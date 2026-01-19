@@ -203,6 +203,8 @@ export class CRMService {
         return await this.syncSalesforce(integration);
       case 'pipedrive':
         return await this.syncPipedrive(integration);
+      case 'zoho':
+        return await this.syncZoho(integration);
       default:
         throw new Error(`Unsupported platform: ${platform}`);
     }
@@ -294,13 +296,87 @@ export class CRMService {
   private async syncSalesforce(
     integration: CRMIntegration
   ): Promise<{ contactsSynced: number; companiesSynced: number; dealsSynced: number }> {
-    // Similar pattern to HubSpot
-    // Use Salesforce REST API endpoints
-    const contactsSynced = 0;
-    const companiesSynced = 0;
-    const dealsSynced = 0;
+    const instanceUrl = (integration as any).instance_url || 'https://login.salesforce.com';
+    const baseUrl = `${instanceUrl}/services/data/v58.0`;
+    const headers = { Authorization: `Bearer ${integration.accessToken}` };
 
-    // TODO: Implement Salesforce-specific sync logic
+    let contactsSynced = 0;
+    let companiesSynced = 0;
+    let dealsSynced = 0;
+
+    try {
+      // Fetch contacts
+      const contactsQuery = 'SELECT Id, FirstName, LastName, Email, Phone, Title FROM Contact LIMIT 100';
+      const contactsResponse = await this.httpClient.get(
+        `${baseUrl}/query`,
+        { headers, params: { q: contactsQuery } }
+      );
+
+      for (const contact of contactsResponse.data.records) {
+        await this.storeContact(
+          integration.id,
+          'salesforce',
+          {
+            externalId: contact.Id,
+            firstName: contact.FirstName,
+            lastName: contact.LastName,
+            email: contact.Email,
+            phone: contact.Phone,
+            title: contact.Title,
+            lifecycleStage: 'customer',
+            customFields: contact,
+          }
+        );
+        contactsSynced++;
+      }
+
+      // Fetch accounts (companies)
+      const accountsQuery = 'SELECT Id, Name, Website, Industry, NumberOfEmployees, AnnualRevenue FROM Account LIMIT 100';
+      const accountsResponse = await this.httpClient.get(
+        `${baseUrl}/query`,
+        { headers, params: { q: accountsQuery } }
+      );
+
+      for (const account of accountsResponse.data.records) {
+        await this.storeCompany(integration.id, 'salesforce', {
+          externalId: account.Id,
+          name: account.Name,
+          website: account.Website,
+          industry: account.Industry,
+          employeeCount: account.NumberOfEmployees,
+          annualRevenue: account.AnnualRevenue,
+          customFields: account,
+        });
+        companiesSynced++;
+      }
+
+      // Fetch opportunities (deals)
+      const oppsQuery = 'SELECT Id, Name, StageName, Amount, Probability, CloseDate, IsClosed, IsWon FROM Opportunity LIMIT 100';
+      const oppsResponse = await this.httpClient.get(
+        `${baseUrl}/query`,
+        { headers, params: { q: oppsQuery } }
+      );
+
+      for (const opp of oppsResponse.data.records) {
+        await this.storeDeal(integration.id, 'salesforce', {
+          externalId: opp.Id,
+          name: opp.Name,
+          dealStage: opp.StageName || 'negotiation',
+          dealAmount: opp.Amount,
+          probability: opp.Probability,
+          isClosed: opp.IsClosed,
+          isWon: opp.IsWon,
+          customFields: opp,
+        });
+        dealsSynced++;
+      }
+    } catch (error) {
+      throw new Error(
+        `Salesforce sync failed: ${
+          error instanceof Error ? error.message : 'Unknown error'
+        }`
+      );
+    }
 
     return { contactsSynced, companiesSynced, dealsSynced };
   }
@@ -310,15 +386,202 @@ export class CRMService {
   private async syncPipedrive(
     integration: CRMIntegration
   ): Promise<{ contactsSynced: number; companiesSynced: number; dealsSynced: number }> {
-    // Similar pattern to HubSpot
-    // Use Pipedrive REST API endpoints
-    const contactsSynced = 0;
-    const companiesSynced = 0;
-    const dealsSynced = 0;
+    const baseUrl = 'https://api.pipedrive.com/v1';
+    const apiToken = integration.accessToken || integration.apiKey;
 
-    // TODO: Implement Pipedrive-specific sync logic
+    if (!apiToken) {
+      throw new Error('No API token available for Pipedrive');
+    }
+
+    const params = { api_token: apiToken, limit: 100 };
+
+    let contactsSynced = 0;
+    let companiesSynced = 0;
+    let dealsSynced = 0;
+
+    try {
+      // Fetch persons (contacts)
+      const personsResponse = await this.httpClient.get(
+        `${baseUrl}/persons`,
+        { params }
+      );
+
+      if (personsResponse.data.success && personsResponse.data.data) {
+        for (const person of personsResponse.data.data) {
+          const primaryEmail = Array.isArray(person.email)
+            ? person.email.find((e: any) => e.primary)?.value
+            : person.email;
+          const primaryPhone = Array.isArray(person.phone)
+            ? person.phone.find((p: any) => p.primary)?.value
+            : person.phone;
+
+          await this.storeContact(
+            integration.id,
+            'pipedrive',
+            {
+              externalId: person.id.toString(),
+              firstName: person.first_name,
+              lastName: person.last_name,
+              email: primaryEmail,
+              phone: primaryPhone,
+              lifecycleStage: 'lead',
+              customFields: person,
+            }
+          );
+          contactsSynced++;
+        }
+      }
+
+      // Fetch organizations (companies)
+      const orgsResponse = await this.httpClient.get(
+        `${baseUrl}/organizations`,
+        { params }
+      );
+
+      if (orgsResponse.data.success && orgsResponse.data.data) {
+        for (const org of orgsResponse.data.data) {
+          await this.storeCompany(integration.id, 'pipedrive', {
+            externalId: org.id.toString(),
+            name: org.name,
+            website: org.website,
+            employeeCount: org.people_count,
+            customFields: org,
+          });
+          companiesSynced++;
+        }
+      }
+
+      // Fetch deals
+      const dealsResponse = await this.httpClient.get(
+        `${baseUrl}/deals`,
+        { params }
+      );
+
+      if (dealsResponse.data.success && dealsResponse.data.data) {
+        for (const deal of dealsResponse.data.data) {
+          await this.storeDeal(integration.id, 'pipedrive', {
+            externalId: deal.id.toString(),
+            name: deal.title,
+            dealStage: deal.stage_name || 'negotiation',
+            dealAmount: deal.value,
+            probability: deal.probability,
+            isClosed: deal.status === 'won' || deal.status === 'lost',
+            isWon: deal.status === 'won',
+            customFields: deal,
+          });
+          dealsSynced++;
+        }
+      }
+    } catch (error) {
+      throw new Error(
+        `Pipedrive sync failed: ${
+          error instanceof Error ? error.message : 'Unknown error'
+        }`
+      );
+    }
 
     return { contactsSynced, companiesSynced, dealsSynced };
+  }
+
+  // ==================== ZOHO SYNC ====================
+
+  private async syncZoho(
+    integration: CRMIntegration
+  ): Promise<{ contactsSynced: number; companiesSynced: number; dealsSynced: number }> {
+    const baseUrl = 'https://www.zohoapis.com/crm/v3';
+    const accessToken = await this.getValidZohoToken(integration);
+    const headers = {
+      Authorization: `Zoho-oauthtoken ${accessToken}`,
+      'Content-Type': 'application/json',
+    };
+
+    let contactsSynced = 0;
+    let companiesSynced = 0;
+    let dealsSynced = 0;
+
+    try {
+      // Fetch contacts
+      const contactsResponse = await this.httpClient.get(
+        `${baseUrl}/Contacts`,
+        { headers, params: { per_page: 100 } }
+      );
+
+      if (contactsResponse.data.data) {
+        for (const contact of contactsResponse.data.data) {
+          await this.storeContact(
+            integration.id,
+            'zoho',
+            {
+              externalId: contact.id,
+              firstName: contact.First_Name,
+              lastName: contact.Last_Name,
+              email: contact.Email,
+              phone: contact.Phone,
+              title: contact.Title,
+              lifecycleStage: 'customer',
+              customFields: contact,
+            }
+          );
+          contactsSynced++;
+        }
+      }
+
+      // Fetch accounts (companies)
+      const accountsResponse = await this.httpClient.get(
+        `${baseUrl}/Accounts`,
+        { headers, params: { per_page: 100 } }
+      );
+
+      if (accountsResponse.data.data) {
+        for (const account of accountsResponse.data.data) {
+          await this.storeCompany(integration.id, 'zoho', {
+            externalId: account.id,
+            name: account.Account_Name,
+            website: account.Website,
+            industry: account.Industry,
+            employeeCount: account.Employees,
+            annualRevenue: account.Annual_Revenue,
+            customFields: account,
+          });
+          companiesSynced++;
+        }
+      }
+
+      // Fetch deals
+      const dealsResponse = await this.httpClient.get(
+        `${baseUrl}/Deals`,
+        { headers, params: { per_page: 100 } }
+      );
+
+      if (dealsResponse.data.data) {
+        for (const deal of dealsResponse.data.data) {
+          await this.storeDeal(integration.id, 'zoho', {
+            externalId: deal.id,
+            name: deal.Deal_Name,
+            dealStage: deal.Stage || 'negotiation',
+            dealAmount: deal.Amount,
+            probability: deal.Probability,
+            isClosed: deal.Stage === 'Closed Won' || deal.Stage === 'Closed Lost',
+            isWon: deal.Stage === 'Closed Won',
+            customFields: deal,
+          });
+          dealsSynced++;
+        }
+      }
+    } catch (error) {
+      throw new Error(
+        `Zoho sync failed: ${
+          error instanceof Error ? error.message : 'Unknown error'
+        }`
+      );
+    }
+
+    return { contactsSynced, companiesSynced, dealsSynced };
+  }
+
+  private async getValidZohoToken(integration: CRMIntegration): Promise<string> {
+    const { getValidAccessToken } = await import('./crm/oauthHelper');
+    return await getValidAccessToken(integration);
   }
 
   // ==================== DATA STORAGE ====================

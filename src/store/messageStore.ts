@@ -16,6 +16,20 @@ import {
   DraftAnalysisResult,
   SearchResult,
 } from '../services/messageChannelService';
+import {
+  messageAutoResponseService,
+  AutoResponseRule,
+} from '../services/messageAutoResponseService';
+import {
+  messageSummarizationService,
+  ThreadSummary,
+  DailyDigest,
+  CatchUpSummary,
+} from '../services/messageSummarizationService';
+import {
+  conversationIntelligenceService,
+  ConversationIntelligence,
+} from '../services/conversationIntelligenceService';
 
 // ==================== Types ====================
 
@@ -52,6 +66,21 @@ interface MessagesState {
   draftAnalysis: DraftAnalysisResult | null;
   isAnalyzingDraft: boolean;
   isGeneratingReplies: boolean;
+
+  // Auto-Response
+  autoResponseRules: AutoResponseRule[];
+  isCheckingAutoResponse: boolean;
+  autoResponseEnabled: boolean;
+
+  // Summarization
+  threadSummaries: Record<string, ThreadSummary>; // threadId -> summary
+  dailyDigest: DailyDigest | null;
+  catchUpSummary: CatchUpSummary | null;
+  isGeneratingSummary: boolean;
+
+  // Conversation Intelligence
+  conversationIntelligence: Record<string, ConversationIntelligence>; // channelId -> intelligence
+  isAnalyzingConversation: boolean;
 
   // Message Composer
   draft: string;
@@ -121,6 +150,20 @@ interface MessagesState {
   setMobileView: (view: 'channels' | 'chat') => void;
   clearError: () => void;
 
+  // Actions - Auto-Response
+  checkAutoResponse: (message: ChannelMessage) => Promise<void>;
+  loadAutoResponseRules: (userId: string) => Promise<void>;
+  toggleAutoResponse: (enabled: boolean) => void;
+
+  // Actions - Summarization
+  summarizeThread: (threadId: string, apiKey: string) => Promise<void>;
+  generateDailyDigest: (workspaceId: string, date: Date, apiKey: string) => Promise<void>;
+  generateCatchUpSummary: (sinceDate: Date, apiKey: string) => Promise<void>;
+
+  // Actions - Conversation Intelligence
+  analyzeConversation: (apiKey: string) => Promise<void>;
+  refreshIntelligence: (apiKey: string) => Promise<void>;
+
   // Actions - Retry Failed
   retryFailedMessage: (tempId: string) => Promise<void>;
   removeFailedMessage: (tempId: string) => void;
@@ -155,6 +198,21 @@ export const useMessagesStore = create<MessagesState>()(
       pendingMessages: {},
       failedMessages: {},
       channelStats: {},
+
+      // Auto-Response
+      autoResponseRules: [],
+      isCheckingAutoResponse: false,
+      autoResponseEnabled: false,
+
+      // Summarization
+      threadSummaries: {},
+      dailyDigest: null,
+      catchUpSummary: null,
+      isGeneratingSummary: false,
+
+      // Conversation Intelligence
+      conversationIntelligence: {},
+      isAnalyzingConversation: false,
 
       // ==================== Channel Actions ====================
 
@@ -654,6 +712,194 @@ export const useMessagesStore = create<MessagesState>()(
         set((state) => {
           state.error = null;
         });
+      },
+
+      // ==================== Auto-Response Actions ====================
+
+      checkAutoResponse: async (message: ChannelMessage) => {
+        const { selectedChannelId, autoResponseEnabled } = get();
+        if (!autoResponseEnabled || !selectedChannelId) return;
+
+        set((state) => {
+          state.isCheckingAutoResponse = true;
+        });
+
+        try {
+          // Get user ID (assuming from auth)
+          const userId = 'current-user'; // Replace with actual auth user ID
+
+          const response = await messageAutoResponseService.checkAutoResponse(
+            message,
+            selectedChannelId,
+            userId
+          );
+
+          if (response) {
+            // Auto-send the response
+            await get().sendMessage(response);
+          }
+        } catch (error) {
+          console.error('[Store] Error checking auto-response:', error);
+        } finally {
+          set((state) => {
+            state.isCheckingAutoResponse = false;
+          });
+        }
+      },
+
+      loadAutoResponseRules: async (userId: string) => {
+        try {
+          const rules = await messageAutoResponseService.getRules(userId);
+          set((state) => {
+            state.autoResponseRules = rules;
+          });
+        } catch (error) {
+          console.error('[Store] Error loading auto-response rules:', error);
+        }
+      },
+
+      toggleAutoResponse: (enabled: boolean) => {
+        set((state) => {
+          state.autoResponseEnabled = enabled;
+        });
+      },
+
+      // ==================== Summarization Actions ====================
+
+      summarizeThread: async (threadId: string, apiKey: string) => {
+        const { selectedChannelId } = get();
+        if (!selectedChannelId) return;
+
+        set((state) => {
+          state.isGeneratingSummary = true;
+        });
+
+        try {
+          const userId = 'current-user'; // Replace with actual auth user ID
+
+          const summary = await messageSummarizationService.summarizeThread(
+            selectedChannelId,
+            threadId,
+            userId,
+            apiKey
+          );
+
+          set((state) => {
+            state.threadSummaries[threadId] = summary;
+            state.isGeneratingSummary = false;
+          });
+        } catch (error) {
+          console.error('[Store] Error summarizing thread:', error);
+          set((state) => {
+            state.error = 'Failed to generate thread summary';
+            state.isGeneratingSummary = false;
+          });
+        }
+      },
+
+      generateDailyDigest: async (workspaceId: string, date: Date, apiKey: string) => {
+        set((state) => {
+          state.isGeneratingSummary = true;
+        });
+
+        try {
+          const userId = 'current-user'; // Replace with actual auth user ID
+
+          const digest = await messageSummarizationService.generateDailyDigest(
+            userId,
+            workspaceId,
+            date,
+            apiKey
+          );
+
+          set((state) => {
+            state.dailyDigest = digest;
+            state.isGeneratingSummary = false;
+          });
+        } catch (error) {
+          console.error('[Store] Error generating daily digest:', error);
+          set((state) => {
+            state.error = 'Failed to generate daily digest';
+            state.isGeneratingSummary = false;
+          });
+        }
+      },
+
+      generateCatchUpSummary: async (sinceDate: Date, apiKey: string) => {
+        const { selectedChannelId } = get();
+        if (!selectedChannelId) return;
+
+        set((state) => {
+          state.isGeneratingSummary = true;
+        });
+
+        try {
+          const userId = 'current-user'; // Replace with actual auth user ID
+
+          const catchUp = await messageSummarizationService.generateCatchUpSummary(
+            selectedChannelId,
+            userId,
+            sinceDate,
+            apiKey
+          );
+
+          set((state) => {
+            state.catchUpSummary = catchUp;
+            state.isGeneratingSummary = false;
+          });
+        } catch (error) {
+          console.error('[Store] Error generating catch-up summary:', error);
+          set((state) => {
+            state.error = 'Failed to generate catch-up summary';
+            state.isGeneratingSummary = false;
+          });
+        }
+      },
+
+      // ==================== Conversation Intelligence Actions ====================
+
+      analyzeConversation: async (apiKey: string) => {
+        const { selectedChannelId, messages } = get();
+        if (!selectedChannelId) return;
+
+        const channelMessages = messages[selectedChannelId] || [];
+        if (channelMessages.length === 0) return;
+
+        set((state) => {
+          state.isAnalyzingConversation = true;
+        });
+
+        try {
+          const userId = 'current-user'; // Replace with actual auth user ID
+
+          const intelligence = await conversationIntelligenceService.analyzeConversation(
+            selectedChannelId,
+            channelMessages,
+            userId,
+            apiKey
+          );
+
+          set((state) => {
+            state.conversationIntelligence[selectedChannelId] = intelligence;
+            state.isAnalyzingConversation = false;
+          });
+        } catch (error) {
+          console.error('[Store] Error analyzing conversation:', error);
+          set((state) => {
+            state.isAnalyzingConversation = false;
+          });
+        }
+      },
+
+      refreshIntelligence: async (apiKey: string) => {
+        const { selectedChannelId } = get();
+        if (!selectedChannelId) {
+          return;
+        }
+
+        // Clear cache to force fresh analysis
+        conversationIntelligenceService.clearCache(selectedChannelId);
+        await get().analyzeConversation(apiKey);
       },
 
       // ==================== Failed Message Actions ====================

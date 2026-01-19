@@ -11,6 +11,107 @@ export default defineConfig(({ mode }) => {
         port: Number(env.VITE_PORT) || 5173,
         host: '0.0.0.0',
       },
+      build: {
+        rollupOptions: {
+          output: {
+            manualChunks: (id) => {
+              // React core - immediate load
+              if (id.includes('node_modules/react') ||
+                  id.includes('node_modules/react-dom') ||
+                  id.includes('node_modules/react-router-dom')) {
+                return 'vendor-react';
+              }
+
+              // AI SDKs - lazy load by provider (largest dependencies)
+              if (id.includes('node_modules/openai')) {
+                return 'vendor-ai-openai';
+              }
+              if (id.includes('node_modules/@anthropic-ai/sdk')) {
+                return 'vendor-ai-anthropic';
+              }
+              if (id.includes('node_modules/@google/genai')) {
+                return 'vendor-ai-google';
+              }
+
+              // UI libraries - split for optimal caching
+              if (id.includes('node_modules/framer-motion')) {
+                return 'vendor-ui-motion';
+              }
+              if (id.includes('node_modules/lucide-react') ||
+                  id.includes('node_modules/react-icons')) {
+                return 'vendor-ui-icons';
+              }
+              if (id.includes('node_modules/react-markdown')) {
+                return 'vendor-ui-markdown';
+              }
+
+              // Supabase - needed for auth/data
+              if (id.includes('node_modules/@supabase/supabase-js')) {
+                return 'vendor-supabase';
+              }
+
+              // Utilities
+              if (id.includes('node_modules/uuid') ||
+                  id.includes('node_modules/date-fns') ||
+                  id.includes('node_modules/fuse.js') ||
+                  id.includes('node_modules/immer')) {
+                return 'vendor-utils';
+              }
+
+              // Message Enhancement Bundles - lazy load by feature
+              if (id.includes('MessageEnhancements/BundleAI')) {
+                return 'enhancements-ai';
+              }
+              if (id.includes('MessageEnhancements/BundleAnalytics')) {
+                return 'enhancements-analytics';
+              }
+              if (id.includes('MessageEnhancements/BundleCollaboration')) {
+                return 'enhancements-collaboration';
+              }
+              if (id.includes('MessageEnhancements/BundleProductivity')) {
+                return 'enhancements-productivity';
+              }
+              if (id.includes('MessageEnhancements/BundleIntelligence')) {
+                return 'enhancements-intelligence';
+              }
+              if (id.includes('MessageEnhancements/BundleProactive')) {
+                return 'enhancements-proactive';
+              }
+              if (id.includes('MessageEnhancements/BundleCommunication')) {
+                return 'enhancements-communication';
+              }
+              if (id.includes('MessageEnhancements/BundleAutomation')) {
+                return 'enhancements-automation';
+              }
+              if (id.includes('MessageEnhancements/BundleSecurity')) {
+                return 'enhancements-security';
+              }
+              if (id.includes('MessageEnhancements/BundleMultimedia')) {
+                return 'enhancements-multimedia';
+              }
+
+              // Core MessageEnhancements loaded immediately
+              if (id.includes('MessageEnhancements') &&
+                  !id.includes('Bundle')) {
+                return 'enhancements-core';
+              }
+            }
+          }
+        },
+        chunkSizeWarningLimit: 500,
+        target: 'es2020',
+        minify: 'terser',
+        terserOptions: {
+          compress: {
+            drop_console: true,
+            drop_debugger: true,
+            pure_funcs: ['console.log', 'console.debug']
+          },
+          mangle: {
+            safari10: true
+          }
+        }
+      },
       plugins: [
         react(),
         VitePWA({

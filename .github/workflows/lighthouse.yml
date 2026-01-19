@@ -1,0 +1,109 @@
+name: Lighthouse CI Performance Audit
+
+on:
+  pull_request:
+    branches: [main, master]
+  push:
+    branches: [main, master]
+
+jobs:
+  lighthouse:
+    runs-on: ubuntu-latest
+    steps:
+      - name: Checkout code
+        uses: actions/checkout@v4
+
+      - name: Setup Node.js
+        uses: actions/setup-node@v4
+        with:
+          node-version: '18'
+          cache: 'npm'
+
+      - name: Install dependencies
+        run: npm ci
+
+      - name: Build application
+        run: npm run build
+        env:
+          NODE_ENV: production
+
+      - name: Run Lighthouse CI
+        uses: treosh/lighthouse-ci-action@v11
+        with:
+          urls: |
+            http://localhost:5173
+          budgetPath: ./lighthouse-budget.json
+          uploadArtifacts: true
+          temporaryPublicStorage: true
+          runs: 3
+
+      - name: Check bundle size
+        run: |
+          echo "Checking bundle sizes..."
+          npm run build:stats
+
+          # Check if dist folder exists
+          if [ ! -d "dist/assets" ]; then
+            echo "Error: dist/assets folder not found"
+            exit 1
+          fi
+
+          # Find main JS bundle and check size
+          MAIN_BUNDLE=$(find dist/assets -name "index-*.js" | head -1)
+          if [ -n "$MAIN_BUNDLE" ]; then
+            SIZE=$(stat -f%z "$MAIN_BUNDLE" 2>/dev/null || stat -c%s "$MAIN_BUNDLE")
+            SIZE_KB=$((SIZE / 1024))
+            echo "Main bundle size: ${SIZE_KB}KB"
+
+            # Fail if main bundle exceeds 500KB
+            if [ $SIZE_KB -gt 500 ]; then
+              echo "ERROR: Main bundle (${SIZE_KB}KB) exceeds 500KB limit!"
+              exit 1
+            else
+              echo "SUCCESS: Main bundle within 500KB limit"
+            fi
+          fi
+
+      - name: Save Lighthouse results
+        id: lighthouse-results
+        run: |
+          if [ -f ".lighthouseci/lighthouse-results.json" ]; then
+            echo "results-exist=true" >> $GITHUB_OUTPUT
+          else
+            echo "results-exist=false" >> $GITHUB_OUTPUT
+          fi
+
+      - name: Comment PR with results
+        uses: actions/github-script@v7
+        if: github.event_name == 'pull_request' && steps.lighthouse-results.outputs.results-exist == 'true'
+        with:
+          script: |
+            const fs = require('fs');
+            const resultsPath = '.lighthouseci/lighthouse-results.json';
+
+            const results = JSON.parse(fs.readFileSync(resultsPath, 'utf8'));
+            const score = Math.round(results[0].categories.performance.score * 100);
+            const fcp = results[0].audits['first-contentful-paint'].displayValue;
+            const tti = results[0].audits.interactive.displayValue;
+            const lcp = results[0].audits['largest-contentful-paint'].displayValue;
+
+            const comment = `## Lighthouse Performance Report
+
+            **Performance Score:** ${score}/100 ${score >= 90 ? '✅' : '❌'}
+
+            **Core Web Vitals:**
+            - First Contentful Paint: ${fcp}
+            - Time to Interactive: ${tti}
+            - Largest Contentful Paint: ${lcp}
+
+            **Bundle Size:** Within limits ✅
+
+            ${score >= 90 ? '🎉 Great job! Performance targets met!' : '⚠️ Performance needs improvement'}
+            `;
+
+            await github.rest.issues.createComment({
+              issue_number: context.issue.number,
+              owner: context.repo.owner,
+              repo: context.repo.repo,
+              body: comment
+            });

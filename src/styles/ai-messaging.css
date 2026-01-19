@@ -1,0 +1,751 @@
+/**
+ * AI Messaging Design Tokens
+ * Pulse 1.1 - AI-Augmented MessageInput Component
+ * Version: 1.0
+ * Date: January 19, 2026
+ *
+ * This file contains all design tokens for the AI-augmented messaging features.
+ * Import this file in your component CSS files as needed.
+ */
+
+/* ============================================
+   AI STATE COLORS
+   ============================================ */
+:root {
+  /* Primary AI States */
+  --ai-active: #8B5CF6;
+  --ai-active-rgb: 139, 92, 246;
+  --ai-processing: #06B6D4;
+  --ai-processing-rgb: 6, 182, 212;
+  --ai-success: #10B981;
+  --ai-success-rgb: 16, 185, 129;
+  --ai-warning: #F59E0B;
+  --ai-warning-rgb: 245, 158, 11;
+
+  /* Confidence Level Colors */
+  --confidence-high: #10B981;
+  --confidence-high-rgb: 16, 185, 129;
+  --confidence-medium: #F59E0B;
+  --confidence-medium-rgb: 245, 158, 11;
+  --confidence-low: #EF4444;
+  --confidence-low-rgb: 239, 68, 68;
+
+  /* Tone Analyzer Colors */
+  --tone-positive: #10B981;
+  --tone-positive-rgb: 16, 185, 129;
+  --tone-neutral: #6B7280;
+  --tone-neutral-rgb: 107, 114, 128;
+  --tone-negative: #EF4444;
+  --tone-negative-rgb: 239, 68, 68;
+  --tone-mixed: #8B5CF6;
+  --tone-mixed-rgb: 139, 92, 246;
+
+  /* AI Visual Effects */
+  --ai-glow: rgba(139, 92, 246, 0.2);
+  --ai-glow-strong: rgba(139, 92, 246, 0.4);
+  --ai-border: rgba(139, 92, 246, 0.3);
+  --ai-background: rgba(139, 92, 246, 0.05);
+  --ai-background-hover: rgba(139, 92, 246, 0.1);
+  --ai-background-active: rgba(139, 92, 246, 0.2);
+
+  /* Shimmer Effect Gradient */
+  --ai-shimmer-gradient: linear-gradient(
+    90deg,
+    rgba(139, 92, 246, 0) 0%,
+    rgba(139, 92, 246, 0.3) 50%,
+    rgba(139, 92, 246, 0) 100%
+  );
+
+  /* AI Card Gradient */
+  --ai-card-gradient: linear-gradient(
+    135deg,
+    rgba(139, 92, 246, 0.05) 0%,
+    rgba(139, 92, 246, 0.02) 100%
+  );
+
+  --ai-card-gradient-hover: linear-gradient(
+    135deg,
+    rgba(139, 92, 246, 0.1) 0%,
+    rgba(139, 92, 246, 0.05) 100%
+  );
+}
+
+/* ============================================
+   TYPOGRAPHY TOKENS
+   ============================================ */
+:root {
+  /* Font Sizes */
+  --ai-label-font-size: 0.75rem;       /* 12px - badges, labels */
+  --ai-suggestion-font-size: 0.875rem; /* 14px - suggestions */
+  --ai-input-font-size: 1rem;          /* 16px - main input (prevents iOS zoom) */
+  --ai-heading-font-size: 1.125rem;    /* 18px - section headers */
+
+  /* Font Weights */
+  --ai-label-weight: 600;
+  --ai-suggestion-weight: 400;
+  --ai-input-weight: 400;
+  --ai-heading-weight: 600;
+
+  /* Line Heights */
+  --ai-label-line-height: 1.2;
+  --ai-suggestion-line-height: 1.5;
+  --ai-input-line-height: 1.5;
+
+  /* Letter Spacing */
+  --ai-label-letter-spacing: 0.02em;
+  --ai-heading-letter-spacing: 0.02em;
+}
+
+/* ============================================
+   SPACING TOKENS
+   ============================================ */
+:root {
+  /* Component-specific spacing */
+  --ai-input-padding-y: 1rem;          /* 16px vertical padding */
+  --ai-input-padding-x: 1rem;          /* 16px horizontal padding */
+  --ai-suggestion-gap: 0.75rem;        /* 12px between suggestions */
+  --ai-toolbar-height: 48px;           /* Formatting toolbar height */
+  --ai-overlay-offset: 8px;            /* Distance from input */
+  --ai-badge-padding-y: 6px;           /* Badge vertical padding */
+  --ai-badge-padding-x: 12px;          /* Badge horizontal padding */
+  --ai-card-padding: 12px 16px;        /* Suggestion card padding */
+}
+
+/* ============================================
+   COMPONENT DIMENSIONS
+   ============================================ */
+:root {
+  /* MessageInput Dimensions */
+  --ai-input-min-height: 80px;
+  --ai-input-max-height: 400px;
+  --ai-overlay-max-height: 300px;
+  --ai-overlay-max-width: 100%;
+
+  /* Button Sizes */
+  --ai-toolbar-button-size: 32px;
+  --ai-action-button-size: 40px;
+  --ai-badge-height: 32px;
+  --ai-badge-min-width: 80px;
+
+  /* Touch Targets (Mobile) */
+  --touch-target-min: 44px;
+
+  /* Tools Panel */
+  --tools-panel-width: 320px;
+  --tools-panel-width-tablet: 280px;
+  --quick-access-button-size: 48px;
+  --quick-access-icon-size: 20px;
+
+  /* Confidence Bar */
+  --confidence-bar-height: 4px;
+  --confidence-percentage-width: 36px;
+}
+
+/* ============================================
+   BORDER RADIUS TOKENS
+   ============================================ */
+:root {
+  /* Inherits from main App.css but defined here for reference */
+  --ai-radius-sm: 0.375rem;    /* 6px */
+  --ai-radius-md: 0.5rem;      /* 8px */
+  --ai-radius-lg: 0.75rem;     /* 12px */
+  --ai-radius-xl: 1rem;        /* 16px */
+  --ai-radius-2xl: 1.5rem;     /* 24px */
+  --ai-radius-full: 9999px;    /* Pill shape */
+}
+
+/* ============================================
+   SHADOW TOKENS
+   ============================================ */
+:root {
+  /* AI-specific shadows */
+  --ai-shadow-sm: 0 1px 2px 0 rgba(0, 0, 0, 0.05);
+  --ai-shadow-md: 0 4px 6px -1px rgba(0, 0, 0, 0.1);
+  --ai-shadow-lg: 0 10px 15px -3px rgba(0, 0, 0, 0.1);
+  --ai-shadow-xl: 0 20px 25px -5px rgba(0, 0, 0, 0.1);
+
+  /* Glow shadows */
+  --ai-glow-shadow: 0 0 0 4px var(--ai-glow);
+  --ai-glow-shadow-strong: 0 0 0 4px var(--ai-glow-strong);
+
+  /* Confidence glow shadows */
+  --confidence-glow-high: 0 0 8px rgba(16, 185, 129, 0.5);
+  --confidence-glow-medium: 0 0 8px rgba(245, 158, 11, 0.5);
+  --confidence-glow-low: 0 0 8px rgba(239, 68, 68, 0.5);
+
+  /* Recording pulse shadow */
+  --recording-shadow-start: 0 0 0 0 rgba(239, 68, 68, 0.7);
+  --recording-shadow-end: 0 0 0 8px rgba(239, 68, 68, 0);
+
+  /* Suggestion card shadow */
+  --suggestion-hover-shadow: 0 4px 12px rgba(139, 92, 246, 0.2);
+}
+
+/* ============================================
+   ANIMATION TIMINGS
+   ============================================ */
+:root {
+  /* Duration */
+  --animation-fast: 150ms;     /* Micro-interactions */
+  --animation-base: 200ms;     /* General transitions */
+  --animation-slow: 300ms;     /* Smooth movements */
+  --animation-slower: 500ms;   /* Dramatic effects */
+
+  /* Easing Functions */
+  --ease-in: cubic-bezier(0.4, 0, 1, 1);
+  --ease-out: cubic-bezier(0, 0, 0.2, 1);
+  --ease-in-out: cubic-bezier(0.4, 0, 0.2, 1);
+  --ease-bounce: cubic-bezier(0.68, -0.55, 0.265, 1.55);
+
+  /* Delays for staggered animations */
+  --stagger-delay: 50ms;
+}
+
+/* ============================================
+   Z-INDEX SCALE
+   ============================================ */
+:root {
+  --z-input-overlay: 10;
+  --z-toolbar: 20;
+  --z-suggestions: 50;
+  --z-quick-access: 60;
+  --z-tools-panel: 100;
+  --z-modal-backdrop: 300;
+  --z-modal: 400;
+  --z-tooltip: 500;
+}
+
+/* ============================================
+   BREAKPOINTS (for reference in JavaScript)
+   ============================================ */
+:root {
+  --breakpoint-sm: 640px;
+  --breakpoint-md: 768px;
+  --breakpoint-lg: 1024px;
+  --breakpoint-xl: 1280px;
+}
+
+/* ============================================
+   KEYFRAME ANIMATIONS
+   ============================================ */
+
+/* Pulse Glow - AI Active Indicator */
+@keyframes pulse-glow {
+  0%, 100% {
+    opacity: 1;
+    filter: drop-shadow(0 0 4px var(--ai-active));
+  }
+  50% {
+    opacity: 0.6;
+    filter: drop-shadow(0 0 12px var(--ai-active));
+  }
+}
+
+/* Shimmer - Loading State */
+@keyframes shimmer {
+  0% {
+    background-position: -200% 0;
+  }
+  100% {
+    background-position: 200% 0;
+  }
+}
+
+/* Slide Up Fade In - Overlay Entrance */
+@keyframes slideUpFadeIn {
+  from {
+    opacity: 0;
+    transform: translateY(8px);
+  }
+  to {
+    opacity: 1;
+    transform: translateY(0);
+  }
+}
+
+/* Slide Down Fade In - Tooltip Entrance */
+@keyframes slideDownFadeIn {
+  from {
+    opacity: 0;
+    transform: translateY(-8px);
+  }
+  to {
+    opacity: 1;
+    transform: translateY(0);
+  }
+}
+
+/* Pulse Recording - Voice Input */
+@keyframes pulse-recording {
+  0%, 100% {
+    box-shadow: var(--recording-shadow-start);
+    transform: scale(1);
+  }
+  50% {
+    box-shadow: var(--recording-shadow-end);
+    transform: scale(1.05);
+  }
+}
+
+/* Scale Pop - Success Feedback */
+@keyframes scalePop {
+  0% {
+    transform: scale(0.9);
+  }
+  50% {
+    transform: scale(1.05);
+  }
+  100% {
+    transform: scale(1);
+  }
+}
+
+/* Slide Left Dismiss - Suggestion Dismissed */
+@keyframes slideLeftDismiss {
+  from {
+    opacity: 1;
+    transform: translateX(0);
+  }
+  to {
+    opacity: 0;
+    transform: translateX(-100%);
+  }
+}
+
+/* Fade In - General Purpose */
+@keyframes fadeIn {
+  from {
+    opacity: 0;
+  }
+  to {
+    opacity: 1;
+  }
+}
+
+/* Fade Out - General Purpose */
+@keyframes fadeOut {
+  from {
+    opacity: 1;
+  }
+  to {
+    opacity: 0;
+  }
+}
+
+/* Pulse Dot - Processing Indicator */
+@keyframes pulse-dot {
+  0%, 100% {
+    opacity: 0.3;
+    transform: scale(0.8);
+  }
+  50% {
+    opacity: 1;
+    transform: scale(1.2);
+  }
+}
+
+/* Ripple - AI Toggle Activation */
+@keyframes ripple {
+  from {
+    transform: scale(0);
+    opacity: 1;
+  }
+  to {
+    transform: scale(2);
+    opacity: 0;
+  }
+}
+
+/* Slide Up From Bottom - Mobile Bottom Sheet */
+@keyframes slideUpFromBottom {
+  from {
+    transform: translateY(100%);
+    opacity: 0;
+  }
+  to {
+    transform: translateY(0);
+    opacity: 1;
+  }
+}
+
+/* Spin - Loading Spinner */
+@keyframes spin {
+  from {
+    transform: rotate(0deg);
+  }
+  to {
+    transform: rotate(360deg);
+  }
+}
+
+/* ============================================
+   UTILITY CLASSES
+   ============================================ */
+
+/* AI Active State */
+.ai-active {
+  border-color: var(--ai-active);
+  box-shadow: var(--ai-glow-shadow), var(--ai-shadow-lg);
+}
+
+/* AI Processing State */
+.ai-processing {
+  border-color: var(--ai-processing);
+  box-shadow: 0 0 0 4px rgba(6, 182, 212, 0.2);
+}
+
+/* Confidence Bar Styles */
+.confidence-bar {
+  height: var(--confidence-bar-height);
+  background: #27272A;
+  border-radius: var(--ai-radius-full);
+  overflow: hidden;
+  position: relative;
+}
+
+.confidence-fill {
+  height: 100%;
+  border-radius: var(--ai-radius-full);
+  transition: width var(--animation-slow),
+              background-color var(--animation-base);
+}
+
+.confidence-fill[data-level="high"] {
+  background: linear-gradient(90deg, var(--confidence-high), #14B8A6);
+  box-shadow: var(--confidence-glow-high);
+}
+
+.confidence-fill[data-level="medium"] {
+  background: linear-gradient(90deg, var(--confidence-medium), #FBBF24);
+  box-shadow: var(--confidence-glow-medium);
+}
+
+.confidence-fill[data-level="low"] {
+  background: linear-gradient(90deg, var(--confidence-low), #F87171);
+  box-shadow: var(--confidence-glow-low);
+}
+
+/* Shimmer Loader */
+.shimmer-loader {
+  background: var(--ai-shimmer-gradient);
+  background-size: 200% 100%;
+  animation: shimmer 2s ease-in-out infinite;
+}
+
+/* Pulse Glow Effect */
+.pulse-glow {
+  animation: pulse-glow 2s ease-in-out infinite;
+}
+
+/* GPU Acceleration */
+.gpu-accelerated {
+  transform: translateZ(0);
+  backface-visibility: hidden;
+  perspective: 1000px;
+}
+
+/* ============================================
+   DARK MODE OVERRIDES
+   ============================================ */
+
+.dark {
+  /* AI colors are already optimized for dark backgrounds */
+  /* No overrides needed, but available for customization */
+}
+
+/* ============================================
+   HIGH CONTRAST MODE
+   ============================================ */
+
+@media (prefers-contrast: high) {
+  :root {
+    /* Increase contrast for AI elements */
+    --ai-active: #A78BFA;
+    --ai-border: rgba(139, 92, 246, 0.6);
+    --ai-glow: rgba(139, 92, 246, 0.4);
+    --ai-glow-strong: rgba(139, 92, 246, 0.6);
+  }
+
+  /* Ensure minimum contrast for all text */
+  .ai-composer-overlay,
+  .suggestion-card,
+  .tone-analyzer-badge {
+    border-width: 2px;
+  }
+}
+
+/* ============================================
+   REDUCED MOTION
+   ============================================ */
+
+@media (prefers-reduced-motion: reduce) {
+  :root {
+    /* Drastically reduce animation durations */
+    --animation-fast: 0.01ms;
+    --animation-base: 0.01ms;
+    --animation-slow: 0.01ms;
+    --animation-slower: 0.01ms;
+  }
+
+  *,
+  *::before,
+  *::after {
+    animation-duration: 0.01ms !important;
+    animation-iteration-count: 1 !important;
+    transition-duration: 0.01ms !important;
+  }
+
+  /* Disable problematic animations */
+  .pulse-glow,
+  .shimmer-loader,
+  .pulse-recording {
+    animation: none;
+  }
+
+  /* Keep opacity transitions for accessibility */
+  .ai-composer-overlay,
+  .suggestion-card {
+    transition: opacity var(--animation-base) !important;
+  }
+}
+
+/* ============================================
+   PRINT STYLES
+   ============================================ */
+
+@media print {
+  /* Hide AI interactive elements when printing */
+  .ai-composer-overlay,
+  .formatting-toolbar,
+  .tone-analyzer-badge,
+  .quick-access-bar,
+  .tools-panel {
+    display: none !important;
+  }
+
+  .message-input-container {
+    border: 1px solid #000;
+    background: #fff;
+    color: #000;
+  }
+}
+
+/* ============================================
+   COMPONENT-SPECIFIC CLASSES
+   ============================================ */
+
+/* Message Input Container */
+.message-input-container {
+  background: #18181B;
+  border: 1px solid #27272A;
+  border-radius: var(--ai-radius-lg);
+  box-shadow: var(--ai-shadow-md);
+  transition: all var(--animation-base);
+}
+
+.message-input-container:focus-within {
+  border-color: var(--ai-active);
+  box-shadow: var(--ai-glow-shadow), var(--ai-shadow-lg);
+}
+
+/* AI Composer Overlay */
+.ai-composer-overlay {
+  position: absolute;
+  bottom: calc(100% + var(--ai-overlay-offset));
+  left: 0;
+  right: 0;
+  background: #18181B;
+  border: 1px solid var(--ai-border);
+  border-radius: var(--ai-radius-lg);
+  padding: var(--space-3);
+  box-shadow: 0 -4px 12px rgba(0, 0, 0, 0.3),
+              0 0 0 1px rgba(139, 92, 246, 0.2);
+  animation: slideUpFadeIn var(--animation-base);
+  backdrop-filter: blur(12px);
+  z-index: var(--z-suggestions);
+  max-height: var(--ai-overlay-max-height);
+  overflow-y: auto;
+}
+
+/* Suggestion Card */
+.suggestion-card {
+  background: var(--ai-card-gradient);
+  border: 1px solid var(--ai-border);
+  border-radius: var(--ai-radius-md);
+  padding: var(--ai-card-padding);
+  cursor: pointer;
+  transition: all var(--animation-fast);
+  position: relative;
+  overflow: hidden;
+}
+
+.suggestion-card:hover {
+  background: var(--ai-card-gradient-hover);
+  border-color: rgba(139, 92, 246, 0.4);
+  transform: translateY(-2px) scale(1.02);
+  box-shadow: var(--suggestion-hover-shadow);
+}
+
+.suggestion-card:active {
+  transform: scale(0.98);
+}
+
+/* Tone Analyzer Badge */
+.tone-analyzer-badge {
+  display: inline-flex;
+  align-items: center;
+  gap: var(--space-2);
+  padding: var(--ai-badge-padding-y) var(--ai-badge-padding-x);
+  background: rgba(39, 39, 42, 0.8);
+  backdrop-filter: blur(8px);
+  border: 1px solid #3F3F46;
+  border-radius: var(--ai-radius-full);
+  font-size: var(--ai-label-font-size);
+  font-weight: var(--ai-label-weight);
+  cursor: pointer;
+  transition: all var(--animation-fast);
+  height: var(--ai-badge-height);
+  min-width: var(--ai-badge-min-width);
+}
+
+.tone-analyzer-badge:hover {
+  background: rgba(39, 39, 42, 0.95);
+  border-color: #52525B;
+  transform: scale(1.05);
+}
+
+/* Toolbar Button */
+.toolbar-button {
+  width: var(--ai-toolbar-button-size);
+  height: var(--ai-toolbar-button-size);
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  background: transparent;
+  border: none;
+  border-radius: var(--ai-radius-sm);
+  color: #A1A1AA;
+  cursor: pointer;
+  transition: all var(--animation-fast);
+  position: relative;
+}
+
+.toolbar-button:hover {
+  background: var(--ai-background-hover);
+  color: #E4E4E7;
+  transform: translateY(-1px);
+}
+
+.toolbar-button:active {
+  transform: scale(0.95);
+}
+
+.toolbar-button.active {
+  background: var(--ai-background-active);
+  color: var(--ai-active);
+  border: 1px solid var(--ai-border);
+}
+
+/* Action Button (Voice, Send) */
+.action-button {
+  width: var(--ai-action-button-size);
+  height: var(--ai-action-button-size);
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  border-radius: var(--ai-radius-md);
+  cursor: pointer;
+  transition: all var(--animation-fast);
+}
+
+.action-button:hover {
+  transform: scale(1.05);
+}
+
+.action-button:active {
+  transform: scale(0.95);
+}
+
+/* ============================================
+   MOBILE RESPONSIVE
+   ============================================ */
+
+@media (max-width: 639px) {
+  :root {
+    /* Adjust spacing for mobile */
+    --ai-input-padding-y: 0.75rem;
+    --ai-input-padding-x: 0.75rem;
+    --ai-toolbar-height: 44px;
+
+    /* Touch targets */
+    --ai-toolbar-button-size: var(--touch-target-min);
+    --ai-action-button-size: var(--touch-target-min);
+  }
+
+  .message-input-container {
+    border-radius: 0;
+    border-left: none;
+    border-right: none;
+  }
+
+  .ai-composer-overlay {
+    position: fixed;
+    bottom: 0;
+    left: 0;
+    right: 0;
+    max-height: 60vh;
+    border-radius: var(--ai-radius-xl) var(--ai-radius-xl) 0 0;
+    animation: slideUpFromBottom var(--animation-base);
+  }
+
+  .tone-analyzer-badge {
+    font-size: 10px;
+    padding: 4px 8px;
+    min-width: 60px;
+  }
+}
+
+@media (min-width: 640px) and (max-width: 1023px) {
+  :root {
+    --tools-panel-width: var(--tools-panel-width-tablet);
+  }
+}
+
+/* ============================================
+   ACCESSIBILITY ENHANCEMENTS
+   ============================================ */
+
+/* Focus visible styles (keyboard navigation) */
+*:focus-visible {
+  outline: 2px solid var(--ai-active);
+  outline-offset: 2px;
+  border-radius: 4px;
+}
+
+/* Remove focus for mouse users */
+*:focus:not(:focus-visible) {
+  outline: none;
+}
+
+/* Enhanced focus for critical actions */
+.send-button:focus-visible,
+.action-button:focus-visible {
+  outline: 3px solid var(--pulse-rose);
+  outline-offset: 3px;
+}
+
+/* Ensure sufficient color contrast */
+.ai-label,
+.confidence-percentage,
+.draft-indicator {
+  color: #A1A1AA; /* zinc-400 - meets WCAG AA 4.5:1 on #18181B */
+}
+
+.suggestion-text,
+.tool-item-name {
+  color: #E4E4E7; /* zinc-200 - excellent contrast */
+}
+
+/* ============================================
+   END OF AI MESSAGING DESIGN TOKENS
+   ============================================ */

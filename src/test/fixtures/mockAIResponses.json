@@ -1,0 +1,153 @@
+{
+  "smartCompose": {
+    "suggestions": [
+      {
+        "text": "I hope this message finds you well.",
+        "confidence": 0.85,
+        "context": "professional_greeting"
+      },
+      {
+        "text": "Let me know if you have any questions.",
+        "confidence": 0.78,
+        "context": "closing_offer_help"
+      },
+      {
+        "text": "Looking forward to your response.",
+        "confidence": 0.72,
+        "context": "closing_anticipation"
+      }
+    ]
+  },
+  "toneAnalysis": {
+    "positive": {
+      "sentiment": "positive",
+      "confidence": 0.82,
+      "tone": "friendly",
+      "emotions": ["happy", "excited"],
+      "suggestions": [
+        "The tone is warm and welcoming",
+        "Consider this approach for team communication"
+      ]
+    },
+    "negative": {
+      "sentiment": "negative",
+      "confidence": 0.76,
+      "tone": "frustrated",
+      "emotions": ["annoyed", "disappointed"],
+      "suggestions": [
+        "Consider softening the language",
+        "Add a constructive element to the message"
+      ]
+    },
+    "neutral": {
+      "sentiment": "neutral",
+      "confidence": 0.88,
+      "tone": "professional",
+      "emotions": ["calm", "focused"],
+      "suggestions": [
+        "The tone is appropriate for business communication",
+        "Clear and direct messaging"
+      ]
+    }
+  },
+  "ideaClustering": {
+    "clusters": [
+      {
+        "name": "Technical Implementation",
+        "theme": "Development, architecture, and code-related ideas",
+        "ideaIds": ["idea-1", "idea-3", "idea-5"],
+        "confidence": 0.85
+      },
+      {
+        "name": "User Experience",
+        "theme": "Design, usability, and user interaction improvements",
+        "ideaIds": ["idea-2", "idea-4"],
+        "confidence": 0.78
+      },
+      {
+        "name": "Business Strategy",
+        "theme": "Marketing, growth, and business-focused concepts",
+        "ideaIds": ["idea-6", "idea-7"],
+        "confidence": 0.72
+      }
+    ]
+  },
+  "ideaExpansion": {
+    "description": "This idea focuses on implementing a real-time collaborative feature that allows team members to work together seamlessly. The system would use WebSockets for instant updates and conflict resolution algorithms to handle simultaneous edits.",
+    "benefits": [
+      "Improved team collaboration and productivity",
+      "Reduced communication overhead",
+      "Better visibility into team activities",
+      "Faster decision-making process"
+    ],
+    "challenges": [
+      "Technical complexity of real-time sync",
+      "Handling network latency and offline scenarios",
+      "Resource requirements for infrastructure"
+    ],
+    "nextSteps": [
+      "Create proof of concept with basic real-time sync",
+      "Conduct user research on collaboration pain points",
+      "Plan infrastructure requirements and costs",
+      "Design conflict resolution strategy"
+    ]
+  },
+  "ideaVariations": [
+    {
+      "type": "SIMPLIFIED",
+      "text": "Basic version with manual refresh instead of real-time updates",
+      "rationale": "Focuses on core value while reducing technical complexity"
+    },
+    {
+      "type": "AMPLIFIED",
+      "text": "Full collaborative suite with video, chat, and document editing",
+      "rationale": "Maximum impact by combining multiple collaboration tools"
+    },
+    {
+      "type": "COMBINED",
+      "text": "Merge with existing project management features",
+      "rationale": "Creates unified workflow experience"
+    },
+    {
+      "type": "OPPOSITE",
+      "text": "Asynchronous updates with digest summaries",
+      "rationale": "Different approach for teams in different time zones"
+    },
+    {
+      "type": "ALTERNATIVE",
+      "text": "Plugin-based system where teams choose their tools",
+      "rationale": "More flexible and customizable implementation"
+    }
+  ],
+  "conversationIntelligence": {
+    "sentiment": {
+      "current": "positive",
+      "score": 0.72,
+      "reason": "Participants are engaged and collaborative",
+      "trend": "improving"
+    },
+    "topics": [
+      {
+        "name": "Meeting Planning",
+        "relevance": 0.88,
+        "mentions": 5
+      },
+      {
+        "name": "Feature Development",
+        "relevance": 0.75,
+        "mentions": 3
+      }
+    ],
+    "engagement": {
+      "score": 78,
+      "mostActiveHours": [9, 10, 14, 15],
+      "mostActiveDays": ["Monday", "Wednesday", "Friday"],
+      "responseRate": 0.85
+    },
+    "followUpSuggestions": [
+      "Send calendar invite for 2:30pm meeting",
+      "Share testing documentation for new feature",
+      "Schedule follow-up discussion on implementation details"
+    ]
+  }
+}

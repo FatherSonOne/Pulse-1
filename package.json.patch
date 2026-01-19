@@ -1,0 +1,11 @@
+// Instructions for updating package.json
+// Add MSW dependency to devDependencies:
+
+{
+  "devDependencies": {
+    "msw": "^2.3.0"
+  }
+}
+
+// Installation command:
+// npm install --save-dev msw

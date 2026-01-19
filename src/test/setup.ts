@@ -4,7 +4,23 @@
 // ============================================
 
 import '@testing-library/jest-dom';
-import { vi, afterEach } from 'vitest';
+import { vi, afterEach, beforeAll, afterAll } from 'vitest';
+import { setupMockServer, resetMockServer, teardownMockServer } from './mocks/server';
+
+// Start MSW mock server before all tests
+beforeAll(() => {
+  setupMockServer();
+});
+
+// Reset handlers between tests
+afterEach(() => {
+  resetMockServer();
+});
+
+// Stop MSW server after all tests
+afterAll(() => {
+  teardownMockServer();
+});
 
 // Mock environment variables
 vi.stubEnv('VITE_SUPABASE_URL', 'https://test.supabase.co');

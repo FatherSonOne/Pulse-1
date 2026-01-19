@@ -141,26 +141,30 @@ export class CRMActionsService {
       case 'pipedrive':
         await this.createPipedriveTask(integration, payload);
         break;
+      case 'zoho':
+        await this.createZohoTask(integration, payload);
+        break;
     }
   }
 
+  private async createZohoTask(integration: any, payload: CRMActionPayload) {
+    const { zohoService } = await import('./crm/zohoService');
+    return await zohoService.createTask(integration, payload);
+  }
+
   private async createHubSpotTask(integration: any, payload: CRMActionPayload) {
-    // HubSpot task creation
-    // POST https://api.hubapi.com/crm/v3/objects/tasks
-    console.log('Creating HubSpot task:', payload);
-    // TODO: Implement HubSpot task creation
+    const { hubspotService } = await import('./crm/hubspotService');
+    return await hubspotService.createTask(integration, payload);
   }
 
   private async createSalesforceTask(integration: any, payload: CRMActionPayload) {
-    // Salesforce task creation
-    console.log('Creating Salesforce task:', payload);
-    // TODO: Implement Salesforce task creation
+    const { salesforceService } = await import('./crm/salesforceService');
+    return await salesforceService.createTask(integration, payload);
   }
 
   private async createPipedriveTask(integration: any, payload: CRMActionPayload) {
-    // Pipedrive activity creation
-    console.log('Creating Pipedrive task:', payload);
-    // TODO: Implement Pipedrive task creation
+    const { pipedriveService } = await import('./crm/pipedriveService');
+    return await pipedriveService.createActivity(integration, payload);
   }
 
   /**
@@ -183,7 +187,20 @@ export class CRMActionsService {
       case 'pipedrive':
         await this.updatePipedriveDeal(integration, dealExternalId, payload);
         break;
+      case 'zoho':
+        await this.updateZohoDeal(integration, dealExternalId, payload);
+        break;
     }
+  }
+
+  private async updateZohoDeal(
+    integration: any,
+    dealId: string,
+    payload: CRMActionPayload
+  ) {
+    const { zohoService } = await import('./crm/zohoService');
+    return await zohoService.updateDeal(integration, dealId, payload);
+  }
 
     // Update local cache
     await this.supabase
@@ -202,9 +219,8 @@ export class CRMActionsService {
     dealId: string,
     payload: CRMActionPayload
   ) {
-    // PATCH https://api.hubapi.com/crm/v3/objects/deals/{dealId}
-    console.log('Updating HubSpot deal:', dealId, payload);
-    // TODO: Implement HubSpot deal update
+    const { hubspotService } = await import('./crm/hubspotService');
+    return await hubspotService.updateDeal(integration, dealId, payload);
   }
 
   private async updateSalesforceDeal(
@@ -212,9 +228,8 @@ export class CRMActionsService {
     dealId: string,
     payload: CRMActionPayload
   ) {
-    // PATCH Salesforce opportunity
-    console.log('Updating Salesforce deal:', dealId, payload);
-    // TODO: Implement Salesforce deal update
+    const { salesforceService } = await import('./crm/salesforceService');
+    return await salesforceService.updateOpportunity(integration, dealId, payload);
   }
 
   private async updatePipedriveDeal(
@@ -222,9 +237,8 @@ export class CRMActionsService {
     dealId: string,
     payload: CRMActionPayload
   ) {
-    // PUT https://api.pipedrive.com/v1/deals/{dealId}
-    console.log('Updating Pipedrive deal:', dealId, payload);
-    // TODO: Implement Pipedrive deal update
+    const { pipedriveService } = await import('./crm/pipedriveService');
+    return await pipedriveService.updateDeal(integration, dealId, payload);
   }
 
   /**
@@ -246,25 +260,33 @@ export class CRMActionsService {
       case 'pipedrive':
         await this.logPipedriveCall(integration, payload);
         break;
+      case 'zoho':
+        await this.logZohoCall(integration, payload);
+        break;
     }
   }
 
+  private async logZohoCall(integration: any, payload: CRMActionPayload) {
+    const { zohoService } = await import('./crm/zohoService');
+    return await zohoService.logCall(integration, payload);
+  }
+
   private async logHubSpotCall(integration: any, payload: CRMActionPayload) {
-    // Create task with call type in HubSpot
-    console.log('Logging HubSpot call:', payload);
-    // TODO: Implement HubSpot call logging
+    const { hubspotService } = await import('./crm/hubspotService');
+    return await hubspotService.logCall(integration, payload);
   }
 
   private async logSalesforceCall(integration: any, payload: CRMActionPayload) {
-    // Create activity/event in Salesforce
-    console.log('Logging Salesforce call:', payload);
-    // TODO: Implement Salesforce call logging
+    const { salesforceService } = await import('./crm/salesforceService');
+    return await salesforceService.logActivity(integration, payload);
   }
 
   private async logPipedriveCall(integration: any, payload: CRMActionPayload) {
-    // Log activity in Pipedrive
-    console.log('Logging Pipedrive call:', payload);
-    // TODO: Implement Pipedrive call logging
+    const { pipedriveService } = await import('./crm/pipedriveService');
+    return await pipedriveService.createActivity(integration, {
+      ...payload,
+      fields: { ...payload.fields, activityType: 'call' }
+    });
   }
 
   /**
@@ -286,25 +308,30 @@ export class CRMActionsService {
       case 'pipedrive':
         await this.createPipedriveContact(integration, payload);
         break;
+      case 'zoho':
+        await this.createZohoContact(integration, payload);
+        break;
     }
   }
 
+  private async createZohoContact(integration: any, payload: CRMActionPayload) {
+    const { zohoService } = await import('./crm/zohoService');
+    return await zohoService.createContact(integration, payload);
+  }
+
   private async createHubSpotContact(integration: any, payload: CRMActionPayload) {
-    // POST https://api.hubapi.com/crm/v3/objects/contacts
-    console.log('Creating HubSpot contact:', payload);
-    // TODO: Implement HubSpot contact creation
+    const { hubspotService } = await import('./crm/hubspotService');
+    return await hubspotService.createContact(integration, payload);
   }
 
   private async createSalesforceContact(integration: any, payload: CRMActionPayload) {
-    // POST Salesforce Lead
-    console.log('Creating Salesforce contact:', payload);
-    // TODO: Implement Salesforce contact creation
+    const { salesforceService } = await import('./crm/salesforceService');
+    return await salesforceService.createContact(integration, payload);
   }
 
   private async createPipedriveContact(integration: any, payload: CRMActionPayload) {
-    // POST https://api.pipedrive.com/v1/persons
-    console.log('Creating Pipedrive contact:', payload);
-    // TODO: Implement Pipedrive contact creation
+    const { pipedriveService } = await import('./crm/pipedriveService');
+    return await pipedriveService.createPerson(integration, payload);
   }
 
   // ==================== UTILITIES ====================

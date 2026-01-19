@@ -26,8 +26,12 @@ export const GeneralVoxSettings: React.FC<GeneralVoxSettingsProps> = ({
   const [defaultMode, setDefaultMode] = useState<string | null>(null);
   const [notificationsEnabled, setNotificationsEnabled] = useState(true);
   const [autoTranscribe, setAutoTranscribe] = useState(true);
+  const [realtimeTranscription, setRealtimeTranscription] = useState(true);
+  const [autoAnalyze, setAutoAnalyze] = useState(true);
+  const [autoFeedback, setAutoFeedback] = useState(true);
   const [autoPlayIncoming, setAutoPlayIncoming] = useState(false);
   const [hapticsEnabled, setHapticsEnabled] = useState(true);
+  const [autoEnhance, setAutoEnhance] = useState(true);
 
   // Load saved settings
   useEffect(() => {
@@ -36,8 +40,12 @@ export const GeneralVoxSettings: React.FC<GeneralVoxSettingsProps> = ({
       setDefaultMode(settings.voxDefaultMode ?? null);
       setNotificationsEnabled(settings.voxNotificationsEnabled ?? true);
       setAutoTranscribe(settings.autoTranscribe ?? true);
+      setRealtimeTranscription(settings.voxRealtimeTranscription ?? true);
+      setAutoAnalyze(settings.voxAutoAnalyze ?? true);
+      setAutoFeedback(settings.voxAutoFeedback ?? true);
       setAutoPlayIncoming(settings.voxAutoPlayIncoming ?? false);
       setHapticsEnabled(settings.voxHapticsEnabled ?? true);
+      setAutoEnhance(settings.voxAutoEnhance ?? true);
     };
     loadSettings();
   }, []);
@@ -167,6 +175,108 @@ export const GeneralVoxSettings: React.FC<GeneralVoxSettingsProps> = ({
             </button>
           </label>
 
+          {/* Real-time Transcription */}
+          <label className="flex items-center justify-between p-4 cursor-pointer">
+            <div className="flex items-center gap-3">
+              <div
+                className="w-10 h-10 rounded-xl flex items-center justify-center"
+                style={{ background: `${accentColor}20` }}
+              >
+                <i className="fa-solid fa-microphone-lines text-lg" style={{ color: accentColor }}></i>
+              </div>
+              <div>
+                <span className={`font-medium ${tc.text}`}>Live Transcription</span>
+                <p className={`text-xs ${tc.textMuted}`}>See words as you speak (browser-based)</p>
+              </div>
+            </div>
+            <button
+              onClick={() => {
+                setRealtimeTranscription(!realtimeTranscription);
+                saveSetting('voxRealtimeTranscription', !realtimeTranscription);
+                // Also update localStorage for immediate effect
+                localStorage.setItem('voxer_realtime_transcription', JSON.stringify(!realtimeTranscription));
+              }}
+              className={`w-11 h-6 rounded-full p-0.5 transition-all duration-300 ${
+                realtimeTranscription ? '' : 'bg-gray-300 dark:bg-gray-600'
+              }`}
+              style={realtimeTranscription ? { background: accentColor } : undefined}
+            >
+              <div
+                className={`w-5 h-5 rounded-full bg-white shadow transition-transform duration-300 ${
+                  realtimeTranscription ? 'translate-x-5' : 'translate-x-0'
+                }`}
+              />
+            </button>
+          </label>
+
+          {/* Auto AI Analysis */}
+          <label className="flex items-center justify-between p-4 cursor-pointer">
+            <div className="flex items-center gap-3">
+              <div
+                className="w-10 h-10 rounded-xl flex items-center justify-center"
+                style={{ background: `${accentColor}20` }}
+              >
+                <i className="fa-solid fa-brain text-lg" style={{ color: accentColor }}></i>
+              </div>
+              <div>
+                <span className={`font-medium ${tc.text}`}>Auto-Analyze</span>
+                <p className={`text-xs ${tc.textMuted}`}>AI analysis with summaries & action items</p>
+              </div>
+            </div>
+            <button
+              onClick={() => {
+                setAutoAnalyze(!autoAnalyze);
+                saveSetting('voxAutoAnalyze', !autoAnalyze);
+                // Also update localStorage for immediate effect
+                localStorage.setItem('voxer_auto_analyze', JSON.stringify(!autoAnalyze));
+              }}
+              className={`w-11 h-6 rounded-full p-0.5 transition-all duration-300 ${
+                autoAnalyze ? '' : 'bg-gray-300 dark:bg-gray-600'
+              }`}
+              style={autoAnalyze ? { background: accentColor } : undefined}
+            >
+              <div
+                className={`w-5 h-5 rounded-full bg-white shadow transition-transform duration-300 ${
+                  autoAnalyze ? 'translate-x-5' : 'translate-x-0'
+                }`}
+              />
+            </button>
+          </label>
+
+          {/* Auto AI Feedback */}
+          <label className="flex items-center justify-between p-4 cursor-pointer">
+            <div className="flex items-center gap-3">
+              <div
+                className="w-10 h-10 rounded-xl flex items-center justify-center"
+                style={{ background: `${accentColor}20` }}
+              >
+                <i className="fa-solid fa-robot text-lg" style={{ color: accentColor }}></i>
+              </div>
+              <div>
+                <span className={`font-medium ${tc.text}`}>Pre-Send AI Review</span>
+                <p className={`text-xs ${tc.textMuted}`}>Get feedback before sending messages</p>
+              </div>
+            </div>
+            <button
+              onClick={() => {
+                setAutoFeedback(!autoFeedback);
+                saveSetting('voxAutoFeedback', !autoFeedback);
+                // Also update localStorage for immediate effect
+                localStorage.setItem('voxer_auto_feedback', JSON.stringify(!autoFeedback));
+              }}
+              className={`w-11 h-6 rounded-full p-0.5 transition-all duration-300 ${
+                autoFeedback ? '' : 'bg-gray-300 dark:bg-gray-600'
+              }`}
+              style={autoFeedback ? { background: accentColor } : undefined}
+            >
+              <div
+                className={`w-5 h-5 rounded-full bg-white shadow transition-transform duration-300 ${
+                  autoFeedback ? 'translate-x-5' : 'translate-x-0'
+                }`}
+              />
+            </button>
+          </label>
+
           {/* Auto Play */}
           <label className="flex items-center justify-between p-4 cursor-pointer">
             <div className="flex items-center gap-3">
@@ -194,6 +304,40 @@ export const GeneralVoxSettings: React.FC<GeneralVoxSettingsProps> = ({
               <div
                 className={`w-5 h-5 rounded-full bg-white shadow transition-transform duration-300 ${
                   autoPlayIncoming ? 'translate-x-5' : 'translate-x-0'
+                }`}
+              />
+            </button>
+          </label>
+
+          {/* Audio Enhancement */}
+          <label className="flex items-center justify-between p-4 cursor-pointer">
+            <div className="flex items-center gap-3">
+              <div
+                className="w-10 h-10 rounded-xl flex items-center justify-center"
+                style={{ background: `${accentColor}20` }}
+              >
+                <i className="fa-solid fa-wand-magic-sparkles text-lg" style={{ color: accentColor }}></i>
+              </div>
+              <div>
+                <span className={`font-medium ${tc.text}`}>Auto-Enhance Audio</span>
+                <p className={`text-xs ${tc.textMuted}`}>AI noise reduction & clarity boost</p>
+              </div>
+            </div>
+            <button
+              onClick={() => {
+                setAutoEnhance(!autoEnhance);
+                saveSetting('voxAutoEnhance', !autoEnhance);
+                // Also update localStorage for immediate effect
+                localStorage.setItem('voxer_auto_enhance', JSON.stringify(!autoEnhance));
+              }}
+              className={`w-11 h-6 rounded-full p-0.5 transition-all duration-300 ${
+                autoEnhance ? '' : 'bg-gray-300 dark:bg-gray-600'
+              }`}
+              style={autoEnhance ? { background: accentColor } : undefined}
+            >
+              <div
+                className={`w-5 h-5 rounded-full bg-white shadow transition-transform duration-300 ${
+                  autoEnhance ? 'translate-x-5' : 'translate-x-0'
                 }`}
               />
             </button>

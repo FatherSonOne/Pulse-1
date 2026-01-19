@@ -161,7 +161,7 @@ const analyzeDraft = (
   return suggestions.sort((a, b) => a.priority - b.priority);
 };
 
-export const AICoachEnhanced: React.FC<AICoachEnhancedProps> = ({
+export const AICoachEnhanced: React.FC<AICoachEnhancedProps> = React.memo(({
   draftText,
   recentMessages,
   contactName,
@@ -341,6 +341,12 @@ export const InlineCoachTip: React.FC<{
       </button>
     </div>
   );
-};
+}, (prevProps, nextProps) => {
+  // Custom comparison - only re-render if these props actually changed
+  return prevProps.draftText === nextProps.draftText &&
+         prevProps.contactName === nextProps.contactName &&
+         prevProps.recentMessages.length === nextProps.recentMessages.length &&
+         prevProps.compact === nextProps.compact;
+});
 
 export default AICoachEnhanced;

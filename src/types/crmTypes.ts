@@ -2,7 +2,7 @@
 // CRM INTEGRATION TYPE DEFINITIONS
 // ============================================
 
-export type CRMPlatform = 'hubspot' | 'salesforce' | 'pipedrive';
+export type CRMPlatform = 'hubspot' | 'salesforce' | 'pipedrive' | 'zoho';
 
 // ============= AUTHENTICATION =============
 

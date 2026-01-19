@@ -1,0 +1,122 @@
+{
+  "messages": [
+    {
+      "id": "msg-1",
+      "content": "Hey team, can we schedule a meeting for tomorrow?",
+      "sender_id": "user-1",
+      "sender_name": "Alice Johnson",
+      "channel_id": "channel-1",
+      "created_at": "2026-01-19T10:00:00Z",
+      "attachments": [],
+      "reactions": {
+        "👍": ["user-2", "user-3"]
+      },
+      "thread_id": null,
+      "edited_at": null
+    },
+    {
+      "id": "msg-2",
+      "content": "Sure! What time works best for everyone?",
+      "sender_id": "user-2",
+      "sender_name": "Bob Smith",
+      "channel_id": "channel-1",
+      "created_at": "2026-01-19T10:05:00Z",
+      "attachments": [],
+      "reactions": {},
+      "thread_id": "msg-1",
+      "edited_at": null
+    },
+    {
+      "id": "msg-3",
+      "content": "I'm available after 2pm",
+      "sender_id": "user-3",
+      "sender_name": "Charlie Davis",
+      "channel_id": "channel-1",
+      "created_at": "2026-01-19T10:07:00Z",
+      "attachments": [],
+      "reactions": {},
+      "thread_id": "msg-1",
+      "edited_at": null
+    },
+    {
+      "id": "msg-4",
+      "content": "Great! Let's do 2:30pm then. I'll send out calendar invites.",
+      "sender_id": "user-1",
+      "sender_name": "Alice Johnson",
+      "channel_id": "channel-1",
+      "created_at": "2026-01-19T10:10:00Z",
+      "attachments": [],
+      "reactions": {
+        "✅": ["user-2", "user-3"]
+      },
+      "thread_id": "msg-1",
+      "edited_at": null
+    },
+    {
+      "id": "msg-5",
+      "content": "Quick update: the new feature is ready for testing!",
+      "sender_id": "user-2",
+      "sender_name": "Bob Smith",
+      "channel_id": "channel-2",
+      "created_at": "2026-01-19T11:00:00Z",
+      "attachments": [
+        {
+          "type": "image",
+          "url": "https://example.com/screenshot.png",
+          "name": "screenshot.png"
+        }
+      ],
+      "reactions": {
+        "🎉": ["user-1", "user-3", "user-4"]
+      },
+      "thread_id": null,
+      "edited_at": null
+    }
+  ],
+  "channels": [
+    {
+      "id": "channel-1",
+      "name": "general",
+      "workspace_id": "workspace-1",
+      "type": "channel",
+      "is_private": false,
+      "description": "General team discussion",
+      "created_at": "2026-01-01T00:00:00Z"
+    },
+    {
+      "id": "channel-2",
+      "name": "development",
+      "workspace_id": "workspace-1",
+      "type": "channel",
+      "is_private": false,
+      "description": "Development team channel",
+      "created_at": "2026-01-01T00:00:00Z"
+    }
+  ],
+  "users": [
+    {
+      "id": "user-1",
+      "email": "alice@example.com",
+      "name": "Alice Johnson",
+      "avatar_url": "https://i.pravatar.cc/150?u=alice",
+      "status": "online",
+      "created_at": "2026-01-01T00:00:00Z"
+    },
+    {
+      "id": "user-2",
+      "email": "bob@example.com",
+      "name": "Bob Smith",
+      "avatar_url": "https://i.pravatar.cc/150?u=bob",
+      "status": "online",
+      "created_at": "2026-01-01T00:00:00Z"
+    },
+    {
+      "id": "user-3",
+      "email": "charlie@example.com",
+      "name": "Charlie Davis",
+      "avatar_url": "https://i.pravatar.cc/150?u=charlie",
+      "status": "away",
+      "created_at": "2026-01-01T00:00:00Z"
+    }
+  ]
+}

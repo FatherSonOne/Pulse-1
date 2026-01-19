@@ -8,12 +8,18 @@ import { saveArchiveItem } from '../services/dbService';
 import { dataService } from '../services/dataService';
 import { Contact } from '../types';
 import toast from 'react-hot-toast';
+import { getVoxerAnalysisService } from '../services/voxer/voxerAnalysisService';
+import { getVoxerFeedbackService } from '../services/voxer/voxerFeedbackService';
+import { audioEnhancementService } from '../services/voxer/audioEnhancementService';
+import { VoxAnalysis as VoxAnalysisType, VoxFeedback } from '../services/voxer/voxerTypes';
 
 // New Voxer Components
 import { LiveVoxSession } from './Voxer/LiveVoxSession';
 import { VoiceRooms } from './Voxer/VoiceRooms';
 import { VoxReactions, QuickReactionBar } from './Voxer/VoxReactions';
 import { AIVoiceCoach } from './Voxer/AIVoiceCoach';
+import { AIAnalysisPanel } from './Voxer/AIAnalysisPanel';
+import { AIFeedbackModal } from './Voxer/AIFeedbackModal';
 import { PriorityVoxSelector, PriorityBadge, EmergencyAlert } from './Voxer/PriorityVox';
 import { VoxThreads, ThreadIndicator } from './Voxer/VoxThreads';
 import { TimeCapsuleVox, ScheduledCapsuleCard } from './Voxer/TimeCapsuleVox';
@@ -61,6 +67,7 @@ import {
 type SentimentType = 'positive' | 'neutral' | 'negative' | 'mixed';
 type UrgencyLevel = 'low' | 'medium' | 'high' | 'urgent';
 
+// Legacy interface - kept for backward compatibility
 interface VoiceAnalysis {
   sentiment: SentimentType;
   urgency: UrgencyLevel;
@@ -92,7 +99,7 @@ interface Recording {
   status?: 'sent' | 'delivered' | 'read';
   playedAt?: Date;
   // Enhanced fields
-  analysis?: VoiceAnalysis;
+  analysis?: VoiceAnalysis | VoxAnalysisType; // Support both legacy and new analysis
   isAnalyzing?: boolean;
   starred?: boolean;
   tags?: string[];
@@ -172,7 +179,10 @@ const Voxer: React.FC<VoxerProps> = ({ apiKey, contacts, initialContactId, isDar
   const [showLiveSession, setShowLiveSession] = useState(false);
   const [showVoiceRooms, setShowVoiceRooms] = useState(false);
   const [realtimeTranscript, setRealtimeTranscript] = useState<string>('');
-  const [isRealtimeActive, setIsRealtimeActive] = useState(false);
+  const [isRealtimeActive, setIsRealtimeActive] = useState(() => {
+    const saved = localStorage.getItem('voxer_realtime_transcription');
+    return saved ? JSON.parse(saved) : true; // Enabled by default
+  });
   const [transcriptionState, setTranscriptionState] = useState<RealtimeTranscriptionState>('idle');
   const realtimeServiceRef = useRef<RealtimeTranscriptionService | null>(null);
   
@@ -237,6 +247,25 @@ const Voxer: React.FC<VoxerProps> = ({ apiKey, contacts, initialContactId, isDar
     transcription: string;
     isTranscribing: boolean;
   } | null>(null);
+
+  // AI Settings
+  const [autoAnalyzeEnabled, setAutoAnalyzeEnabled] = useState(() => {
+    const saved = localStorage.getItem('voxer_auto_analyze');
+    return saved ? JSON.parse(saved) : true; // Enabled by default
+  });
+  const [autoFeedbackEnabled, setAutoFeedbackEnabled] = useState(() => {
+    const saved = localStorage.getItem('voxer_auto_feedback');
+    return saved ? JSON.parse(saved) : true; // Enabled by default
+  });
+  const [autoEnhanceEnabled, setAutoEnhanceEnabled] = useState(() => {
+    const saved = localStorage.getItem('voxer_auto_enhance');
+    return saved ? JSON.parse(saved) : true; // Enabled by default
+  });
+
+  // AI Feedback State
+  const [showFeedbackModal, setShowFeedbackModal] = useState(false);
+  const [currentFeedback, setCurrentFeedback] = useState<VoxFeedback | null>(null);
+  const [isFeedbackLoading, setIsFeedbackLoading] = useState(false);
 
   // 12. Vox Mode System - 6 Communication Styles
   // Show mode selector by default when entering Voxer (no mode selected initially)
@@ -439,7 +468,36 @@ const Voxer: React.FC<VoxerProps> = ({ apiKey, contacts, initialContactId, isDar
       };
 
       mediaRecorder.onstop = async () => {
-        const blob = new Blob(chunksRef.current, { type: mimeType });
+        let blob = new Blob(chunksRef.current, { type: mimeType });
+
+        // ============================================
+        // AUDIO ENHANCEMENT: Apply AI-powered audio processing
+        // ============================================
+        if (autoEnhanceEnabled && mode === 'audio' && blob.size > 100) {
+          try {
+            const enhancementResult = await audioEnhancementService.enhanceAudio(blob, {
+              noiseReduction: true,
+              normalize: true,
+              enhanceClarity: true,
+              removeBackground: false,
+              enhanceVoice: true,
+            });
+            blob = enhancementResult.blob;
+
+            toast.success(`Audio enhanced: ${enhancementResult.appliedEnhancements.join(', ')}`, {
+              icon: '✨',
+              duration: 2000,
+            });
+          } catch (error) {
+            console.error('Audio enhancement failed:', error);
+            // Continue with original blob if enhancement fails
+            toast.error('Audio enhancement failed, using original', {
+              icon: '⚠️',
+              duration: 2000,
+            });
+          }
+        }
+
         const url = URL.createObjectURL(blob);
         const duration = (Date.now() - startTimeRef.current) / 1000;
         
@@ -568,6 +626,46 @@ const Voxer: React.FC<VoxerProps> = ({ apiKey, contacts, initialContactId, isDar
                  icon: '📝',
                  duration: 2000,
                });
+
+               // AI Analysis Integration - Analyze after transcription completes
+               if (autoAnalyzeEnabled && text.length > 10) {
+                 setRecordings(prev => prev.map(rec =>
+                   rec.id === id ? { ...rec, isAnalyzing: true } : rec
+                 ));
+
+                 try {
+                   const analysisService = getVoxerAnalysisService(apiKey);
+                   const contactName = contacts.find(c => c.id === activeContactId)?.name;
+
+                   const analysis = await analysisService.analyzeVox(text, {
+                     senderName: 'You',
+                     channelType: 'direct',
+                   });
+
+                   setRecordings(prev => prev.map(rec =>
+                     rec.id === id ? { ...rec, analysis, isAnalyzing: false } : rec
+                   ));
+
+                   // Update analysis in database
+                   await dataService.updateVoxerRecording(id, {
+                     analysis: JSON.stringify(analysis)
+                   });
+
+                   toast.success('AI analysis complete', {
+                     icon: '🤖',
+                     duration: 2000,
+                   });
+                 } catch (error) {
+                   console.error('AI analysis error:', error);
+                   setRecordings(prev => prev.map(rec =>
+                     rec.id === id ? { ...rec, isAnalyzing: false } : rec
+                   ));
+                   toast.error('AI analysis failed', {
+                     icon: '⚠️',
+                     duration: 2000,
+                   });
+                 }
+               }
              }
            } catch (e) {
              setRecordings(prev => prev.map(rec => 
@@ -697,8 +795,54 @@ const Voxer: React.FC<VoxerProps> = ({ apiKey, contacts, initialContactId, isDar
   // ============================================
   // PREVIEW MODE HANDLERS
   // ============================================
-  
+
+  // Get AI feedback on pending recording
+  const getAIFeedback = useCallback(async () => {
+    if (!pendingRecording || !pendingRecording.transcription || !apiKey) return;
+
+    setIsFeedbackLoading(true);
+
+    try {
+      const feedbackService = getVoxerFeedbackService(apiKey);
+      const contactName = contacts.find(c => c.id === activeContactId)?.name;
+
+      const feedback = await feedbackService.analyzeFeedback(
+        pendingRecording.transcription,
+        {
+          recipientName: contactName,
+          relationship: 'professional', // Could be determined from contact type
+          purpose: 'general',
+        }
+      );
+
+      setCurrentFeedback(feedback);
+      setShowFeedbackModal(true);
+    } catch (error) {
+      console.error('AI feedback error:', error);
+      toast.error('Failed to get AI feedback', {
+        icon: '⚠️',
+        duration: 2000,
+      });
+    } finally {
+      setIsFeedbackLoading(false);
+    }
+  }, [pendingRecording, apiKey, contacts, activeContactId]);
+
   const handleSendPendingRecording = useCallback(async () => {
+    if (!pendingRecording) return;
+
+    // Check if AI feedback is enabled and should be shown
+    if (autoFeedbackEnabled && pendingRecording.transcription && pendingRecording.transcription.length > 10) {
+      await getAIFeedback();
+      return; // Wait for user to review feedback
+    }
+
+    // Proceed with sending (either feedback disabled or user clicked "Send Anyway")
+    await sendRecordingNow();
+  }, [pendingRecording, autoFeedbackEnabled]);
+
+  // Actually send the recording (called after feedback review or if feedback disabled)
+  const sendRecordingNow = useCallback(async () => {
     if (!pendingRecording) return;
     
     const { blob, url, duration, transcription } = pendingRecording;
@@ -772,6 +916,8 @@ const Voxer: React.FC<VoxerProps> = ({ apiKey, contacts, initialContactId, isDar
 
     // Clean up
     setShowPreviewPanel(false);
+    setShowFeedbackModal(false);
+    setCurrentFeedback(null);
     setPendingRecording(null);
     setRealtimeTranscript('');
   }, [pendingRecording, mode, activeContactId, videoQuality, contacts]);
@@ -783,9 +929,23 @@ const Voxer: React.FC<VoxerProps> = ({ apiKey, contacts, initialContactId, isDar
     }
     setPendingRecording(null);
     setShowPreviewPanel(false);
+    setShowFeedbackModal(false);
+    setCurrentFeedback(null);
     setRealtimeTranscript('');
     toast('Ready to re-record', { icon: '🔄', duration: 1500 });
   }, [pendingRecording]);
+
+  // Feedback Modal Handlers
+  const handleFeedbackSendAnyway = useCallback(async () => {
+    setShowFeedbackModal(false);
+    await sendRecordingNow();
+  }, []);
+
+  const handleFeedbackClose = useCallback(() => {
+    setShowFeedbackModal(false);
+    setCurrentFeedback(null);
+    // Keep the pending recording so user can review and decide
+  }, []);
 
   const handleClosePreview = useCallback(() => {
     // Keep the recording but close the panel
@@ -1217,48 +1377,46 @@ const Voxer: React.FC<VoxerProps> = ({ apiKey, contacts, initialContactId, isDar
 
   // Analyze voice message for sentiment, urgency, and action items
   const analyzeVoiceMessage = useCallback(async (recordingId: string, transcription: string) => {
-    if (!apiKey || !transcription) return;
+    if (!apiKey || !transcription || transcription.length < 10) return;
 
     setRecordings(prev => prev.map(r =>
       r.id === recordingId ? { ...r, isAnalyzing: true } : r
     ));
 
     try {
-      const analysisResult = await processWithModel(
-        apiKey,
-        `Analyze this voice message and return a JSON object with:
-- sentiment: "positive", "neutral", "negative", or "mixed"
-- urgency: "low", "medium", "high", or "urgent"
-- actionItems: array of action items extracted (max 5)
-- keyTopics: array of main topics (max 3)
-- summary: one sentence summary
+      const analysisService = getVoxerAnalysisService(apiKey);
+      const recording = recordings.find(r => r.id === recordingId);
+      const contactName = contacts.find(c => c.id === recording?.contactId)?.name;
 
-Voice message: "${transcription}"
+      const analysis = await analysisService.analyzeVox(transcription, {
+        senderName: recording?.sender === 'me' ? 'You' : contactName,
+        channelType: 'direct',
+      });
 
-Return ONLY valid JSON, no markdown.`
-      );
+      setRecordings(prev => prev.map(r =>
+        r.id === recordingId ? { ...r, analysis, isAnalyzing: false } : r
+      ));
 
-      if (analysisResult) {
-        const jsonMatch = analysisResult.match(/\{[\s\S]*\}/);
-        if (jsonMatch) {
-          const analysis: VoiceAnalysis = JSON.parse(jsonMatch[0]);
-          setRecordings(prev => prev.map(r =>
-            r.id === recordingId ? { ...r, analysis, isAnalyzing: false } : r
-          ));
-          
-          // Save analysis to database
-          await dataService.updateVoxerRecording(recordingId, { analysis });
-          
-          toast.success('Voice analysis complete', { icon: '🧠' });
-        }
-      }
+      // Save analysis to database
+      await dataService.updateVoxerRecording(recordingId, {
+        analysis: JSON.stringify(analysis)
+      });
+
+      toast.success('AI analysis complete', {
+        icon: '🤖',
+        duration: 2000,
+      });
     } catch (error) {
       console.error('Analysis failed:', error);
       setRecordings(prev => prev.map(r =>
         r.id === recordingId ? { ...r, isAnalyzing: false } : r
       ));
+      toast.error('Analysis failed', {
+        icon: '⚠️',
+        duration: 2000,
+      });
     }
-  }, [apiKey]);
+  }, [apiKey, recordings, contacts]);
 
   // Toggle star on recording
   const toggleStar = useCallback(async (recordingId: string) => {
@@ -2124,6 +2282,27 @@ Return ONLY valid JSON, no markdown.`
                              )}
                           </div>
 
+                          {/* AI Analysis Panel */}
+                          {rec.analysis && 'summary' in rec.analysis && (
+                            <div className="mt-3 px-1">
+                              <AIAnalysisPanel
+                                analysis={rec.analysis as VoxAnalysisType}
+                                isLoading={rec.isAnalyzing}
+                                compact={true}
+                                className="text-xs"
+                              />
+                            </div>
+                          )}
+
+                          {/* Analyzing indicator */}
+                          {rec.isAnalyzing && (
+                            <div className="mt-3 px-1">
+                              <div className="flex items-center gap-2 text-xs text-purple-500 italic">
+                                <i className="fa-solid fa-circle-notch fa-spin"></i> Analyzing voice message...
+                              </div>
+                            </div>
+                          )}
+
                           {/* ADVANCED FEATURE ACTIONS */}
                           <div className="flex items-center justify-between mt-3 pt-3 border-t border-zinc-100 dark:border-zinc-800">
                             {/* Vox Reactions */}
@@ -2818,6 +2997,19 @@ Return ONLY valid JSON, no markdown.`
           onOpenFullCoach={handlePreviewOpenFullCoach}
           recipientName={activeContact?.name}
           apiKey={apiKey}
+        />
+      )}
+
+      {/* AI Feedback Modal (Pre-Send Review) */}
+      {pendingRecording && (
+        <AIFeedbackModal
+          isOpen={showFeedbackModal}
+          feedback={currentFeedback}
+          transcription={pendingRecording.transcription}
+          isLoading={isFeedbackLoading}
+          onClose={handleFeedbackClose}
+          onSendAnyway={handleFeedbackSendAnyway}
+          onReRecord={handleReRecord}
         />
       )}
 
