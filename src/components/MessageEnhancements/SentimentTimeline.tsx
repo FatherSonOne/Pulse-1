@@ -755,6 +755,6 @@ export const SentimentBadge: React.FC<{
       {showLabel && <span style={{ textTransform: 'capitalize' }}>{sentiment.replace('_', ' ')}</span>}
     </button>
   );
-});
+};
 
 export default SentimentTimeline;
