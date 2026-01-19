@@ -247,7 +247,7 @@ export const ResponseTimeTracker: React.FC<ResponseTimeTrackerProps> = React.mem
       </div>
     </div>
   );
-};
+});
 
 // Mini response time badge for inline use
 export const ResponseTimeBadge: React.FC<{
@@ -272,6 +272,6 @@ export const ResponseTimeBadge: React.FC<{
       {trend === 'declining' && <i className="fa-solid fa-arrow-down text-[8px]" />}
     </div>
   );
-});
+};
 
 export default ResponseTimeTracker;

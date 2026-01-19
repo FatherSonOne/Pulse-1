@@ -532,6 +532,228 @@ app.get('/api/realtime/ws-info', (req, res) => {
   });
 });
 
+// ==========================
+// CRM OAuth Callback Routes
+// ==========================
+
+// OAuth callback for all CRM platforms
+app.get('/api/crm/callback/:platform', async (req, res) => {
+  const { platform } = req.params;
+  const { code, state, error, error_description } = req.query;
+
+  // Handle OAuth errors
+  if (error) {
+    console.error(`CRM OAuth error (${platform}):`, error, error_description);
+    return res.redirect(
+      `/settings/integrations?status=error&platform=${platform}&message=${encodeURIComponent(error_description || error)}`
+    );
+  }
+
+  if (!code) {
+    return res.redirect(
+      `/settings/integrations?status=error&platform=${platform}&message=${encodeURIComponent('Authorization code missing')}`
+    );
+  }
+
+  try {
+    // Import CRM OAuth helper dynamically
+    const { exchangeCodeForToken } = await import('./src/services/crm/oauthHelper.js');
+
+    // Get credentials from environment
+    const clientId = process.env[`${platform.toUpperCase()}_CLIENT_ID`];
+    const clientSecret = process.env[`${platform.toUpperCase()}_CLIENT_SECRET`];
+    const redirectUri = process.env[`${platform.toUpperCase()}_REDIRECT_URI`];
+
+    if (!clientId || !clientSecret || !redirectUri) {
+      throw new Error(`Missing ${platform} OAuth credentials in environment`);
+    }
+
+    // Exchange authorization code for tokens
+    const tokens = await exchangeCodeForToken(
+      platform,
+      code,
+      clientId,
+      clientSecret,
+      redirectUri
+    );
+
+    // Calculate token expiration
+    const expiresAt = tokens.expires_in
+      ? new Date(Date.now() + tokens.expires_in * 1000)
+      : new Date(Date.now() + 3600 * 1000); // Default 1 hour
+
+    // Store in session temporarily (will be saved by frontend)
+    const integrationData = {
+      platform,
+      accessToken: tokens.access_token,
+      refreshToken: tokens.refresh_token,
+      expiresAt: expiresAt.toISOString(),
+      instanceUrl: tokens.instance_url, // For Salesforce
+      scope: tokens.scope,
+    };
+
+    // Redirect to success page with data in URL params (will be picked up by frontend)
+    const params = new URLSearchParams({
+      status: 'success',
+      platform,
+      data: Buffer.from(JSON.stringify(integrationData)).toString('base64'),
+    });
+
+    res.redirect(`/settings/integrations?${params.toString()}`);
+  } catch (error) {
+    console.error(`Failed to complete ${platform} OAuth:`, error);
+    res.redirect(
+      `/settings/integrations?status=error&platform=${platform}&message=${encodeURIComponent(error.message)}`
+    );
+  }
+});
+
+// Get CRM integrations for current user
+app.get('/api/crm/integrations', async (req, res) => {
+  try {
+    const supabase = getSupabaseClient(req);
+    const userId = await getUserId(supabase);
+
+    const { data, error } = await supabase
+      .from('crm_integrations')
+      .select('*')
+      .eq('workspace_id', userId)
+      .order('created_at', { ascending: false });
+
+    if (error) {
+      return res.status(400).json({ error: error.message });
+    }
+
+    res.json({ data: data || [] });
+  } catch (error) {
+    res.status(error.status || 500).json({ error: error.message || 'Internal server error' });
+  }
+});
+
+// Create new CRM integration
+app.post('/api/crm/integrations', async (req, res) => {
+  try {
+    const supabase = getSupabaseClient(req);
+    const userId = await getUserId(supabase);
+
+    const payload = {
+      ...(req.body || {}),
+      workspace_id: userId,
+      is_active: true,
+      sync_enabled: true,
+      sync_status: 'idle',
+      created_at: new Date().toISOString(),
+      updated_at: new Date().toISOString(),
+    };
+
+    const { data, error } = await supabase
+      .from('crm_integrations')
+      .insert(payload)
+      .select()
+      .single();
+
+    if (error) {
+      return res.status(400).json({ error: error.message });
+    }
+
+    res.json({ data });
+  } catch (error) {
+    res.status(error.status || 500).json({ error: error.message || 'Internal server error' });
+  }
+});
+
+// Update CRM integration
+app.patch('/api/crm/integrations/:id', async (req, res) => {
+  try {
+    const supabase = getSupabaseClient(req);
+
+    const payload = {
+      ...(req.body || {}),
+      updated_at: new Date().toISOString(),
+    };
+
+    const { data, error } = await supabase
+      .from('crm_integrations')
+      .update(payload)
+      .eq('id', req.params.id)
+      .select()
+      .single();
+
+    if (error) {
+      return res.status(400).json({ error: error.message });
+    }
+
+    res.json({ data });
+  } catch (error) {
+    res.status(error.status || 500).json({ error: error.message || 'Internal server error' });
+  }
+});
+
+// Delete CRM integration
+app.delete('/api/crm/integrations/:id', async (req, res) => {
+  try {
+    const supabase = getSupabaseClient(req);
+
+    const { error } = await supabase
+      .from('crm_integrations')
+      .delete()
+      .eq('id', req.params.id);
+
+    if (error) {
+      return res.status(400).json({ error: error.message });
+    }
+
+    res.json({ success: true });
+  } catch (error) {
+    res.status(error.status || 500).json({ error: error.message || 'Internal server error' });
+  }
+});
+
+// Trigger manual CRM sync
+app.post('/api/crm/integrations/:id/sync', async (req, res) => {
+  try {
+    const supabase = getSupabaseClient(req);
+
+    // Update sync status to 'syncing'
+    await supabase
+      .from('crm_integrations')
+      .update({ sync_status: 'syncing', updated_at: new Date().toISOString() })
+      .eq('id', req.params.id);
+
+    // Import and run sync (async, don't wait)
+    const { crmService } = await import('./src/services/crmService.js');
+    crmService.fullSync(req.params.id).catch(error => {
+      console.error(`Sync failed for integration ${req.params.id}:`, error);
+    });
+
+    res.json({ success: true, message: 'Sync started' });
+  } catch (error) {
+    res.status(error.status || 500).json({ error: error.message || 'Internal server error' });
+  }
+});
+
+// Get CRM sync logs
+app.get('/api/crm/integrations/:id/sync-logs', async (req, res) => {
+  try {
+    const supabase = getSupabaseClient(req);
+
+    const { data, error } = await supabase
+      .from('crm_sync_logs')
+      .select('*')
+      .eq('crm_id', req.params.id)
+      .order('started_at', { ascending: false })
+      .limit(10);
+
+    if (error) {
+      return res.status(400).json({ error: error.message });
+    }
+
+    res.json({ data: data || [] });
+  } catch (error) {
+    res.status(error.status || 500).json({ error: error.message || 'Internal server error' });
+  }
+});
+
 // Health check endpoint
 app.get('/api/health', (req, res) => {
   res.json({ status: 'ok', message: 'Pulse API Server Running' });
@@ -541,4 +763,5 @@ app.listen(PORT, () => {
   console.log(`🚀 Pulse API Server running on http://localhost:${PORT}`);
   console.log(`📡 Proxying Slack, Gmail, Twilio & OpenAI Realtime API requests...`);
   console.log(`🎤 Voice Agent endpoint: POST /api/realtime/session-token`);
+  console.log(`🔗 CRM OAuth callbacks: /api/crm/callback/:platform`);
 });

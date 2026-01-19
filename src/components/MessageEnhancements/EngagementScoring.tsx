@@ -332,7 +332,7 @@ export const EngagementScoring: React.FC<EngagementScoringProps> = React.memo(({
       </div>
     </div>
   );
-};
+});
 
 // Compact engagement badge
 export const EngagementBadge: React.FC<{
@@ -355,6 +355,6 @@ export const EngagementBadge: React.FC<{
       {trend === 'falling' && <i className="fa-solid fa-arrow-down text-[8px]" />}
     </div>
   );
-});
+};
 
 export default EngagementScoring;
