@@ -4733,6 +4733,7 @@ const Messages: React.FC<MessagesProps> = ({ apiKey, contacts, initialContactId,
                       element?.scrollIntoView({ behavior: 'smooth', block: 'center' });
                   }}
                 />
+                </Suspense>
               )}
             </div>
           </div>
@@ -5037,49 +5038,60 @@ const Messages: React.FC<MessagesProps> = ({ apiKey, contacts, initialContactId,
             {/* Tab Content */}
             <div className="max-h-96 overflow-y-auto">
               {mediaHubTab === 'translation' && (
-                <TranslationHub
-                  conversationId={activeThread.id}
-                  onTranslate={(text, from, to) => console.log('Translate:', text, from, to)}
-                  onLanguageChange={(lang) => console.log('Language changed:', lang)}
-                />
+                <Suspense fallback={<FeatureSkeleton type="modal" />}>
+                  <BundleMultimedia.TranslationHub
+                    conversationId={activeThread.id}
+                    onTranslate={(text, from, to) => console.log('Translate:', text, from, to)}
+                    onLanguageChange={(lang) => console.log('Language changed:', lang)}
+                  />
+                </Suspense>
               )}
               {mediaHubTab === 'export' && (
-                <AnalyticsExport
-                  conversationId={activeThread.id}
-                  onExportStart={(job) => console.log('Export started:', job)}
-                  onExportComplete={(job) => console.log('Export complete:', job)}
-                />
+                <Suspense fallback={<FeatureSkeleton type="modal" />}>
+                  <BundleMultimedia.AnalyticsExport
+                    conversationId={activeThread.id}
+                    onExportStart={(job) => console.log('Export started:', job)}
+                    onExportComplete={(job) => console.log('Export complete:', job)}
+                  />
+                </Suspense>
               )}
               {mediaHubTab === 'templates' && (
-                <TemplatesLibrary
-                  onTemplateSelect={(template) => {
-                    setNewMessage(template.content);
-                    console.log('Template selected:', template);
-                  }}
-                  onTemplateCreate={(template) => console.log('Template created:', template)}
-                />
+                <Suspense fallback={<FeatureSkeleton type="modal" />}>
+                  <BundleMultimedia.TemplatesLibrary
+                    onTemplateSelect={(template) => {
+                      setNewMessage(template.content);
+                      console.log('Template selected:', template);
+                    }}
+                    onTemplateCreate={(template) => console.log('Template created:', template)}
+                  />
+                </Suspense>
               )}
               {mediaHubTab === 'attachments' && (
-                <AttachmentManager
-                  conversationId={activeThread.id}
-                  onAttachmentSelect={(attachment) => console.log('Attachment selected:', attachment)}
-                  onAttachmentDelete={(attachmentId) => console.log('Attachment deleted:', attachmentId)}
-                />
+                <Suspense fallback={<FeatureSkeleton type="panel" />}>
+                  <BundleMultimedia.AttachmentManager
+                    conversationId={activeThread.id}
+                    onAttachmentSelect={(attachment) => console.log('Attachment selected:', attachment)}
+                    onAttachmentDelete={(attachmentId) => console.log('Attachment deleted:', attachmentId)}
+                  />
+                </Suspense>
               )}
               {mediaHubTab === 'backup' && (
-                <BackupSync
-                  onBackupCreate={(backup) => console.log('Backup created:', backup)}
-                  onBackupRestore={(backupId) => console.log('Backup restored:', backupId)}
-                  onSyncToggle={(enabled) => console.log('Sync toggled:', enabled)}
-                />
+                <Suspense fallback={<FeatureSkeleton type="panel" />}>
+                  <BundleMultimedia.BackupSync
+                    onBackupCreate={(backup) => console.log('Backup created:', backup)}
+                    onBackupRestore={(backupId) => console.log('Backup restored:', backupId)}
+                    onSyncToggle={(enabled) => console.log('Sync toggled:', enabled)}
+                  />
+                </Suspense>
               )}
               {mediaHubTab === 'suggestions' && (
-                <SmartSuggestions
-                  conversationId={activeThread.id}
-                  currentMessage={newMessage}
-                  onSuggestionSelect={(suggestion) => {
-                    if (suggestion.type === 'reply') {
-                      setNewMessage(suggestion.content);
+                <Suspense fallback={<FeatureSkeleton type="inline" />}>
+                  <BundleMultimedia.SmartSuggestions
+                    conversationId={activeThread.id}
+                    currentMessage={newMessage}
+                    onSuggestionSelect={(suggestion) => {
+                      if (suggestion.type === 'reply') {
+                        setNewMessage(suggestion.content);
                     }
                     console.log('Suggestion selected:', suggestion);
                   }}
