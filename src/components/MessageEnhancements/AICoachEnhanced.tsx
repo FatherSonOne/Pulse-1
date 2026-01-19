@@ -313,7 +313,7 @@ export const AICoachEnhanced: React.FC<AICoachEnhancedProps> = React.memo(({
       )}
     </div>
   );
-};
+});
 
 // Compact inline coach tip
 export const InlineCoachTip: React.FC<{

@@ -9,7 +9,7 @@ interface NetworkGraphProps {
   onNodeClick?: (contactId: string) => void;
 }
 
-export const NetworkGraph: React.FC<NetworkGraphProps> = ({
+export const NetworkGraph: React.FC<NetworkGraphProps> = React.memo(({
   threads,
   onNodeClick
 }) => {
@@ -177,4 +177,4 @@ export const NetworkGraph: React.FC<NetworkGraphProps> = ({
       </div>
     </div>
   );
-};
+});

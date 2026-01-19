@@ -23,7 +23,7 @@ interface ResponseTimeTrackerProps {
   compact?: boolean;
 }
 
-export const ResponseTimeTracker: React.FC<ResponseTimeTrackerProps> = ({
+export const ResponseTimeTracker: React.FC<ResponseTimeTrackerProps> = React.memo(({
   messages = [],
   contactName,
   compact = false
@@ -272,6 +272,6 @@ export const ResponseTimeBadge: React.FC<{
       {trend === 'declining' && <i className="fa-solid fa-arrow-down text-[8px]" />}
     </div>
   );
-};
+});
 
 export default ResponseTimeTracker;

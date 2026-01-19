@@ -37,7 +37,7 @@ interface ConversationFlowVizProps {
   onMessageClick?: (messageId: string) => void;
 }
 
-export const ConversationFlowViz: React.FC<ConversationFlowVizProps> = ({
+export const ConversationFlowViz: React.FC<ConversationFlowVizProps> = React.memo(({
   messages,
   contactName,
   onMessageClick
@@ -356,6 +356,6 @@ export const ConversationFlowViz: React.FC<ConversationFlowVizProps> = ({
       </div>
     </div>
   );
-};
+});
 
 export default ConversationFlowViz;

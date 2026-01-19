@@ -3378,30 +3378,32 @@ const Messages: React.FC<MessagesProps> = ({ apiKey, contacts, initialContactId,
           )}
 
           {/* Fullscreen Tool Overlay - slides down from top, covers chat area */}
-          <ToolOverlay
-            activeTool={activeToolOverlay}
-            onClose={closeAllPanels}
-            conversationId={activePulseConv?.id}
-            otherUserId={activePulseConv?.other_user?.id}
-            analyticsView={analyticsView}
-            setAnalyticsView={setAnalyticsView}
-            collaborationTab={collaborationTab}
-            setCollaborationTab={setCollaborationTab}
-            productivityTab={productivityTab}
-            setProductivityTab={setProductivityTab}
-            intelligenceTab={intelligenceTab}
-            setIntelligenceTab={setIntelligenceTab}
-            proactiveTab={proactiveTab}
-            setProactiveTab={setProactiveTab}
-            communicationTab={communicationTab}
-            setCommunicationTab={setCommunicationTab}
-            personalizationTab={personalizationTab}
-            setPersonalizationTab={setPersonalizationTab}
-            securityTab={securityTab}
-            setSecurityTab={setSecurityTab}
-            mediaHubTab={mediaHubTab}
-            setMediaHubTab={setMediaHubTab}
-          />
+          <Suspense fallback={<FeatureSkeleton type="modal" />}>
+            <BundleMultimedia.ToolOverlay
+              activeTool={activeToolOverlay}
+              onClose={closeAllPanels}
+              conversationId={activePulseConv?.id}
+              otherUserId={activePulseConv?.other_user?.id}
+              analyticsView={analyticsView}
+              setAnalyticsView={setAnalyticsView}
+              collaborationTab={collaborationTab}
+              setCollaborationTab={setCollaborationTab}
+              productivityTab={productivityTab}
+              setProductivityTab={setProductivityTab}
+              intelligenceTab={intelligenceTab}
+              setIntelligenceTab={setIntelligenceTab}
+              proactiveTab={proactiveTab}
+              setProactiveTab={setProactiveTab}
+              communicationTab={communicationTab}
+              setCommunicationTab={setCommunicationTab}
+              personalizationTab={personalizationTab}
+              setPersonalizationTab={setPersonalizationTab}
+              securityTab={securityTab}
+              setSecurityTab={setSecurityTab}
+              mediaHubTab={mediaHubTab}
+              setMediaHubTab={setMediaHubTab}
+            />
+          </Suspense>
 
           {/* Pulse Messages */}
           <div className="flex-1 overflow-y-auto p-4 md:p-6 space-y-4">
@@ -5096,17 +5098,22 @@ const Messages: React.FC<MessagesProps> = ({ apiKey, contacts, initialContactId,
                     console.log('Suggestion selected:', suggestion);
                   }}
                 />
+                </Suspense>
               )}
             </div>
           </div>
         )}
 
         {/* Command Palette */}
-        <QuickActionsCommandPalette
-          isOpen={showCommandPalette}
-          onClose={() => setShowCommandPalette(false)}
-          onAction={(actionId) => console.log('Command action:', actionId)}
-        />
+        {showCommandPalette && (
+          <Suspense fallback={<FeatureSkeleton type="modal" />}>
+            <BundleIntelligence.QuickActionsCommandPalette
+              isOpen={showCommandPalette}
+              onClose={() => setShowCommandPalette(false)}
+              onAction={(actionId) => console.log('Command action:', actionId)}
+            />
+          </Suspense>
+        )}
 
         {/* Typing Indicator */}
         {typingUsers.length > 0 && (

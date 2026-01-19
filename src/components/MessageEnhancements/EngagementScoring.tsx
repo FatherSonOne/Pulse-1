@@ -27,7 +27,7 @@ interface EngagementScoringProps {
   compact?: boolean;
 }
 
-export const EngagementScoring: React.FC<EngagementScoringProps> = ({
+export const EngagementScoring: React.FC<EngagementScoringProps> = React.memo(({
   messages = [],
   contactName,
   compact = false
@@ -355,6 +355,6 @@ export const EngagementBadge: React.FC<{
       {trend === 'falling' && <i className="fa-solid fa-arrow-down text-[8px]" />}
     </div>
   );
-};
+});
 
 export default EngagementScoring;

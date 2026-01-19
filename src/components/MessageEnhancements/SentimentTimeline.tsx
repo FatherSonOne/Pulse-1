@@ -101,7 +101,7 @@ const generateMockDataPoints = (): SentimentDataPoint[] => {
   }));
 };
 
-export const SentimentTimeline: React.FC<SentimentTimelineProps> = ({
+export const SentimentTimeline: React.FC<SentimentTimelineProps> = React.memo(({
   conversationId,
   dataPoints: propDataPoints,
   timeRange: initialTimeRange = '30d',
@@ -727,7 +727,7 @@ export const SentimentTimeline: React.FC<SentimentTimelineProps> = ({
       </div>
     </div>
   );
-};
+});
 
 // Compact sentiment badge
 export const SentimentBadge: React.FC<{
@@ -755,6 +755,6 @@ export const SentimentBadge: React.FC<{
       {showLabel && <span style={{ textTransform: 'capitalize' }}>{sentiment.replace('_', ' ')}</span>}
     </button>
   );
-};
+});
 
 export default SentimentTimeline;
