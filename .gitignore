@@ -57,3 +57,5 @@ tmpclaude-*-cwd
 
 # Claude Code configuration (local to each user)
 .claude/
+
+.vercel
