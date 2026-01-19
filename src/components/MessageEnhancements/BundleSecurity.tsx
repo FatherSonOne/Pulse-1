@@ -2,9 +2,25 @@
 // This bundle contains encryption, versioning, smart folders, and focus tools
 // Lazy loaded when security and insights features are accessed
 
-export { MessageEncryption, PrivacyShieldButton } from './MessageEncryption';
-export { ReadTimeEstimation, ReadTimeBadge } from './ReadTimeEstimation';
-export { MessageVersioning, EditHistoryIndicator } from './MessageVersioning';
-export { SmartFolders, FolderBadge } from './SmartFolders';
-export { ConversationInsights, InsightsBadge } from './ConversationInsights';
-export { FocusTimer, TimerWidget } from './FocusTimer';
+import { MessageEncryption, PrivacyShieldButton } from './MessageEncryption';
+import { ReadTimeEstimation, ReadTimeBadge } from './ReadTimeEstimation';
+import { MessageVersioning, EditHistoryIndicator } from './MessageVersioning';
+import { SmartFolders, FolderBadge } from './SmartFolders';
+import { ConversationInsights, InsightsBadge } from './ConversationInsights';
+import { FocusTimer, TimerWidget } from './FocusTimer';
+
+// Export as default object for lazy loading
+export default {
+  MessageEncryption,
+  PrivacyShieldButton,
+  ReadTimeEstimation,
+  ReadTimeBadge,
+  MessageVersioning,
+  EditHistoryIndicator,
+  SmartFolders,
+  FolderBadge,
+  ConversationInsights,
+  InsightsBadge,
+  FocusTimer,
+  TimerWidget,
+};

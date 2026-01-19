@@ -2,10 +2,27 @@
 // This bundle contains AI-driven features that enhance message composition and understanding
 // Lazy loaded on-demand when AI features are activated
 
-export { SmartCompose } from './SmartCompose';
-export { AICoach } from './AICoach';
-export { SmartComposeEnhanced, QuickPhrases, ToneAdjuster } from './SmartComposeEnhanced';
-export { AICoachEnhanced, InlineCoachTip } from './AICoachEnhanced';
-export { AIMediatorPanel, MediatorIndicator } from './AIMediatorPanel';
-export { VoiceContextExtractor } from './VoiceContextExtractor';
-export { TranslationWidgetEnhanced, TranslationIndicator, AutoTranslateToggle } from './TranslationWidgetEnhanced';
+import { SmartCompose } from './SmartCompose';
+import { AICoach } from './AICoach';
+import { SmartComposeEnhanced, QuickPhrases, ToneAdjuster } from './SmartComposeEnhanced';
+import { AICoachEnhanced, InlineCoachTip } from './AICoachEnhanced';
+import { AIMediatorPanel, MediatorIndicator } from './AIMediatorPanel';
+import { VoiceContextExtractor } from './VoiceContextExtractor';
+import { TranslationWidgetEnhanced, TranslationIndicator, AutoTranslateToggle } from './TranslationWidgetEnhanced';
+
+// Export as default object for lazy loading
+export default {
+  SmartCompose,
+  AICoach,
+  SmartComposeEnhanced,
+  QuickPhrases,
+  ToneAdjuster,
+  AICoachEnhanced,
+  InlineCoachTip,
+  AIMediatorPanel,
+  MediatorIndicator,
+  VoiceContextExtractor,
+  TranslationWidgetEnhanced,
+  TranslationIndicator,
+  AutoTranslateToggle,
+};

@@ -2,14 +2,34 @@
 // This bundle contains analytics, engagement tracking, and proactive insights
 // Lazy loaded when analytics features are accessed
 
-export { ConversationHealthWidget } from './ConversationHealthWidget';
-export { AchievementToast, AchievementProgress } from './AchievementToast';
-export { MessageImpactVisualization } from './MessageImpactVisualization';
-export { ProactiveInsights } from './ProactiveInsights';
-export { MessageAnalyticsDashboard } from './MessageAnalyticsDashboard';
-export { NetworkGraph } from './NetworkGraph';
-export { ResponseTimeTracker, ResponseTimeBadge } from './ResponseTimeTracker';
-export { EngagementScoring, EngagementBadge } from './EngagementScoring';
-export { ConversationFlowViz } from './ConversationFlowViz';
-export { AchievementSystemEnhanced, AchievementBadge } from './AchievementSystemEnhanced';
-export { ProactiveInsightsEnhanced, InsightIndicator } from './ProactiveInsightsEnhanced';
+import { ConversationHealthWidget } from './ConversationHealthWidget';
+import { AchievementToast, AchievementProgress } from './AchievementToast';
+import { MessageImpactVisualization } from './MessageImpactVisualization';
+import { ProactiveInsights } from './ProactiveInsights';
+import { MessageAnalyticsDashboard } from './MessageAnalyticsDashboard';
+import { NetworkGraph } from './NetworkGraph';
+import { ResponseTimeTracker, ResponseTimeBadge } from './ResponseTimeTracker';
+import { EngagementScoring, EngagementBadge } from './EngagementScoring';
+import { ConversationFlowViz } from './ConversationFlowViz';
+import { AchievementSystemEnhanced, AchievementBadge } from './AchievementSystemEnhanced';
+import { ProactiveInsightsEnhanced, InsightIndicator } from './ProactiveInsightsEnhanced';
+
+// Export as default object for lazy loading
+export default {
+  ConversationHealthWidget,
+  AchievementToast,
+  AchievementProgress,
+  MessageImpactVisualization,
+  ProactiveInsights,
+  MessageAnalyticsDashboard,
+  NetworkGraph,
+  ResponseTimeTracker,
+  ResponseTimeBadge,
+  EngagementScoring,
+  EngagementBadge,
+  ConversationFlowViz,
+  AchievementSystemEnhanced,
+  AchievementBadge,
+  ProactiveInsightsEnhanced,
+  InsightIndicator,
+};

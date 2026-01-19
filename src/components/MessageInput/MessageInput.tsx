@@ -3,7 +3,7 @@
 
 import React, { useState, useRef, useEffect, useCallback, lazy, Suspense } from 'react';
 import { motion, AnimatePresence } from 'framer-motion';
-import { useMessageStore } from '../../store/messageStore';
+import useMessagesStore from '../../store/messageStore';
 import FormattingToolbar from './FormattingToolbar';
 import ToneAnalyzer from './ToneAnalyzer';
 import AttachmentPreview from './AttachmentPreview';
@@ -49,7 +49,7 @@ const MessageInput: React.FC<MessageInputProps> = ({
   const draftTimeoutRef = useRef<NodeJS.Timeout>();
 
   // Store
-  const messageStore = useMessageStore();
+  const messageStore = useMessagesStore();
   const aiSuggestions = (messageStore.smartReplies || []) as unknown as AISuggestion[];
   const toneAnalysis = messageStore.draftAnalysis as unknown as ToneAnalysis | null;
   const isGeneratingAI = messageStore.isGeneratingReplies;

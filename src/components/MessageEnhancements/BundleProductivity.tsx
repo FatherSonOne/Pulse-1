@@ -2,9 +2,27 @@
 // This bundle contains templates, scheduling, export, and keyboard shortcuts
 // Lazy loaded when productivity tools are accessed
 
-export { SmartTemplates, TemplateButton } from './SmartTemplates';
-export { MessageScheduling, ScheduleButton } from './MessageScheduling';
-export { ConversationSummary, SummaryBadge } from './ConversationSummary';
-export { ExportSharing, QuickExportButton, QuickShareButton } from './ExportSharing';
-export { KeyboardShortcuts, useKeyboardShortcuts, ShortcutHint } from './KeyboardShortcuts';
-export { NotificationPreferences, NotificationBadge } from './NotificationPreferences';
+import { SmartTemplates, TemplateButton } from './SmartTemplates';
+import { MessageScheduling, ScheduleButton } from './MessageScheduling';
+import { ConversationSummary, SummaryBadge } from './ConversationSummary';
+import { ExportSharing, QuickExportButton, QuickShareButton } from './ExportSharing';
+import { KeyboardShortcuts, useKeyboardShortcuts, ShortcutHint } from './KeyboardShortcuts';
+import { NotificationPreferences, NotificationBadge } from './NotificationPreferences';
+
+// Export as default object for lazy loading
+export default {
+  SmartTemplates,
+  TemplateButton,
+  MessageScheduling,
+  ScheduleButton,
+  ConversationSummary,
+  SummaryBadge,
+  ExportSharing,
+  QuickExportButton,
+  QuickShareButton,
+  KeyboardShortcuts,
+  useKeyboardShortcuts,
+  ShortcutHint,
+  NotificationPreferences,
+  NotificationBadge,
+};

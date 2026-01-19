@@ -612,6 +612,22 @@ const App: React.FC = () => {
 
   // Show landing page or login for non-authenticated users
   if (!user) {
+    // DEV MODE: Skip auth if accessing localhost directly
+    const isDev = window.location.hostname === 'localhost' || window.location.hostname === '127.0.0.1';
+    const skipAuth = isDev && window.location.search.includes('dev');
+
+    if (skipAuth) {
+      // Create a mock user for development
+      const mockUser: User = {
+        id: 'dev-user-123',
+        email: 'dev@localhost',
+        name: 'Dev User',
+        avatar: '',
+      };
+      setUser(mockUser);
+      return null; // Will re-render with user set
+    }
+
     // Check if user explicitly wants to sign in (via URL param or state)
     const wantsToSignIn = window.location.search.includes('signin') || window.location.hash === '#signin';
 

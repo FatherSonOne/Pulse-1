@@ -2,9 +2,26 @@
 // This bundle contains thread collaboration, linking, and knowledge management
 // Lazy loaded when collaboration features are used
 
-export { ThreadCollaboration, ParticipantAvatars } from './ThreadCollaboration';
-export { ThreadLinking, ThreadReferenceBadge } from './ThreadLinking';
-export { KnowledgeBase, KnowledgeSuggestionChip } from './KnowledgeBase';
-export { AdvancedSearch } from './AdvancedSearch';
-export { MessagePinning, PinButton, HighlightToolbar } from './MessagePinning';
-export { CollaborativeAnnotations, AnnotationButton, QuickAnnotationCreator } from './CollaborativeAnnotations';
+import { ThreadCollaboration, ParticipantAvatars } from './ThreadCollaboration';
+import { ThreadLinking, ThreadReferenceBadge } from './ThreadLinking';
+import { KnowledgeBase, KnowledgeSuggestionChip } from './KnowledgeBase';
+import { AdvancedSearch } from './AdvancedSearch';
+import { MessagePinning, PinButton, HighlightToolbar } from './MessagePinning';
+import { CollaborativeAnnotations, AnnotationButton, QuickAnnotationCreator } from './CollaborativeAnnotations';
+
+// Export as default object for lazy loading
+export default {
+  ThreadCollaboration,
+  ParticipantAvatars,
+  ThreadLinking,
+  ThreadReferenceBadge,
+  KnowledgeBase,
+  KnowledgeSuggestionChip,
+  AdvancedSearch,
+  MessagePinning,
+  PinButton,
+  HighlightToolbar,
+  CollaborativeAnnotations,
+  AnnotationButton,
+  QuickAnnotationCreator,
+};

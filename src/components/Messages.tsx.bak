@@ -1,5 +1,5 @@
 
-import React, { useState, useEffect, useRef, useCallback, useMemo } from 'react';
+import React, { useState, useEffect, useRef, useCallback, useMemo, lazy, Suspense } from 'react';
 import { AnimatePresence, motion } from 'framer-motion';
 import { v4 as uuidv4 } from 'uuid';
 import {
@@ -3369,7 +3369,7 @@ const Messages: React.FC<MessagesProps> = ({ apiKey, contacts, initialContactId,
           )}
 
           {/* Fullscreen Tool Overlay - slides down from top, covers chat area */}
-          
+          <Suspense fallback={<FeatureSkeleton type="modal" />}>
             <BundleMultimedia.ToolOverlay
               activeTool={activeToolOverlay}
               onClose={closeAllPanels}
@@ -3394,7 +3394,7 @@ const Messages: React.FC<MessagesProps> = ({ apiKey, contacts, initialContactId,
               mediaHubTab={mediaHubTab}
               setMediaHubTab={setMediaHubTab}
             />
-          
+          </Suspense>
 
           {/* Pulse Messages */}
           <div className="flex-1 overflow-y-auto p-4 md:p-6 space-y-4">
@@ -4163,7 +4163,7 @@ const Messages: React.FC<MessagesProps> = ({ apiKey, contacts, initialContactId,
             {/* Tab Content */}
             <div className="max-h-80 overflow-y-auto">
               {analyticsView === 'response' && (
-                
+                <Suspense fallback={<FeatureSkeleton type="card" />}>
                   <BundleAnalytics.ResponseTimeTracker
                     messages={activeThread.messages.map(m => ({
                       id: m.id,
@@ -4172,10 +4172,10 @@ const Messages: React.FC<MessagesProps> = ({ apiKey, contacts, initialContactId,
                     }))}
                     contactName={activeThread.contactName}
                   />
-                
+                </Suspense>
               )}
               {analyticsView === 'engagement' && (
-                
+                <Suspense fallback={<FeatureSkeleton type="card" />}>
                   <BundleAnalytics.EngagementScoring
                     messages={activeThread.messages.map(m => ({
                       id: m.id,
@@ -4186,10 +4186,10 @@ const Messages: React.FC<MessagesProps> = ({ apiKey, contacts, initialContactId,
                     }))}
                     contactName={activeThread.contactName}
                   />
-                
+                </Suspense>
               )}
               {analyticsView === 'flow' && (
-                
+                <Suspense fallback={<FeatureSkeleton type="modal" />}>
                   <BundleAnalytics.ConversationFlowViz
                     messages={activeThread.messages.map(m => ({
                       id: m.id,
@@ -4205,10 +4205,10 @@ const Messages: React.FC<MessagesProps> = ({ apiKey, contacts, initialContactId,
                       msgEl?.scrollIntoView({ behavior: 'smooth', block: 'center' });
                     }}
                   />
-                
+                </Suspense>
               )}
               {analyticsView === 'insights' && (
-                
+                <Suspense fallback={<FeatureSkeleton type="panel" />}>
                   <BundleAnalytics.ProactiveInsightsEnhanced
                     messages={activeThread.messages.map(m => ({
                       id: m.id,
@@ -4223,7 +4223,7 @@ const Messages: React.FC<MessagesProps> = ({ apiKey, contacts, initialContactId,
                       }
                     }}
                   />
-                
+                </Suspense>
               )}
             </div>
           </div>
@@ -4260,7 +4260,7 @@ const Messages: React.FC<MessagesProps> = ({ apiKey, contacts, initialContactId,
             {/* Tab Content */}
             <div className="max-h-80 overflow-y-auto">
               {collaborationTab === 'collab' && (
-                
+                <Suspense fallback={<FeatureSkeleton type="list" />}>
                   <BundleCollaboration.ThreadCollaboration
                     threadId={activeThread.id}
                     participants={[
@@ -4272,10 +4272,10 @@ const Messages: React.FC<MessagesProps> = ({ apiKey, contacts, initialContactId,
                     onRemoveParticipant={(id) => console.log('Remove:', id)}
                     onChangeRole={(id, role) => console.log('Change role:', id, role)}
                   />
-                
+                </Suspense>
               )}
               {collaborationTab === 'links' && (
-                
+                <Suspense fallback={<FeatureSkeleton type="list" />}>
                   <BundleCollaboration.ThreadLinking
                     currentThreadId={activeThread.id}
                     linkedThreads={[]}
@@ -4292,10 +4292,10 @@ const Messages: React.FC<MessagesProps> = ({ apiKey, contacts, initialContactId,
                       if (thread) setActiveThread(thread);
                     }}
                   />
-                
+                </Suspense>
               )}
               {collaborationTab === 'kb' && (
-                
+                <Suspense fallback={<FeatureSkeleton type="panel" />}>
                   <BundleCollaboration.KnowledgeBase
                     articles={[
                       { id: '1', title: 'Getting Started Guide', category: 'Onboarding', content: 'Welcome to our platform...', tags: ['guide', 'basics'], lastUpdated: new Date().toISOString(), relevanceScore: 0.95 },
@@ -4305,10 +4305,10 @@ const Messages: React.FC<MessagesProps> = ({ apiKey, contacts, initialContactId,
                     onArticleClick={(id) => console.log('Open article:', id)}
                     onInsertSnippet={(snippet) => setInputText(prev => prev + snippet)}
                   />
-                
+                </Suspense>
               )}
               {collaborationTab === 'search' && (
-                
+                <Suspense fallback={<FeatureSkeleton type="modal" />}>
                   <BundleCollaboration.AdvancedSearch
                     messages={activeThread.messages.map(m => ({
                       id: m.id,
@@ -4326,10 +4326,10 @@ const Messages: React.FC<MessagesProps> = ({ apiKey, contacts, initialContactId,
                     savedSearches={[]}
                     onSaveSearch={(search) => console.log('Save search:', search)}
                   />
-                
+                </Suspense>
               )}
               {collaborationTab === 'pins' && (
-                
+                <Suspense fallback={<FeatureSkeleton type="list" />}>
                   <BundleCollaboration.MessagePinning
                     pinnedMessages={pinnedMessages}
                     highlights={highlights}
@@ -4342,10 +4342,10 @@ const Messages: React.FC<MessagesProps> = ({ apiKey, contacts, initialContactId,
                     onRemoveHighlight={(id) => setHighlights(prev => prev.filter(h => h.id !== id))}
                     onCategoryChange={(id, category) => setPinnedMessages(prev => prev.map(p => p.id === id ? { ...p, category } : p))}
                   />
-                
+                </Suspense>
               )}
               {collaborationTab === 'annotations' && (
-                
+                <Suspense fallback={<FeatureSkeleton type="panel" />}>
                   <BundleCollaboration.CollaborativeAnnotations
                     annotations={annotations}
                     currentUserId="user"
@@ -4376,7 +4376,7 @@ const Messages: React.FC<MessagesProps> = ({ apiKey, contacts, initialContactId,
                     msgEl?.scrollIntoView({ behavior: 'smooth', block: 'center' });
                   }}
                 />
-                
+                </Suspense>
               )}
             </div>
           </div>
@@ -4413,7 +4413,7 @@ const Messages: React.FC<MessagesProps> = ({ apiKey, contacts, initialContactId,
             {/* Tab Content */}
             <div className="max-h-80 overflow-y-auto">
               {productivityTab === 'templates' && (
-                
+                <Suspense fallback={<FeatureSkeleton type="list" />}>
                   <BundleProductivity.SmartTemplates
                     templates={userTemplates}
                     contactName={activeThread.contactName}
@@ -4427,10 +4427,10 @@ const Messages: React.FC<MessagesProps> = ({ apiKey, contacts, initialContactId,
                     }}
                     onDeleteTemplate={(id) => setUserTemplates(prev => prev.filter(t => t.id !== id))}
                   />
-                
+                </Suspense>
               )}
               {productivityTab === 'schedule' && (
-                
+                <Suspense fallback={<FeatureSkeleton type="modal" />}>
                   <BundleProductivity.MessageScheduling
                     scheduledMessages={userScheduledMessages}
                     reminders={userReminders}
@@ -4455,10 +4455,10 @@ const Messages: React.FC<MessagesProps> = ({ apiKey, contacts, initialContactId,
                     onCompleteReminder={(id) => setUserReminders(prev => prev.map(r => r.id === id ? { ...r, completed: true } : r))}
                     onDeleteReminder={(id) => setUserReminders(prev => prev.filter(r => r.id !== id))}
                   />
-                
+                </Suspense>
               )}
               {productivityTab === 'summary' && (
-                
+                <Suspense fallback={<FeatureSkeleton type="card" />}>
                   <BundleProductivity.ConversationSummary
                     messages={activeThread.messages.map(m => ({
                       id: m.id,
@@ -4471,10 +4471,10 @@ const Messages: React.FC<MessagesProps> = ({ apiKey, contacts, initialContactId,
                     onExportSummary={(format) => console.log('Export summary:', format)}
                     onShareSummary={(method) => console.log('Share summary:', method)}
                   />
-                
+                </Suspense>
               )}
               {productivityTab === 'export' && (
-                
+                <Suspense fallback={<FeatureSkeleton type="modal" />}>
                   <BundleProductivity.ExportSharing
                     threadId={activeThread.id}
                     threadTitle={activeThread.contactName}
@@ -4488,25 +4488,25 @@ const Messages: React.FC<MessagesProps> = ({ apiKey, contacts, initialContactId,
                       return { shareUrl: 'https://pulse.app/share/abc123', success: true };
                     }}
                   />
-                
+                </Suspense>
               )}
               {productivityTab === 'shortcuts' && (
-                
+                <Suspense fallback={<FeatureSkeleton type="modal" />}>
                   <BundleProductivity.KeyboardShortcuts
                     shortcuts={[]}
                     onShortcutTriggered={(action) => console.log('Shortcut triggered:', action)}
                   />
-                
+                </Suspense>
               )}
               {productivityTab === 'notifications' && (
-                
+                <Suspense fallback={<FeatureSkeleton type="panel" />}>
                   <BundleProductivity.NotificationPreferences
                     channels={[]}
                     rules={[]}
                     quietHours={{ enabled: false, startTime: '22:00', endTime: '07:00', allowUrgent: true, days: ['mon', 'tue', 'wed', 'thu', 'fri'] }}
                     onUpdateQuietHours={(updates) => console.log('Update quiet hours:', updates)}
                   />
-                
+                </Suspense>
               )}
             </div>
           </div>
@@ -4542,23 +4542,23 @@ const Messages: React.FC<MessagesProps> = ({ apiKey, contacts, initialContactId,
             {/* Tab Content */}
             <div className="max-h-96 overflow-y-auto">
               {intelligenceTab === 'insights' && (
-                
+                <Suspense fallback={<FeatureSkeleton type="card" />}>
                   <BundleIntelligence.ContactInsights
                     contactId={activeThread.contactId}
                     onClose={() => setIntelligenceTab('insights')}
                   />
-                
+                </Suspense>
               )}
               {intelligenceTab === 'reactions' && (
-                
+                <Suspense fallback={<FeatureSkeleton type="card" />}>
                   <BundleIntelligence.ReactionsAnalytics
                     conversationId={activeThread.id}
                     onClose={() => setIntelligenceTab('reactions')}
                   />
-                
+                </Suspense>
               )}
               {intelligenceTab === 'bookmarks' && (
-                
+                <Suspense fallback={<FeatureSkeleton type="list" />}>
                   <BundleIntelligence.MessageBookmarks
                     bookmarks={userBookmarks.filter(b => b.conversationId === activeThread.id)}
                     onBookmarkClick={(bookmark) => {
@@ -4570,10 +4570,10 @@ const Messages: React.FC<MessagesProps> = ({ apiKey, contacts, initialContactId,
                     onBookmarkUpdate={(bookmark) => setUserBookmarks(prev => prev.map(b => b.id === bookmark.id ? bookmark : b))}
                     onClose={() => setIntelligenceTab('bookmarks')}
                   />
-                
+                </Suspense>
               )}
               {intelligenceTab === 'tags' && (
-                
+                <Suspense fallback={<FeatureSkeleton type="inline" />}>
                   <BundleIntelligence.ConversationTags
                     conversationId={activeThread.id}
                     conversationTags={conversationTagAssignments}
@@ -4614,15 +4614,15 @@ const Messages: React.FC<MessagesProps> = ({ apiKey, contacts, initialContactId,
                     }}
                     onClose={() => setIntelligenceTab('tags')}
                   />
-                
+                </Suspense>
               )}
               {intelligenceTab === 'delivery' && (
-                
+                <Suspense fallback={<FeatureSkeleton type="panel" />}>
                   <BundleIntelligence.ReadReceipts
                     messageId={activeThread.messages[activeThread.messages.length - 1]?.id || ''}
                     onClose={() => setIntelligenceTab('delivery')}
                   />
-                
+                </Suspense>
               )}
             </div>
           </div>
@@ -4659,16 +4659,16 @@ const Messages: React.FC<MessagesProps> = ({ apiKey, contacts, initialContactId,
             {/* Tab Content */}
             <div className="max-h-96 overflow-y-auto">
               {proactiveTab === 'reminders' && (
-                
+                <Suspense fallback={<FeatureSkeleton type="list" />}>
                   <BundleProactive.SmartReminders
                     conversationId={activeThread.id}
                     onReminderClick={(reminder) => console.log('Reminder clicked:', reminder)}
                     onCreateReminder={(reminder) => console.log('Create reminder:', reminder)}
                   />
-                
+                </Suspense>
               )}
               {proactiveTab === 'threading' && (
-                
+                <Suspense fallback={<FeatureSkeleton type="panel" />}>
                   <BundleProactive.MessageThreading
                     messages={activeThread.messages.map(m => ({
                       id: m.id,
@@ -4680,26 +4680,26 @@ const Messages: React.FC<MessagesProps> = ({ apiKey, contacts, initialContactId,
                     onReply={(parentId, content) => console.log('Reply to:', parentId, content)}
                     onBranchCreate={(messageId, branchName) => console.log('Branch:', messageId, branchName)}
                   />
-                
+                </Suspense>
               )}
               {proactiveTab === 'sentiment' && (
-                
+                <Suspense fallback={<FeatureSkeleton type="card" />}>
                   <BundleProactive.SentimentTimeline
                     conversationId={activeThread.id}
                     onPeriodClick={(period) => console.log('Period clicked:', period)}
                   />
-                
+                </Suspense>
               )}
               {proactiveTab === 'groups' && (
-                
+                <Suspense fallback={<FeatureSkeleton type="list" />}>
                   <BundleProactive.ContactGroups
                     onGroupSelect={(group) => console.log('Group selected:', group)}
                     onChannelSelect={(channel) => console.log('Channel selected:', channel)}
                   />
-                
+                </Suspense>
               )}
               {proactiveTab === 'search' && (
-                
+                <Suspense fallback={<FeatureSkeleton type="modal" />}>
                   <BundleProactive.NaturalLanguageSearch
                     messages={activeThread.messages.map(m => ({
                       id: m.id,
@@ -4714,10 +4714,10 @@ const Messages: React.FC<MessagesProps> = ({ apiKey, contacts, initialContactId,
                       element?.scrollIntoView({ behavior: 'smooth', block: 'center' });
                     }}
                   />
-                
+                </Suspense>
               )}
               {proactiveTab === 'highlights' && (
-                
+                <Suspense fallback={<FeatureSkeleton type="panel" />}>
                   <BundleProactive.ConversationHighlights
                     conversationId={activeThread.id}
                     onMomentClick={(moment) => console.log('Moment clicked:', moment)}
@@ -4726,7 +4726,7 @@ const Messages: React.FC<MessagesProps> = ({ apiKey, contacts, initialContactId,
                       element?.scrollIntoView({ behavior: 'smooth', block: 'center' });
                   }}
                 />
-                
+                </Suspense>
               )}
             </div>
           </div>
@@ -4763,14 +4763,14 @@ const Messages: React.FC<MessagesProps> = ({ apiKey, contacts, initialContactId,
             {/* Tab Content */}
             <div className="max-h-96 overflow-y-auto">
               {communicationTab === 'voice' && (
-                
+                <Suspense fallback={<FeatureSkeleton type="panel" />}>
                   <BundleCommunication.VoiceRecorder
                     onSendVoice={(blob, duration) => console.log('Voice sent:', duration, 'seconds')}
                   />
-                
+                </Suspense>
               )}
               {communicationTab === 'reactions' && (
-                
+                <Suspense fallback={<FeatureSkeleton type="inline" />}>
                   <BundleCommunication.EmojiReactions
                     messageId={activeThread.messages[activeThread.messages.length - 1]?.id || ''}
                     reactions={[
@@ -4781,42 +4781,42 @@ const Messages: React.FC<MessagesProps> = ({ apiKey, contacts, initialContactId,
                     onReact={(emoji) => console.log('Reacted with:', emoji)}
                     onRemoveReaction={(emoji) => console.log('Removed reaction:', emoji)}
                   />
-                
+                </Suspense>
               )}
               {communicationTab === 'inbox' && (
-                
+                <Suspense fallback={<FeatureSkeleton type="list" />}>
                   <BundleCommunication.PriorityInbox
                     onMessageClick={(msg) => console.log('Message clicked:', msg)}
                     onMessageStar={(id) => console.log('Starred:', id)}
                     onMessageArchive={(id) => console.log('Archived:', id)}
                   />
-                
+                </Suspense>
               )}
               {communicationTab === 'archive' && (
-                
+                <Suspense fallback={<FeatureSkeleton type="list" />}>
                   <BundleCommunication.ConversationArchive
                     onRestore={(id) => console.log('Restore:', id)}
                     onDelete={(id) => console.log('Delete:', id)}
                     onExport={(id) => console.log('Export:', id)}
                     onViewConversation={(id) => console.log('View:', id)}
                   />
-                
+                </Suspense>
               )}
               {communicationTab === 'replies' && (
-                
+                <Suspense fallback={<FeatureSkeleton type="inline" />}>
                   <BundleCommunication.QuickReplies
                     lastReceivedMessage={activeThread.messages.filter(m => m.sender !== 'You').pop()?.text}
                     onSelectReply={(text) => setNewMessage(text)}
                   />
-                
+                </Suspense>
               )}
               {communicationTab === 'status' && (
-                
+                <Suspense fallback={<FeatureSkeleton type="panel" />}>
                   <BundleCommunication.MessageStatusTimeline
                     messageId={activeThread.messages[activeThread.messages.length - 1]?.id || ''}
                     onRetry={() => console.log('Retry send')}
                   />
-                
+                </Suspense>
               )}
             </div>
           </div>
@@ -4852,7 +4852,7 @@ const Messages: React.FC<MessagesProps> = ({ apiKey, contacts, initialContactId,
 
             {/* Tab Content */}
             <div className="max-h-96 overflow-y-auto">
-              
+              <Suspense fallback={<FeatureSkeleton />}>
                 {personalizationTab === 'rules' && (
                   <BundleAutomation.AutoResponseRules
                     onRuleTriggered={(rule, message) => console.log('Rule triggered:', rule.name, message)}
@@ -4911,7 +4911,7 @@ const Messages: React.FC<MessagesProps> = ({ apiKey, contacts, initialContactId,
                     onDeleteDraft={(draftId) => console.log('Draft deleted:', draftId)}
                   />
                 )}
-              
+              </Suspense>
             </div>
           </div>
         )}
@@ -4947,56 +4947,56 @@ const Messages: React.FC<MessagesProps> = ({ apiKey, contacts, initialContactId,
             {/* Tab Content */}
             <div className="max-h-96 overflow-y-auto">
               {securityTab === 'encryption' && (
-                
+                <Suspense fallback={<FeatureSkeleton type="panel" />}>
                   <BundleSecurity.MessageEncryption
                     onSettingsChange={(settings) => console.log('Encryption settings:', settings)}
                     onGenerateKey={() => console.log('Generate new key')}
                     onExportKey={() => console.log('Export public key')}
                   />
-                
+                </Suspense>
               )}
               {securityTab === 'readtime' && (
-                
+                <Suspense fallback={<FeatureSkeleton type="inline" />}>
                   <BundleSecurity.ReadTimeEstimation
                     onMarkAsRead={(messageId) => console.log('Mark as read:', messageId)}
                     onPreferencesChange={(prefs) => console.log('Preferences:', prefs)}
                   />
-                
+                </Suspense>
               )}
               {securityTab === 'versions' && (
-                
+                <Suspense fallback={<FeatureSkeleton type="panel" />}>
                   <BundleSecurity.MessageVersioning
                     onRestoreVersion={(msgId, versionId) => console.log('Restore:', msgId, versionId)}
                     onCompareVersions={(a, b) => console.log('Compare:', a, b)}
                   />
-                
+                </Suspense>
               )}
               {securityTab === 'folders' && (
-                
+                <Suspense fallback={<FeatureSkeleton type="list" />}>
                   <BundleSecurity.SmartFolders
                     onFolderSelect={(folderId) => console.log('Folder selected:', folderId)}
                     onCreateFolder={(folder) => console.log('Create folder:', folder)}
                     onDeleteFolder={(folderId) => console.log('Delete folder:', folderId)}
                   />
-                
+                </Suspense>
               )}
               {securityTab === 'insights' && (
-                
+                <Suspense fallback={<FeatureSkeleton type="card" />}>
                   <BundleSecurity.ConversationInsights
                     onContactSelect={(contactId) => console.log('Contact selected:', contactId)}
                     onInsightAction={(insightId) => console.log('Insight action:', insightId)}
                   />
-                
+                </Suspense>
               )}
               {securityTab === 'focus' && (
-                
+                <Suspense fallback={<FeatureSkeleton type="panel" />}>
                   <BundleSecurity.FocusTimer
                     onTimerStart={(type) => console.log('Timer started:', type)}
                     onTimerComplete={(session) => console.log('Session complete:', session)}
                     onTimerPause={() => console.log('Timer paused')}
                     onSettingsChange={(settings) => console.log('Timer settings:', settings)}
                   />
-                
+                </Suspense>
               )}
             </div>
           </div>
@@ -5033,25 +5033,25 @@ const Messages: React.FC<MessagesProps> = ({ apiKey, contacts, initialContactId,
             {/* Tab Content */}
             <div className="max-h-96 overflow-y-auto">
               {mediaHubTab === 'translation' && (
-                
+                <Suspense fallback={<FeatureSkeleton type="modal" />}>
                   <BundleMultimedia.TranslationHub
                     conversationId={activeThread.id}
                     onTranslate={(text, from, to) => console.log('Translate:', text, from, to)}
                     onLanguageChange={(lang) => console.log('Language changed:', lang)}
                   />
-                
+                </Suspense>
               )}
               {mediaHubTab === 'export' && (
-                
+                <Suspense fallback={<FeatureSkeleton type="modal" />}>
                   <BundleMultimedia.AnalyticsExport
                     conversationId={activeThread.id}
                     onExportStart={(job) => console.log('Export started:', job)}
                     onExportComplete={(job) => console.log('Export complete:', job)}
                   />
-                
+                </Suspense>
               )}
               {mediaHubTab === 'templates' && (
-                
+                <Suspense fallback={<FeatureSkeleton type="modal" />}>
                   <BundleMultimedia.TemplatesLibrary
                     onTemplateSelect={(template) => {
                       setNewMessage(template.content);
@@ -5059,28 +5059,28 @@ const Messages: React.FC<MessagesProps> = ({ apiKey, contacts, initialContactId,
                     }}
                     onTemplateCreate={(template) => console.log('Template created:', template)}
                   />
-                
+                </Suspense>
               )}
               {mediaHubTab === 'attachments' && (
-                
+                <Suspense fallback={<FeatureSkeleton type="panel" />}>
                   <BundleMultimedia.AttachmentManager
                     conversationId={activeThread.id}
                     onAttachmentSelect={(attachment) => console.log('Attachment selected:', attachment)}
                     onAttachmentDelete={(attachmentId) => console.log('Attachment deleted:', attachmentId)}
                   />
-                
+                </Suspense>
               )}
               {mediaHubTab === 'backup' && (
-                
+                <Suspense fallback={<FeatureSkeleton type="panel" />}>
                   <BundleMultimedia.BackupSync
                     onBackupCreate={(backup) => console.log('Backup created:', backup)}
                     onBackupRestore={(backupId) => console.log('Backup restored:', backupId)}
                     onSyncToggle={(enabled) => console.log('Sync toggled:', enabled)}
                   />
-                
+                </Suspense>
               )}
               {mediaHubTab === 'suggestions' && (
-                
+                <Suspense fallback={<FeatureSkeleton type="inline" />}>
                   <BundleMultimedia.SmartSuggestions
                     conversationId={activeThread.id}
                     currentMessage={newMessage}
@@ -5091,7 +5091,7 @@ const Messages: React.FC<MessagesProps> = ({ apiKey, contacts, initialContactId,
                     console.log('Suggestion selected:', suggestion);
                   }}
                 />
-                
+                </Suspense>
               )}
             </div>
           </div>
@@ -5099,13 +5099,13 @@ const Messages: React.FC<MessagesProps> = ({ apiKey, contacts, initialContactId,
 
         {/* Command Palette */}
         {showCommandPalette && (
-          
+          <Suspense fallback={<FeatureSkeleton type="modal" />}>
             <BundleIntelligence.QuickActionsCommandPalette
               isOpen={showCommandPalette}
               onClose={() => setShowCommandPalette(false)}
               onAction={(actionId) => console.log('Command action:', actionId)}
             />
-          
+          </Suspense>
         )}
 
         {/* Typing Indicator */}
@@ -5620,7 +5620,7 @@ const Messages: React.FC<MessagesProps> = ({ apiKey, contacts, initialContactId,
            {/* Phase 2: AI Coach - Real-time draft analysis */}
            {showAICoach && inputText.length > 10 && activeThread && (
              <div className="mb-3">
-               
+               <Suspense fallback={<FeatureSkeleton type="panel" />}>
                  <BundleAI.AICoachEnhanced
                    draftText={inputText}
                    recentMessages={activeThread.messages.slice(-10).map(m => ({
@@ -5632,7 +5632,7 @@ const Messages: React.FC<MessagesProps> = ({ apiKey, contacts, initialContactId,
                    onApplySuggestion={(newText) => setInputText(newText)}
                    onDismiss={() => setShowAICoach(false)}
                  />
-               
+               </Suspense>
              </div>
            )}
 
@@ -5670,7 +5670,7 @@ const Messages: React.FC<MessagesProps> = ({ apiKey, contacts, initialContactId,
            {/* Phase 2: AI Mediator - Conflict detection */}
            {showAIMediator && activeThread && activeThread.messages.length > 5 && (
              <div className="mb-3">
-               
+               <Suspense fallback={<FeatureSkeleton type="panel" />}>
                  <BundleAI.AIMediatorPanel
                    messages={activeThread.messages.slice(-15).map(m => ({
                      id: m.id,
@@ -5686,14 +5686,14 @@ const Messages: React.FC<MessagesProps> = ({ apiKey, contacts, initialContactId,
                    }}
                    onDismiss={() => setShowAIMediator(false)}
                  />
-               
+               </Suspense>
              </div>
            )}
 
            {/* Phase 2: Quick Phrases */}
            {showQuickPhrases && (
              <div className="mb-3">
-               
+               <Suspense fallback={<FeatureSkeleton type="inline" />}>
                  <BundleAI.QuickPhrases
                    onSelect={(phrase) => {
                      setInputText(phrase);
@@ -5701,7 +5701,7 @@ const Messages: React.FC<MessagesProps> = ({ apiKey, contacts, initialContactId,
                    }}
                    context="general"
                  />
-               
+               </Suspense>
              </div>
            )}
 
@@ -5728,7 +5728,7 @@ const Messages: React.FC<MessagesProps> = ({ apiKey, contacts, initialContactId,
            {/* Phase 2: Voice Context Extractor Panel */}
            {showVoiceExtractor && (
              <div className="mb-3">
-               
+               <Suspense fallback={<FeatureSkeleton type="panel" />}>
                  <BundleAI.VoiceContextExtractor
                    onTranscriptionComplete={(context) => {
                      // Add the transcription to the input with extracted action items
@@ -5741,7 +5741,7 @@ const Messages: React.FC<MessagesProps> = ({ apiKey, contacts, initialContactId,
                    }}
                    onError={(error) => console.error('Voice extraction error:', error)}
                  />
-               
+               </Suspense>
              </div>
            )}
 
@@ -5978,13 +5978,13 @@ const Messages: React.FC<MessagesProps> = ({ apiKey, contacts, initialContactId,
                </button>
                {/* Phase 2: Translation Widget - Hidden on mobile */}
                <div className="hidden sm:block">
-                 
+                 <Suspense fallback={<FeatureSkeleton type="inline" />}>
                    <BundleAI.TranslationWidgetEnhanced
                      originalText={inputText}
                      onTranslate={(translation) => setInputText(translation.translatedText)}
                      compact={true}
                    />
-                 
+                 </Suspense>
                </div>
                <button
                   onClick={handleSmartReply}
