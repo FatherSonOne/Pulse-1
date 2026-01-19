@@ -1,0 +1,2111 @@
+/* ============================================
+   PULSE MEETINGS - COMMAND CENTER AESTHETIC
+   A Mission Control inspired interface with
+   tactical precision and cinematic depth
+   ============================================ */
+
+/* ============================================
+   CSS VARIABLES
+   ============================================ */
+:root {
+  /* Core Palette - Tactical Dark */
+  --mtg-bg-primary: #0a0a0f;
+  --mtg-bg-secondary: #12121a;
+  --mtg-bg-tertiary: #1a1a24;
+  --mtg-bg-elevated: #222230;
+  --mtg-bg-glass: rgba(20, 20, 30, 0.85);
+
+  /* Accent Colors - Signal System */
+  --mtg-accent-primary: #00d4ff;
+  --mtg-accent-secondary: #7c3aed;
+  --mtg-accent-success: #10b981;
+  --mtg-accent-warning: #f59e0b;
+  --mtg-accent-danger: #ef4444;
+  --mtg-accent-live: #ff2d55;
+
+  /* Glow Effects */
+  --mtg-glow-primary: 0 0 40px rgba(0, 212, 255, 0.3);
+  --mtg-glow-success: 0 0 30px rgba(16, 185, 129, 0.4);
+  --mtg-glow-danger: 0 0 30px rgba(239, 68, 68, 0.4);
+  --mtg-glow-live: 0 0 20px rgba(255, 45, 85, 0.5);
+
+  /* Text */
+  --mtg-text-primary: #ffffff;
+  --mtg-text-secondary: #94a3b8;
+  --mtg-text-muted: #64748b;
+
+  /* Borders */
+  --mtg-border: rgba(255, 255, 255, 0.08);
+  --mtg-border-active: rgba(0, 212, 255, 0.5);
+
+  /* Gradients */
+  --mtg-gradient-hero: linear-gradient(135deg, #0a0a0f 0%, #1a1a2e 50%, #0f0f1a 100%);
+  --mtg-gradient-card: linear-gradient(180deg, rgba(30, 30, 45, 0.6) 0%, rgba(20, 20, 30, 0.8) 100%);
+  --mtg-gradient-accent: linear-gradient(135deg, #00d4ff 0%, #7c3aed 100%);
+}
+
+/* ============================================
+   LIGHT MODE - REFINED & OPTIMIZED
+   Clean, professional aesthetic with proper
+   contrast, shadows, and visual hierarchy
+   ============================================ */
+:root:not(.dark) {
+  /* Core Palette - Clean & Airy */
+  --mtg-bg-primary: #f8fafc;
+  --mtg-bg-secondary: #ffffff;
+  --mtg-bg-tertiary: #f1f5f9;
+  --mtg-bg-elevated: #ffffff;
+  --mtg-bg-glass: rgba(255, 255, 255, 0.92);
+  --mtg-bg-hover: #f0f4f8;
+
+  /* Accent Colors - Adjusted for Light Mode */
+  --mtg-accent-primary: #0891b2;
+  --mtg-accent-secondary: #7c3aed;
+  --mtg-accent-success: #059669;
+  --mtg-accent-warning: #d97706;
+  --mtg-accent-danger: #dc2626;
+  --mtg-accent-live: #e11d48;
+
+  /* Glow Effects - Softer for Light Mode */
+  --mtg-glow-primary: 0 4px 20px rgba(8, 145, 178, 0.15);
+  --mtg-glow-success: 0 4px 16px rgba(5, 150, 105, 0.2);
+  --mtg-glow-danger: 0 4px 16px rgba(220, 38, 38, 0.2);
+  --mtg-glow-live: 0 4px 12px rgba(225, 29, 72, 0.25);
+
+  /* Text - High Contrast */
+  --mtg-text-primary: #0f172a;
+  --mtg-text-secondary: #475569;
+  --mtg-text-muted: #64748b;
+
+  /* Borders - Subtle but Defined */
+  --mtg-border: rgba(15, 23, 42, 0.08);
+  --mtg-border-active: rgba(8, 145, 178, 0.4);
+  --mtg-border-strong: rgba(15, 23, 42, 0.12);
+
+  /* Shadows - Depth for Light Backgrounds */
+  --mtg-shadow-sm: 0 1px 2px rgba(15, 23, 42, 0.04);
+  --mtg-shadow-md: 0 4px 12px rgba(15, 23, 42, 0.06), 0 1px 3px rgba(15, 23, 42, 0.04);
+  --mtg-shadow-lg: 0 8px 24px rgba(15, 23, 42, 0.08), 0 2px 8px rgba(15, 23, 42, 0.04);
+  --mtg-shadow-xl: 0 16px 48px rgba(15, 23, 42, 0.1), 0 4px 16px rgba(15, 23, 42, 0.06);
+
+  /* Gradients - Refined for Light Mode */
+  --mtg-gradient-hero: linear-gradient(135deg, #ffffff 0%, #f1f5f9 50%, #f8fafc 100%);
+  --mtg-gradient-card: linear-gradient(180deg, #ffffff 0%, #fafbfc 100%);
+  --mtg-gradient-accent: linear-gradient(135deg, #0891b2 0%, #7c3aed 100%);
+  --mtg-gradient-subtle: linear-gradient(180deg, rgba(248, 250, 252, 0) 0%, rgba(241, 245, 249, 0.5) 100%);
+}
+
+/* ============================================
+   ANIMATIONS
+   ============================================ */
+@keyframes mtg-pulse-ring {
+  0% { transform: scale(0.95); opacity: 1; }
+  50% { transform: scale(1.1); opacity: 0.5; }
+  100% { transform: scale(0.95); opacity: 1; }
+}
+
+@keyframes mtg-scan-line {
+  0% { transform: translateY(-100%); }
+  100% { transform: translateY(100%); }
+}
+
+@keyframes mtg-data-stream {
+  0% { background-position: 0% 50%; }
+  50% { background-position: 100% 50%; }
+  100% { background-position: 0% 50%; }
+}
+
+@keyframes mtg-glow-pulse {
+  0%, 100% { box-shadow: var(--mtg-glow-primary); }
+  50% { box-shadow: 0 0 60px rgba(0, 212, 255, 0.5); }
+}
+
+@keyframes mtg-live-pulse {
+  0%, 100% { box-shadow: var(--mtg-glow-live); opacity: 1; }
+  50% { box-shadow: 0 0 30px rgba(255, 45, 85, 0.7); opacity: 0.8; }
+}
+
+@keyframes mtg-fade-in {
+  from { opacity: 0; transform: translateY(10px); }
+  to { opacity: 1; transform: translateY(0); }
+}
+
+@keyframes mtg-slide-in-right {
+  from { opacity: 0; transform: translateX(20px); }
+  to { opacity: 1; transform: translateX(0); }
+}
+
+@keyframes mtg-scale-in {
+  from { opacity: 0; transform: scale(0.95); }
+  to { opacity: 1; transform: scale(1); }
+}
+
+@keyframes mtg-shimmer {
+  0% { background-position: -200% 0; }
+  100% { background-position: 200% 0; }
+}
+
+@keyframes mtg-orbit {
+  from { transform: rotate(0deg) translateX(60px) rotate(0deg); }
+  to { transform: rotate(360deg) translateX(60px) rotate(-360deg); }
+}
+
+/* ============================================
+   MAIN CONTAINER
+   ============================================ */
+.meetings-container {
+  height: 100%;
+  display: flex;
+  flex-direction: column;
+  background: var(--mtg-bg-primary);
+  border-radius: 16px;
+  overflow: hidden;
+  position: relative;
+  border: 1px solid var(--mtg-border);
+}
+
+/* Ambient background effect */
+.meetings-container::before {
+  content: '';
+  position: absolute;
+  inset: 0;
+  background:
+    radial-gradient(ellipse 80% 50% at 20% 20%, rgba(0, 212, 255, 0.08) 0%, transparent 50%),
+    radial-gradient(ellipse 60% 40% at 80% 80%, rgba(124, 58, 237, 0.06) 0%, transparent 50%);
+  pointer-events: none;
+  z-index: 0;
+}
+
+/* ============================================
+   HERO SECTION - JOIN AREA
+   ============================================ */
+.meetings-hero {
+  position: relative;
+  padding: 48px 32px;
+  background: var(--mtg-gradient-hero);
+  border-bottom: 1px solid var(--mtg-border);
+  overflow: hidden;
+}
+
+.meetings-hero-bg {
+  position: absolute;
+  inset: 0;
+  overflow: hidden;
+  pointer-events: none;
+}
+
+/* Grid pattern overlay */
+.meetings-hero-grid {
+  position: absolute;
+  inset: 0;
+  background-image:
+    linear-gradient(rgba(0, 212, 255, 0.03) 1px, transparent 1px),
+    linear-gradient(90deg, rgba(0, 212, 255, 0.03) 1px, transparent 1px);
+  background-size: 40px 40px;
+  mask-image: radial-gradient(ellipse 80% 60% at 50% 40%, black, transparent);
+}
+
+/* Orbiting particles */
+.meetings-hero-orbit {
+  position: absolute;
+  width: 8px;
+  height: 8px;
+  background: var(--mtg-accent-primary);
+  border-radius: 50%;
+  top: 50%;
+  left: 50%;
+  animation: mtg-orbit 20s linear infinite;
+  opacity: 0.6;
+  box-shadow: 0 0 20px var(--mtg-accent-primary);
+}
+
+.meetings-hero-orbit:nth-child(2) {
+  animation-duration: 25s;
+  animation-direction: reverse;
+  background: var(--mtg-accent-secondary);
+  box-shadow: 0 0 20px var(--mtg-accent-secondary);
+}
+
+.meetings-hero-orbit:nth-child(3) {
+  animation-duration: 30s;
+  animation-delay: -5s;
+  width: 6px;
+  height: 6px;
+}
+
+.meetings-hero-content {
+  position: relative;
+  z-index: 1;
+  max-width: 640px;
+  margin: 0 auto;
+  text-align: center;
+}
+
+.meetings-hero-icon {
+  width: 72px;
+  height: 72px;
+  margin: 0 auto 24px;
+  background: var(--mtg-gradient-accent);
+  border-radius: 20px;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  font-size: 28px;
+  color: white;
+  box-shadow: var(--mtg-glow-primary);
+  animation: mtg-glow-pulse 3s ease-in-out infinite;
+}
+
+.meetings-hero-title {
+  font-size: 32px;
+  font-weight: 300;
+  color: var(--mtg-text-primary);
+  letter-spacing: -0.5px;
+  margin-bottom: 8px;
+}
+
+.meetings-hero-subtitle {
+  font-size: 14px;
+  color: var(--mtg-text-muted);
+  margin-bottom: 32px;
+}
+
+/* Join Input */
+.meetings-join-form {
+  position: relative;
+  max-width: 500px;
+  margin: 0 auto;
+}
+
+.meetings-join-input {
+  width: 100%;
+  padding: 18px 140px 18px 24px;
+  background: var(--mtg-bg-glass);
+  backdrop-filter: blur(20px);
+  border: 1px solid var(--mtg-border);
+  border-radius: 16px;
+  font-size: 15px;
+  color: var(--mtg-text-primary);
+  transition: all 0.3s ease;
+}
+
+.meetings-join-input::placeholder {
+  color: var(--mtg-text-muted);
+}
+
+.meetings-join-input:focus {
+  outline: none;
+  border-color: var(--mtg-accent-primary);
+  box-shadow: var(--mtg-glow-primary);
+}
+
+.meetings-join-btn {
+  position: absolute;
+  right: 6px;
+  top: 6px;
+  bottom: 6px;
+  padding: 0 28px;
+  background: var(--mtg-gradient-accent);
+  border: none;
+  border-radius: 12px;
+  color: white;
+  font-weight: 700;
+  font-size: 13px;
+  letter-spacing: 0.5px;
+  text-transform: uppercase;
+  cursor: pointer;
+  transition: all 0.3s ease;
+}
+
+.meetings-join-btn:hover {
+  transform: translateY(-1px);
+  box-shadow: 0 8px 24px rgba(0, 212, 255, 0.4);
+}
+
+/* ============================================
+   DASHBOARD GRID
+   ============================================ */
+.meetings-dashboard {
+  flex: 1;
+  overflow-y: auto;
+  padding: 32px;
+  position: relative;
+  z-index: 1;
+}
+
+.meetings-grid {
+  display: grid;
+  grid-template-columns: 1fr 380px;
+  gap: 32px;
+  max-width: 1400px;
+  margin: 0 auto;
+}
+
+@media (max-width: 1024px) {
+  .meetings-grid {
+    grid-template-columns: 1fr;
+  }
+}
+
+/* ============================================
+   SECTION HEADERS
+   ============================================ */
+.meetings-section-header {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  margin-bottom: 20px;
+}
+
+.meetings-section-title {
+  display: flex;
+  align-items: center;
+  gap: 10px;
+  font-size: 11px;
+  font-weight: 700;
+  text-transform: uppercase;
+  letter-spacing: 1.5px;
+  color: var(--mtg-text-muted);
+}
+
+.meetings-section-title i {
+  color: var(--mtg-accent-primary);
+}
+
+.meetings-section-action {
+  font-size: 11px;
+  font-weight: 600;
+  color: var(--mtg-accent-primary);
+  text-transform: uppercase;
+  letter-spacing: 0.5px;
+  background: none;
+  border: none;
+  cursor: pointer;
+  transition: opacity 0.2s;
+}
+
+.meetings-section-action:hover {
+  opacity: 0.8;
+}
+
+/* ============================================
+   PLATFORM CARDS - START MEETING
+   ============================================ */
+.meetings-platforms {
+  display: grid;
+  grid-template-columns: repeat(4, 1fr);
+  gap: 16px;
+  margin-bottom: 40px;
+}
+
+@media (max-width: 768px) {
+  .meetings-platforms {
+    grid-template-columns: repeat(2, 1fr);
+  }
+}
+
+.meetings-platform-card {
+  position: relative;
+  background: var(--mtg-gradient-card);
+  backdrop-filter: blur(10px);
+  border: 1px solid var(--mtg-border);
+  border-radius: 16px;
+  padding: 24px 20px;
+  cursor: pointer;
+  transition: all 0.3s ease;
+  overflow: hidden;
+  animation: mtg-fade-in 0.5s ease forwards;
+}
+
+.meetings-platform-card::before {
+  content: '';
+  position: absolute;
+  inset: 0;
+  background: linear-gradient(135deg, transparent 50%, rgba(0, 212, 255, 0.05) 100%);
+  opacity: 0;
+  transition: opacity 0.3s;
+}
+
+.meetings-platform-card:hover {
+  transform: translateY(-4px);
+  border-color: var(--mtg-border-active);
+  box-shadow: var(--mtg-glow-primary);
+}
+
+.meetings-platform-card:hover::before {
+  opacity: 1;
+}
+
+.meetings-platform-card.pulse {
+  border-color: rgba(0, 212, 255, 0.3);
+}
+
+.meetings-platform-icon {
+  width: 48px;
+  height: 48px;
+  border-radius: 14px;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  font-size: 20px;
+  color: white;
+  margin-bottom: 16px;
+  position: relative;
+  z-index: 1;
+}
+
+.meetings-platform-icon.pulse { background: linear-gradient(135deg, #00d4ff, #0099cc); }
+.meetings-platform-icon.google { background: linear-gradient(135deg, #ea4335, #fa7b17); }
+.meetings-platform-icon.zoom { background: linear-gradient(135deg, #2d8cff, #0b5cff); }
+.meetings-platform-icon.teams { background: linear-gradient(135deg, #5059c9, #7b83eb); }
+
+.meetings-platform-name {
+  font-size: 14px;
+  font-weight: 600;
+  color: var(--mtg-text-primary);
+  margin-bottom: 4px;
+  position: relative;
+  z-index: 1;
+}
+
+.meetings-platform-desc {
+  font-size: 11px;
+  color: var(--mtg-text-muted);
+  position: relative;
+  z-index: 1;
+}
+
+.meetings-platform-badge {
+  position: absolute;
+  top: 12px;
+  right: 12px;
+  padding: 4px 8px;
+  background: rgba(0, 212, 255, 0.15);
+  border: 1px solid rgba(0, 212, 255, 0.3);
+  border-radius: 6px;
+  font-size: 9px;
+  font-weight: 700;
+  color: var(--mtg-accent-primary);
+  text-transform: uppercase;
+  letter-spacing: 0.5px;
+}
+
+.meetings-platform-actions {
+  display: flex;
+  gap: 8px;
+  margin-top: 16px;
+  position: relative;
+  z-index: 1;
+}
+
+.meetings-platform-btn {
+  flex: 1;
+  padding: 10px;
+  border: none;
+  border-radius: 10px;
+  font-size: 11px;
+  font-weight: 600;
+  text-transform: uppercase;
+  letter-spacing: 0.5px;
+  cursor: pointer;
+  transition: all 0.2s;
+}
+
+.meetings-platform-btn.primary {
+  background: var(--mtg-bg-tertiary);
+  color: var(--mtg-text-primary);
+}
+
+.meetings-platform-btn.primary:hover {
+  background: var(--mtg-bg-elevated);
+}
+
+.meetings-platform-btn.icon {
+  flex: 0 0 40px;
+  background: var(--mtg-bg-tertiary);
+  color: var(--mtg-text-secondary);
+}
+
+.meetings-platform-btn.icon:hover {
+  background: var(--mtg-bg-elevated);
+  color: var(--mtg-text-primary);
+}
+
+/* ============================================
+   FEATURE CARDS - NEW ENHANCED FEATURES
+   ============================================ */
+.meetings-features {
+  display: grid;
+  grid-template-columns: repeat(3, 1fr);
+  gap: 16px;
+  margin-bottom: 40px;
+}
+
+@media (max-width: 900px) {
+  .meetings-features {
+    grid-template-columns: repeat(2, 1fr);
+  }
+}
+
+@media (max-width: 600px) {
+  .meetings-features {
+    grid-template-columns: 1fr;
+  }
+}
+
+.meetings-feature-card {
+  background: var(--mtg-gradient-card);
+  backdrop-filter: blur(10px);
+  border: 1px solid var(--mtg-border);
+  border-radius: 16px;
+  padding: 20px;
+  cursor: pointer;
+  transition: all 0.3s ease;
+  animation: mtg-fade-in 0.5s ease forwards;
+}
+
+.meetings-feature-card:hover {
+  transform: translateY(-2px);
+  border-color: var(--mtg-border-active);
+}
+
+.meetings-feature-header {
+  display: flex;
+  align-items: center;
+  gap: 12px;
+  margin-bottom: 12px;
+}
+
+.meetings-feature-icon {
+  width: 40px;
+  height: 40px;
+  border-radius: 12px;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  font-size: 16px;
+}
+
+.meetings-feature-icon.templates { background: rgba(124, 58, 237, 0.2); color: #a78bfa; }
+.meetings-feature-icon.agenda { background: rgba(16, 185, 129, 0.2); color: #34d399; }
+.meetings-feature-icon.actions { background: rgba(245, 158, 11, 0.2); color: #fbbf24; }
+.meetings-feature-icon.analytics { background: rgba(0, 212, 255, 0.2); color: #00d4ff; }
+.meetings-feature-icon.recordings { background: rgba(239, 68, 68, 0.2); color: #f87171; }
+.meetings-feature-icon.breakout { background: rgba(236, 72, 153, 0.2); color: #f472b6; }
+
+.meetings-feature-title {
+  font-size: 13px;
+  font-weight: 600;
+  color: var(--mtg-text-primary);
+}
+
+.meetings-feature-desc {
+  font-size: 12px;
+  color: var(--mtg-text-muted);
+  line-height: 1.5;
+}
+
+.meetings-feature-badge {
+  display: inline-flex;
+  align-items: center;
+  gap: 4px;
+  padding: 4px 8px;
+  background: rgba(0, 212, 255, 0.1);
+  border-radius: 6px;
+  font-size: 10px;
+  font-weight: 600;
+  color: var(--mtg-accent-primary);
+  margin-top: 12px;
+}
+
+/* ============================================
+   MEETING HISTORY LIST
+   ============================================ */
+.meetings-history {
+  background: var(--mtg-gradient-card);
+  backdrop-filter: blur(10px);
+  border: 1px solid var(--mtg-border);
+  border-radius: 16px;
+  overflow: hidden;
+}
+
+.meetings-history-item {
+  display: flex;
+  align-items: center;
+  gap: 16px;
+  padding: 16px 20px;
+  border-bottom: 1px solid var(--mtg-border);
+  cursor: pointer;
+  transition: background 0.2s;
+}
+
+.meetings-history-item:last-child {
+  border-bottom: none;
+}
+
+.meetings-history-item:hover {
+  background: rgba(0, 212, 255, 0.03);
+}
+
+.meetings-history-icon {
+  width: 44px;
+  height: 44px;
+  border-radius: 12px;
+  background: var(--mtg-bg-tertiary);
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  flex-shrink: 0;
+}
+
+.meetings-history-icon i {
+  font-size: 16px;
+  color: var(--mtg-accent-secondary);
+}
+
+.meetings-history-info {
+  flex: 1;
+  min-width: 0;
+}
+
+.meetings-history-title {
+  font-size: 13px;
+  font-weight: 600;
+  color: var(--mtg-text-primary);
+  margin-bottom: 4px;
+  white-space: nowrap;
+  overflow: hidden;
+  text-overflow: ellipsis;
+}
+
+.meetings-history-meta {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  font-size: 11px;
+  color: var(--mtg-text-muted);
+}
+
+.meetings-history-tag {
+  padding: 2px 6px;
+  background: var(--mtg-bg-tertiary);
+  border-radius: 4px;
+  font-size: 9px;
+  font-weight: 600;
+  text-transform: uppercase;
+}
+
+.meetings-history-date {
+  font-size: 11px;
+  color: var(--mtg-text-muted);
+  white-space: nowrap;
+}
+
+.meetings-empty {
+  padding: 48px 20px;
+  text-align: center;
+  color: var(--mtg-text-muted);
+  font-size: 13px;
+}
+
+/* ============================================
+   SIDEBAR - UPCOMING & QUICK ACTIONS
+   ============================================ */
+.meetings-sidebar {
+  display: flex;
+  flex-direction: column;
+  gap: 24px;
+}
+
+/* Upcoming Meetings Card */
+.meetings-upcoming-card {
+  background: var(--mtg-gradient-card);
+  backdrop-filter: blur(10px);
+  border: 1px solid var(--mtg-border);
+  border-radius: 16px;
+  padding: 20px;
+}
+
+.meetings-upcoming-list {
+  display: flex;
+  flex-direction: column;
+  gap: 12px;
+}
+
+.meetings-upcoming-item {
+  display: flex;
+  gap: 12px;
+  padding: 14px;
+  background: var(--mtg-bg-tertiary);
+  border-radius: 12px;
+  border-left: 3px solid var(--mtg-accent-primary);
+  transition: all 0.2s;
+}
+
+.meetings-upcoming-item:hover {
+  background: var(--mtg-bg-elevated);
+}
+
+.meetings-upcoming-time {
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  justify-content: center;
+  min-width: 50px;
+}
+
+.meetings-upcoming-hour {
+  font-size: 14px;
+  font-weight: 700;
+  color: var(--mtg-text-primary);
+}
+
+.meetings-upcoming-ampm {
+  font-size: 10px;
+  color: var(--mtg-text-muted);
+  text-transform: uppercase;
+}
+
+.meetings-upcoming-info {
+  flex: 1;
+  min-width: 0;
+}
+
+.meetings-upcoming-title {
+  font-size: 13px;
+  font-weight: 600;
+  color: var(--mtg-text-primary);
+  margin-bottom: 4px;
+  white-space: nowrap;
+  overflow: hidden;
+  text-overflow: ellipsis;
+}
+
+.meetings-upcoming-attendees {
+  display: flex;
+  align-items: center;
+  gap: 4px;
+}
+
+.meetings-upcoming-avatar {
+  width: 20px;
+  height: 20px;
+  border-radius: 50%;
+  background: var(--mtg-bg-elevated);
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  font-size: 9px;
+  font-weight: 700;
+  color: var(--mtg-text-secondary);
+  border: 2px solid var(--mtg-bg-tertiary);
+  margin-left: -6px;
+}
+
+.meetings-upcoming-avatar:first-child {
+  margin-left: 0;
+}
+
+.meetings-upcoming-count {
+  font-size: 10px;
+  color: var(--mtg-text-muted);
+  margin-left: 4px;
+}
+
+.meetings-upcoming-join {
+  padding: 8px 14px;
+  background: var(--mtg-accent-primary);
+  border: none;
+  border-radius: 8px;
+  font-size: 10px;
+  font-weight: 700;
+  color: white;
+  text-transform: uppercase;
+  letter-spacing: 0.5px;
+  cursor: pointer;
+  transition: all 0.2s;
+  align-self: center;
+}
+
+.meetings-upcoming-join:hover {
+  background: #00bce6;
+}
+
+/* Quick Actions */
+.meetings-quick-actions {
+  background: var(--mtg-gradient-card);
+  backdrop-filter: blur(10px);
+  border: 1px solid var(--mtg-border);
+  border-radius: 16px;
+  padding: 20px;
+}
+
+.meetings-quick-grid {
+  display: grid;
+  grid-template-columns: 1fr 1fr;
+  gap: 10px;
+}
+
+.meetings-quick-btn {
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  gap: 8px;
+  padding: 16px 12px;
+  background: var(--mtg-bg-tertiary);
+  border: 1px solid var(--mtg-border);
+  border-radius: 12px;
+  cursor: pointer;
+  transition: all 0.2s;
+}
+
+.meetings-quick-btn:hover {
+  background: var(--mtg-bg-elevated);
+  border-color: var(--mtg-border-active);
+}
+
+.meetings-quick-btn i {
+  font-size: 18px;
+  color: var(--mtg-accent-primary);
+}
+
+.meetings-quick-btn span {
+  font-size: 11px;
+  font-weight: 600;
+  color: var(--mtg-text-secondary);
+}
+
+/* Schedule Button */
+.meetings-schedule-btn {
+  width: 100%;
+  margin-top: 12px;
+  padding: 14px;
+  background: transparent;
+  border: 1px dashed var(--mtg-border);
+  border-radius: 12px;
+  color: var(--mtg-text-muted);
+  font-size: 12px;
+  font-weight: 600;
+  cursor: pointer;
+  transition: all 0.2s;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  gap: 8px;
+}
+
+.meetings-schedule-btn:hover {
+  border-color: var(--mtg-accent-primary);
+  color: var(--mtg-accent-primary);
+  background: rgba(0, 212, 255, 0.05);
+}
+
+/* ============================================
+   MEETING INSIGHTS CARD (NEW FEATURE)
+   ============================================ */
+.meetings-insights-card {
+  background: var(--mtg-gradient-card);
+  backdrop-filter: blur(10px);
+  border: 1px solid var(--mtg-border);
+  border-radius: 16px;
+  padding: 20px;
+}
+
+.meetings-insights-stats {
+  display: grid;
+  grid-template-columns: repeat(2, 1fr);
+  gap: 12px;
+  margin-bottom: 16px;
+}
+
+.meetings-insight-stat {
+  padding: 14px;
+  background: var(--mtg-bg-tertiary);
+  border-radius: 10px;
+  text-align: center;
+}
+
+.meetings-insight-value {
+  font-size: 24px;
+  font-weight: 700;
+  color: var(--mtg-text-primary);
+  margin-bottom: 4px;
+}
+
+.meetings-insight-label {
+  font-size: 10px;
+  color: var(--mtg-text-muted);
+  text-transform: uppercase;
+  letter-spacing: 0.5px;
+}
+
+.meetings-insights-chart {
+  height: 60px;
+  background: var(--mtg-bg-tertiary);
+  border-radius: 8px;
+  display: flex;
+  align-items: flex-end;
+  gap: 4px;
+  padding: 8px;
+}
+
+.meetings-insights-bar {
+  flex: 1;
+  background: var(--mtg-accent-primary);
+  border-radius: 4px 4px 0 0;
+  opacity: 0.7;
+  transition: opacity 0.2s;
+}
+
+.meetings-insights-bar:hover {
+  opacity: 1;
+}
+
+/* ============================================
+   ACTIVE MEETING VIEW
+   ============================================ */
+.meetings-active {
+  position: relative;
+  flex: 1;
+  display: flex;
+  flex-direction: column;
+  background: #000;
+}
+
+.meetings-active-header {
+  position: absolute;
+  top: 0;
+  left: 0;
+  right: 0;
+  height: 64px;
+  padding: 0 24px;
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  background: linear-gradient(to bottom, rgba(0, 0, 0, 0.8), transparent);
+  z-index: 30;
+}
+
+.meetings-active-info {
+  display: flex;
+  align-items: center;
+  gap: 12px;
+}
+
+.meetings-active-back {
+  width: 36px;
+  height: 36px;
+  border-radius: 10px;
+  background: rgba(255, 255, 255, 0.1);
+  border: none;
+  color: white;
+  cursor: pointer;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  transition: background 0.2s;
+}
+
+.meetings-active-back:hover {
+  background: rgba(255, 255, 255, 0.2);
+}
+
+.meetings-active-title {
+  font-size: 14px;
+  font-weight: 600;
+  color: white;
+}
+
+.meetings-active-badge {
+  display: inline-flex;
+  align-items: center;
+  gap: 6px;
+  padding: 4px 10px;
+  background: var(--mtg-accent-live);
+  border-radius: 20px;
+  font-size: 10px;
+  font-weight: 700;
+  color: white;
+  text-transform: uppercase;
+  letter-spacing: 0.5px;
+  animation: mtg-live-pulse 2s ease-in-out infinite;
+}
+
+.meetings-active-badge::before {
+  content: '';
+  width: 6px;
+  height: 6px;
+  background: white;
+  border-radius: 50%;
+}
+
+.meetings-active-code {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  padding: 8px 12px;
+  background: rgba(255, 255, 255, 0.1);
+  border-radius: 10px;
+  backdrop-filter: blur(10px);
+}
+
+.meetings-active-code-label {
+  font-size: 11px;
+  color: rgba(255, 255, 255, 0.6);
+}
+
+.meetings-active-code-value {
+  font-size: 13px;
+  font-weight: 700;
+  color: white;
+  font-family: 'SF Mono', 'Fira Code', monospace;
+  letter-spacing: 1px;
+}
+
+.meetings-active-code-copy {
+  width: 28px;
+  height: 28px;
+  border-radius: 6px;
+  background: rgba(255, 255, 255, 0.1);
+  border: none;
+  color: rgba(255, 255, 255, 0.8);
+  cursor: pointer;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  font-size: 11px;
+  transition: all 0.2s;
+}
+
+.meetings-active-code-copy:hover {
+  background: rgba(255, 255, 255, 0.2);
+  color: white;
+}
+
+.meetings-active-end {
+  padding: 10px 20px;
+  background: var(--mtg-accent-danger);
+  border: none;
+  border-radius: 10px;
+  color: white;
+  font-size: 12px;
+  font-weight: 700;
+  cursor: pointer;
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  transition: all 0.2s;
+}
+
+.meetings-active-end:hover {
+  background: #dc2626;
+  transform: scale(1.02);
+}
+
+/* Video Area */
+.meetings-video-area {
+  flex: 1;
+  position: relative;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  background: #0a0a0f;
+}
+
+.meetings-video-main {
+  width: 100%;
+  height: 100%;
+  object-fit: cover;
+}
+
+.meetings-video-off {
+  display: flex;
+  align-items: center;
+  justify-content: center;
+}
+
+.meetings-video-avatar {
+  width: 120px;
+  height: 120px;
+  border-radius: 50%;
+  background: var(--mtg-bg-tertiary);
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  font-size: 48px;
+  font-weight: 700;
+  color: var(--mtg-text-muted);
+  border: 4px solid var(--mtg-border);
+}
+
+/* Self View */
+.meetings-self-view {
+  position: absolute;
+  bottom: 100px;
+  right: 24px;
+  width: 200px;
+  aspect-ratio: 16/9;
+  background: #000;
+  border-radius: 12px;
+  border: 2px solid var(--mtg-border);
+  overflow: hidden;
+  z-index: 20;
+}
+
+.meetings-self-label {
+  position: absolute;
+  bottom: 8px;
+  left: 10px;
+  font-size: 10px;
+  font-weight: 700;
+  color: white;
+  text-shadow: 0 1px 2px rgba(0, 0, 0, 0.8);
+}
+
+.meetings-self-mic {
+  position: absolute;
+  top: 8px;
+  right: 8px;
+  width: 8px;
+  height: 8px;
+  border-radius: 50%;
+  background: var(--mtg-accent-success);
+  border: 2px solid #000;
+}
+
+/* AI Scribe Panel */
+.meetings-scribe-panel {
+  position: absolute;
+  top: 80px;
+  left: 24px;
+  width: 320px;
+  max-height: calc(100% - 180px);
+  background: rgba(0, 0, 0, 0.75);
+  backdrop-filter: blur(20px);
+  border: 1px solid rgba(255, 255, 255, 0.1);
+  border-radius: 16px;
+  overflow: hidden;
+  z-index: 20;
+  animation: mtg-slide-in-right 0.3s ease;
+}
+
+.meetings-scribe-header {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  padding: 14px 16px;
+  border-bottom: 1px solid rgba(255, 255, 255, 0.1);
+}
+
+.meetings-scribe-title {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  font-size: 11px;
+  font-weight: 700;
+  color: var(--mtg-accent-primary);
+  text-transform: uppercase;
+  letter-spacing: 1px;
+}
+
+.meetings-scribe-live {
+  width: 8px;
+  height: 8px;
+  border-radius: 50%;
+  background: var(--mtg-accent-danger);
+  animation: mtg-pulse-ring 1.5s ease-in-out infinite;
+}
+
+.meetings-scribe-content {
+  padding: 16px;
+  max-height: 300px;
+  overflow-y: auto;
+}
+
+.meetings-scribe-note {
+  padding: 10px 12px;
+  background: rgba(255, 255, 255, 0.05);
+  border-left: 2px solid var(--mtg-accent-primary);
+  border-radius: 0 8px 8px 0;
+  margin-bottom: 10px;
+  font-size: 12px;
+  color: rgba(255, 255, 255, 0.9);
+  line-height: 1.5;
+  animation: mtg-fade-in 0.3s ease;
+}
+
+.meetings-scribe-empty {
+  font-size: 12px;
+  color: rgba(255, 255, 255, 0.4);
+  font-style: italic;
+}
+
+/* Control Bar */
+.meetings-controls {
+  height: 80px;
+  background: var(--mtg-bg-secondary);
+  border-top: 1px solid var(--mtg-border);
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  padding: 0 24px;
+  z-index: 30;
+}
+
+.meetings-controls-left,
+.meetings-controls-right {
+  display: flex;
+  align-items: center;
+  gap: 12px;
+  min-width: 200px;
+}
+
+.meetings-controls-right {
+  justify-content: flex-end;
+}
+
+.meetings-controls-center {
+  display: flex;
+  align-items: center;
+  gap: 12px;
+}
+
+.meetings-control-btn {
+  width: 48px;
+  height: 48px;
+  border-radius: 14px;
+  border: none;
+  cursor: pointer;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  font-size: 18px;
+  transition: all 0.2s;
+}
+
+.meetings-control-btn.default {
+  background: var(--mtg-bg-tertiary);
+  color: var(--mtg-text-primary);
+}
+
+.meetings-control-btn.default:hover {
+  background: var(--mtg-bg-elevated);
+}
+
+.meetings-control-btn.active {
+  background: var(--mtg-accent-primary);
+  color: white;
+}
+
+.meetings-control-btn.active:hover {
+  background: #00bce6;
+}
+
+.meetings-control-btn.danger {
+  background: var(--mtg-accent-danger);
+  color: white;
+  width: 64px;
+}
+
+.meetings-control-btn.danger:hover {
+  background: #dc2626;
+}
+
+.meetings-control-btn.off {
+  background: var(--mtg-accent-danger);
+  color: white;
+}
+
+.meetings-control-info {
+  font-size: 12px;
+  color: var(--mtg-text-muted);
+}
+
+.meetings-control-icon {
+  width: 36px;
+  height: 36px;
+  border-radius: 10px;
+  background: transparent;
+  border: none;
+  color: var(--mtg-text-muted);
+  cursor: pointer;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  transition: all 0.2s;
+}
+
+.meetings-control-icon:hover {
+  color: var(--mtg-text-primary);
+  background: var(--mtg-bg-tertiary);
+}
+
+/* ============================================
+   MODALS
+   ============================================ */
+.meetings-modal-overlay {
+  position: fixed;
+  inset: 0;
+  background: rgba(0, 0, 0, 0.7);
+  backdrop-filter: blur(8px);
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  z-index: 100;
+  padding: 20px;
+  animation: mtg-fade-in 0.2s ease;
+}
+
+.meetings-modal {
+  background: var(--mtg-bg-secondary);
+  border: 1px solid var(--mtg-border);
+  border-radius: 20px;
+  width: 100%;
+  max-width: 600px;
+  max-height: 85vh;
+  display: flex;
+  flex-direction: column;
+  animation: mtg-scale-in 0.3s ease;
+}
+
+.meetings-modal-header {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  padding: 20px 24px;
+  border-bottom: 1px solid var(--mtg-border);
+}
+
+.meetings-modal-title {
+  font-size: 18px;
+  font-weight: 600;
+  color: var(--mtg-text-primary);
+}
+
+.meetings-modal-close {
+  width: 36px;
+  height: 36px;
+  border-radius: 10px;
+  background: transparent;
+  border: none;
+  color: var(--mtg-text-muted);
+  cursor: pointer;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  transition: all 0.2s;
+}
+
+.meetings-modal-close:hover {
+  background: var(--mtg-bg-tertiary);
+  color: var(--mtg-text-primary);
+}
+
+.meetings-modal-body {
+  flex: 1;
+  overflow-y: auto;
+  padding: 24px;
+}
+
+.meetings-modal-footer {
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  padding: 16px 24px;
+  border-top: 1px solid var(--mtg-border);
+}
+
+/* Contact Selection Grid */
+.meetings-contacts-grid {
+  display: grid;
+  grid-template-columns: repeat(2, 1fr);
+  gap: 12px;
+}
+
+.meetings-contact-item {
+  display: flex;
+  align-items: center;
+  gap: 12px;
+  padding: 14px;
+  background: var(--mtg-bg-tertiary);
+  border: 1px solid var(--mtg-border);
+  border-radius: 12px;
+  cursor: pointer;
+  transition: all 0.2s;
+}
+
+.meetings-contact-item:hover {
+  border-color: var(--mtg-text-muted);
+}
+
+.meetings-contact-item.selected {
+  background: rgba(0, 212, 255, 0.1);
+  border-color: var(--mtg-accent-primary);
+}
+
+.meetings-contact-avatar {
+  width: 40px;
+  height: 40px;
+  border-radius: 50%;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  font-size: 14px;
+  font-weight: 700;
+  color: white;
+}
+
+.meetings-contact-name {
+  font-size: 13px;
+  font-weight: 600;
+  color: var(--mtg-text-primary);
+}
+
+.meetings-contact-role {
+  font-size: 11px;
+  color: var(--mtg-text-muted);
+}
+
+.meetings-modal-btn {
+  padding: 12px 24px;
+  border-radius: 10px;
+  font-size: 12px;
+  font-weight: 700;
+  text-transform: uppercase;
+  letter-spacing: 0.5px;
+  cursor: pointer;
+  transition: all 0.2s;
+}
+
+.meetings-modal-btn.primary {
+  background: var(--mtg-accent-primary);
+  border: none;
+  color: white;
+}
+
+.meetings-modal-btn.primary:hover {
+  background: #00bce6;
+}
+
+.meetings-modal-btn.primary:disabled {
+  opacity: 0.5;
+  cursor: not-allowed;
+}
+
+/* ============================================
+   SCHEDULE VIEW
+   ============================================ */
+.meetings-schedule {
+  flex: 1;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  background: var(--mtg-bg-primary);
+  position: relative;
+}
+
+.meetings-schedule-form {
+  width: 100%;
+  max-width: 480px;
+  background: var(--mtg-bg-secondary);
+  border: 1px solid var(--mtg-border);
+  border-radius: 20px;
+  padding: 32px;
+  animation: mtg-scale-in 0.3s ease;
+}
+
+.meetings-schedule-header {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  margin-bottom: 28px;
+}
+
+.meetings-schedule-title {
+  font-size: 22px;
+  font-weight: 300;
+  color: var(--mtg-text-primary);
+}
+
+.meetings-schedule-close {
+  width: 36px;
+  height: 36px;
+  border-radius: 10px;
+  background: transparent;
+  border: none;
+  color: var(--mtg-text-muted);
+  cursor: pointer;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  transition: all 0.2s;
+}
+
+.meetings-schedule-close:hover {
+  background: var(--mtg-bg-tertiary);
+  color: var(--mtg-text-primary);
+}
+
+.meetings-form-group {
+  margin-bottom: 24px;
+}
+
+.meetings-form-label {
+  display: block;
+  font-size: 10px;
+  font-weight: 700;
+  text-transform: uppercase;
+  letter-spacing: 1px;
+  color: var(--mtg-text-muted);
+  margin-bottom: 10px;
+}
+
+.meetings-form-input {
+  width: 100%;
+  padding: 14px 16px;
+  background: var(--mtg-bg-primary);
+  border: 1px solid var(--mtg-border);
+  border-radius: 12px;
+  font-size: 14px;
+  color: var(--mtg-text-primary);
+  transition: all 0.2s;
+}
+
+.meetings-form-input::placeholder {
+  color: var(--mtg-text-muted);
+}
+
+.meetings-form-input:focus {
+  outline: none;
+  border-color: var(--mtg-accent-primary);
+  box-shadow: 0 0 0 3px rgba(0, 212, 255, 0.1);
+}
+
+.meetings-attendee-chips {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 8px;
+  margin-bottom: 12px;
+}
+
+.meetings-attendee-chip {
+  display: flex;
+  align-items: center;
+  gap: 6px;
+  padding: 6px 12px;
+  background: rgba(0, 212, 255, 0.1);
+  border-radius: 20px;
+  font-size: 12px;
+  font-weight: 600;
+  color: var(--mtg-accent-primary);
+}
+
+.meetings-attendee-chip button {
+  background: none;
+  border: none;
+  color: var(--mtg-accent-primary);
+  cursor: pointer;
+  padding: 0;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+}
+
+.meetings-form-select {
+  width: 100%;
+  padding: 14px 16px;
+  background: var(--mtg-bg-primary);
+  border: 1px solid var(--mtg-border);
+  border-radius: 12px;
+  font-size: 14px;
+  color: var(--mtg-text-primary);
+  cursor: pointer;
+}
+
+.meetings-form-select:focus {
+  outline: none;
+  border-color: var(--mtg-accent-primary);
+}
+
+.meetings-submit-btn {
+  width: 100%;
+  padding: 16px;
+  background: var(--mtg-gradient-accent);
+  border: none;
+  border-radius: 12px;
+  font-size: 13px;
+  font-weight: 700;
+  text-transform: uppercase;
+  letter-spacing: 1px;
+  color: white;
+  cursor: pointer;
+  transition: all 0.2s;
+  margin-top: 8px;
+}
+
+.meetings-submit-btn:hover {
+  transform: translateY(-2px);
+  box-shadow: 0 8px 24px rgba(0, 212, 255, 0.4);
+}
+
+/* ============================================
+   TOAST NOTIFICATIONS
+   ============================================ */
+.meetings-toast {
+  position: fixed;
+  top: 24px;
+  left: 50%;
+  transform: translateX(-50%);
+  padding: 12px 20px;
+  background: var(--mtg-accent-success);
+  border-radius: 10px;
+  color: white;
+  font-size: 13px;
+  font-weight: 600;
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  z-index: 200;
+  animation: mtg-fade-in 0.3s ease;
+  box-shadow: 0 8px 32px rgba(16, 185, 129, 0.4);
+}
+
+/* ============================================
+   SCROLLBAR STYLING
+   ============================================ */
+.meetings-container ::-webkit-scrollbar {
+  width: 6px;
+}
+
+.meetings-container ::-webkit-scrollbar-track {
+  background: transparent;
+}
+
+.meetings-container ::-webkit-scrollbar-thumb {
+  background: var(--mtg-border);
+  border-radius: 3px;
+}
+
+.meetings-container ::-webkit-scrollbar-thumb:hover {
+  background: var(--mtg-text-muted);
+}
+
+/* ============================================
+   UTILITY CLASSES
+   ============================================ */
+.mtg-fade-in {
+  animation: mtg-fade-in 0.3s ease;
+}
+
+.mtg-scale-in {
+  animation: mtg-scale-in 0.3s ease;
+}
+
+.mtg-slide-in {
+  animation: mtg-slide-in-right 0.3s ease;
+}
+
+/* ============================================
+   LIGHT MODE - COMPONENT OVERRIDES
+   Comprehensive styling adjustments for
+   optimal light mode appearance
+   ============================================ */
+
+/* Main Container - Light Mode */
+:root:not(.dark) .meetings-container {
+  box-shadow: var(--mtg-shadow-lg);
+  border-color: var(--mtg-border-strong);
+}
+
+:root:not(.dark) .meetings-container::before {
+  background:
+    radial-gradient(ellipse 80% 50% at 20% 20%, rgba(8, 145, 178, 0.04) 0%, transparent 50%),
+    radial-gradient(ellipse 60% 40% at 80% 80%, rgba(124, 58, 237, 0.03) 0%, transparent 50%);
+}
+
+/* Hero Section - Light Mode */
+:root:not(.dark) .meetings-hero {
+  background: var(--mtg-gradient-hero);
+  border-bottom-color: var(--mtg-border-strong);
+}
+
+:root:not(.dark) .meetings-hero-grid {
+  background-image:
+    linear-gradient(rgba(8, 145, 178, 0.06) 1px, transparent 1px),
+    linear-gradient(90deg, rgba(8, 145, 178, 0.06) 1px, transparent 1px);
+}
+
+:root:not(.dark) .meetings-hero-orbit {
+  background: var(--mtg-accent-primary);
+  box-shadow: 0 0 16px rgba(8, 145, 178, 0.4);
+  opacity: 0.5;
+}
+
+:root:not(.dark) .meetings-hero-orbit:nth-child(2) {
+  background: var(--mtg-accent-secondary);
+  box-shadow: 0 0 16px rgba(124, 58, 237, 0.4);
+}
+
+:root:not(.dark) .meetings-hero-icon {
+  box-shadow: var(--mtg-shadow-lg), 0 0 0 1px rgba(8, 145, 178, 0.1);
+  animation: none;
+}
+
+:root:not(.dark) .meetings-hero-icon:hover {
+  box-shadow: var(--mtg-shadow-xl), 0 0 0 1px rgba(8, 145, 178, 0.2);
+}
+
+/* Join Form - Light Mode */
+:root:not(.dark) .meetings-join-input {
+  background: var(--mtg-bg-secondary);
+  border-color: var(--mtg-border-strong);
+  box-shadow: var(--mtg-shadow-sm), inset 0 1px 2px rgba(15, 23, 42, 0.02);
+}
+
+:root:not(.dark) .meetings-join-input:focus {
+  border-color: var(--mtg-accent-primary);
+  box-shadow: var(--mtg-shadow-md), 0 0 0 3px rgba(8, 145, 178, 0.1);
+}
+
+:root:not(.dark) .meetings-join-btn {
+  box-shadow: var(--mtg-shadow-md);
+}
+
+:root:not(.dark) .meetings-join-btn:hover {
+  box-shadow: var(--mtg-shadow-lg), 0 0 0 1px rgba(8, 145, 178, 0.2);
+}
+
+/* Platform Cards - Light Mode */
+:root:not(.dark) .meetings-platform-card {
+  background: var(--mtg-bg-secondary);
+  border-color: var(--mtg-border-strong);
+  box-shadow: var(--mtg-shadow-sm);
+}
+
+:root:not(.dark) .meetings-platform-card::before {
+  background: linear-gradient(135deg, transparent 50%, rgba(8, 145, 178, 0.03) 100%);
+}
+
+:root:not(.dark) .meetings-platform-card:hover {
+  border-color: var(--mtg-border-active);
+  box-shadow: var(--mtg-shadow-lg), 0 0 0 1px rgba(8, 145, 178, 0.1);
+  transform: translateY(-4px);
+}
+
+:root:not(.dark) .meetings-platform-card.pulse {
+  border-color: rgba(8, 145, 178, 0.25);
+  background: linear-gradient(135deg, rgba(8, 145, 178, 0.02) 0%, var(--mtg-bg-secondary) 100%);
+}
+
+:root:not(.dark) .meetings-platform-badge {
+  background: rgba(8, 145, 178, 0.1);
+  border-color: rgba(8, 145, 178, 0.2);
+  color: var(--mtg-accent-primary);
+}
+
+:root:not(.dark) .meetings-platform-btn.primary {
+  background: var(--mtg-bg-tertiary);
+  border: 1px solid var(--mtg-border);
+}
+
+:root:not(.dark) .meetings-platform-btn.primary:hover {
+  background: var(--mtg-bg-hover);
+  border-color: var(--mtg-border-strong);
+}
+
+:root:not(.dark) .meetings-platform-btn.icon {
+  background: var(--mtg-bg-tertiary);
+  border: 1px solid var(--mtg-border);
+}
+
+:root:not(.dark) .meetings-platform-btn.icon:hover {
+  background: var(--mtg-bg-hover);
+  color: var(--mtg-accent-primary);
+}
+
+/* Feature Cards - Light Mode */
+:root:not(.dark) .meetings-feature-card {
+  background: var(--mtg-bg-secondary);
+  border-color: var(--mtg-border-strong);
+  box-shadow: var(--mtg-shadow-sm);
+}
+
+:root:not(.dark) .meetings-feature-card:hover {
+  border-color: var(--mtg-border-active);
+  box-shadow: var(--mtg-shadow-md);
+  transform: translateY(-2px);
+}
+
+:root:not(.dark) .meetings-feature-icon.templates {
+  background: rgba(124, 58, 237, 0.1);
+  color: #7c3aed;
+}
+
+:root:not(.dark) .meetings-feature-icon.agenda {
+  background: rgba(5, 150, 105, 0.1);
+  color: #059669;
+}
+
+:root:not(.dark) .meetings-feature-icon.actions {
+  background: rgba(217, 119, 6, 0.1);
+  color: #d97706;
+}
+
+:root:not(.dark) .meetings-feature-icon.analytics {
+  background: rgba(8, 145, 178, 0.1);
+  color: #0891b2;
+}
+
+:root:not(.dark) .meetings-feature-icon.recordings {
+  background: rgba(220, 38, 38, 0.1);
+  color: #dc2626;
+}
+
+:root:not(.dark) .meetings-feature-icon.breakout {
+  background: rgba(219, 39, 119, 0.1);
+  color: #db2777;
+}
+
+:root:not(.dark) .meetings-feature-badge {
+  background: rgba(8, 145, 178, 0.08);
+  color: var(--mtg-accent-primary);
+}
+
+/* Meeting History - Light Mode */
+:root:not(.dark) .meetings-history {
+  background: var(--mtg-bg-secondary);
+  border-color: var(--mtg-border-strong);
+  box-shadow: var(--mtg-shadow-sm);
+}
+
+:root:not(.dark) .meetings-history-item {
+  border-bottom-color: var(--mtg-border);
+}
+
+:root:not(.dark) .meetings-history-item:hover {
+  background: var(--mtg-bg-tertiary);
+}
+
+:root:not(.dark) .meetings-history-icon {
+  background: var(--mtg-bg-tertiary);
+  border: 1px solid var(--mtg-border);
+}
+
+:root:not(.dark) .meetings-history-icon i {
+  color: var(--mtg-accent-secondary);
+}
+
+:root:not(.dark) .meetings-history-tag {
+  background: var(--mtg-bg-tertiary);
+  border: 1px solid var(--mtg-border);
+}
+
+/* Sidebar Cards - Light Mode */
+:root:not(.dark) .meetings-upcoming-card,
+:root:not(.dark) .meetings-quick-actions,
+:root:not(.dark) .meetings-insights-card {
+  background: var(--mtg-bg-secondary);
+  border-color: var(--mtg-border-strong);
+  box-shadow: var(--mtg-shadow-sm);
+}
+
+:root:not(.dark) .meetings-upcoming-item {
+  background: var(--mtg-bg-tertiary);
+  border-left-color: var(--mtg-accent-primary);
+}
+
+:root:not(.dark) .meetings-upcoming-item:hover {
+  background: var(--mtg-bg-hover);
+}
+
+:root:not(.dark) .meetings-upcoming-avatar {
+  border-color: var(--mtg-bg-secondary);
+  box-shadow: var(--mtg-shadow-sm);
+}
+
+:root:not(.dark) .meetings-upcoming-join {
+  background: var(--mtg-accent-primary);
+  box-shadow: var(--mtg-shadow-sm);
+}
+
+:root:not(.dark) .meetings-upcoming-join:hover {
+  background: #0e7490;
+  box-shadow: var(--mtg-shadow-md);
+}
+
+/* Quick Actions - Light Mode */
+:root:not(.dark) .meetings-quick-btn {
+  background: var(--mtg-bg-tertiary);
+  border-color: var(--mtg-border);
+}
+
+:root:not(.dark) .meetings-quick-btn:hover {
+  background: var(--mtg-bg-hover);
+  border-color: var(--mtg-border-active);
+  box-shadow: var(--mtg-shadow-sm);
+}
+
+:root:not(.dark) .meetings-quick-btn i {
+  color: var(--mtg-accent-primary);
+}
+
+:root:not(.dark) .meetings-schedule-btn {
+  border-color: var(--mtg-border-strong);
+  border-style: dashed;
+}
+
+:root:not(.dark) .meetings-schedule-btn:hover {
+  border-color: var(--mtg-accent-primary);
+  background: rgba(8, 145, 178, 0.04);
+}
+
+/* Insights Card - Light Mode */
+:root:not(.dark) .meetings-insight-stat {
+  background: var(--mtg-bg-tertiary);
+}
+
+:root:not(.dark) .meetings-insights-chart {
+  background: var(--mtg-bg-tertiary);
+}
+
+:root:not(.dark) .meetings-insights-bar {
+  background: var(--mtg-accent-primary);
+  opacity: 0.8;
+}
+
+:root:not(.dark) .meetings-insights-bar:hover {
+  opacity: 1;
+}
+
+/* Modals - Light Mode */
+:root:not(.dark) .meetings-modal-overlay {
+  background: rgba(15, 23, 42, 0.4);
+  -webkit-backdrop-filter: blur(8px);
+  backdrop-filter: blur(8px);
+}
+
+:root:not(.dark) .meetings-modal {
+  background: var(--mtg-bg-secondary);
+  border-color: var(--mtg-border-strong);
+  box-shadow: var(--mtg-shadow-xl);
+}
+
+:root:not(.dark) .meetings-modal-header {
+  border-bottom-color: var(--mtg-border);
+}
+
+:root:not(.dark) .meetings-modal-footer {
+  border-top-color: var(--mtg-border);
+  background: var(--mtg-bg-tertiary);
+}
+
+:root:not(.dark) .meetings-modal-close:hover {
+  background: var(--mtg-bg-tertiary);
+}
+
+:root:not(.dark) .meetings-contact-item {
+  background: var(--mtg-bg-tertiary);
+  border-color: var(--mtg-border);
+}
+
+:root:not(.dark) .meetings-contact-item:hover {
+  border-color: var(--mtg-text-muted);
+  background: var(--mtg-bg-hover);
+}
+
+:root:not(.dark) .meetings-contact-item.selected {
+  background: rgba(8, 145, 178, 0.08);
+  border-color: var(--mtg-accent-primary);
+}
+
+:root:not(.dark) .meetings-modal-btn.primary {
+  background: var(--mtg-accent-primary);
+  box-shadow: var(--mtg-shadow-sm);
+}
+
+:root:not(.dark) .meetings-modal-btn.primary:hover {
+  background: #0e7490;
+  box-shadow: var(--mtg-shadow-md);
+}
+
+/* Schedule View - Light Mode */
+:root:not(.dark) .meetings-schedule {
+  background: var(--mtg-bg-primary);
+}
+
+:root:not(.dark) .meetings-schedule-form {
+  background: var(--mtg-bg-secondary);
+  border-color: var(--mtg-border-strong);
+  box-shadow: var(--mtg-shadow-xl);
+}
+
+:root:not(.dark) .meetings-form-input,
+:root:not(.dark) .meetings-form-select {
+  background: var(--mtg-bg-tertiary);
+  border-color: var(--mtg-border-strong);
+}
+
+:root:not(.dark) .meetings-form-input:focus,
+:root:not(.dark) .meetings-form-select:focus {
+  border-color: var(--mtg-accent-primary);
+  box-shadow: 0 0 0 3px rgba(8, 145, 178, 0.1);
+}
+
+:root:not(.dark) .meetings-attendee-chip {
+  background: rgba(8, 145, 178, 0.1);
+  color: var(--mtg-accent-primary);
+}
+
+:root:not(.dark) .meetings-submit-btn {
+  box-shadow: var(--mtg-shadow-md);
+}
+
+:root:not(.dark) .meetings-submit-btn:hover {
+  box-shadow: var(--mtg-shadow-lg);
+}
+
+/* Toast - Light Mode */
+:root:not(.dark) .meetings-toast {
+  box-shadow: var(--mtg-shadow-lg);
+}
+
+/* Scrollbar - Light Mode */
+:root:not(.dark) .meetings-container ::-webkit-scrollbar-thumb {
+  background: rgba(15, 23, 42, 0.15);
+}
+
+:root:not(.dark) .meetings-container ::-webkit-scrollbar-thumb:hover {
+  background: rgba(15, 23, 42, 0.25);
+}
+
+/* Section Headers - Light Mode */
+:root:not(.dark) .meetings-section-title {
+  color: var(--mtg-text-secondary);
+}
+
+:root:not(.dark) .meetings-section-title i {
+  color: var(--mtg-accent-primary);
+}
+
+:root:not(.dark) .meetings-section-action {
+  color: var(--mtg-accent-primary);
+}
+
+:root:not(.dark) .meetings-section-action:hover {
+  opacity: 0.85;
+}
+
+/* Empty States - Light Mode */
+:root:not(.dark) .meetings-empty {
+  color: var(--mtg-text-muted);
+}
+
+/* Animation Adjustments - Light Mode */
+@keyframes mtg-glow-pulse-light {
+  0%, 100% { box-shadow: var(--mtg-shadow-md); }
+  50% { box-shadow: var(--mtg-shadow-lg); }
+}
+
+:root:not(.dark) .meetings-hero-icon {
+  animation: mtg-glow-pulse-light 3s ease-in-out infinite;
+}

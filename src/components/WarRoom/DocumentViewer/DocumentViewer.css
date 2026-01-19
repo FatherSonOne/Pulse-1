@@ -1,0 +1,129 @@
+/* ============================================
+   DOCUMENT VIEWER STYLES
+   ============================================ */
+
+.doc-viewer-header {
+  background: linear-gradient(135deg, rgba(244, 63, 94, 0.05), transparent);
+}
+
+.doc-viewer-content {
+  background: var(--nothing-gray-50, #FAFAFA);
+}
+
+.dark .doc-viewer-content {
+  background: var(--nothing-gray-950, #0a0a0a);
+}
+
+/* Highlight styles */
+.doc-viewer-highlight {
+  background: rgba(250, 204, 21, 0.3);
+  color: inherit;
+  border-radius: 2px;
+  padding: 0 2px;
+}
+
+.dark .doc-viewer-highlight {
+  background: rgba(250, 204, 21, 0.25);
+}
+
+.doc-viewer-highlight.current-match {
+  background: rgba(244, 63, 94, 0.4);
+  box-shadow: 0 0 0 2px rgba(244, 63, 94, 0.3);
+}
+
+.dark .doc-viewer-highlight.current-match {
+  background: rgba(244, 63, 94, 0.5);
+}
+
+/* Content formatting */
+.doc-viewer-content pre {
+  margin: 0;
+  font-family: -apple-system, BlinkMacSystemFont, 'SF Pro Display', 'Segoe UI', Roboto, sans-serif;
+  color: var(--nothing-gray-800, #262626);
+}
+
+.dark .doc-viewer-content pre {
+  color: var(--nothing-gray-200, #e5e5e5);
+}
+
+/* Line numbers (optional enhancement) */
+.doc-viewer-content.show-line-numbers pre {
+  counter-reset: line;
+  padding-left: 3rem;
+  position: relative;
+}
+
+.doc-viewer-content.show-line-numbers pre::before {
+  counter-increment: line;
+  content: counter(line);
+  position: absolute;
+  left: 0;
+  width: 2rem;
+  text-align: right;
+  color: var(--nothing-gray-400, #a3a3a3);
+  font-size: 12px;
+}
+
+/* Print styles */
+@media print {
+  .doc-viewer-header,
+  .doc-viewer-footer {
+    display: none !important;
+  }
+
+  .doc-viewer-content {
+    max-height: none !important;
+    overflow: visible !important;
+  }
+}
+
+/* Animation for modal */
+@keyframes doc-viewer-fade-in {
+  from {
+    opacity: 0;
+    transform: scale(0.95);
+  }
+  to {
+    opacity: 1;
+    transform: scale(1);
+  }
+}
+
+.war-room-modal {
+  animation: doc-viewer-fade-in 0.2s ease-out;
+}
+
+/* Search bar highlight animation */
+@keyframes search-pulse {
+  0%, 100% {
+    box-shadow: 0 0 0 0 rgba(244, 63, 94, 0.4);
+  }
+  50% {
+    box-shadow: 0 0 0 4px rgba(244, 63, 94, 0.1);
+  }
+}
+
+.doc-viewer-highlight.current-match {
+  animation: search-pulse 1.5s ease-in-out infinite;
+}
+
+/* Mobile adjustments */
+@media (max-width: 640px) {
+  .doc-viewer-header .flex.items-center.gap-2 {
+    flex-wrap: wrap;
+    gap: 4px;
+  }
+
+  .doc-viewer-header .war-room-btn-icon-sm {
+    width: 28px;
+    height: 28px;
+  }
+
+  .doc-viewer-content {
+    padding: 16px;
+  }
+
+  .doc-viewer-content pre {
+    font-size: 13px;
+  }
+}

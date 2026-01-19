@@ -1,0 +1,392 @@
+.decision-panel {
+  height: 100%;
+  display: flex;
+  flex-direction: column;
+  background: rgba(255, 255, 255, 0.05);
+  border-radius: 16px;
+  padding: 20px;
+}
+
+.decision-header {
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  margin-bottom: 20px;
+}
+
+.decision-header h2 {
+  margin: 0;
+  color: white;
+  font-size: 24px;
+}
+
+.decision-form {
+  background: rgba(255, 255, 255, 0.1);
+  border-radius: 12px;
+  padding: 20px;
+  margin-bottom: 20px;
+  animation: slideDown 0.3s ease;
+}
+
+@keyframes slideDown {
+  from {
+    opacity: 0;
+    transform: translateY(-10px);
+  }
+  to {
+    opacity: 1;
+    transform: translateY(0);
+  }
+}
+
+.decision-form input,
+.decision-form textarea,
+.decision-form select {
+  width: 100%;
+  padding: 12px;
+  margin-bottom: 12px;
+  background: rgba(255, 255, 255, 0.1);
+  border: 1px solid rgba(255, 255, 255, 0.2);
+  border-radius: 8px;
+  color: white;
+  font-family: inherit;
+  font-size: 14px;
+}
+
+.decision-form textarea {
+  resize: vertical;
+  font-family: inherit;
+}
+
+.input-with-voice {
+  display: flex;
+  align-items: flex-start;
+  gap: 8px;
+  margin-bottom: 12px;
+}
+
+.input-with-voice input,
+.input-with-voice textarea {
+  flex: 1;
+  margin-bottom: 0;
+}
+
+.form-actions {
+  display: flex;
+  gap: 10px;
+  justify-content: flex-end;
+}
+
+.form-actions button {
+  padding: 10px 20px;
+  border-radius: 8px;
+  border: none;
+  cursor: pointer;
+  font-weight: 500;
+  transition: all 0.2s;
+}
+
+.form-actions button[type="submit"] {
+  background: #667eea;
+  color: white;
+}
+
+.form-actions button[type="button"] {
+  background: rgba(255, 255, 255, 0.1);
+  color: white;
+}
+
+.decisions-list {
+  flex: 1;
+  overflow-y: auto;
+  display: flex;
+  flex-direction: column;
+  gap: 16px;
+}
+
+.decision-card {
+  background: rgba(255, 255, 255, 0.1);
+  border-radius: 12px;
+  padding: 20px;
+  border-left: 4px solid transparent;
+  transition: all 0.3s;
+  animation: fadeIn 0.3s ease;
+}
+
+@keyframes fadeIn {
+  from {
+    opacity: 0;
+    transform: translateY(10px);
+  }
+  to {
+    opacity: 1;
+    transform: translateY(0);
+  }
+}
+
+.decision-card.status-proposed {
+  border-left-color: #fbbf24;
+}
+
+.decision-card.status-voting {
+  border-left-color: #60a5fa;
+}
+
+.decision-card.status-decided {
+  border-left-color: #34d399;
+}
+
+.decision-card.status-cancelled {
+  border-left-color: #ef4444;
+}
+
+.decision-card:hover {
+  background: rgba(255, 255, 255, 0.15);
+  transform: translateX(4px);
+}
+
+.decision-card-header {
+  display: flex;
+  justify-content: space-between;
+  align-items: flex-start;
+  margin-bottom: 12px;
+}
+
+.decision-title-section {
+  display: flex;
+  align-items: flex-start;
+  gap: 12px;
+  flex: 1;
+}
+
+.decision-title-section h3 {
+  margin: 0 0 8px 0;
+  color: white;
+  font-size: 18px;
+}
+
+.status-icon {
+  flex-shrink: 0;
+  margin-top: 2px;
+}
+
+.status-icon.proposed {
+  color: #fbbf24;
+}
+
+.status-icon.voting {
+  color: #60a5fa;
+}
+
+.status-icon.decided {
+  color: #34d399;
+}
+
+.status-icon.cancelled {
+  color: #ef4444;
+}
+
+.decision-type {
+  display: inline-block;
+  padding: 4px 12px;
+  border-radius: 12px;
+  font-size: 12px;
+  font-weight: 600;
+  color: white;
+  text-transform: uppercase;
+}
+
+.decision-status {
+  padding: 6px 12px;
+  border-radius: 12px;
+  font-size: 12px;
+  font-weight: 600;
+  background: rgba(255, 255, 255, 0.2);
+  color: white;
+  text-transform: uppercase;
+}
+
+.decision-description {
+  color: rgba(255, 255, 255, 0.8);
+  margin: 12px 0;
+  line-height: 1.5;
+}
+
+.final-decision {
+  background: rgba(52, 211, 153, 0.1);
+  border-left: 3px solid #34d399;
+  padding: 12px;
+  border-radius: 8px;
+  margin: 12px 0;
+}
+
+.final-decision strong {
+  color: #34d399;
+  display: block;
+  margin-bottom: 6px;
+}
+
+.final-decision p {
+  color: white;
+  margin: 0;
+}
+
+.vote-summary {
+  display: flex;
+  gap: 16px;
+  margin: 16px 0;
+  padding: 12px;
+  background: rgba(0, 0, 0, 0.2);
+  border-radius: 8px;
+}
+
+.vote-count {
+  display: flex;
+  align-items: center;
+  gap: 6px;
+  font-weight: 600;
+  color: white;
+}
+
+.vote-count.approve {
+  color: #34d399;
+}
+
+.vote-count.reject {
+  color: #ef4444;
+}
+
+.vote-count.concern {
+  color: #fbbf24;
+}
+
+.vote-count.abstain {
+  color: #94a3b8;
+}
+
+.voting-actions {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 8px;
+  margin-top: 16px;
+}
+
+.vote-btn {
+  display: flex;
+  align-items: center;
+  gap: 6px;
+  padding: 8px 16px;
+  border-radius: 8px;
+  border: none;
+  cursor: pointer;
+  font-weight: 500;
+  transition: all 0.2s;
+  color: white;
+}
+
+.vote-btn.approve {
+  background: #10b981;
+}
+
+.vote-btn.approve:hover {
+  background: #059669;
+  transform: scale(1.05);
+}
+
+.vote-btn.reject {
+  background: #ef4444;
+}
+
+.vote-btn.reject:hover {
+  background: #dc2626;
+  transform: scale(1.05);
+}
+
+.vote-btn.concern {
+  background: #f59e0b;
+}
+
+.vote-btn.concern:hover {
+  background: #d97706;
+  transform: scale(1.05);
+}
+
+.voted-badge {
+  padding: 8px 16px;
+  background: rgba(52, 211, 153, 0.2);
+  border: 2px solid #34d399;
+  border-radius: 8px;
+  color: white;
+  font-weight: 500;
+}
+
+.btn-finalize {
+  padding: 8px 16px;
+  background: #667eea;
+  color: white;
+  border: none;
+  border-radius: 8px;
+  cursor: pointer;
+  font-weight: 500;
+  transition: all 0.2s;
+}
+
+.btn-finalize:hover {
+  background: #5568d3;
+  transform: scale(1.05);
+}
+
+.decision-footer {
+  margin-top: 12px;
+  padding-top: 12px;
+  border-top: 1px solid rgba(255, 255, 255, 0.1);
+}
+
+.decision-footer small {
+  color: rgba(255, 255, 255, 0.6);
+  font-size: 12px;
+}
+
+.empty-state {
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  justify-content: center;
+  padding: 60px 20px;
+  color: rgba(255, 255, 255, 0.6);
+  text-align: center;
+}
+
+.empty-state svg {
+  margin-bottom: 16px;
+  opacity: 0.5;
+}
+
+.empty-state p {
+  margin: 8px 0;
+  font-size: 18px;
+  font-weight: 500;
+}
+
+.empty-state small {
+  font-size: 14px;
+}
+
+.btn-primary {
+  display: flex;
+  align-items: center;
+  gap: 6px;
+  padding: 10px 20px;
+  background: #667eea;
+  color: white;
+  border: none;
+  border-radius: 8px;
+  cursor: pointer;
+  font-weight: 500;
+  transition: all 0.2s;
+}
+
+.btn-primary:hover {
+  background: #5568d3;
+  transform: scale(1.05);
+}

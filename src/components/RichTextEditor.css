@@ -1,0 +1,111 @@
+.rich-text-editor {
+  border: 1px solid var(--search-gray-300);
+  border-radius: 8px;
+  background: var(--search-white);
+  overflow: hidden;
+}
+
+.dark .rich-text-editor {
+  background: var(--search-gray-900);
+  border-color: var(--search-gray-700);
+}
+
+.rich-text-editor.focused {
+  border-color: var(--search-primary);
+  box-shadow: 0 0 0 3px rgba(255, 0, 0, 0.1);
+}
+
+.rich-text-toolbar {
+  display: flex;
+  align-items: center;
+  gap: 4px;
+  padding: 8px;
+  border-bottom: 1px solid var(--search-gray-200);
+  background: var(--search-gray-50);
+}
+
+.dark .rich-text-toolbar {
+  background: var(--search-gray-800);
+  border-bottom-color: var(--search-gray-700);
+}
+
+.toolbar-btn {
+  padding: 6px 8px;
+  border: none;
+  background: transparent;
+  border-radius: 4px;
+  cursor: pointer;
+  color: var(--search-gray-600);
+  display: flex;
+  align-items: center;
+  transition: all var(--transition-fast);
+}
+
+.dark .toolbar-btn {
+  color: var(--search-gray-400);
+}
+
+.toolbar-btn:hover {
+  background: var(--search-gray-200);
+  color: var(--search-black);
+}
+
+.dark .toolbar-btn:hover {
+  background: var(--search-gray-700);
+  color: var(--search-white);
+}
+
+.toolbar-divider {
+  width: 1px;
+  height: 20px;
+  background: var(--search-gray-300);
+  margin: 0 4px;
+}
+
+.dark .toolbar-divider {
+  background: var(--search-gray-700);
+}
+
+.rich-text-content {
+  min-height: 150px;
+  max-height: 400px;
+  overflow-y: auto;
+  padding: 12px;
+  outline: none;
+  font-size: 14px;
+  line-height: 1.6;
+  color: var(--search-black);
+}
+
+.dark .rich-text-content {
+  color: var(--search-white);
+}
+
+.rich-text-content[data-placeholder]:empty:before {
+  content: attr(data-placeholder);
+  color: var(--search-gray-400);
+  pointer-events: none;
+}
+
+.rich-text-content ul,
+.rich-text-content ol {
+  margin: 8px 0;
+  padding-left: 24px;
+}
+
+.rich-text-content a {
+  color: var(--search-primary);
+  text-decoration: underline;
+}
+
+.rich-text-content strong {
+  font-weight: 600;
+}
+
+.rich-text-content em {
+  font-style: italic;
+}
+
+.rich-text-content u {
+  text-decoration: underline;
+}

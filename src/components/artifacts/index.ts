@@ -1,0 +1,1 @@
+export { ChannelArtifactComponent } from './ChannelArtifact';

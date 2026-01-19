@@ -1,0 +1,906 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>Pulse OAuth Recording Checklist</title>
+  <style>
+    :root {
+      --primary: #f43f5e;
+      --primary-light: #fda4af;
+      --success: #10b981;
+      --warning: #f59e0b;
+      --bg: #0a0a0a;
+      --surface: #18181b;
+      --surface-hover: #27272a;
+      --border: #3f3f46;
+      --text: #fafafa;
+      --text-muted: #a1a1aa;
+    }
+
+    * {
+      box-sizing: border-box;
+      margin: 0;
+      padding: 0;
+    }
+
+    body {
+      font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, sans-serif;
+      background: var(--bg);
+      color: var(--text);
+      line-height: 1.6;
+      padding: 20px;
+      max-width: 1400px;
+      margin: 0 auto;
+    }
+
+    @media print {
+      body {
+        background: white;
+        color: black;
+        padding: 10px;
+      }
+      .no-print { display: none !important; }
+      .section { break-inside: avoid; page-break-inside: avoid; }
+      .checkbox-item { border-color: #ccc !important; }
+      :root {
+        --surface: #f5f5f5;
+        --border: #ddd;
+        --text: #111;
+        --text-muted: #666;
+      }
+    }
+
+    header {
+      text-align: center;
+      margin-bottom: 30px;
+      padding-bottom: 20px;
+      border-bottom: 2px solid var(--border);
+    }
+
+    header h1 {
+      font-size: 2rem;
+      background: linear-gradient(135deg, var(--primary), #ec4899);
+      -webkit-background-clip: text;
+      -webkit-text-fill-color: transparent;
+      background-clip: text;
+      margin-bottom: 8px;
+    }
+
+    header p {
+      color: var(--text-muted);
+      font-size: 0.9rem;
+    }
+
+    .progress-bar {
+      background: var(--surface);
+      border-radius: 10px;
+      height: 24px;
+      margin: 20px 0;
+      overflow: hidden;
+      position: relative;
+    }
+
+    .progress-fill {
+      background: linear-gradient(90deg, var(--primary), #ec4899);
+      height: 100%;
+      width: 0%;
+      transition: width 0.3s ease;
+      border-radius: 10px;
+    }
+
+    .progress-text {
+      position: absolute;
+      top: 50%;
+      left: 50%;
+      transform: translate(-50%, -50%);
+      font-weight: 600;
+      font-size: 0.85rem;
+      color: white;
+      text-shadow: 0 1px 2px rgba(0,0,0,0.5);
+    }
+
+    .stats {
+      display: flex;
+      gap: 20px;
+      justify-content: center;
+      margin-bottom: 30px;
+      flex-wrap: wrap;
+    }
+
+    .stat {
+      background: var(--surface);
+      border: 1px solid var(--border);
+      border-radius: 12px;
+      padding: 15px 25px;
+      text-align: center;
+      min-width: 120px;
+    }
+
+    .stat-value {
+      font-size: 1.8rem;
+      font-weight: 700;
+      color: var(--primary);
+    }
+
+    .stat-label {
+      font-size: 0.75rem;
+      color: var(--text-muted);
+      text-transform: uppercase;
+      letter-spacing: 0.5px;
+    }
+
+    .controls {
+      display: flex;
+      gap: 10px;
+      justify-content: center;
+      margin-bottom: 30px;
+      flex-wrap: wrap;
+    }
+
+    .btn {
+      background: var(--surface);
+      border: 1px solid var(--border);
+      color: var(--text);
+      padding: 10px 20px;
+      border-radius: 8px;
+      cursor: pointer;
+      font-size: 0.9rem;
+      transition: all 0.2s;
+      display: flex;
+      align-items: center;
+      gap: 8px;
+    }
+
+    .btn:hover {
+      background: var(--surface-hover);
+      border-color: var(--primary);
+    }
+
+    .btn-primary {
+      background: var(--primary);
+      border-color: var(--primary);
+    }
+
+    .btn-primary:hover {
+      background: #e11d48;
+    }
+
+    .btn-success {
+      background: var(--success);
+      border-color: var(--success);
+    }
+
+    .sections-grid {
+      display: grid;
+      grid-template-columns: repeat(auto-fit, minmax(400px, 1fr));
+      gap: 20px;
+    }
+
+    .section {
+      background: var(--surface);
+      border: 1px solid var(--border);
+      border-radius: 16px;
+      overflow: hidden;
+    }
+
+    .section-header {
+      background: linear-gradient(135deg, rgba(244, 63, 94, 0.1), rgba(236, 72, 153, 0.1));
+      padding: 15px 20px;
+      border-bottom: 1px solid var(--border);
+      display: flex;
+      justify-content: space-between;
+      align-items: center;
+    }
+
+    .section-title {
+      font-weight: 600;
+      font-size: 1rem;
+      display: flex;
+      align-items: center;
+      gap: 10px;
+    }
+
+    .section-title .icon {
+      width: 28px;
+      height: 28px;
+      background: var(--primary);
+      border-radius: 6px;
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      font-size: 0.85rem;
+    }
+
+    .section-progress {
+      font-size: 0.8rem;
+      color: var(--text-muted);
+      background: var(--bg);
+      padding: 4px 10px;
+      border-radius: 20px;
+    }
+
+    .section-content {
+      padding: 15px;
+    }
+
+    .subsection {
+      margin-bottom: 15px;
+    }
+
+    .subsection:last-child {
+      margin-bottom: 0;
+    }
+
+    .subsection-title {
+      font-size: 0.8rem;
+      color: var(--text-muted);
+      text-transform: uppercase;
+      letter-spacing: 0.5px;
+      margin-bottom: 10px;
+      padding-bottom: 5px;
+      border-bottom: 1px dashed var(--border);
+    }
+
+    .checkbox-item {
+      display: flex;
+      align-items: flex-start;
+      gap: 12px;
+      padding: 10px 12px;
+      border-radius: 8px;
+      cursor: pointer;
+      transition: background 0.2s;
+      border: 1px solid transparent;
+    }
+
+    .checkbox-item:hover {
+      background: var(--surface-hover);
+    }
+
+    .checkbox-item.checked {
+      background: rgba(16, 185, 129, 0.1);
+      border-color: var(--success);
+    }
+
+    .checkbox-item.checked .checkbox {
+      background: var(--success);
+      border-color: var(--success);
+    }
+
+    .checkbox-item.checked .checkbox::after {
+      content: '\\2713';
+      color: white;
+      font-size: 14px;
+      font-weight: bold;
+    }
+
+    .checkbox-item.checked .item-text {
+      text-decoration: line-through;
+      opacity: 0.7;
+    }
+
+    .checkbox {
+      width: 22px;
+      height: 22px;
+      border: 2px solid var(--border);
+      border-radius: 6px;
+      flex-shrink: 0;
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      transition: all 0.2s;
+      margin-top: 1px;
+    }
+
+    .item-content {
+      flex: 1;
+    }
+
+    .item-id {
+      font-size: 0.7rem;
+      color: var(--primary);
+      font-weight: 600;
+      margin-right: 6px;
+    }
+
+    .item-text {
+      font-size: 0.9rem;
+    }
+
+    .item-scope {
+      display: inline-block;
+      font-size: 0.7rem;
+      background: rgba(244, 63, 94, 0.2);
+      color: var(--primary-light);
+      padding: 2px 8px;
+      border-radius: 4px;
+      margin-left: 8px;
+    }
+
+    .scopes-table {
+      width: 100%;
+      margin-bottom: 30px;
+      border-collapse: collapse;
+      font-size: 0.85rem;
+    }
+
+    .scopes-table th,
+    .scopes-table td {
+      padding: 10px 15px;
+      text-align: left;
+      border-bottom: 1px solid var(--border);
+    }
+
+    .scopes-table th {
+      background: var(--surface);
+      color: var(--text-muted);
+      font-weight: 600;
+      text-transform: uppercase;
+      font-size: 0.75rem;
+      letter-spacing: 0.5px;
+    }
+
+    .scopes-table tr:hover td {
+      background: var(--surface-hover);
+    }
+
+    .scope-badge {
+      display: inline-block;
+      background: linear-gradient(135deg, var(--primary), #ec4899);
+      color: white;
+      padding: 3px 10px;
+      border-radius: 4px;
+      font-family: monospace;
+      font-size: 0.8rem;
+    }
+
+    .scope-status {
+      width: 20px;
+      height: 20px;
+      border-radius: 50%;
+      display: inline-flex;
+      align-items: center;
+      justify-content: center;
+      font-size: 0.7rem;
+    }
+
+    .scope-status.pending {
+      background: var(--border);
+    }
+
+    .scope-status.done {
+      background: var(--success);
+      color: white;
+    }
+
+    footer {
+      text-align: center;
+      margin-top: 40px;
+      padding-top: 20px;
+      border-top: 1px solid var(--border);
+      color: var(--text-muted);
+      font-size: 0.85rem;
+    }
+
+    .timestamp {
+      font-family: monospace;
+      color: var(--primary);
+    }
+  </style>
+</head>
+<body>
+  <header>
+    <h1>Pulse OAuth Recording Checklist</h1>
+    <p>Google OAuth Verification Screen Recording Guide</p>
+    <p class="no-print">https://pulse.logosvision.org | Logos Vision LLC</p>
+  </header>
+
+  <div class="progress-bar no-print">
+    <div class="progress-fill" id="progressFill"></div>
+    <div class="progress-text" id="progressText">0%</div>
+  </div>
+
+  <div class="stats no-print">
+    <div class="stat">
+      <div class="stat-value" id="completedCount">0</div>
+      <div class="stat-label">Completed</div>
+    </div>
+    <div class="stat">
+      <div class="stat-value" id="remainingCount">0</div>
+      <div class="stat-label">Remaining</div>
+    </div>
+    <div class="stat">
+      <div class="stat-value" id="scopesCovered">0/10</div>
+      <div class="stat-label">Scopes Covered</div>
+    </div>
+  </div>
+
+  <div class="controls no-print">
+    <button class="btn" onclick="resetAll()">
+      <span>&#8634;</span> Reset All
+    </button>
+    <button class="btn" onclick="window.print()">
+      <span>&#128424;</span> Print Checklist
+    </button>
+    <button class="btn btn-success" onclick="exportProgress()">
+      <span>&#128190;</span> Save Progress
+    </button>
+  </div>
+
+  <!-- Scopes Reference Table -->
+  <table class="scopes-table">
+    <thead>
+      <tr>
+        <th>Status</th>
+        <th>Scope</th>
+        <th>API</th>
+        <th>Purpose</th>
+      </tr>
+    </thead>
+    <tbody id="scopesBody">
+      <!-- Populated by JS -->
+    </tbody>
+  </table>
+
+  <div class="sections-grid" id="sectionsContainer">
+    <!-- Populated by JS -->
+  </div>
+
+  <footer>
+    <p>Last saved: <span class="timestamp" id="lastSaved">Never</span></p>
+    <p>Pulse OAuth Checklist v1.0 | Generated for Google OAuth Verification</p>
+  </footer>
+
+  <script>
+    const SCOPES = [
+      { id: 'email', name: 'email', api: 'OpenID Connect', purpose: 'Identify user account', items: ['1.5.1', '2.1', '2.3'] },
+      { id: 'profile', name: 'profile', api: 'OpenID Connect', purpose: 'Display name and photo', items: ['1.5.2', '2.1', '2.2', '2.5'] },
+      { id: 'calendar-readonly', name: 'calendar.readonly', api: 'Google Calendar API', purpose: 'Read calendar events', items: ['1.5.3', '8.2', '8.4', '8.5'] },
+      { id: 'calendar-events', name: 'calendar.events', api: 'Google Calendar API', purpose: 'Create/edit/delete events', items: ['1.5.4', '9.6', '10.4', '11.3'] },
+      { id: 'gmail-readonly', name: 'gmail.readonly', api: 'Gmail API', purpose: 'Read email messages', items: ['1.5.5', '3.2', '3.3', '3.4', '3.5'] },
+      { id: 'gmail-send', name: 'gmail.send', api: 'Gmail API', purpose: 'Send emails', items: ['1.5.6', '6.2', '7.4'] },
+      { id: 'gmail-compose', name: 'gmail.compose', api: 'Gmail API', purpose: 'Create drafts', items: ['1.5.7', '5.5', '5.6'] },
+      { id: 'gmail-modify', name: 'gmail.modify', api: 'Gmail API', purpose: 'Manage labels, star, archive', items: ['1.5.8', '4.1', '4.2', '4.3', '4.4', '4.5', '4.6'] },
+      { id: 'contacts-readonly', name: 'contacts.readonly', api: 'Google People API', purpose: 'Import Google contacts', items: ['1.5.9', '12.2', '12.3', '12.4', '13.2', '13.3'] },
+      { id: 'drive-file', name: 'drive.file', api: 'Google Drive API', purpose: 'Export archives to Drive', items: ['1.5.10', '20.2', '20.3', '20.4', '20.5', '20.6'] },
+    ];
+
+    const SECTIONS = [
+      {
+        id: 'setup',
+        title: 'Pre-Recording Setup',
+        icon: '&#9881;',
+        subsections: [
+          {
+            title: 'Preparation',
+            items: [
+              { id: '0.1', text: 'Open https://pulse.logosvision.org in Chrome' },
+              { id: '0.2', text: 'Ensure you are SIGNED OUT initially' },
+              { id: '0.3', text: 'Clear any cached Google sessions (optional)' },
+              { id: '0.4', text: 'Have screen recording software ready' },
+              { id: '0.5', text: 'Prepare a test email recipient address' },
+            ]
+          }
+        ]
+      },
+      {
+        id: 'oauth',
+        title: 'Part 1: OAuth Login Flow',
+        icon: '&#128274;',
+        subsections: [
+          {
+            title: 'Scene 1: Initial Sign-In',
+            items: [
+              { id: '1.1', text: 'Show the app in logged-out state' },
+              { id: '1.2', text: 'Click "Sign in with Google" button' },
+              { id: '1.3', text: 'Show Google account selection screen' },
+              { id: '1.4', text: 'Select your Google account' },
+              { id: '1.5', text: 'Show OAuth consent screen with ALL scopes:' },
+              { id: '1.5.1', text: 'See your email address', scope: 'email' },
+              { id: '1.5.2', text: 'See your personal info', scope: 'profile' },
+              { id: '1.5.3', text: 'View your calendars', scope: 'calendar.readonly' },
+              { id: '1.5.4', text: 'Manage your calendars', scope: 'calendar.events' },
+              { id: '1.5.5', text: 'Read your emails', scope: 'gmail.readonly' },
+              { id: '1.5.6', text: 'Send emails on your behalf', scope: 'gmail.send' },
+              { id: '1.5.7', text: 'Manage drafts', scope: 'gmail.compose' },
+              { id: '1.5.8', text: 'Manage email labels', scope: 'gmail.modify' },
+              { id: '1.5.9', text: 'View your contacts', scope: 'contacts.readonly' },
+              { id: '1.5.10', text: 'See, edit, create, and delete only app-created Drive files', scope: 'drive.file' },
+              { id: '1.6', text: 'Click "Allow" / "Continue"' },
+              { id: '1.7', text: 'Show successful redirect (now logged in)' },
+            ]
+          }
+        ]
+      },
+      {
+        id: 'profile',
+        title: 'Part 2: Profile Display',
+        icon: '&#128100;',
+        subsections: [
+          {
+            title: 'Scene 2: User Profile (email, profile)',
+            items: [
+              { id: '2.1', text: 'Show user avatar in sidebar', scope: 'profile' },
+              { id: '2.2', text: 'Show user name displayed correctly', scope: 'profile' },
+              { id: '2.3', text: 'Show user email address', scope: 'email' },
+              { id: '2.4', text: 'Navigate to Settings > Profile' },
+              { id: '2.5', text: 'Show profile info populated from Google', scope: 'profile' },
+            ]
+          }
+        ]
+      },
+      {
+        id: 'gmail-read',
+        title: 'Part 3A: Gmail - Reading',
+        icon: '&#128231;',
+        subsections: [
+          {
+            title: 'Scene 3: Reading Emails (gmail.readonly)',
+            items: [
+              { id: '3.1', text: 'Navigate to Email / Inbox section' },
+              { id: '3.2', text: 'Show inbox loading with real Gmail messages', scope: 'gmail.readonly' },
+              { id: '3.3', text: 'Click on an email to view full content', scope: 'gmail.readonly' },
+              { id: '3.4', text: 'Show email details (from, to, subject, body)', scope: 'gmail.readonly' },
+              { id: '3.5', text: 'Navigate through folders: Inbox, Sent, Starred', scope: 'gmail.readonly' },
+            ]
+          }
+        ]
+      },
+      {
+        id: 'gmail-manage',
+        title: 'Part 3B: Gmail - Managing',
+        icon: '&#128221;',
+        subsections: [
+          {
+            title: 'Scene 4: Managing Emails (gmail.modify)',
+            items: [
+              { id: '4.1', text: 'Star an email (click star icon)', scope: 'gmail.modify' },
+              { id: '4.2', text: 'Unstar the email', scope: 'gmail.modify' },
+              { id: '4.3', text: 'Mark as unread an email', scope: 'gmail.modify' },
+              { id: '4.4', text: 'Mark as read the email', scope: 'gmail.modify' },
+              { id: '4.5', text: 'Archive an email', scope: 'gmail.modify' },
+              { id: '4.6', text: 'Delete (move to trash) an email', scope: 'gmail.modify' },
+            ]
+          }
+        ]
+      },
+      {
+        id: 'gmail-compose',
+        title: 'Part 3C: Gmail - Composing',
+        icon: '&#9998;',
+        subsections: [
+          {
+            title: 'Scene 5: Composing (gmail.compose)',
+            items: [
+              { id: '5.1', text: 'Click Compose / New Email button' },
+              { id: '5.2', text: 'Fill in recipient email address' },
+              { id: '5.3', text: 'Fill in subject line' },
+              { id: '5.4', text: 'Write email body content' },
+              { id: '5.5', text: 'Save as Draft', scope: 'gmail.compose' },
+              { id: '5.6', text: 'Show draft appears in Drafts folder', scope: 'gmail.compose' },
+            ]
+          },
+          {
+            title: 'Scene 6: Sending (gmail.send)',
+            items: [
+              { id: '6.1', text: 'Open a draft or compose new email' },
+              { id: '6.2', text: 'Click Send button', scope: 'gmail.send' },
+              { id: '6.3', text: 'Show success confirmation' },
+              { id: '6.4', text: 'Verify email appears in Sent folder' },
+            ]
+          },
+          {
+            title: 'Scene 7: Replying',
+            items: [
+              { id: '7.1', text: 'Open an email from inbox' },
+              { id: '7.2', text: 'Click Reply button' },
+              { id: '7.3', text: 'Type reply message' },
+              { id: '7.4', text: 'Send the reply', scope: 'gmail.send' },
+              { id: '7.5', text: 'Show threaded conversation' },
+            ]
+          }
+        ]
+      },
+      {
+        id: 'calendar',
+        title: 'Part 4: Google Calendar',
+        icon: '&#128197;',
+        subsections: [
+          {
+            title: 'Scene 8: Viewing (calendar.readonly)',
+            items: [
+              { id: '8.1', text: 'Navigate to Calendar section' },
+              { id: '8.2', text: 'Show calendar loading with events', scope: 'calendar.readonly' },
+              { id: '8.3', text: 'Click through views (day/week/month)' },
+              { id: '8.4', text: 'Click on an event to view details', scope: 'calendar.readonly' },
+              { id: '8.5', text: 'Show event info (title, time, location)', scope: 'calendar.readonly' },
+            ]
+          },
+          {
+            title: 'Scene 9: Creating (calendar.events)',
+            items: [
+              { id: '9.1', text: 'Click Create Event / + Add button' },
+              { id: '9.2', text: 'Fill in event title' },
+              { id: '9.3', text: 'Set date and time' },
+              { id: '9.4', text: 'Add location (optional)' },
+              { id: '9.5', text: 'Add description (optional)' },
+              { id: '9.6', text: 'Save the event', scope: 'calendar.events' },
+              { id: '9.7', text: 'Show new event on calendar' },
+            ]
+          },
+          {
+            title: 'Scene 10-11: Edit & Delete',
+            items: [
+              { id: '10.1', text: 'Click on an existing event' },
+              { id: '10.2', text: 'Click Edit button' },
+              { id: '10.3', text: 'Modify event details' },
+              { id: '10.4', text: 'Save changes', scope: 'calendar.events' },
+              { id: '11.1', text: 'Click on event to delete' },
+              { id: '11.2', text: 'Click Delete button' },
+              { id: '11.3', text: 'Confirm deletion', scope: 'calendar.events' },
+            ]
+          }
+        ]
+      },
+      {
+        id: 'contacts',
+        title: 'Part 5: Google Contacts',
+        icon: '&#128101;',
+        subsections: [
+          {
+            title: 'Scene 12: Viewing (contacts.readonly)',
+            items: [
+              { id: '12.1', text: 'Navigate to Contacts section' },
+              { id: '12.2', text: 'Show contacts synced from Google', scope: 'contacts.readonly' },
+              { id: '12.3', text: 'Click on a contact to view details', scope: 'contacts.readonly' },
+              { id: '12.4', text: 'Show contact info (name, email, phone)', scope: 'contacts.readonly' },
+              { id: '12.5', text: 'Search for a contact by name' },
+            ]
+          },
+          {
+            title: 'Scene 13: Using Contacts',
+            items: [
+              { id: '13.1', text: 'Start composing an email' },
+              { id: '13.2', text: 'Show contact suggestions', scope: 'contacts.readonly' },
+              { id: '13.3', text: 'Select a contact from suggestions', scope: 'contacts.readonly' },
+            ]
+          }
+        ]
+      },
+      {
+        id: 'drive',
+        title: 'Part 6: Google Drive Export',
+        icon: '&#128194;',
+        subsections: [
+          {
+            title: 'Scene 20: Archives Export (drive.file)',
+            items: [
+              { id: '20.1', text: 'Navigate to Archives section' },
+              { id: '20.2', text: 'Show "Google Drive connected" indicator', scope: 'drive.file' },
+              { id: '20.3', text: 'Select an archive item (transcript, meeting note, etc.)' },
+              { id: '20.4', text: 'Click "Export to Drive" button', scope: 'drive.file' },
+              { id: '20.5', text: 'Show success message with Drive link', scope: 'drive.file' },
+              { id: '20.6', text: 'Show Drive icon indicator on exported item', scope: 'drive.file' },
+              { id: '20.7', text: '(Optional) Open Google Drive to verify file exists' },
+            ]
+          },
+          {
+            title: 'Scene 21: Bulk Export',
+            items: [
+              { id: '21.1', text: 'Select multiple archive items' },
+              { id: '21.2', text: 'Click bulk "Export to Drive" button' },
+              { id: '21.3', text: 'Show export progress indicator' },
+              { id: '21.4', text: 'Show completion with count of exported items' },
+            ]
+          }
+        ]
+      },
+      {
+        id: 'account',
+        title: 'Part 7: Account Management',
+        icon: '&#9881;',
+        subsections: [
+          {
+            title: 'Scene 14: Account Menu',
+            items: [
+              { id: '14.1', text: 'Click on profile picture in sidebar' },
+              { id: '14.2', text: 'Show account dropdown with options' },
+              { id: '14.3', text: 'Show Change Account option' },
+              { id: '14.4', text: 'Show Add Account option' },
+              { id: '14.5', text: 'Show Manage your Google Account option' },
+              { id: '14.6', text: 'Show Disconnect Google Account option' },
+              { id: '14.7', text: 'Show Revoke Access & Sign Out option' },
+            ]
+          },
+          {
+            title: 'Scene 15-17: Account Actions',
+            items: [
+              { id: '15.1', text: 'Click Manage your Google Account' },
+              { id: '15.2', text: 'Show it opens Google Account page' },
+              { id: '16.1', text: 'Click Disconnect Google Account' },
+              { id: '16.2', text: 'Show confirmation dialog' },
+              { id: '17.1', text: 'Click Revoke Access & Sign Out' },
+              { id: '17.2', text: 'Show confirmation explaining consequences' },
+            ]
+          }
+        ]
+      },
+      {
+        id: 'privacy',
+        title: 'Part 8: Privacy Policy',
+        icon: '&#128220;',
+        subsections: [
+          {
+            title: 'Scene 22: Privacy Documentation',
+            items: [
+              { id: '22.1', text: 'Navigate to Privacy Policy page' },
+              { id: '22.2', text: 'Scroll to Section 4: Google API Services' },
+              { id: '22.3', text: 'Show 4.1 Authentication Permissions (email, profile)' },
+              { id: '22.4', text: 'Show 4.2 Google Calendar Permissions (calendar.readonly, calendar.events)' },
+              { id: '22.5', text: 'Show 4.3 Gmail Permissions (gmail.readonly, gmail.send, gmail.compose, gmail.modify)' },
+              { id: '22.6', text: 'Show 4.4 Google Contacts Permissions (contacts.readonly)' },
+              { id: '22.7', text: 'Show 4.5 Google Drive Permissions (drive.file)' },
+              { id: '22.8', text: 'Show 4.6 Data Handling section' },
+              { id: '22.9', text: 'Show link to Google API User Data Policy' },
+              { id: '22.10', text: 'Show Section 8: Your Rights (including revoke access)' },
+            ]
+          }
+        ]
+      },
+      {
+        id: 'signout',
+        title: 'Part 9: Sign Out',
+        icon: '&#128682;',
+        subsections: [
+          {
+            title: 'Scene 23: Sign Out Flow',
+            items: [
+              { id: '23.1', text: 'Click on account menu' },
+              { id: '23.2', text: 'Click Sign Out' },
+              { id: '23.3', text: 'Show app returns to logged-out state' },
+              { id: '23.4', text: '(Optional) Show re-login requests permissions again' },
+            ]
+          }
+        ]
+      }
+    ];
+
+    let checkedItems = new Set();
+
+    function init() {
+      loadProgress();
+      renderScopes();
+      renderSections();
+      updateStats();
+    }
+
+    function renderScopes() {
+      const tbody = document.getElementById('scopesBody');
+      tbody.innerHTML = SCOPES.map(scope => `
+        <tr>
+          <td><span class="scope-status ${isScopeCovered(scope.id) ? 'done' : 'pending'}" id="scope-${scope.id}">${isScopeCovered(scope.id) ? '&#10003;' : ''}</span></td>
+          <td><span class="scope-badge">${scope.name}</span></td>
+          <td>${scope.api}</td>
+          <td>${scope.purpose}</td>
+        </tr>
+      `).join('');
+    }
+
+    function isScopeCovered(scopeId) {
+      const scope = SCOPES.find(s => s.id === scopeId);
+      if (!scope) return false;
+      return scope.items.some(itemId => checkedItems.has(itemId));
+    }
+
+    function renderSections() {
+      const container = document.getElementById('sectionsContainer');
+      container.innerHTML = SECTIONS.map(section => {
+        const totalItems = section.subsections.reduce((acc, sub) => acc + sub.items.length, 0);
+        const checkedCount = section.subsections.reduce((acc, sub) =>
+          acc + sub.items.filter(item => checkedItems.has(item.id)).length, 0);
+
+        return `
+          <div class="section" id="section-${section.id}">
+            <div class="section-header">
+              <div class="section-title">
+                <span class="icon">${section.icon}</span>
+                ${section.title}
+              </div>
+              <span class="section-progress">${checkedCount}/${totalItems}</span>
+            </div>
+            <div class="section-content">
+              ${section.subsections.map(sub => `
+                <div class="subsection">
+                  <div class="subsection-title">${sub.title}</div>
+                  ${sub.items.map(item => `
+                    <div class="checkbox-item ${checkedItems.has(item.id) ? 'checked' : ''}"
+                         onclick="toggleItem('${item.id}')">
+                      <div class="checkbox"></div>
+                      <div class="item-content">
+                        <span class="item-id">${item.id}</span>
+                        <span class="item-text">${item.text}</span>
+                        ${item.scope ? `<span class="item-scope">${item.scope}</span>` : ''}
+                      </div>
+                    </div>
+                  `).join('')}
+                </div>
+              `).join('')}
+            </div>
+          </div>
+        `;
+      }).join('');
+    }
+
+    function toggleItem(id) {
+      if (checkedItems.has(id)) {
+        checkedItems.delete(id);
+      } else {
+        checkedItems.add(id);
+      }
+      renderSections();
+      renderScopes();
+      updateStats();
+      saveProgress();
+    }
+
+    function updateStats() {
+      const totalItems = SECTIONS.reduce((acc, section) =>
+        acc + section.subsections.reduce((acc2, sub) => acc2 + sub.items.length, 0), 0);
+      const completedCount = checkedItems.size;
+      const remaining = totalItems - completedCount;
+      const percentage = Math.round((completedCount / totalItems) * 100);
+
+      document.getElementById('completedCount').textContent = completedCount;
+      document.getElementById('remainingCount').textContent = remaining;
+      document.getElementById('progressFill').style.width = percentage + '%';
+      document.getElementById('progressText').textContent = percentage + '%';
+
+      const scopesCovered = SCOPES.filter(s => isScopeCovered(s.id)).length;
+      document.getElementById('scopesCovered').textContent = `${scopesCovered}/${SCOPES.length}`;
+    }
+
+    function resetAll() {
+      if (confirm('Reset all checkboxes? This cannot be undone.')) {
+        checkedItems.clear();
+        localStorage.removeItem('pulseOAuthChecklist');
+        renderSections();
+        renderScopes();
+        updateStats();
+        document.getElementById('lastSaved').textContent = 'Never';
+      }
+    }
+
+    function saveProgress() {
+      const data = {
+        checkedItems: Array.from(checkedItems),
+        savedAt: new Date().toISOString()
+      };
+      localStorage.setItem('pulseOAuthChecklist', JSON.stringify(data));
+      document.getElementById('lastSaved').textContent = new Date().toLocaleString();
+    }
+
+    function loadProgress() {
+      const saved = localStorage.getItem('pulseOAuthChecklist');
+      if (saved) {
+        const data = JSON.parse(saved);
+        checkedItems = new Set(data.checkedItems);
+        document.getElementById('lastSaved').textContent = new Date(data.savedAt).toLocaleString();
+      }
+    }
+
+    function exportProgress() {
+      saveProgress();
+      const data = localStorage.getItem('pulseOAuthChecklist');
+      const blob = new Blob([data], { type: 'application/json' });
+      const url = URL.createObjectURL(blob);
+      const a = document.createElement('a');
+      a.href = url;
+      a.download = `pulse-oauth-checklist-${new Date().toISOString().split('T')[0]}.json`;
+      a.click();
+      URL.revokeObjectURL(url);
+    }
+
+    init();
+  </script>
+</body>
+</html>

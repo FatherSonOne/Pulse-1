@@ -1,0 +1,748 @@
+<!doctype html>
+<html lang="en">
+<head>
+  <meta charset="utf-8" />
+  <meta name="viewport" content="width=device-width,initial-scale=1" />
+  <title>Pulse Search – Style Options Dashboard</title>
+  <style>
+    :root{
+      --bg: #0b1220;
+      --bg2:#0b1220;
+      --text:#eaf0ff;
+      --muted:#a7b4d6;
+      --card: rgba(255,255,255,0.06);
+      --card-border: rgba(255,255,255,0.10);
+      --shadow: 0 18px 40px rgba(0,0,0,0.35);
+      --radius: 18px;
+
+      --accent:#6d5efc;
+      --accent2:#00d4ff;
+
+      --focus: 0 0 0 4px rgba(109,94,252,0.18), 0 0 0 1px rgba(109,94,252,0.55);
+      --lift: translateY(-4px);
+
+      --panel-blur: 14px;
+      --panel-opaque: 0.72;
+      --transition: 220ms cubic-bezier(.2,.9,.2,1);
+
+      --font: ui-sans-serif, system-ui, -apple-system, Segoe UI, Roboto, Arial, "Apple Color Emoji","Segoe UI Emoji";
+      --mono: ui-monospace, SFMono-Regular, Menlo, Monaco, Consolas, "Liberation Mono", "Courier New", monospace;
+
+      --ripple: rgba(255,255,255,0.22);
+    }
+
+    /* Base layout */
+    *{box-sizing:border-box}
+    html,body{height:100%}
+    body{
+      margin:0;
+      font-family: var(--font);
+      color: var(--text);
+      background: radial-gradient(1200px 900px at 18% 10%, rgba(109,94,252,0.24), transparent 55%),
+                  radial-gradient(900px 700px at 82% 26%, rgba(0,212,255,0.18), transparent 56%),
+                  linear-gradient(180deg, var(--bg), var(--bg2));
+    }
+    .wrap{
+      max-width: 1180px;
+      margin: 0 auto;
+      padding: 28px 18px 40px;
+    }
+
+    header{
+      display:flex;
+      align-items:flex-start;
+      justify-content:space-between;
+      gap:16px;
+      margin-bottom: 18px;
+      opacity: 0;
+      transform: translateY(10px);
+      animation: intro 520ms ease forwards;
+    }
+    @keyframes intro { to { opacity: 1; transform: translateY(0);} }
+
+    .title{
+      display:flex; flex-direction:column; gap:6px;
+    }
+    h1{
+      margin:0;
+      font-size: 20px;
+      letter-spacing: 0.2px;
+      font-weight: 700;
+    }
+    .subtitle{
+      color: var(--muted);
+      font-size: 13px;
+      line-height: 1.35;
+      max-width: 66ch;
+    }
+
+    .toolbar{
+      display:flex;
+      gap:10px;
+      align-items:center;
+      flex-wrap:wrap;
+      justify-content:flex-end;
+    }
+
+    .btn{
+      border: 1px solid var(--card-border);
+      background: var(--card);
+      color: var(--text);
+      border-radius: 12px;
+      padding: 10px 12px;
+      cursor:pointer;
+      transition: transform var(--transition), box-shadow var(--transition), border-color var(--transition), background var(--transition);
+      box-shadow: none;
+      user-select:none;
+      position:relative;
+      overflow:hidden;
+    }
+    .btn:hover{ transform: var(--lift); border-color: rgba(255,255,255,0.18); }
+    .btn:active{ transform: translateY(-1px) scale(0.99); }
+
+    .grid{
+      display:grid;
+      grid-template-columns: 1.2fr 0.8fr;
+      gap: 14px;
+      align-items: start;
+    }
+    @media (max-width: 980px){
+      .grid{ grid-template-columns: 1fr; }
+    }
+
+    .panel{
+      border: 1px solid var(--card-border);
+      background: rgba(255,255,255,var(--panel-opaque));
+      color: #0b1220;
+      border-radius: var(--radius);
+      box-shadow: var(--shadow);
+      padding: 14px;
+      position:relative;
+      overflow:hidden;
+      transition: background var(--transition), border-color var(--transition), box-shadow var(--transition);
+    }
+
+    /* Glass effect with fallback */
+    .panel.glasslike{
+      background: rgba(255,255,255,0.10);
+      color: var(--text);
+    }
+    @supports (backdrop-filter: blur(10px)) or (-webkit-backdrop-filter: blur(10px)){
+      .panel.glasslike{
+        backdrop-filter: blur(var(--panel-blur));
+        -webkit-backdrop-filter: blur(var(--panel-blur));
+        background: rgba(255,255,255,0.10);
+      }
+    }
+
+    .panelHead{
+      display:flex;
+      align-items:center;
+      justify-content:space-between;
+      gap:10px;
+      margin-bottom: 10px;
+    }
+    .panelTitle{
+      font-weight: 800;
+      font-size: 13px;
+      letter-spacing: 0.25px;
+      text-transform: uppercase;
+      opacity: 0.92;
+    }
+
+    /* Style cards */
+    .styleGrid{
+      display:grid;
+      grid-template-columns: repeat(2, minmax(0,1fr));
+      gap: 10px;
+    }
+    @media (max-width: 560px){
+      .styleGrid{ grid-template-columns: 1fr; }
+    }
+
+    .card{
+      border: 1px solid var(--card-border);
+      background: var(--card);
+      color: var(--text);
+      border-radius: 16px;
+      padding: 12px 12px 10px;
+      cursor:pointer;
+      transition: transform var(--transition), box-shadow var(--transition), border-color var(--transition), background var(--transition);
+      position:relative;
+      overflow:hidden;
+      min-height: 104px;
+    }
+    .card:hover{ transform: var(--lift); border-color: rgba(255,255,255,0.18); }
+    .card.selected{
+      border-color: rgba(109,94,252,0.75);
+      box-shadow: 0 0 0 1px rgba(109,94,252,0.45), 0 20px 50px rgba(0,0,0,0.35);
+      animation: selectedPulse 1400ms ease-in-out infinite;
+    }
+    @keyframes selectedPulse{
+      0%,100%{ filter: saturate(1); }
+      50%{ filter: saturate(1.18); }
+    }
+
+    .cardTop{ display:flex; align-items:center; justify-content:space-between; gap:10px; }
+    .cardName{ font-weight: 800; font-size: 14px; }
+    .badge{
+      font-size: 11px;
+      padding: 5px 8px;
+      border-radius: 999px;
+      border: 1px solid var(--card-border);
+      color: var(--muted);
+      background: rgba(255,255,255,0.04);
+      white-space:nowrap;
+    }
+    .cardDesc{
+      margin-top: 8px;
+      color: var(--muted);
+      font-size: 12px;
+      line-height: 1.35;
+    }
+
+    /* Preview search */
+    .searchWrap{
+      margin-top: 10px;
+      display:flex;
+      gap:10px;
+      align-items:center;
+    }
+    .search{
+      flex:1;
+      display:flex;
+      gap:10px;
+      align-items:center;
+      border-radius: 16px;
+      padding: 12px 12px;
+      border: 1px solid var(--card-border);
+      background: rgba(255,255,255,0.06);
+      transition: transform var(--transition), box-shadow var(--transition), border-color var(--transition), background var(--transition);
+      position:relative;
+      overflow:hidden;
+    }
+    .search:hover{ border-color: rgba(255,255,255,0.18); }
+    .search:focus-within{
+      transform: translateY(-2px);
+      box-shadow: var(--focus);
+      border-color: rgba(109,94,252,0.55);
+    }
+
+    .icon{
+      width: 36px; height: 36px;
+      border-radius: 12px;
+      display:grid; place-items:center;
+      border: 1px solid var(--card-border);
+      background: rgba(255,255,255,0.06);
+      position:relative;
+      animation: gentlePulse 2600ms ease-in-out infinite;
+    }
+    @keyframes gentlePulse{
+      0%,100%{ box-shadow: 0 0 0 0 rgba(0,0,0,0); transform: translateZ(0);}
+      50%{ box-shadow: 0 0 0 6px rgba(109,94,252,0.10); }
+    }
+
+    .icon svg{ width:18px; height:18px; opacity:0.95; }
+    .q{
+      width:100%;
+      border:none;
+      outline:none;
+      background: transparent;
+      color: var(--text);
+      font-size: 14px;
+    }
+    .q::placeholder{ color: rgba(167,180,214,0.75); }
+
+    /* Suggestions */
+    .suggestions{
+      margin-top: 10px;
+      display:grid;
+      gap: 8px;
+    }
+    .result{
+      border: 1px solid var(--card-border);
+      background: rgba(255,255,255,0.05);
+      border-radius: 14px;
+      padding: 10px 10px;
+      display:flex;
+      justify-content:space-between;
+      gap:12px;
+      align-items:center;
+      transform: translateY(10px);
+      opacity: 0;
+      animation: enter 380ms ease forwards;
+    }
+    .result:nth-child(2){ animation-delay: 60ms; }
+    .result:nth-child(3){ animation-delay: 120ms; }
+    .result:nth-child(4){ animation-delay: 180ms; }
+    @keyframes enter { to { opacity: 1; transform: translateY(0);} }
+
+    .result:hover{ transform: translateY(-2px); transition: transform var(--transition); }
+    .rTitle{ font-weight: 800; font-size: 13px; }
+    .rSub{ color: var(--muted); font-size: 12px; margin-top:2px; }
+    .chip{
+      font-size: 11px;
+      padding: 6px 8px;
+      border-radius: 999px;
+      border: 1px solid var(--card-border);
+      color: var(--muted);
+      background: rgba(255,255,255,0.03);
+      white-space:nowrap;
+    }
+
+    /* Right side: tokens / clipboard */
+    .mono{
+      font-family: var(--mono);
+      font-size: 12px;
+      line-height: 1.35;
+      white-space: pre;
+      overflow:auto;
+      border-radius: 14px;
+      padding: 12px;
+      border: 1px solid var(--card-border);
+      background: rgba(0,0,0,0.22);
+      color: rgba(234,240,255,0.95);
+      max-height: 330px;
+    }
+
+    .toast{
+      position: fixed;
+      right: 16px;
+      bottom: 16px;
+      border: 1px solid var(--card-border);
+      background: rgba(0,0,0,0.50);
+      color: var(--text);
+      padding: 10px 12px;
+      border-radius: 12px;
+      box-shadow: 0 16px 40px rgba(0,0,0,0.35);
+      opacity: 0;
+      transform: translateY(10px);
+      pointer-events:none;
+      transition: opacity var(--transition), transform var(--transition);
+    }
+    .toast.show{ opacity: 1; transform: translateY(0); }
+
+    /* Simple ripple */
+    .ripple::after{
+      content:"";
+      position:absolute;
+      inset:0;
+      background: radial-gradient(circle at var(--rx,50%) var(--ry,50%), var(--ripple) 0%, transparent 42%);
+      opacity: 0;
+      transform: scale(1.4);
+      transition: opacity 420ms ease, transform 420ms ease;
+      pointer-events:none;
+    }
+    .ripple.rippling::after{
+      opacity: 1;
+      transform: scale(1);
+    }
+  </style>
+</head>
+
+<body>
+  <div class="wrap">
+    <header>
+      <div class="title">
+        <h1>Pulse Search – Design Style Options</h1>
+        <div class="subtitle">Click a style to apply theme tokens to the preview search UI, results, and buttons. Use “Copy CSS Tokens” to paste into your app and iterate.</div>
+      </div>
+      <div class="toolbar">
+        <button id="copyBtn" class="btn ripple" type="button">Copy CSS Tokens</button>
+        <button id="resetBtn" class="btn ripple" type="button">Reset</button>
+      </div>
+    </header>
+
+    <div class="grid">
+      <!-- Left: style cards + preview -->
+      <section class="panel glasslike" id="leftPanel">
+        <div class="panelHead">
+          <div class="panelTitle">Style selector</div>
+          <div class="badge" id="activeLabel">Modern Minimalist Glass</div>
+        </div>
+
+        <div class="styleGrid" id="styleGrid"></div>
+
+        <div style="height:12px"></div>
+
+        <div class="panelHead">
+          <div class="panelTitle">Interactive preview</div>
+          <div class="badge" id="animLabel">Animations: on</div>
+        </div>
+
+        <div class="searchWrap">
+          <div class="search" id="searchBar">
+            <div class="icon" id="searchIcon" aria-hidden="true" title="Search">
+              <svg viewBox="0 0 24 24" fill="none">
+                <path d="M10.5 18a7.5 7.5 0 1 1 0-15a7.5 7.5 0 0 1 0 15Z" stroke="currentColor" stroke-width="2" opacity="0.95"/>
+                <path d="M16.4 16.4L21 21" stroke="currentColor" stroke-width="2" stroke-linecap="round"/>
+              </svg>
+            </div>
+            <input id="q" class="q" placeholder="Search Pulse… (try: glass, neon, material, brutal)" autocomplete="off" />
+          </div>
+          <button id="searchBtn" class="btn ripple" type="button">Search</button>
+        </div>
+
+        <div class="suggestions" id="results"></div>
+      </section>
+
+      <!-- Right: tokens/clipboard -->
+      <aside class="panel glasslike" id="rightPanel">
+        <div class="panelHead">
+          <div class="panelTitle">Theme tokens (CSS)</div>
+          <div class="badge" id="tokenHint">Paste into :root</div>
+        </div>
+        <div id="tokenBox" class="mono"></div>
+
+        <div style="height:10px"></div>
+
+        <div class="panelHead">
+          <div class="panelTitle">Recommended animations</div>
+          <div class="badge">Included</div>
+        </div>
+        <div class="mono" style="max-height:220px; white-space:normal">
+          <ul style="margin:0; padding-left:18px">
+            <li>Gentle pulse on search icon (2–3s loop)</li>
+            <li>Hover glow + focus expand on search bar</li>
+            <li>Staggered fade/slide-in for results</li>
+            <li>Selected style card pulse</li>
+            <li>Slide-in toast on copy</li>
+          </ul>
+        </div>
+      </aside>
+    </div>
+  </div>
+
+  <div id="toast" class="toast">Copied tokens to clipboard.</div>
+
+  <script>
+    const STYLES = [
+      {
+        id: "glass",
+        name: "Modern Minimalist Glass",
+        badge: "Glassmorphism",
+        desc: "Clean glass panels, subtle gradients, soft shadows; macOS/iOS-inspired.",
+        tokens: {
+          bg:"#0b1220", bg2:"#070b14",
+          text:"#eaf0ff", muted:"#a7b4d6",
+          card:"rgba(255,255,255,0.07)",
+          cardBorder:"rgba(255,255,255,0.14)",
+          shadow:"0 18px 40px rgba(0,0,0,0.35)",
+          radius:"18px",
+          accent:"#6d5efc", accent2:"#00d4ff",
+          panelBlur:"16px", panelOpaque:"0.10",
+          ripple:"rgba(255,255,255,0.20)"
+        }
+      },
+      {
+        id: "neo",
+        name: "Bold Neomorphic",
+        badge: "Tactile",
+        desc: "Soft raised/inset depth; press-down interactions; calm highlights.",
+        tokens: {
+          bg:"#e7ecf4", bg2:"#dfe6f2",
+          text:"#121826", muted:"#4b5876",
+          card:"rgba(255,255,255,0.75)",
+          cardBorder:"rgba(18,24,38,0.10)",
+          shadow:"14px 14px 28px rgba(55,65,81,0.18), -14px -14px 28px rgba(255,255,255,0.90)",
+          radius:"18px",
+          accent:"#3b82f6", accent2:"#22c55e",
+          panelBlur:"0px", panelOpaque:"0.88",
+          ripple:"rgba(59,130,246,0.22)"
+        }
+      },
+      {
+        id: "dark",
+        name: "Premium Dark Mode",
+        badge: "Neon",
+        desc: "Deep blacks, neon accents, glows and shimmer for a gaming/cyber feel.",
+        tokens: {
+          bg:"#05060a", bg2:"#0a0b12",
+          text:"#f3f6ff", muted:"#98a6c8",
+          card:"rgba(255,255,255,0.05)",
+          cardBorder:"rgba(0,212,255,0.22)",
+          shadow:"0 24px 60px rgba(0,0,0,0.55)",
+          radius:"18px",
+          accent:"#00d4ff", accent2:"#ff2bd6",
+          panelBlur:"14px", panelOpaque:"0.08",
+          ripple:"rgba(0,212,255,0.18)"
+        }
+      },
+      {
+        id: "grad",
+        name: "Elegant Gradient",
+        badge: "SaaS",
+        desc: "Rich animated gradient vibe; smooth color transitions; premium polish.",
+        tokens: {
+          bg:"#0b1020", bg2:"#141a34",
+          text:"#eef1ff", muted:"#b2b9db",
+          card:"rgba(255,255,255,0.06)",
+          cardBorder:"rgba(255,255,255,0.13)",
+          shadow:"0 22px 55px rgba(0,0,0,0.40)",
+          radius:"18px",
+          accent:"#8b5cf6", accent2:"#22d3ee",
+          panelBlur:"12px", panelOpaque:"0.10",
+          ripple:"rgba(139,92,246,0.18)"
+        }
+      },
+      {
+        id: "m3",
+        name: "Material Design 3",
+        badge: "Material You",
+        desc: "Material-style elevation, states, and ripple-ready interactions.",
+        tokens: {
+          bg:"#0f172a", bg2:"#111827",
+          text:"#f8fafc", muted:"#cbd5e1",
+          card:"rgba(255,255,255,0.06)",
+          cardBorder:"rgba(255,255,255,0.12)",
+          shadow:"0 12px 30px rgba(0,0,0,0.30)",
+          radius:"18px",
+          accent:"#a78bfa", accent2:"#60a5fa",
+          panelBlur:"10px", panelOpaque:"0.10",
+          ripple:"rgba(248,250,252,0.18)"
+        }
+      },
+      {
+        id: "brut",
+        name: "Brutalist Bold",
+        badge: "High contrast",
+        desc: "Thick borders, stark typography, snappy movement, geometric punch.",
+        tokens: {
+          bg:"#ffffff", bg2:"#f3f4f6",
+          text:"#0b0f19", muted:"#111827",
+          card:"rgba(255,255,255,1)",
+          cardBorder:"rgba(11,15,25,1)",
+          shadow:"6px 6px 0 rgba(11,15,25,1)",
+          radius:"0px",
+          accent:"#111827", accent2:"#f97316",
+          panelBlur:"0px", panelOpaque:"1.0",
+          ripple:"rgba(249,115,22,0.28)"
+        }
+      },
+      {
+        id: "pastel",
+        name: "Soft Pastel",
+        badge: "Friendly",
+        desc: "Pastel palette, soft rounded edges, gentle shadows and motion.",
+        tokens: {
+          bg:"#f8fafc", bg2:"#f1f5ff",
+          text:"#0f172a", muted:"#4b5563",
+          card:"rgba(255,255,255,0.92)",
+          cardBorder:"rgba(15,23,42,0.10)",
+          shadow:"0 16px 40px rgba(15,23,42,0.12)",
+          radius:"22px",
+          accent:"#fb7185", accent2:"#60a5fa",
+          panelBlur:"0px", panelOpaque:"0.92",
+          ripple:"rgba(251,113,133,0.18)"
+        }
+      },
+      {
+        id: "corp",
+        name: "Corporate Professional",
+        badge: "Enterprise",
+        desc: "Clean blues/grays; subtle elevation; trustworthy, restrained polish.",
+        tokens: {
+          bg:"#0b1220", bg2:"#0a1630",
+          text:"#eef2ff", muted:"#b3c0e0",
+          card:"rgba(255,255,255,0.06)",
+          cardBorder:"rgba(255,255,255,0.12)",
+          shadow:"0 14px 34px rgba(0,0,0,0.35)",
+          radius:"16px",
+          accent:"#2563eb", accent2:"#38bdf8",
+          panelBlur:"10px", panelOpaque:"0.10",
+          ripple:"rgba(37,99,235,0.18)"
+        }
+      }
+    ];
+
+    const DEFAULT_ID = "glass";
+
+    const elStyleGrid = document.getElementById("styleGrid");
+    const elActiveLabel = document.getElementById("activeLabel");
+    const elTokenBox = document.getElementById("tokenBox");
+    const elToast = document.getElementById("toast");
+    const elQ = document.getElementById("q");
+    const elResults = document.getElementById("results");
+    const elCopyBtn = document.getElementById("copyBtn");
+    const elResetBtn = document.getElementById("resetBtn");
+    const elSearchBtn = document.getElementById("searchBtn");
+
+    function cssTokensToText(t){
+      return `:root{
+  --bg: ${t.bg};
+  --bg2: ${t.bg2};
+  --text: ${t.text};
+  --muted: ${t.muted};
+  --card: ${t.card};
+  --card-border: ${t.cardBorder};
+  --shadow: ${t.shadow};
+  --radius: ${t.radius};
+
+  --accent: ${t.accent};
+  --accent2: ${t.accent2};
+
+  --panel-blur: ${t.panelBlur};
+  --panel-opaque: ${t.panelOpaque};
+
+  --ripple: ${t.ripple};
+}`;
+    }
+
+    function applyTokens(t){
+      const r = document.documentElement.style;
+      r.setProperty("--bg", t.bg);
+      r.setProperty("--bg2", t.bg2);
+      r.setProperty("--text", t.text);
+      r.setProperty("--muted", t.muted);
+      r.setProperty("--card", t.card);
+      r.setProperty("--card-border", t.cardBorder);
+      r.setProperty("--shadow", t.shadow);
+      r.setProperty("--radius", t.radius);
+      r.setProperty("--accent", t.accent);
+      r.setProperty("--accent2", t.accent2);
+      r.setProperty("--panel-blur", t.panelBlur);
+      r.setProperty("--panel-opaque", t.panelOpaque);
+      r.setProperty("--ripple", t.ripple);
+
+      // Make buttons/search reflect accent a bit
+      document.body.style.background = `
+        radial-gradient(1200px 900px at 18% 10%, ${hexToRgba(t.accent,0.22)}, transparent 55%),
+        radial-gradient(900px 700px at 82% 26%, ${hexToRgba(t.accent2,0.18)}, transparent 56%),
+        linear-gradient(180deg, var(--bg), var(--bg2))
+      `;
+    }
+
+    function hexToRgba(hex, a){
+      // supports #rgb/#rrggbb, falls back if not hex
+      if(!hex || hex[0] !== "#") return `rgba(255,255,255,${a})`;
+      const h = hex.length === 4
+        ? "#" + [...hex.slice(1)].map(c => c+c).join("")
+        : hex;
+      const n = parseInt(h.slice(1), 16);
+      const r = (n >> 16) & 255, g = (n >> 8) & 255, b = n & 255;
+      return `rgba(${r},${g},${b},${a})`;
+    }
+
+    function setSelected(id){
+      const style = STYLES.find(s => s.id === id) || STYLES[0];
+      document.querySelectorAll(".card").forEach(c => c.classList.toggle("selected", c.dataset.id === style.id));
+      elActiveLabel.textContent = style.name;
+      elTokenBox.textContent = cssTokensToText(style.tokens);
+      applyTokens(style.tokens);
+      renderResults(elQ.value.trim());
+    }
+
+    function renderStyleCards(){
+      elStyleGrid.innerHTML = "";
+      for(const s of STYLES){
+        const card = document.createElement("button");
+        card.type = "button";
+        card.className = "card ripple";
+        card.dataset.id = s.id;
+        card.innerHTML = `
+          <div class="cardTop">
+            <div class="cardName">${s.name}</div>
+            <div class="badge">${s.badge}</div>
+          </div>
+          <div class="cardDesc">${s.desc}</div>
+        `;
+        card.addEventListener("click", () => setSelected(s.id));
+        elStyleGrid.appendChild(card);
+      }
+    }
+
+    function renderResults(q){
+      const query = (q || "").toLowerCase();
+      const items = [
+        { t: "Search Bar", s: "Focus expand, hover glow, icon pulse", tag: "UI" },
+        { t: "Suggestions Dropdown", s: "Slides down smoothly; staggered fade-in", tag: "Motion" },
+        { t: "Result Cards", s: "Hover lift, subtle shadow, selected pulse", tag: "Cards" },
+        { t: "Clipboard / Copy", s: "Slide-in toast confirmation", tag: "Utility" }
+      ].filter(x => !query || (x.t + " " + x.s + " " + x.tag).toLowerCase().includes(query));
+
+      elResults.innerHTML = "";
+      if(items.length === 0){
+        const empty = document.createElement("div");
+        empty.className = "result";
+        empty.innerHTML = `<div><div class="rTitle">No matches</div><div class="rSub">Try “glass”, “material”, “neon”, “cards”.</div></div><div class="chip">Hint</div>`;
+        elResults.appendChild(empty);
+        return;
+      }
+
+      items.forEach((x) => {
+        const row = document.createElement("div");
+        row.className = "result";
+        row.innerHTML = `
+          <div>
+            <div class="rTitle">${x.t}</div>
+            <div class="rSub">${x.s}</div>
+          </div>
+          <div class="chip">${x.tag}</div>
+        `;
+        elResults.appendChild(row);
+      });
+    }
+
+    function showToast(msg){
+      elToast.textContent = msg;
+      elToast.classList.add("show");
+      window.clearTimeout(showToast._t);
+      showToast._t = window.setTimeout(() => elToast.classList.remove("show"), 1200);
+    }
+
+    function addRipple(el, ev){
+      const rect = el.getBoundingClientRect();
+      const x = ((ev.clientX - rect.left) / rect.width) * 100;
+      const y = ((ev.clientY - rect.top) / rect.height) * 100;
+      el.style.setProperty("--rx", x + "%");
+      el.style.setProperty("--ry", y + "%");
+      el.classList.remove("rippling");
+      // restart animation
+      void el.offsetWidth;
+      el.classList.add("rippling");
+      window.setTimeout(() => el.classList.remove("rippling"), 450);
+    }
+
+    document.addEventListener("click", (ev) => {
+      const t = ev.target.closest(".ripple");
+      if(t) addRipple(t, ev);
+    });
+
+    elQ.addEventListener("input", () => renderResults(elQ.value.trim()));
+    elSearchBtn.addEventListener("click", () => {
+      // quick "searching" pulse: bump icon animation briefly
+      const icon = document.getElementById("searchIcon");
+      icon.style.animationDuration = "900ms";
+      setTimeout(() => icon.style.animationDuration = "", 1100);
+      renderResults(elQ.value.trim());
+    });
+
+    elCopyBtn.addEventListener("click", async () => {
+      const text = elTokenBox.textContent;
+      try{
+        await navigator.clipboard.writeText(text);
+        showToast("Copied tokens to clipboard.");
+      }catch{
+        // fallback
+        const ta = document.createElement("textarea");
+        ta.value = text;
+        document.body.appendChild(ta);
+        ta.select();
+        document.execCommand("copy");
+        ta.remove();
+        showToast("Copied (fallback).");
+      }
+    });
+
+    elResetBtn.addEventListener("click", () => {
+      elQ.value = "";
+      setSelected(DEFAULT_ID);
+      showToast("Reset to default style.");
+    });
+
+    // init
+    renderStyleCards();
+    setSelected(DEFAULT_ID);
+  </script>
+</body>
+</html>

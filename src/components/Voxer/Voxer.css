@@ -1,0 +1,1183 @@
+/* ============================================
+   VOXER DESIGN SYSTEM - "Sonic Pulse" Aesthetic
+   Premium, immersive audio experience
+   ============================================ */
+
+/* ============================================
+   CSS CUSTOM PROPERTIES
+   ============================================ */
+:root {
+  /* Core palette */
+  --vox-primary: #6366f1;
+  --vox-primary-light: #818cf8;
+  --vox-primary-dark: #4f46e5;
+
+  /* Mode colors */
+  --vox-radio: #8b5cf6;
+  --vox-threads: #10b981;
+  --vox-team: #f59e0b;
+  --vox-notes: #ec4899;
+  --vox-quick: #3b82f6;
+  --vox-drop: #ef4444;
+  --vox-classic: #f97316;
+
+  /* Light mode */
+  --vox-bg-primary: #ffffff;
+  --vox-bg-secondary: #f8fafc;
+  --vox-bg-tertiary: #f1f5f9;
+  --vox-bg-elevated: #ffffff;
+  --vox-border: rgba(0, 0, 0, 0.08);
+  --vox-border-strong: rgba(0, 0, 0, 0.12);
+  --vox-text-primary: #0f172a;
+  --vox-text-secondary: #475569;
+  --vox-text-muted: #94a3b8;
+  --vox-glass: rgba(255, 255, 255, 0.7);
+  --vox-glass-border: rgba(255, 255, 255, 0.3);
+  --vox-shadow-sm: 0 1px 2px rgba(0, 0, 0, 0.05);
+  --vox-shadow-md: 0 4px 6px -1px rgba(0, 0, 0, 0.1), 0 2px 4px -2px rgba(0, 0, 0, 0.1);
+  --vox-shadow-lg: 0 10px 15px -3px rgba(0, 0, 0, 0.1), 0 4px 6px -4px rgba(0, 0, 0, 0.1);
+  --vox-shadow-xl: 0 20px 25px -5px rgba(0, 0, 0, 0.1), 0 8px 10px -6px rgba(0, 0, 0, 0.1);
+  --vox-glow: rgba(99, 102, 241, 0.3);
+}
+
+.dark {
+  /* Dark mode overrides */
+  --vox-bg-primary: #0a0a0f;
+  --vox-bg-secondary: #12121a;
+  --vox-bg-tertiary: #1a1a25;
+  --vox-bg-elevated: #1e1e2a;
+  --vox-border: rgba(255, 255, 255, 0.06);
+  --vox-border-strong: rgba(255, 255, 255, 0.1);
+  --vox-text-primary: #f8fafc;
+  --vox-text-secondary: #94a3b8;
+  --vox-text-muted: #64748b;
+  --vox-glass: rgba(20, 20, 30, 0.8);
+  --vox-glass-border: rgba(255, 255, 255, 0.08);
+  --vox-shadow-sm: 0 1px 2px rgba(0, 0, 0, 0.3);
+  --vox-shadow-md: 0 4px 6px -1px rgba(0, 0, 0, 0.4);
+  --vox-shadow-lg: 0 10px 15px -3px rgba(0, 0, 0, 0.5);
+  --vox-shadow-xl: 0 20px 25px -5px rgba(0, 0, 0, 0.6);
+  --vox-glow: rgba(99, 102, 241, 0.4);
+}
+
+/* ============================================
+   BASE CONTAINER STYLES
+   ============================================ */
+.vox-container {
+  background: var(--vox-bg-primary);
+  color: var(--vox-text-primary);
+  min-height: 100%;
+  position: relative;
+  overflow: hidden;
+}
+
+.vox-container::before {
+  content: '';
+  position: absolute;
+  top: -50%;
+  left: -50%;
+  width: 200%;
+  height: 200%;
+  background: radial-gradient(
+    ellipse at center,
+    rgba(99, 102, 241, 0.03) 0%,
+    transparent 50%
+  );
+  pointer-events: none;
+  animation: vox-ambient-pulse 20s ease-in-out infinite;
+}
+
+.dark .vox-container::before {
+  background: radial-gradient(
+    ellipse at center,
+    rgba(99, 102, 241, 0.08) 0%,
+    transparent 50%
+  );
+}
+
+@keyframes vox-ambient-pulse {
+  0%, 100% { transform: scale(1) rotate(0deg); opacity: 0.5; }
+  50% { transform: scale(1.1) rotate(180deg); opacity: 0.8; }
+}
+
+/* ============================================
+   GLASSMORPHISM PANELS
+   ============================================ */
+.vox-glass {
+  background: var(--vox-glass);
+  backdrop-filter: blur(20px);
+  -webkit-backdrop-filter: blur(20px);
+  border: 1px solid var(--vox-glass-border);
+  border-radius: 20px;
+  box-shadow: var(--vox-shadow-lg);
+}
+
+.vox-glass-subtle {
+  background: var(--vox-glass);
+  backdrop-filter: blur(12px);
+  -webkit-backdrop-filter: blur(12px);
+  border: 1px solid var(--vox-glass-border);
+  border-radius: 16px;
+}
+
+/* ============================================
+   AUDIO VISUALIZER STYLES
+   ============================================ */
+.vox-visualizer-container {
+  position: relative;
+  border-radius: 24px;
+  overflow: hidden;
+  background: linear-gradient(
+    135deg,
+    var(--vox-bg-tertiary) 0%,
+    var(--vox-bg-secondary) 100%
+  );
+}
+
+.vox-visualizer-glow {
+  position: absolute;
+  inset: 0;
+  background: radial-gradient(
+    circle at 50% 50%,
+    var(--vox-glow) 0%,
+    transparent 70%
+  );
+  opacity: 0;
+  transition: opacity 0.3s ease;
+  pointer-events: none;
+}
+
+.vox-visualizer-container.recording .vox-visualizer-glow {
+  opacity: 1;
+  animation: vox-pulse-glow 1.5s ease-in-out infinite;
+}
+
+@keyframes vox-pulse-glow {
+  0%, 100% { opacity: 0.5; transform: scale(1); }
+  50% { opacity: 0.8; transform: scale(1.05); }
+}
+
+.vox-visualizer-bars {
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  gap: 3px;
+  height: 100%;
+  padding: 16px;
+}
+
+.vox-visualizer-bar {
+  width: 4px;
+  border-radius: 4px;
+  background: linear-gradient(
+    to top,
+    var(--vox-primary) 0%,
+    var(--vox-primary-light) 100%
+  );
+  transition: height 0.05s ease-out;
+  min-height: 4px;
+}
+
+.vox-visualizer-bar.active {
+  box-shadow: 0 0 12px var(--vox-glow);
+}
+
+/* Circular visualizer */
+.vox-visualizer-circular {
+  position: relative;
+  width: 200px;
+  height: 200px;
+  border-radius: 50%;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+}
+
+.vox-visualizer-ring {
+  position: absolute;
+  border-radius: 50%;
+  border: 2px solid var(--vox-primary);
+  opacity: 0.3;
+  transition: all 0.1s ease-out;
+}
+
+.vox-visualizer-ring.active {
+  opacity: 0.8;
+  box-shadow: 0 0 20px var(--vox-glow);
+}
+
+/* ============================================
+   PUSH-TO-TALK BUTTON
+   ============================================ */
+.vox-ptt-container {
+  position: relative;
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  gap: 16px;
+}
+
+.vox-ptt-ripple {
+  position: absolute;
+  border-radius: 50%;
+  background: var(--vox-primary);
+  opacity: 0;
+  pointer-events: none;
+}
+
+.vox-ptt-ripple.animate {
+  animation: vox-ripple 1.5s ease-out infinite;
+}
+
+@keyframes vox-ripple {
+  0% {
+    transform: scale(1);
+    opacity: 0.4;
+  }
+  100% {
+    transform: scale(2.5);
+    opacity: 0;
+  }
+}
+
+.vox-ptt-button {
+  position: relative;
+  z-index: 10;
+  border-radius: 50%;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  cursor: pointer;
+  transition: all 0.2s cubic-bezier(0.4, 0, 0.2, 1);
+  border: none;
+  outline: none;
+  background: linear-gradient(
+    135deg,
+    var(--vox-bg-elevated) 0%,
+    var(--vox-bg-tertiary) 100%
+  );
+  box-shadow:
+    var(--vox-shadow-lg),
+    inset 0 1px 0 rgba(255, 255, 255, 0.1);
+}
+
+.dark .vox-ptt-button {
+  background: linear-gradient(
+    135deg,
+    #2a2a3a 0%,
+    #1a1a25 100%
+  );
+}
+
+.vox-ptt-button:hover {
+  transform: scale(1.05);
+  box-shadow: var(--vox-shadow-xl);
+}
+
+.vox-ptt-button:active {
+  transform: scale(0.98);
+}
+
+.vox-ptt-button.recording {
+  background: linear-gradient(
+    135deg,
+    var(--vox-classic) 0%,
+    #dc2626 100%
+  );
+  box-shadow:
+    var(--vox-shadow-xl),
+    0 0 30px rgba(249, 115, 22, 0.5);
+  animation: vox-ptt-pulse 1s ease-in-out infinite;
+}
+
+@keyframes vox-ptt-pulse {
+  0%, 100% { transform: scale(1); }
+  50% { transform: scale(1.02); }
+}
+
+.vox-ptt-icon {
+  color: var(--vox-text-secondary);
+  transition: all 0.2s ease;
+}
+
+.vox-ptt-button.recording .vox-ptt-icon {
+  color: white;
+}
+
+.vox-ptt-timer {
+  font-family: 'JetBrains Mono', 'SF Mono', 'Fira Code', monospace;
+  font-size: 14px;
+  font-weight: 600;
+  color: var(--vox-classic);
+  letter-spacing: 0.05em;
+}
+
+.vox-ptt-hint {
+  font-size: 11px;
+  text-transform: uppercase;
+  letter-spacing: 0.1em;
+  color: var(--vox-text-muted);
+}
+
+/* Size variants */
+.vox-ptt-button.sm { width: 48px; height: 48px; }
+.vox-ptt-button.md { width: 64px; height: 64px; }
+.vox-ptt-button.lg { width: 80px; height: 80px; }
+.vox-ptt-button.xl { width: 96px; height: 96px; }
+
+/* ============================================
+   MODE SELECTOR STYLES
+   ============================================ */
+.vox-mode-selector {
+  display: grid;
+  gap: 12px;
+}
+
+.vox-mode-card {
+  position: relative;
+  padding: 20px;
+  border-radius: 16px;
+  background: var(--vox-bg-secondary);
+  border: 1px solid var(--vox-border);
+  cursor: pointer;
+  transition: all 0.3s cubic-bezier(0.4, 0, 0.2, 1);
+  overflow: hidden;
+}
+
+.vox-mode-card::before {
+  content: '';
+  position: absolute;
+  top: 0;
+  left: 0;
+  right: 0;
+  height: 3px;
+  background: var(--mode-color, var(--vox-primary));
+  opacity: 0;
+  transition: opacity 0.3s ease;
+}
+
+.vox-mode-card:hover {
+  background: var(--vox-bg-tertiary);
+  border-color: var(--vox-border-strong);
+  transform: translateY(-2px);
+  box-shadow: var(--vox-shadow-md);
+}
+
+.vox-mode-card:hover::before {
+  opacity: 1;
+}
+
+.vox-mode-card.selected {
+  background: var(--vox-bg-elevated);
+  border-color: var(--mode-color, var(--vox-primary));
+  box-shadow:
+    var(--vox-shadow-lg),
+    0 0 0 1px var(--mode-color, var(--vox-primary)),
+    0 0 30px color-mix(in srgb, var(--mode-color, var(--vox-primary)) 20%, transparent);
+}
+
+.vox-mode-card.selected::before {
+  opacity: 1;
+}
+
+.vox-mode-icon {
+  width: 48px;
+  height: 48px;
+  border-radius: 14px;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  background: color-mix(in srgb, var(--mode-color, var(--vox-primary)) 15%, transparent);
+  color: var(--mode-color, var(--vox-primary));
+  margin-bottom: 12px;
+  transition: all 0.3s ease;
+}
+
+.vox-mode-card:hover .vox-mode-icon,
+.vox-mode-card.selected .vox-mode-icon {
+  background: var(--mode-color, var(--vox-primary));
+  color: white;
+  box-shadow: 0 4px 14px color-mix(in srgb, var(--mode-color, var(--vox-primary)) 40%, transparent);
+}
+
+.vox-mode-title {
+  font-size: 16px;
+  font-weight: 600;
+  color: var(--vox-text-primary);
+  margin-bottom: 4px;
+}
+
+.vox-mode-tagline {
+  font-size: 13px;
+  color: var(--vox-text-secondary);
+}
+
+/* ============================================
+   RECORDING PREVIEW
+   ============================================ */
+.vox-preview-container {
+  border-radius: 20px;
+  background: var(--vox-bg-secondary);
+  border: 1px solid var(--vox-border);
+  overflow: hidden;
+}
+
+.vox-preview-header {
+  padding: 16px 20px;
+  background: var(--vox-bg-tertiary);
+  border-bottom: 1px solid var(--vox-border);
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+}
+
+.vox-preview-player {
+  padding: 24px;
+  display: flex;
+  align-items: center;
+  gap: 16px;
+}
+
+.vox-preview-play-btn {
+  width: 56px;
+  height: 56px;
+  border-radius: 16px;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  background: var(--vox-primary);
+  color: white;
+  border: none;
+  cursor: pointer;
+  transition: all 0.2s ease;
+  flex-shrink: 0;
+}
+
+.vox-preview-play-btn:hover {
+  transform: scale(1.05);
+  box-shadow: 0 4px 20px color-mix(in srgb, var(--vox-primary) 40%, transparent);
+}
+
+.vox-preview-waveform {
+  flex: 1;
+  height: 64px;
+  position: relative;
+}
+
+.vox-preview-actions {
+  padding: 16px 20px;
+  display: flex;
+  gap: 12px;
+  border-top: 1px solid var(--vox-border);
+}
+
+.vox-preview-btn {
+  flex: 1;
+  padding: 14px;
+  border-radius: 12px;
+  font-size: 14px;
+  font-weight: 600;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  gap: 8px;
+  cursor: pointer;
+  transition: all 0.2s ease;
+  border: none;
+}
+
+.vox-preview-btn.secondary {
+  background: var(--vox-bg-tertiary);
+  color: var(--vox-text-secondary);
+}
+
+.vox-preview-btn.secondary:hover {
+  background: var(--vox-bg-elevated);
+  color: var(--vox-text-primary);
+}
+
+.vox-preview-btn.primary {
+  background: var(--vox-primary);
+  color: white;
+}
+
+.vox-preview-btn.primary:hover {
+  background: var(--vox-primary-dark);
+  box-shadow: 0 4px 14px color-mix(in srgb, var(--vox-primary) 40%, transparent);
+}
+
+/* ============================================
+   MESSAGE BUBBLES
+   ============================================ */
+.vox-bubble {
+  max-width: 85%;
+  padding: 16px;
+  border-radius: 20px;
+  background: var(--vox-bg-secondary);
+  border: 1px solid var(--vox-border);
+  position: relative;
+}
+
+.vox-bubble.sent {
+  margin-left: auto;
+  background: linear-gradient(
+    135deg,
+    var(--vox-primary) 0%,
+    var(--vox-primary-dark) 100%
+  );
+  color: white;
+  border-color: transparent;
+}
+
+.vox-bubble.received {
+  margin-right: auto;
+}
+
+.vox-bubble-waveform {
+  height: 48px;
+  margin: 8px 0;
+  border-radius: 8px;
+  overflow: hidden;
+}
+
+.vox-bubble-meta {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  font-size: 12px;
+  color: var(--vox-text-muted);
+  margin-top: 8px;
+}
+
+.vox-bubble.sent .vox-bubble-meta {
+  color: rgba(255, 255, 255, 0.7);
+}
+
+/* ============================================
+   CHANNEL/CONTACT LISTS
+   ============================================ */
+.vox-list-item {
+  display: flex;
+  align-items: center;
+  gap: 14px;
+  padding: 14px 16px;
+  border-radius: 14px;
+  cursor: pointer;
+  transition: all 0.2s ease;
+  border: 1px solid transparent;
+}
+
+.vox-list-item:hover {
+  background: var(--vox-bg-secondary);
+}
+
+.vox-list-item.active {
+  background: var(--vox-bg-secondary);
+  border-color: var(--vox-border-strong);
+}
+
+.vox-list-avatar {
+  width: 48px;
+  height: 48px;
+  border-radius: 14px;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  font-weight: 600;
+  font-size: 16px;
+  color: white;
+  flex-shrink: 0;
+}
+
+.vox-list-content {
+  flex: 1;
+  min-width: 0;
+}
+
+.vox-list-title {
+  font-size: 15px;
+  font-weight: 600;
+  color: var(--vox-text-primary);
+  white-space: nowrap;
+  overflow: hidden;
+  text-overflow: ellipsis;
+}
+
+.vox-list-subtitle {
+  font-size: 13px;
+  color: var(--vox-text-secondary);
+  white-space: nowrap;
+  overflow: hidden;
+  text-overflow: ellipsis;
+}
+
+.vox-list-badge {
+  min-width: 22px;
+  height: 22px;
+  padding: 0 6px;
+  border-radius: 11px;
+  background: var(--vox-primary);
+  color: white;
+  font-size: 12px;
+  font-weight: 600;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+}
+
+/* ============================================
+   HEADER STYLES
+   ============================================ */
+.vox-header {
+  padding: 16px 20px;
+  display: flex;
+  align-items: center;
+  gap: 16px;
+  border-bottom: 1px solid var(--vox-border);
+  background: var(--vox-bg-primary);
+  position: sticky;
+  top: 0;
+  z-index: 100;
+}
+
+.vox-header-icon {
+  width: 44px;
+  height: 44px;
+  border-radius: 14px;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  color: white;
+  flex-shrink: 0;
+}
+
+.vox-header-content {
+  flex: 1;
+  min-width: 0;
+}
+
+.vox-header-title {
+  font-size: 18px;
+  font-weight: 700;
+  color: var(--vox-text-primary);
+}
+
+.vox-header-subtitle {
+  font-size: 13px;
+  color: var(--vox-text-secondary);
+}
+
+.vox-header-actions {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+}
+
+/* ============================================
+   BUTTONS
+   ============================================ */
+.vox-btn {
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  gap: 8px;
+  padding: 12px 20px;
+  border-radius: 12px;
+  font-size: 14px;
+  font-weight: 600;
+  cursor: pointer;
+  transition: all 0.2s ease;
+  border: none;
+  outline: none;
+}
+
+.vox-btn.primary {
+  background: var(--vox-primary);
+  color: white;
+}
+
+.vox-btn.primary:hover {
+  background: var(--vox-primary-dark);
+  box-shadow: 0 4px 14px color-mix(in srgb, var(--vox-primary) 40%, transparent);
+}
+
+.vox-btn.secondary {
+  background: var(--vox-bg-secondary);
+  color: var(--vox-text-primary);
+  border: 1px solid var(--vox-border);
+}
+
+.vox-btn.secondary:hover {
+  background: var(--vox-bg-tertiary);
+  border-color: var(--vox-border-strong);
+}
+
+.vox-btn.ghost {
+  background: transparent;
+  color: var(--vox-text-secondary);
+}
+
+.vox-btn.ghost:hover {
+  background: var(--vox-bg-secondary);
+  color: var(--vox-text-primary);
+}
+
+.vox-btn.icon {
+  width: 40px;
+  height: 40px;
+  padding: 0;
+  border-radius: 12px;
+}
+
+.vox-btn.sm {
+  padding: 8px 14px;
+  font-size: 13px;
+  border-radius: 10px;
+}
+
+.vox-btn.lg {
+  padding: 16px 28px;
+  font-size: 16px;
+  border-radius: 14px;
+}
+
+/* ============================================
+   INPUTS
+   ============================================ */
+.vox-input {
+  width: 100%;
+  padding: 14px 16px;
+  border-radius: 12px;
+  font-size: 15px;
+  background: var(--vox-bg-secondary);
+  color: var(--vox-text-primary);
+  border: 1px solid var(--vox-border);
+  outline: none;
+  transition: all 0.2s ease;
+}
+
+.vox-input::placeholder {
+  color: var(--vox-text-muted);
+}
+
+.vox-input:focus {
+  border-color: var(--vox-primary);
+  box-shadow: 0 0 0 3px color-mix(in srgb, var(--vox-primary) 15%, transparent);
+}
+
+.vox-input-icon {
+  position: relative;
+}
+
+.vox-input-icon .vox-input {
+  padding-left: 44px;
+}
+
+.vox-input-icon svg {
+  position: absolute;
+  left: 14px;
+  top: 50%;
+  transform: translateY(-50%);
+  color: var(--vox-text-muted);
+  pointer-events: none;
+}
+
+/* ============================================
+   MODAL / OVERLAY
+   ============================================ */
+.vox-overlay {
+  position: fixed;
+  inset: 0;
+  background: rgba(0, 0, 0, 0.5);
+  backdrop-filter: blur(4px);
+  z-index: 1000;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  padding: 20px;
+  animation: vox-fade-in 0.2s ease;
+}
+
+.dark .vox-overlay {
+  background: rgba(0, 0, 0, 0.7);
+}
+
+@keyframes vox-fade-in {
+  from { opacity: 0; }
+  to { opacity: 1; }
+}
+
+.vox-modal {
+  width: 100%;
+  max-width: 480px;
+  max-height: 90vh;
+  overflow-y: auto;
+  background: var(--vox-bg-primary);
+  border-radius: 24px;
+  border: 1px solid var(--vox-border);
+  box-shadow: var(--vox-shadow-xl);
+  animation: vox-slide-up 0.3s cubic-bezier(0.4, 0, 0.2, 1);
+}
+
+@keyframes vox-slide-up {
+  from {
+    opacity: 0;
+    transform: translateY(20px) scale(0.98);
+  }
+  to {
+    opacity: 1;
+    transform: translateY(0) scale(1);
+  }
+}
+
+.vox-modal-header {
+  padding: 20px 24px;
+  border-bottom: 1px solid var(--vox-border);
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+}
+
+.vox-modal-body {
+  padding: 24px;
+}
+
+.vox-modal-footer {
+  padding: 16px 24px;
+  border-top: 1px solid var(--vox-border);
+  display: flex;
+  gap: 12px;
+  justify-content: flex-end;
+}
+
+/* ============================================
+   SIDEBAR LAYOUT
+   ============================================ */
+.vox-sidebar {
+  width: 280px;
+  flex-shrink: 0;
+  border-right: 1px solid var(--vox-border);
+  background: var(--vox-bg-primary);
+  display: flex;
+  flex-direction: column;
+  height: 100%;
+}
+
+.vox-sidebar-header {
+  padding: 16px;
+  border-bottom: 1px solid var(--vox-border);
+}
+
+.vox-sidebar-content {
+  flex: 1;
+  overflow-y: auto;
+  padding: 12px;
+}
+
+.vox-main {
+  flex: 1;
+  display: flex;
+  flex-direction: column;
+  min-width: 0;
+  background: var(--vox-bg-secondary);
+}
+
+/* ============================================
+   WORKFLOW STEPS
+   ============================================ */
+.vox-workflow {
+  display: flex;
+  flex-direction: column;
+  gap: 12px;
+}
+
+.vox-workflow-step {
+  display: flex;
+  align-items: flex-start;
+  gap: 14px;
+  padding: 14px;
+  border-radius: 14px;
+  background: var(--vox-bg-secondary);
+  transition: all 0.2s ease;
+}
+
+.vox-workflow-step:hover {
+  background: var(--vox-bg-tertiary);
+}
+
+.vox-workflow-number {
+  width: 28px;
+  height: 28px;
+  border-radius: 50%;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  font-size: 13px;
+  font-weight: 700;
+  background: color-mix(in srgb, var(--mode-color, var(--vox-primary)) 15%, transparent);
+  color: var(--mode-color, var(--vox-primary));
+  flex-shrink: 0;
+}
+
+.vox-workflow-text {
+  font-size: 14px;
+  color: var(--vox-text-secondary);
+  line-height: 1.5;
+}
+
+/* ============================================
+   FEATURE TAGS
+   ============================================ */
+.vox-tag {
+  display: inline-flex;
+  align-items: center;
+  gap: 6px;
+  padding: 6px 12px;
+  border-radius: 8px;
+  font-size: 12px;
+  font-weight: 500;
+  background: color-mix(in srgb, var(--tag-color, var(--vox-primary)) 12%, transparent);
+  color: var(--tag-color, var(--vox-primary));
+}
+
+.vox-tag-list {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 8px;
+}
+
+/* ============================================
+   ANALYSIS PANEL
+   ============================================ */
+.vox-analysis {
+  padding: 16px;
+  border-radius: 16px;
+  background: linear-gradient(
+    135deg,
+    color-mix(in srgb, var(--vox-primary) 5%, var(--vox-bg-secondary)),
+    var(--vox-bg-secondary)
+  );
+  border: 1px solid var(--vox-border);
+}
+
+.vox-analysis-header {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  margin-bottom: 14px;
+  font-size: 12px;
+  font-weight: 600;
+  text-transform: uppercase;
+  letter-spacing: 0.05em;
+  color: var(--vox-primary);
+}
+
+.vox-analysis-item {
+  display: flex;
+  align-items: center;
+  gap: 10px;
+  padding: 10px 0;
+  border-bottom: 1px solid var(--vox-border);
+}
+
+.vox-analysis-item:last-child {
+  border-bottom: none;
+  padding-bottom: 0;
+}
+
+/* ============================================
+   TABS
+   ============================================ */
+.vox-tabs {
+  display: flex;
+  gap: 4px;
+  padding: 4px;
+  background: var(--vox-bg-secondary);
+  border-radius: 12px;
+}
+
+.vox-tab {
+  flex: 1;
+  padding: 10px 16px;
+  border-radius: 10px;
+  font-size: 14px;
+  font-weight: 500;
+  color: var(--vox-text-secondary);
+  background: transparent;
+  border: none;
+  cursor: pointer;
+  transition: all 0.2s ease;
+}
+
+.vox-tab:hover {
+  color: var(--vox-text-primary);
+  background: var(--vox-bg-tertiary);
+}
+
+.vox-tab.active {
+  background: var(--vox-bg-primary);
+  color: var(--vox-text-primary);
+  box-shadow: var(--vox-shadow-sm);
+}
+
+/* ============================================
+   STATUS INDICATORS
+   ============================================ */
+.vox-status-dot {
+  width: 8px;
+  height: 8px;
+  border-radius: 50%;
+  flex-shrink: 0;
+}
+
+.vox-status-dot.online { background: #22c55e; }
+.vox-status-dot.offline { background: var(--vox-text-muted); }
+.vox-status-dot.recording {
+  background: #ef4444;
+  animation: vox-blink 1s ease-in-out infinite;
+}
+
+@keyframes vox-blink {
+  0%, 100% { opacity: 1; }
+  50% { opacity: 0.4; }
+}
+
+/* ============================================
+   RESPONSIVE STYLES
+   ============================================ */
+@media (max-width: 768px) {
+  .vox-sidebar {
+    width: 100%;
+    position: fixed;
+    left: 0;
+    top: 0;
+    bottom: 0;
+    z-index: 200;
+    transform: translateX(-100%);
+    transition: transform 0.3s ease;
+  }
+
+  .vox-sidebar.open {
+    transform: translateX(0);
+  }
+
+  .vox-header {
+    padding: 12px 16px;
+  }
+
+  .vox-header-icon {
+    width: 40px;
+    height: 40px;
+  }
+
+  .vox-header-title {
+    font-size: 16px;
+  }
+
+  .vox-list-item {
+    padding: 12px;
+  }
+
+  .vox-list-avatar {
+    width: 44px;
+    height: 44px;
+  }
+
+  .vox-ptt-button.lg {
+    width: 72px;
+    height: 72px;
+  }
+
+  .vox-ptt-button.xl {
+    width: 88px;
+    height: 88px;
+  }
+
+  .vox-preview-container {
+    border-radius: 16px;
+  }
+
+  .vox-modal {
+    max-width: 100%;
+    max-height: 100vh;
+    border-radius: 0;
+    height: 100%;
+  }
+}
+
+@media (max-width: 480px) {
+  .vox-header {
+    padding: 10px 12px;
+  }
+
+  .vox-header-icon {
+    width: 36px;
+    height: 36px;
+    border-radius: 10px;
+  }
+
+  .vox-btn {
+    padding: 10px 16px;
+    font-size: 13px;
+  }
+
+  .vox-bubble {
+    max-width: 90%;
+    padding: 12px;
+    border-radius: 16px;
+  }
+}
+
+/* ============================================
+   SCROLLBAR STYLING
+   ============================================ */
+.vox-scrollbar::-webkit-scrollbar {
+  width: 6px;
+}
+
+.vox-scrollbar::-webkit-scrollbar-track {
+  background: transparent;
+}
+
+.vox-scrollbar::-webkit-scrollbar-thumb {
+  background: var(--vox-border-strong);
+  border-radius: 3px;
+}
+
+.vox-scrollbar::-webkit-scrollbar-thumb:hover {
+  background: var(--vox-text-muted);
+}
+
+/* ============================================
+   ACCESSIBILITY
+   ============================================ */
+.vox-sr-only {
+  position: absolute;
+  width: 1px;
+  height: 1px;
+  padding: 0;
+  margin: -1px;
+  overflow: hidden;
+  clip: rect(0, 0, 0, 0);
+  white-space: nowrap;
+  border: 0;
+}
+
+@media (prefers-reduced-motion: reduce) {
+  *,
+  *::before,
+  *::after {
+    animation-duration: 0.01ms !important;
+    animation-iteration-count: 1 !important;
+    transition-duration: 0.01ms !important;
+  }
+}
+
+/* Focus visible styles */
+.vox-btn:focus-visible,
+.vox-input:focus-visible,
+.vox-tab:focus-visible,
+.vox-list-item:focus-visible {
+  outline: 2px solid var(--vox-primary);
+  outline-offset: 2px;
+}

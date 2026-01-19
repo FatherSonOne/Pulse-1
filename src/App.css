@@ -1,0 +1,644 @@
+/* ============================================
+   PULSE 1.1 - CSS Variables & Theme System
+   CMF Nothing Brand Design System
+   ============================================ */
+
+* {
+  margin: 0;
+  padding: 0;
+  box-sizing: border-box;
+}
+
+/* ============================================
+   ROOT CSS VARIABLES
+   ============================================ */
+:root {
+  /* ---- Pulse Brand Colors (Heartbeat Coral) ---- */
+  --pulse-rose: #f43f5e;
+  --pulse-rose-rgb: 244, 63, 94;
+  --pulse-pink: #ec4899;
+  --pulse-pink-rgb: 236, 72, 153;
+  --pulse-coral: #fb7185;
+  --pulse-coral-rgb: 251, 113, 133;
+
+  /* ---- User Customizable Accent (defaults to rose) ---- */
+  --accent-primary: #f43f5e;
+  --accent-primary-rgb: 244, 63, 94;
+  --accent-secondary: #ec4899;
+
+  /* ---- Accent Shades ---- */
+  --accent-light: rgba(var(--accent-primary-rgb), 0.1);
+  --accent-medium: rgba(var(--accent-primary-rgb), 0.3);
+  --accent-glow: rgba(var(--accent-primary-rgb), 0.15);
+  --accent-border: rgba(var(--accent-primary-rgb), 0.2);
+
+  /* ---- Partner Brand Colors ---- */
+  --logos-vision-purple: #8B5CF6;
+  --entomate-teal: #00A86B;
+  --perplexity-blue: #20B2AA;
+
+  /* ---- Semantic Colors ---- */
+  --success: #10B981;
+  --success-light: rgba(16, 185, 129, 0.1);
+  --warning: #F59E0B;
+  --warning-light: rgba(245, 158, 11, 0.1);
+  --error: #EF4444;
+  --error-light: rgba(239, 68, 68, 0.1);
+  --info: #3B82F6;
+  --info-light: rgba(59, 130, 246, 0.1);
+
+  /* ---- Typography ---- */
+  --font-sans: 'Inter', -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, Oxygen, Ubuntu, sans-serif;
+  --font-mono: 'JetBrains Mono', 'SF Mono', 'Fira Code', Consolas, monospace;
+
+  /* ---- Font Sizes ---- */
+  --text-xs: 0.75rem;
+  --text-sm: 0.875rem;
+  --text-base: 1rem;
+  --text-lg: 1.125rem;
+  --text-xl: 1.25rem;
+  --text-2xl: 1.5rem;
+  --text-3xl: 1.875rem;
+
+  /* ---- Spacing ---- */
+  --space-1: 0.25rem;
+  --space-2: 0.5rem;
+  --space-3: 0.75rem;
+  --space-4: 1rem;
+  --space-5: 1.25rem;
+  --space-6: 1.5rem;
+  --space-8: 2rem;
+  --space-10: 2.5rem;
+  --space-12: 3rem;
+
+  /* ---- Border Radius ---- */
+  --radius-sm: 0.375rem;
+  --radius-md: 0.5rem;
+  --radius-lg: 0.75rem;
+  --radius-xl: 1rem;
+  --radius-2xl: 1.5rem;
+  --radius-full: 9999px;
+
+  /* ---- Shadows ---- */
+  --shadow-sm: 0 1px 2px 0 rgba(0, 0, 0, 0.05);
+  --shadow-md: 0 4px 6px -1px rgba(0, 0, 0, 0.1), 0 2px 4px -1px rgba(0, 0, 0, 0.06);
+  --shadow-lg: 0 10px 15px -3px rgba(0, 0, 0, 0.1), 0 4px 6px -2px rgba(0, 0, 0, 0.05);
+  --shadow-xl: 0 20px 25px -5px rgba(0, 0, 0, 0.1), 0 10px 10px -5px rgba(0, 0, 0, 0.04);
+  --shadow-2xl: 0 25px 50px -12px rgba(0, 0, 0, 0.25);
+
+  /* ---- Transitions ---- */
+  --transition-fast: 150ms ease;
+  --transition-base: 200ms ease;
+  --transition-slow: 300ms ease;
+  --transition-slower: 500ms ease;
+
+  /* ---- Z-Index Scale ---- */
+  --z-dropdown: 50;
+  --z-sticky: 100;
+  --z-fixed: 200;
+  --z-modal-backdrop: 300;
+  --z-modal: 400;
+  --z-popover: 500;
+  --z-tooltip: 600;
+}
+
+/* ============================================
+   LIGHT MODE THEME
+   ============================================ */
+:root,
+.light {
+  --bg-primary: #FFFFFF;
+  --bg-secondary: #F9FAFB;
+  --bg-tertiary: #F3F4F6;
+  --bg-elevated: #FFFFFF;
+  --bg-muted: #E5E7EB;
+
+  --text-primary: #111827;
+  --text-secondary: #4B5563;
+  --text-tertiary: #9CA3AF;
+  --text-muted: #D1D5DB;
+  --text-inverted: #FFFFFF;
+
+  --border-primary: #E5E7EB;
+  --border-secondary: #D1D5DB;
+  --border-focus: var(--accent-primary);
+
+  --input-bg: #FFFFFF;
+  --input-border: #D1D5DB;
+  --input-focus-ring: rgba(var(--accent-primary-rgb), 0.2);
+}
+
+/* ============================================
+   DARK MODE THEME
+   ============================================ */
+.dark {
+  --bg-primary: #000000;
+  --bg-secondary: #0A0A0A;
+  --bg-tertiary: #18181B;
+  --bg-elevated: #27272A;
+  --bg-muted: #3F3F46;
+
+  --text-primary: #FAFAFA;
+  --text-secondary: #A1A1AA;
+  --text-tertiary: #71717A;
+  --text-muted: #52525B;
+  --text-inverted: #000000;
+
+  --border-primary: #27272A;
+  --border-secondary: #3F3F46;
+  --border-focus: var(--accent-primary);
+
+  --input-bg: #18181B;
+  --input-border: #3F3F46;
+  --input-focus-ring: rgba(var(--accent-primary-rgb), 0.3);
+
+  /* Dark mode shadows with glow effect */
+  --shadow-sm: 0 1px 2px 0 rgba(0, 0, 0, 0.3);
+  --shadow-md: 0 4px 6px -1px rgba(0, 0, 0, 0.4);
+  --shadow-lg: 0 10px 15px -3px rgba(0, 0, 0, 0.5);
+  --shadow-xl: 0 20px 25px -5px rgba(0, 0, 0, 0.6);
+}
+
+/* ============================================
+   BASE STYLES
+   ============================================ */
+body {
+  font-family: var(--font-sans);
+  -webkit-font-smoothing: antialiased;
+  -moz-osx-font-smoothing: grayscale;
+  background-color: var(--bg-primary);
+  color: var(--text-primary);
+  transition: background-color var(--transition-slow), color var(--transition-slow);
+}
+
+code {
+  font-family: var(--font-mono);
+}
+
+#root {
+  width: 100%;
+  min-height: 100vh;
+}
+
+/* ============================================
+   SCROLLBAR STYLING
+   ============================================ */
+.scrollbar-hide::-webkit-scrollbar {
+  display: none;
+}
+
+.scrollbar-hide {
+  -ms-overflow-style: none;
+  scrollbar-width: none;
+}
+
+/* Custom Scrollbar */
+::-webkit-scrollbar {
+  width: 6px;
+  height: 6px;
+}
+
+::-webkit-scrollbar-track {
+  background: transparent;
+}
+
+::-webkit-scrollbar-thumb {
+  background: var(--bg-muted);
+  border-radius: var(--radius-full);
+}
+
+::-webkit-scrollbar-thumb:hover {
+  background: var(--text-tertiary);
+}
+
+.dark ::-webkit-scrollbar-thumb {
+  background: var(--bg-elevated);
+}
+
+.dark ::-webkit-scrollbar-thumb:hover {
+  background: var(--bg-muted);
+}
+
+/* ============================================
+   ANIMATIONS
+   ============================================ */
+@keyframes fade-in {
+  from {
+    opacity: 0;
+  }
+  to {
+    opacity: 1;
+  }
+}
+
+@keyframes slide-up {
+  from {
+    opacity: 0;
+    transform: translateY(10px);
+  }
+  to {
+    opacity: 1;
+    transform: translateY(0);
+  }
+}
+
+@keyframes slide-down {
+  from {
+    opacity: 0;
+    transform: translateY(-10px);
+  }
+  to {
+    opacity: 1;
+    transform: translateY(0);
+  }
+}
+
+@keyframes slide-in-right {
+  from {
+    opacity: 0;
+    transform: translateX(20px);
+  }
+  to {
+    opacity: 1;
+    transform: translateX(0);
+  }
+}
+
+@keyframes slide-in-left {
+  from {
+    opacity: 0;
+    transform: translateX(-20px);
+  }
+  to {
+    opacity: 1;
+    transform: translateX(0);
+  }
+}
+
+@keyframes scale-in {
+  from {
+    opacity: 0;
+    transform: scale(0.95);
+  }
+  to {
+    opacity: 1;
+    transform: scale(1);
+  }
+}
+
+@keyframes pulse-glow {
+  0%, 100% {
+    box-shadow: 0 0 0 0 rgba(var(--accent-primary-rgb), 0.4);
+  }
+  50% {
+    box-shadow: 0 0 0 8px rgba(var(--accent-primary-rgb), 0);
+  }
+}
+
+@keyframes spin {
+  from {
+    transform: rotate(0deg);
+  }
+  to {
+    transform: rotate(360deg);
+  }
+}
+
+/* Animation Classes */
+.animate-fade-in {
+  animation: fade-in var(--transition-base) ease-out;
+}
+
+.animate-slide-up {
+  animation: slide-up var(--transition-base) ease-out;
+}
+
+.animate-slide-down {
+  animation: slide-down var(--transition-base) ease-out;
+}
+
+.animate-slide-in-right {
+  animation: slide-in-right var(--transition-slow) ease-out;
+}
+
+.animate-slide-in-left {
+  animation: slide-in-left var(--transition-slow) ease-out;
+}
+
+.animate-scale-in {
+  animation: scale-in var(--transition-base) ease-out;
+}
+
+.animate-pulse-glow {
+  animation: pulse-glow 2s infinite;
+}
+
+.animate-spin {
+  animation: spin 1s linear infinite;
+}
+
+/* ============================================
+   PULSE BRAND UTILITIES
+   ============================================ */
+
+/* Dot Pattern Background */
+.pulse-dot-pattern {
+  background-image: radial-gradient(circle, var(--text-muted) 1px, transparent 1px);
+  background-size: 24px 24px;
+}
+
+/* Pulse Rose Accent */
+.pulse-accent-border {
+  border-color: var(--pulse-rose);
+}
+
+.pulse-accent-text {
+  color: var(--pulse-rose);
+}
+
+.pulse-accent-bg {
+  background-color: var(--pulse-rose);
+}
+
+/* Brand Gradient */
+.pulse-gradient {
+  background: linear-gradient(135deg, var(--pulse-rose) 0%, var(--pulse-pink) 100%);
+}
+
+.pulse-gradient-text {
+  background: linear-gradient(135deg, var(--pulse-rose) 0%, var(--pulse-pink) 100%);
+  -webkit-background-clip: text;
+  -webkit-text-fill-color: transparent;
+  background-clip: text;
+}
+
+/* Glow Effects */
+.pulse-glow {
+  box-shadow: 0 0 20px rgba(var(--pulse-rose-rgb), 0.3);
+}
+
+.pulse-glow-sm {
+  box-shadow: 0 0 10px rgba(var(--pulse-rose-rgb), 0.2);
+}
+
+.pulse-glow-lg {
+  box-shadow: 0 0 40px rgba(var(--pulse-rose-rgb), 0.25), 0 0 80px rgba(var(--pulse-pink-rgb), 0.15);
+}
+
+/* Heartbeat Animation */
+@keyframes heartbeat {
+  0%, 100% { transform: scale(1); }
+  14% { transform: scale(1.1); }
+  28% { transform: scale(1); }
+  42% { transform: scale(1.1); }
+  70% { transform: scale(1); }
+}
+
+.animate-heartbeat {
+  animation: heartbeat 1.5s ease-in-out infinite;
+}
+
+/* Slow Pulse Glow Animation for Hero Banners */
+@keyframes pulse-glow-slow {
+  0%, 100% {
+    opacity: 0.15;
+    transform: scale(1);
+  }
+  50% {
+    opacity: 0.25;
+    transform: scale(1.05);
+  }
+}
+
+@keyframes pulse-glow-slow-light {
+  0%, 100% {
+    opacity: 0.08;
+    transform: scale(1);
+  }
+  50% {
+    opacity: 0.15;
+    transform: scale(1.03);
+  }
+}
+
+.animate-pulse-glow-slow {
+  animation: pulse-glow-slow 4s ease-in-out infinite;
+}
+
+.light .animate-pulse-glow-slow,
+:root:not(.dark) .animate-pulse-glow-slow {
+  animation: pulse-glow-slow-light 4s ease-in-out infinite;
+}
+
+/* Secondary pulse with offset timing */
+@keyframes pulse-glow-slow-delayed {
+  0%, 100% {
+    opacity: 0.1;
+    transform: scale(1.02);
+  }
+  50% {
+    opacity: 0.2;
+    transform: scale(1);
+  }
+}
+
+.animate-pulse-glow-delayed {
+  animation: pulse-glow-slow-delayed 4s ease-in-out infinite;
+  animation-delay: 2s;
+}
+
+/* ============================================
+   PARTNER BRAND UTILITIES
+   ============================================ */
+
+/* Logos Vision */
+.partner-vision {
+  --partner-color: var(--logos-vision-purple);
+}
+
+/* Entomate */
+.partner-entomate {
+  --partner-color: var(--entomate-teal);
+}
+
+/* Perplexity */
+.partner-perplexity {
+  --partner-color: var(--perplexity-blue);
+}
+
+/* ============================================
+   FOCUS & ACCESSIBILITY
+   ============================================ */
+:focus-visible {
+  outline: 2px solid var(--accent-primary);
+  outline-offset: 2px;
+}
+
+.sr-only {
+  position: absolute;
+  width: 1px;
+  height: 1px;
+  padding: 0;
+  margin: -1px;
+  overflow: hidden;
+  clip: rect(0, 0, 0, 0);
+  white-space: nowrap;
+  border-width: 0;
+}
+
+/* ============================================
+   PROSE STYLES (for content areas)
+   ============================================ */
+.prose {
+  line-height: 1.7;
+}
+
+.prose p {
+  margin-bottom: 1em;
+}
+
+.prose h1, .prose h2, .prose h3 {
+  font-weight: 600;
+  line-height: 1.3;
+  margin-top: 1.5em;
+  margin-bottom: 0.5em;
+}
+
+.prose code {
+  font-family: var(--font-mono);
+  font-size: 0.875em;
+  padding: 0.2em 0.4em;
+  background-color: var(--bg-tertiary);
+  border-radius: var(--radius-sm);
+}
+
+.prose pre {
+  background-color: var(--bg-tertiary);
+  padding: var(--space-4);
+  border-radius: var(--radius-lg);
+  overflow-x: auto;
+}
+
+.prose-invert {
+  color: var(--text-primary);
+}
+
+/* ============================================
+   UTILITY CLASSES
+   ============================================ */
+
+/* Glass Effect */
+.glass {
+  backdrop-filter: blur(10px);
+  -webkit-backdrop-filter: blur(10px);
+}
+
+.glass-heavy {
+  backdrop-filter: blur(20px);
+  -webkit-backdrop-filter: blur(20px);
+}
+
+/* Line Clamp */
+.line-clamp-1 {
+  display: -webkit-box;
+  -webkit-line-clamp: 1;
+  -webkit-box-orient: vertical;
+  overflow: hidden;
+}
+
+.line-clamp-2 {
+  display: -webkit-box;
+  -webkit-line-clamp: 2;
+  -webkit-box-orient: vertical;
+  overflow: hidden;
+}
+
+.line-clamp-3 {
+  display: -webkit-box;
+  -webkit-line-clamp: 3;
+  -webkit-box-orient: vertical;
+  overflow: hidden;
+}
+
+/* Truncate */
+.truncate {
+  overflow: hidden;
+  text-overflow: ellipsis;
+  white-space: nowrap;
+}
+
+/* Selection */
+::selection {
+  background-color: rgba(var(--accent-primary-rgb), 0.3);
+  color: var(--text-primary);
+}
+
+/* ============================================
+   COMPONENT-SPECIFIC OVERRIDES
+   ============================================ */
+
+/* Button Focus Ring */
+button:focus-visible {
+  outline: 2px solid var(--accent-primary);
+  outline-offset: 2px;
+}
+
+/* Input Focus */
+input:focus,
+textarea:focus,
+select:focus {
+  border-color: var(--accent-primary);
+  box-shadow: 0 0 0 3px var(--input-focus-ring);
+}
+
+/* Checkbox & Radio */
+input[type="checkbox"]:checked,
+input[type="radio"]:checked {
+  background-color: var(--accent-primary);
+  border-color: var(--accent-primary);
+}
+
+/* ============================================
+   TICKER TAPE ANIMATION (AI Coach)
+   ============================================ */
+@keyframes ticker-scroll {
+  0% {
+    transform: translateX(0);
+  }
+  100% {
+    transform: translateX(-50%);
+  }
+}
+
+.ticker-container {
+  display: flex;
+  overflow: hidden;
+  width: 100%;
+}
+
+.ticker-text {
+  display: inline-block;
+  padding-right: 2rem;
+  animation: ticker-scroll 15s linear infinite;
+  animation-play-state: running;
+}
+
+/* Duplicate text for seamless loop */
+.ticker-container::after {
+  content: attr(data-text);
+  display: inline-block;
+  padding-right: 2rem;
+  animation: ticker-scroll 15s linear infinite;
+}
+
+/* Pause on hover */
+.group:hover .ticker-text {
+  animation-play-state: paused;
+}
+
+/* Only animate if text is long enough to need scrolling */
+@media (min-width: 1px) {
+  .ticker-text {
+    animation: ticker-scroll 12s linear infinite;
+  }
+}

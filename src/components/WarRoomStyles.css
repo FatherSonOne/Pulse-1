@@ -1,0 +1,2596 @@
+/* ============================================
+   WAR ROOM - TACTICAL OPERATIONS CENTER
+   Dark Mode Optimized Design System
+
+   Design Philosophy:
+   - Deep, immersive dark backgrounds with subtle depth
+   - Rose/Crimson accent for tactical alerts & active states
+   - Phosphor-inspired UI elements for that tactical display feel
+   - Subtle glow effects for depth without overwhelming
+   ============================================ */
+
+@import url('https://fonts.googleapis.com/css2?family=Space+Grotesk:wght@400;500;600;700&family=IBM+Plex+Mono:wght@400;500;600&display=swap');
+
+/* ============================================
+   DARK MODE CSS VARIABLES (PRIMARY)
+   ============================================ */
+:root {
+  /* Dark Mode Core Palette - Deep tactical blacks */
+  --wr-dark-bg-primary: #08080c;
+  --wr-dark-bg-secondary: #0d0d12;
+  --wr-dark-bg-elevated: #121218;
+  --wr-dark-bg-surface: #18181f;
+  --wr-dark-bg-card: #1e1e26;
+  --wr-dark-bg-hover: #252530;
+
+  /* Dark Mode Borders - Subtle definition */
+  --wr-dark-border: rgba(255, 255, 255, 0.06);
+  --wr-dark-border-strong: rgba(255, 255, 255, 0.12);
+  --wr-dark-border-accent: rgba(244, 63, 94, 0.25);
+
+  /* Dark Mode Text - High contrast hierarchy */
+  --wr-dark-text-primary: #f4f4f5;
+  --wr-dark-text-secondary: #a1a1aa;
+  --wr-dark-text-muted: #71717a;
+  --wr-dark-text-dim: #52525b;
+
+  /* Accent Colors - Rose/Crimson tactical theme */
+  --wr-accent-primary: #f43f5e;
+  --wr-accent-secondary: #fb7185;
+  --wr-accent-tertiary: #fda4af;
+  --wr-accent-soft: rgba(244, 63, 94, 0.1);
+  --wr-accent-glow: rgba(244, 63, 94, 0.4);
+
+  /* Status Colors */
+  --wr-status-success: #10b981;
+  --wr-status-warning: #f59e0b;
+  --wr-status-error: #ef4444;
+  --wr-status-info: #3b82f6;
+
+  /* Dark Mode Shadows - Depth without harsh edges */
+  --wr-dark-shadow-sm: 0 1px 2px rgba(0, 0, 0, 0.4);
+  --wr-dark-shadow-md: 0 4px 12px rgba(0, 0, 0, 0.5);
+  --wr-dark-shadow-lg: 0 12px 40px rgba(0, 0, 0, 0.6);
+  --wr-dark-shadow-glow: 0 0 20px rgba(244, 63, 94, 0.15);
+
+  /* Dark Mode Gradients */
+  --wr-dark-gradient-surface: linear-gradient(180deg, #0d0d12 0%, #08080c 100%);
+  --wr-dark-gradient-elevated: linear-gradient(135deg, #18181f 0%, #121218 100%);
+  --wr-dark-gradient-accent: linear-gradient(135deg, #f43f5e 0%, #e11d48 100%);
+  --wr-dark-gradient-subtle: linear-gradient(180deg, rgba(244, 63, 94, 0.05) 0%, transparent 100%);
+
+  /* Typography */
+  --wr-font-display: 'Space Grotesk', -apple-system, BlinkMacSystemFont, sans-serif;
+  --wr-font-mono: 'IBM Plex Mono', 'SF Mono', 'Fira Code', monospace;
+  --wr-font-body: -apple-system, BlinkMacSystemFont, 'SF Pro Display', 'Segoe UI', Roboto, sans-serif;
+
+  /* Transitions */
+  --wr-transition-fast: 150ms cubic-bezier(0.4, 0, 0.2, 1);
+  --wr-transition-base: 200ms cubic-bezier(0.4, 0, 0.2, 1);
+  --wr-transition-slow: 300ms cubic-bezier(0.4, 0, 0.2, 1);
+}
+
+/* ============================================
+   LIGHT MODE CSS VARIABLES (FALLBACK)
+   ============================================ */
+:root {
+  --wr-light-bg-primary: #fafbfc;
+  --wr-light-bg-secondary: #f3f4f6;
+  --wr-light-bg-elevated: #ffffff;
+  --wr-light-bg-surface: #f8f9fa;
+  --wr-light-border: rgba(0, 0, 0, 0.08);
+  --wr-light-border-strong: rgba(0, 0, 0, 0.12);
+  --wr-light-text-primary: #111827;
+  --wr-light-text-secondary: #4b5563;
+  --wr-light-text-muted: #6b7280;
+  --wr-light-accent: #e11d48;
+  --wr-light-accent-soft: rgba(225, 29, 72, 0.08);
+  --wr-light-shadow-sm: 0 1px 2px rgba(0, 0, 0, 0.04);
+  --wr-light-shadow-md: 0 4px 12px rgba(0, 0, 0, 0.06);
+  --wr-light-shadow-lg: 0 12px 40px rgba(0, 0, 0, 0.08);
+  --wr-light-gradient-subtle: linear-gradient(135deg, #ffffff 0%, #f8fafc 100%);
+  --wr-light-gradient-warm: linear-gradient(180deg, #fffbfb 0%, #faf8f8 100%);
+}
+
+/* ============================================
+   BASE CONTAINER
+   ============================================ */
+
+.war-room-container {
+  background: var(--wr-light-gradient-warm);
+  color: var(--wr-light-text-primary);
+  font-family: var(--wr-font-body);
+  position: relative;
+  min-height: 100%;
+}
+
+/* Light mode subtle ambient gradient overlay */
+.war-room-container::before {
+  content: '';
+  position: absolute;
+  inset: 0;
+  background:
+    radial-gradient(ellipse at 20% 0%, rgba(244, 63, 94, 0.03) 0%, transparent 50%),
+    radial-gradient(ellipse at 80% 100%, rgba(236, 72, 153, 0.02) 0%, transparent 50%);
+  pointer-events: none;
+  z-index: 0;
+}
+
+.war-room-container > * {
+  position: relative;
+  z-index: 1;
+}
+
+/* ============================================
+   DARK MODE - BASE CONTAINER
+   Deep tactical aesthetic with immersive atmosphere
+   ============================================ */
+.dark .war-room-container {
+  background: var(--wr-dark-bg-primary);
+  color: var(--wr-dark-text-primary);
+}
+
+/* Dark mode ambient atmosphere - subtle tactical glow */
+.dark .war-room-container::before {
+  content: '';
+  position: absolute;
+  inset: 0;
+  background:
+    radial-gradient(ellipse at 0% 0%, rgba(244, 63, 94, 0.08) 0%, transparent 40%),
+    radial-gradient(ellipse at 100% 100%, rgba(244, 63, 94, 0.04) 0%, transparent 40%),
+    radial-gradient(ellipse at 50% 50%, rgba(0, 0, 0, 0.3) 0%, transparent 100%);
+  pointer-events: none;
+  z-index: 0;
+}
+
+/* Dark mode grid overlay - subtle tactical display effect */
+.dark .war-room-container::after {
+  content: '';
+  position: absolute;
+  inset: 0;
+  background-image:
+    linear-gradient(rgba(244, 63, 94, 0.015) 1px, transparent 1px),
+    linear-gradient(90deg, rgba(244, 63, 94, 0.015) 1px, transparent 1px);
+  background-size: 40px 40px;
+  pointer-events: none;
+  z-index: 0;
+  opacity: 0.5;
+}
+
+/* ============================================
+   SIDEBAR
+   ============================================ */
+
+.war-room-sidebar {
+  background: var(--wr-light-gradient-subtle);
+  border-right: 1px solid var(--wr-light-border);
+  z-index: 40;
+  position: relative;
+  box-shadow: 2px 0 8px rgba(0, 0, 0, 0.02);
+}
+
+.dark .war-room-sidebar {
+  background: var(--wr-dark-bg-secondary);
+  border-right-color: var(--wr-dark-border);
+  box-shadow: 2px 0 16px rgba(0, 0, 0, 0.4);
+}
+
+/* Dark mode sidebar header accent line */
+.dark .war-room-sidebar::before {
+  content: '';
+  position: absolute;
+  top: 0;
+  left: 0;
+  right: 0;
+  height: 2px;
+  background: var(--wr-dark-gradient-accent);
+  opacity: 0.6;
+}
+
+/* ============================================
+   HEADER
+   ============================================ */
+
+.war-room-header {
+  background: var(--wr-light-bg-elevated);
+  border-bottom: 1px solid var(--wr-light-border);
+  box-shadow: var(--wr-light-shadow-sm);
+  backdrop-filter: blur(8px);
+}
+
+.dark .war-room-header {
+  background: rgba(13, 13, 18, 0.95);
+  border-bottom-color: var(--wr-dark-border);
+  box-shadow: 0 1px 0 rgba(244, 63, 94, 0.1);
+  -webkit-backdrop-filter: blur(12px);
+  backdrop-filter: blur(12px);
+}
+
+/* Dark mode header title styling */
+.dark .war-room-header h1,
+.dark .war-room-header h2,
+.dark .war-room-header .war-room-title {
+  color: var(--wr-dark-text-primary);
+  font-family: var(--wr-font-display);
+  letter-spacing: -0.02em;
+}
+
+/* ============================================
+   INPUT AREA
+   ============================================ */
+
+.war-room-input-area {
+  background: linear-gradient(180deg, var(--wr-light-bg-elevated) 0%, var(--wr-light-bg-surface) 100%);
+  border-top: 1px solid var(--wr-light-border);
+  box-shadow: 0 -4px 16px rgba(0, 0, 0, 0.03);
+}
+
+.dark .war-room-input-area {
+  background: linear-gradient(180deg, var(--wr-dark-bg-secondary) 0%, var(--wr-dark-bg-primary) 100%);
+  border-top-color: var(--wr-dark-border);
+  box-shadow: 0 -8px 24px rgba(0, 0, 0, 0.4);
+}
+
+/* Dark mode input field enhancements */
+.dark .war-room-input-area input,
+.dark .war-room-input-area textarea {
+  background: var(--wr-dark-bg-elevated);
+  border-color: var(--wr-dark-border);
+  color: var(--wr-dark-text-primary);
+  font-family: var(--wr-font-body);
+}
+
+.dark .war-room-input-area input::placeholder,
+.dark .war-room-input-area textarea::placeholder {
+  color: var(--wr-dark-text-dim);
+}
+
+.dark .war-room-input-area input:focus,
+.dark .war-room-input-area textarea:focus {
+  border-color: var(--wr-accent-primary);
+  box-shadow: 0 0 0 3px var(--wr-accent-soft), var(--wr-dark-shadow-glow);
+}
+
+/* ============================================
+   MESSAGES
+   ============================================ */
+
+.war-room-message-user {
+  background: linear-gradient(135deg, var(--accent-primary, #f43f5e), var(--accent-secondary, #ec4899));
+  color: white;
+  border-radius: 20px 20px 4px 20px;
+  box-shadow: 0 4px 16px rgba(244, 63, 94, 0.2), 0 2px 4px rgba(244, 63, 94, 0.1);
+  padding: 14px 18px;
+}
+
+.war-room-message-ai {
+  background: var(--wr-light-bg-elevated);
+  color: var(--wr-light-text-primary);
+  border: 1px solid var(--wr-light-border-strong);
+  border-radius: 20px 20px 20px 4px;
+  padding: 14px 18px;
+  box-shadow: var(--wr-light-shadow-md);
+}
+
+/* DARK MODE - User Messages */
+.dark .war-room-message-user {
+  background: var(--wr-dark-gradient-accent);
+  color: #ffffff;
+  box-shadow: 0 4px 20px rgba(244, 63, 94, 0.25), 0 0 40px rgba(244, 63, 94, 0.1);
+}
+
+/* DARK MODE - AI Messages */
+.dark .war-room-message-ai {
+  background: var(--wr-dark-bg-card) !important;
+  color: var(--wr-dark-text-primary) !important;
+  border-color: var(--wr-dark-border-strong) !important;
+  box-shadow: var(--wr-dark-shadow-md);
+}
+
+/* Dark mode AI message hover effect */
+.dark .war-room-message-ai:hover {
+  border-color: var(--wr-dark-border-accent);
+  box-shadow: var(--wr-dark-shadow-md), 0 0 0 1px rgba(244, 63, 94, 0.1);
+}
+
+/* Ensure AI message text is always readable */
+.war-room-message-ai p,
+.war-room-message-ai span,
+.war-room-message-ai div {
+  color: inherit;
+}
+
+.dark .war-room-message-ai p,
+.dark .war-room-message-ai span,
+.dark .war-room-message-ai div,
+.dark .war-room-message-ai li,
+.dark .war-room-message-ai h1,
+.dark .war-room-message-ai h2,
+.dark .war-room-message-ai h3,
+.dark .war-room-message-ai h4,
+.dark .war-room-message-ai strong,
+.dark .war-room-message-ai em {
+  color: var(--wr-dark-text-primary) !important;
+}
+
+/* Dark mode code blocks in messages */
+.dark .war-room-message-ai pre,
+.dark .war-room-message-ai code {
+  background: var(--wr-dark-bg-primary);
+  border-color: var(--wr-dark-border);
+  color: var(--wr-accent-secondary);
+  font-family: var(--wr-font-mono);
+}
+
+/* Dark mode links in messages */
+.dark .war-room-message-ai a {
+  color: var(--wr-accent-secondary);
+}
+
+.dark .war-room-message-ai a:hover {
+  color: var(--wr-accent-tertiary);
+}
+
+/* ============================================
+   CARDS
+   ============================================ */
+
+.war-room-card {
+  background: var(--wr-light-bg-elevated);
+  border: 1px solid var(--wr-light-border);
+  border-radius: 16px;
+  transition: all 0.25s cubic-bezier(0.4, 0, 0.2, 1);
+  box-shadow: var(--wr-light-shadow-sm);
+}
+
+.war-room-card:hover {
+  border-color: var(--wr-light-accent);
+  transform: translateY(-2px);
+  box-shadow: var(--wr-light-shadow-lg), 0 0 0 1px var(--wr-light-accent-soft);
+}
+
+/* DARK MODE - Cards with tactical aesthetic */
+.dark .war-room-card {
+  background: var(--wr-dark-bg-card);
+  border-color: var(--wr-dark-border);
+  box-shadow: var(--wr-dark-shadow-sm);
+}
+
+.dark .war-room-card:hover {
+  border-color: var(--wr-dark-border-accent);
+  transform: translateY(-2px);
+  box-shadow: var(--wr-dark-shadow-lg), var(--wr-dark-shadow-glow);
+}
+
+/* Dark mode card text */
+.dark .war-room-card h1,
+.dark .war-room-card h2,
+.dark .war-room-card h3,
+.dark .war-room-card h4,
+.dark .war-room-card p,
+.dark .war-room-card span,
+.dark .war-room-card label {
+  color: var(--wr-dark-text-primary);
+}
+
+.dark .war-room-card .text-secondary,
+.dark .war-room-card .subtitle {
+  color: var(--wr-dark-text-secondary);
+}
+
+/* ============================================
+   MODAL
+   ============================================ */
+
+.war-room-modal {
+  background: var(--wr-light-bg-elevated);
+  border: 1px solid var(--wr-light-border);
+  border-radius: 24px;
+  box-shadow:
+    0 25px 50px -12px rgba(0, 0, 0, 0.12),
+    0 0 0 1px rgba(0, 0, 0, 0.02),
+    0 0 80px rgba(244, 63, 94, 0.04);
+  -webkit-backdrop-filter: blur(20px);
+  backdrop-filter: blur(20px);
+}
+
+/* DARK MODE - Modal with tactical depth */
+.dark .war-room-modal {
+  background: var(--wr-dark-bg-elevated);
+  border-color: var(--wr-dark-border-strong);
+  box-shadow:
+    0 25px 50px -12px rgba(0, 0, 0, 0.7),
+    0 0 0 1px rgba(244, 63, 94, 0.1),
+    0 0 80px rgba(244, 63, 94, 0.08);
+  -webkit-backdrop-filter: blur(20px);
+  backdrop-filter: blur(20px);
+}
+
+/* Dark mode modal content */
+.dark .war-room-modal h1,
+.dark .war-room-modal h2,
+.dark .war-room-modal h3,
+.dark .war-room-modal p,
+.dark .war-room-modal label {
+  color: var(--wr-dark-text-primary);
+}
+
+/* ============================================
+   BUTTONS - TACTICAL STYLE
+   ============================================ */
+
+.war-room-btn {
+  padding: 10px 20px;
+  border: 1px solid var(--wr-light-border-strong);
+  background: var(--wr-light-bg-elevated);
+  border-radius: 12px;
+  font-size: 14px;
+  font-weight: 600;
+  color: var(--wr-light-text-secondary);
+  cursor: pointer;
+  transition: all var(--wr-transition-base);
+  display: inline-flex;
+  align-items: center;
+  gap: 8px;
+  box-shadow: var(--wr-light-shadow-sm);
+}
+
+/* DARK MODE - Buttons with tactical glow */
+.dark .war-room-btn {
+  background: var(--wr-dark-bg-elevated);
+  border-color: var(--wr-dark-border-strong);
+  color: var(--wr-dark-text-secondary);
+  box-shadow: var(--wr-dark-shadow-sm);
+}
+
+.war-room-btn:hover:not(:disabled) {
+  border-color: var(--wr-light-accent);
+  color: var(--wr-light-accent);
+  transform: translateY(-1px);
+  box-shadow: var(--wr-light-shadow-md);
+  background: var(--wr-light-accent-soft);
+}
+
+.dark .war-room-btn:hover:not(:disabled) {
+  background: var(--wr-dark-bg-hover);
+  border-color: var(--wr-accent-primary);
+  color: var(--wr-accent-secondary);
+  box-shadow: var(--wr-dark-shadow-md), 0 0 20px rgba(244, 63, 94, 0.15);
+  transform: translateY(-1px);
+}
+
+.war-room-btn:disabled {
+  opacity: 0.5;
+  cursor: not-allowed;
+}
+
+/* Primary Button */
+.war-room-btn-primary {
+  background: linear-gradient(135deg, var(--accent-primary, #f43f5e), var(--accent-secondary, #ec4899));
+  border-color: transparent;
+  color: white;
+  box-shadow: 0 4px 14px rgba(244, 63, 94, 0.25);
+}
+
+.war-room-btn-primary:hover:not(:disabled) {
+  transform: translateY(-1px);
+  box-shadow: 0 8px 24px rgba(244, 63, 94, 0.35);
+  border-color: transparent;
+  color: white;
+}
+
+/* Dark mode primary button glow enhancement */
+.dark .war-room-btn-primary {
+  box-shadow: 0 4px 20px rgba(244, 63, 94, 0.35), 0 0 40px rgba(244, 63, 94, 0.1);
+}
+
+.dark .war-room-btn-primary:hover:not(:disabled) {
+  box-shadow: 0 8px 30px rgba(244, 63, 94, 0.45), 0 0 60px rgba(244, 63, 94, 0.15);
+}
+
+/* Icon Button */
+.war-room-btn-icon {
+  width: 40px;
+  height: 40px;
+  padding: 0;
+  border-radius: 12px;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+}
+
+.war-room-btn-icon-sm {
+  width: 32px;
+  height: 32px;
+  padding: 0;
+  border-radius: 10px;
+  font-size: 14px;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+}
+
+/* Dark mode icon buttons */
+.dark .war-room-btn-icon,
+.dark .war-room-btn-icon-sm {
+  background: var(--wr-dark-bg-card);
+  border-color: var(--wr-dark-border);
+  color: var(--wr-dark-text-secondary);
+}
+
+.dark .war-room-btn-icon:hover:not(:disabled),
+.dark .war-room-btn-icon-sm:hover:not(:disabled) {
+  background: var(--wr-dark-bg-hover);
+  border-color: var(--wr-accent-primary);
+  color: var(--wr-accent-secondary);
+}
+
+/* ============================================
+   INPUT - TACTICAL STYLE
+   ============================================ */
+
+.war-room-input {
+  width: 100%;
+  padding: 12px 18px;
+  background: var(--wr-light-bg-surface);
+  border: 1px solid var(--wr-light-border);
+  border-radius: 12px;
+  font-size: 14px;
+  font-weight: 500;
+  color: var(--wr-light-text-primary);
+  transition: all var(--wr-transition-base);
+  box-shadow: inset 0 1px 2px rgba(0, 0, 0, 0.02);
+}
+
+/* DARK MODE - Input fields with tactical styling */
+.dark .war-room-input {
+  background: var(--wr-dark-bg-card);
+  border-color: var(--wr-dark-border);
+  color: var(--wr-dark-text-primary);
+  box-shadow: inset 0 1px 3px rgba(0, 0, 0, 0.3);
+}
+
+.war-room-input::placeholder {
+  color: var(--wr-light-text-muted);
+}
+
+.dark .war-room-input::placeholder {
+  color: var(--wr-dark-text-dim);
+}
+
+.war-room-input:focus {
+  outline: none;
+  border-color: var(--wr-light-accent);
+  background: var(--wr-light-bg-elevated);
+  box-shadow: 0 0 0 3px var(--wr-light-accent-soft), inset 0 1px 2px rgba(0, 0, 0, 0.02);
+}
+
+.dark .war-room-input:focus {
+  background: var(--wr-dark-bg-elevated);
+  border-color: var(--wr-accent-primary);
+  box-shadow: 0 0 0 3px var(--wr-accent-soft), var(--wr-dark-shadow-glow);
+}
+
+/* ============================================
+   SELECT - TACTICAL STYLE
+   ============================================ */
+
+.war-room-select {
+  padding: 10px 36px 10px 14px;
+  background: var(--wr-light-bg-elevated);
+  border: 1px solid var(--wr-light-border-strong);
+  border-radius: 12px;
+  font-size: 14px;
+  font-weight: 500;
+  color: var(--wr-light-text-primary);
+  cursor: pointer;
+  appearance: none;
+  transition: all var(--wr-transition-base);
+  background-image: url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' width='12' height='12' fill='%236b7280' viewBox='0 0 16 16'%3E%3Cpath d='M8 11L3 6h10l-5 5z'/%3E%3C/svg%3E");
+  background-repeat: no-repeat;
+  background-position: right 12px center;
+  box-shadow: var(--wr-light-shadow-sm);
+}
+
+/* DARK MODE - Select with tactical styling */
+.dark .war-room-select {
+  background-color: var(--wr-dark-bg-card);
+  border-color: var(--wr-dark-border);
+  color: var(--wr-dark-text-primary);
+  background-image: url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' width='12' height='12' fill='%23fb7185' viewBox='0 0 16 16'%3E%3Cpath d='M8 11L3 6h10l-5 5z'/%3E%3C/svg%3E");
+  box-shadow: var(--wr-dark-shadow-sm);
+}
+
+.war-room-select:hover {
+  border-color: var(--wr-light-accent);
+  background-color: var(--wr-light-accent-soft);
+}
+
+.dark .war-room-select:hover {
+  border-color: var(--wr-accent-primary);
+  background-color: var(--wr-dark-bg-hover);
+}
+
+.war-room-select:focus {
+  outline: none;
+  border-color: var(--wr-light-accent);
+  box-shadow: 0 0 0 3px var(--wr-light-accent-soft);
+}
+
+.dark .war-room-select:focus {
+  border-color: var(--wr-accent-primary);
+  box-shadow: 0 0 0 3px var(--wr-accent-soft);
+}
+
+/* Dark mode select options */
+.dark .war-room-select option {
+  background: var(--wr-dark-bg-elevated);
+  color: var(--wr-dark-text-primary);
+}
+
+/* ============================================
+   BADGE - TACTICAL STYLE
+   ============================================ */
+
+.war-room-badge {
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  padding: 4px 12px;
+  background: var(--wr-light-bg-secondary);
+  color: var(--wr-light-text-secondary);
+  border: 1px solid var(--wr-light-border);
+  border-radius: 20px;
+  font-size: 12px;
+  font-weight: 600;
+  box-shadow: var(--wr-light-shadow-sm);
+}
+
+/* DARK MODE - Badges with tactical styling */
+.dark .war-room-badge {
+  background: var(--wr-dark-bg-card);
+  color: var(--wr-dark-text-secondary);
+  border-color: var(--wr-dark-border);
+  box-shadow: var(--wr-dark-shadow-sm);
+}
+
+.war-room-badge-primary {
+  background: linear-gradient(135deg, var(--accent-primary, #f43f5e), var(--accent-secondary, #ec4899));
+  color: white;
+  border: none;
+  box-shadow: 0 2px 8px rgba(244, 63, 94, 0.2);
+}
+
+/* Dark mode primary badge glow */
+.dark .war-room-badge-primary {
+  box-shadow: 0 2px 12px rgba(244, 63, 94, 0.35), 0 0 20px rgba(244, 63, 94, 0.1);
+}
+
+/* Status badges for dark mode */
+.dark .war-room-badge-success {
+  background: rgba(16, 185, 129, 0.15);
+  color: #34d399;
+  border-color: rgba(16, 185, 129, 0.3);
+}
+
+.dark .war-room-badge-warning {
+  background: rgba(245, 158, 11, 0.15);
+  color: #fbbf24;
+  border-color: rgba(245, 158, 11, 0.3);
+}
+
+.dark .war-room-badge-error {
+  background: rgba(239, 68, 68, 0.15);
+  color: #f87171;
+  border-color: rgba(239, 68, 68, 0.3);
+}
+
+.dark .war-room-badge-info {
+  background: rgba(59, 130, 246, 0.15);
+  color: #60a5fa;
+  border-color: rgba(59, 130, 246, 0.3);
+}
+
+/* ============================================
+   PANEL - TACTICAL STYLE
+   ============================================ */
+
+.war-room-panel {
+  background: var(--wr-light-bg-elevated);
+  border: 1px solid var(--wr-light-border);
+  border-radius: 16px;
+  padding: 16px;
+  box-shadow: var(--wr-light-shadow-md);
+}
+
+/* DARK MODE - Panels with tactical depth */
+.dark .war-room-panel {
+  background: var(--wr-dark-bg-card);
+  border-color: var(--wr-dark-border);
+  color: var(--wr-dark-text-primary);
+  box-shadow: var(--wr-dark-shadow-md);
+}
+
+.dark .war-room-panel p,
+.dark .war-room-panel span,
+.dark .war-room-panel label,
+.dark .war-room-panel h1,
+.dark .war-room-panel h2,
+.dark .war-room-panel h3,
+.dark .war-room-panel h4,
+.dark .war-room-panel li {
+  color: var(--wr-dark-text-primary);
+}
+
+.war-room-panel-inset {
+  background: var(--wr-light-bg-surface);
+  border: 1px solid var(--wr-light-border);
+  border-radius: 12px;
+  padding: 12px;
+  box-shadow: inset 0 1px 3px rgba(0, 0, 0, 0.02);
+}
+
+/* DARK MODE - Inset panels */
+.dark .war-room-panel-inset {
+  background: var(--wr-dark-bg-elevated);
+  border-color: var(--wr-dark-border);
+  box-shadow: inset 0 1px 4px rgba(0, 0, 0, 0.4);
+}
+
+/* Dark mode panel header styling */
+.dark .war-room-panel-header {
+  border-bottom-color: var(--wr-dark-border);
+  color: var(--wr-dark-text-primary);
+}
+
+/* Dark mode panel with accent border */
+.dark .war-room-panel.accent {
+  border-color: var(--wr-dark-border-accent);
+  box-shadow: var(--wr-dark-shadow-md), var(--wr-dark-shadow-glow);
+}
+
+/* ============================================
+   LIST ITEM - TACTICAL STYLE
+   ============================================ */
+
+.war-room-list-item {
+  background: var(--wr-light-bg-elevated);
+  padding: 12px 16px;
+  border: 1px solid var(--wr-light-border);
+  border-radius: 12px;
+  margin-bottom: 8px;
+  cursor: pointer;
+  transition: all var(--wr-transition-base);
+  box-shadow: var(--wr-light-shadow-sm);
+}
+
+/* DARK MODE - List items with tactical styling */
+.dark .war-room-list-item {
+  background: var(--wr-dark-bg-card);
+  border-color: var(--wr-dark-border);
+  box-shadow: var(--wr-dark-shadow-sm);
+  color: var(--wr-dark-text-primary);
+}
+
+.war-room-list-item:hover {
+  border-color: var(--wr-light-accent);
+  transform: translateX(4px);
+  background: var(--wr-light-accent-soft);
+  box-shadow: var(--wr-light-shadow-md);
+}
+
+.dark .war-room-list-item:hover {
+  border-color: var(--wr-accent-primary);
+  background: var(--wr-dark-bg-hover);
+  box-shadow: var(--wr-dark-shadow-md), 0 0 0 1px rgba(244, 63, 94, 0.1);
+  transform: translateX(4px);
+}
+
+.war-room-list-item.active {
+  background: linear-gradient(135deg, var(--accent-primary, #f43f5e), var(--accent-secondary, #ec4899));
+  border-color: transparent;
+  color: white;
+  box-shadow: 0 4px 16px rgba(244, 63, 94, 0.25);
+}
+
+/* Dark mode active list item glow */
+.dark .war-room-list-item.active {
+  box-shadow: 0 4px 20px rgba(244, 63, 94, 0.35), 0 0 40px rgba(244, 63, 94, 0.1);
+}
+
+/* Dark mode list item text */
+.dark .war-room-list-item span,
+.dark .war-room-list-item p,
+.dark .war-room-list-item div {
+  color: var(--wr-dark-text-primary);
+}
+
+.dark .war-room-list-item.active span,
+.dark .war-room-list-item.active p,
+.dark .war-room-list-item.active div {
+  color: white;
+}
+
+/* ============================================
+   DIVIDER - TACTICAL STYLE
+   ============================================ */
+
+.war-room-divider {
+  border-bottom: 1px solid var(--wr-light-border);
+}
+
+.dark .war-room-divider {
+  border-bottom-color: var(--wr-dark-border);
+}
+
+/* Dark mode accent divider */
+.dark .war-room-divider.accent {
+  border-bottom-color: var(--wr-dark-border-accent);
+}
+
+/* ============================================
+   PROGRESS BAR - TACTICAL STYLE
+   ============================================ */
+
+.war-room-progress {
+  width: 100%;
+  height: 6px;
+  background: var(--wr-light-bg-secondary);
+  border-radius: 6px;
+  overflow: hidden;
+  box-shadow: inset 0 1px 2px rgba(0, 0, 0, 0.04);
+}
+
+/* DARK MODE - Progress bar with tactical glow */
+.dark .war-room-progress {
+  background: var(--wr-dark-bg-elevated);
+  box-shadow: inset 0 1px 3px rgba(0, 0, 0, 0.4);
+}
+
+.war-room-progress-bar {
+  height: 100%;
+  background: linear-gradient(90deg, var(--accent-primary, #f43f5e), var(--accent-secondary, #ec4899));
+  border-radius: 6px;
+  transition: width 0.3s ease;
+  box-shadow: 0 0 8px rgba(244, 63, 94, 0.3);
+}
+
+/* Dark mode progress bar glow enhancement */
+.dark .war-room-progress-bar {
+  box-shadow: 0 0 12px rgba(244, 63, 94, 0.5), 0 0 24px rgba(244, 63, 94, 0.2);
+}
+
+/* ============================================
+   SCROLLBAR - TACTICAL STYLE
+   ============================================ */
+
+.war-room-scrollbar::-webkit-scrollbar {
+  width: 6px;
+  height: 6px;
+}
+
+.war-room-scrollbar::-webkit-scrollbar-track {
+  background: var(--wr-light-bg-secondary);
+  border-radius: 6px;
+}
+
+.war-room-scrollbar::-webkit-scrollbar-thumb {
+  background: rgba(0, 0, 0, 0.15);
+  border-radius: 6px;
+  border: 1px solid var(--wr-light-bg-secondary);
+}
+
+/* DARK MODE - Scrollbar with tactical accent */
+.dark .war-room-scrollbar::-webkit-scrollbar-track {
+  background: var(--wr-dark-bg-elevated);
+}
+
+.dark .war-room-scrollbar::-webkit-scrollbar-thumb {
+  background: var(--wr-dark-bg-hover);
+  border: none;
+}
+
+.war-room-scrollbar::-webkit-scrollbar-thumb:hover {
+  background: var(--wr-light-accent);
+}
+
+.dark .war-room-scrollbar::-webkit-scrollbar-thumb:hover {
+  background: var(--wr-accent-primary);
+}
+
+/* ============================================
+   TEXT UTILITIES
+   ============================================ */
+
+.war-room-text-primary {
+  color: var(--wr-light-accent);
+}
+
+.dark .war-room-text-primary {
+  color: var(--wr-accent-secondary);
+}
+
+.war-room-text-secondary {
+  color: var(--wr-light-text-secondary);
+}
+
+.dark .war-room-text-secondary {
+  color: var(--wr-dark-text-secondary);
+}
+
+.war-room-text-muted {
+  color: var(--wr-light-text-muted);
+}
+
+.dark .war-room-text-muted {
+  color: var(--wr-dark-text-muted);
+}
+
+/* Dark mode heading utilities */
+.dark .war-room-heading {
+  color: var(--wr-dark-text-primary);
+  font-family: var(--wr-font-display);
+}
+
+.dark .war-room-label {
+  color: var(--wr-dark-text-secondary);
+}
+
+/* Dark mode accent text */
+.dark .war-room-accent {
+  color: var(--wr-accent-secondary);
+}
+
+.dark .war-room-accent-strong {
+  color: var(--wr-accent-primary);
+}
+
+/* ============================================
+   ANIMATIONS
+   ============================================ */
+
+@keyframes war-room-pulse {
+  0%, 100% {
+    opacity: 1;
+  }
+  50% {
+    opacity: 0.5;
+  }
+}
+
+.war-room-pulse {
+  animation: war-room-pulse 2s ease-in-out infinite;
+}
+
+@keyframes war-room-glow {
+  0%, 100% {
+    box-shadow: 0 0 0 0 rgba(244, 63, 94, 0.4);
+  }
+  50% {
+    box-shadow: 0 0 0 8px rgba(244, 63, 94, 0);
+  }
+}
+
+.war-room-glow {
+  animation: war-room-glow 2s ease-in-out infinite;
+}
+
+/* Advanced AI Animations */
+@keyframes fadeIn {
+  from {
+    opacity: 0;
+    transform: translateY(8px);
+  }
+  to {
+    opacity: 1;
+    transform: translateY(0);
+  }
+}
+
+@keyframes slideDown {
+  from {
+    opacity: 0;
+    max-height: 0;
+  }
+  to {
+    opacity: 1;
+    max-height: 500px;
+  }
+}
+
+@keyframes slideLeft {
+  from {
+    opacity: 0;
+    transform: translateX(20px);
+  }
+  to {
+    opacity: 1;
+    transform: translateX(0);
+  }
+}
+
+.animate-fadeIn {
+  animation: fadeIn 0.3s ease-out forwards;
+}
+
+.animate-slideDown {
+  animation: slideDown 0.3s ease-out forwards;
+  overflow: hidden;
+}
+
+.animate-slideLeft {
+  animation: slideLeft 0.3s ease-out forwards;
+}
+
+/* ============================================
+   RESPONSIVE ADJUSTMENTS
+   ============================================ */
+
+@media (max-width: 768px) {
+  .war-room-btn {
+    padding: 8px 12px;
+    font-size: 13px;
+  }
+
+  .war-room-btn-icon {
+    width: 36px;
+    height: 36px;
+    padding: 0;
+  }
+
+  .war-room-input {
+    padding: 10px 14px;
+    font-size: 16px; /* Prevents iOS zoom on focus */
+  }
+
+  .war-room-panel {
+    padding: 12px;
+    border-radius: 12px;
+  }
+
+  .war-room-card {
+    border-radius: 12px;
+  }
+
+  /* Sidebar mobile styles */
+  .war-room-sidebar {
+    width: 85vw !important;
+    max-width: 320px;
+  }
+
+  /* Header mobile adjustments */
+  .war-room-header {
+    padding: 8px 12px;
+  }
+
+  /* Messages mobile styles */
+  .war-room-message-user,
+  .war-room-message-ai {
+    max-width: 90%;
+    padding: 12px 14px;
+    font-size: 14px;
+  }
+
+  /* Input area mobile */
+  .war-room-input-area {
+    padding: 8px 12px;
+  }
+}
+
+/* Small phone screens */
+@media (max-width: 480px) {
+  .war-room-btn {
+    padding: 6px 10px;
+    font-size: 12px;
+  }
+
+  .war-room-btn-icon {
+    width: 32px;
+    height: 32px;
+  }
+
+  .war-room-panel {
+    padding: 10px;
+  }
+
+  .war-room-sidebar {
+    width: 100vw !important;
+    max-width: none;
+  }
+
+  .war-room-message-user,
+  .war-room-message-ai {
+    max-width: 95%;
+    padding: 10px 12px;
+    border-radius: 16px;
+  }
+}
+
+/* ============================================
+   LIGHT MODE CONTRAST IMPROVEMENTS
+   Better readability for AI responses
+   ============================================ */
+
+/* AI message in light mode - darker text */
+.war-room-container:not(.dark) .war-room-message-ai {
+  color: #1f2937; /* gray-800 */
+}
+
+.war-room-container:not(.dark) .war-room-message-ai p,
+.war-room-container:not(.dark) .war-room-message-ai li,
+.war-room-container:not(.dark) .war-room-message-ai span {
+  color: #1f2937;
+}
+
+/* Active Context Panel - light mode improvements */
+.war-room-container:not(.dark) .war-room-panel {
+  background: rgba(255, 255, 255, 0.95);
+}
+
+.war-room-container:not(.dark) .war-room-text-secondary {
+  color: #4b5563; /* gray-600 for better contrast */
+}
+
+.war-room-container:not(.dark) .war-room-text-muted {
+  color: #6b7280; /* gray-500 */
+}
+
+/* Ensure AI response text is readable in light mode */
+.pulse-ai-response {
+  color: #1f2937;
+}
+
+.pulse-ai-response p,
+.pulse-ai-response li,
+.pulse-ai-response h1,
+.pulse-ai-response h2,
+.pulse-ai-response h3,
+.pulse-ai-response h4 {
+  color: #1f2937;
+}
+
+.dark .pulse-ai-response,
+.dark .pulse-ai-response p,
+.dark .pulse-ai-response li,
+.dark .pulse-ai-response h1,
+.dark .pulse-ai-response h2,
+.dark .pulse-ai-response h3,
+.dark .pulse-ai-response h4,
+.dark .pulse-ai-response strong,
+.dark .pulse-ai-response em,
+.dark .pulse-ai-response span {
+  color: #ffffff !important;
+}
+
+/* War room container dark mode text */
+.dark .war-room-container .pulse-ai-response,
+.dark .war-room-container .pulse-ai-response * {
+  color: #ffffff !important;
+}
+
+/* Ensure AI messages in dark mode have dark background and white text */
+.dark .war-room-message-ai {
+  background: #171717 !important;
+  color: #ffffff !important;
+  border-color: #262626 !important;
+}
+
+.dark .war-room-message-ai p,
+.dark .war-room-message-ai li,
+.dark .war-room-message-ai span,
+.dark .war-room-message-ai div {
+  color: #ffffff !important;
+}
+
+/* Dark mode panel text */
+.dark .war-room-panel .pulse-ai-response,
+.dark .war-room-panel .pulse-ai-response * {
+  color: #f9fafb !important;
+}
+
+/* Light mode panel-inset better contrast */
+.war-room-panel-inset:not(.dark .war-room-panel-inset) {
+  background: rgba(249, 250, 251, 0.8);
+  border-color: rgba(209, 213, 219, 0.6);
+}
+
+/* Rose/Pink accent text needs to be darker in light mode */
+.war-room-container:not(.dark) .text-rose-400,
+.war-room-container:not(.dark) .text-rose-300,
+.war-room-container:not(.dark) .text-rose-100 {
+  color: #be123c !important; /* rose-700 for light mode */
+}
+
+.war-room-container:not(.dark) .text-pink-400,
+.war-room-container:not(.dark) .text-pink-300 {
+  color: #be185d !important; /* pink-700 for light mode */
+}
+
+/* Active Context panel light mode fix */
+.war-room-container:not(.dark) [class*="bg-rose-"] {
+  background-color: rgba(251, 113, 133, 0.15); /* lighter rose background */
+}
+
+.war-room-container:not(.dark) [class*="border-rose-"] {
+  border-color: rgba(244, 63, 94, 0.3);
+}
+
+/* Ensure chat messages are readable */
+.war-room-container:not(.dark) .bg-white\/5 {
+  background: rgba(243, 244, 246, 0.9);
+}
+
+/* Make sure input areas have good contrast */
+.war-room-container:not(.dark) input::placeholder {
+  color: #9ca3af;
+}
+
+/* Zen mode text styling */
+.zen-mode-text,
+.zen-mode-text p,
+.zen-mode-text li,
+.zen-mode-text h1,
+.zen-mode-text h2,
+.zen-mode-text h3,
+.zen-mode-text h4 {
+  color: rgba(255, 255, 255, 0.9) !important;
+}
+
+/* ============================================
+   LIGHT MODE TEXT CONTRAST FIXES
+   ============================================ */
+
+/* war-room-text-primary (labels, headers) should be readable in light mode */
+.war-room-container:not(.dark) .war-room-text-primary {
+  color: #1f2937 !important; /* gray-800 for readability */
+}
+
+/* Brainstorm mode - ensure labels and text are readable */
+.war-room-container:not(.dark) label.war-room-text-primary,
+.war-room-container:not(.dark) .war-room-panel label {
+  color: #374151 !important; /* gray-700 */
+}
+
+/* War room panel text in light mode */
+.war-room-container:not(.dark) .war-room-panel h2,
+.war-room-container:not(.dark) .war-room-panel h3,
+.war-room-container:not(.dark) .war-room-panel p:not(.text-rose-*) {
+  color: #1f2937;
+}
+
+/* ============================================
+   DARK MODE TEXT VISIBILITY FIXES
+   Comprehensive text visibility using CSS variables
+   ============================================ */
+
+/* Focus mode panel text must be white/light in dark mode */
+.dark .war-room-panel,
+.dark .war-room-panel * {
+  color: var(--wr-dark-text-primary);
+}
+
+/* Override any inline or utility text colors in dark mode panels */
+.dark .war-room-panel p,
+.dark .war-room-panel li,
+.dark .war-room-panel span:not([class*="text-rose"]):not([class*="text-pink"]):not([class*="text-yellow"]):not([class*="text-green"]):not([class*="text-blue"]):not([class*="text-purple"]):not([class*="text-orange"]):not([class*="text-red"]):not([class*="text-cyan"]):not([class*="text-emerald"]) {
+  color: var(--wr-dark-text-primary) !important;
+}
+
+/* Ensure MarkdownRenderer content is white in dark mode */
+.dark .war-room-panel .prose,
+.dark .war-room-panel .prose * {
+  color: var(--wr-dark-text-primary) !important;
+}
+
+/* Dark mode prose styling */
+.dark .war-room-panel .prose h1,
+.dark .war-room-panel .prose h2,
+.dark .war-room-panel .prose h3,
+.dark .war-room-panel .prose h4 {
+  color: var(--wr-dark-text-primary) !important;
+  font-family: var(--wr-font-display);
+}
+
+.dark .war-room-panel .prose code {
+  background: var(--wr-dark-bg-elevated);
+  color: var(--wr-accent-secondary);
+  font-family: var(--wr-font-mono);
+}
+
+.dark .war-room-panel .prose pre {
+  background: var(--wr-dark-bg-primary);
+  border: 1px solid var(--wr-dark-border);
+}
+
+.dark .war-room-panel .prose blockquote {
+  border-left-color: var(--wr-accent-primary);
+  background: var(--wr-dark-bg-elevated);
+  color: var(--wr-dark-text-secondary);
+}
+
+/* Fix markdown-body class if used */
+.dark .war-room-panel .markdown-body,
+.dark .war-room-panel .markdown-body p,
+.dark .war-room-panel .markdown-body li,
+.dark .war-room-panel .markdown-body span {
+  color: var(--wr-dark-text-primary) !important;
+}
+
+/* Strong override for any nested text */
+.dark .war-room-container .war-room-panel div:not([class*="bg-rose"]):not([class*="bg-pink"]) {
+  color: var(--wr-dark-text-primary);
+}
+
+/* ============================================
+   DARK MODE GLOBAL OVERRIDES
+   Ensure consistent dark mode across all components
+   ============================================ */
+
+/* Global dark mode body text */
+.dark .war-room-container {
+  color: var(--wr-dark-text-primary);
+}
+
+/* Dark mode headings */
+.dark .war-room-container h1,
+.dark .war-room-container h2,
+.dark .war-room-container h3,
+.dark .war-room-container h4,
+.dark .war-room-container h5,
+.dark .war-room-container h6 {
+  color: var(--wr-dark-text-primary);
+}
+
+/* Dark mode paragraphs and text */
+.dark .war-room-container p {
+  color: var(--wr-dark-text-primary);
+}
+
+/* Dark mode muted text */
+.dark .war-room-container .text-gray-400,
+.dark .war-room-container .text-gray-500,
+.dark .war-room-container .text-gray-600 {
+  color: var(--wr-dark-text-secondary) !important;
+}
+
+/* Dark mode very muted text */
+.dark .war-room-container .text-gray-700,
+.dark .war-room-container .text-gray-800 {
+  color: var(--wr-dark-text-muted) !important;
+}
+
+/* Dark mode background utility overrides */
+.dark .war-room-container .bg-gray-100,
+.dark .war-room-container .bg-gray-50 {
+  background: var(--wr-dark-bg-card) !important;
+}
+
+.dark .war-room-container .bg-gray-200 {
+  background: var(--wr-dark-bg-hover) !important;
+}
+
+.dark .war-room-container .bg-white {
+  background: var(--wr-dark-bg-card) !important;
+}
+
+/* Dark mode border utility overrides */
+.dark .war-room-container .border-gray-100,
+.dark .war-room-container .border-gray-200 {
+  border-color: var(--wr-dark-border) !important;
+}
+
+.dark .war-room-container .border-gray-300 {
+  border-color: var(--wr-dark-border-strong) !important;
+}
+
+/* Dark mode icon visibility */
+.dark .war-room-container svg {
+  color: inherit;
+}
+
+/* Dark mode form elements */
+.dark .war-room-container input[type="text"],
+.dark .war-room-container input[type="email"],
+.dark .war-room-container input[type="password"],
+.dark .war-room-container input[type="search"],
+.dark .war-room-container input[type="number"],
+.dark .war-room-container textarea,
+.dark .war-room-container select {
+  background: var(--wr-dark-bg-card);
+  border-color: var(--wr-dark-border);
+  color: var(--wr-dark-text-primary);
+}
+
+.dark .war-room-container input::placeholder,
+.dark .war-room-container textarea::placeholder {
+  color: var(--wr-dark-text-dim);
+}
+
+/* Dark mode focus states */
+.dark .war-room-container input:focus,
+.dark .war-room-container textarea:focus,
+.dark .war-room-container select:focus {
+  border-color: var(--wr-accent-primary);
+  box-shadow: 0 0 0 3px var(--wr-accent-soft);
+}
+
+/* Dark mode tooltips */
+.dark .war-room-container [data-tooltip],
+.dark .war-room-container .tooltip {
+  background: var(--wr-dark-bg-elevated);
+  color: var(--wr-dark-text-primary);
+  border: 1px solid var(--wr-dark-border);
+}
+
+/* ============================================
+   ANALYST MODE - LIGHT MODE BRAND STYLES
+   Black/Red gradient instead of grays
+   ============================================ */
+
+/* Sidebar */
+.analyst-sidebar {
+  background: linear-gradient(180deg, #000000 0%, #1a0a0a 100%);
+  border-color: rgba(244, 63, 94, 0.2);
+}
+
+.dark .analyst-sidebar {
+  background: linear-gradient(180deg, #000000 0%, #0a0a0a 100%);
+  border-color: rgba(244, 63, 94, 0.15);
+}
+
+.analyst-sidebar-header {
+  border-bottom: 1px solid rgba(244, 63, 94, 0.2);
+  background: linear-gradient(90deg, rgba(244, 63, 94, 0.05) 0%, transparent 100%);
+}
+
+.analyst-header-text {
+  color: #ffffff;
+}
+
+/* Analyst Badge */
+.analyst-badge {
+  background: linear-gradient(135deg, #f43f5e, #ec4899);
+  color: white;
+  padding: 2px 10px;
+  border-radius: 20px;
+  font-weight: 600;
+}
+
+/* Icons */
+.analyst-icon {
+  color: #f43f5e;
+}
+
+.dark .analyst-icon {
+  color: #fb7185;
+}
+
+.analyst-icon-bg {
+  background: linear-gradient(135deg, rgba(244, 63, 94, 0.2), rgba(236, 72, 153, 0.2));
+}
+
+/* Source cards */
+.analyst-source-card {
+  background: rgba(0, 0, 0, 0.4);
+  border: 1px solid rgba(244, 63, 94, 0.15);
+  border-radius: 12px;
+}
+
+.analyst-source-card:hover {
+  background: rgba(244, 63, 94, 0.1);
+  border-color: rgba(244, 63, 94, 0.3);
+}
+
+.dark .analyst-source-card {
+  background: rgba(255, 255, 255, 0.03);
+  border-color: rgba(244, 63, 94, 0.1);
+}
+
+/* Text styles */
+.analyst-text-primary {
+  color: #ffffff;
+}
+
+.analyst-text-secondary {
+  color: rgba(255, 255, 255, 0.6);
+}
+
+.dark .analyst-text-secondary {
+  color: rgba(255, 255, 255, 0.5);
+}
+
+.analyst-accent {
+  color: #f43f5e;
+}
+
+/* Citations panel */
+.analyst-citations-panel {
+  border-top: 1px solid rgba(244, 63, 94, 0.2);
+  background: rgba(0, 0, 0, 0.3);
+}
+
+.analyst-citation-card {
+  background: linear-gradient(135deg, rgba(244, 63, 94, 0.1), rgba(236, 72, 153, 0.05));
+  border: 1px solid rgba(244, 63, 94, 0.2);
+}
+
+/* Toolbar */
+.analyst-toolbar {
+  background: linear-gradient(90deg, rgba(0, 0, 0, 0.95) 0%, rgba(26, 10, 10, 0.95) 100%);
+  border-bottom: 1px solid rgba(244, 63, 94, 0.2);
+}
+
+.dark .analyst-toolbar {
+  background: linear-gradient(90deg, rgba(0, 0, 0, 0.8) 0%, rgba(10, 10, 10, 0.8) 100%);
+}
+
+/* Analyst buttons */
+.analyst-btn {
+  background: rgba(0, 0, 0, 0.6);
+  border: 1px solid rgba(244, 63, 94, 0.2);
+  color: rgba(255, 255, 255, 0.8);
+  border-radius: 8px;
+  transition: all 0.2s ease;
+}
+
+.analyst-btn:hover {
+  background: rgba(244, 63, 94, 0.15);
+  border-color: rgba(244, 63, 94, 0.4);
+  color: #ffffff;
+}
+
+.analyst-btn-active {
+  background: linear-gradient(135deg, #f43f5e, #ec4899) !important;
+  border-color: transparent !important;
+  color: #ffffff !important;
+}
+
+.analyst-btn-icon {
+  width: 32px;
+  height: 32px;
+  padding: 0;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+}
+
+/* Quick prompts bar */
+.analyst-prompts-bar {
+  background: rgba(0, 0, 0, 0.8);
+  border-bottom: 1px solid rgba(244, 63, 94, 0.15);
+}
+
+.dark .analyst-prompts-bar {
+  background: rgba(0, 0, 0, 0.5);
+}
+
+.analyst-prompt-btn {
+  background: rgba(0, 0, 0, 0.5);
+  border: 1px solid rgba(244, 63, 94, 0.2);
+  color: rgba(255, 255, 255, 0.7);
+  border-radius: 8px;
+  transition: all 0.2s ease;
+}
+
+.analyst-prompt-btn:hover {
+  background: rgba(244, 63, 94, 0.15);
+  border-color: rgba(244, 63, 94, 0.4);
+  color: #ffffff;
+}
+
+/* Messages area */
+.analyst-messages-area {
+  background: linear-gradient(180deg, rgba(0, 0, 0, 0.9) 0%, rgba(26, 10, 10, 0.9) 100%);
+}
+
+.dark .analyst-messages-area {
+  background: transparent;
+}
+
+/* Empty state icon */
+.analyst-empty-icon {
+  background: linear-gradient(135deg, rgba(244, 63, 94, 0.2), rgba(236, 72, 153, 0.15));
+}
+
+.analyst-hint {
+  color: #fbbf24;
+}
+
+/* Messages */
+.analyst-message-user {
+  background: linear-gradient(135deg, #f43f5e, #ec4899);
+  color: white;
+  border-radius: 20px 20px 4px 20px;
+  box-shadow: 0 4px 12px rgba(244, 63, 94, 0.3);
+  padding: 14px 18px;
+}
+
+.analyst-message-ai {
+  background: rgba(0, 0, 0, 0.6);
+  color: #ffffff;
+  border: 1px solid rgba(244, 63, 94, 0.2);
+  border-radius: 20px 20px 20px 4px;
+  padding: 14px 18px;
+}
+
+.dark .analyst-message-ai {
+  background: rgba(23, 23, 23, 0.9);
+  border-color: rgba(244, 63, 94, 0.15);
+}
+
+.analyst-message-header {
+  border-bottom: 1px solid rgba(244, 63, 94, 0.2);
+}
+
+.analyst-citations-section {
+  border-top: 1px solid rgba(244, 63, 94, 0.2);
+}
+
+.analyst-citation-tag {
+  background: linear-gradient(135deg, rgba(244, 63, 94, 0.2), rgba(236, 72, 153, 0.15));
+  color: #fb7185;
+}
+
+.analyst-loading-icon {
+  background: linear-gradient(135deg, rgba(244, 63, 94, 0.3), rgba(236, 72, 153, 0.2));
+}
+
+/* Input area */
+.analyst-input-area {
+  background: linear-gradient(90deg, rgba(0, 0, 0, 0.95) 0%, rgba(26, 10, 10, 0.95) 100%);
+  border-top: 1px solid rgba(244, 63, 94, 0.2);
+}
+
+.dark .analyst-input-area {
+  background: rgba(0, 0, 0, 0.8);
+}
+
+.analyst-input-container {
+  background: rgba(0, 0, 0, 0.5);
+  border: 1px solid rgba(244, 63, 94, 0.2);
+  border-radius: 12px;
+}
+
+.analyst-input-container:focus-within {
+  border-color: rgba(244, 63, 94, 0.5);
+  box-shadow: 0 0 0 3px rgba(244, 63, 94, 0.1);
+}
+
+.analyst-input-text {
+  color: #ffffff;
+}
+
+.analyst-input-text::placeholder {
+  color: rgba(255, 255, 255, 0.4);
+}
+
+.analyst-send-btn {
+  width: 32px;
+  height: 32px;
+  border-radius: 8px;
+  background: rgba(244, 63, 94, 0.2);
+  border: 1px solid rgba(244, 63, 94, 0.3);
+  color: rgba(255, 255, 255, 0.5);
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  transition: all 0.2s ease;
+  cursor: pointer;
+}
+
+.analyst-send-btn:disabled {
+  opacity: 0.5;
+  cursor: not-allowed;
+}
+
+.analyst-send-btn-active {
+  background: linear-gradient(135deg, #f43f5e, #ec4899);
+  border-color: transparent;
+  color: #ffffff;
+}
+
+.analyst-send-btn-active:hover {
+  transform: scale(1.05);
+  box-shadow: 0 4px 12px rgba(244, 63, 94, 0.4);
+}
+
+/* ============================================
+   ANALYST MODE - MOBILE RESPONSIVE
+   ============================================ */
+
+@media (max-width: 768px) {
+  /* Hide sidebar by default on mobile */
+  .analyst-sidebar {
+    position: fixed;
+    left: 0;
+    top: 0;
+    bottom: 0;
+    width: 85vw !important;
+    max-width: 300px;
+    z-index: 50;
+    transform: translateX(-100%);
+    transition: transform 0.3s ease;
+  }
+
+  .analyst-sidebar.show {
+    transform: translateX(0);
+  }
+
+  /* Toolbar adjustments */
+  .analyst-toolbar {
+    padding: 12px;
+    flex-wrap: wrap;
+    gap: 8px;
+  }
+
+  .analyst-toolbar .flex.gap-2 {
+    flex-wrap: wrap;
+  }
+
+  .analyst-btn {
+    padding: 8px 12px;
+    font-size: 12px;
+  }
+
+  .analyst-btn-icon {
+    width: 32px;
+    height: 32px;
+  }
+
+  /* Quick prompts */
+  .analyst-prompts-bar {
+    padding: 8px 12px;
+  }
+
+  .analyst-prompt-btn {
+    padding: 8px 12px;
+    font-size: 11px;
+  }
+
+  /* Messages */
+  .analyst-message-user,
+  .analyst-message-ai {
+    max-width: 95%;
+    padding: 12px;
+    font-size: 14px;
+  }
+
+  /* Input area */
+  .analyst-input-area {
+    padding: 12px;
+  }
+
+  .analyst-input-container {
+    padding: 10px 14px;
+  }
+
+  .analyst-input-container input {
+    font-size: 16px; /* Prevents iOS zoom */
+  }
+}
+
+@media (max-width: 480px) {
+  .analyst-toolbar {
+    padding: 8px;
+  }
+
+  .analyst-btn {
+    padding: 6px 10px;
+    font-size: 11px;
+  }
+
+  .analyst-message-user,
+  .analyst-message-ai {
+    padding: 10px;
+    font-size: 13px;
+    border-radius: 14px;
+  }
+}
+
+/* ============================================
+   ALL WAR ROOM MODES - MOBILE RESPONSIVE
+   Focus, Strategist, Brainstorm, Debrief, Missions
+   ============================================ */
+
+/* General mobile adjustments for all mode sidebars */
+@media (max-width: 768px) {
+  /* Hide mode sidebars by default, make them overlay */
+  .war-room-container > .w-64,
+  .war-room-container > .w-72,
+  .war-room-container > .w-80 {
+    position: fixed !important;
+    left: 0;
+    top: 0;
+    bottom: 0;
+    width: 85vw !important;
+    max-width: 300px;
+    z-index: 45;
+    transform: translateX(-100%);
+    transition: transform 0.3s ease;
+    background: inherit;
+  }
+
+  .war-room-container > .w-64.show,
+  .war-room-container > .w-72.show,
+  .war-room-container > .w-80.show {
+    transform: translateX(0);
+  }
+
+  /* Make main content full width when sidebar is hidden */
+  .war-room-container > .flex-1 {
+    width: 100% !important;
+    min-width: 0;
+  }
+
+  /* Progress bars */
+  .war-room-progress {
+    height: 6px;
+  }
+
+  /* Phase grids on mobile */
+  .grid-cols-4 {
+    grid-template-columns: repeat(2, 1fr) !important;
+    gap: 12px !important;
+  }
+
+  /* Mission topic setup */
+  .max-w-lg {
+    max-width: 100%;
+    padding: 0 16px;
+  }
+
+  .war-room-container .max-w-lg .war-room-panel {
+    padding: 16px;
+  }
+
+  /* Focus mode adjustments */
+  .max-w-2xl {
+    max-width: 100%;
+    padding: 0 12px;
+  }
+
+  /* Pomodoro timer compact mode */
+  .war-room-badge {
+    padding: 4px 10px;
+    font-size: 11px;
+  }
+
+  /* Control bar adjustments */
+  .war-room-container > div:first-child .flex.items-center.gap-4 {
+    gap: 8px;
+    flex-wrap: wrap;
+  }
+
+  /* Input areas */
+  .war-room-input-area {
+    padding: 10px;
+  }
+
+  .war-room-input-area .max-w-2xl {
+    padding: 0;
+  }
+
+  .war-room-input-area input {
+    font-size: 16px; /* Prevents iOS zoom */
+  }
+
+  /* Messages conversation area */
+  .max-h-48 {
+    max-height: 120px;
+  }
+
+  /* Findings panel */
+  .findings-panel,
+  .research-findings {
+    max-height: 150px;
+  }
+}
+
+/* Very small screens */
+@media (max-width: 480px) {
+  /* Phase indicators smaller */
+  .w-10.h-10 {
+    width: 32px !important;
+    height: 32px !important;
+  }
+
+  .w-20.h-20 {
+    width: 48px !important;
+    height: 48px !important;
+  }
+
+  .text-3xl {
+    font-size: 1.25rem !important;
+  }
+
+  .text-2xl {
+    font-size: 1.125rem !important;
+  }
+
+  /* Tighter spacing */
+  .p-8 {
+    padding: 16px !important;
+  }
+
+  .p-6 {
+    padding: 12px !important;
+  }
+
+  .mb-8 {
+    margin-bottom: 16px !important;
+  }
+
+  .mb-6 {
+    margin-bottom: 12px !important;
+  }
+
+  /* Grid 2x2 on very small screens */
+  .grid-cols-4,
+  .grid-cols-2 {
+    grid-template-columns: repeat(2, 1fr) !important;
+    gap: 8px !important;
+  }
+
+  /* Buttons */
+  .war-room-btn-primary {
+    padding: 10px 16px;
+    font-size: 13px;
+  }
+}
+
+/* ============================================
+   WAR ROOM SIDEBAR - REDESIGNED
+   Collapsible branching navigation with CMF NOTHING inspiration
+   ============================================ */
+
+/* Sidebar Container - Collapsed by Default */
+.wr-sidebar {
+  --wr-sidebar-width: 280px;
+  --wr-sidebar-collapsed: 60px;
+  --wr-sidebar-accent: #ff0000;
+
+  position: relative;
+  display: flex;
+  flex-direction: column;
+  width: var(--wr-sidebar-collapsed);
+  min-width: var(--wr-sidebar-collapsed);
+  height: 100%;
+  background: var(--wr-dark-bg-secondary);
+  border-right: 1px solid var(--wr-dark-border);
+  transition: width 0.3s cubic-bezier(0.4, 0, 0.2, 1),
+              min-width 0.3s cubic-bezier(0.4, 0, 0.2, 1);
+  overflow: hidden;
+  z-index: 40;
+}
+
+.wr-sidebar.expanded {
+  width: var(--wr-sidebar-width);
+  min-width: var(--wr-sidebar-width);
+}
+
+/* Light mode sidebar */
+.wr-sidebar:not(.dark *) {
+  background: var(--wr-light-bg-secondary);
+  border-right-color: var(--wr-light-border);
+}
+
+/* Sidebar Toggle Button - Line Animation */
+.wr-sidebar-toggle {
+  position: absolute;
+  top: 12px;
+  right: -12px;
+  width: 24px;
+  height: 24px;
+  background: var(--wr-dark-bg-card);
+  border: 1px solid var(--wr-dark-border);
+  border-radius: 6px;
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  justify-content: center;
+  gap: 4px;
+  cursor: pointer;
+  z-index: 50;
+  transition: all 0.2s ease;
+}
+
+.wr-sidebar-toggle:hover {
+  background: var(--wr-dark-bg-hover);
+  border-color: var(--wr-sidebar-accent);
+}
+
+.wr-sidebar-toggle-line {
+  width: 10px;
+  height: 2px;
+  background: var(--wr-dark-text-secondary);
+  border-radius: 1px;
+  transition: all 0.25s cubic-bezier(0.4, 0, 0.2, 1);
+}
+
+/* Collapsed state - two horizontal lines */
+.wr-sidebar:not(.expanded) .wr-sidebar-toggle-line {
+  transform: translateX(0);
+}
+
+/* Expanded state - chevron pointing left */
+.wr-sidebar.expanded .wr-sidebar-toggle-line:first-child {
+  transform: rotate(-45deg) translateY(2px);
+  width: 7px;
+}
+
+.wr-sidebar.expanded .wr-sidebar-toggle-line:last-child {
+  transform: rotate(45deg) translateY(-2px);
+  width: 7px;
+}
+
+/* Collapsed Rail View */
+.wr-sidebar-rail {
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  padding: 16px 0;
+  height: 100%;
+  gap: 8px;
+}
+
+.wr-sidebar.expanded .wr-sidebar-rail {
+  display: none;
+}
+
+/* New War Room / Session Button - Collapsed */
+.wr-rail-action {
+  width: 40px;
+  height: 40px;
+  border-radius: 10px;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  cursor: pointer;
+  transition: all 0.2s ease;
+  border: none;
+  font-size: 14px;
+}
+
+.wr-rail-new-room {
+  background: var(--wr-sidebar-accent);
+  color: white;
+  box-shadow: 0 4px 12px rgba(255, 0, 0, 0.3);
+}
+
+.wr-rail-new-room:hover {
+  transform: scale(1.05);
+  box-shadow: 0 6px 16px rgba(255, 0, 0, 0.4);
+}
+
+.wr-rail-new-session {
+  background: var(--wr-dark-bg-card);
+  color: var(--wr-dark-text-secondary);
+  border: 1px solid var(--wr-dark-border);
+}
+
+.wr-rail-new-session:hover {
+  background: var(--wr-dark-bg-hover);
+  color: var(--wr-dark-text-primary);
+  border-color: var(--wr-sidebar-accent);
+}
+
+/* Session dots in collapsed rail */
+.wr-rail-sessions {
+  flex: 1;
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  gap: 6px;
+  padding: 12px 0;
+  overflow-y: auto;
+  width: 100%;
+}
+
+.wr-rail-session-dot {
+  width: 8px;
+  height: 8px;
+  border-radius: 50%;
+  background: var(--wr-dark-text-muted);
+  cursor: pointer;
+  transition: all 0.2s ease;
+}
+
+.wr-rail-session-dot:hover {
+  background: var(--wr-sidebar-accent);
+  transform: scale(1.3);
+}
+
+.wr-rail-session-dot.active {
+  background: var(--wr-sidebar-accent);
+  box-shadow: 0 0 8px var(--wr-sidebar-accent);
+}
+
+/* Logo at bottom of rail */
+.wr-rail-logo {
+  width: 32px;
+  height: 32px;
+  border-radius: 8px;
+  background: linear-gradient(135deg, #000 0%, #1a1a1a 100%);
+  border: 1px solid var(--wr-dark-border);
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  font-family: var(--wr-font-display);
+  font-weight: 700;
+  font-size: 14px;
+  color: white;
+  margin-top: auto;
+}
+
+/* Export button in rail */
+.wr-rail-export {
+  background: transparent;
+  color: var(--wr-dark-text-muted);
+  border: 1px dashed var(--wr-dark-border);
+}
+
+.wr-rail-export:hover {
+  background: var(--wr-dark-bg-card);
+  color: var(--wr-accent-primary);
+  border-style: solid;
+  border-color: var(--wr-accent-primary);
+}
+
+/* Expanded Sidebar Content */
+.wr-sidebar-content {
+  display: none;
+  flex-direction: column;
+  height: 100%;
+  padding: 16px;
+  overflow: hidden;
+}
+
+.wr-sidebar.expanded .wr-sidebar-content {
+  display: flex;
+}
+
+/* Sidebar Header */
+.wr-sidebar-header {
+  display: flex;
+  align-items: center;
+  gap: 12px;
+  padding-bottom: 16px;
+  border-bottom: 1px solid var(--wr-dark-border);
+  margin-bottom: 16px;
+}
+
+.wr-sidebar-logo {
+  display: flex;
+  flex-direction: column;
+}
+
+.wr-sidebar-logo-text {
+  font-family: var(--wr-font-display);
+  font-size: 18px;
+  font-weight: 700;
+  color: var(--wr-dark-text-primary);
+  letter-spacing: 0.5px;
+}
+
+.wr-sidebar-logo-badge {
+  font-size: 9px;
+  font-weight: 600;
+  color: var(--wr-sidebar-accent);
+  letter-spacing: 2px;
+  text-transform: uppercase;
+}
+
+/* Action Buttons Row */
+.wr-sidebar-actions {
+  display: flex;
+  gap: 8px;
+  margin-bottom: 16px;
+}
+
+.wr-action-btn {
+  flex: 1;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  gap: 8px;
+  padding: 10px 12px;
+  border-radius: 8px;
+  font-size: 12px;
+  font-weight: 500;
+  cursor: pointer;
+  transition: all 0.2s ease;
+  border: none;
+}
+
+.wr-action-btn-primary {
+  background: var(--wr-sidebar-accent);
+  color: white;
+}
+
+.wr-action-btn-primary:hover {
+  filter: brightness(1.1);
+}
+
+.wr-action-btn-secondary {
+  background: var(--wr-dark-bg-card);
+  color: var(--wr-dark-text-secondary);
+  border: 1px solid var(--wr-dark-border);
+}
+
+.wr-action-btn-secondary:hover {
+  background: var(--wr-dark-bg-hover);
+  color: var(--wr-dark-text-primary);
+}
+
+/* Branching Navigation Tree */
+.wr-tree {
+  flex: 1;
+  overflow-y: auto;
+  padding-right: 4px;
+}
+
+.wr-tree-section {
+  margin-bottom: 8px;
+}
+
+.wr-tree-section-header {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  padding: 6px 0;
+  margin-bottom: 4px;
+}
+
+.wr-tree-section-label {
+  font-size: 10px;
+  font-weight: 600;
+  color: var(--wr-dark-text-muted);
+  letter-spacing: 1px;
+  text-transform: uppercase;
+}
+
+.wr-tree-section-count {
+  font-size: 10px;
+  color: var(--wr-dark-text-dim);
+  background: var(--wr-dark-bg-card);
+  padding: 2px 6px;
+  border-radius: 8px;
+}
+
+/* Tree Item - War Room */
+.wr-tree-room {
+  margin-bottom: 4px;
+}
+
+.wr-tree-room-header {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  padding: 8px 10px;
+  border-radius: 6px;
+  cursor: pointer;
+  transition: all 0.15s ease;
+  background: transparent;
+  border: none;
+  width: 100%;
+  text-align: left;
+}
+
+.wr-tree-room-header:hover {
+  background: var(--wr-dark-bg-hover);
+}
+
+.wr-tree-room-header.active {
+  background: var(--wr-accent-soft);
+}
+
+.wr-tree-room-chevron {
+  font-size: 10px;
+  color: var(--wr-dark-text-muted);
+  transition: transform 0.2s ease;
+  width: 12px;
+}
+
+.wr-tree-room-header.expanded .wr-tree-room-chevron {
+  transform: rotate(90deg);
+}
+
+.wr-tree-room-icon {
+  width: 20px;
+  height: 20px;
+  border-radius: 4px;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  font-size: 10px;
+}
+
+.wr-tree-room-name {
+  flex: 1;
+  font-size: 13px;
+  font-weight: 500;
+  color: var(--wr-dark-text-primary);
+  white-space: nowrap;
+  overflow: hidden;
+  text-overflow: ellipsis;
+}
+
+.wr-tree-room-count {
+  font-size: 10px;
+  color: var(--wr-dark-text-dim);
+}
+
+.wr-tree-room-delete {
+  opacity: 0;
+  padding: 4px;
+  color: var(--wr-status-error);
+  background: transparent;
+  border: none;
+  cursor: pointer;
+  border-radius: 4px;
+  transition: all 0.15s ease;
+}
+
+.wr-tree-room-header:hover .wr-tree-room-delete {
+  opacity: 1;
+}
+
+.wr-tree-room-delete:hover {
+  background: rgba(239, 68, 68, 0.15);
+}
+
+/* Tree Branch - Sessions under War Room */
+.wr-tree-branch {
+  margin-left: 20px;
+  padding-left: 12px;
+  border-left: 2px solid var(--wr-dark-border);
+  margin-top: 4px;
+}
+
+.wr-tree-branch-connector {
+  position: relative;
+}
+
+.wr-tree-branch-connector::before {
+  content: '';
+  position: absolute;
+  left: -12px;
+  top: 50%;
+  width: 10px;
+  height: 2px;
+  background: var(--wr-dark-border);
+}
+
+/* Tree Session Item */
+.wr-tree-session {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  padding: 6px 10px;
+  border-radius: 4px;
+  cursor: pointer;
+  transition: all 0.15s ease;
+  margin-bottom: 2px;
+}
+
+.wr-tree-session:hover {
+  background: var(--wr-dark-bg-hover);
+}
+
+.wr-tree-session.active {
+  background: var(--wr-accent-soft);
+}
+
+.wr-tree-session-icon {
+  font-size: 10px;
+  color: var(--wr-dark-text-muted);
+}
+
+.wr-tree-session.active .wr-tree-session-icon {
+  color: var(--wr-sidebar-accent);
+}
+
+.wr-tree-session-name {
+  flex: 1;
+  font-size: 12px;
+  color: var(--wr-dark-text-secondary);
+  white-space: nowrap;
+  overflow: hidden;
+  text-overflow: ellipsis;
+}
+
+.wr-tree-session.active .wr-tree-session-name {
+  color: var(--wr-dark-text-primary);
+  font-weight: 500;
+}
+
+.wr-tree-session-delete {
+  opacity: 0;
+  padding: 2px 4px;
+  color: var(--wr-status-error);
+  background: transparent;
+  border: none;
+  cursor: pointer;
+  font-size: 10px;
+  border-radius: 2px;
+}
+
+.wr-tree-session:hover .wr-tree-session-delete {
+  opacity: 1;
+}
+
+/* Empty State */
+.wr-tree-empty {
+  padding: 8px 10px;
+  font-size: 11px;
+  color: var(--wr-dark-text-dim);
+  font-style: italic;
+}
+
+/* "All Sessions" option */
+.wr-tree-all {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  padding: 8px 10px;
+  border-radius: 6px;
+  cursor: pointer;
+  transition: all 0.15s ease;
+  margin-bottom: 8px;
+  background: transparent;
+  border: none;
+  width: 100%;
+  text-align: left;
+}
+
+.wr-tree-all:hover {
+  background: var(--wr-dark-bg-hover);
+}
+
+.wr-tree-all.active {
+  background: var(--wr-accent-soft);
+}
+
+.wr-tree-all-icon {
+  font-size: 12px;
+  color: var(--wr-sidebar-accent);
+}
+
+.wr-tree-all-label {
+  font-size: 13px;
+  font-weight: 500;
+  color: var(--wr-dark-text-primary);
+}
+
+.wr-tree-all-count {
+  margin-left: auto;
+  font-size: 10px;
+  color: var(--wr-dark-text-dim);
+}
+
+/* Sidebar Footer */
+.wr-sidebar-footer {
+  padding-top: 12px;
+  border-top: 1px solid var(--wr-dark-border);
+  margin-top: auto;
+}
+
+.wr-export-btn {
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  gap: 8px;
+  width: 100%;
+  padding: 10px;
+  border-radius: 6px;
+  font-size: 12px;
+  font-weight: 500;
+  background: var(--wr-dark-bg-card);
+  color: var(--wr-dark-text-secondary);
+  border: 1px dashed var(--wr-dark-border);
+  cursor: pointer;
+  transition: all 0.2s ease;
+}
+
+.wr-export-btn:hover {
+  background: var(--wr-dark-bg-hover);
+  color: var(--wr-accent-primary);
+  border-color: var(--wr-accent-primary);
+  border-style: solid;
+}
+
+/* Input fields in sidebar */
+.wr-sidebar-input {
+  width: 100%;
+  padding: 8px 10px;
+  border-radius: 6px;
+  font-size: 12px;
+  background: var(--wr-dark-bg-primary);
+  color: var(--wr-dark-text-primary);
+  border: 1px solid var(--wr-dark-border);
+  outline: none;
+  transition: all 0.2s ease;
+}
+
+.wr-sidebar-input:focus {
+  border-color: var(--wr-sidebar-accent);
+  box-shadow: 0 0 0 2px rgba(255, 0, 0, 0.1);
+}
+
+.wr-sidebar-input::placeholder {
+  color: var(--wr-dark-text-dim);
+}
+
+/* Inline create form */
+.wr-inline-create {
+  display: flex;
+  gap: 6px;
+  margin-bottom: 12px;
+}
+
+.wr-inline-create-confirm {
+  width: 32px;
+  height: 32px;
+  border-radius: 6px;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  background: var(--wr-status-success);
+  color: white;
+  border: none;
+  cursor: pointer;
+  font-size: 12px;
+}
+
+.wr-inline-create-confirm:disabled {
+  opacity: 0.5;
+  cursor: not-allowed;
+}
+
+/* Tooltip for collapsed rail buttons */
+.wr-rail-tooltip {
+  position: absolute;
+  left: 100%;
+  margin-left: 12px;
+  padding: 6px 10px;
+  background: var(--wr-dark-bg-card);
+  color: var(--wr-dark-text-primary);
+  border: 1px solid var(--wr-dark-border);
+  border-radius: 6px;
+  font-size: 11px;
+  white-space: nowrap;
+  opacity: 0;
+  pointer-events: none;
+  transition: opacity 0.15s ease;
+  z-index: 100;
+}
+
+.wr-rail-action:hover .wr-rail-tooltip {
+  opacity: 1;
+}
+
+/* Mobile responsive */
+@media (max-width: 768px) {
+  .wr-sidebar {
+    position: fixed;
+    left: 0;
+    top: 0;
+    height: 100vh;
+    z-index: 100;
+  }
+
+  .wr-sidebar:not(.expanded) {
+    width: 0;
+    min-width: 0;
+    border: none;
+  }
+
+  .wr-sidebar.expanded {
+    width: 280px;
+    min-width: 280px;
+  }
+
+  .wr-sidebar-toggle {
+    right: -32px;
+  }
+}

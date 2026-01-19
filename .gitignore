@@ -1,0 +1,59 @@
+# Dependencies
+node_modules/
+.pnp/
+.pnp.js
+
+# Build outputs
+dist/
+build/
+out/
+
+# Environment files
+.env
+.env.local
+.env.development.local
+.env.test.local
+.env.production.local
+
+# IDE
+.vscode/
+.idea/
+*.swp
+*.swo
+*~
+
+# OS files
+.DS_Store
+Thumbs.db
+
+# Logs
+npm-debug.log*
+yarn-debug.log*
+yarn-error.log*
+*.log
+
+# Testing
+coverage/
+.nyc_output/
+
+# Misc
+*.local
+.cache/
+nul
+
+.vercel
+
+# Google OAuth secrets
+client_secret_*.json
+
+# Android signing keys (NEVER commit these!)
+android/app/pulse-release-key.jks
+android/app/keystore.properties
+*.jks
+
+# Claude Code temp files (prevent accumulation from crashes)
+tmpclaude-*
+tmpclaude-*-cwd
+
+# Claude Code configuration (local to each user)
+.claude/

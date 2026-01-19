@@ -1,0 +1,923 @@
+/**
+ * War Room Sidebar Styles
+ * Collapsible sidebar with light/dark mode support
+ * Brand palette: Rose (#f43f5e) to Pink (#ec4899)
+ */
+
+/* ============================================
+   CSS Variables
+   ============================================ */
+.wrs-container {
+  /* Sizing */
+  --wrs-width-collapsed: 56px;
+  --wrs-width-expanded: 280px;
+
+  /* Dark mode (default) */
+  --wrs-bg: #0f0f12;
+  --wrs-bg-secondary: #18181b;
+  --wrs-bg-hover: #27272a;
+  --wrs-bg-active: rgba(244, 63, 94, 0.15);
+  --wrs-border: #27272a;
+  --wrs-text: #fafafa;
+  --wrs-text-secondary: #a1a1aa;
+  --wrs-text-muted: #71717a;
+  --wrs-accent: #f43f5e;
+  --wrs-accent-hover: #e11d48;
+  --wrs-shadow: 0 4px 24px rgba(0, 0, 0, 0.4);
+}
+
+/* Light mode */
+:root:not(.dark) .wrs-container,
+.light .wrs-container {
+  --wrs-bg: #ffffff;
+  --wrs-bg-secondary: #f4f4f5;
+  --wrs-bg-hover: #e4e4e7;
+  --wrs-bg-active: rgba(244, 63, 94, 0.1);
+  --wrs-border: #e4e4e7;
+  --wrs-text: #18181b;
+  --wrs-text-secondary: #52525b;
+  --wrs-text-muted: #a1a1aa;
+  --wrs-accent: #e11d48;
+  --wrs-accent-hover: #be123c;
+  --wrs-shadow: 0 4px 24px rgba(0, 0, 0, 0.1);
+}
+
+/* ============================================
+   Wrapper - Contains sidebar and button side-by-side
+   ============================================ */
+.wrs-wrapper {
+  position: relative;
+  height: 100%;
+  display: flex;
+  align-items: flex-start;
+  flex-shrink: 0;
+  isolation: isolate;
+  /* Prevent reflows from parent container */
+  contain: layout style;
+  /* Force own stacking context */
+  z-index: 1;
+}
+
+/* ============================================
+   Container
+   ============================================ */
+.wrs-container {
+  position: relative;
+  height: 100%;
+  background: var(--wrs-bg);
+  border-right: 1px solid var(--wrs-border);
+  /* Use transform for width changes to prevent layout reflow */
+  transition: width 0.25s cubic-bezier(0.4, 0, 0.2, 1);
+  overflow: hidden;
+  z-index: 40;
+  display: flex;
+  flex-direction: column;
+  flex-shrink: 0;
+  /* Better performance hints - isolate layout changes */
+  contain: layout style paint;
+  /* Force GPU acceleration */
+  will-change: width;
+  /* Prevent reflows from affecting children */
+  isolation: isolate;
+}
+
+.wrs-collapsed {
+  width: var(--wrs-width-collapsed);
+}
+
+.wrs-expanded {
+  width: var(--wrs-width-expanded);
+}
+
+/* Inner wrapper to handle content overflow */
+.wrs-container > .wrs-rail,
+.wrs-container > .wrs-content {
+  overflow: hidden;
+}
+
+/* ============================================
+   Toggle Button - Positioned to the right of sidebar (not overlaying)
+   ============================================ */
+.wrs-toggle {
+  /* Position as flex item next to sidebar - completely independent */
+  position: relative;
+  margin-top: 12px;
+  margin-left: 8px;
+  z-index: 100;
+  width: 24px;
+  height: 24px;
+  min-width: 24px;
+  min-height: 24px;
+  border-radius: 50%;
+  background: var(--wrs-bg);
+  border: 1px solid var(--wrs-border);
+  box-shadow: 0 2px 8px rgba(0, 0, 0, 0.15);
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  cursor: pointer;
+  /* Prevent text selection and ensure stable interaction */
+  user-select: none;
+  -webkit-user-select: none;
+  touch-action: manipulation;
+  /* Smooth transitions on visual properties only - NO position transitions */
+  transition: background-color 0.2s ease, border-color 0.2s ease, box-shadow 0.2s ease, transform 0.1s ease;
+  /* Force GPU layer - critical for preventing flicker */
+  transform: translate3d(0, 0, 0);
+  will-change: background-color, border-color, transform;
+  /* Create own stacking context - completely isolates from parent */
+  isolation: isolate;
+  contain: layout style paint; /* Prevent parent reflows from affecting button */
+  /* Ensure button is always clickable */
+  pointer-events: auto;
+  /* Prevent layout shifts - fixed size */
+  flex-shrink: 0;
+  /* Backface visibility for smoother rendering */
+  backface-visibility: hidden;
+  -webkit-backface-visibility: hidden;
+  /* Prevent any repaints during parent transitions */
+  opacity: 1;
+}
+
+/* Hover state - stable, no position changes */
+.wrs-toggle:hover {
+  background: var(--wrs-accent);
+  border-color: var(--wrs-accent);
+  box-shadow: 0 2px 12px rgba(244, 63, 94, 0.3);
+  /* Transform stays the same - only visual properties change */
+  transform: translate3d(0, 0, 0);
+  /* Ensure hover state is stable and doesn't flicker */
+  transition: background-color 0.15s ease, border-color 0.15s ease, box-shadow 0.15s ease;
+}
+
+/* Active state for better feedback */
+.wrs-toggle:active {
+  transform: translate3d(0, 0, 0) scale(0.92);
+  transition: transform 0.1s ease, background-color 0.1s ease, border-color 0.1s ease;
+}
+
+/* Focus state for accessibility */
+.wrs-toggle:focus {
+  outline: 2px solid var(--wrs-accent);
+  outline-offset: 2px;
+}
+
+.wrs-toggle:focus:not(:focus-visible) {
+  outline: none;
+}
+
+.wrs-toggle i {
+  font-size: 10px;
+  color: var(--wrs-text-secondary);
+  /* Fixed dimensions prevent reflow */
+  width: 10px;
+  height: 10px;
+  line-height: 10px;
+  text-align: center;
+  pointer-events: none;
+  /* Prevent icon from causing layout shifts */
+  display: inline-block;
+  flex-shrink: 0;
+  /* Smooth color transition */
+  transition: color 0.2s ease;
+}
+
+.wrs-toggle:hover i {
+  color: white;
+}
+
+/* ============================================
+   Collapsed Rail
+   ============================================ */
+.wrs-rail {
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  padding: 16px 0;
+  gap: 8px;
+  height: 100%;
+}
+
+.wrs-rail-logo {
+  width: 36px;
+  height: 36px;
+  border-radius: 10px;
+  background: linear-gradient(135deg, #f43f5e 0%, #ec4899 100%);
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  margin-bottom: 8px;
+}
+
+.wrs-rail-logo i {
+  color: white;
+  font-size: 14px;
+}
+
+.wrs-rail-action {
+  width: 36px;
+  height: 36px;
+  border-radius: 10px;
+  background: var(--wrs-bg-secondary);
+  border: 1px solid var(--wrs-border);
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  cursor: pointer;
+  transition: all 0.2s ease;
+}
+
+.wrs-rail-action:hover {
+  background: var(--wrs-bg-hover);
+  border-color: var(--wrs-accent);
+}
+
+.wrs-rail-action i {
+  font-size: 12px;
+  color: var(--wrs-text-secondary);
+}
+
+.wrs-rail-add:hover {
+  background: var(--wrs-accent);
+  border-color: var(--wrs-accent);
+}
+
+.wrs-rail-add:hover i {
+  color: white;
+}
+
+.wrs-rail-divider {
+  width: 24px;
+  height: 1px;
+  background: var(--wrs-border);
+  margin: 4px 0;
+}
+
+.wrs-rail-projects {
+  flex: 1;
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  gap: 6px;
+  overflow-y: auto;
+  padding: 4px 0;
+}
+
+.wrs-rail-project {
+  width: 32px;
+  height: 32px;
+  border-radius: 8px;
+  background: var(--wrs-bg-secondary);
+  border: 2px solid transparent;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  cursor: pointer;
+  transition: all 0.2s ease;
+}
+
+.wrs-rail-project i {
+  font-size: 12px;
+  color: var(--project-color, var(--wrs-text-secondary));
+}
+
+.wrs-rail-project:hover {
+  border-color: var(--project-color, var(--wrs-accent));
+  transform: scale(1.1);
+}
+
+.wrs-rail-project.active {
+  background: var(--wrs-bg-active);
+  border-color: var(--project-color, var(--wrs-accent));
+}
+
+.wrs-rail-more {
+  width: 32px;
+  height: 32px;
+  border-radius: 8px;
+  background: transparent;
+  border: none;
+  cursor: pointer;
+  font-size: 10px;
+  font-weight: 600;
+  color: var(--wrs-text-muted);
+  transition: all 0.2s ease;
+}
+
+.wrs-rail-more:hover {
+  color: var(--wrs-accent);
+}
+
+/* ============================================
+   Expanded Content
+   ============================================ */
+.wrs-content {
+  display: flex;
+  flex-direction: column;
+  height: 100%;
+  padding: 16px;
+  overflow: hidden;
+}
+
+/* Header */
+.wrs-header {
+  margin-bottom: 16px;
+  padding-bottom: 12px;
+  border-bottom: 1px solid var(--wrs-border);
+}
+
+.wrs-brand {
+  display: flex;
+  flex-direction: column;
+  gap: 2px;
+}
+
+.wrs-brand-text {
+  font-size: 14px;
+  font-weight: 700;
+  letter-spacing: 0.1em;
+  background: linear-gradient(135deg, #f43f5e 0%, #ec4899 100%);
+  -webkit-background-clip: text;
+  -webkit-text-fill-color: transparent;
+  background-clip: text;
+}
+
+.wrs-brand-sub {
+  font-size: 10px;
+  font-weight: 500;
+  color: var(--wrs-text-muted);
+  text-transform: uppercase;
+  letter-spacing: 0.05em;
+}
+
+/* New War Room Button */
+.wrs-new-warroom-btn {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  width: 100%;
+  padding: 10px 12px;
+  border-radius: 8px;
+  background: linear-gradient(135deg, #f43f5e 0%, #ec4899 100%);
+  border: none;
+  color: white;
+  font-size: 13px;
+  font-weight: 500;
+  cursor: pointer;
+  transition: all 0.2s ease;
+  margin-bottom: 12px;
+}
+
+.wrs-new-warroom-btn:hover {
+  transform: translateY(-1px);
+  box-shadow: 0 4px 16px rgba(244, 63, 94, 0.4);
+}
+
+.wrs-new-warroom-btn i {
+  font-size: 11px;
+}
+
+/* ============================================
+   Create Form
+   ============================================ */
+.wrs-create-form {
+  background: var(--wrs-bg-secondary);
+  border: 1px solid var(--wrs-border);
+  border-radius: 10px;
+  padding: 12px;
+  margin-bottom: 12px;
+}
+
+.wrs-input {
+  width: 100%;
+  padding: 10px 12px;
+  background: var(--wrs-bg);
+  border: 1px solid var(--wrs-border);
+  border-radius: 6px;
+  color: var(--wrs-text);
+  font-size: 13px;
+  outline: none;
+  transition: border-color 0.2s ease;
+}
+
+.wrs-input:focus {
+  border-color: var(--wrs-accent);
+}
+
+.wrs-input::placeholder {
+  color: var(--wrs-text-muted);
+}
+
+.wrs-input-sm {
+  padding: 6px 10px;
+  font-size: 12px;
+}
+
+.wrs-picker-label {
+  display: block;
+  font-size: 10px;
+  font-weight: 600;
+  color: var(--wrs-text-muted);
+  text-transform: uppercase;
+  letter-spacing: 0.05em;
+  margin: 10px 0 6px;
+}
+
+.wrs-icon-picker,
+.wrs-color-picker {
+  margin-top: 8px;
+}
+
+.wrs-icon-grid,
+.wrs-color-grid {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 4px;
+}
+
+.wrs-icon-option {
+  width: 28px;
+  height: 28px;
+  border-radius: 6px;
+  background: var(--wrs-bg);
+  border: 1px solid var(--wrs-border);
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  cursor: pointer;
+  transition: all 0.15s ease;
+}
+
+.wrs-icon-option i {
+  font-size: 11px;
+  color: var(--wrs-text-secondary);
+}
+
+.wrs-icon-option:hover,
+.wrs-icon-option.selected {
+  border-color: var(--wrs-accent);
+  background: var(--wrs-bg-active);
+}
+
+.wrs-icon-option.selected i {
+  color: var(--wrs-accent);
+}
+
+.wrs-color-option {
+  width: 20px;
+  height: 20px;
+  border-radius: 50%;
+  border: 2px solid transparent;
+  cursor: pointer;
+  transition: all 0.15s ease;
+}
+
+.wrs-color-option:hover {
+  transform: scale(1.2);
+}
+
+.wrs-color-option.selected {
+  border-color: var(--wrs-text);
+  transform: scale(1.2);
+}
+
+.wrs-form-actions {
+  display: flex;
+  gap: 8px;
+  margin-top: 12px;
+}
+
+.wrs-btn {
+  flex: 1;
+  padding: 8px 12px;
+  border-radius: 6px;
+  font-size: 12px;
+  font-weight: 500;
+  cursor: pointer;
+  transition: all 0.15s ease;
+}
+
+.wrs-btn-secondary {
+  background: var(--wrs-bg);
+  border: 1px solid var(--wrs-border);
+  color: var(--wrs-text-secondary);
+}
+
+.wrs-btn-secondary:hover {
+  background: var(--wrs-bg-hover);
+}
+
+.wrs-btn-primary {
+  background: var(--wrs-accent);
+  border: 1px solid var(--wrs-accent);
+  color: white;
+}
+
+.wrs-btn-primary:hover:not(:disabled) {
+  background: var(--wrs-accent-hover);
+}
+
+.wrs-btn-primary:disabled {
+  opacity: 0.5;
+  cursor: not-allowed;
+}
+
+.wrs-btn-icon {
+  width: 28px;
+  height: 28px;
+  border-radius: 6px;
+  background: var(--wrs-bg);
+  border: 1px solid var(--wrs-border);
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  cursor: pointer;
+  transition: all 0.15s ease;
+}
+
+.wrs-btn-icon:hover:not(:disabled) {
+  border-color: var(--wrs-accent);
+}
+
+.wrs-btn-icon:disabled {
+  opacity: 0.5;
+  cursor: not-allowed;
+}
+
+.wrs-btn-icon i {
+  font-size: 11px;
+  color: var(--wrs-text-secondary);
+}
+
+/* ============================================
+   List & Sections
+   ============================================ */
+.wrs-list {
+  flex: 1;
+  overflow-y: auto;
+  overflow-x: hidden;
+  margin: 0 -8px;
+  padding: 0 8px;
+}
+
+.wrs-list::-webkit-scrollbar {
+  width: 4px;
+}
+
+.wrs-list::-webkit-scrollbar-track {
+  background: transparent;
+}
+
+.wrs-list::-webkit-scrollbar-thumb {
+  background: var(--wrs-border);
+  border-radius: 2px;
+}
+
+.wrs-list::-webkit-scrollbar-thumb:hover {
+  background: var(--wrs-text-muted);
+}
+
+.wrs-section {
+  margin-bottom: 12px;
+}
+
+.wrs-section-header {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  padding: 6px 8px;
+  font-size: 10px;
+  font-weight: 600;
+  color: var(--wrs-text-muted);
+  text-transform: uppercase;
+  letter-spacing: 0.05em;
+}
+
+.wrs-section-header i {
+  font-size: 10px;
+}
+
+/* ============================================
+   War Room Item
+   ============================================ */
+.wrs-warroom {
+  margin-bottom: 4px;
+}
+
+.wrs-warroom-header {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  width: 100%;
+  padding: 8px 10px;
+  border-radius: 8px;
+  background: transparent;
+  border: 1px solid transparent;
+  cursor: pointer;
+  transition: all 0.15s ease;
+  position: relative;
+}
+
+.wrs-warroom-header:hover {
+  background: var(--wrs-bg-hover);
+}
+
+.wrs-warroom-header.active {
+  background: var(--wrs-bg-active);
+  border-color: var(--wrs-accent);
+}
+
+.wrs-chevron {
+  font-size: 9px;
+  color: var(--wrs-text-muted);
+  transition: transform 0.2s ease;
+  width: 12px;
+}
+
+.wrs-warroom-icon {
+  width: 26px;
+  height: 26px;
+  border-radius: 6px;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  flex-shrink: 0;
+}
+
+.wrs-warroom-icon i {
+  font-size: 11px;
+}
+
+.wrs-warroom-name {
+  flex: 1;
+  font-size: 13px;
+  font-weight: 500;
+  color: var(--wrs-text);
+  white-space: nowrap;
+  overflow: hidden;
+  text-overflow: ellipsis;
+}
+
+.wrs-count {
+  font-size: 10px;
+  font-weight: 500;
+  color: var(--wrs-text-muted);
+  background: var(--wrs-bg-secondary);
+  padding: 2px 6px;
+  border-radius: 4px;
+}
+
+.wrs-warroom-actions {
+  display: none;
+  gap: 4px;
+}
+
+.wrs-warroom-header:hover .wrs-warroom-actions {
+  display: flex;
+}
+
+.wrs-warroom-header:hover .wrs-count {
+  display: none;
+}
+
+.wrs-action-btn {
+  width: 24px;
+  height: 24px;
+  border-radius: 4px;
+  background: transparent;
+  border: none;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  cursor: pointer;
+  transition: all 0.15s ease;
+}
+
+.wrs-action-btn:hover {
+  background: var(--wrs-bg-secondary);
+}
+
+.wrs-action-btn i {
+  font-size: 10px;
+  color: var(--wrs-text-muted);
+}
+
+.wrs-action-delete:hover {
+  background: rgba(239, 68, 68, 0.15);
+}
+
+.wrs-action-delete:hover i {
+  color: #ef4444;
+}
+
+/* Export Menu */
+.wrs-export-menu {
+  position: absolute;
+  top: 100%;
+  right: 8px;
+  z-index: 100;
+  background: var(--wrs-bg);
+  border: 1px solid var(--wrs-border);
+  border-radius: 8px;
+  box-shadow: var(--wrs-shadow);
+  padding: 4px;
+  min-width: 160px;
+}
+
+.wrs-export-menu button {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  width: 100%;
+  padding: 8px 12px;
+  border-radius: 6px;
+  background: transparent;
+  border: none;
+  font-size: 12px;
+  color: var(--wrs-text);
+  cursor: pointer;
+  transition: background 0.15s ease;
+}
+
+.wrs-export-menu button:hover {
+  background: var(--wrs-bg-hover);
+}
+
+.wrs-export-menu button i {
+  font-size: 11px;
+  color: var(--wrs-text-muted);
+}
+
+/* ============================================
+   Sessions
+   ============================================ */
+.wrs-sessions {
+  margin-left: 20px;
+  padding-left: 12px;
+  border-left: 1px solid var(--wrs-border);
+  margin-top: 4px;
+}
+
+.wrs-new-session-btn {
+  display: flex;
+  align-items: center;
+  gap: 6px;
+  width: 100%;
+  padding: 6px 10px;
+  border-radius: 6px;
+  background: transparent;
+  border: 1px dashed var(--wrs-border);
+  color: var(--wrs-text-muted);
+  font-size: 11px;
+  cursor: pointer;
+  transition: all 0.15s ease;
+  margin-bottom: 4px;
+}
+
+.wrs-new-session-btn:hover {
+  border-color: var(--wrs-accent);
+  color: var(--wrs-accent);
+  background: var(--wrs-bg-active);
+}
+
+.wrs-new-session-btn i {
+  font-size: 9px;
+}
+
+.wrs-session-create {
+  display: flex;
+  gap: 4px;
+  margin-bottom: 4px;
+}
+
+.wrs-session-create .wrs-input {
+  flex: 1;
+}
+
+.wrs-session {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  padding: 6px 10px;
+  border-radius: 6px;
+  cursor: pointer;
+  transition: all 0.15s ease;
+  margin-bottom: 2px;
+}
+
+.wrs-session:hover {
+  background: var(--wrs-bg-hover);
+}
+
+.wrs-session.active {
+  background: var(--wrs-bg-active);
+}
+
+.wrs-session > i {
+  font-size: 10px;
+  color: var(--wrs-text-muted);
+}
+
+.wrs-session.active > i {
+  color: var(--wrs-accent);
+}
+
+.wrs-session-name {
+  flex: 1;
+  font-size: 12px;
+  color: var(--wrs-text);
+  white-space: nowrap;
+  overflow: hidden;
+  text-overflow: ellipsis;
+}
+
+.wrs-session-actions {
+  display: none;
+  gap: 2px;
+}
+
+.wrs-session:hover .wrs-session-actions {
+  display: flex;
+}
+
+.wrs-session-delete {
+  width: 18px;
+  height: 18px;
+  border-radius: 4px;
+  background: transparent;
+  border: none;
+  display: none;
+  align-items: center;
+  justify-content: center;
+  cursor: pointer;
+  transition: all 0.15s ease;
+}
+
+.wrs-session:hover .wrs-session-delete {
+  display: flex;
+}
+
+.wrs-session-delete:hover {
+  background: rgba(239, 68, 68, 0.15);
+}
+
+.wrs-session-delete i {
+  font-size: 9px;
+  color: var(--wrs-text-muted);
+}
+
+.wrs-session-delete:hover i {
+  color: #ef4444;
+}
+
+/* ============================================
+   Empty States
+   ============================================ */
+.wrs-empty {
+  font-size: 11px;
+  color: var(--wrs-text-muted);
+  padding: 8px 10px;
+  font-style: italic;
+}
+
+.wrs-empty-state {
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  justify-content: center;
+  padding: 32px 16px;
+  text-align: center;
+}
+
+.wrs-empty-state i {
+  font-size: 32px;
+  color: var(--wrs-border);
+  margin-bottom: 12px;
+}
+
+.wrs-empty-state p {
+  font-size: 14px;
+  font-weight: 500;
+  color: var(--wrs-text);
+  margin-bottom: 4px;
+}
+
+.wrs-empty-state span {
+  font-size: 12px;
+  color: var(--wrs-text-muted);
+  line-height: 1.4;
+}
+
+/* ============================================
+   Responsive
+   ============================================ */
+@media (max-width: 768px) {
+  .wrs-expanded {
+    position: fixed;
+    left: 0;
+    top: 0;
+    height: 100vh;
+    z-index: 100;
+    box-shadow: var(--wrs-shadow);
+  }
+}

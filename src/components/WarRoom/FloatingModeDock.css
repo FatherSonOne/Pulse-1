@@ -1,0 +1,519 @@
+/* ============================================
+   FLOATING MODE DOCK - In-Session Mode Switcher
+   ============================================ */
+
+@import url('https://fonts.googleapis.com/css2?family=Syne:wght@400;500;600;700&family=JetBrains+Mono:wght@400;500&display=swap');
+
+/* ============================================
+   CSS Variables - Light Mode (Default)
+   ============================================ */
+.fmd-container {
+  --fmd-bg: rgba(255, 255, 255, 0.98);
+  --fmd-bg-hover: rgba(6, 182, 212, 0.06);
+  --fmd-bg-active: rgba(6, 182, 212, 0.12);
+  --fmd-text: #1e293b;
+  --fmd-text-secondary: #475569;
+  --fmd-text-muted: #94a3b8;
+  --fmd-border: rgba(6, 182, 212, 0.15);
+  --fmd-border-hover: rgba(6, 182, 212, 0.3);
+  --fmd-accent: #0891b2;
+  --fmd-accent-soft: rgba(6, 182, 212, 0.12);
+  --fmd-radius: 16px;
+  --fmd-radius-sm: 10px;
+  --fmd-shadow: 0 20px 40px -12px rgba(0, 0, 0, 0.12), 0 4px 16px rgba(0, 0, 0, 0.08);
+  --fmd-glow: 0 0 20px rgba(6, 182, 212, 0.12);
+  --fmd-font: 'Syne', sans-serif;
+  --fmd-font-mono: 'JetBrains Mono', monospace;
+
+  /* Sidebar offset - uses global --sidebar-width CSS variable set in App.tsx */
+  --fmd-sidebar-offset: var(--sidebar-width, 18rem);
+}
+
+/* ============================================
+   CSS Variables - Dark Mode (when html.dark)
+   ============================================ */
+html.dark .fmd-container,
+.dark .fmd-container {
+  --fmd-bg: rgba(10, 14, 20, 0.98);
+  --fmd-bg-hover: rgba(6, 182, 212, 0.08);
+  --fmd-bg-active: rgba(6, 182, 212, 0.15);
+  --fmd-text: #f1f5f9;
+  --fmd-text-secondary: #94a3b8;
+  --fmd-text-muted: #64748b;
+  --fmd-border: rgba(6, 182, 212, 0.15);
+  --fmd-border-hover: rgba(6, 182, 212, 0.3);
+  --fmd-accent: #06b6d4;
+  --fmd-accent-soft: rgba(6, 182, 212, 0.2);
+  --fmd-shadow: 0 25px 50px -12px rgba(0, 0, 0, 0.6), 0 0 40px rgba(6, 182, 212, 0.08);
+  --fmd-glow: 0 0 20px rgba(6, 182, 212, 0.15);
+}
+
+/* ============================================
+   Container - Positioned in War Room content area (top-right)
+   ============================================ */
+.fmd-container {
+  position: fixed;
+  top: 16px;
+  z-index: 9990;
+  font-family: var(--fmd-font);
+}
+
+.fmd-container.left {
+  /* Position at top-right of content area, inside the War Room */
+  left: auto;
+  right: 24px;
+}
+
+.fmd-container.right {
+  right: 24px;
+}
+
+/* ============================================
+   Trigger Button
+   ============================================ */
+.fmd-trigger {
+  display: flex;
+  align-items: center;
+  gap: 0.5rem;
+  padding: 0.625rem 0.875rem;
+  background: var(--fmd-bg);
+  border: 1px solid var(--fmd-border);
+  color: var(--fmd-text);
+  font-size: 0.8125rem;
+  font-weight: 500;
+  font-family: inherit;
+  cursor: pointer;
+  -webkit-backdrop-filter: blur(20px);
+  backdrop-filter: blur(20px);
+  transition: all 0.3s cubic-bezier(0.4, 0, 0.2, 1);
+  box-shadow: var(--fmd-shadow);
+}
+
+.fmd-container.left .fmd-trigger,
+.fmd-container.right .fmd-trigger {
+  border-radius: var(--fmd-radius);
+  border-bottom: 2px solid var(--fmd-accent);
+}
+
+.fmd-trigger:hover {
+  background: rgba(10, 18, 30, 0.98);
+  border-color: var(--fmd-border-hover);
+  border-bottom-color: var(--fmd-accent);
+  box-shadow: var(--fmd-shadow), var(--fmd-glow);
+  transform: translateY(-2px);
+}
+
+.fmd-trigger-icon {
+  width: 32px;
+  height: 32px;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  border-radius: 8px;
+  color: white;
+  font-size: 0.875rem;
+}
+
+.fmd-trigger-label {
+  max-width: 0;
+  overflow: hidden;
+  white-space: nowrap;
+  opacity: 0;
+  transition: all 0.3s ease;
+}
+
+.fmd-container.expanded .fmd-trigger-label,
+.fmd-trigger:hover .fmd-trigger-label {
+  max-width: 100px;
+  opacity: 1;
+  margin: 0 0.25rem;
+}
+
+.fmd-trigger-arrow {
+  font-size: 0.625rem;
+  color: var(--fmd-text-muted);
+  transition: transform 0.3s ease;
+}
+
+.fmd-trigger-arrow.rotated {
+  transform: rotate(180deg);
+}
+
+/* ============================================
+   Expanded Panel
+   ============================================ */
+.fmd-panel {
+  position: absolute;
+  top: 0;
+  width: 280px;
+  background: var(--fmd-bg);
+  border: 1px solid var(--fmd-border);
+  border-radius: var(--fmd-radius);
+  -webkit-backdrop-filter: blur(24px);
+  backdrop-filter: blur(24px);
+  box-shadow: var(--fmd-shadow), inset 0 1px 0 rgba(255, 255, 255, 0.03);
+  overflow: hidden;
+  animation: fmdSlideIn 0.25s cubic-bezier(0.4, 0, 0.2, 1);
+}
+
+.fmd-container.left .fmd-panel,
+.fmd-container.right .fmd-panel {
+  /* Panel opens below the trigger, aligned to right edge */
+  top: calc(100% + 8px);
+  right: 0;
+  left: auto;
+}
+
+@keyframes fmdSlideIn {
+  from {
+    opacity: 0;
+    transform: translateY(-8px);
+  }
+  to {
+    opacity: 1;
+    transform: translateY(0);
+  }
+}
+
+/* ============================================
+   Panel Header
+   ============================================ */
+.fmd-header {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  padding: 0.75rem;
+  background: rgba(6, 182, 212, 0.03);
+  border-bottom: 1px solid var(--fmd-border);
+}
+
+.fmd-back-btn {
+  display: flex;
+  align-items: center;
+  gap: 0.5rem;
+  padding: 0.5rem 0.75rem;
+  background: var(--fmd-bg-hover);
+  border: 1px solid var(--fmd-border);
+  border-radius: var(--fmd-radius-sm);
+  color: var(--fmd-text);
+  font-size: 0.8125rem;
+  font-weight: 500;
+  font-family: inherit;
+  cursor: pointer;
+  transition: all 0.2s cubic-bezier(0.4, 0, 0.2, 1);
+}
+
+.fmd-back-btn:hover {
+  background: var(--fmd-accent-soft);
+  border-color: var(--fmd-accent);
+  color: var(--fmd-accent);
+}
+
+.fmd-position-btn {
+  width: 32px;
+  height: 32px;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  background: transparent;
+  border: 1px solid transparent;
+  border-radius: 8px;
+  color: var(--fmd-text-muted);
+  cursor: pointer;
+  transition: all 0.2s ease;
+}
+
+.fmd-position-btn:hover {
+  background: var(--fmd-bg-hover);
+  border-color: var(--fmd-border);
+  color: var(--fmd-text);
+}
+
+/* ============================================
+   Section
+   ============================================ */
+.fmd-section {
+  padding: 0.75rem;
+  border-bottom: 1px solid var(--fmd-border);
+}
+
+.fmd-section:last-of-type {
+  border-bottom: none;
+}
+
+.fmd-section-title {
+  display: flex;
+  align-items: center;
+  gap: 0.5rem;
+  font-size: 0.6875rem;
+  font-weight: 600;
+  color: var(--fmd-text-muted);
+  text-transform: uppercase;
+  letter-spacing: 0.05em;
+  margin-bottom: 0.75rem;
+}
+
+/* ============================================
+   Items Grid
+   ============================================ */
+.fmd-items-grid {
+  display: grid;
+  grid-template-columns: repeat(4, 1fr);
+  gap: 0.375rem;
+}
+
+.fmd-item {
+  position: relative;
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  gap: 0.25rem;
+  padding: 0.5rem 0.25rem;
+  background: transparent;
+  border: 1px solid transparent;
+  border-radius: var(--fmd-radius-sm);
+  cursor: pointer;
+  transition: all 0.2s cubic-bezier(0.4, 0, 0.2, 1);
+}
+
+.fmd-item:hover {
+  background: var(--fmd-bg-hover);
+  border-color: var(--fmd-border);
+  transform: translateY(-1px);
+}
+
+.fmd-item.active {
+  background: var(--fmd-accent-soft);
+  border-color: var(--fmd-accent);
+  box-shadow: 0 0 12px rgba(6, 182, 212, 0.2);
+}
+
+.fmd-item-icon {
+  width: 36px;
+  height: 36px;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  border-radius: 10px;
+  color: white;
+  font-size: 0.875rem;
+  transition: transform 0.2s ease;
+}
+
+.fmd-item:hover .fmd-item-icon {
+  transform: scale(1.05);
+}
+
+.fmd-item-label {
+  font-size: 0.625rem;
+  font-weight: 500;
+  color: var(--fmd-text-secondary);
+  text-align: center;
+  white-space: nowrap;
+  overflow: hidden;
+  text-overflow: ellipsis;
+  max-width: 100%;
+}
+
+.fmd-item.active .fmd-item-label {
+  color: var(--fmd-accent);
+  font-weight: 600;
+}
+
+.fmd-item-active {
+  position: absolute;
+  top: 4px;
+  right: 4px;
+  width: 6px;
+  height: 6px;
+  background: var(--fmd-accent);
+  border-radius: 50%;
+  box-shadow: 0 0 8px var(--fmd-accent);
+  animation: fmdPulse 2s ease-in-out infinite;
+}
+
+@keyframes fmdPulse {
+  0%, 100% { opacity: 1; transform: scale(1); }
+  50% { opacity: 0.7; transform: scale(1.2); }
+}
+
+/* ============================================
+   Move Session Trigger
+   ============================================ */
+.fmd-move-trigger {
+  display: flex;
+  align-items: center;
+  gap: 0.5rem;
+  width: 100%;
+  padding: 0.625rem 0.75rem;
+  background: var(--fmd-bg-hover);
+  border: 1px solid var(--fmd-border);
+  border-radius: var(--fmd-radius-sm);
+  color: var(--fmd-text);
+  font-size: 0.8125rem;
+  font-weight: 500;
+  font-family: inherit;
+  cursor: pointer;
+  transition: all 0.2s cubic-bezier(0.4, 0, 0.2, 1);
+}
+
+.fmd-move-trigger:hover {
+  background: var(--fmd-accent-soft);
+  border-color: var(--fmd-border-hover);
+}
+
+.fmd-move-trigger i:first-child {
+  color: var(--fmd-text-muted);
+}
+
+.fmd-move-trigger span {
+  flex: 1;
+  text-align: left;
+}
+
+.fmd-move-trigger i:last-child {
+  font-size: 0.625rem;
+  color: var(--fmd-text-muted);
+  transition: transform 0.2s ease;
+}
+
+.fmd-move-trigger i:last-child.rotated {
+  transform: rotate(180deg);
+}
+
+/* ============================================
+   Missions List
+   ============================================ */
+.fmd-missions-list {
+  display: flex;
+  flex-direction: column;
+  gap: 0.25rem;
+  margin-top: 0.5rem;
+  padding-top: 0.5rem;
+  border-top: 1px solid var(--fmd-border);
+}
+
+.fmd-mission-item {
+  display: flex;
+  align-items: center;
+  gap: 0.75rem;
+  padding: 0.5rem;
+  background: transparent;
+  border: 1px solid transparent;
+  border-radius: var(--fmd-radius-sm);
+  text-align: left;
+  cursor: pointer;
+  transition: all 0.2s ease;
+}
+
+.fmd-mission-item:hover {
+  background: var(--fmd-bg-hover);
+  border-color: var(--fmd-border);
+  transform: translateX(2px);
+}
+
+.fmd-mission-item.active {
+  background: var(--fmd-accent-soft);
+  border-color: var(--fmd-accent);
+  box-shadow: 0 0 12px rgba(6, 182, 212, 0.15);
+}
+
+.fmd-mission-icon {
+  width: 32px;
+  height: 32px;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  border-radius: 8px;
+  color: white;
+  font-size: 0.75rem;
+  flex-shrink: 0;
+}
+
+.fmd-mission-info {
+  flex: 1;
+  min-width: 0;
+}
+
+.fmd-mission-name {
+  font-size: 0.8125rem;
+  font-weight: 500;
+  color: var(--fmd-text);
+}
+
+.fmd-mission-check {
+  color: var(--fmd-accent);
+  font-size: 0.75rem;
+}
+
+/* ============================================
+   Keyboard Hint
+   ============================================ */
+.fmd-hint {
+  padding: 0.625rem 0.75rem;
+  background: rgba(6, 182, 212, 0.02);
+  border-top: 1px solid var(--fmd-border);
+  font-size: 0.6875rem;
+  color: var(--fmd-text-muted);
+  text-align: center;
+}
+
+.fmd-hint kbd {
+  padding: 0.125rem 0.375rem;
+  background: rgba(6, 182, 212, 0.1);
+  border: 1px solid var(--fmd-border);
+  border-radius: 4px;
+  font-family: var(--fmd-font-mono);
+  font-size: 0.625rem;
+  color: var(--fmd-accent);
+}
+
+/* ============================================
+   DARK MODE OVERRIDES
+   ============================================ */
+html.dark .fmd-trigger:hover,
+.dark .fmd-trigger:hover {
+  background: rgba(10, 18, 30, 0.98);
+}
+
+html.dark .fmd-panel,
+.dark .fmd-panel {
+  box-shadow: var(--fmd-shadow), inset 0 1px 0 rgba(255, 255, 255, 0.03);
+}
+
+/* ============================================
+   Mobile Responsive
+   ============================================ */
+@media (max-width: 768px) {
+  .fmd-container {
+    top: 8px;
+    right: 8px !important;
+  }
+
+  .fmd-container.left .fmd-trigger,
+  .fmd-container.right .fmd-trigger {
+    padding: 0.5rem 0.625rem;
+  }
+
+  .fmd-panel {
+    position: fixed;
+    top: 56px;
+    left: 8px !important;
+    right: 8px !important;
+    width: auto;
+    max-height: calc(100vh - 150px);
+    overflow-y: auto;
+  }
+
+  .fmd-items-grid {
+    grid-template-columns: repeat(7, 1fr);
+  }
+
+  .fmd-item-label {
+    display: none;
+  }
+
+  .fmd-trigger-label {
+    display: none;
+  }
+}

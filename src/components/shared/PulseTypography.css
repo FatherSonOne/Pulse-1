@@ -1,0 +1,512 @@
+/* ============================================
+   PULSE TYPOGRAPHY SYSTEM
+   Archives-inspired typography for consistent styling
+   ============================================ */
+
+/* ============================================
+   BASE TYPOGRAPHY VARIABLES
+   ============================================ */
+:root {
+  /* Archive-style Font Stack */
+  --pulse-font-display: 'Inter', -apple-system, BlinkMacSystemFont, 'SF Pro Display', 'Segoe UI', sans-serif;
+  --pulse-font-mono: 'JetBrains Mono', 'SF Mono', 'Fira Code', 'Monaco', Consolas, monospace;
+  --pulse-font-sans: 'Inter', system-ui, -apple-system, sans-serif;
+
+  /* Typography Scale - Archives Style */
+  --pulse-text-micro: 0.625rem;    /* 10px */
+  --pulse-text-xs: 0.75rem;        /* 12px */
+  --pulse-text-sm: 0.875rem;       /* 14px */
+  --pulse-text-base: 1rem;         /* 16px */
+  --pulse-text-lg: 1.125rem;       /* 18px */
+  --pulse-text-xl: 1.25rem;        /* 20px */
+  --pulse-text-2xl: 1.5rem;        /* 24px */
+  --pulse-text-3xl: 1.875rem;      /* 30px */
+
+  /* Line Heights */
+  --pulse-leading-tight: 1.25;
+  --pulse-leading-snug: 1.375;
+  --pulse-leading-normal: 1.5;
+  --pulse-leading-relaxed: 1.625;
+  --pulse-leading-loose: 1.75;
+
+  /* Letter Spacing */
+  --pulse-tracking-tighter: -0.05em;
+  --pulse-tracking-tight: -0.025em;
+  --pulse-tracking-normal: 0;
+  --pulse-tracking-wide: 0.025em;
+  --pulse-tracking-wider: 0.05em;
+  --pulse-tracking-widest: 0.1em;
+}
+
+/* ============================================
+   TYPOGRAPHY UTILITY CLASSES
+   ============================================ */
+
+/* Display / Title Styles - Light Weight (Archives Style) */
+.pulse-title {
+  font-family: var(--pulse-font-display);
+  font-size: var(--pulse-text-lg);
+  font-weight: 300;
+  letter-spacing: var(--pulse-tracking-wide);
+  line-height: var(--pulse-leading-tight);
+  color: var(--text-primary);
+}
+
+.pulse-title-lg {
+  font-family: var(--pulse-font-display);
+  font-size: var(--pulse-text-2xl);
+  font-weight: 300;
+  letter-spacing: var(--pulse-tracking-tight);
+  line-height: var(--pulse-leading-tight);
+  color: var(--text-primary);
+}
+
+/* Label Styles - Monospace, Uppercase, Small */
+.pulse-label {
+  font-family: var(--pulse-font-mono);
+  font-size: var(--pulse-text-micro);
+  font-weight: 400;
+  letter-spacing: var(--pulse-tracking-widest);
+  text-transform: uppercase;
+  color: var(--text-tertiary);
+}
+
+.pulse-label-sm {
+  font-family: var(--pulse-font-mono);
+  font-size: 9px;
+  font-weight: 500;
+  letter-spacing: var(--pulse-tracking-widest);
+  text-transform: uppercase;
+  color: var(--text-tertiary);
+}
+
+/* Body Text */
+.pulse-body {
+  font-family: var(--pulse-font-sans);
+  font-size: var(--pulse-text-sm);
+  font-weight: 400;
+  line-height: var(--pulse-leading-relaxed);
+  color: var(--text-secondary);
+}
+
+.pulse-body-lg {
+  font-family: var(--pulse-font-sans);
+  font-size: var(--pulse-text-base);
+  font-weight: 400;
+  line-height: var(--pulse-leading-relaxed);
+  color: var(--text-secondary);
+}
+
+/* Caption / Small Text */
+.pulse-caption {
+  font-family: var(--pulse-font-sans);
+  font-size: var(--pulse-text-xs);
+  font-weight: 400;
+  line-height: var(--pulse-leading-normal);
+  color: var(--text-tertiary);
+}
+
+/* Monospace Code Text */
+.pulse-mono {
+  font-family: var(--pulse-font-mono);
+  font-size: var(--pulse-text-sm);
+  line-height: var(--pulse-leading-relaxed);
+}
+
+/* Time Display */
+.pulse-time {
+  font-family: var(--pulse-font-mono);
+  font-size: var(--pulse-text-micro);
+  font-weight: 400;
+  color: var(--text-tertiary);
+}
+
+/* ============================================
+   AI RESPONSE MARKDOWN STYLES
+   Claude Code-inspired formatting
+   ============================================ */
+
+.pulse-ai-response {
+  font-family: var(--pulse-font-sans);
+  font-size: var(--pulse-text-sm);
+  line-height: var(--pulse-leading-loose);
+  color: var(--text-primary);
+}
+
+/* Paragraph spacing */
+.pulse-ai-response p {
+  margin-bottom: 1rem;
+}
+
+.pulse-ai-response p:last-child {
+  margin-bottom: 0;
+}
+
+/* Headings in AI responses */
+.pulse-ai-response h1,
+.pulse-ai-response h2,
+.pulse-ai-response h3,
+.pulse-ai-response h4 {
+  font-family: var(--pulse-font-display);
+  font-weight: 600;
+  line-height: var(--pulse-leading-snug);
+  margin-top: 1.5rem;
+  margin-bottom: 0.75rem;
+  color: var(--text-primary);
+}
+
+.pulse-ai-response h1 { font-size: var(--pulse-text-xl); }
+.pulse-ai-response h2 { font-size: var(--pulse-text-lg); }
+.pulse-ai-response h3 { font-size: var(--pulse-text-base); font-weight: 500; }
+.pulse-ai-response h4 { font-size: var(--pulse-text-sm); font-weight: 500; }
+
+.pulse-ai-response h1:first-child,
+.pulse-ai-response h2:first-child,
+.pulse-ai-response h3:first-child,
+.pulse-ai-response h4:first-child {
+  margin-top: 0;
+}
+
+/* Lists */
+.pulse-ai-response ul,
+.pulse-ai-response ol {
+  margin: 0.75rem 0;
+  padding-left: 1.5rem;
+}
+
+.pulse-ai-response li {
+  margin-bottom: 0.5rem;
+  line-height: var(--pulse-leading-relaxed);
+}
+
+.pulse-ai-response li:last-child {
+  margin-bottom: 0;
+}
+
+.pulse-ai-response ul {
+  list-style-type: disc;
+}
+
+.pulse-ai-response ul ul {
+  list-style-type: circle;
+  margin-top: 0.5rem;
+}
+
+.pulse-ai-response ol {
+  list-style-type: decimal;
+}
+
+/* Nested list styling */
+.pulse-ai-response li > ul,
+.pulse-ai-response li > ol {
+  margin-top: 0.5rem;
+  margin-bottom: 0;
+}
+
+/* Inline code */
+.pulse-ai-response code:not(pre code) {
+  font-family: var(--pulse-font-mono);
+  font-size: 0.85em;
+  padding: 0.2em 0.4em;
+  background: rgba(var(--accent-primary-rgb), 0.1);
+  border: 1px solid rgba(var(--accent-primary-rgb), 0.15);
+  border-radius: 4px;
+  color: var(--accent-primary);
+}
+
+.dark .pulse-ai-response code:not(pre code) {
+  background: rgba(var(--accent-primary-rgb), 0.15);
+  border-color: rgba(var(--accent-primary-rgb), 0.2);
+}
+
+/* Code blocks */
+.pulse-ai-response pre {
+  margin: 1rem 0;
+  padding: 1rem;
+  background: var(--bg-tertiary);
+  border: 1px solid var(--border-primary);
+  border-radius: 8px;
+  overflow-x: auto;
+  font-family: var(--pulse-font-mono);
+  font-size: 0.8125rem;
+  line-height: 1.6;
+}
+
+.dark .pulse-ai-response pre {
+  background: rgba(0, 0, 0, 0.4);
+  border-color: var(--border-secondary);
+}
+
+.pulse-ai-response pre code {
+  font-family: inherit;
+  font-size: inherit;
+  padding: 0;
+  background: none;
+  border: none;
+  color: inherit;
+}
+
+/* Blockquotes */
+.pulse-ai-response blockquote {
+  margin: 1rem 0;
+  padding: 0.75rem 1rem;
+  border-left: 3px solid var(--accent-primary);
+  background: rgba(var(--accent-primary-rgb), 0.05);
+  border-radius: 0 8px 8px 0;
+  font-style: italic;
+  color: var(--text-secondary);
+}
+
+.dark .pulse-ai-response blockquote {
+  background: rgba(var(--accent-primary-rgb), 0.08);
+}
+
+/* Bold and italic */
+.pulse-ai-response strong {
+  font-weight: 600;
+  color: var(--text-primary);
+}
+
+.pulse-ai-response em {
+  font-style: italic;
+}
+
+/* Links */
+.pulse-ai-response a {
+  color: var(--accent-primary);
+  text-decoration: none;
+  border-bottom: 1px solid rgba(var(--accent-primary-rgb), 0.3);
+  transition: border-color 0.2s ease;
+}
+
+.pulse-ai-response a:hover {
+  border-bottom-color: var(--accent-primary);
+}
+
+/* Horizontal rules */
+.pulse-ai-response hr {
+  margin: 1.5rem 0;
+  border: none;
+  border-top: 1px solid var(--border-primary);
+}
+
+/* Tables */
+.pulse-ai-response table {
+  width: 100%;
+  margin: 1rem 0;
+  border-collapse: collapse;
+  font-size: var(--pulse-text-sm);
+}
+
+.pulse-ai-response th,
+.pulse-ai-response td {
+  padding: 0.5rem 0.75rem;
+  border: 1px solid var(--border-primary);
+  text-align: left;
+}
+
+.pulse-ai-response th {
+  background: var(--bg-tertiary);
+  font-weight: 600;
+}
+
+.dark .pulse-ai-response th {
+  background: rgba(255, 255, 255, 0.05);
+}
+
+/* Task lists (checkboxes) */
+.pulse-ai-response input[type="checkbox"] {
+  margin-right: 0.5rem;
+  accent-color: var(--accent-primary);
+}
+
+/* ============================================
+   TRANSCRIPT / VOX STYLES
+   ============================================ */
+
+.pulse-transcript {
+  font-family: var(--pulse-font-sans);
+  font-size: var(--pulse-text-sm);
+  line-height: var(--pulse-leading-relaxed);
+  color: var(--text-primary);
+}
+
+.pulse-transcript-label {
+  font-family: var(--pulse-font-mono);
+  font-size: var(--pulse-text-micro);
+  font-weight: 500;
+  letter-spacing: var(--pulse-tracking-widest);
+  text-transform: uppercase;
+  color: var(--accent-primary);
+  margin-bottom: 0.25rem;
+}
+
+.pulse-transcript-content {
+  font-family: var(--pulse-font-sans);
+  font-size: var(--pulse-text-sm);
+  line-height: var(--pulse-leading-loose);
+  color: var(--text-secondary);
+}
+
+/* ============================================
+   TAG / BADGE STYLES
+   ============================================ */
+
+.pulse-tag {
+  display: inline-flex;
+  align-items: center;
+  padding: 0.25rem 0.5rem;
+  font-family: var(--pulse-font-mono);
+  font-size: 0.6875rem;
+  font-weight: 500;
+  letter-spacing: 0.02em;
+  border-radius: 4px;
+  background: var(--bg-tertiary);
+  color: var(--text-secondary);
+  border: 1px solid var(--border-primary);
+}
+
+.pulse-tag-accent {
+  background: rgba(var(--accent-primary-rgb), 0.1);
+  color: var(--accent-primary);
+  border-color: rgba(var(--accent-primary-rgb), 0.2);
+}
+
+/* ============================================
+   DATE HEADERS (Archives Style)
+   ============================================ */
+
+.pulse-date-header {
+  display: flex;
+  align-items: center;
+  gap: 0.5rem;
+  padding: 0.5rem 0.75rem;
+  font-family: var(--pulse-font-mono);
+  font-size: var(--pulse-text-micro);
+  font-weight: 400;
+  letter-spacing: var(--pulse-tracking-widest);
+  text-transform: uppercase;
+  color: var(--text-tertiary);
+}
+
+.pulse-date-header::before {
+  content: '';
+  display: block;
+  width: 4px;
+  height: 4px;
+  border-radius: 50%;
+  background: var(--accent-primary);
+}
+
+/* ============================================
+   MENU / NAVIGATION STYLES
+   ============================================ */
+
+.pulse-nav-label {
+  font-family: var(--pulse-font-mono);
+  font-size: var(--pulse-text-xs);
+  font-weight: 500;
+  letter-spacing: var(--pulse-tracking-wider);
+  text-transform: uppercase;
+  color: var(--text-tertiary);
+}
+
+.pulse-nav-item {
+  font-family: var(--pulse-font-sans);
+  font-size: var(--pulse-text-sm);
+  font-weight: 500;
+  color: var(--text-secondary);
+  transition: color 0.15s ease;
+}
+
+.pulse-nav-item:hover,
+.pulse-nav-item.active {
+  color: var(--text-primary);
+}
+
+.pulse-nav-item.active {
+  color: var(--accent-primary);
+}
+
+/* ============================================
+   CARD STYLES
+   ============================================ */
+
+.pulse-card-title {
+  font-family: var(--pulse-font-sans);
+  font-size: var(--pulse-text-sm);
+  font-weight: 500;
+  line-height: var(--pulse-leading-snug);
+  color: var(--text-primary);
+}
+
+.pulse-card-subtitle {
+  font-family: var(--pulse-font-mono);
+  font-size: var(--pulse-text-micro);
+  font-weight: 400;
+  letter-spacing: var(--pulse-tracking-widest);
+  text-transform: uppercase;
+  color: var(--text-tertiary);
+}
+
+.pulse-card-body {
+  font-family: var(--pulse-font-sans);
+  font-size: var(--pulse-text-xs);
+  line-height: var(--pulse-leading-relaxed);
+  color: var(--text-secondary);
+}
+
+/* ============================================
+   DARK MODE TEXT OVERRIDES
+   Ensure white/near-white text in dark mode
+   ============================================ */
+
+/* Dark mode text - multiple selector patterns for compatibility */
+.dark .pulse-ai-response,
+.dark .pulse-ai-response p,
+.dark .pulse-ai-response li,
+.dark .pulse-ai-response h1,
+.dark .pulse-ai-response h2,
+.dark .pulse-ai-response h3,
+.dark .pulse-ai-response h4,
+.dark .pulse-ai-response strong,
+.dark .pulse-ai-response em,
+.dark .pulse-ai-response span,
+.dark .pulse-ai-response blockquote,
+/* Also target when dark is on html/body */
+html.dark .pulse-ai-response,
+html.dark .pulse-ai-response p,
+html.dark .pulse-ai-response li,
+html.dark .pulse-ai-response h1,
+html.dark .pulse-ai-response h2,
+html.dark .pulse-ai-response h3,
+html.dark .pulse-ai-response h4,
+html.dark .pulse-ai-response strong,
+html.dark .pulse-ai-response em,
+html.dark .pulse-ai-response span,
+html.dark .pulse-ai-response blockquote,
+/* Target war-room-panel content in dark mode */
+.dark .war-room-panel .pulse-ai-response,
+.dark .war-room-panel .pulse-ai-response *,
+html.dark .war-room-panel .pulse-ai-response,
+html.dark .war-room-panel .pulse-ai-response * {
+  color: #ffffff !important;
+}
+
+.dark .pulse-ai-response code:not(pre code) {
+  color: #f472b6 !important; /* pink-400 for code in dark mode */
+  background: rgba(244, 114, 182, 0.15) !important;
+}
+
+.dark .pulse-ai-response a {
+  color: #f472b6 !important;
+}
+
+.dark .pulse-body,
+.dark .pulse-body-lg {
+  color: #e5e7eb !important;
+}
+
+.dark .pulse-transcript-content {
+  color: #d1d5db !important;
+}

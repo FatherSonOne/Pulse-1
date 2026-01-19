@@ -1,0 +1,1012 @@
+/* ============================================
+   AI LAB HUB REDESIGNED - "Neural Nexus"
+   A Living, Breathing AI Laboratory
+   Bioluminescent Tech Organism Aesthetic
+   ============================================ */
+
+/* ========== FONT IMPORTS ========== */
+@import url('https://fonts.googleapis.com/css2?family=Syncopate:wght@400;700&family=DM+Sans:ital,opsz,wght@0,9..40,100..1000;1,9..40,100..1000&family=JetBrains+Mono:wght@400;500;600&display=swap');
+
+/* ========== CSS VARIABLES ========== */
+:root {
+  /* Neural Nexus - Light Mode */
+  --nexus-bg-primary: #f8f9ff;
+  --nexus-bg-secondary: #eef0ff;
+  --nexus-bg-tertiary: #ffffff;
+  --nexus-surface: rgba(255, 255, 255, 0.95);
+  --nexus-surface-elevated: rgba(255, 255, 255, 0.98);
+
+  --nexus-text-primary: #0a0a1a;
+  --nexus-text-secondary: #4a4a6a;
+  --nexus-text-muted: #8888aa;
+
+  --nexus-cyan: #00c4b4;
+  --nexus-cyan-glow: rgba(0, 196, 180, 0.3);
+  --nexus-violet: #7b2cbf;
+  --nexus-violet-glow: rgba(123, 44, 191, 0.25);
+  --nexus-pink: #e91e8c;
+  --nexus-pink-glow: rgba(233, 30, 140, 0.2);
+  --nexus-green: #00d26a;
+  --nexus-green-glow: rgba(0, 210, 106, 0.2);
+  --nexus-amber: #f59e0b;
+  --nexus-amber-glow: rgba(245, 158, 11, 0.2);
+
+  --nexus-border: rgba(123, 44, 191, 0.15);
+  --nexus-border-hover: rgba(0, 196, 180, 0.4);
+  --nexus-shadow: 0 20px 60px -15px rgba(123, 44, 191, 0.15);
+  --nexus-shadow-glow: 0 0 60px -10px rgba(0, 196, 180, 0.3);
+
+  --nexus-gradient-hero: linear-gradient(135deg,
+    rgba(0, 196, 180, 0.08) 0%,
+    rgba(123, 44, 191, 0.08) 50%,
+    rgba(233, 30, 140, 0.05) 100%);
+  --nexus-gradient-card: linear-gradient(145deg,
+    rgba(255, 255, 255, 0.95) 0%,
+    rgba(248, 249, 255, 0.9) 100%);
+
+  /* Neural Animation Timing */
+  --nexus-pulse-speed: 3s;
+  --nexus-breathe-speed: 4s;
+  --nexus-flow-speed: 8s;
+}
+
+/* Dark Mode - Deep Space Bioluminescence */
+html.dark,
+.dark {
+  --nexus-bg-primary: #050508;
+  --nexus-bg-secondary: #0a0a10;
+  --nexus-bg-tertiary: #0d0d14;
+  --nexus-surface: rgba(13, 13, 20, 0.95);
+  --nexus-surface-elevated: rgba(18, 18, 28, 0.98);
+
+  --nexus-text-primary: #f0f0ff;
+  --nexus-text-secondary: #a0a0c0;
+  --nexus-text-muted: #606080;
+
+  --nexus-cyan: #00f5d4;
+  --nexus-cyan-glow: rgba(0, 245, 212, 0.4);
+  --nexus-violet: #9d4edd;
+  --nexus-violet-glow: rgba(157, 78, 221, 0.35);
+  --nexus-pink: #ff006e;
+  --nexus-pink-glow: rgba(255, 0, 110, 0.3);
+  --nexus-green: #39ff14;
+  --nexus-green-glow: rgba(57, 255, 20, 0.3);
+  --nexus-amber: #fbbf24;
+  --nexus-amber-glow: rgba(251, 191, 36, 0.3);
+
+  --nexus-border: rgba(0, 245, 212, 0.15);
+  --nexus-border-hover: rgba(0, 245, 212, 0.5);
+  --nexus-shadow: 0 30px 80px -20px rgba(0, 0, 0, 0.8);
+  --nexus-shadow-glow: 0 0 80px -15px rgba(0, 245, 212, 0.4);
+
+  --nexus-gradient-hero: linear-gradient(135deg,
+    rgba(0, 245, 212, 0.1) 0%,
+    rgba(157, 78, 221, 0.12) 50%,
+    rgba(255, 0, 110, 0.08) 100%);
+  --nexus-gradient-card: linear-gradient(145deg,
+    rgba(18, 18, 28, 0.95) 0%,
+    rgba(13, 13, 20, 0.9) 100%);
+}
+
+/* ========== KEYFRAME ANIMATIONS ========== */
+
+/* Neural Pulse - Core breathing animation */
+@keyframes nexus-pulse {
+  0%, 100% {
+    opacity: 0.6;
+    transform: scale(1);
+  }
+  50% {
+    opacity: 1;
+    transform: scale(1.05);
+  }
+}
+
+/* Synaptic Fire - Quick burst animation */
+@keyframes nexus-synapse {
+  0% {
+    opacity: 0;
+    transform: scale(0.8) translateY(10px);
+  }
+  20% {
+    opacity: 1;
+    transform: scale(1.02) translateY(-2px);
+  }
+  100% {
+    opacity: 1;
+    transform: scale(1) translateY(0);
+  }
+}
+
+/* Neural Flow - Continuous movement */
+@keyframes nexus-flow {
+  0% {
+    background-position: 0% 50%;
+  }
+  50% {
+    background-position: 100% 50%;
+  }
+  100% {
+    background-position: 0% 50%;
+  }
+}
+
+/* Bioluminescent Glow */
+@keyframes nexus-glow {
+  0%, 100% {
+    box-shadow:
+      0 0 20px var(--nexus-cyan-glow),
+      0 0 40px transparent;
+  }
+  50% {
+    box-shadow:
+      0 0 30px var(--nexus-cyan-glow),
+      0 0 60px var(--nexus-violet-glow);
+  }
+}
+
+/* Icon Orbit Animation */
+@keyframes nexus-orbit {
+  0% { transform: rotate(0deg) translateX(40px) rotate(0deg); }
+  100% { transform: rotate(360deg) translateX(40px) rotate(-360deg); }
+}
+
+/* Neural Particle Float */
+@keyframes nexus-float {
+  0%, 100% {
+    transform: translateY(0) translateX(0);
+    opacity: 0.3;
+  }
+  25% {
+    transform: translateY(-20px) translateX(10px);
+    opacity: 0.8;
+  }
+  50% {
+    transform: translateY(-40px) translateX(-5px);
+    opacity: 0.5;
+  }
+  75% {
+    transform: translateY(-20px) translateX(-10px);
+    opacity: 0.7;
+  }
+}
+
+/* Connection Line Pulse */
+@keyframes nexus-connection-pulse {
+  0%, 100% {
+    stroke-dashoffset: 0;
+    opacity: 0.3;
+  }
+  50% {
+    stroke-dashoffset: 20;
+    opacity: 0.8;
+  }
+}
+
+/* Holographic Shimmer */
+@keyframes nexus-shimmer {
+  0% {
+    background-position: -200% 0;
+  }
+  100% {
+    background-position: 200% 0;
+  }
+}
+
+/* Card Hover Lift */
+@keyframes nexus-lift {
+  0% {
+    transform: translateY(0) scale(1);
+  }
+  100% {
+    transform: translateY(-12px) scale(1.02);
+  }
+}
+
+/* Typing/Processing Animation */
+@keyframes nexus-typing {
+  0%, 100% { opacity: 0.2; }
+  50% { opacity: 1; }
+}
+
+/* Ring Expansion */
+@keyframes nexus-ring-expand {
+  0% {
+    transform: scale(0.8);
+    opacity: 1;
+  }
+  100% {
+    transform: scale(2);
+    opacity: 0;
+  }
+}
+
+/* ========== MAIN CONTAINER ========== */
+
+.nexus-container {
+  position: relative;
+  min-height: 100%;
+  background: var(--nexus-bg-primary);
+  font-family: 'DM Sans', -apple-system, BlinkMacSystemFont, sans-serif;
+  color: var(--nexus-text-primary);
+  overflow-x: hidden;
+  overflow-y: auto;
+}
+
+/* Neural Background Layer */
+.nexus-neural-bg {
+  position: fixed;
+  inset: 0;
+  pointer-events: none;
+  z-index: 0;
+  overflow: hidden;
+}
+
+/* Ambient Neural Grid */
+.nexus-grid-overlay {
+  position: absolute;
+  inset: 0;
+  background-image:
+    linear-gradient(var(--nexus-border) 1px, transparent 1px),
+    linear-gradient(90deg, var(--nexus-border) 1px, transparent 1px);
+  background-size: 60px 60px;
+  opacity: 0.4;
+  animation: nexus-pulse var(--nexus-breathe-speed) ease-in-out infinite;
+}
+
+/* Floating Neural Orbs */
+.nexus-orb {
+  position: absolute;
+  border-radius: 50%;
+  filter: blur(80px);
+  animation: nexus-float var(--nexus-flow-speed) ease-in-out infinite;
+}
+
+.nexus-orb-1 {
+  width: 500px;
+  height: 500px;
+  background: radial-gradient(circle, var(--nexus-cyan-glow), transparent 70%);
+  top: -150px;
+  left: -150px;
+  animation-delay: 0s;
+}
+
+.nexus-orb-2 {
+  width: 400px;
+  height: 400px;
+  background: radial-gradient(circle, var(--nexus-violet-glow), transparent 70%);
+  bottom: -100px;
+  right: -100px;
+  animation-delay: -2s;
+}
+
+.nexus-orb-3 {
+  width: 300px;
+  height: 300px;
+  background: radial-gradient(circle, var(--nexus-pink-glow), transparent 70%);
+  top: 40%;
+  left: 60%;
+  animation-delay: -4s;
+}
+
+/* Synaptic Connection Lines - SVG Background */
+.nexus-synapses {
+  position: absolute;
+  inset: 0;
+  opacity: 0.15;
+}
+
+html.dark .nexus-synapses,
+.dark .nexus-synapses {
+  opacity: 0.25;
+}
+
+.nexus-synapse-line {
+  stroke: var(--nexus-cyan);
+  stroke-width: 1;
+  stroke-dasharray: 10 5;
+  fill: none;
+  animation: nexus-connection-pulse 3s ease-in-out infinite;
+}
+
+/* ========== HERO SECTION ========== */
+
+.nexus-hero {
+  position: relative;
+  z-index: 1;
+  padding: 4rem 2rem 3rem;
+  text-align: center;
+}
+
+.nexus-hero-content {
+  max-width: 800px;
+  margin: 0 auto;
+}
+
+/* Living Badge */
+.nexus-badge {
+  display: inline-flex;
+  align-items: center;
+  gap: 0.75rem;
+  padding: 0.6rem 1.25rem;
+  background: var(--nexus-gradient-card);
+  border: 1px solid var(--nexus-border);
+  border-radius: 100px;
+  font-family: 'JetBrains Mono', monospace;
+  font-size: 0.7rem;
+  font-weight: 600;
+  text-transform: uppercase;
+  letter-spacing: 0.15em;
+  color: var(--nexus-cyan);
+  margin-bottom: 2rem;
+  animation: nexus-glow var(--nexus-pulse-speed) ease-in-out infinite;
+  backdrop-filter: blur(10px);
+}
+
+.nexus-badge-dot {
+  width: 8px;
+  height: 8px;
+  background: var(--nexus-green);
+  border-radius: 50%;
+  animation: nexus-pulse 1.5s ease-in-out infinite;
+  box-shadow: 0 0 10px var(--nexus-green-glow);
+}
+
+/* Main Title */
+.nexus-title {
+  font-family: 'Syncopate', sans-serif;
+  font-size: clamp(3rem, 8vw, 5.5rem);
+  font-weight: 700;
+  line-height: 1;
+  margin-bottom: 1rem;
+  background: linear-gradient(135deg,
+    var(--nexus-cyan) 0%,
+    var(--nexus-violet) 50%,
+    var(--nexus-pink) 100%);
+  background-size: 200% 200%;
+  -webkit-background-clip: text;
+  -webkit-text-fill-color: transparent;
+  background-clip: text;
+  animation: nexus-flow var(--nexus-flow-speed) ease infinite;
+  text-shadow: 0 0 80px var(--nexus-cyan-glow);
+}
+
+.nexus-subtitle {
+  font-family: 'JetBrains Mono', monospace;
+  font-size: 0.9rem;
+  font-weight: 500;
+  text-transform: uppercase;
+  letter-spacing: 0.4em;
+  color: var(--nexus-text-muted);
+  margin-bottom: 1.5rem;
+}
+
+.nexus-description {
+  font-size: 1.15rem;
+  line-height: 1.8;
+  color: var(--nexus-text-secondary);
+  max-width: 600px;
+  margin: 0 auto;
+}
+
+/* Central Nucleus Icon */
+.nexus-nucleus {
+  position: relative;
+  width: 120px;
+  height: 120px;
+  margin: 2.5rem auto;
+}
+
+.nexus-nucleus-core {
+  position: absolute;
+  inset: 20px;
+  background: linear-gradient(135deg, var(--nexus-cyan), var(--nexus-violet));
+  border-radius: 50%;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  font-size: 2rem;
+  color: white;
+  box-shadow:
+    0 0 30px var(--nexus-cyan-glow),
+    inset 0 0 20px rgba(255, 255, 255, 0.2);
+  animation: nexus-pulse var(--nexus-breathe-speed) ease-in-out infinite;
+}
+
+.nexus-nucleus-ring {
+  position: absolute;
+  inset: 0;
+  border: 2px solid var(--nexus-cyan);
+  border-radius: 50%;
+  opacity: 0.5;
+}
+
+.nexus-nucleus-ring-1 {
+  animation: nexus-ring-expand 3s ease-out infinite;
+}
+
+.nexus-nucleus-ring-2 {
+  animation: nexus-ring-expand 3s ease-out infinite 1s;
+}
+
+.nexus-nucleus-ring-3 {
+  animation: nexus-ring-expand 3s ease-out infinite 2s;
+}
+
+/* Orbiting Particles */
+.nexus-orbit-particle {
+  position: absolute;
+  width: 10px;
+  height: 10px;
+  background: var(--nexus-cyan);
+  border-radius: 50%;
+  top: 50%;
+  left: 50%;
+  margin: -5px;
+  box-shadow: 0 0 15px var(--nexus-cyan-glow);
+}
+
+.nexus-orbit-particle-1 {
+  animation: nexus-orbit 6s linear infinite;
+}
+
+.nexus-orbit-particle-2 {
+  animation: nexus-orbit 6s linear infinite reverse;
+  animation-delay: -2s;
+  background: var(--nexus-violet);
+  box-shadow: 0 0 15px var(--nexus-violet-glow);
+}
+
+.nexus-orbit-particle-3 {
+  animation: nexus-orbit 8s linear infinite;
+  animation-delay: -4s;
+  background: var(--nexus-pink);
+  box-shadow: 0 0 15px var(--nexus-pink-glow);
+}
+
+/* ========== WORKSPACE GRID ========== */
+
+.nexus-grid {
+  position: relative;
+  z-index: 1;
+  display: grid;
+  grid-template-columns: repeat(auto-fit, minmax(360px, 1fr));
+  gap: 2rem;
+  padding: 2rem;
+  max-width: 1500px;
+  margin: 0 auto;
+}
+
+/* ========== WORKSPACE CARD ========== */
+
+.nexus-card {
+  position: relative;
+  background: var(--nexus-gradient-card);
+  border: 1px solid var(--nexus-border);
+  border-radius: 24px;
+  padding: 0;
+  cursor: pointer;
+  overflow: hidden;
+  transition: all 0.5s cubic-bezier(0.4, 0, 0.2, 1);
+  animation: nexus-synapse 0.6s ease-out both;
+  backdrop-filter: blur(20px);
+}
+
+.nexus-card::before {
+  content: '';
+  position: absolute;
+  inset: 0;
+  background: linear-gradient(135deg,
+    transparent 0%,
+    rgba(255, 255, 255, 0.03) 50%,
+    transparent 100%);
+  opacity: 0;
+  transition: opacity 0.4s;
+}
+
+.nexus-card:hover {
+  border-color: var(--nexus-border-hover);
+  box-shadow:
+    var(--nexus-shadow),
+    var(--nexus-shadow-glow);
+  transform: translateY(-12px) scale(1.02);
+}
+
+.nexus-card:hover::before {
+  opacity: 1;
+}
+
+/* Card Gradient Overlay on Hover */
+.nexus-card-glow {
+  position: absolute;
+  inset: 0;
+  opacity: 0;
+  transition: opacity 0.5s;
+  pointer-events: none;
+}
+
+.nexus-card:hover .nexus-card-glow {
+  opacity: 0.15;
+}
+
+html.dark .nexus-card:hover .nexus-card-glow,
+.dark .nexus-card:hover .nexus-card-glow {
+  opacity: 0.2;
+}
+
+/* Card Content */
+.nexus-card-content {
+  position: relative;
+  z-index: 1;
+  padding: 2rem;
+}
+
+/* Tool Icon - Living Design */
+.nexus-tool-icon {
+  position: relative;
+  width: 80px;
+  height: 80px;
+  margin-bottom: 1.5rem;
+}
+
+.nexus-tool-icon-bg {
+  position: absolute;
+  inset: 0;
+  border-radius: 20px;
+  opacity: 0.15;
+  transition: all 0.4s;
+}
+
+.nexus-card:hover .nexus-tool-icon-bg {
+  opacity: 0.25;
+  transform: scale(1.1) rotate(-3deg);
+}
+
+.nexus-tool-icon-inner {
+  position: absolute;
+  inset: 8px;
+  border-radius: 16px;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  font-size: 1.8rem;
+  color: white;
+  transition: all 0.4s cubic-bezier(0.68, -0.55, 0.265, 1.55);
+  box-shadow: 0 10px 30px -10px rgba(0, 0, 0, 0.3);
+}
+
+.nexus-card:hover .nexus-tool-icon-inner {
+  transform: scale(1.15) rotate(-5deg);
+}
+
+/* Icon Pulse Ring */
+.nexus-tool-icon-pulse {
+  position: absolute;
+  inset: -10px;
+  border: 2px solid currentColor;
+  border-radius: 24px;
+  opacity: 0;
+  transition: opacity 0.3s;
+}
+
+.nexus-card:hover .nexus-tool-icon-pulse {
+  opacity: 0.3;
+  animation: nexus-ring-expand 2s ease-out infinite;
+}
+
+/* Card Title */
+.nexus-card-title {
+  font-family: 'Syncopate', sans-serif;
+  font-size: 1.3rem;
+  font-weight: 700;
+  color: var(--nexus-text-primary);
+  margin-bottom: 0.75rem;
+  transition: color 0.3s;
+}
+
+/* Card Description */
+.nexus-card-description {
+  font-size: 0.95rem;
+  line-height: 1.6;
+  color: var(--nexus-text-secondary);
+  margin-bottom: 1.5rem;
+}
+
+/* Features List */
+.nexus-card-features {
+  display: flex;
+  flex-direction: column;
+  gap: 0.6rem;
+  margin-bottom: 1.5rem;
+}
+
+.nexus-feature {
+  display: flex;
+  align-items: center;
+  gap: 0.75rem;
+  font-size: 0.85rem;
+  color: var(--nexus-text-muted);
+  transition: color 0.3s, transform 0.3s;
+}
+
+.nexus-card:hover .nexus-feature {
+  color: var(--nexus-text-secondary);
+}
+
+.nexus-feature-icon {
+  width: 18px;
+  height: 18px;
+  border-radius: 50%;
+  background: var(--nexus-green);
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  font-size: 0.6rem;
+  color: white;
+  flex-shrink: 0;
+  box-shadow: 0 0 10px var(--nexus-green-glow);
+}
+
+/* Launch Button */
+.nexus-launch-btn {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  padding: 1rem 1.5rem;
+  background: rgba(0, 245, 212, 0.05);
+  border: 1px solid var(--nexus-border);
+  border-radius: 14px;
+  font-family: 'JetBrains Mono', monospace;
+  font-size: 0.8rem;
+  font-weight: 600;
+  text-transform: uppercase;
+  letter-spacing: 0.1em;
+  color: var(--nexus-text-muted);
+  transition: all 0.4s;
+}
+
+.nexus-card:hover .nexus-launch-btn {
+  background: linear-gradient(90deg,
+    rgba(0, 245, 212, 0.1) 0%,
+    rgba(157, 78, 221, 0.1) 100%);
+  border-color: var(--nexus-cyan);
+  color: var(--nexus-cyan);
+}
+
+.nexus-launch-arrow {
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  width: 28px;
+  height: 28px;
+  border-radius: 50%;
+  background: var(--nexus-border);
+  transition: all 0.4s;
+}
+
+.nexus-card:hover .nexus-launch-arrow {
+  background: var(--nexus-cyan);
+  color: white;
+  transform: translateX(5px);
+  box-shadow: 0 0 20px var(--nexus-cyan-glow);
+}
+
+/* Coming Soon Badge */
+.nexus-coming-soon {
+  position: absolute;
+  top: 1.5rem;
+  right: 1.5rem;
+  padding: 0.4rem 0.8rem;
+  background: rgba(251, 191, 36, 0.1);
+  border: 1px solid rgba(251, 191, 36, 0.3);
+  border-radius: 8px;
+  font-family: 'JetBrains Mono', monospace;
+  font-size: 0.65rem;
+  font-weight: 600;
+  text-transform: uppercase;
+  letter-spacing: 0.1em;
+  color: var(--nexus-amber);
+  animation: nexus-pulse 2s ease-in-out infinite;
+}
+
+/* ========== STATS SECTION ========== */
+
+.nexus-stats {
+  position: relative;
+  z-index: 1;
+  display: flex;
+  justify-content: center;
+  gap: 6rem;
+  padding: 3rem 2rem;
+  margin: 2rem 0;
+}
+
+.nexus-stat {
+  text-align: center;
+  position: relative;
+}
+
+.nexus-stat::after {
+  content: '';
+  position: absolute;
+  bottom: -10px;
+  left: 50%;
+  transform: translateX(-50%);
+  width: 40px;
+  height: 3px;
+  background: linear-gradient(90deg, var(--nexus-cyan), var(--nexus-violet));
+  border-radius: 2px;
+  opacity: 0.5;
+}
+
+.nexus-stat-value {
+  font-family: 'Syncopate', sans-serif;
+  font-size: 3rem;
+  font-weight: 700;
+  background: linear-gradient(135deg, var(--nexus-cyan), var(--nexus-violet));
+  -webkit-background-clip: text;
+  -webkit-text-fill-color: transparent;
+  background-clip: text;
+  line-height: 1;
+  margin-bottom: 0.5rem;
+}
+
+.nexus-stat-label {
+  font-family: 'JetBrains Mono', monospace;
+  font-size: 0.7rem;
+  font-weight: 600;
+  text-transform: uppercase;
+  letter-spacing: 0.2em;
+  color: var(--nexus-text-muted);
+}
+
+/* ========== NEURAL ACTIVITY INDICATOR ========== */
+
+.nexus-activity {
+  position: fixed;
+  bottom: 2rem;
+  left: 2rem;
+  display: flex;
+  align-items: center;
+  gap: 1rem;
+  padding: 1rem 1.5rem;
+  background: var(--nexus-surface-elevated);
+  border: 1px solid var(--nexus-border);
+  border-radius: 100px;
+  backdrop-filter: blur(20px);
+  z-index: 100;
+  animation: nexus-glow var(--nexus-pulse-speed) ease-in-out infinite;
+}
+
+.nexus-activity-pulse {
+  display: flex;
+  gap: 4px;
+}
+
+.nexus-activity-bar {
+  width: 3px;
+  height: 16px;
+  background: var(--nexus-cyan);
+  border-radius: 2px;
+  animation: nexus-typing 0.8s ease-in-out infinite;
+}
+
+.nexus-activity-bar:nth-child(1) { animation-delay: 0s; }
+.nexus-activity-bar:nth-child(2) { animation-delay: 0.15s; }
+.nexus-activity-bar:nth-child(3) { animation-delay: 0.3s; }
+.nexus-activity-bar:nth-child(4) { animation-delay: 0.45s; }
+.nexus-activity-bar:nth-child(5) { animation-delay: 0.6s; }
+
+.nexus-activity-text {
+  font-family: 'JetBrains Mono', monospace;
+  font-size: 0.75rem;
+  font-weight: 500;
+  color: var(--nexus-text-secondary);
+}
+
+/* ========== FOOTER ========== */
+
+.nexus-footer {
+  position: relative;
+  z-index: 1;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  gap: 1rem;
+  padding: 2rem;
+  font-size: 0.85rem;
+  color: var(--nexus-text-muted);
+}
+
+.nexus-footer-icon {
+  color: var(--nexus-amber);
+  animation: nexus-pulse 2s ease-in-out infinite;
+}
+
+.nexus-footer kbd {
+  padding: 0.3rem 0.6rem;
+  background: var(--nexus-surface);
+  border: 1px solid var(--nexus-border);
+  border-radius: 6px;
+  font-family: 'JetBrains Mono', monospace;
+  font-size: 0.7rem;
+  color: var(--nexus-text-secondary);
+}
+
+/* ========== WORKSPACE CONTAINER ========== */
+
+.nexus-workspace-container {
+  min-height: 100%;
+  background: var(--nexus-bg-primary);
+}
+
+/* ========== HOLOGRAPHIC SHIMMER EFFECT ========== */
+
+.nexus-shimmer {
+  position: relative;
+  overflow: hidden;
+}
+
+.nexus-shimmer::after {
+  content: '';
+  position: absolute;
+  inset: 0;
+  background: linear-gradient(
+    90deg,
+    transparent 0%,
+    rgba(255, 255, 255, 0.1) 50%,
+    transparent 100%
+  );
+  background-size: 200% 100%;
+  animation: nexus-shimmer 3s linear infinite;
+  pointer-events: none;
+}
+
+/* ========== RESPONSIVE DESIGN ========== */
+
+@media (max-width: 1024px) {
+  .nexus-grid {
+    grid-template-columns: repeat(auto-fit, minmax(320px, 1fr));
+    gap: 1.5rem;
+    padding: 1.5rem;
+  }
+
+  .nexus-stats {
+    gap: 4rem;
+  }
+}
+
+@media (max-width: 768px) {
+  .nexus-hero {
+    padding: 3rem 1.5rem 2rem;
+  }
+
+  .nexus-title {
+    font-size: clamp(2.5rem, 10vw, 3.5rem);
+  }
+
+  .nexus-subtitle {
+    font-size: 0.75rem;
+    letter-spacing: 0.25em;
+  }
+
+  .nexus-grid {
+    grid-template-columns: 1fr;
+    padding: 1rem;
+    gap: 1rem;
+  }
+
+  .nexus-card-content {
+    padding: 1.5rem;
+  }
+
+  .nexus-stats {
+    gap: 2rem;
+    flex-wrap: wrap;
+  }
+
+  .nexus-stat-value {
+    font-size: 2.5rem;
+  }
+
+  .nexus-activity {
+    display: none;
+  }
+
+  .nexus-orb-1,
+  .nexus-orb-2,
+  .nexus-orb-3 {
+    opacity: 0.5;
+  }
+}
+
+/* ========== SPECIAL CARD GRADIENTS ========== */
+
+/* AI Canvas - Violet Flow */
+.nexus-card[data-workspace="canvas"] .nexus-tool-icon-bg,
+.nexus-card[data-workspace="canvas"] .nexus-tool-icon-inner {
+  background: linear-gradient(135deg, #7c3aed, #4f46e5);
+}
+.nexus-card[data-workspace="canvas"] .nexus-card-glow {
+  background: radial-gradient(circle at 50% 50%, rgba(124, 58, 237, 0.4), transparent 70%);
+}
+
+/* Mission Control - Midnight Steel */
+.nexus-card[data-workspace="mission"] .nexus-tool-icon-bg,
+.nexus-card[data-workspace="mission"] .nexus-tool-icon-inner {
+  background: linear-gradient(135deg, #475569, #1e293b);
+}
+.nexus-card[data-workspace="mission"] .nexus-card-glow {
+  background: radial-gradient(circle at 50% 50%, rgba(71, 85, 105, 0.4), transparent 70%);
+}
+
+/* AI Studio - Magenta Dream */
+.nexus-card[data-workspace="studio"] .nexus-tool-icon-bg,
+.nexus-card[data-workspace="studio"] .nexus-tool-icon-inner {
+  background: linear-gradient(135deg, #ec4899, #db2777);
+}
+.nexus-card[data-workspace="studio"] .nexus-card-glow {
+  background: radial-gradient(circle at 50% 50%, rgba(236, 72, 153, 0.4), transparent 70%);
+}
+
+/* Intelligence Hub - Cyan Neural */
+.nexus-card[data-workspace="hub"] .nexus-tool-icon-bg,
+.nexus-card[data-workspace="hub"] .nexus-tool-icon-inner {
+  background: linear-gradient(135deg, #06b6d4, #0891b2);
+}
+.nexus-card[data-workspace="hub"] .nexus-card-glow {
+  background: radial-gradient(circle at 50% 50%, rgba(6, 182, 212, 0.4), transparent 70%);
+}
+
+/* Quick Actions - Solar Flare */
+.nexus-card[data-workspace="actions"] .nexus-tool-icon-bg,
+.nexus-card[data-workspace="actions"] .nexus-tool-icon-inner {
+  background: linear-gradient(135deg, #f59e0b, #d97706);
+}
+.nexus-card[data-workspace="actions"] .nexus-card-glow {
+  background: radial-gradient(circle at 50% 50%, rgba(245, 158, 11, 0.4), transparent 70%);
+}
+
+/* Proposal Builder - Indigo Depth */
+.nexus-card[data-workspace="proposal"] .nexus-tool-icon-bg,
+.nexus-card[data-workspace="proposal"] .nexus-tool-icon-inner {
+  background: linear-gradient(135deg, #4f46e5, #6366f1);
+}
+.nexus-card[data-workspace="proposal"] .nexus-card-glow {
+  background: radial-gradient(circle at 50% 50%, rgba(79, 70, 229, 0.4), transparent 70%);
+}
+
+/* ========== TOOL ICON SPECIFIC STYLES ========== */
+
+.nexus-tool-icon i {
+  filter: drop-shadow(0 0 8px rgba(255, 255, 255, 0.3));
+}
+
+/* ========== HOVER STATES FOR ACCESSIBILITY ========== */
+
+.nexus-card:focus-visible {
+  outline: 2px solid var(--nexus-cyan);
+  outline-offset: 4px;
+}
+
+/* ========== REDUCED MOTION ========== */
+
+@media (prefers-reduced-motion: reduce) {
+  .nexus-orb,
+  .nexus-nucleus-ring,
+  .nexus-orbit-particle,
+  .nexus-badge,
+  .nexus-activity-bar,
+  .nexus-grid-overlay {
+    animation: none;
+  }
+
+  .nexus-card {
+    transition: transform 0.2s, border-color 0.2s;
+  }
+
+  .nexus-title {
+    animation: none;
+    background-size: 100% 100%;
+  }
+}
