@@ -4951,44 +4951,56 @@ const Messages: React.FC<MessagesProps> = ({ apiKey, contacts, initialContactId,
             {/* Tab Content */}
             <div className="max-h-96 overflow-y-auto">
               {securityTab === 'encryption' && (
-                <MessageEncryption
-                  onSettingsChange={(settings) => console.log('Encryption settings:', settings)}
-                  onGenerateKey={() => console.log('Generate new key')}
-                  onExportKey={() => console.log('Export public key')}
-                />
+                <Suspense fallback={<FeatureSkeleton type="panel" />}>
+                  <BundleSecurity.MessageEncryption
+                    onSettingsChange={(settings) => console.log('Encryption settings:', settings)}
+                    onGenerateKey={() => console.log('Generate new key')}
+                    onExportKey={() => console.log('Export public key')}
+                  />
+                </Suspense>
               )}
               {securityTab === 'readtime' && (
-                <ReadTimeEstimation
-                  onMarkAsRead={(messageId) => console.log('Mark as read:', messageId)}
-                  onPreferencesChange={(prefs) => console.log('Preferences:', prefs)}
-                />
+                <Suspense fallback={<FeatureSkeleton type="inline" />}>
+                  <BundleSecurity.ReadTimeEstimation
+                    onMarkAsRead={(messageId) => console.log('Mark as read:', messageId)}
+                    onPreferencesChange={(prefs) => console.log('Preferences:', prefs)}
+                  />
+                </Suspense>
               )}
               {securityTab === 'versions' && (
-                <MessageVersioning
-                  onRestoreVersion={(msgId, versionId) => console.log('Restore:', msgId, versionId)}
-                  onCompareVersions={(a, b) => console.log('Compare:', a, b)}
-                />
+                <Suspense fallback={<FeatureSkeleton type="panel" />}>
+                  <BundleSecurity.MessageVersioning
+                    onRestoreVersion={(msgId, versionId) => console.log('Restore:', msgId, versionId)}
+                    onCompareVersions={(a, b) => console.log('Compare:', a, b)}
+                  />
+                </Suspense>
               )}
               {securityTab === 'folders' && (
-                <SmartFolders
-                  onFolderSelect={(folderId) => console.log('Folder selected:', folderId)}
-                  onCreateFolder={(folder) => console.log('Create folder:', folder)}
-                  onDeleteFolder={(folderId) => console.log('Delete folder:', folderId)}
-                />
+                <Suspense fallback={<FeatureSkeleton type="list" />}>
+                  <BundleSecurity.SmartFolders
+                    onFolderSelect={(folderId) => console.log('Folder selected:', folderId)}
+                    onCreateFolder={(folder) => console.log('Create folder:', folder)}
+                    onDeleteFolder={(folderId) => console.log('Delete folder:', folderId)}
+                  />
+                </Suspense>
               )}
               {securityTab === 'insights' && (
-                <ConversationInsights
-                  onContactSelect={(contactId) => console.log('Contact selected:', contactId)}
-                  onInsightAction={(insightId) => console.log('Insight action:', insightId)}
-                />
+                <Suspense fallback={<FeatureSkeleton type="card" />}>
+                  <BundleSecurity.ConversationInsights
+                    onContactSelect={(contactId) => console.log('Contact selected:', contactId)}
+                    onInsightAction={(insightId) => console.log('Insight action:', insightId)}
+                  />
+                </Suspense>
               )}
               {securityTab === 'focus' && (
-                <FocusTimer
-                  onTimerStart={(type) => console.log('Timer started:', type)}
-                  onTimerComplete={(session) => console.log('Session complete:', session)}
-                  onTimerPause={() => console.log('Timer paused')}
-                  onSettingsChange={(settings) => console.log('Timer settings:', settings)}
-                />
+                <Suspense fallback={<FeatureSkeleton type="panel" />}>
+                  <BundleSecurity.FocusTimer
+                    onTimerStart={(type) => console.log('Timer started:', type)}
+                    onTimerComplete={(session) => console.log('Session complete:', session)}
+                    onTimerPause={() => console.log('Timer paused')}
+                    onSettingsChange={(settings) => console.log('Timer settings:', settings)}
+                  />
+                </Suspense>
               )}
             </div>
           </div>
