@@ -1,291 +1,396 @@
-// MessageInput.tsx - AI-Augmented Message Input Component
-import React, { useState, useRef, useEffect, useCallback } from 'react';
+// src/components/MessageInput/MessageInput.tsx
+// AI-Augmented Message Input Component
+
+import React, { useState, useRef, useEffect, useCallback, lazy, Suspense } from 'react';
 import { motion, AnimatePresence } from 'framer-motion';
-import { useMessagesStore } from '../../store/messageStore';
+import { useMessageStore } from '../../store/messageStore';
+import FormattingToolbar from './FormattingToolbar';
+import ToneAnalyzer from './ToneAnalyzer';
+import AttachmentPreview from './AttachmentPreview';
+import './MessageInput.css';
+import type {
+  MessageInputProps,
+  AttachmentFile,
+  DraftState,
+  FormattingAction,
+  AISuggestion,
+  ToneAnalysis,
+} from './types';
 
-interface MessageInputProps {
-  onSend: (text: string, attachments?: File[]) => void;
-  onTyping?: (isTyping: boolean) => void;
-  placeholder?: string;
-  aiEnabled?: boolean;
-  voiceEnabled?: boolean;
-  maxLength?: number;
-  channelId?: string;
-}
+// Lazy load AI components for better performance
+const AIComposer = lazy(() => import('./AIComposer'));
 
-export const MessageInput: React.FC<MessageInputProps> = ({
+const MessageInput: React.FC<MessageInputProps> = ({
   onSend,
   onTyping,
-  placeholder = 'Type a message...',
-  aiEnabled = true,
-  voiceEnabled = true,
+  placeholder = 'Type your message...',
+  aiEnabled = false,
+  voiceEnabled = false,
   maxLength = 2000,
-  channelId
+  channelId,
+  disabled = false,
+  initialValue = '',
 }) => {
-  const [inputValue, setInputValue] = useState('');
-  const [showToolbar, setShowToolbar] = useState(false);
-  const [isFocused, setIsFocused] = useState(false);
-  const textareaRef = useRef<HTMLTextAreaElement>(null);
+  // State
+  const [content, setContent] = useState(initialValue);
+  const [showAI, setShowAI] = useState(false);
+  const [isRecording, setIsRecording] = useState(false);
+  const [attachments, setAttachments] = useState<AttachmentFile[]>([]);
+  const [activeFormats, setActiveFormats] = useState<Set<string>>(new Set());
+  const [draft, setDraft] = useState<DraftState>({
+    text: '',
+    lastSaved: new Date(),
+    status: 'saved',
+  });
 
-  const {
-    draft,
-    smartReplies,
-    draftAnalysis,
-    isAnalyzingDraft,
-    isGeneratingReplies,
-    setDraft,
-    analyzeDraft,
-    generateSmartReplies
-  } = useMessagesStore();
+  // Refs
+  const editorRef = useRef<HTMLDivElement>(null);
+  const typingTimeoutRef = useRef<NodeJS.Timeout>();
+  const draftTimeoutRef = useRef<NodeJS.Timeout>();
 
-  // Auto-resize textarea
+  // Store
+  const messageStore = useMessageStore();
+  const aiSuggestions = (messageStore.smartReplies || []) as unknown as AISuggestion[];
+  const toneAnalysis = messageStore.draftAnalysis as unknown as ToneAnalysis | null;
+  const isGeneratingAI = messageStore.isGeneratingReplies;
+  const isAnalyzingTone = messageStore.isAnalyzingDraft;
+
+  // Auto-save draft
   useEffect(() => {
-    const textarea = textareaRef.current;
-    if (textarea) {
-      textarea.style.height = 'auto';
-      textarea.style.height = `${Math.min(textarea.scrollHeight, 120)}px`;
+    if (!content || content === draft.text) return;
+
+    if (draftTimeoutRef.current) {
+      clearTimeout(draftTimeoutRef.current);
     }
-  }, [inputValue]);
 
-  // Debounced AI analysis
-  useEffect(() => {
-    if (!aiEnabled || !inputValue || inputValue.length < 10) return;
+    setDraft((prev) => ({ ...prev, status: 'saving' }));
 
-    const timer = setTimeout(() => {
-      const apiKey = localStorage.getItem('gemini_api_key');
-      if (apiKey && channelId) {
-        analyzeDraft(apiKey);
-        generateSmartReplies(apiKey, channelId);
+    draftTimeoutRef.current = setTimeout(() => {
+      // Save draft logic here
+      setDraft({
+        text: content,
+        lastSaved: new Date(),
+        status: 'saved',
+      });
+    }, 1000);
+
+    return () => {
+      if (draftTimeoutRef.current) {
+        clearTimeout(draftTimeoutRef.current);
       }
+    };
+  }, [content, draft.text]);
+
+  // Typing indicator
+  useEffect(() => {
+    if (!onTyping) return;
+
+    if (typingTimeoutRef.current) {
+      clearTimeout(typingTimeoutRef.current);
+    }
+
+    if (content) {
+      onTyping(true);
+      typingTimeoutRef.current = setTimeout(() => {
+        onTyping(false);
+      }, 1000);
+    } else {
+      onTyping(false);
+    }
+
+    return () => {
+      if (typingTimeoutRef.current) {
+        clearTimeout(typingTimeoutRef.current);
+      }
+    };
+  }, [content, onTyping]);
+
+  // AI suggestions
+  useEffect(() => {
+    if (!aiEnabled || !showAI || content.length < 10) return;
+
+    const timeoutId = setTimeout(() => {
+      messageStore.generateSmartReplies(channelId || '', content);
     }, 300);
 
-    return () => clearTimeout(timer);
-  }, [inputValue, aiEnabled, channelId, analyzeDraft, generateSmartReplies]);
+    return () => clearTimeout(timeoutId);
+  }, [content, showAI, aiEnabled, channelId, messageStore]);
 
-  // Handle input change
-  const handleChange = useCallback((e: React.ChangeEvent<HTMLTextAreaElement>) => {
-    const value = e.target.value;
-    if (value.length <= maxLength) {
-      setInputValue(value);
-      setDraft(value);
-      onTyping?.(value.length > 0);
+  // Tone analysis
+  useEffect(() => {
+    if (!aiEnabled || content.length < 5) return;
+
+    const timeoutId = setTimeout(() => {
+      messageStore.analyzeDraft(content);
+    }, 500);
+
+    return () => clearTimeout(timeoutId);
+  }, [content, aiEnabled, messageStore]);
+
+  // Handle content change
+  const handleContentChange = useCallback((e: React.FormEvent<HTMLDivElement>) => {
+    const text = e.currentTarget.textContent || '';
+    if (text.length <= maxLength) {
+      setContent(text);
+    } else {
+      // Truncate and update
+      const truncated = text.slice(0, maxLength);
+      e.currentTarget.textContent = truncated;
+      setContent(truncated);
     }
-  }, [maxLength, setDraft, onTyping]);
-
-  // Handle send
-  const handleSend = useCallback(() => {
-    const trimmed = inputValue.trim();
-    if (!trimmed) return;
-
-    onSend(trimmed, []);
-    setInputValue('');
-    setDraft('');
-    onTyping?.(false);
-
-    // Reset textarea height
-    if (textareaRef.current) {
-      textareaRef.current.style.height = 'auto';
-    }
-  }, [inputValue, onSend, setDraft, onTyping]);
+  }, [maxLength]);
 
   // Handle keyboard shortcuts
-  const handleKeyDown = useCallback((e: React.KeyboardEvent<HTMLTextAreaElement>) => {
-    if (e.key === 'Enter' && !e.shiftKey) {
-      e.preventDefault();
-      handleSend();
+  const handleKeyDown = useCallback(
+    (e: React.KeyboardEvent<HTMLDivElement>) => {
+      // Send message on Cmd/Ctrl + Enter
+      if ((e.metaKey || e.ctrlKey) && e.key === 'Enter') {
+        e.preventDefault();
+        handleSendMessage();
+        return;
+      }
+
+      // Toggle AI on Cmd/Ctrl + K
+      if ((e.metaKey || e.ctrlKey) && e.key === 'k') {
+        e.preventDefault();
+        setShowAI((prev) => !prev);
+        return;
+      }
+
+      // Bold on Cmd/Ctrl + B
+      if ((e.metaKey || e.ctrlKey) && e.key === 'b') {
+        e.preventDefault();
+        applyFormat({ type: 'bold' });
+        return;
+      }
+
+      // Italic on Cmd/Ctrl + I
+      if ((e.metaKey || e.ctrlKey) && e.key === 'i') {
+        e.preventDefault();
+        applyFormat({ type: 'italic' });
+        return;
+      }
+
+      // Code on Cmd/Ctrl + E
+      if ((e.metaKey || e.ctrlKey) && e.key === 'e') {
+        e.preventDefault();
+        applyFormat({ type: 'code' });
+        return;
+      }
+    },
+    [content]
+  );
+
+  // Format text
+  const applyFormat = useCallback((action: FormattingAction) => {
+    document.execCommand(action.type, false, undefined);
+    setActiveFormats((prev) => {
+      const newFormats = new Set(prev);
+      if (newFormats.has(action.type)) {
+        newFormats.delete(action.type);
+      } else {
+        newFormats.add(action.type);
+      }
+      return newFormats;
+    });
+  }, []);
+
+  // Send message
+  const handleSendMessage = useCallback(() => {
+    if (!content.trim() || disabled) return;
+
+    onSend(content);
+    setContent('');
+    if (editorRef.current) {
+      editorRef.current.textContent = '';
     }
+    setAttachments([]);
+    setShowAI(false);
+  }, [content, disabled, onSend]);
 
-    if (e.key === 'Escape') {
-      setShowToolbar(false);
+  // Accept AI suggestion
+  const handleAcceptSuggestion = useCallback((suggestion: AISuggestion) => {
+    setContent(suggestion.text);
+    if (editorRef.current) {
+      editorRef.current.textContent = suggestion.text;
     }
+    setShowAI(false);
+  }, []);
 
-    // Cmd/Ctrl + B for bold
-    if ((e.metaKey || e.ctrlKey) && e.key === 'b') {
-      e.preventDefault();
-      setShowToolbar(prev => !prev);
+  // Dismiss AI suggestion
+  const handleDismissSuggestion = useCallback((suggestionId: string) => {
+    // Logic to remove specific suggestion
+    messageStore.clearSmartReplies();
+  }, [messageStore]);
+
+  // Add attachment
+  const handleAttachmentAdd = useCallback((files: FileList) => {
+    const newAttachments: AttachmentFile[] = Array.from(files).map((file) => ({
+      id: Math.random().toString(36).substr(2, 9),
+      file,
+      name: file.name,
+      size: file.size,
+      type: file.type.startsWith('image/')
+        ? 'image'
+        : file.type.startsWith('video/')
+        ? 'video'
+        : file.type.startsWith('audio/')
+        ? 'audio'
+        : 'document',
+    }));
+
+    setAttachments((prev) => [...prev, ...newAttachments]);
+  }, []);
+
+  // Remove attachment
+  const handleAttachmentRemove = useCallback((id: string) => {
+    setAttachments((prev) => prev.filter((a) => a.id !== id));
+  }, []);
+
+  // Character count
+  const characterCount = content.length;
+  const isNearLimit = characterCount > maxLength * 0.9;
+  const isOverLimit = characterCount > maxLength;
+
+  // Draft status text
+  const getDraftStatusText = () => {
+    if (draft.status === 'saving') return 'Saving draft...';
+    if (draft.status === 'saved') {
+      const seconds = Math.floor((Date.now() - draft.lastSaved.getTime()) / 1000);
+      if (seconds < 5) return 'Draft saved';
+      if (seconds < 60) return `Saved ${seconds}s ago`;
+      const minutes = Math.floor(seconds / 60);
+      return `Saved ${minutes}m ago`;
     }
-  }, [handleSend]);
-
-  // AI active indicator
-  const aiActive = aiEnabled && (isAnalyzingDraft || isGeneratingReplies || smartReplies.length > 0);
-
-  // Character count color
-  const charCountColor = inputValue.length > maxLength * 0.9 ? 'text-red-500' :
-                        inputValue.length > maxLength * 0.7 ? 'text-yellow-500' :
-                        'text-zinc-500';
+    if (draft.status === 'error') return 'Failed to save';
+    return '';
+  };
 
   return (
-    <div className="relative w-full">
+    <div className="message-input-wrapper">
       {/* AI Suggestions Overlay */}
       <AnimatePresence>
-        {aiActive && smartReplies.length > 0 && (
-          <motion.div
-            initial={{ opacity: 0, y: 10 }}
-            animate={{ opacity: 1, y: 0 }}
-            exit={{ opacity: 0, y: 10 }}
-            className="absolute bottom-full left-0 right-0 mb-2 z-50"
-          >
-            <div className="bg-zinc-900 border border-purple-500/30 rounded-xl p-3 shadow-xl">
-              <div className="flex items-center gap-2 mb-2">
-                <div className="w-6 h-6 rounded-lg bg-purple-500/20 flex items-center justify-center">
-                  <i className="fa-solid fa-wand-sparkles text-purple-400 text-xs" />
-                </div>
-                <span className="text-xs font-medium text-purple-300">AI Suggests</span>
-              </div>
-              <div className="space-y-2">
-                {smartReplies.slice(0, 3).map((reply, index) => (
-                  <button
-                    key={index}
-                    onClick={() => {
-                      setInputValue(reply.text);
-                      setDraft(reply.text);
-                    }}
-                    className="w-full text-left px-3 py-2 rounded-lg bg-zinc-800 hover:bg-zinc-700 transition text-sm text-zinc-300 border border-transparent hover:border-purple-500/30"
-                  >
-                    <div className="flex items-center justify-between">
-                      <span className="flex-1">{reply.text}</span>
-                      {reply.confidence && (
-                        <span className={`text-xs ml-2 ${
-                          reply.confidence > 0.8 ? 'text-green-400' :
-                          reply.confidence > 0.5 ? 'text-yellow-400' :
-                          'text-zinc-500'
-                        }`}>
-                          {Math.round(reply.confidence * 100)}%
-                        </span>
-                      )}
-                    </div>
-                  </button>
-                ))}
-              </div>
-            </div>
-          </motion.div>
+        {showAI && aiEnabled && aiSuggestions.length > 0 && (
+          <Suspense fallback={<div className="ai-loading">Loading AI...</div>}>
+            <AIComposer
+              suggestions={aiSuggestions}
+              isLoading={isGeneratingAI}
+              onAcceptSuggestion={handleAcceptSuggestion}
+              onDismissSuggestion={handleDismissSuggestion}
+              onClose={() => setShowAI(false)}
+            />
+          </Suspense>
         )}
       </AnimatePresence>
 
-      {/* Main Input Container */}
-      <div className={`
-        relative rounded-xl border transition-all duration-200
-        ${aiActive ? 'border-purple-500 shadow-[0_0_20px_rgba(139,92,246,0.2)]' : 'border-zinc-700'}
-        ${isFocused ? 'bg-zinc-800' : 'bg-zinc-900'}
-      `}>
-        {/* AI Processing Indicator */}
-        {aiActive && (
-          <div className="absolute top-0 left-0 right-0 h-0.5 overflow-hidden rounded-t-xl">
-            <motion.div
-              className="h-full bg-gradient-to-r from-transparent via-purple-500 to-transparent"
-              animate={{ x: ['-100%', '200%'] }}
-              transition={{ duration: 1.5, repeat: Infinity, ease: 'linear' }}
-            />
+      <div className={`message-input-container ${showAI ? 'ai-active' : ''}`}>
+        {/* Formatting Toolbar */}
+        <FormattingToolbar
+          onFormat={applyFormat}
+          activeFormats={activeFormats}
+          onEmojiClick={() => {}}
+          onAttachmentClick={() => document.getElementById('file-input')?.click()}
+          onAIAssist={() => setShowAI(!showAI)}
+          aiEnabled={aiEnabled}
+        />
+
+        {/* Tone Analyzer Badge */}
+        {aiEnabled && toneAnalysis && (
+          <ToneAnalyzer analysis={toneAnalysis} isAnalyzing={isAnalyzingTone} />
+        )}
+
+        {/* Text Input Area */}
+        <div
+          ref={editorRef}
+          className="message-input-area"
+          contentEditable={!disabled}
+          onInput={handleContentChange}
+          onKeyDown={handleKeyDown}
+          data-placeholder={placeholder}
+          role="textbox"
+          aria-multiline="true"
+          aria-label="Message text"
+          aria-describedby="character-counter draft-indicator"
+        />
+
+        {/* Attachment Preview */}
+        {attachments.length > 0 && (
+          <AttachmentPreview attachments={attachments} onRemove={handleAttachmentRemove} />
+        )}
+
+        {/* Draft Indicator */}
+        {content && (
+          <div
+            id="draft-indicator"
+            className={`draft-indicator ${draft.status}`}
+            role="status"
+            aria-live="polite"
+          >
+            <span className="draft-icon">
+              {draft.status === 'saving' ? '⏳' : draft.status === 'saved' ? '✓' : '⚠'}
+            </span>
+            <span className="draft-timestamp">{getDraftStatusText()}</span>
           </div>
         )}
 
-        {/* Textarea */}
-        <textarea
-          ref={textareaRef}
-          value={inputValue}
-          onChange={handleChange}
-          onKeyDown={handleKeyDown}
-          onFocus={() => setIsFocused(true)}
-          onBlur={() => setIsFocused(false)}
-          placeholder={placeholder}
-          className="w-full px-4 py-3 bg-transparent text-white placeholder-zinc-500
-                   focus:outline-none resize-none text-sm transition"
-          style={{ minHeight: '44px', maxHeight: '120px' }}
-          rows={1}
-        />
+        {/* Character Counter */}
+        <div
+          id="character-counter"
+          className={`character-counter ${isNearLimit ? 'warning' : ''} ${isOverLimit ? 'error' : ''}`}
+          role="status"
+          aria-live="polite"
+        >
+          {characterCount} / {maxLength}
+        </div>
 
-        {/* Toolbar */}
-        <AnimatePresence>
-          {showToolbar && (
-            <motion.div
-              initial={{ opacity: 0, height: 0 }}
-              animate={{ opacity: 1, height: 'auto' }}
-              exit={{ opacity: 0, height: 0 }}
-              className="border-t border-zinc-700 px-4 py-2"
-            >
-              <div className="flex items-center gap-2">
-                <button className="p-1.5 rounded hover:bg-zinc-700 text-zinc-400 hover:text-white">
-                  <i className="fa-solid fa-bold text-xs" />
-                </button>
-                <button className="p-1.5 rounded hover:bg-zinc-700 text-zinc-400 hover:text-white">
-                  <i className="fa-solid fa-italic text-xs" />
-                </button>
-                <button className="p-1.5 rounded hover:bg-zinc-700 text-zinc-400 hover:text-white">
-                  <i className="fa-solid fa-code text-xs" />
-                </button>
-                <button className="p-1.5 rounded hover:bg-zinc-700 text-zinc-400 hover:text-white">
-                  <i className="fa-solid fa-link text-xs" />
-                </button>
-              </div>
-            </motion.div>
-          )}
-        </AnimatePresence>
-
-        {/* Bottom Bar */}
-        <div className="flex items-center justify-between px-4 py-2 border-t border-zinc-700">
-          {/* Left Actions */}
-          <div className="flex items-center gap-2">
-            <button
-              onClick={() => setShowToolbar(prev => !prev)}
-              className="p-1.5 rounded hover:bg-zinc-700 text-zinc-400 hover:text-white transition"
-              title="Formatting (Ctrl+B)"
-            >
-              <i className="fa-solid fa-text text-xs" />
-            </button>
-
-            <button className="p-1.5 rounded hover:bg-zinc-700 text-zinc-400 hover:text-white transition">
-              <i className="fa-solid fa-paperclip text-xs" />
-            </button>
-
-            <button className="p-1.5 rounded hover:bg-zinc-700 text-zinc-400 hover:text-white transition">
-              <i className="fa-solid fa-face-smile text-xs" />
-            </button>
-
+        {/* Action Bar */}
+        <div className="message-action-bar">
+          <div className="action-bar-left">
             {voiceEnabled && (
-              <button className="p-1.5 rounded hover:bg-zinc-700 text-zinc-400 hover:text-white transition">
-                <i className="fa-solid fa-microphone text-xs" />
+              <button
+                className={`voice-input-button ${isRecording ? 'recording' : ''}`}
+                onClick={() => setIsRecording(!isRecording)}
+                aria-label={isRecording ? 'Stop recording' : 'Start voice input'}
+                aria-pressed={isRecording}
+              >
+                <i className={`fa-solid ${isRecording ? 'fa-stop' : 'fa-microphone'}`} />
+              </button>
+            )}
+
+            {aiEnabled && (
+              <button
+                className={`ai-toggle-button ${showAI ? 'active' : ''}`}
+                onClick={() => setShowAI(!showAI)}
+                aria-label="Toggle AI suggestions"
+                aria-pressed={showAI}
+              >
+                <i className="fa-solid fa-wand-magic-sparkles ai-toggle-icon" />
+                <span className="ai-toggle-label">AI</span>
               </button>
             )}
           </div>
 
-          {/* Right Actions */}
-          <div className="flex items-center gap-3">
-            {/* Character Count */}
-            <span className={`text-xs ${charCountColor}`}>
-              {inputValue.length}/{maxLength}
-            </span>
-
-            {/* AI Badge */}
-            {aiActive && (
-              <div className="flex items-center gap-1 px-2 py-0.5 rounded-full bg-purple-500/10 border border-purple-500/30">
-                <div className="w-1.5 h-1.5 rounded-full bg-purple-400 animate-pulse" />
-                <span className="text-[10px] text-purple-400">AI</span>
-              </div>
-            )}
-
-            {/* Send Button */}
-            <button
-              onClick={handleSend}
-              disabled={!inputValue.trim()}
-              className={`
-                px-4 py-1.5 rounded-lg font-medium text-sm transition
-                ${inputValue.trim()
-                  ? 'bg-red-500 hover:bg-red-600 text-white'
-                  : 'bg-zinc-700 text-zinc-500 cursor-not-allowed'}
-              `}
-            >
-              <i className="fa-solid fa-paper-plane text-xs" />
-            </button>
-          </div>
+          <button
+            className="send-button"
+            onClick={handleSendMessage}
+            disabled={!content.trim() || disabled || isOverLimit}
+            aria-label="Send message"
+          >
+            <i className="fa-solid fa-arrow-up" />
+          </button>
         </div>
       </div>
 
-      {/* Tone Analysis (if available) */}
-      {draftAnalysis && (
-        <div className="mt-2 text-xs text-zinc-500">
-          Tone: {draftAnalysis.tone || 'Neutral'}
-        </div>
-      )}
+      {/* Hidden file input */}
+      <input
+        type="file"
+        id="file-input"
+        multiple
+        onChange={(e) => e.target.files && handleAttachmentAdd(e.target.files)}
+        style={{ display: 'none' }}
+      />
     </div>
   );
 };
+
+export default MessageInput;

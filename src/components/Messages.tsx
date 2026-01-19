@@ -4170,59 +4170,67 @@ const Messages: React.FC<MessagesProps> = ({ apiKey, contacts, initialContactId,
             {/* Tab Content */}
             <div className="max-h-80 overflow-y-auto">
               {analyticsView === 'response' && (
-                <ResponseTimeTracker
-                  messages={activeThread.messages.map(m => ({
-                    id: m.id,
-                    sender: m.sender,
-                    timestamp: m.timestamp
-                  }))}
-                  contactName={activeThread.contactName}
-                />
+                <Suspense fallback={<FeatureSkeleton type="card" />}>
+                  <BundleAnalytics.ResponseTimeTracker
+                    messages={activeThread.messages.map(m => ({
+                      id: m.id,
+                      sender: m.sender,
+                      timestamp: m.timestamp
+                    }))}
+                    contactName={activeThread.contactName}
+                  />
+                </Suspense>
               )}
               {analyticsView === 'engagement' && (
-                <EngagementScoring
-                  messages={activeThread.messages.map(m => ({
-                    id: m.id,
-                    text: m.text,
-                    sender: m.sender,
-                    timestamp: m.timestamp,
-                    reactions: m.reactions
-                  }))}
-                  contactName={activeThread.contactName}
-                />
+                <Suspense fallback={<FeatureSkeleton type="card" />}>
+                  <BundleAnalytics.EngagementScoring
+                    messages={activeThread.messages.map(m => ({
+                      id: m.id,
+                      text: m.text,
+                      sender: m.sender,
+                      timestamp: m.timestamp,
+                      reactions: m.reactions
+                    }))}
+                    contactName={activeThread.contactName}
+                  />
+                </Suspense>
               )}
               {analyticsView === 'flow' && (
-                <ConversationFlowViz
-                  messages={activeThread.messages.map(m => ({
-                    id: m.id,
-                    text: m.text,
-                    sender: m.sender,
-                    timestamp: m.timestamp,
-                    type: 'message' as const,
-                    reactions: m.reactions
-                  }))}
-                  contactName={activeThread.contactName}
-                  onMessageClick={(msgId) => {
-                    const msgEl = document.getElementById(`message-${msgId}`);
-                    msgEl?.scrollIntoView({ behavior: 'smooth', block: 'center' });
-                  }}
-                />
+                <Suspense fallback={<FeatureSkeleton type="modal" />}>
+                  <BundleAnalytics.ConversationFlowViz
+                    messages={activeThread.messages.map(m => ({
+                      id: m.id,
+                      text: m.text,
+                      sender: m.sender,
+                      timestamp: m.timestamp,
+                      type: 'message' as const,
+                      reactions: m.reactions
+                    }))}
+                    contactName={activeThread.contactName}
+                    onMessageClick={(msgId) => {
+                      const msgEl = document.getElementById(`message-${msgId}`);
+                      msgEl?.scrollIntoView({ behavior: 'smooth', block: 'center' });
+                    }}
+                  />
+                </Suspense>
               )}
               {analyticsView === 'insights' && (
-                <ProactiveInsightsEnhanced
-                  messages={activeThread.messages.map(m => ({
-                    id: m.id,
-                    text: m.text,
-                    sender: m.sender,
-                    timestamp: m.timestamp
-                  }))}
-                  contactName={activeThread.contactName}
-                  onActionClick={(action) => {
-                    if (action.startsWith('Hey ')) {
-                      setInputText(action);
-                    }
-                  }}
-                />
+                <Suspense fallback={<FeatureSkeleton type="panel" />}>
+                  <BundleAnalytics.ProactiveInsightsEnhanced
+                    messages={activeThread.messages.map(m => ({
+                      id: m.id,
+                      text: m.text,
+                      sender: m.sender,
+                      timestamp: m.timestamp
+                    }))}
+                    contactName={activeThread.contactName}
+                    onActionClick={(action) => {
+                      if (action.startsWith('Hey ')) {
+                        setInputText(action);
+                      }
+                    }}
+                  />
+                </Suspense>
               )}
             </div>
           </div>
@@ -4259,94 +4267,105 @@ const Messages: React.FC<MessagesProps> = ({ apiKey, contacts, initialContactId,
             {/* Tab Content */}
             <div className="max-h-80 overflow-y-auto">
               {collaborationTab === 'collab' && (
-                <ThreadCollaboration
-                  threadId={activeThread.id}
-                  participants={[
-                    { id: 'user', name: 'You', role: 'owner', status: 'active', joinedAt: new Date().toISOString() },
-                    { id: activeThread.contactId, name: activeThread.contactName, role: 'member', status: 'active', joinedAt: activeThread.createdAt || new Date().toISOString() }
-                  ]}
-                  currentUserId="user"
-                  onInvite={(email, role) => console.log('Invite:', email, role)}
-                  onRemoveParticipant={(id) => console.log('Remove:', id)}
-                  onChangeRole={(id, role) => console.log('Change role:', id, role)}
-                />
+                <Suspense fallback={<FeatureSkeleton type="list" />}>
+                  <BundleCollaboration.ThreadCollaboration
+                    threadId={activeThread.id}
+                    participants={[
+                      { id: 'user', name: 'You', role: 'owner', status: 'active', joinedAt: new Date().toISOString() },
+                      { id: activeThread.contactId, name: activeThread.contactName, role: 'member', status: 'active', joinedAt: activeThread.createdAt || new Date().toISOString() }
+                    ]}
+                    currentUserId="user"
+                    onInvite={(email, role) => console.log('Invite:', email, role)}
+                    onRemoveParticipant={(id) => console.log('Remove:', id)}
+                    onChangeRole={(id, role) => console.log('Change role:', id, role)}
+                  />
+                </Suspense>
               )}
               {collaborationTab === 'links' && (
-                <ThreadLinking
-                  currentThreadId={activeThread.id}
-                  linkedThreads={[]}
-                  crossReferences={[]}
-                  availableThreads={threads.filter(t => t.id !== activeThread.id).map(t => ({
-                    id: t.id,
-                    title: t.contactName,
-                    preview: t.messages[t.messages.length - 1]?.text || 'No messages'
-                  }))}
-                  onLinkThread={(threadId, type) => console.log('Link thread:', threadId, type)}
-                  onUnlinkThread={(threadId) => console.log('Unlink thread:', threadId)}
-                  onNavigateToThread={(threadId) => {
-                    const thread = threads.find(t => t.id === threadId);
-                    if (thread) setActiveThread(thread);
-                  }}
-                />
+                <Suspense fallback={<FeatureSkeleton type="list" />}>
+                  <BundleCollaboration.ThreadLinking
+                    currentThreadId={activeThread.id}
+                    linkedThreads={[]}
+                    crossReferences={[]}
+                    availableThreads={threads.filter(t => t.id !== activeThread.id).map(t => ({
+                      id: t.id,
+                      title: t.contactName,
+                      preview: t.messages[t.messages.length - 1]?.text || 'No messages'
+                    }))}
+                    onLinkThread={(threadId, type) => console.log('Link thread:', threadId, type)}
+                    onUnlinkThread={(threadId) => console.log('Unlink thread:', threadId)}
+                    onNavigateToThread={(threadId) => {
+                      const thread = threads.find(t => t.id === threadId);
+                      if (thread) setActiveThread(thread);
+                    }}
+                  />
+                </Suspense>
               )}
               {collaborationTab === 'kb' && (
-                <KnowledgeBase
-                  articles={[
-                    { id: '1', title: 'Getting Started Guide', category: 'Onboarding', content: 'Welcome to our platform...', tags: ['guide', 'basics'], lastUpdated: new Date().toISOString(), relevanceScore: 0.95 },
-                    { id: '2', title: 'FAQ - Common Questions', category: 'Support', content: 'Frequently asked questions...', tags: ['faq', 'help'], lastUpdated: new Date().toISOString(), relevanceScore: 0.85 }
-                  ]}
-                  contextSuggestions={[]}
-                  onArticleClick={(id) => console.log('Open article:', id)}
-                  onInsertSnippet={(snippet) => setInputText(prev => prev + snippet)}
-                />
+                <Suspense fallback={<FeatureSkeleton type="panel" />}>
+                  <BundleCollaboration.KnowledgeBase
+                    articles={[
+                      { id: '1', title: 'Getting Started Guide', category: 'Onboarding', content: 'Welcome to our platform...', tags: ['guide', 'basics'], lastUpdated: new Date().toISOString(), relevanceScore: 0.95 },
+                      { id: '2', title: 'FAQ - Common Questions', category: 'Support', content: 'Frequently asked questions...', tags: ['faq', 'help'], lastUpdated: new Date().toISOString(), relevanceScore: 0.85 }
+                    ]}
+                    contextSuggestions={[]}
+                    onArticleClick={(id) => console.log('Open article:', id)}
+                    onInsertSnippet={(snippet) => setInputText(prev => prev + snippet)}
+                  />
+                </Suspense>
               )}
               {collaborationTab === 'search' && (
-                <AdvancedSearch
-                  messages={activeThread.messages.map(m => ({
-                    id: m.id,
-                    text: m.text,
-                    sender: m.sender === 'user' ? 'You' : activeThread.contactName,
-                    timestamp: m.timestamp,
-                    hasAttachment: m.attachments && m.attachments.length > 0,
-                    isDecision: m.text.toLowerCase().includes('decided') || m.text.toLowerCase().includes('decision'),
-                    isTask: m.text.toLowerCase().includes('todo') || m.text.toLowerCase().includes('task')
-                  }))}
-                  onResultClick={(messageId) => {
-                    const msgEl = document.getElementById(`message-${messageId}`);
-                    msgEl?.scrollIntoView({ behavior: 'smooth', block: 'center' });
-                  }}
-                  savedSearches={[]}
-                  onSaveSearch={(search) => console.log('Save search:', search)}
-                />
+                <Suspense fallback={<FeatureSkeleton type="modal" />}>
+                  <BundleCollaboration.AdvancedSearch
+                    messages={activeThread.messages.map(m => ({
+                      id: m.id,
+                      text: m.text,
+                      sender: m.sender === 'user' ? 'You' : activeThread.contactName,
+                      timestamp: m.timestamp,
+                      hasAttachment: m.attachments && m.attachments.length > 0,
+                      isDecision: m.text.toLowerCase().includes('decided') || m.text.toLowerCase().includes('decision'),
+                      isTask: m.text.toLowerCase().includes('todo') || m.text.toLowerCase().includes('task')
+                    }))}
+                    onResultClick={(messageId) => {
+                      const msgEl = document.getElementById(`message-${messageId}`);
+                      msgEl?.scrollIntoView({ behavior: 'smooth', block: 'center' });
+                    }}
+                    savedSearches={[]}
+                    onSaveSearch={(search) => console.log('Save search:', search)}
+                  />
+                </Suspense>
               )}
               {collaborationTab === 'pins' && (
-                <MessagePinning
-                  pinnedMessages={pinnedMessages}
-                  highlights={highlights}
-                  onUnpin={(id) => setPinnedMessages(prev => prev.filter(p => p.id !== id))}
-                  onJumpToMessage={(messageId) => {
-                    const msgEl = document.getElementById(`message-${messageId}`);
-                    msgEl?.scrollIntoView({ behavior: 'smooth', block: 'center' });
-                  }}
-                  onEditPin={(id, updates) => setPinnedMessages(prev => prev.map(p => p.id === id ? { ...p, ...updates } : p))}
-                  onRemoveHighlight={(id) => setHighlights(prev => prev.filter(h => h.id !== id))}
-                  onCategoryChange={(id, category) => setPinnedMessages(prev => prev.map(p => p.id === id ? { ...p, category } : p))}
-                />
+                <Suspense fallback={<FeatureSkeleton type="list" />}>
+                  <BundleCollaboration.MessagePinning
+                    pinnedMessages={pinnedMessages}
+                    highlights={highlights}
+                    onUnpin={(id) => setPinnedMessages(prev => prev.filter(p => p.id !== id))}
+                    onJumpToMessage={(messageId) => {
+                      const msgEl = document.getElementById(`message-${messageId}`);
+                      msgEl?.scrollIntoView({ behavior: 'smooth', block: 'center' });
+                    }}
+                    onEditPin={(id, updates) => setPinnedMessages(prev => prev.map(p => p.id === id ? { ...p, ...updates } : p))}
+                    onRemoveHighlight={(id) => setHighlights(prev => prev.filter(h => h.id !== id))}
+                    onCategoryChange={(id, category) => setPinnedMessages(prev => prev.map(p => p.id === id ? { ...p, category } : p))}
+                  />
+                </Suspense>
               )}
               {collaborationTab === 'annotations' && (
-                <CollaborativeAnnotations
-                  annotations={annotations}
-                  currentUserId="user"
-                  onReply={(annotationId, reply) => {
-                    setAnnotations(prev => prev.map(a => a.id === annotationId ? {
-                      ...a,
-                      replies: [...a.replies, { id: uuidv4(), content: reply, author: { id: 'user', name: 'You' }, createdAt: new Date().toISOString(), mentions: [] }]
-                    } : a));
-                  }}
-                  onResolve={(id) => setAnnotations(prev => prev.map(a => a.id === id ? { ...a, resolved: true } : a))}
-                  onReopen={(id) => setAnnotations(prev => prev.map(a => a.id === id ? { ...a, resolved: false } : a))}
-                  onDelete={(id) => setAnnotations(prev => prev.filter(a => a.id !== id))}
-                  onReact={(annotationId, emoji) => {
+                <Suspense fallback={<FeatureSkeleton type="panel" />}>
+                  <BundleCollaboration.CollaborativeAnnotations
+                    annotations={annotations}
+                    currentUserId="user"
+                    onReply={(annotationId, reply) => {
+                      setAnnotations(prev => prev.map(a => a.id === annotationId ? {
+                        ...a,
+                        replies: [...a.replies, { id: uuidv4(), content: reply, author: { id: 'user', name: 'You' }, createdAt: new Date().toISOString(), mentions: [] }]
+                      } : a));
+                    }}
+                    onResolve={(id) => setAnnotations(prev => prev.map(a => a.id === id ? { ...a, resolved: true } : a))}
+                    onReopen={(id) => setAnnotations(prev => prev.map(a => a.id === id ? { ...a, resolved: false } : a))}
+                    onDelete={(id) => setAnnotations(prev => prev.filter(a => a.id !== id))}
+                    onReact={(annotationId, emoji) => {
                     setAnnotations(prev => prev.map(a => {
                       if (a.id !== annotationId) return a;
                       const existingReaction = a.reactions.find(r => r.emoji === emoji);
@@ -4364,6 +4383,7 @@ const Messages: React.FC<MessagesProps> = ({ apiKey, contacts, initialContactId,
                     msgEl?.scrollIntoView({ behavior: 'smooth', block: 'center' });
                   }}
                 />
+                </Suspense>
               )}
             </div>
           </div>
@@ -4400,88 +4420,100 @@ const Messages: React.FC<MessagesProps> = ({ apiKey, contacts, initialContactId,
             {/* Tab Content */}
             <div className="max-h-80 overflow-y-auto">
               {productivityTab === 'templates' && (
-                <SmartTemplates
-                  templates={userTemplates}
-                  contactName={activeThread.contactName}
-                  onInsertTemplate={(content) => setInputText(prev => prev + content)}
-                  onSaveTemplate={(template) => {
-                    setUserTemplates(prev => [...prev, {
-                      ...template,
-                      id: uuidv4(),
-                      usageCount: 0
-                    }]);
-                  }}
-                  onDeleteTemplate={(id) => setUserTemplates(prev => prev.filter(t => t.id !== id))}
-                />
+                <Suspense fallback={<FeatureSkeleton type="list" />}>
+                  <BundleProductivity.SmartTemplates
+                    templates={userTemplates}
+                    contactName={activeThread.contactName}
+                    onInsertTemplate={(content) => setInputText(prev => prev + content)}
+                    onSaveTemplate={(template) => {
+                      setUserTemplates(prev => [...prev, {
+                        ...template,
+                        id: uuidv4(),
+                        usageCount: 0
+                      }]);
+                    }}
+                    onDeleteTemplate={(id) => setUserTemplates(prev => prev.filter(t => t.id !== id))}
+                  />
+                </Suspense>
               )}
               {productivityTab === 'schedule' && (
-                <MessageScheduling
-                  scheduledMessages={userScheduledMessages}
-                  reminders={userReminders}
-                  currentThreadId={activeThread.id}
-                  currentThreadName={activeThread.contactName}
-                  onScheduleMessage={(message) => {
-                    setUserScheduledMessages(prev => [...prev, {
-                      ...message,
-                      id: uuidv4(),
-                      createdAt: new Date().toISOString(),
-                      status: 'pending'
-                    }]);
-                  }}
-                  onCancelScheduled={(id) => setUserScheduledMessages(prev => prev.map(m => m.id === id ? { ...m, status: 'cancelled' } : m))}
-                  onCreateReminder={(reminder) => {
-                    setUserReminders(prev => [...prev, {
-                      ...reminder,
-                      id: uuidv4(),
-                      completed: false
-                    }]);
-                  }}
-                  onCompleteReminder={(id) => setUserReminders(prev => prev.map(r => r.id === id ? { ...r, completed: true } : r))}
-                  onDeleteReminder={(id) => setUserReminders(prev => prev.filter(r => r.id !== id))}
-                />
+                <Suspense fallback={<FeatureSkeleton type="modal" />}>
+                  <BundleProductivity.MessageScheduling
+                    scheduledMessages={userScheduledMessages}
+                    reminders={userReminders}
+                    currentThreadId={activeThread.id}
+                    currentThreadName={activeThread.contactName}
+                    onScheduleMessage={(message) => {
+                      setUserScheduledMessages(prev => [...prev, {
+                        ...message,
+                        id: uuidv4(),
+                        createdAt: new Date().toISOString(),
+                        status: 'pending'
+                      }]);
+                    }}
+                    onCancelScheduled={(id) => setUserScheduledMessages(prev => prev.map(m => m.id === id ? { ...m, status: 'cancelled' } : m))}
+                    onCreateReminder={(reminder) => {
+                      setUserReminders(prev => [...prev, {
+                        ...reminder,
+                        id: uuidv4(),
+                        completed: false
+                      }]);
+                    }}
+                    onCompleteReminder={(id) => setUserReminders(prev => prev.map(r => r.id === id ? { ...r, completed: true } : r))}
+                    onDeleteReminder={(id) => setUserReminders(prev => prev.filter(r => r.id !== id))}
+                  />
+                </Suspense>
               )}
               {productivityTab === 'summary' && (
-                <ConversationSummary
-                  messages={activeThread.messages.map(m => ({
-                    id: m.id,
-                    text: m.text,
-                    sender: m.sender,
-                    senderName: m.sender === 'user' ? 'You' : activeThread.contactName,
-                    timestamp: m.timestamp
-                  }))}
-                  contactName={activeThread.contactName}
-                  onExportSummary={(format) => console.log('Export summary:', format)}
-                  onShareSummary={(method) => console.log('Share summary:', method)}
-                />
+                <Suspense fallback={<FeatureSkeleton type="card" />}>
+                  <BundleProductivity.ConversationSummary
+                    messages={activeThread.messages.map(m => ({
+                      id: m.id,
+                      text: m.text,
+                      sender: m.sender,
+                      senderName: m.sender === 'user' ? 'You' : activeThread.contactName,
+                      timestamp: m.timestamp
+                    }))}
+                    contactName={activeThread.contactName}
+                    onExportSummary={(format) => console.log('Export summary:', format)}
+                    onShareSummary={(method) => console.log('Share summary:', method)}
+                  />
+                </Suspense>
               )}
               {productivityTab === 'export' && (
-                <ExportSharing
-                  threadId={activeThread.id}
-                  threadTitle={activeThread.contactName}
-                  messageCount={activeThread.messages.length}
-                  onExport={async (options) => {
-                    console.log('Export with options:', options);
-                    return { url: '#' };
-                  }}
-                  onShare={async (options) => {
-                    console.log('Share with options:', options);
-                    return { shareUrl: 'https://pulse.app/share/abc123', success: true };
-                  }}
-                />
+                <Suspense fallback={<FeatureSkeleton type="modal" />}>
+                  <BundleProductivity.ExportSharing
+                    threadId={activeThread.id}
+                    threadTitle={activeThread.contactName}
+                    messageCount={activeThread.messages.length}
+                    onExport={async (options) => {
+                      console.log('Export with options:', options);
+                      return { url: '#' };
+                    }}
+                    onShare={async (options) => {
+                      console.log('Share with options:', options);
+                      return { shareUrl: 'https://pulse.app/share/abc123', success: true };
+                    }}
+                  />
+                </Suspense>
               )}
               {productivityTab === 'shortcuts' && (
-                <KeyboardShortcuts
-                  shortcuts={[]}
-                  onShortcutTriggered={(action) => console.log('Shortcut triggered:', action)}
-                />
+                <Suspense fallback={<FeatureSkeleton type="modal" />}>
+                  <BundleProductivity.KeyboardShortcuts
+                    shortcuts={[]}
+                    onShortcutTriggered={(action) => console.log('Shortcut triggered:', action)}
+                  />
+                </Suspense>
               )}
               {productivityTab === 'notifications' && (
-                <NotificationPreferences
-                  channels={[]}
-                  rules={[]}
-                  quietHours={{ enabled: false, startTime: '22:00', endTime: '07:00', allowUrgent: true, days: ['mon', 'tue', 'wed', 'thu', 'fri'] }}
-                  onUpdateQuietHours={(updates) => console.log('Update quiet hours:', updates)}
-                />
+                <Suspense fallback={<FeatureSkeleton type="panel" />}>
+                  <BundleProductivity.NotificationPreferences
+                    channels={[]}
+                    rules={[]}
+                    quietHours={{ enabled: false, startTime: '22:00', endTime: '07:00', allowUrgent: true, days: ['mon', 'tue', 'wed', 'thu', 'fri'] }}
+                    onUpdateQuietHours={(updates) => console.log('Update quiet hours:', updates)}
+                  />
+                </Suspense>
               )}
             </div>
           </div>
@@ -4517,77 +4549,87 @@ const Messages: React.FC<MessagesProps> = ({ apiKey, contacts, initialContactId,
             {/* Tab Content */}
             <div className="max-h-96 overflow-y-auto">
               {intelligenceTab === 'insights' && (
-                <ContactInsights
-                  contactId={activeThread.contactId}
-                  onClose={() => setIntelligenceTab('insights')}
-                />
+                <Suspense fallback={<FeatureSkeleton type="card" />}>
+                  <BundleIntelligence.ContactInsights
+                    contactId={activeThread.contactId}
+                    onClose={() => setIntelligenceTab('insights')}
+                  />
+                </Suspense>
               )}
               {intelligenceTab === 'reactions' && (
-                <ReactionsAnalytics
-                  conversationId={activeThread.id}
-                  onClose={() => setIntelligenceTab('reactions')}
-                />
+                <Suspense fallback={<FeatureSkeleton type="card" />}>
+                  <BundleIntelligence.ReactionsAnalytics
+                    conversationId={activeThread.id}
+                    onClose={() => setIntelligenceTab('reactions')}
+                  />
+                </Suspense>
               )}
               {intelligenceTab === 'bookmarks' && (
-                <MessageBookmarks
-                  bookmarks={userBookmarks.filter(b => b.conversationId === activeThread.id)}
-                  onBookmarkClick={(bookmark) => {
-                    // Scroll to bookmarked message
-                    const element = document.getElementById(`message-${bookmark.messageId}`);
-                    element?.scrollIntoView({ behavior: 'smooth', block: 'center' });
-                  }}
-                  onBookmarkDelete={(id) => setUserBookmarks(prev => prev.filter(b => b.id !== id))}
-                  onBookmarkUpdate={(bookmark) => setUserBookmarks(prev => prev.map(b => b.id === bookmark.id ? bookmark : b))}
-                  onClose={() => setIntelligenceTab('bookmarks')}
-                />
+                <Suspense fallback={<FeatureSkeleton type="list" />}>
+                  <BundleIntelligence.MessageBookmarks
+                    bookmarks={userBookmarks.filter(b => b.conversationId === activeThread.id)}
+                    onBookmarkClick={(bookmark) => {
+                      // Scroll to bookmarked message
+                      const element = document.getElementById(`message-${bookmark.messageId}`);
+                      element?.scrollIntoView({ behavior: 'smooth', block: 'center' });
+                    }}
+                    onBookmarkDelete={(id) => setUserBookmarks(prev => prev.filter(b => b.id !== id))}
+                    onBookmarkUpdate={(bookmark) => setUserBookmarks(prev => prev.map(b => b.id === bookmark.id ? bookmark : b))}
+                    onClose={() => setIntelligenceTab('bookmarks')}
+                  />
+                </Suspense>
               )}
               {intelligenceTab === 'tags' && (
-                <ConversationTags
-                  conversationId={activeThread.id}
-                  conversationTags={conversationTagAssignments}
-                  onTagAssign={(convId, tagId) => {
-                    setConversationTagAssignments(prev => {
-                      const existing = prev.find(ct => ct.conversationId === convId);
-                      if (existing) {
-                        return prev.map(ct =>
+                <Suspense fallback={<FeatureSkeleton type="inline" />}>
+                  <BundleIntelligence.ConversationTags
+                    conversationId={activeThread.id}
+                    conversationTags={conversationTagAssignments}
+                    onTagAssign={(convId, tagId) => {
+                      setConversationTagAssignments(prev => {
+                        const existing = prev.find(ct => ct.conversationId === convId);
+                        if (existing) {
+                          return prev.map(ct =>
+                            ct.conversationId === convId
+                              ? { ...ct, tagIds: [...ct.tagIds, tagId] }
+                              : ct
+                          );
+                        }
+                        return [...prev, { conversationId: convId, tagIds: [tagId] }];
+                      });
+                    }}
+                    onTagRemove={(convId, tagId) => {
+                      setConversationTagAssignments(prev =>
+                        prev.map(ct =>
                           ct.conversationId === convId
-                            ? { ...ct, tagIds: [...ct.tagIds, tagId] }
+                            ? { ...ct, tagIds: ct.tagIds.filter(id => id !== tagId) }
                             : ct
-                        );
-                      }
-                      return [...prev, { conversationId: convId, tagIds: [tagId] }];
-                    });
-                  }}
-                  onTagRemove={(convId, tagId) => {
-                    setConversationTagAssignments(prev =>
-                      prev.map(ct =>
-                        ct.conversationId === convId
-                          ? { ...ct, tagIds: ct.tagIds.filter(id => id !== tagId) }
-                          : ct
-                      )
-                    );
-                  }}
-                  onLabelAssign={(convId, labelId) => {
-                    setConversationTagAssignments(prev => {
-                      const existing = prev.find(ct => ct.conversationId === convId);
-                      if (existing) {
-                        return prev.map(ct =>
-                          ct.conversationId === convId
-                            ? { ...ct, labelId }
-                            : ct
-                        );
-                      }
-                      return [...prev, { conversationId: convId, tagIds: [], labelId }];
-                    });
-                  }}
-                  onClose={() => setIntelligenceTab('tags')}
-                />
+                        )
+                      );
+                    }}
+                    onLabelAssign={(convId, labelId) => {
+                      setConversationTagAssignments(prev => {
+                        const existing = prev.find(ct => ct.conversationId === convId);
+                        if (existing) {
+                          return prev.map(ct =>
+                            ct.conversationId === convId
+                              ? { ...ct, labelId }
+                              : ct
+                          );
+                        }
+                        return [...prev, { conversationId: convId, tagIds: [], labelId }];
+                      });
+                    }}
+                    onClose={() => setIntelligenceTab('tags')}
+                  />
+                </Suspense>
               )}
               {intelligenceTab === 'delivery' && (
-                <ReadReceipts
-                  messageId={activeThread.messages[activeThread.messages.length - 1]?.id || ''}
-                  onClose={() => setIntelligenceTab('delivery')}
-                />
+                <Suspense fallback={<FeatureSkeleton type="panel" />}>
+                  <BundleIntelligence.ReadReceipts
+                    messageId={activeThread.messages[activeThread.messages.length - 1]?.id || ''}
+                    onClose={() => setIntelligenceTab('delivery')}
+                  />
+                </Suspense>
               )}
             </div>
           </div>
@@ -4624,60 +4666,71 @@ const Messages: React.FC<MessagesProps> = ({ apiKey, contacts, initialContactId,
             {/* Tab Content */}
             <div className="max-h-96 overflow-y-auto">
               {proactiveTab === 'reminders' && (
-                <SmartReminders
-                  conversationId={activeThread.id}
-                  onReminderClick={(reminder) => console.log('Reminder clicked:', reminder)}
-                  onCreateReminder={(reminder) => console.log('Create reminder:', reminder)}
-                />
+                <Suspense fallback={<FeatureSkeleton type="list" />}>
+                  <BundleProactive.SmartReminders
+                    conversationId={activeThread.id}
+                    onReminderClick={(reminder) => console.log('Reminder clicked:', reminder)}
+                    onCreateReminder={(reminder) => console.log('Create reminder:', reminder)}
+                  />
+                </Suspense>
               )}
               {proactiveTab === 'threading' && (
-                <MessageThreading
-                  messages={activeThread.messages.map(m => ({
-                    id: m.id,
-                    content: m.text,
-                    sender: m.sender,
-                    timestamp: m.timestamp,
-                    isMe: m.sender === 'You'
-                  }))}
-                  onReply={(parentId, content) => console.log('Reply to:', parentId, content)}
-                  onBranchCreate={(messageId, branchName) => console.log('Branch:', messageId, branchName)}
-                />
+                <Suspense fallback={<FeatureSkeleton type="panel" />}>
+                  <BundleProactive.MessageThreading
+                    messages={activeThread.messages.map(m => ({
+                      id: m.id,
+                      content: m.text,
+                      sender: m.sender,
+                      timestamp: m.timestamp,
+                      isMe: m.sender === 'You'
+                    }))}
+                    onReply={(parentId, content) => console.log('Reply to:', parentId, content)}
+                    onBranchCreate={(messageId, branchName) => console.log('Branch:', messageId, branchName)}
+                  />
+                </Suspense>
               )}
               {proactiveTab === 'sentiment' && (
-                <SentimentTimeline
-                  conversationId={activeThread.id}
-                  onPeriodClick={(period) => console.log('Period clicked:', period)}
-                />
+                <Suspense fallback={<FeatureSkeleton type="card" />}>
+                  <BundleProactive.SentimentTimeline
+                    conversationId={activeThread.id}
+                    onPeriodClick={(period) => console.log('Period clicked:', period)}
+                  />
+                </Suspense>
               )}
               {proactiveTab === 'groups' && (
-                <ContactGroups
-                  onGroupSelect={(group) => console.log('Group selected:', group)}
-                  onChannelSelect={(channel) => console.log('Channel selected:', channel)}
-                />
+                <Suspense fallback={<FeatureSkeleton type="list" />}>
+                  <BundleProactive.ContactGroups
+                    onGroupSelect={(group) => console.log('Group selected:', group)}
+                    onChannelSelect={(channel) => console.log('Channel selected:', channel)}
+                  />
+                </Suspense>
               )}
               {proactiveTab === 'search' && (
-                <NaturalLanguageSearch
-                  messages={activeThread.messages.map(m => ({
-                    id: m.id,
-                    content: m.text,
-                    sender: m.sender,
-                    timestamp: m.timestamp,
-                    hasAttachment: !!m.attachments?.length,
-                    attachmentType: m.attachments?.[0]?.type
-                  }))}
-                  onResultClick={(result) => {
-                    const element = document.getElementById(`message-${result.id}`);
-                    element?.scrollIntoView({ behavior: 'smooth', block: 'center' });
-                  }}
-                />
+                <Suspense fallback={<FeatureSkeleton type="modal" />}>
+                  <BundleProactive.NaturalLanguageSearch
+                    messages={activeThread.messages.map(m => ({
+                      id: m.id,
+                      content: m.text,
+                      sender: m.sender,
+                      timestamp: m.timestamp,
+                      hasAttachment: !!m.attachments?.length,
+                      attachmentType: m.attachments?.[0]?.type
+                    }))}
+                    onResultClick={(result) => {
+                      const element = document.getElementById(`message-${result.id}`);
+                      element?.scrollIntoView({ behavior: 'smooth', block: 'center' });
+                    }}
+                  />
+                </Suspense>
               )}
               {proactiveTab === 'highlights' && (
-                <ConversationHighlights
-                  conversationId={activeThread.id}
-                  onMomentClick={(moment) => console.log('Moment clicked:', moment)}
-                  onNavigateToMessage={(messageId) => {
-                    const element = document.getElementById(`message-${messageId}`);
-                    element?.scrollIntoView({ behavior: 'smooth', block: 'center' });
+                <Suspense fallback={<FeatureSkeleton type="panel" />}>
+                  <BundleProactive.ConversationHighlights
+                    conversationId={activeThread.id}
+                    onMomentClick={(moment) => console.log('Moment clicked:', moment)}
+                    onNavigateToMessage={(messageId) => {
+                      const element = document.getElementById(`message-${messageId}`);
+                      element?.scrollIntoView({ behavior: 'smooth', block: 'center' });
                   }}
                 />
               )}
@@ -4716,48 +4769,60 @@ const Messages: React.FC<MessagesProps> = ({ apiKey, contacts, initialContactId,
             {/* Tab Content */}
             <div className="max-h-96 overflow-y-auto">
               {communicationTab === 'voice' && (
-                <VoiceRecorder
-                  onSendVoice={(blob, duration) => console.log('Voice sent:', duration, 'seconds')}
-                />
+                <Suspense fallback={<FeatureSkeleton type="panel" />}>
+                  <BundleCommunication.VoiceRecorder
+                    onSendVoice={(blob, duration) => console.log('Voice sent:', duration, 'seconds')}
+                  />
+                </Suspense>
               )}
               {communicationTab === 'reactions' && (
-                <EmojiReactions
-                  messageId={activeThread.messages[activeThread.messages.length - 1]?.id || ''}
-                  reactions={[
-                    { emoji: '👍', count: 3, users: ['Alice', 'Bob', 'Carol'], hasReacted: true },
-                    { emoji: '❤️', count: 2, users: ['Alice', 'Dave'], hasReacted: false },
-                    { emoji: '😂', count: 1, users: ['Bob'], hasReacted: false }
-                  ]}
-                  onReact={(emoji) => console.log('Reacted with:', emoji)}
-                  onRemoveReaction={(emoji) => console.log('Removed reaction:', emoji)}
-                />
+                <Suspense fallback={<FeatureSkeleton type="inline" />}>
+                  <BundleCommunication.EmojiReactions
+                    messageId={activeThread.messages[activeThread.messages.length - 1]?.id || ''}
+                    reactions={[
+                      { emoji: '👍', count: 3, users: ['Alice', 'Bob', 'Carol'], hasReacted: true },
+                      { emoji: '❤️', count: 2, users: ['Alice', 'Dave'], hasReacted: false },
+                      { emoji: '😂', count: 1, users: ['Bob'], hasReacted: false }
+                    ]}
+                    onReact={(emoji) => console.log('Reacted with:', emoji)}
+                    onRemoveReaction={(emoji) => console.log('Removed reaction:', emoji)}
+                  />
+                </Suspense>
               )}
               {communicationTab === 'inbox' && (
-                <PriorityInbox
-                  onMessageClick={(msg) => console.log('Message clicked:', msg)}
-                  onMessageStar={(id) => console.log('Starred:', id)}
-                  onMessageArchive={(id) => console.log('Archived:', id)}
-                />
+                <Suspense fallback={<FeatureSkeleton type="list" />}>
+                  <BundleCommunication.PriorityInbox
+                    onMessageClick={(msg) => console.log('Message clicked:', msg)}
+                    onMessageStar={(id) => console.log('Starred:', id)}
+                    onMessageArchive={(id) => console.log('Archived:', id)}
+                  />
+                </Suspense>
               )}
               {communicationTab === 'archive' && (
-                <ConversationArchive
-                  onRestore={(id) => console.log('Restore:', id)}
-                  onDelete={(id) => console.log('Delete:', id)}
-                  onExport={(id) => console.log('Export:', id)}
-                  onViewConversation={(id) => console.log('View:', id)}
-                />
+                <Suspense fallback={<FeatureSkeleton type="list" />}>
+                  <BundleCommunication.ConversationArchive
+                    onRestore={(id) => console.log('Restore:', id)}
+                    onDelete={(id) => console.log('Delete:', id)}
+                    onExport={(id) => console.log('Export:', id)}
+                    onViewConversation={(id) => console.log('View:', id)}
+                  />
+                </Suspense>
               )}
               {communicationTab === 'replies' && (
-                <QuickReplies
-                  lastReceivedMessage={activeThread.messages.filter(m => m.sender !== 'You').pop()?.text}
-                  onSelectReply={(text) => setNewMessage(text)}
-                />
+                <Suspense fallback={<FeatureSkeleton type="inline" />}>
+                  <BundleCommunication.QuickReplies
+                    lastReceivedMessage={activeThread.messages.filter(m => m.sender !== 'You').pop()?.text}
+                    onSelectReply={(text) => setNewMessage(text)}
+                  />
+                </Suspense>
               )}
               {communicationTab === 'status' && (
-                <MessageStatusTimeline
-                  messageId={activeThread.messages[activeThread.messages.length - 1]?.id || ''}
-                  onRetry={() => console.log('Retry send')}
-                />
+                <Suspense fallback={<FeatureSkeleton type="panel" />}>
+                  <BundleCommunication.MessageStatusTimeline
+                    messageId={activeThread.messages[activeThread.messages.length - 1]?.id || ''}
+                    onRetry={() => console.log('Retry send')}
+                  />
+                </Suspense>
               )}
             </div>
           </div>
@@ -5531,17 +5596,19 @@ const Messages: React.FC<MessagesProps> = ({ apiKey, contacts, initialContactId,
            {/* Phase 2: AI Coach - Real-time draft analysis */}
            {showAICoach && inputText.length > 10 && activeThread && (
              <div className="mb-3">
-               <AICoachEnhanced
-                 draftText={inputText}
-                 recentMessages={activeThread.messages.slice(-10).map(m => ({
-                   text: m.text,
-                   sender: m.sender,
-                   timestamp: m.timestamp
-                 }))}
-                 contactName={activeThread.contactName}
-                 onApplySuggestion={(newText) => setInputText(newText)}
-                 onDismiss={() => setShowAICoach(false)}
-               />
+               <Suspense fallback={<FeatureSkeleton type="panel" />}>
+                 <BundleAI.AICoachEnhanced
+                   draftText={inputText}
+                   recentMessages={activeThread.messages.slice(-10).map(m => ({
+                     text: m.text,
+                     sender: m.sender,
+                     timestamp: m.timestamp
+                   }))}
+                   contactName={activeThread.contactName}
+                   onApplySuggestion={(newText) => setInputText(newText)}
+                   onDismiss={() => setShowAICoach(false)}
+                 />
+               </Suspense>
              </div>
            )}
 
@@ -5579,34 +5646,38 @@ const Messages: React.FC<MessagesProps> = ({ apiKey, contacts, initialContactId,
            {/* Phase 2: AI Mediator - Conflict detection */}
            {showAIMediator && activeThread && activeThread.messages.length > 5 && (
              <div className="mb-3">
-               <AIMediatorPanel
-                 messages={activeThread.messages.slice(-15).map(m => ({
-                   id: m.id,
-                   text: m.text,
-                   sender: m.sender,
-                   timestamp: m.timestamp
-                 }))}
-                 contactName={activeThread.contactName}
-                 onApplySuggestion={(suggestion) => {
-                   if (suggestion.suggestedText) {
-                     setInputText(suggestion.suggestedText);
-                   }
-                 }}
-                 onDismiss={() => setShowAIMediator(false)}
-               />
+               <Suspense fallback={<FeatureSkeleton type="panel" />}>
+                 <BundleAI.AIMediatorPanel
+                   messages={activeThread.messages.slice(-15).map(m => ({
+                     id: m.id,
+                     text: m.text,
+                     sender: m.sender,
+                     timestamp: m.timestamp
+                   }))}
+                   contactName={activeThread.contactName}
+                   onApplySuggestion={(suggestion) => {
+                     if (suggestion.suggestedText) {
+                       setInputText(suggestion.suggestedText);
+                     }
+                   }}
+                   onDismiss={() => setShowAIMediator(false)}
+                 />
+               </Suspense>
              </div>
            )}
 
            {/* Phase 2: Quick Phrases */}
            {showQuickPhrases && (
              <div className="mb-3">
-               <QuickPhrases
-                 onSelect={(phrase) => {
-                   setInputText(phrase);
-                   setShowQuickPhrases(false);
-                 }}
-                 context="general"
-               />
+               <Suspense fallback={<FeatureSkeleton type="inline" />}>
+                 <BundleAI.QuickPhrases
+                   onSelect={(phrase) => {
+                     setInputText(phrase);
+                     setShowQuickPhrases(false);
+                   }}
+                   context="general"
+                 />
+               </Suspense>
              </div>
            )}
 
@@ -5633,18 +5704,20 @@ const Messages: React.FC<MessagesProps> = ({ apiKey, contacts, initialContactId,
            {/* Phase 2: Voice Context Extractor Panel */}
            {showVoiceExtractor && (
              <div className="mb-3">
-               <VoiceContextExtractor
-                 onTranscriptionComplete={(context) => {
-                   // Add the transcription to the input with extracted action items
-                   let enhancedText = context.transcription;
-                   if (context.actionItems.length > 0) {
-                     enhancedText += '\n\nAction items:\n' + context.actionItems.map(item => `- ${item}`).join('\n');
-                   }
-                   setInputText(enhancedText);
-                   setShowVoiceExtractor(false);
-                 }}
-                 onError={(error) => console.error('Voice extraction error:', error)}
-               />
+               <Suspense fallback={<FeatureSkeleton type="panel" />}>
+                 <BundleAI.VoiceContextExtractor
+                   onTranscriptionComplete={(context) => {
+                     // Add the transcription to the input with extracted action items
+                     let enhancedText = context.transcription;
+                     if (context.actionItems.length > 0) {
+                       enhancedText += '\n\nAction items:\n' + context.actionItems.map(item => `- ${item}`).join('\n');
+                     }
+                     setInputText(enhancedText);
+                     setShowVoiceExtractor(false);
+                   }}
+                   onError={(error) => console.error('Voice extraction error:', error)}
+                 />
+               </Suspense>
              </div>
            )}
 
@@ -5881,11 +5954,13 @@ const Messages: React.FC<MessagesProps> = ({ apiKey, contacts, initialContactId,
                </button>
                {/* Phase 2: Translation Widget - Hidden on mobile */}
                <div className="hidden sm:block">
-                 <TranslationWidgetEnhanced
-                   originalText={inputText}
-                   onTranslate={(translation) => setInputText(translation.translatedText)}
-                   compact={true}
-                 />
+                 <Suspense fallback={<FeatureSkeleton type="inline" />}>
+                   <BundleAI.TranslationWidgetEnhanced
+                     originalText={inputText}
+                     onTranslate={(translation) => setInputText(translation.translatedText)}
+                     compact={true}
+                   />
+                 </Suspense>
                </div>
                <button
                   onClick={handleSmartReply}
