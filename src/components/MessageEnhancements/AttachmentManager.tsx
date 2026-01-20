@@ -1,4 +1,6 @@
-import React, { useState, useCallback, useMemo } from 'react';
+import React, { useState, useCallback, useMemo, useEffect } from 'react';
+import { fileUploadService, type UploadResult } from '../../services/fileUploadService';
+import { supabase } from '../../services/supabase';
 
 // Types
 interface Attachment {
@@ -41,113 +43,31 @@ interface AttachmentManagerProps {
   onAttachmentShare?: (attachmentId: string) => void;
 }
 
-// Mock data generators
-const generateMockAttachments = (): Attachment[] => [
-  {
-    id: '1',
-    name: 'Project_Screenshot.png',
-    type: 'image',
-    mimeType: 'image/png',
-    size: 2456000,
-    url: '/attachments/1.png',
-    thumbnailUrl: '/thumbnails/1.jpg',
-    uploadedAt: new Date(Date.now() - 1000 * 60 * 60 * 2),
-    uploadedBy: 'Alice Chen',
-    conversationId: 'conv1',
-    messageId: 'msg1',
-    metadata: { width: 1920, height: 1080 }
-  },
-  {
-    id: '2',
-    name: 'Meeting_Recording.mp4',
-    type: 'video',
-    mimeType: 'video/mp4',
-    size: 45678000,
-    url: '/attachments/2.mp4',
-    thumbnailUrl: '/thumbnails/2.jpg',
-    uploadedAt: new Date(Date.now() - 1000 * 60 * 60 * 24),
-    uploadedBy: 'Bob Smith',
-    conversationId: 'conv1',
-    messageId: 'msg2',
-    metadata: { duration: 1845, width: 1280, height: 720 }
-  },
-  {
-    id: '3',
-    name: 'Q4_Report.pdf',
-    type: 'document',
-    mimeType: 'application/pdf',
-    size: 1234000,
-    url: '/attachments/3.pdf',
-    uploadedAt: new Date(Date.now() - 1000 * 60 * 60 * 48),
-    uploadedBy: 'Carol Davis',
-    conversationId: 'conv2',
-    messageId: 'msg3',
-    metadata: { pages: 24 }
-  },
-  {
-    id: '4',
-    name: 'Voice_Message.mp3',
-    type: 'audio',
-    mimeType: 'audio/mpeg',
-    size: 567000,
-    url: '/attachments/4.mp3',
-    uploadedAt: new Date(Date.now() - 1000 * 60 * 60 * 72),
-    uploadedBy: 'David Wilson',
-    conversationId: 'conv3',
-    messageId: 'msg4',
-    metadata: { duration: 45 }
-  },
-  {
-    id: '5',
-    name: 'Project_Files.zip',
-    type: 'archive',
-    mimeType: 'application/zip',
-    size: 15678000,
-    url: '/attachments/5.zip',
-    uploadedAt: new Date(Date.now() - 1000 * 60 * 60 * 96),
-    uploadedBy: 'Eve Thompson',
-    conversationId: 'conv1',
-    messageId: 'msg5'
-  },
-  {
-    id: '6',
-    name: 'Team_Photo.jpg',
-    type: 'image',
-    mimeType: 'image/jpeg',
-    size: 3456000,
-    url: '/attachments/6.jpg',
-    thumbnailUrl: '/thumbnails/6.jpg',
-    uploadedAt: new Date(Date.now() - 1000 * 60 * 60 * 120),
-    uploadedBy: 'Alice Chen',
-    conversationId: 'conv2',
-    messageId: 'msg6',
-    metadata: { width: 4032, height: 3024 }
-  },
-  {
-    id: '7',
-    name: 'Contract_Draft.docx',
-    type: 'document',
-    mimeType: 'application/vnd.openxmlformats-officedocument.wordprocessingml.document',
-    size: 456000,
-    url: '/attachments/7.docx',
-    uploadedAt: new Date(Date.now() - 1000 * 60 * 60 * 144),
-    uploadedBy: 'Bob Smith',
-    conversationId: 'conv3',
-    messageId: 'msg7',
-    metadata: { pages: 8 }
-  }
-];
+// Helper function to convert UploadResult to Attachment
+const convertUploadResultToAttachment = (upload: any, userId: string): Attachment => {
+  const getFileType = (mimeType: string): Attachment['type'] => {
+    if (mimeType.startsWith('image/')) return 'image';
+    if (mimeType.startsWith('video/')) return 'video';
+    if (mimeType.startsWith('audio/')) return 'audio';
+    if (mimeType.includes('zip') || mimeType.includes('rar')) return 'archive';
+    if (mimeType.includes('pdf') || mimeType.includes('document') || mimeType.includes('text')) return 'document';
+    return 'other';
+  };
 
-const STORAGE_STATS: StorageStats = {
-  used: 68500000,
-  total: 1073741824, // 1GB
-  byType: {
-    image: 25000000,
-    video: 30000000,
-    document: 8000000,
-    audio: 2500000,
-    archive: 3000000
-  }
+  return {
+    id: upload.id,
+    name: upload.file_name,
+    type: getFileType(upload.file_type),
+    mimeType: upload.file_type,
+    size: upload.file_size,
+    url: upload.public_url,
+    thumbnailUrl: upload.thumbnail_url,
+    uploadedAt: new Date(upload.uploaded_at),
+    uploadedBy: userId,
+    conversationId: '',
+    messageId: '',
+    metadata: upload.metadata
+  };
 };
 
 export const AttachmentManager: React.FC<AttachmentManagerProps> = ({
@@ -156,7 +76,7 @@ export const AttachmentManager: React.FC<AttachmentManagerProps> = ({
   onAttachmentDelete,
   onAttachmentShare
 }) => {
-  const [attachments, setAttachments] = useState<Attachment[]>(generateMockAttachments);
+  const [attachments, setAttachments] = useState<Attachment[]>([]);
   const [filter, setFilter] = useState<AttachmentFilter>({
     type: 'all',
     dateRange: 'all',
@@ -167,6 +87,87 @@ export const AttachmentManager: React.FC<AttachmentManagerProps> = ({
   const [viewMode, setViewMode] = useState<'grid' | 'list'>('grid');
   const [showPreview, setShowPreview] = useState(false);
   const [searchQuery, setSearchQuery] = useState('');
+  const [isLoading, setIsLoading] = useState(false);
+  const [isUploading, setIsUploading] = useState(false);
+  const [uploadProgress, setUploadProgress] = useState(0);
+  const [storageStats, setStorageStats] = useState<StorageStats>({
+    used: 0,
+    total: 1073741824, // 1GB
+    byType: {}
+  });
+
+  // Load attachments on mount
+  useEffect(() => {
+    loadAttachments();
+    loadStorageStats();
+  }, []);
+
+  const loadAttachments = async () => {
+    setIsLoading(true);
+    try {
+      const { data: { user } } = await supabase.auth.getUser();
+      if (!user) return;
+
+      const files = await fileUploadService.listFiles(user.id);
+      const convertedAttachments = files.map(file => convertUploadResultToAttachment(file, user.id));
+      setAttachments(convertedAttachments);
+    } catch (error) {
+      console.error('Failed to load attachments:', error);
+    } finally {
+      setIsLoading(false);
+    }
+  };
+
+  const loadStorageStats = async () => {
+    try {
+      const { data: { user } } = await supabase.auth.getUser();
+      if (!user) return;
+
+      const stats = await fileUploadService.getUserStorageStats(user.id);
+      setStorageStats({
+        used: stats.totalSize,
+        total: 1073741824, // 1GB
+        byType: Object.entries(stats.byType).reduce((acc, [type, data]) => {
+          acc[type] = data.size;
+          return acc;
+        }, {} as Record<string, number>)
+      });
+    } catch (error) {
+      console.error('Failed to load storage stats:', error);
+    }
+  };
+
+  const handleFileUpload = async (files: FileList | null) => {
+    if (!files || files.length === 0) return;
+
+    setIsUploading(true);
+    setUploadProgress(0);
+
+    try {
+      const { data: { user } } = await supabase.auth.getUser();
+      if (!user) throw new Error('User not authenticated');
+
+      const fileArray = Array.from(files);
+
+      for (let i = 0; i < fileArray.length; i++) {
+        const file = fileArray[i];
+        await fileUploadService.uploadFile(file, user.id, {
+          generateThumbnail: file.type.startsWith('image/')
+        });
+        setUploadProgress(Math.round(((i + 1) / fileArray.length) * 100));
+      }
+
+      // Reload attachments and stats
+      await loadAttachments();
+      await loadStorageStats();
+    } catch (error: any) {
+      console.error('Upload failed:', error);
+      alert(`Upload failed: ${error.message}`);
+    } finally {
+      setIsUploading(false);
+      setUploadProgress(0);
+    }
+  };
 
   const filteredAttachments = useMemo(() => {
     let filtered = [...attachments];
@@ -276,13 +277,33 @@ export const AttachmentManager: React.FC<AttachmentManagerProps> = ({
     onAttachmentSelect?.(attachment);
   }, [onAttachmentSelect]);
 
-  const handleDelete = useCallback((id: string) => {
-    setAttachments(prev => prev.filter(a => a.id !== id));
-    if (selectedAttachment?.id === id) {
-      setSelectedAttachment(null);
+  const handleDelete = useCallback(async (id: string) => {
+    try {
+      const attachment = attachments.find(a => a.id === id);
+      if (!attachment) return;
+
+      const { data: { user } } = await supabase.auth.getUser();
+      if (!user) return;
+
+      // Delete from storage
+      const storagePath = attachment.url.split('/').slice(-1)[0];
+      await fileUploadService.deleteFile(storagePath);
+
+      // Update local state
+      setAttachments(prev => prev.filter(a => a.id !== id));
+      if (selectedAttachment?.id === id) {
+        setSelectedAttachment(null);
+      }
+
+      // Reload stats
+      await loadStorageStats();
+
+      onAttachmentDelete?.(id);
+    } catch (error) {
+      console.error('Failed to delete attachment:', error);
+      alert('Failed to delete attachment');
     }
-    onAttachmentDelete?.(id);
-  }, [selectedAttachment, onAttachmentDelete]);
+  }, [attachments, selectedAttachment, onAttachmentDelete]);
 
   const typeStats = useMemo(() => {
     const stats: Record<string, number> = {};
@@ -294,6 +315,22 @@ export const AttachmentManager: React.FC<AttachmentManagerProps> = ({
 
   return (
     <div className="space-y-4">
+      {/* Upload Progress */}
+      {isUploading && (
+        <div className="p-3 bg-pink-50 dark:bg-pink-900/20 rounded-lg border border-pink-200 dark:border-pink-800">
+          <div className="flex items-center justify-between text-xs mb-2">
+            <span className="text-pink-700 dark:text-pink-300 font-medium">Uploading files...</span>
+            <span className="text-pink-600">{uploadProgress}%</span>
+          </div>
+          <div className="h-2 bg-white dark:bg-zinc-800 rounded-full overflow-hidden">
+            <div
+              className="h-full bg-pink-500 rounded-full transition-all"
+              style={{ width: `${uploadProgress}%` }}
+            />
+          </div>
+        </div>
+      )}
+
       {/* Storage Overview */}
       <div className="bg-gradient-to-r from-pink-500/10 to-rose-500/10 dark:from-pink-900/20 dark:to-rose-900/20 rounded-xl p-4 border border-pink-200 dark:border-pink-800">
         <div className="flex items-center justify-between mb-3">
@@ -343,9 +380,21 @@ export const AttachmentManager: React.FC<AttachmentManagerProps> = ({
             className="w-full pl-9 pr-3 py-2 rounded-lg border border-zinc-200 dark:border-zinc-700 bg-white dark:bg-zinc-800 text-sm"
           />
         </div>
+        <label className="p-2 rounded-lg bg-pink-100 dark:bg-pink-900/30 text-pink-600 dark:text-pink-400 hover:bg-pink-200 dark:hover:bg-pink-900/50 transition border border-pink-200 dark:border-pink-700 cursor-pointer">
+          <i className="fa-solid fa-upload text-sm" />
+          <input
+            type="file"
+            multiple
+            onChange={(e) => handleFileUpload(e.target.files)}
+            className="hidden"
+            disabled={isUploading}
+          />
+        </label>
         <button
+          type="button"
           onClick={() => setViewMode(viewMode === 'grid' ? 'list' : 'grid')}
           className="p-2 rounded-lg hover:bg-zinc-100 dark:hover:bg-zinc-800 transition border border-zinc-200 dark:border-zinc-700"
+          title={`Switch to ${viewMode === 'grid' ? 'list' : 'grid'} view`}
         >
           <i className={`fa-solid ${viewMode === 'grid' ? 'fa-list' : 'fa-grip'} text-zinc-500`} />
         </button>

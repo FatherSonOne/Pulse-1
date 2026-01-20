@@ -1,4 +1,6 @@
-import React, { useState, useCallback, useMemo } from 'react';
+import React, { useState, useCallback, useMemo, useEffect } from 'react';
+import { analyticsExportService, type ExportJob as ServiceExportJob, type AnalyticsData as ServiceAnalyticsData } from '../../services/analyticsExportService';
+import { supabase } from '../../services/supabase';
 
 // Types
 interface ExportFormat {
@@ -59,61 +61,32 @@ const EXPORT_FORMATS: ExportFormat[] = [
   { id: 'xlsx', name: 'Excel', extension: '.xlsx', icon: 'fa-file-excel', description: 'Rich spreadsheet with charts' }
 ];
 
-const generateMockAnalytics = (): AnalyticsData => ({
-  totalMessages: 2847,
-  totalContacts: 156,
-  totalAttachments: 423,
-  dateRange: {
-    start: new Date(Date.now() - 30 * 24 * 60 * 60 * 1000),
-    end: new Date()
-  },
-  messageTrend: Array.from({ length: 7 }, (_, i) => ({
-    date: new Date(Date.now() - (6 - i) * 24 * 60 * 60 * 1000).toLocaleDateString('en-US', { weekday: 'short' }),
-    count: Math.floor(Math.random() * 200) + 100
-  })),
-  topContacts: [
-    { name: 'Alice Chen', count: 342 },
-    { name: 'Bob Smith', count: 256 },
-    { name: 'Carol Davis', count: 198 },
-    { name: 'David Wilson', count: 167 },
-    { name: 'Eve Thompson', count: 145 }
-  ],
-  responseTimeAvg: 12,
-  sentimentBreakdown: { positive: 65, neutral: 28, negative: 7 }
+// Helper to convert service types to component types
+const convertServiceJobToComponent = (job: ServiceExportJob): ExportJob => ({
+  id: job.id,
+  name: job.name,
+  format: job.format as ExportFormat['id'],
+  status: job.status,
+  progress: job.progress,
+  createdAt: new Date(job.created_at),
+  completedAt: job.completed_at ? new Date(job.completed_at) : undefined,
+  fileSize: job.file_size,
+  downloadUrl: job.download_url
 });
 
-const generateMockJobs = (): ExportJob[] => [
-  {
-    id: '1',
-    name: 'Monthly Report - December',
-    format: 'pdf',
-    status: 'completed',
-    progress: 100,
-    createdAt: new Date(Date.now() - 1000 * 60 * 60 * 24),
-    completedAt: new Date(Date.now() - 1000 * 60 * 60 * 23),
-    fileSize: 2456000,
-    downloadUrl: '#'
+const convertServiceAnalyticsToComponent = (analytics: ServiceAnalyticsData): AnalyticsData => ({
+  totalMessages: analytics.total_messages,
+  totalContacts: analytics.total_contacts,
+  totalAttachments: analytics.total_attachments,
+  dateRange: {
+    start: new Date(analytics.date_range.start),
+    end: new Date(analytics.date_range.end)
   },
-  {
-    id: '2',
-    name: 'Contact Export',
-    format: 'csv',
-    status: 'completed',
-    progress: 100,
-    createdAt: new Date(Date.now() - 1000 * 60 * 60 * 48),
-    completedAt: new Date(Date.now() - 1000 * 60 * 60 * 47),
-    fileSize: 156000,
-    downloadUrl: '#'
-  },
-  {
-    id: '3',
-    name: 'Full Backup',
-    format: 'json',
-    status: 'processing',
-    progress: 67,
-    createdAt: new Date(Date.now() - 1000 * 60 * 5)
-  }
-];
+  messageTrend: analytics.message_trend,
+  topContacts: analytics.top_contacts,
+  responseTimeAvg: analytics.response_time_avg,
+  sentimentBreakdown: analytics.sentiment_breakdown
+});
 
 export const AnalyticsExport: React.FC<AnalyticsExportProps> = ({
   onExport,
@@ -130,9 +103,36 @@ export const AnalyticsExport: React.FC<AnalyticsExportProps> = ({
     anonymize: false,
     compress: true
   });
-  const [jobs, setJobs] = useState<ExportJob[]>(generateMockJobs);
+  const [jobs, setJobs] = useState<ExportJob[]>([]);
   const [isExporting, setIsExporting] = useState(false);
-  const [analytics] = useState<AnalyticsData>(generateMockAnalytics);
+  const [isLoading, setIsLoading] = useState(false);
+  const [analytics, setAnalytics] = useState<AnalyticsData>({
+    totalMessages: 0,
+    totalContacts: 0,
+    totalAttachments: 0,
+    dateRange: { start: new Date(), end: new Date() },
+    messageTrend: [],
+    topContacts: [],
+    responseTimeAvg: 0,
+    sentimentBreakdown: { positive: 0, neutral: 0, negative: 0 }
+  });
+
+  // Load data on mount
+  useEffect(() => {
+    loadExportJobs();
+  }, []);
+
+  const loadExportJobs = async () => {
+    try {
+      const { data: { user } } = await supabase.auth.getUser();
+      if (!user) return;
+
+      const serviceJobs = await analyticsExportService.listExportJobs(user.id);
+      setJobs(serviceJobs.map(convertServiceJobToComponent));
+    } catch (error) {
+      console.error('Failed to load export jobs:', error);
+    }
+  };
 
   const selectedFormat = useMemo(() =>
     EXPORT_FORMATS.find(f => f.id === options.format),
@@ -164,54 +164,58 @@ export const AnalyticsExport: React.FC<AnalyticsExportProps> = ({
   const handleExport = useCallback(async () => {
     setIsExporting(true);
     try {
-      // Create new job
-      const newJob: ExportJob = {
-        id: Date.now().toString(),
-        name: `Export - ${new Date().toLocaleDateString()}`,
+      const { data: { user } } = await supabase.auth.getUser();
+      if (!user) throw new Error('User not authenticated');
+
+      // Convert component options to service options
+      const serviceOptions = {
         format: options.format,
-        status: 'processing',
-        progress: 0,
-        createdAt: new Date()
+        date_range: options.dateRange,
+        include_metadata: options.includeMetadata,
+        include_attachments: options.includeAttachments,
+        include_analytics: options.includeAnalytics,
+        anonymize: options.anonymize,
+        compress: options.compress
       };
-      setJobs(prev => [newJob, ...prev]);
 
-      // Simulate export progress
-      for (let progress = 0; progress <= 100; progress += 10) {
-        await new Promise(resolve => setTimeout(resolve, 200));
-        setJobs(prev => prev.map(j =>
-          j.id === newJob.id ? { ...j, progress } : j
-        ));
-      }
+      const job = await analyticsExportService.createExport(
+        user.id,
+        serviceOptions,
+        (progress) => {
+          // Update job progress in real-time
+          setJobs(prev => prev.map(j =>
+            j.id === job.id ? { ...j, progress } : j
+          ));
+        }
+      );
 
-      // Mark as completed
-      setJobs(prev => prev.map(j =>
-        j.id === newJob.id
-          ? {
-              ...j,
-              status: 'completed',
-              progress: 100,
-              completedAt: new Date(),
-              fileSize: estimatedSize,
-              downloadUrl: '#'
-            }
-          : j
-      ));
+      const newJob = convertServiceJobToComponent(job);
+      setJobs(prev => [newJob, ...prev.filter(j => j.id !== newJob.id)]);
 
       if (onExport) {
         await onExport(options);
       }
-    } catch (error) {
+    } catch (error: any) {
       console.error('Export failed:', error);
+      alert(`Export failed: ${error.message}`);
     } finally {
       setIsExporting(false);
     }
-  }, [options, estimatedSize, onExport]);
+  }, [options, onExport]);
 
-  const handleCancel = useCallback((jobId: string) => {
-    setJobs(prev => prev.map(j =>
-      j.id === jobId ? { ...j, status: 'failed', error: 'Cancelled by user' } : j
-    ));
-    onCancel?.(jobId);
+  const handleCancel = useCallback(async (jobId: string) => {
+    try {
+      const { data: { user } } = await supabase.auth.getUser();
+      if (!user) return;
+
+      await analyticsExportService.cancelExportJob(jobId, user.id);
+      setJobs(prev => prev.map(j =>
+        j.id === jobId ? { ...j, status: 'failed' } : j
+      ));
+      onCancel?.(jobId);
+    } catch (error) {
+      console.error('Failed to cancel export:', error);
+    }
   }, [onCancel]);
 
   const getStatusColor = (status: ExportJob['status']): string => {

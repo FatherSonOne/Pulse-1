@@ -1,4 +1,6 @@
-import React, { useState, useCallback, useMemo } from 'react';
+import React, { useState, useCallback, useMemo, useEffect } from 'react';
+import { backupSyncService, type BackupEntry as ServiceBackupEntry, type SyncDevice as ServiceSyncDevice } from '../../services/backupSyncService';
+import { supabase } from '../../services/supabase';
 
 // Types
 interface BackupEntry {
@@ -54,88 +56,28 @@ interface BackupSyncProps {
   onSettingsChange?: (settings: BackupSettings & SyncSettings) => void;
 }
 
-// Mock data
-const generateMockBackups = (): BackupEntry[] => [
-  {
-    id: '1',
-    name: 'Full Backup - Jan 10, 2026',
-    type: 'full',
-    size: 156000000,
-    createdAt: new Date(Date.now() - 1000 * 60 * 60 * 2),
-    status: 'completed',
-    destination: 'cloud',
-    encrypted: true,
-    itemCount: { messages: 2847, contacts: 156, attachments: 423 }
-  },
-  {
-    id: '2',
-    name: 'Incremental - Jan 9, 2026',
-    type: 'incremental',
-    size: 12000000,
-    createdAt: new Date(Date.now() - 1000 * 60 * 60 * 26),
-    status: 'completed',
-    destination: 'cloud',
-    encrypted: true,
-    itemCount: { messages: 145, contacts: 3, attachments: 12 }
-  },
-  {
-    id: '3',
-    name: 'Messages Export',
-    type: 'messages',
-    size: 45000000,
-    createdAt: new Date(Date.now() - 1000 * 60 * 60 * 72),
-    status: 'completed',
-    destination: 'local',
-    encrypted: false,
-    itemCount: { messages: 2847, contacts: 0, attachments: 0 }
-  },
-  {
-    id: '4',
-    name: 'Scheduled Backup',
-    type: 'full',
-    size: 0,
-    createdAt: new Date(Date.now() + 1000 * 60 * 60 * 12),
-    status: 'scheduled',
-    destination: 'cloud',
-    encrypted: true,
-    itemCount: { messages: 0, contacts: 0, attachments: 0 }
-  }
-];
+// Helper to convert service types to component types
+const convertServiceBackupToComponent = (backup: ServiceBackupEntry): BackupEntry => ({
+  id: backup.id,
+  name: backup.name,
+  type: backup.type,
+  size: backup.size,
+  createdAt: new Date(backup.created_at),
+  status: backup.status,
+  progress: backup.progress,
+  destination: 'cloud',
+  encrypted: backup.encrypted,
+  itemCount: backup.item_count
+});
 
-const generateMockDevices = (): SyncDevice[] => [
-  {
-    id: '1',
-    name: 'MacBook Pro',
-    type: 'desktop',
-    lastSync: new Date(Date.now() - 1000 * 60 * 5),
-    status: 'synced',
-    os: 'macOS 14.2'
-  },
-  {
-    id: '2',
-    name: 'iPhone 15',
-    type: 'mobile',
-    lastSync: new Date(Date.now() - 1000 * 60 * 30),
-    status: 'synced',
-    os: 'iOS 17.2'
-  },
-  {
-    id: '3',
-    name: 'iPad Pro',
-    type: 'tablet',
-    lastSync: new Date(Date.now() - 1000 * 60 * 60 * 2),
-    status: 'pending',
-    os: 'iPadOS 17.2'
-  },
-  {
-    id: '4',
-    name: 'Chrome Browser',
-    type: 'web',
-    lastSync: new Date(),
-    status: 'syncing',
-    os: 'Web'
-  }
-];
+const convertServiceDeviceToComponent = (device: ServiceSyncDevice): SyncDevice => ({
+  id: device.id,
+  name: device.device_name,
+  type: device.device_type,
+  lastSync: new Date(device.last_sync),
+  status: device.status,
+  os: device.device_os
+});
 
 export const BackupSync: React.FC<BackupSyncProps> = ({
   onBackupCreate,
@@ -145,10 +87,11 @@ export const BackupSync: React.FC<BackupSyncProps> = ({
   onSettingsChange
 }) => {
   const [activeTab, setActiveTab] = useState<'backups' | 'sync' | 'settings'>('backups');
-  const [backups, setBackups] = useState<BackupEntry[]>(generateMockBackups);
-  const [devices] = useState<SyncDevice[]>(generateMockDevices);
+  const [backups, setBackups] = useState<BackupEntry[]>([]);
+  const [devices, setDevices] = useState<SyncDevice[]>([]);
   const [isCreatingBackup, setIsCreatingBackup] = useState(false);
   const [backupProgress, setBackupProgress] = useState(0);
+  const [isLoading, setIsLoading] = useState(false);
   const [backupSettings, setBackupSettings] = useState<BackupSettings>({
     autoBackup: true,
     backupFrequency: 'daily',
@@ -166,6 +109,77 @@ export const BackupSync: React.FC<BackupSyncProps> = ({
     syncAttachments: false,
     conflictResolution: 'newest'
   });
+
+  // Load data on mount
+  useEffect(() => {
+    loadBackups();
+    loadDevices();
+    loadBackupSettings();
+    loadSyncSettings();
+  }, []);
+
+  const loadBackups = async () => {
+    try {
+      const { data: { user } } = await supabase.auth.getUser();
+      if (!user) return;
+
+      const serviceBackups = await backupSyncService.listBackups(user.id);
+      setBackups(serviceBackups.map(convertServiceBackupToComponent));
+    } catch (error) {
+      console.error('Failed to load backups:', error);
+    }
+  };
+
+  const loadDevices = async () => {
+    try {
+      const { data: { user } } = await supabase.auth.getUser();
+      if (!user) return;
+
+      const serviceDevices = await backupSyncService.listDevices(user.id);
+      setDevices(serviceDevices.map(convertServiceDeviceToComponent));
+    } catch (error) {
+      console.error('Failed to load devices:', error);
+    }
+  };
+
+  const loadBackupSettings = async () => {
+    try {
+      const { data: { user } } = await supabase.auth.getUser();
+      if (!user) return;
+
+      const settings = await backupSyncService.getBackupSettings(user.id);
+      setBackupSettings({
+        autoBackup: settings.auto_backup,
+        backupFrequency: settings.backup_frequency,
+        backupTime: settings.backup_time,
+        includeAttachments: settings.include_attachments,
+        encryptBackups: settings.encrypt_backups,
+        cloudProvider: 'drive',
+        retentionDays: settings.retention_days
+      });
+    } catch (error) {
+      console.error('Failed to load backup settings:', error);
+    }
+  };
+
+  const loadSyncSettings = async () => {
+    try {
+      const { data: { user } } = await supabase.auth.getUser();
+      if (!user) return;
+
+      const settings = await backupSyncService.getSyncSettings(user.id);
+      setSyncSettings({
+        syncEnabled: settings.sync_enabled,
+        syncMessages: settings.sync_messages,
+        syncContacts: settings.sync_contacts,
+        syncSettings: settings.sync_settings,
+        syncAttachments: settings.sync_attachments,
+        conflictResolution: settings.conflict_resolution
+      });
+    } catch (error) {
+      console.error('Failed to load sync settings:', error);
+    }
+  };
 
   const totalBackupSize = useMemo(() =>
     backups.filter(b => b.status === 'completed').reduce((sum, b) => sum + b.size, 0),
@@ -242,36 +256,50 @@ export const BackupSync: React.FC<BackupSyncProps> = ({
     setIsCreatingBackup(true);
     setBackupProgress(0);
 
-    // Simulate backup progress
-    for (let i = 0; i <= 100; i += 5) {
-      await new Promise(resolve => setTimeout(resolve, 100));
-      setBackupProgress(i);
+    try {
+      const { data: { user } } = await supabase.auth.getUser();
+      if (!user) throw new Error('User not authenticated');
+
+      const serviceSettings = {
+        auto_backup: backupSettings.autoBackup,
+        backup_frequency: backupSettings.backupFrequency,
+        backup_time: backupSettings.backupTime,
+        include_attachments: backupSettings.includeAttachments,
+        encrypt_backups: backupSettings.encryptBackups,
+        retention_days: backupSettings.retentionDays
+      };
+
+      const backup = await backupSyncService.createBackup(
+        user.id,
+        type,
+        serviceSettings,
+        setBackupProgress
+      );
+
+      const newBackup = convertServiceBackupToComponent(backup);
+      setBackups(prev => [newBackup, ...prev]);
+      onBackupCreate?.(type);
+    } catch (error: any) {
+      console.error('Backup creation failed:', error);
+      alert(`Backup failed: ${error.message}`);
+    } finally {
+      setIsCreatingBackup(false);
+      setBackupProgress(0);
     }
-
-    const newBackup: BackupEntry = {
-      id: Date.now().toString(),
-      name: `${type.charAt(0).toUpperCase() + type.slice(1)} Backup - ${new Date().toLocaleDateString()}`,
-      type,
-      size: Math.floor(Math.random() * 100000000) + 10000000,
-      createdAt: new Date(),
-      status: 'completed',
-      destination: backupSettings.cloudProvider === 'none' ? 'local' : 'cloud',
-      encrypted: backupSettings.encryptBackups,
-      itemCount: {
-        messages: type === 'messages' || type === 'full' ? 2847 : 0,
-        contacts: type === 'contacts' || type === 'full' ? 156 : 0,
-        attachments: backupSettings.includeAttachments ? 423 : 0
-      }
-    };
-
-    setBackups(prev => [newBackup, ...prev]);
-    setIsCreatingBackup(false);
-    onBackupCreate?.(type);
   }, [backupSettings, onBackupCreate]);
 
-  const handleDeleteBackup = useCallback((id: string) => {
-    setBackups(prev => prev.filter(b => b.id !== id));
-    onBackupDelete?.(id);
+  const handleDeleteBackup = useCallback(async (id: string) => {
+    try {
+      const { data: { user } } = await supabase.auth.getUser();
+      if (!user) return;
+
+      await backupSyncService.deleteBackup(id, user.id);
+      setBackups(prev => prev.filter(b => b.id !== id));
+      onBackupDelete?.(id);
+    } catch (error) {
+      console.error('Failed to delete backup:', error);
+      alert('Failed to delete backup');
+    }
   }, [onBackupDelete]);
 
   const updateBackupSetting = useCallback(<K extends keyof BackupSettings>(
