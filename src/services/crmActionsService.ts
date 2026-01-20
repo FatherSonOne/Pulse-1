@@ -191,16 +191,6 @@ export class CRMActionsService {
         await this.updateZohoDeal(integration, dealExternalId, payload);
         break;
     }
-  }
-
-  private async updateZohoDeal(
-    integration: any,
-    dealId: string,
-    payload: CRMActionPayload
-  ) {
-    const { zohoService } = await import('./crm/zohoService');
-    return await zohoService.updateDeal(integration, dealId, payload);
-  }
 
     // Update local cache
     await this.supabase
@@ -212,6 +202,15 @@ export class CRMActionsService {
       })
       .eq('external_id', dealExternalId)
       .eq('crm_id', integration.id);
+  }
+
+  private async updateZohoDeal(
+    integration: any,
+    dealId: string,
+    payload: CRMActionPayload
+  ) {
+    const { zohoService } = await import('./crm/zohoService');
+    return await zohoService.updateDeal(integration, dealId, payload);
   }
 
   private async updateHubSpotDeal(

@@ -85,7 +85,7 @@ import { TaskExtractor } from './tasks/TaskExtractor';
 import { ChannelArtifactComponent } from './artifacts';
 
 // Focus Mode (Phase 5)
-import { FocusMode } from './Messages';
+import { FocusMode } from './Messages/FocusMode';
 
 const COMMON_REACTIONS = ['👍', '❤️', '😂', '😮', '😢', '🔥'];
 

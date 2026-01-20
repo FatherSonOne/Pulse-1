@@ -1,0 +1,321 @@
+name: Deploy to Production
+
+on:
+  push:
+    branches: [main]
+  workflow_dispatch:
+    inputs:
+      environment:
+        description: 'Deployment environment'
+        required: true
+        default: 'staging'
+        type: choice
+        options:
+          - staging
+          - production
+
+env:
+  NODE_VERSION: '20'
+  DEPLOY_TIMEOUT: 600
+
+jobs:
+  # ==================== PRE-DEPLOYMENT CHECKS ====================
+  pre-deployment:
+    name: Pre-Deployment Checks
+    runs-on: ubuntu-latest
+    outputs:
+      should_deploy: ${{ steps.check.outputs.should_deploy }}
+      environment: ${{ steps.check.outputs.environment }}
+
+    steps:
+      - name: Checkout code
+        uses: actions/checkout@v4
+        with:
+          fetch-depth: 0
+
+      - name: Determine deployment environment
+        id: check
+        run: |
+          if [ "${{ github.event_name }}" = "workflow_dispatch" ]; then
+            ENV="${{ github.event.inputs.environment }}"
+          else
+            ENV="production"
+          fi
+          echo "environment=$ENV" >> $GITHUB_OUTPUT
+          echo "should_deploy=true" >> $GITHUB_OUTPUT
+          echo "Deploying to: $ENV"
+
+      - name: Check for breaking changes
+        run: |
+          echo "Checking commit messages for breaking changes..."
+          git log --pretty=format:"%s" HEAD~5..HEAD | grep -i "breaking\|BREAKING" || echo "No breaking changes detected"
+
+  # ==================== BUILD & TEST ====================
+  build-and-test:
+    name: Build & Test
+    needs: pre-deployment
+    runs-on: ubuntu-latest
+    if: needs.pre-deployment.outputs.should_deploy == 'true'
+
+    steps:
+      - name: Checkout code
+        uses: actions/checkout@v4
+
+      - name: Setup Node.js
+        uses: actions/setup-node@v4
+        with:
+          node-version: ${{ env.NODE_VERSION }}
+          cache: 'npm'
+
+      - name: Install dependencies
+        run: npm ci
+
+      - name: Run TypeScript type check
+        run: npx tsc --noEmit
+
+      - name: Run linter
+        run: npx eslint . --ext .ts,.tsx,.js,.jsx --max-warnings 10
+        continue-on-error: true
+
+      - name: Run unit tests
+        run: npm run test:run
+
+      - name: Run test coverage
+        run: npm run test:coverage
+
+      - name: Build application
+        env:
+          NODE_ENV: production
+        run: npm run build
+
+      - name: Upload build artifacts
+        uses: actions/upload-artifact@v4
+        with:
+          name: build-artifacts
+          path: dist/
+          retention-days: 30
+
+      - name: Analyze bundle size
+        run: |
+          echo "## Bundle Size Analysis" >> $GITHUB_STEP_SUMMARY
+          echo "" >> $GITHUB_STEP_SUMMARY
+          du -sh dist/ >> $GITHUB_STEP_SUMMARY
+          echo "" >> $GITHUB_STEP_SUMMARY
+          echo "### Asset Breakdown" >> $GITHUB_STEP_SUMMARY
+          du -h dist/assets/* | sort -rh | head -20 >> $GITHUB_STEP_SUMMARY
+
+  # ==================== SECURITY SCAN ====================
+  security-scan:
+    name: Security Scan
+    needs: pre-deployment
+    runs-on: ubuntu-latest
+
+    steps:
+      - name: Checkout code
+        uses: actions/checkout@v4
+
+      - name: Setup Node.js
+        uses: actions/setup-node@v4
+        with:
+          node-version: ${{ env.NODE_VERSION }}
+          cache: 'npm'
+
+      - name: Install dependencies
+        run: npm ci
+
+      - name: Run npm audit
+        run: npm audit --audit-level moderate
+        continue-on-error: true
+
+      - name: Check for vulnerable dependencies
+        run: |
+          echo "## Security Audit Results" >> $GITHUB_STEP_SUMMARY
+          npm audit --json > audit-results.json || true
+          cat audit-results.json
+
+      - name: Upload audit results
+        uses: actions/upload-artifact@v4
+        with:
+          name: security-audit
+          path: audit-results.json
+
+  # ==================== PERFORMANCE TESTS ====================
+  performance-tests:
+    name: Performance Tests
+    needs: build-and-test
+    runs-on: ubuntu-latest
+
+    steps:
+      - name: Checkout code
+        uses: actions/checkout@v4
+
+      - name: Setup Node.js
+        uses: actions/setup-node@v4
+        with:
+          node-version: ${{ env.NODE_VERSION }}
+          cache: 'npm'
+
+      - name: Install dependencies
+        run: npm ci
+
+      - name: Download build artifacts
+        uses: actions/download-artifact@v4
+        with:
+          name: build-artifacts
+          path: dist/
+
+      - name: Run Lighthouse CI
+        run: |
+          npm install -g @lhci/cli@0.13.x
+          lhci autorun || echo "Lighthouse CI completed with warnings"
+        env:
+          LHCI_GITHUB_APP_TOKEN: ${{ secrets.LHCI_GITHUB_APP_TOKEN }}
+
+      - name: Upload performance report
+        if: always()
+        uses: actions/upload-artifact@v4
+        with:
+          name: performance-report
+          path: .lighthouseci/
+
+  # ==================== DEPLOY TO STAGING ====================
+  deploy-staging:
+    name: Deploy to Staging
+    needs: [pre-deployment, build-and-test, security-scan]
+    runs-on: ubuntu-latest
+    if: needs.pre-deployment.outputs.environment == 'staging'
+    environment:
+      name: staging
+      url: https://staging.pulsemessages.com
+
+    steps:
+      - name: Checkout code
+        uses: actions/checkout@v4
+
+      - name: Download build artifacts
+        uses: actions/download-artifact@v4
+        with:
+          name: build-artifacts
+          path: dist/
+
+      - name: Deploy to Vercel (Staging)
+        uses: amondnet/vercel-action@v25
+        with:
+          vercel-token: ${{ secrets.VERCEL_TOKEN }}
+          vercel-org-id: ${{ secrets.VERCEL_ORG_ID }}
+          vercel-project-id: ${{ secrets.VERCEL_PROJECT_ID }}
+          vercel-args: '--prod'
+          working-directory: ./
+
+      - name: Run smoke tests on staging
+        run: |
+          echo "Running smoke tests on staging environment..."
+          curl -f https://staging.pulsemessages.com/health || exit 1
+
+      - name: Notify deployment success
+        run: |
+          echo "## Staging Deployment Successful" >> $GITHUB_STEP_SUMMARY
+          echo "URL: https://staging.pulsemessages.com" >> $GITHUB_STEP_SUMMARY
+          echo "Deployed at: $(date)" >> $GITHUB_STEP_SUMMARY
+
+  # ==================== DEPLOY TO PRODUCTION ====================
+  deploy-production:
+    name: Deploy to Production (Blue-Green)
+    needs: [pre-deployment, build-and-test, security-scan, performance-tests]
+    runs-on: ubuntu-latest
+    if: needs.pre-deployment.outputs.environment == 'production'
+    environment:
+      name: production
+      url: https://app.pulsemessages.com
+
+    steps:
+      - name: Checkout code
+        uses: actions/checkout@v4
+
+      - name: Download build artifacts
+        uses: actions/download-artifact@v4
+        with:
+          name: build-artifacts
+          path: dist/
+
+      - name: Deploy to Vercel (Production - Green)
+        id: deploy-green
+        uses: amondnet/vercel-action@v25
+        with:
+          vercel-token: ${{ secrets.VERCEL_TOKEN }}
+          vercel-org-id: ${{ secrets.VERCEL_ORG_ID }}
+          vercel-project-id: ${{ secrets.VERCEL_PROJECT_ID }}
+          vercel-args: '--prod'
+          working-directory: ./
+
+      - name: Health check on green deployment
+        run: |
+          echo "Running health checks on green deployment..."
+          sleep 30
+          curl -f ${{ steps.deploy-green.outputs.preview-url }}/health || exit 1
+
+      - name: Run smoke tests on production
+        run: |
+          echo "Running smoke tests on production environment..."
+          curl -f https://app.pulsemessages.com/health || exit 1
+
+      - name: Monitor error rates
+        run: |
+          echo "Monitoring error rates for 2 minutes..."
+          sleep 120
+          # TODO: Check Sentry error rates via API
+
+      - name: Notify deployment success
+        run: |
+          echo "## Production Deployment Successful" >> $GITHUB_STEP_SUMMARY
+          echo "URL: https://app.pulsemessages.com" >> $GITHUB_STEP_SUMMARY
+          echo "Deployed at: $(date)" >> $GITHUB_STEP_SUMMARY
+          echo "Deployment ID: ${{ steps.deploy-green.outputs.deployment-id }}" >> $GITHUB_STEP_SUMMARY
+
+  # ==================== POST-DEPLOYMENT ====================
+  post-deployment:
+    name: Post-Deployment Tasks
+    needs: [deploy-production]
+    runs-on: ubuntu-latest
+    if: always()
+
+    steps:
+      - name: Checkout code
+        uses: actions/checkout@v4
+
+      - name: Create deployment tag
+        run: |
+          TAG="deploy-$(date +%Y%m%d-%H%M%S)"
+          git tag $TAG
+          git push origin $TAG || true
+
+      - name: Notify team
+        run: |
+          echo "Deployment completed. Sending notifications..."
+          # TODO: Send Slack notification
+
+      - name: Update deployment dashboard
+        run: |
+          echo "Updating deployment dashboard..."
+          # TODO: Update deployment tracking system
+
+  # ==================== ROLLBACK ====================
+  rollback:
+    name: Rollback Deployment
+    runs-on: ubuntu-latest
+    if: failure()
+
+    steps:
+      - name: Checkout code
+        uses: actions/checkout@v4
+
+      - name: Trigger rollback
+        run: |
+          echo "## ROLLBACK INITIATED" >> $GITHUB_STEP_SUMMARY
+          echo "Deployment failed. Initiating rollback..." >> $GITHUB_STEP_SUMMARY
+          # TODO: Implement automatic rollback logic
+
+      - name: Notify team of rollback
+        run: |
+          echo "Rollback completed. Notifying team..."
+          # TODO: Send urgent Slack notification

@@ -6,12 +6,17 @@ import { VitePWA } from 'vite-plugin-pwa';
 
 export default defineConfig(({ mode }) => {
     const env = loadEnv(mode, '.', '');
+    const isProduction = mode === 'production';
+
     return {
       server: {
         port: Number(env.VITE_PORT) || 5173,
         host: '0.0.0.0',
       },
       build: {
+        sourcemap: !isProduction, // Disable sourcemaps in production for smaller bundle
+        outDir: 'dist',
+        assetsDir: 'assets',
         rollupOptions: {
           output: {
             manualChunks: (id) => {
@@ -100,17 +105,36 @@ export default defineConfig(({ mode }) => {
         },
         chunkSizeWarningLimit: 500,
         target: 'es2020',
-        minify: 'terser',
-        terserOptions: {
+        minify: isProduction ? 'terser' : 'esbuild',
+        terserOptions: isProduction ? {
           compress: {
             drop_console: true,
             drop_debugger: true,
-            pure_funcs: ['console.log', 'console.debug']
+            pure_funcs: ['console.log', 'console.debug', 'console.info']
           },
           mangle: {
             safari10: true
+          },
+          format: {
+            comments: false
           }
-        }
+        } : undefined,
+        reportCompressedSize: true,
+        cssCodeSplit: true,
+        assetsInlineLimit: 4096 // Inline assets smaller than 4kb
+      },
+      optimizeDeps: {
+        include: [
+          'react',
+          'react-dom',
+          'react-router-dom',
+          '@supabase/supabase-js'
+        ],
+        exclude: [
+          '@anthropic-ai/sdk',
+          'openai',
+          '@google/genai'
+        ]
       },
       plugins: [
         react(),

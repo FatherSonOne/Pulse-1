@@ -164,7 +164,7 @@ export const MessagesProvider: React.FC<MessagesProviderProps> = ({ children, cu
     if (!currentUser?.id) return;
 
     try {
-      const conversations = await pulseService.getUserConversations(currentUser.id);
+      const conversations = await pulseService.getConversations();
       setPulseConversations(conversations);
     } catch (error) {
       console.error('Failed to load pulse conversations:', error);
@@ -174,7 +174,7 @@ export const MessagesProvider: React.FC<MessagesProviderProps> = ({ children, cu
   // Load messages for a conversation
   const loadPulseMessages = useCallback(async (conversationId: string) => {
     try {
-      const messages = await pulseService.getConversationMessages(conversationId);
+      const messages = await pulseService.getMessages(conversationId);
       setPulseMessages(messages);
     } catch (error) {
       console.error('Failed to load pulse messages:', error);
@@ -185,12 +185,19 @@ export const MessagesProvider: React.FC<MessagesProviderProps> = ({ children, cu
   const sendPulseMessage = useCallback(async (conversationId: string, content: string, replyTo?: string) => {
     if (!currentUser?.id) return;
 
+    // Get the conversation to find the recipient
+    const conversation = pulseConversations.find(c => c.id === conversationId);
+    if (!conversation) {
+      console.error('Conversation not found');
+      return;
+    }
+
+    const recipientId = conversation.user1_id === currentUser.id
+      ? conversation.user2_id
+      : conversation.user1_id;
+
     try {
-      await pulseService.sendMessage(conversationId, {
-        sender_id: currentUser.id,
-        content,
-        reply_to: replyTo,
-      });
+      await pulseService.sendMessage(recipientId, content);
 
       // Reload messages
       await loadPulseMessages(conversationId);
@@ -198,7 +205,7 @@ export const MessagesProvider: React.FC<MessagesProviderProps> = ({ children, cu
       console.error('Failed to send pulse message:', error);
       throw error;
     }
-  }, [currentUser?.id, loadPulseMessages]);
+  }, [currentUser?.id, pulseConversations, loadPulseMessages]);
 
   // Add reaction to pulse message
   const addReactionToPulseMessage = useCallback((messageId: string, emoji: string) => {
