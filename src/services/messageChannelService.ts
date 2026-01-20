@@ -459,6 +459,7 @@ export const messageChannelService = {
   async getSmartReplies(
     apiKey: string,
     channelId: string,
+    currentUserId: string,
     limit: number = 10
   ): Promise<SmartReplyOption[]> {
     try {
@@ -467,7 +468,7 @@ export const messageChannelService = {
       if (messages.length === 0) return [];
 
       const history = messages.map(m => ({
-        role: m.sender_id === 'current-user' ? 'me' : 'other',
+        role: m.sender_id === currentUserId ? 'me' : 'other',
         text: m.content
       }));
 

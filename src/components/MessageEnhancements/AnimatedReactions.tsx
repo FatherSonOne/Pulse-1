@@ -39,6 +39,9 @@ const ReactionBubble: React.FC<{
 }> = ({ reaction, onClick, onFloat }) => {
   const [isAnimating, setIsAnimating] = useState(false);
   const [scale, setScale] = useState(1);
+  const [isPressed, setIsPressed] = useState(false);
+  const longPressTimerRef = useRef<NodeJS.Timeout | null>(null);
+  const touchStartRef = useRef<{ x: number; y: number } | null>(null);
 
   const handleClick = () => {
     setIsAnimating(true);
@@ -54,9 +57,70 @@ const ReactionBubble: React.FC<{
     onClick();
   };
 
+  // Handle mobile long-press for additional interaction
+  const handleTouchStart = (e: React.TouchEvent) => {
+    const touch = e.touches[0];
+    touchStartRef.current = { x: touch.clientX, y: touch.clientY };
+    setIsPressed(true);
+
+    // Haptic feedback on press
+    if ('vibrate' in navigator) {
+      navigator.vibrate(5);
+    }
+
+    longPressTimerRef.current = setTimeout(() => {
+      // Long-press detected - trigger enhanced animation
+      setScale(1.2);
+      if ('vibrate' in navigator) {
+        navigator.vibrate([10, 5, 10]);
+      }
+    }, 300);
+  };
+
+  const handleTouchMove = (e: React.TouchEvent) => {
+    if (!touchStartRef.current) return;
+
+    const touch = e.touches[0];
+    const deltaX = Math.abs(touch.clientX - touchStartRef.current.x);
+    const deltaY = Math.abs(touch.clientY - touchStartRef.current.y);
+
+    // Cancel if moved more than 10px
+    if (deltaX > 10 || deltaY > 10) {
+      if (longPressTimerRef.current) {
+        clearTimeout(longPressTimerRef.current);
+        longPressTimerRef.current = null;
+      }
+      setIsPressed(false);
+      setScale(1);
+    }
+  };
+
+  const handleTouchEnd = () => {
+    if (longPressTimerRef.current) {
+      clearTimeout(longPressTimerRef.current);
+      longPressTimerRef.current = null;
+    }
+    setIsPressed(false);
+    setScale(1);
+    touchStartRef.current = null;
+  };
+
+  // Cleanup timer on unmount
+  useEffect(() => {
+    return () => {
+      if (longPressTimerRef.current) {
+        clearTimeout(longPressTimerRef.current);
+      }
+    };
+  }, []);
+
   return (
     <button
       onClick={handleClick}
+      onTouchStart={handleTouchStart}
+      onTouchMove={handleTouchMove}
+      onTouchEnd={handleTouchEnd}
+      onTouchCancel={handleTouchEnd}
       className={`
         px-2.5 py-1 rounded-full text-xs flex items-center gap-1.5
         transition-all duration-200 ease-out
@@ -66,8 +130,11 @@ const ReactionBubble: React.FC<{
           : 'bg-zinc-100 dark:bg-zinc-800 border border-zinc-200 dark:border-zinc-700 hover:border-zinc-300 dark:hover:border-zinc-600'
         }
         ${isAnimating ? 'animate-bounce' : ''}
+        ${isPressed ? 'ring-2 ring-blue-300 ring-opacity-50' : ''}
       `}
       style={{ transform: `scale(${scale})` }}
+      aria-label={`${reaction.emoji} reaction, ${reaction.count} ${reaction.count === 1 ? 'person' : 'people'}${reaction.me ? ', including you' : ''}`}
+      aria-pressed={reaction.me ? 'true' : 'false'}
     >
       <span className={`transition-transform ${isAnimating ? 'animate-wiggle' : ''}`}>
         {reaction.emoji}
@@ -294,15 +361,49 @@ export const AnimatedReactions: React.FC<AnimatedReactionsProps> = ({
 export const QuickReactionBar: React.FC<{
   onReact: (emoji: string) => void;
   onShowMore: () => void;
-}> = ({ onReact, onShowMore }) => {
+  position?: {
+    top?: number;
+    bottom?: number;
+    left?: number;
+    right?: number;
+  };
+  className?: string;
+}> = ({ onReact, onShowMore, position = {}, className = '' }) => {
   const [hoveredEmoji, setHoveredEmoji] = useState<string | null>(null);
+  const [isVisible, setIsVisible] = useState(false);
+
+  // Trigger entrance animation
+  useEffect(() => {
+    setIsVisible(true);
+  }, []);
+
+  const positionStyles = {
+    ...(position.top !== undefined && { top: `${position.top}px` }),
+    ...(position.bottom !== undefined && { bottom: `${position.bottom}px` }),
+    ...(position.left !== undefined && { left: `${position.left}px` }),
+    ...(position.right !== undefined && { right: `${position.right}px` }),
+  };
 
   return (
-    <div className="flex items-center bg-white dark:bg-zinc-800 rounded-full shadow-xl border border-zinc-200 dark:border-zinc-700 p-1 animate-fade-in">
+    <div
+      className={`
+        flex items-center bg-white dark:bg-zinc-800 rounded-full
+        shadow-2xl border border-zinc-200 dark:border-zinc-700 p-1
+        transition-all duration-200 ease-out
+        ${isVisible ? 'opacity-100 scale-100' : 'opacity-0 scale-90'}
+        ${className}
+      `}
+      style={positionStyles}
+      role="toolbar"
+      aria-label="Quick reaction buttons"
+    >
       {COMMON_REACTIONS.slice(0, 6).map(emoji => (
         <button
           key={emoji}
-          onClick={() => onReact(emoji)}
+          onClick={(e) => {
+            e.stopPropagation();
+            onReact(emoji);
+          }}
           onMouseEnter={() => setHoveredEmoji(emoji)}
           onMouseLeave={() => setHoveredEmoji(null)}
           className={`
@@ -310,14 +411,21 @@ export const QuickReactionBar: React.FC<{
             transition-all duration-200
             ${hoveredEmoji === emoji ? 'scale-125 bg-zinc-100 dark:bg-zinc-700' : 'hover:scale-110'}
           `}
+          aria-label={`React with ${emoji}`}
+          title={`React with ${emoji}`}
         >
           <span className="text-lg">{emoji}</span>
         </button>
       ))}
       <div className="w-px h-5 bg-zinc-200 dark:bg-zinc-700 mx-1" />
       <button
-        onClick={onShowMore}
+        onClick={(e) => {
+          e.stopPropagation();
+          onShowMore();
+        }}
         className="w-8 h-8 flex items-center justify-center rounded-full text-zinc-400 hover:text-zinc-600 dark:hover:text-zinc-300 hover:bg-zinc-100 dark:hover:bg-zinc-700 transition-all"
+        aria-label="Show more reactions"
+        title="Show more reactions"
       >
         <i className="fa-solid fa-plus text-xs" />
       </button>

@@ -1,0 +1,231 @@
+/* Pulse Browser Extension - Content Script Styles */
+
+/* Selection Highlight Overlay */
+.pulse-capture-overlay {
+  position: fixed;
+  top: 0;
+  left: 0;
+  right: 0;
+  bottom: 0;
+  background: rgba(0, 0, 0, 0.5);
+  z-index: 2147483646;
+  pointer-events: none;
+  opacity: 0;
+  transition: opacity 0.2s;
+}
+
+.pulse-capture-overlay.active {
+  opacity: 1;
+}
+
+/* Floating Capture Button */
+.pulse-capture-button {
+  position: fixed;
+  z-index: 2147483647;
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  padding: 8px 16px;
+  background: linear-gradient(135deg, #f43f5e, #ec4899);
+  color: white;
+  font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, sans-serif;
+  font-size: 13px;
+  font-weight: 600;
+  border: none;
+  border-radius: 8px;
+  cursor: pointer;
+  box-shadow: 0 4px 16px rgba(244, 63, 94, 0.4);
+  transform: scale(0.9);
+  opacity: 0;
+  transition: all 0.2s;
+  pointer-events: auto;
+}
+
+.pulse-capture-button.visible {
+  transform: scale(1);
+  opacity: 1;
+}
+
+.pulse-capture-button:hover {
+  transform: scale(1.02);
+  box-shadow: 0 6px 20px rgba(244, 63, 94, 0.5);
+}
+
+.pulse-capture-button svg {
+  width: 16px;
+  height: 16px;
+}
+
+/* Selection Highlight */
+.pulse-selection-highlight {
+  background: rgba(244, 63, 94, 0.15) !important;
+  outline: 2px solid rgba(244, 63, 94, 0.5) !important;
+  outline-offset: 2px;
+  border-radius: 4px;
+}
+
+/* Toast Notification */
+.pulse-toast {
+  position: fixed;
+  bottom: 24px;
+  right: 24px;
+  z-index: 2147483647;
+  display: flex;
+  align-items: center;
+  gap: 12px;
+  padding: 16px 20px;
+  background: #18181b;
+  color: #fafafa;
+  font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, sans-serif;
+  font-size: 14px;
+  border-radius: 12px;
+  box-shadow: 0 8px 32px rgba(0, 0, 0, 0.3);
+  transform: translateY(100px);
+  opacity: 0;
+  transition: all 0.3s cubic-bezier(0.16, 1, 0.3, 1);
+}
+
+.pulse-toast.visible {
+  transform: translateY(0);
+  opacity: 1;
+}
+
+.pulse-toast.success {
+  border-left: 4px solid #10b981;
+}
+
+.pulse-toast.error {
+  border-left: 4px solid #ef4444;
+}
+
+.pulse-toast-icon {
+  width: 24px;
+  height: 24px;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  border-radius: 50%;
+}
+
+.pulse-toast.success .pulse-toast-icon {
+  background: rgba(16, 185, 129, 0.2);
+  color: #10b981;
+}
+
+.pulse-toast.error .pulse-toast-icon {
+  background: rgba(239, 68, 68, 0.2);
+  color: #ef4444;
+}
+
+.pulse-toast-content {
+  flex: 1;
+}
+
+.pulse-toast-title {
+  font-weight: 600;
+  margin-bottom: 2px;
+}
+
+.pulse-toast-message {
+  font-size: 12px;
+  color: #a1a1aa;
+}
+
+.pulse-toast-close {
+  width: 24px;
+  height: 24px;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  background: transparent;
+  border: none;
+  color: #71717a;
+  cursor: pointer;
+  border-radius: 4px;
+  transition: all 0.2s;
+}
+
+.pulse-toast-close:hover {
+  background: #27272a;
+  color: #fafafa;
+}
+
+/* Article Detection Highlight */
+.pulse-article-highlight {
+  position: relative;
+}
+
+.pulse-article-highlight::before {
+  content: '';
+  position: absolute;
+  top: -4px;
+  left: -4px;
+  right: -4px;
+  bottom: -4px;
+  border: 2px dashed rgba(244, 63, 94, 0.5);
+  border-radius: 8px;
+  pointer-events: none;
+  animation: pulse-border 2s ease-in-out infinite;
+}
+
+@keyframes pulse-border {
+  0%, 100% {
+    border-color: rgba(244, 63, 94, 0.5);
+  }
+  50% {
+    border-color: rgba(244, 63, 94, 0.8);
+  }
+}
+
+/* Context Menu Highlight */
+.pulse-context-target {
+  outline: 2px solid #f43f5e !important;
+  outline-offset: 2px;
+}
+
+/* Drag and Drop Zone */
+.pulse-drop-zone {
+  position: fixed;
+  top: 50%;
+  left: 50%;
+  transform: translate(-50%, -50%) scale(0.9);
+  z-index: 2147483647;
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  justify-content: center;
+  width: 300px;
+  height: 200px;
+  background: rgba(24, 24, 27, 0.95);
+  border: 2px dashed #f43f5e;
+  border-radius: 16px;
+  opacity: 0;
+  visibility: hidden;
+  transition: all 0.3s;
+}
+
+.pulse-drop-zone.visible {
+  opacity: 1;
+  visibility: visible;
+  transform: translate(-50%, -50%) scale(1);
+}
+
+.pulse-drop-zone svg {
+  width: 48px;
+  height: 48px;
+  color: #f43f5e;
+  margin-bottom: 16px;
+}
+
+.pulse-drop-zone p {
+  font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, sans-serif;
+  font-size: 14px;
+  color: #fafafa;
+  text-align: center;
+}
+
+.pulse-drop-zone span {
+  font-size: 12px;
+  color: #71717a;
+  margin-top: 4px;
+}

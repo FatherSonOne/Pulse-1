@@ -1,0 +1,454 @@
+/**
+ * Sidebar Tabs Styles
+ * Modern, responsive sidebar tabs with smooth animations
+ * Supports desktop and mobile layouts with accessibility features
+ */
+
+/* ===== Desktop Sidebar Container ===== */
+.sidebar-container {
+  @apply relative h-full flex flex-col;
+  @apply bg-white dark:bg-zinc-900;
+  @apply border-r border-zinc-200 dark:border-zinc-800;
+  @apply transition-all duration-300 ease-in-out;
+  will-change: width;
+}
+
+/* Collapsed state */
+.sidebar-collapsed {
+  @apply shadow-sm;
+}
+
+/* ===== Collapse Toggle Button ===== */
+.sidebar-collapse-btn {
+  @apply absolute -right-3 top-6 z-10;
+  @apply w-6 h-6 rounded-full;
+  @apply bg-white dark:bg-zinc-800;
+  @apply border border-zinc-200 dark:border-zinc-700;
+  @apply shadow-md hover:shadow-lg;
+  @apply flex items-center justify-center;
+  @apply text-zinc-500 hover:text-zinc-700 dark:text-zinc-400 dark:hover:text-zinc-200;
+  @apply transition-all duration-200;
+  @apply focus:outline-none focus:ring-2 focus:ring-blue-500 focus:ring-offset-2;
+}
+
+.sidebar-collapse-btn i {
+  @apply text-xs;
+}
+
+/* ===== Tab Navigation ===== */
+.sidebar-tabs {
+  @apply flex flex-col gap-1 p-2;
+  @apply border-b border-zinc-200 dark:border-zinc-800;
+}
+
+.sidebar-tab {
+  @apply relative flex items-center gap-3 px-3 py-3;
+  @apply rounded-lg cursor-pointer;
+  @apply text-left transition-all duration-200;
+  @apply focus:outline-none focus:ring-2 focus:ring-blue-500 focus:ring-offset-2;
+  @apply hover:bg-zinc-50 dark:hover:bg-zinc-800/50;
+}
+
+.sidebar-tab-collapsed {
+  @apply justify-center px-2;
+}
+
+/* Active tab styles */
+.sidebar-tab-active {
+  @apply bg-zinc-100 dark:bg-zinc-800;
+}
+
+/* Active indicator (animated line) */
+.sidebar-tab-indicator {
+  @apply absolute left-0 top-0 bottom-0 w-1 rounded-r-full;
+  @apply bg-gradient-to-b from-blue-500 to-blue-600;
+}
+
+/* Tab icon */
+.sidebar-tab-icon {
+  @apply relative flex items-center justify-center;
+  @apply w-8 h-8 text-lg;
+  @apply transition-colors duration-200;
+}
+
+.sidebar-tab-badge {
+  @apply absolute -top-1 -right-1;
+  @apply min-w-[18px] h-[18px] px-1;
+  @apply rounded-full text-[10px] font-bold;
+  @apply flex items-center justify-center;
+  @apply animate-pulse;
+}
+
+/* Tab content (label + description) */
+.sidebar-tab-content {
+  @apply flex-1 min-w-0;
+}
+
+.sidebar-tab-label-wrapper {
+  @apply flex items-center justify-between gap-2;
+}
+
+.sidebar-tab-label {
+  @apply text-sm font-medium truncate;
+  @apply transition-colors duration-200;
+}
+
+.sidebar-tab-shortcut {
+  @apply px-1.5 py-0.5 text-[10px] font-mono;
+  @apply bg-zinc-200 dark:bg-zinc-700;
+  @apply text-zinc-600 dark:text-zinc-400;
+  @apply rounded border border-zinc-300 dark:border-zinc-600;
+  @apply shadow-sm;
+}
+
+.sidebar-tab-description {
+  @apply text-xs text-zinc-500 dark:text-zinc-400;
+  @apply mt-0.5 truncate;
+}
+
+/* Collapsed tab tooltip */
+.sidebar-tab-tooltip {
+  @apply absolute left-full ml-2 z-50;
+  @apply px-3 py-2 min-w-[200px];
+  @apply bg-zinc-900 dark:bg-zinc-100;
+  @apply text-white dark:text-zinc-900;
+  @apply rounded-lg shadow-xl;
+  @apply opacity-0 invisible pointer-events-none;
+  @apply transition-all duration-200;
+}
+
+.sidebar-tab:hover .sidebar-tab-tooltip {
+  @apply opacity-100 visible;
+}
+
+.sidebar-tab-tooltip-content {
+  @apply flex items-center justify-between gap-2 mb-1;
+}
+
+.sidebar-tab-tooltip-label {
+  @apply text-sm font-semibold;
+}
+
+.sidebar-tab-tooltip-shortcut {
+  @apply px-1.5 py-0.5 text-[10px] font-mono;
+  @apply bg-zinc-800 dark:bg-zinc-200;
+  @apply rounded border border-zinc-700 dark:border-zinc-300;
+}
+
+.sidebar-tab-tooltip-description {
+  @apply text-xs opacity-80;
+}
+
+/* ===== Content Area ===== */
+.sidebar-content-wrapper {
+  @apply flex-1 overflow-hidden;
+}
+
+.sidebar-content {
+  @apply h-full overflow-y-auto;
+}
+
+.sidebar-content-inner {
+  @apply h-full;
+}
+
+/* Custom scrollbar */
+.sidebar-content::-webkit-scrollbar {
+  @apply w-2;
+}
+
+.sidebar-content::-webkit-scrollbar-track {
+  @apply bg-transparent;
+}
+
+.sidebar-content::-webkit-scrollbar-thumb {
+  @apply bg-zinc-300 dark:bg-zinc-700 rounded-full;
+}
+
+.sidebar-content::-webkit-scrollbar-thumb:hover {
+  @apply bg-zinc-400 dark:bg-zinc-600;
+}
+
+/* ===== Section Headers ===== */
+.sidebar-section-header {
+  @apply flex items-center justify-between;
+  @apply px-4 py-3 border-b border-zinc-200 dark:border-zinc-800;
+}
+
+.sidebar-section-title {
+  @apply text-base font-semibold;
+  @apply text-zinc-900 dark:text-white;
+  @apply flex items-center gap-2;
+}
+
+.sidebar-icon-button {
+  @apply w-8 h-8 rounded-lg;
+  @apply flex items-center justify-center;
+  @apply text-zinc-500 dark:text-zinc-400;
+  @apply hover:bg-zinc-100 dark:hover:bg-zinc-800;
+  @apply transition-colors duration-200;
+  @apply focus:outline-none focus:ring-2 focus:ring-blue-500;
+}
+
+/* ===== Search Bar ===== */
+.sidebar-search {
+  @apply relative flex items-center;
+  @apply px-4 py-3;
+  @apply border-b border-zinc-200 dark:border-zinc-800;
+}
+
+.sidebar-search-icon {
+  @apply absolute left-6 text-zinc-400;
+}
+
+.sidebar-search-input {
+  @apply w-full pl-8 pr-3 py-2;
+  @apply bg-zinc-50 dark:bg-zinc-800/50;
+  @apply border border-zinc-200 dark:border-zinc-700;
+  @apply rounded-lg text-sm;
+  @apply text-zinc-900 dark:text-white;
+  @apply placeholder-zinc-500 dark:placeholder-zinc-400;
+  @apply focus:outline-none focus:ring-2 focus:ring-blue-500;
+  @apply transition-all duration-200;
+}
+
+/* ===== Content Sections ===== */
+.sidebar-messages-content,
+.sidebar-crm-content,
+.sidebar-analytics-content {
+  @apply h-full flex flex-col;
+}
+
+.sidebar-messages-list {
+  @apply flex-1 overflow-y-auto p-4;
+}
+
+/* Tools Panel Integration */
+.sidebar-tools-panel {
+  @apply border-none;
+}
+
+/* ===== Loading States ===== */
+.sidebar-content-loading {
+  @apply p-4 space-y-4;
+}
+
+.sidebar-loading-header {
+  @apply space-y-2 mb-4;
+}
+
+.sidebar-loading-skeleton {
+  @apply bg-zinc-200 dark:bg-zinc-800 animate-pulse rounded;
+}
+
+.sidebar-loading-title {
+  @apply h-5 w-32;
+}
+
+.sidebar-loading-subtitle {
+  @apply h-3 w-48;
+}
+
+.sidebar-loading-body {
+  @apply space-y-3;
+}
+
+.sidebar-loading-card {
+  @apply flex items-start gap-3 p-3;
+  @apply bg-zinc-50 dark:bg-zinc-800/50 rounded-lg;
+}
+
+.sidebar-loading-card-icon {
+  @apply w-10 h-10 rounded-lg;
+}
+
+.sidebar-loading-card-content {
+  @apply flex-1 space-y-2;
+}
+
+.sidebar-loading-card-title {
+  @apply h-4 w-24;
+}
+
+.sidebar-loading-card-text {
+  @apply h-3 w-full;
+}
+
+/* ===== Empty States ===== */
+.sidebar-empty-state {
+  @apply flex flex-col items-center justify-center;
+  @apply py-12 px-4 text-center;
+}
+
+.sidebar-error-state {
+  @apply flex flex-col items-center justify-center;
+  @apply h-full px-4 text-center;
+}
+
+/* ===== Keyboard Shortcuts Hint ===== */
+.sidebar-keyboard-hint {
+  @apply flex items-center justify-center gap-4;
+  @apply px-4 py-3 border-t border-zinc-200 dark:border-zinc-800;
+  @apply bg-zinc-50 dark:bg-zinc-800/50;
+}
+
+.sidebar-keyboard-hint-item {
+  @apply flex items-center gap-1.5 text-xs;
+  @apply text-zinc-600 dark:text-zinc-400;
+}
+
+.sidebar-keyboard-hint-item kbd {
+  @apply px-1.5 py-0.5 font-mono text-[10px];
+  @apply bg-white dark:bg-zinc-900;
+  @apply border border-zinc-300 dark:border-zinc-700;
+  @apply rounded shadow-sm;
+}
+
+.sidebar-keyboard-hint-item span {
+  @apply text-zinc-500 dark:text-zinc-500;
+}
+
+/* ===== Mobile Layout ===== */
+.sidebar-mobile {
+  @apply flex flex-col h-full;
+}
+
+/* Mobile tab bar (bottom navigation) */
+.sidebar-mobile-tabs {
+  @apply fixed bottom-0 left-0 right-0 z-50;
+  @apply flex items-center justify-around;
+  @apply px-2 py-2 safe-area-padding-bottom;
+  @apply bg-white dark:bg-zinc-900;
+  @apply border-t border-zinc-200 dark:border-zinc-800;
+  @apply shadow-lg;
+}
+
+.sidebar-tab-mobile {
+  @apply flex flex-col items-center justify-center;
+  @apply px-4 py-2 min-w-[64px];
+  @apply rounded-lg transition-all duration-200;
+  @apply focus:outline-none focus:ring-2 focus:ring-blue-500;
+}
+
+.sidebar-tab-mobile-active {
+  @apply bg-zinc-100 dark:bg-zinc-800;
+}
+
+.sidebar-tab-mobile-content {
+  @apply relative flex items-center justify-center;
+  @apply w-6 h-6 mb-1;
+}
+
+.sidebar-tab-mobile-label {
+  @apply text-[10px] font-medium;
+}
+
+/* Mobile content area */
+.sidebar-mobile-content {
+  @apply flex-1 overflow-y-auto;
+  @apply pb-20; /* Space for bottom tab bar */
+}
+
+/* ===== Responsive Breakpoints ===== */
+@media (max-width: 768px) {
+  .sidebar-container {
+    @apply fixed inset-y-0 left-0 z-40;
+    @apply shadow-xl;
+  }
+
+  .sidebar-keyboard-hint {
+    @apply hidden;
+  }
+}
+
+@media (max-width: 640px) {
+  .sidebar-tab-shortcut,
+  .sidebar-tab-tooltip-shortcut {
+    @apply hidden;
+  }
+}
+
+/* ===== Animations ===== */
+@keyframes slideInFromLeft {
+  from {
+    transform: translateX(-100%);
+    opacity: 0;
+  }
+  to {
+    transform: translateX(0);
+    opacity: 1;
+  }
+}
+
+@keyframes slideInFromRight {
+  from {
+    transform: translateX(100%);
+    opacity: 0;
+  }
+  to {
+    transform: translateX(0);
+    opacity: 1;
+  }
+}
+
+@keyframes fadeIn {
+  from {
+    opacity: 0;
+  }
+  to {
+    opacity: 1;
+  }
+}
+
+/* Apply animations on mount */
+.sidebar-container {
+  animation: slideInFromLeft 0.3s ease-out;
+}
+
+.sidebar-content-inner {
+  animation: fadeIn 0.2s ease-out;
+}
+
+/* ===== Accessibility ===== */
+@media (prefers-reduced-motion: reduce) {
+  .sidebar-container,
+  .sidebar-tab,
+  .sidebar-content-inner,
+  .sidebar-loading-skeleton {
+    animation: none !important;
+    transition: none !important;
+  }
+}
+
+/* Focus visible for keyboard navigation */
+.sidebar-tab:focus-visible,
+.sidebar-icon-button:focus-visible,
+.sidebar-search-input:focus-visible {
+  @apply ring-2 ring-blue-500 ring-offset-2;
+  @apply outline-none;
+}
+
+/* High contrast mode support */
+@media (prefers-contrast: high) {
+  .sidebar-tab-active {
+    @apply border-2 border-blue-600;
+  }
+
+  .sidebar-tab-indicator {
+    @apply w-2;
+  }
+}
+
+/* Print styles */
+@media print {
+  .sidebar-container {
+    @apply hidden;
+  }
+}
+
+/* Safe area padding for mobile devices with notches */
+@supports (padding: env(safe-area-inset-bottom)) {
+  .safe-area-padding-bottom {
+    padding-bottom: env(safe-area-inset-bottom);
+  }
+}

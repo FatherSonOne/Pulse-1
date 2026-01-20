@@ -84,6 +84,9 @@ import { MeetingDeflector } from './attention';
 import { TaskExtractor } from './tasks/TaskExtractor';
 import { ChannelArtifactComponent } from './artifacts';
 
+// Focus Mode (Phase 5)
+import { FocusMode } from './Messages';
+
 const COMMON_REACTIONS = ['👍', '❤️', '😂', '😮', '😢', '🔥'];
 
 // Quick Add Contact Component for empty state
@@ -380,6 +383,9 @@ const Messages: React.FC<MessagesProps> = ({ apiKey, contacts, initialContactId,
   const [focusThreadId, setFocusThreadId] = useState<string | null>(null);
   const [focusDigest, setFocusDigest] = useState<string | null>(null);
   const [asyncSuggestion, setAsyncSuggestion] = useState<AsyncSuggestion | null>(null);
+
+  // Focus Mode State (Phase 5)
+  const [isFocusModeActive, setIsFocusModeActive] = useState(false);
 
   // --- NEW: Decision & Outcome State ---
   const [isProposalMode, setIsProposalMode] = useState(false);
@@ -2069,6 +2075,12 @@ const Messages: React.FC<MessagesProps> = ({ apiKey, contacts, initialContactId,
         setShowTemplates(prev => !prev);
         return;
       }
+      // Shift+F to toggle focus mode
+      if (e.shiftKey && e.key === 'F') {
+        e.preventDefault();
+        setIsFocusModeActive(prev => !prev);
+        return;
+      }
       // Escape to close modals
       if (e.key === 'Escape') {
         setShowScheduleModal(false);
@@ -3065,13 +3077,16 @@ const Messages: React.FC<MessagesProps> = ({ apiKey, contacts, initialContactId,
 
               {/* Focus Mode - Teal/Emerald when active */}
               <button
-                onClick={toggleFocusMode}
-                className={`group w-9 h-9 rounded-xl flex items-center justify-center transition-all duration-300 border-2 ${focusThreadId
+                onClick={() => {
+                  setIsFocusModeActive(!isFocusModeActive);
+                  setFocusThreadId(isFocusModeActive ? null : activeThreadId || 'main');
+                }}
+                className={`group w-9 h-9 rounded-xl flex items-center justify-center transition-all duration-300 border-2 ${isFocusModeActive
                   ? 'bg-gradient-to-br from-emerald-500 to-cyan-500 text-white border-emerald-400 shadow-lg shadow-emerald-500/40'
                   : 'border-teal-200 dark:border-teal-700 bg-gradient-to-br from-teal-50 to-emerald-50 dark:from-teal-900/40 dark:to-emerald-900/40 text-teal-600 dark:text-teal-400 hover:scale-110 hover:shadow-lg hover:shadow-teal-500/30 hover:border-teal-400 dark:hover:border-teal-500 hover:from-teal-100 hover:to-emerald-100 dark:hover:from-teal-900/60 dark:hover:to-emerald-900/60'}`}
-                title={focusThreadId ? "Exit Focus Mode" : "Enter Focus Mode"}
+                title={isFocusModeActive ? "Exit Focus Mode (Shift+F)" : "Enter Focus Mode (Shift+F)"}
               >
-                <i className={`fa-solid fa-crosshairs text-sm ${focusThreadId ? 'animate-pulse' : 'group-hover:animate-pulse'}`}></i>
+                <i className={`fa-solid fa-crosshairs text-sm ${isFocusModeActive ? 'animate-pulse' : 'group-hover:animate-pulse'}`}></i>
               </button>
             </div>
 
@@ -3142,212 +3157,16 @@ const Messages: React.FC<MessagesProps> = ({ apiKey, contacts, initialContactId,
             </div>
           )}
 
-          {/* Tools Drawer for Pulse Conversations - Rendered outside header for proper z-index */}
-          <AnimatePresence>
-            {showToolsDrawer && (
-              <>
-                {/* Backdrop */}
-                <motion.div
-                  initial={{ opacity: 0 }}
-                  animate={{ opacity: 1 }}
-                  exit={{ opacity: 0 }}
-                  transition={{ duration: 0.2 }}
-                  className="fixed inset-0 bg-black/50 z-[100]"
-                  onClick={() => setShowToolsDrawer(false)}
-                />
-                {/* Drawer */}
-                <motion.div
-                  initial={{ x: "100%" }}
-                  animate={{ x: 0 }}
-                  exit={{ x: "100%" }}
-                  transition={{ type: "spring", damping: 25, stiffness: 200 }}
-                  className="fixed top-0 right-0 h-full w-80 bg-white dark:bg-zinc-900 z-[101] shadow-2xl overflow-y-auto"
-                >
-                  <div className="sticky top-0 bg-white dark:bg-zinc-900 border-b border-zinc-200 dark:border-zinc-800 p-4 flex items-center justify-between">
-                    <h3 className="font-bold text-zinc-800 dark:text-white flex items-center gap-2">
-                      <motion.i 
-                        whileHover={{ rotate: 360 }}
-                        transition={{ duration: 0.5 }}
-                        className="fa-solid fa-toolbox text-indigo-500"
-                      />
-                      Tools
-                    </h3>
-                    <button onClick={() => setShowToolsDrawer(false)} className="w-8 h-8 rounded-lg flex items-center justify-center hover:bg-zinc-100 dark:hover:bg-zinc-800 text-zinc-500">
-                      <i className="fa-solid fa-xmark"></i>
-                    </button>
-                  </div>
-
-                  <div className="p-4 space-y-6">
-                    {/* Quick Actions */}
-                    <div>
-                      <h4 className="text-[10px] uppercase tracking-wider text-zinc-400 font-bold mb-2">Quick Actions</h4>
-                      <div className="space-y-1">
-                        <button
-                          onClick={() => {
-                            if (pulseMessages.length === 0) return;
-                            const summary = `## Conversation Summary with ${activePulseConv.other_user?.display_name || activePulseConv.other_user?.handle || 'Pulse User'}\n\n**Total Messages:** ${pulseMessages.length}\n**Started:** ${pulseMessages[0] ? new Date(pulseMessages[0].created_at).toLocaleDateString() : 'N/A'}\n**Last Activity:** ${pulseMessages[pulseMessages.length - 1] ? new Date(pulseMessages[pulseMessages.length - 1].created_at).toLocaleDateString() : 'N/A'}\n\n### Recent Topics\n${pulseMessages.slice(-10).map(m => `- ${m.content.slice(0, 50)}${m.content.length > 50 ? '...' : ''}`).join('\n')}`;
-                            setSummary(summary);
-                            setShowHandoffCard(true);
-                            setShowToolsDrawer(false);
-                          }}
-                          disabled={pulseMessages.length === 0}
-                          className="w-full flex items-center gap-3 px-3 py-2.5 rounded-lg hover:bg-zinc-100 dark:hover:bg-zinc-800 text-left text-sm text-zinc-700 dark:text-zinc-300 disabled:opacity-50 group"
-                        >
-                          <motion.i 
-                            whileHover={{ x: 5 }}
-                            className="fa-solid fa-person-walking-arrow-right text-yellow-500 w-5"
-                          />
-                          Generate Handoff
-                        </button>
-                        <button
-                          onClick={() => {
-                            const messagesText = pulseMessages.map(m =>
-                              `[${new Date(m.created_at).toLocaleString()}] ${m.sender_id === activePulseConv.other_user?.id ? activePulseConv.other_user?.display_name || 'User' : 'You'}: ${m.content}`
-                            ).join('\n');
-                            const blob = new Blob([messagesText], { type: 'text/markdown' });
-                            const url = URL.createObjectURL(blob);
-                            const a = document.createElement('a');
-                            a.href = url;
-                            a.download = `pulse-chat-${activePulseConv.other_user?.handle || 'user'}-${new Date().toISOString().split('T')[0]}.md`;
-                            a.click();
-                            URL.revokeObjectURL(url);
-                            setShowToolsDrawer(false);
-                          }}
-                          disabled={pulseMessages.length === 0}
-                          className="w-full flex items-center gap-3 px-3 py-2.5 rounded-lg hover:bg-zinc-100 dark:hover:bg-zinc-800 text-left text-sm text-zinc-700 dark:text-zinc-300 disabled:opacity-50 group"
-                        >
-                          <motion.i 
-                            whileHover={{ y: 2 }}
-                            className="fa-solid fa-download text-green-500 w-5"
-                          />
-                          Export Messages
-                        </button>
-                        <button onClick={() => { setShowStatsPanel(true); setShowToolsDrawer(false); }} className="w-full flex items-center gap-3 px-3 py-2.5 rounded-lg hover:bg-zinc-100 dark:hover:bg-zinc-800 text-left text-sm text-zinc-700 dark:text-zinc-300 group">
-                          <motion.i 
-                            whileHover={{ scaleY: [1, 1.2, 0.8, 1], transition: { repeat: Infinity, duration: 1 } }}
-                            className="fa-solid fa-chart-bar text-indigo-500 w-5"
-                          />
-                          Conversation Stats
-                        </button>
-                        <button onClick={() => { setShowOutcomeSetup(true); setShowToolsDrawer(false); }} className="w-full flex items-center gap-3 px-3 py-2.5 rounded-lg hover:bg-zinc-100 dark:hover:bg-zinc-800 text-left text-sm text-zinc-700 dark:text-zinc-300 group">
-                          <motion.i 
-                            whileHover={{ scale: 1.2 }}
-                            className="fa-solid fa-bullseye text-red-500 w-5"
-                          />
-                          Set Outcome Goal
-                        </button>
-                        <button onClick={() => { setShowTaskExtractor(true); setShowToolsDrawer(false); }} className="w-full flex items-center gap-3 px-3 py-2.5 rounded-lg hover:bg-zinc-100 dark:hover:bg-zinc-800 text-left text-sm text-zinc-700 dark:text-zinc-300 group">
-                          <motion.i 
-                            whileHover={{ scale: 1.1, rotate: [0, -5, 5, 0], transition: { duration: 0.5 } }}
-                            className="fa-solid fa-tasks text-orange-500 w-5"
-                          />
-                          Extract Tasks
-                        </button>
-                        <button onClick={() => { setShowChannelArtifactPanel(true); setShowToolsDrawer(false); }} className="w-full flex items-center gap-3 px-3 py-2.5 rounded-lg hover:bg-zinc-100 dark:hover:bg-zinc-800 text-left text-sm text-zinc-700 dark:text-zinc-300 group">
-                          <motion.i 
-                            whileHover={{ x: 5 }}
-                            className="fa-solid fa-file-export text-blue-500 w-5"
-                          />
-                          Export as Document
-                        </button>
-                      </div>
-                    </div>
-
-                    {/* Tool Panels */}
-                    <div>
-                      <h4 className="text-[10px] uppercase tracking-wider text-zinc-400 font-bold mb-2">Tool Panels</h4>
-                      <div className="space-y-1">
-                        <button onClick={() => { togglePanel('analytics', showAnalyticsPanel); setShowToolsDrawer(false); }} className={`w-full flex items-center gap-3 px-3 py-2.5 rounded-lg text-left text-sm group ${showAnalyticsPanel ? 'bg-indigo-100 dark:bg-indigo-900/30 text-indigo-700 dark:text-indigo-300' : 'hover:bg-zinc-100 dark:hover:bg-zinc-800 text-zinc-700 dark:text-zinc-300'}`}>
-                          <motion.i 
-                            whileHover={{ rotate: [0, 90, 180, 270, 360], transition: { duration: 2, repeat: Infinity, ease: "linear" } }}
-                            className="fa-solid fa-chart-pie text-indigo-500 w-5"
-                          />
-                          Conversation Analytics
-                        </button>
-                        <button onClick={() => { togglePanel('collaboration', showCollaborationPanel); setShowToolsDrawer(false); }} className={`w-full flex items-center gap-3 px-3 py-2.5 rounded-lg text-left text-sm group ${showCollaborationPanel ? 'bg-purple-100 dark:bg-purple-900/30 text-purple-700 dark:text-purple-300' : 'hover:bg-zinc-100 dark:hover:bg-zinc-800 text-zinc-700 dark:text-zinc-300'}`}>
-                          <motion.i 
-                            whileHover={{ rotate: 180, transition: { duration: 1 } }}
-                            className="fa-solid fa-users-gear text-purple-500 w-5"
-                          />
-                          Collaboration Tools
-                        </button>
-                        <button onClick={() => { togglePanel('productivity', showProductivityPanel); setShowToolsDrawer(false); }} className={`w-full flex items-center gap-3 px-3 py-2.5 rounded-lg text-left text-sm group ${showProductivityPanel ? 'bg-cyan-100 dark:bg-cyan-900/30 text-cyan-700 dark:text-cyan-300' : 'hover:bg-zinc-100 dark:hover:bg-zinc-800 text-zinc-700 dark:text-zinc-300'}`}>
-                          <motion.i 
-                            whileHover={{ y: [0, -3, -5, -3, 0], x: [0, -1, 1, -1, 0], transition: { duration: 0.5, repeat: Infinity } }}
-                            className="fa-solid fa-rocket text-cyan-500 w-5"
-                          />
-                          Productivity Tools
-                        </button>
-                        <button onClick={() => { togglePanel('intelligence', showIntelligencePanel); setShowToolsDrawer(false); }} className={`w-full flex items-center gap-3 px-3 py-2.5 rounded-lg text-left text-sm group ${showIntelligencePanel ? 'bg-violet-100 dark:bg-violet-900/30 text-violet-700 dark:text-violet-300' : 'hover:bg-zinc-100 dark:hover:bg-zinc-800 text-zinc-700 dark:text-zinc-300'}`}>
-                          <motion.i 
-                            whileHover={{ scale: [1, 1.2, 1], transition: { duration: 1, repeat: Infinity } }}
-                            className="fa-solid fa-brain text-violet-500 w-5"
-                          />
-                          Intelligence & Organization
-                        </button>
-                        <button onClick={() => { togglePanel('proactive', showProactivePanel); setShowToolsDrawer(false); }} className={`w-full flex items-center gap-3 px-3 py-2.5 rounded-lg text-left text-sm group ${showProactivePanel ? 'bg-rose-100 dark:bg-rose-900/30 text-rose-700 dark:text-rose-300' : 'hover:bg-zinc-100 dark:hover:bg-zinc-800 text-zinc-700 dark:text-zinc-300'}`}>
-                          <motion.i 
-                            whileHover={{ opacity: [1, 0.5, 1], scale: [1, 1.1, 1], transition: { duration: 0.8, repeat: Infinity } }}
-                            className="fa-solid fa-lightbulb text-rose-500 w-5"
-                          />
-                          Smart Reminders
-                        </button>
-                        <button onClick={() => { togglePanel('communication', showCommunicationPanel); setShowToolsDrawer(false); }} className={`w-full flex items-center gap-3 px-3 py-2.5 rounded-lg text-left text-sm group ${showCommunicationPanel ? 'bg-amber-100 dark:bg-amber-900/30 text-amber-700 dark:text-amber-300' : 'hover:bg-zinc-100 dark:hover:bg-zinc-800 text-zinc-700 dark:text-zinc-300'}`}>
-                          <motion.i 
-                            whileHover={{ scale: [1, 1.1, 1], rotate: [0, -10, 10, 0], transition: { duration: 0.5, repeat: Infinity } }}
-                            className="fa-solid fa-comments text-amber-500 w-5"
-                          />
-                          Communication Tools
-                        </button>
-                        <button onClick={() => { togglePanel('personalization', showPersonalizationPanel); setShowToolsDrawer(false); }} className={`w-full flex items-center gap-3 px-3 py-2.5 rounded-lg text-left text-sm group ${showPersonalizationPanel ? 'bg-fuchsia-100 dark:bg-fuchsia-900/30 text-fuchsia-700 dark:text-fuchsia-300' : 'hover:bg-zinc-100 dark:hover:bg-zinc-800 text-zinc-700 dark:text-zinc-300'}`}>
-                          <motion.i 
-                            whileHover={{ x: [0, 3, -3, 0], transition: { duration: 0.5 } }}
-                            className="fa-solid fa-sliders text-fuchsia-500 w-5"
-                          />
-                          Personalization
-                        </button>
-                        <button onClick={() => { togglePanel('security', showSecurityPanel); setShowToolsDrawer(false); }} className={`w-full flex items-center gap-3 px-3 py-2.5 rounded-lg text-left text-sm group ${showSecurityPanel ? 'bg-emerald-100 dark:bg-emerald-900/30 text-emerald-700 dark:text-emerald-300' : 'hover:bg-zinc-100 dark:hover:bg-zinc-800 text-zinc-700 dark:text-zinc-300'}`}>
-                          <motion.i 
-                            whileHover={{ scale: 1.2 }}
-                            className="fa-solid fa-shield-halved text-emerald-500 w-5"
-                          />
-                          Security & Insights
-                        </button>
-                        <button onClick={() => { togglePanel('mediaHub', showMediaHubPanel); setShowToolsDrawer(false); }} className={`w-full flex items-center gap-3 px-3 py-2.5 rounded-lg text-left text-sm group ${showMediaHubPanel ? 'bg-cyan-100 dark:bg-cyan-900/30 text-cyan-700 dark:text-cyan-300' : 'hover:bg-zinc-100 dark:hover:bg-zinc-800 text-zinc-700 dark:text-zinc-300'}`}>
-                          <motion.i 
-                            whileHover={{ rotate: [0, 10, -10, 0], scale: 1.1 }}
-                            className="fa-solid fa-photo-film text-cyan-500 w-5"
-                          />
-                          Media Hub & Export
-                        </button>
-                      </div>
-                    </div>
-
-                    {/* Appearance */}
-                    <div>
-                      <h4 className="text-[10px] uppercase tracking-wider text-zinc-400 font-bold mb-2">Appearance</h4>
-                      <div className="space-y-1">
-                        <button onClick={() => { setShowThemeSelector(!showThemeSelector); setShowToolsDrawer(false); }} className="w-full flex items-center gap-3 px-3 py-2.5 rounded-lg hover:bg-zinc-100 dark:hover:bg-zinc-800 text-left text-sm text-zinc-700 dark:text-zinc-300 group">
-                          <motion.i 
-                            whileHover={{ rotate: 180 }}
-                            className="fa-solid fa-palette text-purple-500 w-5"
-                          />
-                          Message Theme
-                        </button>
-                        <button onClick={() => { setShowContextPanel(!showContextPanel); setShowToolsDrawer(false); }} className={`w-full flex items-center gap-3 px-3 py-2.5 rounded-lg text-left text-sm group ${showContextPanel ? 'bg-purple-100 dark:bg-purple-900/30 text-purple-700 dark:text-purple-300' : 'hover:bg-zinc-100 dark:hover:bg-zinc-800 text-zinc-700 dark:text-zinc-300'}`}>
-                          <motion.i 
-                            whileHover={{ scale: 1.1, y: -2 }}
-                            className="fa-solid fa-layer-group text-purple-500 w-5"
-                          />
-                          Context Panel
-                        </button>
-                      </div>
-                    </div>
-                  </div>
-                </motion.div>
-              </>
-            )}
-          </AnimatePresence>
+          {/* DEPRECATED: Old Tools Drawer - Replaced by SidebarTabs (Phase 4)
+              This code block has been removed and replaced with the new SidebarTabs component.
+              See: src/components/Sidebar/SidebarTabs.tsx
+              The new sidebar provides:
+              - Persistent sidebar with Messages, Tools, CRM, and Analytics tabs
+              - Keyboard shortcuts (Cmd+B to toggle, Cmd+1-4 to switch tabs)
+              - LocalStorage persistence for last active tab
+              - Integrated ToolsPanel component
+              - Responsive mobile layout
+          */}
 
           {/* Theme Picker Popup */}
           {showThemeSelector && (
@@ -3920,200 +3739,10 @@ const Messages: React.FC<MessagesProps> = ({ apiKey, contacts, initialContactId,
             </button>
           </div>
 
-          {/* Tools Drawer - Slide-out panel with all tools */}
-          <AnimatePresence>
-            {showToolsDrawer && (
-              <>
-                {/* Backdrop */}
-                <motion.div
-                  initial={{ opacity: 0 }}
-                  animate={{ opacity: 1 }}
-                  exit={{ opacity: 0 }}
-                  transition={{ duration: 0.2 }}
-                  className="fixed inset-0 bg-black/50 z-40"
-                  onClick={() => setShowToolsDrawer(false)}
-                />
-                {/* Drawer */}
-                <motion.div
-                  initial={{ x: "100%" }}
-                  animate={{ x: 0 }}
-                  exit={{ x: "100%" }}
-                  transition={{ type: "spring", damping: 25, stiffness: 200 }}
-                  className="fixed top-0 right-0 h-full w-80 bg-white dark:bg-zinc-900 z-50 shadow-2xl overflow-y-auto"
-                >
-                  <div className="sticky top-0 bg-white dark:bg-zinc-900 border-b border-zinc-200 dark:border-zinc-800 p-4 flex items-center justify-between">
-                    <h3 className="font-bold text-zinc-800 dark:text-white flex items-center gap-2">
-                      <motion.i 
-                        whileHover={{ rotate: 360 }}
-                        transition={{ duration: 0.5 }}
-                        className="fa-solid fa-toolbox text-indigo-500"
-                      />
-                      Tools
-                    </h3>
-                    <button onClick={() => setShowToolsDrawer(false)} className="w-8 h-8 rounded-lg flex items-center justify-center hover:bg-zinc-100 dark:hover:bg-zinc-800 text-zinc-500">
-                      <i className="fa-solid fa-xmark"></i>
-                    </button>
-                  </div>
-
-                  <div className="p-4 space-y-6">
-                    {/* Quick Actions Section */}
-                    <div>
-                      <h4 className="text-[10px] uppercase tracking-wider text-zinc-400 font-bold mb-2">Quick Actions</h4>
-                      <div className="space-y-1">
-                        <button onClick={() => { handleGenerateHandoff(); setShowToolsDrawer(false); }} disabled={loadingHandoff || activeThread.messages.length === 0} className="w-full flex items-center gap-3 px-3 py-2.5 rounded-lg hover:bg-zinc-100 dark:hover:bg-zinc-800 text-left text-sm text-zinc-700 dark:text-zinc-300 disabled:opacity-50 group">
-                          <motion.i 
-                            whileHover={{ x: 5 }}
-                            className={`fa-solid ${loadingHandoff ? 'fa-circle-notch fa-spin' : 'fa-person-walking-arrow-right'} text-yellow-500 w-5`}
-                          />
-                          Generate Handoff
-                        </button>
-                        <button onClick={() => { handleGenerateArtifact(); setShowToolsDrawer(false); }} className="w-full flex items-center gap-3 px-3 py-2.5 rounded-lg hover:bg-zinc-100 dark:hover:bg-zinc-800 text-left text-sm text-zinc-700 dark:text-zinc-300 group">
-                          <motion.i 
-                            whileHover={{ y: -2 }}
-                            className="fa-solid fa-file-export text-blue-500 w-5"
-                          />
-                          Export Artifact
-                        </button>
-                        <button onClick={() => { setShowExportMenu(true); setShowToolsDrawer(false); }} className="w-full flex items-center gap-3 px-3 py-2.5 rounded-lg hover:bg-zinc-100 dark:hover:bg-zinc-800 text-left text-sm text-zinc-700 dark:text-zinc-300 group">
-                          <motion.i 
-                            whileHover={{ y: 2 }}
-                            className="fa-solid fa-download text-green-500 w-5"
-                          />
-                          Export Messages
-                        </button>
-                        <button onClick={() => { setShowOutcomeSetup(true); setShowToolsDrawer(false); }} className="w-full flex items-center gap-3 px-3 py-2.5 rounded-lg hover:bg-zinc-100 dark:hover:bg-zinc-800 text-left text-sm text-zinc-700 dark:text-zinc-300 group">
-                          <motion.i 
-                            whileHover={{ scale: 1.2 }}
-                            className="fa-solid fa-bullseye text-red-500 w-5"
-                          />
-                          Set Outcome Goal
-                        </button>
-                      </div>
-                    </div>
-
-                    {/* Analytics Section */}
-                    <div>
-                      <h4 className="text-[10px] uppercase tracking-wider text-zinc-400 font-bold mb-2">Analytics & Insights</h4>
-                      <div className="space-y-1">
-                        <button onClick={() => { setShowStatsPanel(true); setShowToolsDrawer(false); }} className="w-full flex items-center gap-3 px-3 py-2.5 rounded-lg hover:bg-zinc-100 dark:hover:bg-zinc-800 text-left text-sm text-zinc-700 dark:text-zinc-300 group">
-                          <motion.i 
-                            whileHover={{ scaleY: [1, 1.2, 0.8, 1], transition: { repeat: Infinity, duration: 1 } }}
-                            className="fa-solid fa-chart-bar text-indigo-500 w-5"
-                          />
-                          Conversation Stats
-                        </button>
-                        <button onClick={() => { setShowAnalyticsDashboard(true); setShowToolsDrawer(false); }} className="w-full flex items-center gap-3 px-3 py-2.5 rounded-lg hover:bg-zinc-100 dark:hover:bg-zinc-800 text-left text-sm text-zinc-700 dark:text-zinc-300 group">
-                          <motion.i 
-                            whileHover={{ x: [0, 2, 4], y: [0, -2, -4], transition: { repeat: Infinity, repeatType: "reverse", duration: 1 } }}
-                            className="fa-solid fa-chart-line text-indigo-500 w-5"
-                          />
-                          Analytics Dashboard
-                        </button>
-                        <button onClick={() => { setShowNetworkGraph(true); setShowToolsDrawer(false); }} className="w-full flex items-center gap-3 px-3 py-2.5 rounded-lg hover:bg-zinc-100 dark:hover:bg-zinc-800 text-left text-sm text-zinc-700 dark:text-zinc-300 group">
-                          <motion.i 
-                            whileHover={{ rotate: 90 }}
-                            className="fa-solid fa-diagram-project text-purple-500 w-5"
-                          />
-                          Network Graph
-                        </button>
-                      </div>
-                    </div>
-
-                    {/* Tool Panels Section */}
-                    <div>
-                      <h4 className="text-[10px] uppercase tracking-wider text-zinc-400 font-bold mb-2">Tool Panels</h4>
-                      <div className="space-y-1">
-                        <button onClick={() => { togglePanel('analytics', showAnalyticsPanel); setShowToolsDrawer(false); }} className={`w-full flex items-center gap-3 px-3 py-2.5 rounded-lg text-left text-sm group ${showAnalyticsPanel ? 'bg-indigo-100 dark:bg-indigo-900/30 text-indigo-700 dark:text-indigo-300' : 'hover:bg-zinc-100 dark:hover:bg-zinc-800 text-zinc-700 dark:text-zinc-300'}`}>
-                          <motion.i 
-                            whileHover={{ rotate: [0, 90, 180, 270, 360], transition: { duration: 2, repeat: Infinity, ease: "linear" } }}
-                            className="fa-solid fa-chart-pie text-indigo-500 w-5"
-                          />
-                          Conversation Analytics
-                        </button>
-                        <button onClick={() => { togglePanel('collaboration', showCollaborationPanel); setShowToolsDrawer(false); }} className={`w-full flex items-center gap-3 px-3 py-2.5 rounded-lg text-left text-sm group ${showCollaborationPanel ? 'bg-purple-100 dark:bg-purple-900/30 text-purple-700 dark:text-purple-300' : 'hover:bg-zinc-100 dark:hover:bg-zinc-800 text-zinc-700 dark:text-zinc-300'}`}>
-                          <motion.i 
-                            whileHover={{ rotate: 180, transition: { duration: 1 } }}
-                            className="fa-solid fa-users-gear text-purple-500 w-5"
-                          />
-                          Collaboration Tools
-                        </button>
-                        <button onClick={() => { togglePanel('productivity', showProductivityPanel); setShowToolsDrawer(false); }} className={`w-full flex items-center gap-3 px-3 py-2.5 rounded-lg text-left text-sm group ${showProductivityPanel ? 'bg-cyan-100 dark:bg-cyan-900/30 text-cyan-700 dark:text-cyan-300' : 'hover:bg-zinc-100 dark:hover:bg-zinc-800 text-zinc-700 dark:text-zinc-300'}`}>
-                          <motion.i 
-                            whileHover={{ y: [0, -3, -5, -3, 0], x: [0, -1, 1, -1, 0], transition: { duration: 0.5, repeat: Infinity } }}
-                            className="fa-solid fa-rocket text-cyan-500 w-5"
-                          />
-                          Productivity Tools
-                        </button>
-                        <button onClick={() => { togglePanel('intelligence', showIntelligencePanel); setShowToolsDrawer(false); }} className={`w-full flex items-center gap-3 px-3 py-2.5 rounded-lg text-left text-sm group ${showIntelligencePanel ? 'bg-violet-100 dark:bg-violet-900/30 text-violet-700 dark:text-violet-300' : 'hover:bg-zinc-100 dark:hover:bg-zinc-800 text-zinc-700 dark:text-zinc-300'}`}>
-                          <motion.i 
-                            whileHover={{ scale: [1, 1.2, 1], transition: { duration: 1, repeat: Infinity } }}
-                            className="fa-solid fa-brain text-violet-500 w-5"
-                          />
-                          Intelligence & Organization
-                        </button>
-                        <button onClick={() => { togglePanel('proactive', showProactivePanel); setShowToolsDrawer(false); }} className={`w-full flex items-center gap-3 px-3 py-2.5 rounded-lg text-left text-sm group ${showProactivePanel ? 'bg-rose-100 dark:bg-rose-900/30 text-rose-700 dark:text-rose-300' : 'hover:bg-zinc-100 dark:hover:bg-zinc-800 text-zinc-700 dark:text-zinc-300'}`}>
-                          <motion.i 
-                            whileHover={{ opacity: [1, 0.5, 1], scale: [1, 1.1, 1], transition: { duration: 0.8, repeat: Infinity } }}
-                            className="fa-solid fa-lightbulb text-rose-500 w-5"
-                          />
-                          Smart Reminders
-                        </button>
-                        <button onClick={() => { togglePanel('communication', showCommunicationPanel); setShowToolsDrawer(false); }} className={`w-full flex items-center gap-3 px-3 py-2.5 rounded-lg text-left text-sm group ${showCommunicationPanel ? 'bg-amber-100 dark:bg-amber-900/30 text-amber-700 dark:text-amber-300' : 'hover:bg-zinc-100 dark:hover:bg-zinc-800 text-zinc-700 dark:text-zinc-300'}`}>
-                          <motion.i 
-                            whileHover={{ scale: [1, 1.1, 1], rotate: [0, -10, 10, 0], transition: { duration: 0.5, repeat: Infinity } }}
-                            className="fa-solid fa-comments text-amber-500 w-5"
-                          />
-                          Communication Tools
-                        </button>
-                        <button onClick={() => { togglePanel('personalization', showPersonalizationPanel); setShowToolsDrawer(false); }} className={`w-full flex items-center gap-3 px-3 py-2.5 rounded-lg text-left text-sm group ${showPersonalizationPanel ? 'bg-fuchsia-100 dark:bg-fuchsia-900/30 text-fuchsia-700 dark:text-fuchsia-300' : 'hover:bg-zinc-100 dark:hover:bg-zinc-800 text-zinc-700 dark:text-zinc-300'}`}>
-                          <motion.i 
-                            whileHover={{ x: [0, 3, -3, 0], transition: { duration: 0.5 } }}
-                            className="fa-solid fa-sliders text-fuchsia-500 w-5"
-                          />
-                          Personalization
-                        </button>
-                        <button onClick={() => { togglePanel('security', showSecurityPanel); setShowToolsDrawer(false); }} className={`w-full flex items-center gap-3 px-3 py-2.5 rounded-lg text-left text-sm group ${showSecurityPanel ? 'bg-emerald-100 dark:bg-emerald-900/30 text-emerald-700 dark:text-emerald-300' : 'hover:bg-zinc-100 dark:hover:bg-zinc-800 text-zinc-700 dark:text-zinc-300'}`}>
-                          <motion.i 
-                            whileHover={{ scale: 1.2 }}
-                            className="fa-solid fa-shield-halved text-emerald-500 w-5"
-                          />
-                          Security & Insights
-                        </button>
-                        <button onClick={() => { togglePanel('mediaHub', showMediaHubPanel); setShowToolsDrawer(false); }} className={`w-full flex items-center gap-3 px-3 py-2.5 rounded-lg text-left text-sm group ${showMediaHubPanel ? 'bg-cyan-100 dark:bg-cyan-900/30 text-cyan-700 dark:text-cyan-300' : 'hover:bg-zinc-100 dark:hover:bg-zinc-800 text-zinc-700 dark:text-zinc-300'}`}>
-                          <motion.i 
-                            whileHover={{ rotate: [0, 10, -10, 0], scale: 1.1 }}
-                            className="fa-solid fa-photo-film text-cyan-500 w-5"
-                          />
-                          Media Hub & Export
-                        </button>
-                      </div>
-                    </div>
-
-                    {/* Appearance Section */}
-                    <div>
-                      <h4 className="text-[10px] uppercase tracking-wider text-zinc-400 font-bold mb-2">Appearance</h4>
-                      <div className="space-y-1">
-                        <button onClick={() => { setShowThemeSelector(!showThemeSelector); setShowToolsDrawer(false); }} className="w-full flex items-center gap-3 px-3 py-2.5 rounded-lg hover:bg-zinc-100 dark:hover:bg-zinc-800 text-left text-sm text-zinc-700 dark:text-zinc-300 group">
-                          <motion.i 
-                            whileHover={{ rotate: 180 }}
-                            className="fa-solid fa-palette text-purple-500 w-5"
-                          />
-                          Message Theme
-                        </button>
-                        <button onClick={() => { setShowContextPanel(!showContextPanel); setShowToolsDrawer(false); }} className={`w-full flex items-center gap-3 px-3 py-2.5 rounded-lg text-left text-sm group ${showContextPanel ? 'bg-purple-100 dark:bg-purple-900/30 text-purple-700 dark:text-purple-300' : 'hover:bg-zinc-100 dark:hover:bg-zinc-800 text-zinc-700 dark:text-zinc-300'}`}>
-                          <motion.i 
-                            whileHover={{ scale: 1.1, y: -2 }}
-                            className="fa-solid fa-layer-group text-purple-500 w-5"
-                          />
-                          Context Panel
-                        </button>
-                      </div>
-                    </div>
-                  </div>
-                </motion.div>
-              </>
-            )}
-          </AnimatePresence>
+          {/* DEPRECATED: Old Tools Drawer for SMS Mode - Replaced by SidebarTabs (Phase 4)
+              This code block has been removed and replaced with the new SidebarTabs component.
+              See: src/components/Sidebar/SidebarTabs.tsx
+          */}
         </div>
 
         {/* Outcome Setup Modal */}
@@ -6411,6 +6040,18 @@ const Messages: React.FC<MessagesProps> = ({ apiKey, contacts, initialContactId,
           </div>
         </div>
       )}
+
+      {/* ===== FOCUS MODE OVERLAY ===== */}
+      <FocusMode
+        isActive={isFocusModeActive}
+        threadId={activeThreadId || focusThreadId || 'main'}
+        threadName={activeThread?.contactName || activePulseConv?.other_user?.name || 'Conversation'}
+        userId={currentUser?.id || 'current-user'}
+        onClose={() => {
+          setIsFocusModeActive(false);
+          setFocusThreadId(null);
+        }}
+      />
 
       <style>{`
         @keyframes slideInRight {

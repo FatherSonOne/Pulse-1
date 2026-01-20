@@ -1,0 +1,459 @@
+/**
+ * Messages Split-View Layout
+ * 30% thread list | 70% conversation panel
+ * Mobile-first responsive design with breakpoint at 768px
+ */
+
+/* =========================
+   Split-View Container
+   ========================= */
+
+.messages-split-view {
+  display: grid;
+  grid-template-columns: 30% 70%;
+  grid-template-rows: 1fr;
+  height: 100%;
+  width: 100%;
+  overflow: hidden;
+  position: relative;
+}
+
+/* Thread list panel area */
+.messages-split-view .thread-list-panel {
+  grid-column: 1 / 2;
+  height: 100%;
+  overflow: hidden;
+}
+
+/* Conversation panel area */
+.messages-split-view .conversation-panel {
+  grid-column: 2 / 3;
+  height: 100%;
+  overflow: hidden;
+}
+
+/* =========================
+   Thread List Panel Styles
+   ========================= */
+
+.thread-list-panel {
+  display: flex;
+  flex-direction: column;
+  background: var(--bg-primary, #ffffff);
+  border-right: 1px solid var(--border-color, #e5e7eb);
+}
+
+.dark .thread-list-panel {
+  background: var(--bg-primary-dark, #18181b);
+  border-right-color: var(--border-color-dark, #27272a);
+}
+
+.thread-list-header {
+  flex-shrink: 0;
+  padding: 1rem;
+  border-bottom: 1px solid var(--border-color, #e5e7eb);
+}
+
+.dark .thread-list-header {
+  border-bottom-color: var(--border-color-dark, #27272a);
+}
+
+.thread-list-content {
+  flex: 1;
+  overflow-y: auto;
+  overflow-x: hidden;
+}
+
+/* Custom scrollbar for thread list */
+.thread-list-content::-webkit-scrollbar {
+  width: 6px;
+}
+
+.thread-list-content::-webkit-scrollbar-track {
+  background: transparent;
+}
+
+.thread-list-content::-webkit-scrollbar-thumb {
+  background: #d1d5db;
+  border-radius: 3px;
+}
+
+.dark .thread-list-content::-webkit-scrollbar-thumb {
+  background: #3f3f46;
+}
+
+.thread-list-content::-webkit-scrollbar-thumb:hover {
+  background: #9ca3af;
+}
+
+.dark .thread-list-content::-webkit-scrollbar-thumb:hover {
+  background: #52525b;
+}
+
+.thread-list-footer {
+  flex-shrink: 0;
+  padding: 0.5rem 1rem;
+  border-top: 1px solid var(--border-color, #e5e7eb);
+  font-size: 0.75rem;
+  color: var(--text-secondary, #6b7280);
+}
+
+.dark .thread-list-footer {
+  border-top-color: var(--border-color-dark, #27272a);
+  color: var(--text-secondary-dark, #9ca3af);
+}
+
+/* =========================
+   Thread Item Styles
+   ========================= */
+
+.thread-item {
+  position: relative;
+  padding: 0.75rem 1rem;
+  cursor: pointer;
+  transition: background-color 0.2s ease, border-color 0.2s ease;
+  border-left: 4px solid transparent;
+}
+
+.thread-item:hover {
+  background-color: #f9fafb;
+}
+
+.dark .thread-item:hover {
+  background-color: rgba(39, 39, 42, 0.5);
+}
+
+.thread-item.active {
+  background-color: #eff6ff;
+  border-left-color: #3b82f6;
+}
+
+.dark .thread-item.active {
+  background-color: rgba(59, 130, 246, 0.2);
+}
+
+/* Hover actions - show on hover */
+.thread-item .thread-item-actions {
+  opacity: 0;
+  transition: opacity 0.2s ease;
+}
+
+.thread-item:hover .thread-item-actions {
+  opacity: 1;
+}
+
+/* =========================
+   Conversation Panel Styles
+   ========================= */
+
+.conversation-panel {
+  display: flex;
+  flex-direction: column;
+  background: var(--bg-primary, #ffffff);
+}
+
+.dark .conversation-panel {
+  background: var(--bg-primary-dark, #18181b);
+}
+
+.conversation-header {
+  flex-shrink: 0;
+  padding: 1rem 1.5rem;
+  border-bottom: 1px solid var(--border-color, #e5e7eb);
+}
+
+.dark .conversation-header {
+  border-bottom-color: var(--border-color-dark, #27272a);
+}
+
+.messages-area {
+  flex: 1;
+  overflow-y: auto;
+  overflow-x: hidden;
+  padding: 1rem 1.5rem;
+}
+
+/* Custom scrollbar for messages area */
+.messages-area::-webkit-scrollbar {
+  width: 8px;
+}
+
+.messages-area::-webkit-scrollbar-track {
+  background: transparent;
+}
+
+.messages-area::-webkit-scrollbar-thumb {
+  background: #d1d5db;
+  border-radius: 4px;
+}
+
+.dark .messages-area::-webkit-scrollbar-thumb {
+  background: #3f3f46;
+}
+
+.messages-area::-webkit-scrollbar-thumb:hover {
+  background: #9ca3af;
+}
+
+.dark .messages-area::-webkit-scrollbar-thumb:hover {
+  background: #52525b;
+}
+
+.message-input-area {
+  flex-shrink: 0;
+  border-top: 1px solid var(--border-color, #e5e7eb);
+}
+
+.dark .message-input-area {
+  border-top-color: var(--border-color-dark, #27272a);
+}
+
+/* =========================
+   Message Bubble Styles
+   ========================= */
+
+.message-bubble-wrapper {
+  margin-bottom: 1rem;
+  animation: fadeInUp 0.3s ease;
+}
+
+@keyframes fadeInUp {
+  from {
+    opacity: 0;
+    transform: translateY(10px);
+  }
+  to {
+    opacity: 1;
+    transform: translateY(0);
+  }
+}
+
+.message-bubble {
+  padding: 0.5rem 1rem;
+  border-radius: 1rem;
+  word-wrap: break-word;
+  max-width: 100%;
+}
+
+/* Reaction badges */
+.reaction-badge {
+  display: inline-flex;
+  align-items: center;
+  gap: 0.25rem;
+  padding: 0.25rem 0.5rem;
+  border-radius: 9999px;
+  font-size: 0.75rem;
+  transition: all 0.2s ease;
+  cursor: pointer;
+}
+
+.reaction-badge:hover {
+  transform: scale(1.05);
+}
+
+/* =========================
+   Mobile Responsive (< 768px)
+   ========================= */
+
+@media (max-width: 767px) {
+  .messages-split-view {
+    /* Single column layout on mobile */
+    grid-template-columns: 1fr;
+  }
+
+  /* Show only one panel at a time on mobile */
+  .messages-split-view.show-threads .thread-list-panel {
+    display: flex;
+  }
+
+  .messages-split-view.show-threads .conversation-panel {
+    display: none;
+  }
+
+  .messages-split-view.show-conversation .thread-list-panel {
+    display: none;
+  }
+
+  .messages-split-view.show-conversation .conversation-panel {
+    display: flex;
+  }
+
+  /* Mobile back button */
+  .mobile-back-button {
+    display: flex;
+    align-items: center;
+    gap: 0.5rem;
+    padding: 0.5rem;
+    margin-right: 0.5rem;
+    border-radius: 0.5rem;
+    cursor: pointer;
+    transition: background-color 0.2s ease;
+  }
+
+  .mobile-back-button:hover {
+    background-color: #f3f4f6;
+  }
+
+  .dark .mobile-back-button:hover {
+    background-color: #27272a;
+  }
+}
+
+/* Tablet responsive (768px - 1024px) */
+@media (min-width: 768px) and (max-width: 1024px) {
+  .messages-split-view {
+    /* Adjust ratio for tablets */
+    grid-template-columns: 35% 65%;
+  }
+}
+
+/* Desktop responsive (> 1024px) */
+@media (min-width: 1025px) {
+  .messages-split-view {
+    /* Optimal ratio for desktop */
+    grid-template-columns: 30% 70%;
+  }
+}
+
+/* Large desktop (> 1440px) */
+@media (min-width: 1441px) {
+  .messages-split-view {
+    /* More space for conversation on large screens */
+    grid-template-columns: 25% 75%;
+  }
+}
+
+/* =========================
+   Thread Switching Animations
+   ========================= */
+
+.thread-transition-enter {
+  opacity: 0;
+  transform: translateX(20px);
+}
+
+.thread-transition-enter-active {
+  opacity: 1;
+  transform: translateX(0);
+  transition: opacity 300ms ease, transform 300ms ease;
+}
+
+.thread-transition-exit {
+  opacity: 1;
+  transform: translateX(0);
+}
+
+.thread-transition-exit-active {
+  opacity: 0;
+  transform: translateX(-20px);
+  transition: opacity 300ms ease, transform 300ms ease;
+}
+
+/* =========================
+   Accessibility
+   ========================= */
+
+/* Focus indicators */
+.thread-item:focus-visible,
+.thread-search input:focus-visible,
+button:focus-visible {
+  outline: 2px solid #3b82f6;
+  outline-offset: 2px;
+}
+
+/* Reduce motion for users who prefer it */
+@media (prefers-reduced-motion: reduce) {
+  .message-bubble-wrapper,
+  .thread-transition-enter-active,
+  .thread-transition-exit-active,
+  .thread-item,
+  .reaction-badge {
+    animation: none;
+    transition: none;
+  }
+}
+
+/* High contrast mode support */
+@media (prefers-contrast: high) {
+  .thread-item.active {
+    border-left-width: 6px;
+  }
+
+  .thread-list-panel,
+  .conversation-panel {
+    border-width: 2px;
+  }
+}
+
+/* =========================
+   Loading States
+   ========================= */
+
+.messages-loading {
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  padding: 2rem;
+}
+
+.messages-loading-spinner {
+  animation: spin 1s linear infinite;
+}
+
+@keyframes spin {
+  from {
+    transform: rotate(0deg);
+  }
+  to {
+    transform: rotate(360deg);
+  }
+}
+
+/* =========================
+   Empty States
+   ========================= */
+
+.empty-state {
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  justify-content: center;
+  padding: 3rem 1rem;
+  text-align: center;
+}
+
+.empty-state-icon {
+  width: 4rem;
+  height: 4rem;
+  margin-bottom: 1rem;
+  border-radius: 50%;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  background: #f3f4f6;
+}
+
+.dark .empty-state-icon {
+  background: #27272a;
+}
+
+/* =========================
+   Utilities
+   ========================= */
+
+.truncate-text {
+  overflow: hidden;
+  text-overflow: ellipsis;
+  white-space: nowrap;
+}
+
+.smooth-transition {
+  transition: all 0.3s ease;
+}
+
+/* Ensure full height */
+.full-height {
+  height: 100%;
+  min-height: 100%;
+  max-height: 100%;
+}

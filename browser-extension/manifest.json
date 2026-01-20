@@ -1,0 +1,86 @@
+{
+  "manifest_version": 3,
+  "name": "Pulse - Quick Capture",
+  "short_name": "Pulse",
+  "version": "1.0.0",
+  "description": "Capture web content directly to your Pulse War Room projects. Save articles, research, and notes instantly.",
+  "author": "Logos Vision LLC",
+  "homepage_url": "https://pulse.logosvision.org",
+
+  "icons": {
+    "16": "icons/icon-16.png",
+    "32": "icons/icon-32.png",
+    "48": "icons/icon-48.png",
+    "128": "icons/icon-128.png"
+  },
+
+  "action": {
+    "default_popup": "popup.html",
+    "default_icon": {
+      "16": "icons/icon-16.png",
+      "32": "icons/icon-32.png",
+      "48": "icons/icon-48.png"
+    },
+    "default_title": "Capture to Pulse"
+  },
+
+  "permissions": [
+    "activeTab",
+    "storage",
+    "contextMenus",
+    "notifications"
+  ],
+
+  "host_permissions": [
+    "https://pulse.logosvision.org/*",
+    "https://ucaeuszgoihoyrvhewxk.supabase.co/*",
+    "https://*.supabase.co/*"
+  ],
+
+  "background": {
+    "service_worker": "src/background.js",
+    "type": "module"
+  },
+
+  "content_scripts": [
+    {
+      "matches": ["<all_urls>"],
+      "js": ["src/content.js"],
+      "css": ["styles/content.css"],
+      "run_at": "document_idle"
+    }
+  ],
+
+  "options_page": "options.html",
+
+  "commands": {
+    "_execute_action": {
+      "suggested_key": {
+        "default": "Ctrl+Shift+P",
+        "mac": "Command+Shift+P"
+      },
+      "description": "Open Pulse Quick Capture"
+    },
+    "capture_selection": {
+      "suggested_key": {
+        "default": "Ctrl+Shift+S",
+        "mac": "Command+Shift+S"
+      },
+      "description": "Capture selected text"
+    },
+    "capture_page": {
+      "suggested_key": {
+        "default": "Ctrl+Shift+A",
+        "mac": "Command+Shift+A"
+      },
+      "description": "Capture entire page"
+    }
+  },
+
+  "web_accessible_resources": [
+    {
+      "resources": ["icons/*", "styles/*"],
+      "matches": ["<all_urls>"]
+    }
+  ]
+}

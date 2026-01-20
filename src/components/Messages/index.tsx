@@ -76,4 +76,17 @@ export const MessagesView: React.FC<MessagesViewProps> = ({
 
 export { ChannelList } from './ChannelList';
 export { MessageChat } from './MessageChat';
+
+// Split-View Components (Phase 2)
+export { default as ThreadListPanel } from './ThreadListPanel';
+export { default as ThreadItem } from './ThreadItem';
+export { default as ConversationPanel } from './ConversationPanel';
+export { default as ThreadSearch } from './ThreadSearch';
+export { default as MessagesSplitView } from './MessagesSplitView';
+
+// Focus Mode Components (Phase 5)
+export { default as FocusMode } from './FocusMode';
+export { FocusTimer } from './FocusTimer';
+export { FocusControls } from './FocusControls';
+
 export default MessagesView;

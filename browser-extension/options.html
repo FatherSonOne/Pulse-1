@@ -1,0 +1,149 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>Pulse Extension Settings</title>
+  <link rel="stylesheet" href="styles/options.css">
+  <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css">
+</head>
+<body>
+  <div class="container">
+    <header>
+      <div class="logo">
+        <svg viewBox="0 0 64 64" class="pulse-icon">
+          <defs>
+            <linearGradient id="pulse-grad" x1="0%" y1="0%" x2="100%" y2="100%">
+              <stop offset="0%" stop-color="#f43f5e"/>
+              <stop offset="100%" stop-color="#ec4899"/>
+            </linearGradient>
+          </defs>
+          <path d="M8 32 L18 32 L24 16 L32 48 L40 24 L48 40 L56 32" stroke="url(#pulse-grad)" stroke-width="5" stroke-linecap="round" stroke-linejoin="round" fill="none"/>
+        </svg>
+        <div>
+          <h1>Pulse Extension</h1>
+          <p>Quick Capture Settings</p>
+        </div>
+      </div>
+    </header>
+
+    <main>
+      <!-- Account Section -->
+      <section class="card" id="account-section">
+        <h2><i class="fas fa-user-circle"></i> Account</h2>
+        <div id="account-logged-out" class="account-state">
+          <p>Sign in to capture content to your Pulse account.</p>
+          <button id="login-btn" class="btn btn-primary">
+            <i class="fab fa-google"></i>
+            Sign in with Google
+          </button>
+        </div>
+        <div id="account-logged-in" class="account-state hidden">
+          <div class="user-info">
+            <img id="user-avatar" src="" alt="User" class="avatar">
+            <div>
+              <p id="user-name" class="user-name">User Name</p>
+              <p id="user-email" class="user-email">email@example.com</p>
+            </div>
+          </div>
+          <button id="logout-btn" class="btn btn-secondary">
+            <i class="fas fa-sign-out-alt"></i>
+            Sign Out
+          </button>
+        </div>
+      </section>
+
+      <!-- Capture Settings -->
+      <section class="card">
+        <h2><i class="fas fa-download"></i> Capture Settings</h2>
+
+        <div class="setting-row">
+          <div class="setting-info">
+            <label for="default-project">Default Project</label>
+            <p class="setting-description">Automatically save captures to this project</p>
+          </div>
+          <select id="default-project">
+            <option value="">None (choose each time)</option>
+          </select>
+        </div>
+
+        <div class="setting-row">
+          <div class="setting-info">
+            <label>Show Floating Capture Button</label>
+            <p class="setting-description">Show a capture button when text is selected</p>
+          </div>
+          <label class="toggle">
+            <input type="checkbox" id="show-floating-btn" checked>
+            <span class="toggle-slider"></span>
+          </label>
+        </div>
+
+        <div class="setting-row">
+          <div class="setting-info">
+            <label>Keyboard Shortcuts</label>
+            <p class="setting-description">Enable keyboard shortcuts for quick capture</p>
+          </div>
+          <label class="toggle">
+            <input type="checkbox" id="keyboard-shortcuts" checked>
+            <span class="toggle-slider"></span>
+          </label>
+        </div>
+      </section>
+
+      <!-- Keyboard Shortcuts Reference -->
+      <section class="card">
+        <h2><i class="fas fa-keyboard"></i> Keyboard Shortcuts</h2>
+        <div class="shortcuts-list">
+          <div class="shortcut-item">
+            <kbd>Ctrl</kbd> + <kbd>Shift</kbd> + <kbd>P</kbd>
+            <span>Open Quick Capture popup</span>
+          </div>
+          <div class="shortcut-item">
+            <kbd>Ctrl</kbd> + <kbd>Shift</kbd> + <kbd>S</kbd>
+            <span>Capture selected text</span>
+          </div>
+          <div class="shortcut-item">
+            <kbd>Ctrl</kbd> + <kbd>Shift</kbd> + <kbd>A</kbd>
+            <span>Capture entire page</span>
+          </div>
+        </div>
+        <p class="shortcut-note">
+          <i class="fas fa-info-circle"></i>
+          On Mac, use <kbd>Cmd</kbd> instead of <kbd>Ctrl</kbd>
+        </p>
+      </section>
+
+      <!-- About -->
+      <section class="card">
+        <h2><i class="fas fa-info-circle"></i> About</h2>
+        <div class="about-info">
+          <p><strong>Pulse Quick Capture</strong> v1.0.0</p>
+          <p>Capture web content directly to your Pulse War Room projects.</p>
+          <div class="about-links">
+            <a href="https://pulse.logosvision.org" target="_blank">
+              <i class="fas fa-external-link-alt"></i> Open Pulse
+            </a>
+            <a href="https://pulse.logosvision.org/privacy" target="_blank">
+              <i class="fas fa-shield-alt"></i> Privacy Policy
+            </a>
+            <a href="mailto:support@logosvision.org">
+              <i class="fas fa-envelope"></i> Contact Support
+            </a>
+          </div>
+        </div>
+      </section>
+    </main>
+
+    <footer>
+      <p>&copy; 2026 Logos Vision LLC. All rights reserved.</p>
+    </footer>
+  </div>
+
+  <div id="toast" class="toast hidden">
+    <i class="fas fa-check-circle"></i>
+    <span id="toast-message">Settings saved</span>
+  </div>
+
+  <script src="src/options.js" type="module"></script>
+</body>
+</html>

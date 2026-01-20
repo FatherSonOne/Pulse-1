@@ -30,6 +30,32 @@ import {
   conversationIntelligenceService,
   ConversationIntelligence,
 } from '../services/conversationIntelligenceService';
+import {
+  focusModeService,
+  FocusSession,
+  FocusSessionStats,
+} from '../services/focusModeService';
+import { getSessionUserSync } from '../services/authService';
+
+// ==================== Auth Helper ====================
+
+/**
+ * Get the current user ID from auth service
+ * Returns 'guest' if no user is authenticated (fallback for demo mode)
+ */
+const getCurrentUserId = (): string => {
+  const user = getSessionUserSync();
+  return user?.id || 'guest';
+};
+
+/**
+ * Get the current user name from auth service
+ * Returns 'Guest' if no user is authenticated
+ */
+const getCurrentUserName = (): string => {
+  const user = getSessionUserSync();
+  return user?.name || 'Guest';
+};
 
 // ==================== Types ====================
 
@@ -46,6 +72,11 @@ interface MessagesState {
   isSearching: boolean;
   error: string | null;
   mobileView: 'channels' | 'chat';
+
+  // Focus Mode
+  isFocusModeActive: boolean;
+  focusSession: FocusSession | null;
+  focusStats: FocusSessionStats | null;
 
   // Typing Indicators
   typingUsers: Record<string, TypingIndicator[]>; // channelId -> typing users
@@ -167,6 +198,12 @@ interface MessagesState {
   // Actions - Retry Failed
   retryFailedMessage: (tempId: string) => Promise<void>;
   removeFailedMessage: (tempId: string) => void;
+
+  // Actions - Focus Mode
+  toggleFocusMode: (active: boolean) => void;
+  startFocusSession: (userId: string, threadId: string) => Promise<void>;
+  endFocusSession: (sessionId: string, actualDuration: number, completed: boolean) => Promise<void>;
+  loadFocusStats: (userId: string) => Promise<void>;
 }
 
 // ==================== Store ====================
@@ -213,6 +250,11 @@ export const useMessagesStore = create<MessagesState>()(
       // Conversation Intelligence
       conversationIntelligence: {},
       isAnalyzingConversation: false,
+
+      // Focus Mode
+      isFocusModeActive: false,
+      focusSession: null,
+      focusStats: null,
 
       // ==================== Channel Actions ====================
 
@@ -314,6 +356,10 @@ export const useMessagesStore = create<MessagesState>()(
         const { selectedChannelId, draft, replyingTo } = get();
         if (!selectedChannelId || !content.trim()) return;
 
+        // Get authenticated user
+        const userId = getCurrentUserId();
+        const userName = getCurrentUserName();
+
         set((state) => {
           state.isSending = true;
         });
@@ -322,8 +368,8 @@ export const useMessagesStore = create<MessagesState>()(
         const tempId = `temp-${Date.now()}`;
         const optimisticMessage = messageChannelService.createOptimisticMessage(
           selectedChannelId,
-          'current-user',
-          'You',
+          userId,
+          userName,
           content,
           messageType
         );
@@ -344,7 +390,7 @@ export const useMessagesStore = create<MessagesState>()(
         try {
           const message = await messageChannelService.sendMessage(
             selectedChannelId,
-            'current-user',
+            userId,
             content,
             messageType
           );
@@ -432,14 +478,15 @@ export const useMessagesStore = create<MessagesState>()(
           const { selectedChannelId } = get();
           if (!selectedChannelId) return;
 
-          await messageChannelService.addReaction(messageId, emoji, 'current-user');
+          const userId = getCurrentUserId();
+          await messageChannelService.addReaction(messageId, emoji, userId);
           set((state) => {
             const message = state.messages[selectedChannelId].find((m) => m.id === messageId);
             if (message) {
               if (!message.reactions) message.reactions = {};
               if (!message.reactions[emoji]) message.reactions[emoji] = [];
-              if (!message.reactions[emoji].includes('current-user')) {
-                message.reactions[emoji].push('current-user');
+              if (!message.reactions[emoji].includes(userId)) {
+                message.reactions[emoji].push(userId);
               }
             }
           });
@@ -453,12 +500,13 @@ export const useMessagesStore = create<MessagesState>()(
           const { selectedChannelId } = get();
           if (!selectedChannelId) return;
 
-          await messageChannelService.removeReaction(messageId, emoji, 'current-user');
+          const userId = getCurrentUserId();
+          await messageChannelService.removeReaction(messageId, emoji, userId);
           set((state) => {
             const message = state.messages[selectedChannelId].find((m) => m.id === messageId);
             if (message?.reactions?.[emoji]) {
               message.reactions[emoji] = message.reactions[emoji].filter(
-                (id) => id !== 'current-user'
+                (id) => id !== userId
               );
               if (message.reactions[emoji].length === 0) {
                 delete message.reactions[emoji];
@@ -535,9 +583,11 @@ export const useMessagesStore = create<MessagesState>()(
         });
 
         try {
+          const userId = getCurrentUserId();
           const replies = await messageChannelService.getSmartReplies(
             apiKey,
-            selectedChannelId
+            selectedChannelId,
+            userId
           );
           set((state) => {
             state.smartReplies = replies;
@@ -726,7 +776,7 @@ export const useMessagesStore = create<MessagesState>()(
 
         try {
           // Get user ID (assuming from auth)
-          const userId = 'current-user'; // Replace with actual auth user ID
+          const userId = getCurrentUserId();
 
           const response = await messageAutoResponseService.checkAutoResponse(
             message,
@@ -775,7 +825,7 @@ export const useMessagesStore = create<MessagesState>()(
         });
 
         try {
-          const userId = 'current-user'; // Replace with actual auth user ID
+          const userId = getCurrentUserId();
 
           const summary = await messageSummarizationService.summarizeThread(
             selectedChannelId,
@@ -803,7 +853,7 @@ export const useMessagesStore = create<MessagesState>()(
         });
 
         try {
-          const userId = 'current-user'; // Replace with actual auth user ID
+          const userId = getCurrentUserId();
 
           const digest = await messageSummarizationService.generateDailyDigest(
             userId,
@@ -834,7 +884,7 @@ export const useMessagesStore = create<MessagesState>()(
         });
 
         try {
-          const userId = 'current-user'; // Replace with actual auth user ID
+          const userId = getCurrentUserId();
 
           const catchUp = await messageSummarizationService.generateCatchUpSummary(
             selectedChannelId,
@@ -870,7 +920,7 @@ export const useMessagesStore = create<MessagesState>()(
         });
 
         try {
-          const userId = 'current-user'; // Replace with actual auth user ID
+          const userId = getCurrentUserId();
 
           const intelligence = await conversationIntelligenceService.analyzeConversation(
             selectedChannelId,
@@ -926,6 +976,53 @@ export const useMessagesStore = create<MessagesState>()(
             );
           });
         });
+      },
+
+      // ==================== Focus Mode Actions ====================
+
+      toggleFocusMode: (active: boolean) => {
+        set((state) => {
+          state.isFocusModeActive = active;
+        });
+      },
+
+      startFocusSession: async (userId: string, threadId: string) => {
+        try {
+          const session = await focusModeService.startSession(userId, threadId);
+          if (session) {
+            set((state) => {
+              state.focusSession = session;
+            });
+          }
+        } catch (error) {
+          console.error('[Store] Error starting focus session:', error);
+        }
+      },
+
+      endFocusSession: async (
+        sessionId: string,
+        actualDuration: number,
+        completed: boolean
+      ) => {
+        try {
+          await focusModeService.endSession(sessionId, actualDuration, completed);
+          set((state) => {
+            state.focusSession = null;
+          });
+        } catch (error) {
+          console.error('[Store] Error ending focus session:', error);
+        }
+      },
+
+      loadFocusStats: async (userId: string) => {
+        try {
+          const stats = await focusModeService.getSessionStats(userId);
+          set((state) => {
+            state.focusStats = stats;
+          });
+        } catch (error) {
+          console.error('[Store] Error loading focus stats:', error);
+        }
       },
     }))
   )

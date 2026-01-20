@@ -1,0 +1,181 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>Pulse Quick Capture</title>
+  <link rel="stylesheet" href="styles/popup.css">
+  <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css">
+</head>
+<body>
+  <div id="app">
+    <!-- Loading State -->
+    <div id="loading-state" class="state">
+      <div class="loader"></div>
+      <p>Loading...</p>
+    </div>
+
+    <!-- Login State -->
+    <div id="login-state" class="state hidden">
+      <div class="header">
+        <div class="logo">
+          <svg viewBox="0 0 64 64" class="pulse-icon">
+            <defs>
+              <linearGradient id="pulse-grad" x1="0%" y1="0%" x2="100%" y2="100%">
+                <stop offset="0%" stop-color="#f43f5e"/>
+                <stop offset="100%" stop-color="#ec4899"/>
+              </linearGradient>
+            </defs>
+            <path d="M8 32 L18 32 L24 16 L32 48 L40 24 L48 40 L56 32" stroke="url(#pulse-grad)" stroke-width="5" stroke-linecap="round" stroke-linejoin="round" fill="none"/>
+          </svg>
+          <span>Pulse</span>
+        </div>
+      </div>
+      <div class="content">
+        <h2>Welcome to Pulse</h2>
+        <p>Sign in to capture content to your War Room projects.</p>
+        <button id="login-btn" class="btn btn-primary">
+          <i class="fab fa-google"></i>
+          Sign in with Google
+        </button>
+        <a href="https://pulse.logosvision.org" target="_blank" class="link">
+          Don't have an account? Sign up
+        </a>
+      </div>
+    </div>
+
+    <!-- Main Capture State -->
+    <div id="main-state" class="state hidden">
+      <div class="header">
+        <div class="logo">
+          <svg viewBox="0 0 64 64" class="pulse-icon">
+            <defs>
+              <linearGradient id="pulse-grad-main" x1="0%" y1="0%" x2="100%" y2="100%">
+                <stop offset="0%" stop-color="#f43f5e"/>
+                <stop offset="100%" stop-color="#ec4899"/>
+              </linearGradient>
+            </defs>
+            <path d="M8 32 L18 32 L24 16 L32 48 L40 24 L48 40 L56 32" stroke="url(#pulse-grad-main)" stroke-width="5" stroke-linecap="round" stroke-linejoin="round" fill="none"/>
+          </svg>
+          <span>Pulse</span>
+        </div>
+        <div class="user-menu">
+          <img id="user-avatar" src="" alt="User" class="avatar">
+          <button id="logout-btn" class="btn-icon" title="Sign out">
+            <i class="fas fa-sign-out-alt"></i>
+          </button>
+        </div>
+      </div>
+
+      <!-- Page Info -->
+      <div class="page-info">
+        <img id="page-favicon" src="" alt="" class="favicon">
+        <div class="page-details">
+          <h3 id="page-title">Page Title</h3>
+          <p id="page-url">https://example.com</p>
+        </div>
+      </div>
+
+      <!-- Capture Options -->
+      <div class="capture-options">
+        <div class="option-group">
+          <label>Capture Type</label>
+          <div class="button-group">
+            <button class="capture-type active" data-type="selection">
+              <i class="fas fa-i-cursor"></i>
+              Selection
+            </button>
+            <button class="capture-type" data-type="article">
+              <i class="fas fa-newspaper"></i>
+              Article
+            </button>
+            <button class="capture-type" data-type="page">
+              <i class="fas fa-file-alt"></i>
+              Full Page
+            </button>
+          </div>
+        </div>
+
+        <div class="option-group">
+          <label for="project-select">Save to Project</label>
+          <select id="project-select">
+            <option value="">Select a project...</option>
+          </select>
+        </div>
+
+        <div class="option-group">
+          <label for="doc-title">Document Title</label>
+          <input type="text" id="doc-title" placeholder="Enter title...">
+        </div>
+
+        <div class="option-group">
+          <label for="doc-tags">Tags (comma separated)</label>
+          <input type="text" id="doc-tags" placeholder="research, article, reference...">
+        </div>
+
+        <div class="option-group">
+          <label for="doc-notes">Notes (optional)</label>
+          <textarea id="doc-notes" placeholder="Add any notes about this content..." rows="3"></textarea>
+        </div>
+      </div>
+
+      <!-- Preview -->
+      <div class="preview-section">
+        <div class="preview-header">
+          <span>Preview</span>
+          <span id="char-count">0 characters</span>
+        </div>
+        <div id="content-preview" class="preview-content">
+          <p class="placeholder">Select content on the page or choose a capture type</p>
+        </div>
+      </div>
+
+      <!-- Actions -->
+      <div class="actions">
+        <button id="capture-btn" class="btn btn-primary" disabled>
+          <i class="fas fa-download"></i>
+          Capture to Pulse
+        </button>
+      </div>
+    </div>
+
+    <!-- Success State -->
+    <div id="success-state" class="state hidden">
+      <div class="success-content">
+        <div class="success-icon">
+          <i class="fas fa-check-circle"></i>
+        </div>
+        <h2>Captured!</h2>
+        <p id="success-message">Content saved to your project.</p>
+        <div class="success-actions">
+          <button id="view-in-pulse" class="btn btn-primary">
+            <i class="fas fa-external-link-alt"></i>
+            Open in Pulse
+          </button>
+          <button id="capture-another" class="btn btn-secondary">
+            <i class="fas fa-plus"></i>
+            Capture Another
+          </button>
+        </div>
+      </div>
+    </div>
+
+    <!-- Error State -->
+    <div id="error-state" class="state hidden">
+      <div class="error-content">
+        <div class="error-icon">
+          <i class="fas fa-exclamation-triangle"></i>
+        </div>
+        <h2>Oops!</h2>
+        <p id="error-message">Something went wrong.</p>
+        <button id="retry-btn" class="btn btn-primary">
+          <i class="fas fa-redo"></i>
+          Try Again
+        </button>
+      </div>
+    </div>
+  </div>
+
+  <script src="src/popup.js" type="module"></script>
+</body>
+</html>
