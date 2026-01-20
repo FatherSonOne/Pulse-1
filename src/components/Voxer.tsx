@@ -12,6 +12,7 @@ import { getVoxerAnalysisService } from '../services/voxer/voxerAnalysisService'
 import { getVoxerFeedbackService } from '../services/voxer/voxerFeedbackService';
 import { audioEnhancementService } from '../services/voxer/audioEnhancementService';
 import { VoxAnalysis as VoxAnalysisType, VoxFeedback } from '../services/voxer/voxerTypes';
+import { useAuth } from '../hooks/useAuth';
 
 // New Voxer Components
 import { LiveVoxSession } from './Voxer/LiveVoxSession';
@@ -129,6 +130,10 @@ type FilterOption = 'all' | 'starred' | 'actionItems' | 'unplayed';
 const PREDEFINED_TAGS = ['Important', 'Follow-up', 'Decision', 'Question', 'Idea', 'Personal'];
 
 const Voxer: React.FC<VoxerProps> = ({ apiKey, contacts, initialContactId, isDarkMode = false }) => {
+  // Get user from auth context
+  const { user } = useAuth();
+  const userId = user?.id || 'guest';
+
   const [activeContactId, setActiveContactId] = useState<string>(initialContactId || '');
   const [recordings, setRecordings] = useState<Recording[]>([]);
   const [permissionError, setPermissionError] = useState(false);
@@ -1046,7 +1051,7 @@ const Voxer: React.FC<VoxerProps> = ({ apiKey, contacts, initialContactId, isDar
         threadId,
         parentReplyId,
         voxId: `vox-${Date.now()}`,
-        userId: 'current-user',
+        userId: userId,
         userName: 'Me',
         userAvatarColor: 'bg-orange-500',
         audioUrl: URL.createObjectURL(audioBlob),
@@ -1171,7 +1176,7 @@ const Voxer: React.FC<VoxerProps> = ({ apiKey, contacts, initialContactId, isDar
           playlistId,
           voxId,
           addedAt: new Date(),
-          addedBy: 'current-user',
+          addedBy: userId,
           order: p.items.length,
         };
         return { ...p, items: [...p.items, newItem], updatedAt: new Date() };
@@ -1181,7 +1186,7 @@ const Voxer: React.FC<VoxerProps> = ({ apiKey, contacts, initialContactId, isDar
     setShowAddToPlaylist(false);
     setAddToPlaylistVoxId(null);
     toast.success('Added to playlist');
-  }, []);
+  }, [userId]);
 
   const handlePlayPlaylist = useCallback((playlistId: string) => {
     const playlist = playlists.find(p => p.id === playlistId);

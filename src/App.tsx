@@ -19,6 +19,7 @@ import Dashboard from './components/Dashboard';
 import Tools from './components/Tools';
 import AILabHubRedesigned from './components/AILab/AILabHubRedesigned';
 import MessageContainer from './components/MessageContainer';
+import { DecisionTaskPanel } from './components/DecisionTaskPanel';
 import AdminDashboard from './components/AdminDashboard';
 import MessageAnalytics from './components/MessageAnalytics';
 import PrivacyPolicy from './components/PrivacyPolicy';
@@ -29,10 +30,10 @@ import { ChatInterface } from './components/ChatInterface';
 import { SocialHealthMonitor } from './components/health/SocialHealthMonitor';
 import { ContextHandoff } from './components/health/ContextHandoff';
 import { NotificationCenter } from './components/NotificationCenter';
-import { loginWithGoogle, getSessionUser, getSessionUserSync, logoutUser, onAuthStateChange, loginWithEmail, signUpWithEmail, loginWithMicrosoft, syncGoogleContacts } from './services/authService';
+import { loginWithGoogle, loginWithEmail, signUpWithEmail, loginWithMicrosoft, syncGoogleContacts } from './services/authService';
 import { dataService } from './services/dataService';
 import { useNotificationStore } from './store/notificationStore';
-import { User, Contact, AppView } from './types';
+import { Contact, AppView } from './types';
 import './App.css';
 import { Analytics } from '@vercel/analytics/react';
 import UnifiedSearch from './components/UnifiedSearch';
@@ -51,6 +52,7 @@ import { usePermissions } from './hooks/usePermissions';
 import { settingsService } from './services/settingsService';
 import { usePresence } from './hooks/usePresence';
 import { Sidebar } from './components/Sidebar';
+import { useAuth } from './hooks/useAuth';
 
 const App: React.FC = () => {
   // Check for public routes that don't require authentication
@@ -91,10 +93,11 @@ const App: React.FC = () => {
   const meetingMatch = path.match(/^\/meeting\/([a-z0-9-]+)$/i);
   const initialMeetingCode = meetingMatch ? meetingMatch[1] : null;
 
-  const [user, setUser] = useState<User | null>(null);
+  // Use authentication context
+  const { user, isLoading: isAuthLoading, logout } = useAuth();
+
   const [contacts, setContacts] = useState<Contact[]>([]);
   const [isLoadingContacts, setIsLoadingContacts] = useState(true);
-  const [isAuthLoading, setIsAuthLoading] = useState(true);
 
   const [view, setView] = useState<AppView>(initialMeetingCode ? AppView.MEETINGS : AppView.DASHBOARD);
   const [isDarkMode, setIsDarkMode] = useState(false); // Default to light mode
@@ -322,38 +325,20 @@ const App: React.FC = () => {
     }
   }, []);
 
-  // Init - Check auth state
+  // Update dataService when user changes
   useEffect(() => {
-    // Initial auth check (async)
-    const initAuth = async () => {
-      setIsAuthLoading(true);
-      try {
-        const sessionUser = await getSessionUser();
-        if (sessionUser) {
-          setUser(sessionUser);
-          dataService.setUserId(sessionUser.id);
-        }
-      } catch (error) {
-        console.error('Auth check failed:', error);
-      } finally {
-        setIsAuthLoading(false);
-      }
-    };
+    if (user) {
+      dataService.setUserId(user.id);
+      // Auto-sync Google Contacts if user is logged in with Google
+      const syncGoogle = user.googleConnected || user.connectedProviders?.google;
+      loadContacts(syncGoogle);
+    } else {
+      dataService.setUserId('');
+    }
+  }, [user, loadContacts]);
 
-    initAuth();
-
-    // Subscribe to auth state changes (handles OAuth redirects)
-    const unsubscribe = onAuthStateChange((authUser) => {
-      setUser(authUser);
-      if (authUser) {
-        dataService.setUserId(authUser.id);
-        // Auto-sync Google Contacts if user is logged in with Google
-        const syncGoogle = authUser.googleConnected || authUser.connectedProviders?.google;
-        loadContacts(syncGoogle);
-      }
-      setIsAuthLoading(false);
-    });
-
+  // Initialize theme and accent color on mount
+  useEffect(() => {
     // Theme Check - default to light mode if no preference saved
     if (localStorage.theme === 'dark') {
         setIsDarkMode(true);
@@ -399,8 +384,6 @@ const App: React.FC = () => {
 
     // Load contacts from Supabase
     loadContacts();
-
-    return () => unsubscribe();
   }, [loadContacts]);
 
   // Handle Resize to reset sidebar state
@@ -450,9 +433,8 @@ const App: React.FC = () => {
 
   const handleEmailLogin = async (email: string, password: string) => {
     try {
-      const loggedInUser = await loginWithEmail(email, password);
-      setUser(loggedInUser);
-      dataService.setUserId(loggedInUser.id);
+      // AuthContext will handle setting user state
+      await loginWithEmail(email, password);
     } catch (e) {
       console.error("Email login failed:", e);
       throw e; // Re-throw so Login component can show error
@@ -461,9 +443,8 @@ const App: React.FC = () => {
 
   const handleSignup = async (email: string, password: string, name: string) => {
     try {
-      const newUser = await signUpWithEmail(email, password, name);
-      setUser(newUser);
-      dataService.setUserId(newUser.id);
+      // AuthContext will handle setting user state
+      await signUpWithEmail(email, password, name);
     } catch (e) {
       console.error("Signup failed:", e);
       throw e; // Re-throw so Login component can show error
@@ -569,6 +550,8 @@ const App: React.FC = () => {
         return <AnalyticsDashboard onClose={() => setView(AppView.DASHBOARD)} />;
       case AppView.LIVE_AI:
         return <LiveDashboard apiKey={apiKey} userId={user?.id || ''} />;
+      case AppView.DECISIONS_TASKS:
+        return <DecisionTaskPanel user={user} />;
       case AppView.DASHBOARD:
       default:
         return <Dashboard user={user} apiKey={apiKey} setView={(v, options) => { 
@@ -612,22 +595,6 @@ const App: React.FC = () => {
 
   // Show landing page or login for non-authenticated users
   if (!user) {
-    // DEV MODE: Skip auth if accessing localhost directly
-    const isDev = window.location.hostname === 'localhost' || window.location.hostname === '127.0.0.1';
-    const skipAuth = isDev && window.location.search.includes('dev');
-
-    if (skipAuth) {
-      // Create a mock user for development
-      const mockUser: User = {
-        id: 'dev-user-123',
-        email: 'dev@localhost',
-        name: 'Dev User',
-        avatar: '',
-      };
-      setUser(mockUser);
-      return null; // Will re-render with user set
-    }
-
     // Check if user explicitly wants to sign in (via URL param or state)
     const wantsToSignIn = window.location.search.includes('signin') || window.location.hash === '#signin';
 
@@ -696,14 +663,13 @@ const App: React.FC = () => {
         renderUserProfile={() => (
           <GoogleAccountSelector
             user={user}
-            onUserChange={(newUser) => {
-              setUser(newUser);
+            onUserChange={async (newUser) => {
               setIsMobileMenuOpen(false);
               if (!newUser) {
-                dataService.setUserId('');
-              } else {
-                dataService.setUserId(newUser.id);
+                // User logged out - use logout from AuthContext
+                await logout();
               }
+              // User state will be updated by AuthContext
             }}
             isSidebarCollapsed={isSidebarCollapsed}
           />

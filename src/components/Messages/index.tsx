@@ -5,6 +5,7 @@ import React, { useState } from 'react';
 import { ChannelList } from './ChannelList';
 import { MessageChat } from './MessageChat';
 import { MessageChannel } from '../../types/messages';
+import { useAuth } from '../../hooks/useAuth';
 
 interface MessagesViewProps {
   workspaceId?: string;
@@ -14,9 +15,12 @@ interface MessagesViewProps {
 
 export const MessagesView: React.FC<MessagesViewProps> = ({
   workspaceId = 'default-workspace',
-  currentUserId = 'current-user',
+  currentUserId: propUserId,
   currentUserName = 'You',
 }) => {
+  // Get user from auth context, fallback to prop or 'guest'
+  const { user } = useAuth();
+  const currentUserId = propUserId || user?.id || 'guest';
   const [selectedChannel, setSelectedChannel] = useState<MessageChannel | null>(null);
   const [showChannelList, setShowChannelList] = useState(true);
 
@@ -83,6 +87,9 @@ export { default as ThreadItem } from './ThreadItem';
 export { default as ConversationPanel } from './ConversationPanel';
 export { default as ThreadSearch } from './ThreadSearch';
 export { default as MessagesSplitView } from './MessagesSplitView';
+
+// Enhanced Split-View Container (Phase 2.1)
+export { default as SplitViewMessagesContainer } from './SplitViewMessagesContainer';
 
 // Focus Mode Components (Phase 5)
 export { default as FocusMode } from './FocusMode';

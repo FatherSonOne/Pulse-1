@@ -14,6 +14,7 @@
 import React, { useState } from 'react';
 import { HoverReactionTrigger } from './HoverReactionTrigger';
 import { QuickReactionBar, AnimatedReactions } from './AnimatedReactions';
+import { useAuth } from '../../hooks/useAuth';
 
 interface Message {
   id: string;
@@ -108,6 +109,10 @@ export const MessageWithHoverReactions: React.FC<ExampleMessageProps> = ({
  * Example: Message Thread with Multiple Messages
  */
 export const MessageThreadExample: React.FC = () => {
+  // Get user from auth context
+  const { user } = useAuth();
+  const currentUserId = user?.id || 'guest';
+
   const [messages, setMessages] = useState<Message[]>([
     {
       id: '1',
@@ -121,7 +126,7 @@ export const MessageThreadExample: React.FC = () => {
     {
       id: '2',
       content: 'I am doing great! Thanks for asking.',
-      sender: 'current-user',
+      sender: currentUserId,
       reactions: [
         { emoji: '😊', count: 1, me: false },
       ],
@@ -133,8 +138,6 @@ export const MessageThreadExample: React.FC = () => {
       reactions: [],
     },
   ]);
-
-  const currentUserId = 'current-user';
 
   const handleReactionAdd = (messageId: string, emoji: string) => {
     setMessages(prevMessages =>

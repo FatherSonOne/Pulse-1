@@ -32,6 +32,7 @@ import { canSendSms, openSmsApp, isNativePlatform } from '../services/permission
 import { UserContactCard } from './UserContact/UserContactCard';
 import { OnlineIndicator } from './UserContact/OnlineIndicator';
 import { useUserPresence } from '../hooks/usePresence';
+import { useAuth } from '../hooks/useAuth';
 import { CellularSMS } from './CellularSMS';
 
 // Phase 1 Message Enhancements - Core features (loaded immediately - critical path)
@@ -56,6 +57,8 @@ import {
   TranslationWidget,
   TypingIndicator
 } from './MessageEnhancements';
+// Hover-triggered reactions - shows reaction bar on 300ms hover (desktop) or long-press (mobile)
+import { HoverReactionTrigger } from './MessageEnhancements/HoverReactionTrigger';
 import { useMessageEnhancements } from '../hooks/useMessageEnhancements';
 import { FeatureSkeleton } from './MessageEnhancements/FeatureSkeleton';
 
@@ -86,6 +89,14 @@ import { ChannelArtifactComponent } from './artifacts';
 
 // Focus Mode (Phase 5)
 import { FocusMode } from './Messages/FocusMode';
+
+// Extracted Modals
+import {
+  ScheduleMessageModal,
+  ConversationStatsModal,
+  InviteTeamModal,
+  InviteToPulseModal,
+} from './Messages/modals';
 
 const COMMON_REACTIONS = ['👍', '❤️', '😂', '😮', '😢', '🔥'];
 
@@ -307,7 +318,21 @@ interface MessagesProps {
   };
 }
 
-const Messages: React.FC<MessagesProps> = ({ apiKey, contacts, initialContactId, onAddContact, currentUser }) => {
+const Messages: React.FC<MessagesProps> = ({ apiKey, contacts, initialContactId, onAddContact, currentUser: propCurrentUser }) => {
+  // Get user from auth context as fallback
+  const { user: authUser } = useAuth();
+
+  // Use prop if provided, otherwise use auth user, fallback to guest
+  const currentUser = propCurrentUser || (authUser ? {
+    id: authUser.id,
+    name: authUser.name || 'Guest',
+    email: authUser.email || '',
+  } : {
+    id: 'guest',
+    name: 'Guest',
+    email: '',
+  });
+
   const { triggerMessage } = useMessageTrigger();
   const [messageCount, setMessageCount] = useState(0);
   const [threads, setThreads] = useState<Thread[]>([]);
@@ -1504,7 +1529,7 @@ const Messages: React.FC<MessagesProps> = ({ apiKey, contacts, initialContactId,
     if (newCount === 1) {
       triggerMessage({
         type: 'first_message_sent',
-        userId: 'current-user',
+        userId: currentUser.id,
         metadata: {
           thread_id: activeThreadId,
         },
@@ -2205,7 +2230,7 @@ const Messages: React.FC<MessagesProps> = ({ apiKey, contacts, initialContactId,
 
   // Helper to render empty chat area when no thread selected
   const renderEmptyChatArea = () => (
-    <div className={`flex-1 flex flex-col items-center justify-center p-8 bg-white dark:bg-zinc-950 ${mobileView === 'list' ? 'hidden md:flex' : 'flex'}`}>
+    <div className={`flex-1 flex flex-col items-center justify-center p-8 bg-white dark:bg-zinc-950 ${mobileView === 'list' ? 'max-md:hidden' : ''}`}>
       {/* New Message Card - Clickable */}
       <div
         onClick={() => setShowNewChatModal(true)}
@@ -2490,50 +2515,17 @@ const Messages: React.FC<MessagesProps> = ({ apiKey, contacts, initialContactId,
       )}
 
       {/* Schedule Message Modal */}
-      {showScheduleModal && (
-        <div className="absolute inset-0 z-50 bg-black/60 backdrop-blur-sm flex items-center justify-center animate-fade-in p-4">
-          <div className="bg-white dark:bg-zinc-900 w-full max-w-md rounded-2xl shadow-2xl animate-scale-in border border-zinc-200 dark:border-zinc-800">
-            <div className="p-4 border-b border-zinc-200 dark:border-zinc-800 flex justify-between items-center">
-              <h3 className="font-bold dark:text-white flex items-center gap-2">
-                <i className="fa-solid fa-clock text-blue-500"></i> Schedule Message
-              </h3>
-              <button onClick={() => setShowScheduleModal(false)}><i className="fa-solid fa-xmark text-zinc-500"></i></button>
-            </div>
-            <div className="p-4 space-y-4">
-              <div className="bg-zinc-50 dark:bg-zinc-800 p-3 rounded-lg text-sm text-zinc-600 dark:text-zinc-300">
-                {inputText || 'No message to schedule'}
-              </div>
-              <div className="grid grid-cols-2 gap-3">
-                <div>
-                  <label className="text-xs text-zinc-500 mb-1 block">Date</label>
-                  <input type="date" value={scheduleDate} onChange={e => setScheduleDate(e.target.value)} className="w-full border rounded-lg px-3 py-2 text-sm bg-white dark:bg-zinc-800 dark:border-zinc-700 dark:text-white" />
-                </div>
-                <div>
-                  <label className="text-xs text-zinc-500 mb-1 block">Time</label>
-                  <input type="time" value={scheduleTime} onChange={e => setScheduleTime(e.target.value)} className="w-full border rounded-lg px-3 py-2 text-sm bg-white dark:bg-zinc-800 dark:border-zinc-700 dark:text-white" />
-                </div>
-              </div>
-              {scheduledMessages.length > 0 && (
-                <div className="border-t pt-3">
-                  <div className="text-xs text-zinc-500 mb-2">Scheduled Messages ({scheduledMessages.length})</div>
-                  <div className="space-y-2 max-h-32 overflow-y-auto">
-                    {scheduledMessages.map(msg => (
-                      <div key={msg.id} className="flex justify-between items-center text-xs bg-zinc-50 dark:bg-zinc-800 p-2 rounded">
-                        <span className="truncate flex-1">{msg.text}</span>
-                        <span className="text-zinc-400 ml-2">{msg.scheduledFor.toLocaleString()}</span>
-                      </div>
-                    ))}
-                  </div>
-                </div>
-              )}
-            </div>
-            <div className="p-4 border-t flex justify-end gap-2">
-              <button onClick={() => setShowScheduleModal(false)} className="px-4 py-2 text-zinc-500 hover:text-zinc-700">Cancel</button>
-              <button onClick={handleScheduleMessage} disabled={!inputText.trim() || !scheduleDate || !scheduleTime} className="bg-blue-600 text-white px-4 py-2 rounded-lg text-sm font-bold disabled:opacity-50">Schedule</button>
-            </div>
-          </div>
-        </div>
-      )}
+      <ScheduleMessageModal
+        isOpen={showScheduleModal}
+        onClose={() => setShowScheduleModal(false)}
+        messageText={inputText}
+        scheduleDate={scheduleDate}
+        scheduleTime={scheduleTime}
+        onDateChange={setScheduleDate}
+        onTimeChange={setScheduleTime}
+        scheduledMessages={scheduledMessages}
+        onSchedule={handleScheduleMessage}
+      />
 
       {/* Forward Message Modal */}
       {showForwardModal && forwardingMessage && (
@@ -2586,152 +2578,22 @@ const Messages: React.FC<MessagesProps> = ({ apiKey, contacts, initialContactId,
       )}
 
       {/* Thread Statistics Panel */}
-      {showStatsPanel && activeThread && (
-        <div className="absolute inset-0 z-50 bg-black/60 backdrop-blur-sm flex items-center justify-center animate-fade-in p-4">
-          <div className="bg-white dark:bg-zinc-900 w-full max-w-md rounded-2xl shadow-2xl animate-scale-in border border-zinc-200 dark:border-zinc-800">
-            <div className="p-4 border-b border-zinc-200 dark:border-zinc-800 flex justify-between items-center">
-              <h3 className="font-bold dark:text-white flex items-center gap-2">
-                <i className="fa-solid fa-chart-bar text-blue-500"></i> Conversation Statistics
-              </h3>
-              <button onClick={() => setShowStatsPanel(false)}><i className="fa-solid fa-xmark text-zinc-500"></i></button>
-            </div>
-            <div className="p-4 space-y-4">
-              {(() => {
-                const stats = messagesExportService.getThreadStatistics(activeThread);
-                return (
-                  <>
-                    <div className="grid grid-cols-2 gap-4">
-                      <div className="bg-zinc-50 dark:bg-zinc-800 p-3 rounded-lg text-center">
-                        <div className="text-2xl font-bold text-blue-500">{stats.totalMessages}</div>
-                        <div className="text-xs text-zinc-500">Total Messages</div>
-                      </div>
-                      <div className="bg-zinc-50 dark:bg-zinc-800 p-3 rounded-lg text-center">
-                        <div className="text-2xl font-bold text-green-500">{stats.averageResponseTime}m</div>
-                        <div className="text-xs text-zinc-500">Avg Response</div>
-                      </div>
-                    </div>
-                    <div className="grid grid-cols-3 gap-3">
-                      <div className="text-center">
-                        <div className="text-lg font-bold dark:text-white">{stats.sentByMe}</div>
-                        <div className="text-xs text-zinc-500">Sent</div>
-                      </div>
-                      <div className="text-center">
-                        <div className="text-lg font-bold dark:text-white">{stats.sentByThem}</div>
-                        <div className="text-xs text-zinc-500">Received</div>
-                      </div>
-                      <div className="text-center">
-                        <div className="text-lg font-bold dark:text-white">{stats.attachments}</div>
-                        <div className="text-xs text-zinc-500">Attachments</div>
-                      </div>
-                    </div>
-                    <div className="border-t pt-3">
-                      <div className="text-xs text-zinc-500 mb-2">Decisions</div>
-                      <div className="flex gap-3">
-                        <span className="px-2 py-1 bg-emerald-100 text-emerald-700 rounded text-xs">{stats.decisions.approved} Approved</span>
-                        <span className="px-2 py-1 bg-amber-100 text-amber-700 rounded text-xs">{stats.decisions.pending} Pending</span>
-                        <span className="px-2 py-1 bg-blue-100 text-blue-700 rounded text-xs">{stats.tasksCreated} Tasks</span>
-                      </div>
-                    </div>
-                  </>
-                );
-              })()}
-            </div>
-          </div>
-        </div>
-      )}
+      <ConversationStatsModal
+        isOpen={showStatsPanel && !!activeThread}
+        onClose={() => setShowStatsPanel(false)}
+        stats={activeThread ? messagesExportService.getThreadStatistics(activeThread) : null}
+      />
 
       {/* Invite Team Modal */}
-      {showInviteModal && (
-        <div className="absolute inset-0 z-50 bg-black/60 backdrop-blur-sm flex items-center justify-center animate-fade-in p-4">
-          <div className="bg-white dark:bg-zinc-900 w-full max-w-md rounded-2xl shadow-2xl animate-scale-in border border-zinc-200 dark:border-zinc-800">
-            <div className="p-4 border-b border-zinc-200 dark:border-zinc-800 flex justify-between items-center">
-              <h3 className="font-bold dark:text-white flex items-center gap-2">
-                <i className="fa-solid fa-user-plus text-rose-500"></i> Invite Team Member
-              </h3>
-              <button onClick={() => { setShowInviteModal(false); setInviteEmail(''); setInviteStatus('idle'); setInviteMessage(''); }}>
-                <i className="fa-solid fa-xmark text-zinc-500 hover:text-zinc-700 dark:hover:text-zinc-300"></i>
-              </button>
-            </div>
-            <div className="p-6 space-y-4">
-              <p className="text-sm text-zinc-600 dark:text-zinc-400">
-                Invite a team member to join Pulse. They'll receive an email with instructions to sign in with Google.
-              </p>
-
-              <div>
-                <label className="block text-xs font-bold text-zinc-500 dark:text-zinc-400 uppercase tracking-wider mb-2">Email Address</label>
-                <input
-                  type="email"
-                  value={inviteEmail}
-                  onChange={(e) => setInviteEmail(e.target.value)}
-                  onKeyDown={(e) => e.key === 'Enter' && handleSendInvite()}
-                  placeholder="teammate@example.com"
-                  disabled={inviteStatus === 'sending'}
-                  className="w-full px-4 py-3 rounded-xl border border-zinc-300 dark:border-zinc-700 bg-white dark:bg-zinc-800 dark:text-white focus:ring-2 focus:ring-rose-500 focus:border-transparent outline-none transition disabled:opacity-50"
-                  autoFocus
-                />
-              </div>
-
-              {inviteMessage && (
-                <div className={`p-3 rounded-xl text-sm flex items-center gap-2 ${
-                  inviteStatus === 'success' ? 'bg-emerald-100 dark:bg-emerald-900/30 text-emerald-700 dark:text-emerald-400' :
-                  inviteStatus === 'error' ? 'bg-red-100 dark:bg-red-900/30 text-red-700 dark:text-red-400' :
-                  'bg-zinc-100 dark:bg-zinc-800 text-zinc-600 dark:text-zinc-400'
-                }`}>
-                  <i className={`fa-solid ${inviteStatus === 'success' ? 'fa-check-circle' : inviteStatus === 'error' ? 'fa-exclamation-circle' : 'fa-circle-info'}`}></i>
-                  {inviteMessage}
-                </div>
-              )}
-
-              <div className="bg-zinc-50 dark:bg-zinc-800/50 rounded-xl p-4 border border-zinc-200 dark:border-zinc-700">
-                <div className="text-xs font-bold text-zinc-500 dark:text-zinc-400 uppercase tracking-wider mb-3">What they'll get</div>
-                <ul className="space-y-2 text-sm text-zinc-600 dark:text-zinc-400">
-                  <li className="flex items-center gap-2">
-                    <i className="fa-solid fa-check text-rose-500 text-xs"></i>
-                    Access to team messaging & channels
-                  </li>
-                  <li className="flex items-center gap-2">
-                    <i className="fa-solid fa-check text-rose-500 text-xs"></i>
-                    AI-powered meeting notes & transcription
-                  </li>
-                  <li className="flex items-center gap-2">
-                    <i className="fa-solid fa-check text-rose-500 text-xs"></i>
-                    Shared contacts & calendar integration
-                  </li>
-                  <li className="flex items-center gap-2">
-                    <i className="fa-solid fa-check text-rose-500 text-xs"></i>
-                    Install Pulse as a desktop app (PWA)
-                  </li>
-                </ul>
-              </div>
-            </div>
-            <div className="p-4 border-t border-zinc-200 dark:border-zinc-800 flex justify-end gap-3">
-              <button
-                onClick={() => { setShowInviteModal(false); setInviteEmail(''); setInviteStatus('idle'); setInviteMessage(''); }}
-                className="px-4 py-2 text-zinc-600 dark:text-zinc-400 hover:text-zinc-800 dark:hover:text-zinc-200 transition"
-              >
-                Cancel
-              </button>
-              <button
-                onClick={handleSendInvite}
-                disabled={!inviteEmail.trim() || inviteStatus === 'sending'}
-                className="px-6 py-2 bg-gradient-to-r from-rose-500 to-pink-500 hover:from-rose-600 hover:to-pink-600 text-white font-bold rounded-xl transition disabled:opacity-50 disabled:cursor-not-allowed flex items-center gap-2"
-              >
-                {inviteStatus === 'sending' ? (
-                  <>
-                    <i className="fa-solid fa-circle-notch fa-spin"></i>
-                    Sending...
-                  </>
-                ) : (
-                  <>
-                    <i className="fa-solid fa-paper-plane"></i>
-                    Send Invite
-                  </>
-                )}
-              </button>
-            </div>
-          </div>
-        </div>
-      )}
+      <InviteTeamModal
+        isOpen={showInviteModal}
+        onClose={() => { setShowInviteModal(false); setInviteEmail(''); setInviteStatus('idle'); setInviteMessage(''); }}
+        inviteEmail={inviteEmail}
+        onEmailChange={setInviteEmail}
+        inviteStatus={inviteStatus}
+        inviteMessage={inviteMessage}
+        onSendInvite={handleSendInvite}
+      />
 
       {/* Delete Confirmation Modal */}
       {showDeleteConfirm && threadToDelete && (
@@ -2764,8 +2626,8 @@ const Messages: React.FC<MessagesProps> = ({ apiKey, contacts, initialContactId,
         </div>
       )}
 
-      {/* Sidebar (Threads) */}
-      <div className={`w-full md:w-80 border-r border-zinc-200 dark:border-zinc-800 flex-col bg-zinc-50 dark:bg-zinc-900/50 flex-shrink-0 ${mobileView === 'chat' ? 'hidden md:flex' : 'flex'}`}>
+      {/* Sidebar (Threads) - 30% width on desktop, always visible on md+ for split-view */}
+      <div className={`w-full md:w-[30%] md:min-w-[280px] md:max-w-[400px] border-r border-zinc-200 dark:border-zinc-800 bg-zinc-50 dark:bg-zinc-900/50 flex-shrink-0 flex flex-col ${mobileView === 'chat' ? 'max-md:hidden' : ''}`}>
         <div className="p-5 flex justify-between items-center">
           <h2 className="font-bold text-lg text-zinc-900 dark:text-white tracking-tight">Pulse Messages</h2>
           <div className="flex items-center gap-2">
@@ -3003,10 +2865,10 @@ const Messages: React.FC<MessagesProps> = ({ apiKey, contacts, initialContactId,
         </div>
       </div>
 
-      {/* Main Chat Area */}
+      {/* Main Chat Area - 70% width on desktop for split-view */}
       {/* Pulse Conversation View */}
       {activePulseConv && !activeThread && (
-        <div className={`flex-1 flex flex-col relative min-w-0 bg-white dark:bg-zinc-950 ${mobileView === 'list' ? 'hidden md:flex' : 'flex'}`}>
+        <div className={`flex-1 flex flex-col relative min-w-0 bg-white dark:bg-zinc-950 ${mobileView === 'list' ? 'max-md:hidden' : ''}`}>
           {/* Pulse Chat Header */}
           <div className="min-h-16 border-b border-zinc-200 dark:border-zinc-800 flex items-center justify-between px-4 py-2 z-10 bg-white dark:bg-zinc-950/80 backdrop-blur-md sticky top-0">
             <div className="flex items-center gap-3">
@@ -3157,16 +3019,164 @@ const Messages: React.FC<MessagesProps> = ({ apiKey, contacts, initialContactId,
             </div>
           )}
 
-          {/* DEPRECATED: Old Tools Drawer - Replaced by SidebarTabs (Phase 4)
-              This code block has been removed and replaced with the new SidebarTabs component.
-              See: src/components/Sidebar/SidebarTabs.tsx
-              The new sidebar provides:
-              - Persistent sidebar with Messages, Tools, CRM, and Analytics tabs
-              - Keyboard shortcuts (Cmd+B to toggle, Cmd+1-4 to switch tabs)
-              - LocalStorage persistence for last active tab
-              - Integrated ToolsPanel component
-              - Responsive mobile layout
-          */}
+          {/* Tools Panel Drawer - Compact Icon Grid */}
+          <AnimatePresence>
+            {showToolsDrawer && (
+              <>
+                {/* Backdrop */}
+                <motion.div
+                  initial={{ opacity: 0 }}
+                  animate={{ opacity: 1 }}
+                  exit={{ opacity: 0 }}
+                  transition={{ duration: 0.2 }}
+                  className="fixed inset-0 bg-black/40 backdrop-blur-sm z-[90]"
+                  onClick={() => setShowToolsDrawer(false)}
+                />
+                {/* Drawer Panel - Compact */}
+                <motion.div
+                  initial={{ x: '100%' }}
+                  animate={{ x: 0 }}
+                  exit={{ x: '100%' }}
+                  transition={{ type: 'spring', damping: 25, stiffness: 300 }}
+                  className="fixed right-0 top-0 bottom-0 w-64 bg-white dark:bg-zinc-900 shadow-2xl z-[91] flex flex-col border-l border-zinc-200 dark:border-zinc-800"
+                >
+                  {/* Drawer Header */}
+                  <div className="flex items-center justify-between px-3 py-2 border-b border-zinc-200 dark:border-zinc-800 bg-gradient-to-r from-emerald-50 to-cyan-50 dark:from-emerald-950/30 dark:to-cyan-950/30">
+                    <div className="flex items-center gap-2">
+                      <div className="w-8 h-8 rounded-lg bg-gradient-to-br from-emerald-500 to-cyan-500 flex items-center justify-center text-white text-sm">
+                        <i className="fa-solid fa-toolbox"></i>
+                      </div>
+                      <span className="font-bold text-zinc-900 dark:text-white text-sm">Tools</span>
+                    </div>
+                    <button
+                      onClick={() => setShowToolsDrawer(false)}
+                      className="w-7 h-7 rounded-lg hover:bg-zinc-200 dark:hover:bg-zinc-800 flex items-center justify-center transition"
+                    >
+                      <i className="fa-solid fa-xmark text-zinc-500 text-sm"></i>
+                    </button>
+                  </div>
+
+                  {/* Compact Tools Grid */}
+                  <div className="flex-1 p-3 space-y-3 overflow-y-auto">
+                    {/* AI Tools */}
+                    <div>
+                      <div className="text-[10px] font-bold text-purple-600 dark:text-purple-400 uppercase tracking-wider mb-2 flex items-center gap-1">
+                        <i className="fa-solid fa-robot"></i> AI Tools
+                      </div>
+                      <div className="grid grid-cols-4 gap-2">
+                        {[
+                          { id: 'ai-coach', icon: 'fa-user-graduate', name: 'Coach', overlay: 'intelligence' },
+                          { id: 'smart-compose', icon: 'fa-wand-magic-sparkles', name: 'Compose', overlay: 'productivity' },
+                          { id: 'sentiment-analysis', icon: 'fa-face-smile', name: 'Sentiment', overlay: 'analytics' },
+                          { id: 'translation', icon: 'fa-language', name: 'Translate', overlay: 'communication' },
+                        ].map(tool => (
+                          <button
+                            key={tool.id}
+                            onClick={() => { setActiveToolOverlay(tool.overlay as any); setShowToolsDrawer(false); }}
+                            className="flex flex-col items-center p-2 rounded-xl hover:bg-purple-50 dark:hover:bg-purple-900/20 transition group"
+                            title={tool.name}
+                          >
+                            <div className="w-10 h-10 rounded-xl bg-purple-100 dark:bg-purple-900/30 flex items-center justify-center text-purple-600 dark:text-purple-400 group-hover:scale-110 transition">
+                              <i className={`fa-solid ${tool.icon}`}></i>
+                            </div>
+                            <span className="text-[10px] text-zinc-600 dark:text-zinc-400 mt-1 font-medium">{tool.name}</span>
+                          </button>
+                        ))}
+                      </div>
+                    </div>
+
+                    {/* Content Creation */}
+                    <div>
+                      <div className="text-[10px] font-bold text-blue-600 dark:text-blue-400 uppercase tracking-wider mb-2 flex items-center gap-1">
+                        <i className="fa-solid fa-pen-fancy"></i> Content
+                      </div>
+                      <div className="grid grid-cols-4 gap-2">
+                        {[
+                          { id: 'templates', icon: 'fa-file-lines', name: 'Templates', overlay: 'productivity' },
+                          { id: 'voice-recorder', icon: 'fa-microphone', name: 'Voice', overlay: 'mediaHub' },
+                          { id: 'attachments', icon: 'fa-paperclip', name: 'Files', overlay: 'mediaHub' },
+                          { id: 'schedule', icon: 'fa-clock', name: 'Schedule', overlay: 'productivity' },
+                        ].map(tool => (
+                          <button
+                            key={tool.id}
+                            onClick={() => { setActiveToolOverlay(tool.overlay as any); setShowToolsDrawer(false); }}
+                            className="flex flex-col items-center p-2 rounded-xl hover:bg-blue-50 dark:hover:bg-blue-900/20 transition group"
+                            title={tool.name}
+                          >
+                            <div className="w-10 h-10 rounded-xl bg-blue-100 dark:bg-blue-900/30 flex items-center justify-center text-blue-600 dark:text-blue-400 group-hover:scale-110 transition">
+                              <i className={`fa-solid ${tool.icon}`}></i>
+                            </div>
+                            <span className="text-[10px] text-zinc-600 dark:text-zinc-400 mt-1 font-medium">{tool.name}</span>
+                          </button>
+                        ))}
+                      </div>
+                    </div>
+
+                    {/* Analysis */}
+                    <div>
+                      <div className="text-[10px] font-bold text-green-600 dark:text-green-400 uppercase tracking-wider mb-2 flex items-center gap-1">
+                        <i className="fa-solid fa-chart-line"></i> Analysis
+                      </div>
+                      <div className="grid grid-cols-4 gap-2">
+                        {[
+                          { id: 'analytics', icon: 'fa-chart-pie', name: 'Analytics', overlay: 'analytics' },
+                          { id: 'health', icon: 'fa-heart-pulse', name: 'Health', overlay: 'analytics' },
+                          { id: 'network', icon: 'fa-diagram-project', name: 'Network', overlay: 'collaboration' },
+                          { id: 'insights', icon: 'fa-magnifying-glass-chart', name: 'Insights', overlay: 'intelligence' },
+                        ].map(tool => (
+                          <button
+                            key={tool.id}
+                            onClick={() => { setActiveToolOverlay(tool.overlay as any); setShowToolsDrawer(false); }}
+                            className="flex flex-col items-center p-2 rounded-xl hover:bg-green-50 dark:hover:bg-green-900/20 transition group"
+                            title={tool.name}
+                          >
+                            <div className="w-10 h-10 rounded-xl bg-green-100 dark:bg-green-900/30 flex items-center justify-center text-green-600 dark:text-green-400 group-hover:scale-110 transition">
+                              <i className={`fa-solid ${tool.icon}`}></i>
+                            </div>
+                            <span className="text-[10px] text-zinc-600 dark:text-zinc-400 mt-1 font-medium">{tool.name}</span>
+                          </button>
+                        ))}
+                      </div>
+                    </div>
+
+                    {/* Utilities */}
+                    <div>
+                      <div className="text-[10px] font-bold text-amber-600 dark:text-amber-400 uppercase tracking-wider mb-2 flex items-center gap-1">
+                        <i className="fa-solid fa-wrench"></i> Utilities
+                      </div>
+                      <div className="grid grid-cols-4 gap-2">
+                        {[
+                          { id: 'theme', icon: 'fa-palette', name: 'Theme', overlay: 'personalization' },
+                          { id: 'security', icon: 'fa-shield-halved', name: 'Security', overlay: 'security' },
+                          { id: 'export', icon: 'fa-download', name: 'Export', overlay: 'productivity' },
+                          { id: 'settings', icon: 'fa-gear', name: 'Settings', overlay: 'personalization' },
+                        ].map(tool => (
+                          <button
+                            key={tool.id}
+                            onClick={() => { setActiveToolOverlay(tool.overlay as any); setShowToolsDrawer(false); }}
+                            className="flex flex-col items-center p-2 rounded-xl hover:bg-amber-50 dark:hover:bg-amber-900/20 transition group"
+                            title={tool.name}
+                          >
+                            <div className="w-10 h-10 rounded-xl bg-amber-100 dark:bg-amber-900/30 flex items-center justify-center text-amber-600 dark:text-amber-400 group-hover:scale-110 transition">
+                              <i className={`fa-solid ${tool.icon}`}></i>
+                            </div>
+                            <span className="text-[10px] text-zinc-600 dark:text-zinc-400 mt-1 font-medium">{tool.name}</span>
+                          </button>
+                        ))}
+                      </div>
+                    </div>
+                  </div>
+
+                  {/* Quick tip footer */}
+                  <div className="px-3 py-2 border-t border-zinc-200 dark:border-zinc-800 bg-zinc-50 dark:bg-zinc-800/50">
+                    <p className="text-[10px] text-zinc-400 dark:text-zinc-500 text-center">
+                      <kbd className="px-1 py-0.5 bg-zinc-200 dark:bg-zinc-700 rounded text-[9px]">Esc</kbd> to close
+                    </p>
+                  </div>
+                </motion.div>
+              </>
+            )}
+          </AnimatePresence>
 
           {/* Theme Picker Popup */}
           {showThemeSelector && (
@@ -3274,44 +3284,102 @@ const Messages: React.FC<MessagesProps> = ({ apiKey, contacts, initialContactId,
                           </div>
                         )}
 
-                        {/* Message bubble - right-click or long-press for actions */}
-                        <div
-                          className={`px-4 py-2.5 shadow-sm cursor-pointer select-none transition-transform active:scale-[0.98]`}
-                          style={{
-                            background: isMe
-                              ? (selectedColorPair.userGradient || selectedColorPair.userColor)
-                              : (selectedColorPair.otherGradient || selectedColorPair.otherColor),
-                            color: isMe ? selectedColorPair.userTextColor : selectedColorPair.otherTextColor,
-                            borderRadius: selectedColorPair.borderRadius,
-                            borderBottomRightRadius: isMe ? '0.375rem' : selectedColorPair.borderRadius,
-                            borderBottomLeftRadius: !isMe ? '0.375rem' : selectedColorPair.borderRadius
-                          }}
-                          onContextMenu={(e) => handlePulseMessageContextMenu(e, msg.id)}
-                          onTouchStart={(e) => handlePulseLongPressStart(e, msg.id)}
-                          onTouchEnd={handlePulseLongPressEnd}
-                          onTouchCancel={handlePulseLongPressEnd}
-                          onTouchMove={handlePulseLongPressEnd}
+                        {/* Message bubble with hover-triggered reactions */}
+                        <HoverReactionTrigger
+                          messageId={msg.id}
+                          isMe={isMe}
+                          onReact={(messageId, emoji) => handlePulseReaction(messageId, emoji)}
+                          onShowMore={() => handlePulseMessageContextMenu({ preventDefault: () => {}, clientX: 0, clientY: 0 } as React.MouseEvent, msg.id)}
+                          hoverDelay={300}
+                          enableMobileLongPress={true}
+                          renderReactionBar={({ onReact, position, isExiting }) => (
+                            <motion.div
+                              initial={{ opacity: 0, scale: 0.9, y: 8 }}
+                              animate={{
+                                opacity: isExiting ? 0 : 1,
+                                scale: isExiting ? 0.9 : 1,
+                                y: isExiting ? 8 : 0
+                              }}
+                              transition={{
+                                duration: 0.2,
+                                ease: [0.4, 0, 0.2, 1]
+                              }}
+                              className="flex items-center gap-1 p-1.5 bg-white dark:bg-zinc-800 rounded-full shadow-lg border border-zinc-200 dark:border-zinc-700"
+                              style={{ ...position }}
+                            >
+                              {COMMON_REACTIONS.map((emoji, index) => (
+                                <motion.button
+                                  key={emoji}
+                                  initial={{ opacity: 0, scale: 0.5 }}
+                                  animate={{ opacity: 1, scale: 1 }}
+                                  transition={{
+                                    duration: 0.15,
+                                    delay: index * 0.03,
+                                    ease: [0.4, 0, 0.2, 1]
+                                  }}
+                                  onClick={() => onReact(emoji)}
+                                  className="w-8 h-8 flex items-center justify-center hover:bg-zinc-100 dark:hover:bg-zinc-700 rounded-full transition-colors text-base"
+                                  whileHover={{ scale: 1.25 }}
+                                  whileTap={{ scale: 0.9 }}
+                                >
+                                  {emoji}
+                                </motion.button>
+                              ))}
+                              <motion.div
+                                initial={{ opacity: 0 }}
+                                animate={{ opacity: 1 }}
+                                transition={{ delay: 0.15 }}
+                                className="w-px h-6 bg-zinc-200 dark:bg-zinc-700 mx-1"
+                              />
+                              <motion.button
+                                initial={{ opacity: 0, scale: 0.5 }}
+                                animate={{ opacity: 1, scale: 1 }}
+                                transition={{ duration: 0.15, delay: 0.2 }}
+                                onClick={() => handlePulseMessageContextMenu({ preventDefault: () => {}, clientX: 0, clientY: 0 } as React.MouseEvent, msg.id)}
+                                className="w-8 h-8 flex items-center justify-center hover:bg-zinc-100 dark:hover:bg-zinc-700 rounded-full transition-colors text-zinc-500"
+                                title="More options"
+                                whileHover={{ scale: 1.1 }}
+                                whileTap={{ scale: 0.9 }}
+                              >
+                                <i className="fa-solid fa-ellipsis text-sm"></i>
+                              </motion.button>
+                            </motion.div>
+                          )}
                         >
-                          <p className="text-sm whitespace-pre-wrap break-words">{renderTextWithLinks(msg.content)}</p>
                           <div
-                            className="text-[10px] mt-1.5 flex items-center gap-2"
+                            className={`px-4 py-2.5 shadow-sm cursor-pointer select-none transition-transform active:scale-[0.98]`}
                             style={{
-                              color: isMe ? `${selectedColorPair.userTextColor}B3` : `${selectedColorPair.otherTextColor}99`,
-                              justifyContent: isMe ? 'flex-end' : 'flex-start'
+                              background: isMe
+                                ? (selectedColorPair.userGradient || selectedColorPair.userColor)
+                                : (selectedColorPair.otherGradient || selectedColorPair.otherColor),
+                              color: isMe ? selectedColorPair.userTextColor : selectedColorPair.otherTextColor,
+                              borderRadius: selectedColorPair.borderRadius,
+                              borderBottomRightRadius: isMe ? '0.375rem' : selectedColorPair.borderRadius,
+                              borderBottomLeftRadius: !isMe ? '0.375rem' : selectedColorPair.borderRadius
                             }}
+                            onContextMenu={(e) => handlePulseMessageContextMenu(e, msg.id)}
                           >
-                            <span>{new Date(msg.created_at).toLocaleTimeString([], { hour: '2-digit', minute: '2-digit' })}</span>
-                            {isMe && msg.is_read && (
-                              <span className="flex items-center gap-0.5" style={{ opacity: 0.9 }}>
-                                <i className="fa-solid fa-check-double"></i>
-                                <span className="text-[9px]">Read</span>
-                              </span>
-                            )}
-                            {isMe && !msg.is_read && (
-                              <i className="fa-solid fa-check" style={{ opacity: 0.7 }}></i>
-                            )}
+                            <p className="text-sm whitespace-pre-wrap break-words">{renderTextWithLinks(msg.content)}</p>
+                            <div
+                              className="text-[10px] mt-1.5 flex items-center gap-2"
+                              style={{
+                                color: isMe ? `${selectedColorPair.userTextColor}B3` : `${selectedColorPair.otherTextColor}99`,
+                                justifyContent: isMe ? 'flex-end' : 'flex-start'
+                              }}
+                            >
+                              <span>{new Date(msg.created_at).toLocaleTimeString([], { hour: '2-digit', minute: '2-digit' })}</span>
+                              {isMe && msg.is_read && (
+                                <span className="flex items-center gap-0.5" style={{ opacity: 0.9 }}>
+                                  <i className="fa-solid fa-check-double"></i>
+                                  <span className="text-[9px]">Read</span>
+                                </span>
+                              )}
+                              {isMe && !msg.is_read && (
+                                <i className="fa-solid fa-check" style={{ opacity: 0.7 }}></i>
+                              )}
+                            </div>
                           </div>
-                        </div>
+                        </HoverReactionTrigger>
 
                         {/* Context Menu - appears on right-click or long-press */}
                         {pulseContextMenuMsgId === msg.id && pulseContextMenuPosition && (
@@ -3653,10 +3721,10 @@ const Messages: React.FC<MessagesProps> = ({ apiKey, contacts, initialContactId,
         </div>
       )}
 
-      {/* Regular Thread Chat View */}
+      {/* Regular Thread Chat View - Empty state or active thread */}
       {!activeThread && !activePulseConv && renderEmptyChatArea()}
       {activeThread && (
-      <div className={`flex-1 flex flex-col relative min-w-0 bg-white dark:bg-zinc-950 ${mobileView === 'list' ? 'hidden md:flex' : 'flex'}`}>
+      <div className={`flex-1 flex flex-col relative min-w-0 bg-white dark:bg-zinc-950 ${mobileView === 'list' ? 'max-md:hidden' : ''}`}>
 
         {/* Header - Mobile Optimized */}
         <div className="min-h-[56px] md:h-16 border-b border-zinc-200 dark:border-zinc-800 flex items-center justify-between px-2 sm:px-4 z-10 bg-white dark:bg-zinc-950/80 backdrop-blur-md sticky top-0 gap-2">
@@ -5664,154 +5732,40 @@ const Messages: React.FC<MessagesProps> = ({ apiKey, contacts, initialContactId,
       )}
 
       {/* Invite to Pulse Modal */}
-      {showInviteToPulseModal && inviteTargetContact && (
-        <div className="fixed inset-0 z-[70] bg-black/60 backdrop-blur-sm flex items-center justify-center animate-fade-in p-4">
-          <div className="bg-white dark:bg-zinc-900 w-full max-w-md rounded-2xl shadow-2xl animate-scale-in border border-zinc-200 dark:border-zinc-800 overflow-hidden">
-            {/* Header with gradient */}
-            <div className="relative p-6 text-center bg-gradient-to-br from-emerald-500 via-cyan-500 to-blue-500">
-              <div className="absolute inset-0 bg-black/10"></div>
-              <button
-                onClick={() => { setShowInviteToPulseModal(false); setInviteToPulseSent(false); setInviteToPulseCopied(false); setInviteTargetContact(null); }}
-                className="absolute top-4 right-4 text-white/80 hover:text-white z-10"
-              >
-                <i className="fa-solid fa-xmark text-lg"></i>
-              </button>
-              <div className="relative z-10">
-                <div className="w-16 h-16 mx-auto mb-4 bg-white/20 backdrop-blur rounded-2xl flex items-center justify-center">
-                  <i className="fa-solid fa-rocket text-3xl text-white"></i>
-                </div>
-                <h3 className="text-xl font-bold text-white mb-1">Invite to Pulse</h3>
-                <p className="text-white/80 text-sm">Share the future of communication</p>
-              </div>
-            </div>
-
-            {/* Body */}
-            <div className="p-6">
-              {inviteToPulseSent ? (
-                <div className="text-center py-4">
-                  <div className="w-16 h-16 mx-auto mb-4 bg-emerald-100 dark:bg-emerald-900/30 rounded-full flex items-center justify-center">
-                    <i className="fa-solid fa-check text-3xl text-emerald-500"></i>
-                  </div>
-                  <h4 className="text-lg font-bold dark:text-white mb-2">Email Ready!</h4>
-                  <p className="text-zinc-500 text-sm mb-4">
-                    Your email app should open with a pre-written invitation for {inviteTargetContact.name}.
-                  </p>
-                  <button
-                    onClick={() => { setShowInviteToPulseModal(false); setInviteToPulseSent(false); setInviteTargetContact(null); }}
-                    className="px-6 py-2 bg-zinc-900 dark:bg-white text-white dark:text-zinc-900 rounded-lg text-sm font-bold"
-                  >
-                    Done
-                  </button>
-                </div>
-              ) : (
-                <>
-                  <div className="mb-6">
-                    <p className="text-zinc-600 dark:text-zinc-400 text-sm leading-relaxed">
-                      Invite <span className="font-bold text-zinc-900 dark:text-white">{inviteTargetContact.name}</span> to join you on Pulse, the AI-native communication platform that's changing how teams connect.
-                    </p>
-                  </div>
-
-                  {/* Invite Options */}
-                  <div className="space-y-3">
-                    {/* Email Invite */}
-                    {inviteTargetContact.email && (
-                      <button
-                        onClick={() => {
-                          const userName = localStorage.getItem('pulse_user_name') || 'Your friend';
-                          const mailtoLink = generateEarlyAccessInvite(
-                            inviteTargetContact.email!,
-                            userName,
-                            inviteTargetContact.name.split(' ')[0]
-                          );
-                          window.open(mailtoLink, '_blank');
-                          setInviteToPulseSent(true);
-                        }}
-                        className="w-full p-4 rounded-xl bg-gradient-to-r from-emerald-50 to-cyan-50 dark:from-emerald-900/20 dark:to-cyan-900/20 border border-emerald-200 dark:border-emerald-800 hover:border-emerald-400 dark:hover:border-emerald-600 transition flex items-center gap-4 group"
-                      >
-                        <div className="w-12 h-12 rounded-full bg-gradient-to-br from-emerald-500 to-cyan-500 text-white flex items-center justify-center group-hover:scale-110 transition shadow-lg">
-                          <i className="fa-solid fa-envelope text-lg"></i>
-                        </div>
-                        <div className="text-left flex-1">
-                          <div className="font-bold text-zinc-900 dark:text-white">Send Email Invite</div>
-                          <div className="text-xs text-zinc-500">{inviteTargetContact.email}</div>
-                        </div>
-                        <i className="fa-solid fa-chevron-right text-zinc-400"></i>
-                      </button>
-                    )}
-
-                    {/* Copy Shareable Link */}
-                    <button
-                      onClick={() => {
-                        const userName = localStorage.getItem('pulse_user_name') || 'A friend';
-                        const shareText = generateShareableInviteText(userName);
-                        navigator.clipboard.writeText(shareText);
-                        setInviteToPulseCopied(true);
-                        setTimeout(() => setInviteToPulseCopied(false), 3000);
-                      }}
-                      className="w-full p-4 rounded-xl bg-gradient-to-r from-blue-50 to-purple-50 dark:from-blue-900/20 dark:to-purple-900/20 border border-blue-200 dark:border-blue-800 hover:border-blue-400 dark:hover:border-blue-600 transition flex items-center gap-4 group"
-                    >
-                      <div className="w-12 h-12 rounded-full bg-gradient-to-br from-blue-500 to-purple-500 text-white flex items-center justify-center group-hover:scale-110 transition shadow-lg">
-                        <i className={`fa-solid ${inviteToPulseCopied ? 'fa-check' : 'fa-copy'} text-lg`}></i>
-                      </div>
-                      <div className="text-left flex-1">
-                        <div className="font-bold text-zinc-900 dark:text-white">
-                          {inviteToPulseCopied ? 'Copied!' : 'Copy Invite Message'}
-                        </div>
-                        <div className="text-xs text-zinc-500">Share on social or messaging apps</div>
-                      </div>
-                      <i className="fa-solid fa-chevron-right text-zinc-400"></i>
-                    </button>
-
-                    {/* SMS Invite (if phone available) */}
-                    {inviteTargetContact.phone && (
-                      <button
-                        onClick={() => {
-                          const userName = localStorage.getItem('pulse_user_name') || 'A friend';
-                          const shareText = generateShareableInviteText(userName);
-                          window.open(`sms:${inviteTargetContact.phone}?body=${encodeURIComponent(shareText)}`, '_blank');
-                        }}
-                        className="w-full p-4 rounded-xl bg-gradient-to-r from-pink-50 to-rose-50 dark:from-pink-900/20 dark:to-rose-900/20 border border-pink-200 dark:border-pink-800 hover:border-pink-400 dark:hover:border-pink-600 transition flex items-center gap-4 group"
-                      >
-                        <div className="w-12 h-12 rounded-full bg-gradient-to-br from-pink-500 to-rose-500 text-white flex items-center justify-center group-hover:scale-110 transition shadow-lg">
-                          <i className="fa-solid fa-comment-sms text-lg"></i>
-                        </div>
-                        <div className="text-left flex-1">
-                          <div className="font-bold text-zinc-900 dark:text-white">Send Text Invite</div>
-                          <div className="text-xs text-zinc-500">{inviteTargetContact.phone}</div>
-                        </div>
-                        <i className="fa-solid fa-chevron-right text-zinc-400"></i>
-                      </button>
-                    )}
-                  </div>
-
-                  {/* Features Preview */}
-                  <div className="mt-6 pt-6 border-t border-zinc-200 dark:border-zinc-800">
-                    <p className="text-xs text-zinc-400 uppercase tracking-wider font-bold mb-3">What they'll get</p>
-                    <div className="grid grid-cols-2 gap-2 text-xs">
-                      <div className="flex items-center gap-2 text-zinc-600 dark:text-zinc-400">
-                        <i className="fa-solid fa-wand-magic-sparkles text-rose-500"></i>
-                        <span>AI-powered messaging</span>
-                      </div>
-                      <div className="flex items-center gap-2 text-zinc-600 dark:text-zinc-400">
-                        <i className="fa-solid fa-calendar text-blue-500"></i>
-                        <span>Smart calendar</span>
-                      </div>
-                      <div className="flex items-center gap-2 text-zinc-600 dark:text-zinc-400">
-                        <i className="fa-solid fa-microphone text-purple-500"></i>
-                        <span>Meeting transcription</span>
-                      </div>
-                      <div className="flex items-center gap-2 text-zinc-600 dark:text-zinc-400">
-                        <i className="fa-solid fa-users text-emerald-500"></i>
-                        <span>Team collaboration</span>
-                      </div>
-                    </div>
-                  </div>
-                </>
-              )}
-            </div>
-          </div>
-        </div>
-      )}
+      <InviteToPulseModal
+        isOpen={showInviteToPulseModal}
+        onClose={() => { setShowInviteToPulseModal(false); setInviteToPulseSent(false); setInviteToPulseCopied(false); setInviteTargetContact(null); }}
+        targetContact={inviteTargetContact}
+        isSent={inviteToPulseSent}
+        isCopied={inviteToPulseCopied}
+        onSendEmail={() => {
+          if (inviteTargetContact?.email) {
+            const userName = localStorage.getItem('pulse_user_name') || 'Your friend';
+            const mailtoLink = generateEarlyAccessInvite(
+              inviteTargetContact.email,
+              userName,
+              inviteTargetContact.name.split(' ')[0]
+            );
+            window.open(mailtoLink, '_blank');
+            setInviteToPulseSent(true);
+          }
+        }}
+        onCopyLink={() => {
+          const userName = localStorage.getItem('pulse_user_name') || 'A friend';
+          const shareText = generateShareableInviteText(userName);
+          navigator.clipboard.writeText(shareText);
+          setInviteToPulseCopied(true);
+          setTimeout(() => setInviteToPulseCopied(false), 3000);
+        }}
+        onSendSMS={() => {
+          if (inviteTargetContact?.phone) {
+            const userName = localStorage.getItem('pulse_user_name') || 'A friend';
+            const shareText = generateShareableInviteText(userName);
+            window.open(`sms:${inviteTargetContact.phone}?body=${encodeURIComponent(shareText)}`, '_blank');
+          }
+        }}
+        onDone={() => { setShowInviteToPulseModal(false); setInviteToPulseSent(false); setInviteTargetContact(null); }}
+      />
 
       {/* Contact Details Slide-Out Panel */}
       {showContactPanel && selectedContactUserId && (
@@ -6046,7 +6000,7 @@ const Messages: React.FC<MessagesProps> = ({ apiKey, contacts, initialContactId,
         isActive={isFocusModeActive}
         threadId={activeThreadId || focusThreadId || 'main'}
         threadName={activeThread?.contactName || activePulseConv?.other_user?.name || 'Conversation'}
-        userId={currentUser?.id || 'current-user'}
+        userId={currentUser.id}
         onClose={() => {
           setIsFocusModeActive(false);
           setFocusThreadId(null);
