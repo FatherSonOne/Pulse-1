@@ -1,10 +1,19 @@
 /**
  * File Upload Service
  * Handles secure file uploads to Supabase Storage with validation and processing
+ *
+ * SECURITY FEATURES (Phase 6.4):
+ * - File type validation with magic number checking
+ * - File size limits enforcement
+ * - Malicious file pattern detection
+ * - Rate limiting for uploads
+ * - Sanitized file metadata
  */
 
 import { supabase } from './supabase';
-import { securityMiddleware } from './securityMiddleware';
+import { fileSecurityService } from './fileSecurityService';
+import { rateLimitService } from './rateLimitService';
+import { sanitizationService } from './sanitizationService';
 
 // ==================== Types ====================
 
@@ -129,26 +138,43 @@ export class FileUploadService {
     userId: string,
     options: UploadOptions = {}
   ): Promise<UploadResult> {
-    // Validate file
-    const validation = securityMiddleware.validateFile(file);
-    if (!validation.valid) {
-      throw new Error(validation.errors.join(', '));
+    // 1. Check rate limits for file uploads
+    const rateLimitCheck = await rateLimitService.checkLimit('file_upload', userId);
+    if (!rateLimitCheck.allowed) {
+      throw new Error(
+        `Upload rate limit exceeded. Please wait ${Math.ceil(rateLimitCheck.retryAfter / 60000)} minutes before uploading more files.`
+      );
     }
 
-    // Check file size
+    // 2. Comprehensive file security validation
+    const validation = await fileSecurityService.validateFileComprehensive(file, false);
+    if (!validation.valid) {
+      console.error('File validation failed:', validation.errors);
+      throw new Error(`File validation failed: ${validation.errors.join(', ')}`);
+    }
+
+    // Log warnings if any
+    if (validation.warnings.length > 0) {
+      console.warn('File validation warnings:', validation.warnings);
+    }
+
+    // 3. Check file size
     const maxSize = options.maxSize || MAX_FILE_SIZE;
     if (file.size > maxSize) {
       throw new Error(`File size exceeds maximum of ${maxSize / 1024 / 1024}MB`);
     }
 
-    // Check file type if allowedTypes specified
+    // 4. Check file type if allowedTypes specified
     if (options.allowedTypes && !options.allowedTypes.includes(file.type)) {
       throw new Error(`File type ${file.type} is not allowed`);
     }
 
     const bucket = options.bucket || DEFAULT_BUCKET;
     const folder = options.folder || userId;
-    const fileName = generateFileName(file.name);
+
+    // 5. Sanitize filename
+    const sanitizedOriginalName = sanitizationService.sanitizeFilename(file.name);
+    const fileName = generateFileName(sanitizedOriginalName);
     const filePath = `${folder}/${fileName}`;
 
     // Upload main file
@@ -191,13 +217,13 @@ export class FileUploadService {
       }
     }
 
-    // Store file metadata in database
+    // Store file metadata in database with sanitization
     const fileMetadata = {
-      user_id: userId,
-      file_name: file.name,
+      user_id: sanitizationService.sanitizeText(userId),
+      file_name: sanitizedOriginalName,
       file_path: filePath,
       file_size: file.size,
-      file_type: file.type,
+      file_type: sanitizationService.sanitizeText(file.type),
       file_category: getFileCategory(file.type),
       public_url: urlData.publicUrl,
       thumbnail_url: thumbnailUrl,
@@ -215,12 +241,15 @@ export class FileUploadService {
       // Don't throw - file is uploaded, metadata can be added later
     }
 
+    // Record rate limit usage after successful upload
+    await rateLimitService.recordRequest('file_upload', userId);
+
     return {
       id: metaData?.id || uploadData.path,
       url: filePath,
       publicUrl: urlData.publicUrl,
       thumbnailUrl,
-      fileName: file.name,
+      fileName: sanitizedOriginalName,
       fileSize: file.size,
       fileType: file.type,
       uploadedAt: new Date().toISOString(),

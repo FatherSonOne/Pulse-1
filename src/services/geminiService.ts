@@ -3,6 +3,10 @@ import { GoogleGenAI, Type } from "@google/genai";
 import { DraftAnalysis, ThreadContext, CatchUpSummary, AsyncSuggestion, Task, TeamHealth, Nudge, HandoffSummary, VoiceAnalysis, ChannelArtifact } from "../types";
 import { googleCalendarService } from "./googleCalendarService";
 import { withFormattedOutput, getContextualFormattingHints, FormattingContext } from "./aiFormattingService";
+import { rateLimitService } from "./rateLimitService";
+import { retryService } from "./retryService";
+import { sanitizationService } from "./sanitizationService";
+import { apiProxyService } from "./apiProxyService";
 
 // Cache for calendar context to avoid too many API calls
 let calendarContextCache: { context: string; timestamp: number } | null = null;
@@ -296,14 +300,30 @@ ${context}`,
     let jsonStr = response.text || '{}';
     jsonStr = jsonStr.replace(/```json/g, '').replace(/```/g, '').trim();
     return JSON.parse(jsonStr);
-  } catch (e) {
-    console.error('Briefing generation error:', e);
+  } catch (e: any) {
+    // Check for leaked API key error specifically
+    const errorMessage = e?.message || e?.error?.message || String(e);
+    const isLeakedKeyError = 
+      e?.status === 403 || 
+      e?.code === 403 || 
+      (e?.error?.code === 403 && errorMessage?.toLowerCase().includes('leaked'));
+    
+    if (isLeakedKeyError) {
+      console.error('Gemini API Key Error: Your API key has been reported as leaked and needs to be replaced. Please get a new API key from https://aistudio.google.com/apikey and update it in Settings.');
+    } else {
+      console.error('Briefing generation error:', e);
+    }
+    
     return {
       greeting: "Welcome back.",
-      summary: "Your dashboard is ready. Connect your accounts to get personalized insights.",
+      summary: isLeakedKeyError 
+        ? "Your Gemini API key needs to be updated. Please go to Settings to configure a new API key from Google AI Studio."
+        : "Your dashboard is ready. Connect your accounts to get personalized insights.",
       highlights: [],
       suggestions: [],
-      focusRecommendation: "Start by reviewing your tasks and calendar for today."
+      focusRecommendation: isLeakedKeyError
+        ? "Update your Gemini API key in Settings to restore AI features."
+        : "Start by reviewing your tasks and calendar for today."
     };
   }
 };
@@ -1053,8 +1073,116 @@ export const processWithModel = async (apiKey: string, prompt: string, model: st
   }
 };
 
+// ==================== Security Layer ====================
+
+/**
+ * Secure wrapper for Gemini API calls with rate limiting and retry logic
+ * This layer should be used for all new implementations
+ */
+export const secureGeminiService = {
+  /**
+   * Check if backend API proxy is available
+   */
+  async isProxyAvailable(): Promise<boolean> {
+    try {
+      return await apiProxyService.healthCheck();
+    } catch {
+      return false;
+    }
+  },
+
+  /**
+   * Secure generate content with rate limiting and retry
+   */
+  async generateContent(
+    model: string,
+    contents: any,
+    config?: any,
+    userId: string = 'anonymous'
+  ): Promise<any> {
+    // Check rate limits
+    const rateLimitCheck = await rateLimitService.checkLimit('api_gemini', userId);
+    if (!rateLimitCheck.allowed) {
+      throw new Error(
+        `Rate limit exceeded. Please wait ${Math.ceil(rateLimitCheck.retryAfter / 60000)} minutes before trying again.`
+      );
+    }
+
+    // Sanitize input
+    const sanitizedContents = sanitizationService.sanitizeObject(contents);
+
+    // Try to use API proxy if available
+    const useProxy = await this.isProxyAvailable();
+
+    if (useProxy) {
+      try {
+        const result = await retryService.executeWithRetry(
+          async () => await apiProxyService.geminiGenerateContent({
+            model,
+            contents: sanitizedContents,
+            config,
+          }),
+          3, // max attempts
+          2  // backoff multiplier
+        );
+
+        // Record rate limit usage
+        await rateLimitService.recordRequest('api_gemini', userId);
+        return result;
+      } catch (error) {
+        console.warn('API proxy failed, falling back to direct API call:', error);
+        // Fall through to direct API call
+      }
+    }
+
+    // Fallback to direct API call (legacy behavior)
+    // WARNING: This exposes API key on client side
+    const apiKey = localStorage.getItem('gemini_api_key') || '';
+    if (!apiKey) {
+      throw new Error('Gemini API key not configured. Please configure the backend API proxy or add an API key in settings.');
+    }
+
+    const ai = new GoogleGenAI({ apiKey });
+    const result = await retryService.executeWithRetry(
+      async () => await ai.models.generateContent({
+        model,
+        contents: sanitizedContents,
+        config,
+      }),
+      3,
+      2
+    );
+
+    // Record rate limit usage
+    await rateLimitService.recordRequest('api_gemini', userId);
+    return result;
+  },
+
+  /**
+   * Secure chat with rate limiting
+   */
+  async chat(prompt: string, options?: { temperature?: number; userId?: string }): Promise<string> {
+    const userId = options?.userId || 'anonymous';
+
+    // Sanitize prompt
+    const sanitizedPrompt = sanitizationService.sanitizeText(prompt, { maxLength: 10000 });
+
+    const result = await this.generateContent(
+      'gemini-2.0-flash',
+      sanitizedPrompt,
+      {
+        temperature: options?.temperature ?? 0.7,
+      },
+      userId
+    );
+
+    return result.text || '';
+  },
+};
+
 // Convenience wrapper for voice command service and other consumers
 // that expect a simple chat interface
+// DEPRECATED: Use secureGeminiService instead for new implementations
 export const geminiService = {
   async chat(prompt: string, options?: { temperature?: number }): Promise<string> {
     // Get API key from localStorage
@@ -1064,10 +1192,13 @@ export const geminiService = {
     }
 
     try {
+      // Sanitize prompt
+      const sanitizedPrompt = sanitizationService.sanitizeText(prompt, { maxLength: 10000 });
+
       const ai = new GoogleGenAI({ apiKey });
       const response = await ai.models.generateContent({
         model: 'gemini-2.0-flash',
-        contents: prompt,
+        contents: sanitizedPrompt,
         config: {
           temperature: options?.temperature ?? 0.7,
         },
