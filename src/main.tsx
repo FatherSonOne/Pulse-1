@@ -8,6 +8,48 @@ import { AuthProvider } from './contexts/AuthContext'
 import './index.css'
 import './components/shared/PulseTypography.css'
 
+// DEVELOPMENT: Force clear service worker cache on version mismatch
+const APP_VERSION = '28.1.0';
+const VERSION_KEY = 'pulse_app_version';
+
+async function clearOldCache() {
+  const storedVersion = localStorage.getItem(VERSION_KEY);
+
+  if (storedVersion !== APP_VERSION) {
+    console.log(`[Cache] Version mismatch: ${storedVersion} -> ${APP_VERSION}. Clearing cache...`);
+
+    try {
+      // Unregister all service workers
+      if ('serviceWorker' in navigator) {
+        const registrations = await navigator.serviceWorker.getRegistrations();
+        for (const registration of registrations) {
+          await registration.unregister();
+          console.log('[Cache] Unregistered service worker');
+        }
+      }
+
+      // Clear all caches
+      if ('caches' in window) {
+        const cacheNames = await caches.keys();
+        await Promise.all(cacheNames.map(name => caches.delete(name)));
+        console.log(`[Cache] Cleared ${cacheNames.length} cache storage(s)`);
+      }
+
+      // Update version
+      localStorage.setItem(VERSION_KEY, APP_VERSION);
+      console.log('[Cache] Cache cleared successfully, reloading...');
+
+      // Force hard reload
+      window.location.reload();
+    } catch (error) {
+      console.error('[Cache] Error clearing cache:', error);
+    }
+  }
+}
+
+// Run cache check immediately
+clearOldCache();
+
 // Handle OAuth deep link callback for native apps
 // This function extracts tokens from the redirect URL and establishes the session
 const handleOAuthDeepLink = async (url: string) => {

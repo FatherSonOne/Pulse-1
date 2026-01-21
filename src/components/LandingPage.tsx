@@ -42,6 +42,13 @@ const LandingPage: React.FC<LandingPageProps> = ({ onGetStarted }) => {
             <button type="button" onClick={() => scrollToSection('features')} className="hover:text-white transition">Features</button>
             <button type="button" onClick={() => scrollToSection('scenarios')} className="hover:text-white transition">Scenarios</button>
             <button type="button" onClick={() => scrollToSection('download')} className="hover:text-white transition">Download</button>
+            <a href="/privacy" className="hover:text-rose-400 transition flex items-center gap-1">
+              Privacy
+            </a>
+            <a href="/docs/SECURITY-AUDIT-REPORT.md" target="_blank" rel="noopener noreferrer" className="hover:text-rose-400 transition flex items-center gap-1">
+              Security
+              <i className="fa-solid fa-arrow-up-right-from-square text-[10px]"></i>
+            </a>
           </div>
           <div className="flex items-center gap-4">
             <button
@@ -64,6 +71,17 @@ const LandingPage: React.FC<LandingPageProps> = ({ onGetStarted }) => {
 
       {/* Hero Section - Enhanced Gradients */}
       <section className="relative pt-40 pb-20 px-6 min-h-[90vh] flex items-center justify-center overflow-visible">
+        {/* Floating particles for movement */}
+        <div className="absolute inset-0 pointer-events-none z-[1] overflow-hidden">
+          <div className="particle absolute top-[20%] left-[10%] w-2 h-2 bg-rose-500/30 rounded-full blur-sm" style={{ animationDelay: '0s' }}></div>
+          <div className="particle absolute top-[60%] left-[15%] w-3 h-3 bg-pink-500/20 rounded-full blur-sm" style={{ animationDelay: '2s' }}></div>
+          <div className="particle absolute top-[40%] right-[20%] w-2 h-2 bg-purple-500/30 rounded-full blur-sm" style={{ animationDelay: '4s' }}></div>
+          <div className="particle absolute top-[70%] right-[10%] w-3 h-3 bg-rose-500/20 rounded-full blur-sm" style={{ animationDelay: '6s' }}></div>
+          <div className="particle absolute top-[30%] left-[50%] w-2 h-2 bg-pink-500/30 rounded-full blur-sm" style={{ animationDelay: '8s' }}></div>
+          <div className="particle absolute top-[80%] left-[30%] w-2 h-2 bg-purple-500/20 rounded-full blur-sm" style={{ animationDelay: '10s' }}></div>
+          <div className="particle absolute top-[50%] right-[40%] w-3 h-3 bg-rose-500/25 rounded-full blur-sm" style={{ animationDelay: '12s' }}></div>
+        </div>
+
         {/* Enhanced Abstract Background with Rose/Pink Gradients - Base Layer */}
         <div className="absolute inset-0 pointer-events-none z-0 overflow-hidden">
           <div className="absolute top-0 left-1/2 -translate-x-1/2 w-[1200px] h-[700px] bg-gradient-to-br from-rose-500/25 via-pink-500/18 to-transparent rounded-full blur-[140px] opacity-70 mix-blend-screen animate-pulse-slow"></div>
@@ -120,18 +138,7 @@ const LandingPage: React.FC<LandingPageProps> = ({ onGetStarted }) => {
 
           <h1 className="text-5xl sm:text-7xl font-bold mb-8 leading-[1.15] tracking-tight relative z-10 pb-4">
             <span className="block text-white animate-fade-in animation-delay-200">Orchestrate Your</span>
-            <span 
-              className="block mt-2 mb-2 animate-fade-in animation-delay-300 relative z-10"
-              style={{
-                background: 'linear-gradient(to right, #fb7185, #ec4899, #a855f7)',
-                WebkitBackgroundClip: 'text',
-                WebkitTextFillColor: 'transparent',
-                backgroundClip: 'text',
-                color: 'transparent',
-                display: 'block',
-                minHeight: '1.2em'
-              }}
-            >
+            <span className="block mt-2 mb-2 hero-title-shimmer animate-fade-in animation-delay-300 relative z-10">
               Digital Intelligence
             </span>
           </h1>
@@ -645,5 +652,171 @@ const SocialIcon = ({ icon }: { icon: string }) => (
     <i className={icon}></i>
   </a>
 );
+
+// Add animation styles to the document
+const style = document.createElement('style');
+style.textContent = `
+  @keyframes float {
+    0%, 100% {
+      transform: translateY(0px) scale(1);
+    }
+    50% {
+      transform: translateY(-20px) scale(1.02);
+    }
+  }
+
+  @keyframes pulse-slow {
+    0%, 100% {
+      opacity: 1;
+    }
+    50% {
+      opacity: 0.7;
+    }
+  }
+
+  @keyframes pulse-glow-slow {
+    0%, 100% {
+      opacity: 0.3;
+      transform: scale(1);
+    }
+    50% {
+      opacity: 0.5;
+      transform: scale(1.05);
+    }
+  }
+
+  @keyframes fade-in {
+    from {
+      opacity: 0;
+      transform: translateY(20px);
+    }
+    to {
+      opacity: 1;
+      transform: translateY(0);
+    }
+  }
+
+  @keyframes slide-up {
+    from {
+      opacity: 0;
+      transform: translateY(30px);
+    }
+    to {
+      opacity: 1;
+      transform: translateY(0);
+    }
+  }
+
+  @keyframes shimmer {
+    0% {
+      background-position: -200% center;
+    }
+    100% {
+      background-position: 200% center;
+    }
+  }
+
+  .animate-float {
+    animation: float 4s ease-in-out infinite;
+  }
+
+  .animate-pulse-slow {
+    animation: pulse-slow 3s ease-in-out infinite;
+  }
+
+  .animate-pulse-glow-slow {
+    animation: pulse-glow-slow 4s ease-in-out infinite;
+  }
+
+  .animate-fade-in {
+    animation: fade-in 0.8s ease-out forwards;
+    opacity: 0;
+  }
+
+  .animate-slide-up {
+    animation: slide-up 0.8s ease-out forwards;
+    opacity: 0;
+  }
+
+  .animation-delay-100 {
+    animation-delay: 0.1s;
+  }
+
+  .animation-delay-200 {
+    animation-delay: 0.2s;
+  }
+
+  .animation-delay-300 {
+    animation-delay: 0.3s;
+  }
+
+  .animation-delay-400 {
+    animation-delay: 0.4s;
+  }
+
+  .animation-delay-500 {
+    animation-delay: 0.5s;
+  }
+
+  .card-elevated {
+    box-shadow: 0 4px 20px rgba(0, 0, 0, 0.3);
+  }
+
+  .card-elevated-rose {
+    box-shadow: 0 4px 20px rgba(244, 63, 94, 0.2);
+  }
+
+  .text-gradient-rose {
+    background: linear-gradient(to right, #fb7185, #ec4899);
+    -webkit-background-clip: text;
+    -webkit-text-fill-color: transparent;
+    background-clip: text;
+  }
+
+  /* Hero text shimmer effect */
+  .hero-title-shimmer {
+    background: linear-gradient(
+      90deg,
+      #fb7185 0%,
+      #ec4899 25%,
+      #a855f7 50%,
+      #ec4899 75%,
+      #fb7185 100%
+    );
+    background-size: 200% auto;
+    -webkit-background-clip: text;
+    -webkit-text-fill-color: transparent;
+    background-clip: text;
+    animation: shimmer 8s linear infinite;
+  }
+
+  /* Floating particles */
+  @keyframes particle-float {
+    0%, 100% {
+      transform: translate(0, 0) rotate(0deg);
+      opacity: 0.2;
+    }
+    25% {
+      transform: translate(10px, -10px) rotate(90deg);
+      opacity: 0.4;
+    }
+    50% {
+      transform: translate(-5px, -20px) rotate(180deg);
+      opacity: 0.3;
+    }
+    75% {
+      transform: translate(-15px, -10px) rotate(270deg);
+      opacity: 0.5;
+    }
+  }
+
+  .particle {
+    animation: particle-float 15s ease-in-out infinite;
+  }
+`;
+if (!document.head.querySelector('style[data-landing-animations]')) {
+  style.setAttribute('data-landing-animations', 'true');
+  document.head.appendChild(style);
+}
 
 export default LandingPage;

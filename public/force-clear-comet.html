@@ -1,0 +1,346 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Force Clear Comet Cache</title>
+    <style>
+        * {
+            margin: 0;
+            padding: 0;
+            box-sizing: border-box;
+        }
+
+        body {
+            font-family: 'Inter', system-ui, -apple-system, sans-serif;
+            background: linear-gradient(135deg, #ec4899 0%, #f43f5e 100%);
+            min-height: 100vh;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            padding: 20px;
+        }
+
+        .container {
+            background: white;
+            border-radius: 16px;
+            padding: 48px;
+            max-width: 600px;
+            box-shadow: 0 20px 60px rgba(0, 0, 0, 0.3);
+        }
+
+        h1 {
+            font-size: 28px;
+            font-weight: 700;
+            color: #1c1917;
+            margin-bottom: 8px;
+        }
+
+        .subtitle {
+            color: #78716c;
+            font-size: 14px;
+            margin-bottom: 32px;
+        }
+
+        .status {
+            padding: 16px;
+            border-radius: 8px;
+            margin: 24px 0;
+            font-weight: 500;
+        }
+
+        .info {
+            background: #dbeafe;
+            color: #1e40af;
+            border-left: 4px solid #3b82f6;
+        }
+
+        .success {
+            background: #d1fae5;
+            color: #065f46;
+            border-left: 4px solid #10b981;
+        }
+
+        .warning {
+            background: #fef3c7;
+            color: #92400e;
+            border-left: 4px solid #f59e0b;
+        }
+
+        .error {
+            background: #fee2e2;
+            color: #991b1b;
+            border-left: 4px solid #ef4444;
+        }
+
+        button {
+            background: linear-gradient(135deg, #ec4899 0%, #f43f5e 100%);
+            color: white;
+            border: none;
+            padding: 14px 28px;
+            border-radius: 8px;
+            font-size: 16px;
+            font-weight: 600;
+            cursor: pointer;
+            transition: all 0.2s;
+            box-shadow: 0 4px 12px rgba(244, 63, 94, 0.3);
+        }
+
+        button:hover:not(:disabled) {
+            transform: translateY(-2px);
+            box-shadow: 0 6px 20px rgba(244, 63, 94, 0.4);
+        }
+
+        button:active:not(:disabled) {
+            transform: translateY(0);
+        }
+
+        button:disabled {
+            opacity: 0.5;
+            cursor: not-allowed;
+        }
+
+        .button-group {
+            display: flex;
+            gap: 12px;
+            flex-wrap: wrap;
+        }
+
+        .progress {
+            margin: 24px 0;
+        }
+
+        .progress h3 {
+            font-size: 16px;
+            font-weight: 600;
+            color: #1c1917;
+            margin-bottom: 12px;
+        }
+
+        .progress-list {
+            list-style: none;
+            padding: 0;
+        }
+
+        .progress-list li {
+            padding: 8px 0;
+            color: #57534e;
+            display: flex;
+            align-items: center;
+            gap: 8px;
+            opacity: 0;
+            animation: fadeIn 0.3s forwards;
+        }
+
+        @keyframes fadeIn {
+            to { opacity: 1; }
+        }
+
+        .progress-list li::before {
+            content: "✓";
+            color: #10b981;
+            font-weight: bold;
+            font-size: 18px;
+        }
+
+        .steps {
+            background: #fef7f4;
+            padding: 20px;
+            border-radius: 8px;
+            margin: 24px 0;
+        }
+
+        .steps h3 {
+            font-size: 16px;
+            font-weight: 600;
+            color: #1c1917;
+            margin-bottom: 12px;
+        }
+
+        .steps ol {
+            margin-left: 20px;
+            color: #57534e;
+        }
+
+        .steps li {
+            margin-bottom: 8px;
+        }
+
+        .warning-badge {
+            display: inline-block;
+            background: #fef3c7;
+            color: #92400e;
+            padding: 4px 12px;
+            border-radius: 4px;
+            font-size: 12px;
+            font-weight: 600;
+            margin-bottom: 16px;
+        }
+
+        .status-title {
+            font-weight: 600;
+            display: block;
+        }
+
+        .status-text {
+            display: block;
+            margin-top: 4px;
+        }
+    </style>
+</head>
+<body>
+    <div class="container">
+        <h1>🔥 Nuclear Cache Clear</h1>
+        <p class="subtitle">Force Comet Browser to load the latest Pulse UI</p>
+
+        <div class="warning-badge">⚠️ This will clear ALL site data</div>
+
+        <div id="status" class="status info">
+            <span class="status-title">Ready to clear cache</span>
+            <span class="status-text">This will delete all cached data, service workers, and force a complete reload.</span>
+        </div>
+
+        <div class="progress" id="progress" style="display: none;">
+            <h3>Progress:</h3>
+            <ul class="progress-list" id="progressList"></ul>
+        </div>
+
+        <div class="button-group">
+            <button id="clearBtn" onclick="nuclearClear()">🔥 Nuclear Clear</button>
+            <button id="reloadBtn" onclick="forceReload()" style="display: none; background: #10b981;">
+                ✓ Reload Pulse
+            </button>
+        </div>
+
+        <div class="steps">
+            <h3>What This Does:</h3>
+            <ol>
+                <li>Unregisters ALL service workers</li>
+                <li>Deletes ALL cache storage</li>
+                <li>Clears localStorage and sessionStorage</li>
+                <li>Removes ALL cookies</li>
+                <li>Deletes ALL IndexedDB databases</li>
+                <li>Forces hard reload with cache busting</li>
+            </ol>
+        </div>
+
+        <div class="steps">
+            <h3>Manual Backup (If Automated Fails):</h3>
+            <ol>
+                <li>Press <strong>F12</strong> to open DevTools</li>
+                <li>Go to <strong>Application</strong> tab</li>
+                <li>Click <strong>"Clear site data"</strong></li>
+                <li>Check all boxes and confirm</li>
+                <li>Press <strong>Ctrl+Shift+R</strong> to hard reload</li>
+            </ol>
+        </div>
+    </div>
+
+    <script>
+        function setStatus(title, text, className) {
+            const statusDiv = document.getElementById('status');
+            statusDiv.className = 'status ' + className;
+            statusDiv.innerHTML = '';
+
+            const titleSpan = document.createElement('span');
+            titleSpan.className = 'status-title';
+            titleSpan.textContent = title;
+
+            const textSpan = document.createElement('span');
+            textSpan.className = 'status-text';
+            textSpan.textContent = text;
+
+            statusDiv.appendChild(titleSpan);
+            statusDiv.appendChild(textSpan);
+        }
+
+        async function nuclearClear() {
+            const progressDiv = document.getElementById('progress');
+            const progressList = document.getElementById('progressList');
+            const clearBtn = document.getElementById('clearBtn');
+            const reloadBtn = document.getElementById('reloadBtn');
+
+            clearBtn.disabled = true;
+            progressDiv.style.display = 'block';
+            progressList.innerHTML = '';
+
+            let steps = 0;
+
+            function addProgress(message) {
+                const li = document.createElement('li');
+                li.textContent = message;
+                li.style.animationDelay = (steps * 0.1) + 's';
+                progressList.appendChild(li);
+                steps++;
+            }
+
+            try {
+                // Step 1: Service Workers
+                if ('serviceWorker' in navigator) {
+                    const registrations = await navigator.serviceWorker.getRegistrations();
+                    for (const reg of registrations) {
+                        await reg.unregister();
+                    }
+                    addProgress('Unregistered ' + registrations.length + ' service worker(s)');
+                }
+
+                // Step 2: Cache Storage
+                if ('caches' in window) {
+                    const cacheNames = await caches.keys();
+                    await Promise.all(cacheNames.map(name => caches.delete(name)));
+                    addProgress('Deleted ' + cacheNames.length + ' cache storage(s)');
+                }
+
+                // Step 3: localStorage
+                const localStorageCount = localStorage.length;
+                localStorage.clear();
+                addProgress('Cleared ' + localStorageCount + ' localStorage item(s)');
+
+                // Step 4: sessionStorage
+                const sessionStorageCount = sessionStorage.length;
+                sessionStorage.clear();
+                addProgress('Cleared ' + sessionStorageCount + ' sessionStorage item(s)');
+
+                // Step 5: Cookies
+                const cookies = document.cookie.split(';');
+                for (const cookie of cookies) {
+                    const eqPos = cookie.indexOf('=');
+                    const name = eqPos > -1 ? cookie.substr(0, eqPos).trim() : cookie.trim();
+                    document.cookie = name + '=;expires=Thu, 01 Jan 1970 00:00:00 GMT;path=/';
+                }
+                addProgress('Cleared ' + cookies.length + ' cookie(s)');
+
+                // Step 6: IndexedDB
+                if ('indexedDB' in window) {
+                    const dbs = await indexedDB.databases();
+                    for (const db of dbs) {
+                        if (db.name) {
+                            indexedDB.deleteDatabase(db.name);
+                        }
+                    }
+                    addProgress('Deleted ' + dbs.length + ' IndexedDB database(s)');
+                }
+
+                // Step 7: Set new version
+                localStorage.setItem('pulse_app_version', '28.1.0');
+                localStorage.setItem('pulse_cache_cleared_28.1.0', 'true');
+                addProgress('Set version markers');
+
+                // Success
+                setStatus('✓ Cache cleared successfully!', 'Click "Reload Pulse" to load the fresh UI.', 'success');
+
+                clearBtn.style.display = 'none';
+                reloadBtn.style.display = 'inline-block';
+
+            } catch (error) {
+                setStatus('⚠️ Error:', error.message, 'error');
+                clearBtn.disabled = false;
+            }
+        }
+
+        function forceReload() {
+            window.location.href = window.location.origin + '/?nocache=' + Date.now() + '&v=28.1.0';
+        }
+    </script>
+</body>
+</html>

@@ -7,6 +7,7 @@ import { VitePWA } from 'vite-plugin-pwa';
 export default defineConfig(({ mode }) => {
     const env = loadEnv(mode, '.', '');
     const isProduction = mode === 'production';
+    const isDevelopment = mode === 'development';
 
     return {
       server: {
@@ -135,7 +136,7 @@ export default defineConfig(({ mode }) => {
       },
       plugins: [
         react(),
-        VitePWA({
+        ...(isDevelopment ? [] : [VitePWA({
           registerType: 'autoUpdate',
           includeAssets: ['favicon.svg', 'icons/icon-192.svg', 'icons/icon-512.svg'],
           manifest: {
@@ -147,7 +148,7 @@ export default defineConfig(({ mode }) => {
             display: 'standalone',
             orientation: 'portrait',
             scope: '/',
-            start_url: '/',
+            start_url: '/?v=28.1.0',
             icons: [
               {
                 src: '/icons/icon-192.svg',
@@ -249,7 +250,7 @@ export default defineConfig(({ mode }) => {
               }
             ]
           }
-        })
+        })])
       ],
       define: {
         'process.env.API_KEY': JSON.stringify(env.GEMINI_API_KEY),

@@ -72,3 +72,8 @@ tmpclaude-*-cwd
 .claude/
 
 .vercel
+
+# Test files with sensitive data
+test-openai-key.js
+clear-openai-key.html
+clear-service-worker.html

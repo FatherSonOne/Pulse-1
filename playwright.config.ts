@@ -30,8 +30,8 @@ export default defineConfig({
 
   // Shared settings for all tests
   use: {
-    // Base URL for your app (Vite runs on port 3000)
-    baseURL: 'http://localhost:3000',
+    // Base URL for your app (Vite runs on port 5173)
+    baseURL: 'http://localhost:5173',
 
     // Collect trace on first retry of a failed test
     trace: 'on-first-retry',
@@ -72,7 +72,7 @@ export default defineConfig({
   // Start your dev server before running tests
   webServer: {
     command: 'npm run dev',
-    url: 'http://localhost:3000',
+    url: 'http://localhost:5173',
     reuseExistingServer: !process.env.CI,
     timeout: 120 * 1000,  // 2 minutes to start
   },

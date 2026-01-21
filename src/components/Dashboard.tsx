@@ -1032,19 +1032,41 @@ const Dashboard: React.FC<DashboardProps> = ({ user, apiKey, setView }) => {
         <BriefingSkeleton />
       ) : (
         <section className="gradient-dashboard-hero texture-noise grain-effect border border-rose-800/30 rounded-xl sm:rounded-2xl p-4 sm:p-6 lg:p-8 text-white relative overflow-hidden animate-slide-up glow-rose-md shadow-2xl">
-          {/* Mesh Gradient Base Layer */}
-          <div className="absolute inset-0 mesh-gradient pointer-events-none opacity-60"></div>
+          {/* Organic Gradient Base Layer with Smooth Transitions */}
+          <div className="absolute inset-0 bg-gradient-to-br from-rose-950 via-pink-950/90 to-purple-950/80 pointer-events-none"></div>
 
-          {/* Enhanced Rose/Pink Gradient Overlays with Animated Pulse */}
-          <div className="absolute inset-0 bg-gradient-to-br from-rose-900/50 via-pink-900/30 to-purple-950/25 pointer-events-none animate-pulse-glow-slow"></div>
-          <div className="absolute -top-40 -right-40 w-[600px] h-[600px] bg-gradient-to-br from-rose-500/35 via-pink-500/25 to-transparent rounded-full blur-3xl pointer-events-none animate-pulse-glow-slow"></div>
-          <div className="absolute -bottom-32 -left-32 w-[450px] h-[450px] bg-gradient-to-tr from-pink-600/30 via-rose-700/20 to-transparent rounded-full blur-3xl pointer-events-none animate-pulse-glow-slow" style={{ animationDelay: '2s' }}></div>
-          <div className="absolute top-1/3 right-1/4 w-80 h-80 bg-gradient-to-bl from-purple-500/20 via-pink-600/12 to-transparent rounded-full blur-3xl pointer-events-none animate-pulse-glow-slow" style={{ animationDelay: '1s' }}></div>
-          <div className="hidden md:block absolute top-1/2 left-1/2 -translate-x-1/2 -translate-y-1/2 w-[800px] h-[800px] bg-gradient-radial from-rose-600/18 via-pink-700/10 to-transparent rounded-full blur-3xl pointer-events-none"></div>
+          {/* Layered Blurred Gradient Orbs - Softer Edges */}
+          <div className="absolute -top-[40%] -right-[30%] w-[800px] h-[800px] bg-gradient-radial from-rose-500/25 via-rose-600/15 to-transparent rounded-full blur-[120px] pointer-events-none animate-pulse-glow-slow opacity-80"></div>
+          <div className="absolute -bottom-[35%] -left-[25%] w-[700px] h-[700px] bg-gradient-radial from-pink-500/20 via-pink-600/12 to-transparent rounded-full blur-[100px] pointer-events-none animate-pulse-glow-slow opacity-70" style={{ animationDelay: '2s' }}></div>
+          <div className="absolute top-[20%] right-[15%] w-[500px] h-[500px] bg-gradient-radial from-purple-500/15 via-purple-600/8 to-transparent rounded-full blur-[90px] pointer-events-none animate-pulse-glow-slow opacity-60" style={{ animationDelay: '1s' }}></div>
+          <div className="absolute bottom-[25%] left-[40%] w-[600px] h-[600px] bg-gradient-radial from-rose-600/18 via-pink-700/10 to-transparent rounded-full blur-[110px] pointer-events-none animate-pulse-glow-slow opacity-50" style={{ animationDelay: '3s' }}></div>
 
-          {/* Animated Light Rays */}
-          <div className="absolute top-0 left-1/4 w-px h-full bg-gradient-to-b from-transparent via-rose-500/20 to-transparent pointer-events-none" style={{ animation: 'pulse 3s ease-in-out infinite' }}></div>
-          <div className="absolute top-0 right-1/3 w-px h-full bg-gradient-to-b from-transparent via-pink-500/15 to-transparent pointer-events-none" style={{ animation: 'pulse 3s ease-in-out infinite', animationDelay: '1s' }}></div>
+          {/* Subtle Noise Texture Overlay */}
+          <div className="absolute inset-0 opacity-[0.015] mix-blend-overlay pointer-events-none"
+            style={{
+              backgroundImage: `url("data:image/svg+xml,%3Csvg viewBox='0 0 400 400' xmlns='http://www.w3.org/2000/svg'%3E%3Cfilter id='noiseFilter'%3E%3CfeTurbulence type='fractalNoise' baseFrequency='0.9' numOctaves='4' stitchTiles='stitch'/%3E%3C/filter%3E%3Crect width='100%25' height='100%25' filter='url(%23noiseFilter)'/%3E%3C/svg%3E")`,
+              backgroundSize: '200px 200px'
+            }}
+          ></div>
+
+          {/* Animated Gradient Mesh - Organic Movement */}
+          <div className="absolute inset-0 opacity-30 pointer-events-none mix-blend-soft-light"
+            style={{
+              background: `
+                radial-gradient(ellipse at 20% 30%, rgba(244, 63, 94, 0.15), transparent 50%),
+                radial-gradient(ellipse at 80% 70%, rgba(236, 72, 153, 0.12), transparent 50%),
+                radial-gradient(ellipse at 40% 80%, rgba(168, 85, 247, 0.10), transparent 50%)
+              `,
+              animation: 'gradient-shift 15s ease-in-out infinite'
+            }}
+          ></div>
+
+          {/* Soft Vignette Effect */}
+          <div className="absolute inset-0 pointer-events-none"
+            style={{
+              background: 'radial-gradient(ellipse at center, transparent 0%, rgba(0, 0, 0, 0.25) 100%)'
+            }}
+          ></div>
 
           {briefing ? (
             <div className="relative z-10">

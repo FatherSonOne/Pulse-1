@@ -63,6 +63,7 @@ const GoogleAccountSelector: React.FC<GoogleAccountSelectorProps> = ({
   const toggleButtonRef = useRef<HTMLButtonElement>(null);
   const [isInitialized, setIsInitialized] = useState(false);
   const [showAccountMenu, setShowAccountMenu] = useState(false);
+  const [imageError, setImageError] = useState(false);
   const menuRef = useRef<HTMLDivElement>(null);
 
   // Get Google Client ID from environment or use a default for development
@@ -316,8 +317,19 @@ const GoogleAccountSelector: React.FC<GoogleAccountSelectorProps> = ({
           className={`w-full flex items-center gap-3 px-3 py-2 rounded-xl transition-all duration-300 group hover:bg-zinc-50 dark:hover:bg-zinc-900/50 hover:translate-x-1 ${isSidebarCollapsed ? 'justify-center' : ''}`}
           title={isInitialized ? 'Click for menu, double-click for Google account selector' : 'Account menu'}
         >
-          <div className="w-9 h-9 rounded-lg overflow-hidden bg-zinc-100 dark:bg-zinc-900 flex-shrink-0 border border-zinc-200 dark:border-zinc-800 ring-2 ring-transparent group-hover:ring-zinc-200 dark:group-hover:ring-zinc-800 transition-all">
-            <img src={user.avatarUrl} alt={user.name} className="w-full h-full object-cover" />
+          <div className="w-9 h-9 min-w-[2.25rem] rounded-full overflow-hidden bg-gradient-to-br from-rose-500 to-pink-500 flex-shrink-0 border border-zinc-200 dark:border-zinc-800 ring-2 ring-transparent group-hover:ring-zinc-200 dark:group-hover:ring-zinc-800 transition-all flex items-center justify-center">
+            {user.avatarUrl && !imageError ? (
+              <img
+                src={user.avatarUrl}
+                alt={user.name}
+                className="w-full h-full object-cover"
+                onError={() => setImageError(true)}
+              />
+            ) : (
+              <span className="text-white text-xs font-bold">
+                {user.name.split(' ').map(n => n[0]).join('').toUpperCase().slice(0, 2)}
+              </span>
+            )}
           </div>
           {!isSidebarCollapsed && (
             <>
@@ -343,8 +355,19 @@ const GoogleAccountSelector: React.FC<GoogleAccountSelectorProps> = ({
             {/* Current Account Info */}
             <div className="px-4 py-3 border-b border-zinc-200 dark:border-zinc-800 bg-zinc-50 dark:bg-zinc-900/50">
               <div className="flex items-center gap-3">
-                <div className="w-10 h-10 rounded-full overflow-hidden bg-zinc-200 dark:bg-zinc-800 flex-shrink-0 ring-2 ring-zinc-200 dark:ring-zinc-700">
-                  <img src={user.avatarUrl} alt={user.name} className="w-full h-full object-cover" />
+                <div className="w-10 h-10 rounded-full overflow-hidden bg-gradient-to-br from-rose-500 to-pink-500 flex-shrink-0 ring-2 ring-zinc-200 dark:ring-zinc-700 flex items-center justify-center">
+                  {user.avatarUrl && !imageError ? (
+                    <img
+                      src={user.avatarUrl}
+                      alt={user.name}
+                      className="w-full h-full object-cover"
+                      onError={() => setImageError(true)}
+                    />
+                  ) : (
+                    <span className="text-white text-sm font-bold">
+                      {user.name.split(' ').map(n => n[0]).join('').toUpperCase().slice(0, 2)}
+                    </span>
+                  )}
                 </div>
                 <div className="flex-1 min-w-0">
                   <div className="text-sm font-semibold text-zinc-900 dark:text-white truncate">

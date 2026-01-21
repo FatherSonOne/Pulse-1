@@ -396,7 +396,7 @@ const VoxModeSelector: React.FC<VoxModeSelectorProps> = ({
                   : '0 8px 40px rgba(0,0,0,0.04), inset 0 1px 0 rgba(255,255,255,0.8)',
               }}
             >
-              <div className="p-6 h-full flex flex-col">
+              <div className="p-6 flex flex-col">
                 {/* Header with large icon */}
                 <div className="flex flex-col md:flex-row md:items-start gap-5 mb-6">
                   <div
@@ -441,8 +441,6 @@ const VoxModeSelector: React.FC<VoxModeSelectorProps> = ({
                       style={{
                         color: isDarkMode ? 'rgba(255,255,255,0.4)' : 'rgba(0,0,0,0.45)',
                         fontFamily: "'Outfit', sans-serif",
-                        maxHeight: '4.5em',
-                        overflow: 'hidden',
                       }}
                     >
                       {activeModeInfo.description}
@@ -451,7 +449,7 @@ const VoxModeSelector: React.FC<VoxModeSelectorProps> = ({
                 </div>
 
                 {/* Workflow Steps - Industrial numbered list */}
-                <div className="mb-6 flex-1 min-h-0 overflow-hidden">
+                <div className="mb-6">
                   <h3
                     className="text-[10px] font-semibold uppercase tracking-[0.15em] mb-4 flex items-center gap-2"
                     style={{
@@ -465,7 +463,7 @@ const VoxModeSelector: React.FC<VoxModeSelectorProps> = ({
                     />
                     Workflow
                   </h3>
-                  <div className="space-y-2 overflow-y-auto max-h-[200px] vox-custom-scrollbar pr-2">
+                  <div className="space-y-2 pr-2">
                     {activeModeInfo.workflow.map((step, index) => (
                       <div
                         key={index}

@@ -19,7 +19,7 @@ import Dashboard from './components/Dashboard';
 import Tools from './components/Tools';
 import AILabHubRedesigned from './components/AILab/AILabHubRedesigned';
 import MessageContainer from './components/MessageContainer';
-import { DecisionTaskPanel } from './components/DecisionTaskPanel';
+import { DecisionTaskHub } from './components/decisions/DecisionTaskHub';
 import AdminDashboard from './components/AdminDashboard';
 import MessageAnalytics from './components/MessageAnalytics';
 import PrivacyPolicy from './components/PrivacyPolicy';
@@ -555,7 +555,7 @@ const App: React.FC = () => {
       case AppView.LIVE_AI:
         return <LiveDashboard apiKey={apiKey} userId={user?.id || ''} />;
       case AppView.DECISIONS_TASKS:
-        return <DecisionTaskPanel user={user} />;
+        return <DecisionTaskHub user={user} />;
       case AppView.DASHBOARD:
       default:
         return <Dashboard user={user} apiKey={apiKey} setView={(v, options) => { 

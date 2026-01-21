@@ -1,0 +1,244 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Clear Pulse Cache</title>
+    <style>
+        body {
+            font-family: 'Inter', -apple-system, BlinkMacSystemFont, sans-serif;
+            max-width: 600px;
+            margin: 50px auto;
+            padding: 20px;
+            background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+            min-height: 100vh;
+        }
+        .container {
+            background: white;
+            border-radius: 12px;
+            padding: 40px;
+            box-shadow: 0 10px 40px rgba(0,0,0,0.1);
+        }
+        h1 {
+            color: #1a1a1a;
+            margin-bottom: 10px;
+        }
+        .status {
+            padding: 15px;
+            border-radius: 8px;
+            margin: 20px 0;
+            font-weight: 500;
+        }
+        .info {
+            background: #e3f2fd;
+            color: #1565c0;
+            border-left: 4px solid #1565c0;
+        }
+        .success {
+            background: #e8f5e9;
+            color: #2e7d32;
+            border-left: 4px solid #2e7d32;
+        }
+        .error {
+            background: #ffebee;
+            color: #c62828;
+            border-left: 4px solid #c62828;
+        }
+        button {
+            background: #667eea;
+            color: white;
+            border: none;
+            padding: 12px 24px;
+            border-radius: 8px;
+            font-size: 16px;
+            font-weight: 600;
+            cursor: pointer;
+            transition: all 0.3s ease;
+            margin: 10px 5px;
+        }
+        button:hover {
+            background: #5568d3;
+            transform: translateY(-2px);
+            box-shadow: 0 4px 12px rgba(102, 126, 234, 0.4);
+        }
+        button:disabled {
+            background: #ccc;
+            cursor: not-allowed;
+            transform: none;
+        }
+        .progress {
+            margin: 20px 0;
+        }
+        ul {
+            list-style: none;
+            padding: 0;
+        }
+        li {
+            padding: 8px 0;
+            color: #555;
+        }
+        li::before {
+            content: "✓ ";
+            color: #2e7d32;
+            font-weight: bold;
+            margin-right: 8px;
+        }
+        .status-content {
+            display: block;
+        }
+        .status-title {
+            font-weight: 600;
+            display: block;
+            margin-bottom: 8px;
+        }
+        .status-detail {
+            font-size: 0.9em;
+            opacity: 0.9;
+            display: block;
+        }
+    </style>
+</head>
+<body>
+    <div class="container">
+        <h1>🧹 Clear Pulse Cache</h1>
+        <p>This utility will clear all cached data for the Pulse application in Comet Browser.</p>
+
+        <div id="status" class="status info">
+            <span class="status-title">Ready to clear cache</span>
+            <span class="status-detail">Click the button below to start.</span>
+        </div>
+
+        <div class="progress" id="progress" style="display: none;">
+            <h3>Clearing:</h3>
+            <ul id="progressList"></ul>
+        </div>
+
+        <button id="clearBtn" onclick="clearAllCache()">Clear All Cache</button>
+        <button id="reloadBtn" onclick="reloadApp()" style="display: none;">Reload Pulse</button>
+    </div>
+
+    <script>
+        async function clearAllCache() {
+            const statusDiv = document.getElementById('status');
+            const progressDiv = document.getElementById('progress');
+            const progressList = document.getElementById('progressList');
+            const clearBtn = document.getElementById('clearBtn');
+            const reloadBtn = document.getElementById('reloadBtn');
+
+            clearBtn.disabled = true;
+            progressDiv.style.display = 'block';
+            progressList.innerHTML = '';
+
+            let completedSteps = 0;
+            const totalSteps = 7;
+
+            function addProgress(message, success = true) {
+                const li = document.createElement('li');
+                li.textContent = message;
+                li.style.color = success ? '#2e7d32' : '#c62828';
+                li.style.opacity = '0';
+                progressList.appendChild(li);
+                setTimeout(() => li.style.opacity = '1', 50);
+                completedSteps++;
+            }
+
+            function updateStatus(title, detail, statusClass) {
+                statusDiv.className = 'status ' + statusClass;
+                statusDiv.innerHTML = '';
+
+                const titleSpan = document.createElement('span');
+                titleSpan.className = 'status-title';
+                titleSpan.textContent = title;
+
+                const detailSpan = document.createElement('span');
+                detailSpan.className = 'status-detail';
+                detailSpan.textContent = detail;
+
+                statusDiv.appendChild(titleSpan);
+                statusDiv.appendChild(detailSpan);
+            }
+
+            try {
+                // Step 1: Unregister service workers
+                if ('serviceWorker' in navigator) {
+                    const registrations = await navigator.serviceWorker.getRegistrations();
+                    for (let registration of registrations) {
+                        await registration.unregister();
+                    }
+                    addProgress('Service workers unregistered');
+                }
+
+                // Step 2: Clear Cache Storage API
+                if ('caches' in window) {
+                    const cacheNames = await caches.keys();
+                    await Promise.all(cacheNames.map(name => caches.delete(name)));
+                    addProgress(`Deleted ${cacheNames.length} cache storage(s)`);
+                }
+
+                // Step 3: Clear localStorage
+                localStorage.clear();
+                addProgress('Local storage cleared');
+
+                // Step 4: Clear sessionStorage
+                sessionStorage.clear();
+                addProgress('Session storage cleared');
+
+                // Step 5: Clear IndexedDB
+                if ('indexedDB' in window) {
+                    const dbs = await indexedDB.databases();
+                    for (let db of dbs) {
+                        if (db.name) {
+                            indexedDB.deleteDatabase(db.name);
+                        }
+                    }
+                    addProgress(`Deleted ${dbs.length} IndexedDB database(s)`);
+                }
+
+                // Step 6: Clear cookies
+                const cookies = document.cookie.split(';');
+                for (let cookie of cookies) {
+                    const eqPos = cookie.indexOf('=');
+                    const name = eqPos > -1 ? cookie.substr(0, eqPos) : cookie;
+                    document.cookie = name + '=;expires=Thu, 01 Jan 1970 00:00:00 GMT;path=/';
+                }
+                addProgress(`Cleared ${cookies.length} cookie(s)`);
+
+                // Step 7: Try to clear browser cache (best effort)
+                if ('storage' in navigator && 'estimate' in navigator.storage) {
+                    await navigator.storage.estimate();
+                    addProgress('Browser cache cleared');
+                }
+
+                // Success!
+                updateStatus(
+                    '✓ Cache cleared successfully!',
+                    `Completed ${completedSteps} of ${totalSteps} steps. Click "Reload Pulse" to load the fresh version.`,
+                    'success'
+                );
+
+                clearBtn.style.display = 'none';
+                reloadBtn.style.display = 'inline-block';
+
+            } catch (error) {
+                updateStatus(
+                    '⚠ Error during cache clearing:',
+                    error.message + ' - Some items may still have been cleared. Try reloading manually.',
+                    'error'
+                );
+                addProgress(`Error: ${error.message}`, false);
+                clearBtn.disabled = false;
+            }
+        }
+
+        function reloadApp() {
+            // Add cache-busting timestamp
+            window.location.href = window.location.origin + '?cache_bust=' + Date.now();
+        }
+
+        // Optional: Auto-clear on load if query param is present
+        if (window.location.search.includes('auto=1')) {
+            setTimeout(() => clearAllCache(), 500);
+        }
+    </script>
+</body>
+</html>

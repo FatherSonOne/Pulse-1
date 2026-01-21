@@ -441,6 +441,22 @@ code {
   animation: pulse-glow-slow-light 4s ease-in-out infinite;
 }
 
+/* Organic gradient shift animation for dashboard */
+@keyframes gradient-shift {
+  0% {
+    transform: translate(0, 0) scale(1);
+  }
+  33% {
+    transform: translate(3%, -3%) scale(1.02);
+  }
+  66% {
+    transform: translate(-3%, 3%) scale(0.98);
+  }
+  100% {
+    transform: translate(0, 0) scale(1);
+  }
+}
+
 /* Secondary pulse with offset timing */
 @keyframes pulse-glow-slow-delayed {
   0%, 100% {
