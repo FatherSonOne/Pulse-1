@@ -1,0 +1,599 @@
+/**
+ * SplitViewMessagesContainer Styles
+ *
+ * Design System Specifications:
+ * - Desktop (1200px+): 30% thread list / 70% conversation
+ * - Tablet (768px-1199px): 25% thread list / 75% conversation
+ * - Mobile (<768px): Stacked/slide transition
+ *
+ * Panel Constraints:
+ * - Thread List: min 280px, max 480px
+ * - Conversation: min 400px
+ * - Divider: 4px default, 6px on hover
+ *
+ * @author UI Designer Agent
+ * @version 2.0.0
+ */
+
+/* ==============================================
+   CSS Custom Properties (Design Tokens)
+   ============================================== */
+
+:root {
+  /* Layout Tokens */
+  --split-view-thread-min-width: 280px;
+  --split-view-thread-max-width: 480px;
+  --split-view-conversation-min-width: 400px;
+  --split-view-divider-width: 4px;
+  --split-view-divider-hit-area: 12px;
+  --split-view-divider-hover-width: 6px;
+
+  /* Desktop Split (1200px+): 30% / 70% */
+  --split-view-desktop-thread-ratio: 30%;
+  --split-view-desktop-conversation-ratio: 70%;
+
+  /* Tablet Split (768px-1199px): 25% / 75% */
+  --split-view-tablet-thread-ratio: 25%;
+  --split-view-tablet-conversation-ratio: 75%;
+
+  /* Animation Tokens */
+  --split-view-transition-fast: 150ms;
+  --split-view-transition-normal: 300ms;
+  --split-view-transition-slow: 500ms;
+  --split-view-ease-standard: cubic-bezier(0.4, 0, 0.2, 1);
+  --split-view-ease-decelerate: cubic-bezier(0, 0, 0.2, 1);
+  --split-view-ease-accelerate: cubic-bezier(0.4, 0, 1, 1);
+
+  /* Color Tokens - Light Mode */
+  --split-view-bg-primary: #ffffff;
+  --split-view-bg-secondary: #f9fafb;
+  --split-view-border-color: #e5e7eb;
+  --split-view-divider-color: #e4e4e7;
+  --split-view-divider-hover-color: #93c5fd;
+  --split-view-divider-active-color: #3b82f6;
+  --split-view-text-primary: #18181b;
+  --split-view-text-secondary: #71717a;
+  --split-view-shadow-sm: 0 1px 2px 0 rgb(0 0 0 / 0.05);
+  --split-view-shadow-md: 0 4px 6px -1px rgb(0 0 0 / 0.1);
+  --split-view-shadow-lg: 0 10px 15px -3px rgb(0 0 0 / 0.1);
+
+  /* Z-Index Tokens */
+  --split-view-z-divider: 10;
+  --split-view-z-mobile-overlay: 40;
+  --split-view-z-mobile-back-button: 50;
+  --split-view-z-keyboard-helper: 60;
+  --split-view-z-resize-overlay: 9999;
+}
+
+/* Dark Mode Tokens */
+.dark {
+  --split-view-bg-primary: #18181b;
+  --split-view-bg-secondary: #27272a;
+  --split-view-border-color: #3f3f46;
+  --split-view-divider-color: #3f3f46;
+  --split-view-divider-hover-color: #60a5fa;
+  --split-view-divider-active-color: #3b82f6;
+  --split-view-text-primary: #fafafa;
+  --split-view-text-secondary: #a1a1aa;
+}
+
+/* ==============================================
+   Main Container
+   ============================================== */
+
+.split-view-container {
+  display: flex;
+  flex-direction: row;
+  height: 100%;
+  width: 100%;
+  overflow: hidden;
+  position: relative;
+  background-color: var(--split-view-bg-primary);
+}
+
+/* ==============================================
+   Thread List Panel Wrapper
+   ============================================== */
+
+.thread-list-wrapper {
+  position: relative;
+  height: 100%;
+  flex-shrink: 0;
+  overflow: hidden;
+  background-color: var(--split-view-bg-primary);
+  border-right: 1px solid var(--split-view-border-color);
+  transition: width var(--split-view-transition-normal) var(--split-view-ease-standard);
+}
+
+/* Thread list panel fills its wrapper */
+.thread-list-wrapper .thread-list-panel {
+  height: 100%;
+  width: 100%;
+  border-right: none; /* Remove duplicate border */
+}
+
+/* ==============================================
+   Resize Divider
+   ============================================== */
+
+.split-view-divider {
+  position: relative;
+  flex-shrink: 0;
+  width: var(--split-view-divider-hit-area);
+  height: 100%;
+  cursor: col-resize;
+  user-select: none;
+  z-index: var(--split-view-z-divider);
+  display: flex;
+  align-items: center;
+  justify-content: center;
+}
+
+/* Visual divider line */
+.split-view-divider::before {
+  content: '';
+  position: absolute;
+  top: 0;
+  bottom: 0;
+  left: 50%;
+  transform: translateX(-50%);
+  width: var(--split-view-divider-width);
+  background-color: var(--split-view-divider-color);
+  border-radius: 2px;
+  transition:
+    width var(--split-view-transition-fast) var(--split-view-ease-standard),
+    background-color var(--split-view-transition-fast) var(--split-view-ease-standard);
+}
+
+.split-view-divider:hover::before,
+.split-view-divider.is-resizing::before {
+  width: var(--split-view-divider-hover-width);
+  background-color: var(--split-view-divider-hover-color);
+}
+
+.split-view-divider.is-resizing::before {
+  background-color: var(--split-view-divider-active-color);
+}
+
+/* Drag handle dots */
+.split-view-divider-handle {
+  display: flex;
+  flex-direction: column;
+  gap: 4px;
+  opacity: 0;
+  transform: scale(0.8);
+  transition:
+    opacity var(--split-view-transition-fast) var(--split-view-ease-standard),
+    transform var(--split-view-transition-fast) var(--split-view-ease-standard);
+  pointer-events: none;
+}
+
+.split-view-divider:hover .split-view-divider-handle,
+.split-view-divider.is-resizing .split-view-divider-handle {
+  opacity: 1;
+  transform: scale(1);
+}
+
+.split-view-divider-handle-dot {
+  width: 4px;
+  height: 4px;
+  border-radius: 50%;
+  background-color: var(--split-view-divider-active-color);
+}
+
+/* ==============================================
+   Conversation Panel Wrapper
+   ============================================== */
+
+.conversation-wrapper {
+  position: relative;
+  height: 100%;
+  flex: 1;
+  min-width: var(--split-view-conversation-min-width);
+  overflow: hidden;
+  background-color: var(--split-view-bg-primary);
+}
+
+/* Conversation panel fills its wrapper */
+.conversation-wrapper .conversation-panel {
+  height: 100%;
+  width: 100%;
+}
+
+/* ==============================================
+   Resize Cursor Overlay
+   ============================================== */
+
+.resize-cursor-overlay {
+  position: fixed;
+  inset: 0;
+  cursor: col-resize;
+  z-index: var(--split-view-z-resize-overlay);
+  pointer-events: none;
+}
+
+.resize-cursor-overlay.is-active {
+  pointer-events: auto;
+}
+
+/* ==============================================
+   Mobile Layout
+   ============================================== */
+
+@media (max-width: 767px) {
+  .split-view-container {
+    flex-direction: column;
+  }
+
+  .thread-list-wrapper,
+  .conversation-wrapper {
+    position: absolute;
+    inset: 0;
+    width: 100%;
+    min-width: 0;
+    border-right: none;
+  }
+
+  .split-view-divider {
+    display: none;
+  }
+}
+
+/* ==============================================
+   Mobile Back Button
+   ============================================== */
+
+.mobile-back-button {
+  position: fixed;
+  top: 16px;
+  left: 16px;
+  z-index: var(--split-view-z-mobile-back-button);
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  padding: 8px 12px;
+  background-color: var(--split-view-bg-primary);
+  border: 1px solid var(--split-view-border-color);
+  border-radius: 8px;
+  box-shadow: var(--split-view-shadow-lg);
+  cursor: pointer;
+  transition:
+    transform var(--split-view-transition-fast) var(--split-view-ease-standard),
+    box-shadow var(--split-view-transition-fast) var(--split-view-ease-standard);
+}
+
+.mobile-back-button:hover {
+  transform: scale(1.02);
+  box-shadow: var(--split-view-shadow-lg);
+}
+
+.mobile-back-button:active {
+  transform: scale(0.98);
+}
+
+.mobile-back-button-icon {
+  color: var(--split-view-text-secondary);
+  font-size: 14px;
+}
+
+.mobile-back-button-text {
+  color: var(--split-view-text-primary);
+  font-size: 14px;
+  font-weight: 500;
+}
+
+/* ==============================================
+   Keyboard Shortcuts Helper Modal
+   ============================================== */
+
+.keyboard-shortcuts-overlay {
+  position: fixed;
+  inset: 0;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  background-color: rgba(0, 0, 0, 0.5);
+  backdrop-filter: blur(4px);
+  z-index: var(--split-view-z-keyboard-helper);
+}
+
+.keyboard-shortcuts-modal {
+  max-width: 448px;
+  width: calc(100% - 32px);
+  margin: 16px;
+  padding: 24px;
+  background-color: var(--split-view-bg-primary);
+  border: 1px solid var(--split-view-border-color);
+  border-radius: 12px;
+  box-shadow: var(--split-view-shadow-lg);
+}
+
+.keyboard-shortcuts-header {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  margin-bottom: 16px;
+}
+
+.keyboard-shortcuts-title {
+  font-size: 18px;
+  font-weight: 700;
+  color: var(--split-view-text-primary);
+}
+
+.keyboard-shortcuts-close {
+  padding: 8px;
+  border-radius: 8px;
+  background: transparent;
+  border: none;
+  cursor: pointer;
+  transition: background-color var(--split-view-transition-fast);
+}
+
+.keyboard-shortcuts-close:hover {
+  background-color: var(--split-view-bg-secondary);
+}
+
+.keyboard-shortcuts-list {
+  display: flex;
+  flex-direction: column;
+  gap: 12px;
+}
+
+.keyboard-shortcut-item {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  font-size: 14px;
+}
+
+.keyboard-shortcut-description {
+  color: var(--split-view-text-secondary);
+}
+
+.keyboard-shortcut-keys {
+  display: flex;
+  align-items: center;
+  gap: 4px;
+}
+
+.keyboard-key {
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  padding: 4px 8px;
+  font-family: ui-monospace, monospace;
+  font-size: 12px;
+  font-weight: 500;
+  color: var(--split-view-text-primary);
+  background-color: var(--split-view-bg-secondary);
+  border: 1px solid var(--split-view-border-color);
+  border-radius: 4px;
+}
+
+.keyboard-shortcut-separator {
+  color: var(--split-view-text-secondary);
+  font-size: 12px;
+}
+
+.keyboard-shortcuts-footer {
+  margin-top: 16px;
+  padding-top: 16px;
+  border-top: 1px solid var(--split-view-border-color);
+  font-size: 12px;
+  color: var(--split-view-text-secondary);
+}
+
+/* ==============================================
+   Animation Keyframes
+   ============================================== */
+
+@keyframes slideInFromLeft {
+  from {
+    transform: translateX(-100%);
+    opacity: 0;
+  }
+  to {
+    transform: translateX(0);
+    opacity: 1;
+  }
+}
+
+@keyframes slideOutToLeft {
+  from {
+    transform: translateX(0);
+    opacity: 1;
+  }
+  to {
+    transform: translateX(-100%);
+    opacity: 0;
+  }
+}
+
+@keyframes slideInFromRight {
+  from {
+    transform: translateX(100%);
+    opacity: 0;
+  }
+  to {
+    transform: translateX(0);
+    opacity: 1;
+  }
+}
+
+@keyframes slideOutToRight {
+  from {
+    transform: translateX(0);
+    opacity: 1;
+  }
+  to {
+    transform: translateX(100%);
+    opacity: 0;
+  }
+}
+
+@keyframes fadeIn {
+  from {
+    opacity: 0;
+  }
+  to {
+    opacity: 1;
+  }
+}
+
+@keyframes fadeOut {
+  from {
+    opacity: 1;
+  }
+  to {
+    opacity: 0;
+  }
+}
+
+@keyframes scaleIn {
+  from {
+    transform: scale(0.95);
+    opacity: 0;
+  }
+  to {
+    transform: scale(1);
+    opacity: 1;
+  }
+}
+
+/* ==============================================
+   Responsive Breakpoints
+   ============================================== */
+
+/* Mobile: < 768px (handled above) */
+
+/* Tablet: 768px - 1199px */
+@media (min-width: 768px) and (max-width: 1199px) {
+  .thread-list-wrapper {
+    /* Default 25% width, can be overridden by inline styles from JS */
+    width: var(--split-view-tablet-thread-ratio);
+    min-width: var(--split-view-thread-min-width);
+    max-width: var(--split-view-thread-max-width);
+  }
+
+  .conversation-wrapper {
+    width: var(--split-view-tablet-conversation-ratio);
+    min-width: calc(100% - var(--split-view-thread-max-width) - var(--split-view-divider-hit-area));
+  }
+}
+
+/* Desktop: 1200px+ */
+@media (min-width: 1200px) {
+  .thread-list-wrapper {
+    /* Default 30% width, can be overridden by inline styles from JS */
+    width: var(--split-view-desktop-thread-ratio);
+    min-width: var(--split-view-thread-min-width);
+    max-width: var(--split-view-thread-max-width);
+  }
+
+  .conversation-wrapper {
+    width: var(--split-view-desktop-conversation-ratio);
+    min-width: var(--split-view-conversation-min-width);
+  }
+}
+
+/* Large Desktop: 1440px+ */
+@media (min-width: 1440px) {
+  .thread-list-wrapper {
+    /* Can afford slightly narrower thread list */
+    max-width: 420px;
+  }
+}
+
+/* ==============================================
+   Accessibility
+   ============================================== */
+
+/* Focus indicators */
+.split-view-container *:focus-visible {
+  outline: 2px solid var(--split-view-divider-active-color);
+  outline-offset: 2px;
+}
+
+/* Reduced motion */
+@media (prefers-reduced-motion: reduce) {
+  .split-view-container,
+  .split-view-container * {
+    animation-duration: 0.01ms !important;
+    animation-iteration-count: 1 !important;
+    transition-duration: 0.01ms !important;
+  }
+}
+
+/* High contrast mode */
+@media (prefers-contrast: high) {
+  .split-view-divider::before {
+    width: 2px;
+    background-color: currentColor;
+  }
+
+  .thread-list-wrapper {
+    border-right-width: 2px;
+  }
+
+  .keyboard-key {
+    border-width: 2px;
+  }
+}
+
+/* ==============================================
+   Scrollbar Styling
+   ============================================== */
+
+.split-view-container ::-webkit-scrollbar {
+  width: 8px;
+  height: 8px;
+}
+
+.split-view-container ::-webkit-scrollbar-track {
+  background: transparent;
+}
+
+.split-view-container ::-webkit-scrollbar-thumb {
+  background-color: var(--split-view-border-color);
+  border-radius: 4px;
+  border: 2px solid transparent;
+  background-clip: padding-box;
+}
+
+.split-view-container ::-webkit-scrollbar-thumb:hover {
+  background-color: var(--split-view-text-secondary);
+}
+
+/* Firefox scrollbar */
+.split-view-container * {
+  scrollbar-width: thin;
+  scrollbar-color: var(--split-view-border-color) transparent;
+}
+
+/* ==============================================
+   Print Styles
+   ============================================== */
+
+@media print {
+  .split-view-divider,
+  .mobile-back-button,
+  .keyboard-shortcuts-overlay {
+    display: none !important;
+  }
+
+  .split-view-container {
+    display: block;
+    height: auto;
+    overflow: visible;
+  }
+
+  .thread-list-wrapper {
+    display: none;
+  }
+
+  .conversation-wrapper {
+    width: 100%;
+    min-width: 0;
+  }
+}

@@ -1,5 +1,55 @@
-import React, { useState, useCallback, useRef, useEffect } from 'react';
+import React, { useState, useCallback, useRef, useEffect, useMemo } from 'react';
 import { useHoverWithDelay } from '../../hooks/useHoverWithDelay';
+
+// Long-press progress ring component for mobile visual feedback
+const LongPressIndicator: React.FC<{
+  progress: number; // 0 to 1
+  isActive: boolean;
+  isCancelled: boolean;
+}> = ({ progress, isActive, isCancelled }) => {
+  if (!isActive && progress === 0) return null;
+
+  const radius = 45;
+  const circumference = 2 * Math.PI * radius;
+  const strokeDashoffset = circumference * (1 - progress);
+
+  return (
+    <div
+      className={`long-press-indicator ${isCancelled ? 'long-press-cancelled' : ''}`}
+      aria-hidden="true"
+    >
+      {/* Pulse overlay during press */}
+      {isActive && <div className="long-press-pulse-overlay" />}
+
+      {/* SVG Progress Ring */}
+      <svg
+        className="long-press-ring"
+        viewBox="0 0 100 100"
+        aria-hidden="true"
+      >
+        {/* Background track */}
+        <circle
+          className="long-press-ring-track"
+          cx="50"
+          cy="50"
+          r={radius}
+        />
+        {/* Progress arc */}
+        <circle
+          className="long-press-ring-progress"
+          cx="50"
+          cy="50"
+          r={radius}
+          style={{
+            strokeDasharray: circumference,
+            strokeDashoffset: isActive ? undefined : strokeDashoffset,
+            animationPlayState: isActive ? 'running' : 'paused',
+          }}
+        />
+      </svg>
+    </div>
+  );
+};
 
 export interface Position {
   top?: number;
@@ -20,6 +70,8 @@ export interface HoverReactionTriggerProps {
     onReact: (emoji: string) => void;
     onShowMore: () => void;
     position: Position;
+    /** Whether the reaction bar is currently exiting (for animation) */
+    isExiting?: boolean;
   }) => React.ReactNode;
   /** Callback when a reaction is selected */
   onReact: (messageId: string, emoji: string) => void;
@@ -76,7 +128,14 @@ export const HoverReactionTrigger: React.FC<HoverReactionTriggerProps> = ({
 }) => {
   const [position, setPosition] = useState<Position>({});
   const [showReactionBar, setShowReactionBar] = useState(false);
+  const [isExiting, setIsExiting] = useState(false);
+  const [longPressProgress, setLongPressProgress] = useState(0);
+  const [isLongPressing, setIsLongPressing] = useState(false);
+  const [longPressCancelled, setLongPressCancelled] = useState(false);
+  const [isPendingHover, setIsPendingHover] = useState(false);
   const containerRef = useRef<HTMLDivElement>(null);
+  const longPressStartTime = useRef<number>(0);
+  const longPressAnimationRef = useRef<number | null>(null);
 
   // Calculate optimal position for reaction bar
   const calculatePosition = useCallback(() => {
@@ -116,20 +175,85 @@ export const HoverReactionTrigger: React.FC<HoverReactionTriggerProps> = ({
     return newPosition;
   }, [isMe]);
 
-  // Handle hover state changes
+  // Handle hover state changes with visual feedback
+  const handleHoverPending = useCallback(() => {
+    if (disabled) return;
+    setIsPendingHover(true);
+  }, [disabled]);
+
   const handleHoverStart = useCallback(() => {
     if (disabled) return;
 
     const pos = calculatePosition();
     setPosition(pos);
+    setIsPendingHover(false);
+    setIsExiting(false);
     setShowReactionBar(true);
   }, [disabled, calculatePosition]);
 
   const handleHoverEnd = useCallback(() => {
-    setShowReactionBar(false);
+    setIsPendingHover(false);
+    // Trigger exit animation
+    setIsExiting(true);
+    // Wait for exit animation to complete before hiding
+    setTimeout(() => {
+      setShowReactionBar(false);
+      setIsExiting(false);
+    }, 150);
   }, []);
 
-  // Use the hover hook
+  // Long-press progress animation for mobile
+  const startLongPressAnimation = useCallback(() => {
+    setIsLongPressing(true);
+    setLongPressCancelled(false);
+    longPressStartTime.current = Date.now();
+
+    const animate = () => {
+      const elapsed = Date.now() - longPressStartTime.current;
+      const progress = Math.min(elapsed / 500, 1); // 500ms long-press delay
+      setLongPressProgress(progress);
+
+      if (progress < 1) {
+        longPressAnimationRef.current = requestAnimationFrame(animate);
+      }
+    };
+
+    longPressAnimationRef.current = requestAnimationFrame(animate);
+  }, []);
+
+  const cancelLongPressAnimation = useCallback(() => {
+    if (longPressAnimationRef.current) {
+      cancelAnimationFrame(longPressAnimationRef.current);
+      longPressAnimationRef.current = null;
+    }
+
+    if (isLongPressing && longPressProgress < 1) {
+      setLongPressCancelled(true);
+      // Reset after cancel animation
+      setTimeout(() => {
+        setLongPressCancelled(false);
+        setLongPressProgress(0);
+      }, 200);
+    }
+
+    setIsLongPressing(false);
+  }, [isLongPressing, longPressProgress]);
+
+  const completeLongPressAnimation = useCallback(() => {
+    if (longPressAnimationRef.current) {
+      cancelAnimationFrame(longPressAnimationRef.current);
+      longPressAnimationRef.current = null;
+    }
+    setLongPressProgress(1);
+    setIsLongPressing(false);
+
+    // Reset after a brief delay
+    setTimeout(() => {
+      setLongPressProgress(0);
+    }, 300);
+  }, []);
+
+  // Use the hover hook with extended callbacks
   const { isHovering, hoverRef, isLongPressed } = useHoverWithDelay({
     hoverDelay,
     unhoverDelay: 100,
@@ -139,6 +263,84 @@ export const HoverReactionTrigger: React.FC<HoverReactionTriggerProps> = ({
     longPressDelay: 500,
     enableHaptic: true,
   });
+
+  // Track mouse enter for pending hover state
+  useEffect(() => {
+    const element = containerRef.current;
+    if (!element || disabled) return;
+
+    const handleMouseEnter = () => {
+      handleHoverPending();
+    };
+
+    const handleMouseLeave = () => {
+      setIsPendingHover(false);
+    };
+
+    element.addEventListener('mouseenter', handleMouseEnter);
+    element.addEventListener('mouseleave', handleMouseLeave);
+
+    return () => {
+      element.removeEventListener('mouseenter', handleMouseEnter);
+      element.removeEventListener('mouseleave', handleMouseLeave);
+    };
+  }, [disabled, handleHoverPending]);
+
+  // Track touch events for long-press visual feedback
+  useEffect(() => {
+    const element = containerRef.current;
+    if (!element || disabled || !enableMobileLongPress) return;
+
+    const handleTouchStart = () => {
+      startLongPressAnimation();
+    };
+
+    const handleTouchEnd = () => {
+      if (longPressProgress >= 1) {
+        completeLongPressAnimation();
+      } else {
+        cancelLongPressAnimation();
+      }
+    };
+
+    const handleTouchMove = () => {
+      cancelLongPressAnimation();
+    };
+
+    element.addEventListener('touchstart', handleTouchStart, { passive: true });
+    element.addEventListener('touchend', handleTouchEnd);
+    element.addEventListener('touchmove', handleTouchMove, { passive: true });
+    element.addEventListener('touchcancel', handleTouchEnd);
+
+    return () => {
+      element.removeEventListener('touchstart', handleTouchStart);
+      element.removeEventListener('touchend', handleTouchEnd);
+      element.removeEventListener('touchmove', handleTouchMove);
+      element.removeEventListener('touchcancel', handleTouchEnd);
+
+      if (longPressAnimationRef.current) {
+        cancelAnimationFrame(longPressAnimationRef.current);
+      }
+    };
+  }, [
+    disabled,
+    enableMobileLongPress,
+    longPressProgress,
+    startLongPressAnimation,
+    cancelLongPressAnimation,
+    completeLongPressAnimation,
+  ]);
+
+  // Determine hover visual state class
+  const hoverStateClass = useMemo(() => {
+    if (showReactionBar || isLongPressed) {
+      return 'message-hover-active';
+    }
+    if (isPendingHover) {
+      return 'message-hover-pending';
+    }
+    return '';
+  }, [showReactionBar, isLongPressed, isPendingHover]);
 
   // Sync refs (containerRef for positioning, hoverRef for hover detection)
   useEffect(() => {
@@ -202,7 +404,7 @@ export const HoverReactionTrigger: React.FC<HoverReactionTriggerProps> = ({
   return (
     <div
       ref={containerRef}
-      className={`relative ${className}`}
+      className={`relative message-hover-container ${hoverStateClass} ${className}`}
       tabIndex={disabled ? -1 : 0}
       onKeyDown={handleKeyDown}
       role="group"
@@ -210,7 +412,9 @@ export const HoverReactionTrigger: React.FC<HoverReactionTriggerProps> = ({
       aria-description="Hover or long-press to show quick reactions"
     >
       {/* Message Content */}
-      {children}
+      <div className="message-content-bubble">
+        {children}
+      </div>
 
       {/* Reaction Bar Overlay */}
       {(showReactionBar || isHovering || isLongPressed) && (
@@ -224,13 +428,26 @@ export const HoverReactionTrigger: React.FC<HoverReactionTriggerProps> = ({
             onReact: handleReact,
             onShowMore: handleShowMore,
             position,
+            isExiting,
           })}
         </div>
       )}
 
-      {/* Visual indicator for long-press (mobile) */}
+      {/* Enhanced visual indicator for long-press (mobile) */}
+      {(isLongPressing || longPressProgress > 0) && (
+        <LongPressIndicator
+          progress={longPressProgress}
+          isActive={isLongPressing}
+          isCancelled={longPressCancelled}
+        />
+      )}
+
+      {/* Haptic visual feedback flash */}
       {isLongPressed && (
-        <div className="absolute inset-0 pointer-events-none rounded-lg ring-2 ring-blue-400 ring-opacity-50 animate-pulse" />
+        <div
+          className="absolute inset-0 pointer-events-none rounded-lg haptic-visual-feedback long-press-complete"
+          aria-hidden="true"
+        />
       )}
     </div>
   );

@@ -1,0 +1,550 @@
+/**
+ * Messages Layout Styles
+ * ======================
+ *
+ * Comprehensive styling for the Sidebar + Messages Split-View integration.
+ *
+ * Layout Specifications:
+ * - Sidebar: 320px expanded, 60px collapsed
+ * - Messages Split-View: Thread List (30%) | Conversation (70%)
+ * - Mobile breakpoint: 768px
+ * - Transition duration: 300ms cubic-bezier(0.4, 0, 0.2, 1)
+ *
+ * Design Tokens Used:
+ * - --sidebar-width: Dynamic sidebar width
+ * - --sidebar-transition: Sidebar animation timing
+ * - --color-*: Brand color palette
+ * - --space-*: Spacing scale
+ */
+
+/* =============================================================================
+   CSS Custom Properties (Design Tokens)
+   ============================================================================= */
+
+:root {
+  /* Layout Dimensions */
+  --sidebar-width-expanded: 320px;
+  --sidebar-width-collapsed: 60px;
+  --sidebar-width: var(--sidebar-width-expanded);
+
+  /* Animation Timing */
+  --sidebar-transition: 300ms cubic-bezier(0.4, 0, 0.2, 1);
+
+  /* Colors - Light Mode */
+  --layout-bg-primary: #ffffff;
+  --layout-bg-secondary: #f9fafb;
+  --layout-border: #e5e7eb;
+  --layout-shadow: 0 1px 3px rgba(0, 0, 0, 0.1);
+  --layout-shadow-lg: 0 10px 25px rgba(0, 0, 0, 0.15);
+
+  /* Mobile Bottom Bar */
+  --mobile-bar-height: 64px;
+  --mobile-bar-safe-area: env(safe-area-inset-bottom, 0px);
+
+  /* Bottom Sheet */
+  --bottom-sheet-height: 70vh;
+  --bottom-sheet-radius: 1.5rem;
+}
+
+/* Dark Mode Tokens */
+.dark {
+  --layout-bg-primary: #18181b;
+  --layout-bg-secondary: #09090b;
+  --layout-border: #27272a;
+  --layout-shadow: 0 1px 3px rgba(0, 0, 0, 0.3);
+  --layout-shadow-lg: 0 10px 25px rgba(0, 0, 0, 0.4);
+}
+
+/* =============================================================================
+   Desktop Layout Container
+   ============================================================================= */
+
+.messages-layout {
+  display: flex;
+  width: 100%;
+  height: 100vh;
+  overflow: hidden;
+  background-color: var(--layout-bg-secondary);
+}
+
+.messages-layout--desktop {
+  flex-direction: row;
+}
+
+/* =============================================================================
+   Sidebar Styles
+   ============================================================================= */
+
+.messages-layout__sidebar {
+  position: relative;
+  flex-shrink: 0;
+  height: 100%;
+  background-color: var(--layout-bg-primary);
+  border-right: 1px solid var(--layout-border);
+  overflow: hidden;
+  z-index: 10;
+
+  /* Hardware acceleration for smooth animations */
+  will-change: width;
+  transform: translateZ(0);
+}
+
+/* Collapsed state indicator */
+.messages-layout__sidebar[data-collapsed="true"] {
+  box-shadow: var(--layout-shadow);
+}
+
+/* Sidebar internal scroll container */
+.messages-layout__sidebar .sidebar-container {
+  width: 100%;
+  height: 100%;
+  border-right: none; /* Remove duplicate border */
+}
+
+/* =============================================================================
+   Main Content Area
+   ============================================================================= */
+
+.messages-layout__main {
+  flex: 1;
+  min-width: 0; /* Enable flex shrinking */
+  height: 100%;
+  overflow: hidden;
+  background-color: var(--layout-bg-primary);
+
+  /* Smooth margin transition when sidebar collapses */
+  transition: margin-left var(--sidebar-transition);
+}
+
+/* Full height utility for nested components */
+.messages-layout__main .messages-split-view {
+  height: 100%;
+}
+
+/* =============================================================================
+   Mobile Layout
+   ============================================================================= */
+
+.messages-layout--mobile {
+  flex-direction: column;
+  padding-bottom: calc(var(--mobile-bar-height) + var(--mobile-bar-safe-area));
+}
+
+.messages-layout__main--mobile {
+  flex: 1;
+  overflow: hidden;
+}
+
+/* =============================================================================
+   Mobile Tab Bar
+   ============================================================================= */
+
+.mobile-tab-bar {
+  position: fixed;
+  bottom: 0;
+  left: 0;
+  right: 0;
+  z-index: 100;
+
+  display: flex;
+  align-items: center;
+  justify-content: space-around;
+  height: var(--mobile-bar-height);
+  padding-bottom: var(--mobile-bar-safe-area);
+
+  background-color: var(--layout-bg-primary);
+  border-top: 1px solid var(--layout-border);
+  box-shadow: 0 -2px 10px rgba(0, 0, 0, 0.1);
+}
+
+.dark .mobile-tab-bar {
+  box-shadow: 0 -2px 10px rgba(0, 0, 0, 0.3);
+}
+
+.mobile-tab-bar__tab {
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  justify-content: center;
+  gap: 0.25rem;
+
+  min-width: 64px;
+  padding: 0.5rem 0.75rem;
+  border-radius: 0.75rem;
+
+  background: transparent;
+  border: none;
+  cursor: pointer;
+
+  transition: all 150ms ease;
+}
+
+.mobile-tab-bar__tab:active {
+  transform: scale(0.95);
+}
+
+/* Active tab states by color */
+.mobile-tab-bar__tab--active[data-color="blue"] {
+  background-color: rgba(59, 130, 246, 0.1);
+}
+
+.mobile-tab-bar__tab--active[data-color="purple"] {
+  background-color: rgba(147, 51, 234, 0.1);
+}
+
+.mobile-tab-bar__tab--active[data-color="green"] {
+  background-color: rgba(34, 197, 94, 0.1);
+}
+
+.mobile-tab-bar__tab--active[data-color="orange"] {
+  background-color: rgba(249, 115, 22, 0.1);
+}
+
+.mobile-tab-bar__icon {
+  font-size: 1.25rem;
+  color: #6b7280;
+  transition: color 150ms ease;
+}
+
+.dark .mobile-tab-bar__icon {
+  color: #9ca3af;
+}
+
+/* Active icon colors */
+.mobile-tab-bar__tab--active[data-color="blue"] .mobile-tab-bar__icon {
+  color: #3b82f6;
+}
+
+.mobile-tab-bar__tab--active[data-color="purple"] .mobile-tab-bar__icon {
+  color: #9333ea;
+}
+
+.mobile-tab-bar__tab--active[data-color="green"] .mobile-tab-bar__icon {
+  color: #22c55e;
+}
+
+.mobile-tab-bar__tab--active[data-color="orange"] .mobile-tab-bar__icon {
+  color: #f97316;
+}
+
+.mobile-tab-bar__label {
+  font-size: 0.625rem;
+  font-weight: 500;
+  color: #6b7280;
+  transition: color 150ms ease;
+}
+
+.dark .mobile-tab-bar__label {
+  color: #9ca3af;
+}
+
+.mobile-tab-bar__tab--active .mobile-tab-bar__label {
+  color: #18181b;
+}
+
+.dark .mobile-tab-bar__tab--active .mobile-tab-bar__label {
+  color: #fafafa;
+}
+
+/* =============================================================================
+   Mobile Bottom Sheet
+   ============================================================================= */
+
+.mobile-bottom-sheet__backdrop {
+  position: fixed;
+  inset: 0;
+  z-index: 200;
+  background-color: rgba(0, 0, 0, 0.5);
+  backdrop-filter: blur(4px);
+  -webkit-backdrop-filter: blur(4px);
+}
+
+.mobile-bottom-sheet {
+  position: fixed;
+  bottom: 0;
+  left: 0;
+  right: 0;
+  z-index: 300;
+
+  height: var(--bottom-sheet-height);
+  max-height: calc(100vh - 60px);
+
+  display: flex;
+  flex-direction: column;
+
+  background-color: var(--layout-bg-primary);
+  border-top-left-radius: var(--bottom-sheet-radius);
+  border-top-right-radius: var(--bottom-sheet-radius);
+  box-shadow: 0 -10px 40px rgba(0, 0, 0, 0.2);
+
+  /* Touch scrolling behavior */
+  overscroll-behavior: contain;
+  touch-action: pan-y;
+}
+
+.dark .mobile-bottom-sheet {
+  box-shadow: 0 -10px 40px rgba(0, 0, 0, 0.5);
+}
+
+/* Drag Handle */
+.mobile-bottom-sheet__handle {
+  flex-shrink: 0;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  padding: 0.75rem;
+  cursor: grab;
+}
+
+.mobile-bottom-sheet__handle:active {
+  cursor: grabbing;
+}
+
+.mobile-bottom-sheet__handle-bar {
+  width: 2.5rem;
+  height: 0.25rem;
+  background-color: #d1d5db;
+  border-radius: 9999px;
+}
+
+.dark .mobile-bottom-sheet__handle-bar {
+  background-color: #52525b;
+}
+
+/* Sheet Header */
+.mobile-bottom-sheet__header {
+  flex-shrink: 0;
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  padding: 0 1rem 1rem;
+  border-bottom: 1px solid var(--layout-border);
+}
+
+.mobile-bottom-sheet__title {
+  font-size: 1.125rem;
+  font-weight: 600;
+  color: #18181b;
+}
+
+.dark .mobile-bottom-sheet__title {
+  color: #fafafa;
+}
+
+.mobile-bottom-sheet__close {
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  width: 2rem;
+  height: 2rem;
+  border-radius: 0.5rem;
+  background-color: #f4f4f5;
+  border: none;
+  cursor: pointer;
+  transition: background-color 150ms ease;
+}
+
+.mobile-bottom-sheet__close:hover {
+  background-color: #e4e4e7;
+}
+
+.dark .mobile-bottom-sheet__close {
+  background-color: #27272a;
+}
+
+.dark .mobile-bottom-sheet__close:hover {
+  background-color: #3f3f46;
+}
+
+.mobile-bottom-sheet__close i {
+  font-size: 1rem;
+  color: #71717a;
+}
+
+.dark .mobile-bottom-sheet__close i {
+  color: #a1a1aa;
+}
+
+/* Sheet Content */
+.mobile-bottom-sheet__content {
+  flex: 1;
+  overflow-y: auto;
+  overscroll-behavior: contain;
+
+  /* Custom scrollbar */
+  scrollbar-width: thin;
+  scrollbar-color: #d1d5db transparent;
+}
+
+.dark .mobile-bottom-sheet__content {
+  scrollbar-color: #52525b transparent;
+}
+
+.mobile-bottom-sheet__content::-webkit-scrollbar {
+  width: 6px;
+}
+
+.mobile-bottom-sheet__content::-webkit-scrollbar-track {
+  background: transparent;
+}
+
+.mobile-bottom-sheet__content::-webkit-scrollbar-thumb {
+  background-color: #d1d5db;
+  border-radius: 3px;
+}
+
+.dark .mobile-bottom-sheet__content::-webkit-scrollbar-thumb {
+  background-color: #52525b;
+}
+
+/* =============================================================================
+   Collapsed Sidebar Mini-Icons Enhancement
+   ============================================================================= */
+
+/* When sidebar is collapsed, enhance the tab icons */
+.messages-layout__sidebar[data-collapsed="true"] .sidebar-tab {
+  justify-content: center;
+  padding: 0.75rem;
+}
+
+.messages-layout__sidebar[data-collapsed="true"] .sidebar-tab-icon {
+  width: 2.5rem;
+  height: 2.5rem;
+  font-size: 1.125rem;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  border-radius: 0.75rem;
+  transition: all 150ms ease;
+}
+
+.messages-layout__sidebar[data-collapsed="true"] .sidebar-tab:hover .sidebar-tab-icon {
+  background-color: rgba(0, 0, 0, 0.05);
+}
+
+.dark .messages-layout__sidebar[data-collapsed="true"] .sidebar-tab:hover .sidebar-tab-icon {
+  background-color: rgba(255, 255, 255, 0.05);
+}
+
+/* Active state in collapsed mode */
+.messages-layout__sidebar[data-collapsed="true"] .sidebar-tab-active .sidebar-tab-icon {
+  background-color: rgba(59, 130, 246, 0.1);
+}
+
+/* =============================================================================
+   Responsive Breakpoints
+   ============================================================================= */
+
+/* Tablet (768px - 1024px) */
+@media (min-width: 768px) and (max-width: 1024px) {
+  :root {
+    --sidebar-width-expanded: 280px;
+  }
+
+  .messages-layout__sidebar {
+    width: 280px;
+  }
+
+  /* Adjust thread list ratio for tablets */
+  .messages-layout__main .messages-split-view {
+    grid-template-columns: 35% 65%;
+  }
+}
+
+/* Large Desktop (1440px+) */
+@media (min-width: 1440px) {
+  :root {
+    --sidebar-width-expanded: 360px;
+  }
+
+  /* More spacious sidebar on large screens */
+  .messages-layout__sidebar {
+    width: 360px;
+  }
+
+  /* Optimal conversation ratio on large screens */
+  .messages-layout__main .messages-split-view {
+    grid-template-columns: 25% 75%;
+  }
+}
+
+/* =============================================================================
+   Accessibility Enhancements
+   ============================================================================= */
+
+/* Focus visible states */
+.mobile-tab-bar__tab:focus-visible,
+.mobile-bottom-sheet__close:focus-visible {
+  outline: 2px solid #3b82f6;
+  outline-offset: 2px;
+}
+
+/* Reduced motion preferences */
+@media (prefers-reduced-motion: reduce) {
+  .messages-layout__sidebar,
+  .messages-layout__main,
+  .mobile-tab-bar__tab,
+  .mobile-bottom-sheet {
+    transition: none !important;
+    animation: none !important;
+  }
+}
+
+/* High contrast mode */
+@media (prefers-contrast: high) {
+  .messages-layout__sidebar {
+    border-right-width: 2px;
+  }
+
+  .mobile-tab-bar {
+    border-top-width: 2px;
+  }
+
+  .mobile-tab-bar__tab--active {
+    border: 2px solid currentColor;
+  }
+}
+
+/* =============================================================================
+   Print Styles
+   ============================================================================= */
+
+@media print {
+  .messages-layout__sidebar,
+  .mobile-tab-bar,
+  .mobile-bottom-sheet,
+  .mobile-bottom-sheet__backdrop {
+    display: none !important;
+  }
+
+  .messages-layout__main {
+    margin: 0 !important;
+    width: 100% !important;
+  }
+}
+
+/* =============================================================================
+   Utility Classes
+   ============================================================================= */
+
+/* Full height utility */
+.full-height {
+  height: 100%;
+}
+
+/* Safe area padding for mobile devices with notches */
+@supports (padding: env(safe-area-inset-bottom)) {
+  .safe-area-padding {
+    padding-bottom: env(safe-area-inset-bottom);
+  }
+}
+
+/* Scrollbar hide utility */
+.hide-scrollbar {
+  scrollbar-width: none;
+  -ms-overflow-style: none;
+}
+
+.hide-scrollbar::-webkit-scrollbar {
+  display: none;
+}

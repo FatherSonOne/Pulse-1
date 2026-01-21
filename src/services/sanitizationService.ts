@@ -83,8 +83,33 @@ const SANITIZATION_CONFIGS = {
     allowedSchemes: ['http', 'https', 'mailto', 'data'],
   },
   relaxed: {
-    allowedTags: DOMPurify.Config.ALLOWED_TAGS,
-    allowedAttributes: DOMPurify.Config.ALLOWED_ATTR,
+    // Use DOMPurify's default tags - fallback to comprehensive list if Config is not available
+    allowedTags: (() => {
+      try {
+        if (typeof DOMPurify !== 'undefined' && DOMPurify.Config && DOMPurify.Config.ALLOWED_TAGS) {
+          const tags = DOMPurify.Config.ALLOWED_TAGS;
+          // Convert to array if it's a Set or other iterable
+          return Array.isArray(tags) ? tags : Array.from(tags || []);
+        }
+      } catch (e) {
+        console.warn('[Sanitization] Could not access DOMPurify.Config.ALLOWED_TAGS:', e);
+      }
+      // Fallback to comprehensive list
+      return ['p', 'br', 'b', 'i', 'em', 'strong', 'a', 'ul', 'ol', 'li', 'blockquote', 'code', 'pre', 'h1', 'h2', 'h3', 'h4', 'h5', 'h6', 'img', 'span', 'div', 'table', 'thead', 'tbody', 'tr', 'td', 'th', 'hr', 'small', 'sub', 'sup', 's', 'u', 'mark'];
+    })(),
+    allowedAttributes: (() => {
+      try {
+        if (typeof DOMPurify !== 'undefined' && DOMPurify.Config && DOMPurify.Config.ALLOWED_ATTR) {
+          const attrs = DOMPurify.Config.ALLOWED_ATTR;
+          // Convert to array if it's a Set or other iterable
+          return Array.isArray(attrs) ? attrs : Array.from(attrs || []);
+        }
+      } catch (e) {
+        console.warn('[Sanitization] Could not access DOMPurify.Config.ALLOWED_ATTR:', e);
+      }
+      // Fallback to comprehensive list
+      return ['href', 'title', 'target', 'rel', 'src', 'alt', 'width', 'height', 'class', 'id'];
+    })(),
     allowedSchemes: ['http', 'https', 'mailto', 'ftp', 'data'],
   },
 } as const;

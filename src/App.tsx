@@ -121,7 +121,12 @@ const App: React.FC = () => {
   // Presence tracking - start heartbeat when user is logged in
   usePresence();
 
-  const apiKey = import.meta.env.VITE_API_KEY || import.meta.env.VITE_GEMINI_API_KEY || process.env.API_KEY || '';
+  // Get Gemini API key from environment variables or localStorage (user can set it in Settings)
+  const apiKey = import.meta.env.VITE_API_KEY || 
+                 import.meta.env.VITE_GEMINI_API_KEY || 
+                 process.env.API_KEY || 
+                 localStorage.getItem('gemini_api_key') || 
+                 '';
 
   // Toggle theme function - defined early so it can be used in useEffect hooks
   const toggleTheme = useCallback(() => {
@@ -595,12 +600,22 @@ const App: React.FC = () => {
 
   // Show landing page or login for non-authenticated users
   if (!user) {
-    // Check if user explicitly wants to sign in (via URL param or state)
-    const wantsToSignIn = window.location.search.includes('signin') || window.location.hash === '#signin';
+    // Check if user explicitly wants to sign in (via URL param, hash, or path)
+    const wantsToSignIn = 
+      window.location.search.includes('signin') || 
+      window.location.hash === '#signin' ||
+      window.location.pathname === '/login';
 
     // On native apps (Capacitor), always show login directly - no landing page needed
     // Native users have already installed the app, so skip marketing content
     if (wantsToSignIn || Capacitor.isNativePlatform()) {
+      // Preserve signin state in URL to prevent redirect loops
+      if (!window.location.search.includes('signin') && window.location.pathname !== '/login') {
+        const currentUrl = new URL(window.location.href);
+        currentUrl.searchParams.set('signin', 'true');
+        // Use replaceState to avoid adding to history
+        window.history.replaceState({}, '', currentUrl.toString());
+      }
       return <Login onLogin={handleLogin} onEmailLogin={handleEmailLogin} onSignup={handleSignup} onMicrosoftLogin={handleMicrosoftLogin} />;
     }
 

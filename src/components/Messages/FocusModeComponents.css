@@ -1,0 +1,667 @@
+/**
+ * Focus Mode Components - Visual Design System
+ *
+ * Design Language:
+ * - Primary: Blue (#3b82f6) - Focus/Work mode
+ * - Secondary: Green (#10b981) - Break mode, success states
+ * - Accent: Purple (#8b5cf6) - Highlights, streaks
+ * - Warning: Orange (#f59e0b) - Urgent priority
+ * - Error: Red (#ef4444) - Critical priority, cancel actions
+ *
+ * Typography:
+ * - Display: Inter, system-ui (bold headings)
+ * - Mono: JetBrains Mono (timers, statistics)
+ * - Body: Inter, system-ui (readable content)
+ *
+ * Spacing Scale: 4px base (0.25rem)
+ * Border Radius: 8px (sm), 12px (md), 16px (lg), 24px (xl)
+ */
+
+/* ============================================
+   CSS CUSTOM PROPERTIES - DESIGN TOKENS
+   ============================================ */
+
+:root {
+  /* Focus Mode Color Palette */
+  --focus-blue-50: #eff6ff;
+  --focus-blue-100: #dbeafe;
+  --focus-blue-200: #bfdbfe;
+  --focus-blue-300: #93c5fd;
+  --focus-blue-400: #60a5fa;
+  --focus-blue-500: #3b82f6;
+  --focus-blue-600: #2563eb;
+  --focus-blue-700: #1d4ed8;
+  --focus-blue-800: #1e40af;
+  --focus-blue-900: #1e3a8a;
+
+  --focus-green-50: #ecfdf5;
+  --focus-green-100: #d1fae5;
+  --focus-green-400: #34d399;
+  --focus-green-500: #10b981;
+  --focus-green-600: #059669;
+  --focus-green-900: #064e3b;
+
+  --focus-purple-50: #faf5ff;
+  --focus-purple-100: #f3e8ff;
+  --focus-purple-400: #a78bfa;
+  --focus-purple-500: #8b5cf6;
+  --focus-purple-600: #7c3aed;
+
+  --focus-orange-50: #fff7ed;
+  --focus-orange-100: #ffedd5;
+  --focus-orange-400: #fb923c;
+  --focus-orange-500: #f59e0b;
+  --focus-orange-600: #d97706;
+
+  --focus-red-50: #fef2f2;
+  --focus-red-100: #fee2e2;
+  --focus-red-400: #f87171;
+  --focus-red-500: #ef4444;
+  --focus-red-600: #dc2626;
+
+  --focus-yellow-400: #facc15;
+  --focus-yellow-500: #eab308;
+
+  /* Background Colors */
+  --focus-bg-primary: #18181b;
+  --focus-bg-secondary: #27272a;
+  --focus-bg-elevated: #3f3f46;
+  --focus-bg-card: rgba(39, 39, 42, 0.8);
+  --focus-bg-overlay: rgba(0, 0, 0, 0.6);
+
+  /* Border Colors */
+  --focus-border-subtle: rgba(63, 63, 70, 0.5);
+  --focus-border-default: rgba(82, 82, 91, 0.8);
+  --focus-border-strong: rgba(113, 113, 122, 0.8);
+
+  /* Text Colors */
+  --focus-text-primary: #fafafa;
+  --focus-text-secondary: #a1a1aa;
+  --focus-text-muted: #71717a;
+  --focus-text-disabled: #52525b;
+
+  /* Shadows */
+  --focus-shadow-sm: 0 1px 2px rgba(0, 0, 0, 0.4);
+  --focus-shadow-md: 0 4px 6px -1px rgba(0, 0, 0, 0.3), 0 2px 4px -1px rgba(0, 0, 0, 0.2);
+  --focus-shadow-lg: 0 10px 15px -3px rgba(0, 0, 0, 0.4), 0 4px 6px -2px rgba(0, 0, 0, 0.2);
+  --focus-shadow-xl: 0 20px 25px -5px rgba(0, 0, 0, 0.5), 0 10px 10px -5px rgba(0, 0, 0, 0.3);
+  --focus-shadow-glow-blue: 0 0 40px rgba(59, 130, 246, 0.3);
+  --focus-shadow-glow-green: 0 0 40px rgba(16, 185, 129, 0.3);
+  --focus-shadow-glow-purple: 0 0 40px rgba(139, 92, 246, 0.3);
+
+  /* Transitions */
+  --focus-transition-fast: 150ms cubic-bezier(0.4, 0, 0.2, 1);
+  --focus-transition-normal: 300ms cubic-bezier(0.4, 0, 0.2, 1);
+  --focus-transition-slow: 500ms cubic-bezier(0.4, 0, 0.2, 1);
+  --focus-transition-spring: 400ms cubic-bezier(0.34, 1.56, 0.64, 1);
+
+  /* Typography */
+  --focus-font-display: 'Inter', system-ui, -apple-system, sans-serif;
+  --focus-font-mono: 'JetBrains Mono', 'SF Mono', Consolas, monospace;
+  --focus-font-body: 'Inter', system-ui, -apple-system, sans-serif;
+
+  /* Spacing */
+  --focus-space-1: 0.25rem;  /* 4px */
+  --focus-space-2: 0.5rem;   /* 8px */
+  --focus-space-3: 0.75rem;  /* 12px */
+  --focus-space-4: 1rem;     /* 16px */
+  --focus-space-5: 1.25rem;  /* 20px */
+  --focus-space-6: 1.5rem;   /* 24px */
+  --focus-space-8: 2rem;     /* 32px */
+  --focus-space-10: 2.5rem;  /* 40px */
+  --focus-space-12: 3rem;    /* 48px */
+
+  /* Border Radius */
+  --focus-radius-sm: 0.5rem;   /* 8px */
+  --focus-radius-md: 0.75rem;  /* 12px */
+  --focus-radius-lg: 1rem;     /* 16px */
+  --focus-radius-xl: 1.5rem;   /* 24px */
+  --focus-radius-full: 9999px;
+}
+
+/* Light Mode Overrides */
+.light,
+html:not(.dark) {
+  --focus-bg-primary: #fafafa;
+  --focus-bg-secondary: #f4f4f5;
+  --focus-bg-elevated: #e4e4e7;
+  --focus-bg-card: rgba(255, 255, 255, 0.9);
+  --focus-bg-overlay: rgba(0, 0, 0, 0.4);
+
+  --focus-border-subtle: rgba(212, 212, 216, 0.5);
+  --focus-border-default: rgba(161, 161, 170, 0.5);
+  --focus-border-strong: rgba(113, 113, 122, 0.5);
+
+  --focus-text-primary: #18181b;
+  --focus-text-secondary: #52525b;
+  --focus-text-muted: #71717a;
+  --focus-text-disabled: #a1a1aa;
+
+  --focus-shadow-sm: 0 1px 2px rgba(0, 0, 0, 0.1);
+  --focus-shadow-md: 0 4px 6px -1px rgba(0, 0, 0, 0.1), 0 2px 4px -1px rgba(0, 0, 0, 0.06);
+  --focus-shadow-lg: 0 10px 15px -3px rgba(0, 0, 0, 0.1), 0 4px 6px -2px rgba(0, 0, 0, 0.05);
+  --focus-shadow-xl: 0 20px 25px -5px rgba(0, 0, 0, 0.15), 0 10px 10px -5px rgba(0, 0, 0, 0.04);
+}
+
+/* ============================================
+   KEYFRAME ANIMATIONS
+   ============================================ */
+
+@keyframes focus-pulse {
+  0%, 100% {
+    opacity: 1;
+    transform: scale(1);
+  }
+  50% {
+    opacity: 0.7;
+    transform: scale(1.05);
+  }
+}
+
+@keyframes focus-breathe {
+  0%, 100% {
+    transform: scale(1);
+    opacity: 0.6;
+  }
+  50% {
+    transform: scale(1.1);
+    opacity: 0.8;
+  }
+}
+
+@keyframes focus-slide-up {
+  from {
+    opacity: 0;
+    transform: translateY(20px);
+  }
+  to {
+    opacity: 1;
+    transform: translateY(0);
+  }
+}
+
+@keyframes focus-slide-down {
+  from {
+    opacity: 0;
+    transform: translateY(-20px);
+  }
+  to {
+    opacity: 1;
+    transform: translateY(0);
+  }
+}
+
+@keyframes focus-fade-in {
+  from {
+    opacity: 0;
+  }
+  to {
+    opacity: 1;
+  }
+}
+
+@keyframes focus-scale-in {
+  from {
+    opacity: 0;
+    transform: scale(0.9);
+  }
+  to {
+    opacity: 1;
+    transform: scale(1);
+  }
+}
+
+@keyframes focus-shimmer {
+  0% {
+    background-position: -200% 0;
+  }
+  100% {
+    background-position: 200% 0;
+  }
+}
+
+@keyframes focus-confetti-fall {
+  0% {
+    transform: translateY(-10vh) rotate(0deg);
+    opacity: 1;
+  }
+  100% {
+    transform: translateY(100vh) rotate(720deg);
+    opacity: 0;
+  }
+}
+
+@keyframes focus-bounce-subtle {
+  0%, 100% {
+    transform: translateY(0);
+  }
+  50% {
+    transform: translateY(-4px);
+  }
+}
+
+@keyframes focus-glow-pulse {
+  0%, 100% {
+    box-shadow: 0 0 20px rgba(59, 130, 246, 0.3);
+  }
+  50% {
+    box-shadow: 0 0 40px rgba(59, 130, 246, 0.5);
+  }
+}
+
+@keyframes focus-border-rotate {
+  from {
+    transform: rotate(0deg);
+  }
+  to {
+    transform: rotate(360deg);
+  }
+}
+
+/* ============================================
+   ANIMATION UTILITY CLASSES
+   ============================================ */
+
+.focus-animate-pulse {
+  animation: focus-pulse 2s ease-in-out infinite;
+}
+
+.focus-animate-breathe {
+  animation: focus-breathe 4s ease-in-out infinite;
+}
+
+.focus-animate-slide-up {
+  animation: focus-slide-up 0.3s var(--focus-transition-spring) forwards;
+}
+
+.focus-animate-slide-down {
+  animation: focus-slide-down 0.3s var(--focus-transition-spring) forwards;
+}
+
+.focus-animate-fade-in {
+  animation: focus-fade-in 0.3s ease-out forwards;
+}
+
+.focus-animate-scale-in {
+  animation: focus-scale-in 0.3s var(--focus-transition-spring) forwards;
+}
+
+.focus-animate-shimmer {
+  background: linear-gradient(90deg, transparent, rgba(255, 255, 255, 0.1), transparent);
+  background-size: 200% 100%;
+  animation: focus-shimmer 2s infinite;
+}
+
+.focus-animate-bounce {
+  animation: focus-bounce-subtle 1s ease-in-out infinite;
+}
+
+.focus-animate-glow {
+  animation: focus-glow-pulse 2s ease-in-out infinite;
+}
+
+/* ============================================
+   COMPONENT BASE STYLES
+   ============================================ */
+
+/* Focus Digest Card */
+.focus-digest-card {
+  font-family: var(--focus-font-body);
+  background: var(--focus-bg-card);
+  border: 1px solid var(--focus-border-subtle);
+  border-radius: var(--focus-radius-xl);
+  box-shadow: var(--focus-shadow-xl);
+  backdrop-filter: blur(12px);
+  -webkit-backdrop-filter: blur(12px);
+}
+
+.focus-digest-header {
+  background: linear-gradient(135deg,
+    rgba(59, 130, 246, 0.15) 0%,
+    rgba(139, 92, 246, 0.15) 100%
+  );
+  border-bottom: 1px solid var(--focus-border-subtle);
+}
+
+.focus-digest-message-group {
+  border-radius: var(--focus-radius-md);
+  transition: background-color var(--focus-transition-fast);
+}
+
+.focus-digest-message-group:hover {
+  background-color: rgba(255, 255, 255, 0.05);
+}
+
+/* Priority Badges */
+.focus-priority-urgent {
+  background-color: rgba(239, 68, 68, 0.15);
+  color: var(--focus-red-400);
+  border: 1px solid rgba(239, 68, 68, 0.3);
+}
+
+.focus-priority-high {
+  background-color: rgba(249, 115, 22, 0.15);
+  color: var(--focus-orange-400);
+  border: 1px solid rgba(249, 115, 22, 0.3);
+}
+
+.focus-priority-normal {
+  background-color: rgba(59, 130, 246, 0.15);
+  color: var(--focus-blue-400);
+  border: 1px solid rgba(59, 130, 246, 0.3);
+}
+
+.focus-priority-low {
+  background-color: rgba(113, 113, 122, 0.15);
+  color: var(--focus-text-muted);
+  border: 1px solid rgba(113, 113, 122, 0.3);
+}
+
+/* Distraction Blocking Overlay */
+.focus-blocking-overlay {
+  background: linear-gradient(
+    to right,
+    rgba(59, 130, 246, 0.2) 0%,
+    rgba(139, 92, 246, 0.15) 30%,
+    transparent 60%
+  );
+  backdrop-filter: blur(8px);
+  -webkit-backdrop-filter: blur(8px);
+}
+
+.focus-blocking-overlay.break-mode {
+  background: linear-gradient(
+    to right,
+    rgba(16, 185, 129, 0.2) 0%,
+    rgba(52, 211, 153, 0.15) 30%,
+    transparent 60%
+  );
+}
+
+.focus-session-info-card {
+  background: var(--focus-bg-card);
+  border: 1px solid var(--focus-border-subtle);
+  border-radius: var(--focus-radius-xl);
+  box-shadow: var(--focus-shadow-lg);
+  backdrop-filter: blur(16px);
+  -webkit-backdrop-filter: blur(16px);
+}
+
+/* Session Completion Celebration */
+.focus-celebration-card {
+  background: linear-gradient(
+    180deg,
+    rgba(39, 39, 42, 0.95) 0%,
+    rgba(24, 24, 27, 0.98) 100%
+  );
+  border: 1px solid var(--focus-border-subtle);
+  border-radius: var(--focus-radius-xl);
+  box-shadow: var(--focus-shadow-xl);
+  overflow: hidden;
+}
+
+.focus-celebration-trophy {
+  background: linear-gradient(
+    135deg,
+    var(--focus-yellow-400) 0%,
+    var(--focus-orange-500) 100%
+  );
+  box-shadow: 0 8px 32px rgba(234, 179, 8, 0.3);
+}
+
+.focus-celebration-stat-card {
+  background: rgba(39, 39, 42, 0.5);
+  border: 1px solid var(--focus-border-subtle);
+  border-radius: var(--focus-radius-lg);
+  transition: all var(--focus-transition-fast);
+}
+
+.focus-celebration-stat-card:hover {
+  background: rgba(39, 39, 42, 0.7);
+  transform: translateY(-2px);
+}
+
+/* Focus Stats Dashboard */
+.focus-stats-dashboard {
+  font-family: var(--focus-font-body);
+  background: var(--focus-bg-primary);
+  border: 1px solid var(--focus-border-subtle);
+  border-radius: var(--focus-radius-xl);
+  box-shadow: var(--focus-shadow-xl);
+}
+
+.focus-stats-chart-bar {
+  background: linear-gradient(
+    to top,
+    var(--focus-blue-700) 0%,
+    var(--focus-blue-500) 100%
+  );
+  border-radius: var(--focus-radius-sm) var(--focus-radius-sm) 0 0;
+  transform-origin: bottom;
+  transition: transform var(--focus-transition-fast), filter var(--focus-transition-fast);
+}
+
+.focus-stats-chart-bar:hover {
+  filter: brightness(1.15);
+}
+
+.focus-stats-chart-bar.today {
+  background: linear-gradient(
+    to top,
+    var(--focus-blue-600) 0%,
+    var(--focus-blue-400) 100%
+  );
+}
+
+.focus-stats-progress-ring {
+  transform: rotate(-90deg);
+}
+
+.focus-stats-progress-ring circle {
+  transition: stroke-dashoffset 1s ease-out;
+}
+
+/* Streak Visualization */
+.focus-streak-day {
+  width: 2rem;
+  height: 2rem;
+  border-radius: var(--focus-radius-sm);
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  transition: all var(--focus-transition-fast);
+}
+
+.focus-streak-day.completed {
+  background: var(--focus-orange-500);
+  color: white;
+}
+
+.focus-streak-day.incomplete {
+  background: var(--focus-bg-elevated);
+  color: var(--focus-text-disabled);
+}
+
+/* ============================================
+   BUTTON STYLES
+   ============================================ */
+
+.focus-btn {
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  gap: var(--focus-space-2);
+  padding: var(--focus-space-3) var(--focus-space-4);
+  font-family: var(--focus-font-body);
+  font-size: 0.875rem;
+  font-weight: 500;
+  border-radius: var(--focus-radius-md);
+  border: none;
+  cursor: pointer;
+  transition: all var(--focus-transition-fast);
+  user-select: none;
+}
+
+.focus-btn:focus-visible {
+  outline: 2px solid var(--focus-blue-500);
+  outline-offset: 2px;
+}
+
+.focus-btn:disabled {
+  opacity: 0.5;
+  cursor: not-allowed;
+}
+
+.focus-btn-primary {
+  background: linear-gradient(135deg, var(--focus-blue-600) 0%, var(--focus-purple-600) 100%);
+  color: white;
+  box-shadow: 0 4px 12px rgba(59, 130, 246, 0.25);
+}
+
+.focus-btn-primary:hover:not(:disabled) {
+  transform: translateY(-1px);
+  box-shadow: 0 6px 20px rgba(59, 130, 246, 0.35);
+}
+
+.focus-btn-primary:active:not(:disabled) {
+  transform: translateY(0);
+}
+
+.focus-btn-secondary {
+  background: var(--focus-bg-elevated);
+  color: var(--focus-text-secondary);
+  border: 1px solid var(--focus-border-default);
+}
+
+.focus-btn-secondary:hover:not(:disabled) {
+  background: var(--focus-bg-secondary);
+  color: var(--focus-text-primary);
+  border-color: var(--focus-border-strong);
+}
+
+.focus-btn-danger {
+  background: rgba(239, 68, 68, 0.15);
+  color: var(--focus-red-400);
+  border: 1px solid rgba(239, 68, 68, 0.3);
+}
+
+.focus-btn-danger:hover:not(:disabled) {
+  background: rgba(239, 68, 68, 0.25);
+  border-color: rgba(239, 68, 68, 0.5);
+}
+
+.focus-btn-icon {
+  width: 2.5rem;
+  height: 2.5rem;
+  padding: 0;
+  border-radius: var(--focus-radius-md);
+}
+
+/* ============================================
+   RESPONSIVE ADJUSTMENTS
+   ============================================ */
+
+@media (max-width: 768px) {
+  .focus-digest-card,
+  .focus-celebration-card,
+  .focus-stats-dashboard {
+    margin: var(--focus-space-4);
+    max-height: calc(100vh - 2rem);
+  }
+
+  .focus-session-info-card {
+    left: var(--focus-space-4);
+    right: var(--focus-space-4);
+    bottom: var(--focus-space-4);
+    width: auto;
+  }
+
+  .focus-celebration-stat-card {
+    padding: var(--focus-space-3);
+  }
+
+  .focus-stats-chart-bar {
+    min-width: 1.5rem;
+  }
+}
+
+@media (max-width: 480px) {
+  .focus-digest-card,
+  .focus-celebration-card,
+  .focus-stats-dashboard {
+    margin: var(--focus-space-2);
+    border-radius: var(--focus-radius-lg);
+  }
+
+  .focus-btn {
+    padding: var(--focus-space-2) var(--focus-space-3);
+    font-size: 0.8125rem;
+  }
+}
+
+/* ============================================
+   REDUCED MOTION
+   ============================================ */
+
+@media (prefers-reduced-motion: reduce) {
+  .focus-animate-pulse,
+  .focus-animate-breathe,
+  .focus-animate-slide-up,
+  .focus-animate-slide-down,
+  .focus-animate-fade-in,
+  .focus-animate-scale-in,
+  .focus-animate-shimmer,
+  .focus-animate-bounce,
+  .focus-animate-glow {
+    animation: none;
+  }
+
+  .focus-digest-card,
+  .focus-celebration-card,
+  .focus-stats-dashboard,
+  .focus-btn,
+  .focus-digest-message-group,
+  .focus-celebration-stat-card,
+  .focus-stats-chart-bar {
+    transition: none;
+  }
+}
+
+/* ============================================
+   HIGH CONTRAST MODE
+   ============================================ */
+
+@media (prefers-contrast: high) {
+  :root {
+    --focus-border-subtle: rgba(255, 255, 255, 0.3);
+    --focus-border-default: rgba(255, 255, 255, 0.5);
+    --focus-border-strong: rgba(255, 255, 255, 0.7);
+  }
+
+  .focus-digest-card,
+  .focus-celebration-card,
+  .focus-stats-dashboard,
+  .focus-session-info-card {
+    border-width: 2px;
+  }
+
+  .focus-btn:focus-visible {
+    outline-width: 3px;
+  }
+}
+
+/* ============================================
+   PRINT STYLES
+   ============================================ */
+
+@media print {
+  .focus-blocking-overlay,
+  .focus-celebration-card {
+    display: none !important;
+  }
+
+  .focus-stats-dashboard {
+    box-shadow: none;
+    border: 1px solid #ccc;
+  }
+}

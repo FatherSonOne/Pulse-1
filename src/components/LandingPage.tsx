@@ -19,7 +19,7 @@ const LandingPage: React.FC<LandingPageProps> = ({ onGetStarted }) => {
   };
 
   return (
-    <div className="min-h-screen bg-zinc-950 text-white overflow-x-hidden selection:bg-rose-500/30 selection:text-rose-200">
+    <div className="min-h-screen bg-zinc-950 text-white overflow-x-hidden overflow-y-auto selection:bg-rose-500/30 selection:text-rose-200">
       {/* Navigation */}
       <nav className="fixed top-0 left-0 right-0 z-[100] bg-zinc-950/80 backdrop-blur-xl border-b border-zinc-800/50">
         <div className="max-w-7xl mx-auto px-6 py-4 flex items-center justify-between">
@@ -38,21 +38,23 @@ const LandingPage: React.FC<LandingPageProps> = ({ onGetStarted }) => {
             <span className="text-xl font-bold bg-gradient-to-r from-rose-500 via-pink-500 to-purple-500 bg-clip-text text-transparent">Pulse</span>
           </div>
           <div className="hidden md:flex items-center gap-8 text-sm font-medium text-zinc-400">
-            <button onClick={() => scrollToSection('ecosystem')} className="hover:text-white transition">Ecosystem</button>
-            <button onClick={() => scrollToSection('features')} className="hover:text-white transition">Features</button>
-            <button onClick={() => scrollToSection('scenarios')} className="hover:text-white transition">Scenarios</button>
-            <button onClick={() => scrollToSection('download')} className="hover:text-white transition">Download</button>
+            <button type="button" onClick={() => scrollToSection('ecosystem')} className="hover:text-white transition">Ecosystem</button>
+            <button type="button" onClick={() => scrollToSection('features')} className="hover:text-white transition">Features</button>
+            <button type="button" onClick={() => scrollToSection('scenarios')} className="hover:text-white transition">Scenarios</button>
+            <button type="button" onClick={() => scrollToSection('download')} className="hover:text-white transition">Download</button>
           </div>
           <div className="flex items-center gap-4">
             <button
               onClick={onGetStarted}
-              className="px-5 py-2.5 bg-zinc-900 border border-zinc-800 hover:border-zinc-700 text-white rounded-lg text-sm font-semibold transition hover:scale-105 active:scale-95"
+              type="button"
+              className="px-5 py-2.5 bg-zinc-800/90 backdrop-blur-sm border border-zinc-700/80 hover:border-rose-500/50 text-zinc-100 hover:text-white rounded-lg text-sm font-semibold transition-all duration-300 hover:scale-105 active:scale-95 hover:bg-zinc-700/90 hover:shadow-lg hover:shadow-rose-500/10"
             >
               Log In
             </button>
             <button
               onClick={onGetStarted}
-              className="px-5 py-2.5 bg-gradient-to-r from-rose-600 to-pink-600 hover:from-rose-500 hover:to-pink-500 rounded-lg text-sm font-semibold text-white shadow-lg shadow-rose-500/20 transition hover:scale-105 active:scale-95"
+              type="button"
+              className="px-5 py-2.5 bg-gradient-to-r from-rose-600 to-pink-600 hover:from-rose-500 hover:to-pink-500 rounded-lg text-sm font-semibold text-white shadow-lg shadow-rose-500/30 transition-all duration-300 hover:scale-105 active:scale-95 hover:shadow-rose-500/50"
             >
               Get Started
             </button>
@@ -60,21 +62,50 @@ const LandingPage: React.FC<LandingPageProps> = ({ onGetStarted }) => {
         </div>
       </nav>
 
-      {/* Hero Section */}
-      <section className="relative pt-40 pb-20 px-6 min-h-[90vh] flex items-center justify-center overflow-hidden">
-        {/* Abstract Background */}
-        <div className="absolute inset-0 pointer-events-none">
-          <div className="absolute top-0 left-1/2 -translate-x-1/2 w-[1000px] h-[600px] bg-rose-500/10 rounded-full blur-[120px] opacity-50 mix-blend-screen animate-pulse-slow"></div>
-          <div className="absolute bottom-0 right-0 w-[800px] h-[600px] bg-purple-500/10 rounded-full blur-[100px] opacity-30 mix-blend-screen animate-float"></div>
-          <div className="absolute top-40 left-0 w-[600px] h-[600px] bg-blue-500/5 rounded-full blur-[100px] opacity-30 mix-blend-screen" style={{ animation: 'float 4s ease-in-out infinite', animationDelay: '1s' }}></div>
-          
-          {/* Grid Pattern */}
-          <div className="absolute inset-0 bg-[url('https://grainy-gradients.vercel.app/noise.svg')] opacity-20"></div>
-          <div className="absolute inset-0 bg-[linear-gradient(rgba(255,255,255,0.02)_1px,transparent_1px),linear-gradient(90deg,rgba(255,255,255,0.02)_1px,transparent_1px)] bg-[size:64px_64px] [mask-image:radial-gradient(ellipse_at_center,black_50%,transparent_100%)]"></div>
+      {/* Hero Section - Enhanced Gradients */}
+      <section className="relative pt-40 pb-20 px-6 min-h-[90vh] flex items-center justify-center overflow-visible">
+        {/* Enhanced Abstract Background with Rose/Pink Gradients - Base Layer */}
+        <div className="absolute inset-0 pointer-events-none z-0 overflow-hidden">
+          <div className="absolute top-0 left-1/2 -translate-x-1/2 w-[1200px] h-[700px] bg-gradient-to-br from-rose-500/25 via-pink-500/18 to-transparent rounded-full blur-[140px] opacity-70 mix-blend-screen animate-pulse-slow"></div>
+          <div className="absolute bottom-0 right-0 w-[900px] h-[700px] bg-gradient-to-tl from-purple-500/18 via-pink-600/12 to-transparent rounded-full blur-[120px] opacity-50 mix-blend-screen animate-float"></div>
+          <div className="absolute top-40 left-0 w-[700px] h-[700px] bg-gradient-to-br from-rose-600/12 via-pink-700/6 to-transparent rounded-full blur-[120px] opacity-40 mix-blend-screen" style={{ animation: 'float 4s ease-in-out infinite', animationDelay: '1s' }}></div>
+          <div className="absolute top-1/2 left-1/2 -translate-x-1/2 -translate-y-1/2 w-[1000px] h-[1000px] bg-gradient-radial from-rose-500/10 via-pink-600/5 to-transparent rounded-full blur-3xl opacity-60"></div>
+
+          {/* Enhanced Grid Pattern with Gradient - More Visible */}
+          <div className="absolute inset-0 bg-[url('https://grainy-gradients.vercel.app/noise.svg')] opacity-35 z-[1]"></div>
+          {/* Main Grid with Enhanced Gradient Glow */}
+          <div 
+            className="absolute inset-0 z-[1]"
+            style={{
+              backgroundImage: `
+                linear-gradient(rgba(244, 63, 94, 0.15) 1px, transparent 1px),
+                linear-gradient(90deg, rgba(236, 72, 153, 0.15) 1px, transparent 1px),
+                linear-gradient(rgba(168, 85, 247, 0.10) 1px, transparent 1px),
+                linear-gradient(90deg, rgba(244, 63, 94, 0.10) 1px, transparent 1px)
+              `,
+              backgroundSize: '64px 64px, 64px 64px, 32px 32px, 32px 32px',
+              maskImage: 'radial-gradient(ellipse at center, black 50%, transparent 100%)',
+              WebkitMaskImage: 'radial-gradient(ellipse at center, black 50%, transparent 100%)',
+              opacity: 0.8
+            }}
+          ></div>
+          {/* Additional Grid Overlay with Gradient Pulse */}
+          <div 
+            className="absolute inset-0 z-[1] opacity-60"
+            style={{
+              backgroundImage: `
+                repeating-linear-gradient(0deg, transparent, transparent 2px, rgba(244, 63, 94, 0.12) 2px, rgba(244, 63, 94, 0.12) 4px),
+                repeating-linear-gradient(90deg, transparent, transparent 2px, rgba(236, 72, 153, 0.12) 2px, rgba(236, 72, 153, 0.12) 4px)
+              `,
+              backgroundSize: '64px 64px',
+              maskImage: 'radial-gradient(ellipse at center, black 60%, transparent 100%)',
+              WebkitMaskImage: 'radial-gradient(ellipse at center, black 60%, transparent 100%)'
+            }}
+          ></div>
         </div>
 
-        <div className="max-w-5xl mx-auto text-center relative z-10">
-          <div className="inline-flex items-center gap-2 px-4 py-2 bg-zinc-900/80 backdrop-blur-md rounded-full text-sm font-medium text-rose-300 mb-8 border border-rose-500/20 shadow-lg shadow-rose-900/20 animate-fade-in animation-delay-100">
+        <div className="max-w-5xl mx-auto text-center relative z-10 pt-8 pb-8">
+          <div className="inline-flex items-center gap-2 px-4 py-2 bg-zinc-900/80 backdrop-blur-md rounded-full text-sm font-medium text-rose-300 mb-8 border border-rose-500/20 shadow-lg shadow-rose-900/20 animate-fade-in animation-delay-100 relative z-10">
             <span className="relative flex h-2 w-2">
               <span className="animate-ping absolute inline-flex h-full w-full rounded-full bg-rose-400 opacity-75"></span>
               <span className="relative inline-flex rounded-full h-2 w-2 bg-rose-500"></span>
@@ -82,19 +113,25 @@ const LandingPage: React.FC<LandingPageProps> = ({ onGetStarted }) => {
             The Central Nervous System for High-Performance Teams
           </div>
 
-          {/* Pulsing Glow Behind Hero Text */}
-          <div className="absolute left-1/2 -translate-x-1/2 top-1/2 -translate-y-1/2 w-[900px] h-[500px] pointer-events-none z-0">
-            <div 
-              className="absolute inset-0 bg-gradient-to-r from-rose-500/30 via-pink-500/30 to-purple-500/30 rounded-full blur-[120px]"
-              style={{
-                animation: 'pulse-glow 3s ease-in-out infinite',
-              }}
-            ></div>
+          {/* Enhanced Pulsing Glow Behind Hero Text - Between background and content */}
+          <div className="absolute left-1/2 -translate-x-1/2 top-1/2 -translate-y-1/2 w-[1000px] h-[600px] pointer-events-none z-[2]">
+            <div className="absolute inset-0 bg-gradient-to-r from-rose-500/35 via-pink-500/30 to-purple-500/25 rounded-full blur-[140px] animate-pulse-glow-slow"></div>
           </div>
 
-          <h1 className="text-5xl sm:text-7xl font-bold mb-8 leading-[1.15] tracking-tight animate-fade-in animation-delay-200 relative z-10 pb-4">
-            Orchestrate Your
-            <span className="block bg-gradient-to-r from-rose-400 via-pink-500 to-purple-500 bg-clip-text text-transparent animate-fade-in animation-delay-300 relative z-10 pt-3 pb-1">
+          <h1 className="text-5xl sm:text-7xl font-bold mb-8 leading-[1.15] tracking-tight relative z-10 pb-4">
+            <span className="block text-white animate-fade-in animation-delay-200">Orchestrate Your</span>
+            <span 
+              className="block mt-2 mb-2 animate-fade-in animation-delay-300 relative z-10"
+              style={{
+                background: 'linear-gradient(to right, #fb7185, #ec4899, #a855f7)',
+                WebkitBackgroundClip: 'text',
+                WebkitTextFillColor: 'transparent',
+                backgroundClip: 'text',
+                color: 'transparent',
+                display: 'block',
+                minHeight: '1.2em'
+              }}
+            >
               Digital Intelligence
             </span>
           </h1>
@@ -107,6 +144,7 @@ const LandingPage: React.FC<LandingPageProps> = ({ onGetStarted }) => {
             <button
               onClick={onGetStarted}
               className="w-full sm:w-auto px-8 py-4 bg-white text-zinc-950 rounded-xl text-lg font-bold hover:bg-zinc-200 transition shadow-xl hover:scale-105 active:scale-95 flex items-center justify-center gap-2"
+              type="button"
             >
               Launch Pulse
               <i className="fa-solid fa-rocket"></i>
@@ -114,6 +152,7 @@ const LandingPage: React.FC<LandingPageProps> = ({ onGetStarted }) => {
             <button
               onClick={() => scrollToSection('ecosystem')}
               className="w-full sm:w-auto px-8 py-4 bg-zinc-900/50 border border-zinc-800 text-white rounded-xl text-lg font-medium hover:bg-zinc-800 transition flex items-center justify-center gap-2 animate-float"
+              type="button"
             >
               Explore the Ecosystem
               <i className="fa-solid fa-arrow-down"></i>
@@ -133,10 +172,10 @@ const LandingPage: React.FC<LandingPageProps> = ({ onGetStarted }) => {
           </div>
 
           <div className="grid lg:grid-cols-3 gap-8">
-            {/* Pulse Card */}
+            {/* Pulse Card - Enhanced */}
             <div className="relative group animate-fade-in animation-delay-200">
-              <div className="absolute inset-0 bg-rose-500/20 rounded-3xl blur-xl group-hover:bg-rose-500/30 transition duration-500 opacity-0 group-hover:opacity-100"></div>
-              <div className="relative h-full bg-zinc-950 border border-zinc-800 rounded-3xl p-8 hover:border-rose-500/50 transition duration-300 flex flex-col hover:-translate-y-2">
+              <div className="absolute inset-0 bg-gradient-to-br from-rose-500/25 to-pink-500/20 rounded-3xl blur-2xl group-hover:from-rose-500/35 group-hover:to-pink-500/30 transition-all duration-500 opacity-0 group-hover:opacity-100"></div>
+              <div className="relative h-full bg-zinc-950/90 backdrop-blur-sm border border-zinc-800 rounded-3xl p-8 hover:border-rose-500/60 transition-all duration-300 flex flex-col hover:-translate-y-2 card-elevated-rose">
                 <div className="w-14 h-14 bg-zinc-900 rounded-2xl flex items-center justify-center mb-6 border border-zinc-800 group-hover:border-rose-500/50 group-hover:scale-110 transition duration-300">
                   <i className="fa-solid fa-heart-pulse text-2xl text-rose-500"></i>
                 </div>
@@ -159,10 +198,10 @@ const LandingPage: React.FC<LandingPageProps> = ({ onGetStarted }) => {
               </div>
             </div>
 
-            {/* Logos Vision Card */}
+            {/* Logos Vision Card - Enhanced */}
             <div className="relative group animate-fade-in animation-delay-300">
-              <div className="absolute inset-0 bg-blue-500/20 rounded-3xl blur-xl group-hover:bg-blue-500/30 transition duration-500 opacity-0 group-hover:opacity-100"></div>
-              <div className="relative h-full bg-zinc-950 border border-zinc-800 rounded-3xl p-8 hover:border-blue-500/50 transition duration-300 flex flex-col hover:-translate-y-2">
+              <div className="absolute inset-0 bg-gradient-to-br from-blue-500/25 to-cyan-500/20 rounded-3xl blur-2xl group-hover:from-blue-500/35 group-hover:to-cyan-500/30 transition-all duration-500 opacity-0 group-hover:opacity-100"></div>
+              <div className="relative h-full bg-zinc-950/90 backdrop-blur-sm border border-zinc-800 rounded-3xl p-8 hover:border-blue-500/60 transition-all duration-300 flex flex-col hover:-translate-y-2 card-elevated">
                 <div className="w-14 h-14 bg-zinc-900 rounded-2xl flex items-center justify-center mb-6 border border-zinc-800 group-hover:border-blue-500/50 group-hover:scale-110 transition duration-300">
                   <i className="fa-solid fa-eye text-2xl text-blue-500"></i>
                 </div>
@@ -185,10 +224,10 @@ const LandingPage: React.FC<LandingPageProps> = ({ onGetStarted }) => {
               </div>
             </div>
 
-            {/* Entomate Card */}
+            {/* Entomate Card - Enhanced */}
             <div className="relative group animate-fade-in animation-delay-400">
-              <div className="absolute inset-0 bg-emerald-500/20 rounded-3xl blur-xl group-hover:bg-emerald-500/30 transition duration-500 opacity-0 group-hover:opacity-100"></div>
-              <div className="relative h-full bg-zinc-950 border border-zinc-800 rounded-3xl p-8 hover:border-emerald-500/50 transition duration-300 flex flex-col hover:-translate-y-2">
+              <div className="absolute inset-0 bg-gradient-to-br from-emerald-500/25 to-teal-500/20 rounded-3xl blur-2xl group-hover:from-emerald-500/35 group-hover:to-teal-500/30 transition-all duration-500 opacity-0 group-hover:opacity-100"></div>
+              <div className="relative h-full bg-zinc-950/90 backdrop-blur-sm border border-zinc-800 rounded-3xl p-8 hover:border-emerald-500/60 transition-all duration-300 flex flex-col hover:-translate-y-2 card-elevated">
                 <div className="w-14 h-14 bg-zinc-900 rounded-2xl flex items-center justify-center mb-6 border border-zinc-800 group-hover:border-emerald-500/50 group-hover:scale-110 transition duration-300">
                   <i className="fa-solid fa-robot text-2xl text-emerald-500"></i>
                 </div>
@@ -328,32 +367,32 @@ const LandingPage: React.FC<LandingPageProps> = ({ onGetStarted }) => {
             <div className="hidden lg:block absolute top-1/2 left-0 right-0 h-0.5 bg-gradient-to-r from-transparent via-rose-500/50 to-transparent -translate-y-1/2 z-0"></div>
 
             <div className="grid lg:grid-cols-3 gap-8 relative z-10">
-              {/* Step 1 */}
-              <div className="bg-zinc-900 border border-zinc-800 p-8 rounded-2xl relative animate-fade-in animation-delay-200 hover:-translate-y-2 transition-transform duration-300">
-                <div className="absolute -top-4 -right-4 w-8 h-8 bg-zinc-800 border border-zinc-700 rounded-full flex items-center justify-center text-rose-500 font-bold">1</div>
-                <div className="text-rose-400 font-bold mb-2">PULSE</div>
-                <h4 className="text-xl font-bold text-white mb-2">The Signal</h4>
-                <p className="text-zinc-400 text-sm">
+              {/* Step 1 - Enhanced */}
+              <div className="bg-zinc-900/90 backdrop-blur-sm border border-zinc-800 p-8 rounded-2xl relative animate-fade-in animation-delay-200 hover:-translate-y-2 transition-all duration-300 card-elevated hover:border-rose-500/30 hover:glow-rose-sm group">
+                <div className="absolute -top-4 -right-4 w-8 h-8 bg-gradient-to-br from-rose-500 to-pink-500 border border-rose-400/30 rounded-full flex items-center justify-center text-white font-bold shadow-lg glow-rose-sm">1</div>
+                <div className="text-gradient-rose font-bold mb-2 text-sm">PULSE</div>
+                <h4 className="text-xl font-bold text-white mb-2 group-hover:text-rose-100 transition-colors">The Signal</h4>
+                <p className="text-zinc-400 text-sm leading-relaxed">
                   A high-priority email arrives from a key client about a new grant opportunity. Pulse flags it as "Urgent", summarizes the key requirements, and routes it to the #grants channel.
                 </p>
               </div>
 
-              {/* Step 2 */}
-              <div className="bg-zinc-900 border border-zinc-800 p-8 rounded-2xl relative animate-fade-in animation-delay-300 hover:-translate-y-2 transition-transform duration-300">
-                <div className="absolute -top-4 -right-4 w-8 h-8 bg-zinc-800 border border-zinc-700 rounded-full flex items-center justify-center text-blue-500 font-bold">2</div>
-                <div className="text-blue-400 font-bold mb-2">LOGOS VISION</div>
-                <h4 className="text-xl font-bold text-white mb-2">The Context</h4>
-                <p className="text-zinc-400 text-sm">
+              {/* Step 2 - Enhanced */}
+              <div className="bg-zinc-900/90 backdrop-blur-sm border border-zinc-800 p-8 rounded-2xl relative animate-fade-in animation-delay-300 hover:-translate-y-2 transition-all duration-300 card-elevated hover:border-blue-500/30 group">
+                <div className="absolute -top-4 -right-4 w-8 h-8 bg-gradient-to-br from-blue-500 to-cyan-500 border border-blue-400/30 rounded-full flex items-center justify-center text-white font-bold shadow-lg">2</div>
+                <div className="bg-gradient-to-r from-blue-400 to-cyan-400 bg-clip-text text-transparent font-bold mb-2 text-sm">LOGOS VISION</div>
+                <h4 className="text-xl font-bold text-white mb-2 group-hover:text-blue-100 transition-colors">The Context</h4>
+                <p className="text-zinc-400 text-sm leading-relaxed">
                   The system automatically links the message to the Client Record. It pulls up past grant history, success rates, and the assigned relationship manager, displaying this context alongside the chat.
                 </p>
               </div>
 
-              {/* Step 3 */}
-              <div className="bg-zinc-900 border border-zinc-800 p-8 rounded-2xl relative animate-fade-in animation-delay-400 hover:-translate-y-2 transition-transform duration-300">
-                <div className="absolute -top-4 -right-4 w-8 h-8 bg-zinc-800 border border-zinc-700 rounded-full flex items-center justify-center text-emerald-500 font-bold">3</div>
-                <div className="text-emerald-400 font-bold mb-2">ENTOMATE</div>
-                <h4 className="text-xl font-bold text-white mb-2">The Action</h4>
-                <p className="text-zinc-400 text-sm">
+              {/* Step 3 - Enhanced */}
+              <div className="bg-zinc-900/90 backdrop-blur-sm border border-zinc-800 p-8 rounded-2xl relative animate-fade-in animation-delay-400 hover:-translate-y-2 transition-all duration-300 card-elevated hover:border-emerald-500/30 group">
+                <div className="absolute -top-4 -right-4 w-8 h-8 bg-gradient-to-br from-emerald-500 to-teal-500 border border-emerald-400/30 rounded-full flex items-center justify-center text-white font-bold shadow-lg">3</div>
+                <div className="bg-gradient-to-r from-emerald-400 to-teal-400 bg-clip-text text-transparent font-bold mb-2 text-sm">ENTOMATE</div>
+                <h4 className="text-xl font-bold text-white mb-2 group-hover:text-emerald-100 transition-colors">The Action</h4>
+                <p className="text-zinc-400 text-sm leading-relaxed">
                   An "Apply" workflow is triggered. Entomate creates a task for the Grant Writer, schedules a kickoff meeting for the team based on availability, and drafts an acknowledgment email.
                 </p>
               </div>
@@ -558,8 +597,8 @@ const FeatureCard = ({ icon, color, title, description, tags }: { icon: string, 
   };
 
   return (
-    <div className="group p-6 rounded-2xl bg-zinc-900 border border-zinc-800 hover:border-zinc-700 transition duration-300 hover:-translate-y-2 hover:shadow-xl animate-fade-in">
-      <div className={`w-12 h-12 rounded-xl flex items-center justify-center mb-4 transition ${colorClasses[color]}`}>
+    <div className="group p-6 rounded-2xl bg-zinc-900/90 backdrop-blur-sm border border-zinc-800 hover:border-zinc-700 transition-all duration-300 hover:-translate-y-2 card-elevated hover:glow-rose-sm animate-fade-in">
+      <div className={`w-12 h-12 rounded-xl flex items-center justify-center mb-4 transition-all duration-300 shadow-lg ${colorClasses[color]}`}>
         <i className={`${icon} text-xl`}></i>
       </div>
       <h3 className="text-xl font-bold text-white mb-3">{title}</h3>
@@ -568,7 +607,7 @@ const FeatureCard = ({ icon, color, title, description, tags }: { icon: string, 
       </p>
       <div className="flex flex-wrap gap-2">
         {tags.map((tag, i) => (
-          <span key={i} className="px-2 py-1 bg-zinc-800 rounded text-xs text-zinc-300 border border-zinc-700">
+          <span key={i} className="px-2 py-1 bg-zinc-800/80 backdrop-blur-sm rounded text-xs text-zinc-300 border border-zinc-700/50 transition-colors hover:border-zinc-600 hover:bg-zinc-800">
             {tag}
           </span>
         ))}

@@ -13,8 +13,8 @@ body {
     sans-serif;
   -webkit-font-smoothing: antialiased;
   -moz-osx-font-smoothing: grayscale;
-  background-color: #0f0f0f;
-  color: #ffffff;
+  background-color: #0a0a0a;
+  color: #fafafa;
 }
 
 /* Global focus styles for keyboard navigation */
@@ -1042,4 +1042,233 @@ html, body {
 /* Light mode canvas fallback */
 .canvas-fallback {
   background: radial-gradient(ellipse at center, rgba(244, 63, 94, 0.15), transparent 70%);
+}
+
+/* ==========================================
+   ENHANCED GRADIENT & GLASSMORPHISM SYSTEM
+   ========================================== */
+
+/* Premium Gradient Backgrounds */
+.gradient-rose-radial {
+  background: radial-gradient(circle at 50% 50%, rgba(244, 63, 94, 0.15), transparent 70%);
+}
+
+.gradient-rose-glow {
+  background: radial-gradient(circle at 50% 50%, rgba(244, 63, 94, 0.25), rgba(236, 72, 153, 0.15), transparent 70%);
+}
+
+.gradient-dashboard-hero {
+  background:
+    linear-gradient(135deg, rgba(24, 24, 27, 0.95) 0%, rgba(39, 17, 29, 0.9) 50%, rgba(0, 0, 0, 0.98) 100%),
+    repeating-linear-gradient(0deg, transparent, transparent 2px, rgba(244, 63, 94, 0.03) 2px, rgba(244, 63, 94, 0.03) 4px),
+    repeating-linear-gradient(90deg, transparent, transparent 2px, rgba(236, 72, 153, 0.02) 2px, rgba(236, 72, 153, 0.02) 4px);
+  position: relative;
+}
+
+.gradient-dashboard-card {
+  background: linear-gradient(135deg, rgba(24, 24, 27, 0.95) 0%, rgba(39, 17, 29, 0.9) 100%);
+}
+
+/* Noise Texture Overlay */
+.texture-noise {
+  position: relative;
+}
+
+.texture-noise::before {
+  content: '';
+  position: absolute;
+  inset: 0;
+  background-image: url("data:image/svg+xml,%3Csvg viewBox='0 0 200 200' xmlns='http://www.w3.org/2000/svg'%3E%3Cfilter id='noise'%3E%3CfeTurbulence type='fractalNoise' baseFrequency='0.9' numOctaves='4' /%3E%3C/filter%3E%3Crect width='100%25' height='100%25' filter='url(%23noise)' opacity='0.05'/%3E%3C/svg%3E");
+  opacity: 0.4;
+  pointer-events: none;
+  mix-blend-mode: overlay;
+}
+
+/* Grain Effect */
+.grain-effect {
+  position: relative;
+}
+
+.grain-effect::after {
+  content: '';
+  position: absolute;
+  inset: 0;
+  background-image: url("data:image/svg+xml,%3Csvg viewBox='0 0 400 400' xmlns='http://www.w3.org/2000/svg'%3E%3Cfilter id='grain'%3E%3CfeTurbulence type='fractalNoise' baseFrequency='1.5' numOctaves='3' /%3E%3C/filter%3E%3Crect width='100%25' height='100%25' filter='url(%23grain)' opacity='0.08'/%3E%3C/svg%3E");
+  opacity: 0.3;
+  pointer-events: none;
+  animation: grain-shift 8s steps(10) infinite;
+}
+
+@keyframes grain-shift {
+  0%, 100% { transform: translate(0, 0); }
+  10% { transform: translate(-5%, -10%); }
+  20% { transform: translate(-15%, 5%); }
+  30% { transform: translate(7%, -25%); }
+  40% { transform: translate(-5%, 25%); }
+  50% { transform: translate(-15%, 10%); }
+  60% { transform: translate(15%, 0%); }
+  70% { transform: translate(0%, 15%); }
+  80% { transform: translate(3%, -10%); }
+  90% { transform: translate(-10%, 5%); }
+}
+
+/* Mesh Gradient Background */
+.mesh-gradient {
+  background:
+    radial-gradient(at 0% 0%, rgba(244, 63, 94, 0.15) 0px, transparent 50%),
+    radial-gradient(at 100% 0%, rgba(168, 85, 247, 0.1) 0px, transparent 50%),
+    radial-gradient(at 100% 100%, rgba(236, 72, 153, 0.12) 0px, transparent 50%),
+    radial-gradient(at 0% 100%, rgba(244, 63, 94, 0.08) 0px, transparent 50%);
+}
+
+/* Enhanced Glassmorphism */
+.glass-rose {
+  background: rgba(24, 24, 27, 0.6);
+  -webkit-backdrop-filter: blur(20px) saturate(180%);
+  backdrop-filter: blur(20px) saturate(180%);
+  border: 1px solid rgba(244, 63, 94, 0.1);
+}
+
+.glass-rose-strong {
+  background: rgba(24, 24, 27, 0.8);
+  -webkit-backdrop-filter: blur(24px) saturate(200%);
+  backdrop-filter: blur(24px) saturate(200%);
+  border: 1px solid rgba(244, 63, 94, 0.15);
+}
+
+.glass-card {
+  background: rgba(255, 255, 255, 0.05);
+  -webkit-backdrop-filter: blur(16px) saturate(180%);
+  backdrop-filter: blur(16px) saturate(180%);
+  border: 1px solid rgba(255, 255, 255, 0.08);
+}
+
+/* Light mode glass */
+.light .glass-card {
+  background: rgba(255, 255, 255, 0.7);
+  border: 1px solid rgba(0, 0, 0, 0.05);
+}
+
+/* Gradient Text Effects */
+.text-gradient-rose {
+  background: linear-gradient(135deg, #f43f5e 0%, #ec4899 100%);
+  -webkit-background-clip: text;
+  -webkit-text-fill-color: transparent;
+  background-clip: text;
+}
+
+.text-gradient-rose-purple {
+  background: linear-gradient(135deg, #f43f5e 0%, #ec4899 50%, #a855f7 100%);
+  -webkit-background-clip: text;
+  -webkit-text-fill-color: transparent;
+  background-clip: text;
+}
+
+/* Glow Effects */
+.glow-rose-sm {
+  box-shadow: 0 0 20px rgba(244, 63, 94, 0.2), 0 0 40px rgba(236, 72, 153, 0.1);
+}
+
+.glow-rose-md {
+  box-shadow: 0 0 30px rgba(244, 63, 94, 0.25), 0 0 60px rgba(236, 72, 153, 0.15);
+}
+
+.glow-rose-lg {
+  box-shadow: 0 0 40px rgba(244, 63, 94, 0.3), 0 0 80px rgba(236, 72, 153, 0.2);
+}
+
+/* Gradient Borders */
+.border-gradient-rose {
+  border: 1px solid transparent;
+  background-image:
+    linear-gradient(rgba(24, 24, 27, 1), rgba(24, 24, 27, 1)),
+    linear-gradient(135deg, #f43f5e, #ec4899);
+  background-origin: border-box;
+  background-clip: padding-box, border-box;
+}
+
+.border-gradient-rose-subtle {
+  border: 1px solid transparent;
+  background-image:
+    linear-gradient(rgba(24, 24, 27, 1), rgba(24, 24, 27, 1)),
+    linear-gradient(135deg, rgba(244, 63, 94, 0.3), rgba(236, 72, 153, 0.3));
+  background-origin: border-box;
+  background-clip: padding-box, border-box;
+}
+
+/* Card depth and elevation */
+.card-elevated {
+  box-shadow:
+    0 4px 6px -1px rgba(0, 0, 0, 0.1),
+    0 2px 4px -1px rgba(0, 0, 0, 0.06),
+    0 0 0 1px rgba(244, 63, 94, 0.05);
+}
+
+.card-elevated-rose {
+  box-shadow:
+    0 10px 25px -5px rgba(244, 63, 94, 0.15),
+    0 0 0 1px rgba(244, 63, 94, 0.1);
+}
+
+.card-hover-lift {
+  transition: all 0.3s cubic-bezier(0.4, 0, 0.2, 1);
+}
+
+.card-hover-lift:hover {
+  transform: translateY(-4px);
+  box-shadow:
+    0 20px 40px -10px rgba(244, 63, 94, 0.2),
+    0 0 0 1px rgba(244, 63, 94, 0.15);
+}
+
+/* Animated gradient backgrounds */
+@keyframes gradient-shift {
+  0%, 100% {
+    background-position: 0% 50%;
+  }
+  50% {
+    background-position: 100% 50%;
+  }
+}
+
+.gradient-animated {
+  background-size: 200% 200%;
+  animation: gradient-shift 10s ease infinite;
+}
+
+/* Improved contrast grays for light/dark mode */
+:root {
+  --gray-50-improved: #fafafa;
+  --gray-100-improved: #f5f5f5;
+  --gray-200-improved: #e5e5e5;
+  --gray-300-improved: #d4d4d4;
+  --gray-400-improved: #a3a3a3;
+  --gray-500-improved: #737373;
+  --gray-600-improved: #525252;
+  --gray-700-improved: #404040;
+  --gray-800-improved: #262626;
+  --gray-900-improved: #171717;
+  --gray-950-improved: #0a0a0a;
+}
+
+.dark {
+  --bg-primary-improved: #000000;
+  --bg-secondary-improved: #0a0a0a;
+  --bg-tertiary-improved: #171717;
+  --bg-elevated-improved: #262626;
+  --text-primary-improved: #fafafa;
+  --text-secondary-improved: #d4d4d4;
+  --text-tertiary-improved: #a3a3a3;
+  --border-improved: #262626;
+}
+
+.light {
+  --bg-primary-improved: #ffffff;
+  --bg-secondary-improved: #fafafa;
+  --bg-tertiary-improved: #f5f5f5;
+  --bg-elevated-improved: #ffffff;
+  --text-primary-improved: #0a0a0a;
+  --text-secondary-improved: #525252;
+  --text-tertiary-improved: #737373;
+  --border-improved: #e5e5e5;
 }

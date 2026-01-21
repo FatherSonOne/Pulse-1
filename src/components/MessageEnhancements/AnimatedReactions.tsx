@@ -357,6 +357,18 @@ export const AnimatedReactions: React.FC<AnimatedReactionsProps> = ({
   );
 };
 
+// Emoji tooltip labels for accessibility
+const EMOJI_LABELS: Record<string, string> = {
+  '👍': 'Thumbs up',
+  '❤️': 'Love',
+  '😂': 'Laugh',
+  '😮': 'Wow',
+  '😢': 'Sad',
+  '🔥': 'Fire',
+  '🎉': 'Celebrate',
+  '🙏': 'Thanks',
+};
+
 // Quick Reaction Bar (for hover state on messages)
 export const QuickReactionBar: React.FC<{
   onReact: (emoji: string) => void;
@@ -368,14 +380,12 @@ export const QuickReactionBar: React.FC<{
     right?: number;
   };
   className?: string;
-}> = ({ onReact, onShowMore, position = {}, className = '' }) => {
+  isExiting?: boolean;
+}> = ({ onReact, onShowMore, position = {}, className = '', isExiting = false }) => {
   const [hoveredEmoji, setHoveredEmoji] = useState<string | null>(null);
-  const [isVisible, setIsVisible] = useState(false);
-
-  // Trigger entrance animation
-  useEffect(() => {
-    setIsVisible(true);
-  }, []);
+  const [selectedEmoji, setSelectedEmoji] = useState<string | null>(null);
+  const [showRipple, setShowRipple] = useState<string | null>(null);
+  const barRef = useRef<HTMLDivElement>(null);
 
   const positionStyles = {
     ...(position.top !== undefined && { top: `${position.top}px` }),
@@ -384,50 +394,119 @@ export const QuickReactionBar: React.FC<{
     ...(position.right !== undefined && { right: `${position.right}px` }),
   };
 
+  // Handle emoji selection with visual feedback
+  const handleEmojiClick = (e: React.MouseEvent, emoji: string) => {
+    e.stopPropagation();
+
+    // Trigger selection animation
+    setSelectedEmoji(emoji);
+    setShowRipple(emoji);
+
+    // Clear ripple after animation
+    setTimeout(() => setShowRipple(null), 400);
+
+    // Trigger haptic feedback on mobile
+    if ('vibrate' in navigator) {
+      navigator.vibrate(10);
+    }
+
+    // Call onReact after brief visual feedback
+    setTimeout(() => {
+      onReact(emoji);
+    }, 100);
+  };
+
+  // Handle keyboard navigation within the bar
+  const handleKeyDown = (e: React.KeyboardEvent, emoji: string, index: number) => {
+    const buttons = barRef.current?.querySelectorAll('button');
+    if (!buttons) return;
+
+    switch (e.key) {
+      case 'ArrowRight':
+        e.preventDefault();
+        const nextIndex = Math.min(index + 1, buttons.length - 1);
+        (buttons[nextIndex] as HTMLButtonElement).focus();
+        break;
+      case 'ArrowLeft':
+        e.preventDefault();
+        const prevIndex = Math.max(index - 1, 0);
+        (buttons[prevIndex] as HTMLButtonElement).focus();
+        break;
+      case 'Home':
+        e.preventDefault();
+        (buttons[0] as HTMLButtonElement).focus();
+        break;
+      case 'End':
+        e.preventDefault();
+        (buttons[buttons.length - 1] as HTMLButtonElement).focus();
+        break;
+    }
+  };
+
   return (
     <div
+      ref={barRef}
       className={`
-        flex items-center bg-white dark:bg-zinc-800 rounded-full
-        shadow-2xl border border-zinc-200 dark:border-zinc-700 p-1
-        transition-all duration-200 ease-out
-        ${isVisible ? 'opacity-100 scale-100' : 'opacity-0 scale-90'}
+        quick-reaction-bar
+        ${isExiting ? 'quick-reaction-bar-exit' : 'quick-reaction-bar-enter'}
         ${className}
       `}
       style={positionStyles}
       role="toolbar"
-      aria-label="Quick reaction buttons"
+      aria-label="Quick reactions - Use arrow keys to navigate"
     >
-      {COMMON_REACTIONS.slice(0, 6).map(emoji => (
+      {COMMON_REACTIONS.slice(0, 6).map((emoji, index) => (
         <button
           key={emoji}
-          onClick={(e) => {
-            e.stopPropagation();
-            onReact(emoji);
-          }}
+          onClick={(e) => handleEmojiClick(e, emoji)}
           onMouseEnter={() => setHoveredEmoji(emoji)}
           onMouseLeave={() => setHoveredEmoji(null)}
+          onKeyDown={(e) => handleKeyDown(e, emoji, index)}
           className={`
-            w-8 h-8 flex items-center justify-center rounded-full
-            transition-all duration-200
-            ${hoveredEmoji === emoji ? 'scale-125 bg-zinc-100 dark:bg-zinc-700' : 'hover:scale-110'}
+            quick-reaction-emoji
+            ${hoveredEmoji === emoji ? 'scale-125' : ''}
+            ${selectedEmoji === emoji ? 'quick-reaction-emoji-selected' : ''}
           `}
-          aria-label={`React with ${emoji}`}
-          title={`React with ${emoji}`}
+          aria-label={`React with ${EMOJI_LABELS[emoji] || emoji}`}
+          data-tooltip={EMOJI_LABELS[emoji]}
+          tabIndex={index === 0 ? 0 : -1}
         >
-          <span className="text-lg">{emoji}</span>
+          <span className="relative z-10" aria-hidden="true">{emoji}</span>
+          {showRipple === emoji && (
+            <span className="quick-reaction-emoji-ripple" aria-hidden="true" />
+          )}
         </button>
       ))}
-      <div className="w-px h-5 bg-zinc-200 dark:bg-zinc-700 mx-1" />
+
+      {/* Divider */}
+      <div className="quick-reaction-divider" aria-hidden="true" />
+
+      {/* More Button */}
       <button
         onClick={(e) => {
           e.stopPropagation();
           onShowMore();
         }}
-        className="w-8 h-8 flex items-center justify-center rounded-full text-zinc-400 hover:text-zinc-600 dark:hover:text-zinc-300 hover:bg-zinc-100 dark:hover:bg-zinc-700 transition-all"
-        aria-label="Show more reactions"
-        title="Show more reactions"
+        onKeyDown={(e) => handleKeyDown(e, 'more', 6)}
+        className="quick-reaction-more"
+        aria-label="Show all reactions"
+        aria-haspopup="dialog"
+        tabIndex={-1}
       >
-        <i className="fa-solid fa-plus text-xs" />
+        <svg
+          width="14"
+          height="14"
+          viewBox="0 0 14 14"
+          fill="none"
+          stroke="currentColor"
+          strokeWidth="2"
+          strokeLinecap="round"
+          aria-hidden="true"
+        >
+          <line x1="7" y1="3" x2="7" y2="11" />
+          <line x1="3" y1="7" x2="11" y2="7" />
+        </svg>
+        <span className="sr-only">Show more reactions</span>
       </button>
     </div>
   );

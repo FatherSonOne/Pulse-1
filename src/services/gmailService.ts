@@ -147,7 +147,11 @@ export class GmailService {
     const { data: refreshData, error: refreshError } = await supabase.auth.refreshSession();
 
     if (refreshError || !refreshData.session?.provider_token) {
-      throw new Error('Your Google session has expired. Please sign out and sign back in with Google.');
+      // Create a specific error that can be caught gracefully by callers
+      const error = new Error('Your Google session has expired. Please sign out and sign back in with Google.');
+      (error as any).isSessionExpired = true;
+      (error as any).code = 'GOOGLE_SESSION_EXPIRED';
+      throw error;
     }
 
     this.accessToken = refreshData.session.provider_token;
@@ -217,8 +221,11 @@ export class GmailService {
         console.log('[GmailService] Token refresh successful, request retried');
       } catch (refreshError) {
         this.tokenRefreshAttempted = false;
-        console.error('[GmailService] Token refresh failed:', refreshError);
-        throw new Error('Your Google session has expired. Please sign out and sign back in.');
+        // Don't log as error since this is handled gracefully by callers
+        const error = new Error('Your Google session has expired. Please sign out and sign back in.');
+        (error as any).isSessionExpired = true;
+        (error as any).code = 'GOOGLE_SESSION_EXPIRED';
+        throw error;
       }
     }
 
@@ -228,7 +235,10 @@ export class GmailService {
 
       // Provide user-friendly messages for common errors
       if (response.status === 401) {
-        throw new Error('Your Google session has expired. Please sign out and sign back in.');
+        const error = new Error('Your Google session has expired. Please sign out and sign back in.');
+        (error as any).isSessionExpired = true;
+        (error as any).code = 'GOOGLE_SESSION_EXPIRED';
+        throw error;
       }
       if (response.status === 403) {
         throw new Error('Permission denied. Please ensure Gmail access is enabled for this app.');

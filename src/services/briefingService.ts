@@ -337,8 +337,14 @@ class BriefingService {
           snippet: m.content?.substring(0, 100) || '',
         })),
       };
-    } catch (error) {
-      console.log('Gmail not available for briefing');
+    } catch (error: any) {
+      // Silently handle Gmail errors (session expired, not connected, etc.)
+      // The error is already logged by gmailService, so we don't need to log again
+      const errorMessage = error?.message || String(error);
+      if (errorMessage.includes('session has expired')) {
+        // User will need to re-authenticate - this is expected in some cases
+        // Don't log as an error since it's handled gracefully
+      }
       return { unread: 0, emails: [] };
     }
   }

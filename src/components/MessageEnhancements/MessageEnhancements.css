@@ -429,3 +429,520 @@
 .message-scroll::-webkit-scrollbar-thumb:hover {
   background: rgba(113, 113, 122, 0.5);
 }
+
+/* ============= QUICK REACTION BAR - Visual Polish ============= */
+
+/* Modern Pill Container with Glassmorphism */
+.quick-reaction-bar {
+  display: flex;
+  align-items: center;
+  gap: 2px;
+  padding: 6px 8px;
+  border-radius: 24px;
+  background: rgba(255, 255, 255, 0.95);
+  backdrop-filter: blur(20px) saturate(180%);
+  -webkit-backdrop-filter: blur(20px) saturate(180%);
+  box-shadow:
+    0 4px 24px -4px rgba(0, 0, 0, 0.12),
+    0 2px 8px -2px rgba(0, 0, 0, 0.08),
+    0 0 0 1px rgba(0, 0, 0, 0.05);
+  transform-origin: center bottom;
+  will-change: transform, opacity;
+}
+
+.dark .quick-reaction-bar {
+  background: rgba(39, 39, 42, 0.95);
+  box-shadow:
+    0 4px 24px -4px rgba(0, 0, 0, 0.4),
+    0 2px 8px -2px rgba(0, 0, 0, 0.3),
+    0 0 0 1px rgba(255, 255, 255, 0.08);
+}
+
+/* Entrance Animation - Fade + Scale with Spring */
+@keyframes reaction-bar-enter {
+  0% {
+    opacity: 0;
+    transform: scale(0.85) translateY(8px);
+  }
+  60% {
+    transform: scale(1.02) translateY(-2px);
+  }
+  100% {
+    opacity: 1;
+    transform: scale(1) translateY(0);
+  }
+}
+
+@keyframes reaction-bar-exit {
+  0% {
+    opacity: 1;
+    transform: scale(1) translateY(0);
+  }
+  100% {
+    opacity: 0;
+    transform: scale(0.9) translateY(4px);
+  }
+}
+
+.quick-reaction-bar-enter {
+  animation: reaction-bar-enter 0.25s cubic-bezier(0.34, 1.56, 0.64, 1) forwards;
+}
+
+.quick-reaction-bar-exit {
+  animation: reaction-bar-exit 0.15s ease-out forwards;
+}
+
+/* Individual Emoji Button Styles */
+.quick-reaction-emoji {
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  width: 36px;
+  height: 36px;
+  font-size: 20px;
+  border-radius: 50%;
+  background: transparent;
+  border: none;
+  cursor: pointer;
+  transition: all 0.2s cubic-bezier(0.34, 1.56, 0.64, 1);
+  position: relative;
+  user-select: none;
+  -webkit-tap-highlight-color: transparent;
+}
+
+.quick-reaction-emoji::before {
+  content: '';
+  position: absolute;
+  inset: 0;
+  border-radius: 50%;
+  background: currentColor;
+  opacity: 0;
+  transition: opacity 0.15s ease;
+}
+
+/* Emoji Hover State */
+.quick-reaction-emoji:hover {
+  transform: scale(1.25);
+  z-index: 1;
+}
+
+.quick-reaction-emoji:hover::before {
+  background: rgba(59, 130, 246, 0.1);
+  opacity: 1;
+}
+
+.dark .quick-reaction-emoji:hover::before {
+  background: rgba(96, 165, 250, 0.15);
+}
+
+/* Emoji Active/Pressed State */
+.quick-reaction-emoji:active {
+  transform: scale(1.1);
+}
+
+/* Emoji Selection Confirmation Animation */
+@keyframes emoji-select-pop {
+  0% {
+    transform: scale(1.25);
+  }
+  40% {
+    transform: scale(1.5);
+  }
+  100% {
+    transform: scale(0);
+    opacity: 0;
+  }
+}
+
+.quick-reaction-emoji-selected {
+  animation: emoji-select-pop 0.35s cubic-bezier(0.34, 1.56, 0.64, 1) forwards;
+}
+
+/* Selection Ripple Effect */
+@keyframes emoji-ripple {
+  0% {
+    transform: scale(0);
+    opacity: 0.6;
+  }
+  100% {
+    transform: scale(2.5);
+    opacity: 0;
+  }
+}
+
+.quick-reaction-emoji-ripple {
+  position: absolute;
+  inset: 0;
+  border-radius: 50%;
+  background: rgba(59, 130, 246, 0.3);
+  animation: emoji-ripple 0.4s ease-out forwards;
+  pointer-events: none;
+}
+
+/* Divider Between Emojis and More Button */
+.quick-reaction-divider {
+  width: 1px;
+  height: 24px;
+  margin: 0 4px;
+  background: linear-gradient(
+    to bottom,
+    transparent,
+    rgba(113, 113, 122, 0.3) 20%,
+    rgba(113, 113, 122, 0.3) 80%,
+    transparent
+  );
+}
+
+.dark .quick-reaction-divider {
+  background: linear-gradient(
+    to bottom,
+    transparent,
+    rgba(161, 161, 170, 0.2) 20%,
+    rgba(161, 161, 170, 0.2) 80%,
+    transparent
+  );
+}
+
+/* More Button (+) Styles */
+.quick-reaction-more {
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  width: 32px;
+  height: 32px;
+  border-radius: 50%;
+  background: rgba(113, 113, 122, 0.1);
+  border: none;
+  cursor: pointer;
+  color: #71717a;
+  font-size: 14px;
+  font-weight: 600;
+  transition: all 0.2s ease;
+}
+
+.quick-reaction-more:hover {
+  background: rgba(59, 130, 246, 0.15);
+  color: #3b82f6;
+  transform: scale(1.1);
+}
+
+.dark .quick-reaction-more {
+  background: rgba(161, 161, 170, 0.1);
+  color: #a1a1aa;
+}
+
+.dark .quick-reaction-more:hover {
+  background: rgba(96, 165, 250, 0.2);
+  color: #60a5fa;
+}
+
+/* ============= MESSAGE HOVER HIGHLIGHT ============= */
+
+/* Subtle message highlight on hover (before reaction bar appears) */
+.message-hover-container {
+  position: relative;
+  transition: all 0.2s ease;
+}
+
+.message-hover-container::before {
+  content: '';
+  position: absolute;
+  inset: -4px;
+  border-radius: 12px;
+  background: transparent;
+  transition: all 0.2s ease;
+  pointer-events: none;
+  z-index: -1;
+}
+
+/* Pre-hover state (when hovering but before 300ms delay) */
+.message-hover-pending::before {
+  background: rgba(59, 130, 246, 0.04);
+}
+
+.dark .message-hover-pending::before {
+  background: rgba(96, 165, 250, 0.06);
+}
+
+/* Active hover state (after delay, when reaction bar shows) */
+.message-hover-active::before {
+  background: rgba(59, 130, 246, 0.08);
+  box-shadow: 0 0 0 1px rgba(59, 130, 246, 0.1);
+}
+
+.dark .message-hover-active::before {
+  background: rgba(96, 165, 250, 0.1);
+  box-shadow: 0 0 0 1px rgba(96, 165, 250, 0.15);
+}
+
+/* Message content subtle glow */
+.message-hover-active .message-content-bubble {
+  box-shadow: 0 2px 12px rgba(0, 0, 0, 0.08);
+}
+
+.dark .message-hover-active .message-content-bubble {
+  box-shadow: 0 2px 12px rgba(0, 0, 0, 0.3);
+}
+
+/* ============= MOBILE LONG-PRESS INDICATOR ============= */
+
+/* Progress Ring Container */
+.long-press-indicator {
+  position: absolute;
+  inset: -8px;
+  pointer-events: none;
+  z-index: 10;
+}
+
+/* SVG Ring Animation */
+@keyframes long-press-ring-fill {
+  from {
+    stroke-dashoffset: 283; /* 2 * PI * 45 (radius) */
+  }
+  to {
+    stroke-dashoffset: 0;
+  }
+}
+
+.long-press-ring {
+  position: absolute;
+  top: 50%;
+  left: 50%;
+  transform: translate(-50%, -50%) rotate(-90deg);
+  width: 100%;
+  height: 100%;
+  max-width: 200px;
+  max-height: 200px;
+}
+
+.long-press-ring-track {
+  fill: none;
+  stroke: rgba(59, 130, 246, 0.15);
+  stroke-width: 3;
+}
+
+.long-press-ring-progress {
+  fill: none;
+  stroke: #3b82f6;
+  stroke-width: 3;
+  stroke-linecap: round;
+  stroke-dasharray: 283;
+  stroke-dashoffset: 283;
+  animation: long-press-ring-fill 500ms linear forwards;
+}
+
+.dark .long-press-ring-track {
+  stroke: rgba(96, 165, 250, 0.2);
+}
+
+.dark .long-press-ring-progress {
+  stroke: #60a5fa;
+}
+
+/* Pulse Animation During Long-Press */
+@keyframes long-press-pulse {
+  0%, 100% {
+    transform: scale(1);
+    opacity: 0.3;
+  }
+  50% {
+    transform: scale(1.03);
+    opacity: 0.5;
+  }
+}
+
+.long-press-pulse-overlay {
+  position: absolute;
+  inset: -4px;
+  border-radius: 12px;
+  background: rgba(59, 130, 246, 0.1);
+  animation: long-press-pulse 400ms ease-in-out infinite;
+  pointer-events: none;
+}
+
+.dark .long-press-pulse-overlay {
+  background: rgba(96, 165, 250, 0.12);
+}
+
+/* Long-Press Cancelled State */
+@keyframes long-press-cancel {
+  0% {
+    opacity: 1;
+    transform: scale(1);
+  }
+  100% {
+    opacity: 0;
+    transform: scale(0.95);
+  }
+}
+
+.long-press-cancelled {
+  animation: long-press-cancel 0.2s ease-out forwards;
+}
+
+/* Haptic Feedback Visual Sync - Brief flash on haptic trigger */
+@keyframes haptic-flash {
+  0% {
+    background: rgba(59, 130, 246, 0);
+  }
+  30% {
+    background: rgba(59, 130, 246, 0.15);
+  }
+  100% {
+    background: rgba(59, 130, 246, 0);
+  }
+}
+
+.haptic-visual-feedback {
+  animation: haptic-flash 0.15s ease-out;
+}
+
+/* Long-Press Complete Animation */
+@keyframes long-press-complete {
+  0% {
+    transform: scale(1);
+  }
+  50% {
+    transform: scale(1.02);
+  }
+  100% {
+    transform: scale(1);
+  }
+}
+
+.long-press-complete {
+  animation: long-press-complete 0.2s ease-out;
+}
+
+/* ============= ACCESSIBILITY - Focus States ============= */
+
+/* High-contrast focus ring for keyboard navigation */
+.quick-reaction-emoji:focus-visible {
+  outline: none;
+  box-shadow:
+    0 0 0 2px rgba(255, 255, 255, 0.9),
+    0 0 0 4px #3b82f6;
+}
+
+.dark .quick-reaction-emoji:focus-visible {
+  box-shadow:
+    0 0 0 2px rgba(24, 24, 27, 0.9),
+    0 0 0 4px #60a5fa;
+}
+
+.quick-reaction-more:focus-visible {
+  outline: none;
+  box-shadow:
+    0 0 0 2px rgba(255, 255, 255, 0.9),
+    0 0 0 4px #3b82f6;
+}
+
+.dark .quick-reaction-more:focus-visible {
+  box-shadow:
+    0 0 0 2px rgba(24, 24, 27, 0.9),
+    0 0 0 4px #60a5fa;
+}
+
+/* Focus within reaction bar - subtle highlight */
+.quick-reaction-bar:focus-within {
+  box-shadow:
+    0 4px 24px -4px rgba(0, 0, 0, 0.12),
+    0 2px 8px -2px rgba(0, 0, 0, 0.08),
+    0 0 0 2px rgba(59, 130, 246, 0.3);
+}
+
+.dark .quick-reaction-bar:focus-within {
+  box-shadow:
+    0 4px 24px -4px rgba(0, 0, 0, 0.4),
+    0 2px 8px -2px rgba(0, 0, 0, 0.3),
+    0 0 0 2px rgba(96, 165, 250, 0.4);
+}
+
+/* Screen reader only text */
+.sr-only {
+  position: absolute;
+  width: 1px;
+  height: 1px;
+  padding: 0;
+  margin: -1px;
+  overflow: hidden;
+  clip: rect(0, 0, 0, 0);
+  white-space: nowrap;
+  border: 0;
+}
+
+/* ============= REDUCED MOTION ALTERNATIVES ============= */
+
+@media (prefers-reduced-motion: reduce) {
+  .quick-reaction-bar-enter {
+    animation: none;
+    opacity: 1;
+    transform: scale(1);
+  }
+
+  .quick-reaction-bar-exit {
+    animation: none;
+    opacity: 0;
+  }
+
+  .quick-reaction-emoji {
+    transition: none;
+  }
+
+  .quick-reaction-emoji:hover {
+    transform: none;
+    background: rgba(59, 130, 246, 0.1);
+  }
+
+  .quick-reaction-emoji-selected {
+    animation: none;
+    opacity: 0;
+  }
+
+  .long-press-ring-progress {
+    animation: none;
+    stroke-dashoffset: 0;
+  }
+
+  .long-press-pulse-overlay {
+    animation: none;
+    opacity: 0.3;
+  }
+
+  .haptic-visual-feedback {
+    animation: none;
+  }
+}
+
+/* ============= EMOJI TOOLTIP ON HOVER ============= */
+
+.quick-reaction-emoji[data-tooltip]::after {
+  content: attr(data-tooltip);
+  position: absolute;
+  bottom: 100%;
+  left: 50%;
+  transform: translateX(-50%) translateY(-4px);
+  padding: 4px 8px;
+  font-size: 11px;
+  font-weight: 500;
+  color: white;
+  background: rgba(24, 24, 27, 0.9);
+  border-radius: 6px;
+  white-space: nowrap;
+  opacity: 0;
+  visibility: hidden;
+  transition: all 0.15s ease;
+  pointer-events: none;
+  z-index: 10;
+}
+
+.quick-reaction-emoji[data-tooltip]:hover::after {
+  opacity: 1;
+  visibility: visible;
+  transform: translateX(-50%) translateY(-8px);
+}
+
+.dark .quick-reaction-emoji[data-tooltip]::after {
+  background: rgba(250, 250, 250, 0.95);
+  color: #18181b;
+}

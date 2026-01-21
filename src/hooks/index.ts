@@ -32,3 +32,15 @@ export { useCRMIntegration } from './useCRMIntegration';
 
 // Performance
 export { useVirtualList } from './useVirtualList';
+
+// UI/Layout
+export { useSplitViewMessages } from './useSplitViewMessages';
+export { useResizablePanel } from './useResizablePanel';
+
+// Messaging (extracted from Messages.tsx)
+export { usePulseMessaging } from './usePulseMessaging';
+export type { UsePulseMessagingReturn } from './usePulseMessaging';
+export { useMessageScheduling } from './useMessageScheduling';
+export type { UseMessageSchedulingReturn, ScheduledMessage } from './useMessageScheduling';
+export { useMessageContextMenu } from './useMessageContextMenu';
+export type { UseMessageContextMenuReturn, ContextMenuPosition } from './useMessageContextMenu';

@@ -115,20 +115,21 @@ const WidgetSkeleton: React.FC<{ height?: string }> = ({ height = 'h-48' }) => (
 );
 
 const BriefingSkeleton: React.FC = () => (
-  <div className="bg-gradient-to-br from-zinc-900 via-zinc-900 to-rose-950/30 border border-zinc-800 rounded-2xl p-8 animate-pulse">
-    <div className="flex flex-col md:flex-row gap-12">
+  <div className="gradient-dashboard-hero border border-rose-800/30 rounded-xl sm:rounded-2xl p-8 animate-pulse relative overflow-hidden glow-rose-sm">
+    <div className="absolute inset-0 bg-gradient-to-br from-rose-900/30 via-pink-900/20 to-transparent pointer-events-none"></div>
+    <div className="relative z-10 flex flex-col md:flex-row gap-12">
       <div className="flex-1">
-        <div className="h-3 bg-zinc-800 rounded w-24 mb-4"></div>
-        <div className="h-8 bg-zinc-800 rounded w-2/3 mb-4"></div>
+        <div className="h-3 bg-zinc-800/50 rounded w-24 mb-4"></div>
+        <div className="h-8 bg-zinc-800/50 rounded w-2/3 mb-4"></div>
         <div className="space-y-2">
-          <div className="h-4 bg-zinc-800 rounded w-full"></div>
-          <div className="h-4 bg-zinc-800 rounded w-5/6"></div>
+          <div className="h-4 bg-zinc-800/50 rounded w-full"></div>
+          <div className="h-4 bg-zinc-800/50 rounded w-5/6"></div>
         </div>
       </div>
       <div className="flex-1 space-y-3">
-        <div className="h-3 bg-zinc-800 rounded w-20 mb-4"></div>
+        <div className="h-3 bg-zinc-800/50 rounded w-20 mb-4"></div>
         {[1, 2, 3].map(i => (
-          <div key={i} className="h-16 bg-zinc-800/50 rounded-lg"></div>
+          <div key={i} className="h-16 glass-card rounded-lg"></div>
         ))}
       </div>
     </div>
@@ -193,16 +194,16 @@ const CollapsibleWidget: React.FC<CollapsibleWidgetProps> = ({
   children,
   className = ''
 }) => (
-  <div className={`bg-white dark:bg-zinc-950 border border-zinc-200 dark:border-zinc-800 rounded-2xl overflow-hidden transition-all duration-300 hover:border-rose-500/30 ${className}`}>
+  <div className={`bg-white/80 dark:bg-zinc-950/80 backdrop-blur-sm border border-zinc-200 dark:border-zinc-800/80 rounded-2xl overflow-hidden transition-all duration-300 hover:border-rose-500/40 dark:hover:border-rose-500/30 card-elevated hover:glow-rose-sm ${className}`}>
     <div
-      className="flex items-center justify-between p-4 cursor-pointer hover:bg-rose-50/50 dark:hover:bg-rose-950/20 transition"
+      className="flex items-center justify-between p-4 cursor-pointer hover:bg-rose-50/50 dark:hover:bg-rose-950/30 transition-all duration-300"
       onClick={() => onToggle(id)}
     >
       <div className="flex items-center gap-3">
-        <div className="w-8 h-8 rounded-lg bg-gradient-to-br from-rose-500/10 to-pink-500/10 flex items-center justify-center">
+        <div className="w-8 h-8 rounded-lg bg-gradient-to-br from-rose-500/15 to-pink-500/15 dark:from-rose-500/20 dark:to-pink-500/20 flex items-center justify-center border border-rose-500/20 shadow-sm">
           <i className={`fa-solid ${icon} ${iconColor}`}></i>
         </div>
-        <h3 className="font-medium text-zinc-900 dark:text-white">{title}</h3>
+        <h3 className="font-semibold text-zinc-900 dark:text-white">{title}</h3>
       </div>
       <div className="flex items-center gap-2">
         {headerAction && <div onClick={e => e.stopPropagation()}>{headerAction}</div>}
@@ -210,7 +211,7 @@ const CollapsibleWidget: React.FC<CollapsibleWidgetProps> = ({
       </div>
     </div>
     <div className={`transition-all duration-300 overflow-hidden ${isExpanded ? 'max-h-[2000px] opacity-100' : 'max-h-0 opacity-0'}`}>
-      <div className="p-4 pt-0 border-t border-zinc-100 dark:border-zinc-800">
+      <div className="p-4 pt-0 border-t border-zinc-100 dark:border-zinc-800/50">
         {children}
       </div>
     </div>
@@ -258,12 +259,12 @@ const TodaysPriorities: React.FC<TodaysPrioritiesProps> = ({ priorities, isLoadi
     <section className="animate-slide-up">
       <div className="flex items-center justify-between mb-3 sm:mb-4">
         <div className="flex items-center gap-2">
-          <div className="w-7 h-7 sm:w-6 sm:h-6 rounded-lg bg-gradient-to-br from-rose-500 to-pink-500 flex items-center justify-center">
+          <div className="w-7 h-7 sm:w-8 sm:h-8 rounded-lg bg-gradient-to-br from-rose-500 to-pink-500 flex items-center justify-center shadow-lg glow-rose-sm">
             <i className="fa-solid fa-bolt text-white text-xs"></i>
           </div>
-          <h2 className="text-sm sm:text-sm font-bold text-zinc-900 dark:text-white uppercase tracking-wider">Today's Priorities</h2>
+          <h2 className="text-sm sm:text-base font-bold text-zinc-900 dark:text-white uppercase tracking-wider">Today's Priorities</h2>
         </div>
-        <span className="text-xs text-rose-500 font-medium">{priorities.length} items</span>
+        <span className="text-xs text-gradient-rose font-semibold">{priorities.length} items</span>
       </div>
 
       <div className="grid grid-cols-1 sm:grid-cols-2 md:grid-cols-3 lg:grid-cols-5 gap-2 sm:gap-3">
@@ -271,7 +272,7 @@ const TodaysPriorities: React.FC<TodaysPrioritiesProps> = ({ priorities, isLoadi
           <div
             key={item.id}
             onClick={() => onItemClick(item)}
-            className={`border-l-4 rounded-xl p-3 sm:p-4 cursor-pointer hover:shadow-md transition group active:scale-[0.98] min-h-[72px] ${getUrgencyColor(item.urgency)}`}
+            className={`border-l-4 rounded-xl p-3 sm:p-4 cursor-pointer hover:shadow-lg transition-all duration-300 group active:scale-[0.98] min-h-[72px] card-hover-lift backdrop-blur-sm ${getUrgencyColor(item.urgency)}`}
           >
             <div className="flex items-start gap-2 sm:gap-3">
               <div className={`w-9 h-9 sm:w-8 sm:h-8 rounded-lg flex items-center justify-center shrink-0 ${
@@ -306,6 +307,36 @@ const TodaysPriorities: React.FC<TodaysPrioritiesProps> = ({ priorities, isLoadi
 // ============= MAIN DASHBOARD COMPONENT =============
 
 const Dashboard: React.FC<DashboardProps> = ({ user, apiKey, setView }) => {
+  // Also check localStorage for API key (in case user updates it in Settings)
+  // Prefer the prop, but fall back to localStorage
+  const [localApiKey, setLocalApiKey] = useState(() => localStorage.getItem('gemini_api_key') || '');
+  const effectiveApiKey = apiKey || localApiKey;
+  
+  // Listen for localStorage changes (e.g., when user updates API key in Settings)
+  useEffect(() => {
+    const handleStorageChange = () => {
+      const newKey = localStorage.getItem('gemini_api_key') || '';
+      if (newKey !== localApiKey) {
+        setLocalApiKey(newKey);
+      }
+    };
+    
+    // Listen to storage events (from other tabs/windows)
+    window.addEventListener('storage', handleStorageChange);
+    
+    // Also check periodically for changes (in case Settings updates same-tab localStorage)
+    const interval = setInterval(() => {
+      const newKey = localStorage.getItem('gemini_api_key') || '';
+      if (newKey !== localApiKey) {
+        handleStorageChange();
+      }
+    }, 1000);
+    
+    return () => {
+      window.removeEventListener('storage', handleStorageChange);
+      clearInterval(interval);
+    };
+  }, [localApiKey, apiKey]);
   // Real data state
   const [events, setEvents] = useState<CalendarEvent[]>([]);
   const [tasks, setTasks] = useState<Task[]>([]);
@@ -699,7 +730,7 @@ const Dashboard: React.FC<DashboardProps> = ({ user, apiKey, setView }) => {
 
   // Load briefing on mount and set up auto-refresh
   useEffect(() => {
-    if (apiKey && !isLoading) {
+    if (effectiveApiKey && !isLoading) {
       // Initial load
       loadDailyBriefing();
 
@@ -714,14 +745,14 @@ const Dashboard: React.FC<DashboardProps> = ({ user, apiKey, setView }) => {
         }
       };
     }
-  }, [apiKey, isLoading]);
+  }, [effectiveApiKey, isLoading]);
 
   // Also load quick stats separately for faster initial display
   useEffect(() => {
-    if (apiKey) {
+    if (effectiveApiKey) {
       loadBriefingStats();
     }
-  }, [apiKey]);
+  }, [effectiveApiKey]);
 
   const loadBriefingStats = async () => {
     try {
@@ -735,6 +766,22 @@ const Dashboard: React.FC<DashboardProps> = ({ user, apiKey, setView }) => {
   const loadDailyBriefing = async (silent = false) => {
     if (!silent) setLoadingBriefing(true);
 
+    // Check if API key is available
+    if (!effectiveApiKey || effectiveApiKey.trim() === '') {
+      console.warn('[Dashboard] No Gemini API key available. Please set it in Settings or environment variables.');
+      if (!briefing) {
+        setBriefing({
+          greeting: "Welcome back.",
+          summary: "Please configure your Gemini API key in Settings to enable AI-powered briefing generation.",
+          suggestions: [],
+          highlights: [],
+          focusRecommendation: "Go to Settings to add your Gemini API key from https://aistudio.google.com/apikey"
+        });
+      }
+      if (!silent) setLoadingBriefing(false);
+      return;
+    }
+
     try {
       // Gather comprehensive context from all data sources
       const context = await briefingService.gatherBriefingContext();
@@ -746,20 +793,27 @@ const Dashboard: React.FC<DashboardProps> = ({ user, apiKey, setView }) => {
       if (data) {
         setBriefing(data);
         setLastBriefingRefresh(new Date());
+      } else {
+        console.warn('[Dashboard] Briefing generation returned no data');
       }
 
       // Also refresh stats
       await loadBriefingStats();
-    } catch (error) {
+    } catch (error: any) {
       console.error('Failed to load daily briefing:', error);
-      // Set a fallback briefing
+      // Set a fallback briefing with helpful message
+      const errorMessage = error?.message || String(error);
       if (!briefing) {
         setBriefing({
           greeting: "Welcome back.",
-          summary: "Your dashboard is ready. Add some data to generate your AI briefing.",
+          summary: errorMessage?.includes('API key') 
+            ? "There's an issue with your Gemini API key. Please check Settings and ensure your API key is valid."
+            : "Unable to generate AI briefing at this time. Your dashboard is still functional.",
           suggestions: [],
           highlights: [],
-          focusRecommendation: "Start by checking your calendar and tasks."
+          focusRecommendation: errorMessage?.includes('API key')
+            ? "Verify your Gemini API key in Settings"
+            : "Check your tasks and calendar for today."
         });
       }
     }
@@ -787,9 +841,9 @@ const Dashboard: React.FC<DashboardProps> = ({ user, apiKey, setView }) => {
   }, []);
 
   const handleJournalAnalyze = async () => {
-    if (!journalText.trim() || !apiKey) return;
+    if (!journalText.trim() || !effectiveApiKey) return;
     setSaving(true);
-    const insight = await generateJournalInsight(apiKey, journalText);
+    const insight = await generateJournalInsight(effectiveApiKey, journalText);
     setJournalInsight(insight || '');
     setSaving(false);
   };
@@ -825,10 +879,10 @@ const Dashboard: React.FC<DashboardProps> = ({ user, apiKey, setView }) => {
 
   const handleSearch = async (e: React.FormEvent) => {
     e.preventDefault();
-    if (!searchQuery.trim() || !apiKey) return;
+    if (!searchQuery.trim() || !effectiveApiKey) return;
     setLoadingTools(true);
     try {
-      const { text, groundingChunks } = await generateSearchResponse(apiKey, searchQuery);
+      const { text, groundingChunks } = await generateSearchResponse(effectiveApiKey, searchQuery);
       setSearchResult({ text, sources: groundingChunks });
     } catch (e) {
       console.error(e);
@@ -973,16 +1027,24 @@ const Dashboard: React.FC<DashboardProps> = ({ user, apiKey, setView }) => {
   return (
     <div className="space-y-4 sm:space-y-6 overflow-y-auto h-full pr-1 sm:pr-2 animate-fade-in pb-10 mobile-scroll">
 
-      {/* Daily Briefing Hero */}
+      {/* Daily Briefing Hero - Enhanced with Beautiful Gradients */}
       {loadingBriefing || isLoading ? (
         <BriefingSkeleton />
       ) : (
-        <section className="bg-gradient-to-br from-zinc-900 via-rose-950/90 to-black border border-rose-800/40 rounded-xl sm:rounded-2xl p-4 sm:p-6 lg:p-8 text-white relative overflow-hidden animate-slide-up shadow-xl">
-          {/* Rose/pink gradient overlays with slow pulse */}
-          <div className="absolute inset-0 bg-gradient-to-br from-rose-900/50 via-pink-950/30 to-transparent pointer-events-none animate-pulse-glow-slow"></div>
-          <div className="absolute -top-32 -right-32 w-96 h-96 bg-gradient-to-br from-rose-600/25 to-pink-600/15 rounded-full blur-3xl pointer-events-none animate-pulse-glow-slow"></div>
-          <div className="absolute -bottom-24 -left-24 w-72 h-72 bg-gradient-to-tr from-rose-700/20 via-pink-800/10 to-transparent rounded-full blur-3xl pointer-events-none animate-pulse-glow-slow" style={{ animationDelay: '2s' }}></div>
-          <div className="hidden md:block absolute top-1/2 left-1/2 -translate-x-1/2 -translate-y-1/2 w-[600px] h-[600px] bg-gradient-radial from-rose-800/10 to-transparent rounded-full blur-3xl pointer-events-none"></div>
+        <section className="gradient-dashboard-hero texture-noise grain-effect border border-rose-800/30 rounded-xl sm:rounded-2xl p-4 sm:p-6 lg:p-8 text-white relative overflow-hidden animate-slide-up glow-rose-md shadow-2xl">
+          {/* Mesh Gradient Base Layer */}
+          <div className="absolute inset-0 mesh-gradient pointer-events-none opacity-60"></div>
+
+          {/* Enhanced Rose/Pink Gradient Overlays with Animated Pulse */}
+          <div className="absolute inset-0 bg-gradient-to-br from-rose-900/50 via-pink-900/30 to-purple-950/25 pointer-events-none animate-pulse-glow-slow"></div>
+          <div className="absolute -top-40 -right-40 w-[600px] h-[600px] bg-gradient-to-br from-rose-500/35 via-pink-500/25 to-transparent rounded-full blur-3xl pointer-events-none animate-pulse-glow-slow"></div>
+          <div className="absolute -bottom-32 -left-32 w-[450px] h-[450px] bg-gradient-to-tr from-pink-600/30 via-rose-700/20 to-transparent rounded-full blur-3xl pointer-events-none animate-pulse-glow-slow" style={{ animationDelay: '2s' }}></div>
+          <div className="absolute top-1/3 right-1/4 w-80 h-80 bg-gradient-to-bl from-purple-500/20 via-pink-600/12 to-transparent rounded-full blur-3xl pointer-events-none animate-pulse-glow-slow" style={{ animationDelay: '1s' }}></div>
+          <div className="hidden md:block absolute top-1/2 left-1/2 -translate-x-1/2 -translate-y-1/2 w-[800px] h-[800px] bg-gradient-radial from-rose-600/18 via-pink-700/10 to-transparent rounded-full blur-3xl pointer-events-none"></div>
+
+          {/* Animated Light Rays */}
+          <div className="absolute top-0 left-1/4 w-px h-full bg-gradient-to-b from-transparent via-rose-500/20 to-transparent pointer-events-none" style={{ animation: 'pulse 3s ease-in-out infinite' }}></div>
+          <div className="absolute top-0 right-1/3 w-px h-full bg-gradient-to-b from-transparent via-pink-500/15 to-transparent pointer-events-none" style={{ animation: 'pulse 3s ease-in-out infinite', animationDelay: '1s' }}></div>
 
           {briefing ? (
             <div className="relative z-10">
@@ -1018,24 +1080,24 @@ const Dashboard: React.FC<DashboardProps> = ({ user, apiKey, setView }) => {
                 </button>
               </div>
 
-              {/* Quick Stats Row */}
+              {/* Quick Stats Row - Enhanced with Glassmorphism */}
               {briefingStats && (
                 <div className="grid grid-cols-4 gap-2 sm:gap-4 mb-4 sm:mb-6">
-                  <div className="bg-zinc-900/60 border border-zinc-800 rounded-lg p-2 sm:p-3 text-center">
-                    <div className="text-lg sm:text-2xl font-bold text-rose-400">{briefingStats.unreadMessages}</div>
-                    <div className="text-[9px] sm:text-[10px] text-zinc-500 uppercase tracking-wider">Unread</div>
+                  <div className="glass-card hover:glass-rose transition-all duration-300 rounded-lg sm:rounded-xl p-2 sm:p-3 text-center group cursor-pointer card-hover-lift">
+                    <div className="text-lg sm:text-2xl font-bold text-gradient-rose">{briefingStats.unreadMessages}</div>
+                    <div className="text-[9px] sm:text-[10px] text-zinc-400 group-hover:text-zinc-300 uppercase tracking-wider transition-colors">Unread</div>
                   </div>
-                  <div className="bg-zinc-900/60 border border-zinc-800 rounded-lg p-2 sm:p-3 text-center">
-                    <div className="text-lg sm:text-2xl font-bold text-pink-400">{briefingStats.pendingTasks}</div>
-                    <div className="text-[9px] sm:text-[10px] text-zinc-500 uppercase tracking-wider">Tasks</div>
+                  <div className="glass-card hover:glass-rose transition-all duration-300 rounded-lg sm:rounded-xl p-2 sm:p-3 text-center group cursor-pointer card-hover-lift">
+                    <div className="text-lg sm:text-2xl font-bold text-gradient-rose-purple">{briefingStats.pendingTasks}</div>
+                    <div className="text-[9px] sm:text-[10px] text-zinc-400 group-hover:text-zinc-300 uppercase tracking-wider transition-colors">Tasks</div>
                   </div>
-                  <div className="bg-zinc-900/60 border border-zinc-800 rounded-lg p-2 sm:p-3 text-center">
-                    <div className="text-lg sm:text-2xl font-bold text-rose-300">{briefingStats.todayMeetings}</div>
-                    <div className="text-[9px] sm:text-[10px] text-zinc-500 uppercase tracking-wider">Meetings</div>
+                  <div className="glass-card hover:glass-rose transition-all duration-300 rounded-lg sm:rounded-xl p-2 sm:p-3 text-center group cursor-pointer card-hover-lift">
+                    <div className="text-lg sm:text-2xl font-bold bg-gradient-to-r from-rose-300 to-pink-400 bg-clip-text text-transparent">{briefingStats.todayMeetings}</div>
+                    <div className="text-[9px] sm:text-[10px] text-zinc-400 group-hover:text-zinc-300 uppercase tracking-wider transition-colors">Meetings</div>
                   </div>
-                  <div className="bg-zinc-900/60 border border-zinc-800 rounded-lg p-2 sm:p-3 text-center">
-                    <div className="text-lg sm:text-2xl font-bold text-pink-300">{briefingStats.unplayedVoxes}</div>
-                    <div className="text-[9px] sm:text-[10px] text-zinc-500 uppercase tracking-wider">Voxes</div>
+                  <div className="glass-card hover:glass-rose transition-all duration-300 rounded-lg sm:rounded-xl p-2 sm:p-3 text-center group cursor-pointer card-hover-lift">
+                    <div className="text-lg sm:text-2xl font-bold bg-gradient-to-r from-pink-300 to-purple-400 bg-clip-text text-transparent">{briefingStats.unplayedVoxes}</div>
+                    <div className="text-[9px] sm:text-[10px] text-zinc-400 group-hover:text-zinc-300 uppercase tracking-wider transition-colors">Voxes</div>
                   </div>
                 </div>
               )}
@@ -1054,7 +1116,7 @@ const Dashboard: React.FC<DashboardProps> = ({ user, apiKey, setView }) => {
                         <div
                           key={idx}
                           onClick={() => handleHighlightAction(highlight.category)}
-                          className="bg-zinc-900/60 hover:bg-rose-950/40 border border-zinc-800 hover:border-rose-700/40 rounded-lg p-3 sm:p-3 flex items-start gap-2 sm:gap-3 transition cursor-pointer group backdrop-blur-sm active:scale-[0.98] min-h-[56px]"
+                          className="glass-card hover:glass-rose-strong border-gradient-rose-subtle rounded-lg sm:rounded-xl p-3 sm:p-4 flex items-start gap-2 sm:gap-3 transition-all duration-300 cursor-pointer group card-hover-lift active:scale-[0.98] min-h-[56px]"
                         >
                           <div className={`w-9 h-9 sm:w-8 sm:h-8 rounded-lg flex items-center justify-center shrink-0 ${getPriorityColor(highlight.priority)}`}>
                             <i className={`fa-solid ${getCategoryIcon(highlight.category)} text-sm`}></i>
@@ -1085,7 +1147,7 @@ const Dashboard: React.FC<DashboardProps> = ({ user, apiKey, setView }) => {
                     {briefing.suggestions.slice(0, 4).map((suggestion, idx) => (
                       <div
                         key={idx}
-                        className="bg-zinc-900/60 hover:bg-rose-950/40 border border-zinc-800 hover:border-rose-700/40 rounded-lg p-3 flex items-center justify-between transition group backdrop-blur-sm active:scale-[0.98] min-h-[56px]"
+                        className="glass-card hover:glass-rose-strong border-gradient-rose-subtle rounded-lg sm:rounded-xl p-3 sm:p-4 flex items-center justify-between transition-all duration-300 group card-hover-lift active:scale-[0.98] min-h-[56px]"
                       >
                         <div className="flex-1 min-w-0 pr-2 sm:pr-3">
                           <div className="flex items-center gap-2 flex-wrap">

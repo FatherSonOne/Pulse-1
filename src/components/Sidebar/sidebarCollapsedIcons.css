@@ -1,0 +1,298 @@
+/**
+ * Sidebar Collapsed Icons Styles
+ * ==============================
+ *
+ * Styling for the compact icon-only sidebar navigation (60px width).
+ *
+ * Visual Specifications:
+ * - Container width: 60px
+ * - Icon button size: 40px x 40px
+ * - Icon size: 18px (1.125rem)
+ * - Active indicator: 3px left border
+ * - Tooltip: Positioned to the right with arrow
+ * - Badge: 16px minimum, positioned top-right
+ */
+
+/* =============================================================================
+   Container
+   ============================================================================= */
+
+.sidebar-collapsed-icons {
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  gap: 0.5rem;
+  padding: 0.5rem;
+  width: 100%;
+}
+
+/* =============================================================================
+   Icon Wrapper (for tooltip positioning)
+   ============================================================================= */
+
+.sidebar-collapsed-icon-wrapper {
+  position: relative;
+  width: 100%;
+  display: flex;
+  justify-content: center;
+}
+
+/* =============================================================================
+   Icon Button
+   ============================================================================= */
+
+.sidebar-collapsed-icon {
+  position: relative;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+
+  width: 40px;
+  height: 40px;
+  border-radius: 0.75rem;
+
+  background: transparent;
+  border: none;
+  cursor: pointer;
+
+  transition: all 150ms ease;
+}
+
+.sidebar-collapsed-icon:focus-visible {
+  outline: 2px solid #3b82f6;
+  outline-offset: 2px;
+}
+
+/* Active state */
+.sidebar-collapsed-icon--active {
+  position: relative;
+}
+
+/* =============================================================================
+   Active Indicator
+   ============================================================================= */
+
+.sidebar-collapsed-icon__indicator {
+  position: absolute;
+  left: -8px;
+  top: 50%;
+  transform: translateY(-50%);
+
+  width: 3px;
+  height: 24px;
+  border-radius: 0 2px 2px 0;
+
+  background: linear-gradient(180deg, #3b82f6 0%, #2563eb 100%);
+}
+
+/* =============================================================================
+   Icon
+   ============================================================================= */
+
+.sidebar-collapsed-icon__icon {
+  font-size: 1.125rem;
+  transition: color 150ms ease, transform 150ms ease;
+}
+
+.sidebar-collapsed-icon:hover .sidebar-collapsed-icon__icon {
+  transform: scale(1.1);
+}
+
+/* =============================================================================
+   Badge
+   ============================================================================= */
+
+.sidebar-collapsed-icon__badge {
+  position: absolute;
+  top: -2px;
+  right: -2px;
+
+  min-width: 16px;
+  height: 16px;
+  padding: 0 4px;
+
+  display: flex;
+  align-items: center;
+  justify-content: center;
+
+  font-size: 0.625rem;
+  font-weight: 700;
+  line-height: 1;
+
+  border-radius: 9999px;
+  border: 2px solid white;
+}
+
+.dark .sidebar-collapsed-icon__badge {
+  border-color: #18181b;
+}
+
+/* Badge pulse animation for new items */
+.sidebar-collapsed-icon__badge--new {
+  animation: badgePulse 2s ease-in-out infinite;
+}
+
+@keyframes badgePulse {
+  0%, 100% {
+    transform: scale(1);
+    box-shadow: 0 0 0 0 rgba(59, 130, 246, 0.4);
+  }
+  50% {
+    transform: scale(1.05);
+    box-shadow: 0 0 0 4px rgba(59, 130, 246, 0);
+  }
+}
+
+/* =============================================================================
+   Tooltip
+   ============================================================================= */
+
+.sidebar-collapsed-tooltip {
+  position: absolute;
+  left: calc(100% + 12px);
+  top: 50%;
+  transform: translateY(-50%);
+  z-index: 100;
+
+  min-width: 160px;
+  padding: 0.75rem 1rem;
+
+  background-color: #18181b;
+  border-radius: 0.75rem;
+  box-shadow: 0 10px 25px rgba(0, 0, 0, 0.2);
+
+  pointer-events: none;
+}
+
+.dark .sidebar-collapsed-tooltip {
+  background-color: #fafafa;
+  box-shadow: 0 10px 25px rgba(0, 0, 0, 0.3);
+}
+
+/* Tooltip arrow */
+.sidebar-collapsed-tooltip::before {
+  content: '';
+  position: absolute;
+  left: -6px;
+  top: 50%;
+  transform: translateY(-50%);
+
+  width: 0;
+  height: 0;
+  border-style: solid;
+  border-width: 6px 6px 6px 0;
+  border-color: transparent #18181b transparent transparent;
+}
+
+.dark .sidebar-collapsed-tooltip::before {
+  border-color: transparent #fafafa transparent transparent;
+}
+
+/* Tooltip content container */
+.sidebar-collapsed-tooltip__content {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 0.5rem;
+  margin-bottom: 0.25rem;
+}
+
+/* Tooltip label */
+.sidebar-collapsed-tooltip__label {
+  font-size: 0.875rem;
+  font-weight: 600;
+  color: white;
+}
+
+.dark .sidebar-collapsed-tooltip__label {
+  color: #18181b;
+}
+
+/* Keyboard shortcut */
+.sidebar-collapsed-tooltip__shortcut {
+  padding: 0.125rem 0.375rem;
+  font-family: ui-monospace, SFMono-Regular, Menlo, Monaco, Consolas, monospace;
+  font-size: 0.625rem;
+  font-weight: 500;
+
+  color: #a1a1aa;
+  background-color: rgba(255, 255, 255, 0.1);
+  border-radius: 0.25rem;
+  border: 1px solid rgba(255, 255, 255, 0.2);
+}
+
+.dark .sidebar-collapsed-tooltip__shortcut {
+  color: #52525b;
+  background-color: rgba(0, 0, 0, 0.05);
+  border-color: rgba(0, 0, 0, 0.1);
+}
+
+/* Tooltip description */
+.sidebar-collapsed-tooltip__description {
+  font-size: 0.75rem;
+  color: #a1a1aa;
+  margin: 0;
+}
+
+.dark .sidebar-collapsed-tooltip__description {
+  color: #71717a;
+}
+
+/* =============================================================================
+   Color Variants (matching tab colors)
+   ============================================================================= */
+
+/* Blue (Messages) */
+.sidebar-collapsed-icon--active[data-color="blue"] .sidebar-collapsed-icon__indicator {
+  background: linear-gradient(180deg, #3b82f6 0%, #2563eb 100%);
+}
+
+/* Purple (Tools) */
+.sidebar-collapsed-icon--active[data-color="purple"] .sidebar-collapsed-icon__indicator {
+  background: linear-gradient(180deg, #9333ea 0%, #7c3aed 100%);
+}
+
+/* Green (CRM) */
+.sidebar-collapsed-icon--active[data-color="green"] .sidebar-collapsed-icon__indicator {
+  background: linear-gradient(180deg, #22c55e 0%, #16a34a 100%);
+}
+
+/* Orange (Analytics) */
+.sidebar-collapsed-icon--active[data-color="orange"] .sidebar-collapsed-icon__indicator {
+  background: linear-gradient(180deg, #f97316 0%, #ea580c 100%);
+}
+
+/* =============================================================================
+   Accessibility
+   ============================================================================= */
+
+/* Reduced motion */
+@media (prefers-reduced-motion: reduce) {
+  .sidebar-collapsed-icon,
+  .sidebar-collapsed-icon__icon,
+  .sidebar-collapsed-icon__badge,
+  .sidebar-collapsed-tooltip {
+    transition: none !important;
+    animation: none !important;
+  }
+}
+
+/* High contrast mode */
+@media (prefers-contrast: high) {
+  .sidebar-collapsed-icon--active {
+    outline: 2px solid currentColor;
+    outline-offset: -2px;
+  }
+
+  .sidebar-collapsed-icon__indicator {
+    width: 4px;
+  }
+
+  .sidebar-collapsed-tooltip {
+    border: 2px solid white;
+  }
+
+  .dark .sidebar-collapsed-tooltip {
+    border-color: #18181b;
+  }
+}

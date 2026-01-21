@@ -64,6 +64,7 @@ const getNavSections = (isAdmin: boolean): NavSection[] => {
         { icon: 'fa-calendar-days', label: 'Calendar', view: AppView.CALENDAR },
         { icon: 'fa-video', label: 'Meetings', view: AppView.MEETINGS },
         { icon: 'fa-user-group', label: 'Contacts', view: AppView.CONTACTS },
+        { icon: 'fa-list-check', label: 'Decisions & Tasks', view: AppView.DECISIONS_TASKS },
       ],
     },
     {

@@ -98,16 +98,16 @@
    ======================================== */
 
 /* Fix gray-on-gray in Dashboard Daily Overview light mode */
-.daily-overview,
-[class*="daily-overview"],
-.dashboard-section {
+/* IMPORTANT: Only apply to elements that explicitly use these classes */
+/* DO NOT interfere with gradient backgrounds */
+.daily-overview:not([class*="bg-gradient"]),
+.dashboard-section:not([class*="bg-gradient"]) {
   color: rgb(39, 39, 42) !important; /* zinc-800 for light mode */
   background-color: rgb(255, 255, 255) !important;
 }
 
-.dark .daily-overview,
-.dark [class*="daily-overview"],
-.dark .dashboard-section {
+.dark .daily-overview:not([class*="bg-gradient"]),
+.dark .dashboard-section:not([class*="bg-gradient"]) {
   color: rgb(228, 228, 231) !important; /* zinc-200 for dark mode */
   background-color: rgb(24, 24, 27) !important;
 }
@@ -116,10 +116,10 @@
 .daily-overview h2,
 .daily-overview h3,
 .daily-overview h4,
-[class*="daily-overview"] h1,
-[class*="daily-overview"] h2,
-[class*="daily-overview"] h3,
-[class*="daily-overview"] h4 {
+.dashboard-section h1,
+.dashboard-section h2,
+.dashboard-section h3,
+.dashboard-section h4 {
   color: rgb(24, 24, 27) !important;
 }
 
@@ -127,10 +127,10 @@
 .dark .daily-overview h2,
 .dark .daily-overview h3,
 .dark .daily-overview h4,
-.dark [class*="daily-overview"] h1,
-.dark [class*="daily-overview"] h2,
-.dark [class*="daily-overview"] h3,
-.dark [class*="daily-overview"] h4 {
+.dark .dashboard-section h1,
+.dark .dashboard-section h2,
+.dark .dashboard-section h3,
+.dark .dashboard-section h4 {
   color: rgb(250, 250, 250) !important;
 }
 

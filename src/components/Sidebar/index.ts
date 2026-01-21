@@ -6,6 +6,7 @@ export type { default as SidebarType } from './Sidebar';
 export { SidebarTabs } from './SidebarTabs';
 export { SidebarTab } from './SidebarTab';
 export { SidebarContent } from './SidebarContent';
+export { SidebarCollapsedIcons } from './SidebarCollapsedIcons';
 
 // Types
 export type { SidebarTabType } from './SidebarTabs';
