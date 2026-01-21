@@ -8,12 +8,18 @@ dist/
 build/
 out/
 
-# Environment files
+# Environment files - NEVER commit these!
 .env
+.env.*
 .env.local
+.env.development
 .env.development.local
+.env.test
 .env.test.local
+.env.production
 .env.production.local
+.env.staging
+.env.staging.local
 
 # IDE
 .vscode/
