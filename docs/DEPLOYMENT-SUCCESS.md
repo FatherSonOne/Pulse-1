@@ -129,7 +129,7 @@ The following environment variables are set in the Vercel project:
 VITE_APP_URL=https://pulse.logosvision.org
 VITE_SUPABASE_URL=https://ucaeuszgoihoyrvhewxk.supabase.co
 VITE_SUPABASE_ANON_KEY=eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9...
-VITE_GEMINI_API_KEY=AIzaSyDh5M3w42XfQsdJ9cTMBAoXzqqwrzJF3bY
+VITE_GEMINI_API_KEY=<your-gemini-api-key>
 ```
 
 ### Verify Environment Variables

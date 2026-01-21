@@ -67,7 +67,7 @@ export const EmailSidebar: React.FC<EmailSidebarProps> = ({
       <div className="p-4">
         <button
           onClick={onCompose}
-          className="w-full flex items-center justify-center gap-2 bg-gradient-to-r from-rose-500 to-red-500 hover:from-rose-600 hover:to-red-600 text-white px-4 py-3 rounded-xl font-semibold transition-all shadow-lg shadow-rose-500/20 hover:shadow-rose-500/30"
+          className="w-full flex items-center justify-center gap-2 bg-gradient-to-r from-rose-500 to-red-500 hover:from-rose-600 hover:to-red-600 text-white px-4 py-3 rounded-xl font-semibold transition-all shadow-lg shadow-rose-500/20 hover:shadow-rose-500/40 hover:shadow-xl active:scale-95"
           aria-label="Compose new email"
         >
           <i className="fa-solid fa-pen-to-square" aria-hidden="true"></i>
@@ -117,15 +117,15 @@ export const EmailSidebar: React.FC<EmailSidebarProps> = ({
         </div>
         <div className="space-y-0.5" role="group">
           <button className="w-full flex items-center gap-3 px-3 py-2 rounded-lg text-stone-600 dark:text-zinc-400 hover:bg-stone-100 dark:hover:bg-zinc-800/50 hover:text-stone-900 dark:hover:text-white transition" aria-label="Filter by Updates category">
-            <span className="w-2 h-2 rounded-full bg-blue-500" aria-hidden="true"></span>
+            <span className="w-2 h-2 rounded-full bg-pink-500" aria-hidden="true"></span>
             <span className="text-sm">Updates</span>
           </button>
           <button className="w-full flex items-center gap-3 px-3 py-2 rounded-lg text-stone-600 dark:text-zinc-400 hover:bg-stone-100 dark:hover:bg-zinc-800/50 hover:text-stone-900 dark:hover:text-white transition" aria-label="Filter by Social category">
-            <span className="w-2 h-2 rounded-full bg-green-500" aria-hidden="true"></span>
+            <span className="w-2 h-2 rounded-full bg-coral-500" aria-hidden="true"></span>
             <span className="text-sm">Social</span>
           </button>
           <button className="w-full flex items-center gap-3 px-3 py-2 rounded-lg text-stone-600 dark:text-zinc-400 hover:bg-stone-100 dark:hover:bg-zinc-800/50 hover:text-stone-900 dark:hover:text-white transition" aria-label="Filter by Promotions category">
-            <span className="w-2 h-2 rounded-full bg-yellow-500" aria-hidden="true"></span>
+            <span className="w-2 h-2 rounded-full bg-amber-500" aria-hidden="true"></span>
             <span className="text-sm">Promotions</span>
           </button>
           <button className="w-full flex items-center gap-3 px-3 py-2 rounded-lg text-stone-600 dark:text-zinc-400 hover:bg-stone-100 dark:hover:bg-zinc-800/50 hover:text-stone-900 dark:hover:text-white transition" aria-label="Filter by Forums category">

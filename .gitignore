@@ -21,6 +21,13 @@ out/
 .env.staging
 .env.staging.local
 
+# API keys and secrets - NEVER commit these!
+**/credentials.json
+**/*secret*.json
+**/*-key.json
+*.pem
+*.key
+
 # IDE
 .vscode/
 .idea/

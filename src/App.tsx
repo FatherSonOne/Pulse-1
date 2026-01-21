@@ -34,7 +34,6 @@ import { loginWithGoogle, loginWithEmail, signUpWithEmail, loginWithMicrosoft, s
 import { dataService } from './services/dataService';
 import { useNotificationStore } from './store/notificationStore';
 import { Contact, AppView } from './types';
-import './App.css';
 import { Analytics } from '@vercel/analytics/react';
 import UnifiedSearch from './components/UnifiedSearch';
 import UnifiedSearchRedesign from './components/UnifiedSearchRedesign';

@@ -11,28 +11,6 @@
     <meta name="apple-mobile-web-app-capable" content="yes" />
     <meta name="apple-mobile-web-app-status-bar-style" content="black-translucent" />
     <meta name="apple-mobile-web-app-title" content="Pulse" />
-    <script src="https://cdn.tailwindcss.com"></script>
-    <script>
-      // Wait for tailwind to be available before configuring
-      (function configureTailwind() {
-        if (typeof tailwind !== 'undefined') {
-          tailwind.config = {
-            darkMode: 'class',
-            theme: {
-              extend: {
-                fontFamily: {
-                  sans: ['Inter', 'sans-serif'],
-                  mono: ['JetBrains Mono', 'monospace'],
-                }
-              }
-            }
-          };
-        } else {
-          // Retry after a short delay if tailwind isn't loaded yet
-          setTimeout(configureTailwind, 10);
-        }
-      })();
-    </script>
     <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css" />
     <link rel="preconnect" href="https://fonts.googleapis.com">
     <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>

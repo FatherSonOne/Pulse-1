@@ -14,7 +14,7 @@ interface NavItemConfig {
 
 interface NavSection {
   label: string;
-  color: 'rose' | 'cyan' | 'violet' | 'amber' | 'red';
+  color: 'rose' | 'pink' | 'coral' | 'rose-light' | 'red';
   items: NavItemConfig[];
 }
 
@@ -50,7 +50,7 @@ const getNavSections = (isAdmin: boolean): NavSection[] => {
     },
     {
       label: 'Communication',
-      color: 'cyan',
+      color: 'pink',
       items: [
         { icon: 'fa-comment-dots', label: 'Messages', view: AppView.MESSAGES },
         { icon: 'fa-envelope-open-text', label: 'Email', view: AppView.EMAIL },
@@ -59,7 +59,7 @@ const getNavSections = (isAdmin: boolean): NavSection[] => {
     },
     {
       label: 'Work & People',
-      color: 'violet',
+      color: 'coral',
       items: [
         { icon: 'fa-calendar-days', label: 'Calendar', view: AppView.CALENDAR },
         { icon: 'fa-video', label: 'Meetings', view: AppView.MEETINGS },
@@ -69,7 +69,7 @@ const getNavSections = (isAdmin: boolean): NavSection[] => {
     },
     {
       label: 'Intelligence',
-      color: 'amber',
+      color: 'rose-light',
       items: [
         { icon: 'fa-book-open', label: 'War Room', view: AppView.LIVE_AI },
         { icon: 'fa-comments', label: 'Pulse Chat', view: AppView.LIVE },

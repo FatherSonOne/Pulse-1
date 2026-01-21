@@ -53,8 +53,16 @@ jobs:
         with:
           fetch-depth: 0
 
-      - name: Scan for secrets
-        run: |
-          echo "Scanning for secrets..."
-          ! grep -r "password\s*=\s*['\"]" src/ || echo "Warning: potential passwords found"
-          ! grep -r "api[_-]?key\s*=\s*['\"]" src/ || echo "Warning: potential API keys found"
+      - name: Run Gitleaks scan
+        uses: gitleaks/gitleaks-action@v2
+        env:
+          GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
+          GITLEAKS_LICENSE: ${{ secrets.GITLEAKS_LICENSE }}
+
+      - name: Run TruffleHog scan
+        uses: trufflesecurity/trufflehog@main
+        with:
+          path: ./
+          base: ${{ github.event.repository.default_branch }}
+          head: HEAD
+          extra_args: --debug --only-verified

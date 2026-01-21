@@ -1,0 +1,68 @@
+# Gitleaks configuration for Pulse1
+# https://github.com/gitleaks/gitleaks
+
+title = "Pulse1 Secret Scanning Configuration"
+
+[extend]
+# Use default Gitleaks rules
+useDefault = true
+
+[allowlist]
+description = "Allowlisted files and patterns"
+
+# Allow example/template files
+paths = [
+  '''\.env\.example$''',
+  '''\.env\..*\.example$''',
+  '''\.env\..*\.template$''',
+  '''^docs/''',
+  '''^\.github/workflows/''',
+]
+
+# Allow non-secret patterns that might trigger false positives
+regexes = [
+  # Allow placeholder values in templates
+  '''your-.*-key''',
+  '''your-.*-secret''',
+  '''your-project\.supabase\.co''',
+  '''example\.com''',
+  '''localhost''',
+  # Allow comments mentioning secrets
+  '''# .*key''',
+  '''// .*secret''',
+  # Allow variable names (not actual values)
+  '''VITE_SUPABASE_ANON_KEY''',
+  '''VITE_GEMINI_API_KEY''',
+  '''VITE_API_KEY''',
+]
+
+[[rules]]
+description = "Detect Supabase service role keys (CRITICAL)"
+id = "supabase-service-role-key"
+regex = '''(SUPABASE_SERVICE_KEY|service_role).*eyJ[A-Za-z0-9_-]*\.eyJ[A-Za-z0-9_-]*\.[A-Za-z0-9_-]*'''
+tags = ["key", "supabase", "critical"]
+
+[[rules]]
+description = "Detect Gemini API keys"
+id = "gemini-api-key"
+regex = '''AIza[0-9A-Za-z_-]{35}'''
+tags = ["key", "api", "gemini"]
+
+[[rules]]
+description = "Detect OpenAI API keys"
+id = "openai-api-key"
+regex = '''sk-[a-zA-Z0-9]{20,}'''
+tags = ["key", "api", "openai"]
+
+[[rules]]
+description = "Detect Slack tokens"
+id = "slack-token"
+regex = '''xox[baprs]-[0-9]{10,13}-[0-9]{10,13}-[a-zA-Z0-9]{24,}'''
+tags = ["token", "slack"]
+
+[[rules]]
+description = "Detect generic API keys in env files"
+id = "env-api-key"
+regex = '''(?i)(api[_-]?key|secret[_-]?key|private[_-]?key)\s*=\s*['\"]?[a-zA-Z0-9_-]{20,}['\"]?'''
+tags = ["key", "api"]
+path = '''\.env'''

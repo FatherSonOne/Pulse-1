@@ -1,6 +1,11 @@
 /* Import UI Audit Fixes - WCAG AA Compliance */
 @import './styles/audit-fixes.css';
 
+/* Tailwind CSS */
+@tailwind base;
+@tailwind components;
+@tailwind utilities;
+
 * {
   margin: 0;
   padding: 0;
@@ -13,14 +18,15 @@ body {
     sans-serif;
   -webkit-font-smoothing: antialiased;
   -moz-osx-font-smoothing: grayscale;
-  background-color: #0a0a0a;
-  color: #fafafa;
+  background-color: var(--bg-primary);
+  color: var(--text-primary);
 }
 
 /* Global focus styles for keyboard navigation */
 *:focus-visible {
-  outline: 2px solid #3b82f6;
+  outline: 2px solid #f43f5e;
   outline-offset: 2px;
+  box-shadow: 0 0 0 3px rgba(244, 63, 94, 0.2);
 }
 
 /* Remove default focus ring for mouse users */
@@ -39,9 +45,10 @@ input:focus-visible,
 select:focus-visible,
 textarea:focus-visible,
 [tabindex]:not([tabindex="-1"]):focus-visible {
-  outline: 2px solid #3b82f6;
+  outline: 2px solid #f43f5e;
   outline-offset: 2px;
   border-radius: 4px;
+  box-shadow: 0 0 0 3px rgba(244, 63, 94, 0.15);
 }
 
 /* Fix time input styling in dark mode */
@@ -103,6 +110,101 @@ a:not(:disabled):hover,
 .delay-100 { animation-delay: 100ms; }
 .delay-200 { animation-delay: 200ms; }
 .delay-300 { animation-delay: 300ms; }
+
+/* ============================================
+   BRAND ROSE GLOW EFFECTS
+   ============================================ */
+
+/* Small glow - for subtle emphasis */
+.glow-rose-sm {
+  box-shadow: 0 0 15px rgba(244, 63, 94, 0.15);
+}
+
+/* Medium glow - for interactive elements */
+.glow-rose-md {
+  box-shadow: 0 0 25px rgba(244, 63, 94, 0.20);
+}
+
+/* Large glow - for primary CTAs */
+.glow-rose-lg {
+  box-shadow: 0 0 40px rgba(244, 63, 94, 0.25);
+}
+
+/* Hover glow for cards */
+.card-hover-glow:hover {
+  box-shadow:
+    0 8px 24px rgba(244, 63, 94, 0.2),
+    0 0 0 1px rgba(244, 63, 94, 0.1);
+  transition: box-shadow 300ms ease;
+}
+
+/* Focus glow for interactive elements */
+.focus-glow-rose:focus-visible {
+  outline: 2px solid #f43f5e;
+  outline-offset: 2px;
+  box-shadow: 0 0 0 4px rgba(244, 63, 94, 0.15);
+}
+
+/* ============================================
+   BRAND BUTTON PATTERNS
+   ============================================ */
+
+/* Primary brand button - rose gradient */
+.btn-brand-primary {
+  background: linear-gradient(135deg, #f43f5e 0%, #ec4899 100%);
+  color: white;
+  box-shadow: 0 4px 12px rgba(244, 63, 94, 0.3);
+  transition: all 200ms ease;
+}
+
+.btn-brand-primary:hover {
+  background: linear-gradient(135deg, #e11d48 0%, #db2777 100%);
+  box-shadow: 0 6px 20px rgba(244, 63, 94, 0.4);
+  transform: translateY(-1px);
+}
+
+.btn-brand-primary:active {
+  transform: translateY(0);
+  box-shadow: 0 2px 8px rgba(244, 63, 94, 0.3);
+}
+
+/* Secondary brand button - rose outline */
+.btn-brand-secondary {
+  background: transparent;
+  border: 2px solid #f43f5e;
+  color: #f43f5e;
+  transition: all 200ms ease;
+}
+
+.btn-brand-secondary:hover {
+  background: rgba(244, 63, 94, 0.1);
+  border-color: #e11d48;
+  color: #e11d48;
+}
+
+.dark .btn-brand-secondary {
+  color: #fb7185;
+  border-color: #fb7185;
+}
+
+.dark .btn-brand-secondary:hover {
+  background: rgba(244, 63, 94, 0.2);
+  border-color: #fda4af;
+  color: #fda4af;
+}
+
+/* ============================================
+   LIGHT MODE CARD ENHANCEMENTS
+   ============================================ */
+
+/* Light mode card enhancements */
+.light .card:hover,
+.light [class*="card"]:hover {
+  border-color: #fecdd3; /* rose-200 */
+  box-shadow:
+    0 4px 12px rgba(120, 53, 15, 0.08),
+    0 0 0 1px rgba(244, 63, 94, 0.08);
+}
 
 code {
   font-family: source-code-pro, Menlo, Monaco, Consolas, 'Courier New',

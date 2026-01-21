@@ -1,5 +1,6 @@
 // Test script to verify Gemini API key
-const API_KEY = 'AIzaSyDh5M3w42XfQsdJ9cTMBAoXzqqwrzJF3bY';
+// IMPORTANT: Get the API key from .env.local - NEVER hardcode it here!
+const API_KEY = process.env.VITE_GEMINI_API_KEY || '';
 
 async function testGeminiKey() {
   console.log('Testing Gemini API key...');

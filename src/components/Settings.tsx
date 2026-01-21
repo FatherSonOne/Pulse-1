@@ -94,6 +94,9 @@ const Settings: React.FC<SettingsProps> = ({ user, isDarkMode, toggleTheme, init
   const [claudeApiKey, setClaudeApiKey] = useState(() => localStorage.getItem('claude_api_key') || '');
   const [showClaudeKey, setShowClaudeKey] = useState(false);
   const [claudeKeySaved, setClaudeKeySaved] = useState(false);
+  const [geminiApiKey, setGeminiApiKey] = useState(() => localStorage.getItem('gemini_api_key') || '');
+  const [showGeminiKey, setShowGeminiKey] = useState(false);
+  const [geminiKeySaved, setGeminiKeySaved] = useState(false);
   const [assemblyApiKey, setAssemblyApiKey] = useState(() => localStorage.getItem('assemblyai_api_key') || '');
   const [showAssemblyKey, setShowAssemblyKey] = useState(false);
   const [assemblyKeySaved, setAssemblyKeySaved] = useState(false);
@@ -2623,9 +2626,82 @@ const Settings: React.FC<SettingsProps> = ({ user, isDarkMode, toggleTheme, init
                   <div className="flex items-center gap-2 text-sm">
                     <div className={`w-2 h-2 rounded-full ${openaiApiKey.startsWith('sk-') ? 'bg-emerald-500' : 'bg-amber-500'}`}></div>
                     <span className="text-zinc-500">
-                      {openaiApiKey.startsWith('sk-') 
-                        ? 'API key format looks valid' 
+                      {openaiApiKey.startsWith('sk-')
+                        ? 'API key format looks valid'
                         : 'API key should start with "sk-"'}
+                    </span>
+                  </div>
+                )}
+
+                {/* Gemini API Key */}
+                <div className="space-y-2 pt-4 border-t border-zinc-200 dark:border-zinc-700">
+                  <label className="text-sm font-medium dark:text-white text-zinc-900 flex items-center gap-2">
+                    <i className="fa-solid fa-sparkles text-blue-500"></i>
+                    Gemini API Key
+                    <span className="text-xs text-zinc-500 font-normal">(for AI features & briefings)</span>
+                  </label>
+                  <div className="flex gap-2">
+                    <div className="relative flex-1">
+                      <input
+                        type={showGeminiKey ? 'text' : 'password'}
+                        value={geminiApiKey}
+                        onChange={(e) => {
+                          setGeminiApiKey(e.target.value);
+                          setGeminiKeySaved(false);
+                        }}
+                        placeholder="AIza..."
+                        className="w-full px-4 py-2.5 bg-zinc-50 dark:bg-zinc-900 border border-zinc-200 dark:border-zinc-700 rounded-lg text-sm dark:text-white text-zinc-900 focus:outline-none focus:border-blue-500 focus:ring-1 focus:ring-blue-500/30"
+                      />
+                      <button
+                        onClick={() => setShowGeminiKey(!showGeminiKey)}
+                        className="absolute right-3 top-1/2 -translate-y-1/2 text-zinc-400 hover:text-zinc-600 dark:hover:text-zinc-300"
+                        type="button"
+                      >
+                        <i className={`fa-solid ${showGeminiKey ? 'fa-eye-slash' : 'fa-eye'}`}></i>
+                      </button>
+                    </div>
+                    <button
+                      onClick={() => {
+                        localStorage.setItem('gemini_api_key', geminiApiKey);
+                        setGeminiKeySaved(true);
+                        setTimeout(() => setGeminiKeySaved(false), 3000);
+                      }}
+                      className="px-4 py-2.5 bg-blue-600 hover:bg-blue-700 text-white rounded-lg text-sm font-medium transition-colors flex items-center gap-2"
+                    >
+                      {geminiKeySaved ? (
+                        <>
+                          <i className="fa-solid fa-check"></i>
+                          Saved!
+                        </>
+                      ) : (
+                        <>
+                          <i className="fa-solid fa-save"></i>
+                          Save
+                        </>
+                      )}
+                    </button>
+                  </div>
+                  <p className="text-xs text-zinc-500">
+                    Required for daily briefings, smart replies, and AI insights. Get your key from{' '}
+                    <a
+                      href="https://aistudio.google.com/apikey"
+                      target="_blank"
+                      rel="noopener noreferrer"
+                      className="text-blue-500 hover:underline"
+                    >
+                      aistudio.google.com/apikey
+                    </a>
+                  </p>
+                </div>
+
+                {/* Gemini Status indicator */}
+                {geminiApiKey && (
+                  <div className="flex items-center gap-2 text-sm">
+                    <div className={`w-2 h-2 rounded-full ${geminiApiKey.startsWith('AIza') ? 'bg-emerald-500' : 'bg-amber-500'}`}></div>
+                    <span className="text-zinc-500">
+                      {geminiApiKey.startsWith('AIza')
+                        ? 'API key format looks valid'
+                        : 'API key should start with "AIza"'}
                     </span>
                   </div>
                 )}

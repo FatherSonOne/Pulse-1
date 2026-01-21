@@ -7,7 +7,11 @@ const supabaseAnonKey = import.meta.env.VITE_SUPABASE_ANON_KEY;
 
 // Validate environment variables
 if (!supabaseUrl || !supabaseAnonKey) {
-  console.warn('Supabase environment variables are not set. Some features may not work.');
+  console.error('❌ Supabase environment variables are not set!');
+  console.error('VITE_SUPABASE_URL:', supabaseUrl);
+  console.error('VITE_SUPABASE_ANON_KEY:', supabaseAnonKey ? '[SET]' : '[NOT SET]');
+  console.error('Make sure .env.local exists and contains the required variables.');
+  console.error('Available env vars:', Object.keys(import.meta.env).filter(k => k.startsWith('VITE_')));
 }
 
 // Session storage key
@@ -96,9 +100,16 @@ const capacitorStorage = {
   },
 };
 
+// Ensure we have valid values before initializing
+// Use a dummy URL if not set to prevent initialization errors
+const validUrl = supabaseUrl && supabaseUrl.startsWith('http')
+  ? supabaseUrl
+  : 'https://placeholder.supabase.co';
+const validKey = supabaseAnonKey || 'placeholder-key';
+
 export const supabase = createClient(
-  supabaseUrl || 'https://placeholder.supabase.co',
-  supabaseAnonKey || 'placeholder-key',
+  validUrl,
+  validKey,
   {
     auth: {
       persistSession: true,

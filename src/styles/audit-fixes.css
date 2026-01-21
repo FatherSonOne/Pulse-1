@@ -230,20 +230,30 @@
 
 /* Ensure links are always distinguishable */
 a {
-  color: rgb(37, 99, 235) !important; /* blue-600 */
+  color: #be123c !important; /* rose-700 - WCAG AA compliant */
   text-decoration: underline !important;
 }
 
 a:hover {
-  color: rgb(29, 78, 216) !important; /* blue-700 */
+  color: #e11d48 !important; /* rose-600 */
+}
+
+a:focus-visible {
+  outline: 2px solid #f43f5e !important; /* rose-500 */
+  outline-offset: 2px;
 }
 
 .dark a {
-  color: rgb(96, 165, 250) !important; /* blue-400 */
+  color: #fb7185 !important; /* rose-400 - WCAG AA compliant */
 }
 
 .dark a:hover {
-  color: rgb(147, 197, 253) !important; /* blue-300 */
+  color: #fda4af !important; /* rose-300 */
+}
+
+.dark a:focus-visible {
+  outline: 2px solid #f43f5e !important; /* rose-500 */
+  outline-offset: 2px;
 }
 
 /* ========================================

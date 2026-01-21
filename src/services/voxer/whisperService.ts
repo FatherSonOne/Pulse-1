@@ -59,8 +59,8 @@ class WhisperService {
 
   private async loadApiKey(): Promise<void> {
     try {
-      const settings = await settingsService.getSettings();
-      this.apiKey = settings.openaiApiKey || null;
+      const settings = await settingsService.getAll();
+      this.apiKey = settings.openaiApiKey || import.meta.env.VITE_OPENAI_API_KEY || null;
     } catch (error) {
       console.error('Failed to load OpenAI API key:', error);
     }

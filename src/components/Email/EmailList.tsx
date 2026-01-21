@@ -61,10 +61,14 @@ export const EmailList: React.FC<EmailListProps> = ({
   // Get avatar color based on email
   const getAvatarColor = (email: string) => {
     const colors = [
-      'bg-red-500', 'bg-orange-500', 'bg-amber-500', 'bg-yellow-500',
-      'bg-lime-500', 'bg-green-500', 'bg-emerald-500', 'bg-teal-500',
-      'bg-cyan-500', 'bg-sky-500', 'bg-blue-500', 'bg-indigo-500',
-      'bg-violet-500', 'bg-purple-500', 'bg-fuchsia-500', 'bg-pink-500'
+      'bg-gradient-to-br from-rose-500 to-pink-500',      // Brand primary (50%)
+      'bg-gradient-to-br from-pink-500 to-rose-600',      // Brand secondary
+      'bg-gradient-to-br from-coral-500 to-rose-500',     // Brand tertiary
+      'bg-gradient-to-br from-rose-400 to-pink-400',      // Brand light
+      'bg-gradient-to-br from-amber-500 to-orange-500',   // Warm accent (50%)
+      'bg-gradient-to-br from-purple-500 to-pink-500',    // Purple-pink blend
+      'bg-gradient-to-br from-teal-500 to-cyan-500',      // Cool accent
+      'bg-gradient-to-br from-indigo-500 to-purple-500',  // Deep accent
     ];
     const hash = email.split('').reduce((acc, char) => acc + char.charCodeAt(0), 0);
     return colors[hash % colors.length];

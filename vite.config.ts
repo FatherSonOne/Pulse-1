@@ -39,12 +39,9 @@ export default defineConfig(({ mode }) => {
               }
 
               // UI libraries - split for optimal caching
+              // Note: Icon libraries need React, so keep them in main vendor bundle
               if (id.includes('node_modules/framer-motion')) {
                 return 'vendor-ui-motion';
-              }
-              if (id.includes('node_modules/lucide-react') ||
-                  id.includes('node_modules/react-icons')) {
-                return 'vendor-ui-icons';
               }
               if (id.includes('node_modules/react-markdown')) {
                 return 'vendor-ui-markdown';

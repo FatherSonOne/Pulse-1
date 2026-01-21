@@ -231,7 +231,7 @@ const TodaysPriorities: React.FC<TodaysPrioritiesProps> = ({ priorities, isLoadi
     switch (urgency) {
       case 'urgent': return 'border-red-500 bg-red-50 dark:bg-red-900/20';
       case 'high': return 'border-orange-500 bg-orange-50 dark:bg-orange-900/20';
-      case 'medium': return 'border-blue-500 bg-blue-50 dark:bg-blue-900/20';
+      case 'medium': return 'border-rose-500 bg-rose-50 dark:bg-rose-900/20';
       default: return 'border-zinc-300 bg-zinc-50 dark:bg-zinc-900';
     }
   };
@@ -276,7 +276,7 @@ const TodaysPriorities: React.FC<TodaysPrioritiesProps> = ({ priorities, isLoadi
           >
             <div className="flex items-start gap-2 sm:gap-3">
               <div className={`w-9 h-9 sm:w-8 sm:h-8 rounded-lg flex items-center justify-center shrink-0 ${
-                item.type === 'task' ? 'bg-blue-100 text-blue-600' :
+                item.type === 'task' ? 'bg-rose-100 text-rose-600 dark:bg-rose-900/30 dark:text-rose-400' :
                 item.type === 'event' ? 'bg-purple-100 text-purple-600' :
                 'bg-emerald-100 text-emerald-600'
               }`}>
@@ -788,7 +788,7 @@ const Dashboard: React.FC<DashboardProps> = ({ user, apiKey, setView }) => {
       const contextString = briefingService.buildContextString(context);
 
       // Generate AI briefing with full context
-      const data = await generateDailyBriefing(apiKey, contextString);
+      const data = await generateDailyBriefing(effectiveApiKey, contextString);
 
       if (data) {
         setBriefing(data);
@@ -956,7 +956,7 @@ const Dashboard: React.FC<DashboardProps> = ({ user, apiKey, setView }) => {
     switch (priority) {
       case 'urgent': return 'text-red-500 bg-red-50 dark:bg-red-900/20';
       case 'high': return 'text-orange-500 bg-orange-50 dark:bg-orange-900/20';
-      case 'medium': return 'text-blue-500 bg-blue-50 dark:bg-blue-900/20';
+      case 'medium': return 'text-rose-500 bg-rose-50 dark:bg-rose-900/20';
       default: return 'text-zinc-500 bg-zinc-50 dark:bg-zinc-900';
     }
   };
@@ -1390,7 +1390,7 @@ const Dashboard: React.FC<DashboardProps> = ({ user, apiKey, setView }) => {
               <div className="bg-zinc-50 dark:bg-zinc-900 rounded-xl p-4 border border-zinc-100 dark:border-zinc-800">
                 <div className="flex justify-between items-center mb-3">
                   <span className="text-xs font-bold uppercase text-zinc-400">Batched ({batchedNotifications.length})</span>
-                  <button onClick={() => setBatchedNotifications([])} className="text-xs text-blue-500 hover:underline">Clear All</button>
+                  <button onClick={() => setBatchedNotifications([])} className="text-xs text-rose-500 hover:underline">Clear All</button>
                 </div>
                 <div className="space-y-2">
                   {batchedNotifications.slice(0, 3).map(n => (
@@ -1614,7 +1614,7 @@ const Dashboard: React.FC<DashboardProps> = ({ user, apiKey, setView }) => {
               .filter(goal => goal.enabled !== false)
               .map(goal => {
                 const colorClasses = {
-                  blue: 'bg-blue-500',
+                  blue: 'bg-rose-500',
                   green: 'bg-green-500',
                   purple: 'bg-purple-500',
                   red: 'bg-red-500',
@@ -1655,7 +1655,7 @@ const Dashboard: React.FC<DashboardProps> = ({ user, apiKey, setView }) => {
                       <div
                         className={`h-full rounded-full transition-all duration-500 ${
                           progressPercent >= 100 ? 'bg-emerald-500' :
-                          progressPercent >= 70 ? (colorClasses[iconColor as keyof typeof colorClasses] || 'bg-blue-500') :
+                          progressPercent >= 70 ? (colorClasses[iconColor as keyof typeof colorClasses] || 'bg-rose-500') :
                           progressPercent >= 40 ? 'bg-yellow-500' :
                           'bg-red-500'
                         }`}
@@ -1868,15 +1868,15 @@ const Dashboard: React.FC<DashboardProps> = ({ user, apiKey, setView }) => {
                 </div>
 
                 {/* Votes/Decisions */}
-                <div className="p-4 bg-gradient-to-br from-blue-50 to-indigo-50 dark:from-blue-950/20 dark:to-indigo-950/20 rounded-xl border border-blue-200 dark:border-blue-800">
+                <div className="p-4 bg-gradient-to-br from-rose-50 to-pink-50 dark:from-rose-950/20 dark:to-pink-950/20 rounded-xl border border-rose-200 dark:border-rose-800">
                   <div className="flex items-center gap-2 mb-4">
-                    <i className="fa-solid fa-check-to-slot text-blue-600 dark:text-blue-400"></i>
+                    <i className="fa-solid fa-check-to-slot text-rose-600 dark:text-rose-400"></i>
                     <h4 className="font-semibold text-sm text-zinc-900 dark:text-white">Votes & Decisions</h4>
                   </div>
                   <div className="grid grid-cols-2 gap-4">
                     <div>
                       <div className="text-xs text-zinc-500 mb-1">Active Decisions</div>
-                      <div className="text-2xl font-bold text-blue-600 dark:text-blue-400">{teamHealthMetrics.votes.activeDecisions}</div>
+                      <div className="text-2xl font-bold text-rose-600 dark:text-rose-400">{teamHealthMetrics.votes.activeDecisions}</div>
                     </div>
                     <div>
                       <div className="text-xs text-zinc-500 mb-1">Pending Votes</div>
@@ -2101,7 +2101,7 @@ const Dashboard: React.FC<DashboardProps> = ({ user, apiKey, setView }) => {
                           <div className="flex-1 min-w-0">
                             <div className="font-medium text-sm dark:text-white truncate flex items-center gap-2">
                               {user.display_name || user.full_name || 'Pulse User'}
-                              {user.is_verified && <i className="fa-solid fa-circle-check text-blue-500 text-xs"></i>}
+                              {user.is_verified && <i className="fa-solid fa-circle-check text-rose-500 text-xs"></i>}
                             </div>
                             {user.handle && (
                               <div className="text-xs text-emerald-500 truncate">@{user.handle}</div>
@@ -2357,7 +2357,7 @@ const Dashboard: React.FC<DashboardProps> = ({ user, apiKey, setView }) => {
                 onClick={() => setGoalEditorTab('productivity')}
                 className={`px-4 py-3 text-sm font-medium transition border-b-2 ${
                   goalEditorTab === 'productivity'
-                    ? 'border-blue-500 text-blue-600 dark:text-blue-400'
+                    ? 'border-rose-500 text-rose-600 dark:text-rose-400'
                     : 'border-transparent text-zinc-500 hover:text-zinc-700 dark:hover:text-zinc-300'
                 }`}
               >
@@ -2394,7 +2394,7 @@ const Dashboard: React.FC<DashboardProps> = ({ user, apiKey, setView }) => {
                 .filter(goal => goalEditorTab === 'all' || goal.category === goalEditorTab)
                 .map(goal => {
                   const colorClasses = {
-                    blue: 'bg-blue-500',
+                    blue: 'bg-rose-500',
                     green: 'bg-green-500',
                     purple: 'bg-purple-500',
                     red: 'bg-red-500',
@@ -2470,7 +2470,7 @@ const Dashboard: React.FC<DashboardProps> = ({ user, apiKey, setView }) => {
                               <div
                                 className={`h-full rounded-full transition-all duration-500 ${
                                   progressPercent >= 100 ? 'bg-emerald-500' :
-                                  progressPercent >= 70 ? colorClasses[iconColor as keyof typeof colorClasses] || 'bg-blue-500' :
+                                  progressPercent >= 70 ? colorClasses[iconColor as keyof typeof colorClasses] || 'bg-rose-500' :
                                   progressPercent >= 40 ? 'bg-yellow-500' :
                                   'bg-red-500'
                                 }`}

@@ -61,22 +61,14 @@ export const EmailListRedesign: React.FC<EmailListRedesignProps> = ({
   // Get avatar color based on email
   const getAvatarColor = (email: string) => {
     const colors = [
-      'bg-gradient-to-br from-red-500 to-pink-500',
-      'bg-gradient-to-br from-orange-500 to-red-500',
-      'bg-gradient-to-br from-amber-500 to-orange-500',
-      'bg-gradient-to-br from-yellow-500 to-amber-500',
-      'bg-gradient-to-br from-lime-500 to-green-500',
-      'bg-gradient-to-br from-green-500 to-emerald-500',
-      'bg-gradient-to-br from-emerald-500 to-teal-500',
-      'bg-gradient-to-br from-teal-500 to-cyan-500',
-      'bg-gradient-to-br from-cyan-500 to-sky-500',
-      'bg-gradient-to-br from-sky-500 to-blue-500',
-      'bg-gradient-to-br from-blue-500 to-indigo-500',
-      'bg-gradient-to-br from-indigo-500 to-violet-500',
-      'bg-gradient-to-br from-violet-500 to-purple-500',
-      'bg-gradient-to-br from-purple-500 to-fuchsia-500',
-      'bg-gradient-to-br from-fuchsia-500 to-pink-500',
-      'bg-gradient-to-br from-pink-500 to-rose-500'
+      'bg-gradient-to-br from-rose-500 to-pink-500',      // Brand primary (50%)
+      'bg-gradient-to-br from-pink-500 to-rose-600',      // Brand secondary
+      'bg-gradient-to-br from-coral-500 to-rose-500',     // Brand tertiary
+      'bg-gradient-to-br from-rose-400 to-pink-400',      // Brand light
+      'bg-gradient-to-br from-amber-500 to-orange-500',   // Warm accent (50%)
+      'bg-gradient-to-br from-purple-500 to-pink-500',    // Purple-pink blend
+      'bg-gradient-to-br from-teal-500 to-cyan-500',      // Cool accent
+      'bg-gradient-to-br from-indigo-500 to-purple-500',  // Deep accent
     ];
     const hash = email.split('').reduce((acc, char) => acc + char.charCodeAt(0), 0);
     return colors[hash % colors.length];

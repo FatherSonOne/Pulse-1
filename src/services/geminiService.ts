@@ -229,7 +229,11 @@ export const generateMeetingNote = async (apiKey: string, audioBase64: string, m
 };
 
 export const generateDailyBriefing = async (apiKey: string, context: string) => {
-  const ai = new GoogleGenAI({ apiKey });
+  if (!apiKey || apiKey.trim() === '') {
+    throw new Error('Gemini API key is required. Please set it in Settings.');
+  }
+
+  const ai = new GoogleGenAI({ apiKey: apiKey.trim() });
   try {
     const response = await ai.models.generateContent({
       model: 'gemini-2.5-flash',
