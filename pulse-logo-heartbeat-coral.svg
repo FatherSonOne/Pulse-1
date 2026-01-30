@@ -1,0 +1,11 @@
+<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 200 60" fill="none">
+      <defs>
+        <linearGradient id="coral-grad" x1="0%" y1="0%" x2="100%" y2="0%">
+          <stop offset="0%" style="stop-color:#f43f5e"/>
+          <stop offset="100%" style="stop-color:#ec4899"/>
+        </linearGradient>
+      </defs>
+      <rect width="200" height="60" rx="12" fill="#0f172a"/>
+      <path d="M15 30 L35 30 L42 15 L50 45 L58 20 L66 40 L74 30 L90 30" stroke="url(#coral-grad)" stroke-width="3" stroke-linecap="round" stroke-linejoin="round" fill="none"/>
+      <text x="100" y="38" fill="white" font-family="system-ui, -apple-system, sans-serif" font-size="24" font-weight="700">Pulse</text>
+    </svg>

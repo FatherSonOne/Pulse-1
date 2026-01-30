@@ -1,5 +1,4 @@
 import React, { useState, useEffect, useCallback, useMemo } from 'react';
-import { List } from 'react-window';
 import { EnhancedDecisionCard } from './EnhancedDecisionCard';
 import { TaskList, TaskStatus } from '../TaskList';
 import { EnhancedTaskCard } from '../tasks/EnhancedTaskCard';
@@ -99,9 +98,6 @@ export const DecisionTaskHub: React.FC<DecisionTaskHubProps> = ({
   // Sprint 6: New modals state
   const [taskToReassign, setTaskToReassign] = useState<Task | null>(null);
   const [taskToExtend, setTaskToExtend] = useState<Task | null>(null);
-
-  // Sprint 7: Virtualization state
-  const [taskListHeight, setTaskListHeight] = useState(600);
 
   // Use user.id as workspace_id if not provided
   const effectiveWorkspaceId = workspaceId || user?.id || '';
@@ -231,7 +227,7 @@ export const DecisionTaskHub: React.FC<DecisionTaskHubProps> = ({
     };
   }, [showDecisionMission, showAssistant, taskToReassign, taskToExtend]);
 
-  const loadDecisions = useCallback(async () => {
+  const loadDecisions = async () => {
     setDecisionsLoading(true);
     try {
       console.log('🔍 Loading decisions for workspace:', effectiveWorkspaceId);
@@ -245,22 +241,15 @@ export const DecisionTaskHub: React.FC<DecisionTaskHubProps> = ({
 
       console.log('📊 Filtered decisions:', filtered.length);
       setDecisions(filtered);
-
-      // Update selectedDecision if it exists to maintain reference
-      setSelectedDecision(prev => {
-        if (!prev) return null;
-        const updated = filtered.find(d => d.id === prev.id);
-        return updated || prev;
-      });
     } catch (error) {
       console.error('❌ Failed to load decisions:', error);
       setDecisions([]);
     } finally {
       setDecisionsLoading(false);
     }
-  }, [effectiveWorkspaceId, decisionStatusFilter]);
+  };
 
-  const loadTasks = useCallback(async () => {
+  const loadTasks = async () => {
     setTasksLoading(true);
     try {
       console.log('🔍 Loading tasks for workspace:', effectiveWorkspaceId);
@@ -273,9 +262,9 @@ export const DecisionTaskHub: React.FC<DecisionTaskHubProps> = ({
     } finally {
       setTasksLoading(false);
     }
-  }, [effectiveWorkspaceId]);
+  };
 
-  const generateMetrics = useCallback(async () => {
+  const generateMetrics = async () => {
     try {
       console.log('🔢 Generating metrics from decisions:', decisions.length);
       const calculatedMetrics = await decisionAnalyticsService.calculateDecisionVelocity(decisions);
@@ -284,9 +273,9 @@ export const DecisionTaskHub: React.FC<DecisionTaskHubProps> = ({
     } catch (error) {
       console.error('❌ Failed to generate metrics:', error);
     }
-  }, [decisions]);
+  };
 
-  const generateNudges = useCallback(async () => {
+  const generateNudges = async () => {
     if (!user) return;
 
     try {
@@ -307,13 +296,13 @@ export const DecisionTaskHub: React.FC<DecisionTaskHubProps> = ({
     } catch (error) {
       console.error('❌ Failed to generate nudges:', error);
     }
-  }, [user, decisions, tasks, dismissedNudges]);
+  };
 
-  const handleVote = useCallback(() => {
+  const handleVote = () => {
     loadDecisions();
-  }, [loadDecisions]);
+  };
 
-  const handleRefresh = useCallback(() => {
+  const handleRefresh = () => {
     if (activeTab === 'decisions') {
       loadDecisions();
     } else {
@@ -321,10 +310,10 @@ export const DecisionTaskHub: React.FC<DecisionTaskHubProps> = ({
     }
     generateMetrics();
     generateNudges();
-  }, [activeTab, loadDecisions, loadTasks, generateMetrics, generateNudges]);
+  };
 
   // Sprint 6: Enhanced dismiss handling with persistence
-  const handleDismissNudge = useCallback((nudgeId: string) => {
+  const handleDismissNudge = (nudgeId: string) => {
     dismissNudge(nudgeId);
     setDismissedNudges(prev => new Set(prev).add(nudgeId));
     setNudges(nudges.filter(n => n.id !== nudgeId));
@@ -334,9 +323,9 @@ export const DecisionTaskHub: React.FC<DecisionTaskHubProps> = ({
     setTimeout(() => {
       setLastDismissedNudge(null);
     }, 5000);
-  }, [nudges]);
+  };
 
-  const handleDismissAllNudges = useCallback(() => {
+  const handleDismissAllNudges = () => {
     const nudgeIds = nudges.map(n => n.id);
     dismissMultipleNudges(nudgeIds);
     setDismissedNudges(prev => {
@@ -345,9 +334,9 @@ export const DecisionTaskHub: React.FC<DecisionTaskHubProps> = ({
       return updated;
     });
     setShowNudges(false);
-  }, [nudges]);
+  };
 
-  const handleUndoDismiss = useCallback(() => {
+  const handleUndoDismiss = () => {
     if (!lastDismissedNudge) return;
 
     undoDismissNudge(lastDismissedNudge);
@@ -360,84 +349,10 @@ export const DecisionTaskHub: React.FC<DecisionTaskHubProps> = ({
 
     // Regenerate nudges to show the undismissed one
     generateNudges();
-  }, [lastDismissedNudge, generateNudges]);
-
-  // Decision Mission handlers (moved here to fix dependency order)
-  const handleOpenDecisionMission = useCallback((decision?: DecisionWithVotes) => {
-    setShowDecisionMission(true);
-    setSelectedDecision(decision || null);
-    setMissionMessages([]);
-    setMissionThinkingLogs(new Map());
-
-    // If opening with an existing decision, add context message
-    if (decision) {
-      const contextMessage: AIMessage = {
-        id: `msg-${Date.now()}`,
-        role: 'assistant',
-        content: `I've loaded the decision: "${decision.title}"\n\nStatus: ${decision.status}\nType: ${decision.decision_type}\n\nHow can I help you with this decision?`,
-        created_at: new Date().toISOString()
-      };
-      setMissionMessages([contextMessage]);
-    }
-  }, []);
-
-  const handleToggleAssistant = useCallback(() => {
-    setShowAssistant(prev => !prev);
-  }, []);
-
-  const handleCloseAssistant = useCallback(() => {
-    setShowAssistant(false);
-  }, []);
-
-  const handleToggleInsights = useCallback(() => {
-    setShowInsights(prev => !prev);
-  }, []);
-
-  const handleTogglePrioritizer = useCallback(() => {
-    setShowPrioritizer(prev => !prev);
-  }, []);
-
-  const handleCloseMission = useCallback(() => {
-    setShowDecisionMission(false);
-    setSelectedDecision(null);
-    setMissionMessages([]);
-    setMissionThinkingLogs(new Map());
-  }, []);
-
-  const handleAssistantAction = useCallback((action: { type: string; data: any }) => {
-    console.log('Assistant action executed:', action);
-
-    switch (action.type) {
-      case 'create_decision':
-        handleOpenDecisionMission();
-        break;
-      case 'update_task':
-        // Refresh tasks to show any updates
-        loadTasks();
-        break;
-      case 'send_reminder':
-        // TODO: Implement reminder functionality
-        console.log('Send reminder:', action.data);
-        break;
-      default:
-        console.log('Unknown action type:', action.type);
-    }
-  }, [handleOpenDecisionMission, loadTasks]);
-
-  const handleSetListView = useCallback(() => {
-    setActiveView('list');
-  }, []);
-
-  const handleSetKanbanView = useCallback(() => {
-    setActiveView('kanban');
-  }, []);
-
-  const handleSetTimelineView = useCallback(() => {
-    setActiveView('timeline');
-  }, []);
+  };
 
   // Sprint 6: Enhanced nudge action handlers
-  const handleNudgeAction = useCallback(async (nudge: Nudge) => {
+  const handleNudgeAction = async (nudge: Nudge) => {
     console.log('Handle nudge action:', nudge);
 
     switch (nudge.actionType) {
@@ -484,7 +399,7 @@ export const DecisionTaskHub: React.FC<DecisionTaskHubProps> = ({
       default:
         console.log('Unknown action type:', nudge.actionType);
     }
-  }, [decisions, tasks, handleDismissNudge, handleOpenDecisionMission]);
+  };
 
   // Sprint 6: Real-time event handlers
   const updateConnectionStatus = useCallback((status: string) => {
@@ -535,30 +450,30 @@ export const DecisionTaskHub: React.FC<DecisionTaskHubProps> = ({
   }, [effectiveWorkspaceId]);
 
   // Task management handlers
-  const handleTaskStatusChange = useCallback(async (taskId: string, newStatus: Task['status']) => {
+  const handleTaskStatusChange = async (taskId: string, newStatus: Task['status']) => {
     try {
       await taskService.updateTaskStatus(taskId, newStatus);
       await loadTasks(); // Reload tasks
     } catch (error) {
       console.error('Failed to update task status:', error);
     }
-  }, [loadTasks]);
+  };
 
-  const handleTaskDelete = useCallback(async (taskId: string) => {
+  const handleTaskDelete = async (taskId: string) => {
     try {
       await taskService.deleteTask(taskId);
       await loadTasks(); // Reload tasks
     } catch (error) {
       console.error('Failed to delete task:', error);
     }
-  }, [loadTasks]);
+  };
 
-  const handleTaskEdit = useCallback((task: Task) => {
+  const handleTaskEdit = (task: Task) => {
     // TODO: Open task edit modal
     console.log('Edit task:', task);
-  }, []);
+  };
 
-  const handlePrioritizationComplete = useCallback((prioritized: AITaskPriority[]) => {
+  const handlePrioritizationComplete = (prioritized: AITaskPriority[]) => {
     setAiPriorities(prioritized);
 
     // Update tasks with AI scores in metadata
@@ -579,10 +494,10 @@ export const DecisionTaskHub: React.FC<DecisionTaskHubProps> = ({
     });
 
     setTasks(updatedTasks);
-  }, [tasks]);
+  };
 
   // Sprint 6: Reassign task handler
-  const handleReassignTask = useCallback(async (taskId: string, newAssignee: string) => {
+  const handleReassignTask = async (taskId: string, newAssignee: string) => {
     try {
       await taskService.updateTask(taskId, { assigned_to: newAssignee });
       await loadTasks(); // Reload to get fresh data
@@ -591,10 +506,10 @@ export const DecisionTaskHub: React.FC<DecisionTaskHubProps> = ({
       console.error('Failed to reassign task:', error);
       throw error;
     }
-  }, [loadTasks]);
+  };
 
   // Sprint 6: Extend deadline handler
-  const handleExtendDeadline = useCallback(async (taskId: string, newDeadline: string) => {
+  const handleExtendDeadline = async (taskId: string, newDeadline: string) => {
     try {
       await taskService.updateTask(taskId, { due_date: newDeadline });
       await loadTasks(); // Reload to get fresh data
@@ -603,14 +518,30 @@ export const DecisionTaskHub: React.FC<DecisionTaskHubProps> = ({
       console.error('Failed to extend deadline:', error);
       throw error;
     }
-  }, [loadTasks]);
+  };
 
-  const handleMissionSendMessage = useCallback(async (message: string) => {
-    // Use Gemini API key (fallback to environment variable)
-    const apiKey = user?.gemini_api_key || localStorage.getItem('gemini_api_key') || import.meta.env.VITE_GEMINI_API_KEY;
+  // Decision Mission handlers
+  const handleOpenDecisionMission = (decision?: DecisionWithVotes) => {
+    setShowDecisionMission(true);
+    setSelectedDecision(decision || null);
+    setMissionMessages([]);
+    setMissionThinkingLogs(new Map());
 
-    if (!apiKey) {
-      alert('Please add your Gemini API key in settings to use the Decision Mission.');
+    // If opening with an existing decision, add context message
+    if (decision) {
+      const contextMessage: AIMessage = {
+        id: `msg-${Date.now()}`,
+        role: 'assistant',
+        content: `I've loaded the decision: "${decision.title}"\n\nStatus: ${decision.status}\nType: ${decision.decision_type}\n\nHow can I help you with this decision?`,
+        timestamp: new Date().toISOString()
+      };
+      setMissionMessages([contextMessage]);
+    }
+  };
+
+  const handleMissionSendMessage = async (message: string) => {
+    if (!user?.openai_api_key) {
+      alert('Please add your OpenAI API key in settings to use the Decision Mission.');
       return;
     }
 
@@ -619,7 +550,7 @@ export const DecisionTaskHub: React.FC<DecisionTaskHubProps> = ({
       id: `msg-${Date.now()}`,
       role: 'user',
       content: message,
-      created_at: new Date().toISOString()
+      timestamp: new Date().toISOString()
     };
     setMissionMessages(prev => [...prev, userMessage]);
     setMissionLoading(true);
@@ -629,7 +560,7 @@ export const DecisionTaskHub: React.FC<DecisionTaskHubProps> = ({
       const response = await ragService.chat(
         message,
         [],
-        apiKey,
+        user.openai_api_key,
         (logs) => {
           setMissionThinkingLogs(new Map([[userMessage.id, logs]]));
         }
@@ -640,7 +571,7 @@ export const DecisionTaskHub: React.FC<DecisionTaskHubProps> = ({
         id: `msg-${Date.now()}-ai`,
         role: 'assistant',
         content: response,
-        created_at: new Date().toISOString()
+        timestamp: new Date().toISOString()
       };
       setMissionMessages(prev => [...prev, aiMessage]);
     } catch (error) {
@@ -649,13 +580,13 @@ export const DecisionTaskHub: React.FC<DecisionTaskHubProps> = ({
         id: `msg-${Date.now()}-error`,
         role: 'assistant',
         content: 'Sorry, I encountered an error processing your request. Please try again.',
-        created_at: new Date().toISOString()
+        timestamp: new Date().toISOString()
       };
       setMissionMessages(prev => [...prev, errorMessage]);
     } finally {
       setMissionLoading(false);
     }
-  }, []);
+  };
 
   // Filter and sort tasks
   const getFilteredTasks = () => {
@@ -694,55 +625,18 @@ export const DecisionTaskHub: React.FC<DecisionTaskHubProps> = ({
     return filtered;
   };
 
-  // Sprint 7: Memoized computed values
-  const votingCount = useMemo(
-    () => decisions.filter(d => d.status === 'voting').length,
-    [decisions]
-  );
+  const votingCount = decisions.filter(d => d.status === 'voting').length;
+  const overdueCount = tasks.filter(t =>
+    t.due_date && new Date(t.due_date) < new Date() && t.status !== 'done'
+  ).length;
 
-  const overdueCount = useMemo(
-    () => tasks.filter(t =>
-      t.due_date && new Date(t.due_date) < new Date() && t.status !== 'done'
-    ).length,
-    [tasks]
-  );
+  // Count nudges by priority
+  const urgentNudges = nudges.filter(n => n.priority === 'urgent');
+  const importantNudges = nudges.filter(n => n.priority === 'important');
+  const suggestionNudges = nudges.filter(n => n.priority === 'suggestion');
 
-  const urgentNudges = useMemo(
-    () => nudges.filter(n => n.priority === 'urgent'),
-    [nudges]
-  );
-
-  const importantNudges = useMemo(
-    () => nudges.filter(n => n.priority === 'important'),
-    [nudges]
-  );
-
-  const suggestionNudges = useMemo(
-    () => nudges.filter(n => n.priority === 'suggestion'),
-    [nudges]
-  );
-
-  const filteredTasks = useMemo(
-    () => getFilteredTasks(),
-    [tasks, statusFilter, showOverdueOnly, sortBy]
-  );
-
-  // Task row component for virtualization
-  const TaskRow = useCallback(({ index, style }: { index: number; style: React.CSSProperties }) => {
-    const task = filteredTasks[index];
-    if (!task) return null;
-
-    return (
-      <div style={style}>
-        <EnhancedTaskCard
-          task={task}
-          onStatusChange={handleTaskStatusChange}
-          onDelete={handleTaskDelete}
-          onEdit={handleTaskEdit}
-        />
-      </div>
-    );
-  }, [filteredTasks, handleTaskStatusChange, handleTaskDelete, handleTaskEdit]);
+  // Virtualization removed - using simple rendering for stability
+  const filteredTasks = getFilteredTasks();
 
   // Debug logging
   console.log('🎨 Render state:', {
@@ -772,7 +666,7 @@ export const DecisionTaskHub: React.FC<DecisionTaskHubProps> = ({
           <button
             type="button"
             className="hub-action-button"
-            onClick={handleToggleAssistant}
+            onClick={() => setShowAssistant(!showAssistant)}
             aria-label="Toggle AI Assistant sidebar"
             title="AI Assistant"
           >
@@ -782,7 +676,7 @@ export const DecisionTaskHub: React.FC<DecisionTaskHubProps> = ({
           <button
             type="button"
             className="hub-action-button primary"
-            onClick={() => handleOpenDecisionMission()}
+            onClick={handleOpenDecisionMission}
             aria-label="Create new decision with AI assistance"
             title="Create Decision"
           >
@@ -794,80 +688,80 @@ export const DecisionTaskHub: React.FC<DecisionTaskHubProps> = ({
 
       {/* AI Insights Dashboard */}
       <AIFeatureErrorBoundary featureName="AI Insights Dashboard">
-        {metrics && (
-          <div className={`insights-dashboard ${showInsights ? 'expanded' : 'collapsed'}`}>
-            <div className="insights-header">
+      {metrics && (
+        <div className={`insights-dashboard ${showInsights ? 'expanded' : 'collapsed'}`}>
+          <div className="insights-header">
+            <button
+              className="insights-header-toggle"
+              onClick={() => setShowInsights(!showInsights)}
+              onKeyDown={(e) => {
+                if (e.key === 'Enter' || e.key === ' ') {
+                  e.preventDefault();
+                  setShowInsights(!showInsights);
+                }
+              }}
+              aria-expanded={showInsights}
+              aria-label={showInsights ? 'Collapse AI Insights Dashboard' : 'Expand AI Insights Dashboard'}
+              style={{ background: 'transparent', border: 'none', padding: 0, cursor: 'pointer', flex: 1, textAlign: 'left' }}
+            >
+              <div className="insights-header-left">
+                <TrendingUp size={20} aria-hidden="true" />
+                <h2>AI Insights Dashboard</h2>
+              </div>
+            </button>
+            <div className="insights-header-right">
               <button
-                className="insights-header-toggle"
-                onClick={handleToggleInsights}
-                onKeyDown={(e) => {
-                  if (e.key === 'Enter' || e.key === ' ') {
-                    e.preventDefault();
-                    setShowInsights(!showInsights);
-                  }
-                }}
-                aria-expanded={showInsights}
-                aria-label={showInsights ? 'Collapse AI Insights Dashboard' : 'Expand AI Insights Dashboard'}
-                style={{ background: 'transparent', border: 'none', padding: 0, cursor: 'pointer', flex: 1, textAlign: 'left' }}
+                onClick={handleRefresh}
+                className="icon-button"
+                aria-label="Refresh insights data"
+                title="Refresh"
               >
-                <div className="insights-header-left">
-                  <TrendingUp size={20} aria-hidden="true" />
-                  <h2>AI Insights Dashboard</h2>
-                </div>
+                <RefreshCw size={16} aria-hidden="true" />
               </button>
-              <div className="insights-header-right">
-                <button
-                  onClick={handleRefresh}
-                  className="icon-button"
-                  aria-label="Refresh insights data"
-                  title="Refresh"
-                >
-                  <RefreshCw size={16} aria-hidden="true" />
-                </button>
-                <button
-                  className="icon-button"
-                  onClick={handleToggleInsights}
-                  aria-label={showInsights ? 'Collapse insights' : 'Expand insights'}
-                >
-                  {showInsights ? <ChevronUp size={16} aria-hidden="true" /> : <ChevronDown size={16} aria-hidden="true" />}
-                </button>
-              </div>
+              <button
+                className="icon-button"
+                onClick={() => setShowInsights(!showInsights)}
+                aria-label={showInsights ? 'Collapse insights' : 'Expand insights'}
+              >
+                {showInsights ? <ChevronUp size={16} aria-hidden="true" /> : <ChevronDown size={16} aria-hidden="true" />}
+              </button>
             </div>
-
-            {showInsights && (
-              <div className="insights-content">
-                <div className="metrics-grid">
-                  <div className="metric-card">
-                    <div className="metric-label">Decision Velocity</div>
-                    <div className="metric-value">{metrics.velocityPerWeek}/week</div>
-                  </div>
-                  <div className="metric-card">
-                    <div className="metric-label">Avg Resolution Time</div>
-                    <div className="metric-value">{metrics.avgTimeToResolution}h</div>
-                  </div>
-                  <div className="metric-card">
-                    <div className="metric-label">Participation Rate</div>
-                    <div className="metric-value">{metrics.participationRate}%</div>
-                  </div>
-                  <div className="metric-card">
-                    <div className="metric-label">Stale Decisions</div>
-                    <div className="metric-value warning">{metrics.staleCount}</div>
-                  </div>
-                </div>
-
-                {metrics.staleCount > 0 && (
-                  <div className="attention-section">
-                    <h3>
-                      <AlertCircle size={18} />
-                      Attention Needed
-                    </h3>
-                    <p>{metrics.staleCount} decisions have no recent activity</p>
-                  </div>
-                )}
-              </div>
-            )}
           </div>
-        )}
+
+          {showInsights && (
+            <div className="insights-content">
+              <div className="metrics-grid">
+                <div className="metric-card">
+                  <div className="metric-label">Decision Velocity</div>
+                  <div className="metric-value">{metrics.velocityPerWeek}/week</div>
+                </div>
+                <div className="metric-card">
+                  <div className="metric-label">Avg Resolution Time</div>
+                  <div className="metric-value">{metrics.avgTimeToResolution}h</div>
+                </div>
+                <div className="metric-card">
+                  <div className="metric-label">Participation Rate</div>
+                  <div className="metric-value">{metrics.participationRate}%</div>
+                </div>
+                <div className="metric-card">
+                  <div className="metric-label">Stale Decisions</div>
+                  <div className="metric-value warning">{metrics.staleCount}</div>
+                </div>
+              </div>
+
+              {metrics.staleCount > 0 && (
+                <div className="attention-section">
+                  <h3>
+                    <AlertCircle size={18} />
+                    Attention Needed
+                  </h3>
+                  <p>{metrics.staleCount} decisions have no recent activity</p>
+                </div>
+              )}
+            </div>
+          )}
+        </div>
+      )}
       </AIFeatureErrorBoundary>
 
       {/* Proactive Nudges */}
@@ -962,16 +856,14 @@ export const DecisionTaskHub: React.FC<DecisionTaskHubProps> = ({
                         <button
                           className="nudge-action-button"
                           onClick={() => handleNudgeAction(nudge)}
-                          aria-label={`${nudge.action} for ${nudge.relatedTitle || 'this item'}`}
                         >
                           {nudge.action}
                         </button>
                         <button
                           className="nudge-dismiss-button"
                           onClick={() => handleDismissNudge(nudge.id)}
-                          aria-label={`Dismiss nudge: ${nudge.message}`}
                         >
-                          <X size={14} aria-hidden="true" />
+                          <X size={14} />
                         </button>
                       </div>
                     )}
@@ -986,85 +878,69 @@ export const DecisionTaskHub: React.FC<DecisionTaskHubProps> = ({
       {/* Main Content */}
       <div className="hub-main-content">
         {/* View Selector */}
-        <div className="view-selector" role="group" aria-label="View mode selection">
+        <div className="view-selector">
           <button
             type="button"
             className={`view-button ${activeView === 'list' ? 'active' : ''}`}
-            onClick={handleSetListView}
-            aria-label="List view"
-            aria-current={activeView === 'list' ? 'true' : 'false'}
+            onClick={() => setActiveView('list')}
             title="List view"
           >
-            <List size={16} aria-hidden="true" />
+            <List size={16} />
             <span>List</span>
           </button>
           <button
             type="button"
             className={`view-button ${activeView === 'kanban' ? 'active' : ''}`}
-            onClick={handleSetKanbanView}
+            onClick={() => setActiveView('kanban')}
             disabled={activeTab === 'decisions'}
-            aria-label={activeTab === 'decisions' ? 'Kanban view (available for tasks only)' : 'Kanban board view'}
-            aria-current={activeView === 'kanban' ? 'true' : 'false'}
             title={activeTab === 'decisions' ? 'Kanban available for tasks only' : 'Kanban board view'}
           >
-            <Columns size={16} aria-hidden="true" />
+            <Columns size={16} />
             <span>Kanban</span>
           </button>
           <button
             type="button"
             className={`view-button ${activeView === 'timeline' ? 'active' : ''}`}
-            onClick={handleSetTimelineView}
+            onClick={() => setActiveView('timeline')}
             disabled
-            aria-label="Timeline view (coming soon)"
-            aria-current={activeView === 'timeline' ? 'true' : 'false'}
             title="Coming soon"
           >
-            <Calendar size={16} aria-hidden="true" />
+            <Calendar size={16} />
             <span>Timeline</span>
           </button>
           {activeTab === 'tasks' && (
             <button
               type="button"
               className={`view-button ${showPrioritizer ? 'active' : ''}`}
-              onClick={handleTogglePrioritizer}
-              aria-label="Toggle AI Task Prioritization"
-              aria-pressed={showPrioritizer ? 'true' : 'false'}
+              onClick={() => setShowPrioritizer(!showPrioritizer)}
               title="AI Task Prioritization"
             >
-              <Zap size={16} aria-hidden="true" />
+              <Zap size={16} />
               <span>AI Prioritize</span>
             </button>
           )}
         </div>
 
         {/* Tab Navigation */}
-        <div className="hub-tabs" role="tablist" aria-label="Decisions and Tasks tabs">
+        <div className="hub-tabs">
           <button
-            type="button"
             className={`tab-button ${activeTab === 'decisions' ? 'active' : ''}`}
             onClick={() => setActiveTab('decisions')}
-            role="tab"
-            aria-selected={activeTab === 'decisions'}
-            aria-label={`Decisions tab${votingCount > 0 ? `, ${votingCount} items need votes` : ''}`}
           >
-            <Vote size={18} aria-hidden="true" />
+            <Vote size={18} />
             <span>Decisions</span>
             {votingCount > 0 && (
-              <span className="tab-badge" aria-label={`${votingCount} voting`}>{votingCount}</span>
+              <span className="tab-badge">{votingCount}</span>
             )}
           </button>
           <button
-            type="button"
             className={`tab-button ${activeTab === 'tasks' ? 'active' : ''}`}
             onClick={() => setActiveTab('tasks')}
-            role="tab"
-            aria-selected={activeTab === 'tasks'}
-            aria-label={`Tasks tab${overdueCount > 0 ? `, ${overdueCount} overdue` : ''}`}
           >
-            <CheckSquare size={18} aria-hidden="true" />
+            <CheckSquare size={18} />
             <span>Tasks</span>
             {overdueCount > 0 && (
-              <span className="tab-badge urgent" aria-label={`${overdueCount} overdue`}>{overdueCount}</span>
+              <span className="tab-badge urgent">{overdueCount}</span>
             )}
           </button>
         </div>
@@ -1077,7 +953,6 @@ export const DecisionTaskHub: React.FC<DecisionTaskHubProps> = ({
                 className="filter-select"
                 value={decisionStatusFilter || ''}
                 onChange={(e) => setDecisionStatusFilter(e.target.value || undefined)}
-                aria-label="Filter decisions by status"
               >
                 <option value="">All Decisions</option>
                 <option value="proposed">Proposed</option>
@@ -1091,7 +966,6 @@ export const DecisionTaskHub: React.FC<DecisionTaskHubProps> = ({
                   className="filter-select"
                   value={statusFilter || ''}
                   onChange={(e) => setStatusFilter(e.target.value as TaskStatus || undefined)}
-                  aria-label="Filter tasks by status"
                 >
                   <option value="">All Tasks</option>
                   <option value="todo">To Do</option>
@@ -1104,7 +978,6 @@ export const DecisionTaskHub: React.FC<DecisionTaskHubProps> = ({
                   className="filter-select"
                   value={sortBy}
                   onChange={(e) => setSortBy(e.target.value as any)}
-                  aria-label="Sort tasks by"
                 >
                   <option value="created">Created Date</option>
                   <option value="due_date">Due Date</option>
@@ -1117,7 +990,6 @@ export const DecisionTaskHub: React.FC<DecisionTaskHubProps> = ({
                     type="checkbox"
                     checked={showOverdueOnly}
                     onChange={(e) => setShowOverdueOnly(e.target.checked)}
-                    aria-label="Show overdue tasks only"
                   />
                   <span>Overdue only</span>
                 </label>
@@ -1126,13 +998,11 @@ export const DecisionTaskHub: React.FC<DecisionTaskHubProps> = ({
           </div>
 
           <button
-            type="button"
             className="refresh-button"
             onClick={handleRefresh}
-            aria-label="Refresh data"
             title="Refresh"
           >
-            <RefreshCw size={16} aria-hidden="true" />
+            <RefreshCw size={16} />
           </button>
         </div>
 
@@ -1157,7 +1027,7 @@ export const DecisionTaskHub: React.FC<DecisionTaskHubProps> = ({
                   </p>
                   <button
                     className="empty-state-button"
-                    onClick={() => handleOpenDecisionMission()}
+                    onClick={handleOpenDecisionMission}
                   >
                     <Plus size={18} />
                     Create Your First Decision
@@ -1184,13 +1054,13 @@ export const DecisionTaskHub: React.FC<DecisionTaskHubProps> = ({
             <div className="tasks-section">
               {/* AI Task Prioritizer */}
               <AIFeatureErrorBoundary featureName="AI Task Prioritizer">
-                {showPrioritizer && tasks.length > 0 && (
-                  <AITaskPrioritizer
-                    tasks={getFilteredTasks()}
-                    onPrioritizationComplete={handlePrioritizationComplete}
-                    apiKey={localStorage.getItem('gemini_api_key') || ''}
-                  />
-                )}
+              {showPrioritizer && tasks.length > 0 && (
+                <AITaskPrioritizer
+                  tasks={getFilteredTasks()}
+                  onPrioritizationComplete={handlePrioritizationComplete}
+                  apiKey={localStorage.getItem('gemini_api_key') || ''}
+                />
+              )}
               </AIFeatureErrorBoundary>
 
               {tasksLoading ? (
@@ -1217,16 +1087,16 @@ export const DecisionTaskHub: React.FC<DecisionTaskHubProps> = ({
                   onEdit={handleTaskEdit}
                 />
               ) : (
-                <div className="tasks-list-view tasks-list-virtualized">
-                  <List
-                    height={106 * Math.min(filteredTasks.length, 6) || 400} // Dynamic height or fallback
-                    itemCount={filteredTasks.length}
-                    itemSize={106}
-                    width="100%"
-                    overscanCount={5}
-                  >
-                    {TaskRow}
-                  </List>
+                <div className="tasks-list-view">
+                  {filteredTasks.map((task) => (
+                    <EnhancedTaskCard
+                      key={task.id}
+                      task={task}
+                      onStatusChange={handleTaskStatusChange}
+                      onDelete={handleTaskDelete}
+                      onEdit={handleTaskEdit}
+                    />
+                  ))}
                 </div>
               )}
             </div>
@@ -1237,26 +1107,31 @@ export const DecisionTaskHub: React.FC<DecisionTaskHubProps> = ({
       {/* AI Assistant Sidebar */}
       {showAssistant && user && (
         <AIFeatureErrorBoundary featureName="Conversational AI Assistant">
-          <ConversationalAssistant
-            user={user}
-            decisions={decisions}
-            tasks={tasks}
-            onClose={handleCloseAssistant}
-            onActionExecute={handleAssistantAction}
-          />
+        <ConversationalAssistant
+          user={user}
+          decisions={decisions}
+          tasks={tasks}
+          onClose={() => setShowAssistant(false)}
+          onActionExecute={(action) => {
+            console.log('Execute action:', action);
+            // Refresh data after action execution
+            loadDecisions();
+            loadTasks();
+          }}
+        />
         </AIFeatureErrorBoundary>
       )}
 
       {/* Decision Mission Modal */}
       {showDecisionMission && (
         <div className="decision-mission-modal">
-          <div className="decision-mission-overlay" onClick={handleCloseMission} />
+          <div className="decision-mission-overlay" onClick={() => setShowDecisionMission(false)} />
           <div className="decision-mission-container">
             <div className="decision-mission-header">
               <h2>{selectedDecision ? `Decision: ${selectedDecision.title}` : 'Create Decision with AI'}</h2>
               <button
                 type="button"
-                onClick={handleCloseMission}
+                onClick={() => setShowDecisionMission(false)}
                 className="close-button"
                 title="Close Decision Mission"
                 aria-label="Close Decision Mission"
@@ -1266,7 +1141,6 @@ export const DecisionTaskHub: React.FC<DecisionTaskHubProps> = ({
             </div>
             <div className="decision-mission-content">
               <DecisionMission
-                key="decision-mission-stable"
                 messages={missionMessages}
                 isLoading={missionLoading}
                 thinkingLogs={missionThinkingLogs}

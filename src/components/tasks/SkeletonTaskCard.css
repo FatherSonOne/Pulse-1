@@ -1,0 +1,188 @@
+/* Skeleton Task Card */
+
+.skeleton-task-card {
+  display: flex;
+  align-items: flex-start;
+  gap: 1rem;
+  padding: 1rem;
+  background: var(--hub-card-bg, #ffffff);
+  border: 1px solid var(--hub-border, #e7e5e4);
+  border-radius: 8px;
+  box-shadow: 0 1px 3px rgba(0, 0, 0, 0.05);
+  transition: all 0.2s;
+}
+
+.dark .skeleton-task-card {
+  background: #171717;
+  border-color: rgba(255, 255, 255, 0.08);
+  box-shadow:
+    0 2px 6px rgba(0, 0, 0, 0.3),
+    inset 0 1px 0 rgba(255, 255, 255, 0.03);
+}
+
+.skeleton-task-checkbox {
+  flex-shrink: 0;
+  width: 20px;
+  height: 20px;
+  border-radius: 4px;
+  background: var(--hub-border, #e7e5e4);
+  margin-top: 0.25rem;
+}
+
+.dark .skeleton-task-checkbox {
+  background: #262626;
+}
+
+.skeleton-task-content {
+  flex: 1;
+  display: flex;
+  flex-direction: column;
+  gap: 0.75rem;
+}
+
+.skeleton-task-header {
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  gap: 1rem;
+}
+
+.skeleton-task-title {
+  height: 20px;
+  width: 60%;
+  border-radius: 4px;
+  background: var(--hub-border, #e7e5e4);
+}
+
+.dark .skeleton-task-title {
+  background: #262626;
+}
+
+.skeleton-task-badges {
+  display: flex;
+  gap: 0.5rem;
+  flex-shrink: 0;
+}
+
+.skeleton-task-badge {
+  height: 22px;
+  width: 60px;
+  border-radius: 11px;
+  background: var(--hub-border, #e7e5e4);
+}
+
+.dark .skeleton-task-badge {
+  background: #262626;
+}
+
+.skeleton-task-description {
+  height: 14px;
+  width: 100%;
+  border-radius: 4px;
+  background: var(--hub-border, #e7e5e4);
+}
+
+.dark .skeleton-task-description {
+  background: #262626;
+}
+
+.skeleton-task-description-short {
+  height: 14px;
+  width: 75%;
+  border-radius: 4px;
+  background: var(--hub-border, #e7e5e4);
+}
+
+.dark .skeleton-task-description-short {
+  background: #262626;
+}
+
+.skeleton-task-meta {
+  display: flex;
+  gap: 1rem;
+  margin-top: 0.25rem;
+}
+
+.skeleton-task-meta-item {
+  height: 16px;
+  width: 80px;
+  border-radius: 4px;
+  background: var(--hub-border, #e7e5e4);
+}
+
+.dark .skeleton-task-meta-item {
+  background: #262626;
+}
+
+.skeleton-task-actions {
+  display: flex;
+  gap: 0.5rem;
+  flex-shrink: 0;
+}
+
+.skeleton-task-action-button {
+  width: 32px;
+  height: 32px;
+  border-radius: 6px;
+  background: var(--hub-border, #e7e5e4);
+}
+
+.dark .skeleton-task-action-button {
+  background: #262626;
+}
+
+/* Shimmer animation */
+.shimmer {
+  position: relative;
+  overflow: hidden;
+}
+
+.shimmer::after {
+  content: '';
+  position: absolute;
+  top: 0;
+  left: 0;
+  width: 100%;
+  height: 100%;
+  background: linear-gradient(
+    90deg,
+    transparent 0%,
+    rgba(255, 255, 255, 0.2) 50%,
+    transparent 100%
+  );
+  animation: shimmer 2s infinite;
+}
+
+.dark .shimmer::after {
+  background: linear-gradient(
+    90deg,
+    transparent 0%,
+    rgba(255, 255, 255, 0.05) 50%,
+    transparent 100%
+  );
+}
+
+@keyframes shimmer {
+  0% {
+    transform: translateX(-100%);
+  }
+  100% {
+    transform: translateX(100%);
+  }
+}
+
+/* Fade-in animation for when real content appears */
+@keyframes fadeIn {
+  from {
+    opacity: 0;
+    transform: translateY(10px);
+  }
+  to {
+    opacity: 1;
+    transform: translateY(0);
+  }
+}
+
+.tasks-list-view > *:not(.skeleton-task-card) {
+  animation: fadeIn 0.3s ease-out;
+}
