@@ -143,55 +143,64 @@ class VoxModeService {
     if (this.bucketChecked) return this.bucketExists;
 
     try {
-      // First try to check if bucket exists by listing it
-      const { data: buckets, error: listError } = await supabase.storage.listBuckets();
+      // First try to check if bucket exists by listing files (more reliable than listing buckets)
+      // This avoids the 400 error when trying to create a bucket that already exists
+      const { data: files, error: listFilesError } = await supabase.storage
+        .from('voxer')
+        .list('', { limit: 1 });
 
-      if (listError) {
-        console.warn('Could not list buckets:', listError);
-        // Try to upload anyway - the bucket might exist but we don't have list permission
-        return true;
-      }
-
-      const voxerBucket = buckets?.find(b => b.id === 'voxer');
-
-      if (voxerBucket) {
-        console.log('Voxer storage bucket exists');
+      // If we can list files (even if empty), the bucket exists
+      if (!listFilesError) {
+        console.log('Voxer storage bucket exists (verified via file listing)');
         this.bucketChecked = true;
         this.bucketExists = true;
         return true;
       }
 
-      // Bucket doesn't exist, try to create it
-      console.log('Creating voxer storage bucket...');
-      const { data, error: createError } = await supabase.storage.createBucket('voxer', {
-        public: true,
-        fileSizeLimit: 52428800, // 50MB
-        allowedMimeTypes: ['audio/webm', 'audio/mp4', 'audio/mpeg', 'audio/ogg', 'audio/wav', 'audio/x-m4a']
-      });
+      // If we got a "not found" error, the bucket doesn't exist
+      // Otherwise, assume it exists but we don't have permission to list
+      if (listFilesError.message?.includes('not found') ||
+          listFilesError.message?.includes('does not exist')) {
+        console.log('Voxer bucket not found, attempting to create...');
 
-      if (createError) {
-        // If it's a "already exists" error or RLS policy error (bucket exists but can't create), that's fine
-        if (createError.message?.includes('already exists') ||
-            createError.message?.includes('duplicate') ||
-            createError.message?.includes('row-level security')) {
-          console.log('Voxer bucket already exists');
+        // Try to create the bucket
+        const { data, error: createError } = await supabase.storage.createBucket('voxer', {
+          public: true,
+          fileSizeLimit: 52428800, // 50MB
+          allowedMimeTypes: ['audio/webm', 'audio/mp4', 'audio/mpeg', 'audio/ogg', 'audio/wav', 'audio/x-m4a']
+        });
+
+        if (createError) {
+          // If it's a "already exists" error, that's actually fine (race condition)
+          if (createError.message?.includes('already exists') ||
+              createError.message?.includes('duplicate')) {
+            console.log('Voxer bucket already exists');
+            this.bucketChecked = true;
+            this.bucketExists = true;
+            return true;
+          }
+          console.error('Error creating voxer bucket:', createError);
+          console.error('>>> IMPORTANT: You need to create the "voxer" storage bucket in Supabase.');
+          console.error('>>> Run the migration: supabase/migrations/026_voxer_storage_bucket.sql');
+          console.error('>>> Or create it manually in the Supabase dashboard under Storage.');
           this.bucketChecked = true;
-          this.bucketExists = true;
-          return true;
+          this.bucketExists = false;
+          return false;
         }
-        console.error('Error creating voxer bucket:', createError);
-        console.error('>>> IMPORTANT: You need to create the "voxer" storage bucket in Supabase.');
-        console.error('>>> Run the migration: supabase/migrations/026_voxer_storage_bucket.sql');
-        console.error('>>> Or create it manually in the Supabase dashboard under Storage.');
+
+        console.log('Successfully created voxer storage bucket:', data);
         this.bucketChecked = true;
-        this.bucketExists = false;
-        return false;
+        this.bucketExists = true;
+        return true;
       }
 
-      console.log('Successfully created voxer storage bucket:', data);
+      // Got an error listing files, but not a "not found" error
+      // Assume bucket exists but we don't have list permission
+      console.log('Voxer bucket likely exists (cannot verify due to permissions)');
       this.bucketChecked = true;
       this.bucketExists = true;
       return true;
+
     } catch (error) {
       console.error('Error ensuring storage bucket:', error);
       console.error('>>> IMPORTANT: The "voxer" storage bucket may not exist.');
@@ -277,7 +286,7 @@ class VoxModeService {
       .limit(20);
 
     if (error || !data) return [];
-    return data.map(this.mapUserProfileToPulseUser);
+    return data.map(user => this.mapUserProfileToPulseUser(user));
   }
 
   async getAllPulseUsers(): Promise<PulseUser[]> {
@@ -291,7 +300,7 @@ class VoxModeService {
       .limit(100);
 
     if (error || !data) return [];
-    return data.map(this.mapUserProfileToPulseUser);
+    return data.map(user => this.mapUserProfileToPulseUser(user));
   }
 
   /**
@@ -310,7 +319,7 @@ class VoxModeService {
       .in('id', testUserIds);
 
     if (error || !data) return [];
-    return data.map(this.mapDbToPulseUser);
+    return data.map(user => this.mapDbToPulseUser(user));
   }
 
   /**
@@ -376,7 +385,7 @@ class VoxModeService {
       .in('id', userIds);
 
     if (error || !data) return [];
-    return data.map(this.mapDbToPulseUser);
+    return data.map(user => this.mapDbToPulseUser(user));
   }
 
   /**
@@ -515,7 +524,7 @@ class VoxModeService {
       .order('created_at', { ascending: false });
 
     if (error || !data) return [];
-    return data.map(this.mapDbToChannel);
+    return data.map(channel => this.mapDbToChannel(channel));
   }
 
   async createBroadcast(
@@ -649,7 +658,7 @@ class VoxModeService {
       .order('published_at', { ascending: false });
 
     if (error || !data) return [];
-    return data.map(this.mapDbToBroadcast);
+    return data.map(broadcast => this.mapDbToBroadcast(broadcast));
   }
 
   // ============================================
@@ -695,7 +704,7 @@ class VoxModeService {
       .order('last_activity_at', { ascending: false });
 
     if (error || !data) return [];
-    return data.map(this.mapDbToVoiceThread);
+    return data.map(thread => this.mapDbToVoiceThread(thread));
   }
 
   /**
@@ -836,7 +845,7 @@ class VoxModeService {
       .order('created_at', { ascending: true });
 
     if (error || !data) return [];
-    return data.map(this.mapDbToVoiceThreadMessage);
+    return data.map(message => this.mapDbToVoiceThreadMessage(message));
   }
 
   // ============================================
@@ -881,7 +890,7 @@ class VoxModeService {
       .order('created_at', { ascending: false });
 
     if (error || !data) return [];
-    return data.map(this.mapDbToWorkspace);
+    return data.map(workspace => this.mapDbToWorkspace(workspace));
   }
 
   async addMemberToWorkspace(workspaceId: string, memberId: string): Promise<boolean> {
@@ -1030,13 +1039,48 @@ class VoxModeService {
       const audioUrl = urlData.publicUrl;
       console.log('Uploaded team vox audio:', audioUrl);
 
-      // Send the message with the uploaded URL
+      // Transcribe the audio if no transcript provided
+      let finalTranscript = transcript || '';
+      if (!finalTranscript) {
+        try {
+          const geminiKey = import.meta.env.VITE_API_KEY ||
+                            import.meta.env.VITE_GEMINI_API_KEY ||
+                            localStorage.getItem('gemini_api_key') ||
+                            '';
+
+          console.log('Transcription: geminiKey available:', !!geminiKey);
+
+          if (geminiKey) {
+            // Convert blob to base64
+            const base64 = await new Promise<string>((resolve, reject) => {
+              const reader = new FileReader();
+              reader.onloadend = () => {
+                const result = reader.result as string;
+                resolve(result.split(',')[1]);
+              };
+              reader.onerror = reject;
+              reader.readAsDataURL(audioBlob);
+            });
+
+            console.log('Starting Team Vox transcription with Gemini...');
+            const result = await transcribeMedia(geminiKey, base64, 'audio/webm');
+            finalTranscript = result || '';
+            console.log('Team Vox transcribed successfully:', finalTranscript.substring(0, 100) + (finalTranscript.length > 100 ? '...' : ''));
+          } else {
+            console.warn('No Gemini API key - skipping Team Vox transcription');
+          }
+        } catch (transcriptError) {
+          console.error('Team Vox transcription failed:', transcriptError);
+        }
+      }
+
+      // Send the message with the uploaded URL and transcript
       return await this.sendTeamVoxMessage(
         channelId,
         workspaceId,
         audioUrl,
         duration,
-        transcript,
+        finalTranscript,
         messageType,
         mentions
       );
@@ -1107,6 +1151,20 @@ class VoxModeService {
     }
 
     return this.mapDbToTeamVoxMessage(data);
+  }
+
+  async getChannelMessages(channelId: string): Promise<TeamVoxMessage[]> {
+    const { data, error } = await supabase
+      .from('team_vox_messages')
+      .select('*')
+      .eq('channel_id', channelId)
+      .order('created_at', { ascending: true });
+
+    if (error || !data) {
+      console.error('Error fetching channel messages:', error);
+      return [];
+    }
+    return data.map(message => this.mapDbToTeamVoxMessage(message));
   }
 
   // ============================================
@@ -1247,7 +1305,7 @@ class VoxModeService {
     const { data, error } = await query;
 
     if (error || !data) return [];
-    return data.map(this.mapDbToVoxNote);
+    return data.map(note => this.mapDbToVoxNote(note));
   }
 
   async linkNoteToItem(noteId: string, itemType: string, itemId: string, itemTitle: string): Promise<boolean> {
@@ -1338,7 +1396,7 @@ class VoxModeService {
         .in('contact_id', invalidIds);
     }
 
-    return validFavorites.map(this.mapDbToQuickVoxFavorite);
+    return validFavorites.map(favorite => this.mapDbToQuickVoxFavorite(favorite));
   }
 
   /**
@@ -1438,7 +1496,7 @@ class VoxModeService {
       .order('created_at', { ascending: true });
 
     if (error || !data) return [];
-    return data.map(this.mapDbToQuickVoxMessage);
+    return data.map(message => this.mapDbToQuickVoxMessage(message));
   }
 
   async updateQuickVoxStatus(isRecording: boolean): Promise<void> {
@@ -1568,7 +1626,7 @@ class VoxModeService {
       .order('scheduled_for', { ascending: true });
 
     if (error || !data) return [];
-    return data.map(this.mapDbToVoxDrop);
+    return data.map(drop => this.mapDbToVoxDrop(drop));
   }
 
   async getReceivedDrops(): Promise<VoxDrop[]> {
@@ -1583,7 +1641,7 @@ class VoxModeService {
       .order('delivered_at', { ascending: false });
 
     if (error || !data) return [];
-    return data.map(this.mapDbToVoxDrop);
+    return data.map(drop => this.mapDbToVoxDrop(drop));
   }
 
   async cancelVoxDrop(dropId: string): Promise<boolean> {
@@ -1640,14 +1698,21 @@ class VoxModeService {
       .limit(50);
 
     if (error || !data) return [];
-    return data.map(this.mapDbToNotification);
+    return data.map(notification => this.mapDbToNotification(notification));
   }
 
   // ============================================
   // REAL-TIME SUBSCRIPTIONS
   // ============================================
 
-  subscribeToQuickVox(callback: (message: QuickVoxMessage) => void) {
+  async subscribeToQuickVox(callback: (message: QuickVoxMessage) => void): Promise<any> {
+    // AUTH GUARD: Check session before subscribing
+    const { data: { session } } = await supabase.auth.getSession();
+    if (!session?.user) {
+      console.warn('[VoxModeService] Cannot subscribe to QuickVox: user not authenticated');
+      return null;
+    }
+
     const userId = this.getUserId();
     if (!userId) return null;
 
@@ -1664,7 +1729,14 @@ class VoxModeService {
       .subscribe();
   }
 
-  subscribeToRecordingStatus(contactIds: string[], callback: (status: QuickVoxStatus) => void) {
+  async subscribeToRecordingStatus(contactIds: string[], callback: (status: QuickVoxStatus) => void): Promise<any> {
+    // AUTH GUARD: Check session before subscribing
+    const { data: { session } } = await supabase.auth.getSession();
+    if (!session?.user) {
+      console.warn('[VoxModeService] Cannot subscribe to recording status: user not authenticated');
+      return null;
+    }
+
     return supabase
       .channel('recording_status')
       .on('postgres_changes', {

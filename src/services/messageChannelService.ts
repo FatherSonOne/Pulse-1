@@ -426,10 +426,17 @@ export const messageChannelService = {
 
   // ==================== Real-time Subscriptions ====================
 
-  subscribeToChannel(
+  async subscribeToChannel(
     channelId: string,
     onMessage: (message: ChannelMessage) => void
-  ) {
+  ): Promise<any> {
+    // AUTH GUARD: Check session before subscribing
+    const { data: { session } } = await supabase.auth.getSession();
+    if (!session?.user) {
+      console.warn('[MessageChannelService] Cannot subscribe to channel: user not authenticated');
+      return null;
+    }
+
     return supabase
       .channel(`messages:${channelId}`)
       .on(
@@ -590,11 +597,18 @@ export const messageChannelService = {
   /**
    * Subscribe to typing indicators for a channel
    */
-  subscribeToTypingIndicators(
+  async subscribeToTypingIndicators(
     channelId: string,
     onTyping: (indicator: TypingIndicator) => void,
     onStopTyping: (userId: string) => void
-  ) {
+  ): Promise<any> {
+    // AUTH GUARD: Check session before subscribing
+    const { data: { session } } = await supabase.auth.getSession();
+    if (!session?.user) {
+      console.warn('[MessageChannelService] Cannot subscribe to typing indicators: user not authenticated');
+      return null;
+    }
+
     const channel = supabase
       .channel(`typing:${channelId}`)
       .on('broadcast', { event: 'typing' }, (payload) => {
@@ -950,14 +964,21 @@ export const messageChannelService = {
   /**
    * Subscribe to all channel events (messages, edits, deletes, reactions)
    */
-  subscribeToChannelFull(
+  async subscribeToChannelFull(
     channelId: string,
     callbacks: {
       onInsert?: (message: ChannelMessage) => void;
       onUpdate?: (message: ChannelMessage) => void;
       onDelete?: (messageId: string) => void;
     }
-  ) {
+  ): Promise<any> {
+    // AUTH GUARD: Check session before subscribing
+    const { data: { session } } = await supabase.auth.getSession();
+    if (!session?.user) {
+      console.warn('[MessageChannelService] Cannot subscribe to channel full: user not authenticated');
+      return null;
+    }
+
     const channel = supabase.channel(`channel-full:${channelId}`);
 
     if (callbacks.onInsert) {

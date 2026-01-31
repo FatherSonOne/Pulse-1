@@ -834,10 +834,17 @@ Return as JSON.` }
   /**
    * Subscribe to new messages in a conversation
    */
-  subscribeToConversation(
+  async subscribeToConversation(
     conversationId: string,
     callback: (message: VideoVoxMessage) => void
-  ) {
+  ): Promise<any> {
+    // AUTH GUARD: Check session before subscribing
+    const { data: { session } } = await supabase.auth.getSession();
+    if (!session?.user) {
+      console.warn('[VideoVoxService] Cannot subscribe to conversation: user not authenticated');
+      return null;
+    }
+
     return supabase
       .channel(`video_vox:${conversationId}`)
       .on('postgres_changes', {
@@ -857,10 +864,17 @@ Return as JSON.` }
   /**
    * Subscribe to reaction changes
    */
-  subscribeToReactions(
+  async subscribeToReactions(
     messageIds: string[],
     callback: (messageId: string, reactions: Record<string, string[]>) => void
-  ) {
+  ): Promise<any> {
+    // AUTH GUARD: Check session before subscribing
+    const { data: { session } } = await supabase.auth.getSession();
+    if (!session?.user) {
+      console.warn('[VideoVoxService] Cannot subscribe to reactions: user not authenticated');
+      return null;
+    }
+
     return supabase
       .channel('video_vox_reactions')
       .on('postgres_changes', {
@@ -880,7 +894,14 @@ Return as JSON.` }
   /**
    * Subscribe to new conversations
    */
-  subscribeToNewConversations(callback: (conversation: VideoVoxConversation) => void) {
+  async subscribeToNewConversations(callback: (conversation: VideoVoxConversation) => void): Promise<any> {
+    // AUTH GUARD: Check session before subscribing
+    const { data: { session } } = await supabase.auth.getSession();
+    if (!session?.user) {
+      console.warn('[VideoVoxService] Cannot subscribe to new conversations: user not authenticated');
+      return null;
+    }
+
     const userId = this.userId;
     if (!userId) return null;
 

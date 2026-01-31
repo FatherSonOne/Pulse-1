@@ -929,7 +929,14 @@ class DataService {
 
   // ============= REAL-TIME SUBSCRIPTIONS =============
 
-  subscribeToContacts(callback: (contact: Contact) => void) {
+  async subscribeToContacts(callback: (contact: Contact) => void): Promise<any> {
+    // AUTH GUARD: Check session before subscribing
+    const { data: { session } } = await supabase.auth.getSession();
+    if (!session?.user) {
+      console.warn('[DataService] Cannot subscribe to contacts: user not authenticated');
+      return null;
+    }
+
     return supabase
       .channel('contacts_changes')
       .on(
@@ -949,7 +956,14 @@ class DataService {
       .subscribe();
   }
 
-  subscribeToMessages(threadId: string, callback: (message: Message) => void) {
+  async subscribeToMessages(threadId: string, callback: (message: Message) => void): Promise<any> {
+    // AUTH GUARD: Check session before subscribing
+    const { data: { session } } = await supabase.auth.getSession();
+    if (!session?.user) {
+      console.warn('[DataService] Cannot subscribe to messages: user not authenticated');
+      return null;
+    }
+
     return supabase
       .channel(`messages_${threadId}`)
       .on(
@@ -967,7 +981,14 @@ class DataService {
       .subscribe();
   }
 
-  subscribeToUnifiedInbox(callback: (message: UnifiedMessage) => void) {
+  async subscribeToUnifiedInbox(callback: (message: UnifiedMessage) => void): Promise<any> {
+    // AUTH GUARD: Check session before subscribing
+    const { data: { session } } = await supabase.auth.getSession();
+    if (!session?.user) {
+      console.warn('[DataService] Cannot subscribe to unified inbox: user not authenticated');
+      return null;
+    }
+
     return supabase
       .channel('unified_inbox')
       .on(
@@ -1298,7 +1319,7 @@ class DataService {
       user_id: userId,
       title: recording.title,
       audio_url: recording.audio_url,
-      duration: recording.duration,
+      duration: Math.round(recording.duration), // Convert to integer (rounds to nearest whole second)
       transcript: recording.transcript,
       contact_id: recording.contact_id,
       contact_name: recording.contact_name,
@@ -1429,9 +1450,22 @@ class DataService {
       });
 
     if (error) {
-      console.error('Error uploading voxer media:', error);
-      // Try to create bucket if it doesn't exist
-      return null;
+      console.error('Error uploading voxer media to Supabase storage:', error);
+      console.log('Falling back to base64 data URL storage');
+
+      // Fallback: Convert blob to base64 data URL
+      try {
+        const dataUrl = await new Promise<string>((resolve, reject) => {
+          const reader = new FileReader();
+          reader.onloadend = () => resolve(reader.result as string);
+          reader.onerror = reject;
+          reader.readAsDataURL(blob);
+        });
+        return dataUrl;
+      } catch (base64Error) {
+        console.error('Error converting blob to base64:', base64Error);
+        return null;
+      }
     }
 
     // Get public URL
@@ -1535,11 +1569,18 @@ class DataService {
 
   // ============= REAL-TIME DASHBOARD SUBSCRIPTIONS =============
 
-  subscribeToDashboardUpdates(callbacks: {
+  async subscribeToDashboardUpdates(callbacks: {
     onTaskUpdate?: (task: Task) => void;
     onEventUpdate?: (event: CalendarEvent) => void;
     onMessageUpdate?: (message: UnifiedMessage) => void;
-  }) {
+  }): Promise<(() => void) | null> {
+    // AUTH GUARD: Check session before subscribing
+    const { data: { session } } = await supabase.auth.getSession();
+    if (!session?.user) {
+      console.warn('[DataService] Cannot subscribe to dashboard updates: user not authenticated');
+      return null;
+    }
+
     const channels = [];
 
     if (callbacks.onTaskUpdate) {
