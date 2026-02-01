@@ -1,5 +1,8 @@
 import { DocumentProcessor, ProcessorResult } from './index';
-import ExcelJS from 'exceljs';
+
+// Dynamic import of ExcelJS to avoid build issues with Vite
+// ExcelJS will be loaded only when actually processing Excel files
+let ExcelJS: any = null;
 
 // Security constants
 const MAX_FILE_SIZE = 50 * 1024 * 1024; // 50MB
@@ -53,6 +56,21 @@ export const xlsxProcessor: DocumentProcessor = {
       }
 
       onProgress?.(0.1);
+
+      // Dynamically load ExcelJS if not already loaded
+      if (!ExcelJS) {
+        console.log('[XLSXProcessor] Loading ExcelJS library...');
+        try {
+          const module = await import(/* webpackIgnore: true */ 'exceljs');
+          ExcelJS = module.default || module;
+        } catch (error) {
+          console.error('[XLSXProcessor] Failed to load ExcelJS:', error);
+          return {
+            text: '',
+            error: 'Excel processing library not available. Please install exceljs package.'
+          };
+        }
+      }
 
       // Read file as ArrayBuffer
       const arrayBuffer = await file.arrayBuffer();
