@@ -100,12 +100,104 @@ const capacitorStorage = {
   },
 };
 
-// Ensure we have valid values before initializing
-// Use a dummy URL if not set to prevent initialization errors
-const validUrl = supabaseUrl && supabaseUrl.startsWith('http')
-  ? supabaseUrl
-  : 'https://placeholder.supabase.co';
-const validKey = supabaseAnonKey || 'placeholder-key';
+// Validate environment variables before initialization
+function validateSupabaseConfig(): { url: string; key: string } {
+  const url = supabaseUrl;
+  const key = supabaseAnonKey;
+
+  // Check if variables exist
+  if (!url || !key) {
+    const missingVars = [];
+    if (!url) missingVars.push('VITE_SUPABASE_URL');
+    if (!key) missingVars.push('VITE_SUPABASE_ANON_KEY');
+
+    const isDev = import.meta.env.DEV;
+    const errorMessage = `
+╔════════════════════════════════════════════════════════════╗
+║  SUPABASE CONFIGURATION ERROR                              ║
+╚════════════════════════════════════════════════════════════╝
+
+Missing required environment variables: ${missingVars.join(', ')}
+
+${isDev ? `
+🟡 DEVELOPMENT MODE FIX:
+
+1. Create .env.local file in project root with:
+
+   VITE_SUPABASE_URL=https://ucaeuszgoihoyrvhewxk.supabase.co
+   VITE_SUPABASE_ANON_KEY=<your-anon-key>
+
+2. Restart dev server: npm run dev
+
+3. Your .env.local file already exists with credentials!
+   Make sure the dev server is loading it.
+` : `
+🔴 PRODUCTION BUILD FIX:
+
+1. Set environment variables in your hosting platform:
+   - VITE_SUPABASE_URL
+   - VITE_SUPABASE_ANON_KEY
+
+2. Redeploy the application
+
+3. Verify variables are set before building
+`}
+
+Current mode: ${import.meta.env.MODE}
+Available VITE_ vars: ${Object.keys(import.meta.env).filter(k => k.startsWith('VITE_')).join(', ') || 'none'}
+    `.trim();
+
+    console.error(errorMessage);
+    throw new Error(`Supabase configuration missing: ${missingVars.join(', ')}`);
+  }
+
+  // Validate URL format
+  if (!url.startsWith('https://')) {
+    const errorMessage = `
+╔════════════════════════════════════════════════════════════╗
+║  INVALID SUPABASE URL                                      ║
+╚════════════════════════════════════════════════════════════╝
+
+VITE_SUPABASE_URL must be a valid HTTPS URL.
+
+Current value: ${url}
+Expected format: https://your-project.supabase.co
+
+Fix: Update your .env file with the correct URL from:
+https://app.supabase.com/project/_/settings/api
+    `.trim();
+
+    console.error(errorMessage);
+    throw new Error('Invalid Supabase URL format');
+  }
+
+  // Check for placeholder values
+  if (url.includes('placeholder')) {
+    const errorMessage = `
+╔════════════════════════════════════════════════════════════╗
+║  PLACEHOLDER SUPABASE URL DETECTED                         ║
+╚════════════════════════════════════════════════════════════╝
+
+Cannot connect to: ${url}
+
+This is a placeholder value and will not work.
+
+Fix:
+1. Replace with your real Supabase URL
+2. Get URL from: https://app.supabase.com/project/_/settings/api
+3. Update VITE_SUPABASE_URL in .env.local
+    `.trim();
+
+    console.error(errorMessage);
+    throw new Error('Placeholder URL detected - invalid configuration');
+  }
+
+  console.log('✅ Supabase configuration validated');
+  return { url, key };
+}
+
+// Validate and get configuration
+const { url: validUrl, key: validKey } = validateSupabaseConfig();
 
 export const supabase = createClient(
   validUrl,
@@ -133,10 +225,11 @@ export const supabase = createClient(
 );
 
 // Session refresh interval (check more frequently to prevent unexpected logouts)
-const SESSION_CHECK_INTERVAL = 2 * 60 * 1000; // 2 minutes (more frequent checks)
-const TOKEN_REFRESH_THRESHOLD = 30 * 60 * 1000; // Refresh if less than 30 minutes left (more proactive)
+const SESSION_CHECK_INTERVAL = 10 * 60 * 1000; // 10 minutes (optimized from 2 min)
+const TOKEN_REFRESH_THRESHOLD = 5 * 60 * 1000; // Refresh if less than 5 minutes left (optimized from 30 min)
 
 let sessionCheckInterval: ReturnType<typeof setInterval> | null = null;
+let refreshInProgress = false; // Prevent concurrent refresh attempts
 
 /**
  * Start automatic session refresh checking
@@ -150,9 +243,15 @@ export const startSessionRefreshMonitor = () => {
   }
 
   const checkAndRefreshSession = async () => {
+    // Prevent concurrent refresh attempts
+    if (refreshInProgress) {
+      console.log('[Session Monitor] Refresh already in progress, skipping');
+      return;
+    }
+
     try {
       const { data: { session }, error } = await supabase.auth.getSession();
-      
+
       if (error) {
         console.warn('[Session Monitor] Error getting session:', error.message);
         return;
@@ -167,10 +266,12 @@ export const startSessionRefreshMonitor = () => {
       const expiresAt = session.expires_at ? session.expires_at * 1000 : 0;
       const timeUntilExpiry = expiresAt - Date.now();
 
+      // Only refresh if within threshold and not expired
       if (timeUntilExpiry < TOKEN_REFRESH_THRESHOLD && timeUntilExpiry > 0) {
         console.log('[Session Monitor] Session expiring soon, refreshing...');
         console.log('[Session Monitor] Time until expiry:', Math.round(timeUntilExpiry / 60000), 'minutes');
-        
+
+        refreshInProgress = true;
         const { data, error: refreshError } = await supabase.auth.refreshSession();
         
         if (refreshError) {
@@ -185,6 +286,8 @@ export const startSessionRefreshMonitor = () => {
       }
     } catch (err) {
       console.error('[Session Monitor] Error:', err);
+    } finally {
+      refreshInProgress = false;
     }
   };
 
@@ -215,22 +318,40 @@ if (typeof window !== 'undefined') {
     startSessionRefreshMonitor();
   }, 3000);
 
+  // Debounce timer for visibility changes
+  let visibilityDebounceTimer: ReturnType<typeof setTimeout> | null = null;
+
   // Also refresh when app becomes visible (user returns to app)
   document.addEventListener('visibilitychange', () => {
     if (!document.hidden) {
-      console.log('[Session Monitor] App became visible, checking session...');
-      supabase.auth.getSession().then(({ data: { session } }) => {
-        if (session) {
-          const expiresAt = session.expires_at ? session.expires_at * 1000 : 0;
-          const timeUntilExpiry = expiresAt - Date.now();
-          
-          // If session expired or about to expire, refresh it
-          if (timeUntilExpiry < TOKEN_REFRESH_THRESHOLD) {
-            console.log('[Session Monitor] Refreshing session after app resumed...');
-            supabase.auth.refreshSession();
-          }
+      // Debounce to prevent rapid checks when user switches tabs quickly
+      if (visibilityDebounceTimer) clearTimeout(visibilityDebounceTimer);
+
+      visibilityDebounceTimer = setTimeout(() => {
+        console.log('[Session Monitor] App became visible, checking session...');
+
+        // Skip if refresh already in progress
+        if (refreshInProgress) {
+          console.log('[Session Monitor] Refresh already in progress, skipping visibility check');
+          return;
         }
-      });
+
+        supabase.auth.getSession().then(({ data: { session } }) => {
+          if (session) {
+            const expiresAt = session.expires_at ? session.expires_at * 1000 : 0;
+            const timeUntilExpiry = expiresAt - Date.now();
+
+            // Only refresh if within threshold
+            if (timeUntilExpiry < TOKEN_REFRESH_THRESHOLD && timeUntilExpiry > 0) {
+              console.log('[Session Monitor] Refreshing session after app resumed...');
+              refreshInProgress = true;
+              supabase.auth.refreshSession().finally(() => {
+                refreshInProgress = false;
+              });
+            }
+          }
+        });
+      }, 1000); // Wait 1 second before checking
     }
   });
 }

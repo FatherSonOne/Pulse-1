@@ -9,6 +9,21 @@ export default defineConfig(({ mode }) => {
     const isProduction = mode === 'production';
     const isDevelopment = mode === 'development';
 
+    // Build-time validation for production
+    if (isProduction) {
+      if (!env.VITE_SUPABASE_URL) {
+        console.error('\n❌ PRODUCTION BUILD ERROR:');
+        console.error('Missing: VITE_SUPABASE_URL\n');
+        throw new Error('Cannot build without VITE_SUPABASE_URL');
+      }
+      if (!env.VITE_SUPABASE_ANON_KEY) {
+        console.error('\n❌ PRODUCTION BUILD ERROR:');
+        console.error('Missing: VITE_SUPABASE_ANON_KEY\n');
+        throw new Error('Cannot build without VITE_SUPABASE_ANON_KEY');
+      }
+      console.log('✅ Supabase environment variables validated for production build');
+    }
+
     return {
       server: {
         port: Number(env.VITE_PORT) || 5173,
