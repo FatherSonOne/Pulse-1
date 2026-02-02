@@ -21,7 +21,8 @@ import {
   Megaphone,
   Calendar,
   Square,
-  Menu
+  Menu,
+  Briefcase
 } from 'lucide-react';
 import VoxAudioVisualizer from './VoxAudioVisualizer';
 import RecordingPreview from './RecordingPreview';
@@ -78,9 +79,11 @@ const TeamVoxMode: React.FC<TeamVoxModeProps> = ({
   const [mentionSearchQuery, setMentionSearchQuery] = useState('');
   const [pulseContacts, setPulseContacts] = useState<any[]>([]);
   const [showMobileSidebar, setShowMobileSidebar] = useState(false);
+  const [showWorkspaceDropdown, setShowWorkspaceDropdown] = useState(false);
 
   const audioRef = useRef<HTMLAudioElement>(null);
   const messagesEndRef = useRef<HTMLDivElement>(null);
+  const workspaceDropdownRef = useRef<HTMLDivElement>(null);
 
   // Use the recording hook for click-to-record with preview
   const {
@@ -158,8 +161,37 @@ const TeamVoxMode: React.FC<TeamVoxModeProps> = ({
   }, []);
 
   useEffect(() => {
+    if (selectedChannel) {
+      loadMessages();
+    }
+  }, [selectedChannel]);
+
+  useEffect(() => {
     messagesEndRef.current?.scrollIntoView({ behavior: 'smooth' });
   }, [messages]);
+
+  // Close workspace dropdown when clicking outside
+  useEffect(() => {
+    const handleClickOutside = (event: MouseEvent) => {
+      if (workspaceDropdownRef.current && !workspaceDropdownRef.current.contains(event.target as Node)) {
+        setShowWorkspaceDropdown(false);
+      }
+    };
+
+    if (showWorkspaceDropdown) {
+      document.addEventListener('mousedown', handleClickOutside);
+    }
+
+    return () => {
+      document.removeEventListener('mousedown', handleClickOutside);
+    };
+  }, [showWorkspaceDropdown]);
+
+  const loadMessages = async () => {
+    if (!selectedChannel) return;
+    const data = await voxModeService.getChannelMessages(selectedChannel.id);
+    setMessages(data);
+  };
 
   const loadPulseContacts = async () => {
     const pulseUsers = await voxModeService.getPulseUsersAsContacts();
@@ -334,36 +366,47 @@ const TeamVoxMode: React.FC<TeamVoxModeProps> = ({
   // Render sidebar content (shared between mobile and desktop)
   const renderSidebarContent = () => (
     <div className="flex-1 overflow-y-auto py-2">
-      {workspaces.map((workspace) => (
-        <div key={workspace.id}>
+      {workspaces.map((workspace, wsIndex) => (
+        <div key={workspace.id} className={wsIndex > 0 ? 'mt-4' : ''}>
           {/* Workspace Header */}
           <button
             onClick={() => toggleWorkspaceExpanded(workspace.id)}
-            className={`w-full px-3 py-2 flex items-center gap-2 transition-all ${tc.hoverBg} ${
-              selectedWorkspace?.id === workspace.id ? tc.activeBg : ''
+            className={`w-full px-3 py-2.5 flex items-center gap-2 transition-all border-l-2 ${
+              selectedWorkspace?.id === workspace.id
+                ? `border-amber-500 ${tc.activeBg}`
+                : `border-transparent ${tc.hoverBg}`
             }`}
           >
             {expandedWorkspaces.has(workspace.id) ? (
-              <ChevronDown className={`w-4 h-4 ${tc.textMuted}`} />
+              <ChevronDown className={`w-4 h-4 ${selectedWorkspace?.id === workspace.id ? 'text-amber-500' : tc.textMuted}`} />
             ) : (
-              <ChevronRight className={`w-4 h-4 ${tc.textMuted}`} />
+              <ChevronRight className={`w-4 h-4 ${selectedWorkspace?.id === workspace.id ? 'text-amber-500' : tc.textMuted}`} />
             )}
             <div
-              className="w-6 h-6 rounded flex items-center justify-center"
-              style={{ background: `linear-gradient(135deg, ${MODE_COLOR} 0%, #ea580c 100%)` }}
+              className="w-7 h-7 rounded-lg flex items-center justify-center shadow-sm"
+              style={{
+                background: selectedWorkspace?.id === workspace.id
+                  ? `linear-gradient(135deg, ${MODE_COLOR} 0%, #ea580c 100%)`
+                  : isDarkMode ? 'rgba(55,65,81,0.5)' : 'rgba(229,231,235,0.8)'
+              }}
             >
-              <span className="text-xs font-bold text-white">
+              <span className={`text-xs font-bold ${selectedWorkspace?.id === workspace.id ? 'text-white' : tc.textSecondary}`}>
                 {workspace.name.charAt(0).toUpperCase()}
               </span>
             </div>
-            <span className={`font-medium text-sm truncate ${tc.text}`}>
-              {workspace.name}
-            </span>
+            <div className="flex-1 text-left min-w-0">
+              <span className={`font-semibold text-sm truncate block ${selectedWorkspace?.id === workspace.id ? 'text-amber-500' : tc.text}`}>
+                {workspace.name}
+              </span>
+              <span className={`text-xs ${tc.textMuted}`}>
+                {workspace.channels.length} channel{workspace.channels.length !== 1 ? 's' : ''}
+              </span>
+            </div>
           </button>
 
           {/* Channels */}
           {expandedWorkspaces.has(workspace.id) && (
-            <div className={`ml-4 border-l ${tc.border} pl-2 space-y-0.5`}>
+            <div className={`ml-8 border-l-2 ${selectedWorkspace?.id === workspace.id ? 'border-amber-500/30' : tc.border} pl-3 space-y-0.5 mt-1`}>
               {workspace.channels.map((channel) => (
                 <button
                   key={channel.id}
@@ -372,21 +415,24 @@ const TeamVoxMode: React.FC<TeamVoxModeProps> = ({
                     setSelectedChannel(channel);
                     setShowMobileSidebar(false);
                   }}
-                  className={`w-full px-3 py-1.5 flex items-center gap-2 rounded-r-lg text-sm transition-all ${
+                  className={`w-full px-3 py-2 flex items-center gap-2 rounded-r-lg text-sm transition-all group ${
                     selectedChannel?.id === channel.id
-                      ? `${tc.activeBg} text-amber-500`
-                      : `${tc.textSecondary} ${tc.hoverBg}`
+                      ? `${tc.activeBg} text-amber-500 font-medium`
+                      : `${tc.textSecondary} ${tc.hoverBg} hover:text-amber-500`
                   }`}
+                  title={`${channel.type.charAt(0).toUpperCase() + channel.type.slice(1)} channel`}
                 >
-                  {CHANNEL_ICONS[channel.type]}
-                  <span className="truncate">{channel.name}</span>
+                  <span className={selectedChannel?.id === channel.id ? 'text-amber-500' : tc.textMuted}>
+                    {CHANNEL_ICONS[channel.type]}
+                  </span>
+                  <span className="truncate flex-1 text-left">{channel.name}</span>
                   {channel.unreadCount > 0 && (
-                    <span className="ml-auto px-1.5 py-0.5 text-xs bg-amber-500 text-white rounded-full">
+                    <span className="px-2 py-0.5 text-xs bg-amber-500 text-white rounded-full font-semibold">
                       {channel.unreadCount}
                     </span>
                   )}
                   {channel.isPinned && (
-                    <Pin className={`w-3 h-3 ${tc.textMuted}`} />
+                    <Pin className={`w-3 h-3 ${selectedChannel?.id === channel.id ? 'text-amber-500' : tc.textMuted}`} />
                   )}
                 </button>
               ))}
@@ -397,10 +443,11 @@ const TeamVoxMode: React.FC<TeamVoxModeProps> = ({
                   setSelectedWorkspace(workspace);
                   setShowNewChannel(true);
                 }}
-                className={`w-full px-3 py-1.5 flex items-center gap-2 rounded-r-lg text-sm ${tc.textMuted} hover:text-amber-500 transition-all`}
+                className={`w-full px-3 py-2 flex items-center gap-2 rounded-r-lg text-sm ${tc.textMuted} hover:text-amber-500 hover:bg-amber-500/10 transition-all mt-1`}
+                title="Create a new channel in this workspace"
               >
                 <Plus className="w-4 h-4" />
-                Add Channel
+                <span className="font-medium">Add Channel</span>
               </button>
             </div>
           )}
@@ -452,6 +499,93 @@ const TeamVoxMode: React.FC<TeamVoxModeProps> = ({
             <p className={`text-xs md:text-sm ${tc.textSecondary} hidden sm:block`}>Your Team's Voice Hub</p>
           </div>
 
+          {/* Workspace Selector - Desktop */}
+          {selectedWorkspace && (
+            <div ref={workspaceDropdownRef} className="hidden md:block relative">
+              <button
+                onClick={() => setShowWorkspaceDropdown(!showWorkspaceDropdown)}
+                className={`flex items-center gap-2 px-4 py-2 rounded-xl text-sm font-medium transition-all duration-200 ${tc.btnSecondary} border hover:border-amber-500/50`}
+                title="Switch workspace"
+              >
+                <Briefcase className="w-4 h-4" />
+                <span className="max-w-[150px] truncate">{selectedWorkspace.name}</span>
+                <ChevronDown className={`w-4 h-4 transition-transform ${showWorkspaceDropdown ? 'rotate-180' : ''}`} />
+              </button>
+
+              {/* Workspace Dropdown */}
+              {showWorkspaceDropdown && (
+                <div className="absolute top-full right-0 mt-2 w-64 z-50">
+                  <div
+                    className={`rounded-xl border ${tc.modalBg} shadow-2xl overflow-hidden`}
+                    style={{ boxShadow: `0 8px 32px ${MODE_COLOR}20` }}
+                  >
+                    <div className={`px-4 py-3 border-b ${tc.border}`}>
+                      <p className={`text-xs font-semibold ${tc.textMuted} uppercase`}>Switch Workspace</p>
+                    </div>
+                    <div className="max-h-64 overflow-y-auto py-2">
+                      {workspaces.map((workspace) => (
+                        <button
+                          key={workspace.id}
+                          onClick={() => {
+                            setSelectedWorkspace(workspace);
+                            setExpandedWorkspaces(new Set([workspace.id]));
+                            if (workspace.channels.length > 0) {
+                              setSelectedChannel(workspace.channels[0]);
+                            } else {
+                              setSelectedChannel(null);
+                            }
+                            setShowWorkspaceDropdown(false);
+                          }}
+                          className={`w-full px-4 py-3 flex items-center gap-3 transition-all ${
+                            selectedWorkspace?.id === workspace.id
+                              ? `${tc.activeBg} text-amber-500`
+                              : `${tc.hoverBg} ${tc.text}`
+                          }`}
+                        >
+                          <div
+                            className="w-8 h-8 rounded-lg flex items-center justify-center shrink-0"
+                            style={{
+                              background: selectedWorkspace?.id === workspace.id
+                                ? `linear-gradient(135deg, ${MODE_COLOR} 0%, #ea580c 100%)`
+                                : isDarkMode ? 'rgba(55,65,81,0.5)' : 'rgba(229,231,235,0.8)'
+                            }}
+                          >
+                            <span className={`text-sm font-bold ${selectedWorkspace?.id === workspace.id ? 'text-white' : tc.textSecondary}`}>
+                              {workspace.name.charAt(0).toUpperCase()}
+                            </span>
+                          </div>
+                          <div className="flex-1 text-left min-w-0">
+                            <p className={`font-medium truncate ${selectedWorkspace?.id === workspace.id ? 'text-amber-500' : tc.text}`}>
+                              {workspace.name}
+                            </p>
+                            <p className={`text-xs ${tc.textMuted} truncate`}>
+                              {workspace.channels.length} channel{workspace.channels.length !== 1 ? 's' : ''}
+                            </p>
+                          </div>
+                          {selectedWorkspace?.id === workspace.id && (
+                            <div className="w-2 h-2 rounded-full bg-amber-500" />
+                          )}
+                        </button>
+                      ))}
+                    </div>
+                    <div className={`px-2 py-2 border-t ${tc.border}`}>
+                      <button
+                        onClick={() => {
+                          setShowWorkspaceDropdown(false);
+                          setShowNewWorkspace(true);
+                        }}
+                        className={`w-full flex items-center gap-2 px-3 py-2 rounded-lg text-sm font-medium transition-all ${tc.hoverBg} hover:text-amber-500`}
+                      >
+                        <Plus className="w-4 h-4" />
+                        Create New Workspace
+                      </button>
+                    </div>
+                  </div>
+                </div>
+              )}
+            </div>
+          )}
+
           {/* Mobile sidebar toggle */}
           <button
             onClick={() => setShowMobileSidebar(true)}
@@ -463,7 +597,7 @@ const TeamVoxMode: React.FC<TeamVoxModeProps> = ({
 
           <button
             onClick={() => setShowNewWorkspace(true)}
-            className={`flex items-center gap-2 px-3 md:px-4 py-2 rounded-xl text-sm font-medium transition-all duration-200 ${tc.btnPrimary}`}
+            className={`hidden lg:flex items-center gap-2 px-3 md:px-4 py-2 rounded-xl text-sm font-medium transition-all duration-200 ${tc.btnPrimary}`}
           >
             <Plus className="w-4 h-4" />
             <span className="hidden sm:inline">New Workspace</span>
@@ -511,9 +645,16 @@ const TeamVoxMode: React.FC<TeamVoxModeProps> = ({
                     {CHANNEL_ICONS[selectedChannel.type]}
                   </div>
                   <div className="min-w-0">
-                    <h2 className={`text-base md:text-lg font-semibold ${tc.text} truncate`}>
-                      {selectedChannel.name}
-                    </h2>
+                    {/* Breadcrumb-style navigation */}
+                    <div className="flex items-center gap-1.5 mb-0.5">
+                      <span className={`text-xs ${tc.textMuted} truncate max-w-[120px]`}>
+                        {selectedWorkspace?.name}
+                      </span>
+                      <ChevronRight className={`w-3 h-3 ${tc.textMuted} shrink-0`} />
+                      <h2 className={`text-base md:text-lg font-semibold ${tc.text} truncate`}>
+                        {selectedChannel.name}
+                      </h2>
+                    </div>
                     <p className={`text-xs md:text-sm ${tc.textSecondary}`}>
                       {selectedChannel.memberIds.length || selectedWorkspace?.memberIds.length || 0} members
                     </p>
@@ -524,6 +665,7 @@ const TeamVoxMode: React.FC<TeamVoxModeProps> = ({
                     onClick={() => setShowAddMember(true)}
                     className={`p-2 rounded-xl ${tc.btnGhost} transition-all duration-200`}
                     aria-label="Add member"
+                    title="Add team members to this channel"
                   >
                     <UserPlus className="w-4 h-4 md:w-5 md:h-5" />
                   </button>
@@ -531,6 +673,7 @@ const TeamVoxMode: React.FC<TeamVoxModeProps> = ({
                     onClick={() => setShowNotificationSettings(true)}
                     className={`p-2 rounded-xl ${tc.btnGhost} transition-all duration-200`}
                     aria-label="Notification settings"
+                    title="Manage notification preferences"
                   >
                     <Bell className="w-4 h-4 md:w-5 md:h-5" />
                   </button>
@@ -538,6 +681,7 @@ const TeamVoxMode: React.FC<TeamVoxModeProps> = ({
                     onClick={() => setShowChannelSettings(true)}
                     className={`p-2 rounded-xl ${tc.btnGhost} transition-all duration-200`}
                     aria-label="Channel settings"
+                    title="Channel settings and options"
                   >
                     <Settings className="w-4 h-4 md:w-5 md:h-5" />
                   </button>
@@ -714,23 +858,31 @@ const TeamVoxMode: React.FC<TeamVoxModeProps> = ({
                     {/* Message Type Selector */}
                     <div className="flex items-center gap-2 mb-3 flex-wrap">
                       <span className={`text-xs ${tc.textMuted}`}>Message type:</span>
-                      {(['normal', 'standup', 'announcement'] as const).map((type) => (
-                        <button
-                          key={type}
-                          onClick={() => setMessageType(type)}
-                          className={`px-3 py-1 rounded-full text-xs font-medium transition-all ${
-                            messageType === type
-                              ? type === 'announcement'
-                                ? 'bg-red-500/20 text-red-500'
-                                : type === 'standup'
-                                  ? 'bg-amber-500/20 text-amber-500'
-                                  : `${tc.activeBg} ${tc.text}`
-                              : `${tc.cardBg} ${tc.textSecondary} ${tc.hoverBg}`
-                          }`}
-                        >
-                          {type.charAt(0).toUpperCase() + type.slice(1)}
-                        </button>
-                      ))}
+                      {(['normal', 'standup', 'announcement'] as const).map((type) => {
+                        const tooltips = {
+                          normal: 'Regular team message',
+                          standup: 'Daily standup update - automatically extracts action items',
+                          announcement: 'Important team announcement - notifies all members'
+                        };
+                        return (
+                          <button
+                            key={type}
+                            onClick={() => setMessageType(type)}
+                            title={tooltips[type]}
+                            className={`px-3 py-1 rounded-full text-xs font-medium transition-all ${
+                              messageType === type
+                                ? type === 'announcement'
+                                  ? 'bg-red-500/20 text-red-500'
+                                  : type === 'standup'
+                                    ? 'bg-amber-500/20 text-amber-500'
+                                    : `${tc.activeBg} ${tc.text}`
+                                : `${tc.cardBg} ${tc.textSecondary} ${tc.hoverBg}`
+                            }`}
+                          >
+                            {type.charAt(0).toUpperCase() + type.slice(1)}
+                          </button>
+                        );
+                      })}
                     </div>
 
                     <div className="flex flex-col items-center gap-4 w-full">

@@ -1,4 +1,4 @@
-import React, { useState } from 'react';
+import React, { useState, memo } from 'react';
 import { Task } from '../../services/taskService';
 import {
   CheckSquare,
@@ -23,7 +23,29 @@ export interface EnhancedTaskCardProps {
   allTasks?: Task[]; // For showing dependency details
 }
 
-export const EnhancedTaskCard: React.FC<EnhancedTaskCardProps> = ({
+// Custom comparison function to prevent unnecessary re-renders
+const arePropsEqual = (
+  prevProps: EnhancedTaskCardProps,
+  nextProps: EnhancedTaskCardProps
+): boolean => {
+  // Check if task ID or updated_at changed
+  if (prevProps.task.id !== nextProps.task.id) return false;
+  if (prevProps.task.updated_at !== nextProps.task.updated_at) return false;
+
+  // Check if status changed
+  if (prevProps.task.status !== nextProps.task.status) return false;
+
+  // Check if priority changed
+  if (prevProps.task.priority !== nextProps.task.priority) return false;
+
+  // Check if allTasks length changed (dependency updates)
+  if ((prevProps.allTasks?.length || 0) !== (nextProps.allTasks?.length || 0)) return false;
+
+  // Props are equal, skip re-render
+  return true;
+};
+
+const EnhancedTaskCardComponent: React.FC<EnhancedTaskCardProps> = ({
   task,
   onStatusChange,
   onDelete,
@@ -135,18 +157,21 @@ export const EnhancedTaskCard: React.FC<EnhancedTaskCardProps> = ({
       className={`enhanced-task-card status-${task.status} ${isOverdue() ? 'overdue' : ''}`}
       onMouseEnter={() => setShowActions(true)}
       onMouseLeave={() => setShowActions(false)}
+      role="article"
+      aria-label={`Task: ${task.title}`}
     >
       {/* Left side: Checkbox */}
       <button
+        type="button"
         className="task-checkbox"
         onClick={handleStatusToggle}
         disabled={isUpdating}
-        aria-label={task.status === 'done' ? 'Mark as todo' : 'Mark as done'}
+        aria-label={task.status === 'done' ? 'Mark task as todo' : 'Mark task as done'}
       >
         {task.status === 'done' ? (
-          <CheckSquare size={20} />
+          <CheckSquare size={20} aria-hidden="true" />
         ) : (
-          <Square size={20} />
+          <Square size={20} aria-hidden="true" />
         )}
       </button>
 
@@ -279,25 +304,25 @@ export const EnhancedTaskCard: React.FC<EnhancedTaskCardProps> = ({
 
       {/* Right side: Action buttons (show on hover) */}
       {showActions && (
-        <div className="task-actions">
+        <div className="task-actions" role="group" aria-label="Task actions">
           {onEdit && (
             <button
+              type="button"
               className="task-action-button"
               onClick={() => onEdit(task)}
-              title="Edit task"
-              aria-label="Edit task"
+              aria-label={`Edit task: ${task.title}`}
             >
-              <Edit2 size={16} />
+              <Edit2 size={16} aria-hidden="true" />
             </button>
           )}
           {onDelete && (
             <button
+              type="button"
               className="task-action-button delete"
               onClick={handleDelete}
-              title="Delete task"
-              aria-label="Delete task"
+              aria-label={`Delete task: ${task.title}`}
             >
-              <Trash2 size={16} />
+              <Trash2 size={16} aria-hidden="true" />
             </button>
           )}
         </div>
@@ -305,3 +330,6 @@ export const EnhancedTaskCard: React.FC<EnhancedTaskCardProps> = ({
     </div>
   );
 };
+
+// Export memoized component with custom comparison
+export const EnhancedTaskCard = memo(EnhancedTaskCardComponent, arePropsEqual);

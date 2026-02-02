@@ -5,6 +5,7 @@ import { App as CapacitorApp } from '@capacitor/app'
 import { supabase } from './services/supabase'
 import App from './App.tsx'
 import { AuthProvider } from './contexts/AuthContext'
+import { LoadingProvider } from './contexts/LoadingContext'
 import './index.css'
 import './components/shared/PulseTypography.css'
 
@@ -193,8 +194,10 @@ if (isMobileViewport) {
 
 ReactDOM.createRoot(document.getElementById('root')!).render(
   <React.StrictMode>
-    <AuthProvider>
-      <App />
-    </AuthProvider>
+    <LoadingProvider>
+      <AuthProvider>
+        <App />
+      </AuthProvider>
+    </LoadingProvider>
   </React.StrictMode>
 )

@@ -5,18 +5,22 @@
    ============================================ */
 
 :root {
-  /* Light mode colors - Warm stone with rose accents (brand palette) */
-  --hub-bg-start: #fafaf9;          /* stone-50 */
-  --hub-bg-end: #f5f4f1;            /* Warm off-white */
-  --hub-text: #1c1917;              /* stone-900 - high contrast */
-  --hub-text-secondary: #57534e;    /* stone-600 - readable */
-  --hub-border: #e7e5e4;            /* stone-200 */
-  --hub-card-bg: #ffffff;
-  --hub-card-hover: #fef7f4;        /* Rose-tinted hover */
-  --hub-accent-start: #f43f5e;      /* Pulse rose */
-  --hub-accent-end: #ec4899;        /* Pulse pink */
-  --hub-header-bg: rgba(244, 63, 94, 0.05);
-  --hub-insights-bg: rgba(236, 72, 153, 0.05);
+  /* Light mode colors - Optimized for readability and contrast */
+  --hub-bg-start: #f8fafc;          /* slate-50 - Clean, professional */
+  --hub-bg-end: #f1f5f9;            /* slate-100 - Subtle gradient */
+  --hub-text: #0f172a;              /* slate-900 - Maximum contrast (17.5:1) */
+  --hub-text-secondary: #475569;    /* slate-600 - WCAG AA compliant (7.2:1) */
+  --hub-border: #cbd5e1;            /* slate-300 - Visible but not harsh */
+  --hub-card-bg: #ffffff;           /* Pure white for maximum contrast */
+  --hub-card-hover: #fef2f2;        /* rose-50 - Subtle rose tint */
+  --hub-accent-start: #e11d48;      /* rose-600 - Deeper for better contrast */
+  --hub-accent-end: #db2777;        /* pink-600 - Harmonious gradient */
+  --hub-header-bg: rgba(225, 29, 72, 0.04);   /* Subtle rose tint */
+  --hub-insights-bg: rgba(219, 39, 119, 0.04); /* Subtle pink tint */
+  --hub-shadow-sm: 0 1px 2px 0 rgb(0 0 0 / 0.05);
+  --hub-shadow-md: 0 4px 6px -1px rgb(0 0 0 / 0.1);
+  --hub-shadow-lg: 0 10px 15px -3px rgb(0 0 0 / 0.1);
+  --hub-focus-ring: #e11d48;        /* Consistent focus indicator */
 }
 
 .dark {
@@ -37,7 +41,8 @@
 .decision-task-hub {
   display: flex;
   flex-direction: column;
-  min-height: 100vh;
+  height: 100%;
+  min-height: 0;
   background: linear-gradient(135deg, var(--hub-bg-start) 0%, var(--hub-bg-end) 100%);
   color: var(--hub-text);
   overflow-y: auto;
@@ -54,7 +59,8 @@
   align-items: center;
   padding: 1.5rem 2rem;
   background: linear-gradient(135deg, var(--hub-header-bg) 0%, var(--hub-insights-bg) 100%);
-  border-bottom: 1px solid var(--hub-border);
+  border-bottom: 2px solid var(--hub-border);
+  box-shadow: var(--hub-shadow-sm);
 }
 
 .hub-header-content {
@@ -87,19 +93,22 @@
   align-items: center;
   gap: 0.5rem;
   padding: 0.625rem 1rem;
-  background: var(--bg-tertiary);
-  border: 1px solid var(--hub-border);
+  background: var(--hub-card-bg);
+  border: 1.5px solid var(--hub-border);
   border-radius: 8px;
   color: var(--hub-text);
   font-size: 0.9rem;
+  font-weight: 500;
   cursor: pointer;
-  transition: all 0.2s;
+  transition: all 0.2s ease;
+  box-shadow: var(--hub-shadow-sm);
 }
 
 .hub-action-button:hover {
   background: var(--hub-card-hover);
   border-color: var(--hub-accent-start);
   transform: translateY(-1px);
+  box-shadow: var(--hub-shadow-md);
 }
 
 .hub-action-button.primary {
@@ -107,10 +116,19 @@
   border-color: transparent;
   font-weight: 600;
   color: white;
+  box-shadow: var(--hub-shadow-md);
 }
 
 .hub-action-button.primary:hover {
-  box-shadow: 0 4px 12px rgba(244, 63, 94, 0.4);
+  box-shadow: 0 8px 16px rgba(225, 29, 72, 0.35);
+  transform: translateY(-2px);
+}
+
+/* Sprint 7: Accessibility focus indicators - WCAG 2.1 Level AA compliant */
+.hub-action-button:focus-visible {
+  outline: 3px solid var(--hub-focus-ring);
+  outline-offset: 3px;
+  box-shadow: 0 0 0 3px rgba(225, 29, 72, 0.2);
 }
 
 /* ============================================
@@ -119,11 +137,12 @@
 
 .insights-dashboard {
   margin: 0 2rem 1rem 2rem;
-  background: var(--bg-tertiary);
-  border: 1px solid var(--hub-border);
+  background: var(--hub-card-bg);
+  border: 2px solid var(--hub-border);
   border-radius: 12px;
   overflow: hidden;
-  transition: all 0.3s;
+  transition: all 0.3s ease;
+  box-shadow: var(--hub-shadow-sm);
 }
 
 .insights-dashboard.collapsed {
@@ -134,14 +153,25 @@
   display: flex;
   justify-content: space-between;
   align-items: center;
-  padding: 1rem 1.5rem;
+  padding: 1.125rem 1.5rem;
   background: linear-gradient(135deg, var(--hub-header-bg) 0%, var(--hub-insights-bg) 100%);
+  border-bottom: 1px solid var(--hub-border);
   cursor: pointer;
+  -webkit-user-select: none;
   user-select: none;
+  transition: all 0.2s ease;
 }
 
 .insights-header:hover {
-  background: linear-gradient(135deg, rgba(244, 63, 94, 0.1) 0%, rgba(236, 72, 153, 0.1) 100%);
+  background: linear-gradient(135deg, rgba(225, 29, 72, 0.08) 0%, rgba(219, 39, 119, 0.08) 100%);
+}
+
+/* Sprint 7: Focus indicator for insights toggle */
+.insights-header-toggle:focus-visible,
+.insights-header:focus-visible {
+  outline: 3px solid var(--hub-focus-ring);
+  outline-offset: 2px;
+  box-shadow: 0 0 0 3px rgba(225, 29, 72, 0.15);
 }
 
 .insights-header-left {
@@ -169,17 +199,27 @@
   justify-content: center;
   width: 32px;
   height: 32px;
-  background: var(--bg-tertiary);
-  border: 1px solid var(--hub-border);
+  background: var(--hub-card-bg);
+  border: 1.5px solid var(--hub-border);
   border-radius: 6px;
-  color: var(--hub-text);
+  color: var(--hub-text-secondary);
   cursor: pointer;
-  transition: all 0.2s;
+  transition: all 0.2s ease;
+  box-shadow: var(--hub-shadow-sm);
 }
 
 .icon-button:hover {
   background: var(--hub-card-hover);
   border-color: var(--hub-accent-start);
+  color: var(--hub-accent-start);
+  box-shadow: var(--hub-shadow-md);
+}
+
+/* Sprint 7: Accessibility focus indicators */
+.icon-button:focus-visible {
+  outline: 3px solid var(--hub-focus-ring);
+  outline-offset: 3px;
+  box-shadow: 0 0 0 3px rgba(225, 29, 72, 0.2);
 }
 
 .insights-content {
@@ -195,41 +235,47 @@
 
 .metric-card {
   background: var(--hub-card-bg);
-  border: 1px solid var(--hub-border);
+  border: 2px solid var(--hub-border);
   border-radius: 8px;
-  padding: 1rem;
-  transition: all 0.2s;
+  padding: 1.25rem;
+  transition: all 0.2s ease;
+  box-shadow: var(--hub-shadow-sm);
 }
 
 .metric-card:hover {
   background: var(--hub-card-hover);
   border-color: var(--hub-accent-start);
   transform: translateY(-2px);
+  box-shadow: var(--hub-shadow-md);
 }
 
 .metric-label {
-  font-size: 0.8rem;
+  font-size: 0.75rem;
+  font-weight: 600;
   color: var(--hub-text-secondary);
   margin-bottom: 0.5rem;
   text-transform: uppercase;
-  letter-spacing: 0.5px;
+  letter-spacing: 0.05em;
 }
 
 .metric-value {
-  font-size: 1.75rem;
+  font-size: 2rem;
   font-weight: 700;
   color: var(--hub-accent-start);
+  line-height: 1;
 }
 
 .metric-value.warning {
-  color: #f59e0b;
+  color: #d97706;  /* amber-600 - Better contrast for light mode */
 }
 
 .attention-section {
-  background: rgba(239, 68, 68, 0.1);
-  border: 1px solid rgba(239, 68, 68, 0.3);
+  background: #fef2f2;  /* red-50 - Light, visible background */
+  border: 2px solid #fecaca;  /* red-200 - Clear border */
+  border-left: 4px solid #dc2626;  /* red-600 - Strong accent */
   border-radius: 8px;
-  padding: 1rem;
+  padding: 1rem 1.25rem;
+  box-shadow: var(--hub-shadow-sm);
 }
 
 .attention-section h3 {
@@ -238,13 +284,28 @@
   gap: 0.5rem;
   margin: 0 0 0.5rem 0;
   font-size: 1rem;
-  color: #f87171;
+  font-weight: 600;
+  color: #dc2626;  /* red-600 - WCAG AA compliant (5.8:1) */
 }
 
 .attention-section p {
   margin: 0;
-  font-size: 0.9rem;
-  color: var(--hub-text);
+  font-size: 0.875rem;
+  color: #0f172a;  /* slate-900 - Maximum contrast */
+  line-height: 1.5;
+}
+
+.dark .attention-section {
+  background: rgba(239, 68, 68, 0.15);
+  border-color: rgba(239, 68, 68, 0.4);
+}
+
+.dark .attention-section h3 {
+  color: #fca5a5;
+}
+
+.dark .attention-section p {
+  color: var(--hub-text, #fafafa);
 }
 
 /* ============================================
@@ -253,10 +314,11 @@
 
 .nudges-panel {
   margin: 0 2rem 1rem 2rem;
-  background: var(--bg-tertiary);
-  border: 1px solid var(--hub-border);
+  background: var(--hub-card-bg);
+  border: 2px solid var(--hub-border);
   border-radius: 12px;
   overflow: hidden;
+  box-shadow: var(--hub-shadow-sm);
 }
 
 .nudges-header {
@@ -309,47 +371,60 @@
 }
 
 .nudge-group-header.urgent {
-  background: rgba(239, 68, 68, 0.2);
-  border-left: 4px solid #ef4444;
-  color: #fca5a5;
+  background: #fef2f2;  /* red-50 */
+  border-left: 4px solid #dc2626;  /* red-600 */
+  color: #991b1b;  /* red-800 - High contrast for light mode */
 }
 
 .nudge-group-header.important {
-  background: rgba(245, 158, 11, 0.2);
-  border-left: 4px solid #f59e0b;
-  color: #fbbf24;
+  background: #fffbeb;  /* amber-50 */
+  border-left: 4px solid #d97706;  /* amber-600 */
+  color: #92400e;  /* amber-800 - High contrast */
 }
 
 .nudge-group-header.suggestion {
-  background: rgba(16, 185, 129, 0.2);
-  border-left: 4px solid #10b981;
-  color: #6ee7b7;
+  background: #ecfdf5;  /* emerald-50 */
+  border-left: 4px solid #059669;  /* emerald-600 */
+  color: #065f46;  /* emerald-800 - High contrast */
 }
 
 .nudge-item {
   background: var(--hub-card-bg);
+  border: 1px solid var(--hub-border);
   border-radius: 8px;
-  padding: 0.75rem 1rem;
+  padding: 0.875rem 1rem;
   margin-bottom: 0.5rem;
   border-left: 3px solid transparent;
+  box-shadow: var(--hub-shadow-sm);
+  transition: all 0.2s ease;
+}
+
+.nudge-item:hover {
+  box-shadow: var(--hub-shadow-md);
+  transform: translateX(2px);
 }
 
 .nudge-item.urgent {
-  border-left-color: #ef4444;
+  border-left-color: #dc2626;  /* red-600 */
+  background: #fef2f2;  /* red-50 - Subtle background tint */
 }
 
 .nudge-item.important {
-  border-left-color: #f59e0b;
+  border-left-color: #d97706;  /* amber-600 */
+  background: #fffbeb;  /* amber-50 */
 }
 
 .nudge-item.suggestion {
-  border-left-color: #10b981;
+  border-left-color: #059669;  /* emerald-600 */
+  background: #ecfdf5;  /* emerald-50 */
 }
 
 .nudge-message {
-  font-size: 0.9rem;
+  font-size: 0.875rem;
+  font-weight: 500;
   color: var(--hub-text);
-  margin-bottom: 0.5rem;
+  margin-bottom: 0.625rem;
+  line-height: 1.5;
 }
 
 .nudge-actions {
@@ -359,19 +434,31 @@
 }
 
 .nudge-action-button {
-  font-size: 0.8rem;
-  padding: 0.375rem 0.75rem;
-  background: var(--hub-header-bg);
-  border: 1px solid var(--hub-border);
+  font-size: 0.8125rem;
+  font-weight: 600;
+  padding: 0.5rem 1rem;
+  background: var(--hub-card-bg);
+  border: 1.5px solid var(--hub-border);
   border-radius: 6px;
   color: var(--hub-text);
   cursor: pointer;
-  transition: all 0.2s;
+  transition: all 0.2s ease;
+  box-shadow: var(--hub-shadow-sm);
 }
 
 .nudge-action-button:hover {
-  background: var(--hub-insights-bg);
+  background: linear-gradient(135deg, var(--hub-accent-start) 0%, var(--hub-accent-end) 100%);
   border-color: var(--hub-accent-start);
+  color: white;
+  box-shadow: var(--hub-shadow-md);
+  transform: translateY(-1px);
+}
+
+/* Sprint 7: Nudge action button focus indicator */
+.nudge-action-button:focus-visible {
+  outline: 3px solid var(--hub-focus-ring);
+  outline-offset: 3px;
+  box-shadow: 0 0 0 3px rgba(225, 29, 72, 0.2);
 }
 
 .nudge-dismiss-button {
@@ -394,6 +481,12 @@
   color: #fca5a5;
 }
 
+/* Sprint 7: Nudge dismiss button focus indicator */
+.nudge-dismiss-button:focus-visible {
+  outline: 3px solid #ef4444;
+  outline-offset: 2px;
+}
+
 /* ============================================
    MAIN CONTENT
    ============================================ */
@@ -411,39 +504,55 @@
   z-index: 11;
   display: flex;
   gap: 0.5rem;
-  padding: 1rem 0 0.5rem 0;
-  margin-bottom: 0.5rem;
-  background: var(--hub-card-bg);
+  padding: 1rem 0 0.75rem 0;
+  margin-bottom: 0.75rem;
+  background: linear-gradient(to bottom, var(--hub-bg-start) 0%, var(--hub-bg-start) 80%, transparent 100%);
+  -webkit-backdrop-filter: blur(8px);
+  backdrop-filter: blur(8px);
 }
 
 .view-button {
   display: flex;
   align-items: center;
   gap: 0.5rem;
-  padding: 0.5rem 1rem;
-  background: var(--bg-tertiary);
-  border: 1px solid var(--hub-border);
+  padding: 0.625rem 1rem;
+  background: var(--hub-card-bg);
+  border: 1.5px solid var(--hub-border);
   border-radius: 8px;
   color: var(--hub-text-secondary);
-  font-size: 0.9rem;
+  font-size: 0.875rem;
+  font-weight: 500;
   cursor: pointer;
-  transition: all 0.2s;
+  transition: all 0.2s ease;
+  box-shadow: var(--hub-shadow-sm);
 }
 
 .view-button:hover:not(:disabled) {
   background: var(--hub-card-hover);
+  border-color: var(--hub-accent-start);
   color: var(--hub-text);
+  box-shadow: var(--hub-shadow-md);
 }
 
 .view-button.active {
-  background: var(--hub-header-bg);
+  background: linear-gradient(135deg, rgba(225, 29, 72, 0.08) 0%, rgba(219, 39, 119, 0.08) 100%);
   border-color: var(--hub-accent-start);
   color: var(--hub-accent-start);
+  font-weight: 600;
+  box-shadow: var(--hub-shadow-md);
 }
 
 .view-button:disabled {
   opacity: 0.5;
   cursor: not-allowed;
+  background: #f1f5f9;  /* slate-100 */
+}
+
+/* Sprint 7: View button focus indicator */
+.view-button:focus-visible {
+  outline: 3px solid var(--hub-focus-ring);
+  outline-offset: 3px;
+  box-shadow: 0 0 0 3px rgba(225, 29, 72, 0.2);
 }
 
 /* Tabs */
@@ -455,54 +564,71 @@
   gap: 0.5rem;
   padding: 0.5rem 0 1rem 0;
   margin-bottom: 1rem;
-  background: var(--hub-card-bg);
+  background: linear-gradient(to bottom, var(--hub-bg-start) 0%, var(--hub-bg-start) 70%, transparent 100%);
   border-bottom: 2px solid var(--hub-border);
-  box-shadow: 0 2px 4px rgba(0, 0, 0, 0.05);
+  box-shadow: 0 2px 8px rgba(15, 23, 42, 0.06);
+  -webkit-backdrop-filter: blur(8px);
+  backdrop-filter: blur(8px);
 }
 
 .tab-button {
   display: flex;
   align-items: center;
   gap: 0.5rem;
-  padding: 0.75rem 1.5rem;
+  padding: 0.875rem 1.5rem;
   background: transparent;
   border: none;
   border-bottom: 3px solid transparent;
   color: var(--hub-text-secondary);
   font-size: 1rem;
+  font-weight: 500;
   cursor: pointer;
-  transition: all 0.2s;
+  transition: all 0.2s ease;
   position: relative;
   margin-bottom: -1rem;
 }
 
 .tab-button:hover {
   color: var(--hub-text);
-  background: var(--hub-header-bg);
+  background: linear-gradient(135deg, rgba(225, 29, 72, 0.04) 0%, rgba(219, 39, 119, 0.04) 100%);
+  border-radius: 8px 8px 0 0;
 }
 
 .tab-button.active {
   color: var(--hub-accent-start);
+  font-weight: 600;
   border-bottom-color: var(--hub-accent-start);
+  background: linear-gradient(135deg, rgba(225, 29, 72, 0.06) 0%, rgba(219, 39, 119, 0.06) 100%);
+  border-radius: 8px 8px 0 0;
+}
+
+/* Sprint 7: Tab button focus indicator */
+.tab-button:focus-visible {
+  outline: 3px solid var(--hub-focus-ring);
+  outline-offset: 2px;
+  z-index: 1;
 }
 
 .tab-badge {
   display: inline-flex;
   align-items: center;
   justify-content: center;
-  min-width: 20px;
-  height: 20px;
-  padding: 0 6px;
-  background: var(--hub-insights-bg);
-  border-radius: 10px;
+  min-width: 22px;
+  height: 22px;
+  padding: 0 7px;
+  background: #ffe4e6;  /* rose-100 */
+  border: 1px solid #fda4af;  /* rose-300 */
+  border-radius: 11px;
   font-size: 0.75rem;
-  font-weight: 600;
-  color: var(--hub-accent-start);
+  font-weight: 700;
+  color: #be123c;  /* rose-700 - High contrast */
+  box-shadow: var(--hub-shadow-sm);
 }
 
 .tab-badge.urgent {
-  background: rgba(239, 68, 68, 0.3);
-  color: #fca5a5;
+  background: #fee2e2;  /* red-100 */
+  border-color: #fca5a5;  /* red-300 */
+  color: #991b1b;  /* red-800 - Maximum contrast */
 }
 
 /* Filter Bar */
@@ -510,11 +636,12 @@
   display: flex;
   justify-content: space-between;
   align-items: center;
-  padding: 1rem;
-  background: var(--bg-tertiary);
-  border: 1px solid var(--hub-border);
+  padding: 1rem 1.25rem;
+  background: var(--hub-card-bg);
+  border: 2px solid var(--hub-border);
   border-radius: 8px;
   margin-bottom: 1rem;
+  box-shadow: var(--hub-shadow-sm);
 }
 
 .filter-controls {
@@ -525,59 +652,96 @@
 }
 
 .filter-select {
-  padding: 0.5rem 0.75rem;
+  padding: 0.625rem 0.875rem;
   background: var(--hub-card-bg);
-  border: 1px solid var(--hub-border);
+  border: 1.5px solid var(--hub-border);
   border-radius: 6px;
   color: var(--hub-text);
-  font-size: 0.9rem;
+  font-size: 0.875rem;
+  font-weight: 500;
   cursor: pointer;
-  transition: all 0.2s;
+  transition: all 0.2s ease;
+  box-shadow: var(--hub-shadow-sm);
 }
 
 .filter-select:hover {
   background: var(--hub-card-hover);
   border-color: var(--hub-accent-start);
+  box-shadow: var(--hub-shadow-md);
 }
 
 .filter-select:focus {
   outline: none;
   border-color: var(--hub-accent-start);
+  box-shadow: 0 0 0 3px rgba(225, 29, 72, 0.1);
+}
+
+/* Sprint 7: Filter select focus indicator */
+.filter-select:focus-visible {
+  outline: 3px solid var(--hub-focus-ring);
+  outline-offset: 2px;
+  border-color: var(--hub-accent-start);
+  box-shadow: 0 0 0 4px rgba(225, 29, 72, 0.15);
 }
 
 .filter-checkbox {
   display: flex;
   align-items: center;
   gap: 0.5rem;
-  font-size: 0.9rem;
+  font-size: 0.875rem;
+  font-weight: 500;
   color: var(--hub-text);
   cursor: pointer;
+  padding: 0.375rem 0.625rem;
+  border-radius: 6px;
+  transition: all 0.2s ease;
+}
+
+.filter-checkbox:hover {
+  background: var(--hub-card-hover);
 }
 
 .filter-checkbox input[type="checkbox"] {
-  width: 16px;
-  height: 16px;
+  width: 18px;
+  height: 18px;
   cursor: pointer;
+  accent-color: var(--hub-accent-start);
+  border: 1.5px solid var(--hub-border);
+  border-radius: 4px;
+}
+
+.filter-checkbox input[type="checkbox"]:focus-visible {
+  outline: 2px solid var(--hub-focus-ring);
+  outline-offset: 2px;
 }
 
 .refresh-button {
   display: flex;
   align-items: center;
   justify-content: center;
-  width: 36px;
-  height: 36px;
+  width: 40px;
+  height: 40px;
   background: var(--hub-card-bg);
-  border: 1px solid var(--hub-border);
+  border: 1.5px solid var(--hub-border);
   border-radius: 6px;
-  color: var(--hub-text);
+  color: var(--hub-text-secondary);
   cursor: pointer;
-  transition: all 0.2s;
+  transition: all 0.2s ease;
+  box-shadow: var(--hub-shadow-sm);
 }
 
 .refresh-button:hover {
   background: var(--hub-card-hover);
   border-color: var(--hub-accent-start);
+  color: var(--hub-accent-start);
   transform: rotate(90deg);
+  box-shadow: var(--hub-shadow-md);
+}
+
+.refresh-button:focus-visible {
+  outline: 3px solid var(--hub-focus-ring);
+  outline-offset: 3px;
+  box-shadow: 0 0 0 3px rgba(225, 29, 72, 0.2);
 }
 
 /* Content Area */
@@ -678,7 +842,7 @@
   display: flex;
   align-items: center;
   gap: 0.5rem;
-  padding: 0.75rem 1.5rem;
+  padding: 0.875rem 1.75rem;
   background: linear-gradient(135deg, var(--hub-accent-start) 0%, var(--hub-accent-end) 100%);
   border: none;
   border-radius: 8px;
@@ -686,12 +850,19 @@
   font-size: 1rem;
   font-weight: 600;
   cursor: pointer;
-  transition: all 0.2s;
+  transition: all 0.2s ease;
+  box-shadow: var(--hub-shadow-md);
 }
 
 .empty-state-button:hover {
   transform: translateY(-2px);
-  box-shadow: 0 4px 12px rgba(244, 63, 94, 0.4);
+  box-shadow: 0 8px 20px rgba(225, 29, 72, 0.35);
+}
+
+.empty-state-button:focus-visible {
+  outline: 3px solid var(--hub-focus-ring);
+  outline-offset: 3px;
+  box-shadow: 0 0 0 4px rgba(225, 29, 72, 0.25);
 }
 
 /* ============================================
@@ -881,10 +1052,10 @@
   align-items: center;
   gap: 1rem;
   padding: 1rem 1.5rem;
-  background: var(--bg-secondary, #ffffff);
-  border: 1px solid var(--hub-border, #e7e5e4);
+  background: var(--hub-card-bg, #ffffff);
+  border: 2px solid var(--hub-border, #cbd5e1);
   border-radius: 12px;
-  box-shadow: 0 8px 24px rgba(0, 0, 0, 0.15);
+  box-shadow: 0 10px 30px rgba(15, 23, 42, 0.15);
   z-index: 1001;
   animation: slideUpSnackbar 0.3s ease-out;
 }
@@ -901,28 +1072,35 @@
 }
 
 .undo-snackbar span {
-  font-size: 0.9rem;
-  color: var(--hub-text, #1c1917);
+  font-size: 0.875rem;
+  font-weight: 500;
+  color: var(--hub-text, #0f172a);
 }
 
 .undo-snackbar-button {
   display: flex;
   align-items: center;
   gap: 0.375rem;
-  padding: 0.5rem 1rem;
+  padding: 0.625rem 1.125rem;
   background: linear-gradient(135deg, var(--hub-accent-start) 0%, var(--hub-accent-end) 100%);
   border: none;
   border-radius: 6px;
   color: white;
-  font-size: 0.85rem;
+  font-size: 0.875rem;
   font-weight: 600;
   cursor: pointer;
-  transition: all 0.2s;
+  transition: all 0.2s ease;
+  box-shadow: var(--hub-shadow-sm);
 }
 
 .undo-snackbar-button:hover {
-  box-shadow: 0 4px 12px rgba(244, 63, 94, 0.4);
+  box-shadow: 0 6px 16px rgba(225, 29, 72, 0.35);
   transform: translateY(-1px);
+}
+
+.undo-snackbar-button:focus-visible {
+  outline: 2px solid var(--hub-focus-ring);
+  outline-offset: 2px;
 }
 
 .undo-snackbar-close {
@@ -980,13 +1158,17 @@
   width: 100%;
   max-width: 1200px;
   max-height: 90vh;
-  background: var(--bg-secondary);
+  background: var(--hub-card-bg, #ffffff);
   border: 1px solid var(--hub-border);
   border-radius: 16px;
   box-shadow: 0 20px 60px rgba(0, 0, 0, 0.5);
   display: flex;
   flex-direction: column;
   overflow: hidden;
+}
+
+.dark .decision-mission-container {
+  background: var(--hub-card-bg, #171717);
 }
 
 .decision-mission-header {
@@ -1022,6 +1204,24 @@
   display: flex;
   flex-direction: column;
   gap: 1rem;
+}
+
+/* Sprint 7: Virtualized list container */
+.tasks-list-virtualized {
+  /* Remove gap since virtualization handles spacing internally */
+  gap: 0;
+}
+
+.tasks-list-virtualized > div {
+  /* Ensure virtualized container fills parent */
+  width: 100% !important;
+}
+
+/* Ensure individual task cards have proper spacing */
+.tasks-list-virtualized .task-card,
+.tasks-list-virtualized > div > div {
+  margin-bottom: 1rem;
+  padding: 0 0.25rem;
 }
 
 /* ============================================

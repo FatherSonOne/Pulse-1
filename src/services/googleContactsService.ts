@@ -96,42 +96,59 @@ const AVATAR_COLORS = [
   'bg-teal-500',
 ];
 
-// Refresh Google access token using the refresh token
+// Refresh Google access token using the backend endpoint (secure with client_secret)
 const refreshGoogleAccessToken = async (refreshToken: string): Promise<string | null> => {
-  const clientId = import.meta.env.VITE_GOOGLE_CLIENT_ID;
-
-  if (!clientId || !refreshToken) {
-    console.warn('[Google Contacts] Missing client ID or refresh token for Google token refresh');
+  if (!refreshToken) {
+    console.warn('[Google Contacts] Missing refresh token for Google token refresh');
     return null;
   }
 
   try {
-    const response = await fetch('https://oauth2.googleapis.com/token', {
+    // Get Supabase session for authentication with backend
+    const { data: { session } } = await supabase.auth.getSession();
+    if (!session?.access_token) {
+      console.warn('[Google Contacts] No Supabase session available for backend authentication');
+      return null;
+    }
+
+    // ✅ Call backend endpoint with client secret (secure)
+    const backendUrl = import.meta.env.VITE_BACKEND_URL || 'http://localhost:3003';
+    const response = await fetch(`${backendUrl}/api/google/refresh-token`, {
       method: 'POST',
       headers: {
-        'Content-Type': 'application/x-www-form-urlencoded',
+        'Content-Type': 'application/json',
+        'Authorization': `Bearer ${session.access_token}`
       },
-      body: new URLSearchParams({
-        client_id: clientId,
-        grant_type: 'refresh_token',
-        refresh_token: refreshToken,
-      }),
+      body: JSON.stringify({ refresh_token: refreshToken }),
     });
 
     if (!response.ok) {
       const errorData = await response.json().catch(() => ({}));
-      console.error('[Google Contacts] Google token refresh failed:', errorData);
+      console.error('[Google Contacts] Backend token refresh failed:', errorData);
+
+      // Check if re-authentication is required
+      if (errorData.requiresReauth || errorData.code === 'INVALID_GRANT') {
+        const error = new Error('Your Google session has expired. Please reconnect your Google account.');
+        (error as any).code = 'GOOGLE_CONTACTS_SESSION_EXPIRED';
+        (error as any).requiresReauth = true;
+        throw error;
+      }
+
       return null;
     }
 
     const data = await response.json();
     if (data.access_token) {
-      console.log('[Google Contacts] Successfully refreshed Google access token');
+      console.log('[Google Contacts] Successfully refreshed Google access token via backend');
       return data.access_token;
     }
 
     return null;
   } catch (error) {
+    // Re-throw auth errors so they can be caught by UI
+    if ((error as any).requiresReauth) {
+      throw error;
+    }
     console.error('[Google Contacts] Error refreshing Google token:', error);
     return null;
   }

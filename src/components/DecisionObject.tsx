@@ -73,7 +73,7 @@ export const DecisionObject: React.FC<DecisionObjectProps> = ({
     const vote = await decisionService.castVote({
       decision_id: decision.id,
       user_id: currentUserId,
-      vote: choice
+      choice: choice
     });
 
     if (vote) {
@@ -85,8 +85,8 @@ export const DecisionObject: React.FC<DecisionObjectProps> = ({
     if (!decision?.votes) return null;
     const userVote = decision.votes.find(v => v.user_id === currentUserId);
     if (!userVote) return null;
-    if (userVote.vote === 'approve' || userVote.vote === 'reject') {
-      return userVote.vote;
+    if (userVote.choice === 'approve' || userVote.choice === 'reject') {
+      return userVote.choice;
     }
     return null;
   };

@@ -1,48 +1,51 @@
 
 import { Capacitor } from '@capacitor/core';
-import React, { useState, useEffect, useCallback, useRef } from 'react';
+import React, { useState, useEffect, useCallback, useRef, lazy, Suspense } from 'react';
 import LiveSession from './components/LiveSession';
 import PulseChat from './components/PulseChat';
 import { PulseVoiceChat } from './components/VoiceChat';
-import LiveDashboard from './components/LiveDashboard';
-import Voxer from './components/Voxer';
-import Messages from './components/Messages';
-import SMS from './components/SMS';
-import { Meetings } from './components/Meetings';
-import Calendar from './components/Calendar';
-import Contacts from './components/Contacts';
-import Settings from './components/Settings';
-import Login from './components/Login';
-import EmailClient from './components/Email/EmailClientWrapper';
-import Archives from './components/Archives';
-import Dashboard from './components/Dashboard';
-import Tools from './components/Tools';
-import AILabHubRedesigned from './components/AILab/AILabHubRedesigned';
 import MessageContainer from './components/MessageContainer';
-import { DecisionTaskHub } from './components/decisions/DecisionTaskHub';
-import AdminDashboard from './components/AdminDashboard';
-import MessageAnalytics from './components/MessageAnalytics';
+import Login from './components/Login';
 import PrivacyPolicy from './components/PrivacyPolicy';
 import TermsOfService from './components/TermsOfService';
 import LandingPage from './components/LandingPage';
+
+// Lazy-load route components for better code splitting
+const Messages = lazy(() => import('./components/Messages'));
+const LiveDashboard = lazy(() => import('./components/LiveDashboard'));
+const DecisionTaskHub = lazy(() => import('./components/decisions/DecisionTaskHub').then(module => ({ default: module.DecisionTaskHub })));
+const EmailClient = lazy(() => import('./components/Email/EmailClientWrapper'));
+const Calendar = lazy(() => import('./components/Calendar'));
+const AILabHubRedesigned = lazy(() => import('./components/AILab/AILabHubRedesigned'));
+const Settings = lazy(() => import('./components/Settings'));
+const Voxer = lazy(() => import('./components/Voxer'));
+const SMS = lazy(() => import('./components/SMS'));
+const Meetings = lazy(() => import('./components/Meetings').then(module => ({ default: module.Meetings })));
+const Contacts = lazy(() => import('./components/Contacts'));
+const Archives = lazy(() => import('./components/Archives'));
+const Dashboard = lazy(() => import('./components/Dashboard'));
+const AdminDashboard = lazy(() => import('./components/AdminDashboard'));
+const MessageAnalytics = lazy(() => import('./components/MessageAnalytics'));
+const UnifiedSearchRedesign = lazy(() => import('./components/UnifiedSearchRedesign'));
+const TestMatrix = lazy(() => import('./components/TestMatrix'));
+const AnalyticsDashboard = lazy(() => import('./components/Analytics').then(module => ({ default: module.AnalyticsDashboard })));
+
 import { ChatProvider } from './context/ChatContext';
 import { ChatInterface } from './components/ChatInterface';
 import { SocialHealthMonitor } from './components/health/SocialHealthMonitor';
 import { ContextHandoff } from './components/health/ContextHandoff';
 import { NotificationCenter } from './components/NotificationCenter';
+import { LoadingProvider, useLoading } from './contexts/LoadingContext';
+import EnhancedLoadingScreen from './components/EnhancedLoadingScreen';
 import { loginWithGoogle, loginWithEmail, signUpWithEmail, loginWithMicrosoft, syncGoogleContacts } from './services/authService';
 import { dataService } from './services/dataService';
 import { useNotificationStore } from './store/notificationStore';
 import { Contact, AppView } from './types';
 import { Analytics } from '@vercel/analytics/react';
-import UnifiedSearch from './components/UnifiedSearch';
-import UnifiedSearchRedesign from './components/UnifiedSearchRedesign';
-import TestMatrix from './components/TestMatrix';
 import LogoPreview, { LogoOption } from './components/LogoPreview';
 import GoogleAccountSelector from './components/GoogleAccountSelector';
 import { ExtensionLogin, ExtensionOAuthCallback, ExtensionCallback, ExtensionError } from './components/ExtensionAuth';
 import { ApiDocumentation } from './components/ApiKeys';
-import { AnalyticsDashboard } from './components/Analytics';
 import { VoiceCommandButton } from './components/VoiceCommands';
 import PulseVoiceLogo from './components/PulseVoiceLogo';
 import { voiceCommandService } from './services/voiceCommandService';
@@ -52,6 +55,26 @@ import { settingsService } from './services/settingsService';
 import { usePresence } from './hooks/usePresence';
 import { Sidebar } from './components/Sidebar';
 import { useAuth } from './hooks/useAuth';
+
+// Loading fallback component for lazy-loaded routes
+const PageLoader = () => (
+  <div className="h-full w-full flex items-center justify-center">
+    <div className="flex flex-col items-center gap-4">
+      <div className="w-16 h-16 bg-[#0f172a] rounded-2xl flex items-center justify-center shadow-lg shadow-rose-500/20 animate-pulse">
+        <svg viewBox="0 0 64 64" className="w-12 h-12">
+          <defs>
+            <linearGradient id="pulse-grad-loader" x1="0%" y1="0%" x2="100%" y2="100%">
+              <stop offset="0%" stopColor="#f43f5e"/>
+              <stop offset="100%" stopColor="#ec4899"/>
+            </linearGradient>
+          </defs>
+          <path d="M8 32 L18 32 L24 16 L32 48 L40 24 L48 40 L56 32" stroke="url(#pulse-grad-loader)" strokeWidth="5" strokeLinecap="round" strokeLinejoin="round" fill="none"/>
+        </svg>
+      </div>
+      <p className="text-zinc-400 text-sm">Loading...</p>
+    </div>
+  </div>
+);
 
 const App: React.FC = () => {
   // Check for public routes that don't require authentication
@@ -292,39 +315,42 @@ const App: React.FC = () => {
     );
   }, [isSidebarCollapsed]);
 
-  // Load contacts from database and sync with Google Contacts
+  // Load contacts from database and sync with Google Contacts (optimized, non-blocking)
   const loadContacts = useCallback(async (syncGoogle = false) => {
     setIsLoadingContacts(true);
+
     try {
-      // Load local contacts from Supabase
+      // STEP 1: Load local contacts from Supabase (FAST - unblocks UI immediately)
       const dbContacts = await dataService.getContacts();
       setContacts(dbContacts);
+      setIsLoadingContacts(false); // ✅ Unblock UI now - don't wait for Google sync
 
-      // Auto-sync Google Contacts if user is connected with Google
+      // STEP 2: Sync Google Contacts in background (SLOW - non-blocking)
       if (syncGoogle) {
-        try {
-          const googleContacts = await syncGoogleContacts();
-          if (googleContacts.length > 0) {
-            // Merge Google contacts, avoiding duplicates by email
-            setContacts(prev => {
-              const existingEmails = new Set(prev.map(c => c.email?.toLowerCase()).filter(Boolean));
-              const newGoogleContacts = googleContacts.filter(
-                gc => gc.email && !existingEmails.has(gc.email.toLowerCase())
-              );
-              if (newGoogleContacts.length > 0) {
-                console.log(`Added ${newGoogleContacts.length} new contacts from Google`);
-              }
-              return [...prev, ...newGoogleContacts];
-            });
-          }
-        } catch (error) {
-          console.warn('Google Contacts sync failed (optional):', error);
-          // Don't fail the whole load if Google sync fails
-        }
+        // Don't await - run in background
+        syncGoogleContacts()
+          .then(googleContacts => {
+            if (googleContacts && googleContacts.length > 0) {
+              // Merge Google contacts, avoiding duplicates by email
+              setContacts(prev => {
+                const existingEmails = new Set(prev.map(c => c.email?.toLowerCase()).filter(Boolean));
+                const newGoogleContacts = googleContacts.filter(
+                  gc => gc.email && !existingEmails.has(gc.email.toLowerCase())
+                );
+                if (newGoogleContacts.length > 0) {
+                  console.log(`✅ Added ${newGoogleContacts.length} new contacts from Google (background sync)`);
+                }
+                return [...prev, ...newGoogleContacts];
+              });
+            }
+          })
+          .catch(error => {
+            console.warn('⚠️ Google Contacts sync failed (optional, non-blocking):', error);
+            // Silent failure - Google sync is optional and shouldn't block the app
+          });
       }
     } catch (error) {
-      console.error('Failed to load contacts:', error);
-    } finally {
+      console.error('❌ Failed to load contacts:', error);
       setIsLoadingContacts(false);
     }
   }, []);
@@ -513,88 +539,77 @@ const App: React.FC = () => {
   };
 
   const renderContent = () => {
-    switch (view) {
-      case AppView.LIVE:
-        return <PulseVoiceChat apiKey={apiKey} userId={user?.id} onClose={() => setView(AppView.DASHBOARD)} />;
-      case AppView.VOXER:
-        return <Voxer apiKey={apiKey} contacts={contacts} initialContactId={selectedContactId} isDarkMode={isDarkMode} />;
-      case AppView.MESSAGES:
-        return <Messages apiKey={apiKey} contacts={contacts} initialContactId={selectedContactId} onAddContact={handleAddContact} />;
-      case AppView.SMS:
-        return <SMS contacts={contacts} />;
-      case AppView.MEETINGS:
-        return <Meetings apiKey={apiKey} contacts={contacts} initialContactId={selectedContactId} initialMeetingCode={initialMeetingCode || undefined} />;
-      case AppView.CALENDAR:
-        return <Calendar contacts={contacts} openTaskPanel={openTaskPanel} onNavigateToIntegrations={() => { setSettingsSection('integrations'); setView(AppView.SETTINGS); }} />;
-      case AppView.CONTACTS:
-        return <Contacts contacts={contacts} onAction={handleContactAction} onSyncComplete={handleSyncContacts} onUpdateContact={handleUpdateContact} onAddContact={handleAddContact} openAddContact={openAddContact} />;
-      case AppView.EMAIL:
-        return user ? <EmailClient user={user} onUpdateUser={() => setUser({...user})} apiKey={apiKey} /> : null;
-      case AppView.ARCHIVES:
-        return <Archives />;
-      case AppView.SETTINGS:
-        return <Settings 
-          user={user} 
-          isDarkMode={isDarkMode} 
-          toggleTheme={toggleTheme} 
-          initialSection={settingsSection}
-        />;
-      case AppView.TOOLS:
-        return <AILabHubRedesigned apiKey={apiKey} isDarkMode={isDarkMode} />;
-      case AppView.MESSAGE_ADMIN:
-        return <AdminDashboard userId={user?.id || ''} />;
-      case AppView.MESSAGE_ANALYTICS:
-        return <MessageAnalytics />;
-      case AppView.MULTI_MODAL:
-        // Using the Redesigned Search Page
-        return <UnifiedSearchRedesign />;
-      case AppView.TEST_MATRIX:
-        return <TestMatrix />;
-      case AppView.ANALYTICS:
-        return <AnalyticsDashboard onClose={() => setView(AppView.DASHBOARD)} />;
-      case AppView.LIVE_AI:
-        return <LiveDashboard apiKey={apiKey} userId={user?.id || ''} />;
-      case AppView.DECISIONS_TASKS:
-        return <DecisionTaskHub user={user} />;
-      case AppView.DASHBOARD:
-      default:
-        return <Dashboard user={user} apiKey={apiKey} setView={(v, options) => { 
-          setView(v); 
-          setIsMobileMenuOpen(false);
-          if (options?.openTaskPanel) {
-            setOpenTaskPanel(true);
-            // Reset after a brief delay to allow Calendar to read it
-            setTimeout(() => setOpenTaskPanel(false), 100);
+    return (
+      <Suspense fallback={<PageLoader />}>
+        {(() => {
+          switch (view) {
+            case AppView.LIVE:
+              return <PulseVoiceChat apiKey={apiKey} userId={user?.id} onClose={() => setView(AppView.DASHBOARD)} />;
+            case AppView.VOXER:
+              return <Voxer apiKey={apiKey} contacts={contacts} initialContactId={selectedContactId} isDarkMode={isDarkMode} />;
+            case AppView.MESSAGES:
+              return <Messages apiKey={apiKey} contacts={contacts} initialContactId={selectedContactId} onAddContact={handleAddContact} />;
+            case AppView.SMS:
+              return <SMS contacts={contacts} />;
+            case AppView.MEETINGS:
+              return <Meetings apiKey={apiKey} contacts={contacts} initialContactId={selectedContactId} initialMeetingCode={initialMeetingCode || undefined} />;
+            case AppView.CALENDAR:
+              return <Calendar contacts={contacts} openTaskPanel={openTaskPanel} onNavigateToIntegrations={() => { setSettingsSection('integrations'); setView(AppView.SETTINGS); }} />;
+            case AppView.CONTACTS:
+              return <Contacts contacts={contacts} onAction={handleContactAction} onSyncComplete={handleSyncContacts} onUpdateContact={handleUpdateContact} onAddContact={handleAddContact} openAddContact={openAddContact} />;
+            case AppView.EMAIL:
+              return user ? <EmailClient user={user} onUpdateUser={() => setUser({...user})} apiKey={apiKey} /> : null;
+            case AppView.ARCHIVES:
+              return <Archives />;
+            case AppView.SETTINGS:
+              return <Settings
+                user={user}
+                isDarkMode={isDarkMode}
+                toggleTheme={toggleTheme}
+                initialSection={settingsSection}
+              />;
+            case AppView.TOOLS:
+              return <AILabHubRedesigned apiKey={apiKey} isDarkMode={isDarkMode} />;
+            case AppView.MESSAGE_ADMIN:
+              return <AdminDashboard userId={user?.id || ''} />;
+            case AppView.MESSAGE_ANALYTICS:
+              return <MessageAnalytics />;
+            case AppView.MULTI_MODAL:
+              // Using the Redesigned Search Page
+              return <UnifiedSearchRedesign />;
+            case AppView.TEST_MATRIX:
+              return <TestMatrix />;
+            case AppView.ANALYTICS:
+              return <AnalyticsDashboard onClose={() => setView(AppView.DASHBOARD)} />;
+            case AppView.LIVE_AI:
+              return <LiveDashboard apiKey={apiKey} userId={user?.id || ''} />;
+            case AppView.DECISIONS_TASKS:
+              return <DecisionTaskHub user={user} />;
+            case AppView.DASHBOARD:
+            default:
+              return <Dashboard user={user} apiKey={apiKey} setView={(v, options) => {
+                setView(v);
+                setIsMobileMenuOpen(false);
+                if (options?.openTaskPanel) {
+                  setOpenTaskPanel(true);
+                  // Reset after a brief delay to allow Calendar to read it
+                  setTimeout(() => setOpenTaskPanel(false), 100);
+                }
+                if (options?.openAddContact) {
+                  setOpenAddContact(true);
+                  // Reset after a brief delay to allow Contacts to read it
+                  setTimeout(() => setOpenAddContact(false), 100);
+                }
+              }} />;
           }
-          if (options?.openAddContact) {
-            setOpenAddContact(true);
-            // Reset after a brief delay to allow Contacts to read it
-            setTimeout(() => setOpenAddContact(false), 100);
-          }
-        }} />;
-    }
+        })()}
+      </Suspense>
+    );
   };
 
-  // Show loading spinner while checking auth
+  // Show enhanced loading screen while checking auth
   if (isAuthLoading) {
-    return (
-      <div className="h-screen w-screen bg-zinc-950 flex items-center justify-center">
-        <div className="flex flex-col items-center gap-4">
-          <div className="w-16 h-16 bg-[#0f172a] rounded-2xl flex items-center justify-center shadow-lg shadow-rose-500/20 animate-pulse">
-            <svg viewBox="0 0 64 64" className="w-12 h-12">
-              <defs>
-                <linearGradient id="pulse-grad-loading" x1="0%" y1="0%" x2="100%" y2="100%">
-                  <stop offset="0%" stopColor="#f43f5e"/>
-                  <stop offset="100%" stopColor="#ec4899"/>
-                </linearGradient>
-              </defs>
-              <path d="M8 32 L18 32 L24 16 L32 48 L40 24 L48 40 L56 32" stroke="url(#pulse-grad-loading)" strokeWidth="5" strokeLinecap="round" strokeLinejoin="round" fill="none"/>
-            </svg>
-          </div>
-          <p className="text-zinc-400 text-sm">Loading Pulse...</p>
-        </div>
-      </div>
-    );
+    return <EnhancedLoadingScreen />;
   }
 
   // Show landing page or login for non-authenticated users

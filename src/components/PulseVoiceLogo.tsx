@@ -91,7 +91,7 @@ export const PulseVoiceLogo: React.FC<PulseVoiceLogoProps> = ({
           // Show visual feedback briefly, then open modal
           wakeWordTimeoutRef.current = setTimeout(() => {
             setWakeWordActive(false);
-            setShowModal(true);
+            setShowVoiceUI(true);
           }, 500);
 
           return;
@@ -107,7 +107,7 @@ export const PulseVoiceLogo: React.FC<PulseVoiceLogoProps> = ({
 
     recognition.onend = () => {
       // Restart wake word detection if still enabled and modal not open
-      if (wakeWordListening && !showModal) {
+      if (wakeWordListening && !showVoiceUI) {
         setTimeout(() => {
           try {
             recognition.start();
@@ -141,12 +141,16 @@ export const PulseVoiceLogo: React.FC<PulseVoiceLogoProps> = ({
 
   // Start/stop wake word detection based on state
   useEffect(() => {
+    /* 
+    Disable default wake word detection to prevent flickering and confusion
     if (wakeWordListening && !showVoiceUI) {
       startWakeWordDetection();
     } else if (recognitionRef.current) {
       recognitionRef.current.stop();
     }
+    */
 
+    // Just ensure it stops if we unmount or change state
     return () => {
       if (recognitionRef.current) {
         recognitionRef.current.stop();
@@ -201,14 +205,14 @@ export const PulseVoiceLogo: React.FC<PulseVoiceLogoProps> = ({
             <svg viewBox="0 0 64 64" className="pulse-logo-svg">
               <defs>
                 <linearGradient id="pulse-grad-voice" x1="0%" y1="0%" x2="100%" y2="100%">
-                  <stop offset="0%" stopColor="#f43f5e"/>
-                  <stop offset="100%" stopColor="#ec4899"/>
+                  <stop offset="0%" stopColor="#f43f5e" />
+                  <stop offset="100%" stopColor="#ec4899" />
                 </linearGradient>
                 <filter id="glow">
-                  <feGaussianBlur stdDeviation="2" result="coloredBlur"/>
+                  <feGaussianBlur stdDeviation="2" result="coloredBlur" />
                   <feMerge>
-                    <feMergeNode in="coloredBlur"/>
-                    <feMergeNode in="SourceGraphic"/>
+                    <feMergeNode in="coloredBlur" />
+                    <feMergeNode in="SourceGraphic" />
                   </feMerge>
                 </filter>
               </defs>
@@ -242,7 +246,7 @@ export const PulseVoiceLogo: React.FC<PulseVoiceLogoProps> = ({
                   Say "Hey Pulse"
                 </span>
               ) : (
-                'Voice Ready'
+                'Click for AI'
               )}
             </span>
           </div>
@@ -250,16 +254,18 @@ export const PulseVoiceLogo: React.FC<PulseVoiceLogoProps> = ({
 
         {/* Wake word toggle (only visible when expanded) */}
         {!collapsed && (
-          <button
-            className={`wake-word-toggle ${wakeWordListening ? 'active' : ''}`}
-            onClick={(e) => {
-              e.stopPropagation();
-              toggleWakeWord();
-            }}
-            title={wakeWordListening ? 'Disable wake word' : 'Enable "Hey Pulse" wake word'}
-          >
-            <i className={`fa ${wakeWordListening ? 'fa-ear-listen' : 'fa-ear-deaf'}`}></i>
-          </button>
+          // Hidden to prevent confusion
+          // <button
+          // className={`wake-word-toggle ${wakeWordListening ? 'active' : ''}`}
+          // onClick={(e) => {
+          //   e.stopPropagation();
+          //   toggleWakeWord();
+          // }}
+          // title={wakeWordListening ? 'Disable wake word' : 'Enable "Hey Pulse" wake word'}
+          // >
+          // <i className={`fa ${wakeWordListening ? 'fa-ear-listen' : 'fa-ear-deaf'}`}></i>
+          // </button>
+          null
         )}
       </div>
 
@@ -283,11 +289,15 @@ export const PulseVoiceLogo: React.FC<PulseVoiceLogoProps> = ({
 
       <style>{`
         .pulse-voice-logo-container {
-          display: flex;
+          display: flex !important;
           align-items: center;
           gap: 12px;
           cursor: pointer;
           position: relative;
+          visibility: visible !important;
+          opacity: 1 !important;
+          flex-shrink: 0;
+          pointer-events: auto;
         }
 
         .pulse-voice-logo-container.collapsed {
@@ -299,30 +309,36 @@ export const PulseVoiceLogo: React.FC<PulseVoiceLogoProps> = ({
           position: relative;
           width: 44px;
           height: 44px;
+          min-width: 44px;
+          min-height: 44px;
           border-radius: 14px;
           background: linear-gradient(135deg, #0f172a 0%, #1e293b 100%);
-          border: none;
+          border: 2px solid rgba(244, 63, 94, 0.3);
           cursor: pointer;
-          display: flex;
+          display: flex !important;
+          visibility: visible !important;
+          opacity: 1 !important;
           align-items: center;
           justify-content: center;
           transition: all 0.3s cubic-bezier(0.4, 0, 0.2, 1);
           box-shadow:
-            0 4px 15px rgba(244, 63, 94, 0.2),
-            0 0 0 0 rgba(244, 63, 94, 0);
-          animation: pulse-entice 3s ease-in-out infinite;
+            0 4px 15px rgba(244, 63, 94, 0.3),
+            0 0 15px rgba(244, 63, 94, 0.2);
+          animation: none;
           flex-shrink: 0;
+          z-index: 10;
         }
 
         .pulse-voice-logo:hover {
-          transform: scale(1.08);
+          transform: scale(1.02);
           box-shadow:
             0 6px 25px rgba(244, 63, 94, 0.35),
             0 0 20px rgba(244, 63, 94, 0.2);
         }
 
         .pulse-voice-logo.hovered {
-          animation: pulse-vibrate 0.3s ease-in-out infinite;
+          /* Disabled vibration animation to prevent flickering */
+          /* animation: pulse-vibrate 0.3s ease-in-out infinite; */
         }
 
         .pulse-voice-logo.wake-word-active {

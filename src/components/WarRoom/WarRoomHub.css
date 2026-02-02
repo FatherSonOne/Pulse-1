@@ -609,6 +609,73 @@
   color: var(--wrh-text);
 }
 
+/* Header Right Section */
+.wrh-header-right {
+  display: flex;
+  align-items: center;
+  gap: 12px;
+}
+
+/* Missions Button */
+.wrh-missions-btn {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  padding: 12px 20px;
+  background: linear-gradient(135deg,
+    var(--wrh-bg-secondary) 0%,
+    var(--wrh-bg) 100%);
+  border: 2px solid var(--wrh-border);
+  border-radius: var(--wrh-radius-lg);
+  font-size: 14px;
+  font-weight: 600;
+  font-family: var(--wrh-font-body);
+  color: var(--wrh-text);
+  cursor: pointer;
+  transition: all 0.35s var(--wrh-ease);
+  position: relative;
+  overflow: hidden;
+}
+
+.wrh-missions-btn::before {
+  content: '';
+  position: absolute;
+  inset: 0;
+  background: radial-gradient(
+    circle at center,
+    rgba(255, 100, 50, 0.08) 0%,
+    transparent 70%
+  );
+  opacity: 0;
+  transition: opacity 0.35s;
+}
+
+.wrh-missions-btn:hover {
+  border-color: hsl(15, 90%, 60%);
+  transform: translateY(-2px);
+  box-shadow:
+    0 8px 24px rgba(255, 100, 50, 0.15),
+    0 0 20px rgba(255, 100, 50, 0.1);
+}
+
+.wrh-missions-btn:hover::before {
+  opacity: 1;
+}
+
+.wrh-missions-btn i {
+  font-size: 16px;
+  color: hsl(15, 85%, 55%);
+  transition: transform 0.25s var(--wrh-ease);
+}
+
+.wrh-missions-btn:hover i {
+  transform: translateY(-2px);
+}
+
+.wrh-missions-btn:active {
+  transform: translateY(0);
+}
+
 /* Search */
 .wrh-search {
   display: flex;
@@ -1078,6 +1145,16 @@
     flex-direction: column;
     align-items: flex-start;
     gap: 16px;
+  }
+
+  .wrh-header-right {
+    width: 100%;
+    flex-direction: column;
+  }
+
+  .wrh-missions-btn {
+    width: 100%;
+    justify-content: center;
   }
 
   .wrh-search {

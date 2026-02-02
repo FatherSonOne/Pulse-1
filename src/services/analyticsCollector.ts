@@ -71,11 +71,20 @@ export const analyticsCollector = {
 
     try {
       // Find the original message we're replying to
-      const { data: originalMessage } = await supabase
+      const { data: originalMessage, error } = await supabase
         .from('unified_messages')
         .select('timestamp, external_id')
         .eq('id', event.replyToId)
         .single();
+
+      // Silently skip if message not found (e.g., Voice Threads not in unified_messages)
+      if (error) {
+        // Only log if it's not a 406/404 error (table doesn't exist or message not found)
+        if (error.code !== 'PGRST116' && !error.message.includes('406')) {
+          console.warn('Could not track reply time:', error.message);
+        }
+        return;
+      }
 
       if (originalMessage) {
         await trackResponseTime(
@@ -88,7 +97,8 @@ export const analyticsCollector = {
         );
       }
     } catch (error) {
-      console.error('Error tracking reply time:', error);
+      // Silently fail for non-critical analytics tracking
+      console.debug('Analytics reply time tracking skipped:', error);
     }
   },
 

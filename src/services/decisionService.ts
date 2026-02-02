@@ -20,7 +20,7 @@ export interface DecisionVote {
   id: string;
   decision_id: string;
   user_id: string;
-  vote: 'approve' | 'reject' | 'abstain' | 'concern';
+  choice: 'approve' | 'reject' | 'abstain' | 'concern';
   comment?: string;
   voted_at: string;
 }
@@ -86,7 +86,7 @@ export const decisionService = {
   async castVote(data: {
     decision_id: string;
     user_id: string;
-    vote: DecisionVote['vote'];
+    choice: DecisionVote['choice'];
     comment?: string;
   }): Promise<DecisionVote | null> {
     const { data: vote, error } = await supabase
@@ -94,7 +94,7 @@ export const decisionService = {
       .upsert({
         decision_id: data.decision_id,
         user_id: data.user_id,
-        vote: data.vote,
+        choice: data.choice,
         comment: data.comment,
         voted_at: new Date().toISOString()
       }, {
@@ -155,10 +155,10 @@ export const decisionService = {
   // Helper to calculate vote counts
   calculateVoteCounts(votes: DecisionVote[]) {
     return {
-      approve: votes.filter(v => v.vote === 'approve').length,
-      reject: votes.filter(v => v.vote === 'reject').length,
-      abstain: votes.filter(v => v.vote === 'abstain').length,
-      concern: votes.filter(v => v.vote === 'concern').length
+      approve: votes.filter(v => v.choice === 'approve').length,
+      reject: votes.filter(v => v.choice === 'reject').length,
+      abstain: votes.filter(v => v.choice === 'abstain').length,
+      concern: votes.filter(v => v.choice === 'concern').length
     };
   },
 

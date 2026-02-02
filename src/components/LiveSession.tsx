@@ -305,13 +305,13 @@ const LiveSession: React.FC<LiveSessionProps> = ({ apiKey, onClose }) => {
     setStatus(ConnectionState.DISCONNECTED);
   }, []);
 
-  const saveTranscript = useCallback(() => {
+  const saveTranscript = useCallback(async () => {
     if (messages.length > 2) {
         const content = messages
           .filter(m => m.role !== 'system')
           .map(m => `${m.role.toUpperCase()}: ${m.text}`)
           .join('\n');
-        
+
         await saveArchiveItem({
             type: 'transcript',
             title: `Live Session ${new Date().toLocaleString()}`,

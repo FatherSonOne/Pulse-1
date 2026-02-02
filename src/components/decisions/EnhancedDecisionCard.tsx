@@ -1,4 +1,4 @@
-import React, { useEffect, useState } from 'react';
+import React, { useEffect, useState, memo } from 'react';
 import { decisionService, DecisionWithVotes, DecisionVote } from '../../services/decisionService';
 import { taskService } from '../../services/taskService';
 import { decisionAnalyticsService, RiskAssessment } from '../../services/decisionAnalyticsService';
@@ -27,7 +27,30 @@ interface VoteResults {
   average_confidence?: number;
 }
 
-export const EnhancedDecisionCard: React.FC<EnhancedDecisionCardProps> = ({
+// Custom comparison function to prevent unnecessary re-renders
+const arePropsEqual = (
+  prevProps: EnhancedDecisionCardProps,
+  nextProps: EnhancedDecisionCardProps
+): boolean => {
+  // Check if decision ID or updated_at changed
+  if (prevProps.decision.id !== nextProps.decision.id) return false;
+  if (prevProps.decision.updated_at !== nextProps.decision.updated_at) return false;
+
+  // Check if votes array length changed (indicates new vote)
+  if ((prevProps.decision.votes?.length || 0) !== (nextProps.decision.votes?.length || 0)) return false;
+
+  // Check if status changed
+  if (prevProps.decision.status !== nextProps.decision.status) return false;
+
+  // Check if user ID or workspace ID changed
+  if (prevProps.currentUserId !== nextProps.currentUserId) return false;
+  if (prevProps.workspaceId !== nextProps.workspaceId) return false;
+
+  // Props are equal, skip re-render
+  return true;
+};
+
+const EnhancedDecisionCardComponent: React.FC<EnhancedDecisionCardProps> = ({
   decision,
   currentUserId,
   workspaceId,
@@ -72,7 +95,7 @@ export const EnhancedDecisionCard: React.FC<EnhancedDecisionCardProps> = ({
         const count = voteCounts[voteType];
         const percentage = totalVotes > 0 ? Math.round((count / totalVotes) * 100) : 0;
         const voters = votes
-          .filter(v => v.vote === voteType)
+          .filter(v => v.choice === voteType)
           .map(v => v.user_id);
 
         choices[voteType] = {
@@ -121,7 +144,7 @@ export const EnhancedDecisionCard: React.FC<EnhancedDecisionCardProps> = ({
       await decisionService.castVote({
         decision_id: decision.id,
         user_id: currentUserId,
-        vote: choice
+        choice: choice
       });
       setHasVoted(true);
       onVote?.();
@@ -246,11 +269,11 @@ export const EnhancedDecisionCard: React.FC<EnhancedDecisionCardProps> = ({
   };
 
   return (
-    <div className={`decision-card enhanced-decision-card status-${decision.status}`}>
+    <div className={`decision-card enhanced-decision-card status-${decision.status}`} role="article" aria-label={`Decision: ${decision.title}`}>
       <div className="decision-header">
         <div className="decision-title">
           <h3>{decision.title}</h3>
-          <div className="decision-badges">
+          <div className="decision-badges" role="group" aria-label="Decision status and risk indicators">
             <div
               className="decision-status"
               style={{
@@ -270,7 +293,7 @@ export const EnhancedDecisionCard: React.FC<EnhancedDecisionCardProps> = ({
                   backgroundColor: `${getRiskColor(riskAssessment.riskLevel)}15`,
                   color: getRiskColor(riskAssessment.riskLevel)
                 }}
-                title={riskAssessment.reasoning}
+                aria-label={`${riskAssessment.riskLevel} risk: ${riskAssessment.reasoning}`}
               >
                 {getRiskIcon(riskAssessment.riskLevel)}
                 <span>{riskAssessment.riskLevel} risk</span>
@@ -337,29 +360,37 @@ export const EnhancedDecisionCard: React.FC<EnhancedDecisionCardProps> = ({
       {decision.status === 'voting' && (
         <div className="decision-voting">
           {!hasVoted ? (
-            <div className="voting-options">
+            <div className="voting-options" role="group" aria-label="Cast your vote">
               <p>Cast your vote:</p>
               <button
+                type="button"
                 className="vote-button vote-approve"
                 onClick={() => handleVote('approve')}
+                aria-label="Vote to approve this decision"
               >
                 Approve
               </button>
               <button
+                type="button"
                 className="vote-button vote-reject"
                 onClick={() => handleVote('reject')}
+                aria-label="Vote to reject this decision"
               >
                 Reject
               </button>
               <button
+                type="button"
                 className="vote-button vote-concern"
                 onClick={() => handleVote('concern')}
+                aria-label="Vote with concern about this decision"
               >
                 Concern
               </button>
               <button
+                type="button"
                 className="vote-button vote-abstain"
                 onClick={() => handleVote('abstain')}
+                aria-label="Abstain from voting on this decision"
               >
                 Abstain
               </button>
@@ -367,7 +398,7 @@ export const EnhancedDecisionCard: React.FC<EnhancedDecisionCardProps> = ({
           ) : (
             <div className="voted-indicator">
               <CheckCircle size={16} />
-              <span>You voted: <strong>{getVoteLabel(userVote?.vote || '')}</strong></span>
+              <span>You voted: <strong>{getVoteLabel(userVote?.choice || '')}</strong></span>
             </div>
           )}
         </div>
@@ -419,33 +450,35 @@ export const EnhancedDecisionCard: React.FC<EnhancedDecisionCardProps> = ({
       )}
 
       {/* AI Action Buttons */}
-      <div className="decision-actions">
+      <div className="decision-actions" role="group" aria-label="Decision actions">
         {decision.status === 'voting' && (
           <button
+            type="button"
             className="action-button send-reminder"
             onClick={handleSendReminder}
-            title="Send reminder to stakeholders who haven't voted"
+            aria-label="Send reminder to stakeholders who haven't voted"
           >
-            <Bell size={16} />
+            <Bell size={16} aria-hidden="true" />
             <span>Send Reminder</span>
           </button>
         )}
 
         {decision.status === 'decided' && (
           <button
+            type="button"
             className="action-button generate-tasks"
             onClick={handleGenerateTasks}
             disabled={generatingTasks}
-            title="Generate tasks from this decision using AI"
+            aria-label={generatingTasks ? "Generating tasks..." : "Generate tasks from this decision using AI"}
           >
             {generatingTasks ? (
               <>
-                <div className="spinner-small"></div>
+                <div className="spinner-small" aria-hidden="true"></div>
                 <span>Generating...</span>
               </>
             ) : (
               <>
-                <ListTodo size={16} />
+                <ListTodo size={16} aria-hidden="true" />
                 <span>Generate Tasks</span>
               </>
             )}
@@ -454,11 +487,12 @@ export const EnhancedDecisionCard: React.FC<EnhancedDecisionCardProps> = ({
 
         {onOpenMission && (
           <button
+            type="button"
             className="action-button view-mission"
             onClick={() => onOpenMission(decision)}
-            title="View in Decision Mission"
+            aria-label="View this decision in Decision Mission"
           >
-            <TrendingUp size={16} />
+            <TrendingUp size={16} aria-hidden="true" />
             <span>View Mission</span>
           </button>
         )}
@@ -466,3 +500,6 @@ export const EnhancedDecisionCard: React.FC<EnhancedDecisionCardProps> = ({
     </div>
   );
 };
+
+// Export memoized component with custom comparison
+export const EnhancedDecisionCard = memo(EnhancedDecisionCardComponent, arePropsEqual);

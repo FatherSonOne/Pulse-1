@@ -42,6 +42,7 @@ import {
   useVideoVoxSearch,
 } from '../../hooks/useVideoVox';
 import { videoVoxService } from '../../services/voxer/videoVoxService';
+import { voxModeService } from '../../services/voxer/voxModeService';
 import type { VideoVoxMessage, VideoVoxConversation, PulseUser } from '../../services/voxer/voxModeTypes';
 import './VideoVoxMode.css';
 
@@ -435,6 +436,7 @@ const VideoVoxMode: React.FC<VideoVoxModeProps> = ({
   const [expandedTranscripts, setExpandedTranscripts] = useState<Set<string>>(new Set());
   const [showRecipientSelector, setShowRecipientSelector] = useState(false);
   const [currentUserId, setCurrentUserId] = useState<string>('');
+  const [pulseContacts, setPulseContacts] = useState<Array<{ id: string; name: string; avatarColor?: string; handle?: string }>>(contacts);
 
   // Hooks
   const { conversations, isLoading: conversationsLoading, totalUnread } = useVideoVoxConversations();
@@ -472,6 +474,16 @@ const VideoVoxMode: React.FC<VideoVoxModeProps> = ({
   useEffect(() => {
     videoVoxService.ensureUserId().then(setCurrentUserId);
   }, []);
+
+  // Load Pulse contacts
+  useEffect(() => {
+    const loadContacts = async () => {
+      const users = await voxModeService.getPulseUsersAsContacts();
+      console.log('Loaded Video Vox contacts:', users.length, users);
+      setPulseContacts(users.length > 0 ? users : contacts);
+    };
+    loadContacts();
+  }, [contacts]);
 
   // Format helpers
   const formatDurationDisplay = (seconds: number): string => {
@@ -783,7 +795,7 @@ const VideoVoxMode: React.FC<VideoVoxModeProps> = ({
             {/* Recipient selector dropdown */}
             {showRecipientSelector && state.status === 'idle' && (
               <RecipientSelector
-                contacts={contacts}
+                contacts={pulseContacts}
                 selectedIds={selectedRecipients}
                 onSelect={handleToggleRecipient}
                 isDarkMode={isDarkMode}
@@ -969,7 +981,7 @@ const VideoVoxMode: React.FC<VideoVoxModeProps> = ({
 
                       <button
                         onClick={handleRecordClick}
-                        disabled={state.status === 'idle' && selectedRecipients.length === 0 && contacts.length > 0}
+                        disabled={state.status === 'idle' && selectedRecipients.length === 0 && pulseContacts.length > 0}
                         className={`vvb-record-btn ${isRecording ? 'recording' : ''}`}
                       >
                         <div className="vvb-record-icon" />
@@ -978,8 +990,8 @@ const VideoVoxMode: React.FC<VideoVoxModeProps> = ({
                   </div>
 
                   <p className="vvb-hint">
-                    {state.status === 'idle' && selectedRecipients.length === 0 && contacts.length > 0 && 'Select recipients first'}
-                    {state.status === 'idle' && (selectedRecipients.length > 0 || contacts.length === 0) && 'Tap to start camera'}
+                    {state.status === 'idle' && selectedRecipients.length === 0 && pulseContacts.length > 0 && 'Select recipients first'}
+                    {state.status === 'idle' && (selectedRecipients.length > 0 || pulseContacts.length === 0) && 'Tap to start camera'}
                     {isPreviewing && 'Tap to start recording'}
                     {isRecording && 'Tap to stop recording'}
                   </p>

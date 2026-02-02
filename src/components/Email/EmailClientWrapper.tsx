@@ -1,7 +1,7 @@
 // EmailClientWrapper.tsx - Wrapper to adapt legacy props to new PulseEmailClient
 import React from 'react';
 import { User } from '../../types';
-import { PulseEmailClient } from './PulseEmailClient';
+import { PulseEmailClientRedesign } from './PulseEmailClientRedesign';
 
 interface EmailClientWrapperProps {
   user: User;
@@ -20,7 +20,7 @@ export const EmailClientWrapper: React.FC<EmailClientWrapperProps> = ({
 }) => {
   return (
     <div className="h-full w-full rounded-2xl bg-zinc-950 shadow-2xl border border-zinc-800 flex flex-col">
-      <PulseEmailClient
+      <PulseEmailClientRedesign
         userEmail={user.email}
         userName={user.name}
       />

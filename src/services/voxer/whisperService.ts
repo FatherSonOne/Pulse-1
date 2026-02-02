@@ -89,8 +89,10 @@ class WhisperService {
     const formData = new FormData();
 
     // Convert blob to file with appropriate extension
+    // Normalize mime type by stripping codec info
+    const baseMimeType = audioBlob.type ? audioBlob.type.split(';')[0] : 'audio/webm';
     const extension = this.getFileExtension(audioBlob.type);
-    const file = new File([audioBlob], `audio.${extension}`, { type: audioBlob.type });
+    const file = new File([audioBlob], `audio.${extension}`, { type: baseMimeType });
     formData.append('file', file);
     formData.append('model', 'whisper-1');
 
@@ -154,8 +156,10 @@ class WhisperService {
 
     const formData = new FormData();
 
+    // Normalize mime type by stripping codec info
+    const baseMimeType = audioBlob.type ? audioBlob.type.split(';')[0] : 'audio/webm';
     const extension = this.getFileExtension(audioBlob.type);
-    const file = new File([audioBlob], `audio.${extension}`, { type: audioBlob.type });
+    const file = new File([audioBlob], `audio.${extension}`, { type: baseMimeType });
     formData.append('file', file);
     formData.append('model', 'whisper-1');
 
@@ -223,8 +227,12 @@ class WhisperService {
 
   /**
    * Get file extension from MIME type
+   * Strips codec info (e.g., 'audio/webm;codecs=opus' -> 'audio/webm')
    */
   private getFileExtension(mimeType: string): string {
+    // Normalize mime type by stripping codec info
+    const baseMimeType = mimeType.split(';')[0];
+
     const mimeToExt: Record<string, string> = {
       'audio/webm': 'webm',
       'audio/mp3': 'mp3',
@@ -238,7 +246,7 @@ class WhisperService {
       'video/webm': 'webm',
       'video/mp4': 'mp4',
     };
-    return mimeToExt[mimeType] || 'webm';
+    return mimeToExt[baseMimeType] || 'webm';
   }
 
   /**

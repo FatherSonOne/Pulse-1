@@ -138,7 +138,7 @@ const LandingPage: React.FC<LandingPageProps> = ({ onGetStarted }) => {
 
           <h1 className="text-5xl sm:text-7xl font-bold mb-8 leading-[1.15] tracking-tight relative z-10 pb-4">
             <span className="block text-white animate-fade-in animation-delay-200">Orchestrate Your</span>
-            <span className="block mt-2 mb-2 hero-title-shimmer animate-fade-in animation-delay-300 relative z-10">
+            <span className="block mt-2 mb-2 text-transparent bg-clip-text bg-gradient-to-r from-rose-400 via-pink-500 to-purple-500 animate-fade-in animation-delay-300">
               Digital Intelligence
             </span>
           </h1>
@@ -775,6 +775,7 @@ style.textContent = `
 
   /* Hero text shimmer effect */
   .hero-title-shimmer {
+    color: #ec4899;
     background: linear-gradient(
       90deg,
       #fb7185 0%,

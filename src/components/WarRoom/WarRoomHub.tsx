@@ -8,6 +8,7 @@
 
 import React, { useState, useMemo, useRef, useEffect } from 'react';
 import { WarRoomMode, MissionType, RoomType } from './ModeSwitcher';
+import { MissionLauncher } from './MissionLauncher';
 import './WarRoomHub.css';
 
 // ============================================
@@ -182,6 +183,7 @@ const ModeCardComponent: React.FC<{
 
 export const WarRoomHub: React.FC<WarRoomHubProps> = ({
   onModeSelect,
+  onMissionSelect,
   onRoomChange,
   currentMode,
   currentRoom,
@@ -189,6 +191,7 @@ export const WarRoomHub: React.FC<WarRoomHubProps> = ({
   const [hoveredCard, setHoveredCard] = useState<string | null>(null);
   const [searchQuery, setSearchQuery] = useState('');
   const [selectedCategory, setSelectedCategory] = useState<string | null>(null);
+  const [showMissionLauncher, setShowMissionLauncher] = useState(false);
   const searchInputRef = useRef<HTMLInputElement>(null);
 
   // Keyboard shortcuts
@@ -234,6 +237,13 @@ export const WarRoomHub: React.FC<WarRoomHubProps> = ({
     onRoomChange('war-room');
   };
 
+  const handleMissionSelect = (mission: MissionType) => {
+    if (onMissionSelect) {
+      onMissionSelect(mission);
+      onRoomChange('missions');
+    }
+  };
+
   const categories = [
     { id: 'strategic', label: 'Strategic', icon: 'fa-chess-knight' },
     { id: 'creative', label: 'Creative', icon: 'fa-palette' },
@@ -260,6 +270,16 @@ export const WarRoomHub: React.FC<WarRoomHubProps> = ({
           </div>
 
           <div className="wrh-header-right">
+            <button
+              type="button"
+              className="wrh-missions-btn"
+              onClick={() => setShowMissionLauncher(true)}
+              title="Open Mission Launcher"
+            >
+              <i className="fa fa-compass" />
+              <span>Missions</span>
+            </button>
+
             <div className="wrh-search">
               <i className="fa fa-search" />
               <input
@@ -329,6 +349,14 @@ export const WarRoomHub: React.FC<WarRoomHubProps> = ({
           </div>
         </footer>
       </main>
+
+      {/* Mission Launcher Modal */}
+      {showMissionLauncher && (
+        <MissionLauncher
+          onMissionSelect={handleMissionSelect}
+          onClose={() => setShowMissionLauncher(false)}
+        />
+      )}
     </div>
   );
 };

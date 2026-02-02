@@ -115,6 +115,9 @@ const VoxNotesMode: React.FC<VoxNotesModeProps> = ({
         duration: recordingData.duration,
         messageType: 'vox_note'
       }).catch(err => console.error('Analytics tracking failed:', err));
+
+      // Reload notes to confirm persistence
+      setTimeout(() => loadNotes(), 500);
     }
 
     sendRecording();
@@ -129,9 +132,25 @@ const VoxNotesMode: React.FC<VoxNotesModeProps> = ({
     }
   };
 
+  // Load notes on mount
   useEffect(() => {
     loadNotes();
+  }, []);
+
+  // Reload notes when search changes
+  useEffect(() => {
+    if (searchQuery !== '') {
+      loadNotes();
+    }
   }, [searchQuery]);
+
+  // Auto-select first note when notes load (if none selected)
+  useEffect(() => {
+    if (notes.length > 0 && !selectedNote) {
+      console.log('Auto-selecting first note:', notes[0].title);
+      setSelectedNote(notes[0]);
+    }
+  }, [notes]);
 
   useEffect(() => {
     const tags = new Set<string>();
@@ -140,8 +159,18 @@ const VoxNotesMode: React.FC<VoxNotesModeProps> = ({
   }, [notes]);
 
   const loadNotes = async () => {
-    const data = await voxModeService.getMyVoxNotes(searchQuery || undefined);
-    setNotes(data);
+    try {
+      console.log('Loading Vox Notes...');
+      const data = await voxModeService.getMyVoxNotes(searchQuery || undefined);
+      console.log(`Loaded ${data.length} Vox Notes`, data.map(n => ({
+        id: n.id,
+        title: n.title,
+        createdAt: n.createdAt
+      })));
+      setNotes(data);
+    } catch (error) {
+      console.error('Error loading Vox Notes:', error);
+    }
   };
 
   const handlePlayNote = () => {
@@ -180,6 +209,41 @@ const VoxNotesMode: React.FC<VoxNotesModeProps> = ({
     setIsEditing(false);
   };
 
+  const handleLinkToItem = async (itemType: 'email' | 'meeting' | 'task' | 'contact' | 'note') => {
+    if (!selectedNote) {
+      console.error('No note selected for linking');
+      return;
+    }
+
+    // For now, create a placeholder link - in production, this would open a picker modal
+    const itemId = `${itemType}-${Date.now()}`;
+    const itemTitle = `${itemType.charAt(0).toUpperCase() + itemType.slice(1)} Item`;
+
+    const success = await voxModeService.linkNoteToItem(
+      selectedNote.id,
+      itemType,
+      itemId,
+      itemTitle
+    );
+
+    if (success) {
+      // Update local state
+      const updatedNote = {
+        ...selectedNote,
+        linkedItems: [
+          ...(selectedNote.linkedItems || []),
+          { type: itemType, id: itemId, title: itemTitle }
+        ]
+      };
+      setSelectedNote(updatedNote);
+      setNotes(notes.map(n => n.id === selectedNote.id ? updatedNote : n));
+      setShowLinkModal(false);
+      toast.success(`Linked to ${itemType}!`);
+    } else {
+      toast.error(`Failed to link to ${itemType}`);
+    }
+  };
+
   const formatDuration = (seconds: number) => {
     const mins = Math.floor(seconds / 60);
     const secs = Math.floor(seconds % 60);
@@ -204,6 +268,23 @@ const VoxNotesMode: React.FC<VoxNotesModeProps> = ({
     if (filterTag && !note.tags.includes(filterTag)) return false;
     return true;
   });
+
+  // Debug logging
+  console.log('Vox Notes Filter Status:', {
+    totalNotes: notes.length,
+    filteredNotes: filteredNotes.length,
+    showFavoritesOnly,
+    filterTag,
+    selectedNote: selectedNote?.title
+  });
+
+  if (notes.length > 0 && filteredNotes.length === 0) {
+    console.warn('⚠️ All notes filtered out!', {
+      totalNotes: notes.length,
+      showFavoritesOnly,
+      filterTag
+    });
+  }
 
   const groupedNotes = filteredNotes.reduce((acc, note) => {
     const dateKey = note.createdAt.toDateString();
@@ -539,8 +620,8 @@ const VoxNotesMode: React.FC<VoxNotesModeProps> = ({
           </div>
         )}
 
-        {/* Desktop Notes List Sidebar */}
-        <div className={`hidden md:flex w-96 border-r ${tc.border} flex-col ${tc.panelBg}`}>
+        {/* Desktop Notes List Sidebar - Always visible, use responsive width */}
+        <div className={`flex w-80 lg:w-96 border-r ${tc.border} flex-col ${tc.panelBg}`}>
           {renderNotesList()}
         </div>
 
@@ -783,7 +864,9 @@ const VoxNotesMode: React.FC<VoxNotesModeProps> = ({
               {(['email', 'meeting', 'task', 'contact', 'note'] as const).map((type) => (
                 <button
                   key={type}
-                  className={`w-full p-4 rounded-xl text-left transition-all flex items-center gap-3 ${tc.cardBg} border ${tc.border} ${tc.hoverBg}`}
+                  onClick={() => handleLinkToItem(type)}
+                  className={`w-full p-4 rounded-xl text-left transition-all flex items-center gap-3 ${tc.cardBg} border ${tc.border} ${tc.hoverBg} hover:border-pink-500/50`}
+                  type="button"
                 >
                   <div className="p-2 rounded-lg" style={{ background: `${MODE_COLOR}20` }}>
                     <span style={{ color: MODE_COLOR }}>{LINK_TYPE_ICONS[type]}</span>

@@ -78,6 +78,7 @@ export interface SyncState {
 }
 
 export type EmailFolder = 'inbox' | 'sent' | 'drafts' | 'starred' | 'important' | 'snoozed' | 'trash' | 'spam' | 'all';
+export type EmailCategory = 'primary' | 'social' | 'promotions' | 'updates' | 'forums';
 
 export interface EmailTemplate {
   id: string;
@@ -142,15 +143,22 @@ class EmailSyncService {
   /**
    * Perform full email sync from Gmail
    */
-  async fullSync(maxResults: number = 100): Promise<{ synced: number; errors: number }> {
+  async fullSync(maxResults: number = 100): Promise<{ synced: number; errors: number; categories: Record<string, number> }> {
     if (this.syncInProgress) {
       console.log('Sync already in progress');
-      return { synced: 0, errors: 0 };
+      return { synced: 0, errors: 0, categories: {} };
     }
 
     this.syncInProgress = true;
     let syncedCount = 0;
     let errorCount = 0;
+    const categoryCounts: Record<string, number> = {
+      social: 0,
+      promotions: 0,
+      updates: 0,
+      forums: 0,
+      primary: 0
+    };
 
     try {
       // Get current user
@@ -163,14 +171,44 @@ class EmailSyncService {
       // Get Gmail service
       const gmail = getGmailService();
 
-      // Fetch messages from Gmail
-      const messages = await gmail.getMessages(maxResults, 'INBOX');
+      // Get last sync date to fetch only new emails
+      const syncState = await this.getSyncState();
+      let query: string | undefined = undefined;
 
-      // Also fetch sent, starred, drafts
+      if (syncState?.last_full_sync_at) {
+        // Go back 1 day from last sync to ensure we don't miss any emails
+        const lastSyncDate = new Date(syncState.last_full_sync_at);
+        lastSyncDate.setDate(lastSyncDate.getDate() - 1);
+
+        // Format date for Gmail query (YYYY/MM/DD)
+        const formattedDate = `${lastSyncDate.getFullYear()}/${String(lastSyncDate.getMonth() + 1).padStart(2, '0')}/${String(lastSyncDate.getDate()).padStart(2, '0')}`;
+        query = `after:${formattedDate}`;
+        console.log(`[EmailSync] Fetching emails after ${formattedDate} (going back 1 day from last sync for safety)`);
+      } else {
+        console.log('[EmailSync] First sync - fetching all recent emails');
+      }
+
+      // Fetch messages from Gmail
+      console.log('[EmailSync] Fetching messages from Gmail...');
+      const messages = await gmail.getMessages(maxResults, 'INBOX', query);
+      console.log(`[EmailSync] Fetched ${messages.length} inbox messages`);
+
+      // Log the most recent message date to debug
+      if (messages.length > 0) {
+        const mostRecent = messages[0];
+        console.log('[EmailSync] Most recent message:', {
+          date: mostRecent.timestamp,
+          subject: (mostRecent as any).metadata?.subject
+        });
+      }
+
+      // Also fetch sent, starred, drafts (with same date filter)
       const [sentMessages, starredMessages] = await Promise.all([
-        gmail.getSentMessages(50),
-        gmail.getStarredMessages(50)
+        gmail.getSentMessages(50, query),
+        gmail.getStarredMessages(50, query)
       ]);
+
+      console.log(`[EmailSync] Fetched ${sentMessages.length} sent, ${starredMessages.length} starred`);
 
       // Combine and dedupe
       const allMessages = [...messages, ...sentMessages, ...starredMessages];
@@ -178,16 +216,29 @@ class EmailSyncService {
         new Map(allMessages.map(m => [m.id, m])).values()
       );
 
+      console.log(`[EmailSync] Total unique messages to cache: ${uniqueMessages.length}`);
+
       // Cache each message
       for (const msg of uniqueMessages) {
         try {
           await this.cacheEmail(user.id, msg);
           syncedCount++;
+
+          // Track category stats
+          const labels: string[] = (msg as any).tags || (msg as any).metadata?.labels || [];
+          if (labels.includes('CATEGORY_SOCIAL')) categoryCounts.social++;
+          else if (labels.includes('CATEGORY_PROMOTIONS')) categoryCounts.promotions++;
+          else if (labels.includes('CATEGORY_UPDATES')) categoryCounts.updates++;
+          else if (labels.includes('CATEGORY_FORUMS')) categoryCounts.forums++;
+          else categoryCounts.primary++;
+
         } catch (error) {
           console.error('Error caching email:', error);
           errorCount++;
         }
       }
+
+      console.log(`[EmailSync] Successfully cached ${syncedCount} emails, ${errorCount} errors`);
 
       // Update sync state
       await this.updateSyncState(user.id, {
@@ -197,7 +248,7 @@ class EmailSyncService {
         error_count: errorCount
       });
 
-      return { synced: syncedCount, errors: errorCount };
+      return { synced: syncedCount, errors: errorCount, categories: categoryCounts };
     } catch (error) {
       const errorMsg = error instanceof Error ? error.message : 'Unknown error';
       const { data: { user } } = await supabase.auth.getUser();
@@ -385,7 +436,12 @@ class EmailSyncService {
   /**
    * Get emails by folder
    */
-  async getEmailsByFolder(folder: EmailFolder, limit: number = 50, offset: number = 0): Promise<CachedEmail[]> {
+  async getEmailsByFolder(
+    folder: EmailFolder,
+    limit: number = 50,
+    offset: number = 0,
+    categoryFilter?: EmailCategory
+  ): Promise<CachedEmail[]> {
     const { data: { user } } = await supabase.auth.getUser();
     if (!user) return [];
 
@@ -404,6 +460,40 @@ class EmailSyncService {
     switch (folder) {
       case 'inbox':
         query = query.eq('is_trashed', false).eq('is_archived', false).eq('is_draft', false).eq('is_sent', false);
+
+        // Apply category filter for inbox
+        if (categoryFilter) {
+          switch (categoryFilter) {
+            case 'social':
+              query = query.contains('labels', '["CATEGORY_SOCIAL"]');
+              break;
+            case 'promotions':
+              query = query.contains('labels', '["CATEGORY_PROMOTIONS"]');
+              break;
+            case 'updates':
+              query = query.contains('labels', '["CATEGORY_UPDATES"]');
+              break;
+            case 'forums':
+              query = query.contains('labels', '["CATEGORY_FORUMS"]');
+              break;
+            case 'primary':
+              // Primary is complex: It's usually "not the others"
+              // But Supabase doesn't support advanced "NOT contains AND NOT contains" easily in one builder chain without raw SQL or multiple filters
+              // We'll approximate by filtering OUT the known tags if possible, or we might validly use 'CATEGORY_PERSONAL' if Gmail sync adds it.
+              // Assuming Gmail sync adds 'CATEGORY_PERSONAL' or we rely on absence of others.
+              // For now, let's try assuming absence of others is hard in simple query builder.
+              // We'll rely on our service to tag 'primary' in ai_category or specific logic.
+              // For robust filtering, we might need to filter client side or use a stored procedure/view.
+              // Let's try to query for where labels DOES NOT contain Social/Promotions/Updates
+              // Unfortunately .not('labels', 'cs', '{"CATEGORY_SOCIAL"}') etc.
+              // Use JSON array syntax for JSONB column filtering
+              query = query.not('labels', 'cs', '["CATEGORY_SOCIAL"]')
+                .not('labels', 'cs', '["CATEGORY_PROMOTIONS"]')
+                .not('labels', 'cs', '["CATEGORY_UPDATES"]')
+                .not('labels', 'cs', '["CATEGORY_FORUMS"]');
+              break;
+          }
+        }
         break;
       case 'sent':
         query = query.eq('is_sent', true).eq('is_trashed', false);
@@ -421,7 +511,7 @@ class EmailSyncService {
         query = query.eq('is_trashed', true);
         break;
       case 'spam':
-        query = query.contains('labels', ['SPAM']);
+        query = query.contains('labels', '["SPAM"]');
         break;
       case 'all':
         query = query.eq('is_trashed', false);
@@ -651,6 +741,42 @@ class EmailSyncService {
 
     const { count } = await query;
     return count || 0;
+  }
+
+  /**
+   * Get unread counts for specific categories
+   */
+  async getCategoryUnreadCounts(): Promise<Record<string, number>> {
+    const { data: { user } } = await supabase.auth.getUser();
+    if (!user) return { primary: 0, social: 0, promotions: 0, updates: 0 };
+
+    const baseQuery = supabase
+      .from('cached_emails')
+      .select('id', { count: 'exact', head: true })
+      .eq('user_id', user.id)
+      .eq('is_read', false)
+      .eq('is_trashed', false)
+      .eq('is_archived', false)
+      .eq('is_draft', false)
+      .eq('is_sent', false);
+
+    const [social, promotions, updates, forums, allInbox] = await Promise.all([
+      baseQuery.contains('labels', '["CATEGORY_SOCIAL"]').then(r => r.count || 0),
+      baseQuery.contains('labels', '["CATEGORY_PROMOTIONS"]').then(r => r.count || 0),
+      baseQuery.contains('labels', '["CATEGORY_UPDATES"]').then(r => r.count || 0),
+      baseQuery.contains('labels', '["CATEGORY_FORUMS"]').then(r => r.count || 0),
+      baseQuery.then(r => r.count || 0)
+    ]);
+
+    const primary = Math.max(0, allInbox - social - promotions - updates - forums);
+
+    return {
+      primary,
+      social,
+      promotions,
+      updates,
+      forums
+    };
   }
 
   // ========================================

@@ -187,11 +187,25 @@ const ClassicVoxerMode: React.FC<ClassicVoxerModeProps> = ({
 
             if (url) {
               try {
-                const response = await fetch(url);
-                blob = await response.blob();
-                url = URL.createObjectURL(blob);
+                // Check if URL is a data URL (base64)
+                if (url.startsWith('data:')) {
+                  // Data URL - convert to blob and create object URL for playback
+                  const response = await fetch(url);
+                  blob = await response.blob();
+                  url = URL.createObjectURL(blob);
+                } else if (url.startsWith('blob:')) {
+                  // Old blob URL - skip it as it's no longer valid
+                  console.warn('Skipping invalid blob URL:', url);
+                  url = '';
+                } else {
+                  // Regular URL (Supabase storage) - fetch and create blob URL
+                  const response = await fetch(url);
+                  blob = await response.blob();
+                  url = URL.createObjectURL(blob);
+                }
               } catch (e) {
-                console.error('Error loading recording blob:', e);
+                console.error('Error loading recording from URL:', url, e);
+                url = '';
               }
             }
 
@@ -462,16 +476,14 @@ const ClassicVoxerMode: React.FC<ClassicVoxerModeProps> = ({
     setPendingRecording(null);
     setTranscript('');
 
-    // Save to database
+    // Save to database (don't pass id - let database generate UUID)
     try {
       await dataService.saveVoxerRecording({
-        id: newRecording.id,
         audio_url: newRecording.url,
         duration: newRecording.duration,
         contact_id: activeContactId,
-        sender: 'me',
+        is_outgoing: true,
         transcript: transcript,
-        status: 'sent',
         recorded_at: new Date().toISOString(),
       });
       toast.success('Vox sent!');

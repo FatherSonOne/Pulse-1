@@ -39,7 +39,7 @@ const PHASES: { id: DecisionPhase; label: string; icon: string; description: str
   { id: 'decide', label: 'Decide', icon: 'fa-check-circle', description: 'Make the call' },
 ];
 
-export const DecisionMission: React.FC<DecisionMissionProps> = ({
+const DecisionMissionComponent: React.FC<DecisionMissionProps> = ({
   messages,
   isLoading,
   thinkingLogs,
@@ -234,21 +234,19 @@ Provide:
                   key={phase.id}
                   onClick={() => i <= currentPhaseIndex && setCurrentPhase(phase.id)}
                   disabled={i > currentPhaseIndex}
-                  className={`w-full flex items-center gap-3 p-2 rounded-lg transition-all ${
-                    isActive
+                  className={`w-full flex items-center gap-3 p-2 rounded-lg transition-all ${isActive
                       ? 'bg-cyan-500/20 border border-cyan-500/40'
                       : isComplete
-                      ? 'bg-emerald-500/10 hover:bg-emerald-500/20 cursor-pointer'
-                      : 'opacity-40 cursor-not-allowed'
-                  }`}
+                        ? 'bg-emerald-500/10 hover:bg-emerald-500/20 cursor-pointer'
+                        : 'opacity-40 cursor-not-allowed'
+                    }`}
                 >
-                  <div className={`w-6 h-6 rounded-full flex items-center justify-center text-xs ${
-                    isComplete
+                  <div className={`w-6 h-6 rounded-full flex items-center justify-center text-xs ${isComplete
                       ? 'bg-emerald-500 text-white'
                       : isActive
-                      ? 'bg-cyan-500/30 text-cyan-400'
-                      : 'bg-white/10 text-white/40'
-                  }`}>
+                        ? 'bg-cyan-500/30 text-cyan-400'
+                        : 'bg-white/10 text-white/40'
+                    }`}>
                     {isComplete ? <i className="fa fa-check"></i> : <i className={`fa ${phase.icon}`}></i>}
                   </div>
                   <div className="text-left">
@@ -265,7 +263,7 @@ Provide:
 
         {/* Phase-specific controls */}
         <div className="flex-1 overflow-y-auto war-room-scrollbar p-3">
-          {currentPhase === 'define' && !decision && (
+          {currentPhase === 'define' && (
             <div className="space-y-4">
               <div>
                 <label className="block text-xs font-medium war-room-text-primary mb-2">
@@ -392,11 +390,10 @@ Provide:
                         <button
                           key={w}
                           onClick={() => handleSetCriteriaWeight(crit.id, w)}
-                          className={`w-6 h-6 rounded text-xs ${
-                            crit.weight >= w
+                          className={`w-6 h-6 rounded text-xs ${crit.weight >= w
                               ? 'bg-cyan-500 text-white'
                               : 'bg-white/10 text-white/40'
-                          }`}
+                            }`}
                         >
                           {w}
                         </button>
@@ -428,11 +425,10 @@ Provide:
                 <div key={option.id} className="war-room-panel p-3">
                   <div className="flex items-center gap-2 mb-3">
                     <span className="text-sm font-medium war-room-text-primary">{option.name}</span>
-                    <span className={`text-xs px-2 py-0.5 rounded ${
-                      calculateOptionScore(option.id) >= 4 ? 'bg-emerald-500/20 text-emerald-400' :
-                      calculateOptionScore(option.id) >= 3 ? 'bg-yellow-500/20 text-yellow-400' :
-                      'bg-white/10 war-room-text-secondary'
-                    }`}>
+                    <span className={`text-xs px-2 py-0.5 rounded ${calculateOptionScore(option.id) >= 4 ? 'bg-emerald-500/20 text-emerald-400' :
+                        calculateOptionScore(option.id) >= 3 ? 'bg-yellow-500/20 text-yellow-400' :
+                          'bg-white/10 war-room-text-secondary'
+                      }`}>
                       {calculateOptionScore(option.id)}/5
                     </span>
                   </div>
@@ -446,11 +442,10 @@ Provide:
                             <button
                               key={score}
                               onClick={() => handleSetScore(option.id, crit.id, score)}
-                              className={`w-5 h-5 rounded text-[10px] ${
-                                (scores[option.id]?.[crit.id] || 0) >= score
+                              className={`w-5 h-5 rounded text-[10px] ${(scores[option.id]?.[crit.id] || 0) >= score
                                   ? 'bg-cyan-500 text-white'
                                   : 'bg-white/10 text-white/40'
-                              }`}
+                                }`}
                             >
                               {score}
                             </button>
@@ -482,20 +477,18 @@ Provide:
                 <button
                   key={option.id}
                   onClick={() => setFinalChoice(option.id)}
-                  className={`w-full war-room-panel p-3 text-left transition-all ${
-                    finalChoice === option.id
+                  className={`w-full war-room-panel p-3 text-left transition-all ${finalChoice === option.id
                       ? 'ring-2 ring-emerald-500 bg-emerald-500/10'
                       : 'hover:bg-white/5'
-                  }`}
+                    }`}
                 >
                   <div className="flex items-center justify-between">
                     <div className="flex items-center gap-2">
-                      <span className={`w-6 h-6 rounded-full flex items-center justify-center text-xs font-bold ${
-                        i === 0 ? 'bg-yellow-500 text-black' :
-                        i === 1 ? 'bg-gray-400 text-black' :
-                        i === 2 ? 'bg-orange-700 text-white' :
-                        'bg-white/10 text-white/40'
-                      }`}>{i + 1}</span>
+                      <span className={`w-6 h-6 rounded-full flex items-center justify-center text-xs font-bold ${i === 0 ? 'bg-yellow-500 text-black' :
+                          i === 1 ? 'bg-gray-400 text-black' :
+                            i === 2 ? 'bg-orange-700 text-white' :
+                              'bg-white/10 text-white/40'
+                        }`}>{i + 1}</span>
                       <span className="text-sm war-room-text-primary">{option.name}</span>
                     </div>
                     <span className="text-sm font-medium text-cyan-400">{option.score}/5</span>
@@ -559,11 +552,10 @@ Provide:
                 className={`flex ${msg.role === 'user' ? 'justify-end' : 'justify-start'}`}
               >
                 <div
-                  className={`max-w-[80%] ${
-                    msg.role === 'user'
+                  className={`max-w-[80%] ${msg.role === 'user'
                       ? 'war-room-message-user'
                       : 'war-room-message-ai'
-                  }`}
+                    }`}
                 >
                   {msg.role === 'assistant' && (
                     <div className="flex items-center gap-2 mb-2 pb-2 border-b border-white/10">
@@ -610,9 +602,8 @@ Provide:
               <button
                 onClick={handleSend}
                 disabled={!input.trim() || isLoading}
-                className={`war-room-btn war-room-btn-icon-sm ${
-                  input.trim() ? 'war-room-btn-primary' : ''
-                }`}
+                className={`war-room-btn war-room-btn-icon-sm ${input.trim() ? 'war-room-btn-primary' : ''
+                  }`}
               >
                 <i className="fa fa-paper-plane text-xs"></i>
               </button>
@@ -636,3 +627,14 @@ Provide:
     </div>
   );
 };
+
+// Memoize component to prevent unnecessary re-renders
+export const DecisionMission = React.memo(DecisionMissionComponent, (prevProps, nextProps) => {
+  // Only re-render if messages, isLoading, or thinkingLogs actually changed
+  return (
+    prevProps.messages.length === nextProps.messages.length &&
+    prevProps.isLoading === nextProps.isLoading &&
+    prevProps.thinkingLogs.size === nextProps.thinkingLogs.size &&
+    prevProps.sessionId === nextProps.sessionId
+  );
+});

@@ -36,45 +36,48 @@ import { useAuth } from '../hooks/useAuth';
 import { CellularSMS } from './CellularSMS';
 
 // Phase 1 Message Enhancements - Core features (loaded immediately - critical path)
-import {
-  MessageMoodBadge,
-  RichMessageCardComponent,
-  AnimatedReactions,
-  LiveCollaborators,
-  StandaloneThemePicker,
-  COLOR_PAIR_THEMES,
-  ColorPairTheme,
-  ConversationHealthWidget,
-  AchievementToast,
-  AchievementProgress,
-  MessageAnalyticsDashboard,
-  NetworkGraph,
-  SmartCompose,
-  QuickActions,
-  ThreadActionsMenu,
-  ThreadBadges,
-  MessageImpactVisualization,
-  TranslationWidget,
-  TypingIndicator
-} from './MessageEnhancements';
+// Import directly from files to avoid loading entire 875KB index bundle
+import { MessageMoodBadge } from './MessageEnhancements/MessageMoodBadge';
+import { RichMessageCardComponent } from './MessageEnhancements/RichMessageCard';
+import { AnimatedReactions } from './MessageEnhancements/AnimatedReactions';
+import { LiveCollaborators } from './MessageEnhancements/LiveCollaborators';
+import { StandaloneThemePicker, COLOR_PAIR_THEMES, ColorPairTheme } from './MessageEnhancements/MessageThemeProvider';
+import { ConversationHealthWidget } from './MessageEnhancements/ConversationHealthWidget';
+import { AchievementToast, AchievementProgress } from './MessageEnhancements/AchievementToast';
+import { MessageAnalyticsDashboard } from './MessageEnhancements/MessageAnalyticsDashboard';
+import { NetworkGraph } from './MessageEnhancements/NetworkGraph';
+import { SmartCompose } from './MessageEnhancements/SmartCompose';
+import { QuickActions } from './MessageEnhancements/QuickActions';
+import { ThreadActionsMenu, ThreadBadges } from './MessageEnhancements/ThreadActions';
+import { MessageImpactVisualization } from './MessageEnhancements/MessageImpactVisualization';
+import { TranslationWidget } from './MessageEnhancements/TranslationWidget';
+import { TypingIndicator } from './MessageEnhancements/ReadReceipts';
 // Hover-triggered reactions - shows reaction bar on 300ms hover (desktop) or long-press (mobile)
 import { HoverReactionTrigger } from './MessageEnhancements/HoverReactionTrigger';
 import { useMessageEnhancements } from '../hooks/useMessageEnhancements';
 import { FeatureSkeleton } from './MessageEnhancements/FeatureSkeleton';
 
-// Direct imports for all MessageEnhancements bundles (lazy loading removed for stability)
-import BundleAI from './MessageEnhancements/BundleAI';
-import BundleAnalytics from './MessageEnhancements/BundleAnalytics';
-import BundleCollaboration from './MessageEnhancements/BundleCollaboration';
-import BundleProductivity from './MessageEnhancements/BundleProductivity';
-import BundleIntelligence from './MessageEnhancements/BundleIntelligence';
-import BundleProactive from './MessageEnhancements/BundleProactive';
-import BundleCommunication from './MessageEnhancements/BundleCommunication';
-import BundleAutomation from './MessageEnhancements/BundleAutomation';
-import BundleSecurity from './MessageEnhancements/BundleSecurity';
-import BundleMultimedia from './MessageEnhancements/BundleMultimedia';
+// Lazy load MessageEnhancements bundles for optimal bundle size
+// These are loaded on-demand when features are accessed, reducing initial bundle by ~875KB
+const BundleAI = React.lazy(() => import('./MessageEnhancements/BundleAI'));
+const BundleAnalytics = React.lazy(() => import('./MessageEnhancements/BundleAnalytics'));
+const BundleCollaboration = React.lazy(() => import('./MessageEnhancements/BundleCollaboration'));
+const BundleProductivity = React.lazy(() => import('./MessageEnhancements/BundleProductivity'));
+const BundleIntelligence = React.lazy(() => import('./MessageEnhancements/BundleIntelligence'));
+const BundleProactive = React.lazy(() => import('./MessageEnhancements/BundleProactive'));
+const BundleCommunication = React.lazy(() => import('./MessageEnhancements/BundleCommunication'));
+const BundleAutomation = React.lazy(() => import('./MessageEnhancements/BundleAutomation'));
+const BundleSecurity = React.lazy(() => import('./MessageEnhancements/BundleSecurity'));
+const BundleMultimedia = React.lazy(() => import('./MessageEnhancements/BundleMultimedia'));
 
-// For immediate access to hooks and small components, import directly
+// For immediate access to hooks and small components, import directly from individual files
+import ToolOverlay from './MessageEnhancements/ToolOverlay';
+import { TranslationHub } from './MessageEnhancements/TranslationHub';
+import { AnalyticsExport } from './MessageEnhancements/AnalyticsExport';
+import { TemplatesLibrary } from './MessageEnhancements/TemplatesLibrary';
+import { AttachmentManager } from './MessageEnhancements/AttachmentManager';
+import { BackupSync } from './MessageEnhancements/BackupSync';
+import { SmartSuggestions } from './MessageEnhancements/SmartSuggestions';
 import { useCommandPalette } from './MessageEnhancements/QuickActionsCommandPalette';
 import { useAutoSaveDraft } from './MessageEnhancements/DraftManager';
 import { messageEnhancementsService } from '../services/messageEnhancementsService';
@@ -3198,8 +3201,8 @@ const Messages: React.FC<MessagesProps> = ({ apiKey, contacts, initialContactId,
           )}
 
           {/* Fullscreen Tool Overlay - slides down from top, covers chat area */}
-          
-            <BundleMultimedia.ToolOverlay
+          <React.Suspense fallback={<FeatureSkeleton />}>
+            <ToolOverlay
               activeTool={activeToolOverlay}
               onClose={closeAllPanels}
               conversationId={activePulseConv?.id}
@@ -3223,7 +3226,7 @@ const Messages: React.FC<MessagesProps> = ({ apiKey, contacts, initialContactId,
               mediaHubTab={mediaHubTab}
               setMediaHubTab={setMediaHubTab}
             />
-          
+          </React.Suspense>
 
           {/* Pulse Messages */}
           <div className="flex-1 overflow-y-auto p-4 md:p-6 space-y-4">
@@ -3860,7 +3863,7 @@ const Messages: React.FC<MessagesProps> = ({ apiKey, contacts, initialContactId,
             {/* Tab Content */}
             <div className="max-h-80 overflow-y-auto">
               {analyticsView === 'response' && (
-                
+                <React.Suspense fallback={<FeatureSkeleton />}>
                   <BundleAnalytics.ResponseTimeTracker
                     messages={activeThread.messages.map(m => ({
                       id: m.id,
@@ -3869,10 +3872,10 @@ const Messages: React.FC<MessagesProps> = ({ apiKey, contacts, initialContactId,
                     }))}
                     contactName={activeThread.contactName}
                   />
-                
+                </React.Suspense>
               )}
               {analyticsView === 'engagement' && (
-                
+                <React.Suspense fallback={<FeatureSkeleton />}>
                   <BundleAnalytics.EngagementScoring
                     messages={activeThread.messages.map(m => ({
                       id: m.id,
@@ -3883,10 +3886,10 @@ const Messages: React.FC<MessagesProps> = ({ apiKey, contacts, initialContactId,
                     }))}
                     contactName={activeThread.contactName}
                   />
-                
+                </React.Suspense>
               )}
               {analyticsView === 'flow' && (
-                
+                <React.Suspense fallback={<FeatureSkeleton />}>
                   <BundleAnalytics.ConversationFlowViz
                     messages={activeThread.messages.map(m => ({
                       id: m.id,
@@ -3902,10 +3905,10 @@ const Messages: React.FC<MessagesProps> = ({ apiKey, contacts, initialContactId,
                       msgEl?.scrollIntoView({ behavior: 'smooth', block: 'center' });
                     }}
                   />
-                
+                </React.Suspense>
               )}
               {analyticsView === 'insights' && (
-                
+                <React.Suspense fallback={<FeatureSkeleton />}>
                   <BundleAnalytics.ProactiveInsightsEnhanced
                     messages={activeThread.messages.map(m => ({
                       id: m.id,
@@ -3920,7 +3923,7 @@ const Messages: React.FC<MessagesProps> = ({ apiKey, contacts, initialContactId,
                       }
                     }}
                   />
-                
+                </React.Suspense>
               )}
             </div>
           </div>
@@ -4731,7 +4734,7 @@ const Messages: React.FC<MessagesProps> = ({ apiKey, contacts, initialContactId,
             <div className="max-h-96 overflow-y-auto">
               {mediaHubTab === 'translation' && (
                 
-                  <BundleMultimedia.TranslationHub
+                  <TranslationHub
                     conversationId={activeThread.id}
                     onTranslate={(text, from, to) => console.log('Translate:', text, from, to)}
                     onLanguageChange={(lang) => console.log('Language changed:', lang)}
@@ -4740,7 +4743,7 @@ const Messages: React.FC<MessagesProps> = ({ apiKey, contacts, initialContactId,
               )}
               {mediaHubTab === 'export' && (
                 
-                  <BundleMultimedia.AnalyticsExport
+                  <AnalyticsExport
                     conversationId={activeThread.id}
                     onExportStart={(job) => console.log('Export started:', job)}
                     onExportComplete={(job) => console.log('Export complete:', job)}
@@ -4749,7 +4752,7 @@ const Messages: React.FC<MessagesProps> = ({ apiKey, contacts, initialContactId,
               )}
               {mediaHubTab === 'templates' && (
                 
-                  <BundleMultimedia.TemplatesLibrary
+                  <TemplatesLibrary
                     onTemplateSelect={(template) => {
                       setNewMessage(template.content);
                       console.log('Template selected:', template);
@@ -4760,7 +4763,7 @@ const Messages: React.FC<MessagesProps> = ({ apiKey, contacts, initialContactId,
               )}
               {mediaHubTab === 'attachments' && (
                 
-                  <BundleMultimedia.AttachmentManager
+                  <AttachmentManager
                     conversationId={activeThread.id}
                     onAttachmentSelect={(attachment) => console.log('Attachment selected:', attachment)}
                     onAttachmentDelete={(attachmentId) => console.log('Attachment deleted:', attachmentId)}
@@ -4769,7 +4772,7 @@ const Messages: React.FC<MessagesProps> = ({ apiKey, contacts, initialContactId,
               )}
               {mediaHubTab === 'backup' && (
                 
-                  <BundleMultimedia.BackupSync
+                  <BackupSync
                     onBackupCreate={(backup) => console.log('Backup created:', backup)}
                     onBackupRestore={(backupId) => console.log('Backup restored:', backupId)}
                     onSyncToggle={(enabled) => console.log('Sync toggled:', enabled)}
@@ -4778,7 +4781,7 @@ const Messages: React.FC<MessagesProps> = ({ apiKey, contacts, initialContactId,
               )}
               {mediaHubTab === 'suggestions' && (
                 
-                  <BundleMultimedia.SmartSuggestions
+                  <SmartSuggestions
                     conversationId={activeThread.id}
                     currentMessage={newMessage}
                     onSuggestionSelect={(suggestion) => {

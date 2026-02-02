@@ -10,7 +10,7 @@
   right: 0;
   width: 420px;
   height: 100vh;
-  background: var(--bg-secondary);
+  background: var(--bg-secondary, #f5f4f1);
   border-left: 1px solid var(--hub-border);
   display: flex;
   flex-direction: column;
@@ -97,7 +97,7 @@
   justify-content: center;
   width: 36px;
   height: 36px;
-  background: var(--bg-tertiary);
+  background: var(--bg-tertiary, #fef7f4);
   border: 1px solid var(--hub-border);
   border-radius: 8px;
   color: var(--hub-text);
@@ -130,7 +130,7 @@
 }
 
 .assistant-messages::-webkit-scrollbar-track {
-  background: var(--bg-tertiary);
+  background: var(--bg-tertiary, #fef7f4);
 }
 
 .assistant-messages::-webkit-scrollbar-thumb {
@@ -299,7 +299,7 @@
 
 .assistant-quick-actions {
   padding: 1rem 1.5rem;
-  background: var(--bg-tertiary);
+  background: var(--bg-tertiary, #fef7f4);
   border-top: 1px solid var(--hub-border);
   max-height: 280px;
   overflow-y: auto;
@@ -311,7 +311,7 @@
 }
 
 .assistant-quick-actions::-webkit-scrollbar-track {
-  background: var(--bg-secondary);
+  background: var(--bg-secondary, #f5f4f1);
 }
 
 .assistant-quick-actions::-webkit-scrollbar-thumb {
@@ -385,7 +385,7 @@
 
 .assistant-input-container {
   padding: 1rem 1.5rem;
-  background: var(--bg-tertiary);
+  background: var(--bg-tertiary, #fef7f4);
   border-top: 1px solid var(--hub-border);
   flex-shrink: 0;
 }
@@ -492,6 +492,7 @@
 
 /* Dark mode adjustments */
 .dark .conversational-assistant {
+  background: var(--bg-secondary, #0a0a0a);
   box-shadow: -4px 0 24px rgba(0, 0, 0, 0.5);
 }
 
@@ -502,4 +503,17 @@
 .dark .user-message .message-text {
   background: linear-gradient(135deg, rgba(244, 63, 94, 0.15) 0%, rgba(236, 72, 153, 0.15) 100%);
   border-color: rgba(244, 63, 94, 0.3);
+}
+
+.dark .quick-action-chip:hover:not(:disabled) {
+  background: var(--hub-card-hover, #262626);
+  border-color: var(--hub-accent-start, #f43f5e);
+  color: var(--hub-accent-start, #f43f5e);
+  transform: translateY(-1px);
+  box-shadow: 0 2px 8px rgba(244, 63, 94, 0.3);
+}
+
+.dark .assistant-input-wrapper:focus-within {
+  border-color: var(--hub-accent-start, #f43f5e);
+  box-shadow: 0 0 0 3px rgba(244, 63, 94, 0.2);
 }

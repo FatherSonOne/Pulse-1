@@ -235,21 +235,35 @@ export const Sidebar: React.FC<SidebarProps> = ({
             </div>
           )}
 
-          <div className="sidebar-brand-controls">
-            {!isCollapsed && renderNotificationCenter?.()}
-            <button
-              className="sidebar-collapse-btn hidden md:flex"
-              onClick={isCollapsed ? onExpand : onCollapse}
-              title={isCollapsed ? 'Expand sidebar' : 'Collapse sidebar'}
-            >
-              <i className={`fa-solid ${isCollapsed ? 'fa-bars-staggered' : 'fa-chevron-left'} text-sm`} />
-            </button>
-          </div>
+          {!isCollapsed && (
+            <div className="sidebar-brand-controls">
+              {renderNotificationCenter?.()}
+            </div>
+          )}
+        </div>
+
+        {/* Dedicated Collapse Button Section */}
+        <div className="sidebar-collapse-section">
+          <button
+            className="sidebar-collapse-btn"
+            onClick={(e) => {
+              e.stopPropagation();
+              if (isCollapsed) {
+                onExpand();
+              } else {
+                onCollapse();
+              }
+            }}
+            title={isCollapsed ? 'Expand sidebar' : 'Collapse sidebar'}
+            type="button"
+          >
+            <i className={`fa-solid ${isCollapsed ? 'fa-bars-staggered' : 'fa-chevron-left'} text-sm`} />
+          </button>
         </div>
 
         {/* Collapsed state notification center */}
         {isCollapsed && (
-          <div className="hidden md:flex justify-center px-3 pb-2">
+          <div className="sidebar-notification-collapsed">
             {renderNotificationCenter?.()}
           </div>
         )}

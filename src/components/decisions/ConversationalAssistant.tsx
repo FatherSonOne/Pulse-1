@@ -1,4 +1,4 @@
-import React, { useState, useRef, useEffect } from 'react';
+import React, { useState, useRef, useEffect, memo } from 'react';
 import { conversationalAIService, QueryContext } from '../../services/conversationalAIService';
 import { DecisionWithVotes } from '../../services/decisionService';
 import { Task } from '../../services/taskService';
@@ -45,7 +45,37 @@ interface QuickAction {
   category: 'insight' | 'action' | 'summary';
 }
 
-export const ConversationalAssistant: React.FC<ConversationalAssistantProps> = ({
+// Custom comparison function to prevent unnecessary re-renders
+const arePropsEqual = (
+  prevProps: ConversationalAssistantProps,
+  nextProps: ConversationalAssistantProps
+): boolean => {
+  // Check if user ID changed
+  if (prevProps.user.id !== nextProps.user.id) return false;
+
+  // Check if decisions array length changed
+  if (prevProps.decisions.length !== nextProps.decisions.length) return false;
+
+  // Check if any decision's updated_at changed
+  for (let i = 0; i < prevProps.decisions.length; i++) {
+    if (prevProps.decisions[i].id !== nextProps.decisions[i].id) return false;
+    if (prevProps.decisions[i].updated_at !== nextProps.decisions[i].updated_at) return false;
+  }
+
+  // Check if tasks array length changed
+  if (prevProps.tasks.length !== nextProps.tasks.length) return false;
+
+  // Check if any task's updated_at changed
+  for (let i = 0; i < prevProps.tasks.length; i++) {
+    if (prevProps.tasks[i].id !== nextProps.tasks[i].id) return false;
+    if (prevProps.tasks[i].updated_at !== nextProps.tasks[i].updated_at) return false;
+  }
+
+  // Props are equal, skip re-render
+  return true;
+};
+
+const ConversationalAssistantComponent: React.FC<ConversationalAssistantProps> = ({
   user,
   decisions,
   tasks,
@@ -219,11 +249,11 @@ export const ConversationalAssistant: React.FC<ConversationalAssistantProps> = (
   const summaryActions = quickActions.filter((a) => a.category === 'summary');
 
   return (
-    <div className="conversational-assistant">
+    <div className="conversational-assistant" role="complementary" aria-label="AI Assistant">
       {/* Header */}
       <div className="assistant-header">
         <div className="assistant-header-left">
-          <div className="assistant-icon">
+          <div className="assistant-icon" aria-hidden="true">
             <Sparkles size={20} />
           </div>
           <div className="assistant-title-group">
@@ -232,16 +262,17 @@ export const ConversationalAssistant: React.FC<ConversationalAssistantProps> = (
           </div>
         </div>
         <button
+          type="button"
           className="assistant-close-button"
           onClick={onClose}
           aria-label="Close AI Assistant"
         >
-          <X size={20} />
+          <X size={20} aria-hidden="true" />
         </button>
       </div>
 
       {/* Messages */}
-      <div className="assistant-messages">
+      <div className="assistant-messages" role="log" aria-live="polite" aria-atomic="false">
         {messages.length === 0 && (
           <div className="assistant-welcome">
             <div className="welcome-icon">
@@ -315,9 +346,11 @@ export const ConversationalAssistant: React.FC<ConversationalAssistantProps> = (
               {insightActions.map((action) => (
                 <button
                   key={action.id}
+                  type="button"
                   className="quick-action-chip"
                   onClick={() => handleQuickAction(action)}
                   disabled={isLoading}
+                  aria-label={action.label}
                 >
                   {action.icon}
                   <span>{action.label}</span>
@@ -333,9 +366,11 @@ export const ConversationalAssistant: React.FC<ConversationalAssistantProps> = (
               {actionActions.map((action) => (
                 <button
                   key={action.id}
+                  type="button"
                   className="quick-action-chip"
                   onClick={() => handleQuickAction(action)}
                   disabled={isLoading}
+                  aria-label={action.label}
                 >
                   {action.icon}
                   <span>{action.label}</span>
@@ -351,9 +386,11 @@ export const ConversationalAssistant: React.FC<ConversationalAssistantProps> = (
               {summaryActions.map((action) => (
                 <button
                   key={action.id}
+                  type="button"
                   className="quick-action-chip"
                   onClick={() => handleQuickAction(action)}
                   disabled={isLoading}
+                  aria-label={action.label}
                 >
                   {action.icon}
                   <span>{action.label}</span>
@@ -376,17 +413,19 @@ export const ConversationalAssistant: React.FC<ConversationalAssistantProps> = (
             onChange={(e) => setInputValue(e.target.value)}
             onKeyPress={handleKeyPress}
             disabled={isLoading}
+            aria-label="Message input for AI Assistant"
           />
           <button
+            type="button"
             className="assistant-send-button"
             onClick={() => handleSendMessage()}
             disabled={!inputValue.trim() || isLoading}
-            aria-label="Send message"
+            aria-label="Send message to AI Assistant"
           >
             {isLoading ? (
-              <Loader className="spinner-icon" size={18} />
+              <Loader className="spinner-icon" size={18} aria-hidden="true" />
             ) : (
-              <Send size={18} />
+              <Send size={18} aria-hidden="true" />
             )}
           </button>
         </div>
@@ -397,3 +436,6 @@ export const ConversationalAssistant: React.FC<ConversationalAssistantProps> = (
     </div>
   );
 };
+
+// Export memoized component with custom comparison
+export const ConversationalAssistant = memo(ConversationalAssistantComponent, arePropsEqual);

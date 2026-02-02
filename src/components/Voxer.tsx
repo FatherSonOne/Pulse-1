@@ -309,15 +309,28 @@ const Voxer: React.FC<VoxerProps> = ({ apiKey, contacts, initialContactId, isDar
             // Create blob URL from stored URL
             let blob: Blob | null = null;
             let url = dbRec.audio_url || '';
-            
+
             if (url) {
               try {
-                // Fetch the blob from the URL
-                const response = await fetch(url);
-                blob = await response.blob();
-                url = URL.createObjectURL(blob);
+                // Check if URL is a data URL (base64)
+                if (url.startsWith('data:')) {
+                  // Data URL - convert to blob and create object URL for playback
+                  const response = await fetch(url);
+                  blob = await response.blob();
+                  url = URL.createObjectURL(blob);
+                } else if (url.startsWith('blob:')) {
+                  // Old blob URL - skip it as it's no longer valid
+                  console.warn('Skipping invalid blob URL:', url);
+                  url = '';
+                } else {
+                  // Regular URL (Supabase storage) - fetch and create blob URL
+                  const response = await fetch(url);
+                  blob = await response.blob();
+                  url = URL.createObjectURL(blob);
+                }
               } catch (e) {
-                console.error('Error loading recording blob:', e);
+                console.error('Error loading recording from URL:', url, e);
+                url = '';
               }
             }
 

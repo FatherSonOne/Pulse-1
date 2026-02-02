@@ -557,5 +557,48 @@ export const ragService = {
       }).eq('id', docId);
       throw error;
     }
+  },
+
+  // Chat method for Decision Mission and other conversational interfaces
+  async chat(
+    message: string,
+    documents: any[],
+    apiKey: string,
+    onThinkingUpdate?: (logs: ThinkingStep[]) => void
+  ): Promise<string> {
+    const startTime = Date.now();
+    const thinkingSteps: ThinkingStep[] = [];
+
+    try {
+      // Step 1: Prepare context
+      const stepStart = Date.now();
+      let context = '';
+      if (documents && documents.length > 0) {
+        context = `\n\nRelevant context:\n${documents.map(d => d.content || d.text || '').join('\n\n')}`;
+      }
+      thinkingSteps.push({
+        step: 1,
+        thought: 'Prepared context from documents',
+        duration_ms: Date.now() - stepStart
+      });
+      onThinkingUpdate?.(thinkingSteps);
+
+      // Step 2: Generate AI response
+      const aiStepStart = Date.now();
+      const prompt = `${message}${context}`;
+      const response = await processWithModel(apiKey, prompt);
+
+      thinkingSteps.push({
+        step: 2,
+        thought: 'Generated AI response',
+        duration_ms: Date.now() - aiStepStart
+      });
+      onThinkingUpdate?.(thinkingSteps);
+
+      return response || 'I apologize, but I encountered an error generating a response.';
+    } catch (error) {
+      console.error('Chat error:', error);
+      throw error;
+    }
   }
 };

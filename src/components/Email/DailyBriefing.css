@@ -1,0 +1,720 @@
+/**
+ * Daily Briefing Component Styles
+ * Matches Dashboard's "Daily Overview" visual depth and polish
+ * Deep burgundy/maroon gradients with sophisticated shadow effects
+ */
+
+/* ═══════════════════════════════════════════════════════════════════════════
+   CSS VARIABLES
+   ═══════════════════════════════════════════════════════════════════════════ */
+
+.email-daily-briefing {
+  /* Deep Burgundy/Maroon Gradient Colors */
+  --briefing-burgundy-deep: #5c0f21;
+  --briefing-burgundy-mid: #7d1530;
+  --briefing-burgundy-light: #9e2042;
+  --briefing-maroon: #6b1b31;
+  --briefing-coral: #ff6b6b;
+  --briefing-coral-light: #ff8787;
+
+  /* Glass Effects */
+  --briefing-glass-bg: rgba(28, 6, 12, 0.85);
+  --briefing-glass-border: rgba(255, 107, 107, 0.15);
+  --briefing-glass-highlight: rgba(255, 107, 107, 0.08);
+
+  /* Shadow Effects - Multiple Layers */
+  --briefing-shadow-sm:
+    0 2px 4px rgba(92, 15, 33, 0.15),
+    0 4px 8px rgba(92, 15, 33, 0.1),
+    0 1px 2px rgba(0, 0, 0, 0.1);
+
+  --briefing-shadow-md:
+    0 4px 8px rgba(92, 15, 33, 0.2),
+    0 8px 16px rgba(92, 15, 33, 0.15),
+    0 2px 4px rgba(0, 0, 0, 0.15),
+    inset 0 1px 0 rgba(255, 255, 255, 0.05);
+
+  --briefing-shadow-lg:
+    0 8px 16px rgba(92, 15, 33, 0.25),
+    0 16px 32px rgba(92, 15, 33, 0.2),
+    0 4px 8px rgba(0, 0, 0, 0.2),
+    inset 0 1px 0 rgba(255, 255, 255, 0.08);
+
+  /* Inner Shadow for Depth */
+  --briefing-inner-shadow:
+    inset 0 2px 8px rgba(0, 0, 0, 0.2),
+    inset 0 -1px 2px rgba(255, 255, 255, 0.03);
+
+  /* Glow Effects */
+  --briefing-glow-coral: 0 0 20px rgba(255, 107, 107, 0.3),
+                         0 0 40px rgba(255, 107, 107, 0.15);
+  --briefing-glow-burgundy: 0 0 30px rgba(125, 21, 48, 0.4);
+}
+
+/* Dark Mode Adjustments */
+.dark .email-daily-briefing {
+  --briefing-glass-bg: rgba(20, 5, 10, 0.9);
+  --briefing-glass-border: rgba(255, 107, 107, 0.2);
+  --briefing-glass-highlight: rgba(255, 107, 107, 0.1);
+}
+
+/* ═══════════════════════════════════════════════════════════════════════════
+   MAIN CONTAINER - DEEP BURGUNDY GRADIENT
+   ═══════════════════════════════════════════════════════════════════════════ */
+
+.email-daily-briefing {
+  position: relative;
+  background: linear-gradient(
+    135deg,
+    var(--briefing-burgundy-deep) 0%,
+    var(--briefing-maroon) 25%,
+    var(--briefing-burgundy-mid) 50%,
+    var(--briefing-burgundy-light) 100%
+  );
+  border-radius: 20px;
+  overflow: hidden;
+  box-shadow: var(--briefing-shadow-lg);
+  border: 1px solid rgba(255, 107, 107, 0.2);
+  transition: all 0.3s cubic-bezier(0.4, 0, 0.2, 1);
+}
+
+.email-daily-briefing::before {
+  content: '';
+  position: absolute;
+  top: 0;
+  left: 0;
+  right: 0;
+  height: 1px;
+  background: linear-gradient(
+    90deg,
+    transparent 0%,
+    rgba(255, 255, 255, 0.15) 50%,
+    transparent 100%
+  );
+  pointer-events: none;
+}
+
+.email-daily-briefing::after {
+  content: '';
+  position: absolute;
+  inset: 0;
+  background:
+    radial-gradient(circle at 20% 30%, rgba(255, 107, 107, 0.15) 0%, transparent 50%),
+    radial-gradient(circle at 80% 70%, rgba(125, 21, 48, 0.2) 0%, transparent 50%);
+  pointer-events: none;
+  border-radius: 20px;
+}
+
+/* Hover Effect */
+.email-daily-briefing:hover {
+  box-shadow:
+    0 12px 24px rgba(92, 15, 33, 0.3),
+    0 20px 40px rgba(92, 15, 33, 0.25),
+    0 6px 12px rgba(0, 0, 0, 0.25),
+    inset 0 1px 0 rgba(255, 255, 255, 0.1);
+  transform: translateY(-2px);
+}
+
+/* ═══════════════════════════════════════════════════════════════════════════
+   COLLAPSED STATE
+   ═══════════════════════════════════════════════════════════════════════════ */
+
+.email-daily-briefing.collapsed {
+  background: linear-gradient(
+    135deg,
+    var(--briefing-burgundy-mid) 0%,
+    var(--briefing-burgundy-light) 100%
+  );
+  box-shadow: var(--briefing-shadow-md);
+  cursor: pointer;
+  transition: all 0.3s cubic-bezier(0.4, 0, 0.2, 1);
+}
+
+.email-daily-briefing.collapsed:hover {
+  background: linear-gradient(
+    135deg,
+    var(--briefing-burgundy-deep) 0%,
+    var(--briefing-burgundy-mid) 100%
+  );
+  box-shadow: var(--briefing-shadow-lg);
+  transform: translateY(-1px);
+}
+
+/* ═══════════════════════════════════════════════════════════════════════════
+   HEADER SECTION
+   ═══════════════════════════════════════════════════════════════════════════ */
+
+.briefing-header {
+  position: relative;
+  z-index: 2;
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  padding: 20px 24px;
+  border-bottom: 1px solid rgba(255, 107, 107, 0.15);
+  background: linear-gradient(
+    180deg,
+    rgba(255, 255, 255, 0.05) 0%,
+    transparent 100%
+  );
+}
+
+.briefing-header-content {
+  display: flex;
+  align-items: center;
+  gap: 16px;
+}
+
+.briefing-icon-wrapper {
+  position: relative;
+  width: 48px;
+  height: 48px;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  background: linear-gradient(
+    135deg,
+    rgba(255, 107, 107, 0.25) 0%,
+    rgba(255, 135, 135, 0.15) 100%
+  );
+  border-radius: 14px;
+  box-shadow:
+    0 4px 12px rgba(255, 107, 107, 0.3),
+    inset 0 1px 0 rgba(255, 255, 255, 0.2),
+    inset 0 -1px 0 rgba(0, 0, 0, 0.1);
+}
+
+.briefing-icon {
+  font-size: 20px;
+  color: #ffffff;
+  text-shadow: 0 2px 4px rgba(0, 0, 0, 0.3);
+}
+
+.briefing-title-section h2 {
+  font-size: 20px;
+  font-weight: 700;
+  color: #ffffff;
+  margin: 0 0 2px 0;
+  text-shadow: 0 2px 4px rgba(0, 0, 0, 0.3);
+  letter-spacing: -0.01em;
+}
+
+.briefing-title-section p {
+  font-size: 13px;
+  font-weight: 500;
+  color: rgba(255, 255, 255, 0.7);
+  margin: 0;
+  text-transform: uppercase;
+  letter-spacing: 0.05em;
+}
+
+.briefing-header-actions {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+}
+
+.briefing-view-all-btn {
+  padding: 8px 16px;
+  background: rgba(255, 255, 255, 0.1);
+  border: 1px solid rgba(255, 255, 255, 0.2);
+  border-radius: 8px;
+  color: #ffffff;
+  font-size: 13px;
+  font-weight: 600;
+  cursor: pointer;
+  transition: all 0.2s ease;
+}
+
+.briefing-view-all-btn:hover {
+  background: rgba(255, 255, 255, 0.15);
+  border-color: rgba(255, 255, 255, 0.3);
+  box-shadow: 0 2px 8px rgba(255, 107, 107, 0.2);
+}
+
+.briefing-collapse-btn {
+  width: 32px;
+  height: 32px;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  background: rgba(255, 255, 255, 0.08);
+  border: 1px solid rgba(255, 255, 255, 0.15);
+  border-radius: 8px;
+  color: rgba(255, 255, 255, 0.8);
+  cursor: pointer;
+  transition: all 0.2s ease;
+}
+
+.briefing-collapse-btn:hover {
+  background: rgba(255, 255, 255, 0.15);
+  color: #ffffff;
+}
+
+/* ═══════════════════════════════════════════════════════════════════════════
+   CONTENT SECTION
+   ═══════════════════════════════════════════════════════════════════════════ */
+
+.briefing-content {
+  position: relative;
+  z-index: 2;
+  padding: 24px;
+}
+
+.briefing-greeting {
+  font-size: 22px;
+  color: #ffffff;
+  margin: 0 0 24px 0;
+  text-shadow: 0 2px 4px rgba(0, 0, 0, 0.3);
+}
+
+.briefing-greeting-name {
+  font-weight: 700;
+}
+
+.briefing-greeting-text {
+  font-weight: 400;
+  color: rgba(255, 255, 255, 0.85);
+}
+
+/* ═══════════════════════════════════════════════════════════════════════════
+   STATS GRID - METRIC CARDS
+   ═══════════════════════════════════════════════════════════════════════════ */
+
+.briefing-stats-grid {
+  display: grid;
+  grid-template-columns: repeat(4, 1fr);
+  gap: 12px;
+  margin-bottom: 24px;
+}
+
+.briefing-stat-card {
+  position: relative;
+  padding: 20px 16px;
+  background: rgba(255, 255, 255, 0.08);
+  border: 1px solid rgba(255, 255, 255, 0.12);
+  border-radius: 14px;
+  text-align: center;
+  box-shadow:
+    0 2px 8px rgba(0, 0, 0, 0.15),
+    inset 0 1px 0 rgba(255, 255, 255, 0.1);
+  backdrop-filter: blur(10px);
+  transition: all 0.3s cubic-bezier(0.4, 0, 0.2, 1);
+  overflow: hidden;
+}
+
+.briefing-stat-card::before {
+  content: '';
+  position: absolute;
+  top: 0;
+  left: 0;
+  right: 0;
+  height: 2px;
+  background: linear-gradient(
+    90deg,
+    transparent 0%,
+    rgba(255, 255, 255, 0.3) 50%,
+    transparent 100%
+  );
+  opacity: 0;
+  transition: opacity 0.3s ease;
+}
+
+.briefing-stat-card:hover {
+  background: rgba(255, 255, 255, 0.12);
+  border-color: rgba(255, 255, 255, 0.2);
+  box-shadow:
+    0 4px 16px rgba(0, 0, 0, 0.2),
+    inset 0 1px 0 rgba(255, 255, 255, 0.15),
+    0 0 20px rgba(255, 107, 107, 0.15);
+  transform: translateY(-2px);
+}
+
+.briefing-stat-card:hover::before {
+  opacity: 1;
+}
+
+.briefing-stat-value {
+  font-size: 32px;
+  font-weight: 800;
+  color: #ffffff;
+  line-height: 1;
+  margin: 0 0 8px 0;
+  text-shadow: 0 2px 8px rgba(0, 0, 0, 0.3);
+}
+
+/* Color Variants */
+.briefing-stat-card.stat-new .briefing-stat-value {
+  color: #ffffff;
+}
+
+.briefing-stat-card.stat-urgent .briefing-stat-value {
+  color: #ff6b6b;
+  text-shadow: 0 2px 8px rgba(255, 107, 107, 0.5);
+}
+
+.briefing-stat-card.stat-meetings .briefing-stat-value {
+  color: #4fc3f7;
+  text-shadow: 0 2px 8px rgba(79, 195, 247, 0.5);
+}
+
+.briefing-stat-card.stat-followup .briefing-stat-value {
+  color: #ffd54f;
+  text-shadow: 0 2px 8px rgba(255, 213, 79, 0.5);
+}
+
+.briefing-stat-label {
+  font-size: 11px;
+  font-weight: 600;
+  color: rgba(255, 255, 255, 0.7);
+  text-transform: uppercase;
+  letter-spacing: 0.08em;
+  margin: 0;
+}
+
+/* ═══════════════════════════════════════════════════════════════════════════
+   PRIORITY EMAILS SECTION
+   ═══════════════════════════════════════════════════════════════════════════ */
+
+.briefing-priority-section {
+  margin-top: 24px;
+}
+
+.briefing-section-header {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  margin-bottom: 16px;
+}
+
+.briefing-section-icon {
+  font-size: 16px;
+  color: #ffd54f;
+  text-shadow: 0 2px 4px rgba(255, 213, 79, 0.5);
+}
+
+.briefing-section-title {
+  font-size: 14px;
+  font-weight: 700;
+  color: #ffffff;
+  margin: 0;
+  text-shadow: 0 1px 2px rgba(0, 0, 0, 0.3);
+}
+
+.briefing-email-list {
+  display: flex;
+  flex-direction: column;
+  gap: 8px;
+}
+
+.briefing-email-item {
+  position: relative;
+  display: flex;
+  align-items: flex-start;
+  gap: 12px;
+  padding: 16px;
+  background: rgba(255, 255, 255, 0.06);
+  border: 1px solid rgba(255, 255, 255, 0.1);
+  border-radius: 12px;
+  cursor: pointer;
+  transition: all 0.3s cubic-bezier(0.4, 0, 0.2, 1);
+  overflow: hidden;
+}
+
+.briefing-email-item::before {
+  content: '';
+  position: absolute;
+  left: 0;
+  top: 0;
+  bottom: 0;
+  width: 3px;
+  background: linear-gradient(
+    180deg,
+    var(--briefing-coral) 0%,
+    var(--briefing-coral-light) 100%
+  );
+  opacity: 0;
+  transition: opacity 0.3s ease;
+}
+
+.briefing-email-item:hover {
+  background: rgba(255, 255, 255, 0.1);
+  border-color: rgba(255, 255, 255, 0.2);
+  box-shadow:
+    0 4px 12px rgba(0, 0, 0, 0.2),
+    inset 0 1px 0 rgba(255, 255, 255, 0.1);
+  transform: translateX(4px);
+}
+
+.briefing-email-item:hover::before {
+  opacity: 1;
+}
+
+.briefing-email-rank {
+  flex-shrink: 0;
+  width: 28px;
+  height: 28px;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  background: linear-gradient(
+    135deg,
+    rgba(255, 107, 107, 0.3) 0%,
+    rgba(255, 135, 135, 0.2) 100%
+  );
+  border-radius: 50%;
+  font-size: 12px;
+  font-weight: 800;
+  color: #ffffff;
+  text-shadow: 0 1px 2px rgba(0, 0, 0, 0.3);
+  box-shadow:
+    0 2px 6px rgba(255, 107, 107, 0.3),
+    inset 0 1px 0 rgba(255, 255, 255, 0.2);
+}
+
+.briefing-email-content {
+  flex: 1;
+  min-width: 0;
+}
+
+.briefing-email-subject {
+  font-size: 14px;
+  font-weight: 600;
+  color: #ffffff;
+  margin: 0 0 4px 0;
+  white-space: nowrap;
+  overflow: hidden;
+  text-overflow: ellipsis;
+  text-shadow: 0 1px 2px rgba(0, 0, 0, 0.3);
+}
+
+.briefing-email-meta {
+  font-size: 12px;
+  color: rgba(255, 255, 255, 0.7);
+  margin: 0;
+  line-height: 1.4;
+}
+
+.briefing-email-from {
+  font-weight: 500;
+}
+
+.briefing-email-summary {
+  color: rgba(255, 255, 255, 0.5);
+}
+
+.briefing-email-arrow {
+  flex-shrink: 0;
+  color: rgba(255, 255, 255, 0.4);
+  font-size: 14px;
+  opacity: 0;
+  transition: all 0.3s ease;
+  transform: translateX(-4px);
+}
+
+.briefing-email-item:hover .briefing-email-arrow {
+  opacity: 1;
+  color: var(--briefing-coral);
+  transform: translateX(0);
+}
+
+/* ═══════════════════════════════════════════════════════════════════════════
+   EMPTY STATE
+   ═══════════════════════════════════════════════════════════════════════════ */
+
+.briefing-empty-state {
+  text-align: center;
+  padding: 32px 16px;
+}
+
+.briefing-empty-icon {
+  width: 56px;
+  height: 56px;
+  margin: 0 auto 16px;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  background: rgba(52, 211, 153, 0.15);
+  border-radius: 50%;
+  box-shadow:
+    0 4px 12px rgba(52, 211, 153, 0.2),
+    inset 0 1px 0 rgba(255, 255, 255, 0.1);
+}
+
+.briefing-empty-icon i {
+  font-size: 28px;
+  color: #34d399;
+  text-shadow: 0 2px 4px rgba(52, 211, 153, 0.5);
+}
+
+.briefing-empty-title {
+  font-size: 16px;
+  font-weight: 700;
+  color: #ffffff;
+  margin: 0 0 4px 0;
+  text-shadow: 0 1px 2px rgba(0, 0, 0, 0.3);
+}
+
+.briefing-empty-text {
+  font-size: 13px;
+  color: rgba(255, 255, 255, 0.7);
+  margin: 0;
+}
+
+/* ═══════════════════════════════════════════════════════════════════════════
+   PRIORITY INBOX BUTTON
+   ═══════════════════════════════════════════════════════════════════════════ */
+
+.briefing-priority-inbox-btn {
+  width: 100%;
+  margin-top: 16px;
+  padding: 14px 24px;
+  background: linear-gradient(
+    135deg,
+    var(--briefing-coral) 0%,
+    var(--briefing-coral-light) 100%
+  );
+  border: 1px solid rgba(255, 255, 255, 0.2);
+  border-radius: 12px;
+  color: #ffffff;
+  font-size: 14px;
+  font-weight: 700;
+  cursor: pointer;
+  box-shadow:
+    0 4px 12px rgba(255, 107, 107, 0.4),
+    inset 0 1px 0 rgba(255, 255, 255, 0.2);
+  transition: all 0.3s cubic-bezier(0.4, 0, 0.2, 1);
+  text-shadow: 0 1px 2px rgba(0, 0, 0, 0.3);
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  gap: 8px;
+}
+
+.briefing-priority-inbox-btn:hover {
+  background: linear-gradient(
+    135deg,
+    #ff5252 0%,
+    var(--briefing-coral) 100%
+  );
+  box-shadow:
+    0 6px 16px rgba(255, 107, 107, 0.5),
+    inset 0 1px 0 rgba(255, 255, 255, 0.3);
+  transform: translateY(-2px);
+}
+
+.briefing-priority-inbox-btn:active {
+  transform: translateY(0);
+  box-shadow:
+    0 2px 8px rgba(255, 107, 107, 0.4),
+    inset 0 1px 0 rgba(255, 255, 255, 0.2);
+}
+
+/* ═══════════════════════════════════════════════════════════════════════════
+   LOADING STATE
+   ═══════════════════════════════════════════════════════════════════════════ */
+
+.briefing-loading {
+  background: linear-gradient(
+    135deg,
+    var(--briefing-burgundy-deep) 0%,
+    var(--briefing-burgundy-mid) 100%
+  );
+  border-radius: 20px;
+  padding: 24px;
+  box-shadow: var(--briefing-shadow-md);
+  border: 1px solid rgba(255, 107, 107, 0.2);
+}
+
+.briefing-loading-content {
+  display: flex;
+  align-items: center;
+  gap: 16px;
+}
+
+.briefing-loading-spinner {
+  font-size: 20px;
+  color: var(--briefing-coral);
+  animation: spin 1s linear infinite;
+}
+
+@keyframes spin {
+  from { transform: rotate(0deg); }
+  to { transform: rotate(360deg); }
+}
+
+.briefing-loading-text {
+  font-size: 14px;
+  color: rgba(255, 255, 255, 0.8);
+  font-weight: 500;
+}
+
+/* ═══════════════════════════════════════════════════════════════════════════
+   RESPONSIVE DESIGN
+   ═══════════════════════════════════════════════════════════════════════════ */
+
+@media (max-width: 1024px) {
+  .briefing-stats-grid {
+    grid-template-columns: repeat(2, 1fr);
+  }
+}
+
+@media (max-width: 640px) {
+  .email-daily-briefing {
+    border-radius: 16px;
+  }
+
+  .briefing-header {
+    padding: 16px;
+  }
+
+  .briefing-content {
+    padding: 16px;
+  }
+
+  .briefing-stats-grid {
+    grid-template-columns: 1fr;
+    gap: 8px;
+  }
+
+  .briefing-stat-card {
+    padding: 16px;
+  }
+
+  .briefing-greeting {
+    font-size: 18px;
+    margin-bottom: 16px;
+  }
+
+  .briefing-view-all-btn {
+    padding: 6px 12px;
+    font-size: 12px;
+  }
+}
+
+/* ═══════════════════════════════════════════════════════════════════════════
+   ACCESSIBILITY
+   ═══════════════════════════════════════════════════════════════════════════ */
+
+@media (prefers-reduced-motion: reduce) {
+  .email-daily-briefing,
+  .briefing-stat-card,
+  .briefing-email-item,
+  .briefing-priority-inbox-btn,
+  .briefing-email-arrow {
+    transition: none;
+  }
+
+  .briefing-loading-spinner {
+    animation: none;
+  }
+}
+
+/* Focus States */
+.briefing-view-all-btn:focus-visible,
+.briefing-collapse-btn:focus-visible,
+.briefing-email-item:focus-visible,
+.briefing-priority-inbox-btn:focus-visible {
+  outline: 2px solid rgba(255, 107, 107, 0.6);
+  outline-offset: 2px;
+}

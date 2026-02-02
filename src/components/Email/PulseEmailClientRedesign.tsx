@@ -1,7 +1,7 @@
 // PulseEmailClientRedesign.tsx - Redesigned AI-Powered Email Client
 // Features: Enhanced UI, Zoom (50-100%, max default), Light/Dark Mode, Mobile Optimized
 import React, { useState, useEffect, useCallback } from 'react';
-import { emailSyncService, CachedEmail, EmailThread, EmailFolder } from '../../services/emailSyncService';
+import { emailSyncService, CachedEmail, EmailThread, EmailFolder, EmailCategory } from '../../services/emailSyncService';
 import { getGmailService, resetGmailService, SendEmailParams } from '../../services/gmailService';
 import { offlineEmailStorage } from '../../services/offlineEmailStorage';
 import { supabase } from '../../services/supabase';
@@ -17,6 +17,8 @@ import EmailSettingsModal from './EmailSettingsModal';
 import KeyboardShortcutsModal from './KeyboardShortcutsModal';
 import { OfflineIndicatorCompact } from './OfflineIndicator';
 import { useEmailKeyboardShortcuts } from '../../hooks/useEmailKeyboardShortcuts';
+import { ReconnectGoogleModal } from '../Auth/ReconnectGoogleModal';
+import { GoogleAuthStatus } from './GoogleAuthStatus';
 
 interface PulseEmailClientRedesignProps {
   userEmail: string;
@@ -53,14 +55,19 @@ export const PulseEmailClientRedesign: React.FC<PulseEmailClientRedesignProps> =
   const [isOffline, setIsOffline] = useState(!navigator.onLine);
   const [pendingActionsCount, setPendingActionsCount] = useState(0);
   const [showEmailSettings, setShowEmailSettings] = useState(false);
-  
+  const [showReauthModal, setShowReauthModal] = useState(false);
+
   // NEW: Enhanced zoom control - default 100% (maximum), can zoom out to 50%
   const [zoomLevel, setZoomLevel] = useState(100);
   const [density, setDensity] = useState<'comfortable' | 'compact' | 'default'>('default');
-  
+
   // NEW: UI customization
   const [theme, setTheme] = useState<'light' | 'dark' | 'auto'>('auto');
   const [accentColor, setAccentColor] = useState<'rose' | 'blue' | 'purple' | 'green'>('rose');
+
+  // NEW: Category tabs for Inbox
+  const [activeCategory, setActiveCategory] = useState<EmailCategory>('primary');
+  const [categoryCounts, setCategoryCounts] = useState<Record<string, number>>({});
 
   // Zoom controls - 50% (dense) to 100% (spacious)
   const handleZoomIn = () => setZoomLevel(prev => Math.min(prev + 10, 100));
@@ -88,7 +95,12 @@ export const PulseEmailClientRedesign: React.FC<PulseEmailClientRedesignProps> =
   const loadEmails = useCallback(async () => {
     setLoading(true);
     try {
-      const folderEmails = await emailSyncService.getEmailsByFolder(currentFolder);
+      const folderEmails = await emailSyncService.getEmailsByFolder(
+        currentFolder,
+        50,
+        0,
+        currentFolder === 'inbox' ? activeCategory : undefined
+      );
       setEmails(folderEmails);
 
       // Update counts
@@ -97,18 +109,49 @@ export const PulseEmailClientRedesign: React.FC<PulseEmailClientRedesignProps> =
 
       const unread = await emailSyncService.getUnreadCount('inbox');
       setUnreadCount(unread);
+
+      // Update category counts if in inbox
+      if (currentFolder === 'inbox') {
+        const catCounts = await emailSyncService.getCategoryUnreadCounts();
+        setCategoryCounts(catCounts);
+      }
     } catch (error) {
       console.error('Error loading emails:', error);
       toast.error('Failed to load emails');
     } finally {
       setLoading(false);
     }
-  }, [currentFolder]);
+  }, [currentFolder, activeCategory]);
 
-  // Initial load and sync
+  // Initial load and automatic sync
   useEffect(() => {
-    loadEmails();
-  }, [loadEmails]);
+    const initializeEmails = async () => {
+      // Load cached emails first for instant display
+      await loadEmails();
+
+      // Check if we need to sync
+      const syncState = await emailSyncService.getSyncState();
+      const lastSync = syncState?.last_full_sync_at;
+
+      if (!lastSync) {
+        // Never synced - do an initial sync
+        console.log('First time sync - fetching emails from Gmail');
+        handleSync();
+      } else {
+        // Check if last sync was more than 5 minutes ago
+        const lastSyncTime = new Date(lastSync).getTime();
+        const now = Date.now();
+        const fiveMinutes = 5 * 60 * 1000;
+
+        if (now - lastSyncTime > fiveMinutes) {
+          console.log('Auto-syncing emails (last sync was more than 5 minutes ago)');
+          handleSync();
+        }
+      }
+    };
+
+    initializeEmails();
+  }, []); // Run only once on mount
 
   // Offline/Online connectivity handling
   useEffect(() => {
@@ -220,7 +263,49 @@ export const PulseEmailClientRedesign: React.FC<PulseEmailClientRedesignProps> =
     setSyncing(true);
     try {
       const result = await emailSyncService.fullSync(100);
-      toast.success(`Synced ${result.synced} emails`);
+
+      if (result.synced > 0) {
+        const categories = [];
+        if (result.categories?.primary > 0) categories.push(`${result.categories.primary} Primary`);
+        if (result.categories?.social > 0) categories.push(`${result.categories.social} Social`);
+        if (result.categories?.promotions > 0) categories.push(`${result.categories.promotions} Promotions`);
+        if (result.categories?.updates > 0) categories.push(`${result.categories.updates} Updates`);
+
+        const details = categories.join(', ');
+
+        toast.custom((t) => (
+          <div className={`${t.visible ? 'animate-enter' : 'animate-leave'} max-w-md w-full bg-white dark:bg-zinc-800 shadow-lg rounded-lg pointer-events-auto flex ring-1 ring-black ring-opacity-5`}>
+            <div className="flex-1 w-0 p-4">
+              <div className="flex items-start">
+                <div className="flex-shrink-0 pt-0.5">
+                  <i className="fa-solid fa-envelope-circle-check text-green-500 text-lg"></i>
+                </div>
+                <div className="ml-3 flex-1">
+                  <p className="text-sm font-medium text-stone-900 dark:text-gray-100">
+                    Synced {result.synced} new emails
+                  </p>
+                  {details && (
+                    <p className="mt-1 text-sm text-stone-500 dark:text-gray-400">
+                      {details}
+                    </p>
+                  )}
+                </div>
+              </div>
+            </div>
+            <div className="flex border-l border-gray-200 dark:border-zinc-700">
+              <button
+                onClick={() => toast.dismiss(t.id)}
+                className="w-full border border-transparent rounded-none rounded-r-lg p-4 flex items-center justify-center text-sm font-medium text-indigo-600 dark:text-indigo-400 hover:text-indigo-500 focus:outline-none focus:ring-2 focus:ring-indigo-500"
+              >
+                Close
+              </button>
+            </div>
+          </div>
+        ), { duration: 4000 });
+      } else {
+        toast.success(`Synced ${result.synced} emails`);
+      }
+
       await loadEmails();
     } catch (error) {
       console.error('Sync error:', error);
@@ -233,53 +318,102 @@ export const PulseEmailClientRedesign: React.FC<PulseEmailClientRedesignProps> =
   // Handle folder change
   const handleFolderChange = (folder: EmailFolder) => {
     setCurrentFolder(folder);
+    if (folder !== 'inbox') {
+      setActiveCategory('primary'); // Reset, but technically activeCategory is only used for inbox
+    } else {
+      setActiveCategory('primary'); // Always start at primary when going to inbox
+    }
     setSelectedEmail(null);
     setSelectedThread(null);
+  };
+
+  // Handle category change
+  const handleCategoryChange = (category: EmailCategory) => {
+    setActiveCategory(category);
+    setSelectedEmail(null);
+    // loadEmails will be triggered by the dependency change in useEffect/useCallback
+  };
+
+  // Centralized error handler for email operations
+  const handleEmailOperationError = (error: unknown, operation: string) => {
+    const errorMessage = error instanceof Error ? error.message : `Failed to ${operation}`;
+    const errorCode = (error as any).code;
+    const requiresReauth = (error as any).requiresReauth ||
+                          errorCode === 'GOOGLE_SESSION_EXPIRED' ||
+                          errorMessage.toLowerCase().includes('session') ||
+                          errorMessage.toLowerCase().includes('expired');
+
+    if (requiresReauth) {
+      setAuthError(true);
+      setShowReauthModal(true);
+      resetGmailService();
+      toast.error(`Google session expired. Please reconnect to ${operation}.`);
+    } else {
+      toast.error(errorMessage);
+    }
+
+    console.error(`[Email Operation Error] ${operation}:`, error);
   };
 
   // Handle email selection
   const handleEmailSelect = async (email: CachedEmail) => {
     setSelectedEmail(email);
 
-    if (!email.is_read) {
-      await emailSyncService.markAsRead(email.id);
-      setEmails(prev => prev.map(e =>
-        e.id === email.id ? { ...e, is_read: true } : e
-      ));
-      setUnreadCount(prev => Math.max(0, prev - 1));
-    }
+    try {
+      if (!email.is_read) {
+        await emailSyncService.markAsRead(email.id);
+        setEmails(prev => prev.map(e =>
+          e.id === email.id ? { ...e, is_read: true } : e
+        ));
+        setUnreadCount(prev => Math.max(0, prev - 1));
+      }
 
-    if (viewMode === 'thread' && email.thread_id) {
-      const thread = await emailSyncService.getThread(email.thread_id);
-      setSelectedThread(thread);
+      if (viewMode === 'thread' && email.thread_id) {
+        const thread = await emailSyncService.getThread(email.thread_id);
+        setSelectedThread(thread);
+      }
+    } catch (error) {
+      handleEmailOperationError(error, 'mark email as read');
     }
   };
 
   // Handle star toggle
   const handleToggleStar = async (email: CachedEmail) => {
-    const newStarred = await emailSyncService.toggleStar(email.id);
-    setEmails(prev => prev.map(e =>
-      e.id === email.id ? { ...e, is_starred: newStarred } : e
-    ));
-    if (selectedEmail?.id === email.id) {
-      setSelectedEmail({ ...selectedEmail, is_starred: newStarred });
+    try {
+      const newStarred = await emailSyncService.toggleStar(email.id);
+      setEmails(prev => prev.map(e =>
+        e.id === email.id ? { ...e, is_starred: newStarred } : e
+      ));
+      if (selectedEmail?.id === email.id) {
+        setSelectedEmail({ ...selectedEmail, is_starred: newStarred });
+      }
+    } catch (error) {
+      handleEmailOperationError(error, 'star email');
     }
   };
 
   // Handle archive
   const handleArchive = async (email: CachedEmail) => {
-    await emailSyncService.archiveEmail(email.id);
-    setEmails(prev => prev.filter(e => e.id !== email.id));
-    setSelectedEmail(null);
-    toast.success('Email archived');
+    try {
+      await emailSyncService.archiveEmail(email.id);
+      setEmails(prev => prev.filter(e => e.id !== email.id));
+      setSelectedEmail(null);
+      toast.success('Email archived');
+    } catch (error) {
+      handleEmailOperationError(error, 'archive email');
+    }
   };
 
   // Handle trash
   const handleTrash = async (email: CachedEmail) => {
-    await emailSyncService.trashEmail(email.id);
-    setEmails(prev => prev.filter(e => e.id !== email.id));
-    setSelectedEmail(null);
-    toast.success('Email moved to trash');
+    try {
+      await emailSyncService.trashEmail(email.id);
+      setEmails(prev => prev.filter(e => e.id !== email.id));
+      setSelectedEmail(null);
+      toast.success('Email moved to trash');
+    } catch (error) {
+      handleEmailOperationError(error, 'move email to trash');
+    }
   };
 
   // Handle reply
@@ -728,6 +862,9 @@ export const PulseEmailClientRedesign: React.FC<PulseEmailClientRedesignProps> =
             />
           )}
 
+          {/* Google Auth Status */}
+          <GoogleAuthStatus onReconnect={() => setShowReauthModal(true)} />
+
           {/* Sync button */}
           <button
             onClick={handleSync}
@@ -759,11 +896,10 @@ export const PulseEmailClientRedesign: React.FC<PulseEmailClientRedesignProps> =
           {currentFolder === 'inbox' && (
             <button
               onClick={() => setShowBriefing(!showBriefing)}
-              className={`hidden sm:flex items-center gap-2 px-3 py-2 rounded-lg text-sm transition ${
-                showBriefing
-                  ? `bg-gradient-to-r ${accent.gradient} bg-opacity-20 ${accent.text} border border-${accentColor}-500/30`
-                  : 'bg-stone-200 dark:bg-zinc-800 text-stone-600 dark:text-zinc-400 hover:text-stone-800 dark:hover:text-white'
-              }`}
+              className={`hidden sm:flex items-center gap-2 px-3 py-2 rounded-lg text-sm transition ${showBriefing
+                ? `bg-gradient-to-r ${accent.gradient} bg-opacity-20 ${accent.text} border border-${accentColor}-500/30`
+                : 'bg-stone-200 dark:bg-zinc-800 text-stone-600 dark:text-zinc-400 hover:text-stone-800 dark:hover:text-white'
+                }`}
               title={showBriefing ? 'Hide briefing' : 'Show briefing'}
             >
               <i className="fa-solid fa-envelope-open-text"></i>
@@ -860,6 +996,9 @@ export const PulseEmailClientRedesign: React.FC<PulseEmailClientRedesignProps> =
                 onTrash={handleTrash}
                 currentFolder={currentFolder}
                 accentColor={accentColor}
+                activeCategory={activeCategory}
+                onCategoryChange={handleCategoryChange}
+                categoryCounts={categoryCounts}
               />
             </div>
 
@@ -938,6 +1077,20 @@ export const PulseEmailClientRedesign: React.FC<PulseEmailClientRedesignProps> =
       >
         <i className="fa-solid fa-keyboard"></i>
       </button>
+
+      {/* Reconnect Google Modal */}
+      <ReconnectGoogleModal
+        isOpen={showReauthModal}
+        onClose={() => setShowReauthModal(false)}
+        onSuccess={async () => {
+          setShowReauthModal(false);
+          setAuthError(false);
+          toast.success('Google reconnected successfully!');
+          // Reload emails after reconnection
+          await loadEmails();
+        }}
+        message="Your Google session has expired. Please reconnect to continue using Gmail features."
+      />
     </div>
   );
 };

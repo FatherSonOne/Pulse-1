@@ -1,7 +1,8 @@
-import React, { useState } from 'react';
+import React, { useState, memo } from 'react';
 import { Task } from '../../services/taskService';
 import { taskIntelligenceService, AITaskPriority } from '../../services/taskIntelligenceService';
-import { Zap, RefreshCw, AlertCircle, TrendingUp, CheckCircle } from 'lucide-react';
+import { Zap, RefreshCw, AlertCircle, TrendingUp, CheckCircle, Settings } from 'lucide-react';
+import { APIKeyModal } from '../settings/APIKeyModal';
 import './AITaskPrioritizer.css';
 
 export interface AITaskPrioritizerProps {
@@ -10,7 +11,28 @@ export interface AITaskPrioritizerProps {
   apiKey: string;
 }
 
-export const AITaskPrioritizer: React.FC<AITaskPrioritizerProps> = ({
+// Custom comparison function to prevent unnecessary re-renders
+const arePropsEqual = (
+  prevProps: AITaskPrioritizerProps,
+  nextProps: AITaskPrioritizerProps
+): boolean => {
+  // Check if tasks array length changed
+  if (prevProps.tasks.length !== nextProps.tasks.length) return false;
+
+  // Check if any task's updated_at changed
+  for (let i = 0; i < prevProps.tasks.length; i++) {
+    if (prevProps.tasks[i].id !== nextProps.tasks[i].id) return false;
+    if (prevProps.tasks[i].updated_at !== nextProps.tasks[i].updated_at) return false;
+  }
+
+  // Check if API key changed
+  if (prevProps.apiKey !== nextProps.apiKey) return false;
+
+  // Props are equal, skip re-render
+  return true;
+};
+
+const AITaskPrioritizerComponent: React.FC<AITaskPrioritizerProps> = ({
   tasks,
   onPrioritizationComplete,
   apiKey
@@ -19,10 +41,12 @@ export const AITaskPrioritizer: React.FC<AITaskPrioritizerProps> = ({
   const [error, setError] = useState<string | null>(null);
   const [lastAnalysis, setLastAnalysis] = useState<AITaskPriority[] | null>(null);
   const [showResults, setShowResults] = useState(false);
+  const [showAPIKeyModal, setShowAPIKeyModal] = useState(false);
 
   const handlePrioritize = async () => {
     if (!apiKey) {
       setError('API key is required for AI prioritization');
+      setShowAPIKeyModal(true);
       return;
     }
 
@@ -81,11 +105,11 @@ export const AITaskPrioritizer: React.FC<AITaskPrioritizerProps> = ({
   const stats = getSummaryStats();
 
   return (
-    <div className="ai-task-prioritizer">
+    <div className="ai-task-prioritizer" role="region" aria-label="AI Task Prioritization">
       {/* Header */}
       <div className="prioritizer-header">
         <div className="prioritizer-header-left">
-          <Zap size={20} />
+          <Zap size={20} aria-hidden="true" />
           <div>
             <h3 className="prioritizer-title">AI Task Prioritization</h3>
             <p className="prioritizer-subtitle">
@@ -94,18 +118,20 @@ export const AITaskPrioritizer: React.FC<AITaskPrioritizerProps> = ({
           </div>
         </div>
         <button
+          type="button"
           className="prioritize-button"
           onClick={handlePrioritize}
           disabled={isAnalyzing || tasks.length === 0}
+          aria-label={isAnalyzing ? "Analyzing tasks with AI" : `Prioritize ${tasks.length} tasks with AI`}
         >
           {isAnalyzing ? (
             <>
-              <RefreshCw size={16} className="spinning" />
+              <RefreshCw size={16} className="spinning" aria-hidden="true" />
               <span>Analyzing...</span>
             </>
           ) : (
             <>
-              <Zap size={16} />
+              <Zap size={16} aria-hidden="true" />
               <span>Prioritize Tasks</span>
             </>
           )}
@@ -114,11 +140,32 @@ export const AITaskPrioritizer: React.FC<AITaskPrioritizerProps> = ({
 
       {/* Error message */}
       {error && (
-        <div className="prioritizer-error">
-          <AlertCircle size={16} />
+        <div className="prioritizer-error" role="alert">
+          <AlertCircle size={16} aria-hidden="true" />
           <span>{error}</span>
+          {!apiKey && (
+            <button
+              type="button"
+              className="configure-api-key-button"
+              onClick={() => setShowAPIKeyModal(true)}
+              aria-label="Configure Gemini API key for AI prioritization"
+            >
+              <Settings size={14} aria-hidden="true" />
+              Configure API Key
+            </button>
+          )}
         </div>
       )}
+
+      {/* API Key Configuration Modal */}
+      <APIKeyModal
+        isOpen={showAPIKeyModal}
+        onClose={() => setShowAPIKeyModal(false)}
+        onSave={() => {
+          setError(null);
+          setShowAPIKeyModal(false);
+        }}
+      />
 
       {/* Summary statistics */}
       {stats && showResults && (
@@ -152,11 +199,13 @@ export const AITaskPrioritizer: React.FC<AITaskPrioritizerProps> = ({
       {lastAnalysis && showResults && (
         <div className="prioritizer-results">
           <div className="results-header">
-            <TrendingUp size={16} />
+            <TrendingUp size={16} aria-hidden="true" />
             <h4>Prioritization Results</h4>
             <button
+              type="button"
               className="toggle-button"
               onClick={() => setShowResults(!showResults)}
+              aria-label={showResults ? 'Hide prioritization details' : 'Show prioritization details'}
             >
               {showResults ? 'Hide' : 'Show'} Details
             </button>
@@ -228,3 +277,6 @@ export const AITaskPrioritizer: React.FC<AITaskPrioritizerProps> = ({
     </div>
   );
 };
+
+// Export memoized component with custom comparison
+export const AITaskPrioritizer = memo(AITaskPrioritizerComponent, arePropsEqual);

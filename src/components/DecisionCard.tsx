@@ -56,7 +56,7 @@ export const DecisionCard: React.FC<DecisionCardProps> = ({
         const count = voteCounts[voteType];
         const percentage = totalVotes > 0 ? Math.round((count / totalVotes) * 100) : 0;
         const voters = votes
-          .filter(v => v.vote === voteType)
+          .filter(v => v.choice === voteType)
           .map(v => v.user_id);
 
         choices[voteType] = {
@@ -82,7 +82,7 @@ export const DecisionCard: React.FC<DecisionCardProps> = ({
       await decisionService.castVote({
         decision_id: decision.id,
         user_id: currentUserId,
-        vote: choice
+        choice: choice
       });
       setHasVoted(true);
       onVote?.();
@@ -185,7 +185,7 @@ export const DecisionCard: React.FC<DecisionCardProps> = ({
           ) : (
             <div className="voted-indicator">
               <CheckCircle size={16} />
-              <span>You voted: <strong>{getVoteLabel(userVote?.vote || '')}</strong></span>
+              <span>You voted: <strong>{getVoteLabel(userVote?.choice || '')}</strong></span>
             </div>
           )}
         </div>

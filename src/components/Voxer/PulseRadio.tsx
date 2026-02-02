@@ -321,6 +321,45 @@ const PulseRadio: React.FC<PulseRadioProps> = ({ onBack, isDarkMode = false }) =
     }
   };
 
+  const handleSendDiscussionResponse = async () => {
+    if (!recordingData || !activeBroadcastRoom) {
+      console.error('Cannot send discussion response: no recording or active broadcast');
+      return;
+    }
+
+    // Discussion responses are broadcasts that reply to the original broadcast
+    const response = await voxModeService.uploadAndPublishBroadcast(
+      activeBroadcastRoom.channelId,
+      recordingData.blob,
+      recordingData.duration,
+      `Re: ${activeBroadcastRoom.title}`,
+      [] // No special notifications for responses
+    );
+
+    if (response) {
+      // Optionally reload broadcasts to show the response
+      loadBroadcasts(activeBroadcastRoom.channelId);
+
+      analyticsCollector.trackMessageEvent({
+        id: response.id,
+        channel: 'voxer',
+        contactIdentifier: activeBroadcastRoom.channelId,
+        contactName: `📻 Discussion Response`,
+        isSent: true,
+        timestamp: new Date(),
+        content: `Re: ${activeBroadcastRoom.title}`,
+        duration: recordingData.duration,
+        messageType: 'broadcast_response'
+      }).catch(console.error);
+
+      sendRecording();
+      setActiveBroadcastRoom(null);
+      toast.success('Response added to discussion!');
+    } else {
+      toast.error('Failed to send response');
+    }
+  };
+
   useEffect(() => {
     loadChannels();
     loadPulseUsers();
@@ -1011,39 +1050,59 @@ const PulseRadio: React.FC<PulseRadioProps> = ({ onBack, isDarkMode = false }) =
               </div>
             </div>
 
-            <div className="pulse-radio-discussion-content">
-              <MessageSquare className="w-12 h-12" />
-              <p>Join the Discussion</p>
-              <span>Record a voice response below</span>
-            </div>
-
-            <div className="pulse-radio-discussion-record">
-              <PTTButton
-                state={recordingState === 'recording' ? 'recording' : 'idle'}
-                recordingMode="tap"
-                duration={recordingDuration}
-                onStart={startRecording}
-                onStop={stopRecording}
-                size="md"
-                color={MODE_COLOR}
-                isDarkMode={isDarkMode}
-                showWaveform={false}
-              />
-
-              {recordingState === 'recording' && (
-                <LayeredVisualizer
-                  analyser={analyser}
-                  isActive={true}
-                  height={48}
-                  color={MODE_COLOR}
+            {recordingState === 'preview' && recordingData ? (
+              <div className="pulse-radio-preview">
+                <RecordingPreview
+                  recordingData={recordingData}
+                  onSend={handleSendDiscussionResponse}
+                  onCancel={() => {
+                    cancelRecording();
+                  }}
+                  onRetry={() => {
+                    cancelRecording();
+                    setTimeout(() => startRecording(), 100);
+                  }}
                   isDarkMode={isDarkMode}
+                  modeColor={MODE_COLOR}
                 />
-              )}
+              </div>
+            ) : (
+              <>
+                <div className="pulse-radio-discussion-content">
+                  <MessageSquare className="w-12 h-12" />
+                  <p>Join the Discussion</p>
+                  <span>Record a voice response below</span>
+                </div>
 
-              {recordingState === 'idle' && (
-                <p className="pulse-radio-hint">Tap to record your response</p>
-              )}
-            </div>
+                <div className="pulse-radio-discussion-record">
+                  <PTTButton
+                    state={recordingState === 'recording' ? 'recording' : 'idle'}
+                    recordingMode="tap"
+                    duration={recordingDuration}
+                    onStart={startRecording}
+                    onStop={stopRecording}
+                    size="md"
+                    color={MODE_COLOR}
+                    isDarkMode={isDarkMode}
+                    showWaveform={false}
+                  />
+
+                  {recordingState === 'recording' && (
+                    <LayeredVisualizer
+                      analyser={analyser}
+                      isActive={true}
+                      height={48}
+                      color={MODE_COLOR}
+                      isDarkMode={isDarkMode}
+                    />
+                  )}
+
+                  {recordingState === 'idle' && (
+                    <p className="pulse-radio-hint">Tap to record your response</p>
+                  )}
+                </div>
+              </>
+            )}
           </div>
         </div>
       )}

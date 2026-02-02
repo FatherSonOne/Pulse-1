@@ -8,7 +8,7 @@ import { TemplatesLibrary, TemplateInsertButton } from './TemplatesLibrary';
 import { AttachmentManager, AttachmentButton } from './AttachmentManager';
 import { BackupSync, SyncStatusIndicator } from './BackupSync';
 import { SmartSuggestions, SuggestionButton } from './SmartSuggestions';
-import ToolOverlay from './ToolOverlay';
+import ToolOverlayComponent from './ToolOverlay';
 
 // Export as default object for lazy loading
 export default {
@@ -24,5 +24,5 @@ export default {
   SyncStatusIndicator,
   SmartSuggestions,
   SuggestionButton,
-  ToolOverlay,
+  ToolOverlay: ToolOverlayComponent,
 };

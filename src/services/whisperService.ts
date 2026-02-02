@@ -51,11 +51,14 @@ export class WhisperService {
     options: WhisperTranscriptionOptions = {}
   ): Promise<WhisperTranscriptionResult> {
     try {
+      // Normalize mime type - strip codec info (e.g., 'audio/webm;codecs=opus' -> 'audio/webm')
+      const baseMimeType = audioBlob.type ? audioBlob.type.split(';')[0] : 'audio/webm';
+
       // Convert Blob to File (Whisper API requires File object)
       const audioFile = new File(
         [audioBlob],
         `audio-${Date.now()}.webm`,
-        { type: audioBlob.type || 'audio/webm' }
+        { type: baseMimeType }
       );
 
       // Call Whisper API
@@ -101,10 +104,13 @@ export class WhisperService {
     options: Omit<WhisperTranscriptionOptions, 'language'> = {}
   ): Promise<WhisperTranscriptionResult> {
     try {
+      // Normalize mime type - strip codec info
+      const baseMimeType = audioBlob.type ? audioBlob.type.split(';')[0] : 'audio/webm';
+
       const audioFile = new File(
         [audioBlob],
         `audio-${Date.now()}.webm`,
-        { type: audioBlob.type || 'audio/webm' }
+        { type: baseMimeType }
       );
 
       const translation = await this.openai.audio.translations.create({

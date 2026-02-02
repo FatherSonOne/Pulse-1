@@ -62,6 +62,7 @@
   transition: all 0.4s cubic-bezier(0.4, 0, 0.2, 1);
   position: relative;
   overflow: hidden;
+  contain: layout style;
 }
 
 /* Subtle gradient overlay for depth */
@@ -88,6 +89,8 @@
   display: flex;
   align-items: center;
   justify-content: space-between;
+  min-height: 60px;
+  flex-shrink: 0;
 }
 
 .sidebar-brand-logo {
@@ -95,15 +98,16 @@
   align-items: center;
   gap: 10px;
   cursor: pointer;
-  transition: transform 0.3s ease;
+  transition: opacity 0.2s ease;
+  flex-shrink: 0;
 }
 
 .sidebar-brand-logo:hover {
-  transform: scale(1.02);
+  opacity: 0.9;
 }
 
 .sidebar-brand-logo:active {
-  transform: scale(0.98);
+  opacity: 0.8;
 }
 
 .sidebar-logo-icon {
@@ -154,26 +158,85 @@
 .sidebar-brand-controls {
   display: flex;
   align-items: center;
-  gap: 4px;
+  gap: 8px;
+  flex-shrink: 0;
+}
+
+.sidebar-brand-controls > * {
+  flex-shrink: 0;
+}
+
+/* ============================================
+   DEDICATED COLLAPSE BUTTON SECTION
+   ============================================ */
+.sidebar-collapse-section {
+  position: relative;
+  padding: 0 12px 12px;
+  flex-shrink: 0;
+  z-index: 100;
+  display: flex;
+  justify-content: flex-end;
+}
+
+.pulse-sidebar.collapsed .sidebar-collapse-section {
+  justify-content: center;
+  padding: 12px 8px 20px;
+  margin-bottom: 8px;
 }
 
 .sidebar-collapse-btn {
   width: 32px;
   height: 32px;
-  border-radius: 10px;
+  padding: 0;
+  border-radius: 8px;
   display: flex;
   align-items: center;
   justify-content: center;
   color: var(--nav-item-text);
-  background: transparent;
-  border: none;
+  background: var(--nav-item-bg-hover);
+  border: 1px solid var(--nav-icon-border);
   cursor: pointer;
-  transition: all 0.25s ease;
+  flex-shrink: 0;
+  user-select: none;
+  -webkit-tap-highlight-color: transparent;
+  outline: none;
+  box-shadow: 0 1px 2px rgba(0, 0, 0, 0.05);
 }
 
 .sidebar-collapse-btn:hover {
-  background: var(--nav-item-bg-hover);
+  background: var(--nav-item-bg-active);
   color: var(--nav-item-text-hover);
+  border-color: rgba(244, 63, 94, 0.2);
+}
+
+.sidebar-collapse-btn:active {
+  background: var(--nav-item-bg-active);
+}
+
+.sidebar-collapse-btn:focus-visible {
+  outline: 2px solid var(--nav-item-text-hover);
+  outline-offset: 2px;
+}
+
+.sidebar-collapse-btn i {
+  pointer-events: none;
+  display: block;
+  font-size: 0.875rem;
+}
+
+.pulse-sidebar.collapsed .sidebar-collapse-btn {
+  position: relative;
+  z-index: 200;
+}
+
+/* ============================================
+   NOTIFICATION CENTER COLLAPSED STATE
+   ============================================ */
+.sidebar-notification-collapsed {
+  display: flex;
+  justify-content: center;
+  padding: 0 8px 12px;
+  flex-shrink: 0;
 }
 
 /* ============================================
@@ -184,7 +247,7 @@
 }
 
 .pulse-sidebar.collapsed .sidebar-brand {
-  padding: 12px 8px;
+  padding: 12px 8px 8px;
   justify-content: center;
 }
 
@@ -193,6 +256,11 @@
 .pulse-sidebar.collapsed .sidebar-section-label,
 .pulse-sidebar.collapsed .sidebar-footer-text {
   display: none;
+}
+
+.pulse-sidebar.collapsed .sidebar-nav {
+  margin-top: 0;
+  padding-top: 8px;
 }
 
 .pulse-sidebar.collapsed .sidebar-nav-item {

@@ -7,6 +7,8 @@ import { vacationResponderService, VacationResponderConfig } from '../../service
 import { blockedSendersService, BlockedSender } from '../../services/blockedSendersService';
 import { notificationRuleService, NotificationRule } from '../../services/notificationRuleService';
 import { emailAccountsService, EmailAccount, EmailAccountInput } from '../../services/emailAccountsService';
+import { emailSyncService, SyncState } from '../../services/emailSyncService';
+import toast from 'react-hot-toast';
 
 interface EmailSettingsModalProps {
   isOpen: boolean;
@@ -65,10 +67,17 @@ export const EmailSettingsModal: React.FC<EmailSettingsModalProps> = ({
   const [notificationRule, setNotificationRule] = useState<NotificationRuleDraft | null>(null);
   const [notificationSaving, setNotificationSaving] = useState(false);
 
+  // Sync state
+  const [syncState, setSyncState] = useState<SyncState | null>(null);
+  const [syncing, setSyncing] = useState(false);
+
   useEffect(() => {
     if (!isOpen) return;
     if (activeTab === 'gmail') {
       loadGmailProfile();
+    }
+    if (activeTab === 'sync') {
+      loadSyncState();
     }
     if (activeTab === 'automation') {
       loadAutomationSettings();
@@ -94,6 +103,30 @@ export const EmailSettingsModal: React.FC<EmailSettingsModalProps> = ({
       console.error('Error loading Gmail profile:', error);
     } finally {
       setLoading(false);
+    }
+  };
+
+  const loadSyncState = async () => {
+    try {
+      const state = await emailSyncService.getSyncState();
+      setSyncState(state);
+    } catch (error) {
+      console.error('Error loading sync state:', error);
+    }
+  };
+
+  const handleSync = async () => {
+    setSyncing(true);
+    try {
+      const result = await emailSyncService.fullSync(100);
+      toast.success(`Synced ${result.synced} emails successfully!`);
+      // Reload sync state
+      await loadSyncState();
+    } catch (error) {
+      console.error('Sync error:', error);
+      toast.error('Failed to sync emails. Please try again.');
+    } finally {
+      setSyncing(false);
     }
   };
 
@@ -182,10 +215,11 @@ export const EmailSettingsModal: React.FC<EmailSettingsModalProps> = ({
     setAccountError(null);
     try {
       const data = await emailAccountsService.list();
-      setEmailAccounts(data);
+      setEmailAccounts(Array.isArray(data) ? data : []);
     } catch (error) {
       console.error('Error loading email accounts:', error);
       setAccountError('Unable to load accounts.');
+      setEmailAccounts([]);
     } finally {
       setAccountsLoading(false);
     }
@@ -778,24 +812,49 @@ export const EmailSettingsModal: React.FC<EmailSettingsModalProps> = ({
             <div className="space-y-6">
               <div>
                 <h3 className="text-lg font-semibold text-stone-900 dark:text-white mb-4">Sync Settings</h3>
-                
+
                 <div className="space-y-4">
                   <div className="p-4 bg-stone-50 dark:bg-zinc-900/50 rounded-xl border border-stone-200 dark:border-zinc-800">
                     <div className="font-medium text-stone-900 dark:text-white mb-2">Last Sync</div>
-                    <div className="text-sm text-stone-500 dark:text-zinc-400">Never synced</div>
+                    <div className="text-sm text-stone-500 dark:text-zinc-400">
+                      {syncState?.last_full_sync_at
+                        ? new Date(syncState.last_full_sync_at).toLocaleString()
+                        : 'Never synced'}
+                    </div>
                   </div>
 
                   <div className="p-4 bg-stone-50 dark:bg-zinc-900/50 rounded-xl border border-stone-200 dark:border-zinc-800">
                     <div className="font-medium text-stone-900 dark:text-white mb-2">Sync Status</div>
                     <div className="flex items-center gap-2">
-                      <div className="w-2 h-2 rounded-full bg-green-500"></div>
-                      <span className="text-sm text-stone-600 dark:text-zinc-400">Connected to Gmail</span>
+                      <div className={`w-2 h-2 rounded-full ${
+                        syncing ? 'bg-yellow-500 animate-pulse' :
+                        syncState?.sync_status === 'error' ? 'bg-red-500' :
+                        'bg-green-500'
+                      }`}></div>
+                      <span className="text-sm text-stone-600 dark:text-zinc-400">
+                        {syncing ? 'Syncing...' :
+                         syncState?.sync_status === 'error' ? `Error: ${syncState.last_error}` :
+                         'Connected to Gmail'}
+                      </span>
                     </div>
                   </div>
 
-                  <button className="w-full px-4 py-3 bg-gradient-to-r from-rose-500 to-orange-500 hover:from-rose-600 hover:to-orange-600 text-white font-medium rounded-lg transition">
-                    <i className="fa-solid fa-arrows-rotate mr-2"></i>
-                    Sync Now
+                  {syncState?.total_emails_cached !== undefined && (
+                    <div className="p-4 bg-stone-50 dark:bg-zinc-900/50 rounded-xl border border-stone-200 dark:border-zinc-800">
+                      <div className="font-medium text-stone-900 dark:text-white mb-2">Cached Emails</div>
+                      <div className="text-sm text-stone-500 dark:text-zinc-400">
+                        {syncState.total_emails_cached.toLocaleString()} emails cached locally
+                      </div>
+                    </div>
+                  )}
+
+                  <button
+                    onClick={handleSync}
+                    disabled={syncing}
+                    className="w-full px-4 py-3 bg-gradient-to-r from-rose-500 to-orange-500 hover:from-rose-600 hover:to-orange-600 text-white font-medium rounded-lg transition disabled:opacity-50 disabled:cursor-not-allowed"
+                  >
+                    <i className={`fa-solid fa-arrows-rotate mr-2 ${syncing ? 'fa-spin' : ''}`}></i>
+                    {syncing ? 'Syncing...' : 'Sync Now'}
                   </button>
                 </div>
               </div>

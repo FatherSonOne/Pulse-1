@@ -2,6 +2,7 @@
 import React, { useState, useEffect } from 'react';
 import { emailSyncService, CachedEmail } from '../../services/emailSyncService';
 import { emailAIService } from '../../services/emailAIService';
+import './DailyBriefing.css';
 
 interface DailyBriefingProps {
   onEmailClick: (email: CachedEmail) => void;
@@ -89,10 +90,10 @@ export const DailyBriefing: React.FC<DailyBriefingProps> = ({
 
   if (loading) {
     return (
-      <div className="bg-gradient-to-br from-rose-500/10 via-orange-500/10 to-amber-500/10 dark:from-rose-500/5 dark:via-orange-500/5 dark:to-amber-500/5 border border-rose-200/50 dark:border-rose-500/20 rounded-2xl p-6">
-        <div className="flex items-center gap-3">
-          <i className="fa-solid fa-circle-notch fa-spin text-rose-500"></i>
-          <span className="text-stone-600 dark:text-zinc-400">Loading your daily briefing...</span>
+      <div className="email-daily-briefing briefing-loading">
+        <div className="briefing-loading-content">
+          <i className="fa-solid fa-circle-notch fa-spin briefing-loading-spinner"></i>
+          <span className="briefing-loading-text">Loading your daily briefing...</span>
         </div>
       </div>
     );
@@ -104,111 +105,112 @@ export const DailyBriefing: React.FC<DailyBriefingProps> = ({
     return (
       <div
         onClick={() => setCollapsed(false)}
-        className="bg-gradient-to-r from-rose-500/10 to-orange-500/10 dark:from-rose-500/5 dark:to-orange-500/5 border border-rose-200/50 dark:border-rose-500/20 rounded-xl px-4 py-3 cursor-pointer hover:from-rose-500/15 hover:to-orange-500/15 dark:hover:from-rose-500/10 dark:hover:to-orange-500/10 transition"
+        className="email-daily-briefing collapsed"
       >
-        <div className="flex items-center justify-between">
-          <div className="flex items-center gap-3">
-            <div className="w-8 h-8 rounded-lg bg-gradient-to-br from-rose-500 to-orange-500 flex items-center justify-center">
-              <i className="fa-solid fa-envelope-open-text text-white text-sm"></i>
+        <div className="briefing-header">
+          <div className="briefing-header-content">
+            <div className="briefing-icon-wrapper">
+              <i className="fa-solid fa-envelope-open-text briefing-icon"></i>
             </div>
-            <span className="font-medium text-stone-700 dark:text-zinc-300">Daily Briefing</span>
-            <span className="text-sm text-stone-500 dark:text-zinc-500">
-              {briefing.newCount} new · {briefing.urgentCount} urgent
-            </span>
+            <div className="briefing-title-section">
+              <h2>Daily Briefing</h2>
+              <p>
+                {briefing.newCount} new · {briefing.urgentCount} urgent
+              </p>
+            </div>
           </div>
-          <i className="fa-solid fa-chevron-down text-stone-400 dark:text-zinc-500"></i>
+          <i className="fa-solid fa-chevron-down" style={{ color: 'rgba(255, 255, 255, 0.7)' }}></i>
         </div>
       </div>
     );
   }
 
   return (
-    <div className="bg-gradient-to-br from-rose-500/10 via-orange-500/10 to-amber-500/10 dark:from-rose-500/5 dark:via-orange-500/5 dark:to-amber-500/5 border border-rose-200/50 dark:border-rose-500/20 rounded-2xl overflow-hidden">
+    <div className="email-daily-briefing">
       {/* Header */}
-      <div className="flex items-center justify-between px-6 py-4 border-b border-rose-200/30 dark:border-rose-500/10">
-        <div className="flex items-center gap-3">
-          <div className="w-10 h-10 rounded-xl bg-gradient-to-br from-rose-500 to-orange-500 flex items-center justify-center shadow-lg shadow-rose-500/20">
-            <i className="fa-solid fa-envelope-open-text text-white"></i>
+      <div className="briefing-header">
+        <div className="briefing-header-content">
+          <div className="briefing-icon-wrapper">
+            <i className="fa-solid fa-envelope-open-text briefing-icon"></i>
           </div>
-          <div>
-            <h2 className="text-lg font-semibold text-stone-900 dark:text-white">Your Email Pulse</h2>
-            <p className="text-sm text-stone-500 dark:text-zinc-500">Daily briefing</p>
+          <div className="briefing-title-section">
+            <h2>Your Email Pulse</h2>
+            <p>Daily briefing</p>
           </div>
         </div>
-        <div className="flex items-center gap-2">
+        <div className="briefing-header-actions">
           <button
             onClick={onViewAll}
-            className="text-sm text-rose-600 dark:text-rose-400 hover:text-rose-700 dark:hover:text-rose-300 font-medium transition"
+            className="briefing-view-all-btn"
           >
             View All
           </button>
           <button
             onClick={() => setCollapsed(true)}
-            className="w-8 h-8 rounded-lg hover:bg-rose-500/10 flex items-center justify-center text-stone-400 dark:text-zinc-500 hover:text-stone-600 dark:hover:text-white transition"
+            className="briefing-collapse-btn"
           >
-            <i className="fa-solid fa-chevron-up text-sm"></i>
+            <i className="fa-solid fa-chevron-up"></i>
           </button>
         </div>
       </div>
 
       {/* Content */}
-      <div className="p-6">
+      <div className="briefing-content">
         {/* Greeting */}
-        <p className="text-xl text-stone-800 dark:text-zinc-200 mb-6">
-          {briefing.greeting}! <span className="text-stone-500 dark:text-zinc-500">Here's your inbox summary.</span>
+        <p className="briefing-greeting">
+          <span className="briefing-greeting-name">{briefing.greeting}!</span>{' '}
+          <span className="briefing-greeting-text">Here's your inbox summary.</span>
         </p>
 
         {/* Stats grid */}
-        <div className="grid grid-cols-4 gap-4 mb-6">
-          <div className="bg-white/60 dark:bg-zinc-800/50 rounded-xl p-4 text-center">
-            <div className="text-2xl font-bold text-stone-900 dark:text-white">{briefing.newCount}</div>
-            <div className="text-xs text-stone-500 dark:text-zinc-500 mt-1">new emails</div>
+        <div className="briefing-stats-grid">
+          <div className="briefing-stat-card stat-new">
+            <div className="briefing-stat-value">{briefing.newCount}</div>
+            <div className="briefing-stat-label">new emails</div>
           </div>
-          <div className="bg-white/60 dark:bg-zinc-800/50 rounded-xl p-4 text-center">
-            <div className="text-2xl font-bold text-red-500">{briefing.urgentCount}</div>
-            <div className="text-xs text-stone-500 dark:text-zinc-500 mt-1">urgent</div>
+          <div className="briefing-stat-card stat-urgent">
+            <div className="briefing-stat-value">{briefing.urgentCount}</div>
+            <div className="briefing-stat-label">urgent</div>
           </div>
-          <div className="bg-white/60 dark:bg-zinc-800/50 rounded-xl p-4 text-center">
-            <div className="text-2xl font-bold text-blue-500">{briefing.meetingCount}</div>
-            <div className="text-xs text-stone-500 dark:text-zinc-500 mt-1">meetings</div>
+          <div className="briefing-stat-card stat-meetings">
+            <div className="briefing-stat-value">{briefing.meetingCount}</div>
+            <div className="briefing-stat-label">meetings</div>
           </div>
-          <div className="bg-white/60 dark:bg-zinc-800/50 rounded-xl p-4 text-center">
-            <div className="text-2xl font-bold text-amber-500">{briefing.followUpCount}</div>
-            <div className="text-xs text-stone-500 dark:text-zinc-500 mt-1">follow up</div>
+          <div className="briefing-stat-card stat-followup">
+            <div className="briefing-stat-value">{briefing.followUpCount}</div>
+            <div className="briefing-stat-label">follow up</div>
           </div>
         </div>
 
         {/* Priority emails */}
         {briefing.priorityEmails.length > 0 && (
-          <div>
-            <div className="flex items-center gap-2 mb-3">
-              <i className="fa-solid fa-bolt text-amber-500"></i>
-              <span className="text-sm font-semibold text-stone-700 dark:text-zinc-300">Top Priority</span>
+          <div className="briefing-priority-section">
+            <div className="briefing-section-header">
+              <i className="fa-solid fa-bolt briefing-section-icon"></i>
+              <span className="briefing-section-title">Top Priority</span>
             </div>
-            <div className="space-y-2">
+            <div className="briefing-email-list">
               {briefing.priorityEmails.map((email, index) => (
                 <button
                   key={email.id}
                   onClick={() => onEmailClick(email)}
-                  className="w-full flex items-start gap-3 p-3 bg-white/70 dark:bg-zinc-800/70 hover:bg-white dark:hover:bg-zinc-800 rounded-xl text-left transition group"
+                  className="briefing-email-item"
                 >
-                  <div className="w-6 h-6 rounded-full bg-gradient-to-br from-rose-500 to-orange-500 flex items-center justify-center text-white text-xs font-bold flex-shrink-0 mt-0.5">
+                  <div className="briefing-email-rank">
                     {index + 1}
                   </div>
-                  <div className="flex-1 min-w-0">
-                    <div className="flex items-center gap-2">
-                      <span className="font-medium text-stone-900 dark:text-white text-sm truncate">
-                        "{email.subject || '(no subject)'}"
-                      </span>
+                  <div className="briefing-email-content">
+                    <div className="briefing-email-subject">
+                      "{email.subject || '(no subject)'}"
                     </div>
-                    <div className="text-xs text-stone-500 dark:text-zinc-500 mt-0.5">
-                      from {email.from_name || email.from_email}
+                    <div className="briefing-email-meta">
+                      <span className="briefing-email-from">from {email.from_name || email.from_email}</span>
                       {email.ai_summary && (
-                        <span className="text-stone-400 dark:text-zinc-600"> — {email.ai_summary}</span>
+                        <span className="briefing-email-summary"> — {email.ai_summary}</span>
                       )}
                     </div>
                   </div>
-                  <i className="fa-solid fa-chevron-right text-stone-400 dark:text-zinc-600 group-hover:text-rose-500 transition opacity-0 group-hover:opacity-100"></i>
+                  <i className="fa-solid fa-chevron-right briefing-email-arrow"></i>
                 </button>
               ))}
             </div>
@@ -217,12 +219,12 @@ export const DailyBriefing: React.FC<DailyBriefingProps> = ({
 
         {/* No priority emails message */}
         {briefing.priorityEmails.length === 0 && briefing.newCount === 0 && (
-          <div className="text-center py-4">
-            <div className="w-12 h-12 rounded-full bg-green-500/20 flex items-center justify-center mx-auto mb-3">
-              <i className="fa-solid fa-check text-green-500 text-xl"></i>
+          <div className="briefing-empty-state">
+            <div className="briefing-empty-icon">
+              <i className="fa-solid fa-check"></i>
             </div>
-            <p className="text-stone-600 dark:text-zinc-400 font-medium">You're all caught up!</p>
-            <p className="text-sm text-stone-500 dark:text-zinc-500">No urgent emails need your attention.</p>
+            <p className="briefing-empty-title">You're all caught up!</p>
+            <p className="briefing-empty-text">No urgent emails need your attention.</p>
           </div>
         )}
 
@@ -230,7 +232,7 @@ export const DailyBriefing: React.FC<DailyBriefingProps> = ({
         {briefing.urgentCount > 0 && (
           <button
             onClick={onViewAll}
-            className="w-full mt-4 flex items-center justify-center gap-2 bg-gradient-to-r from-rose-500 to-orange-500 hover:from-rose-600 hover:to-orange-600 text-white py-3 rounded-xl font-semibold transition shadow-lg shadow-rose-500/20"
+            className="briefing-priority-inbox-btn"
           >
             <i className="fa-solid fa-inbox"></i>
             Open Priority Inbox

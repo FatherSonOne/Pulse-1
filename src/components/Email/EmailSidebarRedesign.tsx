@@ -139,29 +139,26 @@ export const EmailSidebarRedesign: React.FC<EmailSidebarRedesignProps> = ({
                 <button
                   key={folder.id}
                   onClick={() => handleFolderClick(folder.id)}
-                  className={`w-full group flex items-center gap-3 px-3 py-2.5 rounded-xl text-left transition-all duration-200 ${
-                    isActive
+                  className={`w-full group flex items-center gap-3 px-3 py-2.5 rounded-xl text-left transition-all duration-200 ${isActive
                       ? `${getAccentBg()} ${getAccentText()} border shadow-sm font-semibold`
                       : 'text-stone-600 dark:text-zinc-400 hover:bg-stone-100 dark:hover:bg-zinc-800/60 hover:text-stone-900 dark:hover:text-white font-medium'
-                  }`}
+                    }`}
                   aria-current={isActive ? 'page' : undefined}
                   aria-label={`${folder.label}${count > 0 ? `, ${count} ${folder.id === 'inbox' ? 'unread' : 'emails'}` : ''}`}
                 >
-                  <div className={`w-9 h-9 rounded-lg flex items-center justify-center transition-all ${
-                    isActive 
-                      ? `bg-gradient-to-br ${getAccentGradient()} text-white shadow-md` 
+                  <div className={`w-9 h-9 rounded-lg flex items-center justify-center transition-all ${isActive
+                      ? `bg-gradient-to-br ${getAccentGradient()} text-white shadow-md`
                       : 'bg-stone-200 dark:bg-zinc-800 group-hover:bg-stone-300 dark:group-hover:bg-zinc-700'
-                  }`}>
+                    }`}>
                     <i className={`fa-solid ${folder.icon} ${!isActive && folder.color ? folder.color : ''}`} aria-hidden="true"></i>
                   </div>
                   <span className="flex-1 text-sm">{folder.label}</span>
                   {count > 0 && (
                     <span
-                      className={`text-xs font-bold px-2.5 py-1 rounded-full transition-all ${
-                        isActive 
-                          ? `bg-gradient-to-r ${getAccentGradient()} text-white shadow-sm` 
+                      className={`text-xs font-bold px-2.5 py-1 rounded-full transition-all ${isActive
+                          ? `bg-gradient-to-r ${getAccentGradient()} text-white shadow-sm`
                           : 'bg-stone-200 dark:bg-zinc-800 text-stone-700 dark:text-zinc-300 group-hover:bg-stone-300 dark:group-hover:bg-zinc-700'
-                      }`}
+                        }`}
                       aria-hidden="true"
                     >
                       {count > 999 ? '999+' : count}
@@ -173,39 +170,7 @@ export const EmailSidebarRedesign: React.FC<EmailSidebarRedesignProps> = ({
           </div>
         </nav>
 
-        {/* Categories section */}
-        <div className="px-3 py-4 border-t border-stone-200 dark:border-zinc-800" role="region" aria-labelledby="categories-heading">
-          <div id="categories-heading" className="px-3 py-2 text-xs font-bold text-stone-500 dark:text-zinc-500 uppercase tracking-wider flex items-center gap-2">
-            <i className="fa-solid fa-tags"></i>
-            <span>Categories</span>
-          </div>
-          <div className="space-y-1" role="group">
-            <button className="w-full flex items-center gap-3 px-3 py-2 rounded-xl text-stone-600 dark:text-zinc-400 hover:bg-stone-100 dark:hover:bg-zinc-800/60 hover:text-stone-900 dark:hover:text-white transition font-medium" aria-label="Filter by Updates category">
-              <div className="w-9 h-9 rounded-lg bg-blue-500/20 flex items-center justify-center">
-                <div className="w-3 h-3 rounded-full bg-blue-500"></div>
-              </div>
-              <span className="text-sm">Updates</span>
-            </button>
-            <button className="w-full flex items-center gap-3 px-3 py-2 rounded-xl text-stone-600 dark:text-zinc-400 hover:bg-stone-100 dark:hover:bg-zinc-800/60 hover:text-stone-900 dark:hover:text-white transition font-medium" aria-label="Filter by Social category">
-              <div className="w-9 h-9 rounded-lg bg-green-500/20 flex items-center justify-center">
-                <div className="w-3 h-3 rounded-full bg-green-500"></div>
-              </div>
-              <span className="text-sm">Social</span>
-            </button>
-            <button className="w-full flex items-center gap-3 px-3 py-2 rounded-xl text-stone-600 dark:text-zinc-400 hover:bg-stone-100 dark:hover:bg-zinc-800/60 hover:text-stone-900 dark:hover:text-white transition font-medium" aria-label="Filter by Promotions category">
-              <div className="w-9 h-9 rounded-lg bg-yellow-500/20 flex items-center justify-center">
-                <div className="w-3 h-3 rounded-full bg-yellow-500"></div>
-              </div>
-              <span className="text-sm">Promotions</span>
-            </button>
-            <button className="w-full flex items-center gap-3 px-3 py-2 rounded-xl text-stone-600 dark:text-zinc-400 hover:bg-stone-100 dark:hover:bg-zinc-800/60 hover:text-stone-900 dark:hover:text-white transition font-medium" aria-label="Filter by Forums category">
-              <div className="w-9 h-9 rounded-lg bg-purple-500/20 flex items-center justify-center">
-                <div className="w-3 h-3 rounded-full bg-purple-500"></div>
-              </div>
-              <span className="text-sm">Forums</span>
-            </button>
-          </div>
-        </div>
+
 
         {/* Storage indicator */}
         <div className="p-4 border-t border-stone-200 dark:border-zinc-800 bg-stone-100/50 dark:bg-zinc-900/50" role="region" aria-label="Storage usage">

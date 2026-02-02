@@ -1,6 +1,6 @@
 // EmailListRedesign.tsx - Modern email list with enhanced UI
 import React from 'react';
-import { CachedEmail, EmailFolder } from '../../services/emailSyncService';
+import { CachedEmail, EmailFolder, EmailCategory } from '../../services/emailSyncService';
 
 interface EmailListRedesignProps {
   emails: CachedEmail[];
@@ -12,6 +12,9 @@ interface EmailListRedesignProps {
   onTrash: (email: CachedEmail) => void;
   currentFolder: EmailFolder;
   accentColor?: 'rose' | 'blue' | 'purple' | 'green';
+  activeCategory?: EmailCategory;
+  onCategoryChange?: (category: EmailCategory) => void;
+  categoryCounts?: Record<string, number>;
 }
 
 export const EmailListRedesign: React.FC<EmailListRedesignProps> = ({
@@ -24,6 +27,9 @@ export const EmailListRedesign: React.FC<EmailListRedesignProps> = ({
   onTrash,
   currentFolder,
   accentColor = 'rose',
+  activeCategory,
+  onCategoryChange,
+  categoryCounts,
 }) => {
   // Format relative time
   const formatTime = (dateStr: string) => {
@@ -140,8 +146,8 @@ export const EmailListRedesign: React.FC<EmailListRedesignProps> = ({
             {currentFolder === 'inbox' ? 'Inbox Zero! 🎉' : `No emails in ${currentFolder}`}
           </h3>
           <p className="text-stone-600 dark:text-zinc-400">
-            {currentFolder === 'inbox' 
-              ? 'You\'re all caught up. Time to focus on what matters!' 
+            {currentFolder === 'inbox'
+              ? 'You\'re all caught up. Time to focus on what matters!'
               : `This folder is empty. Check back later.`}
           </p>
         </div>
@@ -155,53 +161,97 @@ export const EmailListRedesign: React.FC<EmailListRedesignProps> = ({
       role="listbox"
       aria-label={`Email list - ${currentFolder}`}
     >
-      {/* Bulk actions bar */}
-      <div className="sticky top-0 z-10 flex items-center gap-2 px-4 py-2.5 bg-stone-50/98 dark:bg-zinc-900/98 backdrop-blur-xl border-b border-stone-200 dark:border-zinc-800 shadow-sm">
-        <input
-          type="checkbox"
-          aria-label="Select all emails"
-          className={`w-4 h-4 rounded border-stone-300 dark:border-zinc-600 bg-white dark:bg-zinc-800 text-${accentColor}-500 focus:ring-${accentColor}-500/30`}
-        />
-        <div className="h-4 w-px bg-stone-300 dark:bg-zinc-700"></div>
-        <button
-          className="p-2 rounded-lg hover:bg-stone-200 dark:hover:bg-zinc-800 text-stone-500 dark:text-zinc-500 hover:text-stone-700 dark:hover:text-white transition"
-          title="Refresh"
-          aria-label="Refresh emails"
-        >
-          <i className="fa-solid fa-arrows-rotate text-sm" aria-hidden="true"></i>
-        </button>
-        <button
-          className="p-2 rounded-lg hover:bg-stone-200 dark:hover:bg-zinc-800 text-stone-500 dark:text-zinc-500 hover:text-stone-700 dark:hover:text-white transition"
-          title="Archive selected"
-          aria-label="Archive selected emails"
-        >
-          <i className="fa-solid fa-box-archive text-sm" aria-hidden="true"></i>
-        </button>
-        <button
-          className="p-2 rounded-lg hover:bg-stone-200 dark:hover:bg-zinc-800 text-stone-500 dark:text-zinc-500 hover:text-red-500 transition"
-          title="Delete selected"
-          aria-label="Delete selected emails"
-        >
-          <i className="fa-solid fa-trash text-sm" aria-hidden="true"></i>
-        </button>
-        <button
-          className="p-2 rounded-lg hover:bg-stone-200 dark:hover:bg-zinc-800 text-stone-500 dark:text-zinc-500 hover:text-stone-700 dark:hover:text-white transition"
-          title="Mark as read"
-          aria-label="Mark selected emails as read"
-        >
-          <i className="fa-solid fa-envelope-open text-sm" aria-hidden="true"></i>
-        </button>
-        <button
-          className="p-2 rounded-lg hover:bg-stone-200 dark:hover:bg-zinc-800 text-stone-500 dark:text-zinc-500 hover:text-stone-700 dark:hover:text-white transition"
-          title="Snooze"
-          aria-label="Snooze selected emails"
-        >
-          <i className="fa-solid fa-clock text-sm" aria-hidden="true"></i>
-        </button>
-        <div className="flex-1"></div>
-        <span className="text-xs font-medium text-stone-500 dark:text-zinc-500" aria-live="polite">
-          {emails.length} {emails.length === 1 ? 'email' : 'emails'}
-        </span>
+      {/* Sticky Header: Tabs + Bulk Actions */}
+      <div className="sticky top-0 z-20 bg-stone-50/95 dark:bg-zinc-900/95 backdrop-blur-xl border-b border-stone-200 dark:border-zinc-800 shadow-sm">
+        {/* Category Tabs (Inbox Only) */}
+        {currentFolder === 'inbox' && activeCategory && onCategoryChange && (
+          <div className="flex items-stretch border-b border-stone-200 dark:border-zinc-800">
+            {(['primary', 'promotions', 'social', 'updates'] as const).map((cat) => {
+              const isActive = activeCategory === cat;
+              const count = categoryCounts?.[cat] || 0;
+
+              const config = {
+                primary: { label: 'Primary', description: 'Personal emails and messages that don\'t appear in other tabs.', icon: 'fa-inbox', color: 'blue', activeClass: 'text-blue-600 dark:text-blue-400 border-blue-600 bg-blue-50/50 dark:bg-blue-500/10', badge: 'bg-blue-100 text-blue-700 dark:bg-blue-900/50 dark:text-blue-300' },
+                promotions: { label: 'Promotions', description: 'Marketing, newsletters, and other promotional emails.', icon: 'fa-tag', color: 'green', activeClass: 'text-green-600 dark:text-green-400 border-green-600 bg-green-50/50 dark:bg-green-500/10', badge: 'bg-green-100 text-green-700 dark:bg-green-900/50 dark:text-green-300' },
+                social: { label: 'Social', description: 'Notifications from social networks and media sites.', icon: 'fa-user-group', color: 'indigo', activeClass: 'text-indigo-600 dark:text-indigo-400 border-indigo-600 bg-indigo-50/50 dark:bg-indigo-500/10', badge: 'bg-indigo-100 text-indigo-700 dark:bg-indigo-900/50 dark:text-indigo-300' },
+                updates: { label: 'Updates', description: 'Confirmations, receipts, bills, and statements.', icon: 'fa-circle-info', color: 'amber', activeClass: 'text-amber-600 dark:text-amber-400 border-amber-600 bg-amber-50/50 dark:bg-amber-500/10', badge: 'bg-amber-100 text-amber-700 dark:bg-amber-900/50 dark:text-amber-300' },
+              }[cat];
+
+              if (!config) return null;
+
+              return (
+                <button
+                  key={cat}
+                  onClick={() => onCategoryChange(cat as EmailCategory)}
+                  title={config.description}
+                  className={`flex-1 flex items-center gap-3 px-4 py-3 border-b-2 transition-all duration-200 min-w-0 group outline-none focus-visible:bg-stone-100 dark:focus-visible:bg-zinc-800 ${isActive
+                    ? config.activeClass
+                    : 'border-transparent text-stone-500 dark:text-zinc-500 hover:text-stone-700 dark:hover:text-zinc-300 hover:bg-stone-100/50 dark:hover:bg-zinc-800/50'
+                    }`}
+                  role="tab"
+                  aria-selected={isActive}
+                >
+                  <i className={`fa-solid ${config.icon} text-lg ${isActive ? '' : 'opacity-70 group-hover:opacity-100'}`}></i>
+                  <div className="font-semibold text-sm truncate hidden sm:block">{config.label}</div>
+                  {count > 0 && (
+                    <span className={`ml-auto text-[10px] font-bold px-2 py-0.5 rounded-full ${isActive ? config.badge : 'bg-stone-200 text-stone-600 dark:bg-zinc-800 dark:text-zinc-400'}`}>
+                      {count > 99 ? '99+' : count} new
+                    </span>
+                  )}
+                </button>
+              );
+            })}
+          </div>
+        )}
+
+        {/* Bulk Actions Toolbar */}
+        <div className="flex items-center gap-2 px-4 py-2.5">
+          <input
+            type="checkbox"
+            aria-label="Select all emails"
+            className={`w-4 h-4 rounded border-stone-300 dark:border-zinc-600 bg-white dark:bg-zinc-800 text-${accentColor}-500 focus:ring-${accentColor}-500/30`}
+          />
+          <div className="h-4 w-px bg-stone-300 dark:bg-zinc-700"></div>
+          <button
+            className="p-2 rounded-lg hover:bg-stone-200 dark:hover:bg-zinc-800 text-stone-500 dark:text-zinc-500 hover:text-stone-700 dark:hover:text-white transition"
+            title="Refresh"
+            aria-label="Refresh emails"
+          >
+            <i className="fa-solid fa-arrows-rotate text-sm" aria-hidden="true"></i>
+          </button>
+          <button
+            className="p-2 rounded-lg hover:bg-stone-200 dark:hover:bg-zinc-800 text-stone-500 dark:text-zinc-500 hover:text-stone-700 dark:hover:text-white transition"
+            title="Archive selected"
+            aria-label="Archive selected emails"
+          >
+            <i className="fa-solid fa-box-archive text-sm" aria-hidden="true"></i>
+          </button>
+          <button
+            className="p-2 rounded-lg hover:bg-stone-200 dark:hover:bg-zinc-800 text-stone-500 dark:text-zinc-500 hover:text-red-500 transition"
+            title="Delete selected"
+            aria-label="Delete selected emails"
+          >
+            <i className="fa-solid fa-trash text-sm" aria-hidden="true"></i>
+          </button>
+          <button
+            className="p-2 rounded-lg hover:bg-stone-200 dark:hover:bg-zinc-800 text-stone-500 dark:text-zinc-500 hover:text-stone-700 dark:hover:text-white transition"
+            title="Mark as read"
+            aria-label="Mark selected emails as read"
+          >
+            <i className="fa-solid fa-envelope-open text-sm" aria-hidden="true"></i>
+          </button>
+          <button
+            className="p-2 rounded-lg hover:bg-stone-200 dark:hover:bg-zinc-800 text-stone-500 dark:text-zinc-500 hover:text-stone-700 dark:hover:text-white transition"
+            title="Snooze"
+            aria-label="Snooze selected emails"
+          >
+            <i className="fa-solid fa-clock text-sm" aria-hidden="true"></i>
+          </button>
+          <div className="flex-1"></div>
+          <span className="text-xs font-medium text-stone-500 dark:text-zinc-500" aria-live="polite">
+            {emails.length} {emails.length === 1 ? 'email' : 'emails'}
+          </span>
+        </div>
       </div>
 
       {/* Email items */}
@@ -209,7 +259,7 @@ export const EmailListRedesign: React.FC<EmailListRedesignProps> = ({
         {emails.map((email) => {
           const isSelected = selectedEmail?.id === email.id;
           const priorityBar = getPriorityIndicator(email);
-          
+
           return (
             <div
               key={email.id}
@@ -224,13 +274,12 @@ export const EmailListRedesign: React.FC<EmailListRedesignProps> = ({
               aria-selected={isSelected}
               tabIndex={0}
               aria-label={`${email.is_read ? '' : 'Unread email. '}From ${email.from_name || email.from_email}. Subject: ${email.subject || 'No subject'}. ${email.is_starred ? 'Starred.' : ''}`}
-              className={`group flex items-center gap-3 px-4 py-3 cursor-pointer transition-all duration-200 focus:outline-none focus:ring-2 focus:ring-inset focus:ring-${accentColor}-500 ${
-                isSelected
-                  ? `${getAccentColor()} border-l-2`
-                  : email.is_read
-                    ? 'hover:bg-stone-50/80 dark:hover:bg-zinc-800/30'
-                    : 'bg-stone-50/50 dark:bg-zinc-800/10 hover:bg-stone-100 dark:hover:bg-zinc-800/30'
-              }`}
+              className={`group flex items-center gap-3 px-4 py-3 cursor-pointer transition-all duration-200 focus:outline-none focus:ring-2 focus:ring-inset focus:ring-${accentColor}-500 ${isSelected
+                ? `${getAccentColor()} border-l-2`
+                : email.is_read
+                  ? 'hover:bg-stone-50/80 dark:hover:bg-zinc-800/30'
+                  : 'bg-stone-50/50 dark:bg-zinc-800/10 hover:bg-stone-100 dark:hover:bg-zinc-800/30'
+                }`}
             >
               {/* Priority indicator */}
               {priorityBar}
@@ -249,11 +298,10 @@ export const EmailListRedesign: React.FC<EmailListRedesignProps> = ({
                   e.stopPropagation();
                   onToggleStar(email);
                 }}
-                className={`pt-1 transition-all duration-200 ${
-                  email.is_starred
-                    ? 'text-yellow-500 scale-110'
-                    : 'text-stone-400 dark:text-zinc-600 hover:text-yellow-500 hover:scale-110'
-                }`}
+                className={`pt-1 transition-all duration-200 ${email.is_starred
+                  ? 'text-yellow-500 scale-110'
+                  : 'text-stone-400 dark:text-zinc-600 hover:text-yellow-500 hover:scale-110'
+                  }`}
                 title={email.is_starred ? 'Unstar' : 'Star'}
               >
                 <i className={`fa-${email.is_starred ? 'solid' : 'regular'} fa-star text-sm`}></i>

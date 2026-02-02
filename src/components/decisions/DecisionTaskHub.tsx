@@ -40,7 +40,7 @@ import {
   X,
   ChevronDown,
   ChevronUp,
-  List,
+  List as ListIcon,
   Columns,
   Calendar,
   AlertCircle,
@@ -995,7 +995,7 @@ export const DecisionTaskHub: React.FC<DecisionTaskHubProps> = ({
             aria-current={activeView === 'list' ? 'true' : 'false'}
             title="List view"
           >
-            <List size={16} aria-hidden="true" />
+            <ListIcon size={16} aria-hidden="true" />
             <span>List</span>
           </button>
           <button

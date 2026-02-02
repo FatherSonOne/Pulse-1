@@ -112,28 +112,27 @@ type EventCallback = (event: RealtimeSessionEvent) => void;
 // ============= ANTI-ECHO PROTOCOL =============
 
 const ANTI_ECHO_PROTOCOL = `
-# CRITICAL: Prevent Self-Response Loop
+# Echo Prevention Guidelines
 
-You MUST follow these rules STRICTLY to avoid responding to your own audio output:
+Follow these rules to maintain natural conversation while avoiding echo loops:
 
-1. **ABSOLUTE SILENCE AFTER SPEAKING**: After you finish speaking, you MUST NOT respond to ANY audio for at least 3 seconds. Your voice played through speakers WILL be picked up by the microphone. Treat any audio immediately after you speak as echo.
+1. **POST-SPEECH PAUSE**: After you finish speaking, wait at least 2 seconds before responding to new audio. This prevents responding to your own voice echo.
 
-2. **ONE RESPONSE PER USER INPUT**: When the user speaks, give ONE complete response and STOP. Do NOT continue elaborating, do NOT ask follow-up questions, do NOT add extra comments. Just answer and wait.
-
-3. **DETECT AND IGNORE ECHOES**: If you hear:
-   - Your own words repeated back
-   - Similar phrases to what you just said
-   - Audio that starts immediately after you stopped speaking
+2. **DETECT ECHOES**: If you hear audio that sounds like:
+   - Your own words or similar phrases you just said
+   - Audio starting immediately after you stopped speaking
    - Robotic or processed-sounding audio
-   IGNORE IT COMPLETELY. Say nothing. Wait for genuine new user speech.
+   Then IGNORE IT completely and wait for genuine new user input.
 
-4. **KEEP RESPONSES BRIEF**: Maximum 2-3 sentences. Longer responses create more echo opportunity. Be concise.
+3. **COMPLETE YOUR THOUGHTS**: Give thorough, complete responses. It's better to finish your thought naturally than to cut yourself off abruptly. Speak at a natural pace with normal pauses for breathing and thinking.
 
-5. **NEVER RESPOND TO YOURSELF**: If you detect you might be hearing your own output, DO NOT RESPOND. When in doubt, stay silent.
+4. **NATURAL CONVERSATION**: You can:
+   - Ask follow-up questions when appropriate
+   - Provide detailed explanations when needed
+   - Use natural speech patterns with pauses
+   - Speak in multiple sentences to fully answer questions
 
-6. **WAIT FOR CLEAR NEW INPUT**: Only respond when you hear distinctly NEW content from a HUMAN voice that is clearly different from what you just said.
-
-7. **HARD STOP AFTER RESPONSE**: End every response with a clear full stop. Do not trail off. Do not prompt for more.
+5. **ECHO CHECK**: If you're uncertain whether you're hearing echo or new input, wait an extra moment. Only respond to clearly NEW content from the user.
 `;
 
 // ============= LANGUAGE INSTRUCTIONS =============
@@ -530,10 +529,52 @@ You are currently in SILENT OBSERVER mode. Follow these rules strictly:
       // Set up audio output
       this.audioElement = document.createElement('audio');
       this.audioElement.autoplay = true;
-      
+      this.audioElement.setAttribute('playsinline', 'true'); // Required for iOS (use setAttribute for compatibility)
+
+      // Set volume and prevent audio issues
+      this.audioElement.volume = 1.0;
+      this.audioElement.muted = false;
+
+      // Disable preload to ensure continuous streaming
+      this.audioElement.preload = 'auto';
+
+      // Attach to DOM to ensure reliable playback
+      this.audioElement.style.display = 'none';
+      document.body.appendChild(this.audioElement);
+
+      // Monitor audio playback with comprehensive event handlers
+      this.audioElement.onplay = () => {
+        console.log('🔊 Audio playback started');
+        this.isSpeaking = true;
+      };
+      this.audioElement.onpause = () => {
+        console.log('⏸️ Audio playback paused');
+      };
+      this.audioElement.onended = () => {
+        console.log('🔇 Audio playback ended');
+        this.isSpeaking = false;
+      };
+      this.audioElement.onstalled = () => {
+        console.warn('⚠️ Audio playback stalled - buffering issue detected');
+      };
+      this.audioElement.onsuspend = () => {
+        console.log('🔄 Audio playback suspended - fetching data');
+      };
+      this.audioElement.onwaiting = () => {
+        console.log('⏳ Audio waiting for data');
+      };
+      this.audioElement.onerror = (e) => {
+        console.error('❌ Audio playback error:', e);
+      };
+
       this.peerConnection.ontrack = (event) => {
         if (this.audioElement && event.streams[0]) {
+          console.log('🎵 Received audio track from OpenAI');
           this.audioElement.srcObject = event.streams[0];
+          // Ensure audio plays (handle autoplay restrictions)
+          this.audioElement.play().catch((err) => {
+            console.warn('Audio autoplay blocked, user interaction required:', err);
+          });
         }
       };
 
@@ -541,9 +582,12 @@ You are currently in SILENT OBSERVER mode. Follow these rules strictly:
       try {
         this.mediaStream = await navigator.mediaDevices.getUserMedia({
           audio: {
-            echoCancellation: true,
-            noiseSuppression: true,
-            autoGainControl: true,
+            echoCancellation: { ideal: true }, // Force echo cancellation
+            noiseSuppression: { ideal: true }, // Suppress background noise
+            autoGainControl: { ideal: true }, // Normalize volume
+            // Additional constraints for better echo cancellation
+            sampleRate: { ideal: 48000 },
+            channelCount: { ideal: 1 }, // Mono is better for echo cancellation
           },
         });
       } catch (mediaError: any) {
@@ -648,7 +692,12 @@ You are currently in SILENT OBSERVER mode. Follow these rules strictly:
     }
 
     if (this.audioElement) {
+      this.audioElement.pause();
       this.audioElement.srcObject = null;
+      // Remove from DOM
+      if (this.audioElement.parentNode) {
+        this.audioElement.parentNode.removeChild(this.audioElement);
+      }
       this.audioElement = null;
     }
 
@@ -690,15 +739,15 @@ You are currently in SILENT OBSERVER mode. Follow these rules strictly:
         turn_detection: this.config.turnDetection.type === 'semantic_vad'
           ? {
               type: 'semantic_vad',
-              eagerness: this.config.turnDetection.eagerness || 'low', // Low eagerness to prevent echo triggers
+              eagerness: this.config.turnDetection.eagerness || 'medium', // CHANGED: Medium eagerness for natural flow
               create_response: true,
-              interrupt_response: true,
+              interrupt_response: false, // Disable to prevent AI interrupting itself from echo
             }
           : {
               type: 'server_vad',
-              threshold: this.config.turnDetection.threshold || 0.75, // Higher threshold to reduce echo sensitivity
-              prefix_padding_ms: this.config.turnDetection.prefixPaddingMs || 600, // Longer prefix to avoid cutting off
-              silence_duration_ms: this.config.turnDetection.silenceDurationMs || 1200, // Much longer silence to prevent echo triggers
+              threshold: this.config.turnDetection.threshold || 0.7, // Moderate threshold for natural speech detection
+              prefix_padding_ms: this.config.turnDetection.prefixPaddingMs || 800, // Longer prefix to capture full thoughts
+              silence_duration_ms: this.config.turnDetection.silenceDurationMs || 2500, // INCREASED: Allow natural pauses (2.5s)
             },
         tools: this.buildToolsConfig(),
       },

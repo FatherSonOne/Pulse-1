@@ -659,7 +659,9 @@ const Dashboard: React.FC<DashboardProps> = ({ user, apiKey, setView }) => {
 
   // Real-time subscriptions
   useEffect(() => {
-    const unsubscribe = dataService.subscribeToDashboardUpdates({
+    let unsubscribe: (() => void) | null = null;
+
+    dataService.subscribeToDashboardUpdates({
       onTaskUpdate: (task) => {
         setTasks(prev => {
           const idx = prev.findIndex(t => t.id === task.id);
@@ -682,9 +684,15 @@ const Dashboard: React.FC<DashboardProps> = ({ user, apiKey, setView }) => {
           return [...prev, event];
         });
       },
+    }).then(unsub => {
+      unsubscribe = unsub;
     });
 
-    return () => unsubscribe();
+    return () => {
+      if (unsubscribe) {
+        unsubscribe();
+      }
+    };
   }, []);
 
   // Computed Metrics

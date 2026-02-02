@@ -75,7 +75,7 @@ export const DecisionPanel: React.FC<DecisionPanelProps> = ({
     await decisionService.castVote({
       decision_id: decisionId,
       user_id: currentUserId,
-      vote
+      choice: vote
     });
     loadDecisions();
   };
@@ -261,7 +261,7 @@ export const DecisionPanel: React.FC<DecisionPanelProps> = ({
                       </>
                     ) : (
                       <div className="voted-badge">
-                        ✓ You voted: <strong>{userVote?.vote}</strong>
+                        ✓ You voted: <strong>{userVote?.choice}</strong>
                       </div>
                     )}
 

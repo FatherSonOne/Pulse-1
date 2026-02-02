@@ -61,36 +61,49 @@ export class GmailService {
    * This is needed because Supabase doesn't automatically refresh Google's provider_token
    */
   private async refreshGoogleToken(refreshToken: string): Promise<string | null> {
-    const clientId = import.meta.env.VITE_GOOGLE_CLIENT_ID;
-
-    if (!clientId || !refreshToken) {
-      console.warn('[GmailService] Missing client ID or refresh token for Google token refresh');
+    if (!refreshToken) {
+      console.warn('[GmailService] Missing refresh token for Google token refresh');
       return null;
     }
 
     try {
-      const response = await fetch('https://oauth2.googleapis.com/token', {
+      // Get Supabase session for authentication with backend
+      const { data: { session } } = await supabase.auth.getSession();
+      if (!session?.access_token) {
+        console.warn('[GmailService] No Supabase session available for backend authentication');
+        return null;
+      }
+
+      // ✅ Call backend endpoint with client secret (secure)
+      const backendUrl = import.meta.env.VITE_BACKEND_URL || 'http://localhost:3003';
+      const response = await fetch(`${backendUrl}/api/google/refresh-token`, {
         method: 'POST',
         headers: {
-          'Content-Type': 'application/x-www-form-urlencoded',
+          'Content-Type': 'application/json',
+          'Authorization': `Bearer ${session.access_token}`
         },
-        body: new URLSearchParams({
-          client_id: clientId,
-          grant_type: 'refresh_token',
-          refresh_token: refreshToken,
-        }),
+        body: JSON.stringify({ refresh_token: refreshToken }),
       });
 
       if (!response.ok) {
         const errorData = await response.json().catch(() => ({}));
-        console.error('[GmailService] Google token refresh failed:', errorData);
+        console.error('[GmailService] Backend token refresh failed:', errorData);
+
+        // Check if re-authentication is required
+        if (errorData.requiresReauth || errorData.code === 'INVALID_GRANT') {
+          const error = new Error('Your Google session has expired. Please reconnect your Google account.');
+          (error as any).code = 'GOOGLE_SESSION_EXPIRED';
+          (error as any).requiresReauth = true;
+          throw error;
+        }
+
         return null;
       }
 
       const data = await response.json();
 
       if (data.access_token) {
-        console.log('[GmailService] Successfully refreshed Google access token');
+        console.log('[GmailService] Successfully refreshed Google access token via backend');
         this.accessToken = data.access_token;
         // Set expiry (Google tokens typically last 3600 seconds/1 hour)
         this.tokenExpiresAt = Date.now() + ((data.expires_in || 3600) * 1000) - 60000; // Refresh 1 min early
@@ -99,6 +112,10 @@ export class GmailService {
 
       return null;
     } catch (error) {
+      // Re-throw auth errors so they can be caught by UI
+      if ((error as any).requiresReauth) {
+        throw error;
+      }
       console.error('[GmailService] Error refreshing Google token:', error);
       return null;
     }
@@ -356,11 +373,16 @@ export class GmailService {
   /**
    * Get list of messages from Gmail inbox
    */
-  async getMessages(maxResults: number = 50, labelIds: string = 'INBOX'): Promise<UnifiedMessage[]> {
+  async getMessages(maxResults: number = 50, labelIds: string = 'INBOX', query?: string): Promise<UnifiedMessage[]> {
     try {
       // Get list of message IDs
+      const params: any = { maxResults, labelIds };
+      if (query) {
+        params.q = query;
+      }
+
       const listResponse = await this.gmailRequest('users/me/messages', {
-        params: { maxResults, labelIds }
+        params
       });
 
       if (!listResponse.messages || listResponse.messages.length === 0) {
@@ -759,15 +781,15 @@ export class GmailService {
   /**
    * Get sent messages
    */
-  async getSentMessages(maxResults: number = 50): Promise<UnifiedMessage[]> {
-    return this.getMessages(maxResults, 'SENT');
+  async getSentMessages(maxResults: number = 50, query?: string): Promise<UnifiedMessage[]> {
+    return this.getMessages(maxResults, 'SENT', query);
   }
 
   /**
    * Get starred messages
    */
-  async getStarredMessages(maxResults: number = 50): Promise<UnifiedMessage[]> {
-    return this.getMessages(maxResults, 'STARRED');
+  async getStarredMessages(maxResults: number = 50, query?: string): Promise<UnifiedMessage[]> {
+    return this.getMessages(maxResults, 'STARRED', query);
   }
 
   /**

@@ -136,18 +136,19 @@ export const ToolsPanel: React.FC<ToolsPanelProps> = ({
           {/* Drag Handle */}
           <div className="absolute top-2 left-1/2 -translate-x-1/2 w-10 h-1 bg-zinc-300 dark:bg-zinc-700 rounded-full"></div>
 
-          {/* Header */}
+          {/* Header - Minimalist CMF Nothing Design */}
           <div className="p-4 border-b border-zinc-200 dark:border-zinc-800">
             <div className="flex items-center justify-between mb-3">
-              <h2 className="text-lg font-semibold text-zinc-900 dark:text-white">
+              <h2 className="text-base font-bold text-zinc-900 dark:text-white uppercase tracking-wide">
                 Tools
               </h2>
               <button
+                type="button"
                 onClick={() => setShowMobilePanel(false)}
-                className="w-8 h-8 rounded-lg bg-zinc-100 dark:bg-zinc-800 flex items-center justify-center hover:bg-zinc-200 dark:hover:bg-zinc-700 transition-colors"
+                className="w-8 h-8 rounded-lg border border-zinc-200 dark:border-zinc-800 flex items-center justify-center hover:border-zinc-300 dark:hover:border-zinc-700 transition-colors"
                 aria-label="Close tools panel"
               >
-                <i className="fa-solid fa-times text-zinc-600 dark:text-zinc-400"></i>
+                <i className="fa-solid fa-times text-zinc-600 dark:text-zinc-400 text-sm"></i>
               </button>
             </div>
 
@@ -234,20 +235,20 @@ export const ToolsPanel: React.FC<ToolsPanelProps> = ({
       role="complementary"
       aria-label="Tools panel"
     >
-      {/* Header */}
+      {/* Header - Minimalist CMF Nothing Design */}
       <div className="p-4 border-b border-zinc-200 dark:border-zinc-800">
         <div className="flex items-center justify-between mb-4">
-          <h2 className="text-lg font-semibold text-zinc-900 dark:text-white flex items-center gap-2">
-            <i className="fa-solid fa-wrench text-purple-500"></i>
+          <h2 className="text-base font-bold text-zinc-900 dark:text-white uppercase tracking-wide">
             Tools
           </h2>
           {onClose && (
             <button
+              type="button"
               onClick={onClose}
-              className="w-8 h-8 rounded-lg bg-zinc-100 dark:bg-zinc-800 flex items-center justify-center hover:bg-zinc-200 dark:hover:bg-zinc-700 transition-colors"
+              className="w-8 h-8 rounded-lg border border-zinc-200 dark:border-zinc-800 flex items-center justify-center hover:border-zinc-300 dark:hover:border-zinc-700 transition-colors"
               aria-label="Close tools panel"
             >
-              <i className="fa-solid fa-times text-zinc-600 dark:text-zinc-400"></i>
+              <i className="fa-solid fa-times text-zinc-600 dark:text-zinc-400 text-sm"></i>
             </button>
           )}
         </div>

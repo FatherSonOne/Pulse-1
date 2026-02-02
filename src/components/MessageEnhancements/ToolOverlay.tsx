@@ -95,7 +95,7 @@ const toolConfig: Record<string, { title: string; icon: string; bgColor: string;
   mediaHub: { title: 'Media Hub & Export', icon: 'fa-photo-film', bgColor: 'bg-cyan-500', textColor: 'text-cyan-500' },
 };
 
-export const ToolOverlay: React.FC<ToolOverlayProps> = ({
+const ToolOverlay: React.FC<ToolOverlayProps> = ({
   activeTool,
   onClose,
   conversationId,

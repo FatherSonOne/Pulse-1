@@ -105,10 +105,11 @@
 }
 
 .decision-card {
-  background: rgba(255, 255, 255, 0.1);
+  background: var(--hub-card-bg, #ffffff);
   border-radius: 12px;
   padding: 20px;
   border-left: 4px solid transparent;
+  border: 1px solid var(--hub-border, #e7e5e4);
   transition: all 0.3s;
   animation: fadeIn 0.3s ease;
 }
@@ -141,8 +142,9 @@
 }
 
 .decision-card:hover {
-  background: rgba(255, 255, 255, 0.15);
-  transform: translateX(4px);
+  background: var(--hub-card-hover, #fef7f4);
+  transform: translateY(-2px);
+  box-shadow: 0 4px 12px rgba(244, 63, 94, 0.15);
 }
 
 .decision-card-header {
@@ -389,4 +391,18 @@
 .btn-primary:hover {
   background: #5568d3;
   transform: scale(1.05);
+}
+
+/* ============================================
+   DARK MODE OVERRIDES
+   ============================================ */
+
+.dark .decision-card {
+  background: var(--hub-card-bg, #171717);
+  border-color: var(--hub-border, #262626);
+}
+
+.dark .decision-card:hover {
+  background: var(--hub-card-hover, #262626);
+  box-shadow: 0 4px 12px rgba(244, 63, 94, 0.2);
 }

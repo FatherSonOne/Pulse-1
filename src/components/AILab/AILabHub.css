@@ -452,8 +452,9 @@
 /* Workspace Container */
 .workspace-container {
   height: 100%;
-  min-height: 100vh;
+  min-height: 0;
   background: var(--ai-bg-gradient);
+  overflow-y: auto;
 }
 
 /* Responsive */

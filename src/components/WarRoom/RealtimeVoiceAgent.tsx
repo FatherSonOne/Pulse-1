@@ -169,17 +169,17 @@ export const RealtimeVoiceAgent = React.forwardRef<RealtimeVoiceAgentRef, Realti
       });
 
       // Create session with configurable settings
-      // Using 'low' eagerness and higher thresholds to prevent echo/feedback loops
+      // Balanced settings for natural conversation flow while preventing echo
       const config: Partial<RealtimeSessionConfig> = {
         model: 'gpt-realtime',
         voice: effectiveSettings.voice as any, // Cast to any since VoiceOption includes new voices
         turnDetection: {
           type: effectiveSettings.turnDetection,
-          eagerness: 'low', // Low eagerness to prevent responding to echoes
-          interruptResponse: true,
+          eagerness: 'medium', // Medium eagerness for natural conversation flow
+          interruptResponse: false, // Disable to prevent AI from interrupting its own speech
           createResponse: true,
-          threshold: 0.75, // Higher threshold to reduce echo sensitivity
-          silenceDurationMs: 1200, // Longer silence to ensure user finished speaking
+          threshold: 0.7, // Moderate threshold for natural speech detection
+          silenceDurationMs: 2500, // Allow for natural pauses in speech (2.5 seconds)
         },
         inputAudioTranscription: {
           model: 'gpt-4o-transcribe',
@@ -533,15 +533,18 @@ export const RealtimeVoiceAgent = React.forwardRef<RealtimeVoiceAgentRef, Realti
     if (!session) return;
 
     if (isSpeaking) {
-      // Mute microphone when AI starts speaking
+      // Mute microphone immediately when AI starts speaking
+      console.log('[Voice] 🔇 Muting microphone - AI is speaking');
       session.setMuted(true);
     } else if (!isMuted) {
-      // Restore microphone after a longer delay when AI stops speaking
-      // The delay helps prevent immediate re-triggering from audio echo
-      // Increased to 1500ms to allow echo to fully dissipate
+      // Restore microphone after AI stops speaking
+      // Delay matches silence detection (2.5s) plus safety margin
+      // This ensures echo has fully dissipated before unmuting
+      console.log('[Voice] ⏳ AI finished speaking - waiting 3s before unmuting...');
       const unmuteDelay = setTimeout(() => {
+        console.log('[Voice] 🎤 Unmuting microphone - ready to listen');
         session.setMuted(false);
-      }, 1500); // 1.5 second delay after speaking stops for echo to die down
+      }, 3000); // 3 second delay to exceed silence detection threshold
 
       return () => clearTimeout(unmuteDelay);
     }

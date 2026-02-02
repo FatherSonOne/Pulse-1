@@ -8,30 +8,30 @@ import { Tool, CategoryConfig } from './types';
 export const CATEGORIES: CategoryConfig[] = [
   {
     id: 'ai',
-    name: 'AI Tools',
+    name: 'AI TOOLS',
     icon: 'fa-robot',
-    color: 'purple',
+    color: 'teal',  // Aurora teal for AI
     description: 'Intelligent assistance and automation'
   },
   {
     id: 'content',
-    name: 'Content Creation',
+    name: 'CONTENT',
     icon: 'fa-pen-fancy',
-    color: 'blue',
+    color: 'green',  // Aurora green for Content
     description: 'Create and compose messages'
   },
   {
     id: 'analysis',
-    name: 'Analysis',
+    name: 'ANALYSIS',
     icon: 'fa-chart-line',
-    color: 'green',
+    color: 'cyan',  // Aurora cyan for Analysis
     description: 'Insights and intelligence'
   },
   {
     id: 'utilities',
-    name: 'Utilities',
+    name: 'UTILITIES',
     icon: 'fa-wrench',
-    color: 'amber',
+    color: 'violet',  // Aurora violet for Utilities
     description: 'Helper tools and settings'
   }
 ];
@@ -430,29 +430,33 @@ export function searchTools(query: string): Tool[] {
 }
 
 /**
- * Get category color classes
+ * Get category color classes - Minimalist CMF Nothing Design
  */
-export function getCategoryColor(category: string): { bg: string; text: string; border: string } {
-  const colorMap: Record<string, { bg: string; text: string; border: string }> = {
+export function getCategoryColor(category: string): { bg: string; text: string; border: string; dot: string } {
+  const colorMap: Record<string, { bg: string; text: string; border: string; dot: string }> = {
     ai: {
-      bg: 'bg-purple-50 dark:bg-purple-950/20',
-      text: 'text-purple-600 dark:text-purple-400',
-      border: 'border-purple-200 dark:border-purple-800'
+      bg: 'bg-zinc-100 dark:bg-zinc-800/50',  // Monochrome bg
+      text: 'text-teal-500 dark:text-teal-400',  // Aurora teal
+      border: 'border-zinc-200 dark:border-zinc-800',
+      dot: 'bg-teal-500'
     },
     content: {
-      bg: 'bg-blue-50 dark:bg-blue-950/20',
-      text: 'text-blue-600 dark:text-blue-400',
-      border: 'border-blue-200 dark:border-blue-800'
+      bg: 'bg-zinc-100 dark:bg-zinc-800/50',
+      text: 'text-green-500 dark:text-green-400',  // Aurora green
+      border: 'border-zinc-200 dark:border-zinc-800',
+      dot: 'bg-green-500'
     },
     analysis: {
-      bg: 'bg-green-50 dark:bg-green-950/20',
-      text: 'text-green-600 dark:text-green-400',
-      border: 'border-green-200 dark:border-green-800'
+      bg: 'bg-zinc-100 dark:bg-zinc-800/50',
+      text: 'text-cyan-500 dark:text-cyan-400',  // Aurora cyan
+      border: 'border-zinc-200 dark:border-zinc-800',
+      dot: 'bg-cyan-500'
     },
     utilities: {
-      bg: 'bg-amber-50 dark:bg-amber-950/20',
-      text: 'text-amber-600 dark:text-amber-400',
-      border: 'border-amber-200 dark:border-amber-800'
+      bg: 'bg-zinc-100 dark:bg-zinc-800/50',
+      text: 'text-violet-500 dark:text-violet-400',  // Aurora violet
+      border: 'border-zinc-200 dark:border-zinc-800',
+      dot: 'bg-violet-500'
     }
   };
 
