@@ -22,6 +22,7 @@ interface SettingsProps {
     isDarkMode: boolean;
     toggleTheme: () => void;
     initialSection?: string;
+    onClose?: () => void;
 }
 
 const SECTIONS = [
@@ -43,8 +44,24 @@ const ADMIN_SECTIONS = [
   { id: 'admin', icon: 'fa-shield-halved', label: 'Admin Dashboard' },
 ];
 
-const Settings: React.FC<SettingsProps> = ({ user, isDarkMode, toggleTheme, initialSection }) => {
+const Settings: React.FC<SettingsProps> = ({ user, isDarkMode, toggleTheme, initialSection, onClose }) => {
   const [activeSection, setActiveSection] = useState(initialSection || 'account');
+
+  // --- MOBILE STATE MANAGEMENT ---
+  const [isMobileMenuOpen, setIsMobileMenuOpen] = useState(false);
+  const [isMobile, setIsMobile] = useState(window.innerWidth < 768);
+
+  // Auto-close mobile menu when resizing to desktop
+  useEffect(() => {
+    const handleResize = () => {
+      setIsMobile(window.innerWidth < 768);
+      if (window.innerWidth >= 768) {
+        setIsMobileMenuOpen(false);
+      }
+    };
+    window.addEventListener('resize', handleResize);
+    return () => window.removeEventListener('resize', handleResize);
+  }, []);
 
   // --- MY ACCOUNT STATE ---
   const [name, setName] = useState(user?.name || 'Demo User');
@@ -2829,17 +2846,83 @@ const Settings: React.FC<SettingsProps> = ({ user, isDarkMode, toggleTheme, init
     </div>
   );
 
+  // Mobile Header Component
+  const MobileHeader = () => (
+    <div className="md:hidden flex items-center justify-between p-4 bg-white dark:bg-zinc-950 border-b border-zinc-200 dark:border-zinc-800">
+      {/* Menu toggle - shows current section name */}
+      {!isMobileMenuOpen && (
+        <button
+          onClick={() => setIsMobileMenuOpen(true)}
+          className="flex items-center gap-2 text-zinc-600 dark:text-zinc-400 hover:text-zinc-900 dark:hover:text-white transition"
+          aria-label="Open settings menu"
+        >
+          <i className="fa-solid fa-bars text-lg"></i>
+          <span className="font-semibold">
+            {SECTIONS.find(s => s.id === activeSection)?.label || 'Settings'}
+          </span>
+        </button>
+      )}
+
+      {/* Close settings button */}
+      <button
+        onClick={onClose}
+        className="ml-auto w-10 h-10 rounded-lg bg-zinc-100 dark:bg-zinc-800 flex items-center justify-center text-zinc-600 dark:text-zinc-400 hover:bg-zinc-200 dark:hover:bg-zinc-700 transition"
+        aria-label="Close settings"
+      >
+        <i className="fa-solid fa-xmark text-lg"></i>
+      </button>
+    </div>
+  );
+
   return (
-    <div className="h-full bg-white dark:bg-zinc-950 rounded-2xl overflow-hidden border border-zinc-200 dark:border-zinc-800 flex flex-col md:flex-row shadow-xl">
-      
-      {/* Settings Sidebar */}
-      <div className="w-full md:w-64 bg-zinc-50 dark:bg-zinc-900 border-r border-zinc-200 dark:border-zinc-800 p-4 flex flex-col">
-        <h2 className="text-2xl font-bold dark:text-white text-zinc-900 mb-6 px-2 animate-fade-in">Settings</h2>
+    <div className="h-full bg-white dark:bg-zinc-950 flex flex-col">
+      {/* Mobile Header */}
+      <MobileHeader />
+
+      {/* Main Content Area */}
+      <div className="flex-1 flex flex-col md:flex-row overflow-hidden rounded-2xl border border-zinc-200 dark:border-zinc-800 shadow-xl">
+
+        {/* Mobile Backdrop */}
+        {isMobileMenuOpen && (
+          <div
+            className="fixed inset-0 bg-black/60 backdrop-blur-sm z-40 md:hidden"
+            onClick={() => setIsMobileMenuOpen(false)}
+            aria-hidden="true"
+          />
+        )}
+
+        {/* Settings Sidebar - Responsive */}
+      <div className={`
+        fixed md:relative z-50 md:z-auto
+        w-full md:w-64 h-full
+        bg-zinc-50 dark:bg-zinc-900
+        border-r border-zinc-200 dark:border-zinc-800
+        p-4 flex flex-col
+        transform transition-transform duration-300 ease-out
+        ${isMobileMenuOpen ? 'translate-x-0' : '-translate-x-full md:translate-x-0'}
+        shadow-2xl md:shadow-none
+      `}>
+        {/* Header with close button */}
+        <div className="flex items-center justify-between mb-6">
+          <h2 className="text-2xl font-bold dark:text-white text-zinc-900 px-2 animate-fade-in">
+            Settings
+          </h2>
+          <button
+            onClick={() => setIsMobileMenuOpen(false)}
+            className="md:hidden w-8 h-8 rounded-lg hover:bg-zinc-200 dark:hover:bg-zinc-800 flex items-center justify-center text-zinc-500 dark:text-zinc-400 transition"
+            aria-label="Close menu"
+          >
+            <i className="fa-solid fa-xmark"></i>
+          </button>
+        </div>
         <nav className="space-y-1 flex-1">
           {SECTIONS.map((section, idx) => (
             <button
               key={section.id}
-              onClick={() => setActiveSection(section.id)}
+              onClick={() => {
+                setActiveSection(section.id);
+                setIsMobileMenuOpen(false);
+              }}
               className={`w-full flex items-center gap-3 px-4 py-3 rounded-xl transition-all duration-200 group animate-slide-in-right ${activeSection === section.id ? 'bg-blue-600/10 text-blue-600 dark:text-blue-400 font-semibold' : 'text-zinc-500 dark:text-zinc-400 hover:text-zinc-900 dark:hover:text-white hover:bg-zinc-200 dark:hover:bg-zinc-800'}`}
               style={{ animationDelay: `${idx * 50}ms` }}
             >
@@ -2858,7 +2941,10 @@ const Settings: React.FC<SettingsProps> = ({ user, isDarkMode, toggleTheme, init
               {ADMIN_SECTIONS.map((section, idx) => (
                 <button
                   key={section.id}
-                  onClick={() => setActiveSection(section.id)}
+                  onClick={() => {
+                    setActiveSection(section.id);
+                    setIsMobileMenuOpen(false);
+                  }}
                   className={`w-full flex items-center gap-3 px-4 py-3 rounded-xl transition-all duration-200 group animate-slide-in-right ${activeSection === section.id ? 'bg-purple-600/10 text-purple-600 dark:text-purple-400 font-semibold' : 'text-zinc-500 dark:text-zinc-400 hover:text-zinc-900 dark:hover:text-white hover:bg-zinc-200 dark:hover:bg-zinc-800'}`}
                   style={{ animationDelay: `${(SECTIONS.length + idx) * 50}ms` }}
                 >
@@ -2872,10 +2958,11 @@ const Settings: React.FC<SettingsProps> = ({ user, isDarkMode, toggleTheme, init
         </nav>
       </div>
 
-      {/* Main Settings Content */}
-      <div className="flex-1 overflow-y-auto p-8 relative bg-white dark:bg-zinc-950">
-        <div className="max-w-2xl mx-auto">
-             {renderContent()}
+        {/* Main Settings Content */}
+        <div className="flex-1 overflow-y-auto p-4 md:p-8 relative bg-white dark:bg-zinc-950">
+          <div className="max-w-2xl mx-auto">
+            {renderContent()}
+          </div>
         </div>
       </div>
 

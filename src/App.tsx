@@ -567,6 +567,7 @@ const App: React.FC = () => {
                 isDarkMode={isDarkMode}
                 toggleTheme={toggleTheme}
                 initialSection={settingsSection}
+                onClose={() => setView(AppView.DASHBOARD)}
               />;
             case AppView.TOOLS:
               return <AILabHubRedesigned apiKey={apiKey} isDarkMode={isDarkMode} />;

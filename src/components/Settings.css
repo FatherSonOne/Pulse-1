@@ -631,4 +631,38 @@
     width: 100%;
     justify-content: center;
   }
+
+  /* Optimize touch targets (minimum 44px for Apple HIG) */
+  button,
+  input[type="checkbox"],
+  input[type="radio"] {
+    min-height: 44px;
+  }
+
+  /* Reduce padding for mobile */
+  .integration-card {
+    padding: 20px;
+  }
+
+  .integration-icon {
+    width: 48px;
+    height: 48px;
+    font-size: 20px;
+  }
+
+  .integration-info h4 {
+    font-size: 16px;
+  }
+}
+
+/* Slide-in animation for mobile menu */
+@keyframes slideInFromLeft {
+  from {
+    transform: translateX(-100%);
+    opacity: 0;
+  }
+  to {
+    transform: translateX(0);
+    opacity: 1;
+  }
 }
