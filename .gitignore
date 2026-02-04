@@ -77,3 +77,6 @@ tmpclaude-*-cwd
 test-openai-key.js
 clear-openai-key.html
 clear-service-worker.html
+
+# Browser extension config (contains credentials)
+browser-extension/src/config.js

@@ -1008,9 +1008,40 @@ const Messages: React.FC<MessagesProps> = ({ apiKey, contacts, initialContactId,
   }, []);
 
   // Open context menu for Pulse message (right-click or long-press)
-  const openPulseContextMenu = useCallback((msgId: string, x: number, y: number) => {
+  const openPulseContextMenu = useCallback((msgId: string, x: number, y: number, element?: HTMLElement) => {
+    // If element is provided, calculate position from element bounds
+    if (element) {
+      const rect = element.getBoundingClientRect();
+      const menuWidth = 200;
+      const menuHeight = 320;
+
+      // Position menu to the right of the message on desktop, or centered on mobile
+      const isMobile = window.innerWidth < 768;
+
+      if (isMobile) {
+        // On mobile, center the menu horizontally and position below the message
+        setPulseContextMenuPosition({
+          x: Math.max(10, Math.min(window.innerWidth / 2 - menuWidth / 2, window.innerWidth - menuWidth - 10)),
+          y: Math.min(rect.bottom + 8, window.innerHeight - menuHeight - 10)
+        });
+      } else {
+        // On desktop, position to the right of the message if space allows, otherwise to the left
+        const spaceOnRight = window.innerWidth - rect.right;
+        const spaceOnLeft = rect.left;
+
+        setPulseContextMenuPosition({
+          x: spaceOnRight >= menuWidth ? rect.right + 8 : Math.max(10, rect.left - menuWidth - 8),
+          y: Math.max(10, Math.min(rect.top, window.innerHeight - menuHeight - 10))
+        });
+      }
+    } else {
+      // Fallback to provided coordinates
+      setPulseContextMenuPosition({
+        x: Math.min(x, window.innerWidth - 200),
+        y: Math.min(y, window.innerHeight - 320)
+      });
+    }
     setPulseContextMenuMsgId(msgId);
-    setPulseContextMenuPosition({ x, y });
   }, []);
 
   // Close context menu
@@ -1022,7 +1053,24 @@ const Messages: React.FC<MessagesProps> = ({ apiKey, contacts, initialContactId,
   // Handle right-click on Pulse message
   const handlePulseMessageContextMenu = useCallback((e: React.MouseEvent, msgId: string) => {
     e.preventDefault();
-    openPulseContextMenu(msgId, e.clientX, e.clientY);
+    const element = e.currentTarget as HTMLElement;
+    openPulseContextMenu(msgId, e.clientX, e.clientY, element);
+  }, [openPulseContextMenu]);
+
+  // Handle opening context menu from a button click (e.g., "..." button)
+  const handleOpenContextMenuFromButton = useCallback((e: React.MouseEvent, msgId: string) => {
+    e.preventDefault();
+    e.stopPropagation();
+    // Find the closest message bubble element
+    const button = e.currentTarget as HTMLElement;
+    const messageBubble = button.closest('.message-hover-container') as HTMLElement;
+    if (messageBubble) {
+      openPulseContextMenu(msgId, 0, 0, messageBubble);
+    } else {
+      // Fallback to button position
+      const rect = button.getBoundingClientRect();
+      openPulseContextMenu(msgId, rect.right, rect.top);
+    }
   }, [openPulseContextMenu]);
 
   // Handle long-press start on Pulse message (for mobile)
@@ -2953,6 +3001,17 @@ const Messages: React.FC<MessagesProps> = ({ apiKey, contacts, initialContactId,
               >
                 <i className={`fa-solid fa-crosshairs text-sm ${isFocusModeActive ? 'animate-pulse' : 'group-hover:animate-pulse'}`}></i>
               </button>
+
+              {/* Achievements - Amber/Orange */}
+              {showAchievements && messageEnhancements.getAllAchievements().length > 0 && (
+                <button
+                  onClick={() => setShowAnalyticsDashboard(true)}
+                  className="group w-9 h-9 rounded-xl flex items-center justify-center transition-all duration-300 border-2 border-amber-300 dark:border-amber-600 bg-gradient-to-br from-amber-50 to-orange-50 dark:from-amber-900/40 dark:to-orange-900/40 text-amber-600 dark:text-amber-400 hover:scale-110 hover:shadow-lg hover:shadow-amber-500/30 hover:border-amber-400 dark:hover:border-amber-500 hover:from-amber-100 hover:to-orange-100 dark:hover:from-amber-900/60 dark:hover:to-orange-900/60"
+                  title="View Achievements"
+                >
+                  <i className="fa-solid fa-trophy text-sm group-hover:animate-pulse"></i>
+                </button>
+              )}
             </div>
 
           </div>
@@ -3292,7 +3351,6 @@ const Messages: React.FC<MessagesProps> = ({ apiKey, contacts, initialContactId,
                           messageId={msg.id}
                           isMe={isMe}
                           onReact={(messageId, emoji) => handlePulseReaction(messageId, emoji)}
-                          onShowMore={() => handlePulseMessageContextMenu({ preventDefault: () => {}, clientX: 0, clientY: 0 } as React.MouseEvent, msg.id)}
                           hoverDelay={300}
                           enableMobileLongPress={true}
                           renderReactionBar={({ onReact, position, isExiting }) => (
@@ -3338,7 +3396,7 @@ const Messages: React.FC<MessagesProps> = ({ apiKey, contacts, initialContactId,
                                 initial={{ opacity: 0, scale: 0.5 }}
                                 animate={{ opacity: 1, scale: 1 }}
                                 transition={{ duration: 0.15, delay: 0.2 }}
-                                onClick={() => handlePulseMessageContextMenu({ preventDefault: () => {}, clientX: 0, clientY: 0 } as React.MouseEvent, msg.id)}
+                                onClick={(e) => handleOpenContextMenuFromButton(e as any, msg.id)}
                                 className="w-8 h-8 flex items-center justify-center hover:bg-zinc-100 dark:hover:bg-zinc-700 rounded-full transition-colors text-zinc-500"
                                 title="More options"
                                 whileHover={{ scale: 1.1 }}
@@ -3808,6 +3866,17 @@ const Messages: React.FC<MessagesProps> = ({ apiKey, contacts, initialContactId,
             >
               <i className="fa-solid fa-eye text-xs sm:text-sm"></i>
             </button>
+
+            {/* Achievements - Always visible if available */}
+            {showAchievements && messageEnhancements.getAllAchievements().length > 0 && (
+              <button
+                onClick={() => setShowAnalyticsDashboard(true)}
+                className="w-8 h-8 sm:w-9 sm:h-9 rounded-lg flex items-center justify-center transition border border-amber-200 dark:border-amber-700 bg-amber-50 dark:bg-amber-900/30 text-amber-500 hover:bg-amber-100 dark:hover:bg-amber-900/50 flex-shrink-0"
+                title="View Achievements"
+              >
+                <i className="fa-solid fa-trophy text-xs sm:text-sm"></i>
+              </button>
+            )}
           </div>
 
           {/* DEPRECATED: Old Tools Drawer for SMS Mode - Replaced by SidebarTabs (Phase 4)
@@ -5864,19 +5933,6 @@ const Messages: React.FC<MessagesProps> = ({ apiKey, contacts, initialContactId,
               />
             </div>
           </div>
-        </div>
-      )}
-
-      {/* ===== ACHIEVEMENT PROGRESS MODAL ===== */}
-      {showAchievements && messageEnhancements.getAllAchievements().length > 0 && (
-        <div className="fixed bottom-4 left-4 z-50">
-          <button
-            onClick={() => setShowAnalyticsDashboard(true)}
-            className="w-12 h-12 rounded-full bg-gradient-to-br from-amber-400 to-orange-500 text-white shadow-lg hover:shadow-xl transition-all hover:scale-110 flex items-center justify-center"
-            title="View Achievements"
-          >
-            <i className="fa-solid fa-trophy"></i>
-          </button>
         </div>
       )}
 

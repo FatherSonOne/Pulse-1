@@ -3,10 +3,13 @@
  * Handles authentication, API communication, and context menus
  */
 
-// Constants
-const PULSE_URL = 'https://pulse.logosvision.org';
-const SUPABASE_URL = 'https://ucaeuszgoihoyrvhewxk.supabase.co';
-const SUPABASE_ANON_KEY = 'eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6InVjYWV1c3pnb2lob3lydmhld3hrIiwicm9sZSI6ImFub24iLCJpYXQiOjE3NjUyMjg5ODYsImV4cCI6MjA4MDgwNDk4Nn0.0VGjpsPBYjyk6QTG5rAQX4_NcpfBTyR85ofE5jiHTKo';
+// Import configuration
+import { config } from './config.js';
+
+// Constants from config
+const PULSE_URL = config.PULSE_URL;
+const SUPABASE_URL = config.SUPABASE_URL;
+const SUPABASE_ANON_KEY = config.SUPABASE_ANON_KEY;
 
 // Initialize
 chrome.runtime.onInstalled.addListener(() => {
