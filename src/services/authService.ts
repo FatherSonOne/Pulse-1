@@ -232,14 +232,16 @@ export const getSessionUser = async (): Promise<User | null> => {
     ]);
 
     if (error) {
-      console.warn('[Auth] Session check failed:', error.message);
-      // If refresh token is invalid, clear the session completely
+      // Suppress expected "Invalid Refresh Token" errors (happens when user not logged in)
+      // Only log these as debug-level to avoid console noise
       if (error.message?.includes('Refresh Token') || error.message?.includes('Invalid')) {
-        console.log('[Auth] Clearing invalid session...');
+        console.debug('[Auth Debug] No valid session found (expected when not logged in)');
         localStorage.removeItem(USER_KEY);
         await supabase.auth.signOut().catch(() => {}); // Ignore signOut errors
         return null;
       }
+      // Log other session errors as warnings (unexpected issues)
+      console.warn('[Auth] Session check failed:', error.message);
     }
 
     if (session?.user) {
@@ -274,14 +276,15 @@ export const getSessionUser = async (): Promise<User | null> => {
 
     console.log('[Auth] No active session found');
   } catch (err: any) {
-    console.warn('[Auth] Session check error:', err);
-    // Handle invalid refresh token error
+    // Handle invalid refresh token error (expected when user not logged in)
     if (err?.message?.includes('Refresh Token') || err?.name === 'AuthApiError') {
-      console.log('[Auth] Clearing invalid session due to auth error...');
+      console.debug('[Auth Debug] No valid session found (expected when not logged in)');
       localStorage.removeItem(USER_KEY);
       await supabase.auth.signOut().catch(() => {});
       return null;
     }
+    // Log unexpected errors as warnings
+    console.warn('[Auth] Session check error:', err);
   }
 
   // Fallback to localStorage for cached user (will be validated on next API call)
@@ -561,26 +564,45 @@ export const connectProvider = async (provider: 'google' | 'microsoft' | 'icloud
 // Real Google Contacts Sync via Google People API
 export const syncGoogleContacts = async (): Promise<Contact[]> => {
   try {
+    // Check if user is authenticated first
+    const { data: { user }, error: authError } = await supabase.auth.getUser();
+    if (authError || !user) {
+      console.debug('[Auth Debug] Skipping contact sync - not authenticated');
+      return [];
+    }
+
     // Dynamically import to avoid circular dependencies
     const { googleContactsService } = await import('./googleContactsService');
 
     const connected = await googleContactsService.isConnected();
     if (!connected) {
-      console.warn('Google Contacts not connected. User may need to re-authenticate to grant contacts permission.');
+      // Use debug-level logging - this is expected when user isn't logged in or hasn't granted contacts permission
+      console.debug('[Auth Debug] Google Contacts not connected (expected when not authenticated or permission not granted)');
       return [];
     }
 
     const contacts = await googleContactsService.getAllContacts();
-    console.log(`Synced ${contacts.length} contacts from Google`);
+    // Only log if contacts were actually synced (avoid noise when 0)
+    if (contacts.length > 0) {
+      console.log(`Synced ${contacts.length} contacts from Google`);
+    } else {
+      console.debug('[Auth Debug] No contacts synced from Google (expected if no contacts exist)');
+    }
     return contacts;
   } catch (error: any) {
-    console.error('Failed to sync Google contacts:', error);
-
-    // If permission denied, let user know they need to re-auth
-    if (error.code === 'GOOGLE_CONTACTS_PERMISSION_DENIED') {
-      console.warn('Google Contacts permission denied. User needs to re-authenticate with Google.');
+    // Silently handle abort errors (expected during initialization)
+    if (error?.name === 'AbortError') {
+      console.debug('[Auth Debug] Contact sync aborted (expected during initialization)');
+      return [];
     }
 
+    // Use debug-level for permission errors (expected), warn for other errors
+    if (error.code === 'GOOGLE_CONTACTS_PERMISSION_DENIED') {
+      console.debug('[Auth Debug] Google Contacts permission not granted (expected)');
+      return [];
+    }
+
+    console.warn('Failed to sync Google contacts:', error);
     return [];
   }
 };

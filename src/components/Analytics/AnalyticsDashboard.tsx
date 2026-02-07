@@ -34,6 +34,7 @@ export const AnalyticsDashboard: React.FC<AnalyticsDashboardProps> = ({ onClose 
   const [loading, setLoading] = useState(true);
   const [viewMode, setViewMode] = useState<ViewMode>('overview');
   const [hoveredMetric, setHoveredMetric] = useState<string | null>(null);
+  const [mobileMenuOpen, setMobileMenuOpen] = useState(false);
 
   // Data states
   const [dashboardData, setDashboardData] = useState<DashboardData | null>(null);
@@ -141,7 +142,32 @@ export const AnalyticsDashboard: React.FC<AnalyticsDashboardProps> = ({ onClose 
           </div>
         </div>
 
-        <nav className="view-switcher">
+        {/* Mobile Menu Toggle */}
+        <button
+          className="mobile-menu-toggle"
+          onClick={() => setMobileMenuOpen(!mobileMenuOpen)}
+          aria-label="Toggle menu"
+        >
+          <span className="hamburger-icon">
+            <span className="line"></span>
+            <span className="line"></span>
+            <span className="line"></span>
+          </span>
+          <span className="current-view-label">{
+            [
+              { id: 'overview', label: 'Overview', icon: '◉' },
+              { id: 'velocity', label: 'Velocity', icon: '⚡' },
+              { id: 'sentiment', label: 'Sentiment', icon: '◐' },
+              { id: 'network', label: 'Network', icon: '⬡' },
+              { id: 'relationships', label: 'Relationships', icon: '♥' },
+              { id: 'conflicts', label: 'Conflicts', icon: '△' },
+              { id: 'kudos', label: 'Kudos', icon: '⭐' },
+              { id: 'predictions', label: 'Predictions', icon: '🔮' },
+            ].find(v => v.id === viewMode)?.label
+          }</span>
+        </button>
+
+        <nav className={`view-switcher ${mobileMenuOpen ? 'mobile-open' : ''}`}>
           {[
             { id: 'overview', label: 'Overview', icon: '◉' },
             { id: 'velocity', label: 'Velocity', icon: '⚡' },
@@ -155,7 +181,10 @@ export const AnalyticsDashboard: React.FC<AnalyticsDashboardProps> = ({ onClose 
             <button
               key={view.id}
               className={`view-btn ${viewMode === view.id ? 'active' : ''}`}
-              onClick={() => setViewMode(view.id as ViewMode)}
+              onClick={() => {
+                setViewMode(view.id as ViewMode);
+                setMobileMenuOpen(false);
+              }}
             >
               <span className="view-icon">{view.icon}</span>
               <span className="view-label">{view.label}</span>

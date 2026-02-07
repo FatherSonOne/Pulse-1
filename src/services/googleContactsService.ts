@@ -159,7 +159,8 @@ const getGoogleAccessToken = async (): Promise<string | null> => {
   const { data: { session }, error } = await supabase.auth.getSession();
 
   if (error || !session) {
-    console.error('[Google Contacts] No session found:', error);
+    // Use debug-level - this is expected when user isn't logged in
+    console.debug('[Google Contacts Debug] No session found (expected when not authenticated)');
     return null;
   }
 
@@ -175,7 +176,8 @@ const getGoogleAccessToken = async (): Promise<string | null> => {
     }
   }
 
-  console.warn('[Google Contacts] No provider_token in session. User may need to re-authenticate with Google.');
+  // Use debug-level - this is expected when user hasn't connected Google
+  console.debug('[Google Contacts Debug] No provider_token in session (expected when not connected to Google)');
   return null;
 };
 
@@ -184,7 +186,8 @@ const refreshTokenIfNeeded = async (): Promise<string | null> => {
   const { data: { session }, error } = await supabase.auth.getSession();
 
   if (error || !session) {
-    console.error('[Google Contacts] Failed to load session:', error);
+    // Use debug-level - this is expected when user isn't logged in
+    console.debug('[Google Contacts Debug] No session found (expected when not authenticated)');
     return null;
   }
 

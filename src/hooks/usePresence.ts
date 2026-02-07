@@ -7,12 +7,20 @@ import type { OnlineStatus, LastActiveStatus } from '../types/userContact';
 
 /**
  * Hook to manage current user's presence
+ * @param enabled - Only start presence tracking when enabled (user is authenticated)
  */
-export function usePresence() {
+export function usePresence(enabled: boolean = true) {
   const [isOnline, setIsOnline] = useState(true);
   const [status, setStatus] = useState<OnlineStatus>('online');
-  
+
   useEffect(() => {
+    // Only start presence tracking if enabled (user is authenticated)
+    if (!enabled) {
+      console.log('[Presence] Skipping presence heartbeat - user not authenticated');
+      return;
+    }
+
+    console.log('[Presence] Starting presence heartbeat');
     // Start presence heartbeat
     const cleanup = userContactService.startPresenceHeartbeat(60000); // 1 minute
     
@@ -48,7 +56,7 @@ export function usePresence() {
     window.addEventListener('beforeunload', handleBeforeUnload);
     window.addEventListener('online', handleOnline);
     window.addEventListener('offline', handleOffline);
-    
+
     return () => {
       cleanup();
       document.removeEventListener('visibilitychange', handleVisibilityChange);
@@ -56,7 +64,7 @@ export function usePresence() {
       window.removeEventListener('online', handleOnline);
       window.removeEventListener('offline', handleOffline);
     };
-  }, []);
+  }, [enabled]); // Re-run when enabled state changes
   
   const updateStatus = useCallback(async (newStatus: OnlineStatus) => {
     setStatus(newStatus);

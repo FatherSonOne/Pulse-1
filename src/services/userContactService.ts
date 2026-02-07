@@ -253,15 +253,23 @@ export class UserContactService {
    */
   async updatePresence(status: OnlineStatus = 'online'): Promise<void> {
     try {
-      const { data: { user } } = await supabase.auth.getUser();
-      if (!user) return;
-      
+      const { data: { user }, error: authError } = await supabase.auth.getUser();
+
+      // Silently return if not authenticated (expected during app initialization)
+      if (authError || !user) {
+        console.debug('[Presence] Skipping presence update - not authenticated');
+        return;
+      }
+
       await supabase.rpc('update_user_presence', {
         p_user_id: user.id,
         p_status: status
       });
     } catch (error) {
-      console.error('Error updating presence:', error);
+      // Only log if it's not an abort error (those are expected during init)
+      if (error && (error as any).name !== 'AbortError') {
+        console.error('Error updating presence:', error);
+      }
     }
   }
   

@@ -1,0 +1,20 @@
+name: Data Cleanup Cron Job
+
+on:
+  schedule:
+    # Runs daily at 2 AM UTC
+    - cron: '0 2 * * *'
+  # Allow manual trigger
+  workflow_dispatch:
+
+jobs:
+  cleanup:
+    runs-on: ubuntu-latest
+    steps:
+      - name: Call Data Cleanup Edge Function
+        run: |
+          curl -X POST \
+            "${{ secrets.SUPABASE_URL }}/functions/v1/data-cleanup" \
+            -H "Authorization: Bearer ${{ secrets.SUPABASE_ANON_KEY }}" \
+            -H "Content-Type: application/json" \
+            -d '{"secret": "${{ secrets.CRON_SECRET }}"}'

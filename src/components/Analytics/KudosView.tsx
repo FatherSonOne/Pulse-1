@@ -7,7 +7,7 @@ import React, { useState, useEffect } from 'react';
 import {
   getAllRecognitionEvents,
   getRecognitionOverview,
-  getRecentWins,
+  getAllWins,
   RecognitionEvent,
   RecognitionOverview,
   WinsTracker,
@@ -38,7 +38,7 @@ export const KudosView: React.FC<KudosViewProps> = ({ timeRange }) => {
       feedFilter === 'all'
         ? getAllRecognitionEvents(undefined, 50)
         : getAllRecognitionEvents(feedFilter as 'received' | 'given', 50),
-      getRecentWins(10),
+      getAllWins(10),
     ]);
 
     if (overviewResult.success) setOverview(overviewResult.data!);

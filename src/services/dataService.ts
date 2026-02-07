@@ -353,10 +353,18 @@ class DataService {
 
   async getContacts(): Promise<Contact[]> {
     try {
+      const userId = this.getUserId();
+
+      // Don't query if no user is authenticated
+      if (!userId) {
+        console.debug('[DataService] Skipping contact fetch - no user authenticated');
+        return [];
+      }
+
       const { data, error } = await supabase
         .from('contacts')
         .select('*')
-        .eq('user_id', this.getUserId())
+        .eq('user_id', userId)
         .order('name');
 
       if (error) {
@@ -365,6 +373,12 @@ class DataService {
       }
       return (data || []).map(dbToContact);
     } catch (err: any) {
+      // Silently handle AbortError (expected during initialization)
+      if (err?.name === 'AbortError') {
+        console.debug('[DataService] Contact fetch aborted (expected during initialization)');
+        return [];
+      }
+
       console.error('Error fetching contacts:', {
         message: err.message,
         details: err.toString(),

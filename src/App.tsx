@@ -134,14 +134,15 @@ const App: React.FC = () => {
   const preservedScrollTop = useRef<number | null>(null);
 
   // Permissions hook
-  const { 
-    shouldShowPermissionModal, 
+  const {
+    shouldShowPermissionModal,
     isInitialized: permissionsInitialized,
-    isNativePlatform: isNative 
+    isNativePlatform: isNative
   } = usePermissions();
 
-  // Presence tracking - start heartbeat when user is logged in
-  usePresence();
+  // Presence tracking - only start heartbeat when user is authenticated
+  // This prevents AbortError when app loads before authentication completes
+  usePresence(!!user && !isAuthLoading);
 
   // Get Gemini API key from environment variables or localStorage (user can set it in Settings)
   const apiKey = import.meta.env.VITE_API_KEY || 
@@ -412,9 +413,9 @@ const App: React.FC = () => {
 
     loadAccentColor();
 
-    // Load contacts from Supabase
-    loadContacts();
-  }, [loadContacts]);
+    // NOTE: Don't load contacts here - they're loaded in the useEffect above (lines 360-369)
+    // when user is authenticated. Loading here causes AbortError before auth completes.
+  }, []);
 
   // Handle Resize to reset sidebar state
   useEffect(() => {
@@ -721,9 +722,11 @@ const App: React.FC = () => {
       />
 
       {/* Main Content */}
-      <main className="flex-1 p-2 sm:p-3 md:p-4 lg:p-6 overflow-hidden relative transition-colors duration-500 w-full safe-area-bottom">
-        <div className="h-full w-full max-w-[1600px] mx-auto animate-fade-in relative flex flex-col overflow-auto mobile-scroll">
-           {renderContent()}
+      <main className="flex-1 overflow-hidden relative transition-colors duration-500 w-full safe-area-bottom">
+        <div className="h-full w-full flex flex-col overflow-auto mobile-scroll p-2 sm:p-3 md:p-4 lg:p-6">
+          <div className="w-full max-w-[1600px] mx-auto animate-fade-in">
+            {renderContent()}
+          </div>
         </div>
       </main>
 

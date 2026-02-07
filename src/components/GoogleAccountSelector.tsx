@@ -1,6 +1,8 @@
 import React, { useEffect, useRef, useState } from 'react';
+import { createPortal } from 'react-dom';
 import { User } from '../types';
 import { loginWithGoogle, logoutUser, revokeGoogleAccess, disconnectGoogleAccount } from '../services/authService';
+import { AccountSettingsModal, PrivacyDashboard, HelpSupportModal } from './Account';
 
 interface GoogleAccountSelectorProps {
   user: User | null;
@@ -65,6 +67,11 @@ const GoogleAccountSelector: React.FC<GoogleAccountSelectorProps> = ({
   const [showAccountMenu, setShowAccountMenu] = useState(false);
   const [imageError, setImageError] = useState(false);
   const menuRef = useRef<HTMLDivElement>(null);
+
+  // Modal states
+  const [showAccountSettings, setShowAccountSettings] = useState(false);
+  const [showPrivacyDashboard, setShowPrivacyDashboard] = useState(false);
+  const [showHelpSupport, setShowHelpSupport] = useState(false);
 
   // Get Google Client ID from environment or use a default for development
   const GOOGLE_CLIENT_ID = import.meta.env.VITE_GOOGLE_CLIENT_ID || '';
@@ -169,28 +176,27 @@ const GoogleAccountSelector: React.FC<GoogleAccountSelectorProps> = ({
     }
   };
 
-  const handleAddAccount = () => {
-    if (window.google?.accounts?.id && isInitialized) {
-      window.google.accounts.id.prompt();
+  const handleAddAccount = async () => {
+    // Use direct OAuth flow instead of unreliable prompt()
+    // This triggers the Google consent screen with account selection
+    try {
+      const newUser = await loginWithGoogle();
+      onUserChange(newUser);
       setShowAccountMenu(false);
+    } catch (error) {
+      console.error('Error adding account:', error);
     }
   };
 
-  const handleSwitchAccount = () => {
-    if (window.google?.accounts?.id && isInitialized) {
-      // Prompt for account selection - this shows the official Google account selector
-      window.google.accounts.id.prompt((notification) => {
-        if (notification.isNotDisplayed() || notification.isSkippedMoment()) {
-          // If prompt is not shown, try alternative method
-          // This will show the account selector popup
-          window.google?.accounts?.id.prompt();
-        }
-      });
+  const handleSwitchAccount = async () => {
+    // Use direct OAuth flow with prompt=select_account
+    // This is more reliable than window.google.accounts.id.prompt()
+    try {
+      const newUser = await loginWithGoogle();
+      onUserChange(newUser);
       setShowAccountMenu(false);
-    } else {
-      // Fallback: trigger OAuth flow which allows account selection
-      loginWithGoogle().then(onUserChange).catch(console.error);
-      setShowAccountMenu(false);
+    } catch (error) {
+      console.error('Error switching account:', error);
     }
   };
 
@@ -304,18 +310,16 @@ const GoogleAccountSelector: React.FC<GoogleAccountSelectorProps> = ({
       <div className="relative w-full">
         <button
           ref={toggleButtonRef}
+          id="account-menu-button"
           onClick={(e) => {
             e.stopPropagation();
             setShowAccountMenu(!showAccountMenu);
           }}
-          onDoubleClick={() => {
-            // Double-click to show official Google account selector
-            if (isInitialized && window.google?.accounts?.id) {
-              window.google.accounts.id.prompt();
-            }
-          }}
+          aria-expanded={showAccountMenu}
+          aria-haspopup="menu"
+          aria-label={`Account menu for ${user.name}. Press Enter to open.`}
           className={`w-full flex items-center gap-3 px-3 py-2 rounded-xl transition-all duration-300 group hover:bg-zinc-50 dark:hover:bg-zinc-900/50 hover:translate-x-1 ${isSidebarCollapsed ? 'justify-center' : ''}`}
-          title={isInitialized ? 'Click for menu, double-click for Google account selector' : 'Account menu'}
+          title="Account menu"
         >
           <div className="w-9 h-9 min-w-[2.25rem] rounded-full overflow-hidden bg-gradient-to-br from-rose-500 to-pink-500 flex-shrink-0 border border-zinc-200 dark:border-zinc-800 ring-2 ring-transparent group-hover:ring-zinc-200 dark:group-hover:ring-zinc-800 transition-all flex items-center justify-center">
             {user.avatarUrl && !imageError ? (
@@ -346,16 +350,19 @@ const GoogleAccountSelector: React.FC<GoogleAccountSelectorProps> = ({
           )}
         </button>
 
-        {/* Account Menu Dropdown */}
+        {/* Account Menu Dropdown - Hybrid Google + Microsoft Design */}
         {showAccountMenu && (
           <div
             ref={menuRef}
-            className={`absolute ${isSidebarCollapsed ? 'left-full ml-2 top-0' : 'bottom-full mb-2 left-0 right-0'} bg-white dark:bg-zinc-900 border border-zinc-200 dark:border-zinc-800 rounded-xl shadow-xl z-50 overflow-hidden min-w-[200px]`}
+            role="menu"
+            aria-labelledby="account-menu-button"
+            aria-orientation="vertical"
+            className={`absolute ${isSidebarCollapsed ? 'left-full ml-2 top-0' : 'bottom-full mb-2 left-0 right-0'} bg-white dark:bg-zinc-900 border border-zinc-200 dark:border-zinc-800 rounded-xl shadow-xl z-50 overflow-hidden min-w-[280px]`}
           >
-            {/* Current Account Info */}
-            <div className="px-4 py-3 border-b border-zinc-200 dark:border-zinc-800 bg-zinc-50 dark:bg-zinc-900/50">
+            {/* Current Account Info Card */}
+            <div className="px-4 py-3 border-b border-zinc-200 dark:border-zinc-800 bg-gradient-to-br from-zinc-50 to-zinc-100/50 dark:from-zinc-900/50 dark:to-zinc-800/30">
               <div className="flex items-center gap-3">
-                <div className="w-10 h-10 rounded-full overflow-hidden bg-gradient-to-br from-rose-500 to-pink-500 flex-shrink-0 ring-2 ring-zinc-200 dark:ring-zinc-700 flex items-center justify-center">
+                <div className="w-10 h-10 rounded-full overflow-hidden bg-gradient-to-br from-rose-500 to-pink-500 flex-shrink-0 ring-2 ring-white/50 dark:ring-zinc-700/50 flex items-center justify-center">
                   {user.avatarUrl && !imageError ? (
                     <img
                       src={user.avatarUrl}
@@ -380,100 +387,190 @@ const GoogleAccountSelector: React.FC<GoogleAccountSelectorProps> = ({
               </div>
             </div>
 
-            {/* Menu Options */}
-            <div className="py-2">
-              {/* Google Account Management Section */}
-              {user.googleConnected ? (
-                <>
-                  {/* Account Actions */}
-                  <div className="px-2 py-1.5 space-y-1">
-                    <button
-                      onClick={handleSwitchAccount}
-                      className="w-full flex items-center gap-3 px-3 py-2.5 text-sm font-medium text-zinc-700 dark:text-zinc-300 hover:bg-zinc-100 dark:hover:bg-zinc-800 rounded-lg transition-colors text-left"
-                      title="Switch to a different Google account"
-                    >
-                      <i className="fa-solid fa-arrow-right-arrow-left w-5 flex-shrink-0 text-zinc-500"></i>
-                      <span className="flex-1 text-left">Change Account</span>
-                    </button>
+            {/* Menu Groups */}
+            <div className="py-2 max-h-[60vh] overflow-y-auto">
+              {/* Account Actions Group */}
+              <div className="px-2 py-1">
+                <div className="px-3 py-1.5 text-[10px] font-semibold text-zinc-500 dark:text-zinc-500 uppercase tracking-wider">
+                  Account Actions
+                </div>
+                <div className="space-y-0.5">
+                  <button
+                    role="menuitem"
+                    onClick={handleSwitchAccount}
+                    className="w-full flex items-center gap-3 px-3 py-2.5 text-sm font-medium text-zinc-700 dark:text-zinc-300 hover:bg-zinc-100 dark:hover:bg-zinc-800 rounded-lg transition-colors text-left group"
+                    aria-label="Switch to a different Google account"
+                  >
+                    <i className="fa-solid fa-repeat w-5 flex-shrink-0 text-zinc-500 dark:text-zinc-400 group-hover:text-zinc-700 dark:group-hover:text-zinc-200"></i>
+                    <span className="flex-1 text-left">Switch account</span>
+                  </button>
 
-                    <button
-                      onClick={handleAddAccount}
-                      className="w-full flex items-center gap-3 px-3 py-2.5 text-sm font-medium text-zinc-700 dark:text-zinc-300 hover:bg-zinc-100 dark:hover:bg-zinc-800 rounded-lg transition-colors text-left"
-                      title="Add another Google account to switch between"
-                    >
-                      <i className="fa-solid fa-user-plus w-5 flex-shrink-0 text-zinc-500"></i>
-                      <span className="flex-1 text-left">Add Account</span>
-                    </button>
+                  <button
+                    role="menuitem"
+                    onClick={handleAddAccount}
+                    className="w-full flex items-center gap-3 px-3 py-2.5 text-sm font-medium text-zinc-700 dark:text-zinc-300 hover:bg-zinc-100 dark:hover:bg-zinc-800 rounded-lg transition-colors text-left group"
+                    aria-label="Add another Google account"
+                  >
+                    <i className="fa-solid fa-user-plus w-5 flex-shrink-0 text-zinc-500 dark:text-zinc-400 group-hover:text-zinc-700 dark:group-hover:text-zinc-200"></i>
+                    <span className="flex-1 text-left">Add account</span>
+                  </button>
+                </div>
+              </div>
 
+              {/* Pulse Settings Group */}
+              <div className="px-2 py-1 mt-1">
+                <div className="px-3 py-1.5 text-[10px] font-semibold text-zinc-500 dark:text-zinc-500 uppercase tracking-wider">
+                  Pulse Settings
+                </div>
+                <div className="space-y-0.5">
+                  <button
+                    role="menuitem"
+                    onClick={() => {
+                      setShowAccountSettings(true);
+                      setShowAccountMenu(false);
+                    }}
+                    className="w-full flex items-center gap-3 px-3 py-2.5 text-sm font-medium text-zinc-700 dark:text-zinc-300 hover:bg-zinc-100 dark:hover:bg-zinc-800 rounded-lg transition-colors text-left group"
+                    aria-label="Manage Pulse account settings"
+                  >
+                    <i className="fa-solid fa-gear w-5 flex-shrink-0 text-zinc-500 dark:text-zinc-400 group-hover:text-zinc-700 dark:group-hover:text-zinc-200"></i>
+                    <span className="flex-1 text-left">Account settings</span>
+                  </button>
+
+                  <button
+                    role="menuitem"
+                    onClick={() => {
+                      setShowPrivacyDashboard(true);
+                      setShowAccountMenu(false);
+                    }}
+                    className="w-full flex items-center gap-3 px-3 py-2.5 text-sm font-medium text-zinc-700 dark:text-zinc-300 hover:bg-zinc-100 dark:hover:bg-zinc-800 rounded-lg transition-colors text-left group"
+                    aria-label="View privacy and connected services"
+                  >
+                    <i className="fa-solid fa-shield-halved w-5 flex-shrink-0 text-zinc-500 dark:text-zinc-400 group-hover:text-zinc-700 dark:group-hover:text-zinc-200"></i>
+                    <span className="flex-1 text-left">Privacy & connected services</span>
+                  </button>
+
+                  <button
+                    role="menuitem"
+                    onClick={() => {
+                      setShowHelpSupport(true);
+                      setShowAccountMenu(false);
+                    }}
+                    className="w-full flex items-center gap-3 px-3 py-2.5 text-sm font-medium text-zinc-700 dark:text-zinc-300 hover:bg-zinc-100 dark:hover:bg-zinc-800 rounded-lg transition-colors text-left group"
+                    aria-label="Get help and support"
+                  >
+                    <i className="fa-solid fa-circle-question w-5 flex-shrink-0 text-zinc-500 dark:text-zinc-400 group-hover:text-zinc-700 dark:group-hover:text-zinc-200"></i>
+                    <span className="flex-1 text-left">Help & support</span>
+                  </button>
+                </div>
+              </div>
+
+              {/* Google Account Group */}
+              {user.googleConnected && (
+                <div className="px-2 py-1 mt-1">
+                  <div className="px-3 py-1.5 text-[10px] font-semibold text-zinc-500 dark:text-zinc-500 uppercase tracking-wider">
+                    Google Account
+                  </div>
+                  <div className="space-y-0.5">
                     <button
+                      role="menuitem"
                       onClick={handleManageGoogleAccount}
-                      className="w-full flex items-center gap-3 px-3 py-2.5 text-sm font-medium text-zinc-700 dark:text-zinc-300 hover:bg-zinc-100 dark:hover:bg-zinc-800 rounded-lg transition-colors text-left"
-                      title="Open Google Account settings to manage your account"
+                      className="w-full flex items-center gap-3 px-3 py-2.5 text-sm font-medium text-zinc-700 dark:text-zinc-300 hover:bg-blue-50 dark:hover:bg-blue-900/20 rounded-lg transition-colors text-left group"
+                      aria-label="Manage your Google Account"
                     >
-                      <i className="fa-brands fa-google w-5 flex-shrink-0 text-zinc-500"></i>
+                      <i className="fa-brands fa-google w-5 flex-shrink-0 text-blue-500 dark:text-blue-400"></i>
                       <span className="flex-1 text-left">Manage your Google Account</span>
+                      <i className="fa-solid fa-external-link text-[10px] text-zinc-400"></i>
                     </button>
                   </div>
+                </div>
+              )}
 
-                  {/* Disconnect Actions */}
-                  <div className="border-t border-zinc-200 dark:border-zinc-800 mt-2 pt-2 px-2 pb-1.5 space-y-1">
+              {/* Advanced Options - Collapsed (Microsoft-style) */}
+              {user.googleConnected && (
+                <details className="px-2 py-1 mt-2 border-t border-dashed border-zinc-200 dark:border-zinc-700 pt-2">
+                  <summary className="px-3 py-2 text-xs font-semibold text-zinc-500 dark:text-zinc-500 uppercase tracking-wider cursor-pointer hover:bg-zinc-50 dark:hover:bg-zinc-800/50 rounded-lg transition-colors flex items-center gap-2 select-none">
+                    <i className="fa-solid fa-chevron-right text-[10px] transition-transform duration-200 [details[open]_&]:rotate-90"></i>
+                    <span>Advanced options</span>
+                    <span className="ml-auto text-[10px] px-2 py-0.5 bg-zinc-200 dark:bg-zinc-700 rounded-full normal-case tracking-normal font-medium">
+                      For power users
+                    </span>
+                  </summary>
+
+                  <div className="mt-1 space-y-0.5 px-1">
+                    <div className="px-3 py-2 text-xs text-amber-700 dark:text-amber-400 bg-amber-50 dark:bg-amber-900/20 rounded-lg flex items-start gap-2 mb-2">
+                      <i className="fa-solid fa-triangle-exclamation flex-shrink-0 mt-0.5"></i>
+                      <span className="text-[11px] leading-relaxed">
+                        These actions are for advanced users and cannot be easily undone.
+                      </span>
+                    </div>
+
                     <button
+                      role="menuitem"
                       onClick={handleDisconnectGoogle}
-                      className="w-full flex items-center gap-3 px-3 py-2.5 text-sm font-medium text-amber-600 dark:text-amber-400 hover:bg-amber-50 dark:hover:bg-amber-900/20 rounded-lg transition-colors text-left"
-                      title="Disconnect your Google account and revoke Pulse's access"
+                      className="w-full flex items-center gap-3 px-3 py-2.5 text-sm font-medium text-amber-700 dark:text-amber-400 hover:bg-amber-50 dark:hover:bg-amber-900/20 rounded-lg transition-colors text-left group"
+                      aria-label="Disconnect your Google account"
                     >
                       <i className="fa-solid fa-unlink w-5 flex-shrink-0"></i>
                       <span className="flex-1 text-left">Disconnect Google Account</span>
                     </button>
 
                     <button
+                      role="menuitem"
                       onClick={handleRevokeAccess}
-                      className="w-full flex items-center gap-3 px-3 py-2.5 text-sm font-medium text-red-600 dark:text-red-400 hover:bg-red-50 dark:hover:bg-red-900/20 rounded-lg transition-colors text-left"
-                      title="Permanently revoke all access and sign out completely"
+                      className="w-full flex items-center gap-3 px-3 py-2.5 text-sm font-medium text-red-600 dark:text-red-400 hover:bg-red-50 dark:hover:bg-red-900/20 rounded-lg transition-colors text-left group"
+                      aria-label="Revoke all access and sign out"
                     >
                       <i className="fa-solid fa-ban w-5 flex-shrink-0"></i>
-                      <span className="flex-1 text-left">Revoke Access & Sign Out</span>
+                      <span className="flex-1 text-left">Revoke all access</span>
                     </button>
                   </div>
-                </>
-              ) : (
-                <>
-                  {/* Fallback for non-Google accounts */}
-                  <div className="px-2 py-1.5 space-y-1">
-                    <button
-                      onClick={handleSwitchAccount}
-                      className="w-full flex items-center gap-3 px-3 py-2.5 text-sm font-medium text-zinc-700 dark:text-zinc-300 hover:bg-zinc-100 dark:hover:bg-zinc-800 rounded-lg transition-colors text-left"
-                      title="Switch to a different account"
-                    >
-                      <i className="fa-solid fa-arrow-right-arrow-left w-5 flex-shrink-0 text-zinc-500"></i>
-                      <span className="flex-1 text-left">Change Account</span>
-                    </button>
-
-                    <button
-                      onClick={handleAddAccount}
-                      className="w-full flex items-center gap-3 px-3 py-2.5 text-sm font-medium text-zinc-700 dark:text-zinc-300 hover:bg-zinc-100 dark:hover:bg-zinc-800 rounded-lg transition-colors text-left"
-                      title="Add another account to switch between"
-                    >
-                      <i className="fa-solid fa-user-plus w-5 flex-shrink-0 text-zinc-500"></i>
-                      <span className="flex-1 text-left">Add Account</span>
-                    </button>
-                  </div>
-                </>
+                </details>
               )}
 
-              {/* Sign Out */}
-              <div className="border-t border-zinc-200 dark:border-zinc-800 mt-2 pt-2 px-2 pb-1.5">
+              {/* Sign Out - Prominent */}
+              <div className="border-t border-zinc-200 dark:border-zinc-800 mt-2 pt-2 px-2 pb-1">
                 <button
+                  role="menuitem"
                   onClick={handleSignOut}
-                  className="w-full flex items-center gap-3 px-3 py-2.5 text-sm font-medium text-red-600 dark:text-red-400 hover:bg-red-50 dark:hover:bg-red-900/20 rounded-lg transition-colors text-left"
-                  title="Sign out of your current session"
+                  className="w-full flex items-center gap-3 px-3 py-2.5 text-sm font-medium text-red-600 dark:text-red-400 hover:bg-red-50 dark:hover:bg-red-900/20 rounded-lg transition-colors text-left group"
+                  aria-label="Sign out of Pulse"
                 >
                   <i className="fa-solid fa-right-from-bracket w-5 flex-shrink-0"></i>
-                  <span className="flex-1 text-left">Sign Out</span>
+                  <span className="flex-1 text-left">Sign out</span>
                 </button>
               </div>
             </div>
           </div>
+        )}
+
+        {/* Account Settings Modal */}
+        {showAccountSettings && createPortal(
+          <AccountSettingsModal
+            isOpen={showAccountSettings}
+            onClose={() => setShowAccountSettings(false)}
+            userName={user.name}
+            userEmail={user.email}
+          />,
+          document.body
+        )}
+
+        {/* Privacy Dashboard */}
+        {showPrivacyDashboard && createPortal(
+          <PrivacyDashboard
+            isOpen={showPrivacyDashboard}
+            onClose={() => setShowPrivacyDashboard(false)}
+            userEmail={user.email}
+          />,
+          document.body
+        )}
+
+        {/* Help & Support Modal */}
+        {showHelpSupport && createPortal(
+          <HelpSupportModal
+            isOpen={showHelpSupport}
+            onClose={() => setShowHelpSupport(false)}
+          />,
+          document.body
         )}
       </div>
     );

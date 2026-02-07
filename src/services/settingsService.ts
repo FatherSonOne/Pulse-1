@@ -85,6 +85,13 @@ export interface PulseSettings {
   emailAutoArchiveDays: number;
   emailDriveQuickAttach: boolean;
 
+  // Data Retention & Privacy
+  dataRetentionEnabled: boolean;
+  emailsRetentionDays: number;
+  calendarRetentionDays: number;
+  contactsRetentionDays: number;
+  messagesRetentionDays: number;
+
   // API Keys (encrypted/hashed in sync)
   openaiApiKey: string;
   claudeApiKey: string;
@@ -176,6 +183,13 @@ const DEFAULT_SETTINGS: PulseSettings = {
   emailNotificationBundling: true,
   emailAutoArchiveDays: 0,
   emailDriveQuickAttach: true,
+
+  // Data Retention & Privacy
+  dataRetentionEnabled: false,
+  emailsRetentionDays: 90,
+  calendarRetentionDays: 365,
+  contactsRetentionDays: -1,
+  messagesRetentionDays: 180,
 
   // API Keys
   openaiApiKey: '',
@@ -299,7 +313,8 @@ class SettingsService {
       // If table doesn't exist (406) or schema error, disable cloud sync
       if (error) {
         if (error.code === 'PGRST204' || error.code === 'PGRST116' || error.message?.includes('406')) {
-          console.warn('[Settings] Cloud sync disabled - user_settings table not available');
+          // Use debug-level - this is expected if table hasn't been created yet
+          console.debug('[Settings Debug] Cloud sync disabled - user_settings table not available (expected during initial setup)');
           this.cloudSyncDisabled = true;
         }
         return;
@@ -322,7 +337,8 @@ class SettingsService {
     } catch (error: any) {
       // Disable cloud sync on 406 errors to prevent spam
       if (error?.status === 406 || error?.code === 'PGRST204') {
-        console.warn('[Settings] Cloud sync disabled - table schema mismatch');
+        // Use debug-level - this is expected if table hasn't been created yet
+        console.debug('[Settings Debug] Cloud sync disabled - table schema mismatch (expected during initial setup)');
         this.cloudSyncDisabled = true;
       } else {
         console.error('Error syncing settings from cloud:', error);
@@ -361,7 +377,8 @@ class SettingsService {
 
       // Disable cloud sync if table doesn't exist
       if (error && (error.code === 'PGRST204' || error.message?.includes('406'))) {
-        console.warn('[Settings] Cloud sync disabled - table not available');
+        // Use debug-level - this is expected if table hasn't been created yet
+        console.debug('[Settings Debug] Cloud sync disabled - table not available (expected during initial setup)');
         this.cloudSyncDisabled = true;
       }
     } catch (error: any) {

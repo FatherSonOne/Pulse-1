@@ -168,6 +168,31 @@ a:not(:disabled):hover,
   box-shadow: 0 2px 8px rgba(244, 63, 94, 0.3);
 }
 
+/* Floating Action Button - Fixed positioning helper */
+.fixed-fab {
+  position: fixed !important;
+  bottom: 24px;
+  right: 24px;
+  z-index: 50;
+  width: 56px;
+  height: 56px;
+  border-radius: 50%;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  box-shadow: 0 4px 16px rgba(0, 0, 0, 0.2);
+  transition: all 0.3s cubic-bezier(0.4, 0, 0.2, 1);
+}
+
+.fixed-fab:hover {
+  transform: scale(1.1);
+  box-shadow: 0 6px 24px rgba(0, 0, 0, 0.3);
+}
+
+.fixed-fab:active {
+  transform: scale(0.95);
+}
+
 /* Secondary brand button - rose outline */
 .btn-brand-secondary {
   background: transparent;
@@ -239,6 +264,11 @@ code {
 @keyframes slideInRight {
   from { opacity: 0; transform: translateX(20px); }
   to { opacity: 1; transform: translateX(0); }
+}
+
+@keyframes slideInFromRight {
+  from { transform: translateX(100%); }
+  to { transform: translateX(0); }
 }
 
 @keyframes slideInUp {
@@ -339,6 +369,7 @@ code {
 .animate-fadeOut { animation: fadeOut 0.3s ease-out forwards; }
 .animate-slideInLeft { animation: slideInLeft 0.3s ease-out forwards; }
 .animate-slideInRight { animation: slideInRight 0.3s ease-out forwards; }
+.animate-slideInFromRight { animation: slideInFromRight 0.3s cubic-bezier(0.16, 1, 0.3, 1) forwards; }
 .animate-slideInUp { animation: slideInUp 0.3s ease-out forwards; }
 .animate-slideInDown { animation: slideInDown 0.3s ease-out forwards; }
 .animate-scaleIn { animation: scaleIn 0.3s ease-out forwards; }
@@ -893,6 +924,17 @@ html.native-app {
   }
   .safe-area-bottom {
     padding-bottom: env(safe-area-inset-bottom);
+  }
+}
+
+/* Mobile-specific FAB adjustments */
+@media (max-width: 768px) {
+  .fixed-fab {
+    bottom: calc(16px + env(safe-area-inset-bottom));
+    right: 16px;
+    width: 52px;
+    height: 52px;
+    z-index: 60;
   }
 }
 

@@ -1,5 +1,6 @@
 
 import React, { useState, useEffect, useMemo, useCallback, useRef } from 'react';
+import ReactDOM from 'react-dom';
 import { User, AppView, BatchedNotification, CalendarEvent, Task, Thread, Contact } from '../types';
 import { generateJournalInsight, generateSearchResponse, generateDailyBriefing } from '../services/geminiService';
 import { saveArchiveItem } from '../services/dbService';
@@ -1486,33 +1487,36 @@ const Dashboard: React.FC<DashboardProps> = ({ user, apiKey, setView }) => {
         </div>
       </div>
 
-      {/* Quick Actions Floating Button */}
-      <div className="fixed bottom-6 right-6 z-50">
-        <div className={`flex flex-col-reverse gap-2 mb-2 transition-all ${showQuickActions ? 'opacity-100 translate-y-0' : 'opacity-0 translate-y-4 pointer-events-none'}`}>
-          {quickActions.map(action => (
-            <button
-              key={action.id}
-              onClick={() => {
-                const params: Record<string, boolean> = {};
-                if (action.openTaskPanel) params.openTaskPanel = true;
-                if (action.openAddContact) params.openAddContact = true;
-                setView(action.view, Object.keys(params).length > 0 ? params : undefined);
-                setShowQuickActions(false);
-              }}
-              className={`${action.color} text-white w-12 h-12 rounded-full shadow-lg flex items-center justify-center hover:scale-110 transition-transform`}
-              title={action.label}
-            >
-              <i className={`fa-solid ${action.icon}`}></i>
-            </button>
-          ))}
-        </div>
-        <button
-          onClick={() => setShowQuickActions(!showQuickActions)}
-          className={`w-14 h-14 rounded-full shadow-xl flex items-center justify-center transition-all ${showQuickActions ? 'bg-zinc-800 rotate-45' : 'bg-gradient-to-br from-rose-500 to-pink-500 hover:from-rose-600 hover:to-pink-600'} text-white`}
-        >
-          <i className="fa-solid fa-plus text-xl"></i>
-        </button>
-      </div>
+      {/* Quick Actions Floating Button - Rendered via Portal */}
+      {ReactDOM.createPortal(
+        <div className="fixed bottom-6 right-6 z-[9999]" style={{ position: 'fixed' }}>
+          <div className={`flex flex-col-reverse gap-2 mb-2 transition-all ${showQuickActions ? 'opacity-100 translate-y-0' : 'opacity-0 translate-y-4 pointer-events-none'}`}>
+            {quickActions.map(action => (
+              <button
+                key={action.id}
+                onClick={() => {
+                  const params: Record<string, boolean> = {};
+                  if (action.openTaskPanel) params.openTaskPanel = true;
+                  if (action.openAddContact) params.openAddContact = true;
+                  setView(action.view, Object.keys(params).length > 0 ? params : undefined);
+                  setShowQuickActions(false);
+                }}
+                className={`${action.color} text-white w-12 h-12 rounded-full shadow-lg flex items-center justify-center hover:scale-110 transition-transform`}
+                title={action.label}
+              >
+                <i className={`fa-solid ${action.icon}`}></i>
+              </button>
+            ))}
+          </div>
+          <button
+            onClick={() => setShowQuickActions(!showQuickActions)}
+            className={`w-14 h-14 rounded-full shadow-xl flex items-center justify-center transition-all ${showQuickActions ? 'bg-zinc-800 rotate-45' : 'bg-gradient-to-br from-rose-500 to-pink-500 hover:from-rose-600 hover:to-pink-600'} text-white`}
+          >
+            <i className="fa-solid fa-plus text-xl"></i>
+          </button>
+        </div>,
+        document.body
+      )}
 
       {/* Productivity Analytics Section */}
       <CollapsibleWidget
