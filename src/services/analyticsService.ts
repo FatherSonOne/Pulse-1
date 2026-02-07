@@ -4,6 +4,11 @@
  */
 
 import { supabase } from './supabase';
+import * as relationshipHealthService from './relationshipHealthService';
+import * as conflictDetectionService from './conflictDetectionService';
+import * as recognitionService from './recognitionService';
+import * as predictiveAnalyticsService from './predictiveAnalyticsService';
+import * as aiInsightsService from './aiInsightsService';
 
 // Types
 export interface DailyMetrics {
@@ -759,3 +764,251 @@ export async function generateInsights(): Promise<{
     return { success: false, error: err.message };
   }
 }
+
+/**
+ * Enhanced Analytics - Comprehensive dashboard combining all analytics services
+ */
+export async function getEnhancedAnalytics(days: number = 30): Promise<{
+  success: boolean;
+  data?: {
+    basic: DashboardData;
+    relationships: {
+      summary: relationshipHealthService.RelationshipHealthSummary;
+      needingAttention: relationshipHealthService.RelationshipHealth[];
+    };
+    conflicts: {
+      summary: conflictDetectionService.ConflictSummary;
+      active: conflictDetectionService.ConflictTracking[];
+      hotTopics: conflictDetectionService.HotTopic[];
+    };
+    recognition: {
+      overview: recognitionService.RecognitionOverview;
+      recentEvents: recognitionService.RecognitionEvent[];
+    };
+    predictions: {
+      burnout: predictiveAnalyticsService.BurnoutIndicator | undefined;
+      predictions: predictiveAnalyticsService.PredictionCache[];
+    };
+    aiInsights: aiInsightsService.CommunicationInsight[];
+  };
+  error?: string;
+}> {
+  try {
+    // Fetch all analytics data in parallel
+    const [
+      basicData,
+      relationshipSummary,
+      relationshipsNeedingAttention,
+      conflictSummary,
+      activeConflicts,
+      hotTopics,
+      recognitionOverview,
+      recentRecognition,
+      burnoutIndicator,
+      predictions,
+      aiInsights
+    ] = await Promise.all([
+      getDashboardData(days),
+      relationshipHealthService.getRelationshipHealthSummary(),
+      relationshipHealthService.getRelationshipsNeedingAttention(),
+      conflictDetectionService.getConflictSummary(),
+      conflictDetectionService.getActiveConflicts(),
+      conflictDetectionService.getHotTopics(),
+      recognitionService.getRecognitionOverview(),
+      recognitionService.getAllRecognitionEvents(undefined, 5),
+      predictiveAnalyticsService.getLatestBurnoutIndicator(),
+      predictiveAnalyticsService.getAllPredictions(),
+      aiInsightsService.generateCommunicationInsights('week')
+    ]);
+
+    if (!basicData.success) {
+      return { success: false, error: basicData.error };
+    }
+
+    return {
+      success: true,
+      data: {
+        basic: basicData.data!,
+        relationships: {
+          summary: relationshipSummary.data || {
+            total_relationships: 0,
+            active_count: 0,
+            at_risk_count: 0,
+            dormant_count: 0,
+            avg_health_score: 0,
+            trending_up: 0,
+            trending_down: 0
+          },
+          needingAttention: relationshipsNeedingAttention.data || []
+        },
+        conflicts: {
+          summary: conflictSummary.data || {
+            active_conflicts: 0,
+            resolved_last_7d: 0,
+            resolved_last_30d: 0,
+            avg_resolution_time_hours: 0,
+            hot_topics_count: 0,
+            conflict_free_days: 365,
+            most_common_type: null
+          },
+          active: activeConflicts.data || [],
+          hotTopics: hotTopics.data || []
+        },
+        recognition: {
+          overview: recognitionOverview.data || {
+            total_received: 0,
+            total_given: 0,
+            total_wins: 0,
+            avg_appreciation_score: 0,
+            top_appreciators: [],
+            recent_wins: [],
+            recognition_trend: 'stable'
+          },
+          recentEvents: recentRecognition.data || []
+        },
+        predictions: {
+          burnout: burnoutIndicator.data,
+          predictions: predictions.data || []
+        },
+        aiInsights: aiInsights.data || []
+      }
+    };
+  } catch (err: any) {
+    console.error('Error fetching enhanced analytics:', err);
+    return { success: false, error: err.message };
+  }
+}
+
+/**
+ * Process a message through all analytics services
+ * This should be called whenever a new message is sent or received
+ */
+export async function processMessageAnalytics(
+  messageContent: string,
+  channel: 'email' | 'sms' | 'slack' | 'voxer' | 'pulse',
+  contactIdentifier: string,
+  contactName: string | null,
+  messageId: string,
+  isSent: boolean
+): Promise<{
+  success: boolean;
+  analytics: {
+    sentiment?: aiInsightsService.SentimentAnalysisResult;
+    conflict?: conflictDetectionService.ConflictTracking;
+    recognition?: recognitionService.RecognitionEvent;
+  };
+  error?: string;
+}> {
+  try {
+    const analytics: {
+      sentiment?: aiInsightsService.SentimentAnalysisResult;
+      conflict?: conflictDetectionService.ConflictTracking;
+      recognition?: recognitionService.RecognitionEvent;
+    } = {};
+
+    // Track basic message analytics
+    await trackMessage(channel, isSent, contactIdentifier);
+
+    // Analyze sentiment
+    const sentimentResult = await aiInsightsService.analyzeSentiment(messageContent);
+    if (sentimentResult.success && sentimentResult.data) {
+      analytics.sentiment = sentimentResult.data;
+    }
+
+    // Detect conflicts
+    const conflictResult = await aiInsightsService.analyzeForConflict(messageContent);
+    if (conflictResult.success && conflictResult.data?.has_conflict) {
+      const conflictData = conflictResult.data;
+      const createResult = await conflictDetectionService.createConflict(
+        contactIdentifier,
+        messageId,
+        channel,
+        conflictData.severity,
+        conflictData.conflict_type,
+        conflictData.topic,
+        conflictData.keywords,
+        conflictData.tension_score
+      );
+      if (createResult.success && createResult.data) {
+        analytics.conflict = createResult.data;
+      }
+    }
+
+    // Detect recognition
+    const recognitionResult = await aiInsightsService.analyzeForRecognition(messageContent);
+    if (recognitionResult.success && recognitionResult.data?.has_recognition) {
+      const recData = recognitionResult.data;
+      const createResult = await recognitionService.createRecognitionEvent(
+        recData.recognition_type,
+        isSent ? 'given' : 'received',
+        channel,
+        messageId,
+        messageContent.substring(0, 200),
+        isSent ? undefined : contactIdentifier,
+        isSent ? undefined : contactName,
+        isSent ? contactIdentifier : undefined,
+        isSent ? contactName : undefined,
+        recData.category,
+        recData.keywords,
+        undefined,
+        recData.positivity_score
+      );
+      if (createResult.success && createResult.data) {
+        analytics.recognition = createResult.data;
+      }
+    }
+
+    return { success: true, analytics };
+  } catch (err: any) {
+    console.error('Error processing message analytics:', err);
+    return { success: false, analytics: {}, error: err.message };
+  }
+}
+
+/**
+ * Run periodic analytics calculations
+ * This should be scheduled to run daily
+ */
+export async function runPeriodicAnalyticsUpdate(): Promise<{
+  success: boolean;
+  results: {
+    relationshipsUpdated: number;
+    burnoutAssessed: boolean;
+  };
+  error?: string;
+}> {
+  try {
+    // Recalculate relationship health scores
+    const relationshipsResult = await relationshipHealthService.recalculateRelationshipHealth();
+
+    // Assess burnout risk
+    const burnoutResult = await predictiveAnalyticsService.assessBurnoutRisk();
+
+    return {
+      success: true,
+      results: {
+        relationshipsUpdated: relationshipsResult.updated_count || 0,
+        burnoutAssessed: burnoutResult.success
+      }
+    };
+  } catch (err: any) {
+    console.error('Error running periodic analytics update:', err);
+    return {
+      success: false,
+      results: {
+        relationshipsUpdated: 0,
+        burnoutAssessed: false
+      },
+      error: err.message
+    };
+  }
+}
+
+// Export all sub-service modules for direct access
+export {
+  relationshipHealthService,
+  conflictDetectionService,
+  recognitionService,
+  predictiveAnalyticsService,
+  aiInsightsService
+};
