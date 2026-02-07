@@ -14,14 +14,20 @@ import {
   DashboardData,
   ContactEngagement
 } from '../../services/analyticsService';
+import { RelationshipsView } from './RelationshipsView';
+import { ConflictsView } from './ConflictsView';
+import { KudosView } from './KudosView';
+import { PredictionsView } from './PredictionsView';
 import './AnalyticsDashboard.css';
+import './AnalyticsEnhancements.css';
+import './AnalyticsEnhancementsPart2.css';
 
 interface AnalyticsDashboardProps {
   onClose?: () => void;
 }
 
 type TimeRange = '7d' | '30d' | '90d' | '365d';
-type ViewMode = 'overview' | 'velocity' | 'sentiment' | 'network';
+type ViewMode = 'overview' | 'velocity' | 'sentiment' | 'network' | 'relationships' | 'conflicts' | 'kudos' | 'predictions';
 
 export const AnalyticsDashboard: React.FC<AnalyticsDashboardProps> = ({ onClose }) => {
   const [timeRange, setTimeRange] = useState<TimeRange>('30d');
@@ -141,6 +147,10 @@ export const AnalyticsDashboard: React.FC<AnalyticsDashboardProps> = ({ onClose 
             { id: 'velocity', label: 'Velocity', icon: '⚡' },
             { id: 'sentiment', label: 'Sentiment', icon: '◐' },
             { id: 'network', label: 'Network', icon: '⬡' },
+            { id: 'relationships', label: 'Relationships', icon: '♥' },
+            { id: 'conflicts', label: 'Conflicts', icon: '△' },
+            { id: 'kudos', label: 'Kudos', icon: '⭐' },
+            { id: 'predictions', label: 'Predictions', icon: '🔮' },
           ].map(view => (
             <button
               key={view.id}
@@ -620,6 +630,18 @@ export const AnalyticsDashboard: React.FC<AnalyticsDashboardProps> = ({ onClose 
               )}
             </div>
           )}
+
+          {/* Relationships View */}
+          {viewMode === 'relationships' && <RelationshipsView timeRange={timeRange} />}
+
+          {/* Conflicts View */}
+          {viewMode === 'conflicts' && <ConflictsView timeRange={timeRange} />}
+
+          {/* Kudos View */}
+          {viewMode === 'kudos' && <KudosView timeRange={timeRange} />}
+
+          {/* Predictions View */}
+          {viewMode === 'predictions' && <PredictionsView timeRange={timeRange} />}
         </main>
       )}
     </div>
