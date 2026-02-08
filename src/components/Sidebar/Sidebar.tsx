@@ -1,4 +1,4 @@
-import React from 'react';
+import React, { useState } from 'react';
 import { AppView, User } from '../../types';
 import './Sidebar.css';
 
@@ -14,8 +14,9 @@ interface NavItemConfig {
 
 interface NavSection {
   label: string;
-  color: 'rose' | 'pink' | 'coral' | 'rose-light' | 'red';
+  color: 'rose' | 'pink' | 'coral' | 'rose-light' | 'red' | 'amber';
   items: NavItemConfig[];
+  collapsible?: boolean;
 }
 
 interface SidebarProps {
@@ -71,12 +72,19 @@ const getNavSections = (isAdmin: boolean): NavSection[] => {
       label: 'Intelligence',
       color: 'rose-light',
       items: [
-        { icon: 'fa-book-open', label: 'War Room', view: AppView.LIVE_AI },
-        { icon: 'fa-comments', label: 'Pulse Chat', view: AppView.LIVE },
         { icon: 'fa-search', label: 'Search', view: AppView.MULTI_MODAL },
-        { icon: 'fa-flask', label: 'AI Lab', view: AppView.TOOLS },
         { icon: 'fa-chart-line', label: 'Analytics', view: AppView.ANALYTICS },
         { icon: 'fa-box-archive', label: 'Archives', view: AppView.ARCHIVES },
+      ],
+    },
+    {
+      label: 'Experimental',
+      color: 'amber',
+      collapsible: true,
+      items: [
+        { icon: 'fa-book-open', label: 'War Room', view: AppView.LIVE_AI },
+        { icon: 'fa-comments', label: 'Pulse Chat', view: AppView.LIVE },
+        { icon: 'fa-flask', label: 'AI Lab', view: AppView.TOOLS },
       ],
     },
   ];
@@ -141,14 +149,34 @@ interface SectionHeaderProps {
   label: string;
   color: 'rose' | 'cyan' | 'violet' | 'amber' | 'red';
   isCollapsed: boolean;
+  collapsible?: boolean;
+  isExpanded?: boolean;
+  onToggle?: () => void;
 }
 
 const SectionHeader: React.FC<SectionHeaderProps> = ({
   label,
   color,
   isCollapsed,
+  collapsible = false,
+  isExpanded = true,
+  onToggle,
 }) => {
   if (isCollapsed) return null;
+
+  if (collapsible) {
+    return (
+      <button
+        className="sidebar-section sidebar-section-collapsible"
+        onClick={onToggle}
+        type="button"
+      >
+        <div className={`sidebar-section-dot ${color}`} />
+        <span className="sidebar-section-label">{label}</span>
+        <i className={`fa-solid ${isExpanded ? 'fa-chevron-down' : 'fa-chevron-right'} sidebar-section-chevron`} />
+      </button>
+    );
+  }
 
   return (
     <div className="sidebar-section">
@@ -180,6 +208,18 @@ export const Sidebar: React.FC<SidebarProps> = ({
 }) => {
   const isAdmin = user?.role === 'admin' || user?.isAdmin || false;
   const navSections = getNavSections(isAdmin);
+
+  // State for tracking which collapsible sections are expanded
+  const [expandedSections, setExpandedSections] = useState<Record<string, boolean>>({
+    'Experimental': false, // Start collapsed
+  });
+
+  const toggleSection = (sectionLabel: string) => {
+    setExpandedSections(prev => ({
+      ...prev,
+      [sectionLabel]: !prev[sectionLabel],
+    }));
+  };
 
   const handleNavClick = (view: AppView) => {
     onViewChange(view);
@@ -270,25 +310,34 @@ export const Sidebar: React.FC<SidebarProps> = ({
 
         {/* Navigation */}
         <nav className="sidebar-nav">
-          {navSections.map((section, sectionIdx) => (
-            <React.Fragment key={section.label}>
-              <SectionHeader
-                label={section.label}
-                color={section.color}
-                isCollapsed={isCollapsed}
-              />
-              {section.items.map((item, itemIdx) => (
-                <NavItem
-                  key={item.view}
-                  icon={item.icon}
-                  label={item.label}
-                  isActive={currentView === item.view}
+          {navSections.map((section, sectionIdx) => {
+            const isSectionExpanded = section.collapsible
+              ? expandedSections[section.label] === true
+              : true;
+
+            return (
+              <React.Fragment key={section.label}>
+                <SectionHeader
+                  label={section.label}
+                  color={section.color}
                   isCollapsed={isCollapsed}
-                  onClick={() => handleNavClick(item.view)}
+                  collapsible={section.collapsible}
+                  isExpanded={isSectionExpanded}
+                  onToggle={() => toggleSection(section.label)}
                 />
-              ))}
-            </React.Fragment>
-          ))}
+                {isSectionExpanded && section.items.map((item, itemIdx) => (
+                  <NavItem
+                    key={item.view}
+                    icon={item.icon}
+                    label={item.label}
+                    isActive={currentView === item.view}
+                    isCollapsed={isCollapsed}
+                    onClick={() => handleNavClick(item.view)}
+                  />
+                ))}
+              </React.Fragment>
+            );
+          })}
         </nav>
 
         {/* Footer */}

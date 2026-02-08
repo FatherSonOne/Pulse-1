@@ -336,6 +336,7 @@
 .sidebar-section-dot.coral { background: #fb7185; }
 .sidebar-section-dot.rose-light { background: #fda4af; }
 .sidebar-section-dot.red { background: #ef4444; }
+.sidebar-section-dot.amber { background: #f59e0b; }
 
 .sidebar-section-label {
   font-family: 'JetBrains Mono', 'SF Mono', monospace;
@@ -345,6 +346,38 @@
   letter-spacing: 0.12em;
   color: var(--nav-item-text);
   opacity: 0.6;
+}
+
+/* Collapsible Section Header */
+.sidebar-section-collapsible {
+  width: 100%;
+  border: none;
+  background: transparent;
+  cursor: pointer;
+  transition: all 0.2s ease;
+  border-radius: 8px;
+  padding: 12px 12px 4px;
+}
+
+.sidebar-section-collapsible:hover {
+  background: var(--nav-item-bg-hover);
+}
+
+.sidebar-section-collapsible:hover .sidebar-section-label {
+  opacity: 0.9;
+}
+
+.sidebar-section-chevron {
+  margin-left: auto;
+  font-size: 0.625rem;
+  color: var(--nav-item-text);
+  opacity: 0.5;
+  transition: all 0.3s cubic-bezier(0.4, 0, 0.2, 1);
+}
+
+.sidebar-section-collapsible:hover .sidebar-section-chevron {
+  opacity: 0.8;
+  color: var(--nav-item-text-hover);
 }
 
 /* ============================================
