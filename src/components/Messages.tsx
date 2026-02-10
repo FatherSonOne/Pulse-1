@@ -70,6 +70,9 @@ const BundleAutomation = React.lazy(() => import('./MessageEnhancements/BundleAu
 const BundleSecurity = React.lazy(() => import('./MessageEnhancements/BundleSecurity'));
 const BundleMultimedia = React.lazy(() => import('./MessageEnhancements/BundleMultimedia'));
 
+// Error Boundary for protecting lazy-loaded Bundle components
+import { MessageEnhancementErrorBoundary } from './MessageEnhancements/MessageEnhancementErrorBoundary';
+
 // For immediate access to hooks and small components, import directly from individual files
 import ToolOverlay from './MessageEnhancements/ToolOverlay';
 import { TranslationHub } from './MessageEnhancements/TranslationHub';
@@ -80,15 +83,27 @@ import { BackupSync } from './MessageEnhancements/BackupSync';
 import { SmartSuggestions } from './MessageEnhancements/SmartSuggestions';
 import { useCommandPalette } from './MessageEnhancements/QuickActionsCommandPalette';
 import { useAutoSaveDraft } from './MessageEnhancements/DraftManager';
+import { getAllToolActions, fuzzySearchTools, saveRecentTool, suggestToolsFromContext, getRecentTools, getToolOverlayType } from '../services/toolRegistry';
+import type { ToolAction } from '../services/toolRegistry';
 import { messageEnhancementsService } from '../services/messageEnhancementsService';
 import type { LiveCollaborator } from '../types/messageEnhancements';
 import { VoiceTextButton } from './shared/VoiceTextButton';
 import MessageInput from './MessageInput';
+import { FloatingToolsButton } from './FloatingToolsButton';
 // Advanced Features - Context, Attention, Tasks, Artifacts
 import { IntentComposer, ContextPanel } from './context';
 import { MeetingDeflector } from './attention';
 import { TaskExtractor } from './tasks/TaskExtractor';
 import { ChannelArtifactComponent } from './artifacts';
+
+// REDESIGN COMPONENTS - Phase 1
+import { SmartTimestamp } from './Messages/SmartTimestamp';
+import { UserBadge, UserRole } from './Messages/UserBadge';
+import { getAccessibleUserColor } from '../utils/userColors';
+import { GestureHandler } from './Messages/GestureHandler';
+
+// REDESIGN COMPONENTS - Phase 2 (Mobile)
+import { MobileDrawer, useSwipeFromEdge, MobileDrawerHeader } from './Messages/MobileDrawer';
 
 // Focus Mode (Phase 5)
 import { FocusMode } from './Messages/FocusMode';
@@ -386,6 +401,14 @@ const Messages: React.FC<MessagesProps> = ({ apiKey, contacts, initialContactId,
   // Mobile View State
   const [mobileView, setMobileView] = useState<'list' | 'chat'>('list');
 
+  // Mobile Drawer State (Phase 2.4)
+  const { isDrawerOpen, setIsDrawerOpen, closeDrawer, openDrawer } = useSwipeFromEdge({
+    side: 'left',
+    edgeThreshold: 20,
+    swipeThreshold: 100,
+    enabled: true,
+  });
+
   // Reply State
   const [replyingTo, setReplyingTo] = useState<Message | null>(null);
 
@@ -606,6 +629,9 @@ const Messages: React.FC<MessagesProps> = ({ apiKey, contacts, initialContactId,
   const [threadFilter, setThreadFilter] = useState<'all' | 'unread' | 'pinned' | 'with-tasks' | 'with-decisions'>('all');
   const [showArchived, setShowArchived] = useState(false);
   const [archivedThreads, setArchivedThreads] = useState<string[]>([]);
+
+  // Tool suggestion state for contextual AI tool recommendations
+  const [suggestedTool, setSuggestedTool] = useState<ToolAction | null>(null);
 
   // Thread statistics panel
   const [showStatsPanel, setShowStatsPanel] = useState(false);
@@ -837,6 +863,93 @@ const Messages: React.FC<MessagesProps> = ({ apiKey, contacts, initialContactId,
 
     return () => clearTimeout(timeout);
   }, [pulseUserSearch]);
+
+  // Tool suggestion based on input text content (Phase 2A)
+  useEffect(() => {
+    if (inputText.length > 10) {
+      const tools = getAllToolActions((toolId) => {
+        console.log('Launching tool:', toolId);
+        saveRecentTool(toolId);
+        // TODO: Implement actual tool launch logic via ToolOverlay
+      });
+
+      const suggestions = suggestToolsFromContext(
+        {
+          messageContent: inputText,
+          hasCode: /```|function|class|const|let|var|def |import |package /.test(inputText),
+          hasImage: /image|photo|picture|screenshot|diagram/.test(inputText.toLowerCase()),
+          hasVideo: /video|watch|analyze|recording|clip/.test(inputText.toLowerCase()),
+          hasAudio: /audio|voice|sound|speech|transcribe/.test(inputText.toLowerCase()),
+        },
+        tools
+      );
+
+      if (suggestions.length > 0) {
+        setSuggestedTool(suggestions[0]);
+      } else {
+        setSuggestedTool(null);
+      }
+    } else {
+      setSuggestedTool(null);
+    }
+  }, [inputText]);
+
+  // Global keyboard shortcuts for command palette and tools (Phase 2A)
+  // Uses capture phase to intercept before browser's default behavior
+  useEffect(() => {
+    const handleGlobalKeyDown = (e: KeyboardEvent) => {
+      const ctrl = e.ctrlKey || e.metaKey;
+      const shift = e.shiftKey;
+      const key = e.key.toLowerCase();
+
+      // Ctrl+K or Cmd+K to toggle command palette
+      if (ctrl && !shift && key === 'k') {
+        e.preventDefault();
+        e.stopPropagation();
+        setShowCommandPalette(prev => !prev);
+        return;
+      }
+
+      // Tool shortcuts (Ctrl+Shift+Key)
+      if (ctrl && shift) {
+        let toolId: string | null = null;
+
+        switch (key) {
+          case 'r': toolId = 'deep-reasoner'; break;
+          case 'v': toolId = 'video-analyst'; break;
+          case 'c': toolId = 'code-studio'; break;
+          case 'i': toolId = 'vision-lab'; break;
+          case 's': toolId = 'deep-search'; break;
+          case 'm': toolId = 'meeting-intel'; break;
+          case 'a': toolId = 'ai-assistant'; break;
+        }
+
+        if (toolId) {
+          e.preventDefault();
+          e.stopPropagation();
+
+          // Save to recent tools for usage tracking
+          saveRecentTool(toolId);
+
+          // Get the overlay type for this tool
+          const overlayType = getToolOverlayType(toolId);
+
+          if (overlayType) {
+            // Launch the tool in its overlay
+            setActiveToolOverlay(overlayType);
+            console.log(`Launched ${toolId} in ${overlayType} overlay`);
+          } else {
+            // Tool doesn't have an overlay mapping - log for future implementation
+            console.warn(`No overlay mapping for tool: ${toolId}`);
+          }
+        }
+      }
+    };
+
+    // Use capture: true to intercept in capture phase before browser handlers
+    document.addEventListener('keydown', handleGlobalKeyDown, { capture: true });
+    return () => document.removeEventListener('keydown', handleGlobalKeyDown, { capture: true });
+  }, []);
 
   // Start Pulse conversation with a user
   const startPulseConversation = useCallback(async (user: SearchUserResult) => {
@@ -1088,6 +1201,37 @@ const Messages: React.FC<MessagesProps> = ({ apiKey, contacts, initialContactId,
       longPressTimerRef.current = null;
     }
   }, []);
+
+  // Gesture handlers for Phase 2 mobile optimizations
+  const handleSwipeLeftDelete = useCallback((msgId: string) => {
+    // Show confirmation or delete immediately based on user preference
+    // For now, we'll just show the context menu with delete option highlighted
+    const messageElement = document.querySelector(`[data-message-id="${msgId}"]`) as HTMLElement;
+    if (messageElement) {
+      const rect = messageElement.getBoundingClientRect();
+      openPulseContextMenu(msgId, rect.right - 200, rect.top + rect.height / 2);
+    }
+  }, [openPulseContextMenu]);
+
+  const handleSwipeRightReply = useCallback((msgId: string) => {
+    // Use functional setState to avoid dependency on activePulseMessages array
+    setActivePulseMessages((messages) => {
+      const message = messages.find(m => m.id === msgId);
+      if (message) {
+        setReplyingToPulseMessage(message);
+      }
+      return messages; // No state change, just reading
+    });
+  }, []);
+
+  const handleGestureLongPress = useCallback((msgId: string) => {
+    // Open context menu on long-press - find element by data attribute
+    const messageElement = document.querySelector(`[data-message-id="${msgId}"]`) as HTMLElement;
+    if (messageElement) {
+      const rect = messageElement.getBoundingClientRect();
+      openPulseContextMenu(msgId, rect.right - 200, rect.top + rect.height / 2);
+    }
+  }, [openPulseContextMenu]);
 
   // Close context menu when clicking outside
   useEffect(() => {
@@ -2287,10 +2431,10 @@ const Messages: React.FC<MessagesProps> = ({ apiKey, contacts, initialContactId,
         onClick={() => setShowNewChatModal(true)}
         className="w-full max-w-md cursor-pointer group"
       >
-        <div className="bg-gradient-to-br from-zinc-50 to-zinc-100 dark:from-zinc-900 dark:to-zinc-800 rounded-2xl p-8 border-2 border-dashed border-zinc-300 dark:border-zinc-700 hover:border-emerald-400 dark:hover:border-emerald-500 hover:from-emerald-50 hover:to-cyan-50 dark:hover:from-emerald-950/30 dark:hover:to-cyan-950/30 transition-all duration-300 shadow-sm hover:shadow-lg">
+        <div className="bg-gradient-to-br from-zinc-50 to-zinc-100 dark:from-zinc-900 dark:to-zinc-800 rounded-2xl p-8 border-2 border-dashed border-zinc-300 dark:border-zinc-700 hover:border-rose-400 dark:hover:border-rose-500 hover:from-rose-50 hover:to-pink-50 dark:hover:from-rose-950/30 dark:hover:to-pink-950/30 transition-all duration-300 shadow-sm hover:shadow-lg hover:shadow-rose-500/20">
           <div className="text-center">
-            <div className="w-20 h-20 bg-gradient-to-br from-emerald-100 to-cyan-100 dark:from-emerald-900/50 dark:to-cyan-900/50 rounded-full flex items-center justify-center mx-auto mb-6 group-hover:scale-110 transition-transform">
-              <i className="fa-solid fa-paper-plane text-3xl text-emerald-500 group-hover:text-emerald-600 transition-colors"></i>
+            <div className="w-20 h-20 bg-gradient-to-br from-rose-100 to-pink-100 dark:from-rose-900/50 dark:to-pink-900/50 rounded-full flex items-center justify-center mx-auto mb-6 group-hover:scale-110 transition-transform">
+              <i className="fa-solid fa-paper-plane text-3xl text-rose-500 group-hover:text-rose-600 transition-colors"></i>
             </div>
             <h2 className="text-xl font-bold text-zinc-900 dark:text-white mb-2">
               Send a New Message
@@ -2300,7 +2444,7 @@ const Messages: React.FC<MessagesProps> = ({ apiKey, contacts, initialContactId,
                 ? 'Start a new conversation with a Pulse user.'
                 : 'Start your first Pulse conversation to begin messaging.'}
             </p>
-            <div className="inline-flex items-center gap-2 px-6 py-3 bg-emerald-600 text-white rounded-xl font-semibold group-hover:bg-emerald-500 transition">
+            <div className="inline-flex items-center gap-2 px-6 py-3 bg-gradient-to-r from-rose-500 to-pink-600 text-white rounded-xl font-semibold group-hover:from-rose-600 group-hover:to-pink-700 transition shadow-lg shadow-rose-500/30">
               <i className="fa-solid fa-plus"></i>
               New Conversation
             </div>
@@ -2314,7 +2458,7 @@ const Messages: React.FC<MessagesProps> = ({ apiKey, contacts, initialContactId,
           <p className="text-xs text-zinc-400 dark:text-zinc-500 mb-3">Or select from your conversations</p>
           <div className="flex justify-center gap-4">
             <div className="text-xs text-zinc-500 dark:text-zinc-400">
-              <span className="font-medium text-emerald-600 dark:text-emerald-400">{pulseConversations.length}</span> Pulse chats
+              <span className="font-medium text-rose-600 dark:text-rose-400">{pulseConversations.length}</span> Pulse chats
             </div>
             {threads.length > 0 && (
               <button
@@ -2331,6 +2475,12 @@ const Messages: React.FC<MessagesProps> = ({ apiKey, contacts, initialContactId,
     </div>
   );
 
+  // Handler to close drawer when selecting a conversation on mobile
+  const handleSelectConversation = (convId: string) => {
+    selectPulseConversation(convId);
+    closeDrawer(); // Close drawer after selection on mobile
+  };
+
   return (
     <div className="h-full flex bg-white dark:bg-zinc-950 rounded-2xl overflow-hidden border border-zinc-200 dark:border-zinc-800 relative animate-fade-in shadow-xl">
       
@@ -2340,7 +2490,7 @@ const Messages: React.FC<MessagesProps> = ({ apiKey, contacts, initialContactId,
           <div className="bg-white dark:bg-zinc-900 w-full max-w-md rounded-2xl shadow-2xl animate-scale-in border border-zinc-200 dark:border-zinc-800">
             <div className="p-4 border-b border-zinc-200 dark:border-zinc-800 flex justify-between items-center">
               <h3 className="font-bold dark:text-white flex items-center gap-2">
-                <i className="fa-solid fa-plus text-emerald-500"></i> New Conversation
+                <i className="fa-solid fa-plus text-rose-500"></i> New Conversation
               </h3>
               <button onClick={() => { setShowNewChatModal(false); setPulseUserSearch(''); setPulseSearchResults([]); }}>
                 <i className="fa-solid fa-xmark text-zinc-500 hover:text-zinc-700 dark:hover:text-zinc-300"></i>
@@ -2381,7 +2531,7 @@ const Messages: React.FC<MessagesProps> = ({ apiKey, contacts, initialContactId,
                                 onClick={() => startPulseConversation(user)}
                                 className="w-full flex items-center gap-3 p-2.5 rounded-xl hover:bg-emerald-50 dark:hover:bg-emerald-900/20 transition text-left"
                               >
-                                <div className="w-9 h-9 rounded-full bg-gradient-to-tr from-emerald-500 to-cyan-500 flex items-center justify-center text-white font-bold text-sm">
+                                <div className="w-9 h-9 rounded-full bg-gradient-to-tr from-rose-500 to-pink-600 flex items-center justify-center text-white font-bold text-sm">
                                   {user.avatar_url ? (
                                     <img src={user.avatar_url} alt="" className="w-full h-full rounded-full object-cover" />
                                   ) : (
@@ -2415,7 +2565,7 @@ const Messages: React.FC<MessagesProps> = ({ apiKey, contacts, initialContactId,
                                 onClick={() => startPulseConversation(user)}
                                 className="w-full flex items-center gap-3 p-2.5 rounded-xl hover:bg-emerald-50 dark:hover:bg-emerald-900/20 transition text-left"
                               >
-                                <div className="w-9 h-9 rounded-full bg-gradient-to-tr from-emerald-500 to-cyan-500 flex items-center justify-center text-white font-bold text-sm">
+                                <div className="w-9 h-9 rounded-full bg-gradient-to-tr from-rose-500 to-pink-600 flex items-center justify-center text-white font-bold text-sm">
                                   {user.avatar_url ? (
                                     <img src={user.avatar_url} alt="" className="w-full h-full rounded-full object-cover" />
                                   ) : (
@@ -2468,7 +2618,7 @@ const Messages: React.FC<MessagesProps> = ({ apiKey, contacts, initialContactId,
                           onClick={() => startPulseConversation(user)}
                           className="w-full flex items-center gap-3 p-3 rounded-xl hover:bg-emerald-50 dark:hover:bg-emerald-900/20 transition text-left border border-transparent hover:border-emerald-200 dark:hover:border-emerald-800"
                         >
-                          <div className="w-10 h-10 rounded-full bg-gradient-to-tr from-emerald-500 to-cyan-500 flex items-center justify-center text-white font-bold">
+                          <div className="w-10 h-10 rounded-full bg-gradient-to-tr from-rose-500 to-pink-600 flex items-center justify-center text-white font-bold">
                             {user.avatar_url ? (
                               <img src={user.avatar_url} alt="" className="w-full h-full rounded-full object-cover" />
                             ) : (
@@ -2677,22 +2827,112 @@ const Messages: React.FC<MessagesProps> = ({ apiKey, contacts, initialContactId,
         </div>
       )}
 
-      {/* Sidebar (Threads) - 30% width on desktop, always visible on md+ for split-view */}
+      {/* Mobile Drawer - Shows sidebar on mobile via swipe or hamburger */}
+      <div className="md:hidden">
+        <MobileDrawer
+          isOpen={isDrawerOpen}
+          onClose={closeDrawer}
+          side="left"
+          width="85%"
+        >
+          <div className="flex-1 overflow-y-auto flex flex-col bg-zinc-50 dark:bg-zinc-900/50">
+            {/* Sidebar content for mobile drawer */}
+            <div className="p-5 flex justify-between items-center border-b border-zinc-200 dark:border-zinc-800">
+              <h2 className="font-bold text-lg text-zinc-900 dark:text-white tracking-tight">Pulse Messages</h2>
+              <button onClick={closeDrawer} className="w-12 h-12 flex items-center justify-center text-zinc-500 hover:bg-zinc-100 dark:hover:bg-zinc-800 rounded-lg transition" aria-label="Close drawer">
+                <i className="fa-solid fa-xmark text-lg"></i>
+              </button>
+            </div>
+
+            <div className="px-4 py-3 flex items-center gap-2 border-b border-zinc-200 dark:border-zinc-800">
+              <button onClick={() => { setShowInviteModal(true); closeDrawer(); }} className="w-12 h-12 rounded-lg text-rose-500 hover:bg-rose-100 dark:hover:bg-rose-900/30 flex items-center justify-center transition" title="Invite team member">
+                <i className="fa-solid fa-user-plus text-sm"></i>
+              </button>
+              <button onClick={() => { setShowCellularSMS(true); closeDrawer(); }} className="w-12 h-12 rounded-lg text-emerald-600 hover:bg-emerald-100 dark:hover:bg-emerald-900/30 flex items-center justify-center transition" title="Cellular SMS">
+                <i className="fa-solid fa-mobile-screen-button text-sm"></i>
+              </button>
+              <button onClick={() => { setShowShortcuts(true); closeDrawer(); }} className="w-12 h-12 rounded-lg text-zinc-400 hover:bg-zinc-200 dark:hover:bg-zinc-800 flex items-center justify-center transition" title="Keyboard shortcuts">
+                <i className="fa-solid fa-keyboard text-sm"></i>
+              </button>
+              <button onClick={() => { setShowNewChatModal(true); closeDrawer(); }} className="w-12 h-12 rounded-lg bg-zinc-200 dark:bg-zinc-800 text-zinc-600 dark:text-zinc-300 flex items-center justify-center transition" title="New message">
+                <i className="fa-solid fa-pen-to-square text-sm"></i>
+              </button>
+            </div>
+
+            <div className="px-2 py-2 flex-1 overflow-y-auto">
+              <p className="text-xs text-zinc-500 px-2 mb-2">Mobile Drawer Integration Active ✅</p>
+              {pulseConversations.length > 0 ? (
+                <div className="space-y-1">
+                  {pulseConversations.map((conv) => {
+                    const otherUser = conv.other_user;
+                    if (!otherUser) return null;
+                    const hasUnread = (conv.unread_count || 0) > 0;
+                    return (
+                      <div
+                        key={conv.id}
+                        onClick={() => handleSelectConversation(conv.id)}
+                        className={`p-3 rounded-xl cursor-pointer transition flex items-center gap-3
+                          ${activePulseConversation === conv.id ? 'bg-emerald-50 dark:bg-emerald-900/20' : 'hover:bg-zinc-100 dark:hover:bg-zinc-800/50'}`}
+                      >
+                        <div className="w-10 h-10 rounded-full bg-gradient-to-br from-rose-500 to-pink-600 flex items-center justify-center text-white text-sm font-bold flex-shrink-0">
+                          {otherUser.avatar_url ? (
+                            <img src={otherUser.avatar_url} alt="" className="w-full h-full rounded-full object-cover" />
+                          ) : (
+                            (otherUser.display_name || otherUser.handle || '?').charAt(0).toUpperCase()
+                          )}
+                        </div>
+                        <div className="flex-1 min-w-0">
+                          <h3 className={`text-sm truncate ${hasUnread ? 'font-bold dark:text-white' : 'font-medium text-zinc-700 dark:text-zinc-300'}`}>
+                            {otherUser.display_name || otherUser.full_name || otherUser.handle || 'Unknown'}
+                          </h3>
+                          {otherUser.handle && <span className="text-[10px] text-emerald-600 dark:text-emerald-400">@{otherUser.handle}</span>}
+                        </div>
+                        {hasUnread && (
+                          <div className="w-5 h-5 bg-emerald-500 rounded-full flex items-center justify-center">
+                            <span className="text-[10px] text-white font-bold">{conv.unread_count}</span>
+                          </div>
+                        )}
+                      </div>
+                    );
+                  })}
+                </div>
+              ) : (
+                <div className="flex flex-col items-center justify-center py-12 text-center px-4">
+                  <div className="w-16 h-16 rounded-2xl bg-gradient-to-br from-rose-100 to-pink-100 dark:from-rose-900/30 dark:to-pink-900/30 flex items-center justify-center mb-4">
+                    <i className="fa-solid fa-comments text-2xl text-rose-500"></i>
+                  </div>
+                  <h3 className="text-zinc-900 dark:text-white font-semibold mb-2">No Messages Yet</h3>
+                  <p className="text-zinc-500 text-sm mb-4">Start a conversation with a Pulse user.</p>
+                  <button
+                    onClick={() => { setShowNewChatModal(true); closeDrawer(); }}
+                    className="px-4 py-2 bg-gradient-to-r from-rose-500 to-pink-600 text-white text-sm font-medium rounded-lg"
+                  >
+                    <i className="fa-solid fa-plus mr-2"></i>
+                    New Conversation
+                  </button>
+                </div>
+              )}
+            </div>
+          </div>
+        </MobileDrawer>
+      </div>
+
+      {/* Sidebar (Threads) - Desktop: 30% width, Mobile: Hidden (shown via drawer) */}
       <div className={`w-full md:w-[30%] md:min-w-[280px] md:max-w-[400px] border-r border-zinc-200 dark:border-zinc-800 bg-zinc-50 dark:bg-zinc-900/50 flex-shrink-0 flex flex-col ${mobileView === 'chat' ? 'max-md:hidden' : ''}`}>
         <div className="p-5 flex justify-between items-center">
           <h2 className="font-bold text-lg text-zinc-900 dark:text-white tracking-tight">Pulse Messages</h2>
           <div className="flex items-center gap-2">
-            <button onClick={() => setShowInviteModal(true)} className="w-8 h-8 rounded-lg text-rose-500 hover:bg-rose-100 dark:hover:bg-rose-900/30 flex items-center justify-center transition" title="Invite team member">
-              <i className="fa-solid fa-user-plus text-xs"></i>
+            <button onClick={() => setShowInviteModal(true)} className="w-12 h-12 rounded-lg text-rose-500 hover:bg-rose-100 dark:hover:bg-rose-900/30 flex items-center justify-center transition" title="Invite team member">
+              <i className="fa-solid fa-user-plus text-sm"></i>
             </button>
-            <button onClick={() => setShowCellularSMS(true)} className="w-8 h-8 rounded-lg text-emerald-600 hover:bg-emerald-100 dark:hover:bg-emerald-900/30 flex items-center justify-center transition" title="Cellular SMS">
-              <i className="fa-solid fa-mobile-screen-button text-xs"></i>
+            <button onClick={() => setShowCellularSMS(true)} className="w-12 h-12 rounded-lg text-emerald-600 hover:bg-emerald-100 dark:hover:bg-emerald-900/30 flex items-center justify-center transition" title="Cellular SMS">
+              <i className="fa-solid fa-mobile-screen-button text-sm"></i>
             </button>
-            <button onClick={() => setShowShortcuts(true)} className="w-8 h-8 rounded-lg text-zinc-400 hover:bg-zinc-200 dark:hover:bg-zinc-800 flex items-center justify-center transition" title="Keyboard shortcuts">
-              <i className="fa-solid fa-keyboard text-xs"></i>
+            <button onClick={() => setShowShortcuts(true)} className="w-12 h-12 rounded-lg text-zinc-400 hover:bg-zinc-200 dark:hover:bg-zinc-800 flex items-center justify-center transition" title="Keyboard shortcuts">
+              <i className="fa-solid fa-keyboard text-sm"></i>
             </button>
-            <button onClick={() => setShowNewChatModal(true)} className="w-8 h-8 rounded-lg bg-zinc-200 dark:bg-zinc-800 text-zinc-600 dark:text-zinc-300 flex items-center justify-center transition" title="New message">
-              <i className="fa-solid fa-pen-to-square text-xs"></i>
+            <button onClick={() => setShowNewChatModal(true)} className="w-12 h-12 rounded-lg bg-zinc-200 dark:bg-zinc-800 text-zinc-600 dark:text-zinc-300 flex items-center justify-center transition" title="New message">
+              <i className="fa-solid fa-pen-to-square text-sm"></i>
             </button>
           </div>
         </div>
@@ -2827,7 +3067,7 @@ const Messages: React.FC<MessagesProps> = ({ apiKey, contacts, initialContactId,
                         setSelectedContactUserId(otherUser.id);
                         setShowContactPanel(true);
                       }}
-                      className="w-10 h-10 rounded-full bg-gradient-to-br from-emerald-500 to-cyan-500 flex items-center justify-center text-white text-sm font-bold flex-shrink-0 relative hover:ring-2 hover:ring-emerald-500/50 transition-all"
+                      className="w-10 h-10 rounded-full bg-gradient-to-br from-rose-500 to-pink-600 flex items-center justify-center text-white text-sm font-bold flex-shrink-0 relative hover:ring-2 hover:ring-emerald-500/50 transition-all"
                       title="View contact details"
                     >
                       {otherUser.avatar_url ? (
@@ -2845,7 +3085,7 @@ const Messages: React.FC<MessagesProps> = ({ apiKey, contacts, initialContactId,
                         </div>
                       )}
                     </button>
-                    <div onClick={() => selectPulseConversation(conv.id)} className="flex-1 overflow-hidden min-w-0">
+                    <div onClick={() => handleSelectConversation(conv.id)} className="flex-1 overflow-hidden min-w-0">
                       <div className="flex justify-between items-baseline mb-0.5">
                         <h3 className={`text-sm truncate ${hasUnread ? 'font-bold dark:text-white' : 'font-medium text-zinc-700 dark:text-zinc-300'}`}>
                           {otherUser.display_name || otherUser.full_name || otherUser.handle || 'Unknown'}
@@ -2888,8 +3128,8 @@ const Messages: React.FC<MessagesProps> = ({ apiKey, contacts, initialContactId,
           ) : (
             /* Empty state when no Pulse conversations */
             <div className="flex flex-col items-center justify-center py-12 text-center px-4">
-              <div className="w-20 h-20 rounded-2xl bg-gradient-to-br from-emerald-100 to-cyan-100 dark:from-emerald-900/30 dark:to-cyan-900/30 flex items-center justify-center mb-4">
-                <i className="fa-solid fa-comments text-3xl text-emerald-500"></i>
+              <div className="w-20 h-20 rounded-2xl bg-gradient-to-br from-rose-100 to-pink-100 dark:from-rose-900/30 dark:to-pink-900/30 flex items-center justify-center mb-4">
+                <i className="fa-solid fa-comments text-3xl text-rose-500"></i>
               </div>
               <h3 className="text-zinc-900 dark:text-white font-semibold mb-2">No Pulse Messages Yet</h3>
               <p className="text-zinc-500 text-sm mb-4 max-w-[200px]">
@@ -2897,7 +3137,7 @@ const Messages: React.FC<MessagesProps> = ({ apiKey, contacts, initialContactId,
               </p>
               <button
                 onClick={() => setShowNewChatModal(true)}
-                className="px-4 py-2 bg-emerald-500 text-white text-sm font-medium rounded-lg hover:bg-emerald-600 transition"
+                className="px-4 py-2 bg-gradient-to-r from-rose-500 to-pink-600 text-white text-sm font-medium rounded-lg hover:from-rose-600 hover:to-pink-700 transition shadow-lg shadow-rose-500/30"
               >
                 <i className="fa-solid fa-plus mr-2"></i>
                 New Conversation
@@ -2919,11 +3159,16 @@ const Messages: React.FC<MessagesProps> = ({ apiKey, contacts, initialContactId,
       {/* Main Chat Area - 70% width on desktop for split-view */}
       {/* Pulse Conversation View */}
       {activePulseConv && !activeThread && (
-        <div className={`flex-1 flex flex-col relative min-w-0 bg-white dark:bg-zinc-950 ${mobileView === 'list' ? 'max-md:hidden' : ''}`}>
-          {/* Pulse Chat Header */}
-          <div className="min-h-16 border-b border-zinc-200 dark:border-zinc-800 flex items-center justify-between px-4 py-2 z-10 bg-white dark:bg-zinc-950/80 backdrop-blur-md sticky top-0">
+        <div className={`flex-1 flex flex-col relative min-w-0 bg-white dark:bg-zinc-950 ${mobileView === 'list' ? 'max-md:hidden' : ''} overflow-hidden`}>
+          {/* Pulse Chat Header - Fixed at top */}
+          <div className="min-h-16 border-b border-zinc-200 dark:border-zinc-800 flex items-center justify-between px-4 py-2 z-10 bg-white dark:bg-zinc-950/80 backdrop-blur-md flex-shrink-0 mobile-header-safe">
             <div className="flex items-center gap-3">
-              <button onClick={handleBackToList} className="text-zinc-500 p-2 hover:bg-zinc-100 dark:hover:bg-zinc-800 rounded-lg transition" title="Back to messages">
+              {/* Mobile Menu Button (visible only on mobile) */}
+              <button onClick={openDrawer} className="md:hidden text-zinc-500 w-12 h-12 flex items-center justify-center hover:bg-zinc-100 dark:hover:bg-zinc-800 rounded-lg transition" title="Open menu">
+                <i className="fa-solid fa-bars"></i>
+              </button>
+              {/* Desktop Back Button (visible only on mobile when chat is active) */}
+              <button onClick={handleBackToList} className="max-md:hidden text-zinc-500 w-12 h-12 flex items-center justify-center hover:bg-zinc-100 dark:hover:bg-zinc-800 rounded-lg transition" title="Back to messages">
                 <i className="fa-solid fa-arrow-left"></i>
               </button>
               <button
@@ -2933,7 +3178,7 @@ const Messages: React.FC<MessagesProps> = ({ apiKey, contacts, initialContactId,
                     setShowContactPanel(true);
                   }
                 }}
-                className="w-10 h-10 rounded-full bg-gradient-to-br from-emerald-500 to-cyan-500 flex items-center justify-center text-white text-sm font-bold flex-shrink-0 relative hover:ring-2 hover:ring-emerald-500/50 transition-all"
+                className="w-10 h-10 rounded-full bg-gradient-to-br from-rose-500 to-pink-600 flex items-center justify-center text-white text-sm font-bold flex-shrink-0 relative hover:ring-2 hover:ring-emerald-500/50 transition-all"
                 title="View contact details"
               >
                 {activePulseConv.other_user?.avatar_url ? (
@@ -2966,59 +3211,31 @@ const Messages: React.FC<MessagesProps> = ({ apiKey, contacts, initialContactId,
               </div>
             </div>
 
-            {/* Action Buttons for Pulse Conversations - Brand Colors (Emerald/Cyan) */}
-            <div className="flex items-center gap-2 flex-shrink-0">
-              {/* Tools Drawer Button - Emerald */}
-              <button
-                onClick={() => setShowToolsDrawer(true)}
-                className="group w-9 h-9 rounded-xl flex items-center justify-center transition-all duration-300 border-2 border-emerald-300 dark:border-emerald-600 bg-gradient-to-br from-emerald-50 to-teal-50 dark:from-emerald-900/40 dark:to-teal-900/40 text-emerald-600 dark:text-emerald-400 hover:scale-110 hover:shadow-lg hover:shadow-emerald-500/30 hover:border-emerald-400 dark:hover:border-emerald-500 hover:from-emerald-100 hover:to-teal-100 dark:hover:from-emerald-900/60 dark:hover:to-teal-900/60"
-                title="Open Tools Menu"
-              >
-                <i className="fa-solid fa-toolbox text-sm group-hover:animate-pulse"></i>
-              </button>
-
-              {/* Search - Cyan */}
-              <button
-                onClick={() => setIsSearchOpen(!isSearchOpen)}
-                className={`group w-9 h-9 rounded-xl flex items-center justify-center transition-all duration-300 border-2 ${isSearchOpen
-                  ? 'bg-gradient-to-br from-cyan-500 to-teal-500 text-white border-cyan-400 shadow-lg shadow-cyan-500/40'
-                  : 'border-cyan-200 dark:border-cyan-700 bg-gradient-to-br from-cyan-50 to-sky-50 dark:from-cyan-900/40 dark:to-sky-900/40 text-cyan-600 dark:text-cyan-400 hover:scale-110 hover:shadow-lg hover:shadow-cyan-500/30 hover:border-cyan-400 dark:hover:border-cyan-500 hover:from-cyan-100 hover:to-sky-100 dark:hover:from-cyan-900/60 dark:hover:to-sky-900/60'}`}
-                title="Search Messages"
-              >
-                <i className={`fa-solid fa-magnifying-glass text-sm ${!isSearchOpen ? 'group-hover:animate-pulse' : ''}`}></i>
-              </button>
-
-              {/* Focus Mode - Teal/Emerald when active */}
-              <button
-                onClick={() => {
-                  setIsFocusModeActive(!isFocusModeActive);
-                  setFocusThreadId(isFocusModeActive ? null : activeThreadId || 'main');
-                }}
-                className={`group w-9 h-9 rounded-xl flex items-center justify-center transition-all duration-300 border-2 ${isFocusModeActive
-                  ? 'bg-gradient-to-br from-emerald-500 to-cyan-500 text-white border-emerald-400 shadow-lg shadow-emerald-500/40'
-                  : 'border-teal-200 dark:border-teal-700 bg-gradient-to-br from-teal-50 to-emerald-50 dark:from-teal-900/40 dark:to-emerald-900/40 text-teal-600 dark:text-teal-400 hover:scale-110 hover:shadow-lg hover:shadow-teal-500/30 hover:border-teal-400 dark:hover:border-teal-500 hover:from-teal-100 hover:to-emerald-100 dark:hover:from-teal-900/60 dark:hover:to-emerald-900/60'}`}
-                title={isFocusModeActive ? "Exit Focus Mode (Shift+F)" : "Enter Focus Mode (Shift+F)"}
-              >
-                <i className={`fa-solid fa-crosshairs text-sm ${isFocusModeActive ? 'animate-pulse' : 'group-hover:animate-pulse'}`}></i>
-              </button>
-
-              {/* Achievements - Amber/Orange */}
-              {showAchievements && messageEnhancements.getAllAchievements().length > 0 && (
-                <button
-                  onClick={() => setShowAnalyticsDashboard(true)}
-                  className="group w-9 h-9 rounded-xl flex items-center justify-center transition-all duration-300 border-2 border-amber-300 dark:border-amber-600 bg-gradient-to-br from-amber-50 to-orange-50 dark:from-amber-900/40 dark:to-orange-900/40 text-amber-600 dark:text-amber-400 hover:scale-110 hover:shadow-lg hover:shadow-amber-500/30 hover:border-amber-400 dark:hover:border-amber-500 hover:from-amber-100 hover:to-orange-100 dark:hover:from-amber-900/60 dark:hover:to-orange-900/60"
-                  title="View Achievements"
-                >
-                  <i className="fa-solid fa-trophy text-sm group-hover:animate-pulse"></i>
-                </button>
-              )}
+            {/* Inline Search Bar */}
+            <div className="flex-1 max-w-md mx-4">
+              <div className="relative">
+                <input
+                  type="text"
+                  placeholder="Search messages..."
+                  value={searchQuery}
+                  onChange={e => setSearchQuery(e.target.value)}
+                  onFocus={() => setIsSearchOpen(true)}
+                  className="w-full bg-zinc-100 dark:bg-zinc-800 border border-zinc-200 dark:border-zinc-700 rounded-lg px-3 py-2 text-sm pl-9 outline-none focus:ring-2 focus:ring-emerald-500/50 dark:text-white transition"
+                />
+                <i className="fa-solid fa-magnifying-glass absolute left-3 top-1/2 -translate-y-1/2 text-zinc-400 text-xs"></i>
+                {searchQuery && (
+                  <button onClick={() => { setSearchQuery(''); setIsSearchOpen(false); }} className="absolute right-3 top-1/2 -translate-y-1/2 text-zinc-400 hover:text-zinc-600 dark:hover:text-zinc-300">
+                    <i className="fa-solid fa-xmark text-xs"></i>
+                  </button>
+                )}
+              </div>
             </div>
 
           </div>
 
           {/* Pulse Message Search Panel */}
           {isSearchOpen && (
-            <div className="border-b border-zinc-200 dark:border-zinc-800 bg-gradient-to-r from-blue-50 to-cyan-50 dark:from-blue-900/20 dark:to-cyan-900/20 p-3 animate-slide-down">
+            <div className="border-b border-zinc-200 dark:border-zinc-800 bg-gradient-to-r from-rose-50 to-pink-50 dark:from-rose-900/20 dark:to-pink-900/20 p-3 animate-slide-down">
               <div className="flex items-center gap-2">
                 <div className="flex-1 relative">
                   <input
@@ -3103,9 +3320,9 @@ const Messages: React.FC<MessagesProps> = ({ apiKey, contacts, initialContactId,
                   className="fixed right-0 top-0 bottom-0 w-64 bg-white dark:bg-zinc-900 shadow-2xl z-[91] flex flex-col border-l border-zinc-200 dark:border-zinc-800"
                 >
                   {/* Drawer Header */}
-                  <div className="flex items-center justify-between px-3 py-2 border-b border-zinc-200 dark:border-zinc-800 bg-gradient-to-r from-emerald-50 to-cyan-50 dark:from-emerald-950/30 dark:to-cyan-950/30">
+                  <div className="flex items-center justify-between px-3 py-2 border-b border-zinc-200 dark:border-zinc-800 bg-gradient-to-r from-rose-50 to-pink-50 dark:from-rose-950/30 dark:to-pink-950/30">
                     <div className="flex items-center gap-2">
-                      <div className="w-8 h-8 rounded-lg bg-gradient-to-br from-emerald-500 to-cyan-500 flex items-center justify-center text-white text-sm">
+                      <div className="w-8 h-8 rounded-lg bg-gradient-to-br from-rose-500 to-pink-600 flex items-center justify-center text-white text-sm">
                         <i className="fa-solid fa-toolbox"></i>
                       </div>
                       <span className="font-bold text-zinc-900 dark:text-white text-sm">Tools</span>
@@ -3207,6 +3424,36 @@ const Messages: React.FC<MessagesProps> = ({ apiKey, contacts, initialContactId,
                         <i className="fa-solid fa-wrench"></i> Utilities
                       </div>
                       <div className="grid grid-cols-4 gap-2">
+                        {/* Focus Mode */}
+                        <button
+                          onClick={() => {
+                            setIsFocusModeActive(!isFocusModeActive);
+                            setFocusThreadId(isFocusModeActive ? null : activeThreadId || 'main');
+                            setShowToolsDrawer(false);
+                          }}
+                          className={`flex flex-col items-center p-2 rounded-xl transition group ${isFocusModeActive ? 'bg-rose-100 dark:bg-rose-900/30' : 'hover:bg-amber-50 dark:hover:bg-amber-900/20'}`}
+                          title="Focus Mode"
+                        >
+                          <div className={`w-10 h-10 rounded-xl flex items-center justify-center group-hover:scale-110 transition ${isFocusModeActive ? 'bg-rose-500 text-white' : 'bg-amber-100 dark:bg-amber-900/30 text-amber-600 dark:text-amber-400'}`}>
+                            <i className="fa-solid fa-crosshairs"></i>
+                          </div>
+                          <span className="text-[10px] text-zinc-600 dark:text-zinc-400 mt-1 font-medium">Focus</span>
+                        </button>
+
+                        {/* Achievements */}
+                        {showAchievements && messageEnhancements.getAllAchievements().length > 0 && (
+                          <button
+                            onClick={() => { setShowAnalyticsDashboard(true); setShowToolsDrawer(false); }}
+                            className="flex flex-col items-center p-2 rounded-xl hover:bg-amber-50 dark:hover:bg-amber-900/20 transition group"
+                            title="Achievements"
+                          >
+                            <div className="w-10 h-10 rounded-xl bg-amber-100 dark:bg-amber-900/30 flex items-center justify-center text-amber-600 dark:text-amber-400 group-hover:scale-110 transition">
+                              <i className="fa-solid fa-trophy"></i>
+                            </div>
+                            <span className="text-[10px] text-zinc-600 dark:text-zinc-400 mt-1 font-medium">Awards</span>
+                          </button>
+                        )}
+
                         {[
                           { id: 'theme', icon: 'fa-palette', name: 'Theme', overlay: 'personalization' },
                           { id: 'security', icon: 'fa-shield-halved', name: 'Security', overlay: 'security' },
@@ -3291,8 +3538,8 @@ const Messages: React.FC<MessagesProps> = ({ apiKey, contacts, initialContactId,
           <div className="flex-1 overflow-y-auto p-4 md:p-6 space-y-4">
             {pulseMessages.length === 0 ? (
               <div className="flex flex-col items-center justify-center h-full text-center">
-                <div className="w-20 h-20 bg-gradient-to-br from-emerald-100 to-cyan-100 dark:from-emerald-900/30 dark:to-cyan-900/30 rounded-full flex items-center justify-center mb-4">
-                  <i className="fa-solid fa-comments text-3xl text-emerald-500"></i>
+                <div className="w-20 h-20 bg-gradient-to-br from-rose-100 to-pink-100 dark:from-rose-900/30 dark:to-pink-900/30 rounded-full flex items-center justify-center mb-4">
+                  <i className="fa-solid fa-comments text-3xl text-rose-500"></i>
                 </div>
                 <h3 className="text-lg font-bold dark:text-white mb-2">Start a Conversation</h3>
                 <p className="text-sm text-zinc-500 max-w-sm">
@@ -3320,7 +3567,15 @@ const Messages: React.FC<MessagesProps> = ({ apiKey, contacts, initialContactId,
                     )}
                     <div className={`flex ${isMe ? 'justify-end' : 'justify-start'} group relative mb-4`}>
                       {!isMe && showAvatar && (
-                        <div className="w-8 h-8 rounded-full bg-gradient-to-br from-emerald-500 to-cyan-500 flex items-center justify-center text-xs text-white mr-2 mt-auto flex-shrink-0">
+                        <div
+                          className="w-8 h-8 rounded-full flex items-center justify-center text-xs text-white mr-2 mt-auto flex-shrink-0"
+                          style={{
+                            backgroundColor: getAccessibleUserColor(
+                              activePulseConv.other_user?.id || 'unknown',
+                              document.documentElement.classList.contains('dark')
+                            )
+                          }}
+                        >
                           {activePulseConv.other_user?.avatar_url ? (
                             <img src={activePulseConv.other_user.avatar_url} alt="" className="w-full h-full rounded-full object-cover" />
                           ) : (
@@ -3330,7 +3585,7 @@ const Messages: React.FC<MessagesProps> = ({ apiKey, contacts, initialContactId,
                       )}
                       {!isMe && !showAvatar && <div className="w-8 mr-2"></div>}
 
-                      <div className="max-w-[70%] relative">
+                      <div className="max-w-[70%] sm:max-w-[75%] md:max-w-[70%] relative">
                         {/* Star indicator */}
                         {isStarred && (
                           <div className={`absolute -top-2 ${isMe ? '-left-2' : '-right-2'} z-10`}>
@@ -3346,13 +3601,22 @@ const Messages: React.FC<MessagesProps> = ({ apiKey, contacts, initialContactId,
                           </div>
                         )}
 
-                        {/* Message bubble with hover-triggered reactions */}
-                        <HoverReactionTrigger
-                          messageId={msg.id}
-                          isMe={isMe}
-                          onReact={(messageId, emoji) => handlePulseReaction(messageId, emoji)}
-                          hoverDelay={300}
-                          enableMobileLongPress={true}
+                        {/* Message bubble with gestures and hover-triggered reactions */}
+                        <GestureHandler
+                          onSwipeLeft={() => handleSwipeLeftDelete(msg.id)}
+                          onSwipeRight={() => handleSwipeRightReply(msg.id)}
+                          onLongPress={() => handleGestureLongPress(msg.id)}
+                          swipeThreshold={80}
+                          longPressDelay={500}
+                          ariaLabel={`Message from ${isMe ? 'you' : activePulseConv.other_user?.display_name || 'user'}`}
+                          enableKeyboard={false}
+                        >
+                          <HoverReactionTrigger
+                            messageId={msg.id}
+                            isMe={isMe}
+                            onReact={(messageId, emoji) => handlePulseReaction(messageId, emoji)}
+                            hoverDelay={300}
+                            enableMobileLongPress={false}
                           renderReactionBar={({ onReact, position, isExiting }) => (
                             <motion.div
                               initial={{ opacity: 0, scale: 0.9, y: 8 }}
@@ -3408,27 +3672,36 @@ const Messages: React.FC<MessagesProps> = ({ apiKey, contacts, initialContactId,
                           )}
                         >
                           <div
-                            className={`px-4 py-2.5 shadow-sm cursor-pointer select-none transition-transform active:scale-[0.98]`}
+                            data-message-id={msg.id}
+                            className={`message-bubble ${isMe ? 'message-bubble-sent' : 'message-bubble-received'} px-4 py-2.5 shadow-sm cursor-pointer select-none transition-all hover:shadow-md`}
                             style={{
-                              background: isMe
-                                ? (selectedColorPair.userGradient || selectedColorPair.userColor)
-                                : (selectedColorPair.otherGradient || selectedColorPair.otherColor),
-                              color: isMe ? selectedColorPair.userTextColor : selectedColorPair.otherTextColor,
-                              borderRadius: selectedColorPair.borderRadius,
-                              borderBottomRightRadius: isMe ? '0.375rem' : selectedColorPair.borderRadius,
-                              borderBottomLeftRadius: !isMe ? '0.375rem' : selectedColorPair.borderRadius
+                              borderRadius: '12px',
+                              borderBottomRightRadius: isMe ? '4px' : '12px',
+                              borderBottomLeftRadius: !isMe ? '4px' : '12px',
                             }}
                             onContextMenu={(e) => handlePulseMessageContextMenu(e, msg.id)}
                           >
-                            <p className="text-sm whitespace-pre-wrap break-words">{renderTextWithLinks(msg.content)}</p>
-                            <div
-                              className="text-[10px] mt-1.5 flex items-center gap-2"
+                            <p
+                              className="whitespace-pre-wrap break-words"
                               style={{
-                                color: isMe ? `${selectedColorPair.userTextColor}B3` : `${selectedColorPair.otherTextColor}99`,
+                                fontSize: 'var(--font-size-message)',
+                                fontWeight: 'var(--font-weight-message)',
+                                lineHeight: 'var(--line-height-message)'
+                              }}
+                            >
+                              {renderTextWithLinks(msg.content)}
+                            </p>
+                            <div
+                              className="mt-1.5 flex items-center gap-2"
+                              style={{
+                                fontSize: 'var(--font-size-timestamp)',
+                                fontWeight: 'var(--font-weight-timestamp)',
+                                fontFamily: 'var(--font-mono)',
+                                color: 'var(--text-tertiary)',
                                 justifyContent: isMe ? 'flex-end' : 'flex-start'
                               }}
                             >
-                              <span>{new Date(msg.created_at).toLocaleTimeString([], { hour: '2-digit', minute: '2-digit' })}</span>
+                              <SmartTimestamp time={msg.created_at} />
                               {isMe && msg.is_read && (
                                 <span className="flex items-center gap-0.5" style={{ opacity: 0.9 }}>
                                   <i className="fa-solid fa-check-double"></i>
@@ -3441,6 +3714,7 @@ const Messages: React.FC<MessagesProps> = ({ apiKey, contacts, initialContactId,
                             </div>
                           </div>
                         </HoverReactionTrigger>
+                        </GestureHandler>
 
                         {/* Context Menu - appears on right-click or long-press */}
                         {pulseContextMenuMsgId === msg.id && pulseContextMenuPosition && (
@@ -3463,7 +3737,7 @@ const Messages: React.FC<MessagesProps> = ({ apiKey, contacts, initialContactId,
                                         handlePulseReaction(msg.id, emoji);
                                         closePulseContextMenu();
                                       }}
-                                      className="w-9 h-9 flex items-center justify-center hover:bg-zinc-100 dark:hover:bg-zinc-800 rounded-full transition text-lg hover:scale-125"
+                                      className="w-12 h-12 flex items-center justify-center hover:bg-zinc-100 dark:hover:bg-zinc-800 rounded-full transition text-lg hover:scale-125"
                                     >
                                       {emoji}
                                     </button>
@@ -3729,8 +4003,40 @@ const Messages: React.FC<MessagesProps> = ({ apiKey, contacts, initialContactId,
             </div>
           )}
 
-          {/* Pulse Message Input */}
-          <div className="p-4 border-t border-zinc-200 dark:border-zinc-800 bg-white dark:bg-zinc-950">
+          {/* Pulse Message Input - Fixed at bottom */}
+          <div className="p-4 border-t border-zinc-200 dark:border-zinc-800 bg-white dark:bg-zinc-950 relative flex-shrink-0 mobile-footer-safe">
+            {/* Tool Suggestion Chip (Phase 2A) */}
+            {suggestedTool && (
+              <div className="absolute -top-16 left-4 right-4 flex justify-center animate-slide-down z-10">
+                <div className="bg-white dark:bg-zinc-900 rounded-xl shadow-lg border border-rose-200 dark:border-rose-700 px-4 py-2 flex items-center gap-3 max-w-md">
+                  <i className={`fa-solid ${suggestedTool.icon} text-rose-500`}></i>
+                  <div className="flex-1 min-w-0">
+                    <div className="text-sm font-medium text-zinc-900 dark:text-white truncate">
+                      Use {suggestedTool.name}?
+                    </div>
+                    <div className="text-xs text-zinc-500 dark:text-zinc-400 truncate">
+                      {suggestedTool.description}
+                    </div>
+                  </div>
+                  <button
+                    onClick={() => {
+                      suggestedTool.onLaunch();
+                      setSuggestedTool(null);
+                    }}
+                    className="px-3 py-1.5 bg-gradient-to-r from-rose-500 to-pink-600 text-white text-sm font-medium rounded-lg hover:from-rose-600 hover:to-pink-700 transition whitespace-nowrap"
+                  >
+                    Try it
+                  </button>
+                  <button
+                    onClick={() => setSuggestedTool(null)}
+                    className="text-zinc-400 hover:text-zinc-600 dark:hover:text-zinc-300"
+                  >
+                    <i className="fa-solid fa-xmark"></i>
+                  </button>
+                </div>
+              </div>
+            )}
+
             {/* Reply indicator */}
             {replyingToPulseMessage && (
               <div className="flex items-center gap-2 mb-3 p-2 bg-zinc-100 dark:bg-zinc-800 rounded-lg">
@@ -3750,6 +4056,15 @@ const Messages: React.FC<MessagesProps> = ({ apiKey, contacts, initialContactId,
               </div>
             )}
             <div className="flex items-center gap-3">
+              {/* Tools Button */}
+              <button
+                onClick={() => setShowToolsDrawer(true)}
+                className="w-12 h-12 rounded-xl flex items-center justify-center bg-zinc-100 dark:bg-zinc-800 text-zinc-600 dark:text-zinc-300 hover:bg-emerald-100 dark:hover:bg-emerald-900/30 hover:text-emerald-600 dark:hover:text-emerald-400 transition flex-shrink-0"
+                title="Open Tools Menu"
+              >
+                <i className="fa-solid fa-toolbox text-sm"></i>
+              </button>
+
               <input
                 type="text"
                 value={inputText}
@@ -3773,7 +4088,7 @@ const Messages: React.FC<MessagesProps> = ({ apiKey, contacts, initialContactId,
                   setReplyingToPulseMessage(null);
                 }}
                 disabled={!inputText.trim()}
-                className="w-12 h-12 bg-gradient-to-r from-emerald-500 to-cyan-500 hover:from-emerald-600 hover:to-cyan-600 text-white rounded-xl flex items-center justify-center transition disabled:opacity-50 disabled:cursor-not-allowed"
+                className="w-12 h-12 bg-gradient-to-r from-rose-500 to-pink-600 hover:from-emerald-600 hover:to-cyan-600 text-white rounded-xl flex items-center justify-center transition disabled:opacity-50 disabled:cursor-not-allowed flex-shrink-0"
               >
                 <i className="fa-solid fa-paper-plane"></i>
               </button>
@@ -3785,12 +4100,17 @@ const Messages: React.FC<MessagesProps> = ({ apiKey, contacts, initialContactId,
       {/* Regular Thread Chat View - Empty state or active thread */}
       {!activeThread && !activePulseConv && renderEmptyChatArea()}
       {activeThread && (
-      <div className={`flex-1 flex flex-col relative min-w-0 bg-white dark:bg-zinc-950 ${mobileView === 'list' ? 'max-md:hidden' : ''}`}>
+      <div className={`flex-1 flex flex-col relative min-w-0 bg-white dark:bg-zinc-950 ${mobileView === 'list' ? 'max-md:hidden' : ''} overflow-hidden`}>
 
-        {/* Header - Mobile Optimized */}
-        <div className="min-h-[56px] md:h-16 border-b border-zinc-200 dark:border-zinc-800 flex items-center justify-between px-2 sm:px-4 z-10 bg-white dark:bg-zinc-950/80 backdrop-blur-md sticky top-0 gap-2">
+        {/* Header - Mobile Optimized - Fixed at top */}
+        <div className="min-h-[56px] md:h-16 border-b border-zinc-200 dark:border-zinc-800 flex items-center justify-between px-2 sm:px-4 z-10 bg-white dark:bg-zinc-950/80 backdrop-blur-md flex-shrink-0 gap-2 mobile-header-safe">
           <div className="flex items-center gap-2 min-w-0 flex-shrink">
-             <button onClick={handleBackToList} className="text-zinc-500 p-1.5 sm:p-2 hover:bg-zinc-100 dark:hover:bg-zinc-800 rounded-lg transition flex-shrink-0" title="Back to messages"><i className="fa-solid fa-arrow-left text-sm"></i></button>
+             {/* Mobile Menu Button (visible only on mobile) */}
+             <button onClick={openDrawer} className="md:hidden text-zinc-500 w-12 h-12 flex items-center justify-center hover:bg-zinc-100 dark:hover:bg-zinc-800 rounded-lg transition flex-shrink-0" title="Open menu">
+               <i className="fa-solid fa-bars"></i>
+             </button>
+             {/* Desktop Back Button (visible only on mobile when chat is active) */}
+             <button onClick={handleBackToList} className="max-md:hidden text-zinc-500 w-12 h-12 flex items-center justify-center hover:bg-zinc-100 dark:hover:bg-zinc-800 rounded-lg transition flex-shrink-0" title="Back to messages"><i className="fa-solid fa-arrow-left"></i></button>
              <div className="flex flex-col min-w-0">
                  <span className="font-bold text-zinc-900 dark:text-white leading-tight flex items-center gap-1 sm:gap-2 text-sm sm:text-base truncate">
                      <span className="truncate max-w-[120px] sm:max-w-none">{activeThread.contactName}</span>
@@ -3932,67 +4252,75 @@ const Messages: React.FC<MessagesProps> = ({ apiKey, contacts, initialContactId,
             {/* Tab Content */}
             <div className="max-h-80 overflow-y-auto">
               {analyticsView === 'response' && (
-                <React.Suspense fallback={<FeatureSkeleton />}>
-                  <BundleAnalytics.ResponseTimeTracker
-                    messages={activeThread.messages.map(m => ({
-                      id: m.id,
-                      sender: m.sender,
-                      timestamp: m.timestamp
-                    }))}
-                    contactName={activeThread.contactName}
-                  />
-                </React.Suspense>
+                <MessageEnhancementErrorBoundary featureName="Analytics">
+                  <React.Suspense fallback={<FeatureSkeleton />}>
+                    <BundleAnalytics.ResponseTimeTracker
+                      messages={activeThread.messages.map(m => ({
+                        id: m.id,
+                        sender: m.sender,
+                        timestamp: m.timestamp
+                      }))}
+                      contactName={activeThread.contactName}
+                    />
+                  </React.Suspense>
+                </MessageEnhancementErrorBoundary>
               )}
               {analyticsView === 'engagement' && (
-                <React.Suspense fallback={<FeatureSkeleton />}>
-                  <BundleAnalytics.EngagementScoring
-                    messages={activeThread.messages.map(m => ({
-                      id: m.id,
-                      text: m.text,
-                      sender: m.sender,
-                      timestamp: m.timestamp,
-                      reactions: m.reactions
-                    }))}
-                    contactName={activeThread.contactName}
-                  />
-                </React.Suspense>
+                <MessageEnhancementErrorBoundary featureName="Analytics">
+                  <React.Suspense fallback={<FeatureSkeleton />}>
+                    <BundleAnalytics.EngagementScoring
+                      messages={activeThread.messages.map(m => ({
+                        id: m.id,
+                        text: m.text,
+                        sender: m.sender,
+                        timestamp: m.timestamp,
+                        reactions: m.reactions
+                      }))}
+                      contactName={activeThread.contactName}
+                    />
+                  </React.Suspense>
+                </MessageEnhancementErrorBoundary>
               )}
               {analyticsView === 'flow' && (
-                <React.Suspense fallback={<FeatureSkeleton />}>
-                  <BundleAnalytics.ConversationFlowViz
-                    messages={activeThread.messages.map(m => ({
-                      id: m.id,
-                      text: m.text,
-                      sender: m.sender,
-                      timestamp: m.timestamp,
-                      type: 'message' as const,
-                      reactions: m.reactions
-                    }))}
-                    contactName={activeThread.contactName}
-                    onMessageClick={(msgId) => {
-                      const msgEl = document.getElementById(`message-${msgId}`);
-                      msgEl?.scrollIntoView({ behavior: 'smooth', block: 'center' });
-                    }}
-                  />
-                </React.Suspense>
+                <MessageEnhancementErrorBoundary featureName="Analytics">
+                  <React.Suspense fallback={<FeatureSkeleton />}>
+                    <BundleAnalytics.ConversationFlowViz
+                      messages={activeThread.messages.map(m => ({
+                        id: m.id,
+                        text: m.text,
+                        sender: m.sender,
+                        timestamp: m.timestamp,
+                        type: 'message' as const,
+                        reactions: m.reactions
+                      }))}
+                      contactName={activeThread.contactName}
+                      onMessageClick={(msgId) => {
+                        const msgEl = document.getElementById(`message-${msgId}`);
+                        msgEl?.scrollIntoView({ behavior: 'smooth', block: 'center' });
+                      }}
+                    />
+                  </React.Suspense>
+                </MessageEnhancementErrorBoundary>
               )}
               {analyticsView === 'insights' && (
-                <React.Suspense fallback={<FeatureSkeleton />}>
-                  <BundleAnalytics.ProactiveInsightsEnhanced
-                    messages={activeThread.messages.map(m => ({
-                      id: m.id,
-                      text: m.text,
-                      sender: m.sender,
-                      timestamp: m.timestamp
-                    }))}
-                    contactName={activeThread.contactName}
-                    onActionClick={(action) => {
-                      if (action.startsWith('Hey ')) {
-                        setInputText(action);
-                      }
-                    }}
-                  />
-                </React.Suspense>
+                <MessageEnhancementErrorBoundary featureName="Analytics">
+                  <React.Suspense fallback={<FeatureSkeleton />}>
+                    <BundleAnalytics.ProactiveInsightsEnhanced
+                      messages={activeThread.messages.map(m => ({
+                        id: m.id,
+                        text: m.text,
+                        sender: m.sender,
+                        timestamp: m.timestamp
+                      }))}
+                      contactName={activeThread.contactName}
+                      onActionClick={(action) => {
+                        if (action.startsWith('Hey ')) {
+                          setInputText(action);
+                        }
+                      }}
+                    />
+                  </React.Suspense>
+                </MessageEnhancementErrorBoundary>
               )}
             </div>
           </div>
@@ -4029,104 +4357,115 @@ const Messages: React.FC<MessagesProps> = ({ apiKey, contacts, initialContactId,
             {/* Tab Content */}
             <div className="max-h-80 overflow-y-auto">
               {collaborationTab === 'collab' && (
-                
-                  <BundleCollaboration.ThreadCollaboration
-                    threadId={activeThread.id}
-                    participants={[
-                      { id: 'user', name: 'You', role: 'owner', status: 'active', joinedAt: new Date().toISOString() },
-                      { id: activeThread.contactId, name: activeThread.contactName, role: 'member', status: 'active', joinedAt: activeThread.createdAt || new Date().toISOString() }
-                    ]}
-                    currentUserId="user"
-                    onInvite={(email, role) => console.log('Invite:', email, role)}
-                    onRemoveParticipant={(id) => console.log('Remove:', id)}
-                    onChangeRole={(id, role) => console.log('Change role:', id, role)}
-                  />
-                
+                <MessageEnhancementErrorBoundary featureName="Collaboration">
+                  <React.Suspense fallback={<FeatureSkeleton />}>
+                    <BundleCollaboration.ThreadCollaboration
+                      threadId={activeThread.id}
+                      participants={[
+                        { id: 'user', name: 'You', role: 'owner', status: 'active', joinedAt: new Date().toISOString() },
+                        { id: activeThread.contactId, name: activeThread.contactName, role: 'member', status: 'active', joinedAt: activeThread.createdAt || new Date().toISOString() }
+                      ]}
+                      currentUserId="user"
+                      onInvite={(email, role) => console.log('Invite:', email, role)}
+                      onRemoveParticipant={(id) => console.log('Remove:', id)}
+                      onChangeRole={(id, role) => console.log('Change role:', id, role)}
+                    />
+                  </React.Suspense>
+                </MessageEnhancementErrorBoundary>
               )}
               {collaborationTab === 'links' && (
-                
-                  <BundleCollaboration.ThreadLinking
-                    currentThreadId={activeThread.id}
-                    linkedThreads={[]}
-                    crossReferences={[]}
-                    availableThreads={threads.filter(t => t.id !== activeThread.id).map(t => ({
-                      id: t.id,
-                      title: t.contactName,
-                      preview: t.messages[t.messages.length - 1]?.text || 'No messages'
-                    }))}
-                    onLinkThread={(threadId, type) => console.log('Link thread:', threadId, type)}
-                    onUnlinkThread={(threadId) => console.log('Unlink thread:', threadId)}
-                    onNavigateToThread={(threadId) => {
-                      const thread = threads.find(t => t.id === threadId);
-                      if (thread) setActiveThread(thread);
-                    }}
-                  />
-                
+                <MessageEnhancementErrorBoundary featureName="Collaboration">
+                  <React.Suspense fallback={<FeatureSkeleton />}>
+                    <BundleCollaboration.ThreadLinking
+                      currentThreadId={activeThread.id}
+                      linkedThreads={[]}
+                      crossReferences={[]}
+                      availableThreads={threads.filter(t => t.id !== activeThread.id).map(t => ({
+                        id: t.id,
+                        title: t.contactName,
+                        preview: t.messages[t.messages.length - 1]?.text || 'No messages'
+                      }))}
+                      onLinkThread={(threadId, type) => console.log('Link thread:', threadId, type)}
+                      onUnlinkThread={(threadId) => console.log('Unlink thread:', threadId)}
+                      onNavigateToThread={(threadId) => {
+                        const thread = threads.find(t => t.id === threadId);
+                        if (thread) setActiveThread(thread);
+                      }}
+                    />
+                  </React.Suspense>
+                </MessageEnhancementErrorBoundary>
               )}
               {collaborationTab === 'kb' && (
-                
-                  <BundleCollaboration.KnowledgeBase
-                    articles={[
-                      { id: '1', title: 'Getting Started Guide', category: 'Onboarding', content: 'Welcome to our platform...', tags: ['guide', 'basics'], lastUpdated: new Date().toISOString(), relevanceScore: 0.95 },
-                      { id: '2', title: 'FAQ - Common Questions', category: 'Support', content: 'Frequently asked questions...', tags: ['faq', 'help'], lastUpdated: new Date().toISOString(), relevanceScore: 0.85 }
-                    ]}
-                    contextSuggestions={[]}
-                    onArticleClick={(id) => console.log('Open article:', id)}
-                    onInsertSnippet={(snippet) => setInputText(prev => prev + snippet)}
-                  />
-                
+                <MessageEnhancementErrorBoundary featureName="Collaboration">
+                  <React.Suspense fallback={<FeatureSkeleton />}>
+                    <BundleCollaboration.KnowledgeBase
+                      articles={[
+                        { id: '1', title: 'Getting Started Guide', category: 'Onboarding', content: 'Welcome to our platform...', tags: ['guide', 'basics'], lastUpdated: new Date().toISOString(), relevanceScore: 0.95 },
+                        { id: '2', title: 'FAQ - Common Questions', category: 'Support', content: 'Frequently asked questions...', tags: ['faq', 'help'], lastUpdated: new Date().toISOString(), relevanceScore: 0.85 }
+                      ]}
+                      contextSuggestions={[]}
+                      onArticleClick={(id) => console.log('Open article:', id)}
+                      onInsertSnippet={(snippet) => setInputText(prev => prev + snippet)}
+                    />
+                  </React.Suspense>
+                </MessageEnhancementErrorBoundary>
               )}
               {collaborationTab === 'search' && (
-                
-                  <BundleCollaboration.AdvancedSearch
-                    messages={activeThread.messages.map(m => ({
-                      id: m.id,
-                      text: m.text,
-                      sender: m.sender === 'user' ? 'You' : activeThread.contactName,
-                      timestamp: m.timestamp,
-                      hasAttachment: m.attachments && m.attachments.length > 0,
-                      isDecision: m.text.toLowerCase().includes('decided') || m.text.toLowerCase().includes('decision'),
-                      isTask: m.text.toLowerCase().includes('todo') || m.text.toLowerCase().includes('task')
-                    }))}
-                    onResultClick={(messageId) => {
-                      const msgEl = document.getElementById(`message-${messageId}`);
-                      msgEl?.scrollIntoView({ behavior: 'smooth', block: 'center' });
-                    }}
-                    savedSearches={[]}
-                    onSaveSearch={(search) => console.log('Save search:', search)}
-                  />
-                
+                <MessageEnhancementErrorBoundary featureName="Collaboration">
+                  <React.Suspense fallback={<FeatureSkeleton />}>
+                    <BundleCollaboration.AdvancedSearch
+                      messages={activeThread.messages.map(m => ({
+                        id: m.id,
+                        text: m.text,
+                        sender: m.sender === 'user' ? 'You' : activeThread.contactName,
+                        timestamp: m.timestamp,
+                        hasAttachment: m.attachments && m.attachments.length > 0,
+                        isDecision: m.text.toLowerCase().includes('decided') || m.text.toLowerCase().includes('decision'),
+                        isTask: m.text.toLowerCase().includes('todo') || m.text.toLowerCase().includes('task')
+                      }))}
+                      onResultClick={(messageId) => {
+                        const msgEl = document.getElementById(`message-${messageId}`);
+                        msgEl?.scrollIntoView({ behavior: 'smooth', block: 'center' });
+                      }}
+                      savedSearches={[]}
+                      onSaveSearch={(search) => console.log('Save search:', search)}
+                    />
+                  </React.Suspense>
+                </MessageEnhancementErrorBoundary>
               )}
               {collaborationTab === 'pins' && (
-                
-                  <BundleCollaboration.MessagePinning
-                    pinnedMessages={pinnedMessages}
-                    highlights={highlights}
-                    onUnpin={(id) => setPinnedMessages(prev => prev.filter(p => p.id !== id))}
-                    onJumpToMessage={(messageId) => {
-                      const msgEl = document.getElementById(`message-${messageId}`);
-                      msgEl?.scrollIntoView({ behavior: 'smooth', block: 'center' });
-                    }}
-                    onEditPin={(id, updates) => setPinnedMessages(prev => prev.map(p => p.id === id ? { ...p, ...updates } : p))}
-                    onRemoveHighlight={(id) => setHighlights(prev => prev.filter(h => h.id !== id))}
-                    onCategoryChange={(id, category) => setPinnedMessages(prev => prev.map(p => p.id === id ? { ...p, category } : p))}
-                  />
-                
+                <MessageEnhancementErrorBoundary featureName="Collaboration">
+                  <React.Suspense fallback={<FeatureSkeleton />}>
+                    <BundleCollaboration.MessagePinning
+                      pinnedMessages={pinnedMessages}
+                      highlights={highlights}
+                      onUnpin={(id) => setPinnedMessages(prev => prev.filter(p => p.id !== id))}
+                      onJumpToMessage={(messageId) => {
+                        const msgEl = document.getElementById(`message-${messageId}`);
+                        msgEl?.scrollIntoView({ behavior: 'smooth', block: 'center' });
+                      }}
+                      onEditPin={(id, updates) => setPinnedMessages(prev => prev.map(p => p.id === id ? { ...p, ...updates } : p))}
+                      onRemoveHighlight={(id) => setHighlights(prev => prev.filter(h => h.id !== id))}
+                      onCategoryChange={(id, category) => setPinnedMessages(prev => prev.map(p => p.id === id ? { ...p, category } : p))}
+                    />
+                  </React.Suspense>
+                </MessageEnhancementErrorBoundary>
               )}
               {collaborationTab === 'annotations' && (
-                
-                  <BundleCollaboration.CollaborativeAnnotations
-                    annotations={annotations}
-                    currentUserId="user"
-                    onReply={(annotationId, reply) => {
-                      setAnnotations(prev => prev.map(a => a.id === annotationId ? {
-                        ...a,
-                        replies: [...a.replies, { id: uuidv4(), content: reply, author: { id: 'user', name: 'You' }, createdAt: new Date().toISOString(), mentions: [] }]
-                      } : a));
-                    }}
-                    onResolve={(id) => setAnnotations(prev => prev.map(a => a.id === id ? { ...a, resolved: true } : a))}
-                    onReopen={(id) => setAnnotations(prev => prev.map(a => a.id === id ? { ...a, resolved: false } : a))}
-                    onDelete={(id) => setAnnotations(prev => prev.filter(a => a.id !== id))}
+                <MessageEnhancementErrorBoundary featureName="Collaboration">
+                  <React.Suspense fallback={<FeatureSkeleton />}>
+                    <BundleCollaboration.CollaborativeAnnotations
+                      annotations={annotations}
+                      currentUserId="user"
+                      onReply={(annotationId, reply) => {
+                        setAnnotations(prev => prev.map(a => a.id === annotationId ? {
+                          ...a,
+                          replies: [...a.replies, { id: uuidv4(), content: reply, author: { id: 'user', name: 'You' }, createdAt: new Date().toISOString(), mentions: [] }]
+                        } : a));
+                      }}
+                      onResolve={(id) => setAnnotations(prev => prev.map(a => a.id === id ? { ...a, resolved: true } : a))}
+                      onReopen={(id) => setAnnotations(prev => prev.map(a => a.id === id ? { ...a, resolved: false } : a))}
+                      onDelete={(id) => setAnnotations(prev => prev.filter(a => a.id !== id))}
                     onReact={(annotationId, emoji) => {
                     setAnnotations(prev => prev.map(a => {
                       if (a.id !== annotationId) return a;
@@ -4145,7 +4484,9 @@ const Messages: React.FC<MessagesProps> = ({ apiKey, contacts, initialContactId,
                     msgEl?.scrollIntoView({ behavior: 'smooth', block: 'center' });
                   }}
                 />
-                
+                  </React.Suspense>
+                </MessageEnhancementErrorBoundary>
+
               )}
             </div>
           </div>
@@ -4169,8 +4510,8 @@ const Messages: React.FC<MessagesProps> = ({ apiKey, contacts, initialContactId,
                   onClick={() => setProductivityTab(tab.id)}
                   className={`flex items-center gap-1.5 px-3 py-1.5 rounded-lg text-xs font-medium transition whitespace-nowrap ${
                     productivityTab === tab.id
-                      ? 'bg-cyan-600 text-white'
-                      : 'bg-white dark:bg-zinc-800 text-zinc-600 dark:text-zinc-400 hover:bg-cyan-50 dark:hover:bg-cyan-900/20'
+                      ? 'bg-gradient-to-r from-rose-500 to-pink-600 text-white shadow-lg shadow-rose-500/30'
+                      : 'bg-white dark:bg-zinc-800 text-zinc-600 dark:text-zinc-400 hover:bg-rose-50 dark:hover:bg-rose-900/20'
                   }`}
                 >
                   <i className={`fa-solid ${tab.icon}`} />
@@ -4182,100 +4523,112 @@ const Messages: React.FC<MessagesProps> = ({ apiKey, contacts, initialContactId,
             {/* Tab Content */}
             <div className="max-h-80 overflow-y-auto">
               {productivityTab === 'templates' && (
-                
-                  <BundleProductivity.SmartTemplates
-                    templates={userTemplates}
-                    contactName={activeThread.contactName}
-                    onInsertTemplate={(content) => setInputText(prev => prev + content)}
-                    onSaveTemplate={(template) => {
-                      setUserTemplates(prev => [...prev, {
-                        ...template,
-                        id: uuidv4(),
-                        usageCount: 0
-                      }]);
-                    }}
-                    onDeleteTemplate={(id) => setUserTemplates(prev => prev.filter(t => t.id !== id))}
-                  />
-                
+                <MessageEnhancementErrorBoundary featureName="Productivity">
+                  <React.Suspense fallback={<FeatureSkeleton />}>
+                    <BundleProductivity.SmartTemplates
+                      templates={userTemplates}
+                      contactName={activeThread.contactName}
+                      onInsertTemplate={(content) => setInputText(prev => prev + content)}
+                      onSaveTemplate={(template) => {
+                        setUserTemplates(prev => [...prev, {
+                          ...template,
+                          id: uuidv4(),
+                          usageCount: 0
+                        }]);
+                      }}
+                      onDeleteTemplate={(id) => setUserTemplates(prev => prev.filter(t => t.id !== id))}
+                    />
+                  </React.Suspense>
+                </MessageEnhancementErrorBoundary>
               )}
               {productivityTab === 'schedule' && (
-                
-                  <BundleProductivity.MessageScheduling
-                    scheduledMessages={userScheduledMessages}
-                    reminders={userReminders}
-                    currentThreadId={activeThread.id}
-                    currentThreadName={activeThread.contactName}
-                    onScheduleMessage={(message) => {
-                      setUserScheduledMessages(prev => [...prev, {
-                        ...message,
-                        id: uuidv4(),
-                        createdAt: new Date().toISOString(),
-                        status: 'pending'
-                      }]);
-                    }}
-                    onCancelScheduled={(id) => setUserScheduledMessages(prev => prev.map(m => m.id === id ? { ...m, status: 'cancelled' } : m))}
-                    onCreateReminder={(reminder) => {
-                      setUserReminders(prev => [...prev, {
-                        ...reminder,
-                        id: uuidv4(),
-                        completed: false
-                      }]);
-                    }}
-                    onCompleteReminder={(id) => setUserReminders(prev => prev.map(r => r.id === id ? { ...r, completed: true } : r))}
-                    onDeleteReminder={(id) => setUserReminders(prev => prev.filter(r => r.id !== id))}
-                  />
-                
+                <MessageEnhancementErrorBoundary featureName="Productivity">
+                  <React.Suspense fallback={<FeatureSkeleton />}>
+                    <BundleProductivity.MessageScheduling
+                      scheduledMessages={userScheduledMessages}
+                      reminders={userReminders}
+                      currentThreadId={activeThread.id}
+                      currentThreadName={activeThread.contactName}
+                      onScheduleMessage={(message) => {
+                        setUserScheduledMessages(prev => [...prev, {
+                          ...message,
+                          id: uuidv4(),
+                          createdAt: new Date().toISOString(),
+                          status: 'pending'
+                        }]);
+                      }}
+                      onCancelScheduled={(id) => setUserScheduledMessages(prev => prev.map(m => m.id === id ? { ...m, status: 'cancelled' } : m))}
+                      onCreateReminder={(reminder) => {
+                        setUserReminders(prev => [...prev, {
+                          ...reminder,
+                          id: uuidv4(),
+                          completed: false
+                        }]);
+                      }}
+                      onCompleteReminder={(id) => setUserReminders(prev => prev.map(r => r.id === id ? { ...r, completed: true } : r))}
+                      onDeleteReminder={(id) => setUserReminders(prev => prev.filter(r => r.id !== id))}
+                    />
+                  </React.Suspense>
+                </MessageEnhancementErrorBoundary>
               )}
               {productivityTab === 'summary' && (
-                
-                  <BundleProductivity.ConversationSummary
-                    messages={activeThread.messages.map(m => ({
-                      id: m.id,
-                      text: m.text,
-                      sender: m.sender,
-                      senderName: m.sender === 'user' ? 'You' : activeThread.contactName,
-                      timestamp: m.timestamp
-                    }))}
-                    contactName={activeThread.contactName}
-                    onExportSummary={(format) => console.log('Export summary:', format)}
-                    onShareSummary={(method) => console.log('Share summary:', method)}
-                  />
-                
+                <MessageEnhancementErrorBoundary featureName="Productivity">
+                  <React.Suspense fallback={<FeatureSkeleton />}>
+                    <BundleProductivity.ConversationSummary
+                      messages={activeThread.messages.map(m => ({
+                        id: m.id,
+                        text: m.text,
+                        sender: m.sender,
+                        senderName: m.sender === 'user' ? 'You' : activeThread.contactName,
+                        timestamp: m.timestamp
+                      }))}
+                      contactName={activeThread.contactName}
+                      onExportSummary={(format) => console.log('Export summary:', format)}
+                      onShareSummary={(method) => console.log('Share summary:', method)}
+                    />
+                  </React.Suspense>
+                </MessageEnhancementErrorBoundary>
               )}
               {productivityTab === 'export' && (
-                
-                  <BundleProductivity.ExportSharing
-                    threadId={activeThread.id}
-                    threadTitle={activeThread.contactName}
-                    messageCount={activeThread.messages.length}
-                    onExport={async (options) => {
-                      console.log('Export with options:', options);
-                      return { url: '#' };
-                    }}
-                    onShare={async (options) => {
-                      console.log('Share with options:', options);
-                      return { shareUrl: 'https://pulse.app/share/abc123', success: true };
-                    }}
-                  />
-                
+                <MessageEnhancementErrorBoundary featureName="Productivity">
+                  <React.Suspense fallback={<FeatureSkeleton />}>
+                    <BundleProductivity.ExportSharing
+                      threadId={activeThread.id}
+                      threadTitle={activeThread.contactName}
+                      messageCount={activeThread.messages.length}
+                      onExport={async (options) => {
+                        console.log('Export with options:', options);
+                        return { url: '#' };
+                      }}
+                      onShare={async (options) => {
+                        console.log('Share with options:', options);
+                        return { shareUrl: 'https://pulse.app/share/abc123', success: true };
+                      }}
+                    />
+                  </React.Suspense>
+                </MessageEnhancementErrorBoundary>
               )}
               {productivityTab === 'shortcuts' && (
-                
-                  <BundleProductivity.KeyboardShortcuts
-                    shortcuts={[]}
-                    onShortcutTriggered={(action) => console.log('Shortcut triggered:', action)}
-                  />
-                
+                <MessageEnhancementErrorBoundary featureName="Productivity">
+                  <React.Suspense fallback={<FeatureSkeleton />}>
+                    <BundleProductivity.KeyboardShortcuts
+                      shortcuts={[]}
+                      onShortcutTriggered={(action) => console.log('Shortcut triggered:', action)}
+                    />
+                  </React.Suspense>
+                </MessageEnhancementErrorBoundary>
               )}
               {productivityTab === 'notifications' && (
-                
-                  <BundleProductivity.NotificationPreferences
-                    channels={[]}
-                    rules={[]}
-                    quietHours={{ enabled: false, startTime: '22:00', endTime: '07:00', allowUrgent: true, days: ['mon', 'tue', 'wed', 'thu', 'fri'] }}
-                    onUpdateQuietHours={(updates) => console.log('Update quiet hours:', updates)}
-                  />
-                
+                <MessageEnhancementErrorBoundary featureName="Productivity">
+                  <React.Suspense fallback={<FeatureSkeleton />}>
+                    <BundleProductivity.NotificationPreferences
+                      channels={[]}
+                      rules={[]}
+                      quietHours={{ enabled: false, startTime: '22:00', endTime: '07:00', allowUrgent: true, days: ['mon', 'tue', 'wed', 'thu', 'fri'] }}
+                      onUpdateQuietHours={(updates) => console.log('Update quiet hours:', updates)}
+                    />
+                  </React.Suspense>
+                </MessageEnhancementErrorBoundary>
               )}
             </div>
           </div>
@@ -4311,87 +4664,97 @@ const Messages: React.FC<MessagesProps> = ({ apiKey, contacts, initialContactId,
             {/* Tab Content */}
             <div className="max-h-96 overflow-y-auto">
               {intelligenceTab === 'insights' && (
-                
-                  <BundleIntelligence.ContactInsights
-                    contactId={activeThread.contactId}
-                    onClose={() => setIntelligenceTab('insights')}
-                  />
-                
+                <MessageEnhancementErrorBoundary featureName="Intelligence">
+                  <React.Suspense fallback={<FeatureSkeleton />}>
+                    <BundleIntelligence.ContactInsights
+                      contactId={activeThread.contactId}
+                      onClose={() => setIntelligenceTab('insights')}
+                    />
+                  </React.Suspense>
+                </MessageEnhancementErrorBoundary>
               )}
               {intelligenceTab === 'reactions' && (
-                
-                  <BundleIntelligence.ReactionsAnalytics
-                    conversationId={activeThread.id}
-                    onClose={() => setIntelligenceTab('reactions')}
-                  />
-                
+                <MessageEnhancementErrorBoundary featureName="Intelligence">
+                  <React.Suspense fallback={<FeatureSkeleton />}>
+                    <BundleIntelligence.ReactionsAnalytics
+                      conversationId={activeThread.id}
+                      onClose={() => setIntelligenceTab('reactions')}
+                    />
+                  </React.Suspense>
+                </MessageEnhancementErrorBoundary>
               )}
               {intelligenceTab === 'bookmarks' && (
-                
-                  <BundleIntelligence.MessageBookmarks
-                    bookmarks={userBookmarks.filter(b => b.conversationId === activeThread.id)}
-                    onBookmarkClick={(bookmark) => {
-                      // Scroll to bookmarked message
-                      const element = document.getElementById(`message-${bookmark.messageId}`);
-                      element?.scrollIntoView({ behavior: 'smooth', block: 'center' });
-                    }}
-                    onBookmarkDelete={(id) => setUserBookmarks(prev => prev.filter(b => b.id !== id))}
-                    onBookmarkUpdate={(bookmark) => setUserBookmarks(prev => prev.map(b => b.id === bookmark.id ? bookmark : b))}
-                    onClose={() => setIntelligenceTab('bookmarks')}
-                  />
-                
+                <MessageEnhancementErrorBoundary featureName="Intelligence">
+                  <React.Suspense fallback={<FeatureSkeleton />}>
+                    <BundleIntelligence.MessageBookmarks
+                      bookmarks={userBookmarks.filter(b => b.conversationId === activeThread.id)}
+                      onBookmarkClick={(bookmark) => {
+                        // Scroll to bookmarked message
+                        const element = document.getElementById(`message-${bookmark.messageId}`);
+                        element?.scrollIntoView({ behavior: 'smooth', block: 'center' });
+                      }}
+                      onBookmarkDelete={(id) => setUserBookmarks(prev => prev.filter(b => b.id !== id))}
+                      onBookmarkUpdate={(bookmark) => setUserBookmarks(prev => prev.map(b => b.id === bookmark.id ? bookmark : b))}
+                      onClose={() => setIntelligenceTab('bookmarks')}
+                    />
+                  </React.Suspense>
+                </MessageEnhancementErrorBoundary>
               )}
               {intelligenceTab === 'tags' && (
-                
-                  <BundleIntelligence.ConversationTags
-                    conversationId={activeThread.id}
-                    conversationTags={conversationTagAssignments}
-                    onTagAssign={(convId, tagId) => {
-                      setConversationTagAssignments(prev => {
-                        const existing = prev.find(ct => ct.conversationId === convId);
-                        if (existing) {
-                          return prev.map(ct =>
+                <MessageEnhancementErrorBoundary featureName="Intelligence">
+                  <React.Suspense fallback={<FeatureSkeleton />}>
+                    <BundleIntelligence.ConversationTags
+                      conversationId={activeThread.id}
+                      conversationTags={conversationTagAssignments}
+                      onTagAssign={(convId, tagId) => {
+                        setConversationTagAssignments(prev => {
+                          const existing = prev.find(ct => ct.conversationId === convId);
+                          if (existing) {
+                            return prev.map(ct =>
+                              ct.conversationId === convId
+                                ? { ...ct, tagIds: [...ct.tagIds, tagId] }
+                                : ct
+                            );
+                          }
+                          return [...prev, { conversationId: convId, tagIds: [tagId] }];
+                        });
+                      }}
+                      onTagRemove={(convId, tagId) => {
+                        setConversationTagAssignments(prev =>
+                          prev.map(ct =>
                             ct.conversationId === convId
-                              ? { ...ct, tagIds: [...ct.tagIds, tagId] }
+                              ? { ...ct, tagIds: ct.tagIds.filter(id => id !== tagId) }
                               : ct
-                          );
-                        }
-                        return [...prev, { conversationId: convId, tagIds: [tagId] }];
-                      });
-                    }}
-                    onTagRemove={(convId, tagId) => {
-                      setConversationTagAssignments(prev =>
-                        prev.map(ct =>
-                          ct.conversationId === convId
-                            ? { ...ct, tagIds: ct.tagIds.filter(id => id !== tagId) }
-                            : ct
-                        )
-                      );
-                    }}
-                    onLabelAssign={(convId, labelId) => {
-                      setConversationTagAssignments(prev => {
-                        const existing = prev.find(ct => ct.conversationId === convId);
-                        if (existing) {
-                          return prev.map(ct =>
-                            ct.conversationId === convId
-                              ? { ...ct, labelId }
-                              : ct
-                          );
-                        }
-                        return [...prev, { conversationId: convId, tagIds: [], labelId }];
-                      });
-                    }}
-                    onClose={() => setIntelligenceTab('tags')}
-                  />
-                
+                          )
+                        );
+                      }}
+                      onLabelAssign={(convId, labelId) => {
+                        setConversationTagAssignments(prev => {
+                          const existing = prev.find(ct => ct.conversationId === convId);
+                          if (existing) {
+                            return prev.map(ct =>
+                              ct.conversationId === convId
+                                ? { ...ct, labelId }
+                                : ct
+                            );
+                          }
+                          return [...prev, { conversationId: convId, tagIds: [], labelId }];
+                        });
+                      }}
+                      onClose={() => setIntelligenceTab('tags')}
+                    />
+                  </React.Suspense>
+                </MessageEnhancementErrorBoundary>
               )}
               {intelligenceTab === 'delivery' && (
-                
-                  <BundleIntelligence.ReadReceipts
-                    messageId={activeThread.messages[activeThread.messages.length - 1]?.id || ''}
-                    onClose={() => setIntelligenceTab('delivery')}
-                  />
-                
+                <MessageEnhancementErrorBoundary featureName="Intelligence">
+                  <React.Suspense fallback={<FeatureSkeleton />}>
+                    <BundleIntelligence.ReadReceipts
+                      messageId={activeThread.messages[activeThread.messages.length - 1]?.id || ''}
+                      onClose={() => setIntelligenceTab('delivery')}
+                    />
+                  </React.Suspense>
+                </MessageEnhancementErrorBoundary>
               )}
             </div>
           </div>
@@ -4428,74 +4791,86 @@ const Messages: React.FC<MessagesProps> = ({ apiKey, contacts, initialContactId,
             {/* Tab Content */}
             <div className="max-h-96 overflow-y-auto">
               {proactiveTab === 'reminders' && (
-                
-                  <BundleProactive.SmartReminders
-                    conversationId={activeThread.id}
-                    onReminderClick={(reminder) => console.log('Reminder clicked:', reminder)}
-                    onCreateReminder={(reminder) => console.log('Create reminder:', reminder)}
-                  />
-                
+                <MessageEnhancementErrorBoundary featureName="Proactive Assistance">
+                  <React.Suspense fallback={<FeatureSkeleton />}>
+                    <BundleProactive.SmartReminders
+                      conversationId={activeThread.id}
+                      onReminderClick={(reminder) => console.log('Reminder clicked:', reminder)}
+                      onCreateReminder={(reminder) => console.log('Create reminder:', reminder)}
+                    />
+                  </React.Suspense>
+                </MessageEnhancementErrorBoundary>
               )}
               {proactiveTab === 'threading' && (
-                
-                  <BundleProactive.MessageThreading
-                    messages={activeThread.messages.map(m => ({
-                      id: m.id,
-                      content: m.text,
-                      sender: m.sender,
-                      timestamp: m.timestamp,
-                      isMe: m.sender === 'You'
-                    }))}
-                    onReply={(parentId, content) => console.log('Reply to:', parentId, content)}
-                    onBranchCreate={(messageId, branchName) => console.log('Branch:', messageId, branchName)}
-                  />
-                
+                <MessageEnhancementErrorBoundary featureName="Proactive Assistance">
+                  <React.Suspense fallback={<FeatureSkeleton />}>
+                    <BundleProactive.MessageThreading
+                      messages={activeThread.messages.map(m => ({
+                        id: m.id,
+                        content: m.text,
+                        sender: m.sender,
+                        timestamp: m.timestamp,
+                        isMe: m.sender === 'You'
+                      }))}
+                      onReply={(parentId, content) => console.log('Reply to:', parentId, content)}
+                      onBranchCreate={(messageId, branchName) => console.log('Branch:', messageId, branchName)}
+                    />
+                  </React.Suspense>
+                </MessageEnhancementErrorBoundary>
               )}
               {proactiveTab === 'sentiment' && (
-                
-                  <BundleProactive.SentimentTimeline
-                    conversationId={activeThread.id}
-                    onPeriodClick={(period) => console.log('Period clicked:', period)}
-                  />
-                
+                <MessageEnhancementErrorBoundary featureName="Proactive Assistance">
+                  <React.Suspense fallback={<FeatureSkeleton />}>
+                    <BundleProactive.SentimentTimeline
+                      conversationId={activeThread.id}
+                      onPeriodClick={(period) => console.log('Period clicked:', period)}
+                    />
+                  </React.Suspense>
+                </MessageEnhancementErrorBoundary>
               )}
               {proactiveTab === 'groups' && (
-                
-                  <BundleProactive.ContactGroups
-                    onGroupSelect={(group) => console.log('Group selected:', group)}
-                    onChannelSelect={(channel) => console.log('Channel selected:', channel)}
-                  />
-                
+                <MessageEnhancementErrorBoundary featureName="Proactive Assistance">
+                  <React.Suspense fallback={<FeatureSkeleton />}>
+                    <BundleProactive.ContactGroups
+                      onGroupSelect={(group) => console.log('Group selected:', group)}
+                      onChannelSelect={(channel) => console.log('Channel selected:', channel)}
+                    />
+                  </React.Suspense>
+                </MessageEnhancementErrorBoundary>
               )}
               {proactiveTab === 'search' && (
-                
-                  <BundleProactive.NaturalLanguageSearch
-                    messages={activeThread.messages.map(m => ({
-                      id: m.id,
-                      content: m.text,
-                      sender: m.sender,
-                      timestamp: m.timestamp,
-                      hasAttachment: !!m.attachments?.length,
-                      attachmentType: m.attachments?.[0]?.type
-                    }))}
-                    onResultClick={(result) => {
-                      const element = document.getElementById(`message-${result.id}`);
-                      element?.scrollIntoView({ behavior: 'smooth', block: 'center' });
-                    }}
-                  />
-                
+                <MessageEnhancementErrorBoundary featureName="Proactive Assistance">
+                  <React.Suspense fallback={<FeatureSkeleton />}>
+                    <BundleProactive.NaturalLanguageSearch
+                      messages={activeThread.messages.map(m => ({
+                        id: m.id,
+                        content: m.text,
+                        sender: m.sender,
+                        timestamp: m.timestamp,
+                        hasAttachment: !!m.attachments?.length,
+                        attachmentType: m.attachments?.[0]?.type
+                      }))}
+                      onResultClick={(result) => {
+                        const element = document.getElementById(`message-${result.id}`);
+                        element?.scrollIntoView({ behavior: 'smooth', block: 'center' });
+                      }}
+                    />
+                  </React.Suspense>
+                </MessageEnhancementErrorBoundary>
               )}
               {proactiveTab === 'highlights' && (
-                
-                  <BundleProactive.ConversationHighlights
-                    conversationId={activeThread.id}
-                    onMomentClick={(moment) => console.log('Moment clicked:', moment)}
-                    onNavigateToMessage={(messageId) => {
-                      const element = document.getElementById(`message-${messageId}`);
-                      element?.scrollIntoView({ behavior: 'smooth', block: 'center' });
-                  }}
-                />
-                
+                <MessageEnhancementErrorBoundary featureName="Proactive Assistance">
+                  <React.Suspense fallback={<FeatureSkeleton />}>
+                    <BundleProactive.ConversationHighlights
+                      conversationId={activeThread.id}
+                      onMomentClick={(moment) => console.log('Moment clicked:', moment)}
+                      onNavigateToMessage={(messageId) => {
+                        const element = document.getElementById(`message-${messageId}`);
+                        element?.scrollIntoView({ behavior: 'smooth', block: 'center' });
+                    }}
+                  />
+                  </React.Suspense>
+                </MessageEnhancementErrorBoundary>
               )}
             </div>
           </div>
@@ -4532,60 +4907,72 @@ const Messages: React.FC<MessagesProps> = ({ apiKey, contacts, initialContactId,
             {/* Tab Content */}
             <div className="max-h-96 overflow-y-auto">
               {communicationTab === 'voice' && (
-                
-                  <BundleCommunication.VoiceRecorder
-                    onSendVoice={(blob, duration) => console.log('Voice sent:', duration, 'seconds')}
-                  />
-                
+                <MessageEnhancementErrorBoundary featureName="Communication">
+                  <React.Suspense fallback={<FeatureSkeleton />}>
+                    <BundleCommunication.VoiceRecorder
+                      onSendVoice={(blob, duration) => console.log('Voice sent:', duration, 'seconds')}
+                    />
+                  </React.Suspense>
+                </MessageEnhancementErrorBoundary>
               )}
               {communicationTab === 'reactions' && (
-                
-                  <BundleCommunication.EmojiReactions
-                    messageId={activeThread.messages[activeThread.messages.length - 1]?.id || ''}
-                    reactions={[
-                      { emoji: '👍', count: 3, users: ['Alice', 'Bob', 'Carol'], hasReacted: true },
-                      { emoji: '❤️', count: 2, users: ['Alice', 'Dave'], hasReacted: false },
-                      { emoji: '😂', count: 1, users: ['Bob'], hasReacted: false }
-                    ]}
-                    onReact={(emoji) => console.log('Reacted with:', emoji)}
-                    onRemoveReaction={(emoji) => console.log('Removed reaction:', emoji)}
-                  />
-                
+                <MessageEnhancementErrorBoundary featureName="Communication">
+                  <React.Suspense fallback={<FeatureSkeleton />}>
+                    <BundleCommunication.EmojiReactions
+                      messageId={activeThread.messages[activeThread.messages.length - 1]?.id || ''}
+                      reactions={[
+                        { emoji: '👍', count: 3, users: ['Alice', 'Bob', 'Carol'], hasReacted: true },
+                        { emoji: '❤️', count: 2, users: ['Alice', 'Dave'], hasReacted: false },
+                        { emoji: '😂', count: 1, users: ['Bob'], hasReacted: false }
+                      ]}
+                      onReact={(emoji) => console.log('Reacted with:', emoji)}
+                      onRemoveReaction={(emoji) => console.log('Removed reaction:', emoji)}
+                    />
+                  </React.Suspense>
+                </MessageEnhancementErrorBoundary>
               )}
               {communicationTab === 'inbox' && (
-                
-                  <BundleCommunication.PriorityInbox
-                    onMessageClick={(msg) => console.log('Message clicked:', msg)}
-                    onMessageStar={(id) => console.log('Starred:', id)}
-                    onMessageArchive={(id) => console.log('Archived:', id)}
-                  />
-                
+                <MessageEnhancementErrorBoundary featureName="Communication">
+                  <React.Suspense fallback={<FeatureSkeleton />}>
+                    <BundleCommunication.PriorityInbox
+                      onMessageClick={(msg) => console.log('Message clicked:', msg)}
+                      onMessageStar={(id) => console.log('Starred:', id)}
+                      onMessageArchive={(id) => console.log('Archived:', id)}
+                    />
+                  </React.Suspense>
+                </MessageEnhancementErrorBoundary>
               )}
               {communicationTab === 'archive' && (
-                
-                  <BundleCommunication.ConversationArchive
-                    onRestore={(id) => console.log('Restore:', id)}
-                    onDelete={(id) => console.log('Delete:', id)}
-                    onExport={(id) => console.log('Export:', id)}
-                    onViewConversation={(id) => console.log('View:', id)}
-                  />
-                
+                <MessageEnhancementErrorBoundary featureName="Communication">
+                  <React.Suspense fallback={<FeatureSkeleton />}>
+                    <BundleCommunication.ConversationArchive
+                      onRestore={(id) => console.log('Restore:', id)}
+                      onDelete={(id) => console.log('Delete:', id)}
+                      onExport={(id) => console.log('Export:', id)}
+                      onViewConversation={(id) => console.log('View:', id)}
+                    />
+                  </React.Suspense>
+                </MessageEnhancementErrorBoundary>
               )}
               {communicationTab === 'replies' && (
-                
-                  <BundleCommunication.QuickReplies
-                    lastReceivedMessage={activeThread.messages.filter(m => m.sender !== 'You').pop()?.text}
-                    onSelectReply={(text) => setNewMessage(text)}
-                  />
-                
+                <MessageEnhancementErrorBoundary featureName="Communication">
+                  <React.Suspense fallback={<FeatureSkeleton />}>
+                    <BundleCommunication.QuickReplies
+                      lastReceivedMessage={activeThread.messages.filter(m => m.sender !== 'You').pop()?.text}
+                      onSelectReply={(text) => setNewMessage(text)}
+                    />
+                  </React.Suspense>
+                </MessageEnhancementErrorBoundary>
               )}
               {communicationTab === 'status' && (
-                
-                  <BundleCommunication.MessageStatusTimeline
-                    messageId={activeThread.messages[activeThread.messages.length - 1]?.id || ''}
-                    onRetry={() => console.log('Retry send')}
-                  />
-                
+                <MessageEnhancementErrorBoundary featureName="Communication">
+                  <React.Suspense fallback={<FeatureSkeleton />}>
+                    <BundleCommunication.MessageStatusTimeline
+                      messageId={activeThread.messages[activeThread.messages.length - 1]?.id || ''}
+                      onRetry={() => console.log('Retry send')}
+                    />
+                  </React.Suspense>
+                </MessageEnhancementErrorBoundary>
               )}
             </div>
           </div>
@@ -4621,66 +5008,90 @@ const Messages: React.FC<MessagesProps> = ({ apiKey, contacts, initialContactId,
 
             {/* Tab Content */}
             <div className="max-h-96 overflow-y-auto">
-              
+
                 {personalizationTab === 'rules' && (
-                  <BundleAutomation.AutoResponseRules
-                    onRuleTriggered={(rule, message) => console.log('Rule triggered:', rule.name, message)}
-                  />
+                  <MessageEnhancementErrorBoundary featureName="Automation">
+                    <React.Suspense fallback={<FeatureSkeleton />}>
+                      <BundleAutomation.AutoResponseRules
+                        onRuleTriggered={(rule, message) => console.log('Rule triggered:', rule.name, message)}
+                      />
+                    </React.Suspense>
+                  </MessageEnhancementErrorBoundary>
                 )}
                 {personalizationTab === 'formatting' && (
-                  <BundleAutomation.FormattingToolbar
-                    onFormat={(format) => {
-                      const formatMap: Record<string, { prefix: string; suffix: string }> = {
-                        bold: { prefix: '**', suffix: '**' },
-                        italic: { prefix: '_', suffix: '_' },
-                        code: { prefix: '`', suffix: '`' },
-                        strike: { prefix: '~~', suffix: '~~' },
-                        bullet: { prefix: '• ', suffix: '' },
-                        number: { prefix: '1. ', suffix: '' },
-                        quote: { prefix: '> ', suffix: '' },
-                        heading: { prefix: '# ', suffix: '' },
-                        link: { prefix: '[', suffix: '](url)' },
-                        mention: { prefix: '@', suffix: ' ' }
-                      };
-                      const fmt = formatMap[format];
-                      if (fmt) {
-                        setNewMessage(prev => `${prev}${fmt.prefix}${fmt.suffix}`);
-                      }
-                    }}
-                    onInsertEmoji={(emoji) => setNewMessage(prev => prev + emoji)}
-                    onInsertLink={(text, url) => setNewMessage(prev => `${prev}[${text}](${url})`)}
-                    onChangeColor={(color) => console.log('Color changed:', color)}
-                  />
+                  <MessageEnhancementErrorBoundary featureName="Automation">
+                    <React.Suspense fallback={<FeatureSkeleton />}>
+                      <BundleAutomation.FormattingToolbar
+                        onFormat={(format) => {
+                          const formatMap: Record<string, { prefix: string; suffix: string }> = {
+                            bold: { prefix: '**', suffix: '**' },
+                            italic: { prefix: '_', suffix: '_' },
+                            code: { prefix: '`', suffix: '`' },
+                            strike: { prefix: '~~', suffix: '~~' },
+                            bullet: { prefix: '• ', suffix: '' },
+                            number: { prefix: '1. ', suffix: '' },
+                            quote: { prefix: '> ', suffix: '' },
+                            heading: { prefix: '# ', suffix: '' },
+                            link: { prefix: '[', suffix: '](url)' },
+                            mention: { prefix: '@', suffix: ' ' }
+                          };
+                          const fmt = formatMap[format];
+                          if (fmt) {
+                            setNewMessage(prev => `${prev}${fmt.prefix}${fmt.suffix}`);
+                          }
+                        }}
+                        onInsertEmoji={(emoji) => setNewMessage(prev => prev + emoji)}
+                        onInsertLink={(text, url) => setNewMessage(prev => `${prev}[${text}](${url})`)}
+                        onChangeColor={(color) => console.log('Color changed:', color)}
+                      />
+                    </React.Suspense>
+                  </MessageEnhancementErrorBoundary>
                 )}
                 {personalizationTab === 'notes' && (
-                  <BundleAutomation.ContactNotes
-                    contactId={activeThread.contactId}
-                    contactName={contacts.find(c => c.id === activeThread.contactId)?.name || 'Unknown'}
-                    onNoteAdded={(note) => console.log('Note added:', note)}
-                    onNoteDeleted={(noteId) => console.log('Note deleted:', noteId)}
-                  />
+                  <MessageEnhancementErrorBoundary featureName="Automation">
+                    <React.Suspense fallback={<FeatureSkeleton />}>
+                      <BundleAutomation.ContactNotes
+                        contactId={activeThread.contactId}
+                        contactName={contacts.find(c => c.id === activeThread.contactId)?.name || 'Unknown'}
+                        onNoteAdded={(note) => console.log('Note added:', note)}
+                        onNoteDeleted={(noteId) => console.log('Note deleted:', noteId)}
+                      />
+                    </React.Suspense>
+                  </MessageEnhancementErrorBoundary>
                 )}
                 {personalizationTab === 'modes' && (
-                  <BundleAutomation.ConversationModes
-                    onModeChange={(mode) => console.log('Mode changed:', mode)}
-                  />
+                  <MessageEnhancementErrorBoundary featureName="Automation">
+                    <React.Suspense fallback={<FeatureSkeleton />}>
+                      <BundleAutomation.ConversationModes
+                        onModeChange={(mode) => console.log('Mode changed:', mode)}
+                      />
+                    </React.Suspense>
+                  </MessageEnhancementErrorBoundary>
                 )}
                 {personalizationTab === 'sounds' && (
-                  <BundleAutomation.NotificationSounds
-                    onSoundChange={(event, sound) => console.log('Sound changed:', event, sound)}
-                    onVolumeChange={(volume) => console.log('Volume changed:', volume)}
-                  />
+                  <MessageEnhancementErrorBoundary featureName="Automation">
+                    <React.Suspense fallback={<FeatureSkeleton />}>
+                      <BundleAutomation.NotificationSounds
+                        onSoundChange={(event, sound) => console.log('Sound changed:', event, sound)}
+                        onVolumeChange={(volume) => console.log('Volume changed:', volume)}
+                      />
+                    </React.Suspense>
+                  </MessageEnhancementErrorBoundary>
                 )}
                 {personalizationTab === 'drafts' && (
-                  <BundleAutomation.DraftManager
-                    onLoadDraft={(draft) => {
-                      setNewMessage(draft.content);
-                      console.log('Draft loaded:', draft);
-                    }}
-                    onDeleteDraft={(draftId) => console.log('Draft deleted:', draftId)}
-                  />
+                  <MessageEnhancementErrorBoundary featureName="Automation">
+                    <React.Suspense fallback={<FeatureSkeleton />}>
+                      <BundleAutomation.DraftManager
+                        onLoadDraft={(draft) => {
+                          setNewMessage(draft.content);
+                          console.log('Draft loaded:', draft);
+                        }}
+                        onDeleteDraft={(draftId) => console.log('Draft deleted:', draftId)}
+                      />
+                    </React.Suspense>
+                  </MessageEnhancementErrorBoundary>
                 )}
-              
+
             </div>
           </div>
         )}
@@ -4703,8 +5114,8 @@ const Messages: React.FC<MessagesProps> = ({ apiKey, contacts, initialContactId,
                   onClick={() => setSecurityTab(tab.id)}
                   className={`flex items-center gap-1.5 px-3 py-1.5 rounded-lg text-xs font-medium transition whitespace-nowrap ${
                     securityTab === tab.id
-                      ? 'bg-emerald-600 text-white'
-                      : 'bg-white dark:bg-zinc-800 text-zinc-600 dark:text-zinc-400 hover:bg-emerald-50 dark:hover:bg-emerald-900/20'
+                      ? 'bg-gradient-to-r from-rose-500 to-pink-600 text-white shadow-lg shadow-rose-500/30'
+                      : 'bg-white dark:bg-zinc-800 text-zinc-600 dark:text-zinc-400 hover:bg-rose-50 dark:hover:bg-rose-900/20'
                   }`}
                 >
                   <i className={`fa-solid ${tab.icon}`} />
@@ -4716,56 +5127,69 @@ const Messages: React.FC<MessagesProps> = ({ apiKey, contacts, initialContactId,
             {/* Tab Content */}
             <div className="max-h-96 overflow-y-auto">
               {securityTab === 'encryption' && (
-                
-                  <BundleSecurity.MessageEncryption
-                    onSettingsChange={(settings) => console.log('Encryption settings:', settings)}
-                    onGenerateKey={() => console.log('Generate new key')}
-                    onExportKey={() => console.log('Export public key')}
-                  />
-                
+                <MessageEnhancementErrorBoundary featureName="Security">
+                  <React.Suspense fallback={<FeatureSkeleton />}>
+                    <BundleSecurity.MessageEncryption
+                      onSettingsChange={(settings) => console.log('Encryption settings:', settings)}
+                      onGenerateKey={() => console.log('Generate new key')}
+                      onExportKey={() => console.log('Export public key')}
+                    />
+                  </React.Suspense>
+                </MessageEnhancementErrorBoundary>
               )}
               {securityTab === 'readtime' && (
-                
-                  <BundleSecurity.ReadTimeEstimation
-                    onMarkAsRead={(messageId) => console.log('Mark as read:', messageId)}
-                    onPreferencesChange={(prefs) => console.log('Preferences:', prefs)}
-                  />
-                
+                <MessageEnhancementErrorBoundary featureName="Security">
+                  <React.Suspense fallback={<FeatureSkeleton />}>
+                    <BundleSecurity.ReadTimeEstimation
+                      onMarkAsRead={(messageId) => console.log('Mark as read:', messageId)}
+                      onPreferencesChange={(prefs) => console.log('Preferences:', prefs)}
+                    />
+                  </React.Suspense>
+                </MessageEnhancementErrorBoundary>
               )}
               {securityTab === 'versions' && (
-                
-                  <BundleSecurity.MessageVersioning
-                    onRestoreVersion={(msgId, versionId) => console.log('Restore:', msgId, versionId)}
-                    onCompareVersions={(a, b) => console.log('Compare:', a, b)}
-                  />
-                
+                <MessageEnhancementErrorBoundary featureName="Security">
+                  <React.Suspense fallback={<FeatureSkeleton />}>
+                    <BundleSecurity.MessageVersioning
+                      onRestoreVersion={(msgId, versionId) => console.log('Restore:', msgId, versionId)}
+                      onCompareVersions={(a, b) => console.log('Compare:', a, b)}
+                    />
+                  </React.Suspense>
+                </MessageEnhancementErrorBoundary>
               )}
               {securityTab === 'folders' && (
-                
-                  <BundleSecurity.SmartFolders
-                    onFolderSelect={(folderId) => console.log('Folder selected:', folderId)}
-                    onCreateFolder={(folder) => console.log('Create folder:', folder)}
-                    onDeleteFolder={(folderId) => console.log('Delete folder:', folderId)}
-                  />
-                
+                <MessageEnhancementErrorBoundary featureName="Security">
+                  <React.Suspense fallback={<FeatureSkeleton />}>
+                    <BundleSecurity.SmartFolders
+                      onFolderSelect={(folderId) => console.log('Folder selected:', folderId)}
+                      onCreateFolder={(folder) => console.log('Create folder:', folder)}
+                      onDeleteFolder={(folderId) => console.log('Delete folder:', folderId)}
+                    />
+                  </React.Suspense>
+                </MessageEnhancementErrorBoundary>
               )}
               {securityTab === 'insights' && (
-                
-                  <BundleSecurity.ConversationInsights
-                    onContactSelect={(contactId) => console.log('Contact selected:', contactId)}
-                    onInsightAction={(insightId) => console.log('Insight action:', insightId)}
-                  />
-                
+                <MessageEnhancementErrorBoundary featureName="Security">
+                  <React.Suspense fallback={<FeatureSkeleton />}>
+                    <BundleSecurity.ConversationInsights
+                      onContactSelect={(contactId) => console.log('Contact selected:', contactId)}
+                      onInsightAction={(insightId) => console.log('Insight action:', insightId)}
+                    />
+                  </React.Suspense>
+                </MessageEnhancementErrorBoundary>
               )}
               {securityTab === 'focus' && (
-                
-                  <BundleSecurity.FocusTimer
-                    onTimerStart={(type) => console.log('Timer started:', type)}
-                    onTimerComplete={(session) => console.log('Session complete:', session)}
-                    onTimerPause={() => console.log('Timer paused')}
-                    onSettingsChange={(settings) => console.log('Timer settings:', settings)}
-                  />
-                
+                <MessageEnhancementErrorBoundary featureName="Security">
+                  <React.Suspense fallback={<FeatureSkeleton />}>
+                    <BundleSecurity.FocusTimer
+                      onTimerStart={(type) => console.log('Timer started:', type)}
+                      onTimerComplete={(session) => console.log('Session complete:', session)}
+                      onTimerPause={() => console.log('Timer paused')}
+                      onSettingsChange={(settings) => console.log('Timer settings:', settings)}
+                    />
+                  </React.Suspense>
+                </MessageEnhancementErrorBoundary>
+
               )}
             </div>
           </div>
@@ -4789,8 +5213,8 @@ const Messages: React.FC<MessagesProps> = ({ apiKey, contacts, initialContactId,
                   onClick={() => setMediaHubTab(tab.id)}
                   className={`flex items-center gap-1.5 px-3 py-1.5 rounded-lg text-xs font-medium transition whitespace-nowrap ${
                     mediaHubTab === tab.id
-                      ? 'bg-cyan-600 text-white'
-                      : 'bg-white dark:bg-zinc-800 text-zinc-600 dark:text-zinc-400 hover:bg-cyan-50 dark:hover:bg-cyan-900/20'
+                      ? 'bg-gradient-to-r from-rose-500 to-pink-600 text-white shadow-lg shadow-rose-500/30'
+                      : 'bg-white dark:bg-zinc-800 text-zinc-600 dark:text-zinc-400 hover:bg-rose-50 dark:hover:bg-rose-900/20'
                   }`}
                 >
                   <i className={`fa-solid ${tab.icon}`} />
@@ -4866,15 +5290,44 @@ const Messages: React.FC<MessagesProps> = ({ apiKey, contacts, initialContactId,
           </div>
         )}
 
-        {/* Command Palette */}
+        {/* Command Palette with Tool Integration (Phase 2A) */}
         {showCommandPalette && (
-          
-            <BundleIntelligence.QuickActionsCommandPalette
-              isOpen={showCommandPalette}
-              onClose={() => setShowCommandPalette(false)}
-              onAction={(actionId) => console.log('Command action:', actionId)}
-            />
-          
+          <MessageEnhancementErrorBoundary featureName="Intelligence">
+            <React.Suspense fallback={<FeatureSkeleton />}>
+              <BundleIntelligence.QuickActionsCommandPalette
+                isOpen={showCommandPalette}
+                onClose={() => setShowCommandPalette(false)}
+                onAction={(actionId) => {
+                  console.log('Command action:', actionId);
+                  saveRecentTool(actionId);
+                }}
+                customActions={getAllToolActions((toolId) => {
+                  console.log('Launching tool:', toolId);
+                  saveRecentTool(toolId);
+                  setShowCommandPalette(false);
+
+                  // Launch tool in its overlay
+                  const overlayType = getToolOverlayType(toolId);
+                  if (overlayType) {
+                    setActiveToolOverlay(overlayType);
+                  } else {
+                    console.warn(`No overlay mapping for tool: ${toolId}`);
+                  }
+                }).map(tool => ({
+                  id: tool.id,
+                  label: tool.name,
+                  description: tool.description,
+                  icon: tool.icon,
+                  category: 'tools' as const,
+                  shortcut: tool.shortcut,
+                  keywords: tool.keywords,
+                  action: tool.onLaunch,
+                  badge: tool.requiresApiKey ? 'API' : tool.isPro ? 'PRO' : undefined,
+                }))}
+                recentActions={getRecentTools()}
+              />
+            </React.Suspense>
+          </MessageEnhancementErrorBoundary>
         )}
 
         {/* Typing Indicator */}
@@ -5262,8 +5715,8 @@ const Messages: React.FC<MessagesProps> = ({ apiKey, contacts, initialContactId,
           )}
         </div>
 
-        {/* Input Area */}
-        <div className="p-4 bg-white dark:bg-zinc-950 z-20 border-t border-zinc-100 dark:border-zinc-900 relative">
+        {/* Input Area - Fixed at bottom */}
+        <div className="p-4 bg-white dark:bg-zinc-950 z-20 border-t border-zinc-100 dark:border-zinc-900 relative flex-shrink-0 mobile-footer-safe">
 
            {/* View-Only Mode Banner for Non-Pulse Users on PC */}
            {isViewOnlyMode && (
@@ -5389,19 +5842,21 @@ const Messages: React.FC<MessagesProps> = ({ apiKey, contacts, initialContactId,
            {/* Phase 2: AI Coach - Real-time draft analysis */}
            {showAICoach && inputText.length > 10 && activeThread && (
              <div className="mb-3">
-               
-                 <BundleAI.AICoachEnhanced
-                   draftText={inputText}
-                   recentMessages={activeThread.messages.slice(-10).map(m => ({
-                     text: m.text,
-                     sender: m.sender,
-                     timestamp: m.timestamp
-                   }))}
-                   contactName={activeThread.contactName}
-                   onApplySuggestion={(newText) => setInputText(newText)}
-                   onDismiss={() => setShowAICoach(false)}
-                 />
-               
+               <MessageEnhancementErrorBoundary featureName="AI Features">
+                 <React.Suspense fallback={<FeatureSkeleton />}>
+                   <BundleAI.AICoachEnhanced
+                     draftText={inputText}
+                     recentMessages={activeThread.messages.slice(-10).map(m => ({
+                       text: m.text,
+                       sender: m.sender,
+                       timestamp: m.timestamp
+                     }))}
+                     contactName={activeThread.contactName}
+                     onApplySuggestion={(newText) => setInputText(newText)}
+                     onDismiss={() => setShowAICoach(false)}
+                   />
+                 </React.Suspense>
+               </MessageEnhancementErrorBoundary>
              </div>
            )}
 
@@ -5439,38 +5894,42 @@ const Messages: React.FC<MessagesProps> = ({ apiKey, contacts, initialContactId,
            {/* Phase 2: AI Mediator - Conflict detection */}
            {showAIMediator && activeThread && activeThread.messages.length > 5 && (
              <div className="mb-3">
-               
-                 <BundleAI.AIMediatorPanel
-                   messages={activeThread.messages.slice(-15).map(m => ({
-                     id: m.id,
-                     text: m.text,
-                     sender: m.sender,
-                     timestamp: m.timestamp
-                   }))}
-                   contactName={activeThread.contactName}
-                   onApplySuggestion={(suggestion) => {
-                     if (suggestion.suggestedText) {
-                       setInputText(suggestion.suggestedText);
-                     }
-                   }}
-                   onDismiss={() => setShowAIMediator(false)}
-                 />
-               
+               <MessageEnhancementErrorBoundary featureName="AI Features">
+                 <React.Suspense fallback={<FeatureSkeleton />}>
+                   <BundleAI.AIMediatorPanel
+                     messages={activeThread.messages.slice(-15).map(m => ({
+                       id: m.id,
+                       text: m.text,
+                       sender: m.sender,
+                       timestamp: m.timestamp
+                     }))}
+                     contactName={activeThread.contactName}
+                     onApplySuggestion={(suggestion) => {
+                       if (suggestion.suggestedText) {
+                         setInputText(suggestion.suggestedText);
+                       }
+                     }}
+                     onDismiss={() => setShowAIMediator(false)}
+                   />
+                 </React.Suspense>
+               </MessageEnhancementErrorBoundary>
              </div>
            )}
 
            {/* Phase 2: Quick Phrases */}
            {showQuickPhrases && (
              <div className="mb-3">
-               
-                 <BundleAI.QuickPhrases
-                   onSelect={(phrase) => {
-                     setInputText(phrase);
-                     setShowQuickPhrases(false);
-                   }}
-                   context="general"
-                 />
-               
+               <MessageEnhancementErrorBoundary featureName="AI Features">
+                 <React.Suspense fallback={<FeatureSkeleton />}>
+                   <BundleAI.QuickPhrases
+                     onSelect={(phrase) => {
+                       setInputText(phrase);
+                       setShowQuickPhrases(false);
+                     }}
+                     context="general"
+                   />
+                 </React.Suspense>
+               </MessageEnhancementErrorBoundary>
              </div>
            )}
 
@@ -5497,20 +5956,22 @@ const Messages: React.FC<MessagesProps> = ({ apiKey, contacts, initialContactId,
            {/* Phase 2: Voice Context Extractor Panel */}
            {showVoiceExtractor && (
              <div className="mb-3">
-               
-                 <BundleAI.VoiceContextExtractor
-                   onTranscriptionComplete={(context) => {
-                     // Add the transcription to the input with extracted action items
-                     let enhancedText = context.transcription;
-                     if (context.actionItems.length > 0) {
-                       enhancedText += '\n\nAction items:\n' + context.actionItems.map(item => `- ${item}`).join('\n');
-                     }
-                     setInputText(enhancedText);
-                     setShowVoiceExtractor(false);
-                   }}
-                   onError={(error) => console.error('Voice extraction error:', error)}
-                 />
-               
+               <MessageEnhancementErrorBoundary featureName="AI Features">
+                 <React.Suspense fallback={<FeatureSkeleton />}>
+                   <BundleAI.VoiceContextExtractor
+                     onTranscriptionComplete={(context) => {
+                       // Add the transcription to the input with extracted action items
+                       let enhancedText = context.transcription;
+                       if (context.actionItems.length > 0) {
+                         enhancedText += '\n\nAction items:\n' + context.actionItems.map(item => `- ${item}`).join('\n');
+                       }
+                       setInputText(enhancedText);
+                       setShowVoiceExtractor(false);
+                     }}
+                     onError={(error) => console.error('Voice extraction error:', error)}
+                   />
+                 </React.Suspense>
+               </MessageEnhancementErrorBoundary>
              </div>
            )}
 
@@ -5674,6 +6135,7 @@ const Messages: React.FC<MessagesProps> = ({ apiKey, contacts, initialContactId,
                    showAnalysis={true}
                    placeholder={isProposalMode ? "State your proposal clearly..." : isRecording ? "Recording voice message..." : "Type a message..."}
                    disabled={isRecording}
+                   setActiveToolOverlay={setActiveToolOverlay}
                  />
                </div>
              ) : apiKey ? (
@@ -5698,6 +6160,7 @@ const Messages: React.FC<MessagesProps> = ({ apiKey, contacts, initialContactId,
                    voiceEnabled={false}
                    maxLength={2000}
                    channelId={activeThread?.id}
+                   setActiveToolOverlay={setActiveToolOverlay}
                  />
                </div>
              ) : (
@@ -5747,13 +6210,15 @@ const Messages: React.FC<MessagesProps> = ({ apiKey, contacts, initialContactId,
                </button>
                {/* Phase 2: Translation Widget - Hidden on mobile */}
                <div className="hidden sm:block">
-                 
-                   <BundleAI.TranslationWidgetEnhanced
-                     originalText={inputText}
-                     onTranslate={(translation) => setInputText(translation.translatedText)}
-                     compact={true}
-                   />
-                 
+                 <MessageEnhancementErrorBoundary featureName="AI Features">
+                   <React.Suspense fallback={<FeatureSkeleton />}>
+                     <BundleAI.TranslationWidgetEnhanced
+                       originalText={inputText}
+                       onTranslate={(translation) => setInputText(translation.translatedText)}
+                       compact={true}
+                     />
+                   </React.Suspense>
+                 </MessageEnhancementErrorBoundary>
                </div>
                <button
                   onClick={handleSmartReply}

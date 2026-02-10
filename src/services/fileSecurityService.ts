@@ -392,23 +392,28 @@ class FileSecurityService {
       const text = await file.text();
 
       // Check for script tags
-      if (/<script/i.test(text)) {
+      if (/<script[\s>]/i.test(text)) {
         errors.push('SVG contains <script> tags which are not allowed');
       }
 
-      // Check for event handlers
-      if (/on\w+\s*=/i.test(text)) {
+      // Check for event handlers (more comprehensive detection)
+      if (/\son\w+\s*=/i.test(text)) {
         errors.push('SVG contains event handlers which are not allowed');
       }
 
-      // Check for external references
-      if (/href\s*=\s*["']?(?:javascript|data):/i.test(text)) {
+      // Check for external references (more comprehensive URL detection)
+      if (/(href|src|xlink:href)\s*=\s*["']?\s*(javascript|data):/i.test(text)) {
         errors.push('SVG contains dangerous external references');
       }
 
-      // Check for embedded content
+      // Check for embedded content and dangerous elements
       if (/<foreignObject/i.test(text)) {
         errors.push('SVG contains foreignObject which could embed unsafe content');
+      }
+
+      // Additional XSS vector checks
+      if (/<iframe|<embed|<object/i.test(text)) {
+        errors.push('SVG contains embedded content which is not allowed');
       }
     } catch (error) {
       errors.push('Failed to parse SVG file');

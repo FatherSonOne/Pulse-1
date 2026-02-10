@@ -6,7 +6,7 @@ interface Shortcut {
   keys: string[];
   action: string;
   description: string;
-  category: 'navigation' | 'messaging' | 'formatting' | 'actions' | 'general';
+  category: 'navigation' | 'messaging' | 'formatting' | 'actions' | 'general' | 'tools';
   enabled: boolean;
   customizable: boolean;
 }
@@ -51,7 +51,17 @@ const defaultShortcuts: Shortcut[] = [
   { id: 'gen-settings', keys: ['Ctrl', ','], action: 'open-settings', description: 'Open settings', category: 'general', enabled: true, customizable: true },
   { id: 'gen-help', keys: ['Ctrl', '/'], action: 'show-shortcuts', description: 'Show shortcuts', category: 'general', enabled: true, customizable: true },
   { id: 'gen-escape', keys: ['Escape'], action: 'close-modal', description: 'Close modal/cancel', category: 'general', enabled: true, customizable: false },
-  { id: 'gen-focus', keys: ['Ctrl', 'Shift', 'F'], action: 'focus-mode', description: 'Toggle focus mode', category: 'general', enabled: true, customizable: true }
+  { id: 'gen-focus', keys: ['Ctrl', 'Shift', 'F'], action: 'focus-mode', description: 'Toggle focus mode', category: 'general', enabled: true, customizable: true },
+
+  // AI Tools (Phase 2A)
+  { id: 'tool-palette', keys: ['Ctrl', 'K'], action: 'open-command-palette', description: 'Open command palette', category: 'tools', enabled: true, customizable: true },
+  { id: 'tool-reasoner', keys: ['Ctrl', 'Shift', 'R'], action: 'deep-reasoner', description: 'Deep Reasoner', category: 'tools', enabled: true, customizable: true },
+  { id: 'tool-video', keys: ['Ctrl', 'Shift', 'V'], action: 'video-analyst', description: 'Video Analyst', category: 'tools', enabled: true, customizable: true },
+  { id: 'tool-code', keys: ['Ctrl', 'Shift', 'C'], action: 'code-studio', description: 'Code Studio', category: 'tools', enabled: true, customizable: true },
+  { id: 'tool-vision', keys: ['Ctrl', 'Shift', 'I'], action: 'vision-lab', description: 'Vision Lab', category: 'tools', enabled: true, customizable: true },
+  { id: 'tool-search', keys: ['Ctrl', 'Shift', 'S'], action: 'deep-search', description: 'Deep Search', category: 'tools', enabled: true, customizable: true },
+  { id: 'tool-meeting', keys: ['Ctrl', 'Shift', 'M'], action: 'meeting-intel', description: 'Meeting Intel', category: 'tools', enabled: true, customizable: true },
+  { id: 'tool-assistant', keys: ['Ctrl', 'Shift', 'A'], action: 'ai-assistant', description: 'AI Assistant', category: 'tools', enabled: true, customizable: true }
 ];
 
 const categoryConfig = {
@@ -59,7 +69,8 @@ const categoryConfig = {
   messaging: { icon: 'fa-message', label: 'Messaging', color: 'green' },
   formatting: { icon: 'fa-text-height', label: 'Formatting', color: 'purple' },
   actions: { icon: 'fa-bolt', label: 'Actions', color: 'amber' },
-  general: { icon: 'fa-gear', label: 'General', color: 'zinc' }
+  general: { icon: 'fa-gear', label: 'General', color: 'zinc' },
+  tools: { icon: 'fa-magic-wand-sparkles', label: 'AI Tools', color: 'rose' }
 };
 
 export const KeyboardShortcuts: React.FC<KeyboardShortcutsProps> = ({

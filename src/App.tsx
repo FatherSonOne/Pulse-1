@@ -55,6 +55,8 @@ import { settingsService } from './services/settingsService';
 import { usePresence } from './hooks/usePresence';
 import { Sidebar } from './components/Sidebar';
 import { useAuth } from './hooks/useAuth';
+import { InstallPrompt } from './components/PWA/InstallPrompt';
+import { OnlineStatus } from './components/PWA/OnlineStatus';
 
 // Loading fallback component for lazy-loaded routes
 const PageLoader = () => (
@@ -303,9 +305,19 @@ const App: React.FC = () => {
 
   // Sync settings from cloud on login
   useEffect(() => {
+    let isSubscribed = true;
+
     if (user) {
-      settingsService.syncFromCloud().catch(console.error);
+      settingsService.syncFromCloud().catch(error => {
+        if (isSubscribed) {
+          console.error(error);
+        }
+      });
     }
+
+    return () => {
+      isSubscribed = false;
+    };
   }, [user]);
 
   // Set CSS variable for sidebar width (used by modals/panels)
@@ -358,14 +370,24 @@ const App: React.FC = () => {
 
   // Update dataService when user changes
   useEffect(() => {
+    let isSubscribed = true;
+
     if (user) {
       dataService.setUserId(user.id);
       // Auto-sync Google Contacts if user is logged in with Google
       const syncGoogle = user.googleConnected || user.connectedProviders?.google;
-      loadContacts(syncGoogle);
+
+      // Only load contacts if the component is still mounted
+      if (isSubscribed) {
+        loadContacts(syncGoogle);
+      }
     } else {
       dataService.setUserId('');
     }
+
+    return () => {
+      isSubscribed = false;
+    };
   }, [user, loadContacts]);
 
   // Initialize theme and accent color on mount
@@ -749,6 +771,10 @@ const App: React.FC = () => {
       {/* Voice commands moved to PulseVoiceLogo in sidebar */}
 
       <Analytics />
+
+      {/* PWA Components */}
+      <InstallPrompt />
+      <OnlineStatus />
       </div>
     </MessageContainer>
   );

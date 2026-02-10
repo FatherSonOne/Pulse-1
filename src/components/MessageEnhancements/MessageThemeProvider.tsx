@@ -19,8 +19,8 @@ export const COLOR_PAIR_THEMES: ColorPairTheme[] = [
   {
     id: 'pulse-default',
     name: 'Pulse Classic',
-    userColor: '#10b981', // emerald-500
-    userGradient: 'linear-gradient(135deg, #10b981, #14b8a6)',
+    userColor: '#f43f5e', // rose-500 (BRAND COLOR)
+    userGradient: 'linear-gradient(135deg, #f43f5e, #ec4899)', // rose to pink
     otherColor: '#f4f4f5', // zinc-100
     userTextColor: '#ffffff',
     otherTextColor: '#18181b',
@@ -515,7 +515,7 @@ export const StandaloneThemePicker: React.FC<{
       <div className="bg-white dark:bg-zinc-900 rounded-xl shadow-2xl border border-zinc-200 dark:border-zinc-700 p-4 w-[320px]">
         <div className="flex items-center justify-between mb-4">
           <span className="text-sm font-bold text-zinc-700 dark:text-zinc-200 flex items-center gap-2">
-            <i className="fa-solid fa-palette text-emerald-500" />
+            <i className="fa-solid fa-palette text-rose-500" />
             Message Theme
           </span>
           {onClose && (
@@ -537,7 +537,7 @@ export const StandaloneThemePicker: React.FC<{
               className={`
                 p-3 rounded-xl transition-all text-left
                 ${selectedPairId === pair.id
-                  ? 'ring-2 ring-emerald-500 bg-emerald-50 dark:bg-emerald-900/20'
+                  ? 'ring-2 ring-rose-500 bg-rose-50 dark:bg-rose-900/20'
                   : 'hover:bg-zinc-100 dark:hover:bg-zinc-800 border border-zinc-200 dark:border-zinc-700'
                 }
               `}
@@ -570,7 +570,7 @@ export const StandaloneThemePicker: React.FC<{
                 {pair.name}
               </span>
               {selectedPairId === pair.id && (
-                <i className="fa-solid fa-check text-emerald-500 text-xs ml-1" />
+                <i className="fa-solid fa-check text-rose-500 text-xs ml-1" />
               )}
             </button>
           ))}

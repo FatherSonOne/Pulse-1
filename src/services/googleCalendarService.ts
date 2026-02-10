@@ -341,6 +341,11 @@ class GoogleCalendarService {
     endpoint: string,
     options: RequestInit = {}
   ): Promise<T> {
+    // Check network connectivity before making request
+    if (!navigator.onLine) {
+      throw new Error('No network connection available');
+    }
+
     const token = await this.getValidToken();
 
     const response = await fetch(`${GOOGLE_CALENDAR_API}${endpoint}`, {

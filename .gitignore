@@ -75,8 +75,25 @@ tmpclaude-*-cwd
 
 # Test files with sensitive data
 test-openai-key.js
+test-gemini-key.js
+test-*-key.js
 clear-openai-key.html
 clear-service-worker.html
 
 # Browser extension config (contains credentials)
 browser-extension/src/config.js
+
+# Documentation markdown files (many are generated reports)
+*.md
+!README.md
+!CLAUDE.md
+docs/*.md
+
+# Generated helper files
+generate-*.js
+generate-*.html
+fix-*.js
+agent-*.html
+
+# Task management files
+task.md

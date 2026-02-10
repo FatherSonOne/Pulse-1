@@ -264,7 +264,7 @@ class RateLimitDB {
 
 // ==================== Rate Limit Service ====================
 
-class RateLimitService {
+export class RateLimitService {
   private db: RateLimitDB;
   private cleanupInterval: number | null = null;
 

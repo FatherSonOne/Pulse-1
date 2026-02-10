@@ -1,0 +1,512 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>Pulse PWA Icon Generator</title>
+  <style>
+    body {
+      font-family: Arial, sans-serif;
+      max-width: 1200px;
+      margin: 0 auto;
+      padding: 20px;
+      background: #f5f5f5;
+    }
+    h1 {
+      color: #10b981;
+    }
+    .controls {
+      background: white;
+      padding: 20px;
+      border-radius: 8px;
+      margin-bottom: 20px;
+      box-shadow: 0 2px 4px rgba(0,0,0,0.1);
+    }
+    button {
+      background: #10b981;
+      color: white;
+      border: none;
+      padding: 12px 24px;
+      border-radius: 6px;
+      cursor: pointer;
+      font-size: 16px;
+      margin: 5px;
+    }
+    button:hover {
+      background: #059669;
+    }
+    .icon-grid {
+      display: grid;
+      grid-template-columns: repeat(auto-fit, minmax(250px, 1fr));
+      gap: 20px;
+      margin-top: 20px;
+    }
+    .icon-card {
+      background: white;
+      padding: 20px;
+      border-radius: 8px;
+      box-shadow: 0 2px 4px rgba(0,0,0,0.1);
+      text-align: center;
+    }
+    .icon-preview {
+      margin: 10px 0;
+      display: flex;
+      justify-content: center;
+      align-items: center;
+      min-height: 150px;
+    }
+    canvas {
+      border: 1px solid #e5e7eb;
+      border-radius: 4px;
+    }
+    .icon-name {
+      font-weight: bold;
+      color: #374151;
+      margin-top: 10px;
+    }
+    .icon-size {
+      color: #6b7280;
+      font-size: 14px;
+    }
+    .status {
+      margin: 10px 0;
+      padding: 10px;
+      border-radius: 4px;
+      background: #dbeafe;
+      color: #1e40af;
+    }
+    .success {
+      background: #d1fae5;
+      color: #065f46;
+    }
+  </style>
+</head>
+<body>
+  <h1>🎨 Pulse PWA Icon Generator</h1>
+
+  <div class="controls">
+    <h2>Generate Icons</h2>
+    <p>Click the button below to generate all PWA icons for Pulse.</p>
+    <button onclick="generateAllIcons()">Generate All Icons</button>
+    <button onclick="downloadAllIcons()">Download All as ZIP</button>
+    <div id="status" class="status" style="display: none;"></div>
+  </div>
+
+  <div class="icon-grid" id="iconGrid"></div>
+
+  <script>
+    const colors = {
+      emerald: '#10b981',
+      cyan: '#06b6d4',
+      rose: '#f43f5e',
+      pink: '#ec4899',
+      white: '#ffffff',
+    };
+
+    const icons = [
+      { name: 'icon-192x192.png', size: 192, type: 'standard', purpose: 'Standard app icon' },
+      { name: 'icon-512x512.png', size: 512, type: 'standard', purpose: 'High-res app icon' },
+      { name: 'icon-192x192-maskable.png', size: 192, type: 'maskable', purpose: 'Android adaptive icon' },
+      { name: 'icon-512x512-maskable.png', size: 512, type: 'maskable', purpose: 'High-res adaptive icon' },
+      { name: 'apple-touch-icon.png', size: 180, type: 'apple', purpose: 'iOS home screen icon' },
+      { name: 'badge-72x72.png', size: 72, type: 'badge', purpose: 'Notification badge' },
+      { name: 'message-shortcut.png', size: 96, type: 'message', purpose: 'Message shortcut' },
+      { name: 'voice-shortcut.png', size: 96, type: 'voice', purpose: 'Voice room shortcut' },
+    ];
+
+    const generatedIcons = new Map();
+
+    function drawHeartbeat(ctx, x, y, width, height, color) {
+      ctx.strokeStyle = color;
+      ctx.lineWidth = Math.max(2, height * 0.08);
+      ctx.lineCap = 'round';
+      ctx.lineJoin = 'round';
+
+      const startY = y + height / 2;
+      const points = [
+        [0, 0], [0.15, 0], [0.2, -0.4], [0.25, 0.4], [0.3, -0.2],
+        [0.35, 0], [0.5, 0], [0.55, -0.6], [0.6, 0.8], [0.65, -0.3],
+        [0.7, 0], [0.85, 0], [1, 0]
+      ];
+
+      ctx.beginPath();
+      ctx.moveTo(x, startY);
+      points.forEach(([px, py]) => {
+        ctx.lineTo(x + px * width, startY + py * height * 0.4);
+      });
+      ctx.stroke();
+    }
+
+    function drawGradientHeartbeat(ctx, x, y, width, height) {
+      const gradient = ctx.createLinearGradient(x, y, x + width, y);
+      gradient.addColorStop(0, colors.rose);
+      gradient.addColorStop(1, colors.pink);
+
+      ctx.strokeStyle = gradient;
+      ctx.lineWidth = Math.max(2, height * 0.08);
+      ctx.lineCap = 'round';
+      ctx.lineJoin = 'round';
+
+      const startY = y + height / 2;
+      const points = [
+        [0, 0], [0.15, 0], [0.2, -0.4], [0.25, 0.4], [0.3, -0.2],
+        [0.35, 0], [0.5, 0], [0.55, -0.6], [0.6, 0.8], [0.65, -0.3],
+        [0.7, 0], [0.85, 0], [1, 0]
+      ];
+
+      ctx.beginPath();
+      ctx.moveTo(x, startY);
+      points.forEach(([px, py]) => {
+        ctx.lineTo(x + px * width, startY + py * height * 0.4);
+      });
+      ctx.stroke();
+    }
+
+    function drawPulseText(ctx, x, y, size, color) {
+      ctx.fillStyle = color;
+      ctx.font = `bold ${size}px Arial, sans-serif`;
+      ctx.textAlign = 'center';
+      ctx.textBaseline = 'middle';
+      ctx.fillText('PULSE', x, y);
+    }
+
+    function generateStandardIcon(size) {
+      const canvas = document.createElement('canvas');
+      canvas.width = size;
+      canvas.height = size;
+      const ctx = canvas.getContext('2d');
+
+      const padding = size === 192 ? 40 : 100;
+
+      // White background
+      ctx.fillStyle = colors.white;
+      ctx.fillRect(0, 0, size, size);
+
+      // Draw heartbeat
+      const waveWidth = size - padding * 2;
+      const waveHeight = size * 0.3;
+      const waveX = padding;
+      const waveY = size * 0.3;
+
+      drawGradientHeartbeat(ctx, waveX, waveY, waveWidth, waveHeight);
+
+      // Draw text
+      const textY = size * 0.7;
+      const fontSize = size * 0.15;
+      drawPulseText(ctx, size / 2, textY, fontSize, colors.emerald);
+
+      return canvas;
+    }
+
+    function generateMaskableIcon(size) {
+      const canvas = document.createElement('canvas');
+      canvas.width = size;
+      canvas.height = size;
+      const ctx = canvas.getContext('2d');
+
+      // Gradient background
+      const gradient = ctx.createLinearGradient(0, 0, size, size);
+      gradient.addColorStop(0, colors.emerald);
+      gradient.addColorStop(1, colors.cyan);
+      ctx.fillStyle = gradient;
+      ctx.fillRect(0, 0, size, size);
+
+      // Safe area is 80% of total
+      const safeAreaSize = size * 0.8;
+      const safeAreaPadding = size * 0.1;
+
+      // Draw heartbeat in safe area
+      const waveWidth = safeAreaSize * 0.9;
+      const waveHeight = safeAreaSize * 0.3;
+      const waveX = safeAreaPadding + (safeAreaSize - waveWidth) / 2;
+      const waveY = size * 0.3;
+
+      drawHeartbeat(ctx, waveX, waveY, waveWidth, waveHeight, colors.white);
+
+      // Draw text in safe area
+      const textY = size * 0.65;
+      const fontSize = safeAreaSize * 0.18;
+      drawPulseText(ctx, size / 2, textY, fontSize, colors.white);
+
+      return canvas;
+    }
+
+    function generateAppleIcon() {
+      const size = 180;
+      const canvas = document.createElement('canvas');
+      canvas.width = size;
+      canvas.height = size;
+      const ctx = canvas.getContext('2d');
+
+      // Solid emerald background
+      ctx.fillStyle = colors.emerald;
+      ctx.fillRect(0, 0, size, size);
+
+      // Draw heartbeat
+      const waveWidth = size * 0.8;
+      const waveHeight = size * 0.3;
+      const waveX = (size - waveWidth) / 2;
+      const waveY = size * 0.3;
+
+      drawHeartbeat(ctx, waveX, waveY, waveWidth, waveHeight, colors.white);
+
+      // Draw text
+      const textY = size * 0.7;
+      const fontSize = size * 0.15;
+      drawPulseText(ctx, size / 2, textY, fontSize, colors.white);
+
+      return canvas;
+    }
+
+    function generateBadgeIcon() {
+      const size = 72;
+      const canvas = document.createElement('canvas');
+      canvas.width = size;
+      canvas.height = size;
+      const ctx = canvas.getContext('2d');
+
+      // Draw simple heartbeat in white
+      const waveWidth = size * 0.8;
+      const waveHeight = size * 0.6;
+      const waveX = (size - waveWidth) / 2;
+      const waveY = (size - waveHeight) / 2;
+
+      drawHeartbeat(ctx, waveX, waveY, waveWidth, waveHeight, colors.white);
+
+      return canvas;
+    }
+
+    function generateMessageIcon() {
+      const size = 96;
+      const canvas = document.createElement('canvas');
+      canvas.width = size;
+      canvas.height = size;
+      const ctx = canvas.getContext('2d');
+
+      // Draw message bubble with gradient
+      const bubbleSize = size * 0.7;
+      const bubbleX = (size - bubbleSize) / 2;
+      const bubbleY = (size - bubbleSize) / 2 - size * 0.05;
+
+      const gradient = ctx.createLinearGradient(bubbleX, bubbleY, bubbleX + bubbleSize, bubbleY + bubbleSize);
+      gradient.addColorStop(0, colors.rose);
+      gradient.addColorStop(1, colors.pink);
+
+      ctx.fillStyle = gradient;
+      ctx.beginPath();
+      ctx.roundRect(bubbleX, bubbleY, bubbleSize, bubbleSize * 0.7, bubbleSize * 0.15);
+      ctx.fill();
+
+      // Draw tail
+      ctx.beginPath();
+      ctx.moveTo(bubbleX + bubbleSize * 0.3, bubbleY + bubbleSize * 0.7);
+      ctx.lineTo(bubbleX + bubbleSize * 0.2, bubbleY + bubbleSize * 0.95);
+      ctx.lineTo(bubbleX + bubbleSize * 0.45, bubbleY + bubbleSize * 0.7);
+      ctx.fill();
+
+      // Draw lines in bubble
+      ctx.strokeStyle = colors.white;
+      ctx.lineWidth = 3;
+      ctx.lineCap = 'round';
+
+      const lineY1 = bubbleY + bubbleSize * 0.25;
+      const lineY2 = bubbleY + bubbleSize * 0.45;
+      const lineStartX = bubbleX + bubbleSize * 0.2;
+      const lineEndX = bubbleX + bubbleSize * 0.8;
+
+      ctx.beginPath();
+      ctx.moveTo(lineStartX, lineY1);
+      ctx.lineTo(lineEndX, lineY1);
+      ctx.stroke();
+
+      ctx.beginPath();
+      ctx.moveTo(lineStartX, lineY2);
+      ctx.lineTo(lineEndX * 0.85, lineY2);
+      ctx.stroke();
+
+      return canvas;
+    }
+
+    function generateVoiceIcon() {
+      const size = 96;
+      const canvas = document.createElement('canvas');
+      canvas.width = size;
+      canvas.height = size;
+      const ctx = canvas.getContext('2d');
+
+      // Draw microphone with gradient
+      const gradient = ctx.createLinearGradient(size * 0.3, size * 0.2, size * 0.7, size * 0.8);
+      gradient.addColorStop(0, colors.emerald);
+      gradient.addColorStop(1, colors.cyan);
+
+      ctx.fillStyle = gradient;
+
+      // Microphone body
+      const micWidth = size * 0.3;
+      const micHeight = size * 0.4;
+      const micX = (size - micWidth) / 2;
+      const micY = size * 0.2;
+
+      ctx.beginPath();
+      ctx.roundRect(micX, micY, micWidth, micHeight, micWidth / 2);
+      ctx.fill();
+
+      // Microphone arc
+      ctx.strokeStyle = gradient;
+      ctx.lineWidth = 4;
+      ctx.lineCap = 'round';
+
+      const arcX = size / 2;
+      const arcY = micY + micHeight;
+      const arcRadius = size * 0.25;
+
+      ctx.beginPath();
+      ctx.arc(arcX, arcY, arcRadius, Math.PI * 0.3, Math.PI * 0.7);
+      ctx.stroke();
+
+      // Microphone stand
+      ctx.beginPath();
+      ctx.moveTo(size / 2, arcY + arcRadius * 0.7);
+      ctx.lineTo(size / 2, size * 0.85);
+      ctx.stroke();
+
+      // Microphone base
+      ctx.beginPath();
+      ctx.moveTo(size * 0.35, size * 0.85);
+      ctx.lineTo(size * 0.65, size * 0.85);
+      ctx.stroke();
+
+      return canvas;
+    }
+
+    function generateIcon(iconInfo) {
+      let canvas;
+
+      switch (iconInfo.type) {
+        case 'standard':
+          canvas = generateStandardIcon(iconInfo.size);
+          break;
+        case 'maskable':
+          canvas = generateMaskableIcon(iconInfo.size);
+          break;
+        case 'apple':
+          canvas = generateAppleIcon();
+          break;
+        case 'badge':
+          canvas = generateBadgeIcon();
+          break;
+        case 'message':
+          canvas = generateMessageIcon();
+          break;
+        case 'voice':
+          canvas = generateVoiceIcon();
+          break;
+      }
+
+      return canvas;
+    }
+
+    function displayIcon(iconInfo, canvas) {
+      const grid = document.getElementById('iconGrid');
+      const card = document.createElement('div');
+      card.className = 'icon-card';
+
+      const previewCanvas = document.createElement('canvas');
+      const displaySize = Math.min(canvas.width, 200);
+      previewCanvas.width = displaySize;
+      previewCanvas.height = displaySize;
+      const previewCtx = previewCanvas.getContext('2d');
+
+      // Checkerboard background for transparency
+      const checkSize = 10;
+      for (let y = 0; y < displaySize; y += checkSize) {
+        for (let x = 0; x < displaySize; x += checkSize) {
+          previewCtx.fillStyle = ((x / checkSize + y / checkSize) % 2 === 0) ? '#e5e7eb' : '#f3f4f6';
+          previewCtx.fillRect(x, y, checkSize, checkSize);
+        }
+      }
+
+      previewCtx.drawImage(canvas, 0, 0, displaySize, displaySize);
+
+      card.innerHTML = `
+        <div class="icon-name">${iconInfo.name}</div>
+        <div class="icon-size">${iconInfo.size}×${iconInfo.size}px</div>
+        <div class="icon-preview"></div>
+        <div style="color: #6b7280; font-size: 13px; margin-top: 8px;">${iconInfo.purpose}</div>
+        <button onclick="downloadIcon('${iconInfo.name}')">Download</button>
+      `;
+
+      card.querySelector('.icon-preview').appendChild(previewCanvas);
+      grid.appendChild(card);
+    }
+
+    function generateAllIcons() {
+      const status = document.getElementById('status');
+      status.style.display = 'block';
+      status.className = 'status';
+      status.textContent = 'Generating icons...';
+
+      const grid = document.getElementById('iconGrid');
+      grid.innerHTML = '';
+      generatedIcons.clear();
+
+      setTimeout(() => {
+        icons.forEach(iconInfo => {
+          const canvas = generateIcon(iconInfo);
+          generatedIcons.set(iconInfo.name, canvas);
+          displayIcon(iconInfo, canvas);
+        });
+
+        status.className = 'status success';
+        status.textContent = `✅ Successfully generated ${icons.length} icons! Click individual Download buttons or Download All as ZIP.`;
+      }, 100);
+    }
+
+    function downloadIcon(filename) {
+      const canvas = generatedIcons.get(filename);
+      if (!canvas) return;
+
+      canvas.toBlob(blob => {
+        const url = URL.createObjectURL(blob);
+        const a = document.createElement('a');
+        a.href = url;
+        a.download = filename;
+        a.click();
+        URL.revokeObjectURL(url);
+      });
+    }
+
+    async function downloadAllIcons() {
+      if (generatedIcons.size === 0) {
+        alert('Please generate icons first!');
+        return;
+      }
+
+      // Since we can't create a ZIP in the browser without a library,
+      // we'll download them individually
+      const status = document.getElementById('status');
+      status.style.display = 'block';
+      status.className = 'status';
+      status.textContent = 'Downloading icons...';
+
+      let count = 0;
+      for (const [filename, canvas] of generatedIcons) {
+        await new Promise(resolve => {
+          setTimeout(() => {
+            downloadIcon(filename);
+            count++;
+            status.textContent = `Downloaded ${count}/${icons.length} icons...`;
+            resolve();
+          }, 300 * count); // Stagger downloads
+        });
+      }
+
+      status.className = 'status success';
+      status.textContent = `✅ Downloaded all ${icons.length} icons! Move them to public/icons/ directory.`;
+    }
+
+    // Generate icons on page load
+    window.addEventListener('load', generateAllIcons);
+  </script>
+</body>
+</html>

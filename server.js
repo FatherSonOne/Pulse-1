@@ -67,15 +67,34 @@ const getUserId = async (supabase) => {
   return data.user.id;
 };
 
-// Enable CORS for the Vite dev server
+// Enable CORS for the Vite dev server and production deployments
 app.use(cors({
   origin: [
+    // Development origins
     'http://localhost:3002',
     'http://localhost:3000',
     'http://localhost:3001',
     'http://localhost:5182',  // Logos Vision CRM
-    'http://localhost:5176'   // Logos Vision CRM (alternate port)
-  ],
+    'http://localhost:5176',  // Logos Vision CRM (alternate port)
+    'http://localhost:5173',  // Vite dev server default port
+
+    // Production origins from environment variables
+    process.env.VITE_APP_URL,
+    process.env.VITE_API_URL,
+    process.env.PRODUCTION_URL,
+
+    // Vercel preview and production deployments
+    process.env.VERCEL_URL ? `https://${process.env.VERCEL_URL}` : null,
+
+    // Hardcoded production URL (fallback)
+    'https://pulse.logosvision.org',
+
+    // Support Vercel preview deployments with regex pattern
+  ].filter(Boolean).concat([
+    // Regex patterns for dynamic preview URLs
+    /^https:\/\/.*\.vercel\.app$/,
+    /^https:\/\/pulse.*\.vercel\.app$/
+  ]),
   credentials: true
 }));
 

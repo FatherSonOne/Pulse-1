@@ -120,7 +120,7 @@ function isRetryableError(error: any, retryableErrors: string[]): boolean {
   }
 
   // Check for timeout errors
-  if (error.name === 'TimeoutError' || errorMessage.includes('timeout')) {
+  if (error.name === 'TimeoutError' || errorMessage.includes('timeout') || errorMessage.includes('timed out')) {
     return true;
   }
 

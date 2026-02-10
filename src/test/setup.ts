@@ -4,23 +4,11 @@
 // ============================================
 
 import '@testing-library/jest-dom';
-import { vi, afterEach, beforeAll, afterAll } from 'vitest';
-import { setupMockServer, resetMockServer, teardownMockServer } from './mocks/server';
+import { vi } from 'vitest';
+import { setupMockServer } from './mocks/server';
 
-// Start MSW mock server before all tests
-beforeAll(() => {
-  setupMockServer();
-});
-
-// Reset handlers between tests
-afterEach(() => {
-  resetMockServer();
-});
-
-// Stop MSW server after all tests
-afterAll(() => {
-  teardownMockServer();
-});
+// Initialize MSW mock server
+setupMockServer();
 
 // Mock environment variables
 vi.stubEnv('VITE_SUPABASE_URL', 'https://test.supabase.co');
@@ -116,8 +104,3 @@ Object.defineProperty(navigator, 'mediaDevices', {
 // Mock URL.createObjectURL
 global.URL.createObjectURL = vi.fn(() => 'blob:mock-url');
 global.URL.revokeObjectURL = vi.fn();
-
-// Clean up after each test
-afterEach(() => {
-  vi.clearAllMocks();
-});

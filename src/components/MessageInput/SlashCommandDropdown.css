@@ -1,0 +1,367 @@
+/* ============================================
+   SLASH COMMAND DROPDOWN - ROSE THEME
+   ============================================ */
+
+.slash-command-dropdown {
+  position: absolute;
+  bottom: calc(100% + 8px);
+  left: 0;
+  right: 0;
+  max-width: 600px;
+  max-height: 400px;
+  background: rgba(255, 255, 255, 0.98);
+  backdrop-filter: blur(20px) saturate(180%);
+  border: 2px solid rgba(244, 63, 94, 0.3);
+  border-radius: 16px;
+  box-shadow:
+    0 12px 32px rgba(0, 0, 0, 0.15),
+    0 0 24px rgba(244, 63, 94, 0.1),
+    0 0 0 1px rgba(244, 63, 94, 0.05) inset;
+  overflow: hidden;
+  z-index: 100;
+  display: flex;
+  flex-direction: column;
+}
+
+.dark .slash-command-dropdown {
+  background: rgba(24, 24, 27, 0.98);
+  border-color: rgba(244, 63, 94, 0.4);
+  box-shadow:
+    0 12px 32px rgba(0, 0, 0, 0.4),
+    0 0 24px rgba(244, 63, 94, 0.2),
+    0 0 0 1px rgba(244, 63, 94, 0.1) inset;
+}
+
+/* ============================================
+   HEADER
+   ============================================ */
+
+.slash-command-header {
+  display: flex;
+  align-items: center;
+  gap: 12px;
+  padding: 12px 16px;
+  background: linear-gradient(135deg,
+    rgba(244, 63, 94, 0.08) 0%,
+    rgba(236, 72, 153, 0.08) 100%);
+  border-bottom: 1px solid rgba(244, 63, 94, 0.15);
+  font-size: 14px;
+  font-weight: 600;
+  flex-shrink: 0;
+}
+
+.dark .slash-command-header {
+  background: linear-gradient(135deg,
+    rgba(244, 63, 94, 0.12) 0%,
+    rgba(236, 72, 153, 0.12) 100%);
+  border-bottom-color: rgba(244, 63, 94, 0.25);
+}
+
+.slash-command-header i {
+  font-size: 16px;
+}
+
+.slash-command-title {
+  color: #18181B;
+  flex: 1;
+}
+
+.dark .slash-command-title {
+  color: #E4E4E7;
+}
+
+.slash-command-query {
+  font-family: 'JetBrains Mono', 'Courier New', monospace;
+  font-size: 13px;
+  font-weight: 700;
+  color: #f43f5e;
+  background: rgba(244, 63, 94, 0.1);
+  padding: 4px 10px;
+  border-radius: 6px;
+  border: 1px solid rgba(244, 63, 94, 0.2);
+}
+
+/* ============================================
+   TOOL LIST
+   ============================================ */
+
+.slash-command-list {
+  flex: 1;
+  max-height: 320px;
+  overflow-y: auto;
+  padding: 8px;
+  scrollbar-width: thin;
+  scrollbar-color: rgba(244, 63, 94, 0.3) transparent;
+}
+
+.slash-command-list::-webkit-scrollbar {
+  width: 6px;
+}
+
+.slash-command-list::-webkit-scrollbar-track {
+  background: transparent;
+}
+
+.slash-command-list::-webkit-scrollbar-thumb {
+  background: rgba(244, 63, 94, 0.3);
+  border-radius: 3px;
+}
+
+.slash-command-list::-webkit-scrollbar-thumb:hover {
+  background: rgba(244, 63, 94, 0.5);
+}
+
+/* ============================================
+   TOOL ITEMS
+   ============================================ */
+
+.slash-command-item {
+  display: flex;
+  align-items: center;
+  gap: 12px;
+  width: 100%;
+  padding: 12px;
+  background: transparent;
+  border: 1px solid transparent;
+  border-left: 3px solid transparent;
+  border-radius: 12px;
+  cursor: pointer;
+  transition: all 150ms cubic-bezier(0.4, 0, 0.2, 1);
+  margin-bottom: 4px;
+}
+
+.slash-command-item:hover {
+  background: rgba(244, 63, 94, 0.06);
+  border-color: rgba(244, 63, 94, 0.2);
+  transform: translateX(2px);
+}
+
+.dark .slash-command-item:hover {
+  background: rgba(244, 63, 94, 0.1);
+  border-color: rgba(244, 63, 94, 0.3);
+}
+
+.slash-command-item.selected {
+  background: linear-gradient(90deg,
+    rgba(244, 63, 94, 0.12) 0%,
+    rgba(244, 63, 94, 0.06) 100%);
+  border-color: rgba(244, 63, 94, 0.3);
+  border-left-color: #f43f5e;
+  box-shadow: 0 2px 8px rgba(244, 63, 94, 0.15);
+  transform: translateX(4px);
+}
+
+.dark .slash-command-item.selected {
+  background: linear-gradient(90deg,
+    rgba(244, 63, 94, 0.18) 0%,
+    rgba(244, 63, 94, 0.08) 100%);
+  border-color: rgba(244, 63, 94, 0.4);
+  border-left-color: #f43f5e;
+  box-shadow: 0 2px 8px rgba(244, 63, 94, 0.25);
+}
+
+.slash-command-item-icon {
+  width: 40px;
+  height: 40px;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  background: linear-gradient(135deg,
+    rgba(244, 63, 94, 0.1) 0%,
+    rgba(236, 72, 153, 0.1) 100%);
+  border-radius: 10px;
+  font-size: 18px;
+  flex-shrink: 0;
+  transition: all 150ms;
+}
+
+.slash-command-item.selected .slash-command-item-icon {
+  background: linear-gradient(135deg,
+    rgba(244, 63, 94, 0.2) 0%,
+    rgba(236, 72, 153, 0.2) 100%);
+  box-shadow: 0 0 12px rgba(244, 63, 94, 0.2);
+}
+
+.slash-command-item-info {
+  flex: 1;
+  min-width: 0;
+  text-align: left;
+}
+
+.slash-command-item-name {
+  font-size: 14px;
+  font-weight: 600;
+  color: #18181B;
+  margin-bottom: 2px;
+  letter-spacing: -0.01em;
+}
+
+.dark .slash-command-item-name {
+  color: #E4E4E7;
+}
+
+.slash-command-item-desc {
+  font-size: 12px;
+  color: #71717A;
+  line-height: 1.4;
+  overflow: hidden;
+  text-overflow: ellipsis;
+  white-space: nowrap;
+}
+
+.dark .slash-command-item-desc {
+  color: #A1A1AA;
+}
+
+.slash-command-shortcut {
+  padding: 4px 8px;
+  background: rgba(244, 63, 94, 0.1);
+  border: 1px solid rgba(244, 63, 94, 0.2);
+  border-radius: 6px;
+  font-size: 11px;
+  font-family: 'JetBrains Mono', 'Courier New', monospace;
+  font-weight: 600;
+  color: #f43f5e;
+  white-space: nowrap;
+  flex-shrink: 0;
+}
+
+.dark .slash-command-shortcut {
+  background: rgba(244, 63, 94, 0.15);
+  border-color: rgba(244, 63, 94, 0.3);
+}
+
+/* ============================================
+   EMPTY STATE
+   ============================================ */
+
+.slash-command-empty {
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  justify-content: center;
+  padding: 48px 32px;
+  text-align: center;
+}
+
+.slash-command-empty i {
+  font-size: 32px;
+}
+
+/* ============================================
+   FOOTER
+   ============================================ */
+
+.slash-command-footer {
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  padding: 10px 16px;
+  background: rgba(244, 63, 94, 0.05);
+  border-top: 1px solid rgba(244, 63, 94, 0.1);
+  font-size: 11px;
+  flex-shrink: 0;
+}
+
+.dark .slash-command-footer {
+  background: rgba(244, 63, 94, 0.08);
+  border-top-color: rgba(244, 63, 94, 0.2);
+}
+
+.slash-command-footer-hints {
+  display: flex;
+  align-items: center;
+  gap: 12px;
+}
+
+.slash-command-hint {
+  display: flex;
+  align-items: center;
+  gap: 4px;
+  color: #71717A;
+}
+
+.dark .slash-command-hint {
+  color: #A1A1AA;
+}
+
+.slash-command-hint kbd {
+  padding: 2px 6px;
+  background: rgba(244, 63, 94, 0.1);
+  border: 1px solid rgba(244, 63, 94, 0.15);
+  border-radius: 4px;
+  font-size: 10px;
+  font-family: 'JetBrains Mono', 'Courier New', monospace;
+  font-weight: 600;
+  color: #f43f5e;
+}
+
+.dark .slash-command-hint kbd {
+  background: rgba(244, 63, 94, 0.12);
+  border-color: rgba(244, 63, 94, 0.25);
+}
+
+.slash-command-footer-count {
+  display: flex;
+  align-items: center;
+  gap: 4px;
+  font-weight: 500;
+}
+
+/* ============================================
+   MOBILE RESPONSIVE
+   ============================================ */
+
+@media (max-width: 768px) {
+  .slash-command-dropdown {
+    position: fixed;
+    bottom: auto;
+    top: 50%;
+    left: 16px;
+    right: 16px;
+    transform: translateY(-50%);
+    max-width: none;
+  }
+
+  .slash-command-item {
+    padding: 14px 12px;
+  }
+
+  .slash-command-item-icon {
+    width: 44px;
+    height: 44px;
+    font-size: 20px;
+  }
+
+  .slash-command-shortcut {
+    display: none;
+  }
+}
+
+/* ============================================
+   ANIMATIONS
+   ============================================ */
+
+@keyframes slideInUp {
+  from {
+    opacity: 0;
+    transform: translateY(10px) scale(0.95);
+  }
+  to {
+    opacity: 1;
+    transform: translateY(0) scale(1);
+  }
+}
+
+.slash-command-item {
+  animation: slideInUp 0.2s ease-out backwards;
+}
+
+.slash-command-item:nth-child(1) { animation-delay: 0.02s; }
+.slash-command-item:nth-child(2) { animation-delay: 0.04s; }
+.slash-command-item:nth-child(3) { animation-delay: 0.06s; }
+.slash-command-item:nth-child(4) { animation-delay: 0.08s; }
+.slash-command-item:nth-child(5) { animation-delay: 0.10s; }
+.slash-command-item:nth-child(6) { animation-delay: 0.12s; }
+.slash-command-item:nth-child(7) { animation-delay: 0.14s; }
+.slash-command-item:nth-child(8) { animation-delay: 0.16s; }

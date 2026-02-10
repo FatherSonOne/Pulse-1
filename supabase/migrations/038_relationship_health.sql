@@ -45,9 +45,9 @@ CREATE TABLE IF NOT EXISTS public.relationship_health (
 );
 
 -- Indexes
-CREATE INDEX idx_relationship_health_user ON public.relationship_health(user_id);
-CREATE INDEX idx_relationship_health_status ON public.relationship_health(user_id, health_status);
-CREATE INDEX idx_relationship_health_score ON public.relationship_health(user_id, health_score DESC);
+CREATE INDEX IF NOT EXISTS idx_relationship_health_user ON public.relationship_health(user_id);
+CREATE INDEX IF NOT EXISTS idx_relationship_health_status ON public.relationship_health(user_id, health_status);
+CREATE INDEX IF NOT EXISTS idx_relationship_health_score ON public.relationship_health(user_id, health_score DESC);
 
 -- Enable RLS
 ALTER TABLE public.relationship_health ENABLE ROW LEVEL SECURITY;

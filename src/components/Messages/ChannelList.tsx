@@ -89,17 +89,17 @@ export const ChannelList: React.FC<ChannelListProps> = ({
   return (
     <div className="h-full flex flex-col bg-zinc-950">
       {/* Header */}
-      <div className="px-4 py-4 border-b border-zinc-800 flex items-center justify-between">
-        <h2 className="font-semibold text-white flex items-center gap-2">
-          <i className="fa-solid fa-hashtag text-red-500"></i>
+      <div className="px-4 py-4 border-b border-rose-900/20 dark:border-rose-900/30 bg-gradient-to-b from-rose-50/50 to-white dark:from-rose-950/20 dark:to-zinc-950 flex items-center justify-between">
+        <h2 className="text-gradient-rose font-semibold flex items-center gap-2">
+          <i className="fa-solid fa-hashtag text-rose-500"></i>
           Channels
         </h2>
         <button
           onClick={() => setShowNewChannel(true)}
-          className="w-7 h-7 rounded-lg bg-zinc-800 hover:bg-zinc-700 flex items-center justify-center transition-all hover-scale"
+          className="w-7 h-7 rounded-lg bg-gradient-to-br from-rose-500/10 to-pink-500/10 border border-rose-500/20 hover:from-rose-500/20 hover:to-pink-500/20 hover:border-rose-500/40 flex items-center justify-center transition-all hover-scale"
           title="Create channel"
         >
-          <i className="fa-solid fa-plus text-xs text-red-500"></i>
+          <i className="fa-solid fa-plus text-xs text-rose-500"></i>
         </button>
       </div>
 
@@ -111,7 +111,7 @@ export const ChannelList: React.FC<ChannelListProps> = ({
             placeholder="Channel name..."
             value={newChannelName}
             onChange={(e) => setNewChannelName(e.target.value)}
-            className="w-full px-3 py-2 bg-zinc-800 border border-zinc-700 rounded-lg text-sm text-white placeholder-zinc-500 focus:outline-none focus:border-red-500 transition"
+            className="w-full px-3 py-2 bg-zinc-800 border border-zinc-700 rounded-lg text-sm text-white placeholder-zinc-500 focus:outline-none focus:border-rose-500 focus:ring-2 focus:ring-rose-500/20 transition"
             autoFocus
           />
           <input
@@ -119,22 +119,22 @@ export const ChannelList: React.FC<ChannelListProps> = ({
             placeholder="Description (optional)"
             value={newChannelDesc}
             onChange={(e) => setNewChannelDesc(e.target.value)}
-            className="w-full px-3 py-2 bg-zinc-800 border border-zinc-700 rounded-lg text-sm text-white placeholder-zinc-500 focus:outline-none focus:border-red-500 transition"
+            className="w-full px-3 py-2 bg-zinc-800 border border-zinc-700 rounded-lg text-sm text-white placeholder-zinc-500 focus:outline-none focus:border-rose-500 focus:ring-2 focus:ring-rose-500/20 transition"
           />
           <label className="flex items-center gap-2 text-sm text-zinc-400 cursor-pointer">
             <input
               type="checkbox"
               checked={isGroup}
               onChange={(e) => setIsGroup(e.target.checked)}
-              className="w-4 h-4 rounded border-zinc-600 text-red-500 focus:ring-red-500 bg-zinc-800"
+              className="w-4 h-4 rounded border-zinc-600 text-rose-500 focus:ring-rose-500 bg-zinc-800"
             />
-            <i className="fa-solid fa-users-rectangle text-blue-400"></i>
+            <i className="fa-solid fa-users-rectangle text-rose-400"></i>
             Private Group Chat
           </label>
           <div className="flex gap-2">
             <button
               onClick={handleCreateChannel}
-              className="flex-1 bg-red-500 hover:bg-red-600 text-white py-2 rounded-lg text-xs font-bold uppercase tracking-wider transition-all btn-pulse"
+              className="flex-1 bg-gradient-to-r from-rose-500 to-pink-600 hover:from-rose-600 hover:to-pink-700 text-white py-2 rounded-lg text-xs font-bold uppercase tracking-wider transition-all btn-pulse shadow-lg shadow-rose-500/30"
             >
               Create
             </button>
@@ -156,7 +156,7 @@ export const ChannelList: React.FC<ChannelListProps> = ({
       <div className="flex-1 overflow-y-auto py-2">
         {loading ? (
           <div className="px-4 py-8 text-center">
-            <div className="w-5 h-5 border-2 border-zinc-600 border-t-red-500 rounded-full animate-spin mx-auto mb-2"></div>
+            <div className="w-5 h-5 border-2 border-zinc-600 border-t-rose-500 rounded-full animate-spin mx-auto mb-2"></div>
             <span className="text-zinc-500 text-sm">Loading channels...</span>
           </div>
         ) : channels.length === 0 ? (
@@ -172,36 +172,34 @@ export const ChannelList: React.FC<ChannelListProps> = ({
                 Channels
               </div>
               {channels.filter(c => !c.is_group).map((channel) => (
-                <div
+                <button
                   key={channel.id}
-                  className={`mx-2 px-3 py-2.5 rounded-lg cursor-pointer transition-all group flex items-center justify-between ${
-                    selectedChannel?.id === channel.id
-                      ? 'bg-zinc-800 text-white'
-                      : 'text-zinc-400 hover:bg-zinc-900 hover:text-white'
-                  }`}
+                  className={`channel-item ${selectedChannel?.id === channel.id ? 'active' : ''}`}
                   onClick={() => onSelectChannel(channel)}
                 >
-                  <div className="flex items-center gap-2 min-w-0 flex-1">
+                  <div className="channel-icon">
                     {channel.is_public ? (
-                      <i className="fa-solid fa-hashtag text-xs text-zinc-500"></i>
+                      <i className="fa-solid fa-hashtag"></i>
                     ) : (
-                      <i className="fa-solid fa-lock text-xs text-yellow-500"></i>
-                    )}
-                    <span className="text-sm font-medium truncate">{channel.name}</span>
-                    {channel.unread_count && channel.unread_count > 0 && (
-                      <span className="ml-auto bg-red-500 text-white text-[10px] px-1.5 py-0.5 rounded-full font-bold">
-                        {channel.unread_count}
-                      </span>
+                      <i className="fa-solid fa-lock"></i>
                     )}
                   </div>
+                  <div className="flex-1 min-w-0">
+                    <span className="channel-name truncate block">{channel.name}</span>
+                  </div>
+                  {channel.unread_count && channel.unread_count > 0 && (
+                    <span className="unread-badge">
+                      {channel.unread_count}
+                    </span>
+                  )}
                   <button
                     onClick={(e) => handleDeleteChannel(channel.id, e)}
-                    className="p-1 rounded opacity-0 group-hover:opacity-100 hover:bg-red-500/20 transition-all ml-2"
+                    className="p-1 rounded opacity-0 group-hover:opacity-100 hover:bg-rose-500/20 transition-all ml-2"
                     title="Delete channel"
                   >
-                    <i className="fa-solid fa-trash text-[10px] text-red-500"></i>
+                    <i className="fa-solid fa-trash text-[10px] text-rose-500"></i>
                   </button>
-                </div>
+                </button>
               ))}
             </div>
 
@@ -212,27 +210,25 @@ export const ChannelList: React.FC<ChannelListProps> = ({
                   Group Chats
                 </div>
                 {channels.filter(c => c.is_group).map((channel) => (
-                  <div
+                  <button
                     key={channel.id}
-                    className={`mx-2 px-3 py-2.5 rounded-lg cursor-pointer transition-all group flex items-center justify-between ${
-                      selectedChannel?.id === channel.id
-                        ? 'bg-zinc-800 text-white'
-                        : 'text-zinc-400 hover:bg-zinc-900 hover:text-white'
-                    }`}
+                    className={`channel-item ${selectedChannel?.id === channel.id ? 'active' : ''}`}
                     onClick={() => onSelectChannel(channel)}
                   >
-                    <div className="flex items-center gap-2 min-w-0 flex-1">
-                      <i className="fa-solid fa-users text-xs text-blue-400"></i>
-                      <span className="text-sm font-medium truncate">{channel.name}</span>
+                    <div className="channel-icon">
+                      <i className="fa-solid fa-users"></i>
+                    </div>
+                    <div className="flex-1 min-w-0">
+                      <span className="channel-name truncate block">{channel.name}</span>
                     </div>
                     <button
                       onClick={(e) => handleDeleteChannel(channel.id, e)}
-                      className="p-1 rounded opacity-0 group-hover:opacity-100 hover:bg-red-500/20 transition-all ml-2"
+                      className="p-1 rounded opacity-0 group-hover:opacity-100 hover:bg-rose-500/20 transition-all ml-2"
                       title="Delete group"
                     >
-                      <i className="fa-solid fa-trash text-[10px] text-red-500"></i>
+                      <i className="fa-solid fa-trash text-[10px] text-rose-500"></i>
                     </button>
-                  </div>
+                  </button>
                 ))}
               </div>
             )}

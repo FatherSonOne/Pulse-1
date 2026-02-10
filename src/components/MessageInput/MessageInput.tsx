@@ -7,6 +7,10 @@ import useMessagesStore from '../../store/messageStore';
 import FormattingToolbar from './FormattingToolbar';
 import ToneAnalyzer from './ToneAnalyzer';
 import AttachmentPreview from './AttachmentPreview';
+import SlashCommandDropdown from './SlashCommandDropdown';
+import InlineToolsMenu from './InlineToolsMenu';
+import { useSlashCommands } from '../../hooks/useSlashCommands';
+import { getToolOverlayType, saveRecentTool } from '../../services/toolRegistry';
 import './MessageInput.css';
 import type {
   MessageInputProps,
@@ -30,11 +34,13 @@ const MessageInput: React.FC<MessageInputProps> = ({
   channelId,
   disabled = false,
   initialValue = '',
+  setActiveToolOverlay,
 }) => {
   // State
   const [content, setContent] = useState(initialValue);
   const [showAI, setShowAI] = useState(false);
   const [isRecording, setIsRecording] = useState(false);
+  const [showToolsMenu, setShowToolsMenu] = useState(false);
   const [attachments, setAttachments] = useState<AttachmentFile[]>([]);
   const [activeFormats, setActiveFormats] = useState<Set<string>>(new Set());
   const [draft, setDraft] = useState<DraftState>({
@@ -45,6 +51,7 @@ const MessageInput: React.FC<MessageInputProps> = ({
 
   // Refs
   const editorRef = useRef<HTMLDivElement>(null);
+  const toolsButtonRef = useRef<HTMLButtonElement>(null);
   const typingTimeoutRef = useRef<NodeJS.Timeout>();
   const draftTimeoutRef = useRef<NodeJS.Timeout>();
 
@@ -54,6 +61,23 @@ const MessageInput: React.FC<MessageInputProps> = ({
   const toneAnalysis = messageStore.draftAnalysis as unknown as ToneAnalysis | null;
   const isGeneratingAI = messageStore.isGeneratingReplies;
   const isAnalyzingTone = messageStore.isAnalyzingDraft;
+
+  // Tool launch handler for slash commands
+  const handleToolLaunch = useCallback((toolId: string) => {
+    console.log('[MessageInput] Tool launched:', toolId);
+    const overlayType = getToolOverlayType(toolId);
+    if (overlayType && setActiveToolOverlay) {
+      setActiveToolOverlay(overlayType);
+    }
+    saveRecentTool(toolId);
+    setContent('');
+    if (editorRef.current) {
+      editorRef.current.textContent = '';
+    }
+  }, [setActiveToolOverlay]);
+
+  // Slash commands system
+  const slashCommands = useSlashCommands(content, editorRef, handleToolLaunch);
 
   // Auto-save draft
   useEffect(() => {
@@ -143,6 +167,12 @@ const MessageInput: React.FC<MessageInputProps> = ({
   // Handle keyboard shortcuts
   const handleKeyDown = useCallback(
     (e: React.KeyboardEvent<HTMLDivElement>) => {
+      // Let slash command handler try first
+      if (slashCommands.state.isActive) {
+        const handled = slashCommands.handlers.handleKeyDown(e);
+        if (handled) return;
+      }
+
       // Send message on Cmd/Ctrl + Enter
       if ((e.metaKey || e.ctrlKey) && e.key === 'Enter') {
         e.preventDefault();
@@ -178,7 +208,7 @@ const MessageInput: React.FC<MessageInputProps> = ({
         return;
       }
     },
-    [content]
+    [content, slashCommands]
   );
 
   // Format text
@@ -284,6 +314,29 @@ const MessageInput: React.FC<MessageInputProps> = ({
       </AnimatePresence>
 
       <div className={`message-input-container ${showAI ? 'ai-active' : ''}`}>
+        {/* Slash Command Dropdown */}
+        <AnimatePresence>
+          {slashCommands.state.isActive && (
+            <SlashCommandDropdown
+              matches={slashCommands.state.matches}
+              selectedIndex={slashCommands.state.selectedIndex}
+              query={slashCommands.state.query}
+              onSelect={slashCommands.handlers.handleSelect}
+              onClose={slashCommands.handlers.handleDismiss}
+            />
+          )}
+        </AnimatePresence>
+
+        {/* Inline Tools Menu */}
+        <AnimatePresence>
+          {showToolsMenu && (
+            <InlineToolsMenu
+              onClose={() => setShowToolsMenu(false)}
+              setActiveToolOverlay={setActiveToolOverlay}
+            />
+          )}
+        </AnimatePresence>
+
         {/* Formatting Toolbar */}
         <FormattingToolbar
           onFormat={applyFormat}
@@ -368,6 +421,18 @@ const MessageInput: React.FC<MessageInputProps> = ({
                 <span className="ai-toggle-label">AI</span>
               </button>
             )}
+
+            {/* Tools Menu Button */}
+            <button
+              ref={toolsButtonRef}
+              className={`tools-menu-button ${showToolsMenu ? 'active' : ''}`}
+              onClick={() => setShowToolsMenu(!showToolsMenu)}
+              aria-label="Open tools menu"
+              aria-pressed={showToolsMenu}
+            >
+              <i className="fa-solid fa-magic-wand-sparkles" />
+              <span className="tools-menu-label">Tools</span>
+            </button>
           </div>
 
           <button

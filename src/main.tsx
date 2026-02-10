@@ -51,6 +51,86 @@ async function clearOldCache() {
 // Run cache check immediately
 clearOldCache();
 
+// PWA Service Worker Registration
+if ('serviceWorker' in navigator && import.meta.env.PROD) {
+  window.addEventListener('load', () => {
+    // Register PWA service worker
+    navigator.serviceWorker.register('/sw.js', { scope: '/' })
+      .then((registration) => {
+        console.log('[PWA] Service worker registered:', registration.scope);
+
+        // Check for updates every hour
+        setInterval(() => {
+          registration.update();
+        }, 60 * 60 * 1000);
+
+        // Handle service worker updates
+        registration.addEventListener('updatefound', () => {
+          const newWorker = registration.installing;
+          if (newWorker) {
+            newWorker.addEventListener('statechange', () => {
+              if (newWorker.state === 'installed' && navigator.serviceWorker.controller) {
+                // New service worker available, show update prompt
+                console.log('[PWA] New version available');
+
+                // Show toast notification for update
+                const updateToast = document.createElement('div');
+                updateToast.className = 'pwa-update-toast';
+                updateToast.innerHTML = `
+                  <div style="
+                    position: fixed;
+                    bottom: 20px;
+                    left: 50%;
+                    transform: translateX(-50%);
+                    background: #10b981;
+                    color: white;
+                    padding: 16px 24px;
+                    border-radius: 12px;
+                    box-shadow: 0 4px 12px rgba(0,0,0,0.15);
+                    z-index: 9999;
+                    display: flex;
+                    align-items: center;
+                    gap: 12px;
+                    font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, sans-serif;
+                    font-size: 14px;
+                    font-weight: 500;
+                  ">
+                    <span>🎉 New version available!</span>
+                    <button onclick="window.location.reload()" style="
+                      background: white;
+                      color: #10b981;
+                      border: none;
+                      padding: 8px 16px;
+                      border-radius: 8px;
+                      font-weight: 600;
+                      cursor: pointer;
+                    ">Update Now</button>
+                  </div>
+                `;
+                document.body.appendChild(updateToast);
+              }
+            });
+          }
+        });
+      })
+      .catch((error) => {
+        console.error('[PWA] Service worker registration failed:', error);
+      });
+
+    // Listen for messages from service worker
+    navigator.serviceWorker.addEventListener('message', (event) => {
+      if (event.data.type === 'CACHE_UPDATED') {
+        console.log('[PWA] Cache updated');
+      }
+    });
+
+    // Listen for controller change (new service worker activated)
+    navigator.serviceWorker.addEventListener('controllerchange', () => {
+      console.log('[PWA] New service worker activated');
+    });
+  });
+}
+
 // Handle OAuth deep link callback for native apps
 // This function extracts tokens from the redirect URL and establishes the session
 const handleOAuthDeepLink = async (url: string) => {

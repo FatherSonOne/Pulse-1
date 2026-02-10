@@ -223,8 +223,8 @@ export const AttachmentManager: React.FC<AttachmentManagerProps> = ({
   }, [attachments, filter, searchQuery]);
 
   const storagePercentage = useMemo(() =>
-    Math.round((STORAGE_STATS.used / STORAGE_STATS.total) * 100),
-    []
+    Math.round((storageStats.used / storageStats.total) * 100),
+    [storageStats]
   );
 
   const formatFileSize = (bytes: number): string => {
@@ -341,7 +341,7 @@ export const AttachmentManager: React.FC<AttachmentManagerProps> = ({
             <div>
               <p className="text-sm font-medium text-zinc-900 dark:text-white">Storage</p>
               <p className="text-xs text-zinc-500">
-                {formatFileSize(STORAGE_STATS.used)} of {formatFileSize(STORAGE_STATS.total)} used
+                {formatFileSize(storageStats.used)} of {formatFileSize(storageStats.total)} used
               </p>
             </div>
           </div>
@@ -356,7 +356,7 @@ export const AttachmentManager: React.FC<AttachmentManagerProps> = ({
           />
         </div>
         <div className="flex gap-3 mt-3">
-          {Object.entries(STORAGE_STATS.byType).map(([type, size]) => {
+          {Object.entries(storageStats.byType).map(([type, size]) => {
             const colors = getTypeColor(type as Attachment['type']);
             return (
               <div key={type} className="flex items-center gap-1 text-xs">

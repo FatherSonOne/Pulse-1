@@ -46,6 +46,31 @@
   padding-bottom: 4px;
 }
 
+.tools-menu-button {
+  background: transparent;
+  border: none;
+  padding: 6px 12px;
+  border-radius: 8px;
+  cursor: pointer;
+  display: flex;
+  align-items: center;
+  gap: 6px;
+  font-size: 13px;
+  font-weight: 500;
+  color: rgba(255, 255, 255, 0.6);
+  transition: all 0.2s ease;
+}
+
+.tools-menu-button:hover {
+  background: rgba(139, 92, 246, 0.1);
+  color: #8b5cf6;
+}
+
+.tools-menu-button.active {
+  background: rgba(139, 92, 246, 0.15);
+  color: #8b5cf6;
+}
+
 /* Analysis Panel */
 .analysis-panel {
   border-top: 1px solid rgba(255, 255, 255, 0.1);

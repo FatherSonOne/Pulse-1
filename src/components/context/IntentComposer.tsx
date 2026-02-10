@@ -1,4 +1,5 @@
 import { useState, useEffect, useRef } from 'react';
+import { AnimatePresence } from 'framer-motion';
 import {
   Wand2,
   MessageCircle,
@@ -19,6 +20,7 @@ import {
 import { analyzeDraftIntent } from '../../services/geminiService';
 import { DraftAnalysis } from '../../types';
 import { VoiceTextButton } from '../shared/VoiceTextButton';
+import InlineToolsMenu from '../MessageInput/InlineToolsMenu';
 import './IntentComposer.css';
 
 interface IntentComposerProps {
@@ -31,6 +33,7 @@ interface IntentComposerProps {
   minRows?: number;
   maxRows?: number;
   disabled?: boolean;
+  setActiveToolOverlay?: (overlay: string | null) => void;
 }
 
 const intentConfig: Record<DraftAnalysis['intent'], {
@@ -80,13 +83,15 @@ export const IntentComposer: React.FC<IntentComposerProps> = ({
   showAnalysis = true,
   minRows = 2,
   maxRows = 8,
-  disabled = false
+  disabled = false,
+  setActiveToolOverlay
 }) => {
   const [analysis, setAnalysis] = useState<DraftAnalysis | null>(null);
   const [isAnalyzing, setIsAnalyzing] = useState(false);
   const [showImprovement, setShowImprovement] = useState(false);
   const [copied, setCopied] = useState(false);
   const [showPanel, setShowPanel] = useState(true);
+  const [showToolsMenu, setShowToolsMenu] = useState(false);
   const textareaRef = useRef<HTMLTextAreaElement>(null);
   const analysisTimeoutRef = useRef<NodeJS.Timeout | null>(null);
 
@@ -167,6 +172,16 @@ export const IntentComposer: React.FC<IntentComposerProps> = ({
 
   return (
     <div className={`intent-composer ${disabled ? 'disabled' : ''}`}>
+      {/* Inline Tools Menu */}
+      <AnimatePresence>
+        {showToolsMenu && setActiveToolOverlay && (
+          <InlineToolsMenu
+            onClose={() => setShowToolsMenu(false)}
+            setActiveToolOverlay={setActiveToolOverlay}
+          />
+        )}
+      </AnimatePresence>
+
       <div className="composer-main">
         <textarea
           ref={textareaRef}
@@ -179,6 +194,20 @@ export const IntentComposer: React.FC<IntentComposerProps> = ({
         />
 
         <div className="composer-actions">
+          {/* Tools Menu Button */}
+          {setActiveToolOverlay && (
+            <button
+              className={`tools-menu-button ${showToolsMenu ? 'active' : ''}`}
+              onClick={() => setShowToolsMenu(!showToolsMenu)}
+              aria-label="Open tools menu"
+              aria-pressed={showToolsMenu}
+              title="Tools"
+            >
+              <Wand2 size={16} />
+              <span>Tools</span>
+            </button>
+          )}
+
           <VoiceTextButton
             onTranscript={handleVoiceInput}
             size="sm"

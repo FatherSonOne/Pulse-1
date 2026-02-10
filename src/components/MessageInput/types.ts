@@ -11,6 +11,7 @@ export interface MessageInputProps {
   channelId?: string;
   disabled?: boolean;
   initialValue?: string;
+  setActiveToolOverlay?: (overlayType: 'analytics' | 'collaboration' | 'productivity' | 'intelligence' | 'proactive' | 'communication' | 'personalization' | 'security' | 'mediaHub') => void;
 }
 
 export interface AISuggestion {

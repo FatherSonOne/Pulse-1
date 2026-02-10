@@ -13,6 +13,8 @@ import { EngagementScoring, EngagementBadge } from './EngagementScoring';
 import { ConversationFlowViz } from './ConversationFlowViz';
 import { AchievementSystemEnhanced, AchievementBadge } from './AchievementSystemEnhanced';
 import { ProactiveInsightsEnhanced, InsightIndicator } from './ProactiveInsightsEnhanced';
+import { PersonalAnalyticsDashboard, AnalyticsBadge } from './PersonalAnalyticsDashboard';
+import { SearchPanel, QuickSearchButton } from './SearchPanel';
 
 // Export as default object for lazy loading
 export default {
@@ -32,4 +34,10 @@ export default {
   AchievementBadge,
   ProactiveInsightsEnhanced,
   InsightIndicator,
+  // New professional analytics (Phase 2B)
+  PersonalAnalyticsDashboard,
+  AnalyticsBadge,
+  // Full-text search (Priority 4)
+  SearchPanel,
+  QuickSearchButton,
 };

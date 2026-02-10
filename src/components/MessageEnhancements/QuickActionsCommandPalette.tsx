@@ -1,4 +1,5 @@
 import React, { useState, useEffect, useCallback, useMemo, useRef } from 'react';
+import { fuzzySearchTools } from '../../services/toolRegistry';
 
 // Types
 interface CommandAction {
@@ -374,14 +375,34 @@ export const QuickActionsCommandPalette: React.FC<QuickActionsCommandPaletteProp
       results = results.filter(action => action.category === selectedCategory);
     }
 
-    // Filter by search query
+    // Filter by search query with fuzzy search (Phase 2A)
     if (query.trim()) {
-      const lowerQuery = query.toLowerCase();
-      results = results.filter(action =>
-        action.label.toLowerCase().includes(lowerQuery) ||
-        action.description.toLowerCase().includes(lowerQuery) ||
-        action.keywords.some(k => k.toLowerCase().includes(lowerQuery))
-      );
+      // Convert CommandAction to ToolAction format for fuzzy search
+      const toolActions = results.map(action => ({
+        id: action.id,
+        name: action.label,
+        description: action.description,
+        icon: action.icon,
+        color: '',
+        category: action.category,
+        keywords: action.keywords,
+        shortcut: action.shortcut,
+        onLaunch: action.action,
+      }));
+
+      // Use fuzzy search from toolRegistry (allows typos!)
+      const fuzzyResults = fuzzySearchTools(query, toolActions, 50);
+
+      // Convert back to CommandAction format
+      const fuzzyIds = new Set(fuzzyResults.map(t => t.id));
+      results = results.filter(action => fuzzyIds.has(action.id));
+
+      // Sort by fuzzy search order
+      results.sort((a, b) => {
+        const aIndex = fuzzyResults.findIndex(t => t.id === a.id);
+        const bIndex = fuzzyResults.findIndex(t => t.id === b.id);
+        return aIndex - bIndex;
+      });
     }
 
     // Sort: recent first, then alphabetically

@@ -335,6 +335,12 @@ class SettingsService {
         await this.saveAll(merged);
       }
     } catch (error: any) {
+      // Silently handle AbortError (expected during component unmount)
+      if (error?.name === 'AbortError' || error?.message?.includes('AbortError') || error?.message?.includes('aborted')) {
+        console.debug('[Settings] Cloud sync aborted (expected during cleanup)');
+        return;
+      }
+
       // Disable cloud sync on 406 errors to prevent spam
       if (error?.status === 406 || error?.code === 'PGRST204') {
         // Use debug-level - this is expected if table hasn't been created yet

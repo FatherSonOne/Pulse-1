@@ -62,29 +62,50 @@ const QuickScheduler: React.FC<QuickSchedulerProps> = ({ onEventCreated }) => {
   }, [loadContacts]);
 
   // Load Google Calendar events for current month
-  const loadGoogleEvents = useCallback(async () => {
+  const loadGoogleEvents = useCallback(async (signal?: AbortSignal) => {
     const user = getSessionUserSync();
     if (!user?.connectedProviders?.google) return;
+
+    // Check if we're already loading or if aborted
+    if (signal?.aborted) return;
 
     setLoadingGoogleEvents(true);
     try {
       const startOfMonth = new Date(currentDate.getFullYear(), currentDate.getMonth(), 1);
       const endOfMonth = new Date(currentDate.getFullYear(), currentDate.getMonth() + 1, 0, 23, 59, 59);
 
+      // Check again before making the API call
+      if (signal?.aborted) return;
+
       const events = await googleCalendarService.getAllEvents({
         timeMin: startOfMonth,
         timeMax: endOfMonth,
       });
-      setGoogleEvents(events);
+
+      // Only update state if not aborted
+      if (!signal?.aborted) {
+        setGoogleEvents(events);
+      }
     } catch (error) {
-      console.error('Failed to load Google Calendar events:', error);
+      // Only log error if not aborted
+      if (!signal?.aborted && error instanceof Error && error.name !== 'AbortError') {
+        console.error('Failed to load Google Calendar events:', error);
+      }
     } finally {
-      setLoadingGoogleEvents(false);
+      if (!signal?.aborted) {
+        setLoadingGoogleEvents(false);
+      }
     }
   }, [currentDate]);
 
   useEffect(() => {
-    loadGoogleEvents();
+    const abortController = new AbortController();
+
+    loadGoogleEvents(abortController.signal);
+
+    return () => {
+      abortController.abort();
+    };
   }, [loadGoogleEvents]);
 
   // Get Google events count for a specific day

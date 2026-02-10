@@ -34,6 +34,8 @@ export { ResponseTimeTracker, ResponseTimeBadge } from './ResponseTimeTracker';
 export { EngagementScoring, EngagementBadge } from './EngagementScoring';
 export { ConversationFlowViz } from './ConversationFlowViz';
 export { AchievementSystemEnhanced, AchievementBadge } from './AchievementSystemEnhanced';
+export { PersonalAnalyticsDashboard, AnalyticsBadge } from './PersonalAnalyticsDashboard';
+export { SearchPanel, QuickSearchButton } from './SearchPanel';
 export { ProactiveInsightsEnhanced, InsightIndicator } from './ProactiveInsightsEnhanced';
 
 // Phase 4: Collaboration & Advanced Features

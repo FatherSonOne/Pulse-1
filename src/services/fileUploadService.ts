@@ -357,6 +357,45 @@ export class FileUploadService {
   }
 
   /**
+   * Get user storage statistics
+   */
+  async getUserStorageStats(
+    userId: string
+  ): Promise<{
+    totalSize: number;
+    fileCount: number;
+    byType: Record<string, { count: number; size: number }>;
+  }> {
+    const { data, error } = await supabase
+      .from('file_uploads')
+      .select('file_size, file_category')
+      .eq('user_id', userId);
+
+    if (error) {
+      console.error('Failed to get storage stats:', error);
+      return { totalSize: 0, fileCount: 0, byType: {} };
+    }
+
+    const stats = {
+      totalSize: 0,
+      fileCount: data?.length || 0,
+      byType: {} as Record<string, { count: number; size: number }>,
+    };
+
+    data?.forEach((file) => {
+      stats.totalSize += file.file_size || 0;
+      const category = file.file_category || 'other';
+      if (!stats.byType[category]) {
+        stats.byType[category] = { count: 0, size: 0 };
+      }
+      stats.byType[category].count++;
+      stats.byType[category].size += file.file_size || 0;
+    });
+
+    return stats;
+  }
+
+  /**
    * Get signed URL for private file access
    */
   async getSignedUrl(

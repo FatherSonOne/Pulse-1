@@ -368,6 +368,11 @@ class DataService {
         .order('name');
 
       if (error) {
+        // Check if it's an AbortError (expected during component unmount)
+        if (error.message?.includes('AbortError') || error.message?.includes('aborted')) {
+          console.debug('[DataService] Contact fetch aborted (expected during cleanup)');
+          return [];
+        }
         console.error('Error fetching contacts:', error);
         return [];
       }

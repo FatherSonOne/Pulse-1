@@ -4,8 +4,8 @@
  * Tests for rate limiting, token bucket algorithm, and quota management
  */
 
-import { describe, it, expect, beforeEach, afterEach, vi } from 'vitest';
-import { RateLimitService, RATE_LIMITS } from '../rateLimitService';
+import { describe, it, expect, beforeEach, vi } from 'vitest';
+import { rateLimitService, RATE_LIMITS } from '../rateLimitService';
 
 // Mock IndexedDB
 class MockIDBDatabase {
@@ -41,16 +41,12 @@ global.indexedDB = {
 } as any;
 
 describe('RateLimitService', () => {
-  let rateLimitService: RateLimitService;
   const testUserId = 'test-user-123';
 
-  beforeEach(() => {
+  beforeEach(async () => {
     vi.clearAllMocks();
-    rateLimitService = new RateLimitService();
-  });
-
-  afterEach(() => {
-    rateLimitService.stopCleanup();
+    // Clear all rate limits before each test
+    await rateLimitService.clearAll();
   });
 
   describe('checkLimit', () => {

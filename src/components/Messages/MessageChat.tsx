@@ -1,9 +1,15 @@
 // src/components/Messages/MessageChat.tsx
+// REDESIGNED: Flat design with user color coding, role badges, and smart timestamps
+// Version: 2.0 | Date: 2026-02-08
+
 import React, { useState, useEffect, useRef } from 'react';
 import { ChannelMessage, MessageChannel } from '../../types/messages';
 import { messageChannelService } from '../../services/messageChannelService';
 import { UserContactCard } from '../UserContact/UserContactCard';
 import { VoiceTextButton } from '../shared/VoiceTextButton';
+import { SmartTimestamp } from './SmartTimestamp';
+import { UserBadge, UserRole } from './UserBadge';
+import { getAccessibleUserColor } from '../../utils/userColors';
 import toast from 'react-hot-toast';
 
 interface MessageChatProps {
@@ -148,17 +154,19 @@ export const MessageChat: React.FC<MessageChatProps> = ({
     return date.toLocaleDateString([], { weekday: 'short', month: 'short', day: 'numeric' });
   };
 
-  const getAvatarColor = (name: string) => {
-    const colors = [
-      'from-red-500 to-orange-500',
-      'from-blue-500 to-cyan-500',
-      'from-green-500 to-emerald-500',
-      'from-purple-500 to-pink-500',
-      'from-yellow-500 to-amber-500',
-    ];
-    const index = name.charCodeAt(0) % colors.length;
-    return colors[index];
+  // Get user role (mock implementation - should come from actual user data)
+  const getUserRole = (userId: string): UserRole => {
+    // TODO: Replace with actual role lookup from user service
+    if (userId === currentUserId) return 'member';
+    // Mock logic for demo - in production, fetch from user permissions
+    if (userId.includes('admin')) return 'admin';
+    if (userId.includes('mod')) return 'moderator';
+    if (userId.includes('bot')) return 'bot';
+    return 'member';
   };
+
+  // Check if dark mode is active
+  const isDarkMode = document.documentElement.classList.contains('dark');
 
   return (
     <div className="h-full flex flex-col bg-zinc-950">
@@ -166,12 +174,12 @@ export const MessageChat: React.FC<MessageChatProps> = ({
       <div className="px-6 py-4 border-b border-zinc-800 flex items-center justify-between">
         <div className="flex items-center gap-3">
           {channel.is_group ? (
-            <div className="w-10 h-10 rounded-lg bg-blue-500/20 flex items-center justify-center">
-              <i className="fa-solid fa-users text-blue-400"></i>
+            <div className="w-10 h-10 rounded-lg bg-gradient-to-br from-rose-500/20 to-pink-500/20 border border-rose-500/30 flex items-center justify-center">
+              <i className="fa-solid fa-users text-rose-400"></i>
             </div>
           ) : (
-            <div className="w-10 h-10 rounded-lg bg-zinc-800 flex items-center justify-center">
-              <i className="fa-solid fa-hashtag text-zinc-400"></i>
+            <div className="w-10 h-10 rounded-lg bg-gradient-to-br from-rose-500/10 to-pink-500/10 border border-rose-500/20 flex items-center justify-center">
+              <i className="fa-solid fa-hashtag text-rose-400"></i>
             </div>
           )}
           <div>
@@ -247,37 +255,70 @@ export const MessageChat: React.FC<MessageChatProps> = ({
                       <div className="flex-1 h-px bg-zinc-800"></div>
                     </div>
                   )}
-                  <div className={`group py-2 px-3 -mx-3 rounded-lg hover:bg-zinc-900/50 transition ${message.is_pinned ? 'bg-yellow-500/5 border-l-2 border-yellow-500' : ''}`}>
+                  <div className={`message-bubble ${isOwnMessage ? 'message-bubble-sent' : 'message-bubble-received'} group ${message.is_pinned ? 'ring-2 ring-yellow-500/30' : ''}`}>
                     <div className="flex items-start gap-3">
+                      {/* Avatar - Left aligned for all messages */}
                       <button
                         onClick={() => !isOwnMessage && setSelectedUserId(message.sender_id)}
-                        className={`w-9 h-9 rounded-full bg-gradient-to-br ${getAvatarColor(message.sender_name || 'U')} flex items-center justify-center flex-shrink-0 border-0 ${!isOwnMessage ? 'cursor-pointer hover:ring-2 hover:ring-red-500/50 transition-all' : 'cursor-default'}`}
+                        className={`rounded-full flex items-center justify-center flex-shrink-0 overflow-hidden ${!isOwnMessage ? 'cursor-pointer hover:opacity-80 transition-opacity' : 'cursor-default'}`}
                         disabled={isOwnMessage}
                         title={!isOwnMessage ? 'View contact details' : undefined}
+                        style={{
+                          width: 'var(--msg-avatar-size)',
+                          height: 'var(--msg-avatar-size)',
+                          backgroundColor: getAccessibleUserColor(message.sender_id, isDarkMode),
+                        }}
                       >
+                        {/* TODO: Replace with actual profile picture when available */}
                         <span className="text-white text-sm font-semibold">
                           {(message.sender_name || 'U').charAt(0).toUpperCase()}
                         </span>
                       </button>
+
                       <div className="flex-1 min-w-0">
-                        <div className="flex items-center gap-2 mb-0.5">
-                          <span className={`font-semibold text-sm ${isOwnMessage ? 'text-red-400' : 'text-white'}`}>
+                        {/* Sender name with color coding and role badge */}
+                        <div className="flex items-center gap-2 mb-0.5 flex-wrap">
+                          <span
+                            className="msg-sender-name"
+                            style={{
+                              color: getAccessibleUserColor(message.sender_id, isDarkMode),
+                              fontSize: 'var(--font-size-sender)',
+                              fontWeight: 'var(--font-weight-sender)',
+                            }}
+                          >
                             {message.sender_name || message.sender_id}
                           </span>
-                          <span className="text-[11px] text-zinc-600">
-                            {formatTime(message.created_at)}
-                          </span>
+
+                          {/* Role Badge */}
+                          <UserBadge role={getUserRole(message.sender_id)} size="sm" />
+
+                          {/* Smart Timestamp */}
+                          <SmartTimestamp time={message.created_at} />
+
+                          {/* Pinned indicator */}
                           {message.is_pinned && (
                             <span className="text-[10px] text-yellow-500 flex items-center gap-1">
                               <i className="fa-solid fa-thumbtack"></i>
                               Pinned
                             </span>
                           )}
+
+                          {/* Edited indicator */}
                           {message.edited_at && (
-                            <span className="text-[10px] text-zinc-600">(edited)</span>
+                            <span className="text-[10px] text-zinc-600 dark:text-zinc-500">(edited)</span>
                           )}
                         </div>
-                        <p className="text-sm text-zinc-300 break-words whitespace-pre-wrap">
+
+                        {/* Message content */}
+                        <p
+                          className="msg-content break-words whitespace-pre-wrap"
+                          style={{
+                            fontSize: 'var(--font-size-message)',
+                            fontWeight: 'var(--font-weight-message)',
+                            lineHeight: 'var(--line-height-message)',
+                            color: 'var(--text-primary)',
+                          }}
+                        >
                           {message.content}
                         </p>
 
@@ -290,8 +331,8 @@ export const MessageChat: React.FC<MessageChatProps> = ({
                                 onClick={() => handleReaction(message.id, emoji)}
                                 className={`px-2 py-0.5 rounded-full text-xs flex items-center gap-1 transition ${
                                   (users as string[]).includes(currentUserId)
-                                    ? 'bg-red-500/20 text-red-400 border border-red-500/30'
-                                    : 'bg-zinc-800 text-zinc-400 hover:bg-zinc-700'
+                                    ? 'bg-rose-500/20 text-rose-400 border border-rose-500/30'
+                                    : 'bg-zinc-800 dark:bg-zinc-700 text-zinc-400 hover:bg-zinc-700 dark:hover:bg-zinc-600'
                                 }`}
                               >
                                 <span>{emoji}</span>
@@ -321,7 +362,7 @@ export const MessageChat: React.FC<MessageChatProps> = ({
                         {isOwnMessage && (
                           <button
                             onClick={() => handleDeleteMessage(message.id)}
-                            className="w-7 h-7 rounded hover:bg-red-500/20 flex items-center justify-center text-zinc-500 hover:text-red-500 transition"
+                            className="w-7 h-7 rounded hover:bg-rose-500/20 flex items-center justify-center text-zinc-500 hover:text-rose-500 transition"
                             title="Delete message"
                           >
                             <i className="fa-solid fa-trash text-xs"></i>
@@ -339,59 +380,61 @@ export const MessageChat: React.FC<MessageChatProps> = ({
       </div>
 
       {/* Message Input */}
-      <div className="px-6 py-4 border-t border-zinc-800">
-        <div className="flex items-end gap-3">
-          <button
-            className="w-10 h-10 rounded-lg bg-zinc-800 hover:bg-zinc-700 flex items-center justify-center transition text-zinc-400 hover:text-white flex-shrink-0"
-            title="Attach file"
-          >
-            <i className="fa-solid fa-paperclip"></i>
-          </button>
+      <div className="message-input-glass-container">
+        <div className="message-input-field-wrapper">
+          <div className="input-actions-left flex gap-2">
+            <button
+              className="w-10 h-10 rounded-lg bg-zinc-100 dark:bg-zinc-800 hover:bg-zinc-200 dark:hover:bg-zinc-700 flex items-center justify-center transition text-zinc-600 dark:text-zinc-400 hover:text-rose-500 flex-shrink-0"
+              title="Attach file"
+            >
+              <i className="fa-solid fa-paperclip"></i>
+            </button>
 
-          <div className="flex-1 relative">
-            <textarea
-              ref={inputRef}
-              value={inputValue}
-              onChange={(e) => setInputValue(e.target.value)}
-              onKeyDown={(e) => {
-                if (e.key === 'Enter' && !e.shiftKey) {
-                  e.preventDefault();
-                  handleSendMessage();
-                }
-              }}
-              placeholder={`Message #${channel.name}`}
-              className="w-full px-4 py-3 bg-zinc-800 border border-zinc-700 rounded-xl text-white placeholder-zinc-500 focus:outline-none focus:border-red-500 resize-none text-sm transition"
-              rows={1}
-              style={{ minHeight: '44px', maxHeight: '120px' }}
-            />
+            <button
+              className="w-10 h-10 rounded-lg bg-zinc-100 dark:bg-zinc-800 hover:bg-zinc-200 dark:hover:bg-zinc-700 flex items-center justify-center transition text-zinc-600 dark:text-zinc-400 hover:text-rose-500 flex-shrink-0"
+              title="Add emoji"
+              onClick={() => setShowEmojiPicker(!showEmojiPicker)}
+            >
+              <i className="fa-regular fa-face-smile"></i>
+            </button>
           </div>
 
-          <button
-            className="w-10 h-10 rounded-lg bg-zinc-800 hover:bg-zinc-700 flex items-center justify-center transition text-zinc-400 hover:text-white flex-shrink-0"
-            title="Add emoji"
-            onClick={() => setShowEmojiPicker(!showEmojiPicker)}
-          >
-            <i className="fa-regular fa-face-smile"></i>
-          </button>
-
-          {/* Voice-to-Text Button */}
-          <VoiceTextButton
-            onTranscript={(text) => {
-              setInputValue(prev => prev + (prev && !prev.endsWith(' ') ? ' ' : '') + text);
-              inputRef.current?.focus();
+          <textarea
+            ref={inputRef}
+            value={inputValue}
+            onChange={(e) => setInputValue(e.target.value)}
+            onKeyDown={(e) => {
+              if (e.key === 'Enter' && !e.shiftKey) {
+                e.preventDefault();
+                handleSendMessage();
+              }
             }}
-            size="md"
-            className="flex-shrink-0"
+            placeholder={`Message #${channel.name}`}
+            className="message-input-llm"
+            rows={1}
+            style={{ minHeight: '44px', maxHeight: '120px' }}
           />
 
-          <button
-            onClick={handleSendMessage}
-            disabled={!inputValue.trim() || sending}
-            className="w-10 h-10 rounded-lg bg-red-500 hover:bg-red-600 disabled:bg-zinc-700 disabled:cursor-not-allowed flex items-center justify-center transition btn-pulse flex-shrink-0"
-            title="Send message"
-          >
-            <i className={`fa-solid ${sending ? 'fa-circle-notch fa-spin' : 'fa-paper-plane'} text-white`}></i>
-          </button>
+          <div className="input-actions-right flex gap-2">
+            {/* Voice-to-Text Button */}
+            <VoiceTextButton
+              onTranscript={(text) => {
+                setInputValue(prev => prev + (prev && !prev.endsWith(' ') ? ' ' : '') + text);
+                inputRef.current?.focus();
+              }}
+              size="md"
+              className="flex-shrink-0"
+            />
+
+            <button
+              onClick={handleSendMessage}
+              disabled={!inputValue.trim() || sending}
+              className="input-send-btn"
+              title="Send message"
+            >
+              <i className={`fa-solid ${sending ? 'fa-circle-notch fa-spin' : 'fa-paper-plane'}`}></i>
+            </button>
+          </div>
         </div>
         <div className="flex items-center justify-between mt-2 text-[11px] text-zinc-600">
           <span>Press <kbd className="px-1.5 py-0.5 bg-zinc-800 rounded text-zinc-400">Enter</kbd> to send, <kbd className="px-1.5 py-0.5 bg-zinc-800 rounded text-zinc-400">Shift+Enter</kbd> for new line</span>

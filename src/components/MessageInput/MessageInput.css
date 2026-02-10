@@ -323,6 +323,47 @@
 }
 
 /* ============================================
+   Tools Menu Button
+   ============================================ */
+.tools-menu-button {
+  display: flex;
+  align-items: center;
+  gap: 6px;
+  padding: 8px 14px;
+  background: linear-gradient(135deg, rgba(244, 63, 94, 0.1), rgba(236, 72, 153, 0.1));
+  border: 1px solid rgba(244, 63, 94, 0.2);
+  border-radius: 10px;
+  color: #f43f5e;
+  font-size: 13px;
+  font-weight: 600;
+  cursor: pointer;
+  transition: all 200ms ease;
+}
+
+.tools-menu-button:hover {
+  background: linear-gradient(135deg, rgba(244, 63, 94, 0.15), rgba(236, 72, 153, 0.15));
+  border-color: rgba(244, 63, 94, 0.3);
+  box-shadow: 0 2px 8px rgba(244, 63, 94, 0.2);
+  transform: translateY(-1px);
+}
+
+.tools-menu-button.active {
+  background: linear-gradient(135deg, #f43f5e, #ec4899);
+  border-color: #f43f5e;
+  color: white;
+  box-shadow: 0 4px 12px rgba(244, 63, 94, 0.3);
+}
+
+.tools-menu-button i {
+  font-size: 14px;
+}
+
+.tools-menu-label {
+  font-size: 12px;
+  letter-spacing: -0.01em;
+}
+
+/* ============================================
    Mobile Responsive
    ============================================ */
 @media (max-width: 639px) {
@@ -363,6 +404,14 @@
   .ai-toggle-icon {
     width: 20px;
     height: 20px;
+  }
+
+  .tools-menu-button {
+    padding: 8px;
+  }
+
+  .tools-menu-label {
+    display: none;
   }
 }
 
