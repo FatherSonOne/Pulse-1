@@ -5944,7 +5944,7 @@ const Messages: React.FC<MessagesProps> = ({ apiKey, contacts, initialContactId,
         </div>
 
         {/* Input Area - Fixed at bottom */}
-        <div className="p-4 bg-white dark:bg-zinc-950 z-20 border-t border-zinc-100 dark:border-zinc-900 relative flex-shrink-0 mobile-footer-safe">
+        <div className="message-input-fixed-container">
 
            {/* View-Only Mode Banner for Non-Pulse Users on PC */}
            {isViewOnlyMode && (

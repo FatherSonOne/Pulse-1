@@ -215,6 +215,7 @@
   overflow-y: auto;
   overflow-x: hidden;
   padding: 1rem 1.5rem;
+  padding-bottom: calc(180px + env(safe-area-inset-bottom, 0));
 }
 
 /* Custom scrollbar for messages area */
@@ -509,4 +510,61 @@ button:focus-visible {
 .messages-split-view.full-page {
   height: 100vh;
   max-height: 100vh;
+}
+
+/* ============================================
+   TASK 3: Fixed Input Architecture
+   ============================================ */
+
+/* Fixed input container at bottom */
+.message-input-fixed-container {
+  position: fixed;
+  bottom: 0;
+  left: 0;
+  right: 0;
+  z-index: 100;
+
+  padding: 1rem 1.5rem;
+  padding-bottom: max(1rem, env(safe-area-inset-bottom));
+
+  background: var(--bg-primary, #ffffff);
+  border-top: 1px solid var(--border-color, #e5e7eb);
+
+  display: flex;
+  flex-direction: column;
+  min-height: 120px;
+  max-height: 60vh;
+
+  transition: none;
+  transform: translateZ(0);
+}
+
+.dark .message-input-fixed-container {
+  background: var(--bg-primary-dark, #18181b);
+  border-top-color: var(--border-color-dark, #27272a);
+}
+
+/* Responsive: Desktop split-view - input only covers right panel */
+@media (min-width: 768px) {
+  .messages-split-view .message-input-fixed-container {
+    left: 30%; /* Match thread list width */
+  }
+}
+
+@media (min-width: 1441px) {
+  .messages-split-view .message-input-fixed-container {
+    left: 25%; /* Large desktop split */
+  }
+}
+
+/* Mobile adjustments */
+@media (max-width: 767px) {
+  .message-input-fixed-container {
+    padding: 0.75rem 1rem;
+    padding-bottom: max(0.75rem, env(safe-area-inset-bottom));
+  }
+
+  .messages-area {
+    padding-bottom: calc(160px + env(safe-area-inset-bottom, 0)) !important;
+  }
 }
