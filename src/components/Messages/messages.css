@@ -546,14 +546,14 @@ button:focus-visible {
 
 /* Responsive: Desktop split-view - input only covers right panel */
 @media (min-width: 768px) {
-  .messages-split-view .message-input-fixed-container {
-    left: 30%; /* Match thread list width */
+  .message-input-fixed-container {
+    left: 30%; /* Match thread list width (Messages component uses 30% sidebar) */
   }
 }
 
 @media (min-width: 1441px) {
-  .messages-split-view .message-input-fixed-container {
-    left: 25%; /* Large desktop split */
+  .message-input-fixed-container {
+    left: 25%; /* Large desktop split - Messages uses max-w-[400px] which ~= 25% on large screens */
   }
 }
 
