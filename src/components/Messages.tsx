@@ -2,6 +2,7 @@
 import React, { useState, useEffect, useRef, useCallback, useMemo } from 'react';
 import { AnimatePresence, motion } from 'framer-motion';
 import { v4 as uuidv4 } from 'uuid';
+import MessageInputPortal from './Messages/MessageInputPortal';
 import {
   generateSmartReply,
   chatWithBot,
@@ -1342,6 +1343,7 @@ const Messages: React.FC<MessagesProps> = ({ apiKey, contacts, initialContactId,
   const attachmentMenuRef = useRef<HTMLDivElement>(null);
   const searchInputRef = useRef<HTMLInputElement>(null);
   const draftTimeoutRef = useRef<number | null>(null);
+  const sidebarRef = useRef<HTMLDivElement>(null); // For measuring sidebar width for portal positioning
 
   useEffect(() => {
     if (initialContactId) {
@@ -3009,7 +3011,7 @@ const Messages: React.FC<MessagesProps> = ({ apiKey, contacts, initialContactId,
       </div>
 
       {/* Sidebar (Threads) - Desktop: 30% width, Mobile: Hidden (shown via drawer) */}
-      <div className={`w-full md:w-[30%] md:min-w-[280px] md:max-w-[400px] border-r border-zinc-200 dark:border-zinc-800 bg-zinc-50 dark:bg-zinc-900/50 flex-shrink-0 flex flex-col ${mobileView === 'chat' ? 'max-md:hidden' : ''}`}>
+      <div ref={sidebarRef} className={`w-full md:w-[30%] md:min-w-[280px] md:max-w-[400px] border-r border-zinc-200 dark:border-zinc-800 bg-zinc-50 dark:bg-zinc-900/50 flex-shrink-0 flex flex-col ${mobileView === 'chat' ? 'max-md:hidden' : ''}`}>
         <div className="p-5 flex justify-between items-center">
           <h2 className="font-bold text-lg text-zinc-900 dark:text-white tracking-tight">Pulse Messages</h2>
           <div className="flex items-center gap-2">
@@ -5942,10 +5944,286 @@ const Messages: React.FC<MessagesProps> = ({ apiKey, contacts, initialContactId,
             </div>
           )}
         </div>
+      </div>
+      )}
 
-        {/* Input Area - Fixed at bottom */}
-        <div className="message-input-fixed-container">
+      {/* Invite to Pulse Modal */}
+      <InviteToPulseModal
+        isOpen={showInviteToPulseModal}
+        onClose={() => { setShowInviteToPulseModal(false); setInviteToPulseSent(false); setInviteToPulseCopied(false); setInviteTargetContact(null); }}
+        targetContact={inviteTargetContact}
+        isSent={inviteToPulseSent}
+        isCopied={inviteToPulseCopied}
+        onSendEmail={() => {
+          if (inviteTargetContact?.email) {
+            const userName = localStorage.getItem('pulse_user_name') || 'Your friend';
+            const mailtoLink = generateEarlyAccessInvite(
+              inviteTargetContact.email,
+              userName,
+              inviteTargetContact.name.split(' ')[0]
+            );
+            window.open(mailtoLink, '_blank');
+            setInviteToPulseSent(true);
+          }
+        }}
+        onCopyLink={() => {
+          const userName = localStorage.getItem('pulse_user_name') || 'A friend';
+          const shareText = generateShareableInviteText(userName);
+          navigator.clipboard.writeText(shareText);
+          setInviteToPulseCopied(true);
+          setTimeout(() => setInviteToPulseCopied(false), 3000);
+        }}
+        onSendSMS={() => {
+          if (inviteTargetContact?.phone) {
+            const userName = localStorage.getItem('pulse_user_name') || 'A friend';
+            const shareText = generateShareableInviteText(userName);
+            window.open(`sms:${inviteTargetContact.phone}?body=${encodeURIComponent(shareText)}`, '_blank');
+          }
+        }}
+        onDone={() => { setShowInviteToPulseModal(false); setInviteToPulseSent(false); setInviteTargetContact(null); }}
+      />
 
+      {/* Contact Details Slide-Out Panel */}
+      {showContactPanel && selectedContactUserId && (
+        <>
+          {/* Backdrop */}
+          <div 
+            className="fixed inset-0 bg-black/40 backdrop-blur-sm z-40 transition-opacity duration-300"
+            onClick={() => {
+              setShowContactPanel(false);
+              setTimeout(() => setSelectedContactUserId(null), 300);
+            }}
+          />
+          {/* Slide-out panel */}
+          <div 
+            className="fixed top-0 right-0 bottom-0 w-full max-w-md bg-white dark:bg-zinc-900 shadow-2xl z-50 transform transition-transform duration-300 ease-out overflow-hidden"
+            style={{
+              animation: showContactPanel ? 'slideInRight 0.3s ease-out' : 'slideOutRight 0.3s ease-in'
+            }}
+          >
+            <UserContactCard
+              userId={selectedContactUserId}
+              onClose={() => {
+                setShowContactPanel(false);
+                setTimeout(() => setSelectedContactUserId(null), 300);
+              }}
+            />
+          </div>
+        </>
+      )}
+
+      {/* ===== ACHIEVEMENT TOASTS ===== */}
+      {showAchievements && messageEnhancements.newAchievements.map(achievement => (
+        <AchievementToast
+          key={achievement.id}
+          achievement={achievement}
+          onDismiss={() => messageEnhancements.dismissAchievement(achievement.id)}
+        />
+      ))}
+
+      {/* ===== MESSAGE ANALYTICS DASHBOARD MODAL ===== */}
+      {showAnalyticsDashboard && (
+        <div className="fixed inset-0 z-[80] bg-black/60 backdrop-blur-sm flex items-center justify-center animate-fade-in p-4">
+          <div className="bg-white dark:bg-zinc-900 w-full max-w-4xl max-h-[90vh] rounded-2xl shadow-2xl animate-scale-in border border-zinc-200 dark:border-zinc-800 overflow-hidden flex flex-col">
+            <div className="flex items-center justify-between p-4 border-b border-zinc-200 dark:border-zinc-800">
+              <h2 className="text-lg font-bold dark:text-white flex items-center gap-2">
+                <i className="fa-solid fa-chart-line text-indigo-500"></i>
+                Message Analytics Dashboard
+              </h2>
+              <button
+                onClick={() => setShowAnalyticsDashboard(false)}
+                className="w-8 h-8 flex items-center justify-center rounded-lg hover:bg-zinc-100 dark:hover:bg-zinc-800 text-zinc-500"
+              >
+                <i className="fa-solid fa-xmark"></i>
+              </button>
+            </div>
+            <div className="flex-1 overflow-y-auto p-4">
+              <MessageAnalyticsDashboard
+                threads={threads}
+                timeRange="week"
+              />
+            </div>
+          </div>
+        </div>
+      )}
+
+      {/* ===== NETWORK GRAPH MODAL ===== */}
+      {showNetworkGraph && (
+        <div className="fixed inset-0 z-[80] bg-black/60 backdrop-blur-sm flex items-center justify-center animate-fade-in p-4">
+          <div className="bg-white dark:bg-zinc-900 w-full max-w-3xl max-h-[80vh] rounded-2xl shadow-2xl animate-scale-in border border-zinc-200 dark:border-zinc-800 overflow-hidden flex flex-col">
+            <div className="flex items-center justify-between p-4 border-b border-zinc-200 dark:border-zinc-800">
+              <h2 className="text-lg font-bold dark:text-white flex items-center gap-2">
+                <i className="fa-solid fa-diagram-project text-purple-500"></i>
+                Connection Network
+              </h2>
+              <button
+                onClick={() => setShowNetworkGraph(false)}
+                className="w-8 h-8 flex items-center justify-center rounded-lg hover:bg-zinc-100 dark:hover:bg-zinc-800 text-zinc-500"
+              >
+                <i className="fa-solid fa-xmark"></i>
+              </button>
+            </div>
+            <div className="flex-1 overflow-y-auto p-4">
+              <NetworkGraph
+                threads={threads}
+                onNodeClick={(contactId) => {
+                  const thread = threads.find(t => t.contactId === contactId);
+                  if (thread) {
+                    setActiveThreadId(thread.id);
+                    setShowNetworkGraph(false);
+                    setMobileView('chat');
+                  }
+                }}
+              />
+            </div>
+          </div>
+        </div>
+      )}
+
+      {/* ===== CONTEXT PANEL SIDEBAR ===== */}
+      {showContextPanel && (activeThread || activePulseConv) && (
+        <div className="fixed top-0 right-0 bottom-0 w-full max-w-md bg-white dark:bg-zinc-900 shadow-2xl z-40 transform transition-transform duration-300 ease-out overflow-hidden border-l border-zinc-200 dark:border-zinc-800" style={{ animation: 'slideInRight 0.3s ease-out' }}>
+          <div className="h-full flex flex-col">
+            <div className="flex items-center justify-between p-4 border-b border-zinc-200 dark:border-zinc-800">
+              <h2 className="text-lg font-bold dark:text-white flex items-center gap-2">
+                <i className="fa-solid fa-layer-group text-purple-500"></i>
+                Context & Insights
+              </h2>
+              <button
+                onClick={() => setShowContextPanel(false)}
+                className="w-8 h-8 flex items-center justify-center rounded-lg hover:bg-zinc-100 dark:hover:bg-zinc-800 text-zinc-500"
+              >
+                <i className="fa-solid fa-xmark"></i>
+              </button>
+            </div>
+            <div className="flex-1 overflow-y-auto">
+              <ContextPanel
+                threadId={activeThread?.id || activePulseConv?.id || ''}
+                messages={activeThread?.messages || activePulseConv?.messages?.map(m => ({
+                  id: m.id,
+                  sender: m.sender_id === currentUser?.id ? 'me' : m.sender?.name || 'Unknown',
+                  text: m.content,
+                  timestamp: new Date(m.created_at),
+                  source: 'pulse' as const
+                })) || []}
+                apiKey={apiKey}
+                onDocClick={(doc) => {
+                  // Handle document click - could open in new tab or navigate
+                  if (doc.url) window.open(doc.url, '_blank');
+                }}
+                onDecisionClick={(decision) => {
+                  // Handle decision click - scroll to message or show details
+                  console.log('Decision clicked:', decision);
+                }}
+              />
+            </div>
+          </div>
+        </div>
+      )}
+
+      {/* ===== TASK EXTRACTOR PANEL ===== */}
+      {showTaskExtractor && (activeThread || activePulseConv) && (
+        <div className="fixed inset-0 z-[80] bg-black/60 backdrop-blur-sm flex items-center justify-center animate-fade-in p-4">
+          <div className="bg-white dark:bg-zinc-900 w-full max-w-3xl max-h-[85vh] rounded-2xl shadow-2xl animate-scale-in border border-zinc-200 dark:border-zinc-800 overflow-hidden flex flex-col">
+            <div className="flex items-center justify-between p-4 border-b border-zinc-200 dark:border-zinc-800">
+              <h2 className="text-lg font-bold dark:text-white flex items-center gap-2">
+                <i className="fa-solid fa-tasks text-emerald-500"></i>
+                Extract Tasks from Conversation
+              </h2>
+              <button
+                onClick={() => setShowTaskExtractor(false)}
+                className="w-8 h-8 flex items-center justify-center rounded-lg hover:bg-zinc-100 dark:hover:bg-zinc-800 text-zinc-500"
+              >
+                <i className="fa-solid fa-xmark"></i>
+              </button>
+            </div>
+            <div className="flex-1 overflow-y-auto">
+              <TaskExtractor
+                workspaceId={activeThread?.id || activePulseConv?.id || ''}
+                userId={currentUser?.id || ''}
+                messages={activeThread?.messages || activePulseConv?.messages?.map(m => ({
+                  id: m.id,
+                  sender: m.sender_id === currentUser?.id ? 'me' : m.sender?.name || 'Unknown',
+                  text: m.content,
+                  timestamp: new Date(m.created_at),
+                  source: 'pulse' as const
+                })) || []}
+                contacts={contacts}
+                apiKey={apiKey}
+                onTaskCreated={(task) => {
+                  console.log('Task created:', task);
+                  // Could show a toast or update UI
+                }}
+              />
+            </div>
+          </div>
+        </div>
+      )}
+
+      {/* ===== CHANNEL ARTIFACT PANEL ===== */}
+      {showChannelArtifactPanel && (activeThread || activePulseConv) && (
+        <div className="fixed inset-0 z-[80] bg-black/60 backdrop-blur-sm flex items-center justify-center animate-fade-in p-4">
+          <div className="bg-white dark:bg-zinc-900 w-full max-w-4xl max-h-[90vh] rounded-2xl shadow-2xl animate-scale-in border border-zinc-200 dark:border-zinc-800 overflow-hidden flex flex-col">
+            <div className="flex items-center justify-between p-4 border-b border-zinc-200 dark:border-zinc-800">
+              <h2 className="text-lg font-bold dark:text-white flex items-center gap-2">
+                <i className="fa-solid fa-file-export text-blue-500"></i>
+                Export as Living Document
+              </h2>
+              <button
+                onClick={() => setShowChannelArtifactPanel(false)}
+                className="w-8 h-8 flex items-center justify-center rounded-lg hover:bg-zinc-100 dark:hover:bg-zinc-800 text-zinc-500"
+              >
+                <i className="fa-solid fa-xmark"></i>
+              </button>
+            </div>
+            <div className="flex-1 overflow-y-auto">
+              <ChannelArtifactComponent
+                channelId={activeThread?.id || activePulseConv?.id || ''}
+                channelName={activeThread?.contactName || activePulseConv?.other_user?.name || 'Conversation'}
+                messages={activeThread?.messages || activePulseConv?.messages?.map(m => ({
+                  id: m.id,
+                  sender: m.sender_id === currentUser?.id ? 'me' : m.sender?.name || 'Unknown',
+                  text: m.content,
+                  timestamp: new Date(m.created_at),
+                  source: 'pulse' as const
+                })) || []}
+                apiKey={apiKey}
+                onExport={(artifact, format) => {
+                  console.log('Exported artifact:', artifact, 'format:', format);
+                  // Handle export - could download file or open in new tab
+                }}
+              />
+            </div>
+          </div>
+        </div>
+      )}
+
+      {/* ===== FEATURE SETTINGS PANEL (Phase 3) ===== */}
+      {showFeatureSettings && (
+        <FeatureSettingsPanel
+          isOpen={showFeatureSettings}
+          onClose={() => setShowFeatureSettings(false)}
+        />
+      )}
+
+      {/* ===== FOCUS MODE OVERLAY ===== */}
+      <FocusMode
+        isActive={isFocusModeActive}
+        threadId={activeThreadId || focusThreadId || 'main'}
+        threadName={activeThread?.contactName || activePulseConv?.other_user?.name || 'Conversation'}
+        userId={currentUser.id}
+        onClose={() => {
+          setIsFocusModeActive(false);
+          setFocusThreadId(null);
+        }}
+      />
+
+      {/* Message Input Portal - Fixed at viewport bottom */}
+      {(activeThread || activePulseConversation) && (
+        <MessageInputPortal
+          sidebarWidth={sidebarRef.current?.offsetWidth || 0}
+          isActive={true}
+        >
            {/* View-Only Mode Banner for Non-Pulse Users on PC */}
            {isViewOnlyMode && (
              <div className="mb-4 p-4 bg-amber-50 dark:bg-amber-900/20 border border-amber-200 dark:border-amber-800 rounded-xl">
@@ -6276,7 +6554,7 @@ const Messages: React.FC<MessagesProps> = ({ apiKey, contacts, initialContactId,
                            <div className="text-xs text-zinc-500">Upload an image</div>
                          </div>
                        </button>
-                       
+
                        <button
                          onClick={() => videoInputRef.current?.click()}
                          className="w-full px-4 py-3 text-left hover:bg-zinc-100 dark:hover:bg-zinc-800 rounded-lg transition flex items-center gap-3 group"
@@ -6289,7 +6567,7 @@ const Messages: React.FC<MessagesProps> = ({ apiKey, contacts, initialContactId,
                            <div className="text-xs text-zinc-500">Upload a video</div>
                          </div>
                        </button>
-                       
+
                        <button
                          onClick={() => fileInputRef.current?.click()}
                          className="w-full px-4 py-3 text-left hover:bg-zinc-100 dark:hover:bg-zinc-800 rounded-lg transition flex items-center gap-3 group"
@@ -6302,9 +6580,9 @@ const Messages: React.FC<MessagesProps> = ({ apiKey, contacts, initialContactId,
                            <div className="text-xs text-zinc-500">Upload a document</div>
                          </div>
                        </button>
-                       
+
                        <div className="border-t border-zinc-200 dark:border-zinc-800 my-1"></div>
-                       
+
                        <button
                          onClick={handleAddLink}
                          className="w-full px-4 py-3 text-left hover:bg-zinc-100 dark:hover:bg-zinc-800 rounded-lg transition flex items-center gap-3 group"
@@ -6323,26 +6601,26 @@ const Messages: React.FC<MessagesProps> = ({ apiKey, contacts, initialContactId,
                </div>
 
                {/* Hidden File Inputs */}
-               <input 
-                 type="file" 
-                 ref={fileInputRef} 
-                 className="hidden" 
-                 onChange={handleFileUpload} 
-                 accept=".pdf,.doc,.docx,.xls,.xlsx,.txt,.csv,.zip,.rar" 
+               <input
+                 type="file"
+                 ref={fileInputRef}
+                 className="hidden"
+                 onChange={handleFileUpload}
+                 accept=".pdf,.doc,.docx,.xls,.xlsx,.txt,.csv,.zip,.rar"
                />
-               <input 
-                 type="file" 
-                 ref={imageInputRef} 
-                 className="hidden" 
-                 onChange={handleImageUpload} 
-                 accept="image/*" 
+               <input
+                 type="file"
+                 ref={imageInputRef}
+                 className="hidden"
+                 onChange={handleImageUpload}
+                 accept="image/*"
                />
-               <input 
-                 type="file" 
-                 ref={videoInputRef} 
-                 className="hidden" 
-                 onChange={handleVideoUpload} 
-                 accept="video/*" 
+               <input
+                 type="file"
+                 ref={videoInputRef}
+                 className="hidden"
+                 onChange={handleVideoUpload}
+                 accept="video/*"
                />
              </div>
 
@@ -6492,280 +6770,8 @@ const Messages: React.FC<MessagesProps> = ({ apiKey, contacts, initialContactId,
                <button onClick={() => setShowScheduleModal(true)} className="text-blue-500 hover:underline">View</button>
              </div>
            )}
-        </div>
-      </div>
+        </MessageInputPortal>
       )}
-
-      {/* Invite to Pulse Modal */}
-      <InviteToPulseModal
-        isOpen={showInviteToPulseModal}
-        onClose={() => { setShowInviteToPulseModal(false); setInviteToPulseSent(false); setInviteToPulseCopied(false); setInviteTargetContact(null); }}
-        targetContact={inviteTargetContact}
-        isSent={inviteToPulseSent}
-        isCopied={inviteToPulseCopied}
-        onSendEmail={() => {
-          if (inviteTargetContact?.email) {
-            const userName = localStorage.getItem('pulse_user_name') || 'Your friend';
-            const mailtoLink = generateEarlyAccessInvite(
-              inviteTargetContact.email,
-              userName,
-              inviteTargetContact.name.split(' ')[0]
-            );
-            window.open(mailtoLink, '_blank');
-            setInviteToPulseSent(true);
-          }
-        }}
-        onCopyLink={() => {
-          const userName = localStorage.getItem('pulse_user_name') || 'A friend';
-          const shareText = generateShareableInviteText(userName);
-          navigator.clipboard.writeText(shareText);
-          setInviteToPulseCopied(true);
-          setTimeout(() => setInviteToPulseCopied(false), 3000);
-        }}
-        onSendSMS={() => {
-          if (inviteTargetContact?.phone) {
-            const userName = localStorage.getItem('pulse_user_name') || 'A friend';
-            const shareText = generateShareableInviteText(userName);
-            window.open(`sms:${inviteTargetContact.phone}?body=${encodeURIComponent(shareText)}`, '_blank');
-          }
-        }}
-        onDone={() => { setShowInviteToPulseModal(false); setInviteToPulseSent(false); setInviteTargetContact(null); }}
-      />
-
-      {/* Contact Details Slide-Out Panel */}
-      {showContactPanel && selectedContactUserId && (
-        <>
-          {/* Backdrop */}
-          <div 
-            className="fixed inset-0 bg-black/40 backdrop-blur-sm z-40 transition-opacity duration-300"
-            onClick={() => {
-              setShowContactPanel(false);
-              setTimeout(() => setSelectedContactUserId(null), 300);
-            }}
-          />
-          {/* Slide-out panel */}
-          <div 
-            className="fixed top-0 right-0 bottom-0 w-full max-w-md bg-white dark:bg-zinc-900 shadow-2xl z-50 transform transition-transform duration-300 ease-out overflow-hidden"
-            style={{
-              animation: showContactPanel ? 'slideInRight 0.3s ease-out' : 'slideOutRight 0.3s ease-in'
-            }}
-          >
-            <UserContactCard
-              userId={selectedContactUserId}
-              onClose={() => {
-                setShowContactPanel(false);
-                setTimeout(() => setSelectedContactUserId(null), 300);
-              }}
-            />
-          </div>
-        </>
-      )}
-
-      {/* ===== ACHIEVEMENT TOASTS ===== */}
-      {showAchievements && messageEnhancements.newAchievements.map(achievement => (
-        <AchievementToast
-          key={achievement.id}
-          achievement={achievement}
-          onDismiss={() => messageEnhancements.dismissAchievement(achievement.id)}
-        />
-      ))}
-
-      {/* ===== MESSAGE ANALYTICS DASHBOARD MODAL ===== */}
-      {showAnalyticsDashboard && (
-        <div className="fixed inset-0 z-[80] bg-black/60 backdrop-blur-sm flex items-center justify-center animate-fade-in p-4">
-          <div className="bg-white dark:bg-zinc-900 w-full max-w-4xl max-h-[90vh] rounded-2xl shadow-2xl animate-scale-in border border-zinc-200 dark:border-zinc-800 overflow-hidden flex flex-col">
-            <div className="flex items-center justify-between p-4 border-b border-zinc-200 dark:border-zinc-800">
-              <h2 className="text-lg font-bold dark:text-white flex items-center gap-2">
-                <i className="fa-solid fa-chart-line text-indigo-500"></i>
-                Message Analytics Dashboard
-              </h2>
-              <button
-                onClick={() => setShowAnalyticsDashboard(false)}
-                className="w-8 h-8 flex items-center justify-center rounded-lg hover:bg-zinc-100 dark:hover:bg-zinc-800 text-zinc-500"
-              >
-                <i className="fa-solid fa-xmark"></i>
-              </button>
-            </div>
-            <div className="flex-1 overflow-y-auto p-4">
-              <MessageAnalyticsDashboard
-                threads={threads}
-                timeRange="week"
-              />
-            </div>
-          </div>
-        </div>
-      )}
-
-      {/* ===== NETWORK GRAPH MODAL ===== */}
-      {showNetworkGraph && (
-        <div className="fixed inset-0 z-[80] bg-black/60 backdrop-blur-sm flex items-center justify-center animate-fade-in p-4">
-          <div className="bg-white dark:bg-zinc-900 w-full max-w-3xl max-h-[80vh] rounded-2xl shadow-2xl animate-scale-in border border-zinc-200 dark:border-zinc-800 overflow-hidden flex flex-col">
-            <div className="flex items-center justify-between p-4 border-b border-zinc-200 dark:border-zinc-800">
-              <h2 className="text-lg font-bold dark:text-white flex items-center gap-2">
-                <i className="fa-solid fa-diagram-project text-purple-500"></i>
-                Connection Network
-              </h2>
-              <button
-                onClick={() => setShowNetworkGraph(false)}
-                className="w-8 h-8 flex items-center justify-center rounded-lg hover:bg-zinc-100 dark:hover:bg-zinc-800 text-zinc-500"
-              >
-                <i className="fa-solid fa-xmark"></i>
-              </button>
-            </div>
-            <div className="flex-1 overflow-y-auto p-4">
-              <NetworkGraph
-                threads={threads}
-                onNodeClick={(contactId) => {
-                  const thread = threads.find(t => t.contactId === contactId);
-                  if (thread) {
-                    setActiveThreadId(thread.id);
-                    setShowNetworkGraph(false);
-                    setMobileView('chat');
-                  }
-                }}
-              />
-            </div>
-          </div>
-        </div>
-      )}
-
-      {/* ===== CONTEXT PANEL SIDEBAR ===== */}
-      {showContextPanel && (activeThread || activePulseConv) && (
-        <div className="fixed top-0 right-0 bottom-0 w-full max-w-md bg-white dark:bg-zinc-900 shadow-2xl z-40 transform transition-transform duration-300 ease-out overflow-hidden border-l border-zinc-200 dark:border-zinc-800" style={{ animation: 'slideInRight 0.3s ease-out' }}>
-          <div className="h-full flex flex-col">
-            <div className="flex items-center justify-between p-4 border-b border-zinc-200 dark:border-zinc-800">
-              <h2 className="text-lg font-bold dark:text-white flex items-center gap-2">
-                <i className="fa-solid fa-layer-group text-purple-500"></i>
-                Context & Insights
-              </h2>
-              <button
-                onClick={() => setShowContextPanel(false)}
-                className="w-8 h-8 flex items-center justify-center rounded-lg hover:bg-zinc-100 dark:hover:bg-zinc-800 text-zinc-500"
-              >
-                <i className="fa-solid fa-xmark"></i>
-              </button>
-            </div>
-            <div className="flex-1 overflow-y-auto">
-              <ContextPanel
-                threadId={activeThread?.id || activePulseConv?.id || ''}
-                messages={activeThread?.messages || activePulseConv?.messages?.map(m => ({
-                  id: m.id,
-                  sender: m.sender_id === currentUser?.id ? 'me' : m.sender?.name || 'Unknown',
-                  text: m.content,
-                  timestamp: new Date(m.created_at),
-                  source: 'pulse' as const
-                })) || []}
-                apiKey={apiKey}
-                onDocClick={(doc) => {
-                  // Handle document click - could open in new tab or navigate
-                  if (doc.url) window.open(doc.url, '_blank');
-                }}
-                onDecisionClick={(decision) => {
-                  // Handle decision click - scroll to message or show details
-                  console.log('Decision clicked:', decision);
-                }}
-              />
-            </div>
-          </div>
-        </div>
-      )}
-
-      {/* ===== TASK EXTRACTOR PANEL ===== */}
-      {showTaskExtractor && (activeThread || activePulseConv) && (
-        <div className="fixed inset-0 z-[80] bg-black/60 backdrop-blur-sm flex items-center justify-center animate-fade-in p-4">
-          <div className="bg-white dark:bg-zinc-900 w-full max-w-3xl max-h-[85vh] rounded-2xl shadow-2xl animate-scale-in border border-zinc-200 dark:border-zinc-800 overflow-hidden flex flex-col">
-            <div className="flex items-center justify-between p-4 border-b border-zinc-200 dark:border-zinc-800">
-              <h2 className="text-lg font-bold dark:text-white flex items-center gap-2">
-                <i className="fa-solid fa-tasks text-emerald-500"></i>
-                Extract Tasks from Conversation
-              </h2>
-              <button
-                onClick={() => setShowTaskExtractor(false)}
-                className="w-8 h-8 flex items-center justify-center rounded-lg hover:bg-zinc-100 dark:hover:bg-zinc-800 text-zinc-500"
-              >
-                <i className="fa-solid fa-xmark"></i>
-              </button>
-            </div>
-            <div className="flex-1 overflow-y-auto">
-              <TaskExtractor
-                workspaceId={activeThread?.id || activePulseConv?.id || ''}
-                userId={currentUser?.id || ''}
-                messages={activeThread?.messages || activePulseConv?.messages?.map(m => ({
-                  id: m.id,
-                  sender: m.sender_id === currentUser?.id ? 'me' : m.sender?.name || 'Unknown',
-                  text: m.content,
-                  timestamp: new Date(m.created_at),
-                  source: 'pulse' as const
-                })) || []}
-                contacts={contacts}
-                apiKey={apiKey}
-                onTaskCreated={(task) => {
-                  console.log('Task created:', task);
-                  // Could show a toast or update UI
-                }}
-              />
-            </div>
-          </div>
-        </div>
-      )}
-
-      {/* ===== CHANNEL ARTIFACT PANEL ===== */}
-      {showChannelArtifactPanel && (activeThread || activePulseConv) && (
-        <div className="fixed inset-0 z-[80] bg-black/60 backdrop-blur-sm flex items-center justify-center animate-fade-in p-4">
-          <div className="bg-white dark:bg-zinc-900 w-full max-w-4xl max-h-[90vh] rounded-2xl shadow-2xl animate-scale-in border border-zinc-200 dark:border-zinc-800 overflow-hidden flex flex-col">
-            <div className="flex items-center justify-between p-4 border-b border-zinc-200 dark:border-zinc-800">
-              <h2 className="text-lg font-bold dark:text-white flex items-center gap-2">
-                <i className="fa-solid fa-file-export text-blue-500"></i>
-                Export as Living Document
-              </h2>
-              <button
-                onClick={() => setShowChannelArtifactPanel(false)}
-                className="w-8 h-8 flex items-center justify-center rounded-lg hover:bg-zinc-100 dark:hover:bg-zinc-800 text-zinc-500"
-              >
-                <i className="fa-solid fa-xmark"></i>
-              </button>
-            </div>
-            <div className="flex-1 overflow-y-auto">
-              <ChannelArtifactComponent
-                channelId={activeThread?.id || activePulseConv?.id || ''}
-                channelName={activeThread?.contactName || activePulseConv?.other_user?.name || 'Conversation'}
-                messages={activeThread?.messages || activePulseConv?.messages?.map(m => ({
-                  id: m.id,
-                  sender: m.sender_id === currentUser?.id ? 'me' : m.sender?.name || 'Unknown',
-                  text: m.content,
-                  timestamp: new Date(m.created_at),
-                  source: 'pulse' as const
-                })) || []}
-                apiKey={apiKey}
-                onExport={(artifact, format) => {
-                  console.log('Exported artifact:', artifact, 'format:', format);
-                  // Handle export - could download file or open in new tab
-                }}
-              />
-            </div>
-          </div>
-        </div>
-      )}
-
-      {/* ===== FEATURE SETTINGS PANEL (Phase 3) ===== */}
-      {showFeatureSettings && (
-        <FeatureSettingsPanel
-          isOpen={showFeatureSettings}
-          onClose={() => setShowFeatureSettings(false)}
-        />
-      )}
-
-      {/* ===== FOCUS MODE OVERLAY ===== */}
-      <FocusMode
-        isActive={isFocusModeActive}
-        threadId={activeThreadId || focusThreadId || 'main'}
-        threadName={activeThread?.contactName || activePulseConv?.other_user?.name || 'Conversation'}
-        userId={currentUser.id}
-        onClose={() => {
-          setIsFocusModeActive(false);
-          setFocusThreadId(null);
-        }}
-      />
 
       <style>{`
         @keyframes slideInRight {

@@ -513,14 +513,13 @@ button:focus-visible {
 }
 
 /* ============================================
-   TASK 3: Fixed Input Architecture
+   TASK 3: Portal-Based Fixed Input Architecture
    ============================================ */
 
-/* Fixed input container at bottom */
-.message-input-fixed-container {
+/* Portal container - rendered at document.body level */
+.message-input-portal-container {
   position: fixed;
   bottom: 0;
-  left: 0;
   right: 0;
   z-index: 100;
 
@@ -535,36 +534,34 @@ button:focus-visible {
   min-height: 120px;
   max-height: 60vh;
 
-  transition: none;
+  /* Performance optimization */
   transform: translateZ(0);
+  will-change: transform;
+
+  /* Left is set via inline style based on sidebar width */
 }
 
-.dark .message-input-fixed-container {
+.dark .message-input-portal-container {
   background: var(--bg-primary-dark, #18181b);
   border-top-color: var(--border-color-dark, #27272a);
 }
 
-/* Responsive: Desktop split-view - input only covers right panel */
-@media (min-width: 768px) {
-  .message-input-fixed-container {
-    left: 30%; /* Match thread list width (Messages component uses 30% sidebar) */
-  }
-}
-
-@media (min-width: 1441px) {
-  .message-input-fixed-container {
-    left: 25%; /* Large desktop split - Messages uses max-w-[400px] which ~= 25% on large screens */
-  }
-}
-
-/* Mobile adjustments */
+/* Mobile: Full width */
 @media (max-width: 767px) {
-  .message-input-fixed-container {
+  .message-input-portal-container {
+    left: 0 !important; /* Override inline style on mobile */
     padding: 0.75rem 1rem;
     padding-bottom: max(0.75rem, env(safe-area-inset-bottom));
   }
+}
 
+/* Messages area needs bottom padding to prevent content from being hidden under fixed input */
+.messages-area {
+  padding-bottom: calc(180px + env(safe-area-inset-bottom, 0));
+}
+
+@media (max-width: 767px) {
   .messages-area {
-    padding-bottom: calc(160px + env(safe-area-inset-bottom, 0)) !important;
+    padding-bottom: calc(160px + env(safe-area-inset-bottom, 0));
   }
 }
