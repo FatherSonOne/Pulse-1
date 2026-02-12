@@ -748,7 +748,7 @@ const App: React.FC = () => {
       {/* Main Content */}
       <main className="flex-1 overflow-hidden relative transition-colors duration-500 w-full safe-area-bottom">
         <div className={`h-full w-full flex flex-col overflow-auto mobile-scroll ${view === AppView.MESSAGES ? '' : 'p-2 sm:p-3 md:p-4 lg:p-6'}`}>
-          <div className="w-full max-w-[1600px] mx-auto animate-fade-in">
+          <div className={`w-full ${view === AppView.MESSAGES ? '' : 'max-w-[1600px] mx-auto'} animate-fade-in`}>
             {renderContent()}
           </div>
         </div>
