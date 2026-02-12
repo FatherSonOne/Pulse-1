@@ -51,7 +51,7 @@ import { QuickActions } from './MessageEnhancements/QuickActions';
 import { ThreadActionsMenu, ThreadBadges } from './MessageEnhancements/ThreadActions';
 import { MessageImpactVisualization } from './MessageEnhancements/MessageImpactVisualization';
 import { TranslationWidget } from './MessageEnhancements/TranslationWidget';
-import { TypingIndicator } from './MessageEnhancements/ReadReceipts';
+// TypingIndicator moved to Phase 4 component (Messages/TypingIndicator.tsx)
 // Hover-triggered reactions - shows reaction bar on 300ms hover (desktop) or long-press (mobile)
 import { HoverReactionTrigger } from './MessageEnhancements/HoverReactionTrigger';
 import { useMessageEnhancements } from '../hooks/useMessageEnhancements';
@@ -99,8 +99,14 @@ import { ChannelArtifactComponent } from './artifacts';
 // REDESIGN COMPONENTS - Phase 1
 import { SmartTimestamp } from './Messages/SmartTimestamp';
 import { UserBadge, UserRole } from './Messages/UserBadge';
-import { getAccessibleUserColor } from '../utils/userColors';
 import { GestureHandler } from './Messages/GestureHandler';
+import { TypingIndicator } from './Messages/TypingIndicator';
+
+// REDESIGN COMPONENTS - Phase 3
+import { RadialMenu, useRadialMenu } from './Messages/RadialMenu';
+import { ContextMenu, useContextMenu } from './Messages/ContextMenu';
+import { FeatureSettingsPanel } from './Messages/FeatureSettingsPanel';
+import { useFeatures } from '../contexts/FeatureContext';
 
 // REDESIGN COMPONENTS - Phase 2 (Mobile)
 import { MobileDrawer, useSwipeFromEdge, MobileDrawerHeader } from './Messages/MobileDrawer';
@@ -334,9 +340,10 @@ interface MessagesProps {
     name: string;
     email: string;
   };
+  fullPage?: boolean;
 }
 
-const Messages: React.FC<MessagesProps> = ({ apiKey, contacts, initialContactId, onAddContact, currentUser: propCurrentUser }) => {
+const Messages: React.FC<MessagesProps> = ({ apiKey, contacts, initialContactId, onAddContact, currentUser: propCurrentUser, fullPage = false }) => {
   // Get user from auth context as fallback
   const { user: authUser } = useAuth();
 
@@ -706,6 +713,14 @@ const Messages: React.FC<MessagesProps> = ({ apiKey, contacts, initialContactId,
   const [pulseContextMenuPosition, setPulseContextMenuPosition] = useState<{ x: number; y: number } | null>(null);
   const longPressTimerRef = useRef<number | null>(null);
 
+  // Phase 3 Integration - RadialMenu, ContextMenu, FeatureSettings
+  const radialMenu = useRadialMenu();
+  const contextMenu = useContextMenu();
+  const features = useFeatures();
+  const [radialMenuMessageId, setRadialMenuMessageId] = useState<string | null>(null);
+  const [contextMenuMessageId, setContextMenuMessageId] = useState<string | null>(null);
+  const [showFeatureSettings, setShowFeatureSettings] = useState(false);
+
   // Contact details panel state
   const [selectedContactUserId, setSelectedContactUserId] = useState<string | null>(null);
   const [showContactPanel, setShowContactPanel] = useState(false);
@@ -782,6 +797,7 @@ const Messages: React.FC<MessagesProps> = ({ apiKey, contacts, initialContactId,
   const [showQuickActionsBar, setShowQuickActionsBar] = useState(true);
   const [showAchievements, setShowAchievements] = useState(true);
   const [showToolsDrawer, setShowToolsDrawer] = useState(false);
+  const [advancedMode, setAdvancedMode] = useState(false); // Phase 1: Simple/Advanced toggle
 
   // Load Pulse conversations, suggestions, and recent contacts on mount
   useEffect(() => {
@@ -1087,6 +1103,84 @@ const Messages: React.FC<MessagesProps> = ({ apiKey, contacts, initialContactId,
     });
   }, []);
 
+  // Create RadialMenu items for reactions
+  const createReactionItems = useCallback((messageId: string) => {
+    return [
+      {
+        id: 'thumbsup',
+        emoji: '👍',
+        label: 'Like',
+        onClick: () => {
+          handlePulseReaction(messageId, '👍');
+          radialMenu.close();
+        }
+      },
+      {
+        id: 'heart',
+        emoji: '❤️',
+        label: 'Love',
+        onClick: () => {
+          handlePulseReaction(messageId, '❤️');
+          radialMenu.close();
+        }
+      },
+      {
+        id: 'laugh',
+        emoji: '😂',
+        label: 'Laugh',
+        onClick: () => {
+          handlePulseReaction(messageId, '😂');
+          radialMenu.close();
+        }
+      },
+      {
+        id: 'wow',
+        emoji: '😮',
+        label: 'Wow',
+        onClick: () => {
+          handlePulseReaction(messageId, '😮');
+          radialMenu.close();
+        }
+      },
+      {
+        id: 'sad',
+        emoji: '😢',
+        label: 'Sad',
+        onClick: () => {
+          handlePulseReaction(messageId, '😢');
+          radialMenu.close();
+        }
+      },
+      {
+        id: 'fire',
+        emoji: '🔥',
+        label: 'Fire',
+        onClick: () => {
+          handlePulseReaction(messageId, '🔥');
+          radialMenu.close();
+        }
+      },
+      {
+        id: 'rocket',
+        emoji: '🚀',
+        label: 'Rocket',
+        onClick: () => {
+          handlePulseReaction(messageId, '🚀');
+          radialMenu.close();
+        }
+      },
+      {
+        id: 'clap',
+        emoji: '👏',
+        label: 'Clap',
+        onClick: () => {
+          handlePulseReaction(messageId, '👏');
+          radialMenu.close();
+        }
+      }
+    ];
+  }, [handlePulseReaction, radialMenu]);
+
   // Toggle starred Pulse messages
   const toggleStarPulseMessage = useCallback((messageId: string) => {
     setStarredPulseMessages(prev => {
@@ -1166,25 +1260,22 @@ const Messages: React.FC<MessagesProps> = ({ apiKey, contacts, initialContactId,
   // Handle right-click on Pulse message
   const handlePulseMessageContextMenu = useCallback((e: React.MouseEvent, msgId: string) => {
     e.preventDefault();
-    const element = e.currentTarget as HTMLElement;
-    openPulseContextMenu(msgId, e.clientX, e.clientY, element);
-  }, [openPulseContextMenu]);
+    e.stopPropagation();
+    // Use new ContextMenu component - hook only takes (x, y)
+    contextMenu.open(e.clientX, e.clientY);
+    setContextMenuMessageId(msgId);
+  }, [contextMenu]);
 
   // Handle opening context menu from a button click (e.g., "..." button)
   const handleOpenContextMenuFromButton = useCallback((e: React.MouseEvent, msgId: string) => {
     e.preventDefault();
     e.stopPropagation();
-    // Find the closest message bubble element
+    // Use new ContextMenu component - hook only takes (x, y)
     const button = e.currentTarget as HTMLElement;
-    const messageBubble = button.closest('.message-hover-container') as HTMLElement;
-    if (messageBubble) {
-      openPulseContextMenu(msgId, 0, 0, messageBubble);
-    } else {
-      // Fallback to button position
-      const rect = button.getBoundingClientRect();
-      openPulseContextMenu(msgId, rect.right, rect.top);
-    }
-  }, [openPulseContextMenu]);
+    const rect = button.getBoundingClientRect();
+    contextMenu.open(rect.left, rect.bottom + 4);
+    setContextMenuMessageId(msgId);
+  }, [contextMenu]);
 
   // Handle long-press start on Pulse message (for mobile)
   const handlePulseLongPressStart = useCallback((e: React.TouchEvent, msgId: string) => {
@@ -2482,7 +2573,7 @@ const Messages: React.FC<MessagesProps> = ({ apiKey, contacts, initialContactId,
   };
 
   return (
-    <div className="h-full flex bg-white dark:bg-zinc-950 rounded-2xl overflow-hidden border border-zinc-200 dark:border-zinc-800 relative animate-fade-in shadow-xl">
+    <div className={`h-full flex bg-white dark:bg-zinc-950 ${fullPage ? '' : 'rounded-2xl border border-zinc-200 dark:border-zinc-800 shadow-xl'} overflow-hidden relative animate-fade-in`}>
       
       {/* New Chat Modal */}
       {showNewChatModal && (
@@ -3087,9 +3178,17 @@ const Messages: React.FC<MessagesProps> = ({ apiKey, contacts, initialContactId,
                     </button>
                     <div onClick={() => handleSelectConversation(conv.id)} className="flex-1 overflow-hidden min-w-0">
                       <div className="flex justify-between items-baseline mb-0.5">
-                        <h3 className={`text-sm truncate ${hasUnread ? 'font-bold dark:text-white' : 'font-medium text-zinc-700 dark:text-zinc-300'}`}>
-                          {otherUser.display_name || otherUser.full_name || otherUser.handle || 'Unknown'}
-                        </h3>
+                        <div className="flex items-center gap-1.5 flex-1 min-w-0">
+                          <h3
+                            className={`text-sm truncate ${hasUnread ? 'font-bold' : 'font-medium'} text-zinc-900 dark:text-zinc-100`}
+                          >
+                            {otherUser.display_name || otherUser.full_name || otherUser.handle || 'Unknown'}
+                          </h3>
+                          {/* Phase 4.2: Role badge in conversation list */}
+                          {otherUser.is_verified && (
+                            <UserBadge role="member" size="xs" showIcon={true} showLabel={false} />
+                          )}
+                        </div>
                         {conv.last_message_at && (
                           <span className="text-[10px] text-zinc-400 whitespace-nowrap ml-2">
                             {new Date(conv.last_message_at).toLocaleTimeString([], { hour: '2-digit', minute: '2-digit' })}
@@ -3194,10 +3293,15 @@ const Messages: React.FC<MessagesProps> = ({ apiKey, contacts, initialContactId,
                 )}
               </button>
               <div className="flex flex-col">
-                <span className="font-bold text-zinc-900 dark:text-white leading-tight flex items-center gap-2">
+                <span
+                  className="font-bold leading-tight flex items-center gap-2 text-zinc-900 dark:text-zinc-100"
+                >
                   {activePulseConv.other_user?.display_name || activePulseConv.other_user?.full_name || 'Unknown'}
                   {activePulseConv.other_user?.is_verified && (
-                    <i className="fa-solid fa-circle-check text-blue-500 text-xs"></i>
+                    <>
+                      <i className="fa-solid fa-circle-check text-blue-500 text-xs"></i>
+                      <UserBadge role="member" size="sm" showIcon={false} showLabel={true} />
+                    </>
                   )}
                 </span>
                 <div className="flex items-center gap-2">
@@ -3229,6 +3333,19 @@ const Messages: React.FC<MessagesProps> = ({ apiKey, contacts, initialContactId,
                   </button>
                 )}
               </div>
+            </div>
+
+            {/* Header Action Buttons */}
+            <div className="flex items-center gap-2">
+              {/* Feature Settings Button */}
+              <button
+                onClick={() => setShowFeatureSettings(true)}
+                className="w-12 h-12 flex items-center justify-center rounded-lg hover:bg-zinc-100 dark:hover:bg-zinc-800 transition-colors"
+                title="Feature Settings"
+                aria-label="Open feature settings"
+              >
+                <i className="fa fa-sliders-h text-zinc-600 dark:text-zinc-400"></i>
+              </button>
             </div>
 
           </div>
@@ -3568,13 +3685,7 @@ const Messages: React.FC<MessagesProps> = ({ apiKey, contacts, initialContactId,
                     <div className={`flex ${isMe ? 'justify-end' : 'justify-start'} group relative mb-4`}>
                       {!isMe && showAvatar && (
                         <div
-                          className="w-8 h-8 rounded-full flex items-center justify-center text-xs text-white mr-2 mt-auto flex-shrink-0"
-                          style={{
-                            backgroundColor: getAccessibleUserColor(
-                              activePulseConv.other_user?.id || 'unknown',
-                              document.documentElement.classList.contains('dark')
-                            )
-                          }}
+                          className="w-8 h-8 rounded-full flex items-center justify-center text-xs text-white mr-2 mt-auto flex-shrink-0 bg-gradient-to-br from-rose-500 to-pink-600"
                         >
                           {activePulseConv.other_user?.avatar_url ? (
                             <img src={activePulseConv.other_user.avatar_url} alt="" className="w-full h-full rounded-full object-cover" />
@@ -3831,6 +3942,17 @@ const Messages: React.FC<MessagesProps> = ({ apiKey, contacts, initialContactId,
                 );
               })
             )}
+
+            {/* Phase 4.4: Typing Indicator */}
+            {activePulseConv?.other_user?.isTyping && (
+              <div className="flex justify-start mb-4 px-4">
+                <TypingIndicator
+                  userName={activePulseConv.other_user.display_name || activePulseConv.other_user.handle || 'User'}
+                  size="sm"
+                />
+              </div>
+            )}
+
             <div ref={messagesEndRef} />
           </div>
 
@@ -4055,15 +4177,35 @@ const Messages: React.FC<MessagesProps> = ({ apiKey, contacts, initialContactId,
                 </button>
               </div>
             )}
-            <div className="flex items-center gap-3">
-              {/* Tools Button */}
+
+            {/* Phase 1: Simple/Advanced Mode Toggle */}
+            <div className="flex items-center justify-between mb-2 px-1">
               <button
-                onClick={() => setShowToolsDrawer(true)}
-                className="w-12 h-12 rounded-xl flex items-center justify-center bg-zinc-100 dark:bg-zinc-800 text-zinc-600 dark:text-zinc-300 hover:bg-emerald-100 dark:hover:bg-emerald-900/30 hover:text-emerald-600 dark:hover:text-emerald-400 transition flex-shrink-0"
-                title="Open Tools Menu"
+                onClick={() => setAdvancedMode(!advancedMode)}
+                className="text-xs font-medium text-zinc-500 dark:text-zinc-400 hover:text-rose-500 dark:hover:text-rose-400 transition flex items-center gap-1.5 px-2 py-1 rounded hover:bg-zinc-100 dark:hover:bg-zinc-800/50"
+                title={advancedMode ? 'Switch to simple mode' : 'Switch to advanced mode'}
               >
-                <i className="fa-solid fa-toolbox text-sm"></i>
+                <i className={`fa-solid ${advancedMode ? 'fa-sliders' : 'fa-wand-magic-sparkles'} text-[10px]`}></i>
+                <span>{advancedMode ? 'Simple Mode' : 'Advanced Mode'}</span>
               </button>
+              {advancedMode && (
+                <span className="text-[10px] text-zinc-500 dark:text-zinc-600">
+                  Enhanced features enabled
+                </span>
+              )}
+            </div>
+
+            <div className="flex items-center gap-3">
+              {/* Tools Button - Only in Advanced Mode */}
+              {advancedMode && (
+                <button
+                  onClick={() => setShowToolsDrawer(true)}
+                  className="w-12 h-12 rounded-xl flex items-center justify-center bg-zinc-100 dark:bg-zinc-800 text-zinc-600 dark:text-zinc-300 hover:bg-emerald-100 dark:hover:bg-emerald-900/30 hover:text-emerald-600 dark:hover:text-emerald-400 transition flex-shrink-0"
+                  title="Open Tools Menu"
+                >
+                  <i className="fa-solid fa-toolbox text-sm"></i>
+                </button>
+              )}
 
               <input
                 type="text"
@@ -4094,6 +4236,92 @@ const Messages: React.FC<MessagesProps> = ({ apiKey, contacts, initialContactId,
               </button>
             </div>
           </div>
+
+          {/* Phase 3: RadialMenu for Reactions */}
+          {radialMenuMessageId && radialMenu.isOpen && (
+            <RadialMenu
+              items={createReactionItems(radialMenuMessageId)}
+              isOpen={radialMenu.isOpen}
+              centerX={radialMenu.position.x}
+              centerY={radialMenu.position.y}
+              onClose={() => {
+                radialMenu.close();
+                setRadialMenuMessageId(null);
+              }}
+            />
+          )}
+
+          {/* Phase 3: New ContextMenu (will replace old one) */}
+          {contextMenuMessageId && contextMenu.isOpen && (
+            <ContextMenu
+              isOpen={contextMenu.isOpen}
+              x={contextMenu.position.x}
+              y={contextMenu.position.y}
+              items={[
+                {
+                  label: 'Reply',
+                  icon: '💬',
+                  onClick: () => {
+                    const msg = pulseMessages.find(m => m.id === contextMenuMessageId);
+                    if (msg) {
+                      setReplyingToPulseMessage(msg);
+                    }
+                    contextMenu.close();
+                    setContextMenuMessageId(null);
+                  }
+                },
+                {
+                  label: 'React',
+                  icon: '😊',
+                  onClick: () => {
+                    // Open radial menu at context menu position
+                    radialMenu.open(contextMenu.position.x, contextMenu.position.y);
+                    setRadialMenuMessageId(contextMenuMessageId);
+                    contextMenu.close();
+                    setContextMenuMessageId(null);
+                  }
+                },
+                {
+                  label: 'Star',
+                  icon: '⭐',
+                  onClick: () => {
+                    toggleStarPulseMessage(contextMenuMessageId);
+                    contextMenu.close();
+                    setContextMenuMessageId(null);
+                  }
+                },
+                {
+                  label: 'Copy Text',
+                  icon: '📋',
+                  onClick: () => {
+                    const msg = pulseMessages.find(m => m.id === contextMenuMessageId);
+                    if (msg) {
+                      navigator.clipboard.writeText(msg.content);
+                    }
+                    contextMenu.close();
+                    setContextMenuMessageId(null);
+                  }
+                },
+                'divider',
+                {
+                  label: 'Delete',
+                  icon: '🗑️',
+                  onClick: () => {
+                    if (confirm('Delete this message?')) {
+                      setPulseMessages(prev => prev.filter(m => m.id !== contextMenuMessageId));
+                    }
+                    contextMenu.close();
+                    setContextMenuMessageId(null);
+                  },
+                  destructive: true
+                }
+              ]}
+              onClose={() => {
+                contextMenu.close();
+                setContextMenuMessageId(null);
+              }}
+            />
+          )}
         </div>
       )}
 
@@ -6517,6 +6745,14 @@ const Messages: React.FC<MessagesProps> = ({ apiKey, contacts, initialContactId,
             </div>
           </div>
         </div>
+      )}
+
+      {/* ===== FEATURE SETTINGS PANEL (Phase 3) ===== */}
+      {showFeatureSettings && (
+        <FeatureSettingsPanel
+          isOpen={showFeatureSettings}
+          onClose={() => setShowFeatureSettings(false)}
+        />
       )}
 
       {/* ===== FOCUS MODE OVERLAY ===== */}

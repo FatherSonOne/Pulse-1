@@ -1,5 +1,6 @@
 import React, { useRef, useEffect } from 'react';
 import { motion, AnimatePresence } from 'framer-motion';
+import EnhancedLoadingScreen from '../EnhancedLoadingScreen';
 import { MessageChannel, ChannelMessage } from '../../types/messages';
 
 interface ConversationPanelProps {
@@ -210,12 +211,11 @@ const ConversationPanel: React.FC<ConversationPanelProps> = ({
             className="messages-area flex-1 overflow-y-auto px-6 py-4"
           >
             {isLoading ? (
-              <div className="flex items-center justify-center h-full">
-                <div className="text-center">
-                  <i className="fa-solid fa-circle-notch fa-spin text-3xl text-zinc-400 mb-2"></i>
-                  <p className="text-sm text-zinc-500 dark:text-zinc-400">Loading messages...</p>
-                </div>
-              </div>
+              <EnhancedLoadingScreen
+                currentStage="loading-messages"
+                currentStageLabel="Loading messages..."
+                progress={50}
+              />
             ) : messages.length === 0 ? (
               <div className="flex items-center justify-center h-full">
                 <div className="text-center">

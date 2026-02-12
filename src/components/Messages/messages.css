@@ -2,7 +2,51 @@
  * Messages Split-View Layout
  * 30% thread list | 70% conversation panel
  * Mobile-first responsive design with breakpoint at 768px
+ * Phase 1 Update: Typography system applied (2026-02-10)
  */
+
+/* === TYPOGRAPHY SYSTEM - Applied Globally === */
+.message-text,
+.msg-content {
+  font-family: var(--font-primary);
+  font-size: var(--font-size-message);
+  font-weight: var(--font-weight-message);
+  line-height: var(--line-height-message);
+}
+
+.message-sender,
+.msg-sender-name {
+  font-size: var(--font-size-sender);
+  font-weight: var(--font-weight-sender);
+  font-family: var(--font-primary);
+}
+
+.message-timestamp,
+.msg-timestamp {
+  font-family: var(--font-mono);
+  font-size: var(--font-size-timestamp);
+  font-weight: var(--font-weight-timestamp);
+}
+
+.channel-name {
+  font-family: var(--font-primary);
+  font-size: var(--font-size-channel);
+  font-weight: var(--font-weight-channel);
+}
+
+.message-input,
+.message-input-llm {
+  font-family: var(--font-primary);
+  font-size: var(--font-size-input);
+  font-weight: var(--font-weight-input);
+}
+
+@media (max-width: 768px) {
+  .message-text,
+  .msg-content {
+    font-size: var(--font-size-message-mobile);
+  }
+}
 
 /* =========================
    Split-View Container
@@ -456,4 +500,13 @@ button:focus-visible {
   height: 100%;
   min-height: 100%;
   max-height: 100%;
+}
+
+/* =========================
+   Full-Page Mode
+   ========================= */
+
+.messages-split-view.full-page {
+  height: 100vh;
+  max-height: 100vh;
 }

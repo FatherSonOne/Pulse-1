@@ -8,6 +8,7 @@
 
 import React, { useState, useEffect } from 'react';
 import { AnimatePresence } from 'framer-motion';
+import EnhancedLoadingScreen from '../EnhancedLoadingScreen';
 import ThreadListPanel from './ThreadListPanel';
 import ConversationPanel from './ConversationPanel';
 import { MessageChannel, ChannelMessage } from '../../types/messages';
@@ -25,6 +26,7 @@ interface MessagesSplitViewProps {
   renderMessageInput?: () => React.ReactNode;
   renderMessageBubble?: (message: ChannelMessage) => React.ReactNode;
   className?: string;
+  fullPage?: boolean;
 }
 
 const MessagesSplitView: React.FC<MessagesSplitViewProps> = ({
@@ -37,7 +39,8 @@ const MessagesSplitView: React.FC<MessagesSplitViewProps> = ({
   isLoading = false,
   renderMessageInput,
   renderMessageBubble,
-  className = ''
+  className = '',
+  fullPage = false
 }) => {
   const {
     activeChannelId,
@@ -84,7 +87,7 @@ const MessagesSplitView: React.FC<MessagesSplitViewProps> = ({
     : '';
 
   return (
-    <div className={`messages-split-view full-height ${mobileViewClass} ${className}`}>
+    <div className={`messages-split-view full-height ${fullPage ? 'full-page' : ''} ${mobileViewClass} ${className}`}>
       {/* Thread List Panel (30%) */}
       <ThreadListPanel
         channels={channels}

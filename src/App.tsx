@@ -57,6 +57,7 @@ import { Sidebar } from './components/Sidebar';
 import { useAuth } from './hooks/useAuth';
 import { InstallPrompt } from './components/PWA/InstallPrompt';
 import { OnlineStatus } from './components/PWA/OnlineStatus';
+import { FeatureProvider } from './contexts/FeatureContext';
 
 // Loading fallback component for lazy-loaded routes
 const PageLoader = () => (
@@ -571,7 +572,7 @@ const App: React.FC = () => {
             case AppView.VOXER:
               return <Voxer apiKey={apiKey} contacts={contacts} initialContactId={selectedContactId} isDarkMode={isDarkMode} />;
             case AppView.MESSAGES:
-              return <Messages apiKey={apiKey} contacts={contacts} initialContactId={selectedContactId} onAddContact={handleAddContact} />;
+              return <Messages apiKey={apiKey} contacts={contacts} initialContactId={selectedContactId} onAddContact={handleAddContact} fullPage={true} />;
             case AppView.SMS:
               return <SMS contacts={contacts} />;
             case AppView.MEETINGS:
@@ -662,8 +663,9 @@ const App: React.FC = () => {
   }
 
   return (
-    <MessageContainer userId={user?.id || 'anonymous'}>
-      <div className="h-screen w-screen bg-zinc-50 dark:bg-black text-zinc-900 dark:text-zinc-100 flex flex-col md:flex-row overflow-hidden font-sans transition-colors duration-500">
+    <FeatureProvider defaultMode="simple">
+      <MessageContainer userId={user?.id || 'anonymous'}>
+        <div className="h-screen w-screen bg-zinc-50 dark:bg-black text-zinc-900 dark:text-zinc-100 flex flex-col md:flex-row overflow-hidden font-sans transition-colors duration-500">
 
         {/* Mobile Header - Larger touch targets and better spacing */}
         <div className="md:hidden h-14 sm:h-16 bg-white dark:bg-zinc-950 border-b border-zinc-200 dark:border-zinc-800 flex items-center justify-between px-3 sm:px-4 z-30 shrink-0 safe-area-top">
@@ -745,7 +747,7 @@ const App: React.FC = () => {
 
       {/* Main Content */}
       <main className="flex-1 overflow-hidden relative transition-colors duration-500 w-full safe-area-bottom">
-        <div className="h-full w-full flex flex-col overflow-auto mobile-scroll p-2 sm:p-3 md:p-4 lg:p-6">
+        <div className={`h-full w-full flex flex-col overflow-auto mobile-scroll ${view === AppView.MESSAGES ? '' : 'p-2 sm:p-3 md:p-4 lg:p-6'}`}>
           <div className="w-full max-w-[1600px] mx-auto animate-fade-in">
             {renderContent()}
           </div>
@@ -775,8 +777,9 @@ const App: React.FC = () => {
       {/* PWA Components */}
       <InstallPrompt />
       <OnlineStatus />
-      </div>
-    </MessageContainer>
+        </div>
+      </MessageContainer>
+    </FeatureProvider>
   );
 };
 
