@@ -6,7 +6,6 @@
 .inline-tools-menu {
   position: absolute;
   bottom: calc(100% + 8px);
-  left: 0;
   right: 0;
   width: 100%;
   max-width: 500px;

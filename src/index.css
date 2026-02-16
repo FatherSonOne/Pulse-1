@@ -94,8 +94,8 @@
   --msg-padding: 12px 16px;
   --msg-border-radius: 12px;
   --msg-gap: 8px;
-  --msg-avatar-size: 40px;
-  --msg-avatar-size-mobile: 36px;
+  --msg-avatar-size: 48px;
+  --msg-avatar-size-mobile: 48px;
 
   /* Touch Targets */
   --touch-target-min: 48px;
@@ -104,7 +104,7 @@
   /* Input */
   --input-padding: 12px 16px;
   --input-border-radius: 16px;
-  --input-min-height: 44px;
+  --input-min-height: 48px;
 
   /* === ANIMATIONS === */
   --anim-fast: 150ms;
@@ -176,21 +176,8 @@ input[type="date"]::-webkit-calendar-picker-indicator {
   filter: invert(1);
 }
 
-/* Global Pulse Animation for Interactive Elements */
-@keyframes pulse-action {
-  0%, 100% { transform: scale(1); filter: brightness(100%); }
-  50% { transform: scale(1.02); filter: brightness(105%); }
-}
-
-/* Apply to buttons, links, and any element styled as a pointer (interactive) */
-button:not(:disabled):hover,
-a:not(:disabled):hover,
-.cursor-pointer:hover,
-[role="button"]:not(:disabled):hover {
-  animation: pulse-action 2s cubic-bezier(0.4, 0, 0.6, 1) infinite;
-  position: relative;
-  z-index: 20;
-}
+/* REMOVED - Heavy pulse animation disabled per Phase 1 redesign (2026-02-10)
+   Subtle hover effects preserved through transitions only */
 
 /* Custom scrollbar */
 ::-webkit-scrollbar {
@@ -399,80 +386,15 @@ code {
   to { transform: scale(1.05); }
 }
 
-@keyframes pulse {
-  0%, 100% { opacity: 1; }
-  50% { opacity: 0.5; }
-}
-
-@keyframes pulse-aggressive {
-  0%, 100% { 
-    opacity: 1; 
-    transform: scale(1);
-    box-shadow: 0 0 0 0 rgba(245, 101, 101, 0.7);
-  }
-  25% { 
-    opacity: 0.9; 
-    transform: scale(1.05);
-    box-shadow: 0 0 0 4px rgba(245, 101, 101, 0.4);
-  }
-  50% { 
-    opacity: 1; 
-    transform: scale(1);
-    box-shadow: 0 0 0 8px rgba(245, 101, 101, 0);
-  }
-  75% { 
-    opacity: 0.9; 
-    transform: scale(1.05);
-    box-shadow: 0 0 0 4px rgba(245, 101, 101, 0.4);
-  }
-}
-
-@keyframes pulse-slow {
-  0%, 100% { 
-    opacity: 1; 
-    transform: scale(1);
-  }
-  50% { 
-    opacity: 0.85; 
-    transform: scale(1.02);
-  }
-}
-
-.animate-pulse-aggressive {
-  animation: pulse-aggressive 1s cubic-bezier(0.4, 0, 0.6, 1) infinite;
-}
-
-.animate-pulse-slow {
-  animation: pulse-slow 3s cubic-bezier(0.4, 0, 0.6, 1) infinite;
-}
+/* REMOVED - Heavy pulse animations disabled per Phase 1 redesign (2026-02-10)
+   Only essential message animations and subtle transitions retained */
 
 @keyframes shimmer {
   0% { background-position: -200% 0; }
   100% { background-position: 200% 0; }
 }
 
-/* DISABLED - Excessive animations removed per redesign
-@keyframes float {
-  0%, 100% { transform: translateY(0); }
-  50% { transform: translateY(-5px); }
-}
-
-@keyframes glow {
-  0%, 100% { box-shadow: 0 0 5px rgba(239, 68, 68, 0.3); }
-  50% { box-shadow: 0 0 20px rgba(239, 68, 68, 0.6); }
-}
-
-@keyframes pulse-glow {
-  0%, 100% {
-    opacity: 0.4;
-    transform: scale(1);
-  }
-  50% {
-    opacity: 0.7;
-    transform: scale(1.1);
-  }
-}
-*/
+/* REMOVED - Heavy animations disabled per Phase 1 redesign (2026-02-10) */
 
 /* Animation Classes */
 .animate-fadeIn { animation: fadeIn 0.3s ease-out forwards; }
@@ -490,10 +412,7 @@ code {
   background-size: 200% 100%;
   animation: shimmer 1.5s infinite;
 }
-/* DISABLED - Excessive animations
-.animate-float { animation: float 3s ease-in-out infinite; }
-.animate-glow { animation: glow 2s ease-in-out infinite; }
-*/
+/* REMOVED - Heavy animations disabled per Phase 1 redesign */
 
 /* Animation Aliases (for backwards compatibility) */
 .animate-slide-up { animation: slideInUp 0.3s ease-out forwards; }
@@ -1062,8 +981,8 @@ html.native-app {
   a,
   [role="button"],
   .clickable {
-    min-height: 44px;
-    min-width: 44px;
+    min-height: 48px;
+    min-width: 48px;
   }
 
   /* Increase padding on interactive elements */
@@ -1281,7 +1200,7 @@ html, body {
 
   /* Make all inputs touch-friendly */
   input, textarea, select, button {
-    min-height: 44px;
+    min-height: 48px;
   }
 }
 
@@ -1785,7 +1704,7 @@ html, body {
   outline: none;
   resize: none;
   width: 100%;
-  min-height: 44px;
+  min-height: 48px;
   max-height: 200px;
   -webkit-font-smoothing: antialiased;
   -moz-osx-font-smoothing: grayscale;
@@ -1799,9 +1718,9 @@ html, body {
 
 /* Send Button */
 .input-send-btn {
-  width: 40px;
-  height: 40px;
-  border-radius: 10px;
+  width: 48px;
+  height: 48px;
+  border-radius: 12px;
   background: linear-gradient(135deg, #f43f5e 0%, #ec4899 100%);
   color: white;
   display: flex;
@@ -1934,8 +1853,8 @@ html, body {
   .channel-item,
   .message-actions button,
   .input-actions button {
-    min-width: 44px;
-    min-height: 44px;
+    min-width: 48px;
+    min-height: 48px;
   }
 
   .message-input-llm {
@@ -1943,7 +1862,7 @@ html, body {
   }
 }
 
-/* Touch target sizes - WCAG 2.1 AA compliance (44x44px minimum) */
+/* Touch target sizes - WCAG 2.1 AAA compliance (48x48px minimum) */
 @media (max-width: 768px) {
   .message-action-button,
   .tool-button,
@@ -1951,15 +1870,15 @@ html, body {
   .dropdown-item,
   [role="button"],
   button:not(.btn-icon-sm) {
-    min-width: 44px;
-    min-height: 44px;
+    min-width: 48px;
+    min-height: 48px;
     padding: 12px;
   }
 
   /* Ensure adequate spacing between touch targets */
   .button-group > *,
   .action-bar > * {
-    margin: 4px;
+    margin: 8px;
   }
 }
 

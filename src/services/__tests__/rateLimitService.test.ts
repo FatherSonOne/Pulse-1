@@ -4,41 +4,13 @@
  * Tests for rate limiting, token bucket algorithm, and quota management
  */
 
-import { describe, it, expect, beforeEach, vi } from 'vitest';
+import { describe, it, expect, beforeEach, beforeAll, vi } from 'vitest';
+// CRITICAL: Setup IndexedDB mock BEFORE importing the service
+// The service instantiates on import, so the mock must be ready first
+import { setupIndexedDBMock } from '../../test/utils/indexedDBMock';
+setupIndexedDBMock();
+
 import { rateLimitService, RATE_LIMITS } from '../rateLimitService';
-
-// Mock IndexedDB
-class MockIDBDatabase {
-  objectStoreNames = { contains: vi.fn().mockReturnValue(true) };
-  transaction = vi.fn().mockReturnValue({
-    objectStore: vi.fn().mockReturnValue({
-      get: vi.fn().mockReturnValue({ onsuccess: null, onerror: null }),
-      put: vi.fn().mockReturnValue({ onsuccess: null, onerror: null }),
-      delete: vi.fn().mockReturnValue({ onsuccess: null, onerror: null }),
-      getAllKeys: vi.fn().mockReturnValue({ onsuccess: null, onerror: null }),
-      clear: vi.fn().mockReturnValue({ onsuccess: null, onerror: null }),
-    }),
-  });
-}
-
-global.indexedDB = {
-  open: vi.fn().mockImplementation(() => {
-    const request = {
-      onsuccess: null as any,
-      onerror: null as any,
-      onupgradeneeded: null as any,
-      result: new MockIDBDatabase(),
-    };
-
-    setTimeout(() => {
-      if (request.onsuccess) {
-        request.onsuccess({ target: { result: request.result } } as any);
-      }
-    }, 0);
-
-    return request;
-  }),
-} as any;
 
 describe('RateLimitService', () => {
   const testUserId = 'test-user-123';

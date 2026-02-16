@@ -94,11 +94,21 @@ export const ExtendDeadlineDialog: React.FC<ExtendDeadlineDialogProps> = ({
   const previewNewDate = calculateNewDate(selectedOption);
 
   return (
-    <div className="extend-deadline-overlay" onClick={onClose}>
-      <div className="extend-deadline-dialog" onClick={(e) => e.stopPropagation()}>
+    <div
+      className="extend-deadline-overlay"
+      onClick={onClose}
+      role="dialog"
+      aria-modal="true"
+      aria-labelledby="extend-deadline-title"
+    >
+      <div
+        className="extend-deadline-dialog"
+        onClick={(e) => e.stopPropagation()}
+        role="document"
+      >
         <div className="extend-deadline-header">
           <div className="extend-deadline-header-content">
-            <h3>Extend Deadline</h3>
+            <h3 id="extend-deadline-title">Extend Deadline</h3>
             <p className="extend-deadline-task-title">{task.title}</p>
           </div>
           <button

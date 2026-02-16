@@ -1,6 +1,7 @@
 /**
  * MessageInput Component Styles
  * AI-Augmented Message Composer with contenteditable support
+ * Phase 1 Update: Simple/Advanced mode toggle (2026-02-10)
  */
 
 /* ============================================
@@ -209,8 +210,8 @@
    Action Buttons
    ============================================ */
 .voice-input-button {
-  width: var(--ai-action-button-size, 40px);
-  height: var(--ai-action-button-size, 40px);
+  width: var(--ai-action-button-size, 48px);
+  height: var(--ai-action-button-size, 48px);
   display: flex;
   align-items: center;
   justify-content: center;
@@ -240,7 +241,8 @@
   display: flex;
   align-items: center;
   gap: var(--space-2, 0.5rem);
-  padding: 8px 12px;
+  padding: 12px 16px;
+  min-height: 48px;
   background: transparent;
   border: 1px solid #3F3F46;
   border-radius: var(--ai-radius-md, 0.5rem);
@@ -275,8 +277,8 @@
 }
 
 .send-button {
-  width: var(--ai-action-button-size, 40px);
-  height: var(--ai-action-button-size, 40px);
+  width: var(--ai-action-button-size, 48px);
+  height: var(--ai-action-button-size, 48px);
   display: flex;
   align-items: center;
   justify-content: center;
@@ -323,13 +325,55 @@
 }
 
 /* ============================================
+   Simple Mode Action Buttons (Phase 1 Task 5)
+   ============================================ */
+.simple-action-button {
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  width: var(--touch-target-min, 48px);
+  height: var(--touch-target-min, 48px);
+  background: transparent;
+  border: 1px solid #3f3f46;
+  border-radius: 10px;
+  color: #a1a1aa;
+  cursor: pointer;
+  transition: all var(--anim-fast, 150ms);
+  font-size: 16px;
+}
+
+.simple-action-button:hover {
+  background: rgba(244, 63, 94, 0.1);
+  border-color: rgba(244, 63, 94, 0.3);
+  color: #f43f5e;
+  transform: scale(1.05);
+}
+
+.simple-action-button:active {
+  transform: scale(0.95);
+}
+
+.simple-action-button.recording {
+  background: rgba(239, 68, 68, 0.2);
+  border-color: #ef4444;
+  color: #ef4444;
+  animation: pulse-recording 1.5s ease-in-out infinite;
+}
+
+@keyframes pulse-recording {
+  0%, 100% { opacity: 1; }
+  50% { opacity: 0.7; }
+}
+
+/* ============================================
    Tools Menu Button
    ============================================ */
 .tools-menu-button {
   display: flex;
   align-items: center;
   gap: 6px;
-  padding: 8px 14px;
+  padding: 12px 16px;
+  min-height: 48px;
   background: linear-gradient(135deg, rgba(244, 63, 94, 0.1), rgba(236, 72, 153, 0.1));
   border: 1px solid rgba(244, 63, 94, 0.2);
   border-radius: 10px;
@@ -389,8 +433,8 @@
 
   .voice-input-button,
   .send-button {
-    width: var(--touch-target-min, 44px);
-    height: var(--touch-target-min, 44px);
+    width: var(--touch-target-min, 48px);
+    height: var(--touch-target-min, 48px);
   }
 
   .ai-toggle-button {

@@ -146,7 +146,7 @@ COMMENT ON TABLE pwa_settings IS 'Global PWA configuration settings';
 
 -- Grant authenticated users access to their subscriptions
 GRANT SELECT, INSERT, UPDATE, DELETE ON push_subscriptions TO authenticated;
-GRANT USAGE ON SEQUENCE push_subscriptions_id_seq TO authenticated;
+-- Note: No sequence grant needed as id uses uuid_generate_v4() function, not a sequence
 
 -- Grant authenticated users read access to settings
 GRANT SELECT ON pwa_settings TO authenticated;

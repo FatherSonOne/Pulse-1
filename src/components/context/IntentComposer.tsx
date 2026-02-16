@@ -1,7 +1,7 @@
 import { useState, useEffect, useRef } from 'react';
 import { AnimatePresence } from 'framer-motion';
 import {
-  Wand2,
+  Grid2x2,
   MessageCircle,
   AlertCircle,
   HelpCircle,
@@ -203,7 +203,7 @@ export const IntentComposer: React.FC<IntentComposerProps> = ({
               aria-pressed={showToolsMenu}
               title="Tools"
             >
-              <Wand2 size={16} />
+              <Grid2x2 size={16} />
               <span>Tools</span>
             </button>
           )}
@@ -284,7 +284,7 @@ export const IntentComposer: React.FC<IntentComposerProps> = ({
       {/* Loading Indicator */}
       {isAnalyzing && (
         <div className="analyzing-indicator">
-          <Wand2 className="analyzing-icon" size={14} />
+          <Sparkles className="analyzing-icon" size={14} />
           <span>Analyzing intent...</span>
         </div>
       )}

@@ -5,21 +5,14 @@ import { describe, it, expect, vi, beforeEach, afterEach } from 'vitest';
 import { messageAutoResponseService } from '../messageAutoResponseService';
 import type { ChannelMessage } from '../../types/messages';
 import type { AutoResponseRule } from '../messageAutoResponseService';
+import { createSupabaseMock, createInsertMock, createUpdateMock, createDeleteMock } from '../../test/utils/supabaseMock';
 
-// Mock Supabase
+// Mock Supabase module
+let mockSupabase: any;
+
 vi.mock('../supabase', () => ({
   supabase: {
-    from: vi.fn((table: string) => ({
-      select: vi.fn().mockReturnThis(),
-      insert: vi.fn().mockReturnThis(),
-      update: vi.fn().mockReturnThis(),
-      delete: vi.fn().mockReturnThis(),
-      eq: vi.fn().mockReturnThis(),
-      order: vi.fn().mockReturnThis(),
-      single: vi.fn(),
-      in: vi.fn().mockReturnThis(),
-      gte: vi.fn().mockReturnThis(),
-    })),
+    from: vi.fn(),
   },
 }));
 
@@ -75,17 +68,27 @@ describe('MessageAutoResponseService', () => {
     updated_at: new Date().toISOString(),
   };
 
-  beforeEach(() => {
+  beforeEach(async () => {
     vi.clearAllMocks();
     localStorageMock.clear();
+
+    // Reset the mock
+    const { supabase } = await import('../supabase');
+    mockSupabase = supabase;
   });
 
   describe('checkAutoResponse', () => {
     it('should return null when no rules are enabled', async () => {
-      const { supabase } = await import('../supabase');
-      vi.mocked(supabase.from('message_auto_responses').select().eq().order as any).mockResolvedValue({
+      const autoResponseMock = createSupabaseMock({
+        table: 'message_auto_responses',
         data: [],
-        error: null,
+      });
+
+      mockSupabase.from.mockImplementation((tableName: string) => {
+        if (tableName === 'message_auto_responses') {
+          return autoResponseMock.chainMock;
+        }
+        return createSupabaseMock({ table: tableName, data: [] }).chainMock;
       });
 
       const response = await messageAutoResponseService.checkAutoResponse(
@@ -98,10 +101,19 @@ describe('MessageAutoResponseService', () => {
     });
 
     it('should return response when rule matches', async () => {
-      const { supabase } = await import('../supabase');
-      vi.mocked(supabase.from('message_auto_responses').select().eq().order as any).mockResolvedValue({
+      const autoResponseMock = createSupabaseMock({
+        table: 'message_auto_responses',
         data: [mockRule],
-        error: null,
+      });
+
+      mockSupabase.from.mockImplementation((tableName: string) => {
+        if (tableName === 'message_auto_responses') {
+          return autoResponseMock.chainMock;
+        }
+        if (tableName === 'message_auto_response_log') {
+          return createSupabaseMock({ table: tableName, data: [] }).chainMock;
+        }
+        return createSupabaseMock({ table: tableName, data: [] }).chainMock;
       });
 
       const response = await messageAutoResponseService.checkAutoResponse(
@@ -114,15 +126,24 @@ describe('MessageAutoResponseService', () => {
     });
 
     it('should substitute variables in template', async () => {
-      const { supabase } = await import('../supabase');
       const ruleWithVars = {
         ...mockRule,
         response_template: 'Hi {sender_name}, I received your message on {date}.',
       };
 
-      vi.mocked(supabase.from('message_auto_responses').select().eq().order as any).mockResolvedValue({
+      const autoResponseMock = createSupabaseMock({
+        table: 'message_auto_responses',
         data: [ruleWithVars],
-        error: null,
+      });
+
+      mockSupabase.from.mockImplementation((tableName: string) => {
+        if (tableName === 'message_auto_responses') {
+          return autoResponseMock.chainMock;
+        }
+        if (tableName === 'message_auto_response_log') {
+          return createSupabaseMock({ table: tableName, data: [] }).chainMock;
+        }
+        return createSupabaseMock({ table: tableName, data: [] }).chainMock;
       });
 
       const response = await messageAutoResponseService.checkAutoResponse(
@@ -136,7 +157,6 @@ describe('MessageAutoResponseService', () => {
     });
 
     it('should respect priority ordering', async () => {
-      const { supabase } = await import('../supabase');
       const highPriorityRule = {
         ...mockRule,
         id: 'rule-2',
@@ -144,9 +164,19 @@ describe('MessageAutoResponseService', () => {
         response_template: 'High priority response',
       };
 
-      vi.mocked(supabase.from('message_auto_responses').select().eq().order as any).mockResolvedValue({
+      const autoResponseMock = createSupabaseMock({
+        table: 'message_auto_responses',
         data: [highPriorityRule, mockRule],
-        error: null,
+      });
+
+      mockSupabase.from.mockImplementation((tableName: string) => {
+        if (tableName === 'message_auto_responses') {
+          return autoResponseMock.chainMock;
+        }
+        if (tableName === 'message_auto_response_log') {
+          return createSupabaseMock({ table: tableName, data: [] }).chainMock;
+        }
+        return createSupabaseMock({ table: tableName, data: [] }).chainMock;
       });
 
       const response = await messageAutoResponseService.checkAutoResponse(
@@ -161,10 +191,19 @@ describe('MessageAutoResponseService', () => {
 
   describe('Rule Matching', () => {
     it('should match keyword in message content', async () => {
-      const { supabase } = await import('../supabase');
-      vi.mocked(supabase.from('message_auto_responses').select().eq().order as any).mockResolvedValue({
+      const autoResponseMock = createSupabaseMock({
+        table: 'message_auto_responses',
         data: [mockRule],
-        error: null,
+      });
+
+      mockSupabase.from.mockImplementation((tableName: string) => {
+        if (tableName === 'message_auto_responses') {
+          return autoResponseMock.chainMock;
+        }
+        if (tableName === 'message_auto_response_log') {
+          return createSupabaseMock({ table: tableName, data: [] }).chainMock;
+        }
+        return createSupabaseMock({ table: tableName, data: [] }).chainMock;
       });
 
       const response = await messageAutoResponseService.checkAutoResponse(
@@ -177,15 +216,21 @@ describe('MessageAutoResponseService', () => {
     });
 
     it('should not match when keyword is absent', async () => {
-      const { supabase } = await import('../supabase');
       const ruleWithDifferentKeyword = {
         ...mockRule,
         trigger_conditions: { keywords: ['meeting', 'schedule'] },
       };
 
-      vi.mocked(supabase.from('message_auto_responses').select().eq().order as any).mockResolvedValue({
+      const autoResponseMock = createSupabaseMock({
+        table: 'message_auto_responses',
         data: [ruleWithDifferentKeyword],
-        error: null,
+      });
+
+      mockSupabase.from.mockImplementation((tableName: string) => {
+        if (tableName === 'message_auto_responses') {
+          return autoResponseMock.chainMock;
+        }
+        return createSupabaseMock({ table: tableName, data: [] }).chainMock;
       });
 
       const response = await messageAutoResponseService.checkAutoResponse(
@@ -198,7 +243,6 @@ describe('MessageAutoResponseService', () => {
     });
 
     it('should match specific channel', async () => {
-      const { supabase } = await import('../supabase');
       const channelSpecificRule = {
         ...mockRule,
         trigger_conditions: {
@@ -206,9 +250,19 @@ describe('MessageAutoResponseService', () => {
         },
       };
 
-      vi.mocked(supabase.from('message_auto_responses').select().eq().order as any).mockResolvedValue({
+      const autoResponseMock = createSupabaseMock({
+        table: 'message_auto_responses',
         data: [channelSpecificRule],
-        error: null,
+      });
+
+      mockSupabase.from.mockImplementation((tableName: string) => {
+        if (tableName === 'message_auto_responses') {
+          return autoResponseMock.chainMock;
+        }
+        if (tableName === 'message_auto_response_log') {
+          return createSupabaseMock({ table: tableName, data: [] }).chainMock;
+        }
+        return createSupabaseMock({ table: tableName, data: [] }).chainMock;
       });
 
       const response = await messageAutoResponseService.checkAutoResponse(
@@ -221,7 +275,6 @@ describe('MessageAutoResponseService', () => {
     });
 
     it('should not match wrong channel', async () => {
-      const { supabase } = await import('../supabase');
       const channelSpecificRule = {
         ...mockRule,
         trigger_conditions: {
@@ -229,9 +282,16 @@ describe('MessageAutoResponseService', () => {
         },
       };
 
-      vi.mocked(supabase.from('message_auto_responses').select().eq().order as any).mockResolvedValue({
+      const autoResponseMock = createSupabaseMock({
+        table: 'message_auto_responses',
         data: [channelSpecificRule],
-        error: null,
+      });
+
+      mockSupabase.from.mockImplementation((tableName: string) => {
+        if (tableName === 'message_auto_responses') {
+          return autoResponseMock.chainMock;
+        }
+        return createSupabaseMock({ table: tableName, data: [] }).chainMock;
       });
 
       const response = await messageAutoResponseService.checkAutoResponse(
@@ -246,7 +306,6 @@ describe('MessageAutoResponseService', () => {
 
   describe('AI Customization', () => {
     it('should use AI to customize response when enabled', async () => {
-      const { supabase } = await import('../supabase');
       const { processWithModel } = await import('../geminiService');
 
       localStorageMock.setItem('gemini_api_key', 'test-api-key');
@@ -256,9 +315,19 @@ describe('MessageAutoResponseService', () => {
         ai_customize: true,
       };
 
-      vi.mocked(supabase.from('message_auto_responses').select().eq().order as any).mockResolvedValue({
+      const autoResponseMock = createSupabaseMock({
+        table: 'message_auto_responses',
         data: [aiRule],
-        error: null,
+      });
+
+      mockSupabase.from.mockImplementation((tableName: string) => {
+        if (tableName === 'message_auto_responses') {
+          return autoResponseMock.chainMock;
+        }
+        if (tableName === 'message_auto_response_log') {
+          return createSupabaseMock({ table: tableName, data: [] }).chainMock;
+        }
+        return createSupabaseMock({ table: tableName, data: [] }).chainMock;
       });
 
       vi.mocked(processWithModel).mockResolvedValue('AI customized response');
@@ -274,7 +343,6 @@ describe('MessageAutoResponseService', () => {
     });
 
     it('should fallback to template if AI fails', async () => {
-      const { supabase } = await import('../supabase');
       const { processWithModel } = await import('../geminiService');
 
       localStorageMock.setItem('gemini_api_key', 'test-api-key');
@@ -284,9 +352,19 @@ describe('MessageAutoResponseService', () => {
         ai_customize: true,
       };
 
-      vi.mocked(supabase.from('message_auto_responses').select().eq().order as any).mockResolvedValue({
+      const autoResponseMock = createSupabaseMock({
+        table: 'message_auto_responses',
         data: [aiRule],
-        error: null,
+      });
+
+      mockSupabase.from.mockImplementation((tableName: string) => {
+        if (tableName === 'message_auto_responses') {
+          return autoResponseMock.chainMock;
+        }
+        if (tableName === 'message_auto_response_log') {
+          return createSupabaseMock({ table: tableName, data: [] }).chainMock;
+        }
+        return createSupabaseMock({ table: tableName, data: [] }).chainMock;
       });
 
       vi.mocked(processWithModel).mockRejectedValue(new Error('AI error'));
@@ -303,7 +381,6 @@ describe('MessageAutoResponseService', () => {
 
   describe('Rule Management', () => {
     it('should create a new rule', async () => {
-      const { supabase } = await import('../supabase');
       const newRule = {
         rule_type: 'out_of_office' as const,
         enabled: true,
@@ -313,9 +390,25 @@ describe('MessageAutoResponseService', () => {
         priority: 5,
       };
 
-      vi.mocked(supabase.from('message_auto_responses').insert().select().single as any).mockResolvedValue({
-        data: { id: 'rule-new', ...newRule, user_id: 'user-1' },
-        error: null,
+      const createdRule = {
+        id: 'rule-new',
+        user_id: 'user-1',
+        times_triggered: 0,
+        created_at: new Date().toISOString(),
+        updated_at: new Date().toISOString(),
+        ...newRule,
+      };
+
+      // Create insert mock
+      const insertMockObj = createInsertMock(createdRule);
+
+      mockSupabase.from.mockImplementation((tableName: string) => {
+        if (tableName === 'message_auto_responses') {
+          return {
+            insert: insertMockObj.insert,
+          };
+        }
+        return createSupabaseMock({ table: tableName, data: [] }).chainMock;
       });
 
       const result = await messageAutoResponseService.createRule('user-1', newRule);
@@ -325,10 +418,15 @@ describe('MessageAutoResponseService', () => {
     });
 
     it('should toggle rule enabled status', async () => {
-      const { supabase } = await import('../supabase');
+      const updateMockObj = createUpdateMock();
 
-      vi.mocked(supabase.from('message_auto_responses').update().eq as any).mockResolvedValue({
-        error: null,
+      mockSupabase.from.mockImplementation((tableName: string) => {
+        if (tableName === 'message_auto_responses') {
+          return {
+            update: updateMockObj.update,
+          };
+        }
+        return createSupabaseMock({ table: tableName, data: [] }).chainMock;
       });
 
       const result = await messageAutoResponseService.toggleRule('rule-1', false);
@@ -337,10 +435,15 @@ describe('MessageAutoResponseService', () => {
     });
 
     it('should delete a rule', async () => {
-      const { supabase } = await import('../supabase');
+      const deleteMockObj = createDeleteMock();
 
-      vi.mocked(supabase.from('message_auto_responses').delete().eq as any).mockResolvedValue({
-        error: null,
+      mockSupabase.from.mockImplementation((tableName: string) => {
+        if (tableName === 'message_auto_responses') {
+          return {
+            delete: deleteMockObj.delete,
+          };
+        }
+        return createSupabaseMock({ table: tableName, data: [] }).chainMock;
       });
 
       const result = await messageAutoResponseService.deleteRule('rule-1');
@@ -351,10 +454,19 @@ describe('MessageAutoResponseService', () => {
 
   describe('Rate Limiting', () => {
     it('should respect rate limits', async () => {
-      const { supabase } = await import('../supabase');
-      vi.mocked(supabase.from('message_auto_responses').select().eq().order as any).mockResolvedValue({
+      const autoResponseMock = createSupabaseMock({
+        table: 'message_auto_responses',
         data: [mockRule],
-        error: null,
+      });
+
+      mockSupabase.from.mockImplementation((tableName: string) => {
+        if (tableName === 'message_auto_responses') {
+          return autoResponseMock.chainMock;
+        }
+        if (tableName === 'message_auto_response_log') {
+          return createSupabaseMock({ table: tableName, data: [] }).chainMock;
+        }
+        return createSupabaseMock({ table: tableName, data: [] }).chainMock;
       });
 
       // Send 11 responses quickly (limit is 10 per minute)
@@ -375,20 +487,28 @@ describe('MessageAutoResponseService', () => {
 
   describe('Analytics', () => {
     it('should return analytics for user rules', async () => {
-      const { supabase } = await import('../supabase');
-
-      vi.mocked(supabase.from('message_auto_responses').select().eq as any).mockResolvedValue({
+      const rulesMock = createSupabaseMock({
+        table: 'message_auto_responses',
         data: [{ id: 'rule-1' }, { id: 'rule-2' }],
-        error: null,
       });
 
-      vi.mocked(supabase.from('message_auto_response_log').select().in().gte as any).mockResolvedValue({
+      const logsMock = createSupabaseMock({
+        table: 'message_auto_response_log',
         data: [
           { rule_id: 'rule-1', ai_customized: true },
           { rule_id: 'rule-1', ai_customized: false },
           { rule_id: 'rule-2', ai_customized: true },
         ],
-        error: null,
+      });
+
+      mockSupabase.from.mockImplementation((tableName: string) => {
+        if (tableName === 'message_auto_responses') {
+          return rulesMock.chainMock;
+        }
+        if (tableName === 'message_auto_response_log') {
+          return logsMock.chainMock;
+        }
+        return createSupabaseMock({ table: tableName, data: [] }).chainMock;
       });
 
       const analytics = await messageAutoResponseService.getAnalytics('user-1', 30);

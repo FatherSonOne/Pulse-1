@@ -95,11 +95,21 @@ export const ReassignTaskModal: React.FC<ReassignTaskModalProps> = ({
   };
 
   return (
-    <div className="reassign-modal-overlay" onClick={onClose}>
-      <div className="reassign-modal" onClick={(e) => e.stopPropagation()}>
+    <div
+      className="reassign-modal-overlay"
+      onClick={onClose}
+      role="dialog"
+      aria-modal="true"
+      aria-labelledby="reassign-modal-title"
+    >
+      <div
+        className="reassign-modal"
+        onClick={(e) => e.stopPropagation()}
+        role="document"
+      >
         <div className="reassign-modal-header">
           <div className="reassign-modal-header-content">
-            <h3>Reassign Task</h3>
+            <h3 id="reassign-modal-title">Reassign Task</h3>
             <p className="reassign-modal-task-title">{task.title}</p>
           </div>
           <button

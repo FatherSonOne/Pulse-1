@@ -5,6 +5,7 @@ interface MessageInputPortalProps {
   children: React.ReactNode;
   sidebarWidth: number;
   isActive: boolean;
+  usePortal?: boolean;  // If false, renders in normal flow instead of portal
 }
 
 /**
@@ -20,7 +21,8 @@ interface MessageInputPortalProps {
 const MessageInputPortal: React.FC<MessageInputPortalProps> = ({
   children,
   sidebarWidth,
-  isActive
+  isActive,
+  usePortal = true
 }) => {
   const [isMounted, setIsMounted] = useState(false);
 
@@ -29,7 +31,21 @@ const MessageInputPortal: React.FC<MessageInputPortalProps> = ({
     return () => setIsMounted(false);
   }, []);
 
-  if (!isMounted || !isActive) {
+  if (!isActive) {
+    return null;
+  }
+
+  // If not using portal, render in normal flex flow with flex-shrink-0
+  if (!usePortal) {
+    return (
+      <div className="flex-shrink-0 border-t border-zinc-200 dark:border-zinc-800 bg-white dark:bg-zinc-950 p-4">
+        {children}
+      </div>
+    );
+  }
+
+  // Portal mode for regular threads
+  if (!isMounted) {
     return null;
   }
 
@@ -41,8 +57,9 @@ const MessageInputPortal: React.FC<MessageInputPortalProps> = ({
     <div
       className="message-input-portal-container"
       style={{
-        left: leftOffset
-      }}
+        left: leftOffset,
+        '--sidebar-offset': leftOffset
+      } as React.CSSProperties}
     >
       {children}
     </div>,

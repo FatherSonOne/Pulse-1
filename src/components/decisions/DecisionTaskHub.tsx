@@ -1,5 +1,5 @@
-import React, { useState, useEffect, useCallback, useMemo } from 'react';
-import { List } from 'react-window';
+import React, { useState, useEffect, useCallback, useMemo, useRef } from 'react';
+import { createPortal } from 'react-dom';
 import { EnhancedDecisionCard } from './EnhancedDecisionCard';
 import { TaskList, TaskStatus } from '../TaskList';
 import { EnhancedTaskCard } from '../tasks/EnhancedTaskCard';
@@ -37,6 +37,7 @@ import {
   MessageSquare,
   TrendingUp,
   Bell,
+  Bot,
   X,
   ChevronDown,
   ChevronUp,
@@ -46,8 +47,26 @@ import {
   AlertCircle,
   Zap,
   Undo,
+  Download,
 } from 'lucide-react';
 import './DecisionTaskHub.css';
+
+// Phase 3: Custom debounce hook for performance optimization
+function useDebounce<T>(value: T, delay: number): T {
+  const [debouncedValue, setDebouncedValue] = useState<T>(value);
+
+  useEffect(() => {
+    const handler = setTimeout(() => {
+      setDebouncedValue(value);
+    }, delay);
+
+    return () => {
+      clearTimeout(handler);
+    };
+  }, [value, delay]);
+
+  return debouncedValue;
+}
 
 interface DecisionTaskHubProps {
   user: User | null;
@@ -81,8 +100,8 @@ export const DecisionTaskHub: React.FC<DecisionTaskHubProps> = ({
   const [metrics, setMetrics] = useState<DecisionMetrics | null>(null);
   const [nudges, setNudges] = useState<Nudge[]>([]);
   const [dismissedNudges, setDismissedNudges] = useState<Set<string>>(new Set());
-  const [showInsights, setShowInsights] = useState(true);
-  const [showNudges, setShowNudges] = useState(true);
+  const [showInsights, setShowInsights] = useState(false); // Phase 1: Hidden by default
+  const [showNudges, setShowNudges] = useState(false); // Phase 1: Hidden by default, shown via notification badge
   const [showAssistant, setShowAssistant] = useState(false);
   const [lastDismissedNudge, setLastDismissedNudge] = useState<string | null>(null);
 
@@ -217,6 +236,8 @@ export const DecisionTaskHub: React.FC<DecisionTaskHubProps> = ({
           setShowDecisionMission(false);
         } else if (showAssistant) {
           setShowAssistant(false);
+        } else if (showPrioritizer) {
+          setShowPrioritizer(false);
         } else if (taskToReassign) {
           setTaskToReassign(null);
         } else if (taskToExtend) {
@@ -228,6 +249,66 @@ export const DecisionTaskHub: React.FC<DecisionTaskHubProps> = ({
     document.addEventListener('keydown', handleEscapeKey);
     return () => {
       document.removeEventListener('keydown', handleEscapeKey);
+    };
+  }, [showDecisionMission, showAssistant, showPrioritizer, taskToReassign, taskToExtend]);
+
+  // Phase 1.1 & 2.4: Prevent background scroll - simple overflow method (no position fixed)
+  useEffect(() => {
+    const hasAnyOverlay = showDecisionMission || showAssistant || showPrioritizer || taskToReassign !== null || taskToExtend !== null;
+
+    if (hasAnyOverlay) {
+      // Simple approach: just hide overflow without manipulating position
+      // This prevents scroll jumps that occur with position:fixed approach
+      document.body.style.overflow = 'hidden';
+    } else {
+      document.body.style.overflow = '';
+    }
+
+    return () => {
+      // Cleanup on unmount
+      document.body.style.overflow = '';
+    };
+  }, [showDecisionMission, showAssistant, showPrioritizer, taskToReassign, taskToExtend]);
+
+  // Phase 2.3: Focus trap for modals (accessibility)
+  useEffect(() => {
+    const hasModalOpen = showDecisionMission || showAssistant || taskToReassign !== null || taskToExtend !== null;
+
+    if (!hasModalOpen) return;
+
+    const handleTabKey = (e: KeyboardEvent) => {
+      if (e.key !== 'Tab') return;
+
+      // Get all focusable elements in the modal
+      const focusableSelectors = 'button, [href], input, select, textarea, [tabindex]:not([tabindex="-1"])';
+      const modalElement = document.querySelector(
+        showDecisionMission ? '.decision-mission-modal' :
+        showAssistant ? '.conversational-assistant' :
+        taskToReassign ? '.reassign-modal-overlay' :
+        '.extend-deadline-overlay'
+      );
+
+      if (!modalElement) return;
+
+      const focusableElements = modalElement.querySelectorAll(focusableSelectors);
+      const firstFocusable = focusableElements[0] as HTMLElement;
+      const lastFocusable = focusableElements[focusableElements.length - 1] as HTMLElement;
+
+      // If shift + tab on first element, focus last
+      if (e.shiftKey && document.activeElement === firstFocusable) {
+        e.preventDefault();
+        lastFocusable?.focus();
+      }
+      // If tab on last element, focus first
+      else if (!e.shiftKey && document.activeElement === lastFocusable) {
+        e.preventDefault();
+        firstFocusable?.focus();
+      }
+    };
+
+    document.addEventListener('keydown', handleTabKey);
+    return () => {
+      document.removeEventListener('keydown', handleTabKey);
     };
   }, [showDecisionMission, showAssistant, taskToReassign, taskToExtend]);
 
@@ -364,6 +445,7 @@ export const DecisionTaskHub: React.FC<DecisionTaskHubProps> = ({
 
   // Decision Mission handlers (moved here to fix dependency order)
   const handleOpenDecisionMission = useCallback((decision?: DecisionWithVotes) => {
+    // Phase 1: No scroll manipulation - sidebar should slide in smoothly without moving the page
     setShowDecisionMission(true);
     setSelectedDecision(decision || null);
     setMissionMessages([]);
@@ -382,6 +464,7 @@ export const DecisionTaskHub: React.FC<DecisionTaskHubProps> = ({
   }, []);
 
   const handleToggleAssistant = useCallback(() => {
+    // Phase 1: No scroll manipulation - sidebar should slide in smoothly without moving the page
     setShowAssistant(prev => !prev);
   }, []);
 
@@ -403,6 +486,51 @@ export const DecisionTaskHub: React.FC<DecisionTaskHubProps> = ({
     setMissionMessages([]);
     setMissionThinkingLogs(new Map());
   }, []);
+
+  // Phase 3: CSV Export
+  const handleExportCSV = useCallback(() => {
+    const filename = `${activeTab}_${new Date().toISOString().split('T')[0]}.csv`;
+
+    if (activeTab === 'decisions') {
+      // Export decisions
+      const headers = ['Title', 'Type', 'Status', 'Created', 'Deadline', 'Votes Count'];
+      const rows = decisions.map(d => [
+        `"${d.title.replace(/"/g, '""')}"`,
+        d.decision_type,
+        d.status,
+        new Date(d.created_at).toLocaleDateString(),
+        d.deadline ? new Date(d.deadline).toLocaleDateString() : 'N/A',
+        d.votes?.length || 0
+      ]);
+      const csv = [headers.join(','), ...rows.map(r => r.join(','))].join('\n');
+      downloadCSV(csv, filename);
+    } else {
+      // Export tasks
+      const headers = ['Title', 'Status', 'Priority', 'Assigned To', 'Due Date', 'Created'];
+      const rows = tasks.map(t => [
+        `"${t.title.replace(/"/g, '""')}"`,
+        t.status,
+        t.priority || 'N/A',
+        t.assigned_to_name || 'Unassigned',
+        t.due_date ? new Date(t.due_date).toLocaleDateString() : 'N/A',
+        new Date(t.created_at).toLocaleDateString()
+      ]);
+      const csv = [headers.join(','), ...rows.map(r => r.join(','))].join('\n');
+      downloadCSV(csv, filename);
+    }
+  }, [activeTab, decisions, tasks]);
+
+  const downloadCSV = (csv: string, filename: string) => {
+    const blob = new Blob([csv], { type: 'text/csv;charset=utf-8;' });
+    const link = document.createElement('a');
+    const url = URL.createObjectURL(blob);
+    link.setAttribute('href', url);
+    link.setAttribute('download', filename);
+    link.style.visibility = 'hidden';
+    document.body.appendChild(link);
+    link.click();
+    document.body.removeChild(link);
+  };
 
   const handleAssistantAction = useCallback((action: { type: string; data: any }) => {
     console.log('Assistant action executed:', action);
@@ -727,22 +855,6 @@ export const DecisionTaskHub: React.FC<DecisionTaskHubProps> = ({
     [tasks, statusFilter, showOverdueOnly, sortBy]
   );
 
-  // Task row component for virtualization
-  const TaskRow = useCallback(({ index, style }: { index: number; style: React.CSSProperties }) => {
-    const task = filteredTasks[index];
-    if (!task) return null;
-
-    return (
-      <div style={style}>
-        <EnhancedTaskCard
-          task={task}
-          onStatusChange={handleTaskStatusChange}
-          onDelete={handleTaskDelete}
-          onEdit={handleTaskEdit}
-        />
-      </div>
-    );
-  }, [filteredTasks, handleTaskStatusChange, handleTaskDelete, handleTaskEdit]);
 
   // Debug logging
   console.log('🎨 Render state:', {
@@ -757,37 +869,55 @@ export const DecisionTaskHub: React.FC<DecisionTaskHubProps> = ({
 
   return (
     <div className="decision-task-hub">
-      {/* Header */}
+      {/* Header - Simplified */}
       <div className="hub-header">
         <div className="hub-header-content">
-          <div style={{ display: 'flex', alignItems: 'center', gap: '1rem' }}>
-            <h1 className="hub-title">Decisions & Tasks</h1>
-            <RealTimeIndicator status={connectionStatus} />
-          </div>
-          <p className="hub-subtitle">
-            AI-powered command center for team coordination
-          </p>
+          <h1 className="hub-title">Decisions & Tasks</h1>
+          {/* Only show connection indicator if there's an error */}
+          {connectionStatus === 'error' && <RealTimeIndicator status={connectionStatus} />}
         </div>
         <div className="hub-header-actions">
+          {/* Notification badge for nudges */}
+          {nudges.length > 0 && (
+            <button
+              type="button"
+              className="hub-action-button notification-badge"
+              onClick={() => setShowNudges(!showNudges)}
+              aria-label={`${nudges.length} notifications`}
+              title="Alerts & Nudges"
+            >
+              <Bell size={18} aria-hidden="true" />
+              <span className="badge-count">{nudges.length}</span>
+            </button>
+          )}
+          <button
+            type="button"
+            className="hub-action-button"
+            onClick={handleExportCSV}
+            aria-label={`Export ${activeTab} to CSV`}
+            title="Export CSV"
+          >
+            <Download size={18} aria-hidden="true" />
+          </button>
           <button
             type="button"
             className="hub-action-button"
             onClick={handleToggleAssistant}
-            aria-label="Toggle AI Assistant sidebar"
+            aria-label="Toggle AI Assistant"
             title="AI Assistant"
           >
-            <MessageSquare size={18} aria-hidden="true" />
-            <span>AI Assistant</span>
+            <Bot size={18} aria-hidden="true" />
+            <span className="action-label">AI</span>
           </button>
           <button
             type="button"
             className="hub-action-button primary"
             onClick={() => handleOpenDecisionMission()}
-            aria-label="Create new decision with AI assistance"
+            aria-label="Create new decision"
             title="Create Decision"
           >
             <Plus size={18} aria-hidden="true" />
-            <span>Create Decision</span>
+            <span className="action-label">Create</span>
           </button>
         </div>
       </div>
@@ -870,113 +1000,76 @@ export const DecisionTaskHub: React.FC<DecisionTaskHubProps> = ({
         )}
       </AIFeatureErrorBoundary>
 
-      {/* Proactive Nudges */}
+      {/* Phase 2: Alerts Panel - Slide-down Dropdown */}
       {nudges.length > 0 && showNudges && (
-        <div className="nudges-panel">
-          <div className="nudges-header">
-            <div className="nudges-header-left">
-              <Bell size={18} />
-              <h3>Suggestions & Nudges</h3>
-              <span className="nudges-count">({nudges.length})</span>
+        <div className="alerts-panel-dropdown">
+          <div className="alerts-panel-header">
+            <div className="alerts-panel-title">
+              <Bell size={16} />
+              <span>Alerts & Nudges</span>
+              <span className="alerts-count-badge">{nudges.length}</span>
             </div>
-            <div className="nudges-header-actions">
-              <button
-                type="button"
-                className="icon-button"
-                onClick={handleDismissAllNudges}
-                aria-label="Dismiss all nudges"
-                title="Dismiss all nudges"
-              >
-                <X size={16} aria-hidden="true" />
-              </button>
-            </div>
+            <button
+              type="button"
+              className="alerts-close-button"
+              onClick={() => setShowNudges(false)}
+              aria-label="Close alerts panel"
+            >
+              <X size={16} aria-hidden="true" />
+            </button>
           </div>
 
-          <div className="nudges-content">
-            {urgentNudges.length > 0 && (
-              <div className="nudge-group">
-                <div className="nudge-group-header urgent">🔴 Urgent ({urgentNudges.length})</div>
-                {urgentNudges.map(nudge => (
-                  <div key={nudge.id} className="nudge-item urgent">
-                    <div className="nudge-message">{nudge.message}</div>
-                    {nudge.action && (
-                      <div className="nudge-actions">
-                        <button
-                          className="nudge-action-button"
-                          onClick={() => handleNudgeAction(nudge)}
-                          aria-label={`${nudge.action} for ${nudge.relatedTitle || 'this item'}`}
-                        >
-                          {nudge.action}
-                        </button>
-                        <button
-                          className="nudge-dismiss-button"
-                          onClick={() => handleDismissNudge(nudge.id)}
-                          aria-label={`Dismiss nudge: ${nudge.message}`}
-                        >
-                          <X size={14} aria-hidden="true" />
-                        </button>
-                      </div>
-                    )}
-                  </div>
-                ))}
-              </div>
-            )}
+          <div className="alerts-panel-content">
+            {/* Show top 3 nudges by priority */}
+            {[...urgentNudges, ...importantNudges, ...suggestionNudges].slice(0, 3).map(nudge => {
+              const priority = nudge.priority === 'urgent' ? 'urgent' : nudge.priority === 'important' ? 'important' : 'suggestion';
+              const icon = priority === 'urgent' ? '🔴' : priority === 'important' ? '🟡' : '🟢';
 
-            {importantNudges.length > 0 && (
-              <div className="nudge-group">
-                <div className="nudge-group-header important">🟡 Important ({importantNudges.length})</div>
-                {importantNudges.map(nudge => (
-                  <div key={nudge.id} className="nudge-item important">
-                    <div className="nudge-message">{nudge.message}</div>
+              return (
+                <div key={nudge.id} className={`alert-item ${priority}`}>
+                  <div className="alert-priority-indicator">{icon}</div>
+                  <div className="alert-content">
+                    <div className="alert-message">{nudge.message}</div>
                     {nudge.action && (
-                      <div className="nudge-actions">
-                        <button
-                          className="nudge-action-button"
-                          onClick={() => handleNudgeAction(nudge)}
-                          aria-label={`${nudge.action} for ${nudge.relatedTitle || 'this item'}`}
-                        >
-                          {nudge.action}
-                        </button>
-                        <button
-                          className="nudge-dismiss-button"
-                          onClick={() => handleDismissNudge(nudge.id)}
-                          aria-label={`Dismiss nudge: ${nudge.message}`}
-                        >
-                          <X size={14} aria-hidden="true" />
-                        </button>
-                      </div>
+                      <button
+                        className="alert-action-button"
+                        onClick={() => handleNudgeAction(nudge)}
+                        aria-label={`${nudge.action} for ${nudge.relatedTitle || 'this item'}`}
+                      >
+                        {nudge.action}
+                      </button>
                     )}
                   </div>
-                ))}
-              </div>
-            )}
+                  <button
+                    className="alert-dismiss-button"
+                    onClick={() => handleDismissNudge(nudge.id)}
+                    aria-label={`Dismiss alert: ${nudge.message}`}
+                  >
+                    <X size={14} aria-hidden="true" />
+                  </button>
+                </div>
+              );
+            })}
 
-            {suggestionNudges.length > 0 && (
-              <div className="nudge-group">
-                <div className="nudge-group-header suggestion">🟢 Suggestions ({suggestionNudges.length})</div>
-                {suggestionNudges.slice(0, 2).map(nudge => (
-                  <div key={nudge.id} className="nudge-item suggestion">
-                    <div className="nudge-message">{nudge.message}</div>
-                    {nudge.action && (
-                      <div className="nudge-actions">
-                        <button
-                          className="nudge-action-button"
-                          onClick={() => handleNudgeAction(nudge)}
-                          aria-label={`${nudge.action} for ${nudge.relatedTitle || 'this item'}`}
-                        >
-                          {nudge.action}
-                        </button>
-                        <button
-                          className="nudge-dismiss-button"
-                          onClick={() => handleDismissNudge(nudge.id)}
-                          aria-label={`Dismiss nudge: ${nudge.message}`}
-                        >
-                          <X size={14} aria-hidden="true" />
-                        </button>
-                      </div>
-                    )}
-                  </div>
-                ))}
+            {/* See all link if more than 3 */}
+            {nudges.length > 3 && (
+              <div className="alerts-see-all">
+                <button
+                  type="button"
+                  className="see-all-button"
+                  onClick={handleDismissAllNudges}
+                  aria-label={`See all ${nudges.length} alerts`}
+                >
+                  See all {nudges.length} alerts
+                </button>
+                <button
+                  type="button"
+                  className="dismiss-all-button"
+                  onClick={handleDismissAllNudges}
+                  aria-label="Dismiss all alerts"
+                >
+                  Dismiss all
+                </button>
               </div>
             )}
           </div>
@@ -1182,14 +1275,16 @@ export const DecisionTaskHub: React.FC<DecisionTaskHubProps> = ({
 
           {activeTab === 'tasks' && (
             <div className="tasks-section">
-              {/* AI Task Prioritizer */}
+              {/* AI Task Prioritizer - Overlay Panel */}
               <AIFeatureErrorBoundary featureName="AI Task Prioritizer">
-                {showPrioritizer && tasks.length > 0 && (
+                {showPrioritizer && tasks.length > 0 && createPortal(
                   <AITaskPrioritizer
-                    tasks={getFilteredTasks()}
+                    tasks={filteredTasks}
                     onPrioritizationComplete={handlePrioritizationComplete}
+                    onClose={() => setShowPrioritizer(false)}
                     apiKey={localStorage.getItem('gemini_api_key') || ''}
-                  />
+                  />,
+                  document.body
                 )}
               </AIFeatureErrorBoundary>
 
@@ -1211,22 +1306,22 @@ export const DecisionTaskHub: React.FC<DecisionTaskHubProps> = ({
                 </div>
               ) : activeView === 'kanban' ? (
                 <TaskKanban
-                  tasks={getFilteredTasks()}
+                  tasks={filteredTasks}
                   onStatusChange={handleTaskStatusChange}
                   onDelete={handleTaskDelete}
                   onEdit={handleTaskEdit}
                 />
               ) : (
-                <div className="tasks-list-view tasks-list-virtualized">
-                  <List
-                    height={106 * Math.min(filteredTasks.length, 6) || 400} // Dynamic height or fallback
-                    itemCount={filteredTasks.length}
-                    itemSize={106}
-                    width="100%"
-                    overscanCount={5}
-                  >
-                    {TaskRow}
-                  </List>
+                <div className="tasks-list-view">
+                  {filteredTasks.map((task) => (
+                    <EnhancedTaskCard
+                      key={task.id}
+                      task={task}
+                      onStatusChange={handleTaskStatusChange}
+                      onDelete={handleTaskDelete}
+                      onEdit={handleTaskEdit}
+                    />
+                  ))}
                 </div>
               )}
             </div>
@@ -1234,13 +1329,14 @@ export const DecisionTaskHub: React.FC<DecisionTaskHubProps> = ({
         </div>
       </div>
 
-      {/* AI Assistant Sidebar */}
+      {/* Phase 2: AI Assistant Sidebar with Metrics */}
       {showAssistant && user && (
         <AIFeatureErrorBoundary featureName="Conversational AI Assistant">
           <ConversationalAssistant
             user={user}
             decisions={decisions}
             tasks={tasks}
+            metrics={metrics}
             onClose={handleCloseAssistant}
             onActionExecute={handleAssistantAction}
           />
@@ -1248,12 +1344,21 @@ export const DecisionTaskHub: React.FC<DecisionTaskHubProps> = ({
       )}
 
       {/* Decision Mission Modal */}
-      {showDecisionMission && (
-        <div className="decision-mission-modal">
-          <div className="decision-mission-overlay" onClick={handleCloseMission} />
+      {showDecisionMission && createPortal(
+        <div
+          className="decision-mission-modal"
+          role="dialog"
+          aria-modal="true"
+          aria-labelledby="decision-mission-title"
+        >
+          <div
+            className="decision-mission-overlay"
+            onClick={handleCloseMission}
+            aria-hidden="true"
+          />
           <div className="decision-mission-container">
             <div className="decision-mission-header">
-              <h2>{selectedDecision ? `Decision: ${selectedDecision.title}` : 'Create Decision with AI'}</h2>
+              <h2 id="decision-mission-title">{selectedDecision ? `Decision: ${selectedDecision.title}` : 'Create Decision with AI'}</h2>
               <button
                 type="button"
                 onClick={handleCloseMission}
@@ -1275,26 +1380,29 @@ export const DecisionTaskHub: React.FC<DecisionTaskHubProps> = ({
               />
             </div>
           </div>
-        </div>
+        </div>,
+        document.body
       )}
 
       {/* Sprint 6: Reassign Task Modal */}
-      {taskToReassign && (
+      {taskToReassign && createPortal(
         <ReassignTaskModal
           task={taskToReassign}
           currentAssignee={taskToReassign.assigned_to}
           onClose={() => setTaskToReassign(null)}
           onReassign={handleReassignTask}
-        />
+        />,
+        document.body
       )}
 
       {/* Sprint 6: Extend Deadline Dialog */}
-      {taskToExtend && (
+      {taskToExtend && createPortal(
         <ExtendDeadlineDialog
           task={taskToExtend}
           onClose={() => setTaskToExtend(null)}
           onExtend={handleExtendDeadline}
-        />
+        />,
+        document.body
       )}
 
       {/* Sprint 6: Undo Dismiss Snackbar */}

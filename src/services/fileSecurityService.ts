@@ -244,29 +244,38 @@ class FileSecurityService {
 
     // 2. Check for dangerous extensions
     if (DANGEROUS_EXTENSIONS.includes(extension.toLowerCase())) {
-      errors.push(`File extension .${extension} is not allowed for security reasons`);
+      errors.push(`File type .${extension} is not allowed`);
     }
 
-    // 3. Check for suspicious filename patterns
-    for (const pattern of SUSPICIOUS_PATTERNS) {
-      if (pattern.test(fileName)) {
-        errors.push('Filename contains suspicious patterns');
-        break;
+    // 3. Check for suspicious filename patterns (skip if already flagged as dangerous)
+    if (!DANGEROUS_EXTENSIONS.includes(extension.toLowerCase())) {
+      for (const pattern of SUSPICIOUS_PATTERNS) {
+        if (pattern.test(fileName)) {
+          errors.push('Filename contains suspicious patterns that are not allowed');
+          break;
+        }
       }
     }
 
-    // 4. Check if file type is whitelisted
-    const typeConfig = this.findFileTypeConfig(extension, mimeType);
-    if (!typeConfig) {
+    // 4. Check if file type is whitelisted (but only if extension exists and not already flagged as dangerous)
+    const typeConfig = extension ? this.findFileTypeConfig(extension, mimeType) : null;
+    if (extension && !typeConfig && !DANGEROUS_EXTENSIONS.includes(extension.toLowerCase())) {
       errors.push(
-        `File type .${extension} (${mimeType}) is not in the allowed whitelist`
+        `File type .${extension} is not allowed`
       );
     }
 
+    // Check for missing extension
+    if (!extension || extension === '') {
+      errors.push('File must have a valid extension');
+    }
+
     // 5. Validate file size
-    if (typeConfig && fileSize > typeConfig.maxSize) {
+    if (fileSize === 0) {
+      errors.push('File is empty (0 bytes)');
+    } else if (typeConfig && fileSize > typeConfig.maxSize) {
       errors.push(
-        `File size ${this.formatFileSize(fileSize)} exceeds maximum allowed ${this.formatFileSize(typeConfig.maxSize)} for ${typeConfig.description}`
+        `File size ${this.formatFileSize(fileSize)} exceeds maximum allowed size of ${this.formatFileSize(typeConfig.maxSize)}`
       );
     }
 
@@ -282,7 +291,7 @@ class FileSecurityService {
       const magicNumberValid = await this.validateMagicNumber(file, typeConfig);
       if (!magicNumberValid) {
         errors.push(
-          `File signature does not match .${extension} file type. File may be renamed or corrupted.`
+          `File signature does not match expected type for .${extension}`
         );
       }
     }
@@ -293,11 +302,6 @@ class FileSecurityService {
       if (!svgValidation.valid) {
         errors.push(...svgValidation.errors);
       }
-    }
-
-    // 9. Check for zero-byte files
-    if (fileSize === 0) {
-      errors.push('File is empty (0 bytes)');
     }
 
     const category = this.getFileCategory(extension);
@@ -401,14 +405,14 @@ class FileSecurityService {
         errors.push('SVG contains event handlers which are not allowed');
       }
 
-      // Check for external references (more comprehensive URL detection)
-      if (/(href|src|xlink:href)\s*=\s*["']?\s*(javascript|data):/i.test(text)) {
-        errors.push('SVG contains dangerous external references');
+      // Check for javascript: protocol in any attribute
+      if (/javascript:/i.test(text)) {
+        errors.push('SVG contains dangerous external references (javascript: protocol)');
       }
 
       // Check for embedded content and dangerous elements
       if (/<foreignObject/i.test(text)) {
-        errors.push('SVG contains foreignObject which could embed unsafe content');
+        errors.push('SVG contains foreignObject which is not allowed');
       }
 
       // Additional XSS vector checks

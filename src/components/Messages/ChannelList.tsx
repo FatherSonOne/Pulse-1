@@ -96,10 +96,10 @@ export const ChannelList: React.FC<ChannelListProps> = ({
         </h2>
         <button
           onClick={() => setShowNewChannel(true)}
-          className="w-7 h-7 rounded-lg bg-gradient-to-br from-rose-500/10 to-pink-500/10 border border-rose-500/20 hover:from-rose-500/20 hover:to-pink-500/20 hover:border-rose-500/40 flex items-center justify-center transition-all hover-scale"
+          className="w-12 h-12 rounded-lg bg-gradient-to-br from-rose-500/10 to-pink-500/10 border border-rose-500/20 hover:from-rose-500/20 hover:to-pink-500/20 hover:border-rose-500/40 flex items-center justify-center transition-all hover-scale"
           title="Create channel"
         >
-          <i className="fa-solid fa-plus text-xs text-rose-500"></i>
+          <i className="fa-solid fa-plus text-sm text-rose-500"></i>
         </button>
       </div>
 
@@ -194,10 +194,10 @@ export const ChannelList: React.FC<ChannelListProps> = ({
                   )}
                   <button
                     onClick={(e) => handleDeleteChannel(channel.id, e)}
-                    className="p-1 rounded opacity-0 group-hover:opacity-100 hover:bg-rose-500/20 transition-all ml-2"
+                    className="w-12 h-12 min-w-[48px] min-h-[48px] rounded opacity-0 group-hover:opacity-100 hover:bg-rose-500/20 transition-all ml-2 flex items-center justify-center"
                     title="Delete channel"
                   >
-                    <i className="fa-solid fa-trash text-[10px] text-rose-500"></i>
+                    <i className="fa-solid fa-trash text-sm text-rose-500"></i>
                   </button>
                 </button>
               ))}
@@ -223,10 +223,10 @@ export const ChannelList: React.FC<ChannelListProps> = ({
                     </div>
                     <button
                       onClick={(e) => handleDeleteChannel(channel.id, e)}
-                      className="p-1 rounded opacity-0 group-hover:opacity-100 hover:bg-rose-500/20 transition-all ml-2"
+                      className="w-12 h-12 min-w-[48px] min-h-[48px] rounded opacity-0 group-hover:opacity-100 hover:bg-rose-500/20 transition-all ml-2 flex items-center justify-center"
                       title="Delete group"
                     >
-                      <i className="fa-solid fa-trash text-[10px] text-rose-500"></i>
+                      <i className="fa-solid fa-trash text-sm text-rose-500"></i>
                     </button>
                   </button>
                 ))}

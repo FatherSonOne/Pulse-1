@@ -14,13 +14,52 @@ function createMockFile(
   content: Uint8Array,
   size?: number
 ): File {
-  const blob = new Blob([content], { type });
+  const blob = new Blob([content as BlobPart], { type });
   const file = new File([blob], name, { type });
 
   // Override size if specified
   if (size !== undefined) {
     Object.defineProperty(file, 'size', { value: size });
   }
+
+  // Add arrayBuffer() method if not present (for Node.js/test environment)
+  if (!file.arrayBuffer) {
+    Object.defineProperty(file, 'arrayBuffer', {
+      value: async function() {
+        return content.buffer;
+      }
+    });
+  }
+
+  // Add text() method if not present (for SVG validation)
+  if (!file.text) {
+    Object.defineProperty(file, 'text', {
+      value: async function() {
+        return new TextDecoder().decode(content);
+      }
+    });
+  }
+
+  // Ensure slice() returns a blob with arrayBuffer() method
+  const originalSlice = file.slice.bind(file);
+  Object.defineProperty(file, 'slice', {
+    value: function(start?: number, end?: number, contentType?: string) {
+      const slicedBlob = originalSlice(start, end, contentType);
+
+      // Add arrayBuffer() to the sliced blob if not present
+      if (!slicedBlob.arrayBuffer) {
+        Object.defineProperty(slicedBlob, 'arrayBuffer', {
+          value: async function() {
+            const sliceStart = start || 0;
+            const sliceEnd = end || content.length;
+            return content.slice(sliceStart, sliceEnd).buffer;
+          }
+        });
+      }
+
+      return slicedBlob;
+    }
+  });
 
   return file;
 }
@@ -89,7 +128,7 @@ describe('FileSecurityService', () => {
       const result = await fileSecurityService.validateFile(file);
 
       expect(result.valid).toBe(false);
-      expect(result.errors).toContain(expect.stringContaining('not allowed'));
+      expect(result.errors).toEqual(expect.arrayContaining([expect.stringContaining('not allowed')]));
     });
 
     it('should reject script files', async () => {
@@ -98,7 +137,7 @@ describe('FileSecurityService', () => {
       const result = await fileSecurityService.validateFile(file);
 
       expect(result.valid).toBe(false);
-      expect(result.errors).toContain(expect.stringContaining('not allowed'));
+      expect(result.errors).toEqual(expect.arrayContaining([expect.stringContaining('not allowed')]));
     });
 
     it('should reject batch files', async () => {
@@ -107,7 +146,7 @@ describe('FileSecurityService', () => {
       const result = await fileSecurityService.validateFile(file);
 
       expect(result.valid).toBe(false);
-      expect(result.errors).toContain(expect.stringContaining('not allowed'));
+      expect(result.errors).toEqual(expect.arrayContaining([expect.stringContaining('not allowed')]));
     });
 
     it('should reject DLL files', async () => {
@@ -128,7 +167,7 @@ describe('FileSecurityService', () => {
       const result = await fileSecurityService.validateFile(file);
 
       expect(result.valid).toBe(false);
-      expect(result.errors).toContain(expect.stringContaining('signature does not match'));
+      expect(result.errors).toEqual(expect.arrayContaining([expect.stringContaining('signature does not match')]));
     });
 
     it('should detect renamed executables', async () => {
@@ -139,7 +178,7 @@ describe('FileSecurityService', () => {
       const result = await fileSecurityService.validateFile(file);
 
       expect(result.valid).toBe(false);
-      expect(result.errors).toContain(expect.stringContaining('signature does not match'));
+      expect(result.errors).toEqual(expect.arrayContaining([expect.stringContaining('signature does not match')]));
     });
 
     it('should validate GIF87a signature', async () => {
@@ -183,7 +222,7 @@ describe('FileSecurityService', () => {
       const result = await fileSecurityService.validateFile(file);
 
       expect(result.valid).toBe(false);
-      expect(result.errors).toContain(expect.stringContaining('exceeds maximum'));
+      expect(result.errors).toEqual(expect.arrayContaining([expect.stringContaining('exceeds maximum')]));
     });
 
     it('should accept files within size limits', async () => {
@@ -206,7 +245,7 @@ describe('FileSecurityService', () => {
       const result = await fileSecurityService.validateFile(file);
 
       expect(result.valid).toBe(false);
-      expect(result.errors).toContain(expect.stringContaining('empty'));
+      expect(result.errors).toEqual(expect.arrayContaining([expect.stringContaining('empty')]));
     });
 
     it('should have stricter limits for SVG files', async () => {
@@ -220,7 +259,7 @@ describe('FileSecurityService', () => {
       const result = await fileSecurityService.validateFile(file);
 
       expect(result.valid).toBe(false);
-      expect(result.errors).toContain(expect.stringContaining('exceeds maximum'));
+      expect(result.errors).toEqual(expect.arrayContaining([expect.stringContaining('exceeds maximum')]));
     });
   });
 
@@ -235,7 +274,7 @@ describe('FileSecurityService', () => {
 
       const result = await fileSecurityService.validateFile(file);
 
-      expect(result.warnings).toContain(expect.stringContaining('sanitized'));
+      expect(result.warnings).toEqual(expect.arrayContaining([expect.stringContaining('sanitized')]));
       expect(result.fileInfo.name).not.toContain('<script>');
     });
 
@@ -249,7 +288,7 @@ describe('FileSecurityService', () => {
       const result = await fileSecurityService.validateFile(file);
 
       expect(result.valid).toBe(false);
-      expect(result.errors).toContain(expect.stringContaining('suspicious'));
+      expect(result.errors).toEqual(expect.arrayContaining([expect.stringContaining('suspicious')]));
     });
 
     it('should reject double extensions', async () => {
@@ -262,7 +301,7 @@ describe('FileSecurityService', () => {
       const result = await fileSecurityService.validateFile(file);
 
       expect(result.valid).toBe(false);
-      expect(result.errors).toContain(expect.stringContaining('not allowed'));
+      expect(result.errors).toEqual(expect.arrayContaining([expect.stringContaining('not allowed')]));
     });
 
     it('should reject .htaccess files', async () => {
@@ -286,7 +325,7 @@ describe('FileSecurityService', () => {
       const result = await fileSecurityService.validateFile(file);
 
       expect(result.valid).toBe(false);
-      expect(result.errors).toContain(expect.stringContaining('<script> tags'));
+      expect(result.errors).toEqual(expect.arrayContaining([expect.stringContaining('<script> tags')]));
     });
 
     it('should reject SVG with event handlers', async () => {
@@ -300,7 +339,7 @@ describe('FileSecurityService', () => {
       const result = await fileSecurityService.validateFile(file);
 
       expect(result.valid).toBe(false);
-      expect(result.errors).toContain(expect.stringContaining('event handlers'));
+      expect(result.errors).toEqual(expect.arrayContaining([expect.stringContaining('event handlers')]));
     });
 
     it('should reject SVG with javascript: URLs', async () => {
@@ -314,7 +353,7 @@ describe('FileSecurityService', () => {
       const result = await fileSecurityService.validateFile(file);
 
       expect(result.valid).toBe(false);
-      expect(result.errors).toContain(expect.stringContaining('dangerous external references'));
+      expect(result.errors).toEqual(expect.arrayContaining([expect.stringContaining('dangerous external references')]));
     });
 
     it('should reject SVG with foreignObject', async () => {
@@ -328,7 +367,7 @@ describe('FileSecurityService', () => {
       const result = await fileSecurityService.validateFile(file);
 
       expect(result.valid).toBe(false);
-      expect(result.errors).toContain(expect.stringContaining('foreignObject'));
+      expect(result.errors).toEqual(expect.arrayContaining([expect.stringContaining('foreignObject')]));
     });
 
     it('should accept safe SVG files', async () => {
@@ -356,8 +395,8 @@ describe('FileSecurityService', () => {
 
       const result = await fileSecurityService.validateFile(file);
 
-      expect(result.warnings).toContain(
-        expect.stringContaining('MIME type')
+      expect(result.warnings).toEqual(
+        expect.arrayContaining([expect.stringContaining('MIME type')])
       );
     });
 
@@ -367,7 +406,7 @@ describe('FileSecurityService', () => {
 
       const result = await fileSecurityService.validateFile(file);
 
-      expect(result.warnings).not.toContain(expect.stringContaining('MIME type'));
+      expect(result.warnings.some(w => w.includes('MIME type'))).toBe(false);
     });
   });
 

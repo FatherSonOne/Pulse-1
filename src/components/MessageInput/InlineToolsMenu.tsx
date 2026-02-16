@@ -166,7 +166,7 @@ export const InlineToolsMenu: React.FC<InlineToolsMenuProps> = ({ onClose, setAc
         ) : (
           <>
             <div className="header-content">
-              <i className="fa-solid fa-magic-wand-sparkles" />
+              <i className="fa-solid fa-grid-2" />
               <span>AI Tools</span>
             </div>
             <button className="close-button" onClick={onClose} aria-label="Close menu">

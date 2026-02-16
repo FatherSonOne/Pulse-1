@@ -73,6 +73,8 @@ describe('MessageSummarizationService', () => {
 
   beforeEach(() => {
     vi.clearAllMocks();
+    // Clear the cache between tests to prevent cache pollution
+    messageSummarizationService.clearCache();
   });
 
   describe('summarizeThread', () => {
@@ -199,10 +201,21 @@ describe('MessageSummarizationService', () => {
         },
       ]);
 
-      vi.mocked(supabase.from('messages').select().eq().gte().lte().order as any).mockResolvedValue({
-        data: mockMessages,
-        error: null,
+      const mockFrom = vi.fn().mockReturnValue({
+        select: vi.fn().mockReturnValue({
+          eq: vi.fn().mockReturnValue({
+            gte: vi.fn().mockReturnValue({
+              lte: vi.fn().mockReturnValue({
+                order: vi.fn().mockResolvedValue({
+                  data: mockMessages,
+                  error: null,
+                }),
+              }),
+            }),
+          }),
+        }),
       });
+      vi.mocked(supabase.from).mockImplementation(mockFrom);
 
       const channelSummaryResponse = JSON.stringify({
         highlights: ['Budget discussion', 'Marketing increase approved'],
@@ -252,10 +265,19 @@ describe('MessageSummarizationService', () => {
 
       const sinceDate = new Date('2024-01-15T09:00:00Z');
 
-      vi.mocked(supabase.from('messages').select().eq().gte().order as any).mockResolvedValue({
-        data: mockMessages,
-        error: null,
+      const mockFrom = vi.fn().mockReturnValue({
+        select: vi.fn().mockReturnValue({
+          eq: vi.fn().mockReturnValue({
+            gte: vi.fn().mockReturnValue({
+              order: vi.fn().mockResolvedValue({
+                data: mockMessages,
+                error: null,
+              }),
+            }),
+          }),
+        }),
       });
+      vi.mocked(supabase.from).mockImplementation(mockFrom);
 
       const mockAIResponse = JSON.stringify({
         summary: 'Budget discussions with increased marketing spend decision',
@@ -283,10 +305,19 @@ describe('MessageSummarizationService', () => {
     it('should handle no new messages', async () => {
       const { supabase } = await import('../supabase');
 
-      vi.mocked(supabase.from('messages').select().eq().gte().order as any).mockResolvedValue({
-        data: [],
-        error: null,
+      const mockFrom = vi.fn().mockReturnValue({
+        select: vi.fn().mockReturnValue({
+          eq: vi.fn().mockReturnValue({
+            gte: vi.fn().mockReturnValue({
+              order: vi.fn().mockResolvedValue({
+                data: [],
+                error: null,
+              }),
+            }),
+          }),
+        }),
       });
+      vi.mocked(supabase.from).mockImplementation(mockFrom);
 
       const catchUp = await messageSummarizationService.generateCatchUpSummary(
         'channel-1',
@@ -302,10 +333,19 @@ describe('MessageSummarizationService', () => {
     it('should format timeframe correctly', async () => {
       const { supabase } = await import('../supabase');
 
-      vi.mocked(supabase.from('messages').select().eq().gte().order as any).mockResolvedValue({
-        data: [],
-        error: null,
+      const mockFrom = vi.fn().mockReturnValue({
+        select: vi.fn().mockReturnValue({
+          eq: vi.fn().mockReturnValue({
+            gte: vi.fn().mockReturnValue({
+              order: vi.fn().mockResolvedValue({
+                data: [],
+                error: null,
+              }),
+            }),
+          }),
+        }),
       });
+      vi.mocked(supabase.from).mockImplementation(mockFrom);
 
       // Test different time ranges
       const twoDaysAgo = new Date();
@@ -342,10 +382,25 @@ describe('MessageSummarizationService', () => {
         },
       ];
 
-      vi.mocked(supabase.from('conversation_summaries').select().eq().order().limit as any).mockResolvedValue({
-        data: mockSummaries,
-        error: null,
+      // Create a chainable mock that handles the conditional .eq() call
+      const mockChain: any = {
+        then: (resolve: (value: any) => void) => {
+          resolve({ data: mockSummaries, error: null });
+          return Promise.resolve({ data: mockSummaries, error: null });
+        },
+        eq: vi.fn(function(this: any) { return this; }),
+      };
+
+      const mockFrom = vi.fn().mockReturnValue({
+        select: vi.fn().mockReturnValue({
+          eq: vi.fn().mockReturnValue({
+            order: vi.fn().mockReturnValue({
+              limit: vi.fn().mockReturnValue(mockChain),
+            }),
+          }),
+        }),
       });
+      vi.mocked(supabase.from).mockImplementation(mockFrom);
 
       const summaries = await messageSummarizationService.getSummaries('user-1', 'thread', 10);
 
@@ -358,10 +413,17 @@ describe('MessageSummarizationService', () => {
     it('should delete old summaries', async () => {
       const { supabase } = await import('../supabase');
 
-      vi.mocked(supabase.from('conversation_summaries').delete().lt().select as any).mockResolvedValue({
-        data: [{ id: 'old-1' }, { id: 'old-2' }],
-        error: null,
+      const mockFrom = vi.fn().mockReturnValue({
+        delete: vi.fn().mockReturnValue({
+          lt: vi.fn().mockReturnValue({
+            select: vi.fn().mockResolvedValue({
+              data: [{ id: 'old-1' }, { id: 'old-2' }],
+              error: null,
+            }),
+          }),
+        }),
       });
+      vi.mocked(supabase.from).mockImplementation(mockFrom);
 
       const deleted = await messageSummarizationService.cleanupOldSummaries(30);
 
@@ -371,10 +433,17 @@ describe('MessageSummarizationService', () => {
     it('should handle cleanup errors', async () => {
       const { supabase } = await import('../supabase');
 
-      vi.mocked(supabase.from('conversation_summaries').delete().lt().select as any).mockResolvedValue({
-        data: null,
-        error: new Error('Cleanup failed'),
+      const mockFrom = vi.fn().mockReturnValue({
+        delete: vi.fn().mockReturnValue({
+          lt: vi.fn().mockReturnValue({
+            select: vi.fn().mockResolvedValue({
+              data: null,
+              error: new Error('Cleanup failed'),
+            }),
+          }),
+        }),
       });
+      vi.mocked(supabase.from).mockImplementation(mockFrom);
 
       const deleted = await messageSummarizationService.cleanupOldSummaries(30);
 

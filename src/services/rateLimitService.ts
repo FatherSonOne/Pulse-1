@@ -267,10 +267,38 @@ class RateLimitDB {
 export class RateLimitService {
   private db: RateLimitDB;
   private cleanupInterval: number | null = null;
+  private locks = new Map<string, Promise<void>>();
 
   constructor() {
     this.db = new RateLimitDB();
     this.startCleanup();
+  }
+
+  /**
+   * Execute a function with exclusive lock on a key
+   * Prevents race conditions in read-modify-write operations
+   */
+  private async withLock<T>(key: string, fn: () => Promise<T>): Promise<T> {
+    // Wait for any existing lock on this key
+    while (this.locks.has(key)) {
+      await this.locks.get(key);
+    }
+
+    // Create new lock for this key
+    let releaseLock: () => void;
+    const lockPromise = new Promise<void>((resolve) => {
+      releaseLock = resolve;
+    });
+    this.locks.set(key, lockPromise);
+
+    try {
+      // Execute the critical section
+      return await fn();
+    } finally {
+      // Release the lock
+      this.locks.delete(key);
+      releaseLock!();
+    }
   }
 
   /**
@@ -389,27 +417,30 @@ export class RateLimitService {
 
   /**
    * Record a request (call this after a successful request)
+   * Uses locking to prevent race conditions during concurrent requests
    */
   async recordRequest(rateLimitType: string, userId: string): Promise<void> {
     const key = this.getKey(rateLimitType, userId);
-    const now = Date.now();
 
-    let record = await this.db.get(key);
+    await this.withLock(key, async () => {
+      const now = Date.now();
+      let record = await this.db.get(key);
 
-    if (!record) {
-      record = {
-        key,
-        userId,
-        timestamps: [],
-        windowStart: now,
-      };
-    }
+      if (!record) {
+        record = {
+          key,
+          userId,
+          timestamps: [],
+          windowStart: now,
+        };
+      }
 
-    // Add current timestamp
-    record.timestamps.push(now);
+      // Add current timestamp
+      record.timestamps.push(now);
 
-    // Save updated record
-    await this.db.set(record);
+      // Save updated record
+      await this.db.set(record);
+    });
   }
 
   /**

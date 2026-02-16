@@ -7,6 +7,13 @@
   transition: all 0.2s;
 }
 
+/* Phase 1: Dark mode - softer background to reduce glare */
+.dark .decision-card {
+  background: #1c1c1c;  /* Slightly lighter than pure black for comfort */
+  border-color: #2a2a2a;
+  color: #e5e5e5;
+}
+
 .decision-card:hover {
   box-shadow: 0 4px 12px rgba(0, 0, 0, 0.08);
   transform: translateY(-2px);
@@ -315,4 +322,87 @@
   .vote-button:hover {
     transform: none;
   }
+}
+
+/* ============================================
+   DARK MODE - Comprehensive overrides (Brand Palette)
+   ============================================ */
+
+.dark .decision-title h3 {
+  color: #e5e5e5;  /* Primary text - comfortable for extended reading */
+}
+
+.dark .decision-description {
+  color: #a3a3a3;  /* Secondary text - softer for descriptions */
+}
+
+.dark .decision-meta {
+  color: #737373;  /* Tertiary text - subtle metadata */
+}
+
+.dark .decision-deadline {
+  color: #a3a3a3;
+}
+
+.dark .decision-voting {
+  background: #262626;  /* Slightly lighter than card for visual hierarchy */
+  border: 1px solid #2a2a2a;
+}
+
+.dark .voting-options p,
+.dark .vote-results h4 {
+  color: #e5e5e5;
+}
+
+.dark .vote-info {
+  color: #a3a3a3;
+}
+
+.dark .info-item strong {
+  color: #e5e5e5;
+}
+
+.dark .info-item span {
+  color: #a3a3a3;
+}
+
+.dark .vote-button {
+  background: #1c1c1c;
+  border-color: #2a2a2a;
+  color: #e5e5e5;
+}
+
+.dark .vote-button:hover {
+  background: #262626;
+  border-color: #f43f5e;
+}
+
+.dark .decision-results {
+  background: #262626;
+  border: 1px solid #2a2a2a;
+}
+
+.dark .results-header {
+  color: #e5e5e5;
+}
+
+.dark .result-label {
+  color: #a3a3a3;
+}
+
+.dark .result-progress {
+  background: #404040;
+}
+
+.dark .final-decision {
+  background: rgba(16, 185, 129, 0.12);
+  border-color: rgba(16, 185, 129, 0.3);
+}
+
+.dark .final-decision strong {
+  color: #e5e5e5;
+}
+
+.dark .final-decision p {
+  color: #a3a3a3;
 }

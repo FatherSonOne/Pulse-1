@@ -7,13 +7,18 @@
   right: 0;
   bottom: 0;
   background: rgba(0, 0, 0, 0.6);
+  /* Phase 3: Optimize backdrop-filter performance */
   backdrop-filter: blur(4px);
+  will-change: opacity;
   display: flex;
   align-items: center;
   justify-content: center;
-  z-index: 1000;
+  z-index: 1000; /* Phase 1.2: Modal layer - above sticky nav (z:4-5), below snackbar (z:1050) */
   padding: 1rem;
   animation: fadeIn 0.2s ease-out;
+  /* Phase 1.3: Prevent clicks/scroll on background */
+  pointer-events: auto;
+  cursor: pointer;
 }
 
 .reassign-modal {
@@ -27,6 +32,9 @@
   display: flex;
   flex-direction: column;
   animation: slideUp 0.3s ease-out;
+  /* Phase 1.3: Prevent clicks from closing modal when clicking inside */
+  pointer-events: auto;
+  cursor: default;
 }
 
 @keyframes fadeIn {
@@ -322,27 +330,97 @@
   transform: translateY(-1px);
 }
 
-/* Dark mode adjustments */
+/* Dark mode adjustments - Brand Palette */
 .dark .reassign-modal {
-  background: var(--bg-secondary, #171717);
-  border-color: var(--hub-border, #262626);
+  background: #1c1c1c;
+  border-color: #2a2a2a;
 }
 
 .dark .reassign-modal-header {
   background: linear-gradient(135deg, rgba(244, 63, 94, 0.1) 0%, rgba(236, 72, 153, 0.1) 100%);
 }
 
-.dark .reassign-modal-close {
-  background: var(--bg-tertiary, #262626);
+.dark .reassign-modal-header-content h3 {
+  color: #e5e5e5;
 }
 
-.dark .reassign-search-input,
+.dark .reassign-modal-task-title {
+  color: #a3a3a3;
+}
+
+.dark .reassign-modal-close {
+  background: #262626;
+  border-color: #2a2a2a;
+  color: #e5e5e5;
+}
+
+.dark .reassign-current-assignee {
+  background: rgba(16, 185, 129, 0.12);
+  border-color: rgba(16, 185, 129, 0.3);
+  color: #e5e5e5;
+}
+
+.dark .reassign-search-input {
+  background: #1c1c1c;
+  border-color: #2a2a2a;
+  color: #e5e5e5;
+}
+
+.dark .reassign-search-input::placeholder {
+  color: #737373;
+}
+
+.dark .reassign-search-input:focus {
+  background: #262626;
+}
+
+.dark .reassign-search-icon {
+  color: #a3a3a3;
+}
+
 .dark .reassign-contact-item {
-  background: var(--hub-card-bg, #171717);
+  background: #1c1c1c;
+  border-color: #2a2a2a;
+}
+
+.dark .reassign-contact-item:hover {
+  background: #262626;
+  border-color: #f43f5e;
+}
+
+.dark .reassign-contact-name {
+  color: #e5e5e5;
+}
+
+.dark .reassign-contact-details {
+  color: #a3a3a3;
+}
+
+.dark .reassign-empty-state p {
+  color: #a3a3a3;
 }
 
 .dark .reassign-modal-footer {
-  background: var(--bg-tertiary, #262626);
+  background: #262626;
+  border-color: #2a2a2a;
+}
+
+.dark .reassign-modal-button-cancel {
+  color: #e5e5e5;
+  border-color: #2a2a2a;
+}
+
+.dark .reassign-modal-button-cancel:hover:not(:disabled) {
+  background: #1c1c1c;
+  border-color: #404040;
+}
+
+.dark .reassign-contacts-list::-webkit-scrollbar-track {
+  background: #262626;
+}
+
+.dark .reassign-contacts-list::-webkit-scrollbar-thumb {
+  background: #404040;
 }
 
 /* Responsive */

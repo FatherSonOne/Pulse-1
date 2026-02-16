@@ -520,14 +520,16 @@ button:focus-visible {
 .message-input-portal-container {
   position: fixed;
   bottom: 0;
-  right: 0;
   z-index: 100;
+  width: calc(100vw - var(--sidebar-offset, 30%));
+  max-width: 1200px;
 
   padding: 1rem 1.5rem;
   padding-bottom: max(1rem, env(safe-area-inset-bottom));
 
   background: var(--bg-primary, #ffffff);
-  border-top: 1px solid var(--border-color, #e5e7eb);
+  border-top: 2px solid var(--border-color, #e5e7eb);
+  box-shadow: 0 -4px 16px rgba(0, 0, 0, 0.08);
 
   display: flex;
   flex-direction: column;
@@ -543,7 +545,8 @@ button:focus-visible {
 
 .dark .message-input-portal-container {
   background: var(--bg-primary-dark, #18181b);
-  border-top-color: var(--border-color-dark, #27272a);
+  border-top-color: var(--border-color-dark, #3f3f46);
+  box-shadow: 0 -4px 20px rgba(0, 0, 0, 0.5);
 }
 
 /* Mobile: Full width */
@@ -564,4 +567,28 @@ button:focus-visible {
   .messages-area {
     padding-bottom: calc(160px + env(safe-area-inset-bottom, 0));
   }
+}
+
+/* Fix text colors in portal for light/dark mode */
+.message-input-portal-container {
+  color: #18181b;
+}
+
+.dark .message-input-portal-container {
+  color: #ffffff;
+}
+
+.message-input-portal-container input,
+.message-input-portal-container textarea {
+  color: inherit !important;
+}
+
+.message-input-portal-container input::placeholder,
+.message-input-portal-container textarea::placeholder {
+  color: #71717a !important;
+}
+
+.dark .message-input-portal-container input::placeholder,
+.dark .message-input-portal-container textarea::placeholder {
+  color: #a1a1aa !important;
 }

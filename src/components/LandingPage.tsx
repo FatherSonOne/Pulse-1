@@ -24,7 +24,7 @@ const LandingPage: React.FC<LandingPageProps> = ({ onGetStarted }) => {
       <nav className="fixed top-0 left-0 right-0 z-[100] bg-zinc-950/80 backdrop-blur-xl border-b border-zinc-800/50">
         <div className="max-w-7xl mx-auto px-6 py-4 flex items-center justify-between">
           <div className="flex items-center gap-3 cursor-pointer group" onClick={handleLogoClick}>
-            <div className="w-10 h-10 rounded-xl bg-[#0f172a] flex items-center justify-center shadow-lg border border-zinc-800 animate-pulse-slow group-hover:scale-110 transition-transform duration-300">
+            <div className="w-10 h-10 rounded-xl bg-[#0f172a] flex items-center justify-center shadow-lg border border-zinc-800 group-hover:scale-110 transition-transform duration-300">
               <svg viewBox="0 0 64 64" className="w-6 h-6">
                 <defs>
                   <linearGradient id="pulse-grad-nav" x1="0%" y1="0%" x2="100%" y2="100%">
@@ -84,9 +84,9 @@ const LandingPage: React.FC<LandingPageProps> = ({ onGetStarted }) => {
 
         {/* Enhanced Abstract Background with Rose/Pink Gradients - Base Layer */}
         <div className="absolute inset-0 pointer-events-none z-0 overflow-hidden">
-          <div className="absolute top-0 left-1/2 -translate-x-1/2 w-[1200px] h-[700px] bg-gradient-to-br from-rose-500/25 via-pink-500/18 to-transparent rounded-full blur-[140px] opacity-70 mix-blend-screen animate-pulse-slow"></div>
-          <div className="absolute bottom-0 right-0 w-[900px] h-[700px] bg-gradient-to-tl from-purple-500/18 via-pink-600/12 to-transparent rounded-full blur-[120px] opacity-50 mix-blend-screen animate-float"></div>
-          <div className="absolute top-40 left-0 w-[700px] h-[700px] bg-gradient-to-br from-rose-600/12 via-pink-700/6 to-transparent rounded-full blur-[120px] opacity-40 mix-blend-screen" style={{ animation: 'float 4s ease-in-out infinite', animationDelay: '1s' }}></div>
+          <div className="absolute top-0 left-1/2 -translate-x-1/2 w-[1200px] h-[700px] bg-gradient-to-br from-rose-500/25 via-pink-500/18 to-transparent rounded-full blur-[140px] opacity-70 mix-blend-screen"></div>
+          <div className="absolute bottom-0 right-0 w-[900px] h-[700px] bg-gradient-to-tl from-purple-500/18 via-pink-600/12 to-transparent rounded-full blur-[120px] opacity-50 mix-blend-screen"></div>
+          <div className="absolute top-40 left-0 w-[700px] h-[700px] bg-gradient-to-br from-rose-600/12 via-pink-700/6 to-transparent rounded-full blur-[120px] opacity-40 mix-blend-screen"></div>
           <div className="absolute top-1/2 left-1/2 -translate-x-1/2 -translate-y-1/2 w-[1000px] h-[1000px] bg-gradient-radial from-rose-500/10 via-pink-600/5 to-transparent rounded-full blur-3xl opacity-60"></div>
 
           {/* Enhanced Grid Pattern with Gradient - More Visible */}

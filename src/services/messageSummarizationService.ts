@@ -74,6 +74,10 @@ function setCached<T>(type: string, id: string, data: T, messageCount: number): 
   summaryCache.set(key, { data, timestamp: Date.now(), messageCount });
 }
 
+function clearCache(): void {
+  summaryCache.clear();
+}
+
 // ==================== Service Class ====================
 
 class MessageSummarizationService {
@@ -87,17 +91,17 @@ class MessageSummarizationService {
     apiKey: string
   ): Promise<ThreadSummary> {
     try {
-      // Check cache first
+      // Get thread messages first to validate
+      const messages = await messageChannelService.getThreadMessages(threadId);
+
+      if (!messages || messages.length === 0) {
+        throw new Error('No messages in thread');
+      }
+
+      // Check cache after validation
       const cached = getCached<ThreadSummary>('thread', threadId);
       if (cached) {
         return cached;
-      }
-
-      // Get thread messages
-      const messages = await messageChannelService.getThreadMessages(threadId);
-
-      if (messages.length === 0) {
-        throw new Error('No messages in thread');
       }
 
       // Build context for AI
@@ -402,22 +406,30 @@ Return as JSON:
    */
   private parseJSONResponse(response: string): any {
     try {
-      // Remove markdown code blocks if present
-      let cleaned = response.trim();
-      if (cleaned.startsWith('```json')) {
-        cleaned = cleaned.substring(7);
-      }
-      if (cleaned.startsWith('```')) {
-        cleaned = cleaned.substring(3);
-      }
-      if (cleaned.endsWith('```')) {
-        cleaned = cleaned.substring(0, cleaned.length - 3);
-      }
+      // First try direct parse
+      return JSON.parse(response.trim());
+    } catch (firstError) {
+      try {
+        // Try removing markdown code blocks
+        let cleaned = response.trim();
 
-      return JSON.parse(cleaned.trim());
-    } catch (error) {
-      console.error('[Summarization] Error parsing JSON:', error);
-      return {};
+        // Handle ```json\n{...}\n``` format
+        if (cleaned.startsWith('```json')) {
+          cleaned = cleaned.substring(7);
+        } else if (cleaned.startsWith('```')) {
+          cleaned = cleaned.substring(3);
+        }
+
+        if (cleaned.endsWith('```')) {
+          cleaned = cleaned.substring(0, cleaned.length - 3);
+        }
+
+        return JSON.parse(cleaned.trim());
+      } catch (secondError) {
+        // Return empty object on parse failure
+        console.error('[Summarization] Error parsing JSON:', secondError);
+        return {};
+      }
     }
   }
 
@@ -521,6 +533,13 @@ Return as JSON:
       console.error('[Summarization] Error cleaning up summaries:', error);
       return 0;
     }
+  }
+
+  /**
+   * Clear the in-memory cache (primarily for testing)
+   */
+  clearCache(): void {
+    clearCache();
   }
 }
 

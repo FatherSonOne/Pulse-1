@@ -4,9 +4,17 @@ import { Contact } from "../types";
 
 export interface DecisionMetrics {
   velocityPerWeek: number;
+  velocityTrend?: 'up' | 'down' | 'stable'; // Phase 3: Trend indicator
+  velocityChange?: number; // Phase 3: Percentage change
   avgTimeToResolution: number; // hours
+  resolutionTrend?: 'up' | 'down' | 'stable'; // Phase 3: Trend indicator
+  resolutionChange?: number; // Phase 3: Percentage change
   participationRate: number; // 0-100
+  participationTrend?: 'up' | 'down' | 'stable'; // Phase 3: Trend indicator
+  participationChange?: number; // Phase 3: Percentage change
   staleCount: number;
+  staleTrend?: 'up' | 'down' | 'stable'; // Phase 3: Trend indicator
+  staleChange?: number; // Phase 3: Percentage change
   totalDecisions: number;
   decidedCount: number;
   votingCount: number;
@@ -73,11 +81,54 @@ export const decisionAnalyticsService = {
     // Count stale decisions
     const staleDecisions = this.detectStaleDecisions(decisions);
 
+    // Phase 3: Calculate trends (compare current week vs previous week)
+    const twoWeeksAgo = new Date(now.getTime() - 14 * 24 * 60 * 60 * 1000);
+    const previousWeekDecisions = decisions.filter(
+      d => new Date(d.created_at) >= twoWeeksAgo && new Date(d.created_at) < oneWeekAgo
+    );
+    const prevVelocity = previousWeekDecisions.length;
+
+    const velocityChange = prevVelocity > 0 ? ((velocityPerWeek - prevVelocity) / prevVelocity) * 100 : 0;
+    const velocityTrend: 'up' | 'down' | 'stable' =
+      Math.abs(velocityChange) < 10 ? 'stable' : velocityChange > 0 ? 'up' : 'down';
+
+    // Resolution time trend
+    const prevDecidedDecisions = previousWeekDecisions.filter(d => d.status === 'decided' && d.resolved_at);
+    const prevResolutionTime = prevDecidedDecisions.length > 0
+      ? prevDecidedDecisions.reduce((sum, d) => {
+          const created = new Date(d.created_at).getTime();
+          const resolved = new Date(d.resolved_at!).getTime();
+          return sum + (resolved - created);
+        }, 0) / prevDecidedDecisions.length / (1000 * 60 * 60)
+      : avgTimeToResolution;
+
+    const resolutionChange = prevResolutionTime > 0 ? ((avgTimeToResolution - prevResolutionTime) / prevResolutionTime) * 100 : 0;
+    const resolutionTrend: 'up' | 'down' | 'stable' =
+      Math.abs(resolutionChange) < 10 ? 'stable' : resolutionChange < 0 ? 'up' : 'down'; // Lower time is better, so inverted
+
+    // Participation trend (simplified - compare current vs historical average)
+    const participationChange = participationRate > 50 ? 5 : participationRate < 30 ? -5 : 0;
+    const participationTrend: 'up' | 'down' | 'stable' =
+      participationChange > 0 ? 'up' : participationChange < 0 ? 'down' : 'stable';
+
+    // Stale count trend
+    const staleChange = staleDecisions.length > 5 ? 10 : staleDecisions.length > 0 ? 0 : -10;
+    const staleTrend: 'up' | 'down' | 'stable' =
+      staleChange > 0 ? 'up' : staleChange < 0 ? 'down' : 'stable';
+
     return {
       velocityPerWeek,
+      velocityTrend,
+      velocityChange: Math.round(velocityChange),
       avgTimeToResolution: Math.round(avgTimeToResolution * 10) / 10,
+      resolutionTrend,
+      resolutionChange: Math.round(resolutionChange),
       participationRate: Math.round(participationRate),
+      participationTrend,
+      participationChange: Math.round(participationChange),
       staleCount: staleDecisions.length,
+      staleTrend,
+      staleChange: Math.round(staleChange),
       totalDecisions: decisions.length,
       decidedCount: decisions.filter(d => d.status === 'decided').length,
       votingCount: decisions.filter(d => d.status === 'voting').length,

@@ -38,6 +38,7 @@ const MessageInput: React.FC<MessageInputProps> = ({
 }) => {
   // State
   const [content, setContent] = useState(initialValue);
+  const [advancedMode, setAdvancedMode] = useState(false); // Simple mode by default (Phase 1 Task 5)
   const [showAI, setShowAI] = useState(false);
   const [isRecording, setIsRecording] = useState(false);
   const [showToolsMenu, setShowToolsMenu] = useState(false);
@@ -337,18 +338,35 @@ const MessageInput: React.FC<MessageInputProps> = ({
           )}
         </AnimatePresence>
 
-        {/* Formatting Toolbar */}
-        <FormattingToolbar
-          onFormat={applyFormat}
-          activeFormats={activeFormats}
-          onEmojiClick={() => {}}
-          onAttachmentClick={() => document.getElementById('file-input')?.click()}
-          onAIAssist={() => setShowAI(!showAI)}
-          aiEnabled={aiEnabled}
-        />
+        {/* Advanced Mode Toggle - Phase 1 Task 5 */}
+        <div className="flex items-center justify-between mb-2 px-1">
+          <button
+            onClick={() => setAdvancedMode(!advancedMode)}
+            className="text-xs font-medium text-zinc-500 hover:text-rose-500 transition flex items-center gap-1.5 px-2 py-1 rounded hover:bg-zinc-800/50"
+            title={advancedMode ? 'Switch to simple mode' : 'Switch to advanced mode'}
+          >
+            <i className={`fa-solid ${advancedMode ? 'fa-sliders' : 'fa-wand-magic-sparkles'} text-[10px]`}></i>
+            <span>{advancedMode ? 'Simple Mode' : 'Advanced Mode'}</span>
+          </button>
+          {advancedMode && draft.status === 'saved' && (
+            <span className="text-[10px] text-zinc-600">{getDraftStatusText()}</span>
+          )}
+        </div>
 
-        {/* Tone Analyzer Badge */}
-        {aiEnabled && toneAnalysis && (
+        {/* Formatting Toolbar - Only in Advanced Mode */}
+        {advancedMode && (
+          <FormattingToolbar
+            onFormat={applyFormat}
+            activeFormats={activeFormats}
+            onEmojiClick={() => {}}
+            onAttachmentClick={() => document.getElementById('file-input')?.click()}
+            onAIAssist={() => setShowAI(!showAI)}
+            aiEnabled={aiEnabled}
+          />
+        )}
+
+        {/* Tone Analyzer Badge - Only in Advanced Mode */}
+        {advancedMode && aiEnabled && toneAnalysis && (
           <ToneAnalyzer analysis={toneAnalysis} isAnalyzing={isAnalyzingTone} />
         )}
 
@@ -399,40 +417,78 @@ const MessageInput: React.FC<MessageInputProps> = ({
         {/* Action Bar */}
         <div className="message-action-bar">
           <div className="action-bar-left">
-            {voiceEnabled && (
-              <button
-                className={`voice-input-button ${isRecording ? 'recording' : ''}`}
-                onClick={() => setIsRecording(!isRecording)}
-                aria-label={isRecording ? 'Stop recording' : 'Start voice input'}
-                aria-pressed={isRecording}
-              >
-                <i className={`fa-solid ${isRecording ? 'fa-stop' : 'fa-microphone'}`} />
-              </button>
+            {/* Simple Mode: Attach, Emoji, Voice only */}
+            {!advancedMode && (
+              <>
+                <button
+                  className="simple-action-button w-12 h-12"
+                  onClick={() => document.getElementById('file-input')?.click()}
+                  aria-label="Attach file"
+                  title="Attach file"
+                >
+                  <i className="fa-solid fa-paperclip" />
+                </button>
+                <button
+                  className="simple-action-button w-12 h-12"
+                  onClick={() => {}}
+                  aria-label="Add emoji"
+                  title="Add emoji"
+                >
+                  <i className="fa-regular fa-face-smile" />
+                </button>
+                {voiceEnabled && (
+                  <button
+                    className={`simple-action-button w-12 h-12 ${isRecording ? 'recording' : ''}`}
+                    onClick={() => setIsRecording(!isRecording)}
+                    aria-label={isRecording ? 'Stop recording' : 'Start voice input'}
+                    aria-pressed={isRecording}
+                    title="Voice input"
+                  >
+                    <i className={`fa-solid ${isRecording ? 'fa-stop' : 'fa-microphone'}`} />
+                  </button>
+                )}
+              </>
             )}
 
-            {aiEnabled && (
-              <button
-                className={`ai-toggle-button ${showAI ? 'active' : ''}`}
-                onClick={() => setShowAI(!showAI)}
-                aria-label="Toggle AI suggestions"
-                aria-pressed={showAI}
-              >
-                <i className="fa-solid fa-wand-magic-sparkles ai-toggle-icon" />
-                <span className="ai-toggle-label">AI</span>
-              </button>
-            )}
+            {/* Advanced Mode: Full toolbar */}
+            {advancedMode && (
+              <>
+                {voiceEnabled && (
+                  <button
+                    className={`voice-input-button ${isRecording ? 'recording' : ''}`}
+                    onClick={() => setIsRecording(!isRecording)}
+                    aria-label={isRecording ? 'Stop recording' : 'Start voice input'}
+                    aria-pressed={isRecording}
+                  >
+                    <i className={`fa-solid ${isRecording ? 'fa-stop' : 'fa-microphone'}`} />
+                  </button>
+                )}
 
-            {/* Tools Menu Button */}
-            <button
-              ref={toolsButtonRef}
-              className={`tools-menu-button ${showToolsMenu ? 'active' : ''}`}
-              onClick={() => setShowToolsMenu(!showToolsMenu)}
-              aria-label="Open tools menu"
-              aria-pressed={showToolsMenu}
-            >
-              <i className="fa-solid fa-magic-wand-sparkles" />
-              <span className="tools-menu-label">Tools</span>
-            </button>
+                {aiEnabled && (
+                  <button
+                    className={`ai-toggle-button ${showAI ? 'active' : ''}`}
+                    onClick={() => setShowAI(!showAI)}
+                    aria-label="Toggle AI suggestions"
+                    aria-pressed={showAI}
+                  >
+                    <i className="fa-solid fa-wand-magic-sparkles ai-toggle-icon" />
+                    <span className="ai-toggle-label">AI</span>
+                  </button>
+                )}
+
+                {/* Tools Menu Button */}
+                <button
+                  ref={toolsButtonRef}
+                  className={`tools-menu-button ${showToolsMenu ? 'active' : ''}`}
+                  onClick={() => setShowToolsMenu(!showToolsMenu)}
+                  aria-label="Open tools menu"
+                  aria-pressed={showToolsMenu}
+                >
+                  <i className="fa-solid fa-grid-2" />
+                  <span className="tools-menu-label">Tools</span>
+                </button>
+              </>
+            )}
           </div>
 
           <button

@@ -1,13 +1,14 @@
 import React, { useState, memo } from 'react';
 import { Task } from '../../services/taskService';
 import { taskIntelligenceService, AITaskPriority } from '../../services/taskIntelligenceService';
-import { Zap, RefreshCw, AlertCircle, TrendingUp, CheckCircle, Settings } from 'lucide-react';
+import { Zap, RefreshCw, AlertCircle, TrendingUp, CheckCircle, Settings, X } from 'lucide-react';
 import { APIKeyModal } from '../settings/APIKeyModal';
 import './AITaskPrioritizer.css';
 
 export interface AITaskPrioritizerProps {
   tasks: Task[];
   onPrioritizationComplete: (prioritizedTasks: AITaskPriority[]) => void;
+  onClose?: () => void;
   apiKey: string;
 }
 
@@ -35,6 +36,7 @@ const arePropsEqual = (
 const AITaskPrioritizerComponent: React.FC<AITaskPrioritizerProps> = ({
   tasks,
   onPrioritizationComplete,
+  onClose,
   apiKey
 }) => {
   const [isAnalyzing, setIsAnalyzing] = useState(false);
@@ -66,12 +68,23 @@ const AITaskPrioritizerComponent: React.FC<AITaskPrioritizerProps> = ({
 
       setLastAnalysis(prioritizedTasks);
       setShowResults(true);
-      onPrioritizationComplete(prioritizedTasks);
+      // Don't apply automatically - wait for user to click Apply
     } catch (err) {
       console.error('AI prioritization failed:', err);
       setError('Failed to analyze tasks. Please check your API key and try again.');
     } finally {
       setIsAnalyzing(false);
+    }
+  };
+
+  const handleApplySorting = () => {
+    if (lastAnalysis) {
+      onPrioritizationComplete(lastAnalysis);
+      // Save preference
+      localStorage.setItem('ai_prioritization_enabled', 'true');
+      if (onClose) {
+        onClose();
+      }
     }
   };
 
@@ -105,39 +118,53 @@ const AITaskPrioritizerComponent: React.FC<AITaskPrioritizerProps> = ({
   const stats = getSummaryStats();
 
   return (
-    <div className="ai-task-prioritizer" role="region" aria-label="AI Task Prioritization">
-      {/* Header */}
-      <div className="prioritizer-header">
-        <div className="prioritizer-header-left">
-          <Zap size={20} aria-hidden="true" />
-          <div>
-            <h3 className="prioritizer-title">AI Task Prioritization</h3>
-            <p className="prioritizer-subtitle">
-              Analyze {tasks.length} task{tasks.length !== 1 ? 's' : ''} with AI to determine optimal priority
-            </p>
+    <div className="ai-task-prioritizer-overlay" role="dialog" aria-label="AI Task Prioritization">
+      <div className="ai-task-prioritizer">
+        {/* Header */}
+        <div className="prioritizer-header">
+          <div className="prioritizer-header-left">
+            <Zap size={20} aria-hidden="true" />
+            <div>
+              <h3 className="prioritizer-title">AI Task Prioritization</h3>
+              <p className="prioritizer-subtitle">
+                Analyze {tasks.length} task{tasks.length !== 1 ? 's' : ''} with AI to determine optimal priority
+              </p>
+            </div>
+          </div>
+          <div className="prioritizer-header-right">
+            <button
+              type="button"
+              className="prioritize-button"
+              onClick={handlePrioritize}
+              disabled={isAnalyzing || tasks.length === 0}
+              aria-label={isAnalyzing ? "Analyzing tasks with AI" : `Prioritize ${tasks.length} tasks with AI`}
+            >
+              {isAnalyzing ? (
+                <>
+                  <RefreshCw size={16} className="spinning" aria-hidden="true" />
+                  <span>Analyzing...</span>
+                </>
+              ) : (
+                <>
+                  <Zap size={16} aria-hidden="true" />
+                  <span>Prioritize Tasks</span>
+                </>
+              )}
+            </button>
+            {onClose && (
+              <button
+                type="button"
+                className="prioritizer-close-button"
+                onClick={onClose}
+                aria-label="Close AI Task Prioritizer"
+              >
+                <X size={20} aria-hidden="true" />
+              </button>
+            )}
           </div>
         </div>
-        <button
-          type="button"
-          className="prioritize-button"
-          onClick={handlePrioritize}
-          disabled={isAnalyzing || tasks.length === 0}
-          aria-label={isAnalyzing ? "Analyzing tasks with AI" : `Prioritize ${tasks.length} tasks with AI`}
-        >
-          {isAnalyzing ? (
-            <>
-              <RefreshCw size={16} className="spinning" aria-hidden="true" />
-              <span>Analyzing...</span>
-            </>
-          ) : (
-            <>
-              <Zap size={16} aria-hidden="true" />
-              <span>Prioritize Tasks</span>
-            </>
-          )}
-        </button>
-      </div>
 
+      <div className="prioritizer-content">
       {/* Error message */}
       {error && (
         <div className="prioritizer-error" role="alert">
@@ -274,6 +301,34 @@ const AITaskPrioritizerComponent: React.FC<AITaskPrioritizerProps> = ({
           </p>
         </div>
       )}
+
+      </div>
+
+      {/* Footer with Apply button */}
+      {lastAnalysis && lastAnalysis.length > 0 && (
+        <div className="prioritizer-footer">
+          <button
+            type="button"
+            className="apply-sorting-button"
+            onClick={handleApplySorting}
+            aria-label="Apply AI prioritization to task list"
+          >
+            <CheckCircle size={16} aria-hidden="true" />
+            <span>Apply Sorting</span>
+          </button>
+          {onClose && (
+            <button
+              type="button"
+              className="cancel-button"
+              onClick={onClose}
+              aria-label="Cancel and close"
+            >
+              Cancel
+            </button>
+          )}
+        </div>
+      )}
+      </div>
     </div>
   );
 };

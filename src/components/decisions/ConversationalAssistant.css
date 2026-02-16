@@ -9,14 +9,20 @@
   top: 0;
   right: 0;
   width: 420px;
-  height: 100vh;
+  height: 100vh; /* Fallback for older browsers */
+  height: 100dvh; /* Phase 2.1: Dynamic viewport height - accounts for mobile browser UI */
   background: var(--bg-secondary, #f5f4f1);
   border-left: 1px solid var(--hub-border);
   display: flex;
   flex-direction: column;
-  z-index: 1000;
+  z-index: 1000; /* Phase 1.2: Modal layer - above sticky nav (z:4-5), below snackbar (z:1050) */
   box-shadow: -4px 0 24px rgba(0, 0, 0, 0.15);
   animation: slideInRight 0.3s cubic-bezier(0.4, 0, 0.2, 1);
+  /* Phase 1.3: Ensure proper pointer events */
+  pointer-events: auto;
+  /* Prevent sidebar scroll from affecting viewport */
+  overscroll-behavior: contain;
+  overflow: hidden; /* Prevent any overflow from affecting viewport */
 }
 
 @keyframes slideInRight {
@@ -119,10 +125,14 @@
 .assistant-messages {
   flex: 1;
   overflow-y: auto;
-  padding: 1.5rem;
+  padding: 0.75rem 1.5rem;
   display: flex;
   flex-direction: column;
   gap: 1rem;
+  /* Prevent scroll from bubbling to parent/viewport */
+  overscroll-behavior: contain;
+  /* Limit height when showing welcome screen with metrics and quick actions */
+  min-height: 0;
 }
 
 .assistant-messages::-webkit-scrollbar {
@@ -142,14 +152,14 @@
   background: var(--hub-accent-start);
 }
 
-/* Welcome Screen */
+/* Welcome Screen - Compact for single-page view */
 .assistant-welcome {
   display: flex;
   flex-direction: column;
   align-items: center;
   justify-content: center;
   text-align: center;
-  padding: 2rem 1rem;
+  padding: 1rem 1rem 0.75rem;
   animation: fadeIn 0.4s ease-in;
 }
 
@@ -157,26 +167,27 @@
   display: flex;
   align-items: center;
   justify-content: center;
-  width: 80px;
-  height: 80px;
+  width: 56px;
+  height: 56px;
   background: linear-gradient(135deg, var(--hub-header-bg) 0%, var(--hub-insights-bg) 100%);
   border-radius: 50%;
-  margin-bottom: 1.5rem;
+  margin-bottom: 0.75rem;
   color: var(--hub-accent-start);
 }
 
 .assistant-welcome h4 {
-  margin: 0 0 0.75rem 0;
-  font-size: 1.25rem;
+  margin: 0 0 0.5rem 0;
+  font-size: 1.05rem;
   font-weight: 600;
   color: var(--hub-text);
+  line-height: 1.2;
 }
 
 .assistant-welcome p {
   margin: 0;
-  font-size: 0.9rem;
+  font-size: 0.8rem;
   color: var(--hub-text-secondary);
-  line-height: 1.5;
+  line-height: 1.4;
   max-width: 300px;
 }
 
@@ -298,11 +309,11 @@
    ============================================ */
 
 .assistant-quick-actions {
-  padding: 1rem 1.5rem;
+  padding: 0.875rem 1.5rem 1rem;
   background: var(--bg-tertiary, #fef7f4);
   border-top: 1px solid var(--hub-border);
-  max-height: 280px;
-  overflow-y: auto;
+  max-height: none;
+  overflow-y: visible;
   flex-shrink: 0;
 }
 
@@ -320,16 +331,16 @@
 }
 
 .quick-actions-header {
-  font-size: 0.75rem;
+  font-size: 0.7rem;
   font-weight: 600;
   text-transform: uppercase;
   letter-spacing: 0.5px;
   color: var(--hub-text-secondary);
-  margin-bottom: 1rem;
+  margin-bottom: 0.625rem;
 }
 
 .quick-action-group {
-  margin-bottom: 1rem;
+  margin-bottom: 0.75rem;
 }
 
 .quick-action-group:last-child {
@@ -337,10 +348,10 @@
 }
 
 .quick-action-group-label {
-  font-size: 0.75rem;
+  font-size: 0.7rem;
   font-weight: 600;
   color: var(--hub-accent-start);
-  margin-bottom: 0.5rem;
+  margin-bottom: 0.375rem;
   text-transform: uppercase;
   letter-spacing: 0.3px;
 }
@@ -348,22 +359,23 @@
 .quick-action-chips {
   display: flex;
   flex-wrap: wrap;
-  gap: 0.5rem;
+  gap: 0.375rem;
 }
 
 .quick-action-chip {
   display: flex;
   align-items: center;
   gap: 0.375rem;
-  padding: 0.5rem 0.875rem;
+  padding: 0.4rem 0.75rem;
   background: var(--hub-card-bg);
   border: 1px solid var(--hub-border);
   border-radius: 20px;
   color: var(--hub-text);
-  font-size: 0.8rem;
+  font-size: 0.75rem;
   cursor: pointer;
   transition: all 0.2s;
   white-space: nowrap;
+  line-height: 1.3;
 }
 
 .quick-action-chip:hover:not(:disabled) {
@@ -384,7 +396,7 @@
    ============================================ */
 
 .assistant-input-container {
-  padding: 1rem 1.5rem;
+  padding: 0.875rem 1.5rem;
   background: var(--bg-tertiary, #fef7f4);
   border-top: 1px solid var(--hub-border);
   flex-shrink: 0;
@@ -462,10 +474,23 @@
    RESPONSIVE
    ============================================ */
 
+/* Phase 2.2: Enhanced responsive breakpoints for tablet and mobile */
+
+/* Tablet - Reduce width but keep sidebar */
+@media (max-width: 1024px) and (min-width: 769px) {
+  .conversational-assistant {
+    width: 360px;
+  }
+}
+
+/* Mobile - Full width sidebar */
 @media (max-width: 768px) {
   .conversational-assistant {
     width: 100%;
     border-left: none;
+    /* Add safe area insets for notched devices */
+    padding-top: env(safe-area-inset-top);
+    padding-bottom: env(safe-area-inset-bottom);
   }
 
   .assistant-header {
@@ -478,10 +503,13 @@
 
   .assistant-quick-actions {
     padding: 1rem;
+    max-height: 220px; /* Reduce on mobile to save space */
   }
 
   .assistant-input-container {
     padding: 1rem;
+    /* Account for mobile keyboard */
+    padding-bottom: max(1rem, env(safe-area-inset-bottom));
   }
 
   .quick-action-chip {
@@ -490,14 +518,72 @@
   }
 }
 
-/* Dark mode adjustments */
+/* Small mobile - Further optimizations */
+@media (max-width: 480px) {
+  .assistant-header {
+    padding: 0.875rem;
+  }
+
+  .assistant-title-group h3 {
+    font-size: 1rem;
+  }
+
+  .assistant-messages {
+    padding: 0.875rem;
+    gap: 0.75rem;
+  }
+
+  .quick-action-chip {
+    font-size: 0.7rem;
+    padding: 0.375rem 0.625rem;
+  }
+}
+
+/* Dark mode adjustments - Brand Palette */
 .dark .conversational-assistant {
-  background: var(--bg-secondary, #0a0a0a);
-  box-shadow: -4px 0 24px rgba(0, 0, 0, 0.5);
+  background: #0a0a0a;
+  box-shadow: -4px 0 24px rgba(0, 0, 0, 0.6);
+  border-left-color: #2a2a2a;
+}
+
+.dark .assistant-header {
+  border-bottom-color: #2a2a2a;
+}
+
+.dark .assistant-title-group h3 {
+  color: #e5e5e5;
+}
+
+.dark .assistant-title-group p {
+  color: #a3a3a3;
+}
+
+.dark .assistant-close-button {
+  background: #262626;
+  border-color: #2a2a2a;
+  color: #e5e5e5;
+}
+
+.dark .assistant-messages::-webkit-scrollbar-track {
+  background: #1c1c1c;
+}
+
+.dark .assistant-messages::-webkit-scrollbar-thumb {
+  background: #404040;
+}
+
+.dark .assistant-welcome h4 {
+  color: #e5e5e5;
+}
+
+.dark .assistant-welcome p {
+  color: #a3a3a3;
 }
 
 .dark .message-text {
-  background: var(--hub-card-bg);
+  background: #1c1c1c;
+  border-color: #2a2a2a;
+  color: #e5e5e5;
 }
 
 .dark .user-message .message-text {
@@ -505,15 +591,262 @@
   border-color: rgba(244, 63, 94, 0.3);
 }
 
+.dark .message-time {
+  color: #737373;
+}
+
+.dark .message-loading {
+  background: #1c1c1c;
+  border-color: #2a2a2a;
+  color: #a3a3a3;
+}
+
+.dark .assistant-error {
+  background: rgba(239, 68, 68, 0.12);
+  border-color: rgba(239, 68, 68, 0.3);
+  color: #fca5a5;
+}
+
+.dark .assistant-quick-actions {
+  background: #1c1c1c;
+  border-top-color: #2a2a2a;
+}
+
+.dark .assistant-quick-actions::-webkit-scrollbar-track {
+  background: #0a0a0a;
+}
+
+.dark .assistant-quick-actions::-webkit-scrollbar-thumb {
+  background: #404040;
+}
+
+.dark .quick-actions-header {
+  color: #737373;
+}
+
+.dark .quick-action-group-label {
+  color: #f43f5e;
+}
+
+.dark .quick-action-chip {
+  background: #1c1c1c;
+  border-color: #2a2a2a;
+  color: #e5e5e5;
+}
+
 .dark .quick-action-chip:hover:not(:disabled) {
-  background: var(--hub-card-hover, #262626);
-  border-color: var(--hub-accent-start, #f43f5e);
-  color: var(--hub-accent-start, #f43f5e);
+  background: #262626;
+  border-color: #f43f5e;
+  color: #f43f5e;
   transform: translateY(-1px);
   box-shadow: 0 2px 8px rgba(244, 63, 94, 0.3);
 }
 
+.dark .assistant-input-container {
+  background: #1c1c1c;
+  border-top-color: #2a2a2a;
+}
+
+.dark .assistant-input-wrapper {
+  background: #262626;
+  border-color: #2a2a2a;
+}
+
+.dark .assistant-input {
+  color: #e5e5e5;
+}
+
+.dark .assistant-input::placeholder {
+  color: #737373;
+}
+
 .dark .assistant-input-wrapper:focus-within {
-  border-color: var(--hub-accent-start, #f43f5e);
+  border-color: #f43f5e;
   box-shadow: 0 0 0 3px rgba(244, 63, 94, 0.2);
+}
+
+.dark .assistant-input-hint {
+  color: #737373;
+}
+
+/* ============================================
+   PHASE 2: METRICS DASHBOARD (IN SIDEBAR)
+   ============================================ */
+
+.assistant-metrics-dashboard {
+  padding: 0.875rem 1.5rem;
+  border-bottom: 1px solid var(--hub-border);
+  background: var(--hub-insights-bg);
+  flex-shrink: 0;
+}
+
+.metrics-dashboard-header {
+  display: flex;
+  align-items: center;
+  gap: 0.5rem;
+  margin-bottom: 0.75rem;
+  font-size: 0.8rem;
+  font-weight: 600;
+  color: var(--hub-text);
+}
+
+.metrics-dashboard-header svg {
+  color: var(--hub-accent-start);
+}
+
+.metrics-grid-compact {
+  display: grid;
+  grid-template-columns: repeat(2, 1fr);
+  gap: 0.625rem;
+}
+
+.metric-card-compact {
+  display: flex;
+  align-items: center;
+  gap: 0.625rem;
+  padding: 0.625rem 0.75rem;
+  background: var(--hub-card-bg);
+  border: 1px solid var(--hub-border);
+  border-radius: 8px;
+  transition: all 0.2s;
+}
+
+.metric-card-compact:hover {
+  border-color: var(--hub-accent-start);
+  box-shadow: 0 2px 8px rgba(244, 63, 94, 0.1);
+}
+
+.metric-card-compact.warning {
+  border-color: #fb923c; /* orange-400 */
+  background: rgba(251, 146, 60, 0.05);
+}
+
+.metric-icon {
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  width: 28px;
+  height: 28px;
+  border-radius: 6px;
+  background: var(--hub-insights-bg);
+  color: var(--hub-accent-start);
+  flex-shrink: 0;
+}
+
+.metric-card-compact.warning .metric-icon {
+  background: rgba(251, 146, 60, 0.1);
+  color: #fb923c;
+}
+
+.metric-content {
+  flex: 1;
+  min-width: 0;
+}
+
+.metric-value {
+  font-size: 1rem;
+  font-weight: 700;
+  color: var(--hub-text);
+  line-height: 1.2;
+}
+
+.metric-label {
+  font-size: 0.7rem;
+  color: var(--hub-text-secondary);
+  line-height: 1.2;
+  white-space: nowrap;
+  overflow: hidden;
+  text-overflow: ellipsis;
+  margin-top: 0.125rem;
+}
+
+/* Dark mode */
+.dark .assistant-metrics-dashboard {
+  background: rgba(244, 63, 94, 0.05);
+}
+
+.dark .metric-card-compact {
+  background: #1c1c1c;
+  border-color: #2a2a2a;
+}
+
+.dark .metric-card-compact:hover {
+  border-color: #f43f5e;
+  box-shadow: 0 2px 8px rgba(244, 63, 94, 0.2);
+}
+
+.dark .metric-icon {
+  background: rgba(244, 63, 94, 0.1);
+  color: #f43f5e;
+}
+
+/* Phase 3: Trend Indicators - Compact */
+.metric-value-row {
+  display: flex;
+  align-items: center;
+  gap: 0.375rem;
+}
+
+.metric-trend-container {
+  display: flex;
+  align-items: center;
+  gap: 0.25rem;
+}
+
+.sparkline {
+  flex-shrink: 0;
+  opacity: 0.8;
+  width: 32px;
+  height: 14px;
+}
+
+.metric-trend {
+  display: flex;
+  align-items: center;
+  gap: 0.2rem;
+  padding: 0.1rem 0.3rem;
+  border-radius: 3px;
+  font-size: 0.625rem;
+  font-weight: 600;
+  white-space: nowrap;
+  line-height: 1.2;
+}
+
+.metric-trend.positive {
+  background: rgba(34, 197, 94, 0.1);
+  color: #22c55e;
+}
+
+.metric-trend.negative {
+  background: rgba(239, 68, 68, 0.1);
+  color: #ef4444;
+}
+
+.metric-trend.stable {
+  background: rgba(148, 163, 184, 0.1);
+  color: #94a3b8;
+}
+
+.metric-trend svg {
+  flex-shrink: 0;
+}
+
+.trend-value {
+  font-size: 0.625rem;
+}
+
+/* Dark mode trend indicators */
+.dark .metric-trend.positive {
+  background: rgba(34, 197, 94, 0.15);
+  color: #4ade80;
+}
+
+.dark .metric-trend.negative {
+  background: rgba(239, 68, 68, 0.15);
+  color: #f87171;
+}
+
+.dark .metric-trend.stable {
+  background: rgba(148, 163, 184, 0.15);
+  color: #cbd5e1;
 }

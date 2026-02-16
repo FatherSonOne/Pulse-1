@@ -3,6 +3,10 @@ import React, { useState, useEffect, useRef, useCallback, useMemo } from 'react'
 import { AnimatePresence, motion } from 'framer-motion';
 import { v4 as uuidv4 } from 'uuid';
 import MessageInputPortal from './Messages/MessageInputPortal';
+import './Messages/messages.css';
+import { DateDivider } from './Messages/DateDivider';
+import { SmartTimestamp } from './Messages/SmartTimestamp';
+import { shouldShowDateDivider, formatDateDivider } from '../utils/dateUtils';
 import {
   generateSmartReply,
   chatWithBot,
@@ -98,7 +102,6 @@ import { TaskExtractor } from './tasks/TaskExtractor';
 import { ChannelArtifactComponent } from './artifacts';
 
 // REDESIGN COMPONENTS - Phase 1
-import { SmartTimestamp } from './Messages/SmartTimestamp';
 import { UserBadge, UserRole } from './Messages/UserBadge';
 import { GestureHandler } from './Messages/GestureHandler';
 import { TypingIndicator } from './Messages/TypingIndicator';
@@ -696,6 +699,7 @@ const Messages: React.FC<MessagesProps> = ({ apiKey, contacts, initialContactId,
   const [pulseConversations, setPulseConversations] = useState<PulseConversation[]>([]);
   const [activePulseConversation, setActivePulseConversation] = useState<string | null>(null);
   const [pulseMessages, setPulseMessages] = useState<PulseMessage[]>([]);
+  const messagesEndRef = useRef<HTMLDivElement>(null);
   // Removed newChatTab - New Conversation modal now only shows Pulse users
   const [suggestedPulseUsers, setSuggestedPulseUsers] = useState<SearchUserResult[]>([]);
   const [recentPulseContacts, setRecentPulseContacts] = useState<SearchUserResult[]>([]);
@@ -821,6 +825,13 @@ const Messages: React.FC<MessagesProps> = ({ apiKey, contacts, initialContactId,
     };
     loadPulseData();
   }, []);
+
+  // Auto-scroll to bottom when new messages arrive
+  useEffect(() => {
+    if (messagesEndRef.current) {
+      messagesEndRef.current.scrollIntoView({ behavior: 'smooth' });
+    }
+  }, [pulseMessages]);
 
   // Real-time subscription for Pulse messages
   useEffect(() => {
@@ -1336,7 +1347,6 @@ const Messages: React.FC<MessagesProps> = ({ apiKey, contacts, initialContactId,
     return () => document.removeEventListener('click', handleClickOutside);
   }, [pulseContextMenuMsgId, closePulseContextMenu]);
 
-  const messagesEndRef = useRef<HTMLDivElement>(null);
   const fileInputRef = useRef<HTMLInputElement>(null);
   const imageInputRef = useRef<HTMLInputElement>(null);
   const videoInputRef = useRef<HTMLInputElement>(null);
@@ -2575,7 +2585,7 @@ const Messages: React.FC<MessagesProps> = ({ apiKey, contacts, initialContactId,
   };
 
   return (
-    <div className={`h-full flex bg-white dark:bg-zinc-950 ${fullPage ? '' : 'rounded-2xl border border-zinc-200 dark:border-zinc-800 shadow-xl'} overflow-hidden relative animate-fade-in`}>
+    <div className={`${fullPage ? 'h-screen' : 'h-full'} flex bg-white dark:bg-zinc-950 ${fullPage ? '' : 'rounded-2xl border border-zinc-200 dark:border-zinc-800 shadow-xl'} overflow-hidden relative animate-fade-in`}>
       
       {/* New Chat Modal */}
       {showNewChatModal && (
@@ -3260,7 +3270,7 @@ const Messages: React.FC<MessagesProps> = ({ apiKey, contacts, initialContactId,
       {/* Main Chat Area - 70% width on desktop for split-view */}
       {/* Pulse Conversation View */}
       {activePulseConv && !activeThread && (
-        <div className={`flex-1 flex flex-col relative min-w-0 bg-white dark:bg-zinc-950 ${mobileView === 'list' ? 'max-md:hidden' : ''}`}>
+        <div className={`flex-1 flex flex-col min-w-0 bg-white dark:bg-zinc-950  ${mobileView === 'list' ? 'max-md:hidden' : ''}`}>
           {/* Pulse Chat Header - Fixed at top */}
           <div className="min-h-16 border-b border-zinc-200 dark:border-zinc-800 flex items-center justify-between px-4 py-2 z-10 bg-white dark:bg-zinc-950/80 backdrop-blur-md flex-shrink-0 mobile-header-safe">
             <div className="flex items-center gap-3">
@@ -3653,8 +3663,8 @@ const Messages: React.FC<MessagesProps> = ({ apiKey, contacts, initialContactId,
             />
           </React.Suspense>
 
-          {/* Pulse Messages */}
-          <div className="flex-1 overflow-y-auto p-4 md:p-6 space-y-4">
+          {/* Pulse Messages - Scrollable area */}
+          <div className="flex-1 overflow-y-auto p-4 md:p-6">
             {pulseMessages.length === 0 ? (
               <div className="flex flex-col items-center justify-center h-full text-center">
                 <div className="w-20 h-20 bg-gradient-to-br from-rose-100 to-pink-100 dark:from-rose-900/30 dark:to-pink-900/30 rounded-full flex items-center justify-center mb-4">
@@ -3668,23 +3678,32 @@ const Messages: React.FC<MessagesProps> = ({ apiKey, contacts, initialContactId,
             ) : (
               pulseMessages.map((msg, idx) => {
                 const isMe = msg.sender_id !== activePulseConv.other_user?.id;
-                const showAvatar = idx === 0 || pulseMessages[idx - 1]?.sender_id !== msg.sender_id;
-                const showDate = idx === 0 || new Date(msg.created_at).toDateString() !== new Date(pulseMessages[idx - 1]?.created_at).toDateString();
+                
+                const prevMsg = idx > 0 ? pulseMessages[idx - 1] : null;
+                const nextMsg = idx < pulseMessages.length - 1 ? pulseMessages[idx + 1] : null;
+
+                // Message grouping: consecutive messages from same sender within 5 minutes
+                const isSameSender = prevMsg?.sender_id === msg.sender_id;
+                const timeDiff = prevMsg ? new Date(msg.created_at).getTime() - new Date(prevMsg.created_at).getTime() : Infinity;
+                const isGrouped = isSameSender && timeDiff < 5 * 60 * 1000;
+
+                const showAvatar = !isGrouped;
+                const showDate = shouldShowDateDivider(prevMsg ? new Date(prevMsg.created_at) : null, new Date(msg.created_at));
+
                 const reactions = pulseMessageReactions[msg.id] || [];
                 const isStarred = starredPulseMessages.has(msg.id);
                 const isReplyTarget = replyingToPulseMessage?.id === msg.id;
 
                 return (
                   <React.Fragment key={msg.id}>
-                    {/* Date separator */}
+                    {/* Modern Date Divider */}
                     {showDate && (
-                      <div className="flex items-center justify-center my-4">
-                        <div className="px-3 py-1 bg-zinc-100 dark:bg-zinc-800 rounded-full text-xs text-zinc-500 dark:text-zinc-400 font-medium">
-                          {new Date(msg.created_at).toLocaleDateString([], { weekday: 'long', month: 'short', day: 'numeric' })}
-                        </div>
-                      </div>
+                      <DateDivider 
+                        date={new Date(msg.created_at)} 
+                        label={formatDateDivider(new Date(msg.created_at))} 
+                      />
                     )}
-                    <div className={`flex ${isMe ? 'justify-end' : 'justify-start'} group relative mb-4`}>
+                    <div className={`flex ${isMe ? 'justify-end' : 'justify-start'} group relative ${isGrouped ? 'mb-1' : 'mb-4'}`}>
                       {!isMe && showAvatar && (
                         <div
                           className="w-8 h-8 rounded-full flex items-center justify-center text-xs text-white mr-2 mt-auto flex-shrink-0 bg-gradient-to-br from-rose-500 to-pink-600"
@@ -4127,117 +4146,6 @@ const Messages: React.FC<MessagesProps> = ({ apiKey, contacts, initialContactId,
             </div>
           )}
 
-          {/* Pulse Message Input - Fixed at bottom */}
-          <div className="p-4 border-t border-zinc-200 dark:border-zinc-800 bg-white dark:bg-zinc-950 relative flex-shrink-0 mobile-footer-safe">
-            {/* Tool Suggestion Chip (Phase 2A) */}
-            {suggestedTool && (
-              <div className="absolute -top-16 left-4 right-4 flex justify-center animate-slide-down z-10">
-                <div className="bg-white dark:bg-zinc-900 rounded-xl shadow-lg border border-rose-200 dark:border-rose-700 px-4 py-2 flex items-center gap-3 max-w-md">
-                  <i className={`fa-solid ${suggestedTool.icon} text-rose-500`}></i>
-                  <div className="flex-1 min-w-0">
-                    <div className="text-sm font-medium text-zinc-900 dark:text-white truncate">
-                      Use {suggestedTool.name}?
-                    </div>
-                    <div className="text-xs text-zinc-500 dark:text-zinc-400 truncate">
-                      {suggestedTool.description}
-                    </div>
-                  </div>
-                  <button
-                    onClick={() => {
-                      suggestedTool.onLaunch();
-                      setSuggestedTool(null);
-                    }}
-                    className="px-3 py-1.5 bg-gradient-to-r from-rose-500 to-pink-600 text-white text-sm font-medium rounded-lg hover:from-rose-600 hover:to-pink-700 transition whitespace-nowrap"
-                  >
-                    Try it
-                  </button>
-                  <button
-                    onClick={() => setSuggestedTool(null)}
-                    className="text-zinc-400 hover:text-zinc-600 dark:hover:text-zinc-300"
-                  >
-                    <i className="fa-solid fa-xmark"></i>
-                  </button>
-                </div>
-              </div>
-            )}
-
-            {/* Reply indicator */}
-            {replyingToPulseMessage && (
-              <div className="flex items-center gap-2 mb-3 p-2 bg-zinc-100 dark:bg-zinc-800 rounded-lg">
-                <div className="w-1 h-8 bg-emerald-500 rounded-full"></div>
-                <div className="flex-1 min-w-0">
-                  <div className="text-[10px] text-emerald-500 font-bold uppercase tracking-wider">
-                    Replying to {replyingToPulseMessage.sender_id === activePulseConv.other_user?.id ? activePulseConv.other_user?.display_name || 'them' : 'yourself'}
-                  </div>
-                  <div className="text-xs text-zinc-500 truncate">{replyingToPulseMessage.content}</div>
-                </div>
-                <button
-                  onClick={() => setReplyingToPulseMessage(null)}
-                  className="text-zinc-400 hover:text-zinc-600 p-1"
-                >
-                  <i className="fa-solid fa-xmark"></i>
-                </button>
-              </div>
-            )}
-
-            {/* Phase 1: Simple/Advanced Mode Toggle */}
-            <div className="flex items-center justify-between mb-2 px-1">
-              <button
-                onClick={() => setAdvancedMode(!advancedMode)}
-                className="text-xs font-medium text-zinc-500 dark:text-zinc-400 hover:text-rose-500 dark:hover:text-rose-400 transition flex items-center gap-1.5 px-2 py-1 rounded hover:bg-zinc-100 dark:hover:bg-zinc-800/50"
-                title={advancedMode ? 'Switch to simple mode' : 'Switch to advanced mode'}
-              >
-                <i className={`fa-solid ${advancedMode ? 'fa-sliders' : 'fa-wand-magic-sparkles'} text-[10px]`}></i>
-                <span>{advancedMode ? 'Simple Mode' : 'Advanced Mode'}</span>
-              </button>
-              {advancedMode && (
-                <span className="text-[10px] text-zinc-500 dark:text-zinc-600">
-                  Enhanced features enabled
-                </span>
-              )}
-            </div>
-
-            <div className="flex items-center gap-3">
-              {/* Tools Button - Only in Advanced Mode */}
-              {advancedMode && (
-                <button
-                  onClick={() => setShowToolsDrawer(true)}
-                  className="w-12 h-12 rounded-xl flex items-center justify-center bg-zinc-100 dark:bg-zinc-800 text-zinc-600 dark:text-zinc-300 hover:bg-emerald-100 dark:hover:bg-emerald-900/30 hover:text-emerald-600 dark:hover:text-emerald-400 transition flex-shrink-0"
-                  title="Open Tools Menu"
-                >
-                  <i className="fa-solid fa-toolbox text-sm"></i>
-                </button>
-              )}
-
-              <input
-                type="text"
-                value={inputText}
-                onChange={(e) => setInputText(e.target.value)}
-                onKeyDown={(e) => {
-                  if (e.key === 'Enter' && !e.shiftKey) {
-                    e.preventDefault();
-                    sendPulseMessage(replyingToPulseMessage ? `> ${replyingToPulseMessage.content.slice(0, 50)}${replyingToPulseMessage.content.length > 50 ? '...' : ''}\n\n${inputText}` : inputText);
-                    setReplyingToPulseMessage(null);
-                  }
-                  if (e.key === 'Escape' && replyingToPulseMessage) {
-                    setReplyingToPulseMessage(null);
-                  }
-                }}
-                placeholder={replyingToPulseMessage ? 'Type your reply...' : `Message ${activePulseConv.other_user?.display_name || activePulseConv.other_user?.handle || 'user'}...`}
-                className="flex-1 bg-zinc-100 dark:bg-zinc-900 border border-zinc-200 dark:border-zinc-800 rounded-xl px-4 py-3 text-sm dark:text-white focus:outline-none focus:ring-2 focus:ring-emerald-500/50 transition"
-              />
-              <button
-                onClick={() => {
-                  sendPulseMessage(replyingToPulseMessage ? `> ${replyingToPulseMessage.content.slice(0, 50)}${replyingToPulseMessage.content.length > 50 ? '...' : ''}\n\n${inputText}` : inputText);
-                  setReplyingToPulseMessage(null);
-                }}
-                disabled={!inputText.trim()}
-                className="w-12 h-12 bg-gradient-to-r from-rose-500 to-pink-600 hover:from-emerald-600 hover:to-cyan-600 text-white rounded-xl flex items-center justify-center transition disabled:opacity-50 disabled:cursor-not-allowed flex-shrink-0"
-              >
-                <i className="fa-solid fa-paper-plane"></i>
-              </button>
-            </div>
-          </div>
 
           {/* Phase 3: RadialMenu for Reactions */}
           {radialMenuMessageId && radialMenu.isOpen && (
@@ -4324,7 +4232,33 @@ const Messages: React.FC<MessagesProps> = ({ apiKey, contacts, initialContactId,
               }}
             />
           )}
+
+          {/* Message Input - Rendered in normal flex flow for Pulse conversations */}
+          {activePulseConversation && (
+            <MessageInputPortal
+              sidebarWidth={0}
+              isActive={true}
+              usePortal={false}
+            >
+              <MessageInput
+                onSend={(text) => {
+                  sendPulseMessage(text);
+                }}
+                onTyping={(isTyping) => {
+                  // Typing indicator for Pulse conversations
+                }}
+                placeholder={`Message ${activePulseConv?.other_user?.display_name || 'user'}...`}
+                aiEnabled={true}
+                voiceEnabled={true}
+                maxLength={2000}
+                channelId={activePulseConv?.id}
+                disabled={false}
+                setActiveToolOverlay={setActiveToolOverlay}
+              />
+            </MessageInputPortal>
+          )}
         </div>
+
       )}
 
       {/* Regular Thread Chat View - Empty state or active thread */}
@@ -5645,13 +5579,34 @@ const Messages: React.FC<MessagesProps> = ({ apiKey, contacts, initialContactId,
 
           {filteredMessages.map((msg, index) => {
              const isMe = msg.sender === 'me';
-             const showAvatar = index === 0 || filteredMessages[index - 1].sender !== msg.sender;
+             const prevMsg = index > 0 ? filteredMessages[index - 1] : null;
+
+             // Enhanced grouping: show avatar if sender changed OR 5+ min gap
+             const showAvatar = !prevMsg || prevMsg.sender !== msg.sender ||
+                               !msg.timestamp || !prevMsg.timestamp ||
+                               (msg.timestamp.getTime() - prevMsg.timestamp.getTime()) > 5 * 60 * 1000;
+
+             // Date divider: show if different day
+             const showDateDivider = !prevMsg ||
+                                    (msg.timestamp && prevMsg.timestamp &&
+                                     shouldShowDateDivider(prevMsg.timestamp, msg.timestamp));
+
              const isProposal = msg.decisionData?.type === 'proposal';
              const isApproved = msg.decisionData?.status === 'approved';
              const isDeepAudio = msg.attachment?.type === 'audio' || msg.voiceAnalysis;
 
              return (
-                <div key={msg.id} className={`flex ${isMe ? 'justify-end' : 'justify-start'} group relative mb-6 animate-slide-up`}>
+                <React.Fragment key={msg.id}>
+                  {/* TASK 4: Date Divider */}
+                  {showDateDivider && msg.timestamp && (
+                    <DateDivider
+                      date={msg.timestamp}
+                      label={formatDateDivider(msg.timestamp)}
+                    />
+                  )}
+
+                  {/* Message - Compact spacing for grouped messages */}
+                  <div className={`flex ${isMe ? 'justify-end' : 'justify-start'} group relative ${showAvatar ? 'mb-6' : 'mb-1'} animate-slide-up`}>
                     {!isMe && showAvatar && (
                         <div className={`w-8 h-8 rounded-full ${activeThread.avatarColor} flex items-center justify-center text-xs text-white mr-2 mt-auto flex-shrink-0 shadow-sm`}>
                             {activeThread.contactName.charAt(0)}
@@ -5928,8 +5883,15 @@ const Messages: React.FC<MessagesProps> = ({ apiKey, contacts, initialContactId,
                             </span>
                           </div>
                         )}
+                        {/* TASK 4: Smart Timestamp */}
+                        {msg.timestamp && (
+                          <div className="flex justify-end mt-1">
+                            <SmartTimestamp date={msg.timestamp} />
+                          </div>
+                        )}
+                      </div>
                     </div>
-                </div>
+                  </React.Fragment>
              );
           })}
           <div ref={messagesEndRef} />
@@ -6218,11 +6180,12 @@ const Messages: React.FC<MessagesProps> = ({ apiKey, contacts, initialContactId,
         }}
       />
 
-      {/* Message Input Portal - Fixed at viewport bottom */}
-      {(activeThread || activePulseConversation) && (
+      {/* Message Input Portal - Fixed at viewport bottom (for regular threads only, Pulse uses inline input) */}
+      {activeThread && !activePulseConversation && (
         <MessageInputPortal
           sidebarWidth={sidebarRef.current?.offsetWidth || 0}
           isActive={true}
+          usePortal={true}
         >
            {/* View-Only Mode Banner for Non-Pulse Users on PC */}
            {isViewOnlyMode && (
@@ -6631,10 +6594,12 @@ const Messages: React.FC<MessagesProps> = ({ apiKey, contacts, initialContactId,
                    value={inputText}
                    onChange={setInputText}
                    onSend={() => {
-                     if (isNonPulseThread && canSendNativeSms) {
+                     if (activePulseConversation) {
+                       sendPulseMessage(inputText);
+                     } else if (isNonPulseThread && canSendNativeSms) {
                        handleSendSms(inputText);
                      } else if (!isViewOnlyMode) {
-                       handleSend();
+                       handleSend(inputText);
                      }
                    }}
                    apiKey={apiKey}
@@ -6648,11 +6613,12 @@ const Messages: React.FC<MessagesProps> = ({ apiKey, contacts, initialContactId,
                <div className="flex-1">
                  <MessageInput
                    onSend={(text) => {
-                     setInputText(text);
-                     if (isNonPulseThread && canSendNativeSms) {
+                     if (activePulseConversation) {
+                       sendPulseMessage(text);
+                     } else if (isNonPulseThread && canSendNativeSms) {
                        handleSendSms(text);
                      } else if (!isViewOnlyMode) {
-                       handleSend();
+                       handleSend(text);
                      }
                    }}
                    onTyping={(isTyping) => {
@@ -6683,8 +6649,11 @@ const Messages: React.FC<MessagesProps> = ({ apiKey, contacts, initialContactId,
 
              {/* Right Action Buttons - Collapsed on mobile */}
              <div className="flex gap-0.5 sm:gap-1 flex-shrink-0">
-               {/* Voice-to-Text Dictation Button */}
-               <VoiceTextButton
+               {/* Voice buttons only shown when NOT using MessageInput component */}
+               {!apiKey && (
+                 <>
+                   {/* Voice-to-Text Dictation Button */}
+                   <VoiceTextButton
                   onTranscript={(text) => setInputText(prev => prev + (prev && !prev.endsWith(' ') ? ' ' : '') + text)}
                   size="sm"
                   disabled={isRecording}
@@ -6697,6 +6666,8 @@ const Messages: React.FC<MessagesProps> = ({ apiKey, contacts, initialContactId,
                >
                   <i className={`fa-solid ${isRecording ? 'fa-stop' : 'fa-microphone'} text-xs sm:text-sm`}></i>
                </button>
+                 </>
+               )}
                {/* Hidden on mobile */}
                <button
                   onClick={() => setShowScheduleModal(true)}
@@ -6715,17 +6686,19 @@ const Messages: React.FC<MessagesProps> = ({ apiKey, contacts, initialContactId,
                   <i className="fa-solid fa-comment-medical text-xs sm:text-sm"></i>
                </button>
                {/* Phase 2: Translation Widget - Hidden on mobile */}
-               <div className="hidden sm:block">
-                 <MessageEnhancementErrorBoundary featureName="AI Features">
-                   <React.Suspense fallback={<FeatureSkeleton />}>
-                     <BundleAI.TranslationWidgetEnhanced
-                       originalText={inputText}
-                       onTranslate={(translation) => setInputText(translation.translatedText)}
-                       compact={true}
-                     />
-                   </React.Suspense>
-                 </MessageEnhancementErrorBoundary>
-               </div>
+               {/*
+                <div className="hidden sm:block">
+                  <MessageEnhancementErrorBoundary featureName="AI Features">
+                    <React.Suspense fallback={<FeatureSkeleton />}>
+                      <BundleAI.TranslationWidgetEnhanced
+                        originalText={inputText}
+                        onTranslate={(translation) => setInputText(translation.translatedText)}
+                        compact={true}
+                      />
+                    </React.Suspense>
+                  </MessageEnhancementErrorBoundary>
+                </div>
+               */}
                <button
                   onClick={handleSmartReply}
                   disabled={loadingAI || isBotChat}

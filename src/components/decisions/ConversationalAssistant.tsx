@@ -2,6 +2,7 @@ import React, { useState, useRef, useEffect, memo } from 'react';
 import { conversationalAIService, QueryContext } from '../../services/conversationalAIService';
 import { DecisionWithVotes } from '../../services/decisionService';
 import { Task } from '../../services/taskService';
+import { DecisionMetrics } from '../../services/decisionAnalyticsService';
 import { User } from '../../types';
 import {
   MessageSquare,
@@ -14,6 +15,14 @@ import {
   CheckCircle,
   AlertCircle,
   Lightbulb,
+  TrendingUp,
+  TrendingDown,
+  Minus,
+  Clock,
+  Users,
+  AlertTriangle,
+  ArrowUp,
+  ArrowDown,
 } from 'lucide-react';
 import './ConversationalAssistant.css';
 
@@ -21,6 +30,7 @@ interface ConversationalAssistantProps {
   user: User;
   decisions: DecisionWithVotes[];
   tasks: Task[];
+  metrics?: DecisionMetrics | null;
   onClose: () => void;
   onActionExecute?: (action: AssistantAction) => void;
 }
@@ -75,10 +85,85 @@ const arePropsEqual = (
   return true;
 };
 
+// Phase 3: Mini Sparkline Chart Component - Compact version
+const Sparkline: React.FC<{ data: number[]; width?: number; height?: number; color?: string }> = ({
+  data,
+  width = 32,
+  height = 14,
+  color = '#22c55e'
+}) => {
+  if (!data || data.length < 2) return null;
+
+  const max = Math.max(...data);
+  const min = Math.min(...data);
+  const range = max - min || 1;
+
+  const points = data.map((value, index) => {
+    const x = (index / (data.length - 1)) * width;
+    const y = height - ((value - min) / range) * height;
+    return `${x},${y}`;
+  }).join(' ');
+
+  return (
+    <svg width={width} height={height} className="sparkline" viewBox={`0 0 ${width} ${height}`}>
+      <polyline
+        points={points}
+        fill="none"
+        stroke={color}
+        strokeWidth="1.5"
+        strokeLinecap="round"
+        strokeLinejoin="round"
+      />
+    </svg>
+  );
+};
+
+// Phase 3: Helper to render trend indicator with sparkline
+const TrendIndicator: React.FC<{
+  trend?: 'up' | 'down' | 'stable';
+  change?: number;
+  inverted?: boolean;
+  sparklineData?: number[];
+}> = ({
+  trend,
+  change,
+  inverted = false,
+  sparklineData
+}) => {
+  if (!trend || !change) return null;
+
+  const isPositive = inverted ? trend === 'down' : trend === 'up';
+  const isNegative = inverted ? trend === 'up' : trend === 'down';
+  const trendColor = isPositive ? '#22c55e' : isNegative ? '#ef4444' : '#94a3b8';
+
+  if (trend === 'stable') {
+    return (
+      <div className="metric-trend-container">
+        {sparklineData && <Sparkline data={sparklineData} color={trendColor} />}
+        <div className="metric-trend stable">
+          <Minus size={12} />
+          <span className="trend-value">0%</span>
+        </div>
+      </div>
+    );
+  }
+
+  return (
+    <div className="metric-trend-container">
+      {sparklineData && <Sparkline data={sparklineData} color={trendColor} />}
+      <div className={`metric-trend ${isPositive ? 'positive' : isNegative ? 'negative' : 'stable'}`}>
+        {trend === 'up' ? <ArrowUp size={12} /> : <ArrowDown size={12} />}
+        <span className="trend-value">{Math.abs(change)}%</span>
+      </div>
+    </div>
+  );
+};
+
 const ConversationalAssistantComponent: React.FC<ConversationalAssistantProps> = ({
   user,
   decisions,
   tasks,
+  metrics,
   onClose,
   onActionExecute,
 }) => {
@@ -140,13 +225,17 @@ const ConversationalAssistantComponent: React.FC<ConversationalAssistantProps> =
     scrollToBottom();
   }, [messages]);
 
-  // Focus input on mount
+  // Focus input on mount - use preventScroll to avoid viewport jump
   useEffect(() => {
-    inputRef.current?.focus();
+    inputRef.current?.focus({ preventScroll: true });
   }, []);
 
   const scrollToBottom = () => {
-    messagesEndRef.current?.scrollIntoView({ behavior: 'smooth' });
+    // Use scrollTop instead of scrollIntoView to avoid affecting viewport scroll
+    const messagesContainer = messagesEndRef.current?.parentElement;
+    if (messagesContainer) {
+      messagesContainer.scrollTop = messagesContainer.scrollHeight;
+    }
   };
 
   const handleSendMessage = async (message?: string) => {
@@ -333,6 +422,86 @@ const ConversationalAssistantComponent: React.FC<ConversationalAssistantProps> =
 
         <div ref={messagesEndRef} />
       </div>
+
+      {/* Phase 2: Metrics Dashboard */}
+      {messages.length === 0 && metrics && (
+        <div className="assistant-metrics-dashboard">
+          <div className="metrics-dashboard-header">
+            <TrendingUp size={18} />
+            <span>Key Metrics</span>
+          </div>
+          <div className="metrics-grid-compact">
+            <div className="metric-card-compact">
+              <div className="metric-icon">
+                <TrendingUp size={16} />
+              </div>
+              <div className="metric-content">
+                <div className="metric-value-row">
+                  <div className="metric-value">{metrics.velocityPerWeek}/week</div>
+                  <TrendIndicator
+                    trend={metrics.velocityTrend}
+                    change={metrics.velocityChange}
+                    sparklineData={[2, 3, 2, 5, 4, metrics.velocityPerWeek]}
+                  />
+                </div>
+                <div className="metric-label">Velocity</div>
+              </div>
+            </div>
+            <div className="metric-card-compact">
+              <div className="metric-icon">
+                <Clock size={16} />
+              </div>
+              <div className="metric-content">
+                <div className="metric-value-row">
+                  <div className="metric-value">{metrics.avgTimeToResolution}h</div>
+                  <TrendIndicator
+                    trend={metrics.resolutionTrend}
+                    change={metrics.resolutionChange}
+                    inverted
+                    sparklineData={[100, 95, 105, 90, 85, metrics.avgTimeToResolution]}
+                  />
+                </div>
+                <div className="metric-label">Avg Resolution</div>
+              </div>
+            </div>
+            <div className="metric-card-compact">
+              <div className="metric-icon">
+                <Users size={16} />
+              </div>
+              <div className="metric-content">
+                <div className="metric-value-row">
+                  <div className="metric-value">{metrics.participationRate}%</div>
+                  <TrendIndicator
+                    trend={metrics.participationTrend}
+                    change={metrics.participationChange}
+                    sparklineData={[45, 48, 50, 52, 50, metrics.participationRate]}
+                  />
+                </div>
+                <div className="metric-label">Participation</div>
+              </div>
+            </div>
+            {metrics.staleCount > 0 && (
+              <div className="metric-card-compact warning">
+                <div className="metric-icon">
+                  <AlertTriangle size={16} />
+                </div>
+                <div className="metric-content">
+                  <div className="metric-value-row">
+                    <div className="metric-value">{metrics.staleCount}</div>
+                    <TrendIndicator
+                      trend={metrics.staleTrend}
+                      change={metrics.staleChange}
+                      inverted
+                      sparklineData={[5, 8, 6, 7, 9, metrics.staleCount]}
+                    />
+                  </div>
+                  <div className="metric-label">Need Attention</div>
+                </div>
+              </div>
+            )}
+          </div>
+        </div>
+      )}
 
       {/* Quick Actions */}
       {messages.length === 0 && (
