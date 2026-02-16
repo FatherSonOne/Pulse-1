@@ -37,23 +37,76 @@ export default defineConfig(({ mode }) => {
           output: {
             manualChunks: (id) => {
               if (id.includes('node_modules')) {
-                // React core - loads first
+                // React core - critical, loads first
                 if (id.includes('/react-dom/') || id.includes('/react/') ||
-                    id.includes('scheduler') || id.match(/\/react\/[^\/]*\.js$/)) {
+                    id.includes('scheduler')) {
                   return 'react-vendor';
                 }
-                // lucide-react - separate chunk
+
+                // Framer Motion - heavy animation library
+                if (id.includes('framer-motion')) {
+                  return 'framer-motion';
+                }
+
+                // UI Icons
                 if (id.includes('lucide-react')) {
                   return 'lucide-icons';
                 }
+
                 // Router
                 if (id.includes('react-router')) {
                   return 'router';
                 }
-                // Everything else
+
+                // Supabase - backend client
+                if (id.includes('@supabase')) {
+                  return 'supabase';
+                }
+
+                // AI/ML Libraries - heavy, rarely needed on initial load
+                if (id.includes('@anthropic-ai/sdk') ||
+                    id.includes('openai') ||
+                    id.includes('@google/genai')) {
+                  return 'ai-providers';
+                }
+
+                // Chart Libraries - only needed on analytics pages
+                if (id.includes('recharts') ||
+                    id.includes('chart.js') ||
+                    id.includes('d3')) {
+                  return 'charts';
+                }
+
+                // Office document processors - large, rarely used
+                if (id.includes('exceljs') ||
+                    id.includes('docx') ||
+                    id.includes('pdfjs')) {
+                  return 'office-processors';
+                }
+
+                // Date/time utilities
+                if (id.includes('date-fns') || id.includes('dayjs')) {
+                  return 'date-utils';
+                }
+
+                // Everything else - smaller utilities
                 return 'vendor';
               }
-              // Application code stays in main bundle (no splitting)
+
+              // Split application bundles by feature
+              if (id.includes('/src/components/')) {
+                // Heavy feature components
+                if (id.includes('/Messages')) return 'feature-messages';
+                if (id.includes('/Voxer')) return 'feature-voxer';
+                if (id.includes('/LiveDashboard')) return 'feature-dashboard';
+                if (id.includes('/Email')) return 'feature-email';
+                if (id.includes('/Analytics')) return 'feature-analytics';
+              }
+
+              // Services layer
+              if (id.includes('/src/services/')) {
+                return 'services';
+              }
             }
           }
         },

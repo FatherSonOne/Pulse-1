@@ -76,7 +76,7 @@
     "react-markdown": "^10.1.0",
     "react-router-dom": "^7.10.1",
     "react-virtualized-auto-sizer": "^2.0.2",
-    "react-window": "^2.2.5",
+    "react-window": "^2.2.7",
     "socket.io-client": "^4.8.1",
     "tesseract.js": "^7.0.0",
     "uuid": "^13.0.0",

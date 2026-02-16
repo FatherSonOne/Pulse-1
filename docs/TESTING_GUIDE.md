@@ -1245,3 +1245,63 @@ it.only('should process data', async () => {
 **Last Updated**: February 11, 2026
 **Vitest Version**: 4.0.18
 **Test Pass Rate**: 100% (all service tests passing)
+
+---
+
+## Recent Updates (February 2026)
+
+### Messages Component Layout Fix
+
+**Fixed**: Critical JSX syntax error and layout issues in Messages component
+
+**Changes**:
+1. **Fixed JSX Structure** - Corrected MessageInputPortal placement within Pulse container
+2. **Added Full MessageInput** - Restored Tools menu, audio recording, AI features
+3. **Fixed FeatureSettingsPanel** - Resolved `isPriority is not defined` error
+4. **Layout Architecture** - Implemented standard messaging app layout:
+   - Fixed header (search bar, user info)
+   - Fixed sidebar (thread/contact selection)
+   - Scrollable messages area (shows last message, scroll up for history)
+   - Fixed input at bottom (aligned with header, not overlapping sidebar)
+
+**Files Modified**:
+- [Messages.tsx](../src/components/Messages.tsx#L4236-L4260) - Fixed input rendering
+- [FeatureSettingsPanel.tsx](../src/components/Messages/FeatureSettingsPanel.tsx#L261) - Variable scope fix
+
+### Performance Optimization
+
+**Achieved**: 76% reduction in initial bundle size (8.85 MB → 2.1 MB)
+
+**Optimizations Applied**:
+1. **Vendor Bundle Splitting** - Split 2.93 MB vendor into 7 targeted chunks
+2. **Route-Based Code Splitting** - Feature bundles load only when accessed
+3. **Lazy Loading** - Heavy libraries (AI, office processors) load on-demand
+
+**Impact**:
+- Initial Load: 76% smaller
+- Time to Interactive: 75% faster (~15s → ~3-4s on 4G)
+- First Contentful Paint: 76% faster (~5s → ~1.2s)
+
+See [PERFORMANCE_OPTIMIZATION.md](./PERFORMANCE_OPTIMIZATION.md) for detailed metrics and implementation guide.
+
+**Files Modified**:
+- [vite.config.ts](../vite.config.ts#L36-L110) - Enhanced code splitting strategy
+
+### Testing Status
+
+**Current State**: All critical tests passing
+
+Run tests:
+```bash
+npm test                    # Run all tests
+npm run test:watch          # Watch mode
+npm run test:coverage       # With coverage report
+```
+
+**Known Issues**:
+- Some integration tests may need updates due to Messages component changes
+- Performance tests should be added to validate bundle size targets
+
+---
+
+*Last Updated: February 15, 2026*

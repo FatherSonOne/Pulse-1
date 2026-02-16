@@ -14,8 +14,10 @@ interface SmartTimestampProps {
  * - Absolute time for older messages ("10:30 AM")
  * - Full timestamp on hover
  * - Minimal, unobtrusive styling
+ *
+ * Performance: Optimized with React.memo() to prevent unnecessary re-renders
  */
-export const SmartTimestamp: React.FC<SmartTimestampProps> = ({ date, className = '' }) => {
+export const SmartTimestamp: React.FC<SmartTimestampProps> = React.memo(({ date, className = '' }) => {
   const smartTime = formatSmartTimestamp(date);
   const fullTime = formatFullTimestamp(date);
 
@@ -27,4 +29,8 @@ export const SmartTimestamp: React.FC<SmartTimestampProps> = ({ date, className 
       {smartTime}
     </span>
   );
-};
+}, (prevProps, nextProps) => {
+  // Only re-render if date or className changes
+  return prevProps.date.getTime() === nextProps.date.getTime() && 
+         prevProps.className === nextProps.className;
+});
