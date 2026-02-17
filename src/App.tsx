@@ -60,24 +60,7 @@ import { OnlineStatus } from './components/PWA/OnlineStatus';
 import { FeatureProvider } from './contexts/FeatureContext';
 
 // Loading fallback component for lazy-loaded routes
-const PageLoader = () => (
-  <div className="h-full w-full flex items-center justify-center">
-    <div className="flex flex-col items-center gap-4">
-      <div className="w-16 h-16 bg-[#0f172a] rounded-2xl flex items-center justify-center shadow-lg shadow-rose-500/20 animate-pulse">
-        <svg viewBox="0 0 64 64" className="w-12 h-12">
-          <defs>
-            <linearGradient id="pulse-grad-loader" x1="0%" y1="0%" x2="100%" y2="100%">
-              <stop offset="0%" stopColor="#f43f5e"/>
-              <stop offset="100%" stopColor="#ec4899"/>
-            </linearGradient>
-          </defs>
-          <path d="M8 32 L18 32 L24 16 L32 48 L40 24 L48 40 L56 32" stroke="url(#pulse-grad-loader)" strokeWidth="5" strokeLinecap="round" strokeLinejoin="round" fill="none"/>
-        </svg>
-      </div>
-      <p className="text-zinc-400 text-sm">Loading...</p>
-    </div>
-  </div>
-);
+const PageLoader = () => <EnhancedLoadingScreen />;
 
 const App: React.FC = () => {
   // Check for public routes that don't require authentication
@@ -747,8 +730,8 @@ const App: React.FC = () => {
 
       {/* Main Content */}
       <main className="flex-1 overflow-hidden relative transition-colors duration-500 w-full safe-area-bottom">
-        <div className={`h-full w-full flex flex-col overflow-auto mobile-scroll ${view === AppView.MESSAGES ? '' : 'p-2 sm:p-3 md:p-4 lg:p-6'}`}>
-          <div className={`w-full ${view === AppView.MESSAGES ? '' : 'max-w-[1600px] mx-auto'} animate-fade-in`}>
+        <div className={`h-full w-full flex flex-col ${view === AppView.MESSAGES || view === AppView.CALENDAR ? 'overflow-hidden' : 'overflow-auto mobile-scroll p-2 sm:p-3 md:p-4 lg:p-6'}`}>
+          <div className={`w-full ${view === AppView.MESSAGES || view === AppView.CALENDAR ? 'h-full min-h-0 flex flex-col' : 'max-w-[1600px] mx-auto'} animate-fade-in`}>
             {renderContent()}
           </div>
         </div>

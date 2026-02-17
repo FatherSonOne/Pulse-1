@@ -97,3 +97,40 @@ agent-*.html
 
 # Task management files
 task.md
+
+# Diagnostic and temporary root-level files
+BROWSER_DIAGNOSTIC.js
+PHASE_3_FILE_MANIFEST.txt
+QUICK_START.txt
+TEST_INSTRUCTIONS.txt
+TEST_UI_FIXES.html
+IMPLEMENTATION_SUMMARY.txt
+apply_messages_fix.ps1
+cleanup_migrations.ps1
+fix_messages.py
+mark_migrations_applied.sql
+messages_fix.patch
+test-debug.js
+test-minimal.test.ts
+test-vitest-assertion.test.ts
+
+# Backup files
+*.backup
+*.backup_*
+*.backup2
+*.temp
+*.patch
+
+# SQL fix/debug scripts (root level)
+fix-*.sql
+debug-*.sql
+FIX_AND_RUN.sql
+fix-user-settings*.sql
+apply-*.sql
+apply-*.js
+apply_*.ps1
+create-*.py
+env-debug.html
+clear-cache.html
+package.json.patch
+build-output.txt

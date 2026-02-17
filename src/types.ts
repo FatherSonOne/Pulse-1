@@ -109,7 +109,7 @@ export interface CalendarEvent {
   attendees?: string[];
   calendarId: string;
   allDay: boolean;
-  type: 'event' | 'meet' | 'reminder' | 'call' | 'deadline';
+  type: 'event' | 'meet' | 'reminder' | 'call' | 'deadline' | 'focus' | 'personal' | 'travel' | 'social' | 'health';
   // Google Calendar specific fields
   googleEventId?: string;
   meetLink?: string;

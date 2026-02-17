@@ -2,7 +2,18 @@ import React, { useState, useEffect, useCallback, useMemo, useRef } from 'react'
 import { Contact, CalendarEvent, Task } from '../types';
 import { fetchCalendarEvents, fetchTasks } from '../services/authService';
 import { googleCalendarService, GoogleCalendar } from '../services/googleCalendarService';
-import { YearView, MonthView, WeekView, DayView, CalendarHeader } from './CalendarViews';
+import { YearView, MonthView, WeekView, DayView, CalendarHeader, AgendaView } from './CalendarViews';
+import DayDetailModal from './DayDetailModal';
+import useSwipeGesture from '../hooks/useSwipeGesture';
+import usePullToRefresh from '../hooks/usePullToRefresh';
+import BottomSheet from './BottomSheet';
+import PullToRefreshIndicator from './PullToRefreshIndicator';
+import NaturalLanguageEventInput from './NaturalLanguageEventInput';
+import SuggestedEventsPanel from './SuggestedEventsPanel';
+import PostMeetingPrompt from './PostMeetingPrompt';
+import { postMeetingService, MeetingFollowUp as PostMeetingFollowUp } from '../services/postMeetingService';
+import CustomEventTypesManager from './CustomEventTypesManager';
+import { customEventTypesService } from '../services/customEventTypesService';
 import './Calendar.css';
 import {
   calendarAIService,
@@ -10,7 +21,6 @@ import {
   MeetingPrepBriefing,
   ConflictResolution,
   FocusTimeBlock,
-  MeetingFollowUp,
   TravelBuffer,
   RelationshipInsight,
   MeetingEffectiveness,
@@ -26,7 +36,7 @@ interface CalendarProps {
   onNavigateToIntegrations?: () => void;
 }
 
-type ViewMode = 'month' | 'week' | 'day' | 'year';
+type ViewMode = 'month' | 'week' | 'day' | 'year' | 'agenda';
 type RecurrenceType = 'none' | 'daily' | 'weekly' | 'monthly' | 'yearly';
 type ReminderTime = 'none' | '5min' | '15min' | '30min' | '1hour' | '1day';
 
@@ -44,12 +54,42 @@ const EVENT_COLORS = [
 
 // Event type presets
 const EVENT_TYPES = [
-  { id: 'event', name: 'Event', icon: 'fa-calendar' },
-  { id: 'meet', name: 'Meeting', icon: 'fa-video' },
-  { id: 'reminder', name: 'Reminder', icon: 'fa-bell' },
-  { id: 'call', name: 'Call', icon: 'fa-phone' },
-  { id: 'deadline', name: 'Deadline', icon: 'fa-flag' },
+  { id: 'event',     name: 'Event',       icon: 'fa-calendar',          color: '#6b7280' },
+  { id: 'meet',      name: 'Meeting',     icon: 'fa-video',             color: '#3b82f6' },
+  { id: 'call',      name: 'Call',        icon: 'fa-phone',             color: '#10b981' },
+  { id: 'focus',     name: 'Focus Time',  icon: 'fa-brain',             color: '#8b5cf6' },
+  { id: 'personal',  name: 'Personal',    icon: 'fa-user',              color: '#f59e0b' },
+  { id: 'deadline',  name: 'Deadline',    icon: 'fa-flag',              color: '#ef4444' },
+  { id: 'travel',    name: 'Travel',      icon: 'fa-plane',             color: '#06b6d4' },
+  { id: 'social',    name: 'Social',      icon: 'fa-users',             color: '#ec4899' },
+  { id: 'health',    name: 'Health',      icon: 'fa-heart-pulse',       color: '#f97316' },
+  { id: 'reminder',  name: 'Reminder',    icon: 'fa-bell',              color: '#a3a3a3' },
 ];
+
+// Smart auto-categorization based on event title/description/location
+const autoDetectEventType = (title: string, description?: string, location?: string): string => {
+  const text = `${title} ${description || ''} ${location || ''}`.toLowerCase();
+
+  // Video / online meeting
+  if (/zoom|google meet|teams|webex|whereby|facetime|skype|video call|video meeting/.test(text)) return 'meet';
+  // In-person meeting / call
+  if (/standup|sync|1:1|one.on.one|check.in|review|retro|sprint|scrum|board meeting|all.hands/.test(text)) return 'meet';
+  if (/call|phone|dial/.test(text) && !/recall|callback/.test(text)) return 'call';
+  // Focus / deep work
+  if (/focus|deep work|heads.down|no.interrupt|coding|writing|study|research|prep/.test(text)) return 'focus';
+  // Travel
+  if (/flight|airport|hotel|commute|drive to|travel|trip|vacation|conf(?:erence)?\s+trip/.test(text)) return 'travel';
+  // Deadline
+  if (/deadline|due|submit|launch|release|ship|milestone/.test(text)) return 'deadline';
+  // Health
+  if (/doctor|dentist|therapy|gym|workout|exercise|yoga|run|physio|appointment|checkup/.test(text)) return 'health';
+  // Social
+  if (/lunch|dinner|breakfast|coffee|happy hour|party|birthday|wedding|social|outing/.test(text)) return 'social';
+  // Personal
+  if (/personal|family|kids?|school|errand|grocery|haircut|car/.test(text)) return 'personal';
+
+  return 'event';
+};
 
 // Time zone list (simplified)
 const TIME_ZONES = [
@@ -72,8 +112,11 @@ interface Team {
 }
 
 const Calendar: React.FC<CalendarProps> = ({ contacts, openTaskPanel = false, onNavigateToIntegrations }) => {
+  // Mobile detection
+  const [isMobile, setIsMobile] = useState(window.innerWidth < 768);
+
   const [currentDate, setCurrentDate] = useState(new Date());
-  const [viewMode, setViewMode] = useState<ViewMode>('month');
+  const [viewMode, setViewMode] = useState<ViewMode>(isMobile ? 'agenda' : 'month');
   const [events, setEvents] = useState<CalendarEvent[]>([]);
   const [tasks, setTasks] = useState<Task[]>([]);
   const [visibleCalendars, setVisibleCalendars] = useState<Set<string>>(new Set(['user']));
@@ -121,7 +164,8 @@ const Calendar: React.FC<CalendarProps> = ({ contacts, openTaskPanel = false, on
   const [meetingPrep, setMeetingPrep] = useState<MeetingPrepBriefing | null>(null);
   const [conflicts, setConflicts] = useState<ConflictResolution[]>([]);
   const [focusBlocks, setFocusBlocks] = useState<FocusTimeBlock[]>([]);
-  const [followUps, setFollowUps] = useState<MeetingFollowUp[]>([]);
+  const [followUps, setFollowUps] = useState<PostMeetingFollowUp[]>([]);
+  const [activeFollowUpPrompt, setActiveFollowUpPrompt] = useState<PostMeetingFollowUp | null>(null);
   const [travelBuffers, setTravelBuffers] = useState<TravelBuffer[]>([]);
   const [relationshipInsights, setRelationshipInsights] = useState<RelationshipInsight[]>([]);
   const [meetingScores, setMeetingScores] = useState<Map<string, MeetingEffectiveness>>(new Map());
@@ -175,6 +219,30 @@ const Calendar: React.FC<CalendarProps> = ({ contacts, openTaskPanel = false, on
   const [selectedEvent, setSelectedEvent] = useState<CalendarEvent | null>(null);
   const [showEventDetail, setShowEventDetail] = useState(false);
 
+  // Day Detail Modal State
+  const [showDayDetail, setShowDayDetail] = useState(false);
+  const [dayDetailDate, setDayDetailDate] = useState<Date | null>(null);
+  const [dayDetailEvents, setDayDetailEvents] = useState<CalendarEvent[]>([]);
+
+  // Custom Event Types Manager
+  const [showCustomTypesManager, setShowCustomTypesManager] = useState(false);
+  const [customEventTypes, setCustomEventTypes] = useState(customEventTypesService.getAll());
+
+  const refreshCustomTypes = useCallback(() => {
+    setCustomEventTypes(customEventTypesService.getAll());
+  }, []);
+
+  // All event types: built-in + custom merged
+  const allEventTypes = useMemo(() => [
+    ...EVENT_TYPES,
+    ...customEventTypes.map(ct => ({
+      id: ct.id,
+      name: ct.name,
+      icon: ct.icon,
+      color: ct.color,
+    })),
+  ], [customEventTypes]);
+
   // Settings Panel
   const [showSettings, setShowSettings] = useState(false);
   const [selectedTimeZone, setSelectedTimeZone] = useState(TIME_ZONES[0].id);
@@ -187,6 +255,7 @@ const Calendar: React.FC<CalendarProps> = ({ contacts, openTaskPanel = false, on
 
   // Upcoming Events Panel
   const [showUpcoming, setShowUpcoming] = useState(false);
+  const [showNLInput, setShowNLInput] = useState(false);
 
   // Context Menu State
   const [contextMenu, setContextMenu] = useState<{
@@ -284,12 +353,21 @@ const Calendar: React.FC<CalendarProps> = ({ contacts, openTaskPanel = false, on
         setLoadedMonths(prev => new Set([...prev, monthKey]));
       }
 
+      // Auto-categorize Google events that have a generic type
+      const categorizedGoogleEvents = googleEvents.map(e => {
+        if (!e.type || e.type === 'event') {
+          const detected = autoDetectEventType(e.title, e.description, e.location);
+          return detected !== 'event' ? { ...e, type: detected as CalendarEvent['type'] } : e;
+        }
+        return e;
+      });
+
       // Merge with local events (avoid duplicates by checking googleEventId)
       setEvents(prev => {
         const localEvents = prev.filter(e => !e.googleEventId);
         // Also filter out duplicate Google events
         const existingGoogleIds = new Set(prev.filter(e => e.googleEventId).map(e => e.googleEventId));
-        const newGoogleEvents = googleEvents.filter(e => !existingGoogleIds.has(e.googleEventId));
+        const newGoogleEvents = categorizedGoogleEvents.filter(e => !existingGoogleIds.has(e.googleEventId));
         return [...localEvents, ...prev.filter(e => e.googleEventId), ...newGoogleEvents];
       });
 
@@ -346,6 +424,161 @@ const Calendar: React.FC<CalendarProps> = ({ contacts, openTaskPanel = false, on
       setShowTaskPanel(true);
     }
   }, [openTaskPanel]);
+
+  // Mobile detection
+  useEffect(() => {
+    const handleResize = () => {
+      const mobile = window.innerWidth < 768;
+      setIsMobile(mobile);
+      // Switch to appropriate view when screen size changes
+      if (mobile && (viewMode === 'week' || viewMode === 'month')) {
+        setViewMode('agenda');
+      } else if (!mobile && viewMode === 'agenda') {
+        setViewMode('month');
+      }
+    };
+
+    window.addEventListener('resize', handleResize);
+    return () => window.removeEventListener('resize', handleResize);
+  }, [viewMode]);
+
+  // Post-meeting follow-up monitoring
+  useEffect(() => {
+    // Start monitoring for ended meetings
+    postMeetingService.startMonitoring(events);
+
+    // Listen for meeting ended events
+    const handleMeetingEnded = (event: Event) => {
+      const customEvent = event as CustomEvent<PostMeetingFollowUp>;
+      setActiveFollowUpPrompt(customEvent.detail);
+      setFollowUps(postMeetingService.getPendingFollowUps());
+    };
+
+    // Listen for follow-up updates
+    const handleFollowUpUpdated = () => {
+      setFollowUps(postMeetingService.getPendingFollowUps());
+    };
+
+    window.addEventListener('pulse:meeting-ended', handleMeetingEnded as EventListener);
+    window.addEventListener('pulse:followup-updated', handleFollowUpUpdated);
+
+    return () => {
+      postMeetingService.stopMonitoring();
+      window.removeEventListener('pulse:meeting-ended', handleMeetingEnded as EventListener);
+      window.removeEventListener('pulse:followup-updated', handleFollowUpUpdated);
+    };
+  }, [events]);
+
+  // Navigation handlers — defined here so keyboard shortcut useEffect can reference them
+  const handlePrev = useCallback(() => {
+    const newDate = new Date(currentDate);
+    if (viewMode === 'year') newDate.setFullYear(newDate.getFullYear() - 1);
+    else if (viewMode === 'month') newDate.setMonth(newDate.getMonth() - 1);
+    else if (viewMode === 'week') newDate.setDate(newDate.getDate() - 7);
+    else newDate.setDate(newDate.getDate() - 1);
+    setCurrentDate(newDate);
+  }, [currentDate, viewMode]);
+
+  const handleNext = useCallback(() => {
+    const newDate = new Date(currentDate);
+    if (viewMode === 'year') newDate.setFullYear(newDate.getFullYear() + 1);
+    else if (viewMode === 'month') newDate.setMonth(newDate.getMonth() + 1);
+    else if (viewMode === 'week') newDate.setDate(newDate.getDate() + 7);
+    else newDate.setDate(newDate.getDate() + 1);
+    setCurrentDate(newDate);
+  }, [currentDate, viewMode]);
+
+  // Keyboard shortcuts
+  useEffect(() => {
+    const handleKeyDown = (e: KeyboardEvent) => {
+      // Don't fire when typing in an input/textarea
+      const tag = (e.target as HTMLElement).tagName;
+      if (tag === 'INPUT' || tag === 'TEXTAREA' || tag === 'SELECT') return;
+      if (showEventModal || showDayDetail) return;
+
+      const meta = e.metaKey || e.ctrlKey;
+
+      switch (e.key) {
+        // View switching
+        case 'd': case 'D': setViewMode('day'); break;
+        case 'w': case 'W': setViewMode('week'); break;
+        case 'm': case 'M': setViewMode('month'); break;
+        case 'y': case 'Y': setViewMode('year'); break;
+        case 'a': case 'A': setViewMode('agenda'); break;
+        // Navigation
+        case 't': case 'T': setCurrentDate(new Date()); break;
+        case 'ArrowLeft':  if (!meta) { e.preventDefault(); handlePrev(); } break;
+        case 'ArrowRight': if (!meta) { e.preventDefault(); handleNext(); } break;
+        // New event
+        case 'n': case 'c': case 'N': case 'C':
+          setShowEventModal(true);
+          break;
+        // Search focus
+        case '/':
+          e.preventDefault();
+          document.querySelector<HTMLInputElement>('input[placeholder="Search events..."]')?.focus();
+          break;
+        // AI panel
+        case 'i': case 'I':
+          if (meta) { e.preventDefault(); setShowAIPanel(prev => !prev); }
+          break;
+        // Escape
+        case 'Escape':
+          setShowAIPanel(false);
+          setShowCalendarSettings(false);
+          break;
+      }
+    };
+
+    window.addEventListener('keydown', handleKeyDown);
+    return () => window.removeEventListener('keydown', handleKeyDown);
+  }, [showEventModal, showDayDetail, handlePrev, handleNext]);
+
+  // Swipe gesture navigation
+  const navigateNext = useCallback(() => {
+    const newDate = new Date(currentDate);
+    if (viewMode === 'year') {
+      newDate.setFullYear(newDate.getFullYear() + 1);
+    } else if (viewMode === 'month' || viewMode === 'agenda') {
+      newDate.setMonth(newDate.getMonth() + 1);
+    } else if (viewMode === 'week') {
+      newDate.setDate(newDate.getDate() + 7);
+    } else if (viewMode === 'day') {
+      newDate.setDate(newDate.getDate() + 1);
+    }
+    setCurrentDate(newDate);
+  }, [currentDate, viewMode]);
+
+  const navigatePrev = useCallback(() => {
+    const newDate = new Date(currentDate);
+    if (viewMode === 'year') {
+      newDate.setFullYear(newDate.getFullYear() - 1);
+    } else if (viewMode === 'month' || viewMode === 'agenda') {
+      newDate.setMonth(newDate.getMonth() - 1);
+    } else if (viewMode === 'week') {
+      newDate.setDate(newDate.getDate() - 7);
+    } else if (viewMode === 'day') {
+      newDate.setDate(newDate.getDate() - 1);
+    }
+    setCurrentDate(newDate);
+  }, [currentDate, viewMode]);
+
+  const { handleTouchStart, handleTouchMove, handleTouchEnd } = useSwipeGesture({
+    onSwipeLeft: navigateNext,
+    onSwipeRight: navigatePrev,
+    minSwipeDistance: 75,
+  });
+
+  // Pull-to-refresh for mobile
+  const handleRefresh = useCallback(async () => {
+    await syncGoogleCalendar();
+  }, [syncGoogleCalendar]);
+
+  const pullToRefresh = usePullToRefresh({
+    onRefresh: handleRefresh,
+    enabled: isMobile && googleConnected,
+    threshold: 80,
+  });
 
   // Sidebar resize handlers
   const sidebarRef = useRef<HTMLDivElement>(null);
@@ -754,7 +987,7 @@ const Calendar: React.FC<CalendarProps> = ({ contacts, openTaskPanel = false, on
     setAILoading(true);
     try {
       const followUp = await calendarAIService.generateMeetingFollowUp(event, notes);
-      setFollowUps(prev => [...prev, followUp]);
+      setFollowUps(prev => [...prev, followUp as unknown as PostMeetingFollowUp]);
     } catch (error) {
       console.error('Failed to generate follow-up:', error);
     } finally {
@@ -794,24 +1027,6 @@ const Calendar: React.FC<CalendarProps> = ({ contacts, openTaskPanel = false, on
       days.push(d);
     }
     return days;
-  };
-
-  const handlePrev = () => {
-    const newDate = new Date(currentDate);
-    if (viewMode === 'year') newDate.setFullYear(newDate.getFullYear() - 1);
-    else if (viewMode === 'month') newDate.setMonth(newDate.getMonth() - 1);
-    else if (viewMode === 'week') newDate.setDate(newDate.getDate() - 7);
-    else newDate.setDate(newDate.getDate() - 1);
-    setCurrentDate(newDate);
-  };
-
-  const handleNext = () => {
-    const newDate = new Date(currentDate);
-    if (viewMode === 'year') newDate.setFullYear(newDate.getFullYear() + 1);
-    else if (viewMode === 'month') newDate.setMonth(newDate.getMonth() + 1);
-    else if (viewMode === 'week') newDate.setDate(newDate.getDate() + 7);
-    else newDate.setDate(newDate.getDate() + 1);
-    setCurrentDate(newDate);
   };
 
   const toggleCalendarVisibility = (id: string) => {
@@ -1263,7 +1478,7 @@ const Calendar: React.FC<CalendarProps> = ({ contacts, openTaskPanel = false, on
   };
 
   return (
-    <div className="pulse-calendar h-full flex flex-col bg-white dark:bg-zinc-950 rounded-2xl overflow-hidden border border-zinc-200 dark:border-zinc-800 animate-fade-in relative shadow-xl">
+    <div className="pulse-calendar h-full flex-1 min-h-0 flex flex-col bg-white dark:bg-zinc-950 overflow-hidden animate-fade-in relative">
 
       {/* Context Menu - Fixed positioning relative to viewport */}
       {contextMenu.visible && (
@@ -1352,16 +1567,27 @@ const Calendar: React.FC<CalendarProps> = ({ contacts, openTaskPanel = false, on
                       <div>
                           <label className="text-xs text-zinc-500 uppercase font-bold mb-2 block">Event Type</label>
                           <div className="flex gap-2 flex-wrap">
-                            {EVENT_TYPES.map(type => (
+                            {allEventTypes.map(type => (
                               <button
                                 key={type.id}
                                 type="button"
                                 onClick={() => setNewEventType(type.id as CalendarEvent['type'])}
-                                className={`px-3 py-2 rounded-lg text-xs font-medium flex items-center gap-2 transition ${newEventType === type.id ? 'bg-zinc-900 dark:bg-white text-white dark:text-zinc-900' : 'bg-zinc-100 dark:bg-zinc-800 text-zinc-600 dark:text-zinc-400 hover:bg-zinc-200 dark:hover:bg-zinc-700'}`}
+                                className="px-3 py-2 rounded-lg text-xs font-medium flex items-center gap-2 transition border"
+                                style={newEventType === type.id
+                                  ? { backgroundColor: type.color, color: '#fff', borderColor: type.color }
+                                  : { backgroundColor: 'transparent', color: type.color, borderColor: type.color + '40' }}
                               >
                                 <i className={`fa-solid ${type.icon}`}></i> {type.name}
                               </button>
                             ))}
+                            {/* Manage custom types button */}
+                            <button
+                              type="button"
+                              onClick={() => setShowCustomTypesManager(true)}
+                              className="px-3 py-2 rounded-lg text-xs font-medium flex items-center gap-1.5 transition border border-dashed border-zinc-300 dark:border-zinc-600 text-zinc-400 hover:text-zinc-600 dark:hover:text-zinc-300 hover:border-zinc-400"
+                            >
+                              <i className="fa-solid fa-sliders"></i> Manage
+                            </button>
                           </div>
                       </div>
 
@@ -1374,7 +1600,14 @@ const Calendar: React.FC<CalendarProps> = ({ contacts, openTaskPanel = false, on
                             className="w-full bg-zinc-50 dark:bg-zinc-950 border border-zinc-200 dark:border-zinc-800 rounded-lg p-3 dark:text-white text-zinc-900 focus:border-zinc-400 focus:ring-2 focus:ring-blue-500 outline-none transition"
                             placeholder="Event Title"
                             value={newEventTitle}
-                            onChange={(e) => setNewEventTitle(e.target.value)}
+                            onChange={(e) => {
+                              setNewEventTitle(e.target.value);
+                              // Auto-detect event type from title
+                              if (e.target.value.length > 3) {
+                                const detected = autoDetectEventType(e.target.value, newEventDesc, newEventLocation);
+                                setNewEventType(detected);
+                              }
+                            }}
                             required
                           />
                       </div>
@@ -1565,9 +1798,17 @@ const Calendar: React.FC<CalendarProps> = ({ contacts, openTaskPanel = false, on
                   <div className={`${selectedEvent.color} p-6`}>
                     <div className="flex items-start justify-between">
                       <div>
-                        <div className="text-white/80 text-xs uppercase tracking-wider mb-1">
-                          {selectedEvent.type === 'meet' ? 'Meeting' : selectedEvent.type === 'reminder' ? 'Reminder' : 'Event'}
-                          {selectedEvent.source === 'google' && <i className="fa-brands fa-google ml-2"></i>}
+                        <div className="flex items-center gap-2 text-white/80 text-xs uppercase tracking-wider mb-1">
+                          {(() => {
+                            const typeMeta = allEventTypes.find(t => t.id === selectedEvent.type);
+                            return typeMeta ? (
+                              <>
+                                <i className={`fa-solid ${typeMeta.icon}`} />
+                                <span>{typeMeta.name}</span>
+                              </>
+                            ) : <span>Event</span>;
+                          })()}
+                          {selectedEvent.source === 'google' && <i className="fa-brands fa-google ml-1"></i>}
                         </div>
                         <h3 className="text-xl font-bold text-white">{selectedEvent.title}</h3>
                       </div>
@@ -1802,103 +2043,157 @@ const Calendar: React.FC<CalendarProps> = ({ contacts, openTaskPanel = false, on
         onViewChange={(view) => setViewMode(view)}
       />
 
-      {/* Secondary Controls Bar */}
-      <div className="bg-white dark:bg-zinc-950 px-4 py-3 border-b border-zinc-200 dark:border-zinc-800 flex items-center justify-between gap-3 flex-wrap">
-        <div className="flex items-center gap-2 sm:gap-4 min-w-0">
+      {/* Unified Toolbar — search, filters, actions, NL quick-add all in one row */}
+      <div className="bg-white dark:bg-zinc-950 border-b border-zinc-200 dark:border-zinc-800 flex flex-col">
 
-          {/* Search Bar - Responsive */}
-          <div className="relative flex-1 min-w-[120px] max-w-[200px] lg:max-w-[240px]">
+        {/* Main toolbar row */}
+        <div className="px-3 py-2 flex items-center gap-2">
+
+          {/* Search */}
+          <div className="relative flex-1 min-w-0 max-w-[220px]">
             <input
               type="text"
               placeholder="Search events..."
               value={searchQuery}
               onChange={(e) => setSearchQuery(e.target.value)}
-              className="w-full bg-zinc-50 dark:bg-zinc-900 border border-zinc-200 dark:border-zinc-800 rounded-lg px-2 py-1.5 sm:px-3 sm:py-2 text-xs sm:text-sm pl-7 sm:pl-9 outline-none focus:ring-2 focus:ring-blue-500"
+              className="w-full bg-zinc-50 dark:bg-zinc-900 border border-zinc-200 dark:border-zinc-800 rounded-lg px-3 py-1.5 text-xs pl-8 outline-none focus:ring-2 focus:ring-blue-500 dark:text-white"
             />
-            <i className="fa-solid fa-search absolute left-2 sm:left-3 top-1/2 -translate-y-1/2 text-zinc-400 text-[10px] sm:text-xs"></i>
+            <i className="fa-solid fa-search absolute left-2.5 top-1/2 -translate-y-1/2 text-zinc-400 text-[10px]"></i>
             {searchQuery && (
               <button onClick={() => setSearchQuery('')} className="absolute right-2 top-1/2 -translate-y-1/2 text-zinc-400 hover:text-zinc-600">
-                <i className="fa-solid fa-xmark text-xs"></i>
+                <i className="fa-solid fa-xmark text-[10px]"></i>
               </button>
             )}
           </div>
 
-          {/* Event Type Filter - Compact on small screens */}
+          {/* Type Filter */}
           <select
             value={filterEventType}
             onChange={(e) => setFilterEventType(e.target.value)}
-            className="bg-zinc-50 dark:bg-zinc-900 border border-zinc-200 dark:border-zinc-800 rounded-lg px-2 py-1.5 sm:px-3 sm:py-2 text-xs sm:text-sm outline-none min-w-0 max-w-[100px] sm:max-w-none"
+            className="bg-zinc-50 dark:bg-zinc-900 border border-zinc-200 dark:border-zinc-800 rounded-lg px-2 py-1.5 text-xs outline-none dark:text-white hidden sm:block"
           >
             <option value="all">All Types</option>
             {EVENT_TYPES.map(type => (
               <option key={type.id} value={type.id}>{type.name}</option>
             ))}
           </select>
-        </div>
 
-        {/* Action Buttons Row */}
-        <div className="flex items-center justify-end gap-2 flex-wrap">
-          {/* Action Buttons */}
-          <div className="flex items-center gap-1 sm:gap-2">
-             {/* New Event Button */}
-             <button
-                onClick={() => setShowEventModal(true)}
-                className="bg-zinc-900 dark:bg-white text-white dark:text-black px-2 py-1.5 sm:px-4 sm:py-2 rounded-lg text-[10px] sm:text-xs font-bold uppercase tracking-wide sm:tracking-widest hover:opacity-90 transition flex items-center gap-1 sm:gap-2"
-             >
-                <i className="fa-solid fa-plus"></i>
-                <span className="hidden sm:inline">Event</span>
-             </button>
-             {/* Upcoming Events */}
-             <button
-                onClick={() => setShowUpcoming(!showUpcoming)}
-                className={`w-7 h-7 sm:w-9 sm:h-9 flex items-center justify-center rounded-lg border transition ${showUpcoming ? 'bg-blue-500 border-blue-500 text-white' : 'border-zinc-200 dark:border-zinc-800 text-zinc-400 hover:text-zinc-900 dark:hover:text-white'}`}
-                title="Upcoming Events"
-             >
-                <i className="fa-solid fa-clock text-xs sm:text-sm"></i>
-             </button>
-             {/* Tasks */}
-             <button
-                onClick={() => setShowTaskPanel(!showTaskPanel)}
-                className={`w-7 h-7 sm:w-9 sm:h-9 flex items-center justify-center rounded-lg border transition ${showTaskPanel ? 'bg-zinc-100 dark:bg-zinc-800 border-zinc-300 dark:border-zinc-700 text-zinc-900 dark:text-white' : 'border-zinc-200 dark:border-zinc-800 text-zinc-400 hover:text-zinc-900 dark:hover:text-white'}`}
-                title="Tasks"
-             >
-                <i className="fa-solid fa-list-check text-xs sm:text-sm"></i>
-             </button>
-             {/* Google Calendar Sync */}
-             <button
-                onClick={syncGoogleCalendar}
-                disabled={syncingGoogle}
-                className={`w-7 h-7 sm:w-9 sm:h-9 flex items-center justify-center rounded-lg border transition ${googleConnected ? 'border-green-300 dark:border-green-700 text-green-500' : 'border-zinc-200 dark:border-zinc-800 text-zinc-400'} ${syncingGoogle ? 'animate-pulse' : 'hover:text-zinc-900 dark:hover:text-white'}`}
-                title={googleConnected ? `Synced with Google Calendar${lastSynced ? ` (${lastSynced.toLocaleTimeString()})` : ''}` : 'Google Calendar not connected'}
-             >
-                <i className={`fa-brands fa-google text-xs sm:text-sm ${syncingGoogle ? 'animate-spin' : ''}`}></i>
-             </button>
-             {/* Calendar Settings */}
-             <button
-                onClick={() => setShowCalendarSettings(!showCalendarSettings)}
-                className={`w-7 h-7 sm:w-9 sm:h-9 flex items-center justify-center rounded-lg border transition ${showCalendarSettings ? 'bg-zinc-900 dark:bg-white border-zinc-900 dark:border-white text-white dark:text-black' : 'border-zinc-200 dark:border-zinc-800 text-zinc-400 hover:text-zinc-900 dark:hover:text-white'}`}
-                title="Calendar Settings"
-             >
-                <i className="fa-solid fa-gear text-xs sm:text-sm"></i>
-             </button>
-             {/* AI Assistant */}
-             <button
-                onClick={() => {
-                  setShowAIPanel(!showAIPanel);
-                  if (!showAIPanel && !analytics) {
-                    handleRunAllAnalyses();
-                  }
-                }}
-                className={`w-7 h-7 sm:w-9 sm:h-9 flex items-center justify-center rounded-lg border transition ${showAIPanel ? 'bg-gradient-to-r from-purple-500 to-pink-500 border-purple-500 text-white' : 'border-zinc-200 dark:border-zinc-800 text-zinc-400 hover:text-purple-500 hover:border-purple-300'}`}
-                title="AI Calendar Assistant"
-             >
-                <i className={`fa-solid fa-wand-magic-sparkles text-xs sm:text-sm ${aiLoading ? 'animate-pulse' : ''}`}></i>
-             </button>
+          {/* Spacer */}
+          <div className="flex-1" />
+
+          {/* AI Quick Add (NL input toggle) */}
+          {!isMobile && (
+            <button
+              onClick={() => setShowNLInput(prev => !prev)}
+              className={`flex items-center gap-1.5 px-2.5 py-1.5 rounded-lg text-xs font-medium border transition ${showNLInput ? 'bg-violet-500 border-violet-500 text-white' : 'border-zinc-200 dark:border-zinc-800 text-zinc-500 dark:text-zinc-400 hover:text-violet-600 hover:border-violet-300'}`}
+              title="AI quick-add (type naturally)"
+            >
+              <i className="fa-solid fa-wand-magic-sparkles text-[10px]"></i>
+              <span className="hidden lg:inline">Quick Add</span>
+            </button>
+          )}
+
+          {/* Divider */}
+          <div className="w-px h-5 bg-zinc-200 dark:bg-zinc-800 hidden sm:block" />
+
+          {/* New Event */}
+          <button
+            onClick={() => setShowEventModal(true)}
+            className="flex items-center gap-1.5 px-2.5 py-1.5 bg-zinc-900 dark:bg-white text-white dark:text-black rounded-lg text-xs font-bold hover:opacity-90 transition"
+          >
+            <i className="fa-solid fa-plus text-[10px]"></i>
+            <span className="hidden sm:inline">New</span>
+          </button>
+
+          {/* Icon buttons */}
+          <div className="flex items-center gap-1">
+            {/* Upcoming */}
+            <button
+              onClick={() => setShowUpcoming(!showUpcoming)}
+              className={`w-8 h-8 flex items-center justify-center rounded-lg border transition ${showUpcoming ? 'bg-blue-500 border-blue-500 text-white' : 'border-zinc-200 dark:border-zinc-800 text-zinc-400 hover:text-zinc-900 dark:hover:text-white'}`}
+              title="Upcoming Events"
+            >
+              <i className="fa-solid fa-clock text-xs"></i>
+            </button>
+            {/* Tasks */}
+            <button
+              onClick={() => setShowTaskPanel(!showTaskPanel)}
+              className={`w-8 h-8 flex items-center justify-center rounded-lg border transition ${showTaskPanel ? 'bg-zinc-100 dark:bg-zinc-800 border-zinc-300 dark:border-zinc-700 text-zinc-900 dark:text-white' : 'border-zinc-200 dark:border-zinc-800 text-zinc-400 hover:text-zinc-900 dark:hover:text-white'}`}
+              title="Tasks"
+            >
+              <i className="fa-solid fa-list-check text-xs"></i>
+            </button>
+            {/* Google Sync */}
+            <button
+              onClick={syncGoogleCalendar}
+              disabled={syncingGoogle}
+              className={`w-8 h-8 flex items-center justify-center rounded-lg border transition ${googleConnected ? 'border-green-300 dark:border-green-700 text-green-500' : 'border-zinc-200 dark:border-zinc-800 text-zinc-400'} ${syncingGoogle ? 'animate-pulse' : 'hover:text-zinc-900 dark:hover:text-white'}`}
+              title={googleConnected ? `Synced with Google Calendar${lastSynced ? ` (${lastSynced.toLocaleTimeString()})` : ''}` : 'Google Calendar not connected'}
+            >
+              <i className={`fa-brands fa-google text-xs ${syncingGoogle ? 'animate-spin' : ''}`}></i>
+            </button>
+            {/* Settings */}
+            <button
+              onClick={() => setShowCalendarSettings(!showCalendarSettings)}
+              className={`w-8 h-8 flex items-center justify-center rounded-lg border transition ${showCalendarSettings ? 'bg-zinc-900 dark:bg-white border-zinc-900 dark:border-white text-white dark:text-black' : 'border-zinc-200 dark:border-zinc-800 text-zinc-400 hover:text-zinc-900 dark:hover:text-white'}`}
+              title="Calendar Settings"
+            >
+              <i className="fa-solid fa-gear text-xs"></i>
+            </button>
+            {/* AI Panel */}
+            <button
+              onClick={() => {
+                setShowAIPanel(!showAIPanel);
+                if (!showAIPanel && !analytics) handleRunAllAnalyses();
+              }}
+              className={`w-8 h-8 flex items-center justify-center rounded-lg border transition ${showAIPanel ? 'bg-gradient-to-r from-purple-500 to-pink-500 border-purple-500 text-white' : 'border-zinc-200 dark:border-zinc-800 text-zinc-400 hover:text-purple-500 hover:border-purple-300'}`}
+              title="AI Calendar Assistant (⌘I)"
+            >
+              <i className={`fa-solid fa-wand-magic-sparkles text-xs ${aiLoading ? 'animate-pulse' : ''}`}></i>
+            </button>
+            {/* Keyboard shortcuts */}
+            <div className="relative group hidden md:block">
+              <button
+                className="w-8 h-8 flex items-center justify-center rounded-lg border border-zinc-200 dark:border-zinc-800 text-zinc-400 hover:text-zinc-700 dark:hover:text-white transition text-[11px] font-bold"
+                title="Keyboard shortcuts"
+              >?</button>
+              <div className="absolute right-0 top-full mt-2 w-64 bg-zinc-900 text-white rounded-xl shadow-2xl p-4 opacity-0 group-hover:opacity-100 pointer-events-none transition-opacity z-50 text-xs">
+                <p className="font-bold mb-2 text-zinc-300">Keyboard Shortcuts</p>
+                <div className="space-y-1 text-zinc-400">
+                  <div className="flex justify-between"><span>New event</span><kbd className="px-1.5 py-0.5 bg-zinc-800 rounded">N</kbd></div>
+                  <div className="flex justify-between"><span>Today</span><kbd className="px-1.5 py-0.5 bg-zinc-800 rounded">T</kbd></div>
+                  <div className="flex justify-between"><span>Day / Week / Month</span><kbd className="px-1.5 py-0.5 bg-zinc-800 rounded">D W M</kbd></div>
+                  <div className="flex justify-between"><span>Prev / Next</span><kbd className="px-1.5 py-0.5 bg-zinc-800 rounded">← →</kbd></div>
+                  <div className="flex justify-between"><span>Search</span><kbd className="px-1.5 py-0.5 bg-zinc-800 rounded">/</kbd></div>
+                  <div className="flex justify-between"><span>AI panel</span><kbd className="px-1.5 py-0.5 bg-zinc-800 rounded">⌘I</kbd></div>
+                </div>
+              </div>
+            </div>
           </div>
         </div>
+
+        {/* NL Quick-Add panel — slides in below toolbar when active */}
+        {showNLInput && !isMobile && (
+          <div className="px-3 pb-2 border-t border-zinc-100 dark:border-zinc-800/60 animate-fade-in">
+            <NaturalLanguageEventInput
+              contacts={contacts}
+              onEventCreated={(eventData) => {
+                setNewEventTitle(eventData.title || '');
+                setNewEventDate(eventData.start ? eventData.start.toISOString().split('T')[0] : new Date().toISOString().split('T')[0]);
+                setNewEventTime(eventData.start ? `${eventData.start.getHours().toString().padStart(2, '0')}:${eventData.start.getMinutes().toString().padStart(2, '0')}` : '09:00');
+                setNewEventEndTime(eventData.end ? `${eventData.end.getHours().toString().padStart(2, '0')}:${eventData.end.getMinutes().toString().padStart(2, '0')}` : '10:00');
+                setNewEventDesc(eventData.description || '');
+                setNewEventLocation(eventData.location || '');
+                setNewEventType(eventData.type || 'event');
+                setShowEventModal(true);
+                setShowNLInput(false);
+              }}
+            />
+          </div>
+        )}
       </div>
 
-      <div className="flex-1 flex overflow-hidden">
+      <div className="flex-1 min-h-0 flex overflow-hidden">
          {/* Resizable Sidebar - Hidden on small screens, collapsible on medium */}
          <div
            ref={sidebarRef}
@@ -2078,7 +2373,25 @@ const Calendar: React.FC<CalendarProps> = ({ contacts, openTaskPanel = false, on
          </div>
 
          {/* Calendar Grid - Premium Views */}
-         <div className="flex-1 overflow-hidden bg-white dark:bg-zinc-950">
+         <div
+           className="flex-1 min-h-0 flex flex-col overflow-hidden bg-white dark:bg-zinc-950 relative"
+           onTouchStart={handleTouchStart}
+           onTouchMove={handleTouchMove}
+           onTouchEnd={handleTouchEnd}
+           ref={(el) => {
+             if (isMobile && el) {
+               pullToRefresh.bindToElement(el);
+             }
+           }}
+         >
+             {/* Pull to Refresh Indicator */}
+             {isMobile && (
+               <PullToRefreshIndicator
+                 pullDistance={pullToRefresh.pullDistance}
+                 isRefreshing={pullToRefresh.isRefreshing}
+                 progress={pullToRefresh.progress}
+               />
+             )}
              {viewMode === 'year' && (
                <YearView
                  currentDate={currentDate}
@@ -2105,6 +2418,11 @@ const Calendar: React.FC<CalendarProps> = ({ contacts, openTaskPanel = false, on
                    setShowEventModal(true);
                  }}
                  onEventClick={openEventDetail}
+                 onShowMoreEvents={(date, events) => {
+                   setDayDetailDate(date);
+                   setDayDetailEvents(events);
+                   setShowDayDetail(true);
+                 }}
                />
              )}
 
@@ -2135,6 +2453,18 @@ const Calendar: React.FC<CalendarProps> = ({ contacts, openTaskPanel = false, on
                    setShowEventModal(true);
                  }}
                  onEventClick={openEventDetail}
+               />
+             )}
+
+             {viewMode === 'agenda' && (
+               <AgendaView
+                 currentDate={currentDate}
+                 events={filteredEvents}
+                 onEventClick={openEventDetail}
+                 onDateClick={(date) => {
+                   setNewEventDate(date.toISOString().split('T')[0]);
+                   setShowEventModal(true);
+                 }}
                />
              )}
          </div>
@@ -2644,6 +2974,20 @@ const Calendar: React.FC<CalendarProps> = ({ contacts, openTaskPanel = false, on
                 </div>
               </div>
             )}
+
+            {/* Suggested Events from Conversations */}
+            <SuggestedEventsPanel
+              onAcceptEvent={(eventData) => {
+                setNewEventTitle(eventData.title || '');
+                setNewEventDate(eventData.start ? eventData.start.toISOString().split('T')[0] : new Date().toISOString().split('T')[0]);
+                setNewEventTime(eventData.start ? `${eventData.start.getHours().toString().padStart(2, '0')}:${eventData.start.getMinutes().toString().padStart(2, '0')}` : '09:00');
+                setNewEventEndTime(eventData.end ? `${eventData.end.getHours().toString().padStart(2, '0')}:${eventData.end.getMinutes().toString().padStart(2, '0')}` : '10:00');
+                setNewEventDesc(eventData.description || '');
+                setNewEventLocation(eventData.location || '');
+                setNewEventType(eventData.type || 'event');
+                setShowEventModal(true);
+              }}
+            />
 
             {/* Assistant Tab */}
             {aiPanelTab === 'assistant' && !aiLoading && (
@@ -3271,6 +3615,67 @@ const Calendar: React.FC<CalendarProps> = ({ contacts, openTaskPanel = false, on
             </form>
           </div>
         </div>
+      )}
+
+      {/* Day Detail Modal */}
+      <DayDetailModal
+        show={showDayDetail}
+        date={dayDetailDate}
+        events={dayDetailEvents}
+        onClose={() => {
+          setShowDayDetail(false);
+          setDayDetailDate(null);
+          setDayDetailEvents([]);
+        }}
+        onEventClick={(event) => {
+          setShowDayDetail(false);
+          openEventDetail(event);
+        }}
+        onCreateEvent={() => {
+          setShowDayDetail(false);
+          if (dayDetailDate) {
+            setNewEventDate(dayDetailDate.toISOString().split('T')[0]);
+          }
+          setShowEventModal(true);
+        }}
+      />
+
+      {/* Post-Meeting Follow-Up Prompt */}
+      {activeFollowUpPrompt && (
+        <div className="fixed bottom-6 right-6 max-w-md z-[100] animate-fade-in">
+          <PostMeetingPrompt
+            followUp={activeFollowUpPrompt}
+            onCreateAction={(suggestion) => {
+              // Handle action creation based on type
+              if (suggestion.type === 'meeting' && suggestion.suggestedTime) {
+                setNewEventTitle(suggestion.title);
+                setNewEventDate(suggestion.suggestedTime.toISOString().split('T')[0]);
+                setNewEventTime(`${suggestion.suggestedTime.getHours().toString().padStart(2, '0')}:${suggestion.suggestedTime.getMinutes().toString().padStart(2, '0')}`);
+                setNewEventDesc(suggestion.description || '');
+                setShowEventModal(true);
+              }
+              // Could also handle task, reminder, note types here
+              postMeetingService.markAsActioned(activeFollowUpPrompt.id);
+              setActiveFollowUpPrompt(null);
+            }}
+            onDismiss={(id) => {
+              postMeetingService.dismissFollowUp(id);
+              setActiveFollowUpPrompt(null);
+            }}
+            onSkip={(id) => {
+              postMeetingService.dismissFollowUp(id);
+              setActiveFollowUpPrompt(null);
+            }}
+          />
+        </div>
+      )}
+
+      {/* Custom Event Types Manager */}
+      {showCustomTypesManager && (
+        <CustomEventTypesManager
+          onClose={() => setShowCustomTypesManager(false)}
+          onTypesChanged={refreshCustomTypes}
+        />
       )}
     </div>
   );

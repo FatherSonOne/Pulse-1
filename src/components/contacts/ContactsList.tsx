@@ -1,4 +1,4 @@
-import React, { useState, useEffect, useRef } from 'react';
+import React, { useState, useEffect, useRef, lazy, Suspense } from 'react';
 import { Contact } from '../../types';
 import { OnlineIndicator } from '../UserContact/OnlineIndicator';
 import { RelationshipScoreBadge } from './RelationshipHealthCard';
@@ -61,10 +61,15 @@ export const ContactsList: React.FC<ContactsListProps> = ({
   const visibleContacts = contacts.slice(0, visibleCount);
 
   if (isLoading) {
+    const EnhancedLoadingScreen = lazy(() => import('../EnhancedLoadingScreen'));
     return (
-      <div className="flex items-center justify-center h-full text-zinc-400">
-        <i className="fa-solid fa-circle-notch fa-spin text-2xl"></i>
-      </div>
+      <Suspense fallback={
+        <div className="flex items-center justify-center h-full text-zinc-400">
+          <i className="fa-solid fa-circle-notch fa-spin text-2xl"></i>
+        </div>
+      }>
+        <EnhancedLoadingScreen currentStageLabel="Loading contacts..." />
+      </Suspense>
     );
   }
 

@@ -1,5 +1,6 @@
-import React, { useMemo } from 'react';
+import React, { useMemo, useEffect, useRef } from 'react';
 import { CalendarEvent } from '../types';
+import { getEventTypeMeta } from '../services/customEventTypesService';
 
 // ============================================
 // SHARED TYPES & UTILITIES
@@ -11,6 +12,7 @@ interface ViewProps {
   onDateClick?: (date: Date) => void;
   onEventClick?: (event: CalendarEvent) => void;
   onViewChange?: (view: 'year' | 'month' | 'week' | 'day', date?: Date) => void;
+  onShowMoreEvents?: (date: Date, events: CalendarEvent[]) => void;
 }
 
 const MONTH_NAMES = ['January', 'February', 'March', 'April', 'May', 'June',
@@ -30,6 +32,35 @@ const getEventColorClass = (color: string): string => {
   if (color.includes('pink') || color.includes('fuchsia')) return 'cal-event-pink';
   if (color.includes('indigo')) return 'cal-event-indigo';
   return 'cal-event-zinc';
+};
+
+// Returns inline style with type-specific background color (with opacity) and border
+const getEventTypeStyle = (type?: string, _fallbackColor?: string): React.CSSProperties => {
+  const meta = getEventTypeMeta(type);
+  const hex = meta.color;
+  const r = parseInt(hex.slice(1, 3), 16);
+  const g = parseInt(hex.slice(3, 5), 16);
+  const b = parseInt(hex.slice(5, 7), 16);
+  return {
+    backgroundColor: `rgba(${r}, ${g}, ${b}, 0.15)`,
+    borderLeft: `3px solid ${hex}`,
+    color: hex,
+  };
+};
+
+// Pill style (month view) — solid background
+const getEventPillStyle = (type?: string, _fallbackColor?: string): React.CSSProperties => {
+  const meta = getEventTypeMeta(type);
+  return {
+    backgroundColor: meta.color,
+    color: '#fff',
+    border: 'none',
+  };
+};
+
+// Get icon class for event type
+const getEventTypeIcon = (type?: string): string => {
+  return getEventTypeMeta(type).icon;
 };
 
 const isSameDay = (d1: Date, d2: Date): boolean => {
@@ -136,7 +167,8 @@ export const MonthView: React.FC<ViewProps> = ({
   currentDate,
   events,
   onDateClick,
-  onEventClick
+  onEventClick,
+  onShowMoreEvents
 }) => {
   const year = currentDate.getFullYear();
   const month = currentDate.getMonth();
@@ -214,40 +246,50 @@ export const MonthView: React.FC<ViewProps> = ({
               <div className="cal-day-number">{date.getDate()}</div>
 
               <div className="cal-day-events">
-                {/* All-day events first */}
-                {allDayEvents.slice(0, 2).map(ev => (
+                {/* All-day events first — up to 3 total slots */}
+                {allDayEvents.slice(0, 3).map(ev => (
                   <div
                     key={ev.id}
-                    className={`cal-event-pill all-day ${getEventColorClass(ev.color)}`}
+                    className="cal-event-pill all-day cal-event-typed"
+                    style={getEventPillStyle(ev.type, ev.color)}
                     onClick={(e) => {
                       e.stopPropagation();
                       onEventClick?.(ev);
                     }}
                     title={ev.title}
                   >
-                    {ev.title}
+                    <i className={`fa-solid ${getEventTypeIcon(ev.type)} cal-event-pill-icon`} />
+                    <span className="cal-event-pill-text">{ev.title}</span>
                   </div>
                 ))}
 
-                {/* Timed events */}
-                {timedEvents.slice(0, 2 - Math.min(allDayEvents.length, 2)).map(ev => (
+                {/* Timed events — fill remaining slots up to 3 */}
+                {timedEvents.slice(0, 3 - Math.min(allDayEvents.length, 3)).map(ev => (
                   <div
                     key={ev.id}
-                    className={`cal-event-pill ${getEventColorClass(ev.color)}`}
+                    className="cal-event-pill cal-event-typed"
+                    style={getEventPillStyle(ev.type, ev.color)}
                     onClick={(e) => {
                       e.stopPropagation();
                       onEventClick?.(ev);
                     }}
                     title={`${formatTime(ev.start)} ${ev.title}`}
                   >
-                    {ev.title}
+                    <i className={`fa-solid ${getEventTypeIcon(ev.type)} cal-event-pill-icon`} />
+                    <span className="cal-event-pill-text">{ev.title}</span>
                   </div>
                 ))}
 
                 {/* More indicator */}
-                {dayEvents.length > 2 && (
-                  <div className="cal-more-events">
-                    +{dayEvents.length - 2} more
+                {dayEvents.length > 3 && (
+                  <div
+                    className="cal-more-events"
+                    onClick={(e) => {
+                      e.stopPropagation();
+                      onShowMoreEvents?.(date, dayEvents);
+                    }}
+                  >
+                    +{dayEvents.length - 3} more
                   </div>
                 )}
               </div>
@@ -271,6 +313,7 @@ export const WeekView: React.FC<ViewProps> = ({
 }) => {
   const today = new Date();
   const hours = Array.from({ length: 24 }, (_, i) => i);
+  const bodyRef = useRef<HTMLDivElement>(null);
 
   // Get week days
   const weekDays = useMemo(() => {
@@ -287,11 +330,19 @@ export const WeekView: React.FC<ViewProps> = ({
     return events.filter(e => isSameDay(e.start, date));
   };
 
-  // Current time position
+  // Current time position (48px per hour)
   const currentTimePosition = useMemo(() => {
     const now = new Date();
-    return (now.getHours() + now.getMinutes() / 60) * 48; // 48px per hour
+    return (now.getHours() + now.getMinutes() / 60) * 48;
   }, []);
+
+  // Auto-scroll to current time (offset by ~2 hours so context is visible above)
+  useEffect(() => {
+    if (bodyRef.current) {
+      const scrollTo = Math.max(0, currentTimePosition - 96); // 2 hrs above
+      bodyRef.current.scrollTop = scrollTo;
+    }
+  }, []); // only on mount
 
   const formatHour = (hour: number): string => {
     if (hour === 0) return '12 AM';
@@ -334,10 +385,12 @@ export const WeekView: React.FC<ViewProps> = ({
                   {allDayEvents.map(ev => (
                     <div
                       key={ev.id}
-                      className={`cal-event-pill ${getEventColorClass(ev.color)}`}
+                      className="cal-event-pill cal-event-typed"
+                      style={getEventPillStyle(ev.type, ev.color)}
                       onClick={() => onEventClick?.(ev)}
                     >
-                      {ev.title}
+                      <i className={`fa-solid ${getEventTypeIcon(ev.type)} cal-event-pill-icon`} />
+                      <span className="cal-event-pill-text">{ev.title}</span>
                     </div>
                   ))}
                 </div>
@@ -348,7 +401,7 @@ export const WeekView: React.FC<ViewProps> = ({
       )}
 
       {/* Time Grid */}
-      <div className="cal-week-body">
+      <div className="cal-week-body" ref={bodyRef}>
         <div className="cal-week-time-column">
           {hours.map(hour => (
             <div key={hour} className="cal-week-time-slot">
@@ -387,11 +440,14 @@ export const WeekView: React.FC<ViewProps> = ({
                   return (
                     <div
                       key={ev.id}
-                      className={`cal-week-event ${getEventColorClass(ev.color)}`}
-                      style={{ top: `${top}px`, height: `${height}px` }}
+                      className="cal-week-event cal-event-typed"
+                      style={{ top: `${top}px`, height: `${height}px`, ...getEventTypeStyle(ev.type, ev.color) }}
                       onClick={() => onEventClick?.(ev)}
                     >
-                      <div className="cal-week-event-title">{ev.title}</div>
+                      <div className="cal-week-event-title">
+                        <i className={`fa-solid ${getEventTypeIcon(ev.type)} cal-event-type-icon`} />
+                        {ev.title}
+                      </div>
                       {duration >= 0.75 && (
                         <div className="cal-week-event-time">{formatTime(ev.start)}</div>
                       )}
@@ -428,6 +484,7 @@ export const DayView: React.FC<ViewProps> = ({
   const today = new Date();
   const hours = Array.from({ length: 24 }, (_, i) => i);
   const dayIsToday = isToday(currentDate);
+  const bodyRef = useRef<HTMLDivElement>(null);
 
   const dayEvents = useMemo(() => {
     return events.filter(e => isSameDay(e.start, currentDate));
@@ -436,10 +493,18 @@ export const DayView: React.FC<ViewProps> = ({
   const allDayEvents = dayEvents.filter(e => e.allDay);
   const timedEvents = dayEvents.filter(e => !e.allDay);
 
-  // Current time position
+  // Current time position (60px per hour)
   const currentTimePosition = useMemo(() => {
     const now = new Date();
-    return (now.getHours() + now.getMinutes() / 60) * 60; // 60px per hour
+    return (now.getHours() + now.getMinutes() / 60) * 60;
+  }, []);
+
+  // Auto-scroll to current time on mount
+  useEffect(() => {
+    if (bodyRef.current) {
+      const scrollTo = Math.max(0, currentTimePosition - 120); // 2 hrs above
+      bodyRef.current.scrollTop = scrollTo;
+    }
   }, []);
 
   const formatHour = (hour: number): string => {
@@ -475,10 +540,11 @@ export const DayView: React.FC<ViewProps> = ({
             {allDayEvents.map(ev => (
               <div
                 key={ev.id}
-                className={`cal-day-allday-event ${getEventColorClass(ev.color)}`}
+                className="cal-day-allday-event cal-event-typed"
+                style={getEventPillStyle(ev.type, ev.color)}
                 onClick={() => onEventClick?.(ev)}
               >
-                <i className="fa-solid fa-calendar-day" style={{ fontSize: '0.75rem', opacity: 0.8 }} />
+                <i className={`fa-solid ${getEventTypeIcon(ev.type)}`} style={{ fontSize: '0.75rem', opacity: 0.9 }} />
                 {ev.title}
               </div>
             ))}
@@ -487,7 +553,7 @@ export const DayView: React.FC<ViewProps> = ({
       )}
 
       {/* Time Grid */}
-      <div className="cal-day-body">
+      <div className="cal-day-body" ref={bodyRef}>
         <div className="cal-day-time-column">
           {hours.map(hour => (
             <div key={hour} className="cal-day-time-slot">
@@ -516,15 +582,19 @@ export const DayView: React.FC<ViewProps> = ({
             const duration = (ev.end.getTime() - ev.start.getTime()) / (1000 * 60 * 60);
             const top = startHour * 60;
             const height = Math.max(duration * 60, 36);
+            const typeStyle = getEventTypeStyle(ev.type, ev.color);
 
             return (
               <div
                 key={ev.id}
-                className={`cal-day-event ${getEventColorClass(ev.color)}`}
-                style={{ top: `${top}px`, height: `${height}px` }}
+                className="cal-day-event cal-event-typed"
+                style={{ top: `${top}px`, height: `${height}px`, ...typeStyle }}
                 onClick={() => onEventClick?.(ev)}
               >
-                <div className="cal-day-event-title">{ev.title}</div>
+                <div className="cal-day-event-title">
+                  <i className={`fa-solid ${getEventTypeIcon(ev.type)} cal-event-type-icon`} />
+                  {ev.title}
+                </div>
                 <div className="cal-day-event-time">
                   {formatTimeRange(ev.start, ev.end)}
                 </div>
@@ -636,3 +706,6 @@ export default {
   DayView,
   CalendarHeader
 };
+
+// Export Agenda View
+export { AgendaView } from './CalendarAgendaView';

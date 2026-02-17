@@ -49,14 +49,21 @@ import { useVoiceSynthesis } from './WarRoom/VoiceSynthesis';
 const isMobilePlatform = Capacitor.isNativePlatform() || /Android|iPhone|iPad|iPod/i.test(navigator.userAgent);
 
 // Loading fallback component
-const LoadingFallback: React.FC<{ message?: string }> = ({ message = 'Loading...' }) => (
-  <div className="h-full w-full flex items-center justify-center bg-gray-900/50">
-    <div className="text-center">
-      <i className="fa fa-spinner fa-spin text-2xl text-rose-500 mb-2"></i>
-      <p className="text-sm text-gray-400">{message}</p>
-    </div>
-  </div>
-);
+const LoadingFallback: React.FC<{ message?: string }> = ({ message = 'Loading...' }) => {
+  const EnhancedLoadingScreen = lazy(() => import('./EnhancedLoadingScreen'));
+  return (
+    <Suspense fallback={
+      <div className="h-full w-full flex items-center justify-center bg-gray-900/50">
+        <div className="text-center">
+          <i className="fa fa-spinner fa-spin text-2xl text-rose-500 mb-2"></i>
+          <p className="text-sm text-gray-400">Loading...</p>
+        </div>
+      </div>
+    }>
+      <EnhancedLoadingScreen currentStageLabel={message} />
+    </Suspense>
+  );
+};
 
 interface Token {
   text: string;

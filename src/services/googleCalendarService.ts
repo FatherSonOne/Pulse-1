@@ -305,11 +305,12 @@ const calendarEventToGoogleEvent = (event: Partial<CalendarEvent>): Partial<Goog
 class GoogleCalendarService {
   private accessToken: string | null = null;
   private tokenExpiry: number = 0;
+  private refreshTimer: NodeJS.Timeout | null = null;
 
   // Initialize and get valid token
   private async getValidToken(): Promise<string> {
-    // Check if we have a valid cached token
-    if (this.accessToken && Date.now() < this.tokenExpiry) {
+    // Check if we have a valid cached token (with 5-minute buffer)
+    if (this.accessToken && Date.now() < (this.tokenExpiry - 5 * 60 * 1000)) {
       return this.accessToken;
     }
 
@@ -330,10 +331,50 @@ class GoogleCalendarService {
     }
 
     this.accessToken = token;
-    // Cache for 50 minutes (tokens typically expire in 1 hour)
-    this.tokenExpiry = Date.now() + 50 * 60 * 1000;
+    // Cache for 55 minutes (tokens typically expire in 1 hour, we refresh at 50 minutes)
+    this.tokenExpiry = Date.now() + 55 * 60 * 1000;
+
+    // Setup automatic refresh at 50 minutes
+    this.scheduleTokenRefresh();
 
     return token;
+  }
+
+  // Schedule automatic token refresh before expiry
+  private scheduleTokenRefresh(): void {
+    // Clear any existing timer
+    if (this.refreshTimer) {
+      clearTimeout(this.refreshTimer);
+    }
+
+    // Schedule refresh for 50 minutes from now
+    this.refreshTimer = setTimeout(async () => {
+      try {
+        console.log('[Google Calendar] Proactively refreshing token before expiry');
+        const newToken = await refreshTokenIfNeeded();
+        if (newToken) {
+          this.accessToken = newToken;
+          this.tokenExpiry = Date.now() + 55 * 60 * 1000;
+          console.log('[Google Calendar] Token refreshed successfully');
+          // Schedule next refresh
+          this.scheduleTokenRefresh();
+        } else {
+          console.warn('[Google Calendar] Failed to refresh token proactively');
+        }
+      } catch (error) {
+        console.error('[Google Calendar] Error in proactive token refresh:', error);
+      }
+    }, 50 * 60 * 1000); // 50 minutes
+  }
+
+  // Clear token and cleanup
+  clearToken(): void {
+    this.accessToken = null;
+    this.tokenExpiry = 0;
+    if (this.refreshTimer) {
+      clearTimeout(this.refreshTimer);
+      this.refreshTimer = null;
+    }
   }
 
   // Make authenticated API request

@@ -18,6 +18,15 @@ interface SmartTimestampProps {
  * Performance: Optimized with React.memo() to prevent unnecessary re-renders
  */
 export const SmartTimestamp: React.FC<SmartTimestampProps> = React.memo(({ date, className = '' }) => {
+  // Guard against undefined/null dates
+  if (!date) {
+    return (
+      <span className={`text-[10px] text-zinc-400 dark:text-zinc-600 ${className}`}>
+        —
+      </span>
+    );
+  }
+
   const smartTime = formatSmartTimestamp(date);
   const fullTime = formatFullTimestamp(date);
 
@@ -30,7 +39,11 @@ export const SmartTimestamp: React.FC<SmartTimestampProps> = React.memo(({ date,
     </span>
   );
 }, (prevProps, nextProps) => {
+  // Handle undefined/null dates in comparison
+  if (!prevProps.date || !nextProps.date) {
+    return prevProps.date === nextProps.date && prevProps.className === nextProps.className;
+  }
   // Only re-render if date or className changes
-  return prevProps.date.getTime() === nextProps.date.getTime() && 
+  return prevProps.date.getTime() === nextProps.date.getTime() &&
          prevProps.className === nextProps.className;
 });

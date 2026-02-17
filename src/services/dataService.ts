@@ -53,7 +53,7 @@ export interface DBCalendarEvent {
   attendees?: string[];
   calendar_id: string;
   all_day: boolean;
-  event_type: 'event' | 'meet' | 'reminder' | 'call' | 'deadline';
+  event_type: 'event' | 'meet' | 'reminder' | 'call' | 'deadline' | 'focus' | 'personal' | 'travel' | 'social' | 'health' | string;
   created_at: string;
   updated_at: string;
 }

@@ -1,11 +1,14 @@
 
 import React, { useState, useEffect, useRef, useCallback, useMemo } from 'react';
+import { lazy, Suspense } from 'react';
+
 import { AnimatePresence, motion } from 'framer-motion';
 import { v4 as uuidv4 } from 'uuid';
 import MessageInputPortal from './Messages/MessageInputPortal';
 import './Messages/messages.css';
 import { DateDivider } from './Messages/DateDivider';
 import { SmartTimestamp } from './Messages/SmartTimestamp';
+import { LazyAvatar } from './common/LazyImage';
 import { shouldShowDateDivider, formatDateDivider } from '../utils/dateUtils';
 import {
   generateSmartReply,
@@ -30,7 +33,7 @@ import { Contact, Message, Thread, Attachment, DraftAnalysis, ThreadContext, Cat
 import { dataService } from '../services/dataService';
 import { saveArchiveItem } from '../services/dbService';
 import { useMessageTrigger } from '../hooks/useMessageTrigger';
-import { createInvitation, sendInvitationEmail, generateMailtoLink, generateEarlyAccessInvite, generateShareableInviteText } from '../services/inviteService';
+import { createInvitation, sendInvitationViaGmail, generateMailtoLink, generateEarlyAccessInvite, generateShareableInviteText } from '../services/inviteService';
 import { pulseService, SearchUserResult, PulseConversation, PulseMessage } from '../services/pulseService';
 import { nativeSmsService } from '../services/nativeSmsService';
 import { canSendSms, openSmsApp, isNativePlatform } from '../services/permissionService';
@@ -107,16 +110,19 @@ import { GestureHandler } from './Messages/GestureHandler';
 import { TypingIndicator } from './Messages/TypingIndicator';
 
 // REDESIGN COMPONENTS - Phase 3
-import { RadialMenu, useRadialMenu } from './Messages/RadialMenu';
-import { ContextMenu, useContextMenu } from './Messages/ContextMenu';
-import { FeatureSettingsPanel } from './Messages/FeatureSettingsPanel';
+import { useRadialMenu } from './Messages/RadialMenu';
+const RadialMenu = lazy(() => import('./Messages/RadialMenu').then(m => ({ default: m.RadialMenu })));
+import { useContextMenu } from './Messages/ContextMenu';
+const ContextMenu = lazy(() => import('./Messages/ContextMenu').then(m => ({ default: m.ContextMenu })));
+// Lazy-loaded for better performance
+const FeatureSettingsPanel = lazy(() => import('./Messages/FeatureSettingsPanel').then(m => ({ default: m.FeatureSettingsPanel })));
 import { useFeatures } from '../contexts/FeatureContext';
 
 // REDESIGN COMPONENTS - Phase 2 (Mobile)
 import { MobileDrawer, useSwipeFromEdge, MobileDrawerHeader } from './Messages/MobileDrawer';
 
 // Focus Mode (Phase 5)
-import { FocusMode } from './Messages/FocusMode';
+const FocusMode = lazy(() => import('./Messages/FocusMode').then(m => ({ default: m.FocusMode })));
 
 // Extracted Modals
 import {
@@ -1442,33 +1448,28 @@ const Messages: React.FC<MessagesProps> = ({ apiKey, contacts, initialContactId,
         throw new Error(createResult.message);
       }
 
-      // Try to send email via Resend
-      const emailResult = await sendInvitationEmail(
+      // Send email via user's connected Gmail account
+      const emailResult = await sendInvitationViaGmail(
         inviteEmail.trim(),
         inviterName,
         createResult.inviteId || '',
         'Pulse Team'
       );
 
-      if (emailResult.message === 'fallback_mailto') {
-        // Resend not configured, open mailto link
-        const mailtoUrl = generateMailtoLink(inviteEmail.trim(), inviterName);
-        window.open(mailtoUrl, '_blank');
+      if (emailResult.success) {
         setInviteStatus('success');
-        setInviteMessage('Email client opened! Send the email to complete the invitation.');
-      } else if (emailResult.success) {
-        setInviteStatus('success');
-        setInviteMessage(`Invitation sent to ${inviteEmail.trim()}!`);
+        setInviteMessage(`Invitation sent to ${inviteEmail.trim()} via your Gmail!`);
+
+        // Clear email after short delay
+        setTimeout(() => {
+          setInviteEmail('');
+          setInviteStatus('idle');
+          setInviteMessage('');
+          setShowInviteModal(false);
+        }, 2000);
       } else {
         throw new Error(emailResult.message);
       }
-
-      // Clear email after short delay
-      setTimeout(() => {
-        setInviteEmail('');
-        setInviteStatus('idle');
-        setInviteMessage('');
-      }, 3000);
 
     } catch (error: any) {
       console.error('Send invite error:', error);
@@ -2444,13 +2445,19 @@ const Messages: React.FC<MessagesProps> = ({ apiKey, contacts, initialContactId,
 
   // Loading state
   if (isLoading) {
+    // Lazy import EnhancedLoadingScreen to avoid circular dependencies
+    const EnhancedLoadingScreen = lazy(() => import('./EnhancedLoadingScreen'));
     return (
-      <div className="h-full flex items-center justify-center bg-white dark:bg-zinc-950 rounded-2xl border border-zinc-200 dark:border-zinc-800">
-        <div className="text-center">
-          <i className="fa-solid fa-circle-notch fa-spin text-3xl text-blue-500 mb-4"></i>
-          <p className="text-zinc-500 dark:text-zinc-400">Loading conversations...</p>
+      <Suspense fallback={
+        <div className="h-full flex items-center justify-center bg-white dark:bg-zinc-950">
+          <div className="text-center">
+            <i className="fa-solid fa-circle-notch fa-spin text-3xl text-blue-500 mb-4"></i>
+            <p className="text-zinc-500 dark:text-zinc-400">Loading...</p>
+          </div>
         </div>
-      </div>
+      }>
+        <EnhancedLoadingScreen currentStageLabel="Loading conversations..." />
+      </Suspense>
     );
   }
 

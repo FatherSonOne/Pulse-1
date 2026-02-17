@@ -1,5 +1,5 @@
 // EmailList.tsx - Email list view with actions
-import React from 'react';
+import React, { lazy, Suspense } from 'react';
 import { CachedEmail, EmailFolder } from '../../services/emailSyncService';
 
 interface EmailListProps {
@@ -94,13 +94,18 @@ export const EmailList: React.FC<EmailListProps> = ({
   };
 
   if (loading) {
+    const EnhancedLoadingScreen = lazy(() => import('../EnhancedLoadingScreen'));
     return (
-      <div className="flex-1 flex items-center justify-center bg-white dark:bg-transparent">
-        <div className="text-center">
-          <i className="fa-solid fa-circle-notch fa-spin text-3xl text-rose-500 mb-3"></i>
-          <p className="text-stone-500 dark:text-zinc-500">Loading emails...</p>
+      <Suspense fallback={
+        <div className="flex-1 flex items-center justify-center bg-white dark:bg-transparent">
+          <div className="text-center">
+            <i className="fa-solid fa-circle-notch fa-spin text-3xl text-rose-500 mb-3"></i>
+            <p className="text-stone-500 dark:text-zinc-500">Loading...</p>
+          </div>
         </div>
-      </div>
+      }>
+        <EnhancedLoadingScreen currentStageLabel="Loading emails..." />
+      </Suspense>
     );
   }
 

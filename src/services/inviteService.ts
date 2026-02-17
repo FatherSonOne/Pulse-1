@@ -1,7 +1,8 @@
 // Team Invitation Service for Pulse
-// Uses Resend API for sending invitation emails
+// Uses Gmail API for sending invitation emails through user's connected account
 
 import { supabase } from './supabase';
+import { GmailService } from './gmailService';
 
 export interface TeamInvite {
   id: string;
@@ -132,6 +133,54 @@ export const sendInvitationEmail = async (
     return {
       success: false,
       message: error.message || 'Failed to send invitation email'
+    };
+  }
+};
+
+// Send invitation email via Gmail API using user's connected Gmail account
+export const sendInvitationViaGmail = async (
+  recipientEmail: string,
+  inviterName: string,
+  inviteToken: string,
+  workspaceName: string = 'Pulse Team'
+): Promise<InviteResult> => {
+  // Always use production URL for invites, even in development
+  const appUrl = 'https://pulse.logosvision.org';
+
+  try {
+    // Get user's Gmail access token from Supabase session
+    const { data: { session } } = await supabase.auth.getSession();
+    if (!session?.provider_token) {
+      throw new Error('No Gmail connection found. Please connect your Google account.');
+    }
+
+    const gmailService = new GmailService(session.provider_token);
+    const inviteUrl = `${appUrl}/invite/${inviteToken}`;
+
+    // Get user's email address
+    const userEmail = session.user?.email;
+    if (!userEmail) {
+      throw new Error('User email not found');
+    }
+
+    // Send email using Gmail API
+    await gmailService.sendEmail({
+      to: [recipientEmail],
+      subject: `${inviterName} invited you to join ${workspaceName} on Pulse`,
+      body: generateInviteEmailHtml(inviterName, workspaceName, inviteUrl),
+      isHtml: true
+    });
+
+    return {
+      success: true,
+      message: 'Invitation sent successfully via Gmail',
+      inviteId: inviteToken
+    };
+  } catch (error: any) {
+    console.error('Send invitation via Gmail error:', error);
+    return {
+      success: false,
+      message: error.message || 'Failed to send invitation via Gmail'
     };
   }
 };

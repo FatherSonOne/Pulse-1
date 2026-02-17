@@ -2,27 +2,52 @@
 // Beautiful animated loading screen for Pulse app beta launch
 // Features: Pulsing waveform logo, circular progress ring, stage-based messaging
 
-import React from 'react';
-import { motion, AnimatePresence } from 'framer-motion';
+import React, { useEffect, useState } from 'react';
+import { motion, AnimatePresence, useMotionValue, useTransform, animate } from 'framer-motion';
 import { useLoading } from '../contexts/LoadingContext';
 
 interface EnhancedLoadingScreenProps {
   currentStage?: string;
   currentStageLabel?: string;
   progress?: number;
+  autoAnimate?: boolean; // If true, auto-animates from 0 to 100
 }
 
 const EnhancedLoadingScreen: React.FC<EnhancedLoadingScreenProps> = ({
   currentStage: propStage,
   currentStageLabel: propLabel,
-  progress: propProgress
+  progress: propProgress,
+  autoAnimate = true // Enable auto-animation by default
 }) => {
   // Use LoadingContext if props are not provided
   const loadingContext = useLoading();
 
   const currentStage = propStage ?? loadingContext.currentStage;
   const currentStageLabel = propLabel ?? loadingContext.currentStageLabel;
-  const progress = propProgress ?? loadingContext.progress;
+  const contextProgress = propProgress ?? loadingContext.progress;
+
+  // Animated progress value
+  const animatedProgress = useMotionValue(0);
+  const [displayProgress, setDisplayProgress] = useState(0);
+
+  useEffect(() => {
+    if (autoAnimate) {
+      // Auto-animate from 0 to 100 over 8 seconds with easing
+      // This gives the appearance of loading progress
+      const controls = animate(animatedProgress, 100, {
+        duration: 8,
+        ease: [0.25, 0.1, 0.25, 1], // Custom cubic bezier for realistic loading feel
+        onUpdate: (latest) => setDisplayProgress(latest)
+      });
+
+      return () => controls.stop();
+    } else {
+      // Use the context or prop progress directly
+      setDisplayProgress(contextProgress);
+    }
+  }, [autoAnimate, contextProgress, animatedProgress]);
+
+  const progress = autoAnimate ? displayProgress : contextProgress;
 
   // Calculate stroke-dashoffset for progress ring
   // Circle circumference: 2 * PI * radius (radius = 58)
