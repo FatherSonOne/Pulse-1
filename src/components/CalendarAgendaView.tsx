@@ -199,24 +199,56 @@ export const AgendaView: React.FC<AgendaViewProps> = ({
                   ))}
                 </div>
               ) : (
-                <div className="px-4 py-8 text-center text-sm text-zinc-400 dark:text-zinc-600">
-                  No events scheduled
-                </div>
+                <button
+                  onClick={() => onDateClick?.(date)}
+                  className="w-full px-4 py-5 flex items-center gap-3 text-left hover:bg-zinc-50 dark:hover:bg-zinc-900/60 transition group"
+                >
+                  <div className="w-8 h-8 rounded-full border-2 border-dashed border-zinc-200 dark:border-zinc-700 flex items-center justify-center group-hover:border-indigo-300 dark:group-hover:border-indigo-600 transition">
+                    <i className="fa-solid fa-plus text-[10px] text-zinc-300 dark:text-zinc-600 group-hover:text-indigo-400 transition" aria-hidden="true" />
+                  </div>
+                  <span className="text-sm text-zinc-400 dark:text-zinc-600 group-hover:text-indigo-500 dark:group-hover:text-indigo-400 transition">
+                    No events — tap to add one
+                  </span>
+                </button>
               )}
             </div>
           );
         })}
       </div>
 
-      {/* Empty State */}
+      {/* Global empty state — no events in the next 30 days */}
       {groupedEvents.size === 0 && (
-        <div className="flex flex-col items-center justify-center h-full p-8 text-center">
-          <i className="fa-solid fa-calendar-xmark text-4xl text-zinc-300 dark:text-zinc-700 mb-3" />
-          <h3 className="text-lg font-semibold text-zinc-900 dark:text-white mb-1">
-            No events scheduled
+        <div className="flex flex-col items-center justify-center min-h-[60vh] p-8 text-center select-none">
+          {/* Illustration */}
+          <div className="relative mb-6">
+            <div className="w-24 h-24 rounded-3xl bg-gradient-to-br from-indigo-100 to-blue-50 dark:from-indigo-900/40 dark:to-blue-900/20 flex items-center justify-center shadow-inner">
+              <i className="fa-regular fa-calendar text-4xl text-indigo-400 dark:text-indigo-500" aria-hidden="true" />
+            </div>
+            {/* Floating sparkle */}
+            <div className="absolute -top-1 -right-1 w-6 h-6 bg-amber-400 rounded-full flex items-center justify-center shadow-md">
+              <i className="fa-solid fa-star text-[9px] text-white" aria-hidden="true" />
+            </div>
+          </div>
+
+          <h3 className="text-xl font-bold text-zinc-900 dark:text-white mb-2">
+            All clear ahead
           </h3>
-          <p className="text-sm text-zinc-500 dark:text-zinc-400">
-            Tap the + button to create your first event
+          <p className="text-sm text-zinc-500 dark:text-zinc-400 max-w-xs leading-relaxed mb-6">
+            No events in the next 30 days. A great time to plan something — or enjoy the calm.
+          </p>
+
+          {/* Quick-add CTA */}
+          <button
+            onClick={() => onDateClick?.(new Date())}
+            className="inline-flex items-center gap-2 px-5 py-2.5 bg-indigo-600 hover:bg-indigo-700 text-white text-sm font-semibold rounded-xl shadow-sm transition active:scale-95"
+          >
+            <i className="fa-solid fa-plus text-xs" aria-hidden="true" />
+            Add first event
+          </button>
+
+          {/* Tip */}
+          <p className="mt-4 text-xs text-zinc-400 dark:text-zinc-600">
+            Tip: type naturally — "Lunch with Sarah tomorrow at noon"
           </p>
         </div>
       )}

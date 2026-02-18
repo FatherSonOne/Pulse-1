@@ -121,12 +121,20 @@ interface Team {
 const Calendar: React.FC<CalendarProps> = ({ contacts, openTaskPanel = false, onNavigateToIntegrations }) => {
   // Mobile detection
   const [isMobile, setIsMobile] = useState(window.innerWidth < 768);
+  /** Show swipe hint the first time user enters WeekView on mobile */
+  const [showSwipeHint, setShowSwipeHint] = useState(false);
+  const [showExportMenu, setShowExportMenu] = useState(false);
 
   const [currentDate, setCurrentDate] = useState(new Date());
   const [viewMode, setViewMode] = useState<ViewMode>(isMobile ? 'agenda' : 'month');
   const [events, setEvents] = useState<CalendarEvent[]>([]);
   const [tasks, setTasks] = useState<Task[]>([]);
   const [visibleCalendars, setVisibleCalendars] = useState<Set<string>>(new Set(['user']));
+  /** Per-calendar color overrides — persisted in localStorage as JSON */
+  const [calendarColors, setCalendarColors] = useState<Record<string, string>>(() => {
+    try { return JSON.parse(localStorage.getItem('cal_calendar_colors') || '{}'); } catch { return {}; }
+  });
+  const [colorPickerOpenFor, setColorPickerOpenFor] = useState<string | null>(null);
   const [showTaskPanel, setShowTaskPanel] = useState(openTaskPanel);
   const [showEventModal, setShowEventModal] = useState(false);
   const [showCommandPalette, setShowCommandPalette] = useState(false);
@@ -218,7 +226,14 @@ const Calendar: React.FC<CalendarProps> = ({ contacts, openTaskPanel = false, on
   const [newEventColor, setNewEventColor] = useState(EVENT_COLORS[0].class);
   const [newEventType, setNewEventType] = useState<CalendarEvent['type']>('event');
   const [newEventRecurrence, setNewEventRecurrence] = useState<RecurrenceType>('none');
-  const [newEventReminder, setNewEventReminder] = useState<ReminderTime>('15min');
+  const [newEventReminder, setNewEventReminder] = useState<ReminderTime>(
+    () => (localStorage.getItem('cal_default_reminder') as ReminderTime | null) ?? '15min'
+  );
+  /** Persist the chosen reminder so it becomes the new default for all future events */
+  const setAndPersistReminder = useCallback((val: ReminderTime) => {
+    setNewEventReminder(val);
+    localStorage.setItem('cal_default_reminder', val);
+  }, []);
   const [newEventLocation, setNewEventLocation] = useState('');
   const [newEventAllDay, setNewEventAllDay] = useState(false);
 
@@ -689,11 +704,18 @@ const Calendar: React.FC<CalendarProps> = ({ contacts, openTaskPanel = false, on
     setCurrentDate(newDate);
   }, [currentDate, viewMode]);
 
-  const { handleTouchStart, handleTouchMove, handleTouchEnd } = useSwipeGesture({
+  const { handleTouchStart, handleTouchMove, handleTouchEnd: rawTouchEnd } = useSwipeGesture({
     onSwipeLeft: navigateNext,
     onSwipeRight: navigatePrev,
     minSwipeDistance: 75,
   });
+  const handleTouchEnd = useCallback((e: React.TouchEvent) => {
+    rawTouchEnd(e);
+    if (showSwipeHint) {
+      setShowSwipeHint(false);
+      localStorage.setItem('cal_swipe_hint_seen', '1');
+    }
+  }, [rawTouchEnd, showSwipeHint]);
 
   // Pull-to-refresh for mobile
   const handleRefresh = useCallback(async () => {
@@ -707,6 +729,18 @@ const Calendar: React.FC<CalendarProps> = ({ contacts, openTaskPanel = false, on
   });
 
   // ─── Background sync polling — every 5 minutes ───────────────────────────
+  // Show a one-time swipe hint when user first opens WeekView on mobile
+  useEffect(() => {
+    if (!isMobile || viewMode !== 'week') return;
+    if (localStorage.getItem('cal_swipe_hint_seen')) return;
+    setShowSwipeHint(true);
+    const timer = setTimeout(() => {
+      setShowSwipeHint(false);
+      localStorage.setItem('cal_swipe_hint_seen', '1');
+    }, 3000);
+    return () => clearTimeout(timer);
+  }, [isMobile, viewMode]);
+
   const SYNC_INTERVAL_MS = 5 * 60 * 1000; // 5 minutes
 
   useEffect(() => {
@@ -1317,6 +1351,105 @@ const Calendar: React.FC<CalendarProps> = ({ contacts, openTaskPanel = false, on
     setVisibleCalendars(newSet);
   };
 
+  const setCalendarColor = useCallback((calId: string, color: string) => {
+    setCalendarColors(prev => {
+      const next = { ...prev, [calId]: color };
+      localStorage.setItem('cal_calendar_colors', JSON.stringify(next));
+      return next;
+    });
+    setColorPickerOpenFor(null);
+  }, []);
+
+  // Close color picker popover when clicking elsewhere
+  useEffect(() => {
+    if (!colorPickerOpenFor) return;
+    const close = () => setColorPickerOpenFor(null);
+    document.addEventListener('click', close);
+    return () => document.removeEventListener('click', close);
+  }, [colorPickerOpenFor]);
+
+  // Close export menu when clicking elsewhere
+  useEffect(() => {
+    if (!showExportMenu) return;
+    const close = () => setShowExportMenu(false);
+    document.addEventListener('click', close);
+    return () => document.removeEventListener('click', close);
+  }, [showExportMenu]);
+
+  /**
+   * Export the currently-visible events as an RFC 5545 .ics file.
+   * Scope: events within the current view window (week, day, month, or all).
+   */
+  const exportAsICS = useCallback(() => {
+    const pad = (n: number) => String(n).padStart(2, '0');
+    const toICSDate = (d: Date) =>
+      `${d.getFullYear()}${pad(d.getMonth() + 1)}${pad(d.getDate())}T` +
+      `${pad(d.getHours())}${pad(d.getMinutes())}${pad(d.getSeconds())}`;
+
+    // Determine the window to export
+    const windowStart = new Date(currentDate);
+    const windowEnd   = new Date(currentDate);
+    if (viewMode === 'week') {
+      windowStart.setDate(windowStart.getDate() - windowStart.getDay());
+      windowStart.setHours(0, 0, 0, 0);
+      windowEnd.setDate(windowStart.getDate() + 7);
+    } else if (viewMode === 'day') {
+      windowStart.setHours(0, 0, 0, 0);
+      windowEnd.setDate(windowStart.getDate() + 1);
+    } else if (viewMode === 'month') {
+      windowStart.setDate(1); windowStart.setHours(0, 0, 0, 0);
+      windowEnd.setMonth(windowEnd.getMonth() + 1); windowEnd.setDate(0);
+    } else {
+      windowStart.setFullYear(windowStart.getFullYear(), 0, 1);
+      windowEnd.setFullYear(windowEnd.getFullYear(), 11, 31);
+    }
+
+    const scope = filteredEvents.filter(e =>
+      e.start >= windowStart && e.start <= windowEnd
+    );
+
+    const lines: string[] = [
+      'BEGIN:VCALENDAR',
+      'VERSION:2.0',
+      'PRODID:-//Pulse Calendar//EN',
+      'CALSCALE:GREGORIAN',
+    ];
+
+    scope.forEach(ev => {
+      lines.push('BEGIN:VEVENT');
+      lines.push(`UID:${ev.id}@pulse-calendar`);
+      lines.push(`DTSTAMP:${toICSDate(new Date())}`);
+      if (ev.allDay) {
+        const ds = ev.start;
+        const de = ev.end;
+        lines.push(`DTSTART;VALUE=DATE:${ds.getFullYear()}${pad(ds.getMonth()+1)}${pad(ds.getDate())}`);
+        lines.push(`DTEND;VALUE=DATE:${de.getFullYear()}${pad(de.getMonth()+1)}${pad(de.getDate())}`);
+      } else {
+        lines.push(`DTSTART:${toICSDate(ev.start)}`);
+        lines.push(`DTEND:${toICSDate(ev.end)}`);
+      }
+      lines.push(`SUMMARY:${ev.title.replace(/\n/g, '\\n')}`);
+      if (ev.description) lines.push(`DESCRIPTION:${ev.description.replace(/\n/g, '\\n')}`);
+      if (ev.location)    lines.push(`LOCATION:${ev.location.replace(/\n/g, '\\n')}`);
+      if (ev.meetLink)    lines.push(`URL:${ev.meetLink}`);
+      lines.push('END:VEVENT');
+    });
+
+    lines.push('END:VCALENDAR');
+    const blob = new Blob([lines.join('\r\n')], { type: 'text/calendar;charset=utf-8' });
+    const url  = URL.createObjectURL(blob);
+    const a    = document.createElement('a');
+    const label = viewMode === 'week'  ? `week-of-${windowStart.toISOString().slice(0,10)}` :
+                  viewMode === 'day'   ? currentDate.toISOString().slice(0,10) :
+                  viewMode === 'month' ? `${currentDate.getFullYear()}-${pad(currentDate.getMonth()+1)}` :
+                  String(currentDate.getFullYear());
+    a.href     = url;
+    a.download = `pulse-calendar-${label}.ics`;
+    a.click();
+    URL.revokeObjectURL(url);
+    setShowExportMenu(false);
+  }, [currentDate, viewMode, filteredEvents]);
+
   const toggleTask = (taskId: string) => {
     setTasks(prev => prev.map(t => t.id === taskId ? { ...t, completed: !t.completed } : t));
   };
@@ -1447,7 +1580,8 @@ const Calendar: React.FC<CalendarProps> = ({ contacts, openTaskPanel = false, on
     setNewEventColor(EVENT_COLORS[0].class);
     setNewEventType('event');
     setNewEventRecurrence('none');
-    setNewEventReminder('15min');
+    // Reset to persisted default (not always '15min')
+    setNewEventReminder((localStorage.getItem('cal_default_reminder') as ReminderTime | null) ?? '15min');
     setNewEventLocation('');
     setNewEventAllDay(false);
     setEditingEvent(null);
@@ -2107,7 +2241,7 @@ const Calendar: React.FC<CalendarProps> = ({ contacts, openTaskPanel = false, on
                           <select
                             tabIndex={0}
                             value={newEventReminder}
-                            onChange={(e) => setNewEventReminder(e.target.value as ReminderTime)}
+                            onChange={(e) => setAndPersistReminder(e.target.value as ReminderTime)}
                             className="w-full bg-zinc-50 dark:bg-zinc-950 border border-zinc-200 dark:border-zinc-800 rounded-lg p-3 dark:text-white text-zinc-900 focus:border-zinc-400 focus:ring-2 focus:ring-blue-500 outline-none transition"
                           >
                             <option value="none">No reminder</option>
@@ -2189,14 +2323,22 @@ const Calendar: React.FC<CalendarProps> = ({ contacts, openTaskPanel = false, on
                             const typeMeta = allEventTypes.find(t => t.id === selectedEvent.type);
                             return typeMeta ? (
                               <>
-                                <i className={`fa-solid ${typeMeta.icon}`} />
+                                <i className={`fa-solid ${typeMeta.icon}`} aria-hidden="true" />
                                 <span>{typeMeta.name}</span>
                               </>
                             ) : <span>Event</span>;
                           })()}
-                          {selectedEvent.source === 'google' && <i className="fa-brands fa-google ml-1"></i>}
+                          {selectedEvent.source === 'google' && <i className="fa-brands fa-google ml-1" aria-hidden="true"></i>}
+                          {selectedEvent.source === 'outlook' && <i className="fa-brands fa-microsoft ml-1" aria-hidden="true"></i>}
                         </div>
                         <h3 className="text-xl font-bold text-white">{selectedEvent.title}</h3>
+                        {/* Conflict badge — shown when this event overlaps a cross-provider duplicate */}
+                        {syncConflicts.some(c => c.eventA.id === selectedEvent.id || c.eventB.id === selectedEvent.id) && (
+                          <div className="mt-2 inline-flex items-center gap-1.5 px-2 py-1 bg-amber-400/30 border border-amber-300/50 rounded-full text-[10px] font-semibold text-amber-100 uppercase tracking-wide">
+                            <i className="fa-solid fa-triangle-exclamation text-[9px]" aria-hidden="true" />
+                            Possible duplicate
+                          </div>
+                        )}
                       </div>
                       <button onClick={() => setShowEventDetail(false)} className="text-white/80 hover:text-white">
                         <i className="fa-solid fa-xmark"></i>
@@ -2222,18 +2364,32 @@ const Calendar: React.FC<CalendarProps> = ({ contacts, openTaskPanel = false, on
                       </div>
                     </div>
 
-                    {/* Google Meet Link */}
+                    {/* Meeting Link (Google Meet or any URL) */}
                     {selectedEvent.meetLink && (
                       <div className="flex items-center gap-3 text-sm">
-                        <i className="fa-solid fa-video text-blue-500 w-5"></i>
-                        <a
-                          href={selectedEvent.meetLink}
-                          target="_blank"
-                          rel="noopener noreferrer"
-                          className="text-blue-500 hover:underline font-medium"
-                        >
-                          Join Google Meet
-                        </a>
+                        <i className="fa-solid fa-video text-blue-500 w-5" aria-hidden="true"></i>
+                        <div className="flex items-center gap-2 flex-1 min-w-0">
+                          <a
+                            href={selectedEvent.meetLink}
+                            target="_blank"
+                            rel="noopener noreferrer"
+                            className="text-blue-500 hover:underline font-medium truncate"
+                          >
+                            {selectedEvent.meetLink.includes('meet.google') ? 'Join Google Meet' :
+                             selectedEvent.meetLink.includes('teams.microsoft') ? 'Join Teams Meeting' :
+                             selectedEvent.meetLink.includes('zoom.us') ? 'Join Zoom Meeting' :
+                             'Join Meeting'}
+                          </a>
+                          <button
+                            onClick={() => {
+                              navigator.clipboard.writeText(selectedEvent.meetLink!).catch(() => {});
+                            }}
+                            title="Copy link"
+                            className="flex-shrink-0 w-6 h-6 flex items-center justify-center rounded-md text-zinc-400 hover:text-zinc-700 dark:hover:text-zinc-200 hover:bg-zinc-100 dark:hover:bg-zinc-800 transition"
+                          >
+                            <i className="fa-regular fa-copy text-[11px]" aria-hidden="true"></i>
+                          </button>
+                        </div>
                       </div>
                     )}
 
@@ -2255,36 +2411,59 @@ const Calendar: React.FC<CalendarProps> = ({ contacts, openTaskPanel = false, on
                       </div>
                     )}
 
-                    {/* Attendees with Response Status */}
+                    {/* Attendees — avatar chips with response status */}
                     {selectedEvent.attendeesDetailed && selectedEvent.attendeesDetailed.length > 0 ? (
                       <div className="flex items-start gap-3 text-sm">
-                        <i className="fa-solid fa-users text-zinc-400 w-5 mt-1"></i>
-                        <div className="flex-1 space-y-1.5">
-                          {selectedEvent.attendeesDetailed.map((attendee, i) => (
-                            <div key={i} className="flex items-center gap-2">
-                              <span className={`w-2 h-2 rounded-full flex-shrink-0 ${
-                                attendee.responseStatus === 'accepted' ? 'bg-green-500' :
-                                attendee.responseStatus === 'declined' ? 'bg-red-500' :
-                                attendee.responseStatus === 'tentative' ? 'bg-amber-500' :
-                                'bg-zinc-400'
-                              }`}></span>
-                              <span className="dark:text-white text-xs truncate">
-                                {attendee.displayName || attendee.email}
-                              </span>
-                              <span className="text-zinc-400 text-xs capitalize">
-                                ({attendee.responseStatus || 'pending'})
-                              </span>
-                            </div>
-                          ))}
+                        <i className="fa-solid fa-users text-zinc-400 w-5 mt-1" aria-hidden="true"></i>
+                        <div className="flex-1">
+                          <div className="text-xs text-zinc-500 dark:text-zinc-400 mb-2">
+                            {selectedEvent.attendeesDetailed.length} attendee{selectedEvent.attendeesDetailed.length !== 1 ? 's' : ''}
+                            {' · '}{selectedEvent.attendeesDetailed.filter(a => a.responseStatus === 'accepted').length} accepted
+                          </div>
+                          <div className="flex flex-wrap gap-2">
+                            {selectedEvent.attendeesDetailed.map((attendee, i) => {
+                              const name = attendee.displayName || attendee.email || '?';
+                              const initials = name.split(' ').map((w: string) => w[0]).slice(0, 2).join('').toUpperCase();
+                              const statusColor =
+                                attendee.responseStatus === 'accepted'  ? 'ring-green-400' :
+                                attendee.responseStatus === 'declined'  ? 'ring-red-400' :
+                                attendee.responseStatus === 'tentative' ? 'ring-amber-400' :
+                                'ring-zinc-300 dark:ring-zinc-600';
+                              const bgColors = ['bg-blue-500','bg-purple-500','bg-emerald-500','bg-pink-500','bg-amber-500','bg-indigo-500'];
+                              const bg = bgColors[i % bgColors.length];
+                              return (
+                                <div key={i} title={`${name} — ${attendee.responseStatus || 'pending'}`} className="flex items-center gap-1.5">
+                                  <div className={`w-7 h-7 rounded-full ${bg} ring-2 ${statusColor} flex items-center justify-center text-white text-[10px] font-bold flex-shrink-0`}>
+                                    {initials}
+                                  </div>
+                                  <span className="text-xs text-zinc-600 dark:text-zinc-300 max-w-[80px] truncate">{name.split(' ')[0]}</span>
+                                </div>
+                              );
+                            })}
+                          </div>
                         </div>
                       </div>
                     ) : selectedEvent.attendees && selectedEvent.attendees.length > 0 && (
                       <div className="flex items-start gap-3 text-sm">
-                        <i className="fa-solid fa-users text-zinc-400 w-5"></i>
-                        <div className="flex flex-wrap gap-1">
-                          {selectedEvent.attendees.map((a, i) => (
-                            <span key={i} className="px-2 py-1 bg-zinc-100 dark:bg-zinc-800 rounded text-xs dark:text-white">{a}</span>
-                          ))}
+                        <i className="fa-solid fa-users text-zinc-400 w-5 mt-1" aria-hidden="true"></i>
+                        <div className="flex-1">
+                          <div className="text-xs text-zinc-500 dark:text-zinc-400 mb-2">
+                            {selectedEvent.attendees.length} attendee{selectedEvent.attendees.length !== 1 ? 's' : ''}
+                          </div>
+                          <div className="flex flex-wrap gap-2">
+                            {selectedEvent.attendees.map((a, i) => {
+                              const initials = a.split(/[@\s]/).filter(Boolean).map((w: string) => w[0]).slice(0, 2).join('').toUpperCase() || '?';
+                              const bgColors = ['bg-blue-500','bg-purple-500','bg-emerald-500','bg-pink-500','bg-amber-500','bg-indigo-500'];
+                              return (
+                                <div key={i} title={a} className="flex items-center gap-1.5">
+                                  <div className={`w-7 h-7 rounded-full ${bgColors[i % bgColors.length]} flex items-center justify-center text-white text-[10px] font-bold flex-shrink-0`}>
+                                    {initials}
+                                  </div>
+                                  <span className="text-xs text-zinc-600 dark:text-zinc-300 max-w-[80px] truncate">{a.split('@')[0]}</span>
+                                </div>
+                              );
+                            })}
+                          </div>
                         </div>
                       </div>
                     )}
@@ -2611,6 +2790,48 @@ const Calendar: React.FC<CalendarProps> = ({ contacts, openTaskPanel = false, on
             >
               <i className="fa-solid fa-expand text-xs" aria-hidden="true" />
             </button>
+
+            {/* ⋯ More / Export menu */}
+            <div className="relative hidden md:block">
+              <button
+                onClick={(e) => { e.stopPropagation(); setShowExportMenu(prev => !prev); }}
+                aria-label="More options"
+                title="More options"
+                className={`w-8 h-8 flex items-center justify-center rounded-lg border transition ${showExportMenu ? 'bg-zinc-900 dark:bg-white border-zinc-900 dark:border-white text-white dark:text-black' : 'border-zinc-200 dark:border-zinc-800 text-zinc-400 hover:text-zinc-700 dark:hover:text-white'}`}
+              >
+                <i className="fa-solid fa-ellipsis text-xs" aria-hidden="true" />
+              </button>
+              {showExportMenu && (
+                <div
+                  className="absolute right-0 top-10 z-30 w-52 bg-white dark:bg-zinc-900 border border-zinc-200 dark:border-zinc-800 rounded-xl shadow-xl overflow-hidden"
+                  onMouseDown={e => e.stopPropagation()}
+                >
+                  <div className="px-3 py-2 border-b border-zinc-100 dark:border-zinc-800">
+                    <span className="text-[10px] font-bold text-zinc-400 uppercase tracking-wider">Export</span>
+                  </div>
+                  <button
+                    onClick={exportAsICS}
+                    className="w-full flex items-center gap-2.5 px-3 py-2.5 text-sm text-zinc-700 dark:text-zinc-200 hover:bg-zinc-50 dark:hover:bg-zinc-800 transition text-left"
+                  >
+                    <i className="fa-solid fa-file-arrow-down text-indigo-500 w-4" aria-hidden="true" />
+                    <div>
+                      <div className="font-medium">Export as .ics</div>
+                      <div className="text-[10px] text-zinc-400 capitalize">
+                        Current {viewMode} view ({filteredEvents.filter(e => {
+                          const ws = new Date(currentDate);
+                          const we = new Date(currentDate);
+                          if (viewMode === 'week') { ws.setDate(ws.getDate() - ws.getDay()); ws.setHours(0,0,0,0); we.setDate(ws.getDate()+7); }
+                          else if (viewMode === 'day') { ws.setHours(0,0,0,0); we.setDate(ws.getDate()+1); }
+                          else if (viewMode === 'month') { ws.setDate(1); ws.setHours(0,0,0,0); we.setMonth(we.getMonth()+1); we.setDate(0); }
+                          else { ws.setFullYear(ws.getFullYear(),0,1); we.setFullYear(we.getFullYear(),11,31); }
+                          return e.start >= ws && e.start <= we;
+                        }).length} events)
+                      </div>
+                    </div>
+                  </button>
+                </div>
+              )}
+            </div>
           </div>
         </div>
 
@@ -2688,23 +2909,65 @@ const Calendar: React.FC<CalendarProps> = ({ contacts, openTaskPanel = false, on
                      <i className="fa-solid fa-plus text-[10px]"></i>
                    </button>
                  </h3>
-                 <div className="space-y-2">
-                   {googleCalendars.map(cal => (
-                     <label key={cal.id} className="flex items-center gap-2 text-xs lg:text-sm text-zinc-600 dark:text-zinc-300 cursor-pointer group">
-                       <input
-                         type="checkbox"
-                         checked={visibleCalendars.has(cal.id)}
-                         onChange={() => toggleCalendarVisibility(cal.id)}
-                         className="w-3.5 h-3.5 lg:w-4 lg:h-4 rounded border-zinc-300 dark:border-zinc-700 bg-white dark:bg-zinc-800 checked:bg-blue-500 checked:border-transparent transition flex-shrink-0"
-                         style={{ accentColor: cal.backgroundColor }}
-                       />
-                       <span className="group-hover:text-zinc-900 dark:group-hover:text-white transition truncate flex items-center gap-1">
-                         {cal.primary && <i className="fa-solid fa-star text-amber-400 text-[8px] flex-shrink-0"></i>}
-                         <span className="truncate">{cal.summary}</span>
-                       </span>
-                     </label>
-                   ))}
-                 </div>
+                 {/* Color palette for the picker */}
+                 {(() => {
+                   const CAL_PALETTE = [
+                     '#ef4444','#f97316','#eab308','#22c55e',
+                     '#14b8a6','#3b82f6','#8b5cf6','#ec4899',
+                     '#6b7280','#0ea5e9','#10b981','#f43f5e',
+                   ];
+                   return (
+                     <div className="space-y-1">
+                       {googleCalendars.map(cal => {
+                         const dotColor = calendarColors[cal.id] || cal.backgroundColor || '#3b82f6';
+                         const isPickerOpen = colorPickerOpenFor === cal.id;
+                         return (
+                           <div key={cal.id} className="relative">
+                             <div className="flex items-center gap-2 group">
+                               {/* Color dot — click to open picker */}
+                               <button
+                                 onClick={(e) => { e.stopPropagation(); setColorPickerOpenFor(isPickerOpen ? null : cal.id); }}
+                                 className="w-3 h-3 rounded-full flex-shrink-0 ring-2 ring-transparent hover:ring-zinc-300 dark:hover:ring-zinc-600 transition focus:outline-none focus-visible:ring-indigo-400"
+                                 style={{ backgroundColor: dotColor }}
+                                 aria-label={`Change color for ${cal.summary}`}
+                                 title="Change calendar color"
+                               />
+                               <label className="flex items-center gap-1.5 flex-1 min-w-0 text-xs lg:text-sm text-zinc-600 dark:text-zinc-300 cursor-pointer">
+                                 <input
+                                   type="checkbox"
+                                   checked={visibleCalendars.has(cal.id)}
+                                   onChange={() => toggleCalendarVisibility(cal.id)}
+                                   className="w-3.5 h-3.5 rounded border-zinc-300 dark:border-zinc-700 bg-white dark:bg-zinc-800 checked:border-transparent transition flex-shrink-0"
+                                   style={{ accentColor: dotColor }}
+                                 />
+                                 <span className="group-hover:text-zinc-900 dark:group-hover:text-white transition truncate flex items-center gap-1">
+                                   {cal.primary && <i className="fa-solid fa-star text-amber-400 text-[8px] flex-shrink-0" aria-hidden="true"></i>}
+                                   <span className="truncate">{cal.summary}</span>
+                                 </span>
+                               </label>
+                             </div>
+                             {/* Color picker popover */}
+                             {isPickerOpen && (
+                               <div className="absolute left-0 top-6 z-20 p-2 bg-white dark:bg-zinc-800 border border-zinc-200 dark:border-zinc-700 rounded-xl shadow-xl grid grid-cols-6 gap-1.5"
+                                 onMouseDown={e => e.stopPropagation()}
+                               >
+                                 {CAL_PALETTE.map(hex => (
+                                   <button
+                                     key={hex}
+                                     onClick={() => setCalendarColor(cal.id, hex)}
+                                     className={`w-5 h-5 rounded-full transition hover:scale-110 focus:outline-none focus-visible:ring-2 focus-visible:ring-offset-1 focus-visible:ring-indigo-500 ${dotColor === hex ? 'ring-2 ring-offset-1 ring-zinc-700 dark:ring-white' : ''}`}
+                                     style={{ backgroundColor: hex }}
+                                     aria-label={hex}
+                                   />
+                                 ))}
+                               </div>
+                             )}
+                           </div>
+                         );
+                       })}
+                     </div>
+                   );
+                 })()}
                  {lastSynced && (
                    <p className="text-[9px] lg:text-[10px] text-zinc-400 mt-2 truncate">
                      Last synced: {lastSynced.toLocaleTimeString()}
@@ -2959,6 +3222,19 @@ const Calendar: React.FC<CalendarProps> = ({ contacts, openTaskPanel = false, on
                  }}
                  onEventReschedule={handleEventReschedule}
                />
+             )}
+
+             {/* Mobile swipe hint — shown once on first WeekView visit */}
+             {showSwipeHint && viewMode === 'week' && isMobile && (
+               <div
+                 className="absolute bottom-20 left-1/2 -translate-x-1/2 z-30 pointer-events-none"
+                 aria-live="polite"
+               >
+                 <div className="flex items-center gap-2.5 px-4 py-2.5 bg-zinc-900/90 dark:bg-zinc-100/90 text-white dark:text-zinc-900 text-sm font-medium rounded-full shadow-xl backdrop-blur-sm animate-fade-in">
+                   <i className="fa-solid fa-left-right text-indigo-400 dark:text-indigo-600 text-xs" aria-hidden="true" />
+                   Swipe left or right to navigate weeks
+                 </div>
+               </div>
              )}
 
              {viewMode === 'week' && (
@@ -3479,7 +3755,7 @@ const Calendar: React.FC<CalendarProps> = ({ contacts, openTaskPanel = false, on
                   <label className="text-sm text-zinc-600 dark:text-zinc-400 mb-2 block">Default Reminder</label>
                   <select
                     value={newEventReminder}
-                    onChange={(e) => setNewEventReminder(e.target.value as ReminderTime)}
+                    onChange={(e) => setAndPersistReminder(e.target.value as ReminderTime)}
                     className="w-full bg-zinc-50 dark:bg-zinc-900 border border-zinc-200 dark:border-zinc-800 rounded-lg px-3 py-2 text-sm outline-none"
                   >
                     <option value="none">No reminder</option>
