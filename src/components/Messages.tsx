@@ -697,6 +697,7 @@ const Messages: React.FC<MessagesProps> = ({ apiKey, contacts, initialContactId,
   // AI Coach tip visibility with fade
   const [showCoachTip, setShowCoachTip] = useState(true);
   const [coachTipFading, setCoachTipFading] = useState(false);
+  const [nudgeFocused, setNudgeFocused] = useState(false);
 
   // Pulse User Search State
   const [pulseUserSearch, setPulseUserSearch] = useState('');
@@ -809,6 +810,20 @@ const Messages: React.FC<MessagesProps> = ({ apiKey, contacts, initialContactId,
   const [showAchievements, setShowAchievements] = useState(true);
   const [showToolsDrawer, setShowToolsDrawer] = useState(false);
   const [advancedMode, setAdvancedMode] = useState(false); // Phase 1: Simple/Advanced toggle
+
+  // Focus AI nudge when navigated from Daily Overview
+  useEffect(() => {
+    const flag = sessionStorage.getItem('pulse_focus_nudge');
+    if (flag === 'message') {
+      sessionStorage.removeItem('pulse_focus_nudge');
+      setShowCoachTip(true);
+      // Flash the nudge bar after a short delay to let the component render
+      setTimeout(() => {
+        setNudgeFocused(true);
+        setTimeout(() => setNudgeFocused(false), 2000);
+      }, 300);
+    }
+  }, []);
 
   // Load Pulse conversations, suggestions, and recent contacts on mount
   useEffect(() => {
@@ -4310,7 +4325,7 @@ const Messages: React.FC<MessagesProps> = ({ apiKey, contacts, initialContactId,
           {/* AI Coach Tip - Hidden on mobile, visible on md+ */}
           {nudge && showCoachTip && (
             <div className={`hidden md:flex flex-1 max-w-md mx-4 transition-all duration-300 ${coachTipFading ? 'opacity-0 scale-95' : 'opacity-100 scale-100'}`}>
-              <div className="flex items-center gap-2 px-3 py-1.5 bg-purple-50 dark:bg-purple-900/20 border border-purple-200 dark:border-purple-700/50 rounded-lg group">
+              <div className={`flex items-center gap-2 px-3 py-1.5 bg-purple-50 dark:bg-purple-900/20 border border-purple-200 dark:border-purple-700/50 rounded-lg group transition-all duration-300 ${nudgeFocused ? 'ring-2 ring-purple-500/60 bg-purple-100 dark:bg-purple-900/40 scale-[1.02]' : ''}`}>
                 <i className="fa-solid fa-wand-magic-sparkles text-purple-500 text-xs flex-shrink-0 animate-pulse"></i>
                 <div className="flex-1 overflow-hidden relative">
                   <div className="ticker-container whitespace-nowrap">

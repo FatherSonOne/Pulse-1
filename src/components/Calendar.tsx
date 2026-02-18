@@ -1,8 +1,11 @@
 import React, { useState, useEffect, useCallback, useMemo, useRef } from 'react';
 import { Contact, CalendarEvent, Task } from '../types';
 import { fetchCalendarEvents, fetchTasks } from '../services/authService';
+import { dataService } from '../services/dataService';
 import { googleCalendarService, GoogleCalendar } from '../services/googleCalendarService';
-import { YearView, MonthView, WeekView, DayView, CalendarHeader, AgendaView } from './CalendarViews';
+import { outlookCalendarService } from '../services/outlookCalendarService';
+import { unifiedCalendarService } from '../services/unifiedCalendarService';
+import { YearView, MonthView, WeekView, DayView, CalendarHeader, AgendaView, OverlayEvent } from './CalendarViews';
 import DayDetailModal from './DayDetailModal';
 import useSwipeGesture from '../hooks/useSwipeGesture';
 import usePullToRefresh from '../hooks/usePullToRefresh';
@@ -14,6 +17,10 @@ import PostMeetingPrompt from './PostMeetingPrompt';
 import { postMeetingService, MeetingFollowUp as PostMeetingFollowUp } from '../services/postMeetingService';
 import CustomEventTypesManager from './CustomEventTypesManager';
 import { customEventTypesService } from '../services/customEventTypesService';
+import CommandPalette from './CommandPalette';
+import ShortcutsHelp from './ShortcutsHelp';
+import JumpToDate from './JumpToDate';
+import ConflictResolutionBanner, { EventConflict, detectConflicts } from './ConflictResolutionBanner';
 import './Calendar.css';
 import {
   calendarAIService,
@@ -122,6 +129,14 @@ const Calendar: React.FC<CalendarProps> = ({ contacts, openTaskPanel = false, on
   const [visibleCalendars, setVisibleCalendars] = useState<Set<string>>(new Set(['user']));
   const [showTaskPanel, setShowTaskPanel] = useState(openTaskPanel);
   const [showEventModal, setShowEventModal] = useState(false);
+  const [showCommandPalette, setShowCommandPalette] = useState(false);
+  const [showShortcutsHelp, setShowShortcutsHelp] = useState(false);
+  const [showJumpToDate, setShowJumpToDate] = useState(false);
+  const [focusMode, setFocusMode] = useState(false);
+  /** Set of contact IDs whose busy-time overlay is visible on WeekView/DayView */
+  const [overlayMemberIds, setOverlayMemberIds] = useState<Set<string>>(new Set());
+  /** Whether the free-time finder panel is open */
+  const [showFreeTimeFinder, setShowFreeTimeFinder] = useState(false);
 
   // Team Management State
   const [teams, setTeams] = useState<Team[]>([
@@ -279,6 +294,12 @@ const Calendar: React.FC<CalendarProps> = ({ contacts, openTaskPanel = false, on
   const [loadedMonths, setLoadedMonths] = useState<Set<string>>(new Set());
   const [historicalSyncComplete, setHistoricalSyncComplete] = useState(false);
 
+  // Outlook Calendar State
+  const [outlookConnected, setOutlookConnected] = useState(false);
+  const [syncingOutlook, setSyncingOutlook] = useState(false);
+  const [outlookError, setOutlookError] = useState<string | null>(null);
+  const [outlookUserEmail, setOutlookUserEmail] = useState<string | null>(null);
+
   // Load local events and check Google Calendar connection
   useEffect(() => {
     const loadData = async () => {
@@ -298,6 +319,19 @@ const Calendar: React.FC<CalendarProps> = ({ contacts, openTaskPanel = false, on
         }
       } catch (error) {
         console.log('Google Calendar not connected');
+      }
+
+      // Check Outlook connection
+      const outlookConn = outlookCalendarService.isConnected();
+      setOutlookConnected(outlookConn);
+      if (outlookConn) {
+        try {
+          const profile = await outlookCalendarService.getUserProfile();
+          if (profile?.mail) setOutlookUserEmail(profile.mail);
+          await syncOutlookCalendar();
+        } catch {
+          console.log('Outlook Calendar check failed');
+        }
       }
     };
     loadData();
@@ -391,6 +425,55 @@ const Calendar: React.FC<CalendarProps> = ({ contacts, openTaskPanel = false, on
       setSyncingGoogle(false);
     }
   }, [syncingGoogle, currentDate, visibleCalendars, historicalSyncComplete, loadedMonths]);
+
+  // Sync with Outlook Calendar
+  const syncOutlookCalendar = useCallback(async () => {
+    if (syncingOutlook) return;
+    setSyncingOutlook(true);
+    setOutlookError(null);
+    try {
+      const now   = new Date();
+      const start = new Date(now.getFullYear() - 1, 0, 1);
+      const end   = new Date(now.getFullYear() + 1, 11, 31);
+      const outlookEvents = await outlookCalendarService.getAllCalendarsEvents(start, end);
+
+      setEvents(prev => {
+        // Remove stale Outlook events, keep Google + local
+        const nonOutlook = prev.filter(e => e.source !== 'outlook');
+        // Deduplicate by outlookEventId
+        const existingIds = new Set(prev.filter(e => e.source === 'outlook').map(e => e.outlookEventId));
+        const newEvents   = outlookEvents.filter(e => !existingIds.has(e.outlookEventId));
+        return [...nonOutlook, ...newEvents];
+      });
+
+      setOutlookConnected(true);
+    } catch (err: any) {
+      console.error('[Outlook] Sync failed:', err);
+      setOutlookError(err.message || 'Failed to sync Outlook Calendar');
+      if (err.message?.includes('expired') || err.message?.includes('reconnect')) {
+        setOutlookConnected(false);
+      }
+    } finally {
+      setSyncingOutlook(false);
+    }
+  }, [syncingOutlook]);
+
+  // Disconnect Outlook
+  const disconnectOutlook = useCallback(() => {
+    outlookCalendarService.disconnect();
+    setOutlookConnected(false);
+    setOutlookUserEmail(null);
+    setEvents(prev => prev.filter(e => e.source !== 'outlook'));
+  }, []);
+
+  // Connect Outlook (triggers OAuth redirect)
+  const connectOutlook = useCallback(async () => {
+    try {
+      await outlookCalendarService.connect();
+    } catch (err: any) {
+      setOutlookError(err.message || 'Could not start Outlook sign-in');
+    }
+  }, []);
 
   // Lazy load events when navigating to past/future months
   const loadMonthEvents = useCallback(async (year: number, month: number) => {
@@ -491,12 +574,33 @@ const Calendar: React.FC<CalendarProps> = ({ contacts, openTaskPanel = false, on
   // Keyboard shortcuts
   useEffect(() => {
     const handleKeyDown = (e: KeyboardEvent) => {
-      // Don't fire when typing in an input/textarea
+      const meta = e.metaKey || e.ctrlKey;
+
+      // Cmd+K / Ctrl+K — command palette (works even while typing)
+      if (meta && e.key === 'k') {
+        e.preventDefault();
+        setShowCommandPalette(prev => !prev);
+        return;
+      }
+
+      // Cmd+J — jump to date (works even while typing)
+      if (meta && e.key === 'j') {
+        e.preventDefault();
+        setShowJumpToDate(prev => !prev);
+        return;
+      }
+
+      // Cmd+F — focus mode toggle (works even while typing)
+      if (meta && e.key === 'f') {
+        e.preventDefault();
+        setFocusMode(prev => !prev);
+        return;
+      }
+
+      // Don't fire remaining shortcuts when typing in an input/textarea
       const tag = (e.target as HTMLElement).tagName;
       if (tag === 'INPUT' || tag === 'TEXTAREA' || tag === 'SELECT') return;
       if (showEventModal || showDayDetail) return;
-
-      const meta = e.metaKey || e.ctrlKey;
 
       switch (e.key) {
         // View switching
@@ -513,6 +617,19 @@ const Calendar: React.FC<CalendarProps> = ({ contacts, openTaskPanel = false, on
         case 'n': case 'c': case 'N': case 'C':
           setShowEventModal(true);
           break;
+        // Edit selected event
+        case 'e': case 'E':
+          if (selectedEvent) openEventDetail(selectedEvent);
+          break;
+        // Delete selected event
+        case 'Delete': case 'Backspace':
+          if (selectedEvent) {
+            setEvents(prev => prev.filter(ev => ev.id !== selectedEvent.id));
+            dataService.deleteEvent(selectedEvent.id).catch(() => {});
+            setSelectedEvent(null);
+            setShowEventDetail(false);
+          }
+          break;
         // Search focus
         case '/':
           e.preventDefault();
@@ -522,17 +639,26 @@ const Calendar: React.FC<CalendarProps> = ({ contacts, openTaskPanel = false, on
         case 'i': case 'I':
           if (meta) { e.preventDefault(); setShowAIPanel(prev => !prev); }
           break;
-        // Escape
+        // Shortcuts help sheet
+        case '?':
+          e.preventDefault();
+          setShowShortcutsHelp(prev => !prev);
+          break;
+        // Escape — dismiss in priority order
         case 'Escape':
+          if (showShortcutsHelp) { setShowShortcutsHelp(false); break; }
+          if (showJumpToDate)    { setShowJumpToDate(false);    break; }
+          if (focusMode)         { setFocusMode(false);         break; }
           setShowAIPanel(false);
           setShowCalendarSettings(false);
+          setShowCommandPalette(false);
           break;
       }
     };
 
     window.addEventListener('keydown', handleKeyDown);
     return () => window.removeEventListener('keydown', handleKeyDown);
-  }, [showEventModal, showDayDetail, handlePrev, handleNext]);
+  }, [showEventModal, showDayDetail, showShortcutsHelp, showJumpToDate, focusMode, selectedEvent, handlePrev, handleNext]);
 
   // Swipe gesture navigation
   const navigateNext = useCallback(() => {
@@ -579,6 +705,63 @@ const Calendar: React.FC<CalendarProps> = ({ contacts, openTaskPanel = false, on
     enabled: isMobile && googleConnected,
     threshold: 80,
   });
+
+  // ─── Background sync polling — every 5 minutes ───────────────────────────
+  const SYNC_INTERVAL_MS = 5 * 60 * 1000; // 5 minutes
+
+  useEffect(() => {
+    // Don't poll if neither provider is connected
+    if (!googleConnected && !outlookConnected) return;
+
+    const poll = async () => {
+      // Silent sync — don't set the loading spinners (those are for manual clicks)
+      try {
+        if (googleConnected && !syncingGoogle) {
+          await syncGoogleCalendar();
+        }
+      } catch { /* swallow — errors already logged inside syncGoogleCalendar */ }
+
+      try {
+        if (outlookConnected && !syncingOutlook) {
+          await syncOutlookCalendar();
+        }
+      } catch { /* swallow */ }
+    };
+
+    const timer = setInterval(poll, SYNC_INTERVAL_MS);
+    return () => clearInterval(timer);
+    // Re-register whenever connection state changes so we start/stop immediately
+  }, [googleConnected, outlookConnected, syncGoogleCalendar, syncOutlookCalendar]);
+
+  // ─── Conflict detection ───────────────────────────────────────────────────
+  const [syncConflicts, setSyncConflicts] = useState<EventConflict[]>([]);
+  // A set of conflict IDs dismissed by the user this session
+  const [dismissedConflicts, setDismissedConflicts] = useState<Set<string>>(new Set());
+
+  useEffect(() => {
+    // Only run when multiple providers are active
+    if (!googleConnected && !outlookConnected) { setSyncConflicts([]); return; }
+    const detected = detectConflicts(events).filter(c => !dismissedConflicts.has(c.id));
+    setSyncConflicts(detected);
+  }, [events, googleConnected, outlookConnected, dismissedConflicts]);
+
+  const handleConflictKeepA = useCallback((conflict: EventConflict) => {
+    // Remove eventB from state + DB
+    setEvents(prev => prev.filter(ev => ev.id !== conflict.eventB.id));
+    dataService.deleteEvent(conflict.eventB.id).catch(() => {});
+    setDismissedConflicts(prev => new Set([...prev, conflict.id]));
+  }, []);
+
+  const handleConflictKeepB = useCallback((conflict: EventConflict) => {
+    // Remove eventA from state + DB
+    setEvents(prev => prev.filter(ev => ev.id !== conflict.eventA.id));
+    dataService.deleteEvent(conflict.eventA.id).catch(() => {});
+    setDismissedConflicts(prev => new Set([...prev, conflict.id]));
+  }, []);
+
+  const handleConflictDismiss = useCallback((conflict: EventConflict) => {
+    setDismissedConflicts(prev => new Set([...prev, conflict.id]));
+  }, []);
 
   // Sidebar resize handlers
   const sidebarRef = useRef<HTMLDivElement>(null);
@@ -633,6 +816,104 @@ const Calendar: React.FC<CalendarProps> = ({ contacts, openTaskPanel = false, on
     // Default: show contacts marked as team members
     return contacts.filter(c => c.isTeamMember || c.contactType === 'team');
   }, [contacts, selectedTeam]);
+
+  /**
+   * Convert a Tailwind avatar color class (e.g. "bg-blue-500") to a hex color
+   * usable for inline CSS. Falls back to #6b7280 (zinc-500) if unrecognised.
+   */
+  const avatarColorToHex = useCallback((cls: string): string => {
+    const map: Record<string, string> = {
+      'bg-red-500': '#ef4444',    'bg-red-400': '#f87171',
+      'bg-orange-500': '#f97316', 'bg-amber-500': '#f59e0b',
+      'bg-yellow-500': '#eab308', 'bg-lime-500': '#84cc16',
+      'bg-green-500': '#22c55e',  'bg-emerald-500': '#10b981',
+      'bg-teal-500': '#14b8a6',   'bg-cyan-500': '#06b6d4',
+      'bg-sky-500': '#0ea5e9',    'bg-blue-500': '#3b82f6',
+      'bg-indigo-500': '#6366f1', 'bg-violet-500': '#8b5cf6',
+      'bg-purple-500': '#a855f7', 'bg-fuchsia-500': '#d946ef',
+      'bg-pink-500': '#ec4899',   'bg-rose-500': '#f43f5e',
+      'bg-blue-400': '#60a5fa',   'bg-green-400': '#4ade80',
+      'bg-purple-400': '#c084fc', 'bg-pink-400': '#f472b6',
+    };
+    return map[cls] ?? '#6b7280';
+  }, []);
+
+  /**
+   * Generate simulated busy-time overlay events for the currently visible
+   * team members. We derive "busy blocks" from the week window centred on
+   * currentDate by spreading each member's working hours across the visible
+   * days with a deterministic but varied pattern (so different members look
+   * different without real calendar data).
+   */
+  const overlayEvents = useMemo<OverlayEvent[]>(() => {
+    if (overlayMemberIds.size === 0) return [];
+    if (viewMode !== 'week' && viewMode !== 'day') return [];
+
+    // Build a 7-day window centred on the current week (or just current day)
+    const windowStart = new Date(currentDate);
+    if (viewMode === 'week') {
+      windowStart.setDate(windowStart.getDate() - windowStart.getDay());
+    }
+    const days = viewMode === 'week' ? 7 : 1;
+
+    const result: OverlayEvent[] = [];
+
+    teamMembers
+      .filter(m => overlayMemberIds.has(m.id))
+      .forEach((member, memberIdx) => {
+        const color = avatarColorToHex(member.avatarColor);
+
+        for (let d = 0; d < days; d++) {
+          const day = new Date(windowStart);
+          day.setDate(day.getDate() + d);
+
+          // Skip weekends for realistic feel
+          const dow = day.getDay();
+          if (dow === 0 || dow === 6) continue;
+
+          // Deterministic pseudo-random: hash memberIdx + day index
+          const seed = (memberIdx + 1) * 31 + d;
+
+          // Morning block: 9–11 or 10–12 depending on seed
+          const morningStart = 9 + (seed % 2);
+          const morningEnd   = morningStart + 1 + (seed % 3 === 0 ? 0.5 : 1);
+          const blockStart1 = new Date(day);
+          blockStart1.setHours(morningStart, 0, 0, 0);
+          const blockEnd1 = new Date(day);
+          blockEnd1.setHours(0, morningEnd * 60, 0, 0);
+          blockEnd1.setTime(blockStart1.getTime() + (morningEnd - morningStart) * 60 * 60 * 1000);
+
+          result.push({
+            id: `overlay-${member.id}-${d}-am`,
+            memberId: member.id,
+            memberName: member.name,
+            color,
+            start: blockStart1,
+            end: blockEnd1,
+          });
+
+          // Afternoon block if seed allows (avoids monotony)
+          if (seed % 3 !== 2) {
+            const afStart = 14 + (seed % 2);
+            const afDuration = 1 + (seed % 2 === 0 ? 0.5 : 1);
+            const blockStart2 = new Date(day);
+            blockStart2.setHours(afStart, 0, 0, 0);
+            const blockEnd2 = new Date(blockStart2.getTime() + afDuration * 60 * 60 * 1000);
+
+            result.push({
+              id: `overlay-${member.id}-${d}-pm`,
+              memberId: member.id,
+              memberName: member.name,
+              color,
+              start: blockStart2,
+              end: blockEnd2,
+            });
+          }
+        }
+      });
+
+    return result;
+  }, [overlayMemberIds, teamMembers, currentDate, viewMode, avatarColorToHex]);
 
   // Team management functions
   const handleCreateTeam = () => {
@@ -1192,6 +1473,75 @@ const Calendar: React.FC<CalendarProps> = ({ contacts, openTaskPanel = false, on
     return filtered;
   }, [events, visibleCalendars, searchQuery, filterEventType]);
 
+  /**
+   * Free-time slots: working-hours windows (9 AM – 6 PM) where no visible
+   * overlay member AND no user event is scheduled. Returned as 30-min slots
+   * merged into contiguous blocks ≥ 30 min. Only computed for week/day views.
+   */
+  const freeTimeSlots = useMemo<{ start: Date; end: Date; dayLabel: string }[]>(() => {
+    if (!showFreeTimeFinder) return [];
+    if (viewMode !== 'week' && viewMode !== 'day') return [];
+
+    const windowStart = new Date(currentDate);
+    if (viewMode === 'week') {
+      windowStart.setDate(windowStart.getDate() - windowStart.getDay());
+    }
+    const days = viewMode === 'week' ? 7 : 1;
+    const WORK_START = 9;  // 9 AM
+    const WORK_END   = 18; // 6 PM
+    const SLOT_MIN   = 30; // minutes per slot chunk
+
+    const allBusy = [...overlayEvents, ...filteredEvents.filter(e => !e.allDay).map(e => ({
+      start: e.start, end: e.end,
+    }))];
+
+    const slots: { start: Date; end: Date; dayLabel: string }[] = [];
+
+    for (let d = 0; d < days; d++) {
+      const day = new Date(windowStart);
+      day.setDate(day.getDate() + d);
+
+      const dow = day.getDay();
+      if (dow === 0 || dow === 6) continue; // skip weekends
+
+      const dayLabel = day.toLocaleDateString([], { weekday: 'short', month: 'short', day: 'numeric' });
+
+      // Collect busy intervals for this day
+      const dayBusy = allBusy
+        .filter(b => {
+          const sd = new Date(b.start);
+          return sd.getFullYear() === day.getFullYear() &&
+                 sd.getMonth() === day.getMonth() &&
+                 sd.getDate() === day.getDate();
+        })
+        .map(b => ({ s: b.start.getTime(), e: b.end.getTime() }));
+
+      // Walk through 30-min slots in working hours
+      let freeStart: Date | null = null;
+
+      const totalSlots = ((WORK_END - WORK_START) * 60) / SLOT_MIN;
+      for (let si = 0; si <= totalSlots; si++) {
+        const slotMs = new Date(day).setHours(WORK_START, si * SLOT_MIN, 0, 0);
+        const slotEnd = slotMs + SLOT_MIN * 60 * 1000;
+        const isFree = si < totalSlots &&
+          !dayBusy.some(b => b.s < slotEnd && b.e > slotMs);
+
+        if (isFree && !freeStart) {
+          freeStart = new Date(slotMs);
+        } else if (!isFree && freeStart) {
+          const end = new Date(slotMs);
+          const durationMin = (end.getTime() - freeStart.getTime()) / 60000;
+          if (durationMin >= 30) {
+            slots.push({ start: freeStart, end, dayLabel });
+          }
+          freeStart = null;
+        }
+      }
+    }
+
+    return slots.slice(0, 8); // cap at 8 suggestions
+  }, [showFreeTimeFinder, viewMode, currentDate, overlayEvents, filteredEvents]);
+
   // Get upcoming events (next 7 days)
   const upcomingEvents = useMemo(() => {
     const now = new Date();
@@ -1236,6 +1586,42 @@ const Calendar: React.FC<CalendarProps> = ({ contacts, openTaskPanel = false, on
   const openEventDetail = useCallback((event: CalendarEvent) => {
     setSelectedEvent(event);
     setShowEventDetail(true);
+  }, []);
+
+  /** Handle drag-to-reschedule from WeekView / DayView */
+  const handleEventReschedule = useCallback(async (event: CalendarEvent, newStart: Date, newEnd: Date) => {
+    const updated: CalendarEvent = { ...event, start: newStart, end: newEnd };
+
+    // Optimistically update local state
+    setEvents(prev => prev.map(ev => ev.id === event.id ? updated : ev));
+
+    // Persist to Google Calendar only if the event originated there AND we're actually connected.
+    // Re-check connection live (not from stale state) to avoid spurious errors.
+    if (event.googleEventId && event.source === 'google') {
+      const stillConnected = await googleCalendarService.isConnected();
+      if (stillConnected) {
+        try {
+          await googleCalendarService.updateEvent(
+            event.googleEventId,
+            updated,
+            event.calendarId || 'primary'
+          );
+        } catch (err) {
+          console.error('Failed to reschedule Google Calendar event:', err);
+        }
+      }
+    }
+
+    // Persist to Supabase only for locally-stored events (UUID id format).
+    // Google-synced events use Google's own IDs which are not UUIDs.
+    const UUID_RE = /^[0-9a-f]{8}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{12}$/i;
+    if (UUID_RE.test(event.id)) {
+      try {
+        await dataService.updateEvent(event.id, updated);
+      } catch (err) {
+        console.error('Failed to persist rescheduled event:', err);
+      }
+    }
   }, []);
 
   // Add attendee
@@ -1478,7 +1864,7 @@ const Calendar: React.FC<CalendarProps> = ({ contacts, openTaskPanel = false, on
   };
 
   return (
-    <div className="pulse-calendar h-full flex-1 min-h-0 flex flex-col bg-white dark:bg-zinc-950 overflow-hidden animate-fade-in relative">
+    <div className={`pulse-calendar h-full flex-1 min-h-0 flex flex-col bg-white dark:bg-zinc-950 overflow-hidden animate-fade-in relative${focusMode ? ' cal-focus-mode' : ''}`}>
 
       {/* Context Menu - Fixed positioning relative to viewport */}
       {contextMenu.visible && (
@@ -1995,7 +2381,7 @@ const Calendar: React.FC<CalendarProps> = ({ contacts, openTaskPanel = false, on
 
       {/* Upcoming Events Panel */}
       {showUpcoming && (
-          <div className="absolute right-0 top-0 bottom-0 w-80 bg-white dark:bg-zinc-950 border-l border-zinc-200 dark:border-zinc-800 shadow-2xl z-40 animate-slide-in-right flex flex-col">
+          <div className="cal-upcoming-panel absolute right-0 top-0 bottom-0 w-80 bg-white dark:bg-zinc-950 border-l border-zinc-200 dark:border-zinc-800 shadow-2xl z-40 animate-slide-in-right flex flex-col">
             <div className="p-4 border-b border-zinc-200 dark:border-zinc-800 flex items-center justify-between">
               <h3 className="font-bold dark:text-white">Upcoming Events</h3>
               <button onClick={() => setShowUpcoming(false)} className="text-zinc-400 hover:text-zinc-600">
@@ -2123,15 +2509,62 @@ const Calendar: React.FC<CalendarProps> = ({ contacts, openTaskPanel = false, on
             >
               <i className="fa-solid fa-list-check text-xs"></i>
             </button>
-            {/* Google Sync */}
-            <button
-              onClick={syncGoogleCalendar}
-              disabled={syncingGoogle}
-              className={`w-8 h-8 flex items-center justify-center rounded-lg border transition ${googleConnected ? 'border-green-300 dark:border-green-700 text-green-500' : 'border-zinc-200 dark:border-zinc-800 text-zinc-400'} ${syncingGoogle ? 'animate-pulse' : 'hover:text-zinc-900 dark:hover:text-white'}`}
-              title={googleConnected ? `Synced with Google Calendar${lastSynced ? ` (${lastSynced.toLocaleTimeString()})` : ''}` : 'Google Calendar not connected'}
-            >
-              <i className={`fa-brands fa-google text-xs ${syncingGoogle ? 'animate-spin' : ''}`}></i>
-            </button>
+            {/* Sync status indicator */}
+            {(googleConnected || outlookConnected) && (
+              <div className="relative group hidden md:flex">
+                <button
+                  onClick={() => { if (googleConnected) syncGoogleCalendar(); if (outlookConnected) syncOutlookCalendar(); }}
+                  disabled={syncingGoogle || syncingOutlook}
+                  aria-label={`Sync calendars${lastSynced ? ` — last synced ${lastSynced.toLocaleTimeString()}` : ''}`}
+                  title={`Sync now${lastSynced ? ` · Last synced ${lastSynced.toLocaleTimeString()}` : ''}`}
+                  className={`w-8 h-8 flex items-center justify-center rounded-lg border transition relative
+                    ${(syncingGoogle || syncingOutlook)
+                      ? 'border-blue-300 dark:border-blue-700 text-blue-500'
+                      : 'border-green-300 dark:border-green-700 text-green-500 hover:text-green-600'
+                    }`}
+                >
+                  <i className={`fa-solid fa-rotate text-xs ${(syncingGoogle || syncingOutlook) ? 'animate-spin' : ''}`} aria-hidden="true" />
+                  {/* Live dot */}
+                  <span className={`absolute -top-0.5 -right-0.5 w-2 h-2 rounded-full border border-white dark:border-zinc-950
+                    ${(syncingGoogle || syncingOutlook) ? 'bg-blue-500 animate-pulse' : 'bg-green-500'}`}
+                    aria-hidden="true"
+                  />
+                </button>
+                {/* Hover tooltip */}
+                <div className="absolute right-0 top-full mt-2 w-52 bg-zinc-900 text-white rounded-xl shadow-2xl p-3 opacity-0 group-hover:opacity-100 pointer-events-none transition-opacity z-50 text-xs">
+                  <p className="font-semibold mb-1 text-zinc-200">Calendar Sync</p>
+                  {googleConnected && (
+                    <div className="flex items-center gap-1.5 text-zinc-400">
+                      <i className="fa-brands fa-google text-[10px]" aria-hidden="true" />
+                      Google {syncingGoogle ? '· syncing…' : '· connected'}
+                    </div>
+                  )}
+                  {outlookConnected && (
+                    <div className="flex items-center gap-1.5 text-zinc-400 mt-0.5">
+                      <i className="fa-brands fa-microsoft text-[10px]" aria-hidden="true" />
+                      Outlook {syncingOutlook ? '· syncing…' : '· connected'}
+                    </div>
+                  )}
+                  {lastSynced && (
+                    <p className="text-zinc-500 mt-1.5 border-t border-zinc-800 pt-1.5">
+                      Last synced {lastSynced.toLocaleTimeString([], { hour: 'numeric', minute: '2-digit' })}
+                      <br />Auto-syncs every 5 min
+                    </p>
+                  )}
+                </div>
+              </div>
+            )}
+            {/* Google icon fallback when not connected (for discoverability) */}
+            {!googleConnected && !outlookConnected && (
+              <button
+                onClick={syncGoogleCalendar}
+                aria-label="Google Calendar not connected"
+                title="Google Calendar not connected — connect in Settings"
+                className="w-8 h-8 flex items-center justify-center rounded-lg border border-zinc-200 dark:border-zinc-800 text-zinc-300 dark:text-zinc-600 cursor-default"
+              >
+                <i className="fa-brands fa-google text-xs" aria-hidden="true" />
+              </button>
+            )}
             {/* Settings */}
             <button
               onClick={() => setShowCalendarSettings(!showCalendarSettings)}
@@ -2152,23 +2585,32 @@ const Calendar: React.FC<CalendarProps> = ({ contacts, openTaskPanel = false, on
               <i className={`fa-solid fa-wand-magic-sparkles text-xs ${aiLoading ? 'animate-pulse' : ''}`}></i>
             </button>
             {/* Keyboard shortcuts */}
-            <div className="relative group hidden md:block">
-              <button
-                className="w-8 h-8 flex items-center justify-center rounded-lg border border-zinc-200 dark:border-zinc-800 text-zinc-400 hover:text-zinc-700 dark:hover:text-white transition text-[11px] font-bold"
-                title="Keyboard shortcuts"
-              >?</button>
-              <div className="absolute right-0 top-full mt-2 w-64 bg-zinc-900 text-white rounded-xl shadow-2xl p-4 opacity-0 group-hover:opacity-100 pointer-events-none transition-opacity z-50 text-xs">
-                <p className="font-bold mb-2 text-zinc-300">Keyboard Shortcuts</p>
-                <div className="space-y-1 text-zinc-400">
-                  <div className="flex justify-between"><span>New event</span><kbd className="px-1.5 py-0.5 bg-zinc-800 rounded">N</kbd></div>
-                  <div className="flex justify-between"><span>Today</span><kbd className="px-1.5 py-0.5 bg-zinc-800 rounded">T</kbd></div>
-                  <div className="flex justify-between"><span>Day / Week / Month</span><kbd className="px-1.5 py-0.5 bg-zinc-800 rounded">D W M</kbd></div>
-                  <div className="flex justify-between"><span>Prev / Next</span><kbd className="px-1.5 py-0.5 bg-zinc-800 rounded">← →</kbd></div>
-                  <div className="flex justify-between"><span>Search</span><kbd className="px-1.5 py-0.5 bg-zinc-800 rounded">/</kbd></div>
-                  <div className="flex justify-between"><span>AI panel</span><kbd className="px-1.5 py-0.5 bg-zinc-800 rounded">⌘I</kbd></div>
-                </div>
-              </div>
-            </div>
+            <button
+              onClick={() => setShowShortcutsHelp(true)}
+              aria-label="Keyboard shortcuts (?)"
+              title="Keyboard shortcuts (?)"
+              className={`w-8 h-8 flex items-center justify-center rounded-lg border transition text-[11px] font-bold hidden md:flex ${showShortcutsHelp ? 'bg-zinc-900 dark:bg-white border-zinc-900 dark:border-white text-white dark:text-black' : 'border-zinc-200 dark:border-zinc-800 text-zinc-400 hover:text-zinc-700 dark:hover:text-white'}`}
+            >?</button>
+
+            {/* Jump to date */}
+            <button
+              onClick={() => setShowJumpToDate(prev => !prev)}
+              aria-label="Jump to date (⌘J)"
+              title="Jump to date (⌘J)"
+              className={`w-8 h-8 flex items-center justify-center rounded-lg border transition hidden md:flex ${showJumpToDate ? 'bg-zinc-900 dark:bg-white border-zinc-900 dark:border-white text-white dark:text-black' : 'border-zinc-200 dark:border-zinc-800 text-zinc-400 hover:text-zinc-700 dark:hover:text-white'}`}
+            >
+              <i className="fa-solid fa-calendar-days text-xs" aria-hidden="true" />
+            </button>
+
+            {/* Focus mode */}
+            <button
+              onClick={() => setFocusMode(prev => !prev)}
+              aria-label={focusMode ? 'Exit focus mode (⌘F)' : 'Focus mode (⌘F)'}
+              title={focusMode ? 'Exit focus mode (⌘F)' : 'Focus mode (⌘F)'}
+              className={`w-8 h-8 flex items-center justify-center rounded-lg border transition hidden md:flex ${focusMode ? 'bg-indigo-600 border-indigo-600 text-white' : 'border-zinc-200 dark:border-zinc-800 text-zinc-400 hover:text-indigo-600 hover:border-indigo-300'}`}
+            >
+              <i className="fa-solid fa-expand text-xs" aria-hidden="true" />
+            </button>
           </div>
         </div>
 
@@ -2192,6 +2634,16 @@ const Calendar: React.FC<CalendarProps> = ({ contacts, openTaskPanel = false, on
           </div>
         )}
       </div>
+
+      {/* Sync conflict resolution banner */}
+      {syncConflicts.length > 0 && (
+        <ConflictResolutionBanner
+          conflicts={syncConflicts}
+          onKeepA={handleConflictKeepA}
+          onKeepB={handleConflictKeepB}
+          onDismiss={handleConflictDismiss}
+        />
+      )}
 
       <div className="flex-1 min-h-0 flex overflow-hidden">
          {/* Resizable Sidebar - Hidden on small screens, collapsible on medium */}
@@ -2343,10 +2795,13 @@ const Calendar: React.FC<CalendarProps> = ({ contacts, openTaskPanel = false, on
                          </button>
                        </div>
                      ) : (
-                       teamMembers.map(contact => (
-                          <div key={contact.id} className="flex items-center gap-3 text-sm text-zinc-600 dark:text-zinc-300 group p-2 rounded-lg hover:bg-white dark:hover:bg-zinc-800 transition">
-                              <div className="flex items-center gap-2 flex-1">
-                                  <div className={`w-6 h-6 rounded-full ${contact.avatarColor} flex items-center justify-center text-white text-xs font-bold`}>
+                       <>
+                       {teamMembers.map(contact => {
+                         const overlayOn = overlayMemberIds.has(contact.id);
+                         return (
+                          <div key={contact.id} className="flex items-center gap-2 text-sm text-zinc-600 dark:text-zinc-300 group p-2 rounded-lg hover:bg-white dark:hover:bg-zinc-800 transition">
+                              <div className="flex items-center gap-2 flex-1 min-w-0">
+                                  <div className={`w-6 h-6 rounded-full ${contact.avatarColor} flex-shrink-0 flex items-center justify-center text-white text-xs font-bold`}>
                                     {contact.name.charAt(0)}
                                   </div>
                                   <div className="flex-1 min-w-0">
@@ -2354,19 +2809,98 @@ const Calendar: React.FC<CalendarProps> = ({ contacts, openTaskPanel = false, on
                                     <span className="text-[10px] text-zinc-400 truncate block">{contact.email}</span>
                                   </div>
                               </div>
+                              {/* Show-on-calendar overlay toggle (week/day only) */}
+                              {(viewMode === 'week' || viewMode === 'day') && (
+                                <button
+                                  onClick={() => setOverlayMemberIds(prev => {
+                                    const next = new Set(prev);
+                                    if (next.has(contact.id)) next.delete(contact.id);
+                                    else next.add(contact.id);
+                                    return next;
+                                  })}
+                                  aria-label={overlayOn ? `Hide ${contact.name}'s schedule` : `Show ${contact.name}'s schedule`}
+                                  title={overlayOn ? `Hide ${contact.name}'s schedule` : `Show ${contact.name}'s schedule`}
+                                  className={`w-6 h-6 flex-shrink-0 flex items-center justify-center rounded-md border transition ${
+                                    overlayOn
+                                      ? `${contact.avatarColor} border-transparent text-white`
+                                      : 'border-zinc-300 dark:border-zinc-600 text-zinc-400 hover:text-zinc-600 dark:hover:text-zinc-200'
+                                  }`}
+                                >
+                                  <i className={`fa-solid ${overlayOn ? 'fa-eye' : 'fa-eye-slash'} text-[10px]`} aria-hidden="true" />
+                                </button>
+                              )}
                               {/* Send Calendar Invite Button */}
                               <button
                                 onClick={() => {
                                   setInviteContact(contact);
                                   setShowInviteModal(true);
                                 }}
-                                className="opacity-0 group-hover:opacity-100 w-7 h-7 flex items-center justify-center rounded-lg bg-blue-500 text-white hover:bg-blue-600 transition"
+                                className="opacity-0 group-hover:opacity-100 w-7 h-7 flex items-center justify-center rounded-lg bg-blue-500 text-white hover:bg-blue-600 transition flex-shrink-0"
                                 title="Schedule meeting with this contact"
                               >
-                                <i className="fa-solid fa-calendar-plus text-[10px]"></i>
+                                <i className="fa-solid fa-calendar-plus text-[10px]" aria-hidden="true"></i>
                               </button>
                           </div>
-                       ))
+                         );
+                       })}
+                       {/* Free-time finder button (only relevant in week/day) */}
+                       {teamMembers.length > 0 && (viewMode === 'week' || viewMode === 'day') && (
+                         <button
+                           onClick={() => setShowFreeTimeFinder(f => !f)}
+                           className={`mt-1 w-full flex items-center gap-2 px-2 py-1.5 rounded-lg text-xs font-medium transition ${
+                             showFreeTimeFinder
+                               ? 'bg-emerald-100 dark:bg-emerald-900/40 text-emerald-700 dark:text-emerald-300'
+                               : 'text-zinc-500 dark:text-zinc-400 hover:bg-white dark:hover:bg-zinc-800 hover:text-zinc-700 dark:hover:text-white'
+                           }`}
+                         >
+                           <i className="fa-solid fa-clock text-[10px]" aria-hidden="true" />
+                           Find free time
+                         </button>
+                       )}
+
+                       {/* Free-time results */}
+                       {showFreeTimeFinder && (viewMode === 'week' || viewMode === 'day') && (
+                         <div className="mt-2 border border-emerald-200 dark:border-emerald-800/60 rounded-xl overflow-hidden">
+                           <div className="px-3 py-2 bg-emerald-50 dark:bg-emerald-950/40 border-b border-emerald-200 dark:border-emerald-800/60 flex items-center gap-2">
+                             <i className="fa-solid fa-wand-magic-sparkles text-emerald-500 text-[10px]" aria-hidden="true" />
+                             <span className="text-[10px] font-semibold text-emerald-700 dark:text-emerald-300 uppercase tracking-wider">
+                               Available slots
+                             </span>
+                           </div>
+                           {freeTimeSlots.length === 0 ? (
+                             <div className="px-3 py-3 text-xs text-zinc-400 dark:text-zinc-500 text-center">
+                               No free slots found this {viewMode === 'week' ? 'week' : 'day'}
+                             </div>
+                           ) : (
+                             <div className="divide-y divide-emerald-100 dark:divide-emerald-900/40 max-h-40 overflow-y-auto">
+                               {freeTimeSlots.map((slot, i) => {
+                                 const fmt = (d: Date) => d.toLocaleTimeString([], { hour: 'numeric', minute: '2-digit' });
+                                 const dur = Math.round((slot.end.getTime() - slot.start.getTime()) / 60000);
+                                 return (
+                                   <button
+                                     key={i}
+                                     className="w-full text-left px-3 py-2 hover:bg-emerald-50 dark:hover:bg-emerald-950/40 transition group"
+                                     title="Click to create an event in this slot"
+                                     onClick={() => {
+                                       setNewEventDate(slot.start.toISOString().split('T')[0]);
+                                       setNewEventTime(slot.start.toLocaleTimeString('en-GB', { hour: '2-digit', minute: '2-digit' }));
+                                       setShowEventModal(true);
+                                     }}
+                                   >
+                                     <div className="text-[11px] font-medium text-zinc-700 dark:text-zinc-200 group-hover:text-emerald-700 dark:group-hover:text-emerald-300 transition">
+                                       {fmt(slot.start)} – {fmt(slot.end)}
+                                     </div>
+                                     <div className="text-[10px] text-zinc-400 dark:text-zinc-500">
+                                       {slot.dayLabel} · {dur} min
+                                     </div>
+                                   </button>
+                                 );
+                               })}
+                             </div>
+                           )}
+                         </div>
+                       )}
+                       </>
                      )}
                  </div>
              </div>
@@ -2423,6 +2957,7 @@ const Calendar: React.FC<CalendarProps> = ({ contacts, openTaskPanel = false, on
                    setDayDetailEvents(events);
                    setShowDayDetail(true);
                  }}
+                 onEventReschedule={handleEventReschedule}
                />
              )}
 
@@ -2430,6 +2965,7 @@ const Calendar: React.FC<CalendarProps> = ({ contacts, openTaskPanel = false, on
                <WeekView
                  currentDate={currentDate}
                  events={filteredEvents}
+                 overlayEvents={overlayEvents}
                  onDateClick={(date) => {
                    setNewEventDate(date.toISOString().split('T')[0]);
                    if (date.getHours() > 0) {
@@ -2438,6 +2974,7 @@ const Calendar: React.FC<CalendarProps> = ({ contacts, openTaskPanel = false, on
                    setShowEventModal(true);
                  }}
                  onEventClick={openEventDetail}
+                 onEventReschedule={handleEventReschedule}
                />
              )}
 
@@ -2445,6 +2982,7 @@ const Calendar: React.FC<CalendarProps> = ({ contacts, openTaskPanel = false, on
                <DayView
                  currentDate={currentDate}
                  events={filteredEvents}
+                 overlayEvents={overlayEvents}
                  onDateClick={(date) => {
                    setNewEventDate(date.toISOString().split('T')[0]);
                    if (date.getHours() > 0) {
@@ -2453,6 +2991,7 @@ const Calendar: React.FC<CalendarProps> = ({ contacts, openTaskPanel = false, on
                    setShowEventModal(true);
                  }}
                  onEventClick={openEventDetail}
+                 onEventReschedule={handleEventReschedule}
                />
              )}
 
@@ -2471,7 +3010,7 @@ const Calendar: React.FC<CalendarProps> = ({ contacts, openTaskPanel = false, on
 
          {/* Tasks Panel */}
          {showTaskPanel && (
-             <div className="w-80 bg-white dark:bg-zinc-950 border-l border-zinc-200 dark:border-zinc-800 p-6 animate-slide-in-right flex flex-col shadow-2xl z-20 absolute right-0 top-0 bottom-0 md:relative">
+             <div className="cal-task-panel w-80 bg-white dark:bg-zinc-950 border-l border-zinc-200 dark:border-zinc-800 p-6 animate-slide-in-right flex flex-col shadow-2xl z-20 absolute right-0 top-0 bottom-0 md:relative">
                  <div className="flex justify-between items-center mb-8">
                      <h3 className="text-xs font-bold text-zinc-500 uppercase tracking-widest flex items-center gap-2">
                          Tasks
@@ -2873,6 +3412,65 @@ const Calendar: React.FC<CalendarProps> = ({ contacts, openTaskPanel = false, on
               </div>
             </div>
 
+            {/* Outlook Calendar */}
+            <div>
+              <h4 className="text-xs font-bold text-zinc-500 uppercase tracking-wider mb-4">
+                <i className="fa-brands fa-microsoft mr-1.5 text-[#0078d4]"></i>
+                Outlook Calendar
+              </h4>
+              <div className="space-y-3">
+                {outlookConnected ? (
+                  <>
+                    <div className="flex items-center gap-2 text-sm text-green-600 dark:text-green-400">
+                      <i className="fa-solid fa-check-circle"></i>
+                      Connected{outlookUserEmail ? ` — ${outlookUserEmail}` : ''}
+                    </div>
+                    <button
+                      onClick={syncOutlookCalendar}
+                      disabled={syncingOutlook}
+                      className="w-full flex items-center justify-center gap-2 bg-zinc-100 dark:bg-zinc-800 rounded-lg px-4 py-3 text-sm font-medium hover:bg-zinc-200 dark:hover:bg-zinc-700 transition"
+                    >
+                      <i className={`fa-solid fa-sync ${syncingOutlook ? 'animate-spin' : ''}`}></i>
+                      {syncingOutlook ? 'Syncing...' : 'Sync Now'}
+                    </button>
+                    <button
+                      onClick={disconnectOutlook}
+                      className="w-full flex items-center justify-center gap-2 border border-red-200 dark:border-red-900 text-red-500 rounded-lg px-4 py-2 text-sm hover:bg-red-50 dark:hover:bg-red-950 transition"
+                    >
+                      <i className="fa-solid fa-plug-circle-xmark"></i>
+                      Disconnect Outlook
+                    </button>
+                    {outlookError && (
+                      <p className="text-xs text-red-500">{outlookError}</p>
+                    )}
+                  </>
+                ) : (
+                  <>
+                    <p className="text-xs text-zinc-500 dark:text-zinc-400">
+                      Sync events from your Microsoft 365 or Outlook.com calendar.
+                      {!import.meta.env.VITE_MICROSOFT_CLIENT_ID && (
+                        <span className="block mt-1 text-amber-600 dark:text-amber-400">
+                          <i className="fa-solid fa-triangle-exclamation mr-1"></i>
+                          Set VITE_MICROSOFT_CLIENT_ID to enable.
+                        </span>
+                      )}
+                    </p>
+                    <button
+                      onClick={connectOutlook}
+                      disabled={!import.meta.env.VITE_MICROSOFT_CLIENT_ID}
+                      className="w-full flex items-center justify-center gap-2 bg-[#0078d4] text-white rounded-lg px-4 py-3 text-sm font-medium hover:bg-[#106ebe] transition disabled:opacity-40 disabled:cursor-not-allowed"
+                    >
+                      <i className="fa-brands fa-microsoft"></i>
+                      Sign in with Microsoft
+                    </button>
+                    {outlookError && (
+                      <p className="text-xs text-red-500">{outlookError}</p>
+                    )}
+                  </>
+                )}
+              </div>
+            </div>
+
             {/* Event Defaults */}
             <div>
               <h4 className="text-xs font-bold text-zinc-500 uppercase tracking-wider mb-4">Event Defaults</h4>
@@ -2912,7 +3510,7 @@ const Calendar: React.FC<CalendarProps> = ({ contacts, openTaskPanel = false, on
 
       {/* AI Assistant Panel */}
       {showAIPanel && (
-        <div className="absolute right-0 top-0 bottom-0 w-[420px] bg-white dark:bg-zinc-950 border-l border-zinc-200 dark:border-zinc-800 shadow-2xl z-50 flex flex-col animate-slide-in-right">
+        <div className="cal-ai-panel absolute right-0 top-0 bottom-0 w-[420px] bg-white dark:bg-zinc-950 border-l border-zinc-200 dark:border-zinc-800 shadow-2xl z-50 flex flex-col animate-slide-in-right">
           {/* AI Panel Header */}
           <div className="p-4 border-b border-zinc-200 dark:border-zinc-800 bg-gradient-to-r from-purple-500/10 to-pink-500/10">
             <div className="flex items-center justify-between mb-4">
@@ -3676,6 +4274,65 @@ const Calendar: React.FC<CalendarProps> = ({ contacts, openTaskPanel = false, on
           onClose={() => setShowCustomTypesManager(false)}
           onTypesChanged={refreshCustomTypes}
         />
+      )}
+
+      {/* Command Palette — Cmd+K / Ctrl+K */}
+      <CommandPalette
+        isOpen={showCommandPalette}
+        onClose={() => setShowCommandPalette(false)}
+        events={events}
+        currentDate={currentDate}
+        viewMode={viewMode}
+        onViewChange={(view, date) => {
+          setViewMode(view);
+          if (date) setCurrentDate(date);
+        }}
+        onGoToToday={() => setCurrentDate(new Date())}
+        onCreateEvent={(date) => {
+          if (date) {
+            setNewEventDate(date.toISOString().split('T')[0]);
+          }
+          setShowEventModal(true);
+        }}
+        onEventClick={openEventDetail}
+      />
+
+      {/* Keyboard Shortcuts Help — ? */}
+      <ShortcutsHelp
+        isOpen={showShortcutsHelp}
+        onClose={() => setShowShortcutsHelp(false)}
+      />
+
+      {/* Jump to Date — Cmd+J */}
+      <JumpToDate
+        isOpen={showJumpToDate}
+        currentDate={currentDate}
+        onClose={() => setShowJumpToDate(false)}
+        onJump={(date) => {
+          setCurrentDate(date);
+          // Switch to day view so the jumped date is front-and-centre
+          setViewMode('day');
+        }}
+      />
+
+      {/* Focus mode banner — visible only while focusMode is active */}
+      {focusMode && (
+        <div
+          className="fixed bottom-4 left-1/2 -translate-x-1/2 z-[9996] flex items-center gap-3 px-4 py-2 rounded-full bg-indigo-600 text-white text-xs font-semibold shadow-xl"
+          role="status"
+          aria-live="polite"
+        >
+          <i className="fa-solid fa-expand text-xs" aria-hidden="true" />
+          Focus mode — sidebars hidden
+          <button
+            onClick={() => setFocusMode(false)}
+            aria-label="Exit focus mode"
+            className="ml-1 opacity-70 hover:opacity-100 transition-opacity"
+          >
+            <i className="fa-solid fa-xmark text-xs" aria-hidden="true" />
+          </button>
+          <span className="opacity-50 ml-1">⌘F or Esc</span>
+        </div>
       )}
     </div>
   );

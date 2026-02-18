@@ -52,20 +52,39 @@ const mapSupabaseUser = (supabaseUser: SupabaseUser): User => {
   const metadata = supabaseUser.user_metadata || {};
   const appMetadata = supabaseUser.app_metadata || {};
 
+  // Determine which providers are linked.
+  // Supabase surfaces the primary provider in app_metadata.provider and lists all
+  // linked identities in the identities array.
+  const primaryProvider: string = appMetadata.provider || '';
+  const identityProviders: string[] = (supabaseUser.identities || []).map(
+    (i: { provider: string }) => i.provider
+  );
+  const allProviders = new Set([primaryProvider, ...identityProviders]);
+
+  const isGoogleConnected  = allProviders.has('google');
+  // Supabase uses the provider key 'azure' for Microsoft accounts
+  const isMicrosoftConnected = allProviders.has('azure');
+
   // Check for admin role from app_metadata (set via Supabase dashboard or RLS)
   // or user_metadata (set by user profile)
   const role = appMetadata.role || metadata.role || 'user';
   const isAdmin = role === 'admin' || appMetadata.is_admin === true || metadata.is_admin === true;
 
+  // Microsoft users: Supabase stores the display name in user_metadata.name or full_name.
+  // For Microsoft accounts the avatar comes from metadata.avatar_url or picture.
+  const displayName = metadata.full_name || metadata.name || supabaseUser.email?.split('@')[0] || 'User';
+
   return {
     id: supabaseUser.id,
-    name: metadata.full_name || metadata.name || supabaseUser.email?.split('@')[0] || 'User',
+    name: displayName,
     email: supabaseUser.email || '',
-    avatarUrl: metadata.avatar_url || metadata.picture || `https://ui-avatars.com/api/?name=${encodeURIComponent(metadata.full_name || 'User')}&background=0D8ABC&color=fff`,
-    googleConnected: appMetadata.provider === 'google',
+    avatarUrl: metadata.avatar_url || metadata.picture ||
+      `https://ui-avatars.com/api/?name=${encodeURIComponent(displayName)}&background=0D8ABC&color=fff`,
+    googleConnected: isGoogleConnected,
+    microsoftConnected: isMicrosoftConnected,
     connectedProviders: {
-      google: appMetadata.provider === 'google',
-      microsoft: appMetadata.provider === 'azure',
+      google: isGoogleConnected,
+      microsoft: isMicrosoftConnected,
       icloud: false // iCloud OAuth not supported by Supabase
     },
     role: role as 'admin' | 'moderator' | 'user',
@@ -133,13 +152,31 @@ export const loginWithGoogle = async (): Promise<User> => {
   });
 };
 
+// Microsoft Graph API scopes for login — covers identity + mail + calendar + contacts
+// These must also be added as API permissions in your Azure App Registration
+const MICROSOFT_SCOPES = [
+  'openid',
+  'profile',
+  'email',
+  'offline_access',
+  'User.Read',
+  'Mail.Read',
+  'Mail.ReadWrite',
+  'Mail.Send',
+  'Calendars.Read',
+  'Calendars.ReadWrite',
+  'Contacts.Read',
+].join(' ');
+
 // Login with Microsoft (Azure AD)
+// Supabase handles the PKCE flow; tokens are stored in the Supabase session.
+// The provider access_token in the session can be used for Graph API calls.
 export const loginWithMicrosoft = async (): Promise<User> => {
   const { data, error } = await supabase.auth.signInWithOAuth({
     provider: 'azure',
     options: {
       redirectTo: getRedirectUrl('/'),
-      scopes: 'email profile openid'
+      scopes: MICROSOFT_SCOPES,
     }
   });
 
@@ -148,6 +185,8 @@ export const loginWithMicrosoft = async (): Promise<User> => {
     throw new Error(error.message);
   }
 
+  // signInWithOAuth redirects the browser — this promise resolves after the
+  // user returns from Microsoft and Supabase fires SIGNED_IN.
   return new Promise((resolve, reject) => {
     const timeout = setTimeout(() => {
       reject(new Error('Login timeout - please try again'));

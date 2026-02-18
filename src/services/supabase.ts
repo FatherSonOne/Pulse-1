@@ -206,9 +206,13 @@ export const supabase = createClient(
     auth: {
       persistSession: true,
       autoRefreshToken: true,
-      storage: capacitorStorage,
-      // Use PKCE flow for better security with mobile OAuth
-      // This sends a 'code' parameter instead of tokens in URL
+      // On native (Capacitor) use our custom async adapter (Preferences API).
+      // On web, use the default localStorage — this is critical for PKCE: Supabase stores
+      // the code verifier in sessionStorage internally and must be able to read it back
+      // synchronously on the redirect. A custom async adapter breaks that lookup.
+      storage: Capacitor.isNativePlatform() ? capacitorStorage : undefined,
+      // PKCE is required by Microsoft for SPA cross-origin auth code redemption.
+      // Supabase handles the code exchange automatically via detectSessionInUrl.
       flowType: 'pkce',
       // Detect URL changes for OAuth callback handling
       detectSessionInUrl: true,

@@ -704,6 +704,7 @@
 /* Time Grid */
 .cal-week-body {
   flex: 1;
+  min-height: 0; /* allow flex shrink so scroll works correctly */
   display: flex;
   overflow-y: auto;
   overflow-x: hidden;
@@ -716,6 +717,7 @@
   flex-shrink: 0;
   border-right: 1px solid var(--cal-border-subtle);
   background: var(--cal-bg-subtle);
+  min-height: 1152px; /* 24 hours × 48px — ensures full day is rendered */
 }
 
 .cal-week-time-slot {
@@ -744,6 +746,7 @@
   position: relative;
   min-width: 0;
   overflow: hidden;
+  min-height: 1152px; /* 24 hours × 48px */
 }
 
 .cal-week-day-column {
@@ -751,6 +754,7 @@
   position: relative;
   min-width: 0;
   overflow: hidden;
+  min-height: 1152px; /* 24 hours × 48px — ensures all hour cells are rendered & clickable */
 }
 
 .cal-week-day-column:last-child {
@@ -929,6 +933,7 @@
 /* Day Time Grid */
 .cal-day-body {
   flex: 1;
+  min-height: 0; /* allow flex shrink so scroll works correctly */
   display: flex;
   overflow-y: auto;
   overflow-x: hidden;
@@ -941,6 +946,7 @@
   flex-shrink: 0;
   border-right: 1px solid var(--cal-border-subtle);
   background: var(--cal-bg-subtle);
+  min-height: 1440px; /* match events column */
 }
 
 .cal-day-time-slot {
@@ -967,6 +973,7 @@
   position: relative;
   min-width: 0;
   overflow: hidden;
+  min-height: 1440px; /* 24 hours × 60px — ensures all hour cells are rendered & clickable */
 }
 
 .cal-day-hour-cell {
@@ -1162,4 +1169,348 @@
 
 .pulse-calendar ::-webkit-scrollbar-thumb:hover {
   background: var(--cal-text-subtle);
+}
+
+/* ============================================
+   DRAG-TO-RESCHEDULE
+   ============================================ */
+
+/* Ghost preview overlay shown while dragging an event */
+.cal-event-drag-ghost {
+  position: absolute;
+  left: 4px;
+  right: 4px;
+  border-radius: var(--cal-radius-sm);
+  background: rgba(99, 102, 241, 0.18);
+  border: 2px dashed #6366f1;
+  pointer-events: none;
+  z-index: 20;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  transition: top 60ms linear, height 60ms linear;
+}
+
+/* Time label inside ghost */
+.cal-event-drag-label {
+  font-size: 0.7rem;
+  font-weight: 600;
+  color: #6366f1;
+  background: rgba(255, 255, 255, 0.85);
+  padding: 2px 6px;
+  border-radius: 4px;
+  white-space: nowrap;
+  pointer-events: none;
+}
+
+.dark .cal-event-drag-label {
+  background: rgba(24, 24, 27, 0.85);
+  color: #818cf8;
+}
+
+.dark .cal-event-drag-ghost {
+  background: rgba(99, 102, 241, 0.12);
+  border-color: #818cf8;
+}
+
+/* Source event while being dragged — slightly faded */
+.cal-event-dragging {
+  opacity: 0.4;
+  cursor: grabbing !important;
+}
+
+/* ─── Team overlay blocks ────────────────────────────────────────────────── */
+/* Translucent colored strips showing when team members are busy.
+   Positioned absolute inside .cal-week-day-column / .cal-day-events-column. */
+.cal-overlay-block {
+  position: absolute;
+  left: 0;
+  right: 0;
+  pointer-events: none;   /* never intercept clicks */
+  border-radius: 3px;
+  z-index: 1;             /* below regular events (z-index: 2+) */
+}
+
+/* Grab cursor on draggable events */
+.cal-week-event,
+.cal-day-event {
+  cursor: grab;
+}
+
+.cal-week-event:active,
+.cal-day-event:active {
+  cursor: grabbing;
+}
+
+/* Draggable month pills */
+.cal-event-pill[draggable="true"] {
+  cursor: grab;
+}
+
+.cal-event-pill[draggable="true"]:active {
+  cursor: grabbing;
+}
+
+/* Month-view drop target cell highlight */
+.cal-day-cell.cal-day-drop-target {
+  background: rgba(99, 102, 241, 0.08);
+  outline: 2px dashed #6366f1;
+  outline-offset: -2px;
+  border-radius: 4px;
+}
+
+.dark .cal-day-cell.cal-day-drop-target {
+  background: rgba(99, 102, 241, 0.12);
+  outline-color: #818cf8;
+}
+
+/* ============================================
+   FOCUS MODE — hide all panels, pure grid
+   ============================================ */
+
+/* Hide every sidebar/panel when .cal-focus-mode is active.
+   We target known Tailwind border-l panels generically. */
+.cal-focus-mode .cal-left-sidebar,
+.cal-focus-mode .cal-right-panel,
+.cal-focus-mode .cal-task-panel,
+.cal-focus-mode .cal-upcoming-panel,
+.cal-focus-mode .cal-ai-panel {
+  display: none !important;
+}
+
+/* Subtle indigo indicator bar on the top edge while focus mode is on */
+.cal-focus-mode::before {
+  content: '';
+  position: absolute;
+  top: 0;
+  left: 0;
+  right: 0;
+  height: 2px;
+  background: linear-gradient(90deg, #6366f1, #8b5cf6);
+  z-index: 100;
+  pointer-events: none;
+}
+
+@media (prefers-reduced-motion: no-preference) {
+  .cal-focus-mode::before {
+    animation: calFocusBar 3s ease-in-out infinite alternate;
+  }
+  @keyframes calFocusBar {
+    from { opacity: 0.6; }
+    to   { opacity: 1; }
+  }
+}
+
+/* ============================================
+   ANIMATION — calScaleIn for modals/popovers
+   ============================================ */
+@keyframes calScaleIn {
+  from {
+    opacity: 0;
+    transform: scale(0.95) translateY(-4px);
+  }
+  to {
+    opacity: 1;
+    transform: scale(1) translateY(0);
+  }
+}
+
+/* ============================================
+   FOCUS-VISIBLE — keyboard navigation styles
+   ============================================ */
+
+/* Only show focus rings for keyboard navigation, not mouse clicks */
+.pulse-calendar :focus { outline: none; }
+
+.pulse-calendar :focus-visible {
+  outline: 2px solid var(--cal-accent);
+  outline-offset: 2px;
+  border-radius: 4px;
+}
+
+/* View buttons need a slightly larger ring offset */
+.cal-view-btn:focus-visible {
+  outline: 2px solid var(--cal-accent);
+  outline-offset: 1px;
+}
+
+/* Nav buttons are circular — match their border-radius */
+.cal-nav-btn:focus-visible {
+  outline: 2px solid var(--cal-accent);
+  outline-offset: 2px;
+  border-radius: 50%;
+}
+
+/* Event pills — tight ring */
+.cal-event-pill:focus-visible {
+  outline: 2px solid #fff;
+  outline-offset: 1px;
+  box-shadow: 0 0 0 4px var(--cal-accent);
+}
+
+/* Day/week events */
+.cal-week-event:focus-visible,
+.cal-day-event:focus-visible {
+  outline: 2px solid #fff;
+  outline-offset: 1px;
+  box-shadow: 0 0 0 3px var(--cal-accent), var(--cal-shadow-md);
+  z-index: 15;
+}
+
+/* Day cells */
+.cal-day-cell:focus-visible {
+  outline: 2px solid var(--cal-accent);
+  outline-offset: -2px;
+  z-index: 5;
+}
+
+/* Mini-month days in year view */
+.cal-mini-day:focus-visible {
+  outline: 2px solid var(--cal-accent);
+  outline-offset: 1px;
+}
+
+/* Mini months */
+.cal-mini-month:focus-visible {
+  outline: 2px solid var(--cal-accent);
+  outline-offset: 3px;
+}
+
+/* More events button */
+.cal-more-events:focus-visible {
+  outline: 2px solid var(--cal-accent);
+  outline-offset: 1px;
+}
+
+/* Today + week day headers */
+.cal-week-day-header:focus-visible {
+  outline: 2px solid var(--cal-accent);
+  outline-offset: -2px;
+}
+
+/* ============================================
+   MINIMUM TOUCH TARGET SIZE — 44×44px
+   ============================================ */
+
+/* Ensure nav buttons always meet 44px touch target */
+.cal-nav-btn {
+  min-width: 44px;
+  min-height: 44px;
+}
+
+/* View buttons */
+.cal-view-btn {
+  min-height: 36px;
+}
+
+/* Today button */
+.cal-today-btn {
+  min-height: 36px;
+}
+
+/* Mini-month day cells need a tap zone even if visually small */
+.cal-mini-day {
+  min-width: 20px;
+  min-height: 20px;
+}
+
+/* ============================================
+   PREFERS-REDUCED-MOTION
+   ============================================ */
+@media (prefers-reduced-motion: reduce) {
+  .pulse-calendar *,
+  .pulse-calendar *::before,
+  .pulse-calendar *::after {
+    animation-duration: 0.01ms !important;
+    animation-iteration-count: 1 !important;
+    transition-duration: 0.01ms !important;
+    scroll-behavior: auto !important;
+  }
+
+  /* Ghost transition is purely functional — disable it too */
+  .cal-event-drag-ghost {
+    transition: none !important;
+  }
+
+  /* Disable hover transforms */
+  .cal-mini-month:hover {
+    transform: none;
+  }
+  .cal-week-event:hover {
+    transform: none;
+  }
+  .cal-day-event:hover {
+    transform: none;
+  }
+  .cal-event-pill:hover {
+    transform: none;
+  }
+  .cal-day-allday-event:hover {
+    transform: none;
+  }
+}
+
+/* ============================================
+   COLOR CONTRAST — WCAG AA compliance
+   ============================================ */
+
+/* cal-text-subtle (#a1a1aa on #fafafa) is ~2.6:1 — too low.
+   Upgrade gutter/time labels to meet 3:1 minimum for UI components. */
+.cal-week-time-label,
+.cal-day-time-label {
+  color: var(--cal-text-muted); /* #71717a — ~4.6:1 on white */
+}
+
+/* Weekday header labels */
+.cal-weekday-cell {
+  color: var(--cal-text-muted);
+}
+
+/* Mini day header */
+.cal-mini-day-header {
+  color: var(--cal-text-muted);
+}
+
+/* More events — is a <button> element, reset button styles then apply ours */
+.cal-more-events {
+  color: #b91c1c; /* deeper red — 4.6:1 on white bg */
+  background: rgba(185, 28, 28, 0.07);
+  /* Reset browser button defaults */
+  border: none;
+  cursor: pointer;
+  text-align: left;
+  width: 100%;
+  font-family: inherit;
+  font-size: inherit;
+}
+
+.cal-more-events:hover {
+  color: white;
+  background: #b91c1c;
+}
+
+.dark .cal-more-events {
+  color: #fca5a5; /* light red — sufficient on dark bg */
+  background: rgba(252, 165, 165, 0.1);
+}
+
+.dark .cal-more-events:hover {
+  color: #18181b;
+  background: #fca5a5;
+}
+
+/* Week view all-day gutter label */
+.cal-week-allday-gutter {
+  color: var(--cal-text-muted);
+}
+
+/* ============================================
+   DRAG CURSOR — pointer-events passthrough fix
+   ============================================ */
+
+/* Prevent ghost from swallowing mouse events during drag */
+.cal-event-drag-ghost,
+.cal-event-drag-label {
+  user-select: none;
+  pointer-events: none;
 }

@@ -101,11 +101,97 @@ export default defineConfig(({ mode }) => {
                 if (id.includes('/LiveDashboard')) return 'feature-dashboard';
                 if (id.includes('/Email')) return 'feature-email';
                 if (id.includes('/Analytics')) return 'feature-analytics';
+                if (id.includes('/Calendar')) return 'feature-calendar';
+                if (id.includes('/Decisions') || id.includes('/DecisionTask')) return 'feature-decisions';
+                if (id.includes('/AILab') || id.includes('/AiLab')) return 'feature-ailab';
               }
 
-              // Services layer
+              // Services layer — split into domain groups to avoid one 768 kB blob
               if (id.includes('/src/services/')) {
-                return 'services';
+                // Voice / Voxer — heavy, only needed in voice features
+                if (id.includes('/voxer/') ||
+                    id.includes('voiceCommand') || id.includes('voiceIntelligence') ||
+                    id.includes('voiceGuardrail') || id.includes('voiceRoom') ||
+                    id.includes('voiceSearch') || id.includes('audioVoice') ||
+                    id.includes('audioService') || id.includes('assemblyService') ||
+                    id.includes('whisperService') || id.includes('elevenLabs') ||
+                    id.includes('nativeVoice')) {
+                  return 'svc-voice';
+                }
+
+                // AI / ML inference services
+                if (id.includes('geminiService') || id.includes('openAiService') ||
+                    id.includes('anthropicService') || id.includes('perplexity') ||
+                    id.includes('unifiedAIService') || id.includes('advancedAI') ||
+                    id.includes('conversationalAI') || id.includes('ragService') ||
+                    id.includes('realtimeAgent') || id.includes('aiInsights') ||
+                    id.includes('aiFormatting') || id.includes('aiLab') ||
+                    id.includes('smartCompose') || id.includes('proactiveSuggestions') ||
+                    id.includes('toolRegistry')) {
+                  return 'svc-ai';
+                }
+
+                // Email domain
+                if (id.includes('emailSync') || id.includes('emailAI') ||
+                    id.includes('emailFilter') || id.includes('emailMeet') ||
+                    id.includes('emailSearch') || id.includes('emailSignature') ||
+                    id.includes('emailTemplate') || id.includes('emailAccounts') ||
+                    id.includes('gmailService') || id.includes('enhancedEmail') ||
+                    id.includes('offlineEmail') || id.includes('confidentialEmail') ||
+                    id.includes('vacationResponder') || id.includes('emailService') ||
+                    id.includes('unifiedInbox')) {
+                  return 'svc-email';
+                }
+
+                // Calendar domain
+                if (id.includes('googleCalendar') || id.includes('calendarAI') ||
+                    id.includes('customEventTypes') || id.includes('conflictDetection') ||
+                    id.includes('meetingDetection') || id.includes('postMeeting') ||
+                    id.includes('inviteService') || id.includes('briefingService') ||
+                    id.includes('outlookCalendar') || id.includes('unifiedCalendar')) {
+                  return 'svc-calendar';
+                }
+
+                // Messaging domain
+                if (id.includes('messageChannel') || id.includes('messageService') ||
+                    id.includes('messageAuto') || id.includes('messageEnhance') ||
+                    id.includes('messageSummariz') || id.includes('messagesExport') ||
+                    id.includes('pulseService') || id.includes('collaborationService') ||
+                    id.includes('notificationService') || id.includes('notificationRule') ||
+                    id.includes('pushNotification') || id.includes('attentionService') ||
+                    id.includes('channelExport')) {
+                  return 'svc-messaging';
+                }
+
+                // CRM / contacts / analytics
+                if (id.includes('/crm/') || id.includes('crmService') ||
+                    id.includes('crmActions') || id.includes('leadScoring') ||
+                    id.includes('contactEnrich') || id.includes('googleContacts') ||
+                    id.includes('userContact') || id.includes('relationshipHealth') ||
+                    id.includes('relationshipIntelligence') || id.includes('relationshipAlert') ||
+                    id.includes('analyticsService') || id.includes('analyticsCollector') ||
+                    id.includes('analyticsExport') || id.includes('decisionAnalytics') ||
+                    id.includes('predictiveAnalytics') || id.includes('teamHealth') ||
+                    id.includes('teamService') || id.includes('recognitionService') ||
+                    id.includes('achievementService') || id.includes('outcomeService')) {
+                  return 'svc-crm-analytics';
+                }
+
+                // Storage / data / export — large but rarely on critical path
+                if (id.includes('dataService') || id.includes('dbService') ||
+                    id.includes('archiveService') || id.includes('dataExport') ||
+                    id.includes('dataPrivacy') || id.includes('dataRetention') ||
+                    id.includes('backupSync') || id.includes('googleDrive') ||
+                    id.includes('fileUpload') || id.includes('fileSecurity') ||
+                    id.includes('virusScan') || id.includes('encryptionService') ||
+                    id.includes('encryption.ts') || id.includes('warRoom') ||
+                    id.includes('brainstorm') || id.includes('contextBank') ||
+                    id.includes('savedSearch') || id.includes('/documentProcessors/')) {
+                  return 'svc-storage';
+                }
+
+                // Everything else (auth, settings, search, etc.)
+                return 'svc-core';
               }
             }
           }

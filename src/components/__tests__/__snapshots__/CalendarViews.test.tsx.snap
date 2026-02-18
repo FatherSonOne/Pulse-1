@@ -1,0 +1,1185 @@
+// Vitest Snapshot v1, https://vitest.dev/guide/snapshot.html
+
+exports[`Snapshots > DayView (empty) structure matches snapshot 1`] = `
+<div
+  class="cal-day-container"
+>
+  <div
+    aria-current="date"
+    aria-label="Tuesday, February 17, 2026, today"
+    class="cal-day-header today"
+  >
+    <div
+      aria-hidden="true"
+      class="cal-day-header-weekday"
+    >
+      Tuesday
+    </div>
+    <div
+      aria-hidden="true"
+      class="cal-day-header-date"
+    >
+      17
+    </div>
+    <div
+      aria-hidden="true"
+      class="cal-day-header-month"
+    >
+      February
+       
+      2026
+    </div>
+  </div>
+  <div
+    class="cal-day-body"
+  >
+    <div
+      class="cal-day-time-column"
+    >
+      <div
+        class="cal-day-time-slot"
+      >
+        <span
+          class="cal-day-time-label"
+        >
+          12 AM
+        </span>
+      </div>
+      <div
+        class="cal-day-time-slot"
+      >
+        <span
+          class="cal-day-time-label"
+        >
+          1 AM
+        </span>
+      </div>
+      <div
+        class="cal-day-time-slot"
+      >
+        <span
+          class="cal-day-time-label"
+        >
+          2 AM
+        </span>
+      </div>
+      <div
+        class="cal-day-time-slot"
+      >
+        <span
+          class="cal-day-time-label"
+        >
+          3 AM
+        </span>
+      </div>
+      <div
+        class="cal-day-time-slot"
+      >
+        <span
+          class="cal-day-time-label"
+        >
+          4 AM
+        </span>
+      </div>
+      <div
+        class="cal-day-time-slot"
+      >
+        <span
+          class="cal-day-time-label"
+        >
+          5 AM
+        </span>
+      </div>
+      <div
+        class="cal-day-time-slot"
+      >
+        <span
+          class="cal-day-time-label"
+        >
+          6 AM
+        </span>
+      </div>
+      <div
+        class="cal-day-time-slot"
+      >
+        <span
+          class="cal-day-time-label"
+        >
+          7 AM
+        </span>
+      </div>
+      <div
+        class="cal-day-time-slot"
+      >
+        <span
+          class="cal-day-time-label"
+        >
+          8 AM
+        </span>
+      </div>
+      <div
+        class="cal-day-time-slot"
+      >
+        <span
+          class="cal-day-time-label"
+        >
+          9 AM
+        </span>
+      </div>
+      <div
+        class="cal-day-time-slot"
+      >
+        <span
+          class="cal-day-time-label"
+        >
+          10 AM
+        </span>
+      </div>
+      <div
+        class="cal-day-time-slot"
+      >
+        <span
+          class="cal-day-time-label"
+        >
+          11 AM
+        </span>
+      </div>
+      <div
+        class="cal-day-time-slot"
+      >
+        <span
+          class="cal-day-time-label"
+        >
+          12 PM
+        </span>
+      </div>
+      <div
+        class="cal-day-time-slot"
+      >
+        <span
+          class="cal-day-time-label"
+        >
+          1 PM
+        </span>
+      </div>
+      <div
+        class="cal-day-time-slot"
+      >
+        <span
+          class="cal-day-time-label"
+        >
+          2 PM
+        </span>
+      </div>
+      <div
+        class="cal-day-time-slot"
+      >
+        <span
+          class="cal-day-time-label"
+        >
+          3 PM
+        </span>
+      </div>
+      <div
+        class="cal-day-time-slot"
+      >
+        <span
+          class="cal-day-time-label"
+        >
+          4 PM
+        </span>
+      </div>
+      <div
+        class="cal-day-time-slot"
+      >
+        <span
+          class="cal-day-time-label"
+        >
+          5 PM
+        </span>
+      </div>
+      <div
+        class="cal-day-time-slot"
+      >
+        <span
+          class="cal-day-time-label"
+        >
+          6 PM
+        </span>
+      </div>
+      <div
+        class="cal-day-time-slot"
+      >
+        <span
+          class="cal-day-time-label"
+        >
+          7 PM
+        </span>
+      </div>
+      <div
+        class="cal-day-time-slot"
+      >
+        <span
+          class="cal-day-time-label"
+        >
+          8 PM
+        </span>
+      </div>
+      <div
+        class="cal-day-time-slot"
+      >
+        <span
+          class="cal-day-time-label"
+        >
+          9 PM
+        </span>
+      </div>
+      <div
+        class="cal-day-time-slot"
+      >
+        <span
+          class="cal-day-time-label"
+        >
+          10 PM
+        </span>
+      </div>
+      <div
+        class="cal-day-time-slot"
+      >
+        <span
+          class="cal-day-time-label"
+        >
+          11 PM
+        </span>
+      </div>
+    </div>
+    <div
+      class="cal-day-events-column"
+    >
+      <div
+        aria-label="Create event at 12 AM"
+        class="cal-day-hour-cell"
+        role="button"
+        tabindex="-1"
+      />
+      <div
+        aria-label="Create event at 1 AM"
+        class="cal-day-hour-cell"
+        role="button"
+        tabindex="-1"
+      />
+      <div
+        aria-label="Create event at 2 AM"
+        class="cal-day-hour-cell"
+        role="button"
+        tabindex="-1"
+      />
+      <div
+        aria-label="Create event at 3 AM"
+        class="cal-day-hour-cell"
+        role="button"
+        tabindex="-1"
+      />
+      <div
+        aria-label="Create event at 4 AM"
+        class="cal-day-hour-cell"
+        role="button"
+        tabindex="-1"
+      />
+      <div
+        aria-label="Create event at 5 AM"
+        class="cal-day-hour-cell"
+        role="button"
+        tabindex="-1"
+      />
+      <div
+        aria-label="Create event at 6 AM"
+        class="cal-day-hour-cell"
+        role="button"
+        tabindex="-1"
+      />
+      <div
+        aria-label="Create event at 7 AM"
+        class="cal-day-hour-cell"
+        role="button"
+        tabindex="-1"
+      />
+      <div
+        aria-label="Create event at 8 AM"
+        class="cal-day-hour-cell"
+        role="button"
+        tabindex="-1"
+      />
+      <div
+        aria-label="Create event at 9 AM"
+        class="cal-day-hour-cell"
+        role="button"
+        tabindex="-1"
+      />
+      <div
+        aria-label="Create event at 10 AM"
+        class="cal-day-hour-cell"
+        role="button"
+        tabindex="-1"
+      />
+      <div
+        aria-label="Create event at 11 AM"
+        class="cal-day-hour-cell"
+        role="button"
+        tabindex="-1"
+      />
+      <div
+        aria-label="Create event at 12 PM"
+        class="cal-day-hour-cell"
+        role="button"
+        tabindex="-1"
+      />
+      <div
+        aria-label="Create event at 1 PM"
+        class="cal-day-hour-cell"
+        role="button"
+        tabindex="-1"
+      />
+      <div
+        aria-label="Create event at 2 PM"
+        class="cal-day-hour-cell"
+        role="button"
+        tabindex="-1"
+      />
+      <div
+        aria-label="Create event at 3 PM"
+        class="cal-day-hour-cell"
+        role="button"
+        tabindex="-1"
+      />
+      <div
+        aria-label="Create event at 4 PM"
+        class="cal-day-hour-cell"
+        role="button"
+        tabindex="-1"
+      />
+      <div
+        aria-label="Create event at 5 PM"
+        class="cal-day-hour-cell"
+        role="button"
+        tabindex="-1"
+      />
+      <div
+        aria-label="Create event at 6 PM"
+        class="cal-day-hour-cell"
+        role="button"
+        tabindex="-1"
+      />
+      <div
+        aria-label="Create event at 7 PM"
+        class="cal-day-hour-cell"
+        role="button"
+        tabindex="-1"
+      />
+      <div
+        aria-label="Create event at 8 PM"
+        class="cal-day-hour-cell"
+        role="button"
+        tabindex="-1"
+      />
+      <div
+        aria-label="Create event at 9 PM"
+        class="cal-day-hour-cell"
+        role="button"
+        tabindex="-1"
+      />
+      <div
+        aria-label="Create event at 10 PM"
+        class="cal-day-hour-cell"
+        role="button"
+        tabindex="-1"
+      />
+      <div
+        aria-label="Create event at 11 PM"
+        class="cal-day-hour-cell"
+        role="button"
+        tabindex="-1"
+      />
+      <div
+        class="cal-current-time-line"
+        style="top: 720px;"
+      />
+    </div>
+  </div>
+</div>
+`;
+
+exports[`Snapshots > MonthView structure matches snapshot 1`] = `
+<div
+  aria-label="February 2026"
+  class="cal-month-container"
+  role="grid"
+>
+  <div
+    aria-hidden="true"
+    class="cal-weekday-header"
+    role="row"
+  >
+    <div
+      class="cal-weekday-cell weekend"
+      role="columnheader"
+    >
+      Sun
+    </div>
+    <div
+      class="cal-weekday-cell "
+      role="columnheader"
+    >
+      Mon
+    </div>
+    <div
+      class="cal-weekday-cell "
+      role="columnheader"
+    >
+      Tue
+    </div>
+    <div
+      class="cal-weekday-cell "
+      role="columnheader"
+    >
+      Wed
+    </div>
+    <div
+      class="cal-weekday-cell "
+      role="columnheader"
+    >
+      Thu
+    </div>
+    <div
+      class="cal-weekday-cell "
+      role="columnheader"
+    >
+      Fri
+    </div>
+    <div
+      class="cal-weekday-cell weekend"
+      role="columnheader"
+    >
+      Sat
+    </div>
+  </div>
+  <div
+    class="cal-month-grid"
+    role="rowgroup"
+  >
+    <div
+      aria-label="February 1"
+      class="cal-day-cell   weekend "
+      role="gridcell"
+      tabindex="0"
+    >
+      <div
+        aria-hidden="true"
+        class="cal-day-number"
+      >
+        1
+      </div>
+      <div
+        class="cal-day-events"
+      />
+    </div>
+    <div
+      aria-label="February 2"
+      class="cal-day-cell    "
+      role="gridcell"
+      tabindex="0"
+    >
+      <div
+        aria-hidden="true"
+        class="cal-day-number"
+      >
+        2
+      </div>
+      <div
+        class="cal-day-events"
+      />
+    </div>
+    <div
+      aria-label="February 3"
+      class="cal-day-cell    "
+      role="gridcell"
+      tabindex="0"
+    >
+      <div
+        aria-hidden="true"
+        class="cal-day-number"
+      >
+        3
+      </div>
+      <div
+        class="cal-day-events"
+      />
+    </div>
+    <div
+      aria-label="February 4"
+      class="cal-day-cell    "
+      role="gridcell"
+      tabindex="0"
+    >
+      <div
+        aria-hidden="true"
+        class="cal-day-number"
+      >
+        4
+      </div>
+      <div
+        class="cal-day-events"
+      />
+    </div>
+    <div
+      aria-label="February 5"
+      class="cal-day-cell    "
+      role="gridcell"
+      tabindex="0"
+    >
+      <div
+        aria-hidden="true"
+        class="cal-day-number"
+      >
+        5
+      </div>
+      <div
+        class="cal-day-events"
+      />
+    </div>
+    <div
+      aria-label="February 6"
+      class="cal-day-cell    "
+      role="gridcell"
+      tabindex="0"
+    >
+      <div
+        aria-hidden="true"
+        class="cal-day-number"
+      >
+        6
+      </div>
+      <div
+        class="cal-day-events"
+      />
+    </div>
+    <div
+      aria-label="February 7"
+      class="cal-day-cell   weekend "
+      role="gridcell"
+      tabindex="0"
+    >
+      <div
+        aria-hidden="true"
+        class="cal-day-number"
+      >
+        7
+      </div>
+      <div
+        class="cal-day-events"
+      />
+    </div>
+    <div
+      aria-label="February 8"
+      class="cal-day-cell   weekend "
+      role="gridcell"
+      tabindex="0"
+    >
+      <div
+        aria-hidden="true"
+        class="cal-day-number"
+      >
+        8
+      </div>
+      <div
+        class="cal-day-events"
+      />
+    </div>
+    <div
+      aria-label="February 9"
+      class="cal-day-cell    "
+      role="gridcell"
+      tabindex="0"
+    >
+      <div
+        aria-hidden="true"
+        class="cal-day-number"
+      >
+        9
+      </div>
+      <div
+        class="cal-day-events"
+      />
+    </div>
+    <div
+      aria-label="February 10"
+      class="cal-day-cell    "
+      role="gridcell"
+      tabindex="0"
+    >
+      <div
+        aria-hidden="true"
+        class="cal-day-number"
+      >
+        10
+      </div>
+      <div
+        class="cal-day-events"
+      />
+    </div>
+    <div
+      aria-label="February 11"
+      class="cal-day-cell    "
+      role="gridcell"
+      tabindex="0"
+    >
+      <div
+        aria-hidden="true"
+        class="cal-day-number"
+      >
+        11
+      </div>
+      <div
+        class="cal-day-events"
+      />
+    </div>
+    <div
+      aria-label="February 12"
+      class="cal-day-cell    "
+      role="gridcell"
+      tabindex="0"
+    >
+      <div
+        aria-hidden="true"
+        class="cal-day-number"
+      >
+        12
+      </div>
+      <div
+        class="cal-day-events"
+      />
+    </div>
+    <div
+      aria-label="February 13"
+      class="cal-day-cell    "
+      role="gridcell"
+      tabindex="0"
+    >
+      <div
+        aria-hidden="true"
+        class="cal-day-number"
+      >
+        13
+      </div>
+      <div
+        class="cal-day-events"
+      />
+    </div>
+    <div
+      aria-label="February 14"
+      class="cal-day-cell   weekend "
+      role="gridcell"
+      tabindex="0"
+    >
+      <div
+        aria-hidden="true"
+        class="cal-day-number"
+      >
+        14
+      </div>
+      <div
+        class="cal-day-events"
+      />
+    </div>
+    <div
+      aria-label="February 15"
+      class="cal-day-cell   weekend "
+      role="gridcell"
+      tabindex="0"
+    >
+      <div
+        aria-hidden="true"
+        class="cal-day-number"
+      >
+        15
+      </div>
+      <div
+        class="cal-day-events"
+      />
+    </div>
+    <div
+      aria-label="February 16"
+      class="cal-day-cell    "
+      role="gridcell"
+      tabindex="0"
+    >
+      <div
+        aria-hidden="true"
+        class="cal-day-number"
+      >
+        16
+      </div>
+      <div
+        class="cal-day-events"
+      />
+    </div>
+    <div
+      aria-label="February 17, 1 event"
+      class="cal-day-cell    "
+      role="gridcell"
+      tabindex="0"
+    >
+      <div
+        aria-hidden="true"
+        class="cal-day-number"
+      >
+        17
+      </div>
+      <div
+        class="cal-day-events"
+      >
+        <div
+          aria-label="Snap A, 9:00 AM"
+          class="cal-event-pill cal-event-typed"
+          draggable="true"
+          role="button"
+          style="background-color: rgb(107, 114, 128); color: rgb(255, 255, 255); border: medium;"
+          tabindex="0"
+          title="9:00 AM Snap A"
+        >
+          <i
+            aria-hidden="true"
+            class="fa-solid fa-calendar cal-event-pill-icon"
+          />
+          <span
+            class="cal-event-pill-text"
+          >
+            Snap A
+          </span>
+        </div>
+      </div>
+    </div>
+    <div
+      aria-current="date"
+      aria-label="February 18, today"
+      class="cal-day-cell  today  "
+      role="gridcell"
+      tabindex="0"
+    >
+      <div
+        aria-hidden="true"
+        class="cal-day-number"
+      >
+        18
+      </div>
+      <div
+        class="cal-day-events"
+      />
+    </div>
+    <div
+      aria-label="February 19"
+      class="cal-day-cell    "
+      role="gridcell"
+      tabindex="0"
+    >
+      <div
+        aria-hidden="true"
+        class="cal-day-number"
+      >
+        19
+      </div>
+      <div
+        class="cal-day-events"
+      />
+    </div>
+    <div
+      aria-label="February 20, 1 event"
+      class="cal-day-cell    "
+      role="gridcell"
+      tabindex="0"
+    >
+      <div
+        aria-hidden="true"
+        class="cal-day-number"
+      >
+        20
+      </div>
+      <div
+        class="cal-day-events"
+      >
+        <div
+          aria-label="Snap B, all day"
+          class="cal-event-pill all-day cal-event-typed"
+          draggable="true"
+          role="button"
+          style="background-color: rgb(107, 114, 128); color: rgb(255, 255, 255); border: medium;"
+          tabindex="0"
+          title="Snap B"
+        >
+          <i
+            aria-hidden="true"
+            class="fa-solid fa-calendar cal-event-pill-icon"
+          />
+          <span
+            class="cal-event-pill-text"
+          >
+            Snap B
+          </span>
+        </div>
+      </div>
+    </div>
+    <div
+      aria-label="February 21"
+      class="cal-day-cell   weekend "
+      role="gridcell"
+      tabindex="0"
+    >
+      <div
+        aria-hidden="true"
+        class="cal-day-number"
+      >
+        21
+      </div>
+      <div
+        class="cal-day-events"
+      />
+    </div>
+    <div
+      aria-label="February 22"
+      class="cal-day-cell   weekend "
+      role="gridcell"
+      tabindex="0"
+    >
+      <div
+        aria-hidden="true"
+        class="cal-day-number"
+      >
+        22
+      </div>
+      <div
+        class="cal-day-events"
+      />
+    </div>
+    <div
+      aria-label="February 23"
+      class="cal-day-cell    "
+      role="gridcell"
+      tabindex="0"
+    >
+      <div
+        aria-hidden="true"
+        class="cal-day-number"
+      >
+        23
+      </div>
+      <div
+        class="cal-day-events"
+      />
+    </div>
+    <div
+      aria-label="February 24"
+      class="cal-day-cell    "
+      role="gridcell"
+      tabindex="0"
+    >
+      <div
+        aria-hidden="true"
+        class="cal-day-number"
+      >
+        24
+      </div>
+      <div
+        class="cal-day-events"
+      />
+    </div>
+    <div
+      aria-label="February 25"
+      class="cal-day-cell    "
+      role="gridcell"
+      tabindex="0"
+    >
+      <div
+        aria-hidden="true"
+        class="cal-day-number"
+      >
+        25
+      </div>
+      <div
+        class="cal-day-events"
+      />
+    </div>
+    <div
+      aria-label="February 26"
+      class="cal-day-cell    "
+      role="gridcell"
+      tabindex="0"
+    >
+      <div
+        aria-hidden="true"
+        class="cal-day-number"
+      >
+        26
+      </div>
+      <div
+        class="cal-day-events"
+      />
+    </div>
+    <div
+      aria-label="February 27"
+      class="cal-day-cell    "
+      role="gridcell"
+      tabindex="0"
+    >
+      <div
+        aria-hidden="true"
+        class="cal-day-number"
+      >
+        27
+      </div>
+      <div
+        class="cal-day-events"
+      />
+    </div>
+    <div
+      aria-label="February 28"
+      class="cal-day-cell   weekend "
+      role="gridcell"
+      tabindex="0"
+    >
+      <div
+        aria-hidden="true"
+        class="cal-day-number"
+      >
+        28
+      </div>
+      <div
+        class="cal-day-events"
+      />
+    </div>
+    <div
+      aria-label="March 1"
+      class="cal-day-cell other-month  weekend "
+      role="gridcell"
+      tabindex="-1"
+    >
+      <div
+        aria-hidden="true"
+        class="cal-day-number"
+      >
+        1
+      </div>
+      <div
+        class="cal-day-events"
+      />
+    </div>
+    <div
+      aria-label="March 2"
+      class="cal-day-cell other-month   "
+      role="gridcell"
+      tabindex="-1"
+    >
+      <div
+        aria-hidden="true"
+        class="cal-day-number"
+      >
+        2
+      </div>
+      <div
+        class="cal-day-events"
+      />
+    </div>
+    <div
+      aria-label="March 3"
+      class="cal-day-cell other-month   "
+      role="gridcell"
+      tabindex="-1"
+    >
+      <div
+        aria-hidden="true"
+        class="cal-day-number"
+      >
+        3
+      </div>
+      <div
+        class="cal-day-events"
+      />
+    </div>
+    <div
+      aria-label="March 4"
+      class="cal-day-cell other-month   "
+      role="gridcell"
+      tabindex="-1"
+    >
+      <div
+        aria-hidden="true"
+        class="cal-day-number"
+      >
+        4
+      </div>
+      <div
+        class="cal-day-events"
+      />
+    </div>
+    <div
+      aria-label="March 5"
+      class="cal-day-cell other-month   "
+      role="gridcell"
+      tabindex="-1"
+    >
+      <div
+        aria-hidden="true"
+        class="cal-day-number"
+      >
+        5
+      </div>
+      <div
+        class="cal-day-events"
+      />
+    </div>
+    <div
+      aria-label="March 6"
+      class="cal-day-cell other-month   "
+      role="gridcell"
+      tabindex="-1"
+    >
+      <div
+        aria-hidden="true"
+        class="cal-day-number"
+      >
+        6
+      </div>
+      <div
+        class="cal-day-events"
+      />
+    </div>
+    <div
+      aria-label="March 7"
+      class="cal-day-cell other-month  weekend "
+      role="gridcell"
+      tabindex="-1"
+    >
+      <div
+        aria-hidden="true"
+        class="cal-day-number"
+      >
+        7
+      </div>
+      <div
+        class="cal-day-events"
+      />
+    </div>
+    <div
+      aria-label="March 8"
+      class="cal-day-cell other-month  weekend "
+      role="gridcell"
+      tabindex="-1"
+    >
+      <div
+        aria-hidden="true"
+        class="cal-day-number"
+      >
+        8
+      </div>
+      <div
+        class="cal-day-events"
+      />
+    </div>
+    <div
+      aria-label="March 9"
+      class="cal-day-cell other-month   "
+      role="gridcell"
+      tabindex="-1"
+    >
+      <div
+        aria-hidden="true"
+        class="cal-day-number"
+      >
+        9
+      </div>
+      <div
+        class="cal-day-events"
+      />
+    </div>
+    <div
+      aria-label="March 10"
+      class="cal-day-cell other-month   "
+      role="gridcell"
+      tabindex="-1"
+    >
+      <div
+        aria-hidden="true"
+        class="cal-day-number"
+      >
+        10
+      </div>
+      <div
+        class="cal-day-events"
+      />
+    </div>
+    <div
+      aria-label="March 11"
+      class="cal-day-cell other-month   "
+      role="gridcell"
+      tabindex="-1"
+    >
+      <div
+        aria-hidden="true"
+        class="cal-day-number"
+      >
+        11
+      </div>
+      <div
+        class="cal-day-events"
+      />
+    </div>
+    <div
+      aria-label="March 12"
+      class="cal-day-cell other-month   "
+      role="gridcell"
+      tabindex="-1"
+    >
+      <div
+        aria-hidden="true"
+        class="cal-day-number"
+      >
+        12
+      </div>
+      <div
+        class="cal-day-events"
+      />
+    </div>
+    <div
+      aria-label="March 13"
+      class="cal-day-cell other-month   "
+      role="gridcell"
+      tabindex="-1"
+    >
+      <div
+        aria-hidden="true"
+        class="cal-day-number"
+      >
+        13
+      </div>
+      <div
+        class="cal-day-events"
+      />
+    </div>
+    <div
+      aria-label="March 14"
+      class="cal-day-cell other-month  weekend "
+      role="gridcell"
+      tabindex="-1"
+    >
+      <div
+        aria-hidden="true"
+        class="cal-day-number"
+      >
+        14
+      </div>
+      <div
+        class="cal-day-events"
+      />
+    </div>
+  </div>
+</div>
+`;

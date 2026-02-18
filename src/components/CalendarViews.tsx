@@ -1,4 +1,4 @@
-import React, { useMemo, useEffect, useRef } from 'react';
+import React, { useMemo, useEffect, useRef, useState, useCallback } from 'react';
 import { CalendarEvent } from '../types';
 import { getEventTypeMeta } from '../services/customEventTypesService';
 
@@ -6,13 +6,164 @@ import { getEventTypeMeta } from '../services/customEventTypesService';
 // SHARED TYPES & UTILITIES
 // ============================================
 
+/** A semi-transparent "ghost" block representing a team member's busy time. */
+export interface OverlayEvent {
+  id: string;
+  memberId: string;
+  memberName: string;
+  /** Hex color for this member's overlay (e.g. "#3b82f6") */
+  color: string;
+  start: Date;
+  end: Date;
+  title?: string;
+}
+
 interface ViewProps {
   currentDate: Date;
   events: CalendarEvent[];
+  /** Team-member busy-time blocks rendered as translucent overlays */
+  overlayEvents?: OverlayEvent[];
   onDateClick?: (date: Date) => void;
   onEventClick?: (event: CalendarEvent) => void;
   onViewChange?: (view: 'year' | 'month' | 'week' | 'day', date?: Date) => void;
   onShowMoreEvents?: (date: Date, events: CalendarEvent[]) => void;
+  /** Called when user drags an event to a new time. Parent handles persistence. */
+  onEventReschedule?: (event: CalendarEvent, newStart: Date, newEnd: Date) => void;
+}
+
+// ─── Drag-to-reschedule hook ──────────────────────────────────────────────────
+// Shared by WeekView and DayView. Returns drag handlers and ghost state.
+
+interface DragState {
+  event: CalendarEvent;
+  startY: number;        // initial mouseY relative to column
+  startTime: Date;       // original event start
+  pxPerHour: number;
+  columnEl: HTMLElement;
+  dayDate?: Date;        // for week view: which day column was grabbed
+}
+
+interface GhostInfo {
+  eventId: string;
+  top: number;
+  height: number;
+  label: string;
+}
+
+function useDragReschedule(
+  pxPerHour: number,
+  onEventReschedule?: (event: CalendarEvent, newStart: Date, newEnd: Date) => void
+) {
+  const dragRef = useRef<DragState | null>(null);
+  const [ghost, setGhost] = useState<GhostInfo | null>(null);
+
+  const formatDragTime = (d: Date) => {
+    const h = d.getHours(), m = d.getMinutes();
+    const ampm = h < 12 ? 'AM' : 'PM';
+    const h12 = h % 12 || 12;
+    return `${h12}:${m.toString().padStart(2, '0')} ${ampm}`;
+  };
+
+  const onMouseDown = useCallback((
+    e: React.MouseEvent,
+    ev: CalendarEvent,
+    columnEl: HTMLElement,
+    dayDate?: Date
+  ) => {
+    // Only left-button drag; ignore if clicking a button inside
+    if (e.button !== 0) return;
+    e.preventDefault();
+    e.stopPropagation();
+
+    const rect = columnEl.getBoundingClientRect();
+    dragRef.current = {
+      event: ev,
+      startY: e.clientY - rect.top + columnEl.scrollTop,
+      startTime: new Date(ev.start),
+      pxPerHour,
+      columnEl,
+      dayDate,
+    };
+  }, [pxPerHour]);
+
+  useEffect(() => {
+    const onMouseMove = (e: MouseEvent) => {
+      const d = dragRef.current;
+      if (!d) return;
+
+      const rect = d.columnEl.getBoundingClientRect();
+      const currentY = e.clientY - rect.top + d.columnEl.scrollTop;
+      const deltaHours = (currentY - d.startY) / d.pxPerHour;
+
+      // Snap to 15-minute increments
+      const snappedDelta = Math.round(deltaHours * 4) / 4;
+      const duration = (d.event.end.getTime() - d.event.start.getTime()) / (1000 * 60 * 60);
+
+      const newStart = new Date(d.startTime);
+      newStart.setMinutes(newStart.getMinutes() + Math.round(snappedDelta * 60));
+
+      // Clamp to day bounds 00:00–23:45
+      const dayStart = new Date(newStart); dayStart.setHours(0, 0, 0, 0);
+      const dayEnd   = new Date(newStart); dayEnd.setHours(23, 45, 0, 0);
+      if (newStart < dayStart) newStart.setTime(dayStart.getTime());
+      if (newStart > dayEnd)   newStart.setTime(dayEnd.getTime());
+
+      const newEnd = new Date(newStart.getTime() + duration * 60 * 60 * 1000);
+      const top    = (newStart.getHours() + newStart.getMinutes() / 60) * d.pxPerHour;
+      const height = Math.max(duration * d.pxPerHour, d.pxPerHour * 0.5);
+
+      setGhost({
+        eventId: d.event.id,
+        top,
+        height,
+        label: `${formatDragTime(newStart)} – ${formatDragTime(newEnd)}`,
+      });
+    };
+
+    const onMouseUp = (e: MouseEvent) => {
+      const d = dragRef.current;
+      if (!d) return;
+      dragRef.current = null;
+
+      const rect = d.columnEl.getBoundingClientRect();
+      const currentY = e.clientY - rect.top + d.columnEl.scrollTop;
+      const deltaHours = (currentY - d.startY) / d.pxPerHour;
+      const snappedDelta = Math.round(deltaHours * 4) / 4;
+
+      // Only reschedule if actually moved more than 1 slot
+      if (Math.abs(snappedDelta) < 0.25) {
+        setGhost(null);
+        return;
+      }
+
+      const duration = (d.event.end.getTime() - d.event.start.getTime()) / (1000 * 60 * 60);
+      const newStart = new Date(d.startTime);
+      newStart.setMinutes(newStart.getMinutes() + Math.round(snappedDelta * 60));
+
+      // If week view, also update the date
+      if (d.dayDate) {
+        newStart.setFullYear(d.dayDate.getFullYear(), d.dayDate.getMonth(), d.dayDate.getDate());
+      }
+
+      const dayStart = new Date(newStart); dayStart.setHours(0, 0, 0, 0);
+      const dayEnd   = new Date(newStart); dayEnd.setHours(23, 45, 0, 0);
+      if (newStart < dayStart) newStart.setTime(dayStart.getTime());
+      if (newStart > dayEnd)   newStart.setTime(dayEnd.getTime());
+
+      const newEnd = new Date(newStart.getTime() + duration * 60 * 60 * 1000);
+      setGhost(null);
+      onEventReschedule?.(d.event, newStart, newEnd);
+    };
+
+    window.addEventListener('mousemove', onMouseMove);
+    window.addEventListener('mouseup', onMouseUp);
+    return () => {
+      window.removeEventListener('mousemove', onMouseMove);
+      window.removeEventListener('mouseup', onMouseUp);
+    };
+  }, [onEventReschedule]);
+
+  return { onMouseDown, ghost };
 }
 
 const MONTH_NAMES = ['January', 'February', 'March', 'April', 'May', 'June',
@@ -109,21 +260,25 @@ export const YearView: React.FC<ViewProps> = ({
     return (
       <div
         key={monthIndex}
+        role="button"
+        tabIndex={0}
         className={`cal-mini-month cal-animate-scale ${isCurrentMonth ? 'current-month' : ''}`}
         onClick={() => onViewChange?.('month', new Date(year, monthIndex, 1))}
+        onKeyDown={(e) => e.key === 'Enter' && onViewChange?.('month', new Date(year, monthIndex, 1))}
+        aria-label={`${MONTH_NAMES[monthIndex]} ${year}${isCurrentMonth ? ', current month' : ''}`}
       >
-        <div className="cal-mini-month-name">{MONTH_NAMES[monthIndex]}</div>
+        <div className="cal-mini-month-name" aria-hidden="true">{MONTH_NAMES[monthIndex]}</div>
 
-        <div className="cal-mini-days-header">
+        <div className="cal-mini-days-header" role="row" aria-hidden="true">
           {WEEKDAYS_MINI.map((d, i) => (
             <div key={i} className="cal-mini-day-header">{d}</div>
           ))}
         </div>
 
-        <div className="cal-mini-days-grid">
+        <div className="cal-mini-days-grid" role="grid" aria-label={`${MONTH_NAMES[monthIndex]} ${year}`}>
           {/* Empty cells for padding */}
           {Array.from({ length: firstDay }).map((_, i) => (
-            <div key={`empty-${i}`} className="cal-mini-day" />
+            <div key={`empty-${i}`} className="cal-mini-day" role="gridcell" aria-hidden="true" />
           ))}
 
           {/* Days */}
@@ -137,7 +292,10 @@ export const YearView: React.FC<ViewProps> = ({
             return (
               <div
                 key={day}
+                role="gridcell"
                 className={`cal-mini-day ${dayIsToday ? 'today' : ''} ${hasEvents ? 'has-events' : ''}`}
+                aria-label={`${MONTH_NAMES[monthIndex]} ${day}${dayIsToday ? ', today' : ''}${hasEvents ? `, ${dayEvents.length} event${dayEvents.length > 1 ? 's' : ''}` : ''}`}
+                aria-current={dayIsToday ? 'date' : undefined}
                 onClick={(e) => {
                   e.stopPropagation();
                   onDateClick?.(dayDate);
@@ -168,11 +326,58 @@ export const MonthView: React.FC<ViewProps> = ({
   events,
   onDateClick,
   onEventClick,
-  onShowMoreEvents
+  onShowMoreEvents,
+  onEventReschedule,
 }) => {
   const year = currentDate.getFullYear();
   const month = currentDate.getMonth();
   const today = new Date();
+
+  // ── Month-drag state (HTML5 DnD — date-to-date, preserves time) ──
+  const [draggingEventId, setDraggingEventId] = useState<string | null>(null);
+  const [dragOverDate, setDragOverDate] = useState<Date | null>(null);
+
+  const handlePillDragStart = useCallback((e: React.DragEvent, ev: CalendarEvent) => {
+    e.dataTransfer.effectAllowed = 'move';
+    e.dataTransfer.setData('text/plain', ev.id);
+    setDraggingEventId(ev.id);
+  }, []);
+
+  const handleCellDragOver = useCallback((e: React.DragEvent, date: Date) => {
+    e.preventDefault();
+    e.dataTransfer.dropEffect = 'move';
+    setDragOverDate(date);
+  }, []);
+
+  const handleCellDragLeave = useCallback(() => {
+    setDragOverDate(null);
+  }, []);
+
+  const handleCellDrop = useCallback((e: React.DragEvent, targetDate: Date) => {
+    e.preventDefault();
+    const eventId = e.dataTransfer.getData('text/plain');
+    const sourceEvent = events.find(ev => ev.id === eventId);
+    if (!sourceEvent || isSameDay(sourceEvent.start, targetDate)) {
+      setDraggingEventId(null);
+      setDragOverDate(null);
+      return;
+    }
+
+    // Shift both start and end to the target date, preserving time-of-day
+    const newStart = new Date(targetDate);
+    newStart.setHours(sourceEvent.start.getHours(), sourceEvent.start.getMinutes(), 0, 0);
+    const duration = sourceEvent.end.getTime() - sourceEvent.start.getTime();
+    const newEnd = new Date(newStart.getTime() + duration);
+
+    setDraggingEventId(null);
+    setDragOverDate(null);
+    onEventReschedule?.(sourceEvent, newStart, newEnd);
+  }, [events, onEventReschedule]);
+
+  const handleDragEnd = useCallback(() => {
+    setDraggingEventId(null);
+    setDragOverDate(null);
+  }, []);
 
   const daysInMonth = new Date(year, month + 1, 0).getDate();
   const firstDayOfMonth = new Date(year, month, 1).getDay();
@@ -215,12 +420,13 @@ export const MonthView: React.FC<ViewProps> = ({
   }, [year, month, daysInMonth, firstDayOfMonth, daysInPrevMonth]);
 
   return (
-    <div className="cal-month-container">
+    <div className="cal-month-container" role="grid" aria-label={`${MONTH_NAMES[month]} ${year}`}>
       {/* Weekday Header */}
-      <div className="cal-weekday-header">
+      <div className="cal-weekday-header" role="row" aria-hidden="true">
         {WEEKDAYS_SHORT.map((day, i) => (
           <div
             key={day}
+            role="columnheader"
             className={`cal-weekday-cell ${i === 0 || i === 6 ? 'weekend' : ''}`}
           >
             {day}
@@ -229,36 +435,52 @@ export const MonthView: React.FC<ViewProps> = ({
       </div>
 
       {/* Days Grid */}
-      <div className="cal-month-grid">
+      <div className="cal-month-grid" role="rowgroup">
         {calendarDays.map(({ date, isCurrentMonth }, index) => {
           const dayEvents = getEventsForDay(date);
           const allDayEvents = dayEvents.filter(e => e.allDay);
           const timedEvents = dayEvents.filter(e => !e.allDay);
           const dayIsToday = isToday(date);
           const isWeekend = date.getDay() === 0 || date.getDay() === 6;
+          const isDragTarget = dragOverDate !== null && isSameDay(date, dragOverDate);
 
           return (
             <div
               key={index}
-              className={`cal-day-cell ${!isCurrentMonth ? 'other-month' : ''} ${dayIsToday ? 'today' : ''} ${isWeekend ? 'weekend' : ''}`}
+              role="gridcell"
+              aria-label={`${MONTH_NAMES[date.getMonth()]} ${date.getDate()}${dayIsToday ? ', today' : ''}${dayEvents.length > 0 ? `, ${dayEvents.length} event${dayEvents.length > 1 ? 's' : ''}` : ''}`}
+              aria-current={dayIsToday ? 'date' : undefined}
+              className={`cal-day-cell ${!isCurrentMonth ? 'other-month' : ''} ${dayIsToday ? 'today' : ''} ${isWeekend ? 'weekend' : ''} ${isDragTarget ? 'cal-day-drop-target' : ''}`}
               onClick={() => onDateClick?.(date)}
+              onKeyDown={(e) => e.key === 'Enter' && onDateClick?.(date)}
+              tabIndex={isCurrentMonth ? 0 : -1}
+              onDragOver={(e) => handleCellDragOver(e, date)}
+              onDragLeave={handleCellDragLeave}
+              onDrop={(e) => handleCellDrop(e, date)}
             >
-              <div className="cal-day-number">{date.getDate()}</div>
+              <div className="cal-day-number" aria-hidden="true">{date.getDate()}</div>
 
               <div className="cal-day-events">
                 {/* All-day events first — up to 3 total slots */}
                 {allDayEvents.slice(0, 3).map(ev => (
                   <div
                     key={ev.id}
-                    className="cal-event-pill all-day cal-event-typed"
+                    role="button"
+                    tabIndex={0}
+                    aria-label={`${ev.title}, all day`}
+                    draggable
+                    className={`cal-event-pill all-day cal-event-typed${draggingEventId === ev.id ? ' cal-event-dragging' : ''}`}
                     style={getEventPillStyle(ev.type, ev.color)}
+                    onDragStart={(e) => handlePillDragStart(e, ev)}
+                    onDragEnd={handleDragEnd}
                     onClick={(e) => {
                       e.stopPropagation();
                       onEventClick?.(ev);
                     }}
+                    onKeyDown={(e) => e.key === 'Enter' && onEventClick?.(ev)}
                     title={ev.title}
                   >
-                    <i className={`fa-solid ${getEventTypeIcon(ev.type)} cal-event-pill-icon`} />
+                    <i className={`fa-solid ${getEventTypeIcon(ev.type)} cal-event-pill-icon`} aria-hidden="true" />
                     <span className="cal-event-pill-text">{ev.title}</span>
                   </div>
                 ))}
@@ -267,30 +489,38 @@ export const MonthView: React.FC<ViewProps> = ({
                 {timedEvents.slice(0, 3 - Math.min(allDayEvents.length, 3)).map(ev => (
                   <div
                     key={ev.id}
-                    className="cal-event-pill cal-event-typed"
+                    role="button"
+                    tabIndex={0}
+                    aria-label={`${ev.title}, ${formatTime(ev.start)}`}
+                    draggable
+                    className={`cal-event-pill cal-event-typed${draggingEventId === ev.id ? ' cal-event-dragging' : ''}`}
                     style={getEventPillStyle(ev.type, ev.color)}
+                    onDragStart={(e) => handlePillDragStart(e, ev)}
+                    onDragEnd={handleDragEnd}
                     onClick={(e) => {
                       e.stopPropagation();
                       onEventClick?.(ev);
                     }}
+                    onKeyDown={(e) => e.key === 'Enter' && onEventClick?.(ev)}
                     title={`${formatTime(ev.start)} ${ev.title}`}
                   >
-                    <i className={`fa-solid ${getEventTypeIcon(ev.type)} cal-event-pill-icon`} />
+                    <i className={`fa-solid ${getEventTypeIcon(ev.type)} cal-event-pill-icon`} aria-hidden="true" />
                     <span className="cal-event-pill-text">{ev.title}</span>
                   </div>
                 ))}
 
                 {/* More indicator */}
                 {dayEvents.length > 3 && (
-                  <div
+                  <button
                     className="cal-more-events"
+                    aria-label={`${dayEvents.length - 3} more event${dayEvents.length - 3 > 1 ? 's' : ''} on ${MONTH_NAMES[date.getMonth()]} ${date.getDate()}`}
                     onClick={(e) => {
                       e.stopPropagation();
                       onShowMoreEvents?.(date, dayEvents);
                     }}
                   >
                     +{dayEvents.length - 3} more
-                  </div>
+                  </button>
                 )}
               </div>
             </div>
@@ -308,12 +538,15 @@ export const MonthView: React.FC<ViewProps> = ({
 export const WeekView: React.FC<ViewProps> = ({
   currentDate,
   events,
+  overlayEvents = [],
   onDateClick,
-  onEventClick
+  onEventClick,
+  onEventReschedule,
 }) => {
   const today = new Date();
   const hours = Array.from({ length: 24 }, (_, i) => i);
   const bodyRef = useRef<HTMLDivElement>(null);
+  const { onMouseDown: dragMouseDown, ghost } = useDragReschedule(48, onEventReschedule);
 
   // Get week days
   const weekDays = useMemo(() => {
@@ -328,6 +561,10 @@ export const WeekView: React.FC<ViewProps> = ({
 
   const getEventsForDay = (date: Date) => {
     return events.filter(e => isSameDay(e.start, date));
+  };
+
+  const getOverlaysForDay = (date: Date) => {
+    return overlayEvents.filter(o => isSameDay(o.start, date));
   };
 
   // Current time position (48px per hour)
@@ -362,11 +599,16 @@ export const WeekView: React.FC<ViewProps> = ({
             return (
               <div
                 key={i}
+                role="button"
+                tabIndex={0}
+                aria-label={`${WEEKDAYS[date.getDay()]}, ${MONTH_NAMES[date.getMonth()]} ${date.getDate()}${dayIsToday ? ', today' : ''}`}
+                aria-current={dayIsToday ? 'date' : undefined}
                 className={`cal-week-day-header ${dayIsToday ? 'today' : ''}`}
                 onClick={() => onDateClick?.(date)}
+                onKeyDown={(e) => e.key === 'Enter' && onDateClick?.(date)}
               >
-                <div className="cal-week-day-name">{WEEKDAYS_SHORT[date.getDay()]}</div>
-                <div className="cal-week-day-number">{date.getDate()}</div>
+                <div className="cal-week-day-name" aria-hidden="true">{WEEKDAYS_SHORT[date.getDay()]}</div>
+                <div className="cal-week-day-number" aria-hidden="true">{date.getDate()}</div>
               </div>
             );
           })}
@@ -413,6 +655,7 @@ export const WeekView: React.FC<ViewProps> = ({
         <div className="cal-week-days-grid">
           {weekDays.map((date, dayIndex) => {
             const dayEvents = getEventsForDay(date).filter(e => !e.allDay);
+            const dayOverlays = getOverlaysForDay(date);
             const dayIsToday = isToday(date);
 
             return (
@@ -421,6 +664,9 @@ export const WeekView: React.FC<ViewProps> = ({
                 {hours.map(hour => (
                   <div
                     key={hour}
+                    role="button"
+                    tabIndex={-1}
+                    aria-label={`${WEEKDAYS[date.getDay()]} ${formatHour(hour)}`}
                     className="cal-week-hour-cell"
                     onClick={() => {
                       const clickDate = new Date(date);
@@ -430,22 +676,51 @@ export const WeekView: React.FC<ViewProps> = ({
                   />
                 ))}
 
+                {/* Team member overlay blocks */}
+                {dayOverlays.map(ov => {
+                  const startHour = ov.start.getHours() + ov.start.getMinutes() / 60;
+                  const duration = (ov.end.getTime() - ov.start.getTime()) / (1000 * 60 * 60);
+                  const top = startHour * 48;
+                  const height = Math.max(duration * 48, 16);
+                  return (
+                    <div
+                      key={ov.id}
+                      className="cal-overlay-block"
+                      aria-hidden="true"
+                      title={`${ov.memberName}: busy${ov.title ? ` — ${ov.title}` : ''}`}
+                      style={{
+                        top: `${top}px`,
+                        height: `${height}px`,
+                        backgroundColor: ov.color,
+                        opacity: 0.18,
+                        borderLeft: `3px solid ${ov.color}`,
+                      }}
+                    />
+                  );
+                })}
+
                 {/* Events */}
                 {dayEvents.map(ev => {
                   const startHour = ev.start.getHours() + ev.start.getMinutes() / 60;
                   const duration = (ev.end.getTime() - ev.start.getTime()) / (1000 * 60 * 60);
                   const top = startHour * 48;
                   const height = Math.max(duration * 48, 24);
+                  const isDragging = ghost?.eventId === ev.id;
 
                   return (
                     <div
                       key={ev.id}
-                      className="cal-week-event cal-event-typed"
+                      role="button"
+                      tabIndex={0}
+                      aria-label={`${ev.title}, ${formatTime(ev.start)}${ev.location ? `, ${ev.location}` : ''}`}
+                      className={`cal-week-event cal-event-typed${isDragging ? ' cal-event-dragging' : ''}`}
                       style={{ top: `${top}px`, height: `${height}px`, ...getEventTypeStyle(ev.type, ev.color) }}
+                      onMouseDown={(e) => dragMouseDown(e, ev, e.currentTarget.closest('.cal-week-day-column') as HTMLElement, date)}
                       onClick={() => onEventClick?.(ev)}
+                      onKeyDown={(e) => e.key === 'Enter' && onEventClick?.(ev)}
                     >
                       <div className="cal-week-event-title">
-                        <i className={`fa-solid ${getEventTypeIcon(ev.type)} cal-event-type-icon`} />
+                        <i className={`fa-solid ${getEventTypeIcon(ev.type)} cal-event-type-icon`} aria-hidden="true" />
                         {ev.title}
                       </div>
                       {duration >= 0.75 && (
@@ -454,6 +729,16 @@ export const WeekView: React.FC<ViewProps> = ({
                     </div>
                   );
                 })}
+
+                {/* Drag ghost for this day column */}
+                {ghost && dayEvents.some(ev => ev.id === ghost.eventId) && (
+                  <div
+                    className="cal-event-drag-ghost"
+                    style={{ top: `${ghost.top}px`, height: `${ghost.height}px` }}
+                  >
+                    <span className="cal-event-drag-label">{ghost.label}</span>
+                  </div>
+                )}
 
                 {/* Current time indicator */}
                 {dayIsToday && (
@@ -478,17 +763,24 @@ export const WeekView: React.FC<ViewProps> = ({
 export const DayView: React.FC<ViewProps> = ({
   currentDate,
   events,
+  overlayEvents = [],
   onDateClick,
-  onEventClick
+  onEventClick,
+  onEventReschedule,
 }) => {
   const today = new Date();
   const hours = Array.from({ length: 24 }, (_, i) => i);
   const dayIsToday = isToday(currentDate);
   const bodyRef = useRef<HTMLDivElement>(null);
+  const { onMouseDown: dragMouseDown, ghost } = useDragReschedule(60, onEventReschedule);
 
   const dayEvents = useMemo(() => {
     return events.filter(e => isSameDay(e.start, currentDate));
   }, [events, currentDate]);
+
+  const dayOverlays = useMemo(() => {
+    return overlayEvents.filter(o => isSameDay(o.start, currentDate));
+  }, [overlayEvents, currentDate]);
 
   const allDayEvents = dayEvents.filter(e => e.allDay);
   const timedEvents = dayEvents.filter(e => !e.allDay);
@@ -517,14 +809,18 @@ export const DayView: React.FC<ViewProps> = ({
   return (
     <div className="cal-day-container">
       {/* Header */}
-      <div className={`cal-day-header ${dayIsToday ? 'today' : ''}`}>
-        <div className="cal-day-header-weekday">
+      <div
+        className={`cal-day-header ${dayIsToday ? 'today' : ''}`}
+        aria-label={`${WEEKDAYS[currentDate.getDay()]}, ${MONTH_NAMES[currentDate.getMonth()]} ${currentDate.getDate()}, ${currentDate.getFullYear()}${dayIsToday ? ', today' : ''}`}
+        aria-current={dayIsToday ? 'date' : undefined}
+      >
+        <div className="cal-day-header-weekday" aria-hidden="true">
           {WEEKDAYS[currentDate.getDay()]}
         </div>
-        <div className="cal-day-header-date">
+        <div className="cal-day-header-date" aria-hidden="true">
           {currentDate.getDate()}
         </div>
-        <div className="cal-day-header-month">
+        <div className="cal-day-header-month" aria-hidden="true">
           {MONTH_NAMES[currentDate.getMonth()]} {currentDate.getFullYear()}
         </div>
       </div>
@@ -533,18 +829,22 @@ export const DayView: React.FC<ViewProps> = ({
       {allDayEvents.length > 0 && (
         <div className="cal-day-allday-section">
           <div className="cal-day-allday-label">
-            <i className="fa-solid fa-sun" style={{ color: '#f59e0b' }} />
+            <i className="fa-solid fa-sun" style={{ color: '#f59e0b' }} aria-hidden="true" />
             All Day Events
           </div>
           <div className="cal-day-allday-events">
             {allDayEvents.map(ev => (
               <div
                 key={ev.id}
+                role="button"
+                tabIndex={0}
+                aria-label={`${ev.title}, all day`}
                 className="cal-day-allday-event cal-event-typed"
                 style={getEventPillStyle(ev.type, ev.color)}
                 onClick={() => onEventClick?.(ev)}
+                onKeyDown={(e) => e.key === 'Enter' && onEventClick?.(ev)}
               >
-                <i className={`fa-solid ${getEventTypeIcon(ev.type)}`} style={{ fontSize: '0.75rem', opacity: 0.9 }} />
+                <i className={`fa-solid ${getEventTypeIcon(ev.type)}`} aria-hidden="true" style={{ fontSize: '0.75rem', opacity: 0.9 }} />
                 {ev.title}
               </div>
             ))}
@@ -567,6 +867,9 @@ export const DayView: React.FC<ViewProps> = ({
           {hours.map(hour => (
             <div
               key={hour}
+              role="button"
+              tabIndex={-1}
+              aria-label={`Create event at ${formatHour(hour)}`}
               className="cal-day-hour-cell"
               onClick={() => {
                 const clickDate = new Date(currentDate);
@@ -576,6 +879,29 @@ export const DayView: React.FC<ViewProps> = ({
             />
           ))}
 
+          {/* Team member overlay blocks (DayView — 60px/hr) */}
+          {dayOverlays.map(ov => {
+            const startHour = ov.start.getHours() + ov.start.getMinutes() / 60;
+            const duration = (ov.end.getTime() - ov.start.getTime()) / (1000 * 60 * 60);
+            const top = startHour * 60;
+            const height = Math.max(duration * 60, 20);
+            return (
+              <div
+                key={ov.id}
+                className="cal-overlay-block"
+                aria-hidden="true"
+                title={`${ov.memberName}: busy${ov.title ? ` — ${ov.title}` : ''}`}
+                style={{
+                  top: `${top}px`,
+                  height: `${height}px`,
+                  backgroundColor: ov.color,
+                  opacity: 0.18,
+                  borderLeft: `3px solid ${ov.color}`,
+                }}
+              />
+            );
+          })}
+
           {/* Events */}
           {timedEvents.map(ev => {
             const startHour = ev.start.getHours() + ev.start.getMinutes() / 60;
@@ -583,16 +909,22 @@ export const DayView: React.FC<ViewProps> = ({
             const top = startHour * 60;
             const height = Math.max(duration * 60, 36);
             const typeStyle = getEventTypeStyle(ev.type, ev.color);
+            const isDragging = ghost?.eventId === ev.id;
 
             return (
               <div
                 key={ev.id}
-                className="cal-day-event cal-event-typed"
+                role="button"
+                tabIndex={0}
+                aria-label={`${ev.title}, ${formatTime(ev.start)}${ev.location ? `, ${ev.location}` : ''}`}
+                className={`cal-day-event cal-event-typed${isDragging ? ' cal-event-dragging' : ''}`}
                 style={{ top: `${top}px`, height: `${height}px`, ...typeStyle }}
+                onMouseDown={(e) => dragMouseDown(e, ev, e.currentTarget.closest('.cal-day-events-column') as HTMLElement)}
                 onClick={() => onEventClick?.(ev)}
+                onKeyDown={(e) => e.key === 'Enter' && onEventClick?.(ev)}
               >
                 <div className="cal-day-event-title">
-                  <i className={`fa-solid ${getEventTypeIcon(ev.type)} cal-event-type-icon`} />
+                  <i className={`fa-solid ${getEventTypeIcon(ev.type)} cal-event-type-icon`} aria-hidden="true" />
                   {ev.title}
                 </div>
                 <div className="cal-day-event-time">
@@ -600,13 +932,23 @@ export const DayView: React.FC<ViewProps> = ({
                 </div>
                 {ev.location && (
                   <div className="cal-day-event-location">
-                    <i className="fa-solid fa-location-dot" />
+                    <i className="fa-solid fa-location-dot" aria-hidden="true" />
                     {ev.location}
                   </div>
                 )}
               </div>
             );
           })}
+
+          {/* Drag ghost */}
+          {ghost && timedEvents.some(ev => ev.id === ghost.eventId) && (
+            <div
+              className="cal-event-drag-ghost"
+              style={{ top: `${ghost.top}px`, height: `${ghost.height}px` }}
+            >
+              <span className="cal-event-drag-label">{ghost.label}</span>
+            </div>
+          )}
 
           {/* Current time indicator */}
           {dayIsToday && (
@@ -665,31 +1007,44 @@ export const CalendarHeader: React.FC<CalendarHeaderProps> = ({
     }
   };
 
+  const prevLabel = viewMode === 'year' ? 'Previous year'
+    : viewMode === 'month' ? 'Previous month'
+    : viewMode === 'week'  ? 'Previous week'
+    : 'Previous day';
+  const nextLabel = viewMode === 'year' ? 'Next year'
+    : viewMode === 'month' ? 'Next month'
+    : viewMode === 'week'  ? 'Next week'
+    : 'Next day';
+
   return (
-    <div className="cal-header">
+    <div className="cal-header" role="toolbar" aria-label="Calendar controls">
       <div className="cal-header-left">
-        <h2 className="cal-title cal-font-display">{getTitle()}</h2>
+        <h2 className="cal-title cal-font-display" aria-live="polite" aria-atomic="true">
+          {getTitle()}
+        </h2>
 
         <div style={{ display: 'flex', gap: '4px' }}>
-          <button className="cal-nav-btn" onClick={onPrev}>
-            <i className="fa-solid fa-chevron-left" />
+          <button className="cal-nav-btn" onClick={onPrev} aria-label={prevLabel}>
+            <i className="fa-solid fa-chevron-left" aria-hidden="true" />
           </button>
-          <button className="cal-nav-btn" onClick={onNext}>
-            <i className="fa-solid fa-chevron-right" />
+          <button className="cal-nav-btn" onClick={onNext} aria-label={nextLabel}>
+            <i className="fa-solid fa-chevron-right" aria-hidden="true" />
           </button>
         </div>
 
-        <button className="cal-today-btn" onClick={onToday}>
+        <button className="cal-today-btn" onClick={onToday} aria-label="Go to today">
           Today
         </button>
       </div>
 
-      <div className="cal-view-switcher">
+      <div className="cal-view-switcher" role="group" aria-label="Calendar view">
         {(['year', 'month', 'week', 'day'] as const).map(view => (
           <button
             key={view}
             className={`cal-view-btn ${viewMode === view ? 'active' : ''}`}
             onClick={() => onViewChange(view)}
+            aria-pressed={viewMode === view}
+            aria-label={`${view} view`}
           >
             {view}
           </button>

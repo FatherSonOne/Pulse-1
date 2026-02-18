@@ -52,6 +52,7 @@ export interface User {
   email: string;
   avatarUrl?: string;
   googleConnected: boolean;
+  microsoftConnected?: boolean;
   connectedProviders: ConnectedProviders;
   role?: 'admin' | 'moderator' | 'user';
   isAdmin?: boolean;
@@ -110,16 +111,19 @@ export interface CalendarEvent {
   calendarId: string;
   allDay: boolean;
   type: 'event' | 'meet' | 'reminder' | 'call' | 'deadline' | 'focus' | 'personal' | 'travel' | 'social' | 'health';
-  // Google Calendar specific fields
+  // Provider-specific fields
   googleEventId?: string;
+  outlookEventId?: string;
   meetLink?: string;
-  source?: 'local' | 'google';
+  source?: 'local' | 'google' | 'outlook';
   htmlLink?: string;
   recurrence?: string[];
   reminders?: CalendarEventReminders;
   creator?: { email: string; displayName?: string };
   organizer?: { email: string; displayName?: string };
   attendeesDetailed?: CalendarEventAttendee[];
+  /** Which provider calendar this event lives in (e.g. "primary", "work@company.com", Outlook folder id) */
+  providerCalendarId?: string;
 }
 
 export interface Task {

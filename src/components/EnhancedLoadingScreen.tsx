@@ -11,13 +11,15 @@ interface EnhancedLoadingScreenProps {
   currentStageLabel?: string;
   progress?: number;
   autoAnimate?: boolean; // If true, auto-animates from 0 to 100
+  contained?: boolean; // If true, uses absolute positioning to fill parent container instead of fixed viewport
 }
 
 const EnhancedLoadingScreen: React.FC<EnhancedLoadingScreenProps> = ({
   currentStage: propStage,
   currentStageLabel: propLabel,
   progress: propProgress,
-  autoAnimate = true // Enable auto-animation by default
+  autoAnimate = true, // Enable auto-animation by default
+  contained = false
 }) => {
   // Use LoadingContext if props are not provided
   const loadingContext = useLoading();
@@ -61,7 +63,7 @@ const EnhancedLoadingScreen: React.FC<EnhancedLoadingScreenProps> = ({
       animate={{ opacity: 1 }}
       exit={{ opacity: 0 }}
       transition={{ duration: 0.3 }}
-      className="fixed inset-0 z-50 flex items-center justify-center bg-[#09090b]"
+      className={`${contained ? 'absolute' : 'fixed'} inset-0 z-50 flex items-center justify-center bg-[#09090b]`}
       role="status"
       aria-live="polite"
       aria-label={`Loading: ${currentStageLabel} - ${Math.round(progress)}% complete`}

@@ -902,6 +902,7 @@ const Dashboard: React.FC<DashboardProps> = ({ user, apiKey, setView }) => {
   const handleSuggestionAction = (type: 'message' | 'event' | 'task' | 'email' | 'vox' | 'contact') => {
     switch (type) {
       case 'message':
+        sessionStorage.setItem('pulse_focus_nudge', 'message');
         setView(AppView.MESSAGES);
         break;
       case 'event':
@@ -909,6 +910,7 @@ const Dashboard: React.FC<DashboardProps> = ({ user, apiKey, setView }) => {
         setView(AppView.CALENDAR);
         break;
       case 'email':
+        sessionStorage.setItem('pulse_focus_nudge', 'email');
         setView(AppView.EMAIL);
         break;
       case 'vox':
@@ -922,16 +924,18 @@ const Dashboard: React.FC<DashboardProps> = ({ user, apiKey, setView }) => {
     }
   };
 
-  const handleHighlightAction = (category: BriefingHighlight['category']) => {
+  const handleHighlightAction = (category: BriefingHighlight['category'], title?: string) => {
     switch (category) {
       case 'calendar':
       case 'task':
         setView(AppView.CALENDAR);
         break;
       case 'message':
+        sessionStorage.setItem('pulse_focus_nudge', 'message');
         setView(AppView.MESSAGES);
         break;
       case 'email':
+        sessionStorage.setItem('pulse_focus_nudge', 'email');
         setView(AppView.EMAIL);
         break;
       case 'vox':
@@ -1095,9 +1099,31 @@ const Dashboard: React.FC<DashboardProps> = ({ user, apiKey, setView }) => {
                   <h1 className="text-xl sm:text-2xl lg:text-3xl font-light mb-3 sm:mb-4 text-white tracking-tight">{contextualGreeting.greeting}</h1>
                   <p className="text-zinc-400 leading-relaxed text-sm sm:text-base max-w-2xl font-light">{briefing.summary}</p>
                   {briefing.focusRecommendation && (
-                    <div className="mt-4 inline-flex items-center gap-2 px-4 py-2 bg-rose-500/10 border border-rose-500/20 rounded-lg">
+                    <div
+                      className="mt-4 inline-flex items-center gap-2 px-4 py-2 bg-rose-500/10 border border-rose-500/20 rounded-lg cursor-pointer hover:bg-rose-500/20 hover:border-rose-500/40 transition-all duration-200 group"
+                      onClick={() => {
+                        // Smart navigation: detect what the recommendation refers to
+                        const rec = briefing.focusRecommendation?.toLowerCase() || '';
+                        if (rec.includes('email') || rec.includes('inbox') || rec.includes('cash app') || rec.includes('message from')) {
+                          sessionStorage.setItem('pulse_focus_nudge', 'email');
+                          setView(AppView.EMAIL);
+                        } else if (rec.includes('message') || rec.includes('chat') || rec.includes('conversation')) {
+                          sessionStorage.setItem('pulse_focus_nudge', 'message');
+                          setView(AppView.MESSAGES);
+                        } else if (rec.includes('meeting') || rec.includes('calendar') || rec.includes('event') || rec.includes('task')) {
+                          setView(AppView.CALENDAR);
+                        } else if (rec.includes('voice') || rec.includes('vox')) {
+                          setView(AppView.VOXER);
+                        } else {
+                          sessionStorage.setItem('pulse_focus_nudge', 'email');
+                          setView(AppView.EMAIL);
+                        }
+                      }}
+                      title="Click to go directly to this item"
+                    >
                       <i className="fa-solid fa-bullseye text-rose-400"></i>
                       <span className="text-sm text-rose-300 font-medium">{briefing.focusRecommendation}</span>
+                      <i className="fa-solid fa-arrow-right text-rose-400/60 text-xs group-hover:text-rose-400 transition-colors"></i>
                     </div>
                   )}
                 </div>

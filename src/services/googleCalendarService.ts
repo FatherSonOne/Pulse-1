@@ -119,7 +119,14 @@ const getGoogleAccessToken = async (): Promise<string | null> => {
   }
 
   if (!session) {
-    console.error('[Google Calendar] No session found');
+    return null;
+  }
+
+  // Only attempt Google API calls when the user is logged in via Google.
+  // If logged in via Microsoft (azure) or another provider there is no
+  // Google provider_token and every call will 401 — skip silently.
+  const provider = session.user?.app_metadata?.provider;
+  if (provider && provider !== 'google') {
     return null;
   }
 
@@ -147,19 +154,13 @@ const getGoogleAccessToken = async (): Promise<string | null> => {
 
 // Refresh token if needed - try Google refresh token first, then Supabase session refresh
 const refreshTokenIfNeeded = async (): Promise<string | null> => {
-  console.log('[Google Calendar] Attempting token refresh for Google API access...');
-
   const { data: { session }, error } = await supabase.auth.getSession();
 
-  if (error) {
-    console.error('[Google Calendar] Failed to load session:', error);
-    return null;
-  }
+  if (error || !session) return null;
 
-  if (!session) {
-    console.error('[Google Calendar] No session available');
-    return null;
-  }
+  // Not a Google session — skip silently, no point refreshing
+  const provider = session.user?.app_metadata?.provider;
+  if (provider && provider !== 'google') return null;
 
   if (session.provider_token) {
     return session.provider_token;

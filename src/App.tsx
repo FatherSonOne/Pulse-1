@@ -45,6 +45,7 @@ import { Analytics } from '@vercel/analytics/react';
 import LogoPreview, { LogoOption } from './components/LogoPreview';
 import GoogleAccountSelector from './components/GoogleAccountSelector';
 import { ExtensionLogin, ExtensionOAuthCallback, ExtensionCallback, ExtensionError } from './components/ExtensionAuth';
+import { MicrosoftCalendarCallback } from './components/MicrosoftCalendarCallback';
 import { ApiDocumentation } from './components/ApiKeys';
 import { VoiceCommandButton } from './components/VoiceCommands';
 import PulseVoiceLogo from './components/PulseVoiceLogo';
@@ -60,7 +61,8 @@ import { OnlineStatus } from './components/PWA/OnlineStatus';
 import { FeatureProvider } from './contexts/FeatureContext';
 
 // Loading fallback component for lazy-loaded routes
-const PageLoader = () => <EnhancedLoadingScreen />;
+// Uses contained=true so it fills the content area rather than the full viewport
+const PageLoader = () => <EnhancedLoadingScreen contained />;
 
 const App: React.FC = () => {
   // Check for public routes that don't require authentication
@@ -90,6 +92,11 @@ const App: React.FC = () => {
 
   if (path === '/auth/extension-error') {
     return <ExtensionError />;
+  }
+
+  // Microsoft Calendar OAuth callback
+  if (path === '/auth/microsoft/callback') {
+    return <MicrosoftCalendarCallback />;
   }
 
   // API Documentation (public)

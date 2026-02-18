@@ -1,6 +1,6 @@
 // PulseEmailClientRedesign.tsx - Redesigned AI-Powered Email Client
 // Features: Enhanced UI, Zoom (50-100%, max default), Light/Dark Mode, Mobile Optimized
-import React, { useState, useEffect, useCallback } from 'react';
+import React, { useState, useEffect, useCallback, useRef } from 'react';
 import { emailSyncService, CachedEmail, EmailThread, EmailFolder, EmailCategory } from '../../services/emailSyncService';
 import { getGmailService, resetGmailService, SendEmailParams } from '../../services/gmailService';
 import { offlineEmailStorage } from '../../services/offlineEmailStorage';
@@ -56,6 +56,26 @@ export const PulseEmailClientRedesign: React.FC<PulseEmailClientRedesignProps> =
   const [pendingActionsCount, setPendingActionsCount] = useState(0);
   const [showEmailSettings, setShowEmailSettings] = useState(false);
   const [showReauthModal, setShowReauthModal] = useState(false);
+  const [nudgeFocused, setNudgeFocused] = useState(false);
+  const briefingRef = useRef<HTMLDivElement>(null);
+
+  // Focus the AI nudge/briefing panel when navigated from Daily Overview
+  useEffect(() => {
+    const flag = sessionStorage.getItem('pulse_focus_nudge');
+    if (flag === 'email') {
+      sessionStorage.removeItem('pulse_focus_nudge');
+      // Ensure briefing is visible
+      setShowBriefing(true);
+      setCurrentFolder('inbox');
+      setSelectedEmail(null);
+      // Scroll to and flash the briefing after a short delay
+      setTimeout(() => {
+        briefingRef.current?.scrollIntoView({ behavior: 'smooth', block: 'start' });
+        setNudgeFocused(true);
+        setTimeout(() => setNudgeFocused(false), 2000);
+      }, 150);
+    }
+  }, []);
 
   // NEW: Enhanced zoom control - default 100% (maximum), can zoom out to 50%
   const [zoomLevel, setZoomLevel] = useState(100);
@@ -960,7 +980,10 @@ export const PulseEmailClientRedesign: React.FC<PulseEmailClientRedesignProps> =
 
         {/* Daily Briefing */}
         {showBriefing && currentFolder === 'inbox' && !selectedEmail && (
-          <div className="px-4 py-3 border-b border-stone-200 dark:border-zinc-800">
+          <div
+            ref={briefingRef}
+            className={`px-4 py-3 border-b border-stone-200 dark:border-zinc-800 transition-all duration-300 ${nudgeFocused ? 'ring-2 ring-rose-500/60 ring-inset bg-rose-500/5' : ''}`}
+          >
             <DailyBriefing
               onEmailClick={(email) => {
                 setSelectedEmail(email);
