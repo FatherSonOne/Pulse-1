@@ -1376,80 +1376,6 @@ const Calendar: React.FC<CalendarProps> = ({ contacts, openTaskPanel = false, on
     return () => document.removeEventListener('click', close);
   }, [showExportMenu]);
 
-  /**
-   * Export the currently-visible events as an RFC 5545 .ics file.
-   * Scope: events within the current view window (week, day, month, or all).
-   */
-  const exportAsICS = useCallback(() => {
-    const pad = (n: number) => String(n).padStart(2, '0');
-    const toICSDate = (d: Date) =>
-      `${d.getFullYear()}${pad(d.getMonth() + 1)}${pad(d.getDate())}T` +
-      `${pad(d.getHours())}${pad(d.getMinutes())}${pad(d.getSeconds())}`;
-
-    // Determine the window to export
-    const windowStart = new Date(currentDate);
-    const windowEnd   = new Date(currentDate);
-    if (viewMode === 'week') {
-      windowStart.setDate(windowStart.getDate() - windowStart.getDay());
-      windowStart.setHours(0, 0, 0, 0);
-      windowEnd.setDate(windowStart.getDate() + 7);
-    } else if (viewMode === 'day') {
-      windowStart.setHours(0, 0, 0, 0);
-      windowEnd.setDate(windowStart.getDate() + 1);
-    } else if (viewMode === 'month') {
-      windowStart.setDate(1); windowStart.setHours(0, 0, 0, 0);
-      windowEnd.setMonth(windowEnd.getMonth() + 1); windowEnd.setDate(0);
-    } else {
-      windowStart.setFullYear(windowStart.getFullYear(), 0, 1);
-      windowEnd.setFullYear(windowEnd.getFullYear(), 11, 31);
-    }
-
-    const scope = filteredEvents.filter(e =>
-      e.start >= windowStart && e.start <= windowEnd
-    );
-
-    const lines: string[] = [
-      'BEGIN:VCALENDAR',
-      'VERSION:2.0',
-      'PRODID:-//Pulse Calendar//EN',
-      'CALSCALE:GREGORIAN',
-    ];
-
-    scope.forEach(ev => {
-      lines.push('BEGIN:VEVENT');
-      lines.push(`UID:${ev.id}@pulse-calendar`);
-      lines.push(`DTSTAMP:${toICSDate(new Date())}`);
-      if (ev.allDay) {
-        const ds = ev.start;
-        const de = ev.end;
-        lines.push(`DTSTART;VALUE=DATE:${ds.getFullYear()}${pad(ds.getMonth()+1)}${pad(ds.getDate())}`);
-        lines.push(`DTEND;VALUE=DATE:${de.getFullYear()}${pad(de.getMonth()+1)}${pad(de.getDate())}`);
-      } else {
-        lines.push(`DTSTART:${toICSDate(ev.start)}`);
-        lines.push(`DTEND:${toICSDate(ev.end)}`);
-      }
-      lines.push(`SUMMARY:${ev.title.replace(/\n/g, '\\n')}`);
-      if (ev.description) lines.push(`DESCRIPTION:${ev.description.replace(/\n/g, '\\n')}`);
-      if (ev.location)    lines.push(`LOCATION:${ev.location.replace(/\n/g, '\\n')}`);
-      if (ev.meetLink)    lines.push(`URL:${ev.meetLink}`);
-      lines.push('END:VEVENT');
-    });
-
-    lines.push('END:VCALENDAR');
-    const blob = new Blob([lines.join('\r\n')], { type: 'text/calendar;charset=utf-8' });
-    const url  = URL.createObjectURL(blob);
-    const a    = document.createElement('a');
-    const label = viewMode === 'week'  ? `week-of-${windowStart.toISOString().slice(0,10)}` :
-                  viewMode === 'day'   ? currentDate.toISOString().slice(0,10) :
-                  viewMode === 'month' ? `${currentDate.getFullYear()}-${pad(currentDate.getMonth()+1)}` :
-                  String(currentDate.getFullYear());
-    a.href     = url;
-    a.download = `pulse-calendar-${label}.ics`;
-    a.click();
-    URL.revokeObjectURL(url);
-    setShowExportMenu(false);
-  }, [currentDate, viewMode, filteredEvents]);
-
   const toggleTask = (taskId: string) => {
     setTasks(prev => prev.map(t => t.id === taskId ? { ...t, completed: !t.completed } : t));
   };
@@ -1606,6 +1532,80 @@ const Calendar: React.FC<CalendarProps> = ({ contacts, openTaskPanel = false, on
 
     return filtered;
   }, [events, visibleCalendars, searchQuery, filterEventType]);
+
+  /**
+   * Export the currently-visible events as an RFC 5545 .ics file.
+   * Scope: events within the current view window (week, day, month, or all).
+   */
+  const exportAsICS = useCallback(() => {
+    const pad = (n: number) => String(n).padStart(2, '0');
+    const toICSDate = (d: Date) =>
+      `${d.getFullYear()}${pad(d.getMonth() + 1)}${pad(d.getDate())}T` +
+      `${pad(d.getHours())}${pad(d.getMinutes())}${pad(d.getSeconds())}`;
+
+    // Determine the window to export
+    const windowStart = new Date(currentDate);
+    const windowEnd   = new Date(currentDate);
+    if (viewMode === 'week') {
+      windowStart.setDate(windowStart.getDate() - windowStart.getDay());
+      windowStart.setHours(0, 0, 0, 0);
+      windowEnd.setDate(windowStart.getDate() + 7);
+    } else if (viewMode === 'day') {
+      windowStart.setHours(0, 0, 0, 0);
+      windowEnd.setDate(windowStart.getDate() + 1);
+    } else if (viewMode === 'month') {
+      windowStart.setDate(1); windowStart.setHours(0, 0, 0, 0);
+      windowEnd.setMonth(windowEnd.getMonth() + 1); windowEnd.setDate(0);
+    } else {
+      windowStart.setFullYear(windowStart.getFullYear(), 0, 1);
+      windowEnd.setFullYear(windowEnd.getFullYear(), 11, 31);
+    }
+
+    const scope = filteredEvents.filter(e =>
+      e.start >= windowStart && e.start <= windowEnd
+    );
+
+    const lines: string[] = [
+      'BEGIN:VCALENDAR',
+      'VERSION:2.0',
+      'PRODID:-//Pulse Calendar//EN',
+      'CALSCALE:GREGORIAN',
+    ];
+
+    scope.forEach(ev => {
+      lines.push('BEGIN:VEVENT');
+      lines.push(`UID:${ev.id}@pulse-calendar`);
+      lines.push(`DTSTAMP:${toICSDate(new Date())}`);
+      if (ev.allDay) {
+        const ds = ev.start;
+        const de = ev.end;
+        lines.push(`DTSTART;VALUE=DATE:${ds.getFullYear()}${pad(ds.getMonth()+1)}${pad(ds.getDate())}`);
+        lines.push(`DTEND;VALUE=DATE:${de.getFullYear()}${pad(de.getMonth()+1)}${pad(de.getDate())}`);
+      } else {
+        lines.push(`DTSTART:${toICSDate(ev.start)}`);
+        lines.push(`DTEND:${toICSDate(ev.end)}`);
+      }
+      lines.push(`SUMMARY:${ev.title.replace(/\n/g, '\\n')}`);
+      if (ev.description) lines.push(`DESCRIPTION:${ev.description.replace(/\n/g, '\\n')}`);
+      if (ev.location)    lines.push(`LOCATION:${ev.location.replace(/\n/g, '\\n')}`);
+      if (ev.meetLink)    lines.push(`URL:${ev.meetLink}`);
+      lines.push('END:VEVENT');
+    });
+
+    lines.push('END:VCALENDAR');
+    const blob = new Blob([lines.join('\r\n')], { type: 'text/calendar;charset=utf-8' });
+    const url  = URL.createObjectURL(blob);
+    const a    = document.createElement('a');
+    const label = viewMode === 'week'  ? `week-of-${windowStart.toISOString().slice(0,10)}` :
+                  viewMode === 'day'   ? currentDate.toISOString().slice(0,10) :
+                  viewMode === 'month' ? `${currentDate.getFullYear()}-${pad(currentDate.getMonth()+1)}` :
+                  String(currentDate.getFullYear());
+    a.href     = url;
+    a.download = `pulse-calendar-${label}.ics`;
+    a.click();
+    URL.revokeObjectURL(url);
+    setShowExportMenu(false);
+  }, [currentDate, viewMode, filteredEvents]);
 
   /**
    * Free-time slots: working-hours windows (9 AM – 6 PM) where no visible

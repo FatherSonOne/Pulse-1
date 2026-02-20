@@ -215,6 +215,7 @@ const ConversationPanel: React.FC<ConversationPanelProps> = ({
                 currentStage="loading-messages"
                 currentStageLabel="Loading messages..."
                 progress={50}
+                contained
               />
             ) : messages.length === 0 ? (
               <div className="flex items-center justify-center h-full">

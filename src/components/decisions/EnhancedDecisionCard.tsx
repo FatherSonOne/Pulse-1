@@ -69,10 +69,19 @@ const EnhancedDecisionCardComponent: React.FC<EnhancedDecisionCardProps> = ({
   const [loadingStakeholders, setLoadingStakeholders] = useState(false);
   const [generatingTasks, setGeneratingTasks] = useState(false);
 
+  // Reload base data whenever the decision id or vote array changes
   useEffect(() => {
     loadData();
-    loadAIInsights();
   }, [decision.id, decision.votes]);
+
+  // Load AI insights only once per decision, or when the vote *count* changes.
+  // Using vote count (not the full array reference) prevents redundant API calls
+  // when the parent re-renders the same data.
+  const voteCount = decision.votes?.length ?? 0;
+  useEffect(() => {
+    loadAIInsights();
+  // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [decision.id, voteCount]);
 
   const loadData = async () => {
     setLoading(true);
@@ -120,14 +129,14 @@ const EnhancedDecisionCardComponent: React.FC<EnhancedDecisionCardProps> = ({
     const apiKey = localStorage.getItem('gemini_api_key');
     if (!apiKey) return;
 
-    // Load risk assessment
+    // Load risk assessment — service handles caching & 429 backoff internally
     if (decision.status === 'voting' || decision.status === 'proposed') {
       setLoadingRisk(true);
       try {
         const risk = await decisionAnalyticsService.assessDecisionRisk(decision, apiKey);
+        // confidence === -1 means quota exhausted; still store it so the UI can
+        // show a friendly message instead of leaving the panel in loading state
         setRiskAssessment(risk);
-      } catch (error) {
-        console.error('Failed to load risk assessment:', error);
       } finally {
         setLoadingRisk(false);
       }
@@ -285,8 +294,8 @@ const EnhancedDecisionCardComponent: React.FC<EnhancedDecisionCardProps> = ({
               <span>{decision.status}</span>
             </div>
 
-            {/* AI Risk Badge */}
-            {riskAssessment && (decision.status === 'voting' || decision.status === 'proposed') && (
+            {/* AI Risk Badge — hidden when quota is exhausted (confidence === -1) */}
+            {riskAssessment && riskAssessment.confidence !== -1 && (decision.status === 'voting' || decision.status === 'proposed') && (
               <div
                 className="ai-badge risk-badge"
                 style={{
@@ -294,9 +303,21 @@ const EnhancedDecisionCardComponent: React.FC<EnhancedDecisionCardProps> = ({
                   color: getRiskColor(riskAssessment.riskLevel)
                 }}
                 aria-label={`${riskAssessment.riskLevel} risk: ${riskAssessment.reasoning}`}
+                title={riskAssessment.reasoning}
               >
                 {getRiskIcon(riskAssessment.riskLevel)}
                 <span>{riskAssessment.riskLevel} risk</span>
+              </div>
+            )}
+            {riskAssessment && riskAssessment.confidence === -1 && (decision.status === 'voting' || decision.status === 'proposed') && (
+              <div
+                className="ai-badge"
+                style={{ opacity: 0.5 }}
+                title="AI risk assessment unavailable — Gemini API quota exceeded"
+                aria-label="AI risk assessment unavailable"
+              >
+                <AlertCircle size={14} />
+                <span>risk N/A</span>
               </div>
             )}
 
@@ -341,8 +362,8 @@ const EnhancedDecisionCardComponent: React.FC<EnhancedDecisionCardProps> = ({
           </div>
         )}
 
-        {/* AI Risk Recommendations */}
-        {riskAssessment && riskAssessment.recommendations.length > 0 && riskAssessment.riskLevel !== 'low' && (
+        {/* AI Risk Recommendations — hidden when quota exhausted */}
+        {riskAssessment && riskAssessment.confidence !== -1 && riskAssessment.recommendations.length > 0 && riskAssessment.riskLevel !== 'low' && (
           <div className="ai-recommendations">
             <div className="recommendations-header">
               <Sparkles size={14} />

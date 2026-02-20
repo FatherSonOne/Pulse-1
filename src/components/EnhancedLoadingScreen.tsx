@@ -12,6 +12,7 @@ interface EnhancedLoadingScreenProps {
   progress?: number;
   autoAnimate?: boolean; // If true, auto-animates from 0 to 100
   contained?: boolean; // If true, uses absolute positioning to fill parent container instead of fixed viewport
+  inline?: boolean; // If true, uses h-full w-full flex layout (no fixed/absolute) — safest for section-level use
 }
 
 const EnhancedLoadingScreen: React.FC<EnhancedLoadingScreenProps> = ({
@@ -19,7 +20,8 @@ const EnhancedLoadingScreen: React.FC<EnhancedLoadingScreenProps> = ({
   currentStageLabel: propLabel,
   progress: propProgress,
   autoAnimate = true, // Enable auto-animation by default
-  contained = false
+  contained = false,
+  inline = false
 }) => {
   // Use LoadingContext if props are not provided
   const loadingContext = useLoading();
@@ -63,7 +65,7 @@ const EnhancedLoadingScreen: React.FC<EnhancedLoadingScreenProps> = ({
       animate={{ opacity: 1 }}
       exit={{ opacity: 0 }}
       transition={{ duration: 0.3 }}
-      className={`${contained ? 'absolute' : 'fixed'} inset-0 z-50 flex items-center justify-center bg-[#09090b]`}
+      className={`${inline ? 'h-full w-full' : contained ? 'absolute inset-0 z-50' : 'fixed inset-0 z-50'} flex items-center justify-center bg-[#09090b]`}
       role="status"
       aria-live="polite"
       aria-label={`Loading: ${currentStageLabel} - ${Math.round(progress)}% complete`}
@@ -244,7 +246,7 @@ const EnhancedLoadingScreen: React.FC<EnhancedLoadingScreenProps> = ({
           initial={{ opacity: 0 }}
           animate={{ opacity: 1 }}
           transition={{ delay: 0.5 }}
-          className="absolute bottom-12 left-0 right-0 text-center"
+          className={`${inline ? '' : 'absolute bottom-12 left-0 right-0'} text-center`}
         >
           <div className="inline-flex items-center gap-2 px-4 py-2 bg-[#18181b] border border-[#27272a] rounded-full">
             <span className="text-xs font-semibold bg-gradient-to-r from-rose-500 to-pink-500 bg-clip-text text-transparent">

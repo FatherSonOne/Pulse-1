@@ -60,7 +60,7 @@ const LoadingFallback: React.FC<{ message?: string }> = ({ message = 'Loading...
         </div>
       </div>
     }>
-      <EnhancedLoadingScreen currentStageLabel={message} />
+      <EnhancedLoadingScreen currentStageLabel={message} inline />
     </Suspense>
   );
 };

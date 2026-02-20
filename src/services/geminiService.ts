@@ -7,6 +7,35 @@ import { rateLimitService } from "./rateLimitService";
 import { retryService } from "./retryService";
 import { sanitizationService } from "./sanitizationService";
 import { apiProxyService } from "./apiProxyService";
+import { perplexityGenerateText, isPerplexityAvailable } from "./perplexityService";
+
+// ─── Perplexity fallback helper (internal) ────────────────────────────────────
+// Tries the primaryFn; on failure, falls back to Perplexity for text responses.
+// Only use for text-in / text-out functions — NOT for image/audio/video/embeddings.
+async function withFallback<T extends string | null>(
+  primaryFn: () => Promise<T>,
+  fallbackPrompt: string,
+  label: string,
+  fallbackSystem?: string
+): Promise<T | string | null> {
+  try {
+    return await primaryFn();
+  } catch (err) {
+    console.warn(`[gemini:${label}] Primary call failed — trying Perplexity fallback`, err);
+    if (!isPerplexityAvailable()) {
+      console.error(`[gemini:${label}] No Perplexity key available.`);
+      return null;
+    }
+    try {
+      const text = await perplexityGenerateText(fallbackPrompt, fallbackSystem);
+      console.info(`[gemini:${label}] Perplexity fallback succeeded.`);
+      return text;
+    } catch (fallbackErr) {
+      console.error(`[gemini:${label}] Perplexity fallback also failed:`, fallbackErr);
+      return null;
+    }
+  }
+}
 
 // Cache for calendar context to avoid too many API calls
 let calendarContextCache: { context: string; timestamp: number } | null = null;
@@ -126,18 +155,18 @@ export const generateProImage = async (apiKey: string, prompt: string, aspectRat
 
 export const generateJournalInsight = async (apiKey: string, text: string) => {
   const ai = new GoogleGenAI({ apiKey });
-  try {
-     const response = await ai.models.generateContent({
-       model: 'gemini-2.5-flash-lite',
-       contents: withFormattedOutput(
-         `Analyze this journal entry and provide a very brief, empathetic insight or advice (max 2 sentences). Entry: "${text}"`,
-         'journal'
-       ),
-     });
-     return response.text;
-  } catch (e) {
-    return "Could not analyze at this moment.";
-  }
+  const prompt = `Analyze this journal entry and provide a very brief, empathetic insight or advice (max 2 sentences). Entry: "${text}"`;
+  return withFallback(
+    async () => {
+      const response = await ai.models.generateContent({
+        model: 'gemini-2.5-flash-lite',
+        contents: withFormattedOutput(prompt, 'journal'),
+      });
+      return response.text ?? null;
+    },
+    prompt,
+    'generateJournalInsight'
+  );
 };
 
 export const generateSmartReply = async (apiKey: string, history: {role: string, text: string}[]) => {
@@ -156,34 +185,36 @@ export const generateSmartReply = async (apiKey: string, history: {role: string,
     ? `You are a helpful communication assistant with access to the user's calendar:\n\n${calendarContext}\n\nIf the conversation involves scheduling or availability, use the calendar context to inform your response.`
     : 'You are a helpful communication assistant.';
 
-  try {
-    const response = await ai.models.generateContent({
-      model: 'gemini-2.5-flash-lite',
-      contents: withFormattedOutput(
-        `${systemPrompt}\n\nRead the following conversation and draft a professional, concise, and friendly reply for the user. Do not include quotes. Just the reply text.\n\nConversation:\n${conversation}`,
-        'chat'
-      ),
-    });
-    return response.text;
-  } catch (e) {
-    return null;
-  }
+  const userPrompt = `Read the following conversation and draft a professional, concise, and friendly reply for the user. Do not include quotes. Just the reply text.\n\nConversation:\n${conversation}`;
+
+  return withFallback(
+    async () => {
+      const response = await ai.models.generateContent({
+        model: 'gemini-2.5-flash-lite',
+        contents: withFormattedOutput(`${systemPrompt}\n\n${userPrompt}`, 'chat'),
+      });
+      return response.text ?? null;
+    },
+    userPrompt,
+    'generateSmartReply',
+    systemPrompt
+  );
 };
 
 export const generateSummary = async (apiKey: string, text: string) => {
   const ai = new GoogleGenAI({ apiKey });
-  try {
-    const response = await ai.models.generateContent({
-      model: 'gemini-2.5-flash',
-      contents: withFormattedOutput(
-        `Summarize the following text or conversation into 3 key bullet points:\n\n${text}`,
-        'summary'
-      ),
-    });
-    return response.text;
-  } catch (e) {
-    return null;
-  }
+  const prompt = `Summarize the following text or conversation into 3 key bullet points:\n\n${text}`;
+  return withFallback(
+    async () => {
+      const response = await ai.models.generateContent({
+        model: 'gemini-2.5-flash',
+        contents: withFormattedOutput(prompt, 'summary'),
+      });
+      return response.text ?? null;
+    },
+    prompt,
+    'generateSummary'
+  );
 };
 
 export const transcribeMedia = async (apiKey: string, mediaBase64: string, mimeType: string = 'audio/webm') => {
@@ -318,9 +349,32 @@ ${context}`,
       console.error('Briefing generation error:', e);
     }
     
+    // Attempt Perplexity fallback for non-key errors
+    if (!isLeakedKeyError && isPerplexityAvailable()) {
+      try {
+        console.info('[gemini:generateDailyBriefing] Attempting Perplexity fallback...');
+        const briefingPrompt = `You are a top-tier executive assistant. Generate a personalized daily briefing as JSON with these fields:
+- greeting: personalized greeting for the time of day
+- summary: 2-3 sentence executive summary highlighting key priorities
+- highlights: array of {category, title, detail, priority} items needing attention
+- suggestions: array of {action, reason, type, priority} actionable suggestions
+- focusRecommendation: single sentence on what to focus on first
+
+Context:
+${context}
+
+Return ONLY valid JSON.`;
+        const text = await perplexityGenerateText(briefingPrompt);
+        const cleaned = text.replace(/```json/g, '').replace(/```/g, '').trim();
+        return JSON.parse(cleaned);
+      } catch (fallbackErr) {
+        console.error('[gemini:generateDailyBriefing] Perplexity fallback failed:', fallbackErr);
+      }
+    }
+
     return {
       greeting: "Welcome back.",
-      summary: isLeakedKeyError 
+      summary: isLeakedKeyError
         ? "Your Gemini API key needs to be updated. Please go to Settings to configure a new API key from Google AI Studio."
         : "Your dashboard is ready. Connect your accounts to get personalized insights.",
       highlights: [],
@@ -334,32 +388,39 @@ ${context}`,
 
 export const generateThinkingResponse = async (apiKey: string, prompt: string) => {
   const ai = new GoogleGenAI({ apiKey });
-  try {
-    const response = await ai.models.generateContent({
-      model: 'gemini-3-pro-preview',
-      contents: prompt,
-      config: { thinkingConfig: { thinkingBudget: 32768 } }
-    });
-    return response.text;
-  } catch (e) {
-    throw e;
-  }
+  return withFallback(
+    async () => {
+      const response = await ai.models.generateContent({
+        model: 'gemini-3-pro-preview',
+        contents: prompt,
+        config: { thinkingConfig: { thinkingBudget: 32768 } },
+      });
+      return response.text ?? null;
+    },
+    prompt,
+    'generateThinkingResponse',
+    'You are a thoughtful AI assistant. Think carefully and provide a detailed, reasoned response.'
+  );
 };
 
 export const generateCode = async (apiKey: string, prompt: string) => {
   const ai = new GoogleGenAI({ apiKey });
-  try {
-    const response = await ai.models.generateContent({
-      model: 'gemini-3-pro-preview',
-      contents: withFormattedOutput(
-        `You are an expert software engineer. Write clean code for: ${prompt}. Return ONLY code with brief explanatory comments.`,
-        'code'
-      ),
-    });
-    return response.text;
-  } catch (e) {
-    throw e;
-  }
+  const codePrompt = `Write clean code for: ${prompt}. Return ONLY code with brief explanatory comments.`;
+  return withFallback(
+    async () => {
+      const response = await ai.models.generateContent({
+        model: 'gemini-3-pro-preview',
+        contents: withFormattedOutput(
+          `You are an expert software engineer. ${codePrompt}`,
+          'code'
+        ),
+      });
+      return response.text ?? null;
+    },
+    codePrompt,
+    'generateCode',
+    'You are an expert software engineer. Return ONLY code with brief explanatory comments.'
+  );
 };
 
 export const analyzeVideo = async (apiKey: string, videoBase64: string, mimeType: string, prompt: string) => {
@@ -435,32 +496,47 @@ export const generateSpeech = async (apiKey: string, text: string) => {
 
 export const chatWithBot = async (apiKey: string, history: {role: string, text: string}[], newMessage: string, includeCalendarContext: boolean = true) => {
   const ai = new GoogleGenAI({ apiKey });
-  try {
-      // Get calendar context for AI awareness
-      let systemContext = '';
-      if (includeCalendarContext) {
-        const calendarContext = await getCalendarContextForAI();
-        if (calendarContext) {
-          systemContext = `You are a helpful AI assistant with access to the user's calendar. Here is their current schedule context:\n\n${calendarContext}\n\nUse this calendar information to provide contextually aware responses. For example, if the user mentions a meeting, you can reference their schedule. If they ask about availability, check their calendar.\n\n`;
-        }
-      }
 
-      const chat = ai.chats.create({
-          model: 'gemini-3-pro-preview',
-          systemInstruction: withFormattedOutput(
-            systemContext || 'You are a helpful AI assistant.',
-            'chat'
-          ),
-          history: history.map(h => ({
-              role: h.role === 'me' ? 'user' : 'model',
-              parts: [{ text: h.text }]
-          }))
-      });
-      const result = await chat.sendMessage({ message: newMessage });
-      return result.text;
-  } catch (e) {
-      return "I'm having trouble connecting right now.";
+  // Get calendar context for AI awareness
+  let systemContext = '';
+  if (includeCalendarContext) {
+    try {
+      const calendarContext = await getCalendarContextForAI();
+      if (calendarContext) {
+        systemContext = `You are a helpful AI assistant with access to the user's calendar. Here is their current schedule context:\n\n${calendarContext}\n\nUse this calendar information to provide contextually aware responses. For example, if the user mentions a meeting, you can reference their schedule. If they ask about availability, check their calendar.\n\n`;
+      }
+    } catch {
+      // Ignore calendar errors
+    }
   }
+
+  const conversationContext = history.map(h => `${h.role === 'me' ? 'User' : 'Assistant'}: ${h.text}`).join('\n');
+  const fallbackPrompt = conversationContext
+    ? `Previous conversation:\n${conversationContext}\n\nUser: ${newMessage}`
+    : newMessage;
+
+  const result = await withFallback(
+    async () => {
+      const chat = ai.chats.create({
+        model: 'gemini-3-pro-preview',
+        systemInstruction: withFormattedOutput(
+          systemContext || 'You are a helpful AI assistant.',
+          'chat'
+        ),
+        history: history.map(h => ({
+          role: h.role === 'me' ? 'user' : 'model',
+          parts: [{ text: h.text }],
+        })),
+      });
+      const response = await chat.sendMessage({ message: newMessage });
+      return response.text ?? null;
+    },
+    fallbackPrompt,
+    'chatWithBot',
+    systemContext || 'You are a helpful AI assistant.'
+  );
+
+  return result ?? "I'm having trouble connecting right now.";
 };
 
 // --- Context Aware Functions ---
@@ -877,22 +953,29 @@ export const generateEmailDraft = async (
 
        Return JSON: { "subject": "subject line", "body": "email body text", "suggestions": ["alternative phrase 1", "alternative phrase 2"] }`;
 
-  const prompt = withFormattedOutput(basePrompt, 'email-draft');
+  const result = await withFallback(
+    async () => {
+      const response = await fetch(`https://generativelanguage.googleapis.com/v1beta/models/gemini-2.0-flash:generateContent?key=${apiKey}`, {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({
+          contents: [{ parts: [{ text: withFormattedOutput(basePrompt, 'email-draft') }] }],
+          generationConfig: { responseMimeType: 'application/json' },
+        }),
+      });
+      const data = await response.json();
+      const text = data.candidates?.[0]?.content?.parts?.[0]?.text;
+      return text ?? null;
+    },
+    `${basePrompt}\n\nIMPORTANT: Return ONLY valid JSON with fields: subject, body, suggestions.`,
+    'generateEmailDraft'
+  );
 
+  if (!result) return null;
   try {
-    const response = await fetch(`https://generativelanguage.googleapis.com/v1beta/models/gemini-2.0-flash:generateContent?key=${apiKey}`, {
-      method: 'POST',
-      headers: { 'Content-Type': 'application/json' },
-      body: JSON.stringify({
-        contents: [{ parts: [{ text: prompt }] }],
-        generationConfig: { responseMimeType: "application/json" }
-      })
-    });
-    const data = await response.json();
-    const text = data.candidates?.[0]?.content?.parts?.[0]?.text;
-    return text ? JSON.parse(text) : null;
-  } catch (e) {
-    console.error('Email draft generation failed:', e);
+    const cleaned = (result as string).replace(/```json/g, '').replace(/```/g, '').trim();
+    return JSON.parse(cleaned) as EmailDraft;
+  } catch {
     return null;
   }
 };
@@ -909,28 +992,26 @@ export const improveEmailText = async (
     elaborate: 'Expand on this text with more detail and context',
     fix_grammar: 'Fix any grammar, spelling, or punctuation errors',
     make_friendlier: 'Rewrite this in a warmer, more friendly tone',
-    make_formal: 'Rewrite this in a more formal, professional tone'
+    make_formal: 'Rewrite this in a more formal, professional tone',
   };
 
-  const prompt = withFormattedOutput(
-    `${instructions[improvement]}:\n\n${text}\n\nReturn only the improved text, nothing else.`,
-    'email-draft'
-  );
+  const rawPrompt = `${instructions[improvement]}:\n\n${text}\n\nReturn only the improved text, nothing else.`;
 
-  try {
-    const response = await fetch(`https://generativelanguage.googleapis.com/v1beta/models/gemini-2.0-flash:generateContent?key=${apiKey}`, {
-      method: 'POST',
-      headers: { 'Content-Type': 'application/json' },
-      body: JSON.stringify({
-        contents: [{ parts: [{ text: prompt }] }]
-      })
-    });
-    const data = await response.json();
-    return data.candidates?.[0]?.content?.parts?.[0]?.text || null;
-  } catch (e) {
-    console.error('Email improvement failed:', e);
-    return null;
-  }
+  return withFallback(
+    async () => {
+      const response = await fetch(`https://generativelanguage.googleapis.com/v1beta/models/gemini-2.0-flash:generateContent?key=${apiKey}`, {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({
+          contents: [{ parts: [{ text: withFormattedOutput(rawPrompt, 'email-draft') }] }],
+        }),
+      });
+      const data = await response.json();
+      return data.candidates?.[0]?.content?.parts?.[0]?.text ?? null;
+    },
+    rawPrompt,
+    'improveEmailText'
+  ) as Promise<string | null>;
 };
 
 export const generateEmailSuggestions = async (
@@ -939,31 +1020,37 @@ export const generateEmailSuggestions = async (
 ): Promise<string[] | null> => {
   if (!apiKey) return null;
 
-  const prompt = withFormattedOutput(
-    `Given this email:
-          From: ${emailContext.from}
-          Subject: ${emailContext.subject}
-          Body: ${emailContext.body}
+  const rawPrompt = `Given this email:
+From: ${emailContext.from}
+Subject: ${emailContext.subject}
+Body: ${emailContext.body}
 
-          Generate 3 smart reply suggestions (short, 1-2 sentences each).
-          Return JSON array: ["suggestion 1", "suggestion 2", "suggestion 3"]`,
-    'chat'
+Generate 3 smart reply suggestions (short, 1-2 sentences each).
+Return JSON array: ["suggestion 1", "suggestion 2", "suggestion 3"]`;
+
+  const result = await withFallback(
+    async () => {
+      const response = await fetch(`https://generativelanguage.googleapis.com/v1beta/models/gemini-2.0-flash:generateContent?key=${apiKey}`, {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({
+          contents: [{ parts: [{ text: withFormattedOutput(rawPrompt, 'chat') }] }],
+          generationConfig: { responseMimeType: 'application/json' },
+        }),
+      });
+      const data = await response.json();
+      const text = data.candidates?.[0]?.content?.parts?.[0]?.text;
+      return text ?? null;
+    },
+    `${rawPrompt}\n\nIMPORTANT: Return ONLY a JSON array like ["reply 1", "reply 2", "reply 3"].`,
+    'generateEmailSuggestions'
   );
 
+  if (!result) return null;
   try {
-    const response = await fetch(`https://generativelanguage.googleapis.com/v1beta/models/gemini-2.0-flash:generateContent?key=${apiKey}`, {
-      method: 'POST',
-      headers: { 'Content-Type': 'application/json' },
-      body: JSON.stringify({
-        contents: [{ parts: [{ text: prompt }] }],
-        generationConfig: { responseMimeType: "application/json" }
-      })
-    });
-    const data = await response.json();
-    const text = data.candidates?.[0]?.content?.parts?.[0]?.text;
-    return text ? JSON.parse(text) : null;
-  } catch (e) {
-    console.error('Email suggestions failed:', e);
+    const cleaned = (result as string).replace(/```json/g, '').replace(/```/g, '').trim();
+    return JSON.parse(cleaned);
+  } catch {
     return null;
   }
 };
@@ -972,32 +1059,23 @@ export const generateEmailSuggestions = async (
 export const summarizeText = async (apiKey: string, text: string): Promise<string | null> => {
   if (!apiKey || !text) return null;
 
-  try {
-    const response = await fetch(`https://generativelanguage.googleapis.com/v1beta/models/gemini-2.0-flash-exp:generateContent?key=${apiKey}`, {
-      method: 'POST',
-      headers: { 'Content-Type': 'application/json' },
-      body: JSON.stringify({
-        contents: [{
-          parts: [{
-            text: withFormattedOutput(
-              `Summarize the following text concisely, capturing the key points and main ideas:
+  const prompt = `Summarize the following text concisely, capturing the key points and main ideas:\n\n${text}\n\nProvide a clear, well-structured summary.`;
 
-${text}
-
-Provide a clear, well-structured summary.`,
-              'summary'
-            )
-          }]
-        }]
-      })
-    });
-
-    const data = await response.json();
-    return data.candidates?.[0]?.content?.parts?.[0]?.text || null;
-  } catch (e) {
-    console.error('Summarization failed:', e);
-    return null;
-  }
+  return withFallback(
+    async () => {
+      const response = await fetch(`https://generativelanguage.googleapis.com/v1beta/models/gemini-2.0-flash-exp:generateContent?key=${apiKey}`, {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({
+          contents: [{ parts: [{ text: withFormattedOutput(prompt, 'summary') }] }],
+        }),
+      });
+      const data = await response.json();
+      return data.candidates?.[0]?.content?.parts?.[0]?.text ?? null;
+    },
+    prompt,
+    'summarizeText'
+  ) as Promise<string | null>;
 };
 
 export const analyzeImage = async (apiKey: string, imageBase64: string, prompt: string): Promise<string | null> => {
@@ -1054,27 +1132,28 @@ export const generateEmbedding = async (apiKey: string, text: string): Promise<n
 export const processWithModel = async (apiKey: string, prompt: string, model: string = 'gemini-2.0-flash-exp'): Promise<string | null> => {
   if (!apiKey || !prompt) return null;
 
-  try {
-    const response = await fetch(`https://generativelanguage.googleapis.com/v1beta/models/${model}:generateContent?key=${apiKey}`, {
-      method: 'POST',
-      headers: { 'Content-Type': 'application/json' },
-      body: JSON.stringify({
-        contents: [{ parts: [{ text: withFormattedOutput(prompt, 'default') }] }]
-      })
-    });
+  return withFallback(
+    async () => {
+      const response = await fetch(`https://generativelanguage.googleapis.com/v1beta/models/${model}:generateContent?key=${apiKey}`, {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({
+          contents: [{ parts: [{ text: withFormattedOutput(prompt, 'default') }] }],
+        }),
+      });
 
-    if (!response.ok) {
-      const errorData = await response.json().catch(() => ({}));
-      console.error(`API Error (${response.status}):`, errorData);
-      throw new Error(`HTTP error! status: ${response.status}`);
-    }
+      if (!response.ok) {
+        const errorData = await response.json().catch(() => ({}));
+        console.error(`API Error (${response.status}):`, errorData);
+        throw new Error(`HTTP error! status: ${response.status}`);
+      }
 
-    const data = await response.json();
-    return data.candidates?.[0]?.content?.parts?.[0]?.text || null;
-  } catch (e) {
-    console.error('AI processing failed:', e);
-    return null;
-  }
+      const data = await response.json();
+      return data.candidates?.[0]?.content?.parts?.[0]?.text ?? null;
+    },
+    prompt,
+    'processWithModel'
+  ) as Promise<string | null>;
 };
 
 // ==================== Security Layer ====================
@@ -1191,26 +1270,33 @@ export const geminiService = {
   async chat(prompt: string, options?: { temperature?: number }): Promise<string> {
     // Get API key from localStorage
     const apiKey = localStorage.getItem('gemini_api_key') || '';
-    if (!apiKey) {
-      throw new Error('Gemini API key not configured');
+
+    const sanitizedPrompt = sanitizationService.sanitizeText(prompt, { maxLength: 10000 });
+
+    if (apiKey) {
+      try {
+        const ai = new GoogleGenAI({ apiKey });
+        const response = await ai.models.generateContent({
+          model: 'gemini-2.0-flash',
+          contents: sanitizedPrompt,
+          config: { temperature: options?.temperature ?? 0.7 },
+        });
+        return response.text || '';
+      } catch (error) {
+        console.warn('[geminiService.chat] Gemini failed — trying Perplexity fallback:', error);
+      }
+    } else {
+      console.warn('[geminiService.chat] No Gemini API key — trying Perplexity fallback');
     }
 
-    try {
-      // Sanitize prompt
-      const sanitizedPrompt = sanitizationService.sanitizeText(prompt, { maxLength: 10000 });
-
-      const ai = new GoogleGenAI({ apiKey });
-      const response = await ai.models.generateContent({
-        model: 'gemini-2.0-flash',
-        contents: sanitizedPrompt,
-        config: {
-          temperature: options?.temperature ?? 0.7,
-        },
-      });
-      return response.text || '';
-    } catch (error) {
-      console.error('Gemini chat error:', error);
-      throw error;
+    if (isPerplexityAvailable()) {
+      try {
+        return await perplexityGenerateText(sanitizedPrompt);
+      } catch (fallbackErr) {
+        console.error('[geminiService.chat] Perplexity fallback failed:', fallbackErr);
+      }
     }
-  }
+
+    throw new Error('AI service unavailable: both Gemini and Perplexity failed or are not configured.');
+  },
 };

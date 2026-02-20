@@ -68,7 +68,7 @@ export const ContactsList: React.FC<ContactsListProps> = ({
           <i className="fa-solid fa-circle-notch fa-spin text-2xl"></i>
         </div>
       }>
-        <EnhancedLoadingScreen currentStageLabel="Loading contacts..." />
+        <EnhancedLoadingScreen currentStageLabel="Loading contacts..." inline />
       </Suspense>
     );
   }

@@ -14,6 +14,8 @@ import { NotificationSettings } from './NotificationSettings';
 import { DesignPreview } from './WarRoom/DesignPreview';
 import AdminDashboard from './AdminDashboard';
 import { ApiKeysPanel } from './ApiKeys';
+import AIHealthMonitor from './AIHealthMonitor';
+import { enableQuotaNotifications, disableQuotaNotifications, areNotificationsEnabled, sendTestNotification } from '../services/geminiQuotaNotifications';
 import './Settings.css';
 
 
@@ -1819,6 +1821,47 @@ const Settings: React.FC<SettingsProps> = ({ user, isDarkMode, toggleTheme, init
               <p>
                 Configure the brain of your Pulse workspace. Choose models, voices, and reasoning capabilities.
               </p>
+            </div>
+
+            {/* AI Health Monitor */}
+            <AIHealthMonitor />
+
+            {/* Quota Notifications */}
+            <div className="bg-white dark:bg-zinc-900 border border-zinc-200 dark:border-zinc-800 rounded-xl p-6">
+              <h4 className="text-sm font-bold uppercase tracking-widest text-zinc-500 mb-4 flex items-center gap-2">
+                <i className="fa-solid fa-bell"></i> Quota Notifications
+              </h4>
+              <div className="space-y-4">
+                <p className="text-sm text-zinc-600 dark:text-zinc-400">
+                  Get notified when your Gemini API quota recovers or when fallback mode activates.
+                </p>
+                <div className="flex gap-3">
+                  <button
+                    onClick={async () => {
+                      const success = await enableQuotaNotifications();
+                      if (success) {
+                        alert('✅ Quota notifications enabled! You\'ll be notified when Gemini recovers.');
+                      } else {
+                        alert('⚠️ Please allow notifications in your browser to enable this feature.');
+                      }
+                    }}
+                    className="px-4 py-2 bg-blue-500 hover:bg-blue-600 text-white rounded-lg text-sm font-medium transition"
+                  >
+                    Enable Notifications
+                  </button>
+                  <button
+                    onClick={async () => {
+                      const success = await sendTestNotification();
+                      if (!success) {
+                        alert('⚠️ Please enable notifications first.');
+                      }
+                    }}
+                    className="px-4 py-2 bg-zinc-100 dark:bg-zinc-800 hover:bg-zinc-200 dark:hover:bg-zinc-700 text-zinc-700 dark:text-zinc-300 rounded-lg text-sm font-medium transition"
+                  >
+                    Test Notification
+                  </button>
+                </div>
+              </div>
             </div>
 
             {/* General AI */}

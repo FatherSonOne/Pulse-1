@@ -2471,7 +2471,7 @@ const Messages: React.FC<MessagesProps> = ({ apiKey, contacts, initialContactId,
           </div>
         </div>
       }>
-        <EnhancedLoadingScreen currentStageLabel="Loading conversations..." />
+        <EnhancedLoadingScreen currentStageLabel="Loading conversations..." contained />
       </Suspense>
     );
   }

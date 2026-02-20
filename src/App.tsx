@@ -61,8 +61,8 @@ import { OnlineStatus } from './components/PWA/OnlineStatus';
 import { FeatureProvider } from './contexts/FeatureContext';
 
 // Loading fallback component for lazy-loaded routes
-// Uses contained=true so it fills the content area rather than the full viewport
-const PageLoader = () => <EnhancedLoadingScreen contained />;
+// Uses inline=true so it fills the content area via flex layout rather than fixed/absolute positioning
+const PageLoader = () => <EnhancedLoadingScreen inline />;
 
 const App: React.FC = () => {
   // Check for public routes that don't require authentication
@@ -738,7 +738,7 @@ const App: React.FC = () => {
       {/* Main Content */}
       <main className="flex-1 overflow-hidden relative transition-colors duration-500 w-full safe-area-bottom">
         <div className={`h-full w-full flex flex-col ${view === AppView.MESSAGES || view === AppView.CALENDAR ? 'overflow-hidden' : 'overflow-auto mobile-scroll p-2 sm:p-3 md:p-4 lg:p-6'}`}>
-          <div className={`w-full ${view === AppView.MESSAGES || view === AppView.CALENDAR ? 'h-full min-h-0 flex flex-col' : 'max-w-[1600px] mx-auto'} animate-fade-in`}>
+          <div className={`w-full ${view === AppView.MESSAGES || view === AppView.CALENDAR ? 'h-full min-h-0 flex flex-col' : 'min-h-full max-w-[1600px] mx-auto flex flex-col'} animate-fade-in`}>
             {renderContent()}
           </div>
         </div>

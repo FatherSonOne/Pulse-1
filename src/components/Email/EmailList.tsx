@@ -104,7 +104,7 @@ export const EmailList: React.FC<EmailListProps> = ({
           </div>
         </div>
       }>
-        <EnhancedLoadingScreen currentStageLabel="Loading emails..." />
+        <EnhancedLoadingScreen currentStageLabel="Loading emails..." inline />
       </Suspense>
     );
   }

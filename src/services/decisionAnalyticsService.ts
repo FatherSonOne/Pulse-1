@@ -2,6 +2,29 @@ import { GoogleGenAI } from "@google/genai";
 import { DecisionWithVotes } from "./decisionService";
 import { Contact } from "../types";
 
+// ---------------------------------------------------------------------------
+// Rate-limit helpers
+// ---------------------------------------------------------------------------
+
+/** True when an error looks like a Gemini 429 / quota-exhausted response. */
+function isRateLimitError(error: unknown): boolean {
+  if (!error) return false;
+  const msg = String((error as { message?: string })?.message ?? error);
+  return msg.includes('429') || msg.includes('RESOURCE_EXHAUSTED') || msg.includes('quota');
+}
+
+/**
+ * In-memory cache for risk assessments keyed by `${decisionId}:${voteCount}`.
+ * Using vote-count as part of the key means a new fetch only happens when
+ * votes actually change, not on every component mount.
+ */
+const riskCache = new Map<string, RiskAssessment>();
+
+/** Exponential backoff: wait 2^attempt * baseMs ms, capped at maxMs. */
+function delay(ms: number): Promise<void> {
+  return new Promise(resolve => setTimeout(resolve, ms));
+}
+
 export interface DecisionMetrics {
   velocityPerWeek: number;
   velocityTrend?: 'up' | 'down' | 'stable'; // Phase 3: Trend indicator
@@ -166,22 +189,30 @@ export const decisionAnalyticsService = {
   },
 
   /**
-   * AI-powered risk assessment for a decision
+   * AI-powered risk assessment for a decision.
+   *
+   * Results are cached per (decisionId + voteCount) so repeated mounts of the
+   * same card don't re-hit the API.  On 429 / quota errors the method returns a
+   * rate-limited sentinel without logging an error (the caller can check
+   * `confidence === -1` to distinguish "quota exhausted" from real failures).
    */
   async assessDecisionRisk(
     decision: DecisionWithVotes,
     apiKey: string
   ): Promise<RiskAssessment> {
-    try {
-      const ai = new GoogleGenAI({ apiKey });
+    const voteData = decision.votes || [];
+    const cacheKey = `${decision.id}:${voteData.length}`;
 
-      const voteData = decision.votes || [];
-      const totalVotes = voteData.length;
-      const approveVotes = voteData.filter(v => v.vote === 'approve').length;
-      const rejectVotes = voteData.filter(v => v.vote === 'reject').length;
-      const concernVotes = voteData.filter(v => v.vote === 'concern').length;
+    // Return cached result if vote count hasn't changed
+    const cached = riskCache.get(cacheKey);
+    if (cached) return cached;
 
-      const prompt = `Analyze this decision and assess its risk level:
+    const totalVotes = voteData.length;
+    const approveVotes = voteData.filter(v => v.vote === 'approve').length;
+    const rejectVotes = voteData.filter(v => v.vote === 'reject').length;
+    const concernVotes = voteData.filter(v => v.vote === 'concern').length;
+
+    const prompt = `Analyze this decision and assess its risk level:
 
 Decision: ${decision.proposal_text}
 Type: ${decision.decision_type}
@@ -203,27 +234,58 @@ Return JSON with:
   "confidence": 0-100
 }`;
 
-      const response = await ai.models.generateContent({
-        model: 'gemini-2.5-flash',
-        contents: prompt,
-        config: {
-          temperature: 0.3,
-          responseMimeType: 'application/json',
-        },
-      });
+    const maxRetries = 2;
+    const baseDelayMs = 2000;
 
-      const result = JSON.parse(response.text);
-      return result;
-    } catch (error) {
-      console.error('Risk assessment failed:', error);
-      // Return safe default
-      return {
-        riskLevel: 'low',
-        reasoning: 'Unable to assess risk',
-        recommendations: ['Review decision details manually'],
-        confidence: 0,
-      };
+    for (let attempt = 0; attempt <= maxRetries; attempt++) {
+      try {
+        const ai = new GoogleGenAI({ apiKey });
+        const response = await ai.models.generateContent({
+          model: 'gemini-2.5-flash',
+          contents: prompt,
+          config: {
+            temperature: 0.3,
+            responseMimeType: 'application/json',
+          },
+        });
+
+        const result: RiskAssessment = JSON.parse(response.text);
+        riskCache.set(cacheKey, result);
+        return result;
+      } catch (error) {
+        if (isRateLimitError(error)) {
+          if (attempt < maxRetries) {
+            // Exponential backoff before next retry
+            await delay(baseDelayMs * Math.pow(2, attempt));
+            continue;
+          }
+          // All retries exhausted — return a quiet sentinel (confidence: -1)
+          const rateLimited: RiskAssessment = {
+            riskLevel: 'low',
+            reasoning: 'AI quota exceeded — assessment unavailable',
+            recommendations: ['Check your Gemini API quota at https://ai.dev/rate-limit'],
+            confidence: -1,
+          };
+          return rateLimited;
+        }
+        // Non-rate-limit error — log once and return safe default
+        console.error('Risk assessment failed:', error);
+        return {
+          riskLevel: 'low',
+          reasoning: 'Unable to assess risk',
+          recommendations: ['Review decision details manually'],
+          confidence: 0,
+        };
+      }
     }
+
+    // Unreachable, but satisfies TypeScript
+    return {
+      riskLevel: 'low',
+      reasoning: 'Unable to assess risk',
+      recommendations: ['Review decision details manually'],
+      confidence: 0,
+    };
   },
 
   /**

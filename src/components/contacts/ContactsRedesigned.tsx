@@ -7,6 +7,8 @@ import { useRelationshipIntelligence } from '../../hooks/useRelationshipIntellig
 import { RelationshipAlertsFeed } from './RelationshipAlertsFeed';
 import { DuplicateDetectionModal } from './DuplicateDetectionModal';
 import { SmartListType, RelationshipProfile, LeadScore, getRelationshipHealthColor } from '../../types/relationshipTypes';
+import { ContactDetail } from './ContactDetail';
+import { supabase } from '../../services/supabase';
 import './Contacts.css';
 
 // ============================================
@@ -241,13 +243,18 @@ const NodeCard: React.FC<NodeCardProps> = ({
         </div>
       )}
 
-      {/* Avatar with Orbits */}
+      {/* Avatar with Orbits + relationship health ring */}
       <div className="contacts-node-avatar">
         <div className="contacts-node-orbit inner" />
         <div className="contacts-node-orbit outer" />
         <div
           className="contacts-node-avatar-inner"
-          style={{ backgroundColor: contact.avatarColor || '#6366f1' }}
+          style={{
+            backgroundColor: contact.avatarColor || '#6366f1',
+            boxShadow: profile
+              ? `0 0 0 3px ${getRelationshipHealthColor(profile.relationshipScore)}`
+              : undefined,
+          }}
         >
           {contact.name.charAt(0)}
         </div>
@@ -355,7 +362,15 @@ const ListRow: React.FC<ListRowProps> = ({
       </div>
 
       <div className="contacts-list-user">
-        <div className="contacts-list-avatar" style={{ backgroundColor: contact.avatarColor || '#6366f1' }}>
+        <div
+          className="contacts-list-avatar"
+          style={{
+            backgroundColor: contact.avatarColor || '#6366f1',
+            boxShadow: profile
+              ? `0 0 0 2px ${getRelationshipHealthColor(profile.relationshipScore)}`
+              : undefined,
+          }}
+        >
           {contact.name.charAt(0)}
           <div
             className="contacts-list-avatar-status"
@@ -664,6 +679,7 @@ export const ContactsRedesigned: React.FC<ContactsRedesignedProps> = ({
   openAddContact,
 }) => {
   // State
+  const [userId, setUserId] = useState<string | null>(null);
   const [selectedContact, setSelectedContact] = useState<Contact | null>(null);
   const [selectedIds, setSelectedIds] = useState<Set<string>>(new Set());
   const [viewStyle, setViewStyle] = useState<ViewStyle>('grid');
@@ -677,6 +693,11 @@ export const ContactsRedesigned: React.FC<ContactsRedesignedProps> = ({
   const [contactToEdit, setContactToEdit] = useState<Contact | null>(null);
   const [showAlertsPanel, setShowAlertsPanel] = useState(false);
   const [showDuplicatesModal, setShowDuplicatesModal] = useState(false);
+
+  // Auth
+  useEffect(() => {
+    supabase.auth.getUser().then(({ data }) => setUserId(data.user?.id ?? null));
+  }, []);
 
   // Relationship Intelligence
   const {
@@ -990,9 +1011,10 @@ export const ContactsRedesigned: React.FC<ContactsRedesignedProps> = ({
 
       {/* Detail Panel */}
       {selectedContact && (
-        <DetailPanel
+        <ContactDetail
           contact={selectedContact}
-          profile={selectedProfile}
+          userId={userId ?? undefined}
+          relationshipProfile={selectedProfile}
           leadScore={selectedLeadScore}
           onClose={() => setSelectedContact(null)}
           onAction={(action) => onAction(action, selectedContact.id)}
