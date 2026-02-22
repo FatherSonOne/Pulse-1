@@ -54,6 +54,7 @@ import {
   Zap,
   Undo,
   Download,
+  Sparkles,
 } from 'lucide-react';
 import './DecisionTaskHub.css';
 
