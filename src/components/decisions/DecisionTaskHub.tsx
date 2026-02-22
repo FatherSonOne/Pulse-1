@@ -8,7 +8,13 @@ import { TaskKanban } from '../tasks/TaskKanban';
 import { SkeletonDecisionCard } from './SkeletonDecisionCard';
 import { SkeletonTaskCard } from '../tasks/SkeletonTaskCard';
 import { AIFeatureErrorBoundary } from './AIFeatureErrorBoundary';
+import { ActiveView } from './ActiveView';
+import { TaskEditModal } from '../tasks/TaskEditModal';
+import { CreateTaskModal } from '../tasks/CreateTaskModal';
+import { DecisionDecomposer } from './DecisionDecomposer'; // Phase 2: AI task decomposition
+import { DecisionTemplates } from './DecisionTemplates'; // Phase 2: Decision templates
 import { decisionService, DecisionWithVotes } from '../../services/decisionService';
+import { consensusDetectorService } from '../../services/consensusDetectorService'; // Phase 2: Consensus detection
 import { taskService, Task } from '../../services/taskService';
 import { decisionAnalyticsService, DecisionMetrics } from '../../services/decisionAnalyticsService';
 import { proactiveSuggestionsService, Nudge } from '../../services/proactiveSuggestionsService';
@@ -119,6 +125,16 @@ export const DecisionTaskHub: React.FC<DecisionTaskHubProps> = ({
   const [taskToReassign, setTaskToReassign] = useState<Task | null>(null);
   const [taskToExtend, setTaskToExtend] = useState<Task | null>(null);
 
+  // Phase 1.7: Task CRUD modals state
+  const [taskToEdit, setTaskToEdit] = useState<Task | null>(null);
+  const [showCreateTask, setShowCreateTask] = useState(false);
+
+  // Phase 2: Decision decomposition state
+  const [decisionToDecompose, setDecisionToDecompose] = useState<DecisionWithVotes | null>(null);
+
+  // Phase 2: Templates state
+  const [showTemplates, setShowTemplates] = useState(false);
+
   // Sprint 7: Virtualization state
   const [taskListHeight, setTaskListHeight] = useState(600);
 
@@ -177,15 +193,15 @@ export const DecisionTaskHub: React.FC<DecisionTaskHubProps> = ({
         updateConnectionStatus(status);
       });
 
-    // Subscribe to tasks changes
+    // Subscribe to tasks changes (now using extracted_tasks table)
     const tasksChannel = supabase
-      .channel('tasks-changes')
+      .channel('extracted-tasks-changes')
       .on(
         'postgres_changes',
         {
           event: '*',
           schema: 'public',
-          table: 'tasks',
+          table: 'extracted_tasks',
           filter: `workspace_id=eq.${effectiveWorkspaceId}`
         },
         (payload) => {
@@ -682,9 +698,131 @@ export const DecisionTaskHub: React.FC<DecisionTaskHubProps> = ({
   }, [loadTasks]);
 
   const handleTaskEdit = useCallback((task: Task) => {
-    // TODO: Open task edit modal
-    console.log('Edit task:', task);
+    setTaskToEdit(task);
   }, []);
+
+  const handleTaskSave = useCallback(async (taskId: string, updates: Partial<Task>) => {
+    try {
+      await taskService.updateTask(taskId, updates);
+      await loadTasks(); // Reload tasks
+      setTaskToEdit(null);
+    } catch (error) {
+      console.error('Failed to save task:', error);
+      throw error;
+    }
+  }, [loadTasks]);
+
+  const handleTaskCreate = useCallback(async (newTask: Partial<Task>) => {
+    try {
+      await taskService.createTask({
+        workspace_id: newTask.workspace_id!,
+        title: newTask.title!,
+        description: newTask.description,
+        priority: newTask.priority,
+        assignee_id: newTask.assignee_id,
+        deadline: newTask.deadline,
+        status: newTask.status,
+        metadata: newTask.metadata
+      });
+      await loadTasks(); // Reload tasks
+      setShowCreateTask(false);
+    } catch (error) {
+      console.error('Failed to create task:', error);
+      throw error;
+    }
+  }, [loadTasks]);
+
+  // Phase 2: Handle decision decomposition
+  const handleOpenDecomposer = useCallback((decision: DecisionWithVotes) => {
+    setDecisionToDecompose(decision);
+  }, []);
+
+  // Phase 2: Handle template selection
+  const handleTemplateSelect = useCallback(async (template: any, variables: any) => {
+    try {
+      const applied = await import('../../services/decisionTemplateService').then(m =>
+        m.decisionTemplateService.applyTemplate(template, variables)
+      );
+
+      // Create decision from template
+      const newDecision = await decisionService.createDecision({
+        workspace_id: effectiveWorkspaceId,
+        title: applied.title,
+        description: applied.description,
+        decision_type: applied.decision_type as any,
+        created_by: user?.id || '',
+        template_id: applied.template_id
+      });
+
+      // Create suggested tasks if any
+      if (applied.suggested_tasks && applied.suggested_tasks.length > 0 && newDecision) {
+        for (const task of applied.suggested_tasks) {
+          const deadline = task.deadline_offset_days
+            ? new Date(Date.now() + task.deadline_offset_days * 24 * 60 * 60 * 1000).toISOString()
+            : undefined;
+
+          await taskService.createTask({
+            workspace_id: effectiveWorkspaceId,
+            title: task.title,
+            description: task.description,
+            priority: task.priority || 'medium',
+            deadline,
+            status: 'todo',
+            metadata: {
+              generated_from_template: template.id,
+              linked_decision: newDecision.id
+            }
+          });
+        }
+      }
+
+      // Reload data
+      await Promise.all([loadDecisions(), loadTasks()]);
+
+      setShowTemplates(false);
+    } catch (error) {
+      console.error('Error creating decision from template:', error);
+      throw error;
+    }
+  }, [effectiveWorkspaceId, user, loadDecisions, loadTasks]);
+
+  const handleDecompositionComplete = useCallback(async (tasks: Partial<Task>[], brief: string) => {
+    if (!decisionToDecompose) return;
+
+    try {
+      // Create all tasks
+      for (const taskData of tasks) {
+        await taskService.createTask({
+          workspace_id: taskData.workspace_id!,
+          title: taskData.title!,
+          description: taskData.description,
+          priority: taskData.priority,
+          assignee_id: taskData.assignee_id,
+          deadline: taskData.deadline,
+          status: taskData.status || 'todo',
+          metadata: {
+            ...taskData.metadata,
+            generated_from_decision: decisionToDecompose.id,
+            decision_title: decisionToDecompose.title
+          }
+        });
+      }
+
+      // Update decision with brief
+      await decisionService.updateDecision(decisionToDecompose.id, {
+        brief,
+        tasks_generated_at: new Date().toISOString()
+      });
+
+      // Reload data
+      await Promise.all([loadTasks(), loadDecisions()]);
+
+      setDecisionToDecompose(null);
+    } catch (error) {
+      console.error('Failed to create tasks from decomposition:', error);
+      throw error;
+    }
+  }, [decisionToDecompose, loadTasks, loadDecisions]);
 
   const handlePrioritizationComplete = useCallback((prioritized: AITaskPriority[]) => {
     setAiPriorities(prioritized);
@@ -712,7 +850,7 @@ export const DecisionTaskHub: React.FC<DecisionTaskHubProps> = ({
   // Sprint 6: Reassign task handler
   const handleReassignTask = useCallback(async (taskId: string, newAssignee: string) => {
     try {
-      await taskService.updateTask(taskId, { assigned_to: newAssignee });
+      await taskService.updateTask(taskId, { assignee_id: newAssignee });
       await loadTasks(); // Reload to get fresh data
       setTaskToReassign(null);
     } catch (error) {
@@ -724,7 +862,7 @@ export const DecisionTaskHub: React.FC<DecisionTaskHubProps> = ({
   // Sprint 6: Extend deadline handler
   const handleExtendDeadline = useCallback(async (taskId: string, newDeadline: string) => {
     try {
-      await taskService.updateTask(taskId, { due_date: newDeadline });
+      await taskService.updateTask(taskId, { deadline: newDeadline });
       await loadTasks(); // Reload to get fresh data
       setTaskToExtend(null);
     } catch (error) {
@@ -795,7 +933,7 @@ export const DecisionTaskHub: React.FC<DecisionTaskHubProps> = ({
 
     if (showOverdueOnly) {
       filtered = filtered.filter(t =>
-        t.due_date && new Date(t.due_date) < new Date() && t.status !== 'done'
+        t.deadline && new Date(t.deadline) < new Date() && t.status !== 'done'
       );
     }
 
@@ -803,19 +941,21 @@ export const DecisionTaskHub: React.FC<DecisionTaskHubProps> = ({
     filtered = [...filtered].sort((a, b) => {
       switch (sortBy) {
         case 'due_date':
-          if (!a.due_date) return 1;
-          if (!b.due_date) return -1;
-          return new Date(a.due_date).getTime() - new Date(b.due_date).getTime();
+          if (!a.deadline) return 1;
+          if (!b.deadline) return -1;
+          return new Date(a.deadline).getTime() - new Date(b.deadline).getTime();
         case 'priority':
           const priorityOrder = { urgent: 0, high: 1, medium: 2, low: 3 };
           return priorityOrder[a.priority] - priorityOrder[b.priority];
         case 'ai_score':
-          const aScore = a.ai_priority_score || 50;
-          const bScore = b.ai_priority_score || 50;
+          const aScore = a.metadata?.ai_priority_score || 50;
+          const bScore = b.metadata?.ai_priority_score || 50;
           return bScore - aScore;
         case 'created':
         default:
-          return new Date(b.created_at).getTime() - new Date(a.created_at).getTime();
+          const aTime = new Date(a.extracted_at || a.created_at || a.updated_at).getTime();
+          const bTime = new Date(b.extracted_at || b.created_at || b.updated_at).getTime();
+          return bTime - aTime;
       }
     });
 
@@ -830,7 +970,7 @@ export const DecisionTaskHub: React.FC<DecisionTaskHubProps> = ({
 
   const overdueCount = useMemo(
     () => tasks.filter(t =>
-      t.due_date && new Date(t.due_date) < new Date() && t.status !== 'done'
+      t.deadline && new Date(t.deadline) < new Date() && t.status !== 'done'
     ).length,
     [tasks]
   );
@@ -909,12 +1049,24 @@ export const DecisionTaskHub: React.FC<DecisionTaskHubProps> = ({
             <Bot size={18} aria-hidden="true" />
             <span className="action-label">AI</span>
           </button>
+          {activeTab === 'decisions' && (
+            <button
+              type="button"
+              className="hub-action-button"
+              onClick={() => setShowTemplates(true)}
+              aria-label="Use decision template"
+              title="Use Template"
+            >
+              <Sparkles size={18} aria-hidden="true" />
+              <span className="action-label">Templates</span>
+            </button>
+          )}
           <button
             type="button"
             className="hub-action-button primary"
-            onClick={() => handleOpenDecisionMission()}
-            aria-label="Create new decision"
-            title="Create Decision"
+            onClick={() => activeTab === 'decisions' ? handleOpenDecisionMission() : setShowCreateTask(true)}
+            aria-label={activeTab === 'decisions' ? 'Create new decision' : 'Create new task'}
+            title={activeTab === 'decisions' ? 'Create Decision' : 'Create Task'}
           >
             <Plus size={18} aria-hidden="true" />
             <span className="action-label">Create</span>
@@ -1266,6 +1418,7 @@ export const DecisionTaskHub: React.FC<DecisionTaskHubProps> = ({
                       workspaceId={effectiveWorkspaceId}
                       onVote={handleVote}
                       onOpenMission={handleOpenDecisionMission}
+                      onGenerateTasks={handleOpenDecomposer}
                     />
                   ))}
                 </div>
@@ -1312,17 +1465,12 @@ export const DecisionTaskHub: React.FC<DecisionTaskHubProps> = ({
                   onEdit={handleTaskEdit}
                 />
               ) : (
-                <div className="tasks-list-view">
-                  {filteredTasks.map((task) => (
-                    <EnhancedTaskCard
-                      key={task.id}
-                      task={task}
-                      onStatusChange={handleTaskStatusChange}
-                      onDelete={handleTaskDelete}
-                      onEdit={handleTaskEdit}
-                    />
-                  ))}
-                </div>
+                <ActiveView
+                  tasks={filteredTasks}
+                  onStatusChange={handleTaskStatusChange}
+                  onDelete={handleTaskDelete}
+                  onEdit={handleTaskEdit}
+                />
               )}
             </div>
           )}
@@ -1388,7 +1536,7 @@ export const DecisionTaskHub: React.FC<DecisionTaskHubProps> = ({
       {taskToReassign && createPortal(
         <ReassignTaskModal
           task={taskToReassign}
-          currentAssignee={taskToReassign.assigned_to}
+          currentAssignee={taskToReassign.assignee_id}
           onClose={() => setTaskToReassign(null)}
           onReassign={handleReassignTask}
         />,
@@ -1428,6 +1576,52 @@ export const DecisionTaskHub: React.FC<DecisionTaskHubProps> = ({
             <X size={16} />
           </button>
         </div>
+      )}
+
+      {/* Phase 1.7: Task Edit Modal */}
+      {taskToEdit && createPortal(
+        <TaskEditModal
+          task={taskToEdit}
+          onClose={() => setTaskToEdit(null)}
+          onSave={handleTaskSave}
+          workspaceMembers={[]} // TODO: Pass actual workspace members
+        />,
+        document.body
+      )}
+
+      {/* Phase 1.7: Create Task Modal */}
+      {showCreateTask && createPortal(
+        <CreateTaskModal
+          workspaceId={effectiveWorkspaceId}
+          currentUserId={user?.id || ''}
+          onClose={() => setShowCreateTask(false)}
+          onCreate={handleTaskCreate}
+          workspaceMembers={[]} // TODO: Pass actual workspace members
+        />,
+        document.body
+      )}
+
+      {/* Phase 2: Decision Decomposer Modal */}
+      {decisionToDecompose && createPortal(
+        <DecisionDecomposer
+          decision={decisionToDecompose}
+          workspaceId={effectiveWorkspaceId}
+          workspaceMembers={[]} // TODO: Pass actual workspace members
+          onClose={() => setDecisionToDecompose(null)}
+          onTasksGenerated={handleDecompositionComplete}
+          apiKey={localStorage.getItem('gemini_api_key') || ''}
+        />,
+        document.body
+      )}
+
+      {/* Phase 2: Decision Templates Modal */}
+      {showTemplates && createPortal(
+        <DecisionTemplates
+          workspaceId={effectiveWorkspaceId}
+          onClose={() => setShowTemplates(false)}
+          onSelectTemplate={handleTemplateSelect}
+        />,
+        document.body
       )}
     </div>
   );

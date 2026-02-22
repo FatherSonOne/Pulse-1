@@ -184,6 +184,8 @@ export interface ArchiveItem {
   sharedWith?: string[]; // User IDs
   createdBy?: string;
   updatedAt?: Date;
+  // Flexible metadata for storing structured data (e.g., Voxer audio URLs, custom fields)
+  metadata?: Record<string, any>;
 }
 
 // Archive Collections

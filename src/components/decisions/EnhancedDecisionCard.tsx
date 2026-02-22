@@ -3,7 +3,9 @@ import { decisionService, DecisionWithVotes, DecisionVote } from '../../services
 import { taskService } from '../../services/taskService';
 import { decisionAnalyticsService, RiskAssessment } from '../../services/decisionAnalyticsService';
 import { taskIntelligenceService } from '../../services/taskIntelligenceService';
+import { consensusDetectorService } from '../../services/consensusDetectorService'; // Phase 2: Consensus detection
 import { CheckCircle, Clock, AlertCircle, TrendingUp, Users, Bell, Sparkles, ListTodo, AlertTriangle, Info } from 'lucide-react';
+import { TaskExtractionModal, ExtractedTask } from '../tasks/TaskExtractionModal';
 import '../DecisionCard.css';
 import './EnhancedDecisionCard.css';
 
@@ -13,6 +15,7 @@ interface EnhancedDecisionCardProps {
   workspaceId: string;
   onVote?: () => void;
   onOpenMission?: (decision: DecisionWithVotes) => void;
+  onGenerateTasks?: (decision: DecisionWithVotes) => void; // Phase 2: Open DecisionDecomposer
 }
 
 interface VoteResults {
@@ -55,7 +58,8 @@ const EnhancedDecisionCardComponent: React.FC<EnhancedDecisionCardProps> = ({
   currentUserId,
   workspaceId,
   onVote,
-  onOpenMission
+  onOpenMission,
+  onGenerateTasks
 }) => {
   const [results, setResults] = useState<VoteResults | null>(null);
   const [hasVoted, setHasVoted] = useState(false);
@@ -69,10 +73,26 @@ const EnhancedDecisionCardComponent: React.FC<EnhancedDecisionCardProps> = ({
   const [loadingStakeholders, setLoadingStakeholders] = useState(false);
   const [generatingTasks, setGeneratingTasks] = useState(false);
 
+  // Task extraction modal state
+  const [showTaskExtractionModal, setShowTaskExtractionModal] = useState(false);
+  const [extractedTasks, setExtractedTasks] = useState<ExtractedTask[]>([]);
+  const [linkedTaskCount, setLinkedTaskCount] = useState<number>(0);
+
   // Reload base data whenever the decision id or vote array changes
   useEffect(() => {
     loadData();
+    loadLinkedTasks();
   }, [decision.id, decision.votes]);
+
+  const loadLinkedTasks = async () => {
+    try {
+      const tasks = await taskService.getWorkspaceTasks(workspaceId);
+      const linkedTasks = tasks.filter(t => t.metadata?.decision_id === decision.id);
+      setLinkedTaskCount(linkedTasks.length);
+    } catch (error) {
+      console.error('Failed to load linked tasks:', error);
+    }
+  };
 
   // Load AI insights only once per decision, or when the vote *count* changes.
   // Using vote count (not the full array reference) prevents redundant API calls
@@ -169,8 +189,15 @@ const EnhancedDecisionCardComponent: React.FC<EnhancedDecisionCardProps> = ({
   };
 
   const handleGenerateTasks = async () => {
-    if (decision.status !== 'decided') {
-      alert('Tasks can only be generated from decided decisions.');
+    // Phase 2: Use DecisionDecomposer if callback provided
+    if (onGenerateTasks) {
+      onGenerateTasks(decision);
+      return;
+    }
+
+    // Fallback to legacy extraction modal
+    if (decision.status !== 'decided' && decision.status !== 'approved') {
+      alert('Tasks can only be generated from approved or decided decisions.');
       return;
     }
 
@@ -183,33 +210,17 @@ const EnhancedDecisionCardComponent: React.FC<EnhancedDecisionCardProps> = ({
     setGeneratingTasks(true);
     try {
       // Extract tasks from decision using AI
-      const extractedTasks = await taskIntelligenceService.extractTasksFromDecision(decision, apiKey);
+      const tasks = await taskIntelligenceService.extractTasksFromDecision(decision, apiKey);
 
-      if (extractedTasks.length === 0) {
+      if (tasks.length === 0) {
         alert('No tasks could be generated from this decision.');
+        setGeneratingTasks(false);
         return;
       }
 
-      // Create tasks in database
-      const createdTasks = [];
-      for (const taskData of extractedTasks) {
-        const newTask = await taskService.createTask({
-          title: taskData.title || 'Untitled Task',
-          description: taskData.description || '',
-          priority: taskData.priority || 'medium',
-          status: 'todo',
-          workspace_id: workspaceId,
-          created_by: currentUserId,
-          metadata: {
-            ...taskData.metadata,
-            decision_id: decision.id,
-            generated_by_ai: true,
-          }
-        });
-        createdTasks.push(newTask);
-      }
-
-      alert(`Successfully generated ${createdTasks.length} tasks from this decision!\n\nSwitch to the Tasks tab to view them.`);
+      // Show the review modal with extracted tasks
+      setExtractedTasks(tasks as ExtractedTask[]);
+      setShowTaskExtractionModal(true);
 
     } catch (error) {
       console.error('Failed to generate tasks:', error);
@@ -217,6 +228,32 @@ const EnhancedDecisionCardComponent: React.FC<EnhancedDecisionCardProps> = ({
     } finally {
       setGeneratingTasks(false);
     }
+  };
+
+  const handleSaveExtractedTasks = async (tasks: ExtractedTask[]) => {
+    // Create tasks in database with decision linkage
+    const createdTasks = [];
+    for (const taskData of tasks) {
+      const newTask = await taskService.createTask({
+        title: taskData.title,
+        description: taskData.description || '',
+        priority: taskData.priority,
+        status: 'todo',
+        workspace_id: workspaceId,
+        created_by: currentUserId,
+        metadata: {
+          decision_id: decision.id,
+          generated_by_ai: true,
+          estimated_duration: taskData.estimated_duration
+        }
+      });
+      createdTasks.push(newTask);
+    }
+
+    // Reload task count to update the badge
+    await loadLinkedTasks();
+
+    alert(`Successfully created ${createdTasks.length} ${createdTasks.length === 1 ? 'task' : 'tasks'} from this decision!\n\nSwitch to the Tasks tab to view them.`);
   };
 
   const getStatusIcon = () => {
@@ -484,7 +521,7 @@ const EnhancedDecisionCardComponent: React.FC<EnhancedDecisionCardProps> = ({
           </button>
         )}
 
-        {decision.status === 'decided' && (
+        {(decision.status === 'decided' || decision.status === 'approved') && (
           <button
             type="button"
             className="action-button generate-tasks"
@@ -501,6 +538,11 @@ const EnhancedDecisionCardComponent: React.FC<EnhancedDecisionCardProps> = ({
               <>
                 <ListTodo size={16} aria-hidden="true" />
                 <span>Generate Tasks</span>
+                {linkedTaskCount > 0 && (
+                  <span className="task-count-badge" title={`${linkedTaskCount} linked ${linkedTaskCount === 1 ? 'task' : 'tasks'}`}>
+                    {linkedTaskCount}
+                  </span>
+                )}
               </>
             )}
           </button>
@@ -518,6 +560,16 @@ const EnhancedDecisionCardComponent: React.FC<EnhancedDecisionCardProps> = ({
           </button>
         )}
       </div>
+
+      {/* Task Extraction Modal */}
+      {showTaskExtractionModal && (
+        <TaskExtractionModal
+          tasks={extractedTasks}
+          decisionTitle={decision.proposal_text || decision.title || 'this decision'}
+          onClose={() => setShowTaskExtractionModal(false)}
+          onSave={handleSaveExtractedTasks}
+        />
+      )}
     </div>
   );
 };

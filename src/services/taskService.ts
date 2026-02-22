@@ -3,18 +3,21 @@ import { supabase } from './supabaseClient';
 export interface Task {
   id: string;
   workspace_id: string;
-  message_id?: string;
+  origin_message_id?: string; // Renamed from message_id to match extracted_tasks schema
   title: string;
   description?: string;
-  status: 'todo' | 'in_progress' | 'done' | 'cancelled';
+  status: 'pending' | 'todo' | 'in_progress' | 'in_review' | 'blocked' | 'done' | 'cancelled';
   priority: 'low' | 'medium' | 'high' | 'urgent';
-  assigned_to?: string;
-  created_by: string;
-  due_date?: string;
+  assignee_id?: string; // Renamed from assigned_to to match extracted_tasks schema
+  deadline?: string; // Renamed from due_date to match extracted_tasks schema
   completed_at?: string;
+  blocked_reason?: string; // NEW: Reason why task is blocked
+  blocked_at?: string; // NEW: When task was blocked
+  archived_at?: string; // NEW: When task was archived
   metadata: Record<string, any>;
-  created_at: string;
+  extracted_at: string; // PRIMARY: extracted_tasks uses this instead of created_at
   updated_at: string;
+  created_at?: string; // Optional: for compatibility
 }
 
 export interface TaskDependency {
@@ -33,29 +36,44 @@ export interface TaskWithDependencies extends Task {
 export interface ExtractedTask {
   title: string;
   description?: string;
-  assigned_to?: string;
-  due_date?: string;
+  assignee_id?: string;
+  deadline?: string;
   priority?: Task['priority'];
+}
+
+// Helper type for creating tasks with flexible field names (backward compatibility)
+export interface CreateTaskData {
+  workspace_id: string;
+  origin_message_id?: string;
+  title: string;
+  description?: string;
+  priority?: Task['priority'];
+  assignee_id?: string;
+  created_by?: string; // Not in extracted_tasks, stored in metadata
+  deadline?: string;
+  status?: Task['status'];
+  metadata?: Record<string, any>;
 }
 
 export const taskService = {
   // Create a new task
-  async createTask(data: {
-    workspace_id: string;
-    message_id?: string;
-    title: string;
-    description?: string;
-    priority?: Task['priority'];
-    assigned_to?: string;
-    created_by: string;
-    due_date?: string;
-  }): Promise<Task | null> {
+  async createTask(data: CreateTaskData): Promise<Task | null> {
+    const metadata: Record<string, any> = data.created_by
+      ? { created_by: data.created_by, ...data.metadata }
+      : data.metadata || {};
+
     const { data: task, error } = await supabase
-      .from('tasks')
+      .from('extracted_tasks')
       .insert({
-        ...data,
-        status: 'todo',
-        priority: data.priority || 'medium'
+        workspace_id: data.workspace_id,
+        origin_message_id: data.origin_message_id,
+        title: data.title,
+        description: data.description,
+        status: data.status || 'todo',
+        priority: data.priority || 'medium',
+        assignee_id: data.assignee_id,
+        deadline: data.deadline,
+        metadata
       })
       .select()
       .single();
@@ -83,7 +101,7 @@ export const taskService = {
       /@(\w+)\s+(?:should|needs to|must)\s+(.+?)(?:\n|$)/gi
     ];
 
-    const extractedTasks: Array<{title: string, assigned_to?: string}> = [];
+    const extractedTasks: Array<{title: string, assignee_id?: string}> = [];
 
     actionPatterns.forEach(pattern => {
       let match;
@@ -91,9 +109,9 @@ export const taskService = {
         if (match[1]) {
           extractedTasks.push({ title: match[1].trim() });
         } else if (match[2]) {
-          extractedTasks.push({ 
+          extractedTasks.push({
             title: match[2].trim(),
-            assigned_to: match[1]
+            assignee_id: match[1]
           });
         }
       }
@@ -104,12 +122,12 @@ export const taskService = {
     for (const taskData of extractedTasks) {
       const task = await this.createTask({
         workspace_id: workspaceId,
-        message_id: messageId,
+        origin_message_id: messageId,
         title: taskData.title,
-        assigned_to: taskData.assigned_to,
+        assignee_id: taskData.assignee_id,
         created_by: userId
       });
-      
+
       if (task) {
         createdTasks.push(task);
       }
@@ -121,39 +139,39 @@ export const taskService = {
   // Get all tasks for a workspace
   async getWorkspaceTasks(workspaceId: string): Promise<Task[]> {
     const { data: tasks, error } = await supabase
-      .from('tasks')
+      .from('extracted_tasks')
       .select('*')
       .eq('workspace_id', workspaceId)
-      .order('created_at', { ascending: false });
+      .order('extracted_at', { ascending: false });
 
     if (error) {
       console.error('Error fetching tasks:', error);
       return [];
     }
 
-    return tasks;
+    return tasks || [];
   },
 
   // Get tasks assigned to a user
   async getUserTasks(workspaceId: string, userId: string): Promise<Task[]> {
-    const { data: tasks, error } = await supabase
-      .from('tasks')
+    const { data: tasks, error} = await supabase
+      .from('extracted_tasks')
       .select('*')
       .eq('workspace_id', workspaceId)
-      .eq('assigned_to', userId)
+      .eq('assignee_id', userId)
       .neq('status', 'cancelled')
-      .order('created_at', { ascending: false });
+      .order('extracted_at', { ascending: false });
 
     if (error) {
       console.error('Error fetching user tasks:', error);
       return [];
     }
 
-    return tasks;
+    return tasks || [];
   },
 
   // Update task status
-  async updateTaskStatus(taskId: string, status: Task['status']): Promise<boolean> {
+  async updateTaskStatus(taskId: string, status: Task['status'], blockedReason?: string): Promise<boolean> {
     const updates: any = {
       status,
       updated_at: new Date().toISOString()
@@ -163,8 +181,19 @@ export const taskService = {
       updates.completed_at = new Date().toISOString();
     }
 
+    if (status === 'blocked') {
+      updates.blocked_at = new Date().toISOString();
+      if (blockedReason) {
+        updates.blocked_reason = blockedReason;
+      }
+    } else {
+      // Clear blocked fields when status changes from blocked
+      updates.blocked_at = null;
+      updates.blocked_reason = null;
+    }
+
     const { error } = await supabase
-      .from('tasks')
+      .from('extracted_tasks')
       .update(updates)
       .eq('id', taskId);
 
@@ -179,7 +208,7 @@ export const taskService = {
   // Update task
   async updateTask(taskId: string, updates: Partial<Task>): Promise<boolean> {
     const { error } = await supabase
-      .from('tasks')
+      .from('extracted_tasks')
       .update({
         ...updates,
         updated_at: new Date().toISOString()
@@ -214,7 +243,7 @@ export const taskService = {
   // Get task with dependencies
   async getTaskWithDependencies(taskId: string): Promise<TaskWithDependencies | null> {
     const { data: task, error } = await supabase
-      .from('tasks')
+      .from('extracted_tasks')
       .select('*')
       .eq('id', taskId)
       .single();
@@ -251,7 +280,7 @@ export const taskService = {
   // Helper to get multiple tasks by IDs
   async getTasksByIds(ids: string[]): Promise<Task[]> {
     const { data: tasks, error } = await supabase
-      .from('tasks')
+      .from('extracted_tasks')
       .select('*')
       .in('id', ids);
 
@@ -260,19 +289,19 @@ export const taskService = {
       return [];
     }
 
-    return tasks;
+    return tasks || [];
   },
 
   // Subscribe to task changes
   subscribeToTasks(workspaceId: string, callback: (task: Task) => void) {
     return supabase
-      .channel(`tasks:${workspaceId}`)
+      .channel(`extracted_tasks:${workspaceId}`)
       .on(
         'postgres_changes',
         {
           event: '*',
           schema: 'public',
-          table: 'tasks',
+          table: 'extracted_tasks',
           filter: `workspace_id=eq.${workspaceId}`
         },
         (payload) => {

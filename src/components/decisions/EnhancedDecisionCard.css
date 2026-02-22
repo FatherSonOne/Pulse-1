@@ -380,3 +380,33 @@
 .dark .recommendations-list {
   color: var(--hub-text-secondary);
 }
+
+/* ============================================
+   TASK COUNT BADGE
+   ============================================ */
+
+.task-count-badge {
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  min-width: 20px;
+  height: 20px;
+  padding: 0 6px;
+  background: linear-gradient(135deg, #ec4899 0%, #db2777 100%);
+  color: white;
+  font-size: 0.75rem;
+  font-weight: 700;
+  border-radius: 10px;
+  margin-left: 0.5rem;
+  box-shadow: 0 2px 4px rgba(236, 72, 153, 0.3);
+  animation: badgePulse 2s ease-in-out infinite;
+}
+
+@keyframes badgePulse {
+  0%, 100% {
+    box-shadow: 0 2px 4px rgba(236, 72, 153, 0.3);
+  }
+  50% {
+    box-shadow: 0 2px 8px rgba(236, 72, 153, 0.5);
+  }
+}

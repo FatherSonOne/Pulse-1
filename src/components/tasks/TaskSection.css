@@ -1,0 +1,127 @@
+/* TaskSection Component Styles */
+
+.task-section {
+  margin-bottom: 1.5rem;
+}
+
+.task-section-header {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  width: 100%;
+  padding: 0.75rem 1rem;
+  background: transparent;
+  border: 1px solid var(--hub-border);
+  border-radius: 8px;
+  cursor: pointer;
+  transition: all 0.2s ease;
+}
+
+.task-section-header:hover {
+  background: var(--hub-card-hover);
+  border-color: var(--hub-border-hover);
+}
+
+.task-section-header:focus {
+  outline: 2px solid var(--hub-focus-ring);
+  outline-offset: 2px;
+}
+
+.task-section-header-left {
+  display: flex;
+  align-items: center;
+  gap: 0.75rem;
+}
+
+.task-section-icon {
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  font-size: 1.25rem;
+}
+
+.task-section-title {
+  font-size: 0.875rem;
+  font-weight: 600;
+  color: var(--hub-text-primary);
+  margin: 0;
+}
+
+.task-section-count {
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  min-width: 1.5rem;
+  height: 1.5rem;
+  padding: 0 0.375rem;
+  font-size: 0.75rem;
+  font-weight: 600;
+  color: white;
+  border-radius: 9999px;
+}
+
+.task-section-header-right {
+  display: flex;
+  align-items: center;
+  color: var(--hub-text-secondary);
+}
+
+.task-section-content {
+  margin-top: 0.75rem;
+  display: flex;
+  flex-direction: column;
+  gap: 0.75rem;
+  padding-left: 0.5rem;
+}
+
+/* Card entrance animation */
+.task-section-content > * {
+  animation: taskCardEnter 0.3s ease-out forwards;
+  opacity: 0;
+}
+
+@keyframes taskCardEnter {
+  from {
+    opacity: 0;
+    transform: translateY(8px);
+  }
+  to {
+    opacity: 1;
+    transform: translateY(0);
+  }
+}
+
+/* Dark mode overrides */
+:root.dark .task-section-header {
+  border-color: var(--hub-border);
+}
+
+:root.dark .task-section-header:hover {
+  background: var(--hub-card-hover);
+  border-color: var(--hub-border-hover);
+}
+
+/* Mobile responsive */
+@media (max-width: 768px) {
+  .task-section {
+    margin-bottom: 1rem;
+  }
+
+  .task-section-header {
+    padding: 0.625rem 0.875rem;
+  }
+
+  .task-section-header-left {
+    gap: 0.5rem;
+  }
+
+  .task-section-title {
+    font-size: 0.8125rem;
+  }
+
+  .task-section-count {
+    min-width: 1.25rem;
+    height: 1.25rem;
+    font-size: 0.6875rem;
+  }
+}

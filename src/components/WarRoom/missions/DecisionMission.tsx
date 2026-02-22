@@ -211,7 +211,7 @@ Provide:
   return (
     <div className="h-full w-full flex war-room-container overflow-hidden">
       {/* Progress & Control Panel */}
-      <div className="w-80 shrink-0 border-r border-white/10 flex flex-col bg-black/20">
+      <div className="w-[32rem] shrink-0 border-r border-white/10 flex flex-col bg-black/20">
         {/* Mission Header */}
         <div className="p-4 border-b border-white/10 bg-gradient-to-r from-cyan-500/10 to-blue-500/10">
           <div className="flex items-center gap-2 mb-2">
@@ -510,6 +510,20 @@ Provide:
                 <i className="fa fa-wand-magic-sparkles mr-2"></i>
                 Generate Recommendation
               </button>
+
+              {finalChoice && (
+                <button
+                  onClick={() => {
+                    const selectedOption = options.find(o => o.id === finalChoice);
+                    const decisionSummary = `Decision: ${decision}\n\nChosen Option: ${selectedOption?.name}\nScore: ${calculateOptionScore(finalChoice)}/5\n\nOptions Considered:\n${rankedOptions.map((o, i) => `${i + 1}. ${o.name} (${o.score}/5)`).join('\n')}`;
+                    alert(`Decision Complete!\n\n${decisionSummary}\n\nIn a full implementation, this would:\n- Save to your workspace decisions\n- Notify stakeholders\n- Create follow-up tasks\n- Archive this mission`);
+                  }}
+                  className="w-full war-room-btn bg-gradient-to-r from-emerald-600 to-green-600 hover:from-emerald-700 hover:to-green-700 text-white py-3 font-semibold"
+                >
+                  <i className="fa fa-check-circle mr-2"></i>
+                  Complete & Save Decision
+                </button>
+              )}
             </div>
           )}
         </div>
@@ -578,6 +592,57 @@ Provide:
                   </div>
                   <span className="text-sm war-room-text-secondary">Analyzing decision...</span>
                 </div>
+              </div>
+            </div>
+          )}
+
+          {/* Phase Progression Prompt - Show after AI responds */}
+          {!isLoading && messages.length > 0 && messages[messages.length - 1]?.role === 'assistant' && (
+            <div className="flex justify-center mt-4">
+              <div className="war-room-panel px-6 py-3 inline-flex items-center gap-3">
+                <span className="text-sm war-room-text-secondary">
+                  {currentPhase === 'define' && 'Ready to explore options?'}
+                  {currentPhase === 'options' && options.length >= 2 && 'Ready to set evaluation criteria?'}
+                  {currentPhase === 'criteria' && criteria.length >= 2 && 'Ready to evaluate options?'}
+                  {currentPhase === 'evaluate' && 'Ready for a recommendation?'}
+                </span>
+                {currentPhase === 'define' && (
+                  <button
+                    onClick={() => setCurrentPhase('options')}
+                    className="war-room-btn war-room-btn-primary px-4 py-2 text-sm"
+                  >
+                    <i className="fa fa-arrow-right mr-2"></i>
+                    Add Options
+                  </button>
+                )}
+                {currentPhase === 'options' && options.length >= 2 && (
+                  <button
+                    onClick={() => proceedToPhase('criteria')}
+                    className="war-room-btn war-room-btn-primary px-4 py-2 text-sm"
+                  >
+                    <i className="fa fa-arrow-right mr-2"></i>
+                    Define Criteria
+                  </button>
+                )}
+                {currentPhase === 'criteria' && criteria.length >= 2 && (
+                  <button
+                    onClick={() => proceedToPhase('evaluate')}
+                    className="war-room-btn war-room-btn-primary px-4 py-2 text-sm"
+                  >
+                    <i className="fa fa-arrow-right mr-2"></i>
+                    Evaluate Options
+                  </button>
+                )}
+                {currentPhase === 'evaluate' && (
+                  <button
+                    onClick={generateRecommendation}
+                    disabled={isLoading}
+                    className="war-room-btn war-room-btn-primary px-4 py-2 text-sm"
+                  >
+                    <i className="fa fa-wand-magic-sparkles mr-2"></i>
+                    Get Recommendation
+                  </button>
+                )}
               </div>
             </div>
           )}
