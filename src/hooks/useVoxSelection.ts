@@ -11,8 +11,12 @@ export interface VoxSelectionItem {
   timestamp: Date;
   senderId?: string;
   senderName?: string;
+  sender?: 'me' | 'other'; // Added for determining who sent the message
   transcript?: string;
+  transcription?: string; // Alternative field name used in some components
   mode: 'quick_vox' | 'voice_threads' | 'team_vox' | 'vox_notes' | 'pulse_radio' | 'vox_drop' | 'video_vox' | 'classic';
+  contactId?: string; // Added for linking to contact
+  contactName?: string; // Added for display in archive
 }
 
 export interface UseVoxSelectionReturn {

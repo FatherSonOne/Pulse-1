@@ -196,6 +196,25 @@ export const VoxDownloadModal: React.FC<VoxDownloadModalProps> = ({
     return new Blob([buffer], { type: 'audio/wav' });
   };
 
+  // Generate enhanced file name with order, timestamp, and sender
+  const generateFileName = (item: VoxSelectionItem, index: number, format: ExportFormat): string => {
+    const date = new Date(item.timestamp);
+    const dateStr = date.toISOString().slice(0, 10); // YYYY-MM-DD
+    const timeStr = date.toLocaleTimeString('en-US', {
+      hour12: false,
+      hour: '2-digit',
+      minute: '2-digit',
+      second: '2-digit'
+    }).replace(/:/g, ''); // HHMMSS
+    const sender = item.sender === 'me'
+      ? 'You'
+      : (item.senderName || item.contactName || 'Contact');
+    const orderStr = String(index + 1).padStart(3, '0'); // 001, 002, etc.
+
+    // Format: 001_2026-02-20_143022_You.wav
+    return `${orderStr}_${dateStr}_${timeStr}_${sender}.${format}`;
+  };
+
   // Handle download
   const handleDownload = async () => {
     if (items.length === 0) return;
@@ -207,26 +226,29 @@ export const VoxDownloadModal: React.FC<VoxDownloadModalProps> = ({
 
     let successCount = 0;
 
-    for (let i = 0; i < items.length; i++) {
-      const item = items[i];
-      const timestamp = new Date(item.timestamp).toISOString().slice(0, 10);
-      const baseName = `vox_${item.mode}_${timestamp}_${item.id.slice(0, 8)}`;
+    // Sort items chronologically for consistent ordering
+    const sortedItems = [...items].sort((a, b) =>
+      new Date(a.timestamp).getTime() - new Date(b.timestamp).getTime()
+    );
+
+    for (let i = 0; i < sortedItems.length; i++) {
+      const item = sortedItems[i];
+      const fileName = generateFileName(item, i, selectedFormat);
 
       try {
         if (selectedFormat === 'webm') {
           // Direct download for WebM
-          const success = await downloadFile(item.url, `${baseName}.webm`);
+          const success = await downloadFile(item.url, fileName);
           if (success) successCount++;
         } else {
           // Convert and download
-          const extension = selectedFormat === 'mp3' ? 'mp3' : 'wav';
           const blob = await convertAudio(item.url, selectedFormat);
 
           if (blob) {
             const downloadUrl = URL.createObjectURL(blob);
             const link = document.createElement('a');
             link.href = downloadUrl;
-            link.download = `${baseName}.${extension}`;
+            link.download = fileName;
             document.body.appendChild(link);
             link.click();
             document.body.removeChild(link);
@@ -239,17 +261,17 @@ export const VoxDownloadModal: React.FC<VoxDownloadModalProps> = ({
       }
 
       setCompletedCount(i + 1);
-      setProgress(((i + 1) / items.length) * 100);
+      setProgress(((i + 1) / sortedItems.length) * 100);
 
-      // Small delay between downloads
-      if (i < items.length - 1) {
-        await new Promise(resolve => setTimeout(resolve, 200));
+      // Small delay between downloads to avoid browser blocking
+      if (i < sortedItems.length - 1) {
+        await new Promise(resolve => setTimeout(resolve, 300));
       }
     }
 
     setIsDownloading(false);
 
-    if (successCount === items.length) {
+    if (successCount === sortedItems.length) {
       setTimeout(() => {
         onClose();
         onComplete?.();
@@ -257,7 +279,7 @@ export const VoxDownloadModal: React.FC<VoxDownloadModalProps> = ({
     } else if (successCount === 0) {
       setError('Failed to download files. Please try again.');
     } else {
-      setError(`Downloaded ${successCount} of ${items.length} files.`);
+      setError(`Downloaded ${successCount} of ${sortedItems.length} files.`);
     }
   };
 

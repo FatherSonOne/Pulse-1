@@ -3,6 +3,7 @@
 
 import { useState, useEffect, useCallback, useRef } from 'react';
 import { videoVoxService } from '../services/voxer/videoVoxService';
+import { supabase } from '../services/supabase';
 import type {
   VideoVoxMessage,
   VideoVoxConversation,
@@ -80,12 +81,17 @@ export function useVideoVoxConversations(): UseVideoVoxConversationsReturn {
     refresh();
 
     // Subscribe to new conversations
-    subscriptionRef.current = videoVoxService.subscribeToNewConversations((conversation) => {
+    videoVoxService.subscribeToNewConversations((conversation) => {
       setConversations(prev => [conversation, ...prev]);
+    }).then(channel => {
+      subscriptionRef.current = channel;
     });
 
     return () => {
-      subscriptionRef.current?.unsubscribe();
+      if (subscriptionRef.current) {
+        supabase.removeChannel(subscriptionRef.current);
+        subscriptionRef.current = null;
+      }
     };
   }, [refresh]);
 

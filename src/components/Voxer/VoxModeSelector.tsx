@@ -77,7 +77,7 @@ const MODE_COLORS: Record<string, string> = {
   vox_notes: '#EC4899',
   quick_vox: '#3B82F6',
   vox_drop: '#EF4444',
-  video_vox: '#8B5CF6',
+  video_vox: '#06B6D4', // Cyan for Video Vox
 };
 
 // Industrial dot matrix pattern for CMF Nothing aesthetic
@@ -105,11 +105,22 @@ const VoxModeSelector: React.FC<VoxModeSelectorProps> = ({
 }) => {
   const [hoveredMode, setHoveredMode] = useState<VoxMode | 'classic' | null>(null);
   const [showSettings, setShowSettings] = useState(false);
+  const [lastUsedMode, setLastUsedMode] = useState<VoxMode | 'classic' | null>(null);
+  const [animatingMode, setAnimatingMode] = useState<VoxMode | 'classic' | null>(null);
   const containerRef = useRef<HTMLDivElement>(null);
+
+  // Load last used mode from localStorage
+  useEffect(() => {
+    const saved = localStorage.getItem('voxer_last_used_mode');
+    if (saved) {
+      setLastUsedMode(saved === 'classic' ? 'classic' : saved as VoxMode);
+    }
+  }, []);
 
   useEffect(() => {
     if (isOpen) {
       setHoveredMode(null);
+      setAnimatingMode(null);
     }
   }, [isOpen]);
 
@@ -123,8 +134,18 @@ const VoxModeSelector: React.FC<VoxModeSelectorProps> = ({
       : null;
 
   const handleModeSelect = (mode: VoxMode | 'classic') => {
-    onSelectMode(mode === 'classic' ? null : mode);
-    onClose();
+    // Save as last used mode
+    localStorage.setItem('voxer_last_used_mode', mode);
+    setLastUsedMode(mode);
+
+    // Animate card expansion
+    setAnimatingMode(mode);
+
+    // Delay slightly for animation, then proceed
+    setTimeout(() => {
+      onSelectMode(mode === 'classic' ? null : mode);
+      onClose();
+    }, 300);
   };
 
   const getModeColor = (modeKey: string) => MODE_COLORS[modeKey] || '#6366f1';
@@ -255,6 +276,8 @@ const VoxModeSelector: React.FC<VoxModeSelectorProps> = ({
             {allModes.map(({ key, info }, index) => {
               const isHovered = hoveredMode === key;
               const isCurrent = (key === 'classic' && currentMode === null) || currentMode === key;
+              const isLastUsed = key === lastUsedMode && !isCurrent;
+              const isAnimating = animatingMode === key;
               const modeColor = getModeColor(key);
 
               return (
@@ -267,22 +290,29 @@ const VoxModeSelector: React.FC<VoxModeSelectorProps> = ({
                   className="relative w-full text-left rounded-2xl p-4 cursor-pointer group overflow-hidden"
                   style={{
                     background: isDarkMode
-                      ? isHovered
+                      ? isHovered || isCurrent
                         ? 'rgba(255,255,255,0.06)'
                         : 'rgba(255,255,255,0.02)'
-                      : isHovered
+                      : isHovered || isCurrent
                         ? 'rgba(255,255,255,0.95)'
                         : 'rgba(255,255,255,0.6)',
                     backdropFilter: 'blur(20px)',
                     WebkitBackdropFilter: 'blur(20px)',
-                    border: isHovered
+                    border: isHovered || isCurrent
                       ? `1px solid ${modeColor}40`
                       : `1px solid ${isDarkMode ? 'rgba(255,255,255,0.04)' : 'rgba(0,0,0,0.04)'}`,
-                    boxShadow: isHovered
+                    boxShadow: isCurrent
+                      ? `0 0 0 2px ${modeColor}40, 0 12px 40px ${modeColor}25, inset 0 1px 0 ${isDarkMode ? 'rgba(255,255,255,0.08)' : 'rgba(255,255,255,0.9)'}`
+                      : isHovered
                       ? `0 8px 32px ${modeColor}15, inset 0 1px 0 ${isDarkMode ? 'rgba(255,255,255,0.05)' : 'rgba(255,255,255,0.8)'}`
                       : `0 2px 8px rgba(0,0,0,${isDarkMode ? '0.2' : '0.03'})`,
-                    transform: isHovered ? 'translateX(4px)' : 'translateX(0)',
+                    transform: isAnimating
+                      ? 'scale(1.05)'
+                      : isHovered
+                      ? 'translateX(4px)'
+                      : 'translateX(0)',
                     transition: 'all 0.4s cubic-bezier(0.16, 1, 0.3, 1)',
+                    opacity: isAnimating ? 0.7 : 1,
                   }}
                 >
                   {/* Hover accent line - left edge */}
@@ -349,6 +379,18 @@ const VoxModeSelector: React.FC<VoxModeSelectorProps> = ({
                             }}
                           >
                             Active
+                          </span>
+                        )}
+                        {isLastUsed && (
+                          <span
+                            className="px-2 py-0.5 rounded-full text-[9px] font-bold uppercase tracking-wider"
+                            style={{
+                              background: isDarkMode ? 'rgba(255,255,255,0.08)' : 'rgba(0,0,0,0.05)',
+                              color: isDarkMode ? 'rgba(255,255,255,0.5)' : 'rgba(0,0,0,0.4)',
+                              fontFamily: "'JetBrains Mono', monospace",
+                            }}
+                          >
+                            Resume
                           </span>
                         )}
                       </div>

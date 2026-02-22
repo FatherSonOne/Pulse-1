@@ -22,6 +22,7 @@ import {
 } from 'lucide-react';
 import VoxAudioVisualizer from './VoxAudioVisualizer';
 import RecordingPreview from './RecordingPreview';
+import RecordButton from './RecordButton';
 import { useVoxRecording } from '../../hooks/useVoxRecording';
 import { voxModeService } from '../../services/voxer/voxModeService';
 import type { VoxDrop } from '../../services/voxer/voxModeTypes';
@@ -71,10 +72,15 @@ const VoxDropMode: React.FC<VoxDropModeProps> = ({
     duration: recordingDuration,
     analyser,
     recordingData,
+    recordingMode,
+    setRecordingMode,
     startRecording,
     stopRecording,
     cancelRecording,
     sendRecording,
+    handlePointerDown,
+    handlePointerUp,
+    handleToggleRecording,
   } = useVoxRecording({
     onRecordingComplete: (data) => {
       console.log('Vox Drop recording complete:', data.duration, 'seconds');
@@ -561,7 +567,7 @@ const VoxDropMode: React.FC<VoxDropModeProps> = ({
       {showNewDrop && (
         <div className="fixed inset-0 z-50 flex items-center justify-center p-4 overflow-y-auto">
           <div className={tc.modalOverlay} onClick={resetForm} />
-          <div className={`relative w-full max-w-lg rounded-2xl border ${tc.modalBg} p-6 my-8`}>
+          <div className={`relative w-full max-w-4xl rounded-2xl border ${tc.modalBg} p-6 my-8 max-h-[90vh] overflow-y-auto`}>
             <div className="flex items-center gap-3 mb-6">
               <div
                 className="p-2 rounded-xl"
@@ -572,13 +578,14 @@ const VoxDropMode: React.FC<VoxDropModeProps> = ({
               <h3 className={`text-xl font-bold ${tc.text}`}>Schedule a Vox Drop</h3>
             </div>
 
-            <div className="space-y-5">
-              {/* Recording Section */}
-              <div>
-                <label className={`block text-sm font-medium mb-3 ${tc.textSecondary}`}>
-                  Record Your Message
-                </label>
-                <div className={`p-4 rounded-xl ${tc.cardBg} border ${tc.border}`}>
+            <div className="grid grid-cols-1 lg:grid-cols-2 gap-6">
+              {/* LEFT COLUMN: Recording Section */}
+              <div className="space-y-5">
+                <div>
+                  <label className={`block text-sm font-medium mb-3 ${tc.textSecondary}`}>
+                    Record Your Message
+                  </label>
+                  <div className={`p-4 rounded-xl ${tc.cardBg} border ${tc.border}`}>
                   {recordingState === 'preview' && recordingData ? (
                     <RecordingPreview
                       recordingData={recordingData}
@@ -593,38 +600,22 @@ const VoxDropMode: React.FC<VoxDropModeProps> = ({
                     />
                   ) : (
                     <div className="flex flex-col items-center gap-3">
-                      <button
-                        onClick={handleRecordToggle}
-                        className="relative w-16 h-16 rounded-full flex items-center justify-center transition-all duration-300 ease-out hover:scale-105 active:scale-95"
-                        style={{
-                          background: recordingState === 'recording'
-                            ? 'linear-gradient(135deg, #ef4444 0%, #dc2626 100%)'
-                            : `linear-gradient(135deg, ${MODE_COLOR} 0%, #ec4899 100%)`,
-                          boxShadow: recordingState === 'recording'
-                            ? '0 8px 32px rgba(239,68,68,0.5)'
-                            : `0 8px 32px ${MODE_COLOR}40`
-                        }}
-                        aria-label={recordingState === 'recording' ? 'Stop recording' : 'Start recording'}
-                      >
-                        {recordingState === 'recording' && (
-                          <span className="absolute inset-0 rounded-full animate-ping bg-red-400 opacity-40" />
-                        )}
-                        <span className="relative z-10">
-                          {recordingState === 'recording' ? (
-                            <Square className="w-6 h-6 text-white" />
-                          ) : (
-                            <Mic className="w-6 h-6 text-white" />
-                          )}
-                        </span>
-                      </button>
-
-                      {recordingState === 'recording' ? (
-                        <span className="text-sm font-mono" style={{ color: MODE_COLOR }}>
-                          {formatDuration(recordingDuration)}
-                        </span>
-                      ) : (
-                        <p className={`text-xs ${tc.textMuted}`}>Click to record</p>
-                      )}
+                      {/* New Unified Record Button with Hold/Tap Toggle */}
+                      <RecordButton
+                        state={recordingState}
+                        recordingMode={recordingMode}
+                        duration={recordingDuration}
+                        onPointerDown={handlePointerDown}
+                        onPointerUp={handlePointerUp}
+                        onToggleRecording={handleToggleRecording}
+                        onModeToggle={() => setRecordingMode(recordingMode === 'hold' ? 'tap' : 'hold')}
+                        accentColor={MODE_COLOR}
+                        size="lg"
+                        showModeToggle={true}
+                        showTimer={true}
+                        isDarkMode={isDarkMode}
+                        mode="audio"
+                      />
 
                       {recordingState === 'recording' && (
                         <div className="w-full">
@@ -641,10 +632,10 @@ const VoxDropMode: React.FC<VoxDropModeProps> = ({
                     </div>
                   )}
                 </div>
-              </div>
+                </div>
 
-              {/* Title */}
-              <div>
+                {/* Title */}
+                <div>
                 <label className={`block text-sm font-medium mb-2 ${tc.textSecondary}`}>
                   Title (Optional)
                 </label>
@@ -669,8 +660,11 @@ const VoxDropMode: React.FC<VoxDropModeProps> = ({
                   rows={2}
                   className={`w-full px-4 py-3 rounded-xl ${tc.inputBg} ${tc.text} border focus:outline-none focus:ring-2 focus:ring-red-500/50 transition-all resize-none`}
                 />
+                </div>
               </div>
 
+              {/* RIGHT COLUMN: Recipients & Settings */}
+              <div className="space-y-5">
               {/* Recipients */}
               <div>
                 <label className={`block text-sm font-medium mb-2 ${tc.textSecondary}`}>
@@ -809,6 +803,7 @@ const VoxDropMode: React.FC<VoxDropModeProps> = ({
                     className={`w-full mt-2 px-4 py-2 rounded-xl text-sm focus:outline-none focus:ring-2 focus:ring-purple-500/50 ${tc.inputBg} ${tc.text} border`}
                   />
                 )}
+              </div>
               </div>
             </div>
 

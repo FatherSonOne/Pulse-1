@@ -1,0 +1,506 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Claude Code Image Diagnostic Tool</title>
+    <style>
+        * {
+            margin: 0;
+            padding: 0;
+            box-sizing: border-box;
+        }
+
+        body {
+            font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, Oxygen, Ubuntu, Cantarell, sans-serif;
+            background: #1a1a1a;
+            color: #e4e4e7;
+            padding: 2rem;
+            line-height: 1.6;
+        }
+
+        .container {
+            max-width: 1200px;
+            margin: 0 auto;
+        }
+
+        h1 {
+            color: #f87171;
+            margin-bottom: 0.5rem;
+        }
+
+        .subtitle {
+            color: #a1a1aa;
+            margin-bottom: 2rem;
+        }
+
+        .drop-zone {
+            border: 3px dashed #3f3f46;
+            border-radius: 12px;
+            padding: 3rem;
+            text-align: center;
+            margin-bottom: 2rem;
+            background: #27272a;
+            transition: all 0.3s ease;
+            cursor: pointer;
+        }
+
+        .drop-zone.dragover {
+            border-color: #f87171;
+            background: #3f3f46;
+        }
+
+        .drop-zone:hover {
+            border-color: #52525b;
+        }
+
+        .icon {
+            font-size: 4rem;
+            margin-bottom: 1rem;
+            opacity: 0.5;
+        }
+
+        .results {
+            background: #27272a;
+            border-radius: 12px;
+            padding: 2rem;
+            margin-bottom: 2rem;
+        }
+
+        .result-item {
+            margin-bottom: 1.5rem;
+            padding-bottom: 1.5rem;
+            border-bottom: 1px solid #3f3f46;
+        }
+
+        .result-item:last-child {
+            border-bottom: none;
+            margin-bottom: 0;
+            padding-bottom: 0;
+        }
+
+        .result-label {
+            color: #a1a1aa;
+            font-size: 0.875rem;
+            font-weight: 600;
+            text-transform: uppercase;
+            letter-spacing: 0.05em;
+            margin-bottom: 0.5rem;
+        }
+
+        .result-value {
+            font-family: 'Courier New', monospace;
+            background: #18181b;
+            padding: 0.75rem;
+            border-radius: 6px;
+            overflow-x: auto;
+            word-break: break-all;
+        }
+
+        .success {
+            color: #4ade80;
+        }
+
+        .error {
+            color: #f87171;
+        }
+
+        .warning {
+            color: #facc15;
+        }
+
+        .preview-container {
+            display: grid;
+            grid-template-columns: repeat(auto-fill, minmax(200px, 1fr));
+            gap: 1rem;
+            margin-top: 1rem;
+        }
+
+        .preview-item {
+            background: #18181b;
+            border-radius: 8px;
+            padding: 1rem;
+            border: 1px solid #3f3f46;
+        }
+
+        .preview-item img {
+            width: 100%;
+            height: 150px;
+            object-fit: contain;
+            border-radius: 6px;
+            background: #000;
+            margin-bottom: 0.5rem;
+        }
+
+        .preview-info {
+            font-size: 0.75rem;
+            color: #71717a;
+        }
+
+        button {
+            background: #f87171;
+            color: white;
+            border: none;
+            padding: 0.75rem 1.5rem;
+            border-radius: 6px;
+            font-weight: 600;
+            cursor: pointer;
+            transition: all 0.2s ease;
+        }
+
+        button:hover {
+            background: #ef4444;
+            transform: translateY(-1px);
+        }
+
+        button:active {
+            transform: translateY(0);
+        }
+
+        .hidden {
+            display: none;
+        }
+
+        .log-section {
+            background: #18181b;
+            border-radius: 8px;
+            padding: 1rem;
+            margin-top: 1rem;
+            max-height: 300px;
+            overflow-y: auto;
+            font-family: 'Courier New', monospace;
+            font-size: 0.875rem;
+        }
+
+        .log-entry {
+            padding: 0.25rem 0;
+            border-bottom: 1px solid #27272a;
+        }
+
+        .log-timestamp {
+            color: #71717a;
+        }
+
+        .log-type-info {
+            color: #60a5fa;
+        }
+
+        .log-type-success {
+            color: #4ade80;
+        }
+
+        .log-type-error {
+            color: #f87171;
+        }
+
+        .log-type-warning {
+            color: #facc15;
+        }
+
+        input[type="file"] {
+            display: none;
+        }
+    </style>
+</head>
+<body>
+    <div class="container">
+        <h1>🔍 Claude Code Image Diagnostic Tool</h1>
+        <p class="subtitle">Test image paste/drop handling and identify format issues</p>
+
+        <div class="drop-zone" id="dropZone">
+            <div class="icon">📸</div>
+            <h2>Paste or Drop Images Here</h2>
+            <p style="color: #71717a; margin-top: 0.5rem;">
+                Ctrl+V to paste | Drag & drop files | Click to browse
+            </p>
+            <input type="file" id="fileInput" accept="image/*" multiple>
+        </div>
+
+        <div id="resultsContainer" class="hidden">
+            <div class="results">
+                <h2>📊 Diagnostic Results</h2>
+                <div id="results"></div>
+            </div>
+
+            <div class="results">
+                <h2>🖼️ Image Previews</h2>
+                <div id="previews" class="preview-container"></div>
+            </div>
+
+            <div class="results">
+                <h2>📝 Event Log</h2>
+                <div id="eventLog" class="log-section"></div>
+            </div>
+
+            <button onclick="clearResults()">Clear Results</button>
+        </div>
+    </div>
+
+    <script>
+        const dropZone = document.getElementById('dropZone');
+        const fileInput = document.getElementById('fileInput');
+        const resultsContainer = document.getElementById('resultsContainer');
+        const resultsDiv = document.getElementById('results');
+        const previewsDiv = document.getElementById('previews');
+        const eventLog = document.getElementById('eventLog');
+
+        let testCount = 0;
+
+        function log(message, type = 'info') {
+            const timestamp = new Date().toLocaleTimeString();
+            const entry = document.createElement('div');
+            entry.className = 'log-entry';
+            entry.innerHTML = `<span class="log-timestamp">[${timestamp}]</span> <span class="log-type-${type}">[${type.toUpperCase()}]</span> ${message}`;
+            eventLog.appendChild(entry);
+            eventLog.scrollTop = eventLog.scrollHeight;
+            console.log(`[${type}] ${message}`);
+        }
+
+        function clearResults() {
+            resultsDiv.innerHTML = '';
+            previewsDiv.innerHTML = '';
+            eventLog.innerHTML = '';
+            resultsContainer.classList.add('hidden');
+            testCount = 0;
+        }
+
+        function showResults() {
+            resultsContainer.classList.remove('hidden');
+        }
+
+        function addResult(label, value, className = '') {
+            const item = document.createElement('div');
+            item.className = 'result-item';
+            item.innerHTML = `
+                <div class="result-label">${label}</div>
+                <div class="result-value ${className}">${value}</div>
+            `;
+            resultsDiv.appendChild(item);
+        }
+
+        async function analyzeImage(file, source) {
+            testCount++;
+            const testId = testCount;
+
+            log(`Test #${testId}: Analyzing image from ${source}`, 'info');
+            log(`File name: ${file.name}, Size: ${(file.size / 1024).toFixed(2)} KB, Type: ${file.type}`, 'info');
+
+            showResults();
+
+            // Basic file info
+            addResult(`Test #${testId} - File Name`, file.name);
+            addResult(`Test #${testId} - File Size`, `${(file.size / 1024).toFixed(2)} KB`);
+            addResult(`Test #${testId} - MIME Type`, file.type);
+            addResult(`Test #${testId} - Source`, source);
+
+            // Try FileReader (base64)
+            try {
+                const dataUrl = await readFileAsDataURL(file);
+                const base64Length = dataUrl.length;
+                const preview = dataUrl.substring(0, 100) + '...';
+
+                addResult(
+                    `Test #${testId} - FileReader (Data URL)`,
+                    `✅ Success - ${(base64Length / 1024).toFixed(2)} KB base64`,
+                    'success'
+                );
+                log(`FileReader successful: ${(base64Length / 1024).toFixed(2)} KB`, 'success');
+
+                // Create preview
+                const previewItem = document.createElement('div');
+                previewItem.className = 'preview-item';
+                previewItem.innerHTML = `
+                    <img src="${dataUrl}" alt="${file.name}">
+                    <div class="preview-info">
+                        <strong>Test #${testId}</strong><br>
+                        ${file.name}<br>
+                        ${(file.size / 1024).toFixed(2)} KB<br>
+                        Source: ${source}
+                    </div>
+                `;
+                previewsDiv.appendChild(previewItem);
+
+                // Test if image loads
+                const img = new Image();
+                const loadPromise = new Promise((resolve, reject) => {
+                    img.onload = () => resolve({ width: img.width, height: img.height });
+                    img.onerror = reject;
+                });
+                img.src = dataUrl;
+
+                const dimensions = await loadPromise;
+                addResult(
+                    `Test #${testId} - Image Dimensions`,
+                    `${dimensions.width} × ${dimensions.height}`,
+                    'success'
+                );
+                log(`Image loaded successfully: ${dimensions.width}×${dimensions.height}`, 'success');
+
+            } catch (error) {
+                addResult(
+                    `Test #${testId} - FileReader`,
+                    `❌ Failed: ${error.message}`,
+                    'error'
+                );
+                log(`FileReader failed: ${error.message}`, 'error');
+            }
+
+            // Try Object URL
+            try {
+                const objectUrl = URL.createObjectURL(file);
+                addResult(
+                    `Test #${testId} - Object URL`,
+                    `✅ ${objectUrl.substring(0, 50)}...`,
+                    'success'
+                );
+                log(`Object URL created: ${objectUrl}`, 'success');
+
+                // Clean up
+                setTimeout(() => URL.revokeObjectURL(objectUrl), 5000);
+            } catch (error) {
+                addResult(
+                    `Test #${testId} - Object URL`,
+                    `❌ Failed: ${error.message}`,
+                    'error'
+                );
+                log(`Object URL failed: ${error.message}`, 'error');
+            }
+
+            // Check for potential issues
+            if (file.size > 5 * 1024 * 1024) {
+                addResult(
+                    `Test #${testId} - Warning`,
+                    '⚠️ File size > 5MB may cause issues in some contexts',
+                    'warning'
+                );
+                log('Warning: Large file size (>5MB)', 'warning');
+            }
+
+            if (!file.type || file.type === '') {
+                addResult(
+                    `Test #${testId} - Warning`,
+                    '⚠️ No MIME type - may cause issues',
+                    'warning'
+                );
+                log('Warning: No MIME type detected', 'warning');
+            }
+
+            // Windows-specific path check
+            if (file.name.includes('\\')) {
+                addResult(
+                    `Test #${testId} - Warning`,
+                    '⚠️ File name contains backslashes (Windows path issue)',
+                    'warning'
+                );
+                log('Warning: Backslashes in filename', 'warning');
+            }
+
+            log(`Test #${testId} complete`, 'success');
+            log('---', 'info');
+        }
+
+        function readFileAsDataURL(file) {
+            return new Promise((resolve, reject) => {
+                const reader = new FileReader();
+                reader.onload = (e) => resolve(e.target.result);
+                reader.onerror = reject;
+                reader.readAsDataURL(file);
+            });
+        }
+
+        // Paste event
+        document.addEventListener('paste', async (e) => {
+            log('Paste event detected', 'info');
+            const items = e.clipboardData?.items;
+
+            if (!items) {
+                log('No clipboard items found', 'error');
+                return;
+            }
+
+            log(`Found ${items.length} clipboard items`, 'info');
+
+            for (let i = 0; i < items.length; i++) {
+                const item = items[i];
+                log(`Item ${i}: kind=${item.kind}, type=${item.type}`, 'info');
+
+                if (item.kind === 'file' && item.type.startsWith('image/')) {
+                    e.preventDefault();
+                    const file = item.getAsFile();
+                    if (file) {
+                        await analyzeImage(file, 'Clipboard Paste');
+                    } else {
+                        log('Failed to get file from clipboard item', 'error');
+                    }
+                }
+            }
+        });
+
+        // Drag and drop events
+        dropZone.addEventListener('dragover', (e) => {
+            e.preventDefault();
+            e.stopPropagation();
+            dropZone.classList.add('dragover');
+        });
+
+        dropZone.addEventListener('dragleave', (e) => {
+            e.preventDefault();
+            e.stopPropagation();
+            dropZone.classList.remove('dragover');
+        });
+
+        dropZone.addEventListener('drop', async (e) => {
+            e.preventDefault();
+            e.stopPropagation();
+            dropZone.classList.remove('dragover');
+
+            log('Drop event detected', 'info');
+            const files = e.dataTransfer?.files;
+
+            if (!files || files.length === 0) {
+                log('No files in drop event', 'error');
+                return;
+            }
+
+            log(`Found ${files.length} dropped files`, 'info');
+
+            for (let i = 0; i < files.length; i++) {
+                const file = files[i];
+                if (file.type.startsWith('image/')) {
+                    await analyzeImage(file, 'Drag & Drop');
+                } else {
+                    log(`Skipping non-image file: ${file.name} (${file.type})`, 'warning');
+                }
+            }
+        });
+
+        // Click to browse
+        dropZone.addEventListener('click', () => {
+            fileInput.click();
+        });
+
+        fileInput.addEventListener('change', async (e) => {
+            const files = e.target.files;
+            if (!files || files.length === 0) return;
+
+            log('File input changed', 'info');
+            log(`Found ${files.length} selected files`, 'info');
+
+            for (let i = 0; i < files.length; i++) {
+                const file = files[i];
+                if (file.type.startsWith('image/')) {
+                    await analyzeImage(file, 'File Browser');
+                } else {
+                    log(`Skipping non-image file: ${file.name} (${file.type})`, 'warning');
+                }
+            }
+
+            // Reset input
+            fileInput.value = '';
+        });
+
+        log('Diagnostic tool initialized', 'success');
+        log('Ready to test image paste/drop functionality', 'info');
+    </script>
+</body>
+</html>

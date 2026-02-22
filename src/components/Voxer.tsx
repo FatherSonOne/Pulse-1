@@ -31,6 +31,11 @@ import { CollaborativeVox } from './Voxer/CollaborativeVox';
 import { VoiceCommandsHub, FloatingVoiceButton } from './Voxer/VoiceCommandsHub';
 import { VoxPreviewPanel } from './Voxer/VoxPreviewPanel';
 
+// Selection and Archive/Download functionality
+import { useVoxSelection } from '../hooks/useVoxSelection';
+import { VoxSelectToolbar } from './Voxer/VoxSelectToolbar';
+import VoxDownloadModal from './Voxer/VoxDownloadModal';
+
 // Vox Mode System - 7 Communication Styles
 import {
   VoxModeSelector,
@@ -228,7 +233,20 @@ const Voxer: React.FC<VoxerProps> = ({ apiKey, contacts, initialContactId, isDar
   const [showPlaylists, setShowPlaylists] = useState(false);
   const [showAddToPlaylist, setShowAddToPlaylist] = useState(false);
   const [addToPlaylistVoxId, setAddToPlaylistVoxId] = useState<string | null>(null);
-  
+
+  // 9. Selection Mode for Archive/Download
+  const {
+    isSelectionMode,
+    selectedItems,
+    selectionCount,
+    totalDuration,
+    toggleSelection,
+    selectAll,
+    deselectAll,
+    enterSelectionMode,
+    exitSelectionMode,
+  } = useVoxSelection();
+
   // 9. Collaborative Vox
   const [showCollabVox, setShowCollabVox] = useState(false);
   const [activeCollabs, setActiveCollabs] = useState<CollabVoxType[]>([]);
@@ -2117,6 +2135,23 @@ const Voxer: React.FC<VoxerProps> = ({ apiKey, contacts, initialContactId, isDar
             </div>
           )}
 
+          {/* Selection Toolbar */}
+          {isSelectionMode && (
+            <div className="border-b border-zinc-200 dark:border-zinc-800">
+              <VoxSelectToolbar
+                selectedItems={selectedItems}
+                selectionCount={selectionCount}
+                totalDuration={totalDuration}
+                onSelectAll={() => selectAll(filteredThreadRecordings)}
+                onDeselectAll={deselectAll}
+                onExitSelection={exitSelectionMode}
+                allSelected={selectionCount === filteredThreadRecordings.length}
+                isDarkMode={isDarkMode}
+                contactName={activeContact?.name || 'Unknown Contact'}
+              />
+            </div>
+          )}
+
           {/* Messages Area */}
           <div className={`flex-1 overflow-y-auto p-4 pb-40 space-y-6 ${activeContactId ? 'pt-28' : 'pt-4'}`}>
               {!activeContactId && !activeGroupId && (
@@ -2176,8 +2211,61 @@ const Voxer: React.FC<VoxerProps> = ({ apiKey, contacts, initialContactId, isDar
               )}
 
               {filteredThreadRecordings.map((rec) => (
-                  <div key={rec.id} className={`flex flex-col ${rec.sender === 'me' ? 'items-end' : 'items-start'} animate-slide-up`}>
-                      <div className={`max-w-[85%] md:max-w-[60%] rounded-2xl p-3 border ${rec.sender === 'me' ? 'bg-orange-50 dark:bg-orange-900/10 border-orange-200 dark:border-orange-800 rounded-br-none' : 'bg-white dark:bg-zinc-900 border-zinc-200 dark:border-zinc-800 rounded-bl-none'} ${rec.starred ? 'ring-2 ring-yellow-400' : ''}`}>
+                  <div key={rec.id} className={`flex gap-2 ${rec.sender === 'me' ? 'flex-row-reverse' : 'flex-row'} items-start animate-slide-up`}>
+                      {/* Selection Checkbox */}
+                      {isSelectionMode && (
+                        <div className="flex-shrink-0 pt-1">
+                          <button
+                            onClick={() => toggleSelection({
+                              id: rec.id,
+                              type: rec.type,
+                              url: rec.url,
+                              duration: rec.duration,
+                              timestamp: rec.timestamp,
+                              sender: rec.sender,
+                              senderName: activeContact?.name,
+                              transcript: rec.transcript,
+                              transcription: rec.transcription,
+                              mode: 'classic',
+                              contactId: activeContactId,
+                              contactName: activeContact?.name,
+                            })}
+                            className={`w-6 h-6 rounded-full border-2 flex items-center justify-center transition ${
+                              selectedItems.some(item => item.id === rec.id)
+                                ? 'bg-orange-500 border-orange-500'
+                                : 'border-zinc-300 dark:border-zinc-600 hover:border-orange-400'
+                            }`}
+                          >
+                            {selectedItems.some(item => item.id === rec.id) && (
+                              <i className="fa-solid fa-check text-white text-xs"></i>
+                            )}
+                          </button>
+                        </div>
+                      )}
+
+                      <div
+                        className={`max-w-[85%] md:max-w-[60%] rounded-2xl p-3 border ${rec.sender === 'me' ? 'bg-orange-50 dark:bg-orange-900/10 border-orange-200 dark:border-orange-800 rounded-br-none' : 'bg-white dark:bg-zinc-900 border-zinc-200 dark:border-zinc-800 rounded-bl-none'} ${rec.starred ? 'ring-2 ring-yellow-400' : ''} ${isSelectionMode && selectedItems.some(item => item.id === rec.id) ? 'ring-2 ring-orange-500' : ''}`}
+                        onContextMenu={(e) => {
+                          e.preventDefault();
+                          if (!isSelectionMode) {
+                            enterSelectionMode();
+                            toggleSelection({
+                              id: rec.id,
+                              type: rec.type,
+                              url: rec.url,
+                              duration: rec.duration,
+                              timestamp: rec.timestamp,
+                              sender: rec.sender,
+                              senderName: activeContact?.name,
+                              transcript: rec.transcript,
+                              transcription: rec.transcription,
+                              mode: 'classic',
+                              contactId: activeContactId,
+                              contactName: activeContact?.name,
+                            });
+                          }
+                        }}
+                      >
 
                           {/* Top Bar: Quality, Tags, Star */}
                           <div className="flex items-center justify-between gap-2 mb-2">
@@ -2455,9 +2543,23 @@ const Voxer: React.FC<VoxerProps> = ({ apiKey, contacts, initialContactId, isDar
                                       </button>
                                       <button
                                         onClick={() => {
+                                          // Generate enhanced filename: Vox_YYYY-MM-DD_HHMMSS_Sender.webm
+                                          const date = rec.timestamp;
+                                          const dateStr = date.toISOString().slice(0, 10); // YYYY-MM-DD
+                                          const timeStr = date.toLocaleTimeString('en-US', {
+                                            hour12: false,
+                                            hour: '2-digit',
+                                            minute: '2-digit',
+                                            second: '2-digit'
+                                          }).replace(/:/g, ''); // HHMMSS
+                                          const sender = rec.sender === 'me'
+                                            ? 'You'
+                                            : (activeContact?.name || 'Contact');
+                                          const fileName = `Vox_${dateStr}_${timeStr}_${sender}.webm`;
+
                                           const link = document.createElement('a');
                                           link.href = rec.url;
-                                          link.download = `vox-${rec.id}.webm`;
+                                          link.download = fileName;
                                           link.click();
                                           setSelectedRecordingForDetails(null);
                                         }}

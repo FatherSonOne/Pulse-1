@@ -16,6 +16,7 @@ import {
 } from 'lucide-react';
 import VoxAudioVisualizer from './VoxAudioVisualizer';
 import RecordingPreview from './RecordingPreview';
+import RecordButton from './RecordButton';
 import { useVoxRecording } from '../../hooks/useVoxRecording';
 import { voxModeService } from '../../services/voxer/voxModeService';
 import analyticsCollector from '../../services/analyticsCollector';
@@ -59,10 +60,15 @@ const QuickVoxMode: React.FC<QuickVoxModeProps> = ({
     duration: recordingDuration,
     analyser,
     recordingData,
+    recordingMode,
+    setRecordingMode,
     startRecording,
     stopRecording,
     cancelRecording,
     sendRecording,
+    handlePointerDown,
+    handlePointerUp,
+    handleToggleRecording,
   } = useVoxRecording({
     onRecordingComplete: (data) => {
       console.log('Quick Vox recording complete:', data.duration, 'seconds');
@@ -546,40 +552,22 @@ const QuickVoxMode: React.FC<QuickVoxModeProps> = ({
                 />
               ) : (
                 <div className="flex flex-col items-center gap-4 w-full">
-                  {/* Recording Button */}
-                  <button
-                    onClick={handleRecordToggle}
-                    className="relative w-16 h-16 md:w-20 md:h-20 rounded-full flex items-center justify-center transition-all duration-300 ease-out hover:scale-105 active:scale-95"
-                    style={{
-                      background: recordingState === 'recording'
-                        ? 'linear-gradient(135deg, #ef4444 0%, #dc2626 100%)'
-                        : `linear-gradient(135deg, ${MODE_COLOR} 0%, #06b6d4 100%)`,
-                      boxShadow: recordingState === 'recording'
-                        ? '0 8px 32px rgba(239,68,68,0.5)'
-                        : `0 8px 32px ${MODE_COLOR}40`
-                    }}
-                    aria-label={recordingState === 'recording' ? 'Stop recording' : 'Start recording'}
-                  >
-                    {recordingState === 'recording' && (
-                      <span className="absolute inset-0 rounded-full animate-ping bg-red-400 opacity-40" />
-                    )}
-                    <span className="relative z-10">
-                      {recordingState === 'recording' ? (
-                        <Square className="w-6 h-6 md:w-8 md:h-8 text-white" />
-                      ) : (
-                        <Mic className="w-6 h-6 md:w-8 md:h-8 text-white" />
-                      )}
-                    </span>
-                  </button>
-
-                  {/* Duration or hint text */}
-                  {recordingState === 'recording' ? (
-                    <span className="text-sm font-mono" style={{ color: MODE_COLOR }}>
-                      {formatDuration(recordingDuration)}
-                    </span>
-                  ) : (
-                    <p className={`text-sm ${tc.textMuted}`}>Click to record</p>
-                  )}
+                  {/* New Unified Record Button with Hold/Tap Toggle */}
+                  <RecordButton
+                    state={recordingState}
+                    recordingMode={recordingMode}
+                    duration={recordingDuration}
+                    onPointerDown={handlePointerDown}
+                    onPointerUp={handlePointerUp}
+                    onToggleRecording={handleToggleRecording}
+                    onModeToggle={() => setRecordingMode(recordingMode === 'hold' ? 'tap' : 'hold')}
+                    accentColor={MODE_COLOR}
+                    size="xl"
+                    showModeToggle={true}
+                    showTimer={true}
+                    isDarkMode={isDarkMode}
+                    mode="audio"
+                  />
 
                   {/* Live Waveform */}
                   {recordingState === 'recording' && (

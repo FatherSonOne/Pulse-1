@@ -26,6 +26,9 @@ import {
 } from 'lucide-react';
 import VoxAudioVisualizer from './VoxAudioVisualizer';
 import RecordingPreview from './RecordingPreview';
+import RecordButton from './RecordButton';
+import VoxModeHeader from './VoxModeHeader';
+import VoxRecordArea from './VoxRecordArea';
 import { useVoxRecording } from '../../hooks/useVoxRecording';
 import { voxModeService } from '../../services/voxer/voxModeService';
 import analyticsCollector from '../../services/analyticsCollector';
@@ -91,10 +94,15 @@ const TeamVoxMode: React.FC<TeamVoxModeProps> = ({
     duration: recordingDuration,
     analyser,
     recordingData,
+    recordingMode,
+    setRecordingMode,
     startRecording,
     stopRecording,
     cancelRecording,
     sendRecording,
+    handlePointerDown,
+    handlePointerUp,
+    handleToggleRecording,
   } = useVoxRecording({
     onRecordingComplete: (data) => {
       console.log('Team Vox recording complete:', data.duration, 'seconds');
@@ -466,144 +474,122 @@ const TeamVoxMode: React.FC<TeamVoxModeProps> = ({
 
   return (
     <div className={`h-full flex flex-col ${tc.pageBg}`}>
-      {/* Header */}
-      <div
-        className={`px-4 md:px-6 py-4 border-b ${tc.border} ${tc.panelBg}`}
-        style={{
-          background: isDarkMode
-            ? `linear-gradient(135deg, rgba(245,158,11,0.15) 0%, transparent 50%)`
-            : `linear-gradient(135deg, rgba(245,158,11,0.1) 0%, transparent 50%)`
-        }}
-      >
-        <div className="flex items-center gap-3 md:gap-4">
-          <button
-            onClick={onBack}
-            className={`p-2 rounded-xl ${tc.btnGhost} transition-all duration-200`}
-            aria-label="Go back"
-          >
-            <ChevronLeft className="w-5 h-5" />
-          </button>
+      {/* Unified Mode Header */}
+      <VoxModeHeader
+        modeName="Team Vox"
+        modeTagline="Your Team's Voice Hub"
+        modeColor={MODE_COLOR}
+        modeIcon="👥"
+        onBack={onBack}
+        isDarkMode={isDarkMode}
+        actions={
+          <>
+            {/* Workspace Selector - Desktop */}
+            {selectedWorkspace && (
+              <div ref={workspaceDropdownRef} className="hidden md:block relative">
+                <button
+                  onClick={() => setShowWorkspaceDropdown(!showWorkspaceDropdown)}
+                  className={`flex items-center gap-2 px-4 py-2 rounded-xl text-sm font-medium transition-all duration-200 ${tc.btnSecondary} border hover:border-amber-500/50`}
+                  title="Switch workspace"
+                >
+                  <Briefcase className="w-4 h-4" />
+                  <span className="max-w-[150px] truncate">{selectedWorkspace.name}</span>
+                  <ChevronDown className={`w-4 h-4 transition-transform ${showWorkspaceDropdown ? 'rotate-180' : ''}`} />
+                </button>
 
-          <div
-            className="p-2.5 rounded-xl shadow-lg"
-            style={{
-              background: `linear-gradient(135deg, ${MODE_COLOR} 0%, #ea580c 100%)`,
-              boxShadow: `0 8px 24px ${MODE_COLOR}40`
-            }}
-          >
-            <Users className="w-5 h-5 md:w-6 md:h-6 text-white" />
-          </div>
-
-          <div className="flex-1 min-w-0">
-            <h1 className={`text-lg md:text-xl font-bold ${tc.text}`}>Team Vox</h1>
-            <p className={`text-xs md:text-sm ${tc.textSecondary} hidden sm:block`}>Your Team's Voice Hub</p>
-          </div>
-
-          {/* Workspace Selector - Desktop */}
-          {selectedWorkspace && (
-            <div ref={workspaceDropdownRef} className="hidden md:block relative">
-              <button
-                onClick={() => setShowWorkspaceDropdown(!showWorkspaceDropdown)}
-                className={`flex items-center gap-2 px-4 py-2 rounded-xl text-sm font-medium transition-all duration-200 ${tc.btnSecondary} border hover:border-amber-500/50`}
-                title="Switch workspace"
-              >
-                <Briefcase className="w-4 h-4" />
-                <span className="max-w-[150px] truncate">{selectedWorkspace.name}</span>
-                <ChevronDown className={`w-4 h-4 transition-transform ${showWorkspaceDropdown ? 'rotate-180' : ''}`} />
-              </button>
-
-              {/* Workspace Dropdown */}
-              {showWorkspaceDropdown && (
-                <div className="absolute top-full right-0 mt-2 w-64 z-50">
-                  <div
-                    className={`rounded-xl border ${tc.modalBg} shadow-2xl overflow-hidden`}
-                    style={{ boxShadow: `0 8px 32px ${MODE_COLOR}20` }}
-                  >
-                    <div className={`px-4 py-3 border-b ${tc.border}`}>
-                      <p className={`text-xs font-semibold ${tc.textMuted} uppercase`}>Switch Workspace</p>
-                    </div>
-                    <div className="max-h-64 overflow-y-auto py-2">
-                      {workspaces.map((workspace) => (
-                        <button
-                          key={workspace.id}
-                          onClick={() => {
-                            setSelectedWorkspace(workspace);
-                            setExpandedWorkspaces(new Set([workspace.id]));
-                            if (workspace.channels.length > 0) {
-                              setSelectedChannel(workspace.channels[0]);
-                            } else {
-                              setSelectedChannel(null);
-                            }
-                            setShowWorkspaceDropdown(false);
-                          }}
-                          className={`w-full px-4 py-3 flex items-center gap-3 transition-all ${
-                            selectedWorkspace?.id === workspace.id
-                              ? `${tc.activeBg} text-amber-500`
-                              : `${tc.hoverBg} ${tc.text}`
-                          }`}
-                        >
-                          <div
-                            className="w-8 h-8 rounded-lg flex items-center justify-center shrink-0"
-                            style={{
-                              background: selectedWorkspace?.id === workspace.id
-                                ? `linear-gradient(135deg, ${MODE_COLOR} 0%, #ea580c 100%)`
-                                : isDarkMode ? 'rgba(55,65,81,0.5)' : 'rgba(229,231,235,0.8)'
+                {/* Workspace Dropdown */}
+                {showWorkspaceDropdown && (
+                  <div className="absolute top-full right-0 mt-2 w-64 z-50">
+                    <div
+                      className={`rounded-xl border ${tc.modalBg} shadow-2xl overflow-hidden`}
+                      style={{ boxShadow: `0 8px 32px ${MODE_COLOR}20` }}
+                    >
+                      <div className={`px-4 py-3 border-b ${tc.border}`}>
+                        <p className={`text-xs font-semibold ${tc.textMuted} uppercase`}>Switch Workspace</p>
+                      </div>
+                      <div className="max-h-64 overflow-y-auto py-2">
+                        {workspaces.map((workspace) => (
+                          <button
+                            key={workspace.id}
+                            onClick={() => {
+                              setSelectedWorkspace(workspace);
+                              setExpandedWorkspaces(new Set([workspace.id]));
+                              if (workspace.channels.length > 0) {
+                                setSelectedChannel(workspace.channels[0]);
+                              } else {
+                                setSelectedChannel(null);
+                              }
+                              setShowWorkspaceDropdown(false);
                             }}
+                            className={`w-full px-4 py-3 flex items-center gap-3 transition-all ${
+                              selectedWorkspace?.id === workspace.id
+                                ? `${tc.activeBg} text-amber-500`
+                                : `${tc.hoverBg} ${tc.text}`
+                            }`}
                           >
-                            <span className={`text-sm font-bold ${selectedWorkspace?.id === workspace.id ? 'text-white' : tc.textSecondary}`}>
-                              {workspace.name.charAt(0).toUpperCase()}
-                            </span>
-                          </div>
-                          <div className="flex-1 text-left min-w-0">
-                            <p className={`font-medium truncate ${selectedWorkspace?.id === workspace.id ? 'text-amber-500' : tc.text}`}>
-                              {workspace.name}
-                            </p>
-                            <p className={`text-xs ${tc.textMuted} truncate`}>
-                              {workspace.channels.length} channel{workspace.channels.length !== 1 ? 's' : ''}
-                            </p>
-                          </div>
-                          {selectedWorkspace?.id === workspace.id && (
-                            <div className="w-2 h-2 rounded-full bg-amber-500" />
-                          )}
+                            <div
+                              className="w-8 h-8 rounded-lg flex items-center justify-center shrink-0"
+                              style={{
+                                background: selectedWorkspace?.id === workspace.id
+                                  ? `linear-gradient(135deg, ${MODE_COLOR} 0%, #ea580c 100%)`
+                                  : isDarkMode ? 'rgba(55,65,81,0.5)' : 'rgba(229,231,235,0.8)'
+                              }}
+                            >
+                              <span className={`text-sm font-bold ${selectedWorkspace?.id === workspace.id ? 'text-white' : tc.textSecondary}`}>
+                                {workspace.name.charAt(0).toUpperCase()}
+                              </span>
+                            </div>
+                            <div className="flex-1 text-left min-w-0">
+                              <p className={`font-medium truncate ${selectedWorkspace?.id === workspace.id ? 'text-amber-500' : tc.text}`}>
+                                {workspace.name}
+                              </p>
+                              <p className={`text-xs ${tc.textMuted} truncate`}>
+                                {workspace.channels.length} channel{workspace.channels.length !== 1 ? 's' : ''}
+                              </p>
+                            </div>
+                            {selectedWorkspace?.id === workspace.id && (
+                              <div className="w-2 h-2 rounded-full bg-amber-500" />
+                            )}
+                          </button>
+                        ))}
+                      </div>
+                      <div className={`px-2 py-2 border-t ${tc.border}`}>
+                        <button
+                          onClick={() => {
+                            setShowWorkspaceDropdown(false);
+                            setShowNewWorkspace(true);
+                          }}
+                          className={`w-full flex items-center gap-2 px-3 py-2 rounded-lg text-sm font-medium transition-all ${tc.hoverBg} hover:text-amber-500`}
+                        >
+                          <Plus className="w-4 h-4" />
+                          Create New Workspace
                         </button>
-                      ))}
-                    </div>
-                    <div className={`px-2 py-2 border-t ${tc.border}`}>
-                      <button
-                        onClick={() => {
-                          setShowWorkspaceDropdown(false);
-                          setShowNewWorkspace(true);
-                        }}
-                        className={`w-full flex items-center gap-2 px-3 py-2 rounded-lg text-sm font-medium transition-all ${tc.hoverBg} hover:text-amber-500`}
-                      >
-                        <Plus className="w-4 h-4" />
-                        Create New Workspace
-                      </button>
+                      </div>
                     </div>
                   </div>
-                </div>
-              )}
-            </div>
-          )}
+                )}
+              </div>
+            )}
 
-          {/* Mobile sidebar toggle */}
-          <button
-            onClick={() => setShowMobileSidebar(true)}
-            className={`md:hidden p-2 rounded-xl ${tc.btnGhost} transition-all`}
-            aria-label="Show workspaces"
-          >
-            <Menu className="w-5 h-5" />
-          </button>
+            {/* Mobile sidebar toggle */}
+            <button
+              onClick={() => setShowMobileSidebar(true)}
+              className={`md:hidden p-2 rounded-xl ${tc.btnGhost} transition-all`}
+              aria-label="Show workspaces"
+            >
+              <Menu className="w-5 h-5" />
+            </button>
 
-          <button
-            onClick={() => setShowNewWorkspace(true)}
-            className={`hidden lg:flex items-center gap-2 px-3 md:px-4 py-2 rounded-xl text-sm font-medium transition-all duration-200 ${tc.btnPrimary}`}
-          >
-            <Plus className="w-4 h-4" />
-            <span className="hidden sm:inline">New Workspace</span>
-          </button>
-        </div>
-      </div>
+            <button
+              onClick={() => setShowNewWorkspace(true)}
+              className={`hidden lg:flex items-center gap-2 px-3 md:px-4 py-2 rounded-xl text-sm font-medium transition-all duration-200 ${tc.btnPrimary}`}
+            >
+              <Plus className="w-4 h-4" />
+              <span className="hidden sm:inline">New Workspace</span>
+            </button>
+          </>
+        }
+      />
 
       <div className="flex-1 flex overflow-hidden relative">
         {/* Mobile Sidebar Overlay */}
@@ -838,10 +824,9 @@ const TeamVoxMode: React.FC<TeamVoxModeProps> = ({
                 <div ref={messagesEndRef} />
               </div>
 
-              {/* Recording Area */}
-              <div className={`px-4 md:px-6 py-4 border-t ${tc.border} ${tc.panelBg}`}>
-                {/* Preview Panel */}
-                {recordingState === 'preview' && recordingData ? (
+              {/* Unified Recording Area */}
+              {recordingState === 'preview' && recordingData ? (
+                <div className={`px-4 md:px-6 py-4 border-t ${tc.border} ${tc.panelBg}`}>
                   <RecordingPreview
                     recordingData={recordingData}
                     onSend={handleSendRecording}
@@ -853,102 +838,77 @@ const TeamVoxMode: React.FC<TeamVoxModeProps> = ({
                     isDarkMode={isDarkMode}
                     modeColor={MODE_COLOR}
                   />
-                ) : (
-                  <>
-                    {/* Message Type Selector */}
-                    <div className="flex items-center gap-2 mb-3 flex-wrap">
-                      <span className={`text-xs ${tc.textMuted}`}>Message type:</span>
-                      {(['normal', 'standup', 'announcement'] as const).map((type) => {
-                        const tooltips = {
-                          normal: 'Regular team message',
-                          standup: 'Daily standup update - automatically extracts action items',
-                          announcement: 'Important team announcement - notifies all members'
-                        };
-                        return (
-                          <button
-                            key={type}
-                            onClick={() => setMessageType(type)}
-                            title={tooltips[type]}
-                            className={`px-3 py-1 rounded-full text-xs font-medium transition-all ${
-                              messageType === type
-                                ? type === 'announcement'
-                                  ? 'bg-red-500/20 text-red-500'
-                                  : type === 'standup'
-                                    ? 'bg-amber-500/20 text-amber-500'
-                                    : `${tc.activeBg} ${tc.text}`
-                                : `${tc.cardBg} ${tc.textSecondary} ${tc.hoverBg}`
-                            }`}
-                          >
-                            {type.charAt(0).toUpperCase() + type.slice(1)}
-                          </button>
-                        );
-                      })}
-                    </div>
-
-                    <div className="flex flex-col items-center gap-4 w-full">
-                      {/* Recording controls row */}
-                      <div className="flex items-center gap-4">
+                </div>
+              ) : (
+                <VoxRecordArea
+                  modeColor={MODE_COLOR}
+                  isDarkMode={isDarkMode}
+                  isRecording={recordingState === 'recording'}
+                  isPreviewing={recordingState === 'preview'}
+                  recordingMode={recordingMode}
+                  onModeToggle={() => setRecordingMode(recordingMode === 'hold' ? 'tap' : 'hold')}
+                  onPointerDown={handlePointerDown}
+                  onPointerUp={handlePointerUp}
+                  onToggleRecording={handleToggleRecording}
+                  recordingDuration={recordingDuration}
+                  recordingState={recordingState}
+                >
+                  {/* Message Type Selector */}
+                  <div className="flex items-center gap-2 mb-3 flex-wrap justify-center">
+                    <span className={`text-xs ${tc.textMuted}`}>Message type:</span>
+                    {(['normal', 'standup', 'announcement'] as const).map((type) => {
+                      const tooltips = {
+                        normal: 'Regular team message',
+                        standup: 'Daily standup update - automatically extracts action items',
+                        announcement: 'Important team announcement - notifies all members'
+                      };
+                      return (
                         <button
-                          onClick={() => setShowMentionPicker(!showMentionPicker)}
-                          className={`p-2 rounded-xl ${tc.btnGhost} transition-all duration-200`}
-                          aria-label="Mention someone"
+                          key={type}
+                          onClick={() => setMessageType(type)}
+                          title={tooltips[type]}
+                          className={`px-3 py-1 rounded-full text-xs font-medium transition-all ${
+                            messageType === type
+                              ? type === 'announcement'
+                                ? 'bg-red-500/20 text-red-500'
+                                : type === 'standup'
+                                  ? 'bg-amber-500/20 text-amber-500'
+                                  : `${tc.activeBg} ${tc.text}`
+                              : `${tc.cardBg} ${tc.textSecondary} ${tc.hoverBg}`
+                          }`}
                         >
-                          <AtSign className="w-5 h-5" />
+                          {type.charAt(0).toUpperCase() + type.slice(1)}
                         </button>
-                        <button
-                          onClick={handleRecordToggle}
-                          className="relative w-14 h-14 md:w-16 md:h-16 rounded-full flex items-center justify-center transition-all duration-300 ease-out hover:scale-105 active:scale-95"
-                          style={{
-                            background: recordingState === 'recording'
-                              ? 'linear-gradient(135deg, #ef4444 0%, #dc2626 100%)'
-                              : `linear-gradient(135deg, ${MODE_COLOR} 0%, #ea580c 100%)`,
-                            boxShadow: recordingState === 'recording'
-                              ? '0 8px 32px rgba(239,68,68,0.5)'
-                              : `0 8px 32px ${MODE_COLOR}40`
-                          }}
-                          aria-label={recordingState === 'recording' ? 'Stop recording' : 'Start recording'}
-                        >
-                          {recordingState === 'recording' && (
-                            <span className="absolute inset-0 rounded-full animate-ping bg-red-400 opacity-40" />
-                          )}
-                          <span className="relative z-10">
-                            {recordingState === 'recording' ? (
-                              <Square className="w-5 h-5 md:w-6 md:h-6 text-white" />
-                            ) : (
-                              <Mic className="w-5 h-5 md:w-6 md:h-6 text-white" />
-                            )}
-                          </span>
-                        </button>
-                      </div>
+                      );
+                    })}
+                  </div>
 
-                      {/* Duration or hint text */}
-                      {recordingState === 'recording' ? (
-                        <span className="text-sm font-mono" style={{ color: MODE_COLOR }}>
-                          {Math.floor(recordingDuration / 60)}:{Math.floor(recordingDuration % 60).toString().padStart(2, '0')}
-                        </span>
-                      ) : (
-                        <p className={`text-sm ${tc.textMuted}`}>
-                          Click to record a team vox
-                        </p>
-                      )}
+                  {/* Mention Button */}
+                  <div className="flex items-center gap-4 mb-4 justify-center">
+                    <button
+                      onClick={() => setShowMentionPicker(!showMentionPicker)}
+                      className={`p-2 rounded-xl ${tc.btnGhost} transition-all duration-200`}
+                      aria-label="Mention someone"
+                    >
+                      <AtSign className="w-5 h-5" />
+                    </button>
+                  </div>
 
-                      {/* Live Waveform */}
-                      {recordingState === 'recording' && (
-                        <div className="w-full max-w-md">
-                          <VoxAudioVisualizer
-                            analyser={analyser}
-                            isActive={true}
-                            mode="waveform"
-                            color={MODE_COLOR}
-                            height={48}
-                            isDarkMode={isDarkMode}
-                          />
-                        </div>
-                      )}
+                  {/* Live Waveform */}
+                  {recordingState === 'recording' && (
+                    <div className="w-full max-w-md mx-auto mt-4">
+                      <VoxAudioVisualizer
+                        analyser={analyser}
+                        isActive={true}
+                        mode="waveform"
+                        color={MODE_COLOR}
+                        height={48}
+                        isDarkMode={isDarkMode}
+                      />
                     </div>
-                  </>
-                )}
-              </div>
+                  )}
+                </VoxRecordArea>
+              )}
             </>
           ) : (
             <div className={`flex-1 flex items-center justify-center ${tc.textMuted}`}>

@@ -27,6 +27,9 @@ import {
 } from 'lucide-react';
 import VoxAudioVisualizer from './VoxAudioVisualizer';
 import RecordingPreview from './RecordingPreview';
+import RecordButton from './RecordButton';
+import VoxModeHeader from './VoxModeHeader';
+import VoxRecordArea from './VoxRecordArea';
 import { useVoxRecording } from '../../hooks/useVoxRecording';
 import { voxModeService } from '../../services/voxer/voxModeService';
 import analyticsCollector from '../../services/analyticsCollector';
@@ -76,10 +79,15 @@ const VoxNotesMode: React.FC<VoxNotesModeProps> = ({
     duration: recordingDuration,
     analyser,
     recordingData,
+    recordingMode,
+    setRecordingMode,
     startRecording,
     stopRecording,
     cancelRecording,
     sendRecording,
+    handlePointerDown,
+    handlePointerUp,
+    handleToggleRecording,
   } = useVoxRecording({
     onRecordingComplete: async (data) => {
       console.log('Recording complete:', data.duration, 'seconds');

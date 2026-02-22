@@ -10,9 +10,11 @@ import {
   CheckSquare,
   Square,
   Clock,
+  AlertCircle,
 } from 'lucide-react';
 import { VoxSelectionItem } from '../../hooks/useVoxSelection';
 import VoxDownloadModal from './VoxDownloadModal';
+import { archiveVoxerConversation } from '../../services/voxer/voxerArchiveService';
 
 interface VoxSelectToolbarProps {
   selectedItems: VoxSelectionItem[];
@@ -21,11 +23,12 @@ interface VoxSelectToolbarProps {
   onSelectAll: () => void;
   onDeselectAll: () => void;
   onExitSelection: () => void;
-  onArchive: (items: VoxSelectionItem[]) => Promise<void>;
+  onArchive?: (items: VoxSelectionItem[]) => Promise<void>; // Made optional - will use default if not provided
   onDelete?: (items: VoxSelectionItem[]) => Promise<void>;
   allSelected?: boolean;
   isDarkMode?: boolean;
   accentColor?: string;
+  contactName?: string; // Added for archive labeling
 }
 
 const ACCENT_COLOR = '#8B5CF6';
@@ -42,10 +45,12 @@ export const VoxSelectToolbar: React.FC<VoxSelectToolbarProps> = ({
   allSelected = false,
   isDarkMode = false,
   accentColor = ACCENT_COLOR,
+  contactName = 'Unknown Contact',
 }) => {
   const [showDownloadModal, setShowDownloadModal] = useState(false);
   const [isArchiving, setIsArchiving] = useState(false);
   const [isDeleting, setIsDeleting] = useState(false);
+  const [archiveError, setArchiveError] = useState<string | null>(null);
 
   const formatDuration = (seconds: number): string => {
     if (seconds < 60) return `${Math.round(seconds)}s`;
@@ -57,11 +62,71 @@ export const VoxSelectToolbar: React.FC<VoxSelectToolbarProps> = ({
   const handleArchive = async () => {
     if (selectedItems.length === 0) return;
     setIsArchiving(true);
+    setArchiveError(null);
+
     try {
-      await onArchive(selectedItems);
+      // Use custom onArchive handler if provided, otherwise use default archive service
+      if (onArchive) {
+        await onArchive(selectedItems);
+      } else {
+        await archiveVoxerConversation(selectedItems, contactName);
+
+        // Show success notification (simple approach without external toast library)
+        const successMessage = `Conversation archived to Pulse Archives (${selectedItems.length} message${selectedItems.length > 1 ? 's' : ''})`;
+        console.log('✅', successMessage);
+
+        // Create a simple visual notification
+        const notification = document.createElement('div');
+        notification.innerHTML = `
+          <div style="position: fixed; top: 20px; right: 20px; z-index: 9999; background: linear-gradient(135deg, #10b981, #059669); color: white; padding: 12px 20px; border-radius: 12px; box-shadow: 0 4px 14px rgba(16, 185, 129, 0.3); font-family: system-ui; font-size: 14px; font-weight: 500; display: flex; align-items: center; gap: 8px; animation: slideIn 0.3s ease-out;">
+            <span style="font-size: 18px;">📚</span>
+            ${successMessage}
+          </div>
+        `;
+        document.body.appendChild(notification);
+
+        // Remove after 3 seconds
+        setTimeout(() => {
+          notification.style.animation = 'slideOut 0.3s ease-out';
+          setTimeout(() => {
+            document.body.removeChild(notification);
+          }, 300);
+        }, 3000);
+
+        // Add animation styles
+        if (!document.getElementById('vox-archive-toast-styles')) {
+          const style = document.createElement('style');
+          style.id = 'vox-archive-toast-styles';
+          style.textContent = `
+            @keyframes slideIn {
+              from {
+                transform: translateX(400px);
+                opacity: 0;
+              }
+              to {
+                transform: translateX(0);
+                opacity: 1;
+              }
+            }
+            @keyframes slideOut {
+              from {
+                transform: translateX(0);
+                opacity: 1;
+              }
+              to {
+                transform: translateX(400px);
+                opacity: 0;
+              }
+            }
+          `;
+          document.head.appendChild(style);
+        }
+      }
+
       onExitSelection();
     } catch (error) {
       console.error('Archive failed:', error);
+      setArchiveError(error instanceof Error ? error.message : 'Failed to archive conversation');
     } finally {
       setIsArchiving(false);
     }
@@ -115,43 +180,59 @@ export const VoxSelectToolbar: React.FC<VoxSelectToolbarProps> = ({
             : '0 -4px 20px rgba(0,0,0,0.1)',
         }}
       >
-        <div className="max-w-4xl mx-auto flex items-center justify-between gap-4">
-          {/* Left - Selection Info */}
-          <div className="flex items-center gap-3">
-            {/* Close Selection Button */}
-            <button
-              onClick={onExitSelection}
-              className={`p-2 rounded-lg transition-colors ${tc.buttonBg}`}
-            >
-              <X className="w-5 h-5" />
-            </button>
-
-            {/* Select All/None Toggle */}
-            <button
-              onClick={allSelected ? onDeselectAll : onSelectAll}
-              className={`p-2 rounded-lg transition-colors ${tc.buttonBg}`}
-              title={allSelected ? 'Deselect all' : 'Select all'}
-            >
-              {allSelected ? (
-                <CheckSquare className="w-5 h-5" style={{ color: accentColor }} />
-              ) : (
-                <Square className="w-5 h-5" />
-              )}
-            </button>
-
-            {/* Selection Stats */}
-            <div className="flex flex-col">
-              <span className={`text-sm font-medium ${tc.text}`}>
-                {selectionCount} selected
-              </span>
-              {totalDuration > 0 && (
-                <span className={`text-xs ${tc.textSecondary} flex items-center gap-1`}>
-                  <Clock className="w-3 h-3" />
-                  {formatDuration(totalDuration)} total
-                </span>
-              )}
+        <div className="max-w-4xl mx-auto">
+          {/* Error Message (if any) */}
+          {archiveError && (
+            <div className={`mb-2 px-3 py-2 rounded-lg flex items-center gap-2 text-sm ${isDarkMode ? 'bg-red-900/30 text-red-400' : 'bg-red-50 text-red-600'}`}>
+              <AlertCircle className="w-4 h-4 flex-shrink-0" />
+              <span>{archiveError}</span>
+              <button
+                onClick={() => setArchiveError(null)}
+                className={`ml-auto ${isDarkMode ? 'hover:text-red-300' : 'hover:text-red-700'}`}
+              >
+                <X className="w-4 h-4" />
+              </button>
             </div>
-          </div>
+          )}
+
+          {/* Main Toolbar */}
+          <div className="flex items-center justify-between gap-4">
+            {/* Left - Selection Info */}
+            <div className="flex items-center gap-3">
+              {/* Close Selection Button */}
+              <button
+                onClick={onExitSelection}
+                className={`p-2 rounded-lg transition-colors ${tc.buttonBg}`}
+              >
+                <X className="w-5 h-5" />
+              </button>
+
+              {/* Select All/None Toggle */}
+              <button
+                onClick={allSelected ? onDeselectAll : onSelectAll}
+                className={`p-2 rounded-lg transition-colors ${tc.buttonBg}`}
+                title={allSelected ? 'Deselect all' : 'Select all'}
+              >
+                {allSelected ? (
+                  <CheckSquare className="w-5 h-5" style={{ color: accentColor }} />
+                ) : (
+                  <Square className="w-5 h-5" />
+                )}
+              </button>
+
+              {/* Selection Stats */}
+              <div className="flex flex-col">
+                <span className={`text-sm font-medium ${tc.text}`}>
+                  {selectionCount} selected
+                </span>
+                {totalDuration > 0 && (
+                  <span className={`text-xs ${tc.textSecondary} flex items-center gap-1`}>
+                    <Clock className="w-3 h-3" />
+                    {formatDuration(totalDuration)} total
+                  </span>
+                )}
+              </div>
+            </div>
 
           {/* Right - Action Buttons */}
           <div className="flex items-center gap-2">
@@ -195,6 +276,7 @@ export const VoxSelectToolbar: React.FC<VoxSelectToolbarProps> = ({
                 </span>
               </button>
             )}
+          </div>
           </div>
         </div>
       </div>

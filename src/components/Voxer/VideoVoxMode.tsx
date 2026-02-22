@@ -101,7 +101,7 @@ const ConversationItem: React.FC<{
         ) : (
           <div
             className="vvb-conv-avatar"
-            style={{ background: otherParticipants[0]?.avatarColor || '#8B5CF6' }}
+            style={{ background: otherParticipants[0]?.avatarColor || '#06B6D4' }}
           >
             {otherParticipants[0]?.name?.[0] || '?'}
           </div>
@@ -363,8 +363,9 @@ const RecipientSelector: React.FC<{
   contacts: Array<{ id: string; name: string; avatarColor?: string; handle?: string }>;
   selectedIds: string[];
   onSelect: (id: string) => void;
+  onDone?: () => void;
   isDarkMode: boolean;
-}> = ({ contacts, selectedIds, onSelect, isDarkMode }) => {
+}> = ({ contacts, selectedIds, onSelect, onDone, isDarkMode }) => {
   const [search, setSearch] = useState('');
 
   const filtered = contacts.filter(c =>
@@ -374,13 +375,25 @@ const RecipientSelector: React.FC<{
 
   return (
     <div className={`vvb-recipient-selector ${isDarkMode ? 'dark' : 'light'}`}>
-      <input
-        type="text"
-        value={search}
-        onChange={(e) => setSearch(e.target.value)}
-        placeholder="Search contacts..."
-        className="vvb-recipient-search"
-      />
+      <div className="vvb-recipient-header">
+        <input
+          type="text"
+          value={search}
+          onChange={(e) => setSearch(e.target.value)}
+          placeholder="Search contacts..."
+          className="vvb-recipient-search"
+        />
+        {onDone && (
+          <button
+            onClick={onDone}
+            disabled={selectedIds.length === 0}
+            className="vvb-recipient-done"
+          >
+            <Check className="w-4 h-4" />
+            {selectedIds.length > 0 ? `Done (${selectedIds.length})` : 'Done'}
+          </button>
+        )}
+      </div>
 
       <div className="vvb-recipient-list">
         {filtered.map(contact => (
@@ -391,7 +404,7 @@ const RecipientSelector: React.FC<{
           >
             <div
               className="vvb-recipient-avatar"
-              style={{ background: contact.avatarColor || '#8B5CF6' }}
+              style={{ background: contact.avatarColor || '#06B6D4' }}
             >
               {contact.name[0]}
             </div>
@@ -798,6 +811,7 @@ const VideoVoxMode: React.FC<VideoVoxModeProps> = ({
                 contacts={pulseContacts}
                 selectedIds={selectedRecipients}
                 onSelect={handleToggleRecipient}
+                onDone={() => setShowRecipientSelector(false)}
                 isDarkMode={isDarkMode}
               />
             )}
@@ -958,8 +972,8 @@ const VideoVoxMode: React.FC<VideoVoxModeProps> = ({
                         <svg className="vvb-progress-ring" viewBox="0 0 84 84">
                           <defs>
                             <linearGradient id="vvb-gradient" x1="0%" y1="0%" x2="100%" y2="100%">
-                              <stop offset="0%" stopColor="#8B5CF6" />
-                              <stop offset="100%" stopColor="#EC4899" />
+                              <stop offset="0%" stopColor="#06B6D4" />
+                              <stop offset="100%" stopColor="#0EA5E9" />
                             </linearGradient>
                           </defs>
                           <circle

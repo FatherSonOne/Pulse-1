@@ -71,6 +71,18 @@ tmpclaude-*-cwd
 # Claude Code configuration (local to each user)
 .claude/
 
+# Additional security patterns
+*.pfx
+*.p12
+**/secrets/
+**/secret/
+.npmrc
+.yarnrc
+auth.json
+token.json
+refresh_token.json
+oauth2_tokens.json
+
 .vercel
 
 # Test files with sensitive data

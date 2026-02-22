@@ -56,6 +56,8 @@ export interface UseVoxRecordingOptions {
   autoAnalyze?: boolean; // Automatically analyze after recording
   qualityPreset?: keyof typeof AUDIO_QUALITY_PRESETS;
   customAudioConstraints?: Partial<AudioQualityPreset>;
+  defaultRecordingMode?: 'hold' | 'tap'; // Default recording mode
+  onModeChange?: (mode: 'hold' | 'tap') => void; // Callback when mode changes
 }
 
 export interface UseVoxRecordingReturn {
@@ -63,11 +65,16 @@ export interface UseVoxRecordingReturn {
   duration: number;
   analyser: AnalyserNode | null;
   recordingData: RecordingData | null;
+  recordingMode: 'hold' | 'tap';
+  setRecordingMode: (mode: 'hold' | 'tap') => void;
   startRecording: () => Promise<void>;
   stopRecording: () => void;
   cancelRecording: () => void;
   sendRecording: () => void;
   analyzeRecording: () => Promise<void>;
+  handlePointerDown: () => void; // For hold mode - start on pointer down
+  handlePointerUp: () => void; // For hold mode - stop on pointer up
+  handleToggleRecording: () => void; // For tap mode - toggle recording on/off
 }
 
 export function useVoxRecording(options: UseVoxRecordingOptions = {}): UseVoxRecordingReturn {
@@ -78,7 +85,16 @@ export function useVoxRecording(options: UseVoxRecordingOptions = {}): UseVoxRec
     autoAnalyze = false,
     qualityPreset = 'voice_hd', // Default to high quality
     customAudioConstraints,
+    defaultRecordingMode,
+    onModeChange,
   } = options;
+
+  // Load recording mode from localStorage or use default
+  const getInitialRecordingMode = (): 'hold' | 'tap' => {
+    if (defaultRecordingMode) return defaultRecordingMode;
+    const saved = localStorage.getItem('voxer_recording_mode');
+    return (saved === 'tap' || saved === 'hold') ? saved : 'hold';
+  };
 
   // Get audio settings from preset, with custom overrides
   const audioSettings: AudioQualityPreset = {
@@ -90,6 +106,7 @@ export function useVoxRecording(options: UseVoxRecordingOptions = {}): UseVoxRec
   const [duration, setDuration] = useState(0);
   const [analyser, setAnalyser] = useState<AnalyserNode | null>(null);
   const [recordingData, setRecordingData] = useState<RecordingData | null>(null);
+  const [recordingMode, setRecordingModeState] = useState<'hold' | 'tap'>(getInitialRecordingMode);
 
   const mediaRecorderRef = useRef<MediaRecorder | null>(null);
   const audioContextRef = useRef<AudioContext | null>(null);
@@ -330,16 +347,53 @@ export function useVoxRecording(options: UseVoxRecordingOptions = {}): UseVoxRec
     }
   }, [recordingData, onAnalysisComplete]);
 
+  // Set recording mode and persist to localStorage
+  const setRecordingMode = useCallback((mode: 'hold' | 'tap') => {
+    setRecordingModeState(mode);
+    localStorage.setItem('voxer_recording_mode', mode);
+    onModeChange?.(mode);
+  }, [onModeChange]);
+
+  // Handle pointer down for hold mode
+  const handlePointerDown = useCallback(() => {
+    if (recordingMode === 'hold' && state === 'idle') {
+      startRecording();
+    }
+  }, [recordingMode, state, startRecording]);
+
+  // Handle pointer up for hold mode
+  const handlePointerUp = useCallback(() => {
+    if (recordingMode === 'hold' && state === 'recording') {
+      stopRecording();
+    }
+  }, [recordingMode, state, stopRecording]);
+
+  // Handle toggle recording for tap mode
+  const handleToggleRecording = useCallback(() => {
+    if (recordingMode === 'tap') {
+      if (state === 'idle') {
+        startRecording();
+      } else if (state === 'recording') {
+        stopRecording();
+      }
+    }
+  }, [recordingMode, state, startRecording, stopRecording]);
+
   return {
     state,
     duration,
     analyser,
     recordingData,
+    recordingMode,
+    setRecordingMode,
     startRecording,
     stopRecording,
     cancelRecording,
     sendRecording,
     analyzeRecording,
+    handlePointerDown,
+    handlePointerUp,
+    handleToggleRecording,
   };
 }
 
