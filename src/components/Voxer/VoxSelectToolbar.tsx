@@ -2,6 +2,7 @@
 // Appears when items are selected, provides download/archive/delete actions
 
 import React, { useState } from 'react';
+import { createPortal } from 'react-dom';
 import {
   X,
   Download,
@@ -169,15 +170,18 @@ export const VoxSelectToolbar: React.FC<VoxSelectToolbarProps> = ({
       : 'bg-red-50 hover:bg-red-100 text-red-600',
   };
 
-  return (
+  const toolbarContent = (
     <>
       {/* Selection Toolbar */}
       <div
-        className={`fixed bottom-0 left-0 right-0 z-50 ${tc.bg} backdrop-blur-xl border-t ${tc.border} px-4 py-3 animate-slide-up`}
+        className="fixed bottom-0 left-0 right-0 px-6 py-4"
         style={{
-          boxShadow: isDarkMode
-            ? '0 -4px 20px rgba(0,0,0,0.3)'
-            : '0 -4px 20px rgba(0,0,0,0.1)',
+          zIndex: 999999,
+          background: isDarkMode
+            ? 'linear-gradient(to top, #1f2937 0%, #111827 100%)'
+            : 'linear-gradient(to top, #ffffff 0%, #f9fafb 100%)',
+          borderTop: `2px solid ${accentColor}`,
+          boxShadow: '0 -8px 32px rgba(0, 0, 0, 0.2)',
         }}
       >
         <div className="max-w-4xl mx-auto">
@@ -202,7 +206,12 @@ export const VoxSelectToolbar: React.FC<VoxSelectToolbarProps> = ({
               {/* Close Selection Button */}
               <button
                 onClick={onExitSelection}
-                className={`p-2 rounded-lg transition-colors ${tc.buttonBg}`}
+                className="p-2.5 rounded-xl transition-all hover:scale-110 active:scale-95"
+                style={{
+                  background: isDarkMode ? '#374151' : '#e5e7eb',
+                  color: isDarkMode ? '#f9fafb' : '#111827',
+                }}
+                title="Exit selection mode"
               >
                 <X className="w-5 h-5" />
               </button>
@@ -210,11 +219,16 @@ export const VoxSelectToolbar: React.FC<VoxSelectToolbarProps> = ({
               {/* Select All/None Toggle */}
               <button
                 onClick={allSelected ? onDeselectAll : onSelectAll}
-                className={`p-2 rounded-lg transition-colors ${tc.buttonBg}`}
+                className="p-2.5 rounded-xl transition-all hover:scale-110 active:scale-95"
+                style={{
+                  background: allSelected ? `${accentColor}20` : (isDarkMode ? '#374151' : '#e5e7eb'),
+                  color: allSelected ? accentColor : (isDarkMode ? '#f9fafb' : '#111827'),
+                  border: `2px solid ${allSelected ? accentColor : 'transparent'}`,
+                }}
                 title={allSelected ? 'Deselect all' : 'Select all'}
               >
                 {allSelected ? (
-                  <CheckSquare className="w-5 h-5" style={{ color: accentColor }} />
+                  <CheckSquare className="w-5 h-5" />
                 ) : (
                   <Square className="w-5 h-5" />
                 )}
@@ -222,12 +236,12 @@ export const VoxSelectToolbar: React.FC<VoxSelectToolbarProps> = ({
 
               {/* Selection Stats */}
               <div className="flex flex-col">
-                <span className={`text-sm font-medium ${tc.text}`}>
+                <span className="text-base font-bold" style={{ color: isDarkMode ? '#f9fafb' : '#111827' }}>
                   {selectionCount} selected
                 </span>
                 {totalDuration > 0 && (
-                  <span className={`text-xs ${tc.textSecondary} flex items-center gap-1`}>
-                    <Clock className="w-3 h-3" />
+                  <span className="text-xs font-medium flex items-center gap-1" style={{ color: isDarkMode ? '#9ca3af' : '#6b7280' }}>
+                    <Clock className="w-3.5 h-3.5" />
                     {formatDuration(totalDuration)} total
                   </span>
                 )}
@@ -240,25 +254,34 @@ export const VoxSelectToolbar: React.FC<VoxSelectToolbarProps> = ({
             <button
               onClick={() => setShowDownloadModal(true)}
               disabled={selectionCount === 0}
-              className={`flex items-center gap-2 px-4 py-2.5 rounded-xl font-medium text-sm transition-all disabled:opacity-40 disabled:cursor-not-allowed`}
+              className={`flex items-center gap-2 px-5 py-3 rounded-xl font-semibold text-sm transition-all disabled:opacity-50 disabled:cursor-not-allowed shadow-lg hover:shadow-xl active:scale-95`}
               style={{
-                background: `linear-gradient(135deg, ${accentColor}, ${accentColor}cc)`,
+                background: selectionCount > 0
+                  ? `linear-gradient(135deg, ${accentColor} 0%, ${accentColor}dd 100%)`
+                  : isDarkMode ? '#374151' : '#d1d5db',
                 color: 'white',
-                boxShadow: selectionCount > 0 ? `0 4px 14px ${accentColor}30` : 'none',
+                border: `2px solid ${selectionCount > 0 ? accentColor : 'transparent'}`,
               }}
             >
-              <Download className="w-4 h-4" />
-              <span className="hidden sm:inline">Download</span>
+              <Download className="w-5 h-5" />
+              <span>Download</span>
             </button>
 
             {/* Archive Button */}
             <button
               onClick={handleArchive}
               disabled={selectionCount === 0 || isArchiving}
-              className={`flex items-center gap-2 px-4 py-2.5 rounded-xl font-medium text-sm transition-all ${tc.buttonBg} disabled:opacity-40 disabled:cursor-not-allowed`}
+              className={`flex items-center gap-2 px-5 py-3 rounded-xl font-semibold text-sm transition-all disabled:opacity-50 disabled:cursor-not-allowed shadow-lg hover:shadow-xl active:scale-95`}
+              style={{
+                background: selectionCount > 0
+                  ? isDarkMode ? '#374151' : '#e5e7eb'
+                  : isDarkMode ? '#1f2937' : '#f3f4f6',
+                color: isDarkMode ? '#f9fafb' : '#111827',
+                border: `2px solid ${selectionCount > 0 ? (isDarkMode ? '#4b5563' : '#d1d5db') : 'transparent'}`,
+              }}
             >
-              <Archive className={`w-4 h-4 ${isArchiving ? 'animate-pulse' : ''}`} />
-              <span className="hidden sm:inline">
+              <Archive className={`w-5 h-5 ${isArchiving ? 'animate-pulse' : ''}`} />
+              <span>
                 {isArchiving ? 'Archiving...' : 'Archive'}
               </span>
             </button>
@@ -309,6 +332,10 @@ export const VoxSelectToolbar: React.FC<VoxSelectToolbarProps> = ({
       `}</style>
     </>
   );
+
+  // Use React Portal to render the toolbar at the document body level
+  // This ensures it's not affected by parent container overflow/positioning
+  return createPortal(toolbarContent, document.body);
 };
 
 export default VoxSelectToolbar;

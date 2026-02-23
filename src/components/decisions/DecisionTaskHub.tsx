@@ -1,20 +1,20 @@
-import React, { useState, useEffect, useCallback, useMemo, useRef } from 'react';
+import React, { useState, useEffect, useCallback, useMemo } from 'react';
 import { createPortal } from 'react-dom';
+import { HubHeader, HubMode } from './HubHeader';
+import { FilterBar, FilterState } from './FilterBar';
+import { ActiveView } from './ActiveView';
+import { BoardView } from './BoardView';
+import { ArchiveView } from './ArchiveView';
 import { EnhancedDecisionCard } from './EnhancedDecisionCard';
-import { TaskList, TaskStatus } from '../TaskList';
-import { EnhancedTaskCard } from '../tasks/EnhancedTaskCard';
 import { AITaskPrioritizer } from '../tasks/AITaskPrioritizer';
-import { TaskKanban } from '../tasks/TaskKanban';
 import { SkeletonDecisionCard } from './SkeletonDecisionCard';
 import { SkeletonTaskCard } from '../tasks/SkeletonTaskCard';
 import { AIFeatureErrorBoundary } from './AIFeatureErrorBoundary';
-import { ActiveView } from './ActiveView';
 import { TaskEditModal } from '../tasks/TaskEditModal';
 import { CreateTaskModal } from '../tasks/CreateTaskModal';
-import { DecisionDecomposer } from './DecisionDecomposer'; // Phase 2: AI task decomposition
-import { DecisionTemplates } from './DecisionTemplates'; // Phase 2: Decision templates
+import { DecisionDecomposer } from './DecisionDecomposer';
+import { DecisionTemplates } from './DecisionTemplates';
 import { decisionService, DecisionWithVotes } from '../../services/decisionService';
-import { consensusDetectorService } from '../../services/consensusDetectorService'; // Phase 2: Consensus detection
 import { taskService, Task } from '../../services/taskService';
 import { decisionAnalyticsService, DecisionMetrics } from '../../services/decisionAnalyticsService';
 import { proactiveSuggestionsService, Nudge } from '../../services/proactiveSuggestionsService';
@@ -32,33 +32,25 @@ import {
   dismissNudge,
   dismissMultipleNudges,
   undoDismissNudge,
-  clearAllDismissedNudges,
 } from '../../utils/dismissedNudgesStorage';
 import {
-  CheckSquare,
-  Vote,
   Plus,
-  Filter,
   RefreshCw,
-  MessageSquare,
-  TrendingUp,
   Bell,
   Bot,
   X,
   ChevronDown,
   ChevronUp,
-  List as ListIcon,
-  Columns,
-  Calendar,
   AlertCircle,
   Zap,
   Undo,
   Download,
   Sparkles,
+  TrendingUp,
 } from 'lucide-react';
 import './DecisionTaskHub.css';
 
-// Phase 3: Custom debounce hook for performance optimization
+// Custom debounce hook for performance optimization
 function useDebounce<T>(value: T, delay: number): T {
   const [debouncedValue, setDebouncedValue] = useState<T>(value);
 
@@ -80,16 +72,12 @@ interface DecisionTaskHubProps {
   workspaceId?: string;
 }
 
-type ViewMode = 'list' | 'kanban' | 'timeline';
-type TabType = 'decisions' | 'tasks';
-
 export const DecisionTaskHub: React.FC<DecisionTaskHubProps> = ({
   user,
   workspaceId
 }) => {
   // Core state
-  const [activeTab, setActiveTab] = useState<TabType>('decisions');
-  const [activeView, setActiveView] = useState<ViewMode>('list');
+  const [mode, setMode] = useState<HubMode>('active');
   const [decisions, setDecisions] = useState<DecisionWithVotes[]>([]);
   const [tasks, setTasks] = useState<Task[]>([]);
   const [decisionsLoading, setDecisionsLoading] = useState(true);
@@ -97,18 +85,20 @@ export const DecisionTaskHub: React.FC<DecisionTaskHubProps> = ({
   const [aiPriorities, setAiPriorities] = useState<AITaskPriority[]>([]);
   const [showPrioritizer, setShowPrioritizer] = useState(false);
 
-  // Filter state
-  const [statusFilter, setStatusFilter] = useState<TaskStatus | undefined>(undefined);
-  const [decisionStatusFilter, setDecisionStatusFilter] = useState<string | undefined>(undefined);
-  const [showOverdueOnly, setShowOverdueOnly] = useState(false);
-  const [sortBy, setSortBy] = useState<'created' | 'due_date' | 'priority' | 'ai_score'>('created');
+  // Filter state - unified using FilterBar's FilterState
+  const [filters, setFilters] = useState<FilterState>({
+    search: '',
+    status: 'all',
+    priority: undefined,
+    dateRange: undefined,
+  });
 
   // AI features state
   const [metrics, setMetrics] = useState<DecisionMetrics | null>(null);
   const [nudges, setNudges] = useState<Nudge[]>([]);
   const [dismissedNudges, setDismissedNudges] = useState<Set<string>>(new Set());
-  const [showInsights, setShowInsights] = useState(false); // Phase 1: Hidden by default
-  const [showNudges, setShowNudges] = useState(false); // Phase 1: Hidden by default, shown via notification badge
+  const [showInsights, setShowInsights] = useState(false);
+  const [showNudges, setShowNudges] = useState(false);
   const [showAssistant, setShowAssistant] = useState(false);
   const [lastDismissedNudge, setLastDismissedNudge] = useState<string | null>(null);
 
@@ -126,18 +116,15 @@ export const DecisionTaskHub: React.FC<DecisionTaskHubProps> = ({
   const [taskToReassign, setTaskToReassign] = useState<Task | null>(null);
   const [taskToExtend, setTaskToExtend] = useState<Task | null>(null);
 
-  // Phase 1.7: Task CRUD modals state
+  // Task CRUD modals state
   const [taskToEdit, setTaskToEdit] = useState<Task | null>(null);
   const [showCreateTask, setShowCreateTask] = useState(false);
 
-  // Phase 2: Decision decomposition state
+  // Decision decomposition state
   const [decisionToDecompose, setDecisionToDecompose] = useState<DecisionWithVotes | null>(null);
 
-  // Phase 2: Templates state
+  // Templates state
   const [showTemplates, setShowTemplates] = useState(false);
-
-  // Sprint 7: Virtualization state
-  const [taskListHeight, setTaskListHeight] = useState(600);
 
   // Use user.id as workspace_id if not provided
   const effectiveWorkspaceId = workspaceId || user?.id || '';
@@ -154,7 +141,7 @@ export const DecisionTaskHub: React.FC<DecisionTaskHubProps> = ({
       loadDecisions();
       loadTasks();
     }
-  }, [effectiveWorkspaceId, decisionStatusFilter]);
+  }, [effectiveWorkspaceId]);
 
   // Generate metrics and nudges when data changes
   useEffect(() => {
@@ -166,7 +153,7 @@ export const DecisionTaskHub: React.FC<DecisionTaskHubProps> = ({
     }
   }, [decisions, tasks]);
 
-  // Sprint 6: Real-time subscriptions for decisions, tasks, and votes
+  // Real-time subscriptions for decisions, tasks, and votes
   useEffect(() => {
     if (!effectiveWorkspaceId) return;
 
@@ -194,7 +181,7 @@ export const DecisionTaskHub: React.FC<DecisionTaskHubProps> = ({
         updateConnectionStatus(status);
       });
 
-    // Subscribe to tasks changes (now using extracted_tasks table)
+    // Subscribe to tasks changes
     const tasksChannel = supabase
       .channel('extracted-tasks-changes')
       .on(
@@ -245,7 +232,7 @@ export const DecisionTaskHub: React.FC<DecisionTaskHubProps> = ({
     };
   }, [effectiveWorkspaceId]);
 
-  // Fix 1.1.7: Modal Escape key handling
+  // Modal Escape key handling
   useEffect(() => {
     const handleEscapeKey = (event: KeyboardEvent) => {
       if (event.key === 'Escape') {
@@ -269,25 +256,22 @@ export const DecisionTaskHub: React.FC<DecisionTaskHubProps> = ({
     };
   }, [showDecisionMission, showAssistant, showPrioritizer, taskToReassign, taskToExtend]);
 
-  // Phase 1.1 & 2.4: Prevent background scroll - simple overflow method (no position fixed)
+  // Prevent background scroll
   useEffect(() => {
     const hasAnyOverlay = showDecisionMission || showAssistant || showPrioritizer || taskToReassign !== null || taskToExtend !== null;
 
     if (hasAnyOverlay) {
-      // Simple approach: just hide overflow without manipulating position
-      // This prevents scroll jumps that occur with position:fixed approach
       document.body.style.overflow = 'hidden';
     } else {
       document.body.style.overflow = '';
     }
 
     return () => {
-      // Cleanup on unmount
       document.body.style.overflow = '';
     };
   }, [showDecisionMission, showAssistant, showPrioritizer, taskToReassign, taskToExtend]);
 
-  // Phase 2.3: Focus trap for modals (accessibility)
+  // Focus trap for modals (accessibility)
   useEffect(() => {
     const hasModalOpen = showDecisionMission || showAssistant || taskToReassign !== null || taskToExtend !== null;
 
@@ -296,7 +280,6 @@ export const DecisionTaskHub: React.FC<DecisionTaskHubProps> = ({
     const handleTabKey = (e: KeyboardEvent) => {
       if (e.key !== 'Tab') return;
 
-      // Get all focusable elements in the modal
       const focusableSelectors = 'button, [href], input, select, textarea, [tabindex]:not([tabindex="-1"])';
       const modalElement = document.querySelector(
         showDecisionMission ? '.decision-mission-modal' :
@@ -311,13 +294,10 @@ export const DecisionTaskHub: React.FC<DecisionTaskHubProps> = ({
       const firstFocusable = focusableElements[0] as HTMLElement;
       const lastFocusable = focusableElements[focusableElements.length - 1] as HTMLElement;
 
-      // If shift + tab on first element, focus last
       if (e.shiftKey && document.activeElement === firstFocusable) {
         e.preventDefault();
         lastFocusable?.focus();
-      }
-      // If tab on last element, focus first
-      else if (!e.shiftKey && document.activeElement === lastFocusable) {
+      } else if (!e.shiftKey && document.activeElement === lastFocusable) {
         e.preventDefault();
         firstFocusable?.focus();
       }
@@ -336,18 +316,12 @@ export const DecisionTaskHub: React.FC<DecisionTaskHubProps> = ({
       const allDecisions = await decisionService.getWorkspaceDecisions(effectiveWorkspaceId);
       console.log('✅ Loaded decisions:', allDecisions.length, allDecisions);
 
-      // Filter by status if set
-      const filtered = decisionStatusFilter
-        ? allDecisions.filter(d => d.status === decisionStatusFilter)
-        : allDecisions;
-
-      console.log('📊 Filtered decisions:', filtered.length);
-      setDecisions(filtered);
+      setDecisions(allDecisions);
 
       // Update selectedDecision if it exists to maintain reference
       setSelectedDecision(prev => {
         if (!prev) return null;
-        const updated = filtered.find(d => d.id === prev.id);
+        const updated = allDecisions.find(d => d.id === prev.id);
         return updated || prev;
       });
     } catch (error) {
@@ -356,7 +330,7 @@ export const DecisionTaskHub: React.FC<DecisionTaskHubProps> = ({
     } finally {
       setDecisionsLoading(false);
     }
-  }, [effectiveWorkspaceId, decisionStatusFilter]);
+  }, [effectiveWorkspaceId]);
 
   const loadTasks = useCallback(async () => {
     setTasksLoading(true);
@@ -389,7 +363,10 @@ export const DecisionTaskHub: React.FC<DecisionTaskHubProps> = ({
 
     try {
       console.log('🔔 Generating nudges from:', decisions.length, 'decisions and', tasks.length, 'tasks');
-      const apiKey = localStorage.getItem('gemini_api_key') || '';
+      const apiKey = localStorage.getItem('gemini_api_key') ||
+                     import.meta.env.VITE_GEMINI_API_KEY ||
+                     import.meta.env.VITE_API_KEY ||
+                     '';
       const generatedNudges = await proactiveSuggestionsService.generateNudges(
         decisions,
         tasks,
@@ -398,7 +375,6 @@ export const DecisionTaskHub: React.FC<DecisionTaskHubProps> = ({
       );
 
       console.log('📌 Generated nudges:', generatedNudges.length);
-      // Filter out dismissed nudges
       const activeNudges = generatedNudges.filter(n => !dismissedNudges.has(n.id));
       console.log('✅ Active nudges after filtering:', activeNudges.length);
       setNudges(activeNudges);
@@ -412,23 +388,19 @@ export const DecisionTaskHub: React.FC<DecisionTaskHubProps> = ({
   }, [loadDecisions]);
 
   const handleRefresh = useCallback(() => {
-    if (activeTab === 'decisions') {
-      loadDecisions();
-    } else {
-      loadTasks();
-    }
+    loadDecisions();
+    loadTasks();
     generateMetrics();
     generateNudges();
-  }, [activeTab, loadDecisions, loadTasks, generateMetrics, generateNudges]);
+  }, [loadDecisions, loadTasks, generateMetrics, generateNudges]);
 
-  // Sprint 6: Enhanced dismiss handling with persistence
+  // Enhanced dismiss handling with persistence
   const handleDismissNudge = useCallback((nudgeId: string) => {
     dismissNudge(nudgeId);
     setDismissedNudges(prev => new Set(prev).add(nudgeId));
     setNudges(nudges.filter(n => n.id !== nudgeId));
     setLastDismissedNudge(nudgeId);
 
-    // Auto-hide undo notification after 5 seconds
     setTimeout(() => {
       setLastDismissedNudge(null);
     }, 5000);
@@ -456,19 +428,16 @@ export const DecisionTaskHub: React.FC<DecisionTaskHubProps> = ({
     });
     setLastDismissedNudge(null);
 
-    // Regenerate nudges to show the undismissed one
     generateNudges();
   }, [lastDismissedNudge, generateNudges]);
 
-  // Decision Mission handlers (moved here to fix dependency order)
+  // Decision Mission handlers
   const handleOpenDecisionMission = useCallback((decision?: DecisionWithVotes) => {
-    // Phase 1: No scroll manipulation - sidebar should slide in smoothly without moving the page
     setShowDecisionMission(true);
     setSelectedDecision(decision || null);
     setMissionMessages([]);
     setMissionThinkingLogs(new Map());
 
-    // If opening with an existing decision, add context message
     if (decision) {
       const contextMessage: AIMessage = {
         id: `msg-${Date.now()}`,
@@ -481,7 +450,6 @@ export const DecisionTaskHub: React.FC<DecisionTaskHubProps> = ({
   }, []);
 
   const handleToggleAssistant = useCallback(() => {
-    // Phase 1: No scroll manipulation - sidebar should slide in smoothly without moving the page
     setShowAssistant(prev => !prev);
   }, []);
 
@@ -504,40 +472,29 @@ export const DecisionTaskHub: React.FC<DecisionTaskHubProps> = ({
     setMissionThinkingLogs(new Map());
   }, []);
 
-  // Phase 3: CSV Export
+  // CSV Export
   const handleExportCSV = useCallback(() => {
-    const filename = `${activeTab}_${new Date().toISOString().split('T')[0]}.csv`;
-
-    if (activeTab === 'decisions') {
-      // Export decisions
-      const headers = ['Title', 'Type', 'Status', 'Created', 'Deadline', 'Votes Count'];
-      const rows = decisions.map(d => [
+    const filename = `decisions_tasks_${new Date().toISOString().split('T')[0]}.csv`;
+    const headers = ['Type', 'Title', 'Status', 'Priority', 'Created', 'Deadline'];
+    const rows = [
+      ...decisions.map(d => [
+        'Decision',
         `"${d.title.replace(/"/g, '""')}"`,
-        d.decision_type,
         d.status,
+        '-',
         new Date(d.created_at).toLocaleDateString(),
-        d.deadline ? new Date(d.deadline).toLocaleDateString() : 'N/A',
-        d.votes?.length || 0
-      ]);
-      const csv = [headers.join(','), ...rows.map(r => r.join(','))].join('\n');
-      downloadCSV(csv, filename);
-    } else {
-      // Export tasks
-      const headers = ['Title', 'Status', 'Priority', 'Assigned To', 'Due Date', 'Created'];
-      const rows = tasks.map(t => [
+        d.deadline ? new Date(d.deadline).toLocaleDateString() : 'N/A'
+      ]),
+      ...tasks.map(t => [
+        'Task',
         `"${t.title.replace(/"/g, '""')}"`,
         t.status,
         t.priority || 'N/A',
-        t.assigned_to_name || 'Unassigned',
-        t.due_date ? new Date(t.due_date).toLocaleDateString() : 'N/A',
-        new Date(t.created_at).toLocaleDateString()
-      ]);
-      const csv = [headers.join(','), ...rows.map(r => r.join(','))].join('\n');
-      downloadCSV(csv, filename);
-    }
-  }, [activeTab, decisions, tasks]);
-
-  const downloadCSV = (csv: string, filename: string) => {
+        new Date(t.created_at).toLocaleDateString(),
+        t.due_date ? new Date(t.due_date).toLocaleDateString() : 'N/A'
+      ])
+    ];
+    const csv = [headers.join(','), ...rows.map(r => r.join(','))].join('\n');
     const blob = new Blob([csv], { type: 'text/csv;charset=utf-8;' });
     const link = document.createElement('a');
     const url = URL.createObjectURL(blob);
@@ -547,7 +504,7 @@ export const DecisionTaskHub: React.FC<DecisionTaskHubProps> = ({
     document.body.appendChild(link);
     link.click();
     document.body.removeChild(link);
-  };
+  }, [decisions, tasks]);
 
   const handleAssistantAction = useCallback((action: { type: string; data: any }) => {
     console.log('Assistant action executed:', action);
@@ -557,11 +514,9 @@ export const DecisionTaskHub: React.FC<DecisionTaskHubProps> = ({
         handleOpenDecisionMission();
         break;
       case 'update_task':
-        // Refresh tasks to show any updates
         loadTasks();
         break;
       case 'send_reminder':
-        // TODO: Implement reminder functionality
         console.log('Send reminder:', action.data);
         break;
       default:
@@ -569,45 +524,27 @@ export const DecisionTaskHub: React.FC<DecisionTaskHubProps> = ({
     }
   }, [handleOpenDecisionMission, loadTasks]);
 
-  const handleSetListView = useCallback(() => {
-    setActiveView('list');
-  }, []);
-
-  const handleSetKanbanView = useCallback(() => {
-    setActiveView('kanban');
-  }, []);
-
-  const handleSetTimelineView = useCallback(() => {
-    setActiveView('timeline');
-  }, []);
-
-  // Sprint 6: Enhanced nudge action handlers
+  // Enhanced nudge action handlers
   const handleNudgeAction = useCallback(async (nudge: Nudge) => {
     console.log('Handle nudge action:', nudge);
 
     switch (nudge.actionType) {
       case 'send_reminder':
-        // TODO: Implement email/notification reminder to stakeholders
         alert(`📧 Send reminder for: ${nudge.relatedTitle}\n\nThis feature will send notifications to stakeholders.`);
         handleDismissNudge(nudge.id);
         break;
 
       case 'review':
-        // Navigate to the decision or task
         if (nudge.type === 'decision_stale' && nudge.relatedId) {
           const decision = decisions.find(d => d.id === nudge.relatedId);
           if (decision) {
-            setActiveTab('decisions');
             handleOpenDecisionMission(decision);
           }
-        } else {
-          setActiveTab(nudge.type.includes('task') ? 'tasks' : 'decisions');
         }
         handleDismissNudge(nudge.id);
         break;
 
       case 'reassign':
-        // Open reassign modal for the related task
         if (nudge.relatedId) {
           const task = tasks.find(t => t.id === nudge.relatedId);
           if (task) {
@@ -617,7 +554,6 @@ export const DecisionTaskHub: React.FC<DecisionTaskHubProps> = ({
         break;
 
       case 'extend_deadline':
-        // Open deadline extension dialog
         if (nudge.relatedId) {
           const task = tasks.find(t => t.id === nudge.relatedId);
           if (task) {
@@ -631,7 +567,7 @@ export const DecisionTaskHub: React.FC<DecisionTaskHubProps> = ({
     }
   }, [decisions, tasks, handleDismissNudge, handleOpenDecisionMission]);
 
-  // Sprint 6: Real-time event handlers
+  // Real-time event handlers
   const updateConnectionStatus = useCallback((status: string) => {
     if (status === 'SUBSCRIBED') {
       setConnectionStatus('connected');
@@ -644,46 +580,34 @@ export const DecisionTaskHub: React.FC<DecisionTaskHubProps> = ({
 
   const handleDecisionChange = useCallback((payload: any) => {
     console.log('📊 Processing decision change:', payload.eventType);
-
-    // Reload decisions to get fresh data with votes
     loadDecisions();
-
-    // Regenerate metrics after data changes
     setTimeout(() => {
       generateMetrics();
       generateNudges();
     }, 500);
-  }, [effectiveWorkspaceId]);
+  }, [loadDecisions, generateMetrics, generateNudges]);
 
   const handleTaskChange = useCallback((payload: any) => {
     console.log('✅ Processing task change:', payload.eventType);
-
-    // Reload tasks to get fresh data
     loadTasks();
-
-    // Regenerate nudges after task changes
     setTimeout(() => {
       generateNudges();
     }, 500);
-  }, [effectiveWorkspaceId]);
+  }, [loadTasks, generateNudges]);
 
   const handleVoteChange = useCallback((payload: any) => {
     console.log('🗳️ Processing vote change:', payload.eventType);
-
-    // Reload decisions to update vote counts
     loadDecisions();
-
-    // Update metrics
     setTimeout(() => {
       generateMetrics();
     }, 500);
-  }, [effectiveWorkspaceId]);
+  }, [loadDecisions, generateMetrics]);
 
   // Task management handlers
   const handleTaskStatusChange = useCallback(async (taskId: string, newStatus: Task['status']) => {
     try {
       await taskService.updateTaskStatus(taskId, newStatus);
-      await loadTasks(); // Reload tasks
+      await loadTasks();
     } catch (error) {
       console.error('Failed to update task status:', error);
     }
@@ -692,7 +616,7 @@ export const DecisionTaskHub: React.FC<DecisionTaskHubProps> = ({
   const handleTaskDelete = useCallback(async (taskId: string) => {
     try {
       await taskService.deleteTask(taskId);
-      await loadTasks(); // Reload tasks
+      await loadTasks();
     } catch (error) {
       console.error('Failed to delete task:', error);
     }
@@ -705,7 +629,7 @@ export const DecisionTaskHub: React.FC<DecisionTaskHubProps> = ({
   const handleTaskSave = useCallback(async (taskId: string, updates: Partial<Task>) => {
     try {
       await taskService.updateTask(taskId, updates);
-      await loadTasks(); // Reload tasks
+      await loadTasks();
       setTaskToEdit(null);
     } catch (error) {
       console.error('Failed to save task:', error);
@@ -725,7 +649,7 @@ export const DecisionTaskHub: React.FC<DecisionTaskHubProps> = ({
         status: newTask.status,
         metadata: newTask.metadata
       });
-      await loadTasks(); // Reload tasks
+      await loadTasks();
       setShowCreateTask(false);
     } catch (error) {
       console.error('Failed to create task:', error);
@@ -733,19 +657,37 @@ export const DecisionTaskHub: React.FC<DecisionTaskHubProps> = ({
     }
   }, [loadTasks]);
 
-  // Phase 2: Handle decision decomposition
+  // Archive handlers
+  const handleTaskReopen = useCallback(async (taskId: string) => {
+    try {
+      await taskService.reopenTask(taskId);
+      await loadTasks();
+    } catch (error) {
+      console.error('Failed to reopen task:', error);
+    }
+  }, [loadTasks]);
+
+  const handleDecisionReopen = useCallback(async (decisionId: string) => {
+    try {
+      await decisionService.reopenDecision(decisionId);
+      await loadDecisions();
+    } catch (error) {
+      console.error('Failed to reopen decision:', error);
+    }
+  }, [loadDecisions]);
+
+  // Handle decision decomposition
   const handleOpenDecomposer = useCallback((decision: DecisionWithVotes) => {
     setDecisionToDecompose(decision);
   }, []);
 
-  // Phase 2: Handle template selection
+  // Handle template selection
   const handleTemplateSelect = useCallback(async (template: any, variables: any) => {
     try {
       const applied = await import('../../services/decisionTemplateService').then(m =>
         m.decisionTemplateService.applyTemplate(template, variables)
       );
 
-      // Create decision from template
       const newDecision = await decisionService.createDecision({
         workspace_id: effectiveWorkspaceId,
         title: applied.title,
@@ -755,7 +697,6 @@ export const DecisionTaskHub: React.FC<DecisionTaskHubProps> = ({
         template_id: applied.template_id
       });
 
-      // Create suggested tasks if any
       if (applied.suggested_tasks && applied.suggested_tasks.length > 0 && newDecision) {
         for (const task of applied.suggested_tasks) {
           const deadline = task.deadline_offset_days
@@ -777,9 +718,7 @@ export const DecisionTaskHub: React.FC<DecisionTaskHubProps> = ({
         }
       }
 
-      // Reload data
       await Promise.all([loadDecisions(), loadTasks()]);
-
       setShowTemplates(false);
     } catch (error) {
       console.error('Error creating decision from template:', error);
@@ -791,7 +730,6 @@ export const DecisionTaskHub: React.FC<DecisionTaskHubProps> = ({
     if (!decisionToDecompose) return;
 
     try {
-      // Create all tasks
       for (const taskData of tasks) {
         await taskService.createTask({
           workspace_id: taskData.workspace_id!,
@@ -809,15 +747,12 @@ export const DecisionTaskHub: React.FC<DecisionTaskHubProps> = ({
         });
       }
 
-      // Update decision with brief
       await decisionService.updateDecision(decisionToDecompose.id, {
         brief,
         tasks_generated_at: new Date().toISOString()
       });
 
-      // Reload data
       await Promise.all([loadTasks(), loadDecisions()]);
-
       setDecisionToDecompose(null);
     } catch (error) {
       console.error('Failed to create tasks from decomposition:', error);
@@ -828,7 +763,6 @@ export const DecisionTaskHub: React.FC<DecisionTaskHubProps> = ({
   const handlePrioritizationComplete = useCallback((prioritized: AITaskPriority[]) => {
     setAiPriorities(prioritized);
 
-    // Update tasks with AI scores in metadata
     const updatedTasks = tasks.map(task => {
       const aiData = prioritized.find(p => p.taskId === task.id);
       if (aiData) {
@@ -848,11 +782,11 @@ export const DecisionTaskHub: React.FC<DecisionTaskHubProps> = ({
     setTasks(updatedTasks);
   }, [tasks]);
 
-  // Sprint 6: Reassign task handler
+  // Reassign task handler
   const handleReassignTask = useCallback(async (taskId: string, newAssignee: string) => {
     try {
       await taskService.updateTask(taskId, { assignee_id: newAssignee });
-      await loadTasks(); // Reload to get fresh data
+      await loadTasks();
       setTaskToReassign(null);
     } catch (error) {
       console.error('Failed to reassign task:', error);
@@ -860,11 +794,11 @@ export const DecisionTaskHub: React.FC<DecisionTaskHubProps> = ({
     }
   }, [loadTasks]);
 
-  // Sprint 6: Extend deadline handler
+  // Extend deadline handler
   const handleExtendDeadline = useCallback(async (taskId: string, newDeadline: string) => {
     try {
       await taskService.updateTask(taskId, { deadline: newDeadline });
-      await loadTasks(); // Reload to get fresh data
+      await loadTasks();
       setTaskToExtend(null);
     } catch (error) {
       console.error('Failed to extend deadline:', error);
@@ -873,7 +807,6 @@ export const DecisionTaskHub: React.FC<DecisionTaskHubProps> = ({
   }, [loadTasks]);
 
   const handleMissionSendMessage = useCallback(async (message: string) => {
-    // Use Gemini API key (fallback to environment variable)
     const apiKey = user?.gemini_api_key || localStorage.getItem('gemini_api_key') || import.meta.env.VITE_GEMINI_API_KEY;
 
     if (!apiKey) {
@@ -881,7 +814,6 @@ export const DecisionTaskHub: React.FC<DecisionTaskHubProps> = ({
       return;
     }
 
-    // Add user message
     const userMessage: AIMessage = {
       id: `msg-${Date.now()}`,
       role: 'user',
@@ -892,7 +824,6 @@ export const DecisionTaskHub: React.FC<DecisionTaskHubProps> = ({
     setMissionLoading(true);
 
     try {
-      // Call RAG service for AI response
       const response = await ragService.chat(
         message,
         [],
@@ -902,7 +833,6 @@ export const DecisionTaskHub: React.FC<DecisionTaskHubProps> = ({
         }
       );
 
-      // Add AI response
       const aiMessage: AIMessage = {
         id: `msg-${Date.now()}-ai`,
         role: 'assistant',
@@ -922,60 +852,59 @@ export const DecisionTaskHub: React.FC<DecisionTaskHubProps> = ({
     } finally {
       setMissionLoading(false);
     }
-  }, []);
+  }, [user]);
 
-  // Filter and sort tasks
-  const getFilteredTasks = () => {
+  const handleDecisionAction = useCallback((decision: DecisionWithVotes, action: string) => {
+    if (action === 'generate-tasks') {
+      handleOpenDecomposer(decision);
+    } else if (action.startsWith('vote-')) {
+      handleVote();
+    }
+  }, [handleOpenDecomposer, handleVote]);
+
+  // Filter tasks based on FilterState
+  const filteredTasks = useMemo(() => {
     let filtered = tasks;
 
-    if (statusFilter) {
-      filtered = filtered.filter(t => t.status === statusFilter);
-    }
-
-    if (showOverdueOnly) {
+    // Apply search filter
+    if (filters.search) {
+      const searchLower = filters.search.toLowerCase();
       filtered = filtered.filter(t =>
-        t.deadline && new Date(t.deadline) < new Date() && t.status !== 'done'
+        t.title.toLowerCase().includes(searchLower) ||
+        t.description?.toLowerCase().includes(searchLower)
       );
     }
 
-    // Sort tasks
-    filtered = [...filtered].sort((a, b) => {
-      switch (sortBy) {
-        case 'due_date':
-          if (!a.deadline) return 1;
-          if (!b.deadline) return -1;
-          return new Date(a.deadline).getTime() - new Date(b.deadline).getTime();
-        case 'priority':
-          const priorityOrder = { urgent: 0, high: 1, medium: 2, low: 3 };
-          return priorityOrder[a.priority] - priorityOrder[b.priority];
-        case 'ai_score':
-          const aScore = a.metadata?.ai_priority_score || 50;
-          const bScore = b.metadata?.ai_priority_score || 50;
-          return bScore - aScore;
-        case 'created':
-        default:
-          const aTime = new Date(a.extracted_at || a.created_at || a.updated_at).getTime();
-          const bTime = new Date(b.extracted_at || b.created_at || b.updated_at).getTime();
-          return bTime - aTime;
-      }
-    });
+    // Apply status filter
+    if (filters.status !== 'all') {
+      filtered = filtered.filter(t => t.status === filters.status);
+    }
+
+    // Apply priority filter
+    if (filters.priority) {
+      filtered = filtered.filter(t => t.priority === filters.priority);
+    }
 
     return filtered;
-  };
+  }, [tasks, filters]);
 
-  // Sprint 7: Memoized computed values
-  const votingCount = useMemo(
-    () => decisions.filter(d => d.status === 'voting').length,
-    [decisions]
-  );
+  // Filter decisions based on FilterState
+  const filteredDecisions = useMemo(() => {
+    let filtered = decisions;
 
-  const overdueCount = useMemo(
-    () => tasks.filter(t =>
-      t.deadline && new Date(t.deadline) < new Date() && t.status !== 'done'
-    ).length,
-    [tasks]
-  );
+    // Apply search filter
+    if (filters.search) {
+      const searchLower = filters.search.toLowerCase();
+      filtered = filtered.filter(d =>
+        d.title.toLowerCase().includes(searchLower) ||
+        d.description?.toLowerCase().includes(searchLower)
+      );
+    }
 
+    return filtered;
+  }, [decisions, filters]);
+
+  // Computed values
   const urgentNudges = useMemo(
     () => nudges.filter(n => n.priority === 'urgent'),
     [nudges]
@@ -991,66 +920,47 @@ export const DecisionTaskHub: React.FC<DecisionTaskHubProps> = ({
     [nudges]
   );
 
-  const filteredTasks = useMemo(
-    () => getFilteredTasks(),
-    [tasks, statusFilter, showOverdueOnly, sortBy]
-  );
-
-
-  // Debug logging
-  console.log('🎨 Render state:', {
-    metrics,
-    nudgesCount: nudges.length,
-    decisionsCount: decisions.length,
-    tasksCount: tasks.length,
-    showInsights,
-    showNudges,
-    filteredTasks: filteredTasks.length
-  });
-
   return (
     <div className="decision-task-hub">
-      {/* Header - Simplified */}
-      <div className="hub-header">
-        <div className="hub-header-content">
-          <h1 className="hub-title">Decisions & Tasks</h1>
-          {/* Only show connection indicator if there's an error */}
-          {connectionStatus === 'error' && <RealTimeIndicator status={connectionStatus} />}
-        </div>
-        <div className="hub-header-actions">
-          {/* Notification badge for nudges */}
-          {nudges.length > 0 && (
+      {/* Header with mode switcher */}
+      <HubHeader
+        mode={mode}
+        onModeChange={setMode}
+        onRefresh={handleRefresh}
+        actions={
+          <>
+            {connectionStatus === 'error' && <RealTimeIndicator status={connectionStatus} />}
+            {nudges.length > 0 && (
+              <button
+                type="button"
+                className="hub-action-button notification-badge"
+                onClick={() => setShowNudges(!showNudges)}
+                aria-label={`${nudges.length} notifications`}
+                title="Alerts & Nudges"
+              >
+                <Bell size={18} aria-hidden="true" />
+                <span className="badge-count">{nudges.length}</span>
+              </button>
+            )}
             <button
               type="button"
-              className="hub-action-button notification-badge"
-              onClick={() => setShowNudges(!showNudges)}
-              aria-label={`${nudges.length} notifications`}
-              title="Alerts & Nudges"
+              className="hub-action-button"
+              onClick={handleExportCSV}
+              aria-label="Export to CSV"
+              title="Export CSV"
             >
-              <Bell size={18} aria-hidden="true" />
-              <span className="badge-count">{nudges.length}</span>
+              <Download size={18} aria-hidden="true" />
             </button>
-          )}
-          <button
-            type="button"
-            className="hub-action-button"
-            onClick={handleExportCSV}
-            aria-label={`Export ${activeTab} to CSV`}
-            title="Export CSV"
-          >
-            <Download size={18} aria-hidden="true" />
-          </button>
-          <button
-            type="button"
-            className="hub-action-button"
-            onClick={handleToggleAssistant}
-            aria-label="Toggle AI Assistant"
-            title="AI Assistant"
-          >
-            <Bot size={18} aria-hidden="true" />
-            <span className="action-label">AI</span>
-          </button>
-          {activeTab === 'decisions' && (
+            <button
+              type="button"
+              className="hub-action-button"
+              onClick={handleToggleAssistant}
+              aria-label="Toggle AI Assistant"
+              title="AI Assistant"
+            >
+              <Bot size={18} aria-hidden="true" />
+              <span className="action-label">AI</span>
+            </button>
             <button
               type="button"
               className="hub-action-button"
@@ -1061,19 +971,19 @@ export const DecisionTaskHub: React.FC<DecisionTaskHubProps> = ({
               <Sparkles size={18} aria-hidden="true" />
               <span className="action-label">Templates</span>
             </button>
-          )}
-          <button
-            type="button"
-            className="hub-action-button primary"
-            onClick={() => activeTab === 'decisions' ? handleOpenDecisionMission() : setShowCreateTask(true)}
-            aria-label={activeTab === 'decisions' ? 'Create new decision' : 'Create new task'}
-            title={activeTab === 'decisions' ? 'Create Decision' : 'Create Task'}
-          >
-            <Plus size={18} aria-hidden="true" />
-            <span className="action-label">Create</span>
-          </button>
-        </div>
-      </div>
+            <button
+              type="button"
+              className="hub-action-button primary"
+              onClick={() => setShowCreateTask(true)}
+              aria-label="Create new task"
+              title="Create Task"
+            >
+              <Plus size={18} aria-hidden="true" />
+              <span className="action-label">Create</span>
+            </button>
+          </>
+        }
+      />
 
       {/* AI Insights Dashboard */}
       <AIFeatureErrorBoundary featureName="AI Insights Dashboard">
@@ -1083,12 +993,6 @@ export const DecisionTaskHub: React.FC<DecisionTaskHubProps> = ({
               <button
                 className="insights-header-toggle"
                 onClick={handleToggleInsights}
-                onKeyDown={(e) => {
-                  if (e.key === 'Enter' || e.key === ' ') {
-                    e.preventDefault();
-                    setShowInsights(!showInsights);
-                  }
-                }}
                 aria-expanded={showInsights}
                 aria-label={showInsights ? 'Collapse AI Insights Dashboard' : 'Expand AI Insights Dashboard'}
                 style={{ background: 'transparent', border: 'none', padding: 0, cursor: 'pointer', flex: 1, textAlign: 'left' }}
@@ -1153,7 +1057,7 @@ export const DecisionTaskHub: React.FC<DecisionTaskHubProps> = ({
         )}
       </AIFeatureErrorBoundary>
 
-      {/* Phase 2: Alerts Panel - Slide-down Dropdown */}
+      {/* Alerts Panel - Slide-down Dropdown */}
       {nudges.length > 0 && showNudges && (
         <div className="alerts-panel-dropdown">
           <div className="alerts-panel-header">
@@ -1173,7 +1077,6 @@ export const DecisionTaskHub: React.FC<DecisionTaskHubProps> = ({
           </div>
 
           <div className="alerts-panel-content">
-            {/* Show top 3 nudges by priority */}
             {[...urgentNudges, ...importantNudges, ...suggestionNudges].slice(0, 3).map(nudge => {
               const priority = nudge.priority === 'urgent' ? 'urgent' : nudge.priority === 'important' ? 'important' : 'suggestion';
               const icon = priority === 'urgent' ? '🔴' : priority === 'important' ? '🟡' : '🟢';
@@ -1204,7 +1107,6 @@ export const DecisionTaskHub: React.FC<DecisionTaskHubProps> = ({
               );
             })}
 
-            {/* See all link if more than 3 */}
             {nudges.length > 3 && (
               <div className="alerts-see-all">
                 <button
@@ -1229,256 +1131,55 @@ export const DecisionTaskHub: React.FC<DecisionTaskHubProps> = ({
         </div>
       )}
 
+      {/* Filter Bar */}
+      <FilterBar filters={filters} onChange={setFilters} />
+
       {/* Main Content */}
-      <div className="hub-main-content">
-        {/* View Selector */}
-        <div className="view-selector" role="group" aria-label="View mode selection">
-          <button
-            type="button"
-            className={`view-button ${activeView === 'list' ? 'active' : ''}`}
-            onClick={handleSetListView}
-            aria-label="List view"
-            aria-current={activeView === 'list' ? 'true' : 'false'}
-            title="List view"
-          >
-            <ListIcon size={16} aria-hidden="true" />
-            <span>List</span>
-          </button>
-          <button
-            type="button"
-            className={`view-button ${activeView === 'kanban' ? 'active' : ''}`}
-            onClick={handleSetKanbanView}
-            disabled={activeTab === 'decisions'}
-            aria-label={activeTab === 'decisions' ? 'Kanban view (available for tasks only)' : 'Kanban board view'}
-            aria-current={activeView === 'kanban' ? 'true' : 'false'}
-            title={activeTab === 'decisions' ? 'Kanban available for tasks only' : 'Kanban board view'}
-          >
-            <Columns size={16} aria-hidden="true" />
-            <span>Kanban</span>
-          </button>
-          <button
-            type="button"
-            className={`view-button ${activeView === 'timeline' ? 'active' : ''}`}
-            onClick={handleSetTimelineView}
-            disabled
-            aria-label="Timeline view (coming soon)"
-            aria-current={activeView === 'timeline' ? 'true' : 'false'}
-            title="Coming soon"
-          >
-            <Calendar size={16} aria-hidden="true" />
-            <span>Timeline</span>
-          </button>
-          {activeTab === 'tasks' && (
-            <button
-              type="button"
-              className={`view-button ${showPrioritizer ? 'active' : ''}`}
-              onClick={handleTogglePrioritizer}
-              aria-label="Toggle AI Task Prioritization"
-              aria-pressed={showPrioritizer ? 'true' : 'false'}
-              title="AI Task Prioritization"
-            >
-              <Zap size={16} aria-hidden="true" />
-              <span>AI Prioritize</span>
-            </button>
-          )}
-        </div>
-
-        {/* Tab Navigation */}
-        <div className="hub-tabs" role="tablist" aria-label="Decisions and Tasks tabs">
-          <button
-            type="button"
-            className={`tab-button ${activeTab === 'decisions' ? 'active' : ''}`}
-            onClick={() => setActiveTab('decisions')}
-            role="tab"
-            aria-selected={activeTab === 'decisions'}
-            aria-label={`Decisions tab${votingCount > 0 ? `, ${votingCount} items need votes` : ''}`}
-          >
-            <Vote size={18} aria-hidden="true" />
-            <span>Decisions</span>
-            {votingCount > 0 && (
-              <span className="tab-badge" aria-label={`${votingCount} voting`}>{votingCount}</span>
-            )}
-          </button>
-          <button
-            type="button"
-            className={`tab-button ${activeTab === 'tasks' ? 'active' : ''}`}
-            onClick={() => setActiveTab('tasks')}
-            role="tab"
-            aria-selected={activeTab === 'tasks'}
-            aria-label={`Tasks tab${overdueCount > 0 ? `, ${overdueCount} overdue` : ''}`}
-          >
-            <CheckSquare size={18} aria-hidden="true" />
-            <span>Tasks</span>
-            {overdueCount > 0 && (
-              <span className="tab-badge urgent" aria-label={`${overdueCount} overdue`}>{overdueCount}</span>
-            )}
-          </button>
-        </div>
-
-        {/* Filter & Sort Bar */}
-        <div className="filter-bar">
-          <div className="filter-controls">
-            {activeTab === 'decisions' ? (
-              <select
-                className="filter-select"
-                value={decisionStatusFilter || ''}
-                onChange={(e) => setDecisionStatusFilter(e.target.value || undefined)}
-                aria-label="Filter decisions by status"
-              >
-                <option value="">All Decisions</option>
-                <option value="proposed">Proposed</option>
-                <option value="voting">Voting</option>
-                <option value="decided">Decided</option>
-                <option value="cancelled">Cancelled</option>
-              </select>
-            ) : (
-              <>
-                <select
-                  className="filter-select"
-                  value={statusFilter || ''}
-                  onChange={(e) => setStatusFilter(e.target.value as TaskStatus || undefined)}
-                  aria-label="Filter tasks by status"
-                >
-                  <option value="">All Tasks</option>
-                  <option value="todo">To Do</option>
-                  <option value="in_progress">In Progress</option>
-                  <option value="done">Done</option>
-                  <option value="cancelled">Cancelled</option>
-                </select>
-
-                <select
-                  className="filter-select"
-                  value={sortBy}
-                  onChange={(e) => setSortBy(e.target.value as any)}
-                  aria-label="Sort tasks by"
-                >
-                  <option value="created">Created Date</option>
-                  <option value="due_date">Due Date</option>
-                  <option value="priority">Manual Priority</option>
-                  <option value="ai_score">🤖 AI Priority</option>
-                </select>
-
-                <label className="filter-checkbox">
-                  <input
-                    type="checkbox"
-                    checked={showOverdueOnly}
-                    onChange={(e) => setShowOverdueOnly(e.target.checked)}
-                    aria-label="Show overdue tasks only"
-                  />
-                  <span>Overdue only</span>
-                </label>
-              </>
-            )}
-          </div>
-
-          <button
-            type="button"
-            className="refresh-button"
-            onClick={handleRefresh}
-            aria-label="Refresh data"
-            title="Refresh"
-          >
-            <RefreshCw size={16} aria-hidden="true" />
-          </button>
-        </div>
-
-        {/* Content Area */}
-        <div className="hub-content-area">
-          {activeTab === 'decisions' && (
-            <div className="decisions-section">
-              {decisionsLoading ? (
-                <div className="decisions-grid">
-                  {[...Array(6)].map((_, i) => (
-                    <SkeletonDecisionCard key={`skeleton-decision-${i}`} />
-                  ))}
-                </div>
-              ) : decisions.length === 0 ? (
-                <div className="empty-state">
-                  <Vote size={64} color="#ccc" />
-                  <h3>No decisions found</h3>
-                  <p>
-                    {decisionStatusFilter
-                      ? `No ${decisionStatusFilter} decisions in this workspace`
-                      : 'Create a decision to get team input and track decisions'}
-                  </p>
-                  <button
-                    className="empty-state-button"
-                    onClick={() => handleOpenDecisionMission()}
-                  >
-                    <Plus size={18} />
-                    Create Your First Decision
-                  </button>
-                </div>
-              ) : (
-                <div className="decisions-grid">
-                  {decisions.map((decision) => (
-                    <EnhancedDecisionCard
-                      key={decision.id}
-                      decision={decision}
-                      currentUserId={user?.id || ''}
-                      workspaceId={effectiveWorkspaceId}
-                      onVote={handleVote}
-                      onOpenMission={handleOpenDecisionMission}
-                      onGenerateTasks={handleOpenDecomposer}
-                    />
-                  ))}
-                </div>
-              )}
-            </div>
-          )}
-
-          {activeTab === 'tasks' && (
-            <div className="tasks-section">
-              {/* AI Task Prioritizer - Overlay Panel */}
-              <AIFeatureErrorBoundary featureName="AI Task Prioritizer">
-                {showPrioritizer && tasks.length > 0 && createPortal(
-                  <AITaskPrioritizer
-                    tasks={filteredTasks}
-                    onPrioritizationComplete={handlePrioritizationComplete}
-                    onClose={() => setShowPrioritizer(false)}
-                    apiKey={localStorage.getItem('gemini_api_key') || ''}
-                  />,
-                  document.body
-                )}
-              </AIFeatureErrorBoundary>
-
-              {tasksLoading ? (
-                <div className="tasks-list-view">
-                  {[...Array(10)].map((_, i) => (
-                    <SkeletonTaskCard key={`skeleton-task-${i}`} />
-                  ))}
-                </div>
-              ) : getFilteredTasks().length === 0 ? (
-                <div className="empty-state">
-                  <CheckSquare size={64} color="#ccc" />
-                  <h3>No tasks found</h3>
-                  <p>
-                    {statusFilter || showOverdueOnly
-                      ? 'Try adjusting your filters'
-                      : 'Tasks will appear here when created from messages or decisions'}
-                  </p>
-                </div>
-              ) : activeView === 'kanban' ? (
-                <TaskKanban
-                  tasks={filteredTasks}
-                  onStatusChange={handleTaskStatusChange}
-                  onDelete={handleTaskDelete}
-                  onEdit={handleTaskEdit}
-                />
-              ) : (
-                <ActiveView
-                  tasks={filteredTasks}
-                  onStatusChange={handleTaskStatusChange}
-                  onDelete={handleTaskDelete}
-                  onEdit={handleTaskEdit}
-                />
-              )}
-            </div>
-          )}
-        </div>
+      <div className="hub-content">
+        {mode === 'active' && (
+          <ActiveView
+            decisions={filteredDecisions}
+            tasks={filteredTasks}
+            currentUserId={user?.id}
+            onStatusChange={handleTaskStatusChange}
+            onDelete={handleTaskDelete}
+            onEdit={handleTaskEdit}
+            onDecisionAction={handleDecisionAction}
+          />
+        )}
+        {mode === 'board' && (
+          <BoardView
+            decisions={filteredDecisions}
+            tasks={filteredTasks}
+            filters={filters}
+            currentUserId={user?.id || ''}
+            workspaceId={effectiveWorkspaceId}
+            onTaskStatusChange={handleTaskStatusChange}
+            onDecisionStatusChange={async (decisionId, newStatus) => {
+              try {
+                await decisionService.updateDecision(decisionId, { status: newStatus });
+                loadDecisions();
+              } catch (error) {
+                console.error('Error updating decision status:', error);
+              }
+            }}
+            onDecisionDecompose={setDecisionToDecompose}
+            onTaskDelete={handleTaskDelete}
+            onTaskEdit={handleTaskEdit}
+          />
+        )}
+        {mode === 'archive' && (
+          <ArchiveView
+            decisions={filteredDecisions}
+            tasks={filteredTasks}
+            filters={filters}
+            onTaskReopen={handleTaskReopen}
+            onDecisionReopen={handleDecisionReopen}
+          />
+        )}
       </div>
 
-      {/* Phase 2: AI Assistant Sidebar with Metrics */}
+      {/* AI Assistant Sidebar */}
       {showAssistant && user && (
         <AIFeatureErrorBoundary featureName="Conversational AI Assistant">
           <ConversationalAssistant
@@ -1533,7 +1234,7 @@ export const DecisionTaskHub: React.FC<DecisionTaskHubProps> = ({
         document.body
       )}
 
-      {/* Sprint 6: Reassign Task Modal */}
+      {/* Reassign Task Modal */}
       {taskToReassign && createPortal(
         <ReassignTaskModal
           task={taskToReassign}
@@ -1544,7 +1245,7 @@ export const DecisionTaskHub: React.FC<DecisionTaskHubProps> = ({
         document.body
       )}
 
-      {/* Sprint 6: Extend Deadline Dialog */}
+      {/* Extend Deadline Dialog */}
       {taskToExtend && createPortal(
         <ExtendDeadlineDialog
           task={taskToExtend}
@@ -1554,7 +1255,7 @@ export const DecisionTaskHub: React.FC<DecisionTaskHubProps> = ({
         document.body
       )}
 
-      {/* Sprint 6: Undo Dismiss Snackbar */}
+      {/* Undo Dismiss Snackbar */}
       {lastDismissedNudge && (
         <div className="undo-snackbar">
           <span>Nudge dismissed</span>
@@ -1579,43 +1280,43 @@ export const DecisionTaskHub: React.FC<DecisionTaskHubProps> = ({
         </div>
       )}
 
-      {/* Phase 1.7: Task Edit Modal */}
+      {/* Task Edit Modal */}
       {taskToEdit && createPortal(
         <TaskEditModal
           task={taskToEdit}
           onClose={() => setTaskToEdit(null)}
           onSave={handleTaskSave}
-          workspaceMembers={[]} // TODO: Pass actual workspace members
+          workspaceMembers={[]}
         />,
         document.body
       )}
 
-      {/* Phase 1.7: Create Task Modal */}
+      {/* Create Task Modal */}
       {showCreateTask && createPortal(
         <CreateTaskModal
           workspaceId={effectiveWorkspaceId}
           currentUserId={user?.id || ''}
           onClose={() => setShowCreateTask(false)}
           onCreate={handleTaskCreate}
-          workspaceMembers={[]} // TODO: Pass actual workspace members
+          workspaceMembers={[]}
         />,
         document.body
       )}
 
-      {/* Phase 2: Decision Decomposer Modal */}
+      {/* Decision Decomposer Modal */}
       {decisionToDecompose && createPortal(
         <DecisionDecomposer
           decision={decisionToDecompose}
           workspaceId={effectiveWorkspaceId}
-          workspaceMembers={[]} // TODO: Pass actual workspace members
+          workspaceMembers={[]}
           onClose={() => setDecisionToDecompose(null)}
           onTasksGenerated={handleDecompositionComplete}
-          apiKey={localStorage.getItem('gemini_api_key') || ''}
+          apiKey={localStorage.getItem('gemini_api_key') || import.meta.env.VITE_GEMINI_API_KEY || import.meta.env.VITE_API_KEY || ''}
         />,
         document.body
       )}
 
-      {/* Phase 2: Decision Templates Modal */}
+      {/* Decision Templates Modal */}
       {showTemplates && createPortal(
         <DecisionTemplates
           workspaceId={effectiveWorkspaceId}
@@ -1624,6 +1325,19 @@ export const DecisionTaskHub: React.FC<DecisionTaskHubProps> = ({
         />,
         document.body
       )}
+
+      {/* AI Task Prioritizer - Overlay Panel */}
+      <AIFeatureErrorBoundary featureName="AI Task Prioritizer">
+        {showPrioritizer && tasks.length > 0 && createPortal(
+          <AITaskPrioritizer
+            tasks={filteredTasks}
+            onPrioritizationComplete={handlePrioritizationComplete}
+            onClose={() => setShowPrioritizer(false)}
+            apiKey={localStorage.getItem('gemini_api_key') || import.meta.env.VITE_GEMINI_API_KEY || import.meta.env.VITE_API_KEY || ''}
+          />,
+          document.body
+        )}
+      </AIFeatureErrorBoundary>
     </div>
   );
 };

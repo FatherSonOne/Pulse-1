@@ -26,16 +26,47 @@ import {
   Trash2,
   Edit3,
   Waves,
+  CheckCheck,
+  Tower,
+  Sparkles,
+  Reply,
 } from 'lucide-react';
 import VoxAudioVisualizer from './VoxAudioVisualizer';
 import RecordingPreview from './RecordingPreview';
 import { PTTButton } from './PTTButton';
+import VoxModeHeader from './VoxModeHeader';
+import RecordButton from './RecordButton';
 import { useVoxRecording } from '../../hooks/useVoxRecording';
 import { voxModeService } from '../../services/voxer/voxModeService';
 import analyticsCollector from '../../services/analyticsCollector';
 import type { PulseChannel, Broadcast } from '../../services/voxer/voxModeTypes';
 import toast from 'react-hot-toast';
 import './PulseRadio.css';
+
+// Phase 2: Selection Mode & Archive/Download
+import { useVoxSelection } from '../../hooks/useVoxSelection';
+import type { VoxSelectionItem } from '../../hooks/useVoxSelection';
+import { VoxSelectToolbar } from './VoxSelectToolbar';
+
+// Phase 5: AI Enhancements
+import {
+  VoxConversationSummary,
+  VoxSmartReplies,
+} from './index';
+import {
+  summarizeConversation,
+  generateSmartReplies,
+  ConversationSummary,
+  SmartReply,
+} from '../../services/voxer/voxerAIService';
+
+// Phase 6: Final Polish
+import { useVoxerKeyboardShortcuts } from '../../hooks/useVoxerKeyboardShortcuts';
+import { VoxKeyboardShortcutsHelp } from './VoxKeyboardShortcutsHelp';
+import { usePlaybackSpeed } from '../../hooks/usePlaybackSpeed';
+import { PlaybackSpeedControl } from './PlaybackSpeedControl';
+import { VoxEmptyState } from './VoxEmptyState';
+import { getEmptyStateConfig } from './voxEmptyStates';
 
 interface PulseRadioProps {
   apiKey?: string;
@@ -240,6 +271,32 @@ const PulseRadio: React.FC<PulseRadioProps> = ({ onBack, isDarkMode = false }) =
   const [showMobileSidebar, setShowMobileSidebar] = useState(false);
   const [likedBroadcasts, setLikedBroadcasts] = useState<Set<string>>(new Set());
 
+  // Phase 2: Selection Mode State
+  const {
+    isSelectionMode,
+    selectedItems,
+    selectionCount,
+    toggleSelection,
+    selectAll,
+    deselectAll,
+    enterSelectionMode,
+    exitSelectionMode,
+    isSelected,
+    getTotalDuration,
+  } = useVoxSelection();
+
+  // Phase 5: AI Enhancement States
+  const [showSummary, setShowSummary] = useState(false);
+  const [conversationSummary, setConversationSummary] = useState<ConversationSummary | null>(null);
+  const [isSummarizing, setIsSummarizing] = useState(false);
+  const [smartReplies, setSmartReplies] = useState<SmartReply[]>([]);
+  const [isGeneratingReplies, setIsGeneratingReplies] = useState(false);
+
+  // Phase 6: Final Polish States
+  const [showShortcutsHelp, setShowShortcutsHelp] = useState(false);
+  const { playbackSpeed, setPlaybackSpeed, applyToElement } = usePlaybackSpeed();
+  const emptyConfig = getEmptyStateConfig('pulse_radio');
+
   const audioRef = useRef<HTMLAudioElement>(null);
 
   const {
@@ -247,15 +304,64 @@ const PulseRadio: React.FC<PulseRadioProps> = ({ onBack, isDarkMode = false }) =
     duration: recordingDuration,
     analyser,
     recordingData,
+    recordingMode,
+    setRecordingMode,
     startRecording,
     stopRecording,
     cancelRecording,
     sendRecording,
+    handlePointerDown,
+    handlePointerUp,
+    handleToggleRecording,
   } = useVoxRecording({
     onRecordingComplete: (data) => {
       console.log('Broadcast recording complete:', data.duration, 'seconds');
     },
+    defaultRecordingMode: 'tap',
   });
+
+  // Persist recording mode preference
+  useEffect(() => {
+    localStorage.setItem('voxer-recording-mode', recordingMode);
+  }, [recordingMode]);
+
+  // Phase 6: Keyboard Shortcuts
+  useVoxerKeyboardShortcuts({
+    onToggleRecording: () => {
+      if (recordingState === 'idle') startRecording();
+      else if (recordingState === 'recording') stopRecording();
+    },
+    onStopRecording: () => {
+      if (recordingState === 'recording') stopRecording();
+    },
+    onGoBack: onBack,
+    onSwitchMode: (mode) => {
+      console.log('Switch to mode:', mode);
+    },
+    onDownload: () => {
+      if (isSelectionMode && selectionCount > 0) {
+        console.log('Download selected broadcasts');
+      }
+    },
+    onArchive: () => {
+      if (isSelectionMode && selectionCount > 0) {
+        console.log('Archive selected broadcasts');
+      }
+    },
+    onSummarize: () => {
+      if (broadcasts.length > 0) {
+        handleSummarizeChannel();
+      }
+    },
+    onShowHelp: () => setShowShortcutsHelp(true),
+  }, true);
+
+  // Phase 6: Apply playback speed to audio
+  useEffect(() => {
+    if (audioRef.current) {
+      applyToElement(audioRef.current);
+    }
+  }, [playbackSpeed, applyToElement]);
 
   // ============================================
   // HANDLERS
@@ -390,6 +496,55 @@ const PulseRadio: React.FC<PulseRadioProps> = ({ onBack, isDarkMode = false }) =
     setBroadcasts(data);
   };
 
+  // Phase 5: AI Enhancement Handlers
+  const handleSummarizeChannel = async () => {
+    if (broadcasts.length === 0) {
+      toast.error('No broadcasts to summarize');
+      return;
+    }
+
+    setIsSummarizing(true);
+    try {
+      const messages = broadcasts.map(b => ({
+        sender: b.broadcaster || 'Unknown',
+        text: b.title || 'Untitled broadcast',
+        timestamp: b.timestamp.toISOString(),
+      }));
+
+      const summary = await summarizeConversation(messages);
+      setConversationSummary(summary);
+      setShowSummary(true);
+    } catch (error) {
+      console.error('Summarization failed:', error);
+      toast.error('Failed to generate summary');
+    } finally {
+      setIsSummarizing(false);
+    }
+  };
+
+  const handleGenerateSmartReplies = async () => {
+    if (broadcasts.length === 0) {
+      toast.error('No broadcasts to analyze');
+      return;
+    }
+
+    setIsGeneratingReplies(true);
+    try {
+      const recentMessages = broadcasts.slice(0, 5).map(b => ({
+        sender: b.broadcaster || 'Unknown',
+        text: b.title || 'Untitled broadcast',
+      }));
+
+      const replies = await generateSmartReplies(recentMessages);
+      setSmartReplies(replies);
+    } catch (error) {
+      console.error('Smart reply generation failed:', error);
+      toast.error('Failed to generate replies');
+    } finally {
+      setIsGeneratingReplies(false);
+    }
+  };
+
   const handleCreateChannel = async () => {
     if (!newChannelName.trim() || isCreatingChannel) return;
 
@@ -469,55 +624,80 @@ const PulseRadio: React.FC<PulseRadioProps> = ({ onBack, isDarkMode = false }) =
       />
 
       {/* Header */}
-      <header className="pulse-radio-header">
-        <button type="button" onClick={onBack} className="pulse-radio-back-btn" title="Back">
-          <ChevronLeft className="w-5 h-5" />
-        </button>
+      <VoxModeHeader
+        modeName="Pulse Radio"
+        modeTagline="Tap to broadcast"
+        modeColor="#8B5CF6"
+        modeIcon={Radio}
+        onBack={onBack}
+        isDarkMode={isDarkMode}
+        actions={
+          <>
+            {/* Phase 5: AI Enhancement Buttons */}
+            <div className="flex items-center gap-2 border-r border-purple-500/30 pr-2 mr-2">
+              <button
+                type="button"
+                onClick={handleSummarizeChannel}
+                disabled={broadcasts.length === 0 || isSummarizing}
+                className="px-3 py-1.5 rounded-lg bg-purple-500 text-white text-xs font-medium hover:bg-purple-600 transition disabled:opacity-50 disabled:cursor-not-allowed"
+                title="AI Summarize Channel"
+              >
+                {isSummarizing ? <Loader2 className="w-3 h-3 animate-spin" /> : <Sparkles className="w-3 h-3" />}
+                <span className="ml-1.5 hidden md:inline">Summarize</span>
+              </button>
 
-        {/* Mobile menu button */}
-        <button
-          type="button"
-          onClick={() => setShowMobileSidebar(true)}
-          className="pulse-radio-mobile-menu md:hidden"
-          title="Show channels"
-        >
-          <Radio className="w-5 h-5" />
-        </button>
+              <button
+                type="button"
+                onClick={handleGenerateSmartReplies}
+                disabled={isGeneratingReplies}
+                className="px-3 py-1.5 rounded-lg bg-blue-500 text-white text-xs font-medium hover:bg-blue-600 transition disabled:opacity-50 disabled:cursor-not-allowed"
+                title="Generate Smart Replies"
+              >
+                {isGeneratingReplies ? <Loader2 className="w-3 h-3 animate-spin" /> : <Reply className="w-3 h-3" />}
+                <span className="ml-1.5 hidden md:inline">Quick Reply</span>
+              </button>
+            </div>
 
-        <div className="pulse-radio-title">
-          <div className="pulse-radio-title-icon">
-            <Radio className="w-5 h-5" />
-            <div className="pulse-radio-title-notch" />
-          </div>
-          <div className="hidden sm:block">
-            <h1>Pulse Radio</h1>
-            <span className="pulse-radio-subtitle">Broadcast Your Voice</span>
-          </div>
-        </div>
-
-        {/* Sound bars animation */}
-        <div className="pulse-radio-sound-bars">
-          {[...Array(5)].map((_, i) => (
-            <div
-              key={i}
-              className="pulse-radio-sound-bar"
-              style={{
-                animationDelay: `${i * 0.1}s`,
-                height: `${40 + Math.sin(i * 1.2) * 30}%`,
+            {/* Phase 2: Selection Mode Button */}
+            <button
+              type="button"
+              onClick={(e) => {
+                e.preventDefault();
+                e.stopPropagation();
+                enterSelectionMode();
               }}
-            />
-          ))}
-        </div>
+              style={{
+                background: isSelectionMode ? '#8B5CF6' : undefined,
+                color: isSelectionMode ? 'white' : undefined,
+              }}
+              className="p-2 rounded-lg hover:bg-purple-500/20 transition"
+              title="Select broadcasts"
+            >
+              <CheckCheck className="w-4 h-4" />
+            </button>
 
-        <button
-          type="button"
-          onClick={() => setShowNewChannel(true)}
-          className="pulse-radio-new-btn"
-        >
-          <Plus className="w-4 h-4" />
-          <span className="hidden sm:inline">New Channel</span>
-        </button>
-      </header>
+            {/* Mobile menu button */}
+            <button
+              type="button"
+              onClick={() => setShowMobileSidebar(!showMobileSidebar)}
+              className="pulse-radio-mobile-menu md:hidden"
+              title="Toggle menu"
+            >
+              <Users className="w-5 h-5" />
+            </button>
+            {/* Create channel button - desktop */}
+            <button
+              type="button"
+              onClick={() => setShowNewChannel(true)}
+              className="hidden md:flex items-center gap-2 px-4 py-2 rounded-xl text-sm font-medium bg-purple-500/20 hover:bg-purple-500/30 text-purple-300 border border-purple-500/30 transition-all"
+              title="Create channel"
+            >
+              <Plus className="w-4 h-4" />
+              <span>Create Channel</span>
+            </button>
+          </>
+        }
+      />
 
       <div className="pulse-radio-body">
         {/* Mobile Sidebar Overlay */}
@@ -673,16 +853,21 @@ const PulseRadio: React.FC<PulseRadioProps> = ({ onBack, isDarkMode = false }) =
                       />
 
                       <div className="pulse-radio-ptt-area">
-                        <PTTButton
-                          state={recordingState === 'recording' ? 'recording' : 'idle'}
-                          recordingMode="tap"
+                        <RecordButton
+                          state={recordingState === 'recording' ? 'recording' : recordingState === 'preview' ? 'processing' : 'idle'}
+                          recordingMode={recordingMode}
                           duration={recordingDuration}
-                          onStart={startRecording}
-                          onStop={stopRecording}
+                          onPointerDown={handlePointerDown}
+                          onPointerUp={handlePointerUp}
+                          onToggleRecording={handleToggleRecording}
+                          onModeToggle={() => setRecordingMode(mode => mode === 'hold' ? 'tap' : 'hold')}
+                          accentColor="#8B5CF6"
                           size="lg"
-                          color={MODE_COLOR}
+                          showModeToggle={true}
+                          showTimer={true}
                           isDarkMode={isDarkMode}
-                          showWaveform={false}
+                          mode="audio"
+                          audioLevel={recordingState === 'recording' ? 0.5 : 0}
                         />
 
                         {recordingState === 'recording' ? (
@@ -720,7 +905,42 @@ const PulseRadio: React.FC<PulseRadioProps> = ({ onBack, isDarkMode = false }) =
                     const isCurrentlyPlaying = playingBroadcastId === broadcast.id && isPlaying;
 
                     return (
-                      <article key={broadcast.id} className={`pulse-radio-broadcast ${isCurrentlyPlaying ? 'playing' : ''}`}>
+                      <article key={broadcast.id} className={`pulse-radio-broadcast ${isCurrentlyPlaying ? 'playing' : ''}`} style={{position: 'relative'}}>
+                        {/* Phase 2: Selection Checkbox */}
+                        {isSelectionMode && (
+                          <button
+                            type="button"
+                            onClick={(e) => {
+                              e.stopPropagation();
+                              const selectionItem: VoxSelectionItem = {
+                                id: broadcast.id,
+                                type: 'audio',
+                                url: broadcast.audioUrl || '',
+                                duration: broadcast.duration,
+                                timestamp: broadcast.publishedAt,
+                                sender: 'other',
+                                transcript: broadcast.transcript,
+                                mode: 'pulse_radio',
+                                contactId: selectedChannel?.id,
+                                contactName: selectedChannel?.name,
+                              };
+                              toggleSelection(selectionItem);
+                            }}
+                            className={`absolute top-3 right-3 w-7 h-7 rounded-lg flex items-center justify-center transition-all shadow-lg hover:scale-110 active:scale-95 z-10 ${
+                              isSelected(broadcast.id)
+                                ? 'bg-orange-500 border-2 border-orange-600'
+                                : 'bg-white dark:bg-gray-700 border-2 border-gray-400 dark:border-gray-500'
+                            }`}
+                            style={{
+                              boxShadow: isSelected(broadcast.id)
+                                ? '0 4px 12px rgba(249, 115, 22, 0.4)'
+                                : '0 2px 8px rgba(0, 0, 0, 0.2)',
+                            }}
+                          >
+                            {isSelected(broadcast.id) && <Check className="w-5 h-5 text-white font-bold" />}
+                          </button>
+                        )}
+
                         <button
                           type="button"
                           onClick={() => handlePlayBroadcast(broadcast)}
@@ -745,6 +965,13 @@ const PulseRadio: React.FC<PulseRadioProps> = ({ onBack, isDarkMode = false }) =
                           <div className="pulse-radio-broadcast-meta">
                             <span><Clock className="w-3 h-3" /> {formatDuration(broadcast.duration)}</span>
                             <span>{formatDate(broadcast.publishedAt)}</span>
+                            {/* Phase 6: Playback Speed Control */}
+                            <PlaybackSpeedControl
+                              speed={playbackSpeed}
+                              onSpeedChange={setPlaybackSpeed}
+                              isDarkMode={isDarkMode}
+                              compact={true}
+                            />
                           </div>
 
                           {broadcast.transcript && (
@@ -814,11 +1041,16 @@ const PulseRadio: React.FC<PulseRadioProps> = ({ onBack, isDarkMode = false }) =
                   })}
 
                   {broadcasts.length === 0 && (
-                    <div className="pulse-radio-empty-broadcasts">
-                      <Mic className="w-12 h-12" />
-                      <p>No broadcasts yet</p>
-                      <span>Record your first broadcast above</span>
-                    </div>
+                    <VoxEmptyState
+                      {...emptyConfig}
+                      isDarkMode={isDarkMode}
+                      action={{
+                        label: 'Start Broadcasting',
+                        onClick: () => {
+                          if (recordingState === 'idle') startRecording();
+                        },
+                      }}
+                    />
                   )}
                 </div>
               </div>
@@ -1075,16 +1307,21 @@ const PulseRadio: React.FC<PulseRadioProps> = ({ onBack, isDarkMode = false }) =
                 </div>
 
                 <div className="pulse-radio-discussion-record">
-                  <PTTButton
-                    state={recordingState === 'recording' ? 'recording' : 'idle'}
-                    recordingMode="tap"
+                  <RecordButton
+                    state={recordingState === 'recording' ? 'recording' : recordingState === 'preview' ? 'processing' : 'idle'}
+                    recordingMode={recordingMode}
                     duration={recordingDuration}
-                    onStart={startRecording}
-                    onStop={stopRecording}
+                    onPointerDown={handlePointerDown}
+                    onPointerUp={handlePointerUp}
+                    onToggleRecording={handleToggleRecording}
+                    onModeToggle={() => setRecordingMode(mode => mode === 'hold' ? 'tap' : 'hold')}
+                    accentColor="#8B5CF6"
                     size="md"
-                    color={MODE_COLOR}
+                    showModeToggle={true}
+                    showTimer={true}
                     isDarkMode={isDarkMode}
-                    showWaveform={false}
+                    mode="audio"
+                    audioLevel={recordingState === 'recording' ? 0.5 : 0}
                   />
 
                   {recordingState === 'recording' && (
@@ -1106,6 +1343,72 @@ const PulseRadio: React.FC<PulseRadioProps> = ({ onBack, isDarkMode = false }) =
           </div>
         </div>
       )}
+
+      {/* Phase 2: Selection Toolbar */}
+      {isSelectionMode && (
+        <VoxSelectToolbar
+          selectedItems={selectedItems}
+          selectionCount={selectionCount}
+          totalDuration={getTotalDuration()}
+          onSelectAll={() => {
+            const allItems: VoxSelectionItem[] = broadcasts.map(b => ({
+              id: b.id,
+              type: 'audio' as const,
+              url: b.audioUrl || '',
+              duration: b.duration,
+              timestamp: b.publishedAt,
+              sender: 'other' as const,
+              transcript: b.transcript,
+              mode: 'pulse_radio' as const,
+              contactId: selectedChannel?.id,
+              contactName: selectedChannel?.name,
+            }));
+            selectAll(allItems);
+          }}
+          onDeselectAll={deselectAll}
+          onExitSelection={exitSelectionMode}
+          contactName={selectedChannel?.name || 'Channel'}
+          isDarkMode={isDarkMode}
+          accentColor="#8B5CF6"
+          allSelected={selectionCount === broadcasts.length && broadcasts.length > 0}
+        />
+      )}
+
+      {/* Phase 5: AI Enhancement Modals */}
+      {conversationSummary && showSummary && (
+        <div className="fixed inset-0 bg-black/50 backdrop-blur-sm z-50 flex items-center justify-center p-4">
+          <div className="max-w-2xl w-full">
+            <VoxConversationSummary
+              summary={conversationSummary}
+              isDarkMode={isDarkMode}
+              accentColor="#8B5CF6"
+              onClose={() => setShowSummary(false)}
+            />
+          </div>
+        </div>
+      )}
+
+      {smartReplies.length > 0 && (
+        <VoxSmartReplies
+          replies={smartReplies}
+          onSelectReply={(reply) => {
+            // Use the reply - could set it as broadcastTitle or copy to clipboard
+            setBroadcastTitle(reply.text);
+            setSmartReplies([]);
+            toast.success('Reply suggestion applied');
+          }}
+          onClose={() => setSmartReplies([])}
+          isDarkMode={isDarkMode}
+          accentColor="#8B5CF6"
+        />
+      )}
+
+      {/* Phase 6: Keyboard Shortcuts Help Modal */}
+      <VoxKeyboardShortcutsHelp
+        isOpen={showShortcutsHelp}
+        onClose={() => setShowShortcutsHelp(false)}
+        isDarkMode={isDarkMode}
+      />
     </div>
   );
 };

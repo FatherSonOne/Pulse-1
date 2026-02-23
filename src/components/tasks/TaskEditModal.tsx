@@ -1,8 +1,13 @@
 import React, { useState, useEffect } from 'react';
 import { createPortal } from 'react-dom';
-import { X, Save, AlertCircle } from 'lucide-react';
+import { X, Save, AlertCircle, AlertTriangle } from 'lucide-react';
 import { Task } from '../../services/taskService';
 import { User } from '../../types';
+import { useAuth } from '../../contexts/AuthContext';
+import { SubtaskList } from '../decisions/SubtaskList';
+import TaskActivityFeed from '../decisions/TaskActivityFeed';
+import { taskIntelligenceService } from '../../services/taskIntelligenceService';
+import { fetchTasks } from '../../services/authService';
 import './TaskEditModal.css';
 
 interface TaskEditModalProps {
@@ -34,6 +39,8 @@ export const TaskEditModal: React.FC<TaskEditModalProps> = ({
   onSave,
   workspaceMembers = []
 }) => {
+  const { user } = useAuth();
+  const [activeTab, setActiveTab] = useState<'details' | 'subtasks' | 'activity'>('details');
   const [title, setTitle] = useState(task.title);
   const [description, setDescription] = useState(task.description || '');
   const [priority, setPriority] = useState<Task['priority']>(task.priority);
@@ -43,6 +50,60 @@ export const TaskEditModal: React.FC<TaskEditModalProps> = ({
   const [blockedReason, setBlockedReason] = useState(task.blocked_reason || '');
   const [isSaving, setIsSaving] = useState(false);
   const [error, setError] = useState<string | null>(null);
+
+  // Phase 5: Blocker Prediction
+  const [predictedBlockers, setPredictedBlockers] = useState<Array<{
+    blocker: string;
+    confidence: 'high' | 'medium' | 'low';
+    mitigation: string;
+  }>>([]);
+  const [isLoadingBlockers, setIsLoadingBlockers] = useState(false);
+
+  // Load blocker predictions on mount
+  useEffect(() => {
+    loadBlockerPredictions();
+  }, []);
+
+  const loadBlockerPredictions = async () => {
+    if (task.status === 'done' || task.status === 'cancelled') {
+      // Skip predictions for completed tasks
+      return;
+    }
+
+    setIsLoadingBlockers(true);
+
+    try {
+      const apiKey = localStorage.getItem('gemini_api_key') ||
+                     import.meta.env.VITE_GEMINI_API_KEY || '';
+
+      if (!apiKey) {
+        return; // Silently skip if no API key
+      }
+
+      // Fetch related tasks
+      const allTasks = await fetchTasks();
+      const workspaceTasks = allTasks.filter(t =>
+        t.workspace_id === task.workspace_id &&
+        t.id !== task.id
+      );
+
+      // Call AI to predict blockers
+      const blockers = await taskIntelligenceService.predictBlockers(
+        apiKey,
+        task.title,
+        task.description,
+        workspaceTasks
+      );
+
+      if (blockers && blockers.length > 0) {
+        setPredictedBlockers(blockers);
+      }
+    } catch (error) {
+      console.error('Error loading blocker predictions:', error);
+    } finally {
+      setIsLoadingBlockers(false);
+    }
+  };
 
   // Focus trap
   useEffect(() => {
@@ -107,11 +168,80 @@ export const TaskEditModal: React.FC<TaskEditModalProps> = ({
           </button>
         </div>
 
-        <form onSubmit={handleSubmit} className="task-edit-modal-form">
+        {/* Tab Navigation */}
+        <div className="task-edit-tabs" role="tablist" aria-label="Task details navigation">
+          <button
+            role="tab"
+            aria-selected={activeTab === 'details'}
+            aria-controls="details-panel"
+            id="details-tab"
+            className={activeTab === 'details' ? 'active' : ''}
+            onClick={() => setActiveTab('details')}
+            type="button"
+          >
+            Details
+          </button>
+          <button
+            role="tab"
+            aria-selected={activeTab === 'subtasks'}
+            aria-controls="subtasks-panel"
+            id="subtasks-tab"
+            className={activeTab === 'subtasks' ? 'active' : ''}
+            onClick={() => setActiveTab('subtasks')}
+            type="button"
+          >
+            Subtasks
+          </button>
+          <button
+            role="tab"
+            aria-selected={activeTab === 'activity'}
+            aria-controls="activity-panel"
+            id="activity-tab"
+            className={activeTab === 'activity' ? 'active' : ''}
+            onClick={() => setActiveTab('activity')}
+            type="button"
+          >
+            Activity
+          </button>
+        </div>
+
+        {/* Tab Content */}
+        <div className="task-edit-content">
+          {activeTab === 'details' && (
+            <form
+              onSubmit={handleSubmit}
+              className="task-edit-modal-form"
+              role="tabpanel"
+              id="details-panel"
+              aria-labelledby="details-tab"
+            >
           {error && (
             <div className="task-edit-error" role="alert">
               <AlertCircle size={16} />
               <span>{error}</span>
+            </div>
+          )}
+
+          {/* Phase 5: Blocker Predictions */}
+          {predictedBlockers.length > 0 && (
+            <div className="blocker-predictions-section">
+              <div className="blocker-predictions-header">
+                <AlertTriangle size={18} />
+                <h3>Potential Blockers Detected</h3>
+              </div>
+              {predictedBlockers.map((blocker, idx) => (
+                <div key={idx} className={`blocker-prediction blocker-confidence-${blocker.confidence}`}>
+                  <div className="blocker-header">
+                    <span className={`blocker-confidence-badge ${blocker.confidence}`}>
+                      {blocker.confidence} confidence
+                    </span>
+                    <span className="blocker-description">{blocker.blocker}</span>
+                  </div>
+                  <div className="blocker-mitigation">
+                    <strong>Mitigation:</strong> {blocker.mitigation}
+                  </div>
+                </div>
+              ))}
             </div>
           )}
 
@@ -234,31 +364,60 @@ export const TaskEditModal: React.FC<TaskEditModalProps> = ({
             </div>
           </div>
 
-          <div className="task-edit-modal-footer">
-            <button
-              type="button"
-              className="task-edit-button task-edit-button-secondary"
-              onClick={onClose}
-              disabled={isSaving}
+              <div className="task-edit-modal-footer">
+                <button
+                  type="button"
+                  className="task-edit-button task-edit-button-secondary"
+                  onClick={onClose}
+                  disabled={isSaving}
+                >
+                  Cancel
+                </button>
+                <button
+                  type="submit"
+                  className="task-edit-button task-edit-button-primary"
+                  disabled={isSaving}
+                >
+                  {isSaving ? (
+                    <>Saving...</>
+                  ) : (
+                    <>
+                      <Save size={16} />
+                      Save Changes
+                    </>
+                  )}
+                </button>
+              </div>
+            </form>
+          )}
+
+          {activeTab === 'subtasks' && (
+            <div
+              role="tabpanel"
+              id="subtasks-panel"
+              aria-labelledby="subtasks-tab"
             >
-              Cancel
-            </button>
-            <button
-              type="submit"
-              className="task-edit-button task-edit-button-primary"
-              disabled={isSaving}
+              <SubtaskList
+                taskId={task.id}
+                workspaceId={task.workspace_id}
+                taskTitle={title}
+                taskDescription={description}
+                taskPriority={priority}
+                currentUserId={user?.id}
+              />
+            </div>
+          )}
+
+          {activeTab === 'activity' && (
+            <div
+              role="tabpanel"
+              id="activity-panel"
+              aria-labelledby="activity-tab"
             >
-              {isSaving ? (
-                <>Saving...</>
-              ) : (
-                <>
-                  <Save size={16} />
-                  Save Changes
-                </>
-              )}
-            </button>
-          </div>
-        </form>
+              <TaskActivityFeed taskId={task.id} />
+            </div>
+          )}
+        </div>
       </div>
     </div>
   );

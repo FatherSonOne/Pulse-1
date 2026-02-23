@@ -1,10 +1,58 @@
 /* ActiveView Component Styles */
+@import './design-tokens.css';
 
 .active-view {
   display: flex;
   flex-direction: column;
   gap: 1.5rem;
   padding: 0.5rem 0;
+}
+
+/* Decision section styling */
+.active-section {
+  display: flex;
+  flex-direction: column;
+  gap: var(--dt-spacing-md);
+}
+
+.active-section-header {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  padding: var(--dt-spacing-sm) 0;
+}
+
+.active-section-header-left {
+  display: flex;
+  align-items: center;
+  gap: var(--dt-spacing-sm);
+}
+
+.active-section-title {
+  font-size: var(--dt-font-lg);
+  font-weight: var(--dt-font-weight-semibold);
+  color: var(--dt-text-primary);
+  margin: 0;
+}
+
+.active-section-badge {
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  min-width: 24px;
+  height: 24px;
+  padding: 0 8px;
+  background: var(--dt-status-voting);
+  color: white;
+  border-radius: 12px;
+  font-size: var(--dt-font-xs);
+  font-weight: var(--dt-font-weight-semibold);
+}
+
+.active-section-content {
+  display: flex;
+  flex-direction: column;
+  gap: var(--dt-spacing-md);
 }
 
 .active-view-empty {

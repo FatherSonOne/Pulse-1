@@ -43,7 +43,7 @@ export interface ToneCheckResult {
 
 class EmailAIService {
   private apiKey: string | null = null;
-  private baseUrl = 'https://generativelanguage.googleapis.com/v1beta/models/gemini-2.0-flash:generateContent';
+  private baseUrl = 'https://generativelanguage.googleapis.com/v1beta/models/gemini-2.5-flash:generateContent';
 
   constructor() {
     // API key should be fetched from environment or secure storage

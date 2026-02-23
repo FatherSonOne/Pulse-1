@@ -340,7 +340,7 @@ const AILab: React.FC<AILabProps> = ({ apiKey }) => {
         currentOutput = await processWithModel(
           apiKey,
           `You are ${getAgentById(step.agentId)?.name || 'an AI assistant'}. ${stepInput}`,
-          'gemini-2.0-flash-exp'
+          'gemini-2.5-flash'
         ) || '';
 
         setWorkflowProgress(((i + 1) / workflow.steps.length) * 100);
@@ -390,7 +390,7 @@ ${context}
 User: ${userMessage.content}
 
 Respond helpfully and naturally.`,
-        'gemini-2.0-flash-exp'
+        'gemini-2.5-flash'
       );
 
       const assistantMessage: ChatMessage = {
@@ -484,7 +484,7 @@ Respond helpfully and naturally.`,
             setIsProcessing(false);
             return;
           }
-          result = await processWithModel(apiKey, `You are a professional content writer. Write the following: ${input}`, 'gemini-2.0-flash-exp') || 'Writing failed';
+          result = await processWithModel(apiKey, `You are a professional content writer. Write the following: ${input}`, 'gemini-2.5-flash') || 'Writing failed';
           break;
 
         case 'coder':
@@ -493,7 +493,7 @@ Respond helpfully and naturally.`,
             setIsProcessing(false);
             return;
           }
-          result = await processWithModel(apiKey, `You are an expert programmer. Help with the following: ${input}. Provide clean, well-commented code.`, 'gemini-2.0-flash-exp') || 'Code generation failed';
+          result = await processWithModel(apiKey, `You are an expert programmer. Help with the following: ${input}. Provide clean, well-commented code.`, 'gemini-2.5-flash') || 'Code generation failed';
           break;
 
         case 'translator':
@@ -502,7 +502,7 @@ Respond helpfully and naturally.`,
             setIsProcessing(false);
             return;
           }
-          result = await processWithModel(apiKey, `Translate the following text to English (if not English) or to the language specified. If no target language is specified, translate to English. Text: ${input}`, 'gemini-2.0-flash-exp') || 'Translation failed';
+          result = await processWithModel(apiKey, `Translate the following text to English (if not English) or to the language specified. If no target language is specified, translate to English. Text: ${input}`, 'gemini-2.5-flash') || 'Translation failed';
           break;
 
         case 'brainstorm':
@@ -511,7 +511,7 @@ Respond helpfully and naturally.`,
             setIsProcessing(false);
             return;
           }
-          result = await processWithModel(apiKey, `You are a creative brainstorming assistant. Generate 5-10 innovative ideas for the following topic or challenge: ${input}. Format as a numbered list with brief explanations.`, 'gemini-2.0-flash-exp') || 'Brainstorming failed';
+          result = await processWithModel(apiKey, `You are a creative brainstorming assistant. Generate 5-10 innovative ideas for the following topic or challenge: ${input}. Format as a numbered list with brief explanations.`, 'gemini-2.5-flash') || 'Brainstorming failed';
           break;
 
         case 'email':
@@ -520,7 +520,7 @@ Respond helpfully and naturally.`,
             setIsProcessing(false);
             return;
           }
-          result = await processWithModel(apiKey, `You are a professional email writer. Write a professional email based on the following request: ${input}. Include subject line, greeting, body, and sign-off.`, 'gemini-2.0-flash-exp') || 'Email generation failed';
+          result = await processWithModel(apiKey, `You are a professional email writer. Write a professional email based on the following request: ${input}. Include subject line, greeting, body, and sign-off.`, 'gemini-2.5-flash') || 'Email generation failed';
           break;
 
         case 'research':
@@ -529,7 +529,7 @@ Respond helpfully and naturally.`,
             setIsProcessing(false);
             return;
           }
-          result = await processWithModel(apiKey, `You are an expert researcher. Provide a comprehensive, structured analysis of the following topic: ${input}. Include key findings, relevant data points, and conclusions. Format with clear sections.`, 'gemini-2.0-flash-exp') || 'Research failed';
+          result = await processWithModel(apiKey, `You are an expert researcher. Provide a comprehensive, structured analysis of the following topic: ${input}. Include key findings, relevant data points, and conclusions. Format with clear sections.`, 'gemini-2.5-flash') || 'Research failed';
           break;
 
         case 'editor':
@@ -538,7 +538,7 @@ Respond helpfully and naturally.`,
             setIsProcessing(false);
             return;
           }
-          result = await processWithModel(apiKey, `You are a professional editor. Review and improve the following text for clarity, grammar, style, and flow. Provide the improved version followed by a brief summary of changes: ${input}`, 'gemini-2.0-flash-exp') || 'Editing failed';
+          result = await processWithModel(apiKey, `You are a professional editor. Review and improve the following text for clarity, grammar, style, and flow. Provide the improved version followed by a brief summary of changes: ${input}`, 'gemini-2.5-flash') || 'Editing failed';
           break;
 
         case 'data':
@@ -547,7 +547,7 @@ Respond helpfully and naturally.`,
             setIsProcessing(false);
             return;
           }
-          result = await processWithModel(apiKey, `You are a data analyst. Analyze the following data and provide insights, patterns, and actionable recommendations: ${input}`, 'gemini-2.0-flash-exp') || 'Data analysis failed';
+          result = await processWithModel(apiKey, `You are a data analyst. Analyze the following data and provide insights, patterns, and actionable recommendations: ${input}`, 'gemini-2.5-flash') || 'Data analysis failed';
           break;
 
         case 'meeting':
@@ -556,7 +556,7 @@ Respond helpfully and naturally.`,
             setIsProcessing(false);
             return;
           }
-          result = await processWithModel(apiKey, `You are a meeting notes assistant. Structure the following meeting notes with: Summary, Key Decisions, Action Items (with owners if mentioned), and Follow-ups: ${input}`, 'gemini-2.0-flash-exp') || 'Meeting notes processing failed';
+          result = await processWithModel(apiKey, `You are a meeting notes assistant. Structure the following meeting notes with: Summary, Key Decisions, Action Items (with owners if mentioned), and Follow-ups: ${input}`, 'gemini-2.5-flash') || 'Meeting notes processing failed';
           break;
 
         default:

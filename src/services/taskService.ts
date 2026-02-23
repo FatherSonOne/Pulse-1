@@ -136,12 +136,13 @@ export const taskService = {
     return createdTasks;
   },
 
-  // Get all tasks for a workspace
+  // Get all tasks for a workspace (excludes archived by default)
   async getWorkspaceTasks(workspaceId: string): Promise<Task[]> {
     const { data: tasks, error } = await supabase
       .from('extracted_tasks')
       .select('*')
       .eq('workspace_id', workspaceId)
+      .is('archived_at', null) // Exclude archived tasks
       .order('extracted_at', { ascending: false });
 
     if (error) {
@@ -152,7 +153,7 @@ export const taskService = {
     return tasks || [];
   },
 
-  // Get tasks assigned to a user
+  // Get tasks assigned to a user (excludes archived)
   async getUserTasks(workspaceId: string, userId: string): Promise<Task[]> {
     const { data: tasks, error} = await supabase
       .from('extracted_tasks')
@@ -160,6 +161,7 @@ export const taskService = {
       .eq('workspace_id', workspaceId)
       .eq('assignee_id', userId)
       .neq('status', 'cancelled')
+      .is('archived_at', null) // Exclude archived tasks
       .order('extracted_at', { ascending: false });
 
     if (error) {
@@ -314,5 +316,87 @@ export const taskService = {
   // Alias for subscribeToTasks
   subscribeToTaskUpdates(workspaceId: string, callback: (task: Task) => void) {
     return this.subscribeToTasks(workspaceId, callback);
+  },
+
+  /**
+   * Phase 4: Archive completed tasks automatically
+   * Archives tasks that have been done/cancelled for more than 48 hours
+   */
+  async archiveCompletedTasks(workspaceId: string): Promise<number> {
+    const fortyEightHoursAgo = new Date();
+    fortyEightHoursAgo.setHours(fortyEightHoursAgo.getHours() - 48);
+
+    const { data, error } = await supabase
+      .from('extracted_tasks')
+      .update({ archived_at: new Date().toISOString() })
+      .eq('workspace_id', workspaceId)
+      .in('status', ['done', 'cancelled'])
+      .is('archived_at', null)
+      .lt('completed_at', fortyEightHoursAgo.toISOString())
+      .select();
+
+    if (error) {
+      console.error('Error auto-archiving tasks:', error);
+      return 0;
+    }
+
+    return data?.length || 0;
+  },
+
+  /**
+   * Phase 4: Manually archive a task
+   */
+  async archiveTask(taskId: string): Promise<boolean> {
+    const { error } = await supabase
+      .from('extracted_tasks')
+      .update({ archived_at: new Date().toISOString() })
+      .eq('id', taskId);
+
+    if (error) {
+      console.error('Error archiving task:', error);
+      return false;
+    }
+
+    return true;
+  },
+
+  /**
+   * Phase 4: Reopen an archived task
+   */
+  async reopenTask(taskId: string): Promise<boolean> {
+    const { error } = await supabase
+      .from('extracted_tasks')
+      .update({
+        archived_at: null,
+        status: 'todo', // Reset to todo when reopened
+        completed_at: null
+      })
+      .eq('id', taskId);
+
+    if (error) {
+      console.error('Error reopening task:', error);
+      return false;
+    }
+
+    return true;
+  },
+
+  /**
+   * Phase 4: Get archived tasks for a workspace
+   */
+  async getArchivedTasks(workspaceId: string): Promise<Task[]> {
+    const { data: tasks, error } = await supabase
+      .from('extracted_tasks')
+      .select('*')
+      .eq('workspace_id', workspaceId)
+      .not('archived_at', 'is', null)
+      .order('archived_at', { ascending: false });
+
+    if (error) {
+      console.error('Error fetching archived tasks:', error);
+      return [];
+    }
+
+    return tasks || [];
   }
 };

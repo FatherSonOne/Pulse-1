@@ -1,0 +1,251 @@
+/* ═══════════════════════════════════════════════════════════════════════════
+   PULSE - DECISIONS & TASKS DESIGN SYSTEM
+   Brand design tokens for consistent UI across all decision/task components
+   ═══════════════════════════════════════════════════════════════════════════ */
+
+:root {
+  /* ─────────────────────────────────────────────────────────────────────────
+     BACKGROUNDS
+     ───────────────────────────────────────────────────────────────────────── */
+  --dt-bg-primary: #f8fafc;
+  --dt-bg-secondary: #f1f5f9;
+  --dt-bg-card: #ffffff;
+  --dt-bg-card-hover: #f8fafc;
+
+  /* ─────────────────────────────────────────────────────────────────────────
+     TEXT
+     ───────────────────────────────────────────────────────────────────────── */
+  --dt-text-primary: #0f172a;
+  --dt-text-secondary: #475569;
+  --dt-text-muted: #94a3b8;
+
+  /* ─────────────────────────────────────────────────────────────────────────
+     ACCENT
+     ───────────────────────────────────────────────────────────────────────── */
+  --dt-accent: #e11d48;
+  --dt-accent-secondary: #db2777;
+  --dt-accent-gradient: linear-gradient(135deg, #e11d48, #db2777);
+  --dt-accent-hover: #be123c;
+
+  /* ─────────────────────────────────────────────────────────────────────────
+     BORDERS
+     ───────────────────────────────────────────────────────────────────────── */
+  --dt-border: #e2e8f0;
+  --dt-border-subtle: #f1f5f9;
+  --dt-border-focus: #e11d48;
+
+  /* ─────────────────────────────────────────────────────────────────────────
+     STATUS COLORS - TASKS
+     ───────────────────────────────────────────────────────────────────────── */
+  --dt-status-overdue: #ef4444;
+  --dt-status-blocked: #f97316;
+  --dt-status-in-review: #a855f7;
+  --dt-status-in-progress: #3b82f6;
+  --dt-status-todo: #6b7280;
+  --dt-status-done: #22c55e;
+  --dt-status-cancelled: #9ca3af;
+  --dt-status-pending: #facc15;
+
+  /* ─────────────────────────────────────────────────────────────────────────
+     STATUS COLORS - DECISIONS
+     ───────────────────────────────────────────────────────────────────────── */
+  --dt-status-proposed: #8b5cf6;
+  --dt-status-voting: #f59e0b;
+  --dt-status-decided: #10b981;
+  --dt-status-archived: #6b7280;
+
+  /* ─────────────────────────────────────────────────────────────────────────
+     STATUS BACKGROUNDS (5% opacity for column backgrounds)
+     ───────────────────────────────────────────────────────────────────────── */
+  --dt-status-bg-overdue: rgba(239, 68, 68, 0.05);
+  --dt-status-bg-blocked: rgba(249, 115, 22, 0.05);
+  --dt-status-bg-in-review: rgba(168, 85, 247, 0.05);
+  --dt-status-bg-in-progress: rgba(59, 130, 246, 0.05);
+  --dt-status-bg-todo: rgba(107, 114, 128, 0.05);
+  --dt-status-bg-done: rgba(34, 197, 94, 0.05);
+  --dt-status-bg-proposed: rgba(139, 92, 246, 0.05);
+  --dt-status-bg-voting: rgba(245, 158, 11, 0.05);
+  --dt-status-bg-decided: rgba(16, 185, 129, 0.05);
+
+  /* ─────────────────────────────────────────────────────────────────────────
+     SPACING & LAYOUT
+     ───────────────────────────────────────────────────────────────────────── */
+  --dt-radius: 12px;
+  --dt-radius-sm: 8px;
+  --dt-radius-lg: 16px;
+  --dt-radius-xl: 20px;
+
+  --dt-spacing-xs: 4px;
+  --dt-spacing-sm: 8px;
+  --dt-spacing-md: 16px;
+  --dt-spacing-lg: 24px;
+  --dt-spacing-xl: 32px;
+
+  /* ─────────────────────────────────────────────────────────────────────────
+     SHADOWS
+     ───────────────────────────────────────────────────────────────────────── */
+  --dt-shadow-card: 0 1px 3px rgba(0, 0, 0, 0.04), 0 1px 2px rgba(0, 0, 0, 0.06);
+  --dt-shadow-card-hover: 0 4px 12px rgba(0, 0, 0, 0.08);
+  --dt-shadow-modal: 0 20px 25px -5px rgba(0, 0, 0, 0.1), 0 10px 10px -5px rgba(0, 0, 0, 0.04);
+  --dt-shadow-focus: 0 0 0 3px rgba(225, 29, 72, 0.1);
+
+  /* ─────────────────────────────────────────────────────────────────────────
+     GLASS MORPHISM (Light mode - subtle)
+     ───────────────────────────────────────────────────────────────────────── */
+  --dt-glass-bg: rgba(255, 255, 255, 0.7);
+  --dt-glass-border: rgba(255, 255, 255, 0.3);
+  --dt-glass-blur: 12px;
+
+  /* ─────────────────────────────────────────────────────────────────────────
+     TYPOGRAPHY
+     ───────────────────────────────────────────────────────────────────────── */
+  --dt-font-xs: 0.75rem;    /* 12px */
+  --dt-font-sm: 0.875rem;   /* 14px */
+  --dt-font-base: 1rem;     /* 16px */
+  --dt-font-lg: 1.125rem;   /* 18px */
+  --dt-font-xl: 1.25rem;    /* 20px */
+  --dt-font-2xl: 1.5rem;    /* 24px */
+
+  --dt-font-weight-normal: 400;
+  --dt-font-weight-medium: 500;
+  --dt-font-weight-semibold: 600;
+  --dt-font-weight-bold: 700;
+
+  /* ─────────────────────────────────────────────────────────────────────────
+     TRANSITIONS
+     ───────────────────────────────────────────────────────────────────────── */
+  --dt-transition-fast: 0.15s ease;
+  --dt-transition-base: 0.2s ease;
+  --dt-transition-slow: 0.3s ease;
+}
+
+/* ═══════════════════════════════════════════════════════════════════════════
+   DARK MODE
+   ═══════════════════════════════════════════════════════════════════════════ */
+
+.dark {
+  /* ─────────────────────────────────────────────────────────────────────────
+     BACKGROUNDS
+     ───────────────────────────────────────────────────────────────────────── */
+  --dt-bg-primary: #000000;
+  --dt-bg-secondary: #0a0a0a;
+  --dt-bg-card: #1c1c1c;
+  --dt-bg-card-hover: #262626;
+
+  /* ─────────────────────────────────────────────────────────────────────────
+     TEXT
+     ───────────────────────────────────────────────────────────────────────── */
+  --dt-text-primary: #e5e5e5;
+  --dt-text-secondary: #a3a3a3;
+  --dt-text-muted: #525252;
+
+  /* ─────────────────────────────────────────────────────────────────────────
+     ACCENT
+     ───────────────────────────────────────────────────────────────────────── */
+  --dt-accent: #f43f5e;
+  --dt-accent-secondary: #ec4899;
+  --dt-accent-gradient: linear-gradient(135deg, #f43f5e, #ec4899);
+  --dt-accent-hover: #fb7185;
+
+  /* ─────────────────────────────────────────────────────────────────────────
+     BORDERS
+     ───────────────────────────────────────────────────────────────────────── */
+  --dt-border: #2a2a2a;
+  --dt-border-subtle: #1a1a1a;
+  --dt-border-focus: #f43f5e;
+
+  /* ─────────────────────────────────────────────────────────────────────────
+     SHADOWS
+     ───────────────────────────────────────────────────────────────────────── */
+  --dt-shadow-card: 0 1px 3px rgba(0, 0, 0, 0.3);
+  --dt-shadow-card-hover: 0 4px 16px rgba(0, 0, 0, 0.4);
+  --dt-shadow-modal: 0 20px 25px -5px rgba(0, 0, 0, 0.3), 0 10px 10px -5px rgba(0, 0, 0, 0.2);
+  --dt-shadow-focus: 0 0 0 3px rgba(244, 63, 94, 0.2);
+
+  /* ─────────────────────────────────────────────────────────────────────────
+     GLASS MORPHISM (Dark mode - frosted)
+     ───────────────────────────────────────────────────────────────────────── */
+  --dt-glass-bg: rgba(28, 28, 28, 0.6);
+  --dt-glass-border: rgba(255, 255, 255, 0.06);
+  --dt-glass-blur: 16px;
+
+  /* ─────────────────────────────────────────────────────────────────────────
+     STATUS BACKGROUNDS (Dark mode - slightly higher opacity)
+     ───────────────────────────────────────────────────────────────────────── */
+  --dt-status-bg-overdue: rgba(239, 68, 68, 0.08);
+  --dt-status-bg-blocked: rgba(249, 115, 22, 0.08);
+  --dt-status-bg-in-review: rgba(168, 85, 247, 0.08);
+  --dt-status-bg-in-progress: rgba(59, 130, 246, 0.08);
+  --dt-status-bg-todo: rgba(107, 114, 128, 0.08);
+  --dt-status-bg-done: rgba(34, 197, 94, 0.08);
+  --dt-status-bg-proposed: rgba(139, 92, 246, 0.08);
+  --dt-status-bg-voting: rgba(245, 158, 11, 0.08);
+  --dt-status-bg-decided: rgba(16, 185, 129, 0.08);
+}
+
+/* ═══════════════════════════════════════════════════════════════════════════
+   UTILITY CLASSES
+   ═══════════════════════════════════════════════════════════════════════════ */
+
+/* Glass card base */
+.dt-glass-card {
+  background: var(--dt-glass-bg);
+  backdrop-filter: blur(var(--dt-glass-blur));
+  -webkit-backdrop-filter: blur(var(--dt-glass-blur));
+  border: 1px solid var(--dt-glass-border);
+  border-radius: var(--dt-radius);
+  box-shadow: var(--dt-shadow-card);
+  transition: all var(--dt-transition-base);
+}
+
+.dt-glass-card:hover {
+  box-shadow: var(--dt-shadow-card-hover);
+  transform: translateY(-1px);
+}
+
+/* Status accent borders */
+.dt-card[data-status="overdue"] {
+  border-left: 3px solid var(--dt-status-overdue);
+}
+
+.dt-card[data-status="blocked"] {
+  border-left: 3px solid var(--dt-status-blocked);
+}
+
+.dt-card[data-status="in_review"],
+.dt-card[data-status="in-review"] {
+  border-left: 3px solid var(--dt-status-in-review);
+}
+
+.dt-card[data-status="in_progress"],
+.dt-card[data-status="in-progress"] {
+  border-left: 3px solid var(--dt-status-in-progress);
+}
+
+.dt-card[data-status="todo"] {
+  border-left: 3px solid var(--dt-status-todo);
+}
+
+.dt-card[data-status="done"] {
+  border-left: 3px solid var(--dt-status-done);
+}
+
+.dt-card[data-status="cancelled"] {
+  border-left: 3px solid var(--dt-status-cancelled);
+}
+
+.dt-card[data-status="pending"] {
+  border-left: 3px solid var(--dt-status-pending);
+}
+
+.dt-card[data-status="proposed"] {
+  border-left: 3px solid var(--dt-status-proposed);
+}
+
+.dt-card[data-status="voting"] {
+  border-left: 3px solid var(--dt-status-voting);
+}
+
+.dt-card[data-status="decided"] {
+  border-left: 3px solid var(--dt-status-decided);
+}

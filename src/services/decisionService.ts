@@ -11,6 +11,7 @@ export interface Decision {
   proposed_by: string;
   decided_at?: string;
   final_decision?: string;
+  archived_at?: string; // NEW: When decision was archived
   metadata: Record<string, any>;
   created_at: string;
   updated_at: string;
@@ -63,12 +64,13 @@ export const decisionService = {
     return decision;
   },
 
-  // Get all decisions for a workspace
+  // Get all decisions for a workspace (excludes archived by default)
   async getWorkspaceDecisions(workspaceId: string): Promise<DecisionWithVotes[]> {
     const { data: decisions, error } = await supabase
       .from('decisions')
       .select('*, votes:decision_votes(*)')
       .eq('workspace_id', workspaceId)
+      .is('archived_at', null) // Exclude archived decisions
       .order('created_at', { ascending: false });
 
     if (error) {
@@ -179,5 +181,91 @@ export const decisionService = {
         }
       )
       .subscribe();
+  },
+
+  /**
+   * Phase 4: Archive completed decisions automatically
+   * Archives decisions that have been decided/cancelled for more than 48 hours
+   */
+  async archiveCompletedDecisions(workspaceId: string): Promise<number> {
+    const fortyEightHoursAgo = new Date();
+    fortyEightHoursAgo.setHours(fortyEightHoursAgo.getHours() - 48);
+
+    const { data, error } = await supabase
+      .from('decisions')
+      .update({ archived_at: new Date().toISOString() })
+      .eq('workspace_id', workspaceId)
+      .in('status', ['decided', 'cancelled'])
+      .is('archived_at', null)
+      .lt('decided_at', fortyEightHoursAgo.toISOString())
+      .select();
+
+    if (error) {
+      console.error('Error auto-archiving decisions:', error);
+      return 0;
+    }
+
+    return data?.length || 0;
+  },
+
+  /**
+   * Phase 4: Manually archive a decision
+   */
+  async archiveDecision(decisionId: string): Promise<boolean> {
+    const { error } = await supabase
+      .from('decisions')
+      .update({ archived_at: new Date().toISOString() })
+      .eq('id', decisionId);
+
+    if (error) {
+      console.error('Error archiving decision:', error);
+      return false;
+    }
+
+    return true;
+  },
+
+  /**
+   * Phase 4: Reopen an archived decision
+   */
+  async reopenDecision(decisionId: string): Promise<boolean> {
+    const { error } = await supabase
+      .from('decisions')
+      .update({
+        archived_at: null,
+        status: 'proposed', // Reset to proposed when reopened
+        decided_at: null,
+        final_decision: null
+      })
+      .eq('id', decisionId);
+
+    if (error) {
+      console.error('Error reopening decision:', error);
+      return false;
+    }
+
+    return true;
+  },
+
+  /**
+   * Phase 4: Get archived decisions for a workspace
+   */
+  async getArchivedDecisions(workspaceId: string): Promise<DecisionWithVotes[]> {
+    const { data: decisions, error } = await supabase
+      .from('decisions')
+      .select('*, votes:decision_votes(*)')
+      .eq('workspace_id', workspaceId)
+      .not('archived_at', 'is', null)
+      .order('archived_at', { ascending: false });
+
+    if (error) {
+      console.error('Error fetching archived decisions:', error);
+      return [];
+    }
+
+    return decisions.map(d => ({
+      ...d,
+      vote_counts: this.calculateVoteCounts(d.votes || [])
+    }));
   }
 };

@@ -1,8 +1,11 @@
 import React, { useState, useEffect } from 'react';
 import { createPortal } from 'react-dom';
-import { X, Save, Sparkles, Calendar } from 'lucide-react';
+import { X, Save, Sparkles, Calendar, Lightbulb } from 'lucide-react';
 import { Task } from '../../services/taskService';
 import { User } from '../../types';
+import { parseNaturalLanguageTaskWithFallback } from '../../services/geminiService';
+import { taskIntelligenceService } from '../../services/taskIntelligenceService';
+import { fetchTasks } from '../../services/authService';
 import './CreateTaskModal.css';
 
 interface CreateTaskModalProps {
@@ -34,8 +37,16 @@ export const CreateTaskModal: React.FC<CreateTaskModalProps> = ({
   const [priority, setPriority] = useState<Task['priority']>('medium');
   const [assigneeId, setAssigneeId] = useState('');
   const [deadline, setDeadline] = useState('');
+  const [metadata, setMetadata] = useState<Record<string, any>>({});
   const [isProcessing, setIsProcessing] = useState(false);
   const [error, setError] = useState<string | null>(null);
+
+  // Phase 5: Smart Scheduling
+  const [isSuggestingDeadline, setIsSuggestingDeadline] = useState(false);
+  const [deadlineSuggestion, setDeadlineSuggestion] = useState<{
+    date: string;
+    reasoning: string;
+  } | null>(null);
 
   // Focus trap
   useEffect(() => {
@@ -59,87 +70,194 @@ export const CreateTaskModal: React.FC<CreateTaskModalProps> = ({
     setError(null);
 
     try {
-      // Simple pattern matching as fallback
-      // TODO: Replace with actual Gemini AI parsing in taskIntelligenceService
-      const input = naturalLanguageInput.trim();
+      // Get API key
+      const apiKey = localStorage.getItem('gemini_api_key') ||
+                     import.meta.env.VITE_GEMINI_API_KEY || '';
 
-      // Extract priority keywords
-      let detectedPriority: Task['priority'] = 'medium';
-      if (/\b(urgent|critical|asap)\b/i.test(input)) {
-        detectedPriority = 'urgent';
-      } else if (/\b(high|important)\b/i.test(input)) {
-        detectedPriority = 'high';
-      } else if (/\b(low|minor)\b/i.test(input)) {
-        detectedPriority = 'low';
+      if (!apiKey) {
+        console.warn('No Gemini API key found. Using basic parsing.');
+        // Fall back to basic regex-based parsing
+        parseNaturalLanguageBasic(naturalLanguageInput);
+        setInputMode('form');
+        return;
       }
 
-      // Extract assignee mentions (@name)
-      const assigneeMention = input.match(/@(\w+)/);
-      let detectedAssignee = '';
-      if (assigneeMention) {
-        const mentionedName = assigneeMention[1].toLowerCase();
-        const matchedMember = workspaceMembers.find(m =>
-          m.full_name?.toLowerCase().includes(mentionedName) ||
-          m.email?.toLowerCase().includes(mentionedName)
+      // Prepare workspace members for AI
+      const membersList = workspaceMembers?.map(m => ({
+        name: m.full_name || m.email,
+        id: m.id
+      })) || [];
+
+      // Call AI parser
+      const parsed = await parseNaturalLanguageTaskWithFallback(
+        apiKey,
+        naturalLanguageInput,
+        membersList
+      );
+
+      if (!parsed) {
+        console.warn('AI parsing failed. Using basic parsing.');
+        parseNaturalLanguageBasic(naturalLanguageInput);
+        setInputMode('form');
+        return;
+      }
+
+      // Update form with AI-parsed data
+      setTitle(parsed.title || '');
+      setDescription(parsed.description || '');
+      setPriority(parsed.priority || 'medium');
+
+      // Handle deadline
+      if (parsed.deadline) {
+        setDeadline(parsed.deadline);
+      }
+
+      // Handle assignee
+      if (parsed.assigneeName && workspaceMembers) {
+        const assignee = workspaceMembers.find(
+          m => m.full_name?.toLowerCase() === parsed.assigneeName?.toLowerCase() ||
+               m.email?.toLowerCase() === parsed.assigneeName?.toLowerCase()
         );
-        if (matchedMember) {
-          detectedAssignee = matchedMember.id;
+        if (assignee) {
+          setAssigneeId(assignee.id);
         }
       }
 
-      // Extract deadline keywords
-      let detectedDeadline = '';
-      const today = new Date();
-
-      if (/\b(today)\b/i.test(input)) {
-        detectedDeadline = today.toISOString().split('T')[0];
-      } else if (/\b(tomorrow)\b/i.test(input)) {
-        const tomorrow = new Date(today);
-        tomorrow.setDate(tomorrow.getDate() + 1);
-        detectedDeadline = tomorrow.toISOString().split('T')[0];
-      } else if (/\b(friday|monday|tuesday|wednesday|thursday|saturday|sunday)\b/i.test(input)) {
-        const dayMatch = input.match(/\b(friday|monday|tuesday|wednesday|thursday|saturday|sunday)\b/i);
-        if (dayMatch) {
-          const targetDay = dayMatch[1].toLowerCase();
-          const days = ['sunday', 'monday', 'tuesday', 'wednesday', 'thursday', 'friday', 'saturday'];
-          const targetDayIndex = days.indexOf(targetDay);
-          const currentDayIndex = today.getDay();
-          let daysUntilTarget = targetDayIndex - currentDayIndex;
-          if (daysUntilTarget <= 0) daysUntilTarget += 7;
-
-          const targetDate = new Date(today);
-          targetDate.setDate(targetDate.getDate() + daysUntilTarget);
-          detectedDeadline = targetDate.toISOString().split('T')[0];
-        }
+      // Handle tags (store in metadata)
+      if (parsed.tags && parsed.tags.length > 0) {
+        setMetadata({ ...metadata, tags: parsed.tags });
       }
 
-      // Clean up the title by removing keywords
-      let cleanTitle = input
-        .replace(/@\w+/g, '')
-        .replace(/\b(urgent|critical|asap|high|important|low|minor)\b/gi, '')
-        .replace(/\b(by|due|deadline)\s+(today|tomorrow|friday|monday|tuesday|wednesday|thursday|saturday|sunday)\b/gi, '')
-        .replace(/,\s*,/g, ',')
-        .replace(/\s+/g, ' ')
-        .trim();
+      // Handle estimated hours (store in metadata)
+      if (parsed.estimatedHours) {
+        setMetadata({ ...metadata, estimatedHours: parsed.estimatedHours });
+      }
 
-      // Remove leading/trailing commas
-      cleanTitle = cleanTitle.replace(/^,\s*|,\s*$/g, '').trim();
+      // Handle dependencies (store in metadata for now)
+      if (parsed.dependencies && parsed.dependencies.length > 0) {
+        setMetadata({ ...metadata, dependencies: parsed.dependencies });
+      }
 
-      // Populate form fields
-      setTitle(cleanTitle);
-      setPriority(detectedPriority);
-      setAssigneeId(detectedAssignee);
-      setDeadline(detectedDeadline);
+      // Show success message
+      console.log('✓ Task parsed with AI:', parsed);
 
       // Switch to form mode so user can review/edit
       setInputMode('form');
 
     } catch (err) {
       console.error('Error parsing natural language:', err);
-      setError('Failed to parse input. Please use the form instead.');
+      // Fall back to basic parsing
+      parseNaturalLanguageBasic(naturalLanguageInput);
+      setInputMode('form');
     } finally {
       setIsProcessing(false);
     }
+  };
+
+  // Phase 5: Smart Scheduling - Suggest optimal deadline
+  const handleSuggestDeadline = async () => {
+    if (!title.trim()) {
+      setError('Please enter a task title first');
+      return;
+    }
+
+    setIsSuggestingDeadline(true);
+    setError(null);
+
+    try {
+      const apiKey = localStorage.getItem('gemini_api_key') ||
+                     import.meta.env.VITE_GEMINI_API_KEY || '';
+
+      if (!apiKey) {
+        // Fallback without AI
+        const daysMap = { urgent: 1, high: 3, medium: 7, low: 14 };
+        const daysToAdd = daysMap[priority] || 7;
+        const suggestedDate = new Date();
+        suggestedDate.setDate(suggestedDate.getDate() + daysToAdd);
+
+        setDeadlineSuggestion({
+          date: suggestedDate.toISOString().split('T')[0],
+          reasoning: `Based on ${priority} priority, suggested deadline is ${daysToAdd} days from now.`
+        });
+        setDeadline(suggestedDate.toISOString().split('T')[0]);
+        return;
+      }
+
+      // Fetch current workspace tasks
+      const currentTasks = await fetchTasks();
+      const workspaceTasks = currentTasks.filter(t => t.workspace_id === workspaceId);
+
+      // Call AI to suggest deadline
+      const suggestion = await taskIntelligenceService.suggestOptimalDeadline(
+        apiKey,
+        title,
+        description,
+        priority,
+        workspaceTasks
+      );
+
+      if (suggestion) {
+        setDeadlineSuggestion({
+          date: suggestion.suggestedDate,
+          reasoning: suggestion.reasoning
+        });
+        setDeadline(suggestion.suggestedDate);
+      } else {
+        throw new Error('No suggestion returned');
+      }
+    } catch (error) {
+      console.error('Error suggesting deadline:', error);
+      setError('Unable to suggest deadline. Please select one manually.');
+    } finally {
+      setIsSuggestingDeadline(false);
+    }
+  };
+
+  // Fallback: Basic regex-based parsing (original implementation)
+  const parseNaturalLanguageBasic = (input: string) => {
+    const text = input.toLowerCase();
+
+    // Extract priority
+    if (text.includes('urgent') || text.includes('asap') || text.includes('critical')) {
+      setPriority('urgent');
+    } else if (text.includes('high priority') || text.includes('important')) {
+      setPriority('high');
+    } else if (text.includes('low priority')) {
+      setPriority('low');
+    }
+
+    // Extract deadline
+    const today = new Date();
+    if (text.includes('today')) {
+      setDeadline(today.toISOString().split('T')[0]);
+    } else if (text.includes('tomorrow')) {
+      const tomorrow = new Date(today);
+      tomorrow.setDate(tomorrow.getDate() + 1);
+      setDeadline(tomorrow.toISOString().split('T')[0]);
+    }
+
+    // Extract assignee mentions (@name)
+    const assigneeMention = input.match(/@(\w+)/);
+    if (assigneeMention) {
+      const mentionedName = assigneeMention[1].toLowerCase();
+      const matchedMember = workspaceMembers.find(m =>
+        m.full_name?.toLowerCase().includes(mentionedName) ||
+        m.email?.toLowerCase().includes(mentionedName)
+      );
+      if (matchedMember) {
+        setAssigneeId(matchedMember.id);
+      }
+    }
+
+    // Use input as title (clean it up a bit)
+    let cleanTitle = input
+      .replace(/@\w+/g, '')
+      .replace(/\b(urgent|critical|asap|high|important|low|minor)\b/gi, '')
+      .replace(/\b(by|due|deadline)\s+(today|tomorrow)\b/gi, '')
+      .replace(/\s+/g, ' ')
+      .trim();
+
+    setTitle(cleanTitle);
   };
 
   const handleSubmit = async (e: React.FormEvent) => {
@@ -161,7 +279,8 @@ export const CreateTaskModal: React.FC<CreateTaskModalProps> = ({
       deadline: deadline ? new Date(deadline).toISOString() : undefined,
       metadata: {
         created_by: currentUserId,
-        created_via: inputMode === 'natural' ? 'natural_language' : 'form'
+        created_via: inputMode === 'natural' ? 'natural_language' : 'form',
+        ...metadata
       }
     };
 
@@ -223,6 +342,12 @@ export const CreateTaskModal: React.FC<CreateTaskModalProps> = ({
               <p className="nl-hint">
                 Try mentioning: priority (urgent/high/low), assignee (@name), deadline (today/tomorrow/Friday)
               </p>
+              {isProcessing && (
+                <div className="nl-parsing-indicator">
+                  <Sparkles size={16} className="spinner" />
+                  Analyzing with AI...
+                </div>
+              )}
               <button
                 type="button"
                 className="nl-parse-button"
@@ -311,9 +436,21 @@ export const CreateTaskModal: React.FC<CreateTaskModalProps> = ({
               </div>
 
               <div className="create-task-field">
-                <label htmlFor="task-deadline" className="create-task-label">
-                  Due Date
-                </label>
+                <div className="deadline-field-header">
+                  <label htmlFor="task-deadline" className="create-task-label">
+                    Due Date
+                  </label>
+                  <button
+                    type="button"
+                    className="suggest-deadline-button"
+                    onClick={handleSuggestDeadline}
+                    disabled={isSuggestingDeadline || !title.trim()}
+                    title="Let AI suggest an optimal deadline"
+                  >
+                    <Lightbulb size={14} />
+                    {isSuggestingDeadline ? 'Analyzing...' : 'Suggest'}
+                  </button>
+                </div>
                 <input
                   id="task-deadline"
                   type="date"
@@ -321,6 +458,16 @@ export const CreateTaskModal: React.FC<CreateTaskModalProps> = ({
                   value={deadline}
                   onChange={(e) => setDeadline(e.target.value)}
                 />
+                {deadlineSuggestion && (
+                  <div className="deadline-suggestion">
+                    <Lightbulb size={14} className="suggestion-icon" />
+                    <div className="suggestion-content">
+                      <div className="suggestion-reasoning">
+                        {deadlineSuggestion.reasoning}
+                      </div>
+                    </div>
+                  </div>
+                )}
               </div>
 
               <div className="create-task-modal-footer">

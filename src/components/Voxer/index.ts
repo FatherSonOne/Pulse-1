@@ -24,6 +24,19 @@ export { CollaborativeVox } from './CollaborativeVox';
 export { VoiceCommandsHub, FloatingVoiceButton } from './VoiceCommandsHub';
 export { VoxPreviewPanel } from './VoxPreviewPanel';
 
+// Phase 5: AI Enhancements
+export { VoxConversationSummary } from './VoxConversationSummary';
+export { VoxSmartReplies } from './VoxSmartReplies';
+export { VoxMeetingNotes } from './VoxMeetingNotes';
+export { VoxAutoChapters } from './VoxAutoChapters';
+
+// Phase 6: Final Polish
+export { VoxKeyboardShortcutsHelp } from './VoxKeyboardShortcutsHelp';
+export { PlaybackSpeedControl } from './PlaybackSpeedControl';
+export { VoxEmptyState } from './VoxEmptyState';
+export { VOX_EMPTY_STATES, getEmptyStateConfig } from './voxEmptyStates';
+export type { VoxEmptyStateConfig } from './voxEmptyStates';
+
 // ============================================
 // VOX MODE SYSTEM - 7 Communication Styles
 // ============================================

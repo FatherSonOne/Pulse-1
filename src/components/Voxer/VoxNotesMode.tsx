@@ -23,7 +23,11 @@ import {
   X,
   Square,
   Check,
-  Menu
+  Menu,
+  Download,
+  Archive,
+  TrendingUp,
+  Loader2,
 } from 'lucide-react';
 import VoxAudioVisualizer from './VoxAudioVisualizer';
 import RecordingPreview from './RecordingPreview';
@@ -34,7 +38,25 @@ import { useVoxRecording } from '../../hooks/useVoxRecording';
 import { voxModeService } from '../../services/voxer/voxModeService';
 import analyticsCollector from '../../services/analyticsCollector';
 import type { VoxNote, LinkedItem } from '../../services/voxer/voxModeTypes';
+import toast from 'react-hot-toast';
 import './Voxer.css';
+
+// Phase 2: Selection Mode
+import { useVoxSelection, VoxSelectionItem } from '../../hooks/useVoxSelection';
+import { VoxSelectToolbar } from './VoxSelectToolbar';
+
+// Phase 5: AI Enhancements
+import { VoxConversationSummary, VoxSmartReplies } from './index';
+import { summarizeConversation, generateSmartReplies } from '../../services/voxer/voxerAIService';
+import type { ConversationSummary, SmartReply } from '../../services/voxer/voxerAIService';
+
+// Phase 6: Final Polish
+import { useVoxerKeyboardShortcuts } from '../../hooks/useVoxerKeyboardShortcuts';
+import { VoxKeyboardShortcutsHelp } from './VoxKeyboardShortcutsHelp';
+import { usePlaybackSpeed } from '../../hooks/usePlaybackSpeed';
+import { PlaybackSpeedControl } from './PlaybackSpeedControl';
+import { VoxEmptyState } from './VoxEmptyState';
+import { getEmptyStateConfig } from './voxEmptyStates';
 
 // Mode color for Vox Notes
 const MODE_COLOR = '#EC4899';
@@ -73,6 +95,32 @@ const VoxNotesMode: React.FC<VoxNotesModeProps> = ({
 
   const audioRef = useRef<HTMLAudioElement>(null);
 
+  // Phase 2: Selection Mode State
+  const {
+    isSelectionMode,
+    selectedItems,
+    selectionCount,
+    toggleSelection,
+    selectAll,
+    deselectAll,
+    enterSelectionMode,
+    exitSelectionMode,
+    isSelected,
+    getTotalDuration,
+  } = useVoxSelection();
+
+  // Phase 5: AI Enhancement States
+  const [showSummary, setShowSummary] = useState(false);
+  const [conversationSummary, setConversationSummary] = useState<ConversationSummary | null>(null);
+  const [showSmartReplies, setShowSmartReplies] = useState(false);
+  const [smartReplies, setSmartReplies] = useState<SmartReply[]>([]);
+  const [isGeneratingAI, setIsGeneratingAI] = useState(false);
+
+  // Phase 6: Final Polish States
+  const [showShortcutsHelp, setShowShortcutsHelp] = useState(false);
+  const { playbackSpeed: globalPlaybackSpeed, setPlaybackSpeed: setGlobalPlaybackSpeed, applyToElement } = usePlaybackSpeed();
+  const emptyConfig = getEmptyStateConfig('vox_notes');
+
   // Use the recording hook for click-to-record with preview
   const {
     state: recordingState,
@@ -93,6 +141,136 @@ const VoxNotesMode: React.FC<VoxNotesModeProps> = ({
       console.log('Recording complete:', data.duration, 'seconds');
     },
   });
+
+  // Phase 6: Keyboard Shortcuts
+  useVoxerKeyboardShortcuts({
+    onToggleRecording: () => {
+      if (recordingState === 'idle') startRecording();
+      else if (recordingState === 'recording') stopRecording();
+    },
+    onStopRecording: () => {
+      if (recordingState === 'recording') stopRecording();
+    },
+    onGoBack: () => {
+      if (selectedNote) setSelectedNote(null);
+      else onBack();
+    },
+    onSwitchMode: (mode) => {
+      console.log('Switch to mode:', mode);
+    },
+    onDownload: () => {
+      if (isSelectionMode && selectionCount > 0) {
+        console.log('Download selected notes');
+      }
+    },
+    onArchive: () => {
+      if (isSelectionMode && selectionCount > 0) {
+        console.log('Archive selected notes');
+      }
+    },
+    onSummarize: handleSummarizeNotes,
+    onShowHelp: () => setShowShortcutsHelp(true),
+  }, true);
+
+  // Phase 6: Apply playback speed to audio elements
+  useEffect(() => {
+    if (audioRef.current) {
+      applyToElement(audioRef.current);
+    }
+  }, [globalPlaybackSpeed, applyToElement]);
+
+  // Phase 5: AI Handler Functions
+  const handleSummarizeNotes = async () => {
+    if (notes.length === 0) {
+      toast.error('No notes to summarize');
+      return;
+    }
+
+    setIsGeneratingAI(true);
+    try {
+      const noteData = notes.slice(0, 10).map(note => ({
+        id: note.id,
+        transcription: note.transcript || '',
+        sender: 'me' as const,
+        senderName: 'Me',
+        timestamp: note.createdAt,
+        duration: note.duration,
+      }));
+
+      const summary = await summarizeConversation('', noteData);
+      if (summary) {
+        setConversationSummary(summary);
+        setShowSummary(true);
+        toast.success('Notes summarized!');
+      } else {
+        toast.error('Failed to generate summary');
+      }
+    } catch (error) {
+      console.error('Summarization error:', error);
+      toast.error('Failed to generate summary');
+    } finally {
+      setIsGeneratingAI(false);
+    }
+  };
+
+  const handleGenerateSmartReplies = async () => {
+    const recentNotes = notes.slice(0, 5);
+    if (recentNotes.length === 0) {
+      toast.error('No notes to analyze');
+      return;
+    }
+
+    setIsGeneratingAI(true);
+    try {
+      const lastNote = recentNotes[0];
+      const context = recentNotes.map(note => ({
+        id: note.id,
+        transcription: note.transcript || '',
+        sender: 'me' as const,
+        senderName: 'Me',
+        timestamp: note.createdAt,
+        duration: note.duration,
+      }));
+
+      const replies = await generateSmartReplies('', {
+        id: lastNote.id,
+        transcription: lastNote.transcript || '',
+        sender: 'me' as const,
+        senderName: 'Me',
+        timestamp: lastNote.createdAt,
+        duration: lastNote.duration,
+      }, context);
+
+      if (replies.length > 0) {
+        setSmartReplies(replies);
+        setShowSmartReplies(true);
+        toast.success('Smart replies generated!');
+      } else {
+        toast.error('Failed to generate smart replies');
+      }
+    } catch (error) {
+      console.error('Smart replies error:', error);
+      toast.error('Failed to generate smart replies');
+    } finally {
+      setIsGeneratingAI(false);
+    }
+  };
+
+  const handleSelectAllNotes = () => {
+    const allItems: VoxSelectionItem[] = filteredNotes.map(note => ({
+      id: note.id,
+      type: 'audio' as const,
+      url: note.audioUrl,
+      duration: note.duration,
+      timestamp: note.createdAt,
+      sender: 'me' as const,
+      transcript: note.transcript,
+      mode: 'vox_notes' as const,
+      contactId: 'personal',
+      contactName: 'My Notes',
+    }));
+    selectAll(allItems);
+  };
 
   // Save recording as a new note
   const handleSendRecording = async () => {
@@ -412,15 +590,52 @@ const VoxNotesMode: React.FC<VoxNotesModeProps> = ({
               <button
                 key={note.id}
                 onClick={() => {
-                  setSelectedNote(note);
-                  setIsPlaying(false);
-                  setPlaybackProgress(0);
-                  setShowMobileSidebar(false);
+                  if (!isSelectionMode) {
+                    setSelectedNote(note);
+                    setIsPlaying(false);
+                    setPlaybackProgress(0);
+                    setShowMobileSidebar(false);
+                  }
                 }}
-                className={`w-full p-4 text-left border-b ${tc.border} transition-all ${
+                className={`w-full p-4 text-left border-b ${tc.border} transition-all relative ${
                   selectedNote?.id === note.id ? tc.activeBg : tc.hoverBg
                 }`}
               >
+                {/* Phase 2: Selection Checkbox */}
+                {isSelectionMode && (
+                  <button
+                    type="button"
+                    onClick={(e) => {
+                      e.stopPropagation();
+                      const selectionItem: VoxSelectionItem = {
+                        id: note.id,
+                        type: 'audio' as const,
+                        url: note.audioUrl,
+                        duration: note.duration,
+                        timestamp: note.createdAt,
+                        sender: 'me' as const,
+                        transcript: note.transcript,
+                        mode: 'vox_notes' as const,
+                        contactId: 'personal',
+                        contactName: 'My Notes',
+                      };
+                      toggleSelection(selectionItem);
+                    }}
+                    className={`absolute top-3 right-3 w-7 h-7 rounded-lg flex items-center justify-center transition-all shadow-lg hover:scale-110 active:scale-95 z-10 ${
+                      isSelected(note.id)
+                        ? 'bg-pink-500 border-2 border-pink-600'
+                        : 'bg-white dark:bg-gray-700 border-2 border-gray-400 dark:border-gray-500'
+                    }`}
+                    style={{
+                      boxShadow: isSelected(note.id)
+                        ? '0 4px 12px rgba(236, 72, 153, 0.4)'
+                        : '0 2px 8px rgba(0, 0, 0, 0.2)',
+                    }}
+                  >
+                    {isSelected(note.id) && <Check className="w-5 h-5 text-white font-bold" />}
+                  </button>
+                )}
+
                 <div className="flex items-start gap-3">
                   <div
                     className="w-10 h-10 rounded-xl flex items-center justify-center shrink-0"
@@ -470,10 +685,12 @@ const VoxNotesMode: React.FC<VoxNotesModeProps> = ({
         ))}
 
         {filteredNotes.length === 0 && (
-          <div className={`text-center py-12 ${tc.textMuted}`}>
-            <FileText className="w-12 h-12 mx-auto mb-3 opacity-50" />
-            <p className="text-sm">No notes found</p>
-            <p className="text-xs mt-1">Record your first voice note</p>
+          <div className="py-12">
+            <VoxEmptyState
+              {...emptyConfig}
+              isDarkMode={isDarkMode}
+              action={{ label: 'Start Recording', onClick: () => { if (recordingState === 'idle') startRecording(); } }}
+            />
           </div>
         )}
       </div>
@@ -514,6 +731,55 @@ const VoxNotesMode: React.FC<VoxNotesModeProps> = ({
             <h1 className={`text-lg md:text-xl font-bold ${tc.text}`}>Vox Notes</h1>
             <p className={`text-xs md:text-sm ${tc.textSecondary} hidden sm:block`}>Your Voice, Organized</p>
           </div>
+
+          {/* Phase 5: AI Enhancement Buttons */}
+          {notes.length > 0 && (
+            <div className="flex items-center gap-2 border-r border-pink-500/30 pr-2 mr-2">
+              <button
+                type="button"
+                onClick={handleSummarizeNotes}
+                disabled={notes.length === 0 || isGeneratingAI}
+                className="px-3 py-1.5 rounded-lg bg-purple-500 text-white text-xs font-medium hover:bg-purple-600 transition disabled:opacity-50 disabled:cursor-not-allowed flex items-center gap-1.5"
+                title="AI Summarize Notes"
+              >
+                {isGeneratingAI ? <Loader2 className="w-3 h-3 animate-spin" /> : <Sparkles className="w-3 h-3" />}
+                <span className="hidden md:inline">Summarize</span>
+              </button>
+
+              <button
+                type="button"
+                onClick={handleGenerateSmartReplies}
+                disabled={isGeneratingAI}
+                className="px-3 py-1.5 rounded-lg bg-blue-500 text-white text-xs font-medium hover:bg-blue-600 transition disabled:opacity-50 disabled:cursor-not-allowed flex items-center gap-1.5"
+                title="Generate Smart Replies"
+              >
+                {isGeneratingAI ? <Loader2 className="w-3 h-3 animate-spin" /> : <TrendingUp className="w-3 h-3" />}
+                <span className="hidden md:inline">Quick Reply</span>
+              </button>
+
+              {/* Phase 2: Selection Mode Button */}
+              <button
+                type="button"
+                onClick={(e) => {
+                  e.preventDefault();
+                  e.stopPropagation();
+                  if (isSelectionMode) {
+                    exitSelectionMode();
+                  } else {
+                    enterSelectionMode();
+                  }
+                }}
+                style={{
+                  background: isSelectionMode ? '#EC4899' : undefined,
+                  color: isSelectionMode ? 'white' : undefined,
+                }}
+                className="p-2 rounded-lg hover:bg-pink-500/20 transition"
+                title="Select notes"
+              >
+                {isSelectionMode ? <X className="w-4 h-4" /> : <Square className="w-4 h-4" />}
+              </button>
+            </div>
+          )}
 
           {/* Mobile sidebar toggle */}
           <button
@@ -735,6 +1001,17 @@ const VoxNotesMode: React.FC<VoxNotesModeProps> = ({
                       onSeek={handleSeek}
                     />
                   </div>
+                  {/* Phase 6: Playback Speed Control */}
+                  <PlaybackSpeedControl
+                    speed={globalPlaybackSpeed}
+                    onSpeedChange={(newSpeed) => {
+                      setGlobalPlaybackSpeed(newSpeed);
+                      if (audioRef.current) audioRef.current.playbackRate = newSpeed;
+                    }}
+                    mode="compact"
+                    isDarkMode={isDarkMode}
+                    accentColor={MODE_COLOR}
+                  />
                 </div>
               </div>
 
@@ -898,6 +1175,63 @@ const VoxNotesMode: React.FC<VoxNotesModeProps> = ({
           </div>
         </div>
       )}
+
+      {/* Phase 2: Selection Toolbar */}
+      {isSelectionMode && (
+        <VoxSelectToolbar
+          selectedItems={selectedItems}
+          selectionCount={selectionCount}
+          totalDuration={getTotalDuration()}
+          onSelectAll={handleSelectAllNotes}
+          onDeselectAll={deselectAll}
+          onExitSelection={exitSelectionMode}
+          contactName="My Notes"
+          isDarkMode={isDarkMode}
+          accentColor={MODE_COLOR}
+          allSelected={selectionCount === filteredNotes.length && filteredNotes.length > 0}
+        />
+      )}
+
+      {/* Phase 5: AI Enhancement Modals */}
+
+      {/* Conversation Summary Modal */}
+      {conversationSummary && showSummary && (
+        <div className="fixed inset-0 bg-black/50 backdrop-blur-sm z-50 flex items-center justify-center p-4">
+          <div className="max-w-2xl w-full">
+            <VoxConversationSummary
+              summary={conversationSummary}
+              isDarkMode={isDarkMode}
+              accentColor={MODE_COLOR}
+              onClose={() => setShowSummary(false)}
+            />
+          </div>
+        </div>
+      )}
+
+      {/* Smart Replies Panel */}
+      {smartReplies.length > 0 && showSmartReplies && (
+        <div className="fixed bottom-20 right-4 z-40 w-96">
+          <VoxSmartReplies
+            replies={smartReplies}
+            onSelectReply={(reply) => {
+              navigator.clipboard.writeText(reply.text);
+              toast.success('Smart reply copied! Use it in your next note.');
+              setSmartReplies([]);
+              setShowSmartReplies(false);
+            }}
+            onClose={() => setShowSmartReplies(false)}
+            isDarkMode={isDarkMode}
+            accentColor={MODE_COLOR}
+          />
+        </div>
+      )}
+
+      {/* Phase 6: Keyboard Shortcuts Help Modal */}
+      <VoxKeyboardShortcutsHelp
+        isOpen={showShortcutsHelp}
+        onClose={() => setShowShortcutsHelp(false)}
+        isDarkMode={isDarkMode}
+      />
     </div>
   );
 };

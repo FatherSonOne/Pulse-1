@@ -22,7 +22,13 @@ import {
   Calendar,
   Square,
   Menu,
-  Briefcase
+  Briefcase,
+  Check,
+  Download,
+  Archive,
+  Sparkles,
+  TrendingUp,
+  Loader2,
 } from 'lucide-react';
 import VoxAudioVisualizer from './VoxAudioVisualizer';
 import RecordingPreview from './RecordingPreview';
@@ -33,7 +39,25 @@ import { useVoxRecording } from '../../hooks/useVoxRecording';
 import { voxModeService } from '../../services/voxer/voxModeService';
 import analyticsCollector from '../../services/analyticsCollector';
 import type { VoxWorkspace, VoxTeamChannel, TeamVoxMessage } from '../../services/voxer/voxModeTypes';
+import toast from 'react-hot-toast';
 import './Voxer.css';
+
+// Phase 2: Selection Mode
+import { useVoxSelection, VoxSelectionItem } from '../../hooks/useVoxSelection';
+import { VoxSelectToolbar } from './VoxSelectToolbar';
+
+// Phase 5: AI Enhancements
+import { VoxConversationSummary, VoxSmartReplies } from './index';
+import { summarizeConversation, generateSmartReplies } from '../../services/voxer/voxerAIService';
+import type { ConversationSummary, SmartReply } from '../../services/voxer/voxerAIService';
+
+// Phase 6: Final Polish
+import { useVoxerKeyboardShortcuts } from '../../hooks/useVoxerKeyboardShortcuts';
+import { VoxKeyboardShortcutsHelp } from './VoxKeyboardShortcutsHelp';
+import { usePlaybackSpeed } from '../../hooks/usePlaybackSpeed';
+import { PlaybackSpeedControl } from './PlaybackSpeedControl';
+import { VoxEmptyState } from './VoxEmptyState';
+import { getEmptyStateConfig } from './voxEmptyStates';
 
 // Mode color for Team Vox
 const MODE_COLOR = '#F59E0B';
@@ -88,6 +112,32 @@ const TeamVoxMode: React.FC<TeamVoxModeProps> = ({
   const messagesEndRef = useRef<HTMLDivElement>(null);
   const workspaceDropdownRef = useRef<HTMLDivElement>(null);
 
+  // Phase 2: Selection Mode State
+  const {
+    isSelectionMode,
+    selectedItems,
+    selectionCount,
+    toggleSelection,
+    selectAll,
+    deselectAll,
+    enterSelectionMode,
+    exitSelectionMode,
+    isSelected,
+    getTotalDuration,
+  } = useVoxSelection();
+
+  // Phase 5: AI Enhancement States
+  const [showSummary, setShowSummary] = useState(false);
+  const [conversationSummary, setConversationSummary] = useState<ConversationSummary | null>(null);
+  const [showSmartReplies, setShowSmartReplies] = useState(false);
+  const [smartReplies, setSmartReplies] = useState<SmartReply[]>([]);
+  const [isGeneratingAI, setIsGeneratingAI] = useState(false);
+
+  // Phase 6: Final Polish States
+  const [showShortcutsHelp, setShowShortcutsHelp] = useState(false);
+  const { playbackSpeed: globalPlaybackSpeed, setPlaybackSpeed: setGlobalPlaybackSpeed, applyToElement } = usePlaybackSpeed();
+  const emptyConfig = getEmptyStateConfig('team_vox');
+
   // Use the recording hook for click-to-record with preview
   const {
     state: recordingState,
@@ -108,6 +158,135 @@ const TeamVoxMode: React.FC<TeamVoxModeProps> = ({
       console.log('Team Vox recording complete:', data.duration, 'seconds');
     },
   });
+
+  // Phase 6: Keyboard Shortcuts
+  useVoxerKeyboardShortcuts({
+    onToggleRecording: () => {
+      if (recordingState === 'idle') startRecording();
+      else if (recordingState === 'recording') stopRecording();
+    },
+    onStopRecording: () => {
+      if (recordingState === 'recording') stopRecording();
+    },
+    onGoBack: () => {
+      if (selectedChannel) setSelectedChannel(null);
+      else onBack();
+    },
+    onSwitchMode: (mode) => {
+      console.log('Switch to mode:', mode);
+    },
+    onDownload: () => {
+      if (isSelectionMode && selectionCount > 0) {
+        console.log('Download selected items');
+      }
+    },
+    onArchive: () => {
+      if (isSelectionMode && selectionCount > 0) {
+        console.log('Archive selected items');
+      }
+    },
+    onSummarize: handleSummarizeChannel,
+    onShowHelp: () => setShowShortcutsHelp(true),
+  }, true);
+
+  // Phase 6: Apply playback speed to audio elements
+  useEffect(() => {
+    if (audioRef.current) {
+      applyToElement(audioRef.current);
+    }
+  }, [globalPlaybackSpeed, applyToElement]);
+
+  // Phase 5: AI Handler Functions
+  const handleSummarizeChannel = async () => {
+    if (messages.length === 0) {
+      toast.error('No messages to summarize');
+      return;
+    }
+
+    setIsGeneratingAI(true);
+    try {
+      const messageData = messages.map(msg => ({
+        id: msg.id,
+        transcription: msg.transcript || '',
+        sender: msg.senderId === voxModeService.getUserId() ? 'me' : 'other',
+        senderName: msg.senderName,
+        timestamp: msg.createdAt,
+        duration: msg.duration,
+      }));
+
+      const summary = await summarizeConversation('', messageData);
+      if (summary) {
+        setConversationSummary(summary);
+        setShowSummary(true);
+        toast.success('Channel summarized!');
+      } else {
+        toast.error('Failed to generate summary');
+      }
+    } catch (error) {
+      console.error('Summarization error:', error);
+      toast.error('Failed to generate summary');
+    } finally {
+      setIsGeneratingAI(false);
+    }
+  };
+
+  const handleGenerateSmartReplies = async () => {
+    const recentMessages = messages.slice(-5);
+    if (recentMessages.length === 0) {
+      toast.error('No messages to analyze');
+      return;
+    }
+
+    setIsGeneratingAI(true);
+    try {
+      const lastMessage = recentMessages[recentMessages.length - 1];
+      const context = recentMessages.map(msg => ({
+        id: msg.id,
+        transcription: msg.transcript || '',
+        sender: msg.senderId === voxModeService.getUserId() ? 'me' : 'other',
+        senderName: msg.senderName,
+        timestamp: msg.createdAt,
+        duration: msg.duration,
+      }));
+
+      const replies = await generateSmartReplies('', {
+        id: lastMessage.id,
+        transcription: lastMessage.transcript || '',
+        sender: lastMessage.senderId === voxModeService.getUserId() ? 'me' : 'other',
+        senderName: lastMessage.senderName,
+        timestamp: lastMessage.createdAt,
+        duration: lastMessage.duration,
+      }, context);
+
+      if (replies.length > 0) {
+        setSmartReplies(replies);
+        toast.success('Smart replies generated!');
+      } else {
+        toast.error('Failed to generate smart replies');
+      }
+    } catch (error) {
+      console.error('Smart replies error:', error);
+      toast.error('Failed to generate smart replies');
+    } finally {
+      setIsGeneratingAI(false);
+    }
+  };
+
+  const handleSelectAllMessages = () => {
+    const allItems: VoxSelectionItem[] = messages.map(msg => ({
+      id: msg.id,
+      type: 'audio' as const,
+      url: msg.audioUrl,
+      duration: msg.duration,
+      timestamp: msg.createdAt,
+      sender: msg.senderId === voxModeService.getUserId() ? 'me' : 'other',
+      transcript: msg.transcript,
+      mode: 'team_vox' as const,
+      contactId: selectedChannel?.id,
+      contactName: selectedChannel?.name,
+    }));
+    selectAll(allItems);
+  };
 
   // Handle sending the recording
   const handleSendRecording = async () => {
@@ -484,6 +663,55 @@ const TeamVoxMode: React.FC<TeamVoxModeProps> = ({
         isDarkMode={isDarkMode}
         actions={
           <>
+            {/* Phase 5: AI Enhancement Buttons */}
+            {selectedChannel && (
+              <div className="flex items-center gap-2 border-r border-amber-500/30 pr-2 mr-2">
+                <button
+                  type="button"
+                  onClick={handleSummarizeChannel}
+                  disabled={messages.length === 0 || isGeneratingAI}
+                  className="px-3 py-1.5 rounded-lg bg-purple-500 text-white text-xs font-medium hover:bg-purple-600 transition disabled:opacity-50 disabled:cursor-not-allowed"
+                  title="AI Summarize Channel"
+                >
+                  {isGeneratingAI ? <Loader2 className="w-3 h-3 animate-spin" /> : <Sparkles className="w-3 h-3" />}
+                  <span className="ml-1.5 hidden md:inline">Summarize</span>
+                </button>
+
+                <button
+                  type="button"
+                  onClick={handleGenerateSmartReplies}
+                  disabled={isGeneratingAI}
+                  className="px-3 py-1.5 rounded-lg bg-blue-500 text-white text-xs font-medium hover:bg-blue-600 transition disabled:opacity-50 disabled:cursor-not-allowed"
+                  title="Generate Smart Replies"
+                >
+                  {isGeneratingAI ? <Loader2 className="w-3 h-3 animate-spin" /> : <TrendingUp className="w-3 h-3" />}
+                  <span className="ml-1.5 hidden md:inline">Quick Reply</span>
+                </button>
+
+                {/* Phase 2: Selection Mode Button */}
+                <button
+                  type="button"
+                  onClick={(e) => {
+                    e.preventDefault();
+                    e.stopPropagation();
+                    if (isSelectionMode) {
+                      exitSelectionMode();
+                    } else {
+                      enterSelectionMode();
+                    }
+                  }}
+                  style={{
+                    background: isSelectionMode ? '#F59E0B' : undefined,
+                    color: isSelectionMode ? 'white' : undefined,
+                  }}
+                  className="p-2 rounded-lg hover:bg-amber-500/20 transition"
+                  title="Select messages"
+                >
+                  {isSelectionMode ? <X className="w-4 h-4" /> : <Square className="w-4 h-4" />}
+                </button>
+              </div>
+            )}
+
             {/* Workspace Selector - Desktop */}
             {selectedWorkspace && (
               <div ref={workspaceDropdownRef} className="hidden md:block relative">
@@ -677,19 +905,11 @@ const TeamVoxMode: React.FC<TeamVoxModeProps> = ({
               {/* Messages */}
               <div className="flex-1 overflow-y-auto p-4 md:p-6">
                 {messages.length === 0 ? (
-                  <div className={`text-center py-12 ${tc.textMuted}`}>
-                    <div
-                      className="w-20 h-20 rounded-2xl mx-auto mb-4 flex items-center justify-center"
-                      style={{
-                        background: `linear-gradient(135deg, ${MODE_COLOR}20 0%, ${MODE_COLOR}10 100%)`,
-                        border: `1px solid ${MODE_COLOR}30`
-                      }}
-                    >
-                      <Volume2 className="w-10 h-10" style={{ color: MODE_COLOR, opacity: 0.6 }} />
-                    </div>
-                    <p className={tc.text}>No messages in this channel yet</p>
-                    <p className={`text-sm mt-1 ${tc.textSecondary}`}>Be the first to send a vox!</p>
-                  </div>
+                  <VoxEmptyState
+                    {...emptyConfig}
+                    isDarkMode={isDarkMode}
+                    action={{ label: 'Start Recording', onClick: () => { if (recordingState === 'idle') startRecording(); } }}
+                  />
                 ) : (
                   <div className="space-y-4">
                     {messages.map((message, index) => {
@@ -708,7 +928,42 @@ const TeamVoxMode: React.FC<TeamVoxModeProps> = ({
                             </div>
                           )}
 
-                          <div className={`rounded-xl p-4 ${tc.cardBg} border ${tc.border} ${getMessageTypeStyle(message.messageType)}`}>
+                          <div className={`rounded-xl p-4 ${tc.cardBg} border ${tc.border} ${getMessageTypeStyle(message.messageType)} relative`}>
+                            {/* Phase 2: Selection Checkbox */}
+                            {isSelectionMode && (
+                              <button
+                                type="button"
+                                onClick={(e) => {
+                                  e.stopPropagation();
+                                  const selectionItem: VoxSelectionItem = {
+                                    id: message.id,
+                                    type: 'audio' as const,
+                                    url: message.audioUrl,
+                                    duration: message.duration,
+                                    timestamp: message.createdAt,
+                                    sender: message.senderId === voxModeService.getUserId() ? 'me' : 'other',
+                                    transcript: message.transcript,
+                                    mode: 'team_vox' as const,
+                                    contactId: selectedChannel?.id,
+                                    contactName: selectedChannel?.name,
+                                  };
+                                  toggleSelection(selectionItem);
+                                }}
+                                className={`absolute top-3 right-3 w-7 h-7 rounded-lg flex items-center justify-center transition-all shadow-lg hover:scale-110 active:scale-95 z-10 ${
+                                  isSelected(message.id)
+                                    ? 'bg-orange-500 border-2 border-orange-600'
+                                    : 'bg-white dark:bg-gray-700 border-2 border-gray-400 dark:border-gray-500'
+                                }`}
+                                style={{
+                                  boxShadow: isSelected(message.id)
+                                    ? '0 4px 12px rgba(249, 115, 22, 0.4)'
+                                    : '0 2px 8px rgba(0, 0, 0, 0.2)',
+                                }}
+                              >
+                                {isSelected(message.id) && <Check className="w-5 h-5 text-white font-bold" />}
+                              </button>
+                            )}
+
                             <div className="flex items-start gap-3">
                               <div
                                 className="w-10 h-10 rounded-full flex items-center justify-center text-white font-medium shrink-0"
@@ -766,6 +1021,17 @@ const TeamVoxMode: React.FC<TeamVoxModeProps> = ({
                                       isDarkMode={isDarkMode}
                                     />
                                   </div>
+                                  {/* Phase 6: Playback Speed Control */}
+                                  <PlaybackSpeedControl
+                                    speed={globalPlaybackSpeed}
+                                    onSpeedChange={(newSpeed) => {
+                                      setGlobalPlaybackSpeed(newSpeed);
+                                      if (audioRef.current) audioRef.current.playbackRate = newSpeed;
+                                    }}
+                                    mode="compact"
+                                    isDarkMode={isDarkMode}
+                                    accentColor={MODE_COLOR}
+                                  />
                                   <span className={`text-xs ${tc.textMuted} shrink-0`}>
                                     {formatDuration(message.duration)}
                                   </span>
@@ -1381,6 +1647,63 @@ const TeamVoxMode: React.FC<TeamVoxModeProps> = ({
           </div>
         </div>
       )}
+
+      {/* Phase 2: Selection Toolbar */}
+      {isSelectionMode && selectedChannel && (
+        <VoxSelectToolbar
+          selectedItems={selectedItems}
+          selectionCount={selectionCount}
+          totalDuration={getTotalDuration()}
+          onSelectAll={handleSelectAllMessages}
+          onDeselectAll={deselectAll}
+          onExitSelection={exitSelectionMode}
+          contactName={selectedChannel.name}
+          isDarkMode={isDarkMode}
+          accentColor={MODE_COLOR}
+          allSelected={selectionCount === messages.length && messages.length > 0}
+        />
+      )}
+
+      {/* Phase 5: AI Enhancement Modals */}
+
+      {/* Conversation Summary Modal */}
+      {conversationSummary && showSummary && (
+        <div className="fixed inset-0 bg-black/50 backdrop-blur-sm z-50 flex items-center justify-center p-4">
+          <div className="max-w-2xl w-full">
+            <VoxConversationSummary
+              summary={conversationSummary}
+              isDarkMode={isDarkMode}
+              accentColor={MODE_COLOR}
+              onClose={() => setShowSummary(false)}
+            />
+          </div>
+        </div>
+      )}
+
+      {/* Smart Replies Panel */}
+      {smartReplies.length > 0 && showSmartReplies && (
+        <div className="fixed bottom-20 right-4 z-40 w-96">
+          <VoxSmartReplies
+            replies={smartReplies}
+            onSelectReply={(reply) => {
+              navigator.clipboard.writeText(reply.text);
+              toast.success('Smart reply copied! Use it in your next message.');
+              setSmartReplies([]);
+              setShowSmartReplies(false);
+            }}
+            onClose={() => setShowSmartReplies(false)}
+            isDarkMode={isDarkMode}
+            accentColor={MODE_COLOR}
+          />
+        </div>
+      )}
+
+      {/* Phase 6: Keyboard Shortcuts Help Modal */}
+      <VoxKeyboardShortcutsHelp
+        isOpen={showShortcutsHelp}
+        onClose={() => setShowShortcutsHelp(false)}
+        isDarkMode={isDarkMode}
+      />
     </div>
   );
 };

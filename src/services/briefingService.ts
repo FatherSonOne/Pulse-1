@@ -49,6 +49,9 @@ export interface BriefingContext {
 
   // Analytics Summary
   productivitySummary: string;
+
+  // AI Task Intelligence
+  taskIntelligence: string;
 }
 
 export interface BriefingData {
@@ -197,6 +200,55 @@ class BriefingService {
       .map(t => `- ${t.title}${t.priority ? ` [${t.priority}]` : ''}${t.dueDate ? ` (Due: ${new Date(t.dueDate).toLocaleDateString()})` : ''}`)
       .join('\n') || 'No pending tasks.';
 
+    // Enhanced task intelligence for AI insights
+    const taskIntelligence = {
+      complexTasks: incompleteTasks.filter(t =>
+        t.description &&
+        t.description.length > 200 &&
+        !t.metadata?.has_subtasks
+      ),
+      largeTasksNeedingBreakdown: incompleteTasks.filter(t =>
+        t.priority === 'high' &&
+        (!t.metadata?.subtasks || t.metadata?.subtasks?.length === 0)
+      ),
+      tasksWithAIEstimates: incompleteTasks.filter(t =>
+        t.metadata?.estimatedHours
+      ),
+      tasksNeedingScheduling: incompleteTasks.filter(t =>
+        !t.dueDate &&
+        t.priority !== 'low'
+      ),
+      workloadByUser: incompleteTasks.reduce((acc: Record<string, number>, task: any) => {
+        if (task.assigned_to) {
+          acc[task.assigned_to] = (acc[task.assigned_to] || 0) + 1;
+        }
+        return acc;
+      }, {} as Record<string, number>)
+    };
+
+    // Build task intelligence summary
+    const taskIntelligenceParts: string[] = [];
+
+    if (taskIntelligence.complexTasks.length > 0) {
+      taskIntelligenceParts.push(`Complex tasks that might benefit from AI breakdown: ${taskIntelligence.complexTasks.map(t => t.title).join(', ')}`);
+    }
+
+    if (taskIntelligence.tasksNeedingScheduling.length > 0) {
+      taskIntelligenceParts.push(`High-priority tasks without deadlines: ${taskIntelligence.tasksNeedingScheduling.map(t => t.title).join(', ')}`);
+    }
+
+    const overloadedUsers = Object.entries(taskIntelligence.workloadByUser)
+      .filter(([_, count]) => count > 5)
+      .map(([userId, count]) => `${userId} (${count} tasks)`);
+
+    if (overloadedUsers.length > 0) {
+      taskIntelligenceParts.push(`Potentially overloaded team members: ${overloadedUsers.join(', ')}`);
+    }
+
+    const taskIntelligenceSummary = taskIntelligenceParts.length > 0
+      ? taskIntelligenceParts.join('\n')
+      : 'No task intelligence insights at this time.';
+
     // Process Messages/Threads
     const unreadThreads = threads.filter(t => t.unread);
     const unreadMessages = unreadThreads
@@ -284,6 +336,7 @@ class BriefingService {
       recentJournalEntries: recentJournal,
       recentDecisions,
       productivitySummary,
+      taskIntelligence: taskIntelligenceSummary,
     };
   }
 
@@ -415,6 +468,9 @@ ${context.recentSearches}
 
 === PRODUCTIVITY SUMMARY ===
 ${context.productivitySummary}
+
+=== AI TASK INTELLIGENCE ===
+${context.taskIntelligence}
 
 === END CONTEXT ===
     `.trim();

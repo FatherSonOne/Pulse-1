@@ -13,7 +13,9 @@ import {
   Waves,
   FolderDown,
   AlertCircle,
+  Archive,
 } from 'lucide-react';
+import JSZip from 'jszip';
 import { VoxSelectionItem } from '../../hooks/useVoxSelection';
 
 interface VoxDownloadModalProps {
@@ -78,6 +80,7 @@ export const VoxDownloadModal: React.FC<VoxDownloadModalProps> = ({
   const [progress, setProgress] = useState(0);
   const [completedCount, setCompletedCount] = useState(0);
   const [error, setError] = useState<string | null>(null);
+  const [downloadAsZip, setDownloadAsZip] = useState(false);
 
   const formatDuration = (seconds: number): string => {
     if (seconds < 60) return `${Math.round(seconds)}s`;
@@ -215,7 +218,91 @@ export const VoxDownloadModal: React.FC<VoxDownloadModalProps> = ({
     return `${orderStr}_${dateStr}_${timeStr}_${sender}.${format}`;
   };
 
-  // Handle download
+  // Handle ZIP download
+  const handleZipDownload = async () => {
+    if (items.length === 0) return;
+
+    setIsDownloading(true);
+    setProgress(0);
+    setCompletedCount(0);
+    setError(null);
+
+    try {
+      const zip = new JSZip();
+
+      // Sort items chronologically for consistent ordering
+      const sortedItems = [...items].sort((a, b) =>
+        new Date(a.timestamp).getTime() - new Date(b.timestamp).getTime()
+      );
+
+      // Add all files to ZIP
+      for (let i = 0; i < sortedItems.length; i++) {
+        const item = sortedItems[i];
+        const fileName = generateFileName(item, i, selectedFormat);
+
+        try {
+          if (selectedFormat === 'webm') {
+            // Add WebM directly
+            const response = await fetch(item.url);
+            const blob = await response.blob();
+            zip.file(fileName, blob);
+          } else {
+            // Convert and add
+            const blob = await convertAudio(item.url, selectedFormat);
+            if (blob) {
+              zip.file(fileName, blob);
+            }
+          }
+        } catch (err) {
+          console.error(`Failed to add item ${item.id} to ZIP:`, err);
+        }
+
+        setCompletedCount(i + 1);
+        setProgress(((i + 1) / sortedItems.length) * 85); // 85% for adding files
+      }
+
+      // Generate ZIP file
+      setProgress(90);
+      const zipBlob = await zip.generateAsync({
+        type: 'blob',
+        compression: 'DEFLATE',
+        compressionOptions: { level: 6 }
+      });
+
+      // Create ZIP filename with date range
+      const firstDate = new Date(sortedItems[0].timestamp);
+      const lastDate = new Date(sortedItems[sortedItems.length - 1].timestamp);
+      const dateStr = firstDate.toISOString().slice(0, 10);
+      const zipFileName = sortedItems.length === 1
+        ? `vox_${dateStr}.zip`
+        : `vox_${dateStr}_${sortedItems.length}_messages.zip`;
+
+      // Download ZIP
+      setProgress(95);
+      const downloadUrl = URL.createObjectURL(zipBlob);
+      const link = document.createElement('a');
+      link.href = downloadUrl;
+      link.download = zipFileName;
+      document.body.appendChild(link);
+      link.click();
+      document.body.removeChild(link);
+      URL.revokeObjectURL(downloadUrl);
+
+      setProgress(100);
+      setIsDownloading(false);
+
+      setTimeout(() => {
+        onClose();
+        onComplete?.();
+      }, 500);
+    } catch (err) {
+      console.error('ZIP creation error:', err);
+      setError('Failed to create ZIP file. Please try again.');
+      setIsDownloading(false);
+    }
+  };
+
+  // Handle individual downloads
   const handleDownload = async () => {
     if (items.length === 0) return;
 
@@ -433,9 +520,54 @@ export const VoxDownloadModal: React.FC<VoxDownloadModalProps> = ({
             </div>
           )}
 
+          {/* ZIP Download Option */}
+          {items.length > 1 && (
+            <div className="mb-4">
+              <button
+                onClick={() => !isDownloading && setDownloadAsZip(!downloadAsZip)}
+                disabled={isDownloading}
+                className={`w-full p-3 rounded-xl border text-left transition-all ${
+                  downloadAsZip
+                    ? 'border-2'
+                    : `${tc.cardBorder} border ${tc.cardBg}`
+                } disabled:opacity-60`}
+                style={downloadAsZip ? {
+                  borderColor: accentColor,
+                  background: isDarkMode ? `${accentColor}10` : `${accentColor}08`,
+                } : undefined}
+              >
+                <div className="flex items-center gap-3">
+                  <div
+                    className={`w-10 h-10 rounded-lg flex items-center justify-center flex-shrink-0`}
+                    style={{
+                      background: downloadAsZip ? accentColor : (isDarkMode ? 'rgba(255,255,255,0.06)' : 'rgba(0,0,0,0.05)'),
+                      color: downloadAsZip ? 'white' : (isDarkMode ? '#9ca3af' : '#6b7280'),
+                    }}
+                  >
+                    <Archive className="w-5 h-5" />
+                  </div>
+                  <div className="flex-1">
+                    <div className={`font-semibold ${tc.text}`}>Download as ZIP</div>
+                    <p className={`text-sm ${tc.textSecondary}`}>
+                      All files in a single archive
+                    </p>
+                  </div>
+                  {downloadAsZip && (
+                    <div
+                      className="w-6 h-6 rounded-full flex items-center justify-center flex-shrink-0"
+                      style={{ background: accentColor }}
+                    >
+                      <Check className="w-4 h-4 text-white" />
+                    </div>
+                  )}
+                </div>
+              </button>
+            </div>
+          )}
+
           {/* Download Button */}
           <button
-            onClick={handleDownload}
+            onClick={downloadAsZip ? handleZipDownload : handleDownload}
             disabled={isDownloading || items.length === 0}
             className="w-full py-3 rounded-xl font-medium text-white flex items-center justify-center gap-2 transition-all disabled:opacity-60 disabled:cursor-not-allowed"
             style={{
@@ -446,12 +578,15 @@ export const VoxDownloadModal: React.FC<VoxDownloadModalProps> = ({
             {isDownloading ? (
               <>
                 <Loader2 className="w-5 h-5 animate-spin" />
-                Downloading...
+                {downloadAsZip ? 'Creating ZIP...' : 'Downloading...'}
               </>
             ) : (
               <>
-                <Download className="w-5 h-5" />
-                Download {items.length} {items.length === 1 ? 'File' : 'Files'}
+                {downloadAsZip ? <Archive className="w-5 h-5" /> : <Download className="w-5 h-5" />}
+                {downloadAsZip
+                  ? `Download ZIP (${items.length} files)`
+                  : `Download ${items.length} ${items.length === 1 ? 'File' : 'Files'}`
+                }
               </>
             )}
           </button>

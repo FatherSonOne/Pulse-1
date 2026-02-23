@@ -12,16 +12,40 @@ import {
   Clock,
   X,
   Edit2,
-  Square
+  Square,
+  Download,
+  Archive,
+  Sparkles,
+  TrendingUp,
+  Loader2,
 } from 'lucide-react';
 import VoxAudioVisualizer from './VoxAudioVisualizer';
 import RecordingPreview from './RecordingPreview';
 import RecordButton from './RecordButton';
+import VoxModeHeader from './VoxModeHeader';
 import { useVoxRecording } from '../../hooks/useVoxRecording';
 import { voxModeService } from '../../services/voxer/voxModeService';
 import analyticsCollector from '../../services/analyticsCollector';
 import type { QuickVoxFavorite, QuickVoxMessage, QuickVoxStatus } from '../../services/voxer/voxModeTypes';
+import toast from 'react-hot-toast';
 import './Voxer.css';
+
+// Phase 2: Selection Mode
+import { useVoxSelection, VoxSelectionItem } from '../../hooks/useVoxSelection';
+import { VoxSelectToolbar } from './VoxSelectToolbar';
+
+// Phase 5: AI Enhancements
+import { VoxConversationSummary, VoxSmartReplies } from './index';
+import { summarizeConversation, generateSmartReplies } from '../../services/voxer/voxerAIService';
+import type { ConversationSummary, SmartReply } from '../../services/voxer/voxerAIService';
+
+// Phase 6: Final Polish
+import { useVoxerKeyboardShortcuts } from '../../hooks/useVoxerKeyboardShortcuts';
+import { VoxKeyboardShortcutsHelp } from './VoxKeyboardShortcutsHelp';
+import { usePlaybackSpeed } from '../../hooks/usePlaybackSpeed';
+import { PlaybackSpeedControl } from './PlaybackSpeedControl';
+import { VoxEmptyState } from './VoxEmptyState';
+import { getEmptyStateConfig } from './voxEmptyStates';
 
 // Mode color for Quick Vox
 const MODE_COLOR = '#3B82F6';
@@ -54,6 +78,32 @@ const QuickVoxMode: React.FC<QuickVoxModeProps> = ({
   const audioRef = useRef<HTMLAudioElement>(null);
   const messagesEndRef = useRef<HTMLDivElement>(null);
 
+  // Phase 2: Selection Mode State
+  const {
+    isSelectionMode,
+    selectedItems,
+    selectionCount,
+    toggleSelection,
+    selectAll,
+    deselectAll,
+    enterSelectionMode,
+    exitSelectionMode,
+    isSelected,
+    getTotalDuration,
+  } = useVoxSelection();
+
+  // Phase 5: AI Enhancement States
+  const [showSummary, setShowSummary] = useState(false);
+  const [conversationSummary, setConversationSummary] = useState<ConversationSummary | null>(null);
+  const [showSmartReplies, setShowSmartReplies] = useState(false);
+  const [smartReplies, setSmartReplies] = useState<SmartReply[]>([]);
+  const [isGeneratingAI, setIsGeneratingAI] = useState(false);
+
+  // Phase 6: Final Polish States
+  const [showShortcutsHelp, setShowShortcutsHelp] = useState(false);
+  const { playbackSpeed: globalPlaybackSpeed, setPlaybackSpeed: setGlobalPlaybackSpeed, applyToElement } = usePlaybackSpeed();
+  const emptyConfig = getEmptyStateConfig('quick_vox');
+
   // Use the recording hook for click-to-record with preview
   const {
     state: recordingState,
@@ -74,6 +124,48 @@ const QuickVoxMode: React.FC<QuickVoxModeProps> = ({
       console.log('Quick Vox recording complete:', data.duration, 'seconds');
     },
   });
+
+  // Phase 6: Keyboard Shortcuts
+  useVoxerKeyboardShortcuts({
+    onToggleRecording: () => {
+      if (recordingState === 'idle') startRecording();
+      else if (recordingState === 'recording') stopRecording();
+    },
+    onStopRecording: () => {
+      if (recordingState === 'recording') stopRecording();
+    },
+    onGoBack: () => {
+      if (selectedContact) setSelectedContact(null);
+      else onBack();
+    },
+    onSwitchMode: (mode) => {
+      console.log('Switch to mode:', mode);
+    },
+    onDownload: () => {
+      if (isSelectionMode && selectionCount > 0) {
+        console.log('Download selected items');
+      }
+    },
+    onArchive: () => {
+      if (isSelectionMode && selectionCount > 0) {
+        console.log('Archive selected items');
+      }
+    },
+    onSummarize: handleSummarizeConversation,
+    onShowHelp: () => setShowShortcutsHelp(true),
+  }, true);
+
+  // Phase 6: Apply playback speed to audio elements
+  useEffect(() => {
+    if (audioRef.current) {
+      applyToElement(audioRef.current);
+    }
+  }, [globalPlaybackSpeed, applyToElement]);
+
+  // Persist recording mode preference
+  useEffect(() => {
+    localStorage.setItem('voxer-recording-mode', recordingMode);
+  }, [recordingMode]);
 
   useEffect(() => {
     loadFavorites();
@@ -154,6 +246,99 @@ const QuickVoxMode: React.FC<QuickVoxModeProps> = ({
     } else if (recordingState === 'idle') {
       startRecording();
     }
+  };
+
+  // Phase 5: AI Handler Functions
+  const handleSummarizeConversation = async () => {
+    if (messages.length === 0) {
+      toast.error('No messages to summarize');
+      return;
+    }
+
+    setIsGeneratingAI(true);
+    try {
+      const messageData = messages.map(msg => ({
+        id: msg.id,
+        transcription: msg.transcript || '',
+        sender: msg.senderId === voxModeService.getUserId() ? 'me' : 'other',
+        senderName: msg.senderName,
+        timestamp: msg.createdAt,
+        duration: msg.duration,
+      }));
+
+      const summary = await summarizeConversation('', messageData);
+      if (summary) {
+        setConversationSummary(summary);
+        setShowSummary(true);
+        toast.success('Conversation summarized!');
+      } else {
+        toast.error('Failed to generate summary');
+      }
+    } catch (error) {
+      console.error('Summarization error:', error);
+      toast.error('Failed to generate summary');
+    } finally {
+      setIsGeneratingAI(false);
+    }
+  };
+
+  const handleGenerateSmartReplies = async () => {
+    const recentMessages = messages.slice(-5);
+    if (recentMessages.length === 0) {
+      toast.error('No messages to analyze');
+      return;
+    }
+
+    setIsGeneratingAI(true);
+    try {
+      const lastMessage = recentMessages[recentMessages.length - 1];
+      const context = recentMessages.map(msg => ({
+        id: msg.id,
+        transcription: msg.transcript || '',
+        sender: msg.senderId === voxModeService.getUserId() ? 'me' : 'other',
+        senderName: msg.senderName,
+        timestamp: msg.createdAt,
+        duration: msg.duration,
+      }));
+
+      const replies = await generateSmartReplies('', {
+        id: lastMessage.id,
+        transcription: lastMessage.transcript || '',
+        sender: lastMessage.senderId === voxModeService.getUserId() ? 'me' : 'other',
+        senderName: lastMessage.senderName,
+        timestamp: lastMessage.createdAt,
+        duration: lastMessage.duration,
+      }, context);
+
+      if (replies.length > 0) {
+        setSmartReplies(replies);
+        setShowSmartReplies(true);
+        toast.success('Smart replies generated!');
+      } else {
+        toast.error('Failed to generate smart replies');
+      }
+    } catch (error) {
+      console.error('Smart replies error:', error);
+      toast.error('Failed to generate smart replies');
+    } finally {
+      setIsGeneratingAI(false);
+    }
+  };
+
+  const handleSelectAllMessages = () => {
+    const allItems: VoxSelectionItem[] = messages.map(msg => ({
+      id: msg.id,
+      type: 'audio' as const,
+      url: msg.audioUrl,
+      duration: msg.duration,
+      timestamp: msg.createdAt,
+      sender: msg.senderId === voxModeService.getUserId() ? 'me' : 'other',
+      transcript: msg.transcript,
+      mode: 'quick_vox' as const,
+      contactId: selectedContact?.contactId,
+      contactName: selectedContact?.contactName,
+    }));
+    selectAll(allItems);
   };
 
   const loadFavorites = async () => {
@@ -306,51 +491,80 @@ const QuickVoxMode: React.FC<QuickVoxModeProps> = ({
   return (
     <div className={`h-full flex flex-col ${tc.pageBg}`}>
       {/* Header */}
-      <div
-        className={`px-4 md:px-6 py-4 border-b ${tc.border} ${tc.panelBg}`}
-        style={{
-          background: isDarkMode
-            ? `linear-gradient(135deg, rgba(59,130,246,0.15) 0%, transparent 50%)`
-            : `linear-gradient(135deg, rgba(59,130,246,0.1) 0%, transparent 50%)`
-        }}
-      >
-        <div className="flex items-center gap-3 md:gap-4">
-          <button
-            onClick={onBack}
-            className={`p-2 rounded-xl ${tc.btnGhost} transition-all duration-200`}
-            aria-label="Go back"
-          >
-            <ChevronLeft className="w-5 h-5" />
-          </button>
+      <VoxModeHeader
+        modeName="Quick Vox"
+        modeTagline="One Tap. Instant Voice."
+        modeColor="#3B82F6"
+        modeIcon={Zap}
+        onBack={onBack}
+        isDarkMode={isDarkMode}
+        actions={
+          <>
+            {/* Phase 5: AI Enhancement Buttons */}
+            {selectedContact && (
+              <div className="flex items-center gap-2 border-r border-blue-500/30 pr-2 mr-2">
+                <button
+                  type="button"
+                  onClick={handleSummarizeConversation}
+                  disabled={messages.length === 0 || isGeneratingAI}
+                  className="px-3 py-1.5 rounded-lg bg-purple-500 text-white text-xs font-medium hover:bg-purple-600 transition disabled:opacity-50 disabled:cursor-not-allowed"
+                  title="AI Summarize Conversation"
+                >
+                  {isGeneratingAI ? <Loader2 className="w-3 h-3 animate-spin" /> : <Sparkles className="w-3 h-3" />}
+                  <span className="ml-1.5 hidden md:inline">Summarize</span>
+                </button>
 
-          <div
-            className="p-2.5 rounded-xl shadow-lg"
-            style={{
-              background: `linear-gradient(135deg, ${MODE_COLOR} 0%, #06b6d4 100%)`,
-              boxShadow: `0 8px 24px ${MODE_COLOR}40`
-            }}
-          >
-            <Zap className="w-5 h-5 md:w-6 md:h-6 text-white" />
-          </div>
+                <button
+                  type="button"
+                  onClick={handleGenerateSmartReplies}
+                  disabled={isGeneratingAI}
+                  className="px-3 py-1.5 rounded-lg bg-blue-500 text-white text-xs font-medium hover:bg-blue-600 transition disabled:opacity-50 disabled:cursor-not-allowed"
+                  title="Generate Smart Replies"
+                >
+                  {isGeneratingAI ? <Loader2 className="w-3 h-3 animate-spin" /> : <TrendingUp className="w-3 h-3" />}
+                  <span className="ml-1.5 hidden md:inline">Quick Reply</span>
+                </button>
 
-          <div className="flex-1 min-w-0">
-            <h1 className={`text-lg md:text-xl font-bold ${tc.text}`}>Quick Vox</h1>
-            <p className={`text-xs md:text-sm ${tc.textSecondary} hidden sm:block`}>One Tap. Instant Voice.</p>
-          </div>
+                {/* Phase 2: Selection Mode Button */}
+                <button
+                  type="button"
+                  onClick={(e) => {
+                    e.preventDefault();
+                    e.stopPropagation();
+                    if (isSelectionMode) {
+                      exitSelectionMode();
+                    } else {
+                      enterSelectionMode();
+                    }
+                  }}
+                  style={{
+                    background: isSelectionMode ? '#3B82F6' : undefined,
+                    color: isSelectionMode ? 'white' : undefined,
+                  }}
+                  className="p-2 rounded-lg hover:bg-blue-500/20 transition"
+                  title="Select messages"
+                >
+                  {isSelectionMode ? <X className="w-4 h-4" /> : <Square className="w-4 h-4" />}
+                </button>
+              </div>
+            )}
 
-          <button
-            onClick={() => setShowEditFavorites(!showEditFavorites)}
-            className={`p-2 rounded-xl transition-all duration-200 ${
-              showEditFavorites
-                ? `${tc.activeBg} text-blue-500`
-                : tc.btnGhost
-            }`}
-            aria-label="Edit favorites"
-          >
-            <Edit2 className="w-5 h-5" />
-          </button>
-        </div>
-      </div>
+            <button
+              onClick={() => setShowEditFavorites(!showEditFavorites)}
+              className={`p-2 rounded-xl transition-all duration-200 ${
+                showEditFavorites
+                  ? 'bg-blue-500/20 text-blue-500'
+                  : isDarkMode
+                    ? 'hover:bg-gray-800/60 text-gray-400 hover:text-white'
+                    : 'hover:bg-gray-100/80 text-gray-600 hover:text-gray-900'
+              }`}
+              aria-label="Edit favorites"
+            >
+              <Edit2 className="w-5 h-5" />
+            </button>
+          </>
+        }
+      />
 
       {/* Favorites Bar */}
       <div className={`px-4 md:px-6 py-4 border-b ${tc.border} ${tc.cardBg} overflow-visible`}>
@@ -455,81 +669,121 @@ const QuickVoxMode: React.FC<QuickVoxModeProps> = ({
 
             {/* Messages */}
             <div className="flex-1 overflow-y-auto p-4 md:p-6 space-y-3">
-              {messages.map((message) => {
-                const isMe = message.senderId === voxModeService.getUserId();
-                const isCurrentlyPlaying = playingMessageId === message.id;
+              {messages.length === 0 ? (
+                <VoxEmptyState
+                  {...emptyConfig}
+                  isDarkMode={isDarkMode}
+                  action={{ label: 'Start Recording', onClick: () => { if (recordingState === 'idle') startRecording(); } }}
+                />
+              ) : (
+                messages.map((message) => {
+                  const isMe = message.senderId === voxModeService.getUserId();
+                  const isCurrentlyPlaying = playingMessageId === message.id;
 
-                return (
-                  <div
-                    key={message.id}
-                    className={`flex ${isMe ? 'justify-end' : 'justify-start'}`}
-                  >
+                  return (
                     <div
-                      className={`flex items-center gap-2 md:gap-3 p-3 rounded-2xl max-w-xs border ${
-                        isMe ? tc.messageMine : tc.messageOther
-                      }`}
+                      key={message.id}
+                      className={`flex ${isMe ? 'justify-end' : 'justify-start'} relative`}
                     >
-                      <button
-                        onClick={() => handlePlayMessage(message)}
-                        className="w-9 h-9 md:w-10 md:h-10 rounded-full flex items-center justify-center shrink-0 transition-all duration-200"
-                        style={{
-                          background: isCurrentlyPlaying && isPlaying
-                            ? MODE_COLOR
-                            : isDarkMode ? 'rgba(55,65,81,0.5)' : 'rgba(229,231,235,0.8)',
-                          boxShadow: isCurrentlyPlaying && isPlaying ? `0 4px 12px ${MODE_COLOR}50` : 'none'
-                        }}
-                        aria-label={isCurrentlyPlaying && isPlaying ? 'Pause' : 'Play'}
+                      <div
+                        className={`flex items-center gap-2 md:gap-3 p-3 rounded-2xl max-w-xs border ${
+                          isMe ? tc.messageMine : tc.messageOther
+                        }`}
                       >
-                        {isCurrentlyPlaying && isPlaying ? (
-                          <Pause className="w-4 h-4 text-white" />
-                        ) : (
-                          <Play className={`w-4 h-4 ml-0.5 ${isCurrentlyPlaying && isPlaying ? 'text-white' : tc.text}`} />
+                        {/* Phase 2: Selection Checkbox */}
+                        {isSelectionMode && (
+                          <button
+                            type="button"
+                            onClick={(e) => {
+                              e.stopPropagation();
+                              const selectionItem: VoxSelectionItem = {
+                                id: message.id,
+                                type: 'audio' as const,
+                                url: message.audioUrl,
+                                duration: message.duration,
+                                timestamp: message.createdAt,
+                                sender: message.senderId === voxModeService.getUserId() ? 'me' : 'other',
+                                transcript: message.transcript,
+                                mode: 'quick_vox' as const,
+                                contactId: selectedContact?.contactId,
+                                contactName: selectedContact?.contactName,
+                              };
+                              toggleSelection(selectionItem);
+                            }}
+                            className={`absolute top-1 ${isMe ? 'right-1' : 'left-1'} w-6 h-6 rounded-lg flex items-center justify-center transition-all shadow-lg hover:scale-110 active:scale-95 z-10 ${
+                              isSelected(message.id)
+                                ? 'bg-blue-500 border-2 border-blue-600'
+                                : 'bg-white dark:bg-gray-700 border-2 border-gray-400 dark:border-gray-500'
+                            }`}
+                            style={{
+                              boxShadow: isSelected(message.id)
+                                ? '0 4px 12px rgba(59, 130, 246, 0.4)'
+                                : '0 2px 8px rgba(0, 0, 0, 0.2)',
+                            }}
+                          >
+                            {isSelected(message.id) && <Check className="w-4 h-4 text-white font-bold" />}
+                          </button>
                         )}
-                      </button>
-                      <div className="flex-1 min-w-0">
-                        <VoxAudioVisualizer
-                          analyser={null}
-                          isActive={false}
-                          isPlaying={isCurrentlyPlaying && isPlaying}
-                          playbackProgress={isCurrentlyPlaying ? playbackProgress : 0}
-                          mode="waveform"
-                          color={MODE_COLOR}
-                          height={24}
-                          isDarkMode={isDarkMode}
-                        />
-                        <div className="flex items-center justify-between mt-1">
-                          <span className={`text-xs ${tc.textMuted}`}>
-                            {formatDuration(message.duration)}
-                          </span>
-                          {isMe && (
-                            <div className="flex items-center gap-1">
-                              <span className={`text-xs ${tc.textMuted}`}>
-                                {formatTime(message.createdAt)}
-                              </span>
-                              {getStatusIcon(message.status)}
-                            </div>
+
+                        <button
+                          onClick={() => handlePlayMessage(message)}
+                          className="w-9 h-9 md:w-10 md:h-10 rounded-full flex items-center justify-center shrink-0 transition-all duration-200"
+                          style={{
+                            background: isCurrentlyPlaying && isPlaying
+                              ? MODE_COLOR
+                              : isDarkMode ? 'rgba(55,65,81,0.5)' : 'rgba(229,231,235,0.8)',
+                            boxShadow: isCurrentlyPlaying && isPlaying ? `0 4px 12px ${MODE_COLOR}50` : 'none'
+                          }}
+                          aria-label={isCurrentlyPlaying && isPlaying ? 'Pause' : 'Play'}
+                        >
+                          {isCurrentlyPlaying && isPlaying ? (
+                            <Pause className="w-4 h-4 text-white" />
+                          ) : (
+                            <Play className={`w-4 h-4 ml-0.5 ${isCurrentlyPlaying && isPlaying ? 'text-white' : tc.text}`} />
                           )}
+                        </button>
+                        <div className="flex-1 min-w-0">
+                          <VoxAudioVisualizer
+                            analyser={null}
+                            isActive={false}
+                            isPlaying={isCurrentlyPlaying && isPlaying}
+                            playbackProgress={isCurrentlyPlaying ? playbackProgress : 0}
+                            mode="waveform"
+                            color={MODE_COLOR}
+                            height={24}
+                            isDarkMode={isDarkMode}
+                          />
+                          <div className="flex items-center justify-between mt-1">
+                            <div className="flex items-center gap-2">
+                              <span className={`text-xs ${tc.textMuted}`}>
+                                {formatDuration(message.duration)}
+                              </span>
+                              {/* Phase 6: Playback Speed Control */}
+                              <PlaybackSpeedControl
+                                speed={globalPlaybackSpeed}
+                                onSpeedChange={(newSpeed) => {
+                                  setGlobalPlaybackSpeed(newSpeed);
+                                  if (audioRef.current) audioRef.current.playbackRate = newSpeed;
+                                }}
+                                mode="compact"
+                                isDarkMode={isDarkMode}
+                                accentColor={MODE_COLOR}
+                              />
+                            </div>
+                            {isMe && (
+                              <div className="flex items-center gap-1">
+                                <span className={`text-xs ${tc.textMuted}`}>
+                                  {formatTime(message.createdAt)}
+                                </span>
+                                {getStatusIcon(message.status)}
+                              </div>
+                            )}
+                          </div>
                         </div>
                       </div>
                     </div>
-                  </div>
-                );
-              })}
-
-              {messages.length === 0 && (
-                <div className={`text-center py-12 ${tc.textMuted}`}>
-                  <div
-                    className="w-16 h-16 rounded-2xl mx-auto mb-4 flex items-center justify-center"
-                    style={{
-                      background: `linear-gradient(135deg, ${MODE_COLOR}20 0%, ${MODE_COLOR}10 100%)`,
-                      border: `1px solid ${MODE_COLOR}30`
-                    }}
-                  >
-                    <Zap className="w-8 h-8" style={{ color: MODE_COLOR, opacity: 0.6 }} />
-                  </div>
-                  <p className="text-sm">No messages yet</p>
-                  <p className="text-xs mt-1">Click the mic to record a message</p>
-                </div>
+                  );
+                })
               )}
 
               <div ref={messagesEndRef} />
@@ -683,6 +937,63 @@ const QuickVoxMode: React.FC<QuickVoxModeProps> = ({
           </div>
         </div>
       )}
+
+      {/* Phase 2: Selection Toolbar */}
+      {isSelectionMode && selectedContact && (
+        <VoxSelectToolbar
+          selectedItems={selectedItems}
+          selectionCount={selectionCount}
+          totalDuration={getTotalDuration()}
+          onSelectAll={handleSelectAllMessages}
+          onDeselectAll={deselectAll}
+          onExitSelection={exitSelectionMode}
+          contactName={selectedContact.contactName}
+          isDarkMode={isDarkMode}
+          accentColor={MODE_COLOR}
+          allSelected={selectionCount === messages.length && messages.length > 0}
+        />
+      )}
+
+      {/* Phase 5: AI Enhancement Modals */}
+
+      {/* Conversation Summary Modal */}
+      {conversationSummary && showSummary && (
+        <div className="fixed inset-0 bg-black/50 backdrop-blur-sm z-50 flex items-center justify-center p-4">
+          <div className="max-w-2xl w-full">
+            <VoxConversationSummary
+              summary={conversationSummary}
+              isDarkMode={isDarkMode}
+              accentColor={MODE_COLOR}
+              onClose={() => setShowSummary(false)}
+            />
+          </div>
+        </div>
+      )}
+
+      {/* Smart Replies Panel */}
+      {smartReplies.length > 0 && showSmartReplies && (
+        <div className="fixed bottom-20 right-4 z-40 w-96">
+          <VoxSmartReplies
+            replies={smartReplies}
+            onSelectReply={(reply) => {
+              navigator.clipboard.writeText(reply.text);
+              toast.success('Smart reply copied! Use it in your next message.');
+              setSmartReplies([]);
+              setShowSmartReplies(false);
+            }}
+            onClose={() => setShowSmartReplies(false)}
+            isDarkMode={isDarkMode}
+            accentColor={MODE_COLOR}
+          />
+        </div>
+      )}
+
+      {/* Phase 6: Keyboard Shortcuts Help Modal */}
+      <VoxKeyboardShortcutsHelp
+        isOpen={showShortcutsHelp}
+        onClose={() => setShowShortcutsHelp(false)}
+        isDarkMode={isDarkMode}
+      />
     </div>
   );
 };

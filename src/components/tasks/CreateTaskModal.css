@@ -325,6 +325,103 @@
   color: #1f2937;
 }
 
+/* Phase 5: Smart Scheduling UI */
+.deadline-field-header {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  margin-bottom: 0.5rem;
+}
+
+.suggest-deadline-button {
+  display: inline-flex;
+  align-items: center;
+  gap: 0.375rem;
+  padding: 0.375rem 0.75rem;
+  background: linear-gradient(135deg, rgba(251, 191, 36, 0.15), rgba(245, 158, 11, 0.15));
+  border: 1px solid rgba(251, 191, 36, 0.3);
+  border-radius: 6px;
+  color: #f59e0b;
+  font-size: 0.75rem;
+  font-weight: 600;
+  cursor: pointer;
+  transition: all 0.2s ease;
+}
+
+.suggest-deadline-button:hover:not(:disabled) {
+  background: linear-gradient(135deg, rgba(251, 191, 36, 0.25), rgba(245, 158, 11, 0.25));
+  border-color: rgba(251, 191, 36, 0.5);
+  transform: translateY(-1px);
+  box-shadow: 0 2px 8px rgba(251, 191, 36, 0.2);
+}
+
+.suggest-deadline-button:disabled {
+  opacity: 0.5;
+  cursor: not-allowed;
+}
+
+.deadline-suggestion {
+  display: flex;
+  align-items: start;
+  gap: 0.75rem;
+  margin-top: 0.75rem;
+  padding: 0.875rem;
+  background: linear-gradient(135deg, rgba(251, 191, 36, 0.08), rgba(245, 158, 11, 0.08));
+  border: 1px solid rgba(251, 191, 36, 0.2);
+  border-radius: 8px;
+  animation: slideDown 0.3s ease-out;
+}
+
+.suggestion-icon {
+  color: #f59e0b;
+  flex-shrink: 0;
+  margin-top: 0.125rem;
+  animation: pulse 2s ease-in-out infinite;
+}
+
+.suggestion-content {
+  flex: 1;
+}
+
+.suggestion-reasoning {
+  font-size: 0.8125rem;
+  color: var(--hub-text-primary);
+  line-height: 1.5;
+}
+
+@keyframes pulse {
+  0%, 100% { opacity: 1; transform: scale(1); }
+  50% { opacity: 0.7; transform: scale(1.1); }
+}
+
+@keyframes slideDown {
+  from {
+    opacity: 0;
+    transform: translateY(-10px);
+  }
+  to {
+    opacity: 1;
+    transform: translateY(0);
+  }
+}
+
+/* Dark mode adjustments for smart scheduling */
+:root.dark .deadline-suggestion {
+  background: linear-gradient(135deg, rgba(251, 191, 36, 0.12), rgba(245, 158, 11, 0.12));
+  border-color: rgba(251, 191, 36, 0.3);
+}
+
+:root.dark .suggest-deadline-button {
+  background: linear-gradient(135deg, rgba(251, 191, 36, 0.2), rgba(245, 158, 11, 0.2));
+  border-color: rgba(251, 191, 36, 0.4);
+  color: #fbbf24;
+}
+
+:root.dark .suggest-deadline-button:hover:not(:disabled) {
+  background: linear-gradient(135deg, rgba(251, 191, 36, 0.3), rgba(245, 158, 11, 0.3));
+  border-color: rgba(251, 191, 36, 0.6);
+}
+
 /* Mobile responsive */
 @media (max-width: 768px) {
   .create-task-modal {

@@ -105,16 +105,35 @@ const VoxModeSelector: React.FC<VoxModeSelectorProps> = ({
 }) => {
   const [hoveredMode, setHoveredMode] = useState<VoxMode | 'classic' | null>(null);
   const [showSettings, setShowSettings] = useState(false);
-  const [lastUsedMode, setLastUsedMode] = useState<VoxMode | 'classic' | null>(null);
+  const [recentModes, setRecentModes] = useState<(VoxMode | 'classic')[]>(() => {
+    const saved = localStorage.getItem('voxer_recent_modes');
+    return saved ? JSON.parse(saved) : [];
+  });
   const [animatingMode, setAnimatingMode] = useState<VoxMode | 'classic' | null>(null);
+  const [mousePosition, setMousePosition] = useState({ x: 0, y: 0 });
   const containerRef = useRef<HTMLDivElement>(null);
 
-  // Load last used mode from localStorage
+  // Update recent modes when selecting
+  const updateRecentModes = (mode: VoxMode | 'classic') => {
+    const updated = [mode, ...recentModes.filter(m => m !== mode)].slice(0, 3);
+    setRecentModes(updated);
+    localStorage.setItem('voxer_recent_modes', JSON.stringify(updated));
+  };
+
+  // Track mouse position for parallax effect
   useEffect(() => {
-    const saved = localStorage.getItem('voxer_last_used_mode');
-    if (saved) {
-      setLastUsedMode(saved === 'classic' ? 'classic' : saved as VoxMode);
-    }
+    const handleMouseMove = (e: MouseEvent) => {
+      if (containerRef.current) {
+        const rect = containerRef.current.getBoundingClientRect();
+        setMousePosition({
+          x: (e.clientX - rect.left) / rect.width,
+          y: (e.clientY - rect.top) / rect.height,
+        });
+      }
+    };
+
+    window.addEventListener('mousemove', handleMouseMove);
+    return () => window.removeEventListener('mousemove', handleMouseMove);
   }, []);
 
   useEffect(() => {
@@ -134,18 +153,17 @@ const VoxModeSelector: React.FC<VoxModeSelectorProps> = ({
       : null;
 
   const handleModeSelect = (mode: VoxMode | 'classic') => {
-    // Save as last used mode
-    localStorage.setItem('voxer_last_used_mode', mode);
-    setLastUsedMode(mode);
+    // Update recent modes history
+    updateRecentModes(mode);
 
     // Animate card expansion
     setAnimatingMode(mode);
 
-    // Delay slightly for animation, then proceed
+    // Delay for smooth transition animation, then proceed
     setTimeout(() => {
       onSelectMode(mode === 'classic' ? null : mode);
       onClose();
-    }, 300);
+    }, 400);
   };
 
   const getModeColor = (modeKey: string) => MODE_COLORS[modeKey] || '#6366f1';
@@ -173,14 +191,20 @@ const VoxModeSelector: React.FC<VoxModeSelectorProps> = ({
       {/* Industrial Dot Matrix Background */}
       <DotMatrix color={activeColor} isDarkMode={isDarkMode} />
 
-      {/* Accent glow orb - CMF Nothing style */}
+      {/* Accent glow orb - CMF Nothing style with parallax */}
       <div
         className="absolute -top-40 -right-40 w-96 h-96 rounded-full blur-[120px] opacity-20 transition-all duration-1000"
-        style={{ backgroundColor: activeColor }}
+        style={{
+          backgroundColor: activeColor,
+          transform: `translate(${mousePosition.x * 20}px, ${mousePosition.y * 20}px)`,
+        }}
       />
       <div
         className="absolute -bottom-40 -left-40 w-80 h-80 rounded-full blur-[100px] opacity-10 transition-all duration-1000"
-        style={{ backgroundColor: activeColor }}
+        style={{
+          backgroundColor: activeColor,
+          transform: `translate(${-mousePosition.x * 15}px, ${-mousePosition.y * 15}px)`,
+        }}
       />
 
       {/* Header - Industrial minimal */}
@@ -272,11 +296,139 @@ const VoxModeSelector: React.FC<VoxModeSelectorProps> = ({
 
         {/* Left Side - Mode List with glassmorphism cards */}
         <div className="lg:w-[360px] xl:w-[400px] flex-shrink-0 overflow-y-auto pr-1 vox-custom-scrollbar">
+          {/* Recently Used Section */}
+          {recentModes.length > 0 && (
+            <div className="mb-4">
+              <h3
+                className="text-[10px] uppercase tracking-wider mb-2 px-2 font-semibold"
+                style={{
+                  color: isDarkMode ? 'rgba(255,255,255,0.3)' : 'rgba(0,0,0,0.3)',
+                  fontFamily: "'JetBrains Mono', monospace",
+                }}
+              >
+                Recently Used
+              </h3>
+              <div className="space-y-1.5">
+                {recentModes.map((mode, idx) => {
+                  const info = mode === 'classic' ? CLASSIC_VOXER_INFO : VOX_MODES[mode];
+                  const isHovered = hoveredMode === mode;
+                  const isCurrent = (mode === 'classic' && currentMode === null) || currentMode === mode;
+                  const isAnimating = animatingMode === mode;
+                  const modeColor = getModeColor(mode);
+
+                  return (
+                    <button
+                      key={`recent-${mode}`}
+                      type="button"
+                      onClick={() => handleModeSelect(mode)}
+                      onMouseEnter={() => setHoveredMode(mode)}
+                      onMouseLeave={() => setHoveredMode(null)}
+                      className="relative w-full text-left rounded-xl p-3 cursor-pointer group overflow-hidden"
+                      style={{
+                        background: isDarkMode
+                          ? isHovered || isCurrent
+                            ? 'rgba(255,255,255,0.06)'
+                            : 'rgba(255,255,255,0.03)'
+                          : isHovered || isCurrent
+                            ? 'rgba(255,255,255,0.95)'
+                            : 'rgba(255,255,255,0.7)',
+                        backdropFilter: 'blur(20px)',
+                        WebkitBackdropFilter: 'blur(20px)',
+                        border: isHovered || isCurrent
+                          ? `1px solid ${modeColor}40`
+                          : `1px solid ${isDarkMode ? 'rgba(255,255,255,0.04)' : 'rgba(0,0,0,0.04)'}`,
+                        boxShadow: isCurrent
+                          ? `0 0 0 2px ${modeColor}40, 0 8px 24px ${modeColor}20`
+                          : isHovered
+                          ? `0 4px 16px ${modeColor}10`
+                          : '0 1px 4px rgba(0,0,0,0.02)',
+                        transform: isAnimating
+                          ? 'scale(1.03)'
+                          : isHovered
+                          ? 'translateX(3px)'
+                          : 'translateX(0)',
+                        transition: 'all 0.3s cubic-bezier(0.16, 1, 0.3, 1)',
+                        opacity: isAnimating ? 0.7 : 1,
+                        animation: `vox-card-enter 0.3s ease-out forwards ${idx * 0.05}s`,
+                      }}
+                    >
+                      <div className="flex items-center gap-3">
+                        <div
+                          className="w-10 h-10 rounded-lg flex items-center justify-center flex-shrink-0 transition-all duration-300"
+                          style={{
+                            background: isHovered
+                              ? `linear-gradient(135deg, ${modeColor}20, ${modeColor}08)`
+                              : isDarkMode
+                                ? 'rgba(255,255,255,0.04)'
+                                : 'rgba(0,0,0,0.03)',
+                            border: `1px solid ${isHovered ? `${modeColor}30` : isDarkMode ? 'rgba(255,255,255,0.06)' : 'rgba(0,0,0,0.05)'}`,
+                          }}
+                        >
+                          <span
+                            style={{
+                              color: isHovered ? modeColor : isDarkMode ? 'rgba(255,255,255,0.5)' : 'rgba(0,0,0,0.4)',
+                              transition: 'color 0.3s ease',
+                            }}
+                          >
+                            {mode === 'classic' ? <Phone className="w-4 h-4" /> : MODE_ICONS[mode as VoxMode]}
+                          </span>
+                        </div>
+                        <div className="flex-1 min-w-0">
+                          <div className="flex items-center gap-2">
+                            <span className="text-sm">⏱️</span>
+                            <h4
+                              className="text-[13px] font-semibold tracking-tight"
+                              style={{
+                                color: isDarkMode ? '#ffffff' : '#0a0a0a',
+                                fontFamily: "'Outfit', sans-serif",
+                              }}
+                            >
+                              {info.name}
+                            </h4>
+                            {isCurrent && (
+                              <span
+                                className="px-1.5 py-0.5 rounded-full text-[8px] font-bold uppercase tracking-wider"
+                                style={{
+                                  background: `${modeColor}15`,
+                                  color: modeColor,
+                                  fontFamily: "'JetBrains Mono', monospace",
+                                  animation: 'vox-badge-pulse 2s ease-in-out infinite',
+                                }}
+                              >
+                                Active
+                              </span>
+                            )}
+                          </div>
+                        </div>
+                        <ChevronRight
+                          className="w-3.5 h-3.5 flex-shrink-0 transition-all duration-300"
+                          style={{
+                            transform: isHovered ? 'translateX(2px)' : 'translateX(0)',
+                            opacity: isHovered ? 0.8 : 0.3,
+                            color: isHovered ? modeColor : isDarkMode ? '#ffffff' : '#000000',
+                          }}
+                        />
+                      </div>
+                    </button>
+                  );
+                })}
+              </div>
+              {/* Separator */}
+              <div
+                className="my-4"
+                style={{
+                  borderTop: `1px solid ${isDarkMode ? 'rgba(255,255,255,0.06)' : 'rgba(0,0,0,0.06)'}`,
+                }}
+              />
+            </div>
+          )}
+
+          {/* All Modes Section */}
           <div className="space-y-2 py-1">
             {allModes.map(({ key, info }, index) => {
               const isHovered = hoveredMode === key;
               const isCurrent = (key === 'classic' && currentMode === null) || currentMode === key;
-              const isLastUsed = key === lastUsedMode && !isCurrent;
+              const isInRecent = recentModes.includes(key);
               const isAnimating = animatingMode === key;
               const modeColor = getModeColor(key);
 
@@ -312,7 +464,10 @@ const VoxModeSelector: React.FC<VoxModeSelectorProps> = ({
                       ? 'translateX(4px)'
                       : 'translateX(0)',
                     transition: 'all 0.4s cubic-bezier(0.16, 1, 0.3, 1)',
-                    opacity: isAnimating ? 0.7 : 1,
+                    opacity: isAnimating ? 0.7 : animatingMode && !isCurrent ? 0.4 : 1,
+                    animation: isCurrent
+                      ? `vox-active-pulse-${modeColor.replace('#', '')} 2s ease-in-out infinite, vox-card-enter 0.4s ease-out forwards ${index * 0.05}s`
+                      : `vox-card-enter 0.4s ease-out forwards ${index * 0.05}s`,
                   }}
                 >
                   {/* Hover accent line - left edge */}
@@ -350,6 +505,7 @@ const VoxModeSelector: React.FC<VoxModeSelectorProps> = ({
                         style={{
                           color: isHovered ? modeColor : isDarkMode ? 'rgba(255,255,255,0.5)' : 'rgba(0,0,0,0.4)',
                           transition: 'color 0.3s ease',
+                          animation: isCurrent ? 'vox-icon-breathe 3s ease-in-out infinite' : 'none',
                         }}
                       >
                         {key === 'classic' ? <Phone className="w-5 h-5" /> : MODE_ICONS[key as VoxMode]}
@@ -376,21 +532,10 @@ const VoxModeSelector: React.FC<VoxModeSelectorProps> = ({
                               background: `${modeColor}15`,
                               color: modeColor,
                               fontFamily: "'JetBrains Mono', monospace",
+                              animation: 'vox-badge-pulse 2s ease-in-out infinite',
                             }}
                           >
                             Active
-                          </span>
-                        )}
-                        {isLastUsed && (
-                          <span
-                            className="px-2 py-0.5 rounded-full text-[9px] font-bold uppercase tracking-wider"
-                            style={{
-                              background: isDarkMode ? 'rgba(255,255,255,0.08)' : 'rgba(0,0,0,0.05)',
-                              color: isDarkMode ? 'rgba(255,255,255,0.5)' : 'rgba(0,0,0,0.4)',
-                              fontFamily: "'JetBrains Mono', monospace",
-                            }}
-                          >
-                            Resume
                           </span>
                         )}
                       </div>
@@ -610,21 +755,29 @@ const VoxModeSelector: React.FC<VoxModeSelectorProps> = ({
                   </div>
                 </div>
 
-                {/* Launch Button - Bold industrial */}
+                {/* Launch Button - Bold industrial with shimmer */}
                 {hoveredMode && (
                   <div className="mt-6 flex justify-center">
                     <button
                       type="button"
                       onClick={() => handleModeSelect(hoveredMode)}
-                      className="px-8 py-4 rounded-xl font-semibold text-white text-sm flex items-center gap-3 transition-all duration-300 hover:scale-[1.02] active:scale-[0.98]"
+                      className="relative px-8 py-4 rounded-xl font-semibold text-white text-sm flex items-center gap-3 transition-all duration-300 hover:scale-[1.02] active:scale-[0.98] overflow-hidden"
                       style={{
                         background: `linear-gradient(135deg, ${activeColor}, ${activeColor}dd)`,
                         boxShadow: `0 8px 32px ${activeColor}35`,
                         fontFamily: "'Outfit', sans-serif",
                       }}
                     >
-                      <span>Launch {activeModeInfo.name}</span>
-                      <ChevronRight className="w-4 h-4" />
+                      {/* Shimmer effect */}
+                      <div
+                        className="absolute inset-0 opacity-30"
+                        style={{
+                          background: 'linear-gradient(90deg, transparent, rgba(255,255,255,0.3), transparent)',
+                          animation: 'vox-shimmer 2s ease-in-out infinite',
+                        }}
+                      />
+                      <span className="relative z-10">Launch {activeModeInfo.name}</span>
+                      <ChevronRight className="w-4 h-4 relative z-10" />
                     </button>
                   </div>
                 )}
@@ -717,6 +870,41 @@ const VoxModeSelector: React.FC<VoxModeSelectorProps> = ({
           100% { transform: scaleY(1); }
         }
 
+        @keyframes vox-active-pulse-${activeColor.replace('#', '')} {
+          0%, 100% {
+            box-shadow: 0 0 0 2px ${activeColor}40, 0 12px 40px ${activeColor}25, inset 0 1px 0 ${isDarkMode ? 'rgba(255,255,255,0.08)' : 'rgba(255,255,255,0.9)'};
+          }
+          50% {
+            box-shadow: 0 0 0 3px ${activeColor}60, 0 16px 48px ${activeColor}35, inset 0 1px 0 ${isDarkMode ? 'rgba(255,255,255,0.08)' : 'rgba(255,255,255,0.9)'};
+          }
+        }
+
+        @keyframes vox-badge-pulse {
+          0%, 100% { opacity: 1; transform: scale(1); }
+          50% { opacity: 0.85; transform: scale(1.05); }
+        }
+
+        @keyframes vox-icon-breathe {
+          0%, 100% { transform: scale(1); }
+          50% { transform: scale(1.1); }
+        }
+
+        @keyframes vox-card-enter {
+          from {
+            opacity: 0;
+            transform: translateY(8px);
+          }
+          to {
+            opacity: 1;
+            transform: translateY(0);
+          }
+        }
+
+        @keyframes vox-shimmer {
+          0% { transform: translateX(-100%); }
+          100% { transform: translateX(100%); }
+        }
+
         .vox-custom-scrollbar::-webkit-scrollbar {
           width: 4px;
         }
@@ -724,11 +912,12 @@ const VoxModeSelector: React.FC<VoxModeSelectorProps> = ({
           background: transparent;
         }
         .vox-custom-scrollbar::-webkit-scrollbar-thumb {
-          background: ${isDarkMode ? 'rgba(255,255,255,0.1)' : 'rgba(0,0,0,0.1)'};
+          background: ${activeColor}40;
           border-radius: 2px;
+          transition: background 0.3s ease;
         }
         .vox-custom-scrollbar::-webkit-scrollbar-thumb:hover {
-          background: ${isDarkMode ? 'rgba(255,255,255,0.2)' : 'rgba(0,0,0,0.2)'};
+          background: ${activeColor}60;
         }
       `}</style>
 

@@ -340,4 +340,222 @@ Return JSON: { "suggestedAssignee": "name" | null, "reasoning": "brief explanati
       overdueBlockers,
     };
   },
+
+  /**
+   * Phase 5: Suggest optimal deadline for a task based on AI analysis
+   */
+  async suggestOptimalDeadline(
+    apiKey: string,
+    taskTitle: string,
+    taskDescription: string | undefined,
+    taskPriority: string,
+    currentWorkload: Task[]
+  ): Promise<{ suggestedDate: string; reasoning: string } | null> {
+    try {
+      const ai = new GoogleGenAI({ apiKey });
+
+      // Analyze current workload
+      const upcomingTasks = currentWorkload
+        .filter(t => !t.is_completed && t.due_date)
+        .sort((a, b) => new Date(a.due_date!).getTime() - new Date(b.due_date!).getTime())
+        .slice(0, 10);
+
+      const workloadSummary = upcomingTasks.map(t => ({
+        title: t.title,
+        due_date: t.due_date,
+        priority: t.priority,
+        status: t.status
+      }));
+
+      const prompt = `You are an expert project manager. Suggest an optimal deadline for this task:
+
+Task Title: ${taskTitle}
+Task Description: ${taskDescription || 'No description provided'}
+Task Priority: ${taskPriority}
+
+Current Workload (upcoming tasks):
+${JSON.stringify(workloadSummary, null, 2)}
+
+Consider:
+1. Task complexity based on title/description
+2. Current workload and existing deadlines
+3. Priority level (urgent tasks need sooner deadlines)
+4. Avoid scheduling conflicts with other high-priority tasks
+5. Realistic time estimates for task completion
+
+Suggest a deadline that:
+- Allows sufficient time for quality work
+- Accounts for current workload
+- Aligns with priority level
+- Avoids overloading any single day
+
+Return JSON with:
+{
+  "suggestedDate": "YYYY-MM-DD",
+  "reasoning": "Brief explanation of why this deadline makes sense (2-3 sentences)"
+}`;
+
+      const response = await ai.models.generateContent({
+        model: 'gemini-2.5-flash',
+        contents: prompt,
+        config: {
+          temperature: 0.4,
+          responseMimeType: 'application/json',
+          responseSchema: {
+            type: Type.OBJECT,
+            properties: {
+              suggestedDate: { type: Type.STRING },
+              reasoning: { type: Type.STRING }
+            },
+            required: ['suggestedDate', 'reasoning']
+          }
+        }
+      });
+
+      const result = JSON.parse(response.text || '{}');
+
+      if (!result.suggestedDate) {
+        return null;
+      }
+
+      return {
+        suggestedDate: result.suggestedDate,
+        reasoning: result.reasoning
+      };
+    } catch (error) {
+      console.error('Smart scheduling failed:', error);
+
+      // Fallback: Simple deadline suggestion based on priority
+      const now = new Date();
+      let daysToAdd = 7; // Default: 1 week
+
+      if (taskPriority === 'urgent') daysToAdd = 1;
+      else if (taskPriority === 'high') daysToAdd = 3;
+      else if (taskPriority === 'medium') daysToAdd = 7;
+      else if (taskPriority === 'low') daysToAdd = 14;
+
+      const suggestedDate = new Date(now.getTime() + daysToAdd * 24 * 60 * 60 * 1000);
+
+      return {
+        suggestedDate: suggestedDate.toISOString().split('T')[0],
+        reasoning: `Based on ${taskPriority} priority, suggested deadline is ${daysToAdd} days from now.`
+      };
+    }
+  },
+
+  /**
+   * Phase 5: Predict potential blockers for a task
+   */
+  async predictBlockers(
+    apiKey: string,
+    taskTitle: string,
+    taskDescription: string | undefined,
+    relatedTasks: Task[]
+  ): Promise<Array<{
+    blocker: string;
+    confidence: 'high' | 'medium' | 'low';
+    mitigation: string;
+  }> | null> {
+    try {
+      const ai = new GoogleGenAI({ apiKey });
+
+      const relatedTasksSummary = relatedTasks.map(t => ({
+        title: t.title,
+        description: t.description,
+        status: t.status,
+        priority: t.priority
+      }));
+
+      const prompt = `You are an expert project risk analyst. Predict potential blockers for this task:
+
+Task Title: ${taskTitle}
+Task Description: ${taskDescription || 'No description provided'}
+
+Related Tasks in Workspace:
+${JSON.stringify(relatedTasksSummary.slice(0, 15), null, 2)}
+
+Identify 0-5 potential blockers that could prevent this task from being completed on time. Consider:
+1. Technical dependencies (e.g., "needs API integration" blocking "build UI")
+2. Resource dependencies (e.g., waiting for design assets, data, approvals)
+3. Skill/knowledge gaps
+4. External dependencies (third-party services, vendors)
+5. Common project risks (scope creep, unclear requirements, etc.)
+
+For each blocker, provide:
+{
+  "blocker": "Clear description of the potential blocker",
+  "confidence": "high" | "medium" | "low",
+  "mitigation": "Actionable suggestion to avoid or mitigate this blocker"
+}
+
+If no significant blockers are predicted, return an empty array.
+
+Return JSON array of blockers.`;
+
+      const response = await ai.models.generateContent({
+        model: 'gemini-2.5-flash',
+        contents: prompt,
+        config: {
+          temperature: 0.5,
+          responseMimeType: 'application/json',
+          responseSchema: {
+            type: Type.ARRAY,
+            items: {
+              type: Type.OBJECT,
+              properties: {
+                blocker: { type: Type.STRING },
+                confidence: {
+                  type: Type.STRING,
+                  enum: ['high', 'medium', 'low']
+                },
+                mitigation: { type: Type.STRING }
+              },
+              required: ['blocker', 'confidence', 'mitigation']
+            }
+          }
+        }
+      });
+
+      const result = JSON.parse(response.text || '[]');
+
+      if (!Array.isArray(result)) {
+        return [];
+      }
+
+      return result;
+    } catch (error) {
+      console.error('Blocker prediction failed:', error);
+
+      // Fallback: Basic keyword-based blocker detection
+      const text = `${taskTitle} ${taskDescription || ''}`.toLowerCase();
+      const blockers: Array<{ blocker: string; confidence: 'high' | 'medium' | 'low'; mitigation: string }> = [];
+
+      // Check for common blocker keywords
+      if (text.includes('integrate') || text.includes('api') || text.includes('third-party')) {
+        blockers.push({
+          blocker: 'External API or integration dependency detected',
+          confidence: 'medium',
+          mitigation: 'Verify API documentation and access tokens early. Consider mock data for testing.'
+        });
+      }
+
+      if (text.includes('design') && !text.includes('implement')) {
+        blockers.push({
+          blocker: 'May require design assets or approval',
+          confidence: 'medium',
+          mitigation: 'Coordinate with design team early to ensure assets are ready.'
+        });
+      }
+
+      if (text.includes('database') || text.includes('migration') || text.includes('schema')) {
+        blockers.push({
+          blocker: 'Database changes may require review and testing',
+          confidence: 'medium',
+          mitigation: 'Test migration in staging environment. Plan rollback strategy.'
+        });
+      }
+
+      return blockers.length > 0 ? blockers : [];
+    }
+  },
 };

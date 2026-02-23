@@ -1,0 +1,226 @@
+@import './design-tokens.css';
+
+/* ═══════════════════════════════════════════════════════════════════════════
+   HUB HEADER COMPONENT
+   Three-mode switcher with title and actions
+   ═══════════════════════════════════════════════════════════════════════════ */
+
+.hub-header {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  padding: var(--dt-spacing-lg) var(--dt-spacing-xl);
+  background: var(--dt-bg-card);
+  border-bottom: 1px solid var(--dt-border);
+  gap: var(--dt-spacing-lg);
+  position: sticky;
+  top: 0;
+  z-index: 100;
+  backdrop-filter: blur(8px);
+  -webkit-backdrop-filter: blur(8px);
+}
+
+/* ───────────────────────────────────────────────────────────────────────────
+   LEFT SECTION - Title
+   ─────────────────────────────────────────────────────────────────────────── */
+
+.hub-header-left {
+  display: flex;
+  align-items: center;
+  min-width: 0;
+  flex-shrink: 0;
+}
+
+.hub-title {
+  font-size: var(--dt-font-xl);
+  font-weight: var(--dt-font-weight-semibold);
+  color: var(--dt-text-primary);
+  margin: 0;
+  white-space: nowrap;
+}
+
+/* ───────────────────────────────────────────────────────────────────────────
+   CENTER SECTION - Mode Switcher
+   ─────────────────────────────────────────────────────────────────────────── */
+
+.hub-header-center {
+  display: flex;
+  justify-content: center;
+  flex: 1;
+}
+
+.hub-mode-switcher {
+  display: inline-flex;
+  gap: 2px;
+  background: var(--dt-border);
+  border-radius: var(--dt-radius);
+  padding: 3px;
+  box-shadow: inset 0 1px 2px rgba(0, 0, 0, 0.05);
+}
+
+.hub-mode-btn {
+  display: inline-flex;
+  align-items: center;
+  gap: var(--dt-spacing-xs);
+  padding: 8px 20px;
+  border-radius: calc(var(--dt-radius) - 2px);
+  border: none;
+  background: transparent;
+  color: var(--dt-text-secondary);
+  font-size: var(--dt-font-sm);
+  font-weight: var(--dt-font-weight-medium);
+  cursor: pointer;
+  transition: all var(--dt-transition-base);
+  white-space: nowrap;
+  user-select: none;
+  -webkit-user-select: none;
+}
+
+.hub-mode-btn:hover:not(.active) {
+  color: var(--dt-text-primary);
+  background: rgba(0, 0, 0, 0.02);
+}
+
+.hub-mode-btn.active {
+  background: var(--dt-bg-card);
+  color: var(--dt-text-primary);
+  box-shadow: var(--dt-shadow-card);
+}
+
+.hub-mode-icon {
+  flex-shrink: 0;
+}
+
+.hub-mode-label {
+  font-weight: var(--dt-font-weight-medium);
+}
+
+/* ───────────────────────────────────────────────────────────────────────────
+   RIGHT SECTION - Actions
+   ─────────────────────────────────────────────────────────────────────────── */
+
+.hub-header-right {
+  display: flex;
+  align-items: center;
+  gap: var(--dt-spacing-sm);
+  flex-shrink: 0;
+}
+
+.hub-refresh-btn {
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  width: 36px;
+  height: 36px;
+  border-radius: var(--dt-radius-sm);
+  border: 1px solid var(--dt-border);
+  background: var(--dt-bg-card);
+  color: var(--dt-text-secondary);
+  cursor: pointer;
+  transition: all var(--dt-transition-base);
+}
+
+.hub-refresh-btn:hover {
+  background: var(--dt-bg-card-hover);
+  color: var(--dt-text-primary);
+  border-color: var(--dt-border-focus);
+  transform: rotate(90deg);
+}
+
+.hub-refresh-btn:active {
+  transform: rotate(180deg);
+}
+
+.hub-actions {
+  display: flex;
+  align-items: center;
+  gap: var(--dt-spacing-sm);
+}
+
+/* ═══════════════════════════════════════════════════════════════════════════
+   RESPONSIVE DESIGN - Mobile
+   ═══════════════════════════════════════════════════════════════════════════ */
+
+@media (max-width: 768px) {
+  .hub-header {
+    flex-wrap: wrap;
+    padding: var(--dt-spacing-md) var(--dt-spacing-md);
+    gap: var(--dt-spacing-md);
+  }
+
+  /* Title and actions on top row */
+  .hub-header-left {
+    order: 1;
+    flex: 1;
+  }
+
+  .hub-header-right {
+    order: 2;
+  }
+
+  /* Mode switcher on bottom row, full width */
+  .hub-header-center {
+    order: 3;
+    flex-basis: 100%;
+    width: 100%;
+  }
+
+  .hub-mode-switcher {
+    width: 100%;
+    display: flex;
+  }
+
+  .hub-mode-btn {
+    flex: 1;
+    justify-content: center;
+    padding: 10px 8px;
+    font-size: var(--dt-font-sm);
+  }
+
+  .hub-title {
+    font-size: var(--dt-font-lg);
+  }
+
+  .hub-mode-label {
+    display: none;
+  }
+
+  .hub-mode-btn[aria-selected="true"] .hub-mode-label {
+    display: inline;
+  }
+}
+
+/* Extra small screens - icon only buttons */
+@media (max-width: 480px) {
+  .hub-mode-label {
+    display: none !important;
+  }
+
+  .hub-mode-btn {
+    padding: 10px;
+  }
+
+  .hub-title {
+    font-size: var(--dt-font-base);
+  }
+}
+
+/* ═══════════════════════════════════════════════════════════════════════════
+   DARK MODE ADJUSTMENTS
+   ═══════════════════════════════════════════════════════════════════════════ */
+
+.dark .hub-header {
+  background: rgba(28, 28, 28, 0.8);
+}
+
+.dark .hub-mode-switcher {
+  box-shadow: inset 0 1px 2px rgba(0, 0, 0, 0.3);
+}
+
+.dark .hub-mode-btn:hover:not(.active) {
+  background: rgba(255, 255, 255, 0.05);
+}
+
+.dark .hub-refresh-btn:hover {
+  background: var(--dt-bg-card-hover);
+}

@@ -83,8 +83,9 @@ interface BriefingHighlight {
 interface BriefingSuggestion {
   action: string;
   reason: string;
-  type: 'message' | 'event' | 'task' | 'email' | 'vox' | 'contact';
+  type: 'message' | 'event' | 'task' | 'email' | 'vox' | 'contact' | 'ai_assist';
   priority: 'urgent' | 'high' | 'medium' | 'low';
+  aiFeature?: string;
 }
 
 interface BriefingData {
@@ -899,7 +900,7 @@ const Dashboard: React.FC<DashboardProps> = ({ user, apiKey, setView }) => {
     setLoadingTools(false);
   };
 
-  const handleSuggestionAction = (type: 'message' | 'event' | 'task' | 'email' | 'vox' | 'contact') => {
+  const handleSuggestionAction = (type: 'message' | 'event' | 'task' | 'email' | 'vox' | 'contact' | 'ai_assist') => {
     switch (type) {
       case 'message':
         sessionStorage.setItem('pulse_focus_nudge', 'message');
@@ -919,8 +920,44 @@ const Dashboard: React.FC<DashboardProps> = ({ user, apiKey, setView }) => {
       case 'contact':
         setView(AppView.CONTACTS);
         break;
+      case 'ai_assist':
+        // Handled by handleAIFeatureClick
+        break;
       default:
         setView(AppView.DASHBOARD);
+    }
+  };
+
+  const handleAIFeatureClick = (featureType: string) => {
+    switch (featureType) {
+      case 'subtask_generation':
+        // Navigate to calendar/tasks with AI subtask generation ready
+        console.log('Navigate to task with AI subtask generation');
+        setView(AppView.CALENDAR, { openTaskPanel: true });
+        // Store the AI feature request for the calendar view to pick up
+        sessionStorage.setItem('pulse_ai_feature_request', 'subtask_generation');
+        break;
+      case 'prioritization':
+        // Navigate to tasks and trigger AI prioritization
+        console.log('Navigate to AI task prioritization');
+        setView(AppView.CALENDAR, { openTaskPanel: true });
+        sessionStorage.setItem('pulse_ai_feature_request', 'prioritization');
+        break;
+      case 'natural_language':
+        // Open create task modal in natural language mode
+        console.log('Open create task in natural language mode');
+        setView(AppView.CALENDAR, { openTaskPanel: true });
+        sessionStorage.setItem('pulse_ai_feature_request', 'natural_language');
+        break;
+      case 'workload_balance':
+        // Navigate to team view for workload balancing
+        console.log('Navigate to workload balance view');
+        setView(AppView.CALENDAR);
+        sessionStorage.setItem('pulse_ai_feature_request', 'workload_balance');
+        break;
+      default:
+        console.log('AI feature:', featureType);
+        setView(AppView.CALENDAR);
     }
   };
 
@@ -1204,30 +1241,47 @@ const Dashboard: React.FC<DashboardProps> = ({ user, apiKey, setView }) => {
                     {briefing.suggestions.slice(0, 4).map((suggestion, idx) => (
                       <div
                         key={idx}
-                        className="glass-card hover:glass-rose-strong border-gradient-rose-subtle rounded-lg sm:rounded-xl p-3 sm:p-4 flex items-center justify-between transition-all duration-300 group card-hover-lift active:scale-[0.98] min-h-[56px]"
+                        className={`glass-card hover:glass-rose-strong border-gradient-rose-subtle rounded-lg sm:rounded-xl p-3 sm:p-4 transition-all duration-300 group card-hover-lift active:scale-[0.98] min-h-[56px] ${
+                          suggestion.type === 'ai_assist' ? 'border-gradient-rose-strong' : ''
+                        }`}
                       >
-                        <div className="flex-1 min-w-0 pr-2 sm:pr-3">
-                          <div className="flex items-center gap-2 flex-wrap">
-                            <div className="font-medium text-sm text-zinc-200 line-clamp-1">{suggestion.action}</div>
-                            {suggestion.priority === 'urgent' && (
-                              <span className="px-1.5 py-0.5 text-[9px] bg-red-500/20 text-red-400 rounded uppercase font-bold shrink-0">Urgent</span>
+                        <div className="flex items-center justify-between">
+                          <div className="flex-1 min-w-0 pr-2 sm:pr-3">
+                            <div className="flex items-center gap-2 flex-wrap">
+                              {suggestion.type === 'ai_assist' && (
+                                <i className="fa-solid fa-sparkles text-rose-400 text-sm animate-pulse"></i>
+                              )}
+                              <div className="font-medium text-sm text-zinc-200 line-clamp-1">{suggestion.action}</div>
+                              {suggestion.priority === 'urgent' && (
+                                <span className="px-1.5 py-0.5 text-[9px] bg-red-500/20 text-red-400 rounded uppercase font-bold shrink-0">Urgent</span>
+                              )}
+                            </div>
+                            <div className="text-xs text-zinc-500 mt-0.5 line-clamp-2 sm:line-clamp-1">{suggestion.reason}</div>
+                            {suggestion.type === 'ai_assist' && suggestion.aiFeature && (
+                              <button
+                                onClick={() => handleAIFeatureClick(suggestion.aiFeature!)}
+                                className="mt-2 px-3 py-1.5 bg-gradient-to-r from-rose-500 to-pink-500 hover:from-rose-600 hover:to-pink-600 text-white text-xs font-semibold rounded-md transition-all duration-200 hover:shadow-lg hover:shadow-rose-500/30 active:scale-95"
+                              >
+                                <i className="fa-solid fa-sparkles mr-1.5"></i>
+                                Try AI Feature
+                              </button>
                             )}
                           </div>
-                          <div className="text-xs text-zinc-500 mt-0.5 line-clamp-2 sm:line-clamp-1">{suggestion.reason}</div>
+                          <button
+                            onClick={() => suggestion.type === 'ai_assist' && suggestion.aiFeature ? handleAIFeatureClick(suggestion.aiFeature) : handleSuggestionAction(suggestion.type)}
+                            className="w-10 h-10 sm:w-8 sm:h-8 rounded-lg bg-gradient-to-br from-rose-600/30 to-pink-600/20 border border-rose-500/30 flex items-center justify-center text-rose-400 group-hover:text-white group-hover:from-rose-500 group-hover:to-pink-500 group-hover:border-rose-500 transition shrink-0 active:scale-95"
+                          >
+                            <i className={`fa-solid ${
+                              suggestion.type === 'ai_assist' ? 'fa-sparkles' :
+                              suggestion.type === 'message' ? 'fa-reply' :
+                              suggestion.type === 'event' ? 'fa-calendar' :
+                              suggestion.type === 'email' ? 'fa-envelope' :
+                              suggestion.type === 'vox' ? 'fa-microphone' :
+                              suggestion.type === 'contact' ? 'fa-user' :
+                              'fa-check'
+                            } text-sm sm:text-xs`}></i>
+                          </button>
                         </div>
-                        <button
-                          onClick={() => handleSuggestionAction(suggestion.type)}
-                          className="w-10 h-10 sm:w-8 sm:h-8 rounded-lg bg-gradient-to-br from-rose-600/30 to-pink-600/20 border border-rose-500/30 flex items-center justify-center text-rose-400 group-hover:text-white group-hover:from-rose-500 group-hover:to-pink-500 group-hover:border-rose-500 transition shrink-0 active:scale-95"
-                        >
-                          <i className={`fa-solid ${
-                            suggestion.type === 'message' ? 'fa-reply' :
-                            suggestion.type === 'event' ? 'fa-calendar' :
-                            suggestion.type === 'email' ? 'fa-envelope' :
-                            suggestion.type === 'vox' ? 'fa-microphone' :
-                            suggestion.type === 'contact' ? 'fa-user' :
-                            'fa-check'
-                          } text-sm sm:text-xs`}></i>
-                        </button>
                       </div>
                     ))}
                   </div>

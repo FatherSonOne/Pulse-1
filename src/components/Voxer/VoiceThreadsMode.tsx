@@ -51,10 +51,29 @@ import {
 import RecordingPreview from './RecordingPreview';
 import { useVoxRecording } from '../../hooks/useVoxRecording';
 import { voxModeService } from '../../services/voxer/voxModeService';
+import VoxModeHeader from './VoxModeHeader';
+import RecordButton from './RecordButton';
 import analyticsCollector from '../../services/analyticsCollector';
 import type { VoiceThread, VoiceThreadMessage, PulseUser } from '../../services/voxer/voxModeTypes';
 import toast from 'react-hot-toast';
 import './VoiceThreadsMode.css';
+
+// Phase 2: Selection Mode
+import { useVoxSelection, VoxSelectionItem } from '../../hooks/useVoxSelection';
+import { VoxSelectToolbar } from './VoxSelectToolbar';
+
+// Phase 5: AI Enhancements
+import { VoxConversationSummary, VoxSmartReplies } from './index';
+import { summarizeConversation, generateSmartReplies } from '../../services/voxer/voxerAIService';
+import type { ConversationSummary, SmartReply } from '../../services/voxer/voxerAIService';
+
+// Phase 6: Final Polish
+import { useVoxerKeyboardShortcuts } from '../../hooks/useVoxerKeyboardShortcuts';
+import { VoxKeyboardShortcutsHelp } from './VoxKeyboardShortcutsHelp';
+import { usePlaybackSpeed } from '../../hooks/usePlaybackSpeed';
+import { PlaybackSpeedControl } from './PlaybackSpeedControl';
+import { VoxEmptyState } from './VoxEmptyState';
+import { getEmptyStateConfig } from './voxEmptyStates';
 
 // Mode color for Voice Threads - Emerald/Teal
 const MODE_COLOR = '#10B981';
@@ -447,6 +466,32 @@ const VoiceThreadsMode: React.FC<VoiceThreadsModeProps> = ({
   const [isLoadingThreads, setIsLoadingThreads] = useState(true);
   const [isLoadingMessages, setIsLoadingMessages] = useState(false);
 
+  // Phase 2: Selection Mode State
+  const {
+    isSelectionMode,
+    selectedItems,
+    selectionCount,
+    toggleSelection,
+    selectAll,
+    deselectAll,
+    enterSelectionMode,
+    exitSelectionMode,
+    isSelected,
+    getTotalDuration,
+  } = useVoxSelection();
+
+  // Phase 5: AI Enhancement States
+  const [showSummary, setShowSummary] = useState(false);
+  const [conversationSummary, setConversationSummary] = useState<ConversationSummary | null>(null);
+  const [showSmartReplies, setShowSmartReplies] = useState(false);
+  const [smartReplies, setSmartReplies] = useState<SmartReply[]>([]);
+  const [isGeneratingAI, setIsGeneratingAI] = useState(false);
+
+  // Phase 6: Final Polish States
+  const [showShortcutsHelp, setShowShortcutsHelp] = useState(false);
+  const { playbackSpeed: globalPlaybackSpeed, setPlaybackSpeed: setGlobalPlaybackSpeed, applyToElement } = usePlaybackSpeed();
+  const emptyConfig = getEmptyStateConfig('voice_threads');
+
   // Refs
   const audioRef = useRef<HTMLAudioElement>(null);
   const messagesEndRef = useRef<HTMLDivElement>(null);
@@ -458,15 +503,80 @@ const VoiceThreadsMode: React.FC<VoiceThreadsModeProps> = ({
     duration: recordingDuration,
     analyser,
     recordingData,
+    recordingMode,
+    setRecordingMode,
     startRecording,
     stopRecording,
     cancelRecording,
     sendRecording,
+    handlePointerDown,
+    handlePointerUp,
+    handleToggleRecording,
   } = useVoxRecording({
     onRecordingComplete: (data) => {
       console.log('Voice Thread recording complete:', data.duration, 'seconds');
     },
+    defaultRecordingMode: 'tap', // Threads work better with tap mode
   });
+
+  // Persist recording mode preference
+  useEffect(() => {
+    localStorage.setItem('voxer-recording-mode', recordingMode);
+  }, [recordingMode]);
+
+  // ============================================
+  // PHASE 6: KEYBOARD SHORTCUTS
+  // ============================================
+
+  useVoxerKeyboardShortcuts({
+    onToggleRecording: () => {
+      if (recordingState === 'idle' && selectedThread) {
+        startRecording();
+      } else if (recordingState === 'recording') {
+        stopRecording();
+      }
+    },
+    onStopRecording: () => {
+      if (recordingState === 'recording') {
+        cancelRecording();
+      } else if (recordingState === 'preview') {
+        cancelRecording();
+      }
+    },
+    onGoBack: () => {
+      if (selectedThread) {
+        setSelectedThread(null);
+      } else {
+        onBack();
+      }
+    },
+    onDownloadSelected: () => {
+      if (isSelectionMode && selectionCount > 0) {
+        console.log('Download selected:', selectionCount);
+      }
+    },
+    onArchiveSelected: () => {
+      if (isSelectionMode && selectionCount > 0) {
+        console.log('Archive selected:', selectionCount);
+      }
+    },
+    onSummarize: () => {
+      if (messages.length > 0) {
+        handleSummarizeThread();
+      }
+    },
+    onShowShortcuts: () => setShowShortcutsHelp(true),
+  }, true);
+
+  // ============================================
+  // PHASE 6: PLAYBACK SPEED PERSISTENCE
+  // ============================================
+
+  useEffect(() => {
+    if (audioRef.current) {
+      applyToElement(audioRef.current);
+    }
+  }, [applyToElement]);
 
   // ============================================
   // LOAD PULSE USERS
@@ -617,17 +727,6 @@ const VoiceThreadsMode: React.FC<VoiceThreadsModeProps> = ({
     setQuotingMessage(null);
   };
 
-  // ============================================
-  // RECORDING TOGGLE
-  // ============================================
-
-  const handleRecordToggle = () => {
-    if (recordingState === 'recording') {
-      stopRecording();
-    } else if (recordingState === 'idle') {
-      startRecording();
-    }
-  };
 
   // ============================================
   // CREATE THREAD
@@ -709,6 +808,72 @@ const VoiceThreadsMode: React.FC<VoiceThreadsModeProps> = ({
     }
     toast.success(`Playback speed: ${newSpeed}x`);
   }, [playbackSpeed]);
+
+  // ============================================
+  // PHASE 5: AI ENHANCEMENT HANDLERS
+  // ============================================
+
+  const handleSummarizeThread = async () => {
+    if (!selectedThread || messages.length === 0) return;
+
+    setIsGeneratingAI(true);
+    try {
+      const formattedMessages = messages.map(m => ({
+        sender: m.senderName || 'Unknown',
+        text: m.transcript || '[Voice message]',
+        timestamp: m.createdAt.toISOString(),
+      }));
+
+      const summary = await summarizeConversation(formattedMessages);
+      setConversationSummary(summary);
+      setShowSummary(true);
+      toast.success('Thread summary generated!');
+    } catch (error) {
+      console.error('Failed to generate summary:', error);
+      toast.error('Failed to generate summary');
+    } finally {
+      setIsGeneratingAI(false);
+    }
+  };
+
+  const handleGenerateSmartReplies = async () => {
+    if (messages.length === 0) return;
+
+    setIsGeneratingAI(true);
+    try {
+      const recentMessages = messages.slice(-5).map(m => ({
+        sender: m.senderName || 'Unknown',
+        text: m.transcript || '[Voice message]',
+        timestamp: m.createdAt.toISOString(),
+      }));
+
+      const replies = await generateSmartReplies(recentMessages);
+      setSmartReplies(replies);
+      setShowSmartReplies(true);
+      toast.success('Smart replies generated!');
+    } catch (error) {
+      console.error('Failed to generate replies:', error);
+      toast.error('Failed to generate replies');
+    } finally {
+      setIsGeneratingAI(false);
+    }
+  };
+
+  const handleSelectAllMessages = () => {
+    const allItems: VoxSelectionItem[] = messages.map(m => ({
+      id: m.id,
+      type: 'audio' as const,
+      url: m.audioUrl,
+      duration: m.duration,
+      timestamp: m.createdAt,
+      senderId: m.senderId,
+      senderName: m.senderName,
+      sender: m.senderId === voxModeService.getUserId() ? 'me' : 'other',
+      transcript: m.transcript,
+      mode: 'voice_threads' as const,
+    }));
+    selectAll(allItems);
+  };
 
   // ============================================
   // MESSAGE ACTIONS
@@ -916,54 +1081,95 @@ const VoiceThreadsMode: React.FC<VoiceThreadsModeProps> = ({
       />
 
       {/* Header */}
-      <header className="vt-header">
-        <button type="button" onClick={onBack} className="vt-back-btn" title="Back">
-          <ChevronLeft className="w-5 h-5" />
-        </button>
+      <VoxModeHeader
+        modeName="Voice Threads"
+        modeTagline="Threaded voice conversations"
+        modeColor="#10B981"
+        modeIcon={MessageSquare}
+        onBack={onBack}
+        isDarkMode={isDarkMode}
+        actions={
+          <>
+            {/* Mobile menu button */}
+            <button
+              type="button"
+              onClick={() => setShowMobileSidebar(true)}
+              className="vt-mobile-menu md:hidden"
+              title="Show threads"
+            >
+              <MessageSquare className="w-5 h-5" />
+            </button>
 
-        {/* Mobile menu button */}
-        <button
-          type="button"
-          onClick={() => setShowMobileSidebar(true)}
-          className="vt-mobile-menu md:hidden"
-          title="Show threads"
-        >
-          <MessageSquare className="w-5 h-5" />
-        </button>
-
-        <div className="vt-title">
-          <div className="vt-title-icon">
-            <MessageSquare className="w-5 h-5" />
-            <div className="vt-title-notch" />
-          </div>
-          <div className="hidden sm:block">
-            <h1>Voice Threads</h1>
-            <span className="vt-subtitle">Conversations That Flow</span>
-          </div>
-        </div>
-
-        {/* Thread count indicator */}
-        <div className="vt-header-stats">
-          <div className="vt-stat">
-            <MessageCircle className="w-4 h-4" />
-            <span>{threads.length}</span>
-          </div>
-          {threads.filter(t => (t.unreadCount || 0) > 0).length > 0 && (
-            <div className="vt-stat vt-stat-unread">
-              <span>{threads.filter(t => (t.unreadCount || 0) > 0).length} unread</span>
+            {/* Thread count indicator */}
+            <div className="vt-header-stats">
+              <div className="vt-stat">
+                <MessageCircle className="w-4 h-4" />
+                <span>{threads.length}</span>
+              </div>
+              {threads.filter(t => (t.unreadCount || 0) > 0).length > 0 && (
+                <div className="vt-stat vt-stat-unread">
+                  <span>{threads.filter(t => (t.unreadCount || 0) > 0).length} unread</span>
+                </div>
+              )}
             </div>
-          )}
-        </div>
 
-        <button
-          type="button"
-          onClick={() => setShowNewThread(true)}
-          className="vt-new-btn"
-        >
-          <Plus className="w-4 h-4" />
-          <span className="hidden sm:inline">New Thread</span>
-        </button>
-      </header>
+            {/* Phase 5: AI Features */}
+            {selectedThread && messages.length > 0 && (
+              <>
+                <button
+                  type="button"
+                  onClick={handleSummarizeThread}
+                  disabled={isGeneratingAI}
+                  className="vt-ai-btn"
+                  title="Summarize thread"
+                >
+                  <Sparkles className="w-4 h-4" />
+                  <span className="hidden sm:inline">Summarize</span>
+                </button>
+                <button
+                  type="button"
+                  onClick={handleGenerateSmartReplies}
+                  disabled={isGeneratingAI}
+                  className="vt-ai-btn"
+                  title="Smart replies"
+                >
+                  <TrendingUp className="w-4 h-4" />
+                  <span className="hidden sm:inline">Smart Replies</span>
+                </button>
+              </>
+            )}
+
+            {/* Phase 2: Selection Mode Toggle */}
+            {selectedThread && messages.length > 0 && (
+              <button
+                type="button"
+                onClick={() => {
+                  if (isSelectionMode) {
+                    exitSelectionMode();
+                  } else {
+                    enterSelectionMode();
+                  }
+                }}
+                className={`vt-selection-btn ${isSelectionMode ? 'active' : ''}`}
+                title={isSelectionMode ? 'Exit selection' : 'Select messages'}
+              >
+                {isSelectionMode ? <X className="w-4 h-4" /> : <Square className="w-4 h-4" />}
+                <span className="hidden sm:inline">{isSelectionMode ? 'Cancel' : 'Select'}</span>
+              </button>
+            )}
+
+            {/* New Thread button */}
+            <button
+              type="button"
+              onClick={() => setShowNewThread(true)}
+              className="vt-new-btn"
+            >
+              <Plus className="w-4 h-4" />
+              <span className="hidden sm:inline">New Thread</span>
+            </button>
+          </>
+        }
+      />
 
       <div className="vt-body">
         {/* Mobile Sidebar Overlay */}
@@ -1258,11 +1464,18 @@ const VoiceThreadsMode: React.FC<VoiceThreadsModeProps> = ({
                     <span>Loading messages...</span>
                   </div>
                 ) : messages.length === 0 ? (
-                  <div className="vt-empty-messages">
-                    <Sparkles className="w-12 h-12" />
-                    <p>Start the conversation</p>
-                    <span>Record your first message below</span>
-                  </div>
+                  <VoxEmptyState
+                    {...emptyConfig}
+                    isDarkMode={isDarkMode}
+                    action={{
+                      label: 'Start Recording',
+                      onClick: () => {
+                        if (recordingState === 'idle') {
+                          startRecording();
+                        }
+                      }
+                    }}
+                  />
                 ) : (
                   messages.map((message) => {
                     const isMe = message.senderId === voxModeService.getUserId();
@@ -1271,8 +1484,43 @@ const VoiceThreadsMode: React.FC<VoiceThreadsModeProps> = ({
                     return (
                       <div
                         key={message.id}
-                        className={`vt-message ${isMe ? 'vt-message-mine' : 'vt-message-other'} ${message.isPinned ? 'vt-message-pinned' : ''}`}
+                        className={`vt-message ${isMe ? 'vt-message-mine' : 'vt-message-other'} ${message.isPinned ? 'vt-message-pinned' : ''} ${isSelectionMode ? 'vt-message-selectable' : ''}`}
                       >
+                        {/* Phase 2: Selection Mode Checkbox */}
+                        {isSelectionMode && (
+                          <button
+                            type="button"
+                            onClick={(e) => {
+                              e.stopPropagation();
+                              const selectionItem: VoxSelectionItem = {
+                                id: message.id,
+                                type: 'audio',
+                                url: message.audioUrl,
+                                duration: message.duration,
+                                timestamp: message.createdAt,
+                                senderId: message.senderId,
+                                senderName: message.senderName,
+                                sender: isMe ? 'me' : 'other',
+                                transcript: message.transcript,
+                                mode: 'voice_threads',
+                              };
+                              toggleSelection(selectionItem);
+                            }}
+                            className={`absolute ${isMe ? 'left-3' : 'right-3'} top-3 w-7 h-7 rounded-lg border-2 flex items-center justify-center transition-all z-10 ${
+                              isSelected(message.id)
+                                ? 'bg-[#10B981] border-[#10B981] shadow-lg shadow-emerald-500/30'
+                                : isDarkMode
+                                ? 'bg-gray-800/50 border-gray-600 hover:border-emerald-400'
+                                : 'bg-white/50 border-gray-300 hover:border-emerald-500'
+                            }`}
+                            style={{
+                              backdropFilter: 'blur(8px)',
+                            }}
+                          >
+                            {isSelected(message.id) && <Check className="w-5 h-5 text-white" />}
+                          </button>
+                        )}
+
                         {/* Pinned indicator */}
                         {message.isPinned && (
                           <div className="vt-message-pinned-indicator">
@@ -1325,15 +1573,21 @@ const VoiceThreadsMode: React.FC<VoiceThreadsModeProps> = ({
                             />
                           </div>
                           <span className="vt-message-duration">{formatDuration(message.duration)}</span>
+
+                          {/* Phase 6: Playback Speed Control */}
                           {isCurrentlyPlaying && (
-                            <button
-                              type="button"
-                              onClick={cyclePlaybackSpeed}
-                              className="vt-speed-btn"
-                              title="Change playback speed"
-                            >
-                              {playbackSpeed}x
-                            </button>
+                            <PlaybackSpeedControl
+                              speed={globalPlaybackSpeed}
+                              onSpeedChange={(newSpeed) => {
+                                setGlobalPlaybackSpeed(newSpeed);
+                                if (audioRef.current) {
+                                  audioRef.current.playbackRate = newSpeed;
+                                }
+                              }}
+                              mode="compact"
+                              isDarkMode={isDarkMode}
+                              accentColor={MODE_COLOR}
+                            />
                           )}
                         </div>
 
@@ -1498,34 +1752,22 @@ const VoiceThreadsMode: React.FC<VoiceThreadsModeProps> = ({
                   </div>
                 ) : (
                   <div className="vt-record-ui">
-                    <button
-                      type="button"
-                      onClick={handleRecordToggle}
-                      className={`vt-record-btn ${recordingState === 'recording' ? 'recording' : ''}`}
-                    >
-                      {recordingState === 'recording' ? (
-                        <>
-                          <Square className="w-5 h-5" />
-                          <div className="vt-record-pulse" />
-                        </>
-                      ) : (
-                        <Mic className="w-5 h-5" />
-                      )}
-                    </button>
-
-                    {recordingState === 'recording' ? (
-                      <div className="vt-recording-info">
-                        <div className="vt-recording-indicator">
-                          <div className="vt-recording-dot" />
-                          <span>Recording</span>
-                        </div>
-                        <span className="vt-recording-duration">
-                          {formatDuration(recordingDuration)}
-                        </span>
-                      </div>
-                    ) : (
-                      <p className="vt-record-hint">Click to record a message</p>
-                    )}
+                    <RecordButton
+                      state={recordingState === 'recording' ? 'recording' : recordingState === 'preview' ? 'processing' : 'idle'}
+                      recordingMode={recordingMode}
+                      duration={recordingDuration}
+                      onPointerDown={handlePointerDown}
+                      onPointerUp={handlePointerUp}
+                      onToggleRecording={handleToggleRecording}
+                      onModeToggle={() => setRecordingMode(mode => mode === 'hold' ? 'tap' : 'hold')}
+                      accentColor="#10B981"
+                      size="lg"
+                      showModeToggle={true}
+                      showTimer={true}
+                      isDarkMode={isDarkMode}
+                      mode="audio"
+                      audioLevel={recordingState === 'recording' ? 0.5 : 0}
+                    />
 
                     {recordingState === 'recording' && (
                       <div className="vt-live-visualizer">
@@ -1710,6 +1952,55 @@ const VoiceThreadsMode: React.FC<VoiceThreadsModeProps> = ({
             </div>
           </div>
         </div>
+      )}
+
+      {/* Phase 2: Selection Toolbar */}
+      {isSelectionMode && selectedThread && (
+        <VoxSelectToolbar
+          selectedItems={selectedItems}
+          selectionCount={selectionCount}
+          totalDuration={getTotalDuration()}
+          onSelectAll={handleSelectAllMessages}
+          onDeselectAll={deselectAll}
+          onExitSelection={exitSelectionMode}
+          allSelected={selectionCount === messages.length && messages.length > 0}
+          isDarkMode={isDarkMode}
+          accentColor={MODE_COLOR}
+          contactName={selectedThread.subject || getParticipantNames(selectedThread)}
+        />
+      )}
+
+      {/* Phase 5: AI Summary Modal */}
+      {showSummary && conversationSummary && (
+        <VoxConversationSummary
+          summary={conversationSummary}
+          onClose={() => setShowSummary(false)}
+          isDarkMode={isDarkMode}
+          accentColor={MODE_COLOR}
+        />
+      )}
+
+      {/* Phase 5: Smart Replies Modal */}
+      {showSmartReplies && (
+        <VoxSmartReplies
+          replies={smartReplies}
+          onSelect={(reply) => {
+            console.log('Selected reply:', reply);
+            setShowSmartReplies(false);
+          }}
+          onClose={() => setShowSmartReplies(false)}
+          isDarkMode={isDarkMode}
+          accentColor={MODE_COLOR}
+        />
+      )}
+
+      {/* Phase 6: Keyboard Shortcuts Help */}
+      {showShortcutsHelp && (
+        <VoxKeyboardShortcutsHelp
+          onClose={() => setShowShortcutsHelp(false)}
+          isDarkMode={isDarkMode}
+          accentColor={MODE_COLOR}
+        />
       )}
     </div>
   );

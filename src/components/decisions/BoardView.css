@@ -1,0 +1,347 @@
+/* ═══════════════════════════════════════════════════════════════════════════
+   BOARD VIEW - 8-COLUMN KANBAN BOARD
+   Phase 2: Full implementation with drag-and-drop, framer-motion, and design tokens
+   ═══════════════════════════════════════════════════════════════════════════ */
+
+@import './design-tokens.css';
+
+/* ─────────────────────────────────────────────────────────────────────────
+   BOARD CONTAINER
+   ───────────────────────────────────────────────────────────────────────── */
+.board-view {
+  display: grid;
+  grid-template-columns: repeat(8, minmax(280px, 1fr));
+  gap: var(--dt-spacing-md);
+  padding: var(--dt-spacing-md);
+  overflow-x: auto;
+  scroll-snap-type: x mandatory;
+  height: 100%;
+  background: var(--dt-bg-primary);
+}
+
+/* ─────────────────────────────────────────────────────────────────────────
+   BOARD COLUMNS
+   ───────────────────────────────────────────────────────────────────────── */
+.board-column {
+  background: var(--dt-bg-card);
+  border: 1px solid var(--dt-border);
+  border-radius: var(--dt-radius);
+  padding: var(--dt-spacing-md);
+  min-height: 600px;
+  max-height: calc(100vh - 200px);
+  display: flex;
+  flex-direction: column;
+  scroll-snap-align: start;
+  transition: all var(--dt-transition-base);
+}
+
+/* Column status backgrounds (5% opacity) */
+.board-column[data-status="proposed"] {
+  background: var(--dt-status-bg-proposed);
+  border-left: 3px solid var(--dt-status-proposed);
+}
+
+.board-column[data-status="voting"] {
+  background: var(--dt-status-bg-voting);
+  border-left: 3px solid var(--dt-status-voting);
+}
+
+.board-column[data-status="decided"] {
+  background: var(--dt-status-bg-decided);
+  border-left: 3px solid var(--dt-status-decided);
+}
+
+.board-column[data-status="todo"] {
+  background: var(--dt-status-bg-todo);
+  border-left: 3px solid var(--dt-status-todo);
+}
+
+.board-column[data-status="in_progress"] {
+  background: var(--dt-status-bg-in-progress);
+  border-left: 3px solid var(--dt-status-in-progress);
+}
+
+.board-column[data-status="in_review"] {
+  background: var(--dt-status-bg-in-review);
+  border-left: 3px solid var(--dt-status-in-review);
+}
+
+.board-column[data-status="blocked"] {
+  background: var(--dt-status-bg-blocked);
+  border-left: 3px solid var(--dt-status-blocked);
+}
+
+.board-column[data-status="done"] {
+  background: var(--dt-status-bg-done);
+  border-left: 3px solid var(--dt-status-done);
+}
+
+/* Drag over state */
+.board-column.drag-over {
+  border-color: var(--dt-accent);
+  box-shadow: 0 0 0 2px var(--dt-accent);
+  background: var(--dt-bg-card-hover);
+  transform: scale(1.02);
+}
+
+/* ─────────────────────────────────────────────────────────────────────────
+   COLUMN HEADER
+   ───────────────────────────────────────────────────────────────────────── */
+.board-column-header {
+  display: flex;
+  align-items: center;
+  gap: var(--dt-spacing-sm);
+  margin-bottom: var(--dt-spacing-md);
+  padding-bottom: var(--dt-spacing-sm);
+  border-bottom: 2px solid var(--dt-border);
+  flex-shrink: 0;
+}
+
+.board-column-header .column-title {
+  flex: 1;
+  font-size: var(--dt-font-base);
+  font-weight: var(--dt-font-weight-semibold);
+  color: var(--dt-text-primary);
+  margin: 0;
+}
+
+.column-count-badge {
+  min-width: 24px;
+  height: 24px;
+  padding: 0 8px;
+  background: var(--dt-accent);
+  color: white;
+  border-radius: 12px;
+  font-size: var(--dt-font-xs);
+  font-weight: var(--dt-font-weight-semibold);
+  display: flex;
+  align-items: center;
+  justify-content: center;
+}
+
+.wip-limit-warning {
+  background: var(--dt-status-overdue) !important;
+  animation: pulse-warning 1.5s ease-in-out infinite;
+}
+
+@keyframes pulse-warning {
+  0%, 100% {
+    opacity: 1;
+    transform: scale(1);
+  }
+  50% {
+    opacity: 0.8;
+    transform: scale(1.1);
+  }
+}
+
+.wip-limit-text {
+  font-size: var(--dt-font-xs);
+  color: var(--dt-status-overdue);
+  font-weight: var(--dt-font-weight-bold);
+}
+
+/* ─────────────────────────────────────────────────────────────────────────
+   COLUMN BODY (Scrollable card container)
+   ───────────────────────────────────────────────────────────────────────── */
+.board-column-body {
+  flex: 1;
+  overflow-y: auto;
+  overflow-x: hidden;
+  padding-right: var(--dt-spacing-xs);
+}
+
+.board-column-body::-webkit-scrollbar {
+  width: 6px;
+}
+
+.board-column-body::-webkit-scrollbar-track {
+  background: transparent;
+}
+
+.board-column-body::-webkit-scrollbar-thumb {
+  background: var(--dt-border);
+  border-radius: 3px;
+}
+
+.board-column-body::-webkit-scrollbar-thumb:hover {
+  background: var(--dt-text-muted);
+}
+
+/* ─────────────────────────────────────────────────────────────────────────
+   BOARD CARDS (Draggable items)
+   ───────────────────────────────────────────────────────────────────────── */
+.board-card {
+  margin-bottom: var(--dt-spacing-md);
+  cursor: grab;
+  transition: all var(--dt-transition-fast);
+}
+
+.board-card:active {
+  cursor: grabbing;
+}
+
+.board-card.dragging {
+  opacity: 0.5;
+  transform: rotate(2deg);
+}
+
+.board-card:hover {
+  transform: translateY(-2px);
+  box-shadow: var(--dt-shadow-card-hover);
+}
+
+/* ─────────────────────────────────────────────────────────────────────────
+   EMPTY STATE
+   ───────────────────────────────────────────────────────────────────────── */
+.column-empty-state {
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  height: 100%;
+  min-height: 200px;
+  padding: var(--dt-spacing-lg);
+  color: var(--dt-text-muted);
+  font-size: var(--dt-font-sm);
+  text-align: center;
+  border: 2px dashed var(--dt-border);
+  border-radius: var(--dt-radius);
+  background: var(--dt-bg-secondary);
+}
+
+.column-empty-state p {
+  margin: 0;
+}
+
+/* ─────────────────────────────────────────────────────────────────────────
+   RESPONSIVE DESIGN
+   ───────────────────────────────────────────────────────────────────────── */
+@media (max-width: 1920px) {
+  .board-view {
+    grid-template-columns: repeat(8, minmax(260px, 1fr));
+  }
+}
+
+@media (max-width: 1600px) {
+  .board-view {
+    grid-template-columns: repeat(8, 280px);
+  }
+}
+
+@media (max-width: 1024px) {
+  .board-view {
+    grid-template-columns: repeat(8, 300px);
+    padding: var(--dt-spacing-sm);
+  }
+
+  .board-column {
+    min-height: 500px;
+  }
+}
+
+@media (max-width: 768px) {
+  .board-view {
+    grid-template-columns: repeat(8, 280px);
+    padding: var(--dt-spacing-sm);
+    gap: var(--dt-spacing-sm);
+  }
+
+  .board-column {
+    scroll-snap-align: center;
+    min-height: 400px;
+  }
+
+  .board-column-header {
+    padding-bottom: var(--dt-spacing-xs);
+  }
+
+  .board-card {
+    margin-bottom: var(--dt-spacing-sm);
+  }
+}
+
+/* ─────────────────────────────────────────────────────────────────────────
+   MOBILE TOUCH OPTIMIZATION
+   ───────────────────────────────────────────────────────────────────────── */
+@media (max-width: 640px) {
+  .board-view {
+    grid-template-columns: repeat(8, 90vw);
+  }
+
+  .board-column {
+    scroll-snap-align: center;
+  }
+
+  /* Disable drag on mobile, rely on tap interactions */
+  .board-card {
+    cursor: default;
+  }
+
+  .board-card:active {
+    cursor: default;
+  }
+}
+
+/* ─────────────────────────────────────────────────────────────────────────
+   ACCESSIBILITY
+   ───────────────────────────────────────────────────────────────────────── */
+.board-column:focus-within {
+  outline: 2px solid var(--dt-accent);
+  outline-offset: 2px;
+}
+
+.board-card:focus-visible {
+  outline: 2px solid var(--dt-accent);
+  outline-offset: 2px;
+  box-shadow: var(--dt-shadow-focus);
+}
+
+/* High contrast mode support */
+@media (prefers-contrast: high) {
+  .board-column {
+    border-width: 2px;
+  }
+
+  .board-column.drag-over {
+    border-width: 3px;
+  }
+
+  .column-empty-state {
+    border-width: 3px;
+  }
+}
+
+/* Reduced motion support */
+@media (prefers-reduced-motion: reduce) {
+  .board-card,
+  .board-column,
+  .column-count-badge {
+    transition: none;
+    animation: none;
+  }
+
+  .board-card:hover {
+    transform: none;
+  }
+
+  .board-column.drag-over {
+    transform: none;
+  }
+}
+
+/* ─────────────────────────────────────────────────────────────────────────
+   DARK MODE ADJUSTMENTS
+   ───────────────────────────────────────────────────────────────────────── */
+.dark .board-view {
+  background: var(--dt-bg-primary);
+}
+
+.dark .board-column {
+  background: var(--dt-bg-card);
+  border-color: var(--dt-border);
+}
+
+.dark .column-empty-state {
+  background: var(--dt-bg-secondary);
+  border-color: var(--dt-border);
+}

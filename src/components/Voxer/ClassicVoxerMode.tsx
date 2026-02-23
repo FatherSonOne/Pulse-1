@@ -37,10 +37,14 @@ import {
   MoreVertical,
   Sliders,
   Phone,
+  Radio,
 } from 'lucide-react';
 import VoxAudioVisualizer from './VoxAudioVisualizer';
 import { PTTButton } from './PTTButton';
 import RecordingPreview from './RecordingPreview';
+import VoxModeHeader from './VoxModeHeader';
+import RecordButton from './RecordButton';
+import { useVoxRecording } from '../../hooks/useVoxRecording';
 import { blobToBase64 } from '../../services/audioService';
 import { transcribeMedia, processWithModel } from '../../services/geminiService';
 import { dataService } from '../../services/dataService';
@@ -50,6 +54,38 @@ import { audioEnhancementService } from '../../services/voxer/audioEnhancementSe
 import type { EnrichedUserProfile } from '../../types/userContact';
 import toast from 'react-hot-toast';
 import './ClassicVoxerMode.css';
+
+// Phase 2: Selection Mode
+import { useVoxSelection } from '../../hooks/useVoxSelection';
+import type { VoxSelectionItem } from '../../hooks/useVoxSelection';
+import { VoxSelectToolbar } from './VoxSelectToolbar';
+
+// Phase 5: AI Enhancements
+import {
+  VoxConversationSummary,
+  VoxSmartReplies,
+  VoxMeetingNotes,
+  VoxAutoChapters,
+} from './index';
+
+import {
+  summarizeConversation,
+  generateSmartReplies,
+  generateMeetingNotes,
+  generateAutoChapters,
+  ConversationSummary,
+  SmartReply,
+  MeetingNotes,
+  Chapter,
+} from '../../services/voxer/voxerAIService';
+
+// Phase 6: Final Polish
+import { useVoxerKeyboardShortcuts } from '../../hooks/useVoxerKeyboardShortcuts';
+import { VoxKeyboardShortcutsHelp } from './VoxKeyboardShortcutsHelp';
+import { usePlaybackSpeed } from '../../hooks/usePlaybackSpeed';
+import { PlaybackSpeedControl } from './PlaybackSpeedControl';
+import { VoxEmptyState } from './VoxEmptyState';
+import { getEmptyStateConfig } from './voxEmptyStates';
 
 // ============================================
 // TYPES
@@ -137,6 +173,7 @@ const ClassicVoxerMode: React.FC<ClassicVoxerModeProps> = ({
   } | null>(null);
   const [isAnalyzing, setIsAnalyzing] = useState(false);
   const [transcript, setTranscript] = useState<string>('');
+  const isPreviewing = !!pendingRecording;
 
   // Settings and controls state
   const [showSettings, setShowSettings] = useState(false);
@@ -160,6 +197,50 @@ const ClassicVoxerMode: React.FC<ClassicVoxerModeProps> = ({
   // Pulse users state
   const [pulseUsers, setPulseUsers] = useState<EnrichedUserProfile[]>([]);
   const [isLoadingUsers, setIsLoadingUsers] = useState(false);
+
+  // Recording mode state
+  const [recordingMode, setRecordingMode] = useState<'hold' | 'tap'>(() => {
+    const saved = localStorage.getItem('voxer-recording-mode');
+    return (saved === 'hold' || saved === 'tap') ? saved : 'hold';
+  });
+
+  // Persist recording mode preference
+  useEffect(() => {
+    localStorage.setItem('voxer-recording-mode', recordingMode);
+  }, [recordingMode]);
+
+  // Phase 2: Selection Mode State
+  const {
+    isSelectionMode,
+    selectedItems,
+    selectionCount,
+    toggleSelection,
+    selectAll,
+    deselectAll,
+    enterSelectionMode,
+    exitSelectionMode,
+    isSelected,
+    getTotalDuration,
+  } = useVoxSelection();
+
+  // Phase 5: AI Enhancement States
+  const [showSummary, setShowSummary] = useState(false);
+  const [conversationSummary, setConversationSummary] = useState<ConversationSummary | null>(null);
+  const [isSummarizing, setIsSummarizing] = useState(false);
+
+  const [smartReplies, setSmartReplies] = useState<SmartReply[]>([]);
+  const [isGeneratingReplies, setIsGeneratingReplies] = useState(false);
+
+  const [meetingNotes, setMeetingNotes] = useState<MeetingNotes | null>(null);
+  const [isGeneratingNotes, setIsGeneratingNotes] = useState(false);
+
+  const [activeChapters, setActiveChapters] = useState<Chapter[]>([]);
+  const [chapterRecordingId, setChapterRecordingId] = useState<string | null>(null);
+
+  // Phase 6: Final Polish States
+  const [showShortcutsHelp, setShowShortcutsHelp] = useState(false);
+  const { playbackSpeed, setPlaybackSpeed, applyToElement } = usePlaybackSpeed();
+  const emptyConfig = getEmptyStateConfig('classic');
 
   // Refs
   const mediaRecorderRef = useRef<MediaRecorder | null>(null);
@@ -279,6 +360,45 @@ const ClassicVoxerMode: React.FC<ClassicVoxerModeProps> = ({
   useEffect(() => {
     messagesEndRef.current?.scrollIntoView({ behavior: 'smooth' });
   }, [recordings, activeContactId]);
+
+  // Phase 6: Keyboard Shortcuts
+  useVoxerKeyboardShortcuts({
+    onToggleRecording: () => {
+      if (!isRecording) startRecording();
+      else stopRecording();
+    },
+    onStopRecording: () => {
+      if (isRecording) stopRecording();
+    },
+    onGoBack: () => {
+      if (activeContactId) setActiveContactId(null);
+    },
+    onSwitchMode: (mode) => {
+      // Handle mode switching - would need to be passed from parent
+      console.log('Switch to mode:', mode);
+    },
+    onDownload: () => {
+      if (isSelectionMode && selectionCount > 0) {
+        // Trigger download modal
+        console.log('Download selected items');
+      }
+    },
+    onArchive: () => {
+      if (isSelectionMode && selectionCount > 0) {
+        // Trigger archive
+        console.log('Archive selected items');
+      }
+    },
+    onSummarize: handleSummarizeConversation,
+    onShowHelp: () => setShowShortcutsHelp(true),
+  }, true);
+
+  // Phase 6: Apply playback speed to audio elements
+  useEffect(() => {
+    if (audioRef.current) {
+      applyToElement(audioRef.current);
+    }
+  }, [playbackSpeed, applyToElement]);
 
   // Contacts with Vox conversations (Pulse users who have recordings)
   const contactsWithVoxes = useMemo(() => {
@@ -451,6 +571,14 @@ const ClassicVoxerMode: React.FC<ClassicVoxerModeProps> = ({
       setAudioLevel(0);
     }
   }, [isRecording]);
+
+  const toggleRecording = useCallback(() => {
+    if (isRecording) {
+      stopRecording();
+    } else {
+      startRecording();
+    }
+  }, [isRecording, startRecording, stopRecording]);
 
   const cancelRecording = useCallback(() => {
     setPendingRecording(null);
@@ -674,6 +802,156 @@ const ClassicVoxerMode: React.FC<ClassicVoxerModeProps> = ({
   }, []);
 
   // ============================================
+  // PHASE 5: AI ENHANCEMENT HANDLERS
+  // ============================================
+
+  // Summarize conversation
+  const handleSummarizeConversation = async () => {
+    if (activeThreadRecordings.length === 0) return;
+
+    setIsSummarizing(true);
+    try {
+      const messages = activeThreadRecordings.map(rec => ({
+        id: rec.id,
+        transcription: rec.transcription || '',
+        sender: rec.sender,
+        senderName: rec.sender === 'other' ? activeContact?.displayName || activeContact?.handle : undefined,
+        timestamp: rec.timestamp,
+        duration: rec.duration,
+      }));
+
+      const summary = await summarizeConversation(apiKey, messages);
+      if (summary) {
+        setConversationSummary(summary);
+        setShowSummary(true);
+        toast.success('Conversation summarized!');
+      } else {
+        toast.error('Failed to generate summary');
+      }
+    } catch (error) {
+      console.error('Summarization error:', error);
+      toast.error('Failed to generate summary');
+    } finally {
+      setIsSummarizing(false);
+    }
+  };
+
+  // Generate smart replies
+  const handleGenerateSmartReplies = async () => {
+    const lastOtherMessage = activeThreadRecordings
+      .filter(r => r.sender === 'other')
+      .sort((a, b) => b.timestamp.getTime() - a.timestamp.getTime())[0];
+
+    if (!lastOtherMessage || !lastOtherMessage.transcription) {
+      toast.error('No message to reply to');
+      return;
+    }
+
+    setIsGeneratingReplies(true);
+    try {
+      const context = activeThreadRecordings.slice(-5).map(rec => ({
+        id: rec.id,
+        transcription: rec.transcription || '',
+        sender: rec.sender,
+        senderName: rec.sender === 'other' ? activeContact?.displayName || activeContact?.handle : undefined,
+        timestamp: rec.timestamp,
+        duration: rec.duration,
+      }));
+
+      const replies = await generateSmartReplies(apiKey, {
+        id: lastOtherMessage.id,
+        transcription: lastOtherMessage.transcription,
+        sender: lastOtherMessage.sender,
+        senderName: activeContact?.displayName || activeContact?.handle,
+        timestamp: lastOtherMessage.timestamp,
+        duration: lastOtherMessage.duration,
+      }, context);
+
+      if (replies.length > 0) {
+        setSmartReplies(replies);
+        toast.success('Smart replies generated!');
+      } else {
+        toast.error('Failed to generate smart replies');
+      }
+    } catch (error) {
+      console.error('Smart replies error:', error);
+      toast.error('Failed to generate smart replies');
+    } finally {
+      setIsGeneratingReplies(false);
+    }
+  };
+
+  // Generate meeting notes
+  const handleGenerateMeetingNotes = async () => {
+    if (activeThreadRecordings.length === 0) return;
+
+    setIsGeneratingNotes(true);
+    try {
+      const messages = activeThreadRecordings.map(rec => ({
+        id: rec.id,
+        transcription: rec.transcription || '',
+        sender: rec.sender,
+        senderName: rec.sender === 'other' ? activeContact?.displayName || activeContact?.handle : undefined,
+        timestamp: rec.timestamp,
+        duration: rec.duration,
+      }));
+
+      const notes = await generateMeetingNotes(
+        apiKey,
+        messages,
+        `Conversation with ${activeContact?.displayName || activeContact?.handle || 'Contact'}`
+      );
+
+      if (notes) {
+        setMeetingNotes(notes);
+        toast.success('Meeting notes generated!');
+      } else {
+        toast.error('Failed to generate meeting notes');
+      }
+    } catch (error) {
+      console.error('Meeting notes error:', error);
+      toast.error('Failed to generate meeting notes');
+    } finally {
+      setIsGeneratingNotes(false);
+    }
+  };
+
+  // Generate chapters for long message
+  const handleGenerateChapters = async (recording: Recording) => {
+    if (recording.duration < 120 || !recording.transcription) {
+      toast.error('Message too short for chapters (need 2+ min with transcription)');
+      return;
+    }
+
+    try {
+      toast.loading('Generating chapters...', { id: 'chapters' });
+      const chapters = await generateAutoChapters(
+        apiKey,
+        recording.transcription,
+        recording.duration
+      );
+
+      if (chapters.length > 0) {
+        setActiveChapters(chapters);
+        setChapterRecordingId(recording.id);
+        toast.success(`${chapters.length} chapters generated!`, { id: 'chapters' });
+      } else {
+        toast.error('Failed to generate chapters', { id: 'chapters' });
+      }
+    } catch (error) {
+      console.error('Chapters error:', error);
+      toast.error('Failed to generate chapters', { id: 'chapters' });
+    }
+  };
+
+  // Handle smart reply selection
+  const handleSelectSmartReply = (replyText: string) => {
+    navigator.clipboard.writeText(replyText);
+    toast.success('Smart reply copied! Use it in your next message.');
+    setSmartReplies([]);
+  };
+
+  // ============================================
   // RENDER
   // ============================================
 
@@ -689,35 +967,25 @@ const ClassicVoxerMode: React.FC<ClassicVoxerModeProps> = ({
       {/* Contact List Sidebar */}
       <aside className={`classic-voxer-sidebar ${mobileView === 'list' ? 'visible' : 'hidden-mobile'}`}>
         {/* Header */}
-        <header className="classic-voxer-sidebar-header">
-          <button
-            type="button"
-            onClick={onBack}
-            className="classic-voxer-back-btn"
-            title="Go back"
-            aria-label="Go back"
-          >
-            <ArrowLeft className="w-5 h-5" />
-          </button>
-          <div className="classic-voxer-title">
-            <div className="classic-voxer-title-icon">
-              <Phone className="w-4 h-4" />
-            </div>
-            <div>
-              <h1>Classic Voxer</h1>
-              <span className="classic-voxer-subtitle">Direct Messaging</span>
-            </div>
-          </div>
-          <button
-            type="button"
-            onClick={() => setShowNewVoxModal(true)}
-            className="classic-voxer-new-btn"
-            title="New Vox"
-            aria-label="Start new Vox conversation"
-          >
-            <Plus className="w-4 h-4" />
-          </button>
-        </header>
+        <VoxModeHeader
+          modeName="Classic Voxer"
+          modeTagline="Hold to talk"
+          modeColor="#F97316"
+          modeIcon={Radio}
+          onBack={onBack}
+          isDarkMode={isDarkMode}
+          actions={
+            <button
+              type="button"
+              onClick={() => setShowNewVoxModal(true)}
+              className="classic-voxer-new-btn"
+              title="New Vox"
+              aria-label="Start new Vox conversation"
+            >
+              <Plus className="w-4 h-4" />
+            </button>
+          }
+        />
 
         {/* Search */}
         <div className="classic-voxer-search">
@@ -825,6 +1093,58 @@ const ClassicVoxerMode: React.FC<ClassicVoxerModeProps> = ({
                 <span>{activeContact.role || (activeContact.handle ? `@${activeContact.handle}` : activeContact.onlineStatus)}</span>
               </div>
               <div className="classic-voxer-thread-actions">
+                {/* AI Enhancement Buttons */}
+                <div className="flex items-center gap-2 border-r border-zinc-200 dark:border-zinc-800 pr-2 mr-2">
+                  <button
+                    type="button"
+                    onClick={handleSummarizeConversation}
+                    disabled={activeThreadRecordings.length === 0 || isSummarizing}
+                    className="px-3 py-1.5 rounded-lg bg-purple-500 text-white text-xs font-medium hover:bg-purple-600 transition disabled:opacity-50 disabled:cursor-not-allowed"
+                    title="AI Summarize Conversation"
+                  >
+                    {isSummarizing ? <Loader2 className="w-3 h-3 animate-spin" /> : <Sparkles className="w-3 h-3" />}
+                    <span className="ml-1.5 hidden md:inline">Summarize</span>
+                  </button>
+
+                  <button
+                    type="button"
+                    onClick={handleGenerateSmartReplies}
+                    disabled={isGeneratingReplies}
+                    className="px-3 py-1.5 rounded-lg bg-blue-500 text-white text-xs font-medium hover:bg-blue-600 transition disabled:opacity-50 disabled:cursor-not-allowed"
+                    title="Generate Smart Replies"
+                  >
+                    {isGeneratingReplies ? <Loader2 className="w-3 h-3 animate-spin" /> : <Reply className="w-3 h-3" />}
+                    <span className="ml-1.5 hidden md:inline">Quick Reply</span>
+                  </button>
+
+                  <button
+                    type="button"
+                    onClick={handleGenerateMeetingNotes}
+                    disabled={activeThreadRecordings.length === 0 || isGeneratingNotes}
+                    className="px-3 py-1.5 rounded-lg bg-green-500 text-white text-xs font-medium hover:bg-green-600 transition disabled:opacity-50 disabled:cursor-not-allowed"
+                    title="Generate Meeting Notes"
+                  >
+                    {isGeneratingNotes ? <Loader2 className="w-3 h-3 animate-spin" /> : <MessageCircle className="w-3 h-3" />}
+                    <span className="ml-1.5 hidden md:inline">Notes</span>
+                  </button>
+                </div>
+
+                <button
+                  type="button"
+                  className="classic-voxer-action-btn"
+                  title="Select messages"
+                  onClick={(e) => {
+                    e.preventDefault();
+                    e.stopPropagation();
+                    enterSelectionMode();
+                  }}
+                  style={{
+                    background: isSelectionMode ? '#F97316' : undefined,
+                    color: isSelectionMode ? 'white' : undefined,
+                  }}
+                >
+                  <CheckCheck className="w-4 h-4" />
+                </button>
                 <button
                   type="button"
                   className="classic-voxer-action-btn"
@@ -847,13 +1167,16 @@ const ClassicVoxerMode: React.FC<ClassicVoxerModeProps> = ({
             {/* Messages */}
             <div className="classic-voxer-messages">
               {activeThreadRecordings.length === 0 ? (
-                <div className="classic-voxer-thread-empty">
-                  <div className="classic-voxer-thread-empty-icon">
-                    <Mic className="w-10 h-10" />
-                  </div>
-                  <h3>Start the conversation</h3>
-                  <p>Send your first voice message to {activeContact.displayName || activeContact.handle || 'this user'}</p>
-                </div>
+                <VoxEmptyState
+                  {...emptyConfig}
+                  isDarkMode={isDarkMode}
+                  action={{
+                    label: 'Start Recording',
+                    onClick: () => {
+                      if (!isRecording) startRecording();
+                    },
+                  }}
+                />
               ) : (
                 activeThreadRecordings.map(recording => (
                   <div
@@ -861,6 +1184,41 @@ const ClassicVoxerMode: React.FC<ClassicVoxerModeProps> = ({
                     className={`classic-voxer-message ${recording.sender === 'me' ? 'sent' : 'received'}`}
                   >
                     <div className="classic-voxer-message-content">
+                      {/* Selection mode checkbox */}
+                      {isSelectionMode && (
+                        <button
+                          type="button"
+                          onClick={(e) => {
+                            e.stopPropagation();
+                            const selectionItem: VoxSelectionItem = {
+                              id: recording.id,
+                              type: 'audio',
+                              url: recording.url,
+                              duration: recording.duration,
+                              timestamp: recording.timestamp,
+                              sender: recording.sender,
+                              transcript: recording.transcription,
+                              mode: 'classic',
+                              contactId: recording.contactId,
+                              contactName: activeContact?.displayName || activeContact?.handle,
+                            };
+                            toggleSelection(selectionItem);
+                          }}
+                          className={`absolute top-3 ${recording.sender === 'me' ? 'left-3' : 'right-3'} w-7 h-7 rounded-lg flex items-center justify-center transition-all shadow-lg hover:scale-110 active:scale-95 z-10 ${
+                            isSelected(recording.id)
+                              ? 'bg-orange-500 border-2 border-orange-600'
+                              : 'bg-white dark:bg-gray-700 border-2 border-gray-400 dark:border-gray-500'
+                          }`}
+                          style={{
+                            boxShadow: isSelected(recording.id)
+                              ? '0 4px 12px rgba(249, 115, 22, 0.4)'
+                              : '0 2px 8px rgba(0, 0, 0, 0.2)',
+                          }}
+                        >
+                          {isSelected(recording.id) && <Check className="w-5 h-5 text-white font-bold" />}
+                        </button>
+                      )}
+
                       {/* Playback controls */}
                       <button
                         type="button"
@@ -893,6 +1251,14 @@ const ClassicVoxerMode: React.FC<ClassicVoxerModeProps> = ({
                           ))}
                         </div>
                       </div>
+
+                      {/* Phase 6: Playback Speed Control */}
+                      <PlaybackSpeedControl
+                        speed={playbackSpeed}
+                        onSpeedChange={setPlaybackSpeed}
+                        isDarkMode={isDarkMode}
+                        compact={true}
+                      />
 
                     </div>
 
@@ -997,6 +1363,18 @@ const ClassicVoxerMode: React.FC<ClassicVoxerModeProps> = ({
                       </div>
                     )}
 
+                    {/* Chapter button for long messages */}
+                    {recording.duration >= 120 && recording.transcription && (
+                      <button
+                        type="button"
+                        onClick={() => handleGenerateChapters(recording)}
+                        className="text-xs text-cyan-600 dark:text-cyan-400 hover:underline mt-1 flex items-center gap-1"
+                      >
+                        <MessageCircle className="w-3 h-3" />
+                        Show Chapters
+                      </button>
+                    )}
+
                     {/* Meta info */}
                     <div className="classic-voxer-message-meta">
                       <span>{recording.timestamp.toLocaleTimeString([], { hour: '2-digit', minute: '2-digit' })}</span>
@@ -1042,19 +1420,21 @@ const ClassicVoxerMode: React.FC<ClassicVoxerModeProps> = ({
             {/* Recording Controls */}
             <div className="classic-voxer-controls">
               <div className="classic-voxer-ptt-container">
-                <PTTButton
-                  state={isRecording ? 'recording' : 'idle'}
-                  mode="audio"
-                  recordingMode="hold"
+                <RecordButton
+                  state={isRecording ? 'recording' : isPreviewing ? 'processing' : 'idle'}
+                  recordingMode={recordingMode}
                   duration={recordingDuration}
-                  audioLevel={audioLevel}
-                  onStart={startRecording}
-                  onStop={stopRecording}
+                  onPointerDown={startRecording}
+                  onPointerUp={stopRecording}
+                  onToggleRecording={toggleRecording}
+                  onModeToggle={() => setRecordingMode(mode => mode === 'hold' ? 'tap' : 'hold')}
+                  accentColor="#F97316"
                   size="xl"
+                  showModeToggle={true}
                   showTimer={true}
-                  showWaveform={true}
-                  color={accentColor}
                   isDarkMode={isDarkMode}
+                  mode="audio"
+                  audioLevel={audioLevel}
                 />
               </div>
             </div>
@@ -1342,6 +1722,114 @@ const ClassicVoxerMode: React.FC<ClassicVoxerModeProps> = ({
           </button>
         </div>
       )}
+
+      {/* Phase 2: Selection Toolbar */}
+      {isSelectionMode && (
+        <VoxSelectToolbar
+          selectedItems={selectedItems}
+          selectionCount={selectionCount}
+          totalDuration={getTotalDuration()}
+          onSelectAll={() => {
+            const allItems: VoxSelectionItem[] = activeThreadRecordings.map(rec => ({
+              id: rec.id,
+              type: 'audio' as const,
+              url: rec.url,
+              duration: rec.duration,
+              timestamp: rec.timestamp,
+              sender: rec.sender,
+              transcript: rec.transcription,
+              mode: 'classic' as const,
+              contactId: rec.contactId,
+              contactName: activeContact?.displayName || activeContact?.handle,
+            }));
+            selectAll(allItems);
+          }}
+          onDeselectAll={deselectAll}
+          onExitSelection={exitSelectionMode}
+          contactName={activeContact?.displayName || activeContact?.handle}
+          isDarkMode={isDarkMode}
+          accentColor="#F97316"
+          allSelected={selectionCount === activeThreadRecordings.length && activeThreadRecordings.length > 0}
+        />
+      )}
+
+      {/* Phase 5: AI Enhancement Panels */}
+
+      {/* Conversation Summary Modal */}
+      {conversationSummary && showSummary && (
+        <div className="fixed inset-0 bg-black/50 backdrop-blur-sm z-50 flex items-center justify-center p-4">
+          <div className="max-w-2xl w-full">
+            <VoxConversationSummary
+              summary={conversationSummary}
+              isDarkMode={isDarkMode}
+              accentColor="#A855F7"
+              onClose={() => setShowSummary(false)}
+            />
+          </div>
+        </div>
+      )}
+
+      {/* Smart Replies Panel */}
+      {smartReplies.length > 0 && (
+        <div className="fixed bottom-20 right-4 z-40 w-96">
+          <VoxSmartReplies
+            replies={smartReplies}
+            onSelectReply={handleSelectSmartReply}
+            isDarkMode={isDarkMode}
+            accentColor="#3B82F6"
+          />
+        </div>
+      )}
+
+      {/* Meeting Notes Modal */}
+      {meetingNotes && (
+        <div className="fixed inset-0 bg-black/50 backdrop-blur-sm z-50 flex items-center justify-center p-4">
+          <div className="max-w-3xl w-full max-h-[90vh] overflow-y-auto">
+            <VoxMeetingNotes
+              notes={meetingNotes}
+              isDarkMode={isDarkMode}
+              accentColor="#10B981"
+              onClose={() => setMeetingNotes(null)}
+            />
+          </div>
+        </div>
+      )}
+
+      {/* Auto-Chapters Panel */}
+      {activeChapters.length > 0 && chapterRecordingId && (
+        <div className="fixed bottom-4 left-4 right-4 z-40 max-w-2xl mx-auto">
+          <div className="relative">
+            <button
+              type="button"
+              onClick={() => {
+                setActiveChapters([]);
+                setChapterRecordingId(null);
+              }}
+              className="absolute -top-2 -right-2 z-10 w-8 h-8 rounded-full bg-cyan-500 text-white hover:bg-cyan-600 transition flex items-center justify-center shadow-lg"
+              title="Close chapters"
+            >
+              <X className="w-4 h-4" />
+            </button>
+            <VoxAutoChapters
+              chapters={activeChapters}
+              currentTime={0}
+              onSeek={(time) => {
+                // Implement seek functionality if needed
+                console.log('Seek to:', time);
+              }}
+              isDarkMode={isDarkMode}
+              accentColor="#06B6D4"
+            />
+          </div>
+        </div>
+      )}
+
+      {/* Phase 6: Keyboard Shortcuts Help Modal */}
+      <VoxKeyboardShortcutsHelp
+        isOpen={showShortcutsHelp}
+        onClose={() => setShowShortcutsHelp(false)}
+        isDarkMode={isDarkMode}
+      />
     </div>
   );
 };

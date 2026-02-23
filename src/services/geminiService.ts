@@ -279,6 +279,7 @@ Analyze the following comprehensive daily context which includes data from:
 - Active projects and outcomes
 - Recent journal entries and decisions
 - Contacts and communications
+- AI-powered task intelligence and recommendations
 
 Generate a highly personalized and actionable daily briefing that:
 1. Acknowledges the time of day appropriately
@@ -286,6 +287,9 @@ Generate a highly personalized and actionable daily briefing that:
 3. Provides specific, actionable suggestions with clear reasoning
 4. Prioritizes urgent matters but also surfaces important non-urgent items
 5. References specific data from the context (names, times, tasks, etc.)
+6. Suggests AI features that could help (e.g., "Break down 'Build dashboard' into subtasks with AI")
+7. Identifies workload imbalances and recommends redistributing tasks
+8. Warns about complex tasks without deadlines
 
 Context:
 ${context}`,
@@ -320,8 +324,9 @@ ${context}`,
                 properties: {
                   action: { type: Type.STRING, description: "What the user should do" },
                   reason: { type: Type.STRING, description: "Why this action is recommended based on the context" },
-                  type: { type: Type.STRING, enum: ["message", "event", "task", "email", "vox", "contact"] },
-                  priority: { type: Type.STRING, enum: ["urgent", "high", "medium", "low"] }
+                  type: { type: Type.STRING, enum: ["message", "event", "task", "email", "vox", "contact", "ai_assist"] },
+                  priority: { type: Type.STRING, enum: ["urgent", "high", "medium", "low"] },
+                  aiFeature: { type: Type.STRING, description: "Optional: Which AI feature to use (subtask_generation, prioritization, natural_language, etc.)" }
                 },
                 required: ["action", "reason", "type", "priority"]
               }
@@ -718,6 +723,201 @@ export const extractTaskFromMessage = async (apiKey: string, message: string, co
   }
 };
 
+export const parseNaturalLanguageTask = async (
+  apiKey: string,
+  input: string,
+  workspaceMembers: Array<{ name: string; id: string }> = []
+): Promise<{
+  title: string;
+  description?: string;
+  priority: 'low' | 'medium' | 'high' | 'urgent';
+  deadline?: string; // ISO date string
+  assigneeName?: string;
+  tags?: string[];
+  estimatedHours?: number;
+  dependencies?: string[];
+} | null> => {
+  const ai = new GoogleGenAI({ apiKey });
+
+  const memberNames = workspaceMembers.map(m => m.name).join(', ');
+
+  try {
+    const response = await ai.models.generateContent({
+      model: 'gemini-2.5-flash',
+      contents: `You are an expert task parser. Parse the following natural language input into a structured task.
+
+Available team members: ${memberNames || 'None specified'}
+
+Input: "${input}"
+
+Extract and return JSON with these fields:
+- title: (string, required) Brief task title (5-10 words max)
+- description: (string, optional) Additional details if provided
+- priority: (string) One of: urgent, high, medium, low
+  - urgent: uses words like "ASAP", "urgent", "critical", "emergency"
+  - high: uses "important", "soon", "priority"
+  - medium: default if no urgency indicated
+  - low: uses "when you can", "low priority", "eventually"
+- deadline: (string, optional) ISO date (YYYY-MM-DD) if date/time mentioned
+  - "today" = today's date
+  - "tomorrow" = tomorrow's date
+  - "next week" = 7 days from now
+  - "Friday" = next Friday
+  - Parse any explicit dates
+- assigneeName: (string, optional) If @mentioned or "assign to X"
+  - Match against available team members
+  - Return exact name from the list
+- tags: (string array, optional) Any hashtags or categories mentioned
+- estimatedHours: (number, optional) If duration/effort mentioned (e.g., "2 hour task")
+- dependencies: (string array, optional) If "after X" or "depends on Y" mentioned
+
+Return ONLY valid JSON, no explanations.`,
+      config: {
+        responseMimeType: "application/json",
+        responseSchema: {
+          type: Type.OBJECT,
+          properties: {
+            title: { type: Type.STRING },
+            description: { type: Type.STRING },
+            priority: { type: Type.STRING, enum: ['urgent', 'high', 'medium', 'low'] },
+            deadline: { type: Type.STRING },
+            assigneeName: { type: Type.STRING },
+            tags: { type: Type.ARRAY, items: { type: Type.STRING } },
+            estimatedHours: { type: Type.NUMBER },
+            dependencies: { type: Type.ARRAY, items: { type: Type.STRING } }
+          },
+          required: ["title", "priority"]
+        }
+      }
+    });
+
+    const parsed = JSON.parse(response.text || '{}');
+    return parsed.title ? parsed : null;
+  } catch (e) {
+    console.error('NL Task Parsing Error:', e);
+    return null;
+  }
+};
+
+export const parseNaturalLanguageTaskWithFallback = async (
+  apiKey: string,
+  input: string,
+  workspaceMembers: Array<{ name: string; id: string }> = []
+): Promise<ReturnType<typeof parseNaturalLanguageTask>> => {
+  const memberNames = workspaceMembers.map(m => m.name).join(', ');
+
+  return withFallback(
+    async () => parseNaturalLanguageTask(apiKey, input, workspaceMembers),
+    `Parse this into a task: "${input}". Available team: ${memberNames}. Return JSON with: title, description, priority (urgent/high/medium/low), deadline (ISO date), assigneeName, tags, estimatedHours.`,
+    'parseNaturalLanguageTask'
+  );
+};
+
+export const generateSubtasksFromTask = async (
+  apiKey: string,
+  taskTitle: string,
+  taskDescription?: string,
+  taskPriority?: string,
+  maxSubtasks: number = 8
+): Promise<Array<{
+  title: string;
+  estimatedHours?: number;
+  order: number;
+}> | null> => {
+  const ai = new GoogleGenAI({ apiKey });
+
+  try {
+    const contextInfo = [
+      `Task: ${taskTitle}`,
+      taskDescription ? `Description: ${taskDescription}` : '',
+      taskPriority ? `Priority: ${taskPriority}` : ''
+    ].filter(Boolean).join('\n');
+
+    const response = await ai.models.generateContent({
+      model: 'gemini-2.5-flash',
+      contents: `You are an expert project manager helping break down tasks into actionable subtasks.
+
+${contextInfo}
+
+Generate ${maxSubtasks} specific, actionable subtasks for completing this task. Each subtask should:
+- Be concrete and actionable (starts with a verb)
+- Be completable independently
+- Follow logical order (earlier tasks enable later ones)
+- Have realistic time estimates
+
+Return JSON array of subtasks with these fields:
+- title: (string) Clear, actionable subtask description (e.g., "Set up API endpoints", "Design dashboard layout")
+- estimatedHours: (number, optional) Estimated hours to complete (0.5 to 8 hours typical)
+- order: (number) Execution order (1 = first, ${maxSubtasks} = last)
+
+Example output:
+[
+  {"title": "Research dashboard requirements and user needs", "estimatedHours": 2, "order": 1},
+  {"title": "Create wireframes for dashboard layout", "estimatedHours": 3, "order": 2},
+  {"title": "Set up API endpoints for dashboard data", "estimatedHours": 4, "order": 3}
+]
+
+Return ONLY the JSON array, no explanations.`,
+      config: {
+        responseMimeType: "application/json",
+        responseSchema: {
+          type: Type.ARRAY,
+          items: {
+            type: Type.OBJECT,
+            properties: {
+              title: { type: Type.STRING },
+              estimatedHours: { type: Type.NUMBER },
+              order: { type: Type.NUMBER }
+            },
+            required: ["title", "order"]
+          }
+        }
+      }
+    });
+
+    const parsed = JSON.parse(response.text || '[]');
+    return Array.isArray(parsed) && parsed.length > 0 ? parsed : null;
+  } catch (e) {
+    console.error('Subtask Generation Error:', e);
+    return null;
+  }
+};
+
+export const generateSubtasksFromTaskWithFallback = async (
+  apiKey: string,
+  taskTitle: string,
+  taskDescription?: string,
+  taskPriority?: string,
+  maxSubtasks: number = 8
+): Promise<Array<{
+  title: string;
+  estimatedHours?: number;
+  order: number;
+}> | null> => {
+  try {
+    return await generateSubtasksFromTask(apiKey, taskTitle, taskDescription, taskPriority, maxSubtasks);
+  } catch (err) {
+    console.warn('[gemini:generateSubtasksFromTask] Primary call failed — trying Perplexity fallback', err);
+    if (!isPerplexityAvailable()) {
+      console.error('[gemini:generateSubtasksFromTask] No Perplexity key available.');
+      return null;
+    }
+    try {
+      const fallbackPrompt = `Break down this task into ${maxSubtasks} actionable subtasks: "${taskTitle}"${taskDescription ? '. ' + taskDescription : ''}. Return JSON array with objects containing: title (string), estimatedHours (number, optional), order (number). Return ONLY the JSON array, no explanations.`;
+      const text = await perplexityGenerateText(fallbackPrompt);
+      console.info('[gemini:generateSubtasksFromTask] Perplexity fallback succeeded.');
+
+      // Try to parse the response
+      const cleaned = text.replace(/```json/g, '').replace(/```/g, '').trim();
+      const parsed = JSON.parse(cleaned);
+      return Array.isArray(parsed) && parsed.length > 0 ? parsed : null;
+    } catch (fallbackErr) {
+      console.error('[gemini:generateSubtasksFromTask] Perplexity fallback also failed:', fallbackErr);
+      return null;
+    }
+  }
+};
+
 export const analyzeOutcomeProgress = async (apiKey: string, history: string, goal: string): Promise<{status: string, progress: number, blockers: string[]}> => {
   const ai = new GoogleGenAI({ apiKey });
   try {
@@ -955,7 +1155,7 @@ export const generateEmailDraft = async (
 
   const result = await withFallback(
     async () => {
-      const response = await fetch(`https://generativelanguage.googleapis.com/v1beta/models/gemini-2.0-flash:generateContent?key=${apiKey}`, {
+      const response = await fetch(`https://generativelanguage.googleapis.com/v1beta/models/gemini-2.5-flash:generateContent?key=${apiKey}`, {
         method: 'POST',
         headers: { 'Content-Type': 'application/json' },
         body: JSON.stringify({
@@ -999,7 +1199,7 @@ export const improveEmailText = async (
 
   return withFallback(
     async () => {
-      const response = await fetch(`https://generativelanguage.googleapis.com/v1beta/models/gemini-2.0-flash:generateContent?key=${apiKey}`, {
+      const response = await fetch(`https://generativelanguage.googleapis.com/v1beta/models/gemini-2.5-flash:generateContent?key=${apiKey}`, {
         method: 'POST',
         headers: { 'Content-Type': 'application/json' },
         body: JSON.stringify({
@@ -1030,7 +1230,7 @@ Return JSON array: ["suggestion 1", "suggestion 2", "suggestion 3"]`;
 
   const result = await withFallback(
     async () => {
-      const response = await fetch(`https://generativelanguage.googleapis.com/v1beta/models/gemini-2.0-flash:generateContent?key=${apiKey}`, {
+      const response = await fetch(`https://generativelanguage.googleapis.com/v1beta/models/gemini-2.5-flash:generateContent?key=${apiKey}`, {
         method: 'POST',
         headers: { 'Content-Type': 'application/json' },
         body: JSON.stringify({
@@ -1063,7 +1263,7 @@ export const summarizeText = async (apiKey: string, text: string): Promise<strin
 
   return withFallback(
     async () => {
-      const response = await fetch(`https://generativelanguage.googleapis.com/v1beta/models/gemini-2.0-flash-exp:generateContent?key=${apiKey}`, {
+      const response = await fetch(`https://generativelanguage.googleapis.com/v1beta/models/gemini-2.5-flash:generateContent?key=${apiKey}`, {
         method: 'POST',
         headers: { 'Content-Type': 'application/json' },
         body: JSON.stringify({
@@ -1082,7 +1282,7 @@ export const analyzeImage = async (apiKey: string, imageBase64: string, prompt: 
   if (!apiKey || !imageBase64) return null;
 
   try {
-    const response = await fetch(`https://generativelanguage.googleapis.com/v1beta/models/gemini-2.0-flash-exp:generateContent?key=${apiKey}`, {
+    const response = await fetch(`https://generativelanguage.googleapis.com/v1beta/models/gemini-2.5-flash:generateContent?key=${apiKey}`, {
       method: 'POST',
       headers: { 'Content-Type': 'application/json' },
       body: JSON.stringify({
@@ -1129,7 +1329,7 @@ export const generateEmbedding = async (apiKey: string, text: string): Promise<n
   }
 };
 
-export const processWithModel = async (apiKey: string, prompt: string, model: string = 'gemini-2.0-flash-exp'): Promise<string | null> => {
+export const processWithModel = async (apiKey: string, prompt: string, model: string = 'gemini-2.5-flash'): Promise<string | null> => {
   if (!apiKey || !prompt) return null;
 
   return withFallback(
@@ -1251,7 +1451,7 @@ export const secureGeminiService = {
     const sanitizedPrompt = sanitizationService.sanitizeText(prompt, { maxLength: 10000 });
 
     const result = await this.generateContent(
-      'gemini-2.0-flash',
+      'gemini-2.5-flash',
       sanitizedPrompt,
       {
         temperature: options?.temperature ?? 0.7,
@@ -1277,7 +1477,7 @@ export const geminiService = {
       try {
         const ai = new GoogleGenAI({ apiKey });
         const response = await ai.models.generateContent({
-          model: 'gemini-2.0-flash',
+          model: 'gemini-2.5-flash',
           contents: sanitizedPrompt,
           config: { temperature: options?.temperature ?? 0.7 },
         });

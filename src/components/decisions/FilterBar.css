@@ -1,0 +1,292 @@
+/* ═══════════════════════════════════════════════════════════════════════════
+   FILTER BAR - DECISIONS & TASKS
+   Enhanced filter controls with search, status, priority, and date range
+   ═══════════════════════════════════════════════════════════════════════════ */
+
+@import './design-tokens.css';
+
+/* ─────────────────────────────────────────────────────────────────────────
+   CONTAINER
+   ───────────────────────────────────────────────────────────────────────── */
+
+.filter-bar {
+  display: flex;
+  flex-direction: column;
+  gap: var(--dt-spacing-md);
+  padding: var(--dt-spacing-md);
+  background: var(--dt-bg-card);
+  border: 1px solid var(--dt-border);
+  border-radius: var(--dt-radius);
+  box-shadow: var(--dt-shadow-card);
+}
+
+/* ─────────────────────────────────────────────────────────────────────────
+   CONTROLS CONTAINER
+   ───────────────────────────────────────────────────────────────────────── */
+
+.filter-bar__controls {
+  display: flex;
+  flex-wrap: wrap;
+  gap: var(--dt-spacing-sm);
+  align-items: center;
+}
+
+/* ─────────────────────────────────────────────────────────────────────────
+   SEARCH INPUT
+   ───────────────────────────────────────────────────────────────────────── */
+
+.filter-bar__search {
+  position: relative;
+  flex: 1;
+  min-width: 200px;
+  max-width: 400px;
+}
+
+.filter-bar__search-icon {
+  position: absolute;
+  left: var(--dt-spacing-sm);
+  top: 50%;
+  transform: translateY(-50%);
+  color: var(--dt-text-muted);
+  pointer-events: none;
+}
+
+.filter-bar__search-input {
+  width: 100%;
+  padding: var(--dt-spacing-sm) var(--dt-spacing-sm) var(--dt-spacing-sm) 32px;
+  font-size: var(--dt-font-sm);
+  font-weight: var(--dt-font-weight-normal);
+  color: var(--dt-text-primary);
+  background: var(--dt-bg-primary);
+  border: 1px solid var(--dt-border);
+  border-radius: var(--dt-radius-sm);
+  transition: all var(--dt-transition-fast);
+}
+
+.filter-bar__search-input:hover {
+  border-color: var(--dt-text-muted);
+}
+
+.filter-bar__search-input:focus {
+  outline: none;
+  border-color: var(--dt-border-focus);
+  box-shadow: var(--dt-shadow-focus);
+}
+
+.filter-bar__search-input::placeholder {
+  color: var(--dt-text-muted);
+}
+
+/* ─────────────────────────────────────────────────────────────────────────
+   SELECT DROPDOWNS
+   ───────────────────────────────────────────────────────────────────────── */
+
+.filter-bar__select-wrapper {
+  position: relative;
+  display: flex;
+  align-items: center;
+  min-width: 150px;
+}
+
+.filter-bar__select-wrapper--date {
+  opacity: 0.5;
+  cursor: not-allowed;
+}
+
+.filter-bar__select-icon {
+  position: absolute;
+  left: var(--dt-spacing-sm);
+  color: var(--dt-text-muted);
+  pointer-events: none;
+  z-index: 1;
+}
+
+.filter-bar__select {
+  width: 100%;
+  padding: var(--dt-spacing-sm) 32px var(--dt-spacing-sm) var(--dt-spacing-sm);
+  font-size: var(--dt-font-sm);
+  font-weight: var(--dt-font-weight-medium);
+  color: var(--dt-text-primary);
+  background: var(--dt-bg-primary);
+  border: 1px solid var(--dt-border);
+  border-radius: var(--dt-radius-sm);
+  cursor: pointer;
+  transition: all var(--dt-transition-fast);
+  appearance: none;
+  -webkit-appearance: none;
+  -moz-appearance: none;
+}
+
+/* Add padding for status dropdown with icon */
+.filter-bar__select-wrapper:has(.filter-bar__select-icon) .filter-bar__select {
+  padding-left: 32px;
+}
+
+.filter-bar__select:hover:not(:disabled) {
+  border-color: var(--dt-text-muted);
+}
+
+.filter-bar__select:focus {
+  outline: none;
+  border-color: var(--dt-border-focus);
+  box-shadow: var(--dt-shadow-focus);
+}
+
+.filter-bar__select:disabled {
+  cursor: not-allowed;
+  opacity: 0.6;
+}
+
+.filter-bar__select-chevron {
+  position: absolute;
+  right: var(--dt-spacing-sm);
+  color: var(--dt-text-muted);
+  pointer-events: none;
+}
+
+/* ─────────────────────────────────────────────────────────────────────────
+   CLEAR FILTERS BUTTON
+   ───────────────────────────────────────────────────────────────────────── */
+
+.filter-bar__clear {
+  display: flex;
+  align-items: center;
+  gap: var(--dt-spacing-xs);
+  padding: var(--dt-spacing-sm) var(--dt-spacing-md);
+  font-size: var(--dt-font-sm);
+  font-weight: var(--dt-font-weight-medium);
+  color: var(--dt-text-secondary);
+  background: var(--dt-bg-primary);
+  border: 1px solid var(--dt-border);
+  border-radius: var(--dt-radius-sm);
+  cursor: pointer;
+  transition: all var(--dt-transition-fast);
+  white-space: nowrap;
+}
+
+.filter-bar__clear:hover {
+  color: var(--dt-accent);
+  border-color: var(--dt-accent);
+  background: var(--dt-bg-card-hover);
+}
+
+.filter-bar__clear:active {
+  transform: scale(0.98);
+}
+
+/* ─────────────────────────────────────────────────────────────────────────
+   ACTIVE FILTERS DISPLAY
+   ───────────────────────────────────────────────────────────────────────── */
+
+.filter-bar__active {
+  display: flex;
+  flex-wrap: wrap;
+  gap: var(--dt-spacing-sm);
+  align-items: center;
+  padding-top: var(--dt-spacing-xs);
+  border-top: 1px solid var(--dt-border-subtle);
+}
+
+.filter-bar__active-label {
+  font-size: var(--dt-font-xs);
+  font-weight: var(--dt-font-weight-semibold);
+  color: var(--dt-text-muted);
+  text-transform: uppercase;
+  letter-spacing: 0.5px;
+}
+
+.filter-bar__active-tag {
+  display: inline-flex;
+  align-items: center;
+  padding: var(--dt-spacing-xs) var(--dt-spacing-sm);
+  font-size: var(--dt-font-xs);
+  font-weight: var(--dt-font-weight-medium);
+  color: var(--dt-text-primary);
+  background: var(--dt-bg-secondary);
+  border: 1px solid var(--dt-border);
+  border-radius: var(--dt-radius-sm);
+}
+
+/* ─────────────────────────────────────────────────────────────────────────
+   RESPONSIVE DESIGN
+   ───────────────────────────────────────────────────────────────────────── */
+
+/* Tablet: Stack some controls */
+@media (max-width: 768px) {
+  .filter-bar__controls {
+    flex-direction: column;
+    align-items: stretch;
+  }
+
+  .filter-bar__search {
+    max-width: 100%;
+  }
+
+  .filter-bar__select-wrapper {
+    width: 100%;
+  }
+
+  .filter-bar__clear {
+    width: 100%;
+    justify-content: center;
+  }
+}
+
+/* Mobile: Full width stacking */
+@media (max-width: 480px) {
+  .filter-bar {
+    padding: var(--dt-spacing-sm);
+  }
+
+  .filter-bar__controls {
+    gap: var(--dt-spacing-xs);
+  }
+
+  .filter-bar__search {
+    min-width: 100%;
+  }
+
+  .filter-bar__active {
+    flex-direction: column;
+    align-items: flex-start;
+  }
+
+  .filter-bar__active-tag {
+    width: 100%;
+  }
+}
+
+/* ─────────────────────────────────────────────────────────────────────────
+   ACCESSIBILITY
+   ───────────────────────────────────────────────────────────────────────── */
+
+/* Focus visible for keyboard navigation */
+.filter-bar__search-input:focus-visible,
+.filter-bar__select:focus-visible,
+.filter-bar__clear:focus-visible {
+  outline: 2px solid var(--dt-border-focus);
+  outline-offset: 2px;
+}
+
+/* Reduced motion support */
+@media (prefers-reduced-motion: reduce) {
+  .filter-bar__search-input,
+  .filter-bar__select,
+  .filter-bar__clear,
+  .filter-bar__active-tag {
+    transition: none;
+  }
+}
+
+/* High contrast mode support */
+@media (prefers-contrast: high) {
+  .filter-bar {
+    border-width: 2px;
+  }
+
+  .filter-bar__search-input,
+  .filter-bar__select,
+  .filter-bar__clear {
+    border-width: 2px;
+  }
+}

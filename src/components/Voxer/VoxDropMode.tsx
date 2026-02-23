@@ -18,15 +18,39 @@ import {
   MapPin,
   Lock,
   Timer,
-  Square
+  Square,
+  Sparkles,
+  TrendingUp,
+  Loader2,
+  Download,
+  Archive,
 } from 'lucide-react';
 import VoxAudioVisualizer from './VoxAudioVisualizer';
 import RecordingPreview from './RecordingPreview';
 import RecordButton from './RecordButton';
+import VoxModeHeader from './VoxModeHeader';
 import { useVoxRecording } from '../../hooks/useVoxRecording';
 import { voxModeService } from '../../services/voxer/voxModeService';
 import type { VoxDrop } from '../../services/voxer/voxModeTypes';
 import './Voxer.css';
+
+// Phase 2: Selection Mode
+import { useVoxSelection, VoxSelectionItem } from '../../hooks/useVoxSelection';
+import { VoxSelectToolbar } from './VoxSelectToolbar';
+
+// Phase 5: AI Enhancements
+import { VoxConversationSummary, VoxSmartReplies } from './index';
+import { summarizeConversation, generateSmartReplies } from '../../services/voxer/voxerAIService';
+import type { ConversationSummary, SmartReply } from '../../services/voxer/voxerAIService';
+import toast from 'react-hot-toast';
+
+// Phase 6: Final Polish
+import { useVoxerKeyboardShortcuts } from '../../hooks/useVoxerKeyboardShortcuts';
+import { VoxKeyboardShortcutsHelp } from './VoxKeyboardShortcutsHelp';
+import { usePlaybackSpeed } from '../../hooks/usePlaybackSpeed';
+import { PlaybackSpeedControl } from './PlaybackSpeedControl';
+import { VoxEmptyState } from './VoxEmptyState';
+import { getEmptyStateConfig } from './voxEmptyStates';
 
 // Mode color for Vox Drop
 const MODE_COLOR = '#EF4444';
@@ -66,6 +90,32 @@ const VoxDropMode: React.FC<VoxDropModeProps> = ({
 
   const audioRef = useRef<HTMLAudioElement>(null);
 
+  // Phase 2: Selection Mode State
+  const {
+    isSelectionMode,
+    selectedItems,
+    selectionCount,
+    toggleSelection,
+    selectAll,
+    deselectAll,
+    enterSelectionMode,
+    exitSelectionMode,
+    isSelected,
+    getTotalDuration,
+  } = useVoxSelection();
+
+  // Phase 5: AI Enhancement States
+  const [showSummary, setShowSummary] = useState(false);
+  const [conversationSummary, setConversationSummary] = useState<ConversationSummary | null>(null);
+  const [showSmartReplies, setShowSmartReplies] = useState(false);
+  const [smartReplies, setSmartReplies] = useState<SmartReply[]>([]);
+  const [isGeneratingAI, setIsGeneratingAI] = useState(false);
+
+  // Phase 6: Final Polish States
+  const [showShortcutsHelp, setShowShortcutsHelp] = useState(false);
+  const { playbackSpeed: globalPlaybackSpeed, setPlaybackSpeed: setGlobalPlaybackSpeed, applyToElement } = usePlaybackSpeed();
+  const emptyConfig = getEmptyStateConfig('vox_drop');
+
   // Use the recording hook for click-to-record with preview
   const {
     state: recordingState,
@@ -87,13 +137,44 @@ const VoxDropMode: React.FC<VoxDropModeProps> = ({
     },
   });
 
-  const handleRecordToggle = () => {
-    if (recordingState === 'recording') {
-      stopRecording();
-    } else if (recordingState === 'idle') {
-      startRecording();
+  // Phase 6: Keyboard Shortcuts
+  useVoxerKeyboardShortcuts({
+    onToggleRecording: () => {
+      if (recordingState === 'idle') startRecording();
+      else if (recordingState === 'recording') stopRecording();
+    },
+    onStopRecording: () => {
+      if (recordingState === 'recording') stopRecording();
+    },
+    onGoBack: onBack,
+    onSwitchMode: (mode) => {
+      console.log('Switch to mode:', mode);
+    },
+    onDownload: () => {
+      if (isSelectionMode && selectionCount > 0) {
+        console.log('Download selected items');
+      }
+    },
+    onArchive: () => {
+      if (isSelectionMode && selectionCount > 0) {
+        console.log('Archive selected items');
+      }
+    },
+    onSummarize: handleSummarizeDrops,
+    onShowHelp: () => setShowShortcutsHelp(true),
+  }, true);
+
+  // Phase 6: Apply playback speed to audio elements
+  useEffect(() => {
+    if (audioRef.current) {
+      applyToElement(audioRef.current);
     }
-  };
+  }, [globalPlaybackSpeed, applyToElement]);
+
+  // Persist recording mode preference
+  useEffect(() => {
+    localStorage.setItem('voxer-recording-mode', recordingMode);
+  }, [recordingMode]);
 
   useEffect(() => {
     loadDrops();
@@ -112,6 +193,101 @@ const VoxDropMode: React.FC<VoxDropModeProps> = ({
     ]);
     setScheduledDrops(scheduled);
     setReceivedDrops(received);
+  };
+
+  // Phase 5: AI Handler Functions
+  const handleSummarizeDrops = async () => {
+    const drops = activeTab === 'scheduled' ? scheduledDrops : receivedDrops;
+    if (drops.length === 0) {
+      toast.error('No drops to summarize');
+      return;
+    }
+
+    setIsGeneratingAI(true);
+    try {
+      const messageData = drops.map(drop => ({
+        id: drop.id,
+        transcription: drop.message || '',
+        sender: drop.senderId === voxModeService.getUserId() ? 'me' : 'other',
+        senderName: drop.recipientIds.join(', '),
+        timestamp: drop.scheduledFor,
+        duration: drop.duration,
+      }));
+
+      const summary = await summarizeConversation('', messageData);
+      if (summary) {
+        setConversationSummary(summary);
+        setShowSummary(true);
+        toast.success('Drops summarized!');
+      } else {
+        toast.error('Failed to generate summary');
+      }
+    } catch (error) {
+      console.error('Summarization error:', error);
+      toast.error('Failed to generate summary');
+    } finally {
+      setIsGeneratingAI(false);
+    }
+  };
+
+  const handleGenerateSmartReplies = async () => {
+    const recentDrops = receivedDrops.slice(-5);
+    if (recentDrops.length === 0) {
+      toast.error('No drops to analyze');
+      return;
+    }
+
+    setIsGeneratingAI(true);
+    try {
+      const lastDrop = recentDrops[recentDrops.length - 1];
+      const context = recentDrops.map(drop => ({
+        id: drop.id,
+        transcription: drop.message || '',
+        sender: drop.senderId === voxModeService.getUserId() ? 'me' : 'other',
+        senderName: drop.recipientIds.join(', '),
+        timestamp: drop.scheduledFor,
+        duration: drop.duration,
+      }));
+
+      const replies = await generateSmartReplies('', {
+        id: lastDrop.id,
+        transcription: lastDrop.message || '',
+        sender: lastDrop.senderId === voxModeService.getUserId() ? 'me' : 'other',
+        senderName: lastDrop.recipientIds.join(', '),
+        timestamp: lastDrop.scheduledFor,
+        duration: lastDrop.duration,
+      }, context);
+
+      if (replies.length > 0) {
+        setSmartReplies(replies);
+        setShowSmartReplies(true);
+        toast.success('Smart replies generated!');
+      } else {
+        toast.error('Failed to generate smart replies');
+      }
+    } catch (error) {
+      console.error('Smart replies error:', error);
+      toast.error('Failed to generate smart replies');
+    } finally {
+      setIsGeneratingAI(false);
+    }
+  };
+
+  const handleSelectAllDrops = () => {
+    const drops = activeTab === 'scheduled' ? scheduledDrops : receivedDrops;
+    const allItems: VoxSelectionItem[] = drops.map(drop => ({
+      id: drop.id,
+      type: 'audio' as const,
+      url: drop.audioUrl,
+      duration: drop.duration,
+      timestamp: drop.scheduledFor,
+      sender: drop.senderId === voxModeService.getUserId() ? 'me' : 'other',
+      transcript: drop.message,
+      mode: 'vox_drop' as const,
+      contactId: drop.recipientIds[0],
+      contactName: drop.title || 'Vox Drop',
+    }));
+    selectAll(allItems);
   };
 
   const handlePlayDrop = (drop: VoxDrop) => {
@@ -267,47 +443,73 @@ const VoxDropMode: React.FC<VoxDropModeProps> = ({
   return (
     <div className={`h-full flex flex-col ${tc.pageBg}`}>
       {/* Header */}
-      <div
-        className={`px-4 md:px-6 py-4 border-b ${tc.border} ${tc.panelBg}`}
-        style={{
-          background: isDarkMode
-            ? `linear-gradient(135deg, rgba(239,68,68,0.15) 0%, transparent 50%)`
-            : `linear-gradient(135deg, rgba(239,68,68,0.1) 0%, transparent 50%)`
-        }}
-      >
-        <div className="flex items-center gap-3 md:gap-4">
-          <button
-            onClick={onBack}
-            className={`p-2 rounded-xl ${tc.btnGhost} transition-all duration-200`}
-            aria-label="Go back"
-          >
-            <ChevronLeft className="w-5 h-5" />
-          </button>
+      <VoxModeHeader
+        modeName="Vox Drop"
+        modeTagline="Drop a voice note"
+        modeColor="#EF4444"
+        modeIcon={Gift}
+        onBack={onBack}
+        isDarkMode={isDarkMode}
+        actions={
+          <>
+            {/* Phase 5: AI Enhancement Buttons */}
+            <div className="flex items-center gap-2 border-r border-red-500/30 pr-2 mr-2">
+              <button
+                type="button"
+                onClick={handleSummarizeDrops}
+                disabled={(activeTab === 'scheduled' ? scheduledDrops.length : receivedDrops.length) === 0 || isGeneratingAI}
+                className="px-3 py-1.5 rounded-lg bg-purple-500 text-white text-xs font-medium hover:bg-purple-600 transition disabled:opacity-50 disabled:cursor-not-allowed"
+                title="AI Summarize Drops"
+              >
+                {isGeneratingAI ? <Loader2 className="w-3 h-3 animate-spin" /> : <Sparkles className="w-3 h-3" />}
+                <span className="ml-1.5 hidden md:inline">Summarize</span>
+              </button>
 
-          <div
-            className="p-2.5 rounded-xl shadow-lg"
-            style={{
-              background: `linear-gradient(135deg, ${MODE_COLOR} 0%, #ec4899 100%)`,
-              boxShadow: `0 8px 24px ${MODE_COLOR}40`
-            }}
-          >
-            <Clock className="w-5 h-5 md:w-6 md:h-6 text-white" />
-          </div>
+              <button
+                type="button"
+                onClick={handleGenerateSmartReplies}
+                disabled={isGeneratingAI || receivedDrops.length === 0}
+                className="px-3 py-1.5 rounded-lg bg-blue-500 text-white text-xs font-medium hover:bg-blue-600 transition disabled:opacity-50 disabled:cursor-not-allowed"
+                title="Generate Smart Replies"
+              >
+                {isGeneratingAI ? <Loader2 className="w-3 h-3 animate-spin" /> : <TrendingUp className="w-3 h-3" />}
+                <span className="ml-1.5 hidden md:inline">Quick Reply</span>
+              </button>
 
-          <div className="flex-1 min-w-0">
-            <h1 className={`text-lg md:text-xl font-bold ${tc.text}`}>Vox Drop</h1>
-            <p className={`text-xs md:text-sm ${tc.textSecondary} hidden sm:block`}>Messages From the Future</p>
-          </div>
+              {/* Phase 2: Selection Mode Button */}
+              <button
+                type="button"
+                onClick={(e) => {
+                  e.preventDefault();
+                  e.stopPropagation();
+                  if (isSelectionMode) {
+                    exitSelectionMode();
+                  } else {
+                    enterSelectionMode();
+                  }
+                }}
+                style={{
+                  background: isSelectionMode ? '#EF4444' : undefined,
+                  color: isSelectionMode ? 'white' : undefined,
+                }}
+                className="p-2 rounded-lg hover:bg-red-500/20 transition"
+                title="Select drops"
+              >
+                {isSelectionMode ? <X className="w-4 h-4" /> : <Square className="w-4 h-4" />}
+              </button>
+            </div>
 
-          <button
-            onClick={() => setShowNewDrop(true)}
-            className={`flex items-center gap-2 px-3 md:px-4 py-2 rounded-xl text-sm font-medium transition-all duration-200 ${tc.btnPrimary}`}
-          >
-            <Plus className="w-4 h-4" />
-            <span className="hidden sm:inline">Schedule Drop</span>
-          </button>
-        </div>
-      </div>
+            <button
+              onClick={() => setShowNewDrop(true)}
+              className="flex items-center gap-2 px-4 py-2 rounded-xl text-sm font-medium bg-red-500/20 hover:bg-red-500/30 text-red-300 border border-red-500/30 transition-all"
+              title="Create new drop"
+            >
+              <Plus className="w-4 h-4" />
+              <span className="hidden sm:inline">New Drop</span>
+            </button>
+          </>
+        }
+      />
 
       {/* Tabs */}
       <div className={`px-4 md:px-6 py-3 border-b ${tc.border} ${tc.cardBg}`}>
@@ -341,30 +543,72 @@ const VoxDropMode: React.FC<VoxDropModeProps> = ({
       <div className="flex-1 overflow-y-auto p-4 md:p-6">
         {activeTab === 'scheduled' ? (
           <div className="space-y-4">
-            {scheduledDrops.map((drop) => (
-              <div
-                key={drop.id}
-                className={`p-4 rounded-2xl border transition-all group ${tc.cardBg} ${tc.border} hover:border-red-500/30`}
-              >
-                <div className="flex items-start gap-3 md:gap-4">
-                  {/* Play Button */}
-                  <button
-                    onClick={() => handlePlayDrop(drop)}
-                    className="w-11 h-11 md:w-12 md:h-12 rounded-xl flex items-center justify-center shrink-0 transition-all duration-200"
-                    style={{
-                      background: playingDropId === drop.id && isPlaying
-                        ? MODE_COLOR
-                        : isDarkMode ? 'rgba(55,65,81,0.5)' : 'rgba(229,231,235,0.8)',
-                      boxShadow: playingDropId === drop.id && isPlaying ? `0 4px 12px ${MODE_COLOR}50` : 'none'
-                    }}
-                    aria-label={playingDropId === drop.id && isPlaying ? 'Pause' : 'Play'}
-                  >
-                    {playingDropId === drop.id && isPlaying ? (
-                      <Pause className="w-5 h-5 text-white" />
-                    ) : (
-                      <Play className="w-5 h-5 text-white ml-0.5" />
-                    )}
-                  </button>
+            {scheduledDrops.length === 0 ? (
+              <VoxEmptyState
+                {...emptyConfig}
+                isDarkMode={isDarkMode}
+                action={{ label: 'Create Drop', onClick: () => setShowNewDrop(true) }}
+              />
+            ) : (
+              scheduledDrops.map((drop) => (
+                <div
+                  key={drop.id}
+                  className={`p-4 rounded-2xl border transition-all group relative ${tc.cardBg} ${tc.border} hover:border-red-500/30`}
+                >
+                  {/* Phase 2: Selection Checkbox */}
+                  {isSelectionMode && (
+                    <button
+                      type="button"
+                      onClick={(e) => {
+                        e.stopPropagation();
+                        const selectionItem: VoxSelectionItem = {
+                          id: drop.id,
+                          type: 'audio' as const,
+                          url: drop.audioUrl,
+                          duration: drop.duration,
+                          timestamp: drop.scheduledFor,
+                          sender: drop.senderId === voxModeService.getUserId() ? 'me' : 'other',
+                          transcript: drop.message,
+                          mode: 'vox_drop' as const,
+                          contactId: drop.recipientIds[0],
+                          contactName: drop.title || 'Vox Drop',
+                        };
+                        toggleSelection(selectionItem);
+                      }}
+                      className={`absolute top-3 right-3 w-7 h-7 rounded-lg flex items-center justify-center transition-all shadow-lg hover:scale-110 active:scale-95 z-10 ${
+                        isSelected(drop.id)
+                          ? 'bg-red-500 border-2 border-red-600'
+                          : 'bg-white dark:bg-gray-700 border-2 border-gray-400 dark:border-gray-500'
+                      }`}
+                      style={{
+                        boxShadow: isSelected(drop.id)
+                          ? '0 4px 12px rgba(239, 68, 68, 0.4)'
+                          : '0 2px 8px rgba(0, 0, 0, 0.2)',
+                      }}
+                    >
+                      {isSelected(drop.id) && <Check className="w-5 h-5 text-white font-bold" />}
+                    </button>
+                  )}
+
+                  <div className="flex items-start gap-3 md:gap-4">
+                    {/* Play Button */}
+                    <button
+                      onClick={() => handlePlayDrop(drop)}
+                      className="w-11 h-11 md:w-12 md:h-12 rounded-xl flex items-center justify-center shrink-0 transition-all duration-200"
+                      style={{
+                        background: playingDropId === drop.id && isPlaying
+                          ? MODE_COLOR
+                          : isDarkMode ? 'rgba(55,65,81,0.5)' : 'rgba(229,231,235,0.8)',
+                        boxShadow: playingDropId === drop.id && isPlaying ? `0 4px 12px ${MODE_COLOR}50` : 'none'
+                      }}
+                      aria-label={playingDropId === drop.id && isPlaying ? 'Pause' : 'Play'}
+                    >
+                      {playingDropId === drop.id && isPlaying ? (
+                        <Pause className="w-5 h-5 text-white" />
+                      ) : (
+                        <Play className="w-5 h-5 text-white ml-0.5" />
+                      )}
+                    </button>
 
                   <div className="flex-1 min-w-0">
                     {/* Title & Status */}
@@ -436,23 +680,38 @@ const VoxDropMode: React.FC<VoxDropModeProps> = ({
 
                 {/* Waveform for playing */}
                 {playingDropId === drop.id && (
-                  <div className="mt-4">
-                    <VoxAudioVisualizer
-                      analyser={null}
-                      isActive={false}
-                      isPlaying={isPlaying}
-                      playbackProgress={playbackProgress}
-                      mode="waveform"
-                      color={MODE_COLOR}
-                      height={40}
+                  <div className="mt-4 flex items-center gap-3">
+                    <div className="flex-1">
+                      <VoxAudioVisualizer
+                        analyser={null}
+                        isActive={false}
+                        isPlaying={isPlaying}
+                        playbackProgress={playbackProgress}
+                        mode="waveform"
+                        color={MODE_COLOR}
+                        height={40}
+                        isDarkMode={isDarkMode}
+                      />
+                    </div>
+                    {/* Phase 6: Playback Speed Control */}
+                    <PlaybackSpeedControl
+                      speed={globalPlaybackSpeed}
+                      onSpeedChange={(newSpeed) => {
+                        setGlobalPlaybackSpeed(newSpeed);
+                        if (audioRef.current) audioRef.current.playbackRate = newSpeed;
+                      }}
                       isDarkMode={isDarkMode}
+                      compact={true}
                     />
                   </div>
                 )}
               </div>
-            ))}
-
-            {scheduledDrops.length === 0 && (
+            ))
+            )}
+          </div>
+        ) : (
+          <div className="space-y-4">
+            {receivedDrops.length === 0 ? (
               <div className={`text-center py-12 ${tc.textMuted}`}>
                 <div
                   className="w-16 h-16 rounded-2xl mx-auto mb-4 flex items-center justify-center"
@@ -461,45 +720,77 @@ const VoxDropMode: React.FC<VoxDropModeProps> = ({
                     border: `1px solid ${MODE_COLOR}30`
                   }}
                 >
-                  <Clock className="w-8 h-8" style={{ color: MODE_COLOR, opacity: 0.6 }} />
+                  <Gift className="w-8 h-8" style={{ color: MODE_COLOR, opacity: 0.6 }} />
                 </div>
-                <p className={tc.text}>No scheduled drops</p>
-                <p className={`text-sm mt-1 ${tc.textSecondary}`}>Create a time capsule for someone special</p>
+                <p className={tc.text}>No received drops yet</p>
+                <p className={`text-sm mt-1 ${tc.textSecondary}`}>Time capsules from others will appear here</p>
               </div>
-            )}
-          </div>
-        ) : (
-          <div className="space-y-4">
-            {receivedDrops.map((drop) => (
-              <div
-                key={drop.id}
-                className="p-4 rounded-2xl border transition-all group"
-                style={{
-                  background: `linear-gradient(135deg, ${MODE_COLOR}10 0%, rgba(236,72,153,0.1) 100%)`,
-                  borderColor: `${MODE_COLOR}30`
-                }}
-              >
-                <div className="flex items-start gap-3 md:gap-4">
-                  {/* Gift Icon / Play */}
-                  <button
-                    onClick={() => handlePlayDrop(drop)}
-                    className="w-11 h-11 md:w-12 md:h-12 rounded-xl flex items-center justify-center shrink-0 transition-all duration-200"
-                    style={{
-                      background: playingDropId === drop.id && isPlaying
-                        ? MODE_COLOR
-                        : `${MODE_COLOR}30`,
-                      boxShadow: playingDropId === drop.id && isPlaying ? `0 4px 12px ${MODE_COLOR}50` : 'none'
-                    }}
-                    aria-label={playingDropId === drop.id && isPlaying ? 'Pause' : 'Play'}
-                  >
-                    {drop.status === 'delivered' ? (
-                      <Gift className="w-5 h-5" style={{ color: MODE_COLOR }} />
-                    ) : playingDropId === drop.id && isPlaying ? (
-                      <Pause className="w-5 h-5 text-white" />
-                    ) : (
-                      <Play className="w-5 h-5 text-white ml-0.5" />
-                    )}
-                  </button>
+            ) : (
+              receivedDrops.map((drop) => (
+                <div
+                  key={drop.id}
+                  className="p-4 rounded-2xl border transition-all group relative"
+                  style={{
+                    background: `linear-gradient(135deg, ${MODE_COLOR}10 0%, rgba(236,72,153,0.1) 100%)`,
+                    borderColor: `${MODE_COLOR}30`
+                  }}
+                >
+                  {/* Phase 2: Selection Checkbox */}
+                  {isSelectionMode && (
+                    <button
+                      type="button"
+                      onClick={(e) => {
+                        e.stopPropagation();
+                        const selectionItem: VoxSelectionItem = {
+                          id: drop.id,
+                          type: 'audio' as const,
+                          url: drop.audioUrl,
+                          duration: drop.duration,
+                          timestamp: drop.scheduledFor,
+                          sender: drop.senderId === voxModeService.getUserId() ? 'me' : 'other',
+                          transcript: drop.message,
+                          mode: 'vox_drop' as const,
+                          contactId: drop.recipientIds[0],
+                          contactName: drop.title || 'Vox Drop',
+                        };
+                        toggleSelection(selectionItem);
+                      }}
+                      className={`absolute top-3 right-3 w-7 h-7 rounded-lg flex items-center justify-center transition-all shadow-lg hover:scale-110 active:scale-95 z-10 ${
+                        isSelected(drop.id)
+                          ? 'bg-red-500 border-2 border-red-600'
+                          : 'bg-white dark:bg-gray-700 border-2 border-gray-400 dark:border-gray-500'
+                      }`}
+                      style={{
+                        boxShadow: isSelected(drop.id)
+                          ? '0 4px 12px rgba(239, 68, 68, 0.4)'
+                          : '0 2px 8px rgba(0, 0, 0, 0.2)',
+                      }}
+                    >
+                      {isSelected(drop.id) && <Check className="w-5 h-5 text-white font-bold" />}
+                    </button>
+                  )}
+
+                  <div className="flex items-start gap-3 md:gap-4">
+                    {/* Gift Icon / Play */}
+                    <button
+                      onClick={() => handlePlayDrop(drop)}
+                      className="w-11 h-11 md:w-12 md:h-12 rounded-xl flex items-center justify-center shrink-0 transition-all duration-200"
+                      style={{
+                        background: playingDropId === drop.id && isPlaying
+                          ? MODE_COLOR
+                          : `${MODE_COLOR}30`,
+                        boxShadow: playingDropId === drop.id && isPlaying ? `0 4px 12px ${MODE_COLOR}50` : 'none'
+                      }}
+                      aria-label={playingDropId === drop.id && isPlaying ? 'Pause' : 'Play'}
+                    >
+                      {drop.status === 'delivered' ? (
+                        <Gift className="w-5 h-5" style={{ color: MODE_COLOR }} />
+                      ) : playingDropId === drop.id && isPlaying ? (
+                        <Pause className="w-5 h-5 text-white" />
+                      ) : (
+                        <Play className="w-5 h-5 text-white ml-0.5" />
+                      )}
+                    </button>
 
                   <div className="flex-1 min-w-0">
                     <h3 className={`font-semibold mb-1 ${tc.text}`}>
@@ -515,36 +806,33 @@ const VoxDropMode: React.FC<VoxDropModeProps> = ({
                 </div>
 
                 {playingDropId === drop.id && (
-                  <div className="mt-4">
-                    <VoxAudioVisualizer
-                      analyser={null}
-                      isActive={false}
-                      isPlaying={isPlaying}
-                      playbackProgress={playbackProgress}
-                      mode="waveform"
-                      color={MODE_COLOR}
-                      height={40}
+                  <div className="mt-4 flex items-center gap-3">
+                    <div className="flex-1">
+                      <VoxAudioVisualizer
+                        analyser={null}
+                        isActive={false}
+                        isPlaying={isPlaying}
+                        playbackProgress={playbackProgress}
+                        mode="waveform"
+                        color={MODE_COLOR}
+                        height={40}
+                        isDarkMode={isDarkMode}
+                      />
+                    </div>
+                    {/* Phase 6: Playback Speed Control */}
+                    <PlaybackSpeedControl
+                      speed={globalPlaybackSpeed}
+                      onSpeedChange={(newSpeed) => {
+                        setGlobalPlaybackSpeed(newSpeed);
+                        if (audioRef.current) audioRef.current.playbackRate = newSpeed;
+                      }}
                       isDarkMode={isDarkMode}
+                      compact={true}
                     />
                   </div>
                 )}
               </div>
-            ))}
-
-            {receivedDrops.length === 0 && (
-              <div className={`text-center py-12 ${tc.textMuted}`}>
-                <div
-                  className="w-16 h-16 rounded-2xl mx-auto mb-4 flex items-center justify-center"
-                  style={{
-                    background: `linear-gradient(135deg, ${MODE_COLOR}20 0%, ${MODE_COLOR}10 100%)`,
-                    border: `1px solid ${MODE_COLOR}30`
-                  }}
-                >
-                  <Gift className="w-8 h-8" style={{ color: MODE_COLOR, opacity: 0.6 }} />
-                </div>
-                <p className={tc.text}>No received drops yet</p>
-                <p className={`text-sm mt-1 ${tc.textSecondary}`}>Time capsules from others will appear here</p>
-              </div>
+            ))
             )}
           </div>
         )}
@@ -827,6 +1115,63 @@ const VoxDropMode: React.FC<VoxDropModeProps> = ({
           </div>
         </div>
       )}
+
+      {/* Phase 2: Selection Toolbar */}
+      {isSelectionMode && (
+        <VoxSelectToolbar
+          selectedItems={selectedItems}
+          selectionCount={selectionCount}
+          totalDuration={getTotalDuration()}
+          onSelectAll={handleSelectAllDrops}
+          onDeselectAll={deselectAll}
+          onExitSelection={exitSelectionMode}
+          contactName="Vox Drops"
+          isDarkMode={isDarkMode}
+          accentColor={MODE_COLOR}
+          allSelected={selectionCount === (activeTab === 'scheduled' ? scheduledDrops.length : receivedDrops.length) && (activeTab === 'scheduled' ? scheduledDrops.length : receivedDrops.length) > 0}
+        />
+      )}
+
+      {/* Phase 5: AI Enhancement Modals */}
+
+      {/* Conversation Summary Modal */}
+      {conversationSummary && showSummary && (
+        <div className="fixed inset-0 bg-black/50 backdrop-blur-sm z-50 flex items-center justify-center p-4">
+          <div className="max-w-2xl w-full">
+            <VoxConversationSummary
+              summary={conversationSummary}
+              isDarkMode={isDarkMode}
+              accentColor={MODE_COLOR}
+              onClose={() => setShowSummary(false)}
+            />
+          </div>
+        </div>
+      )}
+
+      {/* Smart Replies Panel */}
+      {smartReplies.length > 0 && showSmartReplies && (
+        <div className="fixed bottom-20 right-4 z-40 w-96">
+          <VoxSmartReplies
+            replies={smartReplies}
+            onSelectReply={(reply) => {
+              navigator.clipboard.writeText(reply.text);
+              toast.success('Smart reply copied! Use it in your next message.');
+              setSmartReplies([]);
+              setShowSmartReplies(false);
+            }}
+            onClose={() => setShowSmartReplies(false)}
+            isDarkMode={isDarkMode}
+            accentColor={MODE_COLOR}
+          />
+        </div>
+      )}
+
+      {/* Phase 6: Keyboard Shortcuts Help Modal */}
+      <VoxKeyboardShortcutsHelp
+        isOpen={showShortcutsHelp}
+        onClose={() => setShowShortcutsHelp(false)}
+        isDarkMode={isDarkMode}
+      />
     </div>
   );
 };

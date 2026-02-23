@@ -1,0 +1,262 @@
+/**
+ * TaskActivityFeed Styles
+ * Timeline component for task activity history
+ */
+
+@import './design-tokens.css';
+
+/* ─────────────────────────────────────────────────────────────────────────
+   FEED CONTAINER
+   ───────────────────────────────────────────────────────────────────────── */
+
+.activity-feed {
+  display: flex;
+  flex-direction: column;
+  gap: var(--dt-spacing-lg);
+  width: 100%;
+}
+
+.activity-feed-title {
+  font-size: var(--dt-font-lg);
+  font-weight: var(--dt-font-weight-semibold);
+  color: var(--dt-text-primary);
+  margin: 0;
+}
+
+/* ─────────────────────────────────────────────────────────────────────────
+   DATE GROUPING
+   ───────────────────────────────────────────────────────────────────────── */
+
+.activity-date-group {
+  display: flex;
+  flex-direction: column;
+  gap: var(--dt-spacing-md);
+}
+
+.activity-date-label {
+  font-size: var(--dt-font-sm);
+  font-weight: var(--dt-font-weight-semibold);
+  color: var(--dt-text-secondary);
+  text-transform: uppercase;
+  letter-spacing: 0.5px;
+}
+
+/* ─────────────────────────────────────────────────────────────────────────
+   TIMELINE
+   ───────────────────────────────────────────────────────────────────────── */
+
+.activity-timeline {
+  position: relative;
+  padding-left: var(--dt-spacing-xl);
+  list-style: none;
+  margin: 0;
+}
+
+/* Timeline vertical line */
+.activity-timeline::before {
+  content: '';
+  position: absolute;
+  left: 8px;
+  top: 0;
+  bottom: 0;
+  width: 2px;
+  background: var(--dt-border);
+}
+
+/* ─────────────────────────────────────────────────────────────────────────
+   ACTIVITY ITEMS
+   ───────────────────────────────────────────────────────────────────────── */
+
+.activity-item {
+  position: relative;
+  display: flex;
+  flex-direction: column;
+  gap: var(--dt-spacing-xs);
+  padding-bottom: var(--dt-spacing-md);
+  margin: 0;
+}
+
+.activity-item:last-child {
+  padding-bottom: 0;
+}
+
+/* ─────────────────────────────────────────────────────────────────────────
+   ACTIVITY ICONS
+   ───────────────────────────────────────────────────────────────────────── */
+
+.activity-icon {
+  position: absolute;
+  left: -26px;
+  top: 2px;
+  width: 20px;
+  height: 20px;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  background: var(--dt-bg-card);
+  border: 2px solid var(--dt-border);
+  border-radius: 50%;
+  color: var(--dt-text-secondary);
+  z-index: 1;
+  transition: all var(--dt-transition-fast);
+}
+
+/* Icon type variants */
+.activity-icon.created {
+  border-color: var(--dt-status-done);
+  color: var(--dt-status-done);
+  background: var(--dt-status-bg-done);
+}
+
+.activity-icon.status-changed {
+  border-color: var(--dt-accent);
+  color: var(--dt-accent);
+  background: rgba(225, 29, 72, 0.05);
+}
+
+.activity-icon.subtask-completed {
+  border-color: var(--dt-status-done);
+  color: var(--dt-status-done);
+  background: var(--dt-status-bg-done);
+}
+
+.activity-icon.blocked {
+  border-color: var(--dt-status-blocked);
+  color: var(--dt-status-blocked);
+  background: var(--dt-status-bg-blocked);
+}
+
+.activity-icon.deleted {
+  border-color: var(--dt-status-overdue);
+  color: var(--dt-status-overdue);
+  background: var(--dt-status-bg-overdue);
+}
+
+/* ─────────────────────────────────────────────────────────────────────────
+   ACTIVITY CONTENT
+   ───────────────────────────────────────────────────────────────────────── */
+
+.activity-content {
+  font-size: var(--dt-font-sm);
+  color: var(--dt-text-primary);
+  line-height: 1.5;
+}
+
+.activity-user {
+  font-weight: var(--dt-font-weight-semibold);
+  color: var(--dt-text-primary);
+}
+
+.activity-value {
+  font-weight: var(--dt-font-weight-medium);
+  color: var(--dt-accent);
+  padding: 1px 4px;
+  background: rgba(225, 29, 72, 0.05);
+  border-radius: 3px;
+}
+
+.activity-timestamp {
+  font-size: var(--dt-font-xs);
+  color: var(--dt-text-muted);
+  display: block;
+}
+
+/* ─────────────────────────────────────────────────────────────────────────
+   LOADING & EMPTY STATES
+   ───────────────────────────────────────────────────────────────────────── */
+
+.activity-feed-loading,
+.activity-feed-error {
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  gap: var(--dt-spacing-sm);
+  padding: var(--dt-spacing-xl);
+  color: var(--dt-text-muted);
+  font-size: var(--dt-font-sm);
+}
+
+.activity-feed-loading .spinner {
+  animation: spin 1s linear infinite;
+}
+
+@keyframes spin {
+  from {
+    transform: rotate(0deg);
+  }
+  to {
+    transform: rotate(360deg);
+  }
+}
+
+.activity-feed-error {
+  color: var(--dt-status-overdue);
+  background: var(--dt-status-bg-overdue);
+  border-radius: var(--dt-radius);
+}
+
+.activity-empty {
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  justify-content: center;
+  gap: var(--dt-spacing-sm);
+  padding: var(--dt-spacing-xl);
+  text-align: center;
+  color: var(--dt-text-muted);
+}
+
+.activity-empty svg {
+  opacity: 0.3;
+}
+
+.activity-empty p {
+  font-size: var(--dt-font-sm);
+  margin: 0;
+}
+
+/* ─────────────────────────────────────────────────────────────────────────
+   RESPONSIVE
+   ───────────────────────────────────────────────────────────────────────── */
+
+@media (max-width: 640px) {
+  .activity-timeline {
+    padding-left: var(--dt-spacing-lg);
+  }
+
+  .activity-icon {
+    left: -22px;
+    width: 18px;
+    height: 18px;
+  }
+
+  .activity-icon svg {
+    width: 12px;
+    height: 12px;
+  }
+}
+
+/* ─────────────────────────────────────────────────────────────────────────
+   ACCESSIBILITY
+   ───────────────────────────────────────────────────────────────────────── */
+
+@media (prefers-reduced-motion: reduce) {
+  .activity-icon {
+    transition: none;
+  }
+
+  .activity-feed-loading .spinner {
+    animation: none;
+  }
+}
+
+/* High contrast mode */
+@media (prefers-contrast: high) {
+  .activity-icon {
+    border-width: 3px;
+  }
+
+  .activity-timeline::before {
+    width: 3px;
+  }
+}
