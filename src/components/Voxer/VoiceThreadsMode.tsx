@@ -52,7 +52,7 @@ import RecordingPreview from './RecordingPreview';
 import { useVoxRecording } from '../../hooks/useVoxRecording';
 import { voxModeService } from '../../services/voxer/voxModeService';
 import VoxModeHeader from './VoxModeHeader';
-import RecordButton from './RecordButton';
+import VoxRecordArea from './VoxRecordArea';
 import analyticsCollector from '../../services/analyticsCollector';
 import type { VoiceThread, VoiceThreadMessage, PulseUser } from '../../services/voxer/voxModeTypes';
 import toast from 'react-hot-toast';
@@ -1630,7 +1630,14 @@ const VoiceThreadsMode: React.FC<VoiceThreadsModeProps> = ({
                             </button>
                             <button
                               type="button"
-                              onClick={() => setShowMessageActions(showMessageActions === message.id ? null : message.id)}
+                              onClick={(e) => {
+                                e.stopPropagation();
+                                console.log('More actions clicked for message:', message.id);
+                                console.log('Current showMessageActions:', showMessageActions);
+                                const newValue = showMessageActions === message.id ? null : message.id;
+                                console.log('Setting showMessageActions to:', newValue);
+                                setShowMessageActions(newValue);
+                              }}
                               className="vt-quick-action"
                               title="More actions"
                             >
@@ -1668,7 +1675,8 @@ const VoiceThreadsMode: React.FC<VoiceThreadsModeProps> = ({
 
                         {/* Message Actions Menu */}
                         {showMessageActions === message.id && (
-                          <div className="vt-message-actions-menu">
+                          <div className="vt-message-actions-menu" style={{ border: '2px solid red' }}>
+                            {console.log('Rendering menu for message:', message.id)}
                             <button type="button" onClick={() => handleReply(message)}>
                               <Reply className="w-4 h-4" /> Reply
                             </button>
@@ -1751,24 +1759,17 @@ const VoiceThreadsMode: React.FC<VoiceThreadsModeProps> = ({
                     />
                   </div>
                 ) : (
-                  <div className="vt-record-ui">
-                    <RecordButton
-                      state={recordingState === 'recording' ? 'recording' : recordingState === 'preview' ? 'processing' : 'idle'}
-                      recordingMode={recordingMode}
-                      duration={recordingDuration}
-                      onPointerDown={handlePointerDown}
-                      onPointerUp={handlePointerUp}
-                      onToggleRecording={handleToggleRecording}
-                      onModeToggle={() => setRecordingMode(mode => mode === 'hold' ? 'tap' : 'hold')}
-                      accentColor="#10B981"
-                      size="lg"
-                      showModeToggle={true}
-                      showTimer={true}
-                      isDarkMode={isDarkMode}
-                      mode="audio"
-                      audioLevel={recordingState === 'recording' ? 0.5 : 0}
-                    />
-
+                  <VoxRecordArea
+                    modeColor={MODE_COLOR}
+                    isDarkMode={isDarkMode}
+                    isRecording={recordingState === 'recording'}
+                    isPreviewing={recordingState === 'preview'}
+                    recordingMode={recordingMode}
+                    onToggleRecordingMode={() => setRecordingMode(mode => mode === 'hold' ? 'tap' : 'hold')}
+                    onPointerDown={handlePointerDown}
+                    onPointerUp={handlePointerUp}
+                    onToggleRecording={handleToggleRecording}
+                  >
                     {recordingState === 'recording' && (
                       <div className="vt-live-visualizer">
                         <LayeredVisualizer
@@ -1780,7 +1781,7 @@ const VoiceThreadsMode: React.FC<VoiceThreadsModeProps> = ({
                         />
                       </div>
                     )}
-                  </div>
+                  </VoxRecordArea>
                 )}
               </div>
             </>

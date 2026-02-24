@@ -21,8 +21,8 @@ import {
 } from 'lucide-react';
 import VoxAudioVisualizer from './VoxAudioVisualizer';
 import RecordingPreview from './RecordingPreview';
-import RecordButton from './RecordButton';
 import VoxModeHeader from './VoxModeHeader';
+import VoxRecordArea from './VoxRecordArea';
 import { useVoxRecording } from '../../hooks/useVoxRecording';
 import { voxModeService } from '../../services/voxer/voxModeService';
 import analyticsCollector from '../../services/analyticsCollector';
@@ -125,7 +125,101 @@ const QuickVoxMode: React.FC<QuickVoxModeProps> = ({
     },
   });
 
-  // Phase 6: Keyboard Shortcuts
+  // Phase 5: AI Handler Functions (defined before keyboard shortcuts to avoid TDZ)
+  const handleSummarizeConversation = async () => {
+    if (messages.length === 0) {
+      toast.error('No messages to summarize');
+      return;
+    }
+
+    setIsGeneratingAI(true);
+    try {
+      const messageData = messages.map(msg => ({
+        id: msg.id,
+        transcription: msg.transcript || '',
+        sender: (msg.senderId === voxModeService.getUserId() ? 'me' : 'other') as 'me' | 'other',
+        senderName: msg.senderName,
+        timestamp: msg.createdAt,
+        duration: msg.duration,
+      }));
+
+      const summary = await summarizeConversation('', messageData);
+      if (summary) {
+        setConversationSummary(summary);
+        setShowSummary(true);
+        toast.success('Conversation summarized!');
+      } else {
+        toast.error('Failed to generate summary');
+      }
+    } catch (error) {
+      console.error('Summarization error:', error);
+      toast.error('Failed to generate summary');
+    } finally {
+      setIsGeneratingAI(false);
+    }
+  };
+
+  const handleGenerateSmartReplies = async () => {
+    const recentMessages = messages.slice(-5);
+    if (recentMessages.length === 0) {
+      toast.error('No messages to analyze');
+      return;
+    }
+
+    setIsGeneratingAI(true);
+    try {
+      const lastMessage = recentMessages[recentMessages.length - 1];
+      const context = recentMessages.map(msg => ({
+        id: msg.id,
+        transcription: msg.transcript || '',
+        sender: (msg.senderId === voxModeService.getUserId() ? 'me' : 'other') as 'me' | 'other',
+        senderName: msg.senderName,
+        timestamp: msg.createdAt,
+        duration: msg.duration,
+      }));
+
+      const replies = await generateSmartReplies('', {
+        id: lastMessage.id,
+        transcription: lastMessage.transcript || '',
+        sender: (lastMessage.senderId === voxModeService.getUserId() ? 'me' : 'other') as 'me' | 'other',
+        senderName: lastMessage.senderName,
+        timestamp: lastMessage.createdAt,
+        duration: lastMessage.duration,
+      }, context);
+
+      if (replies.length > 0) {
+        setSmartReplies(replies);
+        setShowSmartReplies(true);
+        toast.success('Smart replies generated!');
+      } else {
+        toast.error('Failed to generate smart replies');
+      }
+    } catch (error) {
+      console.error('Smart replies error:', error);
+      toast.error('Failed to generate smart replies');
+    } finally {
+      setIsGeneratingAI(false);
+    }
+  };
+
+  const handleSelectAllMessages = () => {
+    if (!selectedContact) return;
+    const allItems: VoxSelectionItem[] = messages.map(msg => ({
+      id: msg.id,
+      type: 'audio' as const,
+      url: msg.audioUrl,
+      duration: msg.duration,
+      timestamp: msg.createdAt,
+      sender: (msg.senderId === voxModeService.getUserId() ? 'me' : 'other') as 'me' | 'other',
+      transcript: msg.transcript,
+      mode: 'quick_vox' as const,
+      contactId: selectedContact.id,
+      contactName: selectedContact.name,
+    }));
+    selectAll(allItems);
+  };
+
+  // Phase 6: Keyboard Shortcuts (after handler functions are defined)
   useVoxerKeyboardShortcuts({
     onToggleRecording: () => {
       if (recordingState === 'idle') startRecording();
@@ -246,99 +340,6 @@ const QuickVoxMode: React.FC<QuickVoxModeProps> = ({
     } else if (recordingState === 'idle') {
       startRecording();
     }
-  };
-
-  // Phase 5: AI Handler Functions
-  const handleSummarizeConversation = async () => {
-    if (messages.length === 0) {
-      toast.error('No messages to summarize');
-      return;
-    }
-
-    setIsGeneratingAI(true);
-    try {
-      const messageData = messages.map(msg => ({
-        id: msg.id,
-        transcription: msg.transcript || '',
-        sender: msg.senderId === voxModeService.getUserId() ? 'me' : 'other',
-        senderName: msg.senderName,
-        timestamp: msg.createdAt,
-        duration: msg.duration,
-      }));
-
-      const summary = await summarizeConversation('', messageData);
-      if (summary) {
-        setConversationSummary(summary);
-        setShowSummary(true);
-        toast.success('Conversation summarized!');
-      } else {
-        toast.error('Failed to generate summary');
-      }
-    } catch (error) {
-      console.error('Summarization error:', error);
-      toast.error('Failed to generate summary');
-    } finally {
-      setIsGeneratingAI(false);
-    }
-  };
-
-  const handleGenerateSmartReplies = async () => {
-    const recentMessages = messages.slice(-5);
-    if (recentMessages.length === 0) {
-      toast.error('No messages to analyze');
-      return;
-    }
-
-    setIsGeneratingAI(true);
-    try {
-      const lastMessage = recentMessages[recentMessages.length - 1];
-      const context = recentMessages.map(msg => ({
-        id: msg.id,
-        transcription: msg.transcript || '',
-        sender: msg.senderId === voxModeService.getUserId() ? 'me' : 'other',
-        senderName: msg.senderName,
-        timestamp: msg.createdAt,
-        duration: msg.duration,
-      }));
-
-      const replies = await generateSmartReplies('', {
-        id: lastMessage.id,
-        transcription: lastMessage.transcript || '',
-        sender: lastMessage.senderId === voxModeService.getUserId() ? 'me' : 'other',
-        senderName: lastMessage.senderName,
-        timestamp: lastMessage.createdAt,
-        duration: lastMessage.duration,
-      }, context);
-
-      if (replies.length > 0) {
-        setSmartReplies(replies);
-        setShowSmartReplies(true);
-        toast.success('Smart replies generated!');
-      } else {
-        toast.error('Failed to generate smart replies');
-      }
-    } catch (error) {
-      console.error('Smart replies error:', error);
-      toast.error('Failed to generate smart replies');
-    } finally {
-      setIsGeneratingAI(false);
-    }
-  };
-
-  const handleSelectAllMessages = () => {
-    const allItems: VoxSelectionItem[] = messages.map(msg => ({
-      id: msg.id,
-      type: 'audio' as const,
-      url: msg.audioUrl,
-      duration: msg.duration,
-      timestamp: msg.createdAt,
-      sender: msg.senderId === voxModeService.getUserId() ? 'me' : 'other',
-      transcript: msg.transcript,
-      mode: 'quick_vox' as const,
-      contactId: selectedContact?.contactId,
-      contactName: selectedContact?.contactName,
-    }));
-    selectAll(allItems);
   };
 
   const loadFavorites = async () => {
@@ -805,27 +806,20 @@ const QuickVoxMode: React.FC<QuickVoxModeProps> = ({
                   modeColor={MODE_COLOR}
                 />
               ) : (
-                <div className="flex flex-col items-center gap-4 w-full">
-                  {/* New Unified Record Button with Hold/Tap Toggle */}
-                  <RecordButton
-                    state={recordingState}
-                    recordingMode={recordingMode}
-                    duration={recordingDuration}
-                    onPointerDown={handlePointerDown}
-                    onPointerUp={handlePointerUp}
-                    onToggleRecording={handleToggleRecording}
-                    onModeToggle={() => setRecordingMode(recordingMode === 'hold' ? 'tap' : 'hold')}
-                    accentColor={MODE_COLOR}
-                    size="xl"
-                    showModeToggle={true}
-                    showTimer={true}
-                    isDarkMode={isDarkMode}
-                    mode="audio"
-                  />
-
+                <VoxRecordArea
+                  modeColor={MODE_COLOR}
+                  isDarkMode={isDarkMode}
+                  isRecording={recordingState === 'recording'}
+                  isPreviewing={recordingState === 'preview'}
+                  recordingMode={recordingMode}
+                  onToggleRecordingMode={() => setRecordingMode(recordingMode === 'hold' ? 'tap' : 'hold')}
+                  onPointerDown={handlePointerDown}
+                  onPointerUp={handlePointerUp}
+                  onToggleRecording={handleToggleRecording}
+                >
                   {/* Live Waveform */}
                   {recordingState === 'recording' && (
-                    <div className="w-full max-w-md">
+                    <div className="w-full max-w-md mx-auto">
                       <VoxAudioVisualizer
                         analyser={analyser}
                         isActive={true}
@@ -836,7 +830,7 @@ const QuickVoxMode: React.FC<QuickVoxModeProps> = ({
                       />
                     </div>
                   )}
-                </div>
+                </VoxRecordArea>
               )}
             </div>
           </>

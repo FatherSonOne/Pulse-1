@@ -21,6 +21,19 @@
   --task-accent-pink: #ec4899;  /* Dark mode pink */
 }
 
+/* Phase 7.3: Glass-morphism effect for dark mode */
+.dark .enhanced-task-card {
+  background: rgba(28, 28, 28, 0.8);
+  backdrop-filter: blur(12px);
+  -webkit-backdrop-filter: blur(12px);
+  border: 1px solid rgba(255, 255, 255, 0.06);
+}
+
+.dark .enhanced-task-card:hover {
+  background: rgba(38, 38, 38, 0.9);
+  border-color: rgba(255, 255, 255, 0.1);
+}
+
 .enhanced-task-card {
   display: flex;
   align-items: flex-start;
@@ -32,6 +45,10 @@
   transition: all 0.2s ease;
   position: relative;
   box-shadow: 0 1px 2px rgba(0, 0, 0, 0.05);
+
+  /* Phase 7.1: Card entrance animation */
+  animation: cardEnter 0.3s ease-out forwards;
+  opacity: 0;
 }
 
 .enhanced-task-card:hover {
@@ -41,18 +58,80 @@
   transform: translateY(-2px);
 }
 
+/* Phase 7.1: Staggered entrance animation */
+@keyframes cardEnter {
+  from {
+    opacity: 0;
+    transform: translateY(8px);
+  }
+  to {
+    opacity: 1;
+    transform: translateY(0);
+  }
+}
+
+/* Phase 7.1: Status transition animation */
+.enhanced-task-card.status-transitioning {
+  transition: all 0.4s cubic-bezier(0.34, 1.56, 0.64, 1); /* Spring physics */
+  animation: statusPulse 0.4s ease-out;
+}
+
+@keyframes statusPulse {
+  0% { transform: scale(1); }
+  50% { transform: scale(1.02); }
+  100% { transform: scale(1); }
+}
+
 .enhanced-task-card.overdue {
   border-left: 4px solid #dc2626;  /* red-600 - Better visibility */
   background: #fef2f2;  /* red-50 - Subtle highlight */
 }
 
+/* Phase 7.4: Status Accent Borders */
+.enhanced-task-card.status-todo {
+  border-left: 4px solid #94a3b8;  /* slate-400 - Todo */
+}
+
+.enhanced-task-card.status-in_progress {
+  border-left: 4px solid #3b82f6;  /* blue-500 - In Progress */
+}
+
 .enhanced-task-card.status-done {
   opacity: 0.6;
+  border-left: 4px solid #10b981;  /* green-500 - Done */
+}
+
+.enhanced-task-card.status-cancelled {
+  border-left: 4px solid #6b7280;  /* gray-500 - Cancelled */
+  opacity: 0.5;
+}
+
+.enhanced-task-card.status-blocked {
+  border-left: 4px solid #ef4444;  /* red-500 - Blocked */
 }
 
 .enhanced-task-card.status-done .task-title {
   text-decoration: line-through;
   color: var(--task-text-secondary);
+}
+
+/* Phase 7.2: Completion celebration animation */
+.enhanced-task-card.completing {
+  animation: celebrate 0.6s ease-out forwards;
+}
+
+@keyframes celebrate {
+  0% {
+    transform: scale(1);
+  }
+  30% {
+    transform: scale(1.02);
+    box-shadow: 0 0 20px rgba(16, 185, 129, 0.3);
+  }
+  100% {
+    transform: scale(0.95);
+    opacity: 0.6;
+  }
 }
 
 /* Checkbox */
@@ -329,9 +408,26 @@
 }
 
 /* Responsive design */
+
+/* Phase 7.6: Enhanced mobile responsiveness */
+
+/* Tablet: 768px - 1024px */
+@media (max-width: 1024px) {
+  .enhanced-task-card {
+    padding: 1rem;
+  }
+
+  .task-ai-features {
+    gap: 0.5rem;
+  }
+}
+
+/* Mobile: 480px - 768px */
 @media (max-width: 768px) {
   .enhanced-task-card {
     padding: 0.875rem;
+    /* Touch-friendly tap target */
+    min-height: 44px;
   }
 
   .task-header {
@@ -342,6 +438,7 @@
 
   .task-badges {
     width: 100%;
+    flex-wrap: wrap;
   }
 
   .task-ai-features {
@@ -355,12 +452,71 @@
     gap: 0.5rem;
   }
 
+  /* Make action buttons always visible on mobile */
   .task-actions {
     opacity: 1;
     flex-direction: row;
     position: absolute;
     top: 0.5rem;
     right: 0.5rem;
+  }
+
+  /* Touch-friendly button sizes */
+  .task-checkbox {
+    min-width: 44px;
+    min-height: 44px;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+  }
+
+  .task-action-button {
+    min-width: 44px;
+    min-height: 44px;
+  }
+
+  .task-status-select {
+    min-height: 44px;
+    font-size: 0.875rem;
+  }
+}
+
+/* Small Mobile: < 480px */
+@media (max-width: 480px) {
+  .enhanced-task-card {
+    padding: 0.75rem;
+    gap: 0.75rem;
+  }
+
+  .task-title {
+    font-size: 0.9375rem;
+  }
+
+  .task-description {
+    font-size: 0.8125rem;
+  }
+
+  .task-priority-badge,
+  .ai-score-badge {
+    font-size: 0.6875rem;
+    padding: 0.1875rem 0.5rem;
+  }
+
+  .ai-feature-item,
+  .task-meta {
+    font-size: 0.75rem;
+  }
+
+  /* Stack badges vertically on very small screens */
+  .task-badges {
+    flex-direction: column;
+    align-items: flex-start;
+  }
+
+  /* Simplify dependency indicators */
+  .dependency-indicator {
+    font-size: 0.75rem;
+    padding: 0.1875rem 0.5rem;
   }
 }
 
@@ -456,4 +612,25 @@
   background: var(--task-accent-rose);
   border-color: var(--task-accent-rose);
   color: white;
+}
+
+/* Phase 7.4: Dark mode status borders */
+.dark .enhanced-task-card.status-todo {
+  border-left-color: #64748b;  /* slate-500 */
+}
+
+.dark .enhanced-task-card.status-in_progress {
+  border-left-color: #60a5fa;  /* blue-400 */
+}
+
+.dark .enhanced-task-card.status-done {
+  border-left-color: #34d399;  /* green-400 */
+}
+
+.dark .enhanced-task-card.status-cancelled {
+  border-left-color: #9ca3af;  /* gray-400 */
+}
+
+.dark .enhanced-task-card.status-blocked {
+  border-left-color: #f87171;  /* red-400 */
 }

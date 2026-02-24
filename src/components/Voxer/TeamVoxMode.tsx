@@ -159,44 +159,7 @@ const TeamVoxMode: React.FC<TeamVoxModeProps> = ({
     },
   });
 
-  // Phase 6: Keyboard Shortcuts
-  useVoxerKeyboardShortcuts({
-    onToggleRecording: () => {
-      if (recordingState === 'idle') startRecording();
-      else if (recordingState === 'recording') stopRecording();
-    },
-    onStopRecording: () => {
-      if (recordingState === 'recording') stopRecording();
-    },
-    onGoBack: () => {
-      if (selectedChannel) setSelectedChannel(null);
-      else onBack();
-    },
-    onSwitchMode: (mode) => {
-      console.log('Switch to mode:', mode);
-    },
-    onDownload: () => {
-      if (isSelectionMode && selectionCount > 0) {
-        console.log('Download selected items');
-      }
-    },
-    onArchive: () => {
-      if (isSelectionMode && selectionCount > 0) {
-        console.log('Archive selected items');
-      }
-    },
-    onSummarize: handleSummarizeChannel,
-    onShowHelp: () => setShowShortcutsHelp(true),
-  }, true);
-
-  // Phase 6: Apply playback speed to audio elements
-  useEffect(() => {
-    if (audioRef.current) {
-      applyToElement(audioRef.current);
-    }
-  }, [globalPlaybackSpeed, applyToElement]);
-
-  // Phase 5: AI Handler Functions
+  // Phase 5: AI Handler Functions (defined before keyboard shortcuts to avoid TDZ)
   const handleSummarizeChannel = async () => {
     if (messages.length === 0) {
       toast.error('No messages to summarize');
@@ -208,7 +171,7 @@ const TeamVoxMode: React.FC<TeamVoxModeProps> = ({
       const messageData = messages.map(msg => ({
         id: msg.id,
         transcription: msg.transcript || '',
-        sender: msg.senderId === voxModeService.getUserId() ? 'me' : 'other',
+        sender: (msg.senderId === voxModeService.getUserId() ? 'me' : 'other') as 'me' | 'other',
         senderName: msg.senderName,
         timestamp: msg.createdAt,
         duration: msg.duration,
@@ -243,7 +206,7 @@ const TeamVoxMode: React.FC<TeamVoxModeProps> = ({
       const context = recentMessages.map(msg => ({
         id: msg.id,
         transcription: msg.transcript || '',
-        sender: msg.senderId === voxModeService.getUserId() ? 'me' : 'other',
+        sender: (msg.senderId === voxModeService.getUserId() ? 'me' : 'other') as 'me' | 'other',
         senderName: msg.senderName,
         timestamp: msg.createdAt,
         duration: msg.duration,
@@ -252,7 +215,7 @@ const TeamVoxMode: React.FC<TeamVoxModeProps> = ({
       const replies = await generateSmartReplies('', {
         id: lastMessage.id,
         transcription: lastMessage.transcript || '',
-        sender: lastMessage.senderId === voxModeService.getUserId() ? 'me' : 'other',
+        sender: (lastMessage.senderId === voxModeService.getUserId() ? 'me' : 'other') as 'me' | 'other',
         senderName: lastMessage.senderName,
         timestamp: lastMessage.createdAt,
         duration: lastMessage.duration,
@@ -341,6 +304,43 @@ const TeamVoxMode: React.FC<TeamVoxModeProps> = ({
       startRecording();
     }
   };
+
+  // Phase 6: Keyboard Shortcuts (after handler functions are defined)
+  useVoxerKeyboardShortcuts({
+    onToggleRecording: () => {
+      if (recordingState === 'idle') startRecording();
+      else if (recordingState === 'recording') stopRecording();
+    },
+    onStopRecording: () => {
+      if (recordingState === 'recording') stopRecording();
+    },
+    onGoBack: () => {
+      if (selectedChannel) setSelectedChannel(null);
+      else onBack();
+    },
+    onSwitchMode: (mode) => {
+      console.log('Switch to mode:', mode);
+    },
+    onDownload: () => {
+      if (isSelectionMode && selectionCount > 0) {
+        console.log('Download selected items');
+      }
+    },
+    onArchive: () => {
+      if (isSelectionMode && selectionCount > 0) {
+        console.log('Archive selected items');
+      }
+    },
+    onSummarize: handleSummarizeChannel,
+    onShowHelp: () => setShowShortcutsHelp(true),
+  }, true);
+
+  // Phase 6: Apply playback speed to audio elements
+  useEffect(() => {
+    if (audioRef.current) {
+      applyToElement(audioRef.current);
+    }
+  }, [globalPlaybackSpeed, applyToElement]);
 
   useEffect(() => {
     loadWorkspaces();
@@ -658,7 +658,7 @@ const TeamVoxMode: React.FC<TeamVoxModeProps> = ({
         modeName="Team Vox"
         modeTagline="Your Team's Voice Hub"
         modeColor={MODE_COLOR}
-        modeIcon="👥"
+        modeIcon={Users}
         onBack={onBack}
         isDarkMode={isDarkMode}
         actions={

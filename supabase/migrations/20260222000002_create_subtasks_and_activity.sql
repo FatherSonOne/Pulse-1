@@ -67,64 +67,28 @@ ALTER TABLE task_activity ENABLE ROW LEVEL SECURITY;
 -- Subtasks policies: Users can manage subtasks in their workspace
 CREATE POLICY "Users can view subtasks in their workspace"
   ON subtasks FOR SELECT
-  USING (
-    workspace_id IN (
-      SELECT id FROM auth.users WHERE id = auth.uid()
-      UNION
-      SELECT workspace_id FROM workspace_members WHERE user_id = auth.uid()
-    )
-  );
+  USING (workspace_id = auth.uid());
 
 CREATE POLICY "Users can insert subtasks in their workspace"
   ON subtasks FOR INSERT
-  WITH CHECK (
-    workspace_id IN (
-      SELECT id FROM auth.users WHERE id = auth.uid()
-      UNION
-      SELECT workspace_id FROM workspace_members WHERE user_id = auth.uid()
-    )
-  );
+  WITH CHECK (workspace_id = auth.uid());
 
 CREATE POLICY "Users can update subtasks in their workspace"
   ON subtasks FOR UPDATE
-  USING (
-    workspace_id IN (
-      SELECT id FROM auth.users WHERE id = auth.uid()
-      UNION
-      SELECT workspace_id FROM workspace_members WHERE user_id = auth.uid()
-    )
-  );
+  USING (workspace_id = auth.uid());
 
 CREATE POLICY "Users can delete subtasks in their workspace"
   ON subtasks FOR DELETE
-  USING (
-    workspace_id IN (
-      SELECT id FROM auth.users WHERE id = auth.uid()
-      UNION
-      SELECT workspace_id FROM workspace_members WHERE user_id = auth.uid()
-    )
-  );
+  USING (workspace_id = auth.uid());
 
 -- Task activity policies: Read-only for users, system can write
 CREATE POLICY "Users can view activity in their workspace"
   ON task_activity FOR SELECT
-  USING (
-    workspace_id IN (
-      SELECT id FROM auth.users WHERE id = auth.uid()
-      UNION
-      SELECT workspace_id FROM workspace_members WHERE user_id = auth.uid()
-    )
-  );
+  USING (workspace_id = auth.uid());
 
 CREATE POLICY "Users can insert activity in their workspace"
   ON task_activity FOR INSERT
-  WITH CHECK (
-    workspace_id IN (
-      SELECT id FROM auth.users WHERE id = auth.uid()
-      UNION
-      SELECT workspace_id FROM workspace_members WHERE user_id = auth.uid()
-    )
-  );
+  WITH CHECK (workspace_id = auth.uid());
 
 -- ────────────────────────────────────────────────────────────────────────────
 -- HELPER FUNCTION: Auto-log task status changes

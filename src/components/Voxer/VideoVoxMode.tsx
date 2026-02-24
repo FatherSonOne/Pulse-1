@@ -587,7 +587,101 @@ const VideoVoxMode: React.FC<VideoVoxModeProps> = ({
     ? useVideoVoxMessages({ conversationId: activeConversationId })
     : null;
 
-  // Phase 6: Keyboard Shortcuts
+  // Phase 5: AI Handler Functions (defined before keyboard shortcuts to avoid TDZ)
+  const handleSummarizeConversation = async () => {
+    if (!chatHook || chatHook.messages.length === 0) {
+      toast.error('No messages to summarize');
+      return;
+    }
+
+    setIsGeneratingAI(true);
+    try {
+      const messageData = chatHook.messages.map(msg => ({
+        id: msg.id,
+        transcription: msg.transcript || '',
+        sender: (msg.senderId === currentUserId ? 'me' : 'other') as 'me' | 'other',
+        senderName: msg.senderName,
+        timestamp: msg.createdAt,
+        duration: msg.duration,
+      }));
+
+      const summary = await summarizeConversation('', messageData);
+      if (summary) {
+        setConversationSummary(summary);
+        setShowSummary(true);
+        toast.success('Conversation summarized!');
+      } else {
+        toast.error('Failed to generate summary');
+      }
+    } catch (error) {
+      console.error('Summarization error:', error);
+      toast.error('Failed to generate summary');
+    } finally {
+      setIsGeneratingAI(false);
+    }
+  };
+
+  const handleGenerateSmartReplies = async () => {
+    if (!chatHook || chatHook.messages.length === 0) {
+      toast.error('No messages to analyze');
+      return;
+    }
+
+    setIsGeneratingAI(true);
+    try {
+      const recentMessages = chatHook.messages.slice(-5);
+      const lastMessage = recentMessages[recentMessages.length - 1];
+      const context = recentMessages.map(msg => ({
+        id: msg.id,
+        transcription: msg.transcript || '',
+        sender: (msg.senderId === currentUserId ? 'me' : 'other') as 'me' | 'other',
+        senderName: msg.senderName,
+        timestamp: msg.createdAt,
+        duration: msg.duration,
+      }));
+
+      const replies = await generateSmartReplies('', {
+        id: lastMessage.id,
+        transcription: lastMessage.transcript || '',
+        sender: (lastMessage.senderId === currentUserId ? 'me' : 'other') as 'me' | 'other',
+        senderName: lastMessage.senderName,
+        timestamp: lastMessage.createdAt,
+        duration: lastMessage.duration,
+      }, context);
+
+      if (replies.length > 0) {
+        setSmartReplies(replies);
+        setShowSmartReplies(true);
+        toast.success('Smart replies generated!');
+      } else {
+        toast.error('Failed to generate smart replies');
+      }
+    } catch (error) {
+      console.error('Smart replies error:', error);
+      toast.error('Failed to generate smart replies');
+    } finally {
+      setIsGeneratingAI(false);
+    }
+  };
+
+  const handleSelectAllMessages = () => {
+    if (!chatHook || !activeConversationId) return;
+    const allItems: VoxSelectionItem[] = chatHook.messages.map(msg => ({
+      id: msg.id,
+      type: 'video' as const,
+      url: msg.videoUrl,
+      duration: msg.duration,
+      timestamp: msg.createdAt,
+      sender: (msg.senderId === currentUserId ? 'me' : 'other') as 'me' | 'other',
+      transcript: msg.transcript,
+      mode: 'video_vox' as const,
+      contactId: activeConversationId,
+      contactName: conversations.find(c => c.id === activeConversationId)?.recipientName || 'Unknown',
+    }));
+    selectAll(allItems);
+  };
+
+  // Phase 6: Keyboard Shortcuts (after handler functions are defined)
   useVoxerKeyboardShortcuts({
     onToggleRecording: () => {
       if (state.status === 'idle') startPreview();
@@ -656,100 +750,6 @@ const VideoVoxMode: React.FC<VideoVoxModeProps> = ({
   const ringRadius = 38;
   const ringCircumference = 2 * Math.PI * ringRadius;
   const ringOffset = ringCircumference - (progressPercent / 100) * ringCircumference;
-
-  // Phase 5: AI Handler Functions
-  const handleSummarizeConversation = async () => {
-    if (!chatHook || chatHook.messages.length === 0) {
-      toast.error('No messages to summarize');
-      return;
-    }
-
-    setIsGeneratingAI(true);
-    try {
-      const messageData = chatHook.messages.map(msg => ({
-        id: msg.id,
-        transcription: msg.transcript || '',
-        sender: msg.senderId === currentUserId ? 'me' : 'other',
-        senderName: msg.senderName,
-        timestamp: msg.createdAt,
-        duration: msg.duration,
-      }));
-
-      const summary = await summarizeConversation('', messageData);
-      if (summary) {
-        setConversationSummary(summary);
-        setShowSummary(true);
-        toast.success('Conversation summarized!');
-      } else {
-        toast.error('Failed to generate summary');
-      }
-    } catch (error) {
-      console.error('Summarization error:', error);
-      toast.error('Failed to generate summary');
-    } finally {
-      setIsGeneratingAI(false);
-    }
-  };
-
-  const handleGenerateSmartReplies = async () => {
-    if (!chatHook || chatHook.messages.length === 0) {
-      toast.error('No messages to analyze');
-      return;
-    }
-
-    const recentMessages = chatHook.messages.slice(-5);
-    setIsGeneratingAI(true);
-    try {
-      const lastMessage = recentMessages[recentMessages.length - 1];
-      const context = recentMessages.map(msg => ({
-        id: msg.id,
-        transcription: msg.transcript || '',
-        sender: msg.senderId === currentUserId ? 'me' : 'other',
-        senderName: msg.senderName,
-        timestamp: msg.createdAt,
-        duration: msg.duration,
-      }));
-
-      const replies = await generateSmartReplies('', {
-        id: lastMessage.id,
-        transcription: lastMessage.transcript || '',
-        sender: lastMessage.senderId === currentUserId ? 'me' : 'other',
-        senderName: lastMessage.senderName,
-        timestamp: lastMessage.createdAt,
-        duration: lastMessage.duration,
-      }, context);
-
-      if (replies.length > 0) {
-        setSmartReplies(replies);
-        setShowSmartReplies(true);
-        toast.success('Smart replies generated!');
-      } else {
-        toast.error('Failed to generate smart replies');
-      }
-    } catch (error) {
-      console.error('Smart replies error:', error);
-      toast.error('Failed to generate smart replies');
-    } finally {
-      setIsGeneratingAI(false);
-    }
-  };
-
-  const handleSelectAllMessages = () => {
-    if (!chatHook) return;
-    const allItems: VoxSelectionItem[] = chatHook.messages.map(msg => ({
-      id: msg.id,
-      type: 'video' as const,
-      url: msg.videoUrl,
-      duration: msg.duration,
-      timestamp: msg.createdAt,
-      sender: msg.senderId === currentUserId ? 'me' : 'other',
-      transcript: msg.transcript,
-      mode: 'video_vox' as const,
-      contactId: activeConversationId || undefined,
-      contactName: conversations.find(c => c.id === activeConversationId)?.title,
-    }));
-    selectAll(allItems);
-  };
 
   // Handlers
   const handleRecordClick = () => {

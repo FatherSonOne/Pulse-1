@@ -188,6 +188,14 @@ const EnhancedDecisionCardComponent: React.FC<EnhancedDecisionCardProps> = ({
     alert(`Reminder sent for: "${decision.title}"\n\nIn production, this would send notifications to stakeholders who haven't voted yet.`);
   };
 
+  // Phase 7.5: Keyboard navigation handlers
+  const handleButtonKeyDown = (e: React.KeyboardEvent, action: () => void) => {
+    if (e.key === ' ' || e.key === 'Enter') {
+      e.preventDefault();
+      action();
+    }
+  };
+
   const handleGenerateTasks = async () => {
     // Phase 2: Use DecisionDecomposer if callback provided
     if (onGenerateTasks) {
@@ -424,6 +432,7 @@ const EnhancedDecisionCardComponent: React.FC<EnhancedDecisionCardProps> = ({
                 type="button"
                 className="vote-button vote-approve"
                 onClick={() => handleVote('approve')}
+                onKeyDown={(e) => handleButtonKeyDown(e, () => handleVote('approve'))}
                 aria-label="Vote to approve this decision"
               >
                 Approve
@@ -432,6 +441,7 @@ const EnhancedDecisionCardComponent: React.FC<EnhancedDecisionCardProps> = ({
                 type="button"
                 className="vote-button vote-reject"
                 onClick={() => handleVote('reject')}
+                onKeyDown={(e) => handleButtonKeyDown(e, () => handleVote('reject'))}
                 aria-label="Vote to reject this decision"
               >
                 Reject
@@ -440,6 +450,7 @@ const EnhancedDecisionCardComponent: React.FC<EnhancedDecisionCardProps> = ({
                 type="button"
                 className="vote-button vote-concern"
                 onClick={() => handleVote('concern')}
+                onKeyDown={(e) => handleButtonKeyDown(e, () => handleVote('concern'))}
                 aria-label="Vote with concern about this decision"
               >
                 Concern
@@ -448,6 +459,7 @@ const EnhancedDecisionCardComponent: React.FC<EnhancedDecisionCardProps> = ({
                 type="button"
                 className="vote-button vote-abstain"
                 onClick={() => handleVote('abstain')}
+                onKeyDown={(e) => handleButtonKeyDown(e, () => handleVote('abstain'))}
                 aria-label="Abstain from voting on this decision"
               >
                 Abstain
@@ -514,6 +526,7 @@ const EnhancedDecisionCardComponent: React.FC<EnhancedDecisionCardProps> = ({
             type="button"
             className="action-button send-reminder"
             onClick={handleSendReminder}
+            onKeyDown={(e) => handleButtonKeyDown(e, handleSendReminder)}
             aria-label="Send reminder to stakeholders who haven't voted"
           >
             <Bell size={16} aria-hidden="true" />
@@ -526,6 +539,7 @@ const EnhancedDecisionCardComponent: React.FC<EnhancedDecisionCardProps> = ({
             type="button"
             className="action-button generate-tasks"
             onClick={handleGenerateTasks}
+            onKeyDown={(e) => handleButtonKeyDown(e, handleGenerateTasks)}
             disabled={generatingTasks}
             aria-label={generatingTasks ? "Generating tasks..." : "Generate tasks from this decision using AI"}
           >
@@ -553,6 +567,7 @@ const EnhancedDecisionCardComponent: React.FC<EnhancedDecisionCardProps> = ({
             type="button"
             className="action-button view-mission"
             onClick={() => onOpenMission(decision)}
+            onKeyDown={(e) => handleButtonKeyDown(e, () => onOpenMission(decision))}
             aria-label="View this decision in Decision Mission"
           >
             <TrendingUp size={16} aria-hidden="true" />

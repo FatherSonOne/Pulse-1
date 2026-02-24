@@ -142,44 +142,7 @@ const VoxNotesMode: React.FC<VoxNotesModeProps> = ({
     },
   });
 
-  // Phase 6: Keyboard Shortcuts
-  useVoxerKeyboardShortcuts({
-    onToggleRecording: () => {
-      if (recordingState === 'idle') startRecording();
-      else if (recordingState === 'recording') stopRecording();
-    },
-    onStopRecording: () => {
-      if (recordingState === 'recording') stopRecording();
-    },
-    onGoBack: () => {
-      if (selectedNote) setSelectedNote(null);
-      else onBack();
-    },
-    onSwitchMode: (mode) => {
-      console.log('Switch to mode:', mode);
-    },
-    onDownload: () => {
-      if (isSelectionMode && selectionCount > 0) {
-        console.log('Download selected notes');
-      }
-    },
-    onArchive: () => {
-      if (isSelectionMode && selectionCount > 0) {
-        console.log('Archive selected notes');
-      }
-    },
-    onSummarize: handleSummarizeNotes,
-    onShowHelp: () => setShowShortcutsHelp(true),
-  }, true);
-
-  // Phase 6: Apply playback speed to audio elements
-  useEffect(() => {
-    if (audioRef.current) {
-      applyToElement(audioRef.current);
-    }
-  }, [globalPlaybackSpeed, applyToElement]);
-
-  // Phase 5: AI Handler Functions
+  // Phase 5: AI Handler Functions (defined before keyboard shortcuts to avoid TDZ)
   const handleSummarizeNotes = async () => {
     if (notes.length === 0) {
       toast.error('No notes to summarize');
@@ -271,6 +234,43 @@ const VoxNotesMode: React.FC<VoxNotesModeProps> = ({
     }));
     selectAll(allItems);
   };
+
+  // Phase 6: Keyboard Shortcuts (after handler functions are defined)
+  useVoxerKeyboardShortcuts({
+    onToggleRecording: () => {
+      if (recordingState === 'idle') startRecording();
+      else if (recordingState === 'recording') stopRecording();
+    },
+    onStopRecording: () => {
+      if (recordingState === 'recording') stopRecording();
+    },
+    onGoBack: () => {
+      if (selectedNote) setSelectedNote(null);
+      else onBack();
+    },
+    onSwitchMode: (mode) => {
+      console.log('Switch to mode:', mode);
+    },
+    onDownload: () => {
+      if (isSelectionMode && selectionCount > 0) {
+        console.log('Download selected notes');
+      }
+    },
+    onArchive: () => {
+      if (isSelectionMode && selectionCount > 0) {
+        console.log('Archive selected notes');
+      }
+    },
+    onSummarize: handleSummarizeNotes,
+    onShowHelp: () => setShowShortcutsHelp(true),
+  }, true);
+
+  // Phase 6: Apply playback speed to audio elements
+  useEffect(() => {
+    if (audioRef.current) {
+      applyToElement(audioRef.current);
+    }
+  }, [globalPlaybackSpeed, applyToElement]);
 
   // Save recording as a new note
   const handleSendRecording = async () => {

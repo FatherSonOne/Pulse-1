@@ -27,8 +27,8 @@ import {
 } from 'lucide-react';
 import VoxAudioVisualizer from './VoxAudioVisualizer';
 import RecordingPreview from './RecordingPreview';
-import RecordButton from './RecordButton';
 import VoxModeHeader from './VoxModeHeader';
+import VoxRecordArea from './VoxRecordArea';
 import { useVoxRecording } from '../../hooks/useVoxRecording';
 import { voxModeService } from '../../services/voxer/voxModeService';
 import type { VoxDrop } from '../../services/voxer/voxModeTypes';
@@ -137,7 +137,103 @@ const VoxDropMode: React.FC<VoxDropModeProps> = ({
     },
   });
 
-  // Phase 6: Keyboard Shortcuts
+  // Phase 5: AI Handler Functions (defined before keyboard shortcuts to avoid TDZ)
+  const handleSummarizeDrops = async () => {
+    const drops = activeTab === 'scheduled' ? scheduledDrops : receivedDrops;
+    if (drops.length === 0) {
+      toast.error('No drops to summarize');
+      return;
+    }
+
+    setIsGeneratingAI(true);
+    try {
+      const messageData = drops.map(drop => ({
+        id: drop.id,
+        transcription: drop.transcript || '',
+        sender: drop.senderId === voxModeService.getUserId() ? 'me' : 'other' as 'me' | 'other',
+        senderName: drop.senderName,
+        timestamp: drop.scheduledFor,
+        duration: drop.duration,
+      }));
+
+      const summary = await summarizeConversation('', messageData);
+      if (summary) {
+        setConversationSummary(summary);
+        setShowSummary(true);
+        toast.success('Drops summarized!');
+      } else {
+        toast.error('Failed to generate summary');
+      }
+    } catch (error) {
+      console.error('Summarization error:', error);
+      toast.error('Failed to generate summary');
+    } finally {
+      setIsGeneratingAI(false);
+    }
+  };
+
+  const handleGenerateSmartReplies = async () => {
+    const drops = receivedDrops;
+    if (drops.length === 0) {
+      toast.error('No drops to analyze');
+      return;
+    }
+
+    setIsGeneratingAI(true);
+    try {
+      const recentDrops = drops.slice(0, 5);
+      const lastDrop = recentDrops[0];
+      const context = recentDrops.map(drop => ({
+        id: drop.id,
+        transcription: drop.transcript || '',
+        sender: drop.senderId === voxModeService.getUserId() ? 'me' : 'other' as 'me' | 'other',
+        senderName: drop.senderName,
+        timestamp: drop.scheduledFor,
+        duration: drop.duration,
+      }));
+
+      const replies = await generateSmartReplies('', {
+        id: lastDrop.id,
+        transcription: lastDrop.transcript || '',
+        sender: lastDrop.senderId === voxModeService.getUserId() ? 'me' : 'other' as 'me' | 'other',
+        senderName: lastDrop.senderName,
+        timestamp: lastDrop.scheduledFor,
+        duration: lastDrop.duration,
+      }, context);
+
+      if (replies.length > 0) {
+        setSmartReplies(replies);
+        setShowSmartReplies(true);
+        toast.success('Smart replies generated!');
+      } else {
+        toast.error('Failed to generate smart replies');
+      }
+    } catch (error) {
+      console.error('Smart replies error:', error);
+      toast.error('Failed to generate smart replies');
+    } finally {
+      setIsGeneratingAI(false);
+    }
+  };
+
+  const handleSelectAllDrops = () => {
+    const drops = activeTab === 'scheduled' ? scheduledDrops : receivedDrops;
+    const allItems: VoxSelectionItem[] = drops.map(drop => ({
+      id: drop.id,
+      type: 'audio' as const,
+      url: drop.audioUrl,
+      duration: drop.duration,
+      timestamp: drop.scheduledFor,
+      sender: drop.senderId === voxModeService.getUserId() ? 'me' : 'other' as 'me' | 'other',
+      transcript: drop.transcript,
+      mode: 'vox_drop' as const,
+      contactId: drop.recipientId || drop.senderId,
+      contactName: drop.senderName,
+    }));
+    selectAll(allItems);
+  };
+
+  // Phase 6: Keyboard Shortcuts (after handler functions are defined)
   useVoxerKeyboardShortcuts({
     onToggleRecording: () => {
       if (recordingState === 'idle') startRecording();
@@ -193,101 +289,6 @@ const VoxDropMode: React.FC<VoxDropModeProps> = ({
     ]);
     setScheduledDrops(scheduled);
     setReceivedDrops(received);
-  };
-
-  // Phase 5: AI Handler Functions
-  const handleSummarizeDrops = async () => {
-    const drops = activeTab === 'scheduled' ? scheduledDrops : receivedDrops;
-    if (drops.length === 0) {
-      toast.error('No drops to summarize');
-      return;
-    }
-
-    setIsGeneratingAI(true);
-    try {
-      const messageData = drops.map(drop => ({
-        id: drop.id,
-        transcription: drop.message || '',
-        sender: drop.senderId === voxModeService.getUserId() ? 'me' : 'other',
-        senderName: drop.recipientIds.join(', '),
-        timestamp: drop.scheduledFor,
-        duration: drop.duration,
-      }));
-
-      const summary = await summarizeConversation('', messageData);
-      if (summary) {
-        setConversationSummary(summary);
-        setShowSummary(true);
-        toast.success('Drops summarized!');
-      } else {
-        toast.error('Failed to generate summary');
-      }
-    } catch (error) {
-      console.error('Summarization error:', error);
-      toast.error('Failed to generate summary');
-    } finally {
-      setIsGeneratingAI(false);
-    }
-  };
-
-  const handleGenerateSmartReplies = async () => {
-    const recentDrops = receivedDrops.slice(-5);
-    if (recentDrops.length === 0) {
-      toast.error('No drops to analyze');
-      return;
-    }
-
-    setIsGeneratingAI(true);
-    try {
-      const lastDrop = recentDrops[recentDrops.length - 1];
-      const context = recentDrops.map(drop => ({
-        id: drop.id,
-        transcription: drop.message || '',
-        sender: drop.senderId === voxModeService.getUserId() ? 'me' : 'other',
-        senderName: drop.recipientIds.join(', '),
-        timestamp: drop.scheduledFor,
-        duration: drop.duration,
-      }));
-
-      const replies = await generateSmartReplies('', {
-        id: lastDrop.id,
-        transcription: lastDrop.message || '',
-        sender: lastDrop.senderId === voxModeService.getUserId() ? 'me' : 'other',
-        senderName: lastDrop.recipientIds.join(', '),
-        timestamp: lastDrop.scheduledFor,
-        duration: lastDrop.duration,
-      }, context);
-
-      if (replies.length > 0) {
-        setSmartReplies(replies);
-        setShowSmartReplies(true);
-        toast.success('Smart replies generated!');
-      } else {
-        toast.error('Failed to generate smart replies');
-      }
-    } catch (error) {
-      console.error('Smart replies error:', error);
-      toast.error('Failed to generate smart replies');
-    } finally {
-      setIsGeneratingAI(false);
-    }
-  };
-
-  const handleSelectAllDrops = () => {
-    const drops = activeTab === 'scheduled' ? scheduledDrops : receivedDrops;
-    const allItems: VoxSelectionItem[] = drops.map(drop => ({
-      id: drop.id,
-      type: 'audio' as const,
-      url: drop.audioUrl,
-      duration: drop.duration,
-      timestamp: drop.scheduledFor,
-      sender: drop.senderId === voxModeService.getUserId() ? 'me' : 'other',
-      transcript: drop.message,
-      mode: 'vox_drop' as const,
-      contactId: drop.recipientIds[0],
-      contactName: drop.title || 'Vox Drop',
-    }));
-    selectAll(allItems);
   };
 
   const handlePlayDrop = (drop: VoxDrop) => {
@@ -887,26 +888,19 @@ const VoxDropMode: React.FC<VoxDropModeProps> = ({
                       modeColor={MODE_COLOR}
                     />
                   ) : (
-                    <div className="flex flex-col items-center gap-3">
-                      {/* New Unified Record Button with Hold/Tap Toggle */}
-                      <RecordButton
-                        state={recordingState}
-                        recordingMode={recordingMode}
-                        duration={recordingDuration}
-                        onPointerDown={handlePointerDown}
-                        onPointerUp={handlePointerUp}
-                        onToggleRecording={handleToggleRecording}
-                        onModeToggle={() => setRecordingMode(recordingMode === 'hold' ? 'tap' : 'hold')}
-                        accentColor={MODE_COLOR}
-                        size="lg"
-                        showModeToggle={true}
-                        showTimer={true}
-                        isDarkMode={isDarkMode}
-                        mode="audio"
-                      />
-
+                    <VoxRecordArea
+                      modeColor={MODE_COLOR}
+                      isDarkMode={isDarkMode}
+                      isRecording={recordingState === 'recording'}
+                      isPreviewing={recordingState === 'preview'}
+                      recordingMode={recordingMode}
+                      onToggleRecordingMode={() => setRecordingMode(recordingMode === 'hold' ? 'tap' : 'hold')}
+                      onPointerDown={handlePointerDown}
+                      onPointerUp={handlePointerUp}
+                      onToggleRecording={handleToggleRecording}
+                    >
                       {recordingState === 'recording' && (
-                        <div className="w-full">
+                        <div className="w-full max-w-md mx-auto">
                           <VoxAudioVisualizer
                             analyser={analyser}
                             isActive={true}
@@ -917,7 +911,7 @@ const VoxDropMode: React.FC<VoxDropModeProps> = ({
                           />
                         </div>
                       )}
-                    </div>
+                    </VoxRecordArea>
                   )}
                 </div>
                 </div>

@@ -85,6 +85,21 @@ const EnhancedTaskCardComponent: React.FC<EnhancedTaskCardProps> = ({
     }
   };
 
+  // Phase 7.5: Keyboard navigation handlers
+  const handleCheckboxKeyDown = (e: React.KeyboardEvent) => {
+    if (e.key === ' ' || e.key === 'Enter') {
+      e.preventDefault();
+      handleStatusToggle();
+    }
+  };
+
+  const handleActionKeyDown = (e: React.KeyboardEvent, action: () => void) => {
+    if (e.key === ' ' || e.key === 'Enter') {
+      e.preventDefault();
+      action();
+    }
+  };
+
   const handleDelete = async () => {
     if (onDelete && window.confirm('Are you sure you want to delete this task?')) {
       await onDelete(task.id);
@@ -165,6 +180,7 @@ const EnhancedTaskCardComponent: React.FC<EnhancedTaskCardProps> = ({
         type="button"
         className="task-checkbox"
         onClick={handleStatusToggle}
+        onKeyDown={handleCheckboxKeyDown}
         disabled={isUpdating}
         aria-label={task.status === 'done' ? 'Mark task as todo' : 'Mark task as done'}
       >
@@ -310,6 +326,7 @@ const EnhancedTaskCardComponent: React.FC<EnhancedTaskCardProps> = ({
               type="button"
               className="task-action-button"
               onClick={() => onEdit(task)}
+              onKeyDown={(e) => handleActionKeyDown(e, () => onEdit(task))}
               aria-label={`Edit task: ${task.title}`}
             >
               <Edit2 size={16} aria-hidden="true" />
@@ -320,6 +337,7 @@ const EnhancedTaskCardComponent: React.FC<EnhancedTaskCardProps> = ({
               type="button"
               className="task-action-button delete"
               onClick={handleDelete}
+              onKeyDown={(e) => handleActionKeyDown(e, handleDelete)}
               aria-label={`Delete task: ${task.title}`}
             >
               <Trash2 size={16} aria-hidden="true" />

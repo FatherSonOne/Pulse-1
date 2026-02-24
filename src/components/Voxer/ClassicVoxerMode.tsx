@@ -40,10 +40,9 @@ import {
   Radio,
 } from 'lucide-react';
 import VoxAudioVisualizer from './VoxAudioVisualizer';
-import { PTTButton } from './PTTButton';
 import RecordingPreview from './RecordingPreview';
 import VoxModeHeader from './VoxModeHeader';
-import RecordButton from './RecordButton';
+import VoxRecordArea from './VoxRecordArea';
 import { useVoxRecording } from '../../hooks/useVoxRecording';
 import { blobToBase64 } from '../../services/audioService';
 import { transcribeMedia, processWithModel } from '../../services/geminiService';
@@ -361,38 +360,6 @@ const ClassicVoxerMode: React.FC<ClassicVoxerModeProps> = ({
     messagesEndRef.current?.scrollIntoView({ behavior: 'smooth' });
   }, [recordings, activeContactId]);
 
-  // Phase 6: Keyboard Shortcuts
-  useVoxerKeyboardShortcuts({
-    onToggleRecording: () => {
-      if (!isRecording) startRecording();
-      else stopRecording();
-    },
-    onStopRecording: () => {
-      if (isRecording) stopRecording();
-    },
-    onGoBack: () => {
-      if (activeContactId) setActiveContactId(null);
-    },
-    onSwitchMode: (mode) => {
-      // Handle mode switching - would need to be passed from parent
-      console.log('Switch to mode:', mode);
-    },
-    onDownload: () => {
-      if (isSelectionMode && selectionCount > 0) {
-        // Trigger download modal
-        console.log('Download selected items');
-      }
-    },
-    onArchive: () => {
-      if (isSelectionMode && selectionCount > 0) {
-        // Trigger archive
-        console.log('Archive selected items');
-      }
-    },
-    onSummarize: handleSummarizeConversation,
-    onShowHelp: () => setShowShortcutsHelp(true),
-  }, true);
-
   // Phase 6: Apply playback speed to audio elements
   useEffect(() => {
     if (audioRef.current) {
@@ -424,6 +391,41 @@ const ClassicVoxerMode: React.FC<ClassicVoxerModeProps> = ({
   }, [recordings, activeContactId]);
 
   const activeContact = pulseUsers.find(u => u.id === activeContactId);
+
+  // ============================================
+  // PHASE 5: AI ENHANCEMENT HANDLERS
+  // ============================================
+
+  // Summarize conversation
+  const handleSummarizeConversation = useCallback(async () => {
+    if (activeThreadRecordings.length === 0) return;
+
+    setIsSummarizing(true);
+    try {
+      const messages = activeThreadRecordings.map(rec => ({
+        id: rec.id,
+        transcription: rec.transcription || '',
+        sender: rec.sender,
+        senderName: rec.sender === 'other' ? activeContact?.displayName || activeContact?.handle : undefined,
+        timestamp: rec.timestamp,
+        duration: rec.duration,
+      }));
+
+      const summary = await summarizeConversation(apiKey, messages);
+      if (summary) {
+        setConversationSummary(summary);
+        setShowSummary(true);
+        toast.success('Conversation summarized!');
+      } else {
+        toast.error('Failed to generate summary');
+      }
+    } catch (error) {
+      console.error('Summarization error:', error);
+      toast.error('Failed to generate summary');
+    } finally {
+      setIsSummarizing(false);
+    }
+  }, [activeThreadRecordings, activeContact, apiKey]);
 
   // ============================================
   // RECORDING FUNCTIONS
@@ -802,39 +804,8 @@ const ClassicVoxerMode: React.FC<ClassicVoxerModeProps> = ({
   }, []);
 
   // ============================================
-  // PHASE 5: AI ENHANCEMENT HANDLERS
+  // PHASE 5: AI ENHANCEMENT HANDLERS (CONTINUED)
   // ============================================
-
-  // Summarize conversation
-  const handleSummarizeConversation = async () => {
-    if (activeThreadRecordings.length === 0) return;
-
-    setIsSummarizing(true);
-    try {
-      const messages = activeThreadRecordings.map(rec => ({
-        id: rec.id,
-        transcription: rec.transcription || '',
-        sender: rec.sender,
-        senderName: rec.sender === 'other' ? activeContact?.displayName || activeContact?.handle : undefined,
-        timestamp: rec.timestamp,
-        duration: rec.duration,
-      }));
-
-      const summary = await summarizeConversation(apiKey, messages);
-      if (summary) {
-        setConversationSummary(summary);
-        setShowSummary(true);
-        toast.success('Conversation summarized!');
-      } else {
-        toast.error('Failed to generate summary');
-      }
-    } catch (error) {
-      console.error('Summarization error:', error);
-      toast.error('Failed to generate summary');
-    } finally {
-      setIsSummarizing(false);
-    }
-  };
 
   // Generate smart replies
   const handleGenerateSmartReplies = async () => {
@@ -950,6 +921,41 @@ const ClassicVoxerMode: React.FC<ClassicVoxerModeProps> = ({
     toast.success('Smart reply copied! Use it in your next message.');
     setSmartReplies([]);
   };
+
+  // ============================================
+  // PHASE 6: KEYBOARD SHORTCUTS (After all handlers defined)
+  // ============================================
+
+  useVoxerKeyboardShortcuts({
+    onToggleRecording: () => {
+      if (!isRecording) startRecording();
+      else stopRecording();
+    },
+    onStopRecording: () => {
+      if (isRecording) stopRecording();
+    },
+    onGoBack: () => {
+      if (activeContactId) setActiveContactId('');
+    },
+    onSwitchMode: (mode) => {
+      // Handle mode switching - would need to be passed from parent
+      console.log('Switch to mode:', mode);
+    },
+    onDownload: () => {
+      if (isSelectionMode && selectionCount > 0) {
+        // Trigger download modal
+        console.log('Download selected items');
+      }
+    },
+    onArchive: () => {
+      if (isSelectionMode && selectionCount > 0) {
+        // Trigger archive
+        console.log('Archive selected items');
+      }
+    },
+    onSummarize: handleSummarizeConversation,
+    onShowHelp: () => setShowShortcutsHelp(true),
+  }, true);
 
   // ============================================
   // RENDER
@@ -1419,24 +1425,17 @@ const ClassicVoxerMode: React.FC<ClassicVoxerModeProps> = ({
 
             {/* Recording Controls */}
             <div className="classic-voxer-controls">
-              <div className="classic-voxer-ptt-container">
-                <RecordButton
-                  state={isRecording ? 'recording' : isPreviewing ? 'processing' : 'idle'}
-                  recordingMode={recordingMode}
-                  duration={recordingDuration}
-                  onPointerDown={startRecording}
-                  onPointerUp={stopRecording}
-                  onToggleRecording={toggleRecording}
-                  onModeToggle={() => setRecordingMode(mode => mode === 'hold' ? 'tap' : 'hold')}
-                  accentColor="#F97316"
-                  size="xl"
-                  showModeToggle={true}
-                  showTimer={true}
-                  isDarkMode={isDarkMode}
-                  mode="audio"
-                  audioLevel={audioLevel}
-                />
-              </div>
+              <VoxRecordArea
+                modeColor="#F97316"
+                isDarkMode={isDarkMode}
+                isRecording={isRecording}
+                isPreviewing={isPreviewing}
+                recordingMode={recordingMode}
+                onToggleRecordingMode={() => setRecordingMode(mode => mode === 'hold' ? 'tap' : 'hold')}
+                onPointerDown={startRecording}
+                onPointerUp={stopRecording}
+                onToggleRecording={toggleRecording}
+              />
             </div>
           </>
         ) : (

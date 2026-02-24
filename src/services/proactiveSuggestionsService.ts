@@ -43,19 +43,19 @@ export const proactiveSuggestionsService = {
           id: `stale-decision-${decision.id}`,
           type: 'decision_stale',
           priority: 'important',
-          message: `"${decision.proposal_text}" has no votes for ${Math.floor(hoursSinceCreated)}h`,
+          message: `"${decision.title}" has no votes for ${Math.floor(hoursSinceCreated)}h`,
           action: 'Send reminder to voters',
           actionType: 'send_reminder',
           relatedId: decision.id,
-          relatedTitle: decision.proposal_text,
+          relatedTitle: decision.title,
         });
       }
     }
 
     // 2. Overdue tasks
     const overdueTasks = tasks.filter(t =>
-      t.due_date &&
-      new Date(t.due_date) < new Date() &&
+      t.deadline &&
+      new Date(t.deadline) < new Date() &&
       t.status !== 'done' &&
       t.status !== 'cancelled'
     );
@@ -63,7 +63,7 @@ export const proactiveSuggestionsService = {
     if (overdueTasks.length > 0) {
       const assigneeGroups = new Map<string, Task[]>();
       overdueTasks.forEach(t => {
-        const assignee = t.assigned_to || 'Unassigned';
+        const assignee = t.assignee_id || 'Unassigned';
         if (!assigneeGroups.has(assignee)) {
           assigneeGroups.set(assignee, []);
         }
@@ -84,8 +84,8 @@ export const proactiveSuggestionsService = {
 
     // 3. Tasks due soon (next 48h)
     const upcomingTasks = tasks.filter(t => {
-      if (!t.due_date || t.status === 'done' || t.status === 'cancelled') return false;
-      const hoursUntilDue = (new Date(t.due_date).getTime() - Date.now()) / (1000 * 60 * 60);
+      if (!t.deadline || t.status === 'done' || t.status === 'cancelled') return false;
+      const hoursUntilDue = (new Date(t.deadline).getTime() - Date.now()) / (1000 * 60 * 60);
       return hoursUntilDue > 0 && hoursUntilDue <= 48;
     });
 
@@ -117,11 +117,35 @@ export const proactiveSuggestionsService = {
       });
     }
 
-    // 5. Workload imbalance
+    // 5. Stale tasks (in_progress for >3 days with no updates) - Phase 6.3
+    const staleTasks = tasks.filter(t => {
+      if (t.status !== 'in_progress') return false;
+      const lastUpdate = new Date(t.updated_at);
+      const daysSince = (Date.now() - lastUpdate.getTime()) / (1000 * 60 * 60 * 24);
+      return daysSince > 3;
+    });
+
+    for (const task of staleTasks.slice(0, 3)) {
+      const daysSinceUpdate = Math.floor(
+        (Date.now() - new Date(task.updated_at).getTime()) / (1000 * 60 * 60 * 24)
+      );
+      nudges.push({
+        id: `stale-task-${task.id}`,
+        type: 'suggestion',
+        priority: 'important',
+        message: `"${task.title}" has been in progress for ${daysSinceUpdate} days with no updates`,
+        action: 'Update status',
+        actionType: 'review',
+        relatedId: task.id,
+        relatedTitle: task.title,
+      });
+    }
+
+    // 6. Workload imbalance
     const assignedTasks = new Map<string, number>();
     tasks.filter(t => t.status !== 'done' && t.status !== 'cancelled').forEach(t => {
-      if (t.assigned_to) {
-        assignedTasks.set(t.assigned_to, (assignedTasks.get(t.assigned_to) || 0) + 1);
+      if (t.assignee_id) {
+        assignedTasks.set(t.assignee_id, (assignedTasks.get(t.assignee_id) || 0) + 1);
       }
     });
 
@@ -141,14 +165,23 @@ export const proactiveSuggestionsService = {
       });
     }
 
-    // 6. Use AI for advanced suggestions (if API key provided)
-    if (apiKey && nudges.length < 5) {
+    // 7. Use AI for advanced suggestions (if API key provided)
+    if (apiKey && apiKey !== '' && nudges.length < 5) {
       try {
+        console.log('🤖 Attempting AI nudge generation...');
         const aiNudges = await this.generateAINudges(decisions, tasks, apiKey);
+        console.log('✅ AI nudges generated:', aiNudges.length);
         nudges.push(...aiNudges);
-      } catch (error) {
-        console.error('AI nudge generation failed:', error);
+      } catch (error: any) {
+        // Gracefully handle API errors without polluting console
+        if (error?.message?.includes('API Key')) {
+          console.warn('⚠️ Gemini API key invalid or missing. AI nudges disabled. Set VITE_GEMINI_API_KEY to enable.');
+        } else {
+          console.warn('⚠️ AI nudge generation failed:', error?.message || 'Unknown error');
+        }
       }
+    } else if (!apiKey || apiKey === '') {
+      console.info('ℹ️ AI nudges disabled: No Gemini API key provided');
     }
 
     // Sort by priority
@@ -187,7 +220,7 @@ export const proactiveSuggestionsService = {
 Decisions: ${JSON.stringify(decisionSummary)}
 Tasks: ${JSON.stringify(taskSummary)}
 
-Recent Decisions: ${decisions.slice(0, 5).map(d => d.proposal_text).join(', ')}
+Recent Decisions: ${decisions.slice(0, 5).map(d => d.title).join(', ')}
 Recent Tasks: ${tasks.slice(0, 5).map(t => t.title).join(', ')}
 
 Identify potential issues, opportunities for improvement, or helpful suggestions.
@@ -221,8 +254,8 @@ Return JSON array of nudges:
         action: item.action,
       }));
     } catch (error) {
-      console.error('AI nudge generation failed:', error);
-      return [];
+      // Error already handled by caller
+      throw error;
     }
   },
 

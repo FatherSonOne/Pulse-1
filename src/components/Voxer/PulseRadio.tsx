@@ -33,9 +33,8 @@ import {
 } from 'lucide-react';
 import VoxAudioVisualizer from './VoxAudioVisualizer';
 import RecordingPreview from './RecordingPreview';
-import { PTTButton } from './PTTButton';
 import VoxModeHeader from './VoxModeHeader';
-import RecordButton from './RecordButton';
+import VoxRecordArea from './VoxRecordArea';
 import { useVoxRecording } from '../../hooks/useVoxRecording';
 import { voxModeService } from '../../services/voxer/voxModeService';
 import analyticsCollector from '../../services/analyticsCollector';
@@ -852,44 +851,29 @@ const PulseRadio: React.FC<PulseRadioProps> = ({ onBack, isDarkMode = false }) =
                         className="pulse-radio-title-input"
                       />
 
-                      <div className="pulse-radio-ptt-area">
-                        <RecordButton
-                          state={recordingState === 'recording' ? 'recording' : recordingState === 'preview' ? 'processing' : 'idle'}
-                          recordingMode={recordingMode}
-                          duration={recordingDuration}
-                          onPointerDown={handlePointerDown}
-                          onPointerUp={handlePointerUp}
-                          onToggleRecording={handleToggleRecording}
-                          onModeToggle={() => setRecordingMode(mode => mode === 'hold' ? 'tap' : 'hold')}
-                          accentColor="#8B5CF6"
-                          size="lg"
-                          showModeToggle={true}
-                          showTimer={true}
-                          isDarkMode={isDarkMode}
-                          mode="audio"
-                          audioLevel={recordingState === 'recording' ? 0.5 : 0}
-                        />
-
-                        {recordingState === 'recording' ? (
-                          <div className="pulse-radio-recording-indicator">
-                            <div className="pulse-radio-recording-dot" />
-                            <span>Recording...</span>
-                            <span className="pulse-radio-duration">{formatDuration(recordingDuration)}</span>
-                          </div>
-                        ) : (
-                          <p className="pulse-radio-hint">Tap to start recording your broadcast</p>
+                      <VoxRecordArea
+                        modeColor="#8B5CF6"
+                        isDarkMode={isDarkMode}
+                        isRecording={recordingState === 'recording'}
+                        isPreviewing={recordingState === 'preview'}
+                        recordingMode={recordingMode}
+                        onModeToggle={() => setRecordingMode(mode => mode === 'hold' ? 'tap' : 'hold')}
+                        onPointerDown={handlePointerDown}
+                        onPointerUp={handlePointerUp}
+                        onToggleRecording={handleToggleRecording}
+                        recordingDuration={recordingDuration}
+                        recordingState={recordingState}
+                      >
+                        {recordingState === 'recording' && (
+                          <LayeredVisualizer
+                            analyser={analyser}
+                            isActive={true}
+                            height={80}
+                            color={MODE_COLOR}
+                            isDarkMode={isDarkMode}
+                          />
                         )}
-                      </div>
-
-                      {recordingState === 'recording' && (
-                        <LayeredVisualizer
-                          analyser={analyser}
-                          isActive={true}
-                          height={80}
-                          color={MODE_COLOR}
-                          isDarkMode={isDarkMode}
-                        />
-                      )}
+                      </VoxRecordArea>
                     </div>
                   )}
                 </div>
@@ -1307,36 +1291,29 @@ const PulseRadio: React.FC<PulseRadioProps> = ({ onBack, isDarkMode = false }) =
                 </div>
 
                 <div className="pulse-radio-discussion-record">
-                  <RecordButton
-                    state={recordingState === 'recording' ? 'recording' : recordingState === 'preview' ? 'processing' : 'idle'}
+                  <VoxRecordArea
+                    modeColor="#8B5CF6"
+                    isDarkMode={isDarkMode}
+                    isRecording={recordingState === 'recording'}
+                    isPreviewing={recordingState === 'preview'}
                     recordingMode={recordingMode}
-                    duration={recordingDuration}
+                    onModeToggle={() => setRecordingMode(mode => mode === 'hold' ? 'tap' : 'hold')}
                     onPointerDown={handlePointerDown}
                     onPointerUp={handlePointerUp}
                     onToggleRecording={handleToggleRecording}
-                    onModeToggle={() => setRecordingMode(mode => mode === 'hold' ? 'tap' : 'hold')}
-                    accentColor="#8B5CF6"
-                    size="md"
-                    showModeToggle={true}
-                    showTimer={true}
-                    isDarkMode={isDarkMode}
-                    mode="audio"
-                    audioLevel={recordingState === 'recording' ? 0.5 : 0}
-                  />
-
-                  {recordingState === 'recording' && (
-                    <LayeredVisualizer
-                      analyser={analyser}
-                      isActive={true}
-                      height={48}
-                      color={MODE_COLOR}
-                      isDarkMode={isDarkMode}
-                    />
-                  )}
-
-                  {recordingState === 'idle' && (
-                    <p className="pulse-radio-hint">Tap to record your response</p>
-                  )}
+                    recordingDuration={recordingDuration}
+                    recordingState={recordingState}
+                  >
+                    {recordingState === 'recording' && (
+                      <LayeredVisualizer
+                        analyser={analyser}
+                        isActive={true}
+                        height={48}
+                        color={MODE_COLOR}
+                        isDarkMode={isDarkMode}
+                      />
+                    )}
+                  </VoxRecordArea>
                 </div>
               </>
             )}

@@ -730,6 +730,7 @@
 }
 
 .vt-message {
+  position: relative;
   display: flex;
   flex-direction: column;
   gap: 0.5rem;
@@ -738,6 +739,7 @@
   border: 1px solid var(--vt-border);
   background: var(--vt-bg-glass);
   transition: all 0.2s ease;
+  overflow: visible;
 }
 
 .vt-message:hover {
@@ -897,6 +899,7 @@
   margin-top: 0.5rem;
   padding-top: 0.5rem;
   border-top: 1px solid var(--vt-border);
+  overflow: visible;
 }
 
 .vt-message-time {
@@ -905,6 +908,7 @@
 }
 
 .vt-message-actions-row {
+  position: relative;
   display: flex;
   align-items: center;
   gap: 0.5rem;
@@ -922,12 +926,18 @@
   color: var(--vt-text-muted);
   cursor: pointer;
   transition: all 0.2s ease;
+  pointer-events: auto;
+  z-index: 10;
 }
 
 .vt-quick-action:hover {
   background: var(--vt-bg-glass);
   border-color: var(--vt-accent);
   color: var(--vt-accent);
+}
+
+.vt-quick-action svg {
+  pointer-events: none;
 }
 
 .vt-read-receipt {
@@ -979,7 +989,7 @@
   backdrop-filter: blur(20px);
   border: 1px solid var(--vt-border);
   box-shadow: var(--vt-shadow-lg);
-  z-index: 10;
+  z-index: 1000;
   min-width: 180px;
 }
 

@@ -367,6 +367,8 @@ export const DecisionTaskHub: React.FC<DecisionTaskHubProps> = ({
                      import.meta.env.VITE_GEMINI_API_KEY ||
                      import.meta.env.VITE_API_KEY ||
                      '';
+      console.log('🔑 API Key source:', localStorage.getItem('gemini_api_key') ? 'localStorage' : import.meta.env.VITE_GEMINI_API_KEY ? 'VITE_GEMINI_API_KEY' : import.meta.env.VITE_API_KEY ? 'VITE_API_KEY' : 'none');
+      console.log('🔑 API Key present:', apiKey ? `Yes (${apiKey.substring(0, 10)}...)` : 'No');
       const generatedNudges = await proactiveSuggestionsService.generateNudges(
         decisions,
         tasks,

@@ -1185,6 +1185,7 @@
    ============================================ */
 
 .classic-voxer-message-actions-bar {
+  position: relative;
   display: flex;
   align-items: center;
   gap: 4px;

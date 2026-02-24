@@ -7,10 +7,13 @@ interface VoxRecordAreaProps {
   isRecording: boolean;
   isPreviewing: boolean;
   recordingMode: 'hold' | 'tap';
-  onToggleRecordingMode: () => void;
+  onToggleRecordingMode?: () => void;
+  onModeToggle?: () => void;
   onPointerDown: () => void;
   onPointerUp: () => void;
   onToggleRecording: () => void;
+  recordingDuration?: number;
+  recordingState?: 'idle' | 'recording' | 'preview' | 'analyzing';
   children?: React.ReactNode; // Optional controls like playback, visualizers, etc.
 }
 
@@ -31,9 +34,12 @@ const VoxRecordArea: React.FC<VoxRecordAreaProps> = ({
   isPreviewing,
   recordingMode,
   onToggleRecordingMode,
+  onModeToggle,
   onPointerDown,
   onPointerUp,
   onToggleRecording,
+  recordingDuration = 0,
+  recordingState,
   children,
 }) => {
   // Theme classes
@@ -59,6 +65,15 @@ const VoxRecordArea: React.FC<VoxRecordAreaProps> = ({
   const rgb = hexToRgb(modeColor);
   const glowColor = `rgba(${rgb.r}, ${rgb.g}, ${rgb.b}, ${isDarkMode ? '0.2' : '0.15'})`;
 
+  // Map boolean props or recordingState to RecordButton state
+  const recordButtonState: 'idle' | 'recording' | 'processing' =
+    recordingState === 'recording' ? 'recording' :
+    recordingState === 'analyzing' ? 'processing' :
+    recordingState === 'preview' ? 'processing' :
+    isRecording ? 'recording' :
+    isPreviewing ? 'processing' :
+    'idle';
+
   return (
     <div
       className={`relative p-6 rounded-2xl border ${tc.border} ${tc.cardBg} transition-all duration-300`}
@@ -80,30 +95,16 @@ const VoxRecordArea: React.FC<VoxRecordAreaProps> = ({
       {/* Record Button */}
       <div className="flex justify-center">
         <RecordButton
-          isRecording={isRecording}
-          isPreviewing={isPreviewing}
+          state={recordButtonState}
           recordingMode={recordingMode}
-          modeColor={modeColor}
-          onToggleRecordingMode={onToggleRecordingMode}
+          duration={recordingDuration}
           onPointerDown={onPointerDown}
           onPointerUp={onPointerUp}
           onToggleRecording={onToggleRecording}
+          onModeToggle={onModeToggle || onToggleRecordingMode || (() => {})}
+          accentColor={modeColor}
+          isDarkMode={isDarkMode}
         />
-      </div>
-
-      {/* Recording Mode Indicator */}
-      <div className="mt-4 text-center">
-        <button
-          onClick={onToggleRecordingMode}
-          className={`text-xs font-medium transition-colors duration-200 ${
-            isDarkMode
-              ? 'text-gray-400 hover:text-gray-300'
-              : 'text-gray-600 hover:text-gray-700'
-          }`}
-        >
-          {recordingMode === 'hold' ? '⏺ Hold to Record' : '⏺ Tap to Record'}
-          <span className="ml-1 text-[10px] opacity-60">(tap to switch)</span>
-        </button>
       </div>
     </div>
   );
