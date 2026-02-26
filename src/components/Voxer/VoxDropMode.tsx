@@ -6,28 +6,26 @@ import {
   Pause,
   Plus,
   Calendar,
-  ChevronLeft,
   Users,
   Gift,
   Trash2,
   Edit3,
   Send,
-  X,
   Check,
   Repeat,
   MapPin,
   Lock,
   Timer,
-  Square,
   Sparkles,
   TrendingUp,
   Loader2,
   Download,
   Archive,
+  MoreVertical,
 } from 'lucide-react';
 import VoxAudioVisualizer from './VoxAudioVisualizer';
 import RecordingPreview from './RecordingPreview';
-import VoxModeHeader from './VoxModeHeader';
+import VoxModeToolbar from './VoxModeToolbar';
 import VoxRecordArea from './VoxRecordArea';
 import { useVoxRecording } from '../../hooks/useVoxRecording';
 import { voxModeService } from '../../services/voxer/voxModeService';
@@ -37,6 +35,9 @@ import './Voxer.css';
 // Phase 2: Selection Mode
 import { useVoxSelection, VoxSelectionItem } from '../../hooks/useVoxSelection';
 import { VoxSelectToolbar } from './VoxSelectToolbar';
+import VoxMessageMenu from './VoxMessageMenu';
+import VoxDownloadModal from './VoxDownloadModal';
+import { archiveVoxerConversation } from '../../services/voxer/voxerArchiveService';
 
 // Phase 5: AI Enhancements
 import { VoxConversationSummary, VoxSmartReplies } from './index';
@@ -116,6 +117,12 @@ const VoxDropMode: React.FC<VoxDropModeProps> = ({
   const { playbackSpeed: globalPlaybackSpeed, setPlaybackSpeed: setGlobalPlaybackSpeed, applyToElement } = usePlaybackSpeed();
   const emptyConfig = getEmptyStateConfig('vox_drop');
 
+  // VoxMessageMenu state
+  const [showMessageMenu, setShowMessageMenu] = useState<string | null>(null);
+  const [menuAnchorRect, setMenuAnchorRect] = useState<DOMRect | null>(null);
+  const [showDownloadModal, setShowDownloadModal] = useState(false);
+  const [downloadItem, setDownloadItem] = useState<VoxSelectionItem | null>(null);
+
   // Use the recording hook for click-to-record with preview
   const {
     state: recordingState,
@@ -137,11 +144,51 @@ const VoxDropMode: React.FC<VoxDropModeProps> = ({
     },
   });
 
+  // VoxMessageMenu handler functions
+  const handleArchiveDrop = async (drop: any) => {
+    const item: VoxSelectionItem = {
+      id: drop.id,
+      type: 'audio',
+      url: drop.audioUrl || '',
+      duration: drop.duration || 0,
+      timestamp: drop.createdAt instanceof Date ? drop.createdAt : new Date(drop.createdAt || Date.now()),
+      mode: 'vox_drop',
+      contactName: drop.title || 'Vox Drop',
+      transcript: drop.transcript,
+    };
+    try {
+      await archiveVoxerConversation([item], drop.title || 'Vox Drop');
+      toast.success('Archived to Pulse Archives');
+    } catch {
+      toast.error('Failed to archive');
+    }
+  };
+
+  const handleDownloadDrop = (drop: any) => {
+    const item: VoxSelectionItem = {
+      id: drop.id,
+      type: 'audio',
+      url: drop.audioUrl || '',
+      duration: drop.duration || 0,
+      timestamp: drop.createdAt instanceof Date ? drop.createdAt : new Date(drop.createdAt || Date.now()),
+      mode: 'vox_drop',
+      contactName: drop.title || 'Vox Drop',
+      transcript: drop.transcript,
+    };
+    setDownloadItem(item);
+    setShowDownloadModal(true);
+  };
+
   // Phase 5: AI Handler Functions (defined before keyboard shortcuts to avoid TDZ)
   const handleSummarizeDrops = async () => {
     const drops = activeTab === 'scheduled' ? scheduledDrops : receivedDrops;
     if (drops.length === 0) {
       toast.error('No drops to summarize');
+      return;
+    }
+
+    if (!apiKey) {
+      toast.error('Gemini API key not configured');
       return;
     }
 
@@ -156,17 +203,24 @@ const VoxDropMode: React.FC<VoxDropModeProps> = ({
         duration: drop.duration,
       }));
 
-      const summary = await summarizeConversation('', messageData);
+      const summary = await summarizeConversation(apiKey, messageData);
       if (summary) {
         setConversationSummary(summary);
         setShowSummary(true);
         toast.success('Drops summarized!');
       } else {
-        toast.error('Failed to generate summary');
+        toast.error('AI summarizer unavailable — try again later');
       }
-    } catch (error) {
+    } catch (error: any) {
       console.error('Summarization error:', error);
-      toast.error('Failed to generate summary');
+      const msg = error?.message || '';
+      if (msg.includes('API key') || msg.includes('API_KEY') || msg.includes('invalid') || msg.includes('unauthorized')) {
+        toast.error('AI features require API configuration');
+      } else if (msg.includes('network') || msg.includes('fetch') || msg.includes('ECONNREFUSED')) {
+        toast.error('Network error — please try again');
+      } else {
+        toast.error('AI summarizer unavailable (beta)');
+      }
     } finally {
       setIsGeneratingAI(false);
     }
@@ -176,6 +230,11 @@ const VoxDropMode: React.FC<VoxDropModeProps> = ({
     const drops = receivedDrops;
     if (drops.length === 0) {
       toast.error('No drops to analyze');
+      return;
+    }
+
+    if (!apiKey) {
+      toast.error('Gemini API key not configured');
       return;
     }
 
@@ -192,7 +251,7 @@ const VoxDropMode: React.FC<VoxDropModeProps> = ({
         duration: drop.duration,
       }));
 
-      const replies = await generateSmartReplies('', {
+      const replies = await generateSmartReplies(apiKey, {
         id: lastDrop.id,
         transcription: lastDrop.transcript || '',
         sender: lastDrop.senderId === voxModeService.getUserId() ? 'me' : 'other' as 'me' | 'other',
@@ -206,11 +265,18 @@ const VoxDropMode: React.FC<VoxDropModeProps> = ({
         setShowSmartReplies(true);
         toast.success('Smart replies generated!');
       } else {
-        toast.error('Failed to generate smart replies');
+        toast.error('Smart replies unavailable — try again later');
       }
-    } catch (error) {
+    } catch (error: any) {
       console.error('Smart replies error:', error);
-      toast.error('Failed to generate smart replies');
+      const msg = error?.message || '';
+      if (msg.includes('API key') || msg.includes('API_KEY') || msg.includes('invalid') || msg.includes('unauthorized')) {
+        toast.error('AI features require API configuration');
+      } else if (msg.includes('network') || msg.includes('fetch') || msg.includes('ECONNREFUSED')) {
+        toast.error('Network error — please try again');
+      } else {
+        toast.error('Smart replies unavailable (beta)');
+      }
     } finally {
       setIsGeneratingAI(false);
     }
@@ -240,7 +306,17 @@ const VoxDropMode: React.FC<VoxDropModeProps> = ({
       else if (recordingState === 'recording') stopRecording();
     },
     onStopRecording: () => {
-      if (recordingState === 'recording') stopRecording();
+      // Priority 1: close any open modal/overlay first
+      if (showMessageMenu) { setShowMessageMenu(null); return; }
+      if (showSummary) { setShowSummary(false); return; }
+      if (showSmartReplies) { setShowSmartReplies(false); return; }
+      if (showDownloadModal) { setShowDownloadModal(false); return; }
+      if (showNewDrop) { setShowNewDrop(false); return; }
+      // Priority 2: discard active recording
+      if (recordingState === 'recording') { stopRecording(); return; }
+      // Priority 3: exit selection mode
+      if (isSelectionMode) { exitSelectionMode(); return; }
+      onBack();
     },
     onGoBack: onBack,
     onSwitchMode: (mode) => {
@@ -253,7 +329,17 @@ const VoxDropMode: React.FC<VoxDropModeProps> = ({
     },
     onArchive: () => {
       if (isSelectionMode && selectionCount > 0) {
-        console.log('Archive selected items');
+        (async () => {
+          try {
+            await archiveVoxerConversation(Array.from(selectedItems), 'Vox Drop');
+            exitSelectionMode();
+            toast.success(`Archived ${selectionCount} message${selectionCount > 1 ? 's' : ''}`);
+          } catch {
+            toast.error('Failed to archive');
+          }
+        })();
+      } else {
+        toast.error('Select messages first (click selection button)');
       }
     },
     onSummarize: handleSummarizeDrops,
@@ -444,72 +530,31 @@ const VoxDropMode: React.FC<VoxDropModeProps> = ({
   return (
     <div className={`h-full flex flex-col ${tc.pageBg}`}>
       {/* Header */}
-      <VoxModeHeader
-        modeName="Vox Drop"
-        modeTagline="Drop a voice note"
-        modeColor="#EF4444"
-        modeIcon={Gift}
+      <VoxModeToolbar
         onBack={onBack}
+        modeTitle="Vox Drop"
+        modeSubtitle="Scheduled Voice Messages"
+        modeIcon={<Clock className="w-5 h-5" />}
+        accentColor={MODE_COLOR}
         isDarkMode={isDarkMode}
-        actions={
-          <>
-            {/* Phase 5: AI Enhancement Buttons */}
-            <div className="flex items-center gap-2 border-r border-red-500/30 pr-2 mr-2">
-              <button
-                type="button"
-                onClick={handleSummarizeDrops}
-                disabled={(activeTab === 'scheduled' ? scheduledDrops.length : receivedDrops.length) === 0 || isGeneratingAI}
-                className="px-3 py-1.5 rounded-lg bg-purple-500 text-white text-xs font-medium hover:bg-purple-600 transition disabled:opacity-50 disabled:cursor-not-allowed"
-                title="AI Summarize Drops"
-              >
-                {isGeneratingAI ? <Loader2 className="w-3 h-3 animate-spin" /> : <Sparkles className="w-3 h-3" />}
-                <span className="ml-1.5 hidden md:inline">Summarize</span>
-              </button>
-
-              <button
-                type="button"
-                onClick={handleGenerateSmartReplies}
-                disabled={isGeneratingAI || receivedDrops.length === 0}
-                className="px-3 py-1.5 rounded-lg bg-blue-500 text-white text-xs font-medium hover:bg-blue-600 transition disabled:opacity-50 disabled:cursor-not-allowed"
-                title="Generate Smart Replies"
-              >
-                {isGeneratingAI ? <Loader2 className="w-3 h-3 animate-spin" /> : <TrendingUp className="w-3 h-3" />}
-                <span className="ml-1.5 hidden md:inline">Quick Reply</span>
-              </button>
-
-              {/* Phase 2: Selection Mode Button */}
-              <button
-                type="button"
-                onClick={(e) => {
-                  e.preventDefault();
-                  e.stopPropagation();
-                  if (isSelectionMode) {
-                    exitSelectionMode();
-                  } else {
-                    enterSelectionMode();
-                  }
-                }}
-                style={{
-                  background: isSelectionMode ? '#EF4444' : undefined,
-                  color: isSelectionMode ? 'white' : undefined,
-                }}
-                className="p-2 rounded-lg hover:bg-red-500/20 transition"
-                title="Select drops"
-              >
-                {isSelectionMode ? <X className="w-4 h-4" /> : <Square className="w-4 h-4" />}
-              </button>
-            </div>
-
-            <button
-              onClick={() => setShowNewDrop(true)}
-              className="flex items-center gap-2 px-4 py-2 rounded-xl text-sm font-medium bg-red-500/20 hover:bg-red-500/30 text-red-300 border border-red-500/30 transition-all"
-              title="Create new drop"
-            >
-              <Plus className="w-4 h-4" />
-              <span className="hidden sm:inline">New Drop</span>
-            </button>
-          </>
-        }
+        showAI={true}
+        onSummarize={handleSummarizeDrops}
+        onSmartReplies={handleGenerateSmartReplies}
+        isSummarizing={isGeneratingAI}
+        isGeneratingReplies={isGeneratingAI}
+        hasContent={(activeTab === 'scheduled' ? scheduledDrops.length : receivedDrops.length) > 0}
+        isSelectionMode={isSelectionMode}
+        onToggleSelection={() => isSelectionMode ? exitSelectionMode() : enterSelectionMode()}
+        onShowHelp={() => setShowShortcutsHelp(true)}
+        selectionCount={selectionCount}
+        customActions={[
+          {
+            icon: <Plus className="w-4 h-4" />,
+            label: 'New Drop',
+            title: 'Create new drop',
+            onClick: () => setShowNewDrop(true),
+          },
+        ]}
       />
 
       {/* Tabs */}
@@ -676,6 +721,39 @@ const VoxDropMode: React.FC<VoxDropModeProps> = ({
                     >
                       <Trash2 className="w-4 h-4" />
                     </button>
+                    <button
+                        type="button"
+                        onClick={(e) => {
+                        e.stopPropagation();
+                        const rect = (e.currentTarget as HTMLButtonElement).getBoundingClientRect();
+                        setMenuAnchorRect(rect);
+                        setShowMessageMenu(showMessageMenu === drop.id ? null : drop.id);
+                      }}
+                        className="p-1 rounded opacity-60 hover:opacity-100 transition-opacity"
+                        title="More actions"
+                      >
+                        <MoreVertical className="w-4 h-4" />
+                      </button>
+                      {showMessageMenu === drop.id && (
+                        <VoxMessageMenu
+                          isDarkMode={isDarkMode}
+                          accentColor={MODE_COLOR}
+                          anchorRect={menuAnchorRect!}
+                          onArchive={() => handleArchiveDrop(drop)}
+                          onDownload={() => handleDownloadDrop(drop)}
+                          onDelete={async () => {
+                            const success = await voxModeService.cancelVoxDrop(drop.id);
+                            if (success) {
+                              setScheduledDrops(prev => prev.filter(d => d.id !== drop.id));
+                              toast.success('Drop deleted');
+                            } else {
+                              toast.error('Failed to delete drop');
+                            }
+                            setShowMessageMenu(null);
+                          }}
+                          onClose={() => setShowMessageMenu(null)}
+                        />
+                    )}
                   </div>
                 </div>
 
@@ -804,6 +882,34 @@ const VoxDropMode: React.FC<VoxDropModeProps> = ({
                       <p className={`text-sm ${tc.textSecondary}`}>{drop.message}</p>
                     )}
                   </div>
+                  <button
+                      type="button"
+                      onClick={(e) => {
+                      e.stopPropagation();
+                      const rect = (e.currentTarget as HTMLButtonElement).getBoundingClientRect();
+                      setMenuAnchorRect(rect);
+                      setShowMessageMenu(showMessageMenu === drop.id ? null : drop.id);
+                    }}
+                      className="p-1 rounded opacity-60 hover:opacity-100 transition-opacity"
+                      title="More actions"
+                    >
+                      <MoreVertical className="w-4 h-4" />
+                    </button>
+                    {showMessageMenu === drop.id && (
+                      <VoxMessageMenu
+                        isDarkMode={isDarkMode}
+                        accentColor={MODE_COLOR}
+                        anchorRect={menuAnchorRect!}
+                        onArchive={() => handleArchiveDrop(drop)}
+                        onDownload={() => handleDownloadDrop(drop)}
+                        onDelete={() => {
+                          setReceivedDrops(prev => prev.filter(d => d.id !== drop.id));
+                          setShowMessageMenu(null);
+                          toast.success('Drop deleted');
+                        }}
+                        onClose={() => setShowMessageMenu(null)}
+                      />
+                  )}
                 </div>
 
                 {playingDropId === drop.id && (
@@ -1166,6 +1272,17 @@ const VoxDropMode: React.FC<VoxDropModeProps> = ({
         onClose={() => setShowShortcutsHelp(false)}
         isDarkMode={isDarkMode}
       />
+
+      {/* VoxDownloadModal */}
+      {showDownloadModal && downloadItem && (
+        <VoxDownloadModal
+          isOpen={showDownloadModal}
+          onClose={() => { setShowDownloadModal(false); setDownloadItem(null); }}
+          items={[downloadItem]}
+          isDarkMode={isDarkMode}
+          accentColor={MODE_COLOR}
+        />
+      )}
     </div>
   );
 };

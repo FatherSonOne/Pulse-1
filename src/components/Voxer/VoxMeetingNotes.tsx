@@ -1,7 +1,8 @@
 // VoxMeetingNotes - AI-generated meeting notes from voice conversations
 // Displays structured meeting notes with decisions, action items, and next steps
+// Supports archiving to Pulse Archives and clipboard copy
 
-import React from 'react';
+import React, { useState } from 'react';
 import {
   FileText,
   Calendar,
@@ -10,8 +11,11 @@ import {
   TrendingUp,
   Lightbulb,
   Sparkles,
-  Download,
+  Archive,
   Copy,
+  X,
+  Check,
+  Loader2,
 } from 'lucide-react';
 import { MeetingNotes } from '../../services/voxer/voxerAIService';
 
@@ -20,7 +24,9 @@ interface VoxMeetingNotesProps {
   isDarkMode?: boolean;
   accentColor?: string;
   onClose?: () => void;
-  onExport?: () => void;
+  /** Called when user clicks "Archive to Pulse" — parent handles the async op */
+  onArchive?: () => Promise<void>;
+  /** Called when user clicks "Copy" — parent handles clipboard or uses default */
   onCopy?: () => void;
 }
 
@@ -29,9 +35,13 @@ export const VoxMeetingNotes: React.FC<VoxMeetingNotesProps> = ({
   isDarkMode = false,
   accentColor = '#8B5CF6',
   onClose,
-  onExport,
+  onArchive,
   onCopy,
 }) => {
+  const [isArchiving, setIsArchiving] = useState(false);
+  const [archived, setArchived] = useState(false);
+  const [copied, setCopied] = useState(false);
+
   const tc = {
     bg: isDarkMode ? 'bg-zinc-900' : 'bg-white',
     border: isDarkMode ? 'border-zinc-700' : 'border-zinc-200',
@@ -40,6 +50,59 @@ export const VoxMeetingNotes: React.FC<VoxMeetingNotesProps> = ({
     textMuted: isDarkMode ? 'text-zinc-500' : 'text-zinc-400',
     cardBg: isDarkMode ? 'bg-zinc-800/50' : 'bg-zinc-50',
     hoverBg: isDarkMode ? 'hover:bg-zinc-700' : 'hover:bg-zinc-100',
+    footerBg: isDarkMode ? 'bg-zinc-800/60' : 'bg-zinc-50',
+  };
+
+  const handleArchive = async () => {
+    if (!onArchive || isArchiving || archived) return;
+    setIsArchiving(true);
+    try {
+      await onArchive();
+      setArchived(true);
+      // Reset after 3s so they could archive again if needed
+      setTimeout(() => setArchived(false), 3000);
+    } finally {
+      setIsArchiving(false);
+    }
+  };
+
+  const handleCopy = () => {
+    if (onCopy) {
+      onCopy();
+    } else {
+      // Default: build plain-text and copy
+      const lines: string[] = [
+        `# ${notes.title}`,
+        `Date: ${notes.date}`,
+        `Participants: ${notes.participants.join(', ')}`,
+        '',
+        '## Summary',
+        notes.summary,
+        '',
+      ];
+      if (notes.keyDecisions.length > 0) {
+        lines.push('## Key Decisions');
+        notes.keyDecisions.forEach((d, i) => lines.push(`${i + 1}. ${d}`));
+        lines.push('');
+      }
+      if (notes.actionItems.length > 0) {
+        lines.push('## Action Items');
+        notes.actionItems.forEach((item) => {
+          let line = `- [ ] ${item.task}`;
+          if (item.assignee) line += ` (${item.assignee})`;
+          if (item.dueDate) line += ` — due ${item.dueDate}`;
+          lines.push(line);
+        });
+        lines.push('');
+      }
+      if (notes.nextSteps.length > 0) {
+        lines.push('## Next Steps');
+        notes.nextSteps.forEach((s) => lines.push(`- ${s}`));
+      }
+      navigator.clipboard.writeText(lines.join('\n')).catch(() => {});
+    }
+    setCopied(true);
+    setTimeout(() => setCopied(false), 2000);
   };
 
   return (
@@ -76,26 +139,15 @@ export const VoxMeetingNotes: React.FC<VoxMeetingNotesProps> = ({
               </div>
             </div>
           </div>
-          <div className="flex items-center gap-2">
-            {onCopy && (
-              <button
-                onClick={onCopy}
-                className={`p-2 rounded-lg transition-colors ${tc.hoverBg}`}
-                title="Copy to clipboard"
-              >
-                <Copy className={`w-4 h-4 ${tc.textSecondary}`} />
-              </button>
-            )}
-            {onExport && (
-              <button
-                onClick={onExport}
-                className={`p-2 rounded-lg transition-colors ${tc.hoverBg}`}
-                title="Export notes"
-              >
-                <Download className={`w-4 h-4 ${tc.textSecondary}`} />
-              </button>
-            )}
-          </div>
+          {onClose && (
+            <button
+              onClick={onClose}
+              className={`p-2 rounded-lg transition-colors ${tc.hoverBg}`}
+              title="Close"
+            >
+              <X className={`w-4 h-4 ${tc.textSecondary}`} />
+            </button>
+          )}
         </div>
         <div className="flex items-center gap-2">
           <Sparkles className="w-3.5 h-3.5" style={{ color: accentColor }} />
@@ -156,7 +208,7 @@ export const VoxMeetingNotes: React.FC<VoxMeetingNotesProps> = ({
               {notes.actionItems.map((item, index) => (
                 <div
                   key={index}
-                  className={`p-3 rounded-lg border ${tc.border}`}
+                  className={`p-3 rounded-lg border`}
                   style={{
                     borderColor: isDarkMode ? 'rgba(255,255,255,0.08)' : 'rgba(0,0,0,0.08)',
                   }}
@@ -165,9 +217,7 @@ export const VoxMeetingNotes: React.FC<VoxMeetingNotesProps> = ({
                     <div
                       className="w-5 h-5 rounded border-2 flex items-center justify-center flex-shrink-0 mt-0.5"
                       style={{ borderColor: accentColor }}
-                    >
-                      {/* Empty checkbox */}
-                    </div>
+                    />
                     <div className="flex-1">
                       <p className={`text-sm ${tc.text}`}>{item.task}</p>
                       {(item.assignee || item.dueDate) && (
@@ -214,6 +264,64 @@ export const VoxMeetingNotes: React.FC<VoxMeetingNotesProps> = ({
             </ul>
           </div>
         )}
+      </div>
+
+      {/* Action Footer */}
+      <div
+        className={`px-5 py-3 border-t flex items-center gap-3 ${tc.footerBg}`}
+        style={{ borderColor: isDarkMode ? 'rgba(255,255,255,0.08)' : 'rgba(0,0,0,0.08)' }}
+      >
+        {/* Archive to Pulse — primary action */}
+        {onArchive && (
+          <button
+            onClick={handleArchive}
+            disabled={isArchiving || archived}
+            className="flex items-center gap-2 px-4 py-2 rounded-lg text-sm font-medium text-white transition-all disabled:opacity-70"
+            style={{
+              background: archived
+                ? '#22c55e'
+                : `linear-gradient(135deg, ${accentColor}, ${accentColor}cc)`,
+              boxShadow: archived ? '0 2px 8px rgba(34,197,94,0.3)' : `0 2px 8px ${accentColor}30`,
+            }}
+            title="Save to Pulse Archives"
+          >
+            {isArchiving ? (
+              <Loader2 className="w-4 h-4 animate-spin" />
+            ) : archived ? (
+              <Check className="w-4 h-4" />
+            ) : (
+              <Archive className="w-4 h-4" />
+            )}
+            {isArchiving ? 'Archiving…' : archived ? 'Archived!' : 'Archive to Pulse'}
+          </button>
+        )}
+
+        {/* Copy as text — secondary action */}
+        <button
+          onClick={handleCopy}
+          className={`flex items-center gap-2 px-4 py-2 rounded-lg text-sm font-medium border transition-all ${tc.hoverBg}`}
+          style={{
+            borderColor: isDarkMode ? 'rgba(255,255,255,0.12)' : 'rgba(0,0,0,0.12)',
+            color: copied ? '#22c55e' : undefined,
+          }}
+          title="Copy notes as plain text"
+        >
+          {copied ? (
+            <Check className="w-4 h-4" />
+          ) : (
+            <Copy className="w-4 h-4" />
+          )}
+          {copied ? 'Copied!' : 'Copy'}
+        </button>
+
+        <div className="flex-1" />
+
+        {/* Stats summary */}
+        <span className={`text-xs ${tc.textMuted}`}>
+          {notes.actionItems.length > 0 && `${notes.actionItems.length} action${notes.actionItems.length !== 1 ? 's' : ''}`}
+          {notes.actionItems.length > 0 && notes.keyDecisions.length > 0 && ' · '}
+          {notes.keyDecisions.length > 0 && `${notes.keyDecisions.length} decision${notes.keyDecisions.length !== 1 ? 's' : ''}`}
+        </span>
       </div>
     </div>
   );

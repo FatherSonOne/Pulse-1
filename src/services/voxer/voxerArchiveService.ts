@@ -3,6 +3,7 @@
 
 import { VoxSelectionItem } from '../../hooks/useVoxSelection';
 import { saveArchiveItem } from '../dbService';
+import type { MeetingNotes } from './voxerAIService';
 
 /**
  * Format duration from seconds to readable string
@@ -131,6 +132,68 @@ export async function archiveVoxerConversation(
         start: sortedItems[0].timestamp.toISOString(),
         end: sortedItems[sortedItems.length - 1].timestamp.toISOString(),
       },
+    },
+  });
+}
+
+/**
+ * Archive AI-generated meeting notes to Pulse Archives
+ * Saves the structured meeting notes as a meeting_note archive item
+ */
+export async function archiveMeetingNotes(
+  notes: MeetingNotes,
+  source: string = 'Voxer'
+): Promise<void> {
+  // Build a readable plain-text version of the notes
+  const lines: string[] = [];
+
+  lines.push(`# ${notes.title}`);
+  lines.push(`Date: ${notes.date}`);
+  lines.push(`Participants: ${notes.participants.join(', ')}`);
+  lines.push('');
+
+  lines.push('## Summary');
+  lines.push(notes.summary);
+  lines.push('');
+
+  if (notes.keyDecisions.length > 0) {
+    lines.push('## Key Decisions');
+    notes.keyDecisions.forEach((d, i) => lines.push(`${i + 1}. ${d}`));
+    lines.push('');
+  }
+
+  if (notes.actionItems.length > 0) {
+    lines.push('## Action Items');
+    notes.actionItems.forEach((item) => {
+      let line = `- [ ] ${item.task}`;
+      if (item.assignee) line += ` (${item.assignee})`;
+      if (item.dueDate) line += ` — due ${item.dueDate}`;
+      lines.push(line);
+    });
+    lines.push('');
+  }
+
+  if (notes.nextSteps.length > 0) {
+    lines.push('## Next Steps');
+    notes.nextSteps.forEach((s) => lines.push(`- ${s}`));
+    lines.push('');
+  }
+
+  const content = lines.join('\n');
+
+  await saveArchiveItem({
+    type: 'meeting_note',
+    title: `${notes.title} — ${notes.date}`,
+    content,
+    tags: ['voxer', 'meeting-notes', 'ai-generated', source.toLowerCase().replace(/\s+/g, '-')],
+    metadata: {
+      source,
+      generatedAt: new Date().toISOString(),
+      participants: notes.participants,
+      actionItemCount: notes.actionItems.length,
+      decisionCount: notes.keyDecisions.length,
+      nextStepCount: notes.nextSteps.length,
+      archiveSource: 'voxer_meeting_notes',
     },
   });
 }

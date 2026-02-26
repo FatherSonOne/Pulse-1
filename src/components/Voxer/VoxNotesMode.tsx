@@ -9,7 +9,6 @@ import {
   Star,
   Tag,
   Link2,
-  ChevronLeft,
   Clock,
   Sparkles,
   Mail,
@@ -21,18 +20,17 @@ import {
   Copy,
   ExternalLink,
   X,
-  Square,
   Check,
   Menu,
   Download,
   Archive,
-  TrendingUp,
-  Loader2,
+  MoreVertical,
 } from 'lucide-react';
 import VoxAudioVisualizer from './VoxAudioVisualizer';
 import RecordingPreview from './RecordingPreview';
 import RecordButton from './RecordButton';
 import VoxModeHeader from './VoxModeHeader';
+import VoxModeToolbar from './VoxModeToolbar';
 import VoxRecordArea from './VoxRecordArea';
 import { useVoxRecording } from '../../hooks/useVoxRecording';
 import { voxModeService } from '../../services/voxer/voxModeService';
@@ -44,6 +42,9 @@ import './Voxer.css';
 // Phase 2: Selection Mode
 import { useVoxSelection, VoxSelectionItem } from '../../hooks/useVoxSelection';
 import { VoxSelectToolbar } from './VoxSelectToolbar';
+import VoxMessageMenu from './VoxMessageMenu';
+import VoxDownloadModal from './VoxDownloadModal';
+import { archiveVoxerConversation } from '../../services/voxer/voxerArchiveService';
 
 // Phase 5: AI Enhancements
 import { VoxConversationSummary, VoxSmartReplies } from './index';
@@ -92,6 +93,10 @@ const VoxNotesMode: React.FC<VoxNotesModeProps> = ({
   const [allTags, setAllTags] = useState<string[]>([]);
   const [showLinkModal, setShowLinkModal] = useState(false);
   const [showMobileSidebar, setShowMobileSidebar] = useState(false);
+  const [showMessageMenu, setShowMessageMenu] = useState<string | null>(null);
+  const [menuAnchorRect, setMenuAnchorRect] = useState<DOMRect | null>(null);
+  const [showDownloadModal, setShowDownloadModal] = useState(false);
+  const [downloadItem, setDownloadItem] = useState<VoxSelectionItem | null>(null);
 
   const audioRef = useRef<HTMLAudioElement>(null);
 
@@ -149,6 +154,11 @@ const VoxNotesMode: React.FC<VoxNotesModeProps> = ({
       return;
     }
 
+    if (!apiKey) {
+      toast.error('Gemini API key not configured');
+      return;
+    }
+
     setIsGeneratingAI(true);
     try {
       const noteData = notes.slice(0, 10).map(note => ({
@@ -160,17 +170,24 @@ const VoxNotesMode: React.FC<VoxNotesModeProps> = ({
         duration: note.duration,
       }));
 
-      const summary = await summarizeConversation('', noteData);
+      const summary = await summarizeConversation(apiKey, noteData);
       if (summary) {
         setConversationSummary(summary);
         setShowSummary(true);
         toast.success('Notes summarized!');
       } else {
-        toast.error('Failed to generate summary');
+        toast.error('AI summarizer unavailable — try again later');
       }
-    } catch (error) {
+    } catch (error: any) {
       console.error('Summarization error:', error);
-      toast.error('Failed to generate summary');
+      const msg = error?.message || '';
+      if (msg.includes('API key') || msg.includes('API_KEY') || msg.includes('invalid') || msg.includes('unauthorized')) {
+        toast.error('AI features require API configuration');
+      } else if (msg.includes('network') || msg.includes('fetch') || msg.includes('ECONNREFUSED')) {
+        toast.error('Network error — please try again');
+      } else {
+        toast.error('AI summarizer unavailable (beta)');
+      }
     } finally {
       setIsGeneratingAI(false);
     }
@@ -180,6 +197,11 @@ const VoxNotesMode: React.FC<VoxNotesModeProps> = ({
     const recentNotes = notes.slice(0, 5);
     if (recentNotes.length === 0) {
       toast.error('No notes to analyze');
+      return;
+    }
+
+    if (!apiKey) {
+      toast.error('Gemini API key not configured');
       return;
     }
 
@@ -195,7 +217,7 @@ const VoxNotesMode: React.FC<VoxNotesModeProps> = ({
         duration: note.duration,
       }));
 
-      const replies = await generateSmartReplies('', {
+      const replies = await generateSmartReplies(apiKey, {
         id: lastNote.id,
         transcription: lastNote.transcript || '',
         sender: 'me' as const,
@@ -209,11 +231,18 @@ const VoxNotesMode: React.FC<VoxNotesModeProps> = ({
         setShowSmartReplies(true);
         toast.success('Smart replies generated!');
       } else {
-        toast.error('Failed to generate smart replies');
+        toast.error('Smart replies unavailable — try again later');
       }
-    } catch (error) {
+    } catch (error: any) {
       console.error('Smart replies error:', error);
-      toast.error('Failed to generate smart replies');
+      const msg = error?.message || '';
+      if (msg.includes('API key') || msg.includes('API_KEY') || msg.includes('invalid') || msg.includes('unauthorized')) {
+        toast.error('AI features require API configuration');
+      } else if (msg.includes('network') || msg.includes('fetch') || msg.includes('ECONNREFUSED')) {
+        toast.error('Network error — please try again');
+      } else {
+        toast.error('Smart replies unavailable (beta)');
+      }
     } finally {
       setIsGeneratingAI(false);
     }
@@ -242,7 +271,19 @@ const VoxNotesMode: React.FC<VoxNotesModeProps> = ({
       else if (recordingState === 'recording') stopRecording();
     },
     onStopRecording: () => {
-      if (recordingState === 'recording') stopRecording();
+      // Priority 1: close any open modal/overlay first
+      if (showMessageMenu) { setShowMessageMenu(null); return; }
+      if (showSummary) { setShowSummary(false); return; }
+      if (showSmartReplies) { setShowSmartReplies(false); return; }
+      if (showDownloadModal) { setShowDownloadModal(false); return; }
+      if (showLinkModal) { setShowLinkModal(false); return; }
+      // Priority 2: discard active recording
+      if (recordingState === 'recording') { stopRecording(); return; }
+      // Priority 3: exit selection mode
+      if (isSelectionMode) { exitSelectionMode(); return; }
+      // Priority 4: go back
+      if (selectedNote) { setSelectedNote(null); return; }
+      onBack();
     },
     onGoBack: () => {
       if (selectedNote) setSelectedNote(null);
@@ -258,7 +299,17 @@ const VoxNotesMode: React.FC<VoxNotesModeProps> = ({
     },
     onArchive: () => {
       if (isSelectionMode && selectionCount > 0) {
-        console.log('Archive selected notes');
+        (async () => {
+          try {
+            await archiveVoxerConversation(Array.from(selectedItems), 'My Notes');
+            exitSelectionMode();
+            toast.success(`Archived ${selectionCount} message${selectionCount > 1 ? 's' : ''}`);
+          } catch {
+            toast.error('Failed to archive');
+          }
+        })();
+      } else {
+        toast.error('Select messages first (click selection button)');
       }
     },
     onSummarize: handleSummarizeNotes,
@@ -430,6 +481,38 @@ const VoxNotesMode: React.FC<VoxNotesModeProps> = ({
     }
   };
 
+  const handleArchiveNote = async (note: any) => {
+    const item: VoxSelectionItem = {
+      id: note.id,
+      type: 'audio',
+      url: note.audioUrl || '',
+      duration: note.duration || 0,
+      timestamp: note.createdAt instanceof Date ? note.createdAt : new Date(note.createdAt || Date.now()),
+      mode: 'vox_notes',
+      transcript: note.transcript,
+    };
+    try {
+      await archiveVoxerConversation([item], note.title || 'Vox Note');
+      toast.success('Archived to Pulse Archives');
+    } catch {
+      toast.error('Failed to archive');
+    }
+  };
+
+  const handleDownloadNote = (note: any) => {
+    const item: VoxSelectionItem = {
+      id: note.id,
+      type: 'audio',
+      url: note.audioUrl || '',
+      duration: note.duration || 0,
+      timestamp: note.createdAt instanceof Date ? note.createdAt : new Date(note.createdAt || Date.now()),
+      mode: 'vox_notes',
+      transcript: note.transcript,
+    };
+    setDownloadItem(item);
+    setShowDownloadModal(true);
+  };
+
   const formatDuration = (seconds: number) => {
     const mins = Math.floor(seconds / 60);
     const secs = Math.floor(seconds % 60);
@@ -587,7 +670,7 @@ const VoxNotesMode: React.FC<VoxNotesModeProps> = ({
               </span>
             </div>
             {dateNotes.map((note) => (
-              <button
+              <div
                 key={note.id}
                 onClick={() => {
                   if (!isSelectionMode) {
@@ -597,9 +680,22 @@ const VoxNotesMode: React.FC<VoxNotesModeProps> = ({
                     setShowMobileSidebar(false);
                   }
                 }}
-                className={`w-full p-4 text-left border-b ${tc.border} transition-all relative ${
+                className={`w-full p-4 text-left border-b ${tc.border} transition-all relative cursor-pointer ${
                   selectedNote?.id === note.id ? tc.activeBg : tc.hoverBg
                 }`}
+                role="button"
+                tabIndex={0}
+                onKeyDown={(e) => {
+                  if (e.key === 'Enter' || e.key === ' ') {
+                    e.preventDefault();
+                    if (!isSelectionMode) {
+                      setSelectedNote(note);
+                      setIsPlaying(false);
+                      setPlaybackProgress(0);
+                      setShowMobileSidebar(false);
+                    }
+                  }
+                }}
               >
                 {/* Phase 2: Selection Checkbox */}
                 {isSelectionMode && (
@@ -678,8 +774,42 @@ const VoxNotesMode: React.FC<VoxNotesModeProps> = ({
                       )}
                     </div>
                   </div>
+
+                  {/* More Actions Menu */}
+                  {!isSelectionMode && (
+                    <>
+                      <button
+                        type="button"
+                        onClick={(e) => {
+                          e.stopPropagation();
+                          const rect = (e.currentTarget as HTMLButtonElement).getBoundingClientRect();
+                          setMenuAnchorRect(rect);
+                          setShowMessageMenu(showMessageMenu === note.id ? null : note.id);
+                        }}
+                        className="p-1 rounded opacity-60 hover:opacity-100 transition-opacity"
+                        title="More actions"
+                      >
+                        <MoreVertical className="w-4 h-4" />
+                      </button>
+                      {showMessageMenu === note.id && menuAnchorRect && (
+                        <VoxMessageMenu
+                          isDarkMode={isDarkMode}
+                          accentColor={MODE_COLOR}
+                          anchorRect={menuAnchorRect}
+                          onArchive={() => handleArchiveNote(note)}
+                          onDownload={() => handleDownloadNote(note)}
+                          onDelete={() => {
+                            setNotes(prev => prev.filter(n => n.id !== note.id));
+                            setShowMessageMenu(null);
+                            toast.success('Note deleted');
+                          }}
+                          onClose={() => setShowMessageMenu(null)}
+                        />
+                      )}
+                    </>
+                  )}
                 </div>
-              </button>
+              </div>
             ))}
           </div>
         ))}
@@ -700,157 +830,30 @@ const VoxNotesMode: React.FC<VoxNotesModeProps> = ({
   return (
     <div className={`h-full flex flex-col ${tc.pageBg}`}>
       {/* Header */}
-      <div
-        className={`px-4 md:px-6 py-4 border-b ${tc.border} ${tc.panelBg}`}
-        style={{
-          background: isDarkMode
-            ? `linear-gradient(135deg, rgba(236,72,153,0.15) 0%, transparent 50%)`
-            : `linear-gradient(135deg, rgba(236,72,153,0.1) 0%, transparent 50%)`
-        }}
-      >
-        <div className="flex items-center gap-3 md:gap-4">
-          <button
-            onClick={onBack}
-            className={`p-2 rounded-xl ${tc.btnGhost} transition-all duration-200`}
-            aria-label="Go back"
-          >
-            <ChevronLeft className="w-5 h-5" />
-          </button>
-
-          <div
-            className="p-2.5 rounded-xl shadow-lg"
-            style={{
-              background: `linear-gradient(135deg, ${MODE_COLOR} 0%, #e11d48 100%)`,
-              boxShadow: `0 8px 24px ${MODE_COLOR}40`
-            }}
-          >
-            <FileText className="w-5 h-5 md:w-6 md:h-6 text-white" />
-          </div>
-
-          <div className="flex-1 min-w-0">
-            <h1 className={`text-lg md:text-xl font-bold ${tc.text}`}>Vox Notes</h1>
-            <p className={`text-xs md:text-sm ${tc.textSecondary} hidden sm:block`}>Your Voice, Organized</p>
-          </div>
-
-          {/* Phase 5: AI Enhancement Buttons */}
-          {notes.length > 0 && (
-            <div className="flex items-center gap-2 border-r border-pink-500/30 pr-2 mr-2">
-              <button
-                type="button"
-                onClick={handleSummarizeNotes}
-                disabled={notes.length === 0 || isGeneratingAI}
-                className="px-3 py-1.5 rounded-lg bg-purple-500 text-white text-xs font-medium hover:bg-purple-600 transition disabled:opacity-50 disabled:cursor-not-allowed flex items-center gap-1.5"
-                title="AI Summarize Notes"
-              >
-                {isGeneratingAI ? <Loader2 className="w-3 h-3 animate-spin" /> : <Sparkles className="w-3 h-3" />}
-                <span className="hidden md:inline">Summarize</span>
-              </button>
-
-              <button
-                type="button"
-                onClick={handleGenerateSmartReplies}
-                disabled={isGeneratingAI}
-                className="px-3 py-1.5 rounded-lg bg-blue-500 text-white text-xs font-medium hover:bg-blue-600 transition disabled:opacity-50 disabled:cursor-not-allowed flex items-center gap-1.5"
-                title="Generate Smart Replies"
-              >
-                {isGeneratingAI ? <Loader2 className="w-3 h-3 animate-spin" /> : <TrendingUp className="w-3 h-3" />}
-                <span className="hidden md:inline">Quick Reply</span>
-              </button>
-
-              {/* Phase 2: Selection Mode Button */}
-              <button
-                type="button"
-                onClick={(e) => {
-                  e.preventDefault();
-                  e.stopPropagation();
-                  if (isSelectionMode) {
-                    exitSelectionMode();
-                  } else {
-                    enterSelectionMode();
-                  }
-                }}
-                style={{
-                  background: isSelectionMode ? '#EC4899' : undefined,
-                  color: isSelectionMode ? 'white' : undefined,
-                }}
-                className="p-2 rounded-lg hover:bg-pink-500/20 transition"
-                title="Select notes"
-              >
-                {isSelectionMode ? <X className="w-4 h-4" /> : <Square className="w-4 h-4" />}
-              </button>
-            </div>
-          )}
-
-          {/* Mobile sidebar toggle */}
-          <button
-            onClick={() => setShowMobileSidebar(true)}
-            className={`md:hidden p-2 rounded-xl ${tc.btnGhost} transition-all`}
-            aria-label="Show notes list"
-          >
-            <Menu className="w-5 h-5" />
-          </button>
-
-          {/* Quick Record Button */}
-          <button
-            onClick={handleRecordToggle}
-            disabled={recordingState === 'preview'}
-            className={`flex items-center gap-2 px-3 md:px-4 py-2 rounded-xl text-sm font-medium transition-all duration-300 ${
-              recordingState === 'recording'
-                ? 'bg-red-500 text-white shadow-lg shadow-red-500/50'
-                : tc.btnPrimary
-            } disabled:opacity-50 disabled:cursor-not-allowed`}
-            aria-label={recordingState === 'recording' ? 'Stop recording' : 'Start recording'}
-          >
-            {recordingState === 'recording' && (
-              <span className="absolute inset-0 rounded-xl animate-ping bg-red-400 opacity-30" />
-            )}
-            <span className="relative z-10 flex items-center gap-2">
-              {recordingState === 'recording' ? (
-                <>
-                  <Square className="w-4 h-4" />
-                  <span className="hidden sm:inline">Stop</span>
-                  <span className="font-mono text-xs">{Math.floor(recordingDuration / 60)}:{Math.floor(recordingDuration % 60).toString().padStart(2, '0')}</span>
-                </>
-              ) : (
-                <>
-                  <Mic className="w-4 h-4" />
-                  <span className="hidden sm:inline">New Note</span>
-                </>
-              )}
-            </span>
-          </button>
-        </div>
-      </div>
-
-      {/* Recording Banner */}
-      {recordingState === 'recording' && (
-        <div className={`px-4 md:px-6 py-4 border-b border-red-500/30 ${isDarkMode ? 'bg-red-500/10' : 'bg-red-50'}`}>
-          <div className="flex flex-col items-center gap-3 w-full">
-            <div className="flex items-center gap-4">
-              <div className="w-3 h-3 bg-red-500 rounded-full animate-pulse" />
-              <span className="text-sm text-red-500 font-medium">
-                Recording... {Math.floor(recordingDuration / 60)}:{Math.floor(recordingDuration % 60).toString().padStart(2, '0')}
-              </span>
-              <button
-                onClick={stopRecording}
-                className="px-3 py-1.5 bg-red-500 hover:bg-red-600 text-white text-sm rounded-xl transition-all"
-              >
-                Stop
-              </button>
-            </div>
-            <div className="w-full max-w-lg">
-              <VoxAudioVisualizer
-                analyser={analyser}
-                isActive={true}
-                mode="waveform"
-                color={MODE_COLOR}
-                height={48}
-                isDarkMode={isDarkMode}
-              />
-            </div>
-          </div>
-        </div>
-      )}
+      <VoxModeToolbar
+        onBack={onBack}
+        modeIcon={<FileText className="w-5 h-5" />}
+        modeTitle="Vox Notes"
+        modeSubtitle="Your Voice, Organized"
+        accentColor={MODE_COLOR}
+        isDarkMode={isDarkMode}
+        showAI={notes.length > 0}
+        onSummarize={handleSummarizeNotes}
+        onSmartReplies={handleGenerateSmartReplies}
+        isSummarizing={isGeneratingAI}
+        isGeneratingReplies={isGeneratingAI}
+        hasContent={notes.length > 0}
+        isSelectionMode={isSelectionMode}
+        onToggleSelection={() => isSelectionMode ? exitSelectionMode() : enterSelectionMode()}
+        onShowHelp={() => setShowShortcutsHelp(true)}
+        customActions={[
+          {
+            icon: <span className="md:hidden"><Menu className="w-5 h-5" /></span>,
+            title: 'Show notes list',
+            onClick: () => setShowMobileSidebar(true),
+          },
+        ]}
+      />
 
       {/* Recording Preview Panel */}
       {recordingState === 'preview' && recordingData && (
@@ -866,6 +869,36 @@ const VoxNotesMode: React.FC<VoxNotesModeProps> = ({
             isDarkMode={isDarkMode}
             modeColor={MODE_COLOR}
           />
+        </div>
+      )}
+
+      {/* VoxRecordArea - unified recording interface with Hold/Tap toggle */}
+      {recordingState !== 'preview' && (
+        <div className={`px-4 md:px-6 py-4 border-b ${tc.border}`}>
+          <VoxRecordArea
+            modeColor={MODE_COLOR}
+            isDarkMode={isDarkMode}
+            isRecording={recordingState === 'recording'}
+            isPreviewing={false}
+            recordingMode={recordingMode}
+            onToggleRecordingMode={() => setRecordingMode(prev => prev === 'hold' ? 'tap' : 'hold')}
+            onPointerDown={handlePointerDown}
+            onPointerUp={handlePointerUp}
+            onToggleRecording={handleToggleRecording}
+            recordingDuration={recordingDuration}
+            recordingState={recordingState}
+          >
+            {recordingState === 'recording' && (
+              <VoxAudioVisualizer
+                analyser={analyser}
+                isActive={true}
+                mode="waveform"
+                color={MODE_COLOR}
+                height={48}
+                isDarkMode={isDarkMode}
+              />
+            )}
+          </VoxRecordArea>
         </div>
       )}
 
@@ -1232,6 +1265,17 @@ const VoxNotesMode: React.FC<VoxNotesModeProps> = ({
         onClose={() => setShowShortcutsHelp(false)}
         isDarkMode={isDarkMode}
       />
+
+      {/* Download Modal */}
+      {showDownloadModal && downloadItem && (
+        <VoxDownloadModal
+          isOpen={showDownloadModal}
+          onClose={() => { setShowDownloadModal(false); setDownloadItem(null); }}
+          items={[downloadItem]}
+          isDarkMode={isDarkMode}
+          accentColor={MODE_COLOR}
+        />
+      )}
     </div>
   );
 };

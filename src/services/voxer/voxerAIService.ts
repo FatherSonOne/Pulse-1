@@ -125,9 +125,16 @@ Format your response as JSON with this structure:
     }
 
     return null;
-  } catch (error) {
+  } catch (error: any) {
     console.error('Conversation summarization error:', error);
-    return null;
+    const msg = String(error?.message || error || '');
+    if (msg.includes('API key') || msg.includes('API_KEY') || msg.includes('invalid') || msg.includes('unauthorized')) {
+      throw new Error('AI features require API configuration');
+    }
+    if (msg.includes('network') || msg.includes('fetch') || msg.includes('ECONNREFUSED')) {
+      throw new Error('Network error — please try again');
+    }
+    throw new Error('AI summarizer unavailable (beta)');
   }
 }
 
@@ -187,9 +194,16 @@ Format as JSON:
     }
 
     return [];
-  } catch (error) {
+  } catch (error: any) {
     console.error('Smart replies generation error:', error);
-    return [];
+    const msg = String(error?.message || error || '');
+    if (msg.includes('API key') || msg.includes('API_KEY') || msg.includes('invalid') || msg.includes('unauthorized')) {
+      throw new Error('AI features require API configuration');
+    }
+    if (msg.includes('network') || msg.includes('fetch') || msg.includes('ECONNREFUSED')) {
+      throw new Error('Network error — please try again');
+    }
+    throw new Error('AI replies unavailable (beta)');
   }
 }
 
@@ -272,9 +286,16 @@ Format as JSON:
     }
 
     return null;
-  } catch (error) {
+  } catch (error: any) {
     console.error('Meeting notes generation error:', error);
-    return null;
+    const msg = String(error?.message || error || '');
+    if (msg.includes('API key') || msg.includes('API_KEY') || msg.includes('invalid') || msg.includes('unauthorized')) {
+      throw new Error('AI features require API configuration');
+    }
+    if (msg.includes('network') || msg.includes('fetch') || msg.includes('ECONNREFUSED')) {
+      throw new Error('Network error — please try again');
+    }
+    throw new Error('AI meeting notes unavailable (beta)');
   }
 }
 

@@ -38,10 +38,12 @@ import {
   Sliders,
   Phone,
   Radio,
+  List,
 } from 'lucide-react';
 import VoxAudioVisualizer from './VoxAudioVisualizer';
 import RecordingPreview from './RecordingPreview';
 import VoxModeHeader from './VoxModeHeader';
+import VoxModeToolbar from './VoxModeToolbar';
 import VoxRecordArea from './VoxRecordArea';
 import { useVoxRecording } from '../../hooks/useVoxRecording';
 import { blobToBase64 } from '../../services/audioService';
@@ -85,6 +87,11 @@ import { usePlaybackSpeed } from '../../hooks/usePlaybackSpeed';
 import { PlaybackSpeedControl } from './PlaybackSpeedControl';
 import { VoxEmptyState } from './VoxEmptyState';
 import { getEmptyStateConfig } from './voxEmptyStates';
+
+// Message Menu & Download Modal
+import VoxMessageMenu from './VoxMessageMenu';
+import VoxDownloadModal from './VoxDownloadModal';
+import { archiveVoxerConversation } from '../../services/voxer/voxerArchiveService';
 
 // ============================================
 // TYPES
@@ -177,6 +184,9 @@ const ClassicVoxerMode: React.FC<ClassicVoxerModeProps> = ({
   // Settings and controls state
   const [showSettings, setShowSettings] = useState(false);
   const [showMessageMenu, setShowMessageMenu] = useState<string | null>(null);
+  const [menuAnchorRect, setMenuAnchorRect] = useState<DOMRect | null>(null);
+  const [showDownloadModal, setShowDownloadModal] = useState(false);
+  const [downloadItem, setDownloadItem] = useState<VoxSelectionItem | null>(null);
   const [showReactionPicker, setShowReactionPicker] = useState<string | null>(null);
   const [replyingTo, setReplyingTo] = useState<Recording | null>(null);
   const [settings, setSettings] = useState<VoxerSettings>({
@@ -705,6 +715,47 @@ const ClassicVoxerMode: React.FC<ClassicVoxerModeProps> = ({
     }
   }, [pulseUsers]);
 
+  // Archive a single Vox message via VoxMessageMenu
+  const handleArchiveMessage = useCallback(async (recording: Recording) => {
+    const item: VoxSelectionItem = {
+      id: recording.id,
+      type: 'audio',
+      url: recording.url || '',
+      duration: recording.duration || 0,
+      timestamp: recording.timestamp instanceof Date ? recording.timestamp : new Date(recording.timestamp),
+      sender: recording.sender,
+      transcription: recording.transcription,
+      mode: 'classic',
+      contactName: activeContact?.displayName || activeContact?.handle,
+    };
+    const loadingToast = toast.loading('Archiving…');
+    try {
+      await archiveVoxerConversation([item], activeContact?.displayName || activeContact?.handle || 'Unknown');
+      toast.dismiss(loadingToast);
+      toast.success('Archived to Pulse Archives');
+    } catch {
+      toast.dismiss(loadingToast);
+      toast.error('Failed to archive');
+    }
+  }, [activeContact]);
+
+  // Open VoxDownloadModal for a single Vox message
+  const handleDownloadMessage = useCallback((recording: Recording) => {
+    const item: VoxSelectionItem = {
+      id: recording.id,
+      type: 'audio',
+      url: recording.url || '',
+      duration: recording.duration || 0,
+      timestamp: recording.timestamp instanceof Date ? recording.timestamp : new Date(recording.timestamp),
+      sender: recording.sender,
+      transcription: recording.transcription,
+      mode: 'classic',
+      contactName: activeContact?.displayName || activeContact?.handle,
+    };
+    setDownloadItem(item);
+    setShowDownloadModal(true);
+  }, [activeContact]);
+
   // Archive all messages from a conversation
   const archiveConversation = useCallback(async (contactId: string) => {
     try {
@@ -809,20 +860,20 @@ const ClassicVoxerMode: React.FC<ClassicVoxerModeProps> = ({
 
   // Generate smart replies
   const handleGenerateSmartReplies = async () => {
-    const lastOtherMessage = activeThreadRecordings
-      .filter(r => r.sender === 'other')
-      .sort((a, b) => b.timestamp.getTime() - a.timestamp.getTime())[0];
-
-    if (!lastOtherMessage || !lastOtherMessage.transcription) {
-      toast.error('No message to reply to');
+    if (activeThreadRecordings.length === 0) {
+      toast.error('No messages to reply to');
       return;
     }
+
+    // Use most recent message regardless of sender; fall back to placeholder if no transcription
+    const lastMessage = [...activeThreadRecordings]
+      .sort((a, b) => b.timestamp.getTime() - a.timestamp.getTime())[0];
 
     setIsGeneratingReplies(true);
     try {
       const context = activeThreadRecordings.slice(-5).map(rec => ({
         id: rec.id,
-        transcription: rec.transcription || '',
+        transcription: rec.transcription || '[Voice message]',
         sender: rec.sender,
         senderName: rec.sender === 'other' ? activeContact?.displayName || activeContact?.handle : undefined,
         timestamp: rec.timestamp,
@@ -830,12 +881,12 @@ const ClassicVoxerMode: React.FC<ClassicVoxerModeProps> = ({
       }));
 
       const replies = await generateSmartReplies(apiKey, {
-        id: lastOtherMessage.id,
-        transcription: lastOtherMessage.transcription,
-        sender: lastOtherMessage.sender,
+        id: lastMessage.id,
+        transcription: lastMessage.transcription || '[Voice message]',
+        sender: lastMessage.sender,
         senderName: activeContact?.displayName || activeContact?.handle,
-        timestamp: lastOtherMessage.timestamp,
-        duration: lastOtherMessage.duration,
+        timestamp: lastMessage.timestamp,
+        duration: lastMessage.duration,
       }, context);
 
       if (replies.length > 0) {
@@ -887,10 +938,14 @@ const ClassicVoxerMode: React.FC<ClassicVoxerModeProps> = ({
     }
   };
 
-  // Generate chapters for long message
+  // Generate chapters for messages with transcription (min 30s)
   const handleGenerateChapters = async (recording: Recording) => {
-    if (recording.duration < 120 || !recording.transcription) {
-      toast.error('Message too short for chapters (need 2+ min with transcription)');
+    if (!recording.transcription) {
+      toast.error('No transcription available — record and wait for AI to transcribe first');
+      return;
+    }
+    if (recording.duration < 30) {
+      toast.error('Message too short for chapters (need 30+ seconds)');
       return;
     }
 
@@ -932,7 +987,20 @@ const ClassicVoxerMode: React.FC<ClassicVoxerModeProps> = ({
       else stopRecording();
     },
     onStopRecording: () => {
-      if (isRecording) stopRecording();
+      // Priority 1: close any open modal/overlay first
+      if (showMessageMenu) { setShowMessageMenu(null); return; }
+      if (showReactionPicker) { setShowReactionPicker(null); return; }
+      if (meetingNotes) { setMeetingNotes(null); return; }
+      if (showSummary) { setShowSummary(false); return; }
+      if (showDownloadModal) { setShowDownloadModal(false); return; }
+      if (showSettings) { setShowSettings(false); return; }
+      if (showNewVoxModal) { setShowNewVoxModal(false); return; }
+      // Priority 2: discard active recording
+      if (isRecording) { stopRecording(); return; }
+      // Priority 3: exit selection mode
+      if (isSelectionMode) { exitSelectionMode(); return; }
+      // Priority 4: go back to contact list
+      if (activeContactId) setActiveContactId('');
     },
     onGoBack: () => {
       if (activeContactId) setActiveContactId('');
@@ -949,8 +1017,17 @@ const ClassicVoxerMode: React.FC<ClassicVoxerModeProps> = ({
     },
     onArchive: () => {
       if (isSelectionMode && selectionCount > 0) {
-        // Trigger archive
-        console.log('Archive selected items');
+        (async () => {
+          try {
+            await archiveVoxerConversation(Array.from(selectedItems), activeContact?.displayName || activeContact?.handle || 'Classic Voxer');
+            exitSelectionMode();
+            toast.success(`Archived ${selectionCount} message${selectionCount > 1 ? 's' : ''}`);
+          } catch {
+            toast.error('Failed to archive');
+          }
+        })();
+      } else {
+        toast.error('Select messages first (click selection button)');
       }
     },
     onSummarize: handleSummarizeConversation,
@@ -1074,101 +1151,37 @@ const ClassicVoxerMode: React.FC<ClassicVoxerModeProps> = ({
         {activeContact ? (
           <>
             {/* Thread Header */}
-            <header className="classic-voxer-thread-header">
-              <button
-                type="button"
-                onClick={() => setMobileView('list')}
-                className="classic-voxer-mobile-back"
-                title="Back to contacts"
-              >
-                <ArrowLeft className="w-5 h-5" />
-              </button>
-              {activeContact.avatarUrl ? (
-                <img
-                  src={activeContact.avatarUrl}
-                  alt={activeContact.displayName || activeContact.handle || 'User'}
-                  className="classic-voxer-avatar-img"
-                />
-              ) : (
-                <div className="classic-voxer-avatar classic-voxer-avatar-placeholder">
-                  {(activeContact.displayName || activeContact.fullName || activeContact.handle || 'U').charAt(0).toUpperCase()}
-                </div>
-              )}
-              <div className="classic-voxer-thread-info">
-                <h2>{activeContact.displayName || activeContact.fullName || activeContact.handle || 'Unknown User'}</h2>
-                <span>{activeContact.role || (activeContact.handle ? `@${activeContact.handle}` : activeContact.onlineStatus)}</span>
-              </div>
-              <div className="classic-voxer-thread-actions">
-                {/* AI Enhancement Buttons */}
-                <div className="flex items-center gap-2 border-r border-zinc-200 dark:border-zinc-800 pr-2 mr-2">
-                  <button
-                    type="button"
-                    onClick={handleSummarizeConversation}
-                    disabled={activeThreadRecordings.length === 0 || isSummarizing}
-                    className="px-3 py-1.5 rounded-lg bg-purple-500 text-white text-xs font-medium hover:bg-purple-600 transition disabled:opacity-50 disabled:cursor-not-allowed"
-                    title="AI Summarize Conversation"
-                  >
-                    {isSummarizing ? <Loader2 className="w-3 h-3 animate-spin" /> : <Sparkles className="w-3 h-3" />}
-                    <span className="ml-1.5 hidden md:inline">Summarize</span>
-                  </button>
-
-                  <button
-                    type="button"
-                    onClick={handleGenerateSmartReplies}
-                    disabled={isGeneratingReplies}
-                    className="px-3 py-1.5 rounded-lg bg-blue-500 text-white text-xs font-medium hover:bg-blue-600 transition disabled:opacity-50 disabled:cursor-not-allowed"
-                    title="Generate Smart Replies"
-                  >
-                    {isGeneratingReplies ? <Loader2 className="w-3 h-3 animate-spin" /> : <Reply className="w-3 h-3" />}
-                    <span className="ml-1.5 hidden md:inline">Quick Reply</span>
-                  </button>
-
-                  <button
-                    type="button"
-                    onClick={handleGenerateMeetingNotes}
-                    disabled={activeThreadRecordings.length === 0 || isGeneratingNotes}
-                    className="px-3 py-1.5 rounded-lg bg-green-500 text-white text-xs font-medium hover:bg-green-600 transition disabled:opacity-50 disabled:cursor-not-allowed"
-                    title="Generate Meeting Notes"
-                  >
-                    {isGeneratingNotes ? <Loader2 className="w-3 h-3 animate-spin" /> : <MessageCircle className="w-3 h-3" />}
-                    <span className="ml-1.5 hidden md:inline">Notes</span>
-                  </button>
-                </div>
-
-                <button
-                  type="button"
-                  className="classic-voxer-action-btn"
-                  title="Select messages"
-                  onClick={(e) => {
-                    e.preventDefault();
-                    e.stopPropagation();
-                    enterSelectionMode();
-                  }}
-                  style={{
-                    background: isSelectionMode ? '#F97316' : undefined,
-                    color: isSelectionMode ? 'white' : undefined,
-                  }}
-                >
-                  <CheckCheck className="w-4 h-4" />
-                </button>
-                <button
-                  type="button"
-                  className="classic-voxer-action-btn"
-                  title="Archive conversation"
-                  onClick={() => archiveConversation(activeContactId)}
-                >
-                  <Archive className="w-4 h-4" />
-                </button>
-                <button
-                  type="button"
-                  className="classic-voxer-action-btn"
-                  title="Voxer settings"
-                  onClick={() => setShowSettings(true)}
-                >
-                  <Settings className="w-4 h-4" />
-                </button>
-              </div>
-            </header>
+            <VoxModeToolbar
+              onBack={() => setMobileView('list')}
+              modeIcon={<Phone className="w-5 h-5" />}
+              modeTitle={activeContact.displayName || activeContact.fullName || 'Conversation'}
+              modeSubtitle={activeContact.handle ? `@${activeContact.handle}` : activeContact.role || ''}
+              accentColor="#F97316"
+              isDarkMode={isDarkMode}
+              showAI
+              onSummarize={handleSummarizeConversation}
+              onSmartReplies={handleGenerateSmartReplies}
+              onMeetingNotes={handleGenerateMeetingNotes}
+              isSummarizing={isSummarizing}
+              isGeneratingReplies={isGeneratingReplies}
+              isGeneratingNotes={isGeneratingNotes}
+              hasContent={activeThreadRecordings.length > 0}
+              isSelectionMode={isSelectionMode}
+              onToggleSelection={() => isSelectionMode ? exitSelectionMode() : enterSelectionMode()}
+              onShowHelp={() => setShowShortcutsHelp(true)}
+              customActions={[
+                {
+                  icon: <Archive className="w-4 h-4" />,
+                  title: 'Archive conversation',
+                  onClick: () => archiveConversation(activeContactId),
+                },
+                {
+                  icon: <Settings className="w-4 h-4" />,
+                  title: 'Voxer settings',
+                  onClick: () => setShowSettings(true),
+                },
+              ]}
+            />
 
             {/* Messages */}
             <div className="classic-voxer-messages">
@@ -1304,7 +1317,12 @@ const ClassicVoxerMode: React.FC<ClassicVoxerModeProps> = ({
                       </button>
                       <button
                         type="button"
-                        onClick={() => setShowMessageMenu(showMessageMenu === recording.id ? null : recording.id)}
+                        onClick={(e) => {
+                          e.stopPropagation();
+                          const rect = (e.currentTarget as HTMLButtonElement).getBoundingClientRect();
+                          setMenuAnchorRect(rect);
+                          setShowMessageMenu(showMessageMenu === recording.id ? null : recording.id);
+                        }}
                         className="classic-voxer-action-icon"
                         title="More actions"
                       >
@@ -1330,24 +1348,18 @@ const ClassicVoxerMode: React.FC<ClassicVoxerModeProps> = ({
 
                     {/* Message Menu */}
                     {showMessageMenu === recording.id && (
-                      <div className="classic-voxer-message-menu">
-                        <button type="button" onClick={() => downloadVoxMessage(recording)}>
-                          <Download className="w-4 h-4" />
-                          <span>Download</span>
-                        </button>
-                        <button type="button" onClick={() => forwardMessage(recording)}>
-                          <Forward className="w-4 h-4" />
-                          <span>Forward</span>
-                        </button>
-                        <button type="button" onClick={() => forwardMessage(recording)}>
-                          <Share2 className="w-4 h-4" />
-                          <span>Share</span>
-                        </button>
-                        <button type="button" onClick={() => deleteRecording(recording.id)} className="danger">
-                          <Trash2 className="w-4 h-4" />
-                          <span>Delete</span>
-                        </button>
-                      </div>
+                      <VoxMessageMenu
+                        isDarkMode={isDarkMode}
+                        accentColor={accentColor}
+                        anchorRect={menuAnchorRect!}
+                        onArchive={() => handleArchiveMessage(recording)}
+                        onDownload={() => handleDownloadMessage(recording)}
+                        onDelete={() => {
+                          deleteRecording(recording.id);
+                          setShowMessageMenu(null);
+                        }}
+                        onClose={() => setShowMessageMenu(null)}
+                      />
                     )}
 
                     {/* Reactions Display */}
@@ -1369,15 +1381,18 @@ const ClassicVoxerMode: React.FC<ClassicVoxerModeProps> = ({
                       </div>
                     )}
 
-                    {/* Chapter button for long messages */}
-                    {recording.duration >= 120 && recording.transcription && (
+                    {/* Chapter button — visible for any transcribed message >= 30s */}
+                    {recording.transcription && recording.duration >= 30 && (
                       <button
                         type="button"
                         onClick={() => handleGenerateChapters(recording)}
                         className="text-xs text-cyan-600 dark:text-cyan-400 hover:underline mt-1 flex items-center gap-1"
+                        title="Generate AI chapter markers for this message"
                       >
-                        <MessageCircle className="w-3 h-3" />
-                        Show Chapters
+                        <List className="w-3 h-3" />
+                        {chapterRecordingId === recording.id
+                          ? 'Chapters shown below ↓'
+                          : `Generate Chapters (${Math.round(recording.duration)}s)`}
                       </button>
                     )}
 
@@ -1770,7 +1785,7 @@ const ClassicVoxerMode: React.FC<ClassicVoxerModeProps> = ({
 
       {/* Smart Replies Panel */}
       {smartReplies.length > 0 && (
-        <div className="fixed bottom-20 right-4 z-40 w-96">
+        <div className="fixed bottom-20 right-4 z-[200] w-96">
           <VoxSmartReplies
             replies={smartReplies}
             onSelectReply={handleSelectSmartReply}
@@ -1782,8 +1797,14 @@ const ClassicVoxerMode: React.FC<ClassicVoxerModeProps> = ({
 
       {/* Meeting Notes Modal */}
       {meetingNotes && (
-        <div className="fixed inset-0 bg-black/50 backdrop-blur-sm z-50 flex items-center justify-center p-4">
-          <div className="max-w-3xl w-full max-h-[90vh] overflow-y-auto">
+        <div
+          className="fixed inset-0 bg-black/50 backdrop-blur-sm z-50 flex items-center justify-center p-4"
+          onClick={() => setMeetingNotes(null)}
+        >
+          <div
+            className="max-w-3xl w-full max-h-[90vh] overflow-y-auto"
+            onClick={(e) => e.stopPropagation()}
+          >
             <VoxMeetingNotes
               notes={meetingNotes}
               isDarkMode={isDarkMode}
@@ -1796,7 +1817,7 @@ const ClassicVoxerMode: React.FC<ClassicVoxerModeProps> = ({
 
       {/* Auto-Chapters Panel */}
       {activeChapters.length > 0 && chapterRecordingId && (
-        <div className="fixed bottom-4 left-4 right-4 z-40 max-w-2xl mx-auto">
+        <div className="fixed bottom-4 left-4 right-4 z-[200] max-w-2xl mx-auto">
           <div className="relative">
             <button
               type="button"
@@ -1829,6 +1850,17 @@ const ClassicVoxerMode: React.FC<ClassicVoxerModeProps> = ({
         onClose={() => setShowShortcutsHelp(false)}
         isDarkMode={isDarkMode}
       />
+
+      {/* Download Modal */}
+      {showDownloadModal && downloadItem && (
+        <VoxDownloadModal
+          isOpen={showDownloadModal}
+          onClose={() => { setShowDownloadModal(false); setDownloadItem(null); }}
+          items={[downloadItem]}
+          isDarkMode={isDarkMode}
+          accentColor={accentColor}
+        />
+      )}
     </div>
   );
 };

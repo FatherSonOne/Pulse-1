@@ -44,6 +44,10 @@ export type { VoxEmptyStateConfig } from './voxEmptyStates';
 // Vox Mode Selector - Main menu for choosing communication style
 export { default as VoxModeSelector } from './VoxModeSelector';
 
+// Unified toolbar component for all Vox modes
+export { default as VoxModeToolbar } from './VoxModeToolbar';
+export type { VoxModeToolbarProps, VoxToolbarCustomAction } from './VoxModeToolbar';
+
 // Classic Voxer Mode - Direct contact messaging (avant-garde redesign)
 export { default as ClassicVoxerMode } from './ClassicVoxerMode';
 

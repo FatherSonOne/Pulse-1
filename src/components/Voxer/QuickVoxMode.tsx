@@ -5,23 +5,20 @@ import {
   Play,
   Pause,
   Plus,
-  ChevronLeft,
   Search,
   Check,
   CheckCheck,
   Clock,
   X,
   Edit2,
-  Square,
   Download,
   Archive,
-  Sparkles,
-  TrendingUp,
-  Loader2,
+  MoreVertical,
 } from 'lucide-react';
 import VoxAudioVisualizer from './VoxAudioVisualizer';
 import RecordingPreview from './RecordingPreview';
 import VoxModeHeader from './VoxModeHeader';
+import VoxModeToolbar from './VoxModeToolbar';
 import VoxRecordArea from './VoxRecordArea';
 import { useVoxRecording } from '../../hooks/useVoxRecording';
 import { voxModeService } from '../../services/voxer/voxModeService';
@@ -33,6 +30,9 @@ import './Voxer.css';
 // Phase 2: Selection Mode
 import { useVoxSelection, VoxSelectionItem } from '../../hooks/useVoxSelection';
 import { VoxSelectToolbar } from './VoxSelectToolbar';
+import VoxMessageMenu from './VoxMessageMenu';
+import VoxDownloadModal from './VoxDownloadModal';
+import { archiveVoxerConversation } from '../../services/voxer/voxerArchiveService';
 
 // Phase 5: AI Enhancements
 import { VoxConversationSummary, VoxSmartReplies } from './index';
@@ -104,6 +104,12 @@ const QuickVoxMode: React.FC<QuickVoxModeProps> = ({
   const { playbackSpeed: globalPlaybackSpeed, setPlaybackSpeed: setGlobalPlaybackSpeed, applyToElement } = usePlaybackSpeed();
   const emptyConfig = getEmptyStateConfig('quick_vox');
 
+  // VoxMessageMenu state
+  const [showMessageMenu, setShowMessageMenu] = useState<string | null>(null);
+  const [menuAnchorRect, setMenuAnchorRect] = useState<DOMRect | null>(null);
+  const [showDownloadModal, setShowDownloadModal] = useState(false);
+  const [downloadItem, setDownloadItem] = useState<VoxSelectionItem | null>(null);
+
   // Use the recording hook for click-to-record with preview
   const {
     state: recordingState,
@@ -125,10 +131,48 @@ const QuickVoxMode: React.FC<QuickVoxModeProps> = ({
     },
   });
 
+  // VoxMessageMenu handler functions
+  const handleArchiveMessage = async (message: any) => {
+    const item: VoxSelectionItem = {
+      id: message.id,
+      type: 'audio',
+      url: message.audioUrl || '',
+      duration: message.duration || 0,
+      timestamp: message.createdAt instanceof Date ? message.createdAt : new Date(message.createdAt || Date.now()),
+      mode: 'quick_vox',
+      contactName: message.senderName || message.recipientName,
+    };
+    try {
+      await archiveVoxerConversation([item], message.senderName || 'Quick Vox');
+      toast.success('Archived to Pulse Archives');
+    } catch {
+      toast.error('Failed to archive');
+    }
+  };
+
+  const handleDownloadMessage = (message: any) => {
+    const item: VoxSelectionItem = {
+      id: message.id,
+      type: 'audio',
+      url: message.audioUrl || '',
+      duration: message.duration || 0,
+      timestamp: message.createdAt instanceof Date ? message.createdAt : new Date(message.createdAt || Date.now()),
+      mode: 'quick_vox',
+      contactName: message.senderName || message.recipientName,
+    };
+    setDownloadItem(item);
+    setShowDownloadModal(true);
+  };
+
   // Phase 5: AI Handler Functions (defined before keyboard shortcuts to avoid TDZ)
   const handleSummarizeConversation = async () => {
     if (messages.length === 0) {
       toast.error('No messages to summarize');
+      return;
+    }
+
+    if (!apiKey) {
+      toast.error('Gemini API key not configured');
       return;
     }
 
@@ -143,7 +187,7 @@ const QuickVoxMode: React.FC<QuickVoxModeProps> = ({
         duration: msg.duration,
       }));
 
-      const summary = await summarizeConversation('', messageData);
+      const summary = await summarizeConversation(apiKey, messageData);
       if (summary) {
         setConversationSummary(summary);
         setShowSummary(true);
@@ -166,6 +210,11 @@ const QuickVoxMode: React.FC<QuickVoxModeProps> = ({
       return;
     }
 
+    if (!apiKey) {
+      toast.error('Gemini API key not configured');
+      return;
+    }
+
     setIsGeneratingAI(true);
     try {
       const lastMessage = recentMessages[recentMessages.length - 1];
@@ -178,7 +227,7 @@ const QuickVoxMode: React.FC<QuickVoxModeProps> = ({
         duration: msg.duration,
       }));
 
-      const replies = await generateSmartReplies('', {
+      const replies = await generateSmartReplies(apiKey, {
         id: lastMessage.id,
         transcription: lastMessage.transcript || '',
         sender: (lastMessage.senderId === voxModeService.getUserId() ? 'me' : 'other') as 'me' | 'other',
@@ -226,7 +275,20 @@ const QuickVoxMode: React.FC<QuickVoxModeProps> = ({
       else if (recordingState === 'recording') stopRecording();
     },
     onStopRecording: () => {
-      if (recordingState === 'recording') stopRecording();
+      // Priority 1: close any open modal/overlay first
+      if (showMessageMenu) { setShowMessageMenu(null); return; }
+      if (showSummary) { setShowSummary(false); return; }
+      if (showSmartReplies) { setShowSmartReplies(false); return; }
+      if (showDownloadModal) { setShowDownloadModal(false); return; }
+      if (showAddFavorite) { setShowAddFavorite(false); return; }
+      if (showEditFavorites) { setShowEditFavorites(false); return; }
+      // Priority 2: discard active recording
+      if (recordingState === 'recording') { stopRecording(); return; }
+      // Priority 3: exit selection mode
+      if (isSelectionMode) { exitSelectionMode(); return; }
+      // Priority 4: go back
+      if (selectedContact) { setSelectedContact(null); return; }
+      onBack();
     },
     onGoBack: () => {
       if (selectedContact) setSelectedContact(null);
@@ -242,7 +304,17 @@ const QuickVoxMode: React.FC<QuickVoxModeProps> = ({
     },
     onArchive: () => {
       if (isSelectionMode && selectionCount > 0) {
-        console.log('Archive selected items');
+        (async () => {
+          try {
+            await archiveVoxerConversation(Array.from(selectedItems), selectedContact?.contactName || selectedContact?.name || 'Quick Vox');
+            exitSelectionMode();
+            toast.success(`Archived ${selectionCount} message${selectionCount > 1 ? 's' : ''}`);
+          } catch {
+            toast.error('Failed to archive');
+          }
+        })();
+      } else {
+        toast.error('Select messages first (click selection button)');
       }
     },
     onSummarize: handleSummarizeConversation,
@@ -267,12 +339,16 @@ const QuickVoxMode: React.FC<QuickVoxModeProps> = ({
 
     const contactIds = favorites.map(f => f.contactId);
     if (contactIds.length > 0) {
-      const subscription = voxModeService.subscribeToRecordingStatus(
+      let subscription: any = null;
+
+      voxModeService.subscribeToRecordingStatus(
         contactIds,
         (status) => {
           setRecordingStatus(prev => new Map(prev).set(status.recipientId, status));
         }
-      );
+      ).then(sub => {
+        subscription = sub;
+      });
 
       return () => {
         subscription?.unsubscribe();
@@ -492,79 +568,30 @@ const QuickVoxMode: React.FC<QuickVoxModeProps> = ({
   return (
     <div className={`h-full flex flex-col ${tc.pageBg}`}>
       {/* Header */}
-      <VoxModeHeader
-        modeName="Quick Vox"
-        modeTagline="One Tap. Instant Voice."
-        modeColor="#3B82F6"
-        modeIcon={Zap}
+      <VoxModeToolbar
         onBack={onBack}
+        modeIcon={<Zap className="w-5 h-5" />}
+        modeTitle="Quick Vox"
+        modeSubtitle="Fast Voice to Favorites"
+        accentColor={MODE_COLOR}
         isDarkMode={isDarkMode}
-        actions={
-          <>
-            {/* Phase 5: AI Enhancement Buttons */}
-            {selectedContact && (
-              <div className="flex items-center gap-2 border-r border-blue-500/30 pr-2 mr-2">
-                <button
-                  type="button"
-                  onClick={handleSummarizeConversation}
-                  disabled={messages.length === 0 || isGeneratingAI}
-                  className="px-3 py-1.5 rounded-lg bg-purple-500 text-white text-xs font-medium hover:bg-purple-600 transition disabled:opacity-50 disabled:cursor-not-allowed"
-                  title="AI Summarize Conversation"
-                >
-                  {isGeneratingAI ? <Loader2 className="w-3 h-3 animate-spin" /> : <Sparkles className="w-3 h-3" />}
-                  <span className="ml-1.5 hidden md:inline">Summarize</span>
-                </button>
-
-                <button
-                  type="button"
-                  onClick={handleGenerateSmartReplies}
-                  disabled={isGeneratingAI}
-                  className="px-3 py-1.5 rounded-lg bg-blue-500 text-white text-xs font-medium hover:bg-blue-600 transition disabled:opacity-50 disabled:cursor-not-allowed"
-                  title="Generate Smart Replies"
-                >
-                  {isGeneratingAI ? <Loader2 className="w-3 h-3 animate-spin" /> : <TrendingUp className="w-3 h-3" />}
-                  <span className="ml-1.5 hidden md:inline">Quick Reply</span>
-                </button>
-
-                {/* Phase 2: Selection Mode Button */}
-                <button
-                  type="button"
-                  onClick={(e) => {
-                    e.preventDefault();
-                    e.stopPropagation();
-                    if (isSelectionMode) {
-                      exitSelectionMode();
-                    } else {
-                      enterSelectionMode();
-                    }
-                  }}
-                  style={{
-                    background: isSelectionMode ? '#3B82F6' : undefined,
-                    color: isSelectionMode ? 'white' : undefined,
-                  }}
-                  className="p-2 rounded-lg hover:bg-blue-500/20 transition"
-                  title="Select messages"
-                >
-                  {isSelectionMode ? <X className="w-4 h-4" /> : <Square className="w-4 h-4" />}
-                </button>
-              </div>
-            )}
-
-            <button
-              onClick={() => setShowEditFavorites(!showEditFavorites)}
-              className={`p-2 rounded-xl transition-all duration-200 ${
-                showEditFavorites
-                  ? 'bg-blue-500/20 text-blue-500'
-                  : isDarkMode
-                    ? 'hover:bg-gray-800/60 text-gray-400 hover:text-white'
-                    : 'hover:bg-gray-100/80 text-gray-600 hover:text-gray-900'
-              }`}
-              aria-label="Edit favorites"
-            >
-              <Edit2 className="w-5 h-5" />
-            </button>
-          </>
-        }
+        showAI={!!selectedContact}
+        onSummarize={handleSummarizeConversation}
+        onSmartReplies={handleGenerateSmartReplies}
+        isSummarizing={isGeneratingAI}
+        isGeneratingReplies={isGeneratingAI}
+        hasContent={messages.length > 0}
+        isSelectionMode={isSelectionMode}
+        onToggleSelection={() => isSelectionMode ? exitSelectionMode() : enterSelectionMode()}
+        onShowHelp={() => setShowShortcutsHelp(true)}
+        customActions={[
+          {
+            icon: <Edit2 className="w-5 h-5" />,
+            title: 'Edit favorites',
+            onClick: () => setShowEditFavorites(!showEditFavorites),
+            isActive: showEditFavorites,
+          },
+        ]}
       />
 
       {/* Favorites Bar */}
@@ -782,6 +809,34 @@ const QuickVoxMode: React.FC<QuickVoxModeProps> = ({
                           </div>
                         </div>
                       </div>
+                      <button
+                          type="button"
+                          onClick={(e) => {
+                            e.stopPropagation();
+                            const rect = (e.currentTarget as HTMLButtonElement).getBoundingClientRect();
+                            setMenuAnchorRect(rect);
+                            setShowMessageMenu(showMessageMenu === message.id ? null : message.id);
+                          }}
+                          className="p-1 rounded opacity-60 hover:opacity-100 transition-opacity"
+                          title="More actions"
+                        >
+                          <MoreVertical className="w-4 h-4" />
+                        </button>
+                        {showMessageMenu === message.id && (
+                          <VoxMessageMenu
+                            isDarkMode={isDarkMode}
+                            accentColor={MODE_COLOR}
+                            anchorRect={menuAnchorRect!}
+                            onArchive={() => handleArchiveMessage(message)}
+                            onDownload={() => handleDownloadMessage(message)}
+                            onDelete={() => {
+                              setMessages(prev => prev.filter(m => m.id !== message.id));
+                              setShowMessageMenu(null);
+                              toast.success('Message deleted');
+                            }}
+                            onClose={() => setShowMessageMenu(null)}
+                          />
+                      )}
                     </div>
                   );
                 })
@@ -988,6 +1043,17 @@ const QuickVoxMode: React.FC<QuickVoxModeProps> = ({
         onClose={() => setShowShortcutsHelp(false)}
         isDarkMode={isDarkMode}
       />
+
+      {/* VoxDownloadModal */}
+      {showDownloadModal && downloadItem && (
+        <VoxDownloadModal
+          isOpen={showDownloadModal}
+          onClose={() => { setShowDownloadModal(false); setDownloadItem(null); }}
+          items={[downloadItem]}
+          isDarkMode={isDarkMode}
+          accentColor={MODE_COLOR}
+        />
+      )}
     </div>
   );
 };

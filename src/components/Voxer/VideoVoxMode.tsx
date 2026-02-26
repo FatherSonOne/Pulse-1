@@ -37,7 +37,7 @@ import {
   TrendingUp,
   HelpCircle,
 } from 'lucide-react';
-import VoxModeHeader from './VoxModeHeader';
+import VoxModeToolbar from './VoxModeToolbar';
 import { useVideoVoxRecording } from '../../hooks/useVideoVoxRecording';
 import {
   useVideoVoxConversations,
@@ -53,6 +53,9 @@ import './VideoVoxMode.css';
 // Phase 2: Selection Mode
 import { useVoxSelection, VoxSelectionItem } from '../../hooks/useVoxSelection';
 import { VoxSelectToolbar } from './VoxSelectToolbar';
+import VoxMessageMenu from './VoxMessageMenu';
+import VoxDownloadModal from './VoxDownloadModal';
+import { archiveVoxerConversation } from '../../services/voxer/voxerArchiveService';
 
 // Phase 5: AI Enhancements
 import { VoxConversationSummary, VoxSmartReplies } from './index';
@@ -82,6 +85,7 @@ interface VideoVoxModeProps {
   initialRecipientId?: string;
   initialRecipientName?: string;
   contacts?: Array<{ id: string; name: string; avatarColor?: string; handle?: string }>;
+  apiKey?: string;
 }
 
 type ViewMode = 'conversations' | 'chat' | 'record' | 'search';
@@ -512,6 +516,7 @@ const VideoVoxMode: React.FC<VideoVoxModeProps> = ({
   maxDuration = 60,
   initialRecipientId,
   initialRecipientName,
+  apiKey,
   contacts = [],
 }) => {
   // View state
@@ -555,6 +560,12 @@ const VideoVoxMode: React.FC<VideoVoxModeProps> = ({
   const { playbackSpeed: globalPlaybackSpeed, setPlaybackSpeed: setGlobalPlaybackSpeed, applyToElement } = usePlaybackSpeed();
   const emptyConfig = getEmptyStateConfig('video_vox');
 
+  // VoxMessageMenu state
+  const [showMessageMenu, setShowMessageMenu] = useState<string | null>(null);
+  const [menuAnchorRect, setMenuAnchorRect] = useState<DOMRect | null>(null);
+  const [showDownloadModal, setShowDownloadModal] = useState(false);
+  const [downloadItem, setDownloadItem] = useState<VoxSelectionItem | null>(null);
+
   // Hooks
   const { conversations, isLoading: conversationsLoading, totalUnread } = useVideoVoxConversations();
   const { sendToRecipients, isSending, progress, error: sendError } = useVideoVoxSend();
@@ -587,10 +598,48 @@ const VideoVoxMode: React.FC<VideoVoxModeProps> = ({
     ? useVideoVoxMessages({ conversationId: activeConversationId })
     : null;
 
+  // VoxMessageMenu handler functions
+  const handleArchiveMessage = async (message: any) => {
+    const item: VoxSelectionItem = {
+      id: message.id,
+      type: 'video',
+      url: message.videoUrl || message.audioUrl || '',
+      duration: message.duration || 0,
+      timestamp: message.createdAt instanceof Date ? message.createdAt : new Date(message.createdAt || Date.now()),
+      mode: 'video_vox',
+      contactName: message.senderName,
+    };
+    try {
+      await archiveVoxerConversation([item], message.senderName || 'Video Vox');
+      toast.success('Archived to Pulse Archives');
+    } catch {
+      toast.error('Failed to archive');
+    }
+  };
+
+  const handleDownloadMessage = (message: any) => {
+    const item: VoxSelectionItem = {
+      id: message.id,
+      type: 'video',
+      url: message.videoUrl || message.audioUrl || '',
+      duration: message.duration || 0,
+      timestamp: message.createdAt instanceof Date ? message.createdAt : new Date(message.createdAt || Date.now()),
+      mode: 'video_vox',
+      contactName: message.senderName,
+    };
+    setDownloadItem(item);
+    setShowDownloadModal(true);
+  };
+
   // Phase 5: AI Handler Functions (defined before keyboard shortcuts to avoid TDZ)
   const handleSummarizeConversation = async () => {
     if (!chatHook || chatHook.messages.length === 0) {
       toast.error('No messages to summarize');
+      return;
+    }
+
+    if (!apiKey) {
+      toast.error('Gemini API key not configured');
       return;
     }
 
@@ -605,17 +654,24 @@ const VideoVoxMode: React.FC<VideoVoxModeProps> = ({
         duration: msg.duration,
       }));
 
-      const summary = await summarizeConversation('', messageData);
+      const summary = await summarizeConversation(apiKey, messageData);
       if (summary) {
         setConversationSummary(summary);
         setShowSummary(true);
         toast.success('Conversation summarized!');
       } else {
-        toast.error('Failed to generate summary');
+        toast.error('AI summarizer unavailable — try again later');
       }
-    } catch (error) {
+    } catch (error: any) {
       console.error('Summarization error:', error);
-      toast.error('Failed to generate summary');
+      const msg = error?.message || '';
+      if (msg.includes('API key') || msg.includes('API_KEY') || msg.includes('invalid') || msg.includes('unauthorized')) {
+        toast.error('AI features require API configuration');
+      } else if (msg.includes('network') || msg.includes('fetch') || msg.includes('ECONNREFUSED')) {
+        toast.error('Network error — please try again');
+      } else {
+        toast.error('AI summarizer unavailable (beta)');
+      }
     } finally {
       setIsGeneratingAI(false);
     }
@@ -624,6 +680,11 @@ const VideoVoxMode: React.FC<VideoVoxModeProps> = ({
   const handleGenerateSmartReplies = async () => {
     if (!chatHook || chatHook.messages.length === 0) {
       toast.error('No messages to analyze');
+      return;
+    }
+
+    if (!apiKey) {
+      toast.error('Gemini API key not configured');
       return;
     }
 
@@ -640,7 +701,7 @@ const VideoVoxMode: React.FC<VideoVoxModeProps> = ({
         duration: msg.duration,
       }));
 
-      const replies = await generateSmartReplies('', {
+      const replies = await generateSmartReplies(apiKey, {
         id: lastMessage.id,
         transcription: lastMessage.transcript || '',
         sender: (lastMessage.senderId === currentUserId ? 'me' : 'other') as 'me' | 'other',
@@ -654,11 +715,18 @@ const VideoVoxMode: React.FC<VideoVoxModeProps> = ({
         setShowSmartReplies(true);
         toast.success('Smart replies generated!');
       } else {
-        toast.error('Failed to generate smart replies');
+        toast.error('Smart replies unavailable — try again later');
       }
-    } catch (error) {
+    } catch (error: any) {
       console.error('Smart replies error:', error);
-      toast.error('Failed to generate smart replies');
+      const msg = error?.message || '';
+      if (msg.includes('API key') || msg.includes('API_KEY') || msg.includes('invalid') || msg.includes('unauthorized')) {
+        toast.error('AI features require API configuration');
+      } else if (msg.includes('network') || msg.includes('fetch') || msg.includes('ECONNREFUSED')) {
+        toast.error('Network error — please try again');
+      } else {
+        toast.error('Smart replies unavailable (beta)');
+      }
     } finally {
       setIsGeneratingAI(false);
     }
@@ -689,7 +757,21 @@ const VideoVoxMode: React.FC<VideoVoxModeProps> = ({
       else if (state.status === 'recording') stopRecording();
     },
     onStopRecording: () => {
-      if (state.status === 'recording') stopRecording();
+      // Priority 1: close any open modal/overlay first
+      if (showMessageMenu) { setShowMessageMenu(null); return; }
+      if (showSummary) { setShowSummary(false); return; }
+      if (showSmartReplies) { setShowSmartReplies(false); return; }
+      if (showDownloadModal) { setShowDownloadModal(false); return; }
+      if (showRecipientSelector) { setShowRecipientSelector(false); return; }
+      // Priority 2: discard active recording
+      if (state.status === 'recording') { stopRecording(); return; }
+      // Priority 3: exit selection mode
+      if (isSelectionMode) { exitSelectionMode(); return; }
+      // Priority 4: navigate back through views
+      if (viewMode === 'chat' || viewMode === 'record' || viewMode === 'search') {
+        setViewMode('conversations'); return;
+      }
+      onClose?.();
     },
     onGoBack: () => {
       if (viewMode === 'chat' || viewMode === 'record' || viewMode === 'search') {
@@ -708,7 +790,17 @@ const VideoVoxMode: React.FC<VideoVoxModeProps> = ({
     },
     onArchive: () => {
       if (isSelectionMode && selectionCount > 0) {
-        console.log('Archive selected items');
+        (async () => {
+          try {
+            await archiveVoxerConversation(Array.from(selectedItems), conversations.find(c => c.id === activeConversationId)?.recipientName || conversations.find(c => c.id === activeConversationId)?.title || 'Video Vox');
+            exitSelectionMode();
+            toast.success(`Archived ${selectionCount} message${selectionCount > 1 ? 's' : ''}`);
+          } catch {
+            toast.error('Failed to archive');
+          }
+        })();
+      } else {
+        toast.error('Select messages first (click selection button)');
       }
     },
     onSummarize: handleSummarizeConversation,
@@ -841,11 +933,7 @@ const VideoVoxMode: React.FC<VideoVoxModeProps> = ({
   return (
     <div className={`video-vox-mode ${themeClass}`}>
       {/* Header */}
-      <VoxModeHeader
-        modeName="Video Vox"
-        modeTagline="Cinematic video messages"
-        modeColor="#06B6D4"
-        modeIcon={Video}
+      <VoxModeToolbar
         onBack={() => {
           if (viewMode === 'record' && state.status !== 'idle') {
             discardRecording();
@@ -859,108 +947,61 @@ const VideoVoxMode: React.FC<VideoVoxModeProps> = ({
             onClose?.();
           }
         }}
+        modeTitle="Video Vox"
+        modeSubtitle="Video Voice Messages"
+        modeIcon={<Video className="w-5 h-5" />}
+        accentColor={MODE_COLOR}
         isDarkMode={isDarkMode}
-        actions={
-          <>
-            {viewMode === 'conversations' && (
-              <>
-                <div className="vvb-unread-badge">
-                  {totalUnread > 0 && (
-                    <span className="px-2 py-1 rounded-full bg-cyan-500/20 text-cyan-300 text-xs font-medium">
-                      {totalUnread} unread
-                    </span>
-                  )}
-                </div>
-                <button
-                  onClick={() => setViewMode('search')}
-                  className="p-2 rounded-xl hover:bg-gray-800/60 text-gray-400 hover:text-white transition-all"
-                  title="Search"
-                >
-                  <Search className="w-5 h-5" />
-                </button>
-                <button
-                  onClick={() => {
-                    setSelectedRecipients([]);
-                    setViewMode('record');
-                  }}
-                  className="flex items-center gap-2 px-4 py-2 rounded-xl text-sm font-medium bg-cyan-500/20 hover:bg-cyan-500/30 text-cyan-300 border border-cyan-500/30 transition-all"
-                  title="New Video"
-                >
-                  <Video className="w-4 h-4" />
-                  <span className="hidden sm:inline">New Video</span>
-                </button>
-              </>
-            )}
-            {viewMode === 'chat' && (
-              <>
-                {/* Phase 5: AI Enhancement Buttons */}
-                <div className="flex items-center gap-2 border-r border-cyan-500/30 pr-2 mr-2">
-                  <button
-                    type="button"
-                    onClick={handleSummarizeConversation}
-                    disabled={!chatHook || chatHook.messages.length === 0 || isGeneratingAI}
-                    className="px-3 py-1.5 rounded-lg bg-purple-500 text-white text-xs font-medium hover:bg-purple-600 transition disabled:opacity-50 disabled:cursor-not-allowed flex items-center gap-1.5"
-                    title="AI Summarize Conversation"
-                  >
-                    {isGeneratingAI ? <Loader2 className="w-3 h-3 animate-spin" /> : <Sparkles className="w-3 h-3" />}
-                    <span className="hidden md:inline">Summarize</span>
-                  </button>
-
-                  <button
-                    type="button"
-                    onClick={handleGenerateSmartReplies}
-                    disabled={isGeneratingAI}
-                    className="px-3 py-1.5 rounded-lg bg-blue-500 text-white text-xs font-medium hover:bg-blue-600 transition disabled:opacity-50 disabled:cursor-not-allowed flex items-center gap-1.5"
-                    title="Generate Smart Replies"
-                  >
-                    {isGeneratingAI ? <Loader2 className="w-3 h-3 animate-spin" /> : <TrendingUp className="w-3 h-3" />}
-                    <span className="hidden md:inline">Quick Reply</span>
-                  </button>
-
-                  {/* Phase 2: Selection Mode Button */}
-                  <button
-                    type="button"
-                    onClick={(e) => {
-                      e.preventDefault();
-                      e.stopPropagation();
-                      if (isSelectionMode) {
-                        exitSelectionMode();
-                      } else {
-                        enterSelectionMode();
-                      }
-                    }}
-                    style={{
-                      background: isSelectionMode ? MODE_COLOR : undefined,
-                      color: isSelectionMode ? 'white' : undefined,
-                    }}
-                    className="p-2 rounded-lg hover:bg-cyan-500/20 transition"
-                    title="Select videos"
-                  >
-                    {isSelectionMode ? <X className="w-4 h-4" /> : <Square className="w-4 h-4" />}
-                  </button>
-                </div>
-
-                <button
-                  onClick={() => setViewMode('record')}
-                  className="flex items-center gap-2 px-4 py-2 rounded-xl text-sm font-medium bg-cyan-500/20 hover:bg-cyan-500/30 text-cyan-300 border border-cyan-500/30 transition-all"
-                  title="Record Reply"
-                >
-                  <Video className="w-4 h-4" />
-                  <span className="hidden sm:inline">Reply</span>
-                </button>
-              </>
-            )}
-            {/* Phase 6: Keyboard Shortcuts Help */}
-            <button
-              onClick={() => setShowShortcutsHelp(true)}
-              className="p-2 rounded-xl hover:bg-gray-800/60 text-gray-400 hover:text-white transition-all"
-              title="Keyboard Shortcuts"
-            >
-              <HelpCircle className="w-5 h-5" />
-            </button>
-          </>
-        }
-      />
+        showAI={viewMode === 'chat'}
+        onSummarize={viewMode === 'chat' ? handleSummarizeConversation : undefined}
+        onSmartReplies={viewMode === 'chat' ? handleGenerateSmartReplies : undefined}
+        isSummarizing={isGeneratingAI}
+        isGeneratingReplies={isGeneratingAI}
+        hasContent={viewMode === 'chat' ? (chatHook ? chatHook.messages.length > 0 : false) : false}
+        isSelectionMode={isSelectionMode}
+        onToggleSelection={() => isSelectionMode ? exitSelectionMode() : enterSelectionMode()}
+        onShowHelp={() => setShowShortcutsHelp(true)}
+        selectionCount={selectionCount}
+        customActions={[
+          ...(viewMode === 'conversations' ? [
+            {
+              icon: <Search className="w-4 h-4" />,
+              title: 'Search',
+              onClick: () => setViewMode('search'),
+            },
+            {
+              icon: <Video className="w-4 h-4" />,
+              label: 'New Video',
+              title: 'New Video',
+              onClick: () => { setSelectedRecipients([]); setViewMode('record'); },
+            },
+          ] : []),
+          ...(viewMode === 'chat' ? [
+            {
+              icon: <Video className="w-4 h-4" />,
+              label: 'Reply',
+              title: 'Record Reply',
+              onClick: () => setViewMode('record'),
+            },
+          ] : []),
+        ]}
+      >
+        {/* Unread badge (conversations view) */}
+        {viewMode === 'conversations' && totalUnread > 0 && (
+          <span className="px-2 py-1 rounded-full bg-cyan-500/20 text-cyan-300 text-xs font-medium">
+            {totalUnread} unread
+          </span>
+        )}
+        {/* Phase 6: Keyboard Shortcuts Help */}
+        <button
+          type="button"
+          onClick={() => setShowShortcutsHelp(true)}
+          className="p-2 rounded-xl hover:bg-gray-800/60 text-gray-400 hover:text-white transition-all"
+          title="Keyboard Shortcuts"
+        >
+          <HelpCircle className="w-5 h-5" />
+        </button>
+      </VoxModeToolbar>
 
       {/* Main Content */}
       <main className="vvb-content">
@@ -978,6 +1019,7 @@ const VideoVoxMode: React.FC<VideoVoxModeProps> = ({
                 <h3>No video conversations yet</h3>
                 <p>Record and send your first video message!</p>
                 <button
+                  type="button"
                   onClick={() => setViewMode('record')}
                   className="vvb-empty-cta"
                 >
@@ -1015,39 +1057,74 @@ const VideoVoxMode: React.FC<VideoVoxModeProps> = ({
             ) : (
               <div className="vvb-messages-list">
                 {chatHook.messages.map(message => (
-                  <MessageBubble
-                    key={message.id}
-                    message={message}
-                    isOwn={message.senderId === currentUserId}
-                    isDarkMode={isDarkMode}
-                    onReaction={(emoji) => handleReaction(message.id, emoji)}
-                    onReply={() => handleReply(message)}
-                    onBookmark={() => handleBookmark(message.id)}
-                    onTranscriptClick={() => {}}
-                    showTranscript={expandedTranscripts.has(message.id)}
-                    onToggleTranscript={() => toggleTranscript(message.id)}
-                    isSelectionMode={isSelectionMode}
-                    isSelected={isSelected(message.id)}
-                    onToggleSelection={() => {
-                      const selectionItem: VoxSelectionItem = {
-                        id: message.id,
-                        type: 'video' as const,
-                        url: message.videoUrl,
-                        duration: message.duration,
-                        timestamp: message.createdAt,
-                        sender: message.senderId === currentUserId ? 'me' : 'other',
-                        transcript: message.transcript,
-                        mode: 'video_vox' as const,
-                        contactId: activeConversationId || undefined,
-                        contactName: conversations.find(c => c.id === activeConversationId)?.title,
-                      };
-                      toggleSelection(selectionItem);
-                    }}
-                    playbackSpeed={globalPlaybackSpeed}
-                    onPlaybackSpeedChange={(newSpeed) => {
-                      setGlobalPlaybackSpeed(newSpeed);
-                    }}
-                  />
+                  <div key={message.id} className="relative">
+                    <MessageBubble
+                      message={message}
+                      isOwn={message.senderId === currentUserId}
+                      isDarkMode={isDarkMode}
+                      onReaction={(emoji) => handleReaction(message.id, emoji)}
+                      onReply={() => handleReply(message)}
+                      onBookmark={() => handleBookmark(message.id)}
+                      onTranscriptClick={() => {}}
+                      showTranscript={expandedTranscripts.has(message.id)}
+                      onToggleTranscript={() => toggleTranscript(message.id)}
+                      isSelectionMode={isSelectionMode}
+                      isSelected={isSelected(message.id)}
+                      onToggleSelection={() => {
+                        const selectionItem: VoxSelectionItem = {
+                          id: message.id,
+                          type: 'video' as const,
+                          url: message.videoUrl,
+                          duration: message.duration,
+                          timestamp: message.createdAt,
+                          sender: message.senderId === currentUserId ? 'me' : 'other',
+                          transcript: message.transcript,
+                          mode: 'video_vox' as const,
+                          contactId: activeConversationId || undefined,
+                          contactName: conversations.find(c => c.id === activeConversationId)?.title,
+                        };
+                        toggleSelection(selectionItem);
+                      }}
+                      playbackSpeed={globalPlaybackSpeed}
+                      onPlaybackSpeedChange={(newSpeed) => {
+                        setGlobalPlaybackSpeed(newSpeed);
+                      }}
+                    />
+                    <div className="absolute top-2 right-2 z-10">
+                      <button
+                        type="button"
+                        onClick={(e) => {
+                          e.stopPropagation();
+                          const rect = (e.currentTarget as HTMLButtonElement).getBoundingClientRect();
+                          setMenuAnchorRect(rect);
+                          setShowMessageMenu(showMessageMenu === message.id ? null : message.id);
+                        }}
+                        className="p-1 rounded opacity-60 hover:opacity-100 transition-opacity"
+                        title="More actions"
+                      >
+                        <MoreVertical className="w-4 h-4" />
+                      </button>
+                      {showMessageMenu === message.id && (
+                        <VoxMessageMenu
+                          isDarkMode={isDarkMode}
+                          accentColor={MODE_COLOR}
+                          anchorRect={menuAnchorRect!}
+                          onArchive={() => handleArchiveMessage(message)}
+                          onDownload={() => handleDownloadMessage(message)}
+                          onDelete={async () => {
+                            const success = await chatHook.deleteMessage(message.id);
+                            if (success) {
+                              toast.success('Message deleted');
+                            } else {
+                              toast.error('Failed to delete message');
+                            }
+                            setShowMessageMenu(null);
+                          }}
+                          onClose={() => setShowMessageMenu(null)}
+                        />
+                      )}
+                    </div>
+                  </div>
                 ))}
               </div>
             )}
@@ -1110,6 +1187,7 @@ const VideoVoxMode: React.FC<VideoVoxModeProps> = ({
             {/* Recipient selector toggle */}
             {state.status === 'idle' && (
               <button
+                type="button"
                 onClick={() => setShowRecipientSelector(!showRecipientSelector)}
                 className="vvb-recipient-toggle"
               >
@@ -1137,7 +1215,7 @@ const VideoVoxMode: React.FC<VideoVoxModeProps> = ({
               <div className="vvb-replying-to">
                 <Reply className="w-4 h-4" />
                 <span>Replying to {replyingTo.senderName}</span>
-                <button onClick={() => setReplyingTo(null)}>
+                <button type="button" onClick={() => setReplyingTo(null)} title="Cancel reply" aria-label="Cancel reply">
                   <X className="w-4 h-4" />
                 </button>
               </div>
@@ -1192,6 +1270,7 @@ const VideoVoxMode: React.FC<VideoVoxModeProps> = ({
                 {/* Flip camera button */}
                 {(isPreviewing || isRecording) && (
                   <button
+                    type="button"
                     onClick={flipCamera}
                     className="vvb-flip-btn"
                     title="Flip camera"
@@ -1205,7 +1284,7 @@ const VideoVoxMode: React.FC<VideoVoxModeProps> = ({
                   <div className="vvb-error">
                     <AlertCircle className="w-10 h-10 vvb-error-icon" />
                     <p className="vvb-error-text">{state.error}</p>
-                    <button onClick={startPreview} className="vvb-retry-btn">
+                    <button type="button" onClick={startPreview} className="vvb-retry-btn">
                       Try Again
                     </button>
                   </div>
@@ -1231,6 +1310,7 @@ const VideoVoxMode: React.FC<VideoVoxModeProps> = ({
 
                   <div className="vvb-controls-row">
                     <button
+                      type="button"
                       onClick={discardRecording}
                       className="vvb-ctrl-btn danger"
                       title="Discard"
@@ -1239,6 +1319,7 @@ const VideoVoxMode: React.FC<VideoVoxModeProps> = ({
                     </button>
 
                     <button
+                      type="button"
                       onClick={() => {
                         discardRecording();
                         startPreview();
@@ -1251,6 +1332,7 @@ const VideoVoxMode: React.FC<VideoVoxModeProps> = ({
                   </div>
 
                   <button
+                    type="button"
                     onClick={handleSend}
                     disabled={isSending || selectedRecipients.length === 0}
                     className="vvb-send-btn"
@@ -1310,9 +1392,12 @@ const VideoVoxMode: React.FC<VideoVoxModeProps> = ({
                       )}
 
                       <button
+                        type="button"
                         onClick={handleRecordClick}
                         disabled={state.status === 'idle' && selectedRecipients.length === 0 && pulseContacts.length > 0}
                         className={`vvb-record-btn ${isRecording ? 'recording' : ''}`}
+                        aria-label={isRecording ? 'Stop recording' : 'Start recording'}
+                        title={isRecording ? 'Stop recording' : 'Start recording'}
                       >
                         <div className="vvb-record-icon" />
                       </button>
@@ -1388,6 +1473,17 @@ const VideoVoxMode: React.FC<VideoVoxModeProps> = ({
         onClose={() => setShowShortcutsHelp(false)}
         isDarkMode={isDarkMode}
       />
+
+      {/* VoxDownloadModal */}
+      {showDownloadModal && downloadItem && (
+        <VoxDownloadModal
+          isOpen={showDownloadModal}
+          onClose={() => { setShowDownloadModal(false); setDownloadItem(null); }}
+          items={[downloadItem]}
+          isDarkMode={isDarkMode}
+          accentColor={MODE_COLOR}
+        />
+      )}
     </div>
   );
 };

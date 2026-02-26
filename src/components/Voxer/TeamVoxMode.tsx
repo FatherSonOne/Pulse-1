@@ -20,20 +20,18 @@ import {
   UserPlus,
   Megaphone,
   Calendar,
-  Square,
   Menu,
   Briefcase,
   Check,
   Download,
   Archive,
-  Sparkles,
-  TrendingUp,
-  Loader2,
+  MoreVertical,
+  List,
 } from 'lucide-react';
 import VoxAudioVisualizer from './VoxAudioVisualizer';
 import RecordingPreview from './RecordingPreview';
 import RecordButton from './RecordButton';
-import VoxModeHeader from './VoxModeHeader';
+import VoxModeToolbar from './VoxModeToolbar';
 import VoxRecordArea from './VoxRecordArea';
 import { useVoxRecording } from '../../hooks/useVoxRecording';
 import { voxModeService } from '../../services/voxer/voxModeService';
@@ -45,11 +43,14 @@ import './Voxer.css';
 // Phase 2: Selection Mode
 import { useVoxSelection, VoxSelectionItem } from '../../hooks/useVoxSelection';
 import { VoxSelectToolbar } from './VoxSelectToolbar';
+import VoxMessageMenu from './VoxMessageMenu';
+import VoxDownloadModal from './VoxDownloadModal';
+import { archiveVoxerConversation, archiveMeetingNotes } from '../../services/voxer/voxerArchiveService';
 
 // Phase 5: AI Enhancements
-import { VoxConversationSummary, VoxSmartReplies } from './index';
-import { summarizeConversation, generateSmartReplies } from '../../services/voxer/voxerAIService';
-import type { ConversationSummary, SmartReply } from '../../services/voxer/voxerAIService';
+import { VoxConversationSummary, VoxSmartReplies, VoxMeetingNotes, VoxAutoChapters } from './index';
+import { summarizeConversation, generateSmartReplies, generateMeetingNotes, generateAutoChapters } from '../../services/voxer/voxerAIService';
+import type { ConversationSummary, SmartReply, MeetingNotes, Chapter } from '../../services/voxer/voxerAIService';
 
 // Phase 6: Final Polish
 import { useVoxerKeyboardShortcuts } from '../../hooks/useVoxerKeyboardShortcuts';
@@ -107,6 +108,10 @@ const TeamVoxMode: React.FC<TeamVoxModeProps> = ({
   const [pulseContacts, setPulseContacts] = useState<any[]>([]);
   const [showMobileSidebar, setShowMobileSidebar] = useState(false);
   const [showWorkspaceDropdown, setShowWorkspaceDropdown] = useState(false);
+  const [showMessageMenu, setShowMessageMenu] = useState<string | null>(null);
+  const [menuAnchorRect, setMenuAnchorRect] = useState<DOMRect | null>(null);
+  const [showDownloadModal, setShowDownloadModal] = useState(false);
+  const [downloadItem, setDownloadItem] = useState<VoxSelectionItem | null>(null);
 
   const audioRef = useRef<HTMLAudioElement>(null);
   const messagesEndRef = useRef<HTMLDivElement>(null);
@@ -132,6 +137,10 @@ const TeamVoxMode: React.FC<TeamVoxModeProps> = ({
   const [showSmartReplies, setShowSmartReplies] = useState(false);
   const [smartReplies, setSmartReplies] = useState<SmartReply[]>([]);
   const [isGeneratingAI, setIsGeneratingAI] = useState(false);
+  const [meetingNotes, setMeetingNotes] = useState<MeetingNotes | null>(null);
+  const [isGeneratingMeetingNotes, setIsGeneratingMeetingNotes] = useState(false);
+  const [activeChapters, setActiveChapters] = useState<Chapter[]>([]);
+  const [chapterMessageId, setChapterMessageId] = useState<string | null>(null);
 
   // Phase 6: Final Polish States
   const [showShortcutsHelp, setShowShortcutsHelp] = useState(false);
@@ -166,6 +175,11 @@ const TeamVoxMode: React.FC<TeamVoxModeProps> = ({
       return;
     }
 
+    if (!apiKey) {
+      toast.error('Gemini API key not configured');
+      return;
+    }
+
     setIsGeneratingAI(true);
     try {
       const messageData = messages.map(msg => ({
@@ -177,7 +191,7 @@ const TeamVoxMode: React.FC<TeamVoxModeProps> = ({
         duration: msg.duration,
       }));
 
-      const summary = await summarizeConversation('', messageData);
+      const summary = await summarizeConversation(apiKey, messageData);
       if (summary) {
         setConversationSummary(summary);
         setShowSummary(true);
@@ -200,6 +214,11 @@ const TeamVoxMode: React.FC<TeamVoxModeProps> = ({
       return;
     }
 
+    if (!apiKey) {
+      toast.error('Gemini API key not configured');
+      return;
+    }
+
     setIsGeneratingAI(true);
     try {
       const lastMessage = recentMessages[recentMessages.length - 1];
@@ -212,7 +231,7 @@ const TeamVoxMode: React.FC<TeamVoxModeProps> = ({
         duration: msg.duration,
       }));
 
-      const replies = await generateSmartReplies('', {
+      const replies = await generateSmartReplies(apiKey, {
         id: lastMessage.id,
         transcription: lastMessage.transcript || '',
         sender: (lastMessage.senderId === voxModeService.getUserId() ? 'me' : 'other') as 'me' | 'other',
@@ -232,6 +251,76 @@ const TeamVoxMode: React.FC<TeamVoxModeProps> = ({
       toast.error('Failed to generate smart replies');
     } finally {
       setIsGeneratingAI(false);
+    }
+  };
+
+  const handleGenerateChapters = async (message: TeamVoxMessage) => {
+    if (!message.transcript) {
+      toast.error('No transcription available for chapters');
+      return;
+    }
+    if (message.duration < 30) {
+      toast.error('Message too short for chapters (need 30+ seconds)');
+      return;
+    }
+    try {
+      toast.loading('Generating chapters...', { id: 'tv-chapters' });
+      const chapters = await generateAutoChapters(apiKey || '', message.transcript, message.duration);
+      if (chapters.length > 0) {
+        setActiveChapters(chapters);
+        setChapterMessageId(message.id);
+        toast.success(`${chapters.length} chapters generated!`, { id: 'tv-chapters' });
+      } else {
+        toast.error('Could not generate chapters for this message', { id: 'tv-chapters' });
+      }
+    } catch {
+      toast.error('Failed to generate chapters', { id: 'tv-chapters' });
+    }
+  };
+
+  const handleGenerateMeetingNotes = async () => {
+    if (messages.length < 2) {
+      toast.error('Need at least 2 messages to generate meeting notes');
+      return;
+    }
+
+    if (!apiKey) {
+      toast.error('Gemini API key not configured');
+      return;
+    }
+
+    setIsGeneratingMeetingNotes(true);
+    try {
+      const messageData = messages.map(msg => ({
+        id: msg.id,
+        transcription: msg.transcript || '',
+        sender: (msg.senderId === voxModeService.getUserId() ? 'me' : 'other') as 'me' | 'other',
+        senderName: msg.senderName,
+        timestamp: msg.createdAt,
+        duration: msg.duration,
+      }));
+
+      const notes = await generateMeetingNotes(
+        apiKey,
+        messageData,
+        selectedChannel ? `#${selectedChannel.name}` : 'Team Meeting'
+      );
+      if (notes) {
+        setMeetingNotes(notes);
+        toast.success('Meeting notes generated!');
+      } else {
+        toast.error('AI meeting notes unavailable — try again later');
+      }
+    } catch (error: any) {
+      console.error('Meeting notes generation error:', error);
+      const msg = error?.message || '';
+      if (msg.includes('API key') || msg.includes('API_KEY')) {
+        toast.error('AI features require API configuration');
+      } else {
+        toast.error('AI meeting notes unavailable (beta)');
+      }
+    } finally {
+      setIsGeneratingMeetingNotes(false);
     }
   };
 
@@ -312,7 +401,23 @@ const TeamVoxMode: React.FC<TeamVoxModeProps> = ({
       else if (recordingState === 'recording') stopRecording();
     },
     onStopRecording: () => {
-      if (recordingState === 'recording') stopRecording();
+      // Priority 1: close any open modal/overlay first
+      if (showMessageMenu) { setShowMessageMenu(null); return; }
+      if (meetingNotes) { setMeetingNotes(null); return; }
+      if (showSummary) { setShowSummary(false); return; }
+      if (showSmartReplies) { setShowSmartReplies(false); return; }
+      if (showDownloadModal) { setShowDownloadModal(false); return; }
+      if (showMentionPicker) { setShowMentionPicker(false); return; }
+      if (showAddMember) { setShowAddMember(false); return; }
+      if (showNotificationSettings) { setShowNotificationSettings(false); return; }
+      if (showChannelSettings) { setShowChannelSettings(false); return; }
+      // Priority 2: discard active recording
+      if (recordingState === 'recording') { stopRecording(); return; }
+      // Priority 3: exit selection mode
+      if (isSelectionMode) { exitSelectionMode(); return; }
+      // Priority 4: close channel → go back
+      if (selectedChannel) { setSelectedChannel(null); return; }
+      onBack();
     },
     onGoBack: () => {
       if (selectedChannel) setSelectedChannel(null);
@@ -328,7 +433,17 @@ const TeamVoxMode: React.FC<TeamVoxModeProps> = ({
     },
     onArchive: () => {
       if (isSelectionMode && selectionCount > 0) {
-        console.log('Archive selected items');
+        (async () => {
+          try {
+            await archiveVoxerConversation(Array.from(selectedItems), selectedChannel?.name || 'Team Vox');
+            exitSelectionMode();
+            toast.success(`Archived ${selectionCount} message${selectionCount > 1 ? 's' : ''}`);
+          } catch {
+            toast.error('Failed to archive');
+          }
+        })();
+      } else {
+        toast.error('Select messages first (click selection button)');
       }
     },
     onSummarize: handleSummarizeChannel,
@@ -453,6 +568,40 @@ const TeamVoxMode: React.FC<TeamVoxModeProps> = ({
         setIsPlaying(true);
       }
     }
+  };
+
+  const handleArchiveMessage = async (msg: any) => {
+    const item: VoxSelectionItem = {
+      id: msg.id,
+      type: 'audio',
+      url: msg.audioUrl || '',
+      duration: msg.duration || 0,
+      timestamp: msg.createdAt instanceof Date ? msg.createdAt : new Date(msg.createdAt || Date.now()),
+      mode: 'team_vox',
+      contactName: msg.senderName,
+      transcript: msg.transcript,
+    };
+    try {
+      await archiveVoxerConversation([item], msg.senderName || 'Team Vox');
+      toast.success('Archived to Pulse Archives');
+    } catch {
+      toast.error('Failed to archive');
+    }
+  };
+
+  const handleDownloadMessage = (msg: any) => {
+    const item: VoxSelectionItem = {
+      id: msg.id,
+      type: 'audio',
+      url: msg.audioUrl || '',
+      duration: msg.duration || 0,
+      timestamp: msg.createdAt instanceof Date ? msg.createdAt : new Date(msg.createdAt || Date.now()),
+      mode: 'team_vox',
+      contactName: msg.senderName,
+      transcript: msg.transcript,
+    };
+    setDownloadItem(item);
+    setShowDownloadModal(true);
   };
 
   const toggleWorkspaceExpanded = (workspaceId: string) => {
@@ -654,170 +803,125 @@ const TeamVoxMode: React.FC<TeamVoxModeProps> = ({
   return (
     <div className={`h-full flex flex-col ${tc.pageBg}`}>
       {/* Unified Mode Header */}
-      <VoxModeHeader
-        modeName="Team Vox"
-        modeTagline="Your Team's Voice Hub"
-        modeColor={MODE_COLOR}
-        modeIcon={Users}
+      <VoxModeToolbar
         onBack={onBack}
+        modeIcon={<Users className="w-5 h-5" />}
+        modeTitle={selectedChannel?.name || 'Team Vox'}
+        modeSubtitle="Workspace Voice Channels"
+        accentColor={MODE_COLOR}
         isDarkMode={isDarkMode}
-        actions={
-          <>
-            {/* Phase 5: AI Enhancement Buttons */}
-            {selectedChannel && (
-              <div className="flex items-center gap-2 border-r border-amber-500/30 pr-2 mr-2">
-                <button
-                  type="button"
-                  onClick={handleSummarizeChannel}
-                  disabled={messages.length === 0 || isGeneratingAI}
-                  className="px-3 py-1.5 rounded-lg bg-purple-500 text-white text-xs font-medium hover:bg-purple-600 transition disabled:opacity-50 disabled:cursor-not-allowed"
-                  title="AI Summarize Channel"
-                >
-                  {isGeneratingAI ? <Loader2 className="w-3 h-3 animate-spin" /> : <Sparkles className="w-3 h-3" />}
-                  <span className="ml-1.5 hidden md:inline">Summarize</span>
-                </button>
+        showAI={!!(selectedChannel)}
+        onSummarize={selectedChannel ? handleSummarizeChannel : undefined}
+        onSmartReplies={selectedChannel ? handleGenerateSmartReplies : undefined}
+        onMeetingNotes={selectedChannel ? handleGenerateMeetingNotes : undefined}
+        isSummarizing={isGeneratingAI}
+        isGeneratingReplies={isGeneratingAI}
+        isGeneratingNotes={isGeneratingMeetingNotes}
+        hasContent={messages.length > 0}
+        isSelectionMode={isSelectionMode}
+        onToggleSelection={() => isSelectionMode ? exitSelectionMode() : enterSelectionMode()}
+        onShowHelp={() => setShowShortcutsHelp(true)}
+        customActions={[
+          {
+            icon: <Menu className="w-5 h-5" />,
+            title: 'Show workspaces',
+            onClick: () => setShowMobileSidebar(true),
+          },
+          {
+            icon: <Plus className="w-4 h-4" />,
+            title: 'New Workspace',
+            label: 'New Workspace',
+            onClick: () => setShowNewWorkspace(true),
+          },
+        ]}
+      >
+        {/* Workspace Selector - Desktop */}
+        {selectedWorkspace && (
+          <div ref={workspaceDropdownRef} className="hidden md:block relative">
+            <button
+              onClick={() => setShowWorkspaceDropdown(!showWorkspaceDropdown)}
+              className={`flex items-center gap-2 px-4 py-2 rounded-xl text-sm font-medium transition-all duration-200 ${tc.btnSecondary} border hover:border-amber-500/50`}
+              title="Switch workspace"
+            >
+              <Briefcase className="w-4 h-4" />
+              <span className="max-w-[150px] truncate">{selectedWorkspace.name}</span>
+              <ChevronDown className={`w-4 h-4 transition-transform ${showWorkspaceDropdown ? 'rotate-180' : ''}`} />
+            </button>
 
-                <button
-                  type="button"
-                  onClick={handleGenerateSmartReplies}
-                  disabled={isGeneratingAI}
-                  className="px-3 py-1.5 rounded-lg bg-blue-500 text-white text-xs font-medium hover:bg-blue-600 transition disabled:opacity-50 disabled:cursor-not-allowed"
-                  title="Generate Smart Replies"
+            {/* Workspace Dropdown */}
+            {showWorkspaceDropdown && (
+              <div className="absolute top-full right-0 mt-2 w-64 z-50">
+                <div
+                  className={`rounded-xl border ${tc.modalBg} shadow-2xl overflow-hidden`}
+                  style={{ boxShadow: `0 8px 32px ${MODE_COLOR}20` }}
                 >
-                  {isGeneratingAI ? <Loader2 className="w-3 h-3 animate-spin" /> : <TrendingUp className="w-3 h-3" />}
-                  <span className="ml-1.5 hidden md:inline">Quick Reply</span>
-                </button>
-
-                {/* Phase 2: Selection Mode Button */}
-                <button
-                  type="button"
-                  onClick={(e) => {
-                    e.preventDefault();
-                    e.stopPropagation();
-                    if (isSelectionMode) {
-                      exitSelectionMode();
-                    } else {
-                      enterSelectionMode();
-                    }
-                  }}
-                  style={{
-                    background: isSelectionMode ? '#F59E0B' : undefined,
-                    color: isSelectionMode ? 'white' : undefined,
-                  }}
-                  className="p-2 rounded-lg hover:bg-amber-500/20 transition"
-                  title="Select messages"
-                >
-                  {isSelectionMode ? <X className="w-4 h-4" /> : <Square className="w-4 h-4" />}
-                </button>
-              </div>
-            )}
-
-            {/* Workspace Selector - Desktop */}
-            {selectedWorkspace && (
-              <div ref={workspaceDropdownRef} className="hidden md:block relative">
-                <button
-                  onClick={() => setShowWorkspaceDropdown(!showWorkspaceDropdown)}
-                  className={`flex items-center gap-2 px-4 py-2 rounded-xl text-sm font-medium transition-all duration-200 ${tc.btnSecondary} border hover:border-amber-500/50`}
-                  title="Switch workspace"
-                >
-                  <Briefcase className="w-4 h-4" />
-                  <span className="max-w-[150px] truncate">{selectedWorkspace.name}</span>
-                  <ChevronDown className={`w-4 h-4 transition-transform ${showWorkspaceDropdown ? 'rotate-180' : ''}`} />
-                </button>
-
-                {/* Workspace Dropdown */}
-                {showWorkspaceDropdown && (
-                  <div className="absolute top-full right-0 mt-2 w-64 z-50">
-                    <div
-                      className={`rounded-xl border ${tc.modalBg} shadow-2xl overflow-hidden`}
-                      style={{ boxShadow: `0 8px 32px ${MODE_COLOR}20` }}
-                    >
-                      <div className={`px-4 py-3 border-b ${tc.border}`}>
-                        <p className={`text-xs font-semibold ${tc.textMuted} uppercase`}>Switch Workspace</p>
-                      </div>
-                      <div className="max-h-64 overflow-y-auto py-2">
-                        {workspaces.map((workspace) => (
-                          <button
-                            key={workspace.id}
-                            onClick={() => {
-                              setSelectedWorkspace(workspace);
-                              setExpandedWorkspaces(new Set([workspace.id]));
-                              if (workspace.channels.length > 0) {
-                                setSelectedChannel(workspace.channels[0]);
-                              } else {
-                                setSelectedChannel(null);
-                              }
-                              setShowWorkspaceDropdown(false);
-                            }}
-                            className={`w-full px-4 py-3 flex items-center gap-3 transition-all ${
-                              selectedWorkspace?.id === workspace.id
-                                ? `${tc.activeBg} text-amber-500`
-                                : `${tc.hoverBg} ${tc.text}`
-                            }`}
-                          >
-                            <div
-                              className="w-8 h-8 rounded-lg flex items-center justify-center shrink-0"
-                              style={{
-                                background: selectedWorkspace?.id === workspace.id
-                                  ? `linear-gradient(135deg, ${MODE_COLOR} 0%, #ea580c 100%)`
-                                  : isDarkMode ? 'rgba(55,65,81,0.5)' : 'rgba(229,231,235,0.8)'
-                              }}
-                            >
-                              <span className={`text-sm font-bold ${selectedWorkspace?.id === workspace.id ? 'text-white' : tc.textSecondary}`}>
-                                {workspace.name.charAt(0).toUpperCase()}
-                              </span>
-                            </div>
-                            <div className="flex-1 text-left min-w-0">
-                              <p className={`font-medium truncate ${selectedWorkspace?.id === workspace.id ? 'text-amber-500' : tc.text}`}>
-                                {workspace.name}
-                              </p>
-                              <p className={`text-xs ${tc.textMuted} truncate`}>
-                                {workspace.channels.length} channel{workspace.channels.length !== 1 ? 's' : ''}
-                              </p>
-                            </div>
-                            {selectedWorkspace?.id === workspace.id && (
-                              <div className="w-2 h-2 rounded-full bg-amber-500" />
-                            )}
-                          </button>
-                        ))}
-                      </div>
-                      <div className={`px-2 py-2 border-t ${tc.border}`}>
-                        <button
-                          onClick={() => {
-                            setShowWorkspaceDropdown(false);
-                            setShowNewWorkspace(true);
-                          }}
-                          className={`w-full flex items-center gap-2 px-3 py-2 rounded-lg text-sm font-medium transition-all ${tc.hoverBg} hover:text-amber-500`}
-                        >
-                          <Plus className="w-4 h-4" />
-                          Create New Workspace
-                        </button>
-                      </div>
-                    </div>
+                  <div className={`px-4 py-3 border-b ${tc.border}`}>
+                    <p className={`text-xs font-semibold ${tc.textMuted} uppercase`}>Switch Workspace</p>
                   </div>
-                )}
+                  <div className="max-h-64 overflow-y-auto py-2">
+                    {workspaces.map((workspace) => (
+                      <button
+                        key={workspace.id}
+                        onClick={() => {
+                          setSelectedWorkspace(workspace);
+                          setExpandedWorkspaces(new Set([workspace.id]));
+                          if (workspace.channels.length > 0) {
+                            setSelectedChannel(workspace.channels[0]);
+                          } else {
+                            setSelectedChannel(null);
+                          }
+                          setShowWorkspaceDropdown(false);
+                        }}
+                        className={`w-full px-4 py-3 flex items-center gap-3 transition-all ${
+                          selectedWorkspace?.id === workspace.id
+                            ? `${tc.activeBg} text-amber-500`
+                            : `${tc.hoverBg} ${tc.text}`
+                        }`}
+                      >
+                        <div
+                          className="w-8 h-8 rounded-lg flex items-center justify-center shrink-0"
+                          style={{
+                            background: selectedWorkspace?.id === workspace.id
+                              ? `linear-gradient(135deg, ${MODE_COLOR} 0%, #ea580c 100%)`
+                              : isDarkMode ? 'rgba(55,65,81,0.5)' : 'rgba(229,231,235,0.8)'
+                          }}
+                        >
+                          <span className={`text-sm font-bold ${selectedWorkspace?.id === workspace.id ? 'text-white' : tc.textSecondary}`}>
+                            {workspace.name.charAt(0).toUpperCase()}
+                          </span>
+                        </div>
+                        <div className="flex-1 text-left min-w-0">
+                          <p className={`font-medium truncate ${selectedWorkspace?.id === workspace.id ? 'text-amber-500' : tc.text}`}>
+                            {workspace.name}
+                          </p>
+                          <p className={`text-xs ${tc.textMuted} truncate`}>
+                            {workspace.channels.length} channel{workspace.channels.length !== 1 ? 's' : ''}
+                          </p>
+                        </div>
+                        {selectedWorkspace?.id === workspace.id && (
+                          <div className="w-2 h-2 rounded-full bg-amber-500" />
+                        )}
+                      </button>
+                    ))}
+                  </div>
+                  <div className={`px-2 py-2 border-t ${tc.border}`}>
+                    <button
+                      onClick={() => {
+                        setShowWorkspaceDropdown(false);
+                        setShowNewWorkspace(true);
+                      }}
+                      className={`w-full flex items-center gap-2 px-3 py-2 rounded-lg text-sm font-medium transition-all ${tc.hoverBg} hover:text-amber-500`}
+                    >
+                      <Plus className="w-4 h-4" />
+                      Create New Workspace
+                    </button>
+                  </div>
+                </div>
               </div>
             )}
-
-            {/* Mobile sidebar toggle */}
-            <button
-              onClick={() => setShowMobileSidebar(true)}
-              className={`md:hidden p-2 rounded-xl ${tc.btnGhost} transition-all`}
-              aria-label="Show workspaces"
-            >
-              <Menu className="w-5 h-5" />
-            </button>
-
-            <button
-              onClick={() => setShowNewWorkspace(true)}
-              className={`hidden lg:flex items-center gap-2 px-3 md:px-4 py-2 rounded-xl text-sm font-medium transition-all duration-200 ${tc.btnPrimary}`}
-            >
-              <Plus className="w-4 h-4" />
-              <span className="hidden sm:inline">New Workspace</span>
-            </button>
-          </>
-        }
-      />
+          </div>
+        )}
+      </VoxModeToolbar>
 
       <div className="flex-1 flex overflow-hidden relative">
         {/* Mobile Sidebar Overlay */}
@@ -1044,6 +1148,22 @@ const TeamVoxMode: React.FC<TeamVoxModeProps> = ({
                                   </p>
                                 )}
 
+                                {/* AI Chapters button — for transcribed messages >= 30s */}
+                                {message.transcript && message.duration >= 30 && (
+                                  <button
+                                    type="button"
+                                    onClick={() => handleGenerateChapters(message)}
+                                    className="mb-2 flex items-center gap-1 text-xs hover:underline"
+                                    style={{ color: MODE_COLOR }}
+                                    title="Generate AI chapter markers for this message"
+                                  >
+                                    <List className="w-3 h-3" />
+                                    {chapterMessageId === message.id
+                                      ? 'Chapters shown ↓'
+                                      : `Generate Chapters (${Math.round(message.duration)}s)`}
+                                  </button>
+                                )}
+
                                 {/* Action Items */}
                                 {message.actionItems && message.actionItems.length > 0 && (
                                   <div className={`mt-3 p-3 rounded-lg ${isDarkMode ? 'bg-gray-900/50' : 'bg-gray-100/80'}`}>
@@ -1081,6 +1201,40 @@ const TeamVoxMode: React.FC<TeamVoxModeProps> = ({
                                 )}
                               </div>
                             </div>
+
+                            {/* More Actions Menu */}
+                            {!isSelectionMode && (
+                              <>
+                                <button
+                                  type="button"
+                                  onClick={(e) => {
+                                    e.stopPropagation();
+                                    const rect = (e.currentTarget as HTMLButtonElement).getBoundingClientRect();
+                                    setMenuAnchorRect(rect);
+                                    setShowMessageMenu(showMessageMenu === message.id ? null : message.id);
+                                  }}
+                                  className="p-1 rounded opacity-60 hover:opacity-100 transition-opacity flex-shrink-0 ml-2"
+                                  title="More actions"
+                                >
+                                  <MoreVertical className="w-4 h-4" />
+                                </button>
+                                {showMessageMenu === message.id && (
+                                  <VoxMessageMenu
+                                    isDarkMode={isDarkMode}
+                                    accentColor={MODE_COLOR}
+                                    anchorRect={menuAnchorRect!}
+                                    onArchive={() => handleArchiveMessage(message)}
+                                    onDownload={() => handleDownloadMessage(message)}
+                                    onDelete={() => {
+                                      setMessages(prev => prev.filter(m => m.id !== message.id));
+                                      setShowMessageMenu(null);
+                                      toast.success('Message deleted');
+                                    }}
+                                    onClose={() => setShowMessageMenu(null)}
+                                  />
+                                )}
+                              </>
+                            )}
                           </div>
                         </React.Fragment>
                       );
@@ -1698,12 +1852,70 @@ const TeamVoxMode: React.FC<TeamVoxModeProps> = ({
         </div>
       )}
 
+      {/* Meeting Notes Modal */}
+      {meetingNotes && (
+        <div
+          className="fixed inset-0 bg-black/50 backdrop-blur-sm z-50 flex items-center justify-center p-4"
+          onClick={() => setMeetingNotes(null)}
+        >
+          <div className="max-w-2xl w-full max-h-[90vh] overflow-y-auto" onClick={e => e.stopPropagation()}>
+            <VoxMeetingNotes
+              notes={meetingNotes}
+              isDarkMode={isDarkMode}
+              accentColor={MODE_COLOR}
+              onClose={() => setMeetingNotes(null)}
+              onArchive={async () => {
+                await archiveMeetingNotes(
+                  meetingNotes,
+                  selectedChannel ? `Team Vox / #${selectedChannel.name}` : 'Team Vox'
+                );
+                toast.success('Meeting notes archived to Pulse Archives');
+              }}
+            />
+          </div>
+        </div>
+      )}
+
+      {/* AI Auto-Chapters Panel */}
+      {activeChapters.length > 0 && chapterMessageId && (
+        <div className="fixed bottom-4 left-4 right-4 z-[200] max-w-2xl mx-auto">
+          <div className="relative">
+            <button
+              type="button"
+              onClick={() => { setActiveChapters([]); setChapterMessageId(null); }}
+              className="absolute -top-2 -right-2 z-10 w-7 h-7 rounded-full text-white hover:opacity-90 transition flex items-center justify-center shadow-lg"
+              style={{ backgroundColor: MODE_COLOR }}
+              title="Close chapters"
+            >
+              <X className="w-3.5 h-3.5" />
+            </button>
+            <VoxAutoChapters
+              chapters={activeChapters}
+              currentTime={0}
+              isDarkMode={isDarkMode}
+              accentColor={MODE_COLOR}
+            />
+          </div>
+        </div>
+      )}
+
       {/* Phase 6: Keyboard Shortcuts Help Modal */}
       <VoxKeyboardShortcutsHelp
         isOpen={showShortcutsHelp}
         onClose={() => setShowShortcutsHelp(false)}
         isDarkMode={isDarkMode}
       />
+
+      {/* Download Modal */}
+      {showDownloadModal && downloadItem && (
+        <VoxDownloadModal
+          isOpen={showDownloadModal}
+          onClose={() => { setShowDownloadModal(false); setDownloadItem(null); }}
+          items={[downloadItem]}
+          isDarkMode={isDarkMode}
+          accentColor={MODE_COLOR}
+        />
+      )}
     </div>
   );
 };

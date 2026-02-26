@@ -45,6 +45,10 @@ import { useVoxSelection } from '../hooks/useVoxSelection';
 import { VoxSelectToolbar } from './Voxer/VoxSelectToolbar';
 import VoxDownloadModal from './Voxer/VoxDownloadModal';
 
+// Keyboard shortcuts
+import { useVoxerKeyboardShortcuts } from '../hooks/useVoxerKeyboardShortcuts';
+import { VoxKeyboardShortcutsHelp } from './Voxer/VoxKeyboardShortcutsHelp';
+
 // Vox Mode System - 7 Communication Styles
 import {
   VoxModeSelector,
@@ -192,6 +196,8 @@ const Voxer: React.FC<VoxerProps> = ({ apiKey, contacts, initialContactId, isDar
   // Show mode selector by default when entering Voxer (no mode selected initially)
   const [currentVoxMode, setCurrentVoxMode] = useState<VoxMode | null>(null);
   const [showVoxModeSelector, setShowVoxModeSelector] = useState(true); // Show selector on load
+  const [lastVoxMode, setLastVoxMode] = useState<VoxMode | null>(null); // Track last active mode for selector indicator
+  const [showShortcutsHelp, setShowShortcutsHelp] = useState(false);
   
   // Refs
   const mediaRecorderRef = useRef<MediaRecorder | null>(null);
@@ -1336,6 +1342,18 @@ const Voxer: React.FC<VoxerProps> = ({ apiKey, contacts, initialContactId, isDar
   }, [recordings]);
 
 
+  // Mode names for keyboard shortcut toast notifications
+  const MODE_NAMES: Record<string, string> = {
+    classic: 'Classic Voxer',
+    pulse_radio: 'Pulse Radio',
+    voice_threads: 'Voice Threads',
+    team_vox: 'Team Vox',
+    vox_notes: 'Vox Notes',
+    quick_vox: 'Quick Vox',
+    vox_drop: 'Vox Drop',
+    video_vox: 'Video Vox',
+  };
+
   // Handle mode selection callback
   const handleBackToSelector = () => {
     setCurrentVoxMode(null);
@@ -1343,9 +1361,28 @@ const Voxer: React.FC<VoxerProps> = ({ apiKey, contacts, initialContactId, isDar
   };
 
   const handleSelectMode = (mode: VoxMode | null) => {
+    if (mode !== null) setLastVoxMode(mode);
     setCurrentVoxMode(mode);
     setShowVoxModeSelector(false);
   };
+
+  // Global keyboard shortcuts — mode switching (1-8) and help (?)
+  // Escape/go-back is only handled here when NO mode is active, to avoid double-firing
+  // with per-mode keyboard shortcut handlers each mode component registers.
+  useVoxerKeyboardShortcuts({
+    onSwitchMode: (mode) => {
+      const voxMode = mode === 'classic' ? null : mode as VoxMode;
+      setCurrentVoxMode(voxMode);
+      setShowVoxModeSelector(false);
+      toast.success(`Switched to ${MODE_NAMES[mode] || mode}`, { duration: 1500 });
+    },
+    onShowHelp: () => setShowShortcutsHelp(true),
+    // Only handle Escape at parent level when no mode component is mounted (no child handler)
+    onGoBack: !currentVoxMode ? () => {
+      if (showShortcutsHelp) setShowShortcutsHelp(false);
+      else if (showVoxModeSelector) setShowVoxModeSelector(false);
+    } : undefined,
+  }, true);
 
   // If a Vox Mode is selected, render that mode's full interface instead of the default Voxer
   if (currentVoxMode) {
@@ -1370,7 +1407,7 @@ const Voxer: React.FC<VoxerProps> = ({ apiKey, contacts, initialContactId, isDar
           <VoxDropMode onBack={handleBackToSelector} contacts={contacts} apiKey={apiKey} isDarkMode={isDarkMode} />
         )}
         {currentVoxMode === 'video_vox' && (
-          <VideoVoxMode onClose={handleBackToSelector} isDarkMode={isDarkMode} />
+          <VideoVoxMode onClose={handleBackToSelector} apiKey={apiKey} isDarkMode={isDarkMode} />
         )}
 
         {/* Vox Mode Selector Modal (can be opened from within modes) */}
@@ -1379,6 +1416,13 @@ const Voxer: React.FC<VoxerProps> = ({ apiKey, contacts, initialContactId, isDar
           onClose={() => setShowVoxModeSelector(false)}
           onSelectMode={handleSelectMode}
           currentMode={currentVoxMode}
+          isDarkMode={isDarkMode}
+        />
+
+        {/* Global keyboard shortcuts help modal */}
+        <VoxKeyboardShortcutsHelp
+          isOpen={showShortcutsHelp}
+          onClose={() => setShowShortcutsHelp(false)}
           isDarkMode={isDarkMode}
         />
       </div>
@@ -1396,7 +1440,14 @@ const Voxer: React.FC<VoxerProps> = ({ apiKey, contacts, initialContactId, isDar
             setShowVoxModeSelector(false);
           }}
           onSelectMode={handleSelectMode}
-          currentMode={null}
+          currentMode={lastVoxMode}
+          isDarkMode={isDarkMode}
+        />
+
+        {/* Global keyboard shortcuts help modal */}
+        <VoxKeyboardShortcutsHelp
+          isOpen={showShortcutsHelp}
+          onClose={() => setShowShortcutsHelp(false)}
           isDarkMode={isDarkMode}
         />
       </div>
@@ -1420,6 +1471,13 @@ const Voxer: React.FC<VoxerProps> = ({ apiKey, contacts, initialContactId, isDar
           onClose={() => setShowVoxModeSelector(false)}
           onSelectMode={handleSelectMode}
           currentMode={null}
+          isDarkMode={isDarkMode}
+        />
+
+        {/* Global keyboard shortcuts help modal */}
+        <VoxKeyboardShortcutsHelp
+          isOpen={showShortcutsHelp}
+          onClose={() => setShowShortcutsHelp(false)}
           isDarkMode={isDarkMode}
         />
       </div>

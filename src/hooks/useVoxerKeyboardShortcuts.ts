@@ -1,7 +1,7 @@
 // useVoxerKeyboardShortcuts - Global keyboard shortcuts for Voxer
 // Provides Space for record, Escape for back, 1-8 for modes, Ctrl+D/A/S for actions
 
-import { useEffect } from 'react';
+import { useEffect, useRef } from 'react';
 import { VoxMode } from '../services/voxer/voxModeTypes';
 
 export interface VoxerShortcutHandlers {
@@ -47,10 +47,17 @@ export function useVoxerKeyboardShortcuts(
   handlers: VoxerShortcutHandlers,
   enabled: boolean = true
 ) {
+  // Store handlers in a ref so the event listener is never stale and never
+  // needs to be removed/re-added on every render (which caused browser
+  // select-all to fire during the brief gap between removal and re-addition).
+  const handlersRef = useRef<VoxerShortcutHandlers>(handlers);
+  handlersRef.current = handlers;
+
   useEffect(() => {
     if (!enabled) return;
 
     const handleKeyDown = (event: KeyboardEvent) => {
+      const h = handlersRef.current;
       const target = event.target as HTMLElement;
       const isInInput = ['INPUT', 'TEXTAREA', 'SELECT'].includes(target.tagName);
       const isContentEditable = target.isContentEditable;
@@ -63,17 +70,17 @@ export function useVoxerKeyboardShortcuts(
       // Space - Toggle recording (only when not in input)
       if (event.key === ' ' && !isInInput && !isContentEditable) {
         event.preventDefault();
-        handlers.onToggleRecording?.();
+        h.onToggleRecording?.();
         return;
       }
 
       // Escape - Stop recording / Go back
       if (event.key === 'Escape') {
         event.preventDefault();
-        if (handlers.onStopRecording) {
-          handlers.onStopRecording();
+        if (h.onStopRecording) {
+          h.onStopRecording();
         } else {
-          handlers.onGoBack?.();
+          h.onGoBack?.();
         }
         return;
       }
@@ -81,42 +88,42 @@ export function useVoxerKeyboardShortcuts(
       // ? - Show help
       if (event.key === '?' && !isInInput && !isContentEditable) {
         event.preventDefault();
-        handlers.onShowHelp?.();
+        h.onShowHelp?.();
         return;
       }
 
       // Number keys - Switch modes (1-8)
       if (MODE_MAP[event.key] && !isInInput && !isContentEditable) {
         event.preventDefault();
-        handlers.onSwitchMode?.(MODE_MAP[event.key]);
+        h.onSwitchMode?.(MODE_MAP[event.key]);
         return;
       }
 
       // Ctrl+D - Download
       if (event.ctrlKey && event.key === 'd') {
         event.preventDefault();
-        handlers.onDownload?.();
+        h.onDownload?.();
         return;
       }
 
       // Ctrl+A - Archive (override default select all)
       if (event.ctrlKey && event.key === 'a' && !isInInput && !isContentEditable) {
         event.preventDefault();
-        handlers.onArchive?.();
+        h.onArchive?.();
         return;
       }
 
       // Ctrl+S - Summarize (override default save)
       if (event.ctrlKey && event.key === 's') {
         event.preventDefault();
-        handlers.onSummarize?.();
+        h.onSummarize?.();
         return;
       }
     };
 
-    window.addEventListener('keydown', handleKeyDown);
-    return () => window.removeEventListener('keydown', handleKeyDown);
-  }, [handlers, enabled]);
+    window.addEventListener('keydown', handleKeyDown, true); // capture phase for reliable preventDefault
+    return () => window.removeEventListener('keydown', handleKeyDown, true);
+  }, [enabled]); // only re-attach when enabled changes, NOT when handlers change
 }
 
 export default useVoxerKeyboardShortcuts;

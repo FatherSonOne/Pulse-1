@@ -18,7 +18,6 @@ import {
   X,
   Users,
   Archive,
-  Square,
   ChevronLeft,
   Pin,
   Heart,
@@ -42,16 +41,15 @@ import {
   Eye,
   EyeOff,
   Loader2,
-  Sparkles,
-  TrendingUp,
   AlertCircle,
   CheckCircle2,
   MessageCircle,
+  List,
 } from 'lucide-react';
 import RecordingPreview from './RecordingPreview';
 import { useVoxRecording } from '../../hooks/useVoxRecording';
 import { voxModeService } from '../../services/voxer/voxModeService';
-import VoxModeHeader from './VoxModeHeader';
+import VoxModeToolbar from './VoxModeToolbar';
 import VoxRecordArea from './VoxRecordArea';
 import analyticsCollector from '../../services/analyticsCollector';
 import type { VoiceThread, VoiceThreadMessage, PulseUser } from '../../services/voxer/voxModeTypes';
@@ -61,11 +59,14 @@ import './VoiceThreadsMode.css';
 // Phase 2: Selection Mode
 import { useVoxSelection, VoxSelectionItem } from '../../hooks/useVoxSelection';
 import { VoxSelectToolbar } from './VoxSelectToolbar';
+import VoxMessageMenu from './VoxMessageMenu';
+import VoxDownloadModal from './VoxDownloadModal';
+import { archiveVoxerConversation, archiveMeetingNotes } from '../../services/voxer/voxerArchiveService';
 
 // Phase 5: AI Enhancements
-import { VoxConversationSummary, VoxSmartReplies } from './index';
-import { summarizeConversation, generateSmartReplies } from '../../services/voxer/voxerAIService';
-import type { ConversationSummary, SmartReply } from '../../services/voxer/voxerAIService';
+import { VoxConversationSummary, VoxSmartReplies, VoxMeetingNotes, VoxAutoChapters } from './index';
+import { summarizeConversation, generateSmartReplies, generateMeetingNotes, generateAutoChapters } from '../../services/voxer/voxerAIService';
+import type { ConversationSummary, SmartReply, MeetingNotes, Chapter } from '../../services/voxer/voxerAIService';
 
 // Phase 6: Final Polish
 import { useVoxerKeyboardShortcuts } from '../../hooks/useVoxerKeyboardShortcuts';
@@ -486,11 +487,21 @@ const VoiceThreadsMode: React.FC<VoiceThreadsModeProps> = ({
   const [showSmartReplies, setShowSmartReplies] = useState(false);
   const [smartReplies, setSmartReplies] = useState<SmartReply[]>([]);
   const [isGeneratingAI, setIsGeneratingAI] = useState(false);
+  const [meetingNotes, setMeetingNotes] = useState<MeetingNotes | null>(null);
+  const [isGeneratingMeetingNotes, setIsGeneratingMeetingNotes] = useState(false);
+  const [activeChapters, setActiveChapters] = useState<Chapter[]>([]);
+  const [chapterMessageId, setChapterMessageId] = useState<string | null>(null);
 
   // Phase 6: Final Polish States
   const [showShortcutsHelp, setShowShortcutsHelp] = useState(false);
   const { playbackSpeed: globalPlaybackSpeed, setPlaybackSpeed: setGlobalPlaybackSpeed, applyToElement } = usePlaybackSpeed();
   const emptyConfig = getEmptyStateConfig('voice_threads');
+
+  // Message Menu & Download States
+  const [showMessageMenu, setShowMessageMenu] = useState<string | null>(null);
+  const [menuAnchorRect, setMenuAnchorRect] = useState<DOMRect | null>(null);
+  const [showDownloadModal, setShowDownloadModal] = useState(false);
+  const [downloadItem, setDownloadItem] = useState<VoxSelectionItem | null>(null);
 
   // Refs
   const audioRef = useRef<HTMLAudioElement>(null);
@@ -537,11 +548,24 @@ const VoiceThreadsMode: React.FC<VoiceThreadsModeProps> = ({
       }
     },
     onStopRecording: () => {
-      if (recordingState === 'recording') {
-        cancelRecording();
-      } else if (recordingState === 'preview') {
-        cancelRecording();
+      // Priority 1: close any open modal/overlay first
+      if (showMessageActions) { setShowMessageActions(null); return; }
+      if (showReactionPicker) { setShowReactionPicker(null); return; }
+      if (meetingNotes) { setMeetingNotes(null); return; }
+      if (showSummary) { setShowSummary(false); return; }
+      if (showSmartReplies) { setShowSmartReplies(false); return; }
+      if (showDownloadModal) { setShowDownloadModal(false); return; }
+      if (showThreadSettings) { setShowThreadSettings(false); return; }
+      if (showNewThread) { setShowNewThread(false); return; }
+      // Priority 2: discard active recording
+      if (recordingState === 'recording' || recordingState === 'preview') {
+        cancelRecording(); return;
       }
+      // Priority 3: exit selection mode
+      if (isSelectionMode) { exitSelectionMode(); return; }
+      // Priority 4: close thread → go back
+      if (selectedThread) { setSelectedThread(null); return; }
+      onBack();
     },
     onGoBack: () => {
       if (selectedThread) {
@@ -555,9 +579,19 @@ const VoiceThreadsMode: React.FC<VoiceThreadsModeProps> = ({
         console.log('Download selected:', selectionCount);
       }
     },
-    onArchiveSelected: () => {
+    onArchive: () => {
       if (isSelectionMode && selectionCount > 0) {
-        console.log('Archive selected:', selectionCount);
+        (async () => {
+          try {
+            await archiveVoxerConversation(Array.from(selectedItems), selectedThread?.subject || selectedThread?.participantName || 'Voice Thread');
+            exitSelectionMode();
+            toast.success(`Archived ${selectionCount} message${selectionCount > 1 ? 's' : ''}`);
+          } catch {
+            toast.error('Failed to archive');
+          }
+        })();
+      } else {
+        toast.error('Select messages first (click selection button)');
       }
     },
     onSummarize: () => {
@@ -565,7 +599,7 @@ const VoiceThreadsMode: React.FC<VoiceThreadsModeProps> = ({
         handleSummarizeThread();
       }
     },
-    onShowShortcuts: () => setShowShortcutsHelp(true),
+    onShowHelp: () => setShowShortcutsHelp(true),
   }, true);
 
   // ============================================
@@ -642,6 +676,12 @@ const VoiceThreadsMode: React.FC<VoiceThreadsModeProps> = ({
       loadMessages(selectedThread.id);
       setShowMobileSidebar(false);
     }
+    // Reset AI overlays when switching threads
+    setMeetingNotes(null);
+    setConversationSummary(null);
+    setSmartReplies([]);
+    setShowSummary(false);
+    setShowSmartReplies(false);
   }, [selectedThread]);
 
   const loadMessages = async (threadId: string) => {
@@ -816,21 +856,40 @@ const VoiceThreadsMode: React.FC<VoiceThreadsModeProps> = ({
   const handleSummarizeThread = async () => {
     if (!selectedThread || messages.length === 0) return;
 
+    if (!apiKey) {
+      toast.error('Gemini API key not configured');
+      return;
+    }
+
     setIsGeneratingAI(true);
     try {
       const formattedMessages = messages.map(m => ({
-        sender: m.senderName || 'Unknown',
-        text: m.transcript || '[Voice message]',
-        timestamp: m.createdAt.toISOString(),
+        id: m.id,
+        transcription: m.transcript || '[Voice message]',
+        sender: (m.senderId === voxModeService.getUserId() ? 'me' : 'other') as 'me' | 'other',
+        senderName: m.senderName || 'Unknown',
+        timestamp: m.createdAt,
+        duration: m.duration,
       }));
 
-      const summary = await summarizeConversation(formattedMessages);
-      setConversationSummary(summary);
-      setShowSummary(true);
-      toast.success('Thread summary generated!');
-    } catch (error) {
+      const summary = await summarizeConversation(apiKey, formattedMessages);
+      if (summary) {
+        setConversationSummary(summary);
+        setShowSummary(true);
+        toast.success('Thread summarized!');
+      } else {
+        toast.error('AI summarizer unavailable — try again later');
+      }
+    } catch (error: any) {
       console.error('Failed to generate summary:', error);
-      toast.error('Failed to generate summary');
+      const msg = error?.message || '';
+      if (msg.includes('API key') || msg.includes('API_KEY')) {
+        toast.error('AI features require API configuration');
+      } else if (msg.includes('network') || msg.includes('fetch')) {
+        toast.error('Network error — please try again');
+      } else {
+        toast.error('AI summarizer unavailable (beta)');
+      }
     } finally {
       setIsGeneratingAI(false);
     }
@@ -839,15 +898,33 @@ const VoiceThreadsMode: React.FC<VoiceThreadsModeProps> = ({
   const handleGenerateSmartReplies = async () => {
     if (messages.length === 0) return;
 
+    if (!apiKey) {
+      toast.error('Gemini API key not configured');
+      return;
+    }
+
     setIsGeneratingAI(true);
     try {
-      const recentMessages = messages.slice(-5).map(m => ({
-        sender: m.senderName || 'Unknown',
-        text: m.transcript || '[Voice message]',
-        timestamp: m.createdAt.toISOString(),
+      const recentMessages = messages.slice(-5);
+      const lastMessage = recentMessages[recentMessages.length - 1];
+
+      const context = recentMessages.map(m => ({
+        id: m.id,
+        transcription: m.transcript || '[Voice message]',
+        sender: (m.senderId === voxModeService.getUserId() ? 'me' : 'other') as 'me' | 'other',
+        senderName: m.senderName || 'Unknown',
+        timestamp: m.createdAt,
+        duration: m.duration,
       }));
 
-      const replies = await generateSmartReplies(recentMessages);
+      const replies = await generateSmartReplies(apiKey, {
+        id: lastMessage.id,
+        transcription: lastMessage.transcript || '[Voice message]',
+        sender: (lastMessage.senderId === voxModeService.getUserId() ? 'me' : 'other') as 'me' | 'other',
+        senderName: lastMessage.senderName || 'Unknown',
+        timestamp: lastMessage.createdAt,
+        duration: lastMessage.duration,
+      }, context);
       setSmartReplies(replies);
       setShowSmartReplies(true);
       toast.success('Smart replies generated!');
@@ -856,6 +933,64 @@ const VoiceThreadsMode: React.FC<VoiceThreadsModeProps> = ({
       toast.error('Failed to generate replies');
     } finally {
       setIsGeneratingAI(false);
+    }
+  };
+
+  const handleGenerateChapters = async (message: VoiceThreadMessage) => {
+    if (!message.transcript) {
+      toast.error('No transcription available for chapters');
+      return;
+    }
+    if (message.duration < 30) {
+      toast.error('Message too short for chapters (need 30+ seconds)');
+      return;
+    }
+    try {
+      toast.loading('Generating chapters...', { id: 'vt-chapters' });
+      const chapters = await generateAutoChapters(apiKey || '', message.transcript, message.duration);
+      if (chapters.length > 0) {
+        setActiveChapters(chapters);
+        setChapterMessageId(message.id);
+        toast.success(`${chapters.length} chapters generated!`, { id: 'vt-chapters' });
+      } else {
+        toast.error('Could not generate chapters for this message', { id: 'vt-chapters' });
+      }
+    } catch {
+      toast.error('Failed to generate chapters', { id: 'vt-chapters' });
+    }
+  };
+
+  const handleGenerateMeetingNotes = async () => {
+    if (!selectedThread || messages.length === 0) return;
+
+    if (!apiKey) {
+      toast.error('Gemini API key not configured');
+      return;
+    }
+
+    setIsGeneratingMeetingNotes(true);
+    try {
+      const formattedMessages = messages.map(m => ({
+        id: m.id,
+        transcription: m.transcript || '[Voice message]',
+        sender: (m.senderId === voxModeService.getUserId() ? 'me' : 'other') as 'me' | 'other',
+        senderName: m.senderName || 'Unknown',
+        timestamp: m.createdAt,
+        duration: m.duration,
+      }));
+
+      const notes = await generateMeetingNotes(apiKey, formattedMessages, selectedThread.title);
+      if (notes) {
+        setMeetingNotes(notes);
+        toast.success('Meeting notes generated!');
+      } else {
+        toast.error('Failed to generate meeting notes');
+      }
+    } catch (error) {
+      console.error('Failed to generate meeting notes:', error);
+      toast.error('Failed to generate meeting notes');
+    } finally {
+      setIsGeneratingMeetingNotes(false);
     }
   };
 
@@ -962,6 +1097,43 @@ const VoiceThreadsMode: React.FC<VoiceThreadsModeProps> = ({
       setSelectedThread(null);
     }
   }, [selectedThread]);
+
+  const handleArchiveMessage = async (message: any) => {
+    const item: VoxSelectionItem = {
+      id: message.id,
+      type: 'audio',
+      url: message.audioUrl || '',
+      duration: message.duration || 0,
+      timestamp: message.createdAt instanceof Date ? message.createdAt : new Date(message.createdAt || Date.now()),
+      mode: 'voice_threads',
+      contactName: message.senderName,
+      transcript: message.transcript,
+    };
+    const loadingToast = toast.loading('Archiving…');
+    try {
+      await archiveVoxerConversation([item], message.senderName || 'Unknown');
+      toast.dismiss(loadingToast);
+      toast.success('Archived to Pulse Archives');
+    } catch {
+      toast.dismiss(loadingToast);
+      toast.error('Failed to archive');
+    }
+  };
+
+  const handleDownloadMessage = (message: any) => {
+    const item: VoxSelectionItem = {
+      id: message.id,
+      type: 'audio',
+      url: message.audioUrl || '',
+      duration: message.duration || 0,
+      timestamp: message.createdAt instanceof Date ? message.createdAt : new Date(message.createdAt || Date.now()),
+      mode: 'voice_threads',
+      contactName: message.senderName,
+      transcript: message.transcript,
+    };
+    setDownloadItem(item);
+    setShowDownloadModal(true);
+  };
 
   // ============================================
   // FILTERING & SORTING
@@ -1081,94 +1253,37 @@ const VoiceThreadsMode: React.FC<VoiceThreadsModeProps> = ({
       />
 
       {/* Header */}
-      <VoxModeHeader
-        modeName="Voice Threads"
-        modeTagline="Threaded voice conversations"
-        modeColor="#10B981"
-        modeIcon={MessageSquare}
+      <VoxModeToolbar
         onBack={onBack}
+        modeIcon={<MessageSquare className="w-5 h-5" />}
+        modeTitle="Voice Threads"
+        modeSubtitle="Async Voice Conversations"
+        accentColor={MODE_COLOR}
         isDarkMode={isDarkMode}
-        actions={
-          <>
-            {/* Mobile menu button */}
-            <button
-              type="button"
-              onClick={() => setShowMobileSidebar(true)}
-              className="vt-mobile-menu md:hidden"
-              title="Show threads"
-            >
-              <MessageSquare className="w-5 h-5" />
-            </button>
-
-            {/* Thread count indicator */}
-            <div className="vt-header-stats">
-              <div className="vt-stat">
-                <MessageCircle className="w-4 h-4" />
-                <span>{threads.length}</span>
-              </div>
-              {threads.filter(t => (t.unreadCount || 0) > 0).length > 0 && (
-                <div className="vt-stat vt-stat-unread">
-                  <span>{threads.filter(t => (t.unreadCount || 0) > 0).length} unread</span>
-                </div>
-              )}
-            </div>
-
-            {/* Phase 5: AI Features */}
-            {selectedThread && messages.length > 0 && (
-              <>
-                <button
-                  type="button"
-                  onClick={handleSummarizeThread}
-                  disabled={isGeneratingAI}
-                  className="vt-ai-btn"
-                  title="Summarize thread"
-                >
-                  <Sparkles className="w-4 h-4" />
-                  <span className="hidden sm:inline">Summarize</span>
-                </button>
-                <button
-                  type="button"
-                  onClick={handleGenerateSmartReplies}
-                  disabled={isGeneratingAI}
-                  className="vt-ai-btn"
-                  title="Smart replies"
-                >
-                  <TrendingUp className="w-4 h-4" />
-                  <span className="hidden sm:inline">Smart Replies</span>
-                </button>
-              </>
-            )}
-
-            {/* Phase 2: Selection Mode Toggle */}
-            {selectedThread && messages.length > 0 && (
-              <button
-                type="button"
-                onClick={() => {
-                  if (isSelectionMode) {
-                    exitSelectionMode();
-                  } else {
-                    enterSelectionMode();
-                  }
-                }}
-                className={`vt-selection-btn ${isSelectionMode ? 'active' : ''}`}
-                title={isSelectionMode ? 'Exit selection' : 'Select messages'}
-              >
-                {isSelectionMode ? <X className="w-4 h-4" /> : <Square className="w-4 h-4" />}
-                <span className="hidden sm:inline">{isSelectionMode ? 'Cancel' : 'Select'}</span>
-              </button>
-            )}
-
-            {/* New Thread button */}
-            <button
-              type="button"
-              onClick={() => setShowNewThread(true)}
-              className="vt-new-btn"
-            >
-              <Plus className="w-4 h-4" />
-              <span className="hidden sm:inline">New Thread</span>
-            </button>
-          </>
-        }
+        showAI={!!(selectedThread && messages.length > 0)}
+        onSummarize={selectedThread && messages.length > 0 ? handleSummarizeThread : undefined}
+        onSmartReplies={selectedThread && messages.length > 0 ? handleGenerateSmartReplies : undefined}
+        onMeetingNotes={selectedThread && messages.length > 0 ? handleGenerateMeetingNotes : undefined}
+        isSummarizing={isGeneratingAI}
+        isGeneratingReplies={isGeneratingAI}
+        isGeneratingNotes={isGeneratingMeetingNotes}
+        hasContent={messages.length > 0}
+        isSelectionMode={isSelectionMode}
+        onToggleSelection={() => isSelectionMode ? exitSelectionMode() : enterSelectionMode()}
+        onShowHelp={() => setShowShortcutsHelp(true)}
+        customActions={[
+          {
+            icon: <MessageSquare className="w-4 h-4" />,
+            title: 'Show threads',
+            onClick: () => setShowMobileSidebar(true),
+          },
+          {
+            icon: <Plus className="w-4 h-4" />,
+            title: 'New Thread',
+            label: 'New Thread',
+            onClick: () => setShowNewThread(true),
+          },
+        ]}
       />
 
       <div className="vt-body">
@@ -1319,6 +1434,7 @@ const VoiceThreadsMode: React.FC<VoiceThreadsModeProps> = ({
                   value={sortType}
                   onChange={(e) => setSortType(e.target.value as SortType)}
                   className="vt-sort-select"
+                  aria-label="Sort threads"
                 >
                   <option value="recent">Most Recent</option>
                   <option value="oldest">Oldest First</option>
@@ -1596,6 +1712,21 @@ const VoiceThreadsMode: React.FC<VoiceThreadsModeProps> = ({
                           <p className="vt-message-transcript">{message.transcript}</p>
                         )}
 
+                        {/* AI Chapters button — for transcribed messages >= 30s */}
+                        {message.transcript && message.duration >= 30 && (
+                          <button
+                            type="button"
+                            onClick={() => handleGenerateChapters(message)}
+                            className="mt-1 flex items-center gap-1 text-xs text-emerald-600 dark:text-emerald-400 hover:underline"
+                            title="Generate AI chapter markers for this message"
+                          >
+                            <List className="w-3 h-3" />
+                            {chapterMessageId === message.id
+                              ? 'Chapters shown ↓'
+                              : `Generate Chapters (${Math.round(message.duration)}s)`}
+                          </button>
+                        )}
+
                         {/* Reactions */}
                         {message.reactions && message.reactions.length > 0 && (
                           <div className="vt-message-reactions">
@@ -1632,17 +1763,30 @@ const VoiceThreadsMode: React.FC<VoiceThreadsModeProps> = ({
                               type="button"
                               onClick={(e) => {
                                 e.stopPropagation();
-                                console.log('More actions clicked for message:', message.id);
-                                console.log('Current showMessageActions:', showMessageActions);
-                                const newValue = showMessageActions === message.id ? null : message.id;
-                                console.log('Setting showMessageActions to:', newValue);
-                                setShowMessageActions(newValue);
+                                const rect = (e.currentTarget as HTMLButtonElement).getBoundingClientRect();
+                                setMenuAnchorRect(rect);
+                                setShowMessageMenu(showMessageMenu === message.id ? null : message.id);
                               }}
-                              className="vt-quick-action"
+                              className="p-1 rounded opacity-60 hover:opacity-100 transition-opacity"
                               title="More actions"
                             >
                               <MoreVertical className="w-4 h-4" />
                             </button>
+                            {showMessageMenu === message.id && (
+                              <VoxMessageMenu
+                                isDarkMode={isDarkMode}
+                                accentColor={MODE_COLOR}
+                                anchorRect={menuAnchorRect!}
+                                onArchive={() => handleArchiveMessage(message)}
+                                onDownload={() => handleDownloadMessage(message)}
+                                onDelete={() => {
+                                  setMessages(prev => prev.filter(m => m.id !== message.id));
+                                  setShowMessageMenu(null);
+                                  toast.success('Message deleted');
+                                }}
+                                onClose={() => setShowMessageMenu(null)}
+                              />
+                            )}
                           </div>
 
                           {/* Read receipts */}
@@ -1731,6 +1875,7 @@ const VoiceThreadsMode: React.FC<VoiceThreadsModeProps> = ({
                       setQuotingMessage(null);
                     }}
                     className="vt-reply-cancel"
+                    aria-label="Cancel reply"
                   >
                     <X className="w-4 h-4" />
                   </button>
@@ -1985,20 +2130,80 @@ const VoiceThreadsMode: React.FC<VoiceThreadsModeProps> = ({
       {showSmartReplies && (
         <VoxSmartReplies
           replies={smartReplies}
-          onSelect={(reply) => {
-            console.log('Selected reply:', reply);
+          onSelectReply={(reply) => {
+            navigator.clipboard.writeText(reply).catch(() => {});
             setShowSmartReplies(false);
           }}
-          onClose={() => setShowSmartReplies(false)}
           isDarkMode={isDarkMode}
           accentColor={MODE_COLOR}
         />
+      )}
+
+      {/* Phase 5: Meeting Notes Modal */}
+      {meetingNotes && (
+        <div
+          className="fixed inset-0 bg-black/50 backdrop-blur-sm z-[200] flex items-center justify-center p-4"
+          onClick={() => setMeetingNotes(null)}
+        >
+          <div
+            className="max-w-3xl w-full max-h-[90vh] overflow-y-auto"
+            onClick={(e) => e.stopPropagation()}
+          >
+            <VoxMeetingNotes
+              notes={meetingNotes}
+              isDarkMode={isDarkMode}
+              accentColor={MODE_COLOR}
+              onClose={() => setMeetingNotes(null)}
+              onArchive={async () => {
+                await archiveMeetingNotes(
+                  meetingNotes,
+                  selectedThread
+                    ? `Voice Threads / ${selectedThread.subject || getParticipantNames(selectedThread)}`
+                    : 'Voice Threads'
+                );
+                toast.success('Meeting notes archived to Pulse Archives');
+              }}
+            />
+          </div>
+        </div>
+      )}
+
+      {/* AI Auto-Chapters Panel */}
+      {activeChapters.length > 0 && chapterMessageId && (
+        <div className="fixed bottom-4 left-4 right-4 z-[200] max-w-2xl mx-auto">
+          <div className="relative">
+            <button
+              type="button"
+              onClick={() => { setActiveChapters([]); setChapterMessageId(null); }}
+              className="absolute -top-2 -right-2 z-10 w-7 h-7 rounded-full bg-emerald-500 text-white hover:bg-emerald-600 transition flex items-center justify-center shadow-lg"
+              title="Close chapters"
+            >
+              <X className="w-3.5 h-3.5" />
+            </button>
+            <VoxAutoChapters
+              chapters={activeChapters}
+              currentTime={0}
+              isDarkMode={isDarkMode}
+              accentColor={MODE_COLOR}
+            />
+          </div>
+        </div>
       )}
 
       {/* Phase 6: Keyboard Shortcuts Help */}
       {showShortcutsHelp && (
         <VoxKeyboardShortcutsHelp
           onClose={() => setShowShortcutsHelp(false)}
+          isDarkMode={isDarkMode}
+          accentColor={MODE_COLOR}
+        />
+      )}
+
+      {showDownloadModal && downloadItem && (
+        <VoxDownloadModal
+          isOpen={showDownloadModal}
+          onClose={() => { setShowDownloadModal(false); setDownloadItem(null); }}
+          items={[downloadItem]}
           isDarkMode={isDarkMode}
           accentColor={MODE_COLOR}
         />

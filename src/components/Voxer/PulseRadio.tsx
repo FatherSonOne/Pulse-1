@@ -30,10 +30,12 @@ import {
   Tower,
   Sparkles,
   Reply,
+  MoreVertical,
 } from 'lucide-react';
 import VoxAudioVisualizer from './VoxAudioVisualizer';
 import RecordingPreview from './RecordingPreview';
 import VoxModeHeader from './VoxModeHeader';
+import VoxModeToolbar from './VoxModeToolbar';
 import VoxRecordArea from './VoxRecordArea';
 import { useVoxRecording } from '../../hooks/useVoxRecording';
 import { voxModeService } from '../../services/voxer/voxModeService';
@@ -45,6 +47,9 @@ import './PulseRadio.css';
 // Phase 2: Selection Mode & Archive/Download
 import { useVoxSelection } from '../../hooks/useVoxSelection';
 import type { VoxSelectionItem } from '../../hooks/useVoxSelection';
+import VoxMessageMenu from './VoxMessageMenu';
+import VoxDownloadModal from './VoxDownloadModal';
+import { archiveVoxerConversation } from '../../services/voxer/voxerArchiveService';
 import { VoxSelectToolbar } from './VoxSelectToolbar';
 
 // Phase 5: AI Enhancements
@@ -249,7 +254,7 @@ const LayeredVisualizer: React.FC<LayeredVisualizerProps> = ({
 // MAIN COMPONENT
 // ============================================
 
-const PulseRadio: React.FC<PulseRadioProps> = ({ onBack, isDarkMode = false }) => {
+const PulseRadio: React.FC<PulseRadioProps> = ({ onBack, apiKey, isDarkMode = false }) => {
   const [channels, setChannels] = useState<PulseChannel[]>([]);
   const [selectedChannel, setSelectedChannel] = useState<PulseChannel | null>(null);
   const [broadcasts, setBroadcasts] = useState<Broadcast[]>([]);
@@ -294,6 +299,12 @@ const PulseRadio: React.FC<PulseRadioProps> = ({ onBack, isDarkMode = false }) =
   // Phase 6: Final Polish States
   const [showShortcutsHelp, setShowShortcutsHelp] = useState(false);
   const { playbackSpeed, setPlaybackSpeed, applyToElement } = usePlaybackSpeed();
+
+  // Message Menu & Download States
+  const [showMessageMenu, setShowMessageMenu] = useState<string | null>(null);
+  const [menuAnchorRect, setMenuAnchorRect] = useState<DOMRect | null>(null);
+  const [showDownloadModal, setShowDownloadModal] = useState(false);
+  const [downloadItem, setDownloadItem] = useState<VoxSelectionItem | null>(null);
   const emptyConfig = getEmptyStateConfig('pulse_radio');
 
   const audioRef = useRef<HTMLAudioElement>(null);
@@ -331,7 +342,18 @@ const PulseRadio: React.FC<PulseRadioProps> = ({ onBack, isDarkMode = false }) =
       else if (recordingState === 'recording') stopRecording();
     },
     onStopRecording: () => {
-      if (recordingState === 'recording') stopRecording();
+      // Priority 1: close any open modal/overlay first
+      if (showMessageMenu) { setShowMessageMenu(null); return; }
+      if (showSummary) { setShowSummary(false); return; }
+      if (showDownloadModal) { setShowDownloadModal(false); return; }
+      if (showChannelSettings) { setShowChannelSettings(false); return; }
+      if (showNotifyUsers) { setShowNotifyUsers(false); return; }
+      if (showNewChannel) { setShowNewChannel(false); return; }
+      // Priority 2: discard active recording
+      if (recordingState === 'recording') { stopRecording(); return; }
+      // Priority 3: exit selection mode
+      if (isSelectionMode) { exitSelectionMode(); return; }
+      onBack();
     },
     onGoBack: onBack,
     onSwitchMode: (mode) => {
@@ -344,7 +366,17 @@ const PulseRadio: React.FC<PulseRadioProps> = ({ onBack, isDarkMode = false }) =
     },
     onArchive: () => {
       if (isSelectionMode && selectionCount > 0) {
-        console.log('Archive selected broadcasts');
+        (async () => {
+          try {
+            await archiveVoxerConversation(Array.from(selectedItems), 'Pulse Radio');
+            exitSelectionMode();
+            toast.success(`Archived ${selectionCount} message${selectionCount > 1 ? 's' : ''}`);
+          } catch {
+            toast.error('Failed to archive');
+          }
+        })();
+      } else {
+        toast.error('Select messages first (click selection button)');
       }
     },
     onSummarize: () => {
@@ -502,20 +534,40 @@ const PulseRadio: React.FC<PulseRadioProps> = ({ onBack, isDarkMode = false }) =
       return;
     }
 
+    if (!apiKey) {
+      toast.error('Gemini API key not configured');
+      return;
+    }
+
     setIsSummarizing(true);
     try {
       const messages = broadcasts.map(b => ({
-        sender: b.broadcaster || 'Unknown',
-        text: b.title || 'Untitled broadcast',
-        timestamp: b.timestamp.toISOString(),
+        id: b.id,
+        transcription: b.title || 'Untitled broadcast',
+        sender: 'other' as const,
+        senderName: b.broadcaster || 'Unknown',
+        timestamp: b.timestamp,
+        duration: 0,
       }));
 
-      const summary = await summarizeConversation(messages);
-      setConversationSummary(summary);
-      setShowSummary(true);
-    } catch (error) {
+      const summary = await summarizeConversation(apiKey, messages);
+      if (summary) {
+        setConversationSummary(summary);
+        setShowSummary(true);
+        toast.success('Broadcasts summarized!');
+      } else {
+        toast.error('AI summarizer unavailable — try again later');
+      }
+    } catch (error: any) {
       console.error('Summarization failed:', error);
-      toast.error('Failed to generate summary');
+      const msg = error?.message || '';
+      if (msg.includes('API key') || msg.includes('API_KEY')) {
+        toast.error('AI features require API configuration');
+      } else if (msg.includes('network') || msg.includes('fetch')) {
+        toast.error('Network error — please try again');
+      } else {
+        toast.error('AI summarizer unavailable (beta)');
+      }
     } finally {
       setIsSummarizing(false);
     }
@@ -527,18 +579,47 @@ const PulseRadio: React.FC<PulseRadioProps> = ({ onBack, isDarkMode = false }) =
       return;
     }
 
+    if (!apiKey) {
+      toast.error('Gemini API key not configured');
+      return;
+    }
+
     setIsGeneratingReplies(true);
     try {
-      const recentMessages = broadcasts.slice(0, 5).map(b => ({
-        sender: b.broadcaster || 'Unknown',
-        text: b.title || 'Untitled broadcast',
+      const recentBroadcasts = broadcasts.slice(0, 5);
+      const lastBroadcast = recentBroadcasts[0];
+
+      const context = recentBroadcasts.map(b => ({
+        id: b.id,
+        transcription: b.title || 'Untitled broadcast',
+        sender: 'other' as const,
+        senderName: b.broadcaster || 'Unknown',
+        timestamp: b.timestamp,
+        duration: 0,
       }));
 
-      const replies = await generateSmartReplies(recentMessages);
-      setSmartReplies(replies);
-    } catch (error) {
+      const replies = await generateSmartReplies(apiKey, {
+        id: lastBroadcast.id,
+        transcription: lastBroadcast.title || 'Untitled broadcast',
+        sender: 'other' as const,
+        senderName: lastBroadcast.broadcaster || 'Unknown',
+        timestamp: lastBroadcast.timestamp,
+        duration: 0,
+      }, context);
+      if (replies.length > 0) {
+        setSmartReplies(replies);
+        toast.success('Smart replies generated!');
+      } else {
+        toast.error('AI replies unavailable — try again later');
+      }
+    } catch (error: any) {
       console.error('Smart reply generation failed:', error);
-      toast.error('Failed to generate replies');
+      const msg = error?.message || '';
+      if (msg.includes('API key') || msg.includes('API_KEY')) {
+        toast.error('AI features require API configuration');
+      } else {
+        toast.error('AI replies unavailable (beta)');
+      }
     } finally {
       setIsGeneratingReplies(false);
     }
@@ -587,6 +668,38 @@ const PulseRadio: React.FC<PulseRadioProps> = ({ onBack, isDarkMode = false }) =
     }
   };
 
+  const handleArchiveBroadcast = async (broadcast: any) => {
+    const item: VoxSelectionItem = {
+      id: broadcast.id,
+      type: 'audio',
+      url: broadcast.audioUrl || '',
+      duration: broadcast.duration || 0,
+      timestamp: broadcast.createdAt instanceof Date ? broadcast.createdAt : new Date(broadcast.createdAt || Date.now()),
+      mode: 'pulse_radio',
+      contactName: broadcast.title || broadcast.hostName,
+    };
+    try {
+      await archiveVoxerConversation([item], broadcast.title || 'Pulse Radio');
+      toast.success('Archived to Pulse Archives');
+    } catch {
+      toast.error('Failed to archive');
+    }
+  };
+
+  const handleDownloadBroadcast = (broadcast: any) => {
+    const item: VoxSelectionItem = {
+      id: broadcast.id,
+      type: 'audio',
+      url: broadcast.audioUrl || '',
+      duration: broadcast.duration || 0,
+      timestamp: broadcast.createdAt instanceof Date ? broadcast.createdAt : new Date(broadcast.createdAt || Date.now()),
+      mode: 'pulse_radio',
+      contactName: broadcast.title || broadcast.hostName,
+    };
+    setDownloadItem(item);
+    setShowDownloadModal(true);
+  };
+
   const formatDuration = (seconds: number) => {
     const mins = Math.floor(seconds / 60);
     const secs = Math.floor(seconds % 60);
@@ -623,79 +736,34 @@ const PulseRadio: React.FC<PulseRadioProps> = ({ onBack, isDarkMode = false }) =
       />
 
       {/* Header */}
-      <VoxModeHeader
-        modeName="Pulse Radio"
-        modeTagline="Tap to broadcast"
-        modeColor="#8B5CF6"
-        modeIcon={Radio}
+      <VoxModeToolbar
         onBack={onBack}
+        modeIcon={<Radio className="w-5 h-5" />}
+        modeTitle="Pulse Radio"
+        modeSubtitle="Broadcast & Public Channels"
+        accentColor={MODE_COLOR}
         isDarkMode={isDarkMode}
-        actions={
-          <>
-            {/* Phase 5: AI Enhancement Buttons */}
-            <div className="flex items-center gap-2 border-r border-purple-500/30 pr-2 mr-2">
-              <button
-                type="button"
-                onClick={handleSummarizeChannel}
-                disabled={broadcasts.length === 0 || isSummarizing}
-                className="px-3 py-1.5 rounded-lg bg-purple-500 text-white text-xs font-medium hover:bg-purple-600 transition disabled:opacity-50 disabled:cursor-not-allowed"
-                title="AI Summarize Channel"
-              >
-                {isSummarizing ? <Loader2 className="w-3 h-3 animate-spin" /> : <Sparkles className="w-3 h-3" />}
-                <span className="ml-1.5 hidden md:inline">Summarize</span>
-              </button>
-
-              <button
-                type="button"
-                onClick={handleGenerateSmartReplies}
-                disabled={isGeneratingReplies}
-                className="px-3 py-1.5 rounded-lg bg-blue-500 text-white text-xs font-medium hover:bg-blue-600 transition disabled:opacity-50 disabled:cursor-not-allowed"
-                title="Generate Smart Replies"
-              >
-                {isGeneratingReplies ? <Loader2 className="w-3 h-3 animate-spin" /> : <Reply className="w-3 h-3" />}
-                <span className="ml-1.5 hidden md:inline">Quick Reply</span>
-              </button>
-            </div>
-
-            {/* Phase 2: Selection Mode Button */}
-            <button
-              type="button"
-              onClick={(e) => {
-                e.preventDefault();
-                e.stopPropagation();
-                enterSelectionMode();
-              }}
-              style={{
-                background: isSelectionMode ? '#8B5CF6' : undefined,
-                color: isSelectionMode ? 'white' : undefined,
-              }}
-              className="p-2 rounded-lg hover:bg-purple-500/20 transition"
-              title="Select broadcasts"
-            >
-              <CheckCheck className="w-4 h-4" />
-            </button>
-
-            {/* Mobile menu button */}
-            <button
-              type="button"
-              onClick={() => setShowMobileSidebar(!showMobileSidebar)}
-              className="pulse-radio-mobile-menu md:hidden"
-              title="Toggle menu"
-            >
-              <Users className="w-5 h-5" />
-            </button>
-            {/* Create channel button - desktop */}
-            <button
-              type="button"
-              onClick={() => setShowNewChannel(true)}
-              className="hidden md:flex items-center gap-2 px-4 py-2 rounded-xl text-sm font-medium bg-purple-500/20 hover:bg-purple-500/30 text-purple-300 border border-purple-500/30 transition-all"
-              title="Create channel"
-            >
-              <Plus className="w-4 h-4" />
-              <span>Create Channel</span>
-            </button>
-          </>
-        }
+        showAI
+        onSummarize={handleSummarizeChannel}
+        onSmartReplies={handleGenerateSmartReplies}
+        isSummarizing={isSummarizing}
+        isGeneratingReplies={isGeneratingReplies}
+        hasContent={broadcasts.length > 0}
+        isSelectionMode={isSelectionMode}
+        onToggleSelection={() => isSelectionMode ? exitSelectionMode() : enterSelectionMode()}
+        onShowHelp={() => setShowShortcutsHelp(true)}
+        customActions={[
+          {
+            icon: <Users className="w-5 h-5" />,
+            title: 'Toggle channels',
+            onClick: () => setShowMobileSidebar(!showMobileSidebar),
+          },
+          {
+            icon: <Plus className="w-4 h-4" />,
+            title: 'Create channel',
+            onClick: () => setShowNewChannel(true),
+          },
+        ]}
       />
 
       <div className="pulse-radio-body">
@@ -1000,6 +1068,35 @@ const PulseRadio: React.FC<PulseRadioProps> = ({ onBack, isDarkMode = false }) =
                               <Share2 className="w-3.5 h-3.5" />
                               <span>Share</span>
                             </button>
+
+                            <button
+                              type="button"
+                              onClick={(e) => {
+                                e.stopPropagation();
+                                const rect = (e.currentTarget as HTMLButtonElement).getBoundingClientRect();
+                                setMenuAnchorRect(rect);
+                                setShowMessageMenu(showMessageMenu === broadcast.id ? null : broadcast.id);
+                              }}
+                              className="p-1 rounded opacity-60 hover:opacity-100 transition-opacity"
+                              title="More actions"
+                            >
+                              <MoreVertical className="w-4 h-4" />
+                            </button>
+                            {showMessageMenu === broadcast.id && (
+                              <VoxMessageMenu
+                                isDarkMode={isDarkMode}
+                                accentColor={MODE_COLOR}
+                                anchorRect={menuAnchorRect!}
+                                onArchive={() => handleArchiveBroadcast(broadcast)}
+                                onDownload={() => handleDownloadBroadcast(broadcast)}
+                                onDelete={() => {
+                                  setBroadcasts(prev => prev.filter(b => b.id !== broadcast.id));
+                                  setShowMessageMenu(null);
+                                  toast.success('Broadcast deleted');
+                                }}
+                                onClose={() => setShowMessageMenu(null)}
+                              />
+                            )}
                           </div>
                         </div>
 
@@ -1370,7 +1467,7 @@ const PulseRadio: React.FC<PulseRadioProps> = ({ onBack, isDarkMode = false }) =
           replies={smartReplies}
           onSelectReply={(reply) => {
             // Use the reply - could set it as broadcastTitle or copy to clipboard
-            setBroadcastTitle(reply.text);
+            setBroadcastTitle(reply);
             setSmartReplies([]);
             toast.success('Reply suggestion applied');
           }}
@@ -1386,6 +1483,16 @@ const PulseRadio: React.FC<PulseRadioProps> = ({ onBack, isDarkMode = false }) =
         onClose={() => setShowShortcutsHelp(false)}
         isDarkMode={isDarkMode}
       />
+
+      {showDownloadModal && downloadItem && (
+        <VoxDownloadModal
+          isOpen={showDownloadModal}
+          onClose={() => { setShowDownloadModal(false); setDownloadItem(null); }}
+          items={[downloadItem]}
+          isDarkMode={isDarkMode}
+          accentColor={MODE_COLOR}
+        />
+      )}
     </div>
   );
 };
