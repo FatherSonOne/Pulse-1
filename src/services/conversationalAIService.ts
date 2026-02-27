@@ -3,6 +3,37 @@ import { DecisionWithVotes } from "./decisionService";
 import { Task } from "./taskService";
 import { User } from "../types";
 
+// Simple in-memory cache with 5-minute TTL
+const AI_CACHE_TTL_MS = 5 * 60 * 1000; // 5 minutes
+interface CacheEntry { response: string; timestamp: number; }
+const responseCache = new Map<string, CacheEntry>();
+
+function getCacheKey(query: string, context: QueryContext): string {
+  // Key based on query + counts + latest timestamps (avoids huge strings)
+  const decisionsSignature = context.decisions.map(d => d.id + d.updated_at).join(',');
+  const tasksSignature = context.tasks.map(t => t.id + t.updated_at).join(',');
+  return `${query}|${decisionsSignature}|${tasksSignature}`;
+}
+
+function getCached(key: string): string | null {
+  const entry = responseCache.get(key);
+  if (!entry) return null;
+  if (Date.now() - entry.timestamp > AI_CACHE_TTL_MS) {
+    responseCache.delete(key);
+    return null;
+  }
+  return entry.response;
+}
+
+function setCache(key: string, response: string): void {
+  // Evict if cache grows too large (max 20 entries)
+  if (responseCache.size >= 20) {
+    const oldestKey = responseCache.keys().next().value;
+    if (oldestKey) responseCache.delete(oldestKey);
+  }
+  responseCache.set(key, { response, timestamp: Date.now() });
+}
+
 export interface QueryContext {
   decisions: DecisionWithVotes[];
   tasks: Task[];
@@ -32,6 +63,10 @@ export const conversationalAIService = {
     context: QueryContext,
     apiKey: string
   ): Promise<string> {
+    const cacheKey = getCacheKey(query, context);
+    const cached = getCached(cacheKey);
+    if (cached) return cached;
+
     try {
       const ai = new GoogleGenAI({ apiKey });
 
@@ -75,7 +110,13 @@ Context:
 Decisions: ${JSON.stringify(decisionsData.slice(0, 10), null, 2)}
 Tasks: ${JSON.stringify(tasksData.slice(0, 10), null, 2)}
 
-Provide a helpful, concise answer. If the user asks "what should I work on", recommend specific tasks based on priority, due dates, and blocking factors.
+Respond using clear markdown formatting:
+- Use **bold** for decision/task titles and key terms
+- Use bullet lists (- item) for enumerations, risks, recommendations
+- Use numbered lists (1. step) for sequential actions or priorities
+- Use ## headings to separate major sections when the response covers multiple topics
+- Keep paragraphs short (2-3 sentences max)
+- Start with a one-sentence direct answer, then expand with details
 
 If the user wants to create something, respond with:
 [CREATE_DECISION] or [CREATE_TASK] followed by JSON data.
@@ -90,6 +131,7 @@ Answer:`;
         },
       });
 
+      setCache(cacheKey, response.text);
       return response.text;
     } catch (error) {
       console.error('Query answering failed:', error);

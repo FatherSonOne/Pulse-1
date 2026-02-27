@@ -1,0 +1,269 @@
+/* ═══════════════════════════════════════════════════════════════════════════
+   PULSE - ALERTS PANEL DROPDOWN
+   Extracted from DecisionTaskHub.css
+   ═══════════════════════════════════════════════════════════════════════════ */
+
+@import './design-tokens.css';
+
+/* ─────────────────────────────────────────────────────────────────────────
+   ALERTS PANEL DROPDOWN
+   ───────────────────────────────────────────────────────────────────────── */
+
+.alerts-panel-dropdown {
+  background: var(--dt-bg-card);
+  border: 1px solid var(--dt-border);
+  border-radius: var(--dt-radius);
+  box-shadow: var(--dt-shadow-card);
+  animation: slideDown 0.2s ease-out;
+}
+
+@keyframes slideDown {
+  from {
+    opacity: 0;
+    transform: translateY(-10px);
+  }
+  to {
+    opacity: 1;
+    transform: translateY(0);
+  }
+}
+
+.alerts-panel-header {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  padding: var(--dt-spacing-md);
+  border-bottom: 1px solid var(--dt-border);
+}
+
+.alerts-panel-title {
+  display: flex;
+  align-items: center;
+  gap: var(--dt-spacing-sm);
+  font-weight: var(--dt-font-weight-semibold);
+  color: var(--dt-text-primary);
+}
+
+.alerts-count-badge {
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  min-width: 20px;
+  height: 20px;
+  padding: 0 6px;
+  background: var(--dt-accent);
+  color: white;
+  border-radius: 10px;
+  font-size: var(--dt-font-xs);
+  font-weight: var(--dt-font-weight-semibold);
+}
+
+.alerts-close-button {
+  padding: var(--dt-spacing-xs);
+  background: transparent;
+  border: none;
+  border-radius: var(--dt-radius-sm);
+  color: var(--dt-text-secondary);
+  cursor: pointer;
+  transition: all var(--dt-transition-fast);
+}
+
+.alerts-close-button:hover {
+  background: var(--dt-bg-card-hover);
+  color: var(--dt-text-primary);
+}
+
+.alerts-panel-content {
+  padding: var(--dt-spacing-sm);
+  max-height: 400px;
+  overflow-y: auto;
+}
+
+.alert-item {
+  display: flex;
+  align-items: flex-start;
+  gap: var(--dt-spacing-sm);
+  padding: var(--dt-spacing-md);
+  margin-bottom: var(--dt-spacing-sm);
+  background: var(--dt-bg-secondary);
+  border-radius: var(--dt-radius-sm);
+  border-left: 3px solid transparent;
+}
+
+.alert-item.urgent {
+  border-left-color: var(--dt-status-overdue);
+  background: var(--dt-status-bg-overdue);
+}
+
+.alert-item.important {
+  border-left-color: var(--dt-status-voting);
+  background: var(--dt-status-bg-voting);
+}
+
+.alert-item.suggestion {
+  border-left-color: var(--dt-status-done);
+  background: var(--dt-status-bg-done);
+}
+
+.alert-priority-indicator {
+  font-size: var(--dt-font-lg);
+  line-height: 1;
+}
+
+.alert-content {
+  flex: 1;
+}
+
+.alert-message {
+  margin-bottom: var(--dt-spacing-sm);
+  font-size: var(--dt-font-sm);
+  color: var(--dt-text-primary);
+}
+
+.alert-action-button {
+  padding: var(--dt-spacing-xs) var(--dt-spacing-md);
+  background: var(--dt-accent);
+  color: white;
+  border: none;
+  border-radius: var(--dt-radius-sm);
+  font-size: var(--dt-font-sm);
+  font-weight: var(--dt-font-weight-medium);
+  cursor: pointer;
+  transition: all var(--dt-transition-fast);
+}
+
+.alert-action-button:hover {
+  background: var(--dt-accent-hover);
+  transform: translateY(-1px);
+}
+
+.alert-dismiss-button {
+  padding: var(--dt-spacing-xs);
+  background: transparent;
+  border: none;
+  border-radius: var(--dt-radius-sm);
+  color: var(--dt-text-muted);
+  cursor: pointer;
+  transition: all var(--dt-transition-fast);
+}
+
+.alert-dismiss-button:hover {
+  background: var(--dt-bg-card);
+  color: var(--dt-text-primary);
+}
+
+.alerts-see-all {
+  display: flex;
+  justify-content: space-between;
+  padding: var(--dt-spacing-md);
+  border-top: 1px solid var(--dt-border);
+}
+
+.see-all-button,
+.dismiss-all-button {
+  padding: var(--dt-spacing-sm) var(--dt-spacing-md);
+  background: transparent;
+  border: 1px solid var(--dt-border);
+  border-radius: var(--dt-radius-sm);
+  font-size: var(--dt-font-sm);
+  color: var(--dt-text-secondary);
+  cursor: pointer;
+  transition: all var(--dt-transition-fast);
+}
+
+.see-all-button:hover,
+.dismiss-all-button:hover {
+  background: var(--dt-bg-card-hover);
+  color: var(--dt-text-primary);
+  border-color: var(--dt-accent);
+}
+
+/* ─────────────────────────────────────────────────────────────────────────
+   MOBILE RESPONSIVE
+   ───────────────────────────────────────────────────────────────────────── */
+
+@media (max-width: 768px) {
+  .alerts-see-all {
+    flex-direction: column;
+    gap: var(--dt-spacing-sm);
+  }
+
+  .see-all-button,
+  .dismiss-all-button {
+    width: 100%;
+  }
+}
+
+/* ── Alert actions column ── */
+.alert-actions {
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  gap: 2px;
+  flex-shrink: 0;
+}
+
+/* ── Time since ── */
+.alert-time {
+  font-size: 0.7rem;
+  color: var(--dt-text-muted, #94a3b8);
+  margin-top: 2px;
+  display: block;
+}
+
+/* ── Snooze wrapper ── */
+.snooze-wrapper {
+  position: relative;
+  display: flex;
+  align-items: center;
+}
+
+.alert-snooze-button {
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  width: 24px;
+  height: 24px;
+  border: none;
+  background: transparent;
+  cursor: pointer;
+  border-radius: 4px;
+  color: var(--dt-text-muted, #94a3b8);
+  transition: background 0.15s ease, color 0.15s ease;
+}
+
+.alert-snooze-button:hover {
+  background: var(--dt-bg-card-hover, rgba(0, 0, 0, 0.06));
+  color: var(--dt-text-primary, #0f172a);
+}
+
+.snooze-dropdown {
+  position: absolute;
+  right: 0;
+  top: calc(100% + 4px);
+  background: var(--dt-bg-card, #ffffff);
+  border: 1px solid var(--dt-border, #e2e8f0);
+  border-radius: 6px;
+  box-shadow: 0 4px 12px rgba(0, 0, 0, 0.12);
+  z-index: 100;
+  display: flex;
+  flex-direction: column;
+  min-width: 100px;
+  overflow: hidden;
+}
+
+.snooze-option {
+  padding: 0.5rem 0.75rem;
+  font-size: 0.8rem;
+  text-align: left;
+  background: transparent;
+  border: none;
+  cursor: pointer;
+  color: var(--dt-text-primary, #0f172a);
+  transition: background 0.12s ease;
+  white-space: nowrap;
+}
+
+.snooze-option:hover {
+  background: var(--dt-bg-card-hover, #f8fafc);
+}

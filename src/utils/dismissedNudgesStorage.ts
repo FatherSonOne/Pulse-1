@@ -63,6 +63,29 @@ export const dismissNudge = (nudgeId: string): void => {
 };
 
 /**
+ * Snooze a nudge for a specified number of minutes
+ * (treated as dismissed with a custom short TTL)
+ */
+export const snoozeNudge = (nudgeId: string, minutes: number): void => {
+  try {
+    const stored = localStorage.getItem(STORAGE_KEY);
+    const dismissed: DismissedNudge[] = stored ? JSON.parse(stored) : [];
+
+    // Remove existing entry if any
+    const filtered = dismissed.filter(n => n.id !== nudgeId);
+
+    // Add snooze entry: set dismissedAt to future time minus TTL, so it expires after `minutes` minutes
+    // We store it as if it was dismissed (TTL_HOURS * 60 - minutes) minutes ago
+    const effectiveDismissedAt = Date.now() - (TTL_HOURS * 60 - minutes) * 60 * 1000;
+    filtered.push({ id: nudgeId, dismissedAt: effectiveDismissedAt });
+
+    localStorage.setItem(STORAGE_KEY, JSON.stringify(filtered));
+  } catch (error) {
+    console.error('Error snoozing nudge:', error);
+  }
+};
+
+/**
  * Dismiss multiple nudges at once
  */
 export const dismissMultipleNudges = (nudgeIds: string[]): void => {

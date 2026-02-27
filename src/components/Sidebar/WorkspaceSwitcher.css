@@ -1,0 +1,390 @@
+/* ============================================
+   WORKSPACE SWITCHER
+   Inherits sidebar CSS variables from Sidebar.css
+   ============================================ */
+
+/* ── Trigger button (expanded sidebar) ─────────── */
+.ws-switcher {
+  position: relative;
+  padding: 8px 12px 4px;
+}
+
+.ws-trigger {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  width: 100%;
+  padding: 7px 8px;
+  border-radius: 8px;
+  border: 1px solid var(--sidebar-border);
+  background: var(--nav-item-bg);
+  cursor: pointer;
+  transition: background 0.15s, border-color 0.15s;
+  min-width: 0;
+  text-align: left;
+}
+
+.ws-trigger:hover,
+.ws-trigger.open {
+  background: var(--nav-item-bg-hover);
+  border-color: rgba(244, 63, 94, 0.2);
+}
+
+.ws-trigger-name {
+  flex: 1;
+  font-size: 13px;
+  font-weight: 500;
+  color: var(--nav-item-text-active);
+  white-space: nowrap;
+  overflow: hidden;
+  text-overflow: ellipsis;
+}
+
+.ws-trigger-badges {
+  display: flex;
+  gap: 4px;
+}
+
+.ws-trigger-chevron {
+  font-size: 10px;
+  color: var(--nav-item-text);
+  opacity: 0.6;
+  flex-shrink: 0;
+}
+
+/* ── Trigger (collapsed sidebar) ───────────────── */
+.ws-switcher-collapsed {
+  position: relative;
+  display: flex;
+  justify-content: center;
+  padding: 8px 0 4px;
+}
+
+.ws-trigger-collapsed {
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  width: 36px;
+  height: 36px;
+  border-radius: 8px;
+  border: 1px solid var(--sidebar-border);
+  background: transparent;
+  cursor: pointer;
+  transition: background 0.15s;
+}
+
+.ws-trigger-collapsed:hover {
+  background: var(--nav-item-bg-hover);
+}
+
+/* ── Workspace avatar ───────────────────────────── */
+.ws-avatar {
+  border-radius: 6px;
+  flex-shrink: 0;
+  object-fit: cover;
+}
+
+.ws-avatar-initials {
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  font-weight: 700;
+  letter-spacing: -0.01em;
+  background: linear-gradient(135deg, #f43f5e 0%, #ec4899 100%);
+  color: #fff;
+  user-select: none;
+}
+
+/* ── Dropdown panel ─────────────────────────────── */
+.ws-panel {
+  position: absolute;
+  left: 12px;
+  right: 12px;
+  top: calc(100% + 4px);
+  z-index: 200;
+  background: var(--sidebar-bg-solid);
+  border: 1px solid var(--sidebar-border);
+  border-radius: 10px;
+  box-shadow: 0 8px 32px rgba(0, 0, 0, 0.14), 0 2px 8px rgba(0, 0, 0, 0.08);
+  overflow: hidden;
+  animation: ws-panel-in 0.12s ease-out;
+}
+
+/* Panel when sidebar is collapsed — offset to the right */
+.ws-panel-collapsed-pos {
+  left: 48px;
+  right: auto;
+  width: 220px;
+  top: 0;
+}
+
+@keyframes ws-panel-in {
+  from { opacity: 0; transform: translateY(-4px); }
+  to   { opacity: 1; transform: translateY(0); }
+}
+
+/* ── Panel sections ─────────────────────────────── */
+.ws-panel-section {
+  padding: 8px 0;
+}
+
+.ws-panel-divider {
+  border-top: 1px solid var(--divider-color);
+}
+
+.ws-panel-label {
+  display: flex;
+  align-items: center;
+  gap: 6px;
+  padding: 2px 12px 6px;
+  font-size: 10px;
+  font-weight: 600;
+  letter-spacing: 0.06em;
+  text-transform: uppercase;
+  color: var(--nav-item-text);
+  opacity: 0.6;
+}
+
+/* ── Workspace list items ───────────────────────── */
+.ws-list-item {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  width: 100%;
+  padding: 6px 12px;
+  font-size: 13px;
+  font-weight: 400;
+  color: var(--nav-item-text-hover);
+  background: transparent;
+  border: none;
+  cursor: pointer;
+  text-align: left;
+  transition: background 0.1s;
+  border-radius: 0;
+}
+
+.ws-list-item:hover {
+  background: var(--nav-item-bg-hover);
+}
+
+.ws-list-item.active {
+  background: var(--nav-item-bg-active);
+  color: var(--nav-item-text-active);
+  font-weight: 500;
+}
+
+.ws-list-name {
+  flex: 1;
+  white-space: nowrap;
+  overflow: hidden;
+  text-overflow: ellipsis;
+}
+
+.ws-list-check {
+  font-size: 11px;
+  color: #f43f5e;
+  flex-shrink: 0;
+}
+
+.ws-list-create {
+  color: var(--nav-item-text);
+  opacity: 0.7;
+  font-style: italic;
+}
+
+.ws-list-create:hover {
+  opacity: 1;
+}
+
+.ws-create-icon {
+  width: 22px;
+  height: 22px;
+  border-radius: 5px;
+  border: 1.5px dashed var(--nav-item-text);
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  font-size: 10px;
+  opacity: 0.6;
+  flex-shrink: 0;
+}
+
+/* ── Role badge ─────────────────────────────────── */
+.ws-role-badge {
+  font-size: 9px;
+  font-weight: 600;
+  letter-spacing: 0.05em;
+  text-transform: uppercase;
+  padding: 1px 5px;
+  border-radius: 4px;
+  flex-shrink: 0;
+}
+
+.ws-role-owner  { background: rgba(244, 63, 94, 0.12);  color: #f43f5e; }
+.ws-role-admin  { background: rgba(245, 158, 11, 0.12); color: #d97706; }
+.ws-role-member { background: rgba(99, 102, 241, 0.12); color: #6366f1; }
+.ws-role-viewer { background: rgba(113, 113, 122, 0.12); color: #71717a; }
+
+/* ── Member list ────────────────────────────────── */
+.ws-member-count {
+  font-size: 10px;
+  font-weight: 500;
+  background: var(--nav-item-bg-hover);
+  padding: 1px 5px;
+  border-radius: 8px;
+  opacity: 1;
+}
+
+.ws-member-list {
+  display: flex;
+  flex-direction: column;
+  gap: 2px;
+  padding: 0 8px;
+}
+
+.ws-member-row {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  padding: 4px;
+  border-radius: 6px;
+}
+
+.ws-member-avatar {
+  width: 24px;
+  height: 24px;
+  border-radius: 50%;
+  background: linear-gradient(135deg, #f43f5e, #ec4899);
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  font-size: 9px;
+  font-weight: 700;
+  color: #fff;
+  flex-shrink: 0;
+  overflow: hidden;
+}
+
+.ws-member-avatar img {
+  width: 100%;
+  height: 100%;
+  object-fit: cover;
+}
+
+.ws-member-info {
+  flex: 1;
+  min-width: 0;
+}
+
+.ws-member-name {
+  font-size: 12px;
+  color: var(--nav-item-text-hover);
+  white-space: nowrap;
+  overflow: hidden;
+  text-overflow: ellipsis;
+  display: block;
+}
+
+.ws-member-overflow {
+  font-size: 11px;
+  color: var(--nav-item-text);
+  opacity: 0.5;
+  padding: 2px 4px;
+  text-align: center;
+}
+
+/* ── Action button ──────────────────────────────── */
+.ws-action-btn {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  width: 100%;
+  padding: 6px 12px;
+  font-size: 13px;
+  color: var(--nav-item-text);
+  background: transparent;
+  border: none;
+  cursor: pointer;
+  transition: color 0.1s, background 0.1s;
+  text-align: left;
+}
+
+.ws-action-btn:hover {
+  background: var(--nav-item-bg-hover);
+  color: var(--nav-item-text-active);
+}
+
+.ws-action-btn i {
+  width: 16px;
+  text-align: center;
+  font-size: 12px;
+  color: #f43f5e;
+}
+
+/* ── Forms ──────────────────────────────────────── */
+.ws-form {
+  display: flex;
+  flex-direction: column;
+  gap: 6px;
+  padding: 4px 12px 8px;
+}
+
+.ws-input {
+  padding: 7px 10px;
+  font-size: 13px;
+  border-radius: 6px;
+  border: 1px solid var(--sidebar-border);
+  background: var(--nav-item-bg-hover);
+  color: var(--nav-item-text-active);
+  outline: none;
+  transition: border-color 0.15s;
+  width: 100%;
+}
+
+.ws-input:focus {
+  border-color: rgba(244, 63, 94, 0.4);
+}
+
+.ws-select {
+  cursor: pointer;
+}
+
+.ws-submit-btn {
+  padding: 7px 12px;
+  font-size: 13px;
+  font-weight: 500;
+  border-radius: 6px;
+  border: none;
+  background: linear-gradient(135deg, #f43f5e, #ec4899);
+  color: #fff;
+  cursor: pointer;
+  transition: opacity 0.15s;
+}
+
+.ws-submit-btn:disabled {
+  opacity: 0.5;
+  cursor: not-allowed;
+}
+
+.ws-error {
+  font-size: 12px;
+  color: #f43f5e;
+  padding: 0 2px;
+}
+
+.ws-back-btn {
+  display: flex;
+  align-items: center;
+  gap: 6px;
+  padding: 4px 12px 8px;
+  font-size: 12px;
+  color: var(--nav-item-text);
+  background: transparent;
+  border: none;
+  cursor: pointer;
+  transition: color 0.1s;
+}
+
+.ws-back-btn:hover {
+  color: var(--nav-item-text-active);
+}

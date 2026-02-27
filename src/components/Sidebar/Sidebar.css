@@ -518,6 +518,14 @@
 }
 
 /* ============================================
+   PULSE AI BUTTON SECTION
+   ============================================ */
+.sidebar-ai-section {
+  padding: 6px 12px 4px;
+  border-top: 1px solid var(--divider-color);
+}
+
+/* ============================================
    FOOTER SECTION
    ============================================ */
 .sidebar-footer {

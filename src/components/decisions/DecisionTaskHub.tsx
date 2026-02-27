@@ -22,6 +22,7 @@ import { taskIntelligenceService, AITaskPriority } from '../../services/taskInte
 import { ragService, AIMessage, ThinkingStep } from '../../services/ragService';
 import { DecisionMission } from '../WarRoom/missions/DecisionMission';
 import { ConversationalAssistant } from './ConversationalAssistant';
+import { AlertsPanel } from './AlertsPanel';
 import { RealTimeIndicator, ConnectionStatus } from './RealTimeIndicator';
 import { ReassignTaskModal } from './ReassignTaskModal';
 import { ExtendDeadlineDialog } from './ExtendDeadlineDialog';
@@ -32,21 +33,16 @@ import {
   dismissNudge,
   dismissMultipleNudges,
   undoDismissNudge,
+  snoozeNudge,
 } from '../../utils/dismissedNudgesStorage';
 import {
   Plus,
-  RefreshCw,
   Bell,
   Bot,
   X,
-  ChevronDown,
-  ChevronUp,
-  AlertCircle,
-  Zap,
   Undo,
   Download,
   Sparkles,
-  TrendingUp,
 } from 'lucide-react';
 import './DecisionTaskHub.css';
 
@@ -97,7 +93,6 @@ export const DecisionTaskHub: React.FC<DecisionTaskHubProps> = ({
   const [metrics, setMetrics] = useState<DecisionMetrics | null>(null);
   const [nudges, setNudges] = useState<Nudge[]>([]);
   const [dismissedNudges, setDismissedNudges] = useState<Set<string>>(new Set());
-  const [showInsights, setShowInsights] = useState(false);
   const [showNudges, setShowNudges] = useState(false);
   const [showAssistant, setShowAssistant] = useState(false);
   const [lastDismissedNudge, setLastDismissedNudge] = useState<string | null>(null);
@@ -126,6 +121,10 @@ export const DecisionTaskHub: React.FC<DecisionTaskHubProps> = ({
   // Templates state
   const [showTemplates, setShowTemplates] = useState(false);
 
+  // Debounced versions to throttle expensive AI regeneration
+  const debouncedDecisions = useDebounce(decisions, 800);
+  const debouncedTasks = useDebounce(tasks, 800);
+
   // Use user.id as workspace_id if not provided
   const effectiveWorkspaceId = workspaceId || user?.id || '';
 
@@ -143,15 +142,15 @@ export const DecisionTaskHub: React.FC<DecisionTaskHubProps> = ({
     }
   }, [effectiveWorkspaceId]);
 
-  // Generate metrics and nudges when data changes
+  // Generate metrics and nudges when data changes (debounced to avoid rapid re-runs)
   useEffect(() => {
-    if (decisions.length > 0) {
+    if (debouncedDecisions.length > 0) {
       generateMetrics();
     }
-    if (decisions.length > 0 || tasks.length > 0) {
+    if (debouncedDecisions.length > 0 || debouncedTasks.length > 0) {
       generateNudges();
     }
-  }, [decisions, tasks]);
+  }, [debouncedDecisions, debouncedTasks]);
 
   // Real-time subscriptions for decisions, tasks, and votes
   useEffect(() => {
@@ -459,9 +458,6 @@ export const DecisionTaskHub: React.FC<DecisionTaskHubProps> = ({
     setShowAssistant(false);
   }, []);
 
-  const handleToggleInsights = useCallback(() => {
-    setShowInsights(prev => !prev);
-  }, []);
 
   const handleTogglePrioritizer = useCallback(() => {
     setShowPrioritizer(prev => !prev);
@@ -987,150 +983,19 @@ export const DecisionTaskHub: React.FC<DecisionTaskHubProps> = ({
         }
       />
 
-      {/* AI Insights Dashboard */}
-      <AIFeatureErrorBoundary featureName="AI Insights Dashboard">
-        {metrics && (
-          <div className={`insights-dashboard ${showInsights ? 'expanded' : 'collapsed'}`}>
-            <div className="insights-header">
-              <button
-                className="insights-header-toggle"
-                onClick={handleToggleInsights}
-                aria-expanded={showInsights}
-                aria-label={showInsights ? 'Collapse AI Insights Dashboard' : 'Expand AI Insights Dashboard'}
-                style={{ background: 'transparent', border: 'none', padding: 0, cursor: 'pointer', flex: 1, textAlign: 'left' }}
-              >
-                <div className="insights-header-left">
-                  <TrendingUp size={20} aria-hidden="true" />
-                  <h2>AI Insights Dashboard</h2>
-                </div>
-              </button>
-              <div className="insights-header-right">
-                <button
-                  onClick={handleRefresh}
-                  className="icon-button"
-                  aria-label="Refresh insights data"
-                  title="Refresh"
-                >
-                  <RefreshCw size={16} aria-hidden="true" />
-                </button>
-                <button
-                  className="icon-button"
-                  onClick={handleToggleInsights}
-                  aria-label={showInsights ? 'Collapse insights' : 'Expand insights'}
-                >
-                  {showInsights ? <ChevronUp size={16} aria-hidden="true" /> : <ChevronDown size={16} aria-hidden="true" />}
-                </button>
-              </div>
-            </div>
-
-            {showInsights && (
-              <div className="insights-content">
-                <div className="metrics-grid">
-                  <div className="metric-card">
-                    <div className="metric-label">Decision Velocity</div>
-                    <div className="metric-value">{metrics.velocityPerWeek}/week</div>
-                  </div>
-                  <div className="metric-card">
-                    <div className="metric-label">Avg Resolution Time</div>
-                    <div className="metric-value">{metrics.avgTimeToResolution}h</div>
-                  </div>
-                  <div className="metric-card">
-                    <div className="metric-label">Participation Rate</div>
-                    <div className="metric-value">{metrics.participationRate}%</div>
-                  </div>
-                  <div className="metric-card">
-                    <div className="metric-label">Stale Decisions</div>
-                    <div className="metric-value warning">{metrics.staleCount}</div>
-                  </div>
-                </div>
-
-                {metrics.staleCount > 0 && (
-                  <div className="attention-section">
-                    <h3>
-                      <AlertCircle size={18} />
-                      Attention Needed
-                    </h3>
-                    <p>{metrics.staleCount} decisions have no recent activity</p>
-                  </div>
-                )}
-              </div>
-            )}
-          </div>
-        )}
-      </AIFeatureErrorBoundary>
-
       {/* Alerts Panel - Slide-down Dropdown */}
       {nudges.length > 0 && showNudges && (
-        <div className="alerts-panel-dropdown">
-          <div className="alerts-panel-header">
-            <div className="alerts-panel-title">
-              <Bell size={16} />
-              <span>Alerts & Nudges</span>
-              <span className="alerts-count-badge">{nudges.length}</span>
-            </div>
-            <button
-              type="button"
-              className="alerts-close-button"
-              onClick={() => setShowNudges(false)}
-              aria-label="Close alerts panel"
-            >
-              <X size={16} aria-hidden="true" />
-            </button>
-          </div>
-
-          <div className="alerts-panel-content">
-            {[...urgentNudges, ...importantNudges, ...suggestionNudges].slice(0, 3).map(nudge => {
-              const priority = nudge.priority === 'urgent' ? 'urgent' : nudge.priority === 'important' ? 'important' : 'suggestion';
-              const icon = priority === 'urgent' ? '🔴' : priority === 'important' ? '🟡' : '🟢';
-
-              return (
-                <div key={nudge.id} className={`alert-item ${priority}`}>
-                  <div className="alert-priority-indicator">{icon}</div>
-                  <div className="alert-content">
-                    <div className="alert-message">{nudge.message}</div>
-                    {nudge.action && (
-                      <button
-                        className="alert-action-button"
-                        onClick={() => handleNudgeAction(nudge)}
-                        aria-label={`${nudge.action} for ${nudge.relatedTitle || 'this item'}`}
-                      >
-                        {nudge.action}
-                      </button>
-                    )}
-                  </div>
-                  <button
-                    className="alert-dismiss-button"
-                    onClick={() => handleDismissNudge(nudge.id)}
-                    aria-label={`Dismiss alert: ${nudge.message}`}
-                  >
-                    <X size={14} aria-hidden="true" />
-                  </button>
-                </div>
-              );
-            })}
-
-            {nudges.length > 3 && (
-              <div className="alerts-see-all">
-                <button
-                  type="button"
-                  className="see-all-button"
-                  onClick={handleDismissAllNudges}
-                  aria-label={`See all ${nudges.length} alerts`}
-                >
-                  See all {nudges.length} alerts
-                </button>
-                <button
-                  type="button"
-                  className="dismiss-all-button"
-                  onClick={handleDismissAllNudges}
-                  aria-label="Dismiss all alerts"
-                >
-                  Dismiss all
-                </button>
-              </div>
-            )}
-          </div>
-        </div>
+        <AlertsPanel
+          nudges={nudges}
+          onDismiss={handleDismissNudge}
+          onDismissAll={handleDismissAllNudges}
+          onAction={handleNudgeAction}
+          onClose={() => setShowNudges(false)}
+          onSnooze={(id, minutes) => {
+            snoozeNudge(id, minutes);
+            setNudges(prev => prev.filter(n => n.id !== id));
+          }}
+        />
       )}
 
       {/* Filter Bar */}
@@ -1143,6 +1008,7 @@ export const DecisionTaskHub: React.FC<DecisionTaskHubProps> = ({
             decisions={filteredDecisions}
             tasks={filteredTasks}
             currentUserId={user?.id}
+            workspaceId={effectiveWorkspaceId}
             onStatusChange={handleTaskStatusChange}
             onDelete={handleTaskDelete}
             onEdit={handleTaskEdit}

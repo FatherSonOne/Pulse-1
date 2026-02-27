@@ -12,6 +12,7 @@ export interface Nudge {
   actionType?: 'send_reminder' | 'reassign' | 'extend_deadline' | 'link_items' | 'review';
   relatedId?: string;
   relatedTitle?: string;
+  createdAt?: string;
 }
 
 export const proactiveSuggestionsService = {
@@ -48,6 +49,7 @@ export const proactiveSuggestionsService = {
           actionType: 'send_reminder',
           relatedId: decision.id,
           relatedTitle: decision.title,
+          createdAt: new Date().toISOString(),
         });
       }
     }
@@ -78,6 +80,7 @@ export const proactiveSuggestionsService = {
           message: `${tasks.length} task${tasks.length > 1 ? 's' : ''} overdue${assignee !== 'Unassigned' ? ` (${assignee})` : ''}`,
           action: 'Review and update',
           actionType: 'review',
+          createdAt: new Date().toISOString(),
         });
       }
     }
@@ -97,6 +100,7 @@ export const proactiveSuggestionsService = {
         message: `${upcomingTasks.length} tasks due in next 48h`,
         action: 'Review priorities',
         actionType: 'review',
+        createdAt: new Date().toISOString(),
       });
     }
 
@@ -114,6 +118,7 @@ export const proactiveSuggestionsService = {
         message: `You have ${pendingVotes.length} decision${pendingVotes.length > 1 ? 's' : ''} waiting for your vote`,
         action: 'Review and vote',
         actionType: 'review',
+        createdAt: new Date().toISOString(),
       });
     }
 
@@ -138,6 +143,7 @@ export const proactiveSuggestionsService = {
         actionType: 'review',
         relatedId: task.id,
         relatedTitle: task.title,
+        createdAt: new Date().toISOString(),
       });
     }
 
@@ -162,6 +168,7 @@ export const proactiveSuggestionsService = {
         message: `${userId === user.id ? 'You have' : 'Team member has'} ${taskCount} active tasks`,
         action: 'Consider redistributing work',
         actionType: 'reassign',
+        createdAt: new Date().toISOString(),
       });
     }
 
@@ -252,6 +259,7 @@ Return JSON array of nudges:
         priority: item.priority || 'suggestion',
         message: item.message,
         action: item.action,
+        createdAt: new Date().toISOString(),
       }));
     } catch (error) {
       // Error already handled by caller

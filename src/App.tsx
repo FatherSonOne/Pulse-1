@@ -56,9 +56,13 @@ import { settingsService } from './services/settingsService';
 import { usePresence } from './hooks/usePresence';
 import { Sidebar } from './components/Sidebar';
 import { useAuth } from './hooks/useAuth';
+import PulseAssistant from './components/PulseAssistant/PulseAssistant';
+import { PulseAssistantButton } from './components/PulseAssistant/PulseAssistantButton';
+import { PulseAIProactiveChecker } from './components/PulseAssistant/PulseAIProactiveChecker';
 import { InstallPrompt } from './components/PWA/InstallPrompt';
 import { OnlineStatus } from './components/PWA/OnlineStatus';
 import { FeatureProvider } from './contexts/FeatureContext';
+import { WorkspaceProvider } from './contexts/WorkspaceContext';
 
 // Loading fallback component for lazy-loaded routes
 // Uses inline=true so it fills the content area via flex layout rather than fixed/absolute positioning
@@ -115,6 +119,8 @@ const App: React.FC = () => {
   const [isLoadingContacts, setIsLoadingContacts] = useState(true);
 
   const [view, setView] = useState<AppView>(initialMeetingCode ? AppView.MEETINGS : AppView.DASHBOARD);
+  const [showPulseAI, setShowPulseAI] = useState(false);
+  const [hasPulseAISuggestion, setHasPulseAISuggestion] = useState(false);
   const [isDarkMode, setIsDarkMode] = useState(false); // Default to light mode
   const [isSidebarCollapsed, setIsSidebarCollapsed] = useState(false);
   const [isMobileMenuOpen, setIsMobileMenuOpen] = useState(false);
@@ -443,6 +449,28 @@ const App: React.FC = () => {
     return () => window.removeEventListener('resize', handleResize);
   }, []);
 
+  // Keyboard shortcut: Ctrl+/ or Cmd+/ toggles Pulse AI
+  useEffect(() => {
+    const handleKeyDown = (e: KeyboardEvent) => {
+      if ((e.metaKey || e.ctrlKey) && e.key === '/') {
+        e.preventDefault();
+        setShowPulseAI(prev => !prev);
+      }
+    };
+    window.addEventListener('keydown', handleKeyDown);
+    return () => window.removeEventListener('keydown', handleKeyDown);
+  }, []);
+
+  // Global navigation event — allows PulseAssistant suggested actions to navigate
+  useEffect(() => {
+    const handleNavigate = (e: Event) => {
+      const { view: targetView } = (e as CustomEvent<{ view: AppView }>).detail ?? {};
+      if (targetView) setView(targetView);
+    };
+    window.addEventListener('pulse:navigate', handleNavigate);
+    return () => window.removeEventListener('pulse:navigate', handleNavigate);
+  }, []);
+
   // Restore scroll position after view changes
   useEffect(() => {
     if (preservedScrollTop.current !== null && navRef.current) {
@@ -653,6 +681,7 @@ const App: React.FC = () => {
   }
 
   return (
+    <WorkspaceProvider>
     <FeatureProvider defaultMode="simple">
       <MessageContainer userId={user?.id || 'anonymous'}>
         <div className="h-screen w-screen bg-zinc-50 dark:bg-black text-zinc-900 dark:text-zinc-100 flex flex-col md:flex-row overflow-hidden font-sans transition-colors duration-500">
@@ -702,6 +731,9 @@ const App: React.FC = () => {
         onToggleTheme={toggleTheme}
         onMobileClose={() => setIsMobileMenuOpen(false)}
         onLogoClick={() => setView(AppView.DASHBOARD)}
+        onTogglePulseAI={() => setShowPulseAI(prev => !prev)}
+        showPulseAI={showPulseAI}
+        hasProactiveSuggestion={hasPulseAISuggestion}
         renderNotificationCenter={() => (
           <NotificationCenter onOpenSettings={() => { setSettingsSection('notifications'); setView(AppView.SETTINGS); }} />
         )}
@@ -762,6 +794,26 @@ const App: React.FC = () => {
 
       {/* Voice commands moved to PulseVoiceLogo in sidebar */}
 
+      {/* Proactive badge checker — headless, always mounted when user is logged in */}
+      {user && (
+        <PulseAIProactiveChecker
+          user={user}
+          isPanelOpen={showPulseAI}
+          onProactiveChange={setHasPulseAISuggestion}
+        />
+      )}
+
+      {/* Global Pulse AI Assistant — single instance, portal-rendered */}
+      {showPulseAI && user && (
+        <PulseAssistant
+          isOpen={showPulseAI}
+          onClose={() => setShowPulseAI(false)}
+          activeView={view}
+          user={user}
+          isDarkMode={isDarkMode}
+        />
+      )}
+
       <Analytics />
 
       {/* PWA Components */}
@@ -770,6 +822,7 @@ const App: React.FC = () => {
         </div>
       </MessageContainer>
     </FeatureProvider>
+    </WorkspaceProvider>
   );
 };
 

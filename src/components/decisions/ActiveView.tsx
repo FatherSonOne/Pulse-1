@@ -10,6 +10,7 @@ interface ActiveViewProps {
   tasks: Task[];
   decisions: DecisionWithVotes[];
   currentUserId?: string;
+  workspaceId?: string;
   onStatusChange: (taskId: string, status: Task['status']) => Promise<void>;
   onDelete?: (taskId: string) => Promise<void>;
   onEdit?: (task: Task) => void;
@@ -20,6 +21,7 @@ export const ActiveView: React.FC<ActiveViewProps> = ({
   tasks,
   decisions,
   currentUserId,
+  workspaceId = '',
   onStatusChange,
   onDelete,
   onEdit,
@@ -105,8 +107,10 @@ export const ActiveView: React.FC<ActiveViewProps> = ({
               <EnhancedDecisionCard
                 key={decision.id}
                 decision={decision}
+                currentUserId={currentUserId || ''}
+                workspaceId={workspaceId}
                 onGenerateTasks={() => onDecisionAction?.(decision, 'generate-tasks')}
-                onVote={(choice) => onDecisionAction?.(decision, `vote-${choice}`)}
+                onVote={() => onDecisionAction?.(decision, 'vote')}
               />
             ))}
           </div>

@@ -1,4 +1,5 @@
 import React, { useState, useRef, useEffect, memo } from 'react';
+import ReactMarkdown from 'react-markdown';
 import { conversationalAIService, QueryContext } from '../../services/conversationalAIService';
 import { DecisionWithVotes } from '../../services/decisionService';
 import { Task } from '../../services/taskService';
@@ -242,10 +243,13 @@ const ConversationalAssistantComponent: React.FC<ConversationalAssistantProps> =
     const messageToSend = message || inputValue.trim();
     if (!messageToSend || isLoading) return;
 
-    // Get API key
-    const apiKey = localStorage.getItem('gemini_api_key');
+    // Get API key — check localStorage first, then env vars
+    const apiKey = localStorage.getItem('gemini_api_key') ||
+                   import.meta.env.VITE_GEMINI_API_KEY ||
+                   import.meta.env.VITE_API_KEY ||
+                   '';
     if (!apiKey) {
-      setError('Please add your Gemini API key in settings to use the AI Assistant.');
+      setError('No Gemini API key found. Add VITE_GEMINI_API_KEY to your .env or set it in settings.');
       return;
     }
 
@@ -388,7 +392,13 @@ const ConversationalAssistantComponent: React.FC<ConversationalAssistantProps> =
               )}
             </div>
             <div className="message-content">
-              <div className="message-text">{message.content}</div>
+              {message.role === 'assistant' ? (
+                <div className="message-text message-markdown">
+                  <ReactMarkdown>{message.content}</ReactMarkdown>
+                </div>
+              ) : (
+                <div className="message-text">{message.content}</div>
+              )}
               <div className="message-time">
                 {message.timestamp.toLocaleTimeString([], {
                   hour: '2-digit',

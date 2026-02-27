@@ -850,3 +850,143 @@
   background: rgba(148, 163, 184, 0.15);
   color: #cbd5e1;
 }
+
+/* ============================================
+   MARKDOWN RENDERING — assistant messages
+   ============================================ */
+
+.message-markdown {
+  /* Reset defaults that bubble up from browser / global styles */
+  line-height: 1.65;
+}
+
+/* Remove top margin on the first child so it doesn't push away from the bubble top */
+.message-markdown > *:first-child {
+  margin-top: 0;
+}
+.message-markdown > *:last-child {
+  margin-bottom: 0;
+}
+
+/* Paragraphs */
+.message-markdown p {
+  margin: 0 0 0.65rem;
+  color: inherit;
+}
+
+/* Headings */
+.message-markdown h1,
+.message-markdown h2,
+.message-markdown h3,
+.message-markdown h4 {
+  font-weight: 600;
+  line-height: 1.3;
+  margin: 1rem 0 0.4rem;
+  color: var(--hub-text);
+}
+.message-markdown h1 { font-size: 1.05rem; }
+.message-markdown h2 { font-size: 0.97rem; letter-spacing: 0.01em; }
+.message-markdown h3 { font-size: 0.92rem; }
+.message-markdown h4 { font-size: 0.88rem; }
+
+/* Unordered lists */
+.message-markdown ul {
+  margin: 0.3rem 0 0.65rem;
+  padding-left: 1.25rem;
+  list-style: disc;
+}
+.message-markdown ul ul {
+  margin: 0.2rem 0 0.2rem;
+  list-style: circle;
+}
+
+/* Ordered lists */
+.message-markdown ol {
+  margin: 0.3rem 0 0.65rem;
+  padding-left: 1.4rem;
+  list-style: decimal;
+}
+
+/* List items */
+.message-markdown li {
+  margin-bottom: 0.3rem;
+  line-height: 1.55;
+}
+.message-markdown li:last-child {
+  margin-bottom: 0;
+}
+
+/* Bold & italic */
+.message-markdown strong {
+  font-weight: 600;
+  color: var(--hub-text);
+}
+.message-markdown em {
+  font-style: italic;
+  color: var(--hub-text-secondary);
+}
+
+/* Inline code */
+.message-markdown code {
+  font-family: 'SF Mono', 'Fira Code', Consolas, monospace;
+  font-size: 0.82rem;
+  background: rgba(0, 0, 0, 0.07);
+  border-radius: 4px;
+  padding: 0.1em 0.35em;
+  color: var(--hub-accent-end, #e11d48);
+}
+
+/* Fenced code blocks */
+.message-markdown pre {
+  background: rgba(0, 0, 0, 0.06);
+  border: 1px solid var(--hub-border);
+  border-radius: 8px;
+  padding: 0.75rem 1rem;
+  margin: 0.5rem 0 0.75rem;
+  overflow-x: auto;
+}
+.message-markdown pre code {
+  background: transparent;
+  padding: 0;
+  color: inherit;
+  font-size: 0.82rem;
+}
+
+/* Blockquotes */
+.message-markdown blockquote {
+  border-left: 3px solid var(--hub-accent-end, #e11d48);
+  margin: 0.5rem 0;
+  padding: 0.25rem 0 0.25rem 0.875rem;
+  color: var(--hub-text-secondary);
+  font-style: italic;
+}
+
+/* Horizontal rule */
+.message-markdown hr {
+  border: none;
+  border-top: 1px solid var(--hub-border);
+  margin: 0.75rem 0;
+}
+
+/* ── Dark mode overrides ── */
+.dark .message-markdown h1,
+.dark .message-markdown h2,
+.dark .message-markdown h3,
+.dark .message-markdown h4,
+.dark .message-markdown strong {
+  color: #f1f5f9;
+}
+
+.dark .message-markdown code {
+  background: rgba(255, 255, 255, 0.08);
+  color: #fb7185;
+}
+
+.dark .message-markdown pre {
+  background: rgba(255, 255, 255, 0.05);
+  border-color: rgba(255, 255, 255, 0.1);
+}
+
+.dark .message-markdown blockquote {
+  color: #94a3b8;
+}

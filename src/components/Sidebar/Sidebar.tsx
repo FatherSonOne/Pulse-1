@@ -1,5 +1,7 @@
 import React, { useState } from 'react';
 import { AppView, User } from '../../types';
+import { WorkspaceSwitcher } from './WorkspaceSwitcher';
+import { PulseAssistantButton } from '../PulseAssistant/PulseAssistantButton';
 import './Sidebar.css';
 
 // ============================================
@@ -34,6 +36,9 @@ interface SidebarProps {
   renderNotificationCenter?: () => React.ReactNode;
   renderUserProfile?: () => React.ReactNode;
   renderVoiceLogo?: (collapsed: boolean) => React.ReactNode;
+  onTogglePulseAI?: () => void;
+  showPulseAI?: boolean;
+  hasProactiveSuggestion?: boolean;
 }
 
 // ============================================
@@ -205,6 +210,9 @@ export const Sidebar: React.FC<SidebarProps> = ({
   renderNotificationCenter,
   renderUserProfile,
   renderVoiceLogo,
+  onTogglePulseAI,
+  showPulseAI = false,
+  hasProactiveSuggestion = false,
 }) => {
   const isAdmin = user?.role === 'admin' || user?.isAdmin || false;
   const navSections = getNavSections(isAdmin);
@@ -282,6 +290,9 @@ export const Sidebar: React.FC<SidebarProps> = ({
           )}
         </div>
 
+        {/* Workspace Switcher */}
+        <WorkspaceSwitcher isCollapsed={isCollapsed} />
+
         {/* Dedicated Collapse Button Section */}
         <div className="sidebar-collapse-section">
           <button
@@ -339,6 +350,18 @@ export const Sidebar: React.FC<SidebarProps> = ({
             );
           })}
         </nav>
+
+        {/* Pulse AI Button — above footer */}
+        {onTogglePulseAI && (
+          <div className="sidebar-ai-section">
+            <PulseAssistantButton
+              onClick={onTogglePulseAI}
+              isOpen={showPulseAI}
+              hasProactiveSuggestion={hasProactiveSuggestion}
+              collapsed={isCollapsed}
+            />
+          </div>
+        )}
 
         {/* Footer */}
         <div className="sidebar-footer">
