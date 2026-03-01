@@ -1,5 +1,6 @@
 import { supabase } from './supabase';
 import { GmailService } from './gmailService';
+import searchQueryParser from './searchQueryParser';
 
 /**
  * Unified Search Service
@@ -49,7 +50,58 @@ export interface SearchSortOptions {
   order: 'asc' | 'desc';
 }
 
+export interface SearchSourceError {
+  source: string;
+  error: string;
+}
+
 export class UnifiedSearchService {
+  // ── In-memory result cache (30s TTL) ─────────────────────────────────────
+  private searchCache = new Map<
+    string,
+    { results: SearchResult[]; errors: SearchSourceError[]; timestamp: number }
+  >();
+  private readonly CACHE_TTL_MS = 30_000;
+
+  private getCacheKey(query: string, userId: string, filters?: SearchFilters, sort?: SearchSortOptions): string {
+    return `${userId}:${query}:${JSON.stringify(filters ?? {})}:${JSON.stringify(sort ?? {})}`;
+  }
+
+  private getCached(key: string) {
+    const hit = this.searchCache.get(key);
+    if (hit && Date.now() - hit.timestamp < this.CACHE_TTL_MS) return hit;
+    this.searchCache.delete(key);
+    return null;
+  }
+
+  private setCache(key: string, data: { results: SearchResult[]; errors: SearchSourceError[] }) {
+    this.searchCache.set(key, { ...data, timestamp: Date.now() });
+    // Evict stale entries when cache grows large
+    if (this.searchCache.size > 100) {
+      const now = Date.now();
+      for (const [k, v] of this.searchCache) {
+        if (now - v.timestamp > this.CACHE_TTL_MS) this.searchCache.delete(k);
+      }
+    }
+  }
+
+  // ── Per-source 8-second timeout ───────────────────────────────────────────
+  private withTimeout<T>(promise: Promise<T>, ms = 8_000): Promise<T> {
+    const timer = new Promise<never>((_, reject) =>
+      setTimeout(() => reject(new Error(`Query timed out after ${ms}ms`)), ms)
+    );
+    return Promise.race([promise, timer]);
+  }
+
+  // ── Per-source timing (warns on slow sources) ─────────────────────────────
+  private withTiming<T>(name: string, fn: () => Promise<T>): Promise<T> {
+    const start = Date.now();
+    return fn().finally(() => {
+      const ms = Date.now() - start;
+      if (ms > 1000) console.warn(`Slow search source "${name}": ${ms}ms`);
+    });
+  }
+
   /**
    * Perform unified search across all data sources
    */
@@ -57,67 +109,115 @@ export class UnifiedSearchService {
     query: string,
     userId: string,
     filters?: SearchFilters,
-    sort?: SearchSortOptions
-  ): Promise<SearchResult[]> {
+    sort?: SearchSortOptions,
+    onSourceComplete?: (results: SearchResult[], completedSource: string) => void
+  ): Promise<{ results: SearchResult[]; errors: SearchSourceError[] }> {
     if (!query.trim()) {
-      return [];
+      return { results: [], errors: [] };
     }
 
-    const results: SearchResult[] = [];
-    const searchTerm = query.toLowerCase().trim();
+    const cacheKey = this.getCacheKey(query, userId, filters, sort);
+    const cached = this.getCached(cacheKey);
+    if (cached) return { results: cached.results, errors: cached.errors };
 
-    // Search all sources in parallel, including Gmail if connected
-    const [
-      unifiedMessages,
-      messages,
-      emails,
-      gmailEmails,
-      voxes,
-      tasks,
-      events,
-      threads,
-      contacts,
-      smsMessages,
-      notes,
-      archives
-    ] = await Promise.all([
-      this.searchUnifiedMessages(searchTerm, userId, filters),
-      this.searchMessages(searchTerm, userId, filters),
-      this.searchEmails(searchTerm, userId, filters),
-      this.searchGmail(searchTerm, userId, filters).catch(err => {
-        console.log('Gmail search not available:', err.message);
-        return [];
-      }),
-      this.searchVoxes(searchTerm, userId, filters),
-      this.searchTasks(searchTerm, userId, filters),
-      this.searchEvents(searchTerm, userId, filters),
-      this.searchThreads(searchTerm, userId, filters),
-      this.searchContacts(searchTerm, userId, filters),
-      this.searchSMS(searchTerm, userId, filters),
-      this.searchNotes(searchTerm, userId, filters),
-      this.searchArchives(searchTerm, userId, filters),
-    ]);
+    // Parse Gmail-style operators (from:, after:, before:, etc.)
+    const parsed = searchQueryParser.parse(query);
+    const searchTerm = (parsed.freeText || query).toLowerCase().trim();
 
-    results.push(
-      ...unifiedMessages,
-      ...messages,
-      ...emails,
-      ...gmailEmails,
-      ...voxes,
-      ...tasks,
-      ...events,
-      ...threads,
-      ...contacts,
-      ...smsMessages,
-      ...notes,
-      ...archives
+    // Merge parsed operator hints into filters
+    const mergedFilters: SearchFilters = { ...filters };
+    for (const op of parsed.operators) {
+      if (op.negate) continue;
+      switch (op.field) {
+        case 'from':
+          if (!mergedFilters.sender) mergedFilters.sender = String(op.value);
+          break;
+        case 'date':
+          // 'after:' sets dateFrom, 'before:' sets dateTo
+          if (op.operator === 'after' && !mergedFilters.dateFrom) mergedFilters.dateFrom = op.value as Date;
+          if (op.operator === 'before' && !mergedFilters.dateTo)  mergedFilters.dateTo  = op.value as Date;
+          break;
+      }
+    }
+
+    const sources: Array<{ name: string; fn: () => Promise<SearchResult[]> }> = [
+      { name: 'unified_messages', fn: () => this.withTimeout(this.withTiming('unified_messages', () => this.searchUnifiedMessages(searchTerm, userId, mergedFilters))) },
+      { name: 'messages',         fn: () => this.withTimeout(this.withTiming('messages',         () => this.searchMessages(searchTerm, userId, mergedFilters))) },
+      { name: 'emails',           fn: () => this.withTimeout(this.withTiming('emails',           () => this.searchEmails(searchTerm, userId, mergedFilters))) },
+      { name: 'gmail',            fn: () => this.withTimeout(this.withTiming('gmail',            () => this.searchGmail(searchTerm, userId, mergedFilters))) },
+      { name: 'voxes',            fn: () => this.withTimeout(this.withTiming('voxes',            () => this.searchVoxes(searchTerm, userId, mergedFilters))) },
+      { name: 'tasks',            fn: () => this.withTimeout(this.withTiming('tasks',            () => this.searchTasks(searchTerm, userId, mergedFilters))) },
+      { name: 'events',           fn: () => this.withTimeout(this.withTiming('events',           () => this.searchEvents(searchTerm, userId, mergedFilters))) },
+      { name: 'threads',          fn: () => this.withTimeout(this.withTiming('threads',          () => this.searchThreads(searchTerm, userId, mergedFilters))) },
+      { name: 'contacts',         fn: () => this.withTimeout(this.withTiming('contacts',         () => this.searchContacts(searchTerm, userId, mergedFilters))) },
+      { name: 'sms',              fn: () => this.withTimeout(this.withTiming('sms',              () => this.searchSMS(searchTerm, userId, mergedFilters))) },
+      { name: 'notes',            fn: () => this.withTimeout(this.withTiming('notes',            () => this.searchNotes(searchTerm, userId, mergedFilters))) },
+      { name: 'archives',         fn: () => this.withTimeout(this.withTiming('archives',         () => this.searchArchives(searchTerm, userId, mergedFilters))) },
+    ];
+
+    const accumulated: SearchResult[] = [];
+
+    const settled = await Promise.allSettled(
+      sources.map(s =>
+        s.fn().then(sourceResults => {
+          accumulated.push(...sourceResults);
+          if (onSourceComplete) {
+            try {
+              const deduped = this.deduplicateResults([...accumulated]);
+              const sorted = this.sortResults(deduped, sort || { field: 'timestamp', order: 'desc' });
+              onSourceComplete(this.calculateRelevance(sorted, searchTerm), s.name);
+            } catch (callbackError) {
+              console.error('Error in onSourceComplete callback:', callbackError);
+            }
+          }
+          return sourceResults;
+        })
+      )
     );
+
+    const results: SearchResult[] = [];
+    const errors: SearchSourceError[] = [];
+
+    settled.forEach((outcome, i) => {
+      if (outcome.status === 'fulfilled') {
+        results.push(...outcome.value);
+      } else {
+        errors.push({ source: sources[i].name, error: outcome.reason?.message ?? 'Unknown error' });
+        console.error(`Search source "${sources[i].name}" failed:`, outcome.reason);
+      }
+    });
 
     // Apply sorting
     const sortedResults = this.sortResults(results, sort || { field: 'timestamp', order: 'desc' });
 
     // Calculate relevance scores
-    return this.calculateRelevance(sortedResults, searchTerm);
+    const final = { results: this.calculateRelevance(sortedResults, searchTerm), errors };
+
+    // Cache results (only cache if no errors, so partial results aren't stale)
+    if (errors.length === 0) this.setCache(cacheKey, final);
+
+    return final;
+  }
+
+  private deduplicateResults(results: SearchResult[]): SearchResult[] {
+    // Primary dedup: by id, keep higher relevance
+    const seen = new Map<string, SearchResult>();
+    for (const r of results) {
+      const existing = seen.get(r.id);
+      if (!existing || (r.relevance ?? 0) > (existing.relevance ?? 0)) {
+        seen.set(r.id, r);
+      }
+    }
+    // Secondary dedup: same type + same leading content, keep higher relevance
+    const contentSeen = new Map<string, SearchResult>();
+    for (const r of seen.values()) {
+      const contentKey = `${r.type}:${r.content.slice(0, 100)}`;
+      const existing = contentSeen.get(contentKey);
+      if (!existing || (r.relevance ?? 0) > (existing.relevance ?? 0)) {
+        contentSeen.set(contentKey, r);
+      }
+    }
+    return Array.from(contentSeen.values());
   }
 
   /**
@@ -128,12 +228,11 @@ export class UnifiedSearchService {
     userId: string,
     filters?: SearchFilters
   ): Promise<SearchResult[]> {
-    const queryParam = `%${query}%`;
     let searchQuery = supabase
       .from('unified_messages')
       .select('*')
       .eq('user_id', userId)
-      .or(`content.ilike.${queryParam},sender_name.ilike.${queryParam},channel_name.ilike.${queryParam}`);
+      .textSearch('search_vector', query, { type: 'websearch', config: 'english' });
 
     if (filters?.dateFrom) {
       searchQuery = searchQuery.gte('timestamp', filters.dateFrom.toISOString());
@@ -185,7 +284,7 @@ export class UnifiedSearchService {
       .from('messages')
       .select('*, threads!inner(user_id, contact_name)')
       .eq('threads.user_id', userId)
-      .ilike('text', `%${query}%`);
+      .textSearch('search_vector', query, { type: 'websearch', config: 'english' });
 
     if (filters?.dateFrom) {
       searchQuery = searchQuery.gte('timestamp', filters.dateFrom.toISOString());
@@ -228,12 +327,11 @@ export class UnifiedSearchService {
     userId: string,
     filters?: SearchFilters
   ): Promise<SearchResult[]> {
-    const queryParam = `%${query}%`;
     let searchQuery = supabase
       .from('emails')
       .select('*')
       .eq('user_id', userId)
-      .or(`subject.ilike.${queryParam},body.ilike.${queryParam},from_address.ilike.${queryParam},snippet.ilike.${queryParam}`);
+      .textSearch('search_vector', query, { type: 'websearch', config: 'english' });
 
     if (filters?.dateFrom) {
       searchQuery = searchQuery.gte('date', filters.dateFrom.toISOString());
@@ -319,12 +417,11 @@ export class UnifiedSearchService {
     userId: string,
     filters?: SearchFilters
   ): Promise<SearchResult[]> {
-    const queryParam = `%${query}%`;
     let searchQuery = supabase
       .from('voxer_recordings')
       .select('*')
       .eq('user_id', userId)
-      .or(`title.ilike.${queryParam},transcript.ilike.${queryParam},contact_name.ilike.${queryParam}`);
+      .textSearch('search_vector', query, { type: 'websearch', config: 'english' });
 
     if (filters?.dateFrom) {
       searchQuery = searchQuery.gte('recorded_at', filters.dateFrom.toISOString());
@@ -368,12 +465,11 @@ export class UnifiedSearchService {
     userId: string,
     filters?: SearchFilters
   ): Promise<SearchResult[]> {
-    const queryParam = `%${query}%`;
     let searchQuery = supabase
       .from('tasks')
       .select('*')
       .eq('user_id', userId)
-      .or(`title.ilike.${queryParam}`);
+      .textSearch('search_vector', query, { type: 'websearch', config: 'english' });
 
     if (filters?.dateFrom) {
       searchQuery = searchQuery.gte('created_at', filters.dateFrom.toISOString());
@@ -396,7 +492,7 @@ export class UnifiedSearchService {
       id: task.id,
       type: 'task' as SearchResultType,
       title: task.title,
-      content: `Task - ${task.completed ? 'Completed' : 'Pending'}`,
+      content: `Task — ${task.completed ? 'Completed' : 'Pending'}`,
       timestamp: new Date(task.created_at),
       metadata: {
         completed: task.completed,
@@ -415,12 +511,11 @@ export class UnifiedSearchService {
     userId: string,
     filters?: SearchFilters
   ): Promise<SearchResult[]> {
-    const queryParam = `%${query}%`;
     let searchQuery = supabase
       .from('calendar_events')
       .select('*')
       .eq('user_id', userId)
-      .or(`title.ilike.${queryParam},description.ilike.${queryParam},location.ilike.${queryParam}`);
+      .textSearch('search_vector', query, { type: 'websearch', config: 'english' });
 
     if (filters?.dateFrom) {
       searchQuery = searchQuery.gte('start_time', filters.dateFrom.toISOString());
@@ -463,7 +558,7 @@ export class UnifiedSearchService {
       .from('threads')
       .select('*')
       .eq('user_id', userId)
-      .ilike('contact_name', `%${query}%`);
+      .textSearch('search_vector', query, { type: 'websearch', config: 'english' });
 
     if (filters?.contactId) {
       searchQuery = searchQuery.eq('contact_id', filters.contactId);
@@ -499,12 +594,11 @@ export class UnifiedSearchService {
     userId: string,
     filters?: SearchFilters
   ): Promise<SearchResult[]> {
-    const queryParam = `%${query}%`;
     let searchQuery = supabase
       .from('contacts')
       .select('*')
       .eq('user_id', userId)
-      .or(`name.ilike.${queryParam},email.ilike.${queryParam},company.ilike.${queryParam},notes.ilike.${queryParam}`);
+      .textSearch('search_vector', query, { type: 'websearch', config: 'english' });
 
     const { data, error } = await searchQuery.limit(50);
 
@@ -541,7 +635,7 @@ export class UnifiedSearchService {
       .from('sms_messages')
       .select('*, sms_conversations!inner(user_id, contact_name, phone_number)')
       .eq('sms_conversations.user_id', userId)
-      .ilike('text', `%${query}%`);
+      .textSearch('search_vector', query, { type: 'websearch', config: 'english' });
 
     if (filters?.dateFrom) {
       searchQuery = searchQuery.gte('timestamp', filters.dateFrom.toISOString());
@@ -585,7 +679,7 @@ export class UnifiedSearchService {
     let searchQuery = supabase
       .from('logos_notes')
       .select('*')
-      .ilike('content', `%${query}%`);
+      .textSearch('search_vector', query, { type: 'websearch', config: 'english' });
 
     if (filters?.dateFrom) {
       searchQuery = searchQuery.gte('created_at', filters.dateFrom.toISOString());
@@ -626,12 +720,11 @@ export class UnifiedSearchService {
     userId: string,
     filters?: SearchFilters
   ): Promise<SearchResult[]> {
-    const queryParam = `%${query}%`;
     let searchQuery = supabase
       .from('archives')
       .select('*')
       .eq('user_id', userId)
-      .or(`title.ilike.${queryParam},content.ilike.${queryParam},tags.cs.{${query}}`);
+      .textSearch('search_vector', query, { type: 'websearch', config: 'english' });
 
     if (filters?.dateFrom) {
       searchQuery = searchQuery.gte('date', filters.dateFrom.toISOString());

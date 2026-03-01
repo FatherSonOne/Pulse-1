@@ -12,6 +12,7 @@ import {
   RecognitionOverview,
   WinsTracker,
 } from '../../services/recognitionService';
+import { AnimatedIcon } from '../ui/AnimatedIcon';
 
 interface KudosViewProps {
   timeRange: string;
@@ -48,15 +49,15 @@ export const KudosView: React.FC<KudosViewProps> = ({ timeRange }) => {
     setLoading(false);
   };
 
-  const getEventIcon = (eventType: string): string => {
+  const getEventIconKey = (eventType: string): string => {
     switch (eventType) {
-      case 'kudos': return '⭐';
-      case 'appreciation': return '💙';
-      case 'praise': return '👏';
-      case 'thank_you': return '🙏';
-      case 'celebration': return '🎉';
-      case 'win': return '🏆';
-      default: return '✨';
+      case 'kudos': return 'star';
+      case 'appreciation': return 'star';
+      case 'praise': return 'people';
+      case 'thank_you': return 'check';
+      case 'celebration': return 'sparkle';
+      case 'win': return 'trophy';
+      default: return 'sparkle';
     }
   };
 
@@ -114,7 +115,7 @@ export const KudosView: React.FC<KudosViewProps> = ({ timeRange }) => {
           <div className="stat-orb received">
             <div className="orb-glow" style={{ '--glow-color': 'var(--accent-positive)' } as React.CSSProperties} />
             <div className="orb-content">
-              <span className="orb-icon">⭐</span>
+              <span className="orb-icon"><AnimatedIcon icon="star" size={24} /></span>
               <span className="metric-value">{overview?.total_received || 0}</span>
             </div>
             <span className="metric-label">Kudos Received</span>
@@ -123,7 +124,7 @@ export const KudosView: React.FC<KudosViewProps> = ({ timeRange }) => {
           <div className="stat-orb given">
             <div className="orb-glow" style={{ '--glow-color': 'var(--accent-info)' } as React.CSSProperties} />
             <div className="orb-content">
-              <span className="orb-icon">💙</span>
+              <span className="orb-icon"><AnimatedIcon icon="star" size={24} /></span>
               <span className="metric-value">{overview?.total_given || 0}</span>
             </div>
             <span className="metric-label">Kudos Given</span>
@@ -132,7 +133,7 @@ export const KudosView: React.FC<KudosViewProps> = ({ timeRange }) => {
           <div className="stat-orb wins">
             <div className="orb-glow" style={{ '--glow-color': 'var(--accent-warning)' } as React.CSSProperties} />
             <div className="orb-content">
-              <span className="orb-icon">🏆</span>
+              <span className="orb-icon"><AnimatedIcon icon="trophy" size={24} /></span>
               <span className="metric-value">{overview?.total_wins || 0}</span>
             </div>
             <span className="metric-label">Wins Tracked</span>
@@ -209,7 +210,7 @@ export const KudosView: React.FC<KudosViewProps> = ({ timeRange }) => {
           {/* Recognition Feed */}
           {events.length === 0 ? (
             <div className="empty-state">
-              <div className="empty-icon">⭐</div>
+              <div className="empty-icon"><AnimatedIcon icon="star" size={40} /></div>
               <h3>No Recognition Events</h3>
               <p>Start celebrating wins and giving kudos</p>
             </div>
@@ -226,12 +227,12 @@ export const KudosView: React.FC<KudosViewProps> = ({ timeRange }) => {
                 >
                   {/* Card Header */}
                   <div className="rec-header">
-                    <span className="rec-icon">{getEventIcon(event.event_type)}</span>
+                    <span className="rec-icon"><AnimatedIcon icon={getEventIconKey(event.event_type)} size={20} /></span>
                     <div className="rec-info">
                       <div className="rec-type">
                         <span className="type-label">{event.event_type.replace('_', ' ')}</span>
                         {event.is_milestone && (
-                          <span className="milestone-badge">🎯 Milestone</span>
+                          <span className="milestone-badge"><AnimatedIcon icon="target" size={12} /> Milestone</span>
                         )}
                       </div>
                       <div className="rec-meta">
@@ -293,7 +294,7 @@ export const KudosView: React.FC<KudosViewProps> = ({ timeRange }) => {
                   {/* Milestone Details */}
                   {event.is_milestone && event.milestone_description && (
                     <div className="milestone-details">
-                      <span className="milestone-icon">🎯</span>
+                      <span className="milestone-icon"><AnimatedIcon icon="target" size={16} /></span>
                       <div className="milestone-content">
                         {event.milestone_type && (
                           <span className="milestone-type">{event.milestone_type}</span>
@@ -328,7 +329,7 @@ export const KudosView: React.FC<KudosViewProps> = ({ timeRange }) => {
           {overview?.top_appreciators && overview.top_appreciators.length > 0 && (
             <div className="panel glass appreciators-panel">
               <h3 className="panel-title">
-                <span className="title-icon">👏</span>
+                <AnimatedIcon icon="people" size={16} />
                 Top Appreciators
               </h3>
               <div className="appreciators-list">
@@ -350,7 +351,7 @@ export const KudosView: React.FC<KudosViewProps> = ({ timeRange }) => {
           {wins.length > 0 && (
             <div className="panel glass wins-panel">
               <h3 className="panel-title">
-                <span className="title-icon">🏆</span>
+                <AnimatedIcon icon="trophy" size={16} />
                 Recent Wins
               </h3>
               <div className="wins-list">
@@ -361,7 +362,7 @@ export const KudosView: React.FC<KudosViewProps> = ({ timeRange }) => {
                     style={{ '--delay': `${i * 0.05}s` } as React.CSSProperties}
                   >
                     <div className="win-header">
-                      <span className="win-icon">🏆</span>
+                      <span className="win-icon"><AnimatedIcon icon="trophy" size={16} /></span>
                       <h4 className="win-title">{win.win_title}</h4>
                     </div>
 
@@ -385,7 +386,7 @@ export const KudosView: React.FC<KudosViewProps> = ({ timeRange }) => {
 
                     {win.celebrated && (
                       <div className="celebrated-badge">
-                        <span className="celebrate-icon">🎉</span>
+                        <span className="celebrate-icon"><AnimatedIcon icon="sparkle" size={14} /></span>
                         <span className="celebrate-text">Celebrated!</span>
                       </div>
                     )}

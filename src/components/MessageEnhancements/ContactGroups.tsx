@@ -1,4 +1,5 @@
 import React, { useState, useMemo, useCallback } from 'react';
+import { AnimatedIcon } from '../ui/AnimatedIcon';
 
 // Types
 interface GroupMember {
@@ -75,7 +76,7 @@ const generateMockGroups = (): ContactGroup[] => {
       id: 'group-1',
       name: 'Product Team',
       description: 'Main product development team discussions',
-      icon: '💻',
+      icon: 'laptop',
       color: '#8b5cf6',
       members: [
         { id: 'user-1', name: 'Alice Johnson', role: 'admin', joinedAt: new Date(now - 90 * 24 * 60 * 60 * 1000), isOnline: true },
@@ -93,7 +94,7 @@ const generateMockGroups = (): ContactGroup[] => {
       id: 'group-2',
       name: 'Marketing',
       description: 'Marketing campaigns and strategy',
-      icon: '📢',
+      icon: 'broadcast',
       color: '#ec4899',
       members: [
         { id: 'user-5', name: 'Eve Wilson', role: 'admin', joinedAt: new Date(now - 60 * 24 * 60 * 60 * 1000), isOnline: false },
@@ -109,7 +110,7 @@ const generateMockGroups = (): ContactGroup[] => {
       id: 'group-3',
       name: 'Executive Team',
       description: 'Leadership discussions',
-      icon: '👔',
+      icon: 'trophy',
       color: '#f59e0b',
       members: [
         { id: 'user-1', name: 'Alice Johnson', role: 'admin', joinedAt: new Date(now - 120 * 24 * 60 * 60 * 1000), isOnline: true },
@@ -132,7 +133,7 @@ const generateMockChannels = (): Channel[] => {
       name: 'general',
       description: 'General discussions',
       type: 'public',
-      icon: '#️⃣',
+      icon: 'hash',
       color: '#6b7280',
       members: ['user-1', 'user-2', 'user-3', 'user-4', 'user-5'],
       pinnedMessages: [],
@@ -146,7 +147,7 @@ const generateMockChannels = (): Channel[] => {
       name: 'announcements',
       description: 'Important company announcements',
       type: 'announcement',
-      icon: '📣',
+      icon: 'megaphone',
       color: '#f59e0b',
       members: ['user-1', 'user-2', 'user-3', 'user-4', 'user-5', 'user-6'],
       pinnedMessages: ['msg-1', 'msg-2'],
@@ -161,7 +162,7 @@ const generateMockChannels = (): Channel[] => {
       description: 'Design team discussions',
       type: 'public',
       groupId: 'group-1',
-      icon: '🎨',
+      icon: 'palette',
       color: '#8b5cf6',
       members: ['user-1', 'user-3'],
       pinnedMessages: [],
@@ -175,7 +176,7 @@ const generateMockChannels = (): Channel[] => {
       name: 'random',
       description: 'Off-topic fun',
       type: 'public',
-      icon: '🎲',
+      icon: 'star',
       color: '#22c55e',
       members: ['user-1', 'user-2', 'user-4'],
       pinnedMessages: [],
@@ -187,8 +188,8 @@ const generateMockChannels = (): Channel[] => {
   ];
 };
 
-const GROUP_ICONS = ['👥', '💻', '📢', '🎯', '🚀', '💡', '🔧', '📊', '🎨', '📚', '🏢', '🌟'];
-const CHANNEL_ICONS = ['#️⃣', '📣', '🎨', '🔧', '💬', '📊', '🎯', '💡', '🔒', '🌐'];
+const GROUP_ICONS = ['people', 'laptop', 'broadcast', 'target', 'rocket', 'lightbulb', 'wrench', 'chart', 'palette', 'note', 'trophy', 'star'];
+const CHANNEL_ICONS = ['hash', 'megaphone', 'palette', 'wrench', 'chat', 'chart', 'target', 'lightbulb', 'lock', 'globe'];
 const COLORS = ['#8b5cf6', '#ec4899', '#f59e0b', '#22c55e', '#3b82f6', '#ef4444', '#06b6d4', '#6366f1'];
 
 export const ContactGroups: React.FC<ContactGroupsProps> = ({
@@ -217,7 +218,7 @@ export const ContactGroups: React.FC<ContactGroupsProps> = ({
   const [newGroup, setNewGroup] = useState({
     name: '',
     description: '',
-    icon: '👥',
+    icon: 'people',
     color: '#8b5cf6',
     isPrivate: false,
   });
@@ -226,7 +227,7 @@ export const ContactGroups: React.FC<ContactGroupsProps> = ({
     name: '',
     description: '',
     type: 'public' as Channel['type'],
-    icon: '#️⃣',
+    icon: 'hash',
     color: '#6b7280',
     groupId: '',
   });
@@ -286,7 +287,7 @@ export const ContactGroups: React.FC<ContactGroupsProps> = ({
       },
     });
 
-    setNewGroup({ name: '', description: '', icon: '👥', color: '#8b5cf6', isPrivate: false });
+    setNewGroup({ name: '', description: '', icon: 'people', color: '#8b5cf6', isPrivate: false });
     setShowCreateGroup(false);
   }, [newGroup, currentUserId, onCreateGroup]);
 
@@ -305,7 +306,7 @@ export const ContactGroups: React.FC<ContactGroupsProps> = ({
       isMuted: false,
     });
 
-    setNewChannel({ name: '', description: '', type: 'public', icon: '#️⃣', color: '#6b7280', groupId: '' });
+    setNewChannel({ name: '', description: '', type: 'public', icon: 'hash', color: '#6b7280', groupId: '' });
     setShowCreateChannel(false);
   }, [newChannel, currentUserId, onCreateChannel]);
 
@@ -332,7 +333,7 @@ export const ContactGroups: React.FC<ContactGroupsProps> = ({
       <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginBottom: '20px' }}>
         <div>
           <h2 style={{ margin: 0, fontSize: '1.4rem', display: 'flex', alignItems: 'center', gap: '10px' }}>
-            <span style={{ fontSize: '1.6rem' }}>👥</span>
+            <AnimatedIcon icon="people" size={24} />
             Groups & Channels
           </h2>
           <p style={{ margin: '4px 0 0', fontSize: '0.85rem', opacity: 0.7 }}>
@@ -367,7 +368,7 @@ export const ContactGroups: React.FC<ContactGroupsProps> = ({
         padding: '10px 14px',
         marginBottom: '16px',
       }}>
-        <span style={{ opacity: 0.5 }}>🔍</span>
+        <AnimatedIcon icon="signal" size={16} />
         <input
           type="text"
           placeholder="Search groups and channels..."
@@ -391,8 +392,8 @@ export const ContactGroups: React.FC<ContactGroupsProps> = ({
         marginBottom: '16px',
       }}>
         {[
-          { id: 'groups', label: 'Groups', icon: '👥', count: groups.length },
-          { id: 'channels', label: 'Channels', icon: '#️⃣', count: channels.length },
+          { id: 'groups', label: 'Groups', icon: 'people', count: groups.length },
+          { id: 'channels', label: 'Channels', icon: 'hash', count: channels.length },
         ].map((tab) => (
           <button
             key={tab.id}
@@ -415,7 +416,7 @@ export const ContactGroups: React.FC<ContactGroupsProps> = ({
               justifyContent: 'center',
             }}
           >
-            <span>{tab.icon}</span>
+            <AnimatedIcon icon={tab.icon} size={16} />
             {tab.label}
             <span style={{
               fontSize: '0.75rem',
@@ -481,17 +482,19 @@ export const ContactGroups: React.FC<ContactGroupsProps> = ({
                       display: 'flex',
                       alignItems: 'center',
                       justifyContent: 'center',
-                      fontSize: '1.5rem',
                       flexShrink: 0,
+                      display: 'flex',
+                      alignItems: 'center',
+                      justifyContent: 'center',
                     }}>
-                      {group.icon}
+                      <AnimatedIcon icon={group.icon} size={24} />
                     </div>
 
                     <div style={{ flex: 1, minWidth: 0 }}>
                       <div style={{ display: 'flex', alignItems: 'center', gap: '8px', marginBottom: '4px' }}>
                         <span style={{ fontWeight: 'bold', fontSize: '1rem' }}>{group.name}</span>
                         {group.isPrivate && (
-                          <span style={{ fontSize: '0.7rem', opacity: 0.5 }}>🔒</span>
+                          <AnimatedIcon icon="lock" size={12} />
                         )}
                       </div>
 
@@ -509,11 +512,11 @@ export const ContactGroups: React.FC<ContactGroupsProps> = ({
                       )}
 
                       <div style={{ display: 'flex', alignItems: 'center', gap: '12px', fontSize: '0.8rem' }}>
-                        <span style={{ opacity: 0.6 }}>
-                          👤 {group.members.length} members
+                        <span style={{ opacity: 0.6, display: 'flex', alignItems: 'center', gap: '4px' }}>
+                          <AnimatedIcon icon="people" size={12} /> {group.members.length} members
                         </span>
-                        <span style={{ opacity: 0.6 }}>
-                          💬 {group.stats.messageCount}
+                        <span style={{ opacity: 0.6, display: 'flex', alignItems: 'center', gap: '4px' }}>
+                          <AnimatedIcon icon="chat" size={12} /> {group.stats.messageCount}
                         </span>
                         <span style={{ opacity: 0.5 }}>
                           {formatDate(group.stats.lastActivity)}
@@ -567,7 +570,7 @@ export const ContactGroups: React.FC<ContactGroupsProps> = ({
 
               {filteredGroups.length === 0 && (
                 <div style={{ textAlign: 'center', padding: '40px', opacity: 0.5 }}>
-                  <span style={{ fontSize: '2.5rem', display: 'block', marginBottom: '12px' }}>👥</span>
+                  <div style={{ marginBottom: '12px' }}><AnimatedIcon icon="people" size={40} /></div>
                   <p>No groups found</p>
                 </div>
               )}
@@ -613,7 +616,7 @@ export const ContactGroups: React.FC<ContactGroupsProps> = ({
                   justifyContent: 'center',
                   fontSize: '2rem',
                 }}>
-                  {selectedGroupData.icon}
+                  <AnimatedIcon icon={selectedGroupData.icon} size={32} />
                 </div>
                 <div>
                   <h3 style={{ margin: 0, fontSize: '1.3rem' }}>{selectedGroupData.name}</h3>
@@ -774,17 +777,16 @@ export const ContactGroups: React.FC<ContactGroupsProps> = ({
                     display: 'flex',
                     alignItems: 'center',
                     justifyContent: 'center',
-                    fontSize: '1.2rem',
                   }}>
-                    {channel.icon}
+                    <AnimatedIcon icon={channel.icon} size={20} />
                   </div>
 
                   <div style={{ flex: 1, minWidth: 0 }}>
                     <div style={{ display: 'flex', alignItems: 'center', gap: '6px' }}>
                       <span style={{ fontWeight: 'bold' }}>#{channel.name}</span>
-                      {channel.type === 'private' && <span style={{ fontSize: '0.7rem' }}>🔒</span>}
-                      {channel.type === 'announcement' && <span style={{ fontSize: '0.7rem' }}>📣</span>}
-                      {channel.isMuted && <span style={{ fontSize: '0.7rem' }}>🔇</span>}
+                      {channel.type === 'private' && <AnimatedIcon icon="lock" size={12} />}
+                      {channel.type === 'announcement' && <AnimatedIcon icon="megaphone" size={12} />}
+                      {channel.isMuted && <AnimatedIcon icon="bell" size={12} />}
                     </div>
                     {channel.description && (
                       <p style={{
@@ -823,7 +825,7 @@ export const ContactGroups: React.FC<ContactGroupsProps> = ({
 
               {filteredChannels.length === 0 && (
                 <div style={{ textAlign: 'center', padding: '40px', opacity: 0.5 }}>
-                  <span style={{ fontSize: '2.5rem', display: 'block', marginBottom: '12px' }}>#️⃣</span>
+                  <div style={{ marginBottom: '12px' }}><AnimatedIcon icon="hash" size={40} /></div>
                   <p>No channels found</p>
                 </div>
               )}
@@ -873,10 +875,12 @@ export const ContactGroups: React.FC<ContactGroupsProps> = ({
                       border: newGroup.icon === icon ? `2px solid ${newGroup.color}` : '2px solid transparent',
                       background: newGroup.icon === icon ? `${newGroup.color}30` : 'rgba(255,255,255,0.05)',
                       cursor: 'pointer',
-                      fontSize: '1.2rem',
+                      display: 'flex',
+                      alignItems: 'center',
+                      justifyContent: 'center',
                     }}
                   >
-                    {icon}
+                    <AnimatedIcon icon={icon} size={18} />
                   </button>
                 ))}
               </div>
@@ -1050,9 +1054,9 @@ export const ContactGroups: React.FC<ContactGroupsProps> = ({
               </label>
               <div style={{ display: 'flex', gap: '8px' }}>
                 {[
-                  { id: 'public', label: 'Public', icon: '#️⃣' },
-                  { id: 'private', label: 'Private', icon: '🔒' },
-                  { id: 'announcement', label: 'Announcement', icon: '📣' },
+                  { id: 'public', label: 'Public', icon: 'hash' },
+                  { id: 'private', label: 'Private', icon: 'lock' },
+                  { id: 'announcement', label: 'Announcement', icon: 'megaphone' },
                 ].map(type => (
                   <button
                     key={type.id}
@@ -1071,7 +1075,7 @@ export const ContactGroups: React.FC<ContactGroupsProps> = ({
                       gap: '4px',
                     }}
                   >
-                    <span>{type.icon}</span>
+                    <AnimatedIcon icon={type.icon} size={20} />
                     <span style={{ fontSize: '0.8rem' }}>{type.label}</span>
                   </button>
                 ))}
@@ -1161,7 +1165,7 @@ export const GroupBadge: React.FC<{
         fontSize: '0.85rem',
       }}
     >
-      <span>{icon}</span>
+      <AnimatedIcon icon={icon} size={14} />
       <span>{name}</span>
       {memberCount !== undefined && (
         <span style={{ opacity: 0.6, fontSize: '0.75rem' }}>({memberCount})</span>

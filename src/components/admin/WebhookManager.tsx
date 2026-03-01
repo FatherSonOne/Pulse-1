@@ -5,6 +5,7 @@
 
 import React, { useState, useEffect } from 'react';
 import { webhookService, WebhookSource, WebhookLogEntry } from '../../services/webhookService';
+import { AnimatedIcon } from '../ui/AnimatedIcon';
 
 interface WebhookConfig {
   source: WebhookSource;
@@ -25,7 +26,7 @@ const WebhookManager: React.FC = () => {
     {
       source: 'slack',
       name: 'Slack',
-      icon: '💬',
+      icon: 'chat',
       endpoint: '/api/webhooks/slack',
       enabled: true,
       events: ['message', 'reaction_added', 'channel_created'],
@@ -33,7 +34,7 @@ const WebhookManager: React.FC = () => {
     {
       source: 'entomate',
       name: 'Entomate',
-      icon: '🤖',
+      icon: 'gear',
       endpoint: '/api/webhooks/entomate',
       enabled: true,
       events: ['automation.completed', 'automation.failed', 'automation.triggered'],
@@ -41,7 +42,7 @@ const WebhookManager: React.FC = () => {
     {
       source: 'gmail',
       name: 'Gmail',
-      icon: '📧',
+      icon: 'email',
       endpoint: '/api/webhooks/gmail',
       enabled: false,
       events: ['message.received'],
@@ -49,7 +50,7 @@ const WebhookManager: React.FC = () => {
     {
       source: 'twilio',
       name: 'Twilio',
-      icon: '📱',
+      icon: 'mobile',
       endpoint: '/api/webhooks/twilio',
       enabled: false,
       events: ['message.received', 'message.status'],
@@ -57,7 +58,7 @@ const WebhookManager: React.FC = () => {
     {
       source: 'github',
       name: 'GitHub',
-      icon: '🐙',
+      icon: 'link',
       endpoint: '/api/webhooks/github',
       enabled: false,
       events: ['push', 'pull_request', 'issues'],
@@ -65,7 +66,7 @@ const WebhookManager: React.FC = () => {
     {
       source: 'custom',
       name: 'Custom',
-      icon: '🔧',
+      icon: 'wrench',
       endpoint: '/api/webhooks/custom',
       enabled: false,
       events: ['*'],
@@ -182,7 +183,7 @@ const WebhookManager: React.FC = () => {
         {webhooks.map((webhook) => (
           <div key={webhook.source} className="webhook-item">
             <div className="webhook-info">
-              <span className="webhook-icon">{webhook.icon}</span>
+              <span className="webhook-icon"><AnimatedIcon icon={webhook.icon} size={22} /></span>
               <div className="webhook-details">
                 <h4>{webhook.name}</h4>
                 <p>{getBaseUrl()}{webhook.endpoint}</p>
@@ -202,28 +203,28 @@ const WebhookManager: React.FC = () => {
                 onClick={() => copyToClipboard(`${getBaseUrl()}${webhook.endpoint}`)}
                 title="Copy URL"
               >
-                📋
+                <AnimatedIcon icon="clipboard" size={16} />
               </button>
               <button
                 className="btn-icon"
                 onClick={() => generateSecret(webhook.source)}
                 title="Generate Secret"
               >
-                🔑
+                <AnimatedIcon icon="lock" size={16} />
               </button>
               <button
                 className="btn-icon"
                 onClick={() => testWebhook(webhook)}
                 title="Test Webhook"
               >
-                🧪
+                <AnimatedIcon icon="lightning" size={16} />
               </button>
               <button
                 className="btn-icon"
                 onClick={() => setSelectedWebhook(webhook)}
                 title="Configure"
               >
-                ⚙️
+                <AnimatedIcon icon="gear" size={16} />
               </button>
               <div
                 className={`toggle-switch ${webhook.enabled ? 'active' : ''}`}
@@ -239,7 +240,7 @@ const WebhookManager: React.FC = () => {
       {selectedWebhook && (
         <div className="settings-section" style={{ marginTop: '24px' }}>
           <h3>
-            {selectedWebhook.icon} {selectedWebhook.name} Configuration
+            <AnimatedIcon icon={selectedWebhook.icon} size={18} /> {selectedWebhook.name} Configuration
             <button
               onClick={() => setSelectedWebhook(null)}
               style={{
@@ -367,7 +368,7 @@ const WebhookManager: React.FC = () => {
 
       {/* Instructions */}
       <div className="settings-section" style={{ marginTop: '24px' }}>
-        <h3>📖 Setup Instructions</h3>
+        <h3><AnimatedIcon icon="note" size={16} /> Setup Instructions</h3>
         <div style={{ fontSize: '14px', lineHeight: '1.8' }}>
           <p><strong>1. Copy the webhook URL</strong> for the service you want to integrate.</p>
           <p><strong>2. Generate a secret</strong> for signature verification (recommended).</p>

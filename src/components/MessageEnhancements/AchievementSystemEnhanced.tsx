@@ -1,5 +1,6 @@
 // Enhanced Achievement System with Gamification
 import React, { useState, useEffect, useMemo } from 'react';
+import { AnimatedIcon } from '../ui/AnimatedIcon';
 
 interface Achievement {
   id: string;
@@ -32,39 +33,39 @@ interface UserStats {
 // Define all available achievements
 const ACHIEVEMENTS_CONFIG: Omit<Achievement, 'progress' | 'unlocked' | 'unlockedAt'>[] = [
   // Communication achievements
-  { id: 'first-message', title: 'Hello World', description: 'Send your first message', icon: '👋', category: 'communication', rarity: 'common', maxProgress: 1, xpReward: 10 },
-  { id: 'chatterbox', title: 'Chatterbox', description: 'Send 100 messages', icon: '💬', category: 'communication', rarity: 'common', maxProgress: 100, xpReward: 50 },
-  { id: 'novelist', title: 'Novelist', description: 'Send 1000 messages', icon: '📚', category: 'communication', rarity: 'rare', maxProgress: 1000, xpReward: 200 },
-  { id: 'lightning-responder', title: 'Lightning Responder', description: 'Respond to 10 messages within 1 minute', icon: '⚡', category: 'communication', rarity: 'rare', maxProgress: 10, xpReward: 100 },
-  { id: 'deep-thinker', title: 'Deep Thinker', description: 'Send 50 messages over 200 characters', icon: '🧠', category: 'communication', rarity: 'rare', maxProgress: 50, xpReward: 150 },
+  { id: 'first-message', title: 'Hello World', description: 'Send your first message', icon: 'chat', category: 'communication', rarity: 'common', maxProgress: 1, xpReward: 10 },
+  { id: 'chatterbox', title: 'Chatterbox', description: 'Send 100 messages', icon: 'chat', category: 'communication', rarity: 'common', maxProgress: 100, xpReward: 50 },
+  { id: 'novelist', title: 'Novelist', description: 'Send 1000 messages', icon: 'package', category: 'communication', rarity: 'rare', maxProgress: 1000, xpReward: 200 },
+  { id: 'lightning-responder', title: 'Lightning Responder', description: 'Respond to 10 messages within 1 minute', icon: 'lightning', category: 'communication', rarity: 'rare', maxProgress: 10, xpReward: 100 },
+  { id: 'deep-thinker', title: 'Deep Thinker', description: 'Send 50 messages over 200 characters', icon: 'lightbulb', category: 'communication', rarity: 'rare', maxProgress: 50, xpReward: 150 },
 
   // Productivity achievements
-  { id: 'decision-maker', title: 'Decision Maker', description: 'Create your first decision', icon: '⚖️', category: 'productivity', rarity: 'common', maxProgress: 1, xpReward: 25 },
-  { id: 'executive', title: 'The Executive', description: 'Make 50 decisions', icon: '👔', category: 'productivity', rarity: 'epic', maxProgress: 50, xpReward: 300 },
-  { id: 'task-master', title: 'Task Master', description: 'Complete 25 tasks', icon: '✅', category: 'productivity', rarity: 'rare', maxProgress: 25, xpReward: 200 },
-  { id: 'multitasker', title: 'Multitasker', description: 'Have 5 active threads simultaneously', icon: '🎯', category: 'productivity', rarity: 'common', maxProgress: 5, xpReward: 50 },
+  { id: 'decision-maker', title: 'Decision Maker', description: 'Create your first decision', icon: 'check', category: 'productivity', rarity: 'common', maxProgress: 1, xpReward: 25 },
+  { id: 'executive', title: 'The Executive', description: 'Make 50 decisions', icon: 'tools', category: 'productivity', rarity: 'epic', maxProgress: 50, xpReward: 300 },
+  { id: 'task-master', title: 'Task Master', description: 'Complete 25 tasks', icon: 'check', category: 'productivity', rarity: 'rare', maxProgress: 25, xpReward: 200 },
+  { id: 'multitasker', title: 'Multitasker', description: 'Have 5 active threads simultaneously', icon: 'target', category: 'productivity', rarity: 'common', maxProgress: 5, xpReward: 50 },
 
   // Engagement achievements
-  { id: 'reaction-rookie', title: 'Reaction Rookie', description: 'Give your first reaction', icon: '👍', category: 'engagement', rarity: 'common', maxProgress: 1, xpReward: 5 },
-  { id: 'emoji-enthusiast', title: 'Emoji Enthusiast', description: 'Use 50 reactions', icon: '🎉', category: 'engagement', rarity: 'rare', maxProgress: 50, xpReward: 75 },
-  { id: 'popular', title: 'Popular', description: 'Receive 100 reactions on your messages', icon: '⭐', category: 'engagement', rarity: 'epic', maxProgress: 100, xpReward: 250 },
-  { id: 'question-asker', title: 'Curious Mind', description: 'Ask 20 questions', icon: '❓', category: 'engagement', rarity: 'common', maxProgress: 20, xpReward: 40 },
-  { id: 'question-answerer', title: 'Helpful Hand', description: 'Answer 30 questions', icon: '💡', category: 'engagement', rarity: 'rare', maxProgress: 30, xpReward: 120 },
+  { id: 'reaction-rookie', title: 'Reaction Rookie', description: 'Give your first reaction', icon: 'check', category: 'engagement', rarity: 'common', maxProgress: 1, xpReward: 5 },
+  { id: 'emoji-enthusiast', title: 'Emoji Enthusiast', description: 'Use 50 reactions', icon: 'star', category: 'engagement', rarity: 'rare', maxProgress: 50, xpReward: 75 },
+  { id: 'popular', title: 'Popular', description: 'Receive 100 reactions on your messages', icon: 'star', category: 'engagement', rarity: 'epic', maxProgress: 100, xpReward: 250 },
+  { id: 'question-asker', title: 'Curious Mind', description: 'Ask 20 questions', icon: 'lightbulb', category: 'engagement', rarity: 'common', maxProgress: 20, xpReward: 40 },
+  { id: 'question-answerer', title: 'Helpful Hand', description: 'Answer 30 questions', icon: 'lightbulb', category: 'engagement', rarity: 'rare', maxProgress: 30, xpReward: 120 },
 
   // Social achievements
-  { id: 'social-butterfly', title: 'Social Butterfly', description: 'Chat with 10 different contacts', icon: '🦋', category: 'social', rarity: 'rare', maxProgress: 10, xpReward: 100 },
-  { id: 'networker', title: 'Master Networker', description: 'Chat with 50 different contacts', icon: '🕸️', category: 'social', rarity: 'legendary', maxProgress: 50, xpReward: 500 },
-  { id: 'thread-weaver', title: 'Thread Weaver', description: 'Have a conversation with 100+ messages', icon: '🧵', category: 'social', rarity: 'epic', maxProgress: 1, xpReward: 200 },
+  { id: 'social-butterfly', title: 'Social Butterfly', description: 'Chat with 10 different contacts', icon: 'sparkle', category: 'social', rarity: 'rare', maxProgress: 10, xpReward: 100 },
+  { id: 'networker', title: 'Master Networker', description: 'Chat with 50 different contacts', icon: 'signal', category: 'social', rarity: 'legendary', maxProgress: 50, xpReward: 500 },
+  { id: 'thread-weaver', title: 'Thread Weaver', description: 'Have a conversation with 100+ messages', icon: 'hash', category: 'social', rarity: 'epic', maxProgress: 1, xpReward: 200 },
 
   // Milestone achievements
-  { id: 'week-streak', title: 'Weekly Warrior', description: 'Use Pulse for 7 consecutive days', icon: '📅', category: 'milestone', rarity: 'rare', maxProgress: 7, xpReward: 150 },
-  { id: 'month-streak', title: 'Monthly Master', description: 'Use Pulse for 30 consecutive days', icon: '📆', category: 'milestone', rarity: 'epic', maxProgress: 30, xpReward: 500 },
-  { id: 'centurion', title: 'Centurion', description: 'Use Pulse for 100 days', icon: '🏛️', category: 'milestone', rarity: 'legendary', maxProgress: 100, xpReward: 1000 },
+  { id: 'week-streak', title: 'Weekly Warrior', description: 'Use Pulse for 7 consecutive days', icon: 'calendar', category: 'milestone', rarity: 'rare', maxProgress: 7, xpReward: 150 },
+  { id: 'month-streak', title: 'Monthly Master', description: 'Use Pulse for 30 consecutive days', icon: 'calendar', category: 'milestone', rarity: 'epic', maxProgress: 30, xpReward: 500 },
+  { id: 'centurion', title: 'Centurion', description: 'Use Pulse for 100 days', icon: 'trophy', category: 'milestone', rarity: 'legendary', maxProgress: 100, xpReward: 1000 },
 
   // Secret achievements
-  { id: 'night-owl', title: 'Night Owl', description: 'Send messages after midnight', icon: '🦉', category: 'milestone', rarity: 'rare', maxProgress: 10, xpReward: 75, secretHint: 'The night is dark and full of messages' },
-  { id: 'early-bird', title: 'Early Bird', description: 'Send messages before 6 AM', icon: '🐦', category: 'milestone', rarity: 'rare', maxProgress: 10, xpReward: 75, secretHint: 'The early bird catches the worm' },
-  { id: 'perfectionist', title: 'Perfectionist', description: 'Edit a message 5 times', icon: '✨', category: 'engagement', rarity: 'epic', maxProgress: 1, xpReward: 100, secretHint: 'Sometimes good enough isn\'t good enough' },
+  { id: 'night-owl', title: 'Night Owl', description: 'Send messages after midnight', icon: 'note', category: 'milestone', rarity: 'rare', maxProgress: 10, xpReward: 75, secretHint: 'The night is dark and full of messages' },
+  { id: 'early-bird', title: 'Early Bird', description: 'Send messages before 6 AM', icon: 'signal', category: 'milestone', rarity: 'rare', maxProgress: 10, xpReward: 75, secretHint: 'The early bird catches the worm' },
+  { id: 'perfectionist', title: 'Perfectionist', description: 'Edit a message 5 times', icon: 'sparkle', category: 'engagement', rarity: 'epic', maxProgress: 1, xpReward: 100, secretHint: 'Sometimes good enough isn\'t good enough' },
 ];
 
 interface AchievementSystemEnhancedProps {
@@ -307,8 +308,8 @@ export const AchievementSystemEnhanced: React.FC<AchievementSystemEnhancedProps>
               </div>
 
               <div className="flex items-start gap-2">
-                <div className={`text-2xl ${achievement.unlocked ? '' : 'grayscale'}`}>
-                  {achievement.icon}
+                <div className={`${achievement.unlocked ? '' : 'opacity-40'}`}>
+                  <AnimatedIcon icon={achievement.icon} size={24} />
                 </div>
                 <div className="flex-1 min-w-0">
                   <div className="text-xs font-bold text-zinc-800 dark:text-white truncate">
@@ -366,7 +367,7 @@ export const AchievementBadge: React.FC<{ achievement: Achievement }> = ({ achie
       className={`inline-flex items-center gap-1.5 px-2 py-1 rounded-full text-xs ring-2 ${getRarityColor(achievement.rarity)}`}
       title={achievement.description}
     >
-      <span>{achievement.icon}</span>
+      <AnimatedIcon icon={achievement.icon} size={16} />
       <span className="font-medium text-zinc-800 dark:text-white">{achievement.title}</span>
     </div>
   );

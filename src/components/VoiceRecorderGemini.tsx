@@ -1,6 +1,7 @@
 import { useState, useRef, useEffect } from 'react';
 import { AudioVoiceServiceGemini } from '../services/audioVoiceServiceGemini';
 import { VoiceMessage, TranscriptionResult, TaskFromVoice, DecisionFromVoice, VoiceSummary } from '../types';
+import { AnimatedIcon } from './ui/AnimatedIcon';
 import './VoiceRecorder.css';
 
 /**
@@ -120,7 +121,7 @@ export default function VoiceRecorderGemini({ apiKey }: VoiceRecorderProps) {
     return (
       <div className="voice-recorder">
         <div className="error-state">
-          <p>⚠️ Gemini API key not configured</p>
+          <p><AnimatedIcon icon="warning" size={15} /> Gemini API key not configured</p>
           <p style={{ fontSize: '14px', marginTop: '10px' }}>
             Please set your API_KEY environment variable to use voice transcription.
           </p>
@@ -132,7 +133,7 @@ export default function VoiceRecorderGemini({ apiKey }: VoiceRecorderProps) {
   return (
     <div className="voice-recorder">
       <div className="recorder-header">
-        <h2>🎙️ Voice Intelligence (Gemini Powered)</h2>
+        <h2><AnimatedIcon icon="microphone" size={22} /> Voice Intelligence (Gemini Powered)</h2>
         <p className="subtitle">Record, transcribe with Gemini, and extract actionable insights</p>
       </div>
 
@@ -142,7 +143,7 @@ export default function VoiceRecorderGemini({ apiKey }: VoiceRecorderProps) {
           <div className={`record-button ${isRecording ? 'recording' : ''}`}>
             {!isRecording ? (
               <button onClick={handleStartRecording} className="start-record-btn">
-                <span className="mic-icon">🎤</span>
+                <span className="mic-icon"><AnimatedIcon icon="microphone" size={24} /></span>
                 <span>Start Recording</span>
               </button>
             ) : (
@@ -150,7 +151,7 @@ export default function VoiceRecorderGemini({ apiKey }: VoiceRecorderProps) {
                 <div className="pulse-ring"></div>
                 <div className="recording-time">{formatTime(recordingTime)}</div>
                 <button onClick={handleStopRecording} className="stop-record-btn">
-                  ⏹ Stop
+                  Stop
                 </button>
               </div>
             )}
@@ -187,14 +188,14 @@ export default function VoiceRecorderGemini({ apiKey }: VoiceRecorderProps) {
 
       {error && (
         <div className="error-state">
-          <p>❌ {error}</p>
+          <p><AnimatedIcon icon="cross" size={14} /> {error}</p>
         </div>
       )}
 
       {/* Voice Messages List */}
       {voiceMessages.length > 0 && (
         <div className="voice-messages-section">
-          <h3>📼 Recorded Messages</h3>
+          <h3><AnimatedIcon icon="microphone" size={16} /> Recorded Messages</h3>
           <div className="voice-messages-list">
             {voiceMessages.map((voice) => (
               <div
@@ -205,7 +206,7 @@ export default function VoiceRecorderGemini({ apiKey }: VoiceRecorderProps) {
                 onClick={() => setSelectedVoice(voice)}
               >
                 <div className="voice-header">
-                  <span className="voice-icon">🎵</span>
+                  <span className="voice-icon"><AnimatedIcon icon="microphone" size={16} /></span>
                   <span className="voice-duration">
                     {formatTime(Math.floor(voice.duration / 1000))}
                   </span>
@@ -234,7 +235,7 @@ export default function VoiceRecorderGemini({ apiKey }: VoiceRecorderProps) {
                     style={{ flex: 1 }}
                     disabled={voice.status === 'processing' || loading}
                   >
-                    📝 Transcribe
+                    <AnimatedIcon icon="note" size={14} /> Transcribe
                   </button>
                   <button
                     onClick={(e) => {
@@ -245,7 +246,7 @@ export default function VoiceRecorderGemini({ apiKey }: VoiceRecorderProps) {
                     style={{ flex: 1, background: '#34A853' }}
                     disabled={voice.status === 'processing' || loading}
                   >
-                    🧠 Deep Analyze
+                    <AnimatedIcon icon="lightbulb" size={14} /> Deep Analyze
                   </button>
                 </div>
               </div>
@@ -257,7 +258,7 @@ export default function VoiceRecorderGemini({ apiKey }: VoiceRecorderProps) {
       {/* Transcription Panel */}
       {selectedTranscription && (
         <div className="transcription-panel">
-          <h3>📄 Transcription (Gemini)</h3>
+          <h3><AnimatedIcon icon="note" size={16} /> Transcription (Gemini)</h3>
 
           <div className="transcription-content">
             <div className="transcription-meta">
@@ -273,7 +274,7 @@ export default function VoiceRecorderGemini({ apiKey }: VoiceRecorderProps) {
           {/* Summary */}
           {summary && (
             <div className="extracted-section">
-              <h4>📊 Summary</h4>
+              <h4><AnimatedIcon icon="chart" size={15} /> Summary</h4>
               <div className="summary-content">{summary.summary}</div>
               {summary.keyPoints.length > 0 && (
                 <div style={{ marginTop: '15px' }}>
@@ -291,7 +292,7 @@ export default function VoiceRecorderGemini({ apiKey }: VoiceRecorderProps) {
           {/* Extracted Tasks */}
           {extractedTasks.length > 0 && (
             <div className="extracted-section">
-              <h4>📋 Extracted Tasks ({extractedTasks.length})</h4>
+              <h4><AnimatedIcon icon="clipboard" size={15} /> Extracted Tasks ({extractedTasks.length})</h4>
               <div className="tasks-list">
                 {extractedTasks.map((task) => (
                   <div key={task.id} className="task-card">
@@ -311,7 +312,7 @@ export default function VoiceRecorderGemini({ apiKey }: VoiceRecorderProps) {
           {/* Extracted Decisions */}
           {extractedDecisions.length > 0 && (
             <div className="extracted-section">
-              <h4>✅ Extracted Decisions ({extractedDecisions.length})</h4>
+              <h4><AnimatedIcon icon="check" size={15} /> Extracted Decisions ({extractedDecisions.length})</h4>
               <div className="decisions-list">
                 {extractedDecisions.map((decision) => (
                   <div key={decision.id} className="decision-card">

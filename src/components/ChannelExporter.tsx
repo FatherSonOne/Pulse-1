@@ -1,6 +1,7 @@
 import { useState } from 'react';
 import { useMultiModalIntelligence } from '../hooks/useMultiModalIntelligence';
 import { UnifiedMessage, ChannelArtifact } from '../types';
+import { AnimatedIcon } from './ui/AnimatedIcon';
 import './ChannelExporter.css';
 
 /**
@@ -93,7 +94,7 @@ export default function ChannelExporter() {
   return (
     <div className="channel-exporter">
       <div className="exporter-header">
-        <h2>📤 Channel Exporter</h2>
+        <h2><AnimatedIcon icon="upload" size={18} /> Channel Exporter</h2>
         <p className="subtitle">Transform channels into living specifications</p>
       </div>
 
@@ -128,13 +129,13 @@ export default function ChannelExporter() {
               }`}
               onClick={() => setSelectedFormat('markdown')}
             >
-              📝 Markdown
+              <AnimatedIcon icon="note" size={14} /> Markdown
             </button>
             <button
               className={`format-btn ${selectedFormat === 'html' ? 'active' : ''}`}
               onClick={() => setSelectedFormat('html')}
             >
-              🌐 HTML
+              <AnimatedIcon icon="globe" size={14} /> HTML
             </button>
             <button
               className={`format-btn ${
@@ -142,20 +143,20 @@ export default function ChannelExporter() {
               }`}
               onClick={() => setSelectedFormat('google_docs')}
             >
-              📄 Google Docs
+              <AnimatedIcon icon="package" size={14} /> Google Docs
             </button>
           </div>
         </div>
 
         <button onClick={handleExport} className="export-btn" disabled={loading}>
-          {loading ? 'Exporting...' : '🚀 Export Channel'}
+          {loading ? 'Exporting...' : <><AnimatedIcon icon="rocket" size={16} /> Export Channel</>}
         </button>
       </div>
 
       {/* Error */}
       {error && (
         <div className="error-state">
-          <p>❌ {error}</p>
+          <p><AnimatedIcon icon="cross" size={14} /> {error}</p>
         </div>
       )}
 
@@ -179,10 +180,10 @@ export default function ChannelExporter() {
       {showPreview && previewContent && (
         <div className="preview-section">
           <div className="preview-header">
-            <h3>👁️ Preview</h3>
+            <h3><AnimatedIcon icon="signal" size={16} /> Preview</h3>
             <div className="preview-actions">
               <button onClick={handleDownload} className="download-btn">
-                💾 Download
+                <AnimatedIcon icon="save" size={14} /> Download
               </button>
               <button onClick={() => setShowPreview(false)} className="close-preview-btn">
                 ✕ Close
@@ -207,13 +208,13 @@ export default function ChannelExporter() {
       {/* Artifacts List */}
       {artifacts.length > 0 && (
         <div className="artifacts-section">
-          <h3>📦 Created Artifacts</h3>
+          <h3><AnimatedIcon icon="package" size={16} /> Created Artifacts</h3>
           <div className="artifacts-list">
             {artifacts.map((artifact) => (
               <div key={artifact.id} className="artifact-card">
                 <div className="artifact-header">
                   <span className="artifact-icon">
-                    {artifact.exportFormat === 'google_docs' ? '📄' : '📝'}
+                    <AnimatedIcon icon={artifact.exportFormat === 'google_docs' ? 'package' : 'note'} size={18} />
                   </span>
                   <div className="artifact-info">
                     <div className="artifact-title">{artifact.title}</div>
@@ -240,7 +241,7 @@ export default function ChannelExporter() {
                       rel="noopener noreferrer"
                       className="artifact-link-btn"
                     >
-                      🔗 Open Link
+                      <AnimatedIcon icon="link" size={14} /> Open Link
                     </a>
                   )}
                   {artifact.status === 'draft' && (
@@ -248,11 +249,11 @@ export default function ChannelExporter() {
                       onClick={() => handlePublish(artifact.id)}
                       className="publish-btn"
                     >
-                      ✅ Publish
+                      <AnimatedIcon icon="check" size={14} /> Publish
                     </button>
                   )}
                   {artifact.status === 'published' && (
-                    <span className="published-badge">✨ Published</span>
+                    <span className="published-badge"><AnimatedIcon icon="sparkle" size={14} /> Published</span>
                   )}
                 </div>
               </div>
@@ -263,41 +264,41 @@ export default function ChannelExporter() {
 
       {/* Features Info */}
       <div className="features-info">
-        <h3>✨ What gets exported?</h3>
+        <h3><AnimatedIcon icon="sparkle" size={16} /> What gets exported?</h3>
         <div className="features-grid">
           <div className="feature-card">
-            <div className="feature-icon">📋</div>
+            <div className="feature-icon"><AnimatedIcon icon="clipboard" size={22} /></div>
             <div className="feature-title">Decisions</div>
             <div className="feature-desc">
               Key decisions made in the channel with context
             </div>
           </div>
           <div className="feature-card">
-            <div className="feature-icon">✅</div>
+            <div className="feature-icon"><AnimatedIcon icon="check" size={22} /></div>
             <div className="feature-title">Tasks</div>
             <div className="feature-desc">
               Actionable items with assignees and due dates
             </div>
           </div>
           <div className="feature-card">
-            <div className="feature-icon">🎯</div>
+            <div className="feature-icon"><AnimatedIcon icon="target" size={22} /></div>
             <div className="feature-title">Milestones</div>
             <div className="feature-desc">
               Project milestones with completion status
             </div>
           </div>
           <div className="feature-card">
-            <div className="feature-icon">👥</div>
+            <div className="feature-icon"><AnimatedIcon icon="people" size={22} /></div>
             <div className="feature-title">Participants</div>
             <div className="feature-desc">Team members and their roles</div>
           </div>
           <div className="feature-card">
-            <div className="feature-icon">📅</div>
+            <div className="feature-icon"><AnimatedIcon icon="calendar" size={22} /></div>
             <div className="feature-title">Timeline</div>
             <div className="feature-desc">Chronological event history</div>
           </div>
           <div className="feature-card">
-            <div className="feature-icon">🔗</div>
+            <div className="feature-icon"><AnimatedIcon icon="link" size={22} /></div>
             <div className="feature-title">Resources</div>
             <div className="feature-desc">Links to documents and references</div>
           </div>

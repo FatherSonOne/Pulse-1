@@ -4,6 +4,7 @@
 // ============================================
 
 import React, { useState } from 'react';
+import { AnimatedIcon } from '../ui/AnimatedIcon';
 
 interface SettingsPanelProps {
   userId: string;
@@ -107,7 +108,7 @@ const SettingsPanel: React.FC<SettingsPanelProps> = ({ userId }) => {
     <div className="settings-panel">
       {/* General Settings */}
       <div className="settings-section">
-        <h3>⚙️ General</h3>
+        <h3><AnimatedIcon icon="gear" size={16} /> General</h3>
 
         <div className="setting-row">
           <div className="setting-label">
@@ -161,7 +162,7 @@ const SettingsPanel: React.FC<SettingsPanelProps> = ({ userId }) => {
 
       {/* Notification Settings */}
       <div className="settings-section">
-        <h3>🔔 Notifications</h3>
+        <h3><AnimatedIcon icon="bell" size={16} /> Notifications</h3>
 
         <div className="setting-row">
           <div className="setting-label">
@@ -218,7 +219,7 @@ const SettingsPanel: React.FC<SettingsPanelProps> = ({ userId }) => {
 
       {/* Voice Settings */}
       <div className="settings-section">
-        <h3>🎤 Voice & Transcription</h3>
+        <h3><AnimatedIcon icon="microphone" size={16} /> Voice & Transcription</h3>
 
         <div className="setting-row">
           <div className="setting-label">
@@ -273,7 +274,7 @@ const SettingsPanel: React.FC<SettingsPanelProps> = ({ userId }) => {
 
       {/* Privacy Settings */}
       <div className="settings-section">
-        <h3>🔒 Privacy</h3>
+        <h3><AnimatedIcon icon="lock" size={16} /> Privacy</h3>
 
         <div className="setting-row">
           <div className="setting-label">
@@ -300,7 +301,7 @@ const SettingsPanel: React.FC<SettingsPanelProps> = ({ userId }) => {
 
       {/* Advanced Settings */}
       <div className="settings-section">
-        <h3>🔧 Advanced</h3>
+        <h3><AnimatedIcon icon="wrench" size={16} /> Advanced</h3>
 
         <div className="setting-row">
           <div className="setting-label">
@@ -367,7 +368,7 @@ const SettingsPanel: React.FC<SettingsPanelProps> = ({ userId }) => {
 
       {/* User Info */}
       <div className="settings-section" style={{ marginTop: '24px' }}>
-        <h3>👤 Account</h3>
+        <h3><AnimatedIcon icon="people" size={16} /> Account</h3>
         <div className="setting-row">
           <div className="setting-label">
             <span>User ID</span>

@@ -27,6 +27,7 @@ import {
   Users,
   Calendar
 } from 'lucide-react';
+import { AnimatedIcon } from './ui/AnimatedIcon';
 import './UnifiedInbox.css';
 
 /**
@@ -46,23 +47,23 @@ const sourceColors: Record<MessageSource, string> = {
 };
 
 const sourceIcons: Record<MessageSource, string> = {
-  slack: '💬',
-  email: '📧',
-  sms: '📱',
-  pulse: '🎙️',
-  discord: '🎮',
-  teams: '👥',
-  figma: '🎨',
-  jira: '📋',
+  slack: 'chat',
+  email: 'email',
+  sms: 'mobile',
+  pulse: 'mic-studio',
+  discord: 'gamepad',
+  teams: 'people',
+  figma: 'palette',
+  jira: 'clipboard',
 };
 
 // Priority levels with colors
 type Priority = 'urgent' | 'high' | 'normal' | 'low';
 const priorityConfig: Record<Priority, { color: string; icon: string; label: string }> = {
-  urgent: { color: '#DC2626', icon: '🔴', label: 'Urgent' },
-  high: { color: '#F59E0B', icon: '🟠', label: 'High' },
-  normal: { color: '#3B82F6', icon: '🔵', label: 'Normal' },
-  low: { color: '#6B7280', icon: '⚪', label: 'Low' },
+  urgent: { color: '#DC2626', icon: 'fire', label: 'Urgent' },
+  high: { color: '#F59E0B', icon: 'warning', label: 'High' },
+  normal: { color: '#3B82F6', icon: 'check', label: 'Normal' },
+  low: { color: '#6B7280', icon: 'note', label: 'Low' },
 };
 
 // Enhanced display message with additional features
@@ -104,11 +105,11 @@ const snoozeOptions = [
 
 // Quick reply templates
 const quickReplies = [
-  { label: '👍 Thanks!', message: 'Thanks for reaching out! I\'ll get back to you soon.' },
-  { label: '📅 Schedule', message: 'Let me check my calendar and get back to you with availability.' },
-  { label: '✅ On it', message: 'Got it! I\'m working on this now.' },
-  { label: '🤔 Need more info', message: 'Could you provide more details about this?' },
-  { label: '📞 Call me', message: 'This might be easier to discuss on a call. Are you free?' },
+  { icon: 'star', label: 'Thanks!', message: 'Thanks for reaching out! I\'ll get back to you soon.' },
+  { icon: 'calendar', label: 'Schedule', message: 'Let me check my calendar and get back to you with availability.' },
+  { icon: 'check', label: 'On it', message: 'Got it! I\'m working on this now.' },
+  { icon: 'lightbulb', label: 'Need more info', message: 'Could you provide more details about this?' },
+  { icon: 'mobile', label: 'Call me', message: 'This might be easier to discuss on a call. Are you free?' },
 ];
 
 export default function UnifiedInbox() {
@@ -505,7 +506,7 @@ export default function UnifiedInbox() {
                   onClick={() => setFilterSource(source as MessageSource)}
                   style={{ '--chip-color': sourceColors[source as MessageSource] } as React.CSSProperties}
                 >
-                  {sourceIcons[source as MessageSource]} {source}
+                  <AnimatedIcon icon={sourceIcons[source as MessageSource]} size={14} /> {source}
                   {stats.bySource[source] && <span className="count">({stats.bySource[source]})</span>}
                 </button>
               ))}
@@ -646,14 +647,14 @@ export default function UnifiedInbox() {
                       className="source-badge"
                       style={{ backgroundColor: sourceColors[message.platform] }}
                     >
-                      {sourceIcons[message.platform]}
+                      <AnimatedIcon icon={sourceIcons[message.platform]} size={12} />
                     </span>
                     <span
                       className="priority-indicator"
                       style={{ color: priorityConfig[message.priority].color }}
                       title={priorityConfig[message.priority].label}
                     >
-                      {priorityConfig[message.priority].icon}
+                      <AnimatedIcon icon={priorityConfig[message.priority].icon} size={14} color={priorityConfig[message.priority].color} />
                     </span>
                     <span className="sender-name">{message.metadata?.senderName}</span>
                     <span className="message-time">
@@ -771,6 +772,7 @@ export default function UnifiedInbox() {
                         key={reply.label}
                         onClick={() => handleQuickReply(message.id, reply.message)}
                       >
+                        <AnimatedIcon icon={reply.icon} size={14} />
                         {reply.label}
                       </button>
                     ))}
@@ -819,7 +821,7 @@ export default function UnifiedInbox() {
 
             <div className="detail-meta">
               <span className="source-badge" style={{ backgroundColor: sourceColors[selectedMessage.platform] }}>
-                {sourceIcons[selectedMessage.platform]} {selectedMessage.platform}
+                <AnimatedIcon icon={sourceIcons[selectedMessage.platform]} size={14} /> {selectedMessage.platform}
               </span>
               <span className="detail-time">
                 {new Date(selectedMessage.timestamp).toLocaleString()}
@@ -866,7 +868,7 @@ export default function UnifiedInbox() {
                     onClick={() => handleSetPriority(selectedMessage.id, p)}
                     style={{ color: priorityConfig[p].color }}
                   >
-                    {priorityConfig[p].icon}
+                    <AnimatedIcon icon={priorityConfig[p].icon} size={16} color={priorityConfig[p].color} />
                   </button>
                 ))}
               </div>

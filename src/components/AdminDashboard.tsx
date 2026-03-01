@@ -2,12 +2,13 @@
 import React, { useState, useEffect, useCallback } from 'react';
 import AdminMessageEditor from './AdminMessageEditor';
 import { adminService, AdminUser, AdminSettings, DashboardStats, ActivityLogEntry } from '../services/adminService';
+import SearchAnalyticsDashboard from './admin/SearchAnalyticsDashboard';
 
 interface AdminDashboardProps {
   userId: string;
 }
 
-type TabType = 'overview' | 'users' | 'messages' | 'settings';
+type TabType = 'overview' | 'users' | 'messages' | 'settings' | 'search';
 
 const AdminDashboard: React.FC<AdminDashboardProps> = ({ userId }) => {
   const [activeTab, setActiveTab] = useState<TabType>('overview');
@@ -251,6 +252,7 @@ const AdminDashboard: React.FC<AdminDashboardProps> = ({ userId }) => {
             { id: 'users', icon: 'fa-users', label: 'Users' },
             { id: 'messages', icon: 'fa-envelope', label: 'Messages' },
             { id: 'settings', icon: 'fa-gear', label: 'Settings' },
+            { id: 'search', icon: 'fa-magnifying-glass-chart', label: 'Search' },
           ].map(tab => (
             <button
               key={tab.id}
@@ -658,6 +660,13 @@ const AdminDashboard: React.FC<AdminDashboardProps> = ({ userId }) => {
         {activeTab === 'messages' && (
           <div className="animate-fade-in">
             <AdminMessageEditor userId={userId} />
+          </div>
+        )}
+
+        {/* Search Analytics Tab */}
+        {activeTab === 'search' && (
+          <div className="animate-fade-in">
+            <SearchAnalyticsDashboard userId={userId} />
           </div>
         )}
 

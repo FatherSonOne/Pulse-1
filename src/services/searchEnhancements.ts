@@ -1,6 +1,23 @@
-import { unifiedSearchService, SearchResult, SearchFilters } from './unifiedSearchService';
-import { parseSearchQuery, ParsedSearchQuery } from '../utils/searchOperators';
+import { unifiedSearchService, SearchResult, SearchFilters, SearchSourceError } from './unifiedSearchService';
+import searchQueryParser from './searchQueryParser';
 import { supabase } from './supabase';
+
+// Adapter: converts searchQueryParser output (array-based operators) to flat object format
+interface ParsedSearchQuery {
+  baseQuery: string;
+  operators: Record<string, string>;
+}
+
+function parseSearchQuery(query: string): ParsedSearchQuery {
+  const parsed = searchQueryParser.parse(query);
+  const operators: Record<string, string> = {};
+  for (const op of parsed.operators) {
+    if (!op.negate && !(op.field in operators)) {
+      operators[op.field] = String(op.value);
+    }
+  }
+  return { baseQuery: parsed.freeText, operators };
+}
 
 // ============================================
 // SONAR WEB SEARCH TYPES AND INTERFACES
@@ -112,17 +129,21 @@ export class SearchEnhancements {
     userId: string,
     apiKey: string,
     filters?: SearchFilters,
-    useAI: boolean = true
-  ): Promise<SearchResult[]> {
+    useAI: boolean = true,
+    onSourceComplete?: (results: SearchResult[], completedSource: string) => void
+  ): Promise<{ results: SearchResult[]; errors: SearchSourceError[] }> {
     const parsed = parseSearchQuery(query);
 
     // Perform regular search
-    let results = await unifiedSearchService.search(
+    const { results: rawResults, errors } = await unifiedSearchService.search(
       parsed.baseQuery || query,
       userId,
       this.applyOperatorsToFilters(parsed.operators, filters),
-      { field: 'timestamp', order: 'desc' }
+      { field: 'timestamp', order: 'desc' },
+      onSourceComplete
     );
+
+    let results = rawResults;
 
     // If AI is enabled and we have results, enhance with semantic search
     if (useAI && apiKey && results.length > 0 && parsed.baseQuery) {
@@ -143,7 +164,7 @@ export class SearchEnhancements {
       }
     }
 
-    return results;
+    return { results, errors };
   }
 
   /**
@@ -452,21 +473,12 @@ Do not include any other text or markdown formatting.`
     query: string,
     options: SonarSearchOptions = {}
   ): Promise<SonarWebResult | null> {
-    const supabaseUrl = import.meta.env.VITE_SUPABASE_URL;
-
-    if (!supabaseUrl) {
-      console.error('Supabase URL not configured');
-      return null;
-    }
-
     try {
-      const response = await fetch(`${supabaseUrl}/functions/v1/perplexity-sonar`, {
-        method: 'POST',
-        headers: {
-          'Content-Type': 'application/json',
-          'Authorization': `Bearer ${import.meta.env.VITE_SUPABASE_ANON_KEY}`,
-        },
-        body: JSON.stringify({
+      // Use supabase.functions.invoke() so the client automatically attaches
+      // the current user's session token — avoids the raw-fetch 401 that
+      // occurs when VITE_SUPABASE_ANON_KEY is undefined or stale.
+      const { data, error } = await supabase.functions.invoke('perplexity-sonar', {
+        body: {
           query,
           model: options.model || 'sonar',
           systemPrompt: options.systemPrompt,
@@ -476,16 +488,14 @@ Do not include any other text or markdown formatting.`
           returnImages: options.returnImages || false,
           returnRelatedQuestions: options.returnRelatedQuestions !== false,
           searchDomainFilter: options.searchDomainFilter || [],
-        }),
+        },
       });
 
-      if (!response.ok) {
-        const errorData = await response.json();
-        console.error('Sonar search error:', errorData.error);
+      if (error) {
+        console.error('Sonar search error:', error.message);
         return null;
       }
 
-      const data = await response.json();
       return {
         answer: data.answer || '',
         citations: data.citations || [],

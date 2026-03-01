@@ -6,6 +6,7 @@
  */
 
 import React, { useState, useEffect } from 'react';
+import { AnimatedIcon } from './ui/AnimatedIcon';
 import {
   getHealthStatus,
   onHealthStatusChange,
@@ -115,7 +116,7 @@ export const AIHealthMonitor: React.FC<{ compact?: boolean }> = ({ compact = fal
           <div className="ml-6 space-y-1">
             <p className="text-sm text-red-600 dark:text-red-400">
               {status.gemini.errorCode === 429
-                ? '⚠️ Quota Exceeded'
+                ? 'Quota Exceeded'
                 : `Error: ${status.gemini.errorMessage}`}
             </p>
             {status.gemini.errorCode === 429 && timeUntilReset && (
@@ -151,7 +152,7 @@ export const AIHealthMonitor: React.FC<{ compact?: boolean }> = ({ compact = fal
       {status.fallbackActive && (
         <div className="mt-4 p-3 bg-amber-50 dark:bg-amber-900/20 border border-amber-200 dark:border-amber-800 rounded-md">
           <p className="text-sm text-amber-800 dark:text-amber-200">
-            🔄 <strong>Fallback Mode Active</strong>
+            <AnimatedIcon icon="gear" size={14} /> <strong>Fallback Mode Active</strong>
             <br />
             All AI requests are using Perplexity while Gemini quota recovers.
           </p>

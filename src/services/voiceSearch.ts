@@ -11,6 +11,7 @@ export interface VoiceSearchResult {
 export class VoiceSearchService {
   private recognition: any = null;
   private isSupported: boolean = false;
+  private _isListening: boolean = false;
 
   constructor() {
     if (typeof window !== 'undefined') {
@@ -41,7 +42,10 @@ export class VoiceSearchService {
     }
 
     return new Promise((resolve, reject) => {
+      this._isListening = true;
+
       this.recognition.onresult = (event: any) => {
+        this._isListening = false;
         const result = event.results[0];
         resolve({
           transcript: result[0].transcript,
@@ -50,11 +54,12 @@ export class VoiceSearchService {
       };
 
       this.recognition.onerror = (event: any) => {
+        this._isListening = false;
         reject(new Error(`Speech recognition error: ${event.error}`));
       };
 
       this.recognition.onend = () => {
-        // Recognition ended
+        this._isListening = false;
       };
 
       this.recognition.start();
@@ -65,6 +70,7 @@ export class VoiceSearchService {
    * Stop voice recognition
    */
   stopListening(): void {
+    this._isListening = false;
     if (this.recognition) {
       this.recognition.stop();
     }
@@ -74,9 +80,7 @@ export class VoiceSearchService {
    * Check if currently listening
    */
   isListening(): boolean {
-    if (!this.recognition) return false;
-    // @ts-ignore
-    return this.recognition.state === 'listening' || this.recognition.state === 'starting';
+    return this._isListening;
   }
 }
 

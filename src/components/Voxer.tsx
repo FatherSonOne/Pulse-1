@@ -419,14 +419,12 @@ const Voxer: React.FC<VoxerProps> = ({ apiKey, contacts, initialContactId, isDar
             blob = enhancementResult.blob;
 
             toast.success(`Audio enhanced: ${enhancementResult.appliedEnhancements.join(', ')}`, {
-              icon: '✨',
               duration: 2000,
             });
           } catch (error) {
             console.error('Audio enhancement failed:', error);
             // Continue with original blob if enhancement fails
             toast.error('Audio enhancement failed, using original', {
-              icon: '⚠️',
               duration: 2000,
             });
           }
@@ -509,7 +507,6 @@ const Voxer: React.FC<VoxerProps> = ({ apiKey, contacts, initialContactId, isDar
         // Toast notification for sent vox
         const recipientName = contacts.find(c => c.id === activeContactId)?.name || 'contact';
         toast.success(`Vox sent to ${recipientName}`, {
-          icon: '🎙️',
           duration: 2000,
         });
 
@@ -557,7 +554,6 @@ const Voxer: React.FC<VoxerProps> = ({ apiKey, contacts, initialContactId, isDar
                    relatedContactId: activeContactId
                });
                toast.success('Transcription complete', {
-                 icon: '📝',
                  duration: 2000,
                });
 
@@ -586,7 +582,6 @@ const Voxer: React.FC<VoxerProps> = ({ apiKey, contacts, initialContactId, isDar
                    });
 
                    toast.success('AI analysis complete', {
-                     icon: '🤖',
                      duration: 2000,
                    });
                  } catch (error) {
@@ -595,7 +590,6 @@ const Voxer: React.FC<VoxerProps> = ({ apiKey, contacts, initialContactId, isDar
                      rec.id === id ? { ...rec, isAnalyzing: false } : rec
                    ));
                    toast.error('AI analysis failed', {
-                     icon: '⚠️',
                      duration: 2000,
                    });
                  }
@@ -648,7 +642,7 @@ const Voxer: React.FC<VoxerProps> = ({ apiKey, contacts, initialContactId, isDar
           },
           onError: (error) => {
             console.error('Realtime transcription error:', error);
-            toast.error('Transcription error', { icon: '⚠️', duration: 2000 });
+            toast.error('Transcription error', { duration: 2000 });
           },
           onStateChange: setTranscriptionState,
         },
@@ -745,7 +739,6 @@ const Voxer: React.FC<VoxerProps> = ({ apiKey, contacts, initialContactId, isDar
     } catch (error) {
       console.error('AI feedback error:', error);
       toast.error('Failed to get AI feedback', {
-        icon: '⚠️',
         duration: 2000,
       });
     } finally {
@@ -801,7 +794,6 @@ const Voxer: React.FC<VoxerProps> = ({ apiKey, contacts, initialContactId, isDar
     // Toast notification for sent vox
     const recipientName = contacts.find(c => c.id === activeContactId)?.name || 'contact';
     toast.success(`Vox sent to ${recipientName}`, {
-      icon: '🎙️',
       duration: 2000,
     });
 
@@ -857,7 +849,7 @@ const Voxer: React.FC<VoxerProps> = ({ apiKey, contacts, initialContactId, isDar
     features.setShowFeedbackModal(false);
     features.setCurrentFeedback(null);
     setRealtimeTranscript('');
-    toast('Ready to re-record', { icon: '🔄', duration: 1500 });
+    toast('Ready to re-record', { duration: 1500 });
   }, [features]);
 
   // Feedback Modal Handlers
@@ -1002,14 +994,14 @@ const Voxer: React.FC<VoxerProps> = ({ apiKey, contacts, initialContactId, isDar
     };
     features.setScheduledCapsules(prev => [...prev, newCapsule]);
     features.setShowTimeCapsule(false);
-    toast.success(`Time capsule scheduled for ${new Date(capsule.scheduledFor).toLocaleDateString()}`, { icon: '⏰' });
+    toast.success(`Time capsule scheduled for ${new Date(capsule.scheduledFor).toLocaleDateString()}`);
   }, [features]);
 
   const handleCancelCapsule = useCallback((capsuleId: string) => {
     features.setScheduledCapsules(prev =>
       prev.map(c => c.id === capsuleId ? { ...c, status: 'cancelled' as const } : c)
     );
-    toast('Time capsule cancelled', { icon: '🗑️' });
+    toast('Time capsule cancelled');
   }, [features]);
 
   // 6. Voice Bookmarks Handlers
@@ -1085,7 +1077,7 @@ const Voxer: React.FC<VoxerProps> = ({ apiKey, contacts, initialContactId, isDar
 
   const handleDeletePlaylist = useCallback((id: string) => {
     features.setPlaylists(prev => prev.filter(p => p.id !== id));
-    toast('Playlist deleted', { icon: '🗑️' });
+    toast('Playlist deleted');
   }, [features]);
 
   const handleAddToPlaylist = useCallback((playlistId: string, voxId: string) => {
@@ -1150,7 +1142,7 @@ const Voxer: React.FC<VoxerProps> = ({ apiKey, contacts, initialContactId, isDar
     switch (command.action) {
       case 'NAVIGATE_VOXER':
         // Already in Voxer
-        toast('You\'re already in Voxer!', { icon: '🎤' });
+        toast('You\'re already in Voxer!');
         break;
       case 'PLAY_UNREAD':
         const unread = recordings.filter(r => r.sender === 'other' && r.status !== 'read');
@@ -1158,7 +1150,7 @@ const Voxer: React.FC<VoxerProps> = ({ apiKey, contacts, initialContactId, isDar
           handlePlay(unread[0]);
           toast(`Playing ${unread.length} unread messages`);
         } else {
-          toast('No unread messages', { icon: 'ℹ️' });
+          toast('No unread messages');
         }
         break;
       case 'PAUSE_PLAYBACK':
@@ -1175,7 +1167,7 @@ const Voxer: React.FC<VoxerProps> = ({ apiKey, contacts, initialContactId, isDar
         handleToggleSilentMode();
         break;
       default:
-        toast(`Command: ${command.description}`, { icon: '🎯' });
+        toast(`Command: ${command.description}`);
     }
 
     features.setIsVoiceListening(false);
@@ -1215,7 +1207,7 @@ const Voxer: React.FC<VoxerProps> = ({ apiKey, contacts, initialContactId, isDar
     setShowNewVoxModal(false);
     setGroupName('');
     setSelectedGroupMembers([]);
-    toast.success(`Group "${groupName}" created!`, { icon: '👥' });
+    toast.success(`Group "${groupName}" created!`);
   };
 
   // Start new individual vox
@@ -1246,7 +1238,7 @@ const Voxer: React.FC<VoxerProps> = ({ apiKey, contacts, initialContactId, isDar
         setActiveContactId('');
       }
       
-      toast.success('Thread deleted', { icon: '🗑️' });
+      toast.success('Thread deleted');
     }
   }, [activeContactId, recordings]);
 
@@ -1312,7 +1304,6 @@ const Voxer: React.FC<VoxerProps> = ({ apiKey, contacts, initialContactId, isDar
       });
 
       toast.success('AI analysis complete', {
-        icon: '🤖',
         duration: 2000,
       });
     } catch (error) {
@@ -1321,7 +1312,6 @@ const Voxer: React.FC<VoxerProps> = ({ apiKey, contacts, initialContactId, isDar
         r.id === recordingId ? { ...r, isAnalyzing: false } : r
       ));
       toast.error('Analysis failed', {
-        icon: '⚠️',
         duration: 2000,
       });
     }

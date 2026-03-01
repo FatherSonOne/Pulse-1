@@ -14,7 +14,8 @@ import { supabase } from '../services/supabase';
 // Constants
 // ---------------------------------------------------------------------------
 
-const ACTIVE_WORKSPACE_KEY = 'pulse_active_workspace';
+const ACTIVE_WORKSPACE_KEY  = 'pulse_active_workspace';
+const PENDING_INVITE_KEY    = 'pulse_pending_invite_token';
 
 // ---------------------------------------------------------------------------
 // Context types
@@ -127,6 +128,19 @@ export const WorkspaceProvider: React.FC<WorkspaceProviderProps> = ({ children }
     const init = async () => {
       setIsLoading(true);
       try {
+        // Auto-accept a pending invite if the user just logged in after
+        // clicking an invite link (token saved by WorkspaceInviteAccept).
+        const pendingToken = sessionStorage.getItem(PENDING_INVITE_KEY);
+        if (pendingToken) {
+          sessionStorage.removeItem(PENDING_INVITE_KEY);
+          try {
+            const wsId = await workspaceService.acceptInvite(pendingToken);
+            localStorage.setItem(ACTIVE_WORKSPACE_KEY, wsId);
+          } catch {
+            // Accept failed (expired/already used) — continue normally
+          }
+        }
+
         const list = await workspaceService.getUserWorkspaces(user.id);
         if (cancelled) return;
         setWorkspaces(list);

@@ -1,4 +1,5 @@
 import React, { useState, useMemo } from 'react';
+import { AnimatedIcon } from '../ui/AnimatedIcon';
 
 // Types
 interface SentimentDataPoint {
@@ -49,13 +50,13 @@ const getSentimentColor = (sentiment: SentimentDataPoint['sentiment']) => {
   }
 };
 
-const getSentimentEmoji = (sentiment: SentimentDataPoint['sentiment']) => {
+const getSentimentIcon = (sentiment: SentimentDataPoint['sentiment']) => {
   switch (sentiment) {
-    case 'very_positive': return '😄';
-    case 'positive': return '🙂';
-    case 'neutral': return '😐';
-    case 'negative': return '😟';
-    case 'very_negative': return '😢';
+    case 'very_positive': return 'star';
+    case 'positive': return 'check';
+    case 'neutral': return 'note';
+    case 'negative': return 'warning';
+    case 'very_negative': return 'cross';
   }
 };
 
@@ -173,14 +174,14 @@ export const SentimentTimeline: React.FC<SentimentTimelineProps> = React.memo(({
         type: 'trend',
         title: 'Positive Trend',
         description: 'Conversation sentiment has been improving over time. Keep up the good work!',
-        icon: '📈',
+        icon: 'chart',
       });
     } else if (stats.trend === 'declining') {
       insights.push({
         type: 'alert',
         title: 'Sentiment Declining',
         description: 'Conversation sentiment has been declining. Consider addressing any underlying issues.',
-        icon: '⚠️',
+        icon: 'warning',
       });
     }
 
@@ -191,14 +192,14 @@ export const SentimentTimeline: React.FC<SentimentTimelineProps> = React.memo(({
         type: 'pattern',
         title: 'Highly Positive',
         description: `${Math.round(positiveRatio * 100)}% of messages have positive sentiment.`,
-        icon: '🌟',
+        icon: 'star',
       });
     } else if (positiveRatio < 0.3 && stats.negative > stats.positive) {
       insights.push({
         type: 'tip',
         title: 'Relationship Tip',
         description: 'Try starting with positive acknowledgments before addressing concerns.',
-        icon: '💡',
+        icon: 'lightbulb',
       });
     }
 
@@ -213,7 +214,7 @@ export const SentimentTimeline: React.FC<SentimentTimelineProps> = React.memo(({
           type: 'pattern',
           title: 'Emotional Highlights',
           description: `Found ${positive.length} highly positive moments in your conversation.`,
-          icon: '✨',
+          icon: 'sparkle',
           timestamp: positive[positive.length - 1].timestamp,
         });
       }
@@ -223,7 +224,7 @@ export const SentimentTimeline: React.FC<SentimentTimelineProps> = React.memo(({
           type: 'alert',
           title: 'Tension Points',
           description: `Detected ${negative.length} moments of frustration or concern.`,
-          icon: '🔴',
+          icon: 'fire',
           timestamp: negative[negative.length - 1].timestamp,
         });
       }
@@ -279,7 +280,7 @@ export const SentimentTimeline: React.FC<SentimentTimelineProps> = React.memo(({
       <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginBottom: '20px' }}>
         <div>
           <h2 style={{ margin: 0, fontSize: '1.4rem', display: 'flex', alignItems: 'center', gap: '10px' }}>
-            <span style={{ fontSize: '1.6rem' }}>📊</span>
+            <AnimatedIcon icon="chart" size={24} />
             Sentiment Timeline
           </h2>
           <p style={{ margin: '4px 0 0', fontSize: '0.85rem', opacity: 0.7 }}>
@@ -341,7 +342,7 @@ export const SentimentTimeline: React.FC<SentimentTimelineProps> = React.memo(({
             fontSize: '1.8rem',
             marginBottom: '4px',
           }}>
-            {getSentimentEmoji(getScoreToSentiment(stats.average))}
+            <AnimatedIcon icon={getSentimentIcon(getScoreToSentiment(stats.average))!} size={28} />
           </div>
           <div style={{ fontSize: '0.75rem', opacity: 0.6 }}>Overall</div>
         </div>
@@ -425,9 +426,9 @@ export const SentimentTimeline: React.FC<SentimentTimelineProps> = React.memo(({
         marginBottom: '16px',
       }}>
         {[
-          { id: 'timeline', label: 'Timeline', icon: '📈' },
-          { id: 'insights', label: 'Insights', icon: '💡' },
-          { id: 'emotions', label: 'Emotions', icon: '😊' },
+          { id: 'timeline', label: 'Timeline', icon: 'chart' },
+          { id: 'insights', label: 'Insights', icon: 'lightbulb' },
+          { id: 'emotions', label: 'Emotions', icon: 'star' },
         ].map((tab) => (
           <button
             key={tab.id}
@@ -447,7 +448,7 @@ export const SentimentTimeline: React.FC<SentimentTimelineProps> = React.memo(({
               justifyContent: 'center',
             }}
           >
-            <span>{tab.icon}</span>
+            <AnimatedIcon icon={tab.icon} size={14} />
             {tab.label}
           </button>
         ))}
@@ -575,7 +576,7 @@ export const SentimentTimeline: React.FC<SentimentTimelineProps> = React.memo(({
 
                   return (
                     <div style={{ display: 'flex', alignItems: 'flex-start', gap: '12px' }}>
-                      <span style={{ fontSize: '1.5rem' }}>{getSentimentEmoji(point.sentiment)}</span>
+                      <AnimatedIcon icon={getSentimentIcon(point.sentiment)!} size={22} />
                       <div style={{ flex: 1 }}>
                         <div style={{ fontSize: '0.85rem', marginBottom: '4px' }}>
                           <strong>{point.senderName}</strong> · {formatDate(point.timestamp)}
@@ -619,7 +620,7 @@ export const SentimentTimeline: React.FC<SentimentTimelineProps> = React.memo(({
                   }}
                 >
                   <div style={{ display: 'flex', alignItems: 'center', gap: '10px' }}>
-                    <span style={{ fontSize: '1.2rem' }}>{getSentimentEmoji(point.sentiment)}</span>
+                    <AnimatedIcon icon={getSentimentIcon(point.sentiment)!} size={18} />
                     <div style={{ flex: 1, minWidth: 0 }}>
                       <div style={{ fontSize: '0.85rem', fontWeight: 'bold' }}>{point.senderName}</div>
                       <p style={{
@@ -672,7 +673,7 @@ export const SentimentTimeline: React.FC<SentimentTimelineProps> = React.memo(({
                     gap: '12px',
                   }}
                 >
-                  <span style={{ fontSize: '1.5rem' }}>{insight.icon}</span>
+                  <AnimatedIcon icon={insight.icon} size={22} />
                   <div>
                     <div style={{ fontWeight: 'bold', marginBottom: '4px' }}>{insight.title}</div>
                     <p style={{ margin: 0, fontSize: '0.9rem', opacity: 0.8 }}>{insight.description}</p>
@@ -751,7 +752,7 @@ export const SentimentBadge: React.FC<{
         fontSize: '0.8rem',
       }}
     >
-      <span>{getSentimentEmoji(sentiment)}</span>
+      <AnimatedIcon icon={getSentimentIcon(sentiment)!} size={16} />
       {showLabel && <span style={{ textTransform: 'capitalize' }}>{sentiment.replace('_', ' ')}</span>}
     </button>
   );

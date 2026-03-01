@@ -79,7 +79,7 @@ export const PrivacyDashboard: React.FC<PrivacyDashboardProps> = ({
         if (alert.alert_level === 'critical' || alert.alert_level === 'high') {
           toast.error(`Security Alert: ${alert.title}`);
         } else {
-          toast(`Security Alert: ${alert.title}`, { icon: '⚠️' });
+          toast(`Security Alert: ${alert.title}`);
         }
       });
     };

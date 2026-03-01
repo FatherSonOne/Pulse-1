@@ -2,6 +2,7 @@ import React, { useState, useEffect } from 'react';
 import { createPortal } from 'react-dom';
 import { X, Search, CheckSquare, TrendingUp, Sparkles, Plus } from 'lucide-react';
 import { DecisionTemplate, decisionTemplateService, TemplateVariables } from '../../services/decisionTemplateService';
+import { AnimatedIcon } from '../ui/AnimatedIcon';
 import './DecisionTemplates.css';
 
 interface DecisionTemplatesProps {
@@ -43,7 +44,7 @@ export const DecisionTemplates: React.FC<DecisionTemplatesProps> = ({
 
       setTemplates(templateData);
       setCategories([
-        { category: 'All', count: templateData.length, icon: '📋' },
+        { category: 'All', count: templateData.length, icon: 'clipboard' },
         ...categoryData.map(c => ({ ...c, icon: c.icon || '📁' }))
       ]);
     } catch (error) {
@@ -166,7 +167,7 @@ export const DecisionTemplates: React.FC<DecisionTemplatesProps> = ({
                       onClick={() => handleSelectTemplate(template)}
                     >
                       <div className="template-card-header">
-                        <span className="template-icon">{template.icon || '📋'}</span>
+                        <span className="template-icon"><AnimatedIcon icon={template.icon || 'clipboard'} size={22} /></span>
                         <div className="template-meta">
                           {template.is_system && (
                             <span className="system-badge">System</span>
@@ -224,7 +225,7 @@ export const DecisionTemplates: React.FC<DecisionTemplatesProps> = ({
               {/* Template Info */}
               <div className="template-info-card">
                 <div className="info-header">
-                  <span className="template-icon-large">{selectedTemplate.icon || '📋'}</span>
+                  <span className="template-icon-large"><AnimatedIcon icon={selectedTemplate.icon || 'clipboard'} size={32} /></span>
                   <div>
                     <h3>{selectedTemplate.name}</h3>
                     <p>{selectedTemplate.description}</p>

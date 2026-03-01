@@ -9,6 +9,7 @@ import Login from './components/Login';
 import PrivacyPolicy from './components/PrivacyPolicy';
 import TermsOfService from './components/TermsOfService';
 import LandingPage from './components/LandingPage';
+import { WorkspaceInviteAccept } from './components/WorkspaceInviteAccept';
 
 // Lazy-load route components for better code splitting
 const Messages = lazy(() => import('./components/Messages'));
@@ -71,6 +72,11 @@ const PageLoader = () => <EnhancedLoadingScreen inline />;
 const App: React.FC = () => {
   // Check for public routes that don't require authentication
   const path = window.location.pathname;
+
+  // Workspace invite acceptance (handles auth check internally)
+  if (path === '/invite') {
+    return <WorkspaceInviteAccept />;
+  }
 
   // Public pages - Privacy Policy and Terms of Service
   if (path === '/privacy') {
@@ -459,6 +465,22 @@ const App: React.FC = () => {
     };
     window.addEventListener('keydown', handleKeyDown);
     return () => window.removeEventListener('keydown', handleKeyDown);
+  }, []);
+
+  // Keyboard shortcut: Cmd+K or Ctrl+K opens search
+  useEffect(() => {
+    const handleSearchKey = (e: KeyboardEvent) => {
+      if ((e.metaKey || e.ctrlKey) && e.key === 'k') {
+        e.preventDefault();
+        setView(AppView.MULTI_MODAL);
+        // Small delay to allow lazy component to mount before focusing
+        setTimeout(() => {
+          window.dispatchEvent(new CustomEvent('pulse:focus-search'));
+        }, 50);
+      }
+    };
+    window.addEventListener('keydown', handleSearchKey);
+    return () => window.removeEventListener('keydown', handleSearchKey);
   }, []);
 
   // Global navigation event — allows PulseAssistant suggested actions to navigate

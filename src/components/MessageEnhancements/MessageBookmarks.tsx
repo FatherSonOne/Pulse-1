@@ -1,4 +1,5 @@
 import React, { useState, useMemo, useCallback } from 'react';
+import { AnimatedIcon } from '../ui/AnimatedIcon';
 
 // Types
 interface Bookmark {
@@ -37,10 +38,10 @@ interface MessageBookmarksProps {
 
 // Default collections
 const DEFAULT_COLLECTIONS: BookmarkCollection[] = [
-  { id: 'important', name: 'Important', icon: '⭐', color: '#FFD700', count: 0 },
-  { id: 'follow-up', name: 'Follow Up', icon: '📌', color: '#FF6B6B', count: 0 },
-  { id: 'reference', name: 'Reference', icon: '📚', color: '#4ECDC4', count: 0 },
-  { id: 'ideas', name: 'Ideas', icon: '💡', color: '#FFE66D', count: 0 },
+  { id: 'important', name: 'Important', icon: 'star', color: '#FFD700', count: 0 },
+  { id: 'follow-up', name: 'Follow Up', icon: 'pin', color: '#FF6B6B', count: 0 },
+  { id: 'reference', name: 'Reference', icon: 'package', color: '#4ECDC4', count: 0 },
+  { id: 'ideas', name: 'Ideas', icon: 'lightbulb', color: '#FFE66D', count: 0 },
 ];
 
 // Mock data generator
@@ -93,7 +94,7 @@ export const MessageBookmarks: React.FC<MessageBookmarksProps> = ({
   const [editingBookmark, setEditingBookmark] = useState<Bookmark | null>(null);
   const [showAddCollection, setShowAddCollection] = useState(false);
   const [newCollectionName, setNewCollectionName] = useState('');
-  const [newCollectionIcon, setNewCollectionIcon] = useState('📁');
+  const [newCollectionIcon, setNewCollectionIcon] = useState('package');
 
   // Use provided data or mock
   const bookmarks = useMemo(() => propBookmarks || generateMockBookmarks(), [propBookmarks]);
@@ -176,7 +177,7 @@ export const MessageBookmarks: React.FC<MessageBookmarksProps> = ({
     if (newCollectionName.trim()) {
       onCollectionCreate?.(newCollectionName, newCollectionIcon, '#8b5cf6');
       setNewCollectionName('');
-      setNewCollectionIcon('📁');
+      setNewCollectionIcon('package');
       setShowAddCollection(false);
     }
   }, [newCollectionName, newCollectionIcon, onCollectionCreate]);
@@ -204,7 +205,7 @@ export const MessageBookmarks: React.FC<MessageBookmarksProps> = ({
       <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginBottom: '20px' }}>
         <div>
           <h2 style={{ margin: 0, fontSize: '1.4rem', display: 'flex', alignItems: 'center', gap: '10px' }}>
-            <span style={{ fontSize: '1.6rem' }}>🔖</span>
+            <AnimatedIcon icon="bookmark" size={24} />
             Message Bookmarks
           </h2>
           <p style={{ margin: '4px 0 0', fontSize: '0.85rem', opacity: 0.7 }}>
@@ -240,7 +241,7 @@ export const MessageBookmarks: React.FC<MessageBookmarksProps> = ({
           borderRadius: '10px',
           padding: '10px 14px',
         }}>
-          <span style={{ opacity: 0.5 }}>🔍</span>
+          <AnimatedIcon icon="signal" size={16} />
           <input
             type="text"
             placeholder="Search bookmarks..."
@@ -282,9 +283,9 @@ export const MessageBookmarks: React.FC<MessageBookmarksProps> = ({
         marginBottom: '16px',
       }}>
         {[
-          { id: 'all', label: 'All', icon: '📑', count: bookmarks.length },
-          { id: 'collections', label: 'Collections', icon: '📁', count: collections.length },
-          { id: 'tags', label: 'Tags', icon: '🏷️', count: allTags.length },
+          { id: 'all', label: 'All', icon: 'note', count: bookmarks.length },
+          { id: 'collections', label: 'Collections', icon: 'package', count: collections.length },
+          { id: 'tags', label: 'Tags', icon: 'tag', count: allTags.length },
         ].map((tab) => (
           <button
             key={tab.id}
@@ -306,7 +307,7 @@ export const MessageBookmarks: React.FC<MessageBookmarksProps> = ({
               gap: '6px',
             }}
           >
-            <span>{tab.icon}</span>
+            <AnimatedIcon icon={tab.icon} size={14} />
             {tab.label}
             <span style={{
               fontSize: '0.75rem',
@@ -341,7 +342,7 @@ export const MessageBookmarks: React.FC<MessageBookmarksProps> = ({
                   gap: '12px',
                 }}
               >
-                <span style={{ fontSize: '2rem' }}>{collection.icon}</span>
+                <AnimatedIcon icon={collection.icon} size={28} />
                 <div>
                   <div style={{ color: 'white', fontWeight: 'bold', fontSize: '1rem' }}>
                     {collection.name}
@@ -512,7 +513,7 @@ export const MessageBookmarks: React.FC<MessageBookmarksProps> = ({
                             alignItems: 'center',
                             gap: '8px',
                           }}>
-                            <span>📝</span>
+                            <AnimatedIcon icon="note" size={14} />
                             {bookmark.note}
                           </div>
                         )}
@@ -531,7 +532,7 @@ export const MessageBookmarks: React.FC<MessageBookmarksProps> = ({
                                 alignItems: 'center',
                                 gap: '4px',
                               }}>
-                                {collection.icon} {collection.name}
+                                <AnimatedIcon icon={collection.icon} size={12} /> {collection.name}
                               </span>
                             )}
                             {bookmark.tags.map(tag => (
@@ -565,7 +566,7 @@ export const MessageBookmarks: React.FC<MessageBookmarksProps> = ({
                               }}
                               title="Edit"
                             >
-                              ✏️
+                              <AnimatedIcon icon="edit" size={14} />
                             </button>
                             <button
                               onClick={() => onBookmarkDelete?.(bookmark.id)}
@@ -579,7 +580,7 @@ export const MessageBookmarks: React.FC<MessageBookmarksProps> = ({
                               }}
                               title="Delete"
                             >
-                              🗑️
+                              <AnimatedIcon icon="cross" size={14} />
                             </button>
                           </div>
                         </div>
@@ -595,7 +596,7 @@ export const MessageBookmarks: React.FC<MessageBookmarksProps> = ({
                   padding: '60px 20px',
                   opacity: 0.5,
                 }}>
-                  <span style={{ fontSize: '3rem', display: 'block', marginBottom: '16px' }}>🔖</span>
+                  <span style={{ display: 'block', marginBottom: '16px' }}><AnimatedIcon icon="bookmark" size={48} /></span>
                   <p>No bookmarks found</p>
                   {searchQuery && <p style={{ fontSize: '0.85rem' }}>Try a different search term</p>}
                 </div>
@@ -635,7 +636,7 @@ export const MessageBookmarks: React.FC<MessageBookmarksProps> = ({
                 Icon
               </label>
               <div style={{ display: 'flex', gap: '8px', flexWrap: 'wrap' }}>
-                {['📁', '⭐', '📌', '💡', '📚', '🎯', '🔥', '💎', '🎨', '🚀'].map(icon => (
+                {['package', 'star', 'pin', 'lightbulb', 'note', 'target', 'fire', 'trophy', 'palette', 'rocket'].map(icon => (
                   <button
                     key={icon}
                     onClick={() => setNewCollectionIcon(icon)}
@@ -646,10 +647,12 @@ export const MessageBookmarks: React.FC<MessageBookmarksProps> = ({
                       border: newCollectionIcon === icon ? '2px solid #8b5cf6' : '2px solid transparent',
                       background: newCollectionIcon === icon ? 'rgba(138, 43, 226, 0.2)' : 'rgba(255,255,255,0.05)',
                       cursor: 'pointer',
-                      fontSize: '1.2rem',
+                      display: 'flex',
+                      alignItems: 'center',
+                      justifyContent: 'center',
                     }}
                   >
-                    {icon}
+                    <AnimatedIcon icon={icon} size={18} />
                   </button>
                 ))}
               </div>
@@ -799,7 +802,7 @@ export const MessageBookmarks: React.FC<MessageBookmarksProps> = ({
                       fontSize: '0.85rem',
                     }}
                   >
-                    {col.icon} {col.name}
+                    <AnimatedIcon icon={col.icon} size={14} /> {col.name}
                   </button>
                 ))}
               </div>
@@ -870,7 +873,7 @@ export const BookmarkButton: React.FC<{
       }}
       title={isBookmarked ? 'Remove bookmark' : 'Add bookmark'}
     >
-      {isBookmarked ? '🔖' : '🏷️'}
+      <AnimatedIcon icon={isBookmarked ? 'bookmark' : 'tag'} size={16} />
     </button>
   );
 };

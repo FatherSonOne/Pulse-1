@@ -1,5 +1,6 @@
 import React, { useState, useEffect, useCallback, useMemo, useRef } from 'react';
 import { fuzzySearchTools } from '../../services/toolRegistry';
+import { AnimatedIcon } from '../ui/AnimatedIcon';
 
 // Types
 interface CommandAction {
@@ -31,12 +32,12 @@ interface QuickActionsCommandPaletteProps {
 }
 
 const CATEGORIES: CommandCategory[] = [
-  { id: 'navigation', label: 'Navigation', icon: '🧭' },
-  { id: 'messaging', label: 'Messaging', icon: '💬' },
-  { id: 'search', label: 'Search', icon: '🔍' },
-  { id: 'tools', label: 'Tools', icon: '🛠️' },
-  { id: 'settings', label: 'Settings', icon: '⚙️' },
-  { id: 'ai', label: 'AI Features', icon: '🤖' },
+  { id: 'navigation', label: 'Navigation', icon: 'target' },
+  { id: 'messaging', label: 'Messaging', icon: 'chat' },
+  { id: 'search', label: 'Search', icon: 'signal' },
+  { id: 'tools', label: 'Tools', icon: 'tools' },
+  { id: 'settings', label: 'Settings', icon: 'gear' },
+  { id: 'ai', label: 'AI Features', icon: 'lightbulb' },
 ];
 
 // Default actions
@@ -67,7 +68,7 @@ const createDefaultActions = (
     id: 'go-inbox',
     label: 'Go to Inbox',
     description: 'Navigate to your inbox',
-    icon: '📥',
+    icon: 'email',
     category: 'navigation',
     shortcut: 'G I',
     keywords: ['inbox', 'home', 'main', 'messages'],
@@ -77,7 +78,7 @@ const createDefaultActions = (
     id: 'go-sent',
     label: 'Go to Sent',
     description: 'View sent messages',
-    icon: '📤',
+    icon: 'upload',
     category: 'navigation',
     shortcut: 'G S',
     keywords: ['sent', 'outbox', 'sent messages'],
@@ -87,7 +88,7 @@ const createDefaultActions = (
     id: 'go-starred',
     label: 'Go to Starred',
     description: 'View starred messages',
-    icon: '⭐',
+    icon: 'star',
     category: 'navigation',
     shortcut: 'G T',
     keywords: ['starred', 'favorites', 'important'],
@@ -97,7 +98,7 @@ const createDefaultActions = (
     id: 'go-archive',
     label: 'Go to Archive',
     description: 'View archived conversations',
-    icon: '📦',
+    icon: 'package',
     category: 'navigation',
     keywords: ['archive', 'old', 'stored'],
     action: handlers.onArchive || (() => console.log('Go to archive')),
@@ -108,7 +109,7 @@ const createDefaultActions = (
     id: 'new-message',
     label: 'New Message',
     description: 'Compose a new message',
-    icon: '✏️',
+    icon: 'edit',
     category: 'messaging',
     shortcut: 'C',
     keywords: ['new', 'compose', 'write', 'create', 'message'],
@@ -118,7 +119,7 @@ const createDefaultActions = (
     id: 'reply',
     label: 'Reply to Message',
     description: 'Reply to current conversation',
-    icon: '↩️',
+    icon: 'reply',
     category: 'messaging',
     shortcut: 'R',
     keywords: ['reply', 'respond', 'answer'],
@@ -128,7 +129,7 @@ const createDefaultActions = (
     id: 'forward',
     label: 'Forward Message',
     description: 'Forward selected message',
-    icon: '➡️',
+    icon: 'forward',
     category: 'messaging',
     shortcut: 'F',
     keywords: ['forward', 'share', 'send'],
@@ -138,7 +139,7 @@ const createDefaultActions = (
     id: 'schedule-message',
     label: 'Schedule Message',
     description: 'Schedule a message for later',
-    icon: '📅',
+    icon: 'calendar',
     category: 'messaging',
     shortcut: 'Shift+S',
     keywords: ['schedule', 'later', 'timer', 'delay'],
@@ -148,7 +149,7 @@ const createDefaultActions = (
     id: 'use-template',
     label: 'Insert Template',
     description: 'Use a message template',
-    icon: '📋',
+    icon: 'clipboard',
     category: 'messaging',
     shortcut: 'T',
     keywords: ['template', 'preset', 'quick reply'],
@@ -158,7 +159,7 @@ const createDefaultActions = (
     id: 'pin-message',
     label: 'Pin Message',
     description: 'Pin current message',
-    icon: '📌',
+    icon: 'pin',
     category: 'messaging',
     shortcut: 'P',
     keywords: ['pin', 'stick', 'important'],
@@ -170,7 +171,7 @@ const createDefaultActions = (
     id: 'search-all',
     label: 'Search All Messages',
     description: 'Search across all conversations',
-    icon: '🔍',
+    icon: 'signal',
     category: 'search',
     shortcut: '/',
     keywords: ['search', 'find', 'query', 'lookup'],
@@ -180,7 +181,7 @@ const createDefaultActions = (
     id: 'search-contacts',
     label: 'Search Contacts',
     description: 'Find a specific contact',
-    icon: '👤',
+    icon: 'people',
     category: 'search',
     keywords: ['contacts', 'people', 'user', 'person'],
     action: handlers.onContacts || (() => console.log('Search contacts')),
@@ -189,7 +190,7 @@ const createDefaultActions = (
     id: 'search-attachments',
     label: 'Search Attachments',
     description: 'Find files and media',
-    icon: '📎',
+    icon: 'link',
     category: 'search',
     keywords: ['attachments', 'files', 'media', 'images', 'documents'],
     action: () => console.log('Search attachments'),
@@ -198,7 +199,7 @@ const createDefaultActions = (
     id: 'search-by-date',
     label: 'Search by Date',
     description: 'Find messages from a specific time',
-    icon: '📆',
+    icon: 'calendar',
     category: 'search',
     keywords: ['date', 'time', 'when', 'calendar'],
     action: () => console.log('Search by date'),
@@ -209,7 +210,7 @@ const createDefaultActions = (
     id: 'export-conversation',
     label: 'Export Conversation',
     description: 'Export current conversation',
-    icon: '💾',
+    icon: 'save',
     category: 'tools',
     shortcut: 'Ctrl+E',
     keywords: ['export', 'download', 'save', 'backup'],
@@ -219,7 +220,7 @@ const createDefaultActions = (
     id: 'conversation-summary',
     label: 'Generate Summary',
     description: 'AI-powered conversation summary',
-    icon: '📝',
+    icon: 'note',
     category: 'tools',
     keywords: ['summary', 'summarize', 'recap', 'overview'],
     action: handlers.onSummary || (() => console.log('Summary')),
@@ -228,7 +229,7 @@ const createDefaultActions = (
     id: 'translate',
     label: 'Translate Message',
     description: 'Translate selected text',
-    icon: '🌐',
+    icon: 'globe',
     category: 'tools',
     keywords: ['translate', 'language', 'convert'],
     action: handlers.onTranslate || (() => console.log('Translate')),
@@ -237,7 +238,7 @@ const createDefaultActions = (
     id: 'add-bookmark',
     label: 'Bookmark Message',
     description: 'Save message to bookmarks',
-    icon: '🔖',
+    icon: 'bookmark',
     category: 'tools',
     shortcut: 'B',
     keywords: ['bookmark', 'save', 'favorite'],
@@ -247,7 +248,7 @@ const createDefaultActions = (
     id: 'add-tag',
     label: 'Add Tag',
     description: 'Tag current conversation',
-    icon: '🏷️',
+    icon: 'tag',
     category: 'tools',
     keywords: ['tag', 'label', 'categorize'],
     action: handlers.onTags || (() => console.log('Add tag')),
@@ -256,7 +257,7 @@ const createDefaultActions = (
     id: 'view-analytics',
     label: 'View Analytics',
     description: 'See conversation analytics',
-    icon: '📊',
+    icon: 'chart',
     category: 'tools',
     keywords: ['analytics', 'stats', 'metrics', 'data'],
     action: handlers.onAnalytics || (() => console.log('Analytics')),
@@ -267,7 +268,7 @@ const createDefaultActions = (
     id: 'open-settings',
     label: 'Open Settings',
     description: 'Open app settings',
-    icon: '⚙️',
+    icon: 'gear',
     category: 'settings',
     shortcut: 'Ctrl+,',
     keywords: ['settings', 'preferences', 'options', 'config'],
@@ -277,7 +278,7 @@ const createDefaultActions = (
     id: 'notification-settings',
     label: 'Notification Settings',
     description: 'Configure notifications',
-    icon: '🔔',
+    icon: 'bell',
     category: 'settings',
     keywords: ['notifications', 'alerts', 'sounds'],
     action: handlers.onNotifications || (() => console.log('Notifications')),
@@ -286,7 +287,7 @@ const createDefaultActions = (
     id: 'keyboard-shortcuts',
     label: 'Keyboard Shortcuts',
     description: 'View and edit shortcuts',
-    icon: '⌨️',
+    icon: 'keyboard',
     category: 'settings',
     shortcut: '?',
     keywords: ['keyboard', 'shortcuts', 'hotkeys', 'keys'],
@@ -296,7 +297,7 @@ const createDefaultActions = (
     id: 'change-theme',
     label: 'Change Theme',
     description: 'Switch color theme',
-    icon: '🎨',
+    icon: 'palette',
     category: 'settings',
     keywords: ['theme', 'dark', 'light', 'color', 'appearance'],
     action: handlers.onTheme || (() => console.log('Theme')),
@@ -307,7 +308,7 @@ const createDefaultActions = (
     id: 'ai-compose',
     label: 'AI Compose',
     description: 'Let AI help write your message',
-    icon: '✨',
+    icon: 'sparkle',
     category: 'ai',
     shortcut: 'Ctrl+J',
     keywords: ['ai', 'compose', 'write', 'generate', 'assist'],
@@ -318,7 +319,7 @@ const createDefaultActions = (
     id: 'ai-improve',
     label: 'Improve Message',
     description: 'AI suggestions to improve your text',
-    icon: '💫',
+    icon: 'star',
     category: 'ai',
     keywords: ['improve', 'enhance', 'better', 'polish'],
     action: () => console.log('AI improve'),
@@ -328,7 +329,7 @@ const createDefaultActions = (
     id: 'ai-tone',
     label: 'Adjust Tone',
     description: 'Change message tone with AI',
-    icon: '🎭',
+    icon: 'masks',
     category: 'ai',
     keywords: ['tone', 'formal', 'casual', 'friendly', 'professional'],
     action: () => console.log('AI tone'),
@@ -338,7 +339,7 @@ const createDefaultActions = (
     id: 'ai-reply-suggestions',
     label: 'Reply Suggestions',
     description: 'Get AI-powered reply suggestions',
-    icon: '💡',
+    icon: 'lightbulb',
     category: 'ai',
     keywords: ['suggestions', 'replies', 'ideas', 'recommend'],
     action: () => console.log('AI suggestions'),
@@ -561,7 +562,7 @@ export const QuickActionsCommandPalette: React.FC<QuickActionsCommandPaletteProp
             borderRadius: '12px',
             padding: '12px 16px',
           }}>
-            <span style={{ fontSize: '1.2rem', opacity: 0.6 }}>🔍</span>
+            <AnimatedIcon icon="signal" size={18} />
             <input
               ref={inputRef}
               type="text"
@@ -611,7 +612,7 @@ export const QuickActionsCommandPalette: React.FC<QuickActionsCommandPaletteProp
                 gap: '4px',
               }}
             >
-              <span>✨</span> All
+              <AnimatedIcon icon="sparkle" size={14} /> All
             </button>
             {CATEGORIES.map(category => (
               <button
@@ -630,7 +631,7 @@ export const QuickActionsCommandPalette: React.FC<QuickActionsCommandPaletteProp
                   gap: '4px',
                 }}
               >
-                <span>{category.icon}</span> {category.label}
+                <AnimatedIcon icon={category.icon} size={15} /> {category.label}
               </button>
             ))}
           </div>
@@ -651,7 +652,7 @@ export const QuickActionsCommandPalette: React.FC<QuickActionsCommandPaletteProp
               padding: '40px 20px',
               color: 'rgba(255,255,255,0.5)',
             }}>
-              <span style={{ fontSize: '2rem', display: 'block', marginBottom: '12px' }}>🔍</span>
+              <div style={{ marginBottom: '12px' }}><AnimatedIcon icon="signal" size={32} /></div>
               No commands found for "{query}"
             </div>
           ) : (
@@ -671,7 +672,7 @@ export const QuickActionsCommandPalette: React.FC<QuickActionsCommandPaletteProp
                       alignItems: 'center',
                       gap: '8px',
                     }}>
-                      {category?.icon} {category?.label}
+                      {category?.icon && <AnimatedIcon icon={category.icon} size={14} />} {category?.label}
                     </div>
                   )}
 
@@ -701,7 +702,7 @@ export const QuickActionsCommandPalette: React.FC<QuickActionsCommandPaletteProp
                           marginBottom: '4px',
                         }}
                       >
-                        <span style={{ fontSize: '1.3rem' }}>{action.icon}</span>
+                        <span style={{ display: 'flex', alignItems: 'center' }}><AnimatedIcon icon={action.icon} size={22} /></span>
                         <div style={{ flex: 1, minWidth: 0 }}>
                           <div style={{
                             fontWeight: '500',
@@ -858,7 +859,7 @@ export const CommandPaletteButton: React.FC<{
       }}
       title="Open command palette (Ctrl+K)"
     >
-      <span>🔍</span>
+      <AnimatedIcon icon="signal" size={16} />
       <span>Quick Actions</span>
       <span style={{
         fontSize: '0.7rem',

@@ -1,4 +1,5 @@
 import React, { useState, useMemo, useCallback, useRef, useEffect } from 'react';
+import { AnimatedIcon } from '../ui/AnimatedIcon';
 
 // Types
 interface SearchResult {
@@ -236,10 +237,10 @@ const generateMockResults = (query: string): SearchResult[] => {
 };
 
 const defaultSuggestions: SearchSuggestion[] = [
-  { id: 'sug-1', query: 'messages from last week', type: 'suggested', icon: '📅', description: 'Recent messages' },
-  { id: 'sug-2', query: 'files and attachments', type: 'filter', icon: '📎', description: 'Shared files' },
-  { id: 'sug-3', query: 'decisions made this month', type: 'suggested', icon: '✅', description: 'Key decisions' },
-  { id: 'sug-4', query: 'tasks assigned to me', type: 'filter', icon: '📋', description: 'Your tasks' },
+  { id: 'sug-1', query: 'messages from last week', type: 'suggested', icon: 'calendar', description: 'Recent messages' },
+  { id: 'sug-2', query: 'files and attachments', type: 'filter', icon: 'upload', description: 'Shared files' },
+  { id: 'sug-3', query: 'decisions made this month', type: 'suggested', icon: 'check', description: 'Key decisions' },
+  { id: 'sug-4', query: 'tasks assigned to me', type: 'filter', icon: 'clipboard', description: 'Your tasks' },
   { id: 'sug-5', query: 'mentions of me', type: 'filter', icon: '@', description: 'Where you were mentioned' },
 ];
 
@@ -363,11 +364,11 @@ export const NaturalLanguageSearch: React.FC<NaturalLanguageSearchProps> = ({
 
   const getTypeIcon = (type: SearchResult['type']) => {
     switch (type) {
-      case 'message': return '💬';
-      case 'attachment': return '📎';
-      case 'decision': return '✅';
-      case 'task': return '📋';
-      case 'mention': return '@';
+      case 'message': return 'chat';
+      case 'attachment': return 'upload';
+      case 'decision': return 'check';
+      case 'task': return 'clipboard';
+      case 'mention': return 'hash';
     }
   };
 
@@ -398,7 +399,7 @@ export const NaturalLanguageSearch: React.FC<NaturalLanguageSearchProps> = ({
       <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginBottom: '20px' }}>
         <div>
           <h2 style={{ margin: 0, fontSize: '1.4rem', display: 'flex', alignItems: 'center', gap: '10px' }}>
-            <span style={{ fontSize: '1.6rem' }}>🔍</span>
+            <AnimatedIcon icon="signal" size={24} />
             Smart Search
           </h2>
           <p style={{ margin: '4px 0 0', fontSize: '0.85rem', opacity: 0.7 }}>
@@ -436,7 +437,7 @@ export const NaturalLanguageSearch: React.FC<NaturalLanguageSearchProps> = ({
           gap: '12px',
           padding: '12px 16px',
         }}>
-          <span style={{ fontSize: '1.2rem', opacity: 0.6 }}>🔍</span>
+          <AnimatedIcon icon="signal" size={18} />
           <input
             ref={inputRef}
             type="text"
@@ -489,7 +490,7 @@ export const NaturalLanguageSearch: React.FC<NaturalLanguageSearchProps> = ({
                 padding: '2px 8px',
                 borderRadius: '10px',
               }}>
-                📅 {parsedInfo.filters.dateRange.start.toLocaleDateString()} - {parsedInfo.filters.dateRange.end.toLocaleDateString()}
+                <AnimatedIcon icon="calendar" size={12} /> {parsedInfo.filters.dateRange.start.toLocaleDateString()} - {parsedInfo.filters.dateRange.end.toLocaleDateString()}
               </span>
             )}
             {parsedInfo.filters.type?.map(t => (
@@ -504,7 +505,7 @@ export const NaturalLanguageSearch: React.FC<NaturalLanguageSearchProps> = ({
                   textTransform: 'capitalize',
                 }}
               >
-                {getTypeIcon(t)} {t}
+                <AnimatedIcon icon={getTypeIcon(t)!} size={12} /> {t}
               </span>
             ))}
             {parsedInfo.filters.contacts?.map(c => (
@@ -518,7 +519,7 @@ export const NaturalLanguageSearch: React.FC<NaturalLanguageSearchProps> = ({
                   borderRadius: '10px',
                 }}
               >
-                👤 {c}
+                <AnimatedIcon icon="people" size={12} /> {c}
               </span>
             ))}
           </div>
@@ -554,7 +555,7 @@ export const NaturalLanguageSearch: React.FC<NaturalLanguageSearchProps> = ({
                         gap: '6px',
                       }}
                     >
-                      <span style={{ opacity: 0.5 }}>🕐</span>
+                      <AnimatedIcon icon="bell" size={14} />
                       {search}
                     </button>
                   ))}
@@ -585,7 +586,7 @@ export const NaturalLanguageSearch: React.FC<NaturalLanguageSearchProps> = ({
                       textAlign: 'left',
                     }}
                   >
-                    <span style={{ fontSize: '1.2rem' }}>{suggestion.icon}</span>
+                    <AnimatedIcon icon={suggestion.icon} size={18} />
                     <div style={{ flex: 1 }}>
                       <div style={{ fontWeight: '500' }}>{suggestion.query}</div>
                       {suggestion.description && (
@@ -607,7 +608,7 @@ export const NaturalLanguageSearch: React.FC<NaturalLanguageSearchProps> = ({
               padding: '16px',
             }}>
               <h4 style={{ fontSize: '0.9rem', marginBottom: '10px', display: 'flex', alignItems: 'center', gap: '8px' }}>
-                <span>💡</span> Search Tips
+                <AnimatedIcon icon="lightbulb" size={14} /> Search Tips
               </h4>
               <ul style={{ margin: 0, paddingLeft: '20px', fontSize: '0.85rem', opacity: 0.8 }}>
                 <li>Use dates: "last week", "yesterday", "in 3 days"</li>
@@ -713,7 +714,7 @@ export const NaturalLanguageSearch: React.FC<NaturalLanguageSearchProps> = ({
                       fontSize: '1.1rem',
                       flexShrink: 0,
                     }}>
-                      {getTypeIcon(result.type)}
+                      <AnimatedIcon icon={getTypeIcon(result.type)!} size={16} />
                     </div>
 
                     <div style={{ flex: 1, minWidth: 0 }}>
@@ -755,7 +756,7 @@ export const NaturalLanguageSearch: React.FC<NaturalLanguageSearchProps> = ({
                               padding: '2px 8px',
                               borderRadius: '10px',
                             }}>
-                              📄 {result.metadata.attachmentName}
+                              <AnimatedIcon icon="package" size={12} /> {result.metadata.attachmentName}
                             </span>
                           )}
                           {result.metadata.taskStatus && (
@@ -838,7 +839,7 @@ export const QuickSearchButton: React.FC<{
         fontSize: '0.9rem',
       }}
     >
-      <span>🔍</span>
+      <AnimatedIcon icon="signal" size={16} />
       <span>Search messages...</span>
       <span style={{
         fontSize: '0.75rem',

@@ -6,6 +6,7 @@
 import React, { useState, useEffect } from 'react';
 import { logosVisionService } from '../../services/logosVisionService';
 import { entomateService } from '../../services/entomateService';
+import { AnimatedIcon } from '../ui/AnimatedIcon';
 
 interface Integration {
   id: string;
@@ -27,42 +28,42 @@ const IntegrationManager: React.FC = () => {
       id: 'logos_vision',
       name: 'Logos Vision CRM',
       description: 'Sync contacts, projects, and activities',
-      icon: '🎯',
+      icon: 'target',
       status: 'disconnected',
     },
     {
       id: 'entomate',
       name: 'Entomate',
       description: 'Automation events and workflows',
-      icon: '🤖',
+      icon: 'gear',
       status: 'disconnected',
     },
     {
       id: 'slack',
       name: 'Slack',
       description: 'Messages and channel notifications',
-      icon: '💬',
+      icon: 'chat',
       status: 'disconnected',
     },
     {
       id: 'gmail',
       name: 'Gmail',
       description: 'Email inbox integration',
-      icon: '📧',
+      icon: 'email',
       status: 'disconnected',
     },
     {
       id: 'twilio',
       name: 'Twilio SMS',
       description: 'SMS messaging integration',
-      icon: '📱',
+      icon: 'mobile',
       status: 'disconnected',
     },
     {
       id: 'github',
       name: 'GitHub',
       description: 'Repository and PR notifications',
-      icon: '🐙',
+      icon: 'link',
       status: 'disconnected',
     },
   ]);
@@ -185,7 +186,7 @@ const IntegrationManager: React.FC = () => {
         {integrations.map((integration) => (
           <div key={integration.id} className="integration-card">
             <div className="integration-card-header">
-              <span className="integration-icon">{integration.icon}</span>
+              <span className="integration-icon"><AnimatedIcon icon={integration.icon} size={24} /></span>
               <div className="integration-info">
                 <h3>{integration.name}</h3>
                 <p>{integration.description}</p>

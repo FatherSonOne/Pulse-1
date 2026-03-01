@@ -497,7 +497,7 @@ const LiveDashboard: React.FC<LiveDashboardProps> = ({ apiKey, userId }) => {
       
       if (data) {
         console.log('[War Room] Project created successfully:', data);
-        toast.success('War Room created! 🎯');
+        toast.success('War Room created!');
         setProjects([data, ...projects]);
         setSelectedProjectId(data.id);
         setNewProjectName('');
@@ -653,7 +653,7 @@ const LiveDashboard: React.FC<LiveDashboardProps> = ({ apiKey, userId }) => {
           const scopeMsg = activeContextDocs.size > 0
             ? `Found ${filteredDocs.length} relevant source(s) in active context`
             : `Found ${filteredDocs.length} relevant source(s)`;
-          toast.success(scopeMsg, { icon: '📚' });
+          toast.success(scopeMsg);
 
           if (enableExtendedThinking) {
             thinkingSteps.push({
@@ -674,7 +674,7 @@ const LiveDashboard: React.FC<LiveDashboardProps> = ({ apiKey, userId }) => {
           const noResultsMsg = activeContextDocs.size > 0
             ? `No relevant content found in active context (${activeContextDocs.size} docs)`
             : `No relevant documents found for this query`;
-          toast(noResultsMsg, { icon: 'ℹ️' });
+          toast(noResultsMsg);
 
           if (enableExtendedThinking) {
             thinkingSteps.push({
@@ -925,9 +925,8 @@ const LiveDashboard: React.FC<LiveDashboardProps> = ({ apiKey, userId }) => {
           ? ` (${processorResult.metadata.wordCount} words)`
           : '';
 
-        toast.success(`✅ ${file.name}${metaInfo} indexed with AI summary!`, {
+        toast.success(`${file.name}${metaInfo} indexed with AI summary!`, {
           duration: 3000,
-          icon: '📚'
         });
 
       } catch (error) {
@@ -967,7 +966,7 @@ const LiveDashboard: React.FC<LiveDashboardProps> = ({ apiKey, userId }) => {
           const blob = new Blob([audio], { type: 'audio/mp3' });
           const url = URL.createObjectURL(blob);
           setAudioUrl(url);
-          toast.success('Audio overview ready! 🎧');
+          toast.success('Audio overview ready!');
         }
       }
     } catch (e) {

@@ -1,4 +1,5 @@
 import React, { useState, useMemo, useCallback } from 'react';
+import { AnimatedIcon } from '../ui/AnimatedIcon';
 
 // Types
 interface KeyMoment {
@@ -177,7 +178,7 @@ const generateMockCollections = (): HighlightCollection[] => [
     momentIds: ['m1', 'm5'],
     createdAt: new Date(Date.now() - 7 * 24 * 60 * 60 * 1000),
     isAuto: true,
-    icon: '⚖️',
+    icon: 'check',
     color: '#3B82F6'
   },
   {
@@ -187,7 +188,7 @@ const generateMockCollections = (): HighlightCollection[] => [
     momentIds: ['m2'],
     createdAt: new Date(Date.now() - 5 * 24 * 60 * 60 * 1000),
     isAuto: true,
-    icon: '✅',
+    icon: 'check',
     color: '#10B981'
   },
   {
@@ -197,7 +198,7 @@ const generateMockCollections = (): HighlightCollection[] => [
     momentIds: ['m3', 'm7'],
     createdAt: new Date(Date.now() - 3 * 24 * 60 * 60 * 1000),
     isAuto: true,
-    icon: '🎯',
+    icon: 'target',
     color: '#8B5CF6'
   }
 ];
@@ -510,13 +511,13 @@ const styles = {
 
 // Type configurations
 const typeConfig: Record<KeyMoment['type'], { icon: string; color: string; label: string }> = {
-  decision: { icon: '⚖️', color: '#3B82F6', label: 'Decision' },
-  action_item: { icon: '✅', color: '#10B981', label: 'Action Item' },
-  question: { icon: '❓', color: '#F59E0B', label: 'Question' },
-  milestone: { icon: '🎯', color: '#8B5CF6', label: 'Milestone' },
-  agreement: { icon: '🤝', color: '#06B6D4', label: 'Agreement' },
-  concern: { icon: '⚠️', color: '#EF4444', label: 'Concern' },
-  celebration: { icon: '🎉', color: '#EC4899', label: 'Celebration' }
+  decision: { icon: 'check', color: '#3B82F6', label: 'Decision' },
+  action_item: { icon: 'check', color: '#10B981', label: 'Action Item' },
+  question: { icon: 'lightbulb', color: '#F59E0B', label: 'Question' },
+  milestone: { icon: 'target', color: '#8B5CF6', label: 'Milestone' },
+  agreement: { icon: 'check', color: '#06B6D4', label: 'Agreement' },
+  concern: { icon: 'warning', color: '#EF4444', label: 'Concern' },
+  celebration: { icon: 'star', color: '#EC4899', label: 'Celebration' }
 };
 
 const importanceColors: Record<KeyMoment['importance'], { bg: string; color: string }> = {
@@ -565,7 +566,7 @@ const MomentCard: React.FC<{
       <div style={styles.momentHeader}>
         <div style={styles.momentType}>
           <div style={{ ...styles.typeIcon, backgroundColor: `${config.color}20` }}>
-            {config.icon}
+            <AnimatedIcon icon={config.icon} size={16} />
           </div>
           <div>
             <div style={styles.momentTitle}>{moment.title}</div>
@@ -601,7 +602,7 @@ const MomentCard: React.FC<{
 
         <div style={{ display: 'flex', alignItems: 'center', gap: '12px' }}>
           <div style={styles.aiConfidence}>
-            <span>🤖</span>
+            <AnimatedIcon icon="gear" size={14} />
             <span>{Math.round(moment.aiConfidence * 100)}% confident</span>
           </div>
 
@@ -667,7 +668,7 @@ const SummaryView: React.FC<{ summary: ConversationSummary }> = ({ summary }) =>
 
         <div style={styles.summarySection}>
           <div style={styles.sectionTitle}>
-            <span>📌</span> Key Points
+            <AnimatedIcon icon="pin" size={14} /> Key Points
           </div>
           <ul style={styles.bulletList}>
             {summary.keyPoints.map((point, i) => (
@@ -681,7 +682,7 @@ const SummaryView: React.FC<{ summary: ConversationSummary }> = ({ summary }) =>
 
         <div style={styles.summarySection}>
           <div style={styles.sectionTitle}>
-            <span>⚖️</span> Decisions Made
+            <AnimatedIcon icon="check" size={14} /> Decisions Made
           </div>
           <ul style={styles.bulletList}>
             {summary.decisions.map((decision, i) => (
@@ -695,7 +696,7 @@ const SummaryView: React.FC<{ summary: ConversationSummary }> = ({ summary }) =>
 
         <div style={styles.summarySection}>
           <div style={styles.sectionTitle}>
-            <span>✅</span> Action Items ({summary.actionItems.filter(a => !a.completed).length} pending)
+            <AnimatedIcon icon="check" size={14} /> Action Items ({summary.actionItems.filter(a => !a.completed).length} pending)
           </div>
           {summary.actionItems.map((item, i) => (
             <div key={i} style={styles.actionItem}>
@@ -727,7 +728,7 @@ const SummaryView: React.FC<{ summary: ConversationSummary }> = ({ summary }) =>
 
         <div style={styles.summarySection}>
           <div style={styles.sectionTitle}>
-            <span>💬</span> Topics Covered
+            <AnimatedIcon icon="chat" size={14} /> Topics Covered
           </div>
           <div style={{ display: 'flex', gap: '8px', flexWrap: 'wrap' }}>
             {summary.topicsCovered.map(topic => (
@@ -746,7 +747,7 @@ const SummaryView: React.FC<{ summary: ConversationSummary }> = ({ summary }) =>
 
         <div>
           <div style={styles.sectionTitle}>
-            <span>👥</span> Participant Activity
+            <AnimatedIcon icon="people" size={14} /> Participant Activity
           </div>
           {summary.participantActivity.map(p => (
             <div key={p.name} style={styles.activityBar}>
@@ -794,7 +795,7 @@ const CollectionsView: React.FC<{
               ...styles.collectionIcon,
               backgroundColor: `${collection.color}20`
             }}>
-              {collection.icon}
+              <AnimatedIcon icon={collection.icon} size={18} />
             </div>
             <div style={styles.collectionInfo}>
               <div style={styles.collectionName}>
@@ -858,7 +859,7 @@ export const ConversationHighlights: React.FC<ConversationHighlightsProps> = ({
     <div style={styles.container}>
       <div style={styles.header}>
         <div style={styles.title}>
-          <span>✨</span>
+          <AnimatedIcon icon="sparkle" size={18} />
           Conversation Highlights
         </div>
       </div>
@@ -894,7 +895,7 @@ export const ConversationHighlights: React.FC<ConversationHighlightsProps> = ({
                   }}
                   onClick={() => toggleType(type as KeyMoment['type'])}
                 >
-                  <span>{config.icon}</span>
+                  <AnimatedIcon icon={config.icon} size={14} />
                   {config.label}
                 </button>
               ))}
@@ -902,7 +903,7 @@ export const ConversationHighlights: React.FC<ConversationHighlightsProps> = ({
 
             {filteredMoments.length === 0 ? (
               <div style={styles.emptyState}>
-                <div style={{ fontSize: '48px', marginBottom: '16px' }}>🔍</div>
+                <div style={{ marginBottom: '16px' }}><AnimatedIcon icon="signal" size={48} /></div>
                 <div style={{ fontSize: '14px' }}>No moments match your filters</div>
               </div>
             ) : (
@@ -954,7 +955,7 @@ export const HighlightIndicator: React.FC<{
         gap: '4px'
       }}
     >
-      <span>{config.icon}</span>
+      <AnimatedIcon icon={config.icon} size={12} />
       {config.label}
     </button>
   );

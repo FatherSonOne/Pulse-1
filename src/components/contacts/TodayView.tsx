@@ -23,6 +23,7 @@ import { Contact } from '../../types';
 import { getUpcomingActions } from '../../services/contactGoalService';
 import { TodayFeedCard } from './TodayFeedCard';
 import { TodayEmptyState } from './TodayEmptyState';
+import { AnimatedIcon } from '../ui/AnimatedIcon';
 
 // ==================== TYPES ====================
 
@@ -34,12 +35,12 @@ interface TodayViewProps {
 type FilterChip = 'all' | TodayFeedItemType;
 
 const FILTER_CHIPS: { id: FilterChip; label: string; icon: string }[] = [
-  { id: 'all',              label: 'All',         icon: '📋' },
-  { id: 'follow_up',        label: 'Follow-ups',  icon: '⏰' },
-  { id: 'hot_lead',         label: 'Hot Leads',   icon: '🔥' },
-  { id: 'birthday',         label: 'Birthdays',   icon: '🎂' },
-  { id: 'cooling',          label: 'Cooling',     icon: '❄️' },
-  { id: 'awaiting_response',label: 'Awaiting',    icon: '📧' },
+  { id: 'all',              label: 'All',         icon: 'clipboard' },
+  { id: 'follow_up',        label: 'Follow-ups',  icon: 'bell' },
+  { id: 'hot_lead',         label: 'Hot Leads',   icon: 'fire' },
+  { id: 'birthday',         label: 'Birthdays',   icon: 'star' },
+  { id: 'cooling',          label: 'Cooling',     icon: 'signal' },
+  { id: 'awaiting_response',label: 'Awaiting',    icon: 'email' },
 ];
 
 const ITEMS_PER_PAGE = 7;
@@ -230,7 +231,7 @@ export const TodayView: React.FC<TodayViewProps> = ({ onAction, contacts = [] })
                   }
                 `}
               >
-                <span>{chip.icon}</span>
+                <AnimatedIcon icon={chip.icon} size={14} />
                 <span>{chip.label}</span>
                 {count > 0 && (
                   <span className={`

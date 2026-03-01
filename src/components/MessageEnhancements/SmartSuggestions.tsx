@@ -1,4 +1,5 @@
 import React, { useState, useCallback, useMemo } from 'react';
+import { AnimatedIcon } from '../ui/AnimatedIcon';
 
 // ============================================================================
 // TYPES & INTERFACES
@@ -204,12 +205,12 @@ const generateMockStats = (): SuggestionStats => ({
 
 const getSuggestionTypeIcon = (type: SuggestionType): string => {
   const icons: Record<SuggestionType, string> = {
-    reply: '💬',
-    action: '⚡',
-    followup: '📅',
-    reminder: '🔔',
-    emoji: '😊',
-    correction: '✏️',
+    reply: 'chat',
+    action: 'lightning',
+    followup: 'calendar',
+    reminder: 'bell',
+    emoji: 'star',
+    correction: 'edit',
   };
   return icons[type];
 };
@@ -659,7 +660,7 @@ export const SmartSuggestions: React.FC<SmartSuggestionsProps> = ({
             }}
             onClick={() => setTypeFilter(type)}
           >
-            {type === 'all' ? 'All Types' : `${getSuggestionTypeIcon(type)} ${getSuggestionTypeLabel(type)}`}
+            {type === 'all' ? 'All Types' : <><AnimatedIcon icon={getSuggestionTypeIcon(type)} size={14} /> {getSuggestionTypeLabel(type)}</>}
           </button>
         ))}
       </div>
@@ -678,7 +679,7 @@ export const SmartSuggestions: React.FC<SmartSuggestionsProps> = ({
           >
             <div style={styles.suggestionHeader}>
               <div style={styles.suggestionType}>
-                <span>{getSuggestionTypeIcon(suggestion.type)}</span>
+                <AnimatedIcon icon={getSuggestionTypeIcon(suggestion.type)} size={14} />
                 <span>{getSuggestionTypeLabel(suggestion.type)}</span>
                 <span style={{
                   ...styles.suggestionBadge,
@@ -808,7 +809,7 @@ export const SmartSuggestions: React.FC<SmartSuggestionsProps> = ({
           {stats.topTypes.map(item => (
             <div key={item.type} style={styles.chartBar}>
               <div style={styles.chartLabel}>
-                {getSuggestionTypeIcon(item.type)} {getSuggestionTypeLabel(item.type)}
+                <AnimatedIcon icon={getSuggestionTypeIcon(item.type)} size={12} /> {getSuggestionTypeLabel(item.type)}
               </div>
               <div style={styles.chartBarTrack}>
                 <div style={{
@@ -1022,7 +1023,7 @@ export const SmartSuggestions: React.FC<SmartSuggestionsProps> = ({
     <div style={styles.container}>
       <div style={styles.header}>
         <div style={styles.title}>
-          <span>🧠</span>
+          <AnimatedIcon icon="lightbulb" size={16} />
           <span>Smart Suggestions</span>
         </div>
         <div style={styles.subtitle}>

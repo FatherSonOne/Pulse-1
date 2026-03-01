@@ -223,47 +223,29 @@ export const workspaceService = {
    * Validates that the invite has not already been accepted and has not expired.
    * Adds the current user to workspace_members and marks the invite as accepted.
    */
-  async acceptInvite(token: string): Promise<void> {
-    const userId = await getCurrentUserId();
+  /**
+   * Accepts a workspace invite via the accept_workspace_invite RPC function.
+   * The RPC runs as SECURITY DEFINER so it can insert the member row without
+   * the caller needing existing membership. Returns the workspace_id on success.
+   */
+  async acceptInvite(token: string): Promise<string> {
+    const { data, error } = await supabase.rpc('accept_workspace_invite', { p_token: token });
 
-    // Look up the invite
-    const { data: invite, error: lookupError } = await supabase
-      .from('workspace_invites')
-      .select('*')
-      .eq('token', token)
-      .maybeSingle();
+    assertNoError(error, 'acceptInvite — rpc');
 
-    assertNoError(lookupError, 'acceptInvite — lookup');
-
-    if (!invite) {
-      throw new Error('[workspaceService] acceptInvite: invite not found');
-    }
-    if (invite.accepted_at !== null) {
-      throw new Error('[workspaceService] acceptInvite: invite has already been accepted');
-    }
-    if (new Date(invite.expires_at) < new Date()) {
-      throw new Error('[workspaceService] acceptInvite: invite has expired');
+    const result = data as { success: boolean; workspace_id?: string; role?: string; error?: string };
+    if (!result.success) {
+      throw new Error(`[workspaceService] acceptInvite: ${result.error}`);
     }
 
-    // Add the user as a member
-    const { error: memberError } = await supabase
-      .from('workspace_members')
-      .insert({
-        workspace_id: invite.workspace_id,
-        user_id: userId,
-        role: invite.role,
-        invited_by: invite.invited_by,
-      });
+    return result.workspace_id!;
+  },
 
-    assertNoError(memberError, 'acceptInvite — insert member');
-
-    // Mark the invite as accepted
-    const { error: updateError } = await supabase
-      .from('workspace_invites')
-      .update({ accepted_at: new Date().toISOString() })
-      .eq('id', invite.id);
-
-    assertNoError(updateError, 'acceptInvite — mark accepted');
+  /**
+   * Returns the shareable invite link URL for a given invite token.
+   */
+  getInviteLink(token: string): string {
+    return `${window.location.origin}/invite?token=${encodeURIComponent(token)}`;
   },
 
   /**

@@ -18,6 +18,7 @@ import { RelationshipsView } from './RelationshipsView';
 import { ConflictsView } from './ConflictsView';
 import { KudosView } from './KudosView';
 import { PredictionsView } from './PredictionsView';
+import { AnimatedIcon } from '../ui/AnimatedIcon';
 import './AnalyticsDashboard.css';
 import './AnalyticsEnhancements.css';
 import './AnalyticsEnhancementsPart2.css';
@@ -186,7 +187,12 @@ export const AnalyticsDashboard: React.FC<AnalyticsDashboardProps> = ({ onClose 
                 setMobileMenuOpen(false);
               }}
             >
-              <span className="view-icon">{view.icon}</span>
+              <span className="view-icon">
+                {view.id === 'velocity' ? <AnimatedIcon icon="lightning" size={14} /> :
+                 view.id === 'kudos' ? <AnimatedIcon icon="trophy" size={14} /> :
+                 view.id === 'predictions' ? <AnimatedIcon icon="lightbulb" size={14} /> :
+                 view.icon}
+              </span>
               <span className="view-label">{view.label}</span>
             </button>
           ))}
@@ -445,7 +451,7 @@ export const AnalyticsDashboard: React.FC<AnalyticsDashboardProps> = ({ onClose 
 
                 <div className="velocity-stats">
                   <div className="stat-card glass stat-fast">
-                    <span className="stat-icon">⚡</span>
+                    <span className="stat-icon"><AnimatedIcon icon="lightning" size={16} /></span>
                     <span className="stat-value">{formatDuration(responseStats.fastestResponse)}</span>
                     <span className="stat-label">Fastest</span>
                   </div>

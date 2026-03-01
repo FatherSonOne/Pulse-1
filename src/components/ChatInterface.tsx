@@ -1,5 +1,6 @@
 import React, { useEffect, useRef, useState } from 'react';
 import { useChatContext } from '../context/ChatContext';
+import { AnimatedIcon } from './ui/AnimatedIcon';
 import './ChatInterface.css';
 
 export const ChatInterface: React.FC = () => {
@@ -46,11 +47,11 @@ export const ChatInterface: React.FC = () => {
     <div className="chat-interface">
       {/* Header */}
       <div className="chat-header">
-        <h1>🔐 Pulse E2EE Chat</h1>
+        <h1><AnimatedIcon icon="lock" size={20} /> Pulse E2EE Chat</h1>
         {workspaceId && (
           <div className="workspace-info">
             <span className={`status ${isWorkspaceActive ? 'active' : 'inactive'}`}>
-              {isWorkspaceActive ? '🟢 Active' : '🔴 Expired'}
+              {isWorkspaceActive ? <><AnimatedIcon icon="check" size={12} /> Active</> : <><AnimatedIcon icon="cross" size={12} /> Expired</>}
             </span>
             <code className="workspace-id">ID: {workspaceId.substring(0, 8)}...</code>
           </div>
@@ -61,7 +62,7 @@ export const ChatInterface: React.FC = () => {
       {userId && userKeys && (
         <div className="user-info">
           <p><strong>User ID:</strong> {userId.substring(0, 16)}...</p>
-          <p><strong>Encryption:</strong> ✅ Enabled (libsodium.js)</p>
+          <p><strong>Encryption:</strong> <AnimatedIcon icon="check" size={14} /> Enabled (libsodium.js)</p>
         </div>
       )}
 
@@ -95,7 +96,7 @@ export const ChatInterface: React.FC = () => {
           <div className="messages-container">
             {messages.length === 0 ? (
               <div className="empty-state">
-                <p>📭 No messages yet. Start the conversation!</p>
+                <p><AnimatedIcon icon="email" size={16} /> No messages yet. Start the conversation!</p>
               </div>
             ) : (
               messages.map((msg) => (
@@ -133,13 +134,13 @@ export const ChatInterface: React.FC = () => {
               disabled={isLoading || !isWorkspaceActive || !messageText.trim()}
               className="btn-send"
             >
-              {isLoading ? '⏳' : '🔒 Send'}
+              {isLoading ? <AnimatedIcon icon="gear" size={16} /> : <><AnimatedIcon icon="lock" size={14} /> Send</>}
             </button>
           </form>
 
           {!isWorkspaceActive && (
             <div className="alert alert-warning">
-              ⚠️ This workspace has expired. No new messages can be sent.
+              <AnimatedIcon icon="warning" size={14} /> This workspace has expired. No new messages can be sent.
             </div>
           )}
         </>
@@ -148,7 +149,7 @@ export const ChatInterface: React.FC = () => {
       {/* Error Display */}
       {error && (
         <div className="alert alert-error">
-          ❌ {error}
+          <AnimatedIcon icon="cross" size={14} /> {error}
         </div>
       )}
     </div>

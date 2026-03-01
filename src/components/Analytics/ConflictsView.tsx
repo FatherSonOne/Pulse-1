@@ -14,6 +14,7 @@ import {
   ConflictSummary,
   HotTopic,
 } from '../../services/conflictDetectionService';
+import { AnimatedIcon } from '../ui/AnimatedIcon';
 
 interface ConflictsViewProps {
   timeRange: string;
@@ -259,7 +260,7 @@ export const ConflictsView: React.FC<ConflictsViewProps> = ({ timeRange }) => {
                       <span className="topic-icon">◈</span>
                       <span className="topic-text">{conflict.trigger_topic}</span>
                       {conflict.hot_topic && (
-                        <span className="hot-badge">🔥 Hot Topic</span>
+                        <span className="hot-badge"><AnimatedIcon icon="fire" size={12} /> Hot Topic</span>
                       )}
                     </div>
                   )}
@@ -356,7 +357,7 @@ export const ConflictsView: React.FC<ConflictsViewProps> = ({ timeRange }) => {
         <aside className="hot-topics-sidebar">
           <div className="panel glass hot-topics-panel">
             <h3 className="panel-title">
-              <span className="title-icon">🔥</span>
+              <AnimatedIcon icon="fire" size={16} />
               Hot Topics
             </h3>
 
@@ -409,13 +410,13 @@ export const ConflictsView: React.FC<ConflictsViewProps> = ({ timeRange }) => {
 
                     {topic.avoidance_recommended && (
                       <div className="avoidance-badge">
-                        ⚠ Avoidance recommended
+                        <AnimatedIcon icon="warning" size={12} /> Avoidance recommended
                       </div>
                     )}
 
                     {topic.communication_tip && (
                       <div className="communication-tip">
-                        <span className="tip-icon">💡</span>
+                        <span className="tip-icon"><AnimatedIcon icon="lightbulb" size={14} /></span>
                         <p className="tip-text">{topic.communication_tip}</p>
                       </div>
                     )}

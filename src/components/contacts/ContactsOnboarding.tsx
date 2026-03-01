@@ -5,6 +5,7 @@
 // ============================================
 
 import React, { useState, useEffect } from 'react';
+import { AnimatedIcon } from '../ui/AnimatedIcon';
 
 // ==================== TYPES ====================
 
@@ -25,35 +26,35 @@ const TOUR_STEPS: OnboardingStep[] = [
     title: 'Welcome to Contacts Reimagined',
     body: 'Your contacts section is now a People Intelligence system. Let\'s take a 30-second tour.',
     position: 'center',
-    icon: '🚀',
+    icon: 'rocket',
   },
   {
     id: 'today',
     title: 'Your Day',
     body: 'The Today tab shows AI-curated relationship actions — who to reach out to, follow up with, or celebrate. Check it every morning.',
     position: 'top',
-    icon: '🎯',
+    icon: 'target',
   },
   {
     id: 'people',
     title: 'Your People',
     body: 'The People tab is your enhanced contacts list with relationship health rings, AI search, and rich profiles. Try searching "clients I haven\'t talked to in a month".',
     position: 'top',
-    icon: '🧑‍🤝‍🧑',
+    icon: 'people',
   },
   {
     id: 'circles',
     title: 'Your Network',
     body: 'The Circles tab shows your network as interactive bubbles. Let AI group your contacts automatically, or create your own circles.',
     position: 'top',
-    icon: '🗺️',
+    icon: 'globe',
   },
   {
     id: 'goals',
     title: 'Set Keep-in-Touch Goals',
     body: 'Open any contact and set a relationship goal. Enable Autopilot and AI will draft messages for you when it\'s time to reach out.',
     position: 'center',
-    icon: '🤖',
+    icon: 'gear',
   },
 ];
 
@@ -99,8 +100,8 @@ export const ContactsOnboarding: React.FC<ContactsOnboardingProps> = ({ onComple
         <div className="p-6">
           {/* Step icon */}
           <div className="flex justify-center mb-4">
-            <div className="w-14 h-14 rounded-2xl bg-indigo-50 dark:bg-indigo-900/20 flex items-center justify-center text-3xl shadow-sm">
-              {currentStep.icon}
+            <div className="w-14 h-14 rounded-2xl bg-indigo-50 dark:bg-indigo-900/20 flex items-center justify-center shadow-sm">
+              <AnimatedIcon icon={currentStep.icon} size={32} />
             </div>
           </div>
 

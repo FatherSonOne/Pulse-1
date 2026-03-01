@@ -1,6 +1,6 @@
 import React, { useState, useRef, useEffect } from 'react';
 import { useWorkspace } from '../../contexts/WorkspaceContext';
-import { Workspace } from '../../services/workspaceService';
+import { Workspace, workspaceService } from '../../services/workspaceService';
 import './WorkspaceSwitcher.css';
 
 interface WorkspaceSwitcherProps {
@@ -15,19 +15,26 @@ function getInitials(name: string): string {
     .join('');
 }
 
+// Size variants map to CSS classes: sm=22px, md=24px, lg=28px
+function avatarSizeClass(size: number): string {
+  if (size <= 22) return 'ws-avatar-sm';
+  if (size <= 24) return 'ws-avatar-md';
+  return 'ws-avatar-lg';
+}
+
 function WorkspaceAvatar({ workspace, size = 28 }: { workspace: Workspace; size?: number }) {
+  const sc = avatarSizeClass(size);
   if (workspace.avatar_url) {
     return (
       <img
         src={workspace.avatar_url}
         alt={workspace.name}
-        className="ws-avatar ws-avatar-img"
-        style={{ width: size, height: size }}
+        className={`ws-avatar ws-avatar-img ${sc}`}
       />
     );
   }
   return (
-    <div className="ws-avatar ws-avatar-initials" style={{ width: size, height: size, fontSize: size * 0.38 }}>
+    <div className={`ws-avatar ws-avatar-initials ${sc}`}>
       {getInitials(workspace.name)}
     </div>
   );
@@ -54,6 +61,8 @@ export const WorkspaceSwitcher: React.FC<WorkspaceSwitcherProps> = ({ isCollapse
   const [isCreating, setIsCreating] = useState(false);
   const [isInviting, setIsInviting] = useState(false);
   const [inviteError, setInviteError] = useState('');
+  const [inviteLink, setInviteLink] = useState('');
+  const [linkCopied, setLinkCopied] = useState(false);
   const panelRef = useRef<HTMLDivElement>(null);
   const triggerRef = useRef<HTMLButtonElement>(null);
 
@@ -102,15 +111,21 @@ export const WorkspaceSwitcher: React.FC<WorkspaceSwitcherProps> = ({ isCollapse
     setIsInviting(true);
     setInviteError('');
     try {
-      const { workspaceService } = await import('../../services/workspaceService');
-      await workspaceService.inviteMember(currentWorkspace.id, inviteEmail.trim(), inviteRole);
+      const invite = await workspaceService.inviteMember(currentWorkspace.id, inviteEmail.trim(), inviteRole);
       setInviteEmail('');
-      setShowInviteForm(false);
+      setInviteLink(workspaceService.getInviteLink(invite.token));
     } catch (err: any) {
       setInviteError(err?.message ?? 'Invite failed');
     } finally {
       setIsInviting(false);
     }
+  };
+
+  const handleCopyLink = () => {
+    navigator.clipboard.writeText(inviteLink).then(() => {
+      setLinkCopied(true);
+      setTimeout(() => setLinkCopied(false), 2000);
+    });
   };
 
   if (!currentWorkspace) return null;
@@ -120,6 +135,7 @@ export const WorkspaceSwitcher: React.FC<WorkspaceSwitcherProps> = ({ isCollapse
     return (
       <div className="ws-switcher-collapsed">
         <button
+          type="button"
           ref={triggerRef}
           className="ws-trigger-collapsed"
           onClick={() => setIsOpen((o) => !o)}
@@ -145,12 +161,14 @@ export const WorkspaceSwitcher: React.FC<WorkspaceSwitcherProps> = ({ isCollapse
     <div className="ws-switcher">
       {/* Trigger button */}
       <button
+        type="button"
         ref={triggerRef}
         className={`ws-trigger ${isOpen ? 'open' : ''}`}
         onClick={() => {
           setIsOpen((o) => !o);
           setShowCreateForm(false);
           setShowInviteForm(false);
+          setInviteLink('');
         }}
       >
         <WorkspaceAvatar workspace={currentWorkspace} size={24} />
@@ -213,6 +231,7 @@ export const WorkspaceSwitcher: React.FC<WorkspaceSwitcherProps> = ({ isCollapse
               {canManageMembers && (
                 <div className="ws-panel-section ws-panel-divider">
                   <button
+                    type="button"
                     className="ws-action-btn"
                     onClick={() => setShowInviteForm(true)}
                   >
@@ -228,6 +247,7 @@ export const WorkspaceSwitcher: React.FC<WorkspaceSwitcherProps> = ({ isCollapse
           {showCreateForm && (
             <div className="ws-panel-section">
               <button
+                type="button"
                 className="ws-back-btn"
                 onClick={() => setShowCreateForm(false)}
               >
@@ -258,8 +278,9 @@ export const WorkspaceSwitcher: React.FC<WorkspaceSwitcherProps> = ({ isCollapse
           {showInviteForm && (
             <div className="ws-panel-section">
               <button
+                type="button"
                 className="ws-back-btn"
-                onClick={() => { setShowInviteForm(false); setInviteError(''); }}
+                onClick={() => { setShowInviteForm(false); setInviteError(''); setInviteLink(''); }}
               >
                 <i className="fa-solid fa-arrow-left" /> Back
               </button>
@@ -274,6 +295,7 @@ export const WorkspaceSwitcher: React.FC<WorkspaceSwitcherProps> = ({ isCollapse
                   onChange={(e) => setInviteEmail(e.target.value)}
                 />
                 <select
+                  aria-label="Member role"
                   className="ws-input ws-select"
                   value={inviteRole}
                   onChange={(e) => setInviteRole(e.target.value as 'admin' | 'member' | 'viewer')}
@@ -291,6 +313,24 @@ export const WorkspaceSwitcher: React.FC<WorkspaceSwitcherProps> = ({ isCollapse
                   {isInviting ? 'Sending…' : 'Send invite'}
                 </button>
               </form>
+              {inviteLink && (
+                <div className="ws-invite-link-box">
+                  <span className="ws-invite-link-label">Invite link</span>
+                  <div className="ws-invite-link-row">
+                    <span className="ws-invite-link-text">{inviteLink}</span>
+                    <button
+                      type="button"
+                      className="ws-copy-btn"
+                      onClick={handleCopyLink}
+                      title="Copy invite link"
+                    >
+                      {linkCopied
+                        ? <i className="fa-solid fa-check" />
+                        : <i className="fa-solid fa-copy" />}
+                    </button>
+                  </div>
+                </div>
+              )}
             </div>
           )}
         </div>
@@ -314,6 +354,7 @@ const WorkspaceList: React.FC<WorkspaceListProps> = ({ workspaces, currentId, on
   <>
     {workspaces.map((ws) => (
       <button
+        type="button"
         key={ws.id}
         className={`ws-list-item ${ws.id === currentId ? 'active' : ''}`}
         onClick={() => onSwitch(ws)}
@@ -323,7 +364,7 @@ const WorkspaceList: React.FC<WorkspaceListProps> = ({ workspaces, currentId, on
         {ws.id === currentId && <i className="fa-solid fa-check ws-list-check" />}
       </button>
     ))}
-    <button className="ws-list-item ws-list-create" onClick={onCreateClick}>
+    <button type="button" className="ws-list-item ws-list-create" onClick={onCreateClick}>
       <div className="ws-create-icon"><i className="fa-solid fa-plus" /></div>
       <span>New workspace</span>
     </button>

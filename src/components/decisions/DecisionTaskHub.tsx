@@ -28,6 +28,7 @@ import { ReassignTaskModal } from './ReassignTaskModal';
 import { ExtendDeadlineDialog } from './ExtendDeadlineDialog';
 import { User } from '../../types';
 import { supabase } from '../../services/supabase';
+import { useWorkspace } from '../../contexts/WorkspaceContext';
 import {
   getDismissedNudges,
   dismissNudge,
@@ -72,6 +73,7 @@ export const DecisionTaskHub: React.FC<DecisionTaskHubProps> = ({
   user,
   workspaceId
 }) => {
+  const { currentWorkspace } = useWorkspace();
   // Core state
   const [mode, setMode] = useState<HubMode>('active');
   const [decisions, setDecisions] = useState<DecisionWithVotes[]>([]);
@@ -125,8 +127,8 @@ export const DecisionTaskHub: React.FC<DecisionTaskHubProps> = ({
   const debouncedDecisions = useDebounce(decisions, 800);
   const debouncedTasks = useDebounce(tasks, 800);
 
-  // Use user.id as workspace_id if not provided
-  const effectiveWorkspaceId = workspaceId || user?.id || '';
+  // Use current workspace from context, fall back to prop then user.id (Phase 1 compat)
+  const effectiveWorkspaceId = workspaceId || currentWorkspace?.id || user?.id || '';
 
   // Load dismissed nudges from localStorage on mount
   useEffect(() => {

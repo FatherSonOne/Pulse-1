@@ -9,9 +9,11 @@ import MessageAnalytics from '../MessageAnalytics';
 import IntegrationManager from './IntegrationManager';
 import SettingsPanel from './SettingsPanel';
 import WebhookManager from './WebhookManager';
+import SearchAnalyticsDashboard from './SearchAnalyticsDashboard';
+import { AnimatedIcon } from '../ui/AnimatedIcon';
 import './AdminDashboard.css';
 
-type AdminTab = 'messages' | 'analytics' | 'integrations' | 'webhooks' | 'settings';
+type AdminTab = 'messages' | 'analytics' | 'integrations' | 'webhooks' | 'settings' | 'search';
 
 interface AdminDashboardProps {
   userId: string;
@@ -25,11 +27,12 @@ const AdminDashboard: React.FC<AdminDashboardProps> = ({ userId }) => {
   const [activeTab, setActiveTab] = useState<AdminTab>('messages');
 
   const tabs: { id: AdminTab; label: string; icon: string }[] = [
-    { id: 'messages', label: 'Messages', icon: '💬' },
-    { id: 'analytics', label: 'Analytics', icon: '📊' },
-    { id: 'integrations', label: 'Integrations', icon: '🔗' },
-    { id: 'webhooks', label: 'Webhooks', icon: '🪝' },
-    { id: 'settings', label: 'Settings', icon: '⚙️' },
+    { id: 'messages', label: 'Messages', icon: 'chat' },
+    { id: 'analytics', label: 'Analytics', icon: 'chart' },
+    { id: 'integrations', label: 'Integrations', icon: 'link' },
+    { id: 'webhooks', label: 'Webhooks', icon: 'hook' },
+    { id: 'settings', label: 'Settings', icon: 'gear' },
+    { id: 'search', label: 'Search', icon: 'search' },
   ];
 
   const renderTabContent = () => {
@@ -44,6 +47,8 @@ const AdminDashboard: React.FC<AdminDashboardProps> = ({ userId }) => {
         return <WebhookManager />;
       case 'settings':
         return <SettingsPanel userId={userId} />;
+      case 'search':
+        return <SearchAnalyticsDashboard userId={userId} />;
       default:
         return null;
     }
@@ -63,7 +68,7 @@ const AdminDashboard: React.FC<AdminDashboardProps> = ({ userId }) => {
             className={`admin-nav-tab ${activeTab === tab.id ? 'active' : ''}`}
             onClick={() => setActiveTab(tab.id)}
           >
-            <span className="tab-icon">{tab.icon}</span>
+            <span className="tab-icon"><AnimatedIcon icon={tab.icon} size={18} /></span>
             <span className="tab-label">{tab.label}</span>
           </button>
         ))}

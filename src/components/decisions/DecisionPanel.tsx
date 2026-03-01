@@ -1,4 +1,5 @@
 import { useState, useEffect } from 'react';
+import { AnimatedIcon } from '../ui/AnimatedIcon';
 import { 
   CheckCircle, 
   XCircle, 
@@ -114,7 +115,7 @@ export const DecisionPanel: React.FC<DecisionPanelProps> = ({
   return (
     <div className="decision-panel">
       <div className="decision-header">
-        <h2>📋 Decisions</h2>
+        <h2><AnimatedIcon icon="clipboard" size={18} /> Decisions</h2>
         <button 
           className="btn-primary"
           onClick={() => setShowCreateForm(!showCreateForm)}
@@ -212,7 +213,7 @@ export const DecisionPanel: React.FC<DecisionPanelProps> = ({
 
                 {decision.status === 'decided' && decision.final_decision && (
                   <div className="final-decision">
-                    <strong>📝 Final Decision:</strong>
+                    <strong><AnimatedIcon icon="note" size={14} /> Final Decision:</strong>
                     <p>{decision.final_decision}</p>
                   </div>
                 )}

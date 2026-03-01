@@ -2,6 +2,7 @@
 // Shows recording preview with AI analysis before sending
 
 import React, { useState, useEffect, useRef, useCallback } from 'react';
+import { AnimatedIcon } from '../ui/AnimatedIcon';
 
 // ============================================
 // TYPES
@@ -310,12 +311,12 @@ export const VoxPreviewPanel: React.FC<VoxPreviewPanelProps> = ({
     }
   };
 
-  const getToneEmoji = (tone: string) => {
+  const getToneIcon = (tone: string) => {
     switch (tone) {
-      case 'positive': return '😊';
-      case 'negative': return '😔';
-      case 'urgent': return '⚡';
-      default: return '😐';
+      case 'positive': return 'star';
+      case 'negative': return 'warning';
+      case 'urgent': return 'lightning';
+      default: return 'note';
     }
   };
 
@@ -448,7 +449,7 @@ export const VoxPreviewPanel: React.FC<VoxPreviewPanelProps> = ({
                     
                     {/* Tone */}
                     <div className="rounded-lg px-2 py-1.5 text-center bg-zinc-100 dark:bg-zinc-800">
-                      <span className="text-sm">{getToneEmoji(analysis.tone)}</span>
+                      <AnimatedIcon icon={getToneIcon(analysis.tone)} size={16} />
                       <div className="text-[10px] font-medium text-zinc-600 dark:text-zinc-400 capitalize mt-0.5">{analysis.tone}</div>
                     </div>
                   </div>

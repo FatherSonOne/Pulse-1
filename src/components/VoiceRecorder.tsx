@@ -1,6 +1,7 @@
 import { useState, useRef, useEffect } from 'react';
 import { useMultiModalIntelligence } from '../hooks/useMultiModalIntelligence';
 import { VoiceMessage, TranscriptionResult, TaskFromVoice, DecisionFromVoice } from '../types';
+import { AnimatedIcon } from './ui/AnimatedIcon';
 import './VoiceRecorder.css';
 
 /**
@@ -119,7 +120,7 @@ export default function VoiceRecorder() {
   return (
     <div className="voice-recorder">
       <div className="recorder-header">
-        <h2>🎙️ Voice Intelligence</h2>
+        <h2><AnimatedIcon icon="microphone" size={22} /> Voice Intelligence</h2>
         <p className="subtitle">Record, transcribe, and extract actionable insights</p>
       </div>
 
@@ -129,7 +130,7 @@ export default function VoiceRecorder() {
           <div className={`record-button ${isRecording ? 'recording' : ''}`}>
             {!isRecording ? (
               <button onClick={handleStartRecording} className="start-record-btn">
-                <span className="mic-icon">🎤</span>
+                <span className="mic-icon"><AnimatedIcon icon="microphone" size={24} /></span>
                 <span>Start Recording</span>
               </button>
             ) : (
@@ -137,7 +138,7 @@ export default function VoiceRecorder() {
                 <div className="pulse-ring"></div>
                 <div className="recording-time">{formatTime(recordingTime)}</div>
                 <button onClick={handleStopRecording} className="stop-record-btn">
-                  ⏹ Stop
+                  Stop
                 </button>
               </div>
             )}
@@ -174,14 +175,14 @@ export default function VoiceRecorder() {
 
       {error && (
         <div className="error-state">
-          <p>❌ {error}</p>
+          <p><AnimatedIcon icon="cross" size={14} /> {error}</p>
         </div>
       )}
 
       {/* Voice Messages List */}
       {voiceMessages.length > 0 && (
         <div className="voice-messages-section">
-          <h3>📼 Recorded Messages</h3>
+          <h3><AnimatedIcon icon="microphone" size={16} /> Recorded Messages</h3>
           <div className="voice-messages-list">
             {voiceMessages.map((voice) => (
               <div
@@ -192,7 +193,7 @@ export default function VoiceRecorder() {
                 onClick={() => setSelectedVoice(voice)}
               >
                 <div className="voice-header">
-                  <span className="voice-icon">🎵</span>
+                  <span className="voice-icon"><AnimatedIcon icon="microphone" size={16} /></span>
                   <span className="voice-duration">
                     {formatTime(Math.floor(voice.duration / 1000))}
                   </span>
@@ -219,7 +220,7 @@ export default function VoiceRecorder() {
                   className="transcribe-btn"
                   disabled={voice.status === 'processing'}
                 >
-                  {voice.status === 'completed' ? '🔄 Re-transcribe' : '📝 Transcribe'}
+                  {voice.status === 'completed' ? <><AnimatedIcon icon="reply" size={14} /> Re-transcribe</> : <><AnimatedIcon icon="note" size={14} /> Transcribe</>}
                 </button>
               </div>
             ))}
@@ -230,7 +231,7 @@ export default function VoiceRecorder() {
       {/* Transcription Panel */}
       {selectedTranscription && (
         <div className="transcription-panel">
-          <h3>📄 Transcription</h3>
+          <h3><AnimatedIcon icon="note" size={16} /> Transcription</h3>
 
           <div className="transcription-content">
             <div className="transcription-meta">
@@ -246,20 +247,20 @@ export default function VoiceRecorder() {
           {/* Action Buttons */}
           <div className="action-buttons">
             <button onClick={handleExtractTasks} className="action-btn extract-tasks">
-              📋 Extract Tasks
+              <AnimatedIcon icon="clipboard" size={14} /> Extract Tasks
             </button>
             <button onClick={handleExtractDecisions} className="action-btn extract-decisions">
-              ✅ Extract Decisions
+              <AnimatedIcon icon="check" size={14} /> Extract Decisions
             </button>
             <button onClick={handleSummarize} className="action-btn summarize">
-              📊 Summarize
+              <AnimatedIcon icon="chart" size={14} /> Summarize
             </button>
           </div>
 
           {/* Extracted Tasks */}
           {extractedTasks.length > 0 && (
             <div className="extracted-section">
-              <h4>📋 Extracted Tasks</h4>
+              <h4><AnimatedIcon icon="clipboard" size={15} /> Extracted Tasks</h4>
               <div className="tasks-list">
                 {extractedTasks.map((task) => (
                   <div key={task.id} className="task-card">
@@ -271,10 +272,10 @@ export default function VoiceRecorder() {
                     </div>
                     <div className="task-description">{task.description}</div>
                     {task.assignee && (
-                      <div className="task-assignee">👤 {task.assignee}</div>
+                      <div className="task-assignee"><AnimatedIcon icon="people" size={12} /> {task.assignee}</div>
                     )}
                     {task.dueDate && (
-                      <div className="task-due">📅 {new Date(task.dueDate).toLocaleDateString()}</div>
+                      <div className="task-due"><AnimatedIcon icon="calendar" size={12} /> {new Date(task.dueDate).toLocaleDateString()}</div>
                     )}
                   </div>
                 ))}
@@ -285,7 +286,7 @@ export default function VoiceRecorder() {
           {/* Extracted Decisions */}
           {extractedDecisions.length > 0 && (
             <div className="extracted-section">
-              <h4>✅ Extracted Decisions</h4>
+              <h4><AnimatedIcon icon="check" size={15} /> Extracted Decisions</h4>
               <div className="decisions-list">
                 {extractedDecisions.map((decision) => (
                   <div key={decision.id} className="decision-card">
@@ -304,7 +305,7 @@ export default function VoiceRecorder() {
           {/* Summary */}
           {summary && (
             <div className="extracted-section">
-              <h4>📊 Summary</h4>
+              <h4><AnimatedIcon icon="chart" size={15} /> Summary</h4>
               <div className="summary-content">{summary}</div>
             </div>
           )}

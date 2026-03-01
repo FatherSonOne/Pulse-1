@@ -10,6 +10,7 @@ import {
   PredictionCache,
   BurnoutIndicator,
 } from '../../services/predictiveAnalyticsService';
+import { AnimatedIcon } from '../ui/AnimatedIcon';
 
 interface PredictionsViewProps {
   timeRange: string;
@@ -61,12 +62,12 @@ export const PredictionsView: React.FC<PredictionsViewProps> = ({ timeRange }) =
     }
   };
 
-  const getPredictionIcon = (type: string): string => {
-    if (type.includes('churn')) return '⚠';
-    if (type.includes('timing')) return '⏰';
-    if (type.includes('engagement')) return '📈';
-    if (type.includes('response')) return '⚡';
-    return '🔮';
+  const getPredictionIconKey = (type: string): string => {
+    if (type.includes('churn')) return 'warning';
+    if (type.includes('timing')) return 'clock';
+    if (type.includes('engagement')) return 'chart';
+    if (type.includes('response')) return 'lightning';
+    return 'sparkle';
   };
 
   const formatTimeAgo = (timestamp: string): string => {
@@ -116,7 +117,7 @@ export const PredictionsView: React.FC<PredictionsViewProps> = ({ timeRange }) =
         <section className="burnout-monitor">
           <div className="monitor-header">
             <h2 className="monitor-title">
-              <span className="title-icon">🧠</span>
+              <AnimatedIcon icon="lightbulb" size={20} />
               Burnout Risk Monitor
             </h2>
           </div>
@@ -142,27 +143,27 @@ export const PredictionsView: React.FC<PredictionsViewProps> = ({ timeRange }) =
             {/* Risk Factors Grid */}
             <div className="risk-factors">
               <div className={`factor-item ${burnout.avg_response_time_increasing ? 'active' : ''}`}>
-                <span className="factor-icon">⏱</span>
+                <span className="factor-icon"><AnimatedIcon icon="clock" size={16} /></span>
                 <span className="factor-label">Response Time ↑</span>
               </div>
               <div className={`factor-item ${burnout.message_volume_increasing ? 'active' : ''}`}>
-                <span className="factor-icon">📊</span>
+                <span className="factor-icon"><AnimatedIcon icon="chart" size={16} /></span>
                 <span className="factor-label">Message Volume ↑</span>
               </div>
               <div className={`factor-item ${burnout.sentiment_declining ? 'active' : ''}`}>
-                <span className="factor-icon">😟</span>
+                <span className="factor-icon"><AnimatedIcon icon="warning" size={16} /></span>
                 <span className="factor-label">Sentiment ↓</span>
               </div>
               <div className={`factor-item ${burnout.working_hours_extending ? 'active' : ''}`}>
-                <span className="factor-icon">🌙</span>
+                <span className="factor-icon"><AnimatedIcon icon="clock" size={16} /></span>
                 <span className="factor-label">Working Hours ↑</span>
               </div>
               <div className={`factor-item ${burnout.weekend_activity_high ? 'active' : ''}`}>
-                <span className="factor-icon">📅</span>
+                <span className="factor-icon"><AnimatedIcon icon="calendar" size={16} /></span>
                 <span className="factor-label">Weekend Activity</span>
               </div>
               <div className={`factor-item ${burnout.response_quality_dropping ? 'active' : ''}`}>
-                <span className="factor-icon">✍</span>
+                <span className="factor-icon"><AnimatedIcon icon="edit" size={16} /></span>
                 <span className="factor-label">Quality ↓</span>
               </div>
             </div>
@@ -195,7 +196,7 @@ export const PredictionsView: React.FC<PredictionsViewProps> = ({ timeRange }) =
             {burnout.recommended_actions.length > 0 && (
               <div className="panel glass recommendations-panel">
                 <h4 className="rec-title">
-                  <span className="rec-icon">💡</span>
+                  <AnimatedIcon icon="lightbulb" size={16} />
                   Recommended Actions
                 </h4>
                 <ul className="recommendations-list">
@@ -216,7 +217,7 @@ export const PredictionsView: React.FC<PredictionsViewProps> = ({ timeRange }) =
       <section className="predictions-section">
         <div className="section-header">
           <h2 className="section-title">
-            <span className="title-icon">🔮</span>
+            <AnimatedIcon icon="sparkle" size={20} />
             AI Predictions
           </h2>
 
@@ -242,7 +243,7 @@ export const PredictionsView: React.FC<PredictionsViewProps> = ({ timeRange }) =
         {/* Predictions Grid */}
         {predictions.length === 0 ? (
           <div className="empty-state">
-            <div className="empty-icon">🔮</div>
+            <div className="empty-icon"><AnimatedIcon icon="sparkle" size={40} /></div>
             <h3>No Predictions Available</h3>
             <p>AI predictions will appear here once data is analyzed</p>
           </div>
@@ -264,7 +265,7 @@ export const PredictionsView: React.FC<PredictionsViewProps> = ({ timeRange }) =
                     expandedPrediction === prediction.id ? null : prediction.id
                   )}
                 >
-                  <span className="pred-icon">{getPredictionIcon(prediction.prediction_type)}</span>
+                  <span className="pred-icon"><AnimatedIcon icon={getPredictionIconKey(prediction.prediction_type)} size={20} /></span>
                   <div className="pred-info">
                     <h4 className="pred-type">
                       {prediction.prediction_type.replace(/_/g, ' ')}
