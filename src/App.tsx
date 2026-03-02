@@ -728,6 +728,15 @@ const App: React.FC = () => {
              <span className="text-lg sm:text-xl font-bold tracking-tight bg-gradient-to-r from-rose-500 to-pink-500 bg-clip-text text-transparent">Pulse</span>
           </div>
           <div className="flex items-center gap-1 sm:gap-2">
+            {/* User Guide */}
+            <button
+              type="button"
+              onClick={() => { setView(AppView.USERS_GUIDE); setIsMobileMenuOpen(false); }}
+              className="w-11 h-11 sm:w-12 sm:h-12 flex items-center justify-center text-zinc-500 dark:text-zinc-400 rounded-xl hover:bg-zinc-100 dark:hover:bg-zinc-900 transition active:scale-95"
+              aria-label="User Guide"
+            >
+              <i className="fa-solid fa-circle-question text-lg"></i>
+            </button>
             {/* Notification Bell */}
             <NotificationCenter onOpenSettings={() => { setSettingsSection('notifications'); setView(AppView.SETTINGS); setIsMobileMenuOpen(false); }} />
             <button

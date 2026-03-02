@@ -285,6 +285,14 @@ export const Sidebar: React.FC<SidebarProps> = ({
 
           {!isCollapsed && (
             <div className="sidebar-brand-controls">
+              <button
+                type="button"
+                onClick={() => onViewChange(AppView.USERS_GUIDE)}
+                title="User Guide"
+                className="w-8 h-8 flex items-center justify-center rounded-lg text-zinc-400 hover:text-white hover:bg-zinc-800 transition-colors"
+              >
+                <i className="fa-solid fa-circle-question text-base" />
+              </button>
               {renderNotificationCenter?.()}
             </div>
           )}
@@ -312,9 +320,17 @@ export const Sidebar: React.FC<SidebarProps> = ({
           </button>
         </div>
 
-        {/* Collapsed state notification center */}
+        {/* Collapsed state notification center + guide */}
         {isCollapsed && (
           <div className="sidebar-notification-collapsed">
+            <button
+              type="button"
+              onClick={() => onViewChange(AppView.USERS_GUIDE)}
+              title="User Guide"
+              className="w-8 h-8 flex items-center justify-center rounded-lg text-zinc-400 hover:text-white hover:bg-zinc-800 transition-colors"
+            >
+              <i className="fa-solid fa-circle-question text-base" />
+            </button>
             {renderNotificationCenter?.()}
           </div>
         )}
