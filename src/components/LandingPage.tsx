@@ -568,26 +568,7 @@ const LandingPage: React.FC<LandingPageProps> = ({ onGetStarted }) => {
         </div>
       </div>
 
-      {/* ── I: Platform Badge Ticker ── */}
-      <div className="relative overflow-hidden bg-zinc-950 border-b border-zinc-800/40 py-4">
-        {/* Fade masks */}
-        <div className="absolute left-0 top-0 bottom-0 w-24 z-10 pointer-events-none" style={{ background: 'linear-gradient(to right, #09090b, transparent)' }} />
-        <div className="absolute right-0 top-0 bottom-0 w-24 z-10 pointer-events-none" style={{ background: 'linear-gradient(to left, #09090b, transparent)' }} />
-        <div className="ticker-track flex gap-0 w-max">
-          {[...PLATFORMS, ...PLATFORMS].map((p, i) => (
-            <div key={i} className="flex items-center gap-2.5 px-7 py-1 shrink-0 group cursor-default">
-              <div
-                className="w-7 h-7 rounded-lg flex items-center justify-center shrink-0 transition-all duration-300 group-hover:scale-110"
-                style={{ backgroundColor: p.color, boxShadow: `0 2px 8px ${p.color}55` }}
-              >
-                <i className={`${p.icon} text-xs text-white`}></i>
-              </div>
-              <span className="text-xs font-medium text-zinc-500 group-hover:text-zinc-300 transition-colors whitespace-nowrap">{p.name}</span>
-              <span className="w-1 h-1 rounded-full bg-zinc-700 ml-4 shrink-0"></span>
-            </div>
-          ))}
-        </div>
-      </div>
+      {/* ── I: Platform Badge Ticker ── hidden for now */}
 
       {/* ── Feature Showcase ── */}
       <div id="features">

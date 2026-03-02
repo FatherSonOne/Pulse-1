@@ -90,7 +90,7 @@ const ENHANCED_WORKSPACES: WorkspaceConfig[] = [
     name: 'Quick Actions',
     tagline: 'Context-Aware AI Assistant',
     description: 'Experience AI that anticipates your needs. Smart suggestions appear exactly when you need them, offering one-click actions based on your current context and workflow.',
-    icon: 'fa-bolt-lightning',
+    icon: 'fa-bolt',
     features: [
       { icon: 'fa-lightbulb', text: 'Intelligent suggestions' },
       { icon: 'fa-hand-pointer', text: 'One-click AI actions' },
