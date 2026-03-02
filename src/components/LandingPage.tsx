@@ -9,7 +9,7 @@ interface LandingPageProps {
 
 // QntmEcos Abstract Q Logo — solid rose #f43f5e
 const QntmEcosIcon = ({ size = 28 }: { size?: number }) => (
-  <svg width={size} height={size} viewBox="0 0 80 80" fill="none" xmlns="http://www.w3.org/2000/svg">
+  <svg width={size} height={size} viewBox="0 0 80 80" fill="none" xmlns="http://www.w3.org/2000/svg" aria-hidden="true">
     <path d="M 40 10 A 28 28 0 1 1 40 68" stroke="#f43f5e" strokeWidth="5" strokeLinecap="round" fill="none" />
     <line x1="54" y1="56" x2="68" y2="72" stroke="#f43f5e" strokeWidth="5" strokeLinecap="round" />
     <circle cx="40" cy="40" r="5" fill="#f43f5e" />
@@ -185,10 +185,17 @@ const LandingPage: React.FC<LandingPageProps> = ({ onGetStarted }) => {
     return () => window.removeEventListener('scroll', onScroll);
   }, []);
 
-  // Lock body scroll when guide drawer is open
+  // Lock body scroll + close on Escape when guide drawer is open
   useEffect(() => {
     document.body.style.overflow = isGuideOpen ? 'hidden' : '';
     return () => { document.body.style.overflow = ''; };
+  }, [isGuideOpen]);
+
+  useEffect(() => {
+    if (!isGuideOpen) return;
+    const onKey = (e: KeyboardEvent) => { if (e.key === 'Escape') setIsGuideOpen(false); };
+    document.addEventListener('keydown', onKey);
+    return () => document.removeEventListener('keydown', onKey);
   }, [isGuideOpen]);
 
   const scrollToSection = (id: string) => {
@@ -203,8 +210,16 @@ const LandingPage: React.FC<LandingPageProps> = ({ onGetStarted }) => {
   return (
     <div className="min-h-screen bg-zinc-950 text-white overflow-x-hidden overflow-y-auto selection:bg-rose-500/30 selection:text-rose-200">
 
+      {/* ── Skip to main content (ADA) ── */}
+      <a
+        href="#main-content"
+        className="sr-only focus:not-sr-only focus:fixed focus:top-4 focus:left-4 focus:z-[9999] focus:px-4 focus:py-2 focus:bg-rose-600 focus:text-white focus:rounded-lg focus:font-semibold focus:shadow-xl focus:outline-none"
+      >
+        Skip to main content
+      </a>
+
       {/* ── J: Scroll Progress Bar ── */}
-      <div className="fixed top-0 left-0 right-0 z-[200] h-[3px] pointer-events-none">
+      <div className="fixed top-0 left-0 right-0 z-[200] h-[3px] pointer-events-none" aria-hidden="true">
         <div
           className="h-full bg-gradient-to-r from-rose-500 via-pink-500 to-purple-500 transition-none"
           style={{ width: `${scrollProgress * 100}%`, boxShadow: '0 0 8px rgba(244,63,94,0.7)' }}
@@ -219,28 +234,34 @@ const LandingPage: React.FC<LandingPageProps> = ({ onGetStarted }) => {
           className="fixed bottom-8 right-6 z-[150] w-11 h-11 rounded-full bg-rose-600 hover:bg-rose-500 text-white shadow-lg shadow-rose-500/40 flex items-center justify-center transition-all duration-300 hover:scale-110 active:scale-95 bounce-up"
           aria-label="Back to top"
         >
-          <i className="fa-solid fa-chevron-up text-sm"></i>
+          <i className="fa-solid fa-chevron-up text-sm" aria-hidden="true"></i>
         </button>
       )}
 
       {/* ── Guide Drawer ── */}
       {isGuideOpen && (
-        <div className="fixed inset-0 z-[300]">
+        <div
+          className="fixed inset-0 z-[300]"
+          role="dialog"
+          aria-modal="true"
+          aria-labelledby="guide-drawer-title"
+        >
           {/* Backdrop */}
           <div
             className="absolute inset-0 bg-black/70 backdrop-blur-sm overlay-in cursor-pointer"
             onClick={() => setIsGuideOpen(false)}
+            aria-hidden="true"
           />
           {/* Panel */}
           <div className="absolute top-0 right-0 bottom-0 w-full max-w-3xl bg-zinc-950 border-l border-zinc-800 shadow-2xl drawer-open flex flex-col">
             {/* Drawer header */}
             <div className="flex items-center justify-between px-6 py-4 border-b border-zinc-800 bg-zinc-950/95 backdrop-blur-sm shrink-0">
               <div className="flex items-center gap-3">
-                <div className="w-8 h-8 rounded-lg bg-rose-500/10 border border-rose-500/25 flex items-center justify-center">
+                <div className="w-8 h-8 rounded-lg bg-rose-500/10 border border-rose-500/25 flex items-center justify-center" aria-hidden="true">
                   <i className="fa-solid fa-book-open text-rose-400 text-sm"></i>
                 </div>
                 <div>
-                  <div className="font-bold text-white">Pulse User Guide</div>
+                  <div id="guide-drawer-title" className="font-bold text-white">Pulse User Guide</div>
                   <div className="text-xs text-zinc-500">Complete feature documentation</div>
                 </div>
               </div>
@@ -248,9 +269,9 @@ const LandingPage: React.FC<LandingPageProps> = ({ onGetStarted }) => {
                 type="button"
                 onClick={() => setIsGuideOpen(false)}
                 className="w-9 h-9 rounded-lg bg-zinc-900 border border-zinc-800 hover:border-rose-500/40 hover:bg-zinc-800 text-zinc-400 hover:text-white transition flex items-center justify-center"
-                aria-label="Close guide"
+                aria-label="Close User Guide"
               >
-                <i className="fa-solid fa-xmark"></i>
+                <i className="fa-solid fa-xmark" aria-hidden="true"></i>
               </button>
             </div>
             {/* Guide content — loaded lazily on first drawer open */}
@@ -410,14 +431,19 @@ const LandingPage: React.FC<LandingPageProps> = ({ onGetStarted }) => {
       `}</style>
 
       {/* ── Navigation ── */}
-      <nav className="fixed top-0 left-0 right-0 z-[100] bg-zinc-950/85 backdrop-blur-xl border-b border-zinc-800/50">
+      <nav aria-label="Main navigation" className="fixed top-0 left-0 right-0 z-[100] bg-zinc-950/85 backdrop-blur-xl border-b border-zinc-800/50">
         <div className="max-w-7xl mx-auto px-6 py-4 flex items-center justify-between">
 
           {/* Left: Pulse logo + QntmEcos badge */}
           <div className="flex items-center gap-4">
-            <div className="flex items-center gap-3 cursor-pointer group" onClick={handleLogoClick}>
+            <button
+              type="button"
+              onClick={handleLogoClick}
+              className="flex items-center gap-3 cursor-pointer group bg-transparent border-0 p-0"
+              aria-label="Pulse — return to sign in"
+            >
               <div className="w-10 h-10 rounded-xl bg-[#0f172a] flex items-center justify-center shadow-lg border border-zinc-800 group-hover:scale-110 transition-transform duration-300">
-                <svg viewBox="0 0 64 64" className="w-6 h-6">
+                <svg viewBox="0 0 64 64" className="w-6 h-6" aria-hidden="true">
                   <defs>
                     <linearGradient id="pulse-grad-nav" x1="0%" y1="0%" x2="100%" y2="100%">
                       <stop offset="0%" stopColor="#f43f5e"/>
@@ -428,7 +454,7 @@ const LandingPage: React.FC<LandingPageProps> = ({ onGetStarted }) => {
                 </svg>
               </div>
               <span className="text-xl font-bold bg-gradient-to-r from-rose-500 via-pink-500 to-purple-500 bg-clip-text text-transparent">Pulse</span>
-            </div>
+            </button>
 
             {/* QntmEcos badge */}
             <a
@@ -437,27 +463,29 @@ const LandingPage: React.FC<LandingPageProps> = ({ onGetStarted }) => {
               rel="noopener noreferrer"
               className="hidden sm:flex items-center gap-1.5 px-2.5 py-1 rounded-full border border-zinc-700/60 bg-zinc-900/60 hover:border-rose-500/40 hover:bg-zinc-800/60 transition-all duration-200 group"
               title="Quantum Ecosystems — the studio behind Pulse"
+              aria-label="QntmEcos — Quantum Ecosystems, the studio behind Pulse (opens in new tab)"
             >
               <QntmEcosIcon size={16} />
               <span className="text-[11px] font-medium text-zinc-400 group-hover:text-rose-400 transition-colors">QntmEcos</span>
             </a>
           </div>
 
-          <div className="hidden md:flex items-center gap-8 text-sm font-medium text-zinc-400">
+          <div className="hidden md:flex items-center gap-6 text-sm font-medium text-zinc-400">
+            {/* Primary nav */}
             <button type="button" onClick={() => scrollToSection('features')} className="hover:text-white transition">Features</button>
             <button type="button" onClick={() => scrollToSection('ecosystem')} className="hover:text-white transition">Ecosystem</button>
             <button type="button" onClick={() => scrollToSection('scenarios')} className="hover:text-white transition">Scenarios</button>
             <button type="button" onClick={() => scrollToSection('download')} className="hover:text-white transition">Download</button>
-            <button
-              type="button"
-              onClick={() => setIsGuideOpen(true)}
-              className="flex items-center gap-1.5 hover:text-rose-400 transition"
-            >
-              <i className="fa-solid fa-book-open text-[11px]"></i> Guide
-            </button>
-            <a href="/privacy" className="hover:text-rose-400 transition">Privacy</a>
-            <a href="/docs/SECURITY-AUDIT-REPORT.md" target="_blank" rel="noopener noreferrer" className="hover:text-rose-400 transition flex items-center gap-1">
-              Security <i className="fa-solid fa-arrow-up-right-from-square text-[10px]"></i>
+            {/* Divider */}
+            <span className="w-px h-4 bg-zinc-800" aria-hidden="true" />
+            {/* Docs & legal */}
+            <a href="/docs" className="flex items-center gap-1.5 hover:text-white transition">
+              <i className="fa-solid fa-book text-[11px]" aria-hidden="true"></i>
+              Docs
+            </a>
+            <a href="/privacy" className="flex items-center gap-1.5 hover:text-white transition">
+              <i className="fa-solid fa-shield-halved text-[11px]" aria-hidden="true"></i>
+              Privacy
             </a>
           </div>
 
@@ -466,11 +494,11 @@ const LandingPage: React.FC<LandingPageProps> = ({ onGetStarted }) => {
             <button
               type="button"
               onClick={() => setIsGuideOpen(true)}
-              title="Open User Guide"
+              aria-label="Open User Guide"
               className="flex items-center gap-2 px-3.5 py-2 rounded-lg border border-zinc-700/70 bg-zinc-900/60 hover:border-rose-500/50 hover:bg-zinc-800/80 text-zinc-400 hover:text-rose-400 text-sm font-medium transition-all duration-200 hover:scale-105 active:scale-95"
             >
-              <i className="fa-solid fa-book-open text-[13px]"></i>
-              <span className="hidden sm:inline">User Guide</span>
+              <i className="fa-solid fa-book-open text-[13px]" aria-hidden="true"></i>
+              <span className="hidden sm:inline" aria-hidden="true">User Guide</span>
             </button>
             <button
               onClick={onGetStarted}
@@ -489,6 +517,9 @@ const LandingPage: React.FC<LandingPageProps> = ({ onGetStarted }) => {
           </div>
         </div>
       </nav>
+
+      {/* ── Main content landmark (ADA) ── */}
+      <main id="main-content">
 
       {/* ── Hero Section ── */}
       <section className="relative pt-40 pb-20 px-6 min-h-[92vh] flex items-center justify-center overflow-visible">
@@ -1401,7 +1432,7 @@ const LandingPage: React.FC<LandingPageProps> = ({ onGetStarted }) => {
         <div className="max-w-3xl mx-auto">
           <div className="text-center mb-12">
             <div className="inline-flex items-center gap-2 px-3 py-1.5 rounded-full bg-zinc-800/60 border border-zinc-700/50 text-zinc-400 text-xs font-bold uppercase tracking-widest mb-4">
-              <i className="fa-solid fa-circle-question text-zinc-400"></i> FAQ
+              <i className="fa-solid fa-circle-question text-zinc-400" aria-hidden="true"></i> FAQ
             </div>
             <h2 className="text-3xl sm:text-4xl font-bold text-white mb-3">Common Questions</h2>
             <p className="text-zinc-500 text-base">Quick answers — full guide available via the Guide button in the nav.</p>
@@ -1414,17 +1445,24 @@ const LandingPage: React.FC<LandingPageProps> = ({ onGetStarted }) => {
               >
                 <button
                   type="button"
+                  id={`faq-btn-${i}`}
+                  aria-expanded={openFaq === i}
+                  aria-controls={`faq-panel-${i}`}
                   onClick={() => setOpenFaq(openFaq === i ? null : i)}
                   className="w-full flex items-center justify-between gap-4 px-6 py-4 text-left group"
                 >
                   <span className={`font-semibold text-sm transition-colors ${openFaq === i ? 'text-rose-300' : 'text-white group-hover:text-rose-300'}`}>{item.q}</span>
-                  <i className={`fa-solid fa-chevron-down text-xs transition-transform duration-300 shrink-0 ${openFaq === i ? 'rotate-180 text-rose-400' : 'text-zinc-600'}`}></i>
+                  <i className={`fa-solid fa-chevron-down text-xs transition-transform duration-300 shrink-0 ${openFaq === i ? 'rotate-180 text-rose-400' : 'text-zinc-600'}`} aria-hidden="true"></i>
                 </button>
-                {openFaq === i && (
-                  <div className="px-6 pb-5 animate-fade-in">
-                    <p className="text-zinc-400 text-sm leading-relaxed">{item.a}</p>
-                  </div>
-                )}
+                <div
+                  id={`faq-panel-${i}`}
+                  role="region"
+                  aria-labelledby={`faq-btn-${i}`}
+                  hidden={openFaq !== i}
+                  className="px-6 pb-5 animate-fade-in"
+                >
+                  <p className="text-zinc-400 text-sm leading-relaxed">{item.a}</p>
+                </div>
               </div>
             ))}
           </div>
@@ -1433,15 +1471,18 @@ const LandingPage: React.FC<LandingPageProps> = ({ onGetStarted }) => {
             <button
               type="button"
               onClick={() => setIsGuideOpen(true)}
+              aria-label="Open Full User Guide"
               className="inline-flex items-center gap-2 px-6 py-3 rounded-xl bg-zinc-900 border border-zinc-700 hover:border-rose-500/40 hover:bg-zinc-800 text-white text-sm font-semibold transition-all duration-300 hover:scale-105"
             >
-              <i className="fa-solid fa-book-open text-rose-400"></i> Open Full User Guide
+              <i className="fa-solid fa-book-open text-rose-400" aria-hidden="true"></i> Open Full User Guide
             </button>
           </div>
         </div>
       </section>
 
       <SectionDivider />
+
+      </main>{/* /#main-content */}
 
       {/* ── Footer ── */}
       <footer className="bg-zinc-950 border-t border-zinc-800 pt-16 pb-8 px-6">
@@ -1460,10 +1501,10 @@ const LandingPage: React.FC<LandingPageProps> = ({ onGetStarted }) => {
                 AI-driven communication, deep relationship intelligence, and automated workflows — all in one living interface for high-performance teams.
               </p>
               <div className="flex gap-4 mb-8">
-                <SocialIcon icon="fa-brands fa-twitter" />
-                <SocialIcon icon="fa-brands fa-github" />
-                <SocialIcon icon="fa-brands fa-discord" />
-                <SocialIcon icon="fa-brands fa-linkedin" />
+                <SocialIcon icon="fa-brands fa-twitter" label="Follow Pulse on X (Twitter)" />
+                <SocialIcon icon="fa-brands fa-github" label="Pulse on GitHub" />
+                <SocialIcon icon="fa-brands fa-discord" label="Join the Pulse Discord" />
+                <SocialIcon icon="fa-brands fa-linkedin" label="Pulse on LinkedIn" />
               </div>
 
               {/* QntmEcos developer credit */}
@@ -1547,31 +1588,34 @@ const DownloadButton = ({
   icon: string; platform: string; subtext: string; active: boolean; href?: string; onClick?: () => void;
 }) => {
   const Component = href ? 'a' : 'button';
+  const inactive = !active && !href;
   return (
     <Component
       href={href}
       onClick={onClick}
       download={href ? true : undefined}
-      disabled={!active && !href}
+      disabled={inactive ? true : undefined}
+      aria-disabled={inactive ? true : undefined}
+      aria-label={inactive ? `${platform} — coming soon` : platform}
       className={`group p-6 rounded-2xl border transition duration-300 flex flex-col items-center justify-center gap-4 w-full ${
         active
           ? 'bg-zinc-800 border-zinc-700 hover:bg-zinc-700 hover:border-rose-500/50 cursor-pointer'
           : 'bg-zinc-900/50 border-zinc-800 opacity-60 cursor-not-allowed'
       }`}
     >
-      <i className={`${icon} text-4xl text-zinc-300 group-hover:text-white transition`}></i>
+      <i className={`${icon} text-4xl text-zinc-300 group-hover:text-white transition`} aria-hidden="true"></i>
       <div className="text-center">
         <div className="font-bold text-white group-hover:text-rose-400 transition">{platform}</div>
         <div className="text-xs text-zinc-500">{subtext}</div>
       </div>
-      {!active && <span className="px-2 py-1 bg-zinc-800 rounded text-[10px] text-zinc-500 uppercase tracking-wide">Coming Soon</span>}
+      {inactive && <span className="px-2 py-1 bg-zinc-800 rounded text-[10px] text-zinc-500 uppercase tracking-wide">Coming Soon</span>}
     </Component>
   );
 };
 
-const SocialIcon = ({ icon }: { icon: string }) => (
-  <a href="#" className="w-10 h-10 rounded-full bg-zinc-900 flex items-center justify-center text-zinc-400 hover:bg-rose-500 hover:text-white transition duration-300">
-    <i className={icon}></i>
+const SocialIcon = ({ icon, label }: { icon: string; label: string }) => (
+  <a href="#" aria-label={label} className="w-10 h-10 rounded-full bg-zinc-900 flex items-center justify-center text-zinc-400 hover:bg-rose-500 hover:text-white transition duration-300">
+    <i className={icon} aria-hidden="true"></i>
   </a>
 );
 
