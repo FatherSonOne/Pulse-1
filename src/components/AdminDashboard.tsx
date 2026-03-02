@@ -3,15 +3,16 @@ import React, { useState, useEffect, useCallback } from 'react';
 import AdminMessageEditor from './AdminMessageEditor';
 import { adminService, AdminUser, AdminSettings, DashboardStats, ActivityLogEntry } from '../services/adminService';
 import SearchAnalyticsDashboard from './admin/SearchAnalyticsDashboard';
+import ActivityMonitor from './admin/ActivityMonitor';
 
 interface AdminDashboardProps {
   userId: string;
 }
 
-type TabType = 'overview' | 'users' | 'messages' | 'settings' | 'search';
+type TabType = 'overview' | 'users' | 'messages' | 'settings' | 'search' | 'activity';
 
 const AdminDashboard: React.FC<AdminDashboardProps> = ({ userId }) => {
-  const [activeTab, setActiveTab] = useState<TabType>('overview');
+  const [activeTab, setActiveTab] = useState<TabType>('activity');
   const [users, setUsers] = useState<AdminUser[]>([]);
   const [searchQuery, setSearchQuery] = useState('');
   const [roleFilter, setRoleFilter] = useState<'all' | AdminUser['role']>('all');
@@ -248,6 +249,7 @@ const AdminDashboard: React.FC<AdminDashboardProps> = ({ userId }) => {
         {/* Tabs */}
         <div className="flex gap-1 bg-zinc-100 dark:bg-zinc-900 p-1 rounded-xl">
           {[
+            { id: 'activity', icon: 'fa-chart-line', label: 'Activity' },
             { id: 'overview', icon: 'fa-chart-pie', label: 'Overview' },
             { id: 'users', icon: 'fa-users', label: 'Users' },
             { id: 'messages', icon: 'fa-envelope', label: 'Messages' },
@@ -657,6 +659,13 @@ const AdminDashboard: React.FC<AdminDashboardProps> = ({ userId }) => {
         )}
 
         {/* Messages Tab */}
+        {/* Activity Monitor Tab */}
+        {activeTab === 'activity' && (
+          <div className="p-6 animate-fade-in">
+            <ActivityMonitor />
+          </div>
+        )}
+
         {activeTab === 'messages' && (
           <div className="animate-fade-in">
             <AdminMessageEditor userId={userId} />
