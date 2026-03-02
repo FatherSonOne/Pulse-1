@@ -164,6 +164,10 @@ export default defineConfig(({ mode }) => {
                 }
 
                 // CRM / contacts / analytics
+                // Note: contactCircle, contactSearchAI, todayFeed are co-located here
+                // because they statically import relationshipIntelligenceService /
+                // relationshipAlertService — keeping them in the same chunk avoids
+                // the svc-core <-> svc-crm-analytics circular chunk dependency.
                 if (id.includes('/crm/') || id.includes('crmService') ||
                     id.includes('crmActions') || id.includes('leadScoring') ||
                     id.includes('contactEnrich') || id.includes('googleContacts') ||
@@ -173,7 +177,9 @@ export default defineConfig(({ mode }) => {
                     id.includes('analyticsExport') || id.includes('decisionAnalytics') ||
                     id.includes('predictiveAnalytics') || id.includes('teamHealth') ||
                     id.includes('teamService') || id.includes('recognitionService') ||
-                    id.includes('achievementService') || id.includes('outcomeService')) {
+                    id.includes('achievementService') || id.includes('outcomeService') ||
+                    id.includes('contactCircle') || id.includes('contactSearchAI') ||
+                    id.includes('contactGoal') || id.includes('todayFeed')) {
                   return 'svc-crm-analytics';
                 }
 

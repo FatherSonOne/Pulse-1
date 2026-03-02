@@ -1,5 +1,5 @@
 import { GoogleGenAI } from "@google/genai";
-import { DecisionWithVotes } from "./decisionService";
+import type { DecisionWithVotes } from "./decisionService";
 import { Contact } from "../types";
 
 // ---------------------------------------------------------------------------
