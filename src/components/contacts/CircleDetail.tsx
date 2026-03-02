@@ -5,6 +5,7 @@
 // ============================================
 
 import React, { useState } from 'react';
+import { AnimatedIcon } from '../ui/AnimatedIcon';
 import { ContactCircle, CIRCLE_COLOR_PALETTE } from '../../types/contactCircleTypes';
 import { Contact } from '../../types';
 import { RelationshipProfile, getRelationshipHealthColor } from '../../types/relationshipTypes';
@@ -188,7 +189,7 @@ export const CircleDetail: React.FC<CircleDetailProps> = ({
         {/* Source badge */}
         {localCircle.source === 'auto' && (
           <span className="text-xs px-2 py-0.5 bg-indigo-50 dark:bg-indigo-900/30 text-indigo-600 dark:text-indigo-400 rounded-full font-medium">
-            ✨ AI detected
+            <AnimatedIcon icon="sparkle" size={12} /> AI detected
           </span>
         )}
       </div>

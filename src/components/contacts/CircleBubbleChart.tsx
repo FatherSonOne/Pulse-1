@@ -5,6 +5,7 @@
 // ============================================
 
 import React, { useRef, useEffect, useState, useCallback } from 'react';
+import { AnimatedIcon } from '../ui/AnimatedIcon';
 import { ContactCircle } from '../../types/contactCircleTypes';
 import { Contact } from '../../types';
 import { getRelationshipHealthColor } from '../../types/relationshipTypes';
@@ -199,7 +200,7 @@ export const CircleBubbleChart: React.FC<CircleBubbleChartProps> = ({
         style={{ width, height }}
       >
         <div className="w-16 h-16 rounded-full bg-indigo-50 dark:bg-indigo-900/20 flex items-center justify-center mb-4">
-          <span className="text-3xl">🗺️</span>
+          <AnimatedIcon icon="network" size={32} />
         </div>
         <p className="text-sm font-semibold text-zinc-600 dark:text-zinc-300 mb-1">No circles yet</p>
         <p className="text-xs text-zinc-400 dark:text-zinc-500 max-w-[200px] leading-relaxed">
@@ -298,7 +299,7 @@ export const CircleBubbleChart: React.FC<CircleBubbleChartProps> = ({
                   fontSize={8}
                   className="fill-indigo-500 dark:fill-indigo-400"
                 >
-                  ✨ AI
+                  AI
                 </text>
               )}
             </g>

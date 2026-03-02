@@ -6,6 +6,7 @@
 // ============================================
 
 import React, { useState, useEffect, useCallback, useRef } from 'react';
+import { AnimatedIcon } from '../ui/AnimatedIcon';
 import { Contact } from '../../types';
 import { RelationshipProfile } from '../../types/relationshipTypes';
 import {
@@ -293,7 +294,7 @@ export const CirclesView: React.FC<CirclesViewProps> = ({
         <div className="flex-shrink-0 mx-4 mt-3 p-3 bg-indigo-50 dark:bg-indigo-900/20 border border-indigo-200 dark:border-indigo-800 rounded-xl">
           <div className="flex items-center justify-between mb-2">
             <p className="text-sm font-semibold text-indigo-700 dark:text-indigo-300">
-              ✨ AI found {suggestions.length} circle{suggestions.length !== 1 ? 's' : ''}
+              <AnimatedIcon icon="sparkle" size={14} /> AI found {suggestions.length} circle{suggestions.length !== 1 ? 's' : ''}
             </p>
             <button
               onClick={() => setShowSuggestions(false)}

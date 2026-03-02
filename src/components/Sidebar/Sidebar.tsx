@@ -94,16 +94,15 @@ const getNavSections = (isAdmin: boolean): NavSection[] => {
     },
   ];
 
-  if (isAdmin) {
-    sections.push({
-      label: 'Admin',
-      color: 'red',
-      items: [
-        { icon: 'fa-shield-halved', label: 'Admin', view: AppView.MESSAGE_ADMIN },
-        { icon: 'fa-clipboard-check', label: 'Test Matrix', view: AppView.TEST_MATRIX },
-      ],
-    });
-  }
+  sections.push({
+    label: 'Admin',
+    color: 'red',
+    collapsible: true,
+    items: [
+      { icon: 'fa-shield-halved', label: 'Admin', view: AppView.MESSAGE_ADMIN },
+      { icon: 'fa-clipboard-check', label: 'Test Matrix', view: AppView.TEST_MATRIX },
+    ],
+  });
 
   return sections;
 };

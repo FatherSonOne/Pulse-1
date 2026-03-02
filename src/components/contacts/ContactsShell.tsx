@@ -6,6 +6,7 @@
 // ============================================
 
 import React, { useState, useCallback } from 'react';
+import { AnimatedIcon } from '../ui/AnimatedIcon';
 import { Contact } from '../../types';
 import { ContactsRedesigned } from './ContactsRedesigned';
 import { TodayView } from './TodayView';
@@ -40,21 +41,21 @@ const TABS: ModeTab[] = [
   {
     id: 'today',
     label: 'Today',
-    icon: '🎯',
+    icon: 'target',
     description: 'What to do right now',
     shortcut: '1',
   },
   {
     id: 'people',
     label: 'People',
-    icon: '🧑‍🤝‍🧑',
+    icon: 'people',
     description: 'Everyone you know',
     shortcut: '2',
   },
   {
     id: 'circles',
     label: 'Circles',
-    icon: '🗺️',
+    icon: 'network',
     description: 'How your network connects',
     shortcut: '3',
   },
@@ -114,7 +115,7 @@ export const ContactsShell: React.FC<ContactsShellProps> = (props) => {
                 `}
                 title={`${tab.description} (${tab.shortcut})`}
               >
-                <span className="text-base leading-none">{tab.icon}</span>
+                <AnimatedIcon icon={tab.icon} size={16} />
                 <span>{tab.label}</span>
                 {/* Keyboard shortcut hint */}
                 {!isActive && (

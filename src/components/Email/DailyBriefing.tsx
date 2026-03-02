@@ -24,7 +24,8 @@ export const DailyBriefing: React.FC<DailyBriefingProps> = ({
 }) => {
   const [briefing, setBriefing] = useState<BriefingData | null>(null);
   const [loading, setLoading] = useState(true);
-  const [collapsed, setCollapsed] = useState(false);
+  const [collapsed, setCollapsed] = useState(true);
+  const [isReady, setIsReady] = useState(false);
 
   // Get greeting based on time of day
   const getGreeting = () => {
@@ -85,6 +86,7 @@ export const DailyBriefing: React.FC<DailyBriefingProps> = ({
       console.error('Error loading briefing:', error);
     } finally {
       setLoading(false);
+      setIsReady(true);
     }
   };
 
@@ -104,8 +106,8 @@ export const DailyBriefing: React.FC<DailyBriefingProps> = ({
   if (collapsed) {
     return (
       <div
-        onClick={() => setCollapsed(false)}
-        className="email-daily-briefing collapsed"
+        onClick={() => { setCollapsed(false); setIsReady(false); }}
+        className={`email-daily-briefing collapsed${isReady ? ' briefing-ready' : ''}`}
       >
         <div className="briefing-header">
           <div className="briefing-header-content">

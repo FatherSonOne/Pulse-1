@@ -140,6 +140,33 @@
   transform: translateY(-1px);
 }
 
+/* Pulse animation — signals the briefing is loaded and ready to read.
+   Animates opacity only (GPU-composited, no paint) on a pseudo-element
+   that carries the static glow ring. */
+@keyframes briefing-ready-pulse {
+  0%, 100% { opacity: 0; }
+  50%       { opacity: 1; }
+}
+
+.email-daily-briefing.collapsed.briefing-ready::before {
+  content: '';
+  position: absolute;
+  inset: -1px;
+  border-radius: 20px;
+  border: 1px solid rgba(255, 107, 107, 0.65);
+  box-shadow:
+    0 0 0 3px rgba(255, 107, 107, 0.2),
+    0 0 22px rgba(255, 107, 107, 0.22);
+  pointer-events: none;
+  animation: briefing-ready-pulse 2.4s ease-in-out infinite;
+  will-change: opacity;
+}
+
+.email-daily-briefing.collapsed.briefing-ready:hover::before {
+  animation: none;
+  opacity: 0;
+}
+
 /* ═══════════════════════════════════════════════════════════════════════════
    HEADER SECTION
    ═══════════════════════════════════════════════════════════════════════════ */

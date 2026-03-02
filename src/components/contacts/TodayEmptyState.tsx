@@ -4,6 +4,7 @@
 // ============================================
 
 import React, { useState, useEffect } from 'react';
+import { AnimatedIcon } from '../ui/AnimatedIcon';
 
 interface TodayEmptyStateProps {
   onRefresh?: () => void;
@@ -53,7 +54,7 @@ export const TodayEmptyState: React.FC<TodayEmptyStateProps> = ({ onRefresh }) =
       {/* Tip of the day */}
       <div className="bg-zinc-50 dark:bg-zinc-800/60 border border-zinc-200 dark:border-zinc-700 rounded-xl p-4 max-w-sm mb-6">
         <div className="flex items-start gap-3">
-          <span className="text-lg mt-0.5">💡</span>
+          <AnimatedIcon icon="lightbulb" size={18} />
           <p className="text-xs text-zinc-600 dark:text-zinc-400 leading-relaxed text-left">
             {tip}
           </p>
