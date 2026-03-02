@@ -38,12 +38,12 @@ const VOX_MODES = [
 ];
 
 const AI_WORKSPACES = [
-  { icon: 'fa-solid fa-diagram-project', name: 'AI Canvas', desc: 'Drag-and-drop workflow builder for chaining AI operations visually' },
-  { icon: 'fa-solid fa-gauge-high', name: 'Mission Control', desc: 'Multi-panel command center with live data streams and agent orchestration' },
-  { icon: 'fa-solid fa-chalkboard', name: 'AI Studio', desc: 'Transform raw data into polished presentations and dashboards instantly' },
-  { icon: 'fa-solid fa-brain', name: 'Intelligence Hub', desc: 'Deploy autonomous agent swarms for parallel research and synthesis' },
-  { icon: 'fa-solid fa-sparkles', name: 'Quick Actions', desc: 'Context-aware AI suggestions surfaced wherever you are in Pulse' },
-  { icon: 'fa-solid fa-file-contract', name: 'Proposal Builder', desc: 'Professional document wizard — business proposals in minutes, not hours' },
+  { icon: 'fa-solid fa-diagram-project', name: 'AI Canvas', desc: 'Drag-and-drop workflow builder for chaining AI operations visually', anim: 'lp-icon-spin' },
+  { icon: 'fa-solid fa-gauge-high', name: 'Mission Control', desc: 'Multi-panel command center with live data streams and agent orchestration', anim: 'lp-icon-bob' },
+  { icon: 'fa-solid fa-chalkboard', name: 'AI Studio', desc: 'Transform raw data into polished presentations and dashboards instantly', anim: 'lp-icon-tilt' },
+  { icon: 'fa-solid fa-brain', name: 'Intelligence Hub', desc: 'Deploy autonomous agent swarms for parallel research and synthesis', anim: 'lp-icon-throb' },
+  { icon: 'fa-solid fa-bolt', name: 'Quick Actions', desc: 'Context-aware AI suggestions surfaced wherever you are in Pulse', anim: 'lp-icon-zap' },
+  { icon: 'fa-solid fa-file-contract', name: 'Proposal Builder', desc: 'Professional document wizard — business proposals in minutes, not hours', anim: 'lp-icon-stamp' },
 ];
 
 const CRM_PLATFORMS = [
@@ -353,6 +353,60 @@ const LandingPage: React.FC<LandingPageProps> = ({ onGetStarted }) => {
           50%       { transform: translateY(-5px); }
         }
         .bounce-up { animation: bounce-up 1.8s ease-in-out infinite; }
+
+        /* === Landing Page Icon Animations === */
+        @keyframes icon-bob {
+          0%,100% { transform: translateY(0) scale(1); }
+          50%      { transform: translateY(-8px) scale(1.12); }
+        }
+        @keyframes icon-spin-slow {
+          0%   { transform: rotate(0deg); }
+          100% { transform: rotate(360deg); }
+        }
+        @keyframes icon-throb {
+          0%,100% { transform: scale(1); filter: brightness(1); }
+          50%     { transform: scale(1.28); filter: brightness(1.5); }
+        }
+        @keyframes icon-zap {
+          0%,75%,100% { transform: scale(1) rotate(0deg); filter: brightness(1); }
+          80%         { transform: scale(1.35) rotate(-12deg); filter: brightness(2.5); }
+          88%         { transform: scale(1.45) rotate(12deg); filter: brightness(3); }
+          94%         { transform: scale(1.2) rotate(-5deg); filter: brightness(2); }
+        }
+        @keyframes icon-tilt {
+          0%,100% { transform: rotate(-6deg) translateY(0); }
+          50%     { transform: rotate(6deg) translateY(-7px); }
+        }
+        @keyframes icon-stamp {
+          0%,100% { transform: scale(1) translateY(0); }
+          35%     { transform: scale(1.22) translateY(-5px); }
+          55%     { transform: scale(0.92) translateY(3px); }
+          70%     { transform: scale(1.08) translateY(0); }
+        }
+        /* Resting — subtle, always playing */
+        .lp-icon-bob   { animation: icon-bob       3s   ease-in-out infinite; }
+        .lp-icon-spin  { animation: icon-spin-slow  9s   linear     infinite; }
+        .lp-icon-throb { animation: icon-throb      2.8s ease-in-out infinite; }
+        .lp-icon-zap   { animation: icon-zap        4s   ease-in-out infinite; }
+        .lp-icon-tilt  { animation: icon-tilt       3.2s ease-in-out infinite; }
+        .lp-icon-stamp { animation: icon-stamp      3s   ease-in-out infinite; }
+        /* Hover — bold, fast, glowing */
+        .group:hover .lp-icon-bob   { animation-duration: 0.55s; filter: brightness(2.5) drop-shadow(0 0 10px currentColor); }
+        .group:hover .lp-icon-spin  { animation-duration: 0.7s;  filter: brightness(2.5) drop-shadow(0 0 12px currentColor); }
+        .group:hover .lp-icon-throb { animation-duration: 0.55s; filter: brightness(3)   drop-shadow(0 0 14px currentColor); }
+        .group:hover .lp-icon-zap   { animation-duration: 0.38s; filter: brightness(4)   drop-shadow(0 0 18px currentColor); }
+        .group:hover .lp-icon-tilt  { animation-duration: 0.5s;  filter: brightness(2.5) drop-shadow(0 0 10px currentColor); }
+        .group:hover .lp-icon-stamp { animation-duration: 0.45s; filter: brightness(2.5) drop-shadow(0 0 10px currentColor); }
+        /* Icon container glow ring on hover */
+        .group:hover .lp-icon-wrap {
+          box-shadow: 0 0 22px rgba(168,85,247,0.45), 0 0 8px rgba(168,85,247,0.3) inset;
+        }
+        .group:hover .lp-icon-wrap-teal {
+          box-shadow: 0 0 22px rgba(20,184,166,0.45), 0 0 8px rgba(20,184,166,0.3) inset;
+        }
+        .group:hover .lp-icon-wrap-rose {
+          box-shadow: 0 0 22px rgba(244,63,94,0.45), 0 0 8px rgba(244,63,94,0.3) inset;
+        }
       `}</style>
 
       {/* ── Navigation ── */}
@@ -672,8 +726,8 @@ const LandingPage: React.FC<LandingPageProps> = ({ onGetStarted }) => {
                   className="group p-6 rounded-2xl bg-zinc-950/90 border border-zinc-800 hover:border-purple-500/40 transition-all duration-300 hover:-translate-y-2 animate-fade-in"
                   style={{ animationDelay: `${i * 0.1}s` }}
                 >
-                  <div className="w-11 h-11 rounded-xl bg-purple-500/10 flex items-center justify-center mb-4 group-hover:bg-purple-500/20 transition-colors">
-                    <i className={`${ws.icon} text-purple-400`}></i>
+                  <div className="lp-icon-wrap w-11 h-11 rounded-xl bg-purple-500/10 flex items-center justify-center mb-4 group-hover:bg-purple-500/20 transition-all duration-300">
+                    <i className={`${ws.icon} text-purple-400 ${ws.anim}`} style={{ animationDelay: `${i * 0.45}s` }}></i>
                   </div>
                   <h3 className="font-bold text-white mb-2">{ws.name}</h3>
                   <p className="text-zinc-500 text-sm leading-relaxed">{ws.desc}</p>
@@ -683,10 +737,10 @@ const LandingPage: React.FC<LandingPageProps> = ({ onGetStarted }) => {
 
             {/* War Room + Pulse AI callout */}
             <div className="grid sm:grid-cols-2 gap-5">
-              <div className="p-6 rounded-2xl bg-gradient-to-br from-purple-500/10 to-violet-500/5 border border-purple-500/20 hover:border-purple-500/40 transition-all duration-300">
+              <div className="group p-6 rounded-2xl bg-gradient-to-br from-purple-500/10 to-violet-500/5 border border-purple-500/20 hover:border-purple-500/40 transition-all duration-300">
                 <div className="flex items-center gap-3 mb-3">
-                  <div className="w-10 h-10 rounded-xl bg-purple-500/15 flex items-center justify-center">
-                    <i className="fa-solid fa-chess-board text-purple-400"></i>
+                  <div className="lp-icon-wrap w-10 h-10 rounded-xl bg-purple-500/15 flex items-center justify-center transition-all duration-300">
+                    <i className="fa-solid fa-chess-board text-purple-400 lp-icon-bob"></i>
                   </div>
                   <div>
                     <h3 className="font-bold text-white">War Room</h3>
@@ -695,10 +749,10 @@ const LandingPage: React.FC<LandingPageProps> = ({ onGetStarted }) => {
                 </div>
                 <p className="text-zinc-500 text-sm">Analyst, Brainstorm, Strategist, Data Analyst, Debrief, Focus, Neural Terminal, X-Ray, Sentient Interface, Command Center, Living AI, and more.</p>
               </div>
-              <div className="p-6 rounded-2xl bg-gradient-to-br from-violet-500/10 to-purple-500/5 border border-violet-500/20 hover:border-violet-500/40 transition-all duration-300">
+              <div className="group p-6 rounded-2xl bg-gradient-to-br from-violet-500/10 to-purple-500/5 border border-violet-500/20 hover:border-violet-500/40 transition-all duration-300">
                 <div className="flex items-center gap-3 mb-3">
-                  <div className="w-10 h-10 rounded-xl bg-violet-500/15 flex items-center justify-center">
-                    <i className="fa-solid fa-wand-magic-sparkles text-violet-400"></i>
+                  <div className="lp-icon-wrap w-10 h-10 rounded-xl bg-violet-500/15 flex items-center justify-center transition-all duration-300">
+                    <i className="fa-solid fa-wand-magic-sparkles text-violet-400 lp-icon-zap"></i>
                   </div>
                   <div>
                     <h3 className="font-bold text-white">Pulse AI Global Assistant</h3>
@@ -772,8 +826,8 @@ const LandingPage: React.FC<LandingPageProps> = ({ onGetStarted }) => {
                   className="group p-6 rounded-2xl bg-zinc-900/80 border border-zinc-800 hover:border-teal-500/40 transition-all duration-300 hover:-translate-y-2 animate-fade-in"
                   style={{ animationDelay: `${i * 0.1}s` }}
                 >
-                  <div className="w-11 h-11 rounded-xl bg-teal-500/10 flex items-center justify-center mb-4 group-hover:bg-teal-500/20 transition-colors">
-                    <i className={`${item.icon} text-teal-400`}></i>
+                  <div className="lp-icon-wrap-teal w-11 h-11 rounded-xl bg-teal-500/10 flex items-center justify-center mb-4 group-hover:bg-teal-500/20 transition-all duration-300">
+                    <i className={`${item.icon} text-teal-400 ${['lp-icon-bob','lp-icon-stamp','lp-icon-throb','lp-icon-tilt'][i]}`} style={{ animationDelay: `${i * 0.5}s` }}></i>
                   </div>
                   <h3 className="font-bold text-white mb-2">{item.title}</h3>
                   <p className="text-zinc-500 text-sm leading-relaxed mb-4">{item.desc}</p>
