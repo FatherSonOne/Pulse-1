@@ -2,7 +2,7 @@
   height: 100%;
   display: flex;
   flex-direction: column;
-  background: rgba(255, 255, 255, 0.05);
+  background: var(--dt-bg-card);
   border-radius: 16px;
   padding: 20px;
 }
@@ -16,16 +16,19 @@
 
 .decision-header h2 {
   margin: 0;
-  color: white;
-  font-size: 24px;
+  color: var(--dt-text-primary);
+  font-size: 16px;
+  font-weight: 600;
+  letter-spacing: -0.02em;
 }
 
 .decision-form {
-  background: rgba(255, 255, 255, 0.1);
+  background: var(--dt-bg-secondary);
   border-radius: 12px;
   padding: 20px;
   margin-bottom: 20px;
-  animation: slideDown 0.3s ease;
+  border: 1px solid var(--dt-border);
+  animation: slideDown 0.3s cubic-bezier(0.16, 1, 0.3, 1);
 }
 
 @keyframes slideDown {
@@ -45,12 +48,21 @@
   width: 100%;
   padding: 12px;
   margin-bottom: 12px;
-  background: rgba(255, 255, 255, 0.1);
-  border: 1px solid rgba(255, 255, 255, 0.2);
+  background: var(--dt-bg-card);
+  border: 1px solid var(--dt-border);
   border-radius: 8px;
-  color: white;
-  font-family: inherit;
+  color: var(--dt-text-primary);
+  font-family: var(--dt-font-family, 'Inter', system-ui, sans-serif);
   font-size: 14px;
+  transition: border-color var(--dt-transition-fast);
+}
+
+.decision-form input:focus,
+.decision-form textarea:focus,
+.decision-form select:focus {
+  outline: none;
+  border-color: var(--dt-accent);
+  box-shadow: 0 0 0 3px var(--dt-accent-soft);
 }
 
 .decision-form textarea {
@@ -83,18 +95,35 @@
   border: none;
   cursor: pointer;
   font-weight: 500;
-  transition: all 0.2s;
+  transition: all var(--dt-transition-fast);
 }
 
 .form-actions button[type="submit"] {
-  background: #667eea;
+  background: var(--dt-accent-gradient);
   color: white;
+  box-shadow: 0 4px 12px var(--dt-accent-glow);
+}
+
+.form-actions button[type="submit"]:hover {
+  transform: translateY(-1px);
+  box-shadow: 0 6px 20px var(--dt-accent-glow);
 }
 
 .form-actions button[type="button"] {
-  background: rgba(255, 255, 255, 0.1);
-  color: white;
+  background: var(--dt-bg-card-hover);
+  border: 1px solid var(--dt-border);
+  color: var(--dt-text-secondary);
 }
+
+.form-actions button[type="button"]:hover {
+  background: var(--dt-bg-card-hover);
+  border-color: var(--dt-border-hover);
+  color: var(--dt-text-primary);
+}
+
+/* ─────────────────────────────────────────────────────────────────────────
+   DECISIONS LIST — with stagger entrance
+   ───────────────────────────────────────────────────────────────────────── */
 
 .decisions-list {
   flex: 1;
@@ -102,27 +131,45 @@
   display: flex;
   flex-direction: column;
   gap: 16px;
+  scrollbar-width: thin;
+  scrollbar-color: rgba(244, 63, 94, 0.15) transparent;
 }
+
+.decisions-list::-webkit-scrollbar       { width: 6px; }
+.decisions-list::-webkit-scrollbar-track { background: transparent; }
+.decisions-list::-webkit-scrollbar-thumb {
+  background: rgba(244, 63, 94, 0.15);
+  border-radius: 3px;
+}
+.decisions-list::-webkit-scrollbar-thumb:hover {
+  background: rgba(244, 63, 94, 0.35);
+}
+
+/* Stagger — first 5 cards */
+.decisions-list .decision-card:nth-child(1) { animation-delay:   0ms; }
+.decisions-list .decision-card:nth-child(2) { animation-delay:  40ms; }
+.decisions-list .decision-card:nth-child(3) { animation-delay:  80ms; }
+.decisions-list .decision-card:nth-child(4) { animation-delay: 120ms; }
+.decisions-list .decision-card:nth-child(5) { animation-delay: 160ms; }
+.decisions-list .decision-card:nth-child(n+6) { animation: none; }
 
 .decision-card {
-  background: var(--hub-card-bg, #ffffff);
+  background: var(--dt-bg-card);
   border-radius: 12px;
   padding: 20px;
-  border-left: 4px solid transparent;
-  border: 1px solid var(--hub-border, #e7e5e4);
-  transition: all 0.3s;
-  animation: fadeIn 0.3s ease;
+  border: 1px solid var(--dt-border);
+  border-left: 2px solid transparent;
+  transition:
+    background var(--dt-transition-fast),
+    border-color var(--dt-transition-fast),
+    box-shadow var(--dt-transition-fast),
+    transform var(--dt-transition-base);
+  animation: dtEnter 0.22s cubic-bezier(0.16, 1, 0.3, 1) both;
 }
 
-@keyframes fadeIn {
-  from {
-    opacity: 0;
-    transform: translateY(10px);
-  }
-  to {
-    opacity: 1;
-    transform: translateY(0);
-  }
+@keyframes dtEnter {
+  from { opacity: 0; transform: translateY(6px); }
+  to   { opacity: 1; transform: translateY(0); }
 }
 
 .decision-card.status-proposed {
@@ -130,11 +177,11 @@
 }
 
 .decision-card.status-voting {
-  border-left-color: #60a5fa;
+  border-left-color: var(--dt-status-voting);
 }
 
 .decision-card.status-decided {
-  border-left-color: #34d399;
+  border-left-color: var(--dt-status-decided);
 }
 
 .decision-card.status-cancelled {
@@ -142,9 +189,17 @@
 }
 
 .decision-card:hover {
-  background: var(--hub-card-hover, #fef7f4);
-  transform: translateY(-2px);
-  box-shadow: 0 4px 12px rgba(244, 63, 94, 0.15);
+  background: var(--dt-bg-card-hover);
+  border-left-color: rgba(244, 63, 94, 0.25);
+  transform: translateY(-1px);
+  box-shadow: var(--dt-shadow-card-hover);
+}
+
+/* Active/selected state */
+.decision-card.active,
+.decision-card:focus-within {
+  border-left-color: var(--dt-accent);
+  background: var(--dt-accent-softer);
 }
 
 .decision-card-header {
@@ -163,8 +218,10 @@
 
 .decision-title-section h3 {
   margin: 0 0 8px 0;
-  color: white;
-  font-size: 18px;
+  color: var(--dt-text-primary);
+  font-size: 15px;
+  font-weight: 600;
+  letter-spacing: -0.01em;
 }
 
 .status-icon {
@@ -172,65 +229,63 @@
   margin-top: 2px;
 }
 
-.status-icon.proposed {
-  color: #fbbf24;
-}
-
-.status-icon.voting {
-  color: #60a5fa;
-}
-
-.status-icon.decided {
-  color: #34d399;
-}
-
-.status-icon.cancelled {
-  color: #ef4444;
-}
+.status-icon.proposed  { color: #fbbf24; }
+.status-icon.voting    { color: var(--dt-status-voting); }
+.status-icon.decided   { color: var(--dt-status-decided); }
+.status-icon.cancelled { color: #ef4444; }
 
 .decision-type {
   display: inline-block;
   padding: 4px 12px;
   border-radius: 12px;
-  font-size: 12px;
-  font-weight: 600;
+  font-size: 10px;
+  font-weight: 700;
   color: white;
   text-transform: uppercase;
+  letter-spacing: 0.08em;
 }
 
 .decision-status {
   padding: 6px 12px;
   border-radius: 12px;
-  font-size: 12px;
-  font-weight: 600;
-  background: rgba(255, 255, 255, 0.2);
-  color: white;
+  font-size: 10px;
+  font-weight: 700;
+  background: var(--dt-bg-card-hover);
+  border: 1px solid var(--dt-border);
+  color: var(--dt-text-secondary);
   text-transform: uppercase;
+  letter-spacing: 0.08em;
 }
 
 .decision-description {
-  color: rgba(255, 255, 255, 0.8);
+  color: var(--dt-text-secondary);
   margin: 12px 0;
   line-height: 1.5;
+  font-size: 13px;
 }
 
 .final-decision {
-  background: rgba(52, 211, 153, 0.1);
-  border-left: 3px solid #34d399;
+  background: rgba(16, 185, 129, 0.08);
+  border-left: 3px solid #10b981;
   padding: 12px;
   border-radius: 8px;
   margin: 12px 0;
 }
 
 .final-decision strong {
-  color: #34d399;
+  color: #10b981;
   display: block;
   margin-bottom: 6px;
+  font-size: 11px;
+  font-weight: 700;
+  text-transform: uppercase;
+  letter-spacing: 0.1em;
 }
 
 .final-decision p {
-  color: white;
+  color: var(--dt-text-primary);
   margin: 0;
+  font-size: 13px;
 }
 
 .vote-summary {
@@ -238,7 +293,8 @@
   gap: 16px;
   margin: 16px 0;
   padding: 12px;
-  background: rgba(0, 0, 0, 0.2);
+  background: var(--dt-bg-secondary);
+  border: 1px solid var(--dt-border);
   border-radius: 8px;
 }
 
@@ -247,24 +303,14 @@
   align-items: center;
   gap: 6px;
   font-weight: 600;
-  color: white;
+  color: var(--dt-text-secondary);
+  font-size: 13px;
 }
 
-.vote-count.approve {
-  color: #34d399;
-}
-
-.vote-count.reject {
-  color: #ef4444;
-}
-
-.vote-count.concern {
-  color: #fbbf24;
-}
-
-.vote-count.abstain {
-  color: #94a3b8;
-}
+.vote-count.approve  { color: #34d399; }
+.vote-count.reject   { color: #ef4444; }
+.vote-count.concern  { color: #fbbf24; }
+.vote-count.abstain  { color: var(--dt-text-muted); }
 
 .voting-actions {
   display: flex;
@@ -282,7 +328,8 @@
   border: none;
   cursor: pointer;
   font-weight: 500;
-  transition: all 0.2s;
+  font-size: 13px;
+  transition: all var(--dt-transition-fast);
   color: white;
 }
 
@@ -292,7 +339,8 @@
 
 .vote-btn.approve:hover {
   background: #059669;
-  transform: scale(1.05);
+  transform: translateY(-1px);
+  box-shadow: 0 4px 12px rgba(16, 185, 129, 0.3);
 }
 
 .vote-btn.reject {
@@ -301,7 +349,8 @@
 
 .vote-btn.reject:hover {
   background: #dc2626;
-  transform: scale(1.05);
+  transform: translateY(-1px);
+  box-shadow: 0 4px 12px rgba(239, 68, 68, 0.3);
 }
 
 .vote-btn.concern {
@@ -310,43 +359,47 @@
 
 .vote-btn.concern:hover {
   background: #d97706;
-  transform: scale(1.05);
+  transform: translateY(-1px);
+  box-shadow: 0 4px 12px rgba(245, 158, 11, 0.3);
 }
 
 .voted-badge {
   padding: 8px 16px;
-  background: rgba(52, 211, 153, 0.2);
+  background: rgba(16, 185, 129, 0.1);
   border: 2px solid #34d399;
   border-radius: 8px;
-  color: white;
+  color: var(--dt-text-primary);
   font-weight: 500;
+  font-size: 13px;
 }
 
 .btn-finalize {
   padding: 8px 16px;
-  background: #667eea;
+  background: var(--dt-accent-gradient);
   color: white;
   border: none;
   border-radius: 8px;
   cursor: pointer;
-  font-weight: 500;
-  transition: all 0.2s;
+  font-weight: 600;
+  font-size: 13px;
+  transition: all var(--dt-transition-fast);
+  box-shadow: 0 4px 12px var(--dt-accent-glow);
 }
 
 .btn-finalize:hover {
-  background: #5568d3;
-  transform: scale(1.05);
+  transform: translateY(-1px);
+  box-shadow: 0 6px 20px var(--dt-accent-glow);
 }
 
 .decision-footer {
   margin-top: 12px;
   padding-top: 12px;
-  border-top: 1px solid rgba(255, 255, 255, 0.1);
+  border-top: 1px solid var(--dt-border);
 }
 
 .decision-footer small {
-  color: rgba(255, 255, 255, 0.6);
-  font-size: 12px;
+  color: var(--dt-text-muted);
+  font-size: 11px;
 }
 
 .empty-state {
@@ -355,7 +408,7 @@
   align-items: center;
   justify-content: center;
   padding: 60px 20px;
-  color: rgba(255, 255, 255, 0.6);
+  color: var(--dt-text-muted);
   text-align: center;
 }
 
@@ -366,12 +419,14 @@
 
 .empty-state p {
   margin: 8px 0;
-  font-size: 18px;
-  font-weight: 500;
+  font-size: 15px;
+  font-weight: 600;
+  color: var(--dt-text-secondary);
 }
 
 .empty-state small {
-  font-size: 14px;
+  font-size: 13px;
+  color: var(--dt-text-muted);
 }
 
 .btn-primary {
@@ -379,30 +434,22 @@
   align-items: center;
   gap: 6px;
   padding: 10px 20px;
-  background: #667eea;
+  background: var(--dt-accent-gradient);
   color: white;
   border: none;
   border-radius: 8px;
   cursor: pointer;
-  font-weight: 500;
-  transition: all 0.2s;
+  font-weight: 600;
+  font-size: 13px;
+  transition: all var(--dt-transition-fast);
+  box-shadow: 0 4px 12px var(--dt-accent-glow);
 }
 
 .btn-primary:hover {
-  background: #5568d3;
-  transform: scale(1.05);
+  transform: translateY(-1px);
+  box-shadow: 0 6px 20px var(--dt-accent-glow);
 }
 
-/* ============================================
-   DARK MODE OVERRIDES
-   ============================================ */
-
-.dark .decision-card {
-  background: var(--hub-card-bg, #171717);
-  border-color: var(--hub-border, #262626);
-}
-
-.dark .decision-card:hover {
-  background: var(--hub-card-hover, #262626);
-  box-shadow: 0 4px 12px rgba(244, 63, 94, 0.2);
+.btn-primary:active {
+  transform: scale(0.96);
 }

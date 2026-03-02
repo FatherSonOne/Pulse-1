@@ -1,83 +1,92 @@
-/**
- * Daily Briefing Component Styles
- * Matches Dashboard's "Daily Overview" visual depth and polish
- * Deep burgundy/maroon gradients with sophisticated shadow effects
- */
+/* ============================================================
+   EMAIL — DESIGN TOKENS
+   Pulse Premium Dark · Rose Accent System
+   ============================================================ */
 
-/* ═══════════════════════════════════════════════════════════════════════════
-   CSS VARIABLES
-   ═══════════════════════════════════════════════════════════════════════════ */
-
-.email-daily-briefing {
-  /* Deep Burgundy/Maroon Gradient Colors */
-  --briefing-burgundy-deep: #5c0f21;
-  --briefing-burgundy-mid: #7d1530;
-  --briefing-burgundy-light: #9e2042;
-  --briefing-maroon: #6b1b31;
-  --briefing-coral: #ff6b6b;
-  --briefing-coral-light: #ff8787;
-
-  /* Glass Effects */
-  --briefing-glass-bg: rgba(28, 6, 12, 0.85);
-  --briefing-glass-border: rgba(255, 107, 107, 0.15);
-  --briefing-glass-highlight: rgba(255, 107, 107, 0.08);
-
-  /* Shadow Effects - Multiple Layers */
-  --briefing-shadow-sm:
-    0 2px 4px rgba(92, 15, 33, 0.15),
-    0 4px 8px rgba(92, 15, 33, 0.1),
-    0 1px 2px rgba(0, 0, 0, 0.1);
-
-  --briefing-shadow-md:
-    0 4px 8px rgba(92, 15, 33, 0.2),
-    0 8px 16px rgba(92, 15, 33, 0.15),
-    0 2px 4px rgba(0, 0, 0, 0.15),
-    inset 0 1px 0 rgba(255, 255, 255, 0.05);
-
-  --briefing-shadow-lg:
-    0 8px 16px rgba(92, 15, 33, 0.25),
-    0 16px 32px rgba(92, 15, 33, 0.2),
-    0 4px 8px rgba(0, 0, 0, 0.2),
-    inset 0 1px 0 rgba(255, 255, 255, 0.08);
-
-  /* Inner Shadow for Depth */
-  --briefing-inner-shadow:
-    inset 0 2px 8px rgba(0, 0, 0, 0.2),
-    inset 0 -1px 2px rgba(255, 255, 255, 0.03);
-
-  /* Glow Effects */
-  --briefing-glow-coral: 0 0 20px rgba(255, 107, 107, 0.3),
-                         0 0 40px rgba(255, 107, 107, 0.15);
-  --briefing-glow-burgundy: 0 0 30px rgba(125, 21, 48, 0.4);
+:root {
+  --email-bg:             #f8f8f8;
+  --email-surface:        #ffffff;
+  --email-surface-raised: #f2f2f2;
+  --email-border:         rgba(0, 0, 0, 0.08);
+  --email-primary:        #f43f5e;
+  --email-primary-alt:    #ec4899;
+  --email-primary-soft:   rgba(244, 63, 94, 0.10);
+  --email-primary-softer: rgba(244, 63, 94, 0.05);
+  --email-primary-glow:   rgba(244, 63, 94, 0.25);
+  --email-text-main:      #0f0f0f;
+  --email-text-secondary: #52525b;
+  --email-text-muted:     #6b7280;
+  --email-shadow-sm:      0 1px 3px rgba(0, 0, 0, 0.06);
+  --email-shadow-md:      0 4px 12px rgba(0, 0, 0, 0.08);
+  --email-shadow-rose:    0 0 0 1px var(--email-primary),
+                          0 4px 24px var(--email-primary-glow);
 }
 
-/* Dark Mode Adjustments */
-.dark .email-daily-briefing {
-  --briefing-glass-bg: rgba(20, 5, 10, 0.9);
-  --briefing-glass-border: rgba(255, 107, 107, 0.2);
-  --briefing-glass-highlight: rgba(255, 107, 107, 0.1);
+.dark {
+  --email-bg:             #000000;
+  --email-surface:        rgba(255, 255, 255, 0.03);
+  --email-surface-raised: rgba(255, 255, 255, 0.055);
+  --email-border:         rgba(255, 255, 255, 0.06);
+  --email-border-raised:  rgba(255, 255, 255, 0.08);
+  --email-primary:        #f43f5e;
+  --email-primary-alt:    #ec4899;
+  --email-primary-soft:   rgba(244, 63, 94, 0.12);
+  --email-primary-softer: rgba(244, 63, 94, 0.06);
+  --email-primary-glow:   rgba(244, 63, 94, 0.30);
+  --email-text-main:      #fafafa;
+  --email-text-secondary: #b4b4b8;
+  --email-text-muted:     #6b7280;
+  --email-shadow-sm:      0 1px 4px rgba(0, 0, 0, 0.50);
+  --email-shadow-md:      0 4px 16px rgba(0, 0, 0, 0.60);
+  --email-shadow-rose:    0 0 0 1px var(--email-primary),
+                          0 4px 24px var(--email-primary-glow);
+}
+
+/* ============================================================
+   KEYFRAMES
+   ============================================================ */
+
+@keyframes emailHeartbeat {
+  0%   { opacity: 0;   }
+  35%  { opacity: 1;   }
+  100% { opacity: 0.4; }
+}
+
+@keyframes emailEnter {
+  from { opacity: 0; transform: translateY(6px); }
+  to   { opacity: 1; transform: translateY(0); }
+}
+
+@keyframes briefingReadyPulse {
+  0%, 100% { opacity: 0; }
+  50%       { opacity: 1; }
+}
+
+@keyframes spin {
+  from { transform: rotate(0deg); }
+  to   { transform: rotate(360deg); }
 }
 
 /* ═══════════════════════════════════════════════════════════════════════════
-   MAIN CONTAINER - DEEP BURGUNDY GRADIENT
+   MAIN CONTAINER
    ═══════════════════════════════════════════════════════════════════════════ */
 
 .email-daily-briefing {
   position: relative;
   background: linear-gradient(
     135deg,
-    var(--briefing-burgundy-deep) 0%,
-    var(--briefing-maroon) 25%,
-    var(--briefing-burgundy-mid) 50%,
-    var(--briefing-burgundy-light) 100%
+    var(--email-primary-soft) 0%,
+    var(--email-primary-softer) 100%
   );
   border-radius: 20px;
   overflow: hidden;
-  box-shadow: var(--briefing-shadow-lg);
-  border: 1px solid rgba(255, 107, 107, 0.2);
-  transition: all 0.3s cubic-bezier(0.4, 0, 0.2, 1);
+  box-shadow: var(--email-shadow-md);
+  border: 1px solid rgba(244, 63, 94, 0.18);
+  transition: all 220ms cubic-bezier(0.16, 1, 0.3, 1);
+  font-family: 'Inter', system-ui, -apple-system, sans-serif;
 }
 
+/* Light shimmer line at top */
 .email-daily-briefing::before {
   content: '';
   position: absolute;
@@ -88,31 +97,47 @@
   background: linear-gradient(
     90deg,
     transparent 0%,
-    rgba(255, 255, 255, 0.15) 50%,
+    rgba(244, 63, 94, 0.4) 50%,
     transparent 100%
   );
   pointer-events: none;
 }
 
+/* Ambient glow overlays */
 .email-daily-briefing::after {
   content: '';
   position: absolute;
   inset: 0;
   background:
-    radial-gradient(circle at 20% 30%, rgba(255, 107, 107, 0.15) 0%, transparent 50%),
-    radial-gradient(circle at 80% 70%, rgba(125, 21, 48, 0.2) 0%, transparent 50%);
+    radial-gradient(circle at 20% 30%, rgba(244, 63, 94, 0.08) 0%, transparent 55%),
+    radial-gradient(circle at 80% 70%, rgba(236, 72, 153, 0.06) 0%, transparent 55%);
   pointer-events: none;
   border-radius: 20px;
 }
 
-/* Hover Effect */
 .email-daily-briefing:hover {
   box-shadow:
-    0 12px 24px rgba(92, 15, 33, 0.3),
-    0 20px 40px rgba(92, 15, 33, 0.25),
-    0 6px 12px rgba(0, 0, 0, 0.25),
-    inset 0 1px 0 rgba(255, 255, 255, 0.1);
-  transform: translateY(-2px);
+    0 6px 20px rgba(244, 63, 94, 0.15),
+    0 0 0 1px rgba(244, 63, 94, 0.2);
+  transform: translateY(-1px);
+}
+
+/* Dark mode: surface on true black canvas */
+.dark .email-daily-briefing {
+  background: linear-gradient(
+    135deg,
+    rgba(244, 63, 94, 0.08) 0%,
+    rgba(244, 63, 94, 0.03) 100%
+  );
+  border-color: rgba(255, 255, 255, 0.06);
+  box-shadow: var(--email-shadow-md);
+}
+
+.dark .email-daily-briefing:hover {
+  border-color: rgba(244, 63, 94, 0.25);
+  box-shadow:
+    0 4px 24px rgba(244, 63, 94, 0.20),
+    0 0 0 1px rgba(244, 63, 94, 0.25);
 }
 
 /* ═══════════════════════════════════════════════════════════════════════════
@@ -120,45 +145,28 @@
    ═══════════════════════════════════════════════════════════════════════════ */
 
 .email-daily-briefing.collapsed {
-  background: linear-gradient(
-    135deg,
-    var(--briefing-burgundy-mid) 0%,
-    var(--briefing-burgundy-light) 100%
-  );
-  box-shadow: var(--briefing-shadow-md);
   cursor: pointer;
-  transition: all 0.3s cubic-bezier(0.4, 0, 0.2, 1);
+  transition: all 220ms cubic-bezier(0.16, 1, 0.3, 1);
 }
 
 .email-daily-briefing.collapsed:hover {
-  background: linear-gradient(
-    135deg,
-    var(--briefing-burgundy-deep) 0%,
-    var(--briefing-burgundy-mid) 100%
-  );
-  box-shadow: var(--briefing-shadow-lg);
   transform: translateY(-1px);
+  box-shadow: var(--email-shadow-rose);
 }
 
-/* Pulse animation — signals the briefing is loaded and ready to read.
-   Animates opacity only (GPU-composited, no paint) on a pseudo-element
-   that carries the static glow ring. */
-@keyframes briefing-ready-pulse {
-  0%, 100% { opacity: 0; }
-  50%       { opacity: 1; }
-}
-
+/* Ready-to-read pulse — animates opacity only on a pseudo-element
+   carrying the static glow ring (GPU-composited, no layout) */
 .email-daily-briefing.collapsed.briefing-ready::before {
   content: '';
   position: absolute;
   inset: -1px;
   border-radius: 20px;
-  border: 1px solid rgba(255, 107, 107, 0.65);
+  border: 1px solid rgba(244, 63, 94, 0.55);
   box-shadow:
-    0 0 0 3px rgba(255, 107, 107, 0.2),
-    0 0 22px rgba(255, 107, 107, 0.22);
+    0 0 0 3px rgba(244, 63, 94, 0.12),
+    0 0 22px rgba(244, 63, 94, 0.20);
   pointer-events: none;
-  animation: briefing-ready-pulse 2.4s ease-in-out infinite;
+  animation: briefingReadyPulse 2.4s ease-in-out infinite;
   will-change: opacity;
 }
 
@@ -178,12 +186,16 @@
   align-items: center;
   justify-content: space-between;
   padding: 20px 24px;
-  border-bottom: 1px solid rgba(255, 107, 107, 0.15);
+  border-bottom: 1px solid var(--email-border);
   background: linear-gradient(
     180deg,
-    rgba(255, 255, 255, 0.05) 0%,
+    rgba(244, 63, 94, 0.06) 0%,
     transparent 100%
   );
+}
+
+.dark .briefing-header {
+  border-bottom-color: rgba(255, 255, 255, 0.06);
 }
 
 .briefing-header-content {
@@ -199,40 +211,32 @@
   display: flex;
   align-items: center;
   justify-content: center;
-  background: linear-gradient(
-    135deg,
-    rgba(255, 107, 107, 0.25) 0%,
-    rgba(255, 135, 135, 0.15) 100%
-  );
+  background: linear-gradient(135deg, var(--email-primary) 0%, var(--email-primary-alt) 100%);
   border-radius: 14px;
-  box-shadow:
-    0 4px 12px rgba(255, 107, 107, 0.3),
-    inset 0 1px 0 rgba(255, 255, 255, 0.2),
-    inset 0 -1px 0 rgba(0, 0, 0, 0.1);
+  box-shadow: 0 4px 12px var(--email-primary-glow);
 }
 
 .briefing-icon {
   font-size: 20px;
   color: #ffffff;
-  text-shadow: 0 2px 4px rgba(0, 0, 0, 0.3);
 }
 
 .briefing-title-section h2 {
-  font-size: 20px;
-  font-weight: 700;
-  color: #ffffff;
+  font-family: 'Inter', system-ui, -apple-system, sans-serif;
+  font-size: 16px;
+  font-weight: 600;
+  color: var(--email-text-main);
   margin: 0 0 2px 0;
-  text-shadow: 0 2px 4px rgba(0, 0, 0, 0.3);
-  letter-spacing: -0.01em;
+  letter-spacing: -0.02em;
 }
 
 .briefing-title-section p {
-  font-size: 13px;
-  font-weight: 500;
-  color: rgba(255, 255, 255, 0.7);
+  font-size: 11px;
+  font-weight: 600;
+  color: var(--email-text-muted);
   margin: 0;
   text-transform: uppercase;
-  letter-spacing: 0.05em;
+  letter-spacing: 0.12em;
 }
 
 .briefing-header-actions {
@@ -241,22 +245,30 @@
   gap: 8px;
 }
 
+/* Ghost button — secondary action */
 .briefing-view-all-btn {
   padding: 8px 16px;
-  background: rgba(255, 255, 255, 0.1);
-  border: 1px solid rgba(255, 255, 255, 0.2);
+  background: transparent;
+  border: 1px solid var(--email-border);
   border-radius: 8px;
-  color: #ffffff;
+  color: var(--email-text-secondary);
+  font-family: 'Inter', system-ui, -apple-system, sans-serif;
   font-size: 13px;
   font-weight: 600;
   cursor: pointer;
-  transition: all 0.2s ease;
+  transition: all 150ms cubic-bezier(0.4, 0, 0.2, 1);
 }
 
 .briefing-view-all-btn:hover {
-  background: rgba(255, 255, 255, 0.15);
-  border-color: rgba(255, 255, 255, 0.3);
-  box-shadow: 0 2px 8px rgba(255, 107, 107, 0.2);
+  background: var(--email-primary-soft);
+  border-color: rgba(244, 63, 94, 0.3);
+  color: var(--email-primary);
+}
+
+.briefing-view-all-btn:focus-visible {
+  outline: 2px solid var(--email-primary);
+  outline-offset: 2px;
+  border-radius: 8px;
 }
 
 .briefing-collapse-btn {
@@ -265,17 +277,24 @@
   display: flex;
   align-items: center;
   justify-content: center;
-  background: rgba(255, 255, 255, 0.08);
-  border: 1px solid rgba(255, 255, 255, 0.15);
+  background: transparent;
+  border: 1px solid var(--email-border);
   border-radius: 8px;
-  color: rgba(255, 255, 255, 0.8);
+  color: var(--email-text-muted);
   cursor: pointer;
-  transition: all 0.2s ease;
+  transition: all 150ms cubic-bezier(0.4, 0, 0.2, 1);
 }
 
 .briefing-collapse-btn:hover {
-  background: rgba(255, 255, 255, 0.15);
-  color: #ffffff;
+  background: var(--email-primary-soft);
+  border-color: rgba(244, 63, 94, 0.3);
+  color: var(--email-primary);
+}
+
+.briefing-collapse-btn:focus-visible {
+  outline: 2px solid var(--email-primary);
+  outline-offset: 2px;
+  border-radius: 8px;
 }
 
 /* ═══════════════════════════════════════════════════════════════════════════
@@ -289,23 +308,25 @@
 }
 
 .briefing-greeting {
+  font-family: 'Inter', system-ui, -apple-system, sans-serif;
   font-size: 22px;
-  color: #ffffff;
+  color: var(--email-text-main);
   margin: 0 0 24px 0;
-  text-shadow: 0 2px 4px rgba(0, 0, 0, 0.3);
 }
 
 .briefing-greeting-name {
   font-weight: 700;
+  color: var(--email-primary);
+  letter-spacing: -0.02em;
 }
 
 .briefing-greeting-text {
   font-weight: 400;
-  color: rgba(255, 255, 255, 0.85);
+  color: var(--email-text-secondary);
 }
 
 /* ═══════════════════════════════════════════════════════════════════════════
-   STATS GRID - METRIC CARDS
+   STATS GRID — METRIC CARDS
    ═══════════════════════════════════════════════════════════════════════════ */
 
 .briefing-stats-grid {
@@ -318,16 +339,31 @@
 .briefing-stat-card {
   position: relative;
   padding: 20px 16px;
-  background: rgba(255, 255, 255, 0.08);
-  border: 1px solid rgba(255, 255, 255, 0.12);
+  background: var(--email-surface);
+  border: 1px solid var(--email-border);
+  border-left: 2px solid transparent;
   border-radius: 14px;
   text-align: center;
-  box-shadow:
-    0 2px 8px rgba(0, 0, 0, 0.15),
-    inset 0 1px 0 rgba(255, 255, 255, 0.1);
-  backdrop-filter: blur(10px);
-  transition: all 0.3s cubic-bezier(0.4, 0, 0.2, 1);
+  box-shadow: var(--email-shadow-sm);
+  transition: all 220ms cubic-bezier(0.16, 1, 0.3, 1);
   overflow: hidden;
+
+  /* Stagger entrance for first 5 */
+  animation: emailEnter 0.22s cubic-bezier(0.16, 1, 0.3, 1) both;
+}
+
+.briefing-stats-grid .briefing-stat-card:nth-child(1) { animation-delay:   0ms; }
+.briefing-stats-grid .briefing-stat-card:nth-child(2) { animation-delay:  40ms; }
+.briefing-stats-grid .briefing-stat-card:nth-child(3) { animation-delay:  80ms; }
+.briefing-stats-grid .briefing-stat-card:nth-child(4) { animation-delay: 120ms; }
+.briefing-stats-grid .briefing-stat-card:nth-child(n+5) {
+  animation: none;
+  will-change: auto;
+}
+
+.dark .briefing-stat-card {
+  background: var(--email-surface-raised);
+  border-color: var(--email-border);
 }
 
 .briefing-stat-card::before {
@@ -340,20 +376,18 @@
   background: linear-gradient(
     90deg,
     transparent 0%,
-    rgba(255, 255, 255, 0.3) 50%,
+    rgba(244, 63, 94, 0.4) 50%,
     transparent 100%
   );
   opacity: 0;
-  transition: opacity 0.3s ease;
+  transition: opacity 150ms cubic-bezier(0.4, 0, 0.2, 1);
 }
 
 .briefing-stat-card:hover {
-  background: rgba(255, 255, 255, 0.12);
-  border-color: rgba(255, 255, 255, 0.2);
-  box-shadow:
-    0 4px 16px rgba(0, 0, 0, 0.2),
-    inset 0 1px 0 rgba(255, 255, 255, 0.15),
-    0 0 20px rgba(255, 107, 107, 0.15);
+  background: var(--email-surface-raised);
+  border-color: rgba(244, 63, 94, 0.2);
+  border-left-color: rgba(244, 63, 94, 0.35);
+  box-shadow: var(--email-shadow-md);
   transform: translateY(-2px);
 }
 
@@ -361,41 +395,46 @@
   opacity: 1;
 }
 
-.briefing-stat-value {
-  font-size: 32px;
-  font-weight: 800;
-  color: #ffffff;
-  line-height: 1;
-  margin: 0 0 8px 0;
-  text-shadow: 0 2px 8px rgba(0, 0, 0, 0.3);
+.dark .briefing-stat-card:hover {
+  background: rgba(255, 255, 255, 0.07);
+  border-color: rgba(244, 63, 94, 0.25);
 }
 
-/* Color Variants */
+.briefing-stat-value {
+  font-family: 'Inter', system-ui, -apple-system, sans-serif;
+  font-size: 32px;
+  font-weight: 800;
+  color: var(--email-text-main);
+  line-height: 1;
+  margin: 0 0 8px 0;
+  letter-spacing: -0.02em;
+}
+
+/* Color variants — rose budget: urgent only gets rose, others neutral */
 .briefing-stat-card.stat-new .briefing-stat-value {
-  color: #ffffff;
+  color: var(--email-text-main);
 }
 
 .briefing-stat-card.stat-urgent .briefing-stat-value {
-  color: #ff6b6b;
-  text-shadow: 0 2px 8px rgba(255, 107, 107, 0.5);
+  color: var(--email-primary);
+  text-shadow: 0 2px 8px var(--email-primary-glow);
 }
 
 .briefing-stat-card.stat-meetings .briefing-stat-value {
-  color: #4fc3f7;
-  text-shadow: 0 2px 8px rgba(79, 195, 247, 0.5);
+  color: var(--email-text-secondary);
 }
 
 .briefing-stat-card.stat-followup .briefing-stat-value {
-  color: #ffd54f;
-  text-shadow: 0 2px 8px rgba(255, 213, 79, 0.5);
+  color: var(--email-text-secondary);
 }
 
 .briefing-stat-label {
+  font-family: 'Inter', system-ui, -apple-system, sans-serif;
   font-size: 11px;
   font-weight: 600;
-  color: rgba(255, 255, 255, 0.7);
+  color: var(--email-text-muted);
   text-transform: uppercase;
-  letter-spacing: 0.08em;
+  letter-spacing: 0.12em;
   margin: 0;
 }
 
@@ -415,66 +454,90 @@
 }
 
 .briefing-section-icon {
-  font-size: 16px;
-  color: #ffd54f;
-  text-shadow: 0 2px 4px rgba(255, 213, 79, 0.5);
+  font-size: 14px;
+  color: var(--email-primary);
 }
 
 .briefing-section-title {
-  font-size: 14px;
-  font-weight: 700;
-  color: #ffffff;
+  font-family: 'Inter', system-ui, -apple-system, sans-serif;
+  font-size: 11px;
+  font-weight: 600;
+  color: var(--email-text-muted);
   margin: 0;
-  text-shadow: 0 1px 2px rgba(0, 0, 0, 0.3);
+  text-transform: uppercase;
+  letter-spacing: 0.12em;
 }
 
+/* Email list — scrollable */
 .briefing-email-list {
   display: flex;
   flex-direction: column;
   gap: 8px;
+  scrollbar-width: thin;
+  scrollbar-color: rgba(244, 63, 94, 0.15) transparent;
 }
 
+.briefing-email-list::-webkit-scrollbar       { width: 6px; }
+.briefing-email-list::-webkit-scrollbar-track  { background: transparent; }
+.briefing-email-list::-webkit-scrollbar-thumb  {
+  background: rgba(244, 63, 94, 0.15);
+  border-radius: 3px;
+}
+.briefing-email-list::-webkit-scrollbar-thumb:hover {
+  background: rgba(244, 63, 94, 0.35);
+}
+
+/* Email list items — always-on left border rule */
 .briefing-email-item {
   position: relative;
   display: flex;
   align-items: flex-start;
   gap: 12px;
   padding: 16px;
-  background: rgba(255, 255, 255, 0.06);
-  border: 1px solid rgba(255, 255, 255, 0.1);
+  background: var(--email-surface);
+  border: 1px solid var(--email-border);
+  border-left: 2px solid transparent;
   border-radius: 12px;
   cursor: pointer;
-  transition: all 0.3s cubic-bezier(0.4, 0, 0.2, 1);
+  transition: all 150ms cubic-bezier(0.4, 0, 0.2, 1);
   overflow: hidden;
+
+  /* Stagger entrance */
+  animation: emailEnter 0.22s cubic-bezier(0.16, 1, 0.3, 1) both;
 }
 
-.briefing-email-item::before {
-  content: '';
-  position: absolute;
-  left: 0;
-  top: 0;
-  bottom: 0;
-  width: 3px;
-  background: linear-gradient(
-    180deg,
-    var(--briefing-coral) 0%,
-    var(--briefing-coral-light) 100%
-  );
-  opacity: 0;
-  transition: opacity 0.3s ease;
+.briefing-email-list .briefing-email-item:nth-child(1) { animation-delay:   0ms; }
+.briefing-email-list .briefing-email-item:nth-child(2) { animation-delay:  40ms; }
+.briefing-email-list .briefing-email-item:nth-child(3) { animation-delay:  80ms; }
+.briefing-email-list .briefing-email-item:nth-child(4) { animation-delay: 120ms; }
+.briefing-email-list .briefing-email-item:nth-child(5) { animation-delay: 160ms; }
+.briefing-email-list .briefing-email-item:nth-child(n+6) {
+  animation: none;
+  will-change: auto;
+}
+
+.dark .briefing-email-item {
+  background: var(--email-surface-raised);
+  border-color: var(--email-border);
 }
 
 .briefing-email-item:hover {
-  background: rgba(255, 255, 255, 0.1);
-  border-color: rgba(255, 255, 255, 0.2);
-  box-shadow:
-    0 4px 12px rgba(0, 0, 0, 0.2),
-    inset 0 1px 0 rgba(255, 255, 255, 0.1);
-  transform: translateX(4px);
+  background: var(--email-surface-raised);
+  border-color: rgba(244, 63, 94, 0.15);
+  border-left-color: rgba(244, 63, 94, 0.35);
+  box-shadow: var(--email-shadow-sm);
 }
 
-.briefing-email-item:hover::before {
-  opacity: 1;
+.dark .briefing-email-item:hover {
+  background: rgba(255, 255, 255, 0.055);
+  border-color: rgba(255, 255, 255, 0.08);
+  border-left-color: rgba(244, 63, 94, 0.35);
+}
+
+.briefing-email-item:focus-visible {
+  outline: 2px solid var(--email-primary);
+  outline-offset: 2px;
+  border-radius: 12px;
 }
 
 .briefing-email-rank {
@@ -484,19 +547,12 @@
   display: flex;
   align-items: center;
   justify-content: center;
-  background: linear-gradient(
-    135deg,
-    rgba(255, 107, 107, 0.3) 0%,
-    rgba(255, 135, 135, 0.2) 100%
-  );
+  background: var(--email-primary-soft);
   border-radius: 50%;
+  font-family: 'Inter', system-ui, -apple-system, sans-serif;
   font-size: 12px;
-  font-weight: 800;
-  color: #ffffff;
-  text-shadow: 0 1px 2px rgba(0, 0, 0, 0.3);
-  box-shadow:
-    0 2px 6px rgba(255, 107, 107, 0.3),
-    inset 0 1px 0 rgba(255, 255, 255, 0.2);
+  font-weight: 700;
+  color: var(--email-primary);
 }
 
 .briefing-email-content {
@@ -505,43 +561,46 @@
 }
 
 .briefing-email-subject {
-  font-size: 14px;
+  font-family: 'Inter', system-ui, -apple-system, sans-serif;
+  font-size: 15px;
   font-weight: 600;
-  color: #ffffff;
+  color: var(--email-text-main);
   margin: 0 0 4px 0;
   white-space: nowrap;
   overflow: hidden;
   text-overflow: ellipsis;
-  text-shadow: 0 1px 2px rgba(0, 0, 0, 0.3);
+  letter-spacing: -0.01em;
 }
 
 .briefing-email-meta {
-  font-size: 12px;
-  color: rgba(255, 255, 255, 0.7);
+  font-family: 'Inter', system-ui, -apple-system, sans-serif;
+  font-size: 13px;
+  color: var(--email-text-muted);
   margin: 0;
   line-height: 1.4;
 }
 
 .briefing-email-from {
-  font-weight: 500;
+  font-weight: 600;
+  color: var(--email-text-secondary);
 }
 
 .briefing-email-summary {
-  color: rgba(255, 255, 255, 0.5);
+  color: var(--email-text-muted);
 }
 
 .briefing-email-arrow {
   flex-shrink: 0;
-  color: rgba(255, 255, 255, 0.4);
-  font-size: 14px;
+  color: var(--email-text-muted);
+  font-size: 12px;
   opacity: 0;
-  transition: all 0.3s ease;
+  transition: all 150ms cubic-bezier(0.4, 0, 0.2, 1);
   transform: translateX(-4px);
 }
 
 .briefing-email-item:hover .briefing-email-arrow {
   opacity: 1;
-  color: var(--briefing-coral);
+  color: var(--email-primary);
   transform: translateX(0);
 }
 
@@ -561,57 +620,50 @@
   display: flex;
   align-items: center;
   justify-content: center;
-  background: rgba(52, 211, 153, 0.15);
+  background: var(--email-primary-soft);
   border-radius: 50%;
-  box-shadow:
-    0 4px 12px rgba(52, 211, 153, 0.2),
-    inset 0 1px 0 rgba(255, 255, 255, 0.1);
+  box-shadow: 0 4px 12px var(--email-primary-glow);
 }
 
 .briefing-empty-icon i {
-  font-size: 28px;
-  color: #34d399;
-  text-shadow: 0 2px 4px rgba(52, 211, 153, 0.5);
+  font-size: 24px;
+  color: var(--email-primary);
 }
 
 .briefing-empty-title {
-  font-size: 16px;
-  font-weight: 700;
-  color: #ffffff;
+  font-family: 'Inter', system-ui, -apple-system, sans-serif;
+  font-size: 15px;
+  font-weight: 600;
+  color: var(--email-text-main);
   margin: 0 0 4px 0;
-  text-shadow: 0 1px 2px rgba(0, 0, 0, 0.3);
+  letter-spacing: -0.01em;
 }
 
 .briefing-empty-text {
+  font-family: 'Inter', system-ui, -apple-system, sans-serif;
   font-size: 13px;
-  color: rgba(255, 255, 255, 0.7);
+  color: var(--email-text-muted);
   margin: 0;
 }
 
 /* ═══════════════════════════════════════════════════════════════════════════
-   PRIORITY INBOX BUTTON
+   PRIMARY CTA BUTTON
    ═══════════════════════════════════════════════════════════════════════════ */
 
 .briefing-priority-inbox-btn {
   width: 100%;
   margin-top: 16px;
   padding: 14px 24px;
-  background: linear-gradient(
-    135deg,
-    var(--briefing-coral) 0%,
-    var(--briefing-coral-light) 100%
-  );
-  border: 1px solid rgba(255, 255, 255, 0.2);
+  background: linear-gradient(135deg, var(--email-primary) 0%, var(--email-primary-alt) 100%);
+  border: none;
   border-radius: 12px;
   color: #ffffff;
+  font-family: 'Inter', system-ui, -apple-system, sans-serif;
   font-size: 14px;
   font-weight: 700;
   cursor: pointer;
-  box-shadow:
-    0 4px 12px rgba(255, 107, 107, 0.4),
-    inset 0 1px 0 rgba(255, 255, 255, 0.2);
-  transition: all 0.3s cubic-bezier(0.4, 0, 0.2, 1);
-  text-shadow: 0 1px 2px rgba(0, 0, 0, 0.3);
+  box-shadow: 0 4px 12px var(--email-primary-glow);
+  transition: all 150ms cubic-bezier(0.16, 1, 0.3, 1);
   display: flex;
   align-items: center;
   justify-content: center;
@@ -619,22 +671,26 @@
 }
 
 .briefing-priority-inbox-btn:hover {
-  background: linear-gradient(
-    135deg,
-    #ff5252 0%,
-    var(--briefing-coral) 100%
-  );
-  box-shadow:
-    0 6px 16px rgba(255, 107, 107, 0.5),
-    inset 0 1px 0 rgba(255, 255, 255, 0.3);
-  transform: translateY(-2px);
+  transform: translateY(-1px);
+  box-shadow: 0 6px 20px rgba(244, 63, 94, 0.45);
 }
 
 .briefing-priority-inbox-btn:active {
-  transform: translateY(0);
-  box-shadow:
-    0 2px 8px rgba(255, 107, 107, 0.4),
-    inset 0 1px 0 rgba(255, 255, 255, 0.2);
+  transform: scale(0.95);
+  box-shadow: 0 2px 8px var(--email-primary-glow);
+}
+
+.briefing-priority-inbox-btn:disabled {
+  opacity: 0.5;
+  cursor: not-allowed;
+  transform: none;
+  box-shadow: none;
+}
+
+.briefing-priority-inbox-btn:focus-visible {
+  outline: 2px solid var(--email-primary);
+  outline-offset: 2px;
+  border-radius: 12px;
 }
 
 /* ═══════════════════════════════════════════════════════════════════════════
@@ -642,15 +698,15 @@
    ═══════════════════════════════════════════════════════════════════════════ */
 
 .briefing-loading {
-  background: linear-gradient(
-    135deg,
-    var(--briefing-burgundy-deep) 0%,
-    var(--briefing-burgundy-mid) 100%
-  );
+  background: var(--email-surface);
   border-radius: 20px;
   padding: 24px;
-  box-shadow: var(--briefing-shadow-md);
-  border: 1px solid rgba(255, 107, 107, 0.2);
+  box-shadow: var(--email-shadow-sm);
+  border: 1px solid var(--email-border);
+}
+
+.dark .briefing-loading {
+  background: var(--email-surface-raised);
 }
 
 .briefing-loading-content {
@@ -661,18 +717,14 @@
 
 .briefing-loading-spinner {
   font-size: 20px;
-  color: var(--briefing-coral);
+  color: var(--email-primary);
   animation: spin 1s linear infinite;
 }
 
-@keyframes spin {
-  from { transform: rotate(0deg); }
-  to { transform: rotate(360deg); }
-}
-
 .briefing-loading-text {
+  font-family: 'Inter', system-ui, -apple-system, sans-serif;
   font-size: 14px;
-  color: rgba(255, 255, 255, 0.8);
+  color: var(--email-text-secondary);
   font-weight: 500;
 }
 
@@ -723,25 +775,23 @@
    ACCESSIBILITY
    ═══════════════════════════════════════════════════════════════════════════ */
 
+/* Rose focus ring — replaces browser default */
+*:focus-visible {
+  outline: 2px solid #f43f5e;
+  outline-offset: 2px;
+  border-radius: 4px;
+}
+*:focus:not(:focus-visible) { outline: none; }
+
 @media (prefers-reduced-motion: reduce) {
   .email-daily-briefing,
   .briefing-stat-card,
   .briefing-email-item,
   .briefing-priority-inbox-btn,
-  .briefing-email-arrow {
-    transition: none;
-  }
-
+  .briefing-email-arrow,
   .briefing-loading-spinner {
-    animation: none;
+    animation-duration: 0.01ms !important;
+    animation-iteration-count: 1 !important;
+    transition-duration: 0.01ms !important;
   }
-}
-
-/* Focus States */
-.briefing-view-all-btn:focus-visible,
-.briefing-collapse-btn:focus-visible,
-.briefing-email-item:focus-visible,
-.briefing-priority-inbox-btn:focus-visible {
-  outline: 2px solid rgba(255, 107, 107, 0.6);
-  outline-offset: 2px;
 }

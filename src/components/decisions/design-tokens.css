@@ -1,76 +1,82 @@
 /* ═══════════════════════════════════════════════════════════════════════════
    PULSE - DECISIONS & TASKS DESIGN SYSTEM
-   Brand design tokens for consistent UI across all decision/task components
+   Brand design tokens — Pulse Premium Dark · Rose Accent System
    ═══════════════════════════════════════════════════════════════════════════ */
 
 :root {
   /* ─────────────────────────────────────────────────────────────────────────
      BACKGROUNDS
      ───────────────────────────────────────────────────────────────────────── */
-  --dt-bg-primary: #f8fafc;
-  --dt-bg-secondary: #f1f5f9;
-  --dt-bg-card: #ffffff;
-  --dt-bg-card-hover: #f8fafc;
+  --dt-bg-primary:      #f8f8f8;
+  --dt-bg-secondary:    #f2f2f2;
+  --dt-bg-card:         #ffffff;
+  --dt-bg-card-hover:   rgba(0, 0, 0, 0.03);
+  --dt-bg-card-active:  rgba(244, 63, 94, 0.04);
 
   /* ─────────────────────────────────────────────────────────────────────────
      TEXT
      ───────────────────────────────────────────────────────────────────────── */
-  --dt-text-primary: #0f172a;
-  --dt-text-secondary: #475569;
-  --dt-text-muted: #94a3b8;
+  --dt-text-primary:    #0f0f0f;
+  --dt-text-secondary:  #52525b;
+  --dt-text-muted:      #6b7280;
 
   /* ─────────────────────────────────────────────────────────────────────────
-     ACCENT
+     ACCENT / ROSE SYSTEM
      ───────────────────────────────────────────────────────────────────────── */
-  --dt-accent: #e11d48;
-  --dt-accent-secondary: #db2777;
-  --dt-accent-gradient: linear-gradient(135deg, #e11d48, #db2777);
-  --dt-accent-hover: #be123c;
+  --dt-accent:          #f43f5e;
+  --dt-accent-alt:      #ec4899;
+  --dt-accent-secondary: #ec4899;
+  --dt-accent-gradient: linear-gradient(135deg, #f43f5e 0%, #ec4899 100%);
+  --dt-accent-hover:    #e11d48;
+  --dt-accent-soft:     rgba(244, 63, 94, 0.10);
+  --dt-accent-softer:   rgba(244, 63, 94, 0.05);
+  --dt-accent-glow:     rgba(244, 63, 94, 0.25);
 
   /* ─────────────────────────────────────────────────────────────────────────
      BORDERS
      ───────────────────────────────────────────────────────────────────────── */
-  --dt-border: #e2e8f0;
-  --dt-border-subtle: #f1f5f9;
-  --dt-border-focus: #e11d48;
+  --dt-border:          rgba(0, 0, 0, 0.08);
+  --dt-border-hover:    rgba(0, 0, 0, 0.12);
+  --dt-border-focus:    #f43f5e;
+  --dt-border-subtle:   rgba(0, 0, 0, 0.04);
 
   /* ─────────────────────────────────────────────────────────────────────────
      STATUS COLORS - TASKS
      ───────────────────────────────────────────────────────────────────────── */
-  --dt-status-overdue: #ef4444;
-  --dt-status-blocked: #f97316;
-  --dt-status-in-review: #a855f7;
-  --dt-status-in-progress: #3b82f6;
-  --dt-status-todo: #6b7280;
-  --dt-status-done: #22c55e;
-  --dt-status-cancelled: #9ca3af;
-  --dt-status-pending: #facc15;
+  --dt-status-overdue:    #ef4444;
+  --dt-status-blocked:    #f97316;
+  --dt-status-in-review:  #a855f7;
+  --dt-status-in-progress:#3b82f6;
+  --dt-status-todo:       #6b7280;
+  --dt-status-done:       #22c55e;
+  --dt-status-cancelled:  #9ca3af;
+  --dt-status-pending:    #facc15;
 
   /* ─────────────────────────────────────────────────────────────────────────
      STATUS COLORS - DECISIONS
      ───────────────────────────────────────────────────────────────────────── */
-  --dt-status-proposed: #8b5cf6;
-  --dt-status-voting: #f59e0b;
-  --dt-status-decided: #10b981;
-  --dt-status-archived: #6b7280;
+  --dt-status-proposed:  #8b5cf6;
+  --dt-status-voting:    #f59e0b;
+  --dt-status-decided:   #10b981;
+  --dt-status-archived:  #6b7280;
 
   /* ─────────────────────────────────────────────────────────────────────────
      STATUS BACKGROUNDS (5% opacity for column backgrounds)
      ───────────────────────────────────────────────────────────────────────── */
-  --dt-status-bg-overdue: rgba(239, 68, 68, 0.05);
-  --dt-status-bg-blocked: rgba(249, 115, 22, 0.05);
-  --dt-status-bg-in-review: rgba(168, 85, 247, 0.05);
+  --dt-status-bg-overdue:     rgba(239, 68, 68, 0.05);
+  --dt-status-bg-blocked:     rgba(249, 115, 22, 0.05);
+  --dt-status-bg-in-review:   rgba(168, 85, 247, 0.05);
   --dt-status-bg-in-progress: rgba(59, 130, 246, 0.05);
-  --dt-status-bg-todo: rgba(107, 114, 128, 0.05);
-  --dt-status-bg-done: rgba(34, 197, 94, 0.05);
-  --dt-status-bg-proposed: rgba(139, 92, 246, 0.05);
-  --dt-status-bg-voting: rgba(245, 158, 11, 0.05);
-  --dt-status-bg-decided: rgba(16, 185, 129, 0.05);
+  --dt-status-bg-todo:        rgba(107, 114, 128, 0.05);
+  --dt-status-bg-done:        rgba(34, 197, 94, 0.05);
+  --dt-status-bg-proposed:    rgba(139, 92, 246, 0.05);
+  --dt-status-bg-voting:      rgba(245, 158, 11, 0.05);
+  --dt-status-bg-decided:     rgba(16, 185, 129, 0.05);
 
   /* ─────────────────────────────────────────────────────────────────────────
      SPACING & LAYOUT
      ───────────────────────────────────────────────────────────────────────── */
-  --dt-radius: 12px;
+  --dt-radius:    12px;
   --dt-radius-sm: 8px;
   --dt-radius-lg: 16px;
   --dt-radius-xl: 20px;
@@ -84,39 +90,50 @@
   /* ─────────────────────────────────────────────────────────────────────────
      SHADOWS
      ───────────────────────────────────────────────────────────────────────── */
-  --dt-shadow-card: 0 1px 3px rgba(0, 0, 0, 0.04), 0 1px 2px rgba(0, 0, 0, 0.06);
+  --dt-shadow-sm:    0 1px 3px rgba(0, 0, 0, 0.06);
+  --dt-shadow-card:  0 1px 3px rgba(0, 0, 0, 0.06), 0 1px 2px rgba(0, 0, 0, 0.04);
+  --dt-shadow-md:    0 4px 12px rgba(0, 0, 0, 0.08);
   --dt-shadow-card-hover: 0 4px 12px rgba(0, 0, 0, 0.08);
   --dt-shadow-modal: 0 20px 25px -5px rgba(0, 0, 0, 0.1), 0 10px 10px -5px rgba(0, 0, 0, 0.04);
-  --dt-shadow-focus: 0 0 0 3px rgba(225, 29, 72, 0.1);
+  --dt-shadow-focus: 0 0 0 3px rgba(244, 63, 94, 0.10);
+  --dt-shadow-rose:
+    0 0 0 1px #f43f5e,
+    0 4px 24px rgba(244, 63, 94, 0.25);
 
   /* ─────────────────────────────────────────────────────────────────────────
      GLASS MORPHISM (Light mode - subtle)
      ───────────────────────────────────────────────────────────────────────── */
-  --dt-glass-bg: rgba(255, 255, 255, 0.7);
+  --dt-glass-bg:     rgba(255, 255, 255, 0.7);
   --dt-glass-border: rgba(255, 255, 255, 0.3);
-  --dt-glass-blur: 12px;
+  --dt-glass-blur:   12px;
 
   /* ─────────────────────────────────────────────────────────────────────────
      TYPOGRAPHY
      ───────────────────────────────────────────────────────────────────────── */
-  --dt-font-xs: 0.75rem;    /* 12px */
-  --dt-font-sm: 0.875rem;   /* 14px */
-  --dt-font-base: 1rem;     /* 16px */
-  --dt-font-lg: 1.125rem;   /* 18px */
-  --dt-font-xl: 1.25rem;    /* 20px */
-  --dt-font-2xl: 1.5rem;    /* 24px */
+  --dt-font-xs:   0.6875rem; /* 11px */
+  --dt-font-sm:   0.875rem;  /* 14px */
+  --dt-font-base: 1rem;      /* 16px */
+  --dt-font-lg:   1.125rem;  /* 18px */
+  --dt-font-xl:   1.25rem;   /* 20px */
+  --dt-font-2xl:  1.5rem;    /* 24px */
 
-  --dt-font-weight-normal: 400;
-  --dt-font-weight-medium: 500;
+  --dt-font-weight-normal:   400;
+  --dt-font-weight-medium:   500;
   --dt-font-weight-semibold: 600;
-  --dt-font-weight-bold: 700;
+  --dt-font-weight-bold:     700;
 
   /* ─────────────────────────────────────────────────────────────────────────
      TRANSITIONS
      ───────────────────────────────────────────────────────────────────────── */
-  --dt-transition-fast: 0.15s ease;
-  --dt-transition-base: 0.2s ease;
-  --dt-transition-slow: 0.3s ease;
+  --dt-transition-fast:   150ms cubic-bezier(0.4, 0, 0.2, 1);
+  --dt-transition-base:   220ms cubic-bezier(0.16, 1, 0.3, 1);
+  --dt-transition-slow:   300ms cubic-bezier(0.16, 1, 0.3, 1);
+  --dt-transition-exit:   150ms cubic-bezier(0.4, 0, 1, 1);
+
+  /* ─────────────────────────────────────────────────────────────────────────
+     FONT FAMILY
+     ───────────────────────────────────────────────────────────────────────── */
+  --dt-font-family: 'Inter', system-ui, -apple-system, sans-serif;
 }
 
 /* ═══════════════════════════════════════════════════════════════════════════
@@ -125,62 +142,73 @@
 
 .dark {
   /* ─────────────────────────────────────────────────────────────────────────
-     BACKGROUNDS
+     BACKGROUNDS — true black canvas, translucent surfaces
      ───────────────────────────────────────────────────────────────────────── */
-  --dt-bg-primary: #000000;
-  --dt-bg-secondary: #0a0a0a;
-  --dt-bg-card: #1c1c1c;
-  --dt-bg-card-hover: #262626;
+  --dt-bg-primary:      #000000;
+  --dt-bg-secondary:    #080808;
+  --dt-bg-card:         rgba(255, 255, 255, 0.03);
+  --dt-bg-card-hover:   rgba(255, 255, 255, 0.055);
+  --dt-bg-card-active:  rgba(244, 63, 94, 0.06);
 
   /* ─────────────────────────────────────────────────────────────────────────
      TEXT
      ───────────────────────────────────────────────────────────────────────── */
-  --dt-text-primary: #e5e5e5;
-  --dt-text-secondary: #a3a3a3;
-  --dt-text-muted: #525252;
+  --dt-text-primary:    #fafafa;
+  --dt-text-secondary:  #b4b4b8;
+  --dt-text-muted:      #6b7280;
 
   /* ─────────────────────────────────────────────────────────────────────────
-     ACCENT
+     ACCENT / ROSE SYSTEM
      ───────────────────────────────────────────────────────────────────────── */
-  --dt-accent: #f43f5e;
+  --dt-accent:          #f43f5e;
+  --dt-accent-alt:      #ec4899;
   --dt-accent-secondary: #ec4899;
-  --dt-accent-gradient: linear-gradient(135deg, #f43f5e, #ec4899);
-  --dt-accent-hover: #fb7185;
+  --dt-accent-gradient: linear-gradient(135deg, #f43f5e 0%, #ec4899 100%);
+  --dt-accent-hover:    #fb7185;
+  --dt-accent-soft:     rgba(244, 63, 94, 0.12);
+  --dt-accent-softer:   rgba(244, 63, 94, 0.06);
+  --dt-accent-glow:     rgba(244, 63, 94, 0.30);
 
   /* ─────────────────────────────────────────────────────────────────────────
      BORDERS
      ───────────────────────────────────────────────────────────────────────── */
-  --dt-border: #2a2a2a;
-  --dt-border-subtle: #1a1a1a;
-  --dt-border-focus: #f43f5e;
+  --dt-border:          rgba(255, 255, 255, 0.06);
+  --dt-border-hover:    rgba(255, 255, 255, 0.10);
+  --dt-border-focus:    #f43f5e;
+  --dt-border-subtle:   rgba(255, 255, 255, 0.03);
 
   /* ─────────────────────────────────────────────────────────────────────────
      SHADOWS
      ───────────────────────────────────────────────────────────────────────── */
-  --dt-shadow-card: 0 1px 3px rgba(0, 0, 0, 0.3);
-  --dt-shadow-card-hover: 0 4px 16px rgba(0, 0, 0, 0.4);
-  --dt-shadow-modal: 0 20px 25px -5px rgba(0, 0, 0, 0.3), 0 10px 10px -5px rgba(0, 0, 0, 0.2);
-  --dt-shadow-focus: 0 0 0 3px rgba(244, 63, 94, 0.2);
+  --dt-shadow-sm:    0 1px 4px rgba(0, 0, 0, 0.50);
+  --dt-shadow-card:  0 1px 3px rgba(0, 0, 0, 0.30);
+  --dt-shadow-md:    0 4px 16px rgba(0, 0, 0, 0.60);
+  --dt-shadow-card-hover: 0 4px 16px rgba(0, 0, 0, 0.40);
+  --dt-shadow-modal: 0 20px 25px -5px rgba(0, 0, 0, 0.5), 0 10px 10px -5px rgba(0, 0, 0, 0.3);
+  --dt-shadow-focus: 0 0 0 3px rgba(244, 63, 94, 0.20);
+  --dt-shadow-rose:
+    0 0 0 1px #f43f5e,
+    0 4px 24px rgba(244, 63, 94, 0.30);
 
   /* ─────────────────────────────────────────────────────────────────────────
      GLASS MORPHISM (Dark mode - frosted)
      ───────────────────────────────────────────────────────────────────────── */
-  --dt-glass-bg: rgba(28, 28, 28, 0.6);
+  --dt-glass-bg:     rgba(10, 10, 10, 0.95);
   --dt-glass-border: rgba(255, 255, 255, 0.06);
-  --dt-glass-blur: 16px;
+  --dt-glass-blur:   24px;
 
   /* ─────────────────────────────────────────────────────────────────────────
      STATUS BACKGROUNDS (Dark mode - slightly higher opacity)
      ───────────────────────────────────────────────────────────────────────── */
-  --dt-status-bg-overdue: rgba(239, 68, 68, 0.08);
-  --dt-status-bg-blocked: rgba(249, 115, 22, 0.08);
-  --dt-status-bg-in-review: rgba(168, 85, 247, 0.08);
+  --dt-status-bg-overdue:     rgba(239, 68, 68, 0.08);
+  --dt-status-bg-blocked:     rgba(249, 115, 22, 0.08);
+  --dt-status-bg-in-review:   rgba(168, 85, 247, 0.08);
   --dt-status-bg-in-progress: rgba(59, 130, 246, 0.08);
-  --dt-status-bg-todo: rgba(107, 114, 128, 0.08);
-  --dt-status-bg-done: rgba(34, 197, 94, 0.08);
-  --dt-status-bg-proposed: rgba(139, 92, 246, 0.08);
-  --dt-status-bg-voting: rgba(245, 158, 11, 0.08);
-  --dt-status-bg-decided: rgba(16, 185, 129, 0.08);
+  --dt-status-bg-todo:        rgba(107, 114, 128, 0.08);
+  --dt-status-bg-done:        rgba(34, 197, 94, 0.08);
+  --dt-status-bg-proposed:    rgba(139, 92, 246, 0.08);
+  --dt-status-bg-voting:      rgba(245, 158, 11, 0.08);
+  --dt-status-bg-decided:     rgba(16, 185, 129, 0.08);
 }
 
 /* ═══════════════════════════════════════════════════════════════════════════
@@ -190,8 +218,8 @@
 /* Glass card base */
 .dt-glass-card {
   background: var(--dt-glass-bg);
-  backdrop-filter: blur(var(--dt-glass-blur));
   -webkit-backdrop-filter: blur(var(--dt-glass-blur));
+          backdrop-filter: blur(var(--dt-glass-blur));
   border: 1px solid var(--dt-glass-border);
   border-radius: var(--dt-radius);
   box-shadow: var(--dt-shadow-card);
@@ -248,4 +276,31 @@
 
 .dt-card[data-status="decided"] {
   border-left: 3px solid var(--dt-status-decided);
+}
+
+/* ─────────────────────────────────────────────────────────────────────────
+   SHARED KEYFRAMES
+   ───────────────────────────────────────────────────────────────────────── */
+
+@keyframes dtEnter {
+  from { opacity: 0; transform: translateY(6px); }
+  to   { opacity: 1; transform: translateY(0); }
+}
+
+@keyframes dtHeartbeat {
+  0%   { opacity: 0;   }
+  35%  { opacity: 1;   }
+  100% { opacity: 0.4; }
+}
+
+/* ─────────────────────────────────────────────────────────────────────────
+   ACCESSIBILITY
+   ───────────────────────────────────────────────────────────────────────── */
+
+@media (prefers-reduced-motion: reduce) {
+  * {
+    animation-duration: 0.01ms !important;
+    animation-iteration-count: 1 !important;
+    transition-duration: 0.01ms !important;
+  }
 }

@@ -80,6 +80,7 @@ const getNavSections = (isAdmin: boolean): NavSection[] => {
         { icon: 'fa-search', label: 'Search', view: AppView.MULTI_MODAL },
         { icon: 'fa-chart-line', label: 'Analytics', view: AppView.ANALYTICS },
         { icon: 'fa-box-archive', label: 'Archives', view: AppView.ARCHIVES },
+        { icon: 'fa-book-open', label: 'User Guide', view: AppView.USERS_GUIDE },
       ],
     },
     {

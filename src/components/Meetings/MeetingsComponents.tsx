@@ -1,5 +1,15 @@
-import React from 'react';
+import React, { useEffect, useRef, useState } from 'react';
 import { Contact, CalendarEvent, ArchiveItem } from '../../types';
+import {
+  fetchMeetingAnalytics,
+  getMeetingRecordings,
+  getMeetingSettings,
+  saveMeetingSettings,
+  MeetingAnalyticsData,
+  MeetingRecording,
+  MeetingSettings,
+  DEFAULT_MEETING_SETTINGS,
+} from '../../services/meetingService';
 
 // ============================================
 // TYPES
@@ -184,7 +194,6 @@ export const FEATURE_CARDS: FeatureCardConfig[] = [
     description: 'Split into smaller groups for focused discussions',
     icon: 'fa-arrows-split-up-and-left',
     iconClass: 'breakout',
-    badge: 'Coming Soon'
   },
 ];
 
@@ -973,6 +982,1457 @@ export const Toast: React.FC<ToastProps> = ({ message, isVisible }) => {
     <div className="meetings-toast">
       <i className="fa-solid fa-check" />
       {message}
+    </div>
+  );
+};
+
+// ============================================
+// BREAKOUT ROOM TYPE
+// ============================================
+
+export interface BreakoutRoom {
+  id: string;
+  name: string;
+  participants: Contact[];
+  color: string;
+}
+
+const BREAKOUT_COLORS = ['#00d4ff', '#7c3aed', '#10b981', '#f59e0b', '#ef4444', '#ec4899'];
+
+// ============================================
+// MEETING SUMMARY TYPES
+// ============================================
+
+export interface TimelineEntry {
+  timestamp: string;
+  note: string;
+}
+
+export interface MeetingSummaryData {
+  aiSummary: string;
+  keyPoints: string[];
+  actionItems: ActionItem[];
+  decisions: string[];
+  timelineEvents: TimelineEntry[];
+  participants: Contact[];
+  duration: number;
+  meetingTitle: string;
+}
+
+// ============================================
+// ANALYTICS MODAL
+// ============================================
+
+interface AnalyticsModalProps {
+  isOpen: boolean;
+  onClose: () => void;
+}
+
+function formatHours(h: number): string {
+  if (h < 1) return `${Math.round(h * 60)}m`;
+  return `${h}h`;
+}
+
+export const AnalyticsModal: React.FC<AnalyticsModalProps> = ({ isOpen, onClose }) => {
+  const [data, setData] = useState<MeetingAnalyticsData | null>(null);
+  const [loading, setLoading] = useState(true);
+  const [activeTab, setActiveTab] = useState<'overview' | 'topics' | 'people'>('overview');
+
+  useEffect(() => {
+    if (!isOpen) return;
+    setLoading(true);
+    fetchMeetingAnalytics().then(d => {
+      setData(d);
+      setLoading(false);
+    });
+  }, [isOpen]);
+
+  if (!isOpen) return null;
+
+  const maxCount = data ? Math.max(...data.weeklyTrend.map(w => w.count), 1) : 1;
+
+  return (
+    <div className="meetings-modal-overlay" onClick={onClose}>
+      <div className="meetings-modal meetings-modal--wide" onClick={e => e.stopPropagation()}>
+        <div className="meetings-modal-header">
+          <div className="meetings-modal-title">
+            <i className="fa-solid fa-chart-pie" style={{ marginRight: 8, color: 'var(--mtg-accent-primary)' }} />
+            Meeting Analytics
+          </div>
+          <button className="meetings-modal-close" onClick={onClose}>
+            <i className="fa-solid fa-xmark" />
+          </button>
+        </div>
+
+        <div className="meetings-modal-body">
+          {/* Tabs */}
+          <div className="meetings-analytics-tabs">
+            {(['overview', 'topics', 'people'] as const).map(tab => (
+              <button
+                key={tab}
+                className={`meetings-analytics-tab ${activeTab === tab ? 'active' : ''}`}
+                onClick={() => setActiveTab(tab)}
+              >
+                {tab.charAt(0).toUpperCase() + tab.slice(1)}
+              </button>
+            ))}
+          </div>
+
+          {loading ? (
+            <div className="meetings-analytics-empty">
+              <i className="fa-solid fa-spinner fa-spin" style={{ fontSize: 24, marginBottom: 12 }} />
+              <div>Loading analytics...</div>
+            </div>
+          ) : !data || data.totalMeetings === 0 ? (
+            <div className="meetings-analytics-empty">
+              <i className="fa-solid fa-chart-bar" style={{ fontSize: 36, marginBottom: 12, opacity: 0.2 }} />
+              <div style={{ fontWeight: 600, marginBottom: 6 }}>No data yet</div>
+              <div style={{ fontSize: 12, opacity: 0.7 }}>Start a Pulse meeting with AI Scribe to populate analytics.</div>
+            </div>
+          ) : (
+            <>
+              {activeTab === 'overview' && (
+                <>
+                  {/* Stats */}
+                  <div className="meetings-analytics-stats">
+                    <div className="meetings-analytics-stat">
+                      <div className="meetings-analytics-stat-value">{data.totalMeetings}</div>
+                      <div className="meetings-analytics-stat-label">Meetings</div>
+                    </div>
+                    <div className="meetings-analytics-stat">
+                      <div className="meetings-analytics-stat-value">{formatHours(data.totalHours)}</div>
+                      <div className="meetings-analytics-stat-label">Total Time</div>
+                    </div>
+                    <div className="meetings-analytics-stat">
+                      <div className="meetings-analytics-stat-value">{data.avgDuration}m</div>
+                      <div className="meetings-analytics-stat-label">Avg Duration</div>
+                    </div>
+                  </div>
+
+                  {/* 8-week trend chart */}
+                  <div className="meetings-analytics-chart">
+                    <div className="meetings-analytics-chart-title">8-Week Trend</div>
+                    <svg viewBox="0 0 560 80" style={{ width: '100%', height: 80, display: 'block' }}>
+                      <defs>
+                        <linearGradient id="mtg-chart-grad" x1="0" y1="0" x2="0" y2="1">
+                          <stop offset="0%" stopColor="var(--mtg-accent-primary)" stopOpacity="0.3" />
+                          <stop offset="100%" stopColor="var(--mtg-accent-primary)" stopOpacity="0" />
+                        </linearGradient>
+                      </defs>
+                      {(() => {
+                        const pts = data.weeklyTrend.map((w, i) => {
+                          const x = (i / (data.weeklyTrend.length - 1)) * 540 + 10;
+                          const y = 70 - (w.count / maxCount) * 60 + 5;
+                          return `${x},${y}`;
+                        }).join(' ');
+                        const polyPts = `10,75 ${pts} 550,75`;
+                        return (
+                          <>
+                            <polygon points={polyPts} fill="url(#mtg-chart-grad)" />
+                            <polyline points={pts} fill="none" stroke="var(--mtg-accent-primary)" strokeWidth="2" strokeLinejoin="round" />
+                            {data.weeklyTrend.map((w, i) => {
+                              const x = (i / (data.weeklyTrend.length - 1)) * 540 + 10;
+                              const y = 70 - (w.count / maxCount) * 60 + 5;
+                              return (
+                                <g key={i}>
+                                  <circle cx={x} cy={y} r="4" fill="var(--mtg-accent-primary)" />
+                                  <text x={x} y="78" textAnchor="middle" fontSize="9" fill="var(--mtg-text-muted)">{w.label}</text>
+                                </g>
+                              );
+                            })}
+                          </>
+                        );
+                      })()}
+                    </svg>
+                  </div>
+
+                  {/* Sentiment */}
+                  <div className="meetings-sentiment-row">
+                    <div className="meetings-sentiment-item">
+                      <div className="meetings-sentiment-count" style={{ color: 'var(--mtg-accent-success)' }}>
+                        {data.sentimentBreakdown.positive}
+                      </div>
+                      <div className="meetings-sentiment-label">Positive</div>
+                    </div>
+                    <div className="meetings-sentiment-item">
+                      <div className="meetings-sentiment-count" style={{ color: 'var(--mtg-text-muted)' }}>
+                        {data.sentimentBreakdown.neutral}
+                      </div>
+                      <div className="meetings-sentiment-label">Neutral</div>
+                    </div>
+                    <div className="meetings-sentiment-item">
+                      <div className="meetings-sentiment-count" style={{ color: 'var(--mtg-accent-danger)' }}>
+                        {data.sentimentBreakdown.negative}
+                      </div>
+                      <div className="meetings-sentiment-label">Negative</div>
+                    </div>
+                  </div>
+
+                  {/* Recent Decisions */}
+                  {data.topDecisions.length > 0 && (
+                    <>
+                      <div style={{ fontSize: 11, fontWeight: 700, textTransform: 'uppercase', letterSpacing: 1, color: 'var(--mtg-text-muted)', marginBottom: 10 }}>
+                        Recent Decisions
+                      </div>
+                      <div className="meetings-decisions-list">
+                        {data.topDecisions.slice(0, 4).map((d, i) => (
+                          <div key={i} className="meetings-decision-item">
+                            <i className="fa-solid fa-circle-check" style={{ color: 'var(--mtg-accent-success)', marginTop: 1 }} />
+                            <div>
+                              <div className="meetings-decision-text">{d.decision}</div>
+                              <div className="meetings-decision-meta">{d.meetingTitle} · {d.date.toLocaleDateString()}</div>
+                            </div>
+                          </div>
+                        ))}
+                      </div>
+                    </>
+                  )}
+                </>
+              )}
+
+              {activeTab === 'topics' && (
+                <>
+                  <div style={{ fontSize: 11, fontWeight: 700, textTransform: 'uppercase', letterSpacing: 1, color: 'var(--mtg-text-muted)', marginBottom: 12 }}>
+                    Most Discussed Topics
+                  </div>
+                  {data.topTopics.length === 0 ? (
+                    <div className="meetings-analytics-empty">No topic data available yet.</div>
+                  ) : (
+                    <div className="meetings-topic-pills">
+                      {data.topTopics.map((t, i) => (
+                        <div key={i} className="meetings-topic-pill">
+                          {t.topic}
+                          <span className="meetings-topic-pill-count">{t.count}</span>
+                        </div>
+                      ))}
+                    </div>
+                  )}
+                </>
+              )}
+
+              {activeTab === 'people' && (
+                <>
+                  <div style={{ fontSize: 11, fontWeight: 700, textTransform: 'uppercase', letterSpacing: 1, color: 'var(--mtg-text-muted)', marginBottom: 12 }}>
+                    Top Attendees
+                  </div>
+                  {data.topAttendees.length === 0 ? (
+                    <div className="meetings-analytics-empty">No attendee data available yet.</div>
+                  ) : (
+                    <div>
+                      {data.topAttendees.map((a, i) => (
+                        <div key={i} className="meetings-attendee-row">
+                          <div style={{
+                            width: 32, height: 32, borderRadius: '50%',
+                            background: `hsl(${i * 47}, 60%, 45%)`,
+                            display: 'flex', alignItems: 'center', justifyContent: 'center',
+                            fontSize: 12, fontWeight: 700, color: 'white', flexShrink: 0,
+                          }}>
+                            {a.name.charAt(0)}
+                          </div>
+                          <div className="meetings-attendee-row-name">{a.name}</div>
+                          <div className="meetings-attendee-row-count">{a.meetingCount} meetings</div>
+                        </div>
+                      ))}
+                    </div>
+                  )}
+                </>
+              )}
+            </>
+          )}
+        </div>
+
+        <div className="meetings-modal-footer">
+          <button className="meetings-modal-btn" onClick={onClose}>Close</button>
+        </div>
+      </div>
+    </div>
+  );
+};
+
+// ============================================
+// RECORDINGS MODAL
+// ============================================
+
+interface RecordingsModalProps {
+  isOpen: boolean;
+  onClose: () => void;
+}
+
+function formatTime(secs: number): string {
+  const m = Math.floor(secs / 60);
+  const s = Math.floor(secs % 60);
+  return `${m}:${String(s).padStart(2, '0')}`;
+}
+
+export const RecordingsModal: React.FC<RecordingsModalProps> = ({ isOpen, onClose }) => {
+  const [recordings, setRecordings] = useState<MeetingRecording[]>([]);
+  const [loading, setLoading] = useState(true);
+  const [search, setSearch] = useState('');
+  const [selected, setSelected] = useState<MeetingRecording | null>(null);
+  const [playing, setPlaying] = useState(false);
+  const [currentTime, setCurrentTime] = useState(0);
+  const [duration, setDuration] = useState(0);
+  const audioRef = useRef<HTMLAudioElement>(null);
+
+  useEffect(() => {
+    if (!isOpen) return;
+    setLoading(true);
+    setSelected(null);
+    setSearch('');
+    getMeetingRecordings().then(r => {
+      setRecordings(r);
+      setLoading(false);
+    });
+  }, [isOpen]);
+
+  useEffect(() => {
+    if (!selected) {
+      setPlaying(false);
+      setCurrentTime(0);
+      setDuration(0);
+    }
+  }, [selected]);
+
+  if (!isOpen) return null;
+
+  const filtered = recordings.filter(r =>
+    r.title.toLowerCase().includes(search.toLowerCase()) ||
+    (r.transcript || '').toLowerCase().includes(search.toLowerCase())
+  );
+
+  const togglePlay = () => {
+    if (!audioRef.current) return;
+    if (playing) {
+      audioRef.current.pause();
+      setPlaying(false);
+    } else {
+      audioRef.current.play();
+      setPlaying(true);
+    }
+  };
+
+  const seekTo = (e: React.MouseEvent<HTMLDivElement>) => {
+    if (!audioRef.current || !duration) return;
+    const rect = e.currentTarget.getBoundingClientRect();
+    const pct = (e.clientX - rect.left) / rect.width;
+    audioRef.current.currentTime = pct * duration;
+  };
+
+  const renderTranscript = () => {
+    if (!selected?.transcript) return <div style={{ color: 'var(--mtg-text-muted)', fontSize: 12 }}>No transcript available.</div>;
+    const parts = selected.transcript.split(/(\[\d{2}:\d{2}\])/g);
+    return parts.map((part, i) => {
+      const match = part.match(/^\[(\d{2}):(\d{2})\]$/);
+      if (match) {
+        const secs = Number(match[1]) * 60 + Number(match[2]);
+        return (
+          <span
+            key={i}
+            className="ts-link"
+            onClick={() => { if (audioRef.current) audioRef.current.currentTime = secs; }}
+          >
+            {part}
+          </span>
+        );
+      }
+      if (search && part.toLowerCase().includes(search.toLowerCase())) {
+        const idx = part.toLowerCase().indexOf(search.toLowerCase());
+        return (
+          <span key={i}>
+            {part.slice(0, idx)}
+            <mark>{part.slice(idx, idx + search.length)}</mark>
+            {part.slice(idx + search.length)}
+          </span>
+        );
+      }
+      return <span key={i}>{part}</span>;
+    });
+  };
+
+  return (
+    <div className="meetings-modal-overlay" onClick={onClose}>
+      <div className="meetings-modal meetings-modal--wide" onClick={e => e.stopPropagation()}>
+        <div className="meetings-modal-header">
+          {selected ? (
+            <>
+              <button className="meetings-back-btn" onClick={() => setSelected(null)}>
+                <i className="fa-solid fa-arrow-left" /> Back
+              </button>
+              <div className="meetings-modal-title">{selected.title}</div>
+            </>
+          ) : (
+            <div className="meetings-modal-title">
+              <i className="fa-solid fa-circle-play" style={{ marginRight: 8, color: 'var(--mtg-accent-danger)' }} />
+              Recordings
+            </div>
+          )}
+          <button className="meetings-modal-close" onClick={onClose}>
+            <i className="fa-solid fa-xmark" />
+          </button>
+        </div>
+
+        <div className="meetings-modal-body">
+          {!selected ? (
+            <>
+              {/* Search */}
+              <div className="meetings-recordings-search">
+                <i className="fa-solid fa-magnifying-glass meetings-recordings-search-icon" />
+                <input
+                  type="text"
+                  placeholder="Search recordings or transcripts..."
+                  value={search}
+                  onChange={e => setSearch(e.target.value)}
+                />
+              </div>
+
+              {loading ? (
+                <div className="meetings-analytics-empty">
+                  <i className="fa-solid fa-spinner fa-spin" style={{ fontSize: 24, marginBottom: 12 }} />
+                  <div>Loading recordings...</div>
+                </div>
+              ) : filtered.length === 0 ? (
+                <div className="meetings-analytics-empty">
+                  <i className="fa-solid fa-film" style={{ fontSize: 36, marginBottom: 12, opacity: 0.2 }} />
+                  <div style={{ fontWeight: 600, marginBottom: 6 }}>No recordings found</div>
+                  <div style={{ fontSize: 12, opacity: 0.7 }}>
+                    {recordings.length === 0
+                      ? 'Enable Auto-Recording in Meeting Settings to save recordings.'
+                      : 'No results match your search.'}
+                  </div>
+                </div>
+              ) : (
+                filtered.map(r => (
+                  <div key={r.id} className="meetings-recording-card" onClick={() => setSelected(r)}>
+                    <div className="meetings-recording-thumb">
+                      <i className="fa-solid fa-circle-play" style={{ fontSize: 20 }} />
+                    </div>
+                    <div className="meetings-recording-info">
+                      <div className="meetings-recording-title">{r.title}</div>
+                      <div className="meetings-recording-meta">
+                        {r.startTime ? r.startTime.toLocaleDateString() : 'Unknown date'}
+                        {r.durationMinutes ? ` · ${r.durationMinutes} min` : ''}
+                        {r.attendees.length > 0 ? ` · ${r.attendees.length} attendees` : ''}
+                      </div>
+                    </div>
+                    <div className="meetings-recording-play-btn">
+                      <i className="fa-solid fa-play" style={{ fontSize: 12 }} />
+                    </div>
+                  </div>
+                ))
+              )}
+            </>
+          ) : (
+            <>
+              {/* Audio player */}
+              <div className="meetings-player">
+                <audio
+                  ref={audioRef}
+                  src={selected.audioFileUrl}
+                  onTimeUpdate={() => setCurrentTime(audioRef.current?.currentTime || 0)}
+                  onLoadedMetadata={() => setDuration(audioRef.current?.duration || 0)}
+                  onEnded={() => setPlaying(false)}
+                />
+                <div className="meetings-player-progress-track" onClick={seekTo}>
+                  <div
+                    className="meetings-player-progress-fill"
+                    style={{ width: duration ? `${(currentTime / duration) * 100}%` : '0%' }}
+                  />
+                </div>
+                <div className="meetings-player-controls">
+                  <button className="meetings-player-play-btn" onClick={togglePlay}>
+                    <i className={`fa-solid ${playing ? 'fa-pause' : 'fa-play'}`} style={{ fontSize: 13 }} />
+                  </button>
+                  <span className="meetings-player-time">
+                    {formatTime(currentTime)} / {formatTime(duration)}
+                  </span>
+                  <a href={selected.audioFileUrl} download className="meetings-download-btn">
+                    <i className="fa-solid fa-download" /> Download
+                  </a>
+                </div>
+              </div>
+
+              {/* Transcript */}
+              {selected.summary && (
+                <div style={{ marginBottom: 12 }}>
+                  <div style={{ fontSize: 11, fontWeight: 700, textTransform: 'uppercase', letterSpacing: 1, color: 'var(--mtg-text-muted)', marginBottom: 8 }}>
+                    Summary
+                  </div>
+                  <div style={{ fontSize: 13, color: 'var(--mtg-text-secondary)', lineHeight: 1.6 }}>
+                    {selected.summary}
+                  </div>
+                </div>
+              )}
+
+              <div style={{ fontSize: 11, fontWeight: 700, textTransform: 'uppercase', letterSpacing: 1, color: 'var(--mtg-text-muted)', marginBottom: 8 }}>
+                Transcript
+              </div>
+              <div className="meetings-transcript-view">{renderTranscript()}</div>
+            </>
+          )}
+        </div>
+
+        <div className="meetings-modal-footer">
+          <button className="meetings-modal-btn" onClick={onClose}>Close</button>
+        </div>
+      </div>
+    </div>
+  );
+};
+
+// ============================================
+// DEVICE TEST MODAL
+// ============================================
+
+interface DeviceTestModalProps {
+  isOpen: boolean;
+  onClose: () => void;
+}
+
+type Permission = 'pending' | 'granted' | 'denied';
+
+export const DeviceTestModal: React.FC<DeviceTestModalProps> = ({ isOpen, onClose }) => {
+  const videoRef = useRef<HTMLVideoElement>(null);
+  const streamRef = useRef<MediaStream | null>(null);
+  const audioCtxRef = useRef<AudioContext | null>(null);
+  const analyserRef = useRef<AnalyserNode | null>(null);
+  const animFrameRef = useRef<number>(0);
+
+  const [micLevel, setMicLevel] = useState(0);
+  const [micPermission, setMicPermission] = useState<Permission>('pending');
+  const [cameraPermission, setCameraPermission] = useState<Permission>('pending');
+  const [speakerTesting, setSpeakerTesting] = useState(false);
+  const [microphones, setMicrophones] = useState<MediaDeviceInfo[]>([]);
+  const [cameras, setCameras] = useState<MediaDeviceInfo[]>([]);
+  const [selectedMic, setSelectedMic] = useState('');
+  const [selectedCamera, setSelectedCamera] = useState('');
+
+  const stopStream = () => {
+    if (streamRef.current) {
+      streamRef.current.getTracks().forEach(t => t.stop());
+      streamRef.current = null;
+    }
+    cancelAnimationFrame(animFrameRef.current);
+    if (audioCtxRef.current && audioCtxRef.current.state !== 'closed') {
+      audioCtxRef.current.close();
+      audioCtxRef.current = null;
+    }
+  };
+
+  const updateMicLevel = () => {
+    if (!analyserRef.current) return;
+    const data = new Uint8Array(analyserRef.current.frequencyBinCount);
+    analyserRef.current.getByteFrequencyData(data);
+    const avg = data.reduce((a, b) => a + b, 0) / data.length;
+    setMicLevel(Math.min(20, Math.round((avg / 128) * 20)));
+    animFrameRef.current = requestAnimationFrame(updateMicLevel);
+  };
+
+  const startDevices = async () => {
+    try {
+      const stream = await navigator.mediaDevices.getUserMedia({ video: true, audio: true });
+      streamRef.current = stream;
+      setMicPermission('granted');
+      setCameraPermission('granted');
+
+      if (videoRef.current) {
+        videoRef.current.srcObject = stream;
+      }
+
+      const audioCtx = new (window.AudioContext || (window as any).webkitAudioContext)();
+      audioCtxRef.current = audioCtx;
+      const analyser = audioCtx.createAnalyser();
+      analyserRef.current = analyser;
+      audioCtx.createMediaStreamSource(stream).connect(analyser);
+      animFrameRef.current = requestAnimationFrame(updateMicLevel);
+
+      const devices = await navigator.mediaDevices.enumerateDevices();
+      setMicrophones(devices.filter(d => d.kind === 'audioinput'));
+      setCameras(devices.filter(d => d.kind === 'videoinput'));
+    } catch {
+      setMicPermission('denied');
+      setCameraPermission('denied');
+    }
+  };
+
+  useEffect(() => {
+    if (isOpen) {
+      startDevices();
+    } else {
+      stopStream();
+      setMicLevel(0);
+      setMicPermission('pending');
+      setCameraPermission('pending');
+    }
+    return () => stopStream();
+  }, [isOpen]);
+
+  const testSpeaker = () => {
+    try {
+      const ctx = new AudioContext();
+      const osc = ctx.createOscillator();
+      const gain = ctx.createGain();
+      osc.connect(gain);
+      gain.connect(ctx.destination);
+      osc.frequency.value = 440;
+      gain.gain.setValueAtTime(0.3, ctx.currentTime);
+      gain.gain.exponentialRampToValueAtTime(0.001, ctx.currentTime + 1.0);
+      osc.start();
+      osc.stop(ctx.currentTime + 1.0);
+      setSpeakerTesting(true);
+      setTimeout(() => setSpeakerTesting(false), 1200);
+    } catch {
+      // ignore
+    }
+  };
+
+  const PermissionBadge: React.FC<{ perm: Permission }> = ({ perm }) => (
+    <span className={`meetings-permission-badge ${perm}`}>
+      <i className={`fa-solid ${perm === 'granted' ? 'fa-circle-check' : perm === 'denied' ? 'fa-circle-xmark' : 'fa-circle-question'}`} />
+      {perm === 'granted' ? 'Allowed' : perm === 'denied' ? 'Denied' : 'Checking...'}
+    </span>
+  );
+
+  if (!isOpen) return null;
+
+  return (
+    <div className="meetings-modal-overlay" onClick={onClose}>
+      <div className="meetings-modal" onClick={e => e.stopPropagation()} style={{ maxWidth: 500 }}>
+        <div className="meetings-modal-header">
+          <div className="meetings-modal-title">
+            <i className="fa-solid fa-sliders" style={{ marginRight: 8, color: 'var(--mtg-accent-primary)' }} />
+            Device Test
+          </div>
+          <button className="meetings-modal-close" onClick={onClose}>
+            <i className="fa-solid fa-xmark" />
+          </button>
+        </div>
+
+        <div className="meetings-modal-body">
+          {/* Microphone */}
+          <div className="meetings-device-section">
+            <div className="meetings-device-section-header">
+              <div className="meetings-device-section-title">
+                <i className="fa-solid fa-microphone" />
+                Microphone
+              </div>
+              <PermissionBadge perm={micPermission} />
+            </div>
+            {microphones.length > 0 && (
+              <select
+                className="meetings-device-select"
+                value={selectedMic}
+                onChange={e => setSelectedMic(e.target.value)}
+              >
+                {microphones.map(d => (
+                  <option key={d.deviceId} value={d.deviceId}>{d.label || 'Microphone'}</option>
+                ))}
+              </select>
+            )}
+            <div className="meetings-mic-meter">
+              {Array.from({ length: 20 }, (_, i) => (
+                <div key={i} className={`meetings-mic-bar ${i < micLevel ? 'active' : ''}`} />
+              ))}
+            </div>
+          </div>
+
+          {/* Camera */}
+          <div className="meetings-device-section">
+            <div className="meetings-device-section-header">
+              <div className="meetings-device-section-title">
+                <i className="fa-solid fa-video" />
+                Camera
+              </div>
+              <PermissionBadge perm={cameraPermission} />
+            </div>
+            {cameras.length > 0 && (
+              <select
+                className="meetings-device-select"
+                value={selectedCamera}
+                onChange={e => setSelectedCamera(e.target.value)}
+              >
+                {cameras.map(d => (
+                  <option key={d.deviceId} value={d.deviceId}>{d.label || 'Camera'}</option>
+                ))}
+              </select>
+            )}
+            {cameraPermission === 'granted' ? (
+              <video
+                ref={videoRef}
+                autoPlay
+                muted
+                playsInline
+                className="meetings-camera-preview"
+              />
+            ) : (
+              <div className="meetings-camera-off">
+                <i className="fa-solid fa-video-slash" />
+                Camera not available
+              </div>
+            )}
+          </div>
+
+          {/* Speaker */}
+          <div className="meetings-device-section">
+            <div className="meetings-device-section-header">
+              <div className="meetings-device-section-title">
+                <i className="fa-solid fa-volume-high" />
+                Speaker
+              </div>
+            </div>
+            <button
+              className={`meetings-speaker-test-btn ${speakerTesting ? 'testing' : ''}`}
+              onClick={testSpeaker}
+            >
+              <i className={`fa-solid ${speakerTesting ? 'fa-volume-high fa-beat' : 'fa-play'}`} />
+              {speakerTesting ? 'Playing tone...' : 'Test Speaker'}
+            </button>
+          </div>
+        </div>
+
+        <div className="meetings-modal-footer">
+          <span style={{ fontSize: 12, color: 'var(--mtg-text-muted)' }}>
+            Audio and video access required for meetings
+          </span>
+          <button className="meetings-modal-btn primary" onClick={onClose}>Done</button>
+        </div>
+      </div>
+    </div>
+  );
+};
+
+// ============================================
+// MEETING SETTINGS MODAL
+// ============================================
+
+interface MeetingSettingsModalProps {
+  isOpen: boolean;
+  onClose: () => void;
+}
+
+type SettingsSection = 'general' | 'av' | 'integrations';
+
+export const MeetingSettingsModal: React.FC<MeetingSettingsModalProps> = ({ isOpen, onClose }) => {
+  const [settings, setSettings] = useState<MeetingSettings>(DEFAULT_MEETING_SETTINGS);
+  const [section, setSection] = useState<SettingsSection>('general');
+  const [saved, setSaved] = useState(false);
+
+  useEffect(() => {
+    if (isOpen) {
+      setSettings(getMeetingSettings());
+      setSaved(false);
+      setSection('general');
+    }
+  }, [isOpen]);
+
+  if (!isOpen) return null;
+
+  const update = <K extends keyof MeetingSettings>(key: K, value: MeetingSettings[K]) => {
+    setSettings(prev => ({ ...prev, [key]: value }));
+  };
+
+  const handleSave = () => {
+    saveMeetingSettings(settings);
+    setSaved(true);
+    setTimeout(() => setSaved(false), 1500);
+  };
+
+  const DURATIONS = [15, 30, 45, 60, 90];
+
+  const navItems: { id: SettingsSection; label: string; icon: string }[] = [
+    { id: 'general', label: 'General', icon: 'fa-gear' },
+    { id: 'av', label: 'Audio & Video', icon: 'fa-video' },
+    { id: 'integrations', label: 'Integrations', icon: 'fa-plug' },
+  ];
+
+  return (
+    <div className="meetings-modal-overlay" onClick={onClose}>
+      <div className="meetings-modal meetings-modal--wide" onClick={e => e.stopPropagation()}>
+        <div className="meetings-modal-header">
+          <div className="meetings-modal-title">
+            <i className="fa-solid fa-gear" style={{ marginRight: 8, color: 'var(--mtg-accent-primary)' }} />
+            Meeting Settings
+          </div>
+          <button className="meetings-modal-close" onClick={onClose}>
+            <i className="fa-solid fa-xmark" />
+          </button>
+        </div>
+
+        <div className="meetings-modal-body" style={{ padding: 0 }}>
+          <div className="meetings-modal-with-sidebar" style={{ borderRadius: 0 }}>
+            {/* Sidebar nav */}
+            <div className="meetings-settings-sidebar">
+              {navItems.map(item => (
+                <button
+                  key={item.id}
+                  className={`meetings-settings-nav-item ${section === item.id ? 'active' : ''}`}
+                  onClick={() => setSection(item.id)}
+                >
+                  <i className={`fa-solid ${item.icon}`} />
+                  {item.label}
+                </button>
+              ))}
+            </div>
+
+            {/* Content */}
+            <div className="meetings-settings-content">
+              {section === 'general' && (
+                <>
+                  <div className="meetings-settings-section-title">General</div>
+
+                  <div className="meetings-settings-row">
+                    <div className="meetings-settings-row-text">
+                      <div className="meetings-settings-row-label">Default Duration</div>
+                      <div className="meetings-settings-row-desc">Pre-fill meeting duration when scheduling</div>
+                    </div>
+                  </div>
+                  <div className="meetings-pill-btns" style={{ marginBottom: 16 }}>
+                    {DURATIONS.map(d => (
+                      <button
+                        key={d}
+                        className={`meetings-pill-btn ${settings.defaultDuration === d ? 'active' : ''}`}
+                        onClick={() => update('defaultDuration', d)}
+                      >
+                        {d}m
+                      </button>
+                    ))}
+                  </div>
+
+                  <div className="meetings-settings-row">
+                    <div className="meetings-settings-row-text">
+                      <div className="meetings-settings-row-label">Auto-mute on Join</div>
+                      <div className="meetings-settings-row-desc">Start each meeting muted by default</div>
+                    </div>
+                    <button
+                      className={`meetings-toggle ${settings.autoMuteOnJoin ? 'on' : ''}`}
+                      onClick={() => update('autoMuteOnJoin', !settings.autoMuteOnJoin)}
+                      role="switch"
+                      aria-checked={settings.autoMuteOnJoin}
+                    />
+                  </div>
+
+                  <div className="meetings-settings-row">
+                    <div className="meetings-settings-row-text">
+                      <div className="meetings-settings-row-label">AI Scribe by Default</div>
+                      <div className="meetings-settings-row-desc">Enable AI note-taking for all meetings</div>
+                    </div>
+                    <button
+                      className={`meetings-toggle ${settings.aiScribeDefault ? 'on' : ''}`}
+                      onClick={() => update('aiScribeDefault', !settings.aiScribeDefault)}
+                      role="switch"
+                      aria-checked={settings.aiScribeDefault}
+                    />
+                  </div>
+
+                  <div className="meetings-settings-row">
+                    <div className="meetings-settings-row-text">
+                      <div className="meetings-settings-row-label">Join Sound</div>
+                      <div className="meetings-settings-row-desc">Play a sound when participants join or leave</div>
+                    </div>
+                    <button
+                      className={`meetings-toggle ${settings.joinSoundEnabled ? 'on' : ''}`}
+                      onClick={() => update('joinSoundEnabled', !settings.joinSoundEnabled)}
+                      role="switch"
+                      aria-checked={settings.joinSoundEnabled}
+                    />
+                  </div>
+
+                  <div className="meetings-settings-row" style={{ opacity: 0.5 }}>
+                    <div className="meetings-settings-row-text">
+                      <div className="meetings-settings-row-label">
+                        Breakout Rooms
+                        <span style={{
+                          marginLeft: 8, fontSize: 10, padding: '2px 7px',
+                          background: 'rgba(0, 212, 255, 0.1)', borderRadius: 10,
+                          color: 'var(--mtg-accent-primary)', fontWeight: 600,
+                        }}>Coming Soon</span>
+                      </div>
+                      <div className="meetings-settings-row-desc">Split meetings into breakout sessions</div>
+                    </div>
+                    <button className="meetings-toggle" disabled />
+                  </div>
+                </>
+              )}
+
+              {section === 'av' && (
+                <>
+                  <div className="meetings-settings-section-title">Audio & Video</div>
+
+                  <div className="meetings-settings-row">
+                    <div className="meetings-settings-row-text">
+                      <div className="meetings-settings-row-label">Camera On by Default</div>
+                      <div className="meetings-settings-row-desc">Start with your camera on when hosting</div>
+                    </div>
+                    <button
+                      className={`meetings-toggle ${settings.hostVideoDefault ? 'on' : ''}`}
+                      onClick={() => update('hostVideoDefault', !settings.hostVideoDefault)}
+                      role="switch"
+                      aria-checked={settings.hostVideoDefault}
+                    />
+                  </div>
+
+                  <div className="meetings-settings-row">
+                    <div className="meetings-settings-row-text">
+                      <div className="meetings-settings-row-label">Auto-Record Meetings</div>
+                      <div className="meetings-settings-row-desc">Automatically start recording when meeting begins</div>
+                    </div>
+                    <button
+                      className={`meetings-toggle ${settings.autoRecording ? 'on' : ''}`}
+                      onClick={() => update('autoRecording', !settings.autoRecording)}
+                      role="switch"
+                      aria-checked={settings.autoRecording}
+                    />
+                  </div>
+                </>
+              )}
+
+              {section === 'integrations' && (
+                <>
+                  <div className="meetings-settings-section-title">Calendar Sync</div>
+                  <div className="meetings-calendar-cards">
+                    {[
+                      { id: 'none', label: 'None', note: 'No calendar integration', icon: 'fa-calendar-xmark', color: 'var(--mtg-text-muted)' },
+                      { id: 'google', label: 'Google Calendar', note: 'Uses your connected Google account', icon: 'fa-google', color: '#ea4335' },
+                      { id: 'microsoft', label: 'Microsoft Calendar', note: 'Uses your Microsoft/Outlook account', icon: 'fa-microsoft', color: '#00a1f1' },
+                    ].map(opt => (
+                      <button
+                        key={opt.id}
+                        className={`meetings-calendar-card ${settings.calendarSync === opt.id ? 'selected' : ''}`}
+                        onClick={() => update('calendarSync', opt.id as MeetingSettings['calendarSync'])}
+                      >
+                        <div className="meetings-calendar-card-icon" style={{ background: `${opt.color}20` }}>
+                          <i className={`${opt.id === 'none' ? 'fa-solid' : 'fa-brands'} ${opt.icon}`} style={{ color: opt.color }} />
+                        </div>
+                        <div className="meetings-calendar-card-text">
+                          <div className="meetings-calendar-card-name">{opt.label}</div>
+                          <div className="meetings-calendar-card-note">{opt.note}</div>
+                        </div>
+                        {settings.calendarSync === opt.id && (
+                          <i className="fa-solid fa-circle-check" style={{ color: 'var(--mtg-accent-primary)', flexShrink: 0 }} />
+                        )}
+                      </button>
+                    ))}
+                  </div>
+                </>
+              )}
+            </div>
+          </div>
+        </div>
+
+        <div className="meetings-modal-footer">
+          <button className="meetings-modal-btn" onClick={onClose}>Cancel</button>
+          <button
+            className={`meetings-modal-btn primary ${saved ? 'meetings-settings-saved-btn' : ''}`}
+            onClick={handleSave}
+          >
+            {saved ? (
+              <><i className="fa-solid fa-check" style={{ marginRight: 6 }} />Saved!</>
+            ) : (
+              'Save Settings'
+            )}
+          </button>
+        </div>
+      </div>
+    </div>
+  );
+};
+
+// ============================================
+// BREAKOUT ROOMS MODAL
+// ============================================
+
+interface BreakoutRoomsModalProps {
+  isOpen: boolean;
+  onClose: () => void;
+  activeParticipants: Contact[];
+}
+
+export const BreakoutRoomsModal: React.FC<BreakoutRoomsModalProps> = ({
+  isOpen,
+  onClose,
+  activeParticipants,
+}) => {
+  const [rooms, setRooms] = useState<BreakoutRoom[]>([
+    { id: 'room-1', name: 'Room 1', participants: [], color: BREAKOUT_COLORS[0] },
+    { id: 'room-2', name: 'Room 2', participants: [], color: BREAKOUT_COLORS[1] },
+  ]);
+  const [selectedParticipant, setSelectedParticipant] = useState<Contact | null>(null);
+  const [timerMinutes, setTimerMinutes] = useState(15);
+  const [timeLeft, setTimeLeft] = useState(0);
+  const [active, setActive] = useState(false);
+  const [broadcastMode, setBroadcastMode] = useState(false);
+  const [broadcastMsg, setBroadcastMsg] = useState('');
+  const timerRef = useRef<NodeJS.Timeout | null>(null);
+
+  const assignedIds = new Set(rooms.flatMap(r => r.participants.map(p => p.id)));
+  const unassigned = activeParticipants.filter(p => !assignedIds.has(p.id));
+
+  useEffect(() => {
+    if (!isOpen) {
+      if (timerRef.current) clearInterval(timerRef.current);
+      setActive(false);
+      setTimeLeft(0);
+      setRooms([
+        { id: 'room-1', name: 'Room 1', participants: [], color: BREAKOUT_COLORS[0] },
+        { id: 'room-2', name: 'Room 2', participants: [], color: BREAKOUT_COLORS[1] },
+      ]);
+      setSelectedParticipant(null);
+    }
+  }, [isOpen]);
+
+  useEffect(() => {
+    if (active) {
+      setTimeLeft(timerMinutes * 60);
+      timerRef.current = setInterval(() => {
+        setTimeLeft(prev => {
+          if (prev <= 1) {
+            clearInterval(timerRef.current!);
+            setActive(false);
+            return 0;
+          }
+          return prev - 1;
+        });
+      }, 1000);
+    } else {
+      if (timerRef.current) clearInterval(timerRef.current);
+    }
+    return () => { if (timerRef.current) clearInterval(timerRef.current); };
+  }, [active]);
+
+  if (!isOpen) return null;
+
+  const assignToRoom = (roomId: string) => {
+    if (!selectedParticipant) return;
+    setRooms(prev => prev.map(r => {
+      if (r.id === roomId) return { ...r, participants: [...r.participants, selectedParticipant] };
+      return r;
+    }));
+    setSelectedParticipant(null);
+  };
+
+  const unassignFromRoom = (roomId: string, participantId: string) => {
+    setRooms(prev => prev.map(r => {
+      if (r.id === roomId) return { ...r, participants: r.participants.filter(p => p.id !== participantId) };
+      return r;
+    }));
+  };
+
+  const addRoom = () => {
+    const idx = rooms.length;
+    setRooms(prev => [...prev, {
+      id: `room-${Date.now()}`,
+      name: `Room ${idx + 1}`,
+      participants: [],
+      color: BREAKOUT_COLORS[idx % BREAKOUT_COLORS.length],
+    }]);
+  };
+
+  const renameRoom = (roomId: string, name: string) => {
+    setRooms(prev => prev.map(r => r.id === roomId ? { ...r, name } : r));
+  };
+
+  const totalAssigned = rooms.reduce((s, r) => s + r.participants.length, 0);
+  const mins = Math.floor(timeLeft / 60);
+  const secs = timeLeft % 60;
+  const timerClass = timeLeft > 0 && timeLeft <= 120 ? 'over' : timeLeft <= 300 ? 'warning' : '';
+
+  return (
+    <div className="meetings-modal-overlay" onClick={onClose}>
+      <div className="meetings-modal meetings-modal--wide" onClick={e => e.stopPropagation()} style={{ maxWidth: 900 }}>
+        <div className="meetings-modal-header">
+          <div className="meetings-modal-title">
+            <i className="fa-solid fa-arrows-split-up-and-left" style={{ marginRight: 8, color: 'var(--mtg-accent-primary)' }} />
+            Breakout Rooms
+          </div>
+          <button className="meetings-modal-close" onClick={onClose}>
+            <i className="fa-solid fa-xmark" />
+          </button>
+        </div>
+
+        <div className="meetings-modal-body" style={{ padding: 0 }}>
+          <div className="meetings-breakout-layout">
+            {/* Panel 1: Unassigned */}
+            <div className="meetings-breakout-panel">
+              <div className="meetings-breakout-panel-title">
+                Unassigned ({unassigned.length})
+              </div>
+              {unassigned.length === 0 ? (
+                <div style={{ fontSize: 12, color: 'var(--mtg-text-muted)', textAlign: 'center', paddingTop: 20 }}>
+                  All participants assigned
+                </div>
+              ) : unassigned.map(p => (
+                <div
+                  key={p.id}
+                  className={`meetings-breakout-participant-chip ${selectedParticipant?.id === p.id ? 'selected' : ''}`}
+                  onClick={() => setSelectedParticipant(selectedParticipant?.id === p.id ? null : p)}
+                >
+                  <div style={{
+                    width: 24, height: 24, borderRadius: '50%',
+                    background: p.avatarColor || '#7c3aed',
+                    display: 'flex', alignItems: 'center', justifyContent: 'center',
+                    fontSize: 10, fontWeight: 700, color: 'white', flexShrink: 0,
+                  }}>
+                    {p.name.charAt(0)}
+                  </div>
+                  {p.name}
+                </div>
+              ))}
+            </div>
+
+            {/* Panel 2: Rooms */}
+            <div className="meetings-breakout-panel">
+              <div className="meetings-breakout-panel-title">
+                Rooms ({rooms.length}) {selectedParticipant && <span style={{ color: 'var(--mtg-accent-primary)' }}>— click room to assign</span>}
+              </div>
+              {rooms.map(room => (
+                <div
+                  key={room.id}
+                  className={`meetings-breakout-room-card ${selectedParticipant ? 'drop-target' : ''}`}
+                  onClick={() => selectedParticipant && assignToRoom(room.id)}
+                >
+                  <div className="meetings-breakout-room-header">
+                    <div className="meetings-breakout-room-dot" style={{ background: room.color }} />
+                    <input
+                      className="meetings-breakout-room-name"
+                      value={room.name}
+                      onClick={e => e.stopPropagation()}
+                      onChange={e => renameRoom(room.id, e.target.value)}
+                    />
+                    <span style={{ fontSize: 11, color: 'var(--mtg-text-muted)' }}>
+                      {room.participants.length} people
+                    </span>
+                  </div>
+                  <div className="meetings-breakout-participants">
+                    {room.participants.length === 0 ? (
+                      <span style={{ fontSize: 11, color: 'var(--mtg-text-muted)', fontStyle: 'italic' }}>
+                        Empty — assign participants
+                      </span>
+                    ) : room.participants.map(p => (
+                      <div key={p.id} className="meetings-breakout-assigned-chip">
+                        {p.name}
+                        <button
+                          className="meetings-breakout-assigned-remove"
+                          onClick={e => { e.stopPropagation(); unassignFromRoom(room.id, p.id); }}
+                        >
+                          <i className="fa-solid fa-xmark" />
+                        </button>
+                      </div>
+                    ))}
+                  </div>
+                </div>
+              ))}
+              <button className="meetings-breakout-add-room" onClick={addRoom}>
+                <i className="fa-solid fa-plus" /> Add Room
+              </button>
+            </div>
+
+            {/* Panel 3: Controls */}
+            <div className="meetings-breakout-panel">
+              <div className="meetings-breakout-panel-title">Controls</div>
+              <div className="meetings-breakout-controls">
+                {/* Timer picker */}
+                <div>
+                  <div style={{ fontSize: 10, fontWeight: 700, textTransform: 'uppercase', letterSpacing: 1, color: 'var(--mtg-text-muted)', marginBottom: 8 }}>
+                    Duration
+                  </div>
+                  <div className="meetings-pill-btns" style={{ flexWrap: 'wrap' }}>
+                    {[5, 10, 15, 20, 30].map(m => (
+                      <button
+                        key={m}
+                        className={`meetings-pill-btn ${timerMinutes === m ? 'active' : ''}`}
+                        onClick={() => !active && setTimerMinutes(m)}
+                        disabled={active}
+                        style={{ fontSize: 11 }}
+                      >
+                        {m}m
+                      </button>
+                    ))}
+                  </div>
+                </div>
+
+                {/* Timer display */}
+                {(active || timeLeft > 0) && (
+                  <div className={`meetings-breakout-timer ${timerClass}`}>
+                    {String(mins).padStart(2, '0')}:{String(secs).padStart(2, '0')}
+                  </div>
+                )}
+
+                {/* Start/Stop */}
+                <button
+                  className="meetings-breakout-start-btn"
+                  disabled={!active && totalAssigned === 0}
+                  onClick={() => setActive(!active)}
+                >
+                  {active ? (
+                    <><i className="fa-solid fa-stop" style={{ marginRight: 6 }} />End Breakout</>
+                  ) : (
+                    <><i className="fa-solid fa-play" style={{ marginRight: 6 }} />Start Breakout</>
+                  )}
+                </button>
+
+                {/* Broadcast */}
+                {broadcastMode ? (
+                  <div style={{ display: 'flex', flexDirection: 'column', gap: 6 }}>
+                    <input
+                      className="meetings-chat-input"
+                      placeholder="Message to all rooms..."
+                      value={broadcastMsg}
+                      onChange={e => setBroadcastMsg(e.target.value)}
+                      style={{ width: '100%', boxSizing: 'border-box' }}
+                    />
+                    <div style={{ display: 'flex', gap: 6 }}>
+                      <button
+                        className="meetings-breakout-broadcast-btn"
+                        style={{ flex: 1 }}
+                        onClick={() => { setBroadcastMode(false); setBroadcastMsg(''); }}
+                      >
+                        Cancel
+                      </button>
+                      <button
+                        className="meetings-breakout-start-btn"
+                        style={{ flex: 1, marginTop: 0 }}
+                        disabled={!broadcastMsg.trim()}
+                        onClick={() => { setBroadcastMode(false); setBroadcastMsg(''); }}
+                      >
+                        Send
+                      </button>
+                    </div>
+                  </div>
+                ) : (
+                  <button className="meetings-breakout-broadcast-btn" onClick={() => setBroadcastMode(true)}>
+                    <i className="fa-solid fa-bullhorn" /> Broadcast to All
+                  </button>
+                )}
+
+                {/* Recall */}
+                <button className="meetings-breakout-recall-btn" onClick={onClose}>
+                  <i className="fa-solid fa-users" /> Call Everyone Back
+                </button>
+              </div>
+            </div>
+          </div>
+        </div>
+
+        <div className="meetings-modal-footer">
+          <span style={{ fontSize: 12, color: 'var(--mtg-text-muted)' }}>
+            {totalAssigned} of {activeParticipants.length} participants assigned
+          </span>
+          <button className="meetings-modal-btn" onClick={onClose}>Close</button>
+        </div>
+      </div>
+    </div>
+  );
+};
+
+// ============================================
+// MEETING SUMMARY VIEW
+// ============================================
+
+interface MeetingSummaryViewProps {
+  data: MeetingSummaryData | null;
+  loading: boolean;
+  onBack: () => void;
+}
+
+export const MeetingSummaryView: React.FC<MeetingSummaryViewProps> = ({ data, loading, onBack }) => {
+  const [showExportMenu, setShowExportMenu] = useState(false);
+  const [actionItems, setActionItems] = useState<ActionItem[]>(data?.actionItems || []);
+  const [copiedToast, setCopiedToast] = useState(false);
+
+  useEffect(() => {
+    if (data?.actionItems) setActionItems(data.actionItems);
+  }, [data]);
+
+  const toggleActionItem = (id: string) => {
+    setActionItems(prev => prev.map(a =>
+      a.id === id ? { ...a, status: a.status === 'completed' ? 'pending' : 'completed' } : a
+    ));
+  };
+
+  const copyToClipboard = () => {
+    if (!data) return;
+    const text = [
+      `# ${data.meetingTitle}`,
+      `Date: ${new Date().toLocaleDateString()}  Duration: ${data.duration} min`,
+      `Participants: ${data.participants.map(p => p.name).join(', ')}`,
+      '',
+      '## Summary',
+      data.aiSummary,
+      '',
+      '## Key Points',
+      ...data.keyPoints.map(p => `- ${p}`),
+      '',
+      '## Action Items',
+      ...actionItems.map(a => `- [${a.status === 'completed' ? 'x' : ' '}] ${a.title}${a.assignee ? ` (@${a.assignee.name})` : ''}`),
+      '',
+      '## Key Decisions',
+      ...data.decisions.map(d => `- ${d}`),
+    ].join('\n');
+    navigator.clipboard.writeText(text).then(() => {
+      setCopiedToast(true);
+      setTimeout(() => setCopiedToast(false), 2000);
+    });
+    setShowExportMenu(false);
+  };
+
+  return (
+    <div className="meetings-summary-view">
+      {copiedToast && <Toast message="Copied to clipboard!" isVisible />}
+
+      {/* Header */}
+      <div className="meetings-summary-header">
+        <button className="meetings-summary-back" onClick={onBack}>
+          <i className="fa-solid fa-arrow-left" /> Back
+        </button>
+
+        <div className="meetings-summary-title-block">
+          <div className="meetings-summary-title">{data?.meetingTitle || 'Meeting Summary'}</div>
+          <div className="meetings-summary-meta">
+            <span>{new Date().toLocaleDateString()}</span>
+            {data && <span>·</span>}
+            {data && <span>{data.duration} min</span>}
+          </div>
+        </div>
+
+        {data && data.participants.length > 0 && (
+          <div className="meetings-summary-participants-row">
+            {data.participants.slice(0, 5).map((p, i) => (
+              <div
+                key={p.id}
+                className="meetings-summary-participant-avatar"
+                style={{ background: p.avatarColor || '#7c3aed', zIndex: 5 - i }}
+                title={p.name}
+              >
+                {p.name.charAt(0)}
+              </div>
+            ))}
+            {data.participants.length > 5 && (
+              <div className="meetings-summary-participant-avatar" style={{ background: 'var(--mtg-bg-elevated)' }}>
+                +{data.participants.length - 5}
+              </div>
+            )}
+          </div>
+        )}
+
+        <div className="meetings-summary-export-btn">
+          <button
+            className="meetings-summary-export-trigger"
+            onClick={() => setShowExportMenu(!showExportMenu)}
+          >
+            <i className="fa-solid fa-arrow-up-from-bracket" />
+            Export
+            <i className="fa-solid fa-chevron-down" style={{ fontSize: 10 }} />
+          </button>
+          {showExportMenu && (
+            <div className="meetings-summary-export-menu">
+              <button onClick={copyToClipboard}>
+                <i className="fa-solid fa-copy" />
+                Copy as Markdown
+              </button>
+              <button onClick={() => { window.print(); setShowExportMenu(false); }}>
+                <i className="fa-solid fa-file-pdf" />
+                Save as PDF
+              </button>
+            </div>
+          )}
+        </div>
+      </div>
+
+      {/* Body */}
+      <div className="meetings-summary-body">
+        {/* AI Summary */}
+        <div className="meetings-summary-card">
+          <div className="meetings-summary-card-header">
+            <i className="fa-solid fa-wand-magic-sparkles" />
+            AI Summary
+          </div>
+          {loading ? (
+            <>
+              <div className="meetings-summary-shimmer" />
+              <div className="meetings-summary-shimmer" />
+              <div className="meetings-summary-shimmer" />
+            </>
+          ) : (
+            <>
+              <div className="meetings-summary-ai-text">{data?.aiSummary || 'No summary available.'}</div>
+              {data && data.keyPoints.length > 0 && (
+                <div className="meetings-summary-key-points">
+                  {data.keyPoints.map((p, i) => (
+                    <div key={i} className="meetings-summary-key-point">{p}</div>
+                  ))}
+                </div>
+              )}
+            </>
+          )}
+        </div>
+
+        {/* Action Items + Decisions */}
+        {!loading && data && (
+          <div className="meetings-summary-two-col">
+            {/* Action Items */}
+            <div className="meetings-summary-card">
+              <div className="meetings-summary-card-header">
+                <i className="fa-solid fa-circle-check" />
+                Action Items ({actionItems.length})
+              </div>
+              {actionItems.length === 0 ? (
+                <div style={{ fontSize: 12, color: 'var(--mtg-text-muted)' }}>No action items captured.</div>
+              ) : actionItems.map(item => (
+                <div key={item.id} className="meetings-summary-action-item">
+                  <button
+                    className={`meetings-summary-action-toggle ${item.status === 'completed' ? 'done' : ''}`}
+                    onClick={() => toggleActionItem(item.id)}
+                  >
+                    {item.status === 'completed' && <i className="fa-solid fa-check" style={{ fontSize: 10 }} />}
+                  </button>
+                  <div className="meetings-summary-action-text">
+                    <div className={item.status === 'completed' ? 'done' : ''}>{item.title}</div>
+                    {item.assignee && (
+                      <div style={{ fontSize: 10, color: 'var(--mtg-text-muted)', marginTop: 2 }}>
+                        @{item.assignee.name}
+                      </div>
+                    )}
+                  </div>
+                </div>
+              ))}
+            </div>
+
+            {/* Decisions */}
+            <div className="meetings-summary-card">
+              <div className="meetings-summary-card-header">
+                <i className="fa-solid fa-gavel" />
+                Key Decisions ({data.decisions.length})
+              </div>
+              {data.decisions.length === 0 ? (
+                <div style={{ fontSize: 12, color: 'var(--mtg-text-muted)' }}>No key decisions identified.</div>
+              ) : data.decisions.map((d, i) => (
+                <div key={i} className="meetings-summary-decision">
+                  <i className="fa-solid fa-circle-check" />
+                  <div className="meetings-summary-decision-text">{d}</div>
+                </div>
+              ))}
+            </div>
+          </div>
+        )}
+
+        {/* Timeline */}
+        {!loading && data && data.timelineEvents.length > 0 && (
+          <div className="meetings-summary-card">
+            <div className="meetings-summary-card-header">
+              <i className="fa-solid fa-timeline" />
+              Meeting Timeline
+            </div>
+            <div className="meetings-summary-timeline">
+              {data.timelineEvents.slice(0, 10).map((entry, i) => (
+                <div key={i} className="meetings-summary-timeline-item">
+                  <div className="meetings-summary-timeline-ts">{entry.timestamp}</div>
+                  <div className="meetings-summary-timeline-dot" />
+                  <div className="meetings-summary-timeline-note">{entry.note}</div>
+                </div>
+              ))}
+            </div>
+          </div>
+        )}
+      </div>
     </div>
   );
 };

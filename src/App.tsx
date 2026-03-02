@@ -30,6 +30,7 @@ const MessageAnalytics = lazy(() => import('./components/MessageAnalytics'));
 const UnifiedSearchRedesign = lazy(() => import('./components/UnifiedSearchRedesign'));
 const TestMatrix = lazy(() => import('./components/TestMatrix'));
 const AnalyticsDashboard = lazy(() => import('./components/Analytics').then(module => ({ default: module.AnalyticsDashboard })));
+const UsersGuide = lazy(() => import('./components/UsersGuide/UsersGuide'));
 
 import { ChatProvider } from './context/ChatContext';
 import { ChatInterface } from './components/ChatInterface';
@@ -650,6 +651,8 @@ const App: React.FC = () => {
               return <LiveDashboard apiKey={apiKey} userId={user?.id || ''} />;
             case AppView.DECISIONS_TASKS:
               return <DecisionTaskHub user={user} />;
+            case AppView.USERS_GUIDE:
+              return <UsersGuide isDarkMode={isDarkMode} />;
             case AppView.DASHBOARD:
             default:
               return <Dashboard user={user} apiKey={apiKey} setView={(v, options) => {

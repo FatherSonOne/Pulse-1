@@ -1,6 +1,6 @@
 import React, { useEffect, useRef, useState } from 'react';
 import { blobToBase64 } from '../../services/audioService';
-import { generateMeetingNote } from '../../services/geminiService';
+import { generateMeetingNote, generateSummary } from '../../services/geminiService';
 import { createGoogleCalendarEvent, fetchCalendarEvents } from '../../services/authService';
 import { saveArchiveItem, getArchives } from '../../services/dbService';
 import { Contact, CalendarEvent, ArchiveItem } from '../../types';
@@ -14,6 +14,9 @@ import {
   AgendaItem,
   ActionItem,
   MeetingInsights,
+  BreakoutRoom,
+  MeetingSummaryData,
+  TimelineEntry,
   HeroSection,
   PlatformCards,
   FeatureCards,
@@ -27,6 +30,12 @@ import {
   ActionItemsModal,
   Toast,
   MEETING_TEMPLATES,
+  AnalyticsModal,
+  RecordingsModal,
+  DeviceTestModal,
+  MeetingSettingsModal,
+  BreakoutRoomsModal,
+  MeetingSummaryView,
 } from './MeetingsComponents';
 
 interface MeetingsProps {
@@ -36,7 +45,7 @@ interface MeetingsProps {
   initialMeetingCode?: string;
 }
 
-type MeetingView = 'dashboard' | 'active' | 'schedule';
+type MeetingView = 'dashboard' | 'active' | 'schedule' | 'summary';
 
 // Generate a unique meeting code (format: XXX-XXXX-XXX)
 const generateMeetingCode = (): string => {
@@ -73,8 +82,28 @@ const Meetings: React.FC<MeetingsProps> = ({ apiKey, contacts, initialContactId,
   const [showTemplates, setShowTemplates] = useState(false);
   const [showAgendaBuilder, setShowAgendaBuilder] = useState(false);
   const [showActionItems, setShowActionItems] = useState(false);
+  const [showAnalytics, setShowAnalytics] = useState(false);
+  const [showRecordings, setShowRecordings] = useState(false);
+  const [showDeviceTest, setShowDeviceTest] = useState(false);
+  const [showMeetingSettings, setShowMeetingSettings] = useState(false);
+  const [showBreakoutRooms, setShowBreakoutRooms] = useState(false);
   const [agendaItems, setAgendaItems] = useState<AgendaItem[]>([]);
   const [actionItems, setActionItems] = useState<ActionItem[]>([]);
+
+  // Meeting Summary State
+  const [summaryData, setSummaryData] = useState<MeetingSummaryData | null>(null);
+  const [summaryLoading, setSummaryLoading] = useState(false);
+
+  // Active Meeting Enhancements
+  const [meetingStartTime, setMeetingStartTime] = useState<Date | null>(null);
+  const [elapsedSeconds, setElapsedSeconds] = useState(0);
+  const elapsedTimerRef = useRef<NodeJS.Timeout | null>(null);
+  const [activeSidePanel, setActiveSidePanel] = useState<'none' | 'participants' | 'chat'>('none');
+  const [chatMessages, setChatMessages] = useState<{ id: string; sender: string; text: string; time: Date }[]>([]);
+  const [chatInput, setChatInput] = useState('');
+  const [unreadChat, setUnreadChat] = useState(0);
+  const [raisedHands, setRaisedHands] = useState<string[]>([]);
+  const [currentAgendaIndex, setCurrentAgendaIndex] = useState(0);
 
   // Meeting Insights State (NEW)
   const [insights] = useState<MeetingInsights>({
@@ -268,15 +297,13 @@ const Meetings: React.FC<MeetingsProps> = ({ apiKey, contacts, initialContactId,
         setShowActionItems(true);
         break;
       case 'analytics':
-        // Could navigate to analytics view
-        alert('Meeting Analytics - Feature ready for backend integration');
+        setShowAnalytics(true);
         break;
       case 'recordings':
-        // Could navigate to recordings view
-        alert('Recordings - Feature ready for backend integration');
+        setShowRecordings(true);
         break;
       case 'breakout':
-        alert('Breakout Rooms - Coming Soon!');
+        setShowBreakoutRooms(true);
         break;
     }
   };
@@ -319,10 +346,10 @@ const Meetings: React.FC<MeetingsProps> = ({ apiKey, contacts, initialContactId,
         break;
       case 'test-audio':
       case 'test-video':
-        alert(`${action === 'test-audio' ? 'Audio' : 'Video'} test - Feature ready for implementation`);
+        setShowDeviceTest(true);
         break;
       case 'settings':
-        alert('Meeting settings - Feature ready for implementation');
+        setShowMeetingSettings(true);
         break;
     }
   };
@@ -381,6 +408,15 @@ const Meetings: React.FC<MeetingsProps> = ({ apiKey, contacts, initialContactId,
 
       stream.getAudioTracks().forEach(t => t.enabled = micOn);
       stream.getVideoTracks().forEach(t => t.enabled = cameraOn);
+
+      // Start elapsed timer
+      const startT = new Date();
+      setMeetingStartTime(startT);
+      setElapsedSeconds(0);
+      if (elapsedTimerRef.current) clearInterval(elapsedTimerRef.current);
+      elapsedTimerRef.current = setInterval(() => {
+        setElapsedSeconds(Math.round((Date.now() - startT.getTime()) / 1000));
+      }, 1000);
     } catch (e) {
       console.error("Media Error", e);
     }
@@ -410,12 +446,17 @@ const Meetings: React.FC<MeetingsProps> = ({ apiKey, contacts, initialContactId,
   const cleanupMedia = () => {
     if (streamRef.current) streamRef.current.getTracks().forEach(t => t.stop());
     if (audioContextRef.current && audioContextRef.current.state !== 'closed') audioContextRef.current.close();
+    if (elapsedTimerRef.current) clearInterval(elapsedTimerRef.current);
     stopScribe();
     setScribeActive(false);
     setScribeNotes([]);
     setIsScreenSharing(false);
     setHandRaised(false);
     setMeetingCode(null);
+    setActiveSidePanel('none');
+    setCurrentAgendaIndex(0);
+    setElapsedSeconds(0);
+    setMeetingStartTime(null);
   };
 
   // ============================================
@@ -432,22 +473,45 @@ const Meetings: React.FC<MeetingsProps> = ({ apiKey, contacts, initialContactId,
 
   const startScribe = () => {
     if (!streamRef.current || !apiKey) return;
-    const mimeType = MediaRecorder.isTypeSupported('audio/webm') ? 'audio/webm' : '';
-    if (!mimeType) return;
 
-    const recorder = new MediaRecorder(streamRef.current, { mimeType });
+    const candidates = [
+      'audio/webm;codecs=opus',
+      'audio/webm',
+      'audio/ogg;codecs=opus',
+      'audio/ogg',
+      'audio/mp4',
+    ];
+    const mimeType = candidates.find(t => MediaRecorder.isTypeSupported(t)) ?? '';
+
+    let recorder: MediaRecorder;
+    try {
+      recorder = mimeType
+        ? new MediaRecorder(streamRef.current, { mimeType })
+        : new MediaRecorder(streamRef.current);
+    } catch (err) {
+      console.warn('MediaRecorder init failed:', err);
+      return;
+    }
+
     mediaRecorderRef.current = recorder;
+    const effectiveMime = mimeType || recorder.mimeType;
 
     recorder.ondataavailable = async (e) => {
       if (e.data.size > 0) {
         const base64 = await blobToBase64(e.data);
-        const note = await generateMeetingNote(apiKey, base64, mimeType);
+        const note = await generateMeetingNote(apiKey, base64, effectiveMime);
         if (note && note.trim()) {
           setScribeNotes(prev => [...prev, note.trim()]);
         }
       }
     };
-    recorder.start(8000);
+
+    try {
+      recorder.start(8000);
+    } catch (err) {
+      console.warn('MediaRecorder start failed:', err);
+      mediaRecorderRef.current = null;
+    }
   };
 
   const stopScribe = () => {
@@ -457,17 +521,64 @@ const Meetings: React.FC<MeetingsProps> = ({ apiKey, contacts, initialContactId,
   };
 
   const handleLeave = async () => {
-    if (scribeNotes.length > 0) {
-      await saveArchiveItem({
-        type: 'meeting_note',
-        title: `${activeMeetingTitle} Notes`,
-        content: scribeNotes.join('\n'),
-        tags: ['meeting', 'scribe', 'auto-save'],
-        relatedContactId: activeParticipants[0]?.id
+    const endTime = new Date();
+    const durationMins = meetingStartTime
+      ? Math.round((endTime.getTime() - meetingStartTime.getTime()) / 60000)
+      : 0;
+
+    if (scribeNotes.length > 0 || actionItems.length > 0) {
+      // Navigate to summary immediately
+      setView('summary');
+      setSummaryLoading(true);
+      cleanupMedia();
+
+      const rawNotes = scribeNotes.join('\n');
+      let aiSummary = 'Summary not available.';
+      let keyPoints = scribeNotes.slice(0, 5);
+
+      try {
+        if (rawNotes.trim()) {
+          const result = await generateSummary(apiKey, rawNotes);
+          if (result) aiSummary = result;
+        }
+        // Save to archive
+        await saveArchiveItem({
+          type: 'meeting_note',
+          title: `${activeMeetingTitle} Notes`,
+          content: rawNotes,
+          tags: ['meeting', 'scribe', 'auto-save'],
+          relatedContactId: activeParticipants[0]?.id,
+        });
+      } catch (e) {
+        console.error('Summary generation error:', e);
+      }
+
+      const decisions = scribeNotes.filter(n => {
+        const lower = n.toLowerCase();
+        return lower.includes('decided') || lower.includes('agreed') || lower.includes('will ');
       });
+
+      const timelineEvents: { timestamp: string; note: string }[] = scribeNotes.map((note, i) => ({
+        timestamp: `${Math.floor(i * 8 / 60)}:${String((i * 8) % 60).padStart(2, '0')}`,
+        note,
+      }));
+
+      setSummaryData({
+        aiSummary,
+        keyPoints,
+        actionItems: [...actionItems],
+        decisions,
+        timelineEvents,
+        participants: [...activeParticipants],
+        duration: durationMins,
+        meetingTitle: activeMeetingTitle,
+      });
+      setSummaryLoading(false);
+    } else {
+      cleanupMedia();
+      setView('dashboard');
+      refreshDashboard();
     }
-    setView('dashboard');
-    refreshDashboard();
   };
 
   // ============================================
@@ -509,6 +620,32 @@ const Meetings: React.FC<MeetingsProps> = ({ apiKey, contacts, initialContactId,
           onAddItem={handleAddActionItem}
           onToggleStatus={handleToggleActionStatus}
           onClose={() => setShowActionItems(false)}
+        />
+
+        <AnalyticsModal
+          isOpen={showAnalytics}
+          onClose={() => setShowAnalytics(false)}
+        />
+
+        <RecordingsModal
+          isOpen={showRecordings}
+          onClose={() => setShowRecordings(false)}
+        />
+
+        <DeviceTestModal
+          isOpen={showDeviceTest}
+          onClose={() => setShowDeviceTest(false)}
+        />
+
+        <MeetingSettingsModal
+          isOpen={showMeetingSettings}
+          onClose={() => setShowMeetingSettings(false)}
+        />
+
+        <BreakoutRoomsModal
+          isOpen={showBreakoutRooms}
+          onClose={() => setShowBreakoutRooms(false)}
+          activeParticipants={activeParticipants}
         />
 
         {/* Hero Section */}
@@ -698,6 +835,26 @@ const Meetings: React.FC<MeetingsProps> = ({ apiKey, contacts, initialContactId,
   }
 
   // ============================================
+  // RENDER: SUMMARY VIEW
+  // ============================================
+
+  if (view === 'summary') {
+    return (
+      <div className="meetings-container">
+        <MeetingSummaryView
+          data={summaryData}
+          loading={summaryLoading}
+          onBack={() => {
+            setSummaryData(null);
+            setView('dashboard');
+            refreshDashboard();
+          }}
+        />
+      </div>
+    );
+  }
+
+  // ============================================
   // RENDER: ACTIVE MEETING VIEW
   // ============================================
 
@@ -865,12 +1022,173 @@ const Meetings: React.FC<MeetingsProps> = ({ apiKey, contacts, initialContactId,
           </div>
         </div>
 
+        {/* Agenda Progress Bar */}
+        {agendaItems.length > 0 && (
+          <div className="meetings-agenda-progress-bar">
+            <div className="meetings-agenda-progress-track">
+              <div
+                className="meetings-agenda-progress-fill"
+                style={{ width: `${Math.min(100, (currentAgendaIndex / agendaItems.length) * 100)}%` }}
+              />
+            </div>
+            <div className="meetings-agenda-current-item">
+              {currentAgendaIndex < agendaItems.length
+                ? agendaItems[currentAgendaIndex].title
+                : 'All items complete'}
+            </div>
+            {currentAgendaIndex < agendaItems.length && (
+              <button
+                type="button"
+                className="meetings-agenda-next-btn"
+                onClick={() => setCurrentAgendaIndex(i => Math.min(i + 1, agendaItems.length))}
+              >
+                Next <i className="fa-solid fa-arrow-right" />
+              </button>
+            )}
+          </div>
+        )}
+
+        {/* Side Panels */}
+        {activeSidePanel === 'participants' && (
+          <div className="meetings-side-panel">
+            <div className="meetings-side-panel-header">
+              Participants ({activeParticipants.length})
+              <button
+                type="button"
+                className="meetings-side-panel-close"
+                onClick={() => setActiveSidePanel('none')}
+                title="Close panel"
+              >
+                <i className="fa-solid fa-xmark" />
+              </button>
+            </div>
+            <div className="meetings-side-panel-body">
+              {raisedHands.length > 0 && (
+                <div className="meetings-raise-hand-queue">
+                  <div className="meetings-raise-hand-queue-title">Speaking Queue</div>
+                  {raisedHands.map((name, i) => (
+                    <div key={i} style={{ fontSize: 12, color: 'var(--mtg-accent-warning)', marginBottom: 4 }}>
+                      {i + 1}. {name}
+                    </div>
+                  ))}
+                </div>
+              )}
+              {/* Self */}
+              <div className="meetings-participant-row">
+                <div className="meetings-participant-avatar" style={{ background: '#7c3aed' }}>
+                  ME
+                </div>
+                <div className="meetings-participant-info">
+                  <div className="meetings-participant-name">You (Host)</div>
+                  <div className="meetings-participant-role">Presenter</div>
+                </div>
+                <div className="meetings-participant-indicators">
+                  {micOn && (
+                    <div className="meetings-participant-indicator speaking" title="Speaking">
+                      <i className="fa-solid fa-microphone" />
+                    </div>
+                  )}
+                  {handRaised && (
+                    <div className="meetings-participant-indicator hand" title="Hand raised">
+                      <i className="fa-solid fa-hand" />
+                    </div>
+                  )}
+                </div>
+              </div>
+              {activeParticipants.map(p => (
+                <div key={p.id} className="meetings-participant-row">
+                  <div
+                    className="meetings-participant-avatar"
+                    style={{ background: p.avatarColor || '#10b981' }}
+                  >
+                    {p.name.charAt(0)}
+                  </div>
+                  <div className="meetings-participant-info">
+                    <div className="meetings-participant-name">{p.name}</div>
+                    <div className="meetings-participant-role">{p.role}</div>
+                  </div>
+                </div>
+              ))}
+              {activeParticipants.length === 0 && (
+                <div style={{ fontSize: 12, color: 'var(--mtg-text-muted)', textAlign: 'center', paddingTop: 20 }}>
+                  No other participants yet
+                </div>
+              )}
+            </div>
+          </div>
+        )}
+
+        {activeSidePanel === 'chat' && (
+          <div className="meetings-side-panel" style={{ display: 'flex', flexDirection: 'column' }}>
+            <div className="meetings-side-panel-header">
+              In-Meeting Chat
+              <button
+                type="button"
+                className="meetings-side-panel-close"
+                onClick={() => setActiveSidePanel('none')}
+                title="Close panel"
+              >
+                <i className="fa-solid fa-xmark" />
+              </button>
+            </div>
+            <div className="meetings-chat-messages">
+              {chatMessages.length === 0 ? (
+                <div style={{ fontSize: 12, color: 'var(--mtg-text-muted)', textAlign: 'center', paddingTop: 20 }}>
+                  No messages yet. Say hello!
+                </div>
+              ) : chatMessages.map(msg => (
+                <div key={msg.id} className="meetings-chat-message">
+                  <div className="meetings-chat-message-sender">{msg.sender}</div>
+                  <div className="meetings-chat-message-text">{msg.text}</div>
+                  <div className="meetings-chat-message-time">
+                    {msg.time.toLocaleTimeString([], { hour: '2-digit', minute: '2-digit' })}
+                  </div>
+                </div>
+              ))}
+            </div>
+            <div className="meetings-chat-input-row">
+              <input
+                className="meetings-chat-input"
+                placeholder="Send a message..."
+                value={chatInput}
+                onChange={e => setChatInput(e.target.value)}
+                onKeyDown={e => {
+                  if (e.key === 'Enter' && chatInput.trim()) {
+                    const msg = { id: Date.now().toString(), sender: 'You', text: chatInput.trim(), time: new Date() };
+                    setChatMessages(prev => [...prev, msg]);
+                    setChatInput('');
+                  }
+                }}
+              />
+              <button
+                type="button"
+                className="meetings-chat-send-btn"
+                title="Send message"
+                onClick={() => {
+                  if (!chatInput.trim()) return;
+                  const msg = { id: Date.now().toString(), sender: 'You', text: chatInput.trim(), time: new Date() };
+                  setChatMessages(prev => [...prev, msg]);
+                  setChatInput('');
+                }}
+              >
+                <i className="fa-solid fa-paper-plane" style={{ fontSize: 12 }} />
+              </button>
+            </div>
+          </div>
+        )}
+
         {/* Control Bar */}
         <div className="meetings-controls">
           <div className="meetings-controls-left">
-            <span className="meetings-control-info">
-              {new Date().toLocaleTimeString([], { hour: '2-digit', minute: '2-digit' })}
-            </span>
+            {meetingStartTime ? (
+              <span className={`meetings-elapsed-timer ${elapsedSeconds >= 3600 ? 'over' : elapsedSeconds >= 2700 ? 'warning' : ''}`}>
+                {String(Math.floor(elapsedSeconds / 60)).padStart(2, '0')}:{String(elapsedSeconds % 60).padStart(2, '0')}
+              </span>
+            ) : (
+              <span className="meetings-control-info">
+                {new Date().toLocaleTimeString([], { hour: '2-digit', minute: '2-digit' })}
+              </span>
+            )}
           </div>
 
           <div className="meetings-controls-center">
@@ -889,6 +1207,8 @@ const Meetings: React.FC<MeetingsProps> = ({ apiKey, contacts, initialContactId,
             </button>
 
             <button
+              type="button"
+              title={cameraOn ? 'Turn camera off' : 'Turn camera on'}
               className={`meetings-control-btn ${cameraOn ? 'default' : 'off'}`}
               onClick={() => setCameraOn(!cameraOn)}
             >
@@ -896,6 +1216,8 @@ const Meetings: React.FC<MeetingsProps> = ({ apiKey, contacts, initialContactId,
             </button>
 
             <button
+              type="button"
+              title={isScreenSharing ? 'Stop sharing' : 'Share screen'}
               className={`meetings-control-btn ${isScreenSharing ? 'active' : 'default'}`}
               onClick={handleScreenShare}
             >
@@ -903,6 +1225,8 @@ const Meetings: React.FC<MeetingsProps> = ({ apiKey, contacts, initialContactId,
             </button>
 
             <button
+              type="button"
+              title={scribeActive ? 'Stop AI Scribe' : 'Start AI Scribe'}
               className={`meetings-control-btn ${scribeActive ? 'active' : 'default'}`}
               onClick={() => setScribeActive(!scribeActive)}
             >
@@ -923,15 +1247,29 @@ const Meetings: React.FC<MeetingsProps> = ({ apiKey, contacts, initialContactId,
           </div>
 
           <div className="meetings-controls-right">
-            <button className="meetings-control-icon">
-              <i className="fa-solid fa-circle-info" />
-            </button>
-            <button className="meetings-control-icon">
+            <button
+              className={`meetings-control-icon ${activeSidePanel === 'participants' ? 'active' : ''}`}
+              onClick={() => setActiveSidePanel(activeSidePanel === 'participants' ? 'none' : 'participants')}
+              title="Participants"
+            >
               <i className="fa-solid fa-users" />
             </button>
-            <button className="meetings-control-icon">
-              <i className="fa-solid fa-message" />
-            </button>
+            <div className="meetings-control-icon-wrapper">
+              <button
+                type="button"
+                className={`meetings-control-icon ${activeSidePanel === 'chat' ? 'active' : ''}`}
+                onClick={() => {
+                  setActiveSidePanel(activeSidePanel === 'chat' ? 'none' : 'chat');
+                  setUnreadChat(0);
+                }}
+                title="Chat"
+              >
+                <i className="fa-solid fa-message" />
+              </button>
+              {unreadChat > 0 && (
+                <span className="meetings-chat-badge">{unreadChat}</span>
+              )}
+            </div>
           </div>
         </div>
       </div>
