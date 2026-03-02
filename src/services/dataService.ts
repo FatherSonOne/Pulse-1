@@ -4,7 +4,9 @@
  */
 
 import { supabase } from './supabase';
-import analyticsCollector from './analyticsCollector';
+// analyticsCollector is dynamically imported at call sites to avoid eagerly loading
+// the svc-crm-analytics chunk (which contains a circular dep that triggers a TDZ error
+// if loaded during app startup via the dataService → analyticsCollector static import).
 import type {
   Contact,
   CalendarEvent,
@@ -703,22 +705,24 @@ class DataService {
       .update({ updated_at: new Date().toISOString() })
       .eq('id', threadId);
 
-    // Track the Pulse message for analytics
+    // Track the Pulse message for analytics (dynamic import keeps svc-crm-analytics lazy)
     try {
       const thread = await this.getThread(threadId);
       if (thread) {
-        analyticsCollector.trackMessageEvent({
-          id: newMessage.id,
-          channel: 'pulse',
-          contactIdentifier: thread.contactId,
-          contactName: thread.contactName,
-          isSent: message.sender === 'me',
-          timestamp: newMessage.timestamp,
-          content: message.text,
-          threadId: threadId,
-          replyToId: message.replyToId,
-          messageType: 'standard'
-        }).catch(err => console.error('Analytics tracking failed:', err));
+        import('./analyticsCollector').then(({ default: analyticsCollector }) => {
+          analyticsCollector.trackMessageEvent({
+            id: newMessage.id,
+            channel: 'pulse',
+            contactIdentifier: thread.contactId,
+            contactName: thread.contactName,
+            isSent: message.sender === 'me',
+            timestamp: newMessage.timestamp,
+            content: message.text,
+            threadId: threadId,
+            replyToId: message.replyToId,
+            messageType: 'standard'
+          }).catch(err => console.error('Analytics tracking failed:', err));
+        }).catch(() => { /* analytics must never break main flow */ });
       }
     } catch (analyticsError) {
       console.error('Analytics tracking failed:', analyticsError);
@@ -1390,8 +1394,8 @@ class DataService {
       result = data;
     }
 
-    // Track Voxer recording for analytics
-    try {
+    // Track Voxer recording for analytics (dynamic import keeps svc-crm-analytics lazy)
+    import('./analyticsCollector').then(({ default: analyticsCollector }) => {
       analyticsCollector.trackMessageEvent({
         id: result.id,
         channel: 'voxer',
@@ -1403,9 +1407,7 @@ class DataService {
         duration: recording.duration,
         messageType: 'standard'
       }).catch(err => console.error('Analytics tracking failed:', err));
-    } catch (analyticsError) {
-      console.error('Analytics tracking failed:', analyticsError);
-    }
+    }).catch(() => { /* analytics must never break main flow */ });
 
     return result;
   }
