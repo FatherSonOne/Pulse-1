@@ -461,7 +461,17 @@ const LandingPage: React.FC<LandingPageProps> = ({ onGetStarted }) => {
             </a>
           </div>
 
-          <div className="flex items-center gap-4">
+          <div className="flex items-center gap-3">
+            {/* User Guide button — always visible */}
+            <button
+              type="button"
+              onClick={() => setIsGuideOpen(true)}
+              title="Open User Guide"
+              className="flex items-center gap-2 px-3.5 py-2 rounded-lg border border-zinc-700/70 bg-zinc-900/60 hover:border-rose-500/50 hover:bg-zinc-800/80 text-zinc-400 hover:text-rose-400 text-sm font-medium transition-all duration-200 hover:scale-105 active:scale-95"
+            >
+              <i className="fa-solid fa-book-open text-[13px]"></i>
+              <span className="hidden sm:inline">User Guide</span>
+            </button>
             <button
               onClick={onGetStarted}
               type="button"
@@ -472,7 +482,7 @@ const LandingPage: React.FC<LandingPageProps> = ({ onGetStarted }) => {
             <button
               onClick={onGetStarted}
               type="button"
-              className="px-5 py-2.5 bg-gradient-to-r from-rose-600 to-pink-600 hover:from-rose-500 hover:to-pink-500 rounded-lg text-sm font-semibold text-white shadow-lg shadow-rose-500/30 transition-all duration-300 hover:scale-105 active:scale-95 hover:shadow-rose-500/50"
+              className="hidden sm:block px-5 py-2.5 bg-gradient-to-r from-rose-600 to-pink-600 hover:from-rose-500 hover:to-pink-500 rounded-lg text-sm font-semibold text-white shadow-lg shadow-rose-500/30 transition-all duration-300 hover:scale-105 active:scale-95 hover:shadow-rose-500/50"
             >
               Get Started
             </button>
@@ -608,16 +618,14 @@ const LandingPage: React.FC<LandingPageProps> = ({ onGetStarted }) => {
       </section>
 
       {/* ── Stats Strip ── */}
-      <div className="bg-zinc-900/80 border-y border-rose-500/15 py-5 overflow-x-auto">
-        <div className="flex items-center gap-0 min-w-max mx-auto px-6">
+      <div className="bg-zinc-900/80 border-y border-rose-500/15 py-5">
+        <div className="max-w-7xl mx-auto px-6 grid grid-cols-4 sm:grid-cols-8">
           {STATS.map((stat, i) => (
-            <React.Fragment key={stat.label}>
-              <div className="flex flex-col items-center px-8 py-1">
-                <span className="text-2xl font-black text-transparent bg-clip-text bg-gradient-to-r from-rose-400 to-pink-500 leading-none">{stat.value}</span>
-                <span className="text-xs text-zinc-500 mt-1 whitespace-nowrap tracking-wide uppercase font-medium">{stat.label}</span>
-              </div>
-              {i < STATS.length - 1 && <div className="w-px h-10 bg-rose-500/20 shrink-0" />}
-            </React.Fragment>
+            <div key={stat.label} className="flex flex-col items-center py-1 relative">
+              {i > 0 && <div className="absolute left-0 top-1/2 -translate-y-1/2 w-px h-10 bg-rose-500/20" />}
+              <span className="text-2xl font-black text-transparent bg-clip-text bg-gradient-to-r from-rose-400 to-pink-500 leading-none">{stat.value}</span>
+              <span className="text-xs text-zinc-500 mt-1 whitespace-nowrap tracking-wide uppercase font-medium">{stat.label}</span>
+            </div>
           ))}
         </div>
       </div>
