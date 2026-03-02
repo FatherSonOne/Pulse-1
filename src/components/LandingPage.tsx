@@ -894,10 +894,10 @@ const LandingPage: React.FC<LandingPageProps> = ({ onGetStarted }) => {
                     title: 'Network Analytics',
                     desc: 'Communication pattern analysis, interaction heatmaps, and predictive engagement recommendations.',
                   },
-                ].map(item => (
+                ].map((item, i) => (
                   <div key={item.title} className="flex gap-4 p-5 rounded-2xl bg-zinc-950/80 border border-zinc-800 hover:border-rose-500/30 transition-all duration-300 group">
-                    <div className="w-10 h-10 rounded-xl bg-rose-500/10 flex items-center justify-center shrink-0 group-hover:bg-rose-500/20 transition-colors">
-                      <i className={`${item.icon} text-rose-400`}></i>
+                    <div className="lp-icon-wrap-rose w-10 h-10 rounded-xl bg-rose-500/10 flex items-center justify-center shrink-0 group-hover:bg-rose-500/20 transition-all duration-300">
+                      <i className={`${item.icon} text-rose-400 ${['lp-icon-throb','lp-icon-bob','lp-icon-spin'][i]}`} style={{ animationDelay: `${i * 0.6}s` }}></i>
                     </div>
                     <div>
                       <h3 className="font-bold text-white mb-1 text-sm">{item.title}</h3>
