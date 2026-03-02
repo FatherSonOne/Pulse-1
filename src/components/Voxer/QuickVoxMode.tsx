@@ -22,7 +22,7 @@ import VoxModeToolbar from './VoxModeToolbar';
 import VoxRecordArea from './VoxRecordArea';
 import { useVoxRecording } from '../../hooks/useVoxRecording';
 import { voxModeService } from '../../services/voxer/voxModeService';
-import analyticsCollector from '../../services/analyticsCollector';
+// analyticsCollector loaded dynamically to avoid svc-crm-analytics chunk TDZ
 import type { QuickVoxFavorite, QuickVoxMessage, QuickVoxStatus } from '../../services/voxer/voxModeTypes';
 import toast from 'react-hot-toast';
 import './Voxer.css';
@@ -394,17 +394,19 @@ const QuickVoxMode: React.FC<QuickVoxModeProps> = ({
     if (message) {
       setMessages(prev => [...prev, message]);
 
-      analyticsCollector.trackMessageEvent({
-        id: message.id,
-        channel: 'voxer',
-        contactIdentifier: selectedContact.contactId,
-        contactName: selectedContact.contactName,
-        isSent: true,
-        timestamp: new Date(),
-        content: '[Quick Vox Recording]',
-        duration: recordingData.duration,
-        messageType: 'quick_vox'
-      }).catch(err => console.error('Analytics tracking failed:', err));
+      import('../../services/analyticsCollector').then(({ default: ac }) => {
+        ac.trackMessageEvent({
+          id: message.id,
+          channel: 'voxer',
+          contactIdentifier: selectedContact.contactId,
+          contactName: selectedContact.contactName,
+          isSent: true,
+          timestamp: new Date(),
+          content: '[Quick Vox Recording]',
+          duration: recordingData.duration,
+          messageType: 'quick_vox'
+        }).catch(err => console.error('Analytics tracking failed:', err));
+      }).catch(() => {});
     }
 
     sendRecording();

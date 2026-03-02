@@ -34,7 +34,7 @@ import VoxModeToolbar from './VoxModeToolbar';
 import VoxRecordArea from './VoxRecordArea';
 import { useVoxRecording } from '../../hooks/useVoxRecording';
 import { voxModeService } from '../../services/voxer/voxModeService';
-import analyticsCollector from '../../services/analyticsCollector';
+// analyticsCollector loaded dynamically to avoid svc-crm-analytics chunk TDZ
 import type { VoxNote, LinkedItem } from '../../services/voxer/voxModeTypes';
 import toast from 'react-hot-toast';
 import './Voxer.css';
@@ -341,17 +341,19 @@ const VoxNotesMode: React.FC<VoxNotesModeProps> = ({
       setSelectedNote(note);
 
       const userId = voxModeService.getUserId();
-      analyticsCollector.trackMessageEvent({
-        id: note.id,
-        channel: 'voxer',
-        contactIdentifier: userId || 'self',
-        contactName: 'Personal Note',
-        isSent: true,
-        timestamp: new Date(),
-        content: note.title || '[Vox Note]',
-        duration: recordingData.duration,
-        messageType: 'vox_note'
-      }).catch(err => console.error('Analytics tracking failed:', err));
+      import('../../services/analyticsCollector').then(({ default: ac }) => {
+        ac.trackMessageEvent({
+          id: note.id,
+          channel: 'voxer',
+          contactIdentifier: userId || 'self',
+          contactName: 'Personal Note',
+          isSent: true,
+          timestamp: new Date(),
+          content: note.title || '[Vox Note]',
+          duration: recordingData.duration,
+          messageType: 'vox_note'
+        }).catch(err => console.error('Analytics tracking failed:', err));
+      }).catch(() => {});
 
       // Reload notes to confirm persistence
       setTimeout(() => loadNotes(), 500);

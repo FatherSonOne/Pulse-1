@@ -51,7 +51,7 @@ import { useVoxRecording } from '../../hooks/useVoxRecording';
 import { voxModeService } from '../../services/voxer/voxModeService';
 import VoxModeToolbar from './VoxModeToolbar';
 import VoxRecordArea from './VoxRecordArea';
-import analyticsCollector from '../../services/analyticsCollector';
+// analyticsCollector loaded dynamically to avoid svc-crm-analytics chunk TDZ
 import type { VoiceThread, VoiceThreadMessage, PulseUser } from '../../services/voxer/voxModeTypes';
 import toast from 'react-hot-toast';
 import './VoiceThreadsMode.css';
@@ -738,19 +738,21 @@ const VoiceThreadsMode: React.FC<VoiceThreadsModeProps> = ({
         };
         setMessages(prev => [...prev, extendedMessage]);
 
-        analyticsCollector.trackMessageEvent({
-          id: message.id,
-          channel: 'voxer',
-          contactIdentifier: selectedThread.id,
-          contactName: selectedThread.subject || 'Voice Thread',
-          isSent: true,
-          timestamp: new Date(),
-          content: '[Voice Thread Message]',
-          threadId: selectedThread.id,
-          replyToId: replyingTo?.id,
-          duration: recordingData.duration,
-          messageType: 'voice_thread'
-        }).catch(err => console.error('Analytics tracking failed:', err));
+        import('../../services/analyticsCollector').then(({ default: ac }) => {
+          ac.trackMessageEvent({
+            id: message.id,
+            channel: 'voxer',
+            contactIdentifier: selectedThread.id,
+            contactName: selectedThread.subject || 'Voice Thread',
+            isSent: true,
+            timestamp: new Date(),
+            content: '[Voice Thread Message]',
+            threadId: selectedThread.id,
+            replyToId: replyingTo?.id,
+            duration: recordingData.duration,
+            messageType: 'voice_thread'
+          }).catch(err => console.error('Analytics tracking failed:', err));
+        }).catch(() => {});
 
         toast.success('Message sent!');
       } else {

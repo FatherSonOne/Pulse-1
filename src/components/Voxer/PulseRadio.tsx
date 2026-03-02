@@ -39,7 +39,7 @@ import VoxModeToolbar from './VoxModeToolbar';
 import VoxRecordArea from './VoxRecordArea';
 import { useVoxRecording } from '../../hooks/useVoxRecording';
 import { voxModeService } from '../../services/voxer/voxModeService';
-import analyticsCollector from '../../services/analyticsCollector';
+// analyticsCollector loaded dynamically to avoid svc-crm-analytics chunk TDZ
 import type { PulseChannel, Broadcast } from '../../services/voxer/voxModeTypes';
 import toast from 'react-hot-toast';
 import './PulseRadio.css';
@@ -437,17 +437,19 @@ const PulseRadio: React.FC<PulseRadioProps> = ({ onBack, apiKey, isDarkMode = fa
 
     if (broadcast) {
       setBroadcasts([broadcast, ...broadcasts]);
-      analyticsCollector.trackMessageEvent({
-        id: broadcast.id,
-        channel: 'voxer',
-        contactIdentifier: selectedChannel.id,
-        contactName: `📻 ${selectedChannel.name}`,
-        isSent: true,
-        timestamp: new Date(),
-        content: broadcastTitle,
-        duration: recordingData.duration,
-        messageType: 'broadcast'
-      }).catch(console.error);
+      import('../../services/analyticsCollector').then(({ default: ac }) => {
+        ac.trackMessageEvent({
+          id: broadcast.id,
+          channel: 'voxer',
+          contactIdentifier: selectedChannel.id,
+          contactName: `📻 ${selectedChannel.name}`,
+          isSent: true,
+          timestamp: new Date(),
+          content: broadcastTitle,
+          duration: recordingData.duration,
+          messageType: 'broadcast'
+        }).catch(console.error);
+      }).catch(() => {});
 
       sendRecording();
       setBroadcastTitle('');
@@ -477,17 +479,19 @@ const PulseRadio: React.FC<PulseRadioProps> = ({ onBack, apiKey, isDarkMode = fa
       // Optionally reload broadcasts to show the response
       loadBroadcasts(activeBroadcastRoom.channelId);
 
-      analyticsCollector.trackMessageEvent({
-        id: response.id,
-        channel: 'voxer',
-        contactIdentifier: activeBroadcastRoom.channelId,
-        contactName: `📻 Discussion Response`,
-        isSent: true,
-        timestamp: new Date(),
-        content: `Re: ${activeBroadcastRoom.title}`,
-        duration: recordingData.duration,
-        messageType: 'broadcast_response'
-      }).catch(console.error);
+      import('../../services/analyticsCollector').then(({ default: ac }) => {
+        ac.trackMessageEvent({
+          id: response.id,
+          channel: 'voxer',
+          contactIdentifier: activeBroadcastRoom.channelId,
+          contactName: `📻 Discussion Response`,
+          isSent: true,
+          timestamp: new Date(),
+          content: `Re: ${activeBroadcastRoom.title}`,
+          duration: recordingData.duration,
+          messageType: 'broadcast_response'
+        }).catch(console.error);
+      }).catch(() => {});
 
       sendRecording();
       setActiveBroadcastRoom(null);
