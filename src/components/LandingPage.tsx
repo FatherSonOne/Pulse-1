@@ -1,5 +1,7 @@
-import React, { useState, useEffect } from 'react';
-import UsersGuide from './UsersGuide/UsersGuide';
+import React, { useState, useEffect, lazy, Suspense } from 'react';
+
+// Lazy-load the guide — guideData.ts is 26k lines and must NOT land in the main bundle
+const UsersGuide = lazy(() => import('./UsersGuide/UsersGuide'));
 
 interface LandingPageProps {
   onGetStarted: () => void;
@@ -251,9 +253,16 @@ const LandingPage: React.FC<LandingPageProps> = ({ onGetStarted }) => {
                 <i className="fa-solid fa-xmark"></i>
               </button>
             </div>
-            {/* Guide content */}
+            {/* Guide content — loaded lazily on first drawer open */}
             <div className="flex-1 overflow-y-auto">
-              <UsersGuide isDarkMode={true} />
+              <Suspense fallback={
+                <div className="flex items-center justify-center h-64 gap-3 text-zinc-500">
+                  <div className="w-5 h-5 rounded-full border-2 border-rose-500 border-t-transparent animate-spin"></div>
+                  <span className="text-sm">Loading guide…</span>
+                </div>
+              }>
+                <UsersGuide isDarkMode={true} />
+              </Suspense>
             </div>
           </div>
         </div>
@@ -569,9 +578,9 @@ const LandingPage: React.FC<LandingPageProps> = ({ onGetStarted }) => {
             <div key={i} className="flex items-center gap-2.5 px-7 py-1 shrink-0 group cursor-default">
               <div
                 className="w-7 h-7 rounded-lg flex items-center justify-center shrink-0 transition-all duration-300 group-hover:scale-110"
-                style={{ backgroundColor: `${p.color}18`, border: `1px solid ${p.color}30` }}
+                style={{ backgroundColor: p.color, boxShadow: `0 2px 8px ${p.color}55` }}
               >
-                <i className={`${p.icon} text-xs`} style={{ color: p.color }}></i>
+                <i className={`${p.icon} text-xs text-white`}></i>
               </div>
               <span className="text-xs font-medium text-zinc-500 group-hover:text-zinc-300 transition-colors whitespace-nowrap">{p.name}</span>
               <span className="w-1 h-1 rounded-full bg-zinc-700 ml-4 shrink-0"></span>
@@ -870,8 +879,8 @@ const LandingPage: React.FC<LandingPageProps> = ({ onGetStarted }) => {
                   {CRM_PLATFORMS.map(crm => (
                     <div key={crm.name} className="p-5 rounded-2xl bg-zinc-950/80 border border-zinc-800 hover:border-zinc-600 transition-all duration-300 hover:-translate-y-1 group">
                       <div className="flex items-center gap-2 mb-3">
-                        <div className="w-8 h-8 rounded-lg flex items-center justify-center" style={{ backgroundColor: `${crm.color}20` }}>
-                          <i className={`${crm.icon} text-sm`} style={{ color: crm.color }}></i>
+                        <div className="w-8 h-8 rounded-lg flex items-center justify-center" style={{ backgroundColor: crm.color, boxShadow: `0 2px 10px ${crm.color}50` }}>
+                          <i className={`${crm.icon} text-sm text-white`}></i>
                         </div>
                         <span className="font-bold text-white text-sm">{crm.name}</span>
                       </div>
@@ -911,10 +920,10 @@ const LandingPage: React.FC<LandingPageProps> = ({ onGetStarted }) => {
                 className="group flex flex-col items-center gap-2.5 p-4 rounded-2xl bg-zinc-900/60 border border-zinc-800 hover:border-zinc-600 transition-all duration-300 hover:-translate-y-1.5 cursor-default"
               >
                 <div
-                  className="w-10 h-10 rounded-xl flex items-center justify-center transition-all duration-300 group-hover:scale-110"
-                  style={{ backgroundColor: `${p.color}18`, border: `1px solid ${p.color}35` }}
+                  className="w-10 h-10 rounded-xl flex items-center justify-center transition-all duration-300 group-hover:scale-110 group-hover:shadow-lg"
+                  style={{ backgroundColor: p.color, boxShadow: `0 4px 14px ${p.color}45` }}
                 >
-                  <i className={`${p.icon} text-base`} style={{ color: p.color }}></i>
+                  <i className={`${p.icon} text-base text-white`}></i>
                 </div>
                 <span className="text-[10px] font-medium text-zinc-500 group-hover:text-zinc-300 transition-colors text-center leading-tight">{p.name}</span>
               </div>
