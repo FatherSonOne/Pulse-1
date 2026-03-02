@@ -817,7 +817,7 @@ const LandingPage: React.FC<LandingPageProps> = ({ onGetStarted }) => {
                 Know Your Network
               </h2>
               <p className="text-zinc-400 text-lg max-w-2xl">
-                Deep relationship intelligence with 0 to 100 health scoring, contact circles, and native sync with the four biggest CRM platforms.
+                Deep relationship intelligence with 0–100 health scoring, contact circles, and bidirectional sync with Logos Vision — so every conversation in Pulse keeps your case records current.
               </p>
             </div>
 
@@ -853,25 +853,62 @@ const LandingPage: React.FC<LandingPageProps> = ({ onGetStarted }) => {
                 ))}
               </div>
 
-              {/* CRM Integrations */}
+              {/* Logos Vision Sync */}
               <div>
-                <h3 className="text-sm font-bold text-zinc-400 uppercase tracking-widest mb-5">Native CRM Integrations</h3>
-                <div className="grid grid-cols-2 gap-4">
-                  {CRM_PLATFORMS.map(crm => (
-                    <div key={crm.name} className="p-5 rounded-2xl bg-zinc-950/80 border border-zinc-800 hover:border-zinc-600 transition-all duration-300 hover:-translate-y-1 group">
-                      <div className="flex items-center gap-2 mb-3">
-                        <div className="w-8 h-8 rounded-lg flex items-center justify-center" style={{ backgroundColor: crm.color, boxShadow: `0 2px 10px ${crm.color}50` }}>
-                          <i className={`${crm.icon} text-sm text-white`}></i>
-                        </div>
-                        <span className="font-bold text-white text-sm">{crm.name}</span>
+                <div className="flex items-center gap-3 mb-5">
+                  <div className="w-9 h-9 rounded-xl flex items-center justify-center shrink-0" style={{ background: 'linear-gradient(135deg, #6366f1 0%, #a855f7 100%)', boxShadow: '0 4px 14px rgba(99,102,241,0.4)' }}>
+                    <i className="fa-solid fa-eye text-white text-sm"></i>
+                  </div>
+                  <div>
+                    <h3 className="text-sm font-bold text-white">Logos Vision</h3>
+                    <span className="text-xs text-indigo-400">Bidirectional sync — live</span>
+                  </div>
+                  <span className="ml-auto flex items-center gap-1.5 text-xs text-emerald-400 font-medium">
+                    <span className="relative flex h-2 w-2">
+                      <span className="animate-ping absolute inline-flex h-full w-full rounded-full bg-emerald-400 opacity-75"></span>
+                      <span className="relative inline-flex rounded-full h-2 w-2 bg-emerald-500"></span>
+                    </span>
+                    Connected
+                  </span>
+                </div>
+
+                <div className="space-y-3">
+                  {[
+                    {
+                      icon: 'fa-solid fa-comments',
+                      color: '#6366f1',
+                      label: 'Conversation → Case Log',
+                      desc: 'Meet a client and send a Voxer message or reply in Pulse — a case log entry is automatically created in Logos Vision.',
+                    },
+                    {
+                      icon: 'fa-solid fa-bolt',
+                      color: '#a855f7',
+                      label: 'Activity Feed Sync',
+                      desc: 'Every touchpoint in Pulse — calls, messages, notes — surfaces instantly in the client\'s Logos Vision activity timeline.',
+                    },
+                    {
+                      icon: 'fa-solid fa-wand-magic-sparkles',
+                      color: '#ec4899',
+                      label: 'AI Field Population',
+                      desc: 'Pulse pools data from your conversations to auto-fill contact fields, case details, and relationship context in Logos Vision.',
+                    },
+                    {
+                      icon: 'fa-solid fa-rotate',
+                      color: '#06b6d4',
+                      label: 'Records Flow Back',
+                      desc: 'Case outcomes, notes, and status updates in Logos Vision surface in your Pulse relationship feed and contact health score.',
+                    },
+                  ].map(item => (
+                    <div key={item.label} className="flex gap-3 p-4 rounded-xl bg-zinc-950/80 border border-zinc-800 hover:border-indigo-500/30 transition-all duration-300 group">
+                      <div className="w-8 h-8 rounded-lg flex items-center justify-center shrink-0 mt-0.5" style={{ backgroundColor: `${item.color}20`, border: `1px solid ${item.color}40` }}>
+                        <i className={`${item.icon} text-xs`} style={{ color: item.color }}></i>
                       </div>
-                      <p className="text-zinc-600 text-xs leading-relaxed">{crm.desc}</p>
+                      <div>
+                        <p className="text-xs font-bold text-white mb-0.5">{item.label}</p>
+                        <p className="text-zinc-500 text-xs leading-relaxed">{item.desc}</p>
+                      </div>
                     </div>
                   ))}
-                </div>
-                <div className="mt-4 p-4 rounded-xl bg-rose-500/5 border border-rose-500/15 text-xs text-zinc-500 leading-relaxed">
-                  <i className="fa-solid fa-rotate text-rose-500 mr-2"></i>
-                  Bi-directional sync with OAuth 2.0, smart retry logic, and connection health monitoring built-in.
                 </div>
               </div>
             </div>
