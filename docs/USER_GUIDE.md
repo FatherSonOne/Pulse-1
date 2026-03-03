@@ -1,6 +1,6 @@
 # Pulse User's Guide
 
-**Version**: 28.2.0
+**Version**: 25.1
 **Last Updated**: March 2, 2026
 **For**: All Pulse users — personal, team, and enterprise
 
@@ -164,6 +164,8 @@ The left sidebar is your main navigation. It is organized into sections:
 - **Your profile** — Quick access to account options
 
 **Tip:** Click the arrow button at the top of the sidebar to collapse it and give yourself more screen space. Press `G` then a letter to jump directly to any section.
+
+**Tip:** Click the **?** button in the sidebar header (or on mobile, between the notifications bell and the menu icon) to open the User's Guide at any time without leaving your current view.
 
 <details>
 <summary><strong>Use Case: New employee first-day setup</strong></summary>
@@ -1996,6 +1998,26 @@ For team workspace administrators:
    - Role permissions — what each role can see and do
    - Data retention policies — how long messages and data are stored
    - Security settings — SSO, 2FA requirements
+
+### Admin Dashboard & Activity Monitor
+
+Workspace admins have access to a dedicated Admin Dashboard with six tabs: **Overview**, **Users**, **Messages**, **Settings**, **Search Analytics**, and **Activity Monitor**.
+
+The **Activity Monitor** tab is a live command center for tracking workspace health in real time:
+
+- **Header KPIs** — Five summary cards showing: Total Users, Online Now, Away/Busy, New This Week, and Messages Sent (7-day total)
+- **Live Presence Panel** — A full list of every user sorted by status (online first, then away/busy, then offline). Each row shows the user's name, email, current status, and how long ago they were last active. The panel updates automatically every 30 seconds and instantly when any user's status changes.
+- **Recent Signups Panel** — Shows users who joined in the last 24 hours and the last 7 days, so admins can track growth at a glance.
+- **Message Leaderboard** — Ranks all users by messages sent in the past 7 days, with a visual bar chart and a today count column.
+- **Event Feed** — A live log of the most recent admin actions (logins, role changes, user creation, deletions, setting changes) with timestamps and color-coded icons.
+
+To access the Admin Dashboard:
+
+1. Click **Settings** in the sidebar.
+2. Select **Admin Dashboard** (visible only to users with Admin or Owner role).
+3. Click the **Activity** tab to open the Activity Monitor.
+
+**Tip:** The Activity Monitor refreshes automatically every 30 seconds. You do not need to reload the page.
 
 ### API Keys
 

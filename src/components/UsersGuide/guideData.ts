@@ -1,5 +1,5 @@
 // Pulse User's Guide — Full Rich Section Data
-// Version 28.2.0 · March 2, 2026
+// Version 25.1 · March 2, 2026
 // Auto-maintained by the /users-guide slash command.
 
 export interface Shortcut {
@@ -147,6 +147,7 @@ export const guideSections: GuideSection[] = [
           'Secondary section (middle): Contacts, Decisions & Tasks, Tools, Analytics.',
           'Bottom: AI Assistant (ECG icon), Settings, Your Profile.',
           'Click the arrow button at the top of the sidebar to collapse it for more screen space.',
+          'Click the ? button in the sidebar header to open the User\'s Guide at any time. On mobile, the ? button appears between the notifications bell and the menu icon.',
           'Press G + a letter to jump instantly: G→D = Dashboard, G→M = Messages, G→E = Email, G→V = Voxer, G→C = Calendar, G→N = Meetings, G→P = Contacts, G→T = Tasks, G→A = Analytics.',
         ],
       },
@@ -167,7 +168,9 @@ export const guideSections: GuideSection[] = [
       'Using Sign in with Google or Microsoft auto-connects your contacts and calendar — saving significant setup time.',
       'A complete profile with a photo helps teammates recognize you in decisions, tasks, and meeting invites.',
       'Connect all your accounts on day one — Pulse gets smarter the more context it has.',
+      'Click the ? button in the sidebar header to open the User\'s Guide instantly from anywhere in the app.',
     ],
+    badge: 'Updated',
     useCases: [
       {
         id: 'uc-new-employee',
@@ -1826,6 +1829,21 @@ export const guideSections: GuideSection[] = [
         ],
       },
       {
+        id: 'admin-activity-monitor',
+        title: 'Admin Dashboard & Activity Monitor',
+        description: 'Workspace admins have access to a full Admin Dashboard with six tabs, including the live Activity Monitor.',
+        steps: [
+          'Click Settings → Admin Dashboard (visible to Admin and Owner roles only).',
+          'Click the Activity tab to open the real-time Activity Monitor.',
+          'Five header KPIs: Total Users, Online Now, Away/Busy, New This Week, Messages Sent (7-day).',
+          'Live Presence Panel — lists all users sorted by status (online first). Updates every 30 seconds and instantly on status change.',
+          'Recent Signups Panel — shows users who joined in the last 24 hours and the last 7 days.',
+          'Message Leaderboard — ranks users by messages sent in the past 7 days with a visual bar chart.',
+          'Event Feed — live log of the 40 most recent admin actions (logins, role changes, deletions, setting updates) with timestamps.',
+        ],
+        note: 'The Activity Monitor refreshes automatically every 30 seconds — no page reload needed.',
+      },
+      {
         id: 'api-keys',
         title: 'API Keys',
         steps: [
@@ -1886,7 +1904,9 @@ export const guideSections: GuideSection[] = [
       'Choose 7 accent color presets or enter any custom hex code to match your brand.',
       'Quiet Hours prevents all notifications during your chosen hours — critical for work-life balance.',
       'Generate scoped API keys (read-only vs. read-write) and revoke them individually at any time.',
+      'Admins: the Activity Monitor tab gives you a live view of who is online, new signups, and recent admin events — no page reload needed.',
     ],
+    badge: 'Updated',
   },
 
   // ── 18. MOBILE ────────────────────────────────────────────────────────────
