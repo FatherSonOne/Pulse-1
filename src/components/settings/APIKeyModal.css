@@ -18,9 +18,9 @@
 }
 
 .dark {
-  --modal-bg: #171717;
-  --modal-overlay-bg: rgba(0, 0, 0, 0.8);
-  --modal-border: #262626;
+  --modal-bg: rgba(12, 12, 12, 0.97);
+  --modal-overlay-bg: rgba(0, 0, 0, 0.80);
+  --modal-border: rgba(255, 255, 255, 0.08);
   --modal-text: #fafafa;
   --modal-text-secondary: #d4d4d4;
 }
@@ -36,7 +36,8 @@
   right: 0;
   bottom: 0;
   background: var(--modal-overlay-bg);
-  backdrop-filter: blur(8px);
+  -webkit-backdrop-filter: blur(8px);
+          backdrop-filter: blur(8px);
   display: flex;
   align-items: center;
   justify-content: center;
@@ -73,12 +74,15 @@
 }
 
 .dark .api-key-modal {
-  background: #1a1a1a;
-  border-color: #2a2a2a;
+  background: rgba(10, 10, 10, 0.95);
+  -webkit-backdrop-filter: blur(24px) saturate(180%);
+          backdrop-filter: blur(24px) saturate(180%);
+  border-color: rgba(255, 255, 255, 0.08);
   box-shadow:
-    0 24px 72px rgba(0, 0, 0, 0.6),
-    0 8px 24px rgba(0, 0, 0, 0.4),
-    inset 0 1px 0 rgba(255, 255, 255, 0.05);
+    0 24px 72px rgba(0, 0, 0, 0.70),
+    0 8px 24px rgba(0, 0, 0, 0.50),
+    inset 0 1px 0 rgba(255, 255, 255, 0.05),
+    inset 0 0 0 1px rgba(244, 63, 94, 0.08);
 }
 
 @keyframes slideUp {
@@ -186,12 +190,12 @@
 }
 
 .api-key-modal-content::-webkit-scrollbar-thumb {
-  background: var(--modal-border);
+  background: rgba(244, 63, 94, 0.20);
   border-radius: 4px;
 }
 
 .api-key-modal-content::-webkit-scrollbar-thumb:hover {
-  background: var(--modal-accent-rose);
+  background: rgba(244, 63, 94, 0.40);
 }
 
 /* Info Section */
@@ -319,7 +323,7 @@
 }
 
 .dark .api-key-input {
-  background: #0a0a0a;
+  background: rgba(0, 0, 0, 0.50);
 }
 
 .api-key-input:focus {
@@ -414,7 +418,7 @@
 }
 
 .dark .api-key-modal-footer {
-  background: #1a1a1a;
+  background: rgba(10, 10, 10, 0.95);
 }
 
 .api-key-footer-actions {
@@ -466,7 +470,7 @@
 }
 
 .dark .api-key-button.tertiary {
-  background: #0a0a0a;
+  background: rgba(0, 0, 0, 0.40);
 }
 
 .api-key-button.tertiary:hover {

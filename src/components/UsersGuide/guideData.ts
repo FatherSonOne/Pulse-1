@@ -2179,6 +2179,11 @@ export const guideSections: GuideSection[] = [
         ],
       },
     ],
+    tips: [
+      'Always try a hard refresh (Ctrl+Shift+R) before reporting a bug — it clears stale cached assets.',
+      'Export your data before contacting support so you have a local backup: Settings → Data Management → Export.',
+      'The in-app Help & Support chat connects you directly to the Pulse team during business hours.',
+    ],
   },
 ];
 

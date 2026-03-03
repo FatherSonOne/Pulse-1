@@ -1,3 +1,56 @@
+/* ============================================================
+   SETTINGS — DESIGN TOKENS
+   Pulse Premium Dark · Rose Accent System
+   ============================================================ */
+
+:root {
+  --set-bg:             #f8f8f8;
+  --set-surface:        #ffffff;
+  --set-surface-raised: #f2f2f2;
+  --set-border:         rgba(0, 0, 0, 0.08);
+  --set-primary:        #f43f5e;
+  --set-primary-alt:    #ec4899;
+  --set-primary-soft:   rgba(244, 63, 94, 0.10);
+  --set-primary-softer: rgba(244, 63, 94, 0.05);
+  --set-primary-glow:   rgba(244, 63, 94, 0.25);
+  --set-text-main:      #0f0f0f;
+  --set-text-secondary: #52525b;
+  --set-text-muted:     #6b7280;
+  --set-shadow-sm:      0 1px 3px rgba(0, 0, 0, 0.06);
+  --set-shadow-md:      0 4px 12px rgba(0, 0, 0, 0.08);
+  --set-shadow-rose:    0 0 0 1px var(--set-primary), 0 4px 24px var(--set-primary-glow);
+}
+
+.dark {
+  --set-bg:             #000000;
+  --set-surface:        rgba(255, 255, 255, 0.03);
+  --set-surface-raised: rgba(255, 255, 255, 0.055);
+  --set-border:         rgba(255, 255, 255, 0.06);
+  --set-border-raised:  rgba(255, 255, 255, 0.08);
+  --set-primary:        #f43f5e;
+  --set-primary-alt:    #ec4899;
+  --set-primary-soft:   rgba(244, 63, 94, 0.12);
+  --set-primary-softer: rgba(244, 63, 94, 0.06);
+  --set-primary-glow:   rgba(244, 63, 94, 0.30);
+  --set-text-main:      #fafafa;
+  --set-text-secondary: #b4b4b8;
+  --set-text-muted:     #6b7280;
+  --set-shadow-sm:      0 1px 4px rgba(0, 0, 0, 0.50);
+  --set-shadow-md:      0 4px 16px rgba(0, 0, 0, 0.60);
+  --set-shadow-rose:    0 0 0 1px var(--set-primary), 0 4px 24px var(--set-primary-glow);
+}
+
+@keyframes settingsEnter {
+  from { opacity: 0; transform: translateY(6px); }
+  to   { opacity: 1; transform: translateY(0); }
+}
+
+@keyframes settingsHeartbeat {
+  0%   { opacity: 0;   }
+  35%  { opacity: 1;   }
+  100% { opacity: 0.4; }
+}
+
 /* ============================================
    SETTINGS - NOTHING INSPIRED DESIGN
    Premium animations and micro-interactions
@@ -32,6 +85,7 @@
   background: linear-gradient(135deg, var(--nothing-red), transparent, var(--nothing-red));
   -webkit-mask: linear-gradient(#fff 0 0) content-box, linear-gradient(#fff 0 0);
   -webkit-mask-composite: xor;
+  mask: linear-gradient(#fff 0 0) content-box, linear-gradient(#fff 0 0);
   mask-composite: exclude;
   opacity: 0;
   transition: opacity 0.3s;
@@ -229,16 +283,16 @@
 .nothing-info-box {
   margin-top: 12px;
   padding: 16px;
-  background: rgba(255, 0, 0, 0.03);
-  border: 2px solid rgba(255, 0, 0, 0.1);
+  background: var(--set-primary-softer);
+  border: 2px solid var(--set-primary-soft);
   border-radius: 12px;
   font-size: 12px;
   line-height: 1.6;
 }
 
 .dark .nothing-info-box {
-  background: rgba(255, 0, 0, 0.05);
-  border-color: rgba(255, 0, 0, 0.2);
+  background: rgba(244, 63, 94, 0.06);
+  border-color: rgba(244, 63, 94, 0.20);
 }
 
 .nothing-info-box .info-title {
@@ -373,7 +427,7 @@
 
 .nothing-btn-secondary:hover:not(:disabled) {
   transform: translateY(-2px);
-  box-shadow: 0 8px 20px rgba(255, 0, 0, 0.3);
+  box-shadow: 0 8px 20px rgba(244, 63, 94, 0.3);
 }
 
 /* Outlined Button */
@@ -391,12 +445,12 @@
 .nothing-btn-outlined:hover:not(:disabled) {
   border-color: var(--nothing-red);
   color: var(--nothing-red);
-  background: rgba(255, 0, 0, 0.03);
+  background: var(--set-primary-softer);
   transform: translateY(-2px);
 }
 
 .dark .nothing-btn-outlined:hover:not(:disabled) {
-  background: rgba(255, 0, 0, 0.1);
+  background: var(--set-primary-soft);
 }
 
 /* Success Button (Green) */
@@ -442,7 +496,7 @@
 }
 
 .status-display.error {
-  background: rgba(255, 0, 0, 0.05);
+  background: var(--set-primary-softer);
   border: 2px solid var(--nothing-red);
   color: var(--nothing-red);
 }
@@ -470,6 +524,18 @@
   border-radius: 12px;
   max-height: 300px;
   overflow-y: auto;
+  scrollbar-width: thin;
+  scrollbar-color: rgba(244, 63, 94, 0.15) transparent;
+}
+
+.message-preview::-webkit-scrollbar       { width: 6px; }
+.message-preview::-webkit-scrollbar-track { background: transparent; }
+.message-preview::-webkit-scrollbar-thumb {
+  background: rgba(244, 63, 94, 0.15);
+  border-radius: 3px;
+}
+.message-preview::-webkit-scrollbar-thumb:hover {
+  background: rgba(244, 63, 94, 0.35);
 }
 
 .dark .message-preview {
@@ -551,8 +617,8 @@
 
 /* Section Header */
 .section-header {
-  background: linear-gradient(135deg, rgba(255, 0, 0, 0.05), rgba(255, 0, 0, 0.02));
-  border: 2px solid rgba(255, 0, 0, 0.1);
+  background: linear-gradient(135deg, var(--set-primary-softer), rgba(244, 63, 94, 0.02));
+  border: 2px solid var(--set-primary-soft);
   border-radius: 16px;
   padding: 24px;
   margin-bottom: 32px;
@@ -561,8 +627,8 @@
 }
 
 .dark .section-header {
-  background: linear-gradient(135deg, rgba(255, 0, 0, 0.1), rgba(255, 0, 0, 0.05));
-  border-color: rgba(255, 0, 0, 0.2);
+  background: linear-gradient(135deg, var(--set-primary-soft), var(--set-primary-softer));
+  border-color: rgba(244, 63, 94, 0.20);
 }
 
 .section-header::before {
@@ -572,7 +638,7 @@
   right: 0;
   width: 300px;
   height: 100%;
-  background-image: radial-gradient(circle, rgba(255, 0, 0, 0.1) 1px, transparent 1px);
+  background-image: radial-gradient(circle, rgba(244, 63, 94, 0.10) 1px, transparent 1px);
   background-size: 16px 16px;
   opacity: 0.5;
 }

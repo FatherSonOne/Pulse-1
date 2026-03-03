@@ -1301,7 +1301,8 @@
   flex-shrink: 0;
 }
 
-.vt-modal-header h2 {
+.vt-modal-header h2,
+.vt-modal-header h3 {
   font-size: 1.25rem;
   font-weight: 700;
   color: var(--vt-text-primary);
@@ -1409,17 +1410,104 @@
   min-width: 0;
 }
 
-.vt-participant-info h4 {
+.vt-participant-info h4,
+.vt-participant-info > span:first-child {
+  display: block;
   font-size: 0.875rem;
   font-weight: 600;
   color: var(--vt-text-primary);
-  margin: 0 0 0.25rem 0;
+  margin: 0 0 0.125rem 0;
 }
 
-.vt-participant-info p {
+.vt-participant-info p,
+.vt-participant-handle {
+  display: block;
   font-size: 0.75rem;
   color: var(--vt-text-muted);
   margin: 0;
+}
+
+.vt-check {
+  color: var(--vt-accent);
+  flex-shrink: 0;
+  margin-left: auto;
+}
+
+/* ============================================
+   MODAL ACTION BUTTONS
+   ============================================ */
+
+.vt-modal-actions {
+  display: flex;
+  align-items: center;
+  justify-content: flex-end;
+  gap: 0.75rem;
+  padding: 1.25rem 1.5rem;
+  border-top: 1px solid var(--vt-border);
+  background: var(--vt-bg-tertiary);
+  border-radius: 0 0 20px 20px;
+  flex-shrink: 0;
+}
+
+.vt-cancel-btn {
+  display: inline-flex;
+  align-items: center;
+  gap: 0.5rem;
+  padding: 0.625rem 1.25rem;
+  min-height: 40px;
+  border-radius: 10px;
+  border: 1px solid var(--vt-border);
+  background: transparent;
+  color: var(--vt-text-secondary);
+  font-size: 0.875rem;
+  font-weight: 500;
+  cursor: pointer;
+  transition: all 0.15s ease;
+}
+
+.vt-cancel-btn:hover:not(:disabled) {
+  background: var(--vt-bg-glass);
+  border-color: var(--vt-border-strong);
+  color: var(--vt-text-primary);
+}
+
+.vt-cancel-btn:disabled {
+  opacity: 0.4;
+  cursor: not-allowed;
+}
+
+.vt-submit-btn {
+  display: inline-flex;
+  align-items: center;
+  gap: 0.5rem;
+  padding: 0.625rem 1.25rem;
+  min-height: 40px;
+  border-radius: 10px;
+  border: none;
+  background: var(--vt-accent);
+  color: #fff;
+  font-size: 0.875rem;
+  font-weight: 600;
+  cursor: pointer;
+  transition: all 0.15s ease;
+  box-shadow: 0 2px 8px rgba(16, 185, 129, 0.35);
+}
+
+.vt-submit-btn:hover:not(:disabled) {
+  filter: brightness(1.1);
+  box-shadow: 0 4px 14px rgba(16, 185, 129, 0.5);
+  transform: translateY(-1px);
+}
+
+.vt-submit-btn:active:not(:disabled) {
+  transform: scale(0.97);
+}
+
+.vt-submit-btn:disabled {
+  opacity: 0.4;
+  cursor: not-allowed;
+  transform: none;
+  box-shadow: none;
 }
 
 /* ============================================
