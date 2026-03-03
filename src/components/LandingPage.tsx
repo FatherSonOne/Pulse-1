@@ -152,6 +152,7 @@ const LandingPage: React.FC<LandingPageProps> = ({ onGetStarted }) => {
   const [showBackToTop, setShowBackToTop] = useState(false);
   const [openFaq, setOpenFaq] = useState<number | null>(null);
   const [shortcutsOpen, setShortcutsOpen] = useState(false);
+  const [downloadsOpen, setDownloadsOpen] = useState(false);
 
   // Scroll-triggered section backgrounds — fade in/out as user scrolls through each section
   useEffect(() => {
@@ -470,12 +471,129 @@ const LandingPage: React.FC<LandingPageProps> = ({ onGetStarted }) => {
             </a>
           </div>
 
-          <div className="hidden md:flex items-center gap-6 text-sm font-medium text-zinc-400">
+          <div className="flex items-center gap-6 text-sm font-medium text-zinc-400">
             {/* Primary nav */}
             <button type="button" onClick={() => scrollToSection('features')} className="hover:text-white transition">Features</button>
             <button type="button" onClick={() => scrollToSection('ecosystem')} className="hover:text-white transition">Ecosystem</button>
             <button type="button" onClick={() => scrollToSection('scenarios')} className="hover:text-white transition">Scenarios</button>
-            <button type="button" onClick={() => scrollToSection('download')} className="hover:text-white transition">Download</button>
+
+            {/* ── Downloads dropdown ── */}
+            <div
+              className="relative"
+              onMouseEnter={() => setDownloadsOpen(true)}
+              onMouseLeave={() => setDownloadsOpen(false)}
+            >
+              <button
+                type="button"
+                onClick={() => scrollToSection('download')}
+                className={`flex items-center gap-1.5 transition ${downloadsOpen ? 'text-white' : 'hover:text-white'}`}
+                aria-haspopup="true"
+                aria-expanded={downloadsOpen}
+              >
+                <i className="fa-solid fa-download text-[11px]" aria-hidden="true"></i>
+                Download
+                <i className={`fa-solid fa-chevron-down text-[9px] transition-transform duration-200 ${downloadsOpen ? 'rotate-180' : ''}`} aria-hidden="true"></i>
+              </button>
+
+              {/* Dropdown panel */}
+              <div
+                className={`absolute top-full left-1/2 -translate-x-1/2 mt-3 w-64 bg-zinc-900 border border-zinc-700/80 rounded-2xl shadow-2xl shadow-black/60 overflow-hidden transition-all duration-200 z-[200] ${
+                  downloadsOpen ? 'opacity-100 translate-y-0 pointer-events-auto' : 'opacity-0 -translate-y-2 pointer-events-none'
+                }`}
+              >
+                {/* Arrow */}
+                <div className="absolute -top-[6px] left-1/2 -translate-x-1/2 w-3 h-3 bg-zinc-900 border-l border-t border-zinc-700/80 rotate-45" />
+
+                <div className="p-2">
+                  {/* Windows PC */}
+                  <a
+                    href="https://github.com/FatherSonOne/Pulse-1/releases/download/v25.1.0/Pulse.Setup.25.1.0.exe"
+                    target="_blank"
+                    rel="noopener noreferrer"
+                    className="flex items-center gap-3 px-3 py-2.5 rounded-xl hover:bg-zinc-800 group transition"
+                  >
+                    <span className="w-8 h-8 rounded-lg bg-blue-500/15 flex items-center justify-center flex-shrink-0">
+                      <i className="fa-brands fa-windows text-blue-400 text-sm"></i>
+                    </span>
+                    <div className="text-left">
+                      <div className="text-sm font-semibold text-white group-hover:text-blue-400 transition">Windows PC</div>
+                      <div className="text-[11px] text-zinc-500">Desktop installer · x64</div>
+                    </div>
+                    <i className="fa-solid fa-arrow-down text-zinc-600 text-[10px] ml-auto group-hover:text-blue-400 transition"></i>
+                  </a>
+
+                  {/* Android — Play Store */}
+                  <a
+                    href="https://play.google.com/apps/internaltest/4701381285127016770"
+                    target="_blank"
+                    rel="noopener noreferrer"
+                    className="flex items-center gap-3 px-3 py-2.5 rounded-xl hover:bg-zinc-800 group transition"
+                  >
+                    <span className="w-8 h-8 rounded-lg bg-green-500/15 flex items-center justify-center flex-shrink-0">
+                      <i className="fa-brands fa-google-play text-green-400 text-sm"></i>
+                    </span>
+                    <div className="text-left">
+                      <div className="text-sm font-semibold text-white group-hover:text-green-400 transition">Android</div>
+                      <div className="text-[11px] text-zinc-500">Google Play Store</div>
+                    </div>
+                    <i className="fa-solid fa-arrow-up-right-from-square text-zinc-600 text-[10px] ml-auto group-hover:text-green-400 transition"></i>
+                  </a>
+
+                  {/* Android — APK */}
+                  <a
+                    href="/downloads/pulse-android.apk"
+                    download
+                    className="flex items-center gap-3 px-3 py-2.5 rounded-xl hover:bg-zinc-800 group transition"
+                  >
+                    <span className="w-8 h-8 rounded-lg bg-rose-500/15 flex items-center justify-center flex-shrink-0">
+                      <i className="fa-brands fa-android text-rose-400 text-sm"></i>
+                    </span>
+                    <div className="text-left">
+                      <div className="text-sm font-semibold text-white group-hover:text-rose-400 transition">Android APK</div>
+                      <div className="text-[11px] text-zinc-500">Sideload · direct download</div>
+                    </div>
+                    <i className="fa-solid fa-arrow-down text-zinc-600 text-[10px] ml-auto group-hover:text-rose-400 transition"></i>
+                  </a>
+
+                  <div className="my-1.5 border-t border-zinc-800" />
+
+                  {/* iOS — Coming soon */}
+                  <div className="flex items-center gap-3 px-3 py-2.5 rounded-xl opacity-45 cursor-not-allowed">
+                    <span className="w-8 h-8 rounded-lg bg-zinc-700/40 flex items-center justify-center flex-shrink-0">
+                      <i className="fa-brands fa-apple text-zinc-400 text-sm"></i>
+                    </span>
+                    <div className="text-left">
+                      <div className="text-sm font-semibold text-zinc-400">iOS / macOS</div>
+                      <div className="text-[11px] text-zinc-600">App Store — coming soon</div>
+                    </div>
+                  </div>
+
+                  {/* F-Droid — Coming soon */}
+                  <div className="flex items-center gap-3 px-3 py-2.5 rounded-xl opacity-45 cursor-not-allowed">
+                    <span className="w-8 h-8 rounded-lg bg-zinc-700/40 flex items-center justify-center flex-shrink-0">
+                      <i className="fa-solid fa-robot text-zinc-400 text-sm"></i>
+                    </span>
+                    <div className="text-left">
+                      <div className="text-sm font-semibold text-zinc-400">F-Droid</div>
+                      <div className="text-[11px] text-zinc-600">Open source — coming soon</div>
+                    </div>
+                  </div>
+
+                  <div className="my-1.5 border-t border-zinc-800" />
+
+                  {/* All downloads anchor */}
+                  <button
+                    type="button"
+                    onClick={() => { setDownloadsOpen(false); scrollToSection('download'); }}
+                    className="w-full flex items-center justify-center gap-2 px-3 py-2 rounded-xl text-xs font-medium text-zinc-400 hover:text-white hover:bg-zinc-800 transition"
+                  >
+                    <i className="fa-solid fa-layer-group text-[10px]"></i>
+                    View all downloads
+                  </button>
+                </div>
+              </div>
+            </div>
+
             {/* Divider */}
             <span className="w-px h-4 bg-zinc-800" aria-hidden="true" />
             {/* Docs & legal */}
@@ -644,6 +762,15 @@ const LandingPage: React.FC<LandingPageProps> = ({ onGetStarted }) => {
             >
               <i className="fa-brands fa-google-play text-green-400"></i>
               Get on Google Play
+            </a>
+            <a
+              href="https://github.com/FatherSonOne/Pulse-1/releases/download/v25.1.0/Pulse.Setup.25.1.0.exe"
+              target="_blank"
+              rel="noopener noreferrer"
+              className="w-full sm:w-auto px-8 py-4 bg-zinc-900/50 border border-zinc-700 text-white rounded-xl text-lg font-medium hover:bg-zinc-800 hover:border-blue-500/40 transition flex items-center justify-center gap-3 hover:scale-105 active:scale-95"
+            >
+              <i className="fa-brands fa-windows text-blue-400"></i>
+              Download for PC
             </a>
             <button
               onClick={() => scrollToSection('features')}
@@ -1357,7 +1484,7 @@ const LandingPage: React.FC<LandingPageProps> = ({ onGetStarted }) => {
           </p>
 
           <div className="grid grid-cols-2 md:grid-cols-4 gap-6">
-            <DownloadButton icon="fa-brands fa-windows" platform="Windows" subtext="x64 / ARM64" active={false} />
+            <DownloadButton icon="fa-brands fa-windows" platform="Windows PC" subtext="Desktop Installer · x64" active={true} href="https://github.com/FatherSonOne/Pulse-1/releases/download/v25.1.0/Pulse.Setup.25.1.0.exe" />
             <DownloadButton icon="fa-brands fa-apple" platform="macOS / iOS" subtext="Universal" active={false} />
 
             {/* Android Card */}
@@ -1432,7 +1559,42 @@ const LandingPage: React.FC<LandingPageProps> = ({ onGetStarted }) => {
               This is a preview release. You may need to disable "Play Protect" if it flags the app as unrecognized.
             </div>
           </div>
-          <p className="mt-8 text-sm text-zinc-500">* Other download links will be available upon public release.</p>
+          {/* Windows Instructions */}
+          <div className="mt-8 max-w-2xl mx-auto bg-zinc-900/50 border border-zinc-800 rounded-2xl p-8 text-left">
+            <h3 className="text-xl font-bold mb-6 flex items-center gap-3">
+              <i className="fa-brands fa-windows text-blue-400"></i>
+              How to Install on Windows PC
+            </h3>
+            <ol className="space-y-4 text-zinc-400 relative border-l border-zinc-800 ml-3 pl-8">
+              <li className="relative">
+                <span className="absolute -left-[41px] w-6 h-6 rounded-full bg-zinc-800 border border-zinc-700 flex items-center justify-center text-xs font-bold text-white">1</span>
+                <strong className="text-white block mb-1">Download the installer</strong>
+                Click <strong className="text-blue-400">Download for PC</strong> above, or grab it directly from{' '}
+                <a href="https://github.com/FatherSonOne/Pulse-1/releases/tag/v25.1.0" target="_blank" rel="noopener noreferrer" className="text-blue-400 hover:text-blue-300 underline">GitHub Releases</a>.
+                Choose <code className="bg-zinc-800 px-1.5 py-0.5 rounded text-blue-400 text-xs">Pulse.Setup.25.1.0.exe</code> (installer) or <code className="bg-zinc-800 px-1.5 py-0.5 rounded text-blue-400 text-xs">Pulse.25.1.0.exe</code> (portable, no install needed).
+              </li>
+              <li className="relative">
+                <span className="absolute -left-[41px] w-6 h-6 rounded-full bg-zinc-800 border border-zinc-700 flex items-center justify-center text-xs font-bold text-white">2</span>
+                <strong className="text-white block mb-1">Run the installer</strong>
+                Double-click the downloaded file. If Windows SmartScreen appears, click <em>More info → Run anyway</em>. The app is safe — it's just unsigned during early access.
+              </li>
+              <li className="relative">
+                <span className="absolute -left-[41px] w-6 h-6 rounded-full bg-zinc-800 border border-zinc-700 flex items-center justify-center text-xs font-bold text-white">3</span>
+                <strong className="text-white block mb-1">Choose install location & finish</strong>
+                Pick your preferred folder, click Install, then Launch. Pulse adds a shortcut to your Start Menu and Desktop automatically.
+              </li>
+              <li className="relative">
+                <span className="absolute -left-[41px] w-6 h-6 rounded-full bg-zinc-800 border border-zinc-700 flex items-center justify-center text-xs font-bold text-white">4</span>
+                <strong className="text-white block mb-1">Log in with your Pulse account</strong>
+                Sign in with the same credentials you use on web or mobile. Everything syncs automatically.
+              </li>
+            </ol>
+            <div className="mt-6 p-4 bg-blue-500/10 border border-blue-500/20 rounded-lg text-sm text-blue-200">
+              <i className="fa-solid fa-circle-info mr-2"></i>
+              Requires Windows 10 or later (64-bit). Pulse runs in the system tray — closing the window keeps it running in the background.
+            </div>
+          </div>
+          <p className="mt-8 text-sm text-zinc-500">* macOS and Linux builds coming soon.</p>
         </div>
       </section>
 
@@ -1602,7 +1764,8 @@ const DownloadButton = ({
     <Component
       href={href}
       onClick={onClick}
-      download={href ? true : undefined}
+      target={href ? '_blank' : undefined}
+      rel={href ? 'noopener noreferrer' : undefined}
       disabled={inactive ? true : undefined}
       aria-disabled={inactive ? true : undefined}
       aria-label={inactive ? `${platform} — coming soon` : platform}

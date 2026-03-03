@@ -3,6 +3,7 @@
   "private": true,
   "version": "25.1.0",
   "type": "module",
+  "main": "electron/main.cjs",
   "scripts": {
     "dev": "vite",
     "server": "node server.js",
@@ -20,7 +21,57 @@
     "android:sync": "npm run build && npx cap sync android",
     "android:open": "npx cap open android",
     "android:build": "npm run build && npx cap sync android",
-    "android:run": "npm run android:build && npx cap run android"
+    "android:run": "npm run android:build && npx cap run android",
+    "electron:dev": "concurrently \"vite\" \"wait-on http://localhost:5173 && cross-env ELECTRON_IS_DEV=1 electron .\"",
+    "electron:preview": "cross-env ELECTRON_IS_DEV=0 electron .",
+    "electron:build": "vite build && electron-builder",
+    "electron:build:win": "vite build && electron-builder --win",
+    "electron:build:mac": "vite build && electron-builder --mac",
+    "electron:build:linux": "vite build && electron-builder --linux"
+  },
+  "build": {
+    "appId": "io.qntmpulse.desktop",
+    "productName": "Pulse",
+    "copyright": "Copyright © 2025 Pulse",
+    "asar": true,
+    "directories": {
+      "output": "release",
+      "buildResources": "build-resources"
+    },
+    "files": [
+      "dist/**/*",
+      "electron/**/*",
+      "package.json"
+    ],
+    "extraMetadata": {
+      "main": "electron/main.cjs"
+    },
+    "win": {
+      "target": [
+        { "target": "nsis", "arch": ["x64"] },
+        { "target": "portable", "arch": ["x64"] }
+      ],
+      "icon": "public/icons/icon-512x512.png"
+    },
+    "nsis": {
+      "oneClick": false,
+      "perMachine": false,
+      "allowToChangeInstallationDirectory": true,
+      "deleteAppDataOnUninstall": false,
+      "createDesktopShortcut": true,
+      "createStartMenuShortcut": true,
+      "shortcutName": "Pulse"
+    },
+    "mac": {
+      "target": [{ "target": "dmg", "arch": ["x64", "arm64"] }],
+      "icon": "public/icons/icon-512x512.png",
+      "category": "public.app-category.productivity"
+    },
+    "linux": {
+      "target": [{ "target": "AppImage", "arch": ["x64"] }],
+      "icon": "public/icons/icon-512x512.png",
+      "category": "Office"
+    }
   },
   "dependencies": {
     "@anthropic-ai/sdk": "^0.71.2",
@@ -96,6 +147,10 @@
     "@vitejs/plugin-react": "^5.0.0",
     "autoprefixer": "^10.4.23",
     "axe-core": "^4.11.1",
+    "concurrently": "^9.2.1",
+    "cross-env": "^10.1.0",
+    "electron": "^40.6.1",
+    "electron-builder": "^26.8.1",
     "jsdom": "^27.3.0",
     "lighthouse": "^13.0.1",
     "msw": "^2.12.7",
@@ -105,6 +160,7 @@
     "typescript": "~5.8.2",
     "vite": "^6.2.0",
     "vite-plugin-pwa": "^1.2.0",
-    "vitest": "^4.0.15"
+    "vitest": "^4.0.15",
+    "wait-on": "^9.0.4"
   }
 }
