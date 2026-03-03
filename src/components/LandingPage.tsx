@@ -636,6 +636,15 @@ const LandingPage: React.FC<LandingPageProps> = ({ onGetStarted }) => {
               Launch Pulse
               <i className="fa-solid fa-rocket"></i>
             </button>
+            <a
+              href="https://play.google.com/apps/internaltest/4701381285127016770"
+              target="_blank"
+              rel="noopener noreferrer"
+              className="w-full sm:w-auto px-8 py-4 bg-zinc-900/50 border border-zinc-700 text-white rounded-xl text-lg font-medium hover:bg-zinc-800 hover:border-green-500/40 transition flex items-center justify-center gap-3 hover:scale-105 active:scale-95"
+            >
+              <i className="fa-brands fa-google-play text-green-400"></i>
+              Get on Google Play
+            </a>
             <button
               onClick={() => scrollToSection('features')}
               className="w-full sm:w-auto px-8 py-4 bg-zinc-900/50 border border-zinc-800 text-white rounded-xl text-lg font-medium hover:bg-zinc-800 hover:border-rose-500/30 transition flex items-center justify-center gap-2 animate-float"
@@ -1360,7 +1369,7 @@ const LandingPage: React.FC<LandingPageProps> = ({ onGetStarted }) => {
               </div>
               <div className="flex gap-2 w-full mt-2">
                 <a
-                  href="https://play.google.com/store/apps/details?id=io.qntmpulse.app"
+                  href="https://play.google.com/apps/internaltest/4701381285127016770"
                   target="_blank"
                   rel="noopener noreferrer"
                   className="flex-1 px-3 py-2 bg-zinc-900 rounded-lg border border-zinc-600 hover:bg-zinc-700 hover:border-green-500/50 text-xs font-medium text-center text-zinc-300 hover:text-white transition flex items-center justify-center gap-2"
@@ -1394,7 +1403,7 @@ const LandingPage: React.FC<LandingPageProps> = ({ onGetStarted }) => {
                 <i className="fa-brands fa-google-play text-green-500"></i> Recommended: Play Store
               </h4>
               <p className="text-sm text-zinc-400 mb-3">The easiest way to install Pulse. Automatic updates and security checks included.</p>
-              <a href="https://play.google.com/store/apps/details?id=io.qntmpulse.app" target="_blank" rel="noopener noreferrer"
+              <a href="https://play.google.com/apps/internaltest/4701381285127016770" target="_blank" rel="noopener noreferrer"
                 className="inline-flex items-center gap-2 text-sm text-green-400 hover:text-green-300 font-medium">
                 Go to Play Store <i className="fa-solid fa-arrow-up-right-from-square text-xs"></i>
               </a>
@@ -1533,7 +1542,7 @@ const LandingPage: React.FC<LandingPageProps> = ({ onGetStarted }) => {
                   <button type="button" onClick={() => scrollToSection('ecosystem')} className="hover:text-rose-500 transition text-left">Ecosystem</button>
                 </li>
                 <li>
-                  <a href="https://play.google.com/store/apps/details?id=io.qntmpulse.app" target="_blank" rel="noopener noreferrer" className="hover:text-rose-500 transition">Android App</a>
+                  <a href="https://play.google.com/apps/internaltest/4701381285127016770" target="_blank" rel="noopener noreferrer" className="hover:text-rose-500 transition">Android App</a>
                 </li>
                 <li>
                   <a href="https://qntmecos.com" target="_blank" rel="noopener noreferrer" className="hover:text-rose-500 transition flex items-center gap-1">
