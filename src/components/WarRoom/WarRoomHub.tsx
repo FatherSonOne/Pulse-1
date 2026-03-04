@@ -44,14 +44,24 @@ interface WarRoomHubProps {
 
 const WAR_ROOM_MODES: ModeCard[] = [
   {
-    id: 'tactical',
-    name: 'Tactical Operations',
-    shortName: 'TACTICAL',
+    id: 'command-center',
+    name: 'Command Center',
+    shortName: 'COMMAND',
     icon: 'fa-shield-halved',
     description: 'Mission control with real-time intel feeds and strategic command interface',
     features: ['Mission Briefing', 'Intel Panel', 'Real-time Ops'],
     accentHue: 190,
     category: 'strategic',
+  },
+  {
+    id: 'intel',
+    name: 'Intel',
+    shortName: 'INTEL',
+    icon: 'fa-satellite-dish',
+    description: 'Source-grounded Q&A with strict citations — answers verified against loaded documents',
+    features: ['Citations', 'Source Grounding', 'Evidence Trail'],
+    accentHue: 185,
+    category: 'analytical',
   },
   {
     id: 'focus',
@@ -102,16 +112,6 @@ const WAR_ROOM_MODES: ModeCard[] = [
     features: ['Summary', 'Action Items', 'Export'],
     accentHue: 160,
     category: 'analytical',
-  },
-  {
-    id: 'elegant-interface',
-    name: 'Conversation',
-    shortName: 'CHAT',
-    icon: 'fa-comments',
-    description: 'Classic voice and chat with elegant design',
-    features: ['Voice Chat', 'Rich Text', 'Quick Actions'],
-    accentHue: 0,
-    category: 'creative',
   },
 ];
 
@@ -194,13 +194,10 @@ export const WarRoomHub: React.FC<WarRoomHubProps> = ({
   const [showMissionLauncher, setShowMissionLauncher] = useState(false);
   const searchInputRef = useRef<HTMLInputElement>(null);
 
-  // Keyboard shortcuts
+  // Keyboard shortcuts — numeric keys 1-7 select modes
+  // Note: Cmd+K is handled by WarRoomLayout's ActionPalette; not registered here
   useEffect(() => {
     const handleKeyDown = (e: KeyboardEvent) => {
-      if ((e.metaKey || e.ctrlKey) && e.key === 'k') {
-        e.preventDefault();
-        searchInputRef.current?.focus();
-      }
       if (!e.metaKey && !e.ctrlKey && !e.altKey && !e.shiftKey) {
         const num = parseInt(e.key);
         if (num >= 1 && num <= WAR_ROOM_MODES.length) {
@@ -323,7 +320,7 @@ export const WarRoomHub: React.FC<WarRoomHubProps> = ({
             <ModeCardComponent
               key={mode.id}
               mode={mode}
-              isActive={currentMode === mode.id && currentRoom === 'war-room'}
+              isActive={currentMode === mode.id}
               isHovered={hoveredCard === mode.id}
               onHover={setHoveredCard}
               onClick={() => handleModeClick(mode)}
@@ -345,7 +342,7 @@ export const WarRoomHub: React.FC<WarRoomHubProps> = ({
         <footer className="wrh-footer">
           <div className="wrh-hints">
             <span><kbd>1</kbd>-<kbd>7</kbd> Select mode</span>
-            <span><kbd>⌘K</kbd> Search</span>
+            <span><kbd>⌘K</kbd> Command Palette</span>
           </div>
         </footer>
       </main>

@@ -49,15 +49,15 @@
   --da-rose-500: #f43f5e;
 
   /* Dark mode base (default) */
-  --da-bg-primary: #0a0f14;
+  --da-bg-primary: var(--wr-bg-primary, #0a0f14);
   --da-bg-secondary: #0d1318;
   --da-bg-tertiary: #131a21;
   --da-bg-elevated: #1a232c;
   --da-bg-card: #1e2830;
 
-  --da-border-subtle: rgba(20, 184, 166, 0.1);
-  --da-border-default: rgba(20, 184, 166, 0.2);
-  --da-border-strong: rgba(20, 184, 166, 0.4);
+  --da-border-subtle: color-mix(in srgb, var(--wr-mode-accent, #14b8a6) 10%, transparent);
+  --da-border-default: color-mix(in srgb, var(--wr-mode-accent, #14b8a6) 20%, transparent);
+  --da-border-strong: color-mix(in srgb, var(--wr-mode-accent, #14b8a6) 40%, transparent);
 
   --da-text-primary: #f0fdfa;
   --da-text-secondary: #99f6e4;

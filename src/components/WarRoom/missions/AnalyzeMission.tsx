@@ -27,6 +27,7 @@ interface AnalyzeMissionProps {
   sessionId?: string;
   sessionTitle?: string;
   documents?: { title: string; summary?: string }[];
+  activeContextCount?: number;
 }
 
 const PHASES: { id: AnalyzePhase; label: string; icon: string; description: string }[] = [
@@ -60,7 +61,8 @@ export const AnalyzeMission: React.FC<AnalyzeMissionProps> = ({
   onSendMessage,
   sessionId = '',
   sessionTitle = 'Analyze Mission',
-  documents = []
+  documents = [],
+  activeContextCount = 0
 }) => {
   const [input, setInput] = useState('');
   const [showExport, setShowExport] = useState(false);
@@ -200,13 +202,19 @@ Include:
       {/* Progress & Data Panel */}
       <div className="w-80 shrink-0 border-r border-white/10 flex flex-col bg-black/20">
         {/* Mission Header */}
-        <div className="p-4 border-b border-white/10 bg-gradient-to-r from-blue-500/10 to-indigo-500/10">
+        <div className="p-4 border-b border-white/10 wr-mission-accent-bg">
           <div className="flex items-center gap-2 mb-2">
             <i className="fa fa-magnifying-glass-chart text-blue-400"></i>
             <h3 className="text-sm font-semibold war-room-text-primary">Analyze Mission</h3>
           </div>
           {analysisGoal && (
             <p className="text-xs war-room-text-secondary line-clamp-2">{analysisGoal}</p>
+          )}
+          {activeContextCount > 0 && (
+            <div className="war-room-badge text-xs mt-2" style={{ display: 'inline-flex', alignItems: 'center', gap: 4 }}>
+              <i className="fa fa-book-open" style={{ fontSize: 9 }}></i>
+              {activeContextCount} source{activeContextCount !== 1 ? 's' : ''}
+            </div>
           )}
           <div className="mt-2 flex items-center gap-3 text-xs war-room-text-secondary">
             <span><i className="fa fa-database mr-1"></i>{dataPoints.length} data</span>

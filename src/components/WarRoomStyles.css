@@ -199,9 +199,9 @@
 }
 
 .dark .war-room-header {
-  background: rgba(13, 13, 18, 0.95);
-  border-bottom-color: var(--wr-dark-border);
-  box-shadow: 0 1px 0 rgba(244, 63, 94, 0.1);
+  background: var(--wr-bg-secondary);
+  border-bottom-color: var(--wr-border);
+  box-shadow: 0 1px 0 color-mix(in srgb, var(--wr-accent-primary) 10%, transparent);
   -webkit-backdrop-filter: blur(12px);
   backdrop-filter: blur(12px);
 }

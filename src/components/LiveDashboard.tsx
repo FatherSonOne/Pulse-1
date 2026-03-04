@@ -26,11 +26,12 @@ const AudioVisualizer = lazy(() => import('./WarRoom/AudioVisualizer').then(m =>
 const TokenStream = lazy(() => import('./WarRoom/TokenStream').then(m => ({ default: m.TokenStream })));
 const VoiceControl = lazy(() => import('./WarRoom/VoiceControl').then(m => ({ default: m.VoiceControl })));
 const ThinkingPanel = lazy(() => import('./WarRoom/ThinkingPanel').then(m => ({ default: m.ThinkingPanel })));
-const NeuralTerminal = lazy(() => import('./WarRoom/modes/NeuralTerminal').then(m => ({ default: m.NeuralTerminal })));
-const SentientInterface = lazy(() => import('./WarRoom/modes/SentientInterface').then(m => ({ default: m.SentientInterface })));
-const XRayMode = lazy(() => import('./WarRoom/modes/XRayMode').then(m => ({ default: m.XRayMode })));
+// Legacy modes — moved to archived/ in Phase 1. Still functional, pending removal in Phase 4.
+const NeuralTerminal = lazy(() => import('./WarRoom/archived/NeuralTerminal').then(m => ({ default: m.NeuralTerminal })));
+const SentientInterface = lazy(() => import('./WarRoom/archived/SentientInterface').then(m => ({ default: m.SentientInterface })));
+const XRayMode = lazy(() => import('./WarRoom/archived/XRayMode').then(m => ({ default: m.XRayMode })));
 const CommandCenter = lazy(() => import('./WarRoom/modes/CommandCenter').then(m => ({ default: m.CommandCenter })));
-const ElegantInterface = lazy(() => import('./WarRoom/modes/ElegantInterface').then(m => ({ default: m.ElegantInterface })));
+const ElegantInterface = lazy(() => import('./WarRoom/archived/ElegantInterface').then(m => ({ default: m.ElegantInterface })));
 const MatrixRain = lazy(() => import('./WarRoom/effects/MatrixRain').then(m => ({ default: m.MatrixRain })));
 const GlitchEffect = lazy(() => import('./WarRoom/effects/GlitchEffect').then(m => ({ default: m.GlitchEffect })));
 const VoiceAgentPanel = lazy(() => import('./WarRoom/VoiceAgentPanel').then(m => ({ default: m.VoiceAgentPanel })));
@@ -38,9 +39,12 @@ const WarRoomRedesigned = lazy(() => import('./WarRoom/WarRoomRedesigned').then(
 const FocusModeRedesigned = lazy(() => import('./WarRoom/modes/FocusModeRedesigned').then(m => ({ default: m.FocusModeRedesigned })));
 const WarRoomHub = lazy(() => import('./WarRoom/WarRoomHub').then(m => ({ default: m.WarRoomHub })));
 const FloatingModeDock = lazy(() => import('./WarRoom/FloatingModeDock').then(m => ({ default: m.FloatingModeDock })));
+const IntelMode = lazy(() => import('./WarRoom/modes/IntelMode').then(m => ({ default: m.IntelMode })));
 
 // New War Room Sidebar component
 import { WarRoomSidebar, WarRoomProject, WarRoomSession, AIMessage as SidebarAIMessage } from './WarRoom/WarRoomSidebar';
+import { WarRoomLayout } from './WarRoom/WarRoomLayout';
+import { useBoardNotes } from './WarRoom/useBoardNotes';
 
 // Import voice synthesis hook - this is lightweight
 import { useVoiceSynthesis } from './WarRoom/VoiceSynthesis';
@@ -236,7 +240,9 @@ const LiveDashboard: React.FC<LiveDashboardProps> = ({ apiKey, userId }) => {
   const [showAdvancedAI, setShowAdvancedAI] = useState(false);
 
   // Context Panel Collapsible State - Now in header toolbar
-  const [isContextPanelExpanded, setIsContextPanelExpanded] = useState(false);
+  // @deprecated — isContextPanelExpanded full-screen overlay retired in Phase 9
+  // const [isContextPanelExpanded, setIsContextPanelExpanded] = useState(false);
+  const [contextPanelOpen, setContextPanelOpen] = useState(window.innerWidth >= 768);
   const [showKnowledgeBank, setShowKnowledgeBank] = useState(false);
 
   // Sharing State
@@ -307,6 +313,9 @@ const LiveDashboard: React.FC<LiveDashboardProps> = ({ apiKey, userId }) => {
 
   // Voice Synthesis Hook
   const { speak, isSpeaking } = useVoiceSynthesis(voiceSynthesisEnabled, voiceGender);
+
+  // The Board — persistent notes across all modes
+  const { notes: boardNotes, addNote: addBoardNote, deleteNote: deleteBoardNote, clearNotes: clearBoardNotes } = useBoardNotes();
   
   const [showThinkingLogs, setShowThinkingLogs] = useState(true);
 
@@ -708,7 +717,19 @@ const LiveDashboard: React.FC<LiveDashboardProps> = ({ apiKey, userId }) => {
         stepStartTime = Date.now();
       }
 
-      const systemPrompt = agentPrompts[activeAgent] || agentPrompts.general;
+      // Intel Mode: strict source-grounding prompt overrides agent persona
+      const intelSystemPrompt =
+        `You are an intelligence analyst in Intel Mode. ` +
+        `Answer ONLY from the provided source documents. ` +
+        `Every factual claim MUST include an inline citation using bracket notation, e.g. [1] or [2][3]. ` +
+        `End your response with a References section in exactly this format:\n` +
+        `References:\n[1] Document Title - "relevant passage"\n[2] Document Title - "relevant passage"\n` +
+        `If the information is not present in the provided sources, respond with: ` +
+        `"This information is not available in the current intel."`;
+
+      const systemPrompt = warRoomMode === 'intel'
+        ? intelSystemPrompt
+        : (agentPrompts[activeAgent] || agentPrompts.general);
 
       // Enhanced prompt structure
       let fullPrompt = systemPrompt + '\n\n';
@@ -1400,29 +1421,9 @@ const LiveDashboard: React.FC<LiveDashboardProps> = ({ apiKey, userId }) => {
     const sessionTitle = sessions.find(s => s.id === selectedSessionId)?.title || 'Session';
     const docSummaries = documents.map(d => ({ title: d.title, summary: d.ai_summary }));
 
-    // Render Floating Mode Dock for in-session switching
-    const renderWithDock = (content: React.ReactNode) => (
-      <>
-        {content}
-        <Suspense fallback={null}>
-          <FloatingModeDock
-            currentMode={warRoomMode}
-            currentMission={currentMission}
-            currentRoom={currentRoom}
-            onModeChange={(mode) => {
-              setWarRoomMode(mode);
-              setCurrentRoom('war-room');
-            }}
-            onMissionChange={(mission) => {
-              setCurrentMission(mission);
-              setCurrentRoom('missions');
-            }}
-            onRoomChange={setCurrentRoom}
-            onBackToHub={handleBackToHub}
-          />
-        </Suspense>
-      </>
-    );
+    // FloatingModeDock replaced by WarRoomLayout's ModeToolbar (Phase 1).
+    // renderWithDock kept as a passthrough so all call sites remain unchanged.
+    const renderWithDock = (content: React.ReactNode) => <>{content}</>;
 
     // Handle Missions Room
     if (currentRoom === 'missions') {
@@ -1434,6 +1435,7 @@ const LiveDashboard: React.FC<LiveDashboardProps> = ({ apiKey, userId }) => {
               sessionId={selectedSessionId || ''}
               sessionTitle={sessionTitle}
               documents={docSummaries}
+              activeContextCount={activeContextDocs.size}
             />
           );
         case 'decision':
@@ -1443,6 +1445,7 @@ const LiveDashboard: React.FC<LiveDashboardProps> = ({ apiKey, userId }) => {
               sessionId={selectedSessionId || ''}
               sessionTitle={sessionTitle}
               documents={docSummaries}
+              activeContextCount={activeContextDocs.size}
             />
           );
         case 'brainstorm':
@@ -1452,6 +1455,7 @@ const LiveDashboard: React.FC<LiveDashboardProps> = ({ apiKey, userId }) => {
               sessionId={selectedSessionId || ''}
               sessionTitle={sessionTitle}
               documents={docSummaries}
+              activeContextCount={activeContextDocs.size}
             />
           );
         case 'plan':
@@ -1461,6 +1465,7 @@ const LiveDashboard: React.FC<LiveDashboardProps> = ({ apiKey, userId }) => {
               sessionId={selectedSessionId || ''}
               sessionTitle={sessionTitle}
               documents={docSummaries}
+              activeContextCount={activeContextDocs.size}
             />
           );
         case 'analyze':
@@ -1470,6 +1475,7 @@ const LiveDashboard: React.FC<LiveDashboardProps> = ({ apiKey, userId }) => {
               sessionId={selectedSessionId || ''}
               sessionTitle={sessionTitle}
               documents={docSummaries}
+              activeContextCount={activeContextDocs.size}
             />
           );
         case 'create':
@@ -1479,6 +1485,7 @@ const LiveDashboard: React.FC<LiveDashboardProps> = ({ apiKey, userId }) => {
               sessionId={selectedSessionId || ''}
               sessionTitle={sessionTitle}
               documents={docSummaries}
+              activeContextCount={activeContextDocs.size}
             />
           );
         default:
@@ -1598,6 +1605,47 @@ const LiveDashboard: React.FC<LiveDashboardProps> = ({ apiKey, userId }) => {
             sessionTitle={sessionTitle}
             documents={docSummaries}
           />
+        );
+
+      case 'command-center':
+        return renderWithDock(
+          <Suspense fallback={<LoadingFallback message="Loading Command Center..." />}>
+            <WarRoomRedesigned
+              messages={missionSpecificMessages}
+              isLoading={isLoading}
+              thinkingLogs={thinkingLogs}
+              documents={documents}
+              onSendMessage={(text: string) => sendMessageDirect(text)}
+              onGenerateAudio={() => toast.success('Audio generation coming soon!')}
+              onExport={() => {
+                const content = missionSpecificMessages.map(m => `[${m.role}]: ${m.content}`).join('\n\n');
+                const blob = new Blob([content], { type: 'text/plain' });
+                const url = URL.createObjectURL(blob);
+                const a = document.createElement('a');
+                a.href = url;
+                a.download = `command-center-${new Date().toISOString().split('T')[0]}.txt`;
+                a.click();
+                URL.revokeObjectURL(url);
+                toast.success('Session exported!');
+              }}
+              currentMode={warRoomMode}
+              sessionName={sessionTitle}
+              onModeChange={(mode) => setWarRoomMode(mode as WarRoomMode)}
+            />
+          </Suspense>
+        );
+
+      case 'intel':
+        return renderWithDock(
+          <Suspense fallback={<LoadingFallback message="Loading Intel Mode..." />}>
+            <IntelMode
+              {...commonProps}
+              sessionId={selectedSessionId || ''}
+              sessionTitle={sessionTitle}
+              documents={docSummaries}
+              activeContextCount={activeContextDocs.size}
+            />
+          </Suspense>
         );
 
       default:
@@ -1823,17 +1871,17 @@ const LiveDashboard: React.FC<LiveDashboardProps> = ({ apiKey, userId }) => {
                 title="Back to Mode Selection"
               >
                 <i className="fa fa-th-large"></i>
-                <span className="hidden sm:inline">Modes</span>
+                <span className="hidden sm:inline">Hub</span>
               </button>
             )}
 
             {/* War Room title when on hub */}
             {showWarRoomHub && (
               <div className="flex items-center gap-2">
-                <div className="w-8 h-8 rounded-lg bg-gradient-to-br from-rose-500 to-pink-600 flex items-center justify-center">
+                <div className="w-8 h-8 rounded-lg flex items-center justify-center" style={{ background: 'var(--wr-accent-primary)' }}>
                   <i className="fa fa-book-open text-white text-sm"></i>
                 </div>
-                <span className="text-sm font-bold bg-gradient-to-r from-rose-500 to-pink-500 bg-clip-text text-transparent">
+                <span className="text-sm font-bold" style={{ color: 'var(--wr-accent-primary)' }}>
                   War Room
                 </span>
               </div>
@@ -1858,38 +1906,30 @@ const LiveDashboard: React.FC<LiveDashboardProps> = ({ apiKey, userId }) => {
             )}
           </div>
 
-          {/* CENTER: Context Button - Prominent Position */}
+          {/* CENTER: Context Button — toggles IntelDesk source panel */}
           <button
-            onClick={() => setIsContextPanelExpanded(!isContextPanelExpanded)}
+            onClick={() => setContextPanelOpen((v) => !v)}
             className={`flex items-center gap-2 px-4 py-2 rounded-full transition-all font-medium text-sm ${
-              isContextPanelExpanded
-                ? 'bg-gradient-to-r from-rose-500 to-pink-500 text-white shadow-lg shadow-rose-500/30'
+              contextPanelOpen
+                ? 'bg-cyan-500/20 text-cyan-300 border border-cyan-500/40 shadow-lg shadow-cyan-500/10'
                 : activeContextDocs.size > 0
                   ? 'bg-emerald-500/20 text-emerald-400 border border-emerald-500/30 hover:bg-emerald-500/30'
                   : 'bg-rose-500/10 text-rose-400 border border-rose-500/20 hover:bg-rose-500/20'
             }`}
           >
-            <i className={`fa fa-book-open ${isContextPanelExpanded ? 'animate-pulse' : ''}`}></i>
-            <span className="hidden sm:inline">Context</span>
+            <i className="fa fa-database"></i>
+            <span className="hidden sm:inline">Sources</span>
             {activeContextDocs.size > 0 && (
-              <span className={`text-xs px-1.5 py-0.5 rounded-full ${isContextPanelExpanded ? 'bg-white/20' : 'bg-emerald-500/30'}`}>
+              <span className={`text-xs px-1.5 py-0.5 rounded-full ${contextPanelOpen ? 'bg-cyan-500/20' : 'bg-emerald-500/30'}`}>
                 {activeContextDocs.size}
               </span>
             )}
-            <i className={`fa fa-chevron-${isContextPanelExpanded ? 'up' : 'down'} text-xs transition-transform`}></i>
+            <i className={`fa fa-chevron-${contextPanelOpen ? 'left' : 'right'} text-xs transition-transform`}></i>
           </button>
 
           {/* Desktop Controls - Simplified */}
           <div className="hidden lg:flex items-center gap-2">
-            {/* Mode Switcher */}
-            <ModeSwitcher
-              currentMode={warRoomMode}
-              currentMission={currentMission}
-              currentRoom={currentRoom}
-              onChange={setWarRoomMode}
-              onMissionChange={setCurrentMission}
-              onRoomChange={setCurrentRoom}
-            />
+            {/* Mode switching handled by WarRoomLayout's ModeToolbar (Phase 1) */}
 
             {/* Voice Agent Button - OpenAI Realtime */}
             <button
@@ -1968,229 +2008,9 @@ const LiveDashboard: React.FC<LiveDashboardProps> = ({ apiKey, userId }) => {
           </div>
         </div>
 
-        {/* Context Panel - Overlay that respects sidebar */}
-        {isContextPanelExpanded && (
-          <div
-            className="fixed top-0 right-0 bottom-0 z-[100] bg-zinc-900 overflow-y-auto animate-fadeIn"
-            style={{ left: 'var(--sidebar-width, 18rem)' }}
-          >
-            <div className="w-full max-w-none min-h-full flex flex-col px-8 py-6">
-              {/* Header with Close */}
-              <div className="flex items-center justify-between mb-6 pb-4 border-b border-zinc-800">
-                <div className="flex items-center gap-4">
-                  <button
-                    onClick={() => setIsContextPanelExpanded(false)}
-                    className="w-10 h-10 rounded-xl bg-zinc-800 hover:bg-zinc-700 flex items-center justify-center text-zinc-400 hover:text-white transition-colors"
-                  >
-                    <i className="fa fa-arrow-left"></i>
-                  </button>
-                  <div className="w-12 h-12 rounded-xl bg-gradient-to-br from-rose-500 to-pink-500 flex items-center justify-center">
-                    <i className="fa fa-book-open text-white text-xl"></i>
-                  </div>
-                  <div>
-                    <h2 className="text-xl font-bold text-white">Context & Sources</h2>
-                    <p className="text-sm text-zinc-400">Add documents to enhance AI understanding</p>
-                  </div>
-                </div>
-                <div className="flex items-center gap-3">
-                  <label className="flex items-center gap-2 px-5 py-2.5 bg-rose-500 hover:bg-rose-600 text-white rounded-xl cursor-pointer transition-colors font-medium">
-                    <i className="fa fa-plus"></i>
-                    <span>Add Files</span>
-                    <input
-                      type="file"
-                      multiple
-                      onChange={handleFileUpload}
-                      className="hidden"
-                      accept=".txt,.md,.json,.pdf,.docx,.xlsx,.xls,.png,.jpg,.jpeg,.gif,.bmp,.webp"
-                    />
-                  </label>
-                </div>
-              </div>
-
-              {/* Quick Stats */}
-              <div className="grid grid-cols-2 sm:grid-cols-4 gap-3 mb-4">
-                <div className="bg-zinc-800/50 rounded-lg p-3 border border-zinc-700/50">
-                  <div className="text-2xl font-bold text-white">{documents.length}</div>
-                  <div className="text-xs text-zinc-400">Total Documents</div>
-                </div>
-                <div className="bg-emerald-500/10 rounded-lg p-3 border border-emerald-500/30">
-                  <div className="text-2xl font-bold text-emerald-400">{activeContextDocs.size}</div>
-                  <div className="text-xs text-emerald-400/70">Active in Context</div>
-                </div>
-                <div className="bg-zinc-800/50 rounded-lg p-3 border border-zinc-700/50">
-                  <div className="text-2xl font-bold text-white">{uploadProgress.size}</div>
-                  <div className="text-xs text-zinc-400">Processing</div>
-                </div>
-                <button
-                  onClick={() => setShowKnowledgeBank(true)}
-                  className="bg-purple-500/10 hover:bg-purple-500/20 rounded-lg p-3 border border-purple-500/30 text-left transition-colors group"
-                >
-                  <div className="flex items-center gap-2 text-purple-400 font-bold">
-                    <i className="fa fa-book-open group-hover:scale-110 transition-transform"></i>
-                    <span>Open</span>
-                  </div>
-                  <div className="text-xs text-purple-400/70">Knowledge Bank</div>
-                </button>
-              </div>
-
-              {/* Document Search */}
-              {documents.length > 0 && (
-                <div className="mb-4">
-                  <DocumentSearch
-                    documents={documents}
-                    activeContextIds={activeContextDocs}
-                    onResultClick={(doc, highlightText, offset) => {
-                      setViewingDoc(doc);
-                      setViewerHighlightText(highlightText);
-                      setViewerScrollOffset(offset);
-                    }}
-                  />
-                </div>
-              )}
-
-              {/* Generate Tools Row */}
-              {documents.length > 0 && (
-                <div className="mb-4">
-                  <p className="text-xs font-semibold text-zinc-500 mb-2 uppercase tracking-wider">
-                    <i className="fa fa-wand-magic-sparkles mr-1"></i>
-                    Generate from Documents
-                  </p>
-                  <div className="flex flex-wrap gap-2">
-                    <button
-                      onClick={() => { setShowStudyGuide(true); setIsContextPanelExpanded(false); }}
-                      className="flex items-center gap-2 px-3 py-2 bg-emerald-500/10 hover:bg-emerald-500/20 border border-emerald-500/30 rounded-lg text-emerald-400 text-sm transition-colors"
-                    >
-                      <i className="fa fa-book-open"></i>
-                      Study Guide
-                    </button>
-                    <button
-                      onClick={() => { setShowFAQ(true); setIsContextPanelExpanded(false); }}
-                      className="flex items-center gap-2 px-3 py-2 bg-blue-500/10 hover:bg-blue-500/20 border border-blue-500/30 rounded-lg text-blue-400 text-sm transition-colors"
-                    >
-                      <i className="fa fa-circle-question"></i>
-                      FAQ
-                    </button>
-                    <button
-                      onClick={() => { setShowTimeline(true); setIsContextPanelExpanded(false); }}
-                      className="flex items-center gap-2 px-3 py-2 bg-purple-500/10 hover:bg-purple-500/20 border border-purple-500/30 rounded-lg text-purple-400 text-sm transition-colors"
-                    >
-                      <i className="fa fa-timeline"></i>
-                      Timeline
-                    </button>
-                    <button
-                      onClick={() => { setShowPodcast(true); setIsContextPanelExpanded(false); }}
-                      className="flex items-center gap-2 px-3 py-2 bg-pink-500/10 hover:bg-pink-500/20 border border-pink-500/30 rounded-lg text-pink-400 text-sm transition-colors"
-                    >
-                      <i className="fa fa-podcast"></i>
-                      Audio
-                    </button>
-                    {documents.length >= 2 && (
-                      <button
-                        onClick={() => { setShowAdvancedAI(true); setIsContextPanelExpanded(false); }}
-                        className="flex items-center gap-2 px-3 py-2 bg-gradient-to-r from-blue-500/10 via-purple-500/10 to-pink-500/10 hover:from-blue-500/20 hover:via-purple-500/20 hover:to-pink-500/20 border border-purple-500/30 rounded-lg text-purple-400 text-sm transition-colors"
-                      >
-                        <i className="fa fa-brain"></i>
-                        Advanced AI
-                        <span className="text-[9px] px-1 py-0.5 bg-purple-500/30 rounded">NEW</span>
-                      </button>
-                    )}
-                  </div>
-                </div>
-              )}
-
-              {/* Active Documents Grid */}
-              <div>
-                <p className="text-xs font-semibold text-zinc-500 mb-2 uppercase tracking-wider flex items-center justify-between">
-                  <span>
-                    <i className="fa fa-folder-open mr-1"></i>
-                    Documents ({documents.length})
-                  </span>
-                  {documents.length > 0 && (
-                    <button
-                      onClick={() => setShowKnowledgeBank(true)}
-                      className="text-rose-400 hover:text-rose-300 normal-case font-medium"
-                    >
-                      View All <i className="fa fa-arrow-right ml-1"></i>
-                    </button>
-                  )}
-                </p>
-                {documents.length === 0 ? (
-                  <div className="text-center py-8 text-zinc-500">
-                    <i className="fa fa-file-import text-3xl mb-2 block"></i>
-                    <p>No documents yet. Upload files to get started.</p>
-                  </div>
-                ) : (
-                  <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-2 max-h-48 overflow-y-auto pr-2">
-                    {documents.slice(0, 6).map((doc) => {
-                      const isInContext = activeContextDocs.has(doc.id);
-                      return (
-                        <div
-                          key={doc.id}
-                          className={`flex items-center gap-2 p-2 rounded-lg border transition-colors ${
-                            isInContext
-                              ? 'bg-emerald-500/10 border-emerald-500/30'
-                              : 'bg-zinc-800/50 border-zinc-700/50 hover:border-zinc-600'
-                          }`}
-                        >
-                          <button
-                            onClick={() => toggleDocInContext(doc.id)}
-                            className={`w-6 h-6 rounded flex items-center justify-center shrink-0 transition-colors ${
-                              isInContext
-                                ? 'bg-emerald-500 text-white'
-                                : 'bg-zinc-700 text-zinc-400 hover:bg-rose-500 hover:text-white'
-                            }`}
-                          >
-                            <i className={`fa ${isInContext ? 'fa-check' : 'fa-plus'} text-xs`}></i>
-                          </button>
-                          <div className="flex-1 min-w-0">
-                            <p className="text-sm text-white truncate">{doc.title}</p>
-                            {doc.ai_keywords && doc.ai_keywords.length > 0 && (
-                              <p className="text-[10px] text-zinc-500 truncate">
-                                {doc.ai_keywords.slice(0, 2).join(', ')}
-                              </p>
-                            )}
-                          </div>
-                          {doc.processing_status === 'processing' && (
-                            <i className="fa fa-spinner fa-spin text-yellow-400 text-xs"></i>
-                          )}
-                        </div>
-                      );
-                    })}
-                  </div>
-                )}
-              </div>
-
-              {/* Spacer to push footer down */}
-              <div className="flex-1"></div>
-
-              {/* Done Button - Sticky Footer */}
-              <div className="sticky bottom-0 mt-6 py-4 bg-zinc-900 border-t border-zinc-800">
-                <div className="flex items-center justify-between">
-                  <div className="text-sm text-zinc-500">
-                    {activeContextDocs.size > 0 ? (
-                      <span className="text-emerald-400">
-                        <i className="fa fa-check-circle mr-2"></i>
-                        {activeContextDocs.size} document{activeContextDocs.size > 1 ? 's' : ''} ready for AI context
-                      </span>
-                    ) : (
-                      <span>
-                        <i className="fa fa-info-circle mr-2"></i>
-                        Click + on documents to add them to context
-                      </span>
-                    )}
-                  </div>
-                  <button
-                    onClick={() => setIsContextPanelExpanded(false)}
-                    className="px-8 py-3 bg-gradient-to-r from-rose-500 to-pink-500 text-white rounded-xl font-semibold text-lg hover:shadow-xl hover:shadow-rose-500/30 transition-all hover:scale-105"
-                  >
-                    <i className="fa fa-arrow-right mr-2"></i>
-                    Return to Session
-                  </button>
-                </div>
-              </div>
-            </div>
-          </div>
-        )}
+        {/* Context Panel overlay retired in Phase 9.
+            Sources button in header now controls IntelDesk via contextPanelOpen.
+            Knowledge Bank accessible via ⌘K palette or KnowledgeBank modal. */}
 
         {/* Mobile Menu Dropdown */}
         {showMobileMenu && isMobile && (
@@ -2199,18 +2019,7 @@ const LiveDashboard: React.FC<LiveDashboardProps> = ({ apiKey, userId }) => {
             onClick={(e) => e.stopPropagation()}
           >
             <div className="space-y-2">
-              {/* Mode Switcher for Mobile */}
-              <div className="pb-2 border-b border-gray-200 dark:border-gray-700">
-                <span className="text-xs font-semibold text-gray-500 dark:text-gray-400 uppercase">Mode</span>
-                <ModeSwitcher
-                  currentMode={warRoomMode}
-                  currentMission={currentMission}
-                  currentRoom={currentRoom}
-                  onChange={(mode) => { setWarRoomMode(mode); setShowMobileMenu(false); }}
-                  onMissionChange={(mission) => { setCurrentMission(mission); setShowMobileMenu(false); }}
-                  onRoomChange={setCurrentRoom}
-                />
-              </div>
+              {/* Mode switching handled by WarRoomLayout's ModeToolbar (Phase 1) */}
 
               {/* Voice Controls */}
               <button
@@ -2258,10 +2067,41 @@ const LiveDashboard: React.FC<LiveDashboardProps> = ({ apiKey, userId }) => {
           </div>
         )}
 
-        {/* Mode-Based Content Rendering - Always show mode content */}
-        <div className="flex-1 overflow-hidden min-h-0">
+        {/* Mode-Based Content Rendering */}
+        <WarRoomLayout
+          currentMode={warRoomMode}
+          onModeChange={(mode) => {
+            setWarRoomMode(mode);
+            setCurrentRoom('war-room');
+            setShowWarRoomHub(false);
+          }}
+          onMissionLaunch={() => setCurrentRoom('missions')}
+          sourceOpen={contextPanelOpen}
+          onSourceChange={setContextPanelOpen}
+          onKnowledgeBank={() => setShowKnowledgeBank(true)}
+          className="flex-1 min-h-0"
+          apiKey={apiKey}
+          onVoiceSend={(text) => sendMessageDirect(text)}
+          documents={documents}
+          activeContextDocs={activeContextDocs}
+          uploadingFiles={uploadingFiles}
+          uploadProgress={uploadProgress}
+          onToggleDoc={toggleDocInContext}
+          onDeleteDoc={handleDeleteDoc}
+          onViewDoc={(id) => {
+            const doc = documents.find((d) => d.id === id);
+            if (doc) setViewingDoc(doc);
+          }}
+          onUploadDocs={handleFileUpload}
+          onAddAllDocs={addAllDocsToContext}
+          onClearAllDocs={clearActiveContext}
+          notes={boardNotes}
+          onAddNote={addBoardNote}
+          onDeleteNote={deleteBoardNote}
+          onClearNotes={clearBoardNotes}
+        >
           {renderModeContent()}
-        </div>
+        </WarRoomLayout>
 
 
         {/* Input Area - Only show when not using a mode that has its own input */}

@@ -31,14 +31,14 @@
   --fm-emerald-400: #34d399;
   --fm-emerald-500: #10b981;
 
-  --fm-bg-primary: #0c0a14;
+  --fm-bg-primary: var(--wr-bg-primary, #0c0a14);
   --fm-bg-secondary: #110e1a;
   --fm-bg-elevated: #1a1525;
   --fm-bg-card: #1e1829;
 
-  --fm-border-subtle: rgba(139, 92, 246, 0.1);
-  --fm-border-default: rgba(139, 92, 246, 0.2);
-  --fm-border-strong: rgba(139, 92, 246, 0.4);
+  --fm-border-subtle: color-mix(in srgb, var(--wr-mode-accent, #8b5cf6) 10%, transparent);
+  --fm-border-default: color-mix(in srgb, var(--wr-mode-accent, #8b5cf6) 20%, transparent);
+  --fm-border-strong: color-mix(in srgb, var(--wr-mode-accent, #8b5cf6) 40%, transparent);
 
   --fm-text-primary: #f5f3ff;
   --fm-text-secondary: #a5a0b8;
@@ -57,7 +57,7 @@
 
 /* Mode-specific overrides */
 .fm-container.work {
-  --fm-accent: var(--fm-violet-500);
+  --fm-accent: var(--wr-mode-accent, #8b5cf6);
   --fm-accent-glow: var(--fm-glow-violet);
 }
 
@@ -97,14 +97,14 @@
 
 /* Dark Mode - Explicit styles when .dark is on html */
 html.dark .fm-container {
-  --fm-bg-primary: #0c0a14;
+  --fm-bg-primary: var(--wr-bg-primary, #0c0a14);
   --fm-bg-secondary: #110e1a;
   --fm-bg-elevated: #1a1525;
   --fm-bg-card: #1e1829;
 
-  --fm-border-subtle: rgba(139, 92, 246, 0.1);
-  --fm-border-default: rgba(139, 92, 246, 0.2);
-  --fm-border-strong: rgba(139, 92, 246, 0.4);
+  --fm-border-subtle: color-mix(in srgb, var(--wr-mode-accent, #8b5cf6) 10%, transparent);
+  --fm-border-default: color-mix(in srgb, var(--wr-mode-accent, #8b5cf6) 20%, transparent);
+  --fm-border-strong: color-mix(in srgb, var(--wr-mode-accent, #8b5cf6) 40%, transparent);
 
   --fm-text-primary: #f5f3ff;
   --fm-text-secondary: #a5a0b8;

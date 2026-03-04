@@ -21,6 +21,7 @@ interface ResearchMissionProps {
   sessionTitle?: string;
   documents?: { title: string; summary?: string }[];
   onNewSession?: () => void; // Callback to start a new session
+  activeContextCount?: number;
 }
 
 const DEFAULT_PHASES: ResearchPhase[] = [
@@ -82,7 +83,8 @@ export const ResearchMission: React.FC<ResearchMissionProps> = ({
   sessionId = '',
   sessionTitle = 'Research Mission',
   documents = [],
-  onNewSession
+  onNewSession,
+  activeContextCount = 0
 }) => {
   const [researchTopic, setResearchTopic] = useState('');
   const [isTopicSet, setIsTopicSet] = useState(false);
@@ -195,7 +197,7 @@ export const ResearchMission: React.FC<ResearchMissionProps> = ({
     return (
       <div className="h-full w-full flex flex-col items-center justify-center war-room-container p-8">
         <div className="max-w-lg w-full text-center">
-          <div className="w-20 h-20 mx-auto mb-6 rounded-full bg-gradient-to-br from-blue-500/20 to-cyan-500/20 flex items-center justify-center">
+          <div className="w-20 h-20 mx-auto mb-6 rounded-full wr-mission-accent-bg flex items-center justify-center">
             <i className="fa fa-magnifying-glass-chart text-3xl text-blue-400"></i>
           </div>
 
@@ -272,6 +274,13 @@ export const ResearchMission: React.FC<ResearchMissionProps> = ({
               />
             </div>
           </div>
+
+          {activeContextCount > 0 && (
+            <div className="war-room-badge text-xs mt-2" style={{ display: 'inline-flex', alignItems: 'center', gap: 4 }}>
+              <i className="fa fa-book-open" style={{ fontSize: 9 }}></i>
+              {activeContextCount} source{activeContextCount !== 1 ? 's' : ''}
+            </div>
+          )}
         </div>
 
         {/* Phases List */}
@@ -383,7 +392,7 @@ export const ResearchMission: React.FC<ResearchMissionProps> = ({
         </div>
 
         {/* Suggested Prompts */}
-        <div className="shrink-0 p-3 border-b border-white/10 bg-gradient-to-r from-blue-500/5 to-cyan-500/5">
+        <div className="shrink-0 p-3 border-b border-white/10 wr-mission-accent-bg">
           <div className="text-xs war-room-text-secondary mb-2">
             <i className="fa fa-magic mr-1"></i>
             Guided prompts for this phase:

@@ -29,6 +29,7 @@ interface DecisionMissionProps {
   sessionTitle?: string;
   documents?: { title: string; summary?: string }[];
   onNewSession?: () => void;
+  activeContextCount?: number;
 }
 
 const PHASES: { id: DecisionPhase; label: string; icon: string; description: string }[] = [
@@ -46,7 +47,8 @@ const DecisionMissionComponent: React.FC<DecisionMissionProps> = ({
   onSendMessage,
   sessionId = '',
   sessionTitle = 'Decision Mission',
-  documents = []
+  documents = [],
+  activeContextCount = 0
 }) => {
   const [input, setInput] = useState('');
   const [showExport, setShowExport] = useState(false);
@@ -213,13 +215,19 @@ Provide:
       {/* Progress & Control Panel */}
       <div className="w-[32rem] shrink-0 border-r border-white/10 flex flex-col bg-black/20">
         {/* Mission Header */}
-        <div className="p-4 border-b border-white/10 bg-gradient-to-r from-cyan-500/10 to-blue-500/10">
+        <div className="p-4 border-b border-white/10 wr-mission-accent-bg">
           <div className="flex items-center gap-2 mb-2">
             <i className="fa fa-route text-cyan-400"></i>
             <h3 className="text-sm font-semibold war-room-text-primary">Decision Mission</h3>
           </div>
           {decision && (
             <p className="text-xs war-room-text-secondary line-clamp-2">{decision}</p>
+          )}
+          {activeContextCount > 0 && (
+            <div className="war-room-badge text-xs mt-2" style={{ display: 'inline-flex', alignItems: 'center', gap: 4 }}>
+              <i className="fa fa-book-open" style={{ fontSize: 9 }}></i>
+              {activeContextCount} source{activeContextCount !== 1 ? 's' : ''}
+            </div>
           )}
         </div>
 

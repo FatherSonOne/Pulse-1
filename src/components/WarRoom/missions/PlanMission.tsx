@@ -35,6 +35,7 @@ interface PlanMissionProps {
   sessionTitle?: string;
   documents?: { title: string; summary?: string }[];
   onNewSession?: () => void;
+  activeContextCount?: number;
 }
 
 const PHASES: { id: PlanPhase; label: string; icon: string; description: string }[] = [
@@ -52,7 +53,8 @@ export const PlanMission: React.FC<PlanMissionProps> = ({
   onSendMessage,
   sessionId = '',
   sessionTitle = 'Plan Mission',
-  documents = []
+  documents = [],
+  activeContextCount = 0
 }) => {
   const [input, setInput] = useState('');
   const [showExport, setShowExport] = useState(false);
@@ -216,7 +218,7 @@ Generate an executive summary including:
       {/* Progress & Control Panel */}
       <div className="w-80 shrink-0 border-r border-white/10 flex flex-col bg-black/20">
         {/* Mission Header */}
-        <div className="p-4 border-b border-white/10 bg-gradient-to-r from-rose-500/10 to-pink-500/10">
+        <div className="p-4 border-b border-white/10 wr-mission-accent-bg">
           <div className="flex items-center gap-2 mb-2">
             <i className="fa fa-map text-rose-500"></i>
             <h3 className="text-sm font-semibold text-black dark:text-white">Plan Mission</h3>
@@ -235,6 +237,12 @@ Generate an executive summary including:
               <span className="text-xs war-room-text-secondary">
                 {completedTasks}/{totalTasks}
               </span>
+            </div>
+          )}
+          {activeContextCount > 0 && (
+            <div className="war-room-badge text-xs mt-2" style={{ display: 'inline-flex', alignItems: 'center', gap: 4 }}>
+              <i className="fa fa-book-open" style={{ fontSize: 9 }}></i>
+              {activeContextCount} source{activeContextCount !== 1 ? 's' : ''}
             </div>
           )}
         </div>

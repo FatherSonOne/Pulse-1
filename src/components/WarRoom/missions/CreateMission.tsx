@@ -21,6 +21,7 @@ interface CreateMissionProps {
   sessionId?: string;
   sessionTitle?: string;
   documents?: { title: string; summary?: string }[];
+  activeContextCount?: number;
 }
 
 const PHASES: { id: CreatePhase; label: string; icon: string; description: string }[] = [
@@ -51,7 +52,8 @@ export const CreateMission: React.FC<CreateMissionProps> = ({
   onSendMessage,
   sessionId = '',
   sessionTitle = 'Create Mission',
-  documents = []
+  documents = [],
+  activeContextCount = 0
 }) => {
   const [input, setInput] = useState('');
   const [showExport, setShowExport] = useState(false);
@@ -193,7 +195,7 @@ Include these key points: ${keyPoints.join(', ')}`);
       {/* Control Panel */}
       <div className="w-80 shrink-0 border-r border-white/10 flex flex-col bg-black/20">
         {/* Mission Header */}
-        <div className="p-4 border-b border-white/10 bg-gradient-to-r from-pink-500/10 to-rose-500/10">
+        <div className="p-4 border-b border-white/10 wr-mission-accent-bg">
           <div className="flex items-center gap-2 mb-2">
             <i className="fa fa-pen-nib text-pink-400"></i>
             <h3 className="text-sm font-semibold war-room-text-primary">Create Mission</h3>
@@ -208,6 +210,12 @@ Include these key points: ${keyPoints.join(', ')}`);
                 {CONTENT_TYPES.find(t => t.id === contentType)?.name}
               </span>
               <span className="war-room-badge text-xs">{tone}</span>
+            </div>
+          )}
+          {activeContextCount > 0 && (
+            <div className="war-room-badge text-xs mt-2" style={{ display: 'inline-flex', alignItems: 'center', gap: 4 }}>
+              <i className="fa fa-book-open" style={{ fontSize: 9 }}></i>
+              {activeContextCount} source{activeContextCount !== 1 ? 's' : ''}
             </div>
           )}
         </div>

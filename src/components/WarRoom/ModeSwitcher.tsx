@@ -3,13 +3,18 @@ import { createPortal } from 'react-dom';
 
 // War Room Modes - Strategy and deep work modes
 export type WarRoomMode =
-  | 'tactical'        // New tactical operations center UI
-  | 'focus'           // Deep work, distraction-free
-  | 'analyst'         // Data-driven analysis (future)
-  | 'strategist'      // Decision trees, pro/con (future)
-  | 'brainstorm'      // Idea clustering (future)
-  | 'debrief'         // Session summary (future)
-  | 'elegant-interface'; // Legacy conversation mode
+  // ── Canonical modes (Phase 1+) ──────────────────────────────
+  | 'command-center'    // Default home — overview, comms, quick actions
+  | 'intel'             // Source-grounded Q&A with strict citations (Phase 4)
+  // ── Existing modes ───────────────────────────────────────────
+  | 'focus'             // Deep work, distraction-free
+  | 'analyst'           // Data-driven analysis with citations
+  | 'strategist'        // Decision trees, pro/con
+  | 'brainstorm'        // Idea clustering
+  | 'debrief'           // Session summary
+  // ── Legacy (kept for backward compatibility) ─────────────────
+  | 'tactical'          // @deprecated — maps to command-center
+  | 'elegant-interface';// @deprecated — maps to command-center
 
 // Mission Types - Guided workflows
 export type MissionType =
@@ -60,6 +65,22 @@ export const ModeSwitcher: React.FC<ModeSwitcherProps> = ({
 }) => {
   const warRoomModes: ModeOption[] = useMemo(
     () => [
+      {
+        id: 'command-center',
+        name: 'Command',
+        icon: 'fa-shield-halved',
+        description: 'Mission overview & quick actions',
+        color: 'from-rose-500 to-pink-500',
+        available: true
+      },
+      {
+        id: 'intel',
+        name: 'Intel',
+        icon: 'fa-satellite-dish',
+        description: 'Source-grounded Q&A with citations',
+        color: 'from-cyan-500 to-teal-500',
+        available: true
+      },
       {
         id: 'tactical',
         name: 'Tactical',

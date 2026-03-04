@@ -25,13 +25,16 @@
   --wrh-gray-900: #18181b;
   --wrh-gray-950: #09090b;
 
-  --wrh-bg: var(--wrh-white);
-  --wrh-bg-secondary: var(--wrh-gray-50);
-  --wrh-text: var(--wrh-black);
-  --wrh-text-secondary: var(--wrh-gray-600);
-  --wrh-text-muted: var(--wrh-gray-400);
-  --wrh-border: var(--wrh-gray-200);
-  --wrh-accent: var(--wrh-red);
+  /* Token bridge: map to War Room design tokens (always dark) */
+  --wrh-bg:             var(--wr-bg-primary, var(--wrh-gray-950));
+  --wrh-bg-secondary:   var(--wr-bg-secondary, var(--wrh-gray-900));
+  --wrh-text:           var(--wr-text-primary, var(--wrh-white));
+  --wrh-text-secondary: var(--wr-text-secondary, var(--wrh-gray-400));
+  --wrh-text-muted:     var(--wr-text-muted, var(--wrh-gray-600));
+  --wrh-border:         var(--wr-border, var(--wrh-gray-800));
+  --wrh-accent:         var(--wr-accent-primary, var(--wrh-red));
+  --wrh-font-body:      var(--wr-font-sans, var(--wrh-font-body));
+  --wrh-font-mono:      var(--wr-font-mono, var(--wrh-font-mono));
 
   --wrh-sidebar-width: 280px;
   --wrh-sidebar-collapsed: 64px;
@@ -49,15 +52,8 @@
   --wrh-ease-spring: cubic-bezier(0.34, 1.56, 0.64, 1);
 }
 
-/* Dark mode */
-.dark .wrh-container {
-  --wrh-bg: var(--wrh-gray-950);
-  --wrh-bg-secondary: var(--wrh-gray-900);
-  --wrh-text: var(--wrh-white);
-  --wrh-text-secondary: var(--wrh-gray-400);
-  --wrh-text-muted: var(--wrh-gray-600);
-  --wrh-border: var(--wrh-gray-800);
-}
+/* Dark mode overrides removed — War Room Hub always renders inside War Room (always dark).
+   Semantic tokens above now delegate to --wr-* via the token bridge. */
 
 /* ============================================
    Base Container
@@ -901,24 +897,16 @@
   display: flex;
   align-items: center;
   justify-content: center;
+  /* Dark values — War Room Hub is always dark */
   background: linear-gradient(
     135deg,
-    hsl(var(--mode-hue, 0), 70%, 95%) 0%,
-    hsl(var(--mode-hue, 0), 60%, 90%) 100%
+    hsl(var(--mode-hue, 0), 50%, 18%) 0%,
+    hsl(var(--mode-hue, 0), 40%, 14%) 100%
   );
   border-radius: var(--wrh-radius-md);
   font-size: 22px;
-  color: hsl(var(--mode-hue, 0), 60%, 45%);
-  transition: all 0.3s var(--wrh-ease);
-}
-
-.dark .wrh-card-icon {
-  background: linear-gradient(
-    135deg,
-    hsl(var(--mode-hue, 0), 50%, 20%) 0%,
-    hsl(var(--mode-hue, 0), 40%, 15%) 100%
-  );
   color: hsl(var(--mode-hue, 0), 60%, 65%);
+  transition: all 0.3s var(--wrh-ease);
 }
 
 .wrh-mode-card:hover .wrh-card-icon {

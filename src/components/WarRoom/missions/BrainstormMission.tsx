@@ -21,6 +21,7 @@ interface BrainstormMissionProps {
   sessionTitle?: string;
   documents?: { title: string; summary?: string }[];
   onNewSession?: () => void;
+  activeContextCount?: number;
 }
 
 const PHASES: { id: BrainstormPhase; label: string; icon: string; description: string }[] = [
@@ -55,7 +56,8 @@ export const BrainstormMission: React.FC<BrainstormMissionProps> = ({
   onSendMessage,
   sessionId = '',
   sessionTitle = 'Brainstorm Mission',
-  documents = []
+  documents = [],
+  activeContextCount = 0
 }) => {
   const [input, setInput] = useState('');
   const [showExport, setShowExport] = useState(false);
@@ -189,13 +191,19 @@ ${ideas.length > 10 ? `... and ${ideas.length - 10} more` : ''}
       {/* Progress & Ideas Panel */}
       <div className="w-80 shrink-0 border-r border-white/10 flex flex-col bg-black/20">
         {/* Mission Header */}
-        <div className="p-4 border-b border-white/10 bg-gradient-to-r from-yellow-500/10 to-orange-500/10">
+        <div className="p-4 border-b border-white/10 wr-mission-accent-bg">
           <div className="flex items-center gap-2 mb-2">
             <i className="fa fa-lightbulb text-yellow-400"></i>
             <h3 className="text-sm font-semibold war-room-text-primary">Brainstorm Mission</h3>
           </div>
           {challenge && (
             <p className="text-xs war-room-text-secondary line-clamp-2">{challenge}</p>
+          )}
+          {activeContextCount > 0 && (
+            <div className="war-room-badge text-xs mt-2" style={{ display: 'inline-flex', alignItems: 'center', gap: 4 }}>
+              <i className="fa fa-book-open" style={{ fontSize: 9 }}></i>
+              {activeContextCount} source{activeContextCount !== 1 ? 's' : ''}
+            </div>
           )}
         </div>
 
@@ -506,7 +514,7 @@ ${ideas.length > 10 ? `... and ${ideas.length - 10} more` : ''}
           {messages.length === 0 ? (
             <div className="h-full flex items-center justify-center">
               <div className="text-center max-w-md">
-                <div className="w-16 h-16 mx-auto mb-4 rounded-full bg-gradient-to-br from-yellow-500/20 to-orange-500/20 flex items-center justify-center">
+                <div className="w-16 h-16 mx-auto mb-4 rounded-full wr-mission-accent-bg flex items-center justify-center">
                   <i className="fa fa-lightbulb text-2xl text-yellow-400"></i>
                 </div>
                 <h3 className="text-lg font-semibold war-room-text-primary mb-2">
