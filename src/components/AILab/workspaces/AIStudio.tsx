@@ -1,5 +1,8 @@
-import React, { useState } from 'react';
+import React, { useState, useRef } from 'react';
 import { useWorkspace } from '../shared/WorkspaceContext';
+import { processWithModel } from '../../../services/geminiService';
+import AILabProgress from '../shared/AILabProgress';
+import AILabEmptyState from '../shared/AILabEmptyState';
 import './AIStudio.css';
 
 interface AIStudioProps {
@@ -45,7 +48,9 @@ const AIStudio: React.FC<AIStudioProps> = ({ onBack, apiKey }) => {
   const [showThemes, setShowThemes] = useState(false);
   const [aiPrompt, setAiPrompt] = useState('');
   const [generating, setGenerating] = useState(false);
+  const [generatingProgress, setGeneratingProgress] = useState(0);
   const [view, setView] = useState<'edit' | 'preview'>('edit');
+  const bodyTextareaRef = useRef<HTMLTextAreaElement>(null);
 
   const addSlide = (type: string) => {
     const newSlide: Slide = {
@@ -72,22 +77,68 @@ const AIStudio: React.FC<AIStudioProps> = ({ onBack, apiKey }) => {
     }
   };
 
+  const insertFormat = (prefix: string, suffix: string = '') => {
+    const ta = bodyTextareaRef.current;
+    const slide = slides.find(s => s.id === selectedSlide);
+    if (!ta || !slide) return;
+    const start = ta.selectionStart;
+    const end = ta.selectionEnd;
+    const selected = ta.value.substring(start, end);
+    const newText = ta.value.substring(0, start) + prefix + selected + suffix + ta.value.substring(end);
+    updateSlide(slide.id, { content: newText });
+    setTimeout(() => {
+      ta.focus();
+      ta.setSelectionRange(start + prefix.length, end + prefix.length);
+    }, 0);
+  };
+
   const generateWithAI = async () => {
     if (!aiPrompt.trim()) return;
     setGenerating(true);
-    
-    // Simulate AI generation
-    setTimeout(() => {
-      const generatedSlides: Slide[] = [
-        { id: `ai-${Date.now()}-1`, type: 'title', title: aiPrompt, content: 'AI-Generated Presentation', layout: 'center', aiGenerated: true },
-        { id: `ai-${Date.now()}-2`, type: 'content', title: 'Key Points', content: '• First major insight\n• Second important point\n• Third key takeaway', layout: 'default', aiGenerated: true },
-        { id: `ai-${Date.now()}-3`, type: 'chart', title: 'Data Overview', content: 'Performance metrics visualization', layout: 'default', aiGenerated: true },
-        { id: `ai-${Date.now()}-4`, type: 'content', title: 'Conclusion', content: 'Summary and next steps', layout: 'default', aiGenerated: true },
-      ];
-      setSlides([...slides, ...generatedSlides]);
-      setGenerating(false);
+    setGeneratingProgress(10);
+
+    const prompt = `Generate a presentation about: "${aiPrompt}".
+Return a JSON array of 5-8 slide objects. Each object must have these exact fields:
+- type: one of "title", "content", "quote", "comparison"
+- title: string (the slide heading)
+- content: string (the slide body text, use \\n for line breaks, use • for bullet points)
+
+Return ONLY a valid JSON array with no markdown code blocks, no explanation, just the raw JSON array starting with [ and ending with ].`;
+
+    try {
+      setGeneratingProgress(35);
+      const result = await processWithModel(apiKey, prompt);
+      if (!result) throw new Error('No response from AI');
+
+      setGeneratingProgress(75);
+      const cleaned = result.replace(/```json/g, '').replace(/```/g, '').trim();
+      const parsed = JSON.parse(cleaned) as Array<{ type: string; title: string; content: string }>;
+
+      setGeneratingProgress(90);
+      const newSlides: Slide[] = parsed.map((s, i) => ({
+        id: `ai-${Date.now()}-${i}`,
+        type: (s.type as Slide['type']) || 'content',
+        title: s.title || 'Slide',
+        content: s.content || '',
+        layout: s.type === 'title' ? 'center' : 'default',
+        aiGenerated: true,
+      }));
+
+      setSlides([...slides, ...newSlides]);
       setAiPrompt('');
-    }, 2000);
+      setGeneratingProgress(100);
+    } catch (err) {
+      // If JSON parse fails, try to extract slides from plain text response
+      console.error('Slide generation error:', err);
+      const fallback: Slide[] = [
+        { id: `ai-${Date.now()}-1`, type: 'title', title: aiPrompt, content: 'AI-Generated Presentation', layout: 'center', aiGenerated: true },
+        { id: `ai-${Date.now()}-2`, type: 'content', title: 'Key Points', content: `Content for: ${aiPrompt}`, layout: 'default', aiGenerated: true },
+      ];
+      setSlides([...slides, ...fallback]);
+    } finally {
+      setGenerating(false);
+      setTimeout(() => setGeneratingProgress(0), 600);
+    }
   };
 
   const exportPresentation = (format: 'html' | 'pdf' | 'pptx') => {
@@ -231,6 +282,9 @@ const AIStudio: React.FC<AIStudioProps> = ({ onBack, apiKey }) => {
                 <div className="thumbnail-number">{index + 1}</div>
                 <div className="thumbnail-preview" style={{ background: currentTheme?.colors[0] }}>
                   <div className="thumbnail-title">{slide.title}</div>
+                  {slide.content && (
+                    <div className="thumbnail-content-preview">{slide.content}</div>
+                  )}
                 </div>
                 {slide.aiGenerated && (
                   <div className="thumbnail-badge">
@@ -277,7 +331,7 @@ const AIStudio: React.FC<AIStudioProps> = ({ onBack, apiKey }) => {
               value={aiPrompt}
               onChange={(e) => setAiPrompt(e.target.value)}
             />
-            <button 
+            <button
               className="ai-generate-btn"
               onClick={generateWithAI}
               disabled={generating || !aiPrompt.trim()}
@@ -294,6 +348,15 @@ const AIStudio: React.FC<AIStudioProps> = ({ onBack, apiKey }) => {
                 </>
               )}
             </button>
+            {generating && generatingProgress > 0 && (
+              <AILabProgress
+                percent={generatingProgress}
+                label="Building slides..."
+                accentColor="#f43f5e"
+                accentRgb="244, 63, 94"
+                size="sm"
+              />
+            )}
           </div>
         </div>
 
@@ -312,7 +375,22 @@ const AIStudio: React.FC<AIStudioProps> = ({ onBack, apiKey }) => {
                   onChange={(e) => updateSlide(currentSlide.id, { title: e.target.value })}
                   placeholder="Slide Title"
                 />
+                <div className="studio-formatting-bar">
+                  <button type="button" className="fmt-btn" onClick={() => insertFormat('**', '**')} title="Bold">
+                    <i className="fa-solid fa-bold"></i>
+                  </button>
+                  <button type="button" className="fmt-btn" onClick={() => insertFormat('*', '*')} title="Italic">
+                    <i className="fa-solid fa-italic"></i>
+                  </button>
+                  <button type="button" className="fmt-btn" onClick={() => insertFormat('• ')} title="Bullet point">
+                    <i className="fa-solid fa-list-ul"></i>
+                  </button>
+                  <button type="button" className="fmt-btn" onClick={() => insertFormat('# ')} title="Heading">
+                    <i className="fa-solid fa-heading"></i>
+                  </button>
+                </div>
                 <textarea
+                  ref={bodyTextareaRef}
                   className="slide-body-input"
                   value={currentSlide.content}
                   onChange={(e) => updateSlide(currentSlide.id, { content: e.target.value })}

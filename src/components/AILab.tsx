@@ -232,6 +232,43 @@ const AILab: React.FC<AILabProps> = ({ apiKey }) => {
     }
   }, [chatMessages]);
 
+  // Restore history from localStorage on mount
+  useEffect(() => {
+    const saved = localStorage.getItem('ailab_history');
+    if (saved) {
+      try {
+        const parsed = JSON.parse(saved) as ProcessingHistory[];
+        setHistory(parsed.map(h => ({ ...h, timestamp: new Date(h.timestamp) })));
+      } catch {
+        // ignore parse errors
+      }
+    }
+  }, []);
+
+  // Load templates and workflows from Supabase on mount
+  useEffect(() => {
+    const loadData = async () => {
+      setIsLoadingData(true);
+      try {
+        const [dbTemplates, dbWorkflows] = await Promise.all([
+          aiLabService.getTemplates(),
+          aiLabService.getWorkflows(),
+        ]);
+        if (dbTemplates.length > 0) setTemplates(dbTemplates);
+        if (dbWorkflows.length > 0) {
+          setWorkflows(dbWorkflows);
+        } else {
+          setWorkflows(MOCK_WORKFLOWS);
+        }
+      } catch {
+        setWorkflows(MOCK_WORKFLOWS);
+      } finally {
+        setIsLoadingData(false);
+      }
+    };
+    loadData();
+  }, []);
+
   // Get agent by ID
   const getAgentById = useCallback((id: string) => {
     return AI_AGENTS.find(a => a.id === id);
@@ -255,7 +292,7 @@ const AILab: React.FC<AILabProps> = ({ apiKey }) => {
     }
   }, [outputFormat]);
 
-  // Save to history
+  // Save to history (and persist to localStorage)
   const saveToHistory = useCallback((inputText: string, outputText: string, agentId: string) => {
     const historyItem: ProcessingHistory = {
       id: Date.now().toString(),
@@ -264,17 +301,29 @@ const AILab: React.FC<AILabProps> = ({ apiKey }) => {
       agentId,
       timestamp: new Date(),
     };
-    setHistory(prev => [historyItem, ...prev.slice(0, 49)]); // Keep last 50 items
+    setHistory(prev => {
+      const updated = [historyItem, ...prev.slice(0, 49)];
+      localStorage.setItem('ailab_history', JSON.stringify(updated));
+      return updated;
+    });
   }, []);
 
   // Toggle star on history item
   const toggleStarHistory = useCallback((id: string) => {
-    setHistory(prev => prev.map(h => h.id === id ? { ...h, starred: !h.starred } : h));
+    setHistory(prev => {
+      const updated = prev.map(h => h.id === id ? { ...h, starred: !h.starred } : h);
+      localStorage.setItem('ailab_history', JSON.stringify(updated));
+      return updated;
+    });
   }, []);
 
   // Delete history item
   const deleteHistoryItem = useCallback((id: string) => {
-    setHistory(prev => prev.filter(h => h.id !== id));
+    setHistory(prev => {
+      const updated = prev.filter(h => h.id !== id);
+      localStorage.setItem('ailab_history', JSON.stringify(updated));
+      return updated;
+    });
     toast.success('History item deleted');
   }, []);
 

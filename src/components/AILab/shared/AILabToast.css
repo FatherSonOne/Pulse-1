@@ -1,0 +1,89 @@
+.ailab-toast-container {
+  position: fixed;
+  bottom: 1.5rem;
+  right: 1.5rem;
+  display: flex;
+  flex-direction: column;
+  gap: 0.5rem;
+  z-index: 99999;
+  pointer-events: none;
+}
+
+.ailab-toast {
+  display: inline-flex;
+  align-items: center;
+  gap: 0.6rem;
+  padding: 0.65rem 1rem;
+  border-radius: 10px;
+  font-size: 0.85rem;
+  font-weight: 500;
+  backdrop-filter: blur(24px);
+  -webkit-backdrop-filter: blur(24px);
+  border: 1px solid transparent;
+  min-width: 200px;
+  max-width: 320px;
+  box-shadow: 0 8px 24px rgba(0,0,0,0.3);
+  pointer-events: auto;
+  animation: ailabToastIn 0.22s cubic-bezier(0.16, 1, 0.3, 1) forwards;
+}
+
+.ailab-toast.ailab-toast-out {
+  animation: ailabToastOut 0.18s ease-in forwards;
+}
+
+@keyframes ailabToastIn {
+  from {
+    opacity: 0;
+    transform: translateY(12px) scale(0.96);
+  }
+  to {
+    opacity: 1;
+    transform: translateY(0) scale(1);
+  }
+}
+
+@keyframes ailabToastOut {
+  from {
+    opacity: 1;
+    transform: translateY(0) scale(1);
+  }
+  to {
+    opacity: 0;
+    transform: translateY(6px) scale(0.97);
+  }
+}
+
+/* Types */
+.ailab-toast-success {
+  background: rgba(20, 40, 30, 0.92);
+  border-color: rgba(74, 222, 128, 0.25);
+  color: #4ade80;
+}
+
+.ailab-toast-success .ailab-toast-icon { color: #4ade80; }
+
+.ailab-toast-error {
+  background: rgba(40, 20, 20, 0.92);
+  border-color: rgba(248, 113, 113, 0.25);
+  color: #f87171;
+}
+
+.ailab-toast-error .ailab-toast-icon { color: #f87171; }
+
+.ailab-toast-info {
+  background: rgba(18, 18, 30, 0.92);
+  border-color: rgba(129, 140, 248, 0.25);
+  color: var(--ai-text-primary, #fff);
+}
+
+.ailab-toast-info .ailab-toast-icon { color: #818cf8; }
+
+.ailab-toast-icon {
+  font-size: 0.9rem;
+  flex-shrink: 0;
+}
+
+.ailab-toast-message {
+  flex: 1;
+  line-height: 1.4;
+}

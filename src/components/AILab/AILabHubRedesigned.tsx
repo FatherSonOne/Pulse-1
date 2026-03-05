@@ -6,6 +6,8 @@ import AIStudio from './workspaces/AIStudio';
 import IntelligenceHub from './workspaces/IntelligenceHub';
 import QuickActions from './workspaces/QuickActions';
 import ProposalBuilder from './workspaces/ProposalBuilder';
+import StandupBriefing from './workspaces/StandupBriefing';
+import ChannelDigest from './workspaces/ChannelDigest';
 import './AILabHubRedesigned.css';
 
 // ============= TYPES =============
@@ -76,7 +78,7 @@ const ENHANCED_WORKSPACES: WorkspaceConfig[] = [
     name: 'Intelligence Hub',
     tagline: 'Autonomous Agent Swarm',
     description: 'Deploy teams of specialized AI agents that research, analyze, and synthesize information in parallel. Watch as your digital workforce tackles complex problems autonomously.',
-    icon: 'fa-brain-circuit',
+    icon: 'fa-sitemap',
     features: [
       { icon: 'fa-robot', text: 'Autonomous research agents' },
       { icon: 'fa-layer-group', text: 'Parallel processing power' },
@@ -112,6 +114,20 @@ const ENHANCED_WORKSPACES: WorkspaceConfig[] = [
       { icon: 'fa-magic', text: 'AI-powered drafts' }
     ],
     instructions: 'Select a template to begin. The wizard guides you through each section. Pull in client data from contacts, customize AI suggestions, and export as PDF or share via link.'
+  },
+  {
+    id: 'digest',
+    name: 'Channel Digest',
+    tagline: 'Catch-Up Summaries',
+    description: 'Never miss what matters. Select any channel and time range to get an AI-powered summary of key changes, decisions, and action items — delivered in seconds.',
+    icon: 'fa-comment-dots',
+    features: [
+      { icon: 'fa-clock', text: '24h / 48h / 1 week ranges' },
+      { icon: 'fa-bolt', text: 'Key changes & decisions' },
+      { icon: 'fa-list-check', text: 'Action items extracted' },
+      { icon: 'fa-paper-plane', text: 'Share to any channel' }
+    ],
+    instructions: 'Pick a channel from your workspace, select a time range, and hit Generate. The AI reads through all messages and returns a structured summary with key changes, decisions, and action items.'
   }
 ];
 
@@ -245,6 +261,8 @@ const HubContent: React.FC<{ apiKey: string }> = ({ apiKey }) => {
       hub: IntelligenceHub,
       actions: QuickActions,
       proposal: ProposalBuilder,
+      standup: StandupBriefing,
+      digest: ChannelDigest,
     }[activeWorkspace];
 
     if (!WorkspaceComponent) return null;

@@ -1,0 +1,139 @@
+.ailab-progress {
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  justify-content: center;
+  gap: 0.75rem;
+  padding: 1.5rem;
+}
+
+.ailab-progress.ailab-progress-sm {
+  padding: 1rem;
+  gap: 0.5rem;
+}
+
+.ailab-progress.ailab-progress-lg {
+  padding: 2.5rem;
+  gap: 1rem;
+}
+
+/* Indeterminate ring */
+.ailab-progress-ring-wrap {
+  position: relative;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+}
+
+.ailab-progress-ring {
+  width: 48px;
+  height: 48px;
+  border-radius: 50%;
+  background: conic-gradient(
+    var(--accent-color, #818cf8) 0deg,
+    rgba(var(--accent-rgb, 129, 140, 248), 0.15) 270deg,
+    rgba(var(--accent-rgb, 129, 140, 248), 0.05) 360deg
+  );
+  animation: ailabRingSpin 0.9s linear infinite;
+  mask: radial-gradient(farthest-side, transparent 65%, black 66%);
+  -webkit-mask: radial-gradient(farthest-side, transparent 65%, black 66%);
+}
+
+.ailab-progress.ailab-progress-sm .ailab-progress-ring {
+  width: 32px;
+  height: 32px;
+}
+
+.ailab-progress.ailab-progress-lg .ailab-progress-ring {
+  width: 64px;
+  height: 64px;
+}
+
+@keyframes ailabRingSpin {
+  from { transform: rotate(0deg); }
+  to   { transform: rotate(360deg); }
+}
+
+/* Determinate bar */
+.ailab-progress-bar-wrap {
+  width: 100%;
+  display: flex;
+  flex-direction: column;
+  gap: 0.35rem;
+}
+
+.ailab-progress-bar-track {
+  width: 100%;
+  height: 8px;
+  border-radius: 4px;
+  background: rgba(var(--accent-rgb, 129, 140, 248), 0.1);
+  overflow: hidden;
+  position: relative;
+}
+
+.ailab-progress-bar-fill {
+  height: 100%;
+  border-radius: 4px;
+  background: linear-gradient(
+    90deg,
+    var(--accent-color, #818cf8),
+    rgba(var(--accent-rgb, 129, 140, 248), 0.7)
+  );
+  transition: width 400ms cubic-bezier(0.16, 1, 0.3, 1);
+  position: relative;
+  overflow: hidden;
+}
+
+.ailab-progress-bar-fill::after {
+  content: '';
+  position: absolute;
+  inset: 0;
+  background: linear-gradient(
+    90deg,
+    transparent 30%,
+    rgba(255,255,255,0.25) 50%,
+    transparent 70%
+  );
+  background-size: 200% 100%;
+  animation: ailabBarShimmer 1.8s infinite;
+}
+
+@keyframes ailabBarShimmer {
+  from { background-position: 200% 0; }
+  to   { background-position: -200% 0; }
+}
+
+.ailab-progress-percent {
+  text-align: right;
+  font-size: 0.7rem;
+  color: var(--accent-color, #818cf8);
+  font-weight: 600;
+  font-variant-numeric: tabular-nums;
+}
+
+/* Labels */
+.ailab-progress-labels {
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  gap: 0.2rem;
+}
+
+.ailab-progress-label {
+  font-size: 0.875rem;
+  color: var(--ai-text-secondary, rgba(255,255,255,0.65));
+  font-weight: 500;
+  text-align: center;
+}
+
+.ailab-progress.ailab-progress-sm .ailab-progress-label {
+  font-size: 0.8rem;
+}
+
+.ailab-progress-sublabel {
+  font-size: 0.75rem;
+  color: var(--accent-color, #818cf8);
+  font-weight: 600;
+  text-align: center;
+  opacity: 0.8;
+}

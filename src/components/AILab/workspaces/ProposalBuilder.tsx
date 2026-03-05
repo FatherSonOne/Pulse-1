@@ -1,5 +1,10 @@
-import React, { useState } from 'react';
+import React, { useState, useEffect, useRef } from 'react';
 import { useWorkspace } from '../shared/WorkspaceContext';
+import { processWithModel } from '../../../services/geminiService';
+import ShareToChannelModal from '../shared/ShareToChannelModal';
+import AILabProgress from '../shared/AILabProgress';
+import AILabEmptyState from '../shared/AILabEmptyState';
+import { useToast } from '../shared/AILabToast';
 import './ProposalBuilder.css';
 
 interface ProposalBuilderProps {
@@ -63,8 +68,11 @@ const SECTION_DEFAULTS: Record<string, { title: string; icon: string }> = {
 };
 
 const ProposalBuilder: React.FC<ProposalBuilderProps> = ({ onBack, apiKey }) => {
+  const { teamChannels, currentUser } = useWorkspace();
+  const { showToast, ToastComponent } = useToast();
   const [step, setStep] = useState<'template' | 'info' | 'build' | 'preview'>('template');
   const [selectedTemplate, setSelectedTemplate] = useState<Template | null>(null);
+  const [showShare, setShowShare] = useState(false);
   const [proposalInfo, setProposalInfo] = useState({
     title: '',
     client: '',
@@ -74,6 +82,19 @@ const ProposalBuilder: React.FC<ProposalBuilderProps> = ({ onBack, apiKey }) => 
   const [sections, setSections] = useState<ProposalSection[]>([]);
   const [activeSection, setActiveSection] = useState<string | null>(null);
   const [isGenerating, setIsGenerating] = useState(false);
+  const [lastSaved, setLastSaved] = useState<Date | null>(null);
+  const autosaveTimer = useRef<ReturnType<typeof setTimeout> | null>(null);
+
+  // Autosave to localStorage with 1.5s debounce
+  useEffect(() => {
+    if (sections.length === 0) return;
+    if (autosaveTimer.current) clearTimeout(autosaveTimer.current);
+    autosaveTimer.current = setTimeout(() => {
+      localStorage.setItem('pulse_proposal_draft', JSON.stringify({ proposalInfo, sections }));
+      setLastSaved(new Date());
+    }, 1500);
+    return () => { if (autosaveTimer.current) clearTimeout(autosaveTimer.current); };
+  }, [sections, proposalInfo]);
 
   const selectTemplate = (template: Template) => {
     setSelectedTemplate(template);
@@ -90,25 +111,68 @@ const ProposalBuilder: React.FC<ProposalBuilderProps> = ({ onBack, apiKey }) => 
   const generateWithAI = async (sectionId: string) => {
     setIsGenerating(true);
     const section = sections.find(s => s.id === sectionId);
-    
-    // Simulate AI generation
-    await new Promise(r => setTimeout(r, 2000));
-    
-    const aiContent: Record<string, string> = {
-      intro: `Dear ${proposalInfo.client || '[Client Name]'},\n\nThank you for the opportunity to present this proposal. We are excited about the possibility of working together to achieve your goals.\n\nThis document outlines our understanding of your needs and presents a comprehensive solution designed to deliver exceptional results.`,
-      problem: `Based on our analysis, we have identified the following key challenges:\n\n• Challenge 1: Current processes may be inefficient\n• Challenge 2: Opportunities for growth remain untapped\n• Challenge 3: Need for innovative solutions to stay competitive\n\nAddressing these challenges will be crucial for achieving your objectives.`,
-      solution: `We propose a comprehensive solution that addresses your specific needs:\n\n**Phase 1: Discovery & Planning**\nIn-depth analysis and strategy development\n\n**Phase 2: Implementation**\nExecuting the plan with precision and expertise\n\n**Phase 3: Optimization**\nContinuous improvement and refinement`,
-      pricing: `**Investment Overview**\n\n| Component | Investment |\n|-----------|------------|\n| Phase 1 | $X,XXX |\n| Phase 2 | $XX,XXX |\n| Phase 3 | $X,XXX |\n| **Total** | **$XX,XXX** |\n\n*Payment terms: 50% upfront, 50% upon completion*`,
-      timeline: `**Project Timeline**\n\n📅 Week 1-2: Kickoff & Discovery\n📅 Week 3-6: Development & Implementation\n📅 Week 7-8: Testing & Refinement\n📅 Week 9: Launch & Training\n📅 Ongoing: Support & Optimization`,
+    if (!section) { setIsGenerating(false); return; }
+
+    const client = proposalInfo.client || '[Client Name]';
+    const title = proposalInfo.title || 'this proposal';
+    const preparedBy = proposalInfo.preparedBy || 'our team';
+    const templateName = selectedTemplate?.name || 'Proposal';
+
+    const sectionPrompts: Record<string, string> = {
+      intro: `Write a compelling introduction section for a ${templateName} titled "${title}" prepared for ${client} by ${preparedBy}. Make it warm, professional, and client-focused. 2-3 paragraphs. No markdown headers.`,
+      problem: `Write a Problem Statement section for a ${templateName} for ${client}. Identify 3-4 key business challenges this proposal addresses. Be specific and empathetic. Use bullet points.`,
+      solution: `Write a Proposed Solution section for the ${templateName} titled "${title}" for ${client}. Describe the approach in 3 clear phases with specific deliverables per phase. Use headers and bullet points.`,
+      pricing: `Write a Pricing/Investment section for a ${templateName} for ${client}. Use a professional markdown table with phases and placeholder dollar amounts (use $X,XXX format). Include payment terms and what's included.`,
+      timeline: `Write a Project Timeline section for "${title}". Create a phased schedule with clear milestones and time estimates. Use a week-by-week format with emoji indicators.`,
+      team: `Write an Our Team section for "${title}" by ${preparedBy}. Highlight key team roles and their relevant expertise. Make it credible and confidence-inspiring.`,
+      overview: `Write a Project Overview section for a ${templateName} titled "${title}" for ${client}. Summarize what the project is, why it matters, and what success looks like.`,
+      objectives: `Write an Objectives section for "${title}". List 4-6 SMART objectives. Use numbered list format with clear, measurable outcomes.`,
+      approach: `Write an Approach section for "${title}" for ${client}. Describe the methodology, tools, and processes. Use headers for each approach phase.`,
+      deliverables: `Write a Deliverables section for "${title}". List all tangible outputs organized by phase or category. Use a markdown table with columns: Deliverable, Description, Timeline.`,
+      budget: `Write a Budget section for "${title}" for ${client}. Create a professional budget breakdown table. Use placeholder amounts ($X,XXX format). Include contingency.`,
+      opportunity: `Write an Opportunity section for a Partnership Proposal for ${client}. Describe the market opportunity and why now is the right time. 2-3 paragraphs.`,
+      benefits: `Write a Mutual Benefits section for a partnership with ${client}. List benefits for both parties side by side. Use a comparison format.`,
+      structure: `Write a Partnership Structure section. Define roles, responsibilities, governance model, and decision-making process. Use clear headers and bullet points.`,
+      terms: `Write a Terms & Conditions section for the partnership proposal. Cover duration, exclusivity, IP rights, confidentiality, and exit conditions. Keep it professional and clear.`,
+      'next-steps': `Write a Next Steps section. Provide a clear call-to-action with 3-5 specific steps and a proposed timeline for moving forward.`,
+      summary: `Write an Executive Summary for a ${templateName} titled "${title}". Summarize the need, proposed approach, expected impact, and budget at a high level. 1-2 paragraphs.`,
+      need: `Write a Statement of Need section. Clearly articulate the problem or gap being addressed with supporting rationale. Use data-driven language.`,
+      approach: `Write an Approach/Methodology section. Describe the program design, activities, and evidence-based practices being employed.`,
+      evaluation: `Write an Evaluation Plan section. Describe how success will be measured, what metrics will be tracked, and how results will be reported.`,
+      'org-info': `Write an Organization Information section for ${preparedBy}. Highlight mission, track record, leadership, and relevant qualifications.`,
+      cover: `Write a professional Cover Letter for an RFP Response for ${client}. Express interest, summarize key qualifications, and request consideration.`,
+      understanding: `Write an Understanding of Needs section for an RFP Response. Demonstrate deep understanding of ${client}'s requirements and challenges.`,
+      qualifications: `Write a Qualifications section. Highlight relevant experience, past performance, certifications, and team expertise.`,
+      appendix: `Write an Appendix outline listing what supporting documents would be included (case studies, references, certifications, sample work).`,
+      body: `Write the Main Content section for "${title}". Provide the core arguments, evidence, and supporting details for the proposal's central thesis.`,
+      conclusion: `Write a Conclusion section for "${title}". Summarize the key points, reinforce the value proposition, and end with a strong call-to-action.`,
     };
-    
-    setSections(prev => prev.map(s => 
-      s.id === sectionId 
-        ? { ...s, content: aiContent[sectionId] || `AI-generated content for ${s.title}. This section provides detailed information about ${s.title.toLowerCase()} tailored to your specific needs.`, status: 'draft' }
-        : s
-    ));
-    
-    setIsGenerating(false);
+
+    try {
+      const prompt = sectionPrompts[sectionId] || `Write the "${section.title}" section for a ${templateName} titled "${title}" for ${client}. Be professional and specific. 2-4 paragraphs.`;
+      const result = await processWithModel(apiKey, prompt);
+      setSections(prev => prev.map(s =>
+        s.id === sectionId
+          ? { ...s, content: result || `Content for ${s.title}`, status: 'draft' }
+          : s
+      ));
+    } catch (err) {
+      setSections(prev => prev.map(s =>
+        s.id === sectionId
+          ? { ...s, content: `Error generating content: ${err instanceof Error ? err.message : 'Check your API key in Settings.'}` }
+          : s
+      ));
+    } finally {
+      setIsGenerating(false);
+    }
+  };
+
+  const generateAllSections = async () => {
+    const emptySections = sections.filter(s => s.status === 'empty');
+    for (const section of emptySections) {
+      await generateWithAI(section.id);
+      await new Promise(r => setTimeout(r, 500));
+    }
   };
 
   const updateSection = (sectionId: string, content: string) => {
@@ -130,7 +194,21 @@ const ProposalBuilder: React.FC<ProposalBuilderProps> = ({ onBack, apiKey }) => 
     return Math.round((complete / sections.length) * 100);
   };
 
+  const getProposalShareContent = () => {
+    const lines = [
+      `**${proposalInfo.title || 'Proposal'}**`,
+      `Prepared for: ${proposalInfo.client} | By: ${proposalInfo.preparedBy} | ${proposalInfo.date}`,
+      '',
+      ...sections.filter(s => s.content.trim()).map(s => `**${s.title}**\n${s.content}`),
+    ];
+    return lines.join('\n\n');
+  };
+
   const exportProposal = (format: 'html' | 'pdf' | 'docx') => {
+    if (format === 'pdf') {
+      window.print();
+      return;
+    }
     if (format === 'html') {
       const html = `
 <!DOCTYPE html>
@@ -211,17 +289,25 @@ const ProposalBuilder: React.FC<ProposalBuilderProps> = ({ onBack, apiKey }) => 
         </div>
 
         <div className="pb-header-right">
+          {lastSaved && step === 'build' && (
+            <span className="pb-autosave">
+              <i className="fa-solid fa-cloud-check"></i>
+              Saved {lastSaved.toLocaleTimeString([], { hour: '2-digit', minute: '2-digit' })}
+            </span>
+          )}
           {step === 'preview' && (
             <div className="export-buttons">
-              <button onClick={() => exportProposal('html')} className="pb-btn pb-btn-secondary">
+              <button type="button" onClick={() => exportProposal('html')} className="pb-btn pb-btn-secondary">
                 <i className="fa-solid fa-code"></i> HTML
               </button>
-              <button onClick={() => exportProposal('pdf')} className="pb-btn pb-btn-secondary">
+              <button type="button" onClick={() => exportProposal('pdf')} className="pb-btn pb-btn-secondary">
                 <i className="fa-solid fa-file-pdf"></i> PDF
               </button>
-              <button onClick={() => exportProposal('docx')} className="pb-btn pb-btn-primary">
-                <i className="fa-solid fa-file-word"></i> Word
-              </button>
+              {teamChannels.length > 0 && currentUser && (
+                <button type="button" onClick={() => setShowShare(true)} className="pb-btn pb-btn-secondary">
+                  <i className="fa-solid fa-share-nodes"></i> Share
+                </button>
+              )}
             </div>
           )}
         </div>
@@ -353,6 +439,14 @@ const ProposalBuilder: React.FC<ProposalBuilderProps> = ({ onBack, apiKey }) => 
               ))}
             </div>
 
+            <button
+              className="pb-btn pb-btn-secondary pb-btn-generate-all"
+              onClick={generateAllSections}
+              disabled={isGenerating || sections.every(s => s.status !== 'empty')}
+            >
+              <i className="fa-solid fa-wand-magic-sparkles"></i>
+              Generate All Sections
+            </button>
             <button className="pb-btn pb-btn-primary" onClick={() => setStep('preview')}>
               Preview & Export
               <i className="fa-solid fa-arrow-right"></i>
@@ -389,18 +483,29 @@ const ProposalBuilder: React.FC<ProposalBuilderProps> = ({ onBack, apiKey }) => 
                     </button>
                   </div>
                 </div>
-                <textarea
-                  className="editor-content"
-                  value={sections.find(s => s.id === activeSection)?.content || ''}
-                  onChange={(e) => updateSection(activeSection, e.target.value)}
-                  placeholder={`Write your ${sections.find(s => s.id === activeSection)?.title.toLowerCase()} here, or click "Generate with AI" to get started...`}
-                />
+                {isGenerating ? (
+                  <AILabProgress
+                    label={`Generating ${sections.find(s => s.id === activeSection)?.title}...`}
+                    accentColor="#818cf8"
+                    accentRgb="129, 140, 248"
+                  />
+                ) : (
+                  <textarea
+                    className="editor-content"
+                    value={sections.find(s => s.id === activeSection)?.content || ''}
+                    onChange={(e) => updateSection(activeSection, e.target.value)}
+                    placeholder={`Write your ${sections.find(s => s.id === activeSection)?.title.toLowerCase()} here, or click "Generate with AI" to get started...`}
+                  />
+                )}
               </>
             ) : (
-              <div className="editor-empty">
-                <i className="fa-solid fa-arrow-left"></i>
-                <p>Select a section to start editing</p>
-              </div>
+              <AILabEmptyState
+                icon="fa-file-contract"
+                title="Select a section"
+                description="Choose a section from the left panel to start editing"
+                accentColor="#818cf8"
+                accentRgb="129, 140, 248"
+              />
             )}
           </div>
         </div>
@@ -410,7 +515,7 @@ const ProposalBuilder: React.FC<ProposalBuilderProps> = ({ onBack, apiKey }) => 
       {step === 'preview' && (
         <div className="pb-preview-step">
           <div className="preview-nav">
-            <button onClick={() => setStep('build')}>
+            <button type="button" onClick={() => setStep('build')}>
               <i className="fa-solid fa-arrow-left"></i>
               Back to Edit
             </button>
@@ -440,6 +545,15 @@ const ProposalBuilder: React.FC<ProposalBuilderProps> = ({ onBack, apiKey }) => 
           </div>
         </div>
       )}
+
+      {showShare && step === 'preview' && (
+        <ShareToChannelModal
+          title={proposalInfo.title || 'Proposal'}
+          content={getProposalShareContent()}
+          onClose={() => setShowShare(false)}
+        />
+      )}
+      {ToastComponent}
     </div>
   );
 };

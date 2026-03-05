@@ -468,3 +468,65 @@
   color: var(--ai-text-tertiary);
   font-family: monospace;
 }
+
+/* Action description — shown on hover */
+.qa-action-desc {
+  font-size: 0.72rem;
+  color: var(--ai-text-tertiary);
+  opacity: 0;
+  transition: opacity 150ms ease;
+  white-space: nowrap;
+  overflow: hidden;
+  text-overflow: ellipsis;
+  max-width: 120px;
+  margin-left: auto;
+  text-align: right;
+}
+
+.qa-action-btn:hover .qa-action-desc {
+  opacity: 1;
+}
+
+/* Action stagger animations */
+@keyframes qaFadeIn {
+  from { opacity: 0; transform: translateY(6px); }
+  to   { opacity: 1; transform: translateY(0); }
+}
+
+.qa-action-btn:nth-child(1) { animation: qaFadeIn 220ms cubic-bezier(0.16,1,0.3,1) both; }
+.qa-action-btn:nth-child(2) { animation: qaFadeIn 220ms 40ms cubic-bezier(0.16,1,0.3,1) both; }
+.qa-action-btn:nth-child(3) { animation: qaFadeIn 220ms 80ms cubic-bezier(0.16,1,0.3,1) both; }
+.qa-action-btn:nth-child(4) { animation: qaFadeIn 220ms 120ms cubic-bezier(0.16,1,0.3,1) both; }
+.qa-action-btn:nth-child(5) { animation: qaFadeIn 220ms 160ms cubic-bezier(0.16,1,0.3,1) both; }
+.qa-action-btn:nth-child(n+6) { animation: none; }
+
+/* Output section — let AILabOutput fill the space */
+.qa-output-content {
+  flex: 1;
+  padding: 0.75rem;
+  overflow-y: auto;
+  display: flex;
+  flex-direction: column;
+}
+
+.qa-output-content .ailab-output {
+  flex: 1;
+}
+
+.qa-output-content .ailab-progress,
+.qa-output-content .ailab-empty {
+  flex: 1;
+  justify-content: center;
+}
+
+/* Use as Input button — secondary style */
+.qa-output-footer button {
+  background: transparent;
+  border: 1px solid var(--ai-panel-border);
+  color: var(--ai-text-secondary);
+}
+
+.qa-output-footer button:hover {
+  background: rgba(255,255,255,0.04);
+  color: var(--ai-text-primary);
+}

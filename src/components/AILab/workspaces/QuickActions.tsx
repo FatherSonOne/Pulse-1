@@ -1,5 +1,11 @@
 import React, { useState, useEffect } from 'react';
 import { useWorkspace } from '../shared/WorkspaceContext';
+import { processWithModel, summarizeText } from '../../../services/geminiService';
+import ShareToChannelModal from '../shared/ShareToChannelModal';
+import AILabOutput from '../shared/AILabOutput';
+import AILabProgress from '../shared/AILabProgress';
+import AILabEmptyState from '../shared/AILabEmptyState';
+import { useToast } from '../shared/AILabToast';
 import './QuickActions.css';
 
 interface QuickActionsProps {
@@ -40,7 +46,25 @@ const CATEGORIES = [
   { id: 'communicate', label: 'Communicate', icon: 'fa-comments' },
 ];
 
+// Color name → hex/rgb lookup for CSS var injection
+const COLOR_MAP: Record<string, { hex: string; rgb: string }> = {
+  sky:     { hex: '#38bdf8', rgb: '56,189,248' },
+  violet:  { hex: '#8b5cf6', rgb: '139,92,246' },
+  emerald: { hex: '#34d399', rgb: '52,211,153' },
+  amber:   { hex: '#fbbf24', rgb: '251,191,36' },
+  rose:    { hex: '#fb7185', rgb: '251,113,133' },
+  cyan:    { hex: '#22d3ee', rgb: '34,211,238' },
+  blue:    { hex: '#60a5fa', rgb: '96,165,250' },
+  indigo:  { hex: '#818cf8', rgb: '129,140,248' },
+  green:   { hex: '#4ade80', rgb: '74,222,128' },
+  yellow:  { hex: '#facc15', rgb: '250,204,21' },
+  orange:  { hex: '#fb923c', rgb: '251,146,60' },
+  pink:    { hex: '#f472b6', rgb: '244,114,182' },
+};
+
 const QuickActions: React.FC<QuickActionsProps> = ({ onBack, apiKey }) => {
+  const { teamChannels, currentUser } = useWorkspace();
+  const { showToast, ToastComponent } = useToast();
   const [selectedCategory, setSelectedCategory] = useState('all');
   const [searchQuery, setSearchQuery] = useState('');
   const [inputText, setInputText] = useState('');
@@ -48,6 +72,7 @@ const QuickActions: React.FC<QuickActionsProps> = ({ onBack, apiKey }) => {
   const [selectedAction, setSelectedAction] = useState<QuickAction | null>(null);
   const [isProcessing, setIsProcessing] = useState(false);
   const [recentActions, setRecentActions] = useState<string[]>(['summarize', 'email', 'analyze']);
+  const [showShare, setShowShare] = useState(false);
 
   const filteredActions = QUICK_ACTIONS.filter(action => {
     const matchesCategory = selectedCategory === 'all' || action.category === selectedCategory;
@@ -66,29 +91,35 @@ const QuickActions: React.FC<QuickActionsProps> = ({ onBack, apiKey }) => {
     setIsProcessing(true);
     setOutputText('');
 
-    // Simulate AI processing
-    await new Promise(r => setTimeout(r, 1500 + Math.random() * 1000));
+    try {
+      const prompts: Record<string, string> = {
+        expand: `Expand the following text with more detail, supporting examples, and additional context. Return only the expanded content:\n\n${inputText}`,
+        translate: `Detect the language of the following text. If it is English, translate to Spanish. If it is not English, translate to English. Start with "Detected language: [language]". Return the translation:\n\n${inputText}`,
+        rewrite: `Rewrite the following for improved clarity, professional tone, and impact. Keep the core meaning intact. Return only the rewritten version:\n\n${inputText}`,
+        analyze: `Analyze the following text and return a structured report with these sections:\n- **Sentiment** (positive/negative/neutral with confidence %)\n- **Word Count** and reading level\n- **Key Themes** (3-5 bullet points)\n- **Tone Assessment**\n- **Actionable Insights**\n\nText:\n${inputText}`,
+        extract: `Extract all structured data from the following text. Present as markdown tables:\n- Action items or tasks\n- Dates and deadlines\n- People and roles mentioned\n- Key numbers and amounts\n- Links or references\n\nText:\n${inputText}`,
+        email: `Draft a professional email based on the following context. Include subject line, greeting, body paragraphs, and sign-off. Return only the email:\n\n${inputText}`,
+        reply: `Write a thoughtful, professional reply to the following message. Be concise and constructive:\n\n${inputText}`,
+        tasks: `Convert the following content into a clear list of actionable tasks. For each task include the task description (starting with an action verb), priority (High/Medium/Low if determinable), owner if mentioned, and deadline if mentioned:\n\n${inputText}`,
+        explain: `Explain the following in simple, clear terms that a non-expert would understand. Include a real-world analogy and highlight the key takeaway:\n\n${inputText}`,
+        fix: `Fix all grammar, spelling, punctuation, and style issues in the following text. Return the corrected version first, then a bullet list of the main changes made:\n\n${inputText}`,
+        format: `Format the following content using appropriate markdown structure (headers, bullet points, numbered lists, tables where helpful). Make it scannable and well-organized. Return only the formatted content:\n\n${inputText}`,
+      };
 
-    // Generate mock output based on action
-    const mockOutputs: Record<string, string> = {
-      summarize: `**Summary:**\n\n${inputText.split(' ').slice(0, 20).join(' ')}...\n\n• Key point 1 extracted from content\n• Key point 2 with relevant details\n• Key point 3 summarizing main idea`,
-      expand: `${inputText}\n\n**Additional Context:**\n\nBuilding on the points above, it's important to consider the broader implications. This expansion provides more depth and nuance to the original content, adding supporting details and examples.`,
-      translate: `**Translated to Spanish:**\n\nEste es un texto de ejemplo traducido. [Translation of your content would appear here with accurate language conversion.]`,
-      rewrite: `**Improved Version:**\n\n${inputText.split(' ').map(w => w.charAt(0).toUpperCase() + w.slice(1)).join(' ')}\n\n*Enhanced for clarity and professional tone*`,
-      analyze: `**Analysis Results:**\n\n📊 **Sentiment:** Positive (78%)\n📝 **Word Count:** ${inputText.split(' ').length}\n🎯 **Key Themes:** Business, Strategy, Growth\n💡 **Recommendations:** Consider adding more specific data points`,
-      extract: `**Extracted Data:**\n\n| Field | Value |\n|-------|-------|\n| Topic | Business |\n| Entities | 3 identified |\n| Dates | None found |\n| Actions | 2 mentioned |`,
-      email: `**Draft Email:**\n\nSubject: Follow-up on Our Discussion\n\nDear [Recipient],\n\n${inputText}\n\nPlease let me know if you have any questions.\n\nBest regards,\n[Your Name]`,
-      reply: `**Suggested Reply:**\n\nThank you for your message. I've reviewed the information you shared and would like to provide my thoughts:\n\n${inputText.split(' ').slice(0, 15).join(' ')}...\n\nI look forward to discussing this further.`,
-      tasks: `**Action Items:**\n\n☐ Task 1: Review the key points\n☐ Task 2: Schedule follow-up meeting\n☐ Task 3: Prepare documentation\n☐ Task 4: Share findings with team`,
-      explain: `**Explanation:**\n\n${inputText}\n\n**In Simple Terms:**\nThis concept can be understood as [simplified explanation]. Think of it like [analogy]. The main takeaway is [key insight].`,
-      fix: `**Polished Version:**\n\n${inputText.charAt(0).toUpperCase() + inputText.slice(1).replace(/\s+/g, ' ').trim()}\n\n✅ Grammar corrected\n✅ Punctuation fixed\n✅ Style improved`,
-      format: `**Formatted Content:**\n\n| # | Item | Details |\n|---|------|--------|\n| 1 | ${inputText.split(' ')[0] || 'Item'} | Description |\n| 2 | ${inputText.split(' ')[1] || 'Item'} | Description |\n| 3 | ${inputText.split(' ')[2] || 'Item'} | Description |`,
-    };
+      let result: string | null;
+      if (action.id === 'summarize') {
+        result = await summarizeText(apiKey, inputText);
+      } else {
+        result = await processWithModel(apiKey, prompts[action.id] || `${action.label} the following:\n\n${inputText}`);
+      }
 
-    setOutputText(mockOutputs[action.id] || 'Action completed successfully.');
-    setIsProcessing(false);
-    
-    // Update recent actions
+      setOutputText(result || 'No output generated. Check your API key in Settings.');
+    } catch (err) {
+      setOutputText(`Error: ${err instanceof Error ? err.message : 'AI call failed. Check your API key in Settings.'}`);
+    } finally {
+      setIsProcessing(false);
+    }
+
     setRecentActions(prev => [action.id, ...prev.filter(id => id !== action.id)].slice(0, 5));
   };
 
@@ -172,26 +203,32 @@ const QuickActions: React.FC<QuickActionsProps> = ({ onBack, apiKey }) => {
             </label>
             <div className="qa-output-content">
               {isProcessing ? (
-                <div className="qa-processing">
-                  <i className="fa-solid fa-spinner fa-spin"></i>
-                  <span>Processing with AI...</span>
-                </div>
+                <AILabProgress
+                  label={`Running ${selectedAction?.label || 'AI'}...`}
+                  accentColor="#fbbf24"
+                  accentRgb="251, 191, 36"
+                />
               ) : outputText ? (
-                <pre>{outputText}</pre>
+                <AILabOutput
+                  content={outputText}
+                  accentColor="#fbbf24"
+                  accentRgb="251, 191, 36"
+                  label={selectedAction?.label}
+                  onShare={teamChannels.length > 0 && currentUser ? () => setShowShare(true) : undefined}
+                />
               ) : (
-                <div className="qa-output-empty">
-                  <i className="fa-solid fa-wand-magic-sparkles"></i>
-                  <span>Select an action to transform your content</span>
-                </div>
+                <AILabEmptyState
+                  icon="fa-wand-magic-sparkles"
+                  title="Select an action"
+                  description="Choose from 12 AI actions or use ⌘K to search"
+                  accentColor="#fbbf24"
+                  accentRgb="251, 191, 36"
+                />
               )}
             </div>
             {outputText && !isProcessing && (
               <div className="qa-output-footer">
-                <button onClick={() => navigator.clipboard.writeText(outputText)}>
-                  <i className="fa-solid fa-copy"></i>
-                  Copy
-                </button>
-                <button>
+                <button type="button" onClick={() => { setInputText(outputText); setOutputText(''); setSelectedAction(null); showToast('Output moved to input', 'info'); }}>
                   <i className="fa-solid fa-arrow-right"></i>
                   Use as Input
                 </button>
@@ -212,6 +249,7 @@ const QuickActions: React.FC<QuickActionsProps> = ({ onBack, apiKey }) => {
                 return (
                   <button
                     key={action.id}
+                    type="button"
                     className={`qa-recent-btn qa-color-${action.color}`}
                     onClick={() => executeAction(action)}
                   >
@@ -244,26 +282,41 @@ const QuickActions: React.FC<QuickActionsProps> = ({ onBack, apiKey }) => {
           <div className="qa-section qa-actions-section">
             <h4>Actions</h4>
             <div className="qa-actions-grid">
-              {filteredActions.map(action => (
-                <button
-                  key={action.id}
-                  className={`qa-action-btn qa-color-${action.color} ${selectedAction?.id === action.id ? 'active' : ''}`}
-                  onClick={() => executeAction(action)}
-                  title={action.description}
-                >
-                  <div className="qa-action-icon">
-                    <i className={`fa-solid ${action.icon}`}></i>
-                  </div>
-                  <div className="qa-action-info">
-                    <span className="qa-action-label">{action.label}</span>
-                    <span className="qa-action-shortcut">{action.shortcut}</span>
-                  </div>
-                </button>
-              ))}
+              {filteredActions.map(action => {
+                const colors = COLOR_MAP[action.color] || COLOR_MAP.indigo;
+                return (
+                  <button
+                    key={action.id}
+                    type="button"
+                    className={`qa-action-btn qa-color-${action.color} ${selectedAction?.id === action.id ? 'active' : ''}`}
+                    onClick={() => executeAction(action)}
+                    title={action.description}
+                    style={{ '--action-color': colors.hex, '--action-color-rgb': colors.rgb } as React.CSSProperties}
+                  >
+                    <div className="qa-action-icon">
+                      <i className={`fa-solid ${action.icon}`}></i>
+                    </div>
+                    <div className="qa-action-info">
+                      <span className="qa-action-label">{action.label}</span>
+                      <span className="qa-action-shortcut">{action.shortcut}</span>
+                    </div>
+                    <span className="qa-action-desc">{action.description}</span>
+                  </button>
+                );
+              })}
             </div>
           </div>
         </div>
       </div>
+
+      {showShare && outputText && (
+        <ShareToChannelModal
+          title={selectedAction ? `${selectedAction.label}: AI Output` : 'Quick Action Output'}
+          content={outputText}
+          onClose={() => setShowShare(false)}
+        />
+      )}
+      {ToastComponent}
     </div>
   );
 };

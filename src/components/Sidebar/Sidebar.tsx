@@ -90,7 +90,6 @@ const getNavSections = (isAdmin: boolean): NavSection[] => {
       items: [
         { icon: 'fa-book-open', label: 'War Room', view: AppView.LIVE_AI },
         { icon: 'fa-comments', label: 'Pulse Chat', view: AppView.LIVE },
-        { icon: 'fa-flask', label: 'AI Lab', view: AppView.TOOLS },
       ],
     },
   ];

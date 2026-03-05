@@ -1,12 +1,14 @@
 // AI Lab Workspace Types
 
-export type WorkspaceType = 
+export type WorkspaceType =
   | 'canvas'      // AI Canvas - Node-based workflows
   | 'mission'     // Mission Control - Multi-panel dashboard
   | 'studio'      // AI Studio - Presentation pipeline
   | 'hub'         // Intelligence Hub - Autonomous agents
   | 'actions'     // Quick Actions - Context toolbar
-  | 'proposal';   // Proposal Builder - Guided wizard
+  | 'proposal'    // Proposal Builder - Guided wizard
+  | 'standup'    // Standup Briefing - Team daily briefing generator
+  | 'digest';    // Channel Digest - Catch-up summaries for channels
 
 export interface WorkspaceConfig {
   id: WorkspaceType;
@@ -66,6 +68,22 @@ export const WORKSPACES: WorkspaceConfig[] = [
     icon: 'fa-file-contract',
     gradient: 'from-blue-600 via-indigo-600 to-violet-600',
     features: ['Step-by-step wizard', 'Template library', 'Import from contacts', 'AI-powered drafts']
+  },
+  {
+    id: 'standup',
+    name: 'Team Standup',
+    description: 'Generate AI-powered daily briefings from real team data',
+    icon: 'fa-people-group',
+    gradient: 'from-green-500 via-emerald-500 to-teal-500',
+    features: ['Real team task data', 'Per-member summaries', 'Share to channels', 'Yesterday / Today / Blockers']
+  },
+  {
+    id: 'digest',
+    name: 'Channel Digest',
+    description: 'Catch up on any channel with AI-powered summaries',
+    icon: 'fa-messages',
+    gradient: 'from-indigo-500 via-violet-500 to-purple-500',
+    features: ['24h / 48h / 1 week ranges', 'Key changes & decisions', 'Action items extracted', 'Share to any channel']
   }
 ];
 

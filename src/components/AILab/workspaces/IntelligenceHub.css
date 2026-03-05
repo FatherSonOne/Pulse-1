@@ -294,18 +294,40 @@
 }
 
 .agent-progress {
-  height: 4px;
-  background: var(--ai-input-border);
-  border-radius: 2px;
+  height: 8px;
+  background: rgba(255,255,255,0.06);
+  border-radius: 4px;
   overflow: hidden;
   margin-bottom: 1rem;
 }
 
 .agent-progress-bar {
   height: 100%;
-  background: linear-gradient(90deg, var(--agent-color), var(--agent-color));
-  border-radius: 2px;
-  transition: width 0.3s ease-out;
+  width: var(--progress, 0%);
+  background: linear-gradient(90deg, var(--agent-color), color-mix(in srgb, var(--agent-color) 70%, white));
+  border-radius: 4px;
+  transition: width 400ms cubic-bezier(0.16, 1, 0.3, 1);
+  position: relative;
+  overflow: hidden;
+}
+
+.agent-progress-bar::after {
+  content: '';
+  position: absolute;
+  inset: 0;
+  background: linear-gradient(
+    90deg,
+    transparent 30%,
+    rgba(255,255,255,0.2) 50%,
+    transparent 70%
+  );
+  background-size: 200% 100%;
+  animation: ailabBarShimmer 1.8s infinite;
+}
+
+@keyframes ailabBarShimmer {
+  from { background-position: 200% 0; }
+  to   { background-position: -200% 0; }
 }
 
 .agent-output {
@@ -315,6 +337,75 @@
   font-size: 0.8rem;
   color: var(--ai-text-secondary);
   line-height: 1.5;
+}
+
+.agent-expand-btn {
+  display: inline-flex;
+  align-items: center;
+  gap: 0.3rem;
+  margin-top: 0.5rem;
+  font-size: 0.72rem;
+  color: var(--agent-color, #2dd4bf);
+  background: none;
+  border: none;
+  cursor: pointer;
+  padding: 0;
+  opacity: 0.75;
+  transition: opacity 150ms;
+}
+
+.agent-expand-btn:hover { opacity: 1; }
+
+.agent-expand-panel {
+  max-height: 0;
+  overflow: hidden;
+  transition: max-height 220ms cubic-bezier(0.16, 1, 0.3, 1);
+}
+
+.agent-expand-panel.open {
+  max-height: 400px;
+  margin-top: 0.75rem;
+}
+
+/* Mission timer badge */
+.mission-timer {
+  display: inline-flex;
+  align-items: center;
+  gap: 0.4rem;
+  font-family: 'Menlo', 'Monaco', monospace;
+  font-size: 0.9rem;
+  color: rgba(45, 212, 191, 0.85);
+  padding: 0.4rem 0.75rem;
+  border-radius: 8px;
+  background: rgba(45, 212, 191, 0.08);
+  border: 1px solid rgba(45, 212, 191, 0.2);
+}
+
+/* Agent card active border animation */
+.agent-card.agent-working {
+  border-left: 3px solid var(--agent-color, #2dd4bf);
+  animation: agentBorderPulse 1.5s infinite;
+}
+
+.agent-card.agent-thinking {
+  border-left: 3px solid rgba(251, 191, 36, 0.6);
+}
+
+@keyframes agentBorderPulse {
+  0%, 100% { border-left-color: var(--agent-color, #2dd4bf); }
+  50%       { border-left-color: rgba(45, 212, 191, 0.3); }
+}
+
+/* Send to Studio button in output-actions */
+.output-actions button {
+  display: inline-flex;
+  align-items: center;
+  gap: 0.4rem;
+  padding: 0.4rem 0.875rem;
+  font-size: 0.8rem;
+  border-radius: 8px;
+  width: auto;
+  height: auto;
 }
 
 /* Bottom Section */

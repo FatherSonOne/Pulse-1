@@ -17,7 +17,6 @@ const LiveDashboard = lazy(() => import('./components/LiveDashboard'));
 const DecisionTaskHub = lazy(() => import('./components/decisions/DecisionTaskHub').then(module => ({ default: module.DecisionTaskHub })));
 const EmailClient = lazy(() => import('./components/Email/EmailClientWrapper'));
 const Calendar = lazy(() => import('./components/Calendar'));
-const AILabHubRedesigned = lazy(() => import('./components/AILab/AILabHubRedesigned'));
 const Settings = lazy(() => import('./components/Settings'));
 const Voxer = lazy(() => import('./components/Voxer'));
 const SMS = lazy(() => import('./components/SMS'));
@@ -634,8 +633,6 @@ const App: React.FC = () => {
                 initialSection={settingsSection}
                 onClose={() => setView(AppView.DASHBOARD)}
               />;
-            case AppView.TOOLS:
-              return <AILabHubRedesigned apiKey={apiKey} isDarkMode={isDarkMode} />;
             case AppView.MESSAGE_ADMIN:
               return <AdminDashboard userId={user?.id || ''} />;
             case AppView.MESSAGE_ANALYTICS:

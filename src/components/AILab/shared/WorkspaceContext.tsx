@@ -1,37 +1,46 @@
-import React, { createContext, useContext, useState, ReactNode } from 'react';
+import React, { createContext, useContext, useState, useEffect, ReactNode } from 'react';
 import { WorkspaceType, DataSource, CanvasNode, MissionPanel, AIAgent } from './types';
+import { teamService, TeamWithMembers } from '../../../services/teamService';
+import { messageChannelService } from '../../../services/messageChannelService';
+import { MessageChannel } from '../../../types/messages';
+import { supabase } from '../../../services/supabase';
+
+interface CurrentUser {
+  id: string;
+  email?: string;
+}
 
 interface WorkspaceState {
   // Current workspace
   activeWorkspace: WorkspaceType | null;
   setActiveWorkspace: (ws: WorkspaceType | null) => void;
-  
+
   // Data sources (imported from Pulse)
   dataSources: DataSource[];
   addDataSource: (source: DataSource) => void;
   removeDataSource: (id: string) => void;
-  
+
   // Canvas state
   canvasNodes: CanvasNode[];
   setCanvasNodes: (nodes: CanvasNode[]) => void;
-  
+
   // Mission Control state
   missionPanels: MissionPanel[];
   setMissionPanels: (panels: MissionPanel[]) => void;
   missionName: string;
   setMissionName: (name: string) => void;
-  
+
   // Intelligence Hub state
   agents: AIAgent[];
   setAgents: (agents: AIAgent[]) => void;
   missionPrompt: string;
   setMissionPrompt: (prompt: string) => void;
-  
+
   // Shared output
   generatedOutput: any;
   setGeneratedOutput: (output: any) => void;
-  
-  // API Keys (from localStorage)
+
+  // API Keys (from localStorage/env)
   apiKeys: {
     gemini: string;
     openai: string;
@@ -41,6 +50,12 @@ interface WorkspaceState {
     perplexity: string;
     mapbox: string;
   };
+
+  // Team data bridge
+  currentUser: CurrentUser | null;
+  teams: TeamWithMembers[];
+  teamChannels: MessageChannel[];
+  isLoadingTeamData: boolean;
 }
 
 const WorkspaceContext = createContext<WorkspaceState | null>(null);
@@ -55,16 +70,53 @@ export const WorkspaceProvider: React.FC<{ children: ReactNode }> = ({ children 
   const [missionPrompt, setMissionPrompt] = useState('');
   const [generatedOutput, setGeneratedOutput] = useState<any>(null);
 
-  // Load API keys from localStorage
+  // Team data bridge state
+  const [currentUser, setCurrentUser] = useState<CurrentUser | null>(null);
+  const [teams, setTeams] = useState<TeamWithMembers[]>([]);
+  const [teamChannels, setTeamChannels] = useState<MessageChannel[]>([]);
+  const [isLoadingTeamData, setIsLoadingTeamData] = useState(false);
+
+  // Load API keys from localStorage/env
   const apiKeys = {
     gemini: import.meta.env.VITE_API_KEY || import.meta.env.VITE_GEMINI_API_KEY || '',
     openai: localStorage.getItem('openai_api_key') || '',
     claude: localStorage.getItem('claude_api_key') || '',
     assembly: localStorage.getItem('assemblyai_api_key') || '',
     elevenlabs: localStorage.getItem('elevenlabs_api_key') || '',
-    perplexity: localStorage.getItem('perplexity_api_key') || '',
+    perplexity: localStorage.getItem('perplexity_api_key') || import.meta.env.VITE_PERPLEXITY_API_KEY || '',
     mapbox: localStorage.getItem('mapbox_api_key') || '',
   };
+
+  // Load team context on mount
+  useEffect(() => {
+    const loadTeamContext = async () => {
+      setIsLoadingTeamData(true);
+      try {
+        const { data: { user } } = await supabase.auth.getUser();
+        if (user) {
+          setCurrentUser({ id: user.id, email: user.email });
+        }
+
+        const [userTeams, { data: workspaceData }] = await Promise.all([
+          teamService.getTeams(),
+          supabase.from('workspaces').select('id').limit(1).single(),
+        ]);
+
+        setTeams(userTeams);
+
+        if (workspaceData?.id) {
+          const channels = await messageChannelService.getChannels(workspaceData.id);
+          setTeamChannels(channels);
+        }
+      } catch {
+        // Non-blocking — AI Lab still works without team data
+      } finally {
+        setIsLoadingTeamData(false);
+      }
+    };
+
+    loadTeamContext();
+  }, []);
 
   const addDataSource = (source: DataSource) => {
     setDataSources(prev => [...prev, source]);
@@ -94,6 +146,10 @@ export const WorkspaceProvider: React.FC<{ children: ReactNode }> = ({ children 
       generatedOutput,
       setGeneratedOutput,
       apiKeys,
+      currentUser,
+      teams,
+      teamChannels,
+      isLoadingTeamData,
     }}>
       {children}
     </WorkspaceContext.Provider>
