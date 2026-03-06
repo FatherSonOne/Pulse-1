@@ -23,7 +23,6 @@ const STATS = [
   { value: '4', label: 'CRM Integrations' },
   { value: '12', label: 'War Room Modes' },
   { value: '90+', label: 'Languages' },
-  { value: '6', label: 'AI Workspaces' },
   { value: '167+', label: 'Services' },
 ];
 
@@ -35,15 +34,6 @@ const VOX_MODES = [
   { icon: 'fa-solid fa-note-sticky', name: 'Vox Notes', desc: 'Personal voice journaling with AI summary and keyword extraction' },
   { icon: 'fa-solid fa-video', name: 'Video Vox', desc: 'Async video messages with face-cam and screen recording' },
   { icon: 'fa-solid fa-radio', name: 'Pulse Radio', desc: 'Live broadcast mode — stream to your entire team simultaneously' },
-];
-
-const AI_WORKSPACES = [
-  { icon: 'fa-solid fa-diagram-project', name: 'AI Canvas', desc: 'Drag-and-drop workflow builder for chaining AI operations visually', anim: 'lp-icon-spin' },
-  { icon: 'fa-solid fa-gauge-high', name: 'Mission Control', desc: 'Multi-panel command center with live data streams and agent orchestration', anim: 'lp-icon-bob' },
-  { icon: 'fa-solid fa-chalkboard', name: 'AI Studio', desc: 'Transform raw data into polished presentations and dashboards instantly', anim: 'lp-icon-tilt' },
-  { icon: 'fa-solid fa-brain', name: 'Intelligence Hub', desc: 'Deploy autonomous agent swarms for parallel research and synthesis', anim: 'lp-icon-throb' },
-  { icon: 'fa-solid fa-bolt', name: 'Quick Actions', desc: 'Context-aware AI suggestions surfaced wherever you are in Pulse', anim: 'lp-icon-zap' },
-  { icon: 'fa-solid fa-file-contract', name: 'Proposal Builder', desc: 'Professional document wizard — business proposals in minutes, not hours', anim: 'lp-icon-stamp' },
 ];
 
 const CRM_PLATFORMS = [
@@ -156,7 +146,7 @@ const LandingPage: React.FC<LandingPageProps> = ({ onGetStarted }) => {
 
   // Scroll-triggered section backgrounds — fade in/out as user scrolls through each section
   useEffect(() => {
-    const ids = ['section-voxer', 'section-ailab', 'section-decisions', 'section-crm'];
+    const ids = ['section-voxer', 'section-decisions', 'section-crm'];
     const thresholds = Array.from({ length: 21 }, (_, i) => i / 20);
     const observer = new IntersectionObserver(
       (entries) => {
@@ -507,7 +497,7 @@ const LandingPage: React.FC<LandingPageProps> = ({ onGetStarted }) => {
                 <div className="p-2">
                   {/* Windows PC */}
                   <a
-                    href="https://github.com/FatherSonOne/Pulse-1/releases/download/v25.1.0/Pulse.Setup.25.1.0.exe"
+                    href="https://github.com/FatherSonOne/Pulse-1/releases/download/v25.1.1/Pulse.Setup.25.1.1.exe"
                     target="_blank"
                     rel="noopener noreferrer"
                     className="flex items-center gap-3 px-3 py-2.5 rounded-xl hover:bg-zinc-800 group transition"
@@ -764,7 +754,7 @@ const LandingPage: React.FC<LandingPageProps> = ({ onGetStarted }) => {
               Get on Google Play
             </a>
             <a
-              href="https://github.com/FatherSonOne/Pulse-1/releases/download/v25.1.0/Pulse.Setup.25.1.0.exe"
+              href="https://github.com/FatherSonOne/Pulse-1/releases/download/v25.1.1/Pulse.Setup.25.1.1.exe"
               target="_blank"
               rel="noopener noreferrer"
               className="w-full sm:w-auto px-8 py-4 bg-zinc-900/50 border border-zinc-700 text-white rounded-xl text-lg font-medium hover:bg-zinc-800 hover:border-blue-500/40 transition flex items-center justify-center gap-3 hover:scale-105 active:scale-95"
@@ -856,85 +846,6 @@ const LandingPage: React.FC<LandingPageProps> = ({ onGetStarted }) => {
                     <span key={p} className="px-1.5 py-0.5 bg-zinc-800/80 border border-zinc-700/50 rounded text-[10px] text-zinc-400">{p}</span>
                   ))}
                 </div>
-              </div>
-            </div>
-          </div>
-        </section>
-
-        <SectionDivider />
-
-        {/* Section B — AI Intelligence Layer */}
-        <section id="section-ailab" className="py-24 px-6 bg-zinc-900/30 border-y border-zinc-800/40 relative">
-          {/* Neural Nexus themed bg — cyan + violet + pink, from AILabHubRedesigned.css */}
-          <div
-            className="absolute inset-0 pointer-events-none transition-opacity duration-700"
-            style={{ opacity: Math.min(sectionVis['section-ailab'] ?? 0, 1) }}
-          >
-            <div className="absolute inset-0" style={{
-              background: 'radial-gradient(ellipse at 75% 20%, rgba(0,196,180,0.16) 0%, transparent 50%), radial-gradient(ellipse at 25% 70%, rgba(123,44,191,0.18) 0%, transparent 50%), radial-gradient(ellipse at 55% 50%, rgba(233,30,140,0.10) 0%, transparent 55%)',
-            }}></div>
-            {/* Neural grid — subtle dot grid like AI Lab's canvas */}
-            <div className="absolute inset-0" style={{
-              backgroundImage: 'radial-gradient(circle, rgba(0,196,180,0.18) 1px, transparent 1px)',
-              backgroundSize: '40px 40px',
-              maskImage: 'radial-gradient(ellipse at 70% 30%, black 30%, transparent 75%)',
-              WebkitMaskImage: 'radial-gradient(ellipse at 70% 30%, black 30%, transparent 75%)',
-            }}></div>
-          </div>
-          <div className="max-w-7xl mx-auto relative z-10">
-            <div className="mb-14 animate-fade-in">
-              <div className="inline-flex items-center gap-2 px-3 py-1.5 rounded-full bg-purple-500/10 border border-purple-500/25 text-purple-400 text-xs font-bold uppercase tracking-widest mb-4">
-                <i className="fa-solid fa-brain"></i> AI Lab
-              </div>
-              <h2 className="text-4xl sm:text-6xl font-bold mb-4 text-transparent bg-clip-text bg-gradient-to-r from-white via-purple-100 to-violet-200">
-                6 Specialized AI Workspaces
-              </h2>
-              <p className="text-zinc-400 text-lg max-w-2xl">
-                Not just a chatbot. Six purpose-built AI environments each designed for a different mode of thinking — from visual workflow design to autonomous agent swarms.
-              </p>
-            </div>
-
-            <div className="grid sm:grid-cols-2 lg:grid-cols-3 gap-6 mb-10">
-              {AI_WORKSPACES.map((ws, i) => (
-                <div
-                  key={ws.name}
-                  className="group p-6 rounded-2xl bg-zinc-950/90 border border-zinc-800 hover:border-purple-500/40 transition-all duration-300 hover:-translate-y-2 animate-fade-in"
-                  style={{ animationDelay: `${i * 0.1}s` }}
-                >
-                  <div className="lp-icon-wrap w-11 h-11 rounded-xl bg-purple-500/10 flex items-center justify-center mb-4 group-hover:bg-purple-500/20 transition-all duration-300">
-                    <i className={`${ws.icon} text-purple-400 ${ws.anim}`} style={{ animationDelay: `${i * 0.45}s` }}></i>
-                  </div>
-                  <h3 className="font-bold text-white mb-2">{ws.name}</h3>
-                  <p className="text-zinc-500 text-sm leading-relaxed">{ws.desc}</p>
-                </div>
-              ))}
-            </div>
-
-            {/* War Room + Pulse AI callout */}
-            <div className="grid sm:grid-cols-2 gap-5">
-              <div className="group p-6 rounded-2xl bg-gradient-to-br from-purple-500/10 to-violet-500/5 border border-purple-500/20 hover:border-purple-500/40 transition-all duration-300">
-                <div className="flex items-center gap-3 mb-3">
-                  <div className="lp-icon-wrap w-10 h-10 rounded-xl bg-purple-500/15 flex items-center justify-center transition-all duration-300">
-                    <i className="fa-solid fa-chess-board text-purple-400 lp-icon-bob"></i>
-                  </div>
-                  <div>
-                    <h3 className="font-bold text-white">War Room</h3>
-                    <div className="text-xs text-purple-400 font-semibold">12 Specialized Interfaces</div>
-                  </div>
-                </div>
-                <p className="text-zinc-500 text-sm">Analyst, Brainstorm, Strategist, Data Analyst, Debrief, Focus, Neural Terminal, X-Ray, Sentient Interface, Command Center, Living AI, and more.</p>
-              </div>
-              <div className="group p-6 rounded-2xl bg-gradient-to-br from-violet-500/10 to-purple-500/5 border border-violet-500/20 hover:border-violet-500/40 transition-all duration-300">
-                <div className="flex items-center gap-3 mb-3">
-                  <div className="lp-icon-wrap w-10 h-10 rounded-xl bg-violet-500/15 flex items-center justify-center transition-all duration-300">
-                    <i className="fa-solid fa-wand-magic-sparkles text-violet-400 lp-icon-zap"></i>
-                  </div>
-                  <div>
-                    <h3 className="font-bold text-white">Pulse AI Global Assistant</h3>
-                    <div className="text-xs text-violet-400 font-semibold">Cmd+K / Ctrl+K anywhere</div>
-                  </div>
-                </div>
-                <p className="text-zinc-500 text-sm">Context-aware AI that reads your current section and surfaces proactive suggestions, drafts, and actions. Powered by Gemini, GPT-4o, Claude, and Perplexity simultaneously.</p>
               </div>
             </div>
           </div>
@@ -1442,7 +1353,7 @@ const LandingPage: React.FC<LandingPageProps> = ({ onGetStarted }) => {
                   { num: '1', system: 'PULSE', badgeClass: 'from-rose-500 to-pink-500', labelClass: 'text-gradient-rose', borderClass: 'hover:border-rose-500/40', title: 'The Signal', body: 'A high-priority email from a key client lands. Pulse flags it "Urgent", extracts requirements, and routes it to the grants channel with an AI summary.' },
                   { num: '2', system: 'LOGOS VISION', badgeClass: 'from-blue-500 to-cyan-500', labelClass: 'bg-gradient-to-r from-blue-400 to-cyan-400 bg-clip-text text-transparent', borderClass: 'hover:border-blue-500/40', title: 'The Context', body: 'The system links the message to the Client Record — pulling past grant history, success rates, and the assigned relationship manager automatically.' },
                   { num: '3', system: 'ENTOMATE', badgeClass: 'from-emerald-500 to-teal-500', labelClass: 'bg-gradient-to-r from-emerald-400 to-teal-400 bg-clip-text text-transparent', borderClass: 'hover:border-emerald-500/40', title: 'The Action', body: 'An Apply workflow fires. A task is created for the Grant Writer, a kickoff meeting is scheduled based on availability, and an acknowledgment email is drafted.' },
-                  { num: '4', system: 'AI LAB', badgeClass: 'from-purple-500 to-violet-500', labelClass: 'bg-gradient-to-r from-purple-400 to-violet-400 bg-clip-text text-transparent', borderClass: 'hover:border-purple-500/40', title: 'The Intelligence', body: 'War Room activates in Strategist Mode. The AI swarm researches grant requirements, compares past applications, and Proposal Builder outputs a full draft in minutes.' },
+                  { num: '4', system: 'WAR ROOM', badgeClass: 'from-purple-500 to-violet-500', labelClass: 'bg-gradient-to-r from-purple-400 to-violet-400 bg-clip-text text-transparent', borderClass: 'hover:border-purple-500/40', title: 'The Intelligence', body: 'War Room activates in Strategist Mode. The AI swarm researches grant requirements, compares past applications, and outputs a polished grant proposal draft in minutes.' },
                 ].map((step) => (
                   <div key={step.num} className={`bg-zinc-900/90 backdrop-blur-sm border border-zinc-800 p-7 rounded-2xl relative hover:-translate-y-2 transition-all duration-300 card-elevated ${step.borderClass} group animate-fade-in`}>
                     <div className={`absolute -top-4 -right-4 w-8 h-8 bg-gradient-to-br ${step.badgeClass} rounded-full flex items-center justify-center text-white font-bold shadow-lg text-sm`}>{step.num}</div>
@@ -1484,7 +1395,7 @@ const LandingPage: React.FC<LandingPageProps> = ({ onGetStarted }) => {
           </p>
 
           <div className="grid grid-cols-2 md:grid-cols-4 gap-6">
-            <DownloadButton icon="fa-brands fa-windows" platform="Windows PC" subtext="Desktop Installer · x64" active={true} href="https://github.com/FatherSonOne/Pulse-1/releases/download/v25.1.0/Pulse.Setup.25.1.0.exe" />
+            <DownloadButton icon="fa-brands fa-windows" platform="Windows PC" subtext="Desktop Installer · x64" active={true} href="https://github.com/FatherSonOne/Pulse-1/releases/download/v25.1.1/Pulse.Setup.25.1.1.exe" />
             <DownloadButton icon="fa-brands fa-apple" platform="macOS / iOS" subtext="Universal" active={false} />
 
             {/* Android Card */}
@@ -1570,8 +1481,8 @@ const LandingPage: React.FC<LandingPageProps> = ({ onGetStarted }) => {
                 <span className="absolute -left-[41px] w-6 h-6 rounded-full bg-zinc-800 border border-zinc-700 flex items-center justify-center text-xs font-bold text-white">1</span>
                 <strong className="text-white block mb-1">Download the installer</strong>
                 Click <strong className="text-blue-400">Download for PC</strong> above, or grab it directly from{' '}
-                <a href="https://github.com/FatherSonOne/Pulse-1/releases/tag/v25.1.0" target="_blank" rel="noopener noreferrer" className="text-blue-400 hover:text-blue-300 underline">GitHub Releases</a>.
-                Choose <code className="bg-zinc-800 px-1.5 py-0.5 rounded text-blue-400 text-xs">Pulse.Setup.25.1.0.exe</code> (installer) or <code className="bg-zinc-800 px-1.5 py-0.5 rounded text-blue-400 text-xs">Pulse.25.1.0.exe</code> (portable, no install needed).
+                <a href="https://github.com/FatherSonOne/Pulse-1/releases/tag/v25.1.1" target="_blank" rel="noopener noreferrer" className="text-blue-400 hover:text-blue-300 underline">GitHub Releases</a>.
+                Choose <code className="bg-zinc-800 px-1.5 py-0.5 rounded text-blue-400 text-xs">Pulse.Setup.25.1.1.exe</code> (installer) or <code className="bg-zinc-800 px-1.5 py-0.5 rounded text-blue-400 text-xs">Pulse.25.1.1.exe</code> (portable, no install needed).
               </li>
               <li className="relative">
                 <span className="absolute -left-[41px] w-6 h-6 rounded-full bg-zinc-800 border border-zinc-700 flex items-center justify-center text-xs font-bold text-white">2</span>
