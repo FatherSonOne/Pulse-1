@@ -61,7 +61,7 @@ export const EmailCampaignBuilder: React.FC<Props> = ({
   onSave,
   onCancel,
 }) => {
-  const isNew = campaign === null;
+  const isNew = campaign == null; // covers both null and undefined
 
   // ----- Form state -----
   const [name, setName]               = useState(campaign?.name ?? '');
@@ -142,6 +142,8 @@ export const EmailCampaignBuilder: React.FC<Props> = ({
     }, 3000);
   }, [doSave]);
 
+  const isMountedRef = useRef(false);
+
   // Clear on unmount
   useEffect(() => {
     return () => {
@@ -151,6 +153,10 @@ export const EmailCampaignBuilder: React.FC<Props> = ({
 
   // Trigger auto-save whenever form fields change
   useEffect(() => {
+    if (!isMountedRef.current) {
+      isMountedRef.current = true;
+      return;
+    }
     scheduleAutoSave();
     // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [name, subject, previewText, fromName, segmentName, bodyHtml, bodyText, scheduleAt]);
@@ -186,7 +192,7 @@ export const EmailCampaignBuilder: React.FC<Props> = ({
       const result = await emailTemplateService.getTemplates(user.id);
       setTemplates(result.data ?? []);
     } catch {
-      // silently ignore
+      toast.error('Failed to load templates');
     } finally {
       setTemplatesLoading(false);
     }
@@ -338,7 +344,7 @@ export const EmailCampaignBuilder: React.FC<Props> = ({
         {/* Title */}
         <div className="flex-1 min-w-0">
           <h2 className="text-lg font-semibold tracking-tight truncate">
-            {isNew ? 'New Campaign' : 'Edit Campaign'}
+            {isNew ? 'New Campaign' : (campaign?.name ?? 'Edit Campaign')}
           </h2>
         </div>
 
