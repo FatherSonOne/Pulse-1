@@ -87,10 +87,12 @@ class EmailCampaignService {
   }
 
   async update(id: string, input: CampaignInput): Promise<EmailCampaign> {
+    const userId = await this.getUserId();
     const { data, error } = await supabase
       .from('email_campaigns')
       .update(input)
       .eq('id', id)
+      .eq('user_id', userId)
       .select()
       .single();
 
@@ -99,10 +101,12 @@ class EmailCampaignService {
   }
 
   async delete(id: string): Promise<void> {
+    const userId = await this.getUserId();
     const { error } = await supabase
       .from('email_campaigns')
       .delete()
-      .eq('id', id);
+      .eq('id', id)
+      .eq('user_id', userId);
 
     if (error) throw error;
   }
