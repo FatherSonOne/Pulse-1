@@ -33,4 +33,14 @@ contextBridge.exposeInMainWorld('electronAPI', {
       shell.openExternal(url);
     }
   },
+
+  // ── OAuth deep-link callback ───────────────────────────────────────────────
+  // Called by the renderer to register a listener for OAuth redirect URLs
+  // delivered via the pulse:// custom protocol handler.
+  onOAuthCallback: (callback) => {
+    ipcRenderer.on('oauth:url', (_event, url) => callback(url));
+    // Signal to the main process that the renderer is ready to receive OAuth URLs.
+    // This flushes any URL that arrived before the renderer finished loading.
+    ipcRenderer.send('renderer:ready');
+  },
 });

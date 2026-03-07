@@ -198,7 +198,6 @@ const Settings: React.FC<SettingsProps> = ({ user, isDarkMode, toggleTheme, init
   // --- PRIVACY & DATA STATE ---
   const [analyticsTracking, setAnalyticsTracking] = useState(true);
   const [nudgeFrequencyHours, setNudgeFrequencyHours] = useState(24);
-  const [nudgeFrequencyHours, setNudgeFrequencyHours] = useState(24);
 
   // --- WAR ROOM STATE ---
   const [warRoomDefaultMode, setWarRoomDefaultMode] = useState('command-center');
@@ -3060,11 +3059,16 @@ const Settings: React.FC<SettingsProps> = ({ user, isDarkMode, toggleTheme, init
         return (
             <div className="space-y-8 animate-slide-up">
                 <div className="flex flex-col items-center justify-center py-12 text-center">
-                    <div className="w-20 h-20 bg-gradient-to-tr from-rose-500 to-pink-600 rounded-2xl flex items-center justify-center shadow-lg shadow-rose-500/30 mb-6">
-                        <svg viewBox="0 0 64 64" className="w-12 h-12 text-white fill-current">
-                            <path d="M8 32 L18 32 L24 16 L32 48 L40 24 L48 40 L56 32" stroke="currentColor" strokeWidth="6" strokeLinecap="round" strokeLinejoin="round" fill="none"/>
-                        </svg>
-                    </div>
+                    <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 64 64" fill="none" className="w-20 h-20 rounded-2xl shadow-lg shadow-rose-500/30 mb-6">
+                        <defs>
+                            <linearGradient id="about-pulse-grad" x1="0%" y1="0%" x2="100%" y2="100%">
+                                <stop offset="0%" stopColor="#f43f5e" />
+                                <stop offset="100%" stopColor="#ec4899" />
+                            </linearGradient>
+                        </defs>
+                        <rect width="64" height="64" rx="14" fill="#0f172a" />
+                        <path d="M8 32 L18 32 L24 16 L32 48 L40 24 L48 40 L56 32" stroke="url(#about-pulse-grad)" strokeWidth="5" strokeLinecap="round" strokeLinejoin="round" fill="none" />
+                    </svg>
                     <h2 className="text-3xl font-bold dark:text-white text-zinc-900 mb-2">Pulse</h2>
                     <p className="text-zinc-500 mb-6">Version 2.4.0 (Beta)</p>
                     
@@ -3128,169 +3132,155 @@ const Settings: React.FC<SettingsProps> = ({ user, isDarkMode, toggleTheme, init
           <div className="space-y-8 animate-slide-up">
             <div className="section-header">
               <h3>
-                <i className="fa-solid fa-receipt"></i> Plan & Billing
+                {/* Receipt / billing SVG */}
+                <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="1.8" strokeLinecap="round" strokeLinejoin="round" style={{ color: 'var(--set-primary)' }}>
+                  <path d="M4 2h16a1 1 0 0 1 1 1v18l-3-2-2 2-2-2-2 2-2-2-3 2V3a1 1 0 0 1 1-1z"/>
+                  <line x1="8" y1="9" x2="16" y2="9"/><line x1="8" y1="13" x2="14" y2="13"/>
+                </svg>
+                Plan &amp; Billing
               </h3>
-              <p>
-                Manage your subscription and team settings.
-              </p>
+              <p>Manage your subscription and team settings.</p>
             </div>
 
             {/* Current Plan Banner */}
-            <div className="bg-gradient-to-br from-rose-50 to-pink-50 dark:from-rose-900/20 dark:to-pink-900/20 border-2 border-rose-200 dark:border-rose-800 rounded-2xl p-6">
-              <div className="flex items-center gap-4 mb-4">
-                <div className="w-14 h-14 rounded-xl bg-gradient-to-br from-rose-500 to-pink-500 flex items-center justify-center shadow-lg shadow-rose-500/30">
-                  <i className="fa-solid fa-user text-white text-xl"></i>
+            <div style={{ background: 'linear-gradient(135deg, var(--set-primary-softer), rgba(236,72,153,0.04))', border: '1px solid var(--set-primary-soft)', borderLeft: '3px solid var(--set-primary)' }} className="rounded-2xl p-6">
+              <div className="flex items-center gap-4 mb-5">
+                {/* User / plan icon */}
+                <div className="w-14 h-14 rounded-xl flex items-center justify-center shadow-lg shadow-rose-500/25 flex-shrink-0" style={{ background: 'linear-gradient(135deg, #f43f5e 0%, #ec4899 100%)' }}>
+                  <svg width="26" height="26" viewBox="0 0 24 24" fill="none" stroke="white" strokeWidth="1.8" strokeLinecap="round" strokeLinejoin="round">
+                    <circle cx="12" cy="8" r="4"/><path d="M4 20c0-4 3.6-7 8-7s8 3 8 7"/>
+                  </svg>
                 </div>
-                <div>
-                  <div className="flex items-center gap-2">
+                <div className="min-w-0">
+                  <div className="flex items-center gap-2 flex-wrap">
                     <h4 className="text-xl font-bold dark:text-white text-zinc-900">
                       {billingLoading ? 'Loading...' : (currentPlan?.planName || 'Free')} Plan
                     </h4>
-                    <span className="px-2 py-0.5 bg-emerald-500 text-white text-xs font-bold rounded-full">CURRENT</span>
+                    <span className="px-2 py-0.5 text-white text-xs font-bold rounded-full" style={{ background: 'var(--set-primary)', fontSize: '10px', letterSpacing: '0.06em' }}>ACTIVE</span>
                   </div>
-                  <p className="text-sm text-zinc-600 dark:text-zinc-400">
+                  <p className="text-sm mt-0.5" style={{ color: 'var(--set-text-muted)' }}>
                     {currentPlan?.currentPeriodEnd
                       ? `Renews ${new Date(currentPlan.currentPeriodEnd).toLocaleDateString()}`
                       : 'Free forever for personal use'}
                   </p>
                 </div>
               </div>
-              <div className="grid grid-cols-2 gap-4 text-sm">
-                <div className="flex items-center gap-2 text-zinc-600 dark:text-zinc-300">
-                  <i className="fa-solid fa-check text-emerald-500"></i>
-                  <span>Unlimited conversations</span>
-                </div>
-                <div className="flex items-center gap-2 text-zinc-600 dark:text-zinc-300">
-                  <i className="fa-solid fa-check text-emerald-500"></i>
-                  <span>Voice & video calls</span>
-                </div>
-                <div className="flex items-center gap-2 text-zinc-600 dark:text-zinc-300">
-                  <i className="fa-solid fa-check text-emerald-500"></i>
-                  <span>AI-powered inbox</span>
-                </div>
-                <div className="flex items-center gap-2 text-zinc-600 dark:text-zinc-300">
-                  <i className="fa-solid fa-check text-emerald-500"></i>
-                  <span>Email & calendar sync</span>
-                </div>
+              <div className="grid grid-cols-2 gap-3 text-sm">
+                {['Unlimited conversations', 'Voice & video calls', 'AI-powered inbox', 'Email & calendar sync'].map((feat) => (
+                  <div key={feat} className="flex items-center gap-2" style={{ color: 'var(--set-text-secondary)' }}>
+                    <svg width="14" height="14" viewBox="0 0 24 24" fill="none" strokeWidth="2.5" strokeLinecap="round" strokeLinejoin="round" style={{ stroke: 'var(--set-primary)', flexShrink: 0 }}>
+                      <polyline points="20 6 9 17 4 12"/>
+                    </svg>
+                    <span>{feat}</span>
+                  </div>
+                ))}
               </div>
             </div>
 
             {/* Plan Cards */}
             <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
               {/* Team Plan */}
-              <div className="bg-white dark:bg-zinc-900 border-2 border-zinc-200 dark:border-zinc-700 rounded-2xl p-6 hover:border-blue-400 dark:hover:border-blue-500 transition-all hover:shadow-lg group">
+              {/* Team Plan — blue/cyan */}
+              <div className="rounded-2xl p-6 cursor-default" style={{ background: 'var(--set-surface)', border: '1px solid var(--set-border)', borderLeft: '2px solid transparent', transition: 'all 150ms cubic-bezier(0.16,1,0.3,1)' }}
+                onMouseEnter={e => { (e.currentTarget as HTMLElement).style.borderLeftColor = '#3b82f6'; (e.currentTarget as HTMLElement).style.background = 'var(--set-surface-raised)'; (e.currentTarget as HTMLElement).style.boxShadow = '0 4px 24px rgba(59,130,246,0.12)'; }}
+                onMouseLeave={e => { (e.currentTarget as HTMLElement).style.borderLeftColor = 'transparent'; (e.currentTarget as HTMLElement).style.background = 'var(--set-surface)'; (e.currentTarget as HTMLElement).style.boxShadow = 'none'; }}
+              >
                 <div className="flex items-center gap-3 mb-4">
-                  <div className="w-12 h-12 rounded-xl bg-gradient-to-br from-blue-500 to-cyan-500 flex items-center justify-center">
-                    <i className="fa-solid fa-users text-white text-lg"></i>
+                  <div className="w-12 h-12 rounded-xl flex items-center justify-center flex-shrink-0" style={{ background: 'linear-gradient(135deg, #3b82f6 0%, #06b6d4 100%)', boxShadow: '0 4px 12px rgba(59,130,246,0.30)' }}>
+                    <svg width="22" height="22" viewBox="0 0 24 24" fill="none" stroke="white" strokeWidth="1.8" strokeLinecap="round" strokeLinejoin="round">
+                      <circle cx="9" cy="7" r="3"/><path d="M3 20c0-3 2.7-5.5 6-5.5s6 2.5 6 5.5"/>
+                      <circle cx="17" cy="7" r="3"/><path d="M21 20c0-3-2.7-5.5-6-5.5"/>
+                    </svg>
                   </div>
                   <div>
-                    <h4 className="text-lg font-bold dark:text-white text-zinc-900">Team</h4>
-                    <p className="text-xs text-zinc-500">Up to 10 members</p>
+                    <h4 className="text-base font-semibold" style={{ color: 'var(--set-text-main)', letterSpacing: '-0.01em' }}>Team</h4>
+                    <p className="text-xs mt-0.5" style={{ color: 'var(--set-text-muted)' }}>Up to 10 members</p>
                   </div>
                 </div>
 
-                <p className="text-sm text-zinc-600 dark:text-zinc-400 mb-4">
+                <p className="text-sm mb-4" style={{ color: 'var(--set-text-secondary)', lineHeight: '1.6' }}>
                   Perfect for small teams who want to collaborate with shared context.
                 </p>
 
                 <div className="space-y-2 mb-6">
-                  <div className="flex items-center gap-2 text-sm text-zinc-600 dark:text-zinc-300">
-                    <i className="fa-solid fa-check text-blue-500"></i>
-                    <span>Everything in Individual</span>
-                  </div>
-                  <div className="flex items-center gap-2 text-sm text-zinc-600 dark:text-zinc-300">
-                    <i className="fa-solid fa-check text-blue-500"></i>
-                    <span>Shared team database</span>
-                  </div>
-                  <div className="flex items-center gap-2 text-sm text-zinc-600 dark:text-zinc-300">
-                    <i className="fa-solid fa-check text-blue-500"></i>
-                    <span>Team knowledge base</span>
-                  </div>
-                  <div className="flex items-center gap-2 text-sm text-zinc-600 dark:text-zinc-300">
-                    <i className="fa-solid fa-check text-blue-500"></i>
-                    <span>Shared conversation history</span>
-                  </div>
-                  <div className="flex items-center gap-2 text-sm text-zinc-600 dark:text-zinc-300">
-                    <i className="fa-solid fa-check text-blue-500"></i>
-                    <span>Document collaboration</span>
-                  </div>
-                  <div className="flex items-center gap-2 text-sm text-zinc-600 dark:text-zinc-300">
-                    <i className="fa-solid fa-check text-blue-500"></i>
-                    <span>Team analytics dashboard</span>
-                  </div>
+                  {['Everything in Individual', 'Shared team database', 'Team knowledge base', 'Shared conversation history', 'Document collaboration', 'Team analytics dashboard'].map((feat) => (
+                    <div key={feat} className="flex items-center gap-2 text-sm" style={{ color: 'var(--set-text-secondary)' }}>
+                      <svg width="13" height="13" viewBox="0 0 24 24" fill="none" strokeWidth="2.5" strokeLinecap="round" strokeLinejoin="round" style={{ stroke: '#3b82f6', flexShrink: 0 }}>
+                        <polyline points="20 6 9 17 4 12"/>
+                      </svg>
+                      <span>{feat}</span>
+                    </div>
+                  ))}
                 </div>
 
-                <button onClick={() => window.open(billingService.getUpgradeUrl())} className="w-full py-3 px-4 bg-gradient-to-r from-blue-500 to-cyan-500 hover:from-blue-600 hover:to-cyan-600 text-white font-semibold rounded-xl transition-all flex items-center justify-center gap-2 group-hover:shadow-lg group-hover:shadow-blue-500/30">
+                <button onClick={() => window.open(billingService.getUpgradeUrl())} className="w-full py-3 px-4 text-white font-semibold rounded-xl flex items-center justify-center gap-2 transition-all" style={{ background: 'linear-gradient(135deg, #3b82f6 0%, #06b6d4 100%)', boxShadow: '0 4px 12px rgba(59,130,246,0.30)', fontSize: '14px' }}
+                  onMouseEnter={e => { (e.currentTarget as HTMLElement).style.transform = 'translateY(-1px)'; (e.currentTarget as HTMLElement).style.boxShadow = '0 6px 20px rgba(59,130,246,0.42)'; }}
+                  onMouseLeave={e => { (e.currentTarget as HTMLElement).style.transform = ''; (e.currentTarget as HTMLElement).style.boxShadow = '0 4px 12px rgba(59,130,246,0.30)'; }}
+                >
                   <span>Learn More</span>
-                  <i className="fa-solid fa-arrow-right text-sm"></i>
+                  <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="white" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round"><line x1="5" y1="12" x2="19" y2="12"/><polyline points="12 5 19 12 12 19"/></svg>
                 </button>
               </div>
 
-              {/* Enterprise Plan */}
-              <div className="bg-white dark:bg-zinc-900 border-2 border-zinc-200 dark:border-zinc-700 rounded-2xl p-6 hover:border-purple-400 dark:hover:border-purple-500 transition-all hover:shadow-lg group">
-                <div className="flex items-center gap-3 mb-4">
-                  <div className="w-12 h-12 rounded-xl bg-gradient-to-br from-purple-500 to-violet-600 flex items-center justify-center">
-                    <i className="fa-solid fa-building text-white text-lg"></i>
+              {/* Enterprise Plan — purple/violet */}
+              <div className="rounded-2xl p-6 cursor-default relative overflow-hidden" style={{ background: 'var(--set-surface)', border: '1px solid var(--set-border)', borderLeft: '2px solid transparent', transition: 'all 150ms cubic-bezier(0.16,1,0.3,1)' }}
+                onMouseEnter={e => { (e.currentTarget as HTMLElement).style.borderLeftColor = '#8b5cf6'; (e.currentTarget as HTMLElement).style.background = 'var(--set-surface-raised)'; (e.currentTarget as HTMLElement).style.boxShadow = '0 4px 24px rgba(139,92,246,0.12)'; }}
+                onMouseLeave={e => { (e.currentTarget as HTMLElement).style.borderLeftColor = 'transparent'; (e.currentTarget as HTMLElement).style.background = 'var(--set-surface)'; (e.currentTarget as HTMLElement).style.boxShadow = 'none'; }}
+              >
+                {/* Dot-grid decoration */}
+                <div aria-hidden style={{ position: 'absolute', top: 0, right: 0, width: 160, height: '100%', backgroundImage: 'radial-gradient(circle, rgba(139,92,246,0.08) 1px, transparent 1px)', backgroundSize: '14px 14px', opacity: 0.7, pointerEvents: 'none' }} />
+
+                <div className="flex items-center gap-3 mb-4 relative">
+                  <div className="w-12 h-12 rounded-xl flex items-center justify-center flex-shrink-0" style={{ background: 'linear-gradient(135deg, #7c3aed 0%, #8b5cf6 100%)', boxShadow: '0 4px 12px rgba(124,58,237,0.35)' }}>
+                    <svg width="22" height="22" viewBox="0 0 24 24" fill="none" stroke="white" strokeWidth="1.8" strokeLinecap="round" strokeLinejoin="round">
+                      <rect x="3" y="9" width="13" height="13" rx="1"/><path d="M8 22V9"/><path d="M16 9V4a1 1 0 0 0-1-1H8a1 1 0 0 0-1 1v5"/>
+                      <rect x="16" y="13" width="5" height="9" rx="1"/><line x1="10" y1="13" x2="10" y2="13.01"/><line x1="13" y1="13" x2="13" y2="13.01"/><line x1="10" y1="17" x2="10" y2="17.01"/><line x1="13" y1="17" x2="13" y2="17.01"/>
+                    </svg>
                   </div>
                   <div>
-                    <h4 className="text-lg font-bold dark:text-white text-zinc-900">Enterprise</h4>
-                    <p className="text-xs text-zinc-500">10+ members</p>
+                    <h4 className="text-base font-semibold relative" style={{ color: 'var(--set-text-main)', letterSpacing: '-0.01em' }}>Enterprise</h4>
+                    <p className="text-xs mt-0.5" style={{ color: 'var(--set-text-muted)' }}>10+ members</p>
                   </div>
                 </div>
 
-                <p className="text-sm text-zinc-600 dark:text-zinc-400 mb-4">
+                <p className="text-sm mb-4 relative" style={{ color: 'var(--set-text-secondary)', lineHeight: '1.6' }}>
                   For larger organizations with advanced security and customization needs.
                 </p>
 
-                <div className="space-y-2 mb-6">
-                  <div className="flex items-center gap-2 text-sm text-zinc-600 dark:text-zinc-300">
-                    <i className="fa-solid fa-check text-purple-500"></i>
-                    <span>Everything in Team</span>
-                  </div>
-                  <div className="flex items-center gap-2 text-sm text-zinc-600 dark:text-zinc-300">
-                    <i className="fa-solid fa-check text-purple-500"></i>
-                    <span>Unlimited team members</span>
-                  </div>
-                  <div className="flex items-center gap-2 text-sm text-zinc-600 dark:text-zinc-300">
-                    <i className="fa-solid fa-check text-purple-500"></i>
-                    <span>SSO & advanced security</span>
-                  </div>
-                  <div className="flex items-center gap-2 text-sm text-zinc-600 dark:text-zinc-300">
-                    <i className="fa-solid fa-check text-purple-500"></i>
-                    <span>Custom integrations</span>
-                  </div>
-                  <div className="flex items-center gap-2 text-sm text-zinc-600 dark:text-zinc-300">
-                    <i className="fa-solid fa-check text-purple-500"></i>
-                    <span>Dedicated support</span>
-                  </div>
-                  <div className="flex items-center gap-2 text-sm text-zinc-600 dark:text-zinc-300">
-                    <i className="fa-solid fa-check text-purple-500"></i>
-                    <span>On-premise deployment option</span>
-                  </div>
+                <div className="space-y-2 mb-6 relative">
+                  {['Everything in Team', 'Unlimited team members', 'SSO & advanced security', 'Custom integrations', 'Dedicated support', 'On-premise deployment option'].map((feat) => (
+                    <div key={feat} className="flex items-center gap-2 text-sm" style={{ color: 'var(--set-text-secondary)' }}>
+                      <svg width="13" height="13" viewBox="0 0 24 24" fill="none" strokeWidth="2.5" strokeLinecap="round" strokeLinejoin="round" style={{ stroke: '#8b5cf6', flexShrink: 0 }}>
+                        <polyline points="20 6 9 17 4 12"/>
+                      </svg>
+                      <span>{feat}</span>
+                    </div>
+                  ))}
                 </div>
 
-                <button onClick={() => window.open(billingService.getUpgradeUrl())} className="w-full py-3 px-4 bg-gradient-to-r from-purple-500 to-violet-600 hover:from-purple-600 hover:to-violet-700 text-white font-semibold rounded-xl transition-all flex items-center justify-center gap-2 group-hover:shadow-lg group-hover:shadow-purple-500/30">
-                  <span>Learn More</span>
-                  <i className="fa-solid fa-arrow-right text-sm"></i>
+                <button onClick={() => window.open(billingService.getUpgradeUrl())} className="w-full py-3 px-4 text-white font-semibold rounded-xl flex items-center justify-center gap-2 relative transition-all" style={{ background: 'linear-gradient(135deg, #7c3aed 0%, #8b5cf6 100%)', boxShadow: '0 4px 12px rgba(124,58,237,0.30)', fontSize: '14px' }}
+                  onMouseEnter={e => { (e.currentTarget as HTMLElement).style.transform = 'translateY(-1px)'; (e.currentTarget as HTMLElement).style.boxShadow = '0 6px 20px rgba(124,58,237,0.42)'; }}
+                  onMouseLeave={e => { (e.currentTarget as HTMLElement).style.transform = ''; (e.currentTarget as HTMLElement).style.boxShadow = '0 4px 12px rgba(124,58,237,0.30)'; }}
+                >
+                  <span>Contact Sales</span>
+                  <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="white" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round"><line x1="5" y1="12" x2="19" y2="12"/><polyline points="12 5 19 12 12 19"/></svg>
                 </button>
               </div>
             </div>
 
             {/* Billing Info */}
-            <div className="bg-zinc-50 dark:bg-zinc-900/50 rounded-xl border border-zinc-200 dark:border-zinc-800 p-6">
-              <h4 className="text-sm font-bold uppercase tracking-widest text-zinc-500 mb-4">Billing Information</h4>
-              <div className="flex items-center justify-between py-3 border-b border-zinc-200 dark:border-zinc-800">
-                <span className="text-sm text-zinc-600 dark:text-zinc-400">Current Plan</span>
-                <span className="text-sm font-semibold dark:text-white text-zinc-900">Individual (Free)</span>
-              </div>
-              <div className="flex items-center justify-between py-3 border-b border-zinc-200 dark:border-zinc-800">
-                <span className="text-sm text-zinc-600 dark:text-zinc-400">Billing Cycle</span>
-                <span className="text-sm dark:text-zinc-300 text-zinc-700">N/A</span>
-              </div>
-              <div className="flex items-center justify-between py-3">
-                <span className="text-sm text-zinc-600 dark:text-zinc-400">Next Invoice</span>
-                <span className="text-sm dark:text-zinc-300 text-zinc-700">N/A</span>
-              </div>
+            <div className="rounded-xl p-6" style={{ background: 'var(--set-surface)', border: '1px solid var(--set-border)' }}>
+              <h4 className="mb-4" style={{ fontSize: '11px', fontWeight: 600, textTransform: 'uppercase', letterSpacing: '0.12em', color: 'var(--set-text-muted)' }}>Billing Information</h4>
+              {[
+                { label: 'Current Plan', value: 'Individual (Free)', isLast: false },
+                { label: 'Billing Cycle', value: 'N/A', isLast: false },
+                { label: 'Next Invoice', value: 'N/A', isLast: true },
+              ].map(({ label, value, isLast }) => (
+                <div key={label} className="flex items-center justify-between py-3" style={{ borderBottom: isLast ? 'none' : '1px solid var(--set-border)' }}>
+                  <span className="text-sm" style={{ color: 'var(--set-text-secondary)' }}>{label}</span>
+                  <span className="text-sm font-medium" style={{ color: 'var(--set-text-main)' }}>{value}</span>
+                </div>
+              ))}
             </div>
           </div>
         );

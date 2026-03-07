@@ -347,7 +347,7 @@ export const sendTeamInvite = async (email: string): Promise<{ success: boolean;
   const { data: { user } } = await supabase.auth.getUser();
   if (!user) return { success: false, error: 'Not authenticated' };
   const { error } = await supabase.from('team_invites').insert({
-    inviter_id: user.id,
+    invited_by: user.id,
     email: email.toLowerCase().trim(),
     status: 'pending',
   });
@@ -361,7 +361,7 @@ export const getPendingTeamInvites = async (): Promise<TeamInvite[]> => {
   const { data } = await supabase
     .from('team_invites')
     .select('*')
-    .eq('inviter_id', user.id)
+    .eq('invited_by', user.id)
     .eq('status', 'pending')
     .order('created_at', { ascending: false });
   return (data || []) as TeamInvite[];

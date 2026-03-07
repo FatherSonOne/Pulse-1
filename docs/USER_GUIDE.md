@@ -1,7 +1,7 @@
 # Pulse User's Guide
 
-**Version**: 25.1
-**Last Updated**: March 2, 2026
+**Version**: 25.1.1
+**Last Updated**: March 5, 2026
 **For**: All Pulse users — personal, team, and enterprise
 
 ---
@@ -25,7 +25,7 @@
 15. [Tools Panel](#15-tools-panel)
 16. [Search](#16-search)
 17. [Settings & Customization](#17-settings--customization)
-18. [Mobile App](#18-mobile-app)
+18. [Mobile & Desktop Apps](#18-mobile--desktop-apps)
 19. [Keyboard Shortcuts](#19-keyboard-shortcuts)
 20. [Troubleshooting & FAQ](#20-troubleshooting--faq)
 
@@ -1571,31 +1571,65 @@ Find hidden tasks in any message or email:
 
 ### AI Brainstorming — AI Lab
 
-For structured creative thinking:
-1. Click **Tools → AI Lab** from the sidebar.
-2. Enter a topic, problem, or question.
-3. Choose a thinking technique:
+AI Lab is a collection of specialized AI-powered workspaces, each designed for a different kind of work. Access it from **Tools → AI Lab** in the sidebar.
 
-| Technique | Best for |
-| --------- | -------- |
-| **SCAMPER** | Product or process innovation |
-| **Six Thinking Hats** | Multi-perspective team analysis |
-| **Mind Map** | Visual exploration of a topic |
-| **Rapid Brainstorm** | Quick idea generation on a deadline |
+| Workspace | What it does |
+| --------- | ------------ |
+| **AI Studio** | Draft, refine, and enhance written content with AI assistance |
+| **Mission Control** | Build and coordinate multi-step AI workflows |
+| **Intelligence Hub** | Research and synthesize information from multiple sources |
+| **Quick Actions** | Fast one-click AI operations: summarize, rewrite, translate, extract |
+| **Proposal Builder** | Create structured proposals and presentations with AI guidance |
+| **Channel Digest** | Generate summaries of your channels and conversations automatically |
+| **Stand-up Briefing** | Create daily stand-up summaries from your recent activity |
 
-4. Pulse generates a structured set of ideas.
-5. Save ideas individually or export the full session as a document.
+**Tip:** Each AI Lab workspace is independent — you can run a Proposal Builder session while a Channel Digest is being generated.
 
-### AI War Room
+### War Room — Strategic AI Workspace
 
-The **AI War Room** is a collaborative AI workspace for deep analysis:
+The **War Room** is Pulse's deep-work AI hub for research, planning, decision-making, and content creation. Access it by clicking **War Room** in the sidebar.
 
-- **Comparative Analysis** — Compare options side by side with AI-generated evaluation
-- **Knowledge Graph** — Visualize relationships between concepts in a problem
-- **Annotations** — Mark up and highlight documents as a team
-- **AI Panel** — Multi-model AI reasoning — Pulse uses multiple AI approaches to analyze a problem from different angles
+#### War Room Modes
 
-Access from **Tools → AI War Room**.
+The War Room has 7 operational modes — switch between them using the Mode Switcher at the top, or press the number keys **1–7**:
+
+| Key | Mode | Best for |
+| --- | ---- | -------- |
+| `1` | **Command Center** | Tactical operations and real-time coordination |
+| `2` | **Intel** | Research, intelligence gathering, and investigation |
+| `3` | **Deep Focus** | Distraction-free writing and long-form thinking |
+| `4` | **Data Analyst** | Structured data analysis and pattern recognition |
+| `5` | **Strategist** | Strategic planning and big-picture thinking |
+| `6` | **Brainstorm** | Creative ideation and idea generation |
+| `7` | **Debrief** | Post-project retrospectives and lessons learned |
+
+#### Guided Missions
+
+Missions are structured, step-by-step AI workflows for common high-stakes tasks. Launch a Mission from the Mode Switcher's **Missions** tab:
+
+| Mission | What it guides you through |
+| ------- | -------------------------- |
+| **Research** | Define your question → Explore perspectives → Analyze findings → Conclude with answers |
+| **Decision** | Define the choice → List options → Set criteria → Evaluate → Get AI recommendation |
+| **Brainstorm** | Set the challenge → Diverge (wild ideas) → Cluster ideas → Converge → Refine top picks |
+| **Plan** | Define goals → Scope the project → Break into milestones → Identify risks → Finalize plan |
+| **Analyze** | Set the analysis goal → Collect data → Analyze → Extract insights → Generate report |
+| **Create** | Set the brief → Build an outline → Write a draft → Refine → Export final content |
+
+**Tip:** Each Mission saves your progress automatically — you can pause and return to where you left off.
+
+#### The Board
+
+The Board is a persistent intelligence notepad built into the War Room. Click **The Board** to open it alongside your work session.
+
+- Pin five types of notes: **Findings**, **Insights**, **Action Items**, **Questions**, and **Decisions**
+- Notes are timestamped and persist across sessions
+- Filter notes by type to focus on what matters
+- Export everything as a Markdown file when your session is complete
+
+#### Action Palette
+
+Press `Cmd+K` (Mac) or `Ctrl+K` (Windows) inside the War Room to open the **Action Palette** — a searchable command menu for quick access to all War Room actions, mode switching, and board shortcuts without leaving your current work.
 
 <details>
 <summary><strong>Advanced: Getting the most from the Pulse AI Assistant</strong></summary>
@@ -2065,7 +2099,19 @@ Configure custom retention periods for compliance. For HIPAA or GDPR environment
 
 ---
 
-## 18. Mobile App
+## 18. Mobile & Desktop Apps
+
+Pulse is available on Windows (desktop), Android (mobile), and in any modern web browser. Your workspace, contacts, messages, and settings sync instantly across all platforms.
+
+### Installing the Windows Desktop App
+
+1. Go to the Pulse website and click **Downloads** in the top navigation.
+2. Under **Windows PC**, click **Download Desktop Installer**.
+3. Run the downloaded `.exe` file and follow the installer prompts.
+4. Once installed, open **Pulse** from your Start menu or desktop shortcut.
+5. Sign in with your Pulse account — your workspace loads automatically.
+
+**Tip:** The Windows desktop app runs natively and gives you persistent notifications, faster load times, and a dedicated window separate from your browser.
 
 ### Installing the Android App
 
@@ -2355,5 +2401,5 @@ Use Settings → Data Management → Export My Data before initiating account de
 
 ---
 
-*Pulse User's Guide — Version 28.2.0 — Updated March 2, 2026*
+*Pulse User's Guide — Version 25.1.1 — Updated March 5, 2026*
 *This guide is updated regularly as new features are added. Run `/users-guide` in Claude Code to regenerate it.*

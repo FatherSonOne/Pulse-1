@@ -1,20 +1,9 @@
 import { DocumentProcessor, ProcessorResult } from './index';
 import * as pdfjsLib from 'pdfjs-dist';
+// Vite resolves this to the correct local URL at build/serve time — no CDN needed.
+import workerUrl from 'pdfjs-dist/build/pdf.worker.min.mjs?url';
 
-// Configure PDF.js worker
-// Use the CDN version to avoid bundling issues
-// Note: pdfjs-dist v4+ uses .mjs extensions on CDN
-pdfjsLib.GlobalWorkerOptions.workerSrc = `//cdnjs.cloudflare.com/ajax/libs/pdf.js/${pdfjsLib.version}/pdf.worker.min.mjs`;
-
-// Fallback: If CDN fails, disable worker (runs on main thread)
-if (typeof window !== 'undefined') {
-  window.addEventListener('error', (e) => {
-    if (e.message?.includes('pdf.worker')) {
-      console.warn('[PDFProcessor] Worker failed to load, disabling worker');
-      pdfjsLib.GlobalWorkerOptions.workerSrc = '';
-    }
-  });
-}
+pdfjsLib.GlobalWorkerOptions.workerSrc = workerUrl;
 
 export const pdfProcessor: DocumentProcessor = {
   canProcess: (mimeType: string, extension: string): boolean => {

@@ -6,7 +6,7 @@
 
 CREATE TABLE IF NOT EXISTS team_invites (
   id UUID DEFAULT gen_random_uuid() PRIMARY KEY,
-  inviter_id UUID REFERENCES auth.users(id) ON DELETE CASCADE,
+  invited_by UUID REFERENCES auth.users(id) ON DELETE CASCADE,
   email TEXT NOT NULL,
   status TEXT DEFAULT 'pending' CHECK (status IN ('pending', 'accepted', 'declined')),
   created_at TIMESTAMPTZ DEFAULT NOW(),
@@ -17,16 +17,16 @@ ALTER TABLE team_invites ENABLE ROW LEVEL SECURITY;
 
 -- Inviter can see and manage their own invites
 CREATE POLICY "team_invites_inviter_select" ON team_invites
-  FOR SELECT USING (auth.uid() = inviter_id);
+  FOR SELECT USING (auth.uid() = invited_by);
 
 CREATE POLICY "team_invites_inviter_insert" ON team_invites
-  FOR INSERT WITH CHECK (auth.uid() = inviter_id);
+  FOR INSERT WITH CHECK (auth.uid() = invited_by);
 
 CREATE POLICY "team_invites_inviter_delete" ON team_invites
-  FOR DELETE USING (auth.uid() = inviter_id);
+  FOR DELETE USING (auth.uid() = invited_by);
 
 CREATE POLICY "team_invites_inviter_update" ON team_invites
-  FOR UPDATE USING (auth.uid() = inviter_id);
+  FOR UPDATE USING (auth.uid() = invited_by);
 
 -- ─── user_subscriptions ──────────────────────────────────────────────────────
 
@@ -63,7 +63,7 @@ BEGIN
   DELETE FROM contacts WHERE user_id = target_user_id;
   DELETE FROM calendar_events WHERE user_id = target_user_id;
   DELETE FROM user_settings WHERE user_id = target_user_id;
-  DELETE FROM team_invites WHERE inviter_id = target_user_id;
+  DELETE FROM team_invites WHERE invited_by = target_user_id;
   DELETE FROM user_subscriptions WHERE user_id = target_user_id;
   DELETE FROM pulse_profiles WHERE id = target_user_id;
 

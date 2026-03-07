@@ -137,7 +137,7 @@ const handleOAuthDeepLink = async (url: string) => {
   console.log('[OAuth] Deep link received:', url);
 
   // Check if this is an OAuth callback (contains our custom scheme OR our web domain)
-  const isCustomScheme = url.includes('io.qntmpulse.app://');
+  const isCustomScheme = url.includes('io.qntmpulse.app://') || url.includes('pulse://');
   const isWebDomain = url.includes('pulse.logosvision.org') && (url.includes('code=') || url.includes('access_token='));
 
   if (!isCustomScheme && !isWebDomain) {
@@ -149,11 +149,13 @@ const handleOAuthDeepLink = async (url: string) => {
     // Parse the URL - tokens can be in hash fragment OR query params
     // Supabase typically uses hash fragment: #access_token=xxx&refresh_token=xxx
     
-    // Normalize URL for parsing
+    // Normalize URL for parsing — replace custom schemes with https so the URL
+    // constructor can parse query params and hash fragments correctly.
     let normalizedUrl = url;
-    if (url.includes('io.qntmpulse.app://')) {
-        // Replace custom scheme with https for URL parsing
-        normalizedUrl = url.replace(/^io\.qntmpulse\.app:\/\//, 'https://placeholder.com/');
+    if (url.startsWith('io.qntmpulse.app://')) {
+      normalizedUrl = url.replace(/^io\.qntmpulse\.app:\/\//, 'https://placeholder.com/');
+    } else if (url.startsWith('pulse://')) {
+      normalizedUrl = url.replace(/^pulse:\/\//, 'https://placeholder.com/');
     }
     
     const urlObj = new URL(normalizedUrl);
@@ -163,14 +165,18 @@ const handleOAuthDeepLink = async (url: string) => {
     if (code) {
       console.log('[OAuth] Found PKCE code, exchanging for session...');
       const { data, error } = await supabase.auth.exchangeCodeForSession(code);
-      
+
       if (error) {
         console.error('[OAuth] Error exchanging code for session:', error);
       } else if (data?.session) {
         console.log('[OAuth] Session established from code, reloading app...');
         window.location.reload();
-        return;
+      } else {
+        console.error('[OAuth] exchangeCodeForSession returned no session and no error');
       }
+      // Always return after attempting code exchange — do not fall through to
+      // the implicit-flow path below, which is for a different auth flow.
+      return;
     }
 
     // 2. Try hash fragment (Implicit Flow)
@@ -264,6 +270,15 @@ if (Capacitor.isNativePlatform()) {
   // Permission requests are now handled by the usePermissions hook and PermissionRequestModal
   // in App.tsx for a better user experience with proper UI
   console.log('[App] Native platform detected, permission requests will be handled in-app');
+}
+
+// Electron desktop app: listen for OAuth callbacks delivered via the pulse://
+// custom protocol handler in the main process.
+if ((window as any).electronAPI?.isElectron) {
+  (window as any).electronAPI.onOAuthCallback((url: string) => {
+    console.log('[OAuth] Electron protocol callback received:', url);
+    handleOAuthDeepLink(url);
+  });
 }
 
 // Also detect mobile viewport for responsive CSS

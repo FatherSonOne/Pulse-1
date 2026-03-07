@@ -1,5 +1,5 @@
 // Pulse User's Guide — Full Rich Section Data
-// Version 25.1 · March 2, 2026
+// Version 25.1.1 · March 5, 2026
 // Auto-maintained by the /users-guide slash command.
 
 export interface Shortcut {
@@ -1350,7 +1350,8 @@ export const guideSections: GuideSection[] = [
     id: 'ai-features',
     title: 'AI Features',
     icon: '🤖',
-    summary: 'AI woven into every part of Pulse — global assistant, smart compose, translation in 90+ languages, tone analysis, action extraction, AI Lab, and AI War Room.',
+    summary: 'AI woven into every part of Pulse — global assistant, smart compose, translation in 90+ languages, tone analysis, action extraction, AI Lab workspaces, and the full War Room with 7 modes and 6 guided missions.',
+    badge: 'Updated',
     steps: [
       'Press Ctrl+/ (or ⌘/ on Mac) or click the animated ECG icon in the sidebar to open the Pulse AI Assistant.',
       'The assistant loads your current section\'s data automatically — ask it anything about your workspace.',
@@ -1359,6 +1360,7 @@ export const guideSections: GuideSection[] = [
       'Translate any message: hover → click the globe icon → choose from 90+ languages.',
       'Click Summarize on any long thread to get a 2–4 sentence written summary.',
       'Click Extract Action Items on any email or message to pull tasks into your task list.',
+      'Click War Room in the sidebar for deep-work AI research, planning, and decision-making.',
     ],
     subsections: [
       {
@@ -1407,43 +1409,69 @@ export const guideSections: GuideSection[] = [
       },
       {
         id: 'ai-lab',
-        title: 'AI Lab — Brainstorming',
+        title: 'AI Lab — Specialized Workspaces',
         steps: [
           'Open from Tools → AI Lab in the sidebar.',
-          'Enter a topic, problem, or question.',
-          'Choose a technique: SCAMPER, Six Thinking Hats, Mind Map, or Rapid Brainstorm.',
-          'Pulse generates a structured set of ideas.',
-          'Save individual ideas or export the full session as a document.',
+          'AI Studio — draft, refine, and enhance written content with AI assistance.',
+          'Mission Control — build and coordinate multi-step AI workflows.',
+          'Intelligence Hub — research and synthesize information from multiple sources.',
+          'Quick Actions — fast one-click AI: summarize, rewrite, translate, extract.',
+          'Proposal Builder — create structured proposals and presentations with AI guidance.',
+          'Channel Digest — generate summaries of your channels and conversations automatically.',
+          'Stand-up Briefing — create daily stand-up summaries from your recent activity.',
         ],
       },
       {
-        id: 'ai-war-room',
-        title: 'AI War Room — Deep Analysis',
+        id: 'war-room',
+        title: 'War Room — Strategic AI Workspace',
+        description: 'Click War Room in the sidebar to enter Pulse\'s deep-work AI hub with 7 modes and 6 guided missions.',
         steps: [
-          'Open from Tools → AI War Room in the sidebar.',
-          'Comparative Analysis — compare options side by side with AI-generated evaluation.',
-          'Knowledge Graph — visualize relationships between concepts in a problem.',
-          'Annotations — mark up and highlight documents as a team.',
-          'AI Panel — multi-model reasoning: Pulse uses several AI approaches simultaneously.',
+          'Switch modes using the Mode Switcher or press number keys 1–7.',
+          'Mode 1 — Command Center: tactical operations and real-time coordination.',
+          'Mode 2 — Intel: research, intelligence gathering, and investigation.',
+          'Mode 3 — Deep Focus: distraction-free writing and long-form thinking.',
+          'Mode 4 — Data Analyst: structured data analysis and pattern recognition.',
+          'Mode 5 — Strategist: strategic planning and big-picture thinking.',
+          'Mode 6 — Brainstorm: creative ideation and idea generation.',
+          'Mode 7 — Debrief: post-project retrospectives and lessons learned.',
+          'Launch a Mission from the Missions tab: Research, Decision, Brainstorm, Plan, Analyze, or Create.',
+          'Use The Board to pin notes (Findings, Insights, Action Items, Questions, Decisions) that persist across sessions.',
+          'Press Ctrl+K / Cmd+K to open the Action Palette — a searchable command menu for quick War Room actions.',
         ],
       },
     ],
     tables: [
       {
-        title: 'AI Lab Techniques',
-        columns: ['Technique', 'Best For'],
+        title: 'War Room Guided Missions',
+        columns: ['Mission', 'Guides You Through'],
         rows: [
-          ['SCAMPER', 'Product or process innovation — Substitute, Combine, Adapt, Modify, Put to use, Eliminate, Reverse'],
-          ['Six Thinking Hats', 'Multi-perspective team analysis — creative, critical, optimistic, data, emotional, process'],
-          ['Mind Map', 'Visual exploration of a broad topic'],
-          ['Rapid Brainstorm', 'Quick idea generation on a deadline'],
+          ['Research', 'Define question → Explore perspectives → Analyze findings → Conclude'],
+          ['Decision', 'Define choice → List options → Set criteria → Evaluate → AI recommendation'],
+          ['Brainstorm', 'Set challenge → Generate ideas → Cluster → Converge → Refine top picks'],
+          ['Plan', 'Define goals → Scope → Milestones → Risks → Final plan'],
+          ['Analyze', 'Set goal → Collect data → Analyze → Extract insights → Report'],
+          ['Create', 'Set brief → Outline → Draft → Refine → Export'],
+        ],
+      },
+      {
+        title: 'AI Lab Workspaces',
+        columns: ['Workspace', 'Best For'],
+        rows: [
+          ['AI Studio', 'Drafting and refining written content'],
+          ['Mission Control', 'Multi-step AI workflow coordination'],
+          ['Intelligence Hub', 'Research and information synthesis'],
+          ['Quick Actions', 'Fast one-click AI operations'],
+          ['Proposal Builder', 'Structured proposals and presentations'],
+          ['Channel Digest', 'Auto-summaries of channels and conversations'],
+          ['Stand-up Briefing', 'Daily stand-up summaries from recent activity'],
         ],
       },
     ],
     tips: [
       'The AI Assistant can take real actions — don\'t just ask questions, tell it what to do.',
       'Be specific: "Draft a reply to Sarah\'s last email" is far more powerful than "help me write an email".',
-      'The AI War Room uses multiple AI models simultaneously for deeper, more balanced analysis.',
+      'In the War Room, press 1–7 to switch between modes instantly without reaching for the mouse.',
+      'The Board in the War Room saves notes across sessions — use it to build a running intelligence file.',
       'Chat history persists across sections during your session — pick up right where you left off.',
     ],
     useCases: [
@@ -1912,24 +1940,37 @@ export const guideSections: GuideSection[] = [
   // ── 18. MOBILE ────────────────────────────────────────────────────────────
   {
     id: 'mobile',
-    title: 'Mobile App',
+    title: 'Mobile & Desktop Apps',
     icon: '📲',
-    summary: 'The full Pulse experience on Android — push notifications, biometric login, offline mode, camera integration, and a home screen widget.',
+    badge: 'Updated',
+    summary: 'Pulse runs on Windows (desktop installer), Android (mobile), and any web browser. Everything syncs instantly across all platforms.',
     steps: [
-      'Open the Google Play Store, search for Pulse, tap Install.',
-      'Sign in with your existing Pulse account — workspace syncs instantly.',
-      'Grant required permissions: notifications, microphone (Voxer), camera (Video Vox, card scanning).',
-      'Enable Biometric Login: Settings → Security → Biometric Login.',
-      'Enable Push Notifications: Settings → Notifications.',
-      'Add the Pulse home screen widget for quick stats and message preview.',
+      'Windows Desktop: visit the Pulse website → Downloads → Windows PC → run the .exe installer.',
+      'Android: open Google Play Store → search Pulse → tap Install.',
+      'Sign in with your existing Pulse account on any platform — your workspace syncs instantly.',
+      'Grant required permissions on mobile: notifications, microphone (Voxer), camera (Video Vox, card scanning).',
+      'Enable Biometric Login on Android: Settings → Security → Biometric Login.',
+      'Add the Android home screen widget for quick stats and message preview.',
     ],
     subsections: [
       {
+        id: 'windows-desktop',
+        title: 'Windows Desktop App',
+        steps: [
+          'Go to the Pulse website and click Downloads in the top navigation.',
+          'Click Download Desktop Installer under Windows PC.',
+          'Run the downloaded .exe file and follow the installer prompts.',
+          'Open Pulse from your Start menu or desktop shortcut.',
+          'Sign in — your full workspace loads automatically.',
+          'The desktop app runs natively: persistent notifications, faster load times, and a dedicated window.',
+        ],
+      },
+      {
         id: 'mobile-features',
-        title: 'Mobile-Specific Features',
+        title: 'Android Mobile Features',
         steps: [
           'Push Notifications — instant alerts for messages, tasks, and events even when the app is closed.',
-          'Business Card Scanner — tap the camera icon in Contacts to scan a business card and create a contact instantly.',
+          'Business Card Scanner — tap the camera icon in Contacts to scan a card and create a contact instantly.',
           'Biometric Login — fingerprint or face ID instead of a password.',
           'Camera Integration — attach photos directly from your camera in any message or email.',
           'Home Screen Widget — quick stats, unread count, and message preview without opening the app.',
@@ -1944,7 +1985,7 @@ export const guideSections: GuideSection[] = [
           'Draft messages and emails offline — they send automatically when you reconnect.',
           'Tasks and contacts are cached for offline viewing.',
           'The app shows an Offline banner when it can\'t reach the server.',
-          'Tip: open Pulse before entering an area with poor signal to pre-cache your latest data.',
+          'Open Pulse before entering an area with poor signal to pre-cache your latest data.',
         ],
       },
       {
@@ -1959,6 +2000,7 @@ export const guideSections: GuideSection[] = [
       },
     ],
     tips: [
+      'The Windows desktop app gives you native notifications and a persistent window separate from your browser.',
       'Open Pulse before going into an area with poor signal — it pre-caches your latest data for offline reading.',
       'Use Quick Vox on mobile for fast voice replies — much faster than typing on a small keyboard.',
       'Set Quiet Hours in the mobile app to avoid late-night notifications.',
@@ -2207,5 +2249,5 @@ export const guideSections: GuideSection[] = [
   },
 ];
 
-export const guideVersion = '28.2.0';
-export const guideUpdated = 'March 2, 2026';
+export const guideVersion = '25.1.1';
+export const guideUpdated = 'March 5, 2026';

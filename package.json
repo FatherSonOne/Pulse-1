@@ -1,7 +1,7 @@
 {
   "name": "pulse",
   "private": true,
-  "version": "25.1.0",
+  "version": "25.1.1",
   "type": "module",
   "main": "electron/main.cjs",
   "scripts": {
@@ -46,6 +46,12 @@
     "extraMetadata": {
       "main": "electron/main.cjs"
     },
+    "protocols": [
+      {
+        "name": "Pulse",
+        "schemes": ["pulse"]
+      }
+    ],
     "win": {
       "target": [
         { "target": "nsis", "arch": ["x64"] },

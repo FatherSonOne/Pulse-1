@@ -12,22 +12,28 @@ const getRedirectUrl = (path: string = '/') => {
     // This returns the user to the native app after OAuth completes
     return `io.qntmpulse.app://auth${path}`;
   }
-  
+
+  // For the Electron desktop app, use the pulse:// custom protocol so the OS
+  // can route the OAuth callback back into the running Electron process.
+  if ((window as any).electronAPI?.isElectron) {
+    return `pulse://auth/callback`;
+  }
+
   // In development, always use current origin (localhost)
   // In production, use VITE_APP_URL if set, otherwise use current origin
   const isDevelopment = import.meta.env.DEV || window.location.hostname === 'localhost' || window.location.hostname === '127.0.0.1';
-  
+
   if (isDevelopment) {
     // Force localhost redirect for development
     return `${window.location.origin}${path}`;
   }
-  
+
   // Production: use VITE_APP_URL if set, otherwise current origin
   const appUrl = import.meta.env.VITE_APP_URL;
   if (appUrl) {
     return `${appUrl}${path}`;
   }
-  
+
   return `${window.location.origin}${path}`;
 };
 
