@@ -76,6 +76,18 @@ const SectionHeader: React.FC<{ icon: string; label: string }> = ({ icon, label 
   </div>
 );
 
+interface EmailHistoryItem {
+  id: string;
+  thread_id: string;
+  subject: string;
+  snippet: string;
+  received_at: string;
+  is_sent: boolean;
+  is_read: boolean;
+  from_email: string;
+  from_name: string | null;
+}
+
 // ==================== MAIN COMPONENT ====================
 
 export const ContactDetail: React.FC<ContactDetailProps> = ({
@@ -97,17 +109,7 @@ export const ContactDetail: React.FC<ContactDetailProps> = ({
   const [goalModalOpen, setGoalModalOpen] = useState(false);
 
   // ----- Email history (Phase 3) -----
-  const [emailHistory, setEmailHistory] = useState<{
-    id: string;
-    thread_id: string;
-    subject: string;
-    snippet: string;
-    received_at: string;
-    is_sent: boolean;
-    is_read: boolean;
-    from_email: string;
-    from_name: string | null;
-  }[]>([]);
+  const [emailHistory, setEmailHistory] = useState<EmailHistoryItem[]>([]);
   const [emailHistoryLoading, setEmailHistoryLoading] = useState(false);
 
   // Load goal for this contact
@@ -132,8 +134,10 @@ export const ContactDetail: React.FC<ContactDetailProps> = ({
           .order('received_at', { ascending: false })
           .limit(10);
         if (!cancelled) setEmailHistory(data ?? []);
-      } catch {
-        // Silently ignore — email history is non-critical
+      } catch (err) {
+        if (!cancelled) {
+          console.warn('[ContactDetail] Email history fetch failed:', err);
+        }
       } finally {
         if (!cancelled) setEmailHistoryLoading(false);
       }
@@ -656,7 +660,7 @@ export const ContactDetail: React.FC<ContactDetailProps> = ({
                         {email.subject || '(no subject)'}
                       </p>
                       <span className="text-xs text-zinc-400 dark:text-zinc-500 flex-shrink-0">
-                        {new Date(email.received_at).toLocaleDateString()}
+                        {email.received_at ? new Date(email.received_at).toLocaleDateString() : '—'}
                       </span>
                     </div>
                     <p className="text-xs text-zinc-500 dark:text-zinc-500 truncate mt-0.5">
