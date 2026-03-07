@@ -16,6 +16,7 @@ export interface EmailCampaign {
   from_email: string | null;
   reply_to: string | null;
   segment_name: string;
+  segment_id: string | null;
   schedule_at: string | null;
   sent_at: string | null;
   stats: {

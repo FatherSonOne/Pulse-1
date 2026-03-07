@@ -9,6 +9,8 @@ import {
 import { EmailTemplate, emailTemplateService } from '../../../services/emailTemplateService';
 import { emailAIService, DraftGenerationParams } from '../../../services/emailAIService';
 import { supabase } from '../../../services/supabase';
+import { emailSegmentService, EmailSegment } from '../../../services/emailSegmentService';
+import { SegmentBuilder } from './SegmentBuilder';
 
 // ---------------------------------------------------------------------------
 // Types & constants
@@ -20,13 +22,6 @@ const STEPS: { key: WizardStep; label: string; icon: string }[] = [
   { key: 'setup',   label: 'Setup',          icon: 'fa-gear'       },
   { key: 'compose', label: 'Compose',        icon: 'fa-pen-to-square' },
   { key: 'review',  label: 'Review & Send',  icon: 'fa-paper-plane' },
-];
-
-const SEGMENTS = [
-  { value: 'All Contacts',             label: 'All Contacts' },
-  { value: 'Recent (30 days)',         label: 'Recent (30 days)' },
-  { value: 'Newsletter Subscribers',   label: 'Newsletter Subscribers' },
-  { value: 'VIP Contacts',             label: 'VIP Contacts' },
 ];
 
 type SaveStatus = 'idle' | 'saving' | 'saved';
@@ -68,7 +63,7 @@ export const EmailCampaignBuilder: React.FC<Props> = ({
   const [subject, setSubject]         = useState(campaign?.subject ?? '');
   const [previewText, setPreviewText] = useState(campaign?.preview_text ?? '');
   const [fromName, setFromName]       = useState(campaign?.from_name ?? '');
-  const [segmentName, setSegmentName] = useState(campaign?.segment_name ?? SEGMENTS[0].value);
+  const [segmentName, setSegmentName] = useState(campaign?.segment_name ?? '');
   const [bodyHtml, setBodyHtml]       = useState(campaign?.body_html ?? '');
   const [bodyText, setBodyText]       = useState(campaign?.body_text ?? '');
   const [recipientsRaw, setRecipientsRaw] = useState('');
@@ -98,6 +93,13 @@ export const EmailCampaignBuilder: React.FC<Props> = ({
   // ----- Send -----
   const [sending, setSending] = useState(false);
 
+  // ----- Segments (Phase 4) -----
+  const [segments, setSegments]               = useState<EmailSegment[]>([]);
+  const [segmentsLoading, setSegmentsLoading] = useState(false);
+  const [segmentId, setSegmentId]             = useState<string | null>(campaign?.segment_id ?? null);
+  const [showSegmentBuilder, setShowSegmentBuilder] = useState(false);
+  const [editingSegment, setEditingSegment]   = useState<EmailSegment | null>(null);
+
   // ---------------------------------------------------------------------------
   // Auto-save logic
   // ---------------------------------------------------------------------------
@@ -108,10 +110,11 @@ export const EmailCampaignBuilder: React.FC<Props> = ({
     preview_text: previewText || null,
     from_name:    fromName || null,
     segment_name: segmentName,
+    segment_id:   segmentId ?? null,
     body_html:    bodyHtml || null,
     body_text:    bodyText || null,
     schedule_at:  scheduleAt ? new Date(scheduleAt).toISOString() : null,
-  }), [name, subject, previewText, fromName, segmentName, bodyHtml, bodyText, scheduleAt]);
+  }), [name, subject, previewText, fromName, segmentName, segmentId, bodyHtml, bodyText, scheduleAt]);
 
   const doSave = useCallback(async (): Promise<void> => {
     setSaveStatus('saving');
@@ -142,6 +145,12 @@ export const EmailCampaignBuilder: React.FC<Props> = ({
     }, 3000);
   }, [doSave]);
 
+  const handleSegmentChange = useCallback((seg: EmailSegment) => {
+    setSegmentId(seg.id);
+    setSegmentName(seg.name);
+    scheduleAutoSave();
+  }, [scheduleAutoSave]);
+
   const isMountedRef = useRef(false);
 
   // Clear on unmount
@@ -160,6 +169,15 @@ export const EmailCampaignBuilder: React.FC<Props> = ({
     scheduleAutoSave();
     // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [name, subject, previewText, fromName, segmentName, bodyHtml, bodyText, scheduleAt]);
+
+  // Load segments on mount
+  useEffect(() => {
+    setSegmentsLoading(true);
+    emailSegmentService.list()
+      .then(setSegments)
+      .catch(() => toast.error('Failed to load segments'))
+      .finally(() => setSegmentsLoading(false));
+  }, []);
 
   // ---------------------------------------------------------------------------
   // Step navigation with validation
@@ -481,21 +499,77 @@ export const EmailCampaignBuilder: React.FC<Props> = ({
               />
             </div>
 
-            {/* Audience Segment */}
+            {/* Audience Segment (Phase 4 — dynamic) */}
             <div>
-              <label className={labelClass}>Audience Segment</label>
-              <select
-                value={segmentName}
-                onChange={(e) => setSegmentName(e.target.value)}
-                className={inputClass}
-              >
-                {SEGMENTS.map((seg) => (
-                  <option key={seg.value} value={seg.value}>
-                    {seg.label}
-                  </option>
-                ))}
-              </select>
+              <div className="flex items-center justify-between mb-1.5">
+                <label className={labelClass}>Audience Segment</label>
+                <button
+                  type="button"
+                  onClick={() => { setEditingSegment(null); setShowSegmentBuilder(true); }}
+                  className="text-xs text-rose-500 hover:text-rose-600 font-medium transition-colors"
+                >
+                  <i className="fa-solid fa-plus mr-1" />
+                  New Segment
+                </button>
+              </div>
+              {segmentsLoading ? (
+                <div className="flex items-center gap-2 px-3 py-2 text-sm text-stone-400 dark:text-zinc-500">
+                  <i className="fa-solid fa-spinner animate-spin" />
+                  <span>Loading segments…</span>
+                </div>
+              ) : (
+                <div className="space-y-2">
+                  {segments.map((seg) => (
+                    <label
+                      key={seg.id}
+                      className={`flex items-center justify-between gap-3 px-3 py-2.5 rounded-lg border cursor-pointer transition-all ${
+                        segmentId === seg.id
+                          ? 'bg-rose-50 dark:bg-rose-500/10 border-rose-500/50 text-rose-700 dark:text-rose-400'
+                          : 'bg-white dark:bg-zinc-900 border-stone-200 dark:border-zinc-700 text-stone-700 dark:text-zinc-300 hover:border-rose-500/30'
+                      }`}
+                    >
+                      <div className="flex items-center gap-2">
+                        <input
+                          type="radio"
+                          name="segment"
+                          value={seg.id}
+                          checked={segmentId === seg.id}
+                          onChange={() => handleSegmentChange(seg)}
+                          className="accent-rose-500"
+                        />
+                        <span className="text-sm font-medium">{seg.name}</span>
+                      </div>
+                      {seg.contact_count > 0 && (
+                        <span className="text-xs text-stone-400 dark:text-zinc-500">
+                          {seg.contact_count.toLocaleString()} contacts
+                        </span>
+                      )}
+                    </label>
+                  ))}
+                </div>
+              )}
             </div>
+
+            {/* SegmentBuilder modal */}
+            {showSegmentBuilder && (
+              <SegmentBuilder
+                segment={editingSegment}
+                onSave={(saved) => {
+                  setSegments((prev) => {
+                    const idx = prev.findIndex((s) => s.id === saved.id);
+                    if (idx >= 0) {
+                      const next = [...prev];
+                      next[idx] = saved;
+                      return next;
+                    }
+                    return [...prev, saved];
+                  });
+                  handleSegmentChange(saved);
+                  setShowSegmentBuilder(false);
+                }}
+                onClose={() => setShowSegmentBuilder(false)}
+              />
+            )}
 
             {/* Next */}
             <div className="pt-2">
