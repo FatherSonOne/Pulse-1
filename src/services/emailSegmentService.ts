@@ -73,7 +73,7 @@ class EmailSegmentService {
     }));
     const { data, error } = await supabase
       .from('email_segments')
-      .insert(rows)
+      .upsert(rows, { onConflict: 'user_id,name', ignoreDuplicates: true })
       .select();
     if (error) throw error;
     return (data ?? []) as EmailSegment[];
@@ -141,20 +141,24 @@ class EmailSegmentService {
     const segment = await this.getById(segmentId);
     const emails = await this.applyRules(userId, segment.filter_rules);
     const count = emails.length;
-    await supabase
+    const { error: updateError } = await supabase
       .from('email_segments')
       .update({ contact_count: count })
       .eq('id', segmentId)
       .eq('user_id', userId);
+    if (updateError) {
+      console.warn('[emailSegmentService] Failed to persist contact_count:', updateError);
+    }
     return count;
   }
 
   /**
    * Evaluate rules against email_contacts for a given userId.
-   * Multiple rules are AND-ed together. "all" rule returns all non-blocked contacts.
+   * Public so SegmentBuilder can call it for live previews before saving.
    */
   async applyRules(userId: string, rules: SegmentRule[]): Promise<string[]> {
-    const hasAllRule = rules.length === 0 || rules.some((r) => r.type === 'all');
+    const safeRules = rules ?? [];
+    const hasAllRule = safeRules.length === 0 || safeRules.some((r) => r.type === 'all');
 
     let query = supabase
       .from('email_contacts')
@@ -163,7 +167,7 @@ class EmailSegmentService {
       .eq('is_blocked', false);
 
     if (!hasAllRule) {
-      for (const rule of rules) {
+      for (const rule of safeRules) {
         if (rule.type === 'last_contacted_days' && rule.value != null) {
           const cutoff = new Date();
           cutoff.setDate(cutoff.getDate() - rule.value);
