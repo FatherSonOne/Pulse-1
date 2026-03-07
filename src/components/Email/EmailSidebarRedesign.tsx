@@ -11,6 +11,8 @@ interface EmailSidebarRedesignProps {
   isOpen?: boolean;
   onClose?: () => void;
   accentColor?: 'rose' | 'blue' | 'purple' | 'green';
+  onCampaignsClick?: () => void;
+  isCampaignsActive?: boolean;
 }
 
 const folders: { id: EmailFolder; label: string; icon: string; color?: string }[] = [
@@ -34,6 +36,8 @@ export const EmailSidebarRedesign: React.FC<EmailSidebarRedesignProps> = ({
   isOpen = true,
   onClose,
   accentColor = 'rose',
+  onCampaignsClick,
+  isCampaignsActive = false,
 }) => {
   const handleFolderClick = (folder: EmailFolder) => {
     onFolderChange(folder);
@@ -170,7 +174,28 @@ export const EmailSidebarRedesign: React.FC<EmailSidebarRedesignProps> = ({
           </div>
         </nav>
 
-
+        {/* Campaigns navigation */}
+        <div className="px-3 py-2 border-t border-stone-200 dark:border-zinc-800">
+          <button
+            type="button"
+            onClick={onCampaignsClick}
+            aria-label="Campaigns"
+            className={`w-full group flex items-center gap-3 px-3 py-2.5 rounded-xl text-left transition-all duration-200 ${
+              isCampaignsActive
+                ? `${getAccentBg()} ${getAccentText()} border shadow-sm font-semibold`
+                : 'text-stone-600 dark:text-zinc-400 hover:bg-stone-100 dark:hover:bg-zinc-800/60 hover:text-stone-900 dark:hover:text-white font-medium'
+            }`}
+          >
+            <div className={`w-9 h-9 rounded-lg flex items-center justify-center transition-all ${
+              isCampaignsActive
+                ? `bg-gradient-to-br ${getAccentGradient()} text-white shadow-md`
+                : 'bg-stone-200 dark:bg-zinc-800 group-hover:bg-stone-300 dark:group-hover:bg-zinc-700'
+            }`}>
+              <i className="fa-solid fa-bullhorn" aria-hidden="true" />
+            </div>
+            <span className="flex-1 text-sm">Campaigns</span>
+          </button>
+        </div>
 
         {/* Storage indicator */}
         <div className="p-4 border-t border-stone-200 dark:border-zinc-800 bg-stone-100/50 dark:bg-zinc-900/50" role="region" aria-label="Storage usage">

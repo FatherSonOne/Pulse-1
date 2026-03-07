@@ -10,6 +10,9 @@ import toast from 'react-hot-toast';
 import EmailSidebarRedesign from './EmailSidebarRedesign';
 import EmailListRedesign from './EmailListRedesign';
 import EmailViewerNew from './EmailViewerNew';
+import { EmailCampaignsDashboard } from './Campaigns/EmailCampaignsDashboard';
+import { EmailCampaignBuilder } from './Campaigns/EmailCampaignBuilder';
+import type { EmailCampaign } from '../../services/emailCampaignService';
 import EmailComposerModal from './EmailComposerModal';
 import DailyBriefing from './DailyBriefing';
 import FollowUpRemindersDropdown from './FollowUpRemindersDropdown';
@@ -58,6 +61,11 @@ export const PulseEmailClientRedesign: React.FC<PulseEmailClientRedesignProps> =
   const [showReauthModal, setShowReauthModal] = useState(false);
   const [nudgeFocused, setNudgeFocused] = useState(false);
   const briefingRef = useRef<HTMLDivElement>(null);
+
+  // Campaign view state
+  // undefined = campaigns dashboard; null = new campaign; EmailCampaign = edit existing
+  const [currentView, setCurrentView] = useState<'inbox' | 'campaigns'>('inbox');
+  const [editingCampaign, setEditingCampaign] = useState<EmailCampaign | null | undefined>(undefined);
 
   // Focus the AI nudge/briefing panel when navigated from Daily Overview
   useEffect(() => {
@@ -806,6 +814,12 @@ export const PulseEmailClientRedesign: React.FC<PulseEmailClientRedesignProps> =
         isOpen={sidebarOpen}
         onClose={() => setSidebarOpen(false)}
         accentColor={accentColor}
+        onCampaignsClick={() => {
+          setCurrentView('campaigns');
+          setEditingCampaign(undefined);
+          setSidebarOpen(false);
+        }}
+        isCampaignsActive={currentView === 'campaigns'}
       />
 
       {/* Main content area */}
@@ -994,56 +1008,75 @@ export const PulseEmailClientRedesign: React.FC<PulseEmailClientRedesignProps> =
           </div>
         )}
 
-        {/* Email list and viewer - wrapper for zoom */}
+        {/* Email list and viewer - wrapper for zoom, or Campaigns view */}
         <div className="flex-1 overflow-hidden min-h-0">
-          <div
-            className="flex h-full origin-top-left transition-transform duration-200"
-            style={{
-              transform: `scale(${zoomLevel / 100})`,
-              width: `${10000 / zoomLevel}%`,
-              height: `${10000 / zoomLevel}%`
-            }}
-          >
-            {/* Email list */}
-            <div className={`
-              ${selectedEmail ? 'hidden md:flex md:w-2/5 md:border-r md:border-stone-200 dark:md:border-zinc-800' : 'flex w-full'}
-              flex-col min-h-0 flex-1
-            `}>
-              <EmailListRedesign
-                emails={emails}
-                selectedEmail={selectedEmail}
-                loading={loading}
-                onEmailSelect={handleEmailSelect}
-                onToggleStar={handleToggleStar}
-                onArchive={handleArchive}
-                onTrash={handleTrash}
-                currentFolder={currentFolder}
-                accentColor={accentColor}
-                activeCategory={activeCategory}
-                onCategoryChange={handleCategoryChange}
-                categoryCounts={categoryCounts}
+          {currentView === 'campaigns' ? (
+            editingCampaign !== undefined ? (
+              <EmailCampaignBuilder
+                campaign={editingCampaign}
+                onSave={(_saved) => {
+                  setEditingCampaign(undefined); // return to dashboard
+                }}
+                onCancel={() => setEditingCampaign(undefined)}
               />
-            </div>
+            ) : (
+              <EmailCampaignsDashboard
+                onNewCampaign={() => setEditingCampaign(null)}
+                onEditCampaign={(c) => setEditingCampaign(c)}
+              />
+            )
+          ) : (
+            <>
+              <div
+                className="flex h-full origin-top-left transition-transform duration-200"
+                style={{
+                  transform: `scale(${zoomLevel / 100})`,
+                  width: `${10000 / zoomLevel}%`,
+                  height: `${10000 / zoomLevel}%`
+                }}
+              >
+                {/* Email list */}
+                <div className={`
+                  ${selectedEmail ? 'hidden md:flex md:w-2/5 md:border-r md:border-stone-200 dark:md:border-zinc-800' : 'flex w-full'}
+                  flex-col min-h-0 flex-1
+                `}>
+                  <EmailListRedesign
+                    emails={emails}
+                    selectedEmail={selectedEmail}
+                    loading={loading}
+                    onEmailSelect={handleEmailSelect}
+                    onToggleStar={handleToggleStar}
+                    onArchive={handleArchive}
+                    onTrash={handleTrash}
+                    currentFolder={currentFolder}
+                    accentColor={accentColor}
+                    activeCategory={activeCategory}
+                    onCategoryChange={handleCategoryChange}
+                    categoryCounts={categoryCounts}
+                  />
+                </div>
 
-            {/* Email viewer */}
-            {selectedEmail && (
-              <div className="w-full md:flex-1 overflow-hidden">
-                <EmailViewerNew
-                  email={selectedEmail}
-                  thread={selectedThread}
-                  onClose={() => {
-                    setSelectedEmail(null);
-                    setSelectedThread(null);
-                  }}
-                  onReply={handleReply}
-                  onArchive={() => handleArchive(selectedEmail)}
-                  onTrash={() => handleTrash(selectedEmail)}
-                  onToggleStar={() => handleToggleStar(selectedEmail)}
-                  onMarkUnread={() => handleMarkUnread(selectedEmail)}
-                />
+                {/* Email viewer */}
+                {selectedEmail && (
+                  <div className="w-full md:flex-1 overflow-hidden">
+                    <EmailViewerNew
+                      email={selectedEmail}
+                      thread={selectedThread}
+                      onClose={() => {
+                        setSelectedEmail(null);
+                        setSelectedThread(null);
+                      }}
+                      onReply={handleReply}
+                      onArchive={() => handleArchive(selectedEmail)}
+                      onTrash={() => handleTrash(selectedEmail)}
+                      onToggleStar={() => handleToggleStar(selectedEmail)}
+                      onMarkUnread={() => handleMarkUnread(selectedEmail)}
+                    />
+                  </div>
+                )}
               </div>
-            )}
-          </div>
+            </>
+          )}
         </div>
       </div>
 
