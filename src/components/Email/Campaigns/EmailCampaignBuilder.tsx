@@ -437,7 +437,7 @@ export const EmailCampaignBuilder: React.FC<Props> = ({
                   value={subject}
                   onChange={(e) => setSubject(e.target.value)}
                   placeholder="Write a compelling subject line…"
-                  maxLength={100}
+                  maxLength={60}
                   className={`${inputClass} pr-16`}
                 />
                 <span

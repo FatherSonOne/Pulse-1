@@ -57,10 +57,12 @@ class EmailCampaignService {
   }
 
   async getById(id: string): Promise<EmailCampaign> {
+    const userId = await this.getUserId();
     const { data, error } = await supabase
       .from('email_campaigns')
       .select('*')
       .eq('id', id)
+      .eq('user_id', userId)
       .single();
 
     if (error) throw error;

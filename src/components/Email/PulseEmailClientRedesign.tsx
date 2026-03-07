@@ -67,6 +67,7 @@ export const PulseEmailClientRedesign: React.FC<PulseEmailClientRedesignProps> =
   // undefined = campaigns dashboard; null = new campaign; EmailCampaign = edit existing
   const [currentView, setCurrentView] = useState<'inbox' | 'campaigns'>('inbox');
   const [editingCampaign, setEditingCampaign] = useState<EmailCampaign | null | undefined>(undefined);
+  const [campaignRefreshKey, setCampaignRefreshKey] = useState(0);
 
   // Focus the AI nudge/briefing panel when navigated from Daily Overview
   useEffect(() => {
@@ -349,11 +350,7 @@ export const PulseEmailClientRedesign: React.FC<PulseEmailClientRedesignProps> =
   const handleFolderChange = (folder: EmailFolder) => {
     setCurrentView('inbox');
     setCurrentFolder(folder);
-    if (folder !== 'inbox') {
-      setActiveCategory('primary'); // Reset, but technically activeCategory is only used for inbox
-    } else {
-      setActiveCategory('primary'); // Always start at primary when going to inbox
-    }
+    setActiveCategory('primary');
     setSelectedEmail(null);
     setSelectedThread(null);
   };
@@ -1019,12 +1016,14 @@ export const PulseEmailClientRedesign: React.FC<PulseEmailClientRedesignProps> =
               <EmailCampaignBuilder
                 campaign={editingCampaign}
                 onSave={(_saved) => {
-                  setEditingCampaign(undefined); // return to dashboard
+                  setCampaignRefreshKey(k => k + 1); // force dashboard remount to refresh list
+                  setEditingCampaign(undefined);
                 }}
                 onCancel={() => setEditingCampaign(undefined)}
               />
             ) : (
               <EmailCampaignsDashboard
+                key={campaignRefreshKey}
                 onNewCampaign={() => setEditingCampaign(null)}
                 onEditCampaign={(c) => setEditingCampaign(c)}
               />

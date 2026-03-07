@@ -186,12 +186,8 @@ export const EmailViewerNew: React.FC<EmailViewerNewProps> = ({
       const { error } = await supabase.from('tasks').insert({
         user_id: user.id,
         title: email.subject || 'Task from email',
-        description: `From: ${email.from_name || email.from_email}\n\n${email.snippet || ''}`,
+        origin_message_id: email.id,
         priority: 'medium',
-        status: 'pending',
-        source: 'email',
-        source_id: email.id,
-        created_at: new Date().toISOString(),
       });
 
       if (error) throw error;
