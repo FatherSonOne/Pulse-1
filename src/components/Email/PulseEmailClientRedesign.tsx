@@ -345,6 +345,7 @@ export const PulseEmailClientRedesign: React.FC<PulseEmailClientRedesignProps> =
 
   // Handle folder change
   const handleFolderChange = (folder: EmailFolder) => {
+    setCurrentView('inbox');
     setCurrentFolder(folder);
     if (folder !== 'inbox') {
       setActiveCategory('primary'); // Reset, but technically activeCategory is only used for inbox
