@@ -92,6 +92,7 @@ export const EmailCampaignBuilder: React.FC<Props> = ({
 
   // ----- Send -----
   const [sending, setSending] = useState(false);
+  const [loadingRecipients, setLoadingRecipients] = useState(false);
 
   // ----- Segments (Phase 4) -----
   const [segments, setSegments]               = useState<EmailSegment[]>([]);
@@ -178,6 +179,18 @@ export const EmailCampaignBuilder: React.FC<Props> = ({
       .catch(() => toast.error('Failed to load segments'))
       .finally(() => setSegmentsLoading(false));
   }, []);
+
+  // Auto-populate recipients from segment when entering Review step
+  useEffect(() => {
+    if (step !== 'review' || !segmentId || recipientsRaw.trim()) return;
+    setLoadingRecipients(true);
+    emailSegmentService.resolveRecipients(segmentId)
+      .then((emails) => {
+        setRecipientsRaw(emails.join(', '));
+      })
+      .catch(() => toast.error('Failed to load segment recipients'))
+      .finally(() => setLoadingRecipients(false));
+  }, [step, segmentId]);
 
   // ---------------------------------------------------------------------------
   // Step navigation with validation
@@ -810,11 +823,16 @@ export const EmailCampaignBuilder: React.FC<Props> = ({
             <div>
               <label className={labelClass}>
                 Recipients
-                {recipientCount > 0 && (
+                {loadingRecipients ? (
+                  <span className="ml-2 normal-case text-stone-400 dark:text-zinc-500 font-normal">
+                    <i className="fa-solid fa-spinner animate-spin text-xs mr-1" />
+                    Loading from segment…
+                  </span>
+                ) : recipientCount > 0 ? (
                   <span className="ml-2 normal-case text-rose-600 dark:text-rose-400 font-medium">
                     {recipientCount} recipient{recipientCount !== 1 ? 's' : ''}
                   </span>
-                )}
+                ) : null}
               </label>
               <textarea
                 value={recipientsRaw}
