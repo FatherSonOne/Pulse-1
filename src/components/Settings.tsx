@@ -17,6 +17,11 @@ import { ApiKeysPanel } from './ApiKeys';
 import AIHealthMonitor from './AIHealthMonitor';
 import { enableQuotaNotifications, disableQuotaNotifications, areNotificationsEnabled, sendTestNotification } from '../services/geminiQuotaNotifications';
 import './Settings.css';
+import { settingsService } from '../services/settingsService';
+import toast from 'react-hot-toast';
+import { useFeatures, FEATURE_CATEGORIES, FEATURE_NAMES } from '../contexts/FeatureContext';
+import { sendTeamInvite, getPendingTeamInvites, resendTeamInvite, revokeTeamInvite, type TeamInvite } from '../services/teamService';
+import billingService, { type UserPlan } from '../services/billingService';
 
 
 interface SettingsProps {
@@ -32,11 +37,13 @@ const SECTIONS = [
   { id: 'ai_intelligence', icon: 'fa-brain', label: 'AI & Intelligence' },
   { id: 'integrations', icon: 'fa-plug', label: 'Integrations' },
   { id: 'notifications', icon: 'fa-bell', label: 'Notifications' },
+  { id: 'features_labs', icon: 'fa-flask', label: 'Features & Labs' },
+  { id: 'war_room', icon: 'fa-shield', label: 'War Room' },
+  { id: 'activity_monitor', icon: 'fa-chart-line', label: 'Activity Monitor' },
   { id: 'team', icon: 'fa-users', label: 'Team Management' },
   { id: 'accessibility', icon: 'fa-universal-access', label: 'Accessibility' },
   { id: 'privacy_data', icon: 'fa-shield-halved', label: 'Privacy & Data' },
   { id: 'about', icon: 'fa-circle-info', label: 'About Pulse' },
-  // Keeping these for completeness as they were in the original
   { id: 'billing', icon: 'fa-receipt', label: 'Plan & Billing' },
   { id: 'developer', icon: 'fa-code', label: 'Developer Tools' },
 ];
@@ -48,6 +55,7 @@ const ADMIN_SECTIONS = [
 
 const Settings: React.FC<SettingsProps> = ({ user, isDarkMode, toggleTheme, initialSection, onClose }) => {
   const [activeSection, setActiveSection] = useState(initialSection || 'account');
+  const { features, toggleFeature, advancedMode, setAdvancedMode } = useFeatures();
 
   // --- MOBILE STATE MANAGEMENT ---
   const [isMobileMenuOpen, setIsMobileMenuOpen] = useState(false);
@@ -171,11 +179,13 @@ const Settings: React.FC<SettingsProps> = ({ user, isDarkMode, toggleTheme, init
   const [notifEmail, setNotifEmail] = useState(false);
   
   // --- TEAM MANAGEMENT STATE ---
-  const [pendingInvites, setPendingInvites] = useState<{email: string, date: string}[]>([
-      { email: 'colleague@example.com', date: '2024-05-14' }
-  ]);
+  const [pendingInvites, setPendingInvites] = useState<TeamInvite[]>([]);
   const [inviteEmail, setInviteEmail] = useState('');
   const [isInviting, setIsInviting] = useState(false);
+
+  // --- BILLING STATE ---
+  const [currentPlan, setCurrentPlan] = useState<UserPlan | null>(null);
+  const [billingLoading, setBillingLoading] = useState(false);
 
   // --- ACCESSIBILITY STATE ---
   // Theme is passed as prop
@@ -187,10 +197,165 @@ const Settings: React.FC<SettingsProps> = ({ user, isDarkMode, toggleTheme, init
 
   // --- PRIVACY & DATA STATE ---
   const [analyticsTracking, setAnalyticsTracking] = useState(true);
-  
+  const [nudgeFrequencyHours, setNudgeFrequencyHours] = useState(24);
+  const [nudgeFrequencyHours, setNudgeFrequencyHours] = useState(24);
+
+  // --- WAR ROOM STATE ---
+  const [warRoomDefaultMode, setWarRoomDefaultMode] = useState('command-center');
+  const [warRoomAIDepth, setWarRoomAIDepth] = useState<'fast' | 'balanced' | 'deep'>('balanced');
+  const [warRoomTokenStreaming, setWarRoomTokenStreaming] = useState(true);
+  const [warRoomThinkingPanel, setWarRoomThinkingPanel] = useState(true);
+  const [warRoomAnnotations, setWarRoomAnnotations] = useState(true);
+
+  // --- ACTIVITY MONITOR STATE ---
+  const [activityPresenceVisible, setActivityPresenceVisible] = useState(true);
+  const [activityLeaderboard, setActivityLeaderboard] = useState(true);
+  const [activityRetentionDays, setActivityRetentionDays] = useState(90);
+
+  // --- DESKTOP APP STATE ---
+  const [desktopRememberPosition, setDesktopRememberPosition] = useState(true);
+  const [desktopMinimizeToTray, setDesktopMinimizeToTray] = useState(false);
+  const [desktopAutoLaunch, setDesktopAutoLaunch] = useState(false);
+  const [desktopNotificationStyle, setDesktopNotificationStyle] = useState<'native' | 'in-app'>('native');
+  const isElectron = typeof window !== 'undefined' && !!(window as any).electronAPI;
+
+  // --- PWA INSTALL ---
+  const deferredPromptRef = useRef<any>(null);
+  useEffect(() => {
+    const handler = (e: Event) => { e.preventDefault(); deferredPromptRef.current = e; };
+    window.addEventListener('beforeinstallprompt', handler);
+    return () => window.removeEventListener('beforeinstallprompt', handler);
+  }, []);
+
+  // --- SEARCH STATE ---
+  const [searchQuery, setSearchQuery] = useState('');
+
+  // --- SEARCH KEYWORDS MAP ---
+  const SECTION_KEYWORDS: Record<string, string[]> = {
+    account: ['profile', 'avatar', 'name', 'email', 'theme', 'dark', 'light', 'appearance', 'logout', 'sign out', 'password'],
+    ai_intelligence: ['ai', 'intelligence', 'model', 'gpt', 'claude', 'gemini', 'voice agent', 'quota', 'voxer', 'brain'],
+    integrations: ['slack', 'gmail', 'twilio', 'calendar', 'google', 'contacts', 'maps', 'connect', 'integration'],
+    notifications: ['bell', 'alert', 'push', 'email notification', 'sound', 'vibration', 'quiet hours', 'vip'],
+    features_labs: ['feature', 'lab', 'beta', 'experimental', 'toggle', 'enable', 'disable', 'advanced mode'],
+    war_room: ['war room', 'mission', 'intel', 'focus', 'analyst', 'strategist', 'brainstorm', 'command', 'ai depth', 'reasoning'],
+    activity_monitor: ['activity', 'presence', 'online', 'leaderboard', 'event feed', 'retention'],
+    team: ['team', 'invite', 'member', 'colleague', 'share'],
+    accessibility: ['font size', 'high contrast', 'reduced motion', 'visual', 'accessibility'],
+    privacy_data: ['privacy', 'analytics', 'export', 'delete', 'data', 'cache', 'tracking', 'gdpr'],
+    about: ['version', 'update', 'install', 'pwa', 'info', 'about'],
+    billing: ['billing', 'plan', 'subscription', 'upgrade', 'payment', 'usage'],
+    developer: ['api key', 'openai', 'developer', 'token', 'code', 'webhook'],
+    desktop_app: ['desktop', 'electron', 'tray', 'startup', 'launch', 'window'],
+  };
+
+  const filteredSections = searchQuery.trim() === '' ? null : [
+    ...SECTIONS,
+    ...(isElectron ? [{ id: 'desktop_app', icon: 'fa-desktop', label: 'Desktop App' }] : []),
+  ].filter((s) => {
+    const q = searchQuery.toLowerCase();
+    return s.label.toLowerCase().includes(q) || (SECTION_KEYWORDS[s.id] || []).some((kw) => kw.includes(q));
+  });
+
   // --- OTHER ---
   const [showDesignPreview, setShowDesignPreview] = useState(false);
   const [showApiKeysPanel, setShowApiKeysPanel] = useState(false);
+
+  // Load team invites when team section is active
+  useEffect(() => {
+    if (activeSection === 'team') {
+      getPendingTeamInvites().then(setPendingInvites).catch(() => {});
+    }
+  }, [activeSection]);
+
+  // Load billing plan when billing section is active
+  useEffect(() => {
+    if (activeSection === 'billing' && !currentPlan) {
+      setBillingLoading(true);
+      billingService.getCurrentPlan().then(plan => { setCurrentPlan(plan); setBillingLoading(false); }).catch(() => setBillingLoading(false));
+    }
+  }, [activeSection]);
+
+  // Deep-link support: ?settings=<sectionId> navigates directly to that section
+  useEffect(() => {
+    const params = new URLSearchParams(window.location.search);
+    const sectionParam = params.get('settings');
+    const validIds = [...SECTIONS.map(s => s.id), 'desktop_app', 'admin'];
+    if (sectionParam && validIds.includes(sectionParam)) {
+      setActiveSection(sectionParam);
+    }
+  }, []);
+
+  // Load persisted appearance/accessibility settings on mount and apply to document
+  useEffect(() => {
+    const loadPersistedSettings = async () => {
+      const [accent, custom, fontSz, hc, rm, analytics] = await Promise.all([
+        settingsService.get('accentColor'),
+        settingsService.get('customColor'),
+        settingsService.get('messageFontSize'),
+        settingsService.get('highContrast'),
+        settingsService.get('reducedMotion'),
+        settingsService.get('analyticsTracking'),
+      ]);
+      const presets: Record<string, string> = {
+        rose: '#f43f5e', blue: '#3b82f6', purple: '#8b5cf6', green: '#10b981',
+        orange: '#f97316', yellow: '#eab308', cyan: '#06b6d4', pink: '#ec4899',
+      };
+      if (accent) {
+        setAccentColor(accent);
+        const hex = accent === 'custom' ? (custom || '#f43f5e') : (presets[accent] || '#f43f5e');
+        document.documentElement.style.setProperty('--accent-color', hex);
+      }
+      if (custom) setCustomColor(custom);
+      if (fontSz) {
+        const mapped = fontSz === 'medium' ? 'default' : fontSz;
+        setFontSize(mapped as 'small' | 'default' | 'large');
+        const sizeMap: Record<string, string> = { small: '13px', medium: '15px', large: '18px' };
+        document.documentElement.style.setProperty('--font-size-base', sizeMap[fontSz]);
+      }
+      if (hc !== undefined) {
+        setHighContrast(hc);
+        document.documentElement.setAttribute('data-high-contrast', String(hc));
+      }
+      if (rm !== undefined) {
+        setReducedMotion(rm);
+        document.documentElement.setAttribute('data-reduced-motion', String(rm));
+      }
+      if (analytics !== undefined) setAnalyticsTracking(analytics);
+      const nudgeHz = await settingsService.get('nudgeFrequencyHours');
+      if (nudgeHz !== undefined) setNudgeFrequencyHours(nudgeHz);
+
+      // Phase 2 settings
+      const [wrMode, wrDepth, wrStream, wrThink, wrAnnot,
+             actPres, actLead, actRet,
+             deskPos, deskTray, deskLaunch, deskNotif] = await Promise.all([
+        settingsService.get('warRoomDefaultMode'),
+        settingsService.get('warRoomAIDepth'),
+        settingsService.get('warRoomTokenStreaming'),
+        settingsService.get('warRoomThinkingPanel'),
+        settingsService.get('warRoomAnnotations'),
+        settingsService.get('activityMonitorPresenceVisible'),
+        settingsService.get('activityMonitorLeaderboard'),
+        settingsService.get('activityMonitorRetentionDays'),
+        settingsService.get('desktopRememberWindowPosition'),
+        settingsService.get('desktopMinimizeToTray'),
+        settingsService.get('desktopAutoLaunch'),
+        settingsService.get('desktopNotificationStyle'),
+      ]);
+      if (wrMode) setWarRoomDefaultMode(wrMode);
+      if (wrDepth) setWarRoomAIDepth(wrDepth);
+      if (wrStream !== undefined) setWarRoomTokenStreaming(wrStream);
+      if (wrThink !== undefined) setWarRoomThinkingPanel(wrThink);
+      if (wrAnnot !== undefined) setWarRoomAnnotations(wrAnnot);
+      if (actPres !== undefined) setActivityPresenceVisible(actPres);
+      if (actLead !== undefined) setActivityLeaderboard(actLead);
+      if (actRet !== undefined) setActivityRetentionDays(actRet);
+      if (deskPos !== undefined) setDesktopRememberPosition(deskPos);
+      if (deskTray !== undefined) setDesktopMinimizeToTray(deskTray);
+      if (deskLaunch !== undefined) setDesktopAutoLaunch(deskLaunch);
+      if (deskNotif) setDesktopNotificationStyle(deskNotif);
+    };
+    loadPersistedSettings();
+  }, []);
 
   useEffect(() => {
     const getDevices = async () => {
@@ -452,13 +617,55 @@ const Settings: React.FC<SettingsProps> = ({ user, isDarkMode, toggleTheme, init
     }
   };
 
+  const PRESET_COLORS: Record<string, string> = {
+    rose: '#f43f5e',
+    blue: '#3b82f6',
+    purple: '#8b5cf6',
+    green: '#10b981',
+    orange: '#f97316',
+    yellow: '#eab308',
+    cyan: '#06b6d4',
+    pink: '#ec4899',
+  };
+
   const handleColorChange = (preset: string) => {
     setAccentColor(preset);
+    settingsService.set('accentColor', preset);
+    const hex = PRESET_COLORS[preset] || customColor;
+    if (hex) document.documentElement.style.setProperty('--accent-color', hex);
   };
 
   const handleCustomColorChange = (hex: string) => {
     setCustomColor(hex);
     setAccentColor('custom');
+    settingsService.set('customColor', hex);
+    settingsService.set('accentColor', 'custom');
+    document.documentElement.style.setProperty('--accent-color', hex);
+  };
+
+  const handleFontSizeChange = (size: 'small' | 'default' | 'large') => {
+    setFontSize(size);
+    const mapped = size === 'default' ? 'medium' : size;
+    settingsService.set('messageFontSize', mapped as 'small' | 'medium' | 'large');
+    const sizeMap: Record<string, string> = { small: '13px', default: '15px', large: '18px' };
+    document.documentElement.style.setProperty('--font-size-base', sizeMap[size]);
+  };
+
+  const handleHighContrastChange = (val: boolean) => {
+    setHighContrast(val);
+    settingsService.set('highContrast', val);
+    document.documentElement.setAttribute('data-high-contrast', String(val));
+  };
+
+  const handleReducedMotionChange = (val: boolean) => {
+    setReducedMotion(val);
+    settingsService.set('reducedMotion', val);
+    document.documentElement.setAttribute('data-reduced-motion', String(val));
+  };
+
+  const handleAnalyticsTrackingChange = (val: boolean) => {
+    setAnalyticsTracking(val);
+    settingsService.set('analyticsTracking', val);
   };
 
   // Slack Integration Handlers
@@ -2094,6 +2301,24 @@ const Settings: React.FC<SettingsProps> = ({ user, isDarkMode, toggleTheme, init
                     </div>
                 </div>
             </div>
+
+            {/* Voxer Settings Deep-Link */}
+            <div className="bg-white dark:bg-zinc-900 border border-zinc-200 dark:border-zinc-800 rounded-xl p-6">
+              <div className="flex items-center justify-between">
+                <div>
+                  <h4 className="text-sm font-bold text-zinc-900 dark:text-white">Voxer Audio & Voice</h4>
+                  <p className="text-xs text-zinc-500 mt-0.5">Manage microphone, speaker, and voice recording settings</p>
+                </div>
+                <button
+                  type="button"
+                  onClick={() => setActiveSection('audio_video')}
+                  className="px-4 py-2 bg-purple-600 hover:bg-purple-700 text-white rounded-lg text-sm font-medium transition flex items-center gap-2"
+                >
+                  <i className="fa-solid fa-sliders"></i>
+                  Open Voxer Settings
+                </button>
+              </div>
+            </div>
           </div>
         );
 
@@ -2305,16 +2530,20 @@ const Settings: React.FC<SettingsProps> = ({ user, isDarkMode, toggleTheme, init
                             placeholder="colleague@company.com"
                             className="flex-1 bg-zinc-50 dark:bg-zinc-800 border border-zinc-200 dark:border-zinc-700 rounded-lg px-4 py-2.5 dark:text-white text-zinc-900 focus:outline-none focus:border-blue-500"
                         />
-                        <button 
-                            onClick={() => {
-                                if(inviteEmail) {
-                                    setIsInviting(true);
-                                    setTimeout(() => {
-                                        setPendingInvites([...pendingInvites, { email: inviteEmail, date: new Date().toLocaleDateString() }]);
-                                        setInviteEmail('');
-                                        setIsInviting(false);
-                                    }, 1000);
+                        <button
+                            onClick={async () => {
+                                if (!inviteEmail) return;
+                                setIsInviting(true);
+                                const { success, error } = await sendTeamInvite(inviteEmail);
+                                if (success) {
+                                    toast.success(`Invite sent to ${inviteEmail}`);
+                                    setInviteEmail('');
+                                    const updated = await getPendingTeamInvites();
+                                    setPendingInvites(updated);
+                                } else {
+                                    toast.error(error || 'Failed to send invite');
                                 }
+                                setIsInviting(false);
                             }}
                             disabled={!inviteEmail || isInviting}
                             className="px-6 bg-blue-600 hover:bg-blue-700 text-white font-semibold rounded-lg transition disabled:opacity-50 flex items-center gap-2"
@@ -2330,25 +2559,34 @@ const Settings: React.FC<SettingsProps> = ({ user, isDarkMode, toggleTheme, init
                         <h4 className="text-sm font-bold dark:text-white text-zinc-900">Pending Invitations</h4>
                     </div>
                     <div className="divide-y divide-zinc-200 dark:divide-zinc-700">
-                        {pendingInvites.map((invite, idx) => (
-                            <div key={idx} className="p-4 flex items-center justify-between">
+                        {pendingInvites.map((invite) => (
+                            <div key={invite.id} className="p-4 flex items-center justify-between">
                                 <div className="flex items-center gap-3">
                                     <div className="w-8 h-8 rounded-full bg-zinc-200 dark:bg-zinc-700 flex items-center justify-center text-zinc-500">
                                         <i className="fa-solid fa-envelope"></i>
                                     </div>
                                     <div>
                                         <p className="text-sm font-medium dark:text-white text-zinc-900">{invite.email}</p>
-                                        <p className="text-xs text-zinc-500">Sent on {invite.date}</p>
+                                        <p className="text-xs text-zinc-500">Sent {new Date(invite.created_at).toLocaleDateString()}</p>
                                     </div>
                                 </div>
                                 <div className="flex gap-2">
-                                    <button className="text-xs font-medium text-blue-500 hover:text-blue-600">Resend</button>
-                                    <button 
+                                    <button
+                                        className="text-xs font-medium text-blue-500 hover:text-blue-600"
+                                        onClick={async () => {
+                                            const { success } = await resendTeamInvite(invite.id);
+                                            success ? toast.success(`Invite resent to ${invite.email}`) : toast.error('Failed to resend');
+                                        }}
+                                    >Resend</button>
+                                    <button
                                         className="text-xs font-medium text-red-500 hover:text-red-600"
-                                        onClick={() => setPendingInvites(pendingInvites.filter((_, i) => i !== idx))}
-                                    >
-                                        Revoke
-                                    </button>
+                                        onClick={async () => {
+                                            if (!confirm(`Revoke invite for ${invite.email}?`)) return;
+                                            const { success } = await revokeTeamInvite(invite.id);
+                                            if (success) setPendingInvites(pendingInvites.filter(i => i.id !== invite.id));
+                                            else toast.error('Failed to revoke');
+                                        }}
+                                    >Revoke</button>
                                 </div>
                             </div>
                         ))}
@@ -2397,7 +2635,7 @@ const Settings: React.FC<SettingsProps> = ({ user, isDarkMode, toggleTheme, init
                             {['small', 'default', 'large'].map((size) => (
                                 <button
                                     key={size}
-                                    onClick={() => setFontSize(size)}
+                                    onClick={() => handleFontSizeChange(size as 'small' | 'default' | 'large')}
                                     className={`flex-1 py-3 border rounded-xl flex flex-col items-center justify-center gap-2 transition ${
                                         fontSize === size 
                                         ? 'border-blue-500 bg-blue-50 dark:bg-blue-900/20 text-blue-600 dark:text-blue-400' 
@@ -2417,16 +2655,16 @@ const Settings: React.FC<SettingsProps> = ({ user, isDarkMode, toggleTheme, init
                         label="High Contrast Mode" 
                         desc="Increase contrast for better legibility" 
                         active={highContrast} 
-                        onToggle={() => setHighContrast(!highContrast)} 
+                        onToggle={() => handleHighContrastChange(!highContrast)}
                     />
 
                     <div className="h-px bg-zinc-100 dark:bg-zinc-800"></div>
 
-                    <ToggleItem 
-                        label="Reduced Motion" 
-                        desc="Minimize animations and transitions" 
-                        active={reducedMotion} 
-                        onToggle={() => setReducedMotion(!reducedMotion)} 
+                    <ToggleItem
+                        label="Reduced Motion"
+                        desc="Minimize animations and transitions"
+                        active={reducedMotion}
+                        onToggle={() => handleReducedMotionChange(!reducedMotion)}
                     />
                 </div>
             </div>
@@ -2444,26 +2682,61 @@ const Settings: React.FC<SettingsProps> = ({ user, isDarkMode, toggleTheme, init
                     </p>
                 </div>
 
-                <div className="bg-white dark:bg-zinc-900 border border-zinc-200 dark:border-zinc-800 rounded-xl p-6">
-                    <h4 className="text-sm font-bold uppercase tracking-widest text-zinc-500 mb-6">Data Collection</h4>
-                    <ToggleItem 
-                        label="Analytics Tracking" 
-                        desc="Allow Pulse to collect anonymous usage data to improve the app" 
-                        active={analyticsTracking} 
-                        onToggle={() => setAnalyticsTracking(!analyticsTracking)} 
+                <div className="bg-white dark:bg-zinc-900 border border-zinc-200 dark:border-zinc-800 rounded-xl p-6 space-y-6">
+                    <h4 className="text-sm font-bold uppercase tracking-widest text-zinc-500">Data Collection</h4>
+                    <ToggleItem
+                        label="Analytics Tracking"
+                        desc="Allow Pulse to collect anonymous usage data to improve the app"
+                        active={analyticsTracking}
+                        onToggle={() => handleAnalyticsTrackingChange(!analyticsTracking)}
                     />
+                    <div className="h-px bg-zinc-100 dark:bg-zinc-800"></div>
+                    <div>
+                        <label className="text-sm font-bold uppercase tracking-widest text-zinc-500 mb-3 block">Nudge Reminder Frequency</label>
+                        <select
+                            value={nudgeFrequencyHours}
+                            onChange={(e) => {
+                                const v = Number(e.target.value);
+                                setNudgeFrequencyHours(v);
+                                settingsService.set('nudgeFrequencyHours', v);
+                            }}
+                            title="How often dismissed nudges reappear"
+                            className="w-full px-3 py-2 border border-zinc-200 dark:border-zinc-700 rounded-lg bg-white dark:bg-zinc-800 text-zinc-900 dark:text-white text-sm focus:outline-none focus:ring-2 focus:ring-blue-500"
+                        >
+                            <option value={24}>Every 24 hours</option>
+                            <option value={72}>Every 3 days</option>
+                            <option value={168}>Every 7 days</option>
+                            <option value={-1}>Never remind</option>
+                        </select>
+                        <p className="text-xs text-zinc-400 mt-1.5">Controls how long dismissed feature hints stay hidden.</p>
+                    </div>
                 </div>
 
                 <div className="bg-white dark:bg-zinc-900 border border-zinc-200 dark:border-zinc-800 rounded-xl p-6">
                     <h4 className="text-sm font-bold uppercase tracking-widest text-zinc-500 mb-6">Data Management</h4>
-                    
+
                     <div className="space-y-4">
                         <div className="flex items-center justify-between">
                             <div>
                                 <p className="text-sm font-medium dark:text-white text-zinc-900">Rebuild Analytics Cache</p>
-                                <p className="text-xs text-zinc-500">Fix issues with missing or incorrect charts</p>
+                                <p className="text-xs text-zinc-500">Clear cached data and force a fresh reload</p>
                             </div>
-                            <button className="px-4 py-2 border border-zinc-200 dark:border-zinc-700 rounded-lg text-sm hover:bg-zinc-50 dark:hover:bg-zinc-800 transition">
+                            <button
+                                onClick={() => {
+                                    const toastId = toast.loading('Rebuilding cache...');
+                                    try {
+                                        // Clear all pulse- prefixed localStorage keys except API keys and settings
+                                        const keysToRemove = Object.keys(localStorage).filter(k =>
+                                            k.startsWith('pulse-') && k !== 'pulse_settings' && k !== 'pulse-api-keys'
+                                        );
+                                        keysToRemove.forEach(k => localStorage.removeItem(k));
+                                        toast.success(`Cache cleared (${keysToRemove.length} entries)`, { id: toastId });
+                                    } catch {
+                                        toast.error('Failed to clear cache', { id: toastId });
+                                    }
+                                }}
+                                className="px-4 py-2 border border-zinc-200 dark:border-zinc-700 rounded-lg text-sm hover:bg-zinc-50 dark:hover:bg-zinc-800 transition"
+                            >
                                 <i className="fa-solid fa-rotate mr-2"></i> Rebuild
                             </button>
                         </div>
@@ -2473,9 +2746,33 @@ const Settings: React.FC<SettingsProps> = ({ user, isDarkMode, toggleTheme, init
                         <div className="flex items-center justify-between">
                             <div>
                                 <p className="text-sm font-medium dark:text-white text-zinc-900">Export My Data</p>
-                                <p className="text-xs text-zinc-500">Download a copy of all your messages and contacts</p>
+                                <p className="text-xs text-zinc-500">Download a JSON copy of your settings and profile</p>
                             </div>
-                            <button className="px-4 py-2 border border-zinc-200 dark:border-zinc-700 rounded-lg text-sm hover:bg-zinc-50 dark:hover:bg-zinc-800 transition">
+                            <button
+                                onClick={async () => {
+                                    const toastId = toast.loading('Preparing export...');
+                                    try {
+                                        const { data: { user } } = await supabase.auth.getUser();
+                                        if (!user) throw new Error('Not authenticated');
+                                        const { data: profile } = await supabase.from('pulse_profiles').select('*').eq('id', user.id).single();
+                                        const allSettings = await settingsService.getAll?.() || {};
+                                        const exportData = { exportedAt: new Date().toISOString(), email: user.email, profile: profile || {}, settings: allSettings };
+                                        const blob = new Blob([JSON.stringify(exportData, null, 2)], { type: 'application/json' });
+                                        const url = URL.createObjectURL(blob);
+                                        const a = document.createElement('a');
+                                        a.href = url;
+                                        a.download = `pulse-export-${new Date().toISOString().split('T')[0]}.json`;
+                                        document.body.appendChild(a);
+                                        a.click();
+                                        document.body.removeChild(a);
+                                        URL.revokeObjectURL(url);
+                                        toast.success('Data exported!', { id: toastId });
+                                    } catch {
+                                        toast.error('Export failed', { id: toastId });
+                                    }
+                                }}
+                                className="px-4 py-2 border border-zinc-200 dark:border-zinc-700 rounded-lg text-sm hover:bg-zinc-50 dark:hover:bg-zinc-800 transition"
+                            >
                                 <i className="fa-solid fa-download mr-2"></i> Export JSON
                             </button>
                         </div>
@@ -2485,13 +2782,278 @@ const Settings: React.FC<SettingsProps> = ({ user, isDarkMode, toggleTheme, init
                 <div className="bg-red-50 dark:bg-red-900/10 border border-red-200 dark:border-red-900/30 rounded-xl p-6 flex items-center justify-between">
                     <div>
                         <h4 className="text-sm font-bold text-red-600 dark:text-red-400 mb-1">Delete My Account</h4>
-                        <p className="text-xs text-red-500/80">Permanently remove your account and all associated data</p>
+                        <p className="text-xs text-red-500/80">Permanently remove your account and all associated data. Open Privacy Dashboard to complete this action with confirmation.</p>
                     </div>
-                    <button className="px-4 py-2 bg-red-600 hover:bg-red-700 text-white font-semibold rounded-lg text-sm transition">
+                    <button
+                        onClick={() => {
+                            // Navigate to Privacy Dashboard where the full confirmation flow lives
+                            toast('Open Privacy Dashboard → Privacy tab to delete your account.', { icon: 'ℹ️' });
+                        }}
+                        className="px-4 py-2 bg-red-600 hover:bg-red-700 text-white font-semibold rounded-lg text-sm transition"
+                    >
                         Delete Account
                     </button>
                 </div>
             </div>
+        );
+
+      case 'features_labs':
+        return (
+          <div className="space-y-8 animate-slide-up">
+            <div className="section-header">
+              <h3><i className="fa-solid fa-flask"></i> Features & Labs</h3>
+              <p>Enable or disable individual features. Changes apply immediately.</p>
+            </div>
+
+            {/* Advanced Mode Master Toggle */}
+            <div className="bg-white dark:bg-zinc-900 border border-zinc-200 dark:border-zinc-800 rounded-xl p-6">
+              <ToggleItem
+                label="Advanced Mode"
+                desc="Unlock all advanced and experimental features at once"
+                active={advancedMode}
+                onToggle={() => setAdvancedMode(!advancedMode)}
+              />
+            </div>
+
+            {/* Feature categories */}
+            {Object.entries(FEATURE_CATEGORIES).map(([catKey, cat]) => (
+              <div key={catKey} className="bg-white dark:bg-zinc-900 border border-zinc-200 dark:border-zinc-800 rounded-xl p-6 space-y-4">
+                <div>
+                  <h4 className="text-sm font-bold uppercase tracking-widest text-zinc-500">{cat.name}</h4>
+                  <p className="text-xs text-zinc-400 mt-0.5">{cat.description}</p>
+                </div>
+                <div className="space-y-3">
+                  {cat.features.map((featureId) => (
+                    <ToggleItem
+                      key={featureId}
+                      label={FEATURE_NAMES[featureId] || featureId}
+                      desc=""
+                      active={features[featureId]}
+                      onToggle={() => toggleFeature(featureId)}
+                    />
+                  ))}
+                </div>
+              </div>
+            ))}
+          </div>
+        );
+
+      case 'war_room':
+        return (
+          <div className="space-y-8 animate-slide-up">
+            <div className="section-header">
+              <h3><i className="fa-solid fa-shield"></i> War Room</h3>
+              <p>Configure default behavior for the War Room workspace.</p>
+            </div>
+
+            <div className="bg-white dark:bg-zinc-900 border border-zinc-200 dark:border-zinc-800 rounded-xl p-6 space-y-6">
+              {/* Default Mode */}
+              <div>
+                <label className="text-sm font-bold uppercase tracking-widest text-zinc-500 mb-3 block">Default Mode</label>
+                <select
+                  value={warRoomDefaultMode}
+                  onChange={(e) => {
+                    setWarRoomDefaultMode(e.target.value);
+                    settingsService.set('warRoomDefaultMode', e.target.value);
+                  }}
+                  title="Default War Room mode"
+                  className="w-full px-3 py-2 border border-zinc-200 dark:border-zinc-700 rounded-lg bg-white dark:bg-zinc-800 text-zinc-900 dark:text-white text-sm focus:outline-none focus:ring-2 focus:ring-blue-500"
+                >
+                  <option value="command-center">Command Center</option>
+                  <option value="intel">Intel</option>
+                  <option value="focus">Focus</option>
+                  <option value="analyst">Analyst</option>
+                  <option value="strategist">Strategist</option>
+                  <option value="brainstorm">Brainstorm</option>
+                  <option value="debrief">Debrief</option>
+                </select>
+              </div>
+
+              <div className="h-px bg-zinc-100 dark:bg-zinc-800"></div>
+
+              {/* AI Depth */}
+              <div>
+                <label className="text-sm font-bold uppercase tracking-widest text-zinc-500 mb-3 block">AI Reasoning Depth</label>
+                <div className="flex gap-3">
+                  {(['fast', 'balanced', 'deep'] as const).map((depth) => (
+                    <button
+                      key={depth}
+                      type="button"
+                      onClick={() => {
+                        setWarRoomAIDepth(depth);
+                        settingsService.set('warRoomAIDepth', depth);
+                      }}
+                      className={`flex-1 py-2 border rounded-lg text-sm font-medium capitalize transition ${
+                        warRoomAIDepth === depth
+                          ? 'border-blue-500 bg-blue-50 dark:bg-blue-900/20 text-blue-600 dark:text-blue-400'
+                          : 'border-zinc-200 dark:border-zinc-700 text-zinc-600 dark:text-zinc-400 hover:border-zinc-300 dark:hover:border-zinc-600'
+                      }`}
+                    >
+                      {depth}
+                    </button>
+                  ))}
+                </div>
+              </div>
+
+              <div className="h-px bg-zinc-100 dark:bg-zinc-800"></div>
+
+              {/* Visualization Toggles */}
+              <ToggleItem
+                label="Token Streaming"
+                desc="Show tokens appearing in real-time as AI responds"
+                active={warRoomTokenStreaming}
+                onToggle={() => {
+                  const v = !warRoomTokenStreaming;
+                  setWarRoomTokenStreaming(v);
+                  settingsService.set('warRoomTokenStreaming', v);
+                }}
+              />
+              <ToggleItem
+                label="Thinking Panel"
+                desc="Display AI reasoning steps in a side panel"
+                active={warRoomThinkingPanel}
+                onToggle={() => {
+                  const v = !warRoomThinkingPanel;
+                  setWarRoomThinkingPanel(v);
+                  settingsService.set('warRoomThinkingPanel', v);
+                }}
+              />
+              <ToggleItem
+                label="Annotations"
+                desc="Show inline annotations and source citations"
+                active={warRoomAnnotations}
+                onToggle={() => {
+                  const v = !warRoomAnnotations;
+                  setWarRoomAnnotations(v);
+                  settingsService.set('warRoomAnnotations', v);
+                }}
+              />
+            </div>
+          </div>
+        );
+
+      case 'activity_monitor':
+        return (
+          <div className="space-y-8 animate-slide-up">
+            <div className="section-header">
+              <h3><i className="fa-solid fa-chart-line"></i> Activity Monitor</h3>
+              <p>Control how your presence and activity data is shared and retained.</p>
+            </div>
+
+            <div className="bg-white dark:bg-zinc-900 border border-zinc-200 dark:border-zinc-800 rounded-xl p-6 space-y-6">
+              <ToggleItem
+                label="Live Presence"
+                desc="Let others see when you are online"
+                active={activityPresenceVisible}
+                onToggle={() => {
+                  const v = !activityPresenceVisible;
+                  setActivityPresenceVisible(v);
+                  settingsService.set('activityMonitorPresenceVisible', v);
+                }}
+              />
+              <div className="h-px bg-zinc-100 dark:bg-zinc-800"></div>
+              <ToggleItem
+                label="Leaderboard Participation"
+                desc="Include your activity in the community leaderboard"
+                active={activityLeaderboard}
+                onToggle={() => {
+                  const v = !activityLeaderboard;
+                  setActivityLeaderboard(v);
+                  settingsService.set('activityMonitorLeaderboard', v);
+                }}
+              />
+              <div className="h-px bg-zinc-100 dark:bg-zinc-800"></div>
+              <div>
+                <label className="text-sm font-bold uppercase tracking-widest text-zinc-500 mb-3 block">Activity Data Retention</label>
+                <select
+                  value={activityRetentionDays}
+                  onChange={(e) => {
+                    const v = Number(e.target.value);
+                    setActivityRetentionDays(v);
+                    settingsService.set('activityMonitorRetentionDays', v);
+                  }}
+                  title="Activity data retention period"
+                  className="w-full px-3 py-2 border border-zinc-200 dark:border-zinc-700 rounded-lg bg-white dark:bg-zinc-800 text-zinc-900 dark:text-white text-sm focus:outline-none focus:ring-2 focus:ring-blue-500"
+                >
+                  <option value={30}>30 days</option>
+                  <option value={90}>90 days</option>
+                  <option value={180}>180 days</option>
+                  <option value={-1}>Keep forever</option>
+                </select>
+              </div>
+            </div>
+          </div>
+        );
+
+      case 'desktop_app':
+        if (!isElectron) return null;
+        return (
+          <div className="space-y-8 animate-slide-up">
+            <div className="section-header">
+              <h3><i className="fa-solid fa-desktop"></i> Desktop App</h3>
+              <p>Customize Pulse desktop app behavior on your system.</p>
+            </div>
+            <div className="bg-white dark:bg-zinc-900 border border-zinc-200 dark:border-zinc-800 rounded-xl p-6 space-y-6">
+              <ToggleItem
+                label="Remember Window Position"
+                desc="Restore the window to its last position and size on launch"
+                active={desktopRememberPosition}
+                onToggle={() => {
+                  const v = !desktopRememberPosition;
+                  setDesktopRememberPosition(v);
+                  settingsService.set('desktopRememberWindowPosition', v);
+                }}
+              />
+              <div className="h-px bg-zinc-100 dark:bg-zinc-800"></div>
+              <ToggleItem
+                label="Minimize to System Tray"
+                desc="Keep Pulse running in the system tray when the window is closed"
+                active={desktopMinimizeToTray}
+                onToggle={() => {
+                  const v = !desktopMinimizeToTray;
+                  setDesktopMinimizeToTray(v);
+                  settingsService.set('desktopMinimizeToTray', v);
+                }}
+              />
+              <div className="h-px bg-zinc-100 dark:bg-zinc-800"></div>
+              <ToggleItem
+                label="Launch at System Startup"
+                desc="Start Pulse automatically when your computer starts"
+                active={desktopAutoLaunch}
+                onToggle={() => {
+                  const v = !desktopAutoLaunch;
+                  setDesktopAutoLaunch(v);
+                  settingsService.set('desktopAutoLaunch', v);
+                  if ((window as any).electronAPI?.setAutoLaunch) {
+                    (window as any).electronAPI.setAutoLaunch(v);
+                  }
+                }}
+              />
+              <div className="h-px bg-zinc-100 dark:bg-zinc-800"></div>
+              <div>
+                <label className="text-sm font-bold uppercase tracking-widest text-zinc-500 mb-3 block">Notification Style</label>
+                <div className="flex gap-3">
+                  {(['native', 'in-app'] as const).map((style) => (
+                    <button
+                      key={style}
+                      type="button"
+                      onClick={() => {
+                        setDesktopNotificationStyle(style);
+                        settingsService.set('desktopNotificationStyle', style);
+                      }}
+                      className={`flex-1 py-2 border rounded-lg text-sm font-medium transition ${
+                        desktopNotificationStyle === style
+                          ? 'border-blue-500 bg-blue-50 dark:bg-blue-900/20 text-blue-600 dark:text-blue-400'
+                          : 'border-zinc-200 dark:border-zinc-700 text-zinc-600 dark:text-zinc-400 hover:border-zinc-300'
+                      }`}
+                    >
+                      {style === 'native' ? 'Native OS' : 'In-App'}
+                    </button>
+                  ))}
+                </div>
+              </div>
+            </div>
+          </div>
         );
 
       case 'about':
@@ -2510,7 +3072,18 @@ const Settings: React.FC<SettingsProps> = ({ user, isDarkMode, toggleTheme, init
                         <button className="px-6 py-2.5 bg-zinc-900 dark:bg-white text-white dark:text-black font-semibold rounded-full hover:scale-105 transition transform">
                             Check for Updates
                         </button>
-                        <button className="px-6 py-2.5 bg-zinc-100 dark:bg-zinc-800 text-zinc-700 dark:text-zinc-300 font-semibold rounded-full hover:bg-zinc-200 dark:hover:bg-zinc-700 transition">
+                        <button
+                            onClick={async () => {
+                                if (deferredPromptRef.current) {
+                                    deferredPromptRef.current.prompt();
+                                    await deferredPromptRef.current.userChoice;
+                                    deferredPromptRef.current = null;
+                                } else {
+                                    toast('Pulse is already installed or your browser doesn\'t support PWA install.', { icon: 'ℹ️' });
+                                }
+                            }}
+                            className="px-6 py-2.5 bg-zinc-100 dark:bg-zinc-800 text-zinc-700 dark:text-zinc-300 font-semibold rounded-full hover:bg-zinc-200 dark:hover:bg-zinc-700 transition"
+                        >
                             <i className="fa-solid fa-download mr-2"></i> Install App
                         </button>
                     </div>
@@ -2570,10 +3143,16 @@ const Settings: React.FC<SettingsProps> = ({ user, isDarkMode, toggleTheme, init
                 </div>
                 <div>
                   <div className="flex items-center gap-2">
-                    <h4 className="text-xl font-bold dark:text-white text-zinc-900">Individual Plan</h4>
+                    <h4 className="text-xl font-bold dark:text-white text-zinc-900">
+                      {billingLoading ? 'Loading...' : (currentPlan?.planName || 'Free')} Plan
+                    </h4>
                     <span className="px-2 py-0.5 bg-emerald-500 text-white text-xs font-bold rounded-full">CURRENT</span>
                   </div>
-                  <p className="text-sm text-zinc-600 dark:text-zinc-400">Free forever for personal use</p>
+                  <p className="text-sm text-zinc-600 dark:text-zinc-400">
+                    {currentPlan?.currentPeriodEnd
+                      ? `Renews ${new Date(currentPlan.currentPeriodEnd).toLocaleDateString()}`
+                      : 'Free forever for personal use'}
+                  </p>
                 </div>
               </div>
               <div className="grid grid-cols-2 gap-4 text-sm">
@@ -2641,7 +3220,7 @@ const Settings: React.FC<SettingsProps> = ({ user, isDarkMode, toggleTheme, init
                   </div>
                 </div>
 
-                <button className="w-full py-3 px-4 bg-gradient-to-r from-blue-500 to-cyan-500 hover:from-blue-600 hover:to-cyan-600 text-white font-semibold rounded-xl transition-all flex items-center justify-center gap-2 group-hover:shadow-lg group-hover:shadow-blue-500/30">
+                <button onClick={() => window.open(billingService.getUpgradeUrl())} className="w-full py-3 px-4 bg-gradient-to-r from-blue-500 to-cyan-500 hover:from-blue-600 hover:to-cyan-600 text-white font-semibold rounded-xl transition-all flex items-center justify-center gap-2 group-hover:shadow-lg group-hover:shadow-blue-500/30">
                   <span>Learn More</span>
                   <i className="fa-solid fa-arrow-right text-sm"></i>
                 </button>
@@ -2690,7 +3269,7 @@ const Settings: React.FC<SettingsProps> = ({ user, isDarkMode, toggleTheme, init
                   </div>
                 </div>
 
-                <button className="w-full py-3 px-4 bg-gradient-to-r from-purple-500 to-violet-600 hover:from-purple-600 hover:to-violet-700 text-white font-semibold rounded-xl transition-all flex items-center justify-center gap-2 group-hover:shadow-lg group-hover:shadow-purple-500/30">
+                <button onClick={() => window.open(billingService.getUpgradeUrl())} className="w-full py-3 px-4 bg-gradient-to-r from-purple-500 to-violet-600 hover:from-purple-600 hover:to-violet-700 text-white font-semibold rounded-xl transition-all flex items-center justify-center gap-2 group-hover:shadow-lg group-hover:shadow-purple-500/30">
                   <span>Learn More</span>
                   <i className="fa-solid fa-arrow-right text-sm"></i>
                 </button>
@@ -3081,13 +3660,43 @@ const Settings: React.FC<SettingsProps> = ({ user, isDarkMode, toggleTheme, init
             <i className="fa-solid fa-xmark"></i>
           </button>
         </div>
+        {/* Search bar */}
+        <div className="mb-3 relative">
+          <i className="fa-solid fa-magnifying-glass absolute left-3 top-1/2 -translate-y-1/2 text-zinc-400 text-xs pointer-events-none"></i>
+          <input
+            type="text"
+            value={searchQuery}
+            onChange={(e) => setSearchQuery(e.target.value)}
+            placeholder="Search settings..."
+            className="w-full pl-8 pr-3 py-2 rounded-lg border border-zinc-200 dark:border-zinc-700 bg-white dark:bg-zinc-800 text-sm text-zinc-900 dark:text-white placeholder-zinc-400 focus:outline-none focus:ring-2 focus:ring-blue-500"
+            aria-label="Search settings"
+          />
+          {searchQuery && (
+            <button
+              type="button"
+              onClick={() => setSearchQuery('')}
+              className="absolute right-2 top-1/2 -translate-y-1/2 text-zinc-400 hover:text-zinc-600 dark:hover:text-zinc-200"
+              aria-label="Clear search"
+            >
+              <i className="fa-solid fa-xmark text-xs"></i>
+            </button>
+          )}
+        </div>
+
         <nav className="space-y-1 flex-1">
-          {SECTIONS.map((section, idx) => (
+          {(filteredSections ?? [...SECTIONS, ...(isElectron ? [{ id: 'desktop_app', icon: 'fa-desktop', label: 'Desktop App' }] : [])]).map((section, idx) => (
             <button
               key={section.id}
+              tabIndex={0}
               onClick={() => {
                 setActiveSection(section.id);
+                setSearchQuery('');
                 setIsMobileMenuOpen(false);
+              }}
+              onKeyDown={(e) => {
+                if (e.key === 'ArrowDown') { e.preventDefault(); (e.currentTarget.nextElementSibling as HTMLElement)?.focus(); }
+                if (e.key === 'ArrowUp') { e.preventDefault(); (e.currentTarget.previousElementSibling as HTMLElement)?.focus(); }
+                if (e.key === 'Escape') { onClose?.(); }
               }}
               className={`w-full flex items-center gap-3 px-4 py-3 rounded-xl transition-all duration-200 group animate-slide-in-right ${activeSection === section.id ? 'bg-blue-600/10 text-blue-600 dark:text-blue-400 font-semibold' : 'text-zinc-500 dark:text-zinc-400 hover:text-zinc-900 dark:hover:text-white hover:bg-zinc-200 dark:hover:bg-zinc-800'}`}
               style={{ animationDelay: `${idx * 50}ms` }}
@@ -3097,6 +3706,13 @@ const Settings: React.FC<SettingsProps> = ({ user, isDarkMode, toggleTheme, init
               {activeSection === section.id && <i className="fa-solid fa-chevron-right ml-auto text-xs opacity-50"></i>}
             </button>
           ))}
+
+          {/* No search results */}
+          {filteredSections !== null && filteredSections.length === 0 && (
+            <div className="px-4 py-6 text-center text-sm text-zinc-400">
+              No settings matching <em>"{searchQuery}"</em>
+            </div>
+          )}
 
           {/* Admin Sections - Only visible to admin users */}
           {(user?.role === 'admin' || user?.isAdmin) && (

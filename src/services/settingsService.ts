@@ -100,6 +100,37 @@ export interface PulseSettings {
   perplexityApiKey: string;
   mapboxApiKey: string;
 
+  // Accessibility
+  highContrast: boolean;
+  reducedMotion: boolean;
+
+  // Analytics
+  analyticsTracking: boolean;
+
+  // Nudge frequency (hours): 24 / 72 / 168 / -1 (never)
+  nudgeFrequencyHours: number;
+
+  // War Room
+  warRoomDefaultMode: string;
+  warRoomAIDepth: 'fast' | 'balanced' | 'deep';
+  warRoomTokenStreaming: boolean;
+  warRoomThinkingPanel: boolean;
+  warRoomAnnotations: boolean;
+
+  // Activity Monitor
+  activityMonitorPresenceVisible: boolean;
+  activityMonitorLeaderboard: boolean;
+  activityMonitorRetentionDays: number;
+
+  // Desktop App (Electron)
+  desktopRememberWindowPosition: boolean;
+  desktopMinimizeToTray: boolean;
+  desktopAutoLaunch: boolean;
+  desktopNotificationStyle: 'native' | 'in-app';
+
+  // Live Dashboard
+  liveBoardSelectedAgent: string;
+
   // Sync metadata
   lastSyncedAt: string | null;
   settingsVersion: number;
@@ -184,6 +215,9 @@ const DEFAULT_SETTINGS: PulseSettings = {
   emailAutoArchiveDays: 0,
   emailDriveQuickAttach: true,
 
+  // Nudge frequency
+  nudgeFrequencyHours: 24,
+
   // Data Retention & Privacy
   dataRetentionEnabled: false,
   emailsRetentionDays: 90,
@@ -198,6 +232,34 @@ const DEFAULT_SETTINGS: PulseSettings = {
   elevenlabsApiKey: '',
   perplexityApiKey: '',
   mapboxApiKey: '',
+
+  // Accessibility
+  highContrast: false,
+  reducedMotion: false,
+
+  // Analytics
+  analyticsTracking: true,
+
+  // War Room
+  warRoomDefaultMode: 'command-center',
+  warRoomAIDepth: 'balanced',
+  warRoomTokenStreaming: true,
+  warRoomThinkingPanel: true,
+  warRoomAnnotations: true,
+
+  // Activity Monitor
+  activityMonitorPresenceVisible: true,
+  activityMonitorLeaderboard: true,
+  activityMonitorRetentionDays: 90,
+
+  // Desktop App (Electron)
+  desktopRememberWindowPosition: true,
+  desktopMinimizeToTray: false,
+  desktopAutoLaunch: false,
+  desktopNotificationStyle: 'native',
+
+  // Live Dashboard
+  liveBoardSelectedAgent: 'general',
 
   // Sync metadata
   lastSyncedAt: null,

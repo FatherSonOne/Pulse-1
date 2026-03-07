@@ -10,6 +10,7 @@ import { securityAlertsService, type SecurityAlert } from '../../services/securi
 import { dataRetentionService, RETENTION_OPTIONS, type DataRetentionPolicy, type CleanupStats } from '../../services/dataRetentionService';
 import { oauthAppsService, type OAuthConnectedApp } from '../../services/oauthAppsService';
 import { PrivacyTab } from './PrivacyDashboardPrivacyTab';
+import { disconnectGoogleAccount } from '../../services/authService';
 import toast from 'react-hot-toast';
 
 interface PrivacyDashboardProps {
@@ -51,6 +52,11 @@ export const PrivacyDashboard: React.FC<PrivacyDashboardProps> = ({
   const [cleanupStats, setCleanupStats] = useState<CleanupStats | null>(null);
   const [mfaStatus, setMfaStatus] = useState<MFAStatus>({ enabled: false, factors: [], hasRecoveryCodes: false });
   const [securityAlertsEnabled, setSecurityAlertsEnabled] = useState(true);
+
+  // Delete account confirmation state
+  const [showDeleteConfirm, setShowDeleteConfirm] = useState(false);
+  const [deleteConfirmEmail, setDeleteConfirmEmail] = useState('');
+  const [isDeletingAccount, setIsDeletingAccount] = useState(false);
 
   // MFA enrollment state
   const [mfaEnrollment, setMfaEnrollment] = useState<MFAEnrollment | null>(null);
@@ -95,15 +101,20 @@ export const PrivacyDashboard: React.FC<PrivacyDashboardProps> = ({
   const loadServicesAndActivity = async () => {
     setLoading(true);
     try {
-      // Get Google services status
-      const gmailService = getGmailService();
-      // Calendar service is already imported as googleCalendarService
+      // Check if Google is connected via Supabase session provider token
+      const { data: { session } } = await supabase.auth.getSession();
+      const isGoogleConnected: boolean = !!(
+        session?.provider_token ||
+        session?.user?.app_metadata?.provider === 'google' ||
+        session?.user?.app_metadata?.providers?.includes('google')
+      );
+      const googleStatus: ConnectedService['status'] = isGoogleConnected ? 'active' : 'disconnected';
 
       const servicesData: ConnectedService[] = [
         {
           name: 'Gmail',
           icon: 'fa-envelope',
-          status: 'active', // TODO: Check actual status
+          status: googleStatus,
           scopes: [
             'gmail.readonly',
             'gmail.send',
@@ -123,7 +134,7 @@ export const PrivacyDashboard: React.FC<PrivacyDashboardProps> = ({
         {
           name: 'Google Contacts',
           icon: 'fa-address-book',
-          status: 'active',
+          status: googleStatus,
           scopes: ['contacts.readonly', 'contacts.other.readonly'],
           dataAccessed: [
             'Read your contacts',
@@ -136,7 +147,7 @@ export const PrivacyDashboard: React.FC<PrivacyDashboardProps> = ({
         {
           name: 'Google Calendar',
           icon: 'fa-calendar',
-          status: 'active',
+          status: googleStatus,
           scopes: ['calendar.readonly', 'calendar.events'],
           dataAccessed: [
             'Read calendar events',
@@ -149,7 +160,7 @@ export const PrivacyDashboard: React.FC<PrivacyDashboardProps> = ({
         {
           name: 'Google Drive',
           icon: 'fa-folder-open',
-          status: 'active',
+          status: googleStatus,
           scopes: ['drive.file', 'drive.readonly'],
           dataAccessed: [
             'Access files created by Pulse',
@@ -241,32 +252,91 @@ export const PrivacyDashboard: React.FC<PrivacyDashboardProps> = ({
   };
 
   const handleRefreshService = async (serviceName: string) => {
-    toast.success(`Refreshing ${serviceName}...`);
-    // TODO: Implement service refresh logic
-    await loadServicesAndActivity();
+    const toastId = toast.loading(`Refreshing ${serviceName}...`);
+    try {
+      await loadServicesAndActivity();
+      toast.success(`${serviceName} refreshed`, { id: toastId });
+    } catch {
+      toast.error(`Failed to refresh ${serviceName}`, { id: toastId });
+    }
   };
 
   const handleDisconnectService = async (serviceName: string) => {
-    if (!confirm(`Are you sure you want to disconnect ${serviceName}? You may lose access to some features.`)) {
+    if (!confirm(`Are you sure you want to disconnect ${serviceName}? You will lose access to ${serviceName} features in Pulse.`)) {
       return;
     }
-
-    toast.error(`Disconnecting ${serviceName}...`);
-    // TODO: Implement service disconnect logic
+    const toastId = toast.loading(`Disconnecting ${serviceName}...`);
+    try {
+      // All current services are Google services — revoke Google OAuth access
+      await disconnectGoogleAccount();
+      await loadServicesAndActivity();
+      toast.success(`${serviceName} disconnected`, { id: toastId });
+    } catch (error) {
+      console.error('Disconnect error:', error);
+      toast.error(`Failed to disconnect ${serviceName}`, { id: toastId });
+    }
   };
 
-  const handleExportData = () => {
-    toast.success('Preparing data export...');
-    // TODO: Implement data export
+  const handleExportData = async () => {
+    const toastId = toast.loading('Preparing data export...');
+    try {
+      const { data: { user } } = await supabase.auth.getUser();
+      if (!user) throw new Error('Not authenticated');
+
+      const { data: profile } = await supabase
+        .from('pulse_profiles')
+        .select('*')
+        .eq('id', user.id)
+        .single();
+
+      const exportData = {
+        exportedAt: new Date().toISOString(),
+        email: user.email,
+        profile: profile || {},
+        userId: user.id,
+      };
+
+      const json = JSON.stringify(exportData, null, 2);
+      const blob = new Blob([json], { type: 'application/json' });
+      const url = URL.createObjectURL(blob);
+      const a = document.createElement('a');
+      a.href = url;
+      a.download = `pulse-data-export-${new Date().toISOString().split('T')[0]}.json`;
+      document.body.appendChild(a);
+      a.click();
+      document.body.removeChild(a);
+      URL.revokeObjectURL(url);
+      toast.success('Data export downloaded!', { id: toastId });
+    } catch (error) {
+      console.error('Export error:', error);
+      toast.error('Failed to export data', { id: toastId });
+    }
   };
 
   const handleDeleteData = () => {
-    if (!confirm('Are you sure you want to delete all your Pulse data? This action cannot be undone.')) {
+    setShowDeleteConfirm(true);
+    setDeleteConfirmEmail('');
+  };
+
+  const confirmDeleteAccount = async () => {
+    if (deleteConfirmEmail !== userEmail) {
+      toast.error('Email does not match your account email.');
       return;
     }
-
-    toast.error('Data deletion requested. You will receive a confirmation email.');
-    // TODO: Implement data deletion request
+    setIsDeletingAccount(true);
+    const toastId = toast.loading('Deleting account data...');
+    try {
+      const { data: { user } } = await supabase.auth.getUser();
+      if (!user) throw new Error('Not authenticated');
+      await supabase.rpc('delete_user_account', { target_user_id: user.id });
+      await supabase.auth.signOut();
+      toast.success('Account deleted', { id: toastId });
+      onClose();
+    } catch (error) {
+      console.error('Delete account error:', error);
+      toast.error('Failed to delete account. Please contact support.', { id: toastId });
+      setIsDeletingAccount(false);
+    }
   };
 
   const handlePolicyUpdate = (policy: DataRetentionPolicy) => {
@@ -677,14 +747,40 @@ export const PrivacyDashboard: React.FC<PrivacyDashboardProps> = ({
 
               {/* Privacy Tab */}
               {activeTab === 'privacy' && (
-                <PrivacyTab
-                  retentionPolicy={retentionPolicy}
-                  cleanupStats={cleanupStats}
-                  thirdPartyApps={thirdPartyApps}
-                  onPolicyUpdate={handlePolicyUpdate}
-                  onAppRevoke={handleAppRevoke}
-                  formatTimestamp={formatTimestamp}
-                />
+                <div className="space-y-6">
+                  <PrivacyTab
+                    retentionPolicy={retentionPolicy}
+                    cleanupStats={cleanupStats}
+                    thirdPartyApps={thirdPartyApps}
+                    onPolicyUpdate={handlePolicyUpdate}
+                    onAppRevoke={handleAppRevoke}
+                    formatTimestamp={formatTimestamp}
+                  />
+
+                  {/* Data Actions */}
+                  <div className="bg-white dark:bg-zinc-800/50 rounded-xl p-5 border border-zinc-200 dark:border-zinc-700 space-y-4">
+                    <h3 className="text-base font-semibold text-zinc-900 dark:text-white">Data Actions</h3>
+                    <div className="flex flex-col sm:flex-row gap-3">
+                      <button
+                        onClick={handleExportData}
+                        className="flex-1 px-4 py-2.5 bg-blue-600 hover:bg-blue-700 text-white rounded-lg text-sm font-medium transition flex items-center justify-center gap-2"
+                      >
+                        <i className="fa-solid fa-file-export"></i>
+                        Export My Data
+                      </button>
+                      <button
+                        onClick={handleDeleteData}
+                        className="flex-1 px-4 py-2.5 bg-red-600 hover:bg-red-700 text-white rounded-lg text-sm font-medium transition flex items-center justify-center gap-2"
+                      >
+                        <i className="fa-solid fa-trash"></i>
+                        Delete Account
+                      </button>
+                    </div>
+                    <p className="text-xs text-zinc-500 dark:text-zinc-400">
+                      Data export downloads a JSON file with your profile and settings. Account deletion is permanent and cannot be undone.
+                    </p>
+                  </div>
+                </div>
               )}
 
               {/* Security Tab */}
@@ -963,6 +1059,49 @@ export const PrivacyDashboard: React.FC<PrivacyDashboardProps> = ({
         </div>
       </div>
     </div>
+
+    {/* Delete Account Confirmation Modal */}
+    {showDeleteConfirm && (
+      <div className="fixed inset-0 z-[60] bg-black/60 flex items-center justify-center p-4">
+        <div className="bg-white dark:bg-zinc-900 rounded-2xl p-6 max-w-md w-full shadow-2xl border border-zinc-200 dark:border-zinc-700">
+          <div className="flex items-center gap-3 mb-4">
+            <div className="w-10 h-10 rounded-full bg-red-100 dark:bg-red-900/30 flex items-center justify-center">
+              <i className="fa-solid fa-triangle-exclamation text-red-600 dark:text-red-400"></i>
+            </div>
+            <div>
+              <h3 className="font-bold text-zinc-900 dark:text-white">Delete Account</h3>
+              <p className="text-sm text-zinc-500">This action is permanent and cannot be undone.</p>
+            </div>
+          </div>
+          <p className="text-sm text-zinc-700 dark:text-zinc-300 mb-4">
+            All your messages, contacts, calendar events, and settings will be permanently deleted.
+            To confirm, type your account email: <strong>{userEmail}</strong>
+          </p>
+          <input
+            type="email"
+            value={deleteConfirmEmail}
+            onChange={(e) => setDeleteConfirmEmail(e.target.value)}
+            placeholder={userEmail}
+            className="w-full px-3 py-2 border border-zinc-300 dark:border-zinc-600 rounded-lg text-sm mb-4 bg-white dark:bg-zinc-800 text-zinc-900 dark:text-white focus:outline-none focus:ring-2 focus:ring-red-500"
+          />
+          <div className="flex gap-3">
+            <button
+              onClick={() => setShowDeleteConfirm(false)}
+              className="flex-1 px-4 py-2 bg-zinc-100 dark:bg-zinc-800 text-zinc-700 dark:text-zinc-300 rounded-lg text-sm font-medium hover:bg-zinc-200 dark:hover:bg-zinc-700 transition"
+            >
+              Cancel
+            </button>
+            <button
+              onClick={confirmDeleteAccount}
+              disabled={isDeletingAccount || deleteConfirmEmail !== userEmail}
+              className="flex-1 px-4 py-2 bg-red-600 hover:bg-red-700 disabled:opacity-50 disabled:cursor-not-allowed text-white rounded-lg text-sm font-medium transition"
+            >
+              {isDeletingAccount ? 'Deleting...' : 'Delete My Account'}
+            </button>
+          </div>
+        </div>
+      </div>
+    )}
     </>
   );
 };

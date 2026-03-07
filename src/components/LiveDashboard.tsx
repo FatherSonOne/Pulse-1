@@ -1,4 +1,5 @@
 import React, { useState, useEffect, useRef, useCallback, useMemo, Suspense, lazy } from 'react';
+import { settingsService } from '../services/settingsService';
 import { Capacitor } from '@capacitor/core';
 import { ragService, AISession, KnowledgeDoc, AIMessage, AIProject, PromptSuggestion, ThinkingStep } from '../services/ragService';
 import { processWithModel, generateSpeech } from '../services/geminiService';
@@ -44,6 +45,7 @@ const IntelMode = lazy(() => import('./WarRoom/modes/IntelMode').then(m => ({ de
 // New War Room Sidebar component
 import { WarRoomSidebar, WarRoomProject, WarRoomSession, AIMessage as SidebarAIMessage } from './WarRoom/WarRoomSidebar';
 import { WarRoomLayout } from './WarRoom/WarRoomLayout';
+import { MissionLauncher } from './WarRoom/MissionLauncher';
 import { useBoardNotes } from './WarRoom/useBoardNotes';
 
 // Import voice synthesis hook - this is lightweight
@@ -279,6 +281,15 @@ const LiveDashboard: React.FC<LiveDashboardProps> = ({ apiKey, userId }) => {
   // Agent Persona State
   const [activeAgent, setActiveAgent] = useState<'general' | 'skeptic' | 'scribe' | 'deep-diver'>('general');
 
+  // Load persisted agent selection
+  useEffect(() => {
+    settingsService.get('liveBoardSelectedAgent').then((agent) => {
+      if (agent && ['general', 'skeptic', 'scribe', 'deep-diver'].includes(agent)) {
+        setActiveAgent(agent as 'general' | 'skeptic' | 'scribe' | 'deep-diver');
+      }
+    });
+  }, []);
+
   // AI Thinking Visibility
   const [thinkingLogs, setThinkingLogs] = useState<Map<string, ThinkingStep[]>>(new Map());
   const [expandedThinking, setExpandedThinking] = useState<Set<string>>(new Set());
@@ -301,6 +312,7 @@ const LiveDashboard: React.FC<LiveDashboardProps> = ({ apiKey, userId }) => {
   const [currentMission, setCurrentMission] = useState<MissionType>('research');
   const [currentRoom, setCurrentRoom] = useState<RoomType>('war-room');
   const [showWarRoomHub, setShowWarRoomHub] = useState(true); // Show landing page on start
+  const [showMissionLauncher, setShowMissionLauncher] = useState(false);
   const [voiceEnabled, setVoiceEnabled] = useState(false);
   const [voiceMode, setVoiceMode] = useState<'push-to-talk' | 'always-on' | 'wake-word'>('push-to-talk');
   const [currentTokens, setCurrentTokens] = useState<Token[]>([]);
@@ -2037,7 +2049,7 @@ const LiveDashboard: React.FC<LiveDashboardProps> = ({ apiKey, userId }) => {
                 <span className="text-xs font-semibold text-gray-500 dark:text-gray-400 uppercase mb-1 block">Agent</span>
                 <AgentSelector
                   activeAgent={activeAgent}
-                  onAgentChange={(agent) => { setActiveAgent(agent); setShowMobileMenu(false); }}
+                  onAgentChange={(agent) => { setActiveAgent(agent); settingsService.set('liveBoardSelectedAgent', agent); setShowMobileMenu(false); }}
                 />
               </div>
 
@@ -2075,7 +2087,7 @@ const LiveDashboard: React.FC<LiveDashboardProps> = ({ apiKey, userId }) => {
             setCurrentRoom('war-room');
             setShowWarRoomHub(false);
           }}
-          onMissionLaunch={() => setCurrentRoom('missions')}
+          onMissionLaunch={() => setShowMissionLauncher(true)}
           sourceOpen={contextPanelOpen}
           onSourceChange={setContextPanelOpen}
           onKnowledgeBank={() => setShowKnowledgeBank(true)}
@@ -2103,6 +2115,16 @@ const LiveDashboard: React.FC<LiveDashboardProps> = ({ apiKey, userId }) => {
           {renderModeContent()}
         </WarRoomLayout>
 
+        {/* Mission Launcher Modal - triggered from ModeToolbar */}
+        {showMissionLauncher && (
+          <MissionLauncher
+            onMissionSelect={(mission) => {
+              handleMissionSelectFromHub(mission);
+              setShowMissionLauncher(false);
+            }}
+            onClose={() => setShowMissionLauncher(false)}
+          />
+        )}
 
         {/* Input Area - Only show when not using a mode that has its own input */}
         {selectedSessionId && !['tactical', 'focus', 'elegant-interface', 'analyst', 'strategist', 'brainstorm', 'debrief'].includes(warRoomMode) && (
@@ -2299,6 +2321,7 @@ const LiveDashboard: React.FC<LiveDashboardProps> = ({ apiKey, userId }) => {
                           key={agent}
                           onClick={() => {
                             setActiveAgent(agent as any);
+                            settingsService.set('liveBoardSelectedAgent', agent);
                             document.getElementById('agent-dropdown')?.classList.add('hidden');
                           }}
                           className={`w-full px-3 py-2 text-left text-sm flex items-center gap-2 hover:bg-gray-100 dark:hover:bg-gray-700 ${activeAgent === agent ? 'text-rose-500 bg-rose-50 dark:bg-rose-900/20' : 'text-gray-700 dark:text-gray-300'}`}

@@ -1,10 +1,23 @@
 /**
  * Dismissed Nudges Storage Manager
- * Persists dismissed nudge IDs in localStorage with 24h TTL
+ * Persists dismissed nudge IDs in localStorage with configurable TTL (default 24h).
+ * TTL is read from pulse_settings.nudgeFrequencyHours (set via Settings > Privacy & Data).
  */
 
 const STORAGE_KEY = 'pulse-dismissed-nudges';
-const TTL_HOURS = 24;
+
+/** Read nudge TTL from persisted settings synchronously. Falls back to 24h. */
+const getNudgeTTLHours = (): number => {
+  try {
+    const stored = localStorage.getItem('pulse_settings');
+    if (stored) {
+      const settings = JSON.parse(stored);
+      const hours = settings.nudgeFrequencyHours;
+      if (typeof hours === 'number') return hours;
+    }
+  } catch { /* ignore parse errors */ }
+  return 24;
+};
 
 export interface DismissedNudge {
   id: string;
@@ -20,7 +33,7 @@ export const getDismissedNudges = (): Set<string> => {
     if (!stored) return new Set();
 
     const dismissed: DismissedNudge[] = JSON.parse(stored);
-    const cutoff = Date.now() - TTL_HOURS * 60 * 60 * 1000;
+    const cutoff = Date.now() - getNudgeTTLHours() * 60 * 60 * 1000;
 
     // Filter out expired dismissals and return Set of active IDs
     const activeDismissals = dismissed.filter(n => n.dismissedAt > cutoff);
@@ -75,8 +88,8 @@ export const snoozeNudge = (nudgeId: string, minutes: number): void => {
     const filtered = dismissed.filter(n => n.id !== nudgeId);
 
     // Add snooze entry: set dismissedAt to future time minus TTL, so it expires after `minutes` minutes
-    // We store it as if it was dismissed (TTL_HOURS * 60 - minutes) minutes ago
-    const effectiveDismissedAt = Date.now() - (TTL_HOURS * 60 - minutes) * 60 * 1000;
+    // We store it as if it was dismissed (getNudgeTTLHours() * 60 - minutes) minutes ago
+    const effectiveDismissedAt = Date.now() - (getNudgeTTLHours() * 60 - minutes) * 60 * 1000;
     filtered.push({ id: nudgeId, dismissedAt: effectiveDismissedAt });
 
     localStorage.setItem(STORAGE_KEY, JSON.stringify(filtered));
@@ -143,7 +156,7 @@ export const getDismissedCount = (): number => {
     if (!stored) return 0;
 
     const dismissed: DismissedNudge[] = JSON.parse(stored);
-    const cutoff = Date.now() - TTL_HOURS * 60 * 60 * 1000;
+    const cutoff = Date.now() - getNudgeTTLHours() * 60 * 60 * 1000;
 
     return dismissed.filter(n => n.dismissedAt > cutoff).length;
   } catch (error) {
