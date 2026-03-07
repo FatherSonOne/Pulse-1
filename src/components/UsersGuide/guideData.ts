@@ -1,5 +1,5 @@
 // Pulse User's Guide — Full Rich Section Data
-// Version 25.1.1 · March 5, 2026
+// Version 25.1.2 · March 7, 2026
 // Auto-maintained by the /users-guide slash command.
 
 export interface Shortcut {
@@ -371,7 +371,8 @@ export const guideSections: GuideSection[] = [
     id: 'email',
     title: 'Email',
     icon: '📧',
-    summary: 'A full-featured email client with AI daily briefing, smart compose, templates, scheduling, follow-up reminders, and action item extraction.',
+    badge: 'Updated',
+    summary: 'A full-featured email client with AI daily briefing, smart compose, templates, scheduling, follow-up reminders, action item extraction, and email campaigns with audience segments.',
     steps: [
       'Go to Settings → Connected Accounts → Connect Email. Choose Google (Gmail) or Microsoft (Outlook).',
       'Click Email in the sidebar. Your inbox is on the left — click any email to read it on the right.',
@@ -379,6 +380,7 @@ export const guideSections: GuideSection[] = [
       'Click Compose (pencil icon) to write a new email with rich text formatting.',
       'Click Send, or click the clock icon to Schedule it for a future time.',
       'Click Extract Action Items on any email to pull tasks into your task list with source context.',
+      'Click Campaigns in Email to send bulk emails to audience segments — with AI drafting and scheduling.',
     ],
     subsections: [
       {
@@ -434,12 +436,43 @@ export const guideSections: GuideSection[] = [
           'Dismiss the reminder if you\'ve already handled it.',
         ],
       },
+      {
+        id: 'email-campaigns',
+        title: 'Email Campaigns',
+        description: 'Send a single email to an audience of contacts — with AI drafting, templates, scheduling, and auto-save.',
+        steps: [
+          'Click Email in the sidebar, then Campaigns to open the Campaigns dashboard.',
+          'Click New Campaign to open the 3-step Campaign Builder.',
+          'Step 1 — Setup: name your campaign, set your From Name, and choose an Audience Segment.',
+          'Step 2 — Compose: write your subject and body, or use AI Draft to generate it. Templates are also available.',
+          'Step 3 — Review & Send: preview the final email, then send immediately or schedule for a future time.',
+          'Your draft auto-saves every few seconds — you will never lose your work.',
+          'From the dashboard, use the ⋮ menu on any campaign to Duplicate or Delete it.',
+        ],
+        note: 'New in this release',
+      },
+      {
+        id: 'audience-segments',
+        title: 'Audience Segments',
+        description: 'Saved groups of contacts for targeting campaigns — dynamic and reusable.',
+        steps: [
+          'Built-in segments are ready to use: All Contacts, Recent (30 days), VIP Contacts, Important Contacts.',
+          'Create a custom segment: in Campaign Setup, click + New Segment.',
+          'Choose a rule: Active in last N days, Relationship strength ≥ N, or Marked Important.',
+          'Click Preview to see the live contact count — updates instantly as you adjust the rule.',
+          'Save your segment — it appears in the segment picker for all future campaigns.',
+          'When you select a segment, Pulse automatically populates the recipient list.',
+        ],
+        note: 'New in this release',
+      },
     ],
     tips: [
       'Snooze emails: right-click → Snooze to hide until a chosen time — they reappear at the top of your inbox.',
       'Enable read receipts in Settings → Privacy to know when recipients open your emails.',
       'Right-click any email → Send as Voice Message to forward it as a Vox note — richer than a reply.',
       'Use {{first_name}} in email templates for automatic personalization.',
+      'Audience segments are dynamic — VIP Contacts updates automatically as relationship scores change.',
+      'Use CRM Quick Actions (Create Task, View Contact) when reading any email to log follow-ups without leaving the inbox.',
     ],
     useCases: [
       {
@@ -466,6 +499,19 @@ export const guideSections: GuideSection[] = [
           'Snooze important emails you can\'t deal with now — bring them back tomorrow.',
           'Reply to priority emails using AI Smart Compose to draft faster.',
           'For task-related emails, Extract Action Items then archive the email.',
+        ],
+      },
+      {
+        id: 'uc-email-campaign',
+        title: 'Sending a Newsletter to VIP Contacts',
+        scenario: 'You want to send a monthly product update to your top clients without manually listing addresses.',
+        steps: [
+          'Go to Email → Campaigns → New Campaign.',
+          'In Setup, name it "April Newsletter", choose the VIP Contacts segment — Pulse auto-loads 23 recipients.',
+          'In Compose, click AI Draft. Describe: "Monthly product roadmap update", tone: Professional. Review the draft.',
+          'Add your subject line and optional preview text.',
+          'In Review & Send, click Schedule and set it for Tuesday 9 AM.',
+          'The campaign sends automatically — all 23 VIPs receive the email at the scheduled time.',
         ],
       },
     ],

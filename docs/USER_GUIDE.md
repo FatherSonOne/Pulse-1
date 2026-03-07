@@ -1,7 +1,7 @@
 # Pulse User's Guide
 
-**Version**: 25.1.1
-**Last Updated**: March 5, 2026
+**Version**: 25.1.2
+**Last Updated**: March 7, 2026
 **For**: All Pulse users — personal, team, and enterprise
 
 ---
@@ -529,6 +529,89 @@ Result: You never miss a client follow-up and spend 30% less time writing repeti
 4. For important threads you can't deal with now, use **Snooze** to bring them back tomorrow.
 5. Reply to priority emails using **AI Smart Compose** to draft replies faster.
 6. For emails with tasks, use **Extract Action Items** and then archive the email.
+
+</details>
+
+### Email Campaigns
+
+Email Campaigns let you send a single professionally-written email to an audience segment — all your contacts, your VIP contacts, recently active contacts, or a custom group you define.
+
+#### The Campaigns Dashboard
+
+1. Click **Email** in the sidebar.
+2. Click **Campaigns** in the Email navigation bar.
+3. The dashboard shows all your draft, scheduled, and sent campaigns with status, recipient count, and send date.
+4. Use the **search bar** to find campaigns by name or subject.
+5. Click the **⋮ menu** on any campaign to **Duplicate** or **Delete** it.
+
+#### Creating a Campaign
+
+1. Click **New Campaign** from the Campaigns dashboard.
+2. The Campaign Builder opens as a 3-step wizard.
+
+**Step 1 — Setup:**
+
+- Enter a campaign name (internal only, recipients do not see this) and your From Name.
+- Choose an **Audience Segment** from your saved segments — Pulse automatically loads the matching recipients.
+- Or paste email addresses manually in the Recipients field.
+
+**Step 2 — Compose:**
+
+- Write your **Subject Line** and optional preview text.
+- Write the body using the rich text editor.
+- Click **AI Draft** — describe what you want and choose a tone (Professional, Friendly, Persuasive, or Concise). Pulse writes a full draft instantly.
+- Click **Templates** to insert a saved email template and edit it.
+- Your campaign **auto-saves as a draft** every few seconds — you will never lose your work.
+
+**Step 3 — Review & Send:**
+
+- Preview the final email and verify the recipient list.
+- Click **Send Now** to send immediately, or click **Schedule** to pick a future date and time.
+
+#### Audience Segments
+
+Audience Segments are saved groups of contacts that you can reuse across any campaign.
+
+**Built-in segments (ready to use):**
+
+| Segment | Who it includes |
+| ------- | --------------- |
+| **All Contacts** | Every contact you have ever emailed |
+| **Recent (30 days)** | Contacts you've been in touch with in the past 30 days |
+| **VIP Contacts** | Contacts with a relationship strength of 75 or higher |
+| **Important Contacts** | Contacts you've manually marked as Important |
+
+**Creating a custom segment:**
+
+1. In the Campaign Setup step, click **+ New Segment**.
+2. Give the segment a descriptive name.
+3. Choose a rule: **Active in last N days**, **Relationship strength ≥ N**, or **Marked Important**.
+4. Click **Preview** — the live contact count updates immediately so you know how many people will receive the campaign.
+5. Click **Save Segment** — it is now available in all future campaigns.
+
+**Tip:** Use segments instead of manually listing email addresses. Segments are dynamic — if a contact becomes VIP after you create the segment, they are included automatically next time you send.
+
+#### CRM Quick Actions in Email
+
+When reading any email, a **CRM Quick Actions** panel appears in the email viewer:
+
+- Click **Create Task** to log a follow-up task directly from the email — the email thread is attached as context.
+- Click **View Contact** to jump to the sender's full contact profile with relationship history and any linked CRM data.
+
+**Tip:** Use CRM quick actions during your morning triage to capture follow-up tasks without leaving the inbox.
+
+<details>
+<summary><strong>Use Case: Sending a VIP client newsletter</strong></summary>
+
+**Scenario:** You want to send a monthly update to your top clients without manually looking up their email addresses.
+
+1. Navigate to **Email → Campaigns → New Campaign**.
+2. In Setup, name it "April Newsletter" and select the **VIP Contacts** segment — Pulse auto-loads 23 recipients.
+3. In Compose, click **AI Draft**, type "Monthly update on our product roadmap and upcoming features", and choose **Professional** tone. Review the draft.
+4. Add your subject line: "April Update from [Your Name]".
+5. In Review, click **Schedule** and set it for Tuesday at 9 AM.
+
+Result: All 23 VIP contacts receive a personalized, polished email — zero address lookup required.
 
 </details>
 
