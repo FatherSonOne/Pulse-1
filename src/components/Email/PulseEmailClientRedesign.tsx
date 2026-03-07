@@ -1,7 +1,7 @@
 // PulseEmailClientRedesign.tsx - Redesigned AI-Powered Email Client
 // Features: Enhanced UI, Zoom (50-100%, max default), Light/Dark Mode, Mobile Optimized
 import React, { useState, useEffect, useCallback, useRef } from 'react';
-import { emailSyncService, CachedEmail, EmailThread, EmailFolder, EmailCategory } from '../../services/emailSyncService';
+import { emailSyncService, CachedEmail, EmailThread, EmailFolder, EmailCategory, SyncState } from '../../services/emailSyncService';
 import { getGmailService, resetGmailService, SendEmailParams } from '../../services/gmailService';
 import { offlineEmailStorage } from '../../services/offlineEmailStorage';
 import { supabase } from '../../services/supabase';
@@ -60,6 +60,7 @@ export const PulseEmailClientRedesign: React.FC<PulseEmailClientRedesignProps> =
   const [showEmailSettings, setShowEmailSettings] = useState(false);
   const [showReauthModal, setShowReauthModal] = useState(false);
   const [nudgeFocused, setNudgeFocused] = useState(false);
+  const [syncState, setSyncState] = useState<SyncState | null>(null);
   const briefingRef = useRef<HTMLDivElement>(null);
 
   // Campaign view state
@@ -158,8 +159,9 @@ export const PulseEmailClientRedesign: React.FC<PulseEmailClientRedesignProps> =
       await loadEmails();
 
       // Check if we need to sync
-      const syncState = await emailSyncService.getSyncState();
-      const lastSync = syncState?.last_full_sync_at;
+      const fetchedSyncState = await emailSyncService.getSyncState();
+      setSyncState(fetchedSyncState);
+      const lastSync = fetchedSyncState?.last_full_sync_at;
 
       if (!lastSync) {
         // Never synced - do an initial sync
@@ -821,6 +823,7 @@ export const PulseEmailClientRedesign: React.FC<PulseEmailClientRedesignProps> =
           setSidebarOpen(false);
         }}
         isCampaignsActive={currentView === 'campaigns'}
+        cachedEmailCount={syncState?.total_emails_cached ?? 0}
       />
 
       {/* Main content area */}

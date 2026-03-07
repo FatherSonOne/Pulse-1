@@ -13,6 +13,7 @@ interface EmailSidebarRedesignProps {
   accentColor?: 'rose' | 'blue' | 'purple' | 'green';
   onCampaignsClick?: () => void;
   isCampaignsActive?: boolean;
+  cachedEmailCount?: number;
 }
 
 const folders: { id: EmailFolder; label: string; icon: string; color?: string }[] = [
@@ -38,6 +39,7 @@ export const EmailSidebarRedesign: React.FC<EmailSidebarRedesignProps> = ({
   accentColor = 'rose',
   onCampaignsClick,
   isCampaignsActive = false,
+  cachedEmailCount = 0,
 }) => {
   const handleFolderClick = (folder: EmailFolder) => {
     onFolderChange(folder);
@@ -197,23 +199,15 @@ export const EmailSidebarRedesign: React.FC<EmailSidebarRedesignProps> = ({
           </button>
         </div>
 
-        {/* Storage indicator */}
-        <div className="p-4 border-t border-stone-200 dark:border-zinc-800 bg-stone-100/50 dark:bg-zinc-900/50" role="region" aria-label="Storage usage">
-          <div className="flex items-center gap-2 mb-2">
-            <i className="fa-solid fa-hard-drive text-stone-500 dark:text-zinc-500"></i>
+        {/* Cached email count */}
+        <div className="p-4 border-t border-stone-200 dark:border-zinc-800 bg-stone-100/50 dark:bg-zinc-900/50">
+          <div className="flex items-center gap-2">
+            <i className="fa-solid fa-database text-stone-500 dark:text-zinc-500" />
             <div className="flex-1 flex items-center justify-between text-xs font-medium text-stone-600 dark:text-zinc-400">
-              <span>Storage</span>
-              <span>2.4 GB of 15 GB</span>
+              <span>Cached Emails</span>
+              <span className="tabular-nums">{cachedEmailCount.toLocaleString()}</span>
             </div>
           </div>
-          <div className="relative h-2 bg-stone-200 dark:bg-zinc-800 rounded-full overflow-hidden" role="progressbar" aria-valuenow={16} aria-valuemin={0} aria-valuemax={100} aria-label="Storage used: 16%">
-            <div className={`absolute inset-y-0 left-0 w-[16%] bg-gradient-to-r ${getAccentGradient()} rounded-full transition-all duration-500`}>
-              <div className="absolute inset-0 bg-white/20 animate-pulse"></div>
-            </div>
-          </div>
-          <p className="text-xs text-stone-500 dark:text-zinc-500 mt-2 text-center">
-            84% remaining
-          </p>
         </div>
       </aside>
     </>
