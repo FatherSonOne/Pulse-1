@@ -2,6 +2,7 @@
 import React, { useState } from 'react';
 import { CachedEmail, EmailThread, emailSyncService } from '../../services/emailSyncService';
 import { emailAIService, EmailAnalysis } from '../../services/emailAIService';
+import { supabase } from '../../services/supabase';
 import SnoozeModal from './SnoozeModal';
 import RelationshipPanel from './RelationshipPanel';
 import MeetingExtractor from './MeetingExtractor';
@@ -38,6 +39,8 @@ export const EmailViewerNew: React.FC<EmailViewerNewProps> = ({
   const [showRelationshipPanel, setShowRelationshipPanel] = useState(false);
   const [showMeetingExtractor, setShowMeetingExtractor] = useState(true);
   const [showActionExtractor, setShowActionExtractor] = useState(true);
+  const [showQuickActions, setShowQuickActions] = useState(false);
+  const [creatingTask, setCreatingTask] = useState(false);
 
   // Handle snooze
   const handleSnooze = async (snoozeUntil: Date) => {
@@ -173,6 +176,35 @@ export const EmailViewerNew: React.FC<EmailViewerNewProps> = ({
     setShowActionExtractor(false);
   };
 
+  // Handle creating a single task from the current email (CRM quick action)
+  const handleCreateTask = async () => {
+    setCreatingTask(true);
+    try {
+      const { data: { user } } = await supabase.auth.getUser();
+      if (!user) throw new Error('Not authenticated');
+
+      const { error } = await supabase.from('tasks').insert({
+        user_id: user.id,
+        title: email.subject || 'Task from email',
+        description: `From: ${email.from_name || email.from_email}\n\n${email.snippet || ''}`,
+        priority: 'medium',
+        status: 'pending',
+        source: 'email',
+        source_id: email.id,
+        created_at: new Date().toISOString(),
+      });
+
+      if (error) throw error;
+
+      toast.success('Task created!');
+      setShowQuickActions(false);
+    } catch (err) {
+      toast.error(err instanceof Error ? err.message : 'Failed to create task');
+    } finally {
+      setCreatingTask(false);
+    }
+  };
+
   // Messages to display (thread or single)
   const messages = thread?.messages || [email];
 
@@ -267,6 +299,43 @@ export const EmailViewerNew: React.FC<EmailViewerNewProps> = ({
         >
           <i className="fa-solid fa-user-circle" aria-hidden="true"></i>
         </button>
+      </div>
+
+      {/* CRM Quick Actions */}
+      <div className="border-t border-stone-100 dark:border-zinc-800 px-4 py-2">
+        <button
+          onClick={() => setShowQuickActions(!showQuickActions)}
+          className="flex items-center gap-1.5 text-xs text-stone-500 dark:text-zinc-500 hover:text-stone-700 dark:hover:text-zinc-300 font-medium transition-colors"
+          aria-expanded={showQuickActions}
+          aria-label="Toggle quick actions"
+        >
+          <i className={`fa-solid fa-chevron-${showQuickActions ? 'up' : 'down'} text-xs`} aria-hidden="true" />
+          Quick Actions
+        </button>
+        {showQuickActions && (
+          <div className="flex gap-2 mt-2 flex-wrap">
+            <button
+              onClick={handleCreateTask}
+              disabled={creatingTask}
+              className="flex items-center gap-1.5 px-3 py-1.5 rounded-lg text-xs font-medium bg-rose-50 dark:bg-rose-500/10 text-rose-600 dark:text-rose-400 hover:bg-rose-100 dark:hover:bg-rose-500/20 transition-all disabled:opacity-50"
+              aria-label="Create task from this email"
+            >
+              {creatingTask
+                ? <i className="fa-solid fa-spinner animate-spin" aria-hidden="true" />
+                : <i className="fa-solid fa-check-square" aria-hidden="true" />
+              }
+              Create Task
+            </button>
+            <button
+              onClick={() => setShowRelationshipPanel(true)}
+              className="flex items-center gap-1.5 px-3 py-1.5 rounded-lg text-xs font-medium bg-blue-50 dark:bg-blue-500/10 text-blue-600 dark:text-blue-400 hover:bg-blue-100 dark:hover:bg-blue-500/20 transition-all"
+              aria-label="View contact info for email sender"
+            >
+              <i className="fa-solid fa-user-circle" aria-hidden="true" />
+              View Contact
+            </button>
+          </div>
+        )}
       </div>
 
       {/* Email content */}
