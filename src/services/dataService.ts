@@ -303,6 +303,8 @@ function dbToUnifiedMessage(db: DBUnifiedMessage): UnifiedMessage {
 
 // ============= DATA SERVICE CLASS =============
 
+type DBThreadWithMessages = DBThread & { messages: DBMessage[] | null };
+
 class DataService {
   private userId: string | null = null;
 
@@ -610,9 +612,13 @@ class DataService {
       return [];
     }
 
-    return (threadsData || []).map((threadDb: any) => {
+    if (threadsData && threadsData.length === 100) {
+      console.warn('[getThreads] Result capped at 100 threads — some threads may not be shown.');
+    }
+
+    return (threadsData as DBThreadWithMessages[]).map((threadDb) => {
       const messages = (threadDb.messages || [])
-        .sort((a: any, b: any) => new Date(a.timestamp).getTime() - new Date(b.timestamp).getTime())
+        .sort((a, b) => (a.timestamp < b.timestamp ? -1 : a.timestamp > b.timestamp ? 1 : 0))
         .map(dbToMessage);
       const { messages: _, ...threadFields } = threadDb;
       return dbToThread(threadFields, messages);
