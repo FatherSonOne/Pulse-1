@@ -4,6 +4,7 @@ import React, {
   useEffect,
   useState,
   useCallback,
+  useMemo,
   ReactNode,
 } from 'react';
 import { useAuth } from '../hooks/useAuth';
@@ -296,7 +297,7 @@ export const WorkspaceProvider: React.FC<WorkspaceProviderProps> = ({ children }
   // Context value
   // ---------------------------------------------------------------------------
 
-  const value: WorkspaceContextType = {
+  const value: WorkspaceContextType = useMemo(() => ({
     workspaces,
     currentWorkspace,
     members,
@@ -310,7 +311,11 @@ export const WorkspaceProvider: React.FC<WorkspaceProviderProps> = ({ children }
     isOwner,
     isAdmin,
     canManageMembers,
-  };
+  }), [
+    workspaces, currentWorkspace, members, currentRole, isLoading,
+    switchWorkspace, createWorkspace, updateWorkspace,
+    refreshWorkspaces, refreshMembers, isOwner, isAdmin, canManageMembers,
+  ]);
 
   return (
     <WorkspaceContext.Provider value={value}>
