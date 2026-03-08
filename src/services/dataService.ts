@@ -600,28 +600,23 @@ class DataService {
   async getThreads(): Promise<Thread[]> {
     const { data: threadsData, error: threadsError } = await supabase
       .from('threads')
-      .select('*')
+      .select('*, messages(*)')
       .eq('user_id', this.getUserId())
-      .order('updated_at', { ascending: false });
+      .order('updated_at', { ascending: false })
+      .limit(100);
 
     if (threadsError) {
       console.error('Error fetching threads:', threadsError);
       return [];
     }
 
-    const threads: Thread[] = [];
-    for (const threadDb of threadsData || []) {
-      const { data: messagesData } = await supabase
-        .from('messages')
-        .select('*')
-        .eq('thread_id', threadDb.id)
-        .order('timestamp');
-
-      const messages = (messagesData || []).map(dbToMessage);
-      threads.push(dbToThread(threadDb, messages));
-    }
-
-    return threads;
+    return (threadsData || []).map((threadDb: any) => {
+      const messages = (threadDb.messages || [])
+        .sort((a: any, b: any) => new Date(a.timestamp).getTime() - new Date(b.timestamp).getTime())
+        .map(dbToMessage);
+      const { messages: _, ...threadFields } = threadDb;
+      return dbToThread(threadFields, messages);
+    });
   }
 
   async getThread(id: string): Promise<Thread | null> {
