@@ -127,6 +127,10 @@ const Calendar: React.FC<CalendarProps> = ({ contacts, openTaskPanel = false, on
 
   const [currentDate, setCurrentDate] = useState(new Date());
   const [viewMode, setViewMode] = useState<ViewMode>(isMobile ? 'agenda' : 'month');
+  const viewModeRef = useRef(viewMode);
+  useEffect(() => {
+    viewModeRef.current = viewMode;
+  }, [viewMode]);
   const [events, setEvents] = useState<CalendarEvent[]>([]);
   const [tasks, setTasks] = useState<Task[]>([]);
   const [visibleCalendars, setVisibleCalendars] = useState<Set<string>>(new Set(['user']));
@@ -529,16 +533,16 @@ const Calendar: React.FC<CalendarProps> = ({ contacts, openTaskPanel = false, on
       const mobile = window.innerWidth < 768;
       setIsMobile(mobile);
       // Switch to appropriate view when screen size changes
-      if (mobile && (viewMode === 'week' || viewMode === 'month')) {
+      if (mobile && (viewModeRef.current === 'week' || viewModeRef.current === 'month')) {
         setViewMode('agenda');
-      } else if (!mobile && viewMode === 'agenda') {
+      } else if (!mobile && viewModeRef.current === 'agenda') {
         setViewMode('month');
       }
     };
 
     window.addEventListener('resize', handleResize);
     return () => window.removeEventListener('resize', handleResize);
-  }, [viewMode]);
+  }, []); // listener registered once, reads latest viewMode via ref
 
   // Post-meeting follow-up monitoring
   useEffect(() => {
