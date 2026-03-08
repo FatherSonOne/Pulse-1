@@ -36,6 +36,13 @@ export type CampaignInput = Partial<
 >;
 
 class EmailCampaignService {
+  private campaignCache: { data: EmailCampaign[]; expires: number } | null = null;
+  private readonly CACHE_TTL = 60_000; // 60 seconds
+
+  invalidateCache(): void {
+    this.campaignCache = null;
+  }
+
   private async getUserId(): Promise<string> {
     const {
       data: { user },
@@ -47,6 +54,11 @@ class EmailCampaignService {
 
   async list(): Promise<EmailCampaign[]> {
     const userId = await this.getUserId();
+
+    if (this.campaignCache && Date.now() < this.campaignCache.expires) {
+      return this.campaignCache.data;
+    }
+
     const { data, error } = await supabase
       .from('email_campaigns')
       .select('*')
@@ -54,7 +66,9 @@ class EmailCampaignService {
       .order('created_at', { ascending: false });
 
     if (error) throw error;
-    return data as EmailCampaign[];
+    const result = data as EmailCampaign[];
+    this.campaignCache = { data: result, expires: Date.now() + this.CACHE_TTL };
+    return result;
   }
 
   async getById(id: string): Promise<EmailCampaign> {
@@ -71,6 +85,7 @@ class EmailCampaignService {
   }
 
   async create(input: CampaignInput = {}): Promise<EmailCampaign> {
+    this.invalidateCache();
     const userId = await this.getUserId();
     const { data, error } = await supabase
       .from('email_campaigns')
@@ -88,6 +103,7 @@ class EmailCampaignService {
   }
 
   async update(id: string, input: CampaignInput): Promise<EmailCampaign> {
+    this.invalidateCache();
     const userId = await this.getUserId();
     const { data, error } = await supabase
       .from('email_campaigns')
@@ -102,6 +118,7 @@ class EmailCampaignService {
   }
 
   async delete(id: string): Promise<void> {
+    this.invalidateCache();
     const userId = await this.getUserId();
     const { error } = await supabase
       .from('email_campaigns')
@@ -113,6 +130,7 @@ class EmailCampaignService {
   }
 
   async duplicate(id: string): Promise<EmailCampaign> {
+    this.invalidateCache();
     const original = await this.getById(id);
     const { id: _id, user_id: _uid, created_at: _ca, updated_at: _ua, stats: _stats, sent_at: _sa, ...rest } = original;
     return this.create({
@@ -128,6 +146,7 @@ class EmailCampaignService {
    * recipientEmails: list of address strings to send to.
    */
   async send(id: string, recipientEmails: string[]): Promise<void> {
+    this.invalidateCache();
     if (recipientEmails.length === 0) throw new Error('No recipients specified');
 
     const campaign = await this.getById(id);
@@ -177,6 +196,7 @@ class EmailCampaignService {
   }
 
   async schedule(id: string, scheduleAt: Date): Promise<EmailCampaign> {
+    this.invalidateCache();
     return this.update(id, {
       status: 'scheduled',
       schedule_at: scheduleAt.toISOString(),

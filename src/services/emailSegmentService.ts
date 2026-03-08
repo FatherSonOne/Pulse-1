@@ -41,6 +41,13 @@ const DEFAULT_SEGMENTS: SegmentInput[] = [
 // ─── Service ─────────────────────────────────────────────────────────────────
 
 class EmailSegmentService {
+  private segmentCache: { data: EmailSegment[]; expires: number } | null = null;
+  private readonly CACHE_TTL = 60_000; // 60 seconds
+
+  invalidateCache(): void {
+    this.segmentCache = null;
+  }
+
   private async getUserId(): Promise<string> {
     const { data: { user }, error } = await supabase.auth.getUser();
     if (error || !user) throw new Error('Not authenticated');
@@ -50,6 +57,11 @@ class EmailSegmentService {
   /** List user's segments, seeding 4 defaults if none exist yet. */
   async list(): Promise<EmailSegment[]> {
     const userId = await this.getUserId();
+
+    if (this.segmentCache && Date.now() < this.segmentCache.expires) {
+      return this.segmentCache.data;
+    }
+
     const { data, error } = await supabase
       .from('email_segments')
       .select('*')
@@ -58,10 +70,11 @@ class EmailSegmentService {
 
     if (error) throw error;
 
-    if (!data || data.length === 0) {
-      return this.seedDefaults(userId);
-    }
-    return data as EmailSegment[];
+    const result = (data && data.length > 0)
+      ? data as EmailSegment[]
+      : await this.seedDefaults(userId);
+    this.segmentCache = { data: result, expires: Date.now() + this.CACHE_TTL };
+    return result;
   }
 
   private async seedDefaults(userId: string): Promise<EmailSegment[]> {
@@ -92,6 +105,7 @@ class EmailSegmentService {
   }
 
   async create(input: SegmentInput): Promise<EmailSegment> {
+    this.invalidateCache();
     const userId = await this.getUserId();
     const { data, error } = await supabase
       .from('email_segments')
@@ -103,6 +117,7 @@ class EmailSegmentService {
   }
 
   async update(id: string, input: Partial<SegmentInput>): Promise<EmailSegment> {
+    this.invalidateCache();
     const userId = await this.getUserId();
     const { data, error } = await supabase
       .from('email_segments')
@@ -116,6 +131,7 @@ class EmailSegmentService {
   }
 
   async delete(id: string): Promise<void> {
+    this.invalidateCache();
     const userId = await this.getUserId();
     const { error } = await supabase
       .from('email_segments')
@@ -137,6 +153,7 @@ class EmailSegmentService {
 
   /** Update the cached contact_count on a segment. */
   async refreshCount(segmentId: string): Promise<number> {
+    this.invalidateCache();
     const userId = await this.getUserId();
     const segment = await this.getById(segmentId);
     const emails = await this.applyRules(userId, segment.filter_rules);
