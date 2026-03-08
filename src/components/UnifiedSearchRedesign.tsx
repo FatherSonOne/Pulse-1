@@ -1,4 +1,5 @@
 import React, { useState, useEffect, useCallback, useRef } from 'react';
+import { useDebounce } from '../hooks/useDebounce';
 import ReactMarkdown from 'react-markdown';
 import {
   Search,
@@ -132,6 +133,7 @@ export default function UnifiedSearchRedesign() {
 
   // ── Core state ───────────────────────────────────────────────────────────────
   const [searchQuery,   setSearchQuery]   = useState('');
+  const debouncedSearchQuery = useDebounce(searchQuery, 300);
   const [searchResults, setSearchResults] = useState<SearchResult[]>([]);
   const [loading,       setLoading]       = useState(false);
   const [viewMode,      setViewMode]      = useState<ViewMode>('list');
@@ -243,7 +245,7 @@ export default function UnifiedSearchRedesign() {
 
   // ── Core search ──────────────────────────────────────────────────────────────
   const performSearch = useCallback(async () => {
-    if (!searchQuery.trim()) {
+    if (!debouncedSearchQuery.trim()) {
       setSearchResults([]);
       setWebSearchResult(null);
       return;
@@ -259,7 +261,7 @@ export default function UnifiedSearchRedesign() {
     if (useWebSearch) {
       setWebSearchLoading(true);
       searchEnhancements
-        .sonarWebSearch(searchQuery, { model: webSearchModel })
+        .sonarWebSearch(debouncedSearchQuery, { model: webSearchModel })
         .then(setWebSearchResult)
         .catch(() => setWebSearchResult(null))
         .finally(() => setWebSearchLoading(false));
@@ -268,14 +270,14 @@ export default function UnifiedSearchRedesign() {
     }
 
     try {
-      await searchEnhancements.saveSearchToHistory(userId, searchQuery);
+      await searchEnhancements.saveSearchToHistory(userId, debouncedSearchQuery);
       const activeFilters: SearchFilters = {
         ...filters,
         types: selectedTypes.size > 0 ? Array.from(selectedTypes) : undefined,
       };
 
       const { results, errors } = await searchEnhancements.enhancedSearch(
-        searchQuery, userId, apiKey, activeFilters, useAISearch,
+        debouncedSearchQuery, userId, apiKey, activeFilters, useAISearch,
         (partial) => {
           if (searchGeneration.current !== generation) return;
           setSearchResults(partial);
@@ -286,19 +288,18 @@ export default function UnifiedSearchRedesign() {
       setSearchResults(results);
       setSearchErrors(errors);
       setShowSuggestions(false);
-      searchAnalyticsService.trackSearch(userId, searchQuery, results.length);
+      searchAnalyticsService.trackSearch(userId, debouncedSearchQuery, results.length);
     } catch {
       if (searchGeneration.current === generation) setSearchResults([]);
     } finally {
       if (searchGeneration.current === generation) setLoading(false);
     }
-  }, [searchQuery, filters, selectedTypes, useAISearch, useWebSearch, webSearchModel, userId, apiKey]);
+  }, [debouncedSearchQuery, filters, selectedTypes, useAISearch, useWebSearch, webSearchModel, userId, apiKey]);
 
-  // ── Debounced auto-search ─────────────────────────────────────────────────────
+  // ── Auto-search on debounced query change ─────────────────────────────────────
   useEffect(() => {
-    const t = setTimeout(() => { if (searchQuery.trim()) performSearch(); }, 300);
-    return () => clearTimeout(t);
-  }, [searchQuery]);
+    if (debouncedSearchQuery.trim()) performSearch();
+  }, [debouncedSearchQuery]);
 
   // ── Operator hints ────────────────────────────────────────────────────────────
   useEffect(() => {

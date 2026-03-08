@@ -6,6 +6,7 @@
 import React, { useState, useCallback, useEffect, useMemo } from 'react';
 import { searchService, SearchResult, SearchOptions } from '../../services/searchService';
 import { supabase } from '../../services/supabase';
+import { useDebounce } from '../../hooks/useDebounce';
 
 // ==================== Types ====================
 
@@ -189,6 +190,7 @@ export const SearchPanel: React.FC<SearchPanelProps> = ({
   className = ''
 }) => {
   const [query, setQuery] = useState('');
+  const debouncedQuery = useDebounce(query, 300);
   const [filters, setFilters] = useState<SearchFilters>({});
   const [results, setResults] = useState<SearchResult[]>([]);
   const [isSearching, setIsSearching] = useState(false);
@@ -201,7 +203,7 @@ export const SearchPanel: React.FC<SearchPanelProps> = ({
   }, []);
 
   const handleSearch = useCallback(async () => {
-    if (!query.trim() || query.length < 2) {
+    if (!debouncedQuery.trim() || debouncedQuery.length < 2) {
       setResults([]);
       return;
     }
@@ -210,30 +212,28 @@ export const SearchPanel: React.FC<SearchPanelProps> = ({
 
     try {
       const searchResults = await searchService.searchMessages({
-        query,
+        query: debouncedQuery,
         ...filters
       });
 
       setResults(searchResults);
-      searchService.saveRecentSearch(query);
+      searchService.saveRecentSearch(debouncedQuery);
       setRecentSearches(searchService.getRecentSearches());
     } catch (error) {
       console.error('Search error:', error);
     } finally {
       setIsSearching(false);
     }
-  }, [query, filters]);
+  }, [debouncedQuery, filters]);
 
-  // Debounced search
+  // Fire search whenever the debounced query or filters change
   useEffect(() => {
-    const timer = setTimeout(() => {
-      if (query.length >= 2) {
-        handleSearch();
-      }
-    }, 300);
-
-    return () => clearTimeout(timer);
-  }, [query, filters, handleSearch]);
+    if (debouncedQuery.length >= 2) {
+      handleSearch();
+    } else {
+      setResults([]);
+    }
+  }, [debouncedQuery, filters, handleSearch]);
 
   const handleResultClick = (result: SearchResult) => {
     onResultClick?.(result);
