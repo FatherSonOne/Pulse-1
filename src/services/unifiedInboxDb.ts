@@ -168,6 +168,36 @@ export class UnifiedInboxDbService {
   }
 
   /**
+   * Build a unified_messages DB row from a UnifiedMessage.
+   * channel_id and sender_id must be provided when the resolved DB UUIDs are known;
+   * if either is unavailable the row cannot be persisted and null is returned.
+   */
+  private toDbRow(
+    userId: string,
+    message: UnifiedMessage,
+    channelId: string,
+    senderId?: string,
+  ) {
+    if (!channelId) return null;
+    return {
+      user_id: userId,
+      platform: message.source,
+      external_id: message.id,
+      channel_id: channelId,
+      sender_id: senderId,
+      content: message.content,
+      content_type: message.type,
+      media_url: message.mediaUrl,
+      thread_id: message.threadId,
+      timestamp: message.timestamp.toISOString(),
+      is_read: message.isRead,
+      is_starred: message.starred,
+      tags: message.tags,
+      metadata: message.metadata,
+    };
+  }
+
+  /**
    * Store a unified message (handles deduplication)
    */
   async storeMessage(userId: string, message: UnifiedMessage): Promise<DbMessage | null> {
@@ -191,25 +221,13 @@ export class UnifiedInboxDbService {
         senderId = sender.id;
       }
 
-      // Store the message
+      // Build and store the message row
+      const row = this.toDbRow(userId, message, channel.id, senderId);
+      if (!row) return null;
+
       const { data, error } = await supabase
         .from('unified_messages')
-        .upsert({
-          user_id: userId,
-          platform: message.source,
-          external_id: message.id,
-          channel_id: channel.id,
-          sender_id: senderId,
-          content: message.content,
-          content_type: message.type,
-          media_url: message.mediaUrl,
-          thread_id: message.threadId,
-          timestamp: message.timestamp.toISOString(),
-          is_read: message.isRead,
-          is_starred: message.starred,
-          tags: message.tags,
-          metadata: message.metadata,
-        }, {
+        .upsert(row, {
           onConflict: 'user_id,platform,external_id'
         })
         .select()
@@ -228,14 +246,53 @@ export class UnifiedInboxDbService {
   }
 
   /**
-   * Bulk store messages (more efficient for syncing)
+   * Bulk store messages (more efficient for syncing).
+   * Resolves channel and sender for each message individually, then upserts
+   * all resulting rows in chunks of 50 to avoid per-message round-trips.
    */
   async storeMessages(userId: string, messages: UnifiedMessage[]): Promise<number> {
-    let storedCount = 0;
+    if (messages.length === 0) return 0;
 
-    for (const message of messages) {
-      const result = await this.storeMessage(userId, message);
-      if (result) storedCount++;
+    const rows = (
+      await Promise.all(
+        messages.map(async (message) => {
+          try {
+            const channel = await this.upsertChannel(userId, message.source, {
+              externalId: message.channelId,
+              name: message.channelName,
+              isMember: true,
+            });
+
+            let senderId: string | undefined;
+            if (message.senderId && message.senderName) {
+              const sender = await this.upsertContact(userId, message.source, {
+                externalId: message.senderId,
+                name: message.senderName,
+                email: message.senderEmail,
+                metadata: {},
+              });
+              senderId = sender.id;
+            }
+
+            return this.toDbRow(userId, message, channel.id, senderId);
+          } catch {
+            return null;
+          }
+        }),
+      )
+    ).filter((row): row is NonNullable<typeof row> => row !== null);
+
+    if (rows.length === 0) return 0;
+
+    const CHUNK_SIZE = 50;
+    let storedCount = 0;
+    for (let i = 0; i < rows.length; i += CHUNK_SIZE) {
+      const chunk = rows.slice(i, i + CHUNK_SIZE);
+      const { data, error } = await supabase
+        .from('unified_messages')
+        .upsert(chunk, { onConflict: 'user_id,platform,external_id', ignoreDuplicates: true })
+        .select('id');
+      if (!error && data) storedCount += data.length;
     }
 
     return storedCount;
