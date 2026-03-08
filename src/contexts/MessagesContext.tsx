@@ -1,4 +1,4 @@
-import React, { createContext, useContext, useCallback, useState, useEffect, ReactNode } from 'react';
+import React, { createContext, useContext, useCallback, useState, useEffect, useMemo, ReactNode } from 'react';
 import { Thread, Message, Contact } from '../types';
 import { dataService } from '../services/dataService';
 import { pulseService, PulseConversation, PulseMessage, SearchUserResult } from '../services/pulseService';
@@ -271,7 +271,7 @@ export const MessagesProvider: React.FC<MessagesProviderProps> = ({ children, cu
     }
   }, [activePulseConversation, loadPulseMessages]);
 
-  const value: MessagesContextState = {
+  const value: MessagesContextState = useMemo(() => ({
     threads,
     activeThreadId,
     setActiveThreadId,
@@ -318,7 +318,37 @@ export const MessagesProvider: React.FC<MessagesProviderProps> = ({ children, cu
     sendPulseMessage,
     addReactionToPulseMessage,
     toggleStarPulseMessage,
-  };
+  }), [
+    threads,
+    activeThreadId,
+    pulseConversations,
+    activePulseConversation,
+    pulseMessages,
+    pulseMessageReactions,
+    starredPulseMessages,
+    replyingToPulseMessage,
+    searchQuery,
+    isSearchOpen,
+    pulseUserSearch,
+    pulseSearchResults,
+    isSearchingPulseUsers,
+    suggestedPulseUsers,
+    recentPulseContacts,
+    pulseContextMenuMsgId,
+    pulseContextMenuPosition,
+    selectedContactUserId,
+    showContactPanel,
+    typingThreads,
+    typingUsers,
+    mobileView,
+    isLoading,
+    loadThreads,
+    loadPulseConversations,
+    loadPulseMessages,
+    sendPulseMessage,
+    addReactionToPulseMessage,
+    toggleStarPulseMessage,
+  ]);
 
   return <MessagesContext.Provider value={value}>{children}</MessagesContext.Provider>;
 };
