@@ -33,6 +33,7 @@ import { Contact, Message, Thread, Attachment, DraftAnalysis, ThreadContext, Cat
 import { dataService } from '../services/dataService';
 import { saveArchiveItem } from '../services/dbService';
 import { useMessageTrigger } from '../hooks/useMessageTrigger';
+import { useVirtualList } from '../hooks/useVirtualList';
 import { createInvitation, sendInvitationViaGmail, generateMailtoLink, generateEarlyAccessInvite, generateShareableInviteText } from '../services/inviteService';
 import { pulseService, SearchUserResult, PulseConversation, PulseMessage } from '../services/pulseService';
 import { nativeSmsService } from '../services/nativeSmsService';
@@ -2140,6 +2141,33 @@ const Messages: React.FC<MessagesProps> = ({ apiKey, contacts, initialContactId,
     });
   }, [threads, threadFilter, showArchived, archivedThreads]);
 
+  // Virtual list for pulse conversation sidebar
+  const THREAD_ITEM_HEIGHT = 72; // p-3 (12px top + 12px bottom) + h-10 avatar (40px) + ~8px line-heights
+  const [threadListHeight, setThreadListHeight] = useState(600);
+
+  const {
+    virtualItems: virtualConversations,
+    totalHeight: conversationsTotalHeight,
+    containerRef: threadListRef,
+  } = useVirtualList({
+    items: pulseConversations,
+    itemHeight: THREAD_ITEM_HEIGHT,
+    containerHeight: threadListHeight,
+    overscan: 5,
+  });
+
+  // Measure the thread list container height dynamically (flex-1 container has no fixed px height)
+  useEffect(() => {
+    const el = threadListRef.current;
+    if (!el) return;
+    const observer = new ResizeObserver(entries => {
+      const height = entries[0]?.contentRect.height;
+      if (height && height > 0) setThreadListHeight(height);
+    });
+    observer.observe(el);
+    return () => observer.disconnect();
+  }, [threadListRef]);
+
   // Enhanced search handler
   const handleSearch = useCallback((query: string) => {
     setSearchQuery(query);
@@ -3172,92 +3200,97 @@ const Messages: React.FC<MessagesProps> = ({ apiKey, contacts, initialContactId,
           </div>
         )}
 
-        <div className="overflow-y-auto flex-1 px-2 space-y-1">
+        <div
+          ref={threadListRef}
+          className="overflow-y-auto flex-1 px-2"
+          style={{ position: 'relative' }}
+        >
           {/* Pulse Conversations Only - SMS threads moved to Cellular SMS sub-page */}
           {pulseConversations.length > 0 ? (
-            <>
-              {pulseConversations.map((conv) => {
+            <div style={{ height: conversationsTotalHeight, position: 'relative' }}>
+              {virtualConversations.map(({ item: conv, style }) => {
                 const otherUser = conv.other_user;
                 if (!otherUser) return null;
                 const hasUnread = (conv.unread_count || 0) > 0;
                 return (
-                  <div
-                    key={conv.id}
-                    className={`p-3 rounded-xl cursor-pointer transition relative group flex items-center gap-3
-                      ${activePulseConversation === conv.id ? 'bg-emerald-50 dark:bg-emerald-900/20 shadow-sm ring-1 ring-emerald-200 dark:ring-emerald-800' : 'hover:bg-zinc-100 dark:hover:bg-zinc-800/50'}`}
-                  >
-                    <button
-                      onClick={(e) => {
-                        e.stopPropagation();
-                        setSelectedContactUserId(otherUser.id);
-                        setShowContactPanel(true);
-                      }}
-                      className="w-10 h-10 rounded-full bg-gradient-to-br from-rose-500 to-pink-600 flex items-center justify-center text-white text-sm font-bold flex-shrink-0 relative hover:ring-2 hover:ring-emerald-500/50 transition-all"
-                      title="View contact details"
+                  <div key={conv.id} style={style}>
+                    <div
+                      className={`p-3 rounded-xl cursor-pointer transition relative group flex items-center gap-3
+                        ${activePulseConversation === conv.id ? 'bg-emerald-50 dark:bg-emerald-900/20 shadow-sm ring-1 ring-emerald-200 dark:ring-emerald-800' : 'hover:bg-zinc-100 dark:hover:bg-zinc-800/50'}`}
                     >
-                      {otherUser.avatar_url ? (
-                        <img src={otherUser.avatar_url} alt="" className="w-full h-full rounded-full object-cover" />
-                      ) : (
-                        (otherUser.display_name || otherUser.handle || '?').charAt(0).toUpperCase()
-                      )}
-                      {/* Online indicator */}
-                      <div className="absolute -bottom-0.5 -right-0.5">
-                        <OnlineIndicator userId={otherUser.id} size="medium" />
-                      </div>
-                      {otherUser.is_verified && (
-                        <div className="absolute -top-0.5 -right-0.5 w-4 h-4 bg-blue-500 rounded-full flex items-center justify-center border-2 border-white dark:border-zinc-900">
-                          <i className="fa-solid fa-check text-[7px] text-white"></i>
+                      <button
+                        onClick={(e) => {
+                          e.stopPropagation();
+                          setSelectedContactUserId(otherUser.id);
+                          setShowContactPanel(true);
+                        }}
+                        className="w-10 h-10 rounded-full bg-gradient-to-br from-rose-500 to-pink-600 flex items-center justify-center text-white text-sm font-bold flex-shrink-0 relative hover:ring-2 hover:ring-emerald-500/50 transition-all"
+                        title="View contact details"
+                      >
+                        {otherUser.avatar_url ? (
+                          <img src={otherUser.avatar_url} alt="" className="w-full h-full rounded-full object-cover" />
+                        ) : (
+                          (otherUser.display_name || otherUser.handle || '?').charAt(0).toUpperCase()
+                        )}
+                        {/* Online indicator */}
+                        <div className="absolute -bottom-0.5 -right-0.5">
+                          <OnlineIndicator userId={otherUser.id} size="medium" />
                         </div>
-                      )}
-                    </button>
-                    <div onClick={() => handleSelectConversation(conv.id)} className="flex-1 overflow-hidden min-w-0">
-                      <div className="flex justify-between items-baseline mb-0.5">
-                        <div className="flex items-center gap-1.5 flex-1 min-w-0">
-                          <h3
-                            className={`text-sm truncate ${hasUnread ? 'font-bold' : 'font-medium'} text-zinc-900 dark:text-zinc-100`}
-                          >
-                            {otherUser.display_name || otherUser.full_name || otherUser.handle || 'Unknown'}
-                          </h3>
-                          {/* Phase 4.2: Role badge in conversation list */}
-                          {otherUser.is_verified && (
-                            <UserBadge role="member" size="xs" showIcon={true} showLabel={false} />
+                        {otherUser.is_verified && (
+                          <div className="absolute -top-0.5 -right-0.5 w-4 h-4 bg-blue-500 rounded-full flex items-center justify-center border-2 border-white dark:border-zinc-900">
+                            <i className="fa-solid fa-check text-[7px] text-white"></i>
+                          </div>
+                        )}
+                      </button>
+                      <div onClick={() => handleSelectConversation(conv.id)} className="flex-1 overflow-hidden min-w-0">
+                        <div className="flex justify-between items-baseline mb-0.5">
+                          <div className="flex items-center gap-1.5 flex-1 min-w-0">
+                            <h3
+                              className={`text-sm truncate ${hasUnread ? 'font-bold' : 'font-medium'} text-zinc-900 dark:text-zinc-100`}
+                            >
+                              {otherUser.display_name || otherUser.full_name || otherUser.handle || 'Unknown'}
+                            </h3>
+                            {/* Phase 4.2: Role badge in conversation list */}
+                            {otherUser.is_verified && (
+                              <UserBadge role="member" size="xs" showIcon={true} showLabel={false} />
+                            )}
+                          </div>
+                          {conv.last_message_at && (
+                            <span className="text-[10px] text-zinc-400 whitespace-nowrap ml-2">
+                              {new Date(conv.last_message_at).toLocaleTimeString([], { hour: '2-digit', minute: '2-digit' })}
+                            </span>
                           )}
                         </div>
-                        {conv.last_message_at && (
-                          <span className="text-[10px] text-zinc-400 whitespace-nowrap ml-2">
-                            {new Date(conv.last_message_at).toLocaleTimeString([], { hour: '2-digit', minute: '2-digit' })}
-                          </span>
-                        )}
+                        <div className="flex items-center gap-1">
+                          <i className="fa-solid fa-at text-emerald-500 text-[10px]"></i>
+                          {otherUser.handle && <span className="text-[10px] text-emerald-600 dark:text-emerald-400">@{otherUser.handle}</span>}
+                          {conv.last_message_preview && (
+                            <p className="text-xs truncate text-zinc-500 ml-1">{conv.last_message_preview}</p>
+                          )}
+                        </div>
                       </div>
-                      <div className="flex items-center gap-1">
-                        <i className="fa-solid fa-at text-emerald-500 text-[10px]"></i>
-                        {otherUser.handle && <span className="text-[10px] text-emerald-600 dark:text-emerald-400">@{otherUser.handle}</span>}
-                        {conv.last_message_preview && (
-                          <p className="text-xs truncate text-zinc-500 ml-1">{conv.last_message_preview}</p>
-                        )}
+                      {/* Thread Badges - Pin/Star indicators */}
+                      <ThreadBadges actions={messageEnhancements.getThreadActions(conv.id)} />
+                      {hasUnread && (
+                        <div className="w-5 h-5 bg-emerald-500 rounded-full flex items-center justify-center">
+                          <span className="text-[10px] text-white font-bold">{conv.unread_count}</span>
+                        </div>
+                      )}
+                      {/* Thread Actions Menu - Pin/Star/Mute/Archive */}
+                      <div className="opacity-0 group-hover:opacity-100 transition-opacity">
+                        <ThreadActionsMenu
+                          actions={messageEnhancements.getThreadActions(conv.id)}
+                          onTogglePin={() => messageEnhancements.toggleThreadPin(conv.id)}
+                          onToggleStar={() => messageEnhancements.toggleThreadStar(conv.id)}
+                          onToggleMute={() => messageEnhancements.toggleThreadMute(conv.id)}
+                          onToggleArchive={() => messageEnhancements.toggleThreadArchive(conv.id)}
+                        />
                       </div>
-                    </div>
-                    {/* Thread Badges - Pin/Star indicators */}
-                    <ThreadBadges actions={messageEnhancements.getThreadActions(conv.id)} />
-                    {hasUnread && (
-                      <div className="w-5 h-5 bg-emerald-500 rounded-full flex items-center justify-center">
-                        <span className="text-[10px] text-white font-bold">{conv.unread_count}</span>
-                      </div>
-                    )}
-                    {/* Thread Actions Menu - Pin/Star/Mute/Archive */}
-                    <div className="opacity-0 group-hover:opacity-100 transition-opacity">
-                      <ThreadActionsMenu
-                        actions={messageEnhancements.getThreadActions(conv.id)}
-                        onTogglePin={() => messageEnhancements.toggleThreadPin(conv.id)}
-                        onToggleStar={() => messageEnhancements.toggleThreadStar(conv.id)}
-                        onToggleMute={() => messageEnhancements.toggleThreadMute(conv.id)}
-                        onToggleArchive={() => messageEnhancements.toggleThreadArchive(conv.id)}
-                      />
                     </div>
                   </div>
                 );
               })}
-            </>
+            </div>
           ) : (
             /* Empty state when no Pulse conversations */
             <div className="flex flex-col items-center justify-center py-12 text-center px-4">
