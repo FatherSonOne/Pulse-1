@@ -1280,26 +1280,29 @@ class DataService {
 
     if (!contacts) return [];
 
-    // Get unread message counts for each contact
-    const teamMembers = [];
-    for (const contact of contacts) {
-      // Count unread threads for this contact
-      const { count: unreadCount } = await supabase
-        .from('threads')
-        .select('*', { count: 'exact', head: true })
-        .eq('user_id', this.getUserId())
-        .eq('contact_id', contact.id)
-        .eq('unread', true);
+    // Fetch all unread threads for these contacts in one query
+    const contactIds = contacts.map(c => c.id);
+    const { data: unreadThreads } = await supabase
+      .from('threads')
+      .select('contact_id')
+      .eq('user_id', this.getUserId())
+      .in('contact_id', contactIds)
+      .eq('unread', true);
 
-      teamMembers.push({
-        id: contact.id,
-        name: contact.name,
-        avatarColor: contact.avatar_color,
-        status: contact.status,
-        lastActive: contact.updated_at ? new Date(contact.updated_at) : undefined,
-        unreadCount: unreadCount || 0,
-      });
+    // Build count map in JS
+    const unreadMap = new Map<string, number>();
+    for (const row of unreadThreads || []) {
+      unreadMap.set(row.contact_id, (unreadMap.get(row.contact_id) || 0) + 1);
     }
+
+    const teamMembers = contacts.map(contact => ({
+      id: contact.id,
+      name: contact.name,
+      avatarColor: contact.avatar_color,
+      status: contact.status,
+      lastActive: contact.updated_at ? new Date(contact.updated_at) : undefined,
+      unreadCount: unreadMap.get(contact.id) || 0,
+    }));
 
     return teamMembers;
   }
