@@ -1,6 +1,6 @@
 
 import React, { useState, useEffect, useRef } from 'react';
-import { User, MessageSource } from '../types';
+import type { User, MessageSource } from '../types';
 import { UnifiedMessage } from '../types/index';
 import { SlackService } from '../services/slackService';
 import { GmailService } from '../services/gmailService';
@@ -24,7 +24,7 @@ import { sendTeamInvite, getPendingTeamInvites, resendTeamInvite, revokeTeamInvi
 import billingService, { type UserPlan } from '../services/billingService';
 
 
-import { Accessibility, AlertTriangle, ArrowRight, Ban, Bell, Book, Bot, Brain, Camera, Check, ChevronDown, ChevronRight, Code, Cpu, Download, FlaskConical, Github, Headset, Heart, HelpCircle, Info, Key, Loader2, Lock, LogOut, Mail, Menu, Mic, Monitor, Palette, Play, Plug, RefreshCw, Rocket, Save, Search, Send, Server, Shield, ShieldHalf, Sliders, Sparkles, TrendingUp, Unlink, User, Users, Volume2, X } from 'lucide-react';
+import { Accessibility, AlertTriangle, ArrowRight, Ban, Bell, Book, Bot, Brain, Camera, Check, ChevronDown, ChevronRight, Code, Cpu, Download, FlaskConical, Github, Headset, Heart, HelpCircle, Info, Key, Loader2, Lock, LogOut, Mail, Menu, Mic, Monitor, Palette, Play, Plug, RefreshCw, Rocket, Save, Search, Send, Server, Shield, ShieldHalf, Sliders, Sparkles, TrendingUp, Unlink, User as UserIcon, Users, Volume2, X } from 'lucide-react';
 
 interface SettingsProps {
     user?: User | null;

@@ -19,18 +19,18 @@ const ACTIVE_WORKSPACE_KEY  = 'pulse_active_workspace';
 const PENDING_INVITE_KEY    = 'pulse_pending_invite_token';
 
 // ---------------------------------------------------------------------------
-// Context types
+// Sub-context types
 // ---------------------------------------------------------------------------
 
-interface WorkspaceContextType {
-  // State
+export interface WorkspaceDataContextType {
   workspaces: Workspace[];
   currentWorkspace: Workspace | null;
   members: WorkspaceMember[];
   currentRole: 'owner' | 'admin' | 'member' | 'viewer' | null;
   isLoading: boolean;
+}
 
-  // Actions
+export interface WorkspaceActionsContextType {
   switchWorkspace: (workspaceId: string) => void;
   createWorkspace: (name: string, description?: string) => Promise<Workspace>;
   updateWorkspace: (
@@ -39,18 +39,27 @@ interface WorkspaceContextType {
   ) => Promise<void>;
   refreshWorkspaces: () => Promise<void>;
   refreshMembers: () => Promise<void>;
+}
 
-  // Helpers
+export interface WorkspacePermissionsContextType {
   isOwner: boolean;
   isAdmin: boolean;
   canManageMembers: boolean;
 }
 
+// Aggregated type (backward compat)
+export interface WorkspaceContextType
+  extends WorkspaceDataContextType,
+    WorkspaceActionsContextType,
+    WorkspacePermissionsContextType {}
+
 // ---------------------------------------------------------------------------
-// Context
+// Contexts
 // ---------------------------------------------------------------------------
 
-export const WorkspaceContext = createContext<WorkspaceContextType | undefined>(undefined);
+export const WorkspaceDataContext = createContext<WorkspaceDataContextType | undefined>(undefined);
+export const WorkspaceActionsContext = createContext<WorkspaceActionsContextType | undefined>(undefined);
+export const WorkspacePermissionsContext = createContext<WorkspacePermissionsContextType | undefined>(undefined);
 
 // ---------------------------------------------------------------------------
 // Provider
@@ -74,7 +83,6 @@ export const WorkspaceProvider: React.FC<WorkspaceProviderProps> = ({ children }
 
   const loadWorkspaces = useCallback(async (): Promise<Workspace[]> => {
     if (!user) return [];
-
     const fetched = await workspaceService.getUserWorkspaces(user.id);
     setWorkspaces(fetched);
     return fetched;
@@ -89,30 +97,21 @@ export const WorkspaceProvider: React.FC<WorkspaceProviderProps> = ({ children }
   // Restore / persist active workspace
   // ---------------------------------------------------------------------------
 
-  /**
-   * Picks the workspace to make active after a workspaces load.
-   * Preference order:
-   *   1. The ID persisted in localStorage (if it still belongs to the user)
-   *   2. The first workspace in the list
-   *   3. null (the user has no workspaces)
-   */
   const resolveActiveWorkspace = useCallback(
     (list: Workspace[]): Workspace | null => {
       if (list.length === 0) return null;
-
       const persisted = localStorage.getItem(ACTIVE_WORKSPACE_KEY);
       if (persisted) {
         const match = list.find((w) => w.id === persisted);
         if (match) return match;
       }
-
       return list[0];
     },
     [],
   );
 
   // ---------------------------------------------------------------------------
-  // Initial load — triggered when the authenticated user becomes available
+  // Initial load
   // ---------------------------------------------------------------------------
 
   useEffect(() => {
@@ -129,8 +128,6 @@ export const WorkspaceProvider: React.FC<WorkspaceProviderProps> = ({ children }
     const init = async () => {
       setIsLoading(true);
       try {
-        // Auto-accept a pending invite if the user just logged in after
-        // clicking an invite link (token saved by WorkspaceInviteAccept).
         const pendingToken = sessionStorage.getItem(PENDING_INVITE_KEY);
         if (pendingToken) {
           sessionStorage.removeItem(PENDING_INVITE_KEY);
@@ -161,15 +158,11 @@ export const WorkspaceProvider: React.FC<WorkspaceProviderProps> = ({ children }
     };
 
     init();
-
-    return () => {
-      cancelled = true;
-    };
+    return () => { cancelled = true; };
   }, [user, resolveActiveWorkspace]);
 
   // ---------------------------------------------------------------------------
   // Load members whenever currentWorkspace changes
-  // (skips the very first render — the init effect above handles that)
   // ---------------------------------------------------------------------------
 
   const currentWorkspaceId = currentWorkspace?.id;
@@ -179,20 +172,15 @@ export const WorkspaceProvider: React.FC<WorkspaceProviderProps> = ({ children }
       setMembers([]);
       return;
     }
-
     let cancelled = false;
-
     workspaceService.getMembers(currentWorkspaceId).then((fetched) => {
       if (!cancelled) setMembers(fetched);
     });
-
-    return () => {
-      cancelled = true;
-    };
+    return () => { cancelled = true; };
   }, [currentWorkspaceId]);
 
   // ---------------------------------------------------------------------------
-  // Realtime subscription — refresh members on workspace_members changes
+  // Realtime subscription
   // ---------------------------------------------------------------------------
 
   useEffect(() => {
@@ -202,22 +190,12 @@ export const WorkspaceProvider: React.FC<WorkspaceProviderProps> = ({ children }
       .channel(`workspace_members:${currentWorkspaceId}`)
       .on(
         'postgres_changes',
-        {
-          event: '*',
-          schema: 'public',
-          table: 'workspace_members',
-          filter: `workspace_id=eq.${currentWorkspaceId}`,
-        },
-        () => {
-          // Re-fetch the full member list on any change so the UI stays consistent
-          workspaceService.getMembers(currentWorkspaceId).then(setMembers);
-        },
+        { event: '*', schema: 'public', table: 'workspace_members', filter: `workspace_id=eq.${currentWorkspaceId}` },
+        () => { workspaceService.getMembers(currentWorkspaceId).then(setMembers); },
       )
       .subscribe();
 
-    return () => {
-      supabase.removeChannel(channel);
-    };
+    return () => { supabase.removeChannel(channel); };
   }, [currentWorkspaceId]);
 
   // ---------------------------------------------------------------------------
@@ -233,7 +211,7 @@ export const WorkspaceProvider: React.FC<WorkspaceProviderProps> = ({ children }
   const canManageMembers = isAdmin;
 
   // ---------------------------------------------------------------------------
-  // Public actions
+  // Actions (stable unless their deps change)
   // ---------------------------------------------------------------------------
 
   const switchWorkspace = useCallback(
@@ -249,7 +227,6 @@ export const WorkspaceProvider: React.FC<WorkspaceProviderProps> = ({ children }
   const createWorkspace = useCallback(
     async (name: string, description?: string): Promise<Workspace> => {
       const created = await workspaceService.createWorkspace(name, description);
-      // Optimistically add to list and switch to the new workspace
       setWorkspaces((prev) => [...prev, created]);
       setCurrentWorkspace(created);
       localStorage.setItem(ACTIVE_WORKSPACE_KEY, created.id);
@@ -264,27 +241,19 @@ export const WorkspaceProvider: React.FC<WorkspaceProviderProps> = ({ children }
       updates: Partial<Pick<Workspace, 'name' | 'description' | 'avatar_url' | 'slug'>>,
     ): Promise<void> => {
       const updated = await workspaceService.updateWorkspace(workspaceId, updates);
-      setWorkspaces((prev) =>
-        prev.map((w) => (w.id === workspaceId ? updated : w)),
-      );
-      if (currentWorkspace?.id === workspaceId) {
-        setCurrentWorkspace(updated);
-      }
+      setWorkspaces((prev) => prev.map((w) => (w.id === workspaceId ? updated : w)));
+      if (currentWorkspace?.id === workspaceId) setCurrentWorkspace(updated);
     },
     [currentWorkspace],
   );
 
   const refreshWorkspaces = useCallback(async (): Promise<void> => {
     const list = await loadWorkspaces();
-    // If the currently active workspace is no longer in the list, fall back
     if (currentWorkspace && !list.find((w) => w.id === currentWorkspace.id)) {
       const fallback = list[0] ?? null;
       setCurrentWorkspace(fallback);
-      if (fallback) {
-        localStorage.setItem(ACTIVE_WORKSPACE_KEY, fallback.id);
-      } else {
-        localStorage.removeItem(ACTIVE_WORKSPACE_KEY);
-      }
+      if (fallback) localStorage.setItem(ACTIVE_WORKSPACE_KEY, fallback.id);
+      else localStorage.removeItem(ACTIVE_WORKSPACE_KEY);
     }
   }, [loadWorkspaces, currentWorkspace]);
 
@@ -294,48 +263,73 @@ export const WorkspaceProvider: React.FC<WorkspaceProviderProps> = ({ children }
   }, [loadMembers, currentWorkspaceId]);
 
   // ---------------------------------------------------------------------------
-  // Context value
+  // Focused context values — each only re-creates when its own slice changes
   // ---------------------------------------------------------------------------
 
-  const value: WorkspaceContextType = useMemo(() => ({
+  const dataValue = useMemo<WorkspaceDataContextType>(() => ({
     workspaces,
     currentWorkspace,
     members,
     currentRole,
     isLoading,
+  }), [workspaces, currentWorkspace, members, currentRole, isLoading]);
+
+  const actionsValue = useMemo<WorkspaceActionsContextType>(() => ({
     switchWorkspace,
     createWorkspace,
     updateWorkspace,
     refreshWorkspaces,
     refreshMembers,
+  }), [switchWorkspace, createWorkspace, updateWorkspace, refreshWorkspaces, refreshMembers]);
+
+  const permissionsValue = useMemo<WorkspacePermissionsContextType>(() => ({
     isOwner,
     isAdmin,
     canManageMembers,
-  }), [
-    workspaces, currentWorkspace, members, currentRole, isLoading,
-    switchWorkspace, createWorkspace, updateWorkspace,
-    refreshWorkspaces, refreshMembers, isOwner, isAdmin, canManageMembers,
-  ]);
+  }), [isOwner, isAdmin, canManageMembers]);
 
   return (
-    <WorkspaceContext.Provider value={value}>
-      {children}
-    </WorkspaceContext.Provider>
+    <WorkspaceDataContext.Provider value={dataValue}>
+      <WorkspaceActionsContext.Provider value={actionsValue}>
+        <WorkspacePermissionsContext.Provider value={permissionsValue}>
+          {children}
+        </WorkspacePermissionsContext.Provider>
+      </WorkspaceActionsContext.Provider>
+    </WorkspaceDataContext.Provider>
   );
 };
 
 // ---------------------------------------------------------------------------
-// Hook
+// Focused hooks — subscribe only to the slice you need
 // ---------------------------------------------------------------------------
 
-/**
- * Provides access to the WorkspaceContext.
- * Must be used inside a <WorkspaceProvider>.
- */
-export const useWorkspace = (): WorkspaceContextType => {
-  const context = useContext(WorkspaceContext);
-  if (context === undefined) {
-    throw new Error('useWorkspace must be used within a WorkspaceProvider');
-  }
-  return context;
+export const useWorkspaceData = (): WorkspaceDataContextType => {
+  const ctx = useContext(WorkspaceDataContext);
+  if (ctx === undefined) throw new Error('useWorkspaceData must be used within a WorkspaceProvider');
+  return ctx;
 };
+
+export const useWorkspaceActions = (): WorkspaceActionsContextType => {
+  const ctx = useContext(WorkspaceActionsContext);
+  if (ctx === undefined) throw new Error('useWorkspaceActions must be used within a WorkspaceProvider');
+  return ctx;
+};
+
+export const useWorkspacePermissions = (): WorkspacePermissionsContextType => {
+  const ctx = useContext(WorkspacePermissionsContext);
+  if (ctx === undefined) throw new Error('useWorkspacePermissions must be used within a WorkspaceProvider');
+  return ctx;
+};
+
+// ---------------------------------------------------------------------------
+// Backward-compat aggregated hook — existing consumers keep working unchanged
+// ---------------------------------------------------------------------------
+
+export const useWorkspace = (): WorkspaceContextType => ({
+  ...useWorkspaceData(),
+  ...useWorkspaceActions(),
+  ...useWorkspacePermissions(),
+});
+
+// Keep legacy context export for any direct context consumers
+export const WorkspaceContext = WorkspaceDataContext;
