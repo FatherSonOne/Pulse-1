@@ -135,9 +135,11 @@ class ActivityService {
   }
 
   /**
-   * Get user's recent activity logs
+   * Get user's recent activity logs with cursor-based pagination.
+   * @param limit  Page size (default 50)
+   * @param offset Row offset for pagination (default 0)
    */
-  async getRecentActivity(limit: number = 50): Promise<ActivityLog[]> {
+  async getRecentActivity(limit: number = 50, offset: number = 0): Promise<ActivityLog[]> {
     try {
       const { data: { user } } = await supabase.auth.getUser();
       if (!user) {
@@ -147,10 +149,10 @@ class ActivityService {
 
       const { data, error } = await supabase
         .from('activity_logs')
-        .select('*')
+        .select('id, user_id, action_type, action_category, description, severity, success, error_message, device_info, location_info, ip_address, created_at')
         .eq('user_id', user.id)
         .order('created_at', { ascending: false })
-        .limit(limit);
+        .range(offset, offset + limit - 1);
 
       if (error) {
         console.error('[Activity] Failed to fetch activity logs:', error);
@@ -165,11 +167,14 @@ class ActivityService {
   }
 
   /**
-   * Get activity logs by category
+   * Get activity logs by category with cursor-based pagination.
+   * @param limit  Page size (default 50)
+   * @param offset Row offset for pagination (default 0)
    */
   async getActivityByCategory(
     category: ActionCategory,
-    limit: number = 50
+    limit: number = 50,
+    offset: number = 0
   ): Promise<ActivityLog[]> {
     try {
       const { data: { user } } = await supabase.auth.getUser();
@@ -177,11 +182,11 @@ class ActivityService {
 
       const { data, error } = await supabase
         .from('activity_logs')
-        .select('*')
+        .select('id, user_id, action_type, action_category, description, severity, success, error_message, device_info, location_info, ip_address, created_at')
         .eq('user_id', user.id)
         .eq('action_category', category)
         .order('created_at', { ascending: false })
-        .limit(limit);
+        .range(offset, offset + limit - 1);
 
       if (error) {
         console.error('[Activity] Failed to fetch category activity:', error);
@@ -196,11 +201,15 @@ class ActivityService {
   }
 
   /**
-   * Get activity logs within date range
+   * Get activity logs within date range.
+   * @param limit  Page size (default 200; date-range queries are already bounded)
+   * @param offset Row offset for pagination (default 0)
    */
   async getActivityByDateRange(
     startDate: Date,
-    endDate: Date
+    endDate: Date,
+    limit: number = 200,
+    offset: number = 0
   ): Promise<ActivityLog[]> {
     try {
       const { data: { user } } = await supabase.auth.getUser();
@@ -208,11 +217,12 @@ class ActivityService {
 
       const { data, error } = await supabase
         .from('activity_logs')
-        .select('*')
+        .select('id, user_id, action_type, action_category, description, severity, success, error_message, device_info, location_info, ip_address, created_at')
         .eq('user_id', user.id)
         .gte('created_at', startDate.toISOString())
         .lte('created_at', endDate.toISOString())
-        .order('created_at', { ascending: false });
+        .order('created_at', { ascending: false })
+        .range(offset, offset + limit - 1);
 
       if (error) {
         console.error('[Activity] Failed to fetch date range activity:', error);
