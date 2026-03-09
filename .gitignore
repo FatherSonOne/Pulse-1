@@ -71,8 +71,30 @@ android/app/keystore.properties
 tmpclaude-*
 tmpclaude-*-cwd
 
-# Claude Code configuration (local to each user)
-.claude/
+# Claude Code runtime/local data (not shareable)
+.claude/history.jsonl
+.claude/projects/
+.claude/todos/
+.claude/tasks/
+.claude/session-env/
+.claude/settings.local.json
+.claude/settings.json
+.claude/backups/
+.claude/downloads/
+.claude/file-history/
+.claude/shell-snapshots/
+.claude/statsig/
+.claude/stats-cache.json
+.claude/security_warnings_*.json
+.claude/paste-cache/
+.claude/ide/
+.claude/debug/
+.claude/agents/
+.claude/plugins/
+.claude/mcp-needs-auth-cache.json
+.claude/long-term-memory.md
+# .claude/commands/ is intentionally tracked — shared slash commands
+!.claude/commands/*.md
 
 # Additional security patterns
 *.pfx

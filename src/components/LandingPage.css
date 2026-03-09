@@ -1,0 +1,406 @@
+/* ============================================================
+   LANDING PAGE — DESIGN TOKENS
+   Pulse Premium Dark · Rose Accent System
+   ============================================================ */
+
+@import url('https://fonts.googleapis.com/css2?family=Inter:ital,wght@0,400;0,500;0,600;0,700;0,800;0,900;1,400&family=JetBrains+Mono:wght@700&display=swap');
+
+/* ── Light-mode token defaults ── */
+:root {
+  --lp-bg:             #f8f8f8;
+  --lp-surface:        #ffffff;
+  --lp-surface-raised: #f2f2f2;
+  --lp-border:         rgba(0, 0, 0, 0.08);
+  --lp-primary:        #f43f5e;
+  --lp-primary-alt:    #ec4899;
+  --lp-primary-soft:   rgba(244, 63, 94, 0.10);
+  --lp-primary-softer: rgba(244, 63, 94, 0.05);
+  --lp-primary-glow:   rgba(244, 63, 94, 0.25);
+  --lp-text-main:      #0f0f0f;
+  --lp-text-secondary: #52525b;
+  --lp-text-muted:     #6b7280;
+  --lp-shadow-sm:      0 1px 3px rgba(0, 0, 0, 0.06);
+  --lp-shadow-md:      0 4px 12px rgba(0, 0, 0, 0.08);
+  --lp-shadow-rose:    0 0 0 1px var(--lp-primary),
+                       0 4px 24px var(--lp-primary-glow);
+}
+
+/* The landing page is always dark — dark tokens override root */
+.bg-zinc-950,
+.dark,
+[data-theme="dark"] {
+  --lp-bg:             #000000;
+  --lp-surface:        rgba(255, 255, 255, 0.03);
+  --lp-surface-raised: rgba(255, 255, 255, 0.055);
+  --lp-border:         rgba(255, 255, 255, 0.06);
+  --lp-border-raised:  rgba(255, 255, 255, 0.08);
+  --lp-primary:        #f43f5e;
+  --lp-primary-alt:    #ec4899;
+  --lp-primary-soft:   rgba(244, 63, 94, 0.12);
+  --lp-primary-softer: rgba(244, 63, 94, 0.06);
+  --lp-primary-glow:   rgba(244, 63, 94, 0.30);
+  --lp-text-main:      #fafafa;
+  --lp-text-secondary: #b4b4b8;
+  --lp-text-muted:     #6b7280;
+  --lp-shadow-sm:      0 1px 4px rgba(0, 0, 0, 0.50);
+  --lp-shadow-md:      0 4px 16px rgba(0, 0, 0, 0.60);
+  --lp-shadow-rose:    0 0 0 1px var(--lp-primary),
+                       0 4px 24px var(--lp-primary-glow);
+}
+
+/* ============================================================
+   CANVAS — True black (#000000)
+   Zinc-950 = #09090b — upgrade to pure black
+   ============================================================ */
+
+.bg-zinc-950 {
+  background-color: #000000;
+}
+
+/* ============================================================
+   TYPOGRAPHY — Inter + JetBrains Mono
+   ============================================================ */
+
+.min-h-screen {
+  font-family: 'Inter', system-ui, -apple-system, sans-serif;
+}
+
+/* Keyboard shortcut keys */
+kbd {
+  font-family: 'JetBrains Mono', 'Courier New', monospace;
+}
+
+/* ============================================================
+   ACCESSIBILITY — Rose focus ring
+   Replaces browser-default blue outline globally
+   ============================================================ */
+
+*:focus-visible {
+  outline: 2px solid #f43f5e;
+  outline-offset: 2px;
+  border-radius: 4px;
+}
+
+*:focus:not(:focus-visible) {
+  outline: none;
+}
+
+/* ============================================================
+   SCROLLBAR — Rose thumb, transparent track
+   Applied to all scrollable overflow containers
+   ============================================================ */
+
+.overflow-y-auto,
+.overflow-y-scroll,
+.flex-1.overflow-y-auto {
+  scrollbar-width: thin;
+  scrollbar-color: rgba(244, 63, 94, 0.15) transparent;
+}
+
+.overflow-y-auto::-webkit-scrollbar,
+.overflow-y-scroll::-webkit-scrollbar {
+  width: 6px;
+}
+
+.overflow-y-auto::-webkit-scrollbar-track,
+.overflow-y-scroll::-webkit-scrollbar-track {
+  background: transparent;
+}
+
+.overflow-y-auto::-webkit-scrollbar-thumb,
+.overflow-y-scroll::-webkit-scrollbar-thumb {
+  background: rgba(244, 63, 94, 0.15);
+  border-radius: 3px;
+}
+
+.overflow-y-auto::-webkit-scrollbar-thumb:hover,
+.overflow-y-scroll::-webkit-scrollbar-thumb:hover {
+  background: rgba(244, 63, 94, 0.35);
+}
+
+/* ============================================================
+   HERO PRIMARY CTA — "Launch Pulse" button
+   White bg → rose gradient per Premium Dark CTA spec
+   ============================================================ */
+
+/* The Launch Pulse button has the unique combo bg-white + text-zinc-950 */
+.bg-white.text-zinc-950 {
+  background: linear-gradient(135deg, #f43f5e 0%, #ec4899 100%) !important;
+  color: #ffffff !important;
+  box-shadow: 0 4px 12px rgba(244, 63, 94, 0.35) !important;
+  transition: all 150ms cubic-bezier(0.16, 1, 0.3, 1) !important;
+}
+
+.bg-white.text-zinc-950:hover {
+  background: linear-gradient(135deg, #e11d48 0%, #db2777 100%) !important;
+  transform: translateY(-1px);
+  box-shadow: 0 6px 20px rgba(244, 63, 94, 0.45) !important;
+}
+
+.bg-white.text-zinc-950:active {
+  transform: scale(0.95);
+}
+
+/* ============================================================
+   ROSE BUDGET — Reduce to ≤ 4 simultaneous visible elements
+
+   Budget allocations (hero viewport):
+     1. Scroll progress bar (top) → keep rose
+     2. Hero badge "Central Nervous System" → keep rose
+     3. Hero h1 gradient "Every Decision" → keep rose
+     4. Hero primary CTA → now rose gradient (above)
+
+   Neutralize: particles, ECG line, stats numbers, back-to-top
+   ============================================================ */
+
+/* Floating particles → neutral zinc-slate */
+.particle {
+  background-color: rgba(100, 116, 139, 0.15) !important;
+}
+
+/* ECG cardiogram → neutral gray (removes one rose element from hero) */
+.ecg-draw {
+  stroke: #4b5563;
+}
+
+.ecg-glow-trail {
+  stroke: #374151;
+}
+
+/* Stats strip numbers — white instead of rose gradient
+   Targets: text-transparent bg-clip-text bg-gradient-to-r from-rose-400 to-pink-500
+   Note: hero h1 uses to-purple-500 so this selector is stats-specific */
+.from-rose-400.to-pink-500.text-transparent {
+  background-image: none !important;
+  -webkit-background-clip: unset !important;
+  background-clip: unset !important;
+  -webkit-text-fill-color: #ffffff !important;
+  color: #ffffff !important;
+}
+
+/* Back-to-top button — move to ghost style (not rose solid) to free budget */
+.fixed.bottom-8.right-6 {
+  background: rgba(255, 255, 255, 0.08) !important;
+  border: 1px solid rgba(255, 255, 255, 0.12) !important;
+  box-shadow: none !important;
+}
+
+.fixed.bottom-8.right-6:hover {
+  background: rgba(244, 63, 94, 0.15) !important;
+  border-color: rgba(244, 63, 94, 0.40) !important;
+}
+
+/* ============================================================
+   NAV DROPDOWN — Glass treatment
+   bg-zinc-900 flat → rgba(10,10,10,0.95) + backdrop-filter blur
+   ============================================================ */
+
+/* w-64 uniquely identifies the downloads nav dropdown */
+.w-64.bg-zinc-900 {
+  background: rgba(10, 10, 10, 0.95) !important;
+  -webkit-backdrop-filter: blur(24px) saturate(180%);
+          backdrop-filter: blur(24px) saturate(180%);
+  border-color: rgba(255, 255, 255, 0.08) !important;
+  box-shadow: 0 12px 40px rgba(0, 0, 0, 0.70),
+              0 0 0 1px rgba(244, 63, 94, 0.08) inset !important;
+}
+
+/* Dropdown arrow marker */
+.w-64.bg-zinc-900 ~ .absolute,
+.bg-zinc-900.border-l.border-t.rotate-45 {
+  background: rgba(10, 10, 10, 0.95) !important;
+}
+
+/* ============================================================
+   CARD SURFACES — Translucent rgba on true black canvas
+   Replace opaque zinc hex → var(--lp-surface)
+   ============================================================ */
+
+/* Vox mode cards, FAQ items, shortcut groups */
+.bg-zinc-900\/80 {
+  background-color: rgba(255, 255, 255, 0.03) !important;
+}
+
+/* Scenario step cards */
+.bg-zinc-900\/90 {
+  background-color: rgba(255, 255, 255, 0.03) !important;
+}
+
+/* Ecosystem (Trinity) cards — bg-zinc-950/90 */
+.bg-zinc-950\/90 {
+  background-color: rgba(255, 255, 255, 0.025) !important;
+}
+
+/* Hero secondary CTAs (Google Play, Windows) */
+.bg-zinc-900\/50 {
+  background-color: rgba(255, 255, 255, 0.04) !important;
+}
+
+/* Section bg strips */
+.bg-zinc-900\/30,
+.bg-zinc-900\/20 {
+  background-color: rgba(255, 255, 255, 0.015) !important;
+}
+
+/* Scenarios gradient bg → flat dark */
+.bg-gradient-to-b.from-zinc-900\/20.to-zinc-950 {
+  background-image: none !important;
+  background-color: rgba(255, 255, 255, 0.01) !important;
+}
+
+/* Integration logo wall strip */
+.bg-zinc-900\/20.border-y {
+  background-color: rgba(255, 255, 255, 0.015) !important;
+}
+
+/* Guide drawer panel */
+.border-l.border-zinc-800.shadow-2xl {
+  background-color: #000000;
+}
+
+/* ============================================================
+   BORDER TOKENS — Convert opaque zinc to translucent rgba
+   ============================================================ */
+
+/* Default border: rgba(255,255,255,0.06) */
+.border-zinc-800 {
+  border-color: rgba(255, 255, 255, 0.06) !important;
+}
+
+/* Raised border: rgba(255,255,255,0.08) */
+.border-zinc-700 {
+  border-color: rgba(255, 255, 255, 0.08) !important;
+}
+
+/* Half-opacity borders */
+.border-zinc-800\/50 {
+  border-color: rgba(255, 255, 255, 0.03) !important;
+}
+
+/* Stats strip rose border — preserve rose border-y */
+.border-rose-500\/15 {
+  border-color: rgba(244, 63, 94, 0.12) !important;
+}
+
+/* ============================================================
+   HOVER TRANSITIONS — 150ms per spec (down from 300ms)
+   ============================================================ */
+
+.duration-300 {
+  transition-duration: 150ms !important;
+}
+
+/* ============================================================
+   CARD ENTRY ANIMATION — Spring decelerate easing
+   Define lpFadeIn with spring curve; override .animate-fade-in
+   to reference the new keyframe + correct timing
+
+   Note: JSX <style> tag defines fade-in at 0.8s ease-out.
+   !important overrides since <style> injects after external CSS.
+   ============================================================ */
+
+@keyframes lpFadeIn {
+  from {
+    opacity: 0;
+    transform: translateY(6px);
+  }
+  to {
+    opacity: 1;
+    transform: translateY(0);
+  }
+}
+
+.animate-fade-in {
+  animation: lpFadeIn 0.22s cubic-bezier(0.16, 1, 0.3, 1) forwards !important;
+  opacity: 0;
+}
+
+/* ============================================================
+   STAGGER TIMING — 40ms per step, first 5 items only
+   ============================================================ */
+
+/* Grid children */
+.grid > .animate-fade-in:nth-child(1) { animation-delay:   0ms !important; }
+.grid > .animate-fade-in:nth-child(2) { animation-delay:  40ms !important; }
+.grid > .animate-fade-in:nth-child(3) { animation-delay:  80ms !important; }
+.grid > .animate-fade-in:nth-child(4) { animation-delay: 120ms !important; }
+.grid > .animate-fade-in:nth-child(5) { animation-delay: 160ms !important; }
+.grid > .animate-fade-in:nth-child(n+6) { animation-delay: 0ms !important; }
+
+/* List children */
+.space-y-4 > .animate-fade-in:nth-child(1) { animation-delay:   0ms !important; }
+.space-y-4 > .animate-fade-in:nth-child(2) { animation-delay:  40ms !important; }
+.space-y-4 > .animate-fade-in:nth-child(3) { animation-delay:  80ms !important; }
+.space-y-4 > .animate-fade-in:nth-child(n+4) { animation-delay: 0ms !important; }
+
+/* Named animation delay classes — 40ms step instead of 100ms */
+.animation-delay-100 { animation-delay:  40ms !important; }
+.animation-delay-200 { animation-delay:  80ms !important; }
+.animation-delay-300 { animation-delay: 120ms !important; }
+.animation-delay-400 { animation-delay: 160ms !important; }
+.animation-delay-500 { animation-delay: 200ms !important; }
+
+/* ============================================================
+   PRIMARY CTA BUTTON PATTERN (reusable class)
+   ============================================================ */
+
+.lp-cta-primary {
+  background: linear-gradient(135deg, #f43f5e 0%, #ec4899 100%);
+  border: none;
+  color: white;
+  border-radius: 10px;
+  box-shadow: 0 4px 12px rgba(244, 63, 94, 0.35);
+  transition: all 150ms cubic-bezier(0.16, 1, 0.3, 1);
+}
+
+.lp-cta-primary:hover {
+  transform: translateY(-1px);
+  box-shadow: 0 6px 20px rgba(244, 63, 94, 0.45);
+}
+
+.lp-cta-primary:active {
+  transform: scale(0.95);
+}
+
+/* ============================================================
+   ICON CONTAINER GLOW — Rose wrap variant (already in JSX style)
+   Enhance the rose icon wrap hover state
+   ============================================================ */
+
+.lp-icon-wrap-rose {
+  transition: box-shadow 150ms cubic-bezier(0.16, 1, 0.3, 1),
+              background-color 150ms cubic-bezier(0.16, 1, 0.3, 1);
+}
+
+/* ============================================================
+   GLASS DROPDOWN PATTERN (reference, applied to .w-64.bg-zinc-900 above)
+   ============================================================ */
+
+.lp-glass-panel {
+  background: rgba(10, 10, 10, 0.95);
+  -webkit-backdrop-filter: blur(24px) saturate(180%);
+          backdrop-filter: blur(24px) saturate(180%);
+  border: 1px solid rgba(255, 255, 255, 0.08);
+  box-shadow: 0 12px 40px rgba(0, 0, 0, 0.70),
+              0 0 0 1px rgba(244, 63, 94, 0.08) inset;
+}
+
+/* ============================================================
+   ACCESSIBILITY — prefers-reduced-motion
+   WCAG 2.1 SC 2.3.3 — guards all 15+ animation keyframes:
+   float, pulse-slow, pulse-glow-slow, fade-in, particle-float,
+   ecg-draw, ecg-glow-trail, ticker-scroll, drawer-slide-in,
+   bounce-up, icon-bob, icon-spin-slow, icon-throb, icon-zap,
+   icon-tilt, icon-stamp
+   ============================================================ */
+
+@media (prefers-reduced-motion: reduce) {
+  *,
+  *::before,
+  *::after {
+    animation-duration:        0.01ms !important;
+    animation-iteration-count: 1      !important;
+    transition-duration:       0.01ms !important;
+    animation-delay:           0ms    !important;
+  }
+}

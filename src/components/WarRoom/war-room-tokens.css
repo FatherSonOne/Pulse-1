@@ -51,6 +51,23 @@
   --wr-z-modal:   9999;
 }
 
+/* ─── Light mode token overrides ──────────────────────────────────── */
+
+:root:not(.dark),
+html:not(.dark) body {
+  --wr-bg-primary:   #f8fafc;
+  --wr-bg-secondary: #f1f5f9;
+  --wr-bg-elevated:  #e2e8f0;
+  --wr-bg-surface:   #ffffff;
+
+  --wr-border:        rgba(0, 0, 0, 0.1);
+  --wr-border-active: rgba(0, 0, 0, 0.2);
+
+  --wr-text-primary:   #0f172a;
+  --wr-text-secondary: #475569;
+  --wr-text-muted:     #94a3b8;
+}
+
 /* ─── Mode accent overrides ───────────────────────────────────────── */
 .wr-mode-command    { --wr-mode-accent: #f43f5e; }
 .wr-mode-intel      { --wr-mode-accent: #06b6d4; }

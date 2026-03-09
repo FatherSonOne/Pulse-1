@@ -368,7 +368,7 @@ class EmailTemplateService {
       return { data, error };
     } catch (error) {
       console.error('[EmailTemplateService] getFavorites error:', error);
-      return { data, null, error };
+      return { data: null, error };
     }
   }
 

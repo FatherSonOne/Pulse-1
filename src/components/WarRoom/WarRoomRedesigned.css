@@ -2440,6 +2440,13 @@ body:not(.dark) .wr-gauge-bg,
   color: var(--wr-bg-tertiary);
 }
 
+/* Light mode thinking step number — amber bg needs dark text (bg-primary is #f8fafc = too light) */
+:root:not(.dark) .wr-step-num,
+body:not(.dark) .wr-step-num,
+.light .wr-step-num {
+  color: #1a1208;
+}
+
 /* Light mode timeline */
 :root:not(.dark) .wr-timeline-content,
 body:not(.dark) .wr-timeline-content,

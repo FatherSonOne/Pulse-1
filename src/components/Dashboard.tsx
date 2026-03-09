@@ -196,20 +196,20 @@ const CollapsibleWidget: React.FC<CollapsibleWidgetProps> = ({
   children,
   className = ''
 }) => (
-  <div className={`bg-white/80 dark:bg-zinc-950/80 backdrop-blur-sm border border-zinc-200 dark:border-zinc-800/80 rounded-2xl overflow-hidden transition-all duration-300 hover:border-rose-500/40 dark:hover:border-rose-500/30 card-elevated hover:glow-rose-sm ${className}`}>
+  <div className={`dashboard-widget-surface backdrop-blur-sm border border-zinc-200 dark:border-zinc-800/80 rounded-2xl overflow-hidden transition-all duration-150 hover:border-rose-500/40 dark:hover:border-rose-500/30 card-elevated hover:glow-rose-sm ${className}`}>
     <div
-      className="flex items-center justify-between p-4 cursor-pointer hover:bg-rose-50/50 dark:hover:bg-rose-950/30 transition-all duration-300"
+      className="flex items-center justify-between p-4 cursor-pointer hover:bg-rose-50/50 dark:hover:bg-rose-950/30 transition-all duration-150"
       onClick={() => onToggle(id)}
     >
       <div className="flex items-center gap-3">
-        <div className="w-8 h-8 rounded-lg bg-gradient-to-br from-rose-500/15 to-pink-500/15 dark:from-rose-500/20 dark:to-pink-500/20 flex items-center justify-center border border-rose-500/20 shadow-sm">
+        <div className="w-8 h-8 rounded-lg bg-gradient-to-br from-rose-500/20 to-pink-500/20 dark:from-rose-500/20 dark:to-pink-500/20 flex items-center justify-center border border-rose-500/20 shadow-sm">
           <i className={`fa-solid ${icon} ${iconColor}`}></i>
         </div>
         <h3 className="font-semibold text-zinc-900 dark:text-white">{title}</h3>
       </div>
       <div className="flex items-center gap-2">
         {headerAction && <div onClick={e => e.stopPropagation()}>{headerAction}</div>}
-        <i className={`fa-solid fa-chevron-down text-zinc-400 transition-transform duration-300 ${isExpanded ? 'rotate-180' : ''}`}></i>
+        <i className={`fa-solid fa-chevron-down text-zinc-400 transition-transform duration-150 ${isExpanded ? 'rotate-180' : ''}`}></i>
       </div>
     </div>
     <div className={`transition-all duration-300 overflow-hidden ${isExpanded ? 'max-h-[2000px] opacity-100' : 'max-h-0 opacity-0'}`}>
@@ -274,7 +274,7 @@ const TodaysPriorities: React.FC<TodaysPrioritiesProps> = ({ priorities, isLoadi
           <div
             key={item.id}
             onClick={() => onItemClick(item)}
-            className={`border-l-4 rounded-xl p-3 sm:p-4 cursor-pointer hover:shadow-lg transition-all duration-300 group active:scale-[0.98] min-h-[72px] card-hover-lift backdrop-blur-sm ${getUrgencyColor(item.urgency)}`}
+            className={`border-l-4 rounded-xl p-3 sm:p-4 cursor-pointer hover:shadow-lg transition-all duration-150 group active:scale-[0.98] min-h-[72px] card-hover-lift backdrop-blur-sm ${getUrgencyColor(item.urgency)}`}
           >
             <div className="flex items-start gap-2 sm:gap-3">
               <div className={`w-9 h-9 sm:w-8 sm:h-8 rounded-lg flex items-center justify-center shrink-0 ${
@@ -1177,19 +1177,19 @@ const Dashboard: React.FC<DashboardProps> = ({ user, apiKey, setView }) => {
               {/* Quick Stats Row - Enhanced with Glassmorphism */}
               {briefingStats && (
                 <div className="grid grid-cols-4 gap-2 sm:gap-4 mb-4 sm:mb-6">
-                  <div className="glass-card hover:glass-rose transition-all duration-300 rounded-lg sm:rounded-xl p-2 sm:p-3 text-center group cursor-pointer card-hover-lift">
+                  <div className="glass-card hover:glass-rose transition-all duration-150 rounded-lg sm:rounded-xl p-2 sm:p-3 text-center group cursor-pointer card-hover-lift">
                     <div className="text-lg sm:text-2xl font-bold text-gradient-rose">{briefingStats.unreadMessages}</div>
                     <div className="text-[9px] sm:text-[10px] text-zinc-400 group-hover:text-zinc-300 uppercase tracking-wider transition-colors">Unread</div>
                   </div>
-                  <div className="glass-card hover:glass-rose transition-all duration-300 rounded-lg sm:rounded-xl p-2 sm:p-3 text-center group cursor-pointer card-hover-lift">
+                  <div className="glass-card hover:glass-rose transition-all duration-150 rounded-lg sm:rounded-xl p-2 sm:p-3 text-center group cursor-pointer card-hover-lift">
                     <div className="text-lg sm:text-2xl font-bold text-gradient-rose-purple">{briefingStats.pendingTasks}</div>
                     <div className="text-[9px] sm:text-[10px] text-zinc-400 group-hover:text-zinc-300 uppercase tracking-wider transition-colors">Tasks</div>
                   </div>
-                  <div className="glass-card hover:glass-rose transition-all duration-300 rounded-lg sm:rounded-xl p-2 sm:p-3 text-center group cursor-pointer card-hover-lift">
+                  <div className="glass-card hover:glass-rose transition-all duration-150 rounded-lg sm:rounded-xl p-2 sm:p-3 text-center group cursor-pointer card-hover-lift">
                     <div className="text-lg sm:text-2xl font-bold bg-gradient-to-r from-rose-300 to-pink-400 bg-clip-text text-transparent">{briefingStats.todayMeetings}</div>
                     <div className="text-[9px] sm:text-[10px] text-zinc-400 group-hover:text-zinc-300 uppercase tracking-wider transition-colors">Meetings</div>
                   </div>
-                  <div className="glass-card hover:glass-rose transition-all duration-300 rounded-lg sm:rounded-xl p-2 sm:p-3 text-center group cursor-pointer card-hover-lift">
+                  <div className="glass-card hover:glass-rose transition-all duration-150 rounded-lg sm:rounded-xl p-2 sm:p-3 text-center group cursor-pointer card-hover-lift">
                     <div className="text-lg sm:text-2xl font-bold bg-gradient-to-r from-pink-300 to-purple-400 bg-clip-text text-transparent">{briefingStats.unplayedVoxes}</div>
                     <div className="text-[9px] sm:text-[10px] text-zinc-400 group-hover:text-zinc-300 uppercase tracking-wider transition-colors">Voxes</div>
                   </div>
@@ -1205,12 +1205,12 @@ const Dashboard: React.FC<DashboardProps> = ({ user, apiKey, setView }) => {
                       <i className="fa-solid fa-fire"></i>
                       Key Highlights
                     </h3>
-                    <div className="grid gap-2">
+                    <div className="grid gap-2 dashboard-stagger">
                       {briefing.highlights.slice(0, 4).map((highlight, idx) => (
                         <div
                           key={idx}
                           onClick={() => handleHighlightAction(highlight.category)}
-                          className="glass-card hover:glass-rose-strong border-gradient-rose-subtle rounded-lg sm:rounded-xl p-3 sm:p-4 flex items-start gap-2 sm:gap-3 transition-all duration-300 cursor-pointer group card-hover-lift active:scale-[0.98] min-h-[56px]"
+                          className="glass-card hover:glass-rose-strong border-gradient-rose-subtle rounded-lg sm:rounded-xl p-3 sm:p-4 flex items-start gap-2 sm:gap-3 transition-all duration-150 cursor-pointer group card-hover-lift active:scale-[0.98] min-h-[56px]"
                         >
                           <div className={`w-9 h-9 sm:w-8 sm:h-8 rounded-lg flex items-center justify-center shrink-0 ${getPriorityColor(highlight.priority)}`}>
                             <i className={`fa-solid ${getCategoryIcon(highlight.category)} text-sm`}></i>
@@ -1237,11 +1237,11 @@ const Dashboard: React.FC<DashboardProps> = ({ user, apiKey, setView }) => {
                     <i className="fa-solid fa-lightbulb"></i>
                     Action Items
                   </h3>
-                  <div className="grid gap-2">
+                  <div className="grid gap-2 dashboard-stagger">
                     {briefing.suggestions.slice(0, 4).map((suggestion, idx) => (
                       <div
                         key={idx}
-                        className={`glass-card hover:glass-rose-strong border-gradient-rose-subtle rounded-lg sm:rounded-xl p-3 sm:p-4 transition-all duration-300 group card-hover-lift active:scale-[0.98] min-h-[56px] ${
+                        className={`glass-card hover:glass-rose-strong border-gradient-rose-subtle rounded-lg sm:rounded-xl p-3 sm:p-4 transition-all duration-150 group card-hover-lift active:scale-[0.98] min-h-[56px] ${
                           suggestion.type === 'ai_assist' ? 'border-gradient-rose-strong' : ''
                         }`}
                       >
@@ -1550,7 +1550,7 @@ const Dashboard: React.FC<DashboardProps> = ({ user, apiKey, setView }) => {
                   value={searchQuery}
                   onChange={(e) => setSearchQuery(e.target.value)}
                   placeholder="Search the web..."
-                  className="w-full bg-zinc-800 border border-zinc-700 rounded-lg pl-4 pr-10 py-3 text-sm text-white placeholder-zinc-500 focus:border-zinc-500 focus:outline-none transition"
+                  className="w-full bg-zinc-800 border border-zinc-700 rounded-lg pl-4 pr-10 py-3 text-sm text-white placeholder-zinc-500 focus:border-rose-500/50 focus:ring-1 focus:ring-rose-500/20 focus:outline-none transition-all duration-150"
                 />
                 <button type="submit" className="absolute right-3 top-3 text-zinc-400 hover:text-white transition">
                   {loadingTools ? <i className="fa-solid fa-circle-notch fa-spin"></i> : <i className="fa-solid fa-arrow-right"></i>}
@@ -1615,7 +1615,7 @@ const Dashboard: React.FC<DashboardProps> = ({ user, apiKey, setView }) => {
                 className={`px-3 py-1.5 rounded-lg text-xs font-semibold transition ${
                   analyticsTimeRange === range
                     ? 'bg-zinc-900 dark:bg-white text-white dark:text-black'
-                    : 'bg-zinc-100 dark:bg-zinc-900 text-zinc-600 dark:text-zinc-400 hover:bg-zinc-200 dark:hover:bg-zinc-800'
+                    : 'bg-zinc-100 dark:bg-zinc-900 text-zinc-600 dark:text-zinc-400 hover:bg-zinc-200 dark:hover:bg-zinc-800 hover:text-rose-500 dark:hover:text-rose-400'
                 }`}
               >
                 {range.charAt(0).toUpperCase() + range.slice(1)}
@@ -1627,37 +1627,37 @@ const Dashboard: React.FC<DashboardProps> = ({ user, apiKey, setView }) => {
       >
         {/* Metric Cards */}
         <div className="grid grid-cols-2 md:grid-cols-4 gap-4 mb-6">
-          <div className="bg-rose-50 dark:bg-rose-900/20 rounded-xl p-4 border border-rose-100 dark:border-rose-800">
+          <div className="bg-zinc-50 dark:bg-zinc-900/50 rounded-xl p-4 border border-zinc-100 dark:border-zinc-800">
             <div className="flex items-center justify-between mb-2">
-              <span className="text-xs font-bold text-rose-600 dark:text-rose-400 uppercase">Tasks Done</span>
+              <span className="text-xs font-bold text-zinc-600 dark:text-zinc-400 uppercase">Tasks Done</span>
               <i className="fa-solid fa-check-circle text-rose-500"></i>
             </div>
-            <div className="text-2xl font-bold text-rose-700 dark:text-rose-300">{productivityMetrics.tasksCompleted}</div>
-            <div className="text-[10px] text-rose-600/60">of {productivityMetrics.tasksTotal} total</div>
+            <div className="text-2xl font-bold text-zinc-800 dark:text-zinc-100">{productivityMetrics.tasksCompleted}</div>
+            <div className="text-[10px] text-zinc-500">of {productivityMetrics.tasksTotal} total</div>
           </div>
-          <div className="bg-pink-50 dark:bg-pink-900/20 rounded-xl p-4 border border-pink-100 dark:border-pink-800">
+          <div className="bg-zinc-50 dark:bg-zinc-900/50 rounded-xl p-4 border border-zinc-100 dark:border-zinc-800">
             <div className="flex items-center justify-between mb-2">
-              <span className="text-xs font-bold text-pink-600 dark:text-pink-400 uppercase">Messages</span>
+              <span className="text-xs font-bold text-zinc-600 dark:text-zinc-400 uppercase">Messages</span>
               <i className="fa-solid fa-message text-pink-500"></i>
             </div>
-            <div className="text-2xl font-bold text-pink-700 dark:text-pink-300">{productivityMetrics.messagesSent + productivityMetrics.messagesReceived}</div>
-            <div className="text-[10px] text-pink-600/60">{productivityMetrics.messagesSent} sent, {productivityMetrics.messagesReceived} received</div>
+            <div className="text-2xl font-bold text-zinc-800 dark:text-zinc-100">{productivityMetrics.messagesSent + productivityMetrics.messagesReceived}</div>
+            <div className="text-[10px] text-zinc-500">{productivityMetrics.messagesSent} sent, {productivityMetrics.messagesReceived} received</div>
           </div>
-          <div className="bg-rose-50 dark:bg-rose-900/20 rounded-xl p-4 border border-rose-100 dark:border-rose-800">
+          <div className="bg-zinc-50 dark:bg-zinc-900/50 rounded-xl p-4 border border-zinc-100 dark:border-zinc-800">
             <div className="flex items-center justify-between mb-2">
-              <span className="text-xs font-bold text-rose-600 dark:text-rose-400 uppercase">Focus Time</span>
+              <span className="text-xs font-bold text-zinc-600 dark:text-zinc-400 uppercase">Focus Time</span>
               <i className="fa-solid fa-bullseye text-rose-500"></i>
             </div>
-            <div className="text-2xl font-bold text-rose-700 dark:text-rose-300">{formatFocusTime(productivityMetrics.focusTime)}</div>
-            <div className="text-[10px] text-rose-600/60">Deep work today</div>
+            <div className="text-2xl font-bold text-zinc-800 dark:text-zinc-100">{formatFocusTime(productivityMetrics.focusTime)}</div>
+            <div className="text-[10px] text-zinc-500">Deep work today</div>
           </div>
-          <div className="bg-pink-50 dark:bg-pink-900/20 rounded-xl p-4 border border-pink-100 dark:border-pink-800">
+          <div className="bg-zinc-50 dark:bg-zinc-900/50 rounded-xl p-4 border border-zinc-100 dark:border-zinc-800">
             <div className="flex items-center justify-between mb-2">
-              <span className="text-xs font-bold text-pink-600 dark:text-pink-400 uppercase">Avg Response</span>
+              <span className="text-xs font-bold text-zinc-600 dark:text-zinc-400 uppercase">Avg Response</span>
               <i className="fa-solid fa-clock text-pink-500"></i>
             </div>
-            <div className="text-2xl font-bold text-pink-700 dark:text-pink-300">{productivityMetrics.responseTime}m</div>
-            <div className="text-[10px] text-pink-600/60">Message response time</div>
+            <div className="text-2xl font-bold text-zinc-800 dark:text-zinc-100">{productivityMetrics.responseTime}m</div>
+            <div className="text-[10px] text-zinc-500">Message response time</div>
           </div>
         </div>
 
@@ -1884,7 +1884,7 @@ const Dashboard: React.FC<DashboardProps> = ({ user, apiKey, setView }) => {
                       }
                       setShowTeamBuilder(true);
                     }}
-                    className="px-4 py-2 bg-rose-500 hover:bg-rose-600 text-white text-sm font-medium rounded-lg transition"
+                    className="px-4 py-2 bg-rose-500 hover:bg-rose-600 text-white text-sm font-medium rounded-lg transition-all duration-150 hover:-translate-y-0.5 hover:shadow-lg hover:shadow-rose-500/30 active:scale-95"
                   >
                     {selectedTeamId ? 'Add Members' : 'Build Your Team'}
                   </button>

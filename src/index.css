@@ -188,17 +188,17 @@ input[type="date"]::-webkit-calendar-picker-indicator {
   background: transparent;
 }
 ::-webkit-scrollbar-thumb {
-  background: #a1a1aa;
+  background: rgba(244, 63, 94, 0.30);
   border-radius: 4px;
 }
 .dark ::-webkit-scrollbar-thumb {
-  background: #27272a;
+  background: rgba(244, 63, 94, 0.25);
 }
 ::-webkit-scrollbar-thumb:hover {
-  background: #71717a;
+  background: rgba(244, 63, 94, 0.50);
 }
 .dark ::-webkit-scrollbar-thumb:hover {
-  background: #3f3f46;
+  background: rgba(244, 63, 94, 0.45);
 }
 
 /* Delay utilities */
@@ -2142,6 +2142,31 @@ html, body {
     padding-left: var(--safe-area-inset-left);
     padding-right: var(--safe-area-inset-right);
   }
+}
+
+/* ============================================================
+   DASHBOARD — DESIGN TOKENS (Pulse Premium Dark)
+   P0.4: rgba surface override · P1.2: list stagger
+   ============================================================ */
+
+/* Widget card surface — overrides dark:bg-zinc-950/80 */
+.dashboard-widget-surface {
+  background-color: rgba(250, 250, 249, 0.9) !important; /* warm stone light */
+}
+.dark .dashboard-widget-surface {
+  background-color: rgba(255, 255, 255, 0.03) !important; /* true-black canvas */
+}
+
+/* List stagger — apply to grid/flex containers wrapping animated items */
+.dashboard-stagger > *:nth-child(1) { animation-delay:   0ms; }
+.dashboard-stagger > *:nth-child(2) { animation-delay:  40ms; }
+.dashboard-stagger > *:nth-child(3) { animation-delay:  80ms; }
+.dashboard-stagger > *:nth-child(4) { animation-delay: 120ms; }
+.dashboard-stagger > *:nth-child(5) { animation-delay: 160ms; }
+/* Items beyond 5: no animation overhead */
+.dashboard-stagger > *:nth-child(n+6) {
+  animation: none;
+  will-change: auto;
 }
 
 /* Reduced motion for accessibility */

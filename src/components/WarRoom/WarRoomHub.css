@@ -817,9 +817,7 @@
 .wrh-mode-card:hover {
   border-color: hsl(var(--mode-hue, 0), 60%, 60%);
   transform: translateY(-4px);
-  box-shadow:
-    0 12px 40px rgba(0, 0, 0, 0.08),
-    0 0 0 1px hsl(var(--mode-hue, 0), 60%, 60%, 0.1);
+  box-shadow: 0 12px 40px rgba(0, 0, 0, 0.08);
 }
 
 .wrh-mode-card:hover::before {
@@ -897,7 +895,6 @@
   display: flex;
   align-items: center;
   justify-content: center;
-  /* Dark values — War Room Hub is always dark */
   background: linear-gradient(
     135deg,
     hsl(var(--mode-hue, 0), 50%, 18%) 0%,
@@ -907,6 +904,17 @@
   font-size: 22px;
   color: hsl(var(--mode-hue, 0), 60%, 65%);
   transition: all 0.3s var(--wrh-ease);
+}
+
+/* Light mode: icon frame uses tinted light backgrounds */
+:root:not(.dark) .wrh-card-icon,
+html:not(.dark) body .wrh-card-icon {
+  background: linear-gradient(
+    135deg,
+    hsl(var(--mode-hue, 0), 60%, 92%) 0%,
+    hsl(var(--mode-hue, 0), 50%, 87%) 100%
+  );
+  color: hsl(var(--mode-hue, 0), 55%, 38%);
 }
 
 .wrh-mode-card:hover .wrh-card-icon {
@@ -1081,6 +1089,51 @@
   border: 1px solid var(--wrh-border);
   border-radius: 4px;
   color: var(--wrh-text-secondary);
+}
+
+/* ============================================
+   Light Mode Overrides
+   ============================================ */
+
+:root:not(.dark) .wrh-mode-card,
+html:not(.dark) body .wrh-mode-card {
+  background: #ffffff;
+  border-color: rgba(0, 0, 0, 0.08);
+  box-shadow: 0 1px 4px rgba(0, 0, 0, 0.05);
+}
+
+:root:not(.dark) .wrh-mode-card:hover,
+html:not(.dark) body .wrh-mode-card:hover {
+  box-shadow: 0 8px 32px rgba(0, 0, 0, 0.1);
+}
+
+:root:not(.dark) .wrh-mode-card.active,
+html:not(.dark) body .wrh-mode-card.active {
+  background: linear-gradient(180deg, rgba(255, 0, 0, 0.03) 0%, #ffffff 100%);
+}
+
+:root:not(.dark) .wrh-search,
+html:not(.dark) body .wrh-search {
+  background: #ffffff;
+}
+
+:root:not(.dark) .wrh-search:focus-within,
+html:not(.dark) body .wrh-search:focus-within {
+  background: #ffffff;
+  box-shadow: 0 0 0 3px rgba(255, 0, 0, 0.08);
+}
+
+:root:not(.dark) .wrh-missions-btn,
+html:not(.dark) body .wrh-missions-btn {
+  background: #ffffff;
+  box-shadow: 0 1px 4px rgba(0, 0, 0, 0.06);
+}
+
+:root:not(.dark) .wrh-category-btn.active,
+html:not(.dark) body .wrh-category-btn.active {
+  background: var(--wrh-black);
+  border-color: var(--wrh-black);
+  color: var(--wrh-white);
 }
 
 /* ============================================

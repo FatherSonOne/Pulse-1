@@ -2324,3 +2324,327 @@ html.dark .bsr-template-card:hover,
     font-size: 16px; /* Prevent iOS zoom */
   }
 }
+
+/* ============================================
+   LIGHT MODE
+   ============================================ */
+
+:root:not(.dark) .bsr-container,
+html:not(.dark) body .bsr-container {
+  --bsr-bg-void:    #fafaf9;
+  --bsr-bg-primary: #fffdf7;
+  --bsr-bg-secondary: #fef9ee;
+  --bsr-bg-elevated: #fdf3d8;
+  --bsr-bg-surface: #ffffff;
+  --bsr-bg-card: rgba(255, 255, 255, 0.92);
+
+  --bsr-border-subtle:  rgba(245, 158, 11, 0.12);
+  --bsr-border-default: rgba(245, 158, 11, 0.22);
+  --bsr-border-strong:  rgba(245, 158, 11, 0.38);
+  --bsr-border-glow:    rgba(245, 158, 11, 0.45);
+
+  --bsr-text-primary:   #1c1007;
+  --bsr-text-secondary: #44372a;
+  --bsr-text-muted:     #7a6a55;
+  --bsr-text-accent:    var(--bsr-amber-600);
+
+  --bsr-glow-amber:   0 4px 20px rgba(245, 158, 11, 0.18), 0 0 40px rgba(245, 158, 11, 0.07);
+  --bsr-glow-soft:    0 4px 12px rgba(245, 158, 11, 0.12);
+  --bsr-shadow-card:  0 2px 12px rgba(0, 0, 0, 0.06);
+  --bsr-shadow-elevated: 0 6px 24px rgba(0, 0, 0, 0.09);
+
+  background: var(--bsr-bg-primary);
+  color: var(--bsr-text-primary);
+}
+
+/* Ambient effects: much more subtle in light mode */
+:root:not(.dark) .bsr-orb,
+html:not(.dark) body .bsr-orb {
+  opacity: 0.12;
+  filter: blur(120px);
+}
+
+:root:not(.dark) .bsr-particle,
+html:not(.dark) body .bsr-particle {
+  background: var(--bsr-amber-500);
+  opacity: 0;
+}
+
+:root:not(.dark) .bsr-noise,
+html:not(.dark) body .bsr-noise {
+  opacity: 0.01;
+}
+
+:root:not(.dark) .bsr-neural-grid,
+html:not(.dark) body .bsr-neural-grid {
+  background-image:
+    radial-gradient(circle at 20% 30%, rgba(245, 158, 11, 0.05) 0%, transparent 50%),
+    radial-gradient(circle at 80% 70%, rgba(249, 115, 22, 0.04) 0%, transparent 50%);
+}
+
+/* Setup screen */
+:root:not(.dark) .bsr-setup-title,
+html:not(.dark) body .bsr-setup-title {
+  background: linear-gradient(135deg, var(--bsr-amber-600), var(--bsr-orange-500));
+  -webkit-background-clip: text;
+  background-clip: text;
+}
+
+/* Sidebar */
+:root:not(.dark) .bsr-sidebar,
+html:not(.dark) body .bsr-sidebar {
+  background: #fff8e8;
+  border-right-color: var(--bsr-border-subtle);
+}
+
+:root:not(.dark) .bsr-sidebar-header,
+html:not(.dark) body .bsr-sidebar-header {
+  background: linear-gradient(180deg, rgba(245, 158, 11, 0.06) 0%, transparent 100%);
+  border-bottom-color: var(--bsr-border-subtle);
+}
+
+/* Momentum bar track */
+:root:not(.dark) .bsr-momentum-bar,
+html:not(.dark) body .bsr-momentum-bar {
+  background: rgba(245, 158, 11, 0.12);
+}
+
+/* Idea cards */
+:root:not(.dark) .bsr-idea-card,
+html:not(.dark) body .bsr-idea-card {
+  background: #ffffff;
+  border-color: var(--bsr-border-subtle);
+  box-shadow: 0 1px 4px rgba(0, 0, 0, 0.05);
+}
+
+:root:not(.dark) .bsr-idea-card:hover,
+html:not(.dark) body .bsr-idea-card:hover {
+  border-color: var(--bsr-border-default);
+  box-shadow: 0 4px 16px rgba(0, 0, 0, 0.08);
+}
+
+:root:not(.dark) .bsr-idea-card.selected,
+html:not(.dark) body .bsr-idea-card.selected {
+  background: linear-gradient(135deg, rgba(245, 158, 11, 0.06), rgba(249, 115, 22, 0.03));
+}
+
+/* Vote controls */
+:root:not(.dark) .bsr-vote-controls,
+html:not(.dark) body .bsr-vote-controls {
+  background: #f5f0e8;
+}
+
+:root:not(.dark) .bsr-vote-btn:hover,
+html:not(.dark) body .bsr-vote-btn:hover {
+  background: rgba(245, 158, 11, 0.1);
+}
+
+/* Action buttons */
+:root:not(.dark) .bsr-action-btn,
+html:not(.dark) body .bsr-action-btn {
+  background: #f5f0e8;
+  border-color: rgba(245, 158, 11, 0.15);
+}
+
+/* Cluster select */
+:root:not(.dark) .bsr-cluster-select,
+html:not(.dark) body .bsr-cluster-select {
+  background: #f5f0e8;
+  border-color: rgba(245, 158, 11, 0.15);
+  color: var(--bsr-text-secondary);
+}
+
+/* Cluster chips */
+:root:not(.dark) .bsr-cluster-chip,
+html:not(.dark) body .bsr-cluster-chip {
+  background: #f5f0e8;
+  border-color: rgba(245, 158, 11, 0.15);
+}
+
+:root:not(.dark) .bsr-cluster-chip:hover,
+html:not(.dark) body .bsr-cluster-chip:hover {
+  background: rgba(245, 158, 11, 0.1);
+}
+
+/* Toolbar */
+:root:not(.dark) .bsr-toolbar,
+html:not(.dark) body .bsr-toolbar {
+  background: #fff8e8;
+  border-bottom-color: var(--bsr-border-subtle);
+}
+
+:root:not(.dark) .bsr-view-toggle,
+html:not(.dark) body .bsr-view-toggle {
+  background: #f5f0e8;
+  border-color: rgba(245, 158, 11, 0.15);
+}
+
+/* AI bar */
+:root:not(.dark) .bsr-ai-bar,
+html:not(.dark) body .bsr-ai-bar {
+  background: linear-gradient(90deg,
+    rgba(245, 158, 11, 0.04) 0%,
+    transparent 30%,
+    transparent 70%,
+    rgba(245, 158, 11, 0.04) 100%
+  );
+}
+
+:root:not(.dark) .bsr-technique-btn,
+html:not(.dark) body .bsr-technique-btn {
+  background: #ffffff;
+  border-color: rgba(245, 158, 11, 0.15);
+  color: var(--bsr-text-secondary);
+}
+
+/* Timer */
+:root:not(.dark) .bsr-timer,
+html:not(.dark) body .bsr-timer {
+  background: #f5f0e8;
+  border-color: rgba(245, 158, 11, 0.15);
+}
+
+:root:not(.dark) .bsr-timer-btn:hover,
+html:not(.dark) body .bsr-timer-btn:hover {
+  background: rgba(245, 158, 11, 0.12);
+}
+
+/* Canvas cards */
+:root:not(.dark) .bsr-canvas-card,
+html:not(.dark) body .bsr-canvas-card {
+  background: #ffffff;
+  border-color: rgba(245, 158, 11, 0.12);
+  box-shadow: 0 1px 4px rgba(0, 0, 0, 0.05);
+}
+
+:root:not(.dark) .bsr-canvas-card:hover,
+html:not(.dark) body .bsr-canvas-card:hover {
+  box-shadow: 0 6px 24px rgba(0, 0, 0, 0.09);
+}
+
+/* Cluster ideas — fix hardcoded rgba(0,0,0,x) overlays */
+:root:not(.dark) .bsr-cluster-idea,
+html:not(.dark) body .bsr-cluster-idea {
+  background: rgba(255, 255, 255, 0.6);
+}
+
+:root:not(.dark) .bsr-cluster-idea:hover,
+html:not(.dark) body .bsr-cluster-idea:hover {
+  background: rgba(255, 255, 255, 0.8);
+}
+
+/* Cluster count badge — fix hardcoded dark overlay */
+:root:not(.dark) .bsr-cluster-count,
+html:not(.dark) body .bsr-cluster-count {
+  background: rgba(0, 0, 0, 0.08);
+  color: inherit;
+}
+
+/* Cluster empty — fix hardcoded white text */
+:root:not(.dark) .bsr-cluster-empty,
+html:not(.dark) body .bsr-cluster-empty {
+  color: rgba(0, 0, 0, 0.35);
+}
+
+/* Table */
+:root:not(.dark) .bsr-ideas-table th,
+html:not(.dark) body .bsr-ideas-table th {
+  background: #fff8e8;
+  color: var(--bsr-text-secondary);
+}
+
+:root:not(.dark) .bsr-ideas-table tbody tr:hover,
+html:not(.dark) body .bsr-ideas-table tbody tr:hover {
+  background: rgba(245, 158, 11, 0.05);
+}
+
+/* Messages */
+:root:not(.dark) .bsr-message-ai,
+html:not(.dark) body .bsr-message-ai {
+  background: #ffffff;
+  border-color: var(--bsr-border-subtle);
+  box-shadow: 0 2px 8px rgba(0, 0, 0, 0.05);
+}
+
+/* Input area */
+:root:not(.dark) .bsr-input-area,
+html:not(.dark) body .bsr-input-area {
+  background: #fff8e8;
+  border-top-color: var(--bsr-border-subtle);
+}
+
+:root:not(.dark) .bsr-input-container,
+html:not(.dark) body .bsr-input-container {
+  background: #ffffff;
+  border-color: var(--bsr-border-default);
+}
+
+:root:not(.dark) .bsr-input-container:focus-within,
+html:not(.dark) body .bsr-input-container:focus-within {
+  box-shadow: 0 0 0 3px rgba(245, 158, 11, 0.1), var(--bsr-glow-soft);
+}
+
+:root:not(.dark) .bsr-send-btn,
+html:not(.dark) body .bsr-send-btn {
+  background: #f5f0e8;
+  border-color: rgba(245, 158, 11, 0.2);
+}
+
+/* Forms */
+:root:not(.dark) .bsr-input,
+html:not(.dark) body .bsr-input {
+  background: #ffffff;
+  border-color: var(--bsr-border-default);
+  color: var(--bsr-text-primary);
+}
+
+:root:not(.dark) .bsr-input:focus,
+html:not(.dark) body .bsr-input:focus {
+  border-color: var(--bsr-amber-500);
+  box-shadow: 0 0 0 3px rgba(245, 158, 11, 0.1);
+}
+
+:root:not(.dark) .bsr-templates-toggle,
+html:not(.dark) body .bsr-templates-toggle {
+  background: #ffffff;
+  border-color: var(--bsr-border-subtle);
+}
+
+:root:not(.dark) .bsr-template-card,
+html:not(.dark) body .bsr-template-card {
+  background: #ffffff;
+  border-color: var(--bsr-border-subtle);
+}
+
+:root:not(.dark) .bsr-template-card:hover,
+html:not(.dark) body .bsr-template-card:hover {
+  background: #fff8e8;
+  border-color: var(--bsr-border-default);
+}
+
+:root:not(.dark) .bsr-suggestion-chip,
+html:not(.dark) body .bsr-suggestion-chip {
+  background: #f5f0e8;
+  border-color: rgba(245, 158, 11, 0.15);
+}
+
+/* Scrollbars */
+:root:not(.dark) .bsr-ideas-list::-webkit-scrollbar-thumb,
+html:not(.dark) body .bsr-ideas-list::-webkit-scrollbar-thumb,
+:root:not(.dark) .bsr-messages::-webkit-scrollbar-thumb,
+html:not(.dark) body .bsr-messages::-webkit-scrollbar-thumb,
+:root:not(.dark) .bsr-content::-webkit-scrollbar-thumb,
+html:not(.dark) body .bsr-content::-webkit-scrollbar-thumb {
+  background: rgba(245, 158, 11, 0.2);
+}
+
+/* Top ideas ranking */
+:root:not(.dark) .bsr-top-idea,
+html:not(.dark) body .bsr-top-idea {
+  background: #f5f0e8;
+}
+
+:root:not(.dark) .bsr-top-idea:hover,
+html:not(.dark) body .bsr-top-idea:hover {
+  background: rgba(245, 158, 11, 0.08);
+}
