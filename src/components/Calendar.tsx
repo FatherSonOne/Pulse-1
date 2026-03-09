@@ -17,6 +17,8 @@ import PostMeetingPrompt from './PostMeetingPrompt';
 import { postMeetingService, MeetingFollowUp as PostMeetingFollowUp } from '../services/postMeetingService';
 import CustomEventTypesManager from './CustomEventTypesManager';
 import { customEventTypesService } from '../services/customEventTypesService';
+import { EventCreationModal } from './Calendar/EventCreationModal';
+import { CalendarAIPanel } from './Calendar/CalendarAIPanel';
 import CommandPalette from './CommandPalette';
 import ShortcutsHelp from './ShortcutsHelp';
 import JumpToDate from './JumpToDate';
@@ -2076,245 +2078,41 @@ const Calendar: React.FC<CalendarProps> = ({ contacts, openTaskPanel = false, on
         </div>
       )}
 
-      {/* Event Modal - Enhanced */}
-      {showEventModal && (
-          <div className="absolute inset-0 z-50 bg-white/80 dark:bg-black/80 backdrop-blur-sm flex items-center justify-center animate-fade-in p-4 overflow-y-auto">
-              <form onSubmit={handleCreateEvent} className="bg-white dark:bg-zinc-900 border border-zinc-200 dark:border-zinc-800 rounded-2xl w-full max-w-lg p-6 shadow-2xl animate-scale-in my-8">
-                  <div className="flex items-center justify-between mb-6">
-                    <h3 className="text-xl font-bold dark:text-white text-zinc-900">{editingEvent ? 'Edit Event' : 'New Event'}</h3>
-                    <button type="button" onClick={() => { setShowEventModal(false); resetForm(); }} className="text-zinc-400 hover:text-zinc-600">
-                      <X />
-                    </button>
-                  </div>
-
-                  <div className="space-y-4">
-                      {/* Event Type Selector */}
-                      <div>
-                          <label className="text-xs text-zinc-500 uppercase font-bold mb-2 block">Event Type</label>
-                          <div className="flex gap-2 flex-wrap">
-                            {allEventTypes.map(type => (
-                              <button
-                                key={type.id}
-                                type="button"
-                                onClick={() => setNewEventType(type.id as CalendarEvent['type'])}
-                                className="px-3 py-2 rounded-lg text-xs font-medium flex items-center gap-2 transition border"
-                                style={newEventType === type.id
-                                  ? { backgroundColor: type.color, color: '#fff', borderColor: type.color }
-                                  : { backgroundColor: 'transparent', color: type.color, borderColor: type.color + '40' }}
-                              >
-                                <i className={`fa-solid ${type.icon}`}></i> {type.name}
-                              </button>
-                            ))}
-                            {/* Manage custom types button */}
-                            <button
-                              type="button"
-                              onClick={() => setShowCustomTypesManager(true)}
-                              className="px-3 py-2 rounded-lg text-xs font-medium flex items-center gap-1.5 transition border border-dashed border-zinc-300 dark:border-zinc-600 text-zinc-400 hover:text-zinc-600 dark:hover:text-zinc-300 hover:border-zinc-400"
-                            >
-                              <Sliders /> Manage
-                            </button>
-                          </div>
-                      </div>
-
-                      <div>
-                          <label className="text-xs text-zinc-500 uppercase font-bold mb-1 block">Title</label>
-                          <input
-                            type="text"
-                            tabIndex={0}
-                            autoFocus
-                            className="w-full bg-zinc-50 dark:bg-zinc-950 border border-zinc-200 dark:border-zinc-800 rounded-lg p-3 dark:text-white text-zinc-900 focus:border-zinc-400 focus:ring-2 focus:ring-blue-500 outline-none transition"
-                            placeholder="Event Title"
-                            value={newEventTitle}
-                            onChange={(e) => {
-                              setNewEventTitle(e.target.value);
-                              // Auto-detect event type from title
-                              if (e.target.value.length > 3) {
-                                const detected = autoDetectEventType(e.target.value, newEventDesc, newEventLocation);
-                                setNewEventType(detected);
-                              }
-                            }}
-                            required
-                          />
-                      </div>
-
-                      {/* All Day Toggle */}
-                      <div className="flex items-center gap-3">
-                        <label className="relative inline-flex items-center cursor-pointer" tabIndex={0} onKeyDown={(e) => { if (e.key === 'Enter' || e.key === ' ') { e.preventDefault(); setNewEventAllDay(!newEventAllDay); } }}>
-                          <input
-                            type="checkbox"
-                            tabIndex={-1}
-                            checked={newEventAllDay}
-                            onChange={(e) => setNewEventAllDay(e.target.checked)}
-                            className="sr-only peer"
-                          />
-                          <div className="w-9 h-5 bg-zinc-200 peer-focus:outline-none peer-focus:ring-2 peer-focus:ring-blue-500 rounded-full peer dark:bg-zinc-700 peer-checked:after:translate-x-full rtl:peer-checked:after:-translate-x-full peer-checked:after:border-white after:content-[''] after:absolute after:top-[2px] after:start-[2px] after:bg-white after:border-zinc-300 after:border after:rounded-full after:h-4 after:w-4 after:transition-all dark:border-zinc-600 peer-checked:bg-blue-600"></div>
-                        </label>
-                        <span className="text-sm text-zinc-600 dark:text-zinc-400">All Day Event</span>
-                      </div>
-
-                      <div className="grid grid-cols-2 gap-4">
-                          <div>
-                            <label className="text-xs text-zinc-500 uppercase font-bold mb-1 block">Date</label>
-                            <input
-                                type="date"
-                                tabIndex={0}
-                                className="w-full bg-zinc-50 dark:bg-zinc-950 border border-zinc-200 dark:border-zinc-800 rounded-lg p-3 dark:text-white text-zinc-900 focus:border-zinc-400 focus:ring-2 focus:ring-blue-500 outline-none transition"
-                                value={newEventDate}
-                                onChange={(e) => setNewEventDate(e.target.value)}
-                                required
-                            />
-                          </div>
-                          {!newEventAllDay && (
-                            <div className="grid grid-cols-2 gap-2">
-                              <div>
-                                <label className="text-xs text-zinc-500 uppercase font-bold mb-1 block">Start</label>
-                                <input
-                                    type="time"
-                                    step="60"
-                                    tabIndex={0}
-                                    className="w-full bg-zinc-50 dark:bg-zinc-950 border border-zinc-200 dark:border-zinc-800 rounded-lg p-3 dark:text-white text-zinc-900 focus:border-zinc-400 focus:ring-2 focus:ring-blue-500 outline-none transition"
-                                    value={newEventTime || '09:00'}
-                                    onChange={(e) => setNewEventTime(e.target.value)}
-                                />
-                              </div>
-                              <div>
-                                <label className="text-xs text-zinc-500 uppercase font-bold mb-1 block">End</label>
-                                <input
-                                    type="time"
-                                    step="60"
-                                    tabIndex={0}
-                                    className="w-full bg-zinc-50 dark:bg-zinc-950 border border-zinc-200 dark:border-zinc-800 rounded-lg p-3 dark:text-white text-zinc-900 focus:border-zinc-400 focus:ring-2 focus:ring-blue-500 outline-none transition"
-                                    value={newEventEndTime || '10:00'}
-                                    onChange={(e) => setNewEventEndTime(e.target.value)}
-                                />
-                              </div>
-                            </div>
-                          )}
-                      </div>
-
-                      {/* Location */}
-                      <div>
-                          <label className="text-xs text-zinc-500 uppercase font-bold mb-1 block">Location</label>
-                          <input
-                            type="text"
-                            tabIndex={0}
-                            className="w-full bg-zinc-50 dark:bg-zinc-950 border border-zinc-200 dark:border-zinc-800 rounded-lg p-3 dark:text-white text-zinc-900 focus:border-zinc-400 focus:ring-2 focus:ring-blue-500 outline-none transition"
-                            placeholder="Add location or meeting link"
-                            value={newEventLocation}
-                            onChange={(e) => setNewEventLocation(e.target.value)}
-                          />
-                      </div>
-
-                      {/* Color Picker */}
-                      <div>
-                          <label className="text-xs text-zinc-500 uppercase font-bold mb-2 block">Color</label>
-                          <div className="flex gap-2 flex-wrap" role="radiogroup" aria-label="Event color">
-                            {EVENT_COLORS.map((color, index) => (
-                              <button
-                                key={color.id}
-                                type="button"
-                                tabIndex={0}
-                                onClick={() => setNewEventColor(color.class)}
-                                className={`w-8 h-8 rounded-full ${color.class} transition ring-2 ring-offset-2 focus:ring-blue-500 focus:outline-none ${newEventColor === color.class ? 'ring-blue-500' : 'ring-transparent hover:ring-zinc-300'}`}
-                                title={color.name}
-                                aria-label={color.name}
-                              />
-                            ))}
-                          </div>
-                      </div>
-
-                      {/* Recurrence */}
-                      <div>
-                          <label className="text-xs text-zinc-500 uppercase font-bold mb-1 block">Repeat</label>
-                          <select
-                            tabIndex={0}
-                            value={newEventRecurrence}
-                            onChange={(e) => setNewEventRecurrence(e.target.value as RecurrenceType)}
-                            className="w-full bg-zinc-50 dark:bg-zinc-950 border border-zinc-200 dark:border-zinc-800 rounded-lg p-3 dark:text-white text-zinc-900 focus:border-zinc-400 focus:ring-2 focus:ring-blue-500 outline-none transition"
-                          >
-                            <option value="none">Does not repeat</option>
-                            <option value="daily">Daily</option>
-                            <option value="weekly">Weekly</option>
-                            <option value="monthly">Monthly</option>
-                            <option value="yearly">Yearly</option>
-                          </select>
-                      </div>
-
-                      {/* Reminder */}
-                      <div>
-                          <label className="text-xs text-zinc-500 uppercase font-bold mb-1 block">Reminder</label>
-                          <select
-                            tabIndex={0}
-                            value={newEventReminder}
-                            onChange={(e) => setAndPersistReminder(e.target.value as ReminderTime)}
-                            className="w-full bg-zinc-50 dark:bg-zinc-950 border border-zinc-200 dark:border-zinc-800 rounded-lg p-3 dark:text-white text-zinc-900 focus:border-zinc-400 focus:ring-2 focus:ring-blue-500 outline-none transition"
-                          >
-                            <option value="none">No reminder</option>
-                            <option value="5min">5 minutes before</option>
-                            <option value="15min">15 minutes before</option>
-                            <option value="30min">30 minutes before</option>
-                            <option value="1hour">1 hour before</option>
-                            <option value="1day">1 day before</option>
-                          </select>
-                      </div>
-
-                      {/* Attendees */}
-                      <div>
-                          <label className="text-xs text-zinc-500 uppercase font-bold mb-2 block">Attendees</label>
-                          <div className="flex flex-wrap gap-2 mb-2">
-                            {newEventAttendees.map(id => {
-                              const contact = contacts.find(c => c.id === id);
-                              return contact ? (
-                                <span key={id} className="inline-flex items-center gap-1 px-2 py-1 bg-zinc-100 dark:bg-zinc-800 rounded-full text-xs">
-                                  <span className={`w-4 h-4 rounded-full ${contact.avatarColor} flex items-center justify-center text-[8px] text-white font-bold`}>
-                                    {contact.name.charAt(0)}
-                                  </span>
-                                  {contact.name}
-                                  <button type="button" onClick={() => removeAttendee(id)} className="ml-1 text-zinc-400 hover:text-red-500">
-                                    <X className="text-[10px]" />
-                                  </button>
-                                </span>
-                              ) : null;
-                            })}
-                          </div>
-                          <div className="flex gap-2 overflow-x-auto pb-2">
-                            {contacts.filter(c => !newEventAttendees.includes(c.id)).slice(0, 6).map(contact => (
-                              <button
-                                key={contact.id}
-                                type="button"
-                                onClick={() => addAttendee(contact.id)}
-                                className="flex items-center gap-2 px-3 py-2 bg-zinc-50 dark:bg-zinc-800 rounded-lg text-xs hover:bg-zinc-100 dark:hover:bg-zinc-700 transition whitespace-nowrap"
-                              >
-                                <span className={`w-5 h-5 rounded-full ${contact.avatarColor} flex items-center justify-center text-[10px] text-white font-bold`}>
-                                  {contact.name.charAt(0)}
-                                </span>
-                                {contact.name}
-                              </button>
-                            ))}
-                          </div>
-                      </div>
-
-                      <div>
-                          <label className="text-xs text-zinc-500 uppercase font-bold mb-1 block">Description</label>
-                          <textarea
-                             className="w-full bg-zinc-50 dark:bg-zinc-950 border border-zinc-200 dark:border-zinc-800 rounded-lg p-3 dark:text-white text-zinc-900 focus:border-zinc-400 outline-none resize-none h-20"
-                             placeholder="Add description or notes..."
-                             value={newEventDesc}
-                             onChange={(e) => setNewEventDesc(e.target.value)}
-                          />
-                      </div>
-                  </div>
-
-                  <div className="mt-6 flex justify-end gap-3">
-                      <button type="button" onClick={() => { setShowEventModal(false); resetForm(); }} className="px-5 py-2 text-zinc-500 hover:text-zinc-900 dark:hover:text-white transition text-sm font-medium">Cancel</button>
-                      <button type="submit" className="px-5 py-2 bg-zinc-900 dark:bg-white text-white dark:text-black rounded-lg text-sm font-bold uppercase tracking-wide hover:opacity-90 transition flex items-center gap-2">
-                        <i className={`fa-solid ${editingEvent ? 'fa-check' : 'fa-plus'}`}></i>
-                        {editingEvent ? 'Save Changes' : 'Create Event'}
-                      </button>
-                  </div>
-              </form>
-          </div>
-      )}
+      <EventCreationModal
+        isOpen={showEventModal}
+        editingEvent={editingEvent}
+        newEventTitle={newEventTitle}
+        onTitleChange={setNewEventTitle}
+        newEventDate={newEventDate}
+        onDateChange={setNewEventDate}
+        newEventTime={newEventTime}
+        onTimeChange={setNewEventTime}
+        newEventEndTime={newEventEndTime}
+        onEndTimeChange={setNewEventEndTime}
+        newEventAllDay={newEventAllDay}
+        onAllDayChange={setNewEventAllDay}
+        newEventDesc={newEventDesc}
+        onDescChange={setNewEventDesc}
+        newEventLocation={newEventLocation}
+        onLocationChange={setNewEventLocation}
+        newEventColor={newEventColor}
+        onColorChange={setNewEventColor}
+        newEventType={newEventType}
+        onTypeChange={setNewEventType}
+        newEventRecurrence={newEventRecurrence}
+        onRecurrenceChange={setNewEventRecurrence}
+        newEventReminder={newEventReminder}
+        onReminderChange={setAndPersistReminder}
+        newEventAttendees={newEventAttendees}
+        onAddAttendee={(id) => setNewEventAttendees(prev => [...prev, id])}
+        onRemoveAttendee={(id) => setNewEventAttendees(prev => prev.filter(a => a !== id))}
+        allEventTypes={allEventTypes}
+        contacts={contacts}
+        autoDetectEventType={autoDetectEventType}
+        onSubmit={handleCreateEvent}
+        onClose={() => { setShowEventModal(false); setEditingEvent(null); }}
+        onOpenCustomTypesManager={() => setShowCustomTypesManager(true)}
+      />
 
       {/* Event Detail Modal - Enhanced with Google Calendar fields */}
       {showEventDetail && selectedEvent && (
@@ -3789,765 +3587,79 @@ const Calendar: React.FC<CalendarProps> = ({ contacts, openTaskPanel = false, on
         </div>
       )}
 
-      {/* AI Assistant Panel */}
-      {showAIPanel && (
-        <div className="cal-ai-panel absolute right-0 top-0 bottom-0 w-[420px] bg-white dark:bg-zinc-950 border-l border-zinc-200 dark:border-zinc-800 shadow-2xl z-50 flex flex-col animate-slide-in-right">
-          {/* AI Panel Header */}
-          <div className="p-4 border-b border-zinc-200 dark:border-zinc-800 bg-gradient-to-r from-purple-500/10 to-pink-500/10">
-            <div className="flex items-center justify-between mb-4">
-              <h3 className="text-lg font-bold dark:text-white flex items-center gap-2">
-                <Wand2 className="text-purple-500" />
-                AI Calendar Assistant
-              </h3>
-              <button onClick={() => setShowAIPanel(false)} className="text-zinc-400 hover:text-zinc-600 dark:hover:text-white">
-                <X />
-              </button>
-            </div>
-
-            {/* Natural Language Input */}
-            <div className="relative">
-              <input
-                type="text"
-                value={naturalLanguageInput}
-                onChange={(e) => setNaturalLanguageInput(e.target.value)}
-                onKeyDown={(e) => e.key === 'Enter' && handleNaturalLanguageSubmit()}
-                placeholder="Try: 'Schedule a call with John tomorrow at 2pm'"
-                className="w-full bg-white dark:bg-zinc-900 border border-zinc-200 dark:border-zinc-700 rounded-xl px-4 py-3 pr-12 text-sm outline-none focus:ring-2 focus:ring-purple-500"
-              />
-              <button
-                onClick={handleNaturalLanguageSubmit}
-                disabled={aiLoading || !naturalLanguageInput.trim()}
-                className="absolute right-2 top-1/2 -translate-y-1/2 w-8 h-8 flex items-center justify-center bg-purple-500 text-white rounded-lg hover:bg-purple-600 disabled:opacity-50 transition"
-              >
-                {aiLoading ? <Loader2 className="animate-spin text-sm" /> : <ArrowRight className="text-sm" />}
-              </button>
-            </div>
-          </div>
-
-          {/* AI Panel Tabs */}
-          <div className="flex border-b border-zinc-200 dark:border-zinc-800">
-            {[
-              { id: 'assistant', label: 'Assistant', icon: 'fa-robot' },
-              { id: 'insights', label: 'Insights', icon: 'fa-lightbulb' },
-              { id: 'analytics', label: 'Analytics', icon: 'fa-chart-line' },
-              { id: 'goals', label: 'Goals', icon: 'fa-bullseye' },
-            ].map(tab => (
-              <button
-                key={tab.id}
-                onClick={() => setAIPanelTab(tab.id as typeof aiPanelTab)}
-                className={`flex-1 px-3 py-3 text-xs font-medium flex items-center justify-center gap-1.5 transition ${aiPanelTab === tab.id ? 'text-purple-600 border-b-2 border-purple-500 bg-purple-50 dark:bg-purple-900/20' : 'text-zinc-500 hover:text-zinc-900 dark:hover:text-white'}`}
-              >
-                <i className={`fa-solid ${tab.icon}`}></i>
-                {tab.label}
-              </button>
-            ))}
-          </div>
-
-          {/* AI Panel Content */}
-          <div className="flex-1 overflow-y-auto p-4 space-y-4">
-            {aiLoading && (
-              <div className="flex items-center justify-center py-8">
-                <div className="flex items-center gap-3 text-purple-500">
-                  <Loader2 className="animate-spin text-xl" />
-                  <span className="text-sm">AI is analyzing your calendar...</span>
-                </div>
-              </div>
-            )}
-
-            {/* Suggested Events from Conversations */}
-            <SuggestedEventsPanel
-              onAcceptEvent={(eventData) => {
-                setNewEventTitle(eventData.title || '');
-                setNewEventDate(eventData.start ? eventData.start.toISOString().split('T')[0] : new Date().toISOString().split('T')[0]);
-                setNewEventTime(eventData.start ? `${eventData.start.getHours().toString().padStart(2, '0')}:${eventData.start.getMinutes().toString().padStart(2, '0')}` : '09:00');
-                setNewEventEndTime(eventData.end ? `${eventData.end.getHours().toString().padStart(2, '0')}:${eventData.end.getMinutes().toString().padStart(2, '0')}` : '10:00');
-                setNewEventDesc(eventData.description || '');
-                setNewEventLocation(eventData.location || '');
-                setNewEventType(eventData.type || 'event');
-                setShowEventModal(true);
-              }}
-            />
-
-            {/* Assistant Tab */}
-            {aiPanelTab === 'assistant' && !aiLoading && (
-              <div className="space-y-4">
-                {/* Quick Actions */}
-                <div>
-                  <h4 className="text-xs font-bold text-zinc-500 uppercase tracking-wider mb-3">Quick Actions</h4>
-                  <div className="grid grid-cols-2 gap-2">
-                    <button onClick={() => handleGetSuggestions(30)} className="p-3 bg-zinc-50 dark:bg-zinc-900 rounded-xl text-left hover:bg-zinc-100 dark:hover:bg-zinc-800 transition">
-                      <Clock className="text-blue-500 mb-2" />
-                      <p className="text-xs font-medium dark:text-white">Find Meeting Time</p>
-                      <p className="text-[10px] text-zinc-500">30 min slot</p>
-                    </button>
-                    <button onClick={handleSuggestFocusBlocks} className="p-3 bg-zinc-50 dark:bg-zinc-900 rounded-xl text-left hover:bg-zinc-100 dark:hover:bg-zinc-800 transition">
-                      <Brain className="text-indigo-500 mb-2" />
-                      <p className="text-xs font-medium dark:text-white">Add Focus Time</p>
-                      <p className="text-[10px] text-zinc-500">Protect deep work</p>
-                    </button>
-                    <button onClick={handleDetectConflicts} className="p-3 bg-zinc-50 dark:bg-zinc-900 rounded-xl text-left hover:bg-zinc-100 dark:hover:bg-zinc-800 transition">
-                      <AlertTriangle className="text-amber-500 mb-2" />
-                      <p className="text-xs font-medium dark:text-white">Check Conflicts</p>
-                      <p className="text-[10px] text-zinc-500">Find overlaps</p>
-                    </button>
-                    <button onClick={handleAnalyzeTravelBuffers} className="p-3 bg-zinc-50 dark:bg-zinc-900 rounded-xl text-left hover:bg-zinc-100 dark:hover:bg-zinc-800 transition">
-                      <Car className="text-green-500 mb-2" />
-                      <p className="text-xs font-medium dark:text-white">Travel Buffers</p>
-                      <p className="text-[10px] text-zinc-500">Check gaps</p>
-                    </button>
-                  </div>
-                </div>
-
-                {/* Scheduling Suggestions */}
-                {schedulingSuggestions.length > 0 && (
-                  <div>
-                    <h4 className="text-xs font-bold text-zinc-500 uppercase tracking-wider mb-3 flex items-center gap-2">
-                      <Lightbulb className="text-amber-500" />
-                      Suggested Times
-                    </h4>
-                    <div className="space-y-2">
-                      {schedulingSuggestions.slice(0, 5).map((suggestion, i) => (
-                        <button
-                          key={i}
-                          onClick={() => {
-                            setNewEventDate(suggestion.date.toISOString().split('T')[0]);
-                            setNewEventTime(suggestion.startTime);
-                            setNewEventEndTime(suggestion.endTime);
-                            setShowEventModal(true);
-                          }}
-                          className="w-full p-3 bg-zinc-50 dark:bg-zinc-900 rounded-xl text-left hover:bg-blue-50 dark:hover:bg-blue-900/20 transition flex items-center justify-between group"
-                        >
-                          <div>
-                            <p className="text-sm font-medium dark:text-white">
-                              {suggestion.date.toLocaleDateString('en-US', { weekday: 'short', month: 'short', day: 'numeric' })}
-                            </p>
-                            <p className="text-xs text-zinc-500">{suggestion.startTime} - {suggestion.endTime}</p>
-                            <p className="text-[10px] text-blue-500 mt-1">{suggestion.reason}</p>
-                          </div>
-                          <div className="flex items-center gap-2">
-                            <span className="text-xs font-bold text-green-500">{suggestion.score}%</span>
-                            <Plus className="text-zinc-400 group-hover:text-blue-500 transition" />
-                          </div>
-                        </button>
-                      ))}
-                    </div>
-                  </div>
-                )}
-
-                {/* Focus Blocks */}
-                {focusBlocks.length > 0 && (
-                  <div>
-                    <h4 className="text-xs font-bold text-zinc-500 uppercase tracking-wider mb-3 flex items-center gap-2">
-                      <Brain className="text-indigo-500" />
-                      Suggested Focus Blocks
-                    </h4>
-                    <div className="space-y-2">
-                      {focusBlocks.slice(0, 4).map((block) => (
-                        <div key={block.id} className="p-3 bg-indigo-50 dark:bg-indigo-900/20 rounded-xl flex items-center justify-between">
-                          <div>
-                            <p className="text-sm font-medium text-indigo-900 dark:text-indigo-200">
-                              {block.date.toLocaleDateString('en-US', { weekday: 'short', month: 'short', day: 'numeric' })}
-                            </p>
-                            <p className="text-xs text-indigo-600 dark:text-indigo-400">{block.startTime} - {block.endTime}</p>
-                            <p className="text-[10px] text-indigo-500 capitalize mt-1">{block.type.replace('_', ' ')}</p>
-                          </div>
-                          <button
-                            onClick={() => handleAddFocusBlock(block)}
-                            className="px-3 py-1.5 bg-indigo-500 text-white text-xs rounded-lg hover:bg-indigo-600 transition"
-                          >
-                            Add
-                          </button>
-                        </div>
-                      ))}
-                    </div>
-                  </div>
-                )}
-
-                {/* Conflicts */}
-                {conflicts.length > 0 && (
-                  <div>
-                    <h4 className="text-xs font-bold text-zinc-500 uppercase tracking-wider mb-3 flex items-center gap-2">
-                      <AlertTriangle className="text-amber-500" />
-                      Conflicts Detected ({conflicts.length})
-                    </h4>
-                    <div className="space-y-2">
-                      {conflicts.map((conflict, i) => (
-                        <div key={i} className="p-3 bg-amber-50 dark:bg-amber-900/20 rounded-xl border border-amber-200 dark:border-amber-800">
-                          <div className="flex items-center gap-2 mb-2">
-                            <span className={`px-2 py-0.5 rounded text-[10px] font-bold uppercase ${conflict.priority === 'high' ? 'bg-red-100 text-red-700' : conflict.priority === 'medium' ? 'bg-amber-100 text-amber-700' : 'bg-zinc-100 text-zinc-700'}`}>
-                              {conflict.priority}
-                            </span>
-                          </div>
-                          <p className="text-sm font-medium dark:text-white">{conflict.conflictingEvents[0].title}</p>
-                          <p className="text-xs text-zinc-500 mb-2">conflicts with {conflict.conflictingEvents[1].title}</p>
-                          {conflict.suggestedResolutions[0] && (
-                            <button
-                              onClick={() => handleSmartReschedule(conflict.conflictingEvents[0])}
-                              className="text-xs text-amber-600 hover:text-amber-800 font-medium"
-                            >
-                              <Wand2 className="mr-1" />
-                              {conflict.suggestedResolutions[0].description}
-                            </button>
-                          )}
-                        </div>
-                      ))}
-                    </div>
-                  </div>
-                )}
-
-                {/* Travel Buffers */}
-                {travelBuffers.length > 0 && (
-                  <div>
-                    <h4 className="text-xs font-bold text-zinc-500 uppercase tracking-wider mb-3 flex items-center gap-2">
-                      <Car className="text-green-500" />
-                      Travel Buffer Alerts
-                    </h4>
-                    <div className="space-y-2">
-                      {travelBuffers.map((buffer, i) => (
-                        <div key={i} className="p-3 bg-green-50 dark:bg-green-900/20 rounded-xl">
-                          <p className="text-sm font-medium dark:text-white">{buffer.fromEvent.title} → {buffer.toEvent.title}</p>
-                          <p className="text-xs text-green-600 dark:text-green-400">{buffer.recommendation}</p>
-                        </div>
-                      ))}
-                    </div>
-                  </div>
-                )}
-              </div>
-            )}
-
-            {/* Insights Tab */}
-            {aiPanelTab === 'insights' && !aiLoading && (
-              <div className="space-y-4">
-                <button onClick={handleAnalyzeRelationships} className="w-full p-3 bg-zinc-50 dark:bg-zinc-900 rounded-xl text-left hover:bg-zinc-100 dark:hover:bg-zinc-800 transition">
-                  <Users className="text-purple-500 mr-2" />
-                  <span className="text-sm font-medium dark:text-white">Refresh Relationship Insights</span>
-                </button>
-
-                {relationshipInsights.length > 0 && (
-                  <div className="space-y-3">
-                    {relationshipInsights.slice(0, 8).map((insight) => (
-                      <div key={insight.contact.id} className="p-3 bg-zinc-50 dark:bg-zinc-900 rounded-xl">
-                        <div className="flex items-center gap-3 mb-2">
-                          <div className={`w-8 h-8 rounded-full ${insight.contact.avatarColor} flex items-center justify-center text-white text-xs font-bold`}>
-                            {insight.contact.name.charAt(0)}
-                          </div>
-                          <div className="flex-1">
-                            <p className="text-sm font-medium dark:text-white">{insight.contact.name}</p>
-                            <p className="text-[10px] text-zinc-500">{insight.contact.email}</p>
-                          </div>
-                          <span className={`px-2 py-0.5 rounded text-[10px] font-bold ${
-                            insight.relationshipHealth === 'strong' ? 'bg-green-100 text-green-700' :
-                            insight.relationshipHealth === 'healthy' ? 'bg-blue-100 text-blue-700' :
-                            insight.relationshipHealth === 'needs_attention' ? 'bg-amber-100 text-amber-700' :
-                            'bg-red-100 text-red-700'
-                          }`}>
-                            {insight.relationshipHealth.replace('_', ' ')}
-                          </span>
-                        </div>
-                        <div className="text-xs text-zinc-500 space-y-1">
-                          <p><CalendarIcon className="mr-1" /> Last met: {insight.lastMeeting ? insight.lastMeeting.toLocaleDateString() : 'Never'}</p>
-                          <p><Clock className="mr-1" /> {insight.daysSinceLastContact} days since last contact</p>
-                          {insight.upcomingMilestones.length > 0 && (
-                            <p className="text-amber-600"><Star className="mr-1" /> {insight.upcomingMilestones[0].description} in {insight.upcomingMilestones[0].daysUntil} days</p>
-                          )}
-                        </div>
-                        {insight.suggestedActions.length > 0 && (
-                          <button
-                            onClick={() => {
-                              setInviteContact(insight.contact);
-                              setShowInviteModal(true);
-                            }}
-                            className="mt-2 text-xs text-purple-500 hover:text-purple-700 font-medium"
-                          >
-                            <CalendarPlus className="mr-1" />
-                            Schedule catch-up
-                          </button>
-                        )}
-                      </div>
-                    ))}
-                  </div>
-                )}
-              </div>
-            )}
-
-            {/* Analytics Tab */}
-            {aiPanelTab === 'analytics' && !aiLoading && (
-              <div className="space-y-4">
-                <button onClick={handleGenerateAnalytics} className="w-full p-3 bg-zinc-50 dark:bg-zinc-900 rounded-xl text-left hover:bg-zinc-100 dark:hover:bg-zinc-800 transition">
-                  <RefreshCw className="text-blue-500 mr-2" />
-                  <span className="text-sm font-medium dark:text-white">Refresh Analytics</span>
-                </button>
-
-                {analytics && (
-                  <div className="space-y-4">
-                    {/* Overview Cards */}
-                    <div className="grid grid-cols-2 gap-3">
-                      <div className="p-4 bg-blue-50 dark:bg-blue-900/20 rounded-xl text-center">
-                        <p className="text-2xl font-bold text-blue-600">{analytics.totalMeetingHours}h</p>
-                        <p className="text-xs text-blue-500">Meeting Hours</p>
-                      </div>
-                      <div className="p-4 bg-green-50 dark:bg-green-900/20 rounded-xl text-center">
-                        <p className="text-2xl font-bold text-green-600">{analytics.focusTimeHours}h</p>
-                        <p className="text-xs text-green-500">Focus Time</p>
-                      </div>
-                    </div>
-
-                    {/* Productivity Score */}
-                    <div className="p-4 bg-zinc-50 dark:bg-zinc-900 rounded-xl">
-                      <div className="flex items-center justify-between mb-2">
-                        <p className="text-sm font-medium dark:text-white">Productivity Score</p>
-                        <span className={`text-xl font-bold ${analytics.productivityScore >= 70 ? 'text-green-500' : analytics.productivityScore >= 50 ? 'text-amber-500' : 'text-red-500'}`}>
-                          {analytics.productivityScore}%
-                        </span>
-                      </div>
-                      <div className="h-2 bg-zinc-200 dark:bg-zinc-700 rounded-full overflow-hidden">
-                        <div
-                          className={`h-full transition-all ${analytics.productivityScore >= 70 ? 'bg-green-500' : analytics.productivityScore >= 50 ? 'bg-amber-500' : 'bg-red-500'}`}
-                          style={{ width: `${analytics.productivityScore}%` }}
-                        />
-                      </div>
-                    </div>
-
-                    {/* Meeting Overload Warning */}
-                    {analytics.meetingOverload && (
-                      <div className="p-3 bg-red-50 dark:bg-red-900/20 rounded-xl border border-red-200 dark:border-red-800">
-                        <p className="text-sm font-medium text-red-700 dark:text-red-300">
-                          <AlertTriangle className="mr-2" />
-                          Meeting Overload Detected
-                        </p>
-                        <p className="text-xs text-red-600 dark:text-red-400 mt-1">Over 50% of your time is in meetings</p>
-                      </div>
-                    )}
-
-                    {/* Time by Category */}
-                    <div>
-                      <h4 className="text-xs font-bold text-zinc-500 uppercase tracking-wider mb-3">Time by Event Type</h4>
-                      <div className="space-y-2">
-                        {Object.entries(analytics.timeByCategory).map(([type, hours]) => (
-                          <div key={type} className="flex items-center justify-between">
-                            <span className="text-sm capitalize dark:text-zinc-300">{type}</span>
-                            <span className="text-sm font-medium dark:text-white">{typeof hours === 'number' ? hours.toFixed(1) : hours}h</span>
-                          </div>
-                        ))}
-                      </div>
-                    </div>
-
-                    {/* Recommendations */}
-                    {analytics.recommendations.length > 0 && (
-                      <div>
-                        <h4 className="text-xs font-bold text-zinc-500 uppercase tracking-wider mb-3">AI Recommendations</h4>
-                        <div className="space-y-2">
-                          {analytics.recommendations.map((rec, i) => (
-                            <div key={i} className="p-3 bg-purple-50 dark:bg-purple-900/20 rounded-xl">
-                              <p className="text-xs text-purple-700 dark:text-purple-300">
-                                <Lightbulb className="mr-2" />
-                                {rec}
-                              </p>
-                            </div>
-                          ))}
-                        </div>
-                      </div>
-                    )}
-                  </div>
-                )}
-              </div>
-            )}
-
-            {/* Goals Tab */}
-            {aiPanelTab === 'goals' && !aiLoading && (
-              <div className="space-y-4">
-                <div className="flex items-center justify-between">
-                  <h4 className="text-xs font-bold text-zinc-500 uppercase tracking-wider">Your Goals</h4>
-                  <button
-                    onClick={() => {
-                      setEditingGoal(null);
-                      setShowGoalModal(true);
-                    }}
-                    className="text-xs text-purple-500 hover:text-purple-700 font-medium"
-                  >
-                    <Plus className="mr-1" /> Add Goal
-                  </button>
-                </div>
-
-                {/* Goals List */}
-                <div className="space-y-2">
-                  {goals.map(goal => (
-                    <div key={goal.id} className="p-3 bg-zinc-50 dark:bg-zinc-900 rounded-xl">
-                      <div className="flex items-center justify-between mb-2">
-                        <div className="flex items-center gap-2">
-                          <div className={`w-3 h-3 rounded-full ${goal.color}`}></div>
-                          <span className="text-sm font-medium dark:text-white">{goal.title}</span>
-                        </div>
-                        <button
-                          onClick={() => {
-                            setEditingGoal(goal);
-                            setShowGoalModal(true);
-                          }}
-                          className="text-zinc-400 hover:text-zinc-600"
-                        >
-                          <Pen className="text-xs" />
-                        </button>
-                      </div>
-                      <p className="text-xs text-zinc-500">{goal.category} • {goal.targetHoursPerWeek}h/week target</p>
-                    </div>
-                  ))}
-                </div>
-
-                <button onClick={handleAnalyzeGoalAlignment} className="w-full p-3 bg-purple-50 dark:bg-purple-900/20 rounded-xl text-left hover:bg-purple-100 dark:hover:bg-purple-900/30 transition">
-                  <PieChart className="text-purple-500 mr-2" />
-                  <span className="text-sm font-medium text-purple-700 dark:text-purple-300">Analyze Goal Alignment</span>
-                </button>
-
-                {/* Goal Alignments */}
-                {goalAlignments.length > 0 && (
-                  <div className="space-y-3">
-                    {goalAlignments.map(alignment => (
-                      <div key={alignment.goal.id} className="p-3 bg-zinc-50 dark:bg-zinc-900 rounded-xl">
-                        <div className="flex items-center justify-between mb-2">
-                          <div className="flex items-center gap-2">
-                            <div className={`w-3 h-3 rounded-full ${alignment.goal.color}`}></div>
-                            <span className="text-sm font-medium dark:text-white">{alignment.goal.title}</span>
-                          </div>
-                          <span className="text-xs font-bold">{Math.round(alignment.allocatedTime / 60)}h / {alignment.goal.targetHoursPerWeek}h</span>
-                        </div>
-                        <div className="h-2 bg-zinc-200 dark:bg-zinc-700 rounded-full overflow-hidden mb-2">
-                          <div
-                            className={`h-full ${alignment.goal.color} transition-all`}
-                            style={{ width: `${Math.min(100, (alignment.allocatedTime / alignment.targetTime) * 100)}%` }}
-                          />
-                        </div>
-                        <p className="text-[10px] text-zinc-500">{alignment.recommendation}</p>
-                      </div>
-                    ))}
-                  </div>
-                )}
-              </div>
-            )}
-          </div>
-        </div>
-      )}
-
-      {/* Meeting Prep Modal */}
-      {showMeetingPrepModal && meetingPrep && prepEvent && (
-        <div className="absolute inset-0 z-50 bg-black/60 backdrop-blur-sm flex items-center justify-center animate-fade-in p-4">
-          <div className="bg-white dark:bg-zinc-900 border border-zinc-200 dark:border-zinc-800 rounded-2xl w-full max-w-lg shadow-2xl animate-scale-in max-h-[90vh] overflow-hidden flex flex-col">
-            <div className="p-6 border-b border-zinc-200 dark:border-zinc-800 flex items-center justify-between">
-              <div>
-                <h3 className="text-lg font-bold dark:text-white flex items-center gap-2">
-                  <ClipboardList className="text-purple-500" />
-                  Meeting Prep
-                </h3>
-                <p className="text-sm text-zinc-500 mt-1">{prepEvent.title}</p>
-              </div>
-              <button onClick={() => { setShowMeetingPrepModal(false); setMeetingPrep(null); setPrepEvent(null); }} className="text-zinc-400 hover:text-zinc-600">
-                <X />
-              </button>
-            </div>
-            <div className="flex-1 overflow-y-auto p-6 space-y-6">
-              {/* Attendees */}
-              {meetingPrep.attendees.length > 0 && (
-                <div>
-                  <h4 className="text-xs font-bold text-zinc-500 uppercase tracking-wider mb-3">Attendees</h4>
-                  <div className="space-y-2">
-                    {meetingPrep.attendees.map(attendee => (
-                      <div key={attendee.email} className="flex items-center gap-3 p-2 bg-zinc-50 dark:bg-zinc-800 rounded-lg">
-                        <div className="w-8 h-8 rounded-full bg-blue-500 flex items-center justify-center text-white text-xs font-bold">
-                          {(attendee.name || attendee.email).charAt(0).toUpperCase()}
-                        </div>
-                        <div>
-                          <p className="text-sm font-medium dark:text-white">{attendee.name || attendee.email}</p>
-                          {attendee.lastInteraction && (
-                            <p className="text-[10px] text-zinc-500">Last met: {attendee.lastInteraction.toLocaleDateString()}</p>
-                          )}
-                        </div>
-                      </div>
-                    ))}
-                  </div>
-                </div>
-              )}
-
-              {/* Suggested Agenda */}
-              {meetingPrep.suggestedAgenda.length > 0 && (
-                <div>
-                  <h4 className="text-xs font-bold text-zinc-500 uppercase tracking-wider mb-3">Suggested Agenda</h4>
-                  <ol className="list-decimal list-inside space-y-1">
-                    {meetingPrep.suggestedAgenda.map((item, i) => (
-                      <li key={i} className="text-sm dark:text-zinc-300">{item}</li>
-                    ))}
-                  </ol>
-                </div>
-              )}
-
-              {/* Talking Points */}
-              {meetingPrep.talkingPoints.length > 0 && (
-                <div>
-                  <h4 className="text-xs font-bold text-zinc-500 uppercase tracking-wider mb-3">Talking Points</h4>
-                  <ul className="space-y-2">
-                    {meetingPrep.talkingPoints.map((point, i) => (
-                      <li key={i} className="flex items-start gap-2">
-                        <Check className="text-green-500 mt-1 text-xs" />
-                        <span className="text-sm dark:text-zinc-300">{point}</span>
-                      </li>
-                    ))}
-                  </ul>
-                </div>
-              )}
-
-              {/* Questions to Ask */}
-              {meetingPrep.questionsToAsk.length > 0 && (
-                <div>
-                  <h4 className="text-xs font-bold text-zinc-500 uppercase tracking-wider mb-3">Questions to Ask</h4>
-                  <ul className="space-y-2">
-                    {meetingPrep.questionsToAsk.map((q, i) => (
-                      <li key={i} className="flex items-start gap-2">
-                        <HelpCircle className="text-blue-500 mt-1 text-xs" />
-                        <span className="text-sm dark:text-zinc-300">{q}</span>
-                      </li>
-                    ))}
-                  </ul>
-                </div>
-              )}
-
-              {/* Context Notes */}
-              {meetingPrep.contextNotes && (
-                <div>
-                  <h4 className="text-xs font-bold text-zinc-500 uppercase tracking-wider mb-3">Context</h4>
-                  <p className="text-sm text-zinc-600 dark:text-zinc-400 bg-zinc-50 dark:bg-zinc-800 p-3 rounded-lg">{meetingPrep.contextNotes}</p>
-                </div>
-              )}
-            </div>
-            <div className="p-4 border-t border-zinc-200 dark:border-zinc-800">
-              <button onClick={() => { setShowMeetingPrepModal(false); setMeetingPrep(null); setPrepEvent(null); }} className="w-full py-2 bg-zinc-900 dark:bg-white text-white dark:text-black rounded-lg text-sm font-bold hover:opacity-90 transition">
-                Done
-              </button>
-            </div>
-          </div>
-        </div>
-      )}
-
-      {/* Smart Reschedule Modal */}
-      {showRescheduleModal && rescheduleEvent && (
-        <div className="absolute inset-0 z-50 bg-black/60 backdrop-blur-sm flex items-center justify-center animate-fade-in p-4">
-          <div className="bg-white dark:bg-zinc-900 border border-zinc-200 dark:border-zinc-800 rounded-2xl w-full max-w-md shadow-2xl animate-scale-in">
-            <div className="p-6 border-b border-zinc-200 dark:border-zinc-800">
-              <div className="flex items-center justify-between">
-                <h3 className="text-lg font-bold dark:text-white flex items-center gap-2">
-                  <CalendarDays className="text-blue-500" />
-                  Smart Reschedule
-                </h3>
-                <button onClick={() => { setShowRescheduleModal(false); setRescheduleEvent(null); setRescheduleOptions([]); }} className="text-zinc-400 hover:text-zinc-600">
-                  <X />
-                </button>
-              </div>
-              <p className="text-sm text-zinc-500 mt-2">Reschedule: {rescheduleEvent.title}</p>
-            </div>
-            <div className="p-6 space-y-3 max-h-80 overflow-y-auto">
-              {rescheduleOptions.length === 0 ? (
-                <p className="text-sm text-zinc-500 text-center py-4">No available time slots found</p>
-              ) : (
-                rescheduleOptions.map((option, i) => (
-                  <button
-                    key={i}
-                    onClick={() => handleApplyReschedule(option)}
-                    className="w-full p-4 bg-zinc-50 dark:bg-zinc-800 rounded-xl text-left hover:bg-blue-50 dark:hover:bg-blue-900/20 transition group"
-                  >
-                    <div className="flex items-center justify-between">
-                      <div>
-                        <p className="text-sm font-medium dark:text-white">
-                          {option.newStart.toLocaleDateString('en-US', { weekday: 'short', month: 'short', day: 'numeric' })}
-                        </p>
-                        <p className="text-xs text-zinc-500">
-                          {option.newStart.toLocaleTimeString([], { hour: '2-digit', minute: '2-digit' })} - {option.newEnd.toLocaleTimeString([], { hour: '2-digit', minute: '2-digit' })}
-                        </p>
-                        <p className="text-[10px] text-blue-500 mt-1">{option.reason}</p>
-                      </div>
-                      <div className="flex items-center gap-2">
-                        <span className="text-xs font-bold text-green-500">{option.availabilityScore}%</span>
-                        <ArrowRight className="text-zinc-400 group-hover:text-blue-500 transition" />
-                      </div>
-                    </div>
-                  </button>
-                ))
-              )}
-            </div>
-          </div>
-        </div>
-      )}
-
-      {/* Goal Editor Modal */}
-      {showGoalModal && (
-        <div className="absolute inset-0 z-50 bg-black/60 backdrop-blur-sm flex items-center justify-center animate-fade-in p-4">
-          <div className="bg-white dark:bg-zinc-900 border border-zinc-200 dark:border-zinc-800 rounded-2xl w-full max-w-md shadow-2xl animate-scale-in">
-            <div className="p-6 border-b border-zinc-200 dark:border-zinc-800 flex items-center justify-between">
-              <h3 className="text-lg font-bold dark:text-white">
-                {editingGoal ? 'Edit Goal' : 'New Goal'}
-              </h3>
-              <button onClick={() => { setShowGoalModal(false); setEditingGoal(null); }} className="text-zinc-400 hover:text-zinc-600">
-                <X />
-              </button>
-            </div>
-            <form
-              onSubmit={(e) => {
-                e.preventDefault();
-                const form = e.target as HTMLFormElement;
-                const formData = new FormData(form);
-                const newGoal: Goal = {
-                  id: editingGoal?.id || `goal-${Date.now()}`,
-                  title: formData.get('title') as string,
-                  category: formData.get('category') as string,
-                  priority: parseInt(formData.get('priority') as string),
-                  targetHoursPerWeek: parseInt(formData.get('hours') as string),
-                  color: formData.get('color') as string || 'bg-blue-500',
-                };
-                if (editingGoal) {
-                  setGoals(prev => prev.map(g => g.id === editingGoal.id ? newGoal : g));
-                } else {
-                  setGoals(prev => [...prev, newGoal]);
-                }
-                setShowGoalModal(false);
-                setEditingGoal(null);
-              }}
-              className="p-6 space-y-4"
-            >
-              <div>
-                <label className="text-xs text-zinc-500 uppercase font-bold mb-1 block">Goal Title</label>
-                <input
-                  type="text"
-                  name="title"
-                  defaultValue={editingGoal?.title}
-                  required
-                  placeholder="e.g., Deep Work"
-                  className="w-full bg-zinc-50 dark:bg-zinc-950 border border-zinc-200 dark:border-zinc-800 rounded-lg p-3 dark:text-white outline-none"
-                />
-              </div>
-              <div>
-                <label className="text-xs text-zinc-500 uppercase font-bold mb-1 block">Category</label>
-                <input
-                  type="text"
-                  name="category"
-                  defaultValue={editingGoal?.category}
-                  required
-                  placeholder="e.g., focus, meetings, client"
-                  className="w-full bg-zinc-50 dark:bg-zinc-950 border border-zinc-200 dark:border-zinc-800 rounded-lg p-3 dark:text-white outline-none"
-                />
-              </div>
-              <div className="grid grid-cols-2 gap-4">
-                <div>
-                  <label className="text-xs text-zinc-500 uppercase font-bold mb-1 block">Hours/Week</label>
-                  <input
-                    type="number"
-                    name="hours"
-                    defaultValue={editingGoal?.targetHoursPerWeek || 10}
-                    required
-                    min="1"
-                    max="40"
-                    className="w-full bg-zinc-50 dark:bg-zinc-950 border border-zinc-200 dark:border-zinc-800 rounded-lg p-3 dark:text-white outline-none"
-                  />
-                </div>
-                <div>
-                  <label className="text-xs text-zinc-500 uppercase font-bold mb-1 block">Priority</label>
-                  <select
-                    name="priority"
-                    defaultValue={editingGoal?.priority || 1}
-                    className="w-full bg-zinc-50 dark:bg-zinc-950 border border-zinc-200 dark:border-zinc-800 rounded-lg p-3 dark:text-white outline-none"
-                  >
-                    <option value="1">High</option>
-                    <option value="2">Medium</option>
-                    <option value="3">Low</option>
-                  </select>
-                </div>
-              </div>
-              <div>
-                <label className="text-xs text-zinc-500 uppercase font-bold mb-2 block">Color</label>
-                <div className="flex gap-2 flex-wrap">
-                  {EVENT_COLORS.map(color => (
-                    <label key={color.id} className="cursor-pointer">
-                      <input type="radio" name="color" value={color.class} defaultChecked={editingGoal?.color === color.class || (!editingGoal && color.id === 'blue')} className="sr-only peer" />
-                      <div className={`w-8 h-8 rounded-full ${color.class} transition ring-2 ring-offset-2 ring-transparent peer-checked:ring-purple-500`}></div>
-                    </label>
-                  ))}
-                </div>
-              </div>
-              <div className="pt-4 flex justify-between">
-                {editingGoal && (
-                  <button
-                    type="button"
-                    onClick={() => {
-                      setGoals(prev => prev.filter(g => g.id !== editingGoal.id));
-                      setShowGoalModal(false);
-                      setEditingGoal(null);
-                    }}
-                    className="px-4 py-2 text-red-500 hover:bg-red-50 dark:hover:bg-red-900/20 rounded-lg transition"
-                  >
-                    Delete
-                  </button>
-                )}
-                <div className="flex gap-3 ml-auto">
-                  <button type="button" onClick={() => { setShowGoalModal(false); setEditingGoal(null); }} className="px-4 py-2 text-zinc-500 hover:text-zinc-900 dark:hover:text-white transition">
-                    Cancel
-                  </button>
-                  <button type="submit" className="px-5 py-2 bg-purple-500 text-white rounded-lg text-sm font-bold hover:bg-purple-600 transition">
-                    {editingGoal ? 'Save' : 'Create'}
-                  </button>
-                </div>
-              </div>
-            </form>
-          </div>
-        </div>
-      )}
-
-      {/* Day Detail Modal */}
-      <DayDetailModal
-        show={showDayDetail}
-        date={dayDetailDate}
-        events={dayDetailEvents}
-        onClose={() => {
-          setShowDayDetail(false);
-          setDayDetailDate(null);
-          setDayDetailEvents([]);
-        }}
-        onEventClick={(event) => {
-          setShowDayDetail(false);
-          openEventDetail(event);
-        }}
-        onCreateEvent={() => {
-          setShowDayDetail(false);
-          if (dayDetailDate) {
-            setNewEventDate(dayDetailDate.toISOString().split('T')[0]);
+      <CalendarAIPanel
+        showAIPanel={showAIPanel}
+        onClose={() => setShowAIPanel(false)}
+        aiPanelTab={aiPanelTab}
+        onTabChange={setAIPanelTab}
+        aiLoading={aiLoading}
+        naturalLanguageInput={naturalLanguageInput}
+        onNaturalLanguageChange={setNaturalLanguageInput}
+        onNaturalLanguageSubmit={handleNaturalLanguageSubmit}
+        onGetSuggestions={handleGetSuggestions}
+        onSuggestFocusBlocks={handleSuggestFocusBlocks}
+        onDetectConflicts={handleDetectConflicts}
+        onAnalyzeTravelBuffers={handleAnalyzeTravelBuffers}
+        onAddFocusBlock={handleAddFocusBlock}
+        onSmartReschedule={handleSmartReschedule}
+        schedulingSuggestions={schedulingSuggestions}
+        focusBlocks={focusBlocks}
+        conflicts={conflicts}
+        travelBuffers={travelBuffers}
+        onOpenEventModal={() => setShowEventModal(true)}
+        onSetNewEventDate={setNewEventDate}
+        onSetNewEventTime={setNewEventTime}
+        onSetNewEventEndTime={setNewEventEndTime}
+        onSetNewEventTitle={setNewEventTitle}
+        onSetNewEventDesc={setNewEventDesc}
+        onSetNewEventLocation={setNewEventLocation}
+        onSetNewEventType={setNewEventType}
+        relationshipInsights={relationshipInsights}
+        onAnalyzeRelationships={handleAnalyzeRelationships}
+        onOpenInviteModal={(contact) => { setInviteContact(contact); setShowInviteModal(true); }}
+        analytics={analytics}
+        onGenerateAnalytics={handleGenerateAnalytics}
+        goals={goals}
+        goalAlignments={goalAlignments}
+        showGoalModal={showGoalModal}
+        editingGoal={editingGoal}
+        onOpenGoalModal={(goal) => { setEditingGoal(goal); setShowGoalModal(true); }}
+        onCloseGoalModal={() => { setShowGoalModal(false); setEditingGoal(null); }}
+        onSaveGoal={(newGoal) => {
+          if (editingGoal) {
+            setGoals(prev => prev.map(g => g.id === editingGoal.id ? newGoal : g));
+          } else {
+            setGoals(prev => [...prev, newGoal]);
           }
-          setShowEventModal(true);
+          setShowGoalModal(false);
+          setEditingGoal(null);
         }}
+        onDeleteGoal={(id) => { setGoals(prev => prev.filter(g => g.id !== id)); setShowGoalModal(false); setEditingGoal(null); }}
+        onAnalyzeGoalAlignment={handleAnalyzeGoalAlignment}
+        showMeetingPrepModal={showMeetingPrepModal}
+        meetingPrep={meetingPrep}
+        prepEvent={prepEvent}
+        onCloseMeetingPrep={() => { setShowMeetingPrepModal(false); setPrepEvent(null); }}
+        showRescheduleModal={showRescheduleModal}
+        rescheduleEvent={rescheduleEvent}
+        rescheduleOptions={rescheduleOptions}
+        onCloseRescheduleModal={() => { setShowRescheduleModal(false); setRescheduleEvent(null); }}
+        onApplyReschedule={handleApplyReschedule}
+        activeFollowUpPrompt={activeFollowUpPrompt}
+        onFollowUpCreateAction={(suggestion) => {
+          if (suggestion.type === 'event') {
+            setNewEventTitle(suggestion.title);
+            setNewEventDate(suggestion.suggestedTime.toISOString().split('T')[0]);
+            setNewEventTime(`${suggestion.suggestedTime.getHours().toString().padStart(2, '0')}:${suggestion.suggestedTime.getMinutes().toString().padStart(2, '0')}`);
+            setNewEventDesc(suggestion.description || '');
+            setShowEventModal(true);
+          }
+          postMeetingService.markAsActioned(activeFollowUpPrompt!.id);
+          setActiveFollowUpPrompt(null);
+        }}
+        onFollowUpDismiss={(id) => { postMeetingService.dismissFollowUp(id); setActiveFollowUpPrompt(null); }}
+        onFollowUpSkip={(id) => { postMeetingService.dismissFollowUp(id); setActiveFollowUpPrompt(null); }}
       />
-
-      {/* Post-Meeting Follow-Up Prompt */}
-      {activeFollowUpPrompt && (
-        <div className="fixed bottom-6 right-6 max-w-md z-[100] animate-fade-in">
-          <PostMeetingPrompt
-            followUp={activeFollowUpPrompt}
-            onCreateAction={(suggestion) => {
-              // Handle action creation based on type
-              if (suggestion.type === 'meeting' && suggestion.suggestedTime) {
-                setNewEventTitle(suggestion.title);
-                setNewEventDate(suggestion.suggestedTime.toISOString().split('T')[0]);
-                setNewEventTime(`${suggestion.suggestedTime.getHours().toString().padStart(2, '0')}:${suggestion.suggestedTime.getMinutes().toString().padStart(2, '0')}`);
-                setNewEventDesc(suggestion.description || '');
-                setShowEventModal(true);
-              }
-              // Could also handle task, reminder, note types here
-              postMeetingService.markAsActioned(activeFollowUpPrompt.id);
-              setActiveFollowUpPrompt(null);
-            }}
-            onDismiss={(id) => {
-              postMeetingService.dismissFollowUp(id);
-              setActiveFollowUpPrompt(null);
-            }}
-            onSkip={(id) => {
-              postMeetingService.dismissFollowUp(id);
-              setActiveFollowUpPrompt(null);
-            }}
-          />
-        </div>
-      )}
 
       {/* Custom Event Types Manager */}
       {showCustomTypesManager && (
