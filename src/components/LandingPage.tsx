@@ -201,6 +201,58 @@ const LandingPage: React.FC<LandingPageProps> = ({ onGetStarted }) => {
     window.location.href = '/?signin';
   };
 
+  // ── Animated SVG icons for Voxer mode cards ────────────────────────────────
+  const voxSvg = (idx: number): React.ReactNode => {
+    const icons: React.ReactNode[] = [
+      // 0 — Classic Voxer: 5-bar waveform equaliser
+      <svg viewBox="0 0 20 20" width={18} height={18} fill="currentColor" aria-hidden="true">
+        <rect x="1"    y="9" width="2.5" height="2"  rx="1" className="lp-bar-a" />
+        <rect x="4.5"  y="6" width="2.5" height="8"  rx="1" className="lp-bar-b" />
+        <rect x="8"    y="3" width="2.5" height="14" rx="1" className="lp-bar-c" />
+        <rect x="11.5" y="6" width="2.5" height="8"  rx="1" className="lp-bar-d" />
+        <rect x="15"   y="9" width="2.5" height="2"  rx="1" className="lp-bar-e" />
+      </svg>,
+      // 1 — Quick Vox: lightning bolt flash
+      <svg viewBox="0 0 20 20" width={18} height={18} fill="currentColor" aria-hidden="true">
+        <path d="M11 2L4 12h6l-1 6 7-10h-6z" className="lp-flash" />
+      </svg>,
+      // 2 — Team Vox: two silhouettes
+      <svg viewBox="0 0 20 20" width={18} height={18} fill="currentColor" aria-hidden="true">
+        <circle cx="7" cy="6" r="2.5" />
+        <path d="M2 17a5 5 0 0110 0" />
+        <circle cx="14" cy="6" r="2" opacity={0.6} />
+        <path d="M12 17a4 4 0 014 0" opacity={0.6} />
+      </svg>,
+      // 3 — Vox Drop: clock with spinning hands
+      <svg viewBox="0 0 20 20" width={18} height={18} fill="none" stroke="currentColor" strokeWidth={1.5} strokeLinecap="round" aria-hidden="true">
+        <circle cx="10" cy="10" r="7" />
+        <line x1="10" y1="10" x2="10" y2="5.5" className="lp-clock-sec" />
+        <line x1="10" y1="10" x2="13" y2="11"  className="lp-clock-min" />
+      </svg>,
+      // 4 — Vox Notes: notepad
+      <svg viewBox="0 0 20 20" width={18} height={18} fill="none" stroke="currentColor" strokeWidth={1.5} strokeLinecap="round" aria-hidden="true">
+        <path d="M4 3h9l3 3v11a1 1 0 01-1 1H4a1 1 0 01-1-1V4a1 1 0 011-1z" />
+        <line x1="6" y1="8"  x2="12" y2="8" />
+        <line x1="6" y1="11" x2="12" y2="11" />
+        <line x1="6" y1="14" x2="9"  y2="14" />
+        <polyline points="13,3 13,6 16,6" strokeWidth={1.2} />
+      </svg>,
+      // 5 — Video Vox: camera with pulsing record dot
+      <svg viewBox="0 0 20 20" width={18} height={18} fill="none" stroke="currentColor" strokeWidth={1.5} strokeLinecap="round" aria-hidden="true">
+        <rect x="1" y="6" width="11" height="9" rx="2" fill="currentColor" fillOpacity={0.15} />
+        <path d="M12 9l5.5-3v8L12 11" strokeLinejoin="round" />
+        <circle cx="17.5" cy="4" r="1.5" fill="#f43f5e" stroke="none" className="lp-rec-dot" />
+      </svg>,
+      // 6 — Pulse Radio: two expanding concentric rings
+      <svg viewBox="0 0 20 20" width={18} height={18} fill="none" aria-hidden="true">
+        <circle cx="10" cy="10" r="2.5" fill="currentColor" />
+        <circle cx="10" cy="10" r="5" stroke="currentColor" strokeWidth={1.2} className="lp-radio-a" />
+        <circle cx="10" cy="10" r="5" stroke="currentColor" strokeWidth={1}   className="lp-radio-b" opacity={0.55} />
+      </svg>,
+    ];
+    return icons[idx] ?? null;
+  };
+
   return (
     <div className="min-h-screen bg-zinc-950 text-white overflow-x-hidden overflow-y-auto selection:bg-rose-500/30 selection:text-rose-200">
 
@@ -831,7 +883,7 @@ const LandingPage: React.FC<LandingPageProps> = ({ onGetStarted }) => {
                   style={{ animationDelay: `${i * 0.08}s` }}
                 >
                   <div className="w-10 h-10 rounded-xl bg-rose-500/10 flex items-center justify-center mb-3 group-hover:bg-rose-500/20 transition-colors">
-                    <i className={`${mode.icon} text-rose-500`}></i>
+                    <span className="text-rose-500">{voxSvg(i)}</span>
                   </div>
                   <h3 className="text-sm font-bold text-white mb-1.5">{mode.name}</h3>
                   <p className="text-zinc-500 text-xs leading-relaxed">{mode.desc}</p>
@@ -916,7 +968,38 @@ const LandingPage: React.FC<LandingPageProps> = ({ onGetStarted }) => {
                   style={{ animationDelay: `${i * 0.1}s` }}
                 >
                   <div className="lp-icon-wrap-teal w-11 h-11 rounded-xl bg-teal-500/10 flex items-center justify-center mb-4 group-hover:bg-teal-500/20 transition-all duration-300">
-                    <i className={`${item.icon} text-teal-400 ${['lp-icon-bob','lp-icon-stamp','lp-icon-throb','lp-icon-tilt'][i]}`} style={{ animationDelay: `${i * 0.5}s` }}></i>
+                    <span className="text-teal-400">
+                      {[
+                        // 0 — Decision Kanban: 2×2 kanban columns, one highlighted card
+                        <svg viewBox="0 0 20 20" width={18} height={18} fill="currentColor" aria-hidden="true">
+                          <rect x="2"  y="2" width="6.5" height="8"  rx="1.5" opacity={0.35} />
+                          <rect x="2"  y="12" width="6.5" height="6" rx="1.5" opacity={0.35} />
+                          <rect x="11" y="2" width="7"   height="5"  rx="1.5" opacity={0.35} />
+                          <rect x="11" y="9" width="7"   height="9"  rx="1.5" className="lp-throb-sm" />
+                        </svg>,
+                        // 1 — AI Task Prioritizer: checklist with animated stroke-draw tick
+                        <svg viewBox="0 0 20 20" width={18} height={18} fill="none" stroke="currentColor" strokeWidth={1.5} strokeLinecap="round" strokeLinejoin="round" aria-hidden="true">
+                          <polyline points="3,5 4.5,7 7,3" className="lp-check-draw" fill="none" />
+                          <line x1="9" y1="5" x2="17" y2="5" opacity={0.85} />
+                          <line x1="3" y1="10" x2="17" y2="10" opacity={0.45} />
+                          <line x1="3" y1="15" x2="14" y2="15" opacity={0.3} />
+                        </svg>,
+                        // 2 — Team Health Dashboard: pulsing heart + ECG line
+                        <svg viewBox="0 0 20 20" width={18} height={18} fill="none" aria-hidden="true">
+                          <path d="M10 16S3 11.5 3 6.5A3.5 3.5 0 019.5 4L10 4.4l.5-.4A3.5 3.5 0 0117 6.5C17 11.5 10 16 10 16z" fill="currentColor" fillOpacity={0.2} stroke="currentColor" strokeWidth={1.2} className="lp-throb-sm" />
+                          <polyline points="1,10 4,10 6,7 8,13 10,10 13,10 15,7.5 17,10" stroke="currentColor" strokeWidth={1.2} fill="none" strokeLinecap="round" strokeLinejoin="round" className="lp-ecg-line" />
+                        </svg>,
+                        // 3 — Meeting Intelligence: file with animated waveform bars
+                        <svg viewBox="0 0 20 20" width={18} height={18} fill="none" stroke="currentColor" strokeWidth={1.3} strokeLinecap="round" aria-hidden="true">
+                          <path d="M4 3h9l3 3v11a1 1 0 01-1 1H4a1 1 0 01-1-1V4a1 1 0 011-1z" />
+                          <path d="M13 3v3h3" />
+                          <rect x="5.5"  y="12"   width="1.5" height="3.5" rx=".75" fill="currentColor" stroke="none" className="lp-bar-a" />
+                          <rect x="8"    y="10"   width="1.5" height="5.5" rx=".75" fill="currentColor" stroke="none" className="lp-bar-b" />
+                          <rect x="10.5" y="11"   width="1.5" height="4.5" rx=".75" fill="currentColor" stroke="none" className="lp-bar-c" />
+                          <rect x="13"   y="13"   width="1.5" height="2.5" rx=".75" fill="currentColor" stroke="none" className="lp-bar-d" />
+                        </svg>,
+                      ][i]}
+                    </span>
                   </div>
                   <h3 className="font-bold text-white mb-2">{item.title}</h3>
                   <p className="text-zinc-500 text-sm leading-relaxed mb-4">{item.desc}</p>
@@ -986,7 +1069,29 @@ const LandingPage: React.FC<LandingPageProps> = ({ onGetStarted }) => {
                 ].map((item, i) => (
                   <div key={item.title} className="flex gap-4 p-5 rounded-2xl bg-zinc-950/80 border border-zinc-800 hover:border-rose-500/30 transition-all duration-300 group">
                     <div className="lp-icon-wrap-rose w-10 h-10 rounded-xl bg-rose-500/10 flex items-center justify-center shrink-0 group-hover:bg-rose-500/20 transition-all duration-300">
-                      <i className={`${item.icon} text-rose-400 ${['lp-icon-throb','lp-icon-bob','lp-icon-spin'][i]}`} style={{ animationDelay: `${i * 0.6}s` }}></i>
+                      <span className="text-rose-400">
+                        {[
+                          // 0 — Relationship Health Score: pulsing heart
+                          <svg viewBox="0 0 20 20" width={16} height={16} fill="currentColor" aria-hidden="true">
+                            <path d="M10 17S3 12 3 7a3.5 3.5 0 017-1.3A3.5 3.5 0 0117 7c0 5-7 10-7 10z" className="lp-throb-sm" />
+                          </svg>,
+                          // 1 — Contact Circles: orbiting dot around central circle
+                          <svg viewBox="0 0 20 20" width={16} height={16} fill="currentColor" aria-hidden="true">
+                            <circle cx="10" cy="10" r="3" />
+                            <circle cx="10" cy="10" r="7" fill="none" stroke="currentColor" strokeWidth={0.8} strokeDasharray="3 3" opacity={0.4} />
+                            <g className="lp-orbit-g">
+                              <circle cx="10" cy="3" r="1.5" />
+                            </g>
+                          </svg>,
+                          // 2 — Network Analytics: animated 4-bar chart
+                          <svg viewBox="0 0 20 20" width={16} height={16} fill="currentColor" aria-hidden="true">
+                            <rect x="1.5"  y="14" width="3" height="4"  rx="1" className="lp-bar-a" />
+                            <rect x="6.5"  y="10" width="3" height="8"  rx="1" className="lp-bar-b" />
+                            <rect x="11.5" y="6"  width="3" height="12" rx="1" className="lp-bar-c" />
+                            <rect x="16.5" y="8"  width="2" height="10" rx="1" className="lp-bar-d" />
+                          </svg>,
+                        ][i]}
+                      </span>
                     </div>
                     <div>
                       <h3 className="font-bold text-white mb-1 text-sm">{item.title}</h3>

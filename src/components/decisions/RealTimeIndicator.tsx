@@ -9,7 +9,7 @@ interface RealTimeIndicatorProps {
   className?: string;
 }
 
-export const RealTimeIndicator: React.FC<RealTimeIndicatorProps> = ({
+const RealTimeIndicatorBase: React.FC<RealTimeIndicatorProps> = ({
   status,
   className = ''
 }) => {
@@ -63,3 +63,6 @@ export const RealTimeIndicator: React.FC<RealTimeIndicatorProps> = ({
     </div>
   );
 };
+
+export const RealTimeIndicator = React.memo(RealTimeIndicatorBase);
+RealTimeIndicator.displayName = 'RealTimeIndicator';

@@ -9,7 +9,7 @@ interface AICoachProps {
   onDismiss: (index: number) => void;
 }
 
-export const AICoach: React.FC<AICoachProps> = ({
+const AICoachBase: React.FC<AICoachProps> = ({
   suggestions,
   onApplySuggestion,
   onDismiss
@@ -82,3 +82,6 @@ export const AICoach: React.FC<AICoachProps> = ({
     </div>
   );
 };
+
+export const AICoach = React.memo(AICoachBase);
+AICoach.displayName = 'AICoach';

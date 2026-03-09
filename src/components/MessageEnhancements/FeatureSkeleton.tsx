@@ -55,4 +55,4 @@ export const FeatureSkeleton: React.FC<FeatureSkeletonProps> = ({
   return <div className={`${baseClasses} h-12 w-full ${className}`} />;
 };
 
-export default FeatureSkeleton;
+export default React.memo(FeatureSkeleton);

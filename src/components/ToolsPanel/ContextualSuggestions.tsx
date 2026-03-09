@@ -16,7 +16,7 @@ interface ContextualSuggestionsProps {
   onToolSelect: (toolId: string) => void;
 }
 
-export const ContextualSuggestions: React.FC<ContextualSuggestionsProps> = ({
+const ContextualSuggestionsBase: React.FC<ContextualSuggestionsProps> = ({
   allTools,
   recentTools,
   currentTime = new Date(),
@@ -108,3 +108,6 @@ export const ContextualSuggestions: React.FC<ContextualSuggestionsProps> = ({
     </div>
   );
 };
+
+export const ContextualSuggestions = React.memo(ContextualSuggestionsBase);
+ContextualSuggestions.displayName = 'ContextualSuggestions';

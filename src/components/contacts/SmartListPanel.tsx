@@ -109,4 +109,4 @@ export const SmartListPanel: React.FC<SmartListPanelProps> = ({
   );
 };
 
-export default SmartListPanel;
+export default React.memo(SmartListPanel);

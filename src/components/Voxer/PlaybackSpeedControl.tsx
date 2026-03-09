@@ -110,4 +110,4 @@ export const PlaybackSpeedControl: React.FC<PlaybackSpeedControlProps> = ({
   );
 };
 
-export default PlaybackSpeedControl;
+export default React.memo(PlaybackSpeedControl);

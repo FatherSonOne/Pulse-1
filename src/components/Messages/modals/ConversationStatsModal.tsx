@@ -117,4 +117,4 @@ export const ConversationStatsModal: React.FC<ConversationStatsModalProps> = ({
   );
 };
 
-export default ConversationStatsModal;
+export default React.memo(ConversationStatsModal);

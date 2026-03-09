@@ -394,6 +394,104 @@ kbd {
    icon-tilt, icon-stamp
    ============================================================ */
 
+/* ============================================================
+   ANIMATED SVG ICONS — keyframes + utility classes
+   Used in Voxer, Decisions, CRM, and Logos Vision sections
+   ============================================================ */
+
+@keyframes lp-bars {
+  0%, 100% { transform: scaleY(1); }
+  50%       { transform: scaleY(0.28); }
+}
+
+@keyframes lp-flash {
+  0%, 60%, 100% { opacity: 1; }
+  30%            { opacity: 0.32; }
+}
+
+@keyframes lp-radio-ring {
+  0%   { transform: scale(1);   opacity: 0.75; }
+  100% { transform: scale(2.2); opacity: 0; }
+}
+
+@keyframes lp-clock-hand {
+  to { transform: rotate(360deg); }
+}
+
+@keyframes lp-rec-dot {
+  0%, 100% { opacity: 1; }
+  50%       { opacity: 0.18; }
+}
+
+@keyframes lp-throb-sm {
+  0%, 100% { transform: scale(1); }
+  50%       { transform: scale(1.2); }
+}
+
+@keyframes lp-orbit {
+  to { transform: rotate(360deg); }
+}
+
+@keyframes lp-check {
+  0%   { stroke-dashoffset: 20; }
+  100% { stroke-dashoffset: 0; }
+}
+
+@keyframes lp-ecg {
+  0%, 100% { stroke-dashoffset: 50; }
+  55%       { stroke-dashoffset: 0; }
+}
+
+/* Bar wave classes */
+.lp-bar-a { animation: lp-bars 1.2s ease-in-out 0s    infinite; }
+.lp-bar-b { animation: lp-bars 1.2s ease-in-out .15s  infinite; }
+.lp-bar-c { animation: lp-bars 1.2s ease-in-out .3s   infinite; }
+.lp-bar-d { animation: lp-bars 1.2s ease-in-out .45s  infinite; }
+.lp-bar-e { animation: lp-bars 1.2s ease-in-out .6s   infinite; }
+
+/* Other icon animation classes */
+.lp-flash     { animation: lp-flash   1.8s ease-in-out infinite; }
+
+.lp-radio-a   {
+  animation: lp-radio-ring 1.8s ease-out 0s   infinite;
+  transform-origin: 50% 50%; /* SVG viewport center — circles centered at 10,10 */
+}
+.lp-radio-b   {
+  animation: lp-radio-ring 1.8s ease-out .6s  infinite;
+  transform-origin: 50% 50%;
+}
+
+.lp-clock-sec {
+  animation: lp-clock-hand 2s   linear infinite;
+  transform-origin: 10px 10px;
+}
+.lp-clock-min {
+  animation: lp-clock-hand 20s  linear infinite;
+  transform-origin: 10px 10px;
+}
+
+.lp-rec-dot   { animation: lp-rec-dot  1s    ease-in-out infinite; }
+
+.lp-throb-sm  { animation: lp-throb-sm 1.5s  ease-in-out infinite; }
+
+.lp-orbit-g   {
+  animation: lp-orbit 3s linear infinite;
+  transform-origin: 10px 10px; /* center of 20x20 SVG viewport */
+}
+
+.lp-check-draw {
+  stroke-dasharray:  20;
+  stroke-dashoffset: 20;
+  animation: lp-check 1.1s ease-out forwards,
+             lp-check 4s   ease-in-out 1.1s infinite;
+}
+
+.lp-ecg-line {
+  stroke-dasharray:  50;
+  stroke-dashoffset: 50;
+  animation: lp-ecg 2s ease-out infinite;
+}
+
 @media (prefers-reduced-motion: reduce) {
   *,
   *::before,

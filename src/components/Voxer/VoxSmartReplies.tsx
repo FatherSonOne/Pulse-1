@@ -119,4 +119,4 @@ export const VoxSmartReplies: React.FC<VoxSmartRepliesProps> = ({
   );
 };
 
-export default VoxSmartReplies;
+export default React.memo(VoxSmartReplies);

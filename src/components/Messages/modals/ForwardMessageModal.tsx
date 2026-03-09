@@ -120,4 +120,4 @@ export const ForwardMessageModal: React.FC<ForwardMessageModalProps> = ({
   );
 };
 
-export default ForwardMessageModal;
+export default React.memo(ForwardMessageModal);

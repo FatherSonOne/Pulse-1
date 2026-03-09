@@ -14,7 +14,7 @@ interface TokenStreamProps {
   showAlternatives?: boolean;
 }
 
-export const TokenStream: React.FC<TokenStreamProps> = ({
+const TokenStreamBase: React.FC<TokenStreamProps> = ({
   tokens,
   isStreaming,
   showConfidence = true,
@@ -62,3 +62,6 @@ export const TokenStream: React.FC<TokenStreamProps> = ({
     </div>
   );
 };
+
+export const TokenStream = React.memo(TokenStreamBase);
+TokenStream.displayName = 'TokenStream';

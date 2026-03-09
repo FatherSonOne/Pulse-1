@@ -48,4 +48,4 @@ const AILabProgress: React.FC<AILabProgressProps> = ({
   );
 };
 
-export default AILabProgress;
+export default React.memo(AILabProgress);

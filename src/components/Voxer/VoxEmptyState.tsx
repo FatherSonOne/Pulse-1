@@ -118,4 +118,4 @@ export const VoxEmptyState: React.FC<VoxEmptyStateProps> = ({
   );
 };
 
-export default VoxEmptyState;
+export default React.memo(VoxEmptyState);
