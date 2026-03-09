@@ -2,6 +2,8 @@
 import React, { useState, useEffect, useMemo } from 'react';
 import { AnimatedIcon } from '../ui/AnimatedIcon';
 
+import { CheckCircle, Filter } from 'lucide-react';
+
 interface Achievement {
   id: string;
   title: string;
@@ -285,7 +287,7 @@ export const AchievementSystemEnhanced: React.FC<AchievementSystemEnhancedProps>
               : 'text-zinc-600 dark:text-zinc-400 hover:bg-zinc-100 dark:hover:bg-zinc-700'
           }`}
         >
-          <i className="fa-solid fa-filter" />
+          <Filter />
           Unlocked
         </button>
       </div>
@@ -340,7 +342,7 @@ export const AchievementSystemEnhanced: React.FC<AchievementSystemEnhancedProps>
               {/* Unlocked Checkmark */}
               {achievement.unlocked && (
                 <div className="absolute bottom-1 right-1">
-                  <i className="fa-solid fa-check-circle text-emerald-500" />
+                  <CheckCircle className="text-emerald-500" />
                 </div>
               )}
             </div>

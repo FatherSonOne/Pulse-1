@@ -1,5 +1,7 @@
 import React, { Component, ErrorInfo, ReactNode } from 'react';
 
+import { Unplug } from 'lucide-react';
+
 interface Props {
   children: ReactNode;
   featureName: string;
@@ -41,7 +43,7 @@ export class MessageEnhancementErrorBoundary extends Component<Props, State> {
         <div className="flex items-center justify-center p-4 bg-zinc-100 dark:bg-zinc-800/50 rounded-lg border border-zinc-200 dark:border-zinc-700">
           <div className="text-center space-y-2">
             <div className="w-10 h-10 mx-auto rounded-full bg-amber-100 dark:bg-amber-900/30 flex items-center justify-center">
-              <i className="fa-solid fa-plug-circle-exclamation text-amber-500 text-lg"></i>
+              <Unplug className="text-amber-500 text-lg" />
             </div>
             <p className="text-sm text-zinc-600 dark:text-zinc-400">
               {this.props.featureName} unavailable

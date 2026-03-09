@@ -17,6 +17,8 @@ import { buildKnowledgeGraph } from '../../../services/advancedAIService';
 import { KnowledgeDoc } from '../../../services/ragService';
 import { VoiceTextButton } from '../../shared/VoiceTextButton';
 
+import { AlertTriangle, Columns, FileText, GitFork, List, Minus, MousePointer, Plus, Search, X } from 'lucide-react';
+
 interface KnowledgeGraphViewerProps {
   documents: KnowledgeDoc[];
   apiKey: string;
@@ -400,7 +402,7 @@ export const KnowledgeGraphViewer: React.FC<KnowledgeGraphViewerProps> = ({
   if (documents.length === 0) {
     return (
       <div className="flex flex-col items-center justify-center h-64 text-gray-400">
-        <i className="fas fa-project-diagram text-4xl mb-4 opacity-50" />
+        <GitFork className="fas text-4xl mb-4 opacity-50" />
         <p>Select documents to build a knowledge graph</p>
       </div>
     );
@@ -412,7 +414,7 @@ export const KnowledgeGraphViewer: React.FC<KnowledgeGraphViewerProps> = ({
       <div className="flex items-center justify-between p-4 border-b border-gray-800">
         <div className="flex items-center gap-3">
           <div className="p-2 bg-gradient-to-br from-purple-500/20 to-pink-500/20 rounded-lg">
-            <i className="fas fa-project-diagram text-purple-400" />
+            <GitFork className="fas text-purple-400" />
           </div>
           <div>
             <h2 className="text-lg font-semibold text-white">Knowledge Graph</h2>
@@ -431,7 +433,7 @@ export const KnowledgeGraphViewer: React.FC<KnowledgeGraphViewerProps> = ({
             }`}
             title="Toggle legend"
           >
-            <i className="fas fa-list-ul" />
+            <List className="fas" />
           </button>
           <button
             onClick={() => setShowSidebar(!showSidebar)}
@@ -440,14 +442,14 @@ export const KnowledgeGraphViewer: React.FC<KnowledgeGraphViewerProps> = ({
             }`}
             title="Toggle sidebar"
           >
-            <i className="fas fa-columns" />
+            <Columns className="fas" />
           </button>
           {onClose && (
             <button
               onClick={onClose}
               className="p-2 text-gray-400 hover:text-white hover:bg-gray-800 rounded-lg transition-colors"
             >
-              <i className="fas fa-times" />
+              <X className="fas" />
             </button>
           )}
         </div>
@@ -496,7 +498,7 @@ export const KnowledgeGraphViewer: React.FC<KnowledgeGraphViewerProps> = ({
       {error && (
         <div className="flex-1 flex flex-col items-center justify-center p-8">
           <div className="p-4 bg-red-500/10 rounded-full mb-4">
-            <i className="fas fa-exclamation-triangle text-3xl text-red-400" />
+            <AlertTriangle className="fas text-3xl text-red-400" />
           </div>
           <p className="text-red-400 mb-4">{error}</p>
           <button
@@ -526,7 +528,7 @@ export const KnowledgeGraphViewer: React.FC<KnowledgeGraphViewerProps> = ({
                 onClick={() => setZoom(z => Math.min(3, z + 0.2))}
                 className="p-2 bg-gray-800/80 text-gray-300 hover:text-white rounded-lg"
               >
-                <i className="fas fa-plus" />
+                <Plus className="fas" />
               </button>
               <button
                 onClick={() => setZoom(1)}
@@ -538,7 +540,7 @@ export const KnowledgeGraphViewer: React.FC<KnowledgeGraphViewerProps> = ({
                 onClick={() => setZoom(z => Math.max(0.3, z - 0.2))}
                 className="p-2 bg-gray-800/80 text-gray-300 hover:text-white rounded-lg"
               >
-                <i className="fas fa-minus" />
+                <Minus className="fas" />
               </button>
             </div>
 
@@ -572,7 +574,7 @@ export const KnowledgeGraphViewer: React.FC<KnowledgeGraphViewerProps> = ({
             <div className="absolute top-4 right-4 w-72">
               <div className="relative flex items-center gap-2">
                 <div className="relative flex-1">
-                  <i className="fas fa-search absolute left-3 top-1/2 -translate-y-1/2 text-gray-500" />
+                  <Search className="fas absolute left-3 top-1/2 -translate-y-1/2 text-gray-500" />
                   <input
                     type="text"
                     placeholder="Search entities..."
@@ -604,7 +606,7 @@ export const KnowledgeGraphViewer: React.FC<KnowledgeGraphViewerProps> = ({
                   />
                 ) : (
                   <div className="text-center text-gray-400 py-8">
-                    <i className="fas fa-mouse-pointer text-2xl mb-2 opacity-50" />
+                    <MousePointer className="fas text-2xl mb-2 opacity-50" />
                     <p className="text-sm">Click a node to see details</p>
                   </div>
                 )}
@@ -693,7 +695,7 @@ const NodeDetails: React.FC<NodeDetailsProps> = ({
                 key={docId}
                 className="flex items-center gap-2 p-2 bg-gray-800/30 rounded text-sm"
               >
-                <i className="fas fa-file-alt text-gray-500" />
+                <FileText className="fas text-gray-500" />
                 <span className="text-gray-300 truncate">{doc?.title || docId}</span>
               </div>
             );

@@ -1,5 +1,7 @@
 import React, { useState, useEffect, useCallback, useRef } from 'react';
 
+import { Brain, Coffee, FastForward, Flame, Pause, Play, RotateCcw } from 'lucide-react';
+
 interface PomodoroTimerProps {
   onSessionComplete?: (type: 'work' | 'break') => void;
   onTimerStart?: () => void;
@@ -134,7 +136,7 @@ export const PomodoroTimer: React.FC<PomodoroTimerProps> = ({
             className="war-room-btn war-room-btn-primary war-room-btn-icon-sm"
             title="Start focus session"
           >
-            <i className="fa fa-play text-xs"></i>
+            <Play className="fa text-xs" />
           </button>
         ) : (
           <button
@@ -142,7 +144,7 @@ export const PomodoroTimer: React.FC<PomodoroTimerProps> = ({
             className="war-room-btn war-room-btn-icon-sm"
             title="Pause"
           >
-            <i className="fa fa-pause text-xs"></i>
+            <Pause className="fa text-xs" />
           </button>
         )}
 
@@ -152,7 +154,7 @@ export const PomodoroTimer: React.FC<PomodoroTimerProps> = ({
             className="war-room-btn war-room-btn-icon-sm text-red-500"
             title="Reset"
           >
-            <i className="fa fa-rotate-left text-xs"></i>
+            <RotateCcw className="fa text-xs" />
           </button>
         )}
 
@@ -202,7 +204,7 @@ export const PomodoroTimer: React.FC<PomodoroTimerProps> = ({
             onClick={startTimer}
             className="war-room-btn war-room-btn-primary px-6 py-2"
           >
-            <i className="fa fa-play mr-2"></i>
+            <Play className="fa mr-2" />
             {pausedState ? 'Resume' : 'Start Focus'}
           </button>
         ) : (
@@ -211,7 +213,7 @@ export const PomodoroTimer: React.FC<PomodoroTimerProps> = ({
               onClick={pauseTimer}
               className="war-room-btn px-4 py-2"
             >
-              <i className="fa fa-pause mr-2"></i>
+              <Pause className="fa mr-2" />
               Pause
             </button>
 
@@ -220,7 +222,7 @@ export const PomodoroTimer: React.FC<PomodoroTimerProps> = ({
                 onClick={skipBreak}
                 className="war-room-btn px-4 py-2"
               >
-                <i className="fa fa-forward mr-2"></i>
+                <FastForward className="fa mr-2" />
                 Skip Break
               </button>
             )}
@@ -233,7 +235,7 @@ export const PomodoroTimer: React.FC<PomodoroTimerProps> = ({
             className="war-room-btn war-room-btn-icon text-red-500"
             title="Reset timer"
           >
-            <i className="fa fa-rotate-left"></i>
+            <RotateCcw className="fa" />
           </button>
         )}
       </div>
@@ -242,7 +244,7 @@ export const PomodoroTimer: React.FC<PomodoroTimerProps> = ({
       {sessionsCompleted > 0 && (
         <div className="mt-4 text-center">
           <span className="war-room-badge">
-            <i className="fa fa-fire mr-1"></i>
+            <Flame className="fa mr-1" />
             {sessionsCompleted} session{sessionsCompleted !== 1 ? 's' : ''} completed
           </span>
         </div>
@@ -253,11 +255,11 @@ export const PomodoroTimer: React.FC<PomodoroTimerProps> = ({
         <div className="mt-4 pt-4 border-t border-white/10">
           <div className="flex items-center justify-center gap-4 text-xs war-room-text-secondary">
             <div className="flex items-center gap-2">
-              <i className="fa fa-brain"></i>
+              <Brain className="fa" />
               <span>{workDuration}m work</span>
             </div>
             <div className="flex items-center gap-2">
-              <i className="fa fa-coffee"></i>
+              <Coffee className="fa" />
               <span>{breakDuration}m break</span>
             </div>
           </div>

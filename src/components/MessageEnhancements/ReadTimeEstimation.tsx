@@ -1,5 +1,7 @@
 import React, { useState, useMemo, useCallback } from 'react';
 
+import { Check, Clock, Hourglass, Lightbulb, Settings } from 'lucide-react';
+
 // Types
 interface ReadingStats {
   totalMessages: number;
@@ -193,7 +195,7 @@ export const ReadTimeEstimation: React.FC<ReadTimeEstimationProps> = ({
         <div className="flex items-center justify-between mb-3">
           <div className="flex items-center gap-2">
             <div className="w-10 h-10 rounded-full bg-white dark:bg-zinc-800 flex items-center justify-center shadow-sm">
-              <i className="fa-solid fa-hourglass-half text-blue-500" />
+              <Hourglass className="text-blue-500" />
             </div>
             <div>
               <p className="text-xs text-zinc-500 dark:text-zinc-400 uppercase tracking-wide">Time to Catch Up</p>
@@ -206,7 +208,7 @@ export const ReadTimeEstimation: React.FC<ReadTimeEstimationProps> = ({
             onClick={() => setShowSettings(!showSettings)}
             className="p-2 rounded-lg hover:bg-white/50 dark:hover:bg-zinc-800/50 transition"
           >
-            <i className="fa-solid fa-gear text-zinc-500" />
+            <Settings className="text-zinc-500" />
           </button>
         </div>
 
@@ -342,7 +344,7 @@ export const ReadTimeEstimation: React.FC<ReadTimeEstimationProps> = ({
         {unreadMessages.length === 0 ? (
           <div className="text-center py-8">
             <div className="w-12 h-12 rounded-full bg-green-100 dark:bg-green-900/30 flex items-center justify-center mx-auto mb-3">
-              <i className="fa-solid fa-check text-green-500" />
+              <Check className="text-green-500" />
             </div>
             <p className="text-sm font-medium text-zinc-900 dark:text-white">All caught up!</p>
             <p className="text-xs text-zinc-500">No unread messages</p>
@@ -376,7 +378,7 @@ export const ReadTimeEstimation: React.FC<ReadTimeEstimationProps> = ({
                 </div>
                 <div className="flex items-center gap-2">
                   <span className={`px-2 py-0.5 rounded-full text-xs font-medium ${getTimeColor(msg.estimatedSeconds)}`}>
-                    <i className="fa-solid fa-clock mr-1" />
+                    <Clock className="mr-1" />
                     {formatTime(msg.estimatedSeconds)}
                   </span>
                   <button
@@ -384,7 +386,7 @@ export const ReadTimeEstimation: React.FC<ReadTimeEstimationProps> = ({
                     className="opacity-0 group-hover:opacity-100 p-1 rounded hover:bg-zinc-100 dark:hover:bg-zinc-700 transition"
                     title="Mark as read"
                   >
-                    <i className="fa-solid fa-check text-zinc-400 text-xs" />
+                    <Check className="text-zinc-400 text-xs" />
                   </button>
                 </div>
               </div>
@@ -399,7 +401,7 @@ export const ReadTimeEstimation: React.FC<ReadTimeEstimationProps> = ({
       {/* Reading Speed Guide */}
       <div className="bg-zinc-50 dark:bg-zinc-800/50 rounded-lg p-3">
         <p className="text-xs font-medium text-zinc-700 dark:text-zinc-300 mb-2">
-          <i className="fa-solid fa-lightbulb text-yellow-500 mr-1.5" />
+          <Lightbulb className="text-yellow-500 mr-1.5" />
           Reading Speed Guide
         </p>
         <div className="grid grid-cols-3 gap-2 text-xs text-zinc-500">
@@ -441,7 +443,7 @@ export const ReadTimeBadge: React.FC<ReadTimeBadgeProps> = ({ seconds, showLabel
 
   return (
     <span className={`inline-flex items-center gap-1 px-1.5 py-0.5 rounded text-xs font-medium ${getColor()}`}>
-      <i className="fa-solid fa-clock text-[10px]" />
+      <Clock className="text-[10px]" />
       {showLabel && <span>{formatTime(seconds)} read</span>}
       {!showLabel && <span>{formatTime(seconds)}</span>}
     </span>

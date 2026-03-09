@@ -7,6 +7,8 @@ import AILabEmptyState from '../shared/AILabEmptyState';
 import { useToast } from '../shared/AILabToast';
 import './ProposalBuilder.css';
 
+import { ArrowLeft, ArrowRight, Check, Circle, CloudCheck, Code, FileText, Loader2, Pen, Share2, Wand2 } from 'lucide-react';
+
 interface ProposalBuilderProps {
   onBack: () => void;
   apiKey: string;
@@ -257,10 +259,10 @@ const ProposalBuilder: React.FC<ProposalBuilderProps> = ({ onBack, apiKey }) => 
       <div className="pb-header">
         <div className="pb-header-left">
           <button onClick={onBack} className="pb-back-btn">
-            <i className="fa-solid fa-arrow-left"></i>
+            <ArrowLeft />
           </button>
           <div className="pb-branding">
-            <i className="fa-solid fa-file-contract"></i>
+            <FileText />
             <span>Proposal Builder</span>
           </div>
         </div>
@@ -291,21 +293,21 @@ const ProposalBuilder: React.FC<ProposalBuilderProps> = ({ onBack, apiKey }) => 
         <div className="pb-header-right">
           {lastSaved && step === 'build' && (
             <span className="pb-autosave">
-              <i className="fa-solid fa-cloud-check"></i>
+              <CloudCheck />
               Saved {lastSaved.toLocaleTimeString([], { hour: '2-digit', minute: '2-digit' })}
             </span>
           )}
           {step === 'preview' && (
             <div className="export-buttons">
               <button type="button" onClick={() => exportProposal('html')} className="pb-btn pb-btn-secondary">
-                <i className="fa-solid fa-code"></i> HTML
+                <Code /> HTML
               </button>
               <button type="button" onClick={() => exportProposal('pdf')} className="pb-btn pb-btn-secondary">
-                <i className="fa-solid fa-file-pdf"></i> PDF
+                <FileText /> PDF
               </button>
               {teamChannels.length > 0 && currentUser && (
                 <button type="button" onClick={() => setShowShare(true)} className="pb-btn pb-btn-secondary">
-                  <i className="fa-solid fa-share-nodes"></i> Share
+                  <Share2 /> Share
                 </button>
               )}
             </div>
@@ -394,7 +396,7 @@ const ProposalBuilder: React.FC<ProposalBuilderProps> = ({ onBack, apiKey }) => 
                 disabled={!proposalInfo.title}
               >
                 Continue to Build
-                <i className="fa-solid fa-arrow-right"></i>
+                <ArrowRight />
               </button>
             </div>
           </div>
@@ -431,9 +433,9 @@ const ProposalBuilder: React.FC<ProposalBuilderProps> = ({ onBack, apiKey }) => 
                   <span className="section-num">{i + 1}</span>
                   <span className="section-title">{section.title}</span>
                   <span className={`section-status status-${section.status}`}>
-                    {section.status === 'complete' && <i className="fa-solid fa-check"></i>}
-                    {section.status === 'draft' && <i className="fa-solid fa-pen"></i>}
-                    {section.status === 'empty' && <i className="fa-solid fa-circle"></i>}
+                    {section.status === 'complete' && <Check />}
+                    {section.status === 'draft' && <Pen />}
+                    {section.status === 'empty' && <Circle />}
                   </span>
                 </button>
               ))}
@@ -444,12 +446,12 @@ const ProposalBuilder: React.FC<ProposalBuilderProps> = ({ onBack, apiKey }) => 
               onClick={generateAllSections}
               disabled={isGenerating || sections.every(s => s.status !== 'empty')}
             >
-              <i className="fa-solid fa-wand-magic-sparkles"></i>
+              <Wand2 />
               Generate All Sections
             </button>
             <button className="pb-btn pb-btn-primary" onClick={() => setStep('preview')}>
               Preview & Export
-              <i className="fa-solid fa-arrow-right"></i>
+              <ArrowRight />
             </button>
           </div>
 
@@ -469,16 +471,16 @@ const ProposalBuilder: React.FC<ProposalBuilderProps> = ({ onBack, apiKey }) => 
                       disabled={isGenerating}
                     >
                       {isGenerating ? (
-                        <><i className="fa-solid fa-spinner fa-spin"></i> Generating...</>
+                        <><Loader2 className="animate-spin" /> Generating...</>
                       ) : (
-                        <><i className="fa-solid fa-wand-magic-sparkles"></i> Generate with AI</>
+                        <><Wand2 /> Generate with AI</>
                       )}
                     </button>
                     <button 
                       className="complete-btn"
                       onClick={() => markComplete(activeSection)}
                     >
-                      <i className="fa-solid fa-check"></i>
+                      <Check />
                       Mark Complete
                     </button>
                   </div>
@@ -516,7 +518,7 @@ const ProposalBuilder: React.FC<ProposalBuilderProps> = ({ onBack, apiKey }) => 
         <div className="pb-preview-step">
           <div className="preview-nav">
             <button type="button" onClick={() => setStep('build')}>
-              <i className="fa-solid fa-arrow-left"></i>
+              <ArrowLeft />
               Back to Edit
             </button>
           </div>

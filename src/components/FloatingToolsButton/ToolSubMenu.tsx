@@ -2,6 +2,8 @@ import React, { useRef, useEffect } from 'react';
 import { motion } from 'framer-motion';
 import type { ToolSubMenuProps } from './types';
 
+import { ChevronRight, Inbox, X } from 'lucide-react';
+
 export const ToolSubMenu: React.FC<ToolSubMenuProps> = ({
   category,
   tools,
@@ -75,7 +77,7 @@ export const ToolSubMenu: React.FC<ToolSubMenuProps> = ({
           onClick={onClose}
           aria-label="Close submenu"
         >
-          <i className="fa-solid fa-times" />
+          <X />
         </button>
       </div>
 
@@ -83,7 +85,7 @@ export const ToolSubMenu: React.FC<ToolSubMenuProps> = ({
       <div className="ftb-submenu-tools">
         {tools.length === 0 ? (
           <div className="ftb-submenu-empty">
-            <i className="fa-solid fa-inbox text-zinc-400 mb-2" />
+            <Inbox className="text-zinc-400 mb-2" />
             <div className="text-sm text-zinc-600 dark:text-zinc-400">
               No tools in this category
             </div>
@@ -117,7 +119,7 @@ export const ToolSubMenu: React.FC<ToolSubMenuProps> = ({
 
               {/* Arrow Icon */}
               <div className="ftb-tool-arrow">
-                <i className="fa-solid fa-chevron-right" />
+                <ChevronRight />
               </div>
             </motion.button>
           ))

@@ -6,6 +6,8 @@
 import React from 'react';
 import { LeadGrade, LeadStatus, getLeadGradeColor } from '../../types/relationshipTypes';
 
+import { Zap } from 'lucide-react';
+
 interface LeadScoreIndicatorProps {
   score: number;
   grade: LeadGrade;
@@ -170,7 +172,7 @@ export const BuyingSignalBadge: React.FC<BuyingSignalBadgeProps> = ({
       className={`inline-flex items-center gap-1 rounded-full font-medium ${sizeClasses[size]} bg-purple-50 dark:bg-purple-900/20 text-purple-600 dark:text-purple-400`}
       title={`${count} buying signal${count > 1 ? 's' : ''} detected`}
     >
-      <i className="fa-solid fa-bolt text-[8px]"></i>
+      <Zap className="text-[8px]" />
       <span>{count}</span>
     </span>
   );

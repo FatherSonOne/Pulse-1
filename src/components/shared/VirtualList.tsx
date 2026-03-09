@@ -5,6 +5,8 @@
 
 import React, { useRef, useState, useCallback, useEffect, useMemo } from 'react';
 
+import { Loader2 } from 'lucide-react';
+
 interface VirtualListProps<T> {
   items: T[];
   itemHeight: number | ((index: number, item: T) => number);
@@ -223,7 +225,7 @@ export function VirtualList<T>({
               textAlign: 'center',
             }}
           >
-            <i className="fa fa-spinner fa-spin text-gray-400" />
+            <Loader2 className="fa text-gray-400 animate-spin" />
             <span className="ml-2 text-gray-400 text-sm">Loading more...</span>
           </div>
         )}

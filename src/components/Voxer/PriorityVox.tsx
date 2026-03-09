@@ -4,6 +4,8 @@
 import React, { useState, useEffect, useRef, useCallback } from 'react';
 import { PriorityVox as PriorityVoxType, PriorityLevel, PRIORITY_CONFIG } from '../../services/voxer/advancedVoxerTypes';
 
+import { Bell, Check, CheckCircle, CircleDot, Minus, Plus, X } from 'lucide-react';
+
 // ============================================
 // TYPES
 // ============================================
@@ -113,11 +115,11 @@ export const PriorityVoxSelector: React.FC<PriorityVoxSelectorProps> = ({
         {/* Header */}
         <div className="p-4 border-b border-zinc-200 dark:border-zinc-800 flex items-center justify-between">
           <h3 className="font-bold text-lg dark:text-white flex items-center gap-2">
-            <i className="fa-solid fa-bell text-orange-500"></i>
+            <Bell className="text-orange-500" />
             Priority Level
           </h3>
           <button onClick={onClose} className="text-zinc-400 hover:text-zinc-600 dark:hover:text-white transition">
-            <i className="fa-solid fa-times"></i>
+            <X />
           </button>
         </div>
 
@@ -158,7 +160,7 @@ export const PriorityVoxSelector: React.FC<PriorityVoxSelectorProps> = ({
                 </div>
                 {isSelected && (
                   <div className="w-6 h-6 rounded-full bg-emerald-500 flex items-center justify-center">
-                    <i className="fa-solid fa-check text-white text-xs"></i>
+                    <Check className="text-white text-xs" />
                   </div>
                 )}
               </button>
@@ -210,14 +212,14 @@ export const PriorityVoxSelector: React.FC<PriorityVoxSelectorProps> = ({
                   onClick={() => setOptions(prev => ({ ...prev, repeatCount: Math.max(1, prev.repeatCount - 1) }))}
                   className="w-8 h-8 rounded-lg bg-zinc-100 dark:bg-zinc-800 hover:bg-zinc-200 dark:hover:bg-zinc-700 flex items-center justify-center"
                 >
-                  <i className="fa-solid fa-minus text-xs"></i>
+                  <Minus className="text-xs" />
                 </button>
                 <span className="w-8 text-center font-bold dark:text-white">{options.repeatCount}</span>
                 <button
                   onClick={() => setOptions(prev => ({ ...prev, repeatCount: Math.min(5, prev.repeatCount + 1) }))}
                   className="w-8 h-8 rounded-lg bg-zinc-100 dark:bg-zinc-800 hover:bg-zinc-200 dark:hover:bg-zinc-700 flex items-center justify-center"
                 >
-                  <i className="fa-solid fa-plus text-xs"></i>
+                  <Plus className="text-xs" />
                 </button>
               </div>
             </div>
@@ -307,7 +309,7 @@ export const EmergencyAlert: React.FC<EmergencyAlertProps> = ({
         {/* Alert Icon */}
         <div className="flex justify-center mb-6">
           <div className="w-24 h-24 rounded-full bg-white/20 flex items-center justify-center animate-bounce">
-            <i className="fa-solid fa-circle-radiation text-5xl text-white"></i>
+            <CircleDot className="text-5xl text-white" />
           </div>
         </div>
 
@@ -348,7 +350,7 @@ export const EmergencyAlert: React.FC<EmergencyAlertProps> = ({
               onClick={onAcknowledge}
               className="w-full py-4 bg-white text-red-600 rounded-2xl font-bold text-lg uppercase tracking-wider hover:bg-zinc-100 transition flex items-center justify-center gap-3"
             >
-              <i className="fa-solid fa-check-circle"></i>
+              <CheckCircle />
               Acknowledge
             </button>
           )}

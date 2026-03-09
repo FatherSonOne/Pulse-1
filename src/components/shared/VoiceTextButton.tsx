@@ -14,6 +14,8 @@
 import React, { useState, useEffect } from 'react';
 import { useVoiceToText, VoiceToTextProvider } from '../../hooks/useVoiceToText';
 
+import { Quote } from 'lucide-react';
+
 export interface VoiceTextButtonProps {
   /** Called with final transcribed text (to append to input) */
   onTranscript: (text: string) => void;
@@ -165,7 +167,7 @@ export const VoiceTextButton: React.FC<VoiceTextButtonProps> = ({
       {/* Interim transcript preview (shows while speaking) */}
       {isListening && localInterim && (
         <div className="absolute left-full ml-2 px-2 py-1 bg-zinc-800 rounded-lg text-xs text-zinc-300 whitespace-nowrap max-w-[200px] truncate shadow-lg border border-zinc-700 z-10">
-          <i className="fa-solid fa-quote-left text-red-500 mr-1 text-[10px]" />
+          <Quote className="text-red-500 mr-1 text-[10px]" />
           {localInterim}
         </div>
       )}

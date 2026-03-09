@@ -4,6 +4,8 @@ import { MessageChannel } from '../../types/messages';
 import ThreadItem from './ThreadItem';
 import ThreadSearch from './ThreadSearch';
 
+import { Inbox, Plus } from 'lucide-react';
+
 interface ThreadListPanelProps {
   channels: MessageChannel[];
   activeChannelId: string | null;
@@ -64,7 +66,7 @@ const ThreadListPanel: React.FC<ThreadListPanelProps> = ({
             aria-label="Create new thread"
             title="Create new thread"
           >
-            <i className="fa-solid fa-plus text-zinc-600 dark:text-zinc-400"></i>
+            <Plus className="text-zinc-600 dark:text-zinc-400" />
           </button>
         </div>
 
@@ -120,7 +122,7 @@ const ThreadListPanel: React.FC<ThreadListPanelProps> = ({
         {filteredPinned.length === 0 && filteredRegular.length === 0 && (
           <div className="empty-state px-4 py-12 text-center">
             <div className="w-16 h-16 mx-auto mb-4 rounded-full bg-zinc-100 dark:bg-zinc-800 flex items-center justify-center">
-              <i className="fa-solid fa-inbox text-2xl text-zinc-400"></i>
+              <Inbox className="text-2xl text-zinc-400" />
             </div>
             <p className="text-sm text-zinc-500 dark:text-zinc-400">
               {searchQuery ? 'No threads found' : 'No threads yet'}

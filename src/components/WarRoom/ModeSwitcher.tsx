@@ -1,6 +1,8 @@
 import React, { useEffect, useLayoutEffect, useMemo, useRef, useState } from 'react';
 import { createPortal } from 'react-dom';
 
+import { Check, Info, Rocket, ShieldHalf } from 'lucide-react';
+
 // War Room Modes - Strategy and deep work modes
 export type WarRoomMode =
   // ── Canonical modes (Phase 1+) ──────────────────────────────
@@ -343,7 +345,7 @@ export const ModeSwitcher: React.FC<ModeSwitcherProps> = ({
                         : 'war-room-text-secondary hover:bg-white/5'
                     }`}
                   >
-                    <i className="fa fa-shield-halved mr-2"></i>
+                    <ShieldHalf className="fa mr-2" />
                     War Room
                   </button>
                   <button
@@ -354,7 +356,7 @@ export const ModeSwitcher: React.FC<ModeSwitcherProps> = ({
                         : 'war-room-text-secondary hover:bg-white/5'
                     }`}
                   >
-                    <i className="fa fa-rocket mr-2"></i>
+                    <Rocket className="fa mr-2" />
                     Missions
                   </button>
                 </div>
@@ -403,7 +405,7 @@ export const ModeSwitcher: React.FC<ModeSwitcherProps> = ({
                               </div>
                             </div>
                             {currentMode === mode.id && currentRoom === 'war-room' && (
-                              <i className="fa fa-check text-sm"></i>
+                              <Check className="fa text-sm" />
                             )}
                           </div>
                         </button>
@@ -451,7 +453,7 @@ export const ModeSwitcher: React.FC<ModeSwitcherProps> = ({
                               </div>
                             </div>
                             {currentMission === mission.id && currentRoom === 'missions' && (
-                              <i className="fa fa-check text-sm"></i>
+                              <Check className="fa text-sm" />
                             )}
                           </div>
                         </button>
@@ -465,12 +467,12 @@ export const ModeSwitcher: React.FC<ModeSwitcherProps> = ({
                   <div className="text-xs war-room-text-secondary text-center">
                     {activeTab === 'war-room' ? (
                       <>
-                        <i className="fa fa-info-circle mr-1"></i>
+                        <Info className="fa mr-1" />
                         War Room modes for focused strategy work
                       </>
                     ) : (
                       <>
-                        <i className="fa fa-info-circle mr-1"></i>
+                        <Info className="fa mr-1" />
                         Guided workflows with structured phases
                       </>
                     )}

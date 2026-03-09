@@ -4,6 +4,8 @@
 import React, { useState, useEffect, useRef, useCallback } from 'react';
 import { AnimatedIcon } from '../ui/AnimatedIcon';
 
+import { GraduationCap, Lightbulb, Loader2, MessageCircle, RotateCcw, Send, Sparkles, Wand2, X } from 'lucide-react';
+
 // ============================================
 // TYPES
 // ============================================
@@ -353,7 +355,7 @@ export const VoxPreviewPanel: React.FC<VoxPreviewPanelProps> = ({
               onClick={onClose}
               className="w-8 h-8 rounded-full hover:bg-zinc-100 dark:hover:bg-zinc-800 flex items-center justify-center text-zinc-400"
             >
-              <i className="fa-solid fa-times"></i>
+              <X />
             </button>
           </div>
 
@@ -400,7 +402,7 @@ export const VoxPreviewPanel: React.FC<VoxPreviewPanelProps> = ({
             <div className="bg-zinc-50 dark:bg-zinc-800/50 rounded-xl p-3 max-h-24 overflow-y-auto">
               {isTranscribing ? (
                 <div className="flex items-center gap-2 text-zinc-500">
-                  <i className="fa-solid fa-circle-notch fa-spin"></i>
+                  <Loader2 className="animate-spin" />
                   <span className="text-sm">Transcribing...</span>
                 </div>
               ) : (
@@ -420,7 +422,7 @@ export const VoxPreviewPanel: React.FC<VoxPreviewPanelProps> = ({
               >
                 <div className="flex items-center justify-between mb-3">
                   <div className="text-xs font-semibold text-zinc-400 uppercase tracking-wider flex items-center gap-2">
-                    <i className="fa-solid fa-wand-magic-sparkles text-purple-500"></i>
+                    <Wand2 className="text-purple-500" />
                     Quick Analysis
                   </div>
                   <i className={`fa-solid fa-chevron-${showFullAnalysis ? 'up' : 'down'} text-zinc-400 text-xs`}></i>
@@ -443,7 +445,7 @@ export const VoxPreviewPanel: React.FC<VoxPreviewPanelProps> = ({
                       analysis.clarity === 'unclear' ? 'text-red-500 bg-red-100 dark:bg-red-900/30' :
                       'text-amber-500 bg-amber-100 dark:bg-amber-900/30'
                     }`}>
-                      <i className="fa-solid fa-sparkles text-xs"></i>
+                      <Sparkles className="text-xs" />
                       <div className="text-[10px] font-medium capitalize mt-0.5">{analysis.clarity}</div>
                     </div>
                     
@@ -463,7 +465,7 @@ export const VoxPreviewPanel: React.FC<VoxPreviewPanelProps> = ({
                   {analysis.fillerWords > 0 && (
                     <div className="flex items-center gap-3 p-3 bg-amber-50 dark:bg-amber-900/20 rounded-xl">
                       <div className="w-8 h-8 rounded-full bg-amber-100 dark:bg-amber-900/50 flex items-center justify-center">
-                        <i className="fa-solid fa-comment-dots text-amber-600 text-sm"></i>
+                        <MessageCircle className="text-amber-600 text-sm" />
                       </div>
                       <div className="flex-1">
                         <div className="text-sm font-medium text-amber-800 dark:text-amber-300">
@@ -484,7 +486,7 @@ export const VoxPreviewPanel: React.FC<VoxPreviewPanelProps> = ({
                       <div className="text-xs font-semibold text-zinc-400 uppercase">Suggestions</div>
                       {analysis.suggestions.map((suggestion, i) => (
                         <div key={i} className="flex items-start gap-2 text-sm text-zinc-600 dark:text-zinc-400">
-                          <i className="fa-solid fa-lightbulb text-yellow-500 mt-0.5"></i>
+                          <Lightbulb className="text-yellow-500 mt-0.5" />
                           {suggestion}
                         </div>
                       ))}
@@ -496,7 +498,7 @@ export const VoxPreviewPanel: React.FC<VoxPreviewPanelProps> = ({
                     onClick={onOpenFullCoach}
                     className="w-full py-2.5 bg-purple-100 dark:bg-purple-900/30 hover:bg-purple-200 dark:hover:bg-purple-900/50 text-purple-700 dark:text-purple-300 rounded-xl font-medium text-sm transition flex items-center justify-center gap-2"
                   >
-                    <i className="fa-solid fa-user-graduate"></i>
+                    <GraduationCap />
                     Open Full AI Voice Coach
                   </button>
                 </div>
@@ -511,7 +513,7 @@ export const VoxPreviewPanel: React.FC<VoxPreviewPanelProps> = ({
               onClick={onReRecord}
               className="flex-1 py-3.5 bg-zinc-100 dark:bg-zinc-800 hover:bg-zinc-200 dark:hover:bg-zinc-700 rounded-xl font-semibold text-zinc-700 dark:text-zinc-300 transition flex items-center justify-center gap-2"
             >
-              <i className="fa-solid fa-rotate-left"></i>
+              <RotateCcw />
               Re-record
             </button>
             
@@ -520,7 +522,7 @@ export const VoxPreviewPanel: React.FC<VoxPreviewPanelProps> = ({
               onClick={onSend}
               className="flex-[2] py-3.5 bg-gradient-to-r from-orange-500 to-orange-600 hover:from-orange-600 hover:to-orange-700 text-white rounded-xl font-semibold shadow-lg shadow-orange-500/25 transition transform hover:scale-[1.02] active:scale-[0.98] flex items-center justify-center gap-2"
             >
-              <i className="fa-solid fa-paper-plane"></i>
+              <Send />
               Send Vox
             </button>
           </div>

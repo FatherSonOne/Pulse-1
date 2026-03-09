@@ -5,6 +5,8 @@ import AILabProgress from '../shared/AILabProgress';
 import AILabEmptyState from '../shared/AILabEmptyState';
 import './AIStudio.css';
 
+import { AlignCenter, AlignLeft, ArrowLeft, Bold, ChevronLeft, ChevronRight, Clapperboard, Code, Columns, Download, FileText, Heading, Italic, List, Loader2, Pen, Play, Presentation, Sparkles, Trash2, Wand2 } from 'lucide-react';
+
 interface AIStudioProps {
   onBack: () => void;
   apiKey: string;
@@ -204,10 +206,10 @@ Return ONLY a valid JSON array with no markdown code blocks, no explanation, jus
       <div className="studio-header">
         <div className="studio-header-left">
           <button onClick={onBack} className="studio-back-btn">
-            <i className="fa-solid fa-arrow-left"></i>
+            <ArrowLeft />
           </button>
           <div className="studio-branding">
-            <i className="fa-solid fa-clapperboard"></i>
+            <Clapperboard />
             <span>AI Studio</span>
           </div>
           <input
@@ -223,13 +225,13 @@ Return ONLY a valid JSON array with no markdown code blocks, no explanation, jus
               className={view === 'edit' ? 'active' : ''} 
               onClick={() => setView('edit')}
             >
-              <i className="fa-solid fa-pen"></i> Edit
+              <Pen /> Edit
             </button>
             <button 
               className={view === 'preview' ? 'active' : ''} 
               onClick={() => setView('preview')}
             >
-              <i className="fa-solid fa-play"></i> Preview
+              <Play /> Preview
             </button>
           </div>
         </div>
@@ -247,18 +249,18 @@ Return ONLY a valid JSON array with no markdown code blocks, no explanation, jus
           </button>
           <div className="export-dropdown">
             <button className="studio-btn studio-btn-primary">
-              <i className="fa-solid fa-download"></i>
+              <Download />
               Export
             </button>
             <div className="export-menu">
               <button onClick={() => exportPresentation('html')}>
-                <i className="fa-solid fa-code"></i> Interactive HTML
+                <Code /> Interactive HTML
               </button>
               <button onClick={() => exportPresentation('pdf')}>
-                <i className="fa-solid fa-file-pdf"></i> PDF
+                <FileText /> PDF
               </button>
               <button onClick={() => exportPresentation('pptx')}>
-                <i className="fa-solid fa-file-powerpoint"></i> PowerPoint
+                <Presentation /> PowerPoint
               </button>
             </div>
           </div>
@@ -288,7 +290,7 @@ Return ONLY a valid JSON array with no markdown code blocks, no explanation, jus
                 </div>
                 {slide.aiGenerated && (
                   <div className="thumbnail-badge">
-                    <i className="fa-solid fa-sparkles"></i>
+                    <Sparkles />
                   </div>
                 )}
                 {slides.length > 1 && (
@@ -296,7 +298,7 @@ Return ONLY a valid JSON array with no markdown code blocks, no explanation, jus
                     className="thumbnail-delete"
                     onClick={(e) => { e.stopPropagation(); deleteSlide(slide.id); }}
                   >
-                    <i className="fa-solid fa-trash"></i>
+                    <Trash2 />
                   </button>
                 )}
               </div>
@@ -323,7 +325,7 @@ Return ONLY a valid JSON array with no markdown code blocks, no explanation, jus
           {/* AI Generate */}
           <div className="ai-generate-section">
             <span className="ai-label">
-              <i className="fa-solid fa-sparkles"></i>
+              <Sparkles />
               AI Generate
             </span>
             <textarea
@@ -338,12 +340,12 @@ Return ONLY a valid JSON array with no markdown code blocks, no explanation, jus
             >
               {generating ? (
                 <>
-                  <i className="fa-solid fa-spinner fa-spin"></i>
+                  <Loader2 className="animate-spin" />
                   Generating...
                 </>
               ) : (
                 <>
-                  <i className="fa-solid fa-wand-magic-sparkles"></i>
+                  <Wand2 />
                   Generate Slides
                 </>
               )}
@@ -377,16 +379,16 @@ Return ONLY a valid JSON array with no markdown code blocks, no explanation, jus
                 />
                 <div className="studio-formatting-bar">
                   <button type="button" className="fmt-btn" onClick={() => insertFormat('**', '**')} title="Bold">
-                    <i className="fa-solid fa-bold"></i>
+                    <Bold />
                   </button>
                   <button type="button" className="fmt-btn" onClick={() => insertFormat('*', '*')} title="Italic">
-                    <i className="fa-solid fa-italic"></i>
+                    <Italic />
                   </button>
                   <button type="button" className="fmt-btn" onClick={() => insertFormat('• ')} title="Bullet point">
-                    <i className="fa-solid fa-list-ul"></i>
+                    <List />
                   </button>
                   <button type="button" className="fmt-btn" onClick={() => insertFormat('# ')} title="Heading">
-                    <i className="fa-solid fa-heading"></i>
+                    <Heading />
                   </button>
                 </div>
                 <textarea
@@ -420,7 +422,7 @@ Return ONLY a valid JSON array with no markdown code blocks, no explanation, jus
                     if (idx > 0) setSelectedSlide(slides[idx - 1].id);
                   }}
                 >
-                  <i className="fa-solid fa-chevron-left"></i>
+                  <ChevronLeft />
                 </button>
                 <span>{slides.findIndex(s => s.id === selectedSlide) + 1} / {slides.length}</span>
                 <button
@@ -430,7 +432,7 @@ Return ONLY a valid JSON array with no markdown code blocks, no explanation, jus
                     if (idx < slides.length - 1) setSelectedSlide(slides[idx + 1].id);
                   }}
                 >
-                  <i className="fa-solid fa-chevron-right"></i>
+                  <ChevronRight />
                 </button>
               </div>
             </div>
@@ -457,13 +459,13 @@ Return ONLY a valid JSON array with no markdown code blocks, no explanation, jus
                 <label>Layout</label>
                 <div className="layout-options">
                   <button className={currentSlide.layout === 'center' ? 'active' : ''} onClick={() => updateSlide(currentSlide.id, { layout: 'center' })}>
-                    <i className="fa-solid fa-align-center"></i>
+                    <AlignCenter />
                   </button>
                   <button className={currentSlide.layout === 'left' ? 'active' : ''} onClick={() => updateSlide(currentSlide.id, { layout: 'left' })}>
-                    <i className="fa-solid fa-align-left"></i>
+                    <AlignLeft />
                   </button>
                   <button className={currentSlide.layout === 'split' ? 'active' : ''} onClick={() => updateSlide(currentSlide.id, { layout: 'split' })}>
-                    <i className="fa-solid fa-columns"></i>
+                    <Columns />
                   </button>
                 </div>
               </div>

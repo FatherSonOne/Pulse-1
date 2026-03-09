@@ -5,6 +5,8 @@
 import React, { useState, useMemo } from 'react';
 import { achievementService } from '../../services/achievementService';
 
+import { Flag, TrendingUp } from 'lucide-react';
+
 interface MetricTrend {
   direction: 'up' | 'down' | 'neutral';
   value?: string;
@@ -325,7 +327,7 @@ export const PersonalAnalyticsDashboard: React.FC<PersonalAnalyticsDashboardProp
           ) : (
             <div className="text-center py-8">
               <div className="w-12 h-12 rounded-full bg-zinc-100 dark:bg-zinc-700 flex items-center justify-center mx-auto mb-3">
-                <i className="fa-solid fa-flag text-zinc-400" />
+                <Flag className="text-zinc-400" />
               </div>
               <p className="text-sm text-zinc-500 dark:text-zinc-400">
                 No milestones yet. Keep communicating!
@@ -363,7 +365,7 @@ export const AnalyticsBadge: React.FC<AnalyticsBadgeProps> = ({ onClick }) => {
       onClick={onClick}
       className="inline-flex items-center gap-2 px-3 py-1.5 rounded-full bg-rose-50 dark:bg-rose-900/20 border border-rose-200 dark:border-rose-800 hover:border-rose-300 dark:hover:border-rose-700 transition-colors"
     >
-      <i className="fa-solid fa-chart-line text-rose-500 text-sm" />
+      <TrendingUp className="text-rose-500 text-sm" />
       <span className="text-sm font-medium text-rose-700 dark:text-rose-300">
         {stats.messagesSent} messages
       </span>

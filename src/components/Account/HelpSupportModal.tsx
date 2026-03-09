@@ -1,6 +1,8 @@
 // HelpSupportModal.tsx - Help documentation and support
 import React, { useState } from 'react';
 
+import { Book, ChevronRight, Github, Headset, HelpCircle, Keyboard, Mail, MessageCircle, MessagesSquare, Newspaper, Video, X, Youtube } from 'lucide-react';
+
 interface HelpSupportModalProps {
   isOpen: boolean;
   onClose: () => void;
@@ -141,7 +143,7 @@ export const HelpSupportModal: React.FC<HelpSupportModalProps> = ({
         <div className="flex items-center justify-between px-6 py-4 border-b border-zinc-200 dark:border-zinc-800 bg-gradient-to-r from-rose-500/10 to-pink-500/10">
           <div className="flex items-center gap-3">
             <div className="w-10 h-10 rounded-lg bg-gradient-to-br from-rose-500 to-pink-500 flex items-center justify-center">
-              <i className="fa-solid fa-circle-question text-white"></i>
+              <HelpCircle className="text-white" />
             </div>
             <div>
               <h2 className="text-xl font-bold text-zinc-900 dark:text-white">Help & Support</h2>
@@ -153,7 +155,7 @@ export const HelpSupportModal: React.FC<HelpSupportModalProps> = ({
             className="w-10 h-10 rounded-lg hover:bg-zinc-100 dark:hover:bg-zinc-800 flex items-center justify-center text-zinc-500 dark:text-zinc-400 hover:text-zinc-700 dark:hover:text-white transition"
             title="Close"
           >
-            <i className="fa-solid fa-xmark"></i>
+            <X />
           </button>
         </div>
 
@@ -167,7 +169,7 @@ export const HelpSupportModal: React.FC<HelpSupportModalProps> = ({
                 : 'text-zinc-600 dark:text-zinc-400 hover:text-zinc-900 dark:hover:text-white'
             }`}
           >
-            <i className="fa-solid fa-book mr-2"></i>
+            <Book className="mr-2" />
             Resources
           </button>
           <button
@@ -178,7 +180,7 @@ export const HelpSupportModal: React.FC<HelpSupportModalProps> = ({
                 : 'text-zinc-600 dark:text-zinc-400 hover:text-zinc-900 dark:hover:text-white'
             }`}
           >
-            <i className="fa-solid fa-comments mr-2"></i>
+            <MessagesSquare className="mr-2" />
             FAQ
           </button>
           <button
@@ -189,7 +191,7 @@ export const HelpSupportModal: React.FC<HelpSupportModalProps> = ({
                 : 'text-zinc-600 dark:text-zinc-400 hover:text-zinc-900 dark:hover:text-white'
             }`}
           >
-            <i className="fa-solid fa-keyboard mr-2"></i>
+            <Keyboard className="mr-2" />
             Keyboard Shortcuts
           </button>
           <button
@@ -200,7 +202,7 @@ export const HelpSupportModal: React.FC<HelpSupportModalProps> = ({
                 : 'text-zinc-600 dark:text-zinc-400 hover:text-zinc-900 dark:hover:text-white'
             }`}
           >
-            <i className="fa-solid fa-headset mr-2"></i>
+            <Headset className="mr-2" />
             Contact Support
           </button>
         </div>
@@ -230,7 +232,7 @@ export const HelpSupportModal: React.FC<HelpSupportModalProps> = ({
                           {resource.description}
                         </p>
                       </div>
-                      <i className="fa-solid fa-chevron-right text-zinc-400 group-hover:text-rose-600 dark:group-hover:text-rose-400 transition"></i>
+                      <ChevronRight className="text-zinc-400 group-hover:text-rose-600 dark:group-hover:text-rose-400 transition" />
                     </a>
                   ))}
                 </div>
@@ -244,28 +246,28 @@ export const HelpSupportModal: React.FC<HelpSupportModalProps> = ({
                     href="#"
                     className="flex items-center gap-2 px-4 py-3 bg-zinc-50 dark:bg-zinc-800/50 rounded-lg hover:bg-zinc-100 dark:hover:bg-zinc-800 transition text-sm font-medium text-zinc-700 dark:text-zinc-300"
                   >
-                    <i className="fa-solid fa-video text-zinc-500"></i>
+                    <Video className="text-zinc-500" />
                     Video Tutorials
                   </a>
                   <a
                     href="#"
                     className="flex items-center gap-2 px-4 py-3 bg-zinc-50 dark:bg-zinc-800/50 rounded-lg hover:bg-zinc-100 dark:hover:bg-zinc-800 transition text-sm font-medium text-zinc-700 dark:text-zinc-300"
                   >
-                    <i className="fa-solid fa-blog text-zinc-500"></i>
+                    <Newspaper className="text-zinc-500" />
                     Blog & Updates
                   </a>
                   <a
                     href="#"
                     className="flex items-center gap-2 px-4 py-3 bg-zinc-50 dark:bg-zinc-800/50 rounded-lg hover:bg-zinc-100 dark:hover:bg-zinc-800 transition text-sm font-medium text-zinc-700 dark:text-zinc-300"
                   >
-                    <i className="fa-brands fa-youtube text-zinc-500"></i>
+                    <Youtube className="text-zinc-500" />
                     YouTube Channel
                   </a>
                   <a
                     href="#"
                     className="flex items-center gap-2 px-4 py-3 bg-zinc-50 dark:bg-zinc-800/50 rounded-lg hover:bg-zinc-100 dark:hover:bg-zinc-800 transition text-sm font-medium text-zinc-700 dark:text-zinc-300"
                   >
-                    <i className="fa-brands fa-github text-zinc-500"></i>
+                    <Github className="text-zinc-500" />
                     GitHub
                   </a>
                 </div>
@@ -361,7 +363,7 @@ export const HelpSupportModal: React.FC<HelpSupportModalProps> = ({
                     className="flex items-center gap-4 p-4 bg-white dark:bg-zinc-800/50 rounded-xl border border-zinc-200 dark:border-zinc-700 hover:border-zinc-300 dark:hover:border-zinc-600 transition"
                   >
                     <div className="w-12 h-12 rounded-lg bg-rose-100 dark:bg-rose-900/20 flex items-center justify-center flex-shrink-0">
-                      <i className="fa-solid fa-envelope text-rose-600 dark:text-rose-400 text-xl"></i>
+                      <Mail className="text-rose-600 dark:text-rose-400 text-xl" />
                     </div>
                     <div>
                       <h4 className="font-semibold text-zinc-900 dark:text-white">Email Support</h4>
@@ -375,7 +377,7 @@ export const HelpSupportModal: React.FC<HelpSupportModalProps> = ({
                     className="flex items-center gap-4 p-4 bg-white dark:bg-zinc-800/50 rounded-xl border border-zinc-200 dark:border-zinc-700 hover:border-zinc-300 dark:hover:border-zinc-600 transition"
                   >
                     <div className="w-12 h-12 rounded-lg bg-green-100 dark:bg-green-900/20 flex items-center justify-center flex-shrink-0">
-                      <i className="fa-solid fa-comments text-green-600 dark:text-green-400 text-xl"></i>
+                      <MessagesSquare className="text-green-600 dark:text-green-400 text-xl" />
                     </div>
                     <div>
                       <h4 className="font-semibold text-zinc-900 dark:text-white">Live Chat</h4>
@@ -389,7 +391,7 @@ export const HelpSupportModal: React.FC<HelpSupportModalProps> = ({
                     className="flex items-center gap-4 p-4 bg-white dark:bg-zinc-800/50 rounded-xl border border-zinc-200 dark:border-zinc-700 hover:border-zinc-300 dark:hover:border-zinc-600 transition"
                   >
                     <div className="w-12 h-12 rounded-lg bg-purple-100 dark:bg-purple-900/20 flex items-center justify-center flex-shrink-0">
-                      <i className="fa-brands fa-discord text-purple-600 dark:text-purple-400 text-xl"></i>
+                      <MessageCircle className="text-purple-600 dark:text-purple-400 text-xl" />
                     </div>
                     <div>
                       <h4 className="font-semibold text-zinc-900 dark:text-white">Community Discord</h4>

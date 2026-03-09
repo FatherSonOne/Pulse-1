@@ -21,6 +21,8 @@ import {
 import { FeatureSettingsPanel } from '../components/Messages/FeatureSettingsPanel';
 import { useFeatures } from '../contexts/FeatureContext';
 
+import { Bold, Mic, Send, Sliders, Wand2 } from 'lucide-react';
+
 /**
  * Example 1: Message with RadialMenu for reactions
  */
@@ -356,7 +358,7 @@ export const MessagesWithSettings: React.FC = () => {
           className="settings-button"
           aria-label="Feature settings"
         >
-          <i className="fa-solid fa-sliders" />
+          <Sliders />
           Settings
         </button>
       </div>
@@ -374,25 +376,25 @@ export const MessagesWithSettings: React.FC = () => {
           {/* Always visible: Priority features */}
           {isFeatureEnabled('voiceInput') && (
             <button aria-label="Voice input">
-              <i className="fa-solid fa-microphone" />
+              <Mic />
             </button>
           )}
 
           {/* Progressive disclosure: Advanced features */}
           {isFeatureEnabled('aiComposer') && (
             <button aria-label="AI Composer">
-              <i className="fa-solid fa-wand-magic-sparkles" />
+              <Wand2 />
             </button>
           )}
 
           {isFeatureEnabled('formatting') && (
             <button aria-label="Text formatting">
-              <i className="fa-solid fa-bold" />
+              <Bold />
             </button>
           )}
 
           <button aria-label="Send message">
-            <i className="fa-solid fa-paper-plane" />
+            <Send />
           </button>
         </div>
       </div>

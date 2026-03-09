@@ -10,6 +10,8 @@ import type { DataRetentionPolicy, CleanupStats } from '../../services/dataReten
 import type { OAuthConnectedApp } from '../../services/oauthAppsService';
 import toast from 'react-hot-toast';
 
+import { Ban, Calendar, Check, Clock, ExternalLink, Grid3X3, Mail, MessageSquare, Plug, ShieldCheck } from 'lucide-react';
+
 interface PrivacyTabProps {
   retentionPolicy: DataRetentionPolicy | null;
   cleanupStats: CleanupStats | null;
@@ -124,7 +126,7 @@ export const PrivacyTab: React.FC<PrivacyTabProps> = ({
       {cleanupStats && cleanupStats.total_eligible > 0 && (
         <div className="bg-amber-50 dark:bg-amber-900/20 rounded-xl p-4 border border-amber-200 dark:border-amber-800">
           <div className="flex items-start gap-3">
-            <i className="fa-solid fa-clock text-amber-500 text-xl"></i>
+            <Clock className="text-amber-500 text-xl" />
             <div className="flex-1">
               <h3 className="font-semibold text-amber-900 dark:text-amber-100 mb-1">
                 {cleanupStats.total_eligible} Items Eligible for Cleanup
@@ -181,7 +183,7 @@ export const PrivacyTab: React.FC<PrivacyTabProps> = ({
           {retentionPolicy.auto_cleanup_enabled && retentionPolicy.next_cleanup_at && (
             <div className="mt-3 pt-3 border-t border-zinc-200 dark:border-zinc-700">
               <p className="text-xs text-zinc-500 dark:text-zinc-400">
-                <i className="fa-solid fa-clock mr-2"></i>
+                <Clock className="mr-2" />
                 Next cleanup: {new Date(retentionPolicy.next_cleanup_at).toLocaleString()}
               </p>
             </div>
@@ -198,7 +200,7 @@ export const PrivacyTab: React.FC<PrivacyTabProps> = ({
             <div className="flex items-center justify-between mb-3">
               <div className="flex items-center gap-3">
                 <div className="w-10 h-10 rounded-lg bg-red-100 dark:bg-red-900/20 flex items-center justify-center">
-                  <i className="fa-solid fa-envelope text-red-600 dark:text-red-400"></i>
+                  <Mail className="text-red-600 dark:text-red-400" />
                 </div>
                 <div>
                   <h4 className="font-semibold text-zinc-900 dark:text-white">Emails</h4>
@@ -229,7 +231,7 @@ export const PrivacyTab: React.FC<PrivacyTabProps> = ({
             <div className="flex items-center justify-between mb-3">
               <div className="flex items-center gap-3">
                 <div className="w-10 h-10 rounded-lg bg-green-100 dark:bg-green-900/20 flex items-center justify-center">
-                  <i className="fa-solid fa-calendar text-green-600 dark:text-green-400"></i>
+                  <Calendar className="text-green-600 dark:text-green-400" />
                 </div>
                 <div>
                   <h4 className="font-semibold text-zinc-900 dark:text-white">Calendar Events</h4>
@@ -260,7 +262,7 @@ export const PrivacyTab: React.FC<PrivacyTabProps> = ({
             <div className="flex items-center justify-between mb-3">
               <div className="flex items-center gap-3">
                 <div className="w-10 h-10 rounded-lg bg-blue-100 dark:bg-blue-900/20 flex items-center justify-center">
-                  <i className="fa-solid fa-message text-blue-600 dark:text-blue-400"></i>
+                  <MessageSquare className="text-blue-600 dark:text-blue-400" />
                 </div>
                 <div>
                   <h4 className="font-semibold text-zinc-900 dark:text-white">Messages</h4>
@@ -294,7 +296,7 @@ export const PrivacyTab: React.FC<PrivacyTabProps> = ({
         <div className="space-y-3">
           {thirdPartyApps.length === 0 ? (
             <div className="text-center py-8 text-zinc-500 dark:text-zinc-400 bg-white dark:bg-zinc-800/50 rounded-xl border border-zinc-200 dark:border-zinc-700">
-              <i className="fa-solid fa-shield-check text-4xl mb-3 text-zinc-300 dark:text-zinc-600"></i>
+              <ShieldCheck className="text-4xl mb-3 text-zinc-300 dark:text-zinc-600" />
               <p>No third-party apps connected</p>
               <p className="text-xs mt-1">Your account is only accessed by Pulse</p>
             </div>
@@ -307,7 +309,7 @@ export const PrivacyTab: React.FC<PrivacyTabProps> = ({
                 <div className="flex items-start justify-between mb-3">
                   <div className="flex items-center gap-3">
                     <div className="w-10 h-10 rounded-lg bg-zinc-100 dark:bg-zinc-700 flex items-center justify-center">
-                      <i className="fa-solid fa-plug text-zinc-600 dark:text-zinc-400"></i>
+                      <Plug className="text-zinc-600 dark:text-zinc-400" />
                     </div>
                     <div>
                       <h4 className="font-semibold text-zinc-900 dark:text-white">{app.app_name}</h4>
@@ -329,7 +331,7 @@ export const PrivacyTab: React.FC<PrivacyTabProps> = ({
                   <ul className="space-y-1">
                     {app.permissions_granted.map((permission, idx) => (
                       <li key={idx} className="text-xs text-zinc-600 dark:text-zinc-400 flex items-center gap-2">
-                        <i className="fa-solid fa-check text-green-500 text-[10px]"></i>
+                        <Check className="text-green-500 text-[10px]" />
                         {permission}
                       </li>
                     ))}
@@ -339,7 +341,7 @@ export const PrivacyTab: React.FC<PrivacyTabProps> = ({
                   onClick={() => handleRevokeApp(app.id, app.app_name)}
                   className="text-sm text-red-600 dark:text-red-400 hover:underline"
                 >
-                  <i className="fa-solid fa-ban mr-1"></i>
+                  <Ban className="mr-1" />
                   Revoke Access
                 </button>
               </div>
@@ -353,17 +355,17 @@ export const PrivacyTab: React.FC<PrivacyTabProps> = ({
             onClick={() => oauthAppsService.openGooglePermissionsPage()}
             className="flex items-center justify-center gap-2 p-3 bg-white dark:bg-zinc-800/50 rounded-lg border border-zinc-200 dark:border-zinc-700 hover:border-zinc-300 dark:hover:border-zinc-600 transition text-sm font-medium text-zinc-700 dark:text-zinc-300"
           >
-            <i className="fa-brands fa-google text-rose-500"></i>
+            <ExternalLink className="text-rose-500" />
             <span>Google Apps</span>
-            <i className="fa-solid fa-external-link text-xs"></i>
+            <ExternalLink className="text-xs" />
           </button>
           <button
             onClick={() => oauthAppsService.openMicrosoftPermissionsPage()}
             className="flex items-center justify-center gap-2 p-3 bg-white dark:bg-zinc-800/50 rounded-lg border border-zinc-200 dark:border-zinc-700 hover:border-zinc-300 dark:hover:border-zinc-600 transition text-sm font-medium text-zinc-700 dark:text-zinc-300"
           >
-            <i className="fa-brands fa-microsoft text-blue-500"></i>
+            <Grid3X3 className="text-blue-500" />
             <span>Microsoft Apps</span>
-            <i className="fa-solid fa-external-link text-xs"></i>
+            <ExternalLink className="text-xs" />
           </button>
         </div>
       </div>

@@ -1,6 +1,8 @@
 import React, { useRef, useEffect } from 'react';
 import { motion } from 'framer-motion';
 
+import { Search, X } from 'lucide-react';
+
 interface ThreadSearchProps {
   value: string;
   onChange?: (value: string) => void;
@@ -63,7 +65,7 @@ const ThreadSearch: React.FC<ThreadSearchProps> = ({
       <div className="relative">
         {/* Search icon */}
         <div className="absolute left-3 top-1/2 -translate-y-1/2 pointer-events-none">
-          <i className="fa-solid fa-search text-zinc-400 text-sm"></i>
+          <Search className="text-zinc-400 text-sm" />
         </div>
 
         {/* Search input */}
@@ -92,7 +94,7 @@ const ThreadSearch: React.FC<ThreadSearchProps> = ({
             aria-label="Clear search"
             title="Clear search"
           >
-            <i className="fa-solid fa-times text-zinc-400 text-sm"></i>
+            <X className="text-zinc-400 text-sm" />
           </motion.button>
         )}
       </div>

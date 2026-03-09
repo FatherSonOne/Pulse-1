@@ -3,6 +3,8 @@
 import React, { useState, useEffect, useMemo } from 'react';
 import { usePermissions, PermissionName } from '../hooks/usePermissions';
 
+import { Check, Loader2, Minus, ShieldCheck } from 'lucide-react';
+
 interface PermissionRequestModalProps {
   onComplete: () => void;
   onSkip?: () => void;
@@ -139,7 +141,7 @@ const PermissionRequestModal: React.FC<PermissionRequestModalProps> = ({ onCompl
       <div className="fixed inset-0 z-[100] bg-black/70 backdrop-blur-sm flex items-center justify-center p-4">
         <div className="bg-white dark:bg-zinc-900 rounded-2xl max-w-md w-full p-8 text-center animate-scale-in">
           <div className="w-20 h-20 bg-emerald-100 dark:bg-emerald-900/30 rounded-full flex items-center justify-center mx-auto mb-6">
-            <i className="fa-solid fa-check text-4xl text-emerald-500"></i>
+            <Check className="text-4xl text-emerald-500" />
           </div>
           <h2 className="text-2xl font-bold dark:text-white mb-3">You're All Set!</h2>
           <p className="text-zinc-500 dark:text-zinc-400 mb-6">
@@ -158,7 +160,7 @@ const PermissionRequestModal: React.FC<PermissionRequestModalProps> = ({ onCompl
                 <i className={`fa-solid ${perm.icon} text-xs`}></i>
                 <span>{perm.title}</span>
                 {permissions[perm.name]?.granted && (
-                  <i className="fa-solid fa-check text-xs"></i>
+                  <Check className="text-xs" />
                 )}
               </div>
             ))}
@@ -225,9 +227,9 @@ const PermissionRequestModal: React.FC<PermissionRequestModalProps> = ({ onCompl
                 >
                   <i className={`fa-solid ${perm.icon}`}></i>
                   {permissions[perm.name]?.granted ? (
-                    <i className="fa-solid fa-check"></i>
+                    <Check />
                   ) : (
-                    <i className="fa-solid fa-minus"></i>
+                    <Minus />
                   )}
                 </div>
               ))}
@@ -253,12 +255,12 @@ const PermissionRequestModal: React.FC<PermissionRequestModalProps> = ({ onCompl
               >
                 {isRequesting ? (
                   <>
-                    <i className="fa-solid fa-circle-notch fa-spin"></i>
+                    <Loader2 className="animate-spin" />
                     Requesting...
                   </>
                 ) : (
                   <>
-                    <i className="fa-solid fa-shield-check"></i>
+                    <ShieldCheck />
                     Allow {currentPermission.title}
                   </>
                 )}

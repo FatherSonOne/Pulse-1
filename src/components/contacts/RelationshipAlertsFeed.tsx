@@ -4,6 +4,7 @@
 // ============================================
 
 import React, { useState } from 'react';
+import { Bell, BellOff, Clock, Lightbulb, X, Zap } from 'lucide-react';
 import {
   RelationshipAlert,
   AlertType,
@@ -54,7 +55,7 @@ export const RelationshipAlertsFeed: React.FC<RelationshipAlertsFeedProps> = ({
   if (alerts.length === 0 && !isLoading) {
     return (
       <div className="text-center py-8 text-zinc-400">
-        <i className="fa-solid fa-bell-slash text-2xl mb-2"></i>
+        <BellOff className="text-2xl mb-2" />
         <p className="text-sm">No alerts at the moment</p>
       </div>
     );
@@ -146,7 +147,7 @@ const AlertCard: React.FC<AlertCardProps> = ({
           }}
           className="p-1.5 text-zinc-400 hover:text-zinc-600 dark:hover:text-zinc-300 transition"
         >
-          <i className="fa-solid fa-xmark text-xs"></i>
+          <X className="text-xs" />
         </button>
       </div>
     );
@@ -221,7 +222,7 @@ const AlertCard: React.FC<AlertCardProps> = ({
                 Suggested Action
               </div>
               <div className="flex items-center gap-3 p-3 bg-purple-50 dark:bg-purple-900/10 rounded-lg">
-                <i className="fa-solid fa-lightbulb text-purple-500"></i>
+                <Lightbulb className="text-purple-500" />
                 <span className="text-sm text-purple-700 dark:text-purple-300">
                   {alert.suggestedAction}
                 </span>
@@ -236,14 +237,14 @@ const AlertCard: React.FC<AlertCardProps> = ({
                 onClick={() => onAction(alert.id, alert.actionType!)}
                 className="px-4 py-2 bg-purple-600 hover:bg-purple-700 text-white text-sm font-medium rounded-lg transition"
               >
-                <i className="fa-solid fa-bolt mr-2"></i>
+                <Zap className="mr-2" />
                 Take Action
               </button>
             )}
 
             <div className="relative group">
               <button className="px-3 py-2 bg-zinc-100 dark:bg-zinc-800 hover:bg-zinc-200 dark:hover:bg-zinc-700 text-zinc-700 dark:text-zinc-300 text-sm font-medium rounded-lg transition">
-                <i className="fa-solid fa-clock mr-2"></i>
+                <Clock className="mr-2" />
                 Snooze
               </button>
               <div className="absolute bottom-full left-0 mb-1 hidden group-hover:block">
@@ -291,7 +292,7 @@ export const AlertCountBadge: React.FC<AlertCountBadgeProps> = ({
       onClick={onClick}
       className="relative inline-flex items-center justify-center p-2 hover:bg-zinc-100 dark:hover:bg-zinc-800 rounded-lg transition"
     >
-      <i className="fa-solid fa-bell text-zinc-500"></i>
+      <Bell className="text-zinc-500" />
       <span className="absolute -top-0.5 -right-0.5 w-4 h-4 bg-red-500 text-white text-[10px] font-bold rounded-full flex items-center justify-center">
         {count > 9 ? '9+' : count}
       </span>

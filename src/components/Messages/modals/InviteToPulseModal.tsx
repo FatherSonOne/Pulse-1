@@ -6,6 +6,8 @@
 import React from 'react';
 import { motion, AnimatePresence } from 'framer-motion';
 
+import { Calendar, Check, ChevronRight, Mail, MessageSquare, Mic, Rocket, Users, Wand2, X } from 'lucide-react';
+
 interface InviteTargetContact {
   name: string;
   email?: string;
@@ -61,11 +63,11 @@ export const InviteToPulseModal: React.FC<InviteToPulseModalProps> = ({
               onClick={onClose}
               className="absolute top-4 right-4 text-white/80 hover:text-white z-10 transition"
             >
-              <i className="fa-solid fa-xmark text-lg"></i>
+              <X className="text-lg" />
             </button>
             <div className="relative z-10">
               <div className="w-16 h-16 mx-auto mb-4 bg-white/20 backdrop-blur rounded-2xl flex items-center justify-center">
-                <i className="fa-solid fa-rocket text-3xl text-white"></i>
+                <Rocket className="text-3xl text-white" />
               </div>
               <h3 className="text-xl font-bold text-white mb-1">Invite to Pulse</h3>
               <p className="text-white/80 text-sm">Share the future of communication</p>
@@ -78,7 +80,7 @@ export const InviteToPulseModal: React.FC<InviteToPulseModalProps> = ({
               /* Success State */
               <div className="text-center py-4">
                 <div className="w-16 h-16 mx-auto mb-4 bg-emerald-100 dark:bg-emerald-900/30 rounded-full flex items-center justify-center">
-                  <i className="fa-solid fa-check text-3xl text-emerald-500"></i>
+                  <Check className="text-3xl text-emerald-500" />
                 </div>
                 <h4 className="text-lg font-bold dark:text-white mb-2">Email Ready!</h4>
                 <p className="text-zinc-500 text-sm mb-4">
@@ -108,13 +110,13 @@ export const InviteToPulseModal: React.FC<InviteToPulseModalProps> = ({
                       className="w-full p-4 rounded-xl bg-gradient-to-r from-emerald-50 to-cyan-50 dark:from-emerald-900/20 dark:to-cyan-900/20 border border-emerald-200 dark:border-emerald-800 hover:border-emerald-400 dark:hover:border-emerald-600 transition flex items-center gap-4 group"
                     >
                       <div className="w-12 h-12 rounded-full bg-gradient-to-br from-emerald-500 to-cyan-500 text-white flex items-center justify-center group-hover:scale-110 transition shadow-lg">
-                        <i className="fa-solid fa-envelope text-lg"></i>
+                        <Mail className="text-lg" />
                       </div>
                       <div className="text-left flex-1">
                         <div className="font-bold text-zinc-900 dark:text-white">Send Email Invite</div>
                         <div className="text-xs text-zinc-500">{targetContact.email}</div>
                       </div>
-                      <i className="fa-solid fa-chevron-right text-zinc-400"></i>
+                      <ChevronRight className="text-zinc-400" />
                     </button>
                   )}
 
@@ -132,7 +134,7 @@ export const InviteToPulseModal: React.FC<InviteToPulseModalProps> = ({
                       </div>
                       <div className="text-xs text-zinc-500">Share on social or messaging apps</div>
                     </div>
-                    <i className="fa-solid fa-chevron-right text-zinc-400"></i>
+                    <ChevronRight className="text-zinc-400" />
                   </button>
 
                   {/* SMS Invite */}
@@ -142,13 +144,13 @@ export const InviteToPulseModal: React.FC<InviteToPulseModalProps> = ({
                       className="w-full p-4 rounded-xl bg-gradient-to-r from-pink-50 to-rose-50 dark:from-pink-900/20 dark:to-rose-900/20 border border-pink-200 dark:border-pink-800 hover:border-pink-400 dark:hover:border-pink-600 transition flex items-center gap-4 group"
                     >
                       <div className="w-12 h-12 rounded-full bg-gradient-to-br from-pink-500 to-rose-500 text-white flex items-center justify-center group-hover:scale-110 transition shadow-lg">
-                        <i className="fa-solid fa-comment-sms text-lg"></i>
+                        <MessageSquare className="text-lg" />
                       </div>
                       <div className="text-left flex-1">
                         <div className="font-bold text-zinc-900 dark:text-white">Send Text Invite</div>
                         <div className="text-xs text-zinc-500">{targetContact.phone}</div>
                       </div>
-                      <i className="fa-solid fa-chevron-right text-zinc-400"></i>
+                      <ChevronRight className="text-zinc-400" />
                     </button>
                   )}
                 </div>
@@ -158,19 +160,19 @@ export const InviteToPulseModal: React.FC<InviteToPulseModalProps> = ({
                   <p className="text-xs text-zinc-400 uppercase tracking-wider font-bold mb-3">What they'll get</p>
                   <div className="grid grid-cols-2 gap-2 text-xs">
                     <div className="flex items-center gap-2 text-zinc-600 dark:text-zinc-400">
-                      <i className="fa-solid fa-wand-magic-sparkles text-rose-500"></i>
+                      <Wand2 className="text-rose-500" />
                       <span>AI-powered messaging</span>
                     </div>
                     <div className="flex items-center gap-2 text-zinc-600 dark:text-zinc-400">
-                      <i className="fa-solid fa-calendar text-blue-500"></i>
+                      <Calendar className="text-blue-500" />
                       <span>Smart calendar</span>
                     </div>
                     <div className="flex items-center gap-2 text-zinc-600 dark:text-zinc-400">
-                      <i className="fa-solid fa-microphone text-purple-500"></i>
+                      <Mic className="text-purple-500" />
                       <span>Meeting transcription</span>
                     </div>
                     <div className="flex items-center gap-2 text-zinc-600 dark:text-zinc-400">
-                      <i className="fa-solid fa-users text-emerald-500"></i>
+                      <Users className="text-emerald-500" />
                       <span>Team collaboration</span>
                     </div>
                   </div>

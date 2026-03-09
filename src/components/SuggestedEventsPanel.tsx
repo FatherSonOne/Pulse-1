@@ -2,6 +2,8 @@ import React, { useState, useEffect } from 'react';
 import { meetingDetectionService, SuggestedEvent } from '../services/meetingDetectionService';
 import { CalendarEvent } from '../types';
 
+import { Clock, Plus, Sparkles } from 'lucide-react';
+
 interface SuggestedEventsPanelProps {
   onAcceptEvent: (event: Partial<CalendarEvent>) => void;
 }
@@ -79,7 +81,7 @@ export const SuggestedEventsPanel: React.FC<SuggestedEventsPanelProps> = ({
       >
         <div className="flex items-center gap-3">
           <div className="w-8 h-8 rounded-full bg-gradient-to-r from-blue-500 to-purple-500 flex items-center justify-center">
-            <i className="fa-solid fa-sparkles text-white text-sm"></i>
+            <Sparkles className="text-white text-sm" />
           </div>
           <div>
             <h3 className="text-sm font-semibold text-zinc-900 dark:text-white">
@@ -134,7 +136,7 @@ export const SuggestedEventsPanel: React.FC<SuggestedEventsPanelProps> = ({
                   {/* Time */}
                   {suggestion.event.start && (
                     <p className="text-xs text-zinc-600 dark:text-zinc-400 mb-1">
-                      <i className="fa-regular fa-clock mr-1.5"></i>
+                      <Clock className="mr-1.5" />
                       {formatTime(suggestion.event.start)}
                     </p>
                   )}
@@ -167,7 +169,7 @@ export const SuggestedEventsPanel: React.FC<SuggestedEventsPanelProps> = ({
                   onClick={() => handleAccept(suggestion)}
                   className="flex-1 px-3 py-1.5 bg-blue-500 hover:bg-blue-600 text-white rounded-lg text-xs font-medium transition"
                 >
-                  <i className="fa-solid fa-plus mr-1.5"></i>
+                  <Plus className="mr-1.5" />
                   Add to Calendar
                 </button>
                 <button

@@ -7,6 +7,8 @@ import React, { useMemo } from 'react';
 import { Tool } from './types';
 import { getCategoryColor } from './toolsData';
 
+import { ArrowRight, Lightbulb } from 'lucide-react';
+
 interface ContextualSuggestionsProps {
   allTools: Tool[];
   recentTools: string[];
@@ -70,7 +72,7 @@ export const ContextualSuggestions: React.FC<ContextualSuggestionsProps> = ({
     >
       {/* Header */}
       <div className="flex items-center gap-2 mb-3">
-        <i className="fa-solid fa-lightbulb text-purple-600 dark:text-purple-400 text-sm"></i>
+        <Lightbulb className="text-purple-600 dark:text-purple-400 text-sm" />
         <h3 className="text-xs font-bold uppercase tracking-wider text-purple-600 dark:text-purple-400">
           Suggested For You
         </h3>
@@ -98,7 +100,7 @@ export const ContextualSuggestions: React.FC<ContextualSuggestionsProps> = ({
             >
               <i className={`fa-solid ${tool.icon} text-xs`}></i>
               <span className="text-xs font-medium">{tool.name}</span>
-              <i className="fa-solid fa-arrow-right text-xs opacity-0 group-hover:opacity-100 -ml-1 group-hover:ml-0 transition-all"></i>
+              <ArrowRight className="text-xs opacity-0 group-hover:opacity-100 -ml-1 group-hover:ml-0 transition-all" />
             </button>
           );
         })}

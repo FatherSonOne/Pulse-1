@@ -2,6 +2,8 @@
 import React, { createContext, useContext, useState, useCallback, useMemo, useEffect } from 'react';
 import type { MessageTheme } from '../../types/messageEnhancements';
 
+import { Check, Palette, X } from 'lucide-react';
+
 // Color pair themes - each has a user color and other person color
 export interface ColorPairTheme {
   id: string;
@@ -338,7 +340,7 @@ export const ThemeSelector: React.FC<ThemeSelectorProps> = ({ onSelect, compact 
   return (
     <div className="p-4 bg-white dark:bg-zinc-800 rounded-xl shadow-lg border border-zinc-200 dark:border-zinc-700">
       <h3 className="text-sm font-bold text-zinc-800 dark:text-white mb-3 flex items-center gap-2">
-        <i className="fa-solid fa-palette text-purple-500" />
+        <Palette className="text-purple-500" />
         Message Theme
       </h3>
 
@@ -422,7 +424,7 @@ export const InlineThemePicker: React.FC<{
               onClick={onClose}
               className="text-zinc-400 hover:text-zinc-600 dark:hover:text-zinc-300"
             >
-              <i className="fa-solid fa-times text-xs" />
+              <X className="text-xs" />
             </button>
           )}
         </div>
@@ -449,7 +451,7 @@ export const InlineThemePicker: React.FC<{
             >
               {currentTheme.id === theme.id && (
                 <div className="absolute inset-0 flex items-center justify-center">
-                  <i className="fa-solid fa-check text-white text-xs" />
+                  <Check className="text-white text-xs" />
                 </div>
               )}
               <span className="absolute -bottom-5 left-1/2 -translate-x-1/2 text-[9px] text-zinc-500 dark:text-zinc-400 whitespace-nowrap opacity-0 group-hover:opacity-100 transition-opacity">
@@ -515,7 +517,7 @@ export const StandaloneThemePicker: React.FC<{
       <div className="bg-white dark:bg-zinc-900 rounded-xl shadow-2xl border border-zinc-200 dark:border-zinc-700 p-4 w-[320px]">
         <div className="flex items-center justify-between mb-4">
           <span className="text-sm font-bold text-zinc-700 dark:text-zinc-200 flex items-center gap-2">
-            <i className="fa-solid fa-palette text-rose-500" />
+            <Palette className="text-rose-500" />
             Message Theme
           </span>
           {onClose && (
@@ -523,7 +525,7 @@ export const StandaloneThemePicker: React.FC<{
               onClick={onClose}
               className="text-zinc-400 hover:text-zinc-600 dark:hover:text-zinc-300 p-1"
             >
-              <i className="fa-solid fa-times text-sm" />
+              <X className="text-sm" />
             </button>
           )}
         </div>
@@ -570,7 +572,7 @@ export const StandaloneThemePicker: React.FC<{
                 {pair.name}
               </span>
               {selectedPairId === pair.id && (
-                <i className="fa-solid fa-check text-rose-500 text-xs ml-1" />
+                <Check className="text-rose-500 text-xs ml-1" />
               )}
             </button>
           ))}

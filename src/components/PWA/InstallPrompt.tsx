@@ -1,6 +1,8 @@
 import { useInstallPrompt } from '../../hooks/useInstallPrompt';
 import { motion, AnimatePresence } from 'framer-motion';
 
+import { CheckCircle, Upload, X, Zap } from 'lucide-react';
+
 /**
  * InstallPrompt Component
  * Shows a custom install prompt with platform-specific instructions
@@ -64,13 +66,13 @@ export function InstallPrompt() {
                   className="absolute top-4 right-4 w-8 h-8 flex items-center justify-center rounded-full bg-white/20 hover:bg-white/30 transition"
                   aria-label="Dismiss"
                 >
-                  <i className="fa-solid fa-xmark text-sm"></i>
+                  <X className="text-sm" />
                 </button>
 
                 <div className="flex items-center gap-4">
                   {/* App Icon */}
                   <div className="w-16 h-16 rounded-2xl bg-white/20 backdrop-blur-sm flex items-center justify-center">
-                    <i className="fa-solid fa-bolt text-3xl"></i>
+                    <Zap className="text-3xl" />
                   </div>
 
                   <div>
@@ -107,7 +109,7 @@ export function InstallPrompt() {
                     {/* Share icon hint */}
                     <div className="mt-4 p-4 bg-zinc-50 dark:bg-zinc-800/50 rounded-xl flex items-center gap-3">
                       <div className="w-10 h-10 bg-blue-500 rounded-lg flex items-center justify-center text-white flex-shrink-0">
-                        <i className="fa-solid fa-arrow-up-from-bracket text-lg"></i>
+                        <Upload className="text-lg" />
                       </div>
                       <p className="text-xs text-zinc-600 dark:text-zinc-400">
                         Look for the Share icon in Safari's toolbar
@@ -119,19 +121,19 @@ export function InstallPrompt() {
                   <div className="space-y-4">
                     <div className="space-y-2">
                       <div className="flex items-center gap-2 text-emerald-600 dark:text-emerald-400">
-                        <i className="fa-solid fa-check-circle"></i>
+                        <CheckCircle />
                         <span className="text-sm font-medium">Works offline</span>
                       </div>
                       <div className="flex items-center gap-2 text-emerald-600 dark:text-emerald-400">
-                        <i className="fa-solid fa-check-circle"></i>
+                        <CheckCircle />
                         <span className="text-sm font-medium">Fast & reliable</span>
                       </div>
                       <div className="flex items-center gap-2 text-emerald-600 dark:text-emerald-400">
-                        <i className="fa-solid fa-check-circle"></i>
+                        <CheckCircle />
                         <span className="text-sm font-medium">App-like experience</span>
                       </div>
                       <div className="flex items-center gap-2 text-emerald-600 dark:text-emerald-400">
-                        <i className="fa-solid fa-check-circle"></i>
+                        <CheckCircle />
                         <span className="text-sm font-medium">Push notifications</span>
                       </div>
                     </div>

@@ -10,6 +10,8 @@ import {
 } from '../../services/voxer/realtimeTranscriptionService';
 import { processWithModel } from '../../services/geminiService';
 
+import { Bot, Brain, Captions, ChevronLeft, ChevronRight, HelpCircle, Lightbulb, Loader2, Mic, Minimize2, Play, Podcast, RotateCw, Square, Video, X } from 'lucide-react';
+
 // ============================================
 // TYPES
 // ============================================
@@ -391,7 +393,7 @@ Only include arrays that have items. Return ONLY valid JSON.`;
         <div className="px-6 py-4 border-b border-zinc-800 flex items-center justify-between bg-gradient-to-r from-zinc-900 to-zinc-950">
           <div className="flex items-center gap-4">
             <div className={`w-12 h-12 rounded-2xl flex items-center justify-center ${isSessionActive ? 'bg-emerald-500 animate-pulse' : 'bg-zinc-800'}`}>
-              <i className="fa-solid fa-podcast text-xl text-white"></i>
+              <Podcast className="text-xl text-white" />
             </div>
             <div>
               <h2 className="text-xl font-bold text-white flex items-center gap-2">
@@ -423,7 +425,7 @@ Only include arrays that have items. Return ONLY valid JSON.`;
               onClick={onClose}
               className="w-10 h-10 rounded-full hover:bg-zinc-800 flex items-center justify-center transition text-zinc-400 hover:text-white"
             >
-              <i className="fa-solid fa-times text-lg"></i>
+              <X className="text-lg" />
             </button>
           </div>
         </div>
@@ -436,7 +438,7 @@ Only include arrays that have items. Return ONLY valid JSON.`;
             {/* Transcript Header */}
             <div className="px-4 py-3 bg-zinc-900/50 border-b border-zinc-800 flex items-center justify-between">
               <h3 className="font-semibold text-white flex items-center gap-2">
-                <i className="fa-solid fa-closed-captioning text-orange-500"></i>
+                <Captions className="text-orange-500" />
                 Live Transcript
               </h3>
               <div className="flex items-center gap-2">
@@ -457,7 +459,7 @@ Only include arrays that have items. Return ONLY valid JSON.`;
             <div ref={transcriptRef} className="flex-1 overflow-y-auto p-4 space-y-3">
               {transcript.length === 0 && !isSessionActive && (
                 <div className="text-center py-12 text-zinc-500">
-                  <i className="fa-solid fa-microphone-lines text-4xl mb-4 opacity-50"></i>
+                  <Mic className="text-4xl mb-4 opacity-50" />
                   <p>Start the session to begin transcription</p>
                 </div>
               )}
@@ -527,17 +529,17 @@ Only include arrays that have items. Return ONLY valid JSON.`;
                 {/* Notes Header */}
                 <div className="px-4 py-3 bg-zinc-900/50 border-b border-zinc-800 flex items-center justify-between">
                   <h3 className="font-semibold text-white flex items-center gap-2">
-                    <i className="fa-solid fa-robot text-purple-500"></i>
+                    <Bot className="text-purple-500" />
                     AI Notes
                     {aiThinking && (
-                      <i className="fa-solid fa-circle-notch fa-spin text-purple-400 text-xs"></i>
+                      <Loader2 className="text-purple-400 text-xs animate-spin" />
                     )}
                   </h3>
                   <button 
                     onClick={() => setShowNotes(false)}
                     className="text-zinc-400 hover:text-white transition"
                   >
-                    <i className="fa-solid fa-chevron-right"></i>
+                    <ChevronRight />
                   </button>
                 </div>
 
@@ -548,28 +550,28 @@ Only include arrays that have items. Return ONLY valid JSON.`;
                     disabled={!isSessionActive || aiThinking}
                     className="px-2.5 py-1 bg-purple-500/20 hover:bg-purple-500/30 text-purple-300 rounded-lg text-xs transition disabled:opacity-50"
                   >
-                    <i className="fa-solid fa-compress mr-1"></i> Summarize
+                    <Minimize2 className="mr-1" /> Summarize
                   </button>
                   <button
                     onClick={() => askAI('repeat')}
                     disabled={!isSessionActive || aiThinking}
                     className="px-2.5 py-1 bg-blue-500/20 hover:bg-blue-500/30 text-blue-300 rounded-lg text-xs transition disabled:opacity-50"
                   >
-                    <i className="fa-solid fa-redo mr-1"></i> Repeat
+                    <RotateCw className="mr-1" /> Repeat
                   </button>
                   <button
                     onClick={() => askAI('advice')}
                     disabled={!isSessionActive || aiThinking}
                     className="px-2.5 py-1 bg-emerald-500/20 hover:bg-emerald-500/30 text-emerald-300 rounded-lg text-xs transition disabled:opacity-50"
                   >
-                    <i className="fa-solid fa-lightbulb mr-1"></i> Advice
+                    <Lightbulb className="mr-1" /> Advice
                   </button>
                   <button
                     onClick={() => askAI('clarify')}
                     disabled={!isSessionActive || aiThinking}
                     className="px-2.5 py-1 bg-amber-500/20 hover:bg-amber-500/30 text-amber-300 rounded-lg text-xs transition disabled:opacity-50"
                   >
-                    <i className="fa-solid fa-question mr-1"></i> Clarify
+                    <HelpCircle className="mr-1" /> Clarify
                   </button>
                 </div>
 
@@ -577,7 +579,7 @@ Only include arrays that have items. Return ONLY valid JSON.`;
                 <div ref={notesRef} className="flex-1 overflow-y-auto p-3 space-y-2">
                   {aiNotes.length === 0 && (
                     <div className="text-center py-8 text-zinc-500">
-                      <i className="fa-solid fa-brain text-3xl mb-3 opacity-50"></i>
+                      <Brain className="text-3xl mb-3 opacity-50" />
                       <p className="text-sm">AI notes will appear here as the conversation progresses</p>
                     </div>
                   )}
@@ -603,7 +605,7 @@ Only include arrays that have items. Return ONLY valid JSON.`;
                 onClick={() => setShowNotes(true)}
                 className="h-full flex items-center justify-center text-zinc-400 hover:text-white transition"
               >
-                <i className="fa-solid fa-chevron-left"></i>
+                <ChevronLeft />
               </button>
             )}
           </div>
@@ -617,7 +619,7 @@ Only include arrays that have items. Return ONLY valid JSON.`;
                 onClick={startSession}
                 className="px-8 py-3 bg-emerald-500 hover:bg-emerald-600 text-white rounded-full font-bold transition transform hover:scale-105 flex items-center gap-2"
               >
-                <i className="fa-solid fa-play"></i>
+                <Play />
                 Start Session
               </button>
             ) : (
@@ -625,7 +627,7 @@ Only include arrays that have items. Return ONLY valid JSON.`;
                 onClick={stopSession}
                 className="px-8 py-3 bg-red-500 hover:bg-red-600 text-white rounded-full font-bold transition transform hover:scale-105 flex items-center gap-2"
               >
-                <i className="fa-solid fa-stop"></i>
+                <Square />
                 End Session
               </button>
             )}
@@ -633,10 +635,10 @@ Only include arrays that have items. Return ONLY valid JSON.`;
             {isSessionActive && (
               <>
                 <button className="w-12 h-12 rounded-full bg-zinc-800 hover:bg-zinc-700 text-white transition flex items-center justify-center">
-                  <i className="fa-solid fa-microphone"></i>
+                  <Mic />
                 </button>
                 <button className="w-12 h-12 rounded-full bg-zinc-800 hover:bg-zinc-700 text-white transition flex items-center justify-center">
-                  <i className="fa-solid fa-video"></i>
+                  <Video />
                 </button>
               </>
             )}

@@ -10,6 +10,8 @@ import { FavoritesPanel } from './FavoritesPanel';
 import { RecentViews } from './RecentViews';
 import { DocumentTag, DocumentCollection } from '../../../types/organization';
 
+import { FileText, LayoutGrid, Lightbulb, X } from 'lucide-react';
+
 interface OrganizationSidebarProps {
   userId: string;
   documents: Array<{ id: string; title: string; file_type: string }>;
@@ -46,7 +48,7 @@ export const OrganizationSidebar: React.FC<OrganizationSidebarProps> = ({
       <div className="p-3 border-b border-gray-200 dark:border-gray-700 bg-gray-50 dark:bg-gray-900/50">
         <div className="flex items-center justify-between">
           <h2 className="text-sm font-semibold text-gray-700 dark:text-gray-300">
-            <i className="fa fa-th-large mr-2 text-rose-500"></i>
+            <LayoutGrid className="fa mr-2 text-rose-500" />
             Organize
           </h2>
           {onClose && (
@@ -54,7 +56,7 @@ export const OrganizationSidebar: React.FC<OrganizationSidebarProps> = ({
               onClick={onClose}
               className="p-1.5 text-gray-400 hover:text-gray-600 dark:hover:text-gray-200 hover:bg-gray-100 dark:hover:bg-gray-700 rounded-lg transition-colors"
             >
-              <i className="fa fa-times"></i>
+              <X className="fa" />
             </button>
           )}
         </div>
@@ -83,7 +85,7 @@ export const OrganizationSidebar: React.FC<OrganizationSidebarProps> = ({
       {selectedDocId && (
         <div className="px-3 py-2 bg-rose-50 dark:bg-rose-900/20 border-b border-rose-100 dark:border-rose-800/30">
           <div className="text-xs text-rose-600 dark:text-rose-400 flex items-center gap-2">
-            <i className="fa fa-file-text-o"></i>
+            <FileText className="fa" />
             <span className="truncate">
               Organizing: {documents.find(d => d.id === selectedDocId)?.title || 'Selected document'}
             </span>
@@ -130,16 +132,16 @@ export const OrganizationSidebar: React.FC<OrganizationSidebarProps> = ({
       <div className="p-3 border-t border-gray-200 dark:border-gray-700 bg-gray-50 dark:bg-gray-900/50">
         <div className="text-[10px] text-gray-400 space-y-1">
           {activeTab === 'favorites' && (
-            <p><i className="fa fa-lightbulb-o mr-1"></i> Click the star icon on any document to favorite it</p>
+            <p><Lightbulb className="fa mr-1" /> Click the star icon on any document to favorite it</p>
           )}
           {activeTab === 'recent' && (
-            <p><i className="fa fa-lightbulb-o mr-1"></i> Documents you view appear here automatically</p>
+            <p><Lightbulb className="fa mr-1" /> Documents you view appear here automatically</p>
           )}
           {activeTab === 'tags' && (
-            <p><i className="fa fa-lightbulb-o mr-1"></i> {selectedDocId ? 'Check tags to apply them to this document' : 'Select a document to assign tags'}</p>
+            <p><Lightbulb className="fa mr-1" /> {selectedDocId ? 'Check tags to apply them to this document' : 'Select a document to assign tags'}</p>
           )}
           {activeTab === 'collections' && (
-            <p><i className="fa fa-lightbulb-o mr-1"></i> {selectedDocId ? 'Add document to collections' : 'Create manual or smart collections'}</p>
+            <p><Lightbulb className="fa mr-1" /> {selectedDocId ? 'Add document to collections' : 'Create manual or smart collections'}</p>
           )}
         </div>
       </div>

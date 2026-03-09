@@ -1,5 +1,7 @@
 import React, { useState, useCallback, useMemo } from 'react';
 
+import { ArrowRight, ArrowRightLeft, Copy, History, Languages, Loader2, Search, Trash2, X } from 'lucide-react';
+
 // Types
 interface Language {
   code: string;
@@ -219,7 +221,7 @@ export const TranslationHub: React.FC<TranslationHubProps> = ({
       <div className="bg-gradient-to-r from-sky-500/10 to-blue-500/10 dark:from-sky-900/20 dark:to-blue-900/20 rounded-xl p-4 border border-sky-200 dark:border-sky-800">
         <div className="flex items-center gap-3">
           <div className="w-10 h-10 rounded-full bg-white dark:bg-zinc-800 flex items-center justify-center shadow-sm">
-            <i className="fa-solid fa-language text-sky-500 text-lg" />
+            <Languages className="text-sky-500 text-lg" />
           </div>
           <div>
             <p className="text-sm font-medium text-zinc-900 dark:text-white">Translation Hub</p>
@@ -274,7 +276,7 @@ export const TranslationHub: React.FC<TranslationHubProps> = ({
               disabled={sourceLanguage === 'auto'}
               className="p-2 rounded-lg hover:bg-zinc-100 dark:hover:bg-zinc-800 transition disabled:opacity-50 disabled:cursor-not-allowed"
             >
-              <i className="fa-solid fa-arrow-right-arrow-left text-zinc-500" />
+              <ArrowRightLeft className="text-zinc-500" />
             </button>
 
             <select
@@ -305,7 +307,7 @@ export const TranslationHub: React.FC<TranslationHubProps> = ({
                   onClick={() => setSourceText('')}
                   className="p-1 hover:bg-zinc-100 dark:hover:bg-zinc-700 rounded"
                 >
-                  <i className="fa-solid fa-xmark text-zinc-400 text-xs" />
+                  <X className="text-zinc-400 text-xs" />
                 </button>
               )}
             </div>
@@ -319,12 +321,12 @@ export const TranslationHub: React.FC<TranslationHubProps> = ({
           >
             {isTranslating ? (
               <>
-                <i className="fa-solid fa-circle-notch fa-spin" />
+                <Loader2 className="animate-spin" />
                 Translating...
               </>
             ) : (
               <>
-                <i className="fa-solid fa-language" />
+                <Languages />
                 Translate
               </>
             )}
@@ -341,7 +343,7 @@ export const TranslationHub: React.FC<TranslationHubProps> = ({
                   onClick={() => navigator.clipboard.writeText(translatedText)}
                   className="p-1 hover:bg-sky-100 dark:hover:bg-sky-900/30 rounded"
                 >
-                  <i className="fa-solid fa-copy text-sky-500 text-xs" />
+                  <Copy className="text-sky-500 text-xs" />
                 </button>
               </div>
               <p className="text-sm text-zinc-700 dark:text-zinc-300">{translatedText}</p>
@@ -354,7 +356,7 @@ export const TranslationHub: React.FC<TranslationHubProps> = ({
         <div className="space-y-2">
           {history.length === 0 ? (
             <div className="text-center py-8">
-              <i className="fa-solid fa-clock-rotate-left text-zinc-300 text-3xl mb-3" />
+              <History className="text-zinc-300 text-3xl mb-3" />
               <p className="text-sm text-zinc-500">No translation history</p>
             </div>
           ) : (
@@ -366,7 +368,7 @@ export const TranslationHub: React.FC<TranslationHubProps> = ({
                 <div className="flex items-center justify-between mb-2">
                   <div className="flex items-center gap-2 text-xs text-zinc-500">
                     <span>{getLanguage(entry.sourceLanguage)?.flag}</span>
-                    <i className="fa-solid fa-arrow-right text-[10px]" />
+                    <ArrowRight className="text-[10px]" />
                     <span>{getLanguage(entry.targetLanguage)?.flag}</span>
                     {entry.isAutoDetected && (
                       <span className="px-1.5 py-0.5 bg-zinc-100 dark:bg-zinc-700 rounded text-[10px]">
@@ -404,7 +406,7 @@ export const TranslationHub: React.FC<TranslationHubProps> = ({
         <div className="space-y-4">
           {/* Language Search */}
           <div className="relative">
-            <i className="fa-solid fa-search absolute left-3 top-1/2 -translate-y-1/2 text-zinc-400 text-sm" />
+            <Search className="absolute left-3 top-1/2 -translate-y-1/2 text-zinc-400 text-sm" />
             <input
               type="text"
               value={searchLanguage}
@@ -517,7 +519,7 @@ export const TranslationHub: React.FC<TranslationHubProps> = ({
             onClick={() => setHistory([])}
             className="w-full py-2 text-sm text-red-600 dark:text-red-400 hover:bg-red-50 dark:hover:bg-red-900/20 rounded-lg transition"
           >
-            <i className="fa-solid fa-trash mr-2" />
+            <Trash2 className="mr-2" />
             Clear Translation History
           </button>
         </div>
@@ -550,9 +552,9 @@ export const TranslateButton: React.FC<TranslateButtonProps> = ({ text, onTransl
       className="inline-flex items-center gap-1 px-2 py-1 text-xs text-sky-600 dark:text-sky-400 hover:bg-sky-50 dark:hover:bg-sky-900/20 rounded transition"
     >
       {isTranslating ? (
-        <i className="fa-solid fa-circle-notch fa-spin" />
+        <Loader2 className="animate-spin" />
       ) : (
-        <i className="fa-solid fa-language" />
+        <Languages />
       )}
       Translate
     </button>

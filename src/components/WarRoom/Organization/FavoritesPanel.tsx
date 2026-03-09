@@ -4,7 +4,9 @@
  */
 
 import React, { useState, useEffect } from 'react';
+import { Loader2, Star } from 'lucide-react';
 import {
+
   getUserFavorites,
   isDocumentFavorited,
   toggleFavorite,
@@ -68,7 +70,7 @@ export const FavoritesPanel: React.FC<FavoritesPanelProps> = ({
   if (loading) {
     return (
       <div className="flex items-center justify-center p-4">
-        <i className="fa fa-spinner fa-spin text-gray-400"></i>
+        <Loader2 className="fa text-gray-400 animate-spin" />
       </div>
     );
   }
@@ -78,7 +80,7 @@ export const FavoritesPanel: React.FC<FavoritesPanelProps> = ({
       {/* Header */}
       <div className="p-3 border-b border-gray-200 dark:border-gray-700 bg-gradient-to-r from-amber-50 to-yellow-50 dark:from-amber-900/20 dark:to-yellow-900/20">
         <div className="flex items-center gap-2">
-          <i className="fa fa-star text-amber-500"></i>
+          <Star className="fa text-amber-500" />
           <h3 className="text-sm font-medium text-gray-700 dark:text-gray-300">
             Favorites
           </h3>
@@ -92,7 +94,7 @@ export const FavoritesPanel: React.FC<FavoritesPanelProps> = ({
       <div className="max-h-48 overflow-y-auto">
         {favoriteDocuments.length === 0 ? (
           <div className="p-4 text-center">
-            <i className="fa fa-star-o text-2xl text-gray-300 dark:text-gray-600 mb-2"></i>
+            <Star className="fa text-2xl text-gray-300 dark:text-gray-600 mb-2" />
             <p className="text-sm text-gray-400">No favorites yet</p>
             <p className="text-xs text-gray-400 mt-1">
               Star documents to access them quickly
@@ -121,7 +123,7 @@ export const FavoritesPanel: React.FC<FavoritesPanelProps> = ({
                   className="p-1 text-amber-500 hover:text-amber-600 opacity-50 hover:opacity-100 transition-all"
                   title="Remove from favorites"
                 >
-                  <i className="fa fa-star"></i>
+                  <Star className="fa" />
                 </button>
               </div>
             ))}
@@ -190,7 +192,7 @@ export const FavoriteButton: React.FC<FavoriteButtonProps> = ({
         className={`${sizeClasses[size]} flex items-center justify-center text-gray-300`}
         disabled
       >
-        <i className="fa fa-spinner fa-spin"></i>
+        <Loader2 className="fa animate-spin" />
       </button>
     );
   }

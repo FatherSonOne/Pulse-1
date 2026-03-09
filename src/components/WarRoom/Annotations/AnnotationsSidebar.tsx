@@ -15,6 +15,8 @@ import {
 } from '../../../types/annotations';
 import { AnnotationReplyThread } from './AnnotationReplyThread';
 
+import { Download, Highlighter, MessageSquare, Pen, StickyNote, Trash2, X } from 'lucide-react';
+
 interface AnnotationsSidebarProps {
   highlights: Highlight[];
   annotations: Annotation[];
@@ -99,7 +101,7 @@ export const AnnotationsSidebar: React.FC<AnnotationsSidebarProps> = ({
 
             {highlight.note && (
               <p className="mt-2 text-xs text-gray-600 dark:text-gray-400 italic">
-                <i className="fa fa-sticky-note mr-1"></i>
+                <StickyNote className="fa mr-1" />
                 {highlight.note}
               </p>
             )}
@@ -128,7 +130,7 @@ export const AnnotationsSidebar: React.FC<AnnotationsSidebarProps> = ({
               className="p-1 text-gray-500 hover:text-gray-700 dark:text-gray-400 dark:hover:text-gray-200"
               title="Edit highlight"
             >
-              <i className="fa fa-pen text-xs"></i>
+              <Pen className="fa text-xs" />
             </button>
             <button
               onClick={(e) => {
@@ -138,7 +140,7 @@ export const AnnotationsSidebar: React.FC<AnnotationsSidebarProps> = ({
               className="p-1 text-red-500 hover:text-red-700"
               title="Delete highlight"
             >
-              <i className="fa fa-trash text-xs"></i>
+              <Trash2 className="fa text-xs" />
             </button>
           </div>
         </div>
@@ -241,7 +243,7 @@ export const AnnotationsSidebar: React.FC<AnnotationsSidebarProps> = ({
                 onClick={() => setExpandedAnnotation(annotation.id)}
                 className="mt-2 text-xs text-rose-500 hover:text-rose-600"
               >
-                <i className="fa fa-comment mr-1"></i>
+                <MessageSquare className="fa mr-1" />
                 {annotation.reply_count} {annotation.reply_count === 1 ? 'reply' : 'replies'}
               </button>
             )}
@@ -265,14 +267,14 @@ export const AnnotationsSidebar: React.FC<AnnotationsSidebarProps> = ({
               className="p-1 text-gray-500 hover:text-gray-700 dark:text-gray-400 dark:hover:text-gray-200"
               title="View replies"
             >
-              <i className="fa fa-comment text-xs"></i>
+              <MessageSquare className="fa text-xs" />
             </button>
             <button
               onClick={() => onAnnotationDelete(annotation.id)}
               className="p-1 text-red-500 hover:text-red-700"
               title="Delete annotation"
             >
-              <i className="fa fa-trash text-xs"></i>
+              <Trash2 className="fa text-xs" />
             </button>
           </div>
         </div>
@@ -301,7 +303,7 @@ export const AnnotationsSidebar: React.FC<AnnotationsSidebarProps> = ({
       <div className="p-4 border-b border-gray-200 dark:border-gray-700">
         <div className="flex items-center justify-between mb-3">
           <h3 className="font-semibold text-gray-900 dark:text-white flex items-center gap-2">
-            <i className="fa fa-highlighter text-rose-500"></i>
+            <Highlighter className="fa text-rose-500" />
             Annotations
           </h3>
           <div className="flex items-center gap-2">
@@ -310,13 +312,13 @@ export const AnnotationsSidebar: React.FC<AnnotationsSidebarProps> = ({
               className="p-1.5 text-gray-500 hover:text-gray-700 dark:text-gray-400 dark:hover:text-gray-200 hover:bg-gray-100 dark:hover:bg-gray-800 rounded-lg"
               title="Export"
             >
-              <i className="fa fa-download text-sm"></i>
+              <Download className="fa text-sm" />
             </button>
             <button
               onClick={onClose}
               className="p-1.5 text-gray-500 hover:text-gray-700 dark:text-gray-400 dark:hover:text-gray-200 hover:bg-gray-100 dark:hover:bg-gray-800 rounded-lg"
             >
-              <i className="fa fa-times"></i>
+              <X className="fa" />
             </button>
           </div>
         </div>
@@ -399,11 +401,11 @@ export const AnnotationsSidebar: React.FC<AnnotationsSidebarProps> = ({
       <div className="p-3 border-t border-gray-200 dark:border-gray-700 bg-gray-50 dark:bg-gray-800/50">
         <div className="flex items-center justify-between text-xs text-gray-500 dark:text-gray-400">
           <span>
-            <i className="fa fa-highlighter mr-1"></i>
+            <Highlighter className="fa mr-1" />
             {highlights.length} highlights
           </span>
           <span>
-            <i className="fa fa-sticky-note mr-1"></i>
+            <StickyNote className="fa mr-1" />
             {annotations.filter((a) => !a.resolved).length} open annotations
           </span>
         </div>

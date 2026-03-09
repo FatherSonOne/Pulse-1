@@ -1,6 +1,8 @@
 import React, { useEffect, useRef, useState } from 'react';
 import { createPortal } from 'react-dom';
 
+import { X } from 'lucide-react';
+
 interface BottomSheetProps {
   isOpen: boolean;
   onClose: () => void;
@@ -113,7 +115,7 @@ export const BottomSheet: React.FC<BottomSheetProps> = ({
               onClick={onClose}
               className="p-2 text-zinc-400 hover:text-zinc-600 dark:hover:text-zinc-300 transition"
             >
-              <i className="fa-solid fa-xmark text-xl"></i>
+              <X className="text-xl" />
             </button>
           </div>
         )}

@@ -2,6 +2,8 @@ import React, { useState, useRef, useEffect } from 'react';
 import { AIMessage, ThinkingStep } from '../../../services/ragService';
 import { SessionExport } from '../shared';
 
+import { ArrowRight, BookOpen, Check, CheckCircle, MessagesSquare, Plus, Route, Send, Share2, Wand2, X } from 'lucide-react';
+
 interface Option {
   id: string;
   name: string;
@@ -217,7 +219,7 @@ Provide:
         {/* Mission Header */}
         <div className="p-4 border-b border-white/10 wr-mission-accent-bg">
           <div className="flex items-center gap-2 mb-2">
-            <i className="fa fa-route text-cyan-400"></i>
+            <Route className="fa text-cyan-400" />
             <h3 className="text-sm font-semibold war-room-text-primary">Decision Mission</h3>
           </div>
           {decision && (
@@ -225,7 +227,7 @@ Provide:
           )}
           {activeContextCount > 0 && (
             <div className="war-room-badge text-xs mt-2" style={{ display: 'inline-flex', alignItems: 'center', gap: 4 }}>
-              <i className="fa fa-book-open" style={{ fontSize: 9 }}></i>
+              <BookOpen className="fa" />
               {activeContextCount} source{activeContextCount !== 1 ? 's' : ''}
             </div>
           )}
@@ -255,7 +257,7 @@ Provide:
                         ? 'bg-cyan-500/30 text-cyan-400'
                         : 'bg-white/10 text-white/40'
                     }`}>
-                    {isComplete ? <i className="fa fa-check"></i> : <i className={`fa ${phase.icon}`}></i>}
+                    {isComplete ? <Check className="fa" /> : <i className={`fa ${phase.icon}`}></i>}
                   </div>
                   <div className="text-left">
                     <p className={`text-xs font-medium ${isActive ? 'text-cyan-400' : 'war-room-text-primary'}`}>
@@ -301,7 +303,7 @@ Provide:
                 disabled={!decision.trim()}
                 className="w-full war-room-btn war-room-btn-primary py-2"
               >
-                <i className="fa fa-arrow-right mr-2"></i>
+                <ArrowRight className="fa mr-2" />
                 Start Mission
               </button>
             </div>
@@ -323,7 +325,7 @@ Provide:
                   disabled={!newOptionName.trim()}
                   className="war-room-btn war-room-btn-icon-sm war-room-btn-primary"
                 >
-                  <i className="fa fa-plus text-xs"></i>
+                  <Plus className="fa text-xs" />
                 </button>
               </div>
 
@@ -341,7 +343,7 @@ Provide:
                         onClick={() => handleRemoveOption(option.id)}
                         className="opacity-0 group-hover:opacity-100 text-red-400"
                       >
-                        <i className="fa fa-times text-xs"></i>
+                        <X className="fa text-xs" />
                       </button>
                     </div>
                   </div>
@@ -353,7 +355,7 @@ Provide:
                   onClick={() => proceedToPhase('criteria')}
                   className="w-full war-room-btn war-room-btn-primary py-2"
                 >
-                  <i className="fa fa-arrow-right mr-2"></i>
+                  <ArrowRight className="fa mr-2" />
                   Define Criteria
                 </button>
               )}
@@ -376,7 +378,7 @@ Provide:
                   disabled={!newCriteriaName.trim()}
                   className="war-room-btn war-room-btn-icon-sm war-room-btn-primary"
                 >
-                  <i className="fa fa-plus text-xs"></i>
+                  <Plus className="fa text-xs" />
                 </button>
               </div>
 
@@ -389,7 +391,7 @@ Provide:
                         onClick={() => handleRemoveCriteria(crit.id)}
                         className="opacity-0 group-hover:opacity-100 text-red-400"
                       >
-                        <i className="fa fa-times text-xs"></i>
+                        <X className="fa text-xs" />
                       </button>
                     </div>
                     <div className="flex items-center gap-1">
@@ -416,7 +418,7 @@ Provide:
                   onClick={() => proceedToPhase('evaluate')}
                   className="w-full war-room-btn war-room-btn-primary py-2"
                 >
-                  <i className="fa fa-arrow-right mr-2"></i>
+                  <ArrowRight className="fa mr-2" />
                   Start Evaluation
                 </button>
               )}
@@ -469,7 +471,7 @@ Provide:
                 onClick={() => proceedToPhase('decide')}
                 className="w-full war-room-btn war-room-btn-primary py-2"
               >
-                <i className="fa fa-arrow-right mr-2"></i>
+                <ArrowRight className="fa mr-2" />
                 Make Decision
               </button>
             </div>
@@ -503,7 +505,7 @@ Provide:
                   </div>
                   {finalChoice === option.id && (
                     <div className="mt-2 flex items-center gap-1 text-emerald-400">
-                      <i className="fa fa-check-circle"></i>
+                      <CheckCircle className="fa" />
                       <span className="text-xs">Selected</span>
                     </div>
                   )}
@@ -515,7 +517,7 @@ Provide:
                 disabled={isLoading}
                 className="w-full war-room-btn war-room-btn-primary py-2"
               >
-                <i className="fa fa-wand-magic-sparkles mr-2"></i>
+                <Wand2 className="fa mr-2" />
                 Generate Recommendation
               </button>
 
@@ -528,7 +530,7 @@ Provide:
                   }}
                   className="w-full war-room-btn bg-gradient-to-r from-emerald-600 to-green-600 hover:from-emerald-700 hover:to-green-700 text-white py-3 font-semibold"
                 >
-                  <i className="fa fa-check-circle mr-2"></i>
+                  <CheckCircle className="fa mr-2" />
                   Complete & Save Decision
                 </button>
               )}
@@ -542,7 +544,7 @@ Provide:
             onClick={() => setShowExport(true)}
             className="w-full war-room-btn py-2"
           >
-            <i className="fa fa-share-nodes mr-2"></i>
+            <Share2 className="fa mr-2" />
             Export Decision
           </button>
         </div>
@@ -556,7 +558,7 @@ Provide:
             <div className="h-full flex items-center justify-center">
               <div className="text-center max-w-md">
                 <div className="w-16 h-16 mx-auto mb-4 rounded-full bg-gradient-to-br from-cyan-500/20 to-blue-500/20 flex items-center justify-center">
-                  <i className="fa fa-route text-2xl text-cyan-400"></i>
+                  <Route className="fa text-2xl text-cyan-400" />
                 </div>
                 <h3 className="text-lg font-semibold war-room-text-primary mb-2">
                   Decision Mission
@@ -581,7 +583,7 @@ Provide:
                 >
                   {msg.role === 'assistant' && (
                     <div className="flex items-center gap-2 mb-2 pb-2 border-b border-white/10">
-                      <i className="fa fa-route text-cyan-400 text-xs"></i>
+                      <Route className="fa text-cyan-400 text-xs" />
                       <span className="text-xs text-cyan-400 font-medium">Decision Guide</span>
                     </div>
                   )}
@@ -596,7 +598,7 @@ Provide:
               <div className="war-room-message-ai">
                 <div className="flex items-center gap-3">
                   <div className="w-5 h-5 rounded-full bg-cyan-500/30 flex items-center justify-center">
-                    <i className="fa fa-route text-cyan-400 text-xs animate-pulse"></i>
+                    <Route className="fa text-cyan-400 text-xs animate-pulse" />
                   </div>
                   <span className="text-sm war-room-text-secondary">Analyzing decision...</span>
                 </div>
@@ -619,7 +621,7 @@ Provide:
                     onClick={() => setCurrentPhase('options')}
                     className="war-room-btn war-room-btn-primary px-4 py-2 text-sm"
                   >
-                    <i className="fa fa-arrow-right mr-2"></i>
+                    <ArrowRight className="fa mr-2" />
                     Add Options
                   </button>
                 )}
@@ -628,7 +630,7 @@ Provide:
                     onClick={() => proceedToPhase('criteria')}
                     className="war-room-btn war-room-btn-primary px-4 py-2 text-sm"
                   >
-                    <i className="fa fa-arrow-right mr-2"></i>
+                    <ArrowRight className="fa mr-2" />
                     Define Criteria
                   </button>
                 )}
@@ -637,7 +639,7 @@ Provide:
                     onClick={() => proceedToPhase('evaluate')}
                     className="war-room-btn war-room-btn-primary px-4 py-2 text-sm"
                   >
-                    <i className="fa fa-arrow-right mr-2"></i>
+                    <ArrowRight className="fa mr-2" />
                     Evaluate Options
                   </button>
                 )}
@@ -647,7 +649,7 @@ Provide:
                     disabled={isLoading}
                     className="war-room-btn war-room-btn-primary px-4 py-2 text-sm"
                   >
-                    <i className="fa fa-wand-magic-sparkles mr-2"></i>
+                    <Wand2 className="fa mr-2" />
                     Get Recommendation
                   </button>
                 )}
@@ -662,7 +664,7 @@ Provide:
         <div className="shrink-0 p-4 war-room-input-area">
           <div className="flex items-center gap-2">
             <div className="flex-1 war-room-panel-inset flex items-center gap-2 px-4 py-3">
-              <i className="fa fa-comments text-cyan-400 text-sm"></i>
+              <MessagesSquare className="fa text-cyan-400 text-sm" />
               <input
                 type="text"
                 value={input}
@@ -678,7 +680,7 @@ Provide:
                 className={`war-room-btn war-room-btn-icon-sm ${input.trim() ? 'war-room-btn-primary' : ''
                   }`}
               >
-                <i className="fa fa-paper-plane text-xs"></i>
+                <Send className="fa text-xs" />
               </button>
             </div>
           </div>

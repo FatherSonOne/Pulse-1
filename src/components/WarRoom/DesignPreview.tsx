@@ -1,5 +1,7 @@
 import React, { useState } from 'react';
 
+import { X } from 'lucide-react';
+
 interface DesignPreviewProps {
   isOpen: boolean;
   onClose: () => void;
@@ -93,7 +95,7 @@ export const DesignPreview: React.FC<DesignPreviewProps> = ({ isOpen, onClose })
           onClick={onClose}
           className="absolute top-4 right-4 w-10 h-10 rounded-full bg-white/20 backdrop-blur-md text-white hover:bg-white/30 transition-colors flex items-center justify-center"
         >
-          <i className="fa fa-times"></i>
+          <X className="fa" />
         </button>
 
         {/* Content */}

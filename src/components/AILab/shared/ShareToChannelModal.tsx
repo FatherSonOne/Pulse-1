@@ -4,6 +4,8 @@ import { messageChannelService } from '../../../services/messageChannelService';
 import { ragService } from '../../../services/ragService';
 import './ShareToChannelModal.css';
 
+import { Check, Database, FileText, Hash, Loader2, Send, Share2, X } from 'lucide-react';
+
 interface ShareToChannelModalProps {
   title: string;
   content: string;
@@ -56,18 +58,18 @@ const ShareToChannelModal: React.FC<ShareToChannelModalProps> = ({ title, conten
       <div className="share-modal" onClick={e => e.stopPropagation()}>
         <div className="share-modal-header">
           <h3>
-            <i className="fa-solid fa-share-nodes"></i>
+            <Share2 />
             Share Output
           </h3>
           <button type="button" className="share-modal-close" onClick={onClose} aria-label="Close">
-            <i className="fa-solid fa-xmark"></i>
+            <X />
           </button>
         </div>
 
         <div className="share-modal-body">
           <div className="share-preview">
             <span className="share-preview-label">
-              <i className="fa-solid fa-file-lines"></i>
+              <FileText />
               {title}
             </span>
             <p className="share-preview-text">{content.slice(0, 120)}{content.length > 120 ? '...' : ''}</p>
@@ -87,9 +89,9 @@ const ShareToChannelModal: React.FC<ShareToChannelModalProps> = ({ title, conten
                     className={`share-channel-item ${selectedChannelId === ch.id ? 'active' : ''}`}
                     onClick={() => setSelectedChannelId(ch.id)}
                   >
-                    <i className="fa-solid fa-hashtag"></i>
+                    <Hash />
                     <span>{ch.name}</span>
-                    {selectedChannelId === ch.id && <i className="fa-solid fa-check"></i>}
+                    {selectedChannelId === ch.id && <Check />}
                   </button>
                 ))}
               </div>
@@ -102,11 +104,11 @@ const ShareToChannelModal: React.FC<ShareToChannelModalProps> = ({ title, conten
                 disabled={!selectedChannelId || isSending || sent}
               >
                 {sent ? (
-                  <><i className="fa-solid fa-check"></i> Sent to Channel</>
+                  <><Check /> Sent to Channel</>
                 ) : isSending ? (
-                  <><i className="fa-solid fa-spinner fa-spin"></i> Sending...</>
+                  <><Loader2 className="animate-spin" /> Sending...</>
                 ) : (
-                  <><i className="fa-solid fa-paper-plane"></i> Send to Channel</>
+                  <><Send /> Send to Channel</>
                 )}
               </button>
             )}
@@ -123,11 +125,11 @@ const ShareToChannelModal: React.FC<ShareToChannelModalProps> = ({ title, conten
               disabled={!apiKeys.gemini || isSavingToKB || savedToKB}
             >
               {savedToKB ? (
-                <><i className="fa-solid fa-check"></i> Saved to Knowledge Base</>
+                <><Check /> Saved to Knowledge Base</>
               ) : isSavingToKB ? (
-                <><i className="fa-solid fa-spinner fa-spin"></i> Saving...</>
+                <><Loader2 className="animate-spin" /> Saving...</>
               ) : (
-                <><i className="fa-solid fa-database"></i> Save to Knowledge Base</>
+                <><Database /> Save to Knowledge Base</>
               )}
             </button>
             {!apiKeys.gemini && (

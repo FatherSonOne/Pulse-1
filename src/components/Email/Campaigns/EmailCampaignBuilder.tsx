@@ -12,6 +12,8 @@ import { supabase } from '../../../services/supabase';
 import { emailSegmentService, EmailSegment } from '../../../services/emailSegmentService';
 import { SegmentBuilder } from './SegmentBuilder';
 
+import { ArrowLeft, ArrowRight, CheckCircle2, ClipboardList, Clock, FileX, Layers, Loader2, Plus, Save, Send, Wand2 } from 'lucide-react';
+
 // ---------------------------------------------------------------------------
 // Types & constants
 // ---------------------------------------------------------------------------
@@ -369,7 +371,7 @@ export const EmailCampaignBuilder: React.FC<Props> = ({
           className="w-8 h-8 flex items-center justify-center rounded-lg text-stone-500 dark:text-zinc-400 hover:text-stone-900 dark:hover:text-zinc-100 hover:bg-stone-100 dark:hover:bg-zinc-800 transition-colors"
           title="Back to campaigns"
         >
-          <i className="fa-solid fa-arrow-left text-sm" />
+          <ArrowLeft className="text-sm" />
         </button>
 
         {/* Title */}
@@ -383,13 +385,13 @@ export const EmailCampaignBuilder: React.FC<Props> = ({
         <div className="flex items-center gap-2 text-xs text-stone-400 dark:text-zinc-500">
           {saveStatus === 'saving' && (
             <>
-              <i className="fa-solid fa-spinner animate-spin text-rose-500" />
+              <Loader2 className="animate-spin text-rose-500" />
               <span>Saving...</span>
             </>
           )}
           {saveStatus === 'saved' && (
             <>
-              <i className="fa-solid fa-circle-check text-green-500" />
+              <CheckCircle2 className="text-green-500" />
               <span className="text-green-600 dark:text-green-400">Saved</span>
             </>
           )}
@@ -401,7 +403,7 @@ export const EmailCampaignBuilder: React.FC<Props> = ({
           disabled={saveStatus === 'saving'}
           className="inline-flex items-center gap-2 px-3 py-1.5 rounded-lg text-xs font-medium bg-white dark:bg-zinc-900 border border-stone-200 dark:border-zinc-700 text-stone-700 dark:text-zinc-300 hover:bg-stone-100 dark:hover:bg-zinc-800 disabled:opacity-50 transition-colors"
         >
-          <i className="fa-solid fa-floppy-disk" />
+          <Save />
           Save Draft
         </button>
       </div>
@@ -521,13 +523,13 @@ export const EmailCampaignBuilder: React.FC<Props> = ({
                   onClick={() => { setEditingSegment(null); setShowSegmentBuilder(true); }}
                   className="text-xs text-rose-500 hover:text-rose-600 font-medium transition-colors"
                 >
-                  <i className="fa-solid fa-plus mr-1" />
+                  <Plus className="mr-1" />
                   New Segment
                 </button>
               </div>
               {segmentsLoading ? (
                 <div className="flex items-center gap-2 px-3 py-2 text-sm text-stone-400 dark:text-zinc-500">
-                  <i className="fa-solid fa-spinner animate-spin" />
+                  <Loader2 className="animate-spin" />
                   <span>Loading segments…</span>
                 </div>
               ) : (
@@ -591,7 +593,7 @@ export const EmailCampaignBuilder: React.FC<Props> = ({
                 className="inline-flex items-center gap-2 px-5 py-2.5 rounded-lg bg-gradient-to-r from-rose-500 to-red-500 text-white text-sm font-medium shadow-sm hover:opacity-90 transition-opacity"
               >
                 Continue to Compose
-                <i className="fa-solid fa-arrow-right text-xs" />
+                <ArrowRight className="text-xs" />
               </button>
             </div>
           </div>
@@ -606,7 +608,7 @@ export const EmailCampaignBuilder: React.FC<Props> = ({
               <div className="rounded-[10px] bg-stone-50 dark:bg-zinc-950 p-5">
                 <div className="flex items-center gap-2 mb-4">
                   <div className="w-8 h-8 rounded-lg bg-gradient-to-br from-violet-500 to-purple-600 flex items-center justify-center shadow">
-                    <i className="fa-solid fa-wand-magic-sparkles text-white text-xs" />
+                    <Wand2 className="text-white text-xs" />
                   </div>
                   <div>
                     <h3 className="text-sm font-semibold text-stone-900 dark:text-zinc-100">
@@ -645,12 +647,12 @@ export const EmailCampaignBuilder: React.FC<Props> = ({
                       >
                         {aiLoading ? (
                           <>
-                            <i className="fa-solid fa-spinner animate-spin text-xs" />
+                            <Loader2 className="animate-spin text-xs" />
                             Generating...
                           </>
                         ) : (
                           <>
-                            <i className="fa-solid fa-wand-magic-sparkles text-xs" />
+                            <Wand2 className="text-xs" />
                             Generate
                           </>
                         )}
@@ -677,7 +679,7 @@ export const EmailCampaignBuilder: React.FC<Props> = ({
                       : 'bg-white dark:bg-zinc-900 border-stone-200 dark:border-zinc-700 text-stone-600 dark:text-zinc-300 hover:border-rose-500/40'
                   }`}
                 >
-                  <i className="fa-solid fa-layer-group text-xs" />
+                  <Layers className="text-xs" />
                   {showTemplates ? 'Hide Templates' : 'Use Template'}
                 </button>
               </div>
@@ -687,11 +689,11 @@ export const EmailCampaignBuilder: React.FC<Props> = ({
                 <div className="mb-4 rounded-xl border border-stone-200 dark:border-zinc-700 bg-white dark:bg-zinc-900 p-4">
                   {templatesLoading ? (
                     <div className="flex items-center justify-center py-8">
-                      <i className="fa-solid fa-spinner animate-spin text-xl text-rose-500" />
+                      <Loader2 className="animate-spin text-xl text-rose-500" />
                     </div>
                   ) : templates.length === 0 ? (
                     <div className="text-center py-8 text-stone-500 dark:text-zinc-400">
-                      <i className="fa-solid fa-file-circle-xmark text-2xl mb-2 opacity-40 block" />
+                      <FileX className="text-2xl mb-2 opacity-40 block" />
                       <p className="text-sm">No templates found. Create templates in the Templates section.</p>
                     </div>
                   ) : (
@@ -761,7 +763,7 @@ export const EmailCampaignBuilder: React.FC<Props> = ({
                 className="inline-flex items-center gap-2 px-5 py-2.5 rounded-lg bg-gradient-to-r from-rose-500 to-red-500 text-white text-sm font-medium shadow-sm hover:opacity-90 transition-opacity"
               >
                 Continue to Review
-                <i className="fa-solid fa-arrow-right text-xs" />
+                <ArrowRight className="text-xs" />
               </button>
             </div>
           </div>
@@ -774,7 +776,7 @@ export const EmailCampaignBuilder: React.FC<Props> = ({
             {/* Campaign summary card */}
             <div className="rounded-xl border border-stone-200 dark:border-zinc-700 bg-white dark:bg-zinc-900 p-5">
               <h3 className="text-sm font-semibold text-stone-900 dark:text-zinc-100 mb-4 flex items-center gap-2">
-                <i className="fa-solid fa-clipboard-list text-rose-500" />
+                <ClipboardList className="text-rose-500" />
                 Campaign Summary
               </h3>
               <dl className="grid grid-cols-1 sm:grid-cols-3 gap-4 text-sm">
@@ -825,7 +827,7 @@ export const EmailCampaignBuilder: React.FC<Props> = ({
                 Recipients
                 {loadingRecipients ? (
                   <span className="ml-2 normal-case text-stone-400 dark:text-zinc-500 font-normal">
-                    <i className="fa-solid fa-spinner animate-spin text-xs mr-1" />
+                    <Loader2 className="animate-spin text-xs mr-1" />
                     Loading from segment…
                   </span>
                 ) : recipientCount > 0 ? (
@@ -868,9 +870,9 @@ export const EmailCampaignBuilder: React.FC<Props> = ({
                   className="inline-flex items-center gap-2 px-5 py-2.5 rounded-lg bg-blue-600 hover:bg-blue-700 text-white text-sm font-medium shadow-sm disabled:opacity-50 transition-colors"
                 >
                   {sending ? (
-                    <i className="fa-solid fa-spinner animate-spin text-xs" />
+                    <Loader2 className="animate-spin text-xs" />
                   ) : (
-                    <i className="fa-solid fa-clock text-xs" />
+                    <Clock className="text-xs" />
                   )}
                   Schedule
                 </button>
@@ -881,9 +883,9 @@ export const EmailCampaignBuilder: React.FC<Props> = ({
                 className="inline-flex items-center gap-2 px-5 py-2.5 rounded-lg bg-gradient-to-r from-rose-500 to-red-500 text-white text-sm font-medium shadow-sm hover:opacity-90 disabled:opacity-50 transition-opacity"
               >
                 {sending ? (
-                  <i className="fa-solid fa-spinner animate-spin text-xs" />
+                  <Loader2 className="animate-spin text-xs" />
                 ) : (
-                  <i className="fa-solid fa-paper-plane text-xs" />
+                  <Send className="text-xs" />
                 )}
                 Send Now
               </button>

@@ -3,6 +3,8 @@ import { KnowledgeDoc } from '../../../services/ragService';
 import { processWithModel } from '../../../services/geminiService';
 import toast from 'react-hot-toast';
 
+import { Activity, Download, FileText, Filter, GripHorizontal, GripVertical, Loader2, RefreshCw, Sparkles, X } from 'lucide-react';
+
 interface TimelineEvent {
   date: string;
   title: string;
@@ -222,7 +224,7 @@ Requirements:
         <div className="p-4 border-b border-white/10 flex items-center justify-between shrink-0">
           <div className="flex items-center gap-3">
             <div className="w-10 h-10 bg-purple-500/20 rounded-lg flex items-center justify-center">
-              <i className="fa fa-timeline text-purple-400"></i>
+              <Activity className="fa text-purple-400" />
             </div>
             <div>
               <h3 className="text-lg font-bold">Timeline Generator</h3>
@@ -232,7 +234,7 @@ Requirements:
             </div>
           </div>
           <button onClick={onClose} className="war-room-btn war-room-btn-icon-sm">
-            <i className="fa fa-times"></i>
+            <X className="fa" />
           </button>
         </div>
 
@@ -242,7 +244,7 @@ Requirements:
             <div className="text-center py-8">
               {isGenerating ? (
                 <div>
-                  <i className="fa fa-spinner fa-spin text-4xl text-purple-400 mb-4"></i>
+                  <Loader2 className="fa text-4xl text-purple-400 mb-4 animate-spin" />
                   <p className="text-sm war-room-text-secondary mb-4">
                     Generating timeline...
                   </p>
@@ -260,7 +262,7 @@ Requirements:
                 </div>
               ) : (
                 <div>
-                  <i className="fa fa-timeline text-4xl text-purple-400 mb-4"></i>
+                  <Activity className="fa text-4xl text-purple-400 mb-4" />
                   <p className="text-lg font-medium mb-2">Generate Timeline</p>
                   <p className="text-sm war-room-text-secondary mb-6 max-w-md mx-auto">
                     Extract dates and events from your documents to create a visual chronological timeline.
@@ -285,7 +287,7 @@ Requirements:
                     disabled={docsToUse.length === 0}
                     className="war-room-btn war-room-btn-primary"
                   >
-                    <i className="fa fa-sparkles mr-2"></i>
+                    <Sparkles className="fa mr-2" />
                     Generate Timeline
                   </button>
                 </div>
@@ -314,7 +316,7 @@ Requirements:
                         : 'war-room-text-secondary hover:text-purple-400'
                     }`}
                   >
-                    <i className="fa fa-grip-lines-vertical mr-1"></i>
+                    <GripVertical className="fa mr-1" />
                     Vertical
                   </button>
                   <button
@@ -325,7 +327,7 @@ Requirements:
                         : 'war-room-text-secondary hover:text-purple-400'
                     }`}
                   >
-                    <i className="fa fa-grip-lines mr-1"></i>
+                    <GripHorizontal className="fa mr-1" />
                     Horizontal
                   </button>
                 </div>
@@ -385,7 +387,7 @@ Requirements:
                             <p className="text-sm war-room-text-secondary">{event.description}</p>
                             {event.sources.length > 0 && (
                               <p className="text-xs war-room-text-muted mt-2">
-                                <i className="fa fa-file-lines mr-1"></i>
+                                <FileText className="fa mr-1" />
                                 {event.sources.join(', ')}
                               </p>
                             )}
@@ -434,7 +436,7 @@ Requirements:
 
               {filteredEvents.length === 0 && (
                 <div className="text-center py-8 war-room-text-secondary">
-                  <i className="fa fa-filter text-2xl mb-2"></i>
+                  <Filter className="fa text-2xl mb-2" />
                   <p>No events match your filters</p>
                 </div>
               )}
@@ -458,14 +460,14 @@ Requirements:
                   onClick={() => setTimeline(null)}
                   className="war-room-btn text-sm"
                 >
-                  <i className="fa fa-refresh mr-2"></i>
+                  <RefreshCw className="fa mr-2" />
                   Regenerate
                 </button>
                 <button
                   onClick={exportTimeline}
                   className="war-room-btn war-room-btn-primary text-sm"
                 >
-                  <i className="fa fa-download mr-2"></i>
+                  <Download className="fa mr-2" />
                   Export
                 </button>
               </>

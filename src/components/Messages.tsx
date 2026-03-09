@@ -125,6 +125,8 @@ import { MobileDrawer, useSwipeFromEdge, MobileDrawerHeader } from './Messages/M
 // Focus Mode (Phase 5)
 const FocusMode = lazy(() => import('./Messages/FocusMode').then(m => ({ default: m.FocusMode })));
 
+import { Archive, ArrowLeft, ArrowRight, ArrowUp, AtSign, BarChart, Bot, Check, CheckCheck, CheckCircle, CheckCircle2, Clock, Copy, Crosshair, Download, Ellipsis, Eye, File, FileOutput, FileText, Flag, Gavel, GitFork, Handshake, Hash, HeartPulse, History, Image, Keyboard, Layers, LayoutGrid, Link, ListChecks, Loader2, Lock, LogOut, Mail, Menu, MessageCircle, MessageSquare, MessagesSquare, Pen, PenTool, Play, Plus, Reply, Rocket, Scale, Search, Send, Share, SlidersHorizontal, Smartphone, Smile, Square, SquarePen, Star, Target, Terminal, ThumbsDown, ThumbsUp, Trash2, TrendingUp, Trophy, UserPlus, UserX, Users, Video, Wand2, Wrench, X, Zap } from 'lucide-react';
+
 // Extracted Modals
 import {
   ScheduleMessageModal,
@@ -175,7 +177,7 @@ const QuickAddContact: React.FC<QuickAddContactProps> = ({ onAddContact, onConta
     <div className="space-y-4">
       <div className="text-center py-4">
         <div className="w-16 h-16 bg-zinc-100 dark:bg-zinc-800 rounded-full flex items-center justify-center mx-auto mb-3">
-          <i className="fa-solid fa-user-plus text-2xl text-zinc-400"></i>
+          <UserPlus className="text-2xl text-zinc-400" />
         </div>
         <p className="text-sm text-zinc-500 dark:text-zinc-400">No contacts yet. Add your first contact to start messaging.</p>
       </div>
@@ -208,12 +210,12 @@ const QuickAddContact: React.FC<QuickAddContactProps> = ({ onAddContact, onConta
         >
           {isAdding ? (
             <>
-              <i className="fa-solid fa-circle-notch fa-spin"></i>
+              <Loader2 className="animate-spin" />
               Adding...
             </>
           ) : (
             <>
-              <i className="fa-solid fa-plus"></i>
+              <Plus />
               Add Contact & Start Chat
             </>
           )}
@@ -2496,9 +2498,9 @@ const Messages: React.FC<MessagesProps> = ({ apiKey, contacts, initialContactId,
 
   const getSourceIcon = (source?: string) => {
       switch(source) {
-          case 'slack': return <i className="fa-brands fa-slack text-white bg-purple-600 rounded p-0.5 text-[8px]" title="From Slack"></i>;
-          case 'email': return <i className="fa-solid fa-envelope text-white bg-blue-500 rounded p-0.5 text-[8px]" title="From Email"></i>;
-          case 'sms': return <i className="fa-solid fa-comment-sms text-white bg-green-500 rounded p-0.5 text-[8px]" title="From SMS"></i>;
+          case 'slack': return <Hash className="text-white bg-purple-600 rounded p-0.5 text-[8px]" />;
+          case 'email': return <Mail className="text-white bg-blue-500 rounded p-0.5 text-[8px]" />;
+          case 'sms': return <MessageSquare className="text-white bg-green-500 rounded p-0.5 text-[8px]" />;
           default: return null;
       }
   };
@@ -2518,7 +2520,7 @@ const Messages: React.FC<MessagesProps> = ({ apiKey, contacts, initialContactId,
       <Suspense fallback={
         <div className="h-full flex items-center justify-center bg-white dark:bg-zinc-950">
           <div className="text-center">
-            <i className="fa-solid fa-circle-notch fa-spin text-3xl text-blue-500 mb-4"></i>
+            <Loader2 className="text-3xl text-blue-500 mb-4 animate-spin" />
             <p className="text-zinc-500 dark:text-zinc-400">Loading...</p>
           </div>
         </div>
@@ -2611,7 +2613,7 @@ const Messages: React.FC<MessagesProps> = ({ apiKey, contacts, initialContactId,
         <div className="bg-gradient-to-br from-zinc-50 to-zinc-100 dark:from-zinc-900 dark:to-zinc-800 rounded-2xl p-8 border-2 border-dashed border-zinc-300 dark:border-zinc-700 hover:border-rose-400 dark:hover:border-rose-500 hover:from-rose-50 hover:to-pink-50 dark:hover:from-rose-950/30 dark:hover:to-pink-950/30 transition-all duration-300 shadow-sm hover:shadow-lg hover:shadow-rose-500/20">
           <div className="text-center">
             <div className="w-20 h-20 bg-gradient-to-br from-rose-100 to-pink-100 dark:from-rose-900/50 dark:to-pink-900/50 rounded-full flex items-center justify-center mx-auto mb-6 group-hover:scale-110 transition-transform">
-              <i className="fa-solid fa-paper-plane text-3xl text-rose-500 group-hover:text-rose-600 transition-colors"></i>
+              <Send className="text-3xl text-rose-500 group-hover:text-rose-600 transition-colors" />
             </div>
             <h2 className="text-xl font-bold text-zinc-900 dark:text-white mb-2">
               Send a New Message
@@ -2622,7 +2624,7 @@ const Messages: React.FC<MessagesProps> = ({ apiKey, contacts, initialContactId,
                 : 'Start your first Pulse conversation to begin messaging.'}
             </p>
             <div className="inline-flex items-center gap-2 px-6 py-3 bg-gradient-to-r from-rose-500 to-pink-600 text-white rounded-xl font-semibold group-hover:from-rose-600 group-hover:to-pink-700 transition shadow-lg shadow-rose-500/30">
-              <i className="fa-solid fa-plus"></i>
+              <Plus />
               New Conversation
             </div>
           </div>
@@ -2642,7 +2644,7 @@ const Messages: React.FC<MessagesProps> = ({ apiKey, contacts, initialContactId,
                 onClick={() => setShowCellularSMS(true)}
                 className="text-xs text-green-600 dark:text-green-400 hover:underline"
               >
-                <i className="fa-solid fa-mobile-screen-button mr-1"></i>
+                <Smartphone className="mr-1" />
                 {threads.length} SMS
               </button>
             )}
@@ -2667,10 +2669,10 @@ const Messages: React.FC<MessagesProps> = ({ apiKey, contacts, initialContactId,
           <div className="bg-white dark:bg-zinc-900 w-full max-w-md rounded-2xl shadow-2xl animate-scale-in border border-zinc-200 dark:border-zinc-800">
             <div className="p-4 border-b border-zinc-200 dark:border-zinc-800 flex justify-between items-center">
               <h3 className="font-bold dark:text-white flex items-center gap-2">
-                <i className="fa-solid fa-plus text-rose-500"></i> New Conversation
+                <Plus className="text-rose-500" /> New Conversation
               </h3>
               <button onClick={() => { setShowNewChatModal(false); setPulseUserSearch(''); setPulseSearchResults([]); }}>
-                <i className="fa-solid fa-xmark text-zinc-500 hover:text-zinc-700 dark:hover:text-zinc-300"></i>
+                <X className="text-zinc-500 hover:text-zinc-700 dark:hover:text-zinc-300" />
               </button>
             </div>
 
@@ -2678,7 +2680,7 @@ const Messages: React.FC<MessagesProps> = ({ apiKey, contacts, initialContactId,
               {/* Pulse Users Only */}
               <div className="space-y-4">
                   <div className="relative">
-                    <i className="fa-solid fa-search absolute left-3 top-1/2 -translate-y-1/2 text-zinc-400 text-sm"></i>
+                    <Search className="absolute left-3 top-1/2 -translate-y-1/2 text-zinc-400 text-sm" />
                     <input
                       type="text"
                       value={pulseUserSearch}
@@ -2688,7 +2690,7 @@ const Messages: React.FC<MessagesProps> = ({ apiKey, contacts, initialContactId,
                       autoFocus
                     />
                     {isSearchingPulseUsers && (
-                      <i className="fa-solid fa-circle-notch fa-spin absolute right-3 top-1/2 -translate-y-1/2 text-emerald-500"></i>
+                      <Loader2 className="absolute right-3 top-1/2 -translate-y-1/2 text-emerald-500 animate-spin" />
                     )}
                   </div>
 
@@ -2699,7 +2701,7 @@ const Messages: React.FC<MessagesProps> = ({ apiKey, contacts, initialContactId,
                       {recentPulseContacts.length > 0 && (
                         <div>
                           <p className="text-[10px] font-bold text-zinc-500 uppercase tracking-wider mb-2 px-1">
-                            <i className="fa-solid fa-clock-rotate-left mr-1"></i> Recent
+                            <History className="mr-1" /> Recent
                           </p>
                           <div className="space-y-1">
                             {recentPulseContacts.map((user) => (
@@ -2718,11 +2720,11 @@ const Messages: React.FC<MessagesProps> = ({ apiKey, contacts, initialContactId,
                                 <div className="flex-1 min-w-0">
                                   <div className="font-medium dark:text-white truncate text-sm flex items-center gap-1">
                                     {user.display_name || user.full_name || 'Pulse User'}
-                                    {user.is_verified && <i className="fa-solid fa-circle-check text-blue-500 text-[10px]"></i>}
+                                    {user.is_verified && <CheckCircle2 className="text-blue-500 text-[10px]" />}
                                   </div>
                                   {user.handle && <div className="text-[11px] text-emerald-500 truncate">@{user.handle}</div>}
                                 </div>
-                                <i className="fa-solid fa-message text-emerald-400 text-xs"></i>
+                                <MessageSquare className="text-emerald-400 text-xs" />
                               </button>
                             ))}
                           </div>
@@ -2733,7 +2735,7 @@ const Messages: React.FC<MessagesProps> = ({ apiKey, contacts, initialContactId,
                       {suggestedPulseUsers.length > 0 && (
                         <div>
                           <p className="text-[10px] font-bold text-zinc-500 uppercase tracking-wider mb-2 px-1">
-                            <i className="fa-solid fa-users mr-1"></i> Discover Pulse Users
+                            <Users className="mr-1" /> Discover Pulse Users
                           </p>
                           <div className="space-y-1">
                             {suggestedPulseUsers.slice(0, 8).map((user) => (
@@ -2752,11 +2754,11 @@ const Messages: React.FC<MessagesProps> = ({ apiKey, contacts, initialContactId,
                                 <div className="flex-1 min-w-0">
                                   <div className="font-medium dark:text-white truncate text-sm flex items-center gap-1">
                                     {user.display_name || user.full_name || 'Pulse User'}
-                                    {user.is_verified && <i className="fa-solid fa-circle-check text-blue-500 text-[10px]"></i>}
+                                    {user.is_verified && <CheckCircle2 className="text-blue-500 text-[10px]" />}
                                   </div>
                                   {user.handle && <div className="text-[11px] text-emerald-500 truncate">@{user.handle}</div>}
                                 </div>
-                                <i className="fa-solid fa-plus text-zinc-400 text-xs"></i>
+                                <Plus className="text-zinc-400 text-xs" />
                               </button>
                             ))}
                           </div>
@@ -2767,7 +2769,7 @@ const Messages: React.FC<MessagesProps> = ({ apiKey, contacts, initialContactId,
                       {recentPulseContacts.length === 0 && suggestedPulseUsers.length === 0 && (
                         <div className="text-center py-8">
                           <div className="w-16 h-16 bg-emerald-100 dark:bg-emerald-900/30 rounded-full flex items-center justify-center mx-auto mb-4">
-                            <i className="fa-solid fa-at text-2xl text-emerald-500"></i>
+                            <AtSign className="text-2xl text-emerald-500" />
                           </div>
                           <p className="text-sm text-zinc-500 dark:text-zinc-400">
                             Search for Pulse users by their @handle or name
@@ -2778,7 +2780,7 @@ const Messages: React.FC<MessagesProps> = ({ apiKey, contacts, initialContactId,
                   ) : pulseSearchResults.length === 0 && !isSearchingPulseUsers ? (
                     <div className="text-center py-8">
                       <div className="w-16 h-16 bg-zinc-100 dark:bg-zinc-800 rounded-full flex items-center justify-center mx-auto mb-4">
-                        <i className="fa-solid fa-user-slash text-2xl text-zinc-400"></i>
+                        <UserX className="text-2xl text-zinc-400" />
                       </div>
                       <p className="text-sm text-zinc-500 dark:text-zinc-400">
                         No users found for "{pulseUserSearch}"
@@ -2806,14 +2808,14 @@ const Messages: React.FC<MessagesProps> = ({ apiKey, contacts, initialContactId,
                             <div className="font-medium dark:text-white truncate flex items-center gap-2">
                               {user.display_name || user.full_name || 'Pulse User'}
                               {user.is_verified && (
-                                <i className="fa-solid fa-circle-check text-blue-500 text-xs"></i>
+                                <CheckCircle2 className="text-blue-500 text-xs" />
                               )}
                             </div>
                             {user.handle && (
                               <div className="text-xs text-emerald-500 truncate">@{user.handle}</div>
                             )}
                           </div>
-                          <i className="fa-solid fa-message text-emerald-400 text-sm"></i>
+                          <MessageSquare className="text-emerald-400 text-sm" />
                         </button>
                       ))}
                     </div>
@@ -2838,13 +2840,13 @@ const Messages: React.FC<MessagesProps> = ({ apiKey, contacts, initialContactId,
           <div className="absolute inset-0 z-50 bg-black/60 backdrop-blur-sm flex items-center justify-center animate-fade-in p-4">
               <div className="bg-white dark:bg-zinc-900 w-full max-w-2xl h-[80%] rounded-2xl shadow-2xl flex flex-col overflow-hidden animate-scale-in border border-zinc-200 dark:border-zinc-800">
                   <div className="p-4 border-b border-zinc-200 dark:border-zinc-800 flex justify-between items-center bg-zinc-50 dark:bg-zinc-950">
-                      <h3 className="font-bold dark:text-white flex items-center gap-2"><i className="fa-solid fa-file-invoice"></i> Channel Artifact</h3>
-                      <button onClick={() => setShowArtifactModal(false)}><i className="fa-solid fa-xmark text-zinc-500"></i></button>
+                      <h3 className="font-bold dark:text-white flex items-center gap-2"><FileText /> Channel Artifact</h3>
+                      <button onClick={() => setShowArtifactModal(false)}><X className="text-zinc-500" /></button>
                   </div>
                   <div className="flex-1 overflow-y-auto p-8">
                       {loadingArtifact ? (
                           <div className="flex flex-col items-center justify-center h-full gap-4">
-                              <i className="fa-solid fa-circle-notch fa-spin text-2xl text-blue-500"></i>
+                              <Loader2 className="text-2xl text-blue-500 animate-spin" />
                               <p className="text-sm text-zinc-500">Generating spec from conversation history...</p>
                           </div>
                       ) : artifact ? (
@@ -2881,7 +2883,7 @@ const Messages: React.FC<MessagesProps> = ({ apiKey, contacts, initialContactId,
                           disabled={loadingArtifact || !artifact || exportingToDocs}
                           className="bg-blue-50 hover:bg-blue-100 text-blue-700 border border-blue-200 px-6 py-2 rounded-lg text-sm font-bold uppercase tracking-wider transition disabled:opacity-50 mr-3 flex items-center gap-2"
                       >
-                          {exportingToDocs ? <i className="fa-solid fa-circle-notch fa-spin"></i> : <i className="fa-solid fa-file-word"></i>}
+                          {exportingToDocs ? <Loader2 className="animate-spin" /> : <FileText />}
                           Export to Docs
                       </button>
                       <button onClick={handleSaveArtifact} disabled={loadingArtifact || !artifact} className="bg-blue-600 hover:bg-blue-500 text-white px-6 py-2 rounded-lg text-sm font-bold uppercase tracking-wider transition disabled:opacity-50">
@@ -2911,9 +2913,9 @@ const Messages: React.FC<MessagesProps> = ({ apiKey, contacts, initialContactId,
           <div className="bg-white dark:bg-zinc-900 w-full max-w-md rounded-2xl shadow-2xl animate-scale-in border border-zinc-200 dark:border-zinc-800">
             <div className="p-4 border-b border-zinc-200 dark:border-zinc-800 flex justify-between items-center">
               <h3 className="font-bold dark:text-white flex items-center gap-2">
-                <i className="fa-solid fa-share text-blue-500"></i> Forward Message
+                <Share className="text-blue-500" /> Forward Message
               </h3>
-              <button onClick={() => setShowForwardModal(false)}><i className="fa-solid fa-xmark text-zinc-500"></i></button>
+              <button onClick={() => setShowForwardModal(false)}><X className="text-zinc-500" /></button>
             </div>
             <div className="p-4">
               <div className="bg-zinc-50 dark:bg-zinc-800 p-3 rounded-lg text-sm text-zinc-600 dark:text-zinc-300 mb-4">
@@ -2939,9 +2941,9 @@ const Messages: React.FC<MessagesProps> = ({ apiKey, contacts, initialContactId,
           <div className="bg-white dark:bg-zinc-900 w-full max-w-md rounded-2xl shadow-2xl animate-scale-in border border-zinc-200 dark:border-zinc-800">
             <div className="p-4 border-b border-zinc-200 dark:border-zinc-800 flex justify-between items-center">
               <h3 className="font-bold dark:text-white flex items-center gap-2">
-                <i className="fa-solid fa-keyboard text-blue-500"></i> Keyboard Shortcuts
+                <Keyboard className="text-blue-500" /> Keyboard Shortcuts
               </h3>
-              <button onClick={() => setShowShortcuts(false)}><i className="fa-solid fa-xmark text-zinc-500"></i></button>
+              <button onClick={() => setShowShortcuts(false)}><X className="text-zinc-500" /></button>
             </div>
             <div className="p-4 space-y-2">
               {Object.entries(KEYBOARD_SHORTCUTS).map(([key, action]) => (
@@ -2979,7 +2981,7 @@ const Messages: React.FC<MessagesProps> = ({ apiKey, contacts, initialContactId,
           <div className="bg-white dark:bg-zinc-900 w-full max-w-sm rounded-2xl shadow-2xl animate-scale-in border border-zinc-200 dark:border-zinc-800">
             <div className="p-6 text-center">
               <div className="w-16 h-16 rounded-full bg-red-100 dark:bg-red-900/30 flex items-center justify-center mx-auto mb-4">
-                <i className="fa-solid fa-trash text-2xl text-red-500"></i>
+                <Trash2 className="text-2xl text-red-500" />
               </div>
               <h3 className="font-bold text-lg dark:text-white mb-2">Delete Conversation?</h3>
               <p className="text-sm text-zinc-600 dark:text-zinc-400 mb-6">
@@ -3017,22 +3019,22 @@ const Messages: React.FC<MessagesProps> = ({ apiKey, contacts, initialContactId,
             <div className="p-5 flex justify-between items-center border-b border-zinc-200 dark:border-zinc-800">
               <h2 className="font-bold text-lg text-zinc-900 dark:text-white tracking-tight">Pulse Messages</h2>
               <button onClick={closeDrawer} className="w-12 h-12 flex items-center justify-center text-zinc-500 hover:bg-zinc-100 dark:hover:bg-zinc-800 rounded-lg transition" aria-label="Close drawer">
-                <i className="fa-solid fa-xmark text-lg"></i>
+                <X className="text-lg" />
               </button>
             </div>
 
             <div className="px-4 py-3 flex items-center gap-2 border-b border-zinc-200 dark:border-zinc-800">
               <button onClick={() => { setShowInviteModal(true); closeDrawer(); }} className="w-12 h-12 rounded-lg text-rose-500 hover:bg-rose-100 dark:hover:bg-rose-900/30 flex items-center justify-center transition" title="Invite team member">
-                <i className="fa-solid fa-user-plus text-sm"></i>
+                <UserPlus className="text-sm" />
               </button>
               <button onClick={() => { setShowCellularSMS(true); closeDrawer(); }} className="w-12 h-12 rounded-lg text-emerald-600 hover:bg-emerald-100 dark:hover:bg-emerald-900/30 flex items-center justify-center transition" title="Cellular SMS">
-                <i className="fa-solid fa-mobile-screen-button text-sm"></i>
+                <Smartphone className="text-sm" />
               </button>
               <button onClick={() => { setShowShortcuts(true); closeDrawer(); }} className="w-12 h-12 rounded-lg text-zinc-400 hover:bg-zinc-200 dark:hover:bg-zinc-800 flex items-center justify-center transition" title="Keyboard shortcuts">
-                <i className="fa-solid fa-keyboard text-sm"></i>
+                <Keyboard className="text-sm" />
               </button>
               <button onClick={() => { setShowNewChatModal(true); closeDrawer(); }} className="w-12 h-12 rounded-lg bg-zinc-200 dark:bg-zinc-800 text-zinc-600 dark:text-zinc-300 flex items-center justify-center transition" title="New message">
-                <i className="fa-solid fa-pen-to-square text-sm"></i>
+                <SquarePen className="text-sm" />
               </button>
             </div>
 
@@ -3080,7 +3082,7 @@ const Messages: React.FC<MessagesProps> = ({ apiKey, contacts, initialContactId,
               ) : (
                 <div className="flex flex-col items-center justify-center py-12 text-center px-4">
                   <div className="w-16 h-16 rounded-2xl bg-gradient-to-br from-rose-100 to-pink-100 dark:from-rose-900/30 dark:to-pink-900/30 flex items-center justify-center mb-4">
-                    <i className="fa-solid fa-comments text-2xl text-rose-500"></i>
+                    <MessagesSquare className="text-2xl text-rose-500" />
                   </div>
                   <h3 className="text-zinc-900 dark:text-white font-semibold mb-2">No Messages Yet</h3>
                   <p className="text-zinc-500 text-sm mb-4">Start a conversation with a Pulse user.</p>
@@ -3088,7 +3090,7 @@ const Messages: React.FC<MessagesProps> = ({ apiKey, contacts, initialContactId,
                     onClick={() => { setShowNewChatModal(true); closeDrawer(); }}
                     className="px-4 py-2 bg-gradient-to-r from-rose-500 to-pink-600 text-white text-sm font-medium rounded-lg"
                   >
-                    <i className="fa-solid fa-plus mr-2"></i>
+                    <Plus className="mr-2" />
                     New Conversation
                   </button>
                 </div>
@@ -3104,16 +3106,16 @@ const Messages: React.FC<MessagesProps> = ({ apiKey, contacts, initialContactId,
           <h2 className="font-bold text-lg text-zinc-900 dark:text-white tracking-tight">Pulse Messages</h2>
           <div className="flex items-center gap-2">
             <button onClick={() => setShowInviteModal(true)} className="w-12 h-12 rounded-lg text-rose-500 hover:bg-rose-100 dark:hover:bg-rose-900/30 flex items-center justify-center transition" title="Invite team member">
-              <i className="fa-solid fa-user-plus text-sm"></i>
+              <UserPlus className="text-sm" />
             </button>
             <button onClick={() => setShowCellularSMS(true)} className="w-12 h-12 rounded-lg text-emerald-600 hover:bg-emerald-100 dark:hover:bg-emerald-900/30 flex items-center justify-center transition" title="Cellular SMS">
-              <i className="fa-solid fa-mobile-screen-button text-sm"></i>
+              <Smartphone className="text-sm" />
             </button>
             <button onClick={() => setShowShortcuts(true)} className="w-12 h-12 rounded-lg text-zinc-400 hover:bg-zinc-200 dark:hover:bg-zinc-800 flex items-center justify-center transition" title="Keyboard shortcuts">
-              <i className="fa-solid fa-keyboard text-sm"></i>
+              <Keyboard className="text-sm" />
             </button>
             <button onClick={() => setShowNewChatModal(true)} className="w-12 h-12 rounded-lg bg-zinc-200 dark:bg-zinc-800 text-zinc-600 dark:text-zinc-300 flex items-center justify-center transition" title="New message">
-              <i className="fa-solid fa-pen-to-square text-sm"></i>
+              <SquarePen className="text-sm" />
             </button>
           </div>
         </div>
@@ -3161,7 +3163,7 @@ const Messages: React.FC<MessagesProps> = ({ apiKey, contacts, initialContactId,
                     >
                       <i className={`fa-solid ${filter.icon} text-xs w-4`}></i>
                       {filter.label}
-                      {threadFilter === filter.key && <i className="fa-solid fa-check text-xs ml-auto text-emerald-500"></i>}
+                      {threadFilter === filter.key && <Check className="text-xs ml-auto text-emerald-500" />}
                     </button>
                   ))}
                   <div className="border-t border-zinc-200 dark:border-zinc-700 my-1"></div>
@@ -3169,9 +3171,9 @@ const Messages: React.FC<MessagesProps> = ({ apiKey, contacts, initialContactId,
                     onClick={() => { setShowArchived(!showArchived); setShowFilterDropdown(false); }}
                     className={`w-full flex items-center gap-2 px-3 py-2 text-sm hover:bg-zinc-100 dark:hover:bg-zinc-700 transition ${showArchived ? 'text-amber-600 dark:text-amber-400' : 'text-zinc-600 dark:text-zinc-400'}`}
                   >
-                    <i className="fa-solid fa-archive text-xs w-4"></i>
+                    <Archive className="text-xs w-4" />
                     {showArchived ? 'Hide Archived' : 'Show Archived'}
-                    {showArchived && <i className="fa-solid fa-check text-xs ml-auto text-amber-500"></i>}
+                    {showArchived && <Check className="text-xs ml-auto text-amber-500" />}
                   </button>
                 </div>
               )}
@@ -3191,10 +3193,10 @@ const Messages: React.FC<MessagesProps> = ({ apiKey, contacts, initialContactId,
               onFocus={() => setIsSearchOpen(true)}
               className="w-full bg-white dark:bg-zinc-800 border border-zinc-200 dark:border-zinc-700 rounded-lg px-3 py-2 text-sm pl-9 outline-none focus:ring-2 focus:ring-blue-500"
             />
-            <i className="fa-solid fa-search absolute left-3 top-1/2 -translate-y-1/2 text-zinc-400 text-xs"></i>
+            <Search className="absolute left-3 top-1/2 -translate-y-1/2 text-zinc-400 text-xs" />
             {searchQuery && (
               <button onClick={() => { setSearchQuery(''); setSearchResults([]); }} className="absolute right-3 top-1/2 -translate-y-1/2 text-zinc-400 hover:text-zinc-600">
-                <i className="fa-solid fa-xmark text-xs"></i>
+                <X className="text-xs" />
               </button>
             )}
           </div>
@@ -3266,7 +3268,7 @@ const Messages: React.FC<MessagesProps> = ({ apiKey, contacts, initialContactId,
                         </div>
                         {otherUser.is_verified && (
                           <div className="absolute -top-0.5 -right-0.5 w-4 h-4 bg-blue-500 rounded-full flex items-center justify-center border-2 border-white dark:border-zinc-900">
-                            <i className="fa-solid fa-check text-[7px] text-white"></i>
+                            <Check className="text-[7px] text-white" />
                           </div>
                         )}
                       </button>
@@ -3290,7 +3292,7 @@ const Messages: React.FC<MessagesProps> = ({ apiKey, contacts, initialContactId,
                           )}
                         </div>
                         <div className="flex items-center gap-1">
-                          <i className="fa-solid fa-at text-emerald-500 text-[10px]"></i>
+                          <AtSign className="text-emerald-500 text-[10px]" />
                           {otherUser.handle && <span className="text-[10px] text-emerald-600 dark:text-emerald-400">@{otherUser.handle}</span>}
                           {conv.last_message_preview && (
                             <p className="text-xs truncate text-zinc-500 ml-1">{conv.last_message_preview}</p>
@@ -3323,7 +3325,7 @@ const Messages: React.FC<MessagesProps> = ({ apiKey, contacts, initialContactId,
             /* Empty state when no Pulse conversations */
             <div className="flex flex-col items-center justify-center py-12 text-center px-4">
               <div className="w-20 h-20 rounded-2xl bg-gradient-to-br from-rose-100 to-pink-100 dark:from-rose-900/30 dark:to-pink-900/30 flex items-center justify-center mb-4">
-                <i className="fa-solid fa-comments text-3xl text-rose-500"></i>
+                <MessagesSquare className="text-3xl text-rose-500" />
               </div>
               <h3 className="text-zinc-900 dark:text-white font-semibold mb-2">No Pulse Messages Yet</h3>
               <p className="text-zinc-500 text-sm mb-4 max-w-[200px]">
@@ -3333,7 +3335,7 @@ const Messages: React.FC<MessagesProps> = ({ apiKey, contacts, initialContactId,
                 onClick={() => setShowNewChatModal(true)}
                 className="px-4 py-2 bg-gradient-to-r from-rose-500 to-pink-600 text-white text-sm font-medium rounded-lg hover:from-rose-600 hover:to-pink-700 transition shadow-lg shadow-rose-500/30"
               >
-                <i className="fa-solid fa-plus mr-2"></i>
+                <Plus className="mr-2" />
                 New Conversation
               </button>
               {threads.length > 0 && (
@@ -3341,7 +3343,7 @@ const Messages: React.FC<MessagesProps> = ({ apiKey, contacts, initialContactId,
                   onClick={() => setShowCellularSMS(true)}
                   className="mt-3 px-4 py-2 bg-zinc-100 dark:bg-zinc-800 text-zinc-700 dark:text-zinc-300 text-sm font-medium rounded-lg hover:bg-zinc-200 dark:hover:bg-zinc-700 transition"
                 >
-                  <i className="fa-solid fa-mobile-screen-button mr-2 text-green-500"></i>
+                  <Smartphone className="mr-2 text-green-500" />
                   View SMS ({threads.length})
                 </button>
               )}
@@ -3359,11 +3361,11 @@ const Messages: React.FC<MessagesProps> = ({ apiKey, contacts, initialContactId,
             <div className="flex items-center gap-3">
               {/* Mobile Menu Button (visible only on mobile) */}
               <button onClick={openDrawer} className="md:hidden text-zinc-500 w-12 h-12 flex items-center justify-center hover:bg-zinc-100 dark:hover:bg-zinc-800 rounded-lg transition" title="Open menu">
-                <i className="fa-solid fa-bars"></i>
+                <Menu />
               </button>
               {/* Desktop Back Button (visible only on mobile when chat is active) */}
               <button onClick={handleBackToList} className="max-md:hidden text-zinc-500 w-12 h-12 flex items-center justify-center hover:bg-zinc-100 dark:hover:bg-zinc-800 rounded-lg transition" title="Back to messages">
-                <i className="fa-solid fa-arrow-left"></i>
+                <ArrowLeft />
               </button>
               <button
                 onClick={() => {
@@ -3394,7 +3396,7 @@ const Messages: React.FC<MessagesProps> = ({ apiKey, contacts, initialContactId,
                   {activePulseConv.other_user?.display_name || activePulseConv.other_user?.full_name || 'Unknown'}
                   {activePulseConv.other_user?.is_verified && (
                     <>
-                      <i className="fa-solid fa-circle-check text-blue-500 text-xs"></i>
+                      <CheckCircle2 className="text-blue-500 text-xs" />
                       <UserBadge role="member" size="sm" showIcon={false} showLabel={true} />
                     </>
                   )}
@@ -3421,10 +3423,10 @@ const Messages: React.FC<MessagesProps> = ({ apiKey, contacts, initialContactId,
                   onFocus={() => setIsSearchOpen(true)}
                   className="w-full bg-zinc-100 dark:bg-zinc-800 border border-zinc-200 dark:border-zinc-700 rounded-lg px-3 py-2 text-sm pl-9 outline-none focus:ring-2 focus:ring-emerald-500/50 dark:text-white transition"
                 />
-                <i className="fa-solid fa-magnifying-glass absolute left-3 top-1/2 -translate-y-1/2 text-zinc-400 text-xs"></i>
+                <Search className="absolute left-3 top-1/2 -translate-y-1/2 text-zinc-400 text-xs" />
                 {searchQuery && (
                   <button onClick={() => { setSearchQuery(''); setIsSearchOpen(false); }} className="absolute right-3 top-1/2 -translate-y-1/2 text-zinc-400 hover:text-zinc-600 dark:hover:text-zinc-300">
-                    <i className="fa-solid fa-xmark text-xs"></i>
+                    <X className="text-xs" />
                   </button>
                 )}
               </div>
@@ -3439,7 +3441,7 @@ const Messages: React.FC<MessagesProps> = ({ apiKey, contacts, initialContactId,
                 title="Feature Settings"
                 aria-label="Open feature settings"
               >
-                <i className="fa fa-sliders-h text-zinc-600 dark:text-zinc-400"></i>
+                <SlidersHorizontal className="fa text-zinc-600 dark:text-zinc-400" />
               </button>
             </div>
 
@@ -3458,10 +3460,10 @@ const Messages: React.FC<MessagesProps> = ({ apiKey, contacts, initialContactId,
                     onChange={e => setSearchQuery(e.target.value)}
                     className="w-full bg-white dark:bg-zinc-800 border border-blue-200 dark:border-blue-700 rounded-lg px-3 py-2 text-sm pl-9 outline-none focus:ring-2 focus:ring-blue-500"
                   />
-                  <i className="fa-solid fa-magnifying-glass absolute left-3 top-1/2 -translate-y-1/2 text-blue-400 text-xs"></i>
+                  <Search className="absolute left-3 top-1/2 -translate-y-1/2 text-blue-400 text-xs" />
                   {searchQuery && (
                     <button onClick={() => setSearchQuery('')} className="absolute right-3 top-1/2 -translate-y-1/2 text-zinc-400 hover:text-zinc-600">
-                      <i className="fa-solid fa-xmark text-xs"></i>
+                      <X className="text-xs" />
                     </button>
                   )}
                 </div>
@@ -3535,7 +3537,7 @@ const Messages: React.FC<MessagesProps> = ({ apiKey, contacts, initialContactId,
                   <div className="flex items-center justify-between px-3 py-2 border-b border-zinc-200 dark:border-zinc-800 bg-gradient-to-r from-rose-50 to-pink-50 dark:from-rose-950/30 dark:to-pink-950/30">
                     <div className="flex items-center gap-2">
                       <div className="w-8 h-8 rounded-lg bg-gradient-to-br from-rose-500 to-pink-600 flex items-center justify-center text-white text-sm">
-                        <i className="fa-solid fa-toolbox"></i>
+                        <Wrench />
                       </div>
                       <span className="font-bold text-zinc-900 dark:text-white text-sm">Tools</span>
                     </div>
@@ -3543,7 +3545,7 @@ const Messages: React.FC<MessagesProps> = ({ apiKey, contacts, initialContactId,
                       onClick={() => setShowToolsDrawer(false)}
                       className="w-7 h-7 rounded-lg hover:bg-zinc-200 dark:hover:bg-zinc-800 flex items-center justify-center transition"
                     >
-                      <i className="fa-solid fa-xmark text-zinc-500 text-sm"></i>
+                      <X className="text-zinc-500 text-sm" />
                     </button>
                   </div>
 
@@ -3552,7 +3554,7 @@ const Messages: React.FC<MessagesProps> = ({ apiKey, contacts, initialContactId,
                     {/* AI Tools */}
                     <div>
                       <div className="text-[10px] font-bold text-purple-600 dark:text-purple-400 uppercase tracking-wider mb-2 flex items-center gap-1">
-                        <i className="fa-solid fa-robot"></i> AI Tools
+                        <Bot /> AI Tools
                       </div>
                       <div className="grid grid-cols-4 gap-2">
                         {[
@@ -3579,7 +3581,7 @@ const Messages: React.FC<MessagesProps> = ({ apiKey, contacts, initialContactId,
                     {/* Content Creation */}
                     <div>
                       <div className="text-[10px] font-bold text-blue-600 dark:text-blue-400 uppercase tracking-wider mb-2 flex items-center gap-1">
-                        <i className="fa-solid fa-pen-fancy"></i> Content
+                        <PenTool /> Content
                       </div>
                       <div className="grid grid-cols-4 gap-2">
                         {[
@@ -3606,7 +3608,7 @@ const Messages: React.FC<MessagesProps> = ({ apiKey, contacts, initialContactId,
                     {/* Analysis */}
                     <div>
                       <div className="text-[10px] font-bold text-green-600 dark:text-green-400 uppercase tracking-wider mb-2 flex items-center gap-1">
-                        <i className="fa-solid fa-chart-line"></i> Analysis
+                        <TrendingUp /> Analysis
                       </div>
                       <div className="grid grid-cols-4 gap-2">
                         {[
@@ -3633,7 +3635,7 @@ const Messages: React.FC<MessagesProps> = ({ apiKey, contacts, initialContactId,
                     {/* Utilities */}
                     <div>
                       <div className="text-[10px] font-bold text-amber-600 dark:text-amber-400 uppercase tracking-wider mb-2 flex items-center gap-1">
-                        <i className="fa-solid fa-wrench"></i> Utilities
+                        <Wrench /> Utilities
                       </div>
                       <div className="grid grid-cols-4 gap-2">
                         {/* Focus Mode */}
@@ -3647,7 +3649,7 @@ const Messages: React.FC<MessagesProps> = ({ apiKey, contacts, initialContactId,
                           title="Focus Mode"
                         >
                           <div className={`w-10 h-10 rounded-xl flex items-center justify-center group-hover:scale-110 transition ${isFocusModeActive ? 'bg-rose-500 text-white' : 'bg-amber-100 dark:bg-amber-900/30 text-amber-600 dark:text-amber-400'}`}>
-                            <i className="fa-solid fa-crosshairs"></i>
+                            <Crosshair />
                           </div>
                           <span className="text-[10px] text-zinc-600 dark:text-zinc-400 mt-1 font-medium">Focus</span>
                         </button>
@@ -3660,7 +3662,7 @@ const Messages: React.FC<MessagesProps> = ({ apiKey, contacts, initialContactId,
                             title="Achievements"
                           >
                             <div className="w-10 h-10 rounded-xl bg-amber-100 dark:bg-amber-900/30 flex items-center justify-center text-amber-600 dark:text-amber-400 group-hover:scale-110 transition">
-                              <i className="fa-solid fa-trophy"></i>
+                              <Trophy />
                             </div>
                             <span className="text-[10px] text-zinc-600 dark:text-zinc-400 mt-1 font-medium">Awards</span>
                           </button>
@@ -3751,7 +3753,7 @@ const Messages: React.FC<MessagesProps> = ({ apiKey, contacts, initialContactId,
             {pulseMessages.length === 0 ? (
               <div className="flex flex-col items-center justify-center h-full text-center">
                 <div className="w-20 h-20 bg-gradient-to-br from-rose-100 to-pink-100 dark:from-rose-900/30 dark:to-pink-900/30 rounded-full flex items-center justify-center mb-4">
-                  <i className="fa-solid fa-comments text-3xl text-rose-500"></i>
+                  <MessagesSquare className="text-3xl text-rose-500" />
                 </div>
                 <h3 className="text-lg font-bold dark:text-white mb-2">Start a Conversation</h3>
                 <p className="text-sm text-zinc-500 max-w-sm">
@@ -3804,14 +3806,14 @@ const Messages: React.FC<MessagesProps> = ({ apiKey, contacts, initialContactId,
                         {/* Star indicator */}
                         {isStarred && (
                           <div className={`absolute -top-2 ${isMe ? '-left-2' : '-right-2'} z-10`}>
-                            <i className="fa-solid fa-star text-amber-400 text-xs"></i>
+                            <Star className="text-amber-400 text-xs" />
                           </div>
                         )}
 
                         {/* Reply indicator */}
                         {isReplyTarget && (
                           <div className="absolute -top-6 left-0 right-0 flex items-center gap-1 text-[10px] text-emerald-500">
-                            <i className="fa-solid fa-reply"></i>
+                            <Reply />
                             <span>Replying to this message</span>
                           </div>
                         )}
@@ -3881,7 +3883,7 @@ const Messages: React.FC<MessagesProps> = ({ apiKey, contacts, initialContactId,
                                 whileHover={{ scale: 1.1 }}
                                 whileTap={{ scale: 0.9 }}
                               >
-                                <i className="fa-solid fa-ellipsis text-sm"></i>
+                                <Ellipsis className="text-sm" />
                               </motion.button>
                             </motion.div>
                           )}
@@ -3919,12 +3921,12 @@ const Messages: React.FC<MessagesProps> = ({ apiKey, contacts, initialContactId,
                               <SmartTimestamp time={msg.created_at} />
                               {isMe && msg.is_read && (
                                 <span className="flex items-center gap-0.5" style={{ opacity: 0.9 }}>
-                                  <i className="fa-solid fa-check-double"></i>
+                                  <CheckCheck />
                                   <span className="text-[9px]">Read</span>
                                 </span>
                               )}
                               {isMe && !msg.is_read && (
-                                <i className="fa-solid fa-check" style={{ opacity: 0.7 }}></i>
+                                <Check />
                               )}
                             </div>
                           </div>
@@ -3968,7 +3970,7 @@ const Messages: React.FC<MessagesProps> = ({ apiKey, contacts, initialContactId,
                                   }}
                                   className="w-full px-4 py-2.5 text-left text-sm text-zinc-700 dark:text-zinc-300 hover:bg-zinc-100 dark:hover:bg-zinc-800 flex items-center gap-3 transition"
                                 >
-                                  <i className="fa-solid fa-reply text-blue-500 w-4"></i>
+                                  <Reply className="text-blue-500 w-4" />
                                   Reply
                                 </button>
                                 <button
@@ -3978,7 +3980,7 @@ const Messages: React.FC<MessagesProps> = ({ apiKey, contacts, initialContactId,
                                   }}
                                   className="w-full px-4 py-2.5 text-left text-sm text-zinc-700 dark:text-zinc-300 hover:bg-zinc-100 dark:hover:bg-zinc-800 flex items-center gap-3 transition"
                                 >
-                                  <i className="fa-solid fa-copy text-zinc-500 w-4"></i>
+                                  <Copy className="text-zinc-500 w-4" />
                                   Copy Text
                                 </button>
                                 <button
@@ -3998,7 +4000,7 @@ const Messages: React.FC<MessagesProps> = ({ apiKey, contacts, initialContactId,
                                   }}
                                   className="w-full px-4 py-2.5 text-left text-sm text-zinc-700 dark:text-zinc-300 hover:bg-zinc-100 dark:hover:bg-zinc-800 flex items-center gap-3 transition"
                                 >
-                                  <i className="fa-solid fa-share text-purple-500 w-4"></i>
+                                  <Share className="text-purple-500 w-4" />
                                   Share
                                 </button>
                                 <button
@@ -4017,7 +4019,7 @@ const Messages: React.FC<MessagesProps> = ({ apiKey, contacts, initialContactId,
                                   }}
                                   className="w-full px-4 py-2.5 text-left text-sm text-zinc-700 dark:text-zinc-300 hover:bg-zinc-100 dark:hover:bg-zinc-800 flex items-center gap-3 transition"
                                 >
-                                  <i className="fa-solid fa-arrow-right text-emerald-500 w-4"></i>
+                                  <ArrowRight className="text-emerald-500 w-4" />
                                   Forward
                                 </button>
                               </div>
@@ -4066,9 +4068,9 @@ const Messages: React.FC<MessagesProps> = ({ apiKey, contacts, initialContactId,
               <div className="bg-white dark:bg-zinc-900 w-full max-w-md rounded-2xl shadow-2xl animate-scale-in border border-zinc-200 dark:border-zinc-800">
                 <div className="p-4 border-b border-zinc-200 dark:border-zinc-800 flex justify-between items-center">
                   <h3 className="font-bold dark:text-white flex items-center gap-2">
-                    <i className="fa-solid fa-chart-bar text-indigo-500"></i> Pulse Conversation Stats
+                    <BarChart className="text-indigo-500" /> Pulse Conversation Stats
                   </h3>
-                  <button onClick={() => setShowStatsPanel(false)}><i className="fa-solid fa-xmark text-zinc-500"></i></button>
+                  <button onClick={() => setShowStatsPanel(false)}><X className="text-zinc-500" /></button>
                 </div>
                 <div className="p-4 space-y-4">
                   <div className="grid grid-cols-2 gap-4">
@@ -4120,9 +4122,9 @@ const Messages: React.FC<MessagesProps> = ({ apiKey, contacts, initialContactId,
               <div className="bg-white dark:bg-zinc-900 w-full max-w-md rounded-2xl shadow-2xl animate-scale-in border border-zinc-200 dark:border-zinc-800">
                 <div className="p-4 border-b border-zinc-200 dark:border-zinc-800 flex justify-between items-center">
                   <h3 className="font-bold dark:text-white flex items-center gap-2">
-                    <i className="fa-solid fa-bullseye text-red-500"></i> Set Conversation Goal
+                    <Target className="text-red-500" /> Set Conversation Goal
                   </h3>
-                  <button onClick={() => setShowOutcomeSetup(false)}><i className="fa-solid fa-xmark text-zinc-500"></i></button>
+                  <button onClick={() => setShowOutcomeSetup(false)}><X className="text-zinc-500" /></button>
                 </div>
                 <div className="p-4 space-y-4">
                   <p className="text-sm text-zinc-500 dark:text-zinc-400">
@@ -4171,14 +4173,14 @@ const Messages: React.FC<MessagesProps> = ({ apiKey, contacts, initialContactId,
               <div className="bg-white dark:bg-zinc-900 w-full max-w-lg rounded-2xl shadow-2xl animate-scale-in border border-zinc-200 dark:border-zinc-800">
                 <div className="p-4 border-b border-zinc-200 dark:border-zinc-800 flex justify-between items-center">
                   <h3 className="font-bold dark:text-white flex items-center gap-2">
-                    <i className="fa-solid fa-person-walking-arrow-right text-yellow-500"></i> Conversation Handoff
+                    <LogOut className="text-yellow-500" /> Conversation Handoff
                   </h3>
-                  <button onClick={() => setShowHandoffCard(false)}><i className="fa-solid fa-xmark text-zinc-500"></i></button>
+                  <button onClick={() => setShowHandoffCard(false)}><X className="text-zinc-500" /></button>
                 </div>
                 <div className="p-4 space-y-4">
                   <div className="bg-yellow-50 dark:bg-yellow-900/20 border border-yellow-200 dark:border-yellow-700/50 rounded-lg p-4">
                     <div className="text-xs font-bold text-yellow-700 dark:text-yellow-400 uppercase tracking-wider mb-2">
-                      <i className="fa-solid fa-handshake mr-2"></i>Context Summary
+                      <Handshake className="mr-2" />Context Summary
                     </div>
                     <p className="text-sm text-zinc-700 dark:text-zinc-300 mb-3">
                       Conversation with <strong>{activePulseConv?.other_user?.display_name || activePulseConv?.other_user?.handle || 'User'}</strong>
@@ -4215,7 +4217,7 @@ const Messages: React.FC<MessagesProps> = ({ apiKey, contacts, initialContactId,
                       }}
                       className="flex-1 bg-yellow-100 hover:bg-yellow-200 dark:bg-yellow-800/30 dark:hover:bg-yellow-800/50 text-yellow-800 dark:text-yellow-200 font-bold py-2 rounded-lg text-xs transition flex items-center justify-center gap-2"
                     >
-                      <i className="fa-solid fa-copy"></i> Copy to Clipboard
+                      <Copy /> Copy to Clipboard
                     </button>
                     <button
                       onClick={() => setShowHandoffCard(false)}
@@ -4354,10 +4356,10 @@ const Messages: React.FC<MessagesProps> = ({ apiKey, contacts, initialContactId,
           <div className="flex items-center gap-2 min-w-0 flex-shrink">
              {/* Mobile Menu Button (visible only on mobile) */}
              <button onClick={openDrawer} className="md:hidden text-zinc-500 w-12 h-12 flex items-center justify-center hover:bg-zinc-100 dark:hover:bg-zinc-800 rounded-lg transition flex-shrink-0" title="Open menu">
-               <i className="fa-solid fa-bars"></i>
+               <Menu />
              </button>
              {/* Desktop Back Button (visible only on mobile when chat is active) */}
-             <button onClick={handleBackToList} className="max-md:hidden text-zinc-500 w-12 h-12 flex items-center justify-center hover:bg-zinc-100 dark:hover:bg-zinc-800 rounded-lg transition flex-shrink-0" title="Back to messages"><i className="fa-solid fa-arrow-left"></i></button>
+             <button onClick={handleBackToList} className="max-md:hidden text-zinc-500 w-12 h-12 flex items-center justify-center hover:bg-zinc-100 dark:hover:bg-zinc-800 rounded-lg transition flex-shrink-0" title="Back to messages"><ArrowLeft /></button>
              <div className="flex flex-col min-w-0">
                  <span className="font-bold text-zinc-900 dark:text-white leading-tight flex items-center gap-1 sm:gap-2 text-sm sm:text-base truncate">
                      <span className="truncate max-w-[120px] sm:max-w-none">{activeThread.contactName}</span>
@@ -4375,7 +4377,7 @@ const Messages: React.FC<MessagesProps> = ({ apiKey, contacts, initialContactId,
                          <span className="text-[10px] text-emerald-500 font-medium tracking-wide">ONLINE</span>
                          {teamHealth && (
                              <span className={`hidden sm:flex text-[10px] px-1.5 rounded items-center gap-1 cursor-help ${teamHealth.status === 'healthy' ? 'bg-emerald-100 text-emerald-600' : 'bg-red-100 text-red-600'}`} title={`Reliability: ${teamHealth.reliability}\nIssues: ${teamHealth.issues.join(', ')}`}>
-                                 <i className="fa-solid fa-heart-pulse"></i> {teamHealth.score}%
+                                 <HeartPulse /> {teamHealth.score}%
                              </span>
                          )}
                      </div>
@@ -4387,7 +4389,7 @@ const Messages: React.FC<MessagesProps> = ({ apiKey, contacts, initialContactId,
           {nudge && showCoachTip && (
             <div className={`hidden md:flex flex-1 max-w-md mx-4 transition-all duration-300 ${coachTipFading ? 'opacity-0 scale-95' : 'opacity-100 scale-100'}`}>
               <div className={`flex items-center gap-2 px-3 py-1.5 bg-purple-50 dark:bg-purple-900/20 border border-purple-200 dark:border-purple-700/50 rounded-lg group transition-all duration-300 ${nudgeFocused ? 'ring-2 ring-purple-500/60 bg-purple-100 dark:bg-purple-900/40 scale-[1.02]' : ''}`}>
-                <i className="fa-solid fa-wand-magic-sparkles text-purple-500 text-xs flex-shrink-0 animate-pulse"></i>
+                <Wand2 className="text-purple-500 text-xs flex-shrink-0 animate-pulse" />
                 <div className="flex-1 overflow-hidden relative">
                   <div className="ticker-container whitespace-nowrap">
                     <span className="text-xs text-purple-700 dark:text-purple-300 inline-block ticker-text">
@@ -4399,7 +4401,7 @@ const Messages: React.FC<MessagesProps> = ({ apiKey, contacts, initialContactId,
                   </div>
                 </div>
                 <button onClick={dismissCoachTip} className="text-purple-400 hover:text-purple-600 transition p-0.5 flex-shrink-0">
-                  <i className="fa-solid fa-xmark text-[10px]"></i>
+                  <X className="text-[10px]" />
                 </button>
               </div>
             </div>
@@ -4413,7 +4415,7 @@ const Messages: React.FC<MessagesProps> = ({ apiKey, contacts, initialContactId,
               className="w-8 h-8 sm:w-9 sm:h-9 rounded-lg flex items-center justify-center transition border border-indigo-200 dark:border-indigo-700 bg-indigo-50 dark:bg-indigo-900/30 text-indigo-500 hover:bg-indigo-100 dark:hover:bg-indigo-900/50 flex-shrink-0"
               title="Open Tools Menu"
             >
-              <i className="fa-solid fa-grid-2 text-xs sm:text-sm"></i>
+              <LayoutGrid className="text-xs sm:text-sm" />
             </button>
 
             {/* Command Palette - Always visible */}
@@ -4422,7 +4424,7 @@ const Messages: React.FC<MessagesProps> = ({ apiKey, contacts, initialContactId,
               className="w-8 h-8 sm:w-9 sm:h-9 rounded-lg flex items-center justify-center transition border text-zinc-400 hover:bg-zinc-100 dark:hover:bg-zinc-800 flex-shrink-0"
               title="Quick Actions (Ctrl+K)"
             >
-              <i className="fa-solid fa-terminal text-xs sm:text-sm"></i>
+              <Terminal className="text-xs sm:text-sm" />
             </button>
 
             {/* Focus Mode - Always visible */}
@@ -4431,7 +4433,7 @@ const Messages: React.FC<MessagesProps> = ({ apiKey, contacts, initialContactId,
               className={`w-8 h-8 sm:w-9 sm:h-9 rounded-lg flex items-center justify-center transition border flex-shrink-0 ${focusThreadId ? 'bg-indigo-600 text-white' : 'text-zinc-400 hover:bg-zinc-100 dark:hover:bg-zinc-800'}`}
               title="Focus Mode"
             >
-              <i className="fa-solid fa-eye text-xs sm:text-sm"></i>
+              <Eye className="text-xs sm:text-sm" />
             </button>
 
             {/* Achievements - Always visible if available */}
@@ -4441,7 +4443,7 @@ const Messages: React.FC<MessagesProps> = ({ apiKey, contacts, initialContactId,
                 className="w-8 h-8 sm:w-9 sm:h-9 rounded-lg flex items-center justify-center transition border border-amber-200 dark:border-amber-700 bg-amber-50 dark:bg-amber-900/30 text-amber-500 hover:bg-amber-100 dark:hover:bg-amber-900/50 flex-shrink-0"
                 title="View Achievements"
               >
-                <i className="fa-solid fa-trophy text-xs sm:text-sm"></i>
+                <Trophy className="text-xs sm:text-sm" />
               </button>
             )}
           </div>
@@ -4492,7 +4494,7 @@ const Messages: React.FC<MessagesProps> = ({ apiKey, contacts, initialContactId,
                 onClick={() => setShowAnalyticsPanel(false)}
                 className="ml-auto text-zinc-400 hover:text-zinc-600 dark:hover:text-zinc-300"
               >
-                <i className="fa-solid fa-times" />
+                <X />
               </button>
             </div>
 
@@ -5587,7 +5589,7 @@ const Messages: React.FC<MessagesProps> = ({ apiKey, contacts, initialContactId,
           {activeThread.outcome && (
               <div className="flex justify-center mb-4">
                   <div className="bg-indigo-50 dark:bg-indigo-900/20 text-indigo-700 dark:text-indigo-300 text-xs px-3 py-1 rounded-full border border-indigo-200 dark:border-indigo-800 flex items-center gap-2">
-                      <i className="fa-solid fa-flag-checkered"></i> Outcome Goal: <span className="font-bold">{activeThread.outcome.goal}</span>
+                      <Flag /> Outcome Goal: <span className="font-bold">{activeThread.outcome.goal}</span>
                   </div>
               </div>
           )}
@@ -5595,7 +5597,7 @@ const Messages: React.FC<MessagesProps> = ({ apiKey, contacts, initialContactId,
           {/* Handoff Card */}
           {showHandoffCard && (
               <div className="mx-auto max-w-lg bg-yellow-50 dark:bg-yellow-900/10 border border-yellow-200 dark:border-yellow-700/50 rounded-xl p-6 shadow-lg mb-6 animate-scale-in relative">
-                  <button onClick={() => setShowHandoffCard(false)} className="absolute top-2 right-2 text-yellow-600 hover:text-yellow-800"><i className="fa-solid fa-xmark"></i></button>
+                  <button onClick={() => setShowHandoffCard(false)} className="absolute top-2 right-2 text-yellow-600 hover:text-yellow-800"><X /></button>
                   <div className="flex items-center gap-2 mb-4 text-yellow-700 dark:text-yellow-500 font-bold uppercase text-xs tracking-widest">
                       <i className={`fa-solid ${loadingHandoff ? 'fa-circle-notch fa-spin' : 'fa-handshake'}`}></i>
                       {loadingHandoff ? 'Generating Handoff Summary...' : 'Context Handoff'}
@@ -5604,7 +5606,7 @@ const Messages: React.FC<MessagesProps> = ({ apiKey, contacts, initialContactId,
                   {loadingHandoff ? (
                       <div className="py-8 flex flex-col items-center gap-3">
                           <div className="w-12 h-12 rounded-full bg-yellow-100 dark:bg-yellow-800/30 flex items-center justify-center">
-                              <i className="fa-solid fa-wand-magic-sparkles text-yellow-600 dark:text-yellow-400 animate-pulse"></i>
+                              <Wand2 className="text-yellow-600 dark:text-yellow-400 animate-pulse" />
                           </div>
                           <p className="text-sm text-zinc-500 dark:text-zinc-400">Analyzing conversation history...</p>
                       </div>
@@ -5638,7 +5640,7 @@ const Messages: React.FC<MessagesProps> = ({ apiKey, contacts, initialContactId,
                                   onClick={() => handleSend(`Here is a context summary for new team members:\n\n${handoffContent.context}\n\nKey Decisions:\n${handoffContent.keyDecisions.map((d: string) => '• ' + d).join('\n') || 'None yet'}\n\nPending Actions:\n${handoffContent.pendingActions.map((a: string) => '• ' + a).join('\n') || 'None'}`)}
                                   className="flex-1 bg-yellow-100 hover:bg-yellow-200 dark:bg-yellow-800/30 dark:hover:bg-yellow-800/50 text-yellow-800 dark:text-yellow-200 font-bold py-2 rounded-lg text-xs transition flex items-center justify-center gap-2"
                               >
-                                  <i className="fa-solid fa-paper-plane"></i> Share to Thread
+                                  <Send /> Share to Thread
                               </button>
                               <button
                                   onClick={() => {
@@ -5648,7 +5650,7 @@ const Messages: React.FC<MessagesProps> = ({ apiKey, contacts, initialContactId,
                                   className="px-4 py-2 bg-zinc-100 hover:bg-zinc-200 dark:bg-zinc-800 dark:hover:bg-zinc-700 text-zinc-600 dark:text-zinc-300 rounded-lg text-xs transition"
                                   title="Copy to clipboard"
                               >
-                                  <i className="fa-solid fa-copy"></i>
+                                  <Copy />
                               </button>
                           </div>
                       </>
@@ -5786,7 +5788,7 @@ const Messages: React.FC<MessagesProps> = ({ apiKey, contacts, initialContactId,
                                                 }}
                                                 className="w-10 h-10 rounded-full bg-blue-500 text-white flex items-center justify-center hover:bg-blue-600 transition"
                                             >
-                                                <i className="fa-solid fa-play text-sm"></i>
+                                                <Play className="text-sm" />
                                             </button>
                                             <div className="flex-1">
                                                 <div className="text-xs font-medium dark:text-white">{msg.attachment.name}</div>
@@ -5801,13 +5803,13 @@ const Messages: React.FC<MessagesProps> = ({ apiKey, contacts, initialContactId,
                                             className="flex items-center gap-3 p-3 bg-black/5 dark:bg-white/5 rounded-lg hover:bg-black/10 dark:hover:bg-white/10 transition"
                                         >
                                             <div className="w-10 h-10 rounded-lg bg-zinc-200 dark:bg-zinc-700 flex items-center justify-center">
-                                                <i className="fa-solid fa-file text-zinc-500"></i>
+                                                <File className="text-zinc-500" />
                                             </div>
                                             <div className="flex-1 min-w-0">
                                                 <div className="text-xs font-medium dark:text-white truncate">{msg.attachment.name}</div>
                                                 <div className="text-[10px] text-zinc-500">{msg.attachment.size}</div>
                                             </div>
-                                            <i className="fa-solid fa-download text-zinc-400 text-xs"></i>
+                                            <Download className="text-zinc-400 text-xs" />
                                         </a>
                                     )}
                                 </div>
@@ -5819,7 +5821,7 @@ const Messages: React.FC<MessagesProps> = ({ apiKey, contacts, initialContactId,
                                     {msg.voiceAnalysis ? (
                                         <div className="bg-black/5 dark:bg-white/5 rounded-xl p-3 text-xs">
                                             <div className="flex items-center gap-2 mb-2 text-purple-500 font-bold uppercase tracking-wider text-[10px]">
-                                                <i className="fa-solid fa-wand-magic-sparkles"></i> Deep Audio Analysis
+                                                <Wand2 /> Deep Audio Analysis
                                             </div>
                                             <p className="mb-2 italic">"{msg.voiceAnalysis.transcription}"</p>
                                             <div className="mb-2"><strong>Summary:</strong> {msg.voiceAnalysis.summary}</div>
@@ -5827,7 +5829,7 @@ const Messages: React.FC<MessagesProps> = ({ apiKey, contacts, initialContactId,
                                                 <div className="space-y-1">
                                                     <strong>Tasks Identified:</strong>
                                                     {msg.voiceAnalysis.actionItems.map((task, i) => (
-                                                        <div key={i} className="flex items-center gap-1.5"><i className="fa-regular fa-square text-[9px]"></i> {task}</div>
+                                                        <div key={i} className="flex items-center gap-1.5"><Square className="text-[9px]" /> {task}</div>
                                                     ))}
                                                 </div>
                                             )}
@@ -5837,7 +5839,7 @@ const Messages: React.FC<MessagesProps> = ({ apiKey, contacts, initialContactId,
                                             onClick={() => msg.attachment?.url && handleAnalyzeVoice(msg.id, msg.attachment.url)}
                                             className="text-xs flex items-center gap-2 text-purple-500 hover:text-purple-600 font-bold uppercase tracking-wider"
                                         >
-                                            {analyzingAudioId === msg.id ? <><i className="fa-solid fa-circle-notch fa-spin"></i> Analyzing...</> : <><i className="fa-solid fa-wand-sparkles"></i> Deep Analyze Voice</>}
+                                            {analyzingAudioId === msg.id ? <><Loader2 className="animate-spin" /> Analyzing...</> : <><Wand2 /> Deep Analyze Voice</>}
                                         </button>
                                     )}
                                 </div>
@@ -5851,13 +5853,13 @@ const Messages: React.FC<MessagesProps> = ({ apiKey, contacts, initialContactId,
                                             onClick={() => handleVote(msg.id, 'me', 'approve')}
                                             className={`flex-1 py-2 rounded-lg text-xs font-bold transition flex items-center justify-center gap-2 ${msg.decisionData.votes.some(v => v.userId === 'me' && v.choice === 'approve') ? 'bg-emerald-600 text-white' : 'bg-amber-200 dark:bg-amber-800/60 text-amber-800 dark:text-amber-200 hover:bg-amber-300 dark:hover:bg-amber-700/60'}`}
                                         >
-                                            <i className="fa-solid fa-thumbs-up"></i> Approve ({msg.decisionData.votes.filter(v => v.choice === 'approve').length})
+                                            <ThumbsUp /> Approve ({msg.decisionData.votes.filter(v => v.choice === 'approve').length})
                                         </button>
                                         <button
                                             onClick={() => handleVote(msg.id, 'me', 'reject')}
                                             className={`flex-1 py-2 rounded-lg text-xs font-bold transition flex items-center justify-center gap-2 ${msg.decisionData.votes.some(v => v.userId === 'me' && v.choice === 'reject') ? 'bg-red-600 text-white' : 'bg-amber-200 dark:bg-amber-800/60 text-amber-800 dark:text-amber-200 hover:bg-amber-300 dark:hover:bg-amber-700/60'}`}
                                         >
-                                            <i className="fa-solid fa-thumbs-down"></i> Reject ({msg.decisionData.votes.filter(v => v.choice === 'reject').length})
+                                            <ThumbsDown /> Reject ({msg.decisionData.votes.filter(v => v.choice === 'reject').length})
                                         </button>
                                     </div>
                                     <div className="text-[10px] text-amber-700 dark:text-amber-300 text-center">Threshold: {msg.decisionData.threshold} approvals required</div>
@@ -5867,7 +5869,7 @@ const Messages: React.FC<MessagesProps> = ({ apiKey, contacts, initialContactId,
                             {/* Linked Task Indicator */}
                             {msg.relatedTaskId && (
                                 <div className="mt-2 pt-2 border-t border-black/10 dark:border-white/10 flex items-center gap-2 text-xs opacity-80">
-                                    <i className="fa-solid fa-check-circle text-emerald-500"></i>
+                                    <CheckCircle className="text-emerald-500" />
                                     <span>Task Created: <strong>{msg.relatedTaskId}</strong></span>
                                 </div>
                             )}
@@ -5893,21 +5895,21 @@ const Messages: React.FC<MessagesProps> = ({ apiKey, contacts, initialContactId,
                                     className={`w-7 h-7 flex items-center justify-center text-zinc-400 hover:text-emerald-500 rounded-full transition ${creatingTaskForMsgId === msg.id ? 'animate-spin text-emerald-500' : ''}`}
                                     title="Create Task"
                                 >
-                                    <i className="fa-solid fa-check text-xs"></i>
+                                    <Check className="text-xs" />
                                 </button>
                                 <button
                                     onClick={() => setReplyingTo(msg)}
                                     className="w-7 h-7 flex items-center justify-center text-zinc-400 hover:text-blue-500 rounded-full transition"
                                     title="Reply"
                                 >
-                                    <i className="fa-solid fa-reply text-xs"></i>
+                                    <Reply className="text-xs" />
                                 </button>
                                 <button
                                     onClick={() => { setForwardingMessage(msg); setShowForwardModal(true); }}
                                     className="w-7 h-7 flex items-center justify-center text-zinc-400 hover:text-purple-500 rounded-full transition"
                                     title="Forward"
                                 >
-                                    <i className="fa-solid fa-share text-xs"></i>
+                                    <Share className="text-xs" />
                                 </button>
                                 {isMe && (
                                   <button
@@ -5915,7 +5917,7 @@ const Messages: React.FC<MessagesProps> = ({ apiKey, contacts, initialContactId,
                                       className="w-7 h-7 flex items-center justify-center text-zinc-400 hover:text-amber-500 rounded-full transition"
                                       title="Edit"
                                   >
-                                      <i className="fa-solid fa-pen text-xs"></i>
+                                      <Pen className="text-xs" />
                                   </button>
                                 )}
                                 <button
@@ -5930,7 +5932,7 @@ const Messages: React.FC<MessagesProps> = ({ apiKey, contacts, initialContactId,
                                     className="w-7 h-7 flex items-center justify-center text-zinc-400 hover:text-zinc-600 rounded-full transition"
                                     title="Copy Text"
                                 >
-                                    <i className="fa-solid fa-copy text-xs"></i>
+                                    <Copy className="text-xs" />
                                 </button>
                             </div>
                         </div>
@@ -5960,9 +5962,9 @@ const Messages: React.FC<MessagesProps> = ({ apiKey, contacts, initialContactId,
                         {isMe && showReadReceipts && msg.status && (
                           <div className="flex justify-end mt-1">
                             <span className="text-[10px] text-zinc-400 flex items-center gap-1">
-                              {msg.status === 'sent' && <><i className="fa-solid fa-check"></i> Sent</>}
-                              {msg.status === 'delivered' && <><i className="fa-solid fa-check-double"></i> Delivered</>}
-                              {msg.status === 'read' && <><i className="fa-solid fa-check-double text-blue-500"></i> Read</>}
+                              {msg.status === 'sent' && <><Check /> Sent</>}
+                              {msg.status === 'delivered' && <><CheckCheck /> Delivered</>}
+                              {msg.status === 'read' && <><CheckCheck className="text-blue-500" /> Read</>}
                             </span>
                           </div>
                         )}
@@ -6072,14 +6074,14 @@ const Messages: React.FC<MessagesProps> = ({ apiKey, contacts, initialContactId,
           <div className="bg-white dark:bg-zinc-900 w-full max-w-4xl max-h-[90vh] rounded-2xl shadow-2xl animate-scale-in border border-zinc-200 dark:border-zinc-800 overflow-hidden flex flex-col">
             <div className="flex items-center justify-between p-4 border-b border-zinc-200 dark:border-zinc-800">
               <h2 className="text-lg font-bold dark:text-white flex items-center gap-2">
-                <i className="fa-solid fa-chart-line text-indigo-500"></i>
+                <TrendingUp className="text-indigo-500" />
                 Message Analytics Dashboard
               </h2>
               <button
                 onClick={() => setShowAnalyticsDashboard(false)}
                 className="w-8 h-8 flex items-center justify-center rounded-lg hover:bg-zinc-100 dark:hover:bg-zinc-800 text-zinc-500"
               >
-                <i className="fa-solid fa-xmark"></i>
+                <X />
               </button>
             </div>
             <div className="flex-1 overflow-y-auto p-4">
@@ -6098,14 +6100,14 @@ const Messages: React.FC<MessagesProps> = ({ apiKey, contacts, initialContactId,
           <div className="bg-white dark:bg-zinc-900 w-full max-w-3xl max-h-[80vh] rounded-2xl shadow-2xl animate-scale-in border border-zinc-200 dark:border-zinc-800 overflow-hidden flex flex-col">
             <div className="flex items-center justify-between p-4 border-b border-zinc-200 dark:border-zinc-800">
               <h2 className="text-lg font-bold dark:text-white flex items-center gap-2">
-                <i className="fa-solid fa-diagram-project text-purple-500"></i>
+                <GitFork className="text-purple-500" />
                 Connection Network
               </h2>
               <button
                 onClick={() => setShowNetworkGraph(false)}
                 className="w-8 h-8 flex items-center justify-center rounded-lg hover:bg-zinc-100 dark:hover:bg-zinc-800 text-zinc-500"
               >
-                <i className="fa-solid fa-xmark"></i>
+                <X />
               </button>
             </div>
             <div className="flex-1 overflow-y-auto p-4">
@@ -6131,14 +6133,14 @@ const Messages: React.FC<MessagesProps> = ({ apiKey, contacts, initialContactId,
           <div className="h-full flex flex-col">
             <div className="flex items-center justify-between p-4 border-b border-zinc-200 dark:border-zinc-800">
               <h2 className="text-lg font-bold dark:text-white flex items-center gap-2">
-                <i className="fa-solid fa-layer-group text-purple-500"></i>
+                <Layers className="text-purple-500" />
                 Context & Insights
               </h2>
               <button
                 onClick={() => setShowContextPanel(false)}
                 className="w-8 h-8 flex items-center justify-center rounded-lg hover:bg-zinc-100 dark:hover:bg-zinc-800 text-zinc-500"
               >
-                <i className="fa-solid fa-xmark"></i>
+                <X />
               </button>
             </div>
             <div className="flex-1 overflow-y-auto">
@@ -6172,14 +6174,14 @@ const Messages: React.FC<MessagesProps> = ({ apiKey, contacts, initialContactId,
           <div className="bg-white dark:bg-zinc-900 w-full max-w-3xl max-h-[85vh] rounded-2xl shadow-2xl animate-scale-in border border-zinc-200 dark:border-zinc-800 overflow-hidden flex flex-col">
             <div className="flex items-center justify-between p-4 border-b border-zinc-200 dark:border-zinc-800">
               <h2 className="text-lg font-bold dark:text-white flex items-center gap-2">
-                <i className="fa-solid fa-tasks text-emerald-500"></i>
+                <ListChecks className="text-emerald-500" />
                 Extract Tasks from Conversation
               </h2>
               <button
                 onClick={() => setShowTaskExtractor(false)}
                 className="w-8 h-8 flex items-center justify-center rounded-lg hover:bg-zinc-100 dark:hover:bg-zinc-800 text-zinc-500"
               >
-                <i className="fa-solid fa-xmark"></i>
+                <X />
               </button>
             </div>
             <div className="flex-1 overflow-y-auto">
@@ -6211,14 +6213,14 @@ const Messages: React.FC<MessagesProps> = ({ apiKey, contacts, initialContactId,
           <div className="bg-white dark:bg-zinc-900 w-full max-w-4xl max-h-[90vh] rounded-2xl shadow-2xl animate-scale-in border border-zinc-200 dark:border-zinc-800 overflow-hidden flex flex-col">
             <div className="flex items-center justify-between p-4 border-b border-zinc-200 dark:border-zinc-800">
               <h2 className="text-lg font-bold dark:text-white flex items-center gap-2">
-                <i className="fa-solid fa-file-export text-blue-500"></i>
+                <FileOutput className="text-blue-500" />
                 Export as Living Document
               </h2>
               <button
                 onClick={() => setShowChannelArtifactPanel(false)}
                 className="w-8 h-8 flex items-center justify-center rounded-lg hover:bg-zinc-100 dark:hover:bg-zinc-800 text-zinc-500"
               >
-                <i className="fa-solid fa-xmark"></i>
+                <X />
               </button>
             </div>
             <div className="flex-1 overflow-y-auto">
@@ -6275,7 +6277,7 @@ const Messages: React.FC<MessagesProps> = ({ apiKey, contacts, initialContactId,
              <div className="mb-4 p-4 bg-amber-50 dark:bg-amber-900/20 border border-amber-200 dark:border-amber-800 rounded-xl">
                <div className="flex items-start gap-3">
                  <div className="w-10 h-10 bg-amber-100 dark:bg-amber-900/40 rounded-full flex items-center justify-center flex-shrink-0">
-                   <i className="fa-solid fa-mobile-screen text-amber-600 dark:text-amber-400"></i>
+                   <Smartphone className="text-amber-600 dark:text-amber-400" />
                  </div>
                  <div className="flex-1">
                    <h4 className="font-semibold text-amber-800 dark:text-amber-200 text-sm mb-1">Send from your phone</h4>
@@ -6292,7 +6294,7 @@ const Messages: React.FC<MessagesProps> = ({ apiKey, contacts, initialContactId,
                      }}
                      className="text-xs font-medium text-amber-600 dark:text-amber-400 hover:underline inline-flex items-center gap-1"
                    >
-                     <i className="fa-solid fa-rocket"></i> Invite to Pulse for free messaging
+                     <Rocket /> Invite to Pulse for free messaging
                    </button>
                  </div>
                </div>
@@ -6302,7 +6304,7 @@ const Messages: React.FC<MessagesProps> = ({ apiKey, contacts, initialContactId,
            {/* SMS Mode Banner for Native Apps */}
            {isNonPulseThread && canSendNativeSms && (
              <div className="mb-3 px-3 py-2 bg-blue-50 dark:bg-blue-900/20 border border-blue-200 dark:border-blue-800 rounded-lg flex items-center gap-2 text-xs">
-               <i className="fa-solid fa-comment-sms text-blue-500"></i>
+               <MessageSquare className="text-blue-500" />
                <span className="text-blue-700 dark:text-blue-300">
                  Messages to {activeContact?.name || 'this contact'} will be sent as SMS via your carrier
                </span>
@@ -6327,7 +6329,7 @@ const Messages: React.FC<MessagesProps> = ({ apiKey, contacts, initialContactId,
                <div className="flex items-center justify-between mb-3">
                  <span className="text-xs font-bold text-zinc-500 uppercase tracking-wider">Quick Templates</span>
                  <button onClick={() => setShowTemplates(false)} className="text-zinc-400 hover:text-zinc-600">
-                   <i className="fa-solid fa-xmark text-xs"></i>
+                   <X className="text-xs" />
                  </button>
                </div>
                <div className="grid grid-cols-2 gap-2">
@@ -6350,7 +6352,7 @@ const Messages: React.FC<MessagesProps> = ({ apiKey, contacts, initialContactId,
                        className="text-left p-2 rounded-lg bg-zinc-50 dark:bg-zinc-800 hover:bg-zinc-100 dark:hover:bg-zinc-700 transition"
                      >
                        <div className="text-xs font-medium dark:text-white flex items-center gap-1.5">
-                         <i className="fa-solid fa-wand-magic-sparkles text-purple-400 text-[8px]"></i>
+                         <Wand2 className="text-purple-400 text-[8px]" />
                          {template.label}
                        </div>
                        <div className="text-[10px] text-zinc-500 truncate">{previewText}</div>
@@ -6367,7 +6369,7 @@ const Messages: React.FC<MessagesProps> = ({ apiKey, contacts, initialContactId,
                <div className="flex items-center justify-between mb-3">
                  <span className="text-xs font-bold text-zinc-500 uppercase tracking-wider">Add Emoji</span>
                  <button onClick={() => setShowEmojiPicker(false)} className="text-zinc-400 hover:text-zinc-600">
-                   <i className="fa-solid fa-xmark text-xs"></i>
+                   <X className="text-xs" />
                  </button>
                </div>
                <div className="space-y-3 max-h-48 overflow-y-auto">
@@ -6487,8 +6489,8 @@ const Messages: React.FC<MessagesProps> = ({ apiKey, contacts, initialContactId,
 
            {isProposalMode && (
                <div className="absolute bottom-full left-4 right-4 mb-2 bg-amber-50 dark:bg-amber-900/20 border border-amber-200 dark:border-amber-800 p-2 rounded-lg flex items-center justify-between text-xs text-amber-800 dark:text-amber-200 animate-slide-up">
-                   <span className="font-bold flex items-center gap-2"><i className="fa-solid fa-scale-balanced"></i> Proposal Mode Active</span>
-                   <button onClick={() => setIsProposalMode(false)}><i className="fa-solid fa-xmark"></i></button>
+                   <span className="font-bold flex items-center gap-2"><Scale /> Proposal Mode Active</span>
+                   <button onClick={() => setIsProposalMode(false)}><X /></button>
                </div>
            )}
 
@@ -6548,21 +6550,21 @@ const Messages: React.FC<MessagesProps> = ({ apiKey, contacts, initialContactId,
                   className={`w-8 h-8 sm:w-10 sm:h-10 rounded-lg transition flex items-center justify-center flex-shrink-0 ${isProposalMode ? 'bg-amber-500 text-white' : 'text-zinc-400 hover:bg-zinc-200 dark:hover:bg-zinc-800'}`}
                   title="Make Proposal (Ctrl+Shift+P)"
                >
-                  <i className="fa-solid fa-gavel text-xs sm:text-sm"></i>
+                  <Gavel className="text-xs sm:text-sm" />
                </button>
                <button
                   onClick={() => setShowTemplates(!showTemplates)}
                   className={`hidden sm:flex w-8 h-8 sm:w-10 sm:h-10 rounded-lg transition items-center justify-center flex-shrink-0 ${showTemplates ? 'bg-blue-500 text-white' : 'text-zinc-400 hover:bg-zinc-200 dark:hover:bg-zinc-800'}`}
                   title="Message Templates (Ctrl+Shift+T)"
                >
-                  <i className="fa-solid fa-bolt text-xs sm:text-sm"></i>
+                  <Zap className="text-xs sm:text-sm" />
                </button>
                <button
                   onClick={() => setShowEmojiPicker(!showEmojiPicker)}
                   className={`w-8 h-8 sm:w-10 sm:h-10 rounded-lg transition flex items-center justify-center flex-shrink-0 ${showEmojiPicker ? 'bg-yellow-500 text-white' : 'text-zinc-400 hover:bg-zinc-200 dark:hover:bg-zinc-800'}`}
                   title="Add Emoji (Ctrl+Shift+E)"
                >
-                  <i className="fa-solid fa-face-smile text-xs sm:text-sm"></i>
+                  <Smile className="text-xs sm:text-sm" />
                </button>
 
                {/* Phase 2: Quick Phrases Button - Hidden on mobile */}
@@ -6571,7 +6573,7 @@ const Messages: React.FC<MessagesProps> = ({ apiKey, contacts, initialContactId,
                   className={`hidden sm:flex w-8 h-8 sm:w-10 sm:h-10 rounded-lg transition items-center justify-center flex-shrink-0 ${showQuickPhrases ? 'bg-purple-500 text-white' : 'text-zinc-400 hover:bg-zinc-200 dark:hover:bg-zinc-800'}`}
                   title="Quick Phrases"
                >
-                  <i className="fa-solid fa-comment-dots text-xs sm:text-sm"></i>
+                  <MessageCircle className="text-xs sm:text-sm" />
                </button>
 
                {/* Attachment Menu Button */}
@@ -6581,7 +6583,7 @@ const Messages: React.FC<MessagesProps> = ({ apiKey, contacts, initialContactId,
                     className={`w-8 h-8 sm:w-10 sm:h-10 rounded-lg transition flex items-center justify-center flex-shrink-0 ${showAttachmentMenu ? 'bg-orange-500 text-white' : 'text-zinc-400 hover:bg-zinc-200 dark:hover:bg-zinc-800'}`}
                     title="Attach File, Image, Video, or Link"
                  >
-                    <i className="fa-solid fa-plus text-xs sm:text-sm"></i>
+                    <Plus className="text-xs sm:text-sm" />
                  </button>
 
                  {/* Attachment Menu Dropdown */}
@@ -6593,7 +6595,7 @@ const Messages: React.FC<MessagesProps> = ({ apiKey, contacts, initialContactId,
                          className="w-full px-4 py-3 text-left hover:bg-zinc-100 dark:hover:bg-zinc-800 rounded-lg transition flex items-center gap-3 group"
                        >
                          <div className="w-10 h-10 rounded-lg bg-blue-100 dark:bg-blue-900/30 flex items-center justify-center group-hover:bg-blue-200 dark:group-hover:bg-blue-900/50 transition">
-                           <i className="fa-solid fa-image text-blue-600 dark:text-blue-400"></i>
+                           <Image className="text-blue-600 dark:text-blue-400" />
                          </div>
                          <div>
                            <div className="text-sm font-medium dark:text-white">Photo</div>
@@ -6606,7 +6608,7 @@ const Messages: React.FC<MessagesProps> = ({ apiKey, contacts, initialContactId,
                          className="w-full px-4 py-3 text-left hover:bg-zinc-100 dark:hover:bg-zinc-800 rounded-lg transition flex items-center gap-3 group"
                        >
                          <div className="w-10 h-10 rounded-lg bg-purple-100 dark:bg-purple-900/30 flex items-center justify-center group-hover:bg-purple-200 dark:group-hover:bg-purple-900/50 transition">
-                           <i className="fa-solid fa-video text-purple-600 dark:text-purple-400"></i>
+                           <Video className="text-purple-600 dark:text-purple-400" />
                          </div>
                          <div>
                            <div className="text-sm font-medium dark:text-white">Video</div>
@@ -6619,7 +6621,7 @@ const Messages: React.FC<MessagesProps> = ({ apiKey, contacts, initialContactId,
                          className="w-full px-4 py-3 text-left hover:bg-zinc-100 dark:hover:bg-zinc-800 rounded-lg transition flex items-center gap-3 group"
                        >
                          <div className="w-10 h-10 rounded-lg bg-emerald-100 dark:bg-emerald-900/30 flex items-center justify-center group-hover:bg-emerald-200 dark:group-hover:bg-emerald-900/50 transition">
-                           <i className="fa-solid fa-file text-emerald-600 dark:text-emerald-400"></i>
+                           <File className="text-emerald-600 dark:text-emerald-400" />
                          </div>
                          <div>
                            <div className="text-sm font-medium dark:text-white">File</div>
@@ -6634,7 +6636,7 @@ const Messages: React.FC<MessagesProps> = ({ apiKey, contacts, initialContactId,
                          className="w-full px-4 py-3 text-left hover:bg-zinc-100 dark:hover:bg-zinc-800 rounded-lg transition flex items-center gap-3 group"
                        >
                          <div className="w-10 h-10 rounded-lg bg-orange-100 dark:bg-orange-900/30 flex items-center justify-center group-hover:bg-orange-200 dark:group-hover:bg-orange-900/50 transition">
-                           <i className="fa-solid fa-link text-orange-600 dark:text-orange-400"></i>
+                           <Link className="text-orange-600 dark:text-orange-400" />
                          </div>
                          <div>
                            <div className="text-sm font-medium dark:text-white">Link</div>
@@ -6758,7 +6760,7 @@ const Messages: React.FC<MessagesProps> = ({ apiKey, contacts, initialContactId,
                   className="hidden sm:flex w-8 h-8 sm:w-10 sm:h-10 rounded-lg transition items-center justify-center flex-shrink-0 text-zinc-400 hover:bg-zinc-200 dark:hover:bg-zinc-800 disabled:opacity-40"
                   title="Schedule Message"
                >
-                  <i className="fa-solid fa-clock text-xs sm:text-sm"></i>
+                  <Clock className="text-xs sm:text-sm" />
                </button>
                {/* Phase 2: Voice Context Extractor Toggle - Hidden on mobile */}
                <button
@@ -6766,7 +6768,7 @@ const Messages: React.FC<MessagesProps> = ({ apiKey, contacts, initialContactId,
                   className={`hidden sm:flex w-8 h-8 sm:w-10 sm:h-10 rounded-lg transition items-center justify-center flex-shrink-0 ${showVoiceExtractor ? 'bg-blue-500 text-white' : 'text-zinc-400 hover:bg-zinc-200 dark:hover:bg-zinc-800'}`}
                   title="AI Voice Transcription"
                >
-                  <i className="fa-solid fa-comment-medical text-xs sm:text-sm"></i>
+                  <MessageCircle className="text-xs sm:text-sm" />
                </button>
                {/* Phase 2: Translation Widget - Hidden on mobile */}
                {/*
@@ -6798,7 +6800,7 @@ const Messages: React.FC<MessagesProps> = ({ apiKey, contacts, initialContactId,
                    className="w-8 h-8 sm:w-10 sm:h-10 rounded-lg bg-blue-600 hover:bg-blue-500 text-white flex items-center justify-center transition hover:scale-105 disabled:opacity-50 disabled:hover:scale-100"
                    title="Send SMS"
                  >
-                   <i className="fa-solid fa-comment-sms text-xs sm:text-sm"></i>
+                   <MessageSquare className="text-xs sm:text-sm" />
                  </button>
                ) : isViewOnlyMode ? (
                  // Disabled button for view-only mode
@@ -6807,12 +6809,12 @@ const Messages: React.FC<MessagesProps> = ({ apiKey, contacts, initialContactId,
                    className="w-8 h-8 sm:w-10 sm:h-10 rounded-lg bg-zinc-300 dark:bg-zinc-700 text-zinc-500 flex items-center justify-center cursor-not-allowed"
                    title="Send from your mobile device"
                  >
-                   <i className="fa-solid fa-lock text-xs sm:text-sm"></i>
+                   <Lock className="text-xs sm:text-sm" />
                  </button>
                ) : (
                  // Regular send button
                  <button onClick={() => handleSend()} disabled={isRecording || (!inputText.trim())} className="w-8 h-8 sm:w-10 sm:h-10 rounded-lg bg-zinc-900 dark:bg-white text-white dark:text-black flex items-center justify-center transition hover:scale-105 disabled:opacity-50 disabled:hover:scale-100">
-                   <i className="fa-solid fa-arrow-up text-xs sm:text-sm"></i>
+                   <ArrowUp className="text-xs sm:text-sm" />
                  </button>
                )}
              </div>
@@ -6821,7 +6823,7 @@ const Messages: React.FC<MessagesProps> = ({ apiKey, contacts, initialContactId,
            {/* Scheduled Messages Indicator */}
            {scheduledMessages.filter(m => m.threadId === activeThreadId).length > 0 && (
              <div className="mt-2 flex items-center gap-2 text-xs text-zinc-500">
-               <i className="fa-solid fa-clock"></i>
+               <Clock />
                <span>{scheduledMessages.filter(m => m.threadId === activeThreadId).length} message(s) scheduled for this conversation</span>
                <button onClick={() => setShowScheduleModal(true)} className="text-blue-500 hover:underline">View</button>
              </div>

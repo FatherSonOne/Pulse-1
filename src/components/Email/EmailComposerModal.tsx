@@ -13,6 +13,8 @@ import TemplateVariablesModal from './TemplateVariablesModal';
 import { VoiceTextButton } from '../shared/VoiceTextButton';
 import toast from 'react-hot-toast';
 
+import { Bold, ChevronDown, Clock, FileText, Gauge, HardDrive, Italic, Link, Loader2, Lock, Maximize2, Minimize2, Minus, Paperclip, Pen, PenTool, Save, Send, Smile, SpellCheck, Square, Trash2, Underline, UserCog, Video, Wand2, X } from 'lucide-react';
+
 interface EmailComposerModalProps {
   userEmail: string;
   userName: string;
@@ -644,13 +646,13 @@ export const EmailComposerModal: React.FC<EmailComposerModalProps> = ({
               onClick={() => setIsMinimized(false)}
               className="w-6 h-6 rounded hover:bg-zinc-800 flex items-center justify-center text-zinc-400 hover:text-white transition"
             >
-              <i className="fa-solid fa-window-maximize text-xs"></i>
+              <Square className="text-xs" />
             </button>
             <button
               onClick={handleClose}
               className="w-6 h-6 rounded hover:bg-zinc-800 flex items-center justify-center text-zinc-400 hover:text-red-400 transition"
             >
-              <i className="fa-solid fa-xmark text-xs"></i>
+              <X className="text-xs" />
             </button>
           </div>
         </div>
@@ -700,7 +702,7 @@ export const EmailComposerModal: React.FC<EmailComposerModalProps> = ({
               className="w-7 h-7 rounded hover:bg-zinc-800 flex items-center justify-center text-zinc-400 hover:text-white transition-all duration-200"
               title="Minimize"
             >
-              <i className="fa-solid fa-window-minimize text-xs"></i>
+              <Minus className="text-xs" />
             </button>
             <button
               onClick={() => setIsMaximized(!isMaximized)}
@@ -714,7 +716,7 @@ export const EmailComposerModal: React.FC<EmailComposerModalProps> = ({
               className="w-7 h-7 rounded hover:bg-red-500/20 flex items-center justify-center text-zinc-400 hover:text-red-400 transition-all duration-200"
               title="Close"
             >
-              <i className="fa-solid fa-xmark text-sm"></i>
+              <X className="text-sm" />
             </button>
           </div>
         </div>
@@ -801,13 +803,13 @@ export const EmailComposerModal: React.FC<EmailComposerModalProps> = ({
           {showAiPanel && (
             <div className="mx-4 mt-3 p-4 rounded-xl bg-gradient-to-r from-purple-500/10 to-pink-500/10 border border-purple-500/30">
               <div className="flex items-center gap-2 text-purple-400 text-sm font-medium mb-3">
-                <i className="fa-solid fa-wand-magic-sparkles"></i>
+                <Wand2 />
                 <span>AI Draft Assistant</span>
                 <button
                   onClick={() => setShowAiPanel(false)}
                   className="ml-auto text-zinc-500 hover:text-white"
                 >
-                  <i className="fa-solid fa-xmark"></i>
+                  <X />
                 </button>
               </div>
 
@@ -845,12 +847,12 @@ export const EmailComposerModal: React.FC<EmailComposerModalProps> = ({
               >
                 {aiGenerating ? (
                   <>
-                    <i className="fa-solid fa-circle-notch fa-spin"></i>
+                    <Loader2 className="animate-spin" />
                     Generating...
                   </>
                 ) : (
                   <>
-                    <i className="fa-solid fa-magic"></i>
+                    <Wand2 />
                     Generate Draft
                   </>
                 )}
@@ -875,7 +877,7 @@ export const EmailComposerModal: React.FC<EmailComposerModalProps> = ({
                       onClick={() => setShowToneCheck(false)}
                       className="ml-auto text-zinc-500 hover:text-white"
                     >
-                      <i className="fa-solid fa-xmark"></i>
+                      <X />
                     </button>
                   </div>
 
@@ -895,7 +897,7 @@ export const EmailComposerModal: React.FC<EmailComposerModalProps> = ({
                 </>
               ) : (
                 <div className="flex items-center gap-2 text-zinc-400">
-                  <i className="fa-solid fa-circle-notch fa-spin"></i>
+                  <Loader2 className="animate-spin" />
                   <span className="text-sm">Analyzing tone...</span>
                 </div>
               )}
@@ -929,7 +931,7 @@ export const EmailComposerModal: React.FC<EmailComposerModalProps> = ({
                     key={index}
                     className="flex items-center gap-2 bg-zinc-800 rounded-lg px-3 py-1.5 text-sm"
                   >
-                    <i className="fa-solid fa-paperclip text-zinc-500"></i>
+                    <Paperclip className="text-zinc-500" />
                     <span className="text-zinc-300 max-w-[150px] truncate">{file.name}</span>
                     <span className="text-zinc-500 text-xs">
                       ({(file.size / 1024).toFixed(0)}KB)
@@ -938,7 +940,7 @@ export const EmailComposerModal: React.FC<EmailComposerModalProps> = ({
                       onClick={() => removeAttachment(index)}
                       className="text-zinc-500 hover:text-red-500 transition ml-1"
                     >
-                      <i className="fa-solid fa-xmark text-xs"></i>
+                      <X className="text-xs" />
                     </button>
                   </div>
                 ))}
@@ -1027,12 +1029,12 @@ export const EmailComposerModal: React.FC<EmailComposerModalProps> = ({
               >
                 {sending ? (
                   <>
-                    <i className="fa-solid fa-circle-notch fa-spin"></i>
+                    <Loader2 className="animate-spin" />
                     Sending...
                   </>
                 ) : (
                   <>
-                    <i className="fa-solid fa-paper-plane"></i>
+                    <Send />
                     Send
                   </>
                 )}
@@ -1047,9 +1049,9 @@ export const EmailComposerModal: React.FC<EmailComposerModalProps> = ({
                   title="Schedule send"
                 >
                   {scheduling ? (
-                    <i className="fa-solid fa-circle-notch fa-spin text-xs"></i>
+                    <Loader2 className="text-xs animate-spin" />
                   ) : (
-                    <i className="fa-solid fa-clock"></i>
+                    <Clock />
                   )}
                 </button>
                 {showScheduleModal && (
@@ -1067,7 +1069,7 @@ export const EmailComposerModal: React.FC<EmailComposerModalProps> = ({
                 }`}
                 title="Confidential mode"
               >
-                <i className="fa-solid fa-lock text-xs"></i>
+                <Lock className="text-xs" />
               </button>
 
               {/* Formatting toolbar */}
@@ -1079,9 +1081,9 @@ export const EmailComposerModal: React.FC<EmailComposerModalProps> = ({
                   title="Insert Google Meet link"
                 >
                   {meetCreating ? (
-                    <i className="fa-solid fa-circle-notch fa-spin text-xs"></i>
+                    <Loader2 className="text-xs animate-spin" />
                   ) : (
-                    <i className="fa-solid fa-video text-xs"></i>
+                    <Video className="text-xs" />
                   )}
                 </button>
                 <button
@@ -1089,28 +1091,28 @@ export const EmailComposerModal: React.FC<EmailComposerModalProps> = ({
                   className="w-8 h-8 rounded hover:bg-zinc-800 flex items-center justify-center text-zinc-500 hover:text-white transition"
                   title="Bold (**text**)"
                 >
-                  <i className="fa-solid fa-bold text-xs"></i>
+                  <Bold className="text-xs" />
                 </button>
                 <button
                   onClick={handleItalic}
                   className="w-8 h-8 rounded hover:bg-zinc-800 flex items-center justify-center text-zinc-500 hover:text-white transition"
                   title="Italic (*text*)"
                 >
-                  <i className="fa-solid fa-italic text-xs"></i>
+                  <Italic className="text-xs" />
                 </button>
                 <button
                   onClick={handleUnderline}
                   className="w-8 h-8 rounded hover:bg-zinc-800 flex items-center justify-center text-zinc-500 hover:text-white transition"
                   title="Underline"
                 >
-                  <i className="fa-solid fa-underline text-xs"></i>
+                  <Underline className="text-xs" />
                 </button>
                 <button
                   onClick={handleLink}
                   className="w-8 h-8 rounded hover:bg-zinc-800 flex items-center justify-center text-zinc-500 hover:text-white transition"
                   title="Insert link"
                 >
-                  <i className="fa-solid fa-link text-xs"></i>
+                  <Link className="text-xs" />
                 </button>
                 {driveQuickAttach && (
                   <button
@@ -1118,7 +1120,7 @@ export const EmailComposerModal: React.FC<EmailComposerModalProps> = ({
                     className="w-8 h-8 rounded hover:bg-zinc-800 flex items-center justify-center text-zinc-500 hover:text-emerald-400 transition"
                     title="Attach from Drive"
                   >
-                    <i className="fa-brands fa-google-drive text-xs"></i>
+                    <HardDrive className="text-xs" />
                   </button>
                 )}
               </div>
@@ -1132,9 +1134,9 @@ export const EmailComposerModal: React.FC<EmailComposerModalProps> = ({
                   title={smartComposeEnabled ? 'Smart Compose suggestion' : 'Enable Smart Compose in Settings'}
                 >
                   {smartComposeLoading ? (
-                    <i className="fa-solid fa-circle-notch fa-spin"></i>
+                    <Loader2 className="animate-spin" />
                   ) : (
-                    <i className="fa-solid fa-pen"></i>
+                    <Pen />
                   )}
                   Smart
                 </button>
@@ -1147,7 +1149,7 @@ export const EmailComposerModal: React.FC<EmailComposerModalProps> = ({
                   }`}
                   title="AI Draft Assistant"
                 >
-                  <i className="fa-solid fa-wand-magic-sparkles"></i>
+                  <Wand2 />
                   AI Draft
                 </button>
 
@@ -1159,12 +1161,12 @@ export const EmailComposerModal: React.FC<EmailComposerModalProps> = ({
                     title="Enhance email with AI"
                   >
                     {enhancing ? (
-                      <i className="fa-solid fa-circle-notch fa-spin"></i>
+                      <Loader2 className="animate-spin" />
                     ) : (
-                      <i className="fa-solid fa-pen-fancy"></i>
+                      <PenTool />
                     )}
                     Enhance
-                    <i className="fa-solid fa-chevron-down text-[10px] ml-0.5"></i>
+                    <ChevronDown className="text-[10px] ml-0.5" />
                   </button>
                   <div className="absolute bottom-full left-0 mb-1 hidden group-hover:block z-20">
                     <div className="bg-zinc-800 rounded-lg shadow-xl border border-zinc-700 py-1 text-xs min-w-[140px]">
@@ -1172,28 +1174,28 @@ export const EmailComposerModal: React.FC<EmailComposerModalProps> = ({
                         onClick={() => handleEnhanceEmail('shorten')}
                         className="w-full px-3 py-2 text-left text-zinc-300 hover:bg-zinc-700 hover:text-white flex items-center gap-2"
                       >
-                        <i className="fa-solid fa-compress w-4"></i>
+                        <Minimize2 className="w-4" />
                         Shorten
                       </button>
                       <button
                         onClick={() => handleEnhanceEmail('elaborate')}
                         className="w-full px-3 py-2 text-left text-zinc-300 hover:bg-zinc-700 hover:text-white flex items-center gap-2"
                       >
-                        <i className="fa-solid fa-expand w-4"></i>
+                        <Maximize2 className="w-4" />
                         Elaborate
                       </button>
                       <button
                         onClick={() => handleEnhanceEmail('formalize')}
                         className="w-full px-3 py-2 text-left text-zinc-300 hover:bg-zinc-700 hover:text-white flex items-center gap-2"
                       >
-                        <i className="fa-solid fa-user-tie w-4"></i>
+                        <UserCog className="w-4" />
                         Make Formal
                       </button>
                       <button
                         onClick={() => handleEnhanceEmail('casualize')}
                         className="w-full px-3 py-2 text-left text-zinc-300 hover:bg-zinc-700 hover:text-white flex items-center gap-2"
                       >
-                        <i className="fa-solid fa-face-smile w-4"></i>
+                        <Smile className="w-4" />
                         Make Casual
                       </button>
                       <div className="border-t border-zinc-700 my-1"></div>
@@ -1201,7 +1203,7 @@ export const EmailComposerModal: React.FC<EmailComposerModalProps> = ({
                         onClick={() => handleEnhanceEmail('fix_grammar')}
                         className="w-full px-3 py-2 text-left text-zinc-300 hover:bg-zinc-700 hover:text-white flex items-center gap-2"
                       >
-                        <i className="fa-solid fa-spell-check w-4"></i>
+                        <SpellCheck className="w-4" />
                         Fix Grammar
                       </button>
                     </div>
@@ -1213,7 +1215,7 @@ export const EmailComposerModal: React.FC<EmailComposerModalProps> = ({
                   className="flex items-center gap-1.5 px-3 py-1.5 rounded-lg text-xs font-medium bg-zinc-800 text-zinc-400 hover:text-white transition"
                   title="Check tone before sending"
                 >
-                  <i className="fa-solid fa-gauge"></i>
+                  <Gauge />
                   Tone Check
                 </button>
 
@@ -1223,7 +1225,7 @@ export const EmailComposerModal: React.FC<EmailComposerModalProps> = ({
                   className="flex items-center gap-1.5 px-3 py-1.5 rounded-lg text-xs font-medium bg-emerald-500/20 text-emerald-400 hover:bg-emerald-500/30 transition"
                   title="Use email template"
                 >
-                  <i className="fa-solid fa-file-lines"></i>
+                  <FileText />
                   Templates
                 </button>
               </div>
@@ -1242,7 +1244,7 @@ export const EmailComposerModal: React.FC<EmailComposerModalProps> = ({
                 className="w-8 h-8 rounded hover:bg-zinc-800 flex items-center justify-center text-zinc-500 hover:text-white transition relative"
                 title="Attach file (max 25MB total)"
               >
-                <i className="fa-solid fa-paperclip"></i>
+                <Paperclip />
                 {attachments.length > 0 && (
                   <span className="absolute -top-1 -right-1 w-4 h-4 bg-red-500 text-white text-xs rounded-full flex items-center justify-center">
                     {attachments.length}
@@ -1256,9 +1258,9 @@ export const EmailComposerModal: React.FC<EmailComposerModalProps> = ({
                 title="Save draft"
               >
                 {savingDraft ? (
-                  <i className="fa-solid fa-circle-notch fa-spin text-xs"></i>
+                  <Loader2 className="text-xs animate-spin" />
                 ) : (
-                  <i className="fa-solid fa-floppy-disk"></i>
+                  <Save />
                 )}
               </button>
               <button
@@ -1266,7 +1268,7 @@ export const EmailComposerModal: React.FC<EmailComposerModalProps> = ({
                 className="w-8 h-8 rounded hover:bg-red-500/20 flex items-center justify-center text-zinc-500 hover:text-red-500 transition"
                 title="Discard"
               >
-                <i className="fa-solid fa-trash"></i>
+                <Trash2 />
               </button>
             </div>
           </div>

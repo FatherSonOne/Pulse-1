@@ -9,6 +9,8 @@ import AILabEmptyState from '../shared/AILabEmptyState';
 import { useToast } from '../shared/AILabToast';
 import './IntelligenceHub.css';
 
+import { Activity, AlertCircle, ArrowLeft, ArrowRight, Brain, CheckCircle, Circle, Clock, FileText, Gavel, Loader2, PenTool, Rocket, Search, Square, Terminal, TrendingUp } from 'lucide-react';
+
 interface IntelligenceHubProps {
   onBack: () => void;
   apiKey: string;
@@ -247,10 +249,10 @@ ${draft.slice(0, 5000)}`) || draft;
       <div className="hub-header">
         <div className="hub-header-left">
           <button type="button" onClick={onBack} className="hub-back-btn" aria-label="Go back">
-            <i className="fa-solid fa-arrow-left"></i>
+            <ArrowLeft />
           </button>
           <div className="hub-branding">
-            <i className="fa-solid fa-brain"></i>
+            <Brain />
             <span>Intelligence Hub</span>
           </div>
           <span className="hub-subtitle">Autonomous AI Agents</span>
@@ -258,13 +260,13 @@ ${draft.slice(0, 5000)}`) || draft;
         <div className="hub-header-right">
           {(isRunning || elapsed > 0) && (
             <div className="mission-timer">
-              <i className="fa-solid fa-clock"></i>
+              <Clock />
               {String(Math.floor(elapsed / 60)).padStart(2, '0')}:{String(elapsed % 60).padStart(2, '0')}
             </div>
           )}
           {isRunning ? (
             <button type="button" className="hub-btn hub-btn-danger" onClick={stopMission}>
-              <i className="fa-solid fa-stop"></i>
+              <Square />
               Stop Mission
             </button>
           ) : (
@@ -274,7 +276,7 @@ ${draft.slice(0, 5000)}`) || draft;
               onClick={startMission}
               disabled={!missionPrompt.trim() || !apiKey}
             >
-              <i className="fa-solid fa-rocket"></i>
+              <Rocket />
               Launch Mission
             </button>
           )}
@@ -305,21 +307,21 @@ ${draft.slice(0, 5000)}`) || draft;
             >
               <div className="agent-header">
                 <div className="agent-avatar">
-                  {agent.role === 'researcher' && <i className="fa-solid fa-magnifying-glass"></i>}
-                  {agent.role === 'analyst' && <i className="fa-solid fa-chart-line"></i>}
-                  {agent.role === 'writer' && <i className="fa-solid fa-pen-fancy"></i>}
-                  {agent.role === 'critic' && <i className="fa-solid fa-gavel"></i>}
+                  {agent.role === 'researcher' && <Search />}
+                  {agent.role === 'analyst' && <TrendingUp />}
+                  {agent.role === 'writer' && <PenTool />}
+                  {agent.role === 'critic' && <Gavel />}
                 </div>
                 <div className="agent-info">
                   <h4>{agent.name}</h4>
                   <span className="agent-model">{agent.model}</span>
                 </div>
                 <div className={`agent-status-indicator ${agent.status}`}>
-                  {agent.status === 'idle' && <i className="fa-solid fa-circle"></i>}
-                  {agent.status === 'thinking' && <i className="fa-solid fa-brain fa-pulse"></i>}
-                  {agent.status === 'working' && <i className="fa-solid fa-spinner fa-spin"></i>}
-                  {agent.status === 'complete' && <i className="fa-solid fa-check-circle"></i>}
-                  {agent.status === 'error' && <i className="fa-solid fa-exclamation-circle"></i>}
+                  {agent.status === 'idle' && <Circle />}
+                  {agent.status === 'thinking' && <Activity />}
+                  {agent.status === 'working' && <Loader2 className="animate-spin" />}
+                  {agent.status === 'complete' && <CheckCircle />}
+                  {agent.status === 'error' && <AlertCircle />}
                 </div>
               </div>
 
@@ -362,7 +364,7 @@ ${draft.slice(0, 5000)}`) || draft;
         <div className="hub-bottom">
           <div className="activity-log">
             <h4>
-              <i className="fa-solid fa-terminal"></i>
+              <Terminal />
               Activity Log
             </h4>
             <div className="log-content">
@@ -387,7 +389,7 @@ ${draft.slice(0, 5000)}`) || draft;
             <div className="final-output">
               <div className="output-header">
                 <h4>
-                  <i className="fa-solid fa-file-lines"></i>
+                  <FileText />
                   Intelligence Report
                 </h4>
                 <div className="output-actions">
@@ -396,7 +398,7 @@ ${draft.slice(0, 5000)}`) || draft;
                     title="Send to AI Studio"
                     onClick={sendToStudio}
                   >
-                    <i className="fa-solid fa-arrow-right"></i>
+                    <ArrowRight />
                     Send to Studio
                   </button>
                 </div>

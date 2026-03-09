@@ -28,6 +28,8 @@ import MessagesSplitView from '../Messages/MessagesSplitView';
 import { MessageChannel, ChannelMessage } from '../../types/messages';
 import './messagesLayout.css';
 
+import { X } from 'lucide-react';
+
 // =============================================================================
 // Types & Interfaces
 // =============================================================================
@@ -375,7 +377,7 @@ const MobileBottomSheet: React.FC<MobileBottomSheetProps> = ({
             onClick={onClose}
             aria-label="Close panel"
           >
-            <i className="fa-solid fa-times" />
+            <X />
           </button>
         </header>
 

@@ -2,6 +2,8 @@
 import React, { lazy, Suspense } from 'react';
 import { CachedEmail, EmailFolder } from '../../services/emailSyncService';
 
+import { Archive, Bookmark, Clock, Inbox, Loader2, MailOpen, Paperclip, RefreshCw, Trash2, Wand2 } from 'lucide-react';
+
 interface EmailListProps {
   emails: CachedEmail[];
   selectedEmail: CachedEmail | null;
@@ -99,7 +101,7 @@ export const EmailList: React.FC<EmailListProps> = ({
       <Suspense fallback={
         <div className="flex-1 flex items-center justify-center bg-white dark:bg-transparent">
           <div className="text-center">
-            <i className="fa-solid fa-circle-notch fa-spin text-3xl text-rose-500 mb-3"></i>
+            <Loader2 className="text-3xl text-rose-500 mb-3 animate-spin" />
             <p className="text-stone-500 dark:text-zinc-500">Loading...</p>
           </div>
         </div>
@@ -113,7 +115,7 @@ export const EmailList: React.FC<EmailListProps> = ({
     return (
       <div className="flex-1 flex items-center justify-center bg-white dark:bg-transparent">
         <div className="text-center">
-          <i className="fa-solid fa-inbox text-5xl text-stone-300 dark:text-zinc-700 mb-4"></i>
+          <Inbox className="text-5xl text-stone-300 dark:text-zinc-700 mb-4" />
           <p className="text-stone-600 dark:text-zinc-400 font-medium">No emails in {currentFolder}</p>
           <p className="text-sm text-stone-500 dark:text-zinc-600 mt-1">
             {currentFolder === 'inbox' ? 'Your inbox is empty' : `Nothing in ${currentFolder}`}
@@ -141,28 +143,28 @@ export const EmailList: React.FC<EmailListProps> = ({
           title="Refresh"
           aria-label="Refresh emails"
         >
-          <i className="fa-solid fa-arrows-rotate text-sm" aria-hidden="true"></i>
+          <RefreshCw className="text-sm" />
         </button>
         <button
           className="p-1.5 rounded hover:bg-stone-200 dark:hover:bg-zinc-800 text-stone-500 dark:text-zinc-500 hover:text-stone-700 dark:hover:text-white transition"
           title="Archive"
           aria-label="Archive selected emails"
         >
-          <i className="fa-solid fa-box-archive text-sm" aria-hidden="true"></i>
+          <Archive className="text-sm" />
         </button>
         <button
           className="p-1.5 rounded hover:bg-stone-200 dark:hover:bg-zinc-800 text-stone-500 dark:text-zinc-500 hover:text-stone-700 dark:hover:text-white transition"
           title="Delete"
           aria-label="Delete selected emails"
         >
-          <i className="fa-solid fa-trash text-sm" aria-hidden="true"></i>
+          <Trash2 className="text-sm" />
         </button>
         <button
           className="p-1.5 rounded hover:bg-stone-200 dark:hover:bg-zinc-800 text-stone-500 dark:text-zinc-500 hover:text-stone-700 dark:hover:text-white transition"
           title="Mark as read"
           aria-label="Mark selected emails as read"
         >
-          <i className="fa-solid fa-envelope-open text-sm" aria-hidden="true"></i>
+          <MailOpen className="text-sm" />
         </button>
         <div className="flex-1"></div>
         <span className="text-xs text-stone-500 dark:text-zinc-500" aria-live="polite">{emails.length} emails</span>
@@ -227,10 +229,10 @@ export const EmailList: React.FC<EmailListProps> = ({
                   {email.from_name || email.from_email}
                 </span>
                 {email.is_important && (
-                  <i className="fa-solid fa-bookmark text-yellow-500 text-xs"></i>
+                  <Bookmark className="text-yellow-500 text-xs" />
                 )}
                 {email.has_attachments && (
-                  <i className="fa-solid fa-paperclip text-stone-400 dark:text-zinc-500 text-xs"></i>
+                  <Paperclip className="text-stone-400 dark:text-zinc-500 text-xs" />
                 )}
                 {getCategoryBadge(email)}
               </div>
@@ -246,7 +248,7 @@ export const EmailList: React.FC<EmailListProps> = ({
               {/* AI Summary preview */}
               {email.ai_summary && (
                 <div className="flex items-center gap-1.5 mt-2 text-xs text-purple-500 dark:text-purple-400">
-                  <i className="fa-solid fa-wand-magic-sparkles"></i>
+                  <Wand2 />
                   <span className="truncate">{email.ai_summary}</span>
                 </div>
               )}
@@ -268,7 +270,7 @@ export const EmailList: React.FC<EmailListProps> = ({
                   className="w-7 h-7 rounded hover:bg-stone-200 dark:hover:bg-zinc-700 flex items-center justify-center text-stone-500 dark:text-zinc-500 hover:text-stone-700 dark:hover:text-white transition"
                   title="Archive"
                 >
-                  <i className="fa-solid fa-box-archive text-xs"></i>
+                  <Archive className="text-xs" />
                 </button>
                 <button
                   onClick={(e) => {
@@ -278,13 +280,13 @@ export const EmailList: React.FC<EmailListProps> = ({
                   className="w-7 h-7 rounded hover:bg-stone-200 dark:hover:bg-zinc-700 flex items-center justify-center text-stone-500 dark:text-zinc-500 hover:text-red-500 transition"
                   title="Delete"
                 >
-                  <i className="fa-solid fa-trash text-xs"></i>
+                  <Trash2 className="text-xs" />
                 </button>
                 <button
                   className="w-7 h-7 rounded hover:bg-stone-200 dark:hover:bg-zinc-700 flex items-center justify-center text-stone-500 dark:text-zinc-500 hover:text-stone-700 dark:hover:text-white transition"
                   title="Snooze"
                 >
-                  <i className="fa-solid fa-clock text-xs"></i>
+                  <Clock className="text-xs" />
                 </button>
               </div>
             </div>

@@ -6,6 +6,8 @@
 import React, { useState, useEffect } from 'react';
 import { AnimatedIcon } from '../ui/AnimatedIcon';
 
+import { Check, RotateCw } from 'lucide-react';
+
 interface TodayEmptyStateProps {
   onRefresh?: () => void;
 }
@@ -35,7 +37,7 @@ export const TodayEmptyState: React.FC<TodayEmptyStateProps> = ({ onRefresh }) =
       {/* Animated checkmark */}
       <div className="relative mb-6">
         <div className="w-20 h-20 rounded-full bg-emerald-100 dark:bg-emerald-900/30 flex items-center justify-center">
-          <i className="fa-solid fa-check text-3xl text-emerald-500 dark:text-emerald-400" />
+          <Check className="text-3xl text-emerald-500 dark:text-emerald-400" />
         </div>
         {/* Subtle pulse ring */}
         <div className="absolute inset-0 rounded-full border-2 border-emerald-300 dark:border-emerald-600 animate-ping opacity-30" />
@@ -67,7 +69,7 @@ export const TodayEmptyState: React.FC<TodayEmptyStateProps> = ({ onRefresh }) =
           onClick={onRefresh}
           className="flex items-center gap-2 text-sm text-indigo-600 dark:text-indigo-400 hover:text-indigo-700 dark:hover:text-indigo-300 font-medium transition-colors"
         >
-          <i className="fa-solid fa-rotate-right text-xs" />
+          <RotateCw className="text-xs" />
           Check for new items
         </button>
       )}

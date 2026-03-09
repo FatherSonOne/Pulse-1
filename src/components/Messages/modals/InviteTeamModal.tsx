@@ -6,6 +6,8 @@
 import React from 'react';
 import { motion, AnimatePresence } from 'framer-motion';
 
+import { Check, Loader2, Send, UserPlus, X } from 'lucide-react';
+
 type InviteStatus = 'idle' | 'sending' | 'success' | 'error';
 
 interface InviteTeamModalProps {
@@ -59,14 +61,14 @@ export const InviteTeamModal: React.FC<InviteTeamModalProps> = ({
           {/* Header */}
           <div className="p-4 border-b border-zinc-200 dark:border-zinc-800 flex justify-between items-center">
             <h3 className="font-bold dark:text-white flex items-center gap-2">
-              <i className="fa-solid fa-user-plus text-rose-500"></i>
+              <UserPlus className="text-rose-500" />
               Invite Team Member
             </h3>
             <button
               onClick={handleClose}
               className="w-8 h-8 rounded-lg hover:bg-zinc-100 dark:hover:bg-zinc-800 flex items-center justify-center transition"
             >
-              <i className="fa-solid fa-xmark text-zinc-500 hover:text-zinc-700 dark:hover:text-zinc-300"></i>
+              <X className="text-zinc-500 hover:text-zinc-700 dark:hover:text-zinc-300" />
             </button>
           </div>
 
@@ -116,19 +118,19 @@ export const InviteTeamModal: React.FC<InviteTeamModalProps> = ({
               </div>
               <ul className="space-y-2 text-sm text-zinc-600 dark:text-zinc-400">
                 <li className="flex items-center gap-2">
-                  <i className="fa-solid fa-check text-rose-500 text-xs"></i>
+                  <Check className="text-rose-500 text-xs" />
                   Access to team messaging & channels
                 </li>
                 <li className="flex items-center gap-2">
-                  <i className="fa-solid fa-check text-rose-500 text-xs"></i>
+                  <Check className="text-rose-500 text-xs" />
                   AI-powered meeting notes & transcription
                 </li>
                 <li className="flex items-center gap-2">
-                  <i className="fa-solid fa-check text-rose-500 text-xs"></i>
+                  <Check className="text-rose-500 text-xs" />
                   Shared contacts & calendar integration
                 </li>
                 <li className="flex items-center gap-2">
-                  <i className="fa-solid fa-check text-rose-500 text-xs"></i>
+                  <Check className="text-rose-500 text-xs" />
                   Install Pulse as a desktop app (PWA)
                 </li>
               </ul>
@@ -150,12 +152,12 @@ export const InviteTeamModal: React.FC<InviteTeamModalProps> = ({
             >
               {inviteStatus === 'sending' ? (
                 <>
-                  <i className="fa-solid fa-circle-notch fa-spin"></i>
+                  <Loader2 className="animate-spin" />
                   Sending...
                 </>
               ) : (
                 <>
-                  <i className="fa-solid fa-paper-plane"></i>
+                  <Send />
                   Send Invite
                 </>
               )}

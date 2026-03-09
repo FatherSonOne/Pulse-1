@@ -1,6 +1,8 @@
 // Multi-person Thread Collaboration Component
 import React, { useState, useMemo } from 'react';
 
+import { Eye, Pen, Send, UserMinus, UserPen, UserPlus, Users, X } from 'lucide-react';
+
 interface Participant {
   id: string;
   name: string;
@@ -132,7 +134,7 @@ export const ThreadCollaboration: React.FC<ThreadCollaborationProps> = ({
         <div className="flex items-center justify-between">
           <div className="flex items-center gap-2">
             <div className="w-8 h-8 rounded-full bg-indigo-100 dark:bg-indigo-900/40 flex items-center justify-center">
-              <i className="fa-solid fa-users text-indigo-500 text-sm" />
+              <Users className="text-indigo-500 text-sm" />
             </div>
             <div>
               <h3 className="text-sm font-bold text-zinc-800 dark:text-white">Collaborators</h3>
@@ -145,7 +147,7 @@ export const ThreadCollaboration: React.FC<ThreadCollaborationProps> = ({
             onClick={() => setShowInviteModal(true)}
             className="flex items-center gap-1.5 px-2.5 py-1.5 rounded-lg text-xs font-medium bg-indigo-500 text-white hover:bg-indigo-600 transition"
           >
-            <i className="fa-solid fa-user-plus" />
+            <UserPlus />
             Invite
           </button>
         </div>
@@ -199,14 +201,14 @@ export const ThreadCollaboration: React.FC<ThreadCollaborationProps> = ({
                   className="p-1.5 rounded text-zinc-400 hover:text-zinc-600 dark:hover:text-zinc-300 hover:bg-zinc-100 dark:hover:bg-zinc-700"
                   title="Change role"
                 >
-                  <i className="fa-solid fa-user-pen text-xs" />
+                  <UserPen className="text-xs" />
                 </button>
                 <button
                   onClick={() => onRemove?.(participant.id)}
                   className="p-1.5 rounded text-zinc-400 hover:text-red-500 hover:bg-red-50 dark:hover:bg-red-900/20"
                   title="Remove"
                 >
-                  <i className="fa-solid fa-user-minus text-xs" />
+                  <UserMinus className="text-xs" />
                 </button>
               </div>
             )}
@@ -244,14 +246,14 @@ export const ThreadCollaboration: React.FC<ThreadCollaborationProps> = ({
                   className="p-1.5 rounded text-amber-600 dark:text-amber-400 hover:bg-amber-100 dark:hover:bg-amber-900/40"
                   title="Resend"
                 >
-                  <i className="fa-solid fa-paper-plane text-xs" />
+                  <Send className="text-xs" />
                 </button>
                 <button
                   onClick={() => onCancelInvite?.(invite.id)}
                   className="p-1.5 rounded text-zinc-400 hover:text-red-500 hover:bg-red-50 dark:hover:bg-red-900/20"
                   title="Cancel"
                 >
-                  <i className="fa-solid fa-times text-xs" />
+                  <X className="text-xs" />
                 </button>
               </div>
             </div>
@@ -267,7 +269,7 @@ export const ThreadCollaboration: React.FC<ThreadCollaborationProps> = ({
               <div className="flex items-center justify-between">
                 <h3 className="text-lg font-bold text-zinc-800 dark:text-white">Invite Collaborator</h3>
                 <button onClick={() => setShowInviteModal(false)} className="text-zinc-400 hover:text-zinc-600">
-                  <i className="fa-solid fa-times" />
+                  <X />
                 </button>
               </div>
             </div>
@@ -298,7 +300,7 @@ export const ThreadCollaboration: React.FC<ThreadCollaborationProps> = ({
                     }`}
                   >
                     <div className="flex items-center gap-2 mb-1">
-                      <i className="fa-solid fa-pen text-indigo-500" />
+                      <Pen className="text-indigo-500" />
                       <span className="font-medium text-zinc-800 dark:text-white">Participant</span>
                     </div>
                     <p className="text-xs text-zinc-500 dark:text-zinc-400">Can send messages and participate</p>
@@ -312,7 +314,7 @@ export const ThreadCollaboration: React.FC<ThreadCollaborationProps> = ({
                     }`}
                   >
                     <div className="flex items-center gap-2 mb-1">
-                      <i className="fa-solid fa-eye text-zinc-500" />
+                      <Eye className="text-zinc-500" />
                       <span className="font-medium text-zinc-800 dark:text-white">Viewer</span>
                     </div>
                     <p className="text-xs text-zinc-500 dark:text-zinc-400">Can only view the conversation</p>

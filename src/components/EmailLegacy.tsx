@@ -5,6 +5,8 @@ import { generateEmailDraft, generateEmailSuggestions, improveEmailText, EmailTo
 import { getGmailService } from '../services/gmailService';
 import toast from 'react-hot-toast';
 
+import { Apple, ArrowLeft, CheckCircle, ChevronDown, ExternalLink, File, FolderOpen, Grid3X3, Inbox, Link, Loader2, Lock, Mail, Maximize2, Minimize2, Paperclip, Pen, Plus, Printer, Reply, Search, Send, Share, Sparkles, SpellCheck, Star, Wand2, X } from 'lucide-react';
+
 interface EmailProps {
   user: User;
   onUpdateUser: () => void;
@@ -260,7 +262,7 @@ const EmailClient: React.FC<EmailProps> = ({ user, onUpdateUser, apiKey = '' }) 
                             {composeMode === 'reply' ? 'Reply' : composeMode === 'forward' ? 'Forward' : 'New Email'}
                         </h3>
                         <button onClick={() => setShowComposeModal(false)} className="text-zinc-400 hover:text-zinc-900 dark:hover:text-white">
-                            <i className="fa-solid fa-xmark"></i>
+                            <X />
                         </button>
                     </div>
 
@@ -290,7 +292,7 @@ const EmailClient: React.FC<EmailProps> = ({ user, onUpdateUser, apiKey = '' }) 
                         {/* AI Draft Section */}
                         <div className="bg-gradient-to-r from-purple-50 to-blue-50 dark:from-purple-900/20 dark:to-blue-900/20 rounded-xl p-4 border border-purple-100 dark:border-purple-800/30">
                             <div className="flex items-center gap-2 mb-3 text-purple-600 dark:text-purple-400 text-xs font-bold uppercase tracking-wider">
-                                <i className="fa-solid fa-wand-magic-sparkles"></i> AI Draft Assistant
+                                <Wand2 /> AI Draft Assistant
                             </div>
                             <div className="flex gap-2 mb-3">
                                 <input
@@ -305,7 +307,7 @@ const EmailClient: React.FC<EmailProps> = ({ user, onUpdateUser, apiKey = '' }) 
                                     disabled={generatingDraft || !aiIntent.trim()}
                                     className="px-4 py-2 bg-purple-600 hover:bg-purple-500 text-white rounded-lg text-sm font-bold transition disabled:opacity-50 flex items-center gap-2"
                                 >
-                                    {generatingDraft ? <i className="fa-solid fa-circle-notch fa-spin"></i> : <i className="fa-solid fa-sparkles"></i>}
+                                    {generatingDraft ? <Loader2 className="animate-spin" /> : <Sparkles />}
                                     Generate
                                 </button>
                             </div>
@@ -345,7 +347,7 @@ const EmailClient: React.FC<EmailProps> = ({ user, onUpdateUser, apiKey = '' }) 
                         )}
                         {composeMode === 'reply' && loadingSmartReplies && (
                             <div className="text-sm text-zinc-400 flex items-center gap-2">
-                                <i className="fa-solid fa-circle-notch fa-spin"></i> Loading smart replies...
+                                <Loader2 className="animate-spin" /> Loading smart replies...
                             </div>
                         )}
 
@@ -356,13 +358,13 @@ const EmailClient: React.FC<EmailProps> = ({ user, onUpdateUser, apiKey = '' }) 
                                 {composeBody && (
                                     <div className="flex gap-1">
                                         <button onClick={() => handleImproveText('shorten')} className="px-2 py-1 text-[10px] bg-zinc-100 dark:bg-zinc-800 text-zinc-600 dark:text-zinc-400 rounded hover:bg-zinc-200 dark:hover:bg-zinc-700 transition" title="Shorten">
-                                            <i className="fa-solid fa-compress"></i>
+                                            <Minimize2 />
                                         </button>
                                         <button onClick={() => handleImproveText('elaborate')} className="px-2 py-1 text-[10px] bg-zinc-100 dark:bg-zinc-800 text-zinc-600 dark:text-zinc-400 rounded hover:bg-zinc-200 dark:hover:bg-zinc-700 transition" title="Elaborate">
-                                            <i className="fa-solid fa-expand"></i>
+                                            <Maximize2 />
                                         </button>
                                         <button onClick={() => handleImproveText('fix_grammar')} className="px-2 py-1 text-[10px] bg-zinc-100 dark:bg-zinc-800 text-zinc-600 dark:text-zinc-400 rounded hover:bg-zinc-200 dark:hover:bg-zinc-700 transition" title="Fix Grammar">
-                                            <i className="fa-solid fa-spell-check"></i>
+                                            <SpellCheck />
                                         </button>
                                     </div>
                                 )}
@@ -380,10 +382,10 @@ const EmailClient: React.FC<EmailProps> = ({ user, onUpdateUser, apiKey = '' }) 
                     <div className="p-4 border-t border-zinc-200 dark:border-zinc-800 flex justify-between items-center">
                         <div className="flex gap-2">
                             <button className="w-9 h-9 rounded-lg border border-zinc-200 dark:border-zinc-700 text-zinc-400 hover:text-zinc-900 dark:hover:text-white hover:bg-zinc-100 dark:hover:bg-zinc-800 transition">
-                                <i className="fa-solid fa-paperclip"></i>
+                                <Paperclip />
                             </button>
                             <button className="w-9 h-9 rounded-lg border border-zinc-200 dark:border-zinc-700 text-zinc-400 hover:text-zinc-900 dark:hover:text-white hover:bg-zinc-100 dark:hover:bg-zinc-800 transition">
-                                <i className="fa-solid fa-link"></i>
+                                <Link />
                             </button>
                         </div>
                         <div className="flex gap-3">
@@ -400,11 +402,11 @@ const EmailClient: React.FC<EmailProps> = ({ user, onUpdateUser, apiKey = '' }) 
                             >
                                 {sendingEmail ? (
                                   <>
-                                    <i className="fa-solid fa-circle-notch fa-spin"></i> Sending...
+                                    <Loader2 className="animate-spin" /> Sending...
                                   </>
                                 ) : (
                                   <>
-                                    <i className="fa-solid fa-paper-plane"></i> Send
+                                    <Send /> Send
                                   </>
                                 )}
                             </button>
@@ -452,19 +454,19 @@ const EmailClient: React.FC<EmailProps> = ({ user, onUpdateUser, apiKey = '' }) 
 
                         {loginStep === 1 && (
                             <div className="py-8">
-                                <i className="fa-solid fa-circle-notch fa-spin text-blue-500 text-2xl"></i>
+                                <Loader2 className="text-blue-500 text-2xl animate-spin" />
                             </div>
                         )}
                         
                         {loginStep === 2 && (
                             <div className="py-4 text-emerald-500">
-                                <i className="fa-solid fa-check-circle text-4xl"></i>
+                                <CheckCircle className="text-4xl" />
                             </div>
                         )}
                     </div>
                     {loginStep === 0 && (
                         <div className="bg-zinc-50 dark:bg-zinc-950 p-4 border-t border-zinc-200 dark:border-zinc-800 flex justify-between items-center">
-                            <span className="text-xs text-zinc-500"><i className="fa-solid fa-lock"></i> Secure Connection</span>
+                            <span className="text-xs text-zinc-500"><Lock /> Secure Connection</span>
                             <button onClick={() => setShowLoginModal(false)} className="text-sm text-zinc-500 hover:text-zinc-900 dark:hover:text-white">Cancel</button>
                         </div>
                     )}
@@ -480,7 +482,7 @@ const EmailClient: React.FC<EmailProps> = ({ user, onUpdateUser, apiKey = '' }) 
                 onClick={() => openCompose('new')}
                 className="w-full bg-zinc-900 dark:bg-white text-white dark:text-zinc-900 py-3 rounded-xl font-bold shadow-lg hover:shadow-xl hover:scale-[1.02] transition mb-6 flex items-center justify-center gap-2"
             >
-                <i className="fa-solid fa-pen"></i> Compose
+                <Pen /> Compose
             </button>
 
             <h3 className="text-xs font-bold text-zinc-400 uppercase tracking-wider mb-2">Mailboxes</h3>
@@ -490,15 +492,15 @@ const EmailClient: React.FC<EmailProps> = ({ user, onUpdateUser, apiKey = '' }) 
                     className={`w-full text-left px-3 py-2 rounded-lg text-sm font-medium transition flex items-center justify-between group ${selectedProvider === 'all' ? 'bg-zinc-200 dark:bg-zinc-800 text-zinc-900 dark:text-white' : 'text-zinc-600 dark:text-zinc-400 hover:bg-zinc-200 dark:hover:bg-zinc-800'}`}
                 >
                     <div className="flex items-center gap-3">
-                        <i className="fa-solid fa-inbox w-4 text-center"></i> Unified Inbox
+                        <Inbox className="w-4 text-center" /> Unified Inbox
                     </div>
                     {selectedProvider === 'all' && emails.length > 0 && <span className="bg-zinc-300 dark:bg-zinc-700 text-xs px-1.5 rounded-full">{emails.length}</span>}
                 </button>
                 <button className="w-full text-left px-3 py-2 rounded-lg text-sm font-medium transition flex items-center gap-3 text-zinc-600 dark:text-zinc-400 hover:bg-zinc-200 dark:hover:bg-zinc-800">
-                    <i className="fa-regular fa-paper-plane w-4 text-center"></i> Sent
+                    <Send className="w-4 text-center" /> Sent
                 </button>
                 <button className="w-full text-left px-3 py-2 rounded-lg text-sm font-medium transition flex items-center gap-3 text-zinc-600 dark:text-zinc-400 hover:bg-zinc-200 dark:hover:bg-zinc-800">
-                    <i className="fa-solid fa-file w-4 text-center"></i> Drafts
+                    <File className="w-4 text-center" /> Drafts
                 </button>
             </div>
 
@@ -510,7 +512,7 @@ const EmailClient: React.FC<EmailProps> = ({ user, onUpdateUser, apiKey = '' }) 
                     className={`w-full flex items-center gap-3 p-2 rounded-lg transition ${selectedProvider === 'google' ? 'bg-red-50 dark:bg-red-900/20 text-red-600 dark:text-red-400' : 'hover:bg-zinc-200 dark:hover:bg-zinc-800 text-zinc-600 dark:text-zinc-300'}`}
                 >
                     <div className="w-6 h-6 rounded bg-white flex items-center justify-center shadow-sm">
-                         <i className="fa-brands fa-google text-red-500"></i>
+                         <ExternalLink className="text-red-500" />
                     </div>
                     <span className="flex-1 text-sm font-medium text-left">Gmail</span>
                     {user.connectedProviders.google && <div className="w-2 h-2 bg-emerald-500 rounded-full"></div>}
@@ -522,10 +524,10 @@ const EmailClient: React.FC<EmailProps> = ({ user, onUpdateUser, apiKey = '' }) 
                     className={`w-full flex items-center gap-3 p-2 rounded-lg transition ${selectedProvider === 'microsoft' ? 'bg-blue-50 dark:bg-blue-900/20 text-blue-600 dark:text-blue-400' : 'hover:bg-zinc-200 dark:hover:bg-zinc-800 text-zinc-600 dark:text-zinc-300'}`}
                 >
                     <div className="w-6 h-6 rounded bg-white flex items-center justify-center shadow-sm">
-                         <i className="fa-brands fa-microsoft text-blue-500"></i>
+                         <Grid3X3 className="text-blue-500" />
                     </div>
                     <span className="flex-1 text-sm font-medium text-left">Outlook</span>
-                    {!user.connectedProviders.microsoft && <i className="fa-solid fa-plus text-xs opacity-50"></i>}
+                    {!user.connectedProviders.microsoft && <Plus className="text-xs opacity-50" />}
                     {user.connectedProviders.microsoft && <div className="w-2 h-2 bg-emerald-500 rounded-full"></div>}
                 </button>
 
@@ -535,10 +537,10 @@ const EmailClient: React.FC<EmailProps> = ({ user, onUpdateUser, apiKey = '' }) 
                     className={`w-full flex items-center gap-3 p-2 rounded-lg transition ${selectedProvider === 'icloud' ? 'bg-zinc-200 dark:bg-zinc-700' : 'hover:bg-zinc-200 dark:hover:bg-zinc-800 text-zinc-600 dark:text-zinc-300'}`}
                 >
                     <div className="w-6 h-6 rounded bg-white flex items-center justify-center shadow-sm">
-                         <i className="fa-brands fa-apple text-zinc-800"></i>
+                         <Apple className="text-zinc-800" />
                     </div>
                     <span className="flex-1 text-sm font-medium text-left">iCloud</span>
-                    {!user.connectedProviders.icloud && <i className="fa-solid fa-plus text-xs opacity-50"></i>}
+                    {!user.connectedProviders.icloud && <Plus className="text-xs opacity-50" />}
                     {user.connectedProviders.icloud && <div className="w-2 h-2 bg-emerald-500 rounded-full"></div>}
                 </button>
             </div>
@@ -555,7 +557,7 @@ const EmailClient: React.FC<EmailProps> = ({ user, onUpdateUser, apiKey = '' }) 
                         placeholder="Search..." 
                         className="w-full bg-zinc-100 dark:bg-zinc-950 border border-zinc-300 dark:border-zinc-800 rounded-lg pl-9 pr-3 py-2 text-sm focus:outline-none focus:border-blue-500 dark:text-white transition"
                     />
-                    <i className="fa-solid fa-magnifying-glass absolute left-3 top-2.5 text-zinc-400 text-xs"></i>
+                    <Search className="absolute left-3 top-2.5 text-zinc-400 text-xs" />
                 </div>
             </div>
 
@@ -578,10 +580,10 @@ const EmailClient: React.FC<EmailProps> = ({ user, onUpdateUser, apiKey = '' }) 
             {/* List */}
             <div className="flex-1 overflow-y-auto">
                 {loading ? (
-                    <div className="p-8 text-center text-zinc-500"><i className="fa-solid fa-circle-notch fa-spin mr-2"></i> Syncing...</div>
+                    <div className="p-8 text-center text-zinc-500"><Loader2 className="mr-2 animate-spin" /> Syncing...</div>
                 ) : filteredEmails.length === 0 ? (
                     <div className="flex flex-col items-center justify-center h-full text-zinc-400 p-6 text-center">
-                        <i className="fa-regular fa-folder-open text-3xl mb-3 opacity-30"></i>
+                        <FolderOpen className="text-3xl mb-3 opacity-30" />
                         <p className="text-sm">Folder is empty</p>
                     </div>
                 ) : (
@@ -634,13 +636,13 @@ const EmailClient: React.FC<EmailProps> = ({ user, onUpdateUser, apiKey = '' }) 
                     {/* Reading Header */}
                     <div className="p-6 border-b border-zinc-200 dark:border-zinc-800 bg-white dark:bg-zinc-900 flex justify-between items-start animate-slide-up">
                         <div className="flex-1">
-                             <button onClick={() => setSelectedEmail(null)} className="md:hidden text-zinc-500 mb-4 flex items-center gap-1 text-sm"><i className="fa-solid fa-arrow-left"></i> Back</button>
+                             <button onClick={() => setSelectedEmail(null)} className="md:hidden text-zinc-500 mb-4 flex items-center gap-1 text-sm"><ArrowLeft /> Back</button>
                              
                              <div className="flex justify-between items-start">
                                  <h2 className="text-xl font-bold dark:text-white text-zinc-900 mb-4 leading-tight">{selectedEmail.subject}</h2>
                                  <div className="flex gap-2">
-                                     <button className="w-8 h-8 rounded-full hover:bg-zinc-100 dark:hover:bg-zinc-800 text-zinc-400 hover:text-zinc-900 dark:hover:text-white transition"><i className="fa-solid fa-print text-sm"></i></button>
-                                     <button className="w-8 h-8 rounded-full hover:bg-zinc-100 dark:hover:bg-zinc-800 text-zinc-400 hover:text-zinc-900 dark:hover:text-white transition"><i className="fa-solid fa-star text-sm"></i></button>
+                                     <button className="w-8 h-8 rounded-full hover:bg-zinc-100 dark:hover:bg-zinc-800 text-zinc-400 hover:text-zinc-900 dark:hover:text-white transition"><Printer className="text-sm" /></button>
+                                     <button className="w-8 h-8 rounded-full hover:bg-zinc-100 dark:hover:bg-zinc-800 text-zinc-400 hover:text-zinc-900 dark:hover:text-white transition"><Star className="text-sm" /></button>
                                  </div>
                              </div>
 
@@ -653,7 +655,7 @@ const EmailClient: React.FC<EmailProps> = ({ user, onUpdateUser, apiKey = '' }) 
                                  </div>
                                  <div>
                                      <div className="font-bold dark:text-white text-zinc-900 text-sm">{selectedEmail.from}</div>
-                                     <div className="text-xs text-zinc-500">to me <i className="fa-solid fa-caret-down text-[10px] ml-1"></i></div>
+                                     <div className="text-xs text-zinc-500">to me <ChevronDown className="text-[10px] ml-1" /></div>
                                  </div>
                                  <div className="ml-auto text-zinc-400 text-xs font-mono">{selectedEmail.date.toLocaleString()}</div>
                              </div>
@@ -671,20 +673,20 @@ const EmailClient: React.FC<EmailProps> = ({ user, onUpdateUser, apiKey = '' }) 
                             onClick={() => openCompose('reply')}
                             className="px-6 py-2.5 bg-zinc-900 dark:bg-white text-white dark:text-zinc-900 hover:opacity-90 rounded-xl text-sm font-bold transition shadow-lg flex items-center gap-2"
                          >
-                            <i className="fa-solid fa-reply"></i> Reply
+                            <Reply /> Reply
                          </button>
                          <button
                             onClick={() => openCompose('forward')}
                             className="px-6 py-2.5 border border-zinc-300 dark:border-zinc-700 hover:bg-zinc-50 dark:hover:bg-zinc-800 dark:text-white text-zinc-700 rounded-xl text-sm font-medium transition flex items-center gap-2"
                          >
-                            <i className="fa-solid fa-share"></i> Forward
+                            <Share /> Forward
                          </button>
                     </div>
                 </>
             ) : (
                 <div className="flex-1 flex flex-col items-center justify-center text-zinc-400 bg-zinc-50/50 dark:bg-zinc-900/50">
                     <div className="w-24 h-24 bg-zinc-200 dark:bg-zinc-800 rounded-full flex items-center justify-center mb-6 animate-pulse">
-                        <i className="fa-regular fa-envelope text-4xl opacity-50"></i>
+                        <Mail className="text-4xl opacity-50" />
                     </div>
                     <p className="font-medium">Select an email to read</p>
                 </div>

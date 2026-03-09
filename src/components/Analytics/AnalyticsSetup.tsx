@@ -6,6 +6,8 @@
 import React, { useState } from 'react';
 import { useAnalyticsTracking } from '../../hooks/useAnalyticsTracking';
 
+import { Info, Loader2, TrendingUp } from 'lucide-react';
+
 interface AnalyticsSetupProps {
   onComplete: () => void;
   onSkip: () => void;
@@ -47,7 +49,7 @@ export const AnalyticsSetup: React.FC<AnalyticsSetupProps> = ({ onComplete, onSk
       <div className="bg-white dark:bg-zinc-900 max-w-lg w-full rounded-2xl shadow-2xl border border-zinc-200 dark:border-zinc-800 p-6">
         <div className="text-center mb-6">
           <div className="w-16 h-16 bg-gradient-to-br from-rose-500 to-pink-600 rounded-2xl flex items-center justify-center mx-auto mb-4">
-            <i className="fa-solid fa-chart-line text-white text-2xl"></i>
+            <TrendingUp className="text-white text-2xl" />
           </div>
           <h2 className="text-2xl font-bold text-zinc-900 dark:text-white mb-2">
             Setup Analytics
@@ -82,7 +84,7 @@ export const AnalyticsSetup: React.FC<AnalyticsSetupProps> = ({ onComplete, onSk
 
             <div className="bg-blue-50 dark:bg-blue-900/20 border border-blue-200 dark:border-blue-800 rounded-lg p-4 mb-6">
               <div className="flex gap-3">
-                <i className="fa-solid fa-info-circle text-blue-600 dark:text-blue-400 mt-0.5"></i>
+                <Info className="text-blue-600 dark:text-blue-400 mt-0.5" />
                 <div className="text-sm text-blue-900 dark:text-blue-100">
                   <p className="font-medium mb-1">What we'll analyze:</p>
                   <ul className="list-disc list-inside space-y-1 text-blue-800 dark:text-blue-200">
@@ -126,7 +128,7 @@ export const AnalyticsSetup: React.FC<AnalyticsSetupProps> = ({ onComplete, onSk
 
             <div className="flex items-center justify-center gap-2 text-zinc-500 dark:text-zinc-400">
               <div className="animate-spin">
-                <i className="fa-solid fa-spinner"></i>
+                <Loader2 />
               </div>
               <span className="text-sm">{progress}%</span>
             </div>

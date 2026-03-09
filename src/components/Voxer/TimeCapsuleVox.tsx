@@ -5,6 +5,8 @@ import React, { useState, useRef, useCallback } from 'react';
 import { TimeCapsuleVox as TimeCapsuleType, TimeCapsuleRecurrence } from '../../services/voxer/advancedVoxerTypes';
 import { Contact } from '../../types';
 
+import { ArrowRight, Calendar, Check, Clock, History, Hourglass, Pen, Repeat, RotateCw, Users, X } from 'lucide-react';
+
 // ============================================
 // TYPES
 // ============================================
@@ -196,7 +198,7 @@ export const TimeCapsuleVox: React.FC<TimeCapsuleVoxProps> = ({
           <div className="flex items-center justify-between">
             <div className="flex items-center gap-3">
               <div className="w-10 h-10 rounded-xl bg-gradient-to-br from-purple-500 to-pink-500 flex items-center justify-center text-white">
-                <i className="fa-solid fa-clock-rotate-left"></i>
+                <History />
               </div>
               <div>
                 <h2 className="font-bold text-lg dark:text-white">Time Capsule</h2>
@@ -207,7 +209,7 @@ export const TimeCapsuleVox: React.FC<TimeCapsuleVoxProps> = ({
               onClick={() => { resetForm(); onClose(); }}
               className="w-8 h-8 rounded-full hover:bg-zinc-100 dark:hover:bg-zinc-800 flex items-center justify-center text-zinc-400 hover:text-zinc-600 dark:hover:text-white transition"
             >
-              <i className="fa-solid fa-times"></i>
+              <X />
             </button>
           </div>
 
@@ -222,7 +224,7 @@ export const TimeCapsuleVox: React.FC<TimeCapsuleVoxProps> = ({
                     'bg-zinc-200 dark:bg-zinc-700'
                   }`}>
                     {['record', 'recipients', 'schedule'].indexOf(step) > i ? (
-                      <i className="fa-solid fa-check text-[10px]"></i>
+                      <Check className="text-[10px]" />
                     ) : (
                       i + 1
                     )}
@@ -283,7 +285,7 @@ export const TimeCapsuleVox: React.FC<TimeCapsuleVoxProps> = ({
                 {audioBlob ? (
                   <div className="text-center">
                     <div className="w-16 h-16 rounded-full bg-emerald-100 dark:bg-emerald-900/30 flex items-center justify-center mx-auto mb-3">
-                      <i className="fa-solid fa-check text-2xl text-emerald-500"></i>
+                      <Check className="text-2xl text-emerald-500" />
                     </div>
                     <p className="font-semibold dark:text-white">Recorded!</p>
                     <p className="text-sm text-zinc-500">{audioDuration} seconds</p>
@@ -291,7 +293,7 @@ export const TimeCapsuleVox: React.FC<TimeCapsuleVoxProps> = ({
                       onClick={() => setAudioBlob(null)}
                       className="mt-3 text-sm text-purple-500 hover:text-purple-600"
                     >
-                      <i className="fa-solid fa-redo mr-1"></i>
+                      <RotateCw className="mr-1" />
                       Record again
                     </button>
                   </div>
@@ -365,7 +367,7 @@ export const TimeCapsuleVox: React.FC<TimeCapsuleVoxProps> = ({
                         : 'border-zinc-300 dark:border-zinc-600'
                     }`}>
                       {selectedRecipients.includes(contact.id) && (
-                        <i className="fa-solid fa-check text-xs"></i>
+                        <Check className="text-xs" />
                       )}
                     </div>
                   </button>
@@ -374,7 +376,7 @@ export const TimeCapsuleVox: React.FC<TimeCapsuleVoxProps> = ({
 
               {selectedRecipients.length > 0 && (
                 <div className="bg-purple-50 dark:bg-purple-900/20 rounded-xl p-3 text-sm text-purple-600 dark:text-purple-400">
-                  <i className="fa-solid fa-users mr-2"></i>
+                  <Users className="mr-2" />
                   {selectedRecipients.length} recipient{selectedRecipients.length > 1 ? 's' : ''} selected
                 </div>
               )}
@@ -452,7 +454,7 @@ export const TimeCapsuleVox: React.FC<TimeCapsuleVoxProps> = ({
                 <h4 className="font-semibold dark:text-white mb-3">Summary</h4>
                 <div className="space-y-2 text-sm">
                   <div className="flex items-center gap-2 text-zinc-600 dark:text-zinc-400">
-                    <i className="fa-solid fa-calendar w-5"></i>
+                    <Calendar className="w-5" />
                     <span>
                       {scheduledDate.toLocaleDateString('en-US', { 
                         weekday: 'long', 
@@ -463,11 +465,11 @@ export const TimeCapsuleVox: React.FC<TimeCapsuleVoxProps> = ({
                     </span>
                   </div>
                   <div className="flex items-center gap-2 text-zinc-600 dark:text-zinc-400">
-                    <i className="fa-solid fa-repeat w-5"></i>
+                    <Repeat className="w-5" />
                     <span className="capitalize">{recurrence}</span>
                   </div>
                   <div className="flex items-center gap-2 text-zinc-600 dark:text-zinc-400">
-                    <i className="fa-solid fa-users w-5"></i>
+                    <Users className="w-5" />
                     <span>{selectedRecipients.length} recipient{selectedRecipients.length > 1 ? 's' : ''}</span>
                   </div>
                 </div>
@@ -493,7 +495,7 @@ export const TimeCapsuleVox: React.FC<TimeCapsuleVoxProps> = ({
               disabled={!audioBlob || selectedRecipients.length === 0}
               className="flex-1 py-3 bg-gradient-to-r from-purple-500 to-pink-500 hover:from-purple-600 hover:to-pink-600 text-white rounded-xl font-semibold transition disabled:opacity-50 disabled:cursor-not-allowed"
             >
-              <i className="fa-solid fa-clock-rotate-left mr-2"></i>
+              <History className="mr-2" />
               Schedule Capsule
             </button>
           ) : (
@@ -503,7 +505,7 @@ export const TimeCapsuleVox: React.FC<TimeCapsuleVoxProps> = ({
               className="flex-1 py-3 bg-purple-500 hover:bg-purple-600 text-white rounded-xl font-semibold transition disabled:opacity-50 disabled:cursor-not-allowed"
             >
               Next
-              <i className="fa-solid fa-arrow-right ml-2"></i>
+              <ArrowRight className="ml-2" />
             </button>
           )}
         </div>
@@ -566,16 +568,16 @@ export const ScheduledCapsuleCard: React.FC<ScheduledCapsuleCardProps> = ({
           
           <div className="flex items-center gap-4 mt-2 text-xs text-zinc-400">
             <span>
-              <i className="fa-solid fa-calendar mr-1"></i>
+              <Calendar className="mr-1" />
               {new Date(capsule.scheduledFor).toLocaleDateString()}
             </span>
             <span>
-              <i className="fa-solid fa-clock mr-1"></i>
+              <Clock className="mr-1" />
               {new Date(capsule.scheduledFor).toLocaleTimeString([], { hour: '2-digit', minute: '2-digit' })}
             </span>
             {capsule.recurrence !== 'once' && (
               <span>
-                <i className="fa-solid fa-repeat mr-1"></i>
+                <Repeat className="mr-1" />
                 {capsule.recurrence}
               </span>
             )}
@@ -584,20 +586,20 @@ export const ScheduledCapsuleCard: React.FC<ScheduledCapsuleCardProps> = ({
           {capsule.status === 'scheduled' && (
             <div className="flex items-center gap-2 mt-3">
               <div className="flex-1 bg-purple-50 dark:bg-purple-900/20 rounded-lg px-3 py-1.5 text-xs text-purple-600 dark:text-purple-400 font-medium">
-                <i className="fa-solid fa-hourglass-half mr-1 animate-pulse"></i>
+                <Hourglass className="mr-1 animate-pulse" />
                 {getTimeRemaining()}
               </div>
               <button
                 onClick={() => onEdit(capsule)}
                 className="w-8 h-8 rounded-lg bg-zinc-100 dark:bg-zinc-800 hover:bg-zinc-200 dark:hover:bg-zinc-700 flex items-center justify-center text-zinc-500 transition"
               >
-                <i className="fa-solid fa-pen text-xs"></i>
+                <Pen className="text-xs" />
               </button>
               <button
                 onClick={() => onCancel(capsule.id)}
                 className="w-8 h-8 rounded-lg bg-red-50 dark:bg-red-900/20 hover:bg-red-100 dark:hover:bg-red-900/30 flex items-center justify-center text-red-500 transition"
               >
-                <i className="fa-solid fa-times text-xs"></i>
+                <X className="text-xs" />
               </button>
             </div>
           )}

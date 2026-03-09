@@ -17,6 +17,8 @@ import React, { useState, useCallback, useEffect } from 'react';
 import { VoiceAgentPanel } from './VoiceAgentPanel';
 import toast from 'react-hot-toast';
 
+import { AlertTriangle, Mic } from 'lucide-react';
+
 interface VoiceAgentIntegrationProps {
   // User context
   userId: string;
@@ -149,7 +151,7 @@ export const VoiceAgentIntegration: React.FC<VoiceAgentIntegrationProps> = ({
     return (
       <div className={`voice-agent-error p-4 ${className}`}>
         <div className="flex items-center gap-3 text-red-500 dark:text-red-400">
-          <i className="fa fa-exclamation-triangle text-xl" />
+          <AlertTriangle className="fa text-xl" />
           <div>
             <p className="font-medium">Voice Agent Unavailable</p>
             <p className="text-sm opacity-75">{error}</p>
@@ -186,7 +188,7 @@ export const VoiceAgentIntegration: React.FC<VoiceAgentIntegrationProps> = ({
             className={`fixed ${getPositionClasses()} z-50 w-14 h-14 rounded-full bg-gradient-to-br from-cyan-500 to-blue-600 text-white shadow-lg hover:shadow-xl hover:scale-105 transition-all flex items-center justify-center group`}
             title="Open Voice Agent (Ctrl+Shift+V)"
           >
-            <i className="fa fa-microphone text-xl group-hover:scale-110 transition-transform" />
+            <Mic className="fa text-xl group-hover:scale-110 transition-transform" />
             <div className="absolute -top-1 -right-1 w-3 h-3 bg-green-500 rounded-full animate-pulse" />
           </button>
         )}
@@ -282,7 +284,7 @@ export const VoiceAgentButton: React.FC<{
         onClick={() => setShowPanel(true)}
         className="px-4 py-2 bg-gradient-to-r from-cyan-500 to-blue-600 hover:from-cyan-400 hover:to-blue-500 text-white rounded-lg shadow-lg hover:shadow-xl transition-all flex items-center gap-2"
       >
-        <i className="fa fa-microphone" />
+        <Mic className="fa" />
         <span>Voice Agent</span>
       </button>
 

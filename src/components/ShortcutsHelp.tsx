@@ -1,6 +1,8 @@
 import React, { useEffect, useCallback } from 'react';
 import { createPortal } from 'react-dom';
 
+import { Keyboard, X } from 'lucide-react';
+
 interface ShortcutsHelpProps {
   isOpen: boolean;
   onClose: () => void;
@@ -130,7 +132,7 @@ const ShortcutsHelp: React.FC<ShortcutsHelpProps> = ({ isOpen, onClose }) => {
         <div className="flex items-center justify-between px-6 py-4 border-b border-zinc-100 dark:border-zinc-800">
           <div className="flex items-center gap-2.5">
             <div className="w-7 h-7 flex items-center justify-center rounded-lg bg-zinc-100 dark:bg-zinc-800">
-              <i className="fa-solid fa-keyboard text-zinc-500 dark:text-zinc-400 text-xs" aria-hidden="true" />
+              <Keyboard className="text-zinc-500 dark:text-zinc-400 text-xs" />
             </div>
             <h2 className="text-sm font-semibold text-zinc-900 dark:text-zinc-100 tracking-tight">
               Keyboard Shortcuts
@@ -146,7 +148,7 @@ const ShortcutsHelp: React.FC<ShortcutsHelpProps> = ({ isOpen, onClose }) => {
               transition-colors
             "
           >
-            <i className="fa-solid fa-xmark text-xs" aria-hidden="true" />
+            <X className="text-xs" />
           </button>
         </div>
 

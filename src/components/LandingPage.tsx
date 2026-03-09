@@ -1,6 +1,8 @@
 import React, { useState, useEffect, lazy, Suspense } from 'react';
 import './LandingPage.css';
 
+import { Apple, ArrowDown, Battery, Bell, Book, BookOpen, Bot, Check, ChevronUp, Download, ExternalLink, Eye, Gavel, Heart, HeartPulse, HelpCircle, Inbox, Info, Keyboard, Layers, LayoutGrid, Mic, Network, Play, Rocket, Search, ShieldHalf, Signal, Smartphone, Wand2, Wifi, X } from 'lucide-react';
+
 // Lazy-load the guide — guideData.ts is 26k lines and must NOT land in the main bundle
 const UsersGuide = lazy(() => import('./UsersGuide/UsersGuide'));
 
@@ -226,7 +228,7 @@ const LandingPage: React.FC<LandingPageProps> = ({ onGetStarted }) => {
           className="fixed bottom-8 right-6 z-[150] w-11 h-11 rounded-full bg-rose-600 hover:bg-rose-500 text-white shadow-lg shadow-rose-500/40 flex items-center justify-center transition-all duration-300 hover:scale-110 active:scale-95 bounce-up"
           aria-label="Back to top"
         >
-          <i className="fa-solid fa-chevron-up text-sm" aria-hidden="true"></i>
+          <ChevronUp className="text-sm" />
         </button>
       )}
 
@@ -250,7 +252,7 @@ const LandingPage: React.FC<LandingPageProps> = ({ onGetStarted }) => {
             <div className="flex items-center justify-between px-6 py-4 border-b border-zinc-800 bg-zinc-950/95 backdrop-blur-sm shrink-0">
               <div className="flex items-center gap-3">
                 <div className="w-8 h-8 rounded-lg bg-rose-500/10 border border-rose-500/25 flex items-center justify-center" aria-hidden="true">
-                  <i className="fa-solid fa-book-open text-rose-400 text-sm"></i>
+                  <BookOpen className="text-rose-400 text-sm" />
                 </div>
                 <div>
                   <div id="guide-drawer-title" className="font-bold text-white">Pulse User Guide</div>
@@ -263,7 +265,7 @@ const LandingPage: React.FC<LandingPageProps> = ({ onGetStarted }) => {
                 className="w-9 h-9 rounded-lg bg-zinc-900 border border-zinc-800 hover:border-rose-500/40 hover:bg-zinc-800 text-zinc-400 hover:text-white transition flex items-center justify-center"
                 aria-label="Close User Guide"
               >
-                <i className="fa-solid fa-xmark" aria-hidden="true"></i>
+                <X />
               </button>
             </div>
             {/* Guide content — loaded lazily on first drawer open */}
@@ -481,7 +483,7 @@ const LandingPage: React.FC<LandingPageProps> = ({ onGetStarted }) => {
                 aria-haspopup="true"
                 aria-expanded={downloadsOpen}
               >
-                <i className="fa-solid fa-download text-[11px]" aria-hidden="true"></i>
+                <Download className="text-[11px]" />
                 Download
                 <i className={`fa-solid fa-chevron-down text-[9px] transition-transform duration-200 ${downloadsOpen ? 'rotate-180' : ''}`} aria-hidden="true"></i>
               </button>
@@ -504,13 +506,13 @@ const LandingPage: React.FC<LandingPageProps> = ({ onGetStarted }) => {
                     className="flex items-center gap-3 px-3 py-2.5 rounded-xl hover:bg-zinc-800 group transition"
                   >
                     <span className="w-8 h-8 rounded-lg bg-blue-500/15 flex items-center justify-center flex-shrink-0">
-                      <i className="fa-brands fa-windows text-blue-400 text-sm"></i>
+                      <LayoutGrid className="text-blue-400 text-sm" />
                     </span>
                     <div className="text-left">
                       <div className="text-sm font-semibold text-white group-hover:text-blue-400 transition">Windows PC</div>
                       <div className="text-[11px] text-zinc-500">Desktop installer · x64</div>
                     </div>
-                    <i className="fa-solid fa-arrow-down text-zinc-600 text-[10px] ml-auto group-hover:text-blue-400 transition"></i>
+                    <ArrowDown className="text-zinc-600 text-[10px] ml-auto group-hover:text-blue-400 transition" />
                   </a>
 
                   {/* Android — Play Store */}
@@ -521,13 +523,13 @@ const LandingPage: React.FC<LandingPageProps> = ({ onGetStarted }) => {
                     className="flex items-center gap-3 px-3 py-2.5 rounded-xl hover:bg-zinc-800 group transition"
                   >
                     <span className="w-8 h-8 rounded-lg bg-green-500/15 flex items-center justify-center flex-shrink-0">
-                      <i className="fa-brands fa-google-play text-green-400 text-sm"></i>
+                      <Play className="text-green-400 text-sm" />
                     </span>
                     <div className="text-left">
                       <div className="text-sm font-semibold text-white group-hover:text-green-400 transition">Android</div>
                       <div className="text-[11px] text-zinc-500">Google Play Store</div>
                     </div>
-                    <i className="fa-solid fa-arrow-up-right-from-square text-zinc-600 text-[10px] ml-auto group-hover:text-green-400 transition"></i>
+                    <ExternalLink className="text-zinc-600 text-[10px] ml-auto group-hover:text-green-400 transition" />
                   </a>
 
                   {/* Android — APK */}
@@ -537,13 +539,13 @@ const LandingPage: React.FC<LandingPageProps> = ({ onGetStarted }) => {
                     className="flex items-center gap-3 px-3 py-2.5 rounded-xl hover:bg-zinc-800 group transition"
                   >
                     <span className="w-8 h-8 rounded-lg bg-rose-500/15 flex items-center justify-center flex-shrink-0">
-                      <i className="fa-brands fa-android text-rose-400 text-sm"></i>
+                      <Smartphone className="text-rose-400 text-sm" />
                     </span>
                     <div className="text-left">
                       <div className="text-sm font-semibold text-white group-hover:text-rose-400 transition">Android APK</div>
                       <div className="text-[11px] text-zinc-500">Sideload · direct download</div>
                     </div>
-                    <i className="fa-solid fa-arrow-down text-zinc-600 text-[10px] ml-auto group-hover:text-rose-400 transition"></i>
+                    <ArrowDown className="text-zinc-600 text-[10px] ml-auto group-hover:text-rose-400 transition" />
                   </a>
 
                   <div className="my-1.5 border-t border-zinc-800" />
@@ -551,7 +553,7 @@ const LandingPage: React.FC<LandingPageProps> = ({ onGetStarted }) => {
                   {/* iOS — Coming soon */}
                   <div className="flex items-center gap-3 px-3 py-2.5 rounded-xl opacity-45 cursor-not-allowed">
                     <span className="w-8 h-8 rounded-lg bg-zinc-700/40 flex items-center justify-center flex-shrink-0">
-                      <i className="fa-brands fa-apple text-zinc-400 text-sm"></i>
+                      <Apple className="text-zinc-400 text-sm" />
                     </span>
                     <div className="text-left">
                       <div className="text-sm font-semibold text-zinc-400">iOS / macOS</div>
@@ -562,7 +564,7 @@ const LandingPage: React.FC<LandingPageProps> = ({ onGetStarted }) => {
                   {/* F-Droid — Coming soon */}
                   <div className="flex items-center gap-3 px-3 py-2.5 rounded-xl opacity-45 cursor-not-allowed">
                     <span className="w-8 h-8 rounded-lg bg-zinc-700/40 flex items-center justify-center flex-shrink-0">
-                      <i className="fa-solid fa-robot text-zinc-400 text-sm"></i>
+                      <Bot className="text-zinc-400 text-sm" />
                     </span>
                     <div className="text-left">
                       <div className="text-sm font-semibold text-zinc-400">F-Droid</div>
@@ -578,7 +580,7 @@ const LandingPage: React.FC<LandingPageProps> = ({ onGetStarted }) => {
                     onClick={() => { setDownloadsOpen(false); scrollToSection('download'); }}
                     className="w-full flex items-center justify-center gap-2 px-3 py-2 rounded-xl text-xs font-medium text-zinc-400 hover:text-white hover:bg-zinc-800 transition"
                   >
-                    <i className="fa-solid fa-layer-group text-[10px]"></i>
+                    <Layers className="text-[10px]" />
                     View all downloads
                   </button>
                 </div>
@@ -589,11 +591,11 @@ const LandingPage: React.FC<LandingPageProps> = ({ onGetStarted }) => {
             <span className="w-px h-4 bg-zinc-800" aria-hidden="true" />
             {/* Docs & legal */}
             <a href="/docs" className="flex items-center gap-1.5 hover:text-white transition">
-              <i className="fa-solid fa-book text-[11px]" aria-hidden="true"></i>
+              <Book className="text-[11px]" />
               Docs
             </a>
             <a href="/privacy" className="flex items-center gap-1.5 hover:text-white transition">
-              <i className="fa-solid fa-shield-halved text-[11px]" aria-hidden="true"></i>
+              <ShieldHalf className="text-[11px]" />
               Privacy
             </a>
           </div>
@@ -606,7 +608,7 @@ const LandingPage: React.FC<LandingPageProps> = ({ onGetStarted }) => {
               aria-label="Open User Guide"
               className="flex items-center gap-2 px-3.5 py-2 rounded-lg border border-zinc-700/70 bg-zinc-900/60 hover:border-rose-500/50 hover:bg-zinc-800/80 text-zinc-400 hover:text-rose-400 text-sm font-medium transition-all duration-200 hover:scale-105 active:scale-95"
             >
-              <i className="fa-solid fa-book-open text-[13px]" aria-hidden="true"></i>
+              <BookOpen className="text-[13px]" />
               <span className="hidden sm:inline" aria-hidden="true">User Guide</span>
             </button>
             <button
@@ -743,7 +745,7 @@ const LandingPage: React.FC<LandingPageProps> = ({ onGetStarted }) => {
               type="button"
             >
               Launch Pulse
-              <i className="fa-solid fa-rocket"></i>
+              <Rocket />
             </button>
             <a
               href="https://play.google.com/apps/internaltest/4701381285127016770"
@@ -751,7 +753,7 @@ const LandingPage: React.FC<LandingPageProps> = ({ onGetStarted }) => {
               rel="noopener noreferrer"
               className="w-full sm:w-auto px-8 py-4 bg-zinc-900/50 border border-zinc-700 text-white rounded-xl text-lg font-medium hover:bg-zinc-800 hover:border-green-500/40 transition flex items-center justify-center gap-3 hover:scale-105 active:scale-95"
             >
-              <i className="fa-brands fa-google-play text-green-400"></i>
+              <Play className="text-green-400" />
               Get on Google Play
             </a>
             <a
@@ -760,7 +762,7 @@ const LandingPage: React.FC<LandingPageProps> = ({ onGetStarted }) => {
               rel="noopener noreferrer"
               className="w-full sm:w-auto px-8 py-4 bg-zinc-900/50 border border-zinc-700 text-white rounded-xl text-lg font-medium hover:bg-zinc-800 hover:border-blue-500/40 transition flex items-center justify-center gap-3 hover:scale-105 active:scale-95"
             >
-              <i className="fa-brands fa-windows text-blue-400"></i>
+              <LayoutGrid className="text-blue-400" />
               Download for PC
             </a>
             <button
@@ -769,7 +771,7 @@ const LandingPage: React.FC<LandingPageProps> = ({ onGetStarted }) => {
               type="button"
             >
               Explore Features
-              <i className="fa-solid fa-arrow-down"></i>
+              <ArrowDown />
             </button>
           </div>
         </div>
@@ -811,7 +813,7 @@ const LandingPage: React.FC<LandingPageProps> = ({ onGetStarted }) => {
           <div className="max-w-7xl mx-auto relative z-10">
             <div className="mb-14 animate-fade-in">
               <div className="inline-flex items-center gap-2 px-3 py-1.5 rounded-full bg-rose-500/10 border border-rose-500/25 text-rose-400 text-xs font-bold uppercase tracking-widest mb-4">
-                <i className="fa-solid fa-microphone"></i> Voxer
+                <Mic /> Voxer
               </div>
               <h2 className="text-4xl sm:text-6xl font-bold mb-4 text-transparent bg-clip-text bg-gradient-to-r from-white via-rose-100 to-pink-200">
                 7 Ways to Speak
@@ -838,7 +840,7 @@ const LandingPage: React.FC<LandingPageProps> = ({ onGetStarted }) => {
               {/* Unified Inbox callout */}
               <div className="group p-5 rounded-2xl bg-gradient-to-br from-rose-500/10 to-pink-500/5 border border-rose-500/25 hover:border-rose-500/50 transition-all duration-300 hover:-translate-y-1.5 animate-fade-in sm:col-span-2 lg:col-span-1">
                 <div className="w-10 h-10 rounded-xl bg-rose-500/15 flex items-center justify-center mb-3">
-                  <i className="fa-solid fa-inbox text-rose-400"></i>
+                  <Inbox className="text-rose-400" />
                 </div>
                 <h3 className="text-sm font-bold text-white mb-1.5">Unified Inbox</h3>
                 <p className="text-zinc-500 text-xs leading-relaxed mb-3">8 platforms, one stream — Email, Slack, SMS, Discord, Teams, Figma, Jira, internal.</p>
@@ -871,7 +873,7 @@ const LandingPage: React.FC<LandingPageProps> = ({ onGetStarted }) => {
           <div className="max-w-7xl mx-auto relative z-10">
             <div className="mb-14 animate-fade-in">
               <div className="inline-flex items-center gap-2 px-3 py-1.5 rounded-full bg-teal-500/10 border border-teal-500/25 text-teal-400 text-xs font-bold uppercase tracking-widest mb-4">
-                <i className="fa-solid fa-gavel"></i> Decisions and Tasks
+                <Gavel /> Decisions and Tasks
               </div>
               <h2 className="text-4xl sm:text-6xl font-bold mb-4 text-transparent bg-clip-text bg-gradient-to-r from-white via-teal-100 to-cyan-200">
                 From Signal to Action
@@ -952,7 +954,7 @@ const LandingPage: React.FC<LandingPageProps> = ({ onGetStarted }) => {
           <div className="max-w-7xl mx-auto relative z-10">
             <div className="mb-14 animate-fade-in">
               <div className="inline-flex items-center gap-2 px-3 py-1.5 rounded-full bg-rose-500/10 border border-rose-500/25 text-rose-400 text-xs font-bold uppercase tracking-widest mb-4">
-                <i className="fa-solid fa-network-wired"></i> Relationships and CRM
+                <Network /> Relationships and CRM
               </div>
               <h2 className="text-4xl sm:text-6xl font-bold mb-4 text-transparent bg-clip-text bg-gradient-to-r from-white via-rose-100 to-pink-200">
                 Know Your Network
@@ -998,7 +1000,7 @@ const LandingPage: React.FC<LandingPageProps> = ({ onGetStarted }) => {
               <div>
                 <div className="flex items-center gap-3 mb-5">
                   <div className="w-9 h-9 rounded-xl flex items-center justify-center shrink-0" style={{ background: 'linear-gradient(135deg, #6366f1 0%, #a855f7 100%)', boxShadow: '0 4px 14px rgba(99,102,241,0.4)' }}>
-                    <i className="fa-solid fa-eye text-white text-sm"></i>
+                    <Eye className="text-white text-sm" />
                   </div>
                   <div>
                     <h3 className="text-sm font-bold text-white">Logos Vision</h3>
@@ -1101,7 +1103,7 @@ const LandingPage: React.FC<LandingPageProps> = ({ onGetStarted }) => {
             <div className="flex flex-col items-center">
               <div className="mb-8 text-center">
                 <div className="inline-flex items-center gap-2 px-3 py-1.5 rounded-full bg-zinc-800/60 border border-zinc-700/50 text-zinc-400 text-xs font-bold uppercase tracking-widest mb-4">
-                  <i className="fa-brands fa-android text-green-400"></i> Mobile App
+                  <Smartphone className="text-green-400" /> Mobile App
                 </div>
                 <h2 className="text-3xl sm:text-4xl font-bold text-white mb-3">Pulse in Your Pocket</h2>
                 <p className="text-zinc-400 text-base max-w-sm mx-auto">Full-featured Android app. Everything from the web — voice messages, inbox, decisions, CRM — all native.</p>
@@ -1118,9 +1120,9 @@ const LandingPage: React.FC<LandingPageProps> = ({ onGetStarted }) => {
                   <div className="flex items-center justify-between px-5 pt-8 pb-2">
                     <span className="text-[9px] font-bold text-zinc-400">9:41</span>
                     <div className="flex items-center gap-1">
-                      <i className="fa-solid fa-signal text-[8px] text-zinc-400"></i>
-                      <i className="fa-solid fa-wifi text-[8px] text-zinc-400"></i>
-                      <i className="fa-solid fa-battery-full text-[8px] text-zinc-400"></i>
+                      <Signal className="text-[8px] text-zinc-400" />
+                      <Wifi className="text-[8px] text-zinc-400" />
+                      <Battery className="text-[8px] text-zinc-400" />
                     </div>
                   </div>
                   {/* App header */}
@@ -1133,17 +1135,17 @@ const LandingPage: React.FC<LandingPageProps> = ({ onGetStarted }) => {
                     </div>
                     <div className="flex items-center gap-2">
                       <div className="w-5 h-5 rounded-full bg-rose-500/20 flex items-center justify-center">
-                        <i className="fa-solid fa-bell text-[7px] text-rose-400"></i>
+                        <Bell className="text-[7px] text-rose-400" />
                       </div>
                       <div className="w-5 h-5 rounded-full bg-zinc-800 flex items-center justify-center">
-                        <i className="fa-solid fa-magnifying-glass text-[7px] text-zinc-400"></i>
+                        <Search className="text-[7px] text-zinc-400" />
                       </div>
                     </div>
                   </div>
                   {/* AI Briefing card */}
                   <div className="mx-3 mt-3 p-3 rounded-xl bg-gradient-to-r from-rose-500/15 to-pink-500/10 border border-rose-500/20">
                     <div className="flex items-center gap-2 mb-1">
-                      <i className="fa-solid fa-wand-magic-sparkles text-[9px] text-rose-400"></i>
+                      <Wand2 className="text-[9px] text-rose-400" />
                       <span className="text-[9px] font-bold text-rose-300">AI Briefing Ready</span>
                     </div>
                     <p className="text-[8px] text-zinc-400 leading-relaxed">3 urgent emails, 2 pending decisions, 1 meeting in 40 min</p>
@@ -1189,7 +1191,7 @@ const LandingPage: React.FC<LandingPageProps> = ({ onGetStarted }) => {
             <div>
               <div className="mb-8">
                 <div className="inline-flex items-center gap-2 px-3 py-1.5 rounded-full bg-zinc-800/60 border border-zinc-700/50 text-zinc-400 text-xs font-bold uppercase tracking-widest mb-4">
-                  <i className="fa-solid fa-keyboard text-zinc-400"></i> Shortcuts
+                  <Keyboard className="text-zinc-400" /> Shortcuts
                 </div>
                 <h2 className="text-3xl sm:text-4xl font-bold text-white mb-3">Built for Speed</h2>
                 <p className="text-zinc-400 text-base mb-6">Navigate every corner of Pulse without touching your mouse. Full shortcut coverage across all modules.</p>
@@ -1268,15 +1270,15 @@ const LandingPage: React.FC<LandingPageProps> = ({ onGetStarted }) => {
               <div className="absolute inset-0 bg-gradient-to-br from-rose-500/30 to-pink-500/25 rounded-3xl blur-2xl opacity-0 group-hover:opacity-100 transition-all duration-500"></div>
               <div className="relative h-full bg-zinc-950/90 backdrop-blur-sm border border-zinc-800 rounded-3xl p-8 hover:border-rose-500/60 transition-all duration-300 flex flex-col hover:-translate-y-2 card-elevated-rose">
                 <div className="w-14 h-14 bg-zinc-900 rounded-2xl flex items-center justify-center mb-6 border border-zinc-800 group-hover:border-rose-500/50 group-hover:scale-110 transition duration-300">
-                  <i className="fa-solid fa-heart-pulse text-2xl text-rose-500"></i>
+                  <HeartPulse className="text-2xl text-rose-500" />
                 </div>
                 <h3 className="text-2xl font-bold mb-4 text-white">Pulse</h3>
                 <div className="text-sm font-bold text-rose-500 tracking-wider uppercase mb-4">Communication and Intelligence</div>
                 <p className="text-zinc-400 mb-6 flex-grow">The voice and ears of your organization. Real-time messaging, 7 voice modes, and AI transcription that turns every word into action.</p>
                 <ul className="space-y-3 text-zinc-300 text-sm">
-                  <li className="flex items-center gap-2"><i className="fa-solid fa-check text-rose-500"></i> 7 Voxer Modes</li>
-                  <li className="flex items-center gap-2"><i className="fa-solid fa-check text-rose-500"></i> 8-Platform Unified Inbox</li>
-                  <li className="flex items-center gap-2"><i className="fa-solid fa-check text-rose-500"></i> AI Transcription + Action Items</li>
+                  <li className="flex items-center gap-2"><Check className="text-rose-500" /> 7 Voxer Modes</li>
+                  <li className="flex items-center gap-2"><Check className="text-rose-500" /> 8-Platform Unified Inbox</li>
+                  <li className="flex items-center gap-2"><Check className="text-rose-500" /> AI Transcription + Action Items</li>
                 </ul>
               </div>
             </div>
@@ -1286,15 +1288,15 @@ const LandingPage: React.FC<LandingPageProps> = ({ onGetStarted }) => {
               <div className="absolute inset-0 bg-gradient-to-br from-blue-500/30 to-cyan-500/25 rounded-3xl blur-2xl opacity-0 group-hover:opacity-100 transition-all duration-500"></div>
               <div className="relative h-full bg-zinc-950/90 backdrop-blur-sm border border-zinc-800 rounded-3xl p-8 hover:border-blue-500/60 transition-all duration-300 flex flex-col hover:-translate-y-2 card-elevated">
                 <div className="w-14 h-14 bg-zinc-900 rounded-2xl flex items-center justify-center mb-6 border border-zinc-800 group-hover:border-blue-500/50 group-hover:scale-110 transition duration-300">
-                  <i className="fa-solid fa-eye text-2xl text-blue-500"></i>
+                  <Eye className="text-2xl text-blue-500" />
                 </div>
                 <h3 className="text-2xl font-bold mb-4 text-white">Logos Vision</h3>
                 <div className="text-sm font-bold text-blue-500 tracking-wider uppercase mb-4">CRM and Relationships</div>
                 <p className="text-zinc-400 mb-6 flex-grow">The memory of your organization. Deep relationship intelligence with health scoring and 4 native CRM integrations that auto-sync every interaction.</p>
                 <ul className="space-y-3 text-zinc-300 text-sm">
-                  <li className="flex items-center gap-2"><i className="fa-solid fa-check text-blue-500"></i> 0-100 Relationship Scoring</li>
-                  <li className="flex items-center gap-2"><i className="fa-solid fa-check text-blue-500"></i> 4 CRM Integrations</li>
-                  <li className="flex items-center gap-2"><i className="fa-solid fa-check text-blue-500"></i> Network Visualization</li>
+                  <li className="flex items-center gap-2"><Check className="text-blue-500" /> 0-100 Relationship Scoring</li>
+                  <li className="flex items-center gap-2"><Check className="text-blue-500" /> 4 CRM Integrations</li>
+                  <li className="flex items-center gap-2"><Check className="text-blue-500" /> Network Visualization</li>
                 </ul>
               </div>
             </div>
@@ -1304,15 +1306,15 @@ const LandingPage: React.FC<LandingPageProps> = ({ onGetStarted }) => {
               <div className="absolute inset-0 bg-gradient-to-br from-emerald-500/30 to-teal-500/25 rounded-3xl blur-2xl opacity-0 group-hover:opacity-100 transition-all duration-500"></div>
               <div className="relative h-full bg-zinc-950/90 backdrop-blur-sm border border-zinc-800 rounded-3xl p-8 hover:border-emerald-500/60 transition-all duration-300 flex flex-col hover:-translate-y-2 card-elevated">
                 <div className="w-14 h-14 bg-zinc-900 rounded-2xl flex items-center justify-center mb-6 border border-zinc-800 group-hover:border-emerald-500/50 group-hover:scale-110 transition duration-300">
-                  <i className="fa-solid fa-robot text-2xl text-emerald-500"></i>
+                  <Bot className="text-2xl text-emerald-500" />
                 </div>
                 <h3 className="text-2xl font-bold mb-4 text-white">Entomate</h3>
                 <div className="text-sm font-bold text-emerald-500 tracking-wider uppercase mb-4">Automation and Workflow</div>
                 <p className="text-zinc-400 mb-6 flex-grow">The hands of your organization. Intelligent agents that execute tasks, move data between systems, and automate complex multi-step workflows.</p>
                 <ul className="space-y-3 text-zinc-300 text-sm">
-                  <li className="flex items-center gap-2"><i className="fa-solid fa-check text-emerald-500"></i> Workflow Builders</li>
-                  <li className="flex items-center gap-2"><i className="fa-solid fa-check text-emerald-500"></i> Auto-Task Execution</li>
-                  <li className="flex items-center gap-2"><i className="fa-solid fa-check text-emerald-500"></i> Cross-Platform Actions</li>
+                  <li className="flex items-center gap-2"><Check className="text-emerald-500" /> Workflow Builders</li>
+                  <li className="flex items-center gap-2"><Check className="text-emerald-500" /> Auto-Task Execution</li>
+                  <li className="flex items-center gap-2"><Check className="text-emerald-500" /> Cross-Platform Actions</li>
                 </ul>
               </div>
             </div>
@@ -1401,7 +1403,7 @@ const LandingPage: React.FC<LandingPageProps> = ({ onGetStarted }) => {
 
             {/* Android Card */}
             <div className="group p-6 rounded-2xl border bg-zinc-800 border-zinc-700 hover:border-rose-500/50 transition duration-300 flex flex-col items-center justify-center gap-4 w-full">
-              <i className="fa-brands fa-android text-4xl text-zinc-300 group-hover:text-white transition"></i>
+              <Smartphone className="text-4xl text-zinc-300 group-hover:text-white transition" />
               <div className="text-center">
                 <div className="font-bold text-white group-hover:text-rose-400 transition">Android</div>
                 <div className="text-xs text-zinc-500">Play Store and APK</div>
@@ -1414,7 +1416,7 @@ const LandingPage: React.FC<LandingPageProps> = ({ onGetStarted }) => {
                   className="flex-1 px-3 py-2 bg-zinc-900 rounded-lg border border-zinc-600 hover:bg-zinc-700 hover:border-green-500/50 text-xs font-medium text-center text-zinc-300 hover:text-white transition flex items-center justify-center gap-2"
                   title="Download from Play Store"
                 >
-                  <i className="fa-brands fa-google-play"></i> Store
+                  <Play /> Store
                 </a>
                 <a
                   href="/downloads/pulse-android.apk"
@@ -1423,7 +1425,7 @@ const LandingPage: React.FC<LandingPageProps> = ({ onGetStarted }) => {
                   className="flex-1 px-3 py-2 bg-zinc-900 rounded-lg border border-zinc-600 hover:bg-zinc-700 hover:border-rose-500/50 text-xs font-medium text-center text-zinc-300 hover:text-white transition flex items-center justify-center gap-2"
                   title="Download APK Package"
                 >
-                  <i className="fa-solid fa-download"></i> APK
+                  <Download /> APK
                 </a>
               </div>
             </div>
@@ -1434,17 +1436,17 @@ const LandingPage: React.FC<LandingPageProps> = ({ onGetStarted }) => {
           {/* Android Instructions */}
           <div id="android-instructions" className="mt-16 max-w-2xl mx-auto bg-zinc-900/50 border border-zinc-800 rounded-2xl p-8 text-left">
             <h3 className="text-xl font-bold mb-6 flex items-center gap-3">
-              <i className="fa-brands fa-android text-rose-500"></i>
+              <Smartphone className="text-rose-500" />
               How to Install on Android
             </h3>
             <div className="mb-8 p-4 bg-zinc-900 rounded-xl border border-zinc-800">
               <h4 className="font-bold text-white mb-2 flex items-center gap-2">
-                <i className="fa-brands fa-google-play text-green-500"></i> Recommended: Play Store
+                <Play className="text-green-500" /> Recommended: Play Store
               </h4>
               <p className="text-sm text-zinc-400 mb-3">The easiest way to install Pulse. Automatic updates and security checks included.</p>
               <a href="https://play.google.com/apps/internaltest/4701381285127016770" target="_blank" rel="noopener noreferrer"
                 className="inline-flex items-center gap-2 text-sm text-green-400 hover:text-green-300 font-medium">
-                Go to Play Store <i className="fa-solid fa-arrow-up-right-from-square text-xs"></i>
+                Go to Play Store <ExternalLink className="text-xs" />
               </a>
             </div>
             <h4 className="font-bold text-white mb-4">Manual APK Installation</h4>
@@ -1467,14 +1469,14 @@ const LandingPage: React.FC<LandingPageProps> = ({ onGetStarted }) => {
               </li>
             </ol>
             <div className="mt-6 p-4 bg-rose-500/10 border border-rose-500/20 rounded-lg text-sm text-rose-200">
-              <i className="fa-solid fa-circle-info mr-2"></i>
+              <Info className="mr-2" />
               This is a preview release. You may need to disable "Play Protect" if it flags the app as unrecognized.
             </div>
           </div>
           {/* Windows Instructions */}
           <div className="mt-8 max-w-2xl mx-auto bg-zinc-900/50 border border-zinc-800 rounded-2xl p-8 text-left">
             <h3 className="text-xl font-bold mb-6 flex items-center gap-3">
-              <i className="fa-brands fa-windows text-blue-400"></i>
+              <LayoutGrid className="text-blue-400" />
               How to Install on Windows PC
             </h3>
             <ol className="space-y-4 text-zinc-400 relative border-l border-zinc-800 ml-3 pl-8">
@@ -1502,7 +1504,7 @@ const LandingPage: React.FC<LandingPageProps> = ({ onGetStarted }) => {
               </li>
             </ol>
             <div className="mt-6 p-4 bg-blue-500/10 border border-blue-500/20 rounded-lg text-sm text-blue-200">
-              <i className="fa-solid fa-circle-info mr-2"></i>
+              <Info className="mr-2" />
               Requires Windows 10 or later (64-bit). Pulse runs in the system tray — closing the window keeps it running in the background.
             </div>
           </div>
@@ -1515,7 +1517,7 @@ const LandingPage: React.FC<LandingPageProps> = ({ onGetStarted }) => {
         <div className="max-w-3xl mx-auto">
           <div className="text-center mb-12">
             <div className="inline-flex items-center gap-2 px-3 py-1.5 rounded-full bg-zinc-800/60 border border-zinc-700/50 text-zinc-400 text-xs font-bold uppercase tracking-widest mb-4">
-              <i className="fa-solid fa-circle-question text-zinc-400" aria-hidden="true"></i> FAQ
+              <HelpCircle className="text-zinc-400" /> FAQ
             </div>
             <h2 className="text-3xl sm:text-4xl font-bold text-white mb-3">Common Questions</h2>
             <p className="text-zinc-500 text-base">Quick answers — full guide available via the Guide button in the nav.</p>
@@ -1557,7 +1559,7 @@ const LandingPage: React.FC<LandingPageProps> = ({ onGetStarted }) => {
               aria-label="Open Full User Guide"
               className="inline-flex items-center gap-2 px-6 py-3 rounded-xl bg-zinc-900 border border-zinc-700 hover:border-rose-500/40 hover:bg-zinc-800 text-white text-sm font-semibold transition-all duration-300 hover:scale-105"
             >
-              <i className="fa-solid fa-book-open text-rose-400" aria-hidden="true"></i> Open Full User Guide
+              <BookOpen className="text-rose-400" /> Open Full User Guide
             </button>
           </div>
         </div>
@@ -1602,7 +1604,7 @@ const LandingPage: React.FC<LandingPageProps> = ({ onGetStarted }) => {
                   <div className="text-xs font-bold text-white group-hover:text-rose-300 transition-colors">Developed by QntmEcos</div>
                   <div className="text-[10px] text-zinc-500">Quantum Ecosystems · qntmecos.com</div>
                 </div>
-                <i className="fa-solid fa-arrow-up-right-from-square text-[10px] text-zinc-600 group-hover:text-rose-400 transition-colors ml-1"></i>
+                <ExternalLink className="text-[10px] text-zinc-600 group-hover:text-rose-400 transition-colors ml-1" />
               </a>
             </div>
 
@@ -1620,7 +1622,7 @@ const LandingPage: React.FC<LandingPageProps> = ({ onGetStarted }) => {
                 </li>
                 <li>
                   <a href="https://qntmecos.com" target="_blank" rel="noopener noreferrer" className="hover:text-rose-500 transition flex items-center gap-1">
-                    About QntmEcos <i className="fa-solid fa-arrow-up-right-from-square text-[10px]"></i>
+                    About QntmEcos <ExternalLink className="text-[10px]" />
                   </a>
                 </li>
               </ul>
@@ -1637,7 +1639,7 @@ const LandingPage: React.FC<LandingPageProps> = ({ onGetStarted }) => {
                 <li><a href="/terms" className="hover:text-rose-500 transition">Terms of Service</a></li>
                 <li>
                   <a href="/docs/SECURITY-AUDIT-REPORT.md" target="_blank" rel="noopener noreferrer" className="hover:text-rose-500 transition flex items-center gap-1">
-                    Security Audit <i className="fa-solid fa-arrow-up-right-from-square text-[10px]"></i>
+                    Security Audit <ExternalLink className="text-[10px]" />
                   </a>
                 </li>
                 <li><a href="#" className="hover:text-rose-500 transition">Compliance</a></li>
@@ -1651,7 +1653,7 @@ const LandingPage: React.FC<LandingPageProps> = ({ onGetStarted }) => {
             </p>
             <div className="flex items-center gap-2 text-sm text-zinc-600">
               <span>Built with</span>
-              <i className="fa-solid fa-heart text-rose-900"></i>
+              <Heart className="text-rose-900" />
               <span>by the</span>
               <a href="https://qntmecos.com" target="_blank" rel="noopener noreferrer" className="text-zinc-500 hover:text-rose-400 transition font-medium">QntmEcos</a>
               <span>team</span>

@@ -2,6 +2,8 @@ import React, { useState, useRef, useEffect, useMemo } from 'react';
 import { AIMessage, ThinkingStep } from '../../../services/ragService';
 import { SessionExport } from '../shared';
 
+import { AlertTriangle, Crown, Play, Plus, RotateCcw, Send, Share2, ThumbsDown, ThumbsUp, Wand2, X } from 'lucide-react';
+
 interface ProConItem {
   id: string;
   text: string;
@@ -135,7 +137,7 @@ Please provide a strategic recommendation considering all factors. Weight the hi
       <div className="h-full w-full flex flex-col items-center justify-center war-room-container p-8">
         <div className="max-w-lg w-full text-center">
           <div className="w-20 h-20 mx-auto mb-6 rounded-full bg-gradient-to-br from-purple-500/20 to-indigo-500/20 flex items-center justify-center">
-            <i className="fa fa-chess text-3xl text-purple-400"></i>
+            <Crown className="fa text-3xl text-purple-400" />
           </div>
 
           <h2 className="text-2xl font-bold war-room-text-primary mb-2">
@@ -163,7 +165,7 @@ Please provide a strategic recommendation considering all factors. Weight the hi
               disabled={!decisionQuestion.trim()}
               className="war-room-btn war-room-btn-primary w-full py-3"
             >
-              <i className="fa fa-play mr-2"></i>
+              <Play className="fa mr-2" />
               Begin Strategic Analysis
             </button>
           </div>
@@ -179,7 +181,7 @@ Please provide a strategic recommendation considering all factors. Weight the hi
         <div className="flex items-center justify-between">
           <div className="flex items-center gap-3">
             <div className="w-10 h-10 rounded-full bg-purple-500/20 flex items-center justify-center">
-              <i className="fa fa-chess text-purple-400"></i>
+              <Crown className="fa text-purple-400" />
             </div>
             <div>
               <h3 className="font-semibold war-room-text-primary">{decisionQuestion}</h3>
@@ -193,7 +195,7 @@ Please provide a strategic recommendation considering all factors. Weight the hi
               className="war-room-btn war-room-btn-icon-sm"
               title="Export"
             >
-              <i className="fa fa-share-nodes text-xs"></i>
+              <Share2 className="fa text-xs" />
             </button>
             <button
               onClick={() => {
@@ -205,7 +207,7 @@ Please provide a strategic recommendation considering all factors. Weight the hi
               }}
               className="war-room-btn text-xs px-3 py-1"
             >
-              <i className="fa fa-rotate-left mr-1"></i>
+              <RotateCcw className="fa mr-1" />
               New Decision
             </button>
           </div>
@@ -267,7 +269,7 @@ Please provide a strategic recommendation considering all factors. Weight the hi
                 <div className="flex justify-start">
                   <div className="war-room-message-ai">
                     <div className="flex items-center gap-2">
-                      <i className="fa fa-chess text-purple-400 animate-pulse"></i>
+                      <Crown className="fa text-purple-400 animate-pulse" />
                       <span className="text-sm war-room-text-secondary">Strategizing...</span>
                     </div>
                   </div>
@@ -297,7 +299,7 @@ Please provide a strategic recommendation considering all factors. Weight the hi
                       input.trim() ? 'war-room-btn-primary' : ''
                     }`}
                   >
-                    <i className="fa fa-paper-plane text-xs"></i>
+                    <Send className="fa text-xs" />
                   </button>
                 </div>
               </div>
@@ -311,11 +313,11 @@ Please provide a strategic recommendation considering all factors. Weight the hi
             <div className="flex-1 border-r border-white/10 flex flex-col">
               <div className="p-3 border-b border-white/10 bg-emerald-500/5 flex items-center justify-between">
                 <h4 className="text-sm font-semibold text-emerald-400 flex items-center gap-2">
-                  <i className="fa fa-thumbs-up"></i>
+                  <ThumbsUp className="fa" />
                   Pros ({pros.length})
                 </h4>
                 <button onClick={addPro} className="war-room-btn war-room-btn-icon-sm">
-                  <i className="fa fa-plus text-xs"></i>
+                  <Plus className="fa text-xs" />
                 </button>
               </div>
               <div className="flex-1 overflow-y-auto war-room-scrollbar p-3 space-y-2">
@@ -342,7 +344,7 @@ Please provide a strategic recommendation considering all factors. Weight the hi
                         onClick={() => removePro(pro.id)}
                         className="text-red-400 opacity-0 group-hover:opacity-100 transition-opacity"
                       >
-                        <i className="fa fa-times text-xs"></i>
+                        <X className="fa text-xs" />
                       </button>
                     </div>
                   </div>
@@ -359,11 +361,11 @@ Please provide a strategic recommendation considering all factors. Weight the hi
             <div className="flex-1 flex flex-col">
               <div className="p-3 border-b border-white/10 bg-rose-500/5 flex items-center justify-between">
                 <h4 className="text-sm font-semibold text-rose-400 flex items-center gap-2">
-                  <i className="fa fa-thumbs-down"></i>
+                  <ThumbsDown className="fa" />
                   Cons ({cons.length})
                 </h4>
                 <button onClick={addCon} className="war-room-btn war-room-btn-icon-sm">
-                  <i className="fa fa-plus text-xs"></i>
+                  <Plus className="fa text-xs" />
                 </button>
               </div>
               <div className="flex-1 overflow-y-auto war-room-scrollbar p-3 space-y-2">
@@ -390,7 +392,7 @@ Please provide a strategic recommendation considering all factors. Weight the hi
                         onClick={() => removeCon(con.id)}
                         className="text-red-400 opacity-0 group-hover:opacity-100 transition-opacity"
                       >
-                        <i className="fa fa-times text-xs"></i>
+                        <X className="fa text-xs" />
                       </button>
                     </div>
                   </div>
@@ -409,11 +411,11 @@ Please provide a strategic recommendation considering all factors. Weight the hi
           <div className="h-full flex flex-col">
             <div className="p-3 border-b border-white/10 bg-amber-500/5 flex items-center justify-between">
               <h4 className="text-sm font-semibold text-amber-400 flex items-center gap-2">
-                <i className="fa fa-triangle-exclamation"></i>
+                <AlertTriangle className="fa" />
                 Risk Assessment
               </h4>
               <button onClick={addRisk} className="war-room-btn war-room-btn-icon-sm">
-                <i className="fa fa-plus text-xs"></i>
+                <Plus className="fa text-xs" />
               </button>
             </div>
             <div className="flex-1 overflow-y-auto war-room-scrollbar p-4 space-y-3">
@@ -466,7 +468,7 @@ Please provide a strategic recommendation considering all factors. Weight the hi
                       onClick={() => removeRisk(risk.id)}
                       className="text-red-400 opacity-0 group-hover:opacity-100 transition-opacity"
                     >
-                      <i className="fa fa-times"></i>
+                      <X className="fa" />
                     </button>
                   </div>
                 </div>
@@ -488,7 +490,7 @@ Please provide a strategic recommendation considering all factors. Weight the hi
             onClick={analyzeDecision}
             className="war-room-btn war-room-btn-primary w-full py-3"
           >
-            <i className="fa fa-wand-magic-sparkles mr-2"></i>
+            <Wand2 className="fa mr-2" />
             Get AI Strategic Recommendation
           </button>
         </div>

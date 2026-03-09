@@ -24,6 +24,8 @@ import { sendTeamInvite, getPendingTeamInvites, resendTeamInvite, revokeTeamInvi
 import billingService, { type UserPlan } from '../services/billingService';
 
 
+import { Accessibility, AlertTriangle, ArrowRight, Ban, Bell, Book, Bot, Brain, Camera, Check, ChevronDown, ChevronRight, Code, Cpu, Download, FlaskConical, Github, Headset, Heart, HelpCircle, Info, Key, Loader2, Lock, LogOut, Mail, Menu, Mic, Monitor, Palette, Play, Plug, RefreshCw, Rocket, Save, Search, Send, Server, Shield, ShieldHalf, Sliders, Sparkles, TrendingUp, Unlink, User, Users, Volume2, X } from 'lucide-react';
+
 interface SettingsProps {
     user?: User | null;
     isDarkMode: boolean;
@@ -918,7 +920,7 @@ const Settings: React.FC<SettingsProps> = ({ user, isDarkMode, toggleTheme, init
           <div className="space-y-8 animate-slide-up">
             <div className="section-header">
               <h3>
-                <i className="fa-solid fa-plug"></i> Platform Integrations
+                <Plug /> Platform Integrations
               </h3>
               <p>
                 Connect your accounts to sync data across all your platforms. Messages, calendars, and contacts will be unified in one place.
@@ -928,7 +930,7 @@ const Settings: React.FC<SettingsProps> = ({ user, isDarkMode, toggleTheme, init
             {/* Sync Preferences (New) */}
             <div className="bg-white dark:bg-zinc-900 border border-zinc-200 dark:border-zinc-800 rounded-xl p-6">
                 <h4 className="text-sm font-bold uppercase tracking-widest text-zinc-500 mb-4 flex items-center gap-2">
-                    <i className="fa-solid fa-arrows-rotate"></i> Sync Preferences
+                    <RefreshCw /> Sync Preferences
                 </h4>
                 <div className="space-y-4">
                     <div className="flex items-center justify-between">
@@ -997,7 +999,7 @@ const Settings: React.FC<SettingsProps> = ({ user, isDarkMode, toggleTheme, init
                   <div className="bg-emerald-50 dark:bg-emerald-900/20 border border-emerald-200 dark:border-emerald-800 rounded-xl p-4">
                     <div className="flex items-center gap-3 mb-3">
                       <div className="w-10 h-10 rounded-full bg-emerald-500/20 flex items-center justify-center">
-                        <i className="fa-solid fa-check text-emerald-500"></i>
+                        <Check className="text-emerald-500" />
                       </div>
                       <div>
                         <p className="font-semibold text-emerald-700 dark:text-emerald-400">Google Account Connected</p>
@@ -1035,7 +1037,7 @@ const Settings: React.FC<SettingsProps> = ({ user, isDarkMode, toggleTheme, init
                   <div className="bg-amber-50 dark:bg-amber-900/20 border border-amber-200 dark:border-amber-800 rounded-xl p-4">
                     <div className="flex items-center gap-3 mb-3">
                       <div className="w-10 h-10 rounded-full bg-amber-500/20 flex items-center justify-center">
-                        <i className="fa-solid fa-triangle-exclamation text-amber-500"></i>
+                        <AlertTriangle className="text-amber-500" />
                       </div>
                       <div>
                         <p className="font-semibold text-amber-700 dark:text-amber-400">Google Account Not Connected</p>
@@ -1047,7 +1049,7 @@ const Settings: React.FC<SettingsProps> = ({ user, isDarkMode, toggleTheme, init
 
                 <div className="nothing-info-box" style={{ marginTop: '16px' }}>
                   <p className="info-title">
-                    <i className="fa-solid fa-circle-info"></i>
+                    <Info />
                     Google API Permissions Requested:
                   </p>
                   <ul>
@@ -1096,7 +1098,7 @@ const Settings: React.FC<SettingsProps> = ({ user, isDarkMode, toggleTheme, init
                         }}
                         className="nothing-btn nothing-btn-secondary"
                       >
-                        <i className="fa-solid fa-link-slash"></i>
+                        <Unlink />
                         Disconnect
                       </button>
                       <button
@@ -1112,7 +1114,7 @@ const Settings: React.FC<SettingsProps> = ({ user, isDarkMode, toggleTheme, init
                         className="nothing-btn"
                         style={{ color: '#ef4444' }}
                       >
-                        <i className="fa-solid fa-ban"></i>
+                        <Ban />
                         Revoke Access
                       </button>
                     </>
@@ -1148,7 +1150,7 @@ const Settings: React.FC<SettingsProps> = ({ user, isDarkMode, toggleTheme, init
                   <div className="bg-emerald-50 dark:bg-emerald-900/20 border border-emerald-200 dark:border-emerald-800 rounded-xl p-4">
                     <div className="flex items-center gap-3 mb-3">
                       <div className="w-10 h-10 rounded-full bg-emerald-500/20 flex items-center justify-center">
-                        <i className="fa-solid fa-check text-emerald-500"></i>
+                        <Check className="text-emerald-500" />
                       </div>
                       <div>
                         <p className="font-semibold text-emerald-700 dark:text-emerald-400">Gmail Connected</p>
@@ -1161,14 +1163,14 @@ const Settings: React.FC<SettingsProps> = ({ user, isDarkMode, toggleTheme, init
                   </div>
                 ) : (
                   <div className="bg-zinc-100 dark:bg-zinc-800/50 border border-zinc-200 dark:border-zinc-700 rounded-xl p-4 text-center">
-                    <i className="fa-solid fa-lock text-zinc-400 text-2xl mb-2"></i>
+                    <Lock className="text-zinc-400 text-2xl mb-2" />
                     <p className="text-sm text-zinc-600 dark:text-zinc-400">Connect your Google account above to enable Gmail</p>
                   </div>
                 )}
 
                 <div className="nothing-info-box" style={{ marginTop: '16px' }}>
                   <p className="info-title">
-                    <i className="fa-solid fa-circle-info"></i>
+                    <Info />
                     Gmail API Permissions:
                   </p>
                   <ul>
@@ -1200,12 +1202,12 @@ const Settings: React.FC<SettingsProps> = ({ user, isDarkMode, toggleTheme, init
                     >
                       {gmailTesting ? (
                         <>
-                          <i className="fa-solid fa-circle-notch spinner-icon"></i>
+                          <Loader2 className="spinner-icon" />
                           Testing...
                         </>
                       ) : (
                         <>
-                          <i className="fa-solid fa-plug"></i>
+                          <Plug />
                           Test Connection
                         </>
                       )}
@@ -1234,7 +1236,7 @@ const Settings: React.FC<SettingsProps> = ({ user, isDarkMode, toggleTheme, init
                         disabled={gmailTesting}
                         className="nothing-btn nothing-btn-secondary"
                       >
-                        <i className="fa-solid fa-download"></i>
+                        <Download />
                         Fetch Messages
                       </button>
                     )}
@@ -1294,7 +1296,7 @@ const Settings: React.FC<SettingsProps> = ({ user, isDarkMode, toggleTheme, init
                   <>
                     <div className="nothing-info-box">
                       <p className="info-title">
-                        <i className="fa-solid fa-circle-info"></i>
+                        <Info />
                         Calendar Features:
                       </p>
                       <ul>
@@ -1330,12 +1332,12 @@ const Settings: React.FC<SettingsProps> = ({ user, isDarkMode, toggleTheme, init
                       >
                         {calendarTesting ? (
                           <>
-                            <i className="fa-solid fa-circle-notch spinner-icon"></i>
+                            <Loader2 className="spinner-icon" />
                             Testing...
                           </>
                         ) : (
                           <>
-                            <i className="fa-solid fa-plug"></i>
+                            <Plug />
                             Test Connection
                           </>
                         )}
@@ -1368,7 +1370,7 @@ const Settings: React.FC<SettingsProps> = ({ user, isDarkMode, toggleTheme, init
                   </>
                 ) : (
                   <div className="bg-zinc-100 dark:bg-zinc-800/50 border border-zinc-200 dark:border-zinc-700 rounded-xl p-4 text-center">
-                    <i className="fa-solid fa-lock text-zinc-400 text-2xl mb-2"></i>
+                    <Lock className="text-zinc-400 text-2xl mb-2" />
                     <p className="text-sm text-zinc-600 dark:text-zinc-400">Connect your Google account above to enable Calendar sync</p>
                   </div>
                 )}
@@ -1399,7 +1401,7 @@ const Settings: React.FC<SettingsProps> = ({ user, isDarkMode, toggleTheme, init
                   <>
                     <div className="nothing-info-box">
                       <p className="info-title">
-                        <i className="fa-solid fa-circle-info"></i>
+                        <Info />
                         Contacts Features:
                       </p>
                       <ul>
@@ -1433,12 +1435,12 @@ const Settings: React.FC<SettingsProps> = ({ user, isDarkMode, toggleTheme, init
                       >
                         {contactsTesting ? (
                           <>
-                            <i className="fa-solid fa-circle-notch spinner-icon"></i>
+                            <Loader2 className="spinner-icon" />
                             Testing...
                           </>
                         ) : (
                           <>
-                            <i className="fa-solid fa-plug"></i>
+                            <Plug />
                             Test Connection
                           </>
                         )}
@@ -1454,7 +1456,7 @@ const Settings: React.FC<SettingsProps> = ({ user, isDarkMode, toggleTheme, init
                   </>
                 ) : (
                   <div className="bg-zinc-100 dark:bg-zinc-800/50 border border-zinc-200 dark:border-zinc-700 rounded-xl p-4 text-center">
-                    <i className="fa-solid fa-lock text-zinc-400 text-2xl mb-2"></i>
+                    <Lock className="text-zinc-400 text-2xl mb-2" />
                     <p className="text-sm text-zinc-600 dark:text-zinc-400">Connect your Google account above to enable Contacts sync</p>
                   </div>
                 )}
@@ -1486,7 +1488,7 @@ const Settings: React.FC<SettingsProps> = ({ user, isDarkMode, toggleTheme, init
               <div className="space-y-3">
                 <div className="nothing-info-box">
                   <p className="info-title">
-                    <i className="fa-solid fa-circle-info"></i>
+                    <Info />
                     Maps Features:
                   </p>
                   <ul>
@@ -1548,12 +1550,12 @@ const Settings: React.FC<SettingsProps> = ({ user, isDarkMode, toggleTheme, init
                   >
                     {mapsTesting ? (
                       <>
-                        <i className="fa-solid fa-circle-notch spinner-icon"></i>
+                        <Loader2 className="spinner-icon" />
                         Testing...
                       </>
                     ) : (
                       <>
-                        <i className="fa-solid fa-plug"></i>
+                        <Plug />
                         Test Connection
                       </>
                     )}
@@ -1572,7 +1574,7 @@ const Settings: React.FC<SettingsProps> = ({ user, isDarkMode, toggleTheme, init
             {/* ==================== OTHER INTEGRATIONS SECTION ==================== */}
             <div className="section-header" style={{ marginTop: '48px' }}>
               <h3>
-                <i className="fa-solid fa-plug"></i> Other Integrations
+                <Plug /> Other Integrations
               </h3>
               <p>
                 Connect additional platforms to aggregate all your messages in one unified inbox.
@@ -1615,7 +1617,7 @@ const Settings: React.FC<SettingsProps> = ({ user, isDarkMode, toggleTheme, init
                   />
                   <div className="nothing-info-box">
                     <p className="info-title">
-                      <i className="fa-solid fa-circle-info"></i>
+                      <Info />
                       Required Slack Bot Scopes:
                     </p>
                     <ul>
@@ -1641,12 +1643,12 @@ const Settings: React.FC<SettingsProps> = ({ user, isDarkMode, toggleTheme, init
                   >
                     {slackTesting ? (
                       <>
-                        <i className="fa-solid fa-circle-notch spinner-icon"></i>
+                        <Loader2 className="spinner-icon" />
                         Testing...
                       </>
                     ) : (
                       <>
-                        <i className="fa-solid fa-plug"></i>
+                        <Plug />
                         Test Connection
                       </>
                     )}
@@ -1658,7 +1660,7 @@ const Settings: React.FC<SettingsProps> = ({ user, isDarkMode, toggleTheme, init
                       disabled={slackTesting}
                       className="nothing-btn nothing-btn-secondary"
                     >
-                      <i className="fa-solid fa-download"></i>
+                      <Download />
                       Fetch Messages
                     </button>
                   )}
@@ -1754,7 +1756,7 @@ const Settings: React.FC<SettingsProps> = ({ user, isDarkMode, toggleTheme, init
                   />
                   <div className="nothing-info-box">
                     <p className="info-title">
-                      <i className="fa-solid fa-circle-info"></i>
+                      <Info />
                       Twilio API Credentials:
                     </p>
                     <ul>
@@ -1775,12 +1777,12 @@ const Settings: React.FC<SettingsProps> = ({ user, isDarkMode, toggleTheme, init
                   >
                     {twilioTesting ? (
                       <>
-                        <i className="fa-solid fa-circle-notch spinner-icon"></i>
+                        <Loader2 className="spinner-icon" />
                         Testing...
                       </>
                     ) : (
                       <>
-                        <i className="fa-solid fa-plug"></i>
+                        <Plug />
                         Test Connection
                       </>
                     )}
@@ -1792,7 +1794,7 @@ const Settings: React.FC<SettingsProps> = ({ user, isDarkMode, toggleTheme, init
                       disabled={twilioTesting}
                       className="nothing-btn nothing-btn-secondary"
                     >
-                      <i className="fa-solid fa-download"></i>
+                      <Download />
                       Fetch Messages
                     </button>
                   )}
@@ -1866,7 +1868,7 @@ const Settings: React.FC<SettingsProps> = ({ user, isDarkMode, toggleTheme, init
                   <div className="bg-emerald-50 dark:bg-emerald-900/20 border border-emerald-200 dark:border-emerald-800 rounded-xl p-4">
                     <div className="flex items-center gap-3 mb-3">
                       <div className="w-10 h-10 rounded-full bg-emerald-500/20 flex items-center justify-center">
-                        <i className="fa-solid fa-check text-emerald-500"></i>
+                        <Check className="text-emerald-500" />
                       </div>
                       <div>
                         <p className="font-semibold text-emerald-700 dark:text-emerald-400">Microsoft Account Connected</p>
@@ -1898,7 +1900,7 @@ const Settings: React.FC<SettingsProps> = ({ user, isDarkMode, toggleTheme, init
                   <div className="bg-amber-50 dark:bg-amber-900/20 border border-amber-200 dark:border-amber-800 rounded-xl p-4">
                     <div className="flex items-center gap-3 mb-3">
                       <div className="w-10 h-10 rounded-full bg-amber-500/20 flex items-center justify-center">
-                        <i className="fa-solid fa-triangle-exclamation text-amber-500"></i>
+                        <AlertTriangle className="text-amber-500" />
                       </div>
                       <div>
                         <p className="font-semibold text-amber-700 dark:text-amber-400">Microsoft Account Not Connected</p>
@@ -1910,7 +1912,7 @@ const Settings: React.FC<SettingsProps> = ({ user, isDarkMode, toggleTheme, init
 
                 <div className="nothing-info-box" style={{ marginTop: '16px' }}>
                   <p className="info-title">
-                    <i className="fa-solid fa-circle-info"></i>
+                    <Info />
                     Microsoft API Permissions Requested:
                   </p>
                   <ul>
@@ -1960,7 +1962,7 @@ const Settings: React.FC<SettingsProps> = ({ user, isDarkMode, toggleTheme, init
                       className="nothing-btn"
                       style={{ color: '#ef4444', borderColor: 'rgba(239,68,68,0.3)' }}
                     >
-                      <i className="fa-solid fa-link-slash"></i>
+                      <Unlink />
                       Disconnect Microsoft
                     </button>
                   )}
@@ -1971,7 +1973,7 @@ const Settings: React.FC<SettingsProps> = ({ user, isDarkMode, toggleTheme, init
             {/* Future Integrations Teaser */}
             <div className="section-header" style={{ marginTop: '48px' }}>
               <h3>
-                <i className="fa-solid fa-rocket"></i> Coming Soon
+                <Rocket /> Coming Soon
               </h3>
               <p>
                 More integrations are on the way to help you sync all your data in one place.
@@ -2022,7 +2024,7 @@ const Settings: React.FC<SettingsProps> = ({ user, isDarkMode, toggleTheme, init
           <div className="space-y-8 animate-slide-up">
             <div className="section-header">
               <h3>
-                <i className="fa-solid fa-brain"></i> AI & Intelligence
+                <Brain /> AI & Intelligence
               </h3>
               <p>
                 Configure the brain of your Pulse workspace. Choose models, voices, and reasoning capabilities.
@@ -2035,7 +2037,7 @@ const Settings: React.FC<SettingsProps> = ({ user, isDarkMode, toggleTheme, init
             {/* Quota Notifications */}
             <div className="bg-white dark:bg-zinc-900 border border-zinc-200 dark:border-zinc-800 rounded-xl p-6">
               <h4 className="text-sm font-bold uppercase tracking-widest text-zinc-500 mb-4 flex items-center gap-2">
-                <i className="fa-solid fa-bell"></i> Quota Notifications
+                <Bell /> Quota Notifications
               </h4>
               <div className="space-y-4">
                 <p className="text-sm text-zinc-600 dark:text-zinc-400">
@@ -2073,7 +2075,7 @@ const Settings: React.FC<SettingsProps> = ({ user, isDarkMode, toggleTheme, init
             {/* General AI */}
             <div className="bg-white dark:bg-zinc-900 border border-zinc-200 dark:border-zinc-800 rounded-xl p-6">
                 <h4 className="text-sm font-bold uppercase tracking-widest text-zinc-500 mb-6 flex items-center gap-2">
-                    <i className="fa-solid fa-microchip"></i> General AI
+                    <Cpu /> General AI
                 </h4>
                 
                 <div className="space-y-6">
@@ -2105,7 +2107,7 @@ const Settings: React.FC<SettingsProps> = ({ user, isDarkMode, toggleTheme, init
             {/* Voice Agent */}
             <div className="bg-white dark:bg-zinc-900 border border-zinc-200 dark:border-zinc-800 rounded-xl p-6">
                 <h4 className="text-sm font-bold uppercase tracking-widest text-zinc-500 mb-6 flex items-center gap-2">
-                    <i className="fa-solid fa-headset"></i> Voice Agent
+                    <Headset /> Voice Agent
                 </h4>
 
                 <div className="space-y-6">
@@ -2135,7 +2137,7 @@ const Settings: React.FC<SettingsProps> = ({ user, isDarkMode, toggleTheme, init
                                 }}
                                 className="px-4 bg-zinc-100 dark:bg-zinc-800 rounded-lg hover:bg-zinc-200 dark:hover:bg-zinc-700 transition"
                             >
-                                <i className="fa-solid fa-play"></i>
+                                <Play />
                             </button>
                         </div>
                     </div>
@@ -2193,7 +2195,7 @@ const Settings: React.FC<SettingsProps> = ({ user, isDarkMode, toggleTheme, init
             {/* Knowledge Base */}
             <div className="bg-white dark:bg-zinc-900 border border-zinc-200 dark:border-zinc-800 rounded-xl p-6">
                 <h4 className="text-sm font-bold uppercase tracking-widest text-zinc-500 mb-6 flex items-center gap-2">
-                    <i className="fa-solid fa-book"></i> Knowledge Base (RAG)
+                    <Book /> Knowledge Base (RAG)
                 </h4>
                 
                 <div className="space-y-6">
@@ -2222,14 +2224,14 @@ const Settings: React.FC<SettingsProps> = ({ user, isDarkMode, toggleTheme, init
             {/* Device Selection (Hardware) */}
             <div className="bg-white dark:bg-zinc-900 border border-zinc-200 dark:border-zinc-800 rounded-xl p-6">
                 <h4 className="text-sm font-bold uppercase tracking-widest text-zinc-500 mb-6 flex items-center gap-2">
-                    <i className="fa-solid fa-sliders"></i> Hardware Settings
+                    <Sliders /> Hardware Settings
                 </h4>
                 
                 <div className="space-y-4">
                     {/* Audio Input */}
                     <div className="space-y-2">
                         <label className="text-xs font-bold text-zinc-500 uppercase tracking-wider flex items-center gap-2">
-                            <i className="fa-solid fa-microphone"></i> Microphone
+                            <Mic /> Microphone
                         </label>
                         <div className="relative">
                             <select 
@@ -2244,14 +2246,14 @@ const Settings: React.FC<SettingsProps> = ({ user, isDarkMode, toggleTheme, init
                                 ))}
                                 {audioInputs.length === 0 && <option>No microphones found</option>}
                             </select>
-                            <i className="fa-solid fa-chevron-down absolute right-4 top-1/2 -translate-y-1/2 text-zinc-400 text-xs pointer-events-none"></i>
+                            <ChevronDown className="absolute right-4 top-1/2 -translate-y-1/2 text-zinc-400 text-xs pointer-events-none" />
                         </div>
                     </div>
 
                     {/* Audio Output */}
                     <div className="space-y-2">
                         <label className="text-xs font-bold text-zinc-500 uppercase tracking-wider flex items-center gap-2">
-                            <i className="fa-solid fa-volume-high"></i> Speaker
+                            <Volume2 /> Speaker
                         </label>
                         <div className="relative">
                             <select 
@@ -2266,7 +2268,7 @@ const Settings: React.FC<SettingsProps> = ({ user, isDarkMode, toggleTheme, init
                                 ))}
                                 {audioOutputs.length === 0 && <option>Default Speaker</option>}
                             </select>
-                            <i className="fa-solid fa-chevron-down absolute right-4 top-1/2 -translate-y-1/2 text-zinc-400 text-xs pointer-events-none"></i>
+                            <ChevronDown className="absolute right-4 top-1/2 -translate-y-1/2 text-zinc-400 text-xs pointer-events-none" />
                         </div>
                     </div>
 
@@ -2313,7 +2315,7 @@ const Settings: React.FC<SettingsProps> = ({ user, isDarkMode, toggleTheme, init
                   onClick={() => setActiveSection('audio_video')}
                   className="px-4 py-2 bg-purple-600 hover:bg-purple-700 text-white rounded-lg text-sm font-medium transition flex items-center gap-2"
                 >
-                  <i className="fa-solid fa-sliders"></i>
+                  <Sliders />
                   Open Voxer Settings
                 </button>
               </div>
@@ -2326,7 +2328,7 @@ const Settings: React.FC<SettingsProps> = ({ user, isDarkMode, toggleTheme, init
           <div className="space-y-8 animate-slide-up">
             <div className="section-header">
               <h3>
-                <i className="fa-solid fa-user"></i> My Account
+                <User /> My Account
               </h3>
               <p>
                 Manage your personal profile, appearance, and session settings.
@@ -2356,9 +2358,9 @@ const Settings: React.FC<SettingsProps> = ({ user, isDarkMode, toggleTheme, init
                   </div>
                   <div className="absolute inset-0 bg-black/50 rounded-full flex items-center justify-center opacity-0 group-hover:opacity-100 transition duration-300 pointer-events-none">
                     {isUploadingImage ? (
-                      <i className="fa-solid fa-circle-notch fa-spin text-white"></i>
+                      <Loader2 className="text-white animate-spin" />
                     ) : (
-                      <i className="fa-solid fa-camera text-white"></i>
+                      <Camera className="text-white" />
                     )}
                   </div>
                   <input
@@ -2395,7 +2397,7 @@ const Settings: React.FC<SettingsProps> = ({ user, isDarkMode, toggleTheme, init
                                 'border-zinc-200 dark:border-zinc-700 focus:border-blue-500'
                             }`}
                             />
-                            {handleAvailable && !handleError && <i className="fa-solid fa-check text-emerald-500 absolute right-3 top-1/2 -translate-y-1/2"></i>}
+                            {handleAvailable && !handleError && <Check className="text-emerald-500 absolute right-3 top-1/2 -translate-y-1/2" />}
                         </div>
                         {handleError && <p className="text-xs text-red-500">{handleError}</p>}
                     </div>
@@ -2418,7 +2420,7 @@ const Settings: React.FC<SettingsProps> = ({ user, isDarkMode, toggleTheme, init
                         disabled={isSavingProfile || (handle !== pulseProfile?.handle && !handleAvailable && handle !== '')}
                         className="px-6 py-2 bg-zinc-900 dark:bg-white text-white dark:text-black font-semibold rounded-lg hover:bg-zinc-800 dark:hover:bg-zinc-200 transition disabled:opacity-50 flex items-center gap-2"
                     >
-                        {isSavingProfile ? <i className="fa-solid fa-circle-notch fa-spin"></i> : <i className="fa-solid fa-check"></i>}
+                        {isSavingProfile ? <Loader2 className="animate-spin" /> : <Check />}
                         Save Changes
                     </button>
                   </div>
@@ -2468,7 +2470,7 @@ const Settings: React.FC<SettingsProps> = ({ user, isDarkMode, toggleTheme, init
                             }}
                             className="text-red-500 hover:text-red-600 font-medium text-sm flex items-center gap-2"
                         >
-                            <i className="fa-solid fa-right-from-bracket"></i>
+                            <LogOut />
                             Log Out of Pulse
                         </button>
                     </div>
@@ -2512,7 +2514,7 @@ const Settings: React.FC<SettingsProps> = ({ user, isDarkMode, toggleTheme, init
             <div className="space-y-8 animate-slide-up">
                 <div className="section-header">
                     <h3>
-                        <i className="fa-solid fa-users"></i> Team Management
+                        <Users /> Team Management
                     </h3>
                     <p>
                         Invite team members and manage access permissions.
@@ -2547,7 +2549,7 @@ const Settings: React.FC<SettingsProps> = ({ user, isDarkMode, toggleTheme, init
                             disabled={!inviteEmail || isInviting}
                             className="px-6 bg-blue-600 hover:bg-blue-700 text-white font-semibold rounded-lg transition disabled:opacity-50 flex items-center gap-2"
                         >
-                            {isInviting ? <i className="fa-solid fa-circle-notch fa-spin"></i> : <i className="fa-solid fa-paper-plane"></i>}
+                            {isInviting ? <Loader2 className="animate-spin" /> : <Send />}
                             Send Invite
                         </button>
                     </div>
@@ -2562,7 +2564,7 @@ const Settings: React.FC<SettingsProps> = ({ user, isDarkMode, toggleTheme, init
                             <div key={invite.id} className="p-4 flex items-center justify-between">
                                 <div className="flex items-center gap-3">
                                     <div className="w-8 h-8 rounded-full bg-zinc-200 dark:bg-zinc-700 flex items-center justify-center text-zinc-500">
-                                        <i className="fa-solid fa-envelope"></i>
+                                        <Mail />
                                     </div>
                                     <div>
                                         <p className="text-sm font-medium dark:text-white text-zinc-900">{invite.email}</p>
@@ -2620,7 +2622,7 @@ const Settings: React.FC<SettingsProps> = ({ user, isDarkMode, toggleTheme, init
             <div className="space-y-8 animate-slide-up">
                 <div className="section-header">
                     <h3>
-                        <i className="fa-solid fa-universal-access"></i> Accessibility
+                        <Accessibility /> Accessibility
                     </h3>
                     <p>
                         Customize the interface to match your visual and motor preferences.
@@ -2674,7 +2676,7 @@ const Settings: React.FC<SettingsProps> = ({ user, isDarkMode, toggleTheme, init
             <div className="space-y-8 animate-slide-up">
                 <div className="section-header">
                     <h3>
-                        <i className="fa-solid fa-shield-halved"></i> Privacy & Data
+                        <ShieldHalf /> Privacy & Data
                     </h3>
                     <p>
                         Control your data collection settings and manage your personal information.
@@ -2736,7 +2738,7 @@ const Settings: React.FC<SettingsProps> = ({ user, isDarkMode, toggleTheme, init
                                 }}
                                 className="px-4 py-2 border border-zinc-200 dark:border-zinc-700 rounded-lg text-sm hover:bg-zinc-50 dark:hover:bg-zinc-800 transition"
                             >
-                                <i className="fa-solid fa-rotate mr-2"></i> Rebuild
+                                <RefreshCw className="mr-2" /> Rebuild
                             </button>
                         </div>
 
@@ -2772,7 +2774,7 @@ const Settings: React.FC<SettingsProps> = ({ user, isDarkMode, toggleTheme, init
                                 }}
                                 className="px-4 py-2 border border-zinc-200 dark:border-zinc-700 rounded-lg text-sm hover:bg-zinc-50 dark:hover:bg-zinc-800 transition"
                             >
-                                <i className="fa-solid fa-download mr-2"></i> Export JSON
+                                <Download className="mr-2" /> Export JSON
                             </button>
                         </div>
                     </div>
@@ -2800,7 +2802,7 @@ const Settings: React.FC<SettingsProps> = ({ user, isDarkMode, toggleTheme, init
         return (
           <div className="space-y-8 animate-slide-up">
             <div className="section-header">
-              <h3><i className="fa-solid fa-flask"></i> Features & Labs</h3>
+              <h3><FlaskConical /> Features & Labs</h3>
               <p>Enable or disable individual features. Changes apply immediately.</p>
             </div>
 
@@ -2841,7 +2843,7 @@ const Settings: React.FC<SettingsProps> = ({ user, isDarkMode, toggleTheme, init
         return (
           <div className="space-y-8 animate-slide-up">
             <div className="section-header">
-              <h3><i className="fa-solid fa-shield"></i> War Room</h3>
+              <h3><Shield /> War Room</h3>
               <p>Configure default behavior for the War Room workspace.</p>
             </div>
 
@@ -2935,7 +2937,7 @@ const Settings: React.FC<SettingsProps> = ({ user, isDarkMode, toggleTheme, init
         return (
           <div className="space-y-8 animate-slide-up">
             <div className="section-header">
-              <h3><i className="fa-solid fa-chart-line"></i> Activity Monitor</h3>
+              <h3><TrendingUp /> Activity Monitor</h3>
               <p>Control how your presence and activity data is shared and retained.</p>
             </div>
 
@@ -2989,7 +2991,7 @@ const Settings: React.FC<SettingsProps> = ({ user, isDarkMode, toggleTheme, init
         return (
           <div className="space-y-8 animate-slide-up">
             <div className="section-header">
-              <h3><i className="fa-solid fa-desktop"></i> Desktop App</h3>
+              <h3><Monitor /> Desktop App</h3>
               <p>Customize Pulse desktop app behavior on your system.</p>
             </div>
             <div className="bg-white dark:bg-zinc-900 border border-zinc-200 dark:border-zinc-800 rounded-xl p-6 space-y-6">
@@ -3088,7 +3090,7 @@ const Settings: React.FC<SettingsProps> = ({ user, isDarkMode, toggleTheme, init
                             }}
                             className="px-6 py-2.5 bg-zinc-100 dark:bg-zinc-800 text-zinc-700 dark:text-zinc-300 font-semibold rounded-full hover:bg-zinc-200 dark:hover:bg-zinc-700 transition"
                         >
-                            <i className="fa-solid fa-download mr-2"></i> Install App
+                            <Download className="mr-2" /> Install App
                         </button>
                     </div>
                 </div>
@@ -3097,32 +3099,32 @@ const Settings: React.FC<SettingsProps> = ({ user, isDarkMode, toggleTheme, init
                     <a href="/privacy" className="p-4 bg-white dark:bg-zinc-900 border border-zinc-200 dark:border-zinc-800 rounded-xl hover:border-blue-500 transition group">
                         <div className="flex items-center justify-between">
                             <span className="font-medium dark:text-white text-zinc-900">Privacy Policy</span>
-                            <i className="fa-solid fa-arrow-right text-zinc-400 group-hover:text-blue-500 transition"></i>
+                            <ArrowRight className="text-zinc-400 group-hover:text-blue-500 transition" />
                         </div>
                     </a>
                     <a href="/terms" className="p-4 bg-white dark:bg-zinc-900 border border-zinc-200 dark:border-zinc-800 rounded-xl hover:border-blue-500 transition group">
                         <div className="flex items-center justify-between">
                             <span className="font-medium dark:text-white text-zinc-900">Terms of Service</span>
-                            <i className="fa-solid fa-arrow-right text-zinc-400 group-hover:text-blue-500 transition"></i>
+                            <ArrowRight className="text-zinc-400 group-hover:text-blue-500 transition" />
                         </div>
                     </a>
                     <a href="https://github.com/pulse/pulse" target="_blank" rel="noreferrer" className="p-4 bg-white dark:bg-zinc-900 border border-zinc-200 dark:border-zinc-800 rounded-xl hover:border-blue-500 transition group">
                         <div className="flex items-center justify-between">
                             <span className="font-medium dark:text-white text-zinc-900">GitHub Repository</span>
-                            <i className="fa-brands fa-github text-zinc-400 group-hover:text-black dark:group-hover:text-white transition"></i>
+                            <Github className="text-zinc-400 group-hover:text-black dark:group-hover:text-white transition" />
                         </div>
                     </a>
                     <a href="#" className="p-4 bg-white dark:bg-zinc-900 border border-zinc-200 dark:border-zinc-800 rounded-xl hover:border-blue-500 transition group">
                         <div className="flex items-center justify-between">
                             <span className="font-medium dark:text-white text-zinc-900">Help Center</span>
-                            <i className="fa-solid fa-circle-question text-zinc-400 group-hover:text-blue-500 transition"></i>
+                            <HelpCircle className="text-zinc-400 group-hover:text-blue-500 transition" />
                         </div>
                     </a>
                 </div>
 
                 <div className="text-center pt-8 text-xs text-zinc-400">
                     <p>&copy; 2026 Pulse. All rights reserved.</p>
-                    <p className="mt-1">Made with <i className="fa-solid fa-heart text-rose-500 mx-1"></i> by the Pulse Team.</p>
+                    <p className="mt-1">Made with <Heart className="text-rose-500 mx-1" /> by the Pulse Team.</p>
                 </div>
             </div>
         );
@@ -3292,7 +3294,7 @@ const Settings: React.FC<SettingsProps> = ({ user, isDarkMode, toggleTheme, init
           <div className="space-y-8 animate-slide-up">
             <div className="section-header">
               <h3>
-                <i className="fa-solid fa-code"></i> Developer Tools
+                <Code /> Developer Tools
               </h3>
               <p>
                 Tools for development, testing, and debugging.
@@ -3303,7 +3305,7 @@ const Settings: React.FC<SettingsProps> = ({ user, isDarkMode, toggleTheme, init
             <div className="integration-card">
               <div className="integration-header">
                 <div className="integration-icon" style={{ background: 'linear-gradient(135deg, #10B981, #06B6D4)' }}>
-                  <i className="fa-solid fa-key" style={{ color: 'white' }}></i>
+                  <Key />
                 </div>
                 <div className="integration-info" style={{ flex: 1 }}>
                   <h4>API Keys</h4>
@@ -3315,7 +3317,7 @@ const Settings: React.FC<SettingsProps> = ({ user, isDarkMode, toggleTheme, init
                 {/* OpenAI API Key */}
                 <div className="space-y-2">
                   <label className="text-sm font-medium dark:text-white text-zinc-900 flex items-center gap-2">
-                    <i className="fa-solid fa-robot text-cyan-500"></i>
+                    <Bot className="text-cyan-500" />
                     OpenAI API Key
                     <span className="text-xs text-zinc-500 font-normal">(for Voice Agents)</span>
                   </label>
@@ -3349,12 +3351,12 @@ const Settings: React.FC<SettingsProps> = ({ user, isDarkMode, toggleTheme, init
                     >
                       {openaiKeySaved ? (
                         <>
-                          <i className="fa-solid fa-check"></i>
+                          <Check />
                           Saved!
                         </>
                       ) : (
                         <>
-                          <i className="fa-solid fa-save"></i>
+                          <Save />
                           Save
                         </>
                       )}
@@ -3388,7 +3390,7 @@ const Settings: React.FC<SettingsProps> = ({ user, isDarkMode, toggleTheme, init
                 {/* Gemini API Key */}
                 <div className="space-y-2 pt-4 border-t border-zinc-200 dark:border-zinc-700">
                   <label className="text-sm font-medium dark:text-white text-zinc-900 flex items-center gap-2">
-                    <i className="fa-solid fa-sparkles text-blue-500"></i>
+                    <Sparkles className="text-blue-500" />
                     Gemini API Key
                     <span className="text-xs text-zinc-500 font-normal">(for AI features & briefings)</span>
                   </label>
@@ -3422,12 +3424,12 @@ const Settings: React.FC<SettingsProps> = ({ user, isDarkMode, toggleTheme, init
                     >
                       {geminiKeySaved ? (
                         <>
-                          <i className="fa-solid fa-check"></i>
+                          <Check />
                           Saved!
                         </>
                       ) : (
                         <>
-                          <i className="fa-solid fa-save"></i>
+                          <Save />
                           Save
                         </>
                       )}
@@ -3464,7 +3466,7 @@ const Settings: React.FC<SettingsProps> = ({ user, isDarkMode, toggleTheme, init
             <div className="integration-card">
               <div className="integration-header">
                 <div className="integration-icon" style={{ background: 'linear-gradient(135deg, #3ECF8E, #1E9E6B)' }}>
-                  <i className="fa-solid fa-server" style={{ color: 'white' }}></i>
+                  <Server />
                 </div>
                 <div className="integration-info" style={{ flex: 1 }}>
                   <h4>Supabase Connection</h4>
@@ -3489,7 +3491,7 @@ const Settings: React.FC<SettingsProps> = ({ user, isDarkMode, toggleTheme, init
             <div className="integration-card">
               <div className="integration-header">
                 <div className="integration-icon" style={{ background: 'linear-gradient(135deg, #EC4899, #F43F5E)' }}>
-                  <i className="fa-solid fa-palette" style={{ color: 'white' }}></i>
+                  <Palette />
                 </div>
                 <div className="integration-info" style={{ flex: 1 }}>
                   <h4>Design Preview</h4>
@@ -3507,7 +3509,7 @@ const Settings: React.FC<SettingsProps> = ({ user, isDarkMode, toggleTheme, init
                     onClick={() => setShowDesignPreview(true)}
                     className="nothing-btn nothing-btn-primary"
                   >
-                    <i className="fa-solid fa-palette"></i>
+                    <Palette />
                     Open Design Preview
                   </button>
                 </div>
@@ -3518,7 +3520,7 @@ const Settings: React.FC<SettingsProps> = ({ user, isDarkMode, toggleTheme, init
             <div className="integration-card">
               <div className="integration-header">
                 <div className="integration-icon" style={{ background: 'linear-gradient(135deg, #8B5CF6, #6366F1)' }}>
-                  <i className="fa-solid fa-key" style={{ color: 'white' }}></i>
+                  <Key />
                 </div>
                 <div className="integration-info" style={{ flex: 1 }}>
                   <h4>Public API</h4>
@@ -3536,7 +3538,7 @@ const Settings: React.FC<SettingsProps> = ({ user, isDarkMode, toggleTheme, init
                     onClick={() => setShowApiKeysPanel(true)}
                     className="px-4 py-2.5 bg-violet-600 hover:bg-violet-700 text-white rounded-lg text-sm font-medium transition-colors flex items-center gap-2"
                   >
-                    <i className="fa-solid fa-key"></i>
+                    <Key />
                     Manage API Keys
                   </button>
                   <a
@@ -3544,7 +3546,7 @@ const Settings: React.FC<SettingsProps> = ({ user, isDarkMode, toggleTheme, init
                     target="_blank"
                     className="px-4 py-2.5 bg-zinc-100 dark:bg-zinc-800 hover:bg-zinc-200 dark:hover:bg-zinc-700 text-zinc-700 dark:text-zinc-300 rounded-lg text-sm font-medium transition-colors flex items-center gap-2"
                   >
-                    <i className="fa-solid fa-book"></i>
+                    <Book />
                     API Documentation
                   </a>
                 </div>
@@ -3591,7 +3593,7 @@ const Settings: React.FC<SettingsProps> = ({ user, isDarkMode, toggleTheme, init
           className="flex items-center gap-2 text-zinc-600 dark:text-zinc-400 hover:text-zinc-900 dark:hover:text-white transition"
           aria-label="Open settings menu"
         >
-          <i className="fa-solid fa-bars text-lg"></i>
+          <Menu className="text-lg" />
           <span className="font-semibold">
             {SECTIONS.find(s => s.id === activeSection)?.label || 'Settings'}
           </span>
@@ -3604,7 +3606,7 @@ const Settings: React.FC<SettingsProps> = ({ user, isDarkMode, toggleTheme, init
         className="ml-auto w-10 h-10 rounded-lg bg-zinc-100 dark:bg-zinc-800 flex items-center justify-center text-zinc-600 dark:text-zinc-400 hover:bg-zinc-200 dark:hover:bg-zinc-700 transition"
         aria-label="Close settings"
       >
-        <i className="fa-solid fa-xmark text-lg"></i>
+        <X className="text-lg" />
       </button>
     </div>
   );
@@ -3647,12 +3649,12 @@ const Settings: React.FC<SettingsProps> = ({ user, isDarkMode, toggleTheme, init
             className="md:hidden w-8 h-8 rounded-lg hover:bg-zinc-200 dark:hover:bg-zinc-800 flex items-center justify-center text-zinc-500 dark:text-zinc-400 transition"
             aria-label="Close menu"
           >
-            <i className="fa-solid fa-xmark"></i>
+            <X />
           </button>
         </div>
         {/* Search bar */}
         <div className="mb-3 relative">
-          <i className="fa-solid fa-magnifying-glass absolute left-3 top-1/2 -translate-y-1/2 text-zinc-400 text-xs pointer-events-none"></i>
+          <Search className="absolute left-3 top-1/2 -translate-y-1/2 text-zinc-400 text-xs pointer-events-none" />
           <input
             type="text"
             value={searchQuery}
@@ -3668,7 +3670,7 @@ const Settings: React.FC<SettingsProps> = ({ user, isDarkMode, toggleTheme, init
               className="absolute right-2 top-1/2 -translate-y-1/2 text-zinc-400 hover:text-zinc-600 dark:hover:text-zinc-200"
               aria-label="Clear search"
             >
-              <i className="fa-solid fa-xmark text-xs"></i>
+              <X className="text-xs" />
             </button>
           )}
         </div>
@@ -3693,7 +3695,7 @@ const Settings: React.FC<SettingsProps> = ({ user, isDarkMode, toggleTheme, init
             >
               <i className={`fa-solid ${section.icon} w-5 text-center transition-transform group-hover:scale-110`}></i>
               <span className="text-sm">{section.label}</span>
-              {activeSection === section.id && <i className="fa-solid fa-chevron-right ml-auto text-xs opacity-50"></i>}
+              {activeSection === section.id && <ChevronRight className="ml-auto text-xs opacity-50" />}
             </button>
           ))}
 
@@ -3722,7 +3724,7 @@ const Settings: React.FC<SettingsProps> = ({ user, isDarkMode, toggleTheme, init
                 >
                   <i className={`fa-solid ${section.icon} w-5 text-center transition-transform group-hover:scale-110`}></i>
                   <span className="text-sm">{section.label}</span>
-                  {activeSection === section.id && <i className="fa-solid fa-chevron-right ml-auto text-xs opacity-50"></i>}
+                  {activeSection === section.id && <ChevronRight className="ml-auto text-xs opacity-50" />}
                 </button>
               ))}
             </>

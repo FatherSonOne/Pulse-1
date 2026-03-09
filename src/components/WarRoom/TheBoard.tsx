@@ -12,6 +12,8 @@
 import React, { useState, useRef } from 'react';
 import { BoardNote, NoteType, NOTE_TYPE_CONFIG, BoardNoteMeta } from './useBoardNotes';
 
+import { Download, Link, Pin, Trash2, X } from 'lucide-react';
+
 // ─── Types ────────────────────────────────────────────────────────────────────
 
 export interface TheBoardProps {
@@ -128,7 +130,7 @@ const NoteCard: React.FC<{
             flexShrink: 0,
           }}
         >
-          <i className="fa fa-xmark" />
+          <X className="fa" />
         </button>
       </div>
 
@@ -158,7 +160,7 @@ const NoteCard: React.FC<{
             gap: 4,
           }}
         >
-          <i className="fa fa-link" style={{ fontSize: 9 }} />
+          <Link className="fa" />
           {note.sourceDocTitle}
         </div>
       )}
@@ -372,10 +374,7 @@ export const TheBoard: React.FC<TheBoardProps> = ({
               textAlign: 'center',
             }}
           >
-            <i
-              className="fa fa-thumbtack"
-              style={{ fontSize: 24, opacity: 0.2, color: 'var(--wr-text-muted)' }}
-            />
+            <Pin className="fa" />
             <div
               style={{
                 fontFamily: 'var(--wr-font-mono)',
@@ -425,7 +424,7 @@ export const TheBoard: React.FC<TheBoardProps> = ({
               letterSpacing: '0.06em',
             }}
           >
-            <i className="fa fa-download" style={{ fontSize: 10 }} />
+            <Download className="fa" />
             EXPORT .MD
           </button>
 
@@ -459,7 +458,7 @@ export const TheBoard: React.FC<TheBoardProps> = ({
                   cursor: 'pointer',
                 }}
               >
-                <i className="fa fa-xmark" />
+                <X className="fa" />
               </button>
             </>
           ) : (
@@ -476,7 +475,7 @@ export const TheBoard: React.FC<TheBoardProps> = ({
                 cursor: 'pointer',
               }}
             >
-              <i className="fa fa-trash" />
+              <Trash2 className="fa" />
             </button>
           )}
         </div>

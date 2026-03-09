@@ -1,5 +1,7 @@
 import { useState, useEffect, useRef, CSSProperties } from 'react';
 
+import { ImageOff } from 'lucide-react';
+
 interface LazyImageProps {
   src: string;
   alt: string;
@@ -126,7 +128,7 @@ export function LazyImage({
       {/* Error state */}
       {hasError && (
         <div className="absolute inset-0 flex flex-col items-center justify-center bg-zinc-100 dark:bg-zinc-800 text-zinc-400">
-          <i className="fa-solid fa-image-slash text-2xl mb-2"></i>
+          <ImageOff className="text-2xl mb-2" />
           <span className="text-xs">Failed to load image</span>
         </div>
       )}

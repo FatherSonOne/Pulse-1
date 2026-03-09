@@ -2,6 +2,8 @@
 import React, { useState, useEffect, useRef, useCallback } from 'react';
 import type { SmartComposeSuggestion } from '../../types/messageEnhancements';
 
+import { Wand2 } from 'lucide-react';
+
 interface SmartComposeEnhancedProps {
   value: string;
   onChange: (value: string) => void;
@@ -149,7 +151,7 @@ export const SmartComposeEnhanced: React.FC<SmartComposeEnhancedProps> = ({
         <div className="absolute bottom-full left-0 right-0 mb-2 bg-white dark:bg-zinc-800 rounded-xl shadow-2xl border border-zinc-200 dark:border-zinc-700 overflow-hidden z-50 animate-scale-in">
           <div className="px-3 py-2 border-b border-zinc-200 dark:border-zinc-700 bg-zinc-50 dark:bg-zinc-900 flex items-center justify-between">
             <div className="flex items-center gap-2">
-              <i className="fa-solid fa-wand-magic-sparkles text-purple-500 text-xs" />
+              <Wand2 className="text-purple-500 text-xs" />
               <span className="text-xs font-bold text-zinc-600 dark:text-zinc-300">Smart Suggestions</span>
             </div>
             <span className="text-[10px] text-zinc-400">

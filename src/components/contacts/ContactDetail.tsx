@@ -18,6 +18,8 @@ import { ContactGoalModal } from './ContactGoalModal';
 import { RelationshipAutopilotToggle } from './RelationshipAutopilotToggle';
 import { supabase } from '../../services/supabase';
 
+import { ArrowRight, Cake, Check, Clock, Globe, Lightbulb, Loader2, Mail, MailOpen, MapPin, MessageSquare, Pen, Phone, Radio, Sparkles, Star, Target, Video, X } from 'lucide-react';
+
 // ==================== TYPES ====================
 
 interface ContactDetailProps {
@@ -166,7 +168,7 @@ export const ContactDetail: React.FC<ContactDetailProps> = ({
             onClick={onClose}
             className="p-2 hover:bg-zinc-100 dark:hover:bg-zinc-800 rounded-lg text-zinc-500 transition"
           >
-            <i className="fa-solid fa-xmark" />
+            <X />
           </button>
           <span className="font-semibold text-zinc-900 dark:text-white text-sm">Contact Details</span>
         </div>
@@ -176,7 +178,7 @@ export const ContactDetail: React.FC<ContactDetailProps> = ({
             className="p-2 hover:bg-zinc-100 dark:hover:bg-zinc-800 rounded-lg text-zinc-500 transition"
             title="Edit contact"
           >
-            <i className="fa-solid fa-pen text-sm" />
+            <Pen className="text-sm" />
           </button>
           {onRefreshInsights && (
             <button
@@ -211,7 +213,7 @@ export const ContactDetail: React.FC<ContactDetailProps> = ({
               {/* VIP star */}
               {profile?.isVip && (
                 <div className="absolute -top-1 -right-1 w-6 h-6 rounded-full bg-amber-400 flex items-center justify-center shadow-sm">
-                  <i className="fa-solid fa-star text-xs text-white" />
+                  <Star className="text-xs text-white" />
                 </div>
               )}
             </div>
@@ -280,21 +282,21 @@ export const ContactDetail: React.FC<ContactDetailProps> = ({
               onClick={() => onAction('message', contact.id)}
               className="flex flex-col items-center gap-1 p-3 rounded-xl bg-blue-50 dark:bg-blue-900/20 text-blue-600 dark:text-blue-400 hover:bg-blue-100 dark:hover:bg-blue-900/30 transition"
             >
-              <i className="fa-solid fa-message text-lg" />
+              <MessageSquare className="text-lg" />
               <span className="text-xs font-bold uppercase">Message</span>
             </button>
             <button
               onClick={() => onAction('vox', contact.id)}
               className="flex flex-col items-center gap-1 p-3 rounded-xl bg-orange-50 dark:bg-orange-900/20 text-orange-600 dark:text-orange-400 hover:bg-orange-100 dark:hover:bg-orange-900/30 transition"
             >
-              <i className="fa-solid fa-walkie-talkie text-lg" />
+              <Radio className="text-lg" />
               <span className="text-xs font-bold uppercase">Vox</span>
             </button>
             <button
               onClick={() => onAction('meet', contact.id)}
               className="flex flex-col items-center gap-1 p-3 rounded-xl bg-green-50 dark:bg-green-900/20 text-green-600 dark:text-green-400 hover:bg-green-100 dark:hover:bg-green-900/30 transition"
             >
-              <i className="fa-solid fa-video text-lg" />
+              <Video className="text-lg" />
               <span className="text-xs font-bold uppercase">Meet</span>
             </button>
           </div>
@@ -320,7 +322,7 @@ export const ContactDetail: React.FC<ContactDetailProps> = ({
                       className="w-full flex items-center justify-between text-left mb-1.5"
                     >
                       <span className="text-xs font-semibold text-purple-700 dark:text-purple-300 flex items-center gap-1.5">
-                        <i className="fa-solid fa-sparkles text-xs" />
+                        <Sparkles className="text-xs" />
                         AI Summary
                       </span>
                       <i className={`fa-solid fa-chevron-${summaryExpanded ? 'up' : 'down'} text-xs text-purple-400`} />
@@ -337,7 +339,7 @@ export const ContactDetail: React.FC<ContactDetailProps> = ({
                 {profile.aiNextActionSuggestion && (
                   <div className="flex items-start gap-3 p-3 bg-indigo-50 dark:bg-indigo-900/15 rounded-xl border border-indigo-100 dark:border-indigo-900/30">
                     <div className="w-6 h-6 rounded-full bg-indigo-100 dark:bg-indigo-900/40 flex items-center justify-center flex-shrink-0 mt-0.5">
-                      <i className="fa-solid fa-lightbulb text-xs text-indigo-500" />
+                      <Lightbulb className="text-xs text-indigo-500" />
                     </div>
                     <div className="flex-1">
                       <p className="text-xs font-semibold text-indigo-700 dark:text-indigo-300 mb-0.5">Suggested next step</p>
@@ -365,7 +367,7 @@ export const ContactDetail: React.FC<ContactDetailProps> = ({
                   )}
                   {profile.avgResponseTimeHours !== undefined && (
                     <div className="flex-1 flex items-center gap-2 p-2.5 bg-zinc-50 dark:bg-zinc-900 rounded-lg border border-zinc-100 dark:border-zinc-800">
-                      <i className="fa-solid fa-clock text-xs text-zinc-400" />
+                      <Clock className="text-xs text-zinc-400" />
                       <div>
                         <div className="text-xs text-zinc-400">Avg reply</div>
                         <div className="text-xs font-semibold text-zinc-700 dark:text-zinc-300">
@@ -437,7 +439,7 @@ export const ContactDetail: React.FC<ContactDetailProps> = ({
                           }`}>
                             {suggestion.title}
                           </span>
-                          <i className="fa-solid fa-arrow-right text-zinc-300 group-hover:text-purple-500 transition text-xs" />
+                          <ArrowRight className="text-zinc-300 group-hover:text-purple-500 transition text-xs" />
                         </div>
                         <p className={`text-xs mt-0.5 ${
                           suggestion.type === 'warning' ? 'text-red-600 dark:text-red-400'
@@ -515,7 +517,7 @@ export const ContactDetail: React.FC<ContactDetailProps> = ({
                 }}
                 className="w-full flex items-center justify-center gap-2 py-2 text-xs font-semibold text-emerald-600 dark:text-emerald-400 bg-emerald-50 dark:bg-emerald-900/20 hover:bg-emerald-100 dark:hover:bg-emerald-900/30 rounded-xl border border-emerald-100 dark:border-emerald-800/40 transition"
               >
-                <i className="fa-solid fa-check" />
+                <Check />
                 Mark as done — schedule next
               </button>
             </div>
@@ -524,7 +526,7 @@ export const ContactDetail: React.FC<ContactDetailProps> = ({
               onClick={() => setGoalModalOpen(true)}
               className="w-full flex flex-col items-center justify-center gap-1.5 py-5 text-zinc-400 dark:text-zinc-500 border border-dashed border-zinc-200 dark:border-zinc-700 rounded-xl hover:border-indigo-300 dark:hover:border-indigo-700 hover:text-indigo-500 dark:hover:text-indigo-400 transition group"
             >
-              <i className="fa-solid fa-bullseye text-xl group-hover:scale-110 transition-transform" />
+              <Target className="text-xl group-hover:scale-110 transition-transform" />
               <span className="text-xs font-medium">Set a keep-in-touch goal</span>
               <span className="text-[11px] text-zinc-400 dark:text-zinc-500">Get reminded when it's time to reach out</span>
             </button>
@@ -553,7 +555,7 @@ export const ContactDetail: React.FC<ContactDetailProps> = ({
             {contact.email && (
               <div className="flex items-center gap-3 text-sm">
                 <div className="w-8 h-8 rounded-lg bg-zinc-100 dark:bg-zinc-800 flex items-center justify-center text-zinc-500 flex-shrink-0">
-                  <i className="fa-solid fa-envelope text-xs" />
+                  <Mail className="text-xs" />
                 </div>
                 <span className="text-zinc-700 dark:text-zinc-300 select-all truncate">{contact.email}</span>
               </div>
@@ -561,7 +563,7 @@ export const ContactDetail: React.FC<ContactDetailProps> = ({
             {contact.phone && (
               <div className="flex items-center gap-3 text-sm">
                 <div className="w-8 h-8 rounded-lg bg-zinc-100 dark:bg-zinc-800 flex items-center justify-center text-zinc-500 flex-shrink-0">
-                  <i className="fa-solid fa-phone text-xs" />
+                  <Phone className="text-xs" />
                 </div>
                 <span className="text-zinc-700 dark:text-zinc-300 select-all">{contact.phone}</span>
               </div>
@@ -569,7 +571,7 @@ export const ContactDetail: React.FC<ContactDetailProps> = ({
             {contact.address && (
               <div className="flex items-center gap-3 text-sm">
                 <div className="w-8 h-8 rounded-lg bg-zinc-100 dark:bg-zinc-800 flex items-center justify-center text-zinc-500 flex-shrink-0">
-                  <i className="fa-solid fa-location-dot text-xs" />
+                  <MapPin className="text-xs" />
                 </div>
                 <span className="text-zinc-700 dark:text-zinc-300">{contact.address}</span>
               </div>
@@ -577,7 +579,7 @@ export const ContactDetail: React.FC<ContactDetailProps> = ({
             {contact.website && (
               <div className="flex items-center gap-3 text-sm">
                 <div className="w-8 h-8 rounded-lg bg-zinc-100 dark:bg-zinc-800 flex items-center justify-center text-zinc-500 flex-shrink-0">
-                  <i className="fa-solid fa-globe text-xs" />
+                  <Globe className="text-xs" />
                 </div>
                 <a
                   href={contact.website}
@@ -592,7 +594,7 @@ export const ContactDetail: React.FC<ContactDetailProps> = ({
             {contact.birthday && (
               <div className="flex items-center gap-3 text-sm">
                 <div className="w-8 h-8 rounded-lg bg-zinc-100 dark:bg-zinc-800 flex items-center justify-center text-zinc-500 flex-shrink-0">
-                  <i className="fa-solid fa-cake-candles text-xs" />
+                  <Cake className="text-xs" />
                 </div>
                 <span className="text-zinc-700 dark:text-zinc-300">{contact.birthday}</span>
               </div>
@@ -629,11 +631,11 @@ export const ContactDetail: React.FC<ContactDetailProps> = ({
           <SectionHeader icon="fa-solid fa-envelope-clock" label="Email History" />
           {emailHistoryLoading ? (
             <div className="flex items-center justify-center py-6">
-              <i className="fa-solid fa-spinner animate-spin text-indigo-500" />
+              <Loader2 className="animate-spin text-indigo-500" />
             </div>
           ) : emailHistory.length === 0 ? (
             <div className="flex flex-col items-center justify-center py-6 text-zinc-400">
-              <i className="fa-solid fa-envelope-open text-2xl mb-2" />
+              <MailOpen className="text-2xl mb-2" />
               <p className="text-sm">No emails found</p>
             </div>
           ) : (

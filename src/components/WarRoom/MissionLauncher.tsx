@@ -8,6 +8,8 @@ import React, { useEffect } from 'react';
 import { MissionType } from './ModeSwitcher';
 import './MissionLauncher.css';
 
+import { ArrowRight, X } from 'lucide-react';
+
 interface MissionLauncherProps {
   onMissionSelect: (mission: MissionType) => void;
   onClose: () => void;
@@ -114,7 +116,7 @@ export const MissionLauncher: React.FC<MissionLauncherProps> = ({
             onClick={onClose}
             aria-label="Close mission launcher"
           >
-            <i className="fa fa-times" />
+            <X className="fa" />
           </button>
         </header>
 
@@ -145,7 +147,7 @@ export const MissionLauncher: React.FC<MissionLauncherProps> = ({
 
                 <div className="ml-card-action">
                   <span>Launch Mission</span>
-                  <i className="fa fa-arrow-right" />
+                  <ArrowRight className="fa" />
                 </div>
               </div>
             </button>

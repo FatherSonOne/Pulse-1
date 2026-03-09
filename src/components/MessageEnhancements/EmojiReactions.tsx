@@ -1,5 +1,7 @@
 import React, { useState, useMemo, useCallback, useRef, useEffect } from 'react';
 
+import { Plus } from 'lucide-react';
+
 // Types
 interface Reaction {
   emoji: string;
@@ -495,7 +497,7 @@ export const EmojiReactions: React.FC<EmojiReactionsProps> = ({
           (e.target as HTMLButtonElement).style.color = '#64748b';
         }}
       >
-        <i className="fa-solid fa-plus" />
+        <Plus />
       </button>
 
       <EmojiPicker

@@ -1,5 +1,7 @@
 import React, { useState, useMemo, useCallback } from 'react';
 
+import { BookUser, Calendar, Globe, Mail, Phone, Pin, Plus, Star, StickyNote } from 'lucide-react';
+
 // Types
 interface ContactNote {
   id: string;
@@ -481,7 +483,7 @@ export const ContactNotes: React.FC<ContactNotesProps> = ({
     <div style={styles.container}>
       <div style={styles.header}>
         <div style={styles.title}>
-          <i className="fa-solid fa-address-book" />
+          <BookUser />
           Contact Details
         </div>
       </div>
@@ -550,7 +552,7 @@ export const ContactNotes: React.FC<ContactNotesProps> = ({
               return (
                 <div key={note.id} style={styles.noteCard}>
                   {note.isPinned && (
-                    <i className="fa-solid fa-thumbtack" style={styles.pinIcon} />
+                    <Pin />
                   )}
                   <div style={styles.noteHeader}>
                     <span style={{
@@ -581,7 +583,7 @@ export const ContactNotes: React.FC<ContactNotesProps> = ({
               style={styles.addNoteButton}
               onClick={() => setShowNewNote(true)}
             >
-              <i className="fa-solid fa-plus" />
+              <Plus />
               Add Note
             </button>
           </>
@@ -635,24 +637,24 @@ export const ContactNotes: React.FC<ContactNotesProps> = ({
               </div>
               <div style={styles.profileDetails}>
                 <div style={styles.detailItem}>
-                  <i className="fa-solid fa-envelope" />
+                  <Mail />
                   {profile.email}
                 </div>
                 {profile.phone && (
                   <div style={styles.detailItem}>
-                    <i className="fa-solid fa-phone" />
+                    <Phone />
                     {profile.phone}
                   </div>
                 )}
                 {profile.timezone && (
                   <div style={styles.detailItem}>
-                    <i className="fa-solid fa-globe" />
+                    <Globe />
                     {profile.timezone}
                   </div>
                 )}
                 {profile.preferredContactMethod && (
                   <div style={styles.detailItem}>
-                    <i className="fa-solid fa-star" />
+                    <Star />
                     Prefers {profile.preferredContactMethod}
                   </div>
                 )}
@@ -666,7 +668,7 @@ export const ContactNotes: React.FC<ContactNotesProps> = ({
                 </div>
                 {profile.importantDates.map((date, i) => (
                   <div key={i} style={{ ...styles.detailItem, marginBottom: '8px' }}>
-                    <i className="fa-solid fa-calendar" />
+                    <Calendar />
                     <span>{date.label}: {date.date.toLocaleDateString('en-US', { month: 'long', day: 'numeric' })}</span>
                   </div>
                 ))}
@@ -714,7 +716,7 @@ export const QuickNoteButton: React.FC<{
         gap: '4px'
       }}
     >
-      <i className="fa-solid fa-sticky-note" />
+      <StickyNote />
       Add Note
     </button>
   );

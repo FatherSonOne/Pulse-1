@@ -12,7 +12,9 @@ import InlineToolsMenu from './InlineToolsMenu';
 import { useSlashCommands } from '../../hooks/useSlashCommands';
 import { getToolOverlayType, saveRecentTool } from '../../services/toolRegistry';
 import './MessageInput.css';
+import { ArrowUp, LayoutGrid, Paperclip, Smile, Wand2 } from 'lucide-react';
 import type {
+
   MessageInputProps,
   AttachmentFile,
   DraftState,
@@ -426,7 +428,7 @@ const MessageInput: React.FC<MessageInputProps> = ({
                   aria-label="Attach file"
                   title="Attach file"
                 >
-                  <i className="fa-solid fa-paperclip" />
+                  <Paperclip />
                 </button>
                 <button
                   className="simple-action-button w-12 h-12"
@@ -434,7 +436,7 @@ const MessageInput: React.FC<MessageInputProps> = ({
                   aria-label="Add emoji"
                   title="Add emoji"
                 >
-                  <i className="fa-regular fa-face-smile" />
+                  <Smile />
                 </button>
                 {voiceEnabled && (
                   <button
@@ -471,7 +473,7 @@ const MessageInput: React.FC<MessageInputProps> = ({
                     aria-label="Toggle AI suggestions"
                     aria-pressed={showAI}
                   >
-                    <i className="fa-solid fa-wand-magic-sparkles ai-toggle-icon" />
+                    <Wand2 className="ai-toggle-icon" />
                     <span className="ai-toggle-label">AI</span>
                   </button>
                 )}
@@ -484,7 +486,7 @@ const MessageInput: React.FC<MessageInputProps> = ({
                   aria-label="Open tools menu"
                   aria-pressed={showToolsMenu}
                 >
-                  <i className="fa-solid fa-grid-2" />
+                  <LayoutGrid />
                   <span className="tools-menu-label">Tools</span>
                 </button>
               </>
@@ -497,7 +499,7 @@ const MessageInput: React.FC<MessageInputProps> = ({
             disabled={!content.trim() || disabled || isOverLimit}
             aria-label="Send message"
           >
-            <i className="fa-solid fa-arrow-up" />
+            <ArrowUp />
           </button>
         </div>
       </div>

@@ -5,6 +5,8 @@
 
 import React, { useState, useEffect, useRef } from 'react';
 
+import { X } from 'lucide-react';
+
 interface SearchBoxProps {
   value: string;
   onChange: (value: string) => void;
@@ -94,7 +96,7 @@ export const SearchBox: React.FC<SearchBoxProps> = ({
             "
             aria-label="Clear search"
           >
-            <i className="fa-solid fa-times text-xs"></i>
+            <X className="text-xs" />
           </button>
         )}
 

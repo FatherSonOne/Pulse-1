@@ -13,6 +13,8 @@ import { PrivacyTab } from './PrivacyDashboardPrivacyTab';
 import { disconnectGoogleAccount } from '../../services/authService';
 import toast from 'react-hot-toast';
 
+import { AlertTriangle, Bell, Check, Download, ExternalLink, FileArchive, FileOutput, Info, Loader2, Lock, LogOut, Plug, RefreshCw, Shield, ShieldHalf, Trash2, TrendingUp, Unlink, X } from 'lucide-react';
+
 interface PrivacyDashboardProps {
   isOpen: boolean;
   onClose: () => void;
@@ -476,7 +478,7 @@ export const PrivacyDashboard: React.FC<PrivacyDashboardProps> = ({
           <div className="bg-white dark:bg-zinc-900 rounded-2xl shadow-2xl max-w-md w-full mx-4 p-6 border border-zinc-200 dark:border-zinc-800">
             <div className="text-center mb-6">
               <div className="w-16 h-16 rounded-full bg-green-100 dark:bg-green-900/20 flex items-center justify-center mx-auto mb-4">
-                <i className="fa-solid fa-shield-halved text-3xl text-green-600 dark:text-green-400"></i>
+                <ShieldHalf className="text-3xl text-green-600 dark:text-green-400" />
               </div>
               <h3 className="text-xl font-bold text-zinc-900 dark:text-white mb-2">
                 Set Up Two-Factor Authentication
@@ -540,7 +542,7 @@ export const PrivacyDashboard: React.FC<PrivacyDashboardProps> = ({
                 >
                   {loading ? (
                     <>
-                      <i className="fa-solid fa-spinner fa-spin mr-2"></i>
+                      <Loader2 className="mr-2 animate-spin" />
                       Verifying...
                     </>
                   ) : (
@@ -552,7 +554,7 @@ export const PrivacyDashboard: React.FC<PrivacyDashboardProps> = ({
               {/* Instructions */}
               <div className="bg-blue-50 dark:bg-blue-900/20 rounded-lg p-3 border border-blue-200 dark:border-blue-800">
                 <p className="text-xs text-blue-800 dark:text-blue-200">
-                  <i className="fa-solid fa-info-circle mr-2"></i>
+                  <Info className="mr-2" />
                   Use apps like Google Authenticator, Authy, or 1Password to scan the QR code.
                 </p>
               </div>
@@ -568,7 +570,7 @@ export const PrivacyDashboard: React.FC<PrivacyDashboardProps> = ({
         <div className="flex items-center justify-between px-6 py-4 border-b border-zinc-200 dark:border-zinc-800 bg-gradient-to-r from-rose-500/10 to-pink-500/10">
           <div className="flex items-center gap-3">
             <div className="w-10 h-10 rounded-lg bg-gradient-to-br from-rose-500 to-pink-500 flex items-center justify-center">
-              <i className="fa-solid fa-shield-halved text-white"></i>
+              <ShieldHalf className="text-white" />
             </div>
             <div>
               <h2 className="text-xl font-bold text-zinc-900 dark:text-white">Privacy & Connected Services</h2>
@@ -580,7 +582,7 @@ export const PrivacyDashboard: React.FC<PrivacyDashboardProps> = ({
             className="w-10 h-10 rounded-lg hover:bg-zinc-100 dark:hover:bg-zinc-800 flex items-center justify-center text-zinc-500 dark:text-zinc-400 hover:text-zinc-700 dark:hover:text-white transition"
             title="Close"
           >
-            <i className="fa-solid fa-xmark"></i>
+            <X />
           </button>
         </div>
 
@@ -594,7 +596,7 @@ export const PrivacyDashboard: React.FC<PrivacyDashboardProps> = ({
                 : 'text-zinc-600 dark:text-zinc-400 hover:text-zinc-900 dark:hover:text-white'
             }`}
           >
-            <i className="fa-solid fa-plug text-xs"></i>
+            <Plug className="text-xs" />
             <span>Services</span>
           </button>
           <button
@@ -605,7 +607,7 @@ export const PrivacyDashboard: React.FC<PrivacyDashboardProps> = ({
                 : 'text-zinc-600 dark:text-zinc-400 hover:text-zinc-900 dark:hover:text-white'
             }`}
           >
-            <i className="fa-solid fa-lock text-xs"></i>
+            <Lock className="text-xs" />
             <span>Privacy</span>
           </button>
           <button
@@ -616,7 +618,7 @@ export const PrivacyDashboard: React.FC<PrivacyDashboardProps> = ({
                 : 'text-zinc-600 dark:text-zinc-400 hover:text-zinc-900 dark:hover:text-white'
             }`}
           >
-            <i className="fa-solid fa-shield text-xs"></i>
+            <Shield className="text-xs" />
             <span>Security</span>
           </button>
           <button
@@ -627,7 +629,7 @@ export const PrivacyDashboard: React.FC<PrivacyDashboardProps> = ({
                 : 'text-zinc-600 dark:text-zinc-400 hover:text-zinc-900 dark:hover:text-white'
             }`}
           >
-            <i className="fa-solid fa-chart-line text-xs"></i>
+            <TrendingUp className="text-xs" />
             <span>Activity</span>
           </button>
         </div>
@@ -636,7 +638,7 @@ export const PrivacyDashboard: React.FC<PrivacyDashboardProps> = ({
         <div className="flex-1 overflow-y-auto p-6 min-h-[500px]">
           {loading ? (
             <div className="flex items-center justify-center h-64">
-              <i className="fa-solid fa-spinner fa-spin text-3xl text-rose-500"></i>
+              <Loader2 className="text-3xl text-rose-500 animate-spin" />
             </div>
           ) : (
             <>
@@ -646,7 +648,7 @@ export const PrivacyDashboard: React.FC<PrivacyDashboardProps> = ({
                   {/* Privacy Summary */}
                   <div className="bg-rose-50 dark:bg-rose-900/20 rounded-xl p-4 border border-rose-200 dark:border-rose-800">
                     <div className="flex items-start gap-3">
-                      <i className="fa-solid fa-info-circle text-rose-500 text-xl"></i>
+                      <Info className="text-rose-500 text-xl" />
                       <div className="flex-1">
                         <h3 className="font-semibold text-rose-900 dark:text-rose-100 mb-1">
                           How Pulse Uses Your Data
@@ -692,7 +694,7 @@ export const PrivacyDashboard: React.FC<PrivacyDashboardProps> = ({
                         <ul className="space-y-1">
                           {service.dataAccessed.map((access, idx) => (
                             <li key={idx} className="text-sm text-zinc-600 dark:text-zinc-400 flex items-start gap-2">
-                              <i className="fa-solid fa-check text-green-500 text-xs mt-1 flex-shrink-0"></i>
+                              <Check className="text-green-500 text-xs mt-1 flex-shrink-0" />
                               <span>{access}</span>
                             </li>
                           ))}
@@ -704,14 +706,14 @@ export const PrivacyDashboard: React.FC<PrivacyDashboardProps> = ({
                           onClick={() => handleRefreshService(service.name)}
                           className="px-3 py-2 text-sm bg-zinc-100 dark:bg-zinc-700 text-zinc-700 dark:text-zinc-300 rounded-lg hover:bg-zinc-200 dark:hover:bg-zinc-600 transition"
                         >
-                          <i className="fa-solid fa-rotate mr-2"></i>
+                          <RefreshCw className="mr-2" />
                           Refresh
                         </button>
                         <button
                           onClick={() => handleDisconnectService(service.name)}
                           className="px-3 py-2 text-sm bg-red-50 dark:bg-red-900/20 text-red-600 dark:text-red-400 rounded-lg hover:bg-red-100 dark:hover:bg-red-900/30 transition"
                         >
-                          <i className="fa-solid fa-unlink mr-2"></i>
+                          <Unlink className="mr-2" />
                           Disconnect
                         </button>
                       </div>
@@ -729,7 +731,7 @@ export const PrivacyDashboard: React.FC<PrivacyDashboardProps> = ({
                   className="flex items-center justify-between p-4 bg-white dark:bg-zinc-800/50 rounded-xl border border-zinc-200 dark:border-zinc-700 hover:border-zinc-300 dark:hover:border-zinc-600 transition group"
                 >
                   <div className="flex items-center gap-3">
-                    <i className="fa-brands fa-google text-rose-500 text-xl"></i>
+                    <ExternalLink className="text-rose-500 text-xl" />
                     <div>
                       <p className="text-sm font-medium text-zinc-900 dark:text-white">
                         Manage Google Account Permissions
@@ -739,7 +741,7 @@ export const PrivacyDashboard: React.FC<PrivacyDashboardProps> = ({
                       </p>
                     </div>
                   </div>
-                  <i className="fa-solid fa-external-link text-zinc-400 group-hover:text-zinc-600 dark:group-hover:text-zinc-300"></i>
+                  <ExternalLink className="text-zinc-400 group-hover:text-zinc-600 dark:group-hover:text-zinc-300" />
                 </a>
               </div>
             </div>
@@ -765,14 +767,14 @@ export const PrivacyDashboard: React.FC<PrivacyDashboardProps> = ({
                         onClick={handleExportData}
                         className="flex-1 px-4 py-2.5 bg-blue-600 hover:bg-blue-700 text-white rounded-lg text-sm font-medium transition flex items-center justify-center gap-2"
                       >
-                        <i className="fa-solid fa-file-export"></i>
+                        <FileOutput />
                         Export My Data
                       </button>
                       <button
                         onClick={handleDeleteData}
                         className="flex-1 px-4 py-2.5 bg-red-600 hover:bg-red-700 text-white rounded-lg text-sm font-medium transition flex items-center justify-center gap-2"
                       >
-                        <i className="fa-solid fa-trash"></i>
+                        <Trash2 />
                         Delete Account
                       </button>
                     </div>
@@ -867,7 +869,7 @@ export const PrivacyDashboard: React.FC<PrivacyDashboardProps> = ({
                       >
                         {loading ? (
                           <>
-                            <i className="fa-solid fa-spinner fa-spin mr-2"></i>
+                            <Loader2 className="mr-2 animate-spin" />
                             {mfaStatus.enabled ? 'Disabling...' : 'Setting up...'}
                           </>
                         ) : (
@@ -906,7 +908,7 @@ export const PrivacyDashboard: React.FC<PrivacyDashboardProps> = ({
                       {securityAlertsEnabled && (
                         <div className="bg-zinc-50 dark:bg-zinc-900/50 rounded-lg p-3 border border-zinc-200 dark:border-zinc-700">
                           <p className="text-xs text-zinc-600 dark:text-zinc-400">
-                            <i className="fa-solid fa-bell text-rose-500 mr-2"></i>
+                            <Bell className="text-rose-500 mr-2" />
                             We'll send you email alerts when we detect unusual activity on your account
                           </p>
                         </div>
@@ -921,7 +923,7 @@ export const PrivacyDashboard: React.FC<PrivacyDashboardProps> = ({
                       disabled={loading || sessions.filter(s => !s.current).length === 0}
                       className="w-full px-4 py-3 bg-zinc-100 dark:bg-zinc-800 text-zinc-900 dark:text-white rounded-lg hover:bg-zinc-200 dark:hover:bg-zinc-700 transition font-medium disabled:opacity-50 disabled:cursor-not-allowed"
                     >
-                      <i className="fa-solid fa-right-from-bracket mr-2"></i>
+                      <LogOut className="mr-2" />
                       Sign Out of All Other Devices
                     </button>
                     {sessions.filter(s => !s.current).length === 0 && (
@@ -1015,7 +1017,7 @@ export const PrivacyDashboard: React.FC<PrivacyDashboardProps> = ({
                             <div className="flex items-center justify-between">
                               <div className="flex items-center gap-3">
                                 <div className="w-10 h-10 rounded-lg bg-blue-100 dark:bg-blue-900/20 flex items-center justify-center">
-                                  <i className="fa-solid fa-file-zipper text-blue-600 dark:text-blue-400"></i>
+                                  <FileArchive className="text-blue-600 dark:text-blue-400" />
                                 </div>
                                 <div>
                                   <h4 className="font-semibold text-zinc-900 dark:text-white">{download.type}</h4>
@@ -1025,7 +1027,7 @@ export const PrivacyDashboard: React.FC<PrivacyDashboardProps> = ({
                                 </div>
                               </div>
                               <button className="px-3 py-1.5 text-sm bg-rose-50 dark:bg-rose-900/20 text-rose-600 dark:text-rose-400 rounded-lg hover:bg-rose-100 dark:hover:bg-rose-900/30 transition">
-                                <i className="fa-solid fa-download mr-1"></i>
+                                <Download className="mr-1" />
                                 Download
                               </button>
                             </div>
@@ -1054,7 +1056,7 @@ export const PrivacyDashboard: React.FC<PrivacyDashboardProps> = ({
             rel="noopener noreferrer"
             className="text-sm text-rose-600 dark:text-rose-400 hover:underline"
           >
-            Privacy Policy <i className="fa-solid fa-external-link text-xs ml-1"></i>
+            Privacy Policy <ExternalLink className="text-xs ml-1" />
           </a>
         </div>
       </div>
@@ -1066,7 +1068,7 @@ export const PrivacyDashboard: React.FC<PrivacyDashboardProps> = ({
         <div className="bg-white dark:bg-zinc-900 rounded-2xl p-6 max-w-md w-full shadow-2xl border border-zinc-200 dark:border-zinc-700">
           <div className="flex items-center gap-3 mb-4">
             <div className="w-10 h-10 rounded-full bg-red-100 dark:bg-red-900/30 flex items-center justify-center">
-              <i className="fa-solid fa-triangle-exclamation text-red-600 dark:text-red-400"></i>
+              <AlertTriangle className="text-red-600 dark:text-red-400" />
             </div>
             <div>
               <h3 className="font-bold text-zinc-900 dark:text-white">Delete Account</h3>

@@ -16,6 +16,8 @@ import React, { useState, useRef } from 'react';
 import { KnowledgeDoc } from '../../services/ragService';
 import { WarRoomMode } from './ModeSwitcher';
 
+import { Compass, Database, Eye, Plus, Satellite, Trash2, Upload, Wand2 } from 'lucide-react';
+
 // ─── Types ────────────────────────────────────────────────────────────────────
 
 export interface IntelDeskProps {
@@ -198,7 +200,7 @@ const SourceCard: React.FC<{
               flexShrink: 0,
             }}
           >
-            <i className="fa fa-eye" />
+            <Eye className="fa" />
           </button>
         )}
 
@@ -216,7 +218,7 @@ const SourceCard: React.FC<{
             flexShrink: 0,
           }}
         >
-          <i className="fa fa-trash" />
+          <Trash2 className="fa" />
         </button>
       </div>
 
@@ -252,10 +254,7 @@ const UploadCard: React.FC<{ fileName: string; progress: number }> = ({ fileName
     }}
   >
     <div style={{ display: 'flex', alignItems: 'center', gap: 7 }}>
-      <i
-        className="fa fa-arrow-up-from-bracket wr-data-pulse"
-        style={{ fontSize: 12, color: 'var(--wr-accent-primary)', width: 14, textAlign: 'center' }}
-      />
+      <Upload className="fa wr-data-pulse" />
       <div style={{ flex: 1, minWidth: 0 }}>
         <div
           style={{
@@ -384,7 +383,7 @@ export const IntelDesk: React.FC<IntelDeskProps> = ({
             flexShrink: 0,
           }}
         >
-          <i className="fa fa-plus" style={{ fontSize: 10 }} />
+          <Plus className="fa" />
           <span
             style={{
               fontFamily: 'var(--wr-font-mono)',
@@ -489,14 +488,7 @@ export const IntelDesk: React.FC<IntelDeskProps> = ({
           gap: 8,
           flexShrink: 0,
         }}>
-          <i
-            className="fa fa-satellite-dish"
-            style={{
-              fontSize: 11,
-              color: activeCount === 0 ? '#ef4444' : '#06b6d4',
-              flexShrink: 0,
-            }}
-          />
+          <Satellite className="fa" />
           <span style={{
             fontFamily: 'var(--wr-font-mono)',
             fontSize: 10,
@@ -538,10 +530,7 @@ export const IntelDesk: React.FC<IntelDeskProps> = ({
               textAlign: 'center',
             }}
           >
-            <i
-              className="fa fa-database"
-              style={{ fontSize: 26, opacity: 0.2, color: 'var(--wr-text-muted)' }}
-            />
+            <Database className="fa" />
             <div>
               <div
                 style={{
@@ -600,10 +589,7 @@ export const IntelDesk: React.FC<IntelDeskProps> = ({
             cursor: 'pointer',
           }}
         >
-          <i
-            className="fa fa-compass"
-            style={{ fontSize: 11, color: 'var(--wr-accent-warning)', flexShrink: 0 }}
-          />
+          <Compass className="fa" />
           <span
             style={{
               fontFamily: 'var(--wr-font-mono)',
@@ -653,7 +639,7 @@ export const IntelDesk: React.FC<IntelDeskProps> = ({
                   lineHeight: 1.6,
                 }}
               >
-                <i className="fa fa-wand-magic-sparkles" style={{ marginRight: 5, color: 'var(--wr-accent-warning)' }} />
+                <Wand2 className="fa" />
                 AI question generation activates in Intel Mode (Phase 4)
               </div>
             )}

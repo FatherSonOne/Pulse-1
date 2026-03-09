@@ -3,6 +3,8 @@ import React, { useState, useEffect } from 'react';
 import { supabase } from '../../services/supabase';
 import toast from 'react-hot-toast';
 
+import { Check, Loader2, Plus, Tags, Trash2, X } from 'lucide-react';
+
 interface EmailLabel {
   id: string;
   user_id: string;
@@ -184,7 +186,7 @@ export const LabelManager: React.FC<LabelManagerProps> = ({
         <div className="flex items-center justify-between px-6 py-4 border-b border-stone-200 dark:border-zinc-800">
           <div className="flex items-center gap-3">
             <div className="w-10 h-10 rounded-xl bg-gradient-to-br from-violet-500 to-purple-500 flex items-center justify-center">
-              <i className="fa-solid fa-tags text-white"></i>
+              <Tags className="text-white" />
             </div>
             <div>
               <h2 id="label-manager-title" className="text-lg font-semibold text-stone-900 dark:text-white">
@@ -200,7 +202,7 @@ export const LabelManager: React.FC<LabelManagerProps> = ({
             className="w-8 h-8 rounded-lg hover:bg-stone-100 dark:hover:bg-zinc-800 flex items-center justify-center text-stone-500 dark:text-zinc-500 hover:text-stone-700 dark:hover:text-white transition"
             aria-label="Close"
           >
-            <i className="fa-solid fa-xmark"></i>
+            <X />
           </button>
         </div>
 
@@ -208,7 +210,7 @@ export const LabelManager: React.FC<LabelManagerProps> = ({
         <div className="overflow-y-auto max-h-[50vh] p-6">
           {loading ? (
             <div className="flex items-center justify-center py-8">
-              <i className="fa-solid fa-circle-notch fa-spin text-2xl text-stone-400 dark:text-zinc-600"></i>
+              <Loader2 className="text-2xl text-stone-400 dark:text-zinc-600 animate-spin" />
             </div>
           ) : (
             <>
@@ -216,7 +218,7 @@ export const LabelManager: React.FC<LabelManagerProps> = ({
               <div className="space-y-2">
                 {labels.length === 0 && !showCreate && (
                   <div className="text-center py-8 text-stone-500 dark:text-zinc-500">
-                    <i className="fa-solid fa-tags text-3xl mb-3 opacity-50"></i>
+                    <Tags className="text-3xl mb-3 opacity-50" />
                     <p>No labels yet</p>
                     <p className="text-sm mt-1">Create your first label to organize emails</p>
                   </div>
@@ -251,7 +253,7 @@ export const LabelManager: React.FC<LabelManagerProps> = ({
                           : 'border-stone-300 dark:border-zinc-600'
                       }`}>
                         {selectedLabels.has(label.name) && (
-                          <i className="fa-solid fa-check text-white text-xs"></i>
+                          <Check className="text-white text-xs" />
                         )}
                       </div>
                     )}
@@ -266,7 +268,7 @@ export const LabelManager: React.FC<LabelManagerProps> = ({
                         className="w-7 h-7 rounded hover:bg-stone-200 dark:hover:bg-zinc-700 flex items-center justify-center text-stone-400 dark:text-zinc-500 hover:text-red-500 transition"
                         aria-label={`Delete ${label.name} label`}
                       >
-                        <i className="fa-solid fa-trash text-xs"></i>
+                        <Trash2 className="text-xs" />
                       </button>
                     )}
                   </div>
@@ -327,7 +329,7 @@ export const LabelManager: React.FC<LabelManagerProps> = ({
                   onClick={() => setShowCreate(true)}
                   className="mt-4 w-full flex items-center justify-center gap-2 px-4 py-3 bg-stone-100 dark:bg-zinc-800/50 hover:bg-stone-200 dark:hover:bg-zinc-800 rounded-lg text-stone-600 dark:text-zinc-400 text-sm font-medium transition"
                 >
-                  <i className="fa-solid fa-plus"></i>
+                  <Plus />
                   Create New Label
                 </button>
               )}

@@ -5,6 +5,8 @@ import { adminService, AdminUser, AdminSettings, DashboardStats, ActivityLogEntr
 import SearchAnalyticsDashboard from './admin/SearchAnalyticsDashboard';
 import ActivityMonitor from './admin/ActivityMonitor';
 
+import { ArrowLeft, Ban, FileOutput, FileSpreadsheet, History, ListChecks, Search, Server, ShieldHalf, Trash2, User } from 'lucide-react';
+
 interface AdminDashboardProps {
   userId: string;
 }
@@ -230,7 +232,7 @@ const AdminDashboard: React.FC<AdminDashboardProps> = ({ userId }) => {
           <div>
             <h1 className="text-2xl font-bold text-zinc-900 dark:text-white flex items-center gap-3">
               <div className="w-10 h-10 rounded-xl bg-gradient-to-br from-indigo-600 to-purple-600 flex items-center justify-center shadow-lg">
-                <i className="fa-solid fa-shield-halved text-white"></i>
+                <ShieldHalf className="text-white" />
               </div>
               Admin Dashboard
             </h1>
@@ -335,7 +337,7 @@ const AdminDashboard: React.FC<AdminDashboardProps> = ({ userId }) => {
               {/* Recent Activity */}
               <div className="bg-zinc-50 dark:bg-zinc-900 rounded-2xl p-6 border border-zinc-200 dark:border-zinc-800">
                 <h3 className="text-lg font-semibold text-zinc-900 dark:text-white mb-4 flex items-center gap-2">
-                  <i className="fa-solid fa-clock-rotate-left text-zinc-500"></i>
+                  <History className="text-zinc-500" />
                   Recent Activity
                 </h3>
                 <div className="space-y-3">
@@ -374,7 +376,7 @@ const AdminDashboard: React.FC<AdminDashboardProps> = ({ userId }) => {
               {/* Activity Log */}
               <div className="bg-zinc-50 dark:bg-zinc-900 rounded-2xl p-6 border border-zinc-200 dark:border-zinc-800">
                 <h3 className="text-lg font-semibold text-zinc-900 dark:text-white mb-4 flex items-center gap-2">
-                  <i className="fa-solid fa-list-check text-zinc-500"></i>
+                  <ListChecks className="text-zinc-500" />
                   Activity Log
                 </h3>
                 <div className="space-y-3">
@@ -408,7 +410,7 @@ const AdminDashboard: React.FC<AdminDashboardProps> = ({ userId }) => {
               <div className="flex items-center justify-between">
                 <div className="flex items-center gap-4">
                   <div className="w-12 h-12 rounded-xl bg-emerald-500/20 flex items-center justify-center">
-                    <i className="fa-solid fa-server text-emerald-500 text-xl"></i>
+                    <Server className="text-emerald-500 text-xl" />
                   </div>
                   <div>
                     <h4 className="font-semibold text-zinc-900 dark:text-white">
@@ -451,7 +453,7 @@ const AdminDashboard: React.FC<AdminDashboardProps> = ({ userId }) => {
                     placeholder="Search users..."
                     className="w-full bg-zinc-100 dark:bg-zinc-900 border border-zinc-200 dark:border-zinc-800 rounded-xl pl-10 pr-4 py-2.5 text-sm text-zinc-900 dark:text-white placeholder-zinc-500 outline-none focus:border-indigo-500 transition"
                   />
-                  <i className="fa-solid fa-magnifying-glass absolute left-3.5 top-3 text-zinc-500"></i>
+                  <Search className="absolute left-3.5 top-3 text-zinc-500" />
                 </div>
                 <div className="flex gap-2">
                   <select
@@ -524,7 +526,7 @@ const AdminDashboard: React.FC<AdminDashboardProps> = ({ userId }) => {
                       onClick={() => setSelectedUser(null)}
                       className="md:hidden text-zinc-500 mb-4 flex items-center gap-2 text-xs hover:text-zinc-900 dark:hover:text-white transition"
                     >
-                      <i className="fa-solid fa-arrow-left"></i> Back to list
+                      <ArrowLeft /> Back to list
                     </button>
 
                     <div className="flex items-start gap-4">
@@ -633,14 +635,14 @@ const AdminDashboard: React.FC<AdminDashboardProps> = ({ userId }) => {
                         onClick={() => handleUpdateUserStatus(selectedUser.id, 'suspended')}
                         className="px-4 py-2 border border-red-300 dark:border-red-800 text-red-600 dark:text-red-400 rounded-xl text-sm font-medium hover:bg-red-100 dark:hover:bg-red-900/30 transition"
                       >
-                        <i className="fa-solid fa-ban mr-2"></i>
+                        <Ban className="mr-2" />
                         Ban User
                       </button>
                       <button
                         onClick={() => handleDeleteUser(selectedUser.id)}
                         className="px-4 py-2 border border-red-300 dark:border-red-800 text-red-600 dark:text-red-400 rounded-xl text-sm font-medium hover:bg-red-100 dark:hover:bg-red-900/30 transition"
                       >
-                        <i className="fa-solid fa-trash mr-2"></i>
+                        <Trash2 className="mr-2" />
                         Delete Account
                       </button>
                     </div>
@@ -649,7 +651,7 @@ const AdminDashboard: React.FC<AdminDashboardProps> = ({ userId }) => {
               ) : (
                 <div className="h-full flex flex-col items-center justify-center text-zinc-400">
                   <div className="w-24 h-24 bg-zinc-100 dark:bg-zinc-900 rounded-full flex items-center justify-center mb-4">
-                    <i className="fa-solid fa-user text-4xl opacity-50"></i>
+                    <User className="text-4xl opacity-50" />
                   </div>
                   <p>Select a user to view details</p>
                 </div>
@@ -743,13 +745,13 @@ const AdminDashboard: React.FC<AdminDashboardProps> = ({ userId }) => {
                   onClick={handleExportUsersCSV}
                   className="px-4 py-2 bg-white dark:bg-zinc-950 border border-zinc-200 dark:border-zinc-800 text-zinc-700 dark:text-zinc-300 rounded-xl text-sm font-medium hover:border-zinc-400 transition flex items-center gap-2"
                 >
-                  <i className="fa-solid fa-file-csv"></i> Export Users (CSV)
+                  <FileSpreadsheet /> Export Users (CSV)
                 </button>
                 <button
                   onClick={handleExportMessagesJSON}
                   className="px-4 py-2 bg-white dark:bg-zinc-950 border border-zinc-200 dark:border-zinc-800 text-zinc-700 dark:text-zinc-300 rounded-xl text-sm font-medium hover:border-zinc-400 transition flex items-center gap-2"
                 >
-                  <i className="fa-solid fa-file-export"></i> Export Messages (JSON)
+                  <FileOutput /> Export Messages (JSON)
                 </button>
               </div>
             </div>

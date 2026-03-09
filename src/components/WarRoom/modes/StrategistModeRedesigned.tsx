@@ -3,6 +3,8 @@ import { AIMessage, ThinkingStep } from '../../../services/ragService';
 import { SessionExport } from '../shared';
 import './StrategistModeRedesigned.css';
 
+import { Activity, AlertTriangle, Crown, Gauge, GitBranch, LayoutGrid, Plus, RotateCcw, Send, Share2, ShieldHalf, Table2, Target, ThumbsDown, ThumbsUp, Users, Wand2, X } from 'lucide-react';
+
 // ============= TYPES =============
 
 interface ProConItem {
@@ -420,7 +422,7 @@ Please provide:
             <div className="str-setup-icon">
               <div className="str-icon-table">
                 <div className="str-icon-surface">
-                  <i className="fa fa-chess" />
+                  <Crown className="fa" />
                 </div>
               </div>
               <div className="str-icon-orbit">
@@ -455,7 +457,7 @@ Please provide:
                 disabled={!decisionQuestion.trim()}
                 className="str-btn str-btn-primary str-btn-lg"
               >
-                <i className="fa fa-chess-board" />
+                <LayoutGrid className="fa" />
                 Begin Strategic Analysis
               </button>
 
@@ -502,12 +504,12 @@ Please provide:
         <header className="str-header">
           <div className="str-header-left">
             <div className="str-decision-badge">
-              <i className="fa fa-chess" />
+              <Crown className="fa" />
             </div>
             <div className="str-decision-info">
               <h2>{decisionQuestion}</h2>
               <p>
-                <i className="fa fa-bullseye" />
+                <Target className="fa" />
                 Strategic Decision Analysis
               </p>
             </div>
@@ -518,13 +520,13 @@ Please provide:
               className="str-header-btn"
               title="Export analysis"
             >
-              <i className="fa fa-share-nodes" />
+              <Share2 className="fa" />
             </button>
             <button
               onClick={handleNewDecision}
               className="str-btn str-new-decision-btn"
             >
-              <i className="fa fa-rotate-left" style={{ marginRight: '0.375rem' }} />
+              <RotateCcw className="fa" />
               New Decision
             </button>
           </div>
@@ -557,7 +559,7 @@ Please provide:
                 {messages.length === 0 ? (
                   <div className="str-empty-chat">
                     <div className="str-empty-icon">
-                      <i className="fa fa-chess-knight" />
+                      <Crown className="fa" />
                     </div>
                     <h3>Strategic Analysis Ready</h3>
                     <p>Ask questions, request analysis, or explore different aspects of your decision</p>
@@ -571,7 +573,7 @@ Please provide:
                       {msg.role === 'assistant' && (
                         <div className="str-message-header">
                           <div className="str-ai-badge">
-                            <i className="fa fa-chess" />
+                            <Crown className="fa" />
                             <span>Strategic Advisor</span>
                           </div>
                         </div>
@@ -587,7 +589,7 @@ Please provide:
                   <div className="str-message str-message-ai">
                     <div className="str-loading">
                       <div className="str-loading-icon">
-                        <i className="fa fa-chess" />
+                        <Crown className="fa" />
                       </div>
                       <span className="str-loading-text">Analyzing strategic options...</span>
                     </div>
@@ -614,7 +616,7 @@ Please provide:
               {/* Input */}
               <div className="str-input-area">
                 <div className="str-input-container">
-                  <i className="fa fa-chess-knight str-input-icon" />
+                  <Crown className="fa str-input-icon" />
                   <input
                     type="text"
                     value={input}
@@ -629,7 +631,7 @@ Please provide:
                     disabled={!input.trim() || isLoading}
                     className={`str-send-btn ${input.trim() ? 'active' : ''}`}
                   >
-                    <i className="fa fa-paper-plane" />
+                    <Send className="fa" />
                   </button>
                 </div>
               </div>
@@ -643,18 +645,18 @@ Please provide:
               <div className="str-column pros">
                 <div className="str-column-header pros">
                   <div className="str-column-title pros">
-                    <i className="fa fa-thumbs-up" />
+                    <ThumbsUp className="fa" />
                     Pros
                     <span className="str-column-count pros">{pros.length}</span>
                   </div>
                   <button onClick={addPro} className="str-add-btn">
-                    <i className="fa fa-plus" />
+                    <Plus className="fa" />
                   </button>
                 </div>
                 <div className="str-column-items">
                   {pros.length === 0 ? (
                     <div className="str-column-empty pros">
-                      <i className="fa fa-thumbs-up" />
+                      <ThumbsUp className="fa" />
                       <p>Click + to add pros</p>
                     </div>
                   ) : (
@@ -678,7 +680,7 @@ Please provide:
                             className="str-item-input"
                           />
                           <button onClick={() => removePro(pro.id)} className="str-item-delete">
-                            <i className="fa fa-times" />
+                            <X className="fa" />
                           </button>
                         </div>
                       </div>
@@ -691,18 +693,18 @@ Please provide:
               <div className="str-column cons">
                 <div className="str-column-header cons">
                   <div className="str-column-title cons">
-                    <i className="fa fa-thumbs-down" />
+                    <ThumbsDown className="fa" />
                     Cons
                     <span className="str-column-count cons">{cons.length}</span>
                   </div>
                   <button onClick={addCon} className="str-add-btn">
-                    <i className="fa fa-plus" />
+                    <Plus className="fa" />
                   </button>
                 </div>
                 <div className="str-column-items">
                   {cons.length === 0 ? (
                     <div className="str-column-empty cons">
-                      <i className="fa fa-thumbs-down" />
+                      <ThumbsDown className="fa" />
                       <p>Click + to add cons</p>
                     </div>
                   ) : (
@@ -726,7 +728,7 @@ Please provide:
                             className="str-item-input"
                           />
                           <button onClick={() => removeCon(con.id)} className="str-item-delete">
-                            <i className="fa fa-times" />
+                            <X className="fa" />
                           </button>
                         </div>
                       </div>
@@ -742,18 +744,18 @@ Please provide:
             <div className="str-risks">
               <div className="str-risks-header">
                 <div className="str-risks-title">
-                  <i className="fa fa-triangle-exclamation" />
+                  <AlertTriangle className="fa" />
                   Risk Assessment
                 </div>
                 <button onClick={addRisk} className="str-btn">
-                  <i className="fa fa-plus" style={{ marginRight: '0.375rem' }} />
+                  <Plus className="fa" />
                   Add Risk
                 </button>
               </div>
               <div className="str-risks-list">
                 {risks.length === 0 ? (
                   <div className="str-risks-empty">
-                    <i className="fa fa-shield-halved" />
+                    <ShieldHalf className="fa" />
                     <p>No risks identified yet</p>
                     <span>Click "Add Risk" to identify potential risks</span>
                   </div>
@@ -769,7 +771,7 @@ Please provide:
                           className="str-risk-input"
                         />
                         <button onClick={() => removeRisk(risk.id)} className="str-risk-delete">
-                          <i className="fa fa-times" />
+                          <X className="fa" />
                         </button>
                       </div>
                       <div className="str-risk-controls">
@@ -806,7 +808,7 @@ Please provide:
                         className="str-mitigation-input"
                       />
                       <span className={`str-risk-matrix ${getRiskLevel(risk.likelihood, risk.impact)}`}>
-                        <i className="fa fa-gauge-high" />
+                        <Gauge className="fa" />
                         {getRiskLevel(risk.likelihood, risk.impact).toUpperCase()} RISK
                       </span>
                     </div>
@@ -821,16 +823,16 @@ Please provide:
             <div className="str-matrix">
               <div className="str-matrix-header">
                 <div className="str-matrix-title">
-                  <i className="fa fa-table-cells" />
+                  <Table2 className="fa" />
                   Decision Matrix
                 </div>
                 <div style={{ display: 'flex', gap: '0.5rem' }}>
                   <button onClick={addMatrixCriterion} className="str-btn">
-                    <i className="fa fa-plus" style={{ marginRight: '0.375rem' }} />
+                    <Plus className="fa" />
                     Criterion
                   </button>
                   <button onClick={addMatrixOption} className="str-btn">
-                    <i className="fa fa-plus" style={{ marginRight: '0.375rem' }} />
+                    <Plus className="fa" />
                     Option
                   </button>
                 </div>
@@ -907,7 +909,7 @@ Please provide:
             <div className="str-scenarios">
               <div className="str-scenarios-header">
                 <div className="str-scenarios-title">
-                  <i className="fa fa-code-branch" />
+                  <GitBranch className="fa" />
                   Scenario Planning
                 </div>
               </div>
@@ -951,7 +953,7 @@ Please provide:
             <div className="str-stakeholders">
               <div className="str-stakeholders-header">
                 <div className="str-stakeholders-title">
-                  <i className="fa fa-users" />
+                  <Users className="fa" />
                   Stakeholder Map
                 </div>
               </div>
@@ -976,7 +978,7 @@ Please provide:
                               onClick={() => removeStakeholder(s.id)}
                               className="str-tag-delete"
                             >
-                              <i className="fa fa-times" />
+                              <X className="fa" />
                             </button>
                           </span>
                         ))
@@ -1011,7 +1013,7 @@ Please provide:
                           onClick={() => setActiveQuadrant(quadrant)}
                           className="str-add-stakeholder"
                         >
-                          <i className="fa fa-plus" /> Add
+                          <Plus className="fa" /> Add
                         </button>
                       )}
                     </div>
@@ -1026,11 +1028,11 @@ Please provide:
             <div className="str-timeline">
               <div className="str-timeline-header">
                 <div className="str-timeline-title">
-                  <i className="fa fa-timeline" />
+                  <Activity className="fa" />
                   Decision Timeline
                 </div>
                 <button onClick={addMilestone} className="str-btn">
-                  <i className="fa fa-plus" style={{ marginRight: '0.375rem' }} />
+                  <Plus className="fa" />
                   Add Milestone
                 </button>
               </div>
@@ -1089,7 +1091,7 @@ Please provide:
               disabled={isLoading}
               className="str-analyze-btn"
             >
-              <i className="fa fa-wand-magic-sparkles" />
+              <Wand2 className="fa" />
               Generate Strategic Recommendation
             </button>
           </div>

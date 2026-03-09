@@ -5,6 +5,7 @@
 
 import React, { useState, useEffect } from 'react';
 import { messageService } from '../services/messageService';
+import { Eye, Info, MailOpen, MousePointer, XCircle } from 'lucide-react';
 import type {
   InAppMessage,
   MessageMetrics,
@@ -125,7 +126,7 @@ const MessageAnalytics: React.FC = () => {
           <div className="p-6 bg-white dark:bg-zinc-800 border border-zinc-200 dark:border-zinc-700 rounded-lg">
             <div className="flex items-center justify-between mb-2">
               <span className="text-sm text-zinc-600 dark:text-zinc-400">Total Shown</span>
-              <i className="fa-solid fa-eye text-zinc-400 dark:text-zinc-600"></i>
+              <Eye className="text-zinc-400 dark:text-zinc-600" />
             </div>
             <div className="text-3xl font-bold text-zinc-900 dark:text-white">
               {metrics.totalShown.toLocaleString()}
@@ -136,7 +137,7 @@ const MessageAnalytics: React.FC = () => {
           <div className="p-6 bg-white dark:bg-zinc-800 border border-zinc-200 dark:border-zinc-700 rounded-lg">
             <div className="flex items-center justify-between mb-2">
               <span className="text-sm text-zinc-600 dark:text-zinc-400">Open Rate</span>
-              <i className="fa-solid fa-envelope-open text-zinc-400 dark:text-zinc-600"></i>
+              <MailOpen className="text-zinc-400 dark:text-zinc-600" />
             </div>
             <div className={`text-3xl font-bold ${getMetricColor(metrics.openRate)}`}>
               {metrics.openRate.toFixed(1)}%
@@ -150,7 +151,7 @@ const MessageAnalytics: React.FC = () => {
           <div className="p-6 bg-white dark:bg-zinc-800 border border-zinc-200 dark:border-zinc-700 rounded-lg">
             <div className="flex items-center justify-between mb-2">
               <span className="text-sm text-zinc-600 dark:text-zinc-400">Click Rate</span>
-              <i className="fa-solid fa-mouse-pointer text-zinc-400 dark:text-zinc-600"></i>
+              <MousePointer className="text-zinc-400 dark:text-zinc-600" />
             </div>
             <div className={`text-3xl font-bold ${getMetricColor(metrics.clickRate)}`}>
               {metrics.clickRate.toFixed(1)}%
@@ -164,7 +165,7 @@ const MessageAnalytics: React.FC = () => {
           <div className="p-6 bg-white dark:bg-zinc-800 border border-zinc-200 dark:border-zinc-700 rounded-lg">
             <div className="flex items-center justify-between mb-2">
               <span className="text-sm text-zinc-600 dark:text-zinc-400">Total Dismissed</span>
-              <i className="fa-solid fa-times-circle text-zinc-400 dark:text-zinc-600"></i>
+              <XCircle className="text-zinc-400 dark:text-zinc-600" />
             </div>
             <div className="text-3xl font-bold text-zinc-900 dark:text-white">
               {metrics.totalDismissed.toLocaleString()}
@@ -339,7 +340,7 @@ const MessageAnalytics: React.FC = () => {
 
         <div className="mt-4 p-4 bg-blue-50 dark:bg-blue-900/20 border border-blue-200 dark:border-blue-800 rounded-md">
           <div className="flex items-start gap-3">
-            <i className="fa-solid fa-info-circle text-blue-600 dark:text-blue-400 mt-0.5"></i>
+            <Info className="text-blue-600 dark:text-blue-400 mt-0.5" />
             <div className="text-sm text-blue-800 dark:text-blue-300">
               <strong>Insight:</strong> Users with higher message engagement typically show better
               retention rates. Use this data to optimize your messaging strategy.

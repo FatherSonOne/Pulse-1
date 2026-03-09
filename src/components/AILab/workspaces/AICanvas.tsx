@@ -2,6 +2,8 @@ import React, { useState, useRef, useCallback } from 'react';
 import { useWorkspace } from '../shared/WorkspaceContext';
 import './AICanvas.css';
 
+import { ArrowLeft, FolderOpen, GitFork, Minimize2, Minus, Play, Plus, Save, X } from 'lucide-react';
+
 interface AICanvasProps {
   onBack: () => void;
   apiKey: string;
@@ -101,25 +103,25 @@ const AICanvas: React.FC<AICanvasProps> = ({ onBack, apiKey }) => {
       <div className="canvas-header">
         <div className="canvas-header-left">
           <button onClick={onBack} className="canvas-back-btn">
-            <i className="fa-solid fa-arrow-left"></i>
+            <ArrowLeft />
           </button>
           <div className="canvas-title">
-            <i className="fa-solid fa-diagram-project"></i>
+            <GitFork />
             <span>AI Canvas</span>
           </div>
           <span className="canvas-subtitle">Visual Workflow Builder</span>
         </div>
         <div className="canvas-header-right">
           <button className="canvas-btn canvas-btn-secondary">
-            <i className="fa-solid fa-folder-open"></i>
+            <FolderOpen />
             Load Recipe
           </button>
           <button className="canvas-btn canvas-btn-secondary">
-            <i className="fa-solid fa-save"></i>
+            <Save />
             Save
           </button>
           <button onClick={runWorkflow} className="canvas-btn canvas-btn-primary">
-            <i className="fa-solid fa-play"></i>
+            <Play />
             Run Workflow
           </button>
         </div>
@@ -265,7 +267,7 @@ const AICanvas: React.FC<AICanvasProps> = ({ onBack, apiKey }) => {
                   className="node-delete"
                   onClick={(e) => { e.stopPropagation(); deleteNode(node.id); }}
                 >
-                  <i className="fa-solid fa-xmark"></i>
+                  <X />
                 </button>
               </div>
             ))}
@@ -274,21 +276,21 @@ const AICanvas: React.FC<AICanvasProps> = ({ onBack, apiKey }) => {
           {/* Zoom controls */}
           <div className="canvas-zoom-controls">
             <button onClick={() => setZoom(z => Math.min(z + 0.1, 2))}>
-              <i className="fa-solid fa-plus"></i>
+              <Plus />
             </button>
             <span>{Math.round(zoom * 100)}%</span>
             <button onClick={() => setZoom(z => Math.max(z - 0.1, 0.5))}>
-              <i className="fa-solid fa-minus"></i>
+              <Minus />
             </button>
             <button onClick={() => { setZoom(1); setPan({ x: 0, y: 0 }); }}>
-              <i className="fa-solid fa-compress"></i>
+              <Minimize2 />
             </button>
           </div>
 
           {/* Empty state */}
           {nodes.length === 0 && (
             <div className="canvas-empty">
-              <i className="fa-solid fa-diagram-project"></i>
+              <GitFork />
               <h3>Start Building Your Workflow</h3>
               <p>Drag tools from the palette or click to add nodes</p>
             </div>

@@ -2,6 +2,8 @@ import React, { useMemo, useEffect, useRef, useState, useCallback } from 'react'
 import { CalendarEvent } from '../types';
 import { getEventTypeMeta } from '../services/customEventTypesService';
 
+import { ChevronLeft, ChevronRight, MapPin, Sun } from 'lucide-react';
+
 // ============================================
 // SHARED TYPES & UTILITIES
 // ============================================
@@ -829,7 +831,7 @@ export const DayView: React.FC<ViewProps> = ({
       {allDayEvents.length > 0 && (
         <div className="cal-day-allday-section">
           <div className="cal-day-allday-label">
-            <i className="fa-solid fa-sun" style={{ color: '#f59e0b' }} aria-hidden="true" />
+            <Sun />
             All Day Events
           </div>
           <div className="cal-day-allday-events">
@@ -932,7 +934,7 @@ export const DayView: React.FC<ViewProps> = ({
                 </div>
                 {ev.location && (
                   <div className="cal-day-event-location">
-                    <i className="fa-solid fa-location-dot" aria-hidden="true" />
+                    <MapPin />
                     {ev.location}
                   </div>
                 )}
@@ -1025,10 +1027,10 @@ export const CalendarHeader: React.FC<CalendarHeaderProps> = ({
 
         <div style={{ display: 'flex', gap: '4px' }}>
           <button className="cal-nav-btn" onClick={onPrev} aria-label={prevLabel}>
-            <i className="fa-solid fa-chevron-left" aria-hidden="true" />
+            <ChevronLeft />
           </button>
           <button className="cal-nav-btn" onClick={onNext} aria-label={nextLabel}>
-            <i className="fa-solid fa-chevron-right" aria-hidden="true" />
+            <ChevronRight />
           </button>
         </div>
 

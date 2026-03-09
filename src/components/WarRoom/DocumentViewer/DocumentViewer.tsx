@@ -13,6 +13,8 @@ import {
 import * as annotationService from '../../../services/annotationService';
 import { HighlightPopup, AnnotationPopup, AnnotationsSidebar } from '../Annotations';
 
+import { AlignLeft, ChevronDown, ChevronUp, Copy, Download, FileText, Highlighter, Lightbulb, Printer, Search, Sparkles, X } from 'lucide-react';
+
 interface DocumentViewerProps {
   doc: KnowledgeDoc;
   onClose: () => void;
@@ -493,7 +495,7 @@ export const DocumentViewer: React.FC<DocumentViewerProps> = ({
               className={`war-room-btn war-room-btn-icon-sm ${showSearch ? 'war-room-btn-primary' : ''}`}
               title="Search (Ctrl+F)"
             >
-              <i className="fa fa-search"></i>
+              <Search className="fa" />
             </button>
 
             {/* Annotations toggle */}
@@ -503,7 +505,7 @@ export const DocumentViewer: React.FC<DocumentViewerProps> = ({
                 className={`war-room-btn war-room-btn-icon-sm relative ${showAnnotationsSidebar ? 'war-room-btn-primary' : ''}`}
                 title="Annotations & Highlights"
               >
-                <i className="fa fa-highlighter"></i>
+                <Highlighter className="fa" />
                 {(highlights.length > 0 || annotations.length > 0) && (
                   <span className="absolute -top-1 -right-1 w-4 h-4 bg-rose-500 rounded-full text-[10px] text-white flex items-center justify-center">
                     {highlights.length + annotations.length}
@@ -517,28 +519,28 @@ export const DocumentViewer: React.FC<DocumentViewerProps> = ({
               className="war-room-btn war-room-btn-icon-sm"
               title="Copy content"
             >
-              <i className="fa fa-copy"></i>
+              <Copy className="fa" />
             </button>
             <button
               onClick={handleDownload}
               className="war-room-btn war-room-btn-icon-sm"
               title="Download"
             >
-              <i className="fa fa-download"></i>
+              <Download className="fa" />
             </button>
             <button
               onClick={handlePrint}
               className="war-room-btn war-room-btn-icon-sm"
               title="Print (Ctrl+P)"
             >
-              <i className="fa fa-print"></i>
+              <Printer className="fa" />
             </button>
             <button
               onClick={onClose}
               className="war-room-btn war-room-btn-icon-sm"
               title="Close (Esc)"
             >
-              <i className="fa fa-times"></i>
+              <X className="fa" />
             </button>
           </div>
         </div>
@@ -547,7 +549,7 @@ export const DocumentViewer: React.FC<DocumentViewerProps> = ({
         {showSearch && (
           <div className="p-3 border-b border-white/10 flex items-center gap-3 bg-white/5 shrink-0">
             <div className="relative flex-1">
-              <i className="fa fa-search absolute left-3 top-1/2 -translate-y-1/2 war-room-text-secondary text-sm"></i>
+              <Search className="fa absolute left-3 top-1/2 -translate-y-1/2 war-room-text-secondary text-sm" />
               <input
                 ref={searchInputRef}
                 type="text"
@@ -569,7 +571,7 @@ export const DocumentViewer: React.FC<DocumentViewerProps> = ({
               className="war-room-btn war-room-btn-icon-sm"
               title="Previous (Shift+Enter)"
             >
-              <i className="fa fa-chevron-up"></i>
+              <ChevronUp className="fa" />
             </button>
             <button
               onClick={() => navigateMatch(1)}
@@ -577,7 +579,7 @@ export const DocumentViewer: React.FC<DocumentViewerProps> = ({
               className="war-room-btn war-room-btn-icon-sm"
               title="Next (Enter)"
             >
-              <i className="fa fa-chevron-down"></i>
+              <ChevronDown className="fa" />
             </button>
             <button
               onClick={() => {
@@ -586,7 +588,7 @@ export const DocumentViewer: React.FC<DocumentViewerProps> = ({
               }}
               className="war-room-btn war-room-btn-icon-sm"
             >
-              <i className="fa fa-times"></i>
+              <X className="fa" />
             </button>
           </div>
         )}
@@ -595,7 +597,7 @@ export const DocumentViewer: React.FC<DocumentViewerProps> = ({
         {doc.ai_summary && doc.text_content && (
           <div className="p-3 border-b border-white/10 bg-rose-500/5 shrink-0">
             <div className="flex items-start gap-2">
-              <i className="fa fa-sparkles text-rose-400 mt-0.5 text-sm"></i>
+              <Sparkles className="fa text-rose-400 mt-0.5 text-sm" />
               <div>
                 <div className="text-xs font-semibold text-rose-400 mb-1">AI Summary</div>
                 <p className="text-sm war-room-text-secondary line-clamp-3">{doc.ai_summary}</p>
@@ -617,7 +619,7 @@ export const DocumentViewer: React.FC<DocumentViewerProps> = ({
             {/* Tip for highlighting */}
             {userId && highlights.length === 0 && annotations.length === 0 && (
               <div className="mb-4 p-3 bg-rose-500/10 border border-rose-500/20 rounded-lg text-sm">
-                <i className="fa fa-lightbulb text-rose-400 mr-2"></i>
+                <Lightbulb className="fa text-rose-400 mr-2" />
                 <span className="text-rose-300">
                   Tip: Select text to create highlights, or click the highlighter icon to view annotations.
                 </span>
@@ -667,16 +669,16 @@ export const DocumentViewer: React.FC<DocumentViewerProps> = ({
         <div className="p-3 border-t border-white/10 bg-white/5 flex items-center justify-between text-xs war-room-text-secondary shrink-0">
           <div className="flex items-center gap-4">
             <span>
-              <i className="fa fa-file-lines mr-1"></i>
+              <FileText className="fa mr-1" />
               {content.length.toLocaleString()} characters
             </span>
             <span>
-              <i className="fa fa-align-left mr-1"></i>
+              <AlignLeft className="fa mr-1" />
               {content.split(/\s+/).filter(Boolean).length.toLocaleString()} words
             </span>
             {(highlights.length > 0 || annotations.length > 0) && (
               <span>
-                <i className="fa fa-highlighter mr-1 text-rose-400"></i>
+                <Highlighter className="fa mr-1 text-rose-400" />
                 {highlights.length} highlights, {annotations.length} notes
               </span>
             )}

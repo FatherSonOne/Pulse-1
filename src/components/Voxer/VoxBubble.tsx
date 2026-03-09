@@ -4,6 +4,8 @@
 import React, { useState, useRef, useEffect } from 'react';
 import { VoxAnalysis, ActionItem } from '../../services/voxer/voxerTypes';
 
+import { Bot, Brain, ChevronRight, Loader2, Reply, Share, Tag } from 'lucide-react';
+
 // ============================================
 // TYPES
 // ============================================
@@ -279,7 +281,7 @@ export const VoxBubble: React.FC<VoxBubbleProps> = ({
         <div className="px-3 pb-2">
           {isTranscribing ? (
             <div className="flex items-center gap-2 text-xs text-zinc-400 italic py-2">
-              <i className="fa-solid fa-circle-notch fa-spin" />
+              <Loader2 className="animate-spin" />
               Transcribing...
             </div>
           ) : transcription ? (
@@ -306,7 +308,7 @@ export const VoxBubble: React.FC<VoxBubbleProps> = ({
           <div className="px-3 pb-2">
             {isAnalyzing ? (
               <div className="flex items-center gap-2 px-3 py-2 rounded-lg bg-purple-50 dark:bg-purple-900/20 text-purple-600 dark:text-purple-400 text-xs">
-                <i className="fa-solid fa-brain animate-pulse" />
+                <Brain className="animate-pulse" />
                 Analyzing...
               </div>
             ) : analysis && (
@@ -314,7 +316,7 @@ export const VoxBubble: React.FC<VoxBubbleProps> = ({
                 onClick={onViewAnalysis}
                 className="flex items-center gap-2 px-3 py-2 rounded-lg bg-purple-50 dark:bg-purple-900/20 hover:bg-purple-100 dark:hover:bg-purple-900/40 transition text-xs w-full"
               >
-                <i className="fa-solid fa-robot text-purple-500" />
+                <Bot className="text-purple-500" />
                 <span className="text-purple-700 dark:text-purple-300">
                   {analysis.keyPoints.length} key points
                 </span>
@@ -326,7 +328,7 @@ export const VoxBubble: React.FC<VoxBubbleProps> = ({
                     </span>
                   </>
                 )}
-                <i className="fa-solid fa-chevron-right text-purple-400 ml-auto text-[10px]" />
+                <ChevronRight className="text-purple-400 ml-auto text-[10px]" />
               </button>
             )}
           </div>
@@ -339,7 +341,7 @@ export const VoxBubble: React.FC<VoxBubbleProps> = ({
               onClick={onAnalyze}
               className="text-[10px] px-2 py-1 rounded bg-purple-100 dark:bg-purple-900/30 text-purple-600 hover:bg-purple-200 dark:hover:bg-purple-900/50 transition"
             >
-              <i className="fa-solid fa-brain mr-1" />
+              <Brain className="mr-1" />
               Analyze
             </button>
           )}
@@ -347,21 +349,21 @@ export const VoxBubble: React.FC<VoxBubbleProps> = ({
             onClick={onTag}
             className="text-[10px] px-2 py-1 rounded bg-zinc-100 dark:bg-zinc-800 text-zinc-600 dark:text-zinc-400 hover:bg-zinc-200 dark:hover:bg-zinc-700 transition"
           >
-            <i className="fa-solid fa-tag mr-1" />
+            <Tag className="mr-1" />
             Tag
           </button>
           <button
             onClick={onReply}
             className="text-[10px] px-2 py-1 rounded bg-zinc-100 dark:bg-zinc-800 text-zinc-600 dark:text-zinc-400 hover:bg-zinc-200 dark:hover:bg-zinc-700 transition"
           >
-            <i className="fa-solid fa-reply mr-1" />
+            <Reply className="mr-1" />
             Reply
           </button>
           <button
             onClick={onForward}
             className="text-[10px] px-2 py-1 rounded bg-zinc-100 dark:bg-zinc-800 text-zinc-600 dark:text-zinc-400 hover:bg-zinc-200 dark:hover:bg-zinc-700 transition"
           >
-            <i className="fa-solid fa-share mr-1" />
+            <Share className="mr-1" />
             Forward
           </button>
         </div>

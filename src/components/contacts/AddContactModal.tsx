@@ -1,6 +1,8 @@
 import React, { useState } from 'react';
 import { Contact } from '../../types';
 
+import { Loader2, Plus, UserPlus, X } from 'lucide-react';
+
 interface AddContactModalProps {
   isOpen: boolean;
   onClose: () => void;
@@ -55,10 +57,10 @@ export const AddContactModal: React.FC<AddContactModalProps> = ({
       <div className="bg-white dark:bg-zinc-900 w-full max-w-md rounded-2xl shadow-2xl border border-zinc-200 dark:border-zinc-800 animate-scale-in">
         <div className="p-4 border-b border-zinc-200 dark:border-zinc-800 flex justify-between items-center">
           <h3 className="font-bold dark:text-white flex items-center gap-2">
-            <i className="fa-solid fa-user-plus text-blue-500"></i> Add New Contact
+            <UserPlus className="text-blue-500" /> Add New Contact
           </h3>
           <button onClick={onClose} className="text-zinc-400 hover:text-zinc-600 dark:hover:text-zinc-200 transition">
-            <i className="fa-solid fa-xmark"></i>
+            <X />
           </button>
         </div>
         <div className="p-4 space-y-4">
@@ -142,7 +144,7 @@ export const AddContactModal: React.FC<AddContactModalProps> = ({
             disabled={!form.name.trim() || !form.email.trim() || isAdding}
             className="px-4 py-2 rounded-lg text-sm font-bold bg-blue-600 text-white hover:bg-blue-700 disabled:opacity-50 transition flex items-center gap-2"
           >
-            {isAdding ? <i className="fa-solid fa-circle-notch fa-spin"></i> : <i className="fa-solid fa-plus"></i>}
+            {isAdding ? <Loader2 className="animate-spin" /> : <Plus />}
             Add Contact
           </button>
         </div>

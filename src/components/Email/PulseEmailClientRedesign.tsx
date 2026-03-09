@@ -23,6 +23,8 @@ import { useEmailKeyboardShortcuts } from '../../hooks/useEmailKeyboardShortcuts
 import { ReconnectGoogleModal } from '../Auth/ReconnectGoogleModal';
 import { GoogleAuthStatus } from './GoogleAuthStatus';
 
+import { AlertTriangle, ExternalLink, Keyboard, Loader2, MailCheck, MailOpen, Menu, Minus, Pen, Plus, Search, Send, Settings, X } from 'lucide-react';
+
 interface PulseEmailClientRedesignProps {
   userEmail: string;
   userName: string;
@@ -309,7 +311,7 @@ export const PulseEmailClientRedesign: React.FC<PulseEmailClientRedesignProps> =
             <div className="flex-1 w-0 p-4">
               <div className="flex items-start">
                 <div className="flex-shrink-0 pt-0.5">
-                  <i className="fa-solid fa-envelope-circle-check text-green-500 text-lg"></i>
+                  <MailCheck className="text-green-500 text-lg" />
                 </div>
                 <div className="ml-3 flex-1">
                   <p className="text-sm font-medium text-stone-900 dark:text-gray-100">
@@ -594,7 +596,7 @@ export const PulseEmailClientRedesign: React.FC<PulseEmailClientRedesignProps> =
         <div className="flex items-center gap-3">
           <div className="flex-1">
             <div className="flex items-center gap-2 text-white font-medium">
-              <i className="fa-solid fa-paper-plane text-blue-400"></i>
+              <Send className="text-blue-400" />
               <span>Sending to {recipient}...</span>
             </div>
             <div className="text-xs text-zinc-400 mt-1">
@@ -829,7 +831,7 @@ export const PulseEmailClientRedesign: React.FC<PulseEmailClientRedesignProps> =
         {authError && (
           <div className="bg-amber-500/10 border-b border-amber-500/30 px-4 py-3 flex items-center justify-between">
             <div className="flex items-center gap-3">
-              <i className="fa-solid fa-exclamation-triangle text-amber-500"></i>
+              <AlertTriangle className="text-amber-500" />
               <span className="text-amber-800 dark:text-amber-200 text-sm">
                 Your Google session has expired. Reconnect to send emails.
               </span>
@@ -841,12 +843,12 @@ export const PulseEmailClientRedesign: React.FC<PulseEmailClientRedesignProps> =
             >
               {reAuthenticating ? (
                 <>
-                  <i className="fa-solid fa-circle-notch fa-spin"></i>
+                  <Loader2 className="animate-spin" />
                   Connecting...
                 </>
               ) : (
                 <>
-                  <i className="fa-brands fa-google"></i>
+                  <ExternalLink />
                   Reconnect Google
                 </>
               )}
@@ -862,7 +864,7 @@ export const PulseEmailClientRedesign: React.FC<PulseEmailClientRedesignProps> =
             className="md:hidden w-10 h-10 rounded-lg bg-stone-100 dark:bg-zinc-800 flex items-center justify-center text-stone-600 dark:text-zinc-400 hover:bg-stone-200 dark:hover:bg-zinc-700 transition"
             aria-label="Open menu"
           >
-            <i className="fa-solid fa-bars"></i>
+            <Menu />
           </button>
 
           {/* Search */}
@@ -875,7 +877,7 @@ export const PulseEmailClientRedesign: React.FC<PulseEmailClientRedesignProps> =
               placeholder="Search emails..."
               className="w-full bg-stone-100 dark:bg-zinc-800/50 border border-stone-200 dark:border-zinc-700/50 rounded-lg px-4 py-2 pl-10 text-sm text-stone-900 dark:text-white placeholder-stone-500 dark:placeholder-zinc-500 focus:outline-none focus:border-rose-500/50 focus:ring-1 focus:ring-rose-500/30"
             />
-            <i className="fa-solid fa-magnifying-glass absolute left-3 top-1/2 -translate-y-1/2 text-stone-400 dark:text-zinc-500 text-sm"></i>
+            <Search className="absolute left-3 top-1/2 -translate-y-1/2 text-stone-400 dark:text-zinc-500 text-sm" />
             {searchQuery && (
               <button
                 onClick={() => {
@@ -884,7 +886,7 @@ export const PulseEmailClientRedesign: React.FC<PulseEmailClientRedesignProps> =
                 }}
                 className="absolute right-3 top-1/2 -translate-y-1/2 text-stone-400 dark:text-zinc-500 hover:text-stone-700 dark:hover:text-white"
               >
-                <i className="fa-solid fa-xmark text-sm"></i>
+                <X className="text-sm" />
               </button>
             )}
           </div>
@@ -937,7 +939,7 @@ export const PulseEmailClientRedesign: React.FC<PulseEmailClientRedesignProps> =
                 }`}
               title={showBriefing ? 'Hide briefing' : 'Show briefing'}
             >
-              <i className="fa-solid fa-envelope-open-text"></i>
+              <MailOpen />
               <span className="hidden lg:inline">Briefing</span>
               <i className={`fa-solid fa-chevron-${showBriefing ? 'up' : 'down'} text-xs`}></i>
             </button>
@@ -952,7 +954,7 @@ export const PulseEmailClientRedesign: React.FC<PulseEmailClientRedesignProps> =
               title="Zoom out (more emails)"
               aria-label="Zoom out"
             >
-              <i className="fa-solid fa-minus text-xs"></i>
+              <Minus className="text-xs" />
             </button>
             <input
               type="range"
@@ -971,7 +973,7 @@ export const PulseEmailClientRedesign: React.FC<PulseEmailClientRedesignProps> =
               title="Zoom in (larger emails)"
               aria-label="Zoom in"
             >
-              <i className="fa-solid fa-plus text-xs"></i>
+              <Plus className="text-xs" />
             </button>
             <button
               onClick={handleZoomReset}
@@ -989,7 +991,7 @@ export const PulseEmailClientRedesign: React.FC<PulseEmailClientRedesignProps> =
             title="Email Settings"
             aria-label="Open email settings"
           >
-            <i className="fa-solid fa-gear"></i>
+            <Settings />
           </button>
         </div>
 
@@ -1125,7 +1127,7 @@ export const PulseEmailClientRedesign: React.FC<PulseEmailClientRedesignProps> =
         className={`md:hidden fixed bottom-20 right-4 w-14 h-14 rounded-full bg-gradient-to-r ${accent.gradient} text-white shadow-2xl flex items-center justify-center hover:scale-110 transition-transform z-50`}
         aria-label="Compose email"
       >
-        <i className="fa-solid fa-pen text-lg"></i>
+        <Pen className="text-lg" />
       </button>
 
       {/* Keyboard shortcuts hint */}
@@ -1134,7 +1136,7 @@ export const PulseEmailClientRedesign: React.FC<PulseEmailClientRedesignProps> =
         className="hidden md:flex fixed bottom-4 right-4 w-10 h-10 rounded-xl bg-stone-200 dark:bg-zinc-800 hover:bg-stone-300 dark:hover:bg-zinc-700 items-center justify-center text-stone-500 dark:text-zinc-400 hover:text-stone-700 dark:hover:text-white transition shadow-lg z-50"
         title="Keyboard shortcuts (?)"
       >
-        <i className="fa-solid fa-keyboard"></i>
+        <Keyboard />
       </button>
 
       {/* Reconnect Google Modal */}

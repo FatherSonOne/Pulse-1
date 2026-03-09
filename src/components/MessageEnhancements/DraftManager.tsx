@@ -1,5 +1,7 @@
 import React, { useState, useEffect, useCallback, useRef, useMemo } from 'react';
 
+import { AtSign, Check, Clock, FilePen, Loader2, Paperclip, Reply, RotateCcw, Search, Trash2 } from 'lucide-react';
+
 // Types
 interface MessageDraft {
   id: string;
@@ -305,13 +307,13 @@ export const DraftManager: React.FC<DraftManagerProps> = ({
     <div style={styles.container}>
       <div style={styles.header}>
         <div style={styles.title}>
-          <i className="fa-solid fa-file-pen" />
+          <FilePen />
           Drafts
           <span style={styles.draftCount}>{drafts.length}</span>
         </div>
         {drafts.length > 0 && (
           <button style={styles.clearAllButton} onClick={handleClearAll}>
-            <i className="fa-solid fa-trash" />
+            <Trash2 />
             Clear All
           </button>
         )}
@@ -319,7 +321,7 @@ export const DraftManager: React.FC<DraftManagerProps> = ({
 
       <div style={styles.searchBar}>
         <div style={{ position: 'relative' }}>
-          <i className="fa-solid fa-search" style={{ position: 'absolute', left: '12px', top: '50%', transform: 'translateY(-50%)', color: '#64748b', fontSize: '13px' }} />
+          <Search />
           <input
             type="text"
             placeholder="Search drafts..."
@@ -374,7 +376,7 @@ export const DraftManager: React.FC<DraftManagerProps> = ({
                     onClick={e => handleDelete(draft.id, e)}
                     title="Delete draft"
                   >
-                    <i className="fa-solid fa-trash" />
+                    <Trash2 />
                   </button>
                 </div>
               </div>
@@ -384,25 +386,25 @@ export const DraftManager: React.FC<DraftManagerProps> = ({
               <div style={styles.draftMeta}>
                 {draft.attachments && draft.attachments.length > 0 && (
                   <div style={styles.metaBadge}>
-                    <i className="fa-solid fa-paperclip" />
+                    <Paperclip />
                     {draft.attachments.length} file{draft.attachments.length > 1 ? 's' : ''}
                   </div>
                 )}
                 {draft.mentions && draft.mentions.length > 0 && (
                   <div style={styles.metaBadge}>
-                    <i className="fa-solid fa-at" />
+                    <AtSign />
                     {draft.mentions.length} mention{draft.mentions.length > 1 ? 's' : ''}
                   </div>
                 )}
                 {draft.replyToId && (
                   <div style={{ ...styles.metaBadge, ...styles.replyBadge }}>
-                    <i className="fa-solid fa-reply" />
+                    <Reply />
                     Reply
                   </div>
                 )}
                 {draft.isScheduled && draft.scheduledFor && (
                   <div style={{ ...styles.metaBadge, ...styles.scheduledBadge }}>
-                    <i className="fa-solid fa-clock" />
+                    <Clock />
                     Scheduled
                   </div>
                 )}
@@ -479,7 +481,7 @@ export const AutoSaveIndicator: React.FC<{
   if (isSaving) {
     return (
       <div style={{ ...styles.autoSaveIndicator, ...styles.savingIndicator }}>
-        <i className="fa-solid fa-circle-notch fa-spin" style={{ fontSize: '10px' }} />
+        <Loader2 className="animate-spin" />
         Saving...
       </div>
     );
@@ -488,7 +490,7 @@ export const AutoSaveIndicator: React.FC<{
   if (lastSaved) {
     return (
       <div style={styles.autoSaveIndicator}>
-        <i className="fa-solid fa-check" style={{ fontSize: '10px' }} />
+        <Check />
         Saved {formatRelativeTime(lastSaved)}
       </div>
     );
@@ -513,7 +515,7 @@ export const DraftRecoveryPrompt: React.FC<{
       borderRadius: '10px',
       border: '1px solid rgba(245, 158, 11, 0.2)'
     }}>
-      <i className="fa-solid fa-rotate-left" style={{ color: '#fbbf24', fontSize: '16px' }} />
+      <RotateCcw />
       <div style={{ flex: 1 }}>
         <div style={{ fontSize: '13px', color: '#fbbf24', fontWeight: 500 }}>
           Unsaved draft found

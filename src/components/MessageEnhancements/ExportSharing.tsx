@@ -1,6 +1,8 @@
 // Export & Sharing Tools
 import React, { useState } from 'react';
 
+import { BarChart2, CheckCircle, Copy, Download, History, Loader2, Share2 } from 'lucide-react';
+
 interface ExportOptions {
   format: 'txt' | 'json' | 'csv' | 'html' | 'pdf';
   includeMetadata: boolean;
@@ -137,14 +139,14 @@ export const ExportSharing: React.FC<ExportSharingProps> = ({
           onClick={() => setActiveTab('export')}
           className="flex items-center gap-1.5 px-2 py-1 rounded-full bg-cyan-100 dark:bg-cyan-900/40 text-cyan-600 dark:text-cyan-400 hover:bg-cyan-200 dark:hover:bg-cyan-900/60 transition"
         >
-          <i className="fa-solid fa-download text-xs" />
+          <Download className="text-xs" />
           <span className="text-xs font-medium">Export</span>
         </button>
         <button
           onClick={() => setActiveTab('share')}
           className="flex items-center gap-1.5 px-2 py-1 rounded-full bg-indigo-100 dark:bg-indigo-900/40 text-indigo-600 dark:text-indigo-400 hover:bg-indigo-200 dark:hover:bg-indigo-900/60 transition"
         >
-          <i className="fa-solid fa-share-nodes text-xs" />
+          <Share2 className="text-xs" />
           <span className="text-xs font-medium">Share</span>
         </button>
       </div>
@@ -158,7 +160,7 @@ export const ExportSharing: React.FC<ExportSharingProps> = ({
         <div className="flex items-center justify-between mb-3">
           <div className="flex items-center gap-2">
             <div className="w-8 h-8 rounded-full bg-cyan-100 dark:bg-cyan-900/40 flex items-center justify-center">
-              <i className="fa-solid fa-share-from-square text-cyan-500 text-sm" />
+              <Share2 className="text-cyan-500 text-sm" />
             </div>
             <div>
               <h3 className="text-sm font-bold text-zinc-800 dark:text-white">Export & Share</h3>
@@ -180,7 +182,7 @@ export const ExportSharing: React.FC<ExportSharingProps> = ({
               disabled={isProcessing}
               className="flex items-center gap-1 px-2 py-1 rounded-lg text-xs font-medium bg-cyan-500 text-white hover:bg-cyan-600 transition disabled:opacity-50"
             >
-              <i className="fa-solid fa-chart-simple" />
+              <BarChart2 />
               Report
             </button>
           )}
@@ -305,12 +307,12 @@ export const ExportSharing: React.FC<ExportSharingProps> = ({
             >
               {isProcessing ? (
                 <>
-                  <i className="fa-solid fa-circle-notch fa-spin" />
+                  <Loader2 className="animate-spin" />
                   Exporting...
                 </>
               ) : (
                 <>
-                  <i className="fa-solid fa-download" />
+                  <Download />
                   Export as {formatConfig[selectedFormat].label}
                 </>
               )}
@@ -320,7 +322,7 @@ export const ExportSharing: React.FC<ExportSharingProps> = ({
             {exportResult && (
               <div className="p-3 bg-green-50 dark:bg-green-900/20 rounded-lg">
                 <div className="flex items-center gap-2 text-green-600 dark:text-green-400">
-                  <i className="fa-solid fa-check-circle" />
+                  <CheckCircle />
                   <span className="text-sm font-medium">Export ready!</span>
                 </div>
                 {exportResult.url && (
@@ -329,7 +331,7 @@ export const ExportSharing: React.FC<ExportSharingProps> = ({
                     download
                     className="mt-2 flex items-center gap-1 text-xs text-green-600 dark:text-green-400 hover:underline"
                   >
-                    <i className="fa-solid fa-download" />
+                    <Download />
                     Download file
                   </a>
                 )}
@@ -443,7 +445,7 @@ export const ExportSharing: React.FC<ExportSharingProps> = ({
             >
               {isProcessing ? (
                 <>
-                  <i className="fa-solid fa-circle-notch fa-spin" />
+                  <Loader2 className="animate-spin" />
                   Processing...
                 </>
               ) : (
@@ -458,7 +460,7 @@ export const ExportSharing: React.FC<ExportSharingProps> = ({
             {shareResult?.shareUrl && (
               <div className="p-3 bg-green-50 dark:bg-green-900/20 rounded-lg">
                 <div className="flex items-center gap-2 text-green-600 dark:text-green-400 mb-2">
-                  <i className="fa-solid fa-check-circle" />
+                  <CheckCircle />
                   <span className="text-sm font-medium">
                     {shareMethod === 'copy' ? 'Copied to clipboard!' : 'Share link created!'}
                   </span>
@@ -474,7 +476,7 @@ export const ExportSharing: React.FC<ExportSharingProps> = ({
                     onClick={() => navigator.clipboard.writeText(shareResult.shareUrl!)}
                     className="p-1.5 text-zinc-500 hover:text-zinc-700 dark:hover:text-zinc-300"
                   >
-                    <i className="fa-solid fa-copy text-xs" />
+                    <Copy className="text-xs" />
                   </button>
                 </div>
               </div>
@@ -487,7 +489,7 @@ export const ExportSharing: React.FC<ExportSharingProps> = ({
             {recentExports.length === 0 ? (
               <div className="text-center py-8">
                 <div className="w-12 h-12 rounded-full bg-zinc-100 dark:bg-zinc-700 flex items-center justify-center mx-auto mb-3">
-                  <i className="fa-solid fa-clock-rotate-left text-zinc-400 text-lg" />
+                  <History className="text-zinc-400 text-lg" />
                 </div>
                 <p className="text-sm text-zinc-500 dark:text-zinc-400">No export history</p>
                 <p className="text-xs text-zinc-400 dark:text-zinc-500 mt-1">
@@ -515,7 +517,7 @@ export const ExportSharing: React.FC<ExportSharingProps> = ({
                       </div>
                     </div>
                     <button className="p-1.5 text-zinc-400 hover:text-cyan-500 transition">
-                      <i className="fa-solid fa-download text-sm" />
+                      <Download className="text-sm" />
                     </button>
                   </div>
                 ))}
@@ -538,7 +540,7 @@ export const QuickExportButton: React.FC<{
       className="p-1.5 rounded text-zinc-400 hover:text-cyan-500 hover:bg-cyan-50 dark:hover:bg-cyan-900/20 transition"
       title="Export conversation"
     >
-      <i className="fa-solid fa-download text-sm" />
+      <Download className="text-sm" />
     </button>
   );
 };
@@ -553,7 +555,7 @@ export const QuickShareButton: React.FC<{
       className="p-1.5 rounded text-zinc-400 hover:text-indigo-500 hover:bg-indigo-50 dark:hover:bg-indigo-900/20 transition"
       title="Share conversation"
     >
-      <i className="fa-solid fa-share-nodes text-sm" />
+      <Share2 className="text-sm" />
     </button>
   );
 };

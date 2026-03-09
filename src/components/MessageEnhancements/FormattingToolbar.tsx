@@ -1,5 +1,7 @@
 import React, { useState, useCallback, useRef } from 'react';
 
+import { AtSign, Ellipsis, Link, Palette } from 'lucide-react';
+
 // Types
 interface FormattingOption {
   id: string;
@@ -347,7 +349,7 @@ export const FormattingToolbar: React.FC<FormattingToolbarProps> = ({
             onClick={() => setShowMoreOptions(!showMoreOptions)}
             title="More options"
           >
-            <i className="fa-solid fa-ellipsis" />
+            <Ellipsis />
           </button>
           {showMoreOptions && (
             <div style={styles.dropdown}>
@@ -390,7 +392,7 @@ export const FormattingToolbar: React.FC<FormattingToolbarProps> = ({
           onClick={() => setShowLinkModal(true)}
           title="Insert link"
         >
-          <i className="fa-solid fa-link" />
+          <Link />
         </button>
 
         {/* Color picker */}
@@ -405,7 +407,7 @@ export const FormattingToolbar: React.FC<FormattingToolbarProps> = ({
             onClick={() => setShowColorPicker(!showColorPicker)}
             title="Text color"
           >
-            <i className="fa-solid fa-palette" />
+            <Palette />
           </button>
           {showColorPicker && (
             <div style={{ ...styles.dropdown, minWidth: 'auto' }}>
@@ -445,7 +447,7 @@ export const FormattingToolbar: React.FC<FormattingToolbarProps> = ({
           onClick={() => onInsertMention?.('@')}
           title="Mention someone"
         >
-          <i className="fa-solid fa-at" />
+          <AtSign />
         </button>
 
         <div style={styles.divider} />

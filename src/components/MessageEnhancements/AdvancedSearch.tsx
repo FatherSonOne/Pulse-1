@@ -1,6 +1,8 @@
 // Advanced Search with Filters Component
 import React, { useState, useMemo } from 'react';
 
+import { Bookmark, Filter, Loader2, Search, X } from 'lucide-react';
+
 interface SearchFilter {
   id: string;
   label: string;
@@ -181,7 +183,7 @@ export const AdvancedSearch: React.FC<AdvancedSearchProps> = ({
       <div className="p-4 border-b border-zinc-200 dark:border-zinc-700">
         <div className="flex gap-2">
           <div className="relative flex-1">
-            <i className="fa-solid fa-search absolute left-3 top-1/2 -translate-y-1/2 text-zinc-400" />
+            <Search className="absolute left-3 top-1/2 -translate-y-1/2 text-zinc-400" />
             <input
               type="text"
               value={query}
@@ -199,7 +201,7 @@ export const AdvancedSearch: React.FC<AdvancedSearchProps> = ({
                 : 'border-zinc-200 dark:border-zinc-700 text-zinc-600 dark:text-zinc-400 hover:bg-zinc-50 dark:hover:bg-zinc-700'
             }`}
           >
-            <i className="fa-solid fa-filter" />
+            <Filter />
             {activeFiltersCount > 0 && (
               <span className="w-5 h-5 rounded-full bg-blue-500 text-white text-xs flex items-center justify-center">
                 {activeFiltersCount}
@@ -212,7 +214,7 @@ export const AdvancedSearch: React.FC<AdvancedSearchProps> = ({
             className="px-4 py-2 rounded-lg bg-blue-500 text-white font-medium hover:bg-blue-600 disabled:opacity-50 disabled:cursor-not-allowed transition"
           >
             {isSearching ? (
-              <i className="fa-solid fa-circle-notch fa-spin" />
+              <Loader2 className="animate-spin" />
             ) : (
               'Search'
             )}
@@ -363,7 +365,7 @@ export const AdvancedSearch: React.FC<AdvancedSearchProps> = ({
                   onClick={() => setShowSaveModal(true)}
                   className="flex items-center gap-1 text-xs text-blue-600 dark:text-blue-400 hover:underline"
                 >
-                  <i className="fa-solid fa-bookmark" />
+                  <Bookmark />
                   Save this search
                 </button>
               )}
@@ -381,13 +383,13 @@ export const AdvancedSearch: React.FC<AdvancedSearchProps> = ({
                 onClick={() => applySavedSearch(saved)}
                 className="group flex items-center gap-1.5 px-2.5 py-1 rounded-full bg-zinc-100 dark:bg-zinc-700 text-xs text-zinc-600 dark:text-zinc-400 hover:bg-zinc-200 dark:hover:bg-zinc-600 transition"
               >
-                <i className="fa-solid fa-bookmark text-[10px]" />
+                <Bookmark className="text-[10px]" />
                 {saved.name}
                 <button
                   onClick={e => { e.stopPropagation(); onDeleteSavedSearch?.(saved.id); }}
                   className="opacity-0 group-hover:opacity-100 ml-1 text-zinc-400 hover:text-red-500"
                 >
-                  <i className="fa-solid fa-times text-[10px]" />
+                  <X className="text-[10px]" />
                 </button>
               </button>
             ))}
@@ -442,7 +444,7 @@ export const AdvancedSearch: React.FC<AdvancedSearchProps> = ({
       {/* No Results */}
       {query && !isSearching && results.length === 0 && (
         <div className="p-8 text-center text-zinc-400 dark:text-zinc-500">
-          <i className="fa-solid fa-search text-3xl mb-3" />
+          <Search className="text-3xl mb-3" />
           <p className="text-sm">No results found for "{query}"</p>
           <p className="text-xs mt-1">Try different keywords or adjust filters</p>
         </div>

@@ -2,6 +2,8 @@ import React, { useState, useCallback, useMemo, useEffect } from 'react';
 import { backupSyncService, type BackupEntry as ServiceBackupEntry, type SyncDevice as ServiceSyncDevice } from '../../services/backupSyncService';
 import { supabase } from '../../services/supabase';
 
+import { CloudUpload, Database, Loader2, Lock, Plus, RefreshCw } from 'lucide-react';
+
 // Types
 interface BackupEntry {
   id: string;
@@ -336,7 +338,7 @@ export const BackupSync: React.FC<BackupSyncProps> = ({
         <div className="flex items-center justify-between mb-3">
           <div className="flex items-center gap-2">
             <div className="w-10 h-10 rounded-full bg-white dark:bg-zinc-800 flex items-center justify-center shadow-sm">
-              <i className="fa-solid fa-cloud-arrow-up text-cyan-500" />
+              <CloudUpload className="text-cyan-500" />
             </div>
             <div>
               <p className="text-sm font-medium text-zinc-900 dark:text-white">Backup & Sync</p>
@@ -356,14 +358,14 @@ export const BackupSync: React.FC<BackupSyncProps> = ({
             disabled={isCreatingBackup}
             className="flex-1 py-2 bg-cyan-600 text-white rounded-lg text-xs font-medium hover:bg-cyan-700 disabled:opacity-50 transition"
           >
-            <i className="fa-solid fa-plus mr-1" />
+            <Plus className="mr-1" />
             New Backup
           </button>
           <button
             onClick={onSyncNow}
             className="flex-1 py-2 bg-white dark:bg-zinc-800 text-zinc-700 dark:text-zinc-300 rounded-lg text-xs font-medium hover:bg-zinc-50 dark:hover:bg-zinc-700 border border-zinc-200 dark:border-zinc-700 transition"
           >
-            <i className="fa-solid fa-rotate mr-1" />
+            <RefreshCw className="mr-1" />
             Sync Now
           </button>
         </div>
@@ -412,7 +414,7 @@ export const BackupSync: React.FC<BackupSyncProps> = ({
         <div className="space-y-2">
           {backups.length === 0 ? (
             <div className="text-center py-8">
-              <i className="fa-solid fa-database text-zinc-300 text-3xl mb-3" />
+              <Database className="text-zinc-300 text-3xl mb-3" />
               <p className="text-sm text-zinc-500">No backups yet</p>
             </div>
           ) : (
@@ -433,7 +435,7 @@ export const BackupSync: React.FC<BackupSyncProps> = ({
                         <div className="flex items-center gap-2 text-xs text-zinc-500">
                           <i className={`fa-solid ${getDestinationIcon(backup.destination)}`} />
                           <span>{formatTimeAgo(backup.createdAt)}</span>
-                          {backup.encrypted && <i className="fa-solid fa-lock text-green-500" />}
+                          {backup.encrypted && <Lock className="text-green-500" />}
                         </div>
                       </div>
                     </div>
@@ -522,7 +524,7 @@ export const BackupSync: React.FC<BackupSyncProps> = ({
                   </div>
                   <div className="text-right">
                     <span className={`px-2 py-0.5 rounded-full text-xs font-medium ${statusColors.bg} ${statusColors.text}`}>
-                      {device.status === 'syncing' && <i className="fa-solid fa-circle-notch fa-spin mr-1" />}
+                      {device.status === 'syncing' && <Loader2 className="mr-1 animate-spin" />}
                       {device.status}
                     </span>
                     <p className="text-xs text-zinc-400 mt-1">{formatTimeAgo(device.lastSync)}</p>
@@ -533,7 +535,7 @@ export const BackupSync: React.FC<BackupSyncProps> = ({
           })}
 
           <button className="w-full p-3 border-2 border-dashed border-zinc-200 dark:border-zinc-700 rounded-lg text-xs text-zinc-500 hover:border-cyan-300 dark:hover:border-cyan-700 hover:text-cyan-600 transition">
-            <i className="fa-solid fa-plus mr-1" />
+            <Plus className="mr-1" />
             Add new device
           </button>
         </div>

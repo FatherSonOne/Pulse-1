@@ -1,6 +1,8 @@
 // Enhanced Proactive Insights with AI-Powered Analysis
 import React, { useState, useMemo } from 'react';
 
+import { Brain, Info, Lightbulb, X } from 'lucide-react';
+
 interface Insight {
   id: string;
   type: 'opportunity' | 'risk' | 'reminder' | 'suggestion' | 'pattern' | 'milestone';
@@ -245,7 +247,7 @@ export const ProactiveInsightsEnhanced: React.FC<ProactiveInsightsEnhancedProps>
     return (
       <div className="flex items-center gap-2">
         <div className="flex items-center gap-1.5 px-2 py-1 rounded-full bg-purple-100 dark:bg-purple-900/40 text-purple-600 dark:text-purple-400">
-          <i className="fa-solid fa-lightbulb text-xs" />
+          <Lightbulb className="text-xs" />
           <span className="text-xs font-medium">{insights.length} insights</span>
         </div>
       </div>
@@ -259,7 +261,7 @@ export const ProactiveInsightsEnhanced: React.FC<ProactiveInsightsEnhancedProps>
         <div className="flex items-center justify-between">
           <div className="flex items-center gap-2">
             <div className="w-8 h-8 rounded-full bg-purple-100 dark:bg-purple-900/40 flex items-center justify-center">
-              <i className="fa-solid fa-brain text-purple-500 text-sm" />
+              <Brain className="text-purple-500 text-sm" />
             </div>
             <div>
               <h3 className="text-sm font-bold text-zinc-800 dark:text-white">AI Insights</h3>
@@ -295,7 +297,7 @@ export const ProactiveInsightsEnhanced: React.FC<ProactiveInsightsEnhancedProps>
                       onClick={() => handleDismiss(insight.id)}
                       className="text-zinc-400 hover:text-zinc-600 dark:hover:text-zinc-300"
                     >
-                      <i className="fa-solid fa-times text-xs" />
+                      <X className="text-xs" />
                     </button>
                   )}
                 </div>
@@ -303,7 +305,7 @@ export const ProactiveInsightsEnhanced: React.FC<ProactiveInsightsEnhancedProps>
                 {/* Expanded reasoning */}
                 {expandedId === insight.id && (
                   <div className="mt-2 p-2 bg-zinc-50 dark:bg-zinc-900 rounded text-[10px] text-zinc-600 dark:text-zinc-400">
-                    <i className="fa-solid fa-info-circle mr-1" />
+                    <Info className="mr-1" />
                     {insight.reasoning}
                   </div>
                 )}
@@ -375,7 +377,7 @@ export const InsightIndicator: React.FC<{
           : 'bg-purple-100 dark:bg-purple-900/40 text-purple-600 dark:text-purple-400'
       }`}
     >
-      <i className="fa-solid fa-lightbulb" />
+      <Lightbulb />
       <span>{count}</span>
     </button>
   );

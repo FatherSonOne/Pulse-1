@@ -9,6 +9,8 @@ import AILabEmptyState from '../shared/AILabEmptyState';
 import { useToast } from '../shared/AILabToast';
 import './MissionControl.css';
 
+import { ArrowLeft, ArrowRight, Copy, ExternalLink, FileOutput, FileText, LayoutGrid, Loader2, Pen, Plus, RefreshCw, X } from 'lucide-react';
+
 interface MissionControlProps {
   onBack: () => void;
   apiKey: string;
@@ -161,7 +163,7 @@ const MissionControl: React.FC<MissionControlProps> = ({ onBack, apiKey }) => {
                   try { host = new URL(c).hostname.replace('www.', ''); } catch {}
                   return (
                     <a key={i} href={c} target="_blank" rel="noreferrer" className="panel-citation-chip">
-                      <i className="fa-solid fa-arrow-up-right-from-square"></i>
+                      <ExternalLink />
                       {host}
                     </a>
                   );
@@ -348,10 +350,10 @@ const MissionControl: React.FC<MissionControlProps> = ({ onBack, apiKey }) => {
       <div className="mission-header">
         <div className="mission-header-left">
           <button type="button" onClick={onBack} className="mission-back-btn" aria-label="Go back">
-            <i className="fa-solid fa-arrow-left"></i>
+            <ArrowLeft />
           </button>
           <div className="mission-branding">
-            <i className="fa-solid fa-grid-2-plus"></i>
+            <LayoutGrid />
             <span>Mission Control</span>
           </div>
           {isEditingName ? (
@@ -373,7 +375,7 @@ const MissionControl: React.FC<MissionControlProps> = ({ onBack, apiKey }) => {
               onClick={() => setIsEditingName(true)}
             >
               🎯 {missionName}
-              <i className="fa-solid fa-pen"></i>
+              <Pen />
             </button>
           )}
         </div>
@@ -383,7 +385,7 @@ const MissionControl: React.FC<MissionControlProps> = ({ onBack, apiKey }) => {
             className="mission-btn mission-btn-secondary"
             onClick={() => setShowPanelPicker(true)}
           >
-            <i className="fa-solid fa-plus"></i>
+            <Plus />
             Add Panel
           </button>
           <button
@@ -396,7 +398,7 @@ const MissionControl: React.FC<MissionControlProps> = ({ onBack, apiKey }) => {
               { id: '4', type: 'notes', title: 'Notes', icon: 'fa-sticky-note', color: 'yellow', col: 2, row: 2, colSpan: 1, rowSpan: 1 },
             ])}
           >
-            <i className="fa-solid fa-arrows-rotate"></i>
+            <RefreshCw />
             Reset Layout
           </button>
           <button
@@ -406,9 +408,9 @@ const MissionControl: React.FC<MissionControlProps> = ({ onBack, apiKey }) => {
             disabled={isGeneratingBriefing}
           >
             {isGeneratingBriefing ? (
-              <><i className="fa-solid fa-spinner fa-spin"></i> Generating...</>
+              <><Loader2 className="animate-spin" /> Generating...</>
             ) : (
-              <><i className="fa-solid fa-file-export"></i> Generate Briefing</>
+              <><FileOutput /> Generate Briefing</>
             )}
           </button>
         </div>
@@ -429,7 +431,7 @@ const MissionControl: React.FC<MissionControlProps> = ({ onBack, apiKey }) => {
               </div>
               <div className="panel-actions">
                 <button type="button" className="panel-action panel-action-close" onClick={() => removePanel(panel.id)} title="Close">
-                  <i className="fa-solid fa-xmark"></i>
+                  <X />
                 </button>
               </div>
             </div>
@@ -468,11 +470,11 @@ const MissionControl: React.FC<MissionControlProps> = ({ onBack, apiKey }) => {
           <div className="briefing-modal" onClick={e => e.stopPropagation()}>
             <div className="briefing-modal-header">
               <h3>
-                <i className="fa-solid fa-file-lines"></i>
+                <FileText />
                 Daily Briefing
               </h3>
               <button type="button" className="panel-action" onClick={() => setShowBriefingModal(false)} aria-label="Close briefing">
-                <i className="fa-solid fa-xmark"></i>
+                <X />
               </button>
             </div>
             <div className="briefing-modal-body">
@@ -495,7 +497,7 @@ const MissionControl: React.FC<MissionControlProps> = ({ onBack, apiKey }) => {
                   <h4>Suggested Actions</h4>
                   {briefingData.suggestions.map((s, i) => (
                     <div key={i} className="briefing-suggestion">
-                      <i className="fa-solid fa-arrow-right"></i>
+                      <ArrowRight />
                       <div>
                         <strong>{s.action}</strong>
                         <p>{s.reason}</p>
@@ -511,7 +513,7 @@ const MissionControl: React.FC<MissionControlProps> = ({ onBack, apiKey }) => {
                   `${briefingData.greeting}\n\n${briefingData.summary}\n\n${briefingData.highlights?.map(h => `${h.title}: ${h.detail}`).join('\n')}`
                 )}
               >
-                <i className="fa-solid fa-copy"></i> Copy Briefing
+                <Copy /> Copy Briefing
               </button>
             </div>
           </div>

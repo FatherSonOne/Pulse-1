@@ -2,6 +2,8 @@
 import React, { useState, useEffect } from 'react';
 import { CachedEmail } from '../../services/emailSyncService';
 
+import { Calendar, CalendarPlus, Clock, Loader2, X } from 'lucide-react';
+
 interface ExtractedMeeting {
   title: string;
   date: Date | null;
@@ -247,7 +249,7 @@ export const MeetingExtractor: React.FC<MeetingExtractorProps> = ({
     return (
       <div className="bg-blue-500/10 dark:bg-blue-500/5 border border-blue-500/20 rounded-xl p-4">
         <div className="flex items-center gap-3">
-          <i className="fa-solid fa-circle-notch fa-spin text-blue-500"></i>
+          <Loader2 className="text-blue-500 animate-spin" />
           <span className="text-stone-600 dark:text-zinc-400 text-sm">Analyzing for meeting details...</span>
         </div>
       </div>
@@ -266,7 +268,7 @@ export const MeetingExtractor: React.FC<MeetingExtractorProps> = ({
       <div className="flex items-center justify-between px-4 py-3 border-b border-blue-500/20">
         <div className="flex items-center gap-3">
           <div className="w-8 h-8 rounded-lg bg-gradient-to-br from-blue-500 to-indigo-500 flex items-center justify-center">
-            <i className="fa-solid fa-calendar-plus text-white text-sm"></i>
+            <CalendarPlus className="text-white text-sm" />
           </div>
           <div>
             <h3 className="font-semibold text-stone-900 dark:text-white text-sm">Meeting Detected</h3>
@@ -277,7 +279,7 @@ export const MeetingExtractor: React.FC<MeetingExtractorProps> = ({
           onClick={onDismiss}
           className="w-6 h-6 rounded hover:bg-blue-500/20 flex items-center justify-center text-stone-400 dark:text-zinc-500 hover:text-stone-600 dark:hover:text-white transition"
         >
-          <i className="fa-solid fa-xmark text-xs"></i>
+          <X className="text-xs" />
         </button>
       </div>
 
@@ -294,7 +296,7 @@ export const MeetingExtractor: React.FC<MeetingExtractorProps> = ({
           <div className="flex-1">
             <div className="text-xs text-stone-500 dark:text-zinc-500 mb-1">Date</div>
             <div className="flex items-center gap-2 text-sm text-stone-700 dark:text-zinc-300">
-              <i className="fa-regular fa-calendar text-blue-500"></i>
+              <Calendar className="text-blue-500" />
               {formatDate(meeting.date)}
             </div>
           </div>
@@ -302,7 +304,7 @@ export const MeetingExtractor: React.FC<MeetingExtractorProps> = ({
             <div>
               <div className="text-xs text-stone-500 dark:text-zinc-500 mb-1">Time</div>
               <div className="flex items-center gap-2 text-sm text-stone-700 dark:text-zinc-300">
-                <i className="fa-regular fa-clock text-blue-500"></i>
+                <Clock className="text-blue-500" />
                 {meeting.time}
               </div>
             </div>
@@ -361,7 +363,7 @@ export const MeetingExtractor: React.FC<MeetingExtractorProps> = ({
             onClick={() => onAddToCalendar(meeting)}
             className="flex-1 flex items-center justify-center gap-2 px-4 py-2 bg-gradient-to-r from-blue-500 to-indigo-500 hover:from-blue-600 hover:to-indigo-600 text-white font-medium rounded-lg transition"
           >
-            <i className="fa-solid fa-calendar-plus"></i>
+            <CalendarPlus />
             Add to Calendar
           </button>
           <button

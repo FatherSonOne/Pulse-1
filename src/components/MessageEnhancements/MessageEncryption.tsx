@@ -1,5 +1,7 @@
 import React, { useState, useCallback, useMemo } from 'react';
 
+import { Clock, Download, Key, Lock, RefreshCw, ShieldHalf } from 'lucide-react';
+
 // Types
 interface EncryptionSettings {
   enabled: boolean;
@@ -221,7 +223,7 @@ export const MessageEncryption: React.FC<MessageEncryptionProps> = ({
         <div className="flex items-center justify-between">
           <div className="flex items-center gap-3">
             <div className="w-12 h-12 rounded-full bg-white dark:bg-zinc-800 flex items-center justify-center shadow-sm">
-              <i className="fa-solid fa-shield-halved text-emerald-500 text-xl" />
+              <ShieldHalf className="text-emerald-500 text-xl" />
             </div>
             <div>
               <p className="text-xs text-zinc-500 dark:text-zinc-400 uppercase tracking-wide">Security Score</p>
@@ -233,14 +235,14 @@ export const MessageEncryption: React.FC<MessageEncryptionProps> = ({
               onClick={() => setShowKeyInfo(!showKeyInfo)}
               className="px-3 py-1.5 text-xs font-medium bg-white dark:bg-zinc-800 text-zinc-700 dark:text-zinc-300 rounded-lg hover:bg-zinc-50 dark:hover:bg-zinc-700 transition border border-zinc-200 dark:border-zinc-700"
             >
-              <i className="fa-solid fa-key mr-1.5" />
+              <Key className="mr-1.5" />
               Key Info
             </button>
             <button
               onClick={onGenerateKey}
               className="px-3 py-1.5 text-xs font-medium bg-emerald-600 text-white rounded-lg hover:bg-emerald-700 transition"
             >
-              <i className="fa-solid fa-rotate mr-1.5" />
+              <RefreshCw className="mr-1.5" />
               Regenerate
             </button>
           </div>
@@ -270,7 +272,7 @@ export const MessageEncryption: React.FC<MessageEncryptionProps> = ({
               onClick={onExportKey}
               className="mt-3 w-full py-1.5 text-xs font-medium text-emerald-600 dark:text-emerald-400 hover:bg-emerald-50 dark:hover:bg-emerald-900/20 rounded-lg transition"
             >
-              <i className="fa-solid fa-download mr-1.5" />
+              <Download className="mr-1.5" />
               Export Public Key
             </button>
           </div>
@@ -368,7 +370,7 @@ export const MessageEncryption: React.FC<MessageEncryptionProps> = ({
           {encryptionSettings.selfDestructEnabled && (
             <div className="p-3 bg-orange-50 dark:bg-orange-900/20 rounded-lg border border-orange-200 dark:border-orange-800">
               <p className="text-xs font-medium text-orange-700 dark:text-orange-300 mb-2">
-                <i className="fa-solid fa-clock mr-1.5" />
+                <Clock className="mr-1.5" />
                 Self-Destruct Timer
               </p>
               <div className="flex gap-2">
@@ -454,7 +456,7 @@ export const MessageEncryption: React.FC<MessageEncryptionProps> = ({
           {encryptedMessages.length === 0 ? (
             <div className="text-center py-8">
               <div className="w-12 h-12 rounded-full bg-zinc-100 dark:bg-zinc-800 flex items-center justify-center mx-auto mb-3">
-                <i className="fa-solid fa-lock text-zinc-400" />
+                <Lock className="text-zinc-400" />
               </div>
               <p className="text-sm text-zinc-500">No encrypted messages yet</p>
             </div>
@@ -477,7 +479,7 @@ export const MessageEncryption: React.FC<MessageEncryptionProps> = ({
                         ? 'bg-red-100 text-red-600 dark:bg-red-900/30 dark:text-red-400'
                         : 'bg-orange-100 text-orange-600 dark:bg-orange-900/30 dark:text-orange-400'
                     }`}>
-                      <i className="fa-solid fa-clock mr-1" />
+                      <Clock className="mr-1" />
                       {formatTimeRemaining(msg.expiresAt)}
                     </span>
                   )}
@@ -487,7 +489,7 @@ export const MessageEncryption: React.FC<MessageEncryptionProps> = ({
                 </p>
                 {!msg.isDecrypted && (
                   <button className="mt-2 text-xs text-emerald-600 dark:text-emerald-400 hover:underline">
-                    <i className="fa-solid fa-key mr-1" />
+                    <Key className="mr-1" />
                     Decrypt message
                   </button>
                 )}

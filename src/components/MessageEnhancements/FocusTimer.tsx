@@ -1,5 +1,7 @@
 import React, { useState, useEffect, useCallback, useMemo, useRef } from 'react';
 
+import { BellOff, Pause, Play, RotateCcw, Settings } from 'lucide-react';
+
 // Types
 interface TimerSession {
   id: string;
@@ -344,7 +346,7 @@ export const FocusTimer: React.FC<FocusTimerProps> = ({
             </span>
             {timerState === 'running' && settings.blockNotifications && (
               <span className="text-xs text-zinc-500 mt-1 flex items-center gap-1">
-                <i className="fa-solid fa-bell-slash" />
+                <BellOff />
                 Notifications blocked
               </span>
             )}
@@ -358,7 +360,7 @@ export const FocusTimer: React.FC<FocusTimerProps> = ({
               onClick={() => startTimer()}
               className={`px-6 py-3 rounded-xl font-medium text-white ${getTypeBgColor(currentType)} hover:opacity-90 transition shadow-lg`}
             >
-              <i className="fa-solid fa-play mr-2" />
+              <Play className="mr-2" />
               Start {currentType === 'focus' ? 'Focus' : 'Break'}
             </button>
           )}
@@ -369,14 +371,14 @@ export const FocusTimer: React.FC<FocusTimerProps> = ({
                 onClick={pauseTimer}
                 className="px-6 py-3 rounded-xl font-medium bg-zinc-200 dark:bg-zinc-700 text-zinc-700 dark:text-zinc-300 hover:bg-zinc-300 dark:hover:bg-zinc-600 transition"
               >
-                <i className="fa-solid fa-pause mr-2" />
+                <Pause className="mr-2" />
                 Pause
               </button>
               <button
                 onClick={resetTimer}
                 className="px-4 py-3 rounded-xl text-zinc-500 hover:bg-zinc-100 dark:hover:bg-zinc-800 transition"
               >
-                <i className="fa-solid fa-rotate-left" />
+                <RotateCcw />
               </button>
             </>
           )}
@@ -387,14 +389,14 @@ export const FocusTimer: React.FC<FocusTimerProps> = ({
                 onClick={() => startTimer()}
                 className={`px-6 py-3 rounded-xl font-medium text-white ${getTypeBgColor(currentType)} hover:opacity-90 transition shadow-lg`}
               >
-                <i className="fa-solid fa-play mr-2" />
+                <Play className="mr-2" />
                 Resume
               </button>
               <button
                 onClick={resetTimer}
                 className="px-4 py-3 rounded-xl text-zinc-500 hover:bg-zinc-100 dark:hover:bg-zinc-800 transition"
               >
-                <i className="fa-solid fa-rotate-left" />
+                <RotateCcw />
               </button>
             </>
           )}
@@ -463,7 +465,7 @@ export const FocusTimer: React.FC<FocusTimerProps> = ({
         className="w-full flex items-center justify-between p-3 bg-white dark:bg-zinc-800 rounded-lg border border-zinc-200 dark:border-zinc-700 hover:border-rose-300 dark:hover:border-rose-700 transition"
       >
         <span className="text-sm font-medium text-zinc-900 dark:text-white">
-          <i className="fa-solid fa-gear mr-2 text-zinc-400" />
+          <Settings className="mr-2 text-zinc-400" />
           Timer Settings
         </span>
         <i className={`fa-solid fa-chevron-${showSettings ? 'up' : 'down'} text-zinc-400`} />

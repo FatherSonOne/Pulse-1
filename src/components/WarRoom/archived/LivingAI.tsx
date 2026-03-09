@@ -1,6 +1,8 @@
 import React, { useState, useEffect, useRef, useCallback } from 'react';
 import toast from 'react-hot-toast';
 
+import { Circle } from 'lucide-react';
+
 interface LivingAIProps {
   messages: any[];
   input: string;
@@ -326,7 +328,7 @@ export const LivingAI: React.FC<LivingAIProps> = ({
             <div className={`mt-3 text-center text-xs ${
               isDarkMode ? 'text-rose-400' : 'text-rose-600'
             }`}>
-              <i className="fa fa-circle mr-1 animate-pulse"></i>
+              <Circle className="fa mr-1 animate-pulse" />
               {isHoldingMic ? 'Listening... Release to stop' : 'Voice input active'}
             </div>
           )}

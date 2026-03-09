@@ -1,6 +1,8 @@
 // Message Pinning & Highlights System
 import React, { useState, useMemo } from 'react';
 
+import { ExternalLink, Highlighter, Pin, Search, StickyNote, X } from 'lucide-react';
+
 interface PinnedMessage {
   id: string;
   messageId: string;
@@ -130,13 +132,13 @@ export const MessagePinning: React.FC<MessagePinningProps> = ({
       <div className="flex items-center gap-2">
         {pinnedMessages && pinnedMessages.length > 0 && (
           <div className="flex items-center gap-1.5 px-2 py-1 rounded-full bg-amber-100 dark:bg-amber-900/40 text-amber-600 dark:text-amber-400">
-            <i className="fa-solid fa-thumbtack text-xs" />
+            <Pin className="text-xs" />
             <span className="text-xs font-medium">{pinnedMessages.length}</span>
           </div>
         )}
         {highlights && highlights.length > 0 && (
           <div className="flex items-center gap-1.5 px-2 py-1 rounded-full bg-yellow-100 dark:bg-yellow-900/40 text-yellow-600 dark:text-yellow-400">
-            <i className="fa-solid fa-highlighter text-xs" />
+            <Highlighter className="text-xs" />
             <span className="text-xs font-medium">{highlights.length}</span>
           </div>
         )}
@@ -151,7 +153,7 @@ export const MessagePinning: React.FC<MessagePinningProps> = ({
         <div className="flex items-center justify-between mb-3">
           <div className="flex items-center gap-2">
             <div className="w-8 h-8 rounded-full bg-amber-100 dark:bg-amber-900/40 flex items-center justify-center">
-              <i className="fa-solid fa-thumbtack text-amber-500 text-sm" />
+              <Pin className="text-amber-500 text-sm" />
             </div>
             <div>
               <h3 className="text-sm font-bold text-zinc-800 dark:text-white">Pins & Highlights</h3>
@@ -172,7 +174,7 @@ export const MessagePinning: React.FC<MessagePinningProps> = ({
                 : 'text-zinc-600 dark:text-zinc-400 hover:text-zinc-800 dark:hover:text-white'
             }`}
           >
-            <i className="fa-solid fa-thumbtack" />
+            <Pin />
             Pinned ({pinnedMessages?.length || 0})
           </button>
           <button
@@ -183,7 +185,7 @@ export const MessagePinning: React.FC<MessagePinningProps> = ({
                 : 'text-zinc-600 dark:text-zinc-400 hover:text-zinc-800 dark:hover:text-white'
             }`}
           >
-            <i className="fa-solid fa-highlighter" />
+            <Highlighter />
             Highlights ({highlights?.length || 0})
           </button>
         </div>
@@ -193,7 +195,7 @@ export const MessagePinning: React.FC<MessagePinningProps> = ({
       <div className="px-4 py-2 border-b border-zinc-100 dark:border-zinc-700">
         <div className="flex items-center gap-2">
           <div className="flex-1 relative">
-            <i className="fa-solid fa-search absolute left-2.5 top-1/2 -translate-y-1/2 text-zinc-400 text-xs" />
+            <Search className="absolute left-2.5 top-1/2 -translate-y-1/2 text-zinc-400 text-xs" />
             <input
               type="text"
               value={searchQuery}
@@ -224,7 +226,7 @@ export const MessagePinning: React.FC<MessagePinningProps> = ({
             {Object.keys(groupedPins).length === 0 ? (
               <div className="p-8 text-center">
                 <div className="w-12 h-12 rounded-full bg-zinc-100 dark:bg-zinc-700 flex items-center justify-center mx-auto mb-3">
-                  <i className="fa-solid fa-thumbtack text-zinc-400 text-lg" />
+                  <Pin className="text-zinc-400 text-lg" />
                 </div>
                 <p className="text-sm text-zinc-500 dark:text-zinc-400">No pinned messages</p>
                 <p className="text-xs text-zinc-400 dark:text-zinc-500 mt-1">
@@ -275,14 +277,14 @@ export const MessagePinning: React.FC<MessagePinningProps> = ({
                                   className="p-1 text-zinc-400 hover:text-indigo-500 transition"
                                   title="Jump to message"
                                 >
-                                  <i className="fa-solid fa-arrow-up-right-from-square text-xs" />
+                                  <ExternalLink className="text-xs" />
                                 </button>
                                 <button
                                   onClick={() => onUnpin(pin.id)}
                                   className="p-1 text-zinc-400 hover:text-red-500 transition"
                                   title="Unpin"
                                 >
-                                  <i className="fa-solid fa-times text-xs" />
+                                  <X className="text-xs" />
                                 </button>
                               </div>
                             </div>
@@ -319,7 +321,7 @@ export const MessagePinning: React.FC<MessagePinningProps> = ({
                                   setEditNote(pin.note || '');
                                 }}
                               >
-                                <i className="fa-solid fa-note-sticky mr-1" />
+                                <StickyNote className="mr-1" />
                                 {pin.note}
                               </div>
                             ) : (
@@ -367,7 +369,7 @@ export const MessagePinning: React.FC<MessagePinningProps> = ({
             {Object.keys(groupedHighlights).length === 0 ? (
               <div className="p-8 text-center">
                 <div className="w-12 h-12 rounded-full bg-zinc-100 dark:bg-zinc-700 flex items-center justify-center mx-auto mb-3">
-                  <i className="fa-solid fa-highlighter text-zinc-400 text-lg" />
+                  <Highlighter className="text-zinc-400 text-lg" />
                 </div>
                 <p className="text-sm text-zinc-500 dark:text-zinc-400">No highlights</p>
                 <p className="text-xs text-zinc-400 dark:text-zinc-500 mt-1">
@@ -415,7 +417,7 @@ export const MessagePinning: React.FC<MessagePinningProps> = ({
                                 className="p-1 text-zinc-400 hover:text-indigo-500 transition"
                                 title="Jump to message"
                               >
-                                <i className="fa-solid fa-arrow-up-right-from-square text-xs" />
+                                <ExternalLink className="text-xs" />
                               </button>
                               {onRemoveHighlight && (
                                 <button
@@ -423,7 +425,7 @@ export const MessagePinning: React.FC<MessagePinningProps> = ({
                                   className="p-1 text-zinc-400 hover:text-red-500 transition"
                                   title="Remove highlight"
                                 >
-                                  <i className="fa-solid fa-times text-xs" />
+                                  <X className="text-xs" />
                                 </button>
                               )}
                             </div>
@@ -498,7 +500,7 @@ export const HighlightToolbar: React.FC<{
         onClick={onClose}
         className="p-1 text-zinc-400 hover:text-zinc-600 dark:hover:text-zinc-300"
       >
-        <i className="fa-solid fa-times text-xs" />
+        <X className="text-xs" />
       </button>
     </div>
   );

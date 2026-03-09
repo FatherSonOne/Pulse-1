@@ -3,6 +3,8 @@ import React, { useState, useEffect } from 'react';
 import { supabase } from '../../services/supabase';
 import { CachedEmail } from '../../services/emailSyncService';
 
+import { Bell, Loader2, Reply } from 'lucide-react';
+
 interface FollowUpItem {
   sentEmail: CachedEmail;
   daysSince: number;
@@ -171,7 +173,7 @@ export const FollowUpNudge: React.FC<FollowUpNudgeProps> = ({
     return (
       <div className="bg-white dark:bg-zinc-900/50 border border-stone-200 dark:border-zinc-800 rounded-xl p-4">
         <div className="flex items-center gap-3">
-          <i className="fa-solid fa-circle-notch fa-spin text-rose-500"></i>
+          <Loader2 className="text-rose-500 animate-spin" />
           <span className="text-stone-600 dark:text-zinc-400 text-sm">Checking for follow-ups...</span>
         </div>
       </div>
@@ -188,7 +190,7 @@ export const FollowUpNudge: React.FC<FollowUpNudgeProps> = ({
       <div className="flex items-center justify-between px-4 py-3 border-b border-stone-200 dark:border-zinc-800">
         <div className="flex items-center gap-3">
           <div className="w-8 h-8 rounded-lg bg-gradient-to-br from-amber-500 to-orange-500 flex items-center justify-center">
-            <i className="fa-solid fa-bell text-white text-sm"></i>
+            <Bell className="text-white text-sm" />
           </div>
           <div>
             <h3 className="font-semibold text-stone-900 dark:text-white text-sm">Follow-up Reminders</h3>
@@ -240,7 +242,7 @@ export const FollowUpNudge: React.FC<FollowUpNudgeProps> = ({
                       onClick={() => handleFollowUp(item)}
                       className="flex items-center gap-1.5 px-3 py-1.5 bg-gradient-to-r from-rose-500 to-orange-500 hover:from-rose-600 hover:to-orange-600 text-white text-xs font-medium rounded-lg transition"
                     >
-                      <i className="fa-solid fa-reply"></i>
+                      <Reply />
                       Follow Up
                     </button>
                     <button

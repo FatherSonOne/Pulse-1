@@ -6,7 +6,9 @@
 
 import React, { useState, useEffect } from 'react';
 import { messageService } from '../services/messageService';
+import { Eye, Info, Mail, MailOpen, MousePointer, Palette, Plus, RotateCw, Send, SquarePen, Star, Trash2, TrendingUp, Users, XCircle, Zap } from 'lucide-react';
 import type {
+
   InAppMessage,
   CreateMessagePayload,
   MessageEventTrigger,
@@ -329,7 +331,7 @@ const AdminMessageEditor: React.FC<AdminMessageEditorProps> = ({
               : 'text-zinc-500 hover:text-zinc-700 dark:hover:text-zinc-300'
           }`}
         >
-          <i className="fa-solid fa-envelope mr-2"></i>
+          <Mail className="mr-2" />
           Manage Messages
         </button>
         <button
@@ -340,7 +342,7 @@ const AdminMessageEditor: React.FC<AdminMessageEditorProps> = ({
               : 'text-zinc-500 hover:text-zinc-700 dark:hover:text-zinc-300'
           }`}
         >
-          <i className="fa-solid fa-chart-line mr-2"></i>
+          <TrendingUp className="mr-2" />
           Analytics
         </button>
       </div>
@@ -357,7 +359,7 @@ const AdminMessageEditor: React.FC<AdminMessageEditorProps> = ({
               }}
               className="px-4 py-2 bg-blue-600 hover:bg-blue-700 dark:bg-blue-500 dark:hover:bg-blue-600 text-white rounded-md transition-colors"
             >
-              <i className="fa-solid fa-plus mr-2"></i>
+              <Plus className="mr-2" />
               New Message
             </button>
             <button
@@ -365,7 +367,7 @@ const AdminMessageEditor: React.FC<AdminMessageEditorProps> = ({
               disabled={loading}
               className="px-4 py-2 bg-zinc-200 hover:bg-zinc-300 dark:bg-zinc-700 dark:hover:bg-zinc-600 text-zinc-900 dark:text-white rounded-md transition-colors disabled:opacity-50"
             >
-              <i className="fa-solid fa-rotate-right mr-2"></i>
+              <RotateCw className="mr-2" />
               Refresh
             </button>
           </div>
@@ -672,21 +674,21 @@ const AdminMessageEditor: React.FC<AdminMessageEditorProps> = ({
                     onClick={() => handleEdit(message)}
                     className="px-3 py-1 text-sm bg-blue-100 hover:bg-blue-200 dark:bg-blue-900 dark:hover:bg-blue-800 text-blue-700 dark:text-blue-300 rounded transition-colors"
                   >
-                    <i className="fa-solid fa-pen-to-square mr-1"></i>
+                    <SquarePen className="mr-1" />
                     Edit
                   </button>
                   <button
                     onClick={() => handleResend(message)}
                     className="px-3 py-1 text-sm bg-green-100 hover:bg-green-200 dark:bg-green-900 dark:hover:bg-green-800 text-green-700 dark:text-green-300 rounded transition-colors"
                   >
-                    <i className="fa-solid fa-paper-plane mr-1"></i>
+                    <Send className="mr-1" />
                     Resend
                   </button>
                   <button
                     onClick={() => handleDelete(message.id)}
                     className="px-3 py-1 text-sm bg-red-100 hover:bg-red-200 dark:bg-red-900 dark:hover:bg-red-800 text-red-700 dark:text-red-300 rounded transition-colors"
                   >
-                    <i className="fa-solid fa-trash mr-1"></i>
+                    <Trash2 className="mr-1" />
                     Delete
                   </button>
                 </div>
@@ -694,19 +696,19 @@ const AdminMessageEditor: React.FC<AdminMessageEditorProps> = ({
 
               <div className="flex gap-4 text-xs text-zinc-500 dark:text-zinc-500 mt-3">
                 <span>
-                  <i className="fa-solid fa-bolt mr-1"></i>
+                  <Zap className="mr-1" />
                   {TRIGGER_EVENT_LABELS[message.eventTrigger] || message.eventTrigger}
                 </span>
                 <span>
-                  <i className="fa-solid fa-users mr-1"></i>
+                  <Users className="mr-1" />
                   {SEGMENT_LABELS[message.segment] || message.segment}
                 </span>
                 <span>
-                  <i className="fa-solid fa-star mr-1"></i>
+                  <Star className="mr-1" />
                   Priority: {message.priority}
                 </span>
                 <span>
-                  <i className="fa-solid fa-palette mr-1"></i>
+                  <Palette className="mr-1" />
                   {message.styleType}
                 </span>
               </div>
@@ -748,7 +750,7 @@ const AdminMessageEditor: React.FC<AdminMessageEditorProps> = ({
               <div className="p-5 bg-white dark:bg-zinc-800 border border-zinc-200 dark:border-zinc-700 rounded-xl">
                 <div className="flex items-center justify-between mb-2">
                   <span className="text-sm text-zinc-600 dark:text-zinc-400">Total Shown</span>
-                  <i className="fa-solid fa-eye text-zinc-400 dark:text-zinc-600"></i>
+                  <Eye className="text-zinc-400 dark:text-zinc-600" />
                 </div>
                 <div className="text-2xl font-bold text-zinc-900 dark:text-white">
                   {metrics.totalShown.toLocaleString()}
@@ -759,7 +761,7 @@ const AdminMessageEditor: React.FC<AdminMessageEditorProps> = ({
               <div className="p-5 bg-white dark:bg-zinc-800 border border-zinc-200 dark:border-zinc-700 rounded-xl">
                 <div className="flex items-center justify-between mb-2">
                   <span className="text-sm text-zinc-600 dark:text-zinc-400">Open Rate</span>
-                  <i className="fa-solid fa-envelope-open text-zinc-400 dark:text-zinc-600"></i>
+                  <MailOpen className="text-zinc-400 dark:text-zinc-600" />
                 </div>
                 <div className={`text-2xl font-bold ${getMetricColor(metrics.openRate)}`}>
                   {metrics.openRate.toFixed(1)}%
@@ -773,7 +775,7 @@ const AdminMessageEditor: React.FC<AdminMessageEditorProps> = ({
               <div className="p-5 bg-white dark:bg-zinc-800 border border-zinc-200 dark:border-zinc-700 rounded-xl">
                 <div className="flex items-center justify-between mb-2">
                   <span className="text-sm text-zinc-600 dark:text-zinc-400">Click Rate</span>
-                  <i className="fa-solid fa-mouse-pointer text-zinc-400 dark:text-zinc-600"></i>
+                  <MousePointer className="text-zinc-400 dark:text-zinc-600" />
                 </div>
                 <div className={`text-2xl font-bold ${getMetricColor(metrics.clickRate)}`}>
                   {metrics.clickRate.toFixed(1)}%
@@ -787,7 +789,7 @@ const AdminMessageEditor: React.FC<AdminMessageEditorProps> = ({
               <div className="p-5 bg-white dark:bg-zinc-800 border border-zinc-200 dark:border-zinc-700 rounded-xl">
                 <div className="flex items-center justify-between mb-2">
                   <span className="text-sm text-zinc-600 dark:text-zinc-400">Dismissed</span>
-                  <i className="fa-solid fa-times-circle text-zinc-400 dark:text-zinc-600"></i>
+                  <XCircle className="text-zinc-400 dark:text-zinc-600" />
                 </div>
                 <div className="text-2xl font-bold text-zinc-900 dark:text-white">
                   {metrics.totalDismissed.toLocaleString()}
@@ -937,7 +939,7 @@ const AdminMessageEditor: React.FC<AdminMessageEditorProps> = ({
 
             <div className="mt-4 p-4 bg-blue-50 dark:bg-blue-900/20 border border-blue-200 dark:border-blue-800 rounded-md">
               <div className="flex items-start gap-3">
-                <i className="fa-solid fa-info-circle text-blue-600 dark:text-blue-400 mt-0.5"></i>
+                <Info className="text-blue-600 dark:text-blue-400 mt-0.5" />
                 <div className="text-sm text-blue-800 dark:text-blue-300">
                   <strong>Insight:</strong> Users with higher message engagement typically show better
                   retention rates. Use this data to optimize your messaging strategy.

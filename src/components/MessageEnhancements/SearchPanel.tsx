@@ -8,6 +8,8 @@ import { searchService, SearchResult, SearchOptions } from '../../services/searc
 import { supabase } from '../../services/supabase';
 import { useDebounce } from '../../hooks/useDebounce';
 
+import { Filter, Paperclip, Search, X } from 'lucide-react';
+
 // ==================== Types ====================
 
 interface SearchFilters {
@@ -172,7 +174,7 @@ const SearchResultItem: React.FC<SearchResultItemProps> = ({ result, onClick }) 
           </p>
           {result.attachments && result.attachments.length > 0 && (
             <div className="flex items-center gap-1 mt-1.5 text-xs text-zinc-500">
-              <i className="fa-solid fa-paperclip" />
+              <Paperclip />
               <span>{result.attachments.length} attachment{result.attachments.length > 1 ? 's' : ''}</span>
             </div>
           )}
@@ -256,7 +258,7 @@ export const SearchPanel: React.FC<SearchPanelProps> = ({
       <div className="px-4 py-3 border-b border-zinc-200 dark:border-zinc-700">
         <div className="flex items-center justify-between mb-3">
           <h3 className="text-sm font-semibold text-zinc-800 dark:text-white flex items-center gap-2">
-            <i className="fa-solid fa-search text-rose-500" />
+            <Search className="text-rose-500" />
             Search Messages
           </h3>
           {onClose && (
@@ -264,14 +266,14 @@ export const SearchPanel: React.FC<SearchPanelProps> = ({
               onClick={onClose}
               className="p-1 hover:bg-zinc-100 dark:hover:bg-zinc-700 rounded transition"
             >
-              <i className="fa-solid fa-xmark text-zinc-400" />
+              <X className="text-zinc-400" />
             </button>
           )}
         </div>
 
         {/* Search Input */}
         <div className="relative">
-          <i className="fa-solid fa-search absolute left-3 top-1/2 -translate-y-1/2 text-zinc-400 text-sm" />
+          <Search className="absolute left-3 top-1/2 -translate-y-1/2 text-zinc-400 text-sm" />
           <input
             type="text"
             value={query}
@@ -285,7 +287,7 @@ export const SearchPanel: React.FC<SearchPanelProps> = ({
               onClick={() => setQuery('')}
               className="absolute right-3 top-1/2 -translate-y-1/2 text-zinc-400 hover:text-zinc-600"
             >
-              <i className="fa-solid fa-xmark text-sm" />
+              <X className="text-sm" />
             </button>
           )}
         </div>
@@ -299,7 +301,7 @@ export const SearchPanel: React.FC<SearchPanelProps> = ({
               : 'text-zinc-500 hover:bg-zinc-100 dark:hover:bg-zinc-700'
           }`}
         >
-          <i className="fa-solid fa-filter" />
+          <Filter />
           Filters
           <i className={`fa-solid fa-chevron-${showFilters ? 'up' : 'down'} text-[10px]`} />
         </button>
@@ -394,7 +396,7 @@ export const SearchPanel: React.FC<SearchPanelProps> = ({
             ) : (
               <div className="p-8 text-center">
                 <div className="w-12 h-12 rounded-full bg-zinc-100 dark:bg-zinc-800 flex items-center justify-center mx-auto mb-3">
-                  <i className="fa-solid fa-search text-zinc-400" />
+                  <Search className="text-zinc-400" />
                 </div>
                 <p className="text-sm font-medium text-zinc-700 dark:text-zinc-300 mb-1">
                   No results found
@@ -411,7 +413,7 @@ export const SearchPanel: React.FC<SearchPanelProps> = ({
         {!isSearching && query.length === 0 && recentSearches.length === 0 && (
           <div className="p-8 text-center">
             <div className="w-12 h-12 rounded-full bg-rose-50 dark:bg-rose-900/20 flex items-center justify-center mx-auto mb-3">
-              <i className="fa-solid fa-search text-rose-500" />
+              <Search className="text-rose-500" />
             </div>
             <p className="text-sm font-medium text-zinc-700 dark:text-zinc-300 mb-1">
               Search your messages
@@ -464,7 +466,7 @@ export const QuickSearchButton: React.FC<QuickSearchButtonProps> = ({ onClick })
     className="flex items-center gap-2 px-3 py-1.5 bg-zinc-100 dark:bg-zinc-800 rounded-lg hover:bg-zinc-200 dark:hover:bg-zinc-700 transition"
     title="Search messages (Ctrl+/)"
   >
-    <i className="fa-solid fa-search text-zinc-500 text-sm" />
+    <Search className="text-zinc-500 text-sm" />
     <span className="text-sm text-zinc-500 dark:text-zinc-400">Search...</span>
     <kbd className="hidden sm:inline-block px-1.5 py-0.5 bg-white dark:bg-zinc-900 rounded border border-zinc-300 dark:border-zinc-600 text-[10px] text-zinc-400">
       Ctrl+/

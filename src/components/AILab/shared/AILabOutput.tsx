@@ -1,6 +1,8 @@
 import React, { useState, useMemo } from 'react';
 import './AILabOutput.css';
 
+import { Share2, Sparkles } from 'lucide-react';
+
 interface AILabOutputProps {
   content: string;
   accentColor?: string;
@@ -197,7 +199,7 @@ const AILabOutput: React.FC<AILabOutputProps> = ({
     >
       <div className="ailab-output-header">
         <div className="ailab-output-label">
-          <i className="fa-solid fa-sparkles" />
+          <Sparkles />
           {label ? `Output · ${label}` : 'AI Output'}
         </div>
         {!isLoading && content && (
@@ -218,7 +220,7 @@ const AILabOutput: React.FC<AILabOutputProps> = ({
                 onClick={onShare}
                 title="Share to channel"
               >
-                <i className="fa-solid fa-share-nodes" />
+                <Share2 />
                 Share
               </button>
             )}

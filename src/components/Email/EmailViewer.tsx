@@ -2,6 +2,8 @@
 import React from 'react';
 import { Email } from '../../types/email';
 
+import { Archive, ArrowLeft, Bookmark, Download, EllipsisVertical, Paperclip, Reply, ReplyAll, Share, Trash2 } from 'lucide-react';
+
 interface EmailViewerProps {
   email: Email;
   onClose: () => void;
@@ -47,7 +49,7 @@ export const EmailViewer: React.FC<EmailViewerProps> = ({
             className="w-8 h-8 rounded-lg hover:bg-zinc-800 flex items-center justify-center transition text-zinc-400 hover:text-white"
             title="Close"
           >
-            <i className="fa-solid fa-arrow-left"></i>
+            <ArrowLeft />
           </button>
           <h2 className="text-lg font-semibold text-white truncate max-w-md">
             {email.subject}
@@ -68,20 +70,20 @@ export const EmailViewer: React.FC<EmailViewerProps> = ({
             className="w-9 h-9 rounded-lg hover:bg-zinc-800 flex items-center justify-center transition text-zinc-400 hover:text-white"
             title="Archive"
           >
-            <i className="fa-solid fa-box-archive"></i>
+            <Archive />
           </button>
           <button
             onClick={onDelete}
             className="w-9 h-9 rounded-lg hover:bg-red-500/20 flex items-center justify-center transition text-zinc-400 hover:text-red-500"
             title="Delete"
           >
-            <i className="fa-solid fa-trash"></i>
+            <Trash2 />
           </button>
           <button
             className="w-9 h-9 rounded-lg hover:bg-zinc-800 flex items-center justify-center transition text-zinc-400 hover:text-white"
             title="More options"
           >
-            <i className="fa-solid fa-ellipsis-vertical"></i>
+            <EllipsisVertical />
           </button>
         </div>
       </div>
@@ -94,7 +96,7 @@ export const EmailViewer: React.FC<EmailViewerProps> = ({
           <div className="flex items-center gap-2">
             {email.isImportant && (
               <span className="px-2 py-1 bg-red-500/20 text-red-400 text-xs rounded-full flex items-center gap-1">
-                <i className="fa-solid fa-bookmark text-[10px]"></i>
+                <Bookmark className="text-[10px]" />
                 Important
               </span>
             )}
@@ -157,7 +159,7 @@ export const EmailViewer: React.FC<EmailViewerProps> = ({
         {email.attachments && email.attachments.length > 0 && (
           <div className="mt-8 pt-6 border-t border-zinc-800">
             <h4 className="text-sm font-semibold text-zinc-400 mb-4 flex items-center gap-2">
-              <i className="fa-solid fa-paperclip"></i>
+              <Paperclip />
               {email.attachments.length} Attachment{email.attachments.length > 1 ? 's' : ''}
             </h4>
             <div className="grid grid-cols-2 gap-3">
@@ -180,7 +182,7 @@ export const EmailViewer: React.FC<EmailViewerProps> = ({
                     <p className="text-xs text-zinc-500">{formatFileSize(attachment.size)}</p>
                   </div>
                   <button className="w-8 h-8 rounded-lg hover:bg-zinc-800 flex items-center justify-center opacity-0 group-hover:opacity-100 transition">
-                    <i className="fa-solid fa-download text-sm text-zinc-400"></i>
+                    <Download className="text-sm text-zinc-400" />
                   </button>
                 </div>
               ))}
@@ -196,19 +198,19 @@ export const EmailViewer: React.FC<EmailViewerProps> = ({
             onClick={onReply}
             className="flex-1 bg-red-500 hover:bg-red-600 text-white py-3 rounded-xl font-bold text-sm uppercase tracking-wider transition-all btn-pulse flex items-center justify-center gap-2"
           >
-            <i className="fa-solid fa-reply"></i>
+            <Reply />
             Reply
           </button>
           <button
             className="px-6 py-3 bg-zinc-800 hover:bg-zinc-700 text-white rounded-xl font-bold text-sm uppercase tracking-wider transition-all flex items-center gap-2"
           >
-            <i className="fa-solid fa-reply-all"></i>
+            <ReplyAll />
             Reply All
           </button>
           <button
             className="px-6 py-3 bg-zinc-800 hover:bg-zinc-700 text-white rounded-xl font-bold text-sm uppercase tracking-wider transition-all flex items-center gap-2"
           >
-            <i className="fa-solid fa-share"></i>
+            <Share />
             Forward
           </button>
         </div>

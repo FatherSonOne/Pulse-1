@@ -5,6 +5,8 @@
 
 import React from 'react';
 
+import { Clock, Download, RefreshCw, Wifi, X } from 'lucide-react';
+
 interface UpdateNotificationProps {
   isVisible: boolean;
   onUpdate: () => void;
@@ -29,7 +31,7 @@ export function UpdateNotification({
         <div className="flex items-start gap-3">
           <div className="flex-shrink-0">
             <div className="w-10 h-10 rounded-full bg-blue-500/20 flex items-center justify-center">
-              <i className="fa fa-download text-blue-400" />
+              <Download className="fa text-blue-400" />
             </div>
           </div>
 
@@ -60,7 +62,7 @@ export function UpdateNotification({
             className="flex-shrink-0 text-gray-500 hover:text-gray-400 p-1"
             aria-label="Dismiss"
           >
-            <i className="fa fa-times" />
+            <X className="fa" />
           </button>
         </div>
       </div>
@@ -100,7 +102,7 @@ export function OfflineBanner({
     <div className={`bg-yellow-600/90 text-white px-4 py-2 ${className}`}>
       <div className="flex items-center justify-between max-w-7xl mx-auto">
         <div className="flex items-center gap-3">
-          <i className="fa fa-wifi" style={{ opacity: 0.6 }} />
+          <Wifi className="fa" />
           <span className="text-sm font-medium">
             You're offline
             {pendingActions > 0 && (
@@ -144,14 +146,14 @@ export function SyncingIndicator({
     <div className={`flex items-center gap-2 text-sm ${className}`}>
       {isSyncing ? (
         <>
-          <i className="fa fa-sync fa-spin text-blue-400" />
+          <RefreshCw className="fa text-blue-400 animate-spin" />
           <span className="text-gray-400">
             Syncing{itemsRemaining > 0 ? ` (${itemsRemaining} remaining)` : '...'}
           </span>
         </>
       ) : (
         <>
-          <i className="fa fa-clock text-yellow-400" />
+          <Clock className="fa text-yellow-400" />
           <span className="text-gray-400">
             {itemsRemaining} pending
           </span>

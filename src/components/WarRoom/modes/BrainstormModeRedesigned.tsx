@@ -3,6 +3,8 @@ import { AIMessage, ThinkingStep } from '../../../services/ragService';
 import { SessionExport } from '../shared';
 import './BrainstormModeRedesigned.css';
 
+import { ArrowUp, BarChart3, Check, ChevronDown, ChevronUp, Folder, GitBranch, GitMerge, GripHorizontal, Layers, Lightbulb, Maximize2, Plus, Rocket, RotateCw, Send, Share2, Sparkles, StickyNote, Trash2, Trophy, Wand2 } from 'lucide-react';
+
 // ============================================
 // Types & Interfaces
 // ============================================
@@ -415,7 +417,7 @@ For each synthesis:
           <div className="bsr-setup-header">
             <div className="bsr-neural-hub">
               <div className="bsr-hub-core">
-                <i className="fa fa-lightbulb"></i>
+                <Lightbulb className="fa" />
               </div>
               <div className="bsr-hub-rings">
                 <div className="bsr-hub-ring" />
@@ -491,7 +493,7 @@ For each synthesis:
                       <span className="bsr-template-desc">{template.description}</span>
                     </div>
                     {selectedTemplate === template.id && (
-                      <i className="fa fa-check bsr-template-check"></i>
+                      <Check className="fa bsr-template-check" />
                     )}
                   </button>
                 ))}
@@ -505,7 +507,7 @@ For each synthesis:
             disabled={!topic.trim()}
             className="bsr-btn bsr-btn-primary bsr-btn-lg"
           >
-            <i className="fa fa-rocket"></i>
+            <Rocket className="fa" />
             Start Brainstorming
           </button>
         </div>
@@ -542,12 +544,12 @@ For each synthesis:
           {/* Session Header */}
           <div className="bsr-sidebar-header">
             <div className="bsr-topic-badge">
-              <i className="fa fa-lightbulb"></i>
+              <Lightbulb className="fa" />
               <span className="bsr-topic-text">{topic}</span>
             </div>
             <div className="bsr-session-stats">
-              <span><i className="fa fa-sticky-note"></i> {ideas.length} ideas</span>
-              <span><i className="fa fa-layer-group"></i> {clusters.length} clusters</span>
+              <span><StickyNote className="fa" /> {ideas.length} ideas</span>
+              <span><Layers className="fa" /> {clusters.length} clusters</span>
             </div>
 
             {/* Momentum Gauge - NEW */}
@@ -582,7 +584,7 @@ For each synthesis:
               disabled={!newIdeaText.trim()}
               className="bsr-btn bsr-btn-primary bsr-btn-icon"
             >
-              <i className="fa fa-plus"></i>
+              <Plus className="fa" />
             </button>
           </div>
         </div>
@@ -591,7 +593,7 @@ For each synthesis:
         <div className="bsr-clusters-section">
           <div className="bsr-section-header">
             <span className="bsr-section-title">
-              <i className="fa fa-layer-group"></i> Clusters
+              <Layers className="fa" /> Clusters
             </span>
             <button
               onClick={() => {
@@ -600,7 +602,7 @@ For each synthesis:
               }}
               className="bsr-btn bsr-btn-ghost bsr-btn-sm"
             >
-              <i className="fa fa-plus"></i>
+              <Plus className="fa" />
             </button>
           </div>
 
@@ -653,13 +655,13 @@ For each synthesis:
                 <div className="bsr-idea-actions">
                   <div className="bsr-vote-controls">
                     <button onClick={() => handleVoteIdea(idea.id, 1)} className="bsr-vote-btn">
-                      <i className="fa fa-chevron-up"></i>
+                      <ChevronUp className="fa" />
                     </button>
                     <span className={`bsr-vote-count ${idea.votes > 0 ? 'has-votes' : ''}`}>
                       {idea.votes}
                     </span>
                     <button onClick={() => handleVoteIdea(idea.id, -1)} className="bsr-vote-btn">
-                      <i className="fa fa-chevron-down"></i>
+                      <ChevronDown className="fa" />
                     </button>
                   </div>
                   <div className="bsr-idea-menu">
@@ -668,14 +670,14 @@ For each synthesis:
                       className="bsr-action-btn"
                       title="Expand idea"
                     >
-                      <i className="fa fa-expand"></i>
+                      <Maximize2 className="fa" />
                     </button>
                     <button
                       onClick={() => handleGenerateVariations(idea.id)}
                       className="bsr-action-btn"
                       title="Generate variations"
                     >
-                      <i className="fa fa-code-branch"></i>
+                      <GitBranch className="fa" />
                     </button>
                     {clusters.length > 0 && (
                       <select
@@ -694,7 +696,7 @@ For each synthesis:
                       className="bsr-action-btn bsr-action-delete"
                       title="Delete"
                     >
-                      <i className="fa fa-trash"></i>
+                      <Trash2 className="fa" />
                     </button>
                   </div>
                 </div>
@@ -704,7 +706,7 @@ For each synthesis:
 
           {ideas.length === 0 && (
             <div className="bsr-empty-state">
-              <i className="fa fa-lightbulb"></i>
+              <Lightbulb className="fa" />
               <p>No ideas yet</p>
               <span>Add your own or ask AI for suggestions</span>
             </div>
@@ -716,7 +718,7 @@ For each synthesis:
           <div className="bsr-top-ideas">
             <div className="bsr-section-header">
               <span className="bsr-section-title">
-                <i className="fa fa-trophy"></i> Top Rated
+                <Trophy className="fa" /> Top Rated
               </span>
             </div>
             <div className="bsr-top-ideas-list">
@@ -734,7 +736,7 @@ For each synthesis:
         {/* Sidebar Footer */}
         <div className="bsr-sidebar-footer">
           <button onClick={() => setShowExport(true)} className="bsr-btn bsr-btn-ghost">
-            <i className="fa fa-share-nodes"></i> Export
+            <Share2 className="fa" /> Export
           </button>
         </div>
       </div>
@@ -779,7 +781,7 @@ For each synthesis:
                 onClick={() => { setTimerSeconds(480); setTimerActive(false); }}
                 className="bsr-timer-btn"
               >
-                <i className="fa fa-rotate-right"></i>
+                <RotateCw className="fa" />
               </button>
             </div>
           </div>
@@ -790,7 +792,7 @@ For each synthesis:
               onClick={() => setShowAIPanel(!showAIPanel)}
               className={`bsr-btn ${showAIPanel ? 'bsr-btn-primary' : 'bsr-btn-ghost'}`}
             >
-              <i className="fa fa-wand-magic-sparkles"></i>
+              <Wand2 className="fa" />
               AI Tools
             </button>
           </div>
@@ -827,7 +829,7 @@ For each synthesis:
               className="bsr-ai-action-btn"
               title="Find missing perspectives"
             >
-              <i className="fa fa-magnifying-glass-chart"></i>
+              <BarChart3 className="fa" />
               Find Gaps
             </button>
             <button
@@ -836,7 +838,7 @@ For each synthesis:
               className="bsr-ai-action-btn"
               title="Synthesize top ideas"
             >
-              <i className="fa fa-code-merge"></i>
+              <GitMerge className="fa" />
               Synthesize
             </button>
           </div>
@@ -851,7 +853,7 @@ For each synthesis:
                 {messages.length === 0 ? (
                   <div className="bsr-chat-empty">
                     <div className="bsr-chat-empty-icon">
-                      <i className="fa fa-wand-magic-sparkles"></i>
+                      <Wand2 className="fa" />
                     </div>
                     <h3>AI Brainstorm Partner</h3>
                     <p>Ask for ideas, challenge assumptions, or explore new angles</p>
@@ -864,7 +866,7 @@ For each synthesis:
                     >
                       {msg.role === 'assistant' && (
                         <div className="bsr-message-header">
-                          <i className="fa fa-lightbulb"></i>
+                          <Lightbulb className="fa" />
                           <span>Brainstorm AI</span>
                         </div>
                       )}
@@ -896,7 +898,7 @@ For each synthesis:
               {unclusteredIdeas.length > 0 && (
                 <div className="bsr-canvas-section">
                   <h4 className="bsr-canvas-section-title">
-                    <i className="fa fa-sparkles"></i> Unclustered Ideas
+                    <Sparkles className="fa" /> Unclustered Ideas
                   </h4>
                   <div className="bsr-canvas-grid">
                     {unclusteredIdeas.map(idea => (
@@ -904,7 +906,7 @@ For each synthesis:
                         <p>{idea.text}</p>
                         <div className="bsr-canvas-card-footer">
                           <span className={idea.votes > 0 ? 'has-votes' : ''}>
-                            <i className="fa fa-arrow-up"></i> {idea.votes}
+                            <ArrowUp className="fa" /> {idea.votes}
                           </span>
                         </div>
                       </div>
@@ -928,7 +930,7 @@ For each synthesis:
                     }}
                   >
                     <h4 className="bsr-cluster-title" style={{ color: color.value }}>
-                      <i className="fa fa-folder"></i>
+                      <Folder className="fa" />
                       {cluster.name}
                       <span className="bsr-cluster-count">{clusterIdeas.length}</span>
                     </h4>
@@ -938,7 +940,7 @@ For each synthesis:
                           <p>{idea.text}</p>
                           {idea.votes > 0 && (
                             <span className="bsr-idea-votes">
-                              <i className="fa fa-arrow-up"></i> {idea.votes}
+                              <ArrowUp className="fa" /> {idea.votes}
                             </span>
                           )}
                         </div>
@@ -953,7 +955,7 @@ For each synthesis:
 
               {ideas.length === 0 && clusters.length === 0 && (
                 <div className="bsr-canvas-empty">
-                  <i className="fa fa-grip"></i>
+                  <GripHorizontal className="fa" />
                   <p>Your ideas will appear here</p>
                   <span>Add ideas from the sidebar or use AI techniques above</span>
                 </div>
@@ -989,10 +991,10 @@ For each synthesis:
                       <td>
                         <div className="bsr-table-actions">
                           <button onClick={() => handleExpandIdea(idea.id)}>
-                            <i className="fa fa-expand"></i>
+                            <Maximize2 className="fa" />
                           </button>
                           <button onClick={() => handleDeleteIdea(idea.id)}>
-                            <i className="fa fa-trash"></i>
+                            <Trash2 className="fa" />
                           </button>
                         </div>
                       </td>
@@ -1007,7 +1009,7 @@ For each synthesis:
         {/* Input Area */}
         <div className="bsr-input-area">
           <div className="bsr-input-container">
-            <i className="fa fa-wand-magic-sparkles"></i>
+            <Wand2 className="fa" />
             <input
               type="text"
               value={input}
@@ -1021,7 +1023,7 @@ For each synthesis:
               disabled={!input.trim() || isLoading}
               className={`bsr-send-btn ${input.trim() ? 'active' : ''}`}
             >
-              <i className="fa fa-paper-plane"></i>
+              <Send className="fa" />
             </button>
           </div>
         </div>

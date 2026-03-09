@@ -4,6 +4,8 @@ import { User } from '../types';
 import { loginWithGoogle, logoutUser, revokeGoogleAccess, disconnectGoogleAccount } from '../services/authService';
 import { AccountSettingsModal, PrivacyDashboard, HelpSupportModal } from './Account';
 
+import { AlertTriangle, Ban, ChevronRight, ExternalLink, HelpCircle, LogOut, Repeat, Settings, ShieldHalf, Unlink, UserPlus } from 'lucide-react';
+
 interface GoogleAccountSelectorProps {
   user: User | null;
   onUserChange: (user: User | null) => void;
@@ -286,7 +288,7 @@ const GoogleAccountSelector: React.FC<GoogleAccountSelectorProps> = ({
             }}
             title="Sign in with Google"
           >
-            <i className="fa-brands fa-google text-zinc-600 dark:text-zinc-300"></i>
+            <ExternalLink className="text-zinc-600 dark:text-zinc-300" />
           </div>
         ) : (
           <div ref={buttonRef} className="w-full flex justify-center">
@@ -295,7 +297,7 @@ const GoogleAccountSelector: React.FC<GoogleAccountSelectorProps> = ({
                 onClick={() => loginWithGoogle().then(onUserChange).catch(console.error)}
                 className="w-full px-4 py-2.5 bg-white dark:bg-zinc-800 border border-zinc-300 dark:border-zinc-700 rounded-lg text-sm font-medium text-zinc-700 dark:text-zinc-300 hover:bg-zinc-50 dark:hover:bg-zinc-700 transition flex items-center justify-center gap-2"
               >
-                <i className="fa-brands fa-google"></i>
+                <ExternalLink />
                 <span>Sign in with Google</span>
               </button>
             )}
@@ -401,7 +403,7 @@ const GoogleAccountSelector: React.FC<GoogleAccountSelectorProps> = ({
                     className="w-full flex items-center gap-3 px-3 py-2.5 text-sm font-medium text-zinc-700 dark:text-zinc-300 hover:bg-zinc-100 dark:hover:bg-zinc-800 rounded-lg transition-colors text-left group"
                     aria-label="Switch to a different Google account"
                   >
-                    <i className="fa-solid fa-repeat w-5 flex-shrink-0 text-zinc-500 dark:text-zinc-400 group-hover:text-zinc-700 dark:group-hover:text-zinc-200"></i>
+                    <Repeat className="w-5 flex-shrink-0 text-zinc-500 dark:text-zinc-400 group-hover:text-zinc-700 dark:group-hover:text-zinc-200" />
                     <span className="flex-1 text-left">Switch account</span>
                   </button>
 
@@ -411,7 +413,7 @@ const GoogleAccountSelector: React.FC<GoogleAccountSelectorProps> = ({
                     className="w-full flex items-center gap-3 px-3 py-2.5 text-sm font-medium text-zinc-700 dark:text-zinc-300 hover:bg-zinc-100 dark:hover:bg-zinc-800 rounded-lg transition-colors text-left group"
                     aria-label="Add another Google account"
                   >
-                    <i className="fa-solid fa-user-plus w-5 flex-shrink-0 text-zinc-500 dark:text-zinc-400 group-hover:text-zinc-700 dark:group-hover:text-zinc-200"></i>
+                    <UserPlus className="w-5 flex-shrink-0 text-zinc-500 dark:text-zinc-400 group-hover:text-zinc-700 dark:group-hover:text-zinc-200" />
                     <span className="flex-1 text-left">Add account</span>
                   </button>
                 </div>
@@ -432,7 +434,7 @@ const GoogleAccountSelector: React.FC<GoogleAccountSelectorProps> = ({
                     className="w-full flex items-center gap-3 px-3 py-2.5 text-sm font-medium text-zinc-700 dark:text-zinc-300 hover:bg-zinc-100 dark:hover:bg-zinc-800 rounded-lg transition-colors text-left group"
                     aria-label="Manage Pulse account settings"
                   >
-                    <i className="fa-solid fa-gear w-5 flex-shrink-0 text-zinc-500 dark:text-zinc-400 group-hover:text-zinc-700 dark:group-hover:text-zinc-200"></i>
+                    <Settings className="w-5 flex-shrink-0 text-zinc-500 dark:text-zinc-400 group-hover:text-zinc-700 dark:group-hover:text-zinc-200" />
                     <span className="flex-1 text-left">Account settings</span>
                   </button>
 
@@ -445,7 +447,7 @@ const GoogleAccountSelector: React.FC<GoogleAccountSelectorProps> = ({
                     className="w-full flex items-center gap-3 px-3 py-2.5 text-sm font-medium text-zinc-700 dark:text-zinc-300 hover:bg-zinc-100 dark:hover:bg-zinc-800 rounded-lg transition-colors text-left group"
                     aria-label="View privacy and connected services"
                   >
-                    <i className="fa-solid fa-shield-halved w-5 flex-shrink-0 text-zinc-500 dark:text-zinc-400 group-hover:text-zinc-700 dark:group-hover:text-zinc-200"></i>
+                    <ShieldHalf className="w-5 flex-shrink-0 text-zinc-500 dark:text-zinc-400 group-hover:text-zinc-700 dark:group-hover:text-zinc-200" />
                     <span className="flex-1 text-left">Privacy & connected services</span>
                   </button>
 
@@ -458,7 +460,7 @@ const GoogleAccountSelector: React.FC<GoogleAccountSelectorProps> = ({
                     className="w-full flex items-center gap-3 px-3 py-2.5 text-sm font-medium text-zinc-700 dark:text-zinc-300 hover:bg-zinc-100 dark:hover:bg-zinc-800 rounded-lg transition-colors text-left group"
                     aria-label="Get help and support"
                   >
-                    <i className="fa-solid fa-circle-question w-5 flex-shrink-0 text-zinc-500 dark:text-zinc-400 group-hover:text-zinc-700 dark:group-hover:text-zinc-200"></i>
+                    <HelpCircle className="w-5 flex-shrink-0 text-zinc-500 dark:text-zinc-400 group-hover:text-zinc-700 dark:group-hover:text-zinc-200" />
                     <span className="flex-1 text-left">Help & support</span>
                   </button>
                 </div>
@@ -477,9 +479,9 @@ const GoogleAccountSelector: React.FC<GoogleAccountSelectorProps> = ({
                       className="w-full flex items-center gap-3 px-3 py-2.5 text-sm font-medium text-zinc-700 dark:text-zinc-300 hover:bg-blue-50 dark:hover:bg-blue-900/20 rounded-lg transition-colors text-left group"
                       aria-label="Manage your Google Account"
                     >
-                      <i className="fa-brands fa-google w-5 flex-shrink-0 text-blue-500 dark:text-blue-400"></i>
+                      <ExternalLink className="w-5 flex-shrink-0 text-blue-500 dark:text-blue-400" />
                       <span className="flex-1 text-left">Manage your Google Account</span>
-                      <i className="fa-solid fa-external-link text-[10px] text-zinc-400"></i>
+                      <ExternalLink className="text-[10px] text-zinc-400" />
                     </button>
                   </div>
                 </div>
@@ -489,7 +491,7 @@ const GoogleAccountSelector: React.FC<GoogleAccountSelectorProps> = ({
               {user.googleConnected && (
                 <details className="px-2 py-1 mt-2 border-t border-dashed border-zinc-200 dark:border-zinc-700 pt-2">
                   <summary className="px-3 py-2 text-xs font-semibold text-zinc-500 dark:text-zinc-500 uppercase tracking-wider cursor-pointer hover:bg-zinc-50 dark:hover:bg-zinc-800/50 rounded-lg transition-colors flex items-center gap-2 select-none">
-                    <i className="fa-solid fa-chevron-right text-[10px] transition-transform duration-200 [details[open]_&]:rotate-90"></i>
+                    <ChevronRight className="text-[10px] transition-transform duration-200 [details[open]_&]:rotate-90" />
                     <span>Advanced options</span>
                     <span className="ml-auto text-[10px] px-2 py-0.5 bg-zinc-200 dark:bg-zinc-700 rounded-full normal-case tracking-normal font-medium">
                       For power users
@@ -498,7 +500,7 @@ const GoogleAccountSelector: React.FC<GoogleAccountSelectorProps> = ({
 
                   <div className="mt-1 space-y-0.5 px-1">
                     <div className="px-3 py-2 text-xs text-amber-700 dark:text-amber-400 bg-amber-50 dark:bg-amber-900/20 rounded-lg flex items-start gap-2 mb-2">
-                      <i className="fa-solid fa-triangle-exclamation flex-shrink-0 mt-0.5"></i>
+                      <AlertTriangle className="flex-shrink-0 mt-0.5" />
                       <span className="text-[11px] leading-relaxed">
                         These actions are for advanced users and cannot be easily undone.
                       </span>
@@ -510,7 +512,7 @@ const GoogleAccountSelector: React.FC<GoogleAccountSelectorProps> = ({
                       className="w-full flex items-center gap-3 px-3 py-2.5 text-sm font-medium text-amber-700 dark:text-amber-400 hover:bg-amber-50 dark:hover:bg-amber-900/20 rounded-lg transition-colors text-left group"
                       aria-label="Disconnect your Google account"
                     >
-                      <i className="fa-solid fa-unlink w-5 flex-shrink-0"></i>
+                      <Unlink className="w-5 flex-shrink-0" />
                       <span className="flex-1 text-left">Disconnect Google Account</span>
                     </button>
 
@@ -520,7 +522,7 @@ const GoogleAccountSelector: React.FC<GoogleAccountSelectorProps> = ({
                       className="w-full flex items-center gap-3 px-3 py-2.5 text-sm font-medium text-red-600 dark:text-red-400 hover:bg-red-50 dark:hover:bg-red-900/20 rounded-lg transition-colors text-left group"
                       aria-label="Revoke all access and sign out"
                     >
-                      <i className="fa-solid fa-ban w-5 flex-shrink-0"></i>
+                      <Ban className="w-5 flex-shrink-0" />
                       <span className="flex-1 text-left">Revoke all access</span>
                     </button>
                   </div>
@@ -535,7 +537,7 @@ const GoogleAccountSelector: React.FC<GoogleAccountSelectorProps> = ({
                   className="w-full flex items-center gap-3 px-3 py-2.5 text-sm font-medium text-red-600 dark:text-red-400 hover:bg-red-50 dark:hover:bg-red-900/20 rounded-lg transition-colors text-left group"
                   aria-label="Sign out of Pulse"
                 >
-                  <i className="fa-solid fa-right-from-bracket w-5 flex-shrink-0"></i>
+                  <LogOut className="w-5 flex-shrink-0" />
                   <span className="flex-1 text-left">Sign out</span>
                 </button>
               </div>

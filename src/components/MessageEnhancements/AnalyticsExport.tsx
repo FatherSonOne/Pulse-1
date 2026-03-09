@@ -2,6 +2,8 @@ import React, { useState, useCallback, useMemo, useEffect } from 'react';
 import { analyticsExportService, type ExportJob as ServiceExportJob, type AnalyticsData as ServiceAnalyticsData } from '../../services/analyticsExportService';
 import { supabase } from '../../services/supabase';
 
+import { Download, FileOutput, History, Loader2 } from 'lucide-react';
+
 // Types
 interface ExportFormat {
   id: string;
@@ -236,7 +238,7 @@ export const AnalyticsExport: React.FC<AnalyticsExportProps> = ({
         <div className="flex items-center justify-between">
           <div className="flex items-center gap-3">
             <div className="w-10 h-10 rounded-full bg-white dark:bg-zinc-800 flex items-center justify-center shadow-sm">
-              <i className="fa-solid fa-file-export text-indigo-500" />
+              <FileOutput className="text-indigo-500" />
             </div>
             <div>
               <p className="text-sm font-medium text-zinc-900 dark:text-white">Analytics Export</p>
@@ -361,12 +363,12 @@ export const AnalyticsExport: React.FC<AnalyticsExportProps> = ({
           >
             {isExporting ? (
               <>
-                <i className="fa-solid fa-circle-notch fa-spin" />
+                <Loader2 className="animate-spin" />
                 Exporting...
               </>
             ) : (
               <>
-                <i className="fa-solid fa-download" />
+                <Download />
                 Export {selectedFormat?.name} (~{formatFileSize(estimatedSize)})
               </>
             )}
@@ -378,7 +380,7 @@ export const AnalyticsExport: React.FC<AnalyticsExportProps> = ({
         <div className="space-y-2">
           {jobs.length === 0 ? (
             <div className="text-center py-8">
-              <i className="fa-solid fa-clock-rotate-left text-zinc-300 text-3xl mb-3" />
+              <History className="text-zinc-300 text-3xl mb-3" />
               <p className="text-sm text-zinc-500">No export history</p>
             </div>
           ) : (
@@ -430,7 +432,7 @@ export const AnalyticsExport: React.FC<AnalyticsExportProps> = ({
                       onClick={() => onDownload?.(job.id)}
                       className="px-3 py-1 bg-indigo-100 dark:bg-indigo-900/30 text-indigo-600 dark:text-indigo-400 rounded text-xs font-medium hover:bg-indigo-200 dark:hover:bg-indigo-900/50"
                     >
-                      <i className="fa-solid fa-download mr-1" />
+                      <Download className="mr-1" />
                       Download
                     </button>
                   </div>
@@ -548,6 +550,6 @@ export const QuickExportButton: React.FC<QuickExportButtonProps> = ({ onClick })
     className="p-2 rounded-lg hover:bg-zinc-100 dark:hover:bg-zinc-800 transition"
     title="Export conversation"
   >
-    <i className="fa-solid fa-file-export text-zinc-500" />
+    <FileOutput className="text-zinc-500" />
   </button>
 );

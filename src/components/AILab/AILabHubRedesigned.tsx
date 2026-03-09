@@ -10,6 +10,8 @@ import StandupBriefing from './workspaces/StandupBriefing';
 import ChannelDigest from './workspaces/ChannelDigest';
 import './AILabHubRedesigned.css';
 
+import { ArrowRight, Atom, Lightbulb } from 'lucide-react';
+
 // ============= TYPES =============
 
 interface AILabHubRedesignedProps {
@@ -159,7 +161,7 @@ const NucleusIcon: React.FC = () => (
     <div className="nexus-nucleus-ring nexus-nucleus-ring-2" />
     <div className="nexus-nucleus-ring nexus-nucleus-ring-3" />
     <div className="nexus-nucleus-core">
-      <i className="fa-solid fa-atom" />
+      <Atom />
     </div>
     <div className="nexus-orbit-particle nexus-orbit-particle-1" />
     <div className="nexus-orbit-particle nexus-orbit-particle-2" />
@@ -221,7 +223,7 @@ const WorkspaceCard: React.FC<{
         <div className="nexus-launch-btn">
           <span>{config.comingSoon ? 'Coming Soon' : 'Launch Workspace'}</span>
           <div className="nexus-launch-arrow">
-            <i className="fa-solid fa-arrow-right" />
+            <ArrowRight />
           </div>
         </div>
 
@@ -341,7 +343,7 @@ const HubContent: React.FC<{ apiKey: string }> = ({ apiKey }) => {
 
       {/* Footer */}
       <div className="nexus-footer">
-        <i className="fa-solid fa-lightbulb nexus-footer-icon" />
+        <Lightbulb className="nexus-footer-icon" />
         <span>
           Pro tip: Use <kbd>Ctrl</kbd> + <kbd>K</kbd> to quickly switch between workspaces
         </span>

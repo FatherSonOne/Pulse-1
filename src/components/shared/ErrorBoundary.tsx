@@ -1,6 +1,8 @@
 import React, { Component, ErrorInfo, ReactNode } from 'react';
 import { Capacitor } from '@capacitor/core';
 
+import { AlertTriangle, RefreshCw, RotateCw } from 'lucide-react';
+
 interface Props {
   children: ReactNode;
   fallback?: ReactNode;
@@ -70,7 +72,7 @@ export class ErrorBoundary extends Component<Props, State> {
         <div className="h-full w-full flex items-center justify-center p-6 bg-gray-50 dark:bg-zinc-900">
           <div className="max-w-md text-center space-y-4">
             <div className="w-16 h-16 mx-auto rounded-full bg-red-100 dark:bg-red-900/30 flex items-center justify-center">
-              <i className="fa fa-exclamation-triangle text-red-500 text-2xl"></i>
+              <AlertTriangle className="fa text-red-500 text-2xl" />
             </div>
             
             <h2 className="text-xl font-bold text-gray-900 dark:text-white">
@@ -106,7 +108,7 @@ export class ErrorBoundary extends Component<Props, State> {
                 onClick={this.handleRetry}
                 className="px-4 py-2 bg-rose-500 hover:bg-rose-600 text-white rounded-lg font-medium transition-colors"
               >
-                <i className="fa fa-refresh mr-2"></i>
+                <RefreshCw className="fa mr-2" />
                 Try Again
               </button>
               
@@ -114,7 +116,7 @@ export class ErrorBoundary extends Component<Props, State> {
                 onClick={() => window.location.reload()}
                 className="px-4 py-2 bg-gray-200 dark:bg-zinc-700 hover:bg-gray-300 dark:hover:bg-zinc-600 text-gray-700 dark:text-gray-300 rounded-lg font-medium transition-colors"
               >
-                <i className="fa fa-rotate-right mr-2"></i>
+                <RotateCw className="fa mr-2" />
                 Reload App
               </button>
             </div>

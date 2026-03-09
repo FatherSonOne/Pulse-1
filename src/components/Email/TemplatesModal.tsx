@@ -3,6 +3,8 @@ import React, { useState, useEffect } from 'react';
 import { emailSyncService, EmailTemplate } from '../../services/emailSyncService';
 import toast from 'react-hot-toast';
 
+import { Check, Code, FilePlus, FileText, Lightbulb, Loader2, Pen, Plus, Trash2, X } from 'lucide-react';
+
 interface TemplatesModalProps {
   onSelectTemplate: (template: EmailTemplate) => void;
   onClose: () => void;
@@ -163,7 +165,7 @@ export const TemplatesModal: React.FC<TemplatesModalProps> = ({
         <div className="flex items-center justify-between px-6 py-4 border-b border-zinc-800">
           <div className="flex items-center gap-3">
             <div className="w-10 h-10 rounded-xl bg-gradient-to-br from-emerald-500 to-teal-600 flex items-center justify-center">
-              <i className="fa-solid fa-file-lines text-white"></i>
+              <FileText className="text-white" />
             </div>
             <div>
               <h2 className="text-lg font-semibold text-white">Email Templates</h2>
@@ -174,7 +176,7 @@ export const TemplatesModal: React.FC<TemplatesModalProps> = ({
             onClick={onClose}
             className="w-8 h-8 rounded-lg hover:bg-zinc-800 flex items-center justify-center text-zinc-400 hover:text-white transition"
           >
-            <i className="fa-solid fa-xmark"></i>
+            <X />
           </button>
         </div>
 
@@ -187,17 +189,17 @@ export const TemplatesModal: React.FC<TemplatesModalProps> = ({
               onClick={handleStartCreate}
               className="w-full mb-4 flex items-center justify-center gap-2 px-4 py-3 bg-emerald-500/20 hover:bg-emerald-500/30 border border-emerald-500/30 text-emerald-400 rounded-xl transition"
             >
-              <i className="fa-solid fa-plus"></i>
+              <Plus />
               <span className="font-medium">Create New Template</span>
             </button>
 
             {loading ? (
               <div className="flex items-center justify-center py-12">
-                <i className="fa-solid fa-circle-notch fa-spin text-2xl text-zinc-500"></i>
+                <Loader2 className="text-2xl text-zinc-500 animate-spin" />
               </div>
             ) : templates.length === 0 ? (
               <div className="text-center py-12 text-zinc-500">
-                <i className="fa-solid fa-file-circle-plus text-4xl mb-3 block"></i>
+                <FilePlus className="text-4xl mb-3 block" />
                 <p>No templates yet</p>
                 <p className="text-sm">Create your first template to get started</p>
               </div>
@@ -236,7 +238,7 @@ export const TemplatesModal: React.FC<TemplatesModalProps> = ({
                               </div>
                               {template.variables && template.variables.length > 0 && (
                                 <div className="flex items-center gap-1 mt-2">
-                                  <i className="fa-solid fa-code text-[10px] text-amber-500"></i>
+                                  <Code className="text-[10px] text-amber-500" />
                                   <span className="text-[10px] text-amber-500">
                                     Variables: {template.variables.join(', ')}
                                   </span>
@@ -252,7 +254,7 @@ export const TemplatesModal: React.FC<TemplatesModalProps> = ({
                                 className="w-7 h-7 rounded hover:bg-zinc-700 flex items-center justify-center text-zinc-500 hover:text-white transition"
                                 title="Edit"
                               >
-                                <i className="fa-solid fa-pen text-xs"></i>
+                                <Pen className="text-xs" />
                               </button>
                               <button
                                 onClick={(e) => {
@@ -262,7 +264,7 @@ export const TemplatesModal: React.FC<TemplatesModalProps> = ({
                                 className="w-7 h-7 rounded hover:bg-red-500/20 flex items-center justify-center text-zinc-500 hover:text-red-400 transition"
                                 title="Delete"
                               >
-                                <i className="fa-solid fa-trash text-xs"></i>
+                                <Trash2 className="text-xs" />
                               </button>
                             </div>
                           </div>
@@ -339,7 +341,7 @@ export const TemplatesModal: React.FC<TemplatesModalProps> = ({
                 {/* Variable hint */}
                 <div className="bg-amber-500/10 border border-amber-500/20 rounded-lg p-3">
                   <div className="flex items-start gap-2">
-                    <i className="fa-solid fa-lightbulb text-amber-500 text-sm mt-0.5"></i>
+                    <Lightbulb className="text-amber-500 text-sm mt-0.5" />
                     <div className="text-xs text-amber-200">
                       <strong>Pro tip:</strong> Use {'{{name}}'}, {'{{company}}'}, {'{{date}}'}, etc. as placeholders. You'll be prompted to fill them when using the template.
                     </div>
@@ -355,12 +357,12 @@ export const TemplatesModal: React.FC<TemplatesModalProps> = ({
                   >
                     {saving ? (
                       <>
-                        <i className="fa-solid fa-circle-notch fa-spin"></i>
+                        <Loader2 className="animate-spin" />
                         Saving...
                       </>
                     ) : (
                       <>
-                        <i className="fa-solid fa-check"></i>
+                        <Check />
                         {isCreating ? 'Create Template' : 'Save Changes'}
                       </>
                     )}

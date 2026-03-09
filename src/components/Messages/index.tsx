@@ -7,6 +7,8 @@ import { MessageChat } from './MessageChat';
 import { MessageChannel } from '../../types/messages';
 import { useAuth } from '../../hooks/useAuth';
 
+import { ArrowLeft, MessagesSquare } from 'lucide-react';
+
 interface MessagesViewProps {
   workspaceId?: string;
   currentUserId?: string;
@@ -50,7 +52,7 @@ export const MessagesView: React.FC<MessagesViewProps> = ({
                 onClick={() => setShowChannelList(true)}
                 className="flex items-center gap-2 text-zinc-400 hover:text-white transition"
               >
-                <i className="fa-solid fa-arrow-left"></i>
+                <ArrowLeft />
                 <span className="text-sm">Back to channels</span>
               </button>
             </div>
@@ -64,7 +66,7 @@ export const MessagesView: React.FC<MessagesViewProps> = ({
           <div className="flex-1 flex items-center justify-center bg-zinc-950">
             <div className="text-center text-zinc-500 p-8">
               <div className="w-20 h-20 rounded-2xl bg-zinc-900 flex items-center justify-center mx-auto mb-4">
-                <i className="fa-solid fa-comments text-3xl text-zinc-700"></i>
+                <MessagesSquare className="text-3xl text-zinc-700" />
               </div>
               <p className="text-xl font-medium mb-2 text-white">Select a channel</p>
               <p className="text-sm text-zinc-500 max-w-xs mx-auto">

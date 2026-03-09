@@ -6,6 +6,8 @@ import toast from 'react-hot-toast';
 import { EmailComposer } from './EmailComposer';
 import { EmailViewer } from './EmailViewer';
 
+import { Archive, Bookmark, Check, Inbox, MailOpen, Paperclip, RefreshCw, Search, SquarePen, Trash2 } from 'lucide-react';
+
 interface EnhancedEmailClientProps {
   userEmail?: string;
   userName?: string;
@@ -187,7 +189,7 @@ export const EnhancedEmailClient: React.FC<EnhancedEmailClientProps> = ({
             onClick={() => { setReplyTo(null); setShowComposer(true); }}
             className="w-full bg-red-500 hover:bg-red-600 text-white py-3 rounded-xl font-bold text-sm uppercase tracking-wider transition-all btn-pulse flex items-center justify-center gap-2"
           >
-            <i className="fa-solid fa-pen-to-square"></i>
+            <SquarePen />
             Compose
           </button>
         </div>
@@ -256,7 +258,7 @@ export const EnhancedEmailClient: React.FC<EnhancedEmailClientProps> = ({
         <div className="px-4 py-3 border-b border-zinc-800 flex items-center gap-3">
           {/* Search */}
           <div className="flex-1 relative">
-            <i className="fa-solid fa-search absolute left-3 top-1/2 -translate-y-1/2 text-zinc-500 text-sm"></i>
+            <Search className="absolute left-3 top-1/2 -translate-y-1/2 text-zinc-500 text-sm" />
             <input
               type="text"
               placeholder="Search emails..."
@@ -276,21 +278,21 @@ export const EnhancedEmailClient: React.FC<EnhancedEmailClientProps> = ({
                 className="p-2 hover:bg-zinc-800 rounded-lg transition text-zinc-400 hover:text-white"
                 title="Mark as read"
               >
-                <i className="fa-solid fa-envelope-open text-sm"></i>
+                <MailOpen className="text-sm" />
               </button>
               <button
                 onClick={() => handleBulkAction('archive')}
                 className="p-2 hover:bg-zinc-800 rounded-lg transition text-zinc-400 hover:text-white"
                 title="Archive"
               >
-                <i className="fa-solid fa-box-archive text-sm"></i>
+                <Archive className="text-sm" />
               </button>
               <button
                 onClick={() => handleBulkAction('delete')}
                 className="p-2 hover:bg-red-500/20 rounded-lg transition text-zinc-400 hover:text-red-500"
                 title="Delete"
               >
-                <i className="fa-solid fa-trash text-sm"></i>
+                <Trash2 className="text-sm" />
               </button>
             </div>
           )}
@@ -301,7 +303,7 @@ export const EnhancedEmailClient: React.FC<EnhancedEmailClientProps> = ({
             className="p-2 hover:bg-zinc-800 rounded-lg transition text-zinc-400 hover:text-white"
             title="Refresh"
           >
-            <i className="fa-solid fa-arrows-rotate text-sm"></i>
+            <RefreshCw className="text-sm" />
           </button>
         </div>
 
@@ -319,7 +321,7 @@ export const EnhancedEmailClient: React.FC<EnhancedEmailClientProps> = ({
             ) : emails.length === 0 ? (
               <div className="flex items-center justify-center h-full">
                 <div className="text-center text-zinc-500">
-                  <i className="fa-solid fa-inbox text-4xl mb-3 block text-zinc-700"></i>
+                  <Inbox className="text-4xl mb-3 block text-zinc-700" />
                   <p className="text-lg font-medium mb-1">No emails</p>
                   <p className="text-sm">Your {activeFolder} is empty</p>
                 </div>
@@ -348,7 +350,7 @@ export const EnhancedEmailClient: React.FC<EnhancedEmailClientProps> = ({
                       }`}
                     >
                       {selectedEmails.has(email.id) && (
-                        <i className="fa-solid fa-check text-[10px] text-white"></i>
+                        <Check className="text-[10px] text-white" />
                       )}
                     </div>
 
@@ -369,10 +371,10 @@ export const EnhancedEmailClient: React.FC<EnhancedEmailClientProps> = ({
                           {email.from.name || email.from.email}
                         </span>
                         {email.isImportant && (
-                          <i className="fa-solid fa-bookmark text-[10px] text-red-500"></i>
+                          <Bookmark className="text-[10px] text-red-500" />
                         )}
                         {email.attachments && email.attachments.length > 0 && (
-                          <i className="fa-solid fa-paperclip text-[10px] text-zinc-500"></i>
+                          <Paperclip className="text-[10px] text-zinc-500" />
                         )}
                       </div>
                       <p className={`text-sm truncate ${!email.isRead ? 'text-zinc-200' : 'text-zinc-500'}`}>
@@ -394,14 +396,14 @@ export const EnhancedEmailClient: React.FC<EnhancedEmailClientProps> = ({
                           className="p-1 hover:bg-zinc-700 rounded"
                           title="Archive"
                         >
-                          <i className="fa-solid fa-box-archive text-[10px] text-zinc-500 hover:text-white"></i>
+                          <Archive className="text-[10px] text-zinc-500 hover:text-white" />
                         </button>
                         <button
                           onClick={(e) => handleDelete(email, e)}
                           className="p-1 hover:bg-red-500/20 rounded"
                           title="Delete"
                         >
-                          <i className="fa-solid fa-trash text-[10px] text-zinc-500 hover:text-red-500"></i>
+                          <Trash2 className="text-[10px] text-zinc-500 hover:text-red-500" />
                         </button>
                       </div>
                     </div>

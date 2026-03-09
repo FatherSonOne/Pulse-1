@@ -3,6 +3,8 @@ import { motion, AnimatePresence } from 'framer-motion';
 import type { ToolAction } from '../../services/toolRegistry';
 import './SlashCommandDropdown.css';
 
+import { Search, Terminal } from 'lucide-react';
+
 interface SlashCommandDropdownProps {
   matches: ToolAction[];
   selectedIndex: number;
@@ -53,7 +55,7 @@ export const SlashCommandDropdown: React.FC<SlashCommandDropdownProps> = ({
     >
       {/* Header */}
       <div className="slash-command-header">
-        <i className="fa-solid fa-terminal text-rose-500" />
+        <Terminal className="text-rose-500" />
         <span className="slash-command-title">Quick Launch</span>
         {query && (
           <span className="slash-command-query">/{query}</span>
@@ -64,7 +66,7 @@ export const SlashCommandDropdown: React.FC<SlashCommandDropdownProps> = ({
       <div className="slash-command-list">
         {matches.length === 0 ? (
           <div className="slash-command-empty">
-            <i className="fa-solid fa-magnifying-glass text-zinc-400 mb-2"></i>
+            <Search className="text-zinc-400 mb-2" />
             <div className="text-sm text-zinc-600 dark:text-zinc-400">
               No tools found for "/{query}"
             </div>

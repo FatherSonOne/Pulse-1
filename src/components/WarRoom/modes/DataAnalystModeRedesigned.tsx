@@ -15,6 +15,8 @@ import { ModeSwitcher, WarRoomMode, MissionType, RoomType } from '../ModeSwitche
 import { SessionExport } from '../shared';
 import './DataAnalystModeRedesigned.css';
 
+import { Activity, Bookmark, Brain, CheckCircle, ChevronLeft, Database, Download, FileText, FolderOpen, Lightbulb, Microscope, Network, Quote, Send, Sliders, Zap } from 'lucide-react';
+
 // ============= TYPES =============
 
 interface DataSource {
@@ -228,7 +230,7 @@ const AnalysisTypeCard: React.FC<{
     </div>
     {isActive && (
       <div className="da-analysis-active-indicator">
-        <i className="fa fa-check-circle" />
+        <CheckCircle className="fa" />
       </div>
     )}
   </button>
@@ -256,7 +258,7 @@ const EvidencePanel: React.FC<{
   <div className={`da-evidence-panel ${isExpanded ? 'expanded' : ''}`}>
     <button className="da-evidence-header" onClick={onToggle}>
       <div className="da-evidence-title">
-        <i className="fa fa-bookmark" />
+        <Bookmark className="fa" />
         <span>Evidence Trail</span>
         <span className="da-evidence-count">{citations.length}</span>
       </div>
@@ -273,7 +275,7 @@ const EvidencePanel: React.FC<{
               <p className="da-evidence-excerpt">"{citation.excerpt}"</p>
               <div className="da-evidence-meta">
                 <span className="da-evidence-source">
-                  <i className="fa fa-file-lines" />
+                  <FileText className="fa" />
                   {citation.source}
                 </span>
                 <span className="da-evidence-relevance">
@@ -320,7 +322,7 @@ const AnalystMessage: React.FC<{
       {!isUser && (
         <div className="da-message-header">
           <div className="da-ai-badge">
-            <i className="fa fa-chart-network" />
+            <Network className="fa" />
             <span>Data Analysis</span>
           </div>
           <span className="da-message-time">
@@ -336,7 +338,7 @@ const AnalystMessage: React.FC<{
       {thinkingSteps && thinkingSteps.length > 0 && (
         <div className="da-thinking">
           <div className="da-thinking-header">
-            <i className="fa fa-brain" />
+            <Brain className="fa" />
             <span>Analysis Process</span>
           </div>
           <div className="da-thinking-steps">
@@ -365,7 +367,7 @@ const AnalystMessage: React.FC<{
       {!isUser && citations.length > 0 && (
         <div className="da-message-citations">
           <div className="da-citations-label">
-            <i className="fa fa-quote-left" />
+            <Quote className="fa" />
             <span>Sources cited</span>
           </div>
           <div className="da-citations-list">
@@ -386,7 +388,7 @@ const AnalysisLoadingState: React.FC = () => (
       <div className="da-loading-ring" />
       <div className="da-loading-ring delay-1" />
       <div className="da-loading-ring delay-2" />
-      <i className="fa fa-microscope" />
+      <Microscope className="fa" />
     </div>
     <div className="da-loading-text">
       <span className="da-loading-primary">Analyzing data...</span>
@@ -419,7 +421,7 @@ const EmptyState: React.FC<{
       </p>
       {!hasDocuments && (
         <div className="da-empty-hint">
-          <i className="fa fa-lightbulb" />
+          <Lightbulb className="fa" />
           <span>Tip: Add PDFs, documents, or URLs to analyze</span>
         </div>
       )}
@@ -561,14 +563,14 @@ export const DataAnalystModeRedesigned: React.FC<DataAnalystModeRedesignedProps>
           <aside className="da-sources-panel">
             <div className="da-panel-header">
               <div className="da-panel-title">
-                <i className="fa fa-database" />
+                <Database className="fa" />
                 <span>Data Sources</span>
               </div>
               <button
                 onClick={() => setShowSources(false)}
                 className="da-panel-close"
               >
-                <i className="fa fa-chevron-left" />
+                <ChevronLeft className="fa" />
               </button>
             </div>
 
@@ -601,7 +603,7 @@ export const DataAnalystModeRedesigned: React.FC<DataAnalystModeRedesignedProps>
                 </>
               ) : (
                 <div className="da-sources-empty">
-                  <i className="fa fa-folder-open" />
+                  <FolderOpen className="fa" />
                   <span>No data sources</span>
                   <p>Upload documents to begin analysis</p>
                 </div>
@@ -611,7 +613,7 @@ export const DataAnalystModeRedesigned: React.FC<DataAnalystModeRedesignedProps>
             {/* Data Visualization */}
             <div className="da-viz-section">
               <div className="da-viz-header">
-                <i className="fa fa-wave-square" />
+                <Activity className="fa" />
                 <span>Activity</span>
               </div>
               <DataViz isActive={isLoading} />
@@ -629,7 +631,7 @@ export const DataAnalystModeRedesigned: React.FC<DataAnalystModeRedesignedProps>
                   onClick={() => setShowSources(true)}
                   className="da-toggle-sources"
                 >
-                  <i className="fa fa-database" />
+                  <Database className="fa" />
                   <span>{dataSources.length}</span>
                 </button>
               )}
@@ -648,14 +650,14 @@ export const DataAnalystModeRedesigned: React.FC<DataAnalystModeRedesignedProps>
                 className={`da-header-btn ${showEvidence ? 'active' : ''}`}
                 title="Toggle Evidence Panel"
               >
-                <i className="fa fa-bookmark" />
+                <Bookmark className="fa" />
               </button>
               <button
                 onClick={() => setShowExport(true)}
                 className="da-header-btn"
                 title="Export Analysis"
               >
-                <i className="fa fa-download" />
+                <Download className="fa" />
               </button>
             </div>
           </header>
@@ -663,7 +665,7 @@ export const DataAnalystModeRedesigned: React.FC<DataAnalystModeRedesignedProps>
           {/* Analysis Type Selector */}
           <div className="da-analysis-selector">
             <div className="da-selector-label">
-              <i className="fa fa-sliders" />
+              <Sliders className="fa" />
               <span>Analysis Mode</span>
             </div>
             <div className="da-analysis-grid">
@@ -686,7 +688,7 @@ export const DataAnalystModeRedesigned: React.FC<DataAnalystModeRedesignedProps>
                 onClick={() => handleQuickQuery(query)}
                 className="da-quick-btn"
               >
-                <i className="fa fa-bolt" />
+                <Zap className="fa" />
                 {query}
               </button>
             ))}
@@ -742,7 +744,7 @@ export const DataAnalystModeRedesigned: React.FC<DataAnalystModeRedesignedProps>
                 disabled={!input.trim() || isLoading}
                 className="da-send-btn"
               >
-                <i className="fa fa-paper-plane" />
+                <Send className="fa" />
                 <span>Analyze</span>
               </button>
             </div>

@@ -8,7 +8,9 @@ import AudioVisualizer from '../AudioVisualizer';
 import './Meetings.css';
 
 // Import new components
+import { ArrowLeft, ArrowRight, Copy, Ellipsis, Hand, History, LayoutGrid, MessageSquare, Mic, PhoneOff, PlayCircle, Send, Upload, Users, Wand2, X } from 'lucide-react';
 import {
+
   Platform,
   MeetingTemplate,
   AgendaItem,
@@ -663,7 +665,7 @@ const Meetings: React.FC<MeetingsProps> = ({ apiKey, contacts, initialContactId,
               {/* Platform Cards */}
               <div className="meetings-section-header">
                 <div className="meetings-section-title">
-                  <i className="fa-solid fa-circle-play" />
+                  <PlayCircle />
                   Start Instant Meeting
                 </div>
               </div>
@@ -675,7 +677,7 @@ const Meetings: React.FC<MeetingsProps> = ({ apiKey, contacts, initialContactId,
               {/* Feature Cards (NEW) */}
               <div className="meetings-section-header">
                 <div className="meetings-section-title">
-                  <i className="fa-solid fa-grid-2" />
+                  <LayoutGrid />
                   Enhanced Features
                 </div>
               </div>
@@ -687,7 +689,7 @@ const Meetings: React.FC<MeetingsProps> = ({ apiKey, contacts, initialContactId,
               {/* Meeting History */}
               <div className="meetings-section-header">
                 <div className="meetings-section-title">
-                  <i className="fa-solid fa-clock-rotate-left" />
+                  <History />
                   History & Notes
                 </div>
                 <button className="meetings-section-action">View All</button>
@@ -734,7 +736,7 @@ const Meetings: React.FC<MeetingsProps> = ({ apiKey, contacts, initialContactId,
                 className="meetings-schedule-close"
                 onClick={() => setView('dashboard')}
               >
-                <i className="fa-solid fa-xmark" />
+                <X />
               </button>
             </div>
 
@@ -778,7 +780,7 @@ const Meetings: React.FC<MeetingsProps> = ({ apiKey, contacts, initialContactId,
                             setScheduleAttendees(s);
                           }}
                         >
-                          <i className="fa-solid fa-xmark" />
+                          <X />
                         </button>
                       </span>
                     );
@@ -870,7 +872,7 @@ const Meetings: React.FC<MeetingsProps> = ({ apiKey, contacts, initialContactId,
               <div className="meetings-modal-header">
                 <div className="meetings-modal-title">Settings</div>
                 <button className="meetings-modal-close" onClick={() => setShowSettings(false)}>
-                  <i className="fa-solid fa-xmark" />
+                  <X />
                 </button>
               </div>
               <div style={{ padding: 8 }}>
@@ -923,7 +925,7 @@ const Meetings: React.FC<MeetingsProps> = ({ apiKey, contacts, initialContactId,
         <div className="meetings-active-header">
           <div className="meetings-active-info">
             <button className="meetings-active-back" onClick={() => setView('dashboard')}>
-              <i className="fa-solid fa-arrow-left" />
+              <ArrowLeft />
             </button>
             <span className="meetings-active-title">{activeMeetingTitle}</span>
             <span className="meetings-active-badge">Live</span>
@@ -934,13 +936,13 @@ const Meetings: React.FC<MeetingsProps> = ({ apiKey, contacts, initialContactId,
               <span className="meetings-active-code-label">Code:</span>
               <span className="meetings-active-code-value">{meetingCode}</span>
               <button className="meetings-active-code-copy" onClick={copyMeetingCode}>
-                <i className="fa-solid fa-copy" />
+                <Copy />
               </button>
             </div>
           )}
 
           <button className="meetings-active-end" onClick={handleLeave}>
-            <i className="fa-solid fa-phone-slash" />
+            <PhoneOff />
             <span>End</span>
           </button>
         </div>
@@ -968,7 +970,7 @@ const Meetings: React.FC<MeetingsProps> = ({ apiKey, contacts, initialContactId,
             <div className="meetings-scribe-panel">
               <div className="meetings-scribe-header">
                 <div className="meetings-scribe-title">
-                  <i className="fa-solid fa-wand-magic-sparkles" />
+                  <Wand2 />
                   AI Scribe
                 </div>
                 <div className="meetings-scribe-live" />
@@ -1001,7 +1003,7 @@ const Meetings: React.FC<MeetingsProps> = ({ apiKey, contacts, initialContactId,
               animation: 'mtg-fade-in 0.3s ease',
               zIndex: 20,
             }}>
-              <i className="fa-solid fa-hand" style={{ color: '#fbbf24' }} />
+              <Hand />
               You raised your hand
             </div>
           )}
@@ -1042,7 +1044,7 @@ const Meetings: React.FC<MeetingsProps> = ({ apiKey, contacts, initialContactId,
                 className="meetings-agenda-next-btn"
                 onClick={() => setCurrentAgendaIndex(i => Math.min(i + 1, agendaItems.length))}
               >
-                Next <i className="fa-solid fa-arrow-right" />
+                Next <ArrowRight />
               </button>
             )}
           </div>
@@ -1059,7 +1061,7 @@ const Meetings: React.FC<MeetingsProps> = ({ apiKey, contacts, initialContactId,
                 onClick={() => setActiveSidePanel('none')}
                 title="Close panel"
               >
-                <i className="fa-solid fa-xmark" />
+                <X />
               </button>
             </div>
             <div className="meetings-side-panel-body">
@@ -1085,12 +1087,12 @@ const Meetings: React.FC<MeetingsProps> = ({ apiKey, contacts, initialContactId,
                 <div className="meetings-participant-indicators">
                   {micOn && (
                     <div className="meetings-participant-indicator speaking" title="Speaking">
-                      <i className="fa-solid fa-microphone" />
+                      <Mic />
                     </div>
                   )}
                   {handRaised && (
                     <div className="meetings-participant-indicator hand" title="Hand raised">
-                      <i className="fa-solid fa-hand" />
+                      <Hand />
                     </div>
                   )}
                 </div>
@@ -1128,7 +1130,7 @@ const Meetings: React.FC<MeetingsProps> = ({ apiKey, contacts, initialContactId,
                 onClick={() => setActiveSidePanel('none')}
                 title="Close panel"
               >
-                <i className="fa-solid fa-xmark" />
+                <X />
               </button>
             </div>
             <div className="meetings-chat-messages">
@@ -1171,7 +1173,7 @@ const Meetings: React.FC<MeetingsProps> = ({ apiKey, contacts, initialContactId,
                   setChatInput('');
                 }}
               >
-                <i className="fa-solid fa-paper-plane" style={{ fontSize: 12 }} />
+                <Send />
               </button>
             </div>
           </div>
@@ -1196,7 +1198,7 @@ const Meetings: React.FC<MeetingsProps> = ({ apiKey, contacts, initialContactId,
               className="meetings-control-btn default"
               onClick={() => setShowSettings(true)}
             >
-              <i className="fa-solid fa-ellipsis" />
+              <Ellipsis />
             </button>
 
             <button
@@ -1221,7 +1223,7 @@ const Meetings: React.FC<MeetingsProps> = ({ apiKey, contacts, initialContactId,
               className={`meetings-control-btn ${isScreenSharing ? 'active' : 'default'}`}
               onClick={handleScreenShare}
             >
-              <i className="fa-solid fa-arrow-up-from-bracket" />
+              <Upload />
             </button>
 
             <button
@@ -1230,7 +1232,7 @@ const Meetings: React.FC<MeetingsProps> = ({ apiKey, contacts, initialContactId,
               className={`meetings-control-btn ${scribeActive ? 'active' : 'default'}`}
               onClick={() => setScribeActive(!scribeActive)}
             >
-              <i className="fa-solid fa-wand-magic-sparkles" />
+              <Wand2 />
             </button>
 
             <button
@@ -1238,11 +1240,11 @@ const Meetings: React.FC<MeetingsProps> = ({ apiKey, contacts, initialContactId,
               onClick={() => setHandRaised(!handRaised)}
               style={{ color: handRaised ? '#fbbf24' : undefined }}
             >
-              <i className="fa-solid fa-hand" />
+              <Hand />
             </button>
 
             <button className="meetings-control-btn danger" onClick={handleLeave}>
-              <i className="fa-solid fa-phone-slash" />
+              <PhoneOff />
             </button>
           </div>
 
@@ -1252,7 +1254,7 @@ const Meetings: React.FC<MeetingsProps> = ({ apiKey, contacts, initialContactId,
               onClick={() => setActiveSidePanel(activeSidePanel === 'participants' ? 'none' : 'participants')}
               title="Participants"
             >
-              <i className="fa-solid fa-users" />
+              <Users />
             </button>
             <div className="meetings-control-icon-wrapper">
               <button
@@ -1264,7 +1266,7 @@ const Meetings: React.FC<MeetingsProps> = ({ apiKey, contacts, initialContactId,
                 }}
                 title="Chat"
               >
-                <i className="fa-solid fa-message" />
+                <MessageSquare />
               </button>
               {unreadChat > 0 && (
                 <span className="meetings-chat-badge">{unreadChat}</span>

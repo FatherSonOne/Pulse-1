@@ -9,6 +9,8 @@ import React, { useState, useRef, useEffect, useCallback, useMemo } from 'react'
 import { AIMessage, ThinkingStep, KnowledgeDoc } from '../../services/ragService';
 import './WarRoomRedesigned.css';
 
+import { Activity, AreaChart, Bookmark, Bot, Brain, ChevronRight, Code, Download, FileOutput, FileText, FolderOpen, Gauge, GitFork, MessagesSquare, Mic, Paperclip, Satellite, Search, Send, Settings2, ShieldCheck, Terminal, User, Volume2 } from 'lucide-react';
+
 // ============= TYPES =============
 
 interface WarRoomRedesignedProps {
@@ -121,7 +123,7 @@ const MissionBriefing: React.FC<{
       {/* Panel Header */}
       <div className="wr-panel-header">
         <div className="wr-panel-title">
-          <i className="fa fa-satellite-dish wr-icon-glow" />
+          <Satellite className="fa wr-icon-glow" />
           <span>MISSION BRIEF</span>
         </div>
         <button
@@ -139,8 +141,8 @@ const MissionBriefing: React.FC<{
             <div className="wr-session-label">ACTIVE SESSION</div>
             <div className="wr-session-name">{sessionName || 'Untitled Operation'}</div>
             <div className="wr-session-meta">
-              <span><i className="fa fa-comments" /> {messageCount} msgs</span>
-              <span><i className="fa fa-file-alt" /> {documents.length} docs</span>
+              <span><MessagesSquare className="fa" /> {messageCount} msgs</span>
+              <span><FileText className="fa" /> {documents.length} docs</span>
             </div>
           </div>
 
@@ -171,7 +173,7 @@ const MissionBriefing: React.FC<{
             <div className="wr-intel-list">
               {documents.length === 0 ? (
                 <div className="wr-empty-state">
-                  <i className="fa fa-folder-open" />
+                  <FolderOpen className="fa" />
                   <span>No assets loaded</span>
                 </div>
               ) : (
@@ -255,7 +257,7 @@ const TacticalConsole: React.FC<{
       {/* Console Header */}
       <div className="wr-console-header">
         <div className="wr-console-title">
-          <i className="fa fa-terminal" />
+          <Terminal className="fa" />
           <span>TACTICAL CONSOLE</span>
           <DataPulse active={isLoading} />
         </div>
@@ -287,7 +289,7 @@ const TacticalConsole: React.FC<{
         {messages.length === 0 ? (
           <div className="wr-welcome">
             <div className="wr-welcome-icon">
-              <i className="fa fa-shield-alt" />
+              <ShieldCheck className="fa" />
               <div className="wr-welcome-rings">
                 <div className="wr-ring" />
                 <div className="wr-ring delay-1" />
@@ -298,19 +300,19 @@ const TacticalConsole: React.FC<{
             <p>Your strategic AI command interface is ready. Upload intel assets, engage tactical modes, and begin your mission.</p>
             <div className="wr-welcome-grid">
               <div className="wr-welcome-feature">
-                <i className="fa fa-brain" />
+                <Brain className="fa" />
                 <span>AI Analysis</span>
               </div>
               <div className="wr-welcome-feature">
-                <i className="fa fa-search" />
+                <Search className="fa" />
                 <span>Deep Research</span>
               </div>
               <div className="wr-welcome-feature">
-                <i className="fa fa-project-diagram" />
+                <GitFork className="fa" />
                 <span>Strategy Maps</span>
               </div>
               <div className="wr-welcome-feature">
-                <i className="fa fa-microphone" />
+                <Mic className="fa" />
                 <span>Voice Command</span>
               </div>
             </div>
@@ -327,7 +329,7 @@ const TacticalConsole: React.FC<{
                 {msg.role === 'user' ? (
                   <div className="wr-msg-user">
                     <div className="wr-msg-header">
-                      <i className="fa fa-user-astronaut" />
+                      <User className="fa" />
                       <span>OPERATOR</span>
                       <span className="wr-msg-time">
                         {new Date(msg.created_at).toLocaleTimeString()}
@@ -339,7 +341,7 @@ const TacticalConsole: React.FC<{
                   <div className="wr-msg-ai">
                     <div className="wr-msg-header">
                       <div className="wr-ai-avatar">
-                        <i className="fa fa-robot" />
+                        <Bot className="fa" />
                         <div className="wr-ai-pulse" />
                       </div>
                       <span>PULSE AI</span>
@@ -352,7 +354,7 @@ const TacticalConsole: React.FC<{
                     {thinking && thinking.length > 0 && (
                       <div className="wr-thinking">
                         <div className="wr-thinking-header">
-                          <i className="fa fa-cogs" />
+                          <Settings2 className="fa" />
                           <span>Processing Chain</span>
                         </div>
                         <div className="wr-thinking-steps">
@@ -372,7 +374,7 @@ const TacticalConsole: React.FC<{
                     {msg.citations && msg.citations.length > 0 && (
                       <div className="wr-citations">
                         <div className="wr-citations-label">
-                          <i className="fa fa-bookmark" />
+                          <Bookmark className="fa" />
                           INTEL SOURCES
                         </div>
                         <div className="wr-citations-list">
@@ -410,7 +412,7 @@ const TacticalConsole: React.FC<{
       <div className="wr-input-area">
         <div className="wr-input-container">
           <div className="wr-input-prefix">
-            <i className="fa fa-chevron-right" />
+            <ChevronRight className="fa" />
           </div>
           <textarea
             ref={inputRef}
@@ -423,17 +425,17 @@ const TacticalConsole: React.FC<{
           />
           <div className="wr-input-actions">
             <button className="wr-input-btn" title="Voice Input">
-              <i className="fa fa-microphone" />
+              <Mic className="fa" />
             </button>
             <button className="wr-input-btn" title="Attach File">
-              <i className="fa fa-paperclip" />
+              <Paperclip className="fa" />
             </button>
             <button
               onClick={onSend}
               disabled={!input.trim() || isLoading}
               className="wr-send-btn"
             >
-              <i className="fa fa-paper-plane" />
+              <Send className="fa" />
               <span>TRANSMIT</span>
             </button>
           </div>
@@ -486,7 +488,7 @@ const IntelPanel: React.FC<{
           <i className={`fa fa-chevron-${isCollapsed ? 'left' : 'right'}`} />
         </button>
         <div className="wr-panel-title">
-          <i className="fa fa-chart-area wr-icon-glow" />
+          <AreaChart className="fa wr-icon-glow" />
           <span>INTEL FEED</span>
         </div>
       </div>
@@ -499,21 +501,21 @@ const IntelPanel: React.FC<{
               onClick={() => setActiveTab('metrics')}
               className={`wr-tab ${activeTab === 'metrics' ? 'active' : ''}`}
             >
-              <i className="fa fa-tachometer-alt" />
+              <Gauge className="fa" />
               <span>Metrics</span>
             </button>
             <button
               onClick={() => setActiveTab('timeline')}
               className={`wr-tab ${activeTab === 'timeline' ? 'active' : ''}`}
             >
-              <i className="fa fa-stream" />
+              <Activity className="fa" />
               <span>Timeline</span>
             </button>
             <button
               onClick={() => setActiveTab('export')}
               className={`wr-tab ${activeTab === 'export' ? 'active' : ''}`}
             >
-              <i className="fa fa-download" />
+              <Download className="fa" />
               <span>Export</span>
             </button>
           </div>
@@ -618,33 +620,33 @@ const IntelPanel: React.FC<{
             {activeTab === 'export' && (
               <div className="wr-export">
                 <div className="wr-export-header">
-                  <i className="fa fa-file-export" />
+                  <FileOutput className="fa" />
                   <span>Export Options</span>
                 </div>
                 <div className="wr-export-options">
                   <button onClick={onExport} className="wr-export-btn">
-                    <i className="fa fa-file-alt" />
+                    <FileText className="fa" />
                     <div>
                       <span className="wr-export-title">Full Transcript</span>
                       <span className="wr-export-desc">Export all messages as text</span>
                     </div>
                   </button>
                   <button onClick={onGenerateAudio} className="wr-export-btn">
-                    <i className="fa fa-volume-up" />
+                    <Volume2 className="fa" />
                     <div>
                       <span className="wr-export-title">Audio Summary</span>
                       <span className="wr-export-desc">Generate spoken overview</span>
                     </div>
                   </button>
                   <button className="wr-export-btn">
-                    <i className="fa fa-file-pdf" />
+                    <FileText className="fa" />
                     <div>
                       <span className="wr-export-title">PDF Report</span>
                       <span className="wr-export-desc">Formatted briefing document</span>
                     </div>
                   </button>
                   <button className="wr-export-btn">
-                    <i className="fa fa-code" />
+                    <Code className="fa" />
                     <div>
                       <span className="wr-export-title">JSON Data</span>
                       <span className="wr-export-desc">Raw session data export</span>

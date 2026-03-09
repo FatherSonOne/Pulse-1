@@ -9,6 +9,8 @@ import { ContactCircle } from '../../types/contactCircleTypes';
 import { Contact } from '../../types';
 import { RelationshipProfile } from '../../types/relationshipTypes';
 
+import { Network } from 'lucide-react';
+
 // ==================== TYPES ====================
 
 interface NetworkAnalyticsCardProps {
@@ -92,7 +94,7 @@ export const NetworkAnalyticsCard: React.FC<NetworkAnalyticsCardProps> = ({
   return (
     <div className="bg-gradient-to-r from-indigo-50 to-purple-50 dark:from-indigo-950/30 dark:to-purple-950/30 border border-indigo-100 dark:border-indigo-900/40 rounded-xl p-4">
       <div className="flex items-center gap-2 mb-3">
-        <i className="fa-solid fa-chart-network text-xs text-indigo-500" />
+        <Network className="text-xs text-indigo-500" />
         <span className="text-xs font-bold text-zinc-500 dark:text-zinc-400 uppercase tracking-wider">
           Network Overview
         </span>

@@ -1,5 +1,7 @@
 import React, { useState } from 'react';
 
+import { Check, CheckCircle, Download, Image, Palette, X } from 'lucide-react';
+
 interface LogoOption {
   id: string;
   name: string;
@@ -344,7 +346,7 @@ const LogoPreview: React.FC<LogoPreviewProps> = ({ onClose, onSelect }) => {
           <div>
             <h2 className="text-xl font-bold text-zinc-900 dark:text-white flex items-center gap-3">
               <div className="w-10 h-10 rounded-xl bg-gradient-to-br from-rose-500 to-purple-600 flex items-center justify-center">
-                <i className="fa-solid fa-palette text-white"></i>
+                <Palette className="text-white" />
               </div>
               Pulse Logo Preview
             </h2>
@@ -354,7 +356,7 @@ const LogoPreview: React.FC<LogoPreviewProps> = ({ onClose, onSelect }) => {
             onClick={onClose}
             className="w-10 h-10 rounded-xl bg-zinc-100 dark:bg-zinc-800 hover:bg-zinc-200 dark:hover:bg-zinc-700 flex items-center justify-center transition"
           >
-            <i className="fa-solid fa-times text-zinc-500"></i>
+            <X className="text-zinc-500" />
           </button>
         </div>
 
@@ -431,7 +433,7 @@ const LogoPreview: React.FC<LogoPreviewProps> = ({ onClose, onSelect }) => {
                   </div>
                   {selectedId === logo.id && (
                     <div className="w-6 h-6 rounded-full bg-blue-500 flex items-center justify-center">
-                      <i className="fa-solid fa-check text-white text-xs"></i>
+                      <Check className="text-white text-xs" />
                     </div>
                   )}
                 </div>
@@ -445,7 +447,7 @@ const LogoPreview: React.FC<LogoPreviewProps> = ({ onClose, onSelect }) => {
           <div className="text-sm text-zinc-500">
             {selectedId ? (
               <span className="flex items-center gap-2">
-                <i className="fa-solid fa-check-circle text-emerald-500"></i>
+                <CheckCircle className="text-emerald-500" />
                 Selected: {logoOptions.find(l => l.id === selectedId)?.name}
               </span>
             ) : (
@@ -462,7 +464,7 @@ const LogoPreview: React.FC<LogoPreviewProps> = ({ onClose, onSelect }) => {
                   }}
                   className="px-4 py-2 rounded-xl bg-zinc-200 dark:bg-zinc-800 hover:bg-zinc-300 dark:hover:bg-zinc-700 text-zinc-700 dark:text-zinc-300 font-medium transition flex items-center gap-2"
                 >
-                  <i className="fa-solid fa-download"></i>
+                  <Download />
                   Download Logo PNG
                 </button>
                 <button
@@ -472,7 +474,7 @@ const LogoPreview: React.FC<LogoPreviewProps> = ({ onClose, onSelect }) => {
                   }}
                   className="px-4 py-2 rounded-xl bg-zinc-200 dark:bg-zinc-800 hover:bg-zinc-300 dark:hover:bg-zinc-700 text-zinc-700 dark:text-zinc-300 font-medium transition flex items-center gap-2"
                 >
-                  <i className="fa-solid fa-image"></i>
+                  <Image />
                   Download Favicon PNG
                 </button>
               </>
@@ -492,7 +494,7 @@ const LogoPreview: React.FC<LogoPreviewProps> = ({ onClose, onSelect }) => {
                   : 'bg-zinc-300 dark:bg-zinc-700 text-zinc-500 cursor-not-allowed'
               }`}
             >
-              <i className="fa-solid fa-check"></i>
+              <Check />
               Apply Logo
             </button>
           </div>

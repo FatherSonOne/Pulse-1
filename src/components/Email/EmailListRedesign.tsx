@@ -2,6 +2,8 @@
 import React from 'react';
 import { CachedEmail, EmailFolder, EmailCategory } from '../../services/emailSyncService';
 
+import { Archive, Bookmark, Clock, Inbox, MailOpen, Paperclip, RefreshCw, Trash2, Wand2 } from 'lucide-react';
+
 interface EmailListRedesignProps {
   emails: CachedEmail[];
   selectedEmail: CachedEmail | null;
@@ -140,7 +142,7 @@ export const EmailListRedesign: React.FC<EmailListRedesignProps> = ({
       <div className="flex-1 flex items-center justify-center bg-white dark:bg-transparent p-8">
         <div className="text-center max-w-sm">
           <div className="w-24 h-24 mx-auto mb-6 rounded-full bg-gradient-to-br from-stone-200 to-stone-300 dark:from-zinc-800 dark:to-zinc-700 flex items-center justify-center">
-            <i className="fa-solid fa-inbox text-4xl text-stone-400 dark:text-zinc-600"></i>
+            <Inbox className="text-4xl text-stone-400 dark:text-zinc-600" />
           </div>
           <h3 className="text-xl font-semibold text-stone-800 dark:text-white mb-2">
             {currentFolder === 'inbox' ? 'Inbox Zero! 🎉' : `No emails in ${currentFolder}`}
@@ -217,35 +219,35 @@ export const EmailListRedesign: React.FC<EmailListRedesignProps> = ({
             title="Refresh"
             aria-label="Refresh emails"
           >
-            <i className="fa-solid fa-arrows-rotate text-sm" aria-hidden="true"></i>
+            <RefreshCw className="text-sm" />
           </button>
           <button
             className="p-2 rounded-lg hover:bg-stone-200 dark:hover:bg-zinc-800 text-stone-500 dark:text-zinc-500 hover:text-stone-700 dark:hover:text-white transition"
             title="Archive selected"
             aria-label="Archive selected emails"
           >
-            <i className="fa-solid fa-box-archive text-sm" aria-hidden="true"></i>
+            <Archive className="text-sm" />
           </button>
           <button
             className="p-2 rounded-lg hover:bg-stone-200 dark:hover:bg-zinc-800 text-stone-500 dark:text-zinc-500 hover:text-red-500 transition"
             title="Delete selected"
             aria-label="Delete selected emails"
           >
-            <i className="fa-solid fa-trash text-sm" aria-hidden="true"></i>
+            <Trash2 className="text-sm" />
           </button>
           <button
             className="p-2 rounded-lg hover:bg-stone-200 dark:hover:bg-zinc-800 text-stone-500 dark:text-zinc-500 hover:text-stone-700 dark:hover:text-white transition"
             title="Mark as read"
             aria-label="Mark selected emails as read"
           >
-            <i className="fa-solid fa-envelope-open text-sm" aria-hidden="true"></i>
+            <MailOpen className="text-sm" />
           </button>
           <button
             className="p-2 rounded-lg hover:bg-stone-200 dark:hover:bg-zinc-800 text-stone-500 dark:text-zinc-500 hover:text-stone-700 dark:hover:text-white transition"
             title="Snooze"
             aria-label="Snooze selected emails"
           >
-            <i className="fa-solid fa-clock text-sm" aria-hidden="true"></i>
+            <Clock className="text-sm" />
           </button>
           <div className="flex-1"></div>
           <span className="text-xs font-medium text-stone-500 dark:text-zinc-500" aria-live="polite">
@@ -319,10 +321,10 @@ export const EmailListRedesign: React.FC<EmailListRedesignProps> = ({
                     {email.from_name || email.from_email}
                   </span>
                   {email.is_important && (
-                    <i className="fa-solid fa-bookmark text-yellow-500 text-xs" title="Important"></i>
+                    <Bookmark className="text-yellow-500 text-xs" />
                   )}
                   {email.has_attachments && (
-                    <i className="fa-solid fa-paperclip text-stone-400 dark:text-zinc-500 text-xs" title="Has attachments"></i>
+                    <Paperclip className="text-stone-400 dark:text-zinc-500 text-xs" />
                   )}
                   {getCategoryBadge(email)}
                 </div>
@@ -338,7 +340,7 @@ export const EmailListRedesign: React.FC<EmailListRedesignProps> = ({
                 {/* AI Summary preview */}
                 {email.ai_summary && (
                   <div className="flex items-center gap-1.5 mt-2 text-xs bg-purple-500/10 dark:bg-purple-500/20 text-purple-600 dark:text-purple-400 px-2 py-1 rounded-lg border border-purple-500/20">
-                    <i className="fa-solid fa-wand-magic-sparkles flex-shrink-0"></i>
+                    <Wand2 className="flex-shrink-0" />
                     <span className="truncate font-medium">{email.ai_summary}</span>
                   </div>
                 )}
@@ -360,7 +362,7 @@ export const EmailListRedesign: React.FC<EmailListRedesignProps> = ({
                     className="w-8 h-8 rounded-lg hover:bg-stone-200 dark:hover:bg-zinc-700 flex items-center justify-center text-stone-500 dark:text-zinc-500 hover:text-stone-700 dark:hover:text-white transition"
                     title="Archive"
                   >
-                    <i className="fa-solid fa-box-archive text-xs"></i>
+                    <Archive className="text-xs" />
                   </button>
                   <button
                     onClick={(e) => {
@@ -370,13 +372,13 @@ export const EmailListRedesign: React.FC<EmailListRedesignProps> = ({
                     className="w-8 h-8 rounded-lg hover:bg-red-100 dark:hover:bg-red-900/20 flex items-center justify-center text-stone-500 dark:text-zinc-500 hover:text-red-600 dark:hover:text-red-400 transition"
                     title="Delete"
                   >
-                    <i className="fa-solid fa-trash text-xs"></i>
+                    <Trash2 className="text-xs" />
                   </button>
                   <button
                     className="w-8 h-8 rounded-lg hover:bg-stone-200 dark:hover:bg-zinc-700 flex items-center justify-center text-stone-500 dark:text-zinc-500 hover:text-stone-700 dark:hover:text-white transition"
                     title="Snooze"
                   >
-                    <i className="fa-solid fa-clock text-xs"></i>
+                    <Clock className="text-xs" />
                   </button>
                 </div>
               </div>

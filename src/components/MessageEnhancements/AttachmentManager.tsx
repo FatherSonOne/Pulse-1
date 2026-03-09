@@ -2,6 +2,8 @@ import React, { useState, useCallback, useMemo, useEffect } from 'react';
 import { fileUploadService, type UploadResult } from '../../services/fileUploadService';
 import { supabase } from '../../services/supabase';
 
+import { Download, Eye, FolderOpen, HardDrive, Image, Paperclip, Play, Search, Share, Trash2, Upload, X } from 'lucide-react';
+
 // Types
 interface Attachment {
   id: string;
@@ -336,7 +338,7 @@ export const AttachmentManager: React.FC<AttachmentManagerProps> = ({
         <div className="flex items-center justify-between mb-3">
           <div className="flex items-center gap-2">
             <div className="w-10 h-10 rounded-full bg-white dark:bg-zinc-800 flex items-center justify-center shadow-sm">
-              <i className="fa-solid fa-hard-drive text-pink-500" />
+              <HardDrive className="text-pink-500" />
             </div>
             <div>
               <p className="text-sm font-medium text-zinc-900 dark:text-white">Storage</p>
@@ -371,7 +373,7 @@ export const AttachmentManager: React.FC<AttachmentManagerProps> = ({
       {/* Search & Filters */}
       <div className="flex gap-2">
         <div className="flex-1 relative">
-          <i className="fa-solid fa-search absolute left-3 top-1/2 -translate-y-1/2 text-zinc-400 text-sm" />
+          <Search className="absolute left-3 top-1/2 -translate-y-1/2 text-zinc-400 text-sm" />
           <input
             type="text"
             value={searchQuery}
@@ -381,7 +383,7 @@ export const AttachmentManager: React.FC<AttachmentManagerProps> = ({
           />
         </div>
         <label className="p-2 rounded-lg bg-pink-100 dark:bg-pink-900/30 text-pink-600 dark:text-pink-400 hover:bg-pink-200 dark:hover:bg-pink-900/50 transition border border-pink-200 dark:border-pink-700 cursor-pointer">
-          <i className="fa-solid fa-upload text-sm" />
+          <Upload className="text-sm" />
           <input
             type="file"
             multiple
@@ -449,7 +451,7 @@ export const AttachmentManager: React.FC<AttachmentManagerProps> = ({
       {/* Attachments */}
       {filteredAttachments.length === 0 ? (
         <div className="text-center py-8">
-          <i className="fa-solid fa-folder-open text-zinc-300 text-3xl mb-3" />
+          <FolderOpen className="text-zinc-300 text-3xl mb-3" />
           <p className="text-sm text-zinc-500">No attachments found</p>
         </div>
       ) : viewMode === 'grid' ? (
@@ -480,7 +482,7 @@ export const AttachmentManager: React.FC<AttachmentManagerProps> = ({
                     onClick={(e) => { e.stopPropagation(); onAttachmentDownload?.(attachment.id); }}
                     className="p-1 bg-white/90 dark:bg-zinc-800/90 rounded text-zinc-600 dark:text-zinc-400 hover:bg-white"
                   >
-                    <i className="fa-solid fa-download text-[10px]" />
+                    <Download className="text-[10px]" />
                   </button>
                 </div>
               </button>
@@ -516,19 +518,19 @@ export const AttachmentManager: React.FC<AttachmentManagerProps> = ({
                       onClick={(e) => { e.stopPropagation(); onAttachmentDownload?.(attachment.id); }}
                       className="p-2 hover:bg-zinc-100 dark:hover:bg-zinc-700 rounded"
                     >
-                      <i className="fa-solid fa-download text-zinc-500 text-sm" />
+                      <Download className="text-zinc-500 text-sm" />
                     </button>
                     <button
                       onClick={(e) => { e.stopPropagation(); onAttachmentShare?.(attachment.id); }}
                       className="p-2 hover:bg-zinc-100 dark:hover:bg-zinc-700 rounded"
                     >
-                      <i className="fa-solid fa-share text-zinc-500 text-sm" />
+                      <Share className="text-zinc-500 text-sm" />
                     </button>
                     <button
                       onClick={(e) => { e.stopPropagation(); handleDelete(attachment.id); }}
                       className="p-2 hover:bg-red-50 dark:hover:bg-red-900/20 rounded"
                     >
-                      <i className="fa-solid fa-trash text-red-500 text-sm" />
+                      <Trash2 className="text-red-500 text-sm" />
                     </button>
                   </div>
                 </div>
@@ -546,14 +548,14 @@ export const AttachmentManager: React.FC<AttachmentManagerProps> = ({
               onClick={() => setShowPreview(false)}
               className="absolute -top-10 right-0 text-white hover:text-zinc-300"
             >
-              <i className="fa-solid fa-xmark text-xl" />
+              <X className="text-xl" />
             </button>
             <div className="bg-white dark:bg-zinc-900 rounded-xl overflow-hidden">
               <div className="aspect-video bg-zinc-100 dark:bg-zinc-800 flex items-center justify-center">
                 {selectedAttachment.type === 'image' ? (
-                  <i className="fa-solid fa-image text-4xl text-zinc-400" />
+                  <Image className="text-4xl text-zinc-400" />
                 ) : selectedAttachment.type === 'video' ? (
-                  <i className="fa-solid fa-play text-4xl text-zinc-400" />
+                  <Play className="text-4xl text-zinc-400" />
                 ) : (
                   <i className={`fa-solid ${getTypeIcon(selectedAttachment.type)} text-4xl text-zinc-400`} />
                 )}
@@ -587,7 +589,7 @@ export const AttachmentManager: React.FC<AttachmentManagerProps> = ({
               onClick={() => setSelectedAttachment(null)}
               className="p-1 hover:bg-pink-100 dark:hover:bg-pink-900/30 rounded"
             >
-              <i className="fa-solid fa-xmark text-zinc-500 text-xs" />
+              <X className="text-zinc-500 text-xs" />
             </button>
           </div>
           <div className="flex gap-2">
@@ -595,14 +597,14 @@ export const AttachmentManager: React.FC<AttachmentManagerProps> = ({
               onClick={() => setShowPreview(true)}
               className="flex-1 py-2 bg-white dark:bg-zinc-800 rounded-lg text-xs font-medium text-zinc-700 dark:text-zinc-300 hover:bg-zinc-50 dark:hover:bg-zinc-700"
             >
-              <i className="fa-solid fa-eye mr-1" />
+              <Eye className="mr-1" />
               Preview
             </button>
             <button
               onClick={() => onAttachmentDownload?.(selectedAttachment.id)}
               className="flex-1 py-2 bg-pink-600 rounded-lg text-xs font-medium text-white hover:bg-pink-700"
             >
-              <i className="fa-solid fa-download mr-1" />
+              <Download className="mr-1" />
               Download
             </button>
           </div>
@@ -624,7 +626,7 @@ export const AttachmentButton: React.FC<AttachmentButtonProps> = ({ count, onCli
     className="relative p-2 rounded-lg hover:bg-zinc-100 dark:hover:bg-zinc-800 transition"
     title="View attachments"
   >
-    <i className="fa-solid fa-paperclip text-zinc-500" />
+    <Paperclip className="text-zinc-500" />
     {count > 0 && (
       <span className="absolute -top-1 -right-1 w-4 h-4 rounded-full bg-pink-500 text-white text-[10px] flex items-center justify-center">
         {count > 9 ? '9+' : count}

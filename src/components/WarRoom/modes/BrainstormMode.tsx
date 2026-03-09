@@ -2,6 +2,8 @@ import React, { useState, useRef, useEffect, useMemo } from 'react';
 import { AIMessage, ThinkingStep } from '../../../services/ragService';
 import { SessionExport } from '../shared';
 
+import { ArrowDown, ArrowUp, Folder, Lightbulb, Plus, Rocket, Send, Share2, Table2, Trash2, Trophy, Wand2 } from 'lucide-react';
+
 interface IdeaCluster {
   id: string;
   name: string;
@@ -168,7 +170,7 @@ Start by giving me 3-5 initial ideas to consider.`);
         <div className="max-w-lg w-full p-8">
           <div className="text-center mb-8">
             <div className="w-20 h-20 mx-auto mb-4 rounded-full bg-gradient-to-br from-yellow-500/20 to-orange-500/20 flex items-center justify-center">
-              <i className="fa fa-lightbulb text-3xl text-yellow-400"></i>
+              <Lightbulb className="fa text-3xl text-yellow-400" />
             </div>
             <h2 className="text-2xl font-bold war-room-text-primary mb-2">Brainstorm Mode</h2>
             <p className="war-room-text-secondary">
@@ -195,7 +197,7 @@ Start by giving me 3-5 initial ideas to consider.`);
               disabled={!topic.trim()}
               className="w-full mt-4 war-room-btn war-room-btn-primary py-3"
             >
-              <i className="fa fa-rocket mr-2"></i>
+              <Rocket className="fa mr-2" />
               Start Brainstorming
             </button>
           </div>
@@ -226,7 +228,7 @@ Start by giving me 3-5 initial ideas to consider.`);
         {/* Topic Header */}
         <div className="p-4 border-b border-white/10 bg-gradient-to-r from-yellow-500/10 to-orange-500/10">
           <div className="flex items-center gap-2 mb-2">
-            <i className="fa fa-lightbulb text-yellow-400"></i>
+            <Lightbulb className="fa text-yellow-400" />
             <h3 className="text-sm font-semibold war-room-text-primary truncate">{topic}</h3>
           </div>
           <div className="flex items-center gap-2 text-xs war-room-text-secondary">
@@ -253,7 +255,7 @@ Start by giving me 3-5 initial ideas to consider.`);
               disabled={!newIdeaText.trim()}
               className="war-room-btn war-room-btn-icon-sm war-room-btn-primary"
             >
-              <i className="fa fa-plus text-xs"></i>
+              <Plus className="fa text-xs" />
             </button>
           </div>
         </div>
@@ -270,7 +272,7 @@ Start by giving me 3-5 initial ideas to consider.`);
               className="war-room-btn war-room-btn-icon-sm"
               title="Add cluster"
             >
-              <i className="fa fa-plus text-xs"></i>
+              <Plus className="fa text-xs" />
             </button>
           </div>
           <div className="flex flex-wrap gap-1">
@@ -315,7 +317,7 @@ Start by giving me 3-5 initial ideas to consider.`);
                       onClick={() => handleVoteIdea(idea.id, 1)}
                       className="war-room-btn war-room-btn-icon-sm opacity-50 hover:opacity-100"
                     >
-                      <i className="fa fa-arrow-up text-xs"></i>
+                      <ArrowUp className="fa text-xs" />
                     </button>
                     <span className={`text-xs font-medium ${idea.votes > 0 ? 'text-yellow-400' : 'war-room-text-secondary'}`}>
                       {idea.votes}
@@ -324,7 +326,7 @@ Start by giving me 3-5 initial ideas to consider.`);
                       onClick={() => handleVoteIdea(idea.id, -1)}
                       className="war-room-btn war-room-btn-icon-sm opacity-50 hover:opacity-100"
                     >
-                      <i className="fa fa-arrow-down text-xs"></i>
+                      <ArrowDown className="fa text-xs" />
                     </button>
                   </div>
                   <div className="flex items-center gap-1 opacity-0 group-hover:opacity-100 transition-opacity">
@@ -344,7 +346,7 @@ Start by giving me 3-5 initial ideas to consider.`);
                       onClick={() => handleDeleteIdea(idea.id)}
                       className="war-room-btn war-room-btn-icon-sm text-red-400 opacity-50 hover:opacity-100"
                     >
-                      <i className="fa fa-trash text-xs"></i>
+                      <Trash2 className="fa text-xs" />
                     </button>
                   </div>
                 </div>
@@ -354,7 +356,7 @@ Start by giving me 3-5 initial ideas to consider.`);
 
           {ideas.length === 0 && (
             <div className="text-center py-8 war-room-text-secondary">
-              <i className="fa fa-lightbulb text-2xl opacity-30 mb-2"></i>
+              <Lightbulb className="fa text-2xl opacity-30 mb-2" />
               <p className="text-sm">No ideas yet</p>
               <p className="text-xs opacity-70">Add your own or ask AI for suggestions</p>
             </div>
@@ -365,7 +367,7 @@ Start by giving me 3-5 initial ideas to consider.`);
         {ideas.length >= 3 && (
           <div className="p-3 border-t border-white/10 bg-black/20">
             <p className="text-xs font-semibold war-room-text-secondary uppercase tracking-wider mb-2">
-              <i className="fa fa-trophy text-yellow-400 mr-1"></i>
+              <Trophy className="fa text-yellow-400 mr-1" />
               Top Rated
             </p>
             <div className="space-y-1">
@@ -412,7 +414,7 @@ Start by giving me 3-5 initial ideas to consider.`);
             className="war-room-btn war-room-btn-icon-sm"
             title="Export brainstorm"
           >
-            <i className="fa fa-share-nodes text-xs"></i>
+            <Share2 className="fa text-xs" />
           </button>
         </div>
 
@@ -425,7 +427,7 @@ Start by giving me 3-5 initial ideas to consider.`);
                 onClick={() => handleAskAI(prompt)}
                 className="war-room-btn text-xs px-3 py-1.5 whitespace-nowrap shrink-0"
               >
-                <i className="fa fa-wand-magic-sparkles mr-1 text-yellow-400"></i>
+                <Wand2 className="fa mr-1 text-yellow-400" />
                 {prompt}
               </button>
             ))}
@@ -441,7 +443,7 @@ Start by giving me 3-5 initial ideas to consider.`);
                 <div className="h-full flex items-center justify-center">
                   <div className="text-center max-w-md">
                     <div className="w-16 h-16 mx-auto mb-4 rounded-full bg-gradient-to-br from-yellow-500/20 to-orange-500/20 flex items-center justify-center">
-                      <i className="fa fa-wand-magic-sparkles text-2xl text-yellow-400"></i>
+                      <Wand2 className="fa text-2xl text-yellow-400" />
                     </div>
                     <h3 className="text-lg font-semibold war-room-text-primary mb-2">
                       AI Brainstorm Partner
@@ -466,7 +468,7 @@ Start by giving me 3-5 initial ideas to consider.`);
                     >
                       {msg.role === 'assistant' && (
                         <div className="flex items-center gap-2 mb-2 pb-2 border-b border-white/10">
-                          <i className="fa fa-lightbulb text-yellow-400 text-xs"></i>
+                          <Lightbulb className="fa text-yellow-400 text-xs" />
                           <span className="text-xs text-yellow-400 font-medium">Brainstorm AI</span>
                         </div>
                       )}
@@ -481,7 +483,7 @@ Start by giving me 3-5 initial ideas to consider.`);
                   <div className="war-room-message-ai">
                     <div className="flex items-center gap-3">
                       <div className="w-5 h-5 rounded-full bg-yellow-500/30 flex items-center justify-center">
-                        <i className="fa fa-lightbulb text-yellow-400 text-xs animate-pulse"></i>
+                        <Lightbulb className="fa text-yellow-400 text-xs animate-pulse" />
                       </div>
                       <span className="text-sm war-room-text-secondary">Generating ideas...</span>
                     </div>
@@ -509,7 +511,7 @@ Start by giving me 3-5 initial ideas to consider.`);
                         <p className="text-sm war-room-text-primary mb-2">{idea.text}</p>
                         <div className="flex items-center justify-between">
                           <span className={`text-xs ${idea.votes > 0 ? 'text-yellow-400' : 'war-room-text-secondary'}`}>
-                            <i className="fa fa-arrow-up mr-1"></i>{idea.votes}
+                            <ArrowUp className="fa mr-1" />{idea.votes}
                           </span>
                         </div>
                       </div>
@@ -525,7 +527,7 @@ Start by giving me 3-5 initial ideas to consider.`);
                 return (
                   <div key={cluster.id} className={`war-room-panel p-4 ${color.bg} ${color.border}`}>
                     <h4 className={`text-sm font-semibold ${color.text} mb-3 flex items-center gap-2`}>
-                      <i className="fa fa-folder"></i>
+                      <Folder className="fa" />
                       {cluster.name}
                       <span className="war-room-badge text-xs">{clusterIdeas.length}</span>
                     </h4>
@@ -538,7 +540,7 @@ Start by giving me 3-5 initial ideas to consider.`);
                           <p className="text-xs war-room-text-primary">{idea.text}</p>
                           {idea.votes > 0 && (
                             <span className="text-[10px] text-yellow-400 mt-1 inline-block">
-                              <i className="fa fa-arrow-up mr-1"></i>{idea.votes}
+                              <ArrowUp className="fa mr-1" />{idea.votes}
                             </span>
                           )}
                         </div>
@@ -553,7 +555,7 @@ Start by giving me 3-5 initial ideas to consider.`);
 
               {clusters.length === 0 && unclusteredIdeas.length === 0 && (
                 <div className="col-span-full text-center py-12 war-room-text-secondary">
-                  <i className="fa fa-table-cells text-4xl opacity-30 mb-4"></i>
+                  <Table2 className="fa text-4xl opacity-30 mb-4" />
                   <p className="text-sm">Your ideas will appear here</p>
                   <p className="text-xs opacity-70">Add ideas from the sidebar or ask AI for suggestions</p>
                 </div>
@@ -566,7 +568,7 @@ Start by giving me 3-5 initial ideas to consider.`);
         <div className="shrink-0 p-4 war-room-input-area">
           <div className="flex items-center gap-2">
             <div className="flex-1 war-room-panel-inset flex items-center gap-2 px-4 py-3">
-              <i className="fa fa-wand-magic-sparkles text-yellow-400 text-sm"></i>
+              <Wand2 className="fa text-yellow-400 text-sm" />
               <input
                 type="text"
                 value={input}
@@ -583,7 +585,7 @@ Start by giving me 3-5 initial ideas to consider.`);
                   input.trim() ? 'war-room-btn-primary' : ''
                 }`}
               >
-                <i className="fa fa-paper-plane text-xs"></i>
+                <Send className="fa text-xs" />
               </button>
             </div>
           </div>

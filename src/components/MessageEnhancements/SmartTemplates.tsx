@@ -1,6 +1,8 @@
 // Smart Templates System with AI Suggestions
 import React, { useState, useMemo } from 'react';
 
+import { FileText, Pen, Plus, Search, Sparkles, Trash2, Wand2 } from 'lucide-react';
+
 interface Template {
   id: string;
   name: string;
@@ -255,7 +257,7 @@ export const SmartTemplates: React.FC<SmartTemplatesProps> = ({
     return (
       <div className="flex items-center gap-2">
         <div className="flex items-center gap-1.5 px-2 py-1 rounded-full bg-indigo-100 dark:bg-indigo-900/40 text-indigo-600 dark:text-indigo-400">
-          <i className="fa-solid fa-file-lines text-xs" />
+          <FileText className="text-xs" />
           <span className="text-xs font-medium">{allTemplates.length} templates</span>
         </div>
       </div>
@@ -269,7 +271,7 @@ export const SmartTemplates: React.FC<SmartTemplatesProps> = ({
         <div className="flex items-center justify-between mb-3">
           <div className="flex items-center gap-2">
             <div className="w-8 h-8 rounded-full bg-indigo-100 dark:bg-indigo-900/40 flex items-center justify-center">
-              <i className="fa-solid fa-wand-magic-sparkles text-indigo-500 text-sm" />
+              <Wand2 className="text-indigo-500 text-sm" />
             </div>
             <div>
               <h3 className="text-sm font-bold text-zinc-800 dark:text-white">Smart Templates</h3>
@@ -283,7 +285,7 @@ export const SmartTemplates: React.FC<SmartTemplatesProps> = ({
               onClick={() => setShowCreateModal(true)}
               className="flex items-center gap-1 px-2 py-1 rounded-lg text-xs font-medium bg-indigo-500 text-white hover:bg-indigo-600 transition"
             >
-              <i className="fa-solid fa-plus" />
+              <Plus />
               New
             </button>
           )}
@@ -291,7 +293,7 @@ export const SmartTemplates: React.FC<SmartTemplatesProps> = ({
 
         {/* Search */}
         <div className="relative mb-3">
-          <i className="fa-solid fa-search absolute left-2.5 top-1/2 -translate-y-1/2 text-zinc-400 text-xs" />
+          <Search className="absolute left-2.5 top-1/2 -translate-y-1/2 text-zinc-400 text-xs" />
           <input
             type="text"
             value={searchQuery}
@@ -311,7 +313,7 @@ export const SmartTemplates: React.FC<SmartTemplatesProps> = ({
                 : 'bg-white dark:bg-zinc-700 text-zinc-600 dark:text-zinc-400 hover:bg-purple-50 dark:hover:bg-purple-900/20'
             }`}
           >
-            <i className="fa-solid fa-sparkles" />
+            <Sparkles />
             Suggested
           </button>
           <button
@@ -346,7 +348,7 @@ export const SmartTemplates: React.FC<SmartTemplatesProps> = ({
         {filteredTemplates.length === 0 ? (
           <div className="p-8 text-center">
             <div className="w-12 h-12 rounded-full bg-zinc-100 dark:bg-zinc-700 flex items-center justify-center mx-auto mb-3">
-              <i className="fa-solid fa-file-lines text-zinc-400 text-lg" />
+              <FileText className="text-zinc-400 text-lg" />
             </div>
             <p className="text-sm text-zinc-500 dark:text-zinc-400">No templates found</p>
           </div>
@@ -370,7 +372,7 @@ export const SmartTemplates: React.FC<SmartTemplatesProps> = ({
                       </span>
                       {template.isAISuggested && (
                         <span className="px-1.5 py-0.5 text-[10px] font-medium rounded bg-purple-100 dark:bg-purple-900/40 text-purple-600 dark:text-purple-400">
-                          <i className="fa-solid fa-sparkles mr-0.5" />
+                          <Sparkles className="mr-0.5" />
                           Suggested
                         </span>
                       )}
@@ -404,7 +406,7 @@ export const SmartTemplates: React.FC<SmartTemplatesProps> = ({
                         }}
                         className="p-1 text-zinc-400 hover:text-indigo-500 transition"
                       >
-                        <i className="fa-solid fa-pen text-xs" />
+                        <Pen className="text-xs" />
                       </button>
                     )}
                     {template.createdBy !== 'system' && onDeleteTemplate && (
@@ -415,7 +417,7 @@ export const SmartTemplates: React.FC<SmartTemplatesProps> = ({
                         }}
                         className="p-1 text-zinc-400 hover:text-red-500 transition"
                       >
-                        <i className="fa-solid fa-trash text-xs" />
+                        <Trash2 className="text-xs" />
                       </button>
                     )}
                   </div>
@@ -644,7 +646,7 @@ export const TemplateButton: React.FC<{
       }`}
       title="Message templates"
     >
-      <i className="fa-solid fa-file-lines text-sm" />
+      <FileText className="text-sm" />
     </button>
   );
 };

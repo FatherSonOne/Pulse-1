@@ -7,6 +7,8 @@ import React from 'react';
 import { Tool } from './types';
 import { getCategoryColor } from './toolsData';
 
+import { BarChart2, Key } from 'lucide-react';
+
 interface ToolCardProps {
   tool: Tool;
   isActive?: boolean;
@@ -114,7 +116,7 @@ export const ToolCard: React.FC<ToolCardProps> = ({
         {/* Usage count */}
         {usageCount > 0 ? (
           <div className="flex items-center gap-1 text-zinc-400">
-            <i className="fa-solid fa-chart-simple text-[10px]"></i>
+            <BarChart2 className="text-[10px]" />
             <span>{usageCount}</span>
           </div>
         ) : (
@@ -127,7 +129,7 @@ export const ToolCard: React.FC<ToolCardProps> = ({
             className="flex items-center gap-1 text-zinc-400 hover:text-zinc-600 dark:hover:text-zinc-300"
             title={`Requires ${tool.apiKeyName} API key`}
           >
-            <i className="fa-solid fa-key text-[10px]"></i>
+            <Key className="text-[10px]" />
           </div>
         )}
       </div>

@@ -65,6 +65,8 @@ import { OnlineStatus } from './components/PWA/OnlineStatus';
 import { FeatureProvider } from './contexts/FeatureContext';
 import { WorkspaceProvider } from './contexts/WorkspaceContext';
 
+import { HelpCircle } from 'lucide-react';
+
 // Loading fallback component for lazy-loaded routes
 // Uses inline=true so it fills the content area via flex layout rather than fixed/absolute positioning
 const PageLoader = () => <EnhancedLoadingScreen inline />;
@@ -732,7 +734,7 @@ const App: React.FC = () => {
               className="w-11 h-11 sm:w-12 sm:h-12 flex items-center justify-center text-zinc-500 dark:text-zinc-400 rounded-xl hover:bg-zinc-100 dark:hover:bg-zinc-900 transition active:scale-95"
               aria-label="User Guide"
             >
-              <i className="fa-solid fa-circle-question text-lg"></i>
+              <HelpCircle className="text-lg" />
             </button>
             {/* Notification Bell */}
             <NotificationCenter onOpenSettings={() => { setSettingsSection('notifications'); setView(AppView.SETTINGS); setIsMobileMenuOpen(false); }} />

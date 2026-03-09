@@ -1,6 +1,8 @@
 import React, { useState } from 'react';
 import { SuggestedEvent } from '../services/meetingDetectionService';
 
+import { CalendarCheck, Clock, MapPin, Plus, Sparkles, X } from 'lucide-react';
+
 interface MeetingSuggestionNotificationProps {
   suggestion: SuggestedEvent;
   onAccept: (suggestion: SuggestedEvent) => void;
@@ -55,7 +57,7 @@ export const MeetingSuggestionNotification: React.FC<MeetingSuggestionNotificati
           <div className="flex-1 min-w-0">
             <h4 className="text-sm font-semibold text-zinc-900 dark:text-white flex items-center gap-2">
               <span>Meeting Detected</span>
-              <i className="fa-solid fa-sparkles text-purple-500 text-xs"></i>
+              <Sparkles className="text-purple-500 text-xs" />
             </h4>
             <p className="text-xs text-zinc-500 dark:text-zinc-400">
               From {suggestion.source}
@@ -68,7 +70,7 @@ export const MeetingSuggestionNotification: React.FC<MeetingSuggestionNotificati
           onClick={() => onDismiss(suggestion.id)}
           className="text-zinc-400 hover:text-zinc-600 dark:hover:text-zinc-300 transition"
         >
-          <i className="fa-solid fa-xmark"></i>
+          <X />
         </button>
       </div>
 
@@ -78,7 +80,7 @@ export const MeetingSuggestionNotification: React.FC<MeetingSuggestionNotificati
           {/* Title */}
           {suggestion.event.title && (
             <div className="flex items-start gap-2">
-              <i className="fa-solid fa-calendar-check text-blue-500 text-sm mt-0.5 flex-shrink-0"></i>
+              <CalendarCheck className="text-blue-500 text-sm mt-0.5 flex-shrink-0" />
               <p className="text-sm font-medium text-zinc-900 dark:text-white">
                 {suggestion.event.title}
               </p>
@@ -88,7 +90,7 @@ export const MeetingSuggestionNotification: React.FC<MeetingSuggestionNotificati
           {/* Time */}
           {suggestion.event.start && (
             <div className="flex items-center gap-2 text-xs text-zinc-600 dark:text-zinc-400">
-              <i className="fa-regular fa-clock w-4 text-zinc-400"></i>
+              <Clock className="w-4 text-zinc-400" />
               <span>{formatTime(suggestion.event.start)}</span>
             </div>
           )}
@@ -96,7 +98,7 @@ export const MeetingSuggestionNotification: React.FC<MeetingSuggestionNotificati
           {/* Location */}
           {suggestion.event.location && (
             <div className="flex items-center gap-2 text-xs text-zinc-600 dark:text-zinc-400">
-              <i className="fa-solid fa-location-dot w-4 text-zinc-400"></i>
+              <MapPin className="w-4 text-zinc-400" />
               <span className="truncate">{suggestion.event.location}</span>
             </div>
           )}
@@ -138,7 +140,7 @@ export const MeetingSuggestionNotification: React.FC<MeetingSuggestionNotificati
           onClick={() => onAccept(suggestion)}
           className="flex-1 px-3 py-2 bg-blue-500 hover:bg-blue-600 text-white rounded-lg text-sm font-medium transition flex items-center justify-center gap-2"
         >
-          <i className="fa-solid fa-plus"></i>
+          <Plus />
           Add to Calendar
         </button>
         <button

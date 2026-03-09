@@ -1,5 +1,7 @@
 import React, { useState } from 'react';
 
+import { ArrowLeft, Loader2, Lock, ShieldHalf } from 'lucide-react';
+
 interface LoginProps {
   onLogin: () => void;
   onEmailLogin: (email: string, password: string) => Promise<void>;
@@ -109,7 +111,7 @@ const Login: React.FC<LoginProps> = ({ onLogin, onEmailLogin, onSignup, onMicros
               >
                 {isLoggingIn && loginMethod === 'google' ? (
                   <>
-                    <i className="fa-solid fa-circle-notch fa-spin text-zinc-500"></i>
+                    <Loader2 className="text-zinc-500 animate-spin" />
                     <span>Connecting to Google...</span>
                   </>
                 ) : (
@@ -128,7 +130,7 @@ const Login: React.FC<LoginProps> = ({ onLogin, onEmailLogin, onSignup, onMicros
               >
                 {isLoggingIn && loginMethod === 'microsoft' ? (
                   <>
-                    <i className="fa-solid fa-circle-notch fa-spin text-zinc-400"></i>
+                    <Loader2 className="text-zinc-400 animate-spin" />
                     <span>Connecting to Microsoft...</span>
                   </>
                 ) : (
@@ -205,7 +207,7 @@ const Login: React.FC<LoginProps> = ({ onLogin, onEmailLogin, onSignup, onMicros
               >
                 {isLoggingIn && loginMethod === 'email' ? (
                   <>
-                    <i className="fa-solid fa-circle-notch fa-spin mr-2"></i>
+                    <Loader2 className="mr-2 animate-spin" />
                     {isSignupMode ? 'Creating account...' : 'Signing in...'}
                   </>
                 ) : (
@@ -222,7 +224,7 @@ const Login: React.FC<LoginProps> = ({ onLogin, onEmailLogin, onSignup, onMicros
                   }}
                   className="text-zinc-500 hover:text-zinc-300 transition"
                 >
-                  <i className="fa-solid fa-arrow-left mr-1"></i> Back
+                  <ArrowLeft className="mr-1" /> Back
                 </button>
                 <button
                   type="button"
@@ -246,8 +248,8 @@ const Login: React.FC<LoginProps> = ({ onLogin, onEmailLogin, onSignup, onMicros
         </div>
 
         <div className="mt-8 flex justify-center gap-6 text-zinc-600 animate-slide-up delay-200">
-           <div className="flex items-center gap-2 text-xs"><i className="fa-solid fa-shield-halved"></i> Secure Encryption</div>
-           <a href="/privacy" className="flex items-center gap-2 text-xs hover:text-zinc-400 transition"><i className="fa-solid fa-lock"></i> Privacy Policy</a>
+           <div className="flex items-center gap-2 text-xs"><ShieldHalf /> Secure Encryption</div>
+           <a href="/privacy" className="flex items-center gap-2 text-xs hover:text-zinc-400 transition"><Lock /> Privacy Policy</a>
         </div>
       </div>
     </div>

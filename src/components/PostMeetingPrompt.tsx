@@ -1,6 +1,8 @@
 import React, { useState } from 'react';
 import { MeetingFollowUp, FollowUpSuggestion } from '../services/postMeetingService';
 
+import { CalendarCheck, Check, Clock, Lightbulb, Sparkles, Users, X } from 'lucide-react';
+
 interface PostMeetingPromptProps {
   followUp: MeetingFollowUp;
   onCreateAction: (suggestion: FollowUpSuggestion) => void;
@@ -60,7 +62,7 @@ export const PostMeetingPrompt: React.FC<PostMeetingPromptProps> = ({
         <div className="flex items-start justify-between mb-2">
           <div className="flex items-center gap-3">
             <div className="w-10 h-10 rounded-full bg-white/20 backdrop-blur-sm flex items-center justify-center">
-              <i className="fa-solid fa-calendar-check text-lg"></i>
+              <CalendarCheck className="text-lg" />
             </div>
             <div>
               <h3 className="text-lg font-bold">How did your meeting go?</h3>
@@ -73,7 +75,7 @@ export const PostMeetingPrompt: React.FC<PostMeetingPromptProps> = ({
             onClick={() => onDismiss(followUp.id)}
             className="text-white/80 hover:text-white transition"
           >
-            <i className="fa-solid fa-xmark text-xl"></i>
+            <X className="text-xl" />
           </button>
         </div>
       </div>
@@ -97,7 +99,7 @@ export const PostMeetingPrompt: React.FC<PostMeetingPromptProps> = ({
         {/* Suggestions */}
         <div className="mb-6">
           <h4 className="text-sm font-semibold text-zinc-700 dark:text-zinc-300 mb-3 flex items-center gap-2">
-            <i className="fa-solid fa-sparkles text-purple-500"></i>
+            <Sparkles className="text-purple-500" />
             Suggested follow-up actions
           </h4>
           <div className="space-y-2">
@@ -121,7 +123,7 @@ export const PostMeetingPrompt: React.FC<PostMeetingPromptProps> = ({
                     }`}
                   >
                     {selectedSuggestions.has(index) && (
-                      <i className="fa-solid fa-check text-white text-xs"></i>
+                      <Check className="text-white text-xs" />
                     )}
                   </div>
 
@@ -157,7 +159,7 @@ export const PostMeetingPrompt: React.FC<PostMeetingPromptProps> = ({
                     )}
                     {suggestion.suggestedTime && (
                       <p className="text-xs text-zinc-500 dark:text-zinc-500">
-                        <i className="fa-regular fa-clock mr-1"></i>
+                        <Clock className="mr-1" />
                         {new Intl.DateTimeFormat('en-US', {
                           month: 'short',
                           day: 'numeric',
@@ -177,7 +179,7 @@ export const PostMeetingPrompt: React.FC<PostMeetingPromptProps> = ({
         {followUp.attendees && followUp.attendees.length > 0 && (
           <div className="mb-6 p-3 bg-zinc-50 dark:bg-zinc-800/50 rounded-lg">
             <p className="text-xs text-zinc-500 dark:text-zinc-400 mb-2">
-              <i className="fa-solid fa-user-group mr-1"></i>
+              <Users className="mr-1" />
               Attendees
             </p>
             <div className="flex flex-wrap gap-2">
@@ -200,7 +202,7 @@ export const PostMeetingPrompt: React.FC<PostMeetingPromptProps> = ({
             disabled={selectedSuggestions.size === 0}
             className="flex-1 px-4 py-3 bg-gradient-to-r from-purple-500 to-pink-500 hover:from-purple-600 hover:to-pink-600 disabled:from-zinc-300 disabled:to-zinc-300 disabled:cursor-not-allowed text-white rounded-xl font-semibold transition flex items-center justify-center gap-2"
           >
-            <i className="fa-solid fa-check"></i>
+            <Check />
             Create {selectedSuggestions.size > 0 ? `${selectedSuggestions.size} ` : ''}
             {selectedSuggestions.size === 1 ? 'Action' : 'Actions'}
           </button>
@@ -214,7 +216,7 @@ export const PostMeetingPrompt: React.FC<PostMeetingPromptProps> = ({
 
         {/* Tip */}
         <p className="text-xs text-zinc-400 text-center mt-4">
-          <i className="fa-solid fa-lightbulb mr-1"></i>
+          <Lightbulb className="mr-1" />
           Tip: Select multiple actions to create them all at once
         </p>
       </div>

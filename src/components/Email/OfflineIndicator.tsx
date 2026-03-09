@@ -1,6 +1,8 @@
 // OfflineIndicator.tsx - Shows offline status and pending sync actions
 import React from 'react';
 
+import { CloudUpload, WifiOff } from 'lucide-react';
+
 interface OfflineIndicatorProps {
   isOffline: boolean;
   pendingActionsCount: number;
@@ -56,7 +58,7 @@ export const OfflineIndicator: React.FC<OfflineIndicatorProps> = ({
     >
       {isOffline ? (
         <>
-          <i className="fa-solid fa-wifi-slash" aria-hidden="true" />
+          <WifiOff />
           <span>Offline</span>
           {pendingActionsCount > 0 && (
             <span className="px-1.5 py-0.5 bg-amber-500/20 rounded text-xs">
@@ -66,7 +68,7 @@ export const OfflineIndicator: React.FC<OfflineIndicatorProps> = ({
         </>
       ) : (
         <>
-          <i className="fa-solid fa-cloud-arrow-up" aria-hidden="true" />
+          <CloudUpload />
           <span>{pendingActionsCount} to sync</span>
           {onSync && (
             <button
@@ -106,9 +108,9 @@ export const OfflineIndicatorCompact: React.FC<{
       aria-label={isOffline ? `Offline with ${pendingActionsCount} pending changes` : `${pendingActionsCount} changes pending sync`}
     >
       {isOffline ? (
-        <i className="fa-solid fa-wifi-slash text-sm" aria-hidden="true" />
+        <WifiOff className="text-sm" />
       ) : (
-        <i className="fa-solid fa-cloud-arrow-up text-sm" aria-hidden="true" />
+        <CloudUpload className="text-sm" />
       )}
       {pendingActionsCount > 0 && (
         <span

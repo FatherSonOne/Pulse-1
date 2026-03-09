@@ -1,6 +1,8 @@
 // Conversation Flow Visualization
 import React, { useMemo, useState } from 'react';
 
+import { ChevronRight, GitFork, Star } from 'lucide-react';
+
 interface MessageNode {
   id: string;
   text: string;
@@ -164,7 +166,7 @@ export const ConversationFlowViz: React.FC<ConversationFlowVizProps> = React.mem
         <div className="flex items-center justify-between">
           <div className="flex items-center gap-2">
             <div className="w-8 h-8 rounded-full bg-indigo-100 dark:bg-indigo-900/40 flex items-center justify-center">
-              <i className="fa-solid fa-diagram-project text-indigo-500 text-sm" />
+              <GitFork className="text-indigo-500 text-sm" />
             </div>
             <div>
               <h3 className="text-sm font-bold text-zinc-800 dark:text-white">Conversation Flow</h3>
@@ -276,7 +278,7 @@ export const ConversationFlowViz: React.FC<ConversationFlowVizProps> = React.mem
                   <i className={`fa-solid ${getTypeIcon(node.type)} text-xs`} />
                 </button>
                 {idx < flowData.nodes.length - 1 && (
-                  <i className="fa-solid fa-chevron-right text-zinc-300 dark:text-zinc-600 text-[8px]" />
+                  <ChevronRight className="text-zinc-300 dark:text-zinc-600 text-[8px]" />
                 )}
               </React.Fragment>
             ))}
@@ -346,7 +348,7 @@ export const ConversationFlowViz: React.FC<ConversationFlowVizProps> = React.mem
             <div className="space-y-1">
               {flowData.turningPoints.slice(0, 3).map((tp, idx) => (
                 <div key={idx} className="flex items-center gap-2 text-xs text-zinc-600 dark:text-zinc-400">
-                  <i className="fa-solid fa-star text-amber-500 text-[8px]" />
+                  <Star className="text-amber-500 text-[8px]" />
                   {tp.reason}
                 </div>
               ))}

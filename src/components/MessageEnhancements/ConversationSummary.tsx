@@ -1,6 +1,8 @@
 // Conversation Summary Generator
 import React, { useState, useMemo } from 'react';
 
+import { Copy, FileText, Hash, Loader2, Mail, Sparkles, Wand2 } from 'lucide-react';
+
 interface SummarySection {
   id: string;
   title: string;
@@ -205,7 +207,7 @@ export const ConversationSummary: React.FC<ConversationSummaryProps> = ({
     return (
       <div className="flex items-center gap-2">
         <div className="flex items-center gap-1.5 px-2 py-1 rounded-full bg-green-100 dark:bg-green-900/40 text-green-600 dark:text-green-400">
-          <i className="fa-solid fa-file-lines text-xs" />
+          <FileText className="text-xs" />
           <span className="text-xs font-medium">{summarySections.length} sections</span>
         </div>
       </div>
@@ -219,7 +221,7 @@ export const ConversationSummary: React.FC<ConversationSummaryProps> = ({
         <div className="flex items-center justify-between mb-3">
           <div className="flex items-center gap-2">
             <div className="w-8 h-8 rounded-full bg-green-100 dark:bg-green-900/40 flex items-center justify-center">
-              <i className="fa-solid fa-file-lines text-green-500 text-sm" />
+              <FileText className="text-green-500 text-sm" />
             </div>
             <div>
               <h3 className="text-sm font-bold text-zinc-800 dark:text-white">
@@ -239,12 +241,12 @@ export const ConversationSummary: React.FC<ConversationSummaryProps> = ({
               >
                 {isGenerating ? (
                   <>
-                    <i className="fa-solid fa-circle-notch fa-spin" />
+                    <Loader2 className="animate-spin" />
                     Generating...
                   </>
                 ) : (
                   <>
-                    <i className="fa-solid fa-wand-magic-sparkles" />
+                    <Wand2 />
                     AI Summary
                   </>
                 )}
@@ -278,7 +280,7 @@ export const ConversationSummary: React.FC<ConversationSummaryProps> = ({
       {customSummary && (
         <div className="px-4 py-3 bg-green-50 dark:bg-green-900/20 border-b border-zinc-200 dark:border-zinc-700">
           <div className="flex items-start gap-2">
-            <i className="fa-solid fa-sparkles text-green-500 mt-0.5" />
+            <Sparkles className="text-green-500 mt-0.5" />
             <div>
               <p className="text-xs font-medium text-green-700 dark:text-green-400 mb-1">AI-Generated Summary</p>
               <p className="text-sm text-zinc-700 dark:text-zinc-300">{customSummary}</p>
@@ -342,7 +344,7 @@ export const ConversationSummary: React.FC<ConversationSummaryProps> = ({
         ) : (
           <div className="text-center py-8">
             <div className="w-12 h-12 rounded-full bg-zinc-100 dark:bg-zinc-700 flex items-center justify-center mx-auto mb-3">
-              <i className="fa-solid fa-file-lines text-zinc-400 text-lg" />
+              <FileText className="text-zinc-400 text-lg" />
             </div>
             <p className="text-sm text-zinc-500 dark:text-zinc-400">No summary available</p>
           </div>
@@ -375,21 +377,21 @@ export const ConversationSummary: React.FC<ConversationSummaryProps> = ({
                   className="p-1.5 rounded text-zinc-400 hover:text-zinc-600 dark:hover:text-zinc-300 hover:bg-zinc-100 dark:hover:bg-zinc-700 transition"
                   title="Copy to clipboard"
                 >
-                  <i className="fa-solid fa-copy text-xs" />
+                  <Copy className="text-xs" />
                 </button>
                 <button
                   onClick={() => onShareSummary('email')}
                   className="p-1.5 rounded text-zinc-400 hover:text-zinc-600 dark:hover:text-zinc-300 hover:bg-zinc-100 dark:hover:bg-zinc-700 transition"
                   title="Send via email"
                 >
-                  <i className="fa-solid fa-envelope text-xs" />
+                  <Mail className="text-xs" />
                 </button>
                 <button
                   onClick={() => onShareSummary('slack')}
                   className="p-1.5 rounded text-zinc-400 hover:text-zinc-600 dark:hover:text-zinc-300 hover:bg-zinc-100 dark:hover:bg-zinc-700 transition"
                   title="Share to Slack"
                 >
-                  <i className="fa-brands fa-slack text-xs" />
+                  <Hash className="text-xs" />
                 </button>
               </div>
             )}
@@ -416,7 +418,7 @@ export const SummaryBadge: React.FC<{
       }`}
       title={hasSummary ? 'View summary' : 'Generate summary'}
     >
-      <i className="fa-solid fa-file-lines text-xs" />
+      <FileText className="text-xs" />
       {messageCount > 0 && <span className="text-[10px] font-medium">{messageCount}</span>}
     </button>
   );

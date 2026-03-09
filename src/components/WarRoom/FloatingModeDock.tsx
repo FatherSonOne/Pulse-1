@@ -3,6 +3,8 @@ import { createPortal } from 'react-dom';
 import { WarRoomMode, MissionType, RoomType } from './ModeSwitcher';
 import './FloatingModeDock.css';
 
+import { ArrowRightLeft, Check, LayoutGrid, Zap } from 'lucide-react';
+
 interface FloatingModeDockProps {
   currentMode: WarRoomMode;
   currentMission: MissionType;
@@ -134,7 +136,7 @@ export const FloatingModeDock: React.FC<FloatingModeDockProps> = ({
           {/* Header */}
           <div className="fmd-header">
             <button onClick={onBackToHub} className="fmd-back-btn">
-              <i className="fa fa-th-large"></i>
+              <LayoutGrid className="fa" />
               <span>All Modes</span>
             </button>
           </div>
@@ -142,7 +144,7 @@ export const FloatingModeDock: React.FC<FloatingModeDockProps> = ({
           {/* Quick Switch Section */}
           <div className="fmd-section">
             <div className="fmd-section-title">
-              <i className="fa fa-bolt"></i>
+              <Zap className="fa" />
               Quick Switch
             </div>
 
@@ -173,7 +175,7 @@ export const FloatingModeDock: React.FC<FloatingModeDockProps> = ({
               onClick={() => setShowMoveSession(!showMoveSession)}
               className="fmd-move-trigger"
             >
-              <i className="fa fa-arrow-right-arrow-left"></i>
+              <ArrowRightLeft className="fa" />
               <span>Move to Mission</span>
               <i className={`fa fa-chevron-down ${showMoveSession ? 'rotated' : ''}`}></i>
             </button>
@@ -193,7 +195,7 @@ export const FloatingModeDock: React.FC<FloatingModeDockProps> = ({
                       <span className="fmd-mission-name">{mission.name}</span>
                     </div>
                     {currentMission === mission.id && currentRoom === 'missions' && (
-                      <i className="fa fa-check fmd-mission-check"></i>
+                      <Check className="fa fmd-mission-check" />
                     )}
                   </button>
                 ))}

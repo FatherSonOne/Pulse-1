@@ -22,6 +22,7 @@ import ShortcutsHelp from './ShortcutsHelp';
 import JumpToDate from './JumpToDate';
 import ConflictResolutionBanner, { EventConflict, detectConflicts } from './ConflictResolutionBanner';
 import './Calendar.css';
+import { AlignLeft, AlertTriangle, ArrowLeftRight, ArrowRight, Bell, Brain, Calendar, CalendarCheck, CalendarDays, CalendarPlus, Car, Check, CheckCircle, ChevronRight, ClipboardList, Clock, Copy, Ellipsis, ExternalLink, FileDown, Grid3X3, HelpCircle, Lightbulb, ListChecks, Loader2, MapPin, Maximize2, Pen, PieChart, Plus, RefreshCw, Repeat, Search, Send, Settings, Sliders, Star, Sun, Trash2, Unplug, UserCog, Users, Video, Wand2, X } from 'lucide-react';
 import {
   calendarAIService,
   SchedulingSuggestion,
@@ -1974,7 +1975,7 @@ const Calendar: React.FC<CalendarProps> = ({ contacts, openTaskPanel = false, on
                   onContextMenu={(e) => handleContextMenu(e, 'event', date, ev.id)}
                   title="All-day event"
                 >
-                    <i className="fa-solid fa-sun mr-0.5 sm:mr-1 text-[6px] sm:text-[8px] opacity-75 hidden sm:inline"></i>
+                    <Sun className="mr-0.5 sm:mr-1 text-[6px] sm:text-[8px] opacity-75 hidden sm:inline" />
                     <span className="truncate">{ev.title}</span>
                 </div>
             ))}
@@ -1986,7 +1987,7 @@ const Calendar: React.FC<CalendarProps> = ({ contacts, openTaskPanel = false, on
                   onClick={(e) => { e.stopPropagation(); openEventDetail(ev); }}
                   onContextMenu={(e) => handleContextMenu(e, 'event', date, ev.id)}
                 >
-                    {ev.type === 'meet' && <i className="fa-solid fa-video mr-0.5 sm:mr-1 hidden sm:inline"></i>}
+                    {ev.type === 'meet' && <Video className="mr-0.5 sm:mr-1 hidden sm:inline" />}
                     <span className="truncate">{ev.title}</span>
                 </div>
             ))}
@@ -2020,7 +2021,7 @@ const Calendar: React.FC<CalendarProps> = ({ contacts, openTaskPanel = false, on
                 onClick={handleQuickEvent}
                 className="w-full px-4 py-2.5 text-left text-sm text-zinc-700 dark:text-zinc-300 hover:bg-zinc-100 dark:hover:bg-zinc-800 flex items-center gap-3 transition"
               >
-                <i className="fa-solid fa-plus text-blue-500 w-4"></i>
+                <Plus className="text-blue-500 w-4" />
                 New Event
               </button>
               <button
@@ -2034,7 +2035,7 @@ const Calendar: React.FC<CalendarProps> = ({ contacts, openTaskPanel = false, on
                 }}
                 className="w-full px-4 py-2.5 text-left text-sm text-zinc-700 dark:text-zinc-300 hover:bg-zinc-100 dark:hover:bg-zinc-800 flex items-center gap-3 transition"
               >
-                <i className="fa-solid fa-video text-green-500 w-4"></i>
+                <Video className="text-green-500 w-4" />
                 Schedule Meeting
               </button>
               <div className="border-t border-zinc-100 dark:border-zinc-800 my-1"></div>
@@ -2052,14 +2053,14 @@ const Calendar: React.FC<CalendarProps> = ({ contacts, openTaskPanel = false, on
                 onClick={handleEditEvent}
                 className="w-full px-4 py-2.5 text-left text-sm text-zinc-700 dark:text-zinc-300 hover:bg-zinc-100 dark:hover:bg-zinc-800 flex items-center gap-3 transition"
               >
-                <i className="fa-solid fa-pen text-blue-500 w-4"></i>
+                <Pen className="text-blue-500 w-4" />
                 Edit Event
               </button>
               <button
                 onClick={handleDuplicateEvent}
                 className="w-full px-4 py-2.5 text-left text-sm text-zinc-700 dark:text-zinc-300 hover:bg-zinc-100 dark:hover:bg-zinc-800 flex items-center gap-3 transition"
               >
-                <i className="fa-regular fa-copy text-zinc-400 w-4"></i>
+                <Copy className="text-zinc-400 w-4" />
                 Duplicate
               </button>
               <div className="border-t border-zinc-100 dark:border-zinc-800 my-1"></div>
@@ -2067,7 +2068,7 @@ const Calendar: React.FC<CalendarProps> = ({ contacts, openTaskPanel = false, on
                 onClick={handleDeleteEvent}
                 className="w-full px-4 py-2.5 text-left text-sm text-red-600 hover:bg-red-50 dark:hover:bg-red-900/20 flex items-center gap-3 transition"
               >
-                <i className="fa-solid fa-trash w-4"></i>
+                <Trash2 className="w-4" />
                 Delete Event
               </button>
             </>
@@ -2082,7 +2083,7 @@ const Calendar: React.FC<CalendarProps> = ({ contacts, openTaskPanel = false, on
                   <div className="flex items-center justify-between mb-6">
                     <h3 className="text-xl font-bold dark:text-white text-zinc-900">{editingEvent ? 'Edit Event' : 'New Event'}</h3>
                     <button type="button" onClick={() => { setShowEventModal(false); resetForm(); }} className="text-zinc-400 hover:text-zinc-600">
-                      <i className="fa-solid fa-xmark"></i>
+                      <X />
                     </button>
                   </div>
 
@@ -2110,7 +2111,7 @@ const Calendar: React.FC<CalendarProps> = ({ contacts, openTaskPanel = false, on
                               onClick={() => setShowCustomTypesManager(true)}
                               className="px-3 py-2 rounded-lg text-xs font-medium flex items-center gap-1.5 transition border border-dashed border-zinc-300 dark:border-zinc-600 text-zinc-400 hover:text-zinc-600 dark:hover:text-zinc-300 hover:border-zinc-400"
                             >
-                              <i className="fa-solid fa-sliders"></i> Manage
+                              <Sliders /> Manage
                             </button>
                           </div>
                       </div>
@@ -2270,7 +2271,7 @@ const Calendar: React.FC<CalendarProps> = ({ contacts, openTaskPanel = false, on
                                   </span>
                                   {contact.name}
                                   <button type="button" onClick={() => removeAttendee(id)} className="ml-1 text-zinc-400 hover:text-red-500">
-                                    <i className="fa-solid fa-xmark text-[10px]"></i>
+                                    <X className="text-[10px]" />
                                   </button>
                                 </span>
                               ) : null;
@@ -2332,27 +2333,27 @@ const Calendar: React.FC<CalendarProps> = ({ contacts, openTaskPanel = false, on
                               </>
                             ) : <span>Event</span>;
                           })()}
-                          {selectedEvent.source === 'google' && <i className="fa-brands fa-google ml-1" aria-hidden="true"></i>}
-                          {selectedEvent.source === 'outlook' && <i className="fa-brands fa-microsoft ml-1" aria-hidden="true"></i>}
+                          {selectedEvent.source === 'google' && <ExternalLink className="ml-1" />}
+                          {selectedEvent.source === 'outlook' && <Grid3X3 className="ml-1" />}
                         </div>
                         <h3 className="text-xl font-bold text-white">{selectedEvent.title}</h3>
                         {/* Conflict badge — shown when this event overlaps a cross-provider duplicate */}
                         {syncConflicts.some(c => c.eventA.id === selectedEvent.id || c.eventB.id === selectedEvent.id) && (
                           <div className="mt-2 inline-flex items-center gap-1.5 px-2 py-1 bg-amber-400/30 border border-amber-300/50 rounded-full text-[10px] font-semibold text-amber-100 uppercase tracking-wide">
-                            <i className="fa-solid fa-triangle-exclamation text-[9px]" aria-hidden="true" />
+                            <AlertTriangle className="text-[9px]" />
                             Possible duplicate
                           </div>
                         )}
                       </div>
                       <button onClick={() => setShowEventDetail(false)} className="text-white/80 hover:text-white">
-                        <i className="fa-solid fa-xmark"></i>
+                        <X />
                       </button>
                     </div>
                   </div>
                   <div className="p-6 space-y-4">
                     {/* Time */}
                     <div className="flex items-center gap-3 text-sm">
-                      <i className="fa-solid fa-clock text-zinc-400 w-5"></i>
+                      <Clock className="text-zinc-400 w-5" />
                       <div className="dark:text-white">
                         {selectedEvent.allDay ? (
                           <span>All day</span>
@@ -2371,7 +2372,7 @@ const Calendar: React.FC<CalendarProps> = ({ contacts, openTaskPanel = false, on
                     {/* Meeting Link (Google Meet or any URL) */}
                     {selectedEvent.meetLink && (
                       <div className="flex items-center gap-3 text-sm">
-                        <i className="fa-solid fa-video text-blue-500 w-5" aria-hidden="true"></i>
+                        <Video className="text-blue-500 w-5" />
                         <div className="flex items-center gap-2 flex-1 min-w-0">
                           <a
                             href={selectedEvent.meetLink}
@@ -2391,7 +2392,7 @@ const Calendar: React.FC<CalendarProps> = ({ contacts, openTaskPanel = false, on
                             title="Copy link"
                             className="flex-shrink-0 w-6 h-6 flex items-center justify-center rounded-md text-zinc-400 hover:text-zinc-700 dark:hover:text-zinc-200 hover:bg-zinc-100 dark:hover:bg-zinc-800 transition"
                           >
-                            <i className="fa-regular fa-copy text-[11px]" aria-hidden="true"></i>
+                            <Copy className="text-[11px]" />
                           </button>
                         </div>
                       </div>
@@ -2400,7 +2401,7 @@ const Calendar: React.FC<CalendarProps> = ({ contacts, openTaskPanel = false, on
                     {/* Location */}
                     {selectedEvent.location && (
                       <div className="flex items-center gap-3 text-sm">
-                        <i className="fa-solid fa-location-dot text-zinc-400 w-5"></i>
+                        <MapPin className="text-zinc-400 w-5" />
                         <span className="dark:text-white">{selectedEvent.location}</span>
                       </div>
                     )}
@@ -2408,7 +2409,7 @@ const Calendar: React.FC<CalendarProps> = ({ contacts, openTaskPanel = false, on
                     {/* Organizer */}
                     {selectedEvent.organizer && (
                       <div className="flex items-center gap-3 text-sm">
-                        <i className="fa-solid fa-user-tie text-zinc-400 w-5"></i>
+                        <UserCog className="text-zinc-400 w-5" />
                         <span className="dark:text-white">
                           Organized by {selectedEvent.organizer.displayName || selectedEvent.organizer.email}
                         </span>
@@ -2418,7 +2419,7 @@ const Calendar: React.FC<CalendarProps> = ({ contacts, openTaskPanel = false, on
                     {/* Attendees — avatar chips with response status */}
                     {selectedEvent.attendeesDetailed && selectedEvent.attendeesDetailed.length > 0 ? (
                       <div className="flex items-start gap-3 text-sm">
-                        <i className="fa-solid fa-users text-zinc-400 w-5 mt-1" aria-hidden="true"></i>
+                        <Users className="text-zinc-400 w-5 mt-1" />
                         <div className="flex-1">
                           <div className="text-xs text-zinc-500 dark:text-zinc-400 mb-2">
                             {selectedEvent.attendeesDetailed.length} attendee{selectedEvent.attendeesDetailed.length !== 1 ? 's' : ''}
@@ -2449,7 +2450,7 @@ const Calendar: React.FC<CalendarProps> = ({ contacts, openTaskPanel = false, on
                       </div>
                     ) : selectedEvent.attendees && selectedEvent.attendees.length > 0 && (
                       <div className="flex items-start gap-3 text-sm">
-                        <i className="fa-solid fa-users text-zinc-400 w-5 mt-1" aria-hidden="true"></i>
+                        <Users className="text-zinc-400 w-5 mt-1" />
                         <div className="flex-1">
                           <div className="text-xs text-zinc-500 dark:text-zinc-400 mb-2">
                             {selectedEvent.attendees.length} attendee{selectedEvent.attendees.length !== 1 ? 's' : ''}
@@ -2475,7 +2476,7 @@ const Calendar: React.FC<CalendarProps> = ({ contacts, openTaskPanel = false, on
                     {/* Recurrence */}
                     {selectedEvent.recurrence && selectedEvent.recurrence.length > 0 && (
                       <div className="flex items-center gap-3 text-sm">
-                        <i className="fa-solid fa-repeat text-zinc-400 w-5"></i>
+                        <Repeat className="text-zinc-400 w-5" />
                         <span className="dark:text-white text-zinc-600">Recurring event</span>
                       </div>
                     )}
@@ -2483,7 +2484,7 @@ const Calendar: React.FC<CalendarProps> = ({ contacts, openTaskPanel = false, on
                     {/* Reminders */}
                     {selectedEvent.reminders && !selectedEvent.reminders.useDefault && selectedEvent.reminders.overrides && (
                       <div className="flex items-start gap-3 text-sm">
-                        <i className="fa-solid fa-bell text-zinc-400 w-5 mt-0.5"></i>
+                        <Bell className="text-zinc-400 w-5 mt-0.5" />
                         <div className="flex-1">
                           {selectedEvent.reminders.overrides.map((reminder, i) => (
                             <div key={i} className="text-zinc-500 text-xs">
@@ -2497,7 +2498,7 @@ const Calendar: React.FC<CalendarProps> = ({ contacts, openTaskPanel = false, on
                     {/* Description */}
                     {selectedEvent.description && (
                       <div className="flex items-start gap-3 text-sm">
-                        <i className="fa-solid fa-align-left text-zinc-400 w-5"></i>
+                        <AlignLeft className="text-zinc-400 w-5" />
                         <p className="text-zinc-600 dark:text-zinc-400 whitespace-pre-wrap">{selectedEvent.description}</p>
                       </div>
                     )}
@@ -2511,7 +2512,7 @@ const Calendar: React.FC<CalendarProps> = ({ contacts, openTaskPanel = false, on
                           rel="noopener noreferrer"
                           className="text-xs text-blue-500 hover:underline flex items-center gap-1"
                         >
-                          <i className="fa-brands fa-google"></i>
+                          <ExternalLink />
                           Open in Google Calendar
                         </a>
                       </div>
@@ -2533,7 +2534,7 @@ const Calendar: React.FC<CalendarProps> = ({ contacts, openTaskPanel = false, on
                         }}
                         className="flex-1 px-4 py-2 bg-zinc-100 dark:bg-zinc-800 rounded-lg text-sm font-medium text-zinc-700 dark:text-zinc-300 hover:bg-zinc-200 dark:hover:bg-zinc-700 transition flex items-center justify-center gap-2"
                       >
-                        <i className="fa-solid fa-pen text-xs"></i> Edit
+                        <Pen className="text-xs" /> Edit
                       </button>
                       <button
                         onClick={async () => {
@@ -2554,7 +2555,7 @@ const Calendar: React.FC<CalendarProps> = ({ contacts, openTaskPanel = false, on
                         }}
                         className="px-4 py-2 bg-red-50 dark:bg-red-900/20 rounded-lg text-sm font-medium text-red-600 hover:bg-red-100 dark:hover:bg-red-900/40 transition flex items-center justify-center gap-2"
                       >
-                        <i className="fa-solid fa-trash text-xs"></i> Delete
+                        <Trash2 className="text-xs" /> Delete
                       </button>
                     </div>
                   </div>
@@ -2568,13 +2569,13 @@ const Calendar: React.FC<CalendarProps> = ({ contacts, openTaskPanel = false, on
             <div className="p-4 border-b border-zinc-200 dark:border-zinc-800 flex items-center justify-between">
               <h3 className="font-bold dark:text-white">Upcoming Events</h3>
               <button onClick={() => setShowUpcoming(false)} className="text-zinc-400 hover:text-zinc-600">
-                <i className="fa-solid fa-xmark"></i>
+                <X />
               </button>
             </div>
             <div className="flex-1 overflow-y-auto p-4 space-y-3">
               {upcomingEvents.length === 0 ? (
                 <div className="text-center text-zinc-500 py-8">
-                  <i className="fa-solid fa-calendar-check text-3xl mb-3 opacity-50"></i>
+                  <CalendarCheck className="text-3xl mb-3 opacity-50" />
                   <p className="text-sm">No upcoming events</p>
                 </div>
               ) : (
@@ -2593,7 +2594,7 @@ const Calendar: React.FC<CalendarProps> = ({ contacts, openTaskPanel = false, on
                           {!event.allDay && ` at ${event.start.toLocaleTimeString([], { hour: '2-digit', minute: '2-digit' })}`}
                         </div>
                       </div>
-                      <i className="fa-solid fa-chevron-right text-zinc-300 group-hover:text-zinc-500 text-xs"></i>
+                      <ChevronRight className="text-zinc-300 group-hover:text-zinc-500 text-xs" />
                     </div>
                   </button>
                 ))
@@ -2627,10 +2628,10 @@ const Calendar: React.FC<CalendarProps> = ({ contacts, openTaskPanel = false, on
               onChange={(e) => setSearchQuery(e.target.value)}
               className="w-full bg-zinc-50 dark:bg-zinc-900 border border-zinc-200 dark:border-zinc-800 rounded-lg px-3 py-1.5 text-xs pl-8 outline-none focus:ring-2 focus:ring-blue-500 dark:text-white"
             />
-            <i className="fa-solid fa-search absolute left-2.5 top-1/2 -translate-y-1/2 text-zinc-400 text-[10px]"></i>
+            <Search className="absolute left-2.5 top-1/2 -translate-y-1/2 text-zinc-400 text-[10px]" />
             {searchQuery && (
               <button onClick={() => setSearchQuery('')} className="absolute right-2 top-1/2 -translate-y-1/2 text-zinc-400 hover:text-zinc-600">
-                <i className="fa-solid fa-xmark text-[10px]"></i>
+                <X className="text-[10px]" />
               </button>
             )}
           </div>
@@ -2657,7 +2658,7 @@ const Calendar: React.FC<CalendarProps> = ({ contacts, openTaskPanel = false, on
               className={`flex items-center gap-1.5 px-2.5 py-1.5 rounded-lg text-xs font-medium border transition ${showNLInput ? 'bg-violet-500 border-violet-500 text-white' : 'border-zinc-200 dark:border-zinc-800 text-zinc-500 dark:text-zinc-400 hover:text-violet-600 hover:border-violet-300'}`}
               title="AI quick-add (type naturally)"
             >
-              <i className="fa-solid fa-wand-magic-sparkles text-[10px]"></i>
+              <Wand2 className="text-[10px]" />
               <span className="hidden lg:inline">Quick Add</span>
             </button>
           )}
@@ -2670,7 +2671,7 @@ const Calendar: React.FC<CalendarProps> = ({ contacts, openTaskPanel = false, on
             onClick={() => setShowEventModal(true)}
             className="flex items-center gap-1.5 px-2.5 py-1.5 bg-zinc-900 dark:bg-white text-white dark:text-black rounded-lg text-xs font-bold hover:opacity-90 transition"
           >
-            <i className="fa-solid fa-plus text-[10px]"></i>
+            <Plus className="text-[10px]" />
             <span className="hidden sm:inline">New</span>
           </button>
 
@@ -2682,7 +2683,7 @@ const Calendar: React.FC<CalendarProps> = ({ contacts, openTaskPanel = false, on
               className={`w-8 h-8 flex items-center justify-center rounded-lg border transition ${showUpcoming ? 'bg-blue-500 border-blue-500 text-white' : 'border-zinc-200 dark:border-zinc-800 text-zinc-400 hover:text-zinc-900 dark:hover:text-white'}`}
               title="Upcoming Events"
             >
-              <i className="fa-solid fa-clock text-xs"></i>
+              <Clock className="text-xs" />
             </button>
             {/* Tasks */}
             <button
@@ -2690,7 +2691,7 @@ const Calendar: React.FC<CalendarProps> = ({ contacts, openTaskPanel = false, on
               className={`w-8 h-8 flex items-center justify-center rounded-lg border transition ${showTaskPanel ? 'bg-zinc-100 dark:bg-zinc-800 border-zinc-300 dark:border-zinc-700 text-zinc-900 dark:text-white' : 'border-zinc-200 dark:border-zinc-800 text-zinc-400 hover:text-zinc-900 dark:hover:text-white'}`}
               title="Tasks"
             >
-              <i className="fa-solid fa-list-check text-xs"></i>
+              <ListChecks className="text-xs" />
             </button>
             {/* Sync status indicator */}
             {(googleConnected || outlookConnected) && (
@@ -2718,13 +2719,13 @@ const Calendar: React.FC<CalendarProps> = ({ contacts, openTaskPanel = false, on
                   <p className="font-semibold mb-1 text-zinc-200">Calendar Sync</p>
                   {googleConnected && (
                     <div className="flex items-center gap-1.5 text-zinc-400">
-                      <i className="fa-brands fa-google text-[10px]" aria-hidden="true" />
+                      <ExternalLink className="text-[10px]" />
                       Google {syncingGoogle ? '· syncing…' : '· connected'}
                     </div>
                   )}
                   {outlookConnected && (
                     <div className="flex items-center gap-1.5 text-zinc-400 mt-0.5">
-                      <i className="fa-brands fa-microsoft text-[10px]" aria-hidden="true" />
+                      <Grid3X3 className="text-[10px]" />
                       Outlook {syncingOutlook ? '· syncing…' : '· connected'}
                     </div>
                   )}
@@ -2745,7 +2746,7 @@ const Calendar: React.FC<CalendarProps> = ({ contacts, openTaskPanel = false, on
                 title="Google Calendar not connected — connect in Settings"
                 className="w-8 h-8 flex items-center justify-center rounded-lg border border-zinc-200 dark:border-zinc-800 text-zinc-300 dark:text-zinc-600 cursor-default"
               >
-                <i className="fa-brands fa-google text-xs" aria-hidden="true" />
+                <ExternalLink className="text-xs" />
               </button>
             )}
             {/* Settings */}
@@ -2754,7 +2755,7 @@ const Calendar: React.FC<CalendarProps> = ({ contacts, openTaskPanel = false, on
               className={`w-8 h-8 flex items-center justify-center rounded-lg border transition ${showCalendarSettings ? 'bg-zinc-900 dark:bg-white border-zinc-900 dark:border-white text-white dark:text-black' : 'border-zinc-200 dark:border-zinc-800 text-zinc-400 hover:text-zinc-900 dark:hover:text-white'}`}
               title="Calendar Settings"
             >
-              <i className="fa-solid fa-gear text-xs"></i>
+              <Settings className="text-xs" />
             </button>
             {/* AI Panel */}
             <button
@@ -2782,7 +2783,7 @@ const Calendar: React.FC<CalendarProps> = ({ contacts, openTaskPanel = false, on
               title="Jump to date (⌘J)"
               className={`w-8 h-8 flex items-center justify-center rounded-lg border transition hidden md:flex ${showJumpToDate ? 'bg-zinc-900 dark:bg-white border-zinc-900 dark:border-white text-white dark:text-black' : 'border-zinc-200 dark:border-zinc-800 text-zinc-400 hover:text-zinc-700 dark:hover:text-white'}`}
             >
-              <i className="fa-solid fa-calendar-days text-xs" aria-hidden="true" />
+              <CalendarDays className="text-xs" />
             </button>
 
             {/* Focus mode */}
@@ -2792,7 +2793,7 @@ const Calendar: React.FC<CalendarProps> = ({ contacts, openTaskPanel = false, on
               title={focusMode ? 'Exit focus mode (⌘F)' : 'Focus mode (⌘F)'}
               className={`w-8 h-8 flex items-center justify-center rounded-lg border transition hidden md:flex ${focusMode ? 'bg-indigo-600 border-indigo-600 text-white' : 'border-zinc-200 dark:border-zinc-800 text-zinc-400 hover:text-indigo-600 hover:border-indigo-300'}`}
             >
-              <i className="fa-solid fa-expand text-xs" aria-hidden="true" />
+              <Maximize2 className="text-xs" />
             </button>
 
             {/* ⋯ More / Export menu */}
@@ -2803,7 +2804,7 @@ const Calendar: React.FC<CalendarProps> = ({ contacts, openTaskPanel = false, on
                 title="More options"
                 className={`w-8 h-8 flex items-center justify-center rounded-lg border transition ${showExportMenu ? 'bg-zinc-900 dark:bg-white border-zinc-900 dark:border-white text-white dark:text-black' : 'border-zinc-200 dark:border-zinc-800 text-zinc-400 hover:text-zinc-700 dark:hover:text-white'}`}
               >
-                <i className="fa-solid fa-ellipsis text-xs" aria-hidden="true" />
+                <Ellipsis className="text-xs" />
               </button>
               {showExportMenu && (
                 <div
@@ -2817,7 +2818,7 @@ const Calendar: React.FC<CalendarProps> = ({ contacts, openTaskPanel = false, on
                     onClick={exportAsICS}
                     className="w-full flex items-center gap-2.5 px-3 py-2.5 text-sm text-zinc-700 dark:text-zinc-200 hover:bg-zinc-50 dark:hover:bg-zinc-800 transition text-left"
                   >
-                    <i className="fa-solid fa-file-arrow-down text-indigo-500 w-4" aria-hidden="true" />
+                    <FileDown className="text-indigo-500 w-4" />
                     <div>
                       <div className="font-medium">Export as .ics</div>
                       <div className="text-[10px] text-zinc-400 capitalize">
@@ -2903,14 +2904,14 @@ const Calendar: React.FC<CalendarProps> = ({ contacts, openTaskPanel = false, on
                <div className="mb-4 lg:mb-6">
                  <h3 className="text-[10px] lg:text-xs font-bold text-zinc-400 uppercase tracking-widest mb-2 lg:mb-3 flex items-center justify-between">
                    <span className="flex items-center gap-1.5 truncate">
-                     <i className="fa-brands fa-google text-[8px] lg:text-[10px]"></i> <span className="truncate">Google Calendars</span>
+                     <ExternalLink className="text-[8px] lg:text-[10px]" /> <span className="truncate">Google Calendars</span>
                    </span>
                    <button
                      onClick={() => setShowCreateCalendarModal(true)}
                      className="text-blue-500 hover:text-blue-600 transition flex-shrink-0"
                      title="Create New Calendar"
                    >
-                     <i className="fa-solid fa-plus text-[10px]"></i>
+                     <Plus className="text-[10px]" />
                    </button>
                  </h3>
                  {/* Color palette for the picker */}
@@ -2945,7 +2946,7 @@ const Calendar: React.FC<CalendarProps> = ({ contacts, openTaskPanel = false, on
                                    style={{ accentColor: dotColor }}
                                  />
                                  <span className="group-hover:text-zinc-900 dark:group-hover:text-white transition truncate flex items-center gap-1">
-                                   {cal.primary && <i className="fa-solid fa-star text-amber-400 text-[8px] flex-shrink-0" aria-hidden="true"></i>}
+                                   {cal.primary && <Star className="text-amber-400 text-[8px] flex-shrink-0" />}
                                    <span className="truncate">{cal.summary}</span>
                                  </span>
                                </label>
@@ -2986,7 +2987,7 @@ const Calendar: React.FC<CalendarProps> = ({ contacts, openTaskPanel = false, on
              {!googleConnected && (
                <div className="mb-8 p-4 bg-zinc-100 dark:bg-zinc-800/50 rounded-xl border border-zinc-200 dark:border-zinc-700">
                  <div className="flex items-center gap-2 mb-2">
-                   <i className="fa-brands fa-google text-blue-500"></i>
+                   <ExternalLink className="text-blue-500" />
                    <span className="text-sm font-medium dark:text-white">Google Calendar</span>
                  </div>
                  <p className="text-xs text-zinc-500 dark:text-zinc-400 mb-3">
@@ -3000,12 +3001,12 @@ const Calendar: React.FC<CalendarProps> = ({ contacts, openTaskPanel = false, on
                    }}
                    className="w-full flex items-center justify-center gap-2 bg-white dark:bg-zinc-900 border border-zinc-200 dark:border-zinc-700 rounded-lg px-3 py-2 text-sm font-medium text-zinc-700 dark:text-zinc-300 hover:bg-zinc-50 dark:hover:bg-zinc-800 transition shadow-sm"
                  >
-                   <i className="fa-solid fa-cog text-sm"></i>
+                   <Settings className="text-sm" />
                    Connect in Settings
                  </button>
                  {syncError && (
                    <p className="text-[10px] text-amber-600 dark:text-amber-400 mt-2 flex items-center gap-1">
-                     <i className="fa-solid fa-triangle-exclamation"></i>
+                     <AlertTriangle />
                      {syncError}
                    </p>
                  )}
@@ -3022,7 +3023,7 @@ const Calendar: React.FC<CalendarProps> = ({ contacts, openTaskPanel = false, on
                        className="text-blue-500 hover:text-blue-600 transition"
                        title="Create New Team"
                      >
-                       <i className="fa-solid fa-plus text-[10px]"></i>
+                       <Plus className="text-[10px]" />
                      </button>
                      {selectedTeam && teams.length > 1 && (
                        <button
@@ -3030,7 +3031,7 @@ const Calendar: React.FC<CalendarProps> = ({ contacts, openTaskPanel = false, on
                          className="text-zinc-400 hover:text-zinc-600 transition"
                          title="Edit Team"
                        >
-                         <i className="fa-solid fa-pen text-[10px]"></i>
+                         <Pen className="text-[10px]" />
                        </button>
                      )}
                    </div>
@@ -3052,7 +3053,7 @@ const Calendar: React.FC<CalendarProps> = ({ contacts, openTaskPanel = false, on
                  <div className="space-y-2">
                      {teamMembers.length === 0 ? (
                        <div className="text-center py-4">
-                         <i className="fa-solid fa-users text-zinc-300 dark:text-zinc-600 text-2xl mb-2"></i>
+                         <Users className="text-zinc-300 dark:text-zinc-600 text-2xl mb-2" />
                          <p className="text-xs text-zinc-500">No team members yet</p>
                          <button
                            onClick={() => openEditTeam(selectedTeam)}
@@ -3105,7 +3106,7 @@ const Calendar: React.FC<CalendarProps> = ({ contacts, openTaskPanel = false, on
                                 className="opacity-0 group-hover:opacity-100 w-7 h-7 flex items-center justify-center rounded-lg bg-blue-500 text-white hover:bg-blue-600 transition flex-shrink-0"
                                 title="Schedule meeting with this contact"
                               >
-                                <i className="fa-solid fa-calendar-plus text-[10px]" aria-hidden="true"></i>
+                                <CalendarPlus className="text-[10px]" />
                               </button>
                           </div>
                          );
@@ -3120,7 +3121,7 @@ const Calendar: React.FC<CalendarProps> = ({ contacts, openTaskPanel = false, on
                                : 'text-zinc-500 dark:text-zinc-400 hover:bg-white dark:hover:bg-zinc-800 hover:text-zinc-700 dark:hover:text-white'
                            }`}
                          >
-                           <i className="fa-solid fa-clock text-[10px]" aria-hidden="true" />
+                           <Clock className="text-[10px]" />
                            Find free time
                          </button>
                        )}
@@ -3129,7 +3130,7 @@ const Calendar: React.FC<CalendarProps> = ({ contacts, openTaskPanel = false, on
                        {showFreeTimeFinder && (viewMode === 'week' || viewMode === 'day') && (
                          <div className="mt-2 border border-emerald-200 dark:border-emerald-800/60 rounded-xl overflow-hidden">
                            <div className="px-3 py-2 bg-emerald-50 dark:bg-emerald-950/40 border-b border-emerald-200 dark:border-emerald-800/60 flex items-center gap-2">
-                             <i className="fa-solid fa-wand-magic-sparkles text-emerald-500 text-[10px]" aria-hidden="true" />
+                             <Wand2 className="text-emerald-500 text-[10px]" />
                              <span className="text-[10px] font-semibold text-emerald-700 dark:text-emerald-300 uppercase tracking-wider">
                                Available slots
                              </span>
@@ -3235,7 +3236,7 @@ const Calendar: React.FC<CalendarProps> = ({ contacts, openTaskPanel = false, on
                  aria-live="polite"
                >
                  <div className="flex items-center gap-2.5 px-4 py-2.5 bg-zinc-900/90 dark:bg-zinc-100/90 text-white dark:text-zinc-900 text-sm font-medium rounded-full shadow-xl backdrop-blur-sm animate-fade-in">
-                   <i className="fa-solid fa-left-right text-indigo-400 dark:text-indigo-600 text-xs" aria-hidden="true" />
+                   <ArrowLeftRight className="text-indigo-400 dark:text-indigo-600 text-xs" />
                    Swipe left or right to navigate weeks
                  </div>
                </div>
@@ -3295,7 +3296,7 @@ const Calendar: React.FC<CalendarProps> = ({ contacts, openTaskPanel = false, on
                      <h3 className="text-xs font-bold text-zinc-500 uppercase tracking-widest flex items-center gap-2">
                          Tasks
                      </h3>
-                     <button onClick={() => setShowTaskPanel(false)} className="text-zinc-400 hover:text-zinc-900 dark:hover:text-white"><i className="fa-solid fa-xmark"></i></button>
+                     <button onClick={() => setShowTaskPanel(false)} className="text-zinc-400 hover:text-zinc-900 dark:hover:text-white"><X /></button>
                  </div>
 
                  <div className="space-y-1">
@@ -3304,7 +3305,7 @@ const Calendar: React.FC<CalendarProps> = ({ contacts, openTaskPanel = false, on
                              <div 
                                 className={`mt-1 w-4 h-4 rounded border flex items-center justify-center transition ${task.completed ? 'bg-zinc-900 dark:bg-white border-zinc-900 dark:border-white' : 'border-zinc-300 dark:border-zinc-600 group-hover:border-zinc-500'}`}
                              >
-                                 {task.completed && <i className="fa-solid fa-check text-[10px] text-white dark:text-black"></i>}
+                                 {task.completed && <Check className="text-[10px] text-white dark:text-black" />}
                              </div>
                              <div className="flex-1">
                                  <div className={`text-sm ${task.completed ? 'text-zinc-400 line-through' : 'text-zinc-800 dark:text-zinc-200 font-medium'}`}>{task.title}</div>
@@ -3319,7 +3320,7 @@ const Calendar: React.FC<CalendarProps> = ({ contacts, openTaskPanel = false, on
                      
                      <div className="mt-4 pt-4 border-t border-zinc-100 dark:border-zinc-800">
                          <button className="flex items-center gap-2 text-sm text-zinc-500 hover:text-zinc-900 dark:hover:text-white transition w-full p-2 rounded">
-                             <i className="fa-solid fa-plus"></i> Add new task
+                             <Plus /> Add new task
                          </button>
                      </div>
                  </div>
@@ -3336,7 +3337,7 @@ const Calendar: React.FC<CalendarProps> = ({ contacts, openTaskPanel = false, on
                 {editingTeam ? 'Edit Team' : 'Create New Team'}
               </h3>
               <button onClick={() => { setShowTeamModal(false); resetTeamForm(); }} className="text-zinc-400 hover:text-zinc-600">
-                <i className="fa-solid fa-xmark"></i>
+                <X />
               </button>
             </div>
             <div className="p-6 space-y-4">
@@ -3428,7 +3429,7 @@ const Calendar: React.FC<CalendarProps> = ({ contacts, openTaskPanel = false, on
               <div className="flex items-center justify-between mb-4">
                 <h3 className="text-lg font-bold dark:text-white">Schedule Meeting</h3>
                 <button onClick={() => { setShowInviteModal(false); setInviteContact(null); }} className="text-zinc-400 hover:text-zinc-600">
-                  <i className="fa-solid fa-xmark"></i>
+                  <X />
                 </button>
               </div>
               <div className="flex items-center gap-3 p-3 bg-zinc-50 dark:bg-zinc-800 rounded-lg">
@@ -3514,7 +3515,7 @@ const Calendar: React.FC<CalendarProps> = ({ contacts, openTaskPanel = false, on
                   Cancel
                 </button>
                 <button type="submit" className="px-5 py-2 bg-blue-500 text-white rounded-lg text-sm font-bold hover:bg-blue-600 transition flex items-center gap-2">
-                  <i className="fa-solid fa-paper-plane"></i>
+                  <Send />
                   Send Invite
                 </button>
               </div>
@@ -3529,11 +3530,11 @@ const Calendar: React.FC<CalendarProps> = ({ contacts, openTaskPanel = false, on
           <div className="bg-white dark:bg-zinc-900 border border-zinc-200 dark:border-zinc-800 rounded-2xl w-full max-w-md shadow-2xl animate-scale-in">
             <div className="p-6 border-b border-zinc-200 dark:border-zinc-800 flex items-center justify-between">
               <h3 className="text-lg font-bold dark:text-white flex items-center gap-2">
-                <i className="fa-brands fa-google text-blue-500"></i>
+                <ExternalLink className="text-blue-500" />
                 Create New Calendar
               </h3>
               <button onClick={() => setShowCreateCalendarModal(false)} className="text-zinc-400 hover:text-zinc-600">
-                <i className="fa-solid fa-xmark"></i>
+                <X />
               </button>
             </div>
             <div className="p-6 space-y-4">
@@ -3569,12 +3570,12 @@ const Calendar: React.FC<CalendarProps> = ({ contacts, openTaskPanel = false, on
               >
                 {creatingCalendar ? (
                   <>
-                    <i className="fa-solid fa-spinner animate-spin"></i>
+                    <Loader2 className="animate-spin" />
                     Creating...
                   </>
                 ) : (
                   <>
-                    <i className="fa-solid fa-plus"></i>
+                    <Plus />
                     Create Calendar
                   </>
                 )}
@@ -3589,11 +3590,11 @@ const Calendar: React.FC<CalendarProps> = ({ contacts, openTaskPanel = false, on
         <div className="absolute right-0 top-0 bottom-0 w-96 bg-white dark:bg-zinc-950 border-l border-zinc-200 dark:border-zinc-800 shadow-2xl z-50 animate-slide-in-right flex flex-col">
           <div className="p-6 border-b border-zinc-200 dark:border-zinc-800 flex items-center justify-between">
             <h3 className="text-lg font-bold dark:text-white flex items-center gap-2">
-              <i className="fa-solid fa-gear text-zinc-400"></i>
+              <Settings className="text-zinc-400" />
               Calendar Settings
             </h3>
             <button onClick={() => setShowCalendarSettings(false)} className="text-zinc-400 hover:text-zinc-600 dark:hover:text-white">
-              <i className="fa-solid fa-xmark"></i>
+              <X />
             </button>
           </div>
           <div className="flex-1 overflow-y-auto p-6 space-y-6">
@@ -3660,7 +3661,7 @@ const Calendar: React.FC<CalendarProps> = ({ contacts, openTaskPanel = false, on
                 {googleConnected ? (
                   <>
                     <div className="flex items-center gap-2 text-sm text-green-600 dark:text-green-400">
-                      <i className="fa-solid fa-check-circle"></i>
+                      <CheckCircle />
                       Connected
                     </div>
                     <button
@@ -3685,7 +3686,7 @@ const Calendar: React.FC<CalendarProps> = ({ contacts, openTaskPanel = false, on
                     }}
                     className="w-full flex items-center justify-center gap-2 bg-blue-500 text-white rounded-lg px-4 py-3 text-sm font-medium hover:bg-blue-600 transition"
                   >
-                    <i className="fa-brands fa-google"></i>
+                    <ExternalLink />
                     Connect Google Calendar
                   </button>
                 )}
@@ -3695,14 +3696,14 @@ const Calendar: React.FC<CalendarProps> = ({ contacts, openTaskPanel = false, on
             {/* Outlook Calendar */}
             <div>
               <h4 className="text-xs font-bold text-zinc-500 uppercase tracking-wider mb-4">
-                <i className="fa-brands fa-microsoft mr-1.5 text-[#0078d4]"></i>
+                <Grid3X3 className="mr-1.5 text-[#0078d4]" />
                 Outlook Calendar
               </h4>
               <div className="space-y-3">
                 {outlookConnected ? (
                   <>
                     <div className="flex items-center gap-2 text-sm text-green-600 dark:text-green-400">
-                      <i className="fa-solid fa-check-circle"></i>
+                      <CheckCircle />
                       Connected{outlookUserEmail ? ` — ${outlookUserEmail}` : ''}
                     </div>
                     <button
@@ -3717,7 +3718,7 @@ const Calendar: React.FC<CalendarProps> = ({ contacts, openTaskPanel = false, on
                       onClick={disconnectOutlook}
                       className="w-full flex items-center justify-center gap-2 border border-red-200 dark:border-red-900 text-red-500 rounded-lg px-4 py-2 text-sm hover:bg-red-50 dark:hover:bg-red-950 transition"
                     >
-                      <i className="fa-solid fa-plug-circle-xmark"></i>
+                      <Unplug />
                       Disconnect Outlook
                     </button>
                     {outlookError && (
@@ -3730,7 +3731,7 @@ const Calendar: React.FC<CalendarProps> = ({ contacts, openTaskPanel = false, on
                       Sync events from your Microsoft 365 or Outlook.com calendar.
                       {!import.meta.env.VITE_MICROSOFT_CLIENT_ID && (
                         <span className="block mt-1 text-amber-600 dark:text-amber-400">
-                          <i className="fa-solid fa-triangle-exclamation mr-1"></i>
+                          <AlertTriangle className="mr-1" />
                           Set VITE_MICROSOFT_CLIENT_ID to enable.
                         </span>
                       )}
@@ -3740,7 +3741,7 @@ const Calendar: React.FC<CalendarProps> = ({ contacts, openTaskPanel = false, on
                       disabled={!import.meta.env.VITE_MICROSOFT_CLIENT_ID}
                       className="w-full flex items-center justify-center gap-2 bg-[#0078d4] text-white rounded-lg px-4 py-3 text-sm font-medium hover:bg-[#106ebe] transition disabled:opacity-40 disabled:cursor-not-allowed"
                     >
-                      <i className="fa-brands fa-microsoft"></i>
+                      <Grid3X3 />
                       Sign in with Microsoft
                     </button>
                     {outlookError && (
@@ -3795,11 +3796,11 @@ const Calendar: React.FC<CalendarProps> = ({ contacts, openTaskPanel = false, on
           <div className="p-4 border-b border-zinc-200 dark:border-zinc-800 bg-gradient-to-r from-purple-500/10 to-pink-500/10">
             <div className="flex items-center justify-between mb-4">
               <h3 className="text-lg font-bold dark:text-white flex items-center gap-2">
-                <i className="fa-solid fa-wand-magic-sparkles text-purple-500"></i>
+                <Wand2 className="text-purple-500" />
                 AI Calendar Assistant
               </h3>
               <button onClick={() => setShowAIPanel(false)} className="text-zinc-400 hover:text-zinc-600 dark:hover:text-white">
-                <i className="fa-solid fa-xmark"></i>
+                <X />
               </button>
             </div>
 
@@ -3818,7 +3819,7 @@ const Calendar: React.FC<CalendarProps> = ({ contacts, openTaskPanel = false, on
                 disabled={aiLoading || !naturalLanguageInput.trim()}
                 className="absolute right-2 top-1/2 -translate-y-1/2 w-8 h-8 flex items-center justify-center bg-purple-500 text-white rounded-lg hover:bg-purple-600 disabled:opacity-50 transition"
               >
-                {aiLoading ? <i className="fa-solid fa-spinner animate-spin text-sm"></i> : <i className="fa-solid fa-arrow-right text-sm"></i>}
+                {aiLoading ? <Loader2 className="animate-spin text-sm" /> : <ArrowRight className="text-sm" />}
               </button>
             </div>
           </div>
@@ -3847,7 +3848,7 @@ const Calendar: React.FC<CalendarProps> = ({ contacts, openTaskPanel = false, on
             {aiLoading && (
               <div className="flex items-center justify-center py-8">
                 <div className="flex items-center gap-3 text-purple-500">
-                  <i className="fa-solid fa-spinner animate-spin text-xl"></i>
+                  <Loader2 className="animate-spin text-xl" />
                   <span className="text-sm">AI is analyzing your calendar...</span>
                 </div>
               </div>
@@ -3875,22 +3876,22 @@ const Calendar: React.FC<CalendarProps> = ({ contacts, openTaskPanel = false, on
                   <h4 className="text-xs font-bold text-zinc-500 uppercase tracking-wider mb-3">Quick Actions</h4>
                   <div className="grid grid-cols-2 gap-2">
                     <button onClick={() => handleGetSuggestions(30)} className="p-3 bg-zinc-50 dark:bg-zinc-900 rounded-xl text-left hover:bg-zinc-100 dark:hover:bg-zinc-800 transition">
-                      <i className="fa-solid fa-clock text-blue-500 mb-2"></i>
+                      <Clock className="text-blue-500 mb-2" />
                       <p className="text-xs font-medium dark:text-white">Find Meeting Time</p>
                       <p className="text-[10px] text-zinc-500">30 min slot</p>
                     </button>
                     <button onClick={handleSuggestFocusBlocks} className="p-3 bg-zinc-50 dark:bg-zinc-900 rounded-xl text-left hover:bg-zinc-100 dark:hover:bg-zinc-800 transition">
-                      <i className="fa-solid fa-brain text-indigo-500 mb-2"></i>
+                      <Brain className="text-indigo-500 mb-2" />
                       <p className="text-xs font-medium dark:text-white">Add Focus Time</p>
                       <p className="text-[10px] text-zinc-500">Protect deep work</p>
                     </button>
                     <button onClick={handleDetectConflicts} className="p-3 bg-zinc-50 dark:bg-zinc-900 rounded-xl text-left hover:bg-zinc-100 dark:hover:bg-zinc-800 transition">
-                      <i className="fa-solid fa-triangle-exclamation text-amber-500 mb-2"></i>
+                      <AlertTriangle className="text-amber-500 mb-2" />
                       <p className="text-xs font-medium dark:text-white">Check Conflicts</p>
                       <p className="text-[10px] text-zinc-500">Find overlaps</p>
                     </button>
                     <button onClick={handleAnalyzeTravelBuffers} className="p-3 bg-zinc-50 dark:bg-zinc-900 rounded-xl text-left hover:bg-zinc-100 dark:hover:bg-zinc-800 transition">
-                      <i className="fa-solid fa-car text-green-500 mb-2"></i>
+                      <Car className="text-green-500 mb-2" />
                       <p className="text-xs font-medium dark:text-white">Travel Buffers</p>
                       <p className="text-[10px] text-zinc-500">Check gaps</p>
                     </button>
@@ -3901,7 +3902,7 @@ const Calendar: React.FC<CalendarProps> = ({ contacts, openTaskPanel = false, on
                 {schedulingSuggestions.length > 0 && (
                   <div>
                     <h4 className="text-xs font-bold text-zinc-500 uppercase tracking-wider mb-3 flex items-center gap-2">
-                      <i className="fa-solid fa-lightbulb text-amber-500"></i>
+                      <Lightbulb className="text-amber-500" />
                       Suggested Times
                     </h4>
                     <div className="space-y-2">
@@ -3925,7 +3926,7 @@ const Calendar: React.FC<CalendarProps> = ({ contacts, openTaskPanel = false, on
                           </div>
                           <div className="flex items-center gap-2">
                             <span className="text-xs font-bold text-green-500">{suggestion.score}%</span>
-                            <i className="fa-solid fa-plus text-zinc-400 group-hover:text-blue-500 transition"></i>
+                            <Plus className="text-zinc-400 group-hover:text-blue-500 transition" />
                           </div>
                         </button>
                       ))}
@@ -3937,7 +3938,7 @@ const Calendar: React.FC<CalendarProps> = ({ contacts, openTaskPanel = false, on
                 {focusBlocks.length > 0 && (
                   <div>
                     <h4 className="text-xs font-bold text-zinc-500 uppercase tracking-wider mb-3 flex items-center gap-2">
-                      <i className="fa-solid fa-brain text-indigo-500"></i>
+                      <Brain className="text-indigo-500" />
                       Suggested Focus Blocks
                     </h4>
                     <div className="space-y-2">
@@ -3966,7 +3967,7 @@ const Calendar: React.FC<CalendarProps> = ({ contacts, openTaskPanel = false, on
                 {conflicts.length > 0 && (
                   <div>
                     <h4 className="text-xs font-bold text-zinc-500 uppercase tracking-wider mb-3 flex items-center gap-2">
-                      <i className="fa-solid fa-triangle-exclamation text-amber-500"></i>
+                      <AlertTriangle className="text-amber-500" />
                       Conflicts Detected ({conflicts.length})
                     </h4>
                     <div className="space-y-2">
@@ -3984,7 +3985,7 @@ const Calendar: React.FC<CalendarProps> = ({ contacts, openTaskPanel = false, on
                               onClick={() => handleSmartReschedule(conflict.conflictingEvents[0])}
                               className="text-xs text-amber-600 hover:text-amber-800 font-medium"
                             >
-                              <i className="fa-solid fa-magic mr-1"></i>
+                              <Wand2 className="mr-1" />
                               {conflict.suggestedResolutions[0].description}
                             </button>
                           )}
@@ -3998,7 +3999,7 @@ const Calendar: React.FC<CalendarProps> = ({ contacts, openTaskPanel = false, on
                 {travelBuffers.length > 0 && (
                   <div>
                     <h4 className="text-xs font-bold text-zinc-500 uppercase tracking-wider mb-3 flex items-center gap-2">
-                      <i className="fa-solid fa-car text-green-500"></i>
+                      <Car className="text-green-500" />
                       Travel Buffer Alerts
                     </h4>
                     <div className="space-y-2">
@@ -4018,7 +4019,7 @@ const Calendar: React.FC<CalendarProps> = ({ contacts, openTaskPanel = false, on
             {aiPanelTab === 'insights' && !aiLoading && (
               <div className="space-y-4">
                 <button onClick={handleAnalyzeRelationships} className="w-full p-3 bg-zinc-50 dark:bg-zinc-900 rounded-xl text-left hover:bg-zinc-100 dark:hover:bg-zinc-800 transition">
-                  <i className="fa-solid fa-users text-purple-500 mr-2"></i>
+                  <Users className="text-purple-500 mr-2" />
                   <span className="text-sm font-medium dark:text-white">Refresh Relationship Insights</span>
                 </button>
 
@@ -4044,10 +4045,10 @@ const Calendar: React.FC<CalendarProps> = ({ contacts, openTaskPanel = false, on
                           </span>
                         </div>
                         <div className="text-xs text-zinc-500 space-y-1">
-                          <p><i className="fa-solid fa-calendar mr-1"></i> Last met: {insight.lastMeeting ? insight.lastMeeting.toLocaleDateString() : 'Never'}</p>
-                          <p><i className="fa-solid fa-clock mr-1"></i> {insight.daysSinceLastContact} days since last contact</p>
+                          <p><Calendar className="mr-1" /> Last met: {insight.lastMeeting ? insight.lastMeeting.toLocaleDateString() : 'Never'}</p>
+                          <p><Clock className="mr-1" /> {insight.daysSinceLastContact} days since last contact</p>
                           {insight.upcomingMilestones.length > 0 && (
-                            <p className="text-amber-600"><i className="fa-solid fa-star mr-1"></i> {insight.upcomingMilestones[0].description} in {insight.upcomingMilestones[0].daysUntil} days</p>
+                            <p className="text-amber-600"><Star className="mr-1" /> {insight.upcomingMilestones[0].description} in {insight.upcomingMilestones[0].daysUntil} days</p>
                           )}
                         </div>
                         {insight.suggestedActions.length > 0 && (
@@ -4058,7 +4059,7 @@ const Calendar: React.FC<CalendarProps> = ({ contacts, openTaskPanel = false, on
                             }}
                             className="mt-2 text-xs text-purple-500 hover:text-purple-700 font-medium"
                           >
-                            <i className="fa-solid fa-calendar-plus mr-1"></i>
+                            <CalendarPlus className="mr-1" />
                             Schedule catch-up
                           </button>
                         )}
@@ -4073,7 +4074,7 @@ const Calendar: React.FC<CalendarProps> = ({ contacts, openTaskPanel = false, on
             {aiPanelTab === 'analytics' && !aiLoading && (
               <div className="space-y-4">
                 <button onClick={handleGenerateAnalytics} className="w-full p-3 bg-zinc-50 dark:bg-zinc-900 rounded-xl text-left hover:bg-zinc-100 dark:hover:bg-zinc-800 transition">
-                  <i className="fa-solid fa-sync text-blue-500 mr-2"></i>
+                  <RefreshCw className="text-blue-500 mr-2" />
                   <span className="text-sm font-medium dark:text-white">Refresh Analytics</span>
                 </button>
 
@@ -4111,7 +4112,7 @@ const Calendar: React.FC<CalendarProps> = ({ contacts, openTaskPanel = false, on
                     {analytics.meetingOverload && (
                       <div className="p-3 bg-red-50 dark:bg-red-900/20 rounded-xl border border-red-200 dark:border-red-800">
                         <p className="text-sm font-medium text-red-700 dark:text-red-300">
-                          <i className="fa-solid fa-exclamation-triangle mr-2"></i>
+                          <AlertTriangle className="mr-2" />
                           Meeting Overload Detected
                         </p>
                         <p className="text-xs text-red-600 dark:text-red-400 mt-1">Over 50% of your time is in meetings</p>
@@ -4139,7 +4140,7 @@ const Calendar: React.FC<CalendarProps> = ({ contacts, openTaskPanel = false, on
                           {analytics.recommendations.map((rec, i) => (
                             <div key={i} className="p-3 bg-purple-50 dark:bg-purple-900/20 rounded-xl">
                               <p className="text-xs text-purple-700 dark:text-purple-300">
-                                <i className="fa-solid fa-lightbulb mr-2"></i>
+                                <Lightbulb className="mr-2" />
                                 {rec}
                               </p>
                             </div>
@@ -4164,7 +4165,7 @@ const Calendar: React.FC<CalendarProps> = ({ contacts, openTaskPanel = false, on
                     }}
                     className="text-xs text-purple-500 hover:text-purple-700 font-medium"
                   >
-                    <i className="fa-solid fa-plus mr-1"></i> Add Goal
+                    <Plus className="mr-1" /> Add Goal
                   </button>
                 </div>
 
@@ -4184,7 +4185,7 @@ const Calendar: React.FC<CalendarProps> = ({ contacts, openTaskPanel = false, on
                           }}
                           className="text-zinc-400 hover:text-zinc-600"
                         >
-                          <i className="fa-solid fa-pen text-xs"></i>
+                          <Pen className="text-xs" />
                         </button>
                       </div>
                       <p className="text-xs text-zinc-500">{goal.category} • {goal.targetHoursPerWeek}h/week target</p>
@@ -4193,7 +4194,7 @@ const Calendar: React.FC<CalendarProps> = ({ contacts, openTaskPanel = false, on
                 </div>
 
                 <button onClick={handleAnalyzeGoalAlignment} className="w-full p-3 bg-purple-50 dark:bg-purple-900/20 rounded-xl text-left hover:bg-purple-100 dark:hover:bg-purple-900/30 transition">
-                  <i className="fa-solid fa-chart-pie text-purple-500 mr-2"></i>
+                  <PieChart className="text-purple-500 mr-2" />
                   <span className="text-sm font-medium text-purple-700 dark:text-purple-300">Analyze Goal Alignment</span>
                 </button>
 
@@ -4233,13 +4234,13 @@ const Calendar: React.FC<CalendarProps> = ({ contacts, openTaskPanel = false, on
             <div className="p-6 border-b border-zinc-200 dark:border-zinc-800 flex items-center justify-between">
               <div>
                 <h3 className="text-lg font-bold dark:text-white flex items-center gap-2">
-                  <i className="fa-solid fa-clipboard-list text-purple-500"></i>
+                  <ClipboardList className="text-purple-500" />
                   Meeting Prep
                 </h3>
                 <p className="text-sm text-zinc-500 mt-1">{prepEvent.title}</p>
               </div>
               <button onClick={() => { setShowMeetingPrepModal(false); setMeetingPrep(null); setPrepEvent(null); }} className="text-zinc-400 hover:text-zinc-600">
-                <i className="fa-solid fa-xmark"></i>
+                <X />
               </button>
             </div>
             <div className="flex-1 overflow-y-auto p-6 space-y-6">
@@ -4284,7 +4285,7 @@ const Calendar: React.FC<CalendarProps> = ({ contacts, openTaskPanel = false, on
                   <ul className="space-y-2">
                     {meetingPrep.talkingPoints.map((point, i) => (
                       <li key={i} className="flex items-start gap-2">
-                        <i className="fa-solid fa-check text-green-500 mt-1 text-xs"></i>
+                        <Check className="text-green-500 mt-1 text-xs" />
                         <span className="text-sm dark:text-zinc-300">{point}</span>
                       </li>
                     ))}
@@ -4299,7 +4300,7 @@ const Calendar: React.FC<CalendarProps> = ({ contacts, openTaskPanel = false, on
                   <ul className="space-y-2">
                     {meetingPrep.questionsToAsk.map((q, i) => (
                       <li key={i} className="flex items-start gap-2">
-                        <i className="fa-solid fa-question-circle text-blue-500 mt-1 text-xs"></i>
+                        <HelpCircle className="text-blue-500 mt-1 text-xs" />
                         <span className="text-sm dark:text-zinc-300">{q}</span>
                       </li>
                     ))}
@@ -4331,11 +4332,11 @@ const Calendar: React.FC<CalendarProps> = ({ contacts, openTaskPanel = false, on
             <div className="p-6 border-b border-zinc-200 dark:border-zinc-800">
               <div className="flex items-center justify-between">
                 <h3 className="text-lg font-bold dark:text-white flex items-center gap-2">
-                  <i className="fa-solid fa-calendar-alt text-blue-500"></i>
+                  <CalendarDays className="text-blue-500" />
                   Smart Reschedule
                 </h3>
                 <button onClick={() => { setShowRescheduleModal(false); setRescheduleEvent(null); setRescheduleOptions([]); }} className="text-zinc-400 hover:text-zinc-600">
-                  <i className="fa-solid fa-xmark"></i>
+                  <X />
                 </button>
               </div>
               <p className="text-sm text-zinc-500 mt-2">Reschedule: {rescheduleEvent.title}</p>
@@ -4362,7 +4363,7 @@ const Calendar: React.FC<CalendarProps> = ({ contacts, openTaskPanel = false, on
                       </div>
                       <div className="flex items-center gap-2">
                         <span className="text-xs font-bold text-green-500">{option.availabilityScore}%</span>
-                        <i className="fa-solid fa-arrow-right text-zinc-400 group-hover:text-blue-500 transition"></i>
+                        <ArrowRight className="text-zinc-400 group-hover:text-blue-500 transition" />
                       </div>
                     </div>
                   </button>
@@ -4382,7 +4383,7 @@ const Calendar: React.FC<CalendarProps> = ({ contacts, openTaskPanel = false, on
                 {editingGoal ? 'Edit Goal' : 'New Goal'}
               </h3>
               <button onClick={() => { setShowGoalModal(false); setEditingGoal(null); }} className="text-zinc-400 hover:text-zinc-600">
-                <i className="fa-solid fa-xmark"></i>
+                <X />
               </button>
             </div>
             <form
@@ -4602,14 +4603,14 @@ const Calendar: React.FC<CalendarProps> = ({ contacts, openTaskPanel = false, on
           role="status"
           aria-live="polite"
         >
-          <i className="fa-solid fa-expand text-xs" aria-hidden="true" />
+          <Maximize2 className="text-xs" />
           Focus mode — sidebars hidden
           <button
             onClick={() => setFocusMode(false)}
             aria-label="Exit focus mode"
             className="ml-1 opacity-70 hover:opacity-100 transition-opacity"
           >
-            <i className="fa-solid fa-xmark text-xs" aria-hidden="true" />
+            <X className="text-xs" />
           </button>
           <span className="opacity-50 ml-1">⌘F or Esc</span>
         </div>

@@ -51,6 +51,8 @@ import { useBoardNotes } from './WarRoom/useBoardNotes';
 // Import voice synthesis hook - this is lightweight
 import { useVoiceSynthesis } from './WarRoom/VoiceSynthesis';
 
+import { Activity, AlertTriangle, BookOpen, Brain, Check, ChevronDown, ChevronUp, Clipboard, Code, Database, Download, EllipsisVertical, Eye, FileText, FolderOpen, Headphones, Info, Layers, LayoutGrid, Loader2, Mail, MessageSquare, Mic, MicOff, Paperclip, Plus, Send, Share2, Sparkles, Tags, Trash2, Volume2, Wand2, X } from 'lucide-react';
+
 // Check if we're on a mobile/native platform
 const isMobilePlatform = Capacitor.isNativePlatform() || /Android|iPhone|iPad|iPod/i.test(navigator.userAgent);
 
@@ -61,7 +63,7 @@ const LoadingFallback: React.FC<{ message?: string }> = ({ message = 'Loading...
     <Suspense fallback={
       <div className="h-full w-full flex items-center justify-center bg-gray-900/50">
         <div className="text-center">
-          <i className="fa fa-spinner fa-spin text-2xl text-rose-500 mb-2"></i>
+          <Loader2 className="fa text-2xl text-rose-500 mb-2 animate-spin" />
           <p className="text-sm text-gray-400">Loading...</p>
         </div>
       </div>
@@ -175,7 +177,7 @@ const AgentSelector: React.FC<{
                     </div>
                   </div>
                   {activeAgent === agent.id && (
-                    <i className="fa fa-check text-xs"></i>
+                    <Check className="fa text-xs" />
                   )}
                 </div>
               </button>
@@ -1504,7 +1506,7 @@ const LiveDashboard: React.FC<LiveDashboardProps> = ({ apiKey, userId }) => {
           return renderWithDock(
             <div className="h-full flex items-center justify-center war-room-text-secondary">
               <div className="text-center">
-                <i className="fa fa-book-open text-4xl mb-4 opacity-30"></i>
+                <BookOpen className="fa text-4xl mb-4 opacity-30" />
                 <p>Mission type coming soon</p>
               </div>
             </div>
@@ -1882,7 +1884,7 @@ const LiveDashboard: React.FC<LiveDashboardProps> = ({ apiKey, userId }) => {
                   text-zinc-600 dark:text-zinc-300 border border-zinc-200 dark:border-zinc-700"
                 title="Back to Mode Selection"
               >
-                <i className="fa fa-th-large"></i>
+                <LayoutGrid className="fa" />
                 <span className="hidden sm:inline">Hub</span>
               </button>
             )}
@@ -1891,7 +1893,7 @@ const LiveDashboard: React.FC<LiveDashboardProps> = ({ apiKey, userId }) => {
             {showWarRoomHub && (
               <div className="flex items-center gap-2">
                 <div className="w-8 h-8 rounded-lg flex items-center justify-center" style={{ background: 'var(--wr-accent-primary)' }}>
-                  <i className="fa fa-book-open text-white text-sm"></i>
+                  <BookOpen className="fa text-white text-sm" />
                 </div>
                 <span className="text-sm font-bold" style={{ color: 'var(--wr-accent-primary)' }}>
                   War Room
@@ -1929,7 +1931,7 @@ const LiveDashboard: React.FC<LiveDashboardProps> = ({ apiKey, userId }) => {
                   : 'bg-rose-500/10 text-rose-400 border border-rose-500/20 hover:bg-rose-500/20'
             }`}
           >
-            <i className="fa fa-database"></i>
+            <Database className="fa" />
             <span className="hidden sm:inline">Sources</span>
             {activeContextDocs.size > 0 && (
               <span className={`text-xs px-1.5 py-0.5 rounded-full ${contextPanelOpen ? 'bg-cyan-500/20' : 'bg-emerald-500/30'}`}>
@@ -1963,7 +1965,7 @@ const LiveDashboard: React.FC<LiveDashboardProps> = ({ apiKey, userId }) => {
                 onClick={() => setShowExportModal(true)}
                 className="px-3 py-1.5 bg-gray-100 hover:bg-gray-200 dark:bg-gray-800 dark:hover:bg-gray-700 border border-gray-200 dark:border-gray-700 rounded-full text-sm text-gray-700 dark:text-gray-300 transition-all flex items-center gap-2 font-medium"
               >
-                <i className="fa fa-share-nodes"></i>
+                <Share2 className="fa" />
                 <span className="hidden xl:inline">Export</span>
               </button>
             )}
@@ -1981,7 +1983,7 @@ const LiveDashboard: React.FC<LiveDashboardProps> = ({ apiKey, userId }) => {
               }`}
               title="Voice Agent"
             >
-              <i className="fa fa-waveform-lines"></i>
+              <Activity className="fa" />
             </button>
 
             {/* Quick action buttons on mobile */}
@@ -1993,7 +1995,7 @@ const LiveDashboard: React.FC<LiveDashboardProps> = ({ apiKey, userId }) => {
                   : 'text-gray-600 dark:text-gray-300 hover:bg-gray-100 dark:hover:bg-gray-800'
               }`}
             >
-              <i className="fa fa-microphone"></i>
+              <Mic className="fa" />
             </button>
 
             <button
@@ -2004,7 +2006,7 @@ const LiveDashboard: React.FC<LiveDashboardProps> = ({ apiKey, userId }) => {
                   : 'text-gray-600 dark:text-gray-300 hover:bg-gray-100 dark:hover:bg-gray-800'
               }`}
             >
-              <i className="fa fa-brain"></i>
+              <Brain className="fa" />
             </button>
 
             {/* Mobile menu toggle */}
@@ -2015,7 +2017,7 @@ const LiveDashboard: React.FC<LiveDashboardProps> = ({ apiKey, userId }) => {
               }}
               className="mobile-menu-container p-2 rounded-full text-gray-600 dark:text-gray-300 hover:bg-gray-100 dark:hover:bg-gray-800"
             >
-              <i className="fa fa-ellipsis-v"></i>
+              <EllipsisVertical className="fa" />
             </button>
           </div>
         </div>
@@ -2040,7 +2042,7 @@ const LiveDashboard: React.FC<LiveDashboardProps> = ({ apiKey, userId }) => {
                   voiceSynthesisEnabled ? 'bg-rose-100 dark:bg-rose-600/20 text-rose-700 dark:text-rose-200' : 'hover:bg-gray-100 dark:hover:bg-gray-800 text-gray-700 dark:text-gray-300'
                 }`}
               >
-                <i className="fa fa-volume-up w-5"></i>
+                <Volume2 className="fa w-5" />
                 Voice Output {voiceSynthesisEnabled ? 'On' : 'Off'}
               </button>
 
@@ -2062,7 +2064,7 @@ const LiveDashboard: React.FC<LiveDashboardProps> = ({ apiKey, userId }) => {
                     disabled={isGeneratingAudio}
                     className="w-full text-left px-3 py-2 rounded-lg text-sm flex items-center gap-3 hover:bg-gray-100 dark:hover:bg-gray-800 text-gray-700 dark:text-gray-300 disabled:opacity-50"
                   >
-                    <i className="fa fa-headphones w-5"></i>
+                    <Headphones className="fa w-5" />
                     {isGeneratingAudio ? 'Generating...' : 'Generate Audio'}
                   </button>
 
@@ -2070,7 +2072,7 @@ const LiveDashboard: React.FC<LiveDashboardProps> = ({ apiKey, userId }) => {
                     onClick={() => { setShowExportModal(true); setShowMobileMenu(false); }}
                     className="w-full text-left px-3 py-2 rounded-lg text-sm flex items-center gap-3 hover:bg-gray-100 dark:hover:bg-gray-800 text-gray-700 dark:text-gray-300"
                   >
-                    <i className="fa fa-share-nodes w-5"></i>
+                    <Share2 className="fa w-5" />
                     Export Session
                   </button>
                 </>
@@ -2137,7 +2139,7 @@ const LiveDashboard: React.FC<LiveDashboardProps> = ({ apiKey, userId }) => {
               <div className="mb-2 p-2 md:p-3 bg-gradient-to-r from-rose-900/20 to-pink-900/20 border border-rose-500/20 rounded-xl">
                 <div className="flex items-center justify-between mb-2">
                   <div className="flex items-center gap-2">
-                    <i className="fa fa-layer-group text-rose-400 text-sm"></i>
+                    <Layers className="fa text-rose-400 text-sm" />
                     <span className="text-xs md:text-sm font-semibold text-rose-300">
                       ACTIVE CONTEXT
                     </span>
@@ -2159,7 +2161,7 @@ const LiveDashboard: React.FC<LiveDashboardProps> = ({ apiKey, userId }) => {
                             className="text-[10px] md:text-xs px-2 py-0.5 hover:bg-red-900/20 rounded text-red-400 transition-colors"
                             title="Clear all"
                           >
-                            <i className="fa fa-times mr-1"></i>
+                            <X className="fa mr-1" />
                             {!isMobile && 'Clear'}
                           </button>
                         )}
@@ -2169,7 +2171,7 @@ const LiveDashboard: React.FC<LiveDashboardProps> = ({ apiKey, userId }) => {
                             className="text-[10px] md:text-xs px-2 py-0.5 hover:bg-rose-900/20 rounded text-rose-300 transition-colors"
                             title="Add all documents"
                           >
-                            <i className="fa fa-plus mr-1"></i>
+                            <Plus className="fa mr-1" />
                             {!isMobile && 'Add All'}
                           </button>
                         )}
@@ -2180,7 +2182,7 @@ const LiveDashboard: React.FC<LiveDashboardProps> = ({ apiKey, userId }) => {
                       className="w-5 h-5 flex items-center justify-center hover:bg-rose-900/20 rounded text-rose-400"
                       title="Hide context panel"
                     >
-                      <i className="fa fa-chevron-up text-xs"></i>
+                      <ChevronUp className="fa text-xs" />
                     </button>
                   </div>
                 </div>
@@ -2188,7 +2190,7 @@ const LiveDashboard: React.FC<LiveDashboardProps> = ({ apiKey, userId }) => {
                 {activeContextDocs.size === 0 ? (
                   <div className="text-center py-2">
                     <p className="text-xs text-rose-300/70 mb-1">
-                      <i className="fa fa-info-circle mr-1"></i>
+                      <Info className="fa mr-1" />
                       No documents in active context
                     </p>
                     {documents.length === 0 ? (
@@ -2208,7 +2210,7 @@ const LiveDashboard: React.FC<LiveDashboardProps> = ({ apiKey, userId }) => {
                         key={doc.id}
                         className="flex items-center gap-1 px-2 py-1 bg-rose-900/30 border border-rose-500/30 rounded-full text-xs group hover:border-rose-400 transition-colors"
                       >
-                        <i className="fa fa-file-alt text-rose-400 text-[10px]"></i>
+                        <FileText className="fa text-rose-400 text-[10px]" />
                         <span className="text-rose-200 truncate max-w-[100px] md:max-w-[150px]">
                           {doc.title}
                         </span>
@@ -2222,7 +2224,7 @@ const LiveDashboard: React.FC<LiveDashboardProps> = ({ apiKey, userId }) => {
                           className="w-4 h-4 flex items-center justify-center hover:bg-red-900/50 rounded-full opacity-70 group-hover:opacity-100 transition-opacity"
                           title="Remove from context"
                         >
-                          <i className="fa fa-times text-red-400 text-[10px]"></i>
+                          <X className="fa text-red-400 text-[10px]" />
                         </button>
                       </div>
                     ))}
@@ -2235,13 +2237,13 @@ const LiveDashboard: React.FC<LiveDashboardProps> = ({ apiKey, userId }) => {
             {!showActiveContext && (
               <div className="mb-2 px-3 py-1 bg-rose-900/10 border border-rose-500/20 rounded-lg flex items-center justify-between cursor-pointer hover:bg-rose-900/20 transition-colors" onClick={() => setShowActiveContext(true)}>
                 <span className="text-xs text-rose-300">
-                  <i className="fa fa-layer-group mr-1"></i>
+                  <Layers className="fa mr-1" />
                   {activeContextDocs.size} document{activeContextDocs.size !== 1 ? 's' : ''} in context
                 </span>
                 <button
                   className="text-xs px-2 py-0.5 hover:bg-rose-900/20 rounded text-rose-300"
                 >
-                  <i className="fa fa-chevron-down mr-1"></i>
+                  <ChevronDown className="fa mr-1" />
                   Show
                 </button>
               </div>
@@ -2254,7 +2256,7 @@ const LiveDashboard: React.FC<LiveDashboardProps> = ({ apiKey, userId }) => {
                   componentName="Voice Control"
                   fallback={
                     <div className="text-center py-2 text-amber-500 text-sm">
-                      <i className="fa fa-microphone-slash mr-2"></i>
+                      <MicOff className="fa mr-2" />
                       Voice input unavailable
                     </div>
                   }
@@ -2310,7 +2312,7 @@ const LiveDashboard: React.FC<LiveDashboardProps> = ({ apiKey, userId }) => {
                     >
                       <i className={`fa ${activeAgent === 'pulse' ? 'fa-robot' : activeAgent === 'analyst' ? 'fa-chart-line' : activeAgent === 'creative' ? 'fa-palette' : activeAgent === 'coder' ? 'fa-code' : 'fa-brain'} text-rose-500`}></i>
                       <span className="hidden sm:inline capitalize">{activeAgent}</span>
-                      <i className="fa fa-chevron-down text-[10px] opacity-60"></i>
+                      <ChevronDown className="fa text-[10px] opacity-60" />
                     </button>
                     <div
                       id="agent-dropdown"
@@ -2328,7 +2330,7 @@ const LiveDashboard: React.FC<LiveDashboardProps> = ({ apiKey, userId }) => {
                         >
                           <i className={`fa ${agent === 'pulse' ? 'fa-robot' : agent === 'analyst' ? 'fa-chart-line' : agent === 'creative' ? 'fa-palette' : agent === 'coder' ? 'fa-code' : 'fa-brain'} w-4`}></i>
                           <span className="capitalize">{agent}</span>
-                          {activeAgent === agent && <i className="fa fa-check ml-auto text-xs"></i>}
+                          {activeAgent === agent && <Check className="fa ml-auto text-xs" />}
                         </button>
                       ))}
                     </div>
@@ -2348,7 +2350,7 @@ const LiveDashboard: React.FC<LiveDashboardProps> = ({ apiKey, userId }) => {
                       className="p-1.5 hover:bg-gray-100 dark:hover:bg-gray-700 rounded-lg text-gray-500 dark:text-gray-400 hover:text-rose-500 transition-all"
                       title="Upload file"
                     >
-                      <i className="fa fa-paperclip text-sm"></i>
+                      <Paperclip className="fa text-sm" />
                     </button>
 
                     {/* Voice Input Toggle */}
@@ -2366,7 +2368,7 @@ const LiveDashboard: React.FC<LiveDashboardProps> = ({ apiKey, userId }) => {
                       className={`p-1.5 rounded-lg transition-all ${enableExtendedThinking ? 'bg-purple-100 dark:bg-purple-900/30 text-purple-500' : 'hover:bg-gray-100 dark:hover:bg-gray-700 text-gray-500 dark:text-gray-400 hover:text-purple-500'}`}
                       title={enableExtendedThinking ? 'Deep thinking enabled' : 'Enable deep thinking'}
                     >
-                      <i className="fa fa-brain text-sm"></i>
+                      <Brain className="fa text-sm" />
                     </button>
                   </div>
                 </div>
@@ -2375,7 +2377,7 @@ const LiveDashboard: React.FC<LiveDashboardProps> = ({ apiKey, userId }) => {
                 <div className="flex items-center gap-2 text-[10px] text-gray-500 dark:text-gray-400">
                   {/* Context Window Indicator */}
                   <div className="hidden sm:flex items-center gap-1.5 px-2 py-1 bg-gray-100 dark:bg-gray-800 rounded-md" title="Estimated context usage">
-                    <i className="fa fa-layer-group text-rose-400"></i>
+                    <Layers className="fa text-rose-400" />
                     <span>~{Math.round(estimateContextTokens()).toLocaleString()}</span>
                     <span className="text-gray-400">/</span>
                     <span>200K</span>
@@ -2389,7 +2391,7 @@ const LiveDashboard: React.FC<LiveDashboardProps> = ({ apiKey, userId }) => {
 
                   {/* Active docs count - mobile */}
                   <div className="sm:hidden flex items-center gap-1 px-2 py-1 bg-gray-100 dark:bg-gray-800 rounded-md">
-                    <i className="fa fa-file-alt text-rose-400"></i>
+                    <FileText className="fa text-rose-400" />
                     <span>{activeContextDocs.size}</span>
                   </div>
                 </div>
@@ -2411,7 +2413,7 @@ const LiveDashboard: React.FC<LiveDashboardProps> = ({ apiKey, userId }) => {
                   disabled={isLoading || !input.trim()}
                   className="px-4 md:px-6 py-2.5 md:py-3 bg-gradient-to-r from-rose-600 to-pink-600 hover:from-rose-700 hover:to-pink-700 rounded-full font-medium text-white disabled:opacity-50 disabled:cursor-not-allowed shadow-lg hover:shadow-xl transition-all"
                 >
-                  <i className="fa fa-paper-plane"></i>
+                  <Send className="fa" />
                 </button>
               </div>
 
@@ -2419,7 +2421,7 @@ const LiveDashboard: React.FC<LiveDashboardProps> = ({ apiKey, userId }) => {
               {suggestions.length > 0 && showSuggestions && (
                 <div className="flex items-center gap-2 mt-2 overflow-x-auto pb-1">
                   <span className="text-[10px] text-gray-400 dark:text-gray-500 shrink-0">
-                    <i className="fa fa-magic mr-1"></i>
+                    <Wand2 className="fa mr-1" />
                     Try:
                   </span>
                   {suggestions.slice(0, 3).map((s) => (
@@ -2439,7 +2441,7 @@ const LiveDashboard: React.FC<LiveDashboardProps> = ({ apiKey, userId }) => {
                     className="p-1 hover:bg-gray-200 dark:hover:bg-gray-700 rounded text-gray-400 hover:text-gray-600 dark:hover:text-gray-300 transition-colors shrink-0"
                     title="Hide suggestions"
                   >
-                    <i className="fa fa-times text-[10px]"></i>
+                    <X className="fa text-[10px]" />
                   </button>
                 </div>
               )}
@@ -2461,14 +2463,14 @@ const LiveDashboard: React.FC<LiveDashboardProps> = ({ apiKey, userId }) => {
           <div className="w-full max-w-2xl war-room-modal rounded-3xl shadow-2xl p-6">
             <div className="flex items-center justify-between mb-6">
               <h3 className="text-2xl font-bold bg-gradient-to-r from-rose-400 to-pink-400 bg-clip-text text-transparent">
-                <i className="fa fa-share-nodes mr-2"></i>
+                <Share2 className="fa mr-2" />
                 Export Session
               </h3>
               <button
                 onClick={() => setShowExportModal(false)}
                 className="px-3 py-2 hover:bg-gray-200 dark:hover:bg-gray-800/50 rounded-full transition-colors text-gray-600 dark:text-gray-400"
               >
-                <i className="fa fa-times text-xl"></i>
+                <X className="fa text-xl" />
               </button>
             </div>
 
@@ -2483,13 +2485,13 @@ const LiveDashboard: React.FC<LiveDashboardProps> = ({ apiKey, userId }) => {
               >
                 <div className="flex items-center gap-3">
                   <div className="w-12 h-12 bg-blue-100 dark:bg-blue-600 rounded-xl flex items-center justify-center text-xl group-hover:scale-110 transition text-blue-600 dark:text-white">
-                    <i className="fa fa-file-text"></i>
+                    <FileText className="fa" />
                   </div>
                   <div className="flex-1">
                     <div className="font-medium text-lg text-gray-900 dark:text-white">Export as Markdown</div>
                     <div className="text-sm text-gray-500 dark:text-gray-400">Download full conversation as .md file</div>
                   </div>
-                  <i className="fa fa-download text-blue-400"></i>
+                  <Download className="fa text-blue-400" />
                 </div>
               </button>
 
@@ -2503,13 +2505,13 @@ const LiveDashboard: React.FC<LiveDashboardProps> = ({ apiKey, userId }) => {
               >
                 <div className="flex items-center gap-3">
                   <div className="w-12 h-12 bg-purple-100 dark:bg-purple-600 rounded-xl flex items-center justify-center text-xl group-hover:scale-110 transition text-purple-600 dark:text-white">
-                    <i className="fa fa-code"></i>
+                    <Code className="fa" />
                   </div>
                   <div className="flex-1">
                     <div className="font-medium text-lg text-gray-900 dark:text-white">Export as JSON</div>
                     <div className="text-sm text-gray-500 dark:text-gray-400">Structured data for integrations</div>
                   </div>
-                  <i className="fa fa-download text-purple-400"></i>
+                  <Download className="fa text-purple-400" />
                 </div>
               </button>
 
@@ -2523,13 +2525,13 @@ const LiveDashboard: React.FC<LiveDashboardProps> = ({ apiKey, userId }) => {
               >
                 <div className="flex items-center gap-3">
                   <div className="w-12 h-12 bg-rose-100 dark:bg-rose-600 rounded-xl flex items-center justify-center text-xl group-hover:scale-110 transition text-rose-600 dark:text-white">
-                    <i className="fa fa-sparkles"></i>
+                    <Sparkles className="fa" />
                   </div>
                   <div className="flex-1">
                     <div className="font-medium text-lg text-gray-900 dark:text-white">Generate AI Summary</div>
                     <div className="text-sm text-gray-500 dark:text-gray-400">Key points & action items (copies to clipboard)</div>
                   </div>
-                  <i className="fa fa-clipboard text-rose-400"></i>
+                  <Clipboard className="fa text-rose-400" />
                 </div>
               </button>
 
@@ -2546,7 +2548,7 @@ const LiveDashboard: React.FC<LiveDashboardProps> = ({ apiKey, userId }) => {
                     }}
                     className="px-4 py-3 bg-green-50 dark:bg-green-600/20 border border-green-200 dark:border-green-500/30 rounded-xl hover:bg-green-100 dark:hover:bg-green-600/30 text-sm flex items-center justify-center text-gray-700 dark:text-white transition-colors"
                   >
-                    <i className="fa fa-message mr-2 text-green-600 dark:text-green-400"></i>
+                    <MessageSquare className="fa mr-2 text-green-600 dark:text-green-400" />
                     Messages
                   </button>
                   
@@ -2559,7 +2561,7 @@ const LiveDashboard: React.FC<LiveDashboardProps> = ({ apiKey, userId }) => {
                     }}
                     className="px-4 py-3 bg-blue-50 dark:bg-blue-600/20 border border-blue-200 dark:border-blue-500/30 rounded-xl hover:bg-blue-100 dark:hover:bg-blue-600/30 text-sm flex items-center justify-center text-gray-700 dark:text-white transition-colors"
                   >
-                    <i className="fa fa-envelope mr-2 text-blue-600 dark:text-blue-400"></i>
+                    <Mail className="fa mr-2 text-blue-600 dark:text-blue-400" />
                     Email
                   </button>
                 </div>
@@ -2580,7 +2582,7 @@ const LiveDashboard: React.FC<LiveDashboardProps> = ({ apiKey, userId }) => {
             componentName="Voice Agent"
             fallback={
               <div className="bg-gray-900/95 backdrop-blur-xl border border-red-500/30 rounded-xl p-6 text-center">
-                <i className="fa fa-microphone-slash text-3xl text-red-500 mb-3"></i>
+                <MicOff className="fa text-3xl text-red-500 mb-3" />
                 <p className="text-white font-medium mb-2">Voice Agent Unavailable</p>
                 <p className="text-gray-400 text-sm mb-4">
                   {isMobilePlatform 
@@ -2718,7 +2720,7 @@ const LiveDashboard: React.FC<LiveDashboardProps> = ({ apiKey, userId }) => {
             <div className="p-4 border-b border-zinc-700 flex items-center justify-between shrink-0">
               <div className="flex items-center gap-3">
                 <div className="w-10 h-10 rounded-xl bg-gradient-to-br from-purple-500 to-pink-500 flex items-center justify-center">
-                  <i className="fa fa-book-open text-white"></i>
+                  <BookOpen className="fa text-white" />
                 </div>
                 <div>
                   <h2 className="text-lg font-bold text-white">Knowledge Bank</h2>
@@ -2727,7 +2729,7 @@ const LiveDashboard: React.FC<LiveDashboardProps> = ({ apiKey, userId }) => {
               </div>
               <div className="flex items-center gap-2">
                 <label className="flex items-center gap-2 px-4 py-2 bg-rose-500 hover:bg-rose-600 text-white rounded-lg cursor-pointer transition-colors">
-                  <i className="fa fa-plus"></i>
+                  <Plus className="fa" />
                   <span>Upload</span>
                   <input
                     type="file"
@@ -2741,7 +2743,7 @@ const LiveDashboard: React.FC<LiveDashboardProps> = ({ apiKey, userId }) => {
                   onClick={() => setShowKnowledgeBank(false)}
                   className="p-2 text-zinc-400 hover:text-white hover:bg-white/10 rounded-lg transition-colors"
                 >
-                  <i className="fa fa-times text-lg"></i>
+                  <X className="fa text-lg" />
                 </button>
               </div>
             </div>
@@ -2763,7 +2765,7 @@ const LiveDashboard: React.FC<LiveDashboardProps> = ({ apiKey, userId }) => {
             <div className="flex-1 overflow-y-auto p-4">
               {documents.length === 0 ? (
                 <div className="text-center py-16 text-zinc-500">
-                  <i className="fa fa-folder-open text-5xl mb-4 block"></i>
+                  <FolderOpen className="fa text-5xl mb-4 block" />
                   <h3 className="text-lg font-medium text-white mb-2">No Documents Yet</h3>
                   <p className="text-sm">Upload PDFs, Word docs, images, or text files to build your knowledge base.</p>
                 </div>
@@ -2803,9 +2805,9 @@ const LiveDashboard: React.FC<LiveDashboardProps> = ({ apiKey, userId }) => {
                             </div>
                           </div>
                           {doc.processing_status === 'processing' ? (
-                            <i className="fa fa-spinner fa-spin text-yellow-400"></i>
+                            <Loader2 className="fa text-yellow-400 animate-spin" />
                           ) : doc.processing_status === 'failed' ? (
-                            <i className="fa fa-exclamation-triangle text-red-400"></i>
+                            <AlertTriangle className="fa text-red-400" />
                           ) : (
                             <button
                               onClick={() => toggleDocInContext(doc.id)}
@@ -2843,7 +2845,7 @@ const LiveDashboard: React.FC<LiveDashboardProps> = ({ apiKey, userId }) => {
                             }}
                             className="flex-1 text-xs py-1.5 text-zinc-400 hover:text-white hover:bg-white/5 rounded transition-colors"
                           >
-                            <i className="fa fa-eye mr-1"></i> View
+                            <Eye className="fa mr-1" /> View
                           </button>
                           <button
                             onClick={() => {
@@ -2852,13 +2854,13 @@ const LiveDashboard: React.FC<LiveDashboardProps> = ({ apiKey, userId }) => {
                             }}
                             className="flex-1 text-xs py-1.5 text-zinc-400 hover:text-white hover:bg-white/5 rounded transition-colors"
                           >
-                            <i className="fa fa-tags mr-1"></i> Organize
+                            <Tags className="fa mr-1" /> Organize
                           </button>
                           <button
                             onClick={() => handleDeleteDoc(doc.id)}
                             className="text-xs py-1.5 px-2 text-red-400 hover:text-red-300 hover:bg-red-500/10 rounded transition-colors"
                           >
-                            <i className="fa fa-trash"></i>
+                            <Trash2 className="fa" />
                           </button>
                         </div>
                       </div>
@@ -2871,8 +2873,8 @@ const LiveDashboard: React.FC<LiveDashboardProps> = ({ apiKey, userId }) => {
             {/* Footer */}
             <div className="p-4 border-t border-zinc-700 flex items-center justify-between shrink-0">
               <div className="text-sm text-zinc-400">
-                <i className="fa fa-info-circle mr-1"></i>
-                Click <i className="fa fa-plus mx-1"></i> to add documents to context
+                <Info className="fa mr-1" />
+                Click <Plus className="fa mx-1" /> to add documents to context
               </div>
               <button
                 onClick={() => setShowKnowledgeBank(false)}

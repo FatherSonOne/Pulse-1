@@ -17,6 +17,8 @@ import { searchPerplexity } from '../services/perplexityService';
 import { geocodeAddress, getStaticMapUrl, getNavigationRoute } from '../services/mapboxService';
 import { generateWithFallback, AIProvider } from '../services/unifiedAIService';
 
+import { ArrowLeft, ArrowRight, BarChart3, Bot, CloudUpload, Code, Copy, Download, Eye, FileAudio, Film, Flag, FlaskConical, Image, Lightbulb, Link, Loader2, MapPin, Mic, Play, Podcast, Quote, Route, Users, Volume2, Wand2, Zap } from 'lucide-react';
+
 interface ToolsProps {
   apiKey: string;
   assemblyKey?: string;
@@ -579,7 +581,7 @@ const Tools: React.FC<ToolsProps> = ({ apiKey, assemblyKey, elevenLabsKey, perpl
                 onClick={() => setActiveTool(null)}
                 className="w-10 h-10 rounded-xl bg-zinc-100 dark:bg-zinc-900 flex items-center justify-center hover:bg-zinc-200 dark:hover:bg-zinc-800 transition"
               >
-                <i className="fa-solid fa-arrow-left text-zinc-600 dark:text-zinc-400"></i>
+                <ArrowLeft className="text-zinc-600 dark:text-zinc-400" />
               </button>
             )}
             <div>
@@ -591,7 +593,7 @@ const Tools: React.FC<ToolsProps> = ({ apiKey, assemblyKey, elevenLabsKey, perpl
                   </>
                 ) : (
                   <>
-                    <i className="fa-solid fa-flask text-purple-500"></i> AI Lab
+                    <FlaskConical className="text-purple-500" /> AI Lab
                   </>
                 )}
               </h2>
@@ -638,14 +640,14 @@ const Tools: React.FC<ToolsProps> = ({ apiKey, assemblyKey, elevenLabsKey, perpl
                 {/* Partner badge */}
                 {tile.partner && (
                   <div className="mt-4 inline-flex items-center gap-1.5 px-2 py-1 rounded-md bg-zinc-100 dark:bg-zinc-800 text-xs font-medium text-zinc-600 dark:text-zinc-400">
-                    <i className="fa-solid fa-bolt text-amber-500"></i>
+                    <Zap className="text-amber-500" />
                     {tile.partner}
                   </div>
                 )}
 
                 {/* Arrow indicator */}
                 <div className="absolute bottom-6 right-6 w-8 h-8 rounded-full bg-zinc-100 dark:bg-zinc-800 flex items-center justify-center opacity-0 group-hover:opacity-100 transition-all group-hover:translate-x-1">
-                  <i className="fa-solid fa-arrow-right text-zinc-500 dark:text-zinc-400 text-xs"></i>
+                  <ArrowRight className="text-zinc-500 dark:text-zinc-400 text-xs" />
                 </div>
               </button>
             ))}
@@ -671,7 +673,7 @@ const Tools: React.FC<ToolsProps> = ({ apiKey, assemblyKey, elevenLabsKey, perpl
                       disabled={isReasoning || !reasonPrompt.trim()}
                       className="bg-purple-600 hover:bg-purple-500 text-white px-6 py-2.5 rounded-xl font-bold uppercase tracking-widest text-xs transition shadow-lg shadow-purple-500/20 disabled:opacity-50 flex items-center gap-2"
                     >
-                       {isReasoning ? <><i className="fa-solid fa-circle-notch fa-spin"></i> Thinking...</> : <><i className="fa-solid fa-bolt"></i> Analyze</>}
+                       {isReasoning ? <><Loader2 className="animate-spin" /> Thinking...</> : <><Zap /> Analyze</>}
                     </button>
                  </div>
               </div>
@@ -680,7 +682,7 @@ const Tools: React.FC<ToolsProps> = ({ apiKey, assemblyKey, elevenLabsKey, perpl
                  <div className="bg-white dark:bg-zinc-900 p-8 rounded-2xl border border-zinc-200 dark:border-zinc-800 shadow-sm animate-fade-in relative overflow-hidden">
                      <div className="absolute top-0 left-0 w-1 h-full bg-purple-500"></div>
                      <h3 className="text-purple-500 text-xs font-bold uppercase tracking-widest mb-4 flex items-center gap-2">
-                        <i className="fa-solid fa-lightbulb"></i> Analysis Result
+                        <Lightbulb /> Analysis Result
                      </h3>
                      <div className="prose dark:prose-invert max-w-none text-sm leading-relaxed text-zinc-700 dark:text-zinc-300 whitespace-pre-wrap">
                         {reasonResult}
@@ -701,7 +703,7 @@ const Tools: React.FC<ToolsProps> = ({ apiKey, assemblyKey, elevenLabsKey, perpl
                            onClick={() => fileInputRef.current?.click()}
                            className="border-2 border-dashed border-zinc-200 dark:border-zinc-700 rounded-xl h-40 flex flex-col items-center justify-center cursor-pointer hover:border-blue-500 dark:hover:border-blue-500 hover:bg-blue-50 dark:hover:bg-blue-900/10 transition"
                         >
-                           <i className="fa-solid fa-cloud-arrow-up text-2xl text-zinc-400 mb-2"></i>
+                           <CloudUpload className="text-2xl text-zinc-400 mb-2" />
                            <span className="text-sm text-zinc-500 dark:text-zinc-400 font-medium">
                               {videoFile ? videoFile.name : "Click to select video"}
                            </span>
@@ -725,7 +727,7 @@ const Tools: React.FC<ToolsProps> = ({ apiKey, assemblyKey, elevenLabsKey, perpl
                       disabled={isAnalyzingVideo || !videoFile || !videoPrompt.trim()}
                       className="bg-blue-600 hover:bg-blue-500 text-white px-6 py-2.5 rounded-xl font-bold uppercase tracking-widest text-xs transition shadow-lg shadow-blue-500/20 disabled:opacity-50 flex items-center gap-2"
                     >
-                       {isAnalyzingVideo ? <><i className="fa-solid fa-circle-notch fa-spin"></i> Analyzing...</> : <><i className="fa-solid fa-play"></i> Process Video</>}
+                       {isAnalyzingVideo ? <><Loader2 className="animate-spin" /> Analyzing...</> : <><Play /> Process Video</>}
                     </button>
                  </div>
               </div>
@@ -734,7 +736,7 @@ const Tools: React.FC<ToolsProps> = ({ apiKey, assemblyKey, elevenLabsKey, perpl
                  <div className="bg-white dark:bg-zinc-900 p-8 rounded-2xl border border-zinc-200 dark:border-zinc-800 shadow-sm animate-fade-in relative overflow-hidden">
                      <div className="absolute top-0 left-0 w-1 h-full bg-blue-500"></div>
                      <h3 className="text-blue-500 text-xs font-bold uppercase tracking-widest mb-4 flex items-center gap-2">
-                        <i className="fa-solid fa-eye"></i> Video Insights
+                        <Eye /> Video Insights
                      </h3>
                      <div className="prose dark:prose-invert max-w-none text-sm leading-relaxed text-zinc-700 dark:text-zinc-300 whitespace-pre-wrap">
                         {videoResult}
@@ -759,7 +761,7 @@ const Tools: React.FC<ToolsProps> = ({ apiKey, assemblyKey, elevenLabsKey, perpl
                                     <img src={URL.createObjectURL(videoGenImage)} className="w-full h-full object-cover opacity-50" />
                                 ) : (
                                     <>
-                                        <i className="fa-solid fa-image text-2xl text-zinc-400 mb-2"></i>
+                                        <Image className="text-2xl text-zinc-400 mb-2" />
                                         <span className="text-sm text-zinc-500 dark:text-zinc-400 font-medium">Click to select image</span>
                                     </>
                                 )}
@@ -782,7 +784,7 @@ const Tools: React.FC<ToolsProps> = ({ apiKey, assemblyKey, elevenLabsKey, perpl
                             disabled={isGeneratingVideo || !videoGenPrompt.trim()}
                             className="bg-orange-600 hover:bg-orange-500 text-white px-6 py-2.5 rounded-xl font-bold uppercase tracking-widest text-xs transition shadow-lg shadow-orange-500/20 disabled:opacity-50 flex items-center gap-2"
                         >
-                            {isGeneratingVideo ? <><i className="fa-solid fa-circle-notch fa-spin"></i> Generating...</> : <><i className="fa-solid fa-film"></i> Generate Veo</>}
+                            {isGeneratingVideo ? <><Loader2 className="animate-spin" /> Generating...</> : <><Film /> Generate Veo</>}
                         </button>
                     </div>
                 </div>
@@ -792,7 +794,7 @@ const Tools: React.FC<ToolsProps> = ({ apiKey, assemblyKey, elevenLabsKey, perpl
                         <video src={generatedVideoUrl} controls className="w-full h-auto" />
                         <div className="p-4 bg-zinc-900 flex justify-between items-center">
                             <span className="text-white text-sm font-bold">Veo Generation</span>
-                            <a href={generatedVideoUrl} download="veo-gen.mp4" className="text-zinc-400 hover:text-white"><i className="fa-solid fa-download"></i></a>
+                            <a href={generatedVideoUrl} download="veo-gen.mp4" className="text-zinc-400 hover:text-white"><Download /></a>
                         </div>
                     </div>
                 )}
@@ -824,7 +826,7 @@ const Tools: React.FC<ToolsProps> = ({ apiKey, assemblyKey, elevenLabsKey, perpl
 
                  {isTranscribing && (
                     <div className="flex items-center gap-2 text-emerald-500 text-sm font-medium animate-pulse">
-                       <i className="fa-solid fa-circle-notch fa-spin"></i> Transcribing...
+                       <Loader2 className="animate-spin" /> Transcribing...
                     </div>
                  )}
               </div>
@@ -834,14 +836,14 @@ const Tools: React.FC<ToolsProps> = ({ apiKey, assemblyKey, elevenLabsKey, perpl
                      <div className="absolute top-0 left-0 w-1 h-full bg-emerald-500"></div>
                      <div className="flex justify-between items-center mb-4">
                         <h3 className="text-emerald-500 text-xs font-bold uppercase tracking-widest flex items-center gap-2">
-                            <i className="fa-solid fa-quote-left"></i> Transcription
+                            <Quote /> Transcription
                         </h3>
                         <button 
                            onClick={() => {navigator.clipboard.writeText(transcription)}}
                            className="text-zinc-400 hover:text-emerald-500 transition"
                            title="Copy"
                         >
-                            <i className="fa-solid fa-copy"></i>
+                            <Copy />
                         </button>
                      </div>
                      <p className="text-base leading-relaxed text-zinc-700 dark:text-zinc-300 whitespace-pre-wrap font-serif italic">
@@ -871,7 +873,7 @@ const Tools: React.FC<ToolsProps> = ({ apiKey, assemblyKey, elevenLabsKey, perpl
                             disabled={isCoding || !codePrompt.trim()}
                             className="bg-indigo-600 hover:bg-indigo-500 text-white px-6 py-2.5 rounded-xl font-bold uppercase tracking-widest text-xs transition shadow-lg shadow-indigo-500/20 disabled:opacity-50 flex items-center gap-2"
                         >
-                            {isCoding ? <><i className="fa-solid fa-circle-notch fa-spin"></i> Coding...</> : <><i className="fa-solid fa-code"></i> Generate Code</>}
+                            {isCoding ? <><Loader2 className="animate-spin" /> Coding...</> : <><Code /> Generate Code</>}
                         </button>
                     </div>
                 </div>
@@ -941,7 +943,7 @@ const Tools: React.FC<ToolsProps> = ({ apiKey, assemblyKey, elevenLabsKey, perpl
                             disabled={isGeneratingImage || !visionPrompt.trim()}
                             className="mt-auto bg-pink-600 hover:bg-pink-500 text-white px-6 py-3 rounded-xl font-bold uppercase tracking-widest text-xs transition shadow-lg shadow-pink-500/20 disabled:opacity-50 flex items-center justify-center gap-2"
                         >
-                            {isGeneratingImage ? <><i className="fa-solid fa-circle-notch fa-spin"></i> Generating...</> : <><i className="fa-solid fa-wand-magic-sparkles"></i> Create</>}
+                            {isGeneratingImage ? <><Loader2 className="animate-spin" /> Generating...</> : <><Wand2 /> Create</>}
                         </button>
                     </div>
                 </div>
@@ -952,7 +954,7 @@ const Tools: React.FC<ToolsProps> = ({ apiKey, assemblyKey, elevenLabsKey, perpl
                             <img src={generatedImage} alt="Generated" className="max-w-full max-h-[600px] object-contain" />
                             <div className="absolute inset-0 bg-black/50 opacity-0 group-hover:opacity-100 transition flex items-center justify-center gap-4">
                                 <a href={generatedImage} download="pulse-vision.png" className="w-12 h-12 bg-white rounded-full flex items-center justify-center text-black hover:scale-110 transition shadow-xl">
-                                    <i className="fa-solid fa-download"></i>
+                                    <Download />
                                 </a>
                             </div>
                         </div>
@@ -976,7 +978,7 @@ const Tools: React.FC<ToolsProps> = ({ apiKey, assemblyKey, elevenLabsKey, perpl
                                     <img src={URL.createObjectURL(editImageFile)} className="w-full h-full object-contain" />
                                 ) : (
                                     <>
-                                        <i className="fa-solid fa-image text-2xl text-zinc-400 mb-2"></i>
+                                        <Image className="text-2xl text-zinc-400 mb-2" />
                                         <span className="text-sm text-zinc-500 dark:text-zinc-400 font-medium">Click to select image</span>
                                     </>
                                 )}
@@ -999,7 +1001,7 @@ const Tools: React.FC<ToolsProps> = ({ apiKey, assemblyKey, elevenLabsKey, perpl
                             disabled={isEditingImage || !editImageFile || !editPrompt.trim()}
                             className="bg-cyan-600 hover:bg-cyan-500 text-white px-6 py-2.5 rounded-xl font-bold uppercase tracking-widest text-xs transition shadow-lg shadow-cyan-500/20 disabled:opacity-50 flex items-center gap-2"
                         >
-                            {isEditingImage ? <><i className="fa-solid fa-circle-notch fa-spin"></i> Editing...</> : <><i className="fa-solid fa-wand-sparkles"></i> Apply Edit</>}
+                            {isEditingImage ? <><Loader2 className="animate-spin" /> Editing...</> : <><Wand2 /> Apply Edit</>}
                         </button>
                     </div>
                 </div>
@@ -1010,7 +1012,7 @@ const Tools: React.FC<ToolsProps> = ({ apiKey, assemblyKey, elevenLabsKey, perpl
                             <img src={editedImageUrl} alt="Edited" className="max-w-full max-h-[600px] object-contain" />
                             <div className="absolute inset-0 bg-black/50 opacity-0 group-hover:opacity-100 transition flex items-center justify-center gap-4">
                                 <a href={editedImageUrl} download="pulse-edit.png" className="w-12 h-12 bg-white rounded-full flex items-center justify-center text-black hover:scale-110 transition shadow-xl">
-                                    <i className="fa-solid fa-download"></i>
+                                    <Download />
                                 </a>
                             </div>
                         </div>
@@ -1036,7 +1038,7 @@ const Tools: React.FC<ToolsProps> = ({ apiKey, assemblyKey, elevenLabsKey, perpl
                             disabled={isMapping || !mapsQuery.trim()}
                             className="bg-green-600 hover:bg-green-500 text-white px-6 rounded-xl font-bold uppercase tracking-widest text-xs transition shadow-lg shadow-green-500/20 disabled:opacity-50"
                         >
-                            {isMapping ? <i className="fa-solid fa-circle-notch fa-spin"></i> : <i className="fa-solid fa-map-location-dot"></i>}
+                            {isMapping ? <Loader2 className="animate-spin" /> : <MapPin />}
                         </button>
                     </div>
                  </div>
@@ -1045,7 +1047,7 @@ const Tools: React.FC<ToolsProps> = ({ apiKey, assemblyKey, elevenLabsKey, perpl
                      <div className="bg-white dark:bg-zinc-900 p-8 rounded-2xl border border-zinc-200 dark:border-zinc-800 shadow-sm animate-fade-in relative overflow-hidden">
                          <div className="absolute top-0 left-0 w-1 h-full bg-green-500"></div>
                          <h3 className="text-green-500 text-xs font-bold uppercase tracking-widest mb-4 flex items-center gap-2">
-                             <i className="fa-solid fa-map-location-dot"></i> Geo Intel Result
+                             <MapPin /> Geo Intel Result
                          </h3>
                          <div className="prose dark:prose-invert max-w-none text-sm leading-relaxed text-zinc-700 dark:text-zinc-300 whitespace-pre-wrap">
                              {mapsResult}
@@ -1063,7 +1065,7 @@ const Tools: React.FC<ToolsProps> = ({ apiKey, assemblyKey, elevenLabsKey, perpl
                                            rel="noreferrer"
                                            className="flex items-center gap-3 p-3 rounded-lg bg-zinc-50 dark:bg-zinc-950 hover:bg-zinc-100 dark:hover:bg-zinc-800 transition border border-zinc-100 dark:border-zinc-800"
                                          >
-                                             <i className="fa-solid fa-location-dot text-red-500"></i>
+                                             <MapPin className="text-red-500" />
                                              <span className="text-sm font-medium dark:text-zinc-300 text-zinc-700">{chunk.maps?.title || "Map Location"}</span>
                                          </a>
                                     ))}
@@ -1088,7 +1090,7 @@ const Tools: React.FC<ToolsProps> = ({ apiKey, assemblyKey, elevenLabsKey, perpl
                     onClick={() => meetingFileInputRef.current?.click()}
                     className="border-2 border-dashed border-zinc-200 dark:border-zinc-700 rounded-xl h-40 flex flex-col items-center justify-center cursor-pointer hover:border-violet-500 dark:hover:border-violet-500 hover:bg-violet-50 dark:hover:bg-violet-900/10 transition"
                   >
-                    <i className="fa-solid fa-file-audio text-2xl text-zinc-400 mb-2"></i>
+                    <FileAudio className="text-2xl text-zinc-400 mb-2" />
                     <span className="text-sm text-zinc-500 dark:text-zinc-400 font-medium">
                       {meetingFile ? meetingFile.name : "Click to select audio/video"}
                     </span>
@@ -1112,7 +1114,7 @@ const Tools: React.FC<ToolsProps> = ({ apiKey, assemblyKey, elevenLabsKey, perpl
                   disabled={isProcessingMeeting || !meetingFile || !assemblyKey}
                   className="bg-violet-600 hover:bg-violet-500 text-white px-6 py-2.5 rounded-xl font-bold uppercase tracking-widest text-xs transition shadow-lg shadow-violet-500/20 disabled:opacity-50 flex items-center gap-2"
                 >
-                  {isProcessingMeeting ? <><i className="fa-solid fa-circle-notch fa-spin"></i> Processing...</> : <><i className="fa-solid fa-users-rectangle"></i> Analyze Meeting</>}
+                  {isProcessingMeeting ? <><Loader2 className="animate-spin" /> Processing...</> : <><Users /> Analyze Meeting</>}
                 </button>
               </div>
               {!assemblyKey && (
@@ -1124,7 +1126,7 @@ const Tools: React.FC<ToolsProps> = ({ apiKey, assemblyKey, elevenLabsKey, perpl
               <div className="bg-white dark:bg-zinc-900 p-8 rounded-2xl border border-zinc-200 dark:border-zinc-800 shadow-sm animate-fade-in relative overflow-hidden">
                 <div className="absolute top-0 left-0 w-1 h-full bg-violet-500"></div>
                 <h3 className="text-violet-500 text-xs font-bold uppercase tracking-widest mb-4 flex items-center gap-2">
-                  <i className="fa-solid fa-microphone-lines"></i> Transcript
+                  <Mic /> Transcript
                 </h3>
                 
                 {/* Speaker segments */}
@@ -1167,7 +1169,7 @@ const Tools: React.FC<ToolsProps> = ({ apiKey, assemblyKey, elevenLabsKey, perpl
               <div className="bg-white dark:bg-zinc-900 p-8 rounded-2xl border border-zinc-200 dark:border-zinc-800 shadow-sm animate-fade-in relative overflow-hidden">
                 <div className="absolute top-0 left-0 w-1 h-full bg-purple-500"></div>
                 <h3 className="text-purple-500 text-xs font-bold uppercase tracking-widest mb-4 flex items-center gap-2">
-                  <i className="fa-solid fa-lightbulb"></i> Meeting Insights
+                  <Lightbulb /> Meeting Insights
                 </h3>
                 <div className="prose dark:prose-invert max-w-none text-sm leading-relaxed text-zinc-700 dark:text-zinc-300 whitespace-pre-wrap">
                   {meetingInsights}
@@ -1216,7 +1218,7 @@ const Tools: React.FC<ToolsProps> = ({ apiKey, assemblyKey, elevenLabsKey, perpl
                   disabled={isGeneratingSpeech || !ttsText.trim() || !elevenLabsKey}
                   className="bg-amber-500 hover:bg-amber-400 text-white px-6 py-3 rounded-xl font-bold uppercase tracking-widest text-xs transition shadow-lg shadow-amber-500/20 disabled:opacity-50 flex items-center gap-2"
                 >
-                  {isGeneratingSpeech ? <><i className="fa-solid fa-circle-notch fa-spin"></i> Generating...</> : <><i className="fa-solid fa-volume-high"></i> Generate Speech</>}
+                  {isGeneratingSpeech ? <><Loader2 className="animate-spin" /> Generating...</> : <><Volume2 /> Generate Speech</>}
                 </button>
               </div>
               {!elevenLabsKey && (
@@ -1228,7 +1230,7 @@ const Tools: React.FC<ToolsProps> = ({ apiKey, assemblyKey, elevenLabsKey, perpl
               <div className="bg-zinc-900 p-6 rounded-2xl shadow-2xl animate-fade-in">
                 <div className="flex items-center gap-4 mb-4">
                   <div className="w-12 h-12 rounded-full bg-amber-500 flex items-center justify-center">
-                    <i className="fa-solid fa-podcast text-white text-xl"></i>
+                    <Podcast className="text-white text-xl" />
                   </div>
                   <div>
                     <h3 className="text-white font-semibold">Generated Audio</h3>
@@ -1238,7 +1240,7 @@ const Tools: React.FC<ToolsProps> = ({ apiKey, assemblyKey, elevenLabsKey, perpl
                 <audio src={ttsAudioUrl} controls className="w-full" />
                 <div className="flex justify-end mt-4">
                   <a href={ttsAudioUrl} download="pulse-tts.mp3" className="text-amber-500 hover:text-amber-400 text-sm font-medium flex items-center gap-2">
-                    <i className="fa-solid fa-download"></i> Download
+                    <Download /> Download
                   </a>
                 </div>
               </div>
@@ -1264,7 +1266,7 @@ const Tools: React.FC<ToolsProps> = ({ apiKey, assemblyKey, elevenLabsKey, perpl
                   disabled={isSearching || !searchQuery.trim() || !perplexityKey}
                   className="bg-sky-500 hover:bg-sky-400 text-white px-6 rounded-xl font-bold uppercase tracking-widest text-xs transition shadow-lg shadow-sky-500/20 disabled:opacity-50"
                 >
-                  {isSearching ? <i className="fa-solid fa-circle-notch fa-spin"></i> : <i className="fa-solid fa-magnifying-glass-chart"></i>}
+                  {isSearching ? <Loader2 className="animate-spin" /> : <BarChart3 />}
                 </button>
               </div>
               {!perplexityKey && (
@@ -1276,7 +1278,7 @@ const Tools: React.FC<ToolsProps> = ({ apiKey, assemblyKey, elevenLabsKey, perpl
               <div className="bg-white dark:bg-zinc-900 p-8 rounded-2xl border border-zinc-200 dark:border-zinc-800 shadow-sm animate-fade-in relative overflow-hidden">
                 <div className="absolute top-0 left-0 w-1 h-full bg-sky-500"></div>
                 <h3 className="text-sky-500 text-xs font-bold uppercase tracking-widest mb-4 flex items-center gap-2">
-                  <i className="fa-solid fa-magnifying-glass-chart"></i> Research Result
+                  <BarChart3 /> Research Result
                 </h3>
                 <div className="prose dark:prose-invert max-w-none text-sm leading-relaxed text-zinc-700 dark:text-zinc-300 whitespace-pre-wrap">
                   {searchResult}
@@ -1294,7 +1296,7 @@ const Tools: React.FC<ToolsProps> = ({ apiKey, assemblyKey, elevenLabsKey, perpl
                           rel="noreferrer"
                           className="inline-flex items-center gap-1 px-3 py-1 rounded-full bg-sky-50 dark:bg-sky-900/20 text-sky-600 dark:text-sky-400 text-xs hover:bg-sky-100 dark:hover:bg-sky-900/40 transition"
                         >
-                          <i className="fa-solid fa-link"></i>
+                          <Link />
                           {new URL(url).hostname}
                         </a>
                       ))}
@@ -1338,7 +1340,7 @@ const Tools: React.FC<ToolsProps> = ({ apiKey, assemblyKey, elevenLabsKey, perpl
                   disabled={isPlanning || !startAddress.trim() || !endAddress.trim() || !mapboxKey}
                   className="bg-teal-500 hover:bg-teal-400 text-white px-6 py-2.5 rounded-xl font-bold uppercase tracking-widest text-xs transition shadow-lg shadow-teal-500/20 disabled:opacity-50 flex items-center gap-2"
                 >
-                  {isPlanning ? <><i className="fa-solid fa-circle-notch fa-spin"></i> Planning...</> : <><i className="fa-solid fa-route"></i> Plan Route</>}
+                  {isPlanning ? <><Loader2 className="animate-spin" /> Planning...</> : <><Route /> Plan Route</>}
                 </button>
               </div>
               {!mapboxKey && (
@@ -1367,10 +1369,10 @@ const Tools: React.FC<ToolsProps> = ({ apiKey, assemblyKey, elevenLabsKey, perpl
                     </div>
                   </div>
                   <div className="flex items-center gap-2 text-sm text-zinc-600 dark:text-zinc-400">
-                    <i className="fa-solid fa-location-dot text-green-500"></i>
+                    <MapPin className="text-green-500" />
                     <span>{startAddress}</span>
-                    <i className="fa-solid fa-arrow-right text-zinc-300"></i>
-                    <i className="fa-solid fa-flag-checkered text-red-500"></i>
+                    <ArrowRight className="text-zinc-300" />
+                    <Flag className="text-red-500" />
                     <span>{endAddress}</span>
                   </div>
                 </div>
@@ -1417,7 +1419,7 @@ const Tools: React.FC<ToolsProps> = ({ apiKey, assemblyKey, elevenLabsKey, perpl
                   disabled={isAssisting || !assistantPrompt.trim()}
                   className="bg-rose-500 hover:bg-rose-400 text-white px-6 py-3 rounded-xl font-bold uppercase tracking-widest text-xs transition shadow-lg shadow-rose-500/20 disabled:opacity-50 flex items-center gap-2"
                 >
-                  {isAssisting ? <><i className="fa-solid fa-circle-notch fa-spin"></i> Thinking...</> : <><i className="fa-solid fa-robot"></i> Ask AI</>}
+                  {isAssisting ? <><Loader2 className="animate-spin" /> Thinking...</> : <><Bot /> Ask AI</>}
                 </button>
               </div>
             </div>
@@ -1427,7 +1429,7 @@ const Tools: React.FC<ToolsProps> = ({ apiKey, assemblyKey, elevenLabsKey, perpl
                 <div className="absolute top-0 left-0 w-1 h-full bg-rose-500"></div>
                 <div className="flex items-center justify-between mb-4">
                   <h3 className="text-rose-500 text-xs font-bold uppercase tracking-widest flex items-center gap-2">
-                    <i className="fa-solid fa-robot"></i> AI Response
+                    <Bot /> AI Response
                   </h3>
                   {assistantProvider && (
                     <span className="px-2 py-1 rounded-full bg-zinc-100 dark:bg-zinc-800 text-xs font-medium text-zinc-500 dark:text-zinc-400 uppercase">

@@ -1,5 +1,7 @@
 import React, { useState, useRef, useCallback, useEffect } from 'react';
 
+import { Captions, Loader2, Mic, Send, Trash2 } from 'lucide-react';
+
 // Types
 interface VoiceMessage {
   id: string;
@@ -352,7 +354,7 @@ export const VoicePlayer: React.FC<VoicePlayerProps> = ({ message, onTranscribe 
 
       {message.isTranscribing && (
         <div style={{ ...styles.transcription, ...styles.transcribing }}>
-          <i className="fa-solid fa-circle-notch fa-spin" />
+          <Loader2 className="animate-spin" />
           Transcribing audio...
         </div>
       )}
@@ -362,7 +364,7 @@ export const VoicePlayer: React.FC<VoicePlayerProps> = ({ message, onTranscribe 
           style={{ ...styles.transcribeButton, marginTop: '8px' }}
           onClick={onTranscribe}
         >
-          <i className="fa-solid fa-closed-captioning" />
+          <Captions />
           Transcribe
         </button>
       )}
@@ -477,7 +479,7 @@ export const VoiceRecorder: React.FC<VoiceMessagesProps> = ({ onSendVoice }) => 
     <div style={styles.recorder}>
       <div style={styles.recorderHeader}>
         <div style={styles.title}>
-          <i className="fa-solid fa-microphone" />
+          <Mic />
           Voice Message
         </div>
         {!isRecording && !audioUrl && (
@@ -541,14 +543,14 @@ export const VoiceRecorder: React.FC<VoiceMessagesProps> = ({ onSendVoice }) => 
                 style={{ ...styles.controlButton, ...styles.cancelButton }}
                 onClick={cancelRecording}
               >
-                <i className="fa-solid fa-trash" />
+                <Trash2 />
                 Discard
               </button>
               <button
                 style={{ ...styles.controlButton, ...styles.sendButton }}
                 onClick={sendRecording}
               >
-                <i className="fa-solid fa-paper-plane" />
+                <Send />
                 Send Voice
               </button>
             </div>

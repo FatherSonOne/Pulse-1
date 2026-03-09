@@ -2,6 +2,8 @@
 import React from 'react';
 import { EmailFolder } from '../../services/emailSyncService';
 
+import { Database, Mail, Megaphone, SquarePen, X } from 'lucide-react';
+
 interface EmailSidebarRedesignProps {
   currentFolder: EmailFolder;
   folderCounts: Record<EmailFolder, number>;
@@ -107,7 +109,7 @@ export const EmailSidebarRedesign: React.FC<EmailSidebarRedesignProps> = ({
           <div className="flex items-center justify-between mb-4">
             <div className="flex items-center gap-3">
               <div className={`w-10 h-10 rounded-xl bg-gradient-to-br ${getAccentGradient()} flex items-center justify-center shadow-lg`}>
-                <i className="fa-solid fa-envelope text-white text-lg"></i>
+                <Mail className="text-white text-lg" />
               </div>
               <div>
                 <h2 className="font-bold text-stone-900 dark:text-white text-lg">Pulse Mail</h2>
@@ -119,7 +121,7 @@ export const EmailSidebarRedesign: React.FC<EmailSidebarRedesignProps> = ({
               className="md:hidden w-8 h-8 rounded-lg hover:bg-stone-200 dark:hover:bg-zinc-800 flex items-center justify-center text-stone-500 dark:text-zinc-400 transition"
               aria-label="Close menu"
             >
-              <i className="fa-solid fa-xmark"></i>
+              <X />
             </button>
           </div>
 
@@ -129,7 +131,7 @@ export const EmailSidebarRedesign: React.FC<EmailSidebarRedesignProps> = ({
             className={`w-full flex items-center justify-center gap-2.5 bg-gradient-to-r ${getAccentGradient()} hover:shadow-xl text-white px-4 py-3.5 rounded-xl font-bold transition-all duration-200 shadow-lg hover:scale-[1.02] active:scale-[0.98]`}
             aria-label="Compose new email"
           >
-            <i className="fa-solid fa-pen-to-square text-lg" aria-hidden="true"></i>
+            <SquarePen className="text-lg" />
             <span>Compose</span>
           </button>
         </div>
@@ -193,7 +195,7 @@ export const EmailSidebarRedesign: React.FC<EmailSidebarRedesignProps> = ({
                 ? `bg-gradient-to-br ${getAccentGradient()} text-white shadow-md`
                 : 'bg-stone-200 dark:bg-zinc-800 group-hover:bg-stone-300 dark:group-hover:bg-zinc-700'
             }`}>
-              <i className="fa-solid fa-bullhorn" aria-hidden="true" />
+              <Megaphone />
             </div>
             <span className="flex-1 text-sm">Campaigns</span>
           </button>
@@ -202,7 +204,7 @@ export const EmailSidebarRedesign: React.FC<EmailSidebarRedesignProps> = ({
         {/* Cached email count */}
         <div className="p-4 border-t border-stone-200 dark:border-zinc-800 bg-stone-100/50 dark:bg-zinc-900/50">
           <div className="flex items-center gap-2">
-            <i className="fa-solid fa-database text-stone-500 dark:text-zinc-500" />
+            <Database className="text-stone-500 dark:text-zinc-500" />
             <div className="flex-1 flex items-center justify-between text-xs font-medium text-stone-600 dark:text-zinc-400">
               <span>Cached Emails</span>
               <span className="tabular-nums">{cachedEmailCount.toLocaleString()}</span>

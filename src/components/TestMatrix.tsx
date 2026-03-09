@@ -2,6 +2,8 @@ import React, { useState, useEffect, useCallback } from 'react';
 import { saveTestResult, loadTestResults, saveTesterName, clearTestResults, TestStatus } from '../services/testMatrixService';
 import { getSessionUserSync } from '../services/authService';
 
+import { Check, ClipboardCheck, Download, Loader2, RotateCcw, StickyNote } from 'lucide-react';
+
 interface TestCase {
   id: string;
   name: string;
@@ -485,11 +487,11 @@ const TestMatrix: React.FC = () => {
     return (
       <div className="h-full flex flex-col items-center justify-center bg-zinc-50 dark:bg-zinc-950">
         <div className="w-16 h-16 rounded-2xl bg-gradient-to-br from-blue-500 to-purple-600 flex items-center justify-center mb-4">
-          <i className="fa-solid fa-clipboard-check text-white text-2xl"></i>
+          <ClipboardCheck className="text-white text-2xl" />
         </div>
         <div className="text-lg font-medium text-zinc-900 dark:text-white mb-2">Loading Test Matrix...</div>
         <div className="text-sm text-zinc-500">Retrieving your saved progress</div>
-        <i className="fa-solid fa-spinner fa-spin text-blue-500 text-xl mt-4"></i>
+        <Loader2 className="text-blue-500 text-xl mt-4 animate-spin" />
       </div>
     );
   }
@@ -502,7 +504,7 @@ const TestMatrix: React.FC = () => {
           <div>
             <h1 className="text-2xl font-bold text-zinc-900 dark:text-white flex items-center gap-3">
               <div className="w-10 h-10 rounded-xl bg-gradient-to-br from-blue-500 to-purple-600 flex items-center justify-center">
-                <i className="fa-solid fa-clipboard-check text-white"></i>
+                <ClipboardCheck className="text-white" />
               </div>
               Test Matrix
             </h1>
@@ -513,13 +515,13 @@ const TestMatrix: React.FC = () => {
             {/* Save Status Indicator */}
             {isSaving && (
               <span className="text-sm text-blue-500 flex items-center gap-2">
-                <i className="fa-solid fa-spinner fa-spin"></i>
+                <Loader2 className="animate-spin" />
                 Saving...
               </span>
             )}
             {!isSaving && lastSaved && (
               <span className="text-sm text-emerald-500 flex items-center gap-2">
-                <i className="fa-solid fa-check"></i>
+                <Check />
                 Saved
               </span>
             )}
@@ -536,14 +538,14 @@ const TestMatrix: React.FC = () => {
               className="px-4 py-2 rounded-xl bg-zinc-200 dark:bg-zinc-800 hover:bg-zinc-300 dark:hover:bg-zinc-700 text-zinc-700 dark:text-zinc-300 font-medium transition flex items-center gap-2"
               title="Reset all test results"
             >
-              <i className="fa-solid fa-rotate-left"></i>
+              <RotateCcw />
               Reset
             </button>
             <button
               onClick={exportResults}
               className="px-4 py-2 rounded-xl bg-blue-600 hover:bg-blue-700 text-white font-medium transition flex items-center gap-2"
             >
-              <i className="fa-solid fa-download"></i>
+              <Download />
               Export Results
             </button>
           </div>
@@ -641,7 +643,7 @@ const TestMatrix: React.FC = () => {
                             <div className="font-medium text-zinc-900 dark:text-white">{test.name}</div>
                             {test.notes && (
                               <div className="text-xs text-amber-600 dark:text-amber-400 mt-1">
-                                <i className="fa-solid fa-note-sticky mr-1"></i>
+                                <StickyNote className="mr-1" />
                                 {test.notes}
                               </div>
                             )}

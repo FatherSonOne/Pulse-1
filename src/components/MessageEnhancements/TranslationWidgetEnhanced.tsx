@@ -2,6 +2,8 @@
 import React, { useState, useEffect, useCallback } from 'react';
 import type { MessageTranslation } from '../../types/messageEnhancements';
 
+import { Check, CheckCircle, Copy, Globe, Languages, Search, Wand2, X } from 'lucide-react';
+
 interface Language {
   code: string;
   name: string;
@@ -173,7 +175,7 @@ export const TranslationWidgetEnhanced: React.FC<TranslationWidgetEnhancedProps>
         }`}
         title={detectedLanguage ? `Detected: ${detectedLanguage.name}` : 'Translate'}
       >
-        <i className="fa-solid fa-globe text-xs" />
+        <Globe className="text-xs" />
       </button>
     );
   }
@@ -189,7 +191,7 @@ export const TranslationWidgetEnhanced: React.FC<TranslationWidgetEnhancedProps>
             : 'text-zinc-500 hover:text-zinc-700 dark:hover:text-zinc-300 hover:bg-zinc-100 dark:hover:bg-zinc-800'
         }`}
       >
-        <i className="fa-solid fa-globe text-xs" />
+        <Globe className="text-xs" />
         {detectedLanguage && detectedLanguage.code !== 'en' && (
           <span className="text-[10px] font-medium">
             {detectedLanguage.flag} {detectedLanguage.name}
@@ -204,7 +206,7 @@ export const TranslationWidgetEnhanced: React.FC<TranslationWidgetEnhancedProps>
           <div className="px-3 py-2 border-b border-zinc-200 dark:border-zinc-700 bg-zinc-50 dark:bg-zinc-900">
             <div className="flex items-center justify-between">
               <div className="flex items-center gap-2">
-                <i className="fa-solid fa-language text-blue-500" />
+                <Languages className="text-blue-500" />
                 <span className="text-xs font-bold text-zinc-600 dark:text-zinc-300">
                   Translation
                 </span>
@@ -213,14 +215,14 @@ export const TranslationWidgetEnhanced: React.FC<TranslationWidgetEnhancedProps>
                 onClick={() => setIsOpen(false)}
                 className="text-zinc-400 hover:text-zinc-600 dark:hover:text-zinc-300"
               >
-                <i className="fa-solid fa-times text-xs" />
+                <X className="text-xs" />
               </button>
             </div>
 
             {/* Auto-detected language */}
             {detectedLanguage && (
               <div className="mt-2 flex items-center gap-2 text-xs text-zinc-500 dark:text-zinc-400">
-                <i className="fa-solid fa-wand-magic-sparkles text-purple-500" />
+                <Wand2 className="text-purple-500" />
                 <span>Detected: {detectedLanguage.flag} {detectedLanguage.name}</span>
               </div>
             )}
@@ -231,7 +233,7 @@ export const TranslationWidgetEnhanced: React.FC<TranslationWidgetEnhancedProps>
             <div className="p-3 border-b border-zinc-200 dark:border-zinc-700 bg-blue-50 dark:bg-blue-900/20">
               <div className="flex items-center justify-between mb-2">
                 <div className="flex items-center gap-1.5 text-xs text-blue-600 dark:text-blue-400">
-                  <i className="fa-solid fa-check-circle" />
+                  <CheckCircle />
                   <span className="font-medium">
                     {LANGUAGES.find(l => l.code === translation.targetLanguage)?.name}
                   </span>
@@ -257,7 +259,7 @@ export const TranslationWidgetEnhanced: React.FC<TranslationWidgetEnhancedProps>
                 }}
                 className="mt-2 text-xs text-zinc-500 dark:text-zinc-400 hover:text-zinc-700 dark:hover:text-zinc-300 flex items-center gap-1"
               >
-                <i className="fa-solid fa-copy" />
+                <Copy />
                 Copy translation
               </button>
             </div>
@@ -277,7 +279,7 @@ export const TranslationWidgetEnhanced: React.FC<TranslationWidgetEnhancedProps>
               {/* Search */}
               <div className="p-2 border-b border-zinc-200 dark:border-zinc-700">
                 <div className="relative">
-                  <i className="fa-solid fa-search absolute left-2.5 top-1/2 -translate-y-1/2 text-zinc-400 text-xs" />
+                  <Search className="absolute left-2.5 top-1/2 -translate-y-1/2 text-zinc-400 text-xs" />
                   <input
                     type="text"
                     placeholder="Search languages..."
@@ -367,7 +369,7 @@ export const AutoTranslateToggle: React.FC<{
     <div className="flex items-center justify-between p-3 bg-zinc-50 dark:bg-zinc-800 rounded-lg">
       <div className="flex items-center gap-3">
         <div className="w-8 h-8 rounded-full bg-blue-100 dark:bg-blue-900/40 flex items-center justify-center">
-          <i className="fa-solid fa-globe text-blue-500" />
+          <Globe className="text-blue-500" />
         </div>
         <div>
           <div className="text-sm font-medium text-zinc-800 dark:text-white">
@@ -414,7 +416,7 @@ export const AutoTranslateToggle: React.FC<{
               <span>{lang.flag}</span>
               <span>{lang.name}</span>
               {lang.code === targetLanguage && (
-                <i className="fa-solid fa-check text-blue-500 ml-auto" />
+                <Check className="text-blue-500 ml-auto" />
               )}
             </button>
           ))}

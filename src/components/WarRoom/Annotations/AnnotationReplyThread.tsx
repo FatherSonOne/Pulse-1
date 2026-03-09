@@ -6,6 +6,8 @@
 import React, { useState } from 'react';
 import { Annotation, AnnotationReply } from '../../../types/annotations';
 
+import { Loader2, Reply } from 'lucide-react';
+
 interface AnnotationReplyThreadProps {
   annotation: Annotation;
   onReply: (content: string) => void;
@@ -88,7 +90,7 @@ export const AnnotationReplyThread: React.FC<AnnotationReplyThreadProps> = ({
       {/* Reply input */}
       <div className="flex items-start gap-2">
         <div className="w-6 h-6 rounded-full bg-rose-100 dark:bg-rose-900/30 flex items-center justify-center flex-shrink-0">
-          <i className="fa fa-reply text-xs text-rose-500"></i>
+          <Reply className="fa text-xs text-rose-500" />
         </div>
         <div className="flex-1">
           <textarea
@@ -109,7 +111,7 @@ export const AnnotationReplyThread: React.FC<AnnotationReplyThreadProps> = ({
               className="px-2 py-1 text-xs bg-rose-500 hover:bg-rose-600 disabled:opacity-50 disabled:cursor-not-allowed text-white rounded transition-colors"
             >
               {isSubmitting ? (
-                <i className="fa fa-spinner fa-spin"></i>
+                <Loader2 className="fa animate-spin" />
               ) : (
                 'Reply'
               )}

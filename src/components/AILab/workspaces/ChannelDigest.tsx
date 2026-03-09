@@ -7,6 +7,8 @@ import AILabEmptyState from '../shared/AILabEmptyState';
 import { useToast } from '../shared/AILabToast';
 import './ChannelDigest.css';
 
+import { AlertCircle, AlertTriangle, AlignLeft, ArrowLeft, Copy, Gavel, Inbox, ListChecks, MessageCircle, ScrollText, Send, Zap } from 'lucide-react';
+
 function computeSentiment(text: string): 'positive' | 'neutral' | 'negative' {
   const lower = text.toLowerCase();
   const pos = (lower.match(/resolved|shipped|completed|approved|launched|success|great|improved/g) || []).length;
@@ -104,10 +106,10 @@ const ChannelDigest: React.FC<ChannelDigestProps> = ({ onBack, apiKey }) => {
       <div className="cd-header">
         <div className="cd-header-left">
           <button type="button" onClick={onBack} className="cd-back-btn" aria-label="Go back">
-            <i className="fa-solid fa-arrow-left"></i>
+            <ArrowLeft />
           </button>
           <div className="cd-branding">
-            <i className="fa-solid fa-comment-dots"></i>
+            <MessageCircle />
             <span>Channel Digest</span>
           </div>
           <span className="cd-subtitle">Catch-Up Summaries</span>
@@ -120,7 +122,7 @@ const ChannelDigest: React.FC<ChannelDigestProps> = ({ onBack, apiKey }) => {
               onClick={() => { navigator.clipboard.writeText(getShareContent()); showToast('Digest copied!', 'success'); }}
               title="Copy digest"
             >
-              <i className="fa-solid fa-copy"></i>
+              <Copy />
               Copy
             </button>
             {teamChannels.length > 0 && currentUser && (
@@ -129,7 +131,7 @@ const ChannelDigest: React.FC<ChannelDigestProps> = ({ onBack, apiKey }) => {
                 className="cd-btn cd-btn-primary"
                 onClick={() => setShowShare(true)}
               >
-                <i className="fa-solid fa-paper-plane"></i>
+                <Send />
                 Share to Channel
               </button>
             )}
@@ -142,7 +144,7 @@ const ChannelDigest: React.FC<ChannelDigestProps> = ({ onBack, apiKey }) => {
         <div className="cd-setup">
           <div className="cd-setup-inner">
             <div className="cd-setup-icon">
-              <i className="fa-solid fa-comment-dots"></i>
+              <MessageCircle />
             </div>
             <h2>Channel Catch-Up</h2>
             <p>Select a channel and time range to get an AI-powered summary of everything you missed.</p>
@@ -201,7 +203,7 @@ const ChannelDigest: React.FC<ChannelDigestProps> = ({ onBack, apiKey }) => {
 
             {!apiKey && (
               <p className="cd-warning">
-                <i className="fa-solid fa-triangle-exclamation"></i>
+                <AlertTriangle />
                 Gemini API key required. Add it in Settings.
               </p>
             )}
@@ -213,14 +215,14 @@ const ChannelDigest: React.FC<ChannelDigestProps> = ({ onBack, apiKey }) => {
           <div className="cd-results">
             {error ? (
               <div className="cd-error">
-                <i className="fa-solid fa-circle-exclamation"></i>
+                <AlertCircle />
                 <p>{error}</p>
               </div>
             ) : digest && (
               <>
                 <div className="cd-results-header">
                   <h3>
-                    <i className="fa-solid fa-scroll"></i>
+                    <ScrollText />
                     #{selectedChannel?.name} — {TIME_RANGES.find(r => r.hours === selectedHours)?.label}
                   </h3>
                   <div className="cd-results-meta">
@@ -245,17 +247,17 @@ const ChannelDigest: React.FC<ChannelDigestProps> = ({ onBack, apiKey }) => {
                   return (
                     <div className="cd-metrics-strip">
                       <div className="cd-metric-tile">
-                        <i className="fa-solid fa-list-check"></i>
+                        <ListChecks />
                         <span className="cd-metric-value">{m.actionItemsCount}</span>
                         <span className="cd-metric-label">Actions</span>
                       </div>
                       <div className="cd-metric-tile">
-                        <i className="fa-solid fa-gavel"></i>
+                        <Gavel />
                         <span className="cd-metric-value">{m.decisionsCount}</span>
                         <span className="cd-metric-label">Decisions</span>
                       </div>
                       <div className="cd-metric-tile">
-                        <i className="fa-solid fa-bolt"></i>
+                        <Zap />
                         <span className="cd-metric-value">{m.keyChangesCount}</span>
                         <span className="cd-metric-label">Key Changes</span>
                       </div>
@@ -264,13 +266,13 @@ const ChannelDigest: React.FC<ChannelDigestProps> = ({ onBack, apiKey }) => {
                 })()}
 
                 <div className="cd-summary-card">
-                  <i className="fa-solid fa-align-left"></i>
+                  <AlignLeft />
                   <p>{digest.summary}</p>
                 </div>
 
                 {digest.keyChanges.length > 0 && (
                   <div className="cd-section">
-                    <h4><i className="fa-solid fa-bolt"></i> Key Changes</h4>
+                    <h4><Zap /> Key Changes</h4>
                     <ul className="cd-list">
                       {digest.keyChanges.map((item, i) => (
                         <li key={i}>{item}</li>
@@ -281,7 +283,7 @@ const ChannelDigest: React.FC<ChannelDigestProps> = ({ onBack, apiKey }) => {
 
                 {digest.actionItems.length > 0 && (
                   <div className="cd-section cd-section-actions">
-                    <h4><i className="fa-solid fa-list-check"></i> Action Items</h4>
+                    <h4><ListChecks /> Action Items</h4>
                     <ul className="cd-list">
                       {digest.actionItems.map((item, i) => (
                         <li key={i}>{item}</li>
@@ -292,7 +294,7 @@ const ChannelDigest: React.FC<ChannelDigestProps> = ({ onBack, apiKey }) => {
 
                 {digest.decisonsMade.length > 0 && (
                   <div className="cd-section cd-section-decisions">
-                    <h4><i className="fa-solid fa-gavel"></i> Decisions Made</h4>
+                    <h4><Gavel /> Decisions Made</h4>
                     <ul className="cd-list">
                       {digest.decisonsMade.map((item, i) => (
                         <li key={i}>{item}</li>
@@ -303,7 +305,7 @@ const ChannelDigest: React.FC<ChannelDigestProps> = ({ onBack, apiKey }) => {
 
                 {digest.messageCount === 0 && (
                   <div className="cd-no-messages">
-                    <i className="fa-solid fa-inbox"></i>
+                    <Inbox />
                     <p>No messages in this channel for the selected time range.</p>
                   </div>
                 )}

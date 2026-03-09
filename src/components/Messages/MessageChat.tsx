@@ -12,6 +12,8 @@ import { UserBadge, UserRole } from './UserBadge';
 import { getAccessibleUserColor } from '../../utils/userColors';
 import toast from 'react-hot-toast';
 
+import { Hash, Lock, MessagesSquare, Paperclip, Pin, Search, Settings, Smile, Trash2, Users } from 'lucide-react';
+
 interface MessageChatProps {
   channel: MessageChannel;
   currentUserId: string;
@@ -175,18 +177,18 @@ export const MessageChat: React.FC<MessageChatProps> = ({
         <div className="flex items-center gap-3">
           {channel.is_group ? (
             <div className="w-10 h-10 rounded-lg bg-gradient-to-br from-rose-500/20 to-pink-500/20 border border-rose-500/30 flex items-center justify-center">
-              <i className="fa-solid fa-users text-rose-400"></i>
+              <Users className="text-rose-400" />
             </div>
           ) : (
             <div className="w-10 h-10 rounded-lg bg-gradient-to-br from-rose-500/10 to-pink-500/10 border border-rose-500/20 flex items-center justify-center">
-              <i className="fa-solid fa-hashtag text-rose-400"></i>
+              <Hash className="text-rose-400" />
             </div>
           )}
           <div>
             <h2 className="text-lg font-semibold text-white flex items-center gap-2">
               {channel.is_group ? '' : '#'}{channel.name}
               {channel.is_public === false && !channel.is_group && (
-                <i className="fa-solid fa-lock text-xs text-yellow-500"></i>
+                <Lock className="text-xs text-yellow-500" />
               )}
             </h2>
             {channel.description && (
@@ -199,25 +201,25 @@ export const MessageChat: React.FC<MessageChatProps> = ({
             className="w-9 h-9 rounded-lg hover:bg-zinc-800 flex items-center justify-center transition text-zinc-400 hover:text-white"
             title="Search messages"
           >
-            <i className="fa-solid fa-search text-sm"></i>
+            <Search className="text-sm" />
           </button>
           <button
             className="w-9 h-9 rounded-lg hover:bg-zinc-800 flex items-center justify-center transition text-zinc-400 hover:text-white"
             title="Pinned messages"
           >
-            <i className="fa-solid fa-thumbtack text-sm"></i>
+            <Pin className="text-sm" />
           </button>
           <button
             className="w-9 h-9 rounded-lg hover:bg-zinc-800 flex items-center justify-center transition text-zinc-400 hover:text-white"
             title="Channel members"
           >
-            <i className="fa-solid fa-user-group text-sm"></i>
+            <Users className="text-sm" />
           </button>
           <button
             className="w-9 h-9 rounded-lg hover:bg-zinc-800 flex items-center justify-center transition text-zinc-400 hover:text-white"
             title="Channel settings"
           >
-            <i className="fa-solid fa-gear text-sm"></i>
+            <Settings className="text-sm" />
           </button>
         </div>
       </div>
@@ -234,7 +236,7 @@ export const MessageChat: React.FC<MessageChatProps> = ({
         ) : messages.length === 0 ? (
           <div className="flex items-center justify-center h-full">
             <div className="text-center text-zinc-500">
-              <i className="fa-solid fa-comments text-4xl mb-3 block text-zinc-700"></i>
+              <MessagesSquare className="text-4xl mb-3 block text-zinc-700" />
               <p className="text-lg font-medium mb-1">No messages yet</p>
               <p className="text-sm">Be the first to send a message in #{channel.name}!</p>
             </div>
@@ -298,7 +300,7 @@ export const MessageChat: React.FC<MessageChatProps> = ({
                           {/* Pinned indicator */}
                           {message.is_pinned && (
                             <span className="text-[10px] text-yellow-500 flex items-center gap-1">
-                              <i className="fa-solid fa-thumbtack"></i>
+                              <Pin />
                               Pinned
                             </span>
                           )}
@@ -350,14 +352,14 @@ export const MessageChat: React.FC<MessageChatProps> = ({
                           className="w-7 h-7 rounded hover:bg-zinc-800 flex items-center justify-center text-zinc-500 hover:text-white transition"
                           title="Add reaction"
                         >
-                          <i className="fa-regular fa-face-smile text-xs"></i>
+                          <Smile className="text-xs" />
                         </button>
                         <button
                           onClick={() => handlePinMessage(message.id)}
                           className={`w-7 h-7 rounded hover:bg-zinc-800 flex items-center justify-center transition ${message.is_pinned ? 'text-yellow-500' : 'text-zinc-500 hover:text-yellow-500'}`}
                           title={message.is_pinned ? 'Unpin message' : 'Pin message'}
                         >
-                          <i className="fa-solid fa-thumbtack text-xs"></i>
+                          <Pin className="text-xs" />
                         </button>
                         {isOwnMessage && (
                           <button
@@ -365,7 +367,7 @@ export const MessageChat: React.FC<MessageChatProps> = ({
                             className="w-7 h-7 rounded hover:bg-rose-500/20 flex items-center justify-center text-zinc-500 hover:text-rose-500 transition"
                             title="Delete message"
                           >
-                            <i className="fa-solid fa-trash text-xs"></i>
+                            <Trash2 className="text-xs" />
                           </button>
                         )}
                       </div>
@@ -387,7 +389,7 @@ export const MessageChat: React.FC<MessageChatProps> = ({
               className="w-10 h-10 rounded-lg bg-zinc-100 dark:bg-zinc-800 hover:bg-zinc-200 dark:hover:bg-zinc-700 flex items-center justify-center transition text-zinc-600 dark:text-zinc-400 hover:text-rose-500 flex-shrink-0"
               title="Attach file"
             >
-              <i className="fa-solid fa-paperclip"></i>
+              <Paperclip />
             </button>
 
             <button
@@ -395,7 +397,7 @@ export const MessageChat: React.FC<MessageChatProps> = ({
               title="Add emoji"
               onClick={() => setShowEmojiPicker(!showEmojiPicker)}
             >
-              <i className="fa-regular fa-face-smile"></i>
+              <Smile />
             </button>
           </div>
 

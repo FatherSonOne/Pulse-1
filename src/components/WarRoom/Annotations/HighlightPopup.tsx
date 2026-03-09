@@ -6,6 +6,8 @@
 import React, { useState, useEffect, useRef } from 'react';
 import { HighlightColor, HIGHLIGHT_COLORS, CreateHighlightPayload } from '../../../types/annotations';
 
+import { Highlighter, Plus, X } from 'lucide-react';
+
 interface HighlightPopupProps {
   selectedText: string;
   position: { x: number; y: number };
@@ -173,7 +175,7 @@ export const HighlightPopup: React.FC<HighlightPopupProps> = ({
                 onClick={handleAddTag}
                 className="px-2 py-1 text-sm bg-gray-100 dark:bg-gray-700 hover:bg-gray-200 dark:hover:bg-gray-600 rounded-lg text-gray-700 dark:text-gray-300"
               >
-                <i className="fa fa-plus"></i>
+                <Plus className="fa" />
               </button>
             </div>
 
@@ -189,7 +191,7 @@ export const HighlightPopup: React.FC<HighlightPopupProps> = ({
                       onClick={() => handleRemoveTag(tag)}
                       className="hover:text-rose-900 dark:hover:text-rose-100"
                     >
-                      <i className="fa fa-times text-[10px]"></i>
+                      <X className="fa text-[10px]" />
                     </button>
                   </span>
                 ))}
@@ -202,7 +204,7 @@ export const HighlightPopup: React.FC<HighlightPopupProps> = ({
             onClick={handleDetailedHighlight}
             className="w-full py-2 bg-gradient-to-r from-rose-500 to-pink-500 hover:from-rose-600 hover:to-pink-600 text-white rounded-lg text-sm font-medium transition-all"
           >
-            <i className="fa fa-highlighter mr-2"></i>
+            <Highlighter className="fa mr-2" />
             Save Highlight
           </button>
         </div>

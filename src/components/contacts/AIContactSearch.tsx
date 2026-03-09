@@ -9,6 +9,8 @@ import { Contact } from '../../types';
 import { searchContactsNL } from '../../services/contactSearchAIService';
 import { supabase } from '../../services/supabase';
 
+import { Loader2, Search, Sparkles, Wand2, X } from 'lucide-react';
+
 // ==================== TYPES ====================
 
 interface AIContactSearchProps {
@@ -121,11 +123,11 @@ export const AIContactSearch: React.FC<AIContactSearchProps> = ({
       `}>
         {/* Icon: spinner when searching, sparkle for AI, magnifying glass otherwise */}
         {isSearching ? (
-          <i className="fa-solid fa-circle-notch animate-spin text-indigo-500 text-sm flex-shrink-0" />
+          <Loader2 className="animate-spin text-indigo-500 text-sm flex-shrink-0" />
         ) : isAIMode ? (
-          <i className="fa-solid fa-wand-magic-sparkles text-indigo-500 text-sm flex-shrink-0" />
+          <Wand2 className="text-indigo-500 text-sm flex-shrink-0" />
         ) : (
-          <i className="fa-solid fa-magnifying-glass text-zinc-400 text-sm flex-shrink-0" />
+          <Search className="text-zinc-400 text-sm flex-shrink-0" />
         )}
 
         <input
@@ -152,7 +154,7 @@ export const AIContactSearch: React.FC<AIContactSearchProps> = ({
             onClick={handleClear}
             className="flex-shrink-0 w-5 h-5 flex items-center justify-center rounded-full text-zinc-400 hover:text-zinc-600 dark:hover:text-zinc-300 hover:bg-zinc-100 dark:hover:bg-zinc-800 transition-colors"
           >
-            <i className="fa-solid fa-xmark text-xs" />
+            <X className="text-xs" />
           </button>
         )}
       </div>
@@ -160,7 +162,7 @@ export const AIContactSearch: React.FC<AIContactSearchProps> = ({
       {/* AI explanation chip */}
       {isAIMode && explanation && (
         <div className="mt-1.5 flex items-center gap-1.5 px-2">
-          <i className="fa-solid fa-sparkles text-xs text-indigo-400" />
+          <Sparkles className="text-xs text-indigo-400" />
           <span className="text-xs text-indigo-600 dark:text-indigo-400 leading-tight">
             {explanation}
           </span>

@@ -2,6 +2,8 @@ import React from 'react';
 import { motion } from 'framer-motion';
 import { MessageChannel } from '../../types/messages';
 
+import { BellOff, Lock, MessageCircle, Pin, Users } from 'lucide-react';
+
 interface ThreadItemProps {
   channel: MessageChannel;
   isActive: boolean;
@@ -84,7 +86,7 @@ const ThreadItem: React.FC<ThreadItemProps> = ({
         <div className="flex-shrink-0 relative">
           {isGroup ? (
             <div className="w-12 h-12 rounded-full bg-gradient-to-br from-purple-500 to-pink-500 flex items-center justify-center text-white font-bold text-sm">
-              <i className="fa-solid fa-users"></i>
+              <Users />
             </div>
           ) : (
             <div className="w-12 h-12 rounded-full bg-gradient-to-br from-blue-500 to-cyan-500 flex items-center justify-center text-white font-bold text-sm">
@@ -115,18 +117,10 @@ const ThreadItem: React.FC<ThreadItemProps> = ({
                 {channel.name}
               </h3>
               {isPinned && (
-                <i
-                  className="fa-solid fa-thumbtack text-xs text-zinc-400 flex-shrink-0"
-                  aria-label="Pinned"
-                  title="Pinned thread"
-                ></i>
+                <Pin className="text-xs text-zinc-400 flex-shrink-0" />
               )}
               {!channel.is_public && (
-                <i
-                  className="fa-solid fa-lock text-xs text-zinc-400 flex-shrink-0"
-                  aria-label="Private"
-                  title="Private thread"
-                ></i>
+                <Lock className="text-xs text-zinc-400 flex-shrink-0" />
               )}
             </div>
 
@@ -150,7 +144,7 @@ const ThreadItem: React.FC<ThreadItemProps> = ({
           {/* Thread count indicator (if applicable) */}
           {(channel as any).thread_count > 0 && (
             <div className="flex items-center gap-1 mt-1 text-xs text-zinc-400">
-              <i className="fa-solid fa-comment-dots"></i>
+              <MessageCircle />
               <span>{(channel as any).thread_count} replies</span>
             </div>
           )}
@@ -180,7 +174,7 @@ const ThreadItem: React.FC<ThreadItemProps> = ({
             aria-label="Mute thread"
             title="Mute thread"
           >
-            <i className="fa-solid fa-bell-slash text-xs text-zinc-400"></i>
+            <BellOff className="text-xs text-zinc-400" />
           </button>
         </div>
       </div>

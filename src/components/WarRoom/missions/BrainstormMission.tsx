@@ -2,6 +2,8 @@ import React, { useState, useRef, useEffect } from 'react';
 import { AIMessage, ThinkingStep } from '../../../services/ragService';
 import { SessionExport } from '../shared';
 
+import { ArrowDown, ArrowRight, ArrowUp, BookOpen, Check, Lightbulb, Plus, Rocket, Send, Share2, Wand2, X } from 'lucide-react';
+
 interface Idea {
   id: string;
   text: string;
@@ -193,7 +195,7 @@ ${ideas.length > 10 ? `... and ${ideas.length - 10} more` : ''}
         {/* Mission Header */}
         <div className="p-4 border-b border-white/10 wr-mission-accent-bg">
           <div className="flex items-center gap-2 mb-2">
-            <i className="fa fa-lightbulb text-yellow-400"></i>
+            <Lightbulb className="fa text-yellow-400" />
             <h3 className="text-sm font-semibold war-room-text-primary">Brainstorm Mission</h3>
           </div>
           {challenge && (
@@ -201,7 +203,7 @@ ${ideas.length > 10 ? `... and ${ideas.length - 10} more` : ''}
           )}
           {activeContextCount > 0 && (
             <div className="war-room-badge text-xs mt-2" style={{ display: 'inline-flex', alignItems: 'center', gap: 4 }}>
-              <i className="fa fa-book-open" style={{ fontSize: 9 }}></i>
+              <BookOpen className="fa" />
               {activeContextCount} source{activeContextCount !== 1 ? 's' : ''}
             </div>
           )}
@@ -269,7 +271,7 @@ ${ideas.length > 10 ? `... and ${ideas.length - 10} more` : ''}
                 disabled={!challenge.trim()}
                 className="w-full war-room-btn war-room-btn-primary py-2"
               >
-                <i className="fa fa-rocket mr-2"></i>
+                <Rocket className="fa mr-2" />
                 Start Brainstorming
               </button>
             </div>
@@ -293,7 +295,7 @@ ${ideas.length > 10 ? `... and ${ideas.length - 10} more` : ''}
                     disabled={!newIdeaText.trim()}
                     className="war-room-btn war-room-btn-icon-sm war-room-btn-primary"
                   >
-                    <i className="fa fa-plus text-xs"></i>
+                    <Plus className="fa text-xs" />
                   </button>
                 </div>
               </div>
@@ -334,18 +336,18 @@ ${ideas.length > 10 ? `... and ${ideas.length - 10} more` : ''}
                     <div className="flex items-center justify-between">
                       <div className="flex items-center gap-1">
                         <button onClick={() => handleVoteIdea(idea.id, 1)} className="opacity-50 hover:opacity-100">
-                          <i className="fa fa-arrow-up text-[10px]"></i>
+                          <ArrowUp className="fa text-[10px]" />
                         </button>
                         <span className="text-[10px] text-yellow-400">{idea.votes}</span>
                         <button onClick={() => handleVoteIdea(idea.id, -1)} className="opacity-50 hover:opacity-100">
-                          <i className="fa fa-arrow-down text-[10px]"></i>
+                          <ArrowDown className="fa text-[10px]" />
                         </button>
                       </div>
                       <button
                         onClick={() => handleDeleteIdea(idea.id)}
                         className="opacity-0 group-hover:opacity-100 text-red-400"
                       >
-                        <i className="fa fa-times text-[10px]"></i>
+                        <X className="fa text-[10px]" />
                       </button>
                     </div>
                   </div>
@@ -400,7 +402,7 @@ ${ideas.length > 10 ? `... and ${ideas.length - 10} more` : ''}
                   onClick={() => proceedToPhase('converge')}
                   className="w-full war-room-btn war-room-btn-primary py-2"
                 >
-                  <i className="fa fa-arrow-right mr-2"></i>
+                  <ArrowRight className="fa mr-2" />
                   Select Top Ideas
                 </button>
               )}
@@ -429,7 +431,7 @@ ${ideas.length > 10 ? `... and ${ideas.length - 10} more` : ''}
                       <div className={`w-5 h-5 rounded-full border-2 flex items-center justify-center shrink-0 ${
                         isSelected ? 'bg-yellow-500 border-yellow-500' : 'border-white/30'
                       }`}>
-                        {isSelected && <i className="fa fa-check text-black text-xs"></i>}
+                        {isSelected && <Check className="fa text-black text-xs" />}
                       </div>
                       <div className="flex-1">
                         <p className="text-sm war-room-text-primary">{idea.text}</p>
@@ -438,7 +440,7 @@ ${ideas.length > 10 ? `... and ${ideas.length - 10} more` : ''}
                             {idea.category}
                           </span>
                           <span className="text-[10px] text-yellow-400">
-                            <i className="fa fa-arrow-up mr-0.5"></i>{idea.votes}
+                            <ArrowUp className="fa mr-0.5" />{idea.votes}
                           </span>
                         </div>
                       </div>
@@ -452,7 +454,7 @@ ${ideas.length > 10 ? `... and ${ideas.length - 10} more` : ''}
                   onClick={() => proceedToPhase('refine')}
                   className="w-full war-room-btn war-room-btn-primary py-2"
                 >
-                  <i className="fa fa-arrow-right mr-2"></i>
+                  <ArrowRight className="fa mr-2" />
                   Refine Ideas
                 </button>
               )}
@@ -488,7 +490,7 @@ ${ideas.length > 10 ? `... and ${ideas.length - 10} more` : ''}
                 disabled={isLoading}
                 className="w-full war-room-btn war-room-btn-primary py-2"
               >
-                <i className="fa fa-wand-magic-sparkles mr-2"></i>
+                <Wand2 className="fa mr-2" />
                 Generate Action Plan
               </button>
             </div>
@@ -501,7 +503,7 @@ ${ideas.length > 10 ? `... and ${ideas.length - 10} more` : ''}
             onClick={() => setShowExport(true)}
             className="w-full war-room-btn py-2"
           >
-            <i className="fa fa-share-nodes mr-2"></i>
+            <Share2 className="fa mr-2" />
             Export Ideas
           </button>
         </div>
@@ -515,7 +517,7 @@ ${ideas.length > 10 ? `... and ${ideas.length - 10} more` : ''}
             <div className="h-full flex items-center justify-center">
               <div className="text-center max-w-md">
                 <div className="w-16 h-16 mx-auto mb-4 rounded-full wr-mission-accent-bg flex items-center justify-center">
-                  <i className="fa fa-lightbulb text-2xl text-yellow-400"></i>
+                  <Lightbulb className="fa text-2xl text-yellow-400" />
                 </div>
                 <h3 className="text-lg font-semibold war-room-text-primary mb-2">
                   Brainstorm Mission
@@ -541,7 +543,7 @@ ${ideas.length > 10 ? `... and ${ideas.length - 10} more` : ''}
                 >
                   {msg.role === 'assistant' && (
                     <div className="flex items-center gap-2 mb-2 pb-2 border-b border-white/10">
-                      <i className="fa fa-lightbulb text-yellow-400 text-xs"></i>
+                      <Lightbulb className="fa text-yellow-400 text-xs" />
                       <span className="text-xs text-yellow-400 font-medium">Creative AI</span>
                     </div>
                   )}
@@ -556,7 +558,7 @@ ${ideas.length > 10 ? `... and ${ideas.length - 10} more` : ''}
               <div className="war-room-message-ai">
                 <div className="flex items-center gap-3">
                   <div className="w-5 h-5 rounded-full bg-yellow-500/30 flex items-center justify-center">
-                    <i className="fa fa-lightbulb text-yellow-400 text-xs animate-pulse"></i>
+                    <Lightbulb className="fa text-yellow-400 text-xs animate-pulse" />
                   </div>
                   <span className="text-sm war-room-text-secondary">Generating ideas...</span>
                 </div>
@@ -571,7 +573,7 @@ ${ideas.length > 10 ? `... and ${ideas.length - 10} more` : ''}
         <div className="shrink-0 p-4 war-room-input-area">
           <div className="flex items-center gap-2">
             <div className="flex-1 war-room-panel-inset flex items-center gap-2 px-4 py-3">
-              <i className="fa fa-wand-magic-sparkles text-yellow-400 text-sm"></i>
+              <Wand2 className="fa text-yellow-400 text-sm" />
               <input
                 type="text"
                 value={input}
@@ -588,7 +590,7 @@ ${ideas.length > 10 ? `... and ${ideas.length - 10} more` : ''}
                   input.trim() ? 'war-room-btn-primary' : ''
                 }`}
               >
-                <i className="fa fa-paper-plane text-xs"></i>
+                <Send className="fa text-xs" />
               </button>
             </div>
           </div>

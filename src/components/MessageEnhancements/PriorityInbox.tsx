@@ -1,5 +1,7 @@
 import React, { useState, useMemo, useCallback } from 'react';
 
+import { Archive, ArrowUp, Brain, Inbox, Mail, Paperclip, Star, Trash2, Zap } from 'lucide-react';
+
 // Types
 interface InboxMessage {
   id: string;
@@ -483,7 +485,7 @@ export const PriorityInbox: React.FC<PriorityInboxProps> = ({
                 </span>
               )}
               {message.hasAttachment && (
-                <i className="fa-solid fa-paperclip" style={{ fontSize: '11px', color: '#64748b' }} />
+                <Paperclip />
               )}
             </div>
             <span style={styles.timestamp}>{formatTimestamp(message.timestamp)}</span>
@@ -498,7 +500,7 @@ export const PriorityInbox: React.FC<PriorityInboxProps> = ({
               <span key={label} style={styles.label}>{label}</span>
             ))}
             <div style={styles.aiScore}>
-              <i className="fa-solid fa-brain" />
+              <Brain />
               {message.aiScore}%
             </div>
           </div>
@@ -517,14 +519,14 @@ export const PriorityInbox: React.FC<PriorityInboxProps> = ({
             onClick={e => { e.stopPropagation(); onMessageArchive?.(message.id); }}
             title="Archive"
           >
-            <i className="fa-solid fa-box-archive" />
+            <Archive />
           </button>
           <button
             style={styles.actionButton}
             onClick={e => { e.stopPropagation(); onMessageDelete?.(message.id); }}
             title="Delete"
           >
-            <i className="fa-solid fa-trash" />
+            <Trash2 />
           </button>
         </div>
       </div>
@@ -535,7 +537,7 @@ export const PriorityInbox: React.FC<PriorityInboxProps> = ({
     <div style={styles.container}>
       <div style={styles.header}>
         <div style={styles.title}>
-          <i className="fa-solid fa-inbox" />
+          <Inbox />
           Priority Inbox
         </div>
         <div style={{ fontSize: '12px', color: '#64748b' }}>
@@ -568,7 +570,7 @@ export const PriorityInbox: React.FC<PriorityInboxProps> = ({
           }}
           onClick={() => toggleFilter('isUnread', true)}
         >
-          <i className="fa-solid fa-envelope" />
+          <Mail />
           Unread
         </button>
         <button
@@ -578,7 +580,7 @@ export const PriorityInbox: React.FC<PriorityInboxProps> = ({
           }}
           onClick={() => toggleFilter('isStarred', true)}
         >
-          <i className="fa-solid fa-star" />
+          <Star />
           Starred
         </button>
         <button
@@ -588,7 +590,7 @@ export const PriorityInbox: React.FC<PriorityInboxProps> = ({
           }}
           onClick={() => toggleFilter('hasAttachment', true)}
         >
-          <i className="fa-solid fa-paperclip" />
+          <Paperclip />
           Attachments
         </button>
         <button
@@ -598,7 +600,7 @@ export const PriorityInbox: React.FC<PriorityInboxProps> = ({
           }}
           onClick={() => toggleFilter('priority', 'urgent')}
         >
-          <i className="fa-solid fa-bolt" />
+          <Zap />
           Urgent
         </button>
         <button
@@ -608,7 +610,7 @@ export const PriorityInbox: React.FC<PriorityInboxProps> = ({
           }}
           onClick={() => toggleFilter('priority', 'high')}
         >
-          <i className="fa-solid fa-arrow-up" />
+          <ArrowUp />
           High Priority
         </button>
       </div>
@@ -618,7 +620,7 @@ export const PriorityInbox: React.FC<PriorityInboxProps> = ({
           <>
             <div style={styles.smartSection}>
               <div style={styles.smartTitle}>
-                <i className="fa-solid fa-bolt" />
+                <Zap />
                 Needs Attention ({urgentMessages.length})
               </div>
             </div>
@@ -631,7 +633,7 @@ export const PriorityInbox: React.FC<PriorityInboxProps> = ({
             {urgentMessages.length > 0 && (
               <div style={styles.smartSection}>
                 <div style={styles.smartTitle}>
-                  <i className="fa-solid fa-inbox" />
+                  <Inbox />
                   Everything Else
                 </div>
               </div>

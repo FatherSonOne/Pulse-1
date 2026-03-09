@@ -2,6 +2,8 @@
 import React from 'react';
 import { EmailFolder } from '../../services/emailSyncService';
 
+import { SquarePen } from 'lucide-react';
+
 interface EmailSidebarProps {
   currentFolder: EmailFolder;
   folderCounts: Record<EmailFolder, number>;
@@ -70,7 +72,7 @@ export const EmailSidebar: React.FC<EmailSidebarProps> = ({
             className="w-full flex items-center justify-center gap-2 bg-gradient-to-r from-rose-500 to-red-500 hover:from-rose-600 hover:to-red-600 text-white px-4 py-3 rounded-xl font-semibold transition-all shadow-lg shadow-rose-500/20 hover:shadow-rose-500/40 hover:shadow-xl active:scale-95"
             aria-label="Compose new email"
           >
-            <i className="fa-solid fa-pen-to-square" aria-hidden="true"></i>
+            <SquarePen />
             <span>Compose</span>
           </button>
         </div>

@@ -1,5 +1,7 @@
 import React, { useState } from 'react';
 
+import { Brain, ChevronDown, ChevronUp, Clock, File, FileText, ListOrdered } from 'lucide-react';
+
 interface ThinkingStep {
   step: number;
   thought: string;
@@ -38,13 +40,13 @@ export const ThinkingPanel: React.FC<ThinkingPanelProps> = ({
         className="w-full px-3 py-2 bg-purple-900/20 hover:bg-purple-900/30 border border-purple-500/30 rounded text-sm text-purple-300 flex items-center justify-between group transition-all"
       >
         <div className="flex items-center gap-2">
-          <i className="fa fa-brain animate-pulse"></i>
+          <Brain className="fa animate-pulse" />
           <span>AI Thinking Process</span>
           <span className="text-xs text-purple-400">
             ({steps.length} steps · {(totalTime / 1000).toFixed(2)}s)
           </span>
         </div>
-        <i className="fa fa-chevron-down group-hover:translate-y-1 transition-transform"></i>
+        <ChevronDown className="fa group-hover:translate-y-1 transition-transform" />
       </button>
     );
   }
@@ -56,7 +58,7 @@ export const ThinkingPanel: React.FC<ThinkingPanelProps> = ({
       {/* Header */}
       <div className="px-4 py-3 bg-purple-900/40 border-b border-purple-500/30 flex items-center justify-between">
         <div className="flex items-center gap-3">
-          <i className="fa fa-brain text-purple-400"></i>
+          <Brain className="fa text-purple-400" />
           <div>
             <div className="font-semibold text-purple-200">AI Thinking Process</div>
             <div className="text-xs text-purple-400">
@@ -68,7 +70,7 @@ export const ThinkingPanel: React.FC<ThinkingPanelProps> = ({
           onClick={onToggle}
           className="px-3 py-1 hover:bg-purple-800/50 rounded text-sm"
         >
-          <i className="fa fa-chevron-up"></i>
+          <ChevronUp className="fa" />
         </button>
       </div>
 
@@ -82,7 +84,7 @@ export const ThinkingPanel: React.FC<ThinkingPanelProps> = ({
               : 'text-purple-400 hover:bg-purple-900/20'
           }`}
         >
-          <i className="fa fa-list-ol mr-2"></i>
+          <ListOrdered className="fa mr-2" />
           Steps
         </button>
         {ragContext.length > 0 && (
@@ -94,7 +96,7 @@ export const ThinkingPanel: React.FC<ThinkingPanelProps> = ({
                 : 'text-purple-400 hover:bg-purple-900/20'
             }`}
           >
-            <i className="fa fa-file-text mr-2"></i>
+            <FileText className="fa mr-2" />
             RAG Context ({ragContext.length})
           </button>
         )}
@@ -106,7 +108,7 @@ export const ThinkingPanel: React.FC<ThinkingPanelProps> = ({
               : 'text-purple-400 hover:bg-purple-900/20'
           }`}
         >
-          <i className="fa fa-clock mr-2"></i>
+          <Clock className="fa mr-2" />
           Timeline
         </button>
       </div>
@@ -145,7 +147,7 @@ export const ThinkingPanel: React.FC<ThinkingPanelProps> = ({
               <div key={index} className="border border-purple-500/30 rounded-lg p-3 bg-black/20">
                 <div className="flex items-center justify-between mb-2">
                   <div className="font-semibold text-purple-200 text-sm">
-                    <i className="fa fa-file mr-2"></i>
+                    <File className="fa mr-2" />
                     {chunk.doc_title}
                   </div>
                   <div className="text-xs text-green-400">

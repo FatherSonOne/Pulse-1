@@ -10,6 +10,8 @@ import {
 } from '../../services/voxer/advancedVoxerTypes';
 import { Contact } from '../../types';
 
+import { Check, Mic, Play, Send, Square, Trash2, Users, X } from 'lucide-react';
+
 // ============================================
 // TYPES
 // ============================================
@@ -103,7 +105,7 @@ const SegmentCard: React.FC<SegmentCardProps> = ({
             onClick={onRemove}
             className="w-8 h-8 rounded-full bg-zinc-200 dark:bg-zinc-700 hover:bg-red-100 dark:hover:bg-red-900/30 text-zinc-600 dark:text-zinc-300 hover:text-red-500 flex items-center justify-center transition"
           >
-            <i className="fa-solid fa-trash text-xs"></i>
+            <Trash2 className="text-xs" />
           </button>
         )}
       </div>
@@ -190,7 +192,7 @@ const SegmentRecorder: React.FC<SegmentRecorderProps> = ({ onRecord, onCancel })
             onClick={cancelRecording}
             className="w-12 h-12 rounded-full bg-zinc-200 dark:bg-zinc-700 hover:bg-zinc-300 dark:hover:bg-zinc-600 flex items-center justify-center text-zinc-600 dark:text-zinc-300 transition"
           >
-            <i className="fa-solid fa-times"></i>
+            <X />
           </button>
           <div className="flex flex-col items-center">
             <div className="text-2xl font-mono font-bold text-red-500 animate-pulse">{duration}s</div>
@@ -200,7 +202,7 @@ const SegmentRecorder: React.FC<SegmentRecorderProps> = ({ onRecord, onCancel })
             onClick={stopRecording}
             className="w-12 h-12 rounded-full bg-red-500 hover:bg-red-600 text-white flex items-center justify-center transition animate-pulse"
           >
-            <i className="fa-solid fa-stop"></i>
+            <Square />
           </button>
         </>
       ) : (
@@ -208,7 +210,7 @@ const SegmentRecorder: React.FC<SegmentRecorderProps> = ({ onRecord, onCancel })
           onClick={startRecording}
           className="w-16 h-16 rounded-full bg-orange-500 hover:bg-orange-600 text-white flex items-center justify-center transition transform hover:scale-105"
         >
-          <i className="fa-solid fa-microphone text-2xl"></i>
+          <Mic className="text-2xl" />
         </button>
       )}
     </div>
@@ -291,7 +293,7 @@ const CollabSession: React.FC<CollabSessionProps> = ({
           </p>
         </div>
         <button onClick={onClose} className="text-zinc-400 hover:text-zinc-600 dark:hover:text-white">
-          <i className="fa-solid fa-times"></i>
+          <X />
         </button>
       </div>
 
@@ -317,7 +319,7 @@ const CollabSession: React.FC<CollabSessionProps> = ({
       <div className="flex-1 overflow-y-auto p-4 space-y-2">
         {collab.segments.length === 0 ? (
           <div className="text-center py-8 text-zinc-500">
-            <i className="fa-solid fa-microphone text-3xl mb-2 opacity-50"></i>
+            <Mic className="text-3xl mb-2 opacity-50" />
             <p className="text-sm">No segments yet</p>
             <p className="text-xs mt-1">Be the first to add your part!</p>
           </div>
@@ -355,7 +357,7 @@ const CollabSession: React.FC<CollabSessionProps> = ({
                 onClick={playAll}
                 className="flex-1 py-3 bg-zinc-100 dark:bg-zinc-800 hover:bg-zinc-200 dark:hover:bg-zinc-700 rounded-xl font-semibold text-zinc-700 dark:text-zinc-300 transition"
               >
-                <i className="fa-solid fa-play mr-2"></i>
+                <Play className="mr-2" />
                 Preview All
               </button>
             )}
@@ -363,7 +365,7 @@ const CollabSession: React.FC<CollabSessionProps> = ({
               onClick={() => setIsRecording(true)}
               className="flex-1 py-3 bg-orange-500 hover:bg-orange-600 text-white rounded-xl font-semibold transition"
             >
-              <i className="fa-solid fa-microphone mr-2"></i>
+              <Mic className="mr-2" />
               Add Your Part
             </button>
           </div>
@@ -374,7 +376,7 @@ const CollabSession: React.FC<CollabSessionProps> = ({
               onClick={onSend}
               className="w-full py-3 bg-emerald-500 hover:bg-emerald-600 text-white rounded-xl font-semibold transition"
             >
-              <i className="fa-solid fa-paper-plane mr-2"></i>
+              <Send className="mr-2" />
               Send Collaborative Vox
             </button>
           )}
@@ -530,7 +532,7 @@ export const CollaborativeVox: React.FC<CollaborativeVoxProps> = ({
               <div className="flex items-center justify-between">
                 <div className="flex items-center gap-3">
                   <div className="w-10 h-10 rounded-xl bg-gradient-to-br from-cyan-500 to-blue-500 flex items-center justify-center text-white">
-                    <i className="fa-solid fa-users-rectangle"></i>
+                    <Users />
                   </div>
                   <div>
                     <h2 className="font-bold text-lg dark:text-white">Collaborative Vox</h2>
@@ -541,7 +543,7 @@ export const CollaborativeVox: React.FC<CollaborativeVoxProps> = ({
                   onClick={() => { resetForm(); onClose(); }}
                   className="w-8 h-8 rounded-full hover:bg-zinc-100 dark:hover:bg-zinc-800 flex items-center justify-center text-zinc-400 hover:text-zinc-600 dark:hover:text-white transition"
                 >
-                  <i className="fa-solid fa-times"></i>
+                  <X />
                 </button>
               </div>
             </div>
@@ -601,7 +603,7 @@ export const CollaborativeVox: React.FC<CollaborativeVoxProps> = ({
                           : 'border-zinc-300 dark:border-zinc-600'
                       }`}>
                         {selectedContacts.includes(contact.id) && (
-                          <i className="fa-solid fa-check text-xs"></i>
+                          <Check className="text-xs" />
                         )}
                       </div>
                     </button>
@@ -612,7 +614,7 @@ export const CollaborativeVox: React.FC<CollaborativeVoxProps> = ({
               {/* Selected Summary */}
               {selectedContacts.length > 0 && (
                 <div className="bg-cyan-50 dark:bg-cyan-900/20 rounded-xl p-3 text-sm text-cyan-600 dark:text-cyan-400">
-                  <i className="fa-solid fa-users mr-2"></i>
+                  <Users className="mr-2" />
                   {selectedContacts.length + 1} people will collaborate (including you)
                 </div>
               )}
@@ -630,7 +632,7 @@ export const CollaborativeVox: React.FC<CollaborativeVoxProps> = ({
                 onClick={handleCreate}
                 className="flex-1 py-3 bg-gradient-to-r from-cyan-500 to-blue-500 hover:from-cyan-600 hover:to-blue-600 text-white rounded-xl font-semibold transition"
               >
-                <i className="fa-solid fa-play mr-2"></i>
+                <Play className="mr-2" />
                 Start Recording
               </button>
             </div>

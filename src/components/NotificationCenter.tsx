@@ -9,6 +9,8 @@ import { useNotificationStore, useUnreadCount } from '../store/notificationStore
 import { PulseNotification, NotificationCategory } from '../types/notifications';
 import { playNotificationSound } from '../utils/soundGenerator';
 
+import { AlertCircle, Bell, BellOff, Settings, Trash2, Volume2, X } from 'lucide-react';
+
 // Icons for notification categories
 const CategoryIcons: Record<NotificationCategory, string> = {
   message: 'fa-comment',
@@ -154,7 +156,7 @@ export const NotificationCenter: React.FC<NotificationCenterProps> = ({ classNam
         className="relative p-2 rounded-lg hover:bg-zinc-100 dark:hover:bg-zinc-800 transition-colors"
         aria-label="Notifications"
       >
-        <i className="fa-solid fa-bell text-lg text-zinc-600 dark:text-zinc-400"></i>
+        <Bell className="text-lg text-zinc-600 dark:text-zinc-400" />
         {unreadCount > 0 && (
           <span className="absolute -top-0.5 -right-0.5 min-w-[18px] h-[18px] flex items-center justify-center bg-rose-500 text-white text-[10px] font-bold rounded-full px-1 animate-pulse">
             {unreadCount > 99 ? '99+' : unreadCount}
@@ -198,7 +200,7 @@ export const NotificationCenter: React.FC<NotificationCenterProps> = ({ classNam
                   className="text-xs text-zinc-400 hover:text-zinc-600 dark:hover:text-zinc-300"
                   title="Clear all"
                 >
-                  <i className="fa-solid fa-trash-can"></i>
+                  <Trash2 />
                 </button>
               </div>
             </div>
@@ -207,7 +209,7 @@ export const NotificationCenter: React.FC<NotificationCenterProps> = ({ classNam
             {permissionStatus === 'default' && (
               <div className="bg-blue-50 dark:bg-blue-900/20 border border-blue-100 dark:border-blue-800 rounded-lg p-3 mb-3">
                 <div className="flex items-start gap-2">
-                  <i className="fa-solid fa-bell-slash text-blue-500 mt-0.5"></i>
+                  <BellOff className="text-blue-500 mt-0.5" />
                   <div className="flex-1">
                     <p className="text-xs text-blue-700 dark:text-blue-300 font-medium">
                       Enable desktop notifications
@@ -265,7 +267,7 @@ export const NotificationCenter: React.FC<NotificationCenterProps> = ({ classNam
             {filteredNotifications.length === 0 ? (
               <div className="p-8 text-center">
                 <div className="w-16 h-16 mx-auto mb-4 rounded-full bg-zinc-100 dark:bg-zinc-800 flex items-center justify-center">
-                  <i className="fa-solid fa-bell-slash text-2xl text-zinc-400"></i>
+                  <BellOff className="text-2xl text-zinc-400" />
                 </div>
                 <p className="text-zinc-500 dark:text-zinc-400 text-sm">No notifications</p>
                 <p className="text-zinc-400 dark:text-zinc-500 text-xs mt-1">
@@ -294,7 +296,7 @@ export const NotificationCenter: React.FC<NotificationCenterProps> = ({ classNam
                 onClick={() => testSound()}
                 className="text-xs text-zinc-500 hover:text-zinc-700 dark:hover:text-zinc-300 flex items-center gap-1"
               >
-                <i className="fa-solid fa-volume-high"></i>
+                <Volume2 />
                 Test Sound
               </button>
               <button
@@ -306,7 +308,7 @@ export const NotificationCenter: React.FC<NotificationCenterProps> = ({ classNam
                   }
                 }}
               >
-                <i className="fa-solid fa-cog"></i>
+                <Settings />
                 Settings
               </button>
             </div>
@@ -394,7 +396,7 @@ const NotificationItem: React.FC<{
           {/* Priority indicator for urgent */}
           {notification.priority === 'urgent' && (
             <span className="inline-flex items-center gap-1 mt-1.5 px-2 py-0.5 bg-red-100 dark:bg-red-900/30 text-red-600 dark:text-red-400 text-[10px] font-bold rounded-full">
-              <i className="fa-solid fa-exclamation-circle"></i>
+              <AlertCircle />
               Urgent
             </span>
           )}
@@ -416,7 +418,7 @@ const NotificationItem: React.FC<{
           className="opacity-0 group-hover:opacity-100 p-1 hover:bg-zinc-200 dark:hover:bg-zinc-700 rounded-full transition"
           title="Dismiss"
         >
-          <i className="fa-solid fa-xmark text-xs text-zinc-400"></i>
+          <X className="text-xs text-zinc-400" />
         </button>
       </div>
 
@@ -439,7 +441,7 @@ export const NotificationBell: React.FC<{ className?: string }> = ({ className =
       className={`relative p-2 rounded-lg hover:bg-zinc-100 dark:hover:bg-zinc-800 transition-colors ${className}`}
       aria-label={`Notifications${unreadCount > 0 ? ` (${unreadCount} unread)` : ''}`}
     >
-      <i className="fa-solid fa-bell text-lg text-zinc-600 dark:text-zinc-400"></i>
+      <Bell className="text-lg text-zinc-600 dark:text-zinc-400" />
       {unreadCount > 0 && (
         <span className="absolute -top-0.5 -right-0.5 min-w-[18px] h-[18px] flex items-center justify-center bg-rose-500 text-white text-[10px] font-bold rounded-full px-1">
           {unreadCount > 99 ? '99+' : unreadCount}

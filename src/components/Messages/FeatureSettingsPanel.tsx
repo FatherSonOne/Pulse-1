@@ -12,6 +12,7 @@
 
 import React, { useState } from 'react';
 import { motion, AnimatePresence } from 'framer-motion';
+import { RotateCcw, Search, Sliders, X } from 'lucide-react';
 import {
   useFeatures,
   FEATURE_CATEGORIES,
@@ -145,7 +146,7 @@ export const FeatureSettingsPanel: React.FC<FeatureSettingsPanelProps> = ({
             >
               <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between', marginBottom: '16px' }}>
                 <h2 style={{ fontSize: '24px', fontWeight: '700', color: '#18181B', margin: 0 }}>
-                  <i className="fa-solid fa-sliders mr-3 text-rose-500" />
+                  <Sliders className="mr-3 text-rose-500" />
                   Feature Settings
                 </h2>
                 <button
@@ -166,23 +167,13 @@ export const FeatureSettingsPanel: React.FC<FeatureSettingsPanelProps> = ({
                   }}
                   aria-label="Close settings"
                 >
-                  <i className="fa-solid fa-times" />
+                  <X />
                 </button>
               </div>
 
               {/* Search */}
               <div style={{ position: 'relative' }}>
-                <i
-                  className="fa-solid fa-search"
-                  style={{
-                    position: 'absolute',
-                    left: '14px',
-                    top: '50%',
-                    transform: 'translateY(-50%)',
-                    color: '#71717A',
-                    fontSize: '14px'
-                  }}
-                />
+                <Search />
                 <input
                   type="text"
                   placeholder="Search features..."
@@ -453,7 +444,7 @@ export const FeatureSettingsPanel: React.FC<FeatureSettingsPanelProps> = ({
                   gap: '8px'
                 }}
               >
-                <i className="fa-solid fa-rotate-left" />
+                <RotateCcw />
                 Reset to Defaults
               </button>
             </div>

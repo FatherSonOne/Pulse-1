@@ -1,6 +1,8 @@
 import React, { useState, useEffect, useRef, useCallback, useMemo } from 'react';
 import { CalendarEvent } from '../types';
 
+import { Search } from 'lucide-react';
+
 // ─── Types ────────────────────────────────────────────────────────────────────
 
 type ViewMode = 'month' | 'week' | 'day' | 'year' | 'agenda';
@@ -252,7 +254,7 @@ const CommandPalette: React.FC<CommandPaletteProps> = ({
       >
         {/* Input row */}
         <div className="flex items-center gap-3 px-4 py-3 border-b border-zinc-200 dark:border-zinc-700">
-          <i className="fa-solid fa-magnifying-glass text-zinc-400 text-sm flex-shrink-0" aria-hidden="true" />
+          <Search className="text-zinc-400 text-sm flex-shrink-0" />
           <input
             ref={inputRef}
             type="text"

@@ -4,6 +4,8 @@
 import React, { useState, useRef, useCallback } from 'react';
 import { VoxThread, VoxThreadReply } from '../../services/voxer/advancedVoxerTypes';
 
+import { CheckCircle, Clock, MessagesSquare, Reply, RotateCw, Send, X } from 'lucide-react';
+
 // ============================================
 // TYPES
 // ============================================
@@ -222,7 +224,7 @@ const ThreadReply: React.FC<ThreadReplyProps> = ({
               onClick={() => onReply(reply.id)}
               className="text-[10px] text-zinc-400 hover:text-orange-500 transition"
             >
-              <i className="fa-solid fa-reply mr-1"></i>Reply
+              <Reply className="mr-1" />Reply
             </button>
           </div>
         </div>
@@ -310,7 +312,7 @@ const ThreadRecorder: React.FC<ThreadRecorderProps> = ({
     <div className="border-t border-zinc-200 dark:border-zinc-700 p-4">
       {replyingTo && (
         <div className="text-xs text-orange-500 mb-2">
-          <i className="fa-solid fa-reply mr-1"></i>
+          <Reply className="mr-1" />
           Replying to thread
         </div>
       )}
@@ -318,7 +320,7 @@ const ThreadRecorder: React.FC<ThreadRecorderProps> = ({
       {recordedBlob ? (
         <div className="flex items-center gap-3">
           <div className="flex-1 bg-emerald-50 dark:bg-emerald-900/20 rounded-xl p-3 flex items-center gap-2">
-            <i className="fa-solid fa-check-circle text-emerald-500"></i>
+            <CheckCircle className="text-emerald-500" />
             <span className="text-sm text-emerald-600 dark:text-emerald-400">
               Recorded {duration}s
             </span>
@@ -327,13 +329,13 @@ const ThreadRecorder: React.FC<ThreadRecorderProps> = ({
             onClick={handleReset}
             className="w-10 h-10 rounded-full bg-zinc-100 dark:bg-zinc-800 hover:bg-zinc-200 dark:hover:bg-zinc-700 flex items-center justify-center transition"
           >
-            <i className="fa-solid fa-redo text-zinc-500"></i>
+            <RotateCw className="text-zinc-500" />
           </button>
           <button
             onClick={handleSend}
             className="w-10 h-10 rounded-full bg-orange-500 hover:bg-orange-600 text-white flex items-center justify-center transition"
           >
-            <i className="fa-solid fa-paper-plane"></i>
+            <Send />
           </button>
         </div>
       ) : (
@@ -447,7 +449,7 @@ export const VoxThreads: React.FC<VoxThreadsProps> = ({
       {/* Header */}
       <div className="px-4 py-3 border-b border-zinc-200 dark:border-zinc-800 flex items-center justify-between bg-zinc-50 dark:bg-zinc-800/50">
         <div className="flex items-center gap-2">
-          <i className="fa-solid fa-comments text-orange-500"></i>
+          <MessagesSquare className="text-orange-500" />
           <h3 className="font-semibold dark:text-white">
             {thread ? `Thread (${thread.replies.length} replies)` : 'Start Thread'}
           </h3>
@@ -456,7 +458,7 @@ export const VoxThreads: React.FC<VoxThreadsProps> = ({
           onClick={onClose}
           className="w-8 h-8 rounded-full hover:bg-zinc-100 dark:hover:bg-zinc-700 flex items-center justify-center text-zinc-400 hover:text-zinc-600 dark:hover:text-white transition"
         >
-          <i className="fa-solid fa-times"></i>
+          <X />
         </button>
       </div>
 
@@ -473,7 +475,7 @@ export const VoxThreads: React.FC<VoxThreadsProps> = ({
           <div className="space-y-1">
             {thread.parentTimestamp !== undefined && (
               <div className="text-xs text-orange-500 mb-3 flex items-center gap-1">
-                <i className="fa-solid fa-clock"></i>
+                <Clock />
                 Replying to moment at {Math.floor(thread.parentTimestamp / 60)}:{(thread.parentTimestamp % 60).toString().padStart(2, '0')}
               </div>
             )}
@@ -481,7 +483,7 @@ export const VoxThreads: React.FC<VoxThreadsProps> = ({
               renderReplies(thread.replies)
             ) : (
               <div className="text-center py-8 text-zinc-500">
-                <i className="fa-solid fa-comments text-3xl mb-2 opacity-50"></i>
+                <MessagesSquare className="text-3xl mb-2 opacity-50" />
                 <p className="text-sm">No replies yet</p>
               </div>
             )}
@@ -489,7 +491,7 @@ export const VoxThreads: React.FC<VoxThreadsProps> = ({
         ) : (
           <div className="text-center py-8">
             <div className="w-16 h-16 rounded-full bg-orange-100 dark:bg-orange-900/30 flex items-center justify-center mx-auto mb-4">
-              <i className="fa-solid fa-reply text-2xl text-orange-500"></i>
+              <Reply className="text-2xl text-orange-500" />
             </div>
             <h4 className="font-semibold dark:text-white mb-2">Start a Thread</h4>
             <p className="text-sm text-zinc-500 mb-4">
@@ -537,7 +539,7 @@ export const ThreadIndicator: React.FC<ThreadIndicatorProps> = ({
       onClick={onClick}
       className="flex items-center gap-1.5 text-xs text-orange-500 hover:text-orange-600 transition mt-2"
     >
-      <i className="fa-solid fa-comments"></i>
+      <MessagesSquare />
       <span>{replyCount} {replyCount === 1 ? 'reply' : 'replies'}</span>
     </button>
   );

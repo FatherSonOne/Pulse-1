@@ -15,6 +15,8 @@ import { MessageChannel, ChannelMessage } from '../../types/messages';
 import { useSplitViewMessages } from '../../hooks/useSplitViewMessages';
 import './messages.css';
 
+import { ArrowLeft, X } from 'lucide-react';
+
 interface MessagesSplitViewProps {
   channels: MessageChannel[];
   messages: Record<string, ChannelMessage[]>;
@@ -123,7 +125,7 @@ const MessagesSplitView: React.FC<MessagesSplitViewProps> = ({
           className="mobile-back-button fixed top-4 left-4 z-50 bg-white dark:bg-zinc-800 rounded-lg shadow-lg"
           aria-label="Back to threads"
         >
-          <i className="fa-solid fa-arrow-left text-zinc-600 dark:text-zinc-400"></i>
+          <ArrowLeft className="text-zinc-600 dark:text-zinc-400" />
           <span className="text-sm text-zinc-900 dark:text-white">Threads</span>
         </button>
       )}
@@ -184,7 +186,7 @@ const KeyboardShortcutsHelper: React.FC = () => {
             className="p-2 rounded-lg hover:bg-zinc-100 dark:hover:bg-zinc-800 transition-colors"
             aria-label="Close"
           >
-            <i className="fa-solid fa-times text-zinc-600 dark:text-zinc-400"></i>
+            <X className="text-zinc-600 dark:text-zinc-400" />
           </button>
         </div>
 

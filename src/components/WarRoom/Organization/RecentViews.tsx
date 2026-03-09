@@ -5,7 +5,9 @@
 
 import React, { useState, useEffect } from 'react';
 import { DocRecentView } from '../../../types/organization';
+import { Clock, Eye, History, Loader2 } from 'lucide-react';
 import {
+
   getRecentViews,
   recordDocumentView,
   clearRecentViews,
@@ -115,7 +117,7 @@ export const RecentViews: React.FC<RecentViewsProps> = ({
   if (loading) {
     return (
       <div className="flex items-center justify-center p-4">
-        <i className="fa fa-spinner fa-spin text-gray-400"></i>
+        <Loader2 className="fa text-gray-400 animate-spin" />
       </div>
     );
   }
@@ -126,7 +128,7 @@ export const RecentViews: React.FC<RecentViewsProps> = ({
       <div className="p-3 border-b border-gray-200 dark:border-gray-700 bg-gradient-to-r from-blue-50 to-indigo-50 dark:from-blue-900/20 dark:to-indigo-900/20">
         <div className="flex items-center justify-between">
           <div className="flex items-center gap-2">
-            <i className="fa fa-clock-o text-blue-500"></i>
+            <Clock className="fa text-blue-500" />
             <h3 className="text-sm font-medium text-gray-700 dark:text-gray-300">
               Recent
             </h3>
@@ -146,7 +148,7 @@ export const RecentViews: React.FC<RecentViewsProps> = ({
       <div className="max-h-48 overflow-y-auto">
         {recentDocs.length === 0 ? (
           <div className="p-4 text-center">
-            <i className="fa fa-history text-2xl text-gray-300 dark:text-gray-600 mb-2"></i>
+            <History className="fa text-2xl text-gray-300 dark:text-gray-600 mb-2" />
             <p className="text-sm text-gray-400">No recent documents</p>
           </div>
         ) : (
@@ -166,7 +168,7 @@ export const RecentViews: React.FC<RecentViewsProps> = ({
                     <span>{formatTimeAgo(item.viewed_at)}</span>
                     {item.view_count > 1 && (
                       <span className="flex items-center gap-0.5">
-                        <i className="fa fa-eye text-[10px]"></i>
+                        <Eye className="fa text-[10px]" />
                         {item.view_count}
                       </span>
                     )}

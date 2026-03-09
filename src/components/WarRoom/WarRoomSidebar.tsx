@@ -13,6 +13,8 @@
 import React, { useState, useCallback, memo, useRef, useEffect } from 'react';
 import './WarRoomSidebar.css';
 
+import { BookOpen, Check, Download, FileOutput, FolderOpen, Inbox, MessageSquare, Plus, Trash2, X } from 'lucide-react';
+
 // ============================================
 // Types
 // ============================================
@@ -191,7 +193,7 @@ export const WarRoomSidebar: React.FC<WarRoomSidebarProps> = memo(({
       {!isOpen && (
         <div className="wrs-rail">
           <div className="wrs-rail-logo">
-            <i className="fa fa-book-open" />
+            <BookOpen className="fa" />
           </div>
 
           <button
@@ -200,7 +202,7 @@ export const WarRoomSidebar: React.FC<WarRoomSidebarProps> = memo(({
             onClick={() => { onToggle(); setIsCreatingWarRoom(true); }}
             title="New War Room"
           >
-            <i className="fa fa-plus" />
+            <Plus className="fa" />
           </button>
 
           <div className="wrs-rail-divider" />
@@ -250,7 +252,7 @@ export const WarRoomSidebar: React.FC<WarRoomSidebarProps> = memo(({
             className="wrs-new-warroom-btn"
             onClick={() => setIsCreatingWarRoom(true)}
           >
-            <i className="fa fa-plus" />
+            <Plus className="fa" />
             <span>New War Room</span>
           </button>
 
@@ -329,7 +331,7 @@ export const WarRoomSidebar: React.FC<WarRoomSidebarProps> = memo(({
             {orphanSessions.length > 0 && (
               <div className="wrs-section">
                 <div className="wrs-section-header">
-                  <i className="fa fa-inbox" />
+                  <Inbox className="fa" />
                   <span>Unsorted Sessions</span>
                   <span className="wrs-count">{orphanSessions.length}</span>
                 </div>
@@ -340,7 +342,7 @@ export const WarRoomSidebar: React.FC<WarRoomSidebarProps> = memo(({
                       className={`wrs-session ${selectedSessionId === session.id ? 'active' : ''}`}
                       onClick={() => onSelectSession(session.id)}
                     >
-                      <i className="fa fa-message" />
+                      <MessageSquare className="fa" />
                       <span className="wrs-session-name">{session.title}</span>
                       <button
                         type="button"
@@ -348,7 +350,7 @@ export const WarRoomSidebar: React.FC<WarRoomSidebarProps> = memo(({
                         onClick={(e) => { e.stopPropagation(); onDeleteSession(session.id); }}
                         title="Delete session"
                       >
-                        <i className="fa fa-times" />
+                        <X className="fa" />
                       </button>
                     </div>
                   ))}
@@ -392,7 +394,7 @@ export const WarRoomSidebar: React.FC<WarRoomSidebarProps> = memo(({
                         }}
                         title="Export"
                       >
-                        <i className="fa fa-download" />
+                        <Download className="fa" />
                       </button>
                       <button
                         type="button"
@@ -400,7 +402,7 @@ export const WarRoomSidebar: React.FC<WarRoomSidebarProps> = memo(({
                         onClick={(e) => { e.stopPropagation(); onDeleteProject(project.id); }}
                         title="Delete War Room"
                       >
-                        <i className="fa fa-trash" />
+                        <Trash2 className="fa" />
                       </button>
                     </div>
 
@@ -411,7 +413,7 @@ export const WarRoomSidebar: React.FC<WarRoomSidebarProps> = memo(({
                           type="button"
                           onClick={() => { onExportWarRoom(project.id); setShowExportMenu(null); }}
                         >
-                          <i className="fa fa-file-export" />
+                          <FileOutput className="fa" />
                           <span>Export All Sessions</span>
                         </button>
                       </div>
@@ -428,7 +430,7 @@ export const WarRoomSidebar: React.FC<WarRoomSidebarProps> = memo(({
                           className="wrs-new-session-btn"
                           onClick={() => setCreatingSessionFor(project.id)}
                         >
-                          <i className="fa fa-plus" />
+                          <Plus className="fa" />
                           <span>New Session</span>
                         </button>
                       ) : (
@@ -452,7 +454,7 @@ export const WarRoomSidebar: React.FC<WarRoomSidebarProps> = memo(({
                             disabled={!newSessionName.trim()}
                             title="Create session"
                           >
-                            <i className="fa fa-check" />
+                            <Check className="fa" />
                           </button>
                           <button
                             type="button"
@@ -460,7 +462,7 @@ export const WarRoomSidebar: React.FC<WarRoomSidebarProps> = memo(({
                             onClick={() => setCreatingSessionFor(null)}
                             title="Cancel"
                           >
-                            <i className="fa fa-times" />
+                            <X className="fa" />
                           </button>
                         </div>
                       )}
@@ -476,7 +478,7 @@ export const WarRoomSidebar: React.FC<WarRoomSidebarProps> = memo(({
                           className={`wrs-session ${selectedSessionId === session.id ? 'active' : ''}`}
                           onClick={() => onSelectSession(session.id)}
                         >
-                          <i className="fa fa-message" />
+                          <MessageSquare className="fa" />
                           <span className="wrs-session-name">{session.title}</span>
                           <div className="wrs-session-actions">
                             <button
@@ -485,7 +487,7 @@ export const WarRoomSidebar: React.FC<WarRoomSidebarProps> = memo(({
                               onClick={(e) => { e.stopPropagation(); onExportSession(session.id); }}
                               title="Export session"
                             >
-                              <i className="fa fa-download" />
+                              <Download className="fa" />
                             </button>
                             <button
                               type="button"
@@ -493,7 +495,7 @@ export const WarRoomSidebar: React.FC<WarRoomSidebarProps> = memo(({
                               onClick={(e) => { e.stopPropagation(); onDeleteSession(session.id); }}
                               title="Delete session"
                             >
-                              <i className="fa fa-times" />
+                              <X className="fa" />
                             </button>
                           </div>
                         </div>
@@ -507,7 +509,7 @@ export const WarRoomSidebar: React.FC<WarRoomSidebarProps> = memo(({
             {/* Empty State */}
             {projects.length === 0 && orphanSessions.length === 0 && !isCreatingWarRoom && (
               <div className="wrs-empty-state">
-                <i className="fa fa-folder-open" />
+                <FolderOpen className="fa" />
                 <p>No War Rooms yet</p>
                 <span>Create your first War Room to organize your AI sessions</span>
               </div>

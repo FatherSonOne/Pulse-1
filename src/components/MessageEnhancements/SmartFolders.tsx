@@ -1,5 +1,7 @@
 import React, { useState, useMemo, useCallback } from 'react';
 
+import { FolderTree, Paperclip, Plus, Star, Trash2, X } from 'lucide-react';
+
 // Types
 interface SmartFolder {
   id: string;
@@ -351,7 +353,7 @@ export const SmartFolders: React.FC<SmartFoldersProps> = ({
               }}
               className="opacity-0 group-hover:opacity-100 p-1 hover:bg-red-100 dark:hover:bg-red-900/30 rounded transition"
             >
-              <i className="fa-solid fa-trash text-red-500 text-xs" />
+              <Trash2 className="text-red-500 text-xs" />
             </button>
           )}
         </button>
@@ -371,7 +373,7 @@ export const SmartFolders: React.FC<SmartFoldersProps> = ({
       <div className="flex items-center justify-between">
         <div className="flex items-center gap-2">
           <div className="w-8 h-8 rounded-lg bg-teal-100 dark:bg-teal-900/30 flex items-center justify-center">
-            <i className="fa-solid fa-folder-tree text-teal-600 dark:text-teal-400" />
+            <FolderTree className="text-teal-600 dark:text-teal-400" />
           </div>
           <div>
             <p className="text-sm font-medium text-zinc-900 dark:text-white">Smart Folders</p>
@@ -389,7 +391,7 @@ export const SmartFolders: React.FC<SmartFoldersProps> = ({
             onClick={() => setShowCreateModal(true)}
             className="p-2 rounded-lg bg-teal-100 dark:bg-teal-900/30 text-teal-600 dark:text-teal-400 hover:bg-teal-200 dark:hover:bg-teal-900/50 transition"
           >
-            <i className="fa-solid fa-plus" />
+            <Plus />
           </button>
         </div>
       </div>
@@ -458,10 +460,10 @@ export const SmartFolders: React.FC<SmartFoldersProps> = ({
                 </div>
                 <div className="flex items-center gap-2">
                   {msg.priority === 'high' && (
-                    <i className="fa-solid fa-star text-yellow-500 text-xs" />
+                    <Star className="text-yellow-500 text-xs" />
                   )}
                   {msg.hasAttachment && (
-                    <i className="fa-solid fa-paperclip text-zinc-400 text-xs" />
+                    <Paperclip className="text-zinc-400 text-xs" />
                   )}
                   <span className="text-xs text-zinc-500">{formatTimeAgo(msg.timestamp)}</span>
                 </div>
@@ -493,7 +495,7 @@ export const SmartFolders: React.FC<SmartFoldersProps> = ({
                   onClick={() => setShowCreateModal(false)}
                   className="p-1 hover:bg-zinc-100 dark:hover:bg-zinc-800 rounded"
                 >
-                  <i className="fa-solid fa-xmark text-zinc-500" />
+                  <X className="text-zinc-500" />
                 </button>
               </div>
             </div>
@@ -593,7 +595,7 @@ export const SmartFolders: React.FC<SmartFoldersProps> = ({
                           onClick={() => removeRule(rule.id)}
                           className="p-1 hover:bg-red-100 dark:hover:bg-red-900/30 rounded"
                         >
-                          <i className="fa-solid fa-trash text-red-500 text-xs" />
+                          <Trash2 className="text-red-500 text-xs" />
                         </button>
                       </div>
                     ))}

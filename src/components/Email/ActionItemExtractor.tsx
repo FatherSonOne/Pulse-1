@@ -3,6 +3,8 @@ import React, { useState, useEffect } from 'react';
 import { CachedEmail } from '../../services/emailSyncService';
 import { supabase } from '../../services/supabase';
 
+import { Calendar, Check, ListChecks, Loader2, Plus, X } from 'lucide-react';
+
 interface ActionItem {
   id: string;
   text: string;
@@ -238,7 +240,7 @@ export const ActionItemExtractor: React.FC<ActionItemExtractorProps> = ({
     return (
       <div className="bg-purple-500/10 dark:bg-purple-500/5 border border-purple-500/20 rounded-xl p-4">
         <div className="flex items-center gap-3">
-          <i className="fa-solid fa-circle-notch fa-spin text-purple-500"></i>
+          <Loader2 className="text-purple-500 animate-spin" />
           <span className="text-stone-600 dark:text-zinc-400 text-sm">Scanning for action items...</span>
         </div>
       </div>
@@ -257,7 +259,7 @@ export const ActionItemExtractor: React.FC<ActionItemExtractorProps> = ({
       <div className="flex items-center justify-between px-4 py-3 border-b border-purple-500/20">
         <div className="flex items-center gap-3">
           <div className="w-8 h-8 rounded-lg bg-gradient-to-br from-purple-500 to-pink-500 flex items-center justify-center">
-            <i className="fa-solid fa-list-check text-white text-sm"></i>
+            <ListChecks className="text-white text-sm" />
           </div>
           <div>
             <h3 className="font-semibold text-stone-900 dark:text-white text-sm">Action Items Detected</h3>
@@ -270,7 +272,7 @@ export const ActionItemExtractor: React.FC<ActionItemExtractorProps> = ({
           onClick={onDismiss}
           className="w-6 h-6 rounded hover:bg-purple-500/20 flex items-center justify-center text-stone-400 dark:text-zinc-500 hover:text-stone-600 dark:hover:text-white transition"
         >
-          <i className="fa-solid fa-xmark text-xs"></i>
+          <X className="text-xs" />
         </button>
       </div>
 
@@ -296,7 +298,7 @@ export const ActionItemExtractor: React.FC<ActionItemExtractorProps> = ({
                   : 'border-stone-300 dark:border-zinc-600'
               }`}>
                 {item.selected && (
-                  <i className="fa-solid fa-check text-white text-xs"></i>
+                  <Check className="text-white text-xs" />
                 )}
               </div>
 
@@ -311,7 +313,7 @@ export const ActionItemExtractor: React.FC<ActionItemExtractorProps> = ({
                   </span>
                   {item.dueDate && (
                     <span className="text-xs text-stone-500 dark:text-zinc-500 flex items-center gap-1">
-                      <i className="fa-regular fa-calendar"></i>
+                      <Calendar />
                       {formatDueDate(item.dueDate)}
                     </span>
                   )}
@@ -335,12 +337,12 @@ export const ActionItemExtractor: React.FC<ActionItemExtractorProps> = ({
         >
           {creating ? (
             <>
-              <i className="fa-solid fa-circle-notch fa-spin"></i>
+              <Loader2 className="animate-spin" />
               Creating...
             </>
           ) : (
             <>
-              <i className="fa-solid fa-plus"></i>
+              <Plus />
               Create {selectedCount} Task{selectedCount !== 1 ? 's' : ''}
             </>
           )}

@@ -8,6 +8,8 @@ import { ErrorBoundary } from './shared/ErrorBoundary';
 import { VoiceTextButton } from './shared/VoiceTextButton';
 import toast from 'react-hot-toast';
 
+import { AlertTriangle, Brain, ChevronDown, CloudUpload, Code, Database, Download, Eye, FileCode, FileText, FolderOpen, Inbox, Key, Loader2, MessagesSquare, Mic, Paperclip, Pause, PhoneOff, Plus, Quote, Search, Settings, Sliders, Square, Volume2, X, Zap } from 'lucide-react';
+
 // Lazy load heavy voice components that may crash on mobile
 const RealtimeVoiceAgent = lazy(() => import('./WarRoom/RealtimeVoiceAgent').then(m => ({ default: m.RealtimeVoiceAgent })));
 const VoiceAgentVisualizerEnhanced = lazy(() => import('./WarRoom/VoiceAgentVisualizerEnhanced').then(m => ({ default: m.VoiceAgentVisualizerEnhanced })));
@@ -19,7 +21,7 @@ const isMobilePlatform = Capacitor.isNativePlatform() || /Android|iPhone|iPad|iP
 const LoadingFallback: React.FC = () => (
   <div className="h-full w-full flex items-center justify-center bg-gray-900/50">
     <div className="text-center">
-      <i className="fa fa-spinner fa-spin text-2xl text-rose-500 mb-2"></i>
+      <Loader2 className="fa text-2xl text-rose-500 mb-2 animate-spin" />
       <p className="text-sm text-gray-400">Loading voice features...</p>
     </div>
   </div>
@@ -303,7 +305,7 @@ const PulseChatInner: React.FC<PulseChatProps> = ({ apiKey, userId = 'anonymous'
       <div className="absolute top-0 left-0 right-0 h-16 border-b border-gray-200 dark:border-rose-500/20 bg-white/90 dark:bg-black/60 backdrop-blur-xl flex items-center justify-between px-4 md:px-6 shadow-sm z-50">
         <div className="flex items-center gap-3">
           <div className="w-10 h-10 rounded-xl bg-gradient-to-br from-rose-500 to-pink-500 flex items-center justify-center shadow-lg">
-            <i className="fa fa-comments text-white text-lg"></i>
+            <MessagesSquare className="fa text-white text-lg" />
           </div>
           <div>
             <h1 className="text-xl font-bold bg-gradient-to-r from-rose-500 to-pink-500 bg-clip-text text-transparent">
@@ -328,7 +330,7 @@ const PulseChatInner: React.FC<PulseChatProps> = ({ apiKey, userId = 'anonymous'
               }`}
               title="AI actively participates in conversation"
             >
-              <i className="fa fa-comments"></i>
+              <MessagesSquare className="fa" />
               <span className="hidden sm:inline">Active</span>
             </button>
             <button
@@ -340,7 +342,7 @@ const PulseChatInner: React.FC<PulseChatProps> = ({ apiKey, userId = 'anonymous'
               }`}
               title="AI listens silently, responds only when prompted"
             >
-              <i className="fa fa-eye"></i>
+              <Eye className="fa" />
               <span className="hidden sm:inline">Observer</span>
             </button>
           </div>
@@ -356,7 +358,7 @@ const PulseChatInner: React.FC<PulseChatProps> = ({ apiKey, userId = 'anonymous'
               }`}
               title="Export Chat"
             >
-              <i className="fa fa-download"></i>
+              <Download className="fa" />
             </button>
 
             {/* Export Menu Dropdown */}
@@ -366,21 +368,21 @@ const PulseChatInner: React.FC<PulseChatProps> = ({ apiKey, userId = 'anonymous'
                   onClick={exportTranscriptText}
                   className="w-full px-4 py-2 text-left text-sm text-gray-700 dark:text-gray-300 hover:bg-gray-100 dark:hover:bg-gray-800 flex items-center gap-2"
                 >
-                  <i className="fa fa-file-text text-gray-400"></i>
+                  <FileText className="fa text-gray-400" />
                   Export as TXT
                 </button>
                 <button
                   onClick={exportTranscriptJSON}
                   className="w-full px-4 py-2 text-left text-sm text-gray-700 dark:text-gray-300 hover:bg-gray-100 dark:hover:bg-gray-800 flex items-center gap-2"
                 >
-                  <i className="fa fa-code text-gray-400"></i>
+                  <Code className="fa text-gray-400" />
                   Export as JSON
                 </button>
                 <button
                   onClick={exportTranscriptMarkdown}
                   className="w-full px-4 py-2 text-left text-sm text-gray-700 dark:text-gray-300 hover:bg-gray-100 dark:hover:bg-gray-800 flex items-center gap-2"
                 >
-                  <i className="fa fa-file-code text-gray-400"></i>
+                  <FileCode className="fa text-gray-400" />
                   Export as Markdown
                 </button>
               </div>
@@ -411,7 +413,7 @@ const PulseChatInner: React.FC<PulseChatProps> = ({ apiKey, userId = 'anonymous'
                 onClick={handleDisconnect}
                 className="flex items-center gap-2 px-3 py-1.5 bg-red-500/10 hover:bg-red-500/20 text-red-500 rounded-full text-sm font-medium transition-all border border-red-500/20"
               >
-                <i className="fa fa-phone-slash text-xs"></i>
+                <PhoneOff className="fa text-xs" />
                 <span className="hidden sm:inline">Disconnect</span>
               </button>
             ) : (
@@ -422,12 +424,12 @@ const PulseChatInner: React.FC<PulseChatProps> = ({ apiKey, userId = 'anonymous'
               >
                 {isConnecting ? (
                   <>
-                    <i className="fa fa-spinner fa-spin text-xs"></i>
+                    <Loader2 className="fa text-xs animate-spin" />
                     <span className="hidden sm:inline">Connecting...</span>
                   </>
                 ) : (
                   <>
-                    <i className="fa fa-microphone text-xs"></i>
+                    <Mic className="fa text-xs" />
                     <span>Start Voice</span>
                   </>
                 )}
@@ -446,7 +448,7 @@ const PulseChatInner: React.FC<PulseChatProps> = ({ apiKey, userId = 'anonymous'
             }`}
             title="Voice Settings"
           >
-            <i className="fa fa-cog"></i>
+            <Settings className="fa" />
           </button>
 
           {/* Close Button */}
@@ -455,7 +457,7 @@ const PulseChatInner: React.FC<PulseChatProps> = ({ apiKey, userId = 'anonymous'
             className="w-9 h-9 rounded-full hover:bg-gray-100 dark:hover:bg-gray-800 flex items-center justify-center text-gray-600 dark:text-gray-400 transition-colors"
             title="Close"
           >
-            <i className="fa fa-times"></i>
+            <X className="fa" />
           </button>
         </div>
       </div>
@@ -466,7 +468,7 @@ const PulseChatInner: React.FC<PulseChatProps> = ({ apiKey, userId = 'anonymous'
           className="absolute z-[60] top-16 right-4 w-72 bg-white dark:bg-gray-900 rounded-2xl shadow-2xl border border-gray-200 dark:border-rose-500/30 p-4 space-y-4"
         >
           <h3 className="text-sm font-semibold text-gray-900 dark:text-white flex items-center gap-2">
-            <i className="fa fa-sliders text-rose-500"></i>
+            <Sliders className="fa text-rose-500" />
             Voice Settings
           </h3>
 
@@ -532,7 +534,7 @@ const PulseChatInner: React.FC<PulseChatProps> = ({ apiKey, userId = 'anonymous'
                 />
                 <div>
                   <div className="text-sm font-medium text-gray-900 dark:text-white flex items-center gap-1">
-                    <i className="fa fa-comments text-rose-500"></i> Active Participant
+                    <MessagesSquare className="fa text-rose-500" /> Active Participant
                   </div>
                   <p className="text-xs text-gray-500 dark:text-gray-400">
                     AI engages proactively, asks clarifying questions, and drives conversation
@@ -550,7 +552,7 @@ const PulseChatInner: React.FC<PulseChatProps> = ({ apiKey, userId = 'anonymous'
                 />
                 <div>
                   <div className="text-sm font-medium text-gray-900 dark:text-white flex items-center gap-1">
-                    <i className="fa fa-eye text-blue-500"></i> Silent Observer
+                    <Eye className="fa text-blue-500" /> Silent Observer
                   </div>
                   <p className="text-xs text-gray-500 dark:text-gray-400">
                     AI listens silently, only responds when directly addressed or asked
@@ -572,7 +574,7 @@ const PulseChatInner: React.FC<PulseChatProps> = ({ apiKey, userId = 'anonymous'
           <div className="h-full flex items-center justify-center p-6">
             <div className="max-w-md text-center space-y-4">
               <div className="w-16 h-16 rounded-full bg-rose-100 dark:bg-rose-900/30 flex items-center justify-center mx-auto">
-                <i className="fa fa-key text-rose-500 text-2xl"></i>
+                <Key className="fa text-rose-500 text-2xl" />
               </div>
               <h2 className="text-xl font-bold text-gray-900 dark:text-white">
                 OpenAI API Key Required
@@ -586,7 +588,7 @@ const PulseChatInner: React.FC<PulseChatProps> = ({ apiKey, userId = 'anonymous'
                 }}
                 className="px-6 py-3 bg-gradient-to-r from-rose-500 to-pink-500 hover:from-rose-600 hover:to-pink-600 text-white rounded-full font-medium transition-all shadow-lg hover:shadow-xl"
               >
-                <i className="fa fa-gear mr-2"></i>
+                <Settings className="fa mr-2" />
                 Go to Settings
               </button>
             </div>
@@ -600,7 +602,7 @@ const PulseChatInner: React.FC<PulseChatProps> = ({ apiKey, userId = 'anonymous'
                 <div className="absolute inset-0 rounded-full bg-gradient-to-br from-rose-500/20 to-pink-500/20 animate-pulse"></div>
                 <div className="absolute inset-2 rounded-full bg-gradient-to-br from-rose-500/30 to-pink-500/30 animate-ping" style={{ animationDuration: '2s' }}></div>
                 <div className="absolute inset-4 rounded-full bg-gradient-to-br from-rose-500 to-pink-500 flex items-center justify-center shadow-lg shadow-rose-500/30">
-                  <i className="fa fa-microphone text-white text-2xl"></i>
+                  <Mic className="fa text-white text-2xl" />
                 </div>
               </div>
 
@@ -620,12 +622,12 @@ const PulseChatInner: React.FC<PulseChatProps> = ({ apiKey, userId = 'anonymous'
               >
                 {isConnecting ? (
                   <>
-                    <i className="fa fa-spinner fa-spin"></i>
+                    <Loader2 className="fa animate-spin" />
                     Connecting...
                   </>
                 ) : (
                   <>
-                    <i className="fa fa-microphone"></i>
+                    <Mic className="fa" />
                     Start Voice Chat
                   </>
                 )}
@@ -634,7 +636,7 @@ const PulseChatInner: React.FC<PulseChatProps> = ({ apiKey, userId = 'anonymous'
               {/* Context files indicator */}
               {contextFiles.length > 0 && (
                 <p className="text-xs text-rose-500">
-                  <i className="fa fa-paperclip mr-1"></i>
+                  <Paperclip className="fa mr-1" />
                   {contextFiles.length} context file{contextFiles.length > 1 ? 's' : ''} attached
                 </p>
               )}
@@ -655,7 +657,7 @@ const PulseChatInner: React.FC<PulseChatProps> = ({ apiKey, userId = 'anonymous'
                   <div className="h-full flex items-center justify-center bg-gradient-to-br from-gray-900 to-rose-900/30">
                     <div className="text-center">
                       <div className="w-20 h-20 rounded-full bg-rose-500/20 flex items-center justify-center mx-auto mb-4">
-                        <i className="fa fa-microphone text-rose-500 text-2xl"></i>
+                        <Mic className="fa text-rose-500 text-2xl" />
                       </div>
                       <p className="text-white">Voice Active</p>
                       <p className="text-gray-400 text-sm">Visualizer unavailable on this device</p>
@@ -696,7 +698,7 @@ const PulseChatInner: React.FC<PulseChatProps> = ({ apiKey, userId = 'anonymous'
                   className="w-8 h-8 rounded-full bg-red-500 text-white hover:bg-red-600 flex items-center justify-center transition-all"
                   title="Stop"
                 >
-                  <i className="fa fa-stop text-xs"></i>
+                  <Square className="fa text-xs" />
                 </button>
 
                 {/* Context Button */}
@@ -709,7 +711,7 @@ const PulseChatInner: React.FC<PulseChatProps> = ({ apiKey, userId = 'anonymous'
                   }`}
                   title="Add Context"
                 >
-                  <i className="fa fa-paperclip text-xs"></i>
+                  <Paperclip className="fa text-xs" />
                   {contextFiles.length > 0 && (
                     <span className="absolute -top-1 -right-1 w-4 h-4 bg-white dark:bg-gray-900 text-rose-500 text-[10px] font-bold rounded-full flex items-center justify-center border border-rose-500">
                       {contextFiles.length}
@@ -753,7 +755,7 @@ const PulseChatInner: React.FC<PulseChatProps> = ({ apiKey, userId = 'anonymous'
                                   className="text-[10px] px-2 py-0.5 bg-rose-100 dark:bg-rose-900/30 text-rose-600 dark:text-rose-400 rounded-full flex items-center gap-1"
                                   title={citation.excerpt}
                                 >
-                                  <i className="fa fa-quote-left text-[8px]"></i>
+                                  <Quote className="fa text-[8px]" />
                                   {citation.documentName.length > 20
                                     ? citation.documentName.substring(0, 20) + '...'
                                     : citation.documentName}
@@ -778,27 +780,27 @@ const PulseChatInner: React.FC<PulseChatProps> = ({ apiKey, userId = 'anonymous'
             <div className="shrink-0 py-2 text-center space-y-1">
               {isPaused && (
                 <span className="text-sm text-yellow-500 font-medium">
-                  <i className="fa fa-pause mr-1"></i> Paused
+                  <Pause className="fa mr-1" /> Paused
                 </span>
               )}
               {!isPaused && isSearchingContext && (
                 <span className="text-sm text-blue-500 font-medium animate-pulse">
-                  <i className="fa fa-search mr-1"></i> Searching knowledge base...
+                  <Search className="fa mr-1" /> Searching knowledge base...
                 </span>
               )}
               {!isPaused && isListening && !isSearchingContext && (
                 <span className="text-sm text-rose-500 font-medium animate-pulse">
-                  <i className="fa fa-microphone mr-1"></i> Listening...
+                  <Mic className="fa mr-1" /> Listening...
                 </span>
               )}
               {!isPaused && isSpeaking && (
                 <span className="text-sm text-green-500 font-medium animate-pulse">
-                  <i className="fa fa-volume-up mr-1"></i> Speaking...
+                  <Volume2 className="fa mr-1" /> Speaking...
                 </span>
               )}
               {!isPaused && isThinking && !isSearchingContext && (
                 <span className="text-sm text-purple-500 font-medium animate-pulse">
-                  <i className="fa fa-brain mr-1"></i> Thinking...
+                  <Brain className="fa mr-1" /> Thinking...
                 </span>
               )}
               {!isPaused && !isListening && !isSpeaking && !isThinking && !isSearchingContext && (
@@ -810,7 +812,7 @@ const PulseChatInner: React.FC<PulseChatProps> = ({ apiKey, userId = 'anonymous'
               {/* Context files indicator when connected */}
               {contextFiles.length > 0 && (
                 <div className="text-[10px] text-gray-400 flex items-center justify-center gap-1">
-                  <i className="fa fa-database"></i>
+                  <Database className="fa" />
                   {contextFiles.length} document{contextFiles.length > 1 ? 's' : ''} indexed for RAG
                 </div>
               )}
@@ -870,14 +872,14 @@ const PulseChatInner: React.FC<PulseChatProps> = ({ apiKey, userId = 'anonymous'
         <div className="bg-white/95 dark:bg-gray-900/95 backdrop-blur-xl px-4 pb-16 max-h-[60vh] overflow-y-auto">
           <div className="flex items-center justify-between mb-4">
             <h3 className="text-lg font-semibold text-gray-900 dark:text-white flex items-center gap-2">
-              <i className="fa fa-folder-open text-rose-500"></i>
+              <FolderOpen className="fa text-rose-500" />
               Conversation Context
             </h3>
             <button
               onClick={() => setShowContextDrawer(false)}
               className="w-8 h-8 rounded-full hover:bg-gray-100 dark:hover:bg-gray-800 flex items-center justify-center text-gray-500"
             >
-              <i className="fa fa-chevron-down"></i>
+              <ChevronDown className="fa" />
             </button>
           </div>
 
@@ -899,7 +901,7 @@ const PulseChatInner: React.FC<PulseChatProps> = ({ apiKey, userId = 'anonymous'
               onClick={() => fileInputRef.current?.click()}
               className="w-full py-3 border-2 border-dashed border-gray-300 dark:border-gray-600 rounded-xl text-gray-500 dark:text-gray-400 hover:border-rose-500 hover:text-rose-500 transition-all flex items-center justify-center gap-2"
             >
-              <i className="fa fa-cloud-upload"></i>
+              <CloudUpload className="fa" />
               Upload Files
             </button>
           </div>
@@ -926,7 +928,7 @@ const PulseChatInner: React.FC<PulseChatProps> = ({ apiKey, userId = 'anonymous'
               disabled={!contextText.trim()}
               className="mt-2 px-4 py-1.5 bg-rose-500 hover:bg-rose-600 text-white rounded-full text-sm font-medium disabled:opacity-50 disabled:cursor-not-allowed transition-all"
             >
-              <i className="fa fa-plus mr-1"></i>
+              <Plus className="fa mr-1" />
               Add Context
             </button>
           </div>
@@ -962,7 +964,7 @@ const PulseChatInner: React.FC<PulseChatProps> = ({ apiKey, userId = 'anonymous'
                     onClick={() => removeContextFile(file.id)}
                     className="w-7 h-7 rounded-full bg-red-100 dark:bg-red-900/30 text-red-500 hover:bg-red-200 dark:hover:bg-red-900/50 flex items-center justify-center opacity-0 group-hover:opacity-100 transition-opacity"
                   >
-                    <i className="fa fa-times text-xs"></i>
+                    <X className="fa text-xs" />
                   </button>
                 </div>
               ))}
@@ -971,7 +973,7 @@ const PulseChatInner: React.FC<PulseChatProps> = ({ apiKey, userId = 'anonymous'
 
           {contextFiles.length === 0 && (
             <div className="text-center py-6 text-gray-400">
-              <i className="fa fa-inbox text-3xl mb-2"></i>
+              <Inbox className="fa text-3xl mb-2" />
               <p className="text-sm">No context files added yet</p>
             </div>
           )}
@@ -991,15 +993,15 @@ const PulseChatInner: React.FC<PulseChatProps> = ({ apiKey, userId = 'anonymous'
         <div className="flex items-center justify-between text-xs text-gray-500 dark:text-gray-400">
           <div className="flex items-center gap-4">
             <span className="flex items-center gap-1">
-              <i className="fa fa-brain text-rose-500"></i>
+              <Brain className="fa text-rose-500" />
               Advanced Reasoning
             </span>
             <span className="flex items-center gap-1">
-              <i className="fa fa-microphone text-rose-500"></i>
+              <Mic className="fa text-rose-500" />
               Real-time Voice
             </span>
             <span className="flex items-center gap-1">
-              <i className="fa fa-bolt text-rose-500"></i>
+              <Zap className="fa text-rose-500" />
               Powered by OpenAI
             </span>
           </div>
@@ -1008,7 +1010,7 @@ const PulseChatInner: React.FC<PulseChatProps> = ({ apiKey, userId = 'anonymous'
             onClick={() => setShowContextDrawer(true)}
             className="flex items-center gap-1 text-gray-400 hover:text-rose-500 transition-colors"
           >
-            <i className="fa fa-paperclip"></i>
+            <Paperclip className="fa" />
             {contextFiles.length > 0 ? `${contextFiles.length} files` : 'Add context'}
           </button>
         </div>
@@ -1031,7 +1033,7 @@ const PulseChat: React.FC<PulseChatProps> = (props) => (
       <div className="h-full w-full flex items-center justify-center p-6 bg-gradient-to-br from-gray-50 via-white to-rose-50/30 dark:from-[#050507] dark:via-[#0a0a0c] dark:to-[#0f0a0d]">
         <div className="max-w-md text-center space-y-4">
           <div className="w-16 h-16 mx-auto rounded-full bg-red-100 dark:bg-red-900/30 flex items-center justify-center">
-            <i className="fa fa-exclamation-triangle text-red-500 text-2xl"></i>
+            <AlertTriangle className="fa text-red-500 text-2xl" />
           </div>
           <h2 className="text-xl font-bold text-gray-900 dark:text-white">
             Pulse Chat Unavailable

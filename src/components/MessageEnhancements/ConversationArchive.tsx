@@ -1,5 +1,7 @@
 import React, { useState, useMemo, useCallback } from 'react';
 
+import { Archive, Check, Clock, Download, Eye, MessageSquare, Paperclip, RotateCcw, Search, Trash2 } from 'lucide-react';
+
 // Types
 interface ArchivedConversation {
   id: string;
@@ -445,7 +447,7 @@ export const ConversationArchive: React.FC<ConversationArchiveProps> = ({
     <div style={styles.container}>
       <div style={styles.header}>
         <div style={styles.title}>
-          <i className="fa-solid fa-box-archive" />
+          <Archive />
           Archive
         </div>
       </div>
@@ -471,7 +473,7 @@ export const ConversationArchive: React.FC<ConversationArchiveProps> = ({
 
       <div style={styles.searchBar}>
         <div style={{ position: 'relative', flex: 1 }}>
-          <i className="fa-solid fa-search" style={{ position: 'absolute', left: '12px', top: '50%', transform: 'translateY(-50%)', color: '#64748b', fontSize: '13px' }} />
+          <Search />
           <input
             type="text"
             placeholder="Search archived conversations..."
@@ -504,7 +506,7 @@ export const ConversationArchive: React.FC<ConversationArchiveProps> = ({
               onClick={selectAll}
             >
               {selectedIds.size === filteredConversations.length && (
-                <i className="fa-solid fa-check" style={{ color: 'white', fontSize: '10px' }} />
+                <Check />
               )}
             </div>
             {selectedIds.size} selected
@@ -513,21 +515,21 @@ export const ConversationArchive: React.FC<ConversationArchiveProps> = ({
             style={{ ...styles.actionButton, ...styles.restoreButton }}
             onClick={() => selectedIds.forEach(id => onRestore?.(id))}
           >
-            <i className="fa-solid fa-rotate-left" />
+            <RotateCcw />
             Restore All
           </button>
           <button
             style={{ ...styles.actionButton, ...styles.exportButton }}
             onClick={() => selectedIds.forEach(id => onExport?.(id))}
           >
-            <i className="fa-solid fa-download" />
+            <Download />
             Export All
           </button>
           <button
             style={{ ...styles.actionButton, ...styles.deleteButton }}
             onClick={() => selectedIds.forEach(id => onDelete?.(id))}
           >
-            <i className="fa-solid fa-trash" />
+            <Trash2 />
             Delete All
           </button>
         </div>
@@ -560,7 +562,7 @@ export const ConversationArchive: React.FC<ConversationArchiveProps> = ({
                       onClick={() => toggleSelect(conv.id)}
                     >
                       {selectedIds.has(conv.id) && (
-                        <i className="fa-solid fa-check" style={{ color: 'white', fontSize: '10px' }} />
+                        <Check />
                       )}
                     </div>
                     <div style={styles.avatar}>
@@ -590,12 +592,12 @@ export const ConversationArchive: React.FC<ConversationArchiveProps> = ({
                 <div style={styles.cardMeta}>
                   <div style={styles.metaInfo}>
                     <div style={styles.metaItem}>
-                      <i className="fa-solid fa-message" />
+                      <MessageSquare />
                       {conv.messageCount} messages
                     </div>
                     {conv.attachmentCount > 0 && (
                       <div style={styles.metaItem}>
-                        <i className="fa-solid fa-paperclip" />
+                        <Paperclip />
                         {conv.attachmentCount} files
                       </div>
                     )}
@@ -611,7 +613,7 @@ export const ConversationArchive: React.FC<ConversationArchiveProps> = ({
                       style={{ ...styles.actionButton, ...styles.viewButton }}
                       onClick={() => onViewConversation?.(conv.id)}
                     >
-                      <i className="fa-solid fa-eye" />
+                      <Eye />
                       View
                     </button>
                     {conv.canRestore && (
@@ -619,7 +621,7 @@ export const ConversationArchive: React.FC<ConversationArchiveProps> = ({
                         style={{ ...styles.actionButton, ...styles.restoreButton }}
                         onClick={() => onRestore?.(conv.id)}
                       >
-                        <i className="fa-solid fa-rotate-left" />
+                        <RotateCcw />
                         Restore
                       </button>
                     )}
@@ -627,20 +629,20 @@ export const ConversationArchive: React.FC<ConversationArchiveProps> = ({
                       style={{ ...styles.actionButton, ...styles.exportButton }}
                       onClick={() => onExport?.(conv.id)}
                     >
-                      <i className="fa-solid fa-download" />
+                      <Download />
                     </button>
                     <button
                       style={{ ...styles.actionButton, ...styles.deleteButton }}
                       onClick={() => onDelete?.(conv.id)}
                     >
-                      <i className="fa-solid fa-trash" />
+                      <Trash2 />
                     </button>
                   </div>
                 </div>
 
                 {conv.expiresAt && (
                   <div style={styles.expiryWarning}>
-                    <i className="fa-solid fa-clock" />
+                    <Clock />
                     Auto-deletes in {formatDaysUntil(conv.expiresAt)}
                   </div>
                 )}
@@ -679,7 +681,7 @@ export const ArchiveButton: React.FC<{
         transition: 'all 0.2s ease'
       }}
     >
-      <i className="fa-solid fa-box-archive" />
+      <Archive />
       Archive
     </button>
   );

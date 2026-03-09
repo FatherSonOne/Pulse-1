@@ -1,7 +1,7 @@
 // Achievement Toast Component - Rose Theme
 // Professional notifications for milestones
 import React, { useEffect, useState } from 'react';
-import { X, TrendingUp } from 'lucide-react';
+import { TrendingUp, X } from 'lucide-react';
 import type { Achievement } from '../../types/messageEnhancements';
 
 interface AchievementToastProps {
@@ -139,7 +139,7 @@ export const AchievementProgress: React.FC<AchievementProgressProps> = ({
     >
       <div className="flex items-center gap-3">
         <div className={`w-8 h-8 rounded-lg bg-rose-50 dark:bg-rose-900/20 flex items-center justify-center ${achievement.unlocked ? '' : 'opacity-50'}`}>
-          <i className="fa-solid fa-chart-line text-rose-500 text-sm" />
+          <TrendingUp className="text-rose-500 text-sm" />
         </div>
         <div className="flex-1 min-w-0">
           <div className="flex items-center justify-between mb-1">
