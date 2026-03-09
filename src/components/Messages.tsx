@@ -2168,6 +2168,30 @@ const Messages: React.FC<MessagesProps> = ({ apiKey, contacts, initialContactId,
     return () => observer.disconnect();
   }, [threadListRef]);
 
+  // Virtual list for mobile drawer (same items, separate scroll container)
+  const [drawerListHeight, setDrawerListHeight] = useState(600);
+  const {
+    virtualItems: virtualDrawerConversations,
+    totalHeight: drawerTotalHeight,
+    containerRef: drawerListRef,
+  } = useVirtualList({
+    items: pulseConversations,
+    itemHeight: THREAD_ITEM_HEIGHT,
+    containerHeight: drawerListHeight,
+    overscan: 3,
+  });
+
+  useEffect(() => {
+    const el = drawerListRef.current;
+    if (!el) return;
+    const observer = new ResizeObserver(entries => {
+      const height = entries[0]?.contentRect.height;
+      if (height && height > 0) setDrawerListHeight(height);
+    });
+    observer.observe(el);
+    return () => observer.disconnect();
+  }, [drawerListRef]);
+
   // Enhanced search handler
   const handleSearch = useCallback((query: string) => {
     setSearchQuery(query);
@@ -3012,39 +3036,43 @@ const Messages: React.FC<MessagesProps> = ({ apiKey, contacts, initialContactId,
               </button>
             </div>
 
-            <div className="px-2 py-2 flex-1 overflow-y-auto">
-              <p className="text-xs text-zinc-500 px-2 mb-2">Mobile Drawer Integration Active ✅</p>
+            <div
+              ref={drawerListRef}
+              className="px-2 py-2 flex-1 overflow-y-auto"
+              style={{ position: 'relative' }}
+            >
               {pulseConversations.length > 0 ? (
-                <div className="space-y-1">
-                  {pulseConversations.map((conv) => {
+                <div style={{ height: drawerTotalHeight, position: 'relative' }}>
+                  {virtualDrawerConversations.map(({ item: conv, style }) => {
                     const otherUser = conv.other_user;
                     if (!otherUser) return null;
                     const hasUnread = (conv.unread_count || 0) > 0;
                     return (
-                      <div
-                        key={conv.id}
-                        onClick={() => handleSelectConversation(conv.id)}
-                        className={`p-3 rounded-xl cursor-pointer transition flex items-center gap-3
-                          ${activePulseConversation === conv.id ? 'bg-emerald-50 dark:bg-emerald-900/20' : 'hover:bg-zinc-100 dark:hover:bg-zinc-800/50'}`}
-                      >
-                        <div className="w-10 h-10 rounded-full bg-gradient-to-br from-rose-500 to-pink-600 flex items-center justify-center text-white text-sm font-bold flex-shrink-0">
-                          {otherUser.avatar_url ? (
-                            <img src={otherUser.avatar_url} alt="" className="w-full h-full rounded-full object-cover" />
-                          ) : (
-                            (otherUser.display_name || otherUser.handle || '?').charAt(0).toUpperCase()
+                      <div key={conv.id} style={style}>
+                        <div
+                          onClick={() => handleSelectConversation(conv.id)}
+                          className={`p-3 rounded-xl cursor-pointer transition flex items-center gap-3
+                            ${activePulseConversation === conv.id ? 'bg-emerald-50 dark:bg-emerald-900/20' : 'hover:bg-zinc-100 dark:hover:bg-zinc-800/50'}`}
+                        >
+                          <div className="w-10 h-10 rounded-full bg-gradient-to-br from-rose-500 to-pink-600 flex items-center justify-center text-white text-sm font-bold flex-shrink-0">
+                            {otherUser.avatar_url ? (
+                              <img src={otherUser.avatar_url} alt="" className="w-full h-full rounded-full object-cover" />
+                            ) : (
+                              (otherUser.display_name || otherUser.handle || '?').charAt(0).toUpperCase()
+                            )}
+                          </div>
+                          <div className="flex-1 min-w-0">
+                            <h3 className={`text-sm truncate ${hasUnread ? 'font-bold dark:text-white' : 'font-medium text-zinc-700 dark:text-zinc-300'}`}>
+                              {otherUser.display_name || otherUser.full_name || otherUser.handle || 'Unknown'}
+                            </h3>
+                            {otherUser.handle && <span className="text-[10px] text-emerald-600 dark:text-emerald-400">@{otherUser.handle}</span>}
+                          </div>
+                          {hasUnread && (
+                            <div className="w-5 h-5 bg-emerald-500 rounded-full flex items-center justify-center">
+                              <span className="text-[10px] text-white font-bold">{conv.unread_count}</span>
+                            </div>
                           )}
                         </div>
-                        <div className="flex-1 min-w-0">
-                          <h3 className={`text-sm truncate ${hasUnread ? 'font-bold dark:text-white' : 'font-medium text-zinc-700 dark:text-zinc-300'}`}>
-                            {otherUser.display_name || otherUser.full_name || otherUser.handle || 'Unknown'}
-                          </h3>
-                          {otherUser.handle && <span className="text-[10px] text-emerald-600 dark:text-emerald-400">@{otherUser.handle}</span>}
-                        </div>
-                        {hasUnread && (
-                          <div className="w-5 h-5 bg-emerald-500 rounded-full flex items-center justify-center">
-                            <span className="text-[10px] text-white font-bold">{conv.unread_count}</span>
-                          </div>
-                        )}
                       </div>
                     );
                   })}

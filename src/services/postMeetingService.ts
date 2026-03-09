@@ -26,25 +26,29 @@ export interface FollowUpSuggestion {
 
 class PostMeetingService {
   private checkInterval: NodeJS.Timeout | null = null;
+  private currentEvents: CalendarEvent[] = [];
   private promptedEventIds = new Set<string>();
   private readonly PROMPT_DELAY = 5 * 60 * 1000; // 5 minutes after meeting ends
   private readonly PROMPT_WINDOW = 15 * 60 * 1000; // 15 minute window to show prompt
 
   /**
-   * Start monitoring for ended meetings
+   * Start monitoring for ended meetings.
+   * Subsequent calls only update the events reference — the interval is not restarted.
    */
   startMonitoring(events: CalendarEvent[]): void {
-    if (this.checkInterval) {
-      clearInterval(this.checkInterval);
-    }
+    // Always update the events reference for the next scheduled check
+    this.currentEvents = events;
 
-    // Check every 2 minutes
+    // Only start the interval once
+    if (this.checkInterval) return;
+
+    // Check every 2 minutes using the always-current events ref
     this.checkInterval = setInterval(() => {
-      this.checkEndedMeetings(events);
+      this.checkEndedMeetings(this.currentEvents);
     }, 2 * 60 * 1000);
 
     // Also check immediately
-    this.checkEndedMeetings(events);
+    this.checkEndedMeetings(this.currentEvents);
   }
 
   /**

@@ -253,7 +253,7 @@ class ActivityService {
 
       const { data, error } = await supabase
         .from('activity_logs')
-        .select('*')
+        .select('action_category, severity, location_info, device_info')
         .eq('user_id', user.id)
         .gte('created_at', startDate.toISOString());
 
