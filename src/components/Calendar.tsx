@@ -25,6 +25,11 @@ import JumpToDate from './JumpToDate';
 import ConflictResolutionBanner, { EventConflict, detectConflicts } from './ConflictResolutionBanner';
 import './Calendar.css';
 import { AlignLeft, AlertTriangle, ArrowLeftRight, ArrowRight, Bell, Brain, Calendar as CalendarIcon, CalendarCheck, CalendarDays, CalendarPlus, Car, Check, CheckCircle, ChevronRight, ClipboardList, Clock, Copy, Ellipsis, ExternalLink, FileDown, Grid3X3, HelpCircle, Lightbulb, ListChecks, Loader2, MapPin, Maximize2, Pen, PieChart, Plus, RefreshCw, Repeat, Search, Send, Settings, Sliders, Star, Sun, Trash2, Unplug, UserCog, Users, Video, Wand2, X } from 'lucide-react';
+import { CalendarContextMenu } from './Calendar/CalendarContextMenu';
+import { CalendarSidebar } from './Calendar/CalendarSidebar';
+import { CalendarInlineModals } from './Calendar/CalendarInlineModals';
+import { CalendarSettingsPanel } from './Calendar/CalendarSettingsPanel';
+import { ViewMode, RecurrenceType, ReminderTime, EVENT_COLORS, EVENT_TYPES, TIME_ZONES, Team, autoDetectEventType } from './Calendar/calendarTypes';
 import {
   calendarAIService,
   SchedulingSuggestion,
@@ -44,81 +49,6 @@ interface CalendarProps {
   contacts: Contact[];
   openTaskPanel?: boolean;
   onNavigateToIntegrations?: () => void;
-}
-
-type ViewMode = 'month' | 'week' | 'day' | 'year' | 'agenda';
-type RecurrenceType = 'none' | 'daily' | 'weekly' | 'monthly' | 'yearly';
-type ReminderTime = 'none' | '5min' | '15min' | '30min' | '1hour' | '1day';
-
-// Event color presets
-const EVENT_COLORS = [
-  { id: 'zinc', name: 'Default', class: 'bg-zinc-800 dark:bg-zinc-700' },
-  { id: 'blue', name: 'Blue', class: 'bg-blue-600' },
-  { id: 'green', name: 'Green', class: 'bg-emerald-600' },
-  { id: 'red', name: 'Red', class: 'bg-red-600' },
-  { id: 'purple', name: 'Purple', class: 'bg-purple-600' },
-  { id: 'amber', name: 'Amber', class: 'bg-amber-600' },
-  { id: 'pink', name: 'Pink', class: 'bg-pink-600' },
-  { id: 'indigo', name: 'Indigo', class: 'bg-indigo-600' },
-];
-
-// Event type presets
-const EVENT_TYPES = [
-  { id: 'event',     name: 'Event',       icon: 'fa-calendar',          color: '#6b7280' },
-  { id: 'meet',      name: 'Meeting',     icon: 'fa-video',             color: '#3b82f6' },
-  { id: 'call',      name: 'Call',        icon: 'fa-phone',             color: '#10b981' },
-  { id: 'focus',     name: 'Focus Time',  icon: 'fa-brain',             color: '#8b5cf6' },
-  { id: 'personal',  name: 'Personal',    icon: 'fa-user',              color: '#f59e0b' },
-  { id: 'deadline',  name: 'Deadline',    icon: 'fa-flag',              color: '#ef4444' },
-  { id: 'travel',    name: 'Travel',      icon: 'fa-plane',             color: '#06b6d4' },
-  { id: 'social',    name: 'Social',      icon: 'fa-users',             color: '#ec4899' },
-  { id: 'health',    name: 'Health',      icon: 'fa-heart-pulse',       color: '#f97316' },
-  { id: 'reminder',  name: 'Reminder',    icon: 'fa-bell',              color: '#a3a3a3' },
-];
-
-// Smart auto-categorization based on event title/description/location
-const autoDetectEventType = (title: string, description?: string, location?: string): string => {
-  const text = `${title} ${description || ''} ${location || ''}`.toLowerCase();
-
-  // Video / online meeting
-  if (/zoom|google meet|teams|webex|whereby|facetime|skype|video call|video meeting/.test(text)) return 'meet';
-  // In-person meeting / call
-  if (/standup|sync|1:1|one.on.one|check.in|review|retro|sprint|scrum|board meeting|all.hands/.test(text)) return 'meet';
-  if (/call|phone|dial/.test(text) && !/recall|callback/.test(text)) return 'call';
-  // Focus / deep work
-  if (/focus|deep work|heads.down|no.interrupt|coding|writing|study|research|prep/.test(text)) return 'focus';
-  // Travel
-  if (/flight|airport|hotel|commute|drive to|travel|trip|vacation|conf(?:erence)?\s+trip/.test(text)) return 'travel';
-  // Deadline
-  if (/deadline|due|submit|launch|release|ship|milestone/.test(text)) return 'deadline';
-  // Health
-  if (/doctor|dentist|therapy|gym|workout|exercise|yoga|run|physio|appointment|checkup/.test(text)) return 'health';
-  // Social
-  if (/lunch|dinner|breakfast|coffee|happy hour|party|birthday|wedding|social|outing/.test(text)) return 'social';
-  // Personal
-  if (/personal|family|kids?|school|errand|grocery|haircut|car/.test(text)) return 'personal';
-
-  return 'event';
-};
-
-// Time zone list (simplified)
-const TIME_ZONES = [
-  { id: 'local', name: 'Local Time', offset: '' },
-  { id: 'utc', name: 'UTC', offset: '+0:00' },
-  { id: 'est', name: 'Eastern', offset: '-5:00' },
-  { id: 'pst', name: 'Pacific', offset: '-8:00' },
-  { id: 'gmt', name: 'London', offset: '+0:00' },
-  { id: 'cet', name: 'Central Europe', offset: '+1:00' },
-  { id: 'ist', name: 'India', offset: '+5:30' },
-  { id: 'jst', name: 'Japan', offset: '+9:00' },
-];
-
-// Team interface for custom team groupings
-interface Team {
-  id: string;
-  name: string;
-  color: string;
-  memberIds: string[];
 }
 
 const Calendar: React.FC<CalendarProps> = ({ contacts, openTaskPanel = false, onNavigateToIntegrations }) => {
@@ -2075,80 +2005,20 @@ const Calendar: React.FC<CalendarProps> = ({ contacts, openTaskPanel = false, on
     setActiveFollowUpPrompt(null);
   }, []);
 
-
   return (
     <div className={`pulse-calendar h-full flex-1 min-h-0 flex flex-col bg-white dark:bg-zinc-950 overflow-hidden animate-fade-in relative${focusMode ? ' cal-focus-mode' : ''}`}>
 
-      {/* Context Menu - Fixed positioning relative to viewport */}
-      {contextMenu.visible && (
-        <div
-          className="fixed z-[100] bg-white dark:bg-zinc-900 rounded-xl shadow-2xl border border-zinc-200 dark:border-zinc-800 py-2 min-w-[180px] animate-fade-in"
-          style={{
-            left: `${contextMenu.x}px`,
-            top: `${contextMenu.y}px`,
-          }}
-          onClick={(e) => e.stopPropagation()}
-        >
-          {contextMenu.type === 'day' ? (
-            <>
-              <button
-                onClick={handleQuickEvent}
-                className="w-full px-4 py-2.5 text-left text-sm text-zinc-700 dark:text-zinc-300 hover:bg-zinc-100 dark:hover:bg-zinc-800 flex items-center gap-3 transition"
-              >
-                <Plus className="text-blue-500 w-4" />
-                New Event
-              </button>
-              <button
-                onClick={() => {
-                  if (contextMenu.date) {
-                    setNewEventDate(contextMenu.date.toISOString().split('T')[0]);
-                    setNewEventTime('09:00');
-                    setShowEventModal(true);
-                  }
-                  closeContextMenu();
-                }}
-                className="w-full px-4 py-2.5 text-left text-sm text-zinc-700 dark:text-zinc-300 hover:bg-zinc-100 dark:hover:bg-zinc-800 flex items-center gap-3 transition"
-              >
-                <Video className="text-green-500 w-4" />
-                Schedule Meeting
-              </button>
-              <div className="border-t border-zinc-100 dark:border-zinc-800 my-1"></div>
-              <div className="px-4 py-2 text-xs text-zinc-400">
-                {contextMenu.date?.toLocaleDateString('en-US', {
-                  weekday: 'long',
-                  month: 'long',
-                  day: 'numeric'
-                })}
-              </div>
-            </>
-          ) : (
-            <>
-              <button
-                onClick={handleEditEvent}
-                className="w-full px-4 py-2.5 text-left text-sm text-zinc-700 dark:text-zinc-300 hover:bg-zinc-100 dark:hover:bg-zinc-800 flex items-center gap-3 transition"
-              >
-                <Pen className="text-blue-500 w-4" />
-                Edit Event
-              </button>
-              <button
-                onClick={handleDuplicateEvent}
-                className="w-full px-4 py-2.5 text-left text-sm text-zinc-700 dark:text-zinc-300 hover:bg-zinc-100 dark:hover:bg-zinc-800 flex items-center gap-3 transition"
-              >
-                <Copy className="text-zinc-400 w-4" />
-                Duplicate
-              </button>
-              <div className="border-t border-zinc-100 dark:border-zinc-800 my-1"></div>
-              <button
-                onClick={handleDeleteEvent}
-                className="w-full px-4 py-2.5 text-left text-sm text-red-600 hover:bg-red-50 dark:hover:bg-red-900/20 flex items-center gap-3 transition"
-              >
-                <Trash2 className="w-4" />
-                Delete Event
-              </button>
-            </>
-          )}
-        </div>
-      )}
+      <CalendarContextMenu
+        contextMenu={contextMenu}
+        handleQuickEvent={handleQuickEvent}
+        setNewEventDate={setNewEventDate}
+        setNewEventTime={setNewEventTime}
+        setShowEventModal={setShowEventModal}
+        closeContextMenu={closeContextMenu}
+        handleEditEvent={handleEditEvent}
+        handleDuplicateEvent={handleDuplicateEvent}
+        handleDeleteEvent={handleDeleteEvent}
+      />
 
       <EventCreationModal
         isOpen={showEventModal}
@@ -2742,307 +2612,42 @@ const Calendar: React.FC<CalendarProps> = ({ contacts, openTaskPanel = false, on
       )}
 
       <div className="flex-1 min-h-0 flex overflow-hidden">
-         {/* Resizable Sidebar - Hidden on small screens, collapsible on medium */}
-         <div
-           ref={sidebarRef}
-           style={{ width: `${sidebarWidth}px`, minWidth: '160px', maxWidth: '400px' }}
-           className="bg-zinc-50 dark:bg-zinc-900/30 border-r border-zinc-200 dark:border-zinc-800 p-3 lg:p-4 overflow-y-auto hidden lg:flex flex-col relative flex-shrink-0"
-         >
-             {/* Resize Handle */}
-             <div
-               onMouseDown={handleMouseDown}
-               className={`absolute right-0 top-0 bottom-0 w-2 cursor-col-resize hover:bg-blue-500/50 transition ${isResizing ? 'bg-blue-500' : 'bg-transparent hover:bg-blue-500/30'}`}
-             />
-
-             <div className="mb-4 lg:mb-6">
-                 <h3 className="text-[10px] lg:text-xs font-bold text-zinc-400 uppercase tracking-widest mb-2 lg:mb-3">My Calendars</h3>
-                 <div className="space-y-2">
-                     <label className="flex items-center gap-2 text-xs lg:text-sm text-zinc-600 dark:text-zinc-300 cursor-pointer group">
-                         <input
-                            type="checkbox"
-                            checked={visibleCalendars.has('user')}
-                            onChange={() => toggleCalendarVisibility('user')}
-                            className="w-3.5 h-3.5 lg:w-4 lg:h-4 rounded border-zinc-300 dark:border-zinc-700 bg-white dark:bg-zinc-800 checked:bg-zinc-900 dark:checked:bg-white checked:border-transparent transition"
-                         />
-                         <span className="group-hover:text-zinc-900 dark:group-hover:text-white transition truncate">Local Events</span>
-                     </label>
-                 </div>
-             </div>
-
-             {/* Google Calendars */}
-             {googleConnected && googleCalendars.length > 0 && (
-               <div className="mb-4 lg:mb-6">
-                 <h3 className="text-[10px] lg:text-xs font-bold text-zinc-400 uppercase tracking-widest mb-2 lg:mb-3 flex items-center justify-between">
-                   <span className="flex items-center gap-1.5 truncate">
-                     <ExternalLink className="text-[8px] lg:text-[10px]" /> <span className="truncate">Google Calendars</span>
-                   </span>
-                   <button
-                     onClick={() => setShowCreateCalendarModal(true)}
-                     className="text-blue-500 hover:text-blue-600 transition flex-shrink-0"
-                     title="Create New Calendar"
-                   >
-                     <Plus className="text-[10px]" />
-                   </button>
-                 </h3>
-                 {/* Color palette for the picker */}
-                 {(() => {
-                   const CAL_PALETTE = [
-                     '#ef4444','#f97316','#eab308','#22c55e',
-                     '#14b8a6','#3b82f6','#8b5cf6','#ec4899',
-                     '#6b7280','#0ea5e9','#10b981','#f43f5e',
-                   ];
-                   return (
-                     <div className="space-y-1">
-                       {googleCalendars.map(cal => {
-                         const dotColor = calendarColors[cal.id] || cal.backgroundColor || '#3b82f6';
-                         const isPickerOpen = colorPickerOpenFor === cal.id;
-                         return (
-                           <div key={cal.id} className="relative">
-                             <div className="flex items-center gap-2 group">
-                               {/* Color dot — click to open picker */}
-                               <button
-                                 onClick={(e) => { e.stopPropagation(); setColorPickerOpenFor(isPickerOpen ? null : cal.id); }}
-                                 className="w-3 h-3 rounded-full flex-shrink-0 ring-2 ring-transparent hover:ring-zinc-300 dark:hover:ring-zinc-600 transition focus:outline-none focus-visible:ring-indigo-400"
-                                 style={{ backgroundColor: dotColor }}
-                                 aria-label={`Change color for ${cal.summary}`}
-                                 title="Change calendar color"
-                               />
-                               <label className="flex items-center gap-1.5 flex-1 min-w-0 text-xs lg:text-sm text-zinc-600 dark:text-zinc-300 cursor-pointer">
-                                 <input
-                                   type="checkbox"
-                                   checked={visibleCalendars.has(cal.id)}
-                                   onChange={() => toggleCalendarVisibility(cal.id)}
-                                   className="w-3.5 h-3.5 rounded border-zinc-300 dark:border-zinc-700 bg-white dark:bg-zinc-800 checked:border-transparent transition flex-shrink-0"
-                                   style={{ accentColor: dotColor }}
-                                 />
-                                 <span className="group-hover:text-zinc-900 dark:group-hover:text-white transition truncate flex items-center gap-1">
-                                   {cal.primary && <Star className="text-amber-400 text-[8px] flex-shrink-0" />}
-                                   <span className="truncate">{cal.summary}</span>
-                                 </span>
-                               </label>
-                             </div>
-                             {/* Color picker popover */}
-                             {isPickerOpen && (
-                               <div className="absolute left-0 top-6 z-20 p-2 bg-white dark:bg-zinc-800 border border-zinc-200 dark:border-zinc-700 rounded-xl shadow-xl grid grid-cols-6 gap-1.5"
-                                 onMouseDown={e => e.stopPropagation()}
-                               >
-                                 {CAL_PALETTE.map(hex => (
-                                   <button
-                                     key={hex}
-                                     onClick={() => setCalendarColor(cal.id, hex)}
-                                     className={`w-5 h-5 rounded-full transition hover:scale-110 focus:outline-none focus-visible:ring-2 focus-visible:ring-offset-1 focus-visible:ring-indigo-500 ${dotColor === hex ? 'ring-2 ring-offset-1 ring-zinc-700 dark:ring-white' : ''}`}
-                                     style={{ backgroundColor: hex }}
-                                     aria-label={hex}
-                                   />
-                                 ))}
-                               </div>
-                             )}
-                           </div>
-                         );
-                       })}
-                     </div>
-                   );
-                 })()}
-                 {lastSynced && (
-                   <p className="text-[9px] lg:text-[10px] text-zinc-400 mt-2 truncate">
-                     Last synced: {lastSynced.toLocaleTimeString()}
-                   </p>
-                 )}
-                 {syncError && (
-                   <p className="text-[9px] lg:text-[10px] text-red-500 mt-2 truncate">{syncError}</p>
-                 )}
-               </div>
-             )}
-
-             {!googleConnected && (
-               <div className="mb-8 p-4 bg-zinc-100 dark:bg-zinc-800/50 rounded-xl border border-zinc-200 dark:border-zinc-700">
-                 <div className="flex items-center gap-2 mb-2">
-                   <ExternalLink className="text-blue-500" />
-                   <span className="text-sm font-medium dark:text-white">Google Calendar</span>
-                 </div>
-                 <p className="text-xs text-zinc-500 dark:text-zinc-400 mb-3">
-                   Connect to sync your events and enable AI scheduling
-                 </p>
-                 <button
-                   onClick={() => {
-                     if (onNavigateToIntegrations) {
-                       onNavigateToIntegrations();
-                     }
-                   }}
-                   className="w-full flex items-center justify-center gap-2 bg-white dark:bg-zinc-900 border border-zinc-200 dark:border-zinc-700 rounded-lg px-3 py-2 text-sm font-medium text-zinc-700 dark:text-zinc-300 hover:bg-zinc-50 dark:hover:bg-zinc-800 transition shadow-sm"
-                 >
-                   <Settings className="text-sm" />
-                   Connect in Settings
-                 </button>
-                 {syncError && (
-                   <p className="text-[10px] text-amber-600 dark:text-amber-400 mt-2 flex items-center gap-1">
-                     <AlertTriangle />
-                     {syncError}
-                   </p>
-                 )}
-               </div>
-             )}
-             
-             {/* Team Section with Team Selection */}
-             <div className="flex-1">
-                 <div className="flex items-center justify-between mb-4">
-                   <h3 className="text-xs font-bold text-zinc-400 uppercase tracking-widest">Team</h3>
-                   <div className="flex items-center gap-2">
-                     <button
-                       onClick={() => setShowTeamModal(true)}
-                       className="text-blue-500 hover:text-blue-600 transition"
-                       title="Create New Team"
-                     >
-                       <Plus className="text-[10px]" />
-                     </button>
-                     {selectedTeam && teams.length > 1 && (
-                       <button
-                         onClick={() => openEditTeam(selectedTeam)}
-                         className="text-zinc-400 hover:text-zinc-600 transition"
-                         title="Edit Team"
-                       >
-                         <Pen className="text-[10px]" />
-                       </button>
-                     )}
-                   </div>
-                 </div>
-
-                 {/* Team Selector Dropdown */}
-                 {teams.length > 1 && (
-                   <select
-                     value={selectedTeamId}
-                     onChange={(e) => setSelectedTeamId(e.target.value)}
-                     className="w-full mb-4 bg-white dark:bg-zinc-800 border border-zinc-200 dark:border-zinc-700 rounded-lg px-3 py-2 text-sm outline-none"
-                   >
-                     {teams.map(team => (
-                       <option key={team.id} value={team.id}>{team.name}</option>
-                     ))}
-                   </select>
-                 )}
-
-                 <div className="space-y-2">
-                     {teamMembers.length === 0 ? (
-                       <div className="text-center py-4">
-                         <Users className="text-zinc-300 dark:text-zinc-600 text-2xl mb-2" />
-                         <p className="text-xs text-zinc-500">No team members yet</p>
-                         <button
-                           onClick={() => openEditTeam(selectedTeam)}
-                           className="text-xs text-blue-500 hover:text-blue-600 mt-2"
-                         >
-                           Add members
-                         </button>
-                       </div>
-                     ) : (
-                       <>
-                       {teamMembers.map(contact => {
-                         const overlayOn = overlayMemberIds.has(contact.id);
-                         return (
-                          <div key={contact.id} className="flex items-center gap-2 text-sm text-zinc-600 dark:text-zinc-300 group p-2 rounded-lg hover:bg-white dark:hover:bg-zinc-800 transition">
-                              <div className="flex items-center gap-2 flex-1 min-w-0">
-                                  <div className={`w-6 h-6 rounded-full ${contact.avatarColor} flex-shrink-0 flex items-center justify-center text-white text-xs font-bold`}>
-                                    {contact.name.charAt(0)}
-                                  </div>
-                                  <div className="flex-1 min-w-0">
-                                    <span className="group-hover:text-zinc-900 dark:group-hover:text-white truncate block transition">{contact.name}</span>
-                                    <span className="text-[10px] text-zinc-400 truncate block">{contact.email}</span>
-                                  </div>
-                              </div>
-                              {/* Show-on-calendar overlay toggle (week/day only) */}
-                              {(viewMode === 'week' || viewMode === 'day') && (
-                                <button
-                                  onClick={() => setOverlayMemberIds(prev => {
-                                    const next = new Set(prev);
-                                    if (next.has(contact.id)) next.delete(contact.id);
-                                    else next.add(contact.id);
-                                    return next;
-                                  })}
-                                  aria-label={overlayOn ? `Hide ${contact.name}'s schedule` : `Show ${contact.name}'s schedule`}
-                                  title={overlayOn ? `Hide ${contact.name}'s schedule` : `Show ${contact.name}'s schedule`}
-                                  className={`w-6 h-6 flex-shrink-0 flex items-center justify-center rounded-md border transition ${
-                                    overlayOn
-                                      ? `${contact.avatarColor} border-transparent text-white`
-                                      : 'border-zinc-300 dark:border-zinc-600 text-zinc-400 hover:text-zinc-600 dark:hover:text-zinc-200'
-                                  }`}
-                                >
-                                  <i className={`fa-solid ${overlayOn ? 'fa-eye' : 'fa-eye-slash'} text-[10px]`} aria-hidden="true" />
-                                </button>
-                              )}
-                              {/* Send Calendar Invite Button */}
-                              <button
-                                onClick={() => {
-                                  setInviteContact(contact);
-                                  setShowInviteModal(true);
-                                }}
-                                className="opacity-0 group-hover:opacity-100 w-7 h-7 flex items-center justify-center rounded-lg bg-blue-500 text-white hover:bg-blue-600 transition flex-shrink-0"
-                                title="Schedule meeting with this contact"
-                              >
-                                <CalendarPlus className="text-[10px]" />
-                              </button>
-                          </div>
-                         );
-                       })}
-                       {/* Free-time finder button (only relevant in week/day) */}
-                       {teamMembers.length > 0 && (viewMode === 'week' || viewMode === 'day') && (
-                         <button
-                           onClick={() => setShowFreeTimeFinder(f => !f)}
-                           className={`mt-1 w-full flex items-center gap-2 px-2 py-1.5 rounded-lg text-xs font-medium transition ${
-                             showFreeTimeFinder
-                               ? 'bg-emerald-100 dark:bg-emerald-900/40 text-emerald-700 dark:text-emerald-300'
-                               : 'text-zinc-500 dark:text-zinc-400 hover:bg-white dark:hover:bg-zinc-800 hover:text-zinc-700 dark:hover:text-white'
-                           }`}
-                         >
-                           <Clock className="text-[10px]" />
-                           Find free time
-                         </button>
-                       )}
-
-                       {/* Free-time results */}
-                       {showFreeTimeFinder && (viewMode === 'week' || viewMode === 'day') && (
-                         <div className="mt-2 border border-emerald-200 dark:border-emerald-800/60 rounded-xl overflow-hidden">
-                           <div className="px-3 py-2 bg-emerald-50 dark:bg-emerald-950/40 border-b border-emerald-200 dark:border-emerald-800/60 flex items-center gap-2">
-                             <Wand2 className="text-emerald-500 text-[10px]" />
-                             <span className="text-[10px] font-semibold text-emerald-700 dark:text-emerald-300 uppercase tracking-wider">
-                               Available slots
-                             </span>
-                           </div>
-                           {freeTimeSlots.length === 0 ? (
-                             <div className="px-3 py-3 text-xs text-zinc-400 dark:text-zinc-500 text-center">
-                               No free slots found this {viewMode === 'week' ? 'week' : 'day'}
-                             </div>
-                           ) : (
-                             <div className="divide-y divide-emerald-100 dark:divide-emerald-900/40 max-h-40 overflow-y-auto">
-                               {freeTimeSlots.map((slot, i) => {
-                                 const fmt = (d: Date) => d.toLocaleTimeString([], { hour: 'numeric', minute: '2-digit' });
-                                 const dur = Math.round((slot.end.getTime() - slot.start.getTime()) / 60000);
-                                 return (
-                                   <button
-                                     key={i}
-                                     className="w-full text-left px-3 py-2 hover:bg-emerald-50 dark:hover:bg-emerald-950/40 transition group"
-                                     title="Click to create an event in this slot"
-                                     onClick={() => {
-                                       setNewEventDate(slot.start.toISOString().split('T')[0]);
-                                       setNewEventTime(slot.start.toLocaleTimeString('en-GB', { hour: '2-digit', minute: '2-digit' }));
-                                       setShowEventModal(true);
-                                     }}
-                                   >
-                                     <div className="text-[11px] font-medium text-zinc-700 dark:text-zinc-200 group-hover:text-emerald-700 dark:group-hover:text-emerald-300 transition">
-                                       {fmt(slot.start)} – {fmt(slot.end)}
-                                     </div>
-                                     <div className="text-[10px] text-zinc-400 dark:text-zinc-500">
-                                       {slot.dayLabel} · {dur} min
-                                     </div>
-                                   </button>
-                                 );
-                               })}
-                             </div>
-                           )}
-                         </div>
-                       )}
-                       </>
-                     )}
-                 </div>
-             </div>
-         </div>
+         <CalendarSidebar
+           sidebarRef={sidebarRef}
+           sidebarWidth={sidebarWidth}
+           handleMouseDown={handleMouseDown}
+           isResizing={isResizing}
+           visibleCalendars={visibleCalendars}
+           toggleCalendarVisibility={toggleCalendarVisibility}
+           googleConnected={googleConnected}
+           googleCalendars={googleCalendars}
+           calendarColors={calendarColors}
+           colorPickerOpenFor={colorPickerOpenFor}
+           setColorPickerOpenFor={setColorPickerOpenFor}
+           setCalendarColor={setCalendarColor}
+           lastSynced={lastSynced}
+           syncError={syncError}
+           setShowCreateCalendarModal={setShowCreateCalendarModal}
+           onNavigateToIntegrations={onNavigateToIntegrations}
+           teams={teams}
+           selectedTeam={selectedTeam}
+           selectedTeamId={selectedTeamId}
+           setSelectedTeamId={setSelectedTeamId}
+           teamMembers={teamMembers}
+           setShowTeamModal={setShowTeamModal}
+           openEditTeam={openEditTeam}
+           viewMode={viewMode}
+           overlayMemberIds={overlayMemberIds}
+           setOverlayMemberIds={setOverlayMemberIds}
+           setInviteContact={setInviteContact}
+           setShowInviteModal={setShowInviteModal}
+           showFreeTimeFinder={showFreeTimeFinder}
+           setShowFreeTimeFinder={setShowFreeTimeFinder}
+           freeTimeSlots={freeTimeSlots}
+           setNewEventDate={setNewEventDate}
+           setNewEventTime={setNewEventTime}
+           setShowEventModal={setShowEventModal}
+         />
 
          {/* Calendar Grid - Premium Views */}
          <div
@@ -3198,466 +2803,65 @@ const Calendar: React.FC<CalendarProps> = ({ contacts, openTaskPanel = false, on
          )}
       </div>
 
-      {/* Team Management Modal */}
-      {showTeamModal && (
-        <div className="absolute inset-0 z-50 bg-black/60 backdrop-blur-sm flex items-center justify-center animate-fade-in p-4">
-          <div className="bg-white dark:bg-zinc-900 border border-zinc-200 dark:border-zinc-800 rounded-2xl w-full max-w-md shadow-2xl animate-scale-in">
-            <div className="p-6 border-b border-zinc-200 dark:border-zinc-800 flex items-center justify-between">
-              <h3 className="text-lg font-bold dark:text-white">
-                {editingTeam ? 'Edit Team' : 'Create New Team'}
-              </h3>
-              <button onClick={() => { setShowTeamModal(false); resetTeamForm(); }} className="text-zinc-400 hover:text-zinc-600">
-                <X />
-              </button>
-            </div>
-            <div className="p-6 space-y-4">
-              <div>
-                <label className="text-xs text-zinc-500 uppercase font-bold mb-1 block">Team Name</label>
-                <input
-                  type="text"
-                  value={newTeamName}
-                  onChange={(e) => setNewTeamName(e.target.value)}
-                  placeholder="e.g., Marketing Team"
-                  className="w-full bg-zinc-50 dark:bg-zinc-950 border border-zinc-200 dark:border-zinc-800 rounded-lg p-3 dark:text-white outline-none"
-                />
-              </div>
+      <CalendarInlineModals
+        showTeamModal={showTeamModal}
+        setShowTeamModal={setShowTeamModal}
+        editingTeam={editingTeam}
+        resetTeamForm={resetTeamForm}
+        newTeamName={newTeamName}
+        setNewTeamName={setNewTeamName}
+        newTeamColor={newTeamColor}
+        setNewTeamColor={setNewTeamColor}
+        contacts={contacts}
+        newTeamMembers={newTeamMembers}
+        setNewTeamMembers={setNewTeamMembers}
+        teams={teams}
+        handleDeleteTeam={handleDeleteTeam}
+        handleUpdateTeam={handleUpdateTeam}
+        handleCreateTeam={handleCreateTeam}
+        showInviteModal={showInviteModal}
+        setShowInviteModal={setShowInviteModal}
+        inviteContact={inviteContact}
+        setInviteContact={setInviteContact}
+        handleSendInvite={handleSendInvite}
+        showCreateCalendarModal={showCreateCalendarModal}
+        setShowCreateCalendarModal={setShowCreateCalendarModal}
+        newCalendarName={newCalendarName}
+        setNewCalendarName={setNewCalendarName}
+        newCalendarDescription={newCalendarDescription}
+        setNewCalendarDescription={setNewCalendarDescription}
+        handleCreateGoogleCalendar={handleCreateGoogleCalendar}
+        creatingCalendar={creatingCalendar}
+      />
 
-              <div>
-                <label className="text-xs text-zinc-500 uppercase font-bold mb-2 block">Team Color</label>
-                <div className="flex gap-2 flex-wrap">
-                  {EVENT_COLORS.map(color => (
-                    <button
-                      key={color.id}
-                      type="button"
-                      onClick={() => setNewTeamColor(color.class)}
-                      className={`w-8 h-8 rounded-full ${color.class} transition ring-2 ring-offset-2 ${newTeamColor === color.class ? 'ring-blue-500' : 'ring-transparent'}`}
-                    />
-                  ))}
-                </div>
-              </div>
-
-              <div>
-                <label className="text-xs text-zinc-500 uppercase font-bold mb-2 block">Team Members</label>
-                <div className="max-h-48 overflow-y-auto space-y-2 border border-zinc-200 dark:border-zinc-800 rounded-lg p-2">
-                  {contacts.map(contact => (
-                    <label key={contact.id} className="flex items-center gap-3 p-2 rounded-lg hover:bg-zinc-50 dark:hover:bg-zinc-800 cursor-pointer">
-                      <input
-                        type="checkbox"
-                        checked={newTeamMembers.includes(contact.id)}
-                        onChange={(e) => {
-                          if (e.target.checked) {
-                            setNewTeamMembers(prev => [...prev, contact.id]);
-                          } else {
-                            setNewTeamMembers(prev => prev.filter(id => id !== contact.id));
-                          }
-                        }}
-                        className="w-4 h-4 rounded"
-                      />
-                      <div className={`w-6 h-6 rounded-full ${contact.avatarColor} flex items-center justify-center text-white text-xs font-bold`}>
-                        {contact.name.charAt(0)}
-                      </div>
-                      <span className="text-sm dark:text-white">{contact.name}</span>
-                    </label>
-                  ))}
-                </div>
-              </div>
-            </div>
-            <div className="p-6 border-t border-zinc-200 dark:border-zinc-800 flex justify-between">
-              {editingTeam && teams.length > 1 && (
-                <button
-                  onClick={() => {
-                    handleDeleteTeam(editingTeam.id);
-                    setShowTeamModal(false);
-                    resetTeamForm();
-                  }}
-                  className="px-4 py-2 text-red-500 hover:bg-red-50 dark:hover:bg-red-900/20 rounded-lg transition"
-                >
-                  Delete Team
-                </button>
-              )}
-              <div className="flex gap-3 ml-auto">
-                <button onClick={() => { setShowTeamModal(false); resetTeamForm(); }} className="px-4 py-2 text-zinc-500 hover:text-zinc-900 dark:hover:text-white transition">
-                  Cancel
-                </button>
-                <button
-                  onClick={editingTeam ? handleUpdateTeam : handleCreateTeam}
-                  className="px-5 py-2 bg-zinc-900 dark:bg-white text-white dark:text-black rounded-lg text-sm font-bold hover:opacity-90 transition"
-                >
-                  {editingTeam ? 'Save Changes' : 'Create Team'}
-                </button>
-              </div>
-            </div>
-          </div>
-        </div>
-      )}
-
-      {/* Calendar Invite Modal */}
-      {showInviteModal && inviteContact && (
-        <div className="absolute inset-0 z-50 bg-black/60 backdrop-blur-sm flex items-center justify-center animate-fade-in p-4">
-          <div className="bg-white dark:bg-zinc-900 border border-zinc-200 dark:border-zinc-800 rounded-2xl w-full max-w-md shadow-2xl animate-scale-in">
-            <div className="p-6 border-b border-zinc-200 dark:border-zinc-800">
-              <div className="flex items-center justify-between mb-4">
-                <h3 className="text-lg font-bold dark:text-white">Schedule Meeting</h3>
-                <button onClick={() => { setShowInviteModal(false); setInviteContact(null); }} className="text-zinc-400 hover:text-zinc-600">
-                  <X />
-                </button>
-              </div>
-              <div className="flex items-center gap-3 p-3 bg-zinc-50 dark:bg-zinc-800 rounded-lg">
-                <div className={`w-10 h-10 rounded-full ${inviteContact.avatarColor} flex items-center justify-center text-white font-bold`}>
-                  {inviteContact.name.charAt(0)}
-                </div>
-                <div>
-                  <div className="font-medium dark:text-white">{inviteContact.name}</div>
-                  <div className="text-xs text-zinc-500">{inviteContact.email}</div>
-                </div>
-              </div>
-            </div>
-            <form
-              onSubmit={(e) => {
-                e.preventDefault();
-                const form = e.target as HTMLFormElement;
-                const formData = new FormData(form);
-                handleSendInvite(inviteContact, {
-                  title: formData.get('title') as string,
-                  date: formData.get('date') as string,
-                  startTime: formData.get('startTime') as string,
-                  endTime: formData.get('endTime') as string,
-                  description: formData.get('description') as string,
-                });
-              }}
-              className="p-6 space-y-4"
-            >
-              <div>
-                <label className="text-xs text-zinc-500 uppercase font-bold mb-1 block">Meeting Title</label>
-                <input
-                  type="text"
-                  name="title"
-                  required
-                  placeholder="e.g., Project Discussion"
-                  className="w-full bg-zinc-50 dark:bg-zinc-950 border border-zinc-200 dark:border-zinc-800 rounded-lg p-3 dark:text-white outline-none"
-                />
-              </div>
-              <div className="grid grid-cols-2 gap-4">
-                <div>
-                  <label className="text-xs text-zinc-500 uppercase font-bold mb-1 block">Date</label>
-                  <input
-                    type="date"
-                    name="date"
-                    required
-                    defaultValue={new Date().toISOString().split('T')[0]}
-                    className="w-full bg-zinc-50 dark:bg-zinc-950 border border-zinc-200 dark:border-zinc-800 rounded-lg p-3 dark:text-white outline-none"
-                  />
-                </div>
-                <div className="grid grid-cols-2 gap-2">
-                  <div>
-                    <label className="text-xs text-zinc-500 uppercase font-bold mb-1 block">Start</label>
-                    <input
-                      type="time"
-                      name="startTime"
-                      required
-                      defaultValue="10:00"
-                      className="w-full bg-zinc-50 dark:bg-zinc-950 border border-zinc-200 dark:border-zinc-800 rounded-lg p-3 dark:text-white outline-none"
-                    />
-                  </div>
-                  <div>
-                    <label className="text-xs text-zinc-500 uppercase font-bold mb-1 block">End</label>
-                    <input
-                      type="time"
-                      name="endTime"
-                      required
-                      defaultValue="11:00"
-                      className="w-full bg-zinc-50 dark:bg-zinc-950 border border-zinc-200 dark:border-zinc-800 rounded-lg p-3 dark:text-white outline-none"
-                    />
-                  </div>
-                </div>
-              </div>
-              <div>
-                <label className="text-xs text-zinc-500 uppercase font-bold mb-1 block">Description (Optional)</label>
-                <textarea
-                  name="description"
-                  rows={3}
-                  placeholder="Add meeting details..."
-                  className="w-full bg-zinc-50 dark:bg-zinc-950 border border-zinc-200 dark:border-zinc-800 rounded-lg p-3 dark:text-white outline-none resize-none"
-                />
-              </div>
-              <div className="pt-4 flex justify-end gap-3">
-                <button type="button" onClick={() => { setShowInviteModal(false); setInviteContact(null); }} className="px-4 py-2 text-zinc-500 hover:text-zinc-900 dark:hover:text-white transition">
-                  Cancel
-                </button>
-                <button type="submit" className="px-5 py-2 bg-blue-500 text-white rounded-lg text-sm font-bold hover:bg-blue-600 transition flex items-center gap-2">
-                  <Send />
-                  Send Invite
-                </button>
-              </div>
-            </form>
-          </div>
-        </div>
-      )}
-
-      {/* Create New Google Calendar Modal */}
-      {showCreateCalendarModal && (
-        <div className="absolute inset-0 z-50 bg-black/60 backdrop-blur-sm flex items-center justify-center animate-fade-in p-4">
-          <div className="bg-white dark:bg-zinc-900 border border-zinc-200 dark:border-zinc-800 rounded-2xl w-full max-w-md shadow-2xl animate-scale-in">
-            <div className="p-6 border-b border-zinc-200 dark:border-zinc-800 flex items-center justify-between">
-              <h3 className="text-lg font-bold dark:text-white flex items-center gap-2">
-                <ExternalLink className="text-blue-500" />
-                Create New Calendar
-              </h3>
-              <button onClick={() => setShowCreateCalendarModal(false)} className="text-zinc-400 hover:text-zinc-600">
-                <X />
-              </button>
-            </div>
-            <div className="p-6 space-y-4">
-              <div>
-                <label className="text-xs text-zinc-500 uppercase font-bold mb-1 block">Calendar Name</label>
-                <input
-                  type="text"
-                  value={newCalendarName}
-                  onChange={(e) => setNewCalendarName(e.target.value)}
-                  placeholder="e.g., Work Projects"
-                  className="w-full bg-zinc-50 dark:bg-zinc-950 border border-zinc-200 dark:border-zinc-800 rounded-lg p-3 dark:text-white outline-none"
-                />
-              </div>
-              <div>
-                <label className="text-xs text-zinc-500 uppercase font-bold mb-1 block">Description (Optional)</label>
-                <textarea
-                  value={newCalendarDescription}
-                  onChange={(e) => setNewCalendarDescription(e.target.value)}
-                  rows={3}
-                  placeholder="What is this calendar for?"
-                  className="w-full bg-zinc-50 dark:bg-zinc-950 border border-zinc-200 dark:border-zinc-800 rounded-lg p-3 dark:text-white outline-none resize-none"
-                />
-              </div>
-            </div>
-            <div className="p-6 border-t border-zinc-200 dark:border-zinc-800 flex justify-end gap-3">
-              <button onClick={() => setShowCreateCalendarModal(false)} className="px-4 py-2 text-zinc-500 hover:text-zinc-900 dark:hover:text-white transition">
-                Cancel
-              </button>
-              <button
-                onClick={handleCreateGoogleCalendar}
-                disabled={creatingCalendar || !newCalendarName.trim()}
-                className="px-5 py-2 bg-blue-500 text-white rounded-lg text-sm font-bold hover:bg-blue-600 transition flex items-center gap-2 disabled:opacity-50"
-              >
-                {creatingCalendar ? (
-                  <>
-                    <Loader2 className="animate-spin" />
-                    Creating...
-                  </>
-                ) : (
-                  <>
-                    <Plus />
-                    Create Calendar
-                  </>
-                )}
-              </button>
-            </div>
-          </div>
-        </div>
-      )}
-
-      {/* Calendar Settings Panel (Slide-in from right) */}
-      {showCalendarSettings && (
-        <div className="absolute right-0 top-0 bottom-0 w-96 bg-white dark:bg-zinc-950 border-l border-zinc-200 dark:border-zinc-800 shadow-2xl z-50 animate-slide-in-right flex flex-col">
-          <div className="p-6 border-b border-zinc-200 dark:border-zinc-800 flex items-center justify-between">
-            <h3 className="text-lg font-bold dark:text-white flex items-center gap-2">
-              <Settings className="text-zinc-400" />
-              Calendar Settings
-            </h3>
-            <button onClick={() => setShowCalendarSettings(false)} className="text-zinc-400 hover:text-zinc-600 dark:hover:text-white">
-              <X />
-            </button>
-          </div>
-          <div className="flex-1 overflow-y-auto p-6 space-y-6">
-            {/* View Preferences */}
-            <div>
-              <h4 className="text-xs font-bold text-zinc-500 uppercase tracking-wider mb-4">View Preferences</h4>
-              <div className="space-y-4">
-                <div>
-                  <label className="text-sm text-zinc-600 dark:text-zinc-400 mb-2 block">Default View</label>
-                  <select
-                    value={viewMode}
-                    onChange={(e) => setViewMode(e.target.value as ViewMode)}
-                    className="w-full bg-zinc-50 dark:bg-zinc-900 border border-zinc-200 dark:border-zinc-800 rounded-lg px-3 py-2 text-sm outline-none"
-                  >
-                    <option value="day">Day</option>
-                    <option value="week">Week</option>
-                    <option value="month">Month</option>
-                    <option value="year">Year</option>
-                  </select>
-                </div>
-
-                <div>
-                  <label className="text-sm text-zinc-600 dark:text-zinc-400 mb-2 block">Week Starts On</label>
-                  <select
-                    value={weekStartsOn}
-                    onChange={(e) => setWeekStartsOn(e.target.value as 'sunday' | 'monday')}
-                    className="w-full bg-zinc-50 dark:bg-zinc-900 border border-zinc-200 dark:border-zinc-800 rounded-lg px-3 py-2 text-sm outline-none"
-                  >
-                    <option value="sunday">Sunday</option>
-                    <option value="monday">Monday</option>
-                  </select>
-                </div>
-
-                <label className="flex items-center gap-3 cursor-pointer">
-                  <input
-                    type="checkbox"
-                    checked={showWeekNumbers}
-                    onChange={(e) => setShowWeekNumbers(e.target.checked)}
-                    className="w-4 h-4 rounded"
-                  />
-                  <span className="text-sm text-zinc-600 dark:text-zinc-400">Show Week Numbers</span>
-                </label>
-              </div>
-            </div>
-
-            {/* Time Zone */}
-            <div>
-              <h4 className="text-xs font-bold text-zinc-500 uppercase tracking-wider mb-4">Time Zone</h4>
-              <select
-                value={selectedTimeZone}
-                onChange={(e) => setSelectedTimeZone(e.target.value)}
-                className="w-full bg-zinc-50 dark:bg-zinc-900 border border-zinc-200 dark:border-zinc-800 rounded-lg px-3 py-2 text-sm outline-none"
-              >
-                {TIME_ZONES.map(tz => (
-                  <option key={tz.id} value={tz.id}>{tz.name} {tz.offset && `(UTC${tz.offset})`}</option>
-                ))}
-              </select>
-            </div>
-
-            {/* Google Calendar */}
-            <div>
-              <h4 className="text-xs font-bold text-zinc-500 uppercase tracking-wider mb-4">Google Calendar</h4>
-              <div className="space-y-3">
-                {googleConnected ? (
-                  <>
-                    <div className="flex items-center gap-2 text-sm text-green-600 dark:text-green-400">
-                      <CheckCircle />
-                      Connected
-                    </div>
-                    <button
-                      onClick={syncGoogleCalendar}
-                      disabled={syncingGoogle}
-                      className="w-full flex items-center justify-center gap-2 bg-zinc-100 dark:bg-zinc-800 rounded-lg px-4 py-3 text-sm font-medium hover:bg-zinc-200 dark:hover:bg-zinc-700 transition"
-                    >
-                      <i className={`fa-solid fa-sync ${syncingGoogle ? 'animate-spin' : ''}`}></i>
-                      {syncingGoogle ? 'Syncing...' : 'Sync Now'}
-                    </button>
-                    {lastSynced && (
-                      <p className="text-xs text-zinc-500 text-center">
-                        Last synced: {lastSynced.toLocaleString()}
-                      </p>
-                    )}
-                  </>
-                ) : (
-                  <button
-                    onClick={() => {
-                      setShowCalendarSettings(false);
-                      if (onNavigateToIntegrations) onNavigateToIntegrations();
-                    }}
-                    className="w-full flex items-center justify-center gap-2 bg-blue-500 text-white rounded-lg px-4 py-3 text-sm font-medium hover:bg-blue-600 transition"
-                  >
-                    <ExternalLink />
-                    Connect Google Calendar
-                  </button>
-                )}
-              </div>
-            </div>
-
-            {/* Outlook Calendar */}
-            <div>
-              <h4 className="text-xs font-bold text-zinc-500 uppercase tracking-wider mb-4">
-                <Grid3X3 className="mr-1.5 text-[#0078d4]" />
-                Outlook Calendar
-              </h4>
-              <div className="space-y-3">
-                {outlookConnected ? (
-                  <>
-                    <div className="flex items-center gap-2 text-sm text-green-600 dark:text-green-400">
-                      <CheckCircle />
-                      Connected{outlookUserEmail ? ` — ${outlookUserEmail}` : ''}
-                    </div>
-                    <button
-                      onClick={syncOutlookCalendar}
-                      disabled={syncingOutlook}
-                      className="w-full flex items-center justify-center gap-2 bg-zinc-100 dark:bg-zinc-800 rounded-lg px-4 py-3 text-sm font-medium hover:bg-zinc-200 dark:hover:bg-zinc-700 transition"
-                    >
-                      <i className={`fa-solid fa-sync ${syncingOutlook ? 'animate-spin' : ''}`}></i>
-                      {syncingOutlook ? 'Syncing...' : 'Sync Now'}
-                    </button>
-                    <button
-                      onClick={disconnectOutlook}
-                      className="w-full flex items-center justify-center gap-2 border border-red-200 dark:border-red-900 text-red-500 rounded-lg px-4 py-2 text-sm hover:bg-red-50 dark:hover:bg-red-950 transition"
-                    >
-                      <Unplug />
-                      Disconnect Outlook
-                    </button>
-                    {outlookError && (
-                      <p className="text-xs text-red-500">{outlookError}</p>
-                    )}
-                  </>
-                ) : (
-                  <>
-                    <p className="text-xs text-zinc-500 dark:text-zinc-400">
-                      Sync events from your Microsoft 365 or Outlook.com calendar.
-                      {!import.meta.env.VITE_MICROSOFT_CLIENT_ID && (
-                        <span className="block mt-1 text-amber-600 dark:text-amber-400">
-                          <AlertTriangle className="mr-1" />
-                          Set VITE_MICROSOFT_CLIENT_ID to enable.
-                        </span>
-                      )}
-                    </p>
-                    <button
-                      onClick={connectOutlook}
-                      disabled={!import.meta.env.VITE_MICROSOFT_CLIENT_ID}
-                      className="w-full flex items-center justify-center gap-2 bg-[#0078d4] text-white rounded-lg px-4 py-3 text-sm font-medium hover:bg-[#106ebe] transition disabled:opacity-40 disabled:cursor-not-allowed"
-                    >
-                      <Grid3X3 />
-                      Sign in with Microsoft
-                    </button>
-                    {outlookError && (
-                      <p className="text-xs text-red-500">{outlookError}</p>
-                    )}
-                  </>
-                )}
-              </div>
-            </div>
-
-            {/* Event Defaults */}
-            <div>
-              <h4 className="text-xs font-bold text-zinc-500 uppercase tracking-wider mb-4">Event Defaults</h4>
-              <div className="space-y-4">
-                <div>
-                  <label className="text-sm text-zinc-600 dark:text-zinc-400 mb-2 block">Default Reminder</label>
-                  <select
-                    value={newEventReminder}
-                    onChange={(e) => setAndPersistReminder(e.target.value as ReminderTime)}
-                    className="w-full bg-zinc-50 dark:bg-zinc-900 border border-zinc-200 dark:border-zinc-800 rounded-lg px-3 py-2 text-sm outline-none"
-                  >
-                    <option value="none">No reminder</option>
-                    <option value="5min">5 minutes before</option>
-                    <option value="15min">15 minutes before</option>
-                    <option value="30min">30 minutes before</option>
-                    <option value="1hour">1 hour before</option>
-                    <option value="1day">1 day before</option>
-                  </select>
-                </div>
-                <div>
-                  <label className="text-sm text-zinc-600 dark:text-zinc-400 mb-2 block">Default Event Color</label>
-                  <div className="flex gap-2 flex-wrap">
-                    {EVENT_COLORS.map(color => (
-                      <button
-                        key={color.id}
-                        onClick={() => setNewEventColor(color.class)}
-                        className={`w-8 h-8 rounded-full ${color.class} transition ring-2 ring-offset-2 ${newEventColor === color.class ? 'ring-blue-500' : 'ring-transparent'}`}
-                      />
-                    ))}
-                  </div>
-                </div>
-              </div>
-            </div>
-          </div>
-        </div>
-      )}
+      <CalendarSettingsPanel
+        showCalendarSettings={showCalendarSettings}
+        setShowCalendarSettings={setShowCalendarSettings}
+        viewMode={viewMode}
+        setViewMode={setViewMode}
+        weekStartsOn={weekStartsOn}
+        setWeekStartsOn={setWeekStartsOn}
+        showWeekNumbers={showWeekNumbers}
+        setShowWeekNumbers={setShowWeekNumbers}
+        selectedTimeZone={selectedTimeZone}
+        setSelectedTimeZone={setSelectedTimeZone}
+        googleConnected={googleConnected}
+        syncGoogleCalendar={syncGoogleCalendar}
+        syncingGoogle={syncingGoogle}
+        lastSynced={lastSynced}
+        onNavigateToIntegrations={onNavigateToIntegrations}
+        outlookConnected={outlookConnected}
+        outlookUserEmail={outlookUserEmail}
+        outlookError={outlookError}
+        syncOutlookCalendar={syncOutlookCalendar}
+        syncingOutlook={syncingOutlook}
+        disconnectOutlook={disconnectOutlook}
+        connectOutlook={connectOutlook}
+        newEventReminder={newEventReminder}
+        setAndPersistReminder={setAndPersistReminder}
+        newEventColor={newEventColor}
+        setNewEventColor={setNewEventColor}
+      />
 
       <CalendarAIPanel
         showAIPanel={showAIPanel}
