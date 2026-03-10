@@ -2,6 +2,8 @@ import React, { useState, useRef, useEffect, useMemo } from 'react';
 import { AIMessage, ThinkingStep } from '../../../services/ragService';
 import { SessionExport } from '../shared';
 
+import { Bookmark, Database, FileText, Info, PanelLeft, Quote, Send, Share2, TrendingUp } from 'lucide-react';
+
 interface DataSource {
   id: string;
   name: string;
@@ -122,7 +124,7 @@ export const AnalystMode: React.FC<AnalystModeProps> = ({
           <div className="p-4 analyst-sidebar-header">
             <div className="flex items-center justify-between">
               <h3 className="text-sm font-semibold analyst-header-text flex items-center gap-2">
-                <i className="fa fa-database analyst-icon"></i>
+                <Database className="fa analyst-icon" />
                 Data Sources
               </h3>
               <span className="analyst-badge text-xs">{documents.length}</span>
@@ -137,7 +139,7 @@ export const AnalystMode: React.FC<AnalystModeProps> = ({
               >
                 <div className="flex items-start gap-2">
                   <div className="w-8 h-8 rounded-lg analyst-icon-bg flex items-center justify-center shrink-0">
-                    <i className="fa fa-file-lines analyst-icon text-sm"></i>
+                    <FileText className="fa analyst-icon text-sm" />
                   </div>
                   <div className="flex-1 min-w-0">
                     <p className="text-sm font-medium analyst-text-primary truncate">
@@ -158,7 +160,7 @@ export const AnalystMode: React.FC<AnalystModeProps> = ({
           {citations.length > 0 && (
             <div className="analyst-citations-panel p-3">
               <h4 className="text-xs font-semibold analyst-text-secondary uppercase tracking-wider mb-2">
-                <i className="fa fa-quote-left mr-1"></i>
+                <Quote className="fa mr-1" />
                 Recent Citations
               </h4>
               <div className="space-y-2 max-h-40 overflow-y-auto war-room-scrollbar">
@@ -216,7 +218,7 @@ export const AnalystMode: React.FC<AnalystModeProps> = ({
               className={`analyst-btn analyst-btn-icon ${showSources ? 'analyst-btn-active' : ''}`}
               title="Toggle sources panel"
             >
-              <i className="fa fa-sidebar text-xs"></i>
+              <PanelLeft className="fa text-xs" />
             </button>
 
             <button
@@ -224,7 +226,7 @@ export const AnalystMode: React.FC<AnalystModeProps> = ({
               className="analyst-btn analyst-btn-icon"
               title="Export analysis"
             >
-              <i className="fa fa-share-nodes text-xs"></i>
+              <Share2 className="fa text-xs" />
             </button>
           </div>
         </div>
@@ -252,7 +254,7 @@ export const AnalystMode: React.FC<AnalystModeProps> = ({
             <div className="h-full flex items-center justify-center">
               <div className="text-center max-w-md">
                 <div className="w-16 h-16 mx-auto mb-4 rounded-full analyst-empty-icon flex items-center justify-center">
-                  <i className="fa fa-chart-line text-2xl analyst-icon"></i>
+                  <TrendingUp className="fa text-2xl analyst-icon" />
                 </div>
                 <h3 className="text-lg font-semibold analyst-text-primary mb-2">
                   Analyst Mode
@@ -263,7 +265,7 @@ export const AnalystMode: React.FC<AnalystModeProps> = ({
                 </p>
                 {documents.length === 0 && (
                   <p className="text-xs analyst-hint">
-                    <i className="fa fa-info-circle mr-1"></i>
+                    <Info className="fa mr-1" />
                     Upload documents to enable citation-backed analysis
                   </p>
                 )}
@@ -284,7 +286,7 @@ export const AnalystMode: React.FC<AnalystModeProps> = ({
                 >
                   {msg.role === 'assistant' && (
                     <div className="flex items-center gap-2 mb-2 pb-2 analyst-message-header">
-                      <i className="fa fa-chart-line analyst-icon text-xs"></i>
+                      <TrendingUp className="fa analyst-icon text-xs" />
                       <span className="text-xs analyst-accent font-medium">Analysis</span>
                     </div>
                   )}
@@ -294,7 +296,7 @@ export const AnalystMode: React.FC<AnalystModeProps> = ({
                   {msg.role === 'assistant' && msg.citations && msg.citations.length > 0 && (
                     <div className="mt-3 pt-3 analyst-citations-section">
                       <p className="text-xs analyst-text-secondary mb-2">
-                        <i className="fa fa-bookmark mr-1"></i>
+                        <Bookmark className="fa mr-1" />
                         Sources cited:
                       </p>
                       <div className="flex flex-wrap gap-1">
@@ -319,7 +321,7 @@ export const AnalystMode: React.FC<AnalystModeProps> = ({
               <div className="analyst-message-ai">
                 <div className="flex items-center gap-3">
                   <div className="w-5 h-5 rounded-full analyst-loading-icon flex items-center justify-center">
-                    <i className="fa fa-chart-line analyst-icon text-xs animate-pulse"></i>
+                    <TrendingUp className="fa analyst-icon text-xs animate-pulse" />
                   </div>
                   <span className="text-sm analyst-text-secondary">Analyzing data...</span>
                 </div>
@@ -356,7 +358,7 @@ export const AnalystMode: React.FC<AnalystModeProps> = ({
                   input.trim() ? 'analyst-send-btn-active' : ''
                 }`}
               >
-                <i className="fa fa-paper-plane text-xs"></i>
+                <Send className="fa text-xs" />
               </button>
             </div>
           </div>

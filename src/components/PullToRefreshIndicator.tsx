@@ -1,5 +1,7 @@
 import React from 'react';
 
+import { ArrowDown, RefreshCw } from 'lucide-react';
+
 interface PullToRefreshIndicatorProps {
   pullDistance: number;
   isRefreshing: boolean;
@@ -23,18 +25,13 @@ export const PullToRefreshIndicator: React.FC<PullToRefreshIndicatorProps> = ({
     >
       <div className="bg-white dark:bg-zinc-900 rounded-full shadow-lg p-3 flex items-center justify-center">
         {isRefreshing ? (
-          <i className="fa-solid fa-sync animate-spin text-blue-500 text-lg"></i>
+          <RefreshCw className="animate-spin text-blue-500 text-lg" />
         ) : (
-          <i
-            className="fa-solid fa-arrow-down text-zinc-400 text-lg transition-transform duration-200"
-            style={{
-              transform: `rotate(${progress * 180}deg)`,
-            }}
-          ></i>
+          <ArrowDown className="text-zinc-400 text-lg transition-transform duration-200" />
         )}
       </div>
     </div>
   );
 };
 
-export default PullToRefreshIndicator;
+export default React.memo(PullToRefreshIndicator);

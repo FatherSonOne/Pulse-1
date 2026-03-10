@@ -4,6 +4,8 @@ import { getAllToolActions, getToolOverlayType, saveRecentTool } from '../../ser
 import type { ToolAction } from '../../services/toolRegistry';
 import './InlineToolsMenu.css';
 
+import { ArrowLeft, ChevronRight, LayoutGrid, X } from 'lucide-react';
+
 interface ToolCategory {
   id: string;
   name: string;
@@ -156,7 +158,7 @@ export const InlineToolsMenu: React.FC<InlineToolsMenuProps> = ({ onClose, setAc
               onClick={() => setSelectedCategory(null)}
               aria-label="Back to categories"
             >
-              <i className="fa-solid fa-arrow-left" />
+              <ArrowLeft />
             </button>
             <div className="header-content">
               <i className={`fa-solid ${TOOL_CATEGORIES.find(c => c.id === selectedCategory)?.icon}`} />
@@ -166,11 +168,11 @@ export const InlineToolsMenu: React.FC<InlineToolsMenuProps> = ({ onClose, setAc
         ) : (
           <>
             <div className="header-content">
-              <i className="fa-solid fa-grid-2" />
+              <LayoutGrid />
               <span>AI Tools</span>
             </div>
             <button className="close-button" onClick={onClose} aria-label="Close menu">
-              <i className="fa-solid fa-times" />
+              <X />
             </button>
           </>
         )}
@@ -201,7 +203,7 @@ export const InlineToolsMenu: React.FC<InlineToolsMenuProps> = ({ onClose, setAc
                   <div className="category-name">{category.name}</div>
                   <div className="category-count">{category.tools.length} tools</div>
                 </div>
-                <i className="fa-solid fa-chevron-right category-arrow" />
+                <ChevronRight className="category-arrow" />
               </motion.button>
             ))}
           </div>

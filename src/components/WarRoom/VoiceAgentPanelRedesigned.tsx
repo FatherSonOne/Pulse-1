@@ -5,6 +5,8 @@ import { VoiceAgentVisualizerEnhanced } from './VoiceAgentVisualizerEnhanced';
 import { RealtimeHistoryItem } from '../../services/realtimeAgentService';
 import toast from 'react-hot-toast';
 
+import { Code, Copy, FileText, Globe, MessagesSquare, Settings, Sliders, X } from 'lucide-react';
+
 interface VoiceAgentPanelRedesignedProps {
   userId: string;
   projectId?: string;
@@ -232,7 +234,7 @@ export const VoiceAgentPanelRedesigned: React.FC<VoiceAgentPanelRedesignedProps>
         onClick={(e) => e.stopPropagation()}
       >
         <h3 className="text-sm font-semibold flex items-center gap-2">
-          <i className="fa fa-sliders war-room-text-primary"></i>
+          <Sliders className="fa war-room-text-primary" />
           Voice Settings
         </h3>
 
@@ -318,7 +320,7 @@ export const VoiceAgentPanelRedesigned: React.FC<VoiceAgentPanelRedesignedProps>
         {/* Language Preference */}
         <div>
           <label className="text-xs war-room-text-secondary block mb-1.5">
-            <i className="fa fa-globe mr-1"></i>
+            <Globe className="fa mr-1" />
             Preferred Language
           </label>
           <select
@@ -375,7 +377,7 @@ export const VoiceAgentPanelRedesigned: React.FC<VoiceAgentPanelRedesignedProps>
                 className="war-room-btn px-2 py-1.5 text-xs"
                 title="Export as Text"
               >
-                <i className="fa fa-file-text mr-1"></i>
+                <FileText className="fa mr-1" />
                 TXT
               </button>
               <button
@@ -383,7 +385,7 @@ export const VoiceAgentPanelRedesigned: React.FC<VoiceAgentPanelRedesignedProps>
                 className="war-room-btn px-2 py-1.5 text-xs"
                 title="Export as JSON"
               >
-                <i className="fa fa-code mr-1"></i>
+                <Code className="fa mr-1" />
                 JSON
               </button>
             </div>
@@ -397,7 +399,7 @@ export const VoiceAgentPanelRedesigned: React.FC<VoiceAgentPanelRedesignedProps>
           className={`war-room-btn war-room-btn-icon ${showSettings ? 'war-room-btn-primary' : ''}`}
           title="Voice Settings"
         >
-          <i className="fa fa-cog"></i>
+          <Settings className="fa" />
         </button>
       </div>
 
@@ -520,7 +522,7 @@ export const VoiceAgentPanelRedesigned: React.FC<VoiceAgentPanelRedesignedProps>
             className={`war-room-btn war-room-btn-icon ${showTranscriptPanel ? 'war-room-btn-primary' : ''}`}
             title="View Transcript"
           >
-            <i className="fa fa-file-text"></i>
+            <FileText className="fa" />
           </button>
 
           {/* Recording indicator */}
@@ -572,14 +574,14 @@ export const VoiceAgentPanelRedesigned: React.FC<VoiceAgentPanelRedesignedProps>
         {/* Panel Header */}
         <div className="shrink-0 flex items-center justify-between p-4 war-room-divider">
           <h3 className="text-sm font-semibold flex items-center gap-2">
-            <i className="fa fa-comments war-room-text-primary"></i>
+            <MessagesSquare className="fa war-room-text-primary" />
             Conversation Transcript
           </h3>
           <button
             onClick={() => setShowTranscriptPanel(false)}
             className="war-room-btn war-room-btn-icon-sm"
           >
-            <i className="fa fa-times"></i>
+            <X className="fa" />
           </button>
         </div>
 
@@ -625,7 +627,7 @@ export const VoiceAgentPanelRedesigned: React.FC<VoiceAgentPanelRedesignedProps>
                       className="absolute top-0 right-0 opacity-0 group-hover:opacity-100 transition-opacity p-1 text-gray-400 hover:text-gray-600"
                       title="Copy"
                     >
-                      <i className="fa fa-copy text-xs"></i>
+                      <Copy className="fa text-xs" />
                     </button>
                   </div>
                 );
@@ -649,7 +651,7 @@ export const VoiceAgentPanelRedesigned: React.FC<VoiceAgentPanelRedesignedProps>
             }}
             className="w-full py-2 px-4 bg-gray-100 dark:bg-gray-800 hover:bg-gray-200 dark:hover:bg-gray-700 text-gray-700 dark:text-gray-300 rounded-xl text-sm font-medium transition-colors flex items-center justify-center gap-2"
           >
-            <i className="fa fa-copy"></i>
+            <Copy className="fa" />
             Copy All
           </button>
           <div className="flex gap-2">
@@ -657,14 +659,14 @@ export const VoiceAgentPanelRedesigned: React.FC<VoiceAgentPanelRedesignedProps>
               onClick={exportTranscriptText}
               className="flex-1 py-2 px-3 bg-gray-100 dark:bg-gray-800 hover:bg-gray-200 dark:hover:bg-gray-700 text-gray-700 dark:text-gray-300 rounded-xl text-xs font-medium transition-colors flex items-center justify-center gap-1"
             >
-              <i className="fa fa-file-text"></i>
+              <FileText className="fa" />
               Export TXT
             </button>
             <button
               onClick={exportTranscriptJSON}
               className="flex-1 py-2 px-3 bg-gray-100 dark:bg-gray-800 hover:bg-gray-200 dark:hover:bg-gray-700 text-gray-700 dark:text-gray-300 rounded-xl text-xs font-medium transition-colors flex items-center justify-center gap-1"
             >
-              <i className="fa fa-code"></i>
+              <Code className="fa" />
               Export JSON
             </button>
           </div>

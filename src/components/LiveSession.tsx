@@ -11,6 +11,8 @@ import {
 import { saveArchiveItem } from '../services/dbService';
 import AudioVisualizer from './AudioVisualizer';
 
+import { RefreshCw, X } from 'lucide-react';
+
 const GEMINI_MODEL = 'gemini-2.5-flash-native-audio-preview-09-2025';
 const VIDEO_FRAME_RATE = 5; 
 const JPEG_QUALITY = 0.5;
@@ -362,12 +364,12 @@ const LiveSession: React.FC<LiveSessionProps> = ({ apiKey, onClose }) => {
                 }}
                 className="ml-4 px-3 py-1 text-xs bg-blue-600 hover:bg-blue-500 text-white rounded-lg transition"
               >
-                <i className="fa-solid fa-rotate mr-1"></i> Retry
+                <RefreshCw className="mr-1" /> Retry
               </button>
             )}
         </div>
         <button onClick={() => { saveTranscript(); disconnect(); onClose(); }} className="text-zinc-400 hover:text-white transition">
-          <i className="fa-solid fa-xmark text-xl"></i>
+          <X className="text-xl" />
         </button>
       </div>
 

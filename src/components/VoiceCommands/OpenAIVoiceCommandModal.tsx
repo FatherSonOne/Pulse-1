@@ -1,6 +1,8 @@
 import React, { useEffect } from 'react';
 import { VoiceAgentPanelRedesigned } from '../WarRoom/VoiceAgentPanelRedesigned';
 
+import { X } from 'lucide-react';
+
 interface OpenAIVoiceCommandModalProps {
   isOpen: boolean;
   onClose: () => void;
@@ -55,7 +57,7 @@ export const OpenAIVoiceCommandModal: React.FC<OpenAIVoiceCommandModalProps> = (
           aria-label="Close voice commands"
           title="Close"
         >
-          <i className="fa-solid fa-xmark text-lg" />
+          <X className="text-lg" />
         </button>
 
         <VoiceAgentPanelRedesigned

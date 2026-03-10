@@ -19,6 +19,8 @@ import ConversationPanel from './ConversationPanel';
 import { MessageChannel, ChannelMessage } from '../../types/messages';
 import { useSplitViewMessages } from '../../hooks/useSplitViewMessages';
 
+import { ArrowLeft, X } from 'lucide-react';
+
 /* =========================================
    Design Token System
    ========================================= */
@@ -309,7 +311,7 @@ const MobileBackButton: React.FC<MobileBackButtonProps> = ({ onClick }) => (
     whileTap={{ scale: 0.98 }}
     aria-label="Back to threads"
   >
-    <i className="fa-solid fa-arrow-left text-zinc-600 dark:text-zinc-400" />
+    <ArrowLeft className="text-zinc-600 dark:text-zinc-400" />
     <span className="text-sm font-medium text-zinc-900 dark:text-white">Threads</span>
   </motion.button>
 );
@@ -379,7 +381,7 @@ const KeyboardShortcutsHelper: React.FC = () => {
             className="p-2 rounded-lg hover:bg-zinc-100 dark:hover:bg-zinc-800 transition-colors"
             aria-label="Close"
           >
-            <i className="fa-solid fa-times text-zinc-600 dark:text-zinc-400" />
+            <X className="text-zinc-600 dark:text-zinc-400" />
           </button>
         </div>
 

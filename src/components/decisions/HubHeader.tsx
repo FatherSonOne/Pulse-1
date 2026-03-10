@@ -11,7 +11,7 @@ interface HubHeaderProps {
   actions?: React.ReactNode;
 }
 
-export const HubHeader: React.FC<HubHeaderProps> = ({
+const HubHeaderBase: React.FC<HubHeaderProps> = ({
   mode,
   onModeChange,
   onRefresh,
@@ -74,3 +74,6 @@ export const HubHeader: React.FC<HubHeaderProps> = ({
     </header>
   );
 };
+
+export const HubHeader = React.memo(HubHeaderBase);
+HubHeader.displayName = 'HubHeader';

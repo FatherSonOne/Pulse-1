@@ -43,4 +43,4 @@ export const SkeletonDecisionCard: React.FC<SkeletonDecisionCardProps> = ({ clas
   );
 };
 
-export default SkeletonDecisionCard;
+export default React.memo(SkeletonDecisionCard);

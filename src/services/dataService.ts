@@ -4,6 +4,7 @@
  */
 
 import { supabase } from './supabase';
+import type { RealtimeChannel } from '@supabase/supabase-js';
 // analyticsCollector is dynamically imported at call sites to avoid eagerly loading
 // the svc-crm-analytics chunk (which contains a circular dep that triggers a TDZ error
 // if loaded during app startup via the dataService → analyticsCollector static import).
@@ -307,6 +308,21 @@ type DBThreadWithMessages = DBThread & { messages: DBMessage[] | null };
 
 class DataService {
   private userId: string | null = null;
+  private subscriptionRegistry: Map<string, RealtimeChannel> = new Map();
+
+  private registerChannel(key: string, channel: RealtimeChannel): RealtimeChannel {
+    const existing = this.subscriptionRegistry.get(key);
+    if (existing) {
+      supabase.removeChannel(existing);
+    }
+    this.subscriptionRegistry.set(key, channel);
+    return channel;
+  }
+
+  cleanupAllSubscriptions(): void {
+    this.subscriptionRegistry.forEach(channel => supabase.removeChannel(channel));
+    this.subscriptionRegistry.clear();
+  }
 
   setUserId(userId: string) {
     this.userId = userId;
@@ -626,22 +642,20 @@ class DataService {
   }
 
   async getThread(id: string): Promise<Thread | null> {
-    const { data: threadData, error } = await supabase
+    const { data, error } = await supabase
       .from('threads')
-      .select('*')
+      .select('*, messages(*)')
       .eq('id', id)
       .single();
 
     if (error) return null;
 
-    const { data: messagesData } = await supabase
-      .from('messages')
-      .select('*')
-      .eq('thread_id', id)
-      .order('timestamp');
-
-    const messages = (messagesData || []).map(dbToMessage);
-    return dbToThread(threadData, messages);
+    const threadDb = data as DBThreadWithMessages;
+    const messages = (threadDb.messages || [])
+      .sort((a, b) => (a.timestamp < b.timestamp ? -1 : a.timestamp > b.timestamp ? 1 : 0))
+      .map(dbToMessage);
+    const { messages: _, ...threadFields } = threadDb;
+    return dbToThread(threadFields, messages);
   }
 
   async createThread(thread: Omit<Thread, 'id' | 'messages'>): Promise<Thread | null> {
@@ -961,7 +975,7 @@ class DataService {
       return null;
     }
 
-    return supabase
+    const channel = supabase
       .channel('contacts_changes')
       .on(
         'postgres_changes',
@@ -978,6 +992,7 @@ class DataService {
         }
       )
       .subscribe();
+    return this.registerChannel('contacts_changes', channel);
   }
 
   async subscribeToMessages(threadId: string, callback: (message: Message) => void): Promise<any> {
@@ -988,8 +1003,9 @@ class DataService {
       return null;
     }
 
-    return supabase
-      .channel(`messages_${threadId}`)
+    const channelKey = `messages_${threadId}`;
+    const channel = supabase
+      .channel(channelKey)
       .on(
         'postgres_changes',
         {
@@ -1003,6 +1019,7 @@ class DataService {
         }
       )
       .subscribe();
+    return this.registerChannel(channelKey, channel);
   }
 
   async subscribeToUnifiedInbox(callback: (message: UnifiedMessage) => void): Promise<any> {
@@ -1013,7 +1030,7 @@ class DataService {
       return null;
     }
 
-    return supabase
+    const channel = supabase
       .channel('unified_inbox')
       .on(
         'postgres_changes',
@@ -1028,6 +1045,7 @@ class DataService {
         }
       )
       .subscribe();
+    return this.registerChannel('unified_inbox', channel);
   }
 
   // ============= PRODUCTIVITY & ANALYTICS =============
@@ -1622,7 +1640,7 @@ class DataService {
           }
         })
         .subscribe();
-      channels.push(taskChannel);
+      channels.push(this.registerChannel('dashboard_tasks', taskChannel));
     }
 
     if (callbacks.onEventUpdate) {
@@ -1639,7 +1657,7 @@ class DataService {
           }
         })
         .subscribe();
-      channels.push(eventChannel);
+      channels.push(this.registerChannel('dashboard_events', eventChannel));
     }
 
     if (callbacks.onMessageUpdate) {
@@ -1656,12 +1674,12 @@ class DataService {
           }
         })
         .subscribe();
-      channels.push(messageChannel);
+      channels.push(this.registerChannel('dashboard_messages', messageChannel));
     }
 
     // Return unsubscribe function
     return () => {
-      channels.forEach(channel => channel.unsubscribe());
+      channels.forEach(channel => supabase.removeChannel(channel));
     };
   }
 }

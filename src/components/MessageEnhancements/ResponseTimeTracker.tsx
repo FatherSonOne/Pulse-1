@@ -1,6 +1,8 @@
 // Response Time Tracker with Insights
 import React, { useMemo, useState } from 'react';
 
+import { ArrowDown, ArrowUp, Minus, Timer, TrendingDown, TrendingUp, Zap } from 'lucide-react';
+
 interface ResponseMetric {
   contactName: string;
   contactId: string;
@@ -118,9 +120,9 @@ export const ResponseTimeTracker: React.FC<ResponseTimeTrackerProps> = React.mem
           </span>
         </div>
         <div className="flex items-center gap-1">
-          {metrics.trend === 'improving' && <i className="fa-solid fa-arrow-trend-up text-emerald-500 text-[10px]" />}
-          {metrics.trend === 'declining' && <i className="fa-solid fa-arrow-trend-down text-red-500 text-[10px]" />}
-          {metrics.trend === 'stable' && <i className="fa-solid fa-minus text-zinc-400 text-[10px]" />}
+          {metrics.trend === 'improving' && <TrendingUp className="text-emerald-500 text-[10px]" />}
+          {metrics.trend === 'declining' && <TrendingDown className="text-red-500 text-[10px]" />}
+          {metrics.trend === 'stable' && <Minus className="text-zinc-400 text-[10px]" />}
         </div>
       </div>
     );
@@ -133,7 +135,7 @@ export const ResponseTimeTracker: React.FC<ResponseTimeTrackerProps> = React.mem
         <div className="flex items-center justify-between">
           <div className="flex items-center gap-2">
             <div className="w-8 h-8 rounded-full bg-blue-100 dark:bg-blue-900/40 flex items-center justify-center">
-              <i className="fa-solid fa-stopwatch text-blue-500 text-sm" />
+              <Timer className="text-blue-500 text-sm" />
             </div>
             <div>
               <h3 className="text-sm font-bold text-zinc-800 dark:text-white">Response Time</h3>
@@ -170,9 +172,9 @@ export const ResponseTimeTracker: React.FC<ResponseTimeTrackerProps> = React.mem
             metrics.trend === 'declining' ? 'bg-red-100 dark:bg-red-900/40 text-red-700 dark:text-red-300' :
             'bg-zinc-100 dark:bg-zinc-700 text-zinc-600 dark:text-zinc-400'
           }`}>
-            {metrics.trend === 'improving' && <i className="fa-solid fa-arrow-trend-up" />}
-            {metrics.trend === 'declining' && <i className="fa-solid fa-arrow-trend-down" />}
-            {metrics.trend === 'stable' && <i className="fa-solid fa-minus" />}
+            {metrics.trend === 'improving' && <TrendingUp />}
+            {metrics.trend === 'declining' && <TrendingDown />}
+            {metrics.trend === 'stable' && <Minus />}
             <span className="capitalize">{metrics.trend}</span>
           </div>
         </div>
@@ -266,10 +268,10 @@ export const ResponseTimeBadge: React.FC<{
       avgTime < 120 ? 'bg-blue-100 dark:bg-blue-900/40 text-blue-700 dark:text-blue-300' :
       'bg-amber-100 dark:bg-amber-900/40 text-amber-700 dark:text-amber-300'
     }`}>
-      <i className="fa-solid fa-bolt" />
+      <Zap />
       <span>{formatTime(avgTime)}</span>
-      {trend === 'improving' && <i className="fa-solid fa-arrow-up text-[8px]" />}
-      {trend === 'declining' && <i className="fa-solid fa-arrow-down text-[8px]" />}
+      {trend === 'improving' && <ArrowUp className="text-[8px]" />}
+      {trend === 'declining' && <ArrowDown className="text-[8px]" />}
     </div>
   );
 };

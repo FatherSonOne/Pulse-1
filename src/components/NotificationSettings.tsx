@@ -8,6 +8,8 @@ import { useNotificationStore } from '../store/notificationStore';
 import { NotificationCategory, CategoryPreferences, NotificationPriority } from '../types/notifications';
 import { playNotificationSound, testAllSounds } from '../utils/soundGenerator';
 
+import { Bell, Lightbulb, Moon, Play, Sliders, Star, Volume2, X } from 'lucide-react';
+
 // Category configuration
 const CATEGORIES: {
   id: NotificationCategory;
@@ -103,7 +105,7 @@ export const NotificationSettings: React.FC<NotificationSettingsProps> = ({
       {/* Header */}
       <div className="section-header">
         <h3 className="text-lg font-bold dark:text-white text-zinc-900 flex items-center gap-2">
-          <i className="fa-solid fa-bell text-rose-500"></i>
+          <Bell className="text-rose-500" />
           Notification Preferences
         </h3>
         <p className="text-sm text-zinc-500 dark:text-zinc-400 mt-1">
@@ -141,7 +143,7 @@ export const NotificationSettings: React.FC<NotificationSettingsProps> = ({
                 onClick={requestPermission}
                 className="mt-3 px-4 py-2 bg-amber-500 hover:bg-amber-600 text-white text-sm font-bold rounded-lg transition"
               >
-                <i className="fa-solid fa-bell mr-2"></i>
+                <Bell className="mr-2" />
                 Enable Notifications
               </button>
             )}
@@ -177,7 +179,7 @@ export const NotificationSettings: React.FC<NotificationSettingsProps> = ({
       {notifSound && (
         <div className="bg-white dark:bg-zinc-900/50 rounded-xl border border-zinc-200 dark:border-zinc-800 p-4 shadow-sm">
           <h4 className="text-sm font-bold text-zinc-700 dark:text-zinc-300 mb-4 flex items-center gap-2">
-            <i className="fa-solid fa-volume-high text-rose-500"></i>
+            <Volume2 className="text-rose-500" />
             Sound Settings
           </h4>
 
@@ -224,7 +226,7 @@ export const NotificationSettings: React.FC<NotificationSettingsProps> = ({
                   <i className={`fa-solid ${cat.icon}`}></i>
                   {cat.label}
                   {testingSound === cat.id && (
-                    <i className="fa-solid fa-volume-high animate-pulse"></i>
+                    <Volume2 className="animate-pulse" />
                   )}
                 </button>
               ))}
@@ -234,7 +236,7 @@ export const NotificationSettings: React.FC<NotificationSettingsProps> = ({
               disabled={testingSound !== null}
               className="mt-3 text-xs text-rose-500 hover:text-rose-600 font-medium"
             >
-              <i className="fa-solid fa-play mr-1"></i>
+              <Play className="mr-1" />
               Play all sounds demo
             </button>
           </div>
@@ -246,7 +248,7 @@ export const NotificationSettings: React.FC<NotificationSettingsProps> = ({
         <div className="flex items-center justify-between mb-4">
           <div>
             <h4 className="text-sm font-bold text-zinc-700 dark:text-zinc-300 flex items-center gap-2">
-              <i className="fa-solid fa-moon text-purple-500"></i>
+              <Moon className="text-purple-500" />
               Quiet Hours
             </h4>
             <p className="text-xs text-zinc-500 dark:text-zinc-400 mt-1">
@@ -300,7 +302,7 @@ export const NotificationSettings: React.FC<NotificationSettingsProps> = ({
       {/* VIP Contacts */}
       <div className="bg-white dark:bg-zinc-900/50 rounded-xl border border-zinc-200 dark:border-zinc-800 p-4 shadow-sm">
         <h4 className="text-sm font-bold text-zinc-700 dark:text-zinc-300 mb-2 flex items-center gap-2">
-          <i className="fa-solid fa-star text-amber-500"></i>
+          <Star className="text-amber-500" />
           VIP Contacts
         </h4>
         <p className="text-xs text-zinc-500 dark:text-zinc-400 mb-4">
@@ -332,13 +334,13 @@ export const NotificationSettings: React.FC<NotificationSettingsProps> = ({
                 key={i}
                 className="bg-amber-100 dark:bg-amber-900/30 text-amber-700 dark:text-amber-400 px-3 py-1.5 rounded-full text-xs font-medium flex items-center gap-2"
               >
-                <i className="fa-solid fa-star text-[10px]"></i>
+                <Star className="text-[10px]" />
                 {contact}
                 <button
                   onClick={() => removeVipContact(contact)}
                   className="hover:text-amber-900 dark:hover:text-amber-200"
                 >
-                  <i className="fa-solid fa-xmark"></i>
+                  <X />
                 </button>
               </span>
             ))}
@@ -386,7 +388,7 @@ export const NotificationSettings: React.FC<NotificationSettingsProps> = ({
           className="w-full p-4 flex items-center justify-between hover:bg-zinc-50 dark:hover:bg-zinc-800/50 transition"
         >
           <div className="flex items-center gap-3">
-            <i className="fa-solid fa-sliders text-blue-500"></i>
+            <Sliders className="text-blue-500" />
             <div className="text-left">
               <h4 className="text-sm font-bold text-zinc-700 dark:text-zinc-300">
                 Per-Category Settings
@@ -416,7 +418,7 @@ export const NotificationSettings: React.FC<NotificationSettingsProps> = ({
       {/* Info Box */}
       <div className="p-4 bg-blue-50 dark:bg-blue-900/20 border border-blue-100 dark:border-blue-800 rounded-xl">
         <div className="flex items-start gap-3">
-          <i className="fa-solid fa-lightbulb text-blue-500 mt-0.5"></i>
+          <Lightbulb className="text-blue-500 mt-0.5" />
           <div className="text-sm text-blue-700 dark:text-blue-300">
             <p className="font-semibold mb-1">About Pulse Notifications</p>
             <ul className="text-xs text-blue-600 dark:text-blue-400 space-y-1 list-disc list-inside">

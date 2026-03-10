@@ -1,6 +1,8 @@
 import React, { useState, useCallback } from 'react';
 import { Thread, Message, Contact } from '../types';
 
+import { ArrowLeft, EllipsisVertical, FlaskConical, Info, Mail, MessageCircle, MessageSquare, MessageSquareX, Phone, Pin, Plus, Search, Send, Smartphone, Trash2, X } from 'lucide-react';
+
 interface CellularSMSProps {
   onBack: () => void;
   threads: Thread[];
@@ -63,10 +65,10 @@ export const CellularSMS: React.FC<CellularSMSProps> = ({
 
   const getSourceIcon = (source?: string) => {
     switch (source) {
-      case 'sms': return <i className="fa-solid fa-comment-sms text-green-500 text-[10px]" />;
-      case 'whatsapp': return <i className="fa-brands fa-whatsapp text-emerald-500 text-[10px]" />;
-      case 'email': return <i className="fa-solid fa-envelope text-blue-500 text-[10px]" />;
-      default: return <i className="fa-solid fa-message text-zinc-400 text-[10px]" />;
+      case 'sms': return <MessageSquare className="text-green-500 text-[10px]" />;
+      case 'whatsapp': return <MessageCircle className="text-emerald-500 text-[10px]" />;
+      case 'email': return <Mail className="text-blue-500 text-[10px]" />;
+      default: return <MessageSquare className="text-zinc-400 text-[10px]" />;
     }
   };
 
@@ -77,7 +79,7 @@ export const CellularSMS: React.FC<CellularSMSProps> = ({
         <div className="bg-gradient-to-r from-amber-500 to-orange-500 px-4 py-2 flex items-center justify-between">
           <div className="flex items-center gap-3">
             <div className="w-8 h-8 rounded-lg bg-white/20 flex items-center justify-center">
-              <i className="fa-solid fa-flask text-white"></i>
+              <FlaskConical className="text-white" />
             </div>
             <div>
               <p className="text-white font-semibold text-sm">Cellular SMS - Beta Testing</p>
@@ -88,7 +90,7 @@ export const CellularSMS: React.FC<CellularSMSProps> = ({
             onClick={() => setShowDevBanner(false)}
             className="w-8 h-8 rounded-lg bg-white/20 hover:bg-white/30 flex items-center justify-center text-white transition"
           >
-            <i className="fa-solid fa-times"></i>
+            <X />
           </button>
         </div>
       )}
@@ -105,11 +107,11 @@ export const CellularSMS: React.FC<CellularSMSProps> = ({
                 className="w-9 h-9 rounded-lg flex items-center justify-center text-zinc-500 hover:bg-zinc-100 dark:hover:bg-zinc-800 transition"
                 title="Back to Pulse Messages"
               >
-                <i className="fa-solid fa-arrow-left"></i>
+                <ArrowLeft />
               </button>
               <div className="flex items-center gap-2">
                 <div className="w-8 h-8 rounded-lg bg-gradient-to-br from-green-500 to-emerald-600 flex items-center justify-center">
-                  <i className="fa-solid fa-mobile-screen-button text-white text-sm"></i>
+                  <Smartphone className="text-white text-sm" />
                 </div>
                 <div>
                   <h1 className="text-sm font-bold text-zinc-900 dark:text-white">Cellular SMS</h1>
@@ -122,7 +124,7 @@ export const CellularSMS: React.FC<CellularSMSProps> = ({
               className="px-3 py-1.5 bg-green-600 hover:bg-green-500 text-white text-xs font-medium rounded-lg transition flex items-center gap-2"
               title="New Message"
             >
-              <i className="fa-solid fa-plus"></i>
+              <Plus />
               New Message
             </button>
           </div>
@@ -130,7 +132,7 @@ export const CellularSMS: React.FC<CellularSMSProps> = ({
           {/* Search */}
           <div className="p-3">
             <div className="relative">
-              <i className="fa-solid fa-search absolute left-3 top-1/2 -translate-y-1/2 text-zinc-400 text-sm"></i>
+              <Search className="absolute left-3 top-1/2 -translate-y-1/2 text-zinc-400 text-sm" />
               <input
                 type="text"
                 placeholder="Search SMS..."
@@ -146,7 +148,7 @@ export const CellularSMS: React.FC<CellularSMSProps> = ({
             {filteredThreads.length === 0 ? (
               <div className="flex flex-col items-center justify-center py-12 text-center">
                 <div className="w-16 h-16 rounded-2xl bg-zinc-100 dark:bg-zinc-800 flex items-center justify-center mb-4">
-                  <i className="fa-solid fa-comment-slash text-2xl text-zinc-400"></i>
+                  <MessageSquareX className="text-2xl text-zinc-400" />
                 </div>
                 <p className="text-zinc-500 text-sm font-medium">No SMS conversations</p>
                 <p className="text-zinc-400 text-xs mt-1">SMS messages will appear here</p>
@@ -170,14 +172,14 @@ export const CellularSMS: React.FC<CellularSMSProps> = ({
                         className={`w-6 h-6 rounded flex items-center justify-center ${thread.pinned ? 'text-amber-500' : 'text-zinc-400 hover:text-zinc-600'}`}
                         title={thread.pinned ? 'Unpin' : 'Pin'}
                       >
-                        <i className="fa-solid fa-thumbtack text-[10px]"></i>
+                        <Pin className="text-[10px]" />
                       </button>
                       <button
                         onClick={(e) => { e.stopPropagation(); onDeleteThread(thread.id); }}
                         className="w-6 h-6 rounded flex items-center justify-center text-zinc-400 hover:text-red-500"
                         title="Delete"
                       >
-                        <i className="fa-solid fa-trash text-[10px]"></i>
+                        <Trash2 className="text-[10px]" />
                       </button>
                     </div>
 
@@ -186,7 +188,7 @@ export const CellularSMS: React.FC<CellularSMSProps> = ({
                       {thread.contactName.charAt(0)}
                       {thread.pinned && (
                         <div className="absolute -top-1 -right-1 w-4 h-4 bg-amber-500 rounded-full flex items-center justify-center">
-                          <i className="fa-solid fa-thumbtack text-[8px] text-white"></i>
+                          <Pin className="text-[8px] text-white" />
                         </div>
                       )}
                     </div>
@@ -237,10 +239,10 @@ export const CellularSMS: React.FC<CellularSMSProps> = ({
                 </div>
                 <div className="flex items-center gap-2">
                   <button className="w-9 h-9 rounded-lg flex items-center justify-center text-zinc-500 hover:bg-zinc-100 dark:hover:bg-zinc-800 transition" title="Call">
-                    <i className="fa-solid fa-phone"></i>
+                    <Phone />
                   </button>
                   <button className="w-9 h-9 rounded-lg flex items-center justify-center text-zinc-500 hover:bg-zinc-100 dark:hover:bg-zinc-800 transition" title="More options">
-                    <i className="fa-solid fa-ellipsis-vertical"></i>
+                    <EllipsisVertical />
                   </button>
                 </div>
               </div>
@@ -272,7 +274,7 @@ export const CellularSMS: React.FC<CellularSMSProps> = ({
               <div className="p-4 border-t border-zinc-200 dark:border-zinc-800 bg-white dark:bg-zinc-950">
                 <div className="flex items-center gap-3">
                   <button className="w-10 h-10 rounded-full flex items-center justify-center text-zinc-500 hover:bg-zinc-100 dark:hover:bg-zinc-800 transition">
-                    <i className="fa-solid fa-plus"></i>
+                    <Plus />
                   </button>
                   <input
                     type="text"
@@ -287,7 +289,7 @@ export const CellularSMS: React.FC<CellularSMSProps> = ({
                     disabled={!inputText.trim()}
                     className="w-10 h-10 rounded-full bg-green-500 flex items-center justify-center text-white hover:bg-green-600 transition disabled:opacity-50 disabled:cursor-not-allowed"
                   >
-                    <i className="fa-solid fa-paper-plane"></i>
+                    <Send />
                   </button>
                 </div>
               </div>
@@ -297,7 +299,7 @@ export const CellularSMS: React.FC<CellularSMSProps> = ({
             <div className="flex-1 flex items-center justify-center">
               <div className="text-center max-w-md">
                 <div className="w-24 h-24 mx-auto mb-6 rounded-2xl bg-gradient-to-br from-green-100 to-emerald-100 dark:from-green-900/30 dark:to-emerald-900/30 flex items-center justify-center">
-                  <i className="fa-solid fa-comment-sms text-4xl text-green-600 dark:text-green-400"></i>
+                  <MessageSquare className="text-4xl text-green-600 dark:text-green-400" />
                 </div>
                 <h2 className="text-xl font-bold text-zinc-900 dark:text-white mb-2">
                   Select a Conversation
@@ -310,7 +312,7 @@ export const CellularSMS: React.FC<CellularSMSProps> = ({
                 <div className="bg-amber-50 dark:bg-amber-900/20 border border-amber-200 dark:border-amber-800 rounded-xl p-4 text-left">
                   <div className="flex items-start gap-3">
                     <div className="w-8 h-8 rounded-lg bg-amber-100 dark:bg-amber-800/50 flex items-center justify-center flex-shrink-0">
-                      <i className="fa-solid fa-info-circle text-amber-600 dark:text-amber-400"></i>
+                      <Info className="text-amber-600 dark:text-amber-400" />
                     </div>
                     <div>
                       <p className="text-sm font-medium text-amber-800 dark:text-amber-200">Development Notice</p>

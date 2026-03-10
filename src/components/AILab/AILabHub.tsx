@@ -9,6 +9,8 @@ import QuickActions from './workspaces/QuickActions';
 import ProposalBuilder from './workspaces/ProposalBuilder';
 import './AILabHub.css';
 
+import { ArrowRight, Check, Lightbulb, Sparkles } from 'lucide-react';
+
 interface AILabHubProps {
   apiKey: string;
 }
@@ -41,7 +43,7 @@ const WorkspaceCard: React.FC<{
       <div className="workspace-features">
         {config.features.slice(0, 3).map((feature, i) => (
           <span key={i} className="workspace-feature">
-            <i className="fa-solid fa-check"></i>
+            <Check />
             {feature}
           </span>
         ))}
@@ -50,7 +52,7 @@ const WorkspaceCard: React.FC<{
       {/* Launch button */}
       <div className="workspace-launch">
         <span>Launch Workspace</span>
-        <i className="fa-solid fa-arrow-right"></i>
+        <ArrowRight />
       </div>
       
       {config.comingSoon && (
@@ -88,7 +90,7 @@ const HubContent: React.FC<{ apiKey: string }> = ({ apiKey }) => {
       <div className="hub-hero">
         <div className="hub-hero-content">
           <div className="hub-badge">
-            <i className="fa-solid fa-sparkles"></i>
+            <Sparkles />
             <span>AI-Powered Workspaces</span>
           </div>
           <h1 className="hub-title">
@@ -139,7 +141,7 @@ const HubContent: React.FC<{ apiKey: string }> = ({ apiKey }) => {
 
       {/* Footer hint */}
       <div className="hub-footer">
-        <i className="fa-solid fa-lightbulb"></i>
+        <Lightbulb />
         <span>Pro tip: Use <kbd>Ctrl</kbd> + <kbd>K</kbd> to quickly switch between workspaces</span>
       </div>
     </div>

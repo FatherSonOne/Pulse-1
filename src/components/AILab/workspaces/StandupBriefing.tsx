@@ -7,6 +7,8 @@ import AILabEmptyState from '../shared/AILabEmptyState';
 import { useToast } from '../shared/AILabToast';
 import './StandupBriefing.css';
 
+import { AlertTriangle, ArrowLeft, CalendarCheck, CheckCircle, Copy, Send, Target, TrendingUp, Users } from 'lucide-react';
+
 function getBlockerSeverity(text: string): 'none' | 'low' | 'high' {
   const lower = text.toLowerCase();
   if (/\bnone\b|no blocker|n\/a|nothing/.test(lower)) return 'none';
@@ -128,10 +130,10 @@ Return ONLY the JSON object, no markdown, no explanation.`;
       <div className="sb-header">
         <div className="sb-header-left">
           <button type="button" onClick={onBack} className="sb-back-btn" aria-label="Go back">
-            <i className="fa-solid fa-arrow-left"></i>
+            <ArrowLeft />
           </button>
           <div className="sb-branding">
-            <i className="fa-solid fa-people-group"></i>
+            <Users />
             <span>Team Standup</span>
           </div>
           <span className="sb-subtitle">AI-Powered Daily Briefing</span>
@@ -143,7 +145,7 @@ Return ONLY the JSON object, no markdown, no explanation.`;
               className="sb-btn sb-btn-secondary"
               onClick={() => navigator.clipboard.writeText(getShareContent())}
             >
-              <i className="fa-solid fa-copy"></i>
+              <Copy />
               Copy
             </button>
             {teamChannels.length > 0 && currentUser && (
@@ -152,7 +154,7 @@ Return ONLY the JSON object, no markdown, no explanation.`;
                 className="sb-btn sb-btn-primary"
                 onClick={() => setShowShare(true)}
               >
-                <i className="fa-solid fa-paper-plane"></i>
+                <Send />
                 Share to Channel
               </button>
             )}
@@ -165,7 +167,7 @@ Return ONLY the JSON object, no markdown, no explanation.`;
         <div className="sb-setup">
           <div className="sb-setup-inner">
             <div className="sb-setup-icon">
-              <i className="fa-solid fa-people-group"></i>
+              <Users />
             </div>
             <h2>Daily Standup Generator</h2>
             <p>Generate a per-member standup briefing based on your team's real activity, then share it directly to a Pulse channel.</p>
@@ -210,7 +212,7 @@ Return ONLY the JSON object, no markdown, no explanation.`;
 
             {!apiKey && (
               <p className="sb-warning">
-                <i className="fa-solid fa-triangle-exclamation"></i>
+                <AlertTriangle />
                 Gemini API key required. Add it in Settings.
               </p>
             )}
@@ -223,7 +225,7 @@ Return ONLY the JSON object, no markdown, no explanation.`;
             <div className="sb-results-header">
               <div>
                 <h3>
-                  <i className="fa-solid fa-calendar-check"></i>
+                  <CalendarCheck />
                   {selectedTeam?.name} Standup
                 </h3>
                 <span className="sb-date">{generatedDate}</span>
@@ -253,7 +255,7 @@ Return ONLY the JSON object, no markdown, no explanation.`;
 
             {teamSummary && (
               <div className="sb-team-summary">
-                <i className="fa-solid fa-chart-line"></i>
+                <TrendingUp />
                 <p>{teamSummary}</p>
               </div>
             )}
@@ -278,20 +280,20 @@ Return ONLY the JSON object, no markdown, no explanation.`;
                           showToast(`${member.memberName}'s standup copied`, 'success');
                         }}
                       >
-                        <i className="fa-solid fa-copy"></i>
+                        <Copy />
                       </button>
                     </div>
                     <div className="sb-member-items">
                       <div className="sb-item sb-item-yesterday">
                         <span className="sb-item-label">
-                          <i className="fa-solid fa-check-circle"></i>
+                          <CheckCircle />
                           Yesterday
                         </span>
                         <p>{member.yesterday}</p>
                       </div>
                       <div className="sb-item sb-item-today">
                         <span className="sb-item-label">
-                          <i className="fa-solid fa-bullseye"></i>
+                          <Target />
                           Today
                         </span>
                         <p>{member.today}</p>

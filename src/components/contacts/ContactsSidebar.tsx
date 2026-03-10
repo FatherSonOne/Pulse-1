@@ -3,6 +3,8 @@ import { Contact } from '../../types';
 import { SmartListPanel } from './SmartListPanel';
 import { SmartListType, SmartListCounts } from '../../types/relationshipTypes';
 
+import { Bell, ChevronRight, Users } from 'lucide-react';
+
 interface ContactsSidebarProps {
   filters: {
     status: string | null;
@@ -57,7 +59,7 @@ export const ContactsSidebar: React.FC<ContactsSidebarProps> = ({
             }`}
           >
             <span className="flex items-center gap-2">
-              <i className="fa-solid fa-users text-zinc-400"></i>
+              <Users className="text-zinc-400" />
               All Contacts
             </span>
             <span className="text-xs bg-zinc-100 dark:bg-zinc-800 px-2 py-0.5 rounded-full text-zinc-500 group-hover:bg-white dark:group-hover:bg-zinc-700 transition">
@@ -113,7 +115,7 @@ export const ContactsSidebar: React.FC<ContactsSidebarProps> = ({
           >
             <div className="flex items-center gap-2">
               <div className="w-8 h-8 rounded-full bg-orange-100 dark:bg-orange-900/30 flex items-center justify-center">
-                <i className="fa-solid fa-bell text-orange-500"></i>
+                <Bell className="text-orange-500" />
               </div>
               <div className="text-left">
                 <div className="text-sm font-medium text-orange-900 dark:text-orange-200">
@@ -124,7 +126,7 @@ export const ContactsSidebar: React.FC<ContactsSidebarProps> = ({
                 </div>
               </div>
             </div>
-            <i className="fa-solid fa-chevron-right text-orange-400 text-xs"></i>
+            <ChevronRight className="text-orange-400 text-xs" />
           </button>
         </div>
       )}

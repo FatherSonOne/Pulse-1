@@ -8,6 +8,8 @@ import AILabEmptyState from '../shared/AILabEmptyState';
 import { useToast } from '../shared/AILabToast';
 import './QuickActions.css';
 
+import { ArrowLeft, ArrowRight, Eraser, Keyboard, Search, Sparkles, Zap } from 'lucide-react';
+
 interface QuickActionsProps {
   onBack: () => void;
   apiKey: string;
@@ -147,17 +149,17 @@ const QuickActions: React.FC<QuickActionsProps> = ({ onBack, apiKey }) => {
       <div className="qa-header">
         <div className="qa-header-left">
           <button onClick={onBack} className="qa-back-btn">
-            <i className="fa-solid fa-arrow-left"></i>
+            <ArrowLeft />
           </button>
           <div className="qa-branding">
-            <i className="fa-solid fa-bolt"></i>
+            <Zap />
             <span>Quick Actions</span>
           </div>
           <span className="qa-subtitle">Context-Aware AI Toolbar</span>
         </div>
         <div className="qa-header-right">
           <div className="qa-search">
-            <i className="fa-solid fa-search"></i>
+            <Search />
             <input
               type="text"
               placeholder="Search actions..."
@@ -174,7 +176,7 @@ const QuickActions: React.FC<QuickActionsProps> = ({ onBack, apiKey }) => {
         <div className="qa-main">
           <div className="qa-input-section">
             <label>
-              <i className="fa-solid fa-keyboard"></i>
+              <Keyboard />
               Input
             </label>
             <textarea
@@ -185,7 +187,7 @@ const QuickActions: React.FC<QuickActionsProps> = ({ onBack, apiKey }) => {
             <div className="qa-input-footer">
               <span>{inputText.split(' ').filter(Boolean).length} words</span>
               <button onClick={() => setInputText('')}>
-                <i className="fa-solid fa-eraser"></i>
+                <Eraser />
                 Clear
               </button>
             </div>
@@ -193,7 +195,7 @@ const QuickActions: React.FC<QuickActionsProps> = ({ onBack, apiKey }) => {
 
           <div className="qa-output-section">
             <label>
-              <i className="fa-solid fa-sparkles"></i>
+              <Sparkles />
               Output
               {selectedAction && (
                 <span className="qa-output-action">
@@ -229,7 +231,7 @@ const QuickActions: React.FC<QuickActionsProps> = ({ onBack, apiKey }) => {
             {outputText && !isProcessing && (
               <div className="qa-output-footer">
                 <button type="button" onClick={() => { setInputText(outputText); setOutputText(''); setSelectedAction(null); showToast('Output moved to input', 'info'); }}>
-                  <i className="fa-solid fa-arrow-right"></i>
+                  <ArrowRight />
                   Use as Input
                 </button>
               </div>

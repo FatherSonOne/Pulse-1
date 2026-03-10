@@ -2,6 +2,8 @@ import React, { useState, useRef, useEffect } from 'react';
 import { AIMessage, ThinkingStep } from '../../../services/ragService';
 import { SessionExport } from '../shared';
 
+import { ArrowRight, BookOpen, Check, CheckCircle, Circle, Map, MessagesSquare, Minus, Plus, Send, Share2, Wand2, XCircle } from 'lucide-react';
+
 interface Milestone {
   id: string;
   name: string;
@@ -220,7 +222,7 @@ Generate an executive summary including:
         {/* Mission Header */}
         <div className="p-4 border-b border-white/10 wr-mission-accent-bg">
           <div className="flex items-center gap-2 mb-2">
-            <i className="fa fa-map text-rose-500"></i>
+            <Map className="fa text-rose-500" />
             <h3 className="text-sm font-semibold text-black dark:text-white">Plan Mission</h3>
           </div>
           {projectName && (
@@ -241,7 +243,7 @@ Generate an executive summary including:
           )}
           {activeContextCount > 0 && (
             <div className="war-room-badge text-xs mt-2" style={{ display: 'inline-flex', alignItems: 'center', gap: 4 }}>
-              <i className="fa fa-book-open" style={{ fontSize: 9 }}></i>
+              <BookOpen className="fa" />
               {activeContextCount} source{activeContextCount !== 1 ? 's' : ''}
             </div>
           )}
@@ -273,7 +275,7 @@ Generate an executive summary including:
                       ? 'bg-rose-500/30 text-rose-400'
                       : 'bg-white/10 text-white/40'
                   }`}>
-                    {isComplete ? <i className="fa fa-check"></i> : <i className={`fa ${phase.icon}`}></i>}
+                    {isComplete ? <Check className="fa" /> : <i className={`fa ${phase.icon}`}></i>}
                   </div>
                   <div className="text-left">
                     <p className={`text-xs font-medium ${isActive ? 'text-rose-400' : 'text-black dark:text-white'}`}>
@@ -332,13 +334,13 @@ Generate an executive summary including:
                     disabled={!newCriterion.trim()}
                     className="war-room-btn war-room-btn-icon-sm war-room-btn-primary"
                   >
-                    <i className="fa fa-plus text-xs"></i>
+                    <Plus className="fa text-xs" />
                   </button>
                 </div>
                 <div className="space-y-1">
                   {successCriteria.map((c, i) => (
                     <div key={i} className="flex items-center gap-2 text-xs war-room-text-secondary">
-                      <i className="fa fa-check-circle text-rose-500"></i>
+                      <CheckCircle className="fa text-rose-500" />
                       <span>{c}</span>
                     </div>
                   ))}
@@ -349,7 +351,7 @@ Generate an executive summary including:
                 disabled={!projectName.trim() || !projectGoal.trim()}
                 className="w-full war-room-btn war-room-btn-primary py-2"
               >
-                <i className="fa fa-arrow-right mr-2"></i>
+                <ArrowRight className="fa mr-2" />
                 Define Scope
               </button>
             </div>
@@ -372,20 +374,20 @@ Generate an executive summary including:
                   disabled={!newScopeItem.trim()}
                   className="flex-1 war-room-btn py-2 text-xs bg-rose-500/20 text-rose-400"
                 >
-                  <i className="fa fa-plus mr-1"></i> In Scope
+                  <Plus className="fa mr-1" /> In Scope
                 </button>
                 <button
                   onClick={() => handleAddScopeItem(false)}
                   disabled={!newScopeItem.trim()}
                   className="flex-1 war-room-btn py-2 text-xs bg-red-500/20 text-red-400"
                 >
-                  <i className="fa fa-minus mr-1"></i> Out of Scope
+                  <Minus className="fa mr-1" /> Out of Scope
                 </button>
               </div>
 
               <div className="war-room-panel p-3 bg-rose-500/10 border-rose-500/30">
                 <h4 className="text-xs font-semibold text-rose-400 mb-2">
-                  <i className="fa fa-check-circle mr-1"></i> In Scope
+                  <CheckCircle className="fa mr-1" /> In Scope
                 </h4>
                 <div className="space-y-1">
                   {inScope.map((item, i) => (
@@ -399,7 +401,7 @@ Generate an executive summary including:
 
               <div className="war-room-panel p-3 bg-red-500/10 border-red-500/30">
                 <h4 className="text-xs font-semibold text-red-400 mb-2">
-                  <i className="fa fa-times-circle mr-1"></i> Out of Scope
+                  <XCircle className="fa mr-1" /> Out of Scope
                 </h4>
                 <div className="space-y-1">
                   {outOfScope.map((item, i) => (
@@ -416,7 +418,7 @@ Generate an executive summary including:
                   onClick={() => proceedToPhase('milestones')}
                   className="w-full war-room-btn war-room-btn-primary py-2"
                 >
-                  <i className="fa fa-arrow-right mr-2"></i>
+                  <ArrowRight className="fa mr-2" />
                   Define Milestones
                 </button>
               )}
@@ -439,7 +441,7 @@ Generate an executive summary including:
                   disabled={!newMilestoneName.trim()}
                   className="war-room-btn war-room-btn-icon-sm war-room-btn-primary"
                 >
-                  <i className="fa fa-plus text-xs"></i>
+                  <Plus className="fa text-xs" />
                 </button>
               </div>
 
@@ -468,7 +470,7 @@ Generate an executive summary including:
                       <div className="mt-3 pl-8 space-y-2">
                         {milestone.tasks.map(task => (
                           <div key={task.id} className="flex items-center gap-2 text-xs war-room-text-secondary">
-                            <i className="fa fa-circle text-[6px]"></i>
+                            <Circle className="fa text-[6px]" />
                             <span>{task.name}</span>
                           </div>
                         ))}
@@ -494,7 +496,7 @@ Generate an executive summary including:
                   onClick={() => proceedToPhase('risks')}
                   className="w-full war-room-btn war-room-btn-primary py-2"
                 >
-                  <i className="fa fa-arrow-right mr-2"></i>
+                  <ArrowRight className="fa mr-2" />
                   Identify Risks
                 </button>
               )}
@@ -517,7 +519,7 @@ Generate an executive summary including:
                   disabled={!newRiskText.trim()}
                   className="war-room-btn war-room-btn-icon-sm war-room-btn-primary"
                 >
-                  <i className="fa fa-plus text-xs"></i>
+                  <Plus className="fa text-xs" />
                 </button>
               </div>
 
@@ -556,7 +558,7 @@ Generate an executive summary including:
                   onClick={() => proceedToPhase('finalize')}
                   className="w-full war-room-btn war-room-btn-primary py-2"
                 >
-                  <i className="fa fa-arrow-right mr-2"></i>
+                  <ArrowRight className="fa mr-2" />
                   Finalize Plan
                 </button>
               )}
@@ -581,7 +583,7 @@ Generate an executive summary including:
                 disabled={isLoading}
                 className="w-full war-room-btn war-room-btn-primary py-2"
               >
-                <i className="fa fa-wand-magic-sparkles mr-2"></i>
+                <Wand2 className="fa mr-2" />
                 Generate Plan Document
               </button>
             </div>
@@ -594,7 +596,7 @@ Generate an executive summary including:
             onClick={() => setShowExport(true)}
             className="w-full war-room-btn py-2"
           >
-            <i className="fa fa-share-nodes mr-2"></i>
+            <Share2 className="fa mr-2" />
             Export Plan
           </button>
         </div>
@@ -608,7 +610,7 @@ Generate an executive summary including:
             <div className="h-full flex items-center justify-center">
               <div className="text-center max-w-md">
                 <div className="w-16 h-16 mx-auto mb-4 rounded-full bg-gradient-to-br from-rose-500/20 to-pink-500/20 flex items-center justify-center">
-                  <i className="fa fa-map text-2xl text-rose-500"></i>
+                  <Map className="fa text-2xl text-rose-500" />
                 </div>
                 <h3 className="text-lg font-semibold text-black dark:text-white mb-2">
                   Plan Mission
@@ -634,7 +636,7 @@ Generate an executive summary including:
                 >
                   {msg.role === 'assistant' && (
                     <div className="flex items-center gap-2 mb-2 pb-2 border-b border-white/10">
-                      <i className="fa fa-map text-rose-500 text-xs"></i>
+                      <Map className="fa text-rose-500 text-xs" />
                       <span className="text-xs text-rose-500 font-medium">Planning AI</span>
                     </div>
                   )}
@@ -649,7 +651,7 @@ Generate an executive summary including:
               <div className="war-room-message-ai">
                 <div className="flex items-center gap-3">
                   <div className="w-5 h-5 rounded-full bg-rose-500/30 flex items-center justify-center">
-                    <i className="fa fa-map text-rose-500 text-xs animate-pulse"></i>
+                    <Map className="fa text-rose-500 text-xs animate-pulse" />
                   </div>
                   <span className="text-sm war-room-text-secondary">Planning...</span>
                 </div>
@@ -664,7 +666,7 @@ Generate an executive summary including:
         <div className="shrink-0 p-4 war-room-input-area">
           <div className="flex items-center gap-2">
             <div className="flex-1 war-room-panel-inset flex items-center gap-2 px-4 py-3">
-              <i className="fa fa-comments text-rose-500 text-sm"></i>
+              <MessagesSquare className="fa text-rose-500 text-sm" />
               <input
                 type="text"
                 value={input}
@@ -681,7 +683,7 @@ Generate an executive summary including:
                   input.trim() ? 'war-room-btn-primary' : ''
                 }`}
               >
-                <i className="fa fa-paper-plane text-xs"></i>
+                <Send className="fa text-xs" />
               </button>
             </div>
           </div>

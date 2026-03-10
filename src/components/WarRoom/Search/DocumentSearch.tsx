@@ -2,6 +2,8 @@ import React, { useState, useMemo, useCallback, useRef, useEffect } from 'react'
 import Fuse from 'fuse.js';
 import { KnowledgeDoc } from '../../../services/ragService';
 
+import { ArrowRight, CheckCircle, FileText, Globe, Search, X, ZoomOut } from 'lucide-react';
+
 interface SearchResult {
   doc: KnowledgeDoc;
   matchType: 'title' | 'content' | 'summary' | 'keywords';
@@ -159,7 +161,7 @@ export const DocumentSearch: React.FC<DocumentSearchProps> = ({
       {/* Search Input */}
       <div className="p-3 war-room-divider">
         <div className="relative">
-          <i className="fa fa-search absolute left-3 top-1/2 -translate-y-1/2 war-room-text-secondary text-sm"></i>
+          <Search className="fa absolute left-3 top-1/2 -translate-y-1/2 war-room-text-secondary text-sm" />
           <input
             ref={inputRef}
             type="text"
@@ -181,7 +183,7 @@ export const DocumentSearch: React.FC<DocumentSearchProps> = ({
               }}
               className="absolute right-3 top-1/2 -translate-y-1/2 war-room-text-secondary hover:text-rose-400 transition-colors"
             >
-              <i className="fa fa-times text-xs"></i>
+              <X className="fa text-xs" />
             </button>
           )}
         </div>
@@ -197,7 +199,7 @@ export const DocumentSearch: React.FC<DocumentSearchProps> = ({
                   : 'war-room-panel-inset war-room-text-secondary hover:text-rose-400'
               }`}
             >
-              <i className="fa fa-globe mr-1"></i>
+              <Globe className="fa mr-1" />
               All ({documents.length})
             </button>
             <button
@@ -209,7 +211,7 @@ export const DocumentSearch: React.FC<DocumentSearchProps> = ({
                   : 'war-room-panel-inset war-room-text-secondary hover:text-rose-400 disabled:opacity-50 disabled:cursor-not-allowed'
               }`}
             >
-              <i className="fa fa-check-circle mr-1"></i>
+              <CheckCircle className="fa mr-1" />
               Active ({activeContextIds.size})
             </button>
           </div>
@@ -270,7 +272,7 @@ export const DocumentSearch: React.FC<DocumentSearchProps> = ({
         <div className="max-h-64 overflow-y-auto war-room-scrollbar">
           {results.length === 0 ? (
             <div className="p-4 text-center">
-              <i className="fa fa-search-minus text-2xl war-room-text-secondary mb-2"></i>
+              <ZoomOut className="fa text-2xl war-room-text-secondary mb-2" />
               <p className="text-sm war-room-text-secondary">
                 No results for "{query}"
               </p>
@@ -308,14 +310,14 @@ export const DocumentSearch: React.FC<DocumentSearchProps> = ({
                         </span>
                         {activeContextIds.has(result.doc.id) && (
                           <span className="text-xs text-emerald-400">
-                            <i className="fa fa-check-circle mr-0.5"></i>
+                            <CheckCircle className="fa mr-0.5" />
                             Active
                           </span>
                         )}
                       </div>
                     </div>
                     <div className="shrink-0">
-                      <i className="fa fa-arrow-right text-xs war-room-text-secondary opacity-0 group-hover:opacity-100 transition-opacity"></i>
+                      <ArrowRight className="fa text-xs war-room-text-secondary opacity-0 group-hover:opacity-100 transition-opacity" />
                     </div>
                   </div>
                 </button>
@@ -330,12 +332,12 @@ export const DocumentSearch: React.FC<DocumentSearchProps> = ({
         <div className="p-3 text-xs war-room-text-secondary">
           <div className="flex items-center justify-between">
             <span>
-              <i className="fa fa-file-lines mr-1"></i>
+              <FileText className="fa mr-1" />
               {filteredDocuments.length} documents
             </span>
             {activeContextIds.size > 0 && (
               <span className="text-emerald-400">
-                <i className="fa fa-check-circle mr-1"></i>
+                <CheckCircle className="fa mr-1" />
                 {activeContextIds.size} in context
               </span>
             )}

@@ -1,6 +1,8 @@
 import React, { useEffect, useRef } from 'react';
 import { AIMessage, ThinkingStep } from '../../services/ragService';
 
+import { Send } from 'lucide-react';
+
 interface SentientInterfaceProps {
   messages: AIMessage[];
   isLoading: boolean;
@@ -389,7 +391,7 @@ export const SentientInterface: React.FC<SentientInterfaceProps> = ({
               onClick={handleSubmit}
               className="px-6 py-3 bg-gradient-to-r from-rose-600 to-pink-600 hover:from-rose-700 hover:to-pink-700 rounded-xl font-medium transition-all shrink-0 text-white shadow-md hover:shadow-lg"
             >
-              <i className="fa fa-paper-plane"></i>
+              <Send className="fa" />
             </button>
           </div>
         </div>

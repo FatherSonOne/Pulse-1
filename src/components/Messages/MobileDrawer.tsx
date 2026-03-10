@@ -1,6 +1,8 @@
 import React, { useEffect, useRef, useCallback } from 'react';
 import { motion, AnimatePresence, PanInfo } from 'framer-motion';
 
+import { X } from 'lucide-react';
+
 export interface MobileDrawerProps {
   isOpen: boolean;
   onClose: () => void;
@@ -295,7 +297,7 @@ export const MobileDrawerHeader: React.FC<{
           className="w-12 h-12 flex items-center justify-center text-zinc-500 hover:bg-zinc-100 dark:hover:bg-zinc-800 rounded-lg transition"
           aria-label="Close drawer"
         >
-          <i className="fa-solid fa-xmark text-lg"></i>
+          <X className="text-lg" />
         </button>
       )}
     </div>

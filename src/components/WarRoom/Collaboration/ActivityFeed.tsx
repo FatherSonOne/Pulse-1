@@ -8,7 +8,9 @@ import {
   ActivityFeedItem,
   ACTIVITY_ACTIONS,
 } from '../../../types/collaboration';
+import { Bell, CheckCheck, Inbox, Loader2 } from 'lucide-react';
 import {
+
   getActivityFeed,
   getUnreadActivityCount,
   markActivitiesAsRead,
@@ -114,7 +116,7 @@ export const ActivityFeed: React.FC<ActivityFeedProps> = ({
   if (loading) {
     return (
       <div className="flex items-center justify-center p-4">
-        <i className="fa fa-spinner fa-spin text-gray-400"></i>
+        <Loader2 className="fa text-gray-400 animate-spin" />
       </div>
     );
   }
@@ -166,7 +168,7 @@ export const ActivityFeed: React.FC<ActivityFeedProps> = ({
       <div className="p-3 border-b border-gray-200 dark:border-gray-700 bg-gray-50 dark:bg-gray-900/50">
         <div className="flex items-center justify-between">
           <h3 className="text-sm font-medium text-gray-700 dark:text-gray-300 flex items-center gap-2">
-            <i className="fa fa-bell text-rose-500"></i>
+            <Bell className="fa text-rose-500" />
             Activity
           </h3>
           <div className="flex items-center gap-2">
@@ -186,7 +188,7 @@ export const ActivityFeed: React.FC<ActivityFeedProps> = ({
                 className="text-xs text-gray-400 hover:text-gray-600 dark:hover:text-gray-200"
                 title="Mark all as read"
               >
-                <i className="fa fa-check-double"></i>
+                <CheckCheck className="fa" />
               </button>
             )}
           </div>
@@ -197,7 +199,7 @@ export const ActivityFeed: React.FC<ActivityFeedProps> = ({
       <div className="max-h-96 overflow-y-auto">
         {activities.length === 0 ? (
           <div className="p-6 text-center">
-            <i className="fa fa-inbox text-3xl text-gray-300 dark:text-gray-600 mb-2"></i>
+            <Inbox className="fa text-3xl text-gray-300 dark:text-gray-600 mb-2" />
             <p className="text-sm text-gray-400">
               {showUnreadOnly ? 'No unread activity' : 'No activity yet'}
             </p>
@@ -298,7 +300,7 @@ export const ActivityBadge: React.FC<ActivityBadgeProps> = ({ userId, onClick })
       onClick={onClick}
       className="relative p-2 text-gray-400 hover:text-gray-600 dark:hover:text-gray-200 transition-colors"
     >
-      <i className="fa fa-bell"></i>
+      <Bell className="fa" />
       {count > 0 && (
         <span className="absolute -top-1 -right-1 min-w-[18px] h-[18px] bg-rose-500 text-white text-[10px] font-medium rounded-full flex items-center justify-center">
           {count > 99 ? '99+' : count}

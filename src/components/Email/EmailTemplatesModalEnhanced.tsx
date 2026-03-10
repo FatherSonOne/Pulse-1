@@ -8,6 +8,8 @@ import { emailTemplateService, EmailTemplate, TemplateCategory, TEMPLATE_VARIABL
 import { getSessionUserSync } from '../../services/authService';
 import toast from 'react-hot-toast';
 
+import { BarChart2, Code, FileText, Pen, Plus, Search, Star, Trash2, X } from 'lucide-react';
+
 interface EmailTemplatesModalEnhancedProps {
   onSelectTemplate: (template: EmailTemplate) => void;
   onClose: () => void;
@@ -234,7 +236,7 @@ export const EmailTemplatesModalEnhanced: React.FC<EmailTemplatesModalEnhancedPr
         <div className="flex items-center justify-between px-6 py-4 border-b border-zinc-800">
           <div className="flex items-center gap-3">
             <div className="w-10 h-10 rounded-xl bg-gradient-to-br from-purple-500 to-pink-600 flex items-center justify-center">
-              <i className="fa-solid fa-file-lines text-white"></i>
+              <FileText className="text-white" />
             </div>
             <div>
               <h2 className="text-lg font-semibold text-white">
@@ -249,7 +251,7 @@ export const EmailTemplatesModalEnhanced: React.FC<EmailTemplatesModalEnhancedPr
             onClick={onClose}
             className="w-8 h-8 rounded-lg hover:bg-zinc-800 flex items-center justify-center text-zinc-400 hover:text-white transition"
           >
-            <i className="fa-solid fa-xmark"></i>
+            <X />
           </button>
         </div>
 
@@ -260,7 +262,7 @@ export const EmailTemplatesModalEnhanced: React.FC<EmailTemplatesModalEnhancedPr
             <div className="px-6 py-4 border-b border-zinc-800 space-y-3">
               {/* Search */}
               <div className="relative">
-                <i className="fa-solid fa-search absolute left-3 top-1/2 -translate-y-1/2 text-zinc-500 text-sm"></i>
+                <Search className="absolute left-3 top-1/2 -translate-y-1/2 text-zinc-500 text-sm" />
                 <input
                   type="text"
                   placeholder="Search templates..."
@@ -280,7 +282,7 @@ export const EmailTemplatesModalEnhanced: React.FC<EmailTemplatesModalEnhancedPr
                       : 'bg-zinc-800 text-zinc-300 hover:bg-zinc-700'
                   }`}
                 >
-                  <i className="fa-solid fa-star mr-1.5"></i>
+                  <Star className="mr-1.5" />
                   Favorites
                 </button>
 
@@ -303,7 +305,7 @@ export const EmailTemplatesModalEnhanced: React.FC<EmailTemplatesModalEnhancedPr
                   onClick={handleCreate}
                   className="ml-auto px-3 py-1.5 rounded-lg text-xs font-medium bg-purple-500 hover:bg-purple-600 text-white transition"
                 >
-                  <i className="fa-solid fa-plus mr-1.5"></i>
+                  <Plus className="mr-1.5" />
                   New Template
                 </button>
               </div>
@@ -317,7 +319,7 @@ export const EmailTemplatesModalEnhanced: React.FC<EmailTemplatesModalEnhancedPr
                 </div>
               ) : filteredTemplates.length === 0 ? (
                 <div className="text-center py-12">
-                  <i className="fa-solid fa-file-lines text-4xl text-zinc-700 mb-3"></i>
+                  <FileText className="text-4xl text-zinc-700 mb-3" />
                   <p className="text-zinc-500">No templates found</p>
                   <button
                     onClick={handleCreate}
@@ -368,12 +370,12 @@ export const EmailTemplatesModalEnhanced: React.FC<EmailTemplatesModalEnhancedPr
                           )}
                           {template.variables.length > 0 && (
                             <span className="flex items-center gap-1">
-                              <i className="fa-solid fa-code"></i>
+                              <Code />
                               {template.variables.length} var{template.variables.length !== 1 ? 's' : ''}
                             </span>
                           )}
                           <span className="flex items-center gap-1">
-                            <i className="fa-solid fa-chart-simple"></i>
+                            <BarChart2 />
                             {template.use_count} use{template.use_count !== 1 ? 's' : ''}
                           </span>
                         </div>
@@ -382,13 +384,13 @@ export const EmailTemplatesModalEnhanced: React.FC<EmailTemplatesModalEnhancedPr
                             onClick={(e) => { e.stopPropagation(); handleEdit(template); }}
                             className="w-6 h-6 rounded hover:bg-zinc-700 flex items-center justify-center text-zinc-500 hover:text-white transition"
                           >
-                            <i className="fa-solid fa-pen text-xs"></i>
+                            <Pen className="text-xs" />
                           </button>
                           <button
                             onClick={(e) => handleDelete(template, e)}
                             className="w-6 h-6 rounded hover:bg-zinc-700 flex items-center justify-center text-zinc-500 hover:text-red-400 transition"
                           >
-                            <i className="fa-solid fa-trash text-xs"></i>
+                            <Trash2 className="text-xs" />
                           </button>
                         </div>
                       </div>

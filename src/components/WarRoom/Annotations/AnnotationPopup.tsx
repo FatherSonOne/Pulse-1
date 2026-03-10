@@ -6,6 +6,8 @@
 import React, { useState, useEffect, useRef } from 'react';
 import { AnnotationType, ANNOTATION_TYPES, CreateAnnotationPayload, AnnotationPosition } from '../../../types/annotations';
 
+import { Plus, X } from 'lucide-react';
+
 interface AnnotationPopupProps {
   position: AnnotationPosition;
   screenPosition: { x: number; y: number };
@@ -105,7 +107,7 @@ export const AnnotationPopup: React.FC<AnnotationPopupProps> = ({
             onClick={onClose}
             className="p-1 text-gray-400 hover:text-gray-600 dark:hover:text-gray-200"
           >
-            <i className="fa fa-times"></i>
+            <X className="fa" />
           </button>
         </div>
 
@@ -175,7 +177,7 @@ export const AnnotationPopup: React.FC<AnnotationPopupProps> = ({
               onClick={handleAddTag}
               className="px-2 py-1 text-sm bg-gray-100 dark:bg-gray-700 hover:bg-gray-200 dark:hover:bg-gray-600 rounded-lg text-gray-700 dark:text-gray-300"
             >
-              <i className="fa fa-plus"></i>
+              <Plus className="fa" />
             </button>
           </div>
 
@@ -191,7 +193,7 @@ export const AnnotationPopup: React.FC<AnnotationPopupProps> = ({
                     onClick={() => handleRemoveTag(tag)}
                     className="hover:text-rose-900 dark:hover:text-rose-100"
                   >
-                    <i className="fa fa-times text-[10px]"></i>
+                    <X className="fa text-[10px]" />
                   </button>
                 </span>
               ))}

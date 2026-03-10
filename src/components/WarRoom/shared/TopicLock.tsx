@@ -1,5 +1,7 @@
 import React, { useState, useCallback, useEffect } from 'react';
 
+import { AlertTriangle, Check, Crosshair, Info, Pen, X } from 'lucide-react';
+
 interface TopicLockProps {
   topic: string;
   isLocked: boolean;
@@ -140,7 +142,7 @@ export const TopicLock: React.FC<TopicLockProps> = ({
     <div className={`war-room-panel p-4 ${className}`}>
       <div className="flex items-center justify-between mb-3">
         <h3 className="text-sm font-semibold war-room-text-primary flex items-center gap-2">
-          <i className="fa fa-crosshairs"></i>
+          <Crosshair className="fa" />
           Focus Topic
         </h3>
 
@@ -172,7 +174,7 @@ export const TopicLock: React.FC<TopicLockProps> = ({
             onClick={handleSave}
             className="war-room-btn war-room-btn-primary war-room-btn-icon-sm"
           >
-            <i className="fa fa-check"></i>
+            <Check className="fa" />
           </button>
           <button
             onClick={() => {
@@ -181,7 +183,7 @@ export const TopicLock: React.FC<TopicLockProps> = ({
             }}
             className="war-room-btn war-room-btn-icon-sm"
           >
-            <i className="fa fa-times"></i>
+            <X className="fa" />
           </button>
         </div>
       ) : (
@@ -199,7 +201,7 @@ export const TopicLock: React.FC<TopicLockProps> = ({
                 {topic}
               </span>
               {!isLocked && (
-                <i className="fa fa-pen text-xs war-room-text-secondary"></i>
+                <Pen className="fa text-xs war-room-text-secondary" />
               )}
             </div>
           ) : (
@@ -214,7 +216,7 @@ export const TopicLock: React.FC<TopicLockProps> = ({
       {showWarning && (
         <div className="mt-3 p-3 bg-amber-500/20 border border-amber-500/30 rounded-lg animate-pulse">
           <div className="flex items-center gap-2 text-amber-300 text-sm">
-            <i className="fa fa-triangle-exclamation"></i>
+            <AlertTriangle className="fa" />
             <span>That seems off-topic. Stay focused on: <strong>{topic}</strong></span>
           </div>
         </div>
@@ -222,7 +224,7 @@ export const TopicLock: React.FC<TopicLockProps> = ({
 
       {isLocked && (
         <div className="mt-3 text-xs war-room-text-secondary">
-          <i className="fa fa-info-circle mr-1"></i>
+          <Info className="fa mr-1" />
           Topic is locked. AI will gently redirect off-topic conversations.
         </div>
       )}

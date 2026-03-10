@@ -2,6 +2,8 @@ import React, { useState, useRef, useEffect } from 'react';
 import { AIMessage, ThinkingStep } from '../../../services/ragService';
 import { SessionExport } from '../shared';
 
+import { ArrowRight, BarChart3, BookOpen, Database, FileText, Lightbulb, MessagesSquare, Minimize2, Plus, Send, Share2, X } from 'lucide-react';
+
 interface DataPoint {
   id: string;
   label: string;
@@ -204,7 +206,7 @@ Include:
         {/* Mission Header */}
         <div className="p-4 border-b border-white/10 wr-mission-accent-bg">
           <div className="flex items-center gap-2 mb-2">
-            <i className="fa fa-magnifying-glass-chart text-blue-400"></i>
+            <BarChart3 className="fa text-blue-400" />
             <h3 className="text-sm font-semibold war-room-text-primary">Analyze Mission</h3>
           </div>
           {analysisGoal && (
@@ -212,13 +214,13 @@ Include:
           )}
           {activeContextCount > 0 && (
             <div className="war-room-badge text-xs mt-2" style={{ display: 'inline-flex', alignItems: 'center', gap: 4 }}>
-              <i className="fa fa-book-open" style={{ fontSize: 9 }}></i>
+              <BookOpen className="fa" />
               {activeContextCount} source{activeContextCount !== 1 ? 's' : ''}
             </div>
           )}
           <div className="mt-2 flex items-center gap-3 text-xs war-room-text-secondary">
-            <span><i className="fa fa-database mr-1"></i>{dataPoints.length} data</span>
-            <span><i className="fa fa-lightbulb mr-1"></i>{insights.length} insights</span>
+            <span><Database className="fa mr-1" />{dataPoints.length} data</span>
+            <span><Lightbulb className="fa mr-1" />{insights.length} insights</span>
           </div>
         </div>
 
@@ -284,7 +286,7 @@ Include:
                 disabled={!analysisGoal.trim()}
                 className="w-full war-room-btn war-room-btn-primary py-2"
               >
-                <i className="fa fa-arrow-right mr-2"></i>
+                <ArrowRight className="fa mr-2" />
                 Start Analysis
               </button>
             </div>
@@ -324,7 +326,7 @@ Include:
                     disabled={!newDataLabel.trim() || !newDataValue.trim()}
                     className="war-room-btn war-room-btn-primary px-4"
                   >
-                    <i className="fa fa-plus"></i>
+                    <Plus className="fa" />
                   </button>
                 </div>
               </div>
@@ -345,7 +347,7 @@ Include:
                               onClick={() => handleDeleteDataPoint(point.id)}
                               className="opacity-0 group-hover:opacity-100 text-red-400"
                             >
-                              <i className="fa fa-times text-[10px]"></i>
+                              <X className="fa text-[10px]" />
                             </button>
                           </div>
                         </div>
@@ -360,7 +362,7 @@ Include:
                   onClick={() => proceedToPhase('analyze')}
                   className="w-full war-room-btn war-room-btn-primary py-2"
                 >
-                  <i className="fa fa-arrow-right mr-2"></i>
+                  <ArrowRight className="fa mr-2" />
                   Start Analysis
                 </button>
               )}
@@ -387,7 +389,7 @@ Include:
                 onClick={() => proceedToPhase('insights')}
                 className="w-full war-room-btn war-room-btn-primary py-2 mt-4"
               >
-                <i className="fa fa-arrow-right mr-2"></i>
+                <ArrowRight className="fa mr-2" />
                 Extract Insights
               </button>
             </div>
@@ -428,7 +430,7 @@ Include:
                     disabled={!newInsightText.trim()}
                     className="war-room-btn war-room-btn-icon-sm war-room-btn-primary"
                   >
-                    <i className="fa fa-plus text-xs"></i>
+                    <Plus className="fa text-xs" />
                   </button>
                 </div>
               </div>
@@ -453,7 +455,7 @@ Include:
                               onClick={() => handleDeleteInsight(insight.id)}
                               className="opacity-0 group-hover:opacity-100 text-red-400 shrink-0"
                             >
-                              <i className="fa fa-times text-[10px]"></i>
+                              <X className="fa text-[10px]" />
                             </button>
                           </div>
                         </div>
@@ -468,7 +470,7 @@ Include:
                   onClick={() => proceedToPhase('report')}
                   className="w-full war-room-btn war-room-btn-primary py-2"
                 >
-                  <i className="fa fa-arrow-right mr-2"></i>
+                  <ArrowRight className="fa mr-2" />
                   Generate Report
                 </button>
               )}
@@ -492,7 +494,7 @@ Include:
                 disabled={isLoading}
                 className="w-full war-room-btn war-room-btn-primary py-2"
               >
-                <i className="fa fa-file-lines mr-2"></i>
+                <FileText className="fa mr-2" />
                 Generate Full Report
               </button>
 
@@ -501,7 +503,7 @@ Include:
                 disabled={isLoading}
                 className="w-full war-room-btn py-2"
               >
-                <i className="fa fa-compress mr-2"></i>
+                <Minimize2 className="fa mr-2" />
                 Executive Summary Only
               </button>
             </div>
@@ -514,7 +516,7 @@ Include:
             onClick={() => setShowExport(true)}
             className="w-full war-room-btn py-2"
           >
-            <i className="fa fa-share-nodes mr-2"></i>
+            <Share2 className="fa mr-2" />
             Export Analysis
           </button>
         </div>
@@ -528,7 +530,7 @@ Include:
             <div className="h-full flex items-center justify-center">
               <div className="text-center max-w-md">
                 <div className="w-16 h-16 mx-auto mb-4 rounded-full bg-gradient-to-br from-blue-500/20 to-indigo-500/20 flex items-center justify-center">
-                  <i className="fa fa-magnifying-glass-chart text-2xl text-blue-400"></i>
+                  <BarChart3 className="fa text-2xl text-blue-400" />
                 </div>
                 <h3 className="text-lg font-semibold war-room-text-primary mb-2">
                   Analyze Mission
@@ -554,7 +556,7 @@ Include:
                 >
                   {msg.role === 'assistant' && (
                     <div className="flex items-center gap-2 mb-2 pb-2 border-b border-white/10">
-                      <i className="fa fa-magnifying-glass-chart text-blue-400 text-xs"></i>
+                      <BarChart3 className="fa text-blue-400 text-xs" />
                       <span className="text-xs text-blue-400 font-medium">Analysis AI</span>
                     </div>
                   )}
@@ -569,7 +571,7 @@ Include:
               <div className="war-room-message-ai">
                 <div className="flex items-center gap-3">
                   <div className="w-5 h-5 rounded-full bg-blue-500/30 flex items-center justify-center">
-                    <i className="fa fa-magnifying-glass-chart text-blue-400 text-xs animate-pulse"></i>
+                    <BarChart3 className="fa text-blue-400 text-xs animate-pulse" />
                   </div>
                   <span className="text-sm war-room-text-secondary">Analyzing...</span>
                 </div>
@@ -584,7 +586,7 @@ Include:
         <div className="shrink-0 p-4 war-room-input-area">
           <div className="flex items-center gap-2">
             <div className="flex-1 war-room-panel-inset flex items-center gap-2 px-4 py-3">
-              <i className="fa fa-comments text-blue-400 text-sm"></i>
+              <MessagesSquare className="fa text-blue-400 text-sm" />
               <input
                 type="text"
                 value={input}
@@ -601,7 +603,7 @@ Include:
                   input.trim() ? 'war-room-btn-primary' : ''
                 }`}
               >
-                <i className="fa fa-paper-plane text-xs"></i>
+                <Send className="fa text-xs" />
               </button>
             </div>
           </div>

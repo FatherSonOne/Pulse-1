@@ -3,6 +3,8 @@ import { KnowledgeDoc } from '../../../services/ragService';
 import { processWithModel } from '../../../services/geminiService';
 import toast from 'react-hot-toast';
 
+import { BookOpen, Check, Copy, Download, HelpCircle, List, Loader2, RefreshCcw, RefreshCw, Sparkles, X } from 'lucide-react';
+
 interface StudySection {
   title: string;
   content: string;
@@ -237,7 +239,7 @@ Requirements:
         <div className="p-4 border-b border-white/10 flex items-center justify-between shrink-0">
           <div className="flex items-center gap-3">
             <div className="w-10 h-10 bg-emerald-500/20 rounded-lg flex items-center justify-center">
-              <i className="fa fa-book-open text-emerald-400"></i>
+              <BookOpen className="fa text-emerald-400" />
             </div>
             <div>
               <h3 className="text-lg font-bold">Study Guide Generator</h3>
@@ -247,7 +249,7 @@ Requirements:
             </div>
           </div>
           <button onClick={onClose} className="war-room-btn war-room-btn-icon-sm">
-            <i className="fa fa-times"></i>
+            <X className="fa" />
           </button>
         </div>
 
@@ -257,7 +259,7 @@ Requirements:
             <div className="text-center py-8">
               {isGenerating ? (
                 <div>
-                  <i className="fa fa-spinner fa-spin text-4xl text-emerald-400 mb-4"></i>
+                  <Loader2 className="fa text-4xl text-emerald-400 mb-4 animate-spin" />
                   <p className="text-sm war-room-text-secondary mb-4">
                     Generating study guide...
                   </p>
@@ -275,7 +277,7 @@ Requirements:
                 </div>
               ) : (
                 <div>
-                  <i className="fa fa-book-open text-4xl text-emerald-400 mb-4"></i>
+                  <BookOpen className="fa text-4xl text-emerald-400 mb-4" />
                   <p className="text-lg font-medium mb-2">Generate Study Guide</p>
                   <p className="text-sm war-room-text-secondary mb-6 max-w-md mx-auto">
                     Create a comprehensive study guide with key topics, practice questions, and flashcards from your documents.
@@ -300,7 +302,7 @@ Requirements:
                     disabled={docsToUse.length === 0}
                     className="war-room-btn war-room-btn-primary"
                   >
-                    <i className="fa fa-sparkles mr-2"></i>
+                    <Sparkles className="fa mr-2" />
                     Generate Study Guide
                   </button>
                 </div>
@@ -318,7 +320,7 @@ Requirements:
                       : 'war-room-text-secondary hover:text-emerald-400'
                   }`}
                 >
-                  <i className="fa fa-list mr-2"></i>
+                  <List className="fa mr-2" />
                   Overview ({studyGuide.sections.length})
                 </button>
                 <button
@@ -329,7 +331,7 @@ Requirements:
                       : 'war-room-text-secondary hover:text-emerald-400'
                   }`}
                 >
-                  <i className="fa fa-question-circle mr-2"></i>
+                  <HelpCircle className="fa mr-2" />
                   Questions ({studyGuide.questions.length})
                 </button>
                 <button
@@ -340,7 +342,7 @@ Requirements:
                       : 'war-room-text-secondary hover:text-emerald-400'
                   }`}
                 >
-                  <i className="fa fa-clone mr-2"></i>
+                  <Copy className="fa mr-2" />
                   Flashcards ({studyGuide.flashcards.length})
                 </button>
               </div>
@@ -364,7 +366,7 @@ Requirements:
                         <ul className="space-y-1">
                           {section.keyPoints.map((point, j) => (
                             <li key={j} className="text-xs war-room-text-secondary flex items-start gap-2">
-                              <i className="fa fa-check text-emerald-400 mt-0.5"></i>
+                              <Check className="fa text-emerald-400 mt-0.5" />
                               {point}
                             </li>
                           ))}
@@ -430,7 +432,7 @@ Requirements:
                           </>
                         )}
                         <p className="text-xs war-room-text-muted mt-3">
-                          <i className="fa fa-sync-alt mr-1"></i>
+                          <RefreshCcw className="fa mr-1" />
                           Click to flip
                         </p>
                       </div>
@@ -456,14 +458,14 @@ Requirements:
                   onClick={() => setStudyGuide(null)}
                   className="war-room-btn text-sm"
                 >
-                  <i className="fa fa-refresh mr-2"></i>
+                  <RefreshCw className="fa mr-2" />
                   Regenerate
                 </button>
                 <button
                   onClick={exportStudyGuide}
                   className="war-room-btn war-room-btn-primary text-sm"
                 >
-                  <i className="fa fa-download mr-2"></i>
+                  <Download className="fa mr-2" />
                   Export
                 </button>
               </>

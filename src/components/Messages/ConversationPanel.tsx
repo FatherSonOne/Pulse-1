@@ -3,6 +3,8 @@ import { motion, AnimatePresence } from 'framer-motion';
 import EnhancedLoadingScreen from '../EnhancedLoadingScreen';
 import { MessageChannel, ChannelMessage } from '../../types/messages';
 
+import { Info, MessageSquare, MessagesSquare, Search, Users } from 'lucide-react';
+
 interface ConversationPanelProps {
   channel: MessageChannel | null;
   messages: ChannelMessage[];
@@ -163,7 +165,7 @@ const ConversationPanel: React.FC<ConversationPanelProps> = ({
                 {/* Channel avatar */}
                 <div className="w-10 h-10 rounded-full bg-gradient-to-br from-blue-500 to-cyan-500 flex items-center justify-center text-white font-bold">
                   {channel.is_group ? (
-                    <i className="fa-solid fa-users"></i>
+                    <Users />
                   ) : (
                     channel.name.slice(0, 2).toUpperCase()
                   )}
@@ -192,14 +194,14 @@ const ConversationPanel: React.FC<ConversationPanelProps> = ({
                   aria-label="Thread details"
                   title="Thread details"
                 >
-                  <i className="fa-solid fa-info-circle text-zinc-600 dark:text-zinc-400"></i>
+                  <Info className="text-zinc-600 dark:text-zinc-400" />
                 </button>
                 <button
                   className="p-2 rounded-lg hover:bg-zinc-100 dark:hover:bg-zinc-800 transition-colors"
                   aria-label="Search in thread"
                   title="Search in thread"
                 >
-                  <i className="fa-solid fa-search text-zinc-600 dark:text-zinc-400"></i>
+                  <Search className="text-zinc-600 dark:text-zinc-400" />
                 </button>
               </div>
             </div>
@@ -221,7 +223,7 @@ const ConversationPanel: React.FC<ConversationPanelProps> = ({
               <div className="flex items-center justify-center h-full">
                 <div className="text-center">
                   <div className="w-16 h-16 mx-auto mb-4 rounded-full bg-zinc-100 dark:bg-zinc-800 flex items-center justify-center">
-                    <i className="fa-solid fa-comment text-2xl text-zinc-400"></i>
+                    <MessageSquare className="text-2xl text-zinc-400" />
                   </div>
                   <p className="text-sm text-zinc-500 dark:text-zinc-400">No messages yet</p>
                   <p className="text-xs text-zinc-400 dark:text-zinc-500 mt-1">
@@ -263,7 +265,7 @@ const ConversationPanel: React.FC<ConversationPanelProps> = ({
         <div className="flex items-center justify-center h-full">
           <div className="text-center max-w-sm">
             <div className="w-20 h-20 mx-auto mb-4 rounded-full bg-gradient-to-br from-blue-500 to-cyan-500 flex items-center justify-center">
-              <i className="fa-solid fa-comments text-3xl text-white"></i>
+              <MessagesSquare className="text-3xl text-white" />
             </div>
             <h3 className="text-lg font-bold text-zinc-900 dark:text-white mb-2">
               Select a thread

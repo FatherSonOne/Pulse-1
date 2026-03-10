@@ -1,5 +1,7 @@
 import React, { useState, useMemo, useCallback } from 'react';
 
+import { ArrowLeft, Check, GitCompare, History, Info, Pen } from 'lucide-react';
+
 // Types
 interface MessageVersion {
   id: string;
@@ -210,7 +212,7 @@ export const MessageVersioning: React.FC<MessageVersioningProps> = ({
       <div className="bg-gradient-to-r from-violet-500/10 to-purple-500/10 dark:from-violet-900/20 dark:to-purple-900/20 rounded-xl p-4 border border-violet-200 dark:border-violet-800">
         <div className="flex items-center gap-3 mb-3">
           <div className="w-10 h-10 rounded-full bg-white dark:bg-zinc-800 flex items-center justify-center shadow-sm">
-            <i className="fa-solid fa-clock-rotate-left text-violet-500" />
+            <History className="text-violet-500" />
           </div>
           <div>
             <p className="text-xs text-zinc-500 dark:text-zinc-400 uppercase tracking-wide">Message History</p>
@@ -287,7 +289,7 @@ export const MessageVersioning: React.FC<MessageVersioningProps> = ({
               }}
               className="flex items-center gap-1.5 text-sm text-zinc-500 hover:text-zinc-700 dark:hover:text-zinc-300"
             >
-              <i className="fa-solid fa-arrow-left" />
+              <ArrowLeft />
               Back to messages
             </button>
             <div className="flex gap-2">
@@ -313,7 +315,7 @@ export const MessageVersioning: React.FC<MessageVersioningProps> = ({
                     : 'bg-zinc-100 dark:bg-zinc-800 text-zinc-600 dark:text-zinc-400 hover:bg-zinc-200'
                 }`}
               >
-                <i className="fa-solid fa-code-compare mr-1.5" />
+                <GitCompare className="mr-1.5" />
                 Compare
               </button>
             </div>
@@ -341,7 +343,7 @@ export const MessageVersioning: React.FC<MessageVersioningProps> = ({
           {compareMode && (
             <div className="p-3 bg-violet-50 dark:bg-violet-900/20 rounded-lg border border-violet-200 dark:border-violet-800">
               <p className="text-xs font-medium text-violet-700 dark:text-violet-300 mb-2">
-                <i className="fa-solid fa-info-circle mr-1.5" />
+                <Info className="mr-1.5" />
                 Select 2 versions to compare
               </p>
               <div className="flex items-center gap-2">
@@ -384,7 +386,7 @@ export const MessageVersioning: React.FC<MessageVersioningProps> = ({
                       />
                     ) : null}
                     {selectedVersions.includes(version.id) && (
-                      <i className="fa-solid fa-check text-white text-[8px]" />
+                      <Check className="text-white text-[8px]" />
                     )}
                   </div>
 
@@ -477,7 +479,7 @@ export const EditHistoryIndicator: React.FC<EditHistoryIndicatorProps> = ({
       onClick={onClick}
       className="inline-flex items-center gap-1 text-xs text-zinc-400 hover:text-violet-500 transition"
     >
-      <i className="fa-solid fa-pen text-[10px]" />
+      <Pen className="text-[10px]" />
       <span>edited</span>
       {lastEditedAt && <span>({formatTimeAgo(lastEditedAt)})</span>}
     </button>

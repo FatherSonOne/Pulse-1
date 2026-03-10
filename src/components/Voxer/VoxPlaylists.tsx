@@ -4,6 +4,8 @@
 import React, { useState, useRef, useCallback, useMemo } from 'react';
 import { VoxPlaylist, VoxPlaylistItem, SmartPlaylistCriteria, DEFAULT_PLAYLISTS } from '../../services/voxer/advancedVoxerTypes';
 
+import { Check, Clock, EllipsisVertical, List, Pen, Plus, Search, Trash2, Wand2, X } from 'lucide-react';
+
 // ============================================
 // TYPES
 // ============================================
@@ -120,7 +122,7 @@ const PlaylistEditor: React.FC<PlaylistEditorProps> = ({
             {playlist ? 'Edit Playlist' : 'Create Playlist'}
           </h3>
           <button onClick={onClose} className="text-zinc-400 hover:text-zinc-600 dark:hover:text-white transition">
-            <i className="fa-solid fa-times"></i>
+            <X />
           </button>
         </div>
 
@@ -323,7 +325,7 @@ const PlaylistCard: React.FC<PlaylistCardProps> = ({
         {/* Smart Badge */}
         {playlist.isSmartPlaylist && (
           <div className="absolute top-2 left-2 px-2 py-1 bg-black/50 rounded-full text-[10px] text-white font-medium">
-            <i className="fa-solid fa-wand-magic-sparkles mr-1"></i>
+            <Wand2 className="mr-1" />
             Smart
           </div>
         )}
@@ -334,7 +336,7 @@ const PlaylistCard: React.FC<PlaylistCardProps> = ({
             onClick={() => setShowMenu(!showMenu)}
             className="w-8 h-8 rounded-full bg-black/50 hover:bg-black/70 text-white flex items-center justify-center opacity-0 group-hover:opacity-100 transition"
           >
-            <i className="fa-solid fa-ellipsis-v"></i>
+            <EllipsisVertical />
           </button>
           
           {showMenu && (
@@ -345,14 +347,14 @@ const PlaylistCard: React.FC<PlaylistCardProps> = ({
                   onClick={() => { onEdit(); setShowMenu(false); }}
                   className="w-full px-4 py-2 text-left text-sm hover:bg-zinc-100 dark:hover:bg-zinc-700 transition"
                 >
-                  <i className="fa-solid fa-pen mr-2 text-zinc-400"></i>
+                  <Pen className="mr-2 text-zinc-400" />
                   Edit
                 </button>
                 <button
                   onClick={() => { onDelete(); setShowMenu(false); }}
                   className="w-full px-4 py-2 text-left text-sm text-red-500 hover:bg-red-50 dark:hover:bg-red-900/20 transition"
                 >
-                  <i className="fa-solid fa-trash mr-2"></i>
+                  <Trash2 className="mr-2" />
                   Delete
                 </button>
               </div>
@@ -369,11 +371,11 @@ const PlaylistCard: React.FC<PlaylistCardProps> = ({
         )}
         <div className="flex items-center gap-3 mt-3 text-xs text-zinc-400">
           <span>
-            <i className="fa-solid fa-list mr-1"></i>
+            <List className="mr-1" />
             {playlist.items.length} voxes
           </span>
           <span>
-            <i className="fa-solid fa-clock mr-1"></i>
+            <Clock className="mr-1" />
             {formatDuration(playlist.totalDuration)}
           </span>
         </div>
@@ -447,14 +449,14 @@ export const VoxPlaylists: React.FC<VoxPlaylistsProps> = ({
       <div className="px-4 py-3 border-b border-zinc-200 dark:border-zinc-800">
         <div className="flex items-center justify-between mb-3">
           <h3 className="font-bold text-lg dark:text-white flex items-center gap-2">
-            <i className="fa-solid fa-rectangle-list text-orange-500"></i>
+            <List className="text-orange-500" />
             Playlists
           </h3>
           <button
             onClick={handleCreateNew}
             className="px-4 py-2 bg-orange-500 hover:bg-orange-600 text-white rounded-xl text-sm font-semibold transition"
           >
-            <i className="fa-solid fa-plus mr-2"></i>
+            <Plus className="mr-2" />
             New
           </button>
         </div>
@@ -468,7 +470,7 @@ export const VoxPlaylists: React.FC<VoxPlaylistsProps> = ({
             placeholder="Search playlists..."
             className="w-full pl-10 pr-4 py-2 bg-zinc-100 dark:bg-zinc-800 rounded-xl border-0 focus:ring-2 focus:ring-orange-500 dark:text-white text-sm"
           />
-          <i className="fa-solid fa-search absolute left-3.5 top-1/2 -translate-y-1/2 text-zinc-400 text-sm"></i>
+          <Search className="absolute left-3.5 top-1/2 -translate-y-1/2 text-zinc-400 text-sm" />
         </div>
       </div>
 
@@ -477,7 +479,7 @@ export const VoxPlaylists: React.FC<VoxPlaylistsProps> = ({
         {filteredPlaylists.length === 0 ? (
           <div className="text-center py-12">
             <div className="w-20 h-20 rounded-full bg-zinc-100 dark:bg-zinc-800 flex items-center justify-center mx-auto mb-4">
-              <i className="fa-solid fa-rectangle-list text-3xl text-zinc-400"></i>
+              <List className="text-3xl text-zinc-400" />
             </div>
             <h4 className="font-semibold dark:text-white mb-2">
               {searchQuery ? 'No playlists found' : 'No playlists yet'}
@@ -555,7 +557,7 @@ export const AddToPlaylistModal: React.FC<AddToPlaylistModalProps> = ({
         <div className="px-4 py-3 border-b border-zinc-200 dark:border-zinc-800 flex items-center justify-between">
           <h3 className="font-bold dark:text-white">Add to Playlist</h3>
           <button onClick={onClose} className="text-zinc-400 hover:text-zinc-600 dark:hover:text-white transition">
-            <i className="fa-solid fa-times"></i>
+            <X />
           </button>
         </div>
 
@@ -588,7 +590,7 @@ export const AddToPlaylistModal: React.FC<AddToPlaylistModalProps> = ({
                   </div>
                   {alreadyInPlaylist && (
                     <span className="text-xs text-emerald-500">
-                      <i className="fa-solid fa-check"></i>
+                      <Check />
                     </span>
                   )}
                 </button>
@@ -603,7 +605,7 @@ export const AddToPlaylistModal: React.FC<AddToPlaylistModalProps> = ({
             onClick={onCreate}
             className="w-full py-2.5 border-2 border-dashed border-zinc-200 dark:border-zinc-700 rounded-xl text-sm text-zinc-500 hover:border-orange-500 hover:text-orange-500 transition"
           >
-            <i className="fa-solid fa-plus mr-2"></i>
+            <Plus className="mr-2" />
             Create new playlist
           </button>
         </div>

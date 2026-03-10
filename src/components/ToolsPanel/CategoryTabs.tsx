@@ -13,7 +13,7 @@ interface CategoryTabsProps {
   toolCounts?: Record<string, number>;
 }
 
-export const CategoryTabs: React.FC<CategoryTabsProps> = ({
+const CategoryTabsBase: React.FC<CategoryTabsProps> = ({
   activeCategory,
   onCategoryChange,
   toolCounts = {}
@@ -94,3 +94,6 @@ export const CategoryTabs: React.FC<CategoryTabsProps> = ({
     </div>
   );
 };
+
+export const CategoryTabs = React.memo(CategoryTabsBase);
+CategoryTabs.displayName = 'CategoryTabs';

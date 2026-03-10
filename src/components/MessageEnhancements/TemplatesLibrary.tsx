@@ -1,5 +1,7 @@
 import React, { useState, useCallback, useMemo } from 'react';
 
+import { Bookmark, Check, Plus, Search, Share2, Star, X } from 'lucide-react';
+
 // Types
 interface Template {
   id: string;
@@ -262,7 +264,7 @@ export const TemplatesLibrary: React.FC<TemplatesLibraryProps> = ({
       <div className="flex items-center justify-between">
         <div className="flex items-center gap-2">
           <div className="w-8 h-8 rounded-lg bg-amber-100 dark:bg-amber-900/30 flex items-center justify-center">
-            <i className="fa-solid fa-bookmark text-amber-600 dark:text-amber-400" />
+            <Bookmark className="text-amber-600 dark:text-amber-400" />
           </div>
           <div>
             <p className="text-sm font-medium text-zinc-900 dark:text-white">Templates Library</p>
@@ -280,7 +282,7 @@ export const TemplatesLibrary: React.FC<TemplatesLibraryProps> = ({
             onClick={() => setShowCreateModal(true)}
             className="px-3 py-1.5 bg-amber-600 text-white rounded-lg text-xs font-medium hover:bg-amber-700 transition"
           >
-            <i className="fa-solid fa-plus mr-1" />
+            <Plus className="mr-1" />
             New
           </button>
         </div>
@@ -288,7 +290,7 @@ export const TemplatesLibrary: React.FC<TemplatesLibraryProps> = ({
 
       {/* Search */}
       <div className="relative">
-        <i className="fa-solid fa-search absolute left-3 top-1/2 -translate-y-1/2 text-zinc-400 text-sm" />
+        <Search className="absolute left-3 top-1/2 -translate-y-1/2 text-zinc-400 text-sm" />
         <input
           type="text"
           value={searchQuery}
@@ -302,7 +304,7 @@ export const TemplatesLibrary: React.FC<TemplatesLibraryProps> = ({
       {favoriteTemplates.length > 0 && !searchQuery && selectedCategory === 'all' && (
         <div>
           <p className="text-xs font-medium text-zinc-500 uppercase tracking-wide mb-2">
-            <i className="fa-solid fa-star text-yellow-500 mr-1" />
+            <Star className="text-yellow-500 mr-1" />
             Favorites
           </p>
           <div className="flex gap-2 overflow-x-auto pb-2">
@@ -361,7 +363,7 @@ export const TemplatesLibrary: React.FC<TemplatesLibraryProps> = ({
                   onClick={() => setSelectedTemplate(null)}
                   className="p-1 hover:bg-zinc-100 dark:hover:bg-zinc-800 rounded"
                 >
-                  <i className="fa-solid fa-xmark text-zinc-500" />
+                  <X className="text-zinc-500" />
                 </button>
               </div>
               <div className="flex gap-1 mt-2">
@@ -417,7 +419,7 @@ export const TemplatesLibrary: React.FC<TemplatesLibraryProps> = ({
                 onClick={handleInsertTemplate}
                 className="px-4 py-2 text-sm bg-amber-600 text-white rounded-lg hover:bg-amber-700"
               >
-                <i className="fa-solid fa-check mr-1" />
+                <Check className="mr-1" />
                 Insert Template
               </button>
             </div>
@@ -428,7 +430,7 @@ export const TemplatesLibrary: React.FC<TemplatesLibraryProps> = ({
       {/* Templates Grid/List */}
       {filteredTemplates.length === 0 ? (
         <div className="text-center py-8">
-          <i className="fa-solid fa-bookmark text-zinc-300 text-3xl mb-3" />
+          <Bookmark className="text-zinc-300 text-3xl mb-3" />
           <p className="text-sm text-zinc-500">No templates found</p>
         </div>
       ) : viewMode === 'grid' ? (
@@ -442,14 +444,14 @@ export const TemplatesLibrary: React.FC<TemplatesLibraryProps> = ({
               <div className="flex items-start justify-between mb-1">
                 <p className="text-sm font-medium text-zinc-900 dark:text-white line-clamp-1">{template.name}</p>
                 {template.isFavorite && (
-                  <i className="fa-solid fa-star text-yellow-500 text-xs" />
+                  <Star className="text-yellow-500 text-xs" />
                 )}
               </div>
               <p className="text-xs text-zinc-500 line-clamp-2 mb-2">{template.content}</p>
               <div className="flex items-center justify-between">
                 <span className="text-[10px] text-zinc-400">{template.usageCount} uses</span>
                 {template.isShared && (
-                  <i className="fa-solid fa-share-nodes text-zinc-400 text-[10px]" />
+                  <Share2 className="text-zinc-400 text-[10px]" />
                 )}
               </div>
             </button>
@@ -467,8 +469,8 @@ export const TemplatesLibrary: React.FC<TemplatesLibraryProps> = ({
                 <div className="flex-1">
                   <div className="flex items-center gap-2">
                     <p className="text-sm font-medium text-zinc-900 dark:text-white">{template.name}</p>
-                    {template.isFavorite && <i className="fa-solid fa-star text-yellow-500 text-xs" />}
-                    {template.isShared && <i className="fa-solid fa-share-nodes text-zinc-400 text-xs" />}
+                    {template.isFavorite && <Star className="text-yellow-500 text-xs" />}
+                    {template.isShared && <Share2 className="text-zinc-400 text-xs" />}
                   </div>
                   <p className="text-xs text-zinc-500 line-clamp-1 mt-1">{template.content}</p>
                 </div>
@@ -563,6 +565,6 @@ export const TemplateInsertButton: React.FC<TemplateInsertButtonProps> = ({ onSe
     className="p-2 rounded-lg hover:bg-zinc-100 dark:hover:bg-zinc-800 transition"
     title="Insert template"
   >
-    <i className="fa-solid fa-bookmark text-zinc-500" />
+    <Bookmark className="text-zinc-500" />
   </button>
 );

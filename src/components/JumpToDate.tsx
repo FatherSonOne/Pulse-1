@@ -1,6 +1,8 @@
 import React, { useState, useEffect, useRef, useCallback } from 'react';
 import { createPortal } from 'react-dom';
 
+import { ChevronLeft, ChevronRight } from 'lucide-react';
+
 interface JumpToDateProps {
   isOpen: boolean;
   currentDate: Date;
@@ -187,7 +189,7 @@ const JumpToDate: React.FC<JumpToDateProps> = ({ isOpen, currentDate, onClose, o
               transition-colors
             "
           >
-            <i className="fa-solid fa-chevron-left text-[10px]" aria-hidden="true" />
+            <ChevronLeft className="text-[10px]" />
           </button>
 
           <span
@@ -208,7 +210,7 @@ const JumpToDate: React.FC<JumpToDateProps> = ({ isOpen, currentDate, onClose, o
               transition-colors
             "
           >
-            <i className="fa-solid fa-chevron-right text-[10px]" aria-hidden="true" />
+            <ChevronRight className="text-[10px]" />
           </button>
         </div>
 

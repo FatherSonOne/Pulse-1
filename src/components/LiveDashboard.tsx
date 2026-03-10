@@ -25,7 +25,7 @@ import { warRoomExportService, WarRoomExportData } from '../services/warRoomExpo
 // Lazy load heavy components that may crash on mobile
 const AudioVisualizer = lazy(() => import('./WarRoom/AudioVisualizer').then(m => ({ default: m.AudioVisualizer })));
 const TokenStream = lazy(() => import('./WarRoom/TokenStream').then(m => ({ default: m.TokenStream })));
-const VoiceControl = lazy(() => import('./WarRoom/VoiceControl').then(m => ({ default: m.VoiceControl })));
+
 const ThinkingPanel = lazy(() => import('./WarRoom/ThinkingPanel').then(m => ({ default: m.ThinkingPanel })));
 // Legacy modes — moved to archived/ in Phase 1. Still functional, pending removal in Phase 4.
 const NeuralTerminal = lazy(() => import('./WarRoom/archived/NeuralTerminal').then(m => ({ default: m.NeuralTerminal })));
@@ -44,12 +44,18 @@ const IntelMode = lazy(() => import('./WarRoom/modes/IntelMode').then(m => ({ de
 
 // New War Room Sidebar component
 import { WarRoomSidebar, WarRoomProject, WarRoomSession, AIMessage as SidebarAIMessage } from './WarRoom/WarRoomSidebar';
+import { WarRoomModalStack } from './WarRoom/WarRoomModalStack';
 import { WarRoomLayout } from './WarRoom/WarRoomLayout';
 import { MissionLauncher } from './WarRoom/MissionLauncher';
 import { useBoardNotes } from './WarRoom/useBoardNotes';
+import { WarRoomHeader } from './WarRoom/WarRoomHeader';
+import { InputArea } from './WarRoom/InputArea';
+import { AgentType } from './WarRoom/AgentSelector';
 
 // Import voice synthesis hook - this is lightweight
 import { useVoiceSynthesis } from './WarRoom/VoiceSynthesis';
+
+import { Activity, AlertTriangle, BookOpen, Brain, Check, ChevronDown, ChevronUp, Clipboard, Code, Database, Download, EllipsisVertical, Eye, FileText, FolderOpen, Headphones, Info, Layers, LayoutGrid, Loader2, Mail, MessageSquare, Mic, MicOff, Paperclip, Plus, Send, Share2, Sparkles, Tags, Trash2, Volume2, Wand2, X } from 'lucide-react';
 
 // Check if we're on a mobile/native platform
 const isMobilePlatform = Capacitor.isNativePlatform() || /Android|iPhone|iPad|iPod/i.test(navigator.userAgent);
@@ -61,7 +67,7 @@ const LoadingFallback: React.FC<{ message?: string }> = ({ message = 'Loading...
     <Suspense fallback={
       <div className="h-full w-full flex items-center justify-center bg-gray-900/50">
         <div className="text-center">
-          <i className="fa fa-spinner fa-spin text-2xl text-rose-500 mb-2"></i>
+          <Loader2 className="fa text-2xl text-rose-500 mb-2 animate-spin" />
           <p className="text-sm text-gray-400">Loading...</p>
         </div>
       </div>
@@ -82,110 +88,6 @@ interface LiveDashboardProps {
   apiKey: string;
   userId: string;
 }
-
-// Agent type
-type AgentType = 'general' | 'skeptic' | 'scribe' | 'deep-diver';
-
-// Agent definitions for the selector
-const AGENTS: { id: AgentType; name: string; icon: string; description: string; color: string }[] = [
-  { id: 'general', name: 'General', icon: 'fa-lightbulb', description: 'Balanced AI assistant for any task', color: 'from-amber-500 to-yellow-500' },
-  { id: 'skeptic', name: 'Skeptic', icon: 'fa-scale-balanced', description: 'Critical thinker, questions assumptions', color: 'from-purple-500 to-indigo-500' },
-  { id: 'scribe', name: 'Scribe', icon: 'fa-pen-fancy', description: 'Note-taker and summarizer', color: 'from-emerald-500 to-teal-500' },
-  { id: 'deep-diver', name: 'Deep Diver', icon: 'fa-microscope', description: 'In-depth analysis and research', color: 'from-blue-500 to-cyan-500' },
-];
-
-// War Room styled Agent Selector component
-const AgentSelector: React.FC<{
-  activeAgent: AgentType;
-  onAgentChange: (agent: AgentType) => void;
-}> = ({ activeAgent, onAgentChange }) => {
-  const [isOpen, setIsOpen] = useState(false);
-  const buttonRef = useRef<HTMLButtonElement>(null);
-  const menuRef = useRef<HTMLDivElement>(null);
-
-  const selectedAgent = AGENTS.find(a => a.id === activeAgent) || AGENTS[0];
-
-  // Close on outside click
-  useEffect(() => {
-    const handleClickOutside = (e: MouseEvent) => {
-      if (menuRef.current && !menuRef.current.contains(e.target as Node) &&
-          buttonRef.current && !buttonRef.current.contains(e.target as Node)) {
-        setIsOpen(false);
-      }
-    };
-
-    if (isOpen) {
-      document.addEventListener('mousedown', handleClickOutside);
-    }
-    return () => document.removeEventListener('mousedown', handleClickOutside);
-  }, [isOpen]);
-
-  // Close on Escape
-  useEffect(() => {
-    const handleEscape = (e: KeyboardEvent) => {
-      if (e.key === 'Escape') setIsOpen(false);
-    };
-    if (isOpen) {
-      document.addEventListener('keydown', handleEscape);
-    }
-    return () => document.removeEventListener('keydown', handleEscape);
-  }, [isOpen]);
-
-  return (
-    <div className="relative">
-      <button
-        ref={buttonRef}
-        onClick={() => setIsOpen(!isOpen)}
-        className="war-room-btn px-3 py-1.5 flex items-center gap-2"
-      >
-        <span className={`w-2 h-2 rounded-full bg-gradient-to-r ${selectedAgent.color}`} />
-        <i className={`fa ${selectedAgent.icon} text-sm`}></i>
-        <span className="text-sm font-medium hidden sm:inline">{selectedAgent.name}</span>
-        <i className={`fa fa-chevron-down text-xs war-room-text-secondary transition-transform ${isOpen ? 'rotate-180' : ''}`}></i>
-      </button>
-
-      {isOpen && (
-        <div
-          ref={menuRef}
-          className="absolute top-full right-0 mt-2 w-64 war-room-panel z-50 overflow-hidden"
-        >
-          <div className="text-xs war-room-text-secondary px-3 py-2 font-semibold uppercase tracking-wider border-b border-white/10">
-            AI Agent Persona
-          </div>
-          <div className="p-1">
-            {AGENTS.map(agent => (
-              <button
-                key={agent.id}
-                onClick={() => {
-                  onAgentChange(agent.id);
-                  setIsOpen(false);
-                }}
-                className={`war-room-list-item w-full p-2.5 text-left ${
-                  activeAgent === agent.id ? 'active' : ''
-                }`}
-              >
-                <div className="flex items-center gap-3">
-                  <div className={`w-8 h-8 rounded-lg bg-gradient-to-br ${agent.color} bg-opacity-20 flex items-center justify-center`}>
-                    <i className={`fa ${agent.icon} text-sm ${activeAgent === agent.id ? 'text-white' : ''}`}></i>
-                  </div>
-                  <div className="flex-1 min-w-0">
-                    <div className="text-sm font-medium">{agent.name}</div>
-                    <div className={`text-xs truncate ${activeAgent === agent.id ? 'text-white/70' : 'war-room-text-secondary'}`}>
-                      {agent.description}
-                    </div>
-                  </div>
-                  {activeAgent === agent.id && (
-                    <i className="fa fa-check text-xs"></i>
-                  )}
-                </div>
-              </button>
-            ))}
-          </div>
-        </div>
-      )}
-    </div>
-  );
-};
 
 const LiveDashboard: React.FC<LiveDashboardProps> = ({ apiKey, userId }) => {
   // Projects / War Rooms
@@ -335,7 +237,6 @@ const LiveDashboard: React.FC<LiveDashboardProps> = ({ apiKey, userId }) => {
   const [showVoiceAgentPanel, setShowVoiceAgentPanel] = useState(false);
   const [voiceAgentExpanded, setVoiceAgentExpanded] = useState(false);
   const openaiApiKey = localStorage.getItem('openai_api_key') || import.meta.env.VITE_OPENAI_API_KEY || '';
-
 
   // Handle resize and orientation changes for mobile responsiveness
   useEffect(() => {
@@ -1504,7 +1405,7 @@ const LiveDashboard: React.FC<LiveDashboardProps> = ({ apiKey, userId }) => {
           return renderWithDock(
             <div className="h-full flex items-center justify-center war-room-text-secondary">
               <div className="text-center">
-                <i className="fa fa-book-open text-4xl mb-4 opacity-30"></i>
+                <BookOpen className="fa text-4xl mb-4 opacity-30" />
                 <p>Mission type coming soon</p>
               </div>
             </div>
@@ -1869,215 +1770,33 @@ const LiveDashboard: React.FC<LiveDashboardProps> = ({ apiKey, userId }) => {
 
       {/* Main Content */}
       <div className="flex-1 flex flex-col min-w-0 overflow-hidden">
-        {/* Header */}
-        <div className="war-room-header relative h-14 md:h-16 flex items-center justify-between px-2 md:px-4 shrink-0 z-30">
-          <div className="flex items-center gap-2 md:gap-3">
-            {/* Back to Modes button - show when not on hub */}
-            {!showWarRoomHub && (
-              <button
-                type="button"
-                onClick={() => setShowWarRoomHub(true)}
-                className="flex items-center gap-2 px-3 py-1.5 rounded-lg text-sm font-medium transition-all
-                  bg-zinc-100 hover:bg-zinc-200 dark:bg-zinc-800 dark:hover:bg-zinc-700
-                  text-zinc-600 dark:text-zinc-300 border border-zinc-200 dark:border-zinc-700"
-                title="Back to Mode Selection"
-              >
-                <i className="fa fa-th-large"></i>
-                <span className="hidden sm:inline">Hub</span>
-              </button>
-            )}
-
-            {/* War Room title when on hub */}
-            {showWarRoomHub && (
-              <div className="flex items-center gap-2">
-                <div className="w-8 h-8 rounded-lg flex items-center justify-center" style={{ background: 'var(--wr-accent-primary)' }}>
-                  <i className="fa fa-book-open text-white text-sm"></i>
-                </div>
-                <span className="text-sm font-bold" style={{ color: 'var(--wr-accent-primary)' }}>
-                  War Room
-                </span>
-              </div>
-            )}
-
-            {/* Project badge - only show when in a mode */}
-            {!showWarRoomHub && selectedProject && !isMobile && (
-              <div className="war-room-badge flex items-center gap-2 px-3 py-1.5">
-                <i className={`fa ${selectedProject.icon}`} style={{ color: selectedProject.color }}></i>
-                <span className="text-sm font-medium">{selectedProject.name}</span>
-              </div>
-            )}
-
-            {/* Session info - only show when in a mode */}
-            {!showWarRoomHub && selectedSessionId && !isMobile && (
-              <div className="text-sm flex items-center">
-                <span className="war-room-text-secondary">Session:</span>
-                <span className="ml-2 font-medium truncate max-w-[150px]">
-                  {sessions.find(s => s.id === selectedSessionId)?.title}
-                </span>
-              </div>
-            )}
-          </div>
-
-          {/* CENTER: Context Button — toggles IntelDesk source panel */}
-          <button
-            onClick={() => setContextPanelOpen((v) => !v)}
-            className={`flex items-center gap-2 px-4 py-2 rounded-full transition-all font-medium text-sm ${
-              contextPanelOpen
-                ? 'bg-cyan-500/20 text-cyan-300 border border-cyan-500/40 shadow-lg shadow-cyan-500/10'
-                : activeContextDocs.size > 0
-                  ? 'bg-emerald-500/20 text-emerald-400 border border-emerald-500/30 hover:bg-emerald-500/30'
-                  : 'bg-rose-500/10 text-rose-400 border border-rose-500/20 hover:bg-rose-500/20'
-            }`}
-          >
-            <i className="fa fa-database"></i>
-            <span className="hidden sm:inline">Sources</span>
-            {activeContextDocs.size > 0 && (
-              <span className={`text-xs px-1.5 py-0.5 rounded-full ${contextPanelOpen ? 'bg-cyan-500/20' : 'bg-emerald-500/30'}`}>
-                {activeContextDocs.size}
-              </span>
-            )}
-            <i className={`fa fa-chevron-${contextPanelOpen ? 'left' : 'right'} text-xs transition-transform`}></i>
-          </button>
-
-          {/* Desktop Controls - Simplified */}
-          <div className="hidden lg:flex items-center gap-2">
-            {/* Mode switching handled by WarRoomLayout's ModeToolbar (Phase 1) */}
-
-            {/* Voice Agent Button - OpenAI Realtime */}
-            <button
-              onClick={() => setShowVoiceAgentPanel(true)}
-              className={`px-3 py-1.5 rounded-full text-sm transition-all flex items-center gap-2 font-medium ${
-                showVoiceAgentPanel
-                  ? 'bg-gradient-to-r from-rose-500 to-pink-500 text-white shadow-lg shadow-rose-500/30'
-                  : 'bg-rose-500/10 text-rose-400 border border-rose-500/20 hover:bg-rose-500/20 hover:shadow-lg hover:shadow-rose-500/20'
-              }`}
-              title="Open Voice Agent (OpenAI Realtime)"
-            >
-              <i className={`fa fa-waveform-lines ${showVoiceAgentPanel ? 'animate-pulse' : ''}`}></i>
-              <span className="hidden xl:inline">Voice Agent</span>
-            </button>
-
-            {/* Export Button - Only show when there are messages */}
-            {messages.length > 0 && (
-              <button
-                onClick={() => setShowExportModal(true)}
-                className="px-3 py-1.5 bg-gray-100 hover:bg-gray-200 dark:bg-gray-800 dark:hover:bg-gray-700 border border-gray-200 dark:border-gray-700 rounded-full text-sm text-gray-700 dark:text-gray-300 transition-all flex items-center gap-2 font-medium"
-              >
-                <i className="fa fa-share-nodes"></i>
-                <span className="hidden xl:inline">Export</span>
-              </button>
-            )}
-          </div>
-
-          {/* Mobile/Tablet Controls */}
-          <div className="flex lg:hidden items-center gap-1">
-            {/* Voice Agent Button - Mobile */}
-            <button
-              onClick={() => setShowVoiceAgentPanel(true)}
-              className={`p-2 rounded-full text-sm transition-all ${
-                showVoiceAgentPanel
-                  ? 'bg-gradient-to-r from-rose-500 to-pink-500 text-white shadow-lg'
-                  : 'text-rose-400 hover:bg-rose-500/20'
-              }`}
-              title="Voice Agent"
-            >
-              <i className="fa fa-waveform-lines"></i>
-            </button>
-
-            {/* Quick action buttons on mobile */}
-            <button
-              onClick={() => setVoiceEnabled(!voiceEnabled)}
-              className={`p-2 rounded-full text-sm transition-all ${
-                voiceEnabled
-                  ? 'bg-rose-600 text-white'
-                  : 'text-gray-600 dark:text-gray-300 hover:bg-gray-100 dark:hover:bg-gray-800'
-              }`}
-            >
-              <i className="fa fa-microphone"></i>
-            </button>
-
-            <button
-              onClick={() => setEnableExtendedThinking(!enableExtendedThinking)}
-              className={`p-2 rounded-full text-sm transition-all ${
-                enableExtendedThinking
-                  ? 'bg-rose-600 text-white'
-                  : 'text-gray-600 dark:text-gray-300 hover:bg-gray-100 dark:hover:bg-gray-800'
-              }`}
-            >
-              <i className="fa fa-brain"></i>
-            </button>
-
-            {/* Mobile menu toggle */}
-            <button
-              onClick={(e) => {
-                e.stopPropagation();
-                setShowMobileMenu(!showMobileMenu);
-              }}
-              className="mobile-menu-container p-2 rounded-full text-gray-600 dark:text-gray-300 hover:bg-gray-100 dark:hover:bg-gray-800"
-            >
-              <i className="fa fa-ellipsis-v"></i>
-            </button>
-          </div>
-        </div>
-
-        {/* Context Panel overlay retired in Phase 9.
-            Sources button in header now controls IntelDesk via contextPanelOpen.
-            Knowledge Bank accessible via ⌘K palette or KnowledgeBank modal. */}
-
-        {/* Mobile Menu Dropdown */}
-        {showMobileMenu && isMobile && (
-          <div
-            className="mobile-menu-container fixed top-16 right-2 z-[9990] bg-white dark:bg-gray-900 rounded-xl shadow-xl border border-gray-200 dark:border-rose-500/30 p-3 min-w-[220px] max-h-[calc(100vh-5rem)] overflow-y-auto"
-            onClick={(e) => e.stopPropagation()}
-          >
-            <div className="space-y-2">
-              {/* Mode switching handled by WarRoomLayout's ModeToolbar (Phase 1) */}
-
-              {/* Voice Controls */}
-              <button
-                onClick={() => { setVoiceSynthesisEnabled(!voiceSynthesisEnabled); setShowMobileMenu(false); }}
-                className={`w-full text-left px-3 py-2 rounded-lg text-sm flex items-center gap-3 ${
-                  voiceSynthesisEnabled ? 'bg-rose-100 dark:bg-rose-600/20 text-rose-700 dark:text-rose-200' : 'hover:bg-gray-100 dark:hover:bg-gray-800 text-gray-700 dark:text-gray-300'
-                }`}
-              >
-                <i className="fa fa-volume-up w-5"></i>
-                Voice Output {voiceSynthesisEnabled ? 'On' : 'Off'}
-              </button>
-
-              {/* Agent Selector - War Room Style */}
-              <div className="px-3 py-2">
-                <span className="text-xs font-semibold text-gray-500 dark:text-gray-400 uppercase mb-1 block">Agent</span>
-                <AgentSelector
-                  activeAgent={activeAgent}
-                  onAgentChange={(agent) => { setActiveAgent(agent); settingsService.set('liveBoardSelectedAgent', agent); setShowMobileMenu(false); }}
-                />
-              </div>
-
-
-              {/* Audio & Export */}
-              {messages.length > 0 && (
-                <>
-                  <button
-                    onClick={() => { handleGenerateAudioOverview(); setShowMobileMenu(false); }}
-                    disabled={isGeneratingAudio}
-                    className="w-full text-left px-3 py-2 rounded-lg text-sm flex items-center gap-3 hover:bg-gray-100 dark:hover:bg-gray-800 text-gray-700 dark:text-gray-300 disabled:opacity-50"
-                  >
-                    <i className="fa fa-headphones w-5"></i>
-                    {isGeneratingAudio ? 'Generating...' : 'Generate Audio'}
-                  </button>
-
-                  <button
-                    onClick={() => { setShowExportModal(true); setShowMobileMenu(false); }}
-                    className="w-full text-left px-3 py-2 rounded-lg text-sm flex items-center gap-3 hover:bg-gray-100 dark:hover:bg-gray-800 text-gray-700 dark:text-gray-300"
-                  >
-                    <i className="fa fa-share-nodes w-5"></i>
-                    Export Session
-                  </button>
-                </>
-              )}
-            </div>
-          </div>
-        )}
+        <WarRoomHeader
+          showWarRoomHub={showWarRoomHub}
+          setShowWarRoomHub={setShowWarRoomHub}
+          selectedProject={selectedProject}
+          selectedSessionId={selectedSessionId}
+          sessions={sessions}
+          isMobile={isMobile}
+          contextPanelOpen={contextPanelOpen}
+          setContextPanelOpen={setContextPanelOpen}
+          activeContextDocs={activeContextDocs}
+          showVoiceAgentPanel={showVoiceAgentPanel}
+          setShowVoiceAgentPanel={setShowVoiceAgentPanel}
+          messages={messages}
+          setShowExportModal={setShowExportModal}
+          voiceEnabled={voiceEnabled}
+          setVoiceEnabled={setVoiceEnabled}
+          enableExtendedThinking={enableExtendedThinking}
+          setEnableExtendedThinking={setEnableExtendedThinking}
+          showMobileMenu={showMobileMenu}
+          setShowMobileMenu={setShowMobileMenu}
+          voiceSynthesisEnabled={voiceSynthesisEnabled}
+          setVoiceSynthesisEnabled={setVoiceSynthesisEnabled}
+          activeAgent={activeAgent}
+          setActiveAgent={setActiveAgent}
+          isGeneratingAudio={isGeneratingAudio}
+          handleGenerateAudioOverview={handleGenerateAudioOverview}
+        />
 
         {/* Mode-Based Content Rendering */}
         <WarRoomLayout
@@ -2126,326 +1845,38 @@ const LiveDashboard: React.FC<LiveDashboardProps> = ({ apiKey, userId }) => {
           />
         )}
 
-        {/* Input Area - Only show when not using a mode that has its own input */}
-        {selectedSessionId && !['tactical', 'focus', 'elegant-interface', 'analyst', 'strategist', 'brainstorm', 'debrief'].includes(warRoomMode) && (
-          <div
-            className="p-2 md:p-4 border-t border-rose-200 bg-white/90 dark:border-rose-500/40 dark:bg-[#1c1b23]/95 backdrop-blur-xl shrink-0 md:rounded-2xl shadow-[0_12px_48px_-28px_rgba(255,82,134,0.55)] transition-all duration-300 hover:shadow-[0_16px_60px_-28px_rgba(255,82,134,0.65)]"
-          >
-            {/* Active Document Indicators - hidden on mobile to save space */}
-            {/* Active Context Panel - Above Input */}
-            {showActiveContext && (
-              <div className="mb-2 p-2 md:p-3 bg-gradient-to-r from-rose-900/20 to-pink-900/20 border border-rose-500/20 rounded-xl">
-                <div className="flex items-center justify-between mb-2">
-                  <div className="flex items-center gap-2">
-                    <i className="fa fa-layer-group text-rose-400 text-sm"></i>
-                    <span className="text-xs md:text-sm font-semibold text-rose-300">
-                      ACTIVE CONTEXT
-                    </span>
-                    <span className="text-xs px-2 py-0.5 bg-rose-900/40 border border-rose-500/30 rounded-full text-rose-300">
-                      {activeContextDocs.size} / {documents.filter(d => d.processing_status === 'completed').length}
-                    </span>
-                    {!isMobile && (
-                      <span className="text-[10px] text-rose-400/70">
-                        ~{Math.round(estimateContextTokens())} tokens
-                      </span>
-                    )}
-                  </div>
-                  <div className="flex items-center gap-1">
-                    {documents.filter(d => d.processing_status === 'completed').length > 0 && (
-                      <>
-                        {activeContextDocs.size > 0 && (
-                          <button
-                            onClick={clearActiveContext}
-                            className="text-[10px] md:text-xs px-2 py-0.5 hover:bg-red-900/20 rounded text-red-400 transition-colors"
-                            title="Clear all"
-                          >
-                            <i className="fa fa-times mr-1"></i>
-                            {!isMobile && 'Clear'}
-                          </button>
-                        )}
-                        {activeContextDocs.size < documents.filter(d => d.processing_status === 'completed').length && (
-                          <button
-                            onClick={addAllDocsToContext}
-                            className="text-[10px] md:text-xs px-2 py-0.5 hover:bg-rose-900/20 rounded text-rose-300 transition-colors"
-                            title="Add all documents"
-                          >
-                            <i className="fa fa-plus mr-1"></i>
-                            {!isMobile && 'Add All'}
-                          </button>
-                        )}
-                      </>
-                    )}
-                    <button
-                      onClick={() => setShowActiveContext(false)}
-                      className="w-5 h-5 flex items-center justify-center hover:bg-rose-900/20 rounded text-rose-400"
-                      title="Hide context panel"
-                    >
-                      <i className="fa fa-chevron-up text-xs"></i>
-                    </button>
-                  </div>
-                </div>
-                
-                {activeContextDocs.size === 0 ? (
-                  <div className="text-center py-2">
-                    <p className="text-xs text-rose-300/70 mb-1">
-                      <i className="fa fa-info-circle mr-1"></i>
-                      No documents in active context
-                    </p>
-                    {documents.length === 0 ? (
-                      <p className="text-xs text-rose-300/50">
-                        Upload documents in sidebar to get started →
-                      </p>
-                    ) : (
-                      <p className="text-xs text-rose-300/50">
-                        Click checkboxes in sidebar to add documents ✓
-                      </p>
-                    )}
-                  </div>
-                ) : (
-                  <div className="flex flex-wrap gap-1">
-                    {activeContextDocuments.map((doc) => (
-                      <div
-                        key={doc.id}
-                        className="flex items-center gap-1 px-2 py-1 bg-rose-900/30 border border-rose-500/30 rounded-full text-xs group hover:border-rose-400 transition-colors"
-                      >
-                        <i className="fa fa-file-alt text-rose-400 text-[10px]"></i>
-                        <span className="text-rose-200 truncate max-w-[100px] md:max-w-[150px]">
-                          {doc.title}
-                        </span>
-                        {!isMobile && doc.ai_keywords && doc.ai_keywords.length > 0 && (
-                          <span className="text-[10px] text-rose-300/70">
-                            ({doc.ai_keywords.length} topics)
-                          </span>
-                        )}
-                        <button
-                          onClick={() => toggleDocInContext(doc.id)}
-                          className="w-4 h-4 flex items-center justify-center hover:bg-red-900/50 rounded-full opacity-70 group-hover:opacity-100 transition-opacity"
-                          title="Remove from context"
-                        >
-                          <i className="fa fa-times text-red-400 text-[10px]"></i>
-                        </button>
-                      </div>
-                    ))}
-                  </div>
-                )}
-              </div>
-            )}
-
-            {/* Show context panel toggle when hidden */}
-            {!showActiveContext && (
-              <div className="mb-2 px-3 py-1 bg-rose-900/10 border border-rose-500/20 rounded-lg flex items-center justify-between cursor-pointer hover:bg-rose-900/20 transition-colors" onClick={() => setShowActiveContext(true)}>
-                <span className="text-xs text-rose-300">
-                  <i className="fa fa-layer-group mr-1"></i>
-                  {activeContextDocs.size} document{activeContextDocs.size !== 1 ? 's' : ''} in context
-                </span>
-                <button
-                  className="text-xs px-2 py-0.5 hover:bg-rose-900/20 rounded text-rose-300"
-                >
-                  <i className="fa fa-chevron-down mr-1"></i>
-                  Show
-                </button>
-              </div>
-            )}
-
-            {/* Voice Control */}
-            {voiceEnabled && (
-              <div className="mb-2 md:mb-3">
-                <ErrorBoundary 
-                  componentName="Voice Control"
-                  fallback={
-                    <div className="text-center py-2 text-amber-500 text-sm">
-                      <i className="fa fa-microphone-slash mr-2"></i>
-                      Voice input unavailable
-                    </div>
-                  }
-                >
-                  <Suspense fallback={<div className="h-10 animate-pulse bg-gray-700/50 rounded-lg"></div>}>
-                    <VoiceControl
-                      enabled={voiceEnabled}
-                      mode={voiceMode}
-                      wakeWord="hey pulse"
-                      onTranscript={(text, isFinal) => {
-                        if (isFinal) {
-                          setInput(text);
-                          handleSendMessage();
-                        } else {
-                          setInput(text);
-                        }
-                      }}
-                      onCommand={(cmd) => {
-                        if (cmd === 'show_thinking') {
-                          setShowThinkingLogs(true);
-                        } else if (cmd === 'hide_thinking') {
-                          setShowThinkingLogs(false);
-                        } else if (cmd.startsWith('switch_mode:')) {
-                          const mode = cmd.split(':')[1] as WarRoomMode;
-                          setWarRoomMode(mode);
-                          toast.success(`Switched to ${mode}!`);
-                        }
-                      }}
-                      onListeningChange={(isListening) => {
-                        setVisualizerType(isListening ? 'listening' : 'idle');
-                      }}
-                    />
-                  </Suspense>
-                </ErrorBoundary>
-              </div>
-            )}
-
-            {/* Enhanced Input Area - Cursor-style with agent selector */}
-            <div className="flex flex-col gap-2">
-              {/* Quick Actions Row */}
-              <div className="flex items-center justify-between px-1">
-                {/* Left side: Agent selector + actions */}
-                <div className="flex items-center gap-2">
-                  {/* Agent/Persona Selector - Cursor-style dropdown */}
-                  <div className="relative group">
-                    <button
-                      data-agent-trigger
-                      onClick={() => {
-                        const dropdown = document.getElementById('agent-dropdown');
-                        dropdown?.classList.toggle('hidden');
-                      }}
-                      className="flex items-center gap-1.5 px-2.5 py-1.5 bg-gray-100 dark:bg-gray-800 hover:bg-gray-200 dark:hover:bg-gray-700 border border-gray-200 dark:border-gray-600 rounded-lg text-xs font-medium text-gray-700 dark:text-gray-300 transition-all"
-                    >
-                      <i className={`fa ${activeAgent === 'pulse' ? 'fa-robot' : activeAgent === 'analyst' ? 'fa-chart-line' : activeAgent === 'creative' ? 'fa-palette' : activeAgent === 'coder' ? 'fa-code' : 'fa-brain'} text-rose-500`}></i>
-                      <span className="hidden sm:inline capitalize">{activeAgent}</span>
-                      <i className="fa fa-chevron-down text-[10px] opacity-60"></i>
-                    </button>
-                    <div
-                      id="agent-dropdown"
-                      className="hidden absolute bottom-full left-0 mb-1 w-48 bg-white dark:bg-gray-800 border border-gray-200 dark:border-gray-600 rounded-lg shadow-xl z-50 py-1"
-                    >
-                      {['pulse', 'analyst', 'creative', 'coder', 'researcher'].map((agent) => (
-                        <button
-                          key={agent}
-                          onClick={() => {
-                            setActiveAgent(agent as any);
-                            settingsService.set('liveBoardSelectedAgent', agent);
-                            document.getElementById('agent-dropdown')?.classList.add('hidden');
-                          }}
-                          className={`w-full px-3 py-2 text-left text-sm flex items-center gap-2 hover:bg-gray-100 dark:hover:bg-gray-700 ${activeAgent === agent ? 'text-rose-500 bg-rose-50 dark:bg-rose-900/20' : 'text-gray-700 dark:text-gray-300'}`}
-                        >
-                          <i className={`fa ${agent === 'pulse' ? 'fa-robot' : agent === 'analyst' ? 'fa-chart-line' : agent === 'creative' ? 'fa-palette' : agent === 'coder' ? 'fa-code' : 'fa-brain'} w-4`}></i>
-                          <span className="capitalize">{agent}</span>
-                          {activeAgent === agent && <i className="fa fa-check ml-auto text-xs"></i>}
-                        </button>
-                      ))}
-                    </div>
-                  </div>
-
-                  {/* Divider */}
-                  <div className="w-px h-5 bg-gray-300 dark:bg-gray-600 hidden sm:block"></div>
-
-                  {/* Quick Actions */}
-                  <div className="flex items-center gap-1">
-                    {/* Upload File */}
-                    <button
-                      onClick={() => {
-                        const fileInput = document.querySelector('input[type="file"][accept=".txt,.md,.json,.csv,.pdf,.docx,.doc,.xlsx,.xls,.png,.jpg,.jpeg,.gif,.webp"]') as HTMLInputElement;
-                        fileInput?.click();
-                      }}
-                      className="p-1.5 hover:bg-gray-100 dark:hover:bg-gray-700 rounded-lg text-gray-500 dark:text-gray-400 hover:text-rose-500 transition-all"
-                      title="Upload file"
-                    >
-                      <i className="fa fa-paperclip text-sm"></i>
-                    </button>
-
-                    {/* Voice Input Toggle */}
-                    <button
-                      onClick={() => setVoiceEnabled(!voiceEnabled)}
-                      className={`p-1.5 rounded-lg transition-all ${voiceEnabled ? 'bg-rose-100 dark:bg-rose-900/30 text-rose-500' : 'hover:bg-gray-100 dark:hover:bg-gray-700 text-gray-500 dark:text-gray-400 hover:text-rose-500'}`}
-                      title={voiceEnabled ? 'Disable voice input' : 'Enable voice input'}
-                    >
-                      <i className={`fa ${voiceEnabled ? 'fa-microphone' : 'fa-microphone-slash'} text-sm`}></i>
-                    </button>
-
-                    {/* Deep Think Toggle */}
-                    <button
-                      onClick={() => setEnableExtendedThinking(!enableExtendedThinking)}
-                      className={`p-1.5 rounded-lg transition-all ${enableExtendedThinking ? 'bg-purple-100 dark:bg-purple-900/30 text-purple-500' : 'hover:bg-gray-100 dark:hover:bg-gray-700 text-gray-500 dark:text-gray-400 hover:text-purple-500'}`}
-                      title={enableExtendedThinking ? 'Deep thinking enabled' : 'Enable deep thinking'}
-                    >
-                      <i className="fa fa-brain text-sm"></i>
-                    </button>
-                  </div>
-                </div>
-
-                {/* Right side: Context info */}
-                <div className="flex items-center gap-2 text-[10px] text-gray-500 dark:text-gray-400">
-                  {/* Context Window Indicator */}
-                  <div className="hidden sm:flex items-center gap-1.5 px-2 py-1 bg-gray-100 dark:bg-gray-800 rounded-md" title="Estimated context usage">
-                    <i className="fa fa-layer-group text-rose-400"></i>
-                    <span>~{Math.round(estimateContextTokens()).toLocaleString()}</span>
-                    <span className="text-gray-400">/</span>
-                    <span>200K</span>
-                    <div className="w-12 h-1.5 bg-gray-300 dark:bg-gray-600 rounded-full overflow-hidden ml-1">
-                      <div
-                        className="h-full bg-gradient-to-r from-rose-500 to-pink-500 rounded-full transition-all"
-                        style={{ width: `${Math.min((estimateContextTokens() / 200000) * 100, 100)}%` }}
-                      ></div>
-                    </div>
-                  </div>
-
-                  {/* Active docs count - mobile */}
-                  <div className="sm:hidden flex items-center gap-1 px-2 py-1 bg-gray-100 dark:bg-gray-800 rounded-md">
-                    <i className="fa fa-file-alt text-rose-400"></i>
-                    <span>{activeContextDocs.size}</span>
-                  </div>
-                </div>
-              </div>
-
-              {/* Main Input Row */}
-              <div className="flex gap-2">
-                <input
-                  type="text"
-                  value={input}
-                  onChange={(e) => setInput(e.target.value)}
-                  onKeyDown={(e) => e.key === 'Enter' && !e.shiftKey && handleSendMessage()}
-                  placeholder={isMobile ? 'Ask anything...' : (documents.length > 0 ? 'Ask about your documents...' : 'Ask anything...')}
-                  className="flex-1 px-4 md:px-6 py-2.5 md:py-3 bg-white dark:bg-gray-800 border border-gray-200 dark:border-rose-500/30 rounded-full focus:border-rose-500 focus:outline-none text-gray-900 dark:text-white shadow-sm text-sm md:text-base"
-                  disabled={isLoading}
-                />
-                <button
-                  onClick={handleSendMessage}
-                  disabled={isLoading || !input.trim()}
-                  className="px-4 md:px-6 py-2.5 md:py-3 bg-gradient-to-r from-rose-600 to-pink-600 hover:from-rose-700 hover:to-pink-700 rounded-full font-medium text-white disabled:opacity-50 disabled:cursor-not-allowed shadow-lg hover:shadow-xl transition-all"
-                >
-                  <i className="fa fa-paper-plane"></i>
-                </button>
-              </div>
-
-              {/* Suggested Prompts - Below Input */}
-              {suggestions.length > 0 && showSuggestions && (
-                <div className="flex items-center gap-2 mt-2 overflow-x-auto pb-1">
-                  <span className="text-[10px] text-gray-400 dark:text-gray-500 shrink-0">
-                    <i className="fa fa-magic mr-1"></i>
-                    Try:
-                  </span>
-                  {suggestions.slice(0, 3).map((s) => (
-                    <button
-                      key={s.id}
-                      onClick={() => handleUseSuggestion(s)}
-                      className="px-3 py-1 bg-gray-100 dark:bg-gray-800 hover:bg-gray-200 dark:hover:bg-gray-700 border border-gray-200 dark:border-gray-600 rounded-full text-xs whitespace-nowrap text-gray-600 dark:text-gray-300 hover:text-rose-500 dark:hover:text-rose-400 transition-colors"
-                    >
-                      {s.suggestion_text.length > 60 ? s.suggestion_text.substring(0, 60) + '...' : s.suggestion_text}
-                    </button>
-                  ))}
-                  {suggestions.length > 3 && (
-                    <span className="text-[10px] text-gray-400 dark:text-gray-500">+{suggestions.length - 3} more</span>
-                  )}
-                  <button
-                    onClick={() => setShowSuggestions(false)}
-                    className="p-1 hover:bg-gray-200 dark:hover:bg-gray-700 rounded text-gray-400 hover:text-gray-600 dark:hover:text-gray-300 transition-colors shrink-0"
-                    title="Hide suggestions"
-                  >
-                    <i className="fa fa-times text-[10px]"></i>
-                  </button>
-                </div>
-              )}
-            </div>
-          </div>
-        )}
+        <InputArea
+          selectedSessionId={selectedSessionId}
+          warRoomMode={warRoomMode}
+          showActiveContext={showActiveContext}
+          setShowActiveContext={setShowActiveContext}
+          activeContextDocs={activeContextDocs}
+          documents={documents}
+          activeContextDocuments={activeContextDocuments}
+          estimateContextTokens={estimateContextTokens}
+          clearActiveContext={clearActiveContext}
+          addAllDocsToContext={addAllDocsToContext}
+          toggleDocInContext={toggleDocInContext}
+          isMobile={isMobile}
+          voiceEnabled={voiceEnabled}
+          setVoiceEnabled={setVoiceEnabled}
+          voiceMode={voiceMode}
+          setInput={setInput}
+          handleSendMessage={handleSendMessage}
+          setShowThinkingLogs={setShowThinkingLogs}
+          setWarRoomMode={setWarRoomMode}
+          setVisualizerType={setVisualizerType}
+          input={input}
+          isLoading={isLoading}
+          suggestions={suggestions}
+          showSuggestions={showSuggestions}
+          setShowSuggestions={setShowSuggestions}
+          handleUseSuggestion={handleUseSuggestion}
+          activeAgent={activeAgent}
+          setActiveAgent={setActiveAgent}
+          enableExtendedThinking={enableExtendedThinking}
+          setEnableExtendedThinking={setEnableExtendedThinking}
+        />
 
         {/* Audio Player */}
         {audioUrl && (
@@ -2455,449 +1886,52 @@ const LiveDashboard: React.FC<LiveDashboardProps> = ({ apiKey, userId }) => {
         )}
       </div>
 
-      {/* Export Modal */}
-      {showExportModal && (
-        <div className="fixed inset-0 bg-black/80 backdrop-blur-sm flex items-center justify-center z-50">
-          <div className="w-full max-w-2xl war-room-modal rounded-3xl shadow-2xl p-6">
-            <div className="flex items-center justify-between mb-6">
-              <h3 className="text-2xl font-bold bg-gradient-to-r from-rose-400 to-pink-400 bg-clip-text text-transparent">
-                <i className="fa fa-share-nodes mr-2"></i>
-                Export Session
-              </h3>
-              <button
-                onClick={() => setShowExportModal(false)}
-                className="px-3 py-2 hover:bg-gray-200 dark:hover:bg-gray-800/50 rounded-full transition-colors text-gray-600 dark:text-gray-400"
-              >
-                <i className="fa fa-times text-xl"></i>
-              </button>
-            </div>
-
-            <div className="space-y-3">
-              {/* Markdown Export */}
-              <button
-                onClick={() => {
-                  handleExport('markdown');
-                  setShowExportModal(false);
-                }}
-                className="w-full p-4 bg-gradient-to-br from-blue-50/50 to-cyan-50/50 dark:from-blue-600/20 dark:to-cyan-600/20 border border-blue-200 dark:border-blue-500/30 rounded-2xl hover:border-blue-400 text-left group transition-all"
-              >
-                <div className="flex items-center gap-3">
-                  <div className="w-12 h-12 bg-blue-100 dark:bg-blue-600 rounded-xl flex items-center justify-center text-xl group-hover:scale-110 transition text-blue-600 dark:text-white">
-                    <i className="fa fa-file-text"></i>
-                  </div>
-                  <div className="flex-1">
-                    <div className="font-medium text-lg text-gray-900 dark:text-white">Export as Markdown</div>
-                    <div className="text-sm text-gray-500 dark:text-gray-400">Download full conversation as .md file</div>
-                  </div>
-                  <i className="fa fa-download text-blue-400"></i>
-                </div>
-              </button>
-
-              {/* JSON Export */}
-              <button
-                onClick={() => {
-                  handleExport('json');
-                  setShowExportModal(false);
-                }}
-                className="w-full p-4 bg-gradient-to-br from-purple-50/50 to-pink-50/50 dark:from-purple-600/20 dark:to-pink-600/20 border border-purple-200 dark:border-purple-500/30 rounded-2xl hover:border-purple-400 text-left group transition-all"
-              >
-                <div className="flex items-center gap-3">
-                  <div className="w-12 h-12 bg-purple-100 dark:bg-purple-600 rounded-xl flex items-center justify-center text-xl group-hover:scale-110 transition text-purple-600 dark:text-white">
-                    <i className="fa fa-code"></i>
-                  </div>
-                  <div className="flex-1">
-                    <div className="font-medium text-lg text-gray-900 dark:text-white">Export as JSON</div>
-                    <div className="text-sm text-gray-500 dark:text-gray-400">Structured data for integrations</div>
-                  </div>
-                  <i className="fa fa-download text-purple-400"></i>
-                </div>
-              </button>
-
-              {/* AI Summary */}
-              <button
-                onClick={() => {
-                  handleExport('summary');
-                  setShowExportModal(false);
-                }}
-                className="w-full p-4 bg-gradient-to-br from-rose-50/50 to-pink-50/50 dark:from-rose-600/20 dark:to-pink-600/20 border border-rose-200 dark:border-rose-500/30 rounded-2xl hover:border-rose-400 text-left group transition-all"
-              >
-                <div className="flex items-center gap-3">
-                  <div className="w-12 h-12 bg-rose-100 dark:bg-rose-600 rounded-xl flex items-center justify-center text-xl group-hover:scale-110 transition text-rose-600 dark:text-white">
-                    <i className="fa fa-sparkles"></i>
-                  </div>
-                  <div className="flex-1">
-                    <div className="font-medium text-lg text-gray-900 dark:text-white">Generate AI Summary</div>
-                    <div className="text-sm text-gray-500 dark:text-gray-400">Key points & action items (copies to clipboard)</div>
-                  </div>
-                  <i className="fa fa-clipboard text-rose-400"></i>
-                </div>
-              </button>
-
-              {/* Share Options */}
-              <div className="pt-4 border-t border-gray-200 dark:border-gray-800">
-                <div className="text-sm text-gray-500 dark:text-gray-400 mb-3">Share to:</div>
-                <div className="grid grid-cols-2 gap-2">
-                  <button
-                    onClick={() => {
-                      const content = exportToMarkdown();
-                      navigator.clipboard.writeText(content);
-                      toast.success('Copied to clipboard! Paste in Messages app');
-                      setShowExportModal(false);
-                    }}
-                    className="px-4 py-3 bg-green-50 dark:bg-green-600/20 border border-green-200 dark:border-green-500/30 rounded-xl hover:bg-green-100 dark:hover:bg-green-600/30 text-sm flex items-center justify-center text-gray-700 dark:text-white transition-colors"
-                  >
-                    <i className="fa fa-message mr-2 text-green-600 dark:text-green-400"></i>
-                    Messages
-                  </button>
-                  
-                  <button
-                    onClick={() => {
-                      const content = exportToMarkdown();
-                      const mailtoLink = `mailto:?subject=War Room Session&body=${encodeURIComponent(content)}`;
-                      window.location.href = mailtoLink;
-                      setShowExportModal(false);
-                    }}
-                    className="px-4 py-3 bg-blue-50 dark:bg-blue-600/20 border border-blue-200 dark:border-blue-500/30 rounded-xl hover:bg-blue-100 dark:hover:bg-blue-600/30 text-sm flex items-center justify-center text-gray-700 dark:text-white transition-colors"
-                  >
-                    <i className="fa fa-envelope mr-2 text-blue-600 dark:text-blue-400"></i>
-                    Email
-                  </button>
-                </div>
-              </div>
-            </div>
-          </div>
-        </div>
-      )}
-
-      {/* OpenAI Realtime Voice Agent Panel */}
-      {showVoiceAgentPanel && (
-        <div className={`fixed z-50 ${
-          voiceAgentExpanded
-            ? 'inset-2 md:inset-4'
-            : 'bottom-2 right-2 left-2 md:left-auto md:bottom-4 md:right-4 md:w-full md:max-w-md'
-        }`}>
-          <ErrorBoundary 
-            componentName="Voice Agent"
-            fallback={
-              <div className="bg-gray-900/95 backdrop-blur-xl border border-red-500/30 rounded-xl p-6 text-center">
-                <i className="fa fa-microphone-slash text-3xl text-red-500 mb-3"></i>
-                <p className="text-white font-medium mb-2">Voice Agent Unavailable</p>
-                <p className="text-gray-400 text-sm mb-4">
-                  {isMobilePlatform 
-                    ? 'Voice features may not be fully supported on this device.'
-                    : 'The voice agent encountered an error.'}
-                </p>
-                <button
-                  onClick={() => setShowVoiceAgentPanel(false)}
-                  className="px-4 py-2 bg-gray-700 hover:bg-gray-600 text-white rounded-lg text-sm"
-                >
-                  Close
-                </button>
-              </div>
-            }
-          >
-            <Suspense fallback={<LoadingFallback message="Loading Voice Agent..." />}>
-              <VoiceAgentPanel
-                userId={userId}
-                projectId={selectedProjectId || undefined}
-                sessionId={selectedSessionId || undefined}
-                openaiApiKey={openaiApiKey}
-                onClose={() => setShowVoiceAgentPanel(false)}
-                isExpanded={voiceAgentExpanded}
-                onToggleExpand={() => setVoiceAgentExpanded(!voiceAgentExpanded)}
-                documents={documents}
-                activeContextIds={activeContextDocs}
-              />
-            </Suspense>
-          </ErrorBoundary>
-        </div>
-      )}
-
-      {/* Document Viewer Modal */}
-      {viewingDoc && (
-        <DocumentViewer
-          doc={viewingDoc}
-          onClose={() => {
-            setViewingDoc(null);
-            setViewerHighlightText(undefined);
-            setViewerScrollOffset(undefined);
-          }}
-          highlightText={viewerHighlightText}
-          scrollToOffset={viewerScrollOffset}
-        />
-      )}
-
-      {/* Content Generator Modals */}
-      {showStudyGuide && (
-        <StudyGuideGenerator
-          documents={documents}
-          activeContextIds={activeContextDocs}
-          apiKey={apiKey}
-          onClose={() => setShowStudyGuide(false)}
-        />
-      )}
-
-      {showFAQ && (
-        <FAQGenerator
-          documents={documents}
-          activeContextIds={activeContextDocs}
-          apiKey={apiKey}
-          onClose={() => setShowFAQ(false)}
-        />
-      )}
-
-      {showTimeline && (
-        <TimelineGenerator
-          documents={documents}
-          activeContextIds={activeContextDocs}
-          apiKey={apiKey}
-          onClose={() => setShowTimeline(false)}
-        />
-      )}
-
-      {showPodcast && (
-        <PodcastGenerator
-          documents={documents}
-          activeContextIds={activeContextDocs}
-          apiKey={apiKey}
-          onClose={() => setShowPodcast(false)}
-        />
-      )}
-
-      {/* Advanced AI Panel */}
-      {showAdvancedAI && (
-        <div className="fixed inset-0 z-50 flex items-center justify-center p-4 bg-black/60 backdrop-blur-sm">
-          <div className="w-full max-w-6xl h-[85vh]">
-            <AdvancedAIPanel
-              documents={documents.filter(d => activeContextDocs.has(d.id) || activeContextDocs.size === 0)}
-              apiKey={apiKey}
-              onClose={() => setShowAdvancedAI(false)}
-            />
-          </div>
-        </div>
-      )}
-
-      {/* Organization Sidebar (Floating) */}
-      {showOrganize && (
-        <div className="fixed inset-0 z-50 flex">
-          {/* Backdrop */}
-          <div
-            className="flex-1 bg-black/50"
-            onClick={() => {
-              setShowOrganize(false);
-              setOrganizingDocId(undefined);
-            }}
-          />
-          {/* Sidebar */}
-          <OrganizationSidebar
-            userId={userId}
-            documents={documents.map(d => ({ id: d.id, title: d.title, file_type: d.file_type }))}
-            selectedDocId={organizingDocId}
-            onDocumentClick={(docId) => {
-              const doc = documents.find(d => d.id === docId);
-              if (doc && doc.text_content) {
-                setViewingDoc(doc);
-                setShowOrganize(false);
-                setOrganizingDocId(undefined);
-                recordDocumentView(userId, docId).catch(console.error);
-              }
-            }}
-            onClose={() => {
-              setShowOrganize(false);
-              setOrganizingDocId(undefined);
-            }}
-          />
-        </div>
-      )}
-
-      {/* Knowledge Bank Modal - Full Document Browser */}
-      {showKnowledgeBank && (
-        <div className="fixed inset-0 z-[100] bg-black/80 backdrop-blur-sm flex items-center justify-center p-4">
-          <div className="bg-zinc-900 rounded-2xl border border-zinc-700 w-full max-w-5xl max-h-[90vh] flex flex-col overflow-hidden animate-scale-in">
-            {/* Header */}
-            <div className="p-4 border-b border-zinc-700 flex items-center justify-between shrink-0">
-              <div className="flex items-center gap-3">
-                <div className="w-10 h-10 rounded-xl bg-gradient-to-br from-purple-500 to-pink-500 flex items-center justify-center">
-                  <i className="fa fa-book-open text-white"></i>
-                </div>
-                <div>
-                  <h2 className="text-lg font-bold text-white">Knowledge Bank</h2>
-                  <p className="text-xs text-zinc-400">{documents.length} documents • {activeContextDocs.size} active</p>
-                </div>
-              </div>
-              <div className="flex items-center gap-2">
-                <label className="flex items-center gap-2 px-4 py-2 bg-rose-500 hover:bg-rose-600 text-white rounded-lg cursor-pointer transition-colors">
-                  <i className="fa fa-plus"></i>
-                  <span>Upload</span>
-                  <input
-                    type="file"
-                    multiple
-                    onChange={handleFileUpload}
-                    className="hidden"
-                    accept=".txt,.md,.json,.pdf,.docx,.xlsx,.xls,.png,.jpg,.jpeg,.gif,.bmp,.webp"
-                  />
-                </label>
-                <button
-                  onClick={() => setShowKnowledgeBank(false)}
-                  className="p-2 text-zinc-400 hover:text-white hover:bg-white/10 rounded-lg transition-colors"
-                >
-                  <i className="fa fa-times text-lg"></i>
-                </button>
-              </div>
-            </div>
-
-            {/* Search */}
-            <div className="p-4 border-b border-zinc-800 shrink-0">
-              <DocumentSearch
-                documents={documents}
-                activeContextIds={activeContextDocs}
-                onResultClick={(doc, highlightText, offset) => {
-                  setViewingDoc(doc);
-                  setViewerHighlightText(highlightText);
-                  setViewerScrollOffset(offset);
-                }}
-              />
-            </div>
-
-            {/* Document Grid */}
-            <div className="flex-1 overflow-y-auto p-4">
-              {documents.length === 0 ? (
-                <div className="text-center py-16 text-zinc-500">
-                  <i className="fa fa-folder-open text-5xl mb-4 block"></i>
-                  <h3 className="text-lg font-medium text-white mb-2">No Documents Yet</h3>
-                  <p className="text-sm">Upload PDFs, Word docs, images, or text files to build your knowledge base.</p>
-                </div>
-              ) : (
-                <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-4">
-                  {documents.map((doc) => {
-                    const isInContext = activeContextDocs.has(doc.id);
-                    return (
-                      <div
-                        key={doc.id}
-                        className={`rounded-xl border p-4 transition-all hover:shadow-lg ${
-                          isInContext
-                            ? 'bg-emerald-500/10 border-emerald-500/30 shadow-emerald-500/10'
-                            : 'bg-zinc-800/50 border-zinc-700 hover:border-zinc-600'
-                        }`}
-                      >
-                        <div className="flex items-start justify-between mb-3">
-                          <div className="flex items-center gap-2">
-                            <div className={`w-8 h-8 rounded-lg flex items-center justify-center ${
-                              doc.file_type === 'pdf' ? 'bg-red-500/20 text-red-400' :
-                              doc.file_type === 'docx' ? 'bg-blue-500/20 text-blue-400' :
-                              doc.file_type === 'xlsx' ? 'bg-green-500/20 text-green-400' :
-                              doc.file_type?.startsWith('image') ? 'bg-purple-500/20 text-purple-400' :
-                              'bg-zinc-700 text-zinc-400'
-                            }`}>
-                              <i className={`fa ${
-                                doc.file_type === 'pdf' ? 'fa-file-pdf' :
-                                doc.file_type === 'docx' ? 'fa-file-word' :
-                                doc.file_type === 'xlsx' ? 'fa-file-excel' :
-                                doc.file_type?.startsWith('image') ? 'fa-file-image' :
-                                'fa-file-alt'
-                              } text-sm`}></i>
-                            </div>
-                            <div>
-                              <h4 className="font-medium text-white text-sm truncate max-w-[150px]">{doc.title}</h4>
-                              <p className="text-[10px] text-zinc-500 uppercase">{doc.file_type || 'Document'}</p>
-                            </div>
-                          </div>
-                          {doc.processing_status === 'processing' ? (
-                            <i className="fa fa-spinner fa-spin text-yellow-400"></i>
-                          ) : doc.processing_status === 'failed' ? (
-                            <i className="fa fa-exclamation-triangle text-red-400"></i>
-                          ) : (
-                            <button
-                              onClick={() => toggleDocInContext(doc.id)}
-                              className={`w-8 h-8 rounded-lg flex items-center justify-center transition-colors ${
-                                isInContext
-                                  ? 'bg-emerald-500 text-white'
-                                  : 'bg-zinc-700 text-zinc-400 hover:bg-rose-500 hover:text-white'
-                              }`}
-                            >
-                              <i className={`fa ${isInContext ? 'fa-check' : 'fa-plus'}`}></i>
-                            </button>
-                          )}
-                        </div>
-
-                        {doc.ai_summary && (
-                          <p className="text-xs text-zinc-400 line-clamp-2 mb-3">{doc.ai_summary}</p>
-                        )}
-
-                        {doc.ai_keywords && doc.ai_keywords.length > 0 && (
-                          <div className="flex flex-wrap gap-1 mb-3">
-                            {doc.ai_keywords.slice(0, 4).map((keyword, i) => (
-                              <span key={i} className="text-[10px] px-2 py-0.5 bg-zinc-700/50 text-zinc-400 rounded-full">
-                                {keyword}
-                              </span>
-                            ))}
-                          </div>
-                        )}
-
-                        <div className="flex items-center gap-2 pt-2 border-t border-zinc-700/50">
-                          <button
-                            onClick={() => {
-                              setViewingDoc(doc);
-                              setViewerHighlightText(undefined);
-                              setViewerScrollOffset(undefined);
-                            }}
-                            className="flex-1 text-xs py-1.5 text-zinc-400 hover:text-white hover:bg-white/5 rounded transition-colors"
-                          >
-                            <i className="fa fa-eye mr-1"></i> View
-                          </button>
-                          <button
-                            onClick={() => {
-                              setOrganizingDocId(doc.id);
-                              setShowOrganize(true);
-                            }}
-                            className="flex-1 text-xs py-1.5 text-zinc-400 hover:text-white hover:bg-white/5 rounded transition-colors"
-                          >
-                            <i className="fa fa-tags mr-1"></i> Organize
-                          </button>
-                          <button
-                            onClick={() => handleDeleteDoc(doc.id)}
-                            className="text-xs py-1.5 px-2 text-red-400 hover:text-red-300 hover:bg-red-500/10 rounded transition-colors"
-                          >
-                            <i className="fa fa-trash"></i>
-                          </button>
-                        </div>
-                      </div>
-                    );
-                  })}
-                </div>
-              )}
-            </div>
-
-            {/* Footer */}
-            <div className="p-4 border-t border-zinc-700 flex items-center justify-between shrink-0">
-              <div className="text-sm text-zinc-400">
-                <i className="fa fa-info-circle mr-1"></i>
-                Click <i className="fa fa-plus mx-1"></i> to add documents to context
-              </div>
-              <button
-                onClick={() => setShowKnowledgeBank(false)}
-                className="px-6 py-2 bg-gradient-to-r from-rose-500 to-pink-500 text-white rounded-lg font-medium hover:shadow-lg hover:shadow-rose-500/30 transition-all"
-              >
-                Done
-              </button>
-            </div>
-          </div>
-        </div>
-      )}
-
-      {/* Share Modal */}
-      {showShareModal && sharingDoc && (
-        <ShareModal
-          type="document"
-          resourceId={sharingDoc.id}
-          resourceTitle={sharingDoc.title}
-          userId={userId}
-          onClose={() => {
-            setShowShareModal(false);
-            setSharingDoc(null);
-          }}
-        />
-      )}
+      <WarRoomModalStack
+        showExportModal={showExportModal}
+        showVoiceAgentPanel={showVoiceAgentPanel}
+        voiceAgentExpanded={voiceAgentExpanded}
+        viewingDoc={viewingDoc}
+        viewerHighlightText={viewerHighlightText}
+        viewerScrollOffset={viewerScrollOffset}
+        showStudyGuide={showStudyGuide}
+        showFAQ={showFAQ}
+        showTimeline={showTimeline}
+        showPodcast={showPodcast}
+        showAdvancedAI={showAdvancedAI}
+        showOrganize={showOrganize}
+        organizingDocId={organizingDocId}
+        showKnowledgeBank={showKnowledgeBank}
+        showShareModal={showShareModal}
+        sharingDoc={sharingDoc}
+        documents={documents}
+        activeContextDocs={activeContextDocs}
+        apiKey={apiKey}
+        openaiApiKey={openaiApiKey}
+        userId={userId}
+        selectedProjectId={selectedProjectId}
+        selectedSessionId={selectedSessionId}
+        setShowExportModal={setShowExportModal}
+        setShowVoiceAgentPanel={setShowVoiceAgentPanel}
+        setVoiceAgentExpanded={setVoiceAgentExpanded}
+        setViewingDoc={setViewingDoc}
+        setViewerHighlightText={setViewerHighlightText}
+        setViewerScrollOffset={setViewerScrollOffset}
+        setShowStudyGuide={setShowStudyGuide}
+        setShowFAQ={setShowFAQ}
+        setShowTimeline={setShowTimeline}
+        setShowPodcast={setShowPodcast}
+        setShowAdvancedAI={setShowAdvancedAI}
+        setShowOrganize={setShowOrganize}
+        setOrganizingDocId={setOrganizingDocId}
+        setShowKnowledgeBank={setShowKnowledgeBank}
+        setShowShareModal={setShowShareModal}
+        setSharingDoc={setSharingDoc}
+        handleExport={handleExport}
+        exportToMarkdown={exportToMarkdown}
+        handleFileUpload={handleFileUpload}
+        handleDeleteDoc={handleDeleteDoc}
+        toggleDocInContext={toggleDocInContext}
+      />
 
     </div>
   );

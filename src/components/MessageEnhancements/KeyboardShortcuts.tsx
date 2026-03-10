@@ -1,6 +1,8 @@
 // Keyboard Shortcuts Manager
 import React, { useState, useEffect, useCallback } from 'react';
 
+import { Check, Keyboard, Pen, Search, X } from 'lucide-react';
+
 interface Shortcut {
   id: string;
   keys: string[];
@@ -181,7 +183,7 @@ export const KeyboardShortcuts: React.FC<KeyboardShortcutsProps> = ({
           onClick={() => onShortcutTriggered?.('show-shortcuts')}
           className="flex items-center gap-1.5 px-2 py-1 rounded-full bg-zinc-100 dark:bg-zinc-700 text-zinc-600 dark:text-zinc-400 hover:bg-zinc-200 dark:hover:bg-zinc-600 transition"
         >
-          <i className="fa-solid fa-keyboard text-xs" />
+          <Keyboard className="text-xs" />
           <span className="text-xs font-medium">Shortcuts</span>
         </button>
       </div>
@@ -195,7 +197,7 @@ export const KeyboardShortcuts: React.FC<KeyboardShortcutsProps> = ({
         <div className="flex items-center justify-between mb-3">
           <div className="flex items-center gap-2">
             <div className="w-8 h-8 rounded-full bg-zinc-100 dark:bg-zinc-700 flex items-center justify-center">
-              <i className="fa-solid fa-keyboard text-zinc-500 text-sm" />
+              <Keyboard className="text-zinc-500 text-sm" />
             </div>
             <div>
               <h3 className="text-sm font-bold text-zinc-800 dark:text-white">Keyboard Shortcuts</h3>
@@ -216,7 +218,7 @@ export const KeyboardShortcuts: React.FC<KeyboardShortcutsProps> = ({
 
         {/* Search */}
         <div className="relative mb-3">
-          <i className="fa-solid fa-search absolute left-2.5 top-1/2 -translate-y-1/2 text-zinc-400 text-xs" />
+          <Search className="absolute left-2.5 top-1/2 -translate-y-1/2 text-zinc-400 text-xs" />
           <input
             type="text"
             value={searchQuery}
@@ -260,7 +262,7 @@ export const KeyboardShortcuts: React.FC<KeyboardShortcutsProps> = ({
         {Object.keys(groupedShortcuts).length === 0 ? (
           <div className="p-8 text-center">
             <div className="w-12 h-12 rounded-full bg-zinc-100 dark:bg-zinc-700 flex items-center justify-center mx-auto mb-3">
-              <i className="fa-solid fa-keyboard text-zinc-400 text-lg" />
+              <Keyboard className="text-zinc-400 text-lg" />
             </div>
             <p className="text-sm text-zinc-500 dark:text-zinc-400">No shortcuts found</p>
           </div>
@@ -294,7 +296,7 @@ export const KeyboardShortcuts: React.FC<KeyboardShortcutsProps> = ({
                               : 'border-zinc-300 dark:border-zinc-600'
                           }`}
                         >
-                          {shortcut.enabled && <i className="fa-solid fa-check text-[8px]" />}
+                          {shortcut.enabled && <Check className="text-[8px]" />}
                         </button>
                       )}
                       <span className="text-sm text-zinc-700 dark:text-zinc-300">
@@ -325,13 +327,13 @@ export const KeyboardShortcuts: React.FC<KeyboardShortcutsProps> = ({
                             disabled={recordingKeys.length === 0}
                             className="p-1 text-green-500 hover:bg-green-50 dark:hover:bg-green-900/20 rounded disabled:opacity-50"
                           >
-                            <i className="fa-solid fa-check text-xs" />
+                            <Check className="text-xs" />
                           </button>
                           <button
                             onClick={cancelRecording}
                             className="p-1 text-red-500 hover:bg-red-50 dark:hover:bg-red-900/20 rounded"
                           >
-                            <i className="fa-solid fa-times text-xs" />
+                            <X className="text-xs" />
                           </button>
                         </div>
                       ) : (
@@ -352,7 +354,7 @@ export const KeyboardShortcuts: React.FC<KeyboardShortcutsProps> = ({
                               className="p-1 text-zinc-400 hover:text-zinc-600 dark:hover:text-zinc-300 transition"
                               title="Customize shortcut"
                             >
-                              <i className="fa-solid fa-pen text-xs" />
+                              <Pen className="text-xs" />
                             </button>
                           )}
                         </>
@@ -370,7 +372,7 @@ export const KeyboardShortcuts: React.FC<KeyboardShortcutsProps> = ({
       {isRecording && (
         <div className="px-4 py-3 border-t border-zinc-200 dark:border-zinc-700 bg-amber-50 dark:bg-amber-900/20">
           <div className="flex items-center gap-2 text-amber-600 dark:text-amber-400">
-            <i className="fa-solid fa-keyboard animate-pulse" />
+            <Keyboard className="animate-pulse" />
             <span className="text-xs">Recording shortcut... Press the keys you want to assign.</span>
           </div>
         </div>

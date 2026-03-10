@@ -25,4 +25,4 @@ export const SearchResultSkeleton: React.FC<SearchResultSkeletonProps> = ({ coun
   );
 };
 
-export default SearchResultSkeleton;
+export default React.memo(SearchResultSkeleton);

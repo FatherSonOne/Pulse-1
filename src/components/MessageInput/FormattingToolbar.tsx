@@ -4,6 +4,8 @@
 import React from 'react';
 import type { FormattingToolbarProps, FormattingAction } from './types';
 
+import { Link, Paperclip, Smile, Wand2 } from 'lucide-react';
+
 const FormattingToolbar: React.FC<FormattingToolbarProps> = ({
   onFormat,
   activeFormats,
@@ -115,7 +117,7 @@ const FormattingToolbar: React.FC<FormattingToolbarProps> = ({
           data-tooltip="Emoji"
           title="Insert emoji"
         >
-          <i className="fa-solid fa-face-smile" aria-hidden="true" />
+          <Smile />
         </button>
         <button
           type="button"
@@ -125,7 +127,7 @@ const FormattingToolbar: React.FC<FormattingToolbarProps> = ({
           data-tooltip="Attachment"
           title="Attach file"
         >
-          <i className="fa-solid fa-paperclip" aria-hidden="true" />
+          <Paperclip />
         </button>
         <button
           type="button"
@@ -135,7 +137,7 @@ const FormattingToolbar: React.FC<FormattingToolbarProps> = ({
           data-tooltip="Link"
           title="Insert link"
         >
-          <i className="fa-solid fa-link" aria-hidden="true" />
+          <Link />
         </button>
       </div>
 
@@ -160,7 +162,7 @@ const FormattingToolbar: React.FC<FormattingToolbarProps> = ({
               color: 'var(--ai-active, #8B5CF6)',
             }}
           >
-            <i className="fa-solid fa-wand-magic-sparkles" aria-hidden="true" />
+            <Wand2 />
           </button>
         </div>
       )}

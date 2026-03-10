@@ -11,6 +11,8 @@ import { ContactDetail } from './ContactDetail';
 import { supabase } from '../../services/supabase';
 import './Contacts.css';
 
+import { ArrowDown, ArrowUp, Bell, Building2, Check, ChevronRight, Copy, Flame, History, LayoutGrid, Lightbulb, List, Mail, MapPin, MessageSquare, Minus, Network, Pen, Phone, Plus, Radio, RefreshCw, Search, Star, UserX, Users, Video, Wand2, X } from 'lucide-react';
+
 // ============================================
 // TYPES
 // ============================================
@@ -93,11 +95,11 @@ const Sidebar: React.FC<SidebarProps> = ({
   <div className="contacts-sidebar">
     <div className="contacts-sidebar-header">
       <div className="contacts-sidebar-title">
-        <i className="fa-solid fa-circle-nodes" />
+        <Network />
         <span>Network</span>
       </div>
       <div className="contacts-search">
-        <i className="fa-solid fa-magnifying-glass contacts-search-icon" />
+        <Search className="contacts-search-icon" />
         <input
           type="text"
           className="contacts-search-input"
@@ -117,7 +119,7 @@ const Sidebar: React.FC<SidebarProps> = ({
       >
         <div className="contacts-filter-btn-content">
           <div className="contacts-filter-btn-icon">
-            <i className="fa-solid fa-users" />
+            <Users />
           </div>
           <span className="contacts-filter-btn-label">All Contacts</span>
         </div>
@@ -169,13 +171,13 @@ const Sidebar: React.FC<SidebarProps> = ({
         >
           <div className="contacts-filter-btn-content">
             <div className="contacts-filter-btn-icon" style={{ background: 'rgba(249, 115, 22, 0.2)' }}>
-              <i className="fa-solid fa-bell" style={{ color: '#f97316' }} />
+              <Bell />
             </div>
             <span className="contacts-filter-btn-label" style={{ color: '#f97316' }}>
               {alertCount} Alert{alertCount !== 1 ? 's' : ''}
             </span>
           </div>
-          <i className="fa-solid fa-chevron-right" style={{ fontSize: 10, color: '#f97316' }} />
+          <ChevronRight />
         </button>
       </div>
     )}
@@ -200,7 +202,7 @@ const Sidebar: React.FC<SidebarProps> = ({
 
     {/* Add Contact Button */}
     <button className="contacts-add-btn" onClick={onAddContact}>
-      <i className="fa-solid fa-plus" />
+      <Plus />
       Add Contact
     </button>
   </div>
@@ -261,7 +263,7 @@ const NodeCard: React.FC<NodeCardProps> = ({
         <div className={`contacts-node-status ${contact.status || 'offline'}`} />
         {profile?.isVip && (
           <div className="contacts-node-vip">
-            <i className="fa-solid fa-star" />
+            <Star />
           </div>
         )}
       </div>
@@ -272,7 +274,7 @@ const NodeCard: React.FC<NodeCardProps> = ({
         <div className="contacts-node-role">{contact.role || 'Contact'}</div>
         {contact.company && (
           <div className="contacts-node-company">
-            <i className="fa-solid fa-building" />
+            <Building2 />
             {contact.company}
           </div>
         )}
@@ -296,12 +298,12 @@ const NodeCard: React.FC<NodeCardProps> = ({
             </span>
             {profile.relationshipTrend === 'rising' && (
               <span className="contacts-node-health-trend up">
-                <i className="fa-solid fa-arrow-up" />
+                <ArrowUp />
               </span>
             )}
             {profile.relationshipTrend === 'falling' && (
               <span className="contacts-node-health-trend down">
-                <i className="fa-solid fa-arrow-down" />
+                <ArrowDown />
               </span>
             )}
           </div>
@@ -311,13 +313,13 @@ const NodeCard: React.FC<NodeCardProps> = ({
       {/* Quick Actions */}
       <div className="contacts-node-actions" onClick={(e) => e.stopPropagation()}>
         <button className="contacts-node-action" onClick={() => onAction('message')}>
-          <i className="fa-solid fa-message" />
+          <MessageSquare />
         </button>
         <button className="contacts-node-action" onClick={() => onAction('vox')}>
-          <i className="fa-solid fa-walkie-talkie" />
+          <Radio />
         </button>
         <button className="contacts-node-action" onClick={() => onAction('meet')}>
-          <i className="fa-solid fa-video" />
+          <Video />
         </button>
       </div>
     </div>
@@ -358,7 +360,7 @@ const ListRow: React.FC<ListRowProps> = ({
         className={`contacts-list-checkbox ${isChecked ? 'checked' : ''}`}
         onClick={(e) => { e.stopPropagation(); onToggleCheck(); }}
       >
-        {isChecked && <i className="fa-solid fa-check" style={{ fontSize: 10 }} />}
+        {isChecked && <Check />}
       </div>
 
       <div className="contacts-list-user">
@@ -457,10 +459,10 @@ const DetailPanel: React.FC<DetailPanelProps> = ({
         <span className="contacts-detail-title">Contact Details</span>
         <div style={{ display: 'flex', gap: 8 }}>
           <button className="contacts-detail-close" onClick={onEdit}>
-            <i className="fa-solid fa-pen" />
+            <Pen />
           </button>
           <button className="contacts-detail-close" onClick={onClose}>
-            <i className="fa-solid fa-xmark" />
+            <X />
           </button>
         </div>
       </div>
@@ -490,7 +492,7 @@ const DetailPanel: React.FC<DetailPanelProps> = ({
           <div className="contacts-detail-role">{contact.role || 'Contact'}</div>
           {contact.company && (
             <div className="contacts-detail-company">
-              <i className="fa-solid fa-building" />
+              <Building2 />
               {contact.company}
             </div>
           )}
@@ -499,15 +501,15 @@ const DetailPanel: React.FC<DetailPanelProps> = ({
         {/* Action Buttons */}
         <div className="contacts-detail-actions">
           <button className="contacts-detail-action message" onClick={() => onAction('message')}>
-            <i className="fa-solid fa-message" />
+            <MessageSquare />
             <span>Message</span>
           </button>
           <button className="contacts-detail-action vox" onClick={() => onAction('vox')}>
-            <i className="fa-solid fa-walkie-talkie" />
+            <Radio />
             <span>Vox</span>
           </button>
           <button className="contacts-detail-action meet" onClick={() => onAction('meet')}>
-            <i className="fa-solid fa-video" />
+            <Video />
             <span>Meet</span>
           </button>
         </div>
@@ -533,19 +535,19 @@ const DetailPanel: React.FC<DetailPanelProps> = ({
             <div className="contacts-detail-health-label">
               {profile.relationshipTrend === 'rising' && (
                 <>
-                  <i className="fa-solid fa-arrow-up" style={{ color: 'var(--cnt-status-online)' }} />
+                  <ArrowUp />
                   <span>Trending up</span>
                 </>
               )}
               {profile.relationshipTrend === 'falling' && (
                 <>
-                  <i className="fa-solid fa-arrow-down" style={{ color: 'var(--cnt-status-busy)' }} />
+                  <ArrowDown />
                   <span>Trending down</span>
                 </>
               )}
               {profile.relationshipTrend === 'stable' && (
                 <>
-                  <i className="fa-solid fa-minus" />
+                  <Minus />
                   <span>Stable</span>
                 </>
               )}
@@ -571,7 +573,7 @@ const DetailPanel: React.FC<DetailPanelProps> = ({
             className={`contacts-detail-tab ${activeTab === 'ai' ? 'active' : ''}`}
             onClick={() => setActiveTab('ai')}
           >
-            <i className="fa-solid fa-wand-magic-sparkles" style={{ marginRight: 6 }} />
+            <Wand2 />
             AI
           </button>
         </div>
@@ -583,7 +585,7 @@ const DetailPanel: React.FC<DetailPanelProps> = ({
             {contact.email && (
               <div className="contacts-detail-info-item">
                 <div className="contacts-detail-info-icon">
-                  <i className="fa-solid fa-envelope" />
+                  <Mail />
                 </div>
                 <span className="contacts-detail-info-value">{contact.email}</span>
               </div>
@@ -591,7 +593,7 @@ const DetailPanel: React.FC<DetailPanelProps> = ({
             {contact.phone && (
               <div className="contacts-detail-info-item">
                 <div className="contacts-detail-info-icon">
-                  <i className="fa-solid fa-phone" />
+                  <Phone />
                 </div>
                 <span className="contacts-detail-info-value">{contact.phone}</span>
               </div>
@@ -599,7 +601,7 @@ const DetailPanel: React.FC<DetailPanelProps> = ({
             {contact.address && (
               <div className="contacts-detail-info-item">
                 <div className="contacts-detail-info-icon">
-                  <i className="fa-solid fa-location-dot" />
+                  <MapPin />
                 </div>
                 <span className="contacts-detail-info-value">{contact.address}</span>
               </div>
@@ -610,7 +612,7 @@ const DetailPanel: React.FC<DetailPanelProps> = ({
         {activeTab === 'activity' && (
           <div className="contacts-empty" style={{ padding: 24 }}>
             <div className="contacts-empty-icon" style={{ width: 48, height: 48, fontSize: 18 }}>
-              <i className="fa-solid fa-clock-rotate-left" />
+              <History />
             </div>
             <div className="contacts-empty-title" style={{ fontSize: 14 }}>No Activity Yet</div>
             <div className="contacts-empty-desc" style={{ fontSize: 12 }}>
@@ -633,18 +635,18 @@ const DetailPanel: React.FC<DetailPanelProps> = ({
               }}>
                 {profile.isVip && (
                   <div style={{ marginBottom: 12, display: 'flex', alignItems: 'center', gap: 8 }}>
-                    <i className="fa-solid fa-star" style={{ color: '#eab308' }} />
+                    <Star />
                     <span>VIP Contact - Prioritize engagement</span>
                   </div>
                 )}
                 {leadScore && leadScore.leadStatus === 'hot' && (
                   <div style={{ marginBottom: 12, display: 'flex', alignItems: 'center', gap: 8 }}>
-                    <i className="fa-solid fa-fire" style={{ color: '#f97316' }} />
+                    <Flame />
                     <span>Hot lead - High conversion potential</span>
                   </div>
                 )}
                 <div style={{ display: 'flex', alignItems: 'center', gap: 8 }}>
-                  <i className="fa-solid fa-lightbulb" style={{ color: 'var(--cnt-accent-primary)' }} />
+                  <Lightbulb />
                   <span>Based on {profile.totalInteractions || 0} interactions</span>
                 </div>
               </div>
@@ -652,7 +654,7 @@ const DetailPanel: React.FC<DetailPanelProps> = ({
           ) : (
             <div className="contacts-empty" style={{ padding: 24 }}>
               <div className="contacts-empty-icon" style={{ width: 48, height: 48, fontSize: 18 }}>
-                <i className="fa-solid fa-wand-magic-sparkles" />
+                <Wand2 />
               </div>
               <div className="contacts-empty-title" style={{ fontSize: 14 }}>No Insights Yet</div>
               <div className="contacts-empty-desc" style={{ fontSize: 12 }}>
@@ -885,11 +887,11 @@ export const ContactsRedesigned: React.FC<ContactsRedesignedProps> = ({
                   }}
                   onClick={() => setActiveSmartList(null)}
                 >
-                  <i className="fa-solid fa-wand-magic-sparkles" style={{ color: '#8b5cf6' }} />
+                  <Wand2 />
                   <span style={{ color: '#8b5cf6' }}>
                     {SMART_LISTS.find(l => l.id === activeSmartList)?.label}
                   </span>
-                  <i className="fa-solid fa-xmark" style={{ fontSize: 10, color: '#8b5cf6' }} />
+                  <X />
                 </div>
               )}
             </div>
@@ -901,13 +903,13 @@ export const ContactsRedesigned: React.FC<ContactsRedesignedProps> = ({
                 className={`contacts-view-btn ${viewStyle === 'grid' ? 'active' : ''}`}
                 onClick={() => setViewStyle('grid')}
               >
-                <i className="fa-solid fa-grid-2" />
+                <LayoutGrid />
               </button>
               <button
                 className={`contacts-view-btn ${viewStyle === 'list' ? 'active' : ''}`}
                 onClick={() => setViewStyle('list')}
               >
-                <i className="fa-solid fa-list" />
+                <List />
               </button>
             </div>
 
@@ -916,7 +918,7 @@ export const ContactsRedesigned: React.FC<ContactsRedesignedProps> = ({
               onClick={handleSync}
               disabled={isSyncing}
             >
-              <i className="fa-solid fa-arrows-rotate" />
+              <RefreshCw />
             </button>
           </div>
         </div>
@@ -934,7 +936,7 @@ export const ContactsRedesigned: React.FC<ContactsRedesignedProps> = ({
             }}
           >
             <div style={{ display: 'flex', alignItems: 'center', gap: 8 }}>
-              <i className="fa-solid fa-clone" style={{ color: '#eab308' }} />
+              <Copy />
               <span style={{ fontSize: 13, color: '#eab308' }}>
                 {duplicates.length} potential duplicate{duplicates.length !== 1 ? 's' : ''} detected
               </span>
@@ -959,7 +961,7 @@ export const ContactsRedesigned: React.FC<ContactsRedesignedProps> = ({
         {filteredContacts.length === 0 ? (
           <div className="contacts-empty">
             <div className="contacts-empty-icon">
-              <i className="fa-solid fa-user-slash" />
+              <UserX />
             </div>
             <div className="contacts-empty-title">No Contacts Found</div>
             <div className="contacts-empty-desc">
@@ -1053,7 +1055,7 @@ export const ContactsRedesigned: React.FC<ContactsRedesignedProps> = ({
               justifyContent: 'space-between',
             }}>
               <span style={{ fontWeight: 600, color: 'var(--cnt-text-primary)' }}>
-                <i className="fa-solid fa-bell" style={{ color: '#f97316', marginRight: 8 }} />
+                <Bell />
                 Relationship Alerts
               </span>
               <button
@@ -1066,7 +1068,7 @@ export const ContactsRedesigned: React.FC<ContactsRedesignedProps> = ({
                   padding: 8,
                 }}
               >
-                <i className="fa-solid fa-xmark" />
+                <X />
               </button>
             </div>
             <div style={{ flex: 1, overflow: 'auto', padding: 16 }}>

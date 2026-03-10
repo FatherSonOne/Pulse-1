@@ -1,5 +1,7 @@
 import React, { useState, useMemo, useCallback } from 'react';
 
+import { Bot, Calendar, Clock, Pen, Plus, Trash2, X, Zap } from 'lucide-react';
+
 // Types
 interface RuleCondition {
   type: 'keyword' | 'sender' | 'time' | 'day' | 'contact_group' | 'message_type' | 'sentiment';
@@ -528,14 +530,14 @@ export const AutoResponseRules: React.FC<AutoResponseRulesProps> = ({
     <div style={styles.container}>
       <div style={styles.header}>
         <div style={styles.title}>
-          <i className="fa-solid fa-robot" />
+          <Bot />
           Auto-Response Rules
         </div>
         <button
           style={styles.createButton}
           onClick={() => setShowCreateModal(true)}
         >
-          <i className="fa-solid fa-plus" />
+          <Plus />
           Create Rule
         </button>
       </div>
@@ -608,7 +610,7 @@ export const AutoResponseRules: React.FC<AutoResponseRulesProps> = ({
               {rule.schedule?.enabled && (
                 <div style={{ marginTop: '12px' }}>
                   <div style={styles.scheduleBadge}>
-                    <i className="fa-solid fa-calendar" />
+                    <Calendar />
                     {rule.schedule.startTime && rule.schedule.endTime
                       ? `${rule.schedule.startTime} - ${rule.schedule.endTime}`
                       : 'Scheduled'}
@@ -620,12 +622,12 @@ export const AutoResponseRules: React.FC<AutoResponseRulesProps> = ({
               <div style={styles.ruleFooter}>
                 <div style={styles.stats}>
                   <div style={styles.statItem}>
-                    <i className="fa-solid fa-bolt" />
+                    <Zap />
                     {rule.triggerCount} triggers
                   </div>
                   {rule.lastTriggered && (
                     <div style={styles.statItem}>
-                      <i className="fa-solid fa-clock" />
+                      <Clock />
                       Last: {formatDate(rule.lastTriggered)}
                     </div>
                   )}
@@ -635,14 +637,14 @@ export const AutoResponseRules: React.FC<AutoResponseRulesProps> = ({
                     style={styles.actionButton}
                     onClick={() => setEditingRule(rule)}
                   >
-                    <i className="fa-solid fa-pen" />
+                    <Pen />
                     Edit
                   </button>
                   <button
                     style={styles.actionButton}
                     onClick={() => handleDelete(rule.id)}
                   >
-                    <i className="fa-solid fa-trash" />
+                    <Trash2 />
                   </button>
                 </div>
               </div>
@@ -663,7 +665,7 @@ export const AutoResponseRules: React.FC<AutoResponseRulesProps> = ({
                 style={{ background: 'none', border: 'none', color: '#64748b', cursor: 'pointer' }}
                 onClick={() => { setShowCreateModal(false); setEditingRule(null); }}
               >
-                <i className="fa-solid fa-times" />
+                <X />
               </button>
             </div>
             <div style={styles.modalBody}>

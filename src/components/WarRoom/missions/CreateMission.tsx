@@ -2,6 +2,8 @@ import React, { useState, useRef, useEffect } from 'react';
 import { AIMessage, ThinkingStep } from '../../../services/ragService';
 import { SessionExport } from '../shared';
 
+import { ArrowRight, BookOpen, CheckCheck, CheckCircle, Copy, MessagesSquare, Pen, PenTool, Plus, Save, Send, Share2, Wand2, X } from 'lucide-react';
+
 interface ContentDraft {
   id: string;
   version: number;
@@ -197,7 +199,7 @@ Include these key points: ${keyPoints.join(', ')}`);
         {/* Mission Header */}
         <div className="p-4 border-b border-white/10 wr-mission-accent-bg">
           <div className="flex items-center gap-2 mb-2">
-            <i className="fa fa-pen-nib text-pink-400"></i>
+            <PenTool className="fa text-pink-400" />
             <h3 className="text-sm font-semibold war-room-text-primary">Create Mission</h3>
           </div>
           {topic && (
@@ -214,7 +216,7 @@ Include these key points: ${keyPoints.join(', ')}`);
           )}
           {activeContextCount > 0 && (
             <div className="war-room-badge text-xs mt-2" style={{ display: 'inline-flex', alignItems: 'center', gap: 4 }}>
-              <i className="fa fa-book-open" style={{ fontSize: 9 }}></i>
+              <BookOpen className="fa" />
               {activeContextCount} source{activeContextCount !== 1 ? 's' : ''}
             </div>
           )}
@@ -346,19 +348,19 @@ Include these key points: ${keyPoints.join(', ')}`);
                     disabled={!newKeyPoint.trim()}
                     className="war-room-btn war-room-btn-icon-sm war-room-btn-primary"
                   >
-                    <i className="fa fa-plus text-xs"></i>
+                    <Plus className="fa text-xs" />
                   </button>
                 </div>
                 <div className="space-y-1">
                   {keyPoints.map((point, i) => (
                     <div key={i} className="flex items-center gap-2 text-xs group">
-                      <i className="fa fa-check-circle text-pink-400"></i>
+                      <CheckCircle className="fa text-pink-400" />
                       <span className="flex-1 war-room-text-secondary">{point}</span>
                       <button
                         onClick={() => handleRemoveKeyPoint(i)}
                         className="opacity-0 group-hover:opacity-100 text-red-400"
                       >
-                        <i className="fa fa-times"></i>
+                        <X className="fa" />
                       </button>
                     </div>
                   ))}
@@ -370,7 +372,7 @@ Include these key points: ${keyPoints.join(', ')}`);
                 disabled={!contentType || !topic.trim()}
                 className="w-full war-room-btn war-room-btn-primary py-2"
               >
-                <i className="fa fa-arrow-right mr-2"></i>
+                <ArrowRight className="fa mr-2" />
                 Create Outline
               </button>
             </div>
@@ -393,7 +395,7 @@ Include these key points: ${keyPoints.join(', ')}`);
                       onClick={() => setOutline(outline.filter((_, idx) => idx !== i))}
                       className="text-red-400 opacity-50 hover:opacity-100"
                     >
-                      <i className="fa fa-times text-[10px]"></i>
+                      <X className="fa text-[10px]" />
                     </button>
                   </div>
                 ))}
@@ -419,7 +421,7 @@ Include these key points: ${keyPoints.join(', ')}`);
                 disabled={isLoading}
                 className="w-full war-room-btn py-2"
               >
-                <i className="fa fa-wand-magic-sparkles mr-2"></i>
+                <Wand2 className="fa mr-2" />
                 AI Suggest Outline
               </button>
 
@@ -428,7 +430,7 @@ Include these key points: ${keyPoints.join(', ')}`);
                   onClick={() => proceedToPhase('draft')}
                   className="w-full war-room-btn war-room-btn-primary py-2"
                 >
-                  <i className="fa fa-arrow-right mr-2"></i>
+                  <ArrowRight className="fa mr-2" />
                   Start Writing
                 </button>
               )}
@@ -442,7 +444,7 @@ Include these key points: ${keyPoints.join(', ')}`);
                 disabled={isLoading}
                 className="w-full war-room-btn war-room-btn-primary py-2"
               >
-                <i className="fa fa-wand-magic-sparkles mr-2"></i>
+                <Wand2 className="fa mr-2" />
                 Generate Draft
               </button>
 
@@ -451,7 +453,7 @@ Include these key points: ${keyPoints.join(', ')}`);
                 disabled={!currentDraft.trim()}
                 className="w-full war-room-btn py-2"
               >
-                <i className="fa fa-save mr-2"></i>
+                <Save className="fa mr-2" />
                 Save Draft
               </button>
 
@@ -484,7 +486,7 @@ Include these key points: ${keyPoints.join(', ')}`);
                   onClick={() => proceedToPhase('refine')}
                   className="w-full war-room-btn war-room-btn-primary py-2"
                 >
-                  <i className="fa fa-arrow-right mr-2"></i>
+                  <ArrowRight className="fa mr-2" />
                   Refine Draft
                 </button>
               )}
@@ -520,7 +522,7 @@ Include these key points: ${keyPoints.join(', ')}`);
                 onClick={() => proceedToPhase('finalize')}
                 className="w-full war-room-btn war-room-btn-primary py-2"
               >
-                <i className="fa fa-arrow-right mr-2"></i>
+                <ArrowRight className="fa mr-2" />
                 Finalize
               </button>
             </div>
@@ -543,7 +545,7 @@ Include these key points: ${keyPoints.join(', ')}`);
                 disabled={isLoading}
                 className="w-full war-room-btn war-room-btn-primary py-2"
               >
-                <i className="fa fa-check-double mr-2"></i>
+                <CheckCheck className="fa mr-2" />
                 Final Review
               </button>
 
@@ -552,7 +554,7 @@ Include these key points: ${keyPoints.join(', ')}`);
                 disabled={!currentDraft}
                 className="w-full war-room-btn py-2"
               >
-                <i className="fa fa-copy mr-2"></i>
+                <Copy className="fa mr-2" />
                 Copy to Clipboard
               </button>
             </div>
@@ -565,7 +567,7 @@ Include these key points: ${keyPoints.join(', ')}`);
             onClick={() => setShowExport(true)}
             className="w-full war-room-btn py-2"
           >
-            <i className="fa fa-share-nodes mr-2"></i>
+            <Share2 className="fa mr-2" />
             Export Content
           </button>
         </div>
@@ -578,7 +580,7 @@ Include these key points: ${keyPoints.join(', ')}`);
           <div className="shrink-0 p-4 border-b border-white/10 bg-black/20">
             <div className="flex items-center justify-between mb-2">
               <span className="text-xs font-medium war-room-text-secondary">
-                <i className="fa fa-pen mr-1"></i>
+                <Pen className="fa mr-1" />
                 Draft Editor
               </span>
               <span className="text-xs war-room-text-secondary">
@@ -601,7 +603,7 @@ Include these key points: ${keyPoints.join(', ')}`);
             <div className="h-full flex items-center justify-center">
               <div className="text-center max-w-md">
                 <div className="w-16 h-16 mx-auto mb-4 rounded-full bg-gradient-to-br from-pink-500/20 to-rose-500/20 flex items-center justify-center">
-                  <i className="fa fa-pen-nib text-2xl text-pink-400"></i>
+                  <PenTool className="fa text-2xl text-pink-400" />
                 </div>
                 <h3 className="text-lg font-semibold war-room-text-primary mb-2">
                   Create Mission
@@ -627,7 +629,7 @@ Include these key points: ${keyPoints.join(', ')}`);
                 >
                   {msg.role === 'assistant' && (
                     <div className="flex items-center gap-2 mb-2 pb-2 border-b border-white/10">
-                      <i className="fa fa-pen-nib text-pink-400 text-xs"></i>
+                      <PenTool className="fa text-pink-400 text-xs" />
                       <span className="text-xs text-pink-400 font-medium">Writing AI</span>
                     </div>
                   )}
@@ -642,7 +644,7 @@ Include these key points: ${keyPoints.join(', ')}`);
               <div className="war-room-message-ai">
                 <div className="flex items-center gap-3">
                   <div className="w-5 h-5 rounded-full bg-pink-500/30 flex items-center justify-center">
-                    <i className="fa fa-pen-nib text-pink-400 text-xs animate-pulse"></i>
+                    <PenTool className="fa text-pink-400 text-xs animate-pulse" />
                   </div>
                   <span className="text-sm war-room-text-secondary">Writing...</span>
                 </div>
@@ -657,7 +659,7 @@ Include these key points: ${keyPoints.join(', ')}`);
         <div className="shrink-0 p-4 war-room-input-area">
           <div className="flex items-center gap-2">
             <div className="flex-1 war-room-panel-inset flex items-center gap-2 px-4 py-3">
-              <i className="fa fa-comments text-pink-400 text-sm"></i>
+              <MessagesSquare className="fa text-pink-400 text-sm" />
               <input
                 type="text"
                 value={input}
@@ -674,7 +676,7 @@ Include these key points: ${keyPoints.join(', ')}`);
                   input.trim() ? 'war-room-btn-primary' : ''
                 }`}
               >
-                <i className="fa fa-paper-plane text-xs"></i>
+                <Send className="fa text-xs" />
               </button>
             </div>
           </div>

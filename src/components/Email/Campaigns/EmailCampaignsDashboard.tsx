@@ -1,6 +1,8 @@
 // src/components/Email/Campaigns/EmailCampaignsDashboard.tsx
 import React, { useCallback, useEffect, useRef, useState } from 'react';
+import { ArrowRight, Loader2, MailOpen, Plus, Search } from 'lucide-react';
 import {
+
   EmailCampaign,
   emailCampaignService,
 } from '../../../services/emailCampaignService';
@@ -243,7 +245,7 @@ export const EmailCampaignsDashboard: React.FC<Props> = ({
           onClick={onNewCampaign}
           className="inline-flex items-center gap-2 px-4 py-2 rounded-lg bg-gradient-to-r from-rose-500 to-red-500 text-white text-sm font-medium shadow-sm hover:opacity-90 transition-opacity"
         >
-          <i className="fa-solid fa-plus text-xs" />
+          <Plus className="text-xs" />
           New Campaign
         </button>
       </div>
@@ -254,7 +256,7 @@ export const EmailCampaignsDashboard: React.FC<Props> = ({
       <div className="flex flex-col sm:flex-row sm:items-center gap-3 px-6 py-3 border-b border-stone-200 dark:border-zinc-800">
         {/* Search */}
         <div className="relative flex-1 max-w-xs">
-          <i className="fa-solid fa-search absolute left-3 top-1/2 -translate-y-1/2 text-stone-400 dark:text-zinc-500 text-xs pointer-events-none" />
+          <Search className="absolute left-3 top-1/2 -translate-y-1/2 text-stone-400 dark:text-zinc-500 text-xs pointer-events-none" />
           <input
             type="text"
             placeholder="Search campaigns…"
@@ -289,7 +291,7 @@ export const EmailCampaignsDashboard: React.FC<Props> = ({
         {loading ? (
           /* Loading spinner */
           <div className="flex items-center justify-center h-64">
-            <i className="fa-solid fa-spinner animate-spin text-2xl text-rose-500" />
+            <Loader2 className="animate-spin text-2xl text-rose-500" />
           </div>
         ) : campaigns.length === 0 ? (
           /* Empty state — no campaigns at all */
@@ -297,7 +299,7 @@ export const EmailCampaignsDashboard: React.FC<Props> = ({
         ) : filtered.length === 0 ? (
           /* No results for current filter */
           <div className="flex flex-col items-center justify-center h-64 text-stone-500 dark:text-zinc-400">
-            <i className="fa-solid fa-envelope-open text-3xl mb-3 opacity-40" />
+            <MailOpen className="text-3xl mb-3 opacity-40" />
             <p className="text-sm">No campaigns match your filters.</p>
             <button
               onClick={() => { setSearch(''); setStatusFilter('all'); }}
@@ -503,7 +505,7 @@ const ActionButton: React.FC<ActionButtonProps> = ({ title, icon, onClick, dange
 const EmptyState: React.FC<{ onNewCampaign: () => void }> = ({ onNewCampaign }) => (
   <div className="flex flex-col items-center justify-center h-64 text-center px-6">
     <div className="w-16 h-16 rounded-full bg-rose-500/10 flex items-center justify-center mb-4">
-      <i className="fa-solid fa-envelope-open text-2xl text-rose-500 dark:text-rose-400" />
+      <MailOpen className="text-2xl text-rose-500 dark:text-rose-400" />
     </div>
     <h3 className="text-base font-semibold text-stone-900 dark:text-zinc-100 mb-1">
       No campaigns yet
@@ -516,7 +518,7 @@ const EmptyState: React.FC<{ onNewCampaign: () => void }> = ({ onNewCampaign }) 
       className="inline-flex items-center gap-2 px-4 py-2 rounded-lg bg-gradient-to-r from-rose-500 to-red-500 text-white text-sm font-medium hover:opacity-90 transition-opacity"
     >
       Create your first campaign
-      <i className="fa-solid fa-arrow-right text-xs" />
+      <ArrowRight className="text-xs" />
     </button>
   </div>
 );

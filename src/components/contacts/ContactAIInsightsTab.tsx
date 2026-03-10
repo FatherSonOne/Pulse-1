@@ -18,6 +18,8 @@ import {
 import { RelationshipHealthCard } from './RelationshipHealthCard';
 import { LeadScoreCard } from './LeadScoreIndicator';
 
+import { ArrowRight, BarChart2, Globe, PieChart, RefreshCw, Wand2, Zap } from 'lucide-react';
+
 interface ContactAIInsightsTabProps {
   profile: RelationshipProfile;
   insights: RelationshipInsights | null;
@@ -83,7 +85,7 @@ export const ContactAIInsightsTab: React.FC<ContactAIInsightsTabProps> = ({
           {insights?.profile.aiRelationshipSummary && (
             <div className="bg-gradient-to-br from-purple-50 to-indigo-50 dark:from-purple-900/20 dark:to-indigo-900/20 rounded-xl p-4 border border-purple-100 dark:border-purple-900/30">
               <h3 className="font-semibold text-purple-900 dark:text-purple-300 mb-2 flex items-center gap-2">
-                <i className="fa-solid fa-wand-magic-sparkles"></i>
+                <Wand2 />
                 AI Summary
               </h3>
               <p className="text-sm text-purple-800 dark:text-purple-200">
@@ -145,7 +147,7 @@ export const ContactAIInsightsTab: React.FC<ContactAIInsightsTabProps> = ({
                       }`}>
                         {suggestion.title}
                       </span>
-                      <i className="fa-solid fa-arrow-right text-zinc-300 group-hover:text-purple-500 transition"></i>
+                      <ArrowRight className="text-zinc-300 group-hover:text-purple-500 transition" />
                     </div>
                     <p className={`text-xs ${
                       suggestion.type === 'warning'
@@ -167,7 +169,7 @@ export const ContactAIInsightsTab: React.FC<ContactAIInsightsTabProps> = ({
             onClick={onRefreshInsights}
             className="w-full py-2 text-sm text-purple-600 dark:text-purple-400 hover:text-purple-700 dark:hover:text-purple-300 font-medium transition"
           >
-            <i className="fa-solid fa-rotate mr-2"></i>
+            <RefreshCw className="mr-2" />
             Refresh Insights
           </button>
         </div>
@@ -182,7 +184,7 @@ export const ContactAIInsightsTab: React.FC<ContactAIInsightsTabProps> = ({
 
           {(!insights || insights.healthFactors.length === 0) && (
             <div className="text-center py-8 text-zinc-400">
-              <i className="fa-solid fa-chart-pie text-2xl mb-2"></i>
+              <PieChart className="text-2xl mb-2" />
               <p className="text-sm">No health factors available yet</p>
               <p className="text-xs mt-1">More data needed for analysis</p>
             </div>
@@ -216,7 +218,7 @@ export const ContactAIInsightsTab: React.FC<ContactAIInsightsTabProps> = ({
                         key={idx}
                         className="flex items-center gap-3 p-3 bg-purple-50 dark:bg-purple-900/10 rounded-lg"
                       >
-                        <i className="fa-solid fa-bolt text-purple-500"></i>
+                        <Zap className="text-purple-500" />
                         <div className="flex-1">
                           <div className="text-sm font-medium text-purple-900 dark:text-purple-200 capitalize">
                             {signal.signal.replace(/_/g, ' ')}
@@ -240,7 +242,7 @@ export const ContactAIInsightsTab: React.FC<ContactAIInsightsTabProps> = ({
               {leadScore.aiNextActionPrediction && (
                 <div className="bg-gradient-to-br from-indigo-50 to-purple-50 dark:from-indigo-900/20 dark:to-purple-900/20 rounded-xl p-4 border border-indigo-100 dark:border-indigo-900/30">
                   <h3 className="font-semibold text-indigo-900 dark:text-indigo-300 mb-2 flex items-center gap-2">
-                    <i className="fa-solid fa-crystal-ball"></i>
+                    <Globe />
                     AI Prediction
                   </h3>
                   <p className="text-sm text-indigo-800 dark:text-indigo-200">
@@ -251,7 +253,7 @@ export const ContactAIInsightsTab: React.FC<ContactAIInsightsTabProps> = ({
             </>
           ) : (
             <div className="text-center py-8 text-zinc-400">
-              <i className="fa-solid fa-chart-simple text-2xl mb-2"></i>
+              <BarChart2 className="text-2xl mb-2" />
               <p className="text-sm">No lead score available</p>
               <p className="text-xs mt-1">Contact needs more interaction data</p>
             </div>

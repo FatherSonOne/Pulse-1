@@ -6,6 +6,8 @@
 import React from 'react';
 import { motion, AnimatePresence } from 'framer-motion';
 
+import { BarChart, X } from 'lucide-react';
+
 interface ConversationStats {
   totalMessages: number;
   averageResponseTime: number;
@@ -52,14 +54,14 @@ export const ConversationStatsModal: React.FC<ConversationStatsModalProps> = ({
           {/* Header */}
           <div className="p-4 border-b border-zinc-200 dark:border-zinc-800 flex justify-between items-center">
             <h3 className="font-bold dark:text-white flex items-center gap-2">
-              <i className="fa-solid fa-chart-bar text-blue-500"></i>
+              <BarChart className="text-blue-500" />
               Conversation Statistics
             </h3>
             <button
               onClick={onClose}
               className="w-8 h-8 rounded-lg hover:bg-zinc-100 dark:hover:bg-zinc-800 flex items-center justify-center transition"
             >
-              <i className="fa-solid fa-xmark text-zinc-500"></i>
+              <X className="text-zinc-500" />
             </button>
           </div>
 
@@ -115,4 +117,4 @@ export const ConversationStatsModal: React.FC<ConversationStatsModalProps> = ({
   );
 };
 
-export default ConversationStatsModal;
+export default React.memo(ConversationStatsModal);

@@ -3,7 +3,9 @@ import { Contact } from '../../types';
 import { OnlineIndicator } from '../UserContact/OnlineIndicator';
 import { RelationshipScoreBadge } from './RelationshipHealthCard';
 import { LeadGradeBadge } from './LeadScoreIndicator';
+import { ArrowDown, ArrowUp, Building2, Flame, Handshake, Loader2, Mail, Star, UserX } from 'lucide-react';
 import {
+
   RelationshipProfile,
   LeadScore,
   getRelationshipHealthColor,
@@ -65,7 +67,7 @@ export const ContactsList: React.FC<ContactsListProps> = ({
     return (
       <Suspense fallback={
         <div className="flex items-center justify-center h-full text-zinc-400">
-          <i className="fa-solid fa-circle-notch fa-spin text-2xl"></i>
+          <Loader2 className="text-2xl animate-spin" />
         </div>
       }>
         <EnhancedLoadingScreen currentStageLabel="Loading contacts..." inline />
@@ -76,7 +78,7 @@ export const ContactsList: React.FC<ContactsListProps> = ({
   if (contacts.length === 0) {
     return (
       <div className="flex flex-col items-center justify-center h-full text-zinc-400">
-        <i className="fa-solid fa-user-slash text-4xl mb-4 text-zinc-200 dark:text-zinc-800"></i>
+        <UserX className="text-4xl mb-4 text-zinc-200 dark:text-zinc-800" />
         <p>No contacts found.</p>
       </div>
     );
@@ -124,7 +126,7 @@ export const ContactsList: React.FC<ContactsListProps> = ({
                     </div>
                     {profile?.isVip && (
                       <div className="absolute -top-1 -right-1 w-4 h-4 bg-amber-400 rounded-full flex items-center justify-center">
-                        <i className="fa-solid fa-star text-[8px] text-white"></i>
+                        <Star className="text-[8px] text-white" />
                       </div>
                     )}
                   </div>
@@ -156,10 +158,10 @@ export const ContactsList: React.FC<ContactsListProps> = ({
                         {profile.relationshipScore}
                       </span>
                       {profile.relationshipTrend === 'rising' && (
-                        <i className="fa-solid fa-arrow-up text-[10px] text-green-500"></i>
+                        <ArrowUp className="text-[10px] text-green-500" />
                       )}
                       {profile.relationshipTrend === 'falling' && (
-                        <i className="fa-solid fa-arrow-down text-[10px] text-red-500"></i>
+                        <ArrowDown className="text-[10px] text-red-500" />
                       )}
                     </div>
                   ) : (
@@ -222,7 +224,7 @@ export const ContactsList: React.FC<ContactsListProps> = ({
                     )}
                     {profile?.isVip && (
                       <div className="absolute -top-1 -left-1 w-5 h-5 bg-amber-400 rounded-full flex items-center justify-center shadow-sm">
-                        <i className="fa-solid fa-star text-[10px] text-white"></i>
+                        <Star className="text-[10px] text-white" />
                       </div>
                     )}
                   </div>
@@ -233,13 +235,13 @@ export const ContactsList: React.FC<ContactsListProps> = ({
                 </div>
 
                 <div className="text-sm text-zinc-500 dark:text-zinc-400 mb-2 truncate">
-                  <i className="fa-regular fa-envelope mr-2 opacity-50"></i>
+                  <Mail className="mr-2 opacity-50" />
                   {contact.email || 'No email'}
                 </div>
 
                 {contact.company && (
                   <div className="text-sm text-zinc-500 dark:text-zinc-400 truncate">
-                     <i className="fa-regular fa-building mr-2 opacity-50"></i>
+                     <Building2 className="mr-2 opacity-50" />
                      {contact.company}
                   </div>
                 )}
@@ -254,10 +256,10 @@ export const ContactsList: React.FC<ContactsListProps> = ({
                           {profile.relationshipScore}%
                         </span>
                         {profile.relationshipTrend === 'rising' && (
-                          <i className="fa-solid fa-arrow-up text-[8px] text-green-500"></i>
+                          <ArrowUp className="text-[8px] text-green-500" />
                         )}
                         {profile.relationshipTrend === 'falling' && (
-                          <i className="fa-solid fa-arrow-down text-[8px] text-red-500"></i>
+                          <ArrowDown className="text-[8px] text-red-500" />
                         )}
                       </div>
                     </div>
@@ -276,13 +278,13 @@ export const ContactsList: React.FC<ContactsListProps> = ({
                 {/* AI Insight - Show only when there's a lead score or buying signals */}
                 {contactLeadScore && contactLeadScore.leadStatus === 'hot' && (
                   <div className="mt-3 pt-2 border-t border-zinc-100 dark:border-zinc-800 flex items-center gap-2">
-                    <i className="fa-solid fa-fire text-orange-500 text-xs"></i>
+                    <Flame className="text-orange-500 text-xs" />
                     <span className="text-[10px] text-orange-600 dark:text-orange-400 font-medium">Hot Lead</span>
                   </div>
                 )}
                 {contactLeadScore && contactLeadScore.leadStatus === 'warm' && !profile && (
                   <div className="mt-3 pt-2 border-t border-zinc-100 dark:border-zinc-800 flex items-center gap-2">
-                    <i className="fa-solid fa-handshake text-blue-500 text-xs"></i>
+                    <Handshake className="text-blue-500 text-xs" />
                     <span className="text-[10px] text-blue-600 dark:text-blue-400 font-medium">Warm Lead</span>
                   </div>
                 )}

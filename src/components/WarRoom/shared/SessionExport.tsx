@@ -2,6 +2,8 @@ import React, { useState } from 'react';
 import { AIMessage } from '../../../services/ragService';
 import toast from 'react-hot-toast';
 
+import { Clipboard, Code, Copy, Download, FileText, ListChecks, Share2, Sparkles, X } from 'lucide-react';
+
 interface SessionExportProps {
   sessionId: string;
   sessionTitle: string;
@@ -191,7 +193,7 @@ export const SessionExport: React.FC<SessionExportProps> = ({
         <div className="p-4 border-b border-white/10 flex items-center justify-between">
           <div>
             <h3 className="text-lg font-bold war-room-text-primary">
-              <i className="fa fa-share-nodes mr-2"></i>
+              <Share2 className="fa mr-2" />
               Export Session
             </h3>
             <p className="text-xs war-room-text-secondary mt-1">
@@ -203,7 +205,7 @@ export const SessionExport: React.FC<SessionExportProps> = ({
             onClick={onClose}
             className="war-room-btn war-room-btn-icon"
           >
-            <i className="fa fa-times"></i>
+            <X className="fa" />
           </button>
         </div>
 
@@ -216,13 +218,13 @@ export const SessionExport: React.FC<SessionExportProps> = ({
           >
             <div className="flex items-center gap-3">
               <div className="w-10 h-10 bg-blue-500/20 rounded-lg flex items-center justify-center">
-                <i className="fa fa-file-lines text-blue-400"></i>
+                <FileText className="fa text-blue-400" />
               </div>
               <div className="flex-1">
                 <div className="font-medium">Markdown File</div>
                 <div className="text-xs war-room-text-secondary">Full conversation as .md file</div>
               </div>
-              <i className="fa fa-download war-room-text-secondary"></i>
+              <Download className="fa war-room-text-secondary" />
             </div>
           </button>
 
@@ -232,13 +234,13 @@ export const SessionExport: React.FC<SessionExportProps> = ({
           >
             <div className="flex items-center gap-3">
               <div className="w-10 h-10 bg-purple-500/20 rounded-lg flex items-center justify-center">
-                <i className="fa fa-code text-purple-400"></i>
+                <Code className="fa text-purple-400" />
               </div>
               <div className="flex-1">
                 <div className="font-medium">JSON Data</div>
                 <div className="text-xs war-room-text-secondary">Structured data for integrations</div>
               </div>
-              <i className="fa fa-download war-room-text-secondary"></i>
+              <Download className="fa war-room-text-secondary" />
             </div>
           </button>
 
@@ -248,13 +250,13 @@ export const SessionExport: React.FC<SessionExportProps> = ({
           >
             <div className="flex items-center gap-3">
               <div className="w-10 h-10 bg-emerald-500/20 rounded-lg flex items-center justify-center">
-                <i className="fa fa-clipboard text-emerald-400"></i>
+                <Clipboard className="fa text-emerald-400" />
               </div>
               <div className="flex-1">
                 <div className="font-medium">Copy to Clipboard</div>
                 <div className="text-xs war-room-text-secondary">Paste into docs, notes, or messages</div>
               </div>
-              <i className="fa fa-copy war-room-text-secondary"></i>
+              <Copy className="fa war-room-text-secondary" />
             </div>
           </button>
 
@@ -264,13 +266,13 @@ export const SessionExport: React.FC<SessionExportProps> = ({
           >
             <div className="flex items-center gap-3">
               <div className="w-10 h-10 bg-rose-500/20 rounded-lg flex items-center justify-center">
-                <i className="fa fa-list-check text-rose-400"></i>
+                <ListChecks className="fa text-rose-400" />
               </div>
               <div className="flex-1">
                 <div className="font-medium">Key Points & Actions</div>
                 <div className="text-xs war-room-text-secondary">Extracted insights and action items</div>
               </div>
-              <i className="fa fa-sparkles war-room-text-secondary"></i>
+              <Sparkles className="fa war-room-text-secondary" />
             </div>
           </button>
         </div>

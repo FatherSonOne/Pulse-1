@@ -3,6 +3,8 @@ import { AIMessage, ThinkingStep } from '../../../services/ragService';
 import { SessionExport } from '../shared';
 import { dataService } from '../../../services/dataService';
 
+import { BarChart3, BookOpen, Check, Copy, Lightbulb, Plus, Rocket, Send, Share2, Wand2, X } from 'lucide-react';
+
 interface ResearchPhase {
   id: string;
   name: string;
@@ -198,7 +200,7 @@ export const ResearchMission: React.FC<ResearchMissionProps> = ({
       <div className="h-full w-full flex flex-col items-center justify-center war-room-container p-8">
         <div className="max-w-lg w-full text-center">
           <div className="w-20 h-20 mx-auto mb-6 rounded-full wr-mission-accent-bg flex items-center justify-center">
-            <i className="fa fa-magnifying-glass-chart text-3xl text-blue-400"></i>
+            <BarChart3 className="fa text-3xl text-blue-400" />
           </div>
 
           <h2 className="text-2xl font-bold war-room-text-primary mb-2">
@@ -227,7 +229,7 @@ export const ResearchMission: React.FC<ResearchMissionProps> = ({
               disabled={!researchTopic.trim()}
               className="war-room-btn war-room-btn-primary w-full py-3"
             >
-              <i className="fa fa-rocket mr-2"></i>
+              <Rocket className="fa mr-2" />
               Start Research Mission
             </button>
           </div>
@@ -277,7 +279,7 @@ export const ResearchMission: React.FC<ResearchMissionProps> = ({
 
           {activeContextCount > 0 && (
             <div className="war-room-badge text-xs mt-2" style={{ display: 'inline-flex', alignItems: 'center', gap: 4 }}>
-              <i className="fa fa-book-open" style={{ fontSize: 9 }}></i>
+              <BookOpen className="fa" />
               {activeContextCount} source{activeContextCount !== 1 ? 's' : ''}
             </div>
           )}
@@ -304,7 +306,7 @@ export const ResearchMission: React.FC<ResearchMissionProps> = ({
                     : 'bg-white/5 war-room-text-secondary'
                 }`}>
                   {phase.completed ? (
-                    <i className="fa fa-check text-sm"></i>
+                    <Check className="fa text-sm" />
                   ) : (
                     <i className={`fa ${phase.icon} text-sm`}></i>
                   )}
@@ -331,7 +333,7 @@ export const ResearchMission: React.FC<ResearchMissionProps> = ({
             className="war-room-btn w-full justify-between"
           >
             <span>
-              <i className="fa fa-lightbulb mr-2"></i>
+              <Lightbulb className="fa mr-2" />
               Key Findings
             </span>
             <span className="war-room-badge text-xs">{findings.length}</span>
@@ -367,7 +369,7 @@ export const ResearchMission: React.FC<ResearchMissionProps> = ({
                   className="war-room-btn text-sm px-3 py-2"
                   title="Start a new research session"
                 >
-                  <i className="fa fa-plus mr-2"></i>
+                  <Plus className="fa mr-2" />
                   New Session
                 </button>
               )}
@@ -376,7 +378,7 @@ export const ResearchMission: React.FC<ResearchMissionProps> = ({
                   onClick={markPhaseComplete}
                   className="war-room-btn war-room-btn-primary text-sm px-4 py-2"
                 >
-                  <i className="fa fa-check mr-2"></i>
+                  <Check className="fa mr-2" />
                   Complete Phase
                 </button>
               )}
@@ -385,7 +387,7 @@ export const ResearchMission: React.FC<ResearchMissionProps> = ({
                 className="war-room-btn war-room-btn-icon"
                 title="Export research"
               >
-                <i className="fa fa-share-nodes"></i>
+                <Share2 className="fa" />
               </button>
             </div>
           </div>
@@ -394,7 +396,7 @@ export const ResearchMission: React.FC<ResearchMissionProps> = ({
         {/* Suggested Prompts */}
         <div className="shrink-0 p-3 border-b border-white/10 wr-mission-accent-bg">
           <div className="text-xs war-room-text-secondary mb-2">
-            <i className="fa fa-magic mr-1"></i>
+            <Wand2 className="fa mr-1" />
             Guided prompts for this phase:
           </div>
           <div className="flex gap-2 overflow-x-auto pb-1 war-room-scrollbar">
@@ -431,7 +433,7 @@ export const ResearchMission: React.FC<ResearchMissionProps> = ({
                   <div className="mt-2 pt-2 border-t border-white/10 flex flex-wrap gap-1">
                     {msg.citations.map((c: any, i: number) => (
                       <span key={i} className="war-room-badge text-xs">
-                        <i className="fa fa-book-open mr-1"></i>
+                        <BookOpen className="fa mr-1" />
                         {c.title}
                       </span>
                     ))}
@@ -444,7 +446,7 @@ export const ResearchMission: React.FC<ResearchMissionProps> = ({
                     onClick={() => addToFindings(msg.content.slice(0, 200) + '...')}
                     className="mt-2 text-xs war-room-text-secondary hover:text-blue-400 transition-colors"
                   >
-                    <i className="fa fa-plus mr-1"></i>
+                    <Plus className="fa mr-1" />
                     Save to findings
                   </button>
                 )}
@@ -488,7 +490,7 @@ export const ResearchMission: React.FC<ResearchMissionProps> = ({
                   input.trim() ? 'war-room-btn-primary' : ''
                 }`}
               >
-                <i className="fa fa-paper-plane text-xs"></i>
+                <Send className="fa text-xs" />
               </button>
             </div>
           </div>
@@ -500,14 +502,14 @@ export const ResearchMission: React.FC<ResearchMissionProps> = ({
         <div className="w-72 shrink-0 border-l border-white/10 flex flex-col bg-black/20">
           <div className="p-4 border-b border-white/10 flex items-center justify-between">
             <h3 className="font-medium war-room-text-primary">
-              <i className="fa fa-lightbulb mr-2 text-yellow-400"></i>
+              <Lightbulb className="fa mr-2 text-yellow-400" />
               Key Findings
             </h3>
             <button
               onClick={() => setShowFindings(false)}
               className="war-room-btn war-room-btn-icon-sm"
             >
-              <i className="fa fa-times text-xs"></i>
+              <X className="fa text-xs" />
             </button>
           </div>
 
@@ -528,7 +530,7 @@ export const ResearchMission: React.FC<ResearchMissionProps> = ({
                       onClick={() => setFindings(prev => prev.filter((_, idx) => idx !== i))}
                       className="text-red-400 hover:text-red-300 shrink-0"
                     >
-                      <i className="fa fa-times"></i>
+                      <X className="fa" />
                     </button>
                   </div>
                 </div>
@@ -545,7 +547,7 @@ export const ResearchMission: React.FC<ResearchMissionProps> = ({
                 }}
                 className="war-room-btn w-full text-xs"
               >
-                <i className="fa fa-copy mr-2"></i>
+                <Copy className="fa mr-2" />
                 Copy All Findings
               </button>
             </div>

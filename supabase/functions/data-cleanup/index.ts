@@ -4,7 +4,7 @@
  * Runs daily at scheduled time for users with auto-cleanup enabled
  */
 
-import { serve } from 'https://deno.land/std@0.168.0/http/server.ts';
+import { serve } from 'https://deno.land/std@0.208.0/http/server.ts';
 import { createClient } from 'https://esm.sh/@supabase/supabase-js@2.39.0';
 
 // ================================================
@@ -18,6 +18,7 @@ interface DataRetentionPolicy {
   calendar_retention_days: number;
   contacts_retention_days: number;
   messages_retention_days: number;
+  brainstorm_retention_days: number;
   auto_cleanup_enabled: boolean;
   cleanup_time_utc: string;
   last_cleanup_at: string | null;
@@ -162,6 +163,18 @@ serve(async (req) => {
       results,
     };
 
+    // Purge expired conversation_summaries (global, not per-user policy)
+    try {
+      const { error: rpcError } = await supabase.rpc('cleanup_expired_summaries');
+      if (rpcError) {
+        console.warn('[DataCleanup] cleanup_expired_summaries RPC error:', rpcError.message);
+      } else {
+        console.log('[DataCleanup] cleanup_expired_summaries completed');
+      }
+    } catch (rpcErr) {
+      console.warn('[DataCleanup] cleanup_expired_summaries threw:', rpcErr);
+    }
+
     console.log('[DataCleanup] Cleanup completed:', summary);
 
     return new Response(JSON.stringify(summary), {
@@ -195,12 +208,13 @@ async function cleanupUserData(
 
   const dataTypes = [
     { type: 'emails', days: policy.emails_retention_days, table: 'emails' },
-    { type: 'calendar', days: policy.calendar_retention_days, table: 'events' },
+    { type: 'calendar', days: policy.calendar_retention_days, table: 'calendar_events' },
     { type: 'contacts', days: policy.contacts_retention_days, table: 'contacts' },
     { type: 'messages', days: policy.messages_retention_days, table: 'messages' },
+    { type: 'brainstorm', days: policy.brainstorm_retention_days, table: 'brainstorm_sessions', dateField: 'expires_at', useExpiry: true },
   ];
 
-  for (const { type, days, table } of dataTypes) {
+  for (const { type, days, table, dateField, useExpiry } of dataTypes as any[]) {
     // Skip if retention is -1 (never delete)
     if (days === -1) {
       continue;
@@ -209,16 +223,23 @@ async function cleanupUserData(
     const startTime = Date.now();
 
     try {
-      const cutoffDate = new Date();
-      cutoffDate.setDate(cutoffDate.getDate() - days);
-
-      // Delete old data
-      const { data, error } = await supabase
+      let deleteQuery = supabase
         .from(table)
         .delete()
         .eq('user_id', policy.user_id)
-        .lt('created_at', cutoffDate.toISOString())
         .select('id');
+
+      if (useExpiry) {
+        // Delete rows where expires_at is in the past
+        deleteQuery = deleteQuery.lt(dateField ?? 'expires_at', new Date().toISOString());
+      } else {
+        const cutoffDate = new Date();
+        cutoffDate.setDate(cutoffDate.getDate() - days);
+        deleteQuery = deleteQuery.lt('created_at', cutoffDate.toISOString());
+      }
+
+      // Delete old data
+      const { data, error } = await deleteQuery;
 
       if (error) {
         // Table might not exist or have different schema

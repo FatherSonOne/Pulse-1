@@ -3,6 +3,8 @@ import { useWorkspace } from '../../contexts/WorkspaceContext';
 import { Workspace, workspaceService } from '../../services/workspaceService';
 import './WorkspaceSwitcher.css';
 
+import { ArrowLeft, Check, Copy, Plus, UserPlus } from 'lucide-react';
+
 interface WorkspaceSwitcherProps {
   isCollapsed: boolean;
 }
@@ -235,7 +237,7 @@ export const WorkspaceSwitcher: React.FC<WorkspaceSwitcherProps> = ({ isCollapse
                     className="ws-action-btn"
                     onClick={() => setShowInviteForm(true)}
                   >
-                    <i className="fa-solid fa-user-plus" />
+                    <UserPlus />
                     <span>Invite member</span>
                   </button>
                 </div>
@@ -251,7 +253,7 @@ export const WorkspaceSwitcher: React.FC<WorkspaceSwitcherProps> = ({ isCollapse
                 className="ws-back-btn"
                 onClick={() => setShowCreateForm(false)}
               >
-                <i className="fa-solid fa-arrow-left" /> Back
+                <ArrowLeft /> Back
               </button>
               <div className="ws-panel-label">New workspace</div>
               <form onSubmit={handleCreate} className="ws-form">
@@ -282,7 +284,7 @@ export const WorkspaceSwitcher: React.FC<WorkspaceSwitcherProps> = ({ isCollapse
                 className="ws-back-btn"
                 onClick={() => { setShowInviteForm(false); setInviteError(''); setInviteLink(''); }}
               >
-                <i className="fa-solid fa-arrow-left" /> Back
+                <ArrowLeft /> Back
               </button>
               <div className="ws-panel-label">Invite to {currentWorkspace.name}</div>
               <form onSubmit={handleInvite} className="ws-form">
@@ -325,8 +327,8 @@ export const WorkspaceSwitcher: React.FC<WorkspaceSwitcherProps> = ({ isCollapse
                       title="Copy invite link"
                     >
                       {linkCopied
-                        ? <i className="fa-solid fa-check" />
-                        : <i className="fa-solid fa-copy" />}
+                        ? <Check />
+                        : <Copy />}
                     </button>
                   </div>
                 </div>
@@ -361,11 +363,11 @@ const WorkspaceList: React.FC<WorkspaceListProps> = ({ workspaces, currentId, on
       >
         <WorkspaceAvatar workspace={ws} size={22} />
         <span className="ws-list-name">{ws.name}</span>
-        {ws.id === currentId && <i className="fa-solid fa-check ws-list-check" />}
+        {ws.id === currentId && <Check className="ws-list-check" />}
       </button>
     ))}
     <button type="button" className="ws-list-item ws-list-create" onClick={onCreateClick}>
-      <div className="ws-create-icon"><i className="fa-solid fa-plus" /></div>
+      <div className="ws-create-icon"><Plus /></div>
       <span>New workspace</span>
     </button>
   </>

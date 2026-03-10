@@ -1,5 +1,7 @@
 import React, { useState, useMemo, useCallback } from 'react';
 
+import { ChevronDown, Plus, Sparkles, Zap } from 'lucide-react';
+
 // Types
 interface QuickReply {
   id: string;
@@ -345,7 +347,7 @@ export const QuickReplies: React.FC<QuickRepliesProps> = ({
       {aiSuggestions.length > 0 && (
         <div style={styles.aiSection}>
           <div style={styles.sectionTitle}>
-            <i className="fa-solid fa-sparkles" style={{ color: '#a78bfa' }} />
+            <Sparkles />
             AI Suggested Replies
           </div>
           <div style={styles.suggestionsList}>
@@ -394,7 +396,7 @@ export const QuickReplies: React.FC<QuickRepliesProps> = ({
       {/* Quick Replies */}
       <div style={styles.section}>
         <div style={styles.sectionTitle}>
-          <i className="fa-solid fa-bolt" />
+          <Zap />
           Quick Replies
         </div>
 
@@ -451,7 +453,7 @@ export const QuickReplies: React.FC<QuickRepliesProps> = ({
             style={{ ...styles.addCustom, marginTop: '8px' }}
             onClick={() => setShowAll(true)}
           >
-            <i className="fa-solid fa-chevron-down" />
+            <ChevronDown />
             Show {defaultQuickReplies.length - 6} more replies
           </button>
         )}
@@ -462,7 +464,7 @@ export const QuickReplies: React.FC<QuickRepliesProps> = ({
         style={styles.addCustom}
         onClick={() => onCustomize?.({ id: 'new', text: '', category: 'custom', useCount: 0 })}
       >
-        <i className="fa-solid fa-plus" />
+        <Plus />
         Add custom quick reply
       </button>
     </div>
@@ -510,7 +512,7 @@ export const QuickReplyBar: React.FC<{
             transition: 'all 0.2s ease'
           }}
         >
-          {reply.isAI && <i className="fa-solid fa-sparkles" style={{ fontSize: '9px' }} />}
+          {reply.isAI && <Sparkles />}
           {'emoji' in reply && reply.emoji && <span>{reply.emoji}</span>}
           {reply.text.length > 30 ? reply.text.slice(0, 30) + '...' : reply.text}
         </button>

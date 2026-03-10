@@ -1,6 +1,8 @@
 // Collaborative Annotations System
 import React, { useState, useMemo } from 'react';
 
+import { Check, ExternalLink, MessageCircle, MessagesSquare, Reply, RotateCcw, Smile, Trash2, User } from 'lucide-react';
+
 interface Annotation {
   id: string;
   messageId: string;
@@ -142,12 +144,12 @@ export const CollaborativeAnnotations: React.FC<CollaborativeAnnotationsProps> =
     return (
       <div className="flex items-center gap-2">
         <div className="flex items-center gap-1.5 px-2 py-1 rounded-full bg-blue-100 dark:bg-blue-900/40 text-blue-600 dark:text-blue-400">
-          <i className="fa-solid fa-comments text-xs" />
+          <MessagesSquare className="text-xs" />
           <span className="text-xs font-medium">{stats.open} open</span>
         </div>
         {stats.resolved > 0 && (
           <div className="flex items-center gap-1.5 px-2 py-1 rounded-full bg-green-100 dark:bg-green-900/40 text-green-600 dark:text-green-400">
-            <i className="fa-solid fa-check text-xs" />
+            <Check className="text-xs" />
             <span className="text-xs font-medium">{stats.resolved}</span>
           </div>
         )}
@@ -162,7 +164,7 @@ export const CollaborativeAnnotations: React.FC<CollaborativeAnnotationsProps> =
         <div className="flex items-center justify-between mb-3">
           <div className="flex items-center gap-2">
             <div className="w-8 h-8 rounded-full bg-blue-100 dark:bg-blue-900/40 flex items-center justify-center">
-              <i className="fa-solid fa-comments text-blue-500 text-sm" />
+              <MessagesSquare className="text-blue-500 text-sm" />
             </div>
             <div>
               <h3 className="text-sm font-bold text-zinc-800 dark:text-white">Annotations</h3>
@@ -230,7 +232,7 @@ export const CollaborativeAnnotations: React.FC<CollaborativeAnnotationsProps> =
         {filteredAnnotations.length === 0 ? (
           <div className="p-8 text-center">
             <div className="w-12 h-12 rounded-full bg-zinc-100 dark:bg-zinc-700 flex items-center justify-center mx-auto mb-3">
-              <i className="fa-solid fa-comments text-zinc-400 text-lg" />
+              <MessagesSquare className="text-zinc-400 text-lg" />
             </div>
             <p className="text-sm text-zinc-500 dark:text-zinc-400">No annotations found</p>
             <p className="text-xs text-zinc-400 dark:text-zinc-500 mt-1">
@@ -296,7 +298,7 @@ export const CollaborativeAnnotations: React.FC<CollaborativeAnnotationsProps> =
                             className="p-1 text-zinc-400 hover:text-indigo-500 transition"
                             title="Jump to message"
                           >
-                            <i className="fa-solid fa-arrow-up-right-from-square text-xs" />
+                            <ExternalLink className="text-xs" />
                           </button>
                         )}
                         {annotation.author.id === currentUserId && onDelete && (
@@ -305,7 +307,7 @@ export const CollaborativeAnnotations: React.FC<CollaborativeAnnotationsProps> =
                             className="p-1 text-zinc-400 hover:text-red-500 transition"
                             title="Delete"
                           >
-                            <i className="fa-solid fa-trash text-xs" />
+                            <Trash2 className="text-xs" />
                           </button>
                         )}
                       </div>
@@ -360,7 +362,7 @@ export const CollaborativeAnnotations: React.FC<CollaborativeAnnotationsProps> =
                           onClick={() => setShowReactionPicker(showReactionPicker === annotation.id ? null : annotation.id)}
                           className="p-1 text-zinc-400 hover:text-zinc-600 dark:hover:text-zinc-300 transition"
                         >
-                          <i className="fa-solid fa-face-smile text-xs" />
+                          <Smile className="text-xs" />
                         </button>
                         {showReactionPicker === annotation.id && (
                           <div className="flex items-center gap-1 p-1 bg-white dark:bg-zinc-700 rounded-lg shadow-lg border border-zinc-200 dark:border-zinc-600">
@@ -397,7 +399,7 @@ export const CollaborativeAnnotations: React.FC<CollaborativeAnnotationsProps> =
                           onClick={() => onResolve(annotation.id)}
                           className="text-[10px] text-green-600 dark:text-green-400 hover:text-green-700 dark:hover:text-green-300"
                         >
-                          <i className="fa-solid fa-check mr-1" />
+                          <Check className="mr-1" />
                           Resolve
                         </button>
                       )}
@@ -406,7 +408,7 @@ export const CollaborativeAnnotations: React.FC<CollaborativeAnnotationsProps> =
                           onClick={() => onReopen(annotation.id)}
                           className="text-[10px] text-amber-600 dark:text-amber-400 hover:text-amber-700 dark:hover:text-amber-300"
                         >
-                          <i className="fa-solid fa-undo mr-1" />
+                          <RotateCcw className="mr-1" />
                           Reopen
                         </button>
                       )}
@@ -450,7 +452,7 @@ export const CollaborativeAnnotations: React.FC<CollaborativeAnnotationsProps> =
                         {replyingTo === annotation.id ? (
                           <div className="flex items-start gap-2">
                             <div className="w-6 h-6 rounded-full bg-indigo-100 dark:bg-indigo-900/40 flex items-center justify-center">
-                              <i className="fa-solid fa-user text-indigo-500 text-[10px]" />
+                              <User className="text-indigo-500 text-[10px]" />
                             </div>
                             <div className="flex-1">
                               <textarea
@@ -486,7 +488,7 @@ export const CollaborativeAnnotations: React.FC<CollaborativeAnnotationsProps> =
                             onClick={() => setReplyingTo(annotation.id)}
                             className="text-[10px] text-indigo-600 dark:text-indigo-400 hover:text-indigo-700 dark:hover:text-indigo-300"
                           >
-                            <i className="fa-solid fa-reply mr-1" />
+                            <Reply className="mr-1" />
                             Add reply
                           </button>
                         )}
@@ -521,7 +523,7 @@ export const AnnotationButton: React.FC<{
       }`}
       title={count > 0 ? `${count} annotations` : 'Add annotation'}
     >
-      <i className="fa-solid fa-comment-dots text-xs" />
+      <MessageCircle className="text-xs" />
       {count > 0 && <span className="text-[10px] font-medium">{count}</span>}
     </button>
   );

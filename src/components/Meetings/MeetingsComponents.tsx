@@ -1,6 +1,8 @@
 import React, { useEffect, useRef, useState } from 'react';
 import { Contact, CalendarEvent, ArchiveItem } from '../../types';
+import { Activity, ArrowLeft, BarChart, Calendar, CalendarPlus, Check, CheckCircle2, ChevronDown, Copy, Download, FileText, Film, Gavel, Inbox, Info, Loader2, Megaphone, Mic, Monitor, PieChart, Play, PlayCircle, Plus, Search, Settings, Sliders, SplitSquareVertical, Square, Trash2, TrendingUp, Upload, UserPlus, Users, Video, VideoOff, Volume2, Wand2, X, Zap } from 'lucide-react';
 import {
+
   fetchMeetingAnalytics,
   getMeetingRecordings,
   getMeetingSettings,
@@ -221,7 +223,7 @@ export const HeroSection: React.FC<HeroSectionProps> = ({
     </div>
     <div className="meetings-hero-content">
       <div className="meetings-hero-icon">
-        <i className="fa-solid fa-video" />
+        <Video />
       </div>
       <h1 className="meetings-hero-title">Ready to connect?</h1>
       <p className="meetings-hero-subtitle">
@@ -283,7 +285,7 @@ export const PlatformCards: React.FC<PlatformCardsProps> = ({
             onClick={() => onBulkInvite(platform.id)}
             title="Invite contacts"
           >
-            <i className="fa-solid fa-user-plus" />
+            <UserPlus />
           </button>
         </div>
       </div>
@@ -321,7 +323,7 @@ export const FeatureCards: React.FC<FeatureCardsProps> = ({
         <div className="meetings-feature-desc">{feature.description}</div>
         {feature.badge && (
           <div className="meetings-feature-badge">
-            <i className="fa-solid fa-circle-info" />
+            <Info />
             {feature.id === 'actions' && pendingActions > 0
               ? `${pendingActions} pending`
               : feature.badge
@@ -354,7 +356,7 @@ export const MeetingHistory: React.FC<MeetingHistoryProps> = ({
         onClick={() => onNoteClick(note)}
       >
         <div className="meetings-history-icon">
-          <i className="fa-solid fa-file-lines" />
+          <FileText />
         </div>
         <div className="meetings-history-info">
           <div className="meetings-history-title">{note.title}</div>
@@ -371,7 +373,7 @@ export const MeetingHistory: React.FC<MeetingHistoryProps> = ({
     ))}
     {notes.length === 0 && (
       <div className="meetings-empty">
-        <i className="fa-solid fa-inbox" style={{ fontSize: 24, marginBottom: 12, opacity: 0.3 }} />
+        <Inbox />
         <div>No meeting history found</div>
       </div>
     )}
@@ -396,7 +398,7 @@ export const UpcomingMeetings: React.FC<UpcomingMeetingsProps> = ({
   <div className="meetings-upcoming-card">
     <div className="meetings-section-header">
       <div className="meetings-section-title">
-        <i className="fa-solid fa-calendar-day" />
+        <Calendar />
         Upcoming
       </div>
       <button className="meetings-section-action">View All</button>
@@ -447,7 +449,7 @@ export const UpcomingMeetings: React.FC<UpcomingMeetingsProps> = ({
       )}
     </div>
     <button className="meetings-schedule-btn" onClick={onSchedule}>
-      <i className="fa-solid fa-calendar-plus" />
+      <CalendarPlus />
       Schedule New Meeting
     </button>
   </div>
@@ -465,25 +467,25 @@ export const QuickActions: React.FC<QuickActionsProps> = ({ onAction }) => (
   <div className="meetings-quick-actions">
     <div className="meetings-section-header">
       <div className="meetings-section-title">
-        <i className="fa-solid fa-bolt" />
+        <Zap />
         Quick Actions
       </div>
     </div>
     <div className="meetings-quick-grid">
       <button className="meetings-quick-btn" onClick={() => onAction('share-screen')}>
-        <i className="fa-solid fa-display" />
+        <Monitor />
         <span>Share Screen</span>
       </button>
       <button className="meetings-quick-btn" onClick={() => onAction('test-audio')}>
-        <i className="fa-solid fa-microphone" />
+        <Mic />
         <span>Test Audio</span>
       </button>
       <button className="meetings-quick-btn" onClick={() => onAction('test-video')}>
-        <i className="fa-solid fa-video" />
+        <Video />
         <span>Test Video</span>
       </button>
       <button className="meetings-quick-btn" onClick={() => onAction('settings')}>
-        <i className="fa-solid fa-gear" />
+        <Settings />
         <span>Settings</span>
       </button>
     </div>
@@ -504,7 +506,7 @@ export const MeetingInsightsCard: React.FC<MeetingInsightsCardProps> = ({
   <div className="meetings-insights-card">
     <div className="meetings-section-header">
       <div className="meetings-section-title">
-        <i className="fa-solid fa-chart-line" />
+        <TrendingUp />
         This Week
       </div>
     </div>
@@ -565,7 +567,7 @@ export const BulkInviteModal: React.FC<BulkInviteModalProps> = ({
             Invite to {platformConfig?.label || 'Meeting'}
           </div>
           <button className="meetings-modal-close" onClick={onClose}>
-            <i className="fa-solid fa-xmark" />
+            <X />
           </button>
         </div>
         <div className="meetings-modal-body">
@@ -581,7 +583,7 @@ export const BulkInviteModal: React.FC<BulkInviteModalProps> = ({
                   style={{ backgroundColor: contact.avatarColor || '#7c3aed' }}
                 >
                   {selectedContacts.has(contact.id)
-                    ? <i className="fa-solid fa-check" />
+                    ? <Check />
                     : contact.name.charAt(0)
                   }
                 </div>
@@ -633,7 +635,7 @@ export const TemplatesModal: React.FC<TemplatesModalProps> = ({
         <div className="meetings-modal-header">
           <div className="meetings-modal-title">Meeting Templates</div>
           <button className="meetings-modal-close" onClick={onClose}>
-            <i className="fa-solid fa-xmark" />
+            <X />
           </button>
         </div>
         <div className="meetings-modal-body">
@@ -706,7 +708,7 @@ export const AgendaBuilderModal: React.FC<AgendaBuilderModalProps> = ({
         <div className="meetings-modal-header">
           <div className="meetings-modal-title">Build Agenda</div>
           <button className="meetings-modal-close" onClick={onClose}>
-            <i className="fa-solid fa-xmark" />
+            <X />
           </button>
         </div>
         <div className="meetings-modal-body">
@@ -735,7 +737,7 @@ export const AgendaBuilderModal: React.FC<AgendaBuilderModalProps> = ({
               onClick={handleAdd}
               style={{ padding: '12px 16px' }}
             >
-              <i className="fa-solid fa-plus" />
+              <Plus />
             </button>
           </div>
 
@@ -783,7 +785,7 @@ export const AgendaBuilderModal: React.FC<AgendaBuilderModalProps> = ({
                     padding: 4,
                   }}
                 >
-                  <i className="fa-solid fa-trash" />
+                  <Trash2 />
                 </button>
               </div>
             ))}
@@ -849,7 +851,7 @@ export const ActionItemsModal: React.FC<ActionItemsModalProps> = ({
         <div className="meetings-modal-header">
           <div className="meetings-modal-title">Action Items</div>
           <button className="meetings-modal-close" onClick={onClose}>
-            <i className="fa-solid fa-xmark" />
+            <X />
           </button>
         </div>
         <div className="meetings-modal-body">
@@ -878,7 +880,7 @@ export const ActionItemsModal: React.FC<ActionItemsModalProps> = ({
               onClick={handleAdd}
               style={{ padding: '12px 16px' }}
             >
-              <i className="fa-solid fa-plus" />
+              <Plus />
             </button>
           </div>
 
@@ -916,7 +918,7 @@ export const ActionItemsModal: React.FC<ActionItemsModalProps> = ({
                   }}
                 >
                   {item.status === 'completed' && (
-                    <i className="fa-solid fa-check" style={{ fontSize: 12 }} />
+                    <Check />
                   )}
                 </button>
                 <span style={{
@@ -980,7 +982,7 @@ export const Toast: React.FC<ToastProps> = ({ message, isVisible }) => {
 
   return (
     <div className="meetings-toast">
-      <i className="fa-solid fa-check" />
+      <Check />
       {message}
     </div>
   );
@@ -1056,11 +1058,11 @@ export const AnalyticsModal: React.FC<AnalyticsModalProps> = ({ isOpen, onClose 
       <div className="meetings-modal meetings-modal--wide" onClick={e => e.stopPropagation()}>
         <div className="meetings-modal-header">
           <div className="meetings-modal-title">
-            <i className="fa-solid fa-chart-pie" style={{ marginRight: 8, color: 'var(--mtg-accent-primary)' }} />
+            <PieChart />
             Meeting Analytics
           </div>
           <button className="meetings-modal-close" onClick={onClose}>
-            <i className="fa-solid fa-xmark" />
+            <X />
           </button>
         </div>
 
@@ -1080,12 +1082,12 @@ export const AnalyticsModal: React.FC<AnalyticsModalProps> = ({ isOpen, onClose 
 
           {loading ? (
             <div className="meetings-analytics-empty">
-              <i className="fa-solid fa-spinner fa-spin" style={{ fontSize: 24, marginBottom: 12 }} />
+              <Loader2 className="animate-spin" />
               <div>Loading analytics...</div>
             </div>
           ) : !data || data.totalMeetings === 0 ? (
             <div className="meetings-analytics-empty">
-              <i className="fa-solid fa-chart-bar" style={{ fontSize: 36, marginBottom: 12, opacity: 0.2 }} />
+              <BarChart />
               <div style={{ fontWeight: 600, marginBottom: 6 }}>No data yet</div>
               <div style={{ fontSize: 12, opacity: 0.7 }}>Start a Pulse meeting with AI Scribe to populate analytics.</div>
             </div>
@@ -1177,7 +1179,7 @@ export const AnalyticsModal: React.FC<AnalyticsModalProps> = ({ isOpen, onClose 
                       <div className="meetings-decisions-list">
                         {data.topDecisions.slice(0, 4).map((d, i) => (
                           <div key={i} className="meetings-decision-item">
-                            <i className="fa-solid fa-circle-check" style={{ color: 'var(--mtg-accent-success)', marginTop: 1 }} />
+                            <CheckCircle2 />
                             <div>
                               <div className="meetings-decision-text">{d.decision}</div>
                               <div className="meetings-decision-meta">{d.meetingTitle} · {d.date.toLocaleDateString()}</div>
@@ -1356,18 +1358,18 @@ export const RecordingsModal: React.FC<RecordingsModalProps> = ({ isOpen, onClos
           {selected ? (
             <>
               <button className="meetings-back-btn" onClick={() => setSelected(null)}>
-                <i className="fa-solid fa-arrow-left" /> Back
+                <ArrowLeft /> Back
               </button>
               <div className="meetings-modal-title">{selected.title}</div>
             </>
           ) : (
             <div className="meetings-modal-title">
-              <i className="fa-solid fa-circle-play" style={{ marginRight: 8, color: 'var(--mtg-accent-danger)' }} />
+              <PlayCircle />
               Recordings
             </div>
           )}
           <button className="meetings-modal-close" onClick={onClose}>
-            <i className="fa-solid fa-xmark" />
+            <X />
           </button>
         </div>
 
@@ -1376,7 +1378,7 @@ export const RecordingsModal: React.FC<RecordingsModalProps> = ({ isOpen, onClos
             <>
               {/* Search */}
               <div className="meetings-recordings-search">
-                <i className="fa-solid fa-magnifying-glass meetings-recordings-search-icon" />
+                <Search className="meetings-recordings-search-icon" />
                 <input
                   type="text"
                   placeholder="Search recordings or transcripts..."
@@ -1387,12 +1389,12 @@ export const RecordingsModal: React.FC<RecordingsModalProps> = ({ isOpen, onClos
 
               {loading ? (
                 <div className="meetings-analytics-empty">
-                  <i className="fa-solid fa-spinner fa-spin" style={{ fontSize: 24, marginBottom: 12 }} />
+                  <Loader2 className="animate-spin" />
                   <div>Loading recordings...</div>
                 </div>
               ) : filtered.length === 0 ? (
                 <div className="meetings-analytics-empty">
-                  <i className="fa-solid fa-film" style={{ fontSize: 36, marginBottom: 12, opacity: 0.2 }} />
+                  <Film />
                   <div style={{ fontWeight: 600, marginBottom: 6 }}>No recordings found</div>
                   <div style={{ fontSize: 12, opacity: 0.7 }}>
                     {recordings.length === 0
@@ -1404,7 +1406,7 @@ export const RecordingsModal: React.FC<RecordingsModalProps> = ({ isOpen, onClos
                 filtered.map(r => (
                   <div key={r.id} className="meetings-recording-card" onClick={() => setSelected(r)}>
                     <div className="meetings-recording-thumb">
-                      <i className="fa-solid fa-circle-play" style={{ fontSize: 20 }} />
+                      <PlayCircle />
                     </div>
                     <div className="meetings-recording-info">
                       <div className="meetings-recording-title">{r.title}</div>
@@ -1415,7 +1417,7 @@ export const RecordingsModal: React.FC<RecordingsModalProps> = ({ isOpen, onClos
                       </div>
                     </div>
                     <div className="meetings-recording-play-btn">
-                      <i className="fa-solid fa-play" style={{ fontSize: 12 }} />
+                      <Play />
                     </div>
                   </div>
                 ))
@@ -1446,7 +1448,7 @@ export const RecordingsModal: React.FC<RecordingsModalProps> = ({ isOpen, onClos
                     {formatTime(currentTime)} / {formatTime(duration)}
                   </span>
                   <a href={selected.audioFileUrl} download className="meetings-download-btn">
-                    <i className="fa-solid fa-download" /> Download
+                    <Download /> Download
                   </a>
                 </div>
               </div>
@@ -1599,11 +1601,11 @@ export const DeviceTestModal: React.FC<DeviceTestModalProps> = ({ isOpen, onClos
       <div className="meetings-modal" onClick={e => e.stopPropagation()} style={{ maxWidth: 500 }}>
         <div className="meetings-modal-header">
           <div className="meetings-modal-title">
-            <i className="fa-solid fa-sliders" style={{ marginRight: 8, color: 'var(--mtg-accent-primary)' }} />
+            <Sliders />
             Device Test
           </div>
           <button className="meetings-modal-close" onClick={onClose}>
-            <i className="fa-solid fa-xmark" />
+            <X />
           </button>
         </div>
 
@@ -1612,7 +1614,7 @@ export const DeviceTestModal: React.FC<DeviceTestModalProps> = ({ isOpen, onClos
           <div className="meetings-device-section">
             <div className="meetings-device-section-header">
               <div className="meetings-device-section-title">
-                <i className="fa-solid fa-microphone" />
+                <Mic />
                 Microphone
               </div>
               <PermissionBadge perm={micPermission} />
@@ -1639,7 +1641,7 @@ export const DeviceTestModal: React.FC<DeviceTestModalProps> = ({ isOpen, onClos
           <div className="meetings-device-section">
             <div className="meetings-device-section-header">
               <div className="meetings-device-section-title">
-                <i className="fa-solid fa-video" />
+                <Video />
                 Camera
               </div>
               <PermissionBadge perm={cameraPermission} />
@@ -1665,7 +1667,7 @@ export const DeviceTestModal: React.FC<DeviceTestModalProps> = ({ isOpen, onClos
               />
             ) : (
               <div className="meetings-camera-off">
-                <i className="fa-solid fa-video-slash" />
+                <VideoOff />
                 Camera not available
               </div>
             )}
@@ -1675,7 +1677,7 @@ export const DeviceTestModal: React.FC<DeviceTestModalProps> = ({ isOpen, onClos
           <div className="meetings-device-section">
             <div className="meetings-device-section-header">
               <div className="meetings-device-section-title">
-                <i className="fa-solid fa-volume-high" />
+                <Volume2 />
                 Speaker
               </div>
             </div>
@@ -1749,11 +1751,11 @@ export const MeetingSettingsModal: React.FC<MeetingSettingsModalProps> = ({ isOp
       <div className="meetings-modal meetings-modal--wide" onClick={e => e.stopPropagation()}>
         <div className="meetings-modal-header">
           <div className="meetings-modal-title">
-            <i className="fa-solid fa-gear" style={{ marginRight: 8, color: 'var(--mtg-accent-primary)' }} />
+            <Settings />
             Meeting Settings
           </div>
           <button className="meetings-modal-close" onClick={onClose}>
-            <i className="fa-solid fa-xmark" />
+            <X />
           </button>
         </div>
 
@@ -1907,7 +1909,7 @@ export const MeetingSettingsModal: React.FC<MeetingSettingsModalProps> = ({ isOp
                           <div className="meetings-calendar-card-note">{opt.note}</div>
                         </div>
                         {settings.calendarSync === opt.id && (
-                          <i className="fa-solid fa-circle-check" style={{ color: 'var(--mtg-accent-primary)', flexShrink: 0 }} />
+                          <CheckCircle2 />
                         )}
                       </button>
                     ))}
@@ -1925,7 +1927,7 @@ export const MeetingSettingsModal: React.FC<MeetingSettingsModalProps> = ({ isOp
             onClick={handleSave}
           >
             {saved ? (
-              <><i className="fa-solid fa-check" style={{ marginRight: 6 }} />Saved!</>
+              <><Check />Saved!</>
             ) : (
               'Save Settings'
             )}
@@ -2040,11 +2042,11 @@ export const BreakoutRoomsModal: React.FC<BreakoutRoomsModalProps> = ({
       <div className="meetings-modal meetings-modal--wide" onClick={e => e.stopPropagation()} style={{ maxWidth: 900 }}>
         <div className="meetings-modal-header">
           <div className="meetings-modal-title">
-            <i className="fa-solid fa-arrows-split-up-and-left" style={{ marginRight: 8, color: 'var(--mtg-accent-primary)' }} />
+            <SplitSquareVertical />
             Breakout Rooms
           </div>
           <button className="meetings-modal-close" onClick={onClose}>
-            <i className="fa-solid fa-xmark" />
+            <X />
           </button>
         </div>
 
@@ -2113,7 +2115,7 @@ export const BreakoutRoomsModal: React.FC<BreakoutRoomsModalProps> = ({
                           className="meetings-breakout-assigned-remove"
                           onClick={e => { e.stopPropagation(); unassignFromRoom(room.id, p.id); }}
                         >
-                          <i className="fa-solid fa-xmark" />
+                          <X />
                         </button>
                       </div>
                     ))}
@@ -2121,7 +2123,7 @@ export const BreakoutRoomsModal: React.FC<BreakoutRoomsModalProps> = ({
                 </div>
               ))}
               <button className="meetings-breakout-add-room" onClick={addRoom}>
-                <i className="fa-solid fa-plus" /> Add Room
+                <Plus /> Add Room
               </button>
             </div>
 
@@ -2163,9 +2165,9 @@ export const BreakoutRoomsModal: React.FC<BreakoutRoomsModalProps> = ({
                   onClick={() => setActive(!active)}
                 >
                   {active ? (
-                    <><i className="fa-solid fa-stop" style={{ marginRight: 6 }} />End Breakout</>
+                    <><Square />End Breakout</>
                   ) : (
-                    <><i className="fa-solid fa-play" style={{ marginRight: 6 }} />Start Breakout</>
+                    <><Play />Start Breakout</>
                   )}
                 </button>
 
@@ -2199,13 +2201,13 @@ export const BreakoutRoomsModal: React.FC<BreakoutRoomsModalProps> = ({
                   </div>
                 ) : (
                   <button className="meetings-breakout-broadcast-btn" onClick={() => setBroadcastMode(true)}>
-                    <i className="fa-solid fa-bullhorn" /> Broadcast to All
+                    <Megaphone /> Broadcast to All
                   </button>
                 )}
 
                 {/* Recall */}
                 <button className="meetings-breakout-recall-btn" onClick={onClose}>
-                  <i className="fa-solid fa-users" /> Call Everyone Back
+                  <Users /> Call Everyone Back
                 </button>
               </div>
             </div>
@@ -2281,7 +2283,7 @@ export const MeetingSummaryView: React.FC<MeetingSummaryViewProps> = ({ data, lo
       {/* Header */}
       <div className="meetings-summary-header">
         <button className="meetings-summary-back" onClick={onBack}>
-          <i className="fa-solid fa-arrow-left" /> Back
+          <ArrowLeft /> Back
         </button>
 
         <div className="meetings-summary-title-block">
@@ -2318,18 +2320,18 @@ export const MeetingSummaryView: React.FC<MeetingSummaryViewProps> = ({ data, lo
             className="meetings-summary-export-trigger"
             onClick={() => setShowExportMenu(!showExportMenu)}
           >
-            <i className="fa-solid fa-arrow-up-from-bracket" />
+            <Upload />
             Export
-            <i className="fa-solid fa-chevron-down" style={{ fontSize: 10 }} />
+            <ChevronDown />
           </button>
           {showExportMenu && (
             <div className="meetings-summary-export-menu">
               <button onClick={copyToClipboard}>
-                <i className="fa-solid fa-copy" />
+                <Copy />
                 Copy as Markdown
               </button>
               <button onClick={() => { window.print(); setShowExportMenu(false); }}>
-                <i className="fa-solid fa-file-pdf" />
+                <FileText />
                 Save as PDF
               </button>
             </div>
@@ -2342,7 +2344,7 @@ export const MeetingSummaryView: React.FC<MeetingSummaryViewProps> = ({ data, lo
         {/* AI Summary */}
         <div className="meetings-summary-card">
           <div className="meetings-summary-card-header">
-            <i className="fa-solid fa-wand-magic-sparkles" />
+            <Wand2 />
             AI Summary
           </div>
           {loading ? (
@@ -2371,7 +2373,7 @@ export const MeetingSummaryView: React.FC<MeetingSummaryViewProps> = ({ data, lo
             {/* Action Items */}
             <div className="meetings-summary-card">
               <div className="meetings-summary-card-header">
-                <i className="fa-solid fa-circle-check" />
+                <CheckCircle2 />
                 Action Items ({actionItems.length})
               </div>
               {actionItems.length === 0 ? (
@@ -2382,7 +2384,7 @@ export const MeetingSummaryView: React.FC<MeetingSummaryViewProps> = ({ data, lo
                     className={`meetings-summary-action-toggle ${item.status === 'completed' ? 'done' : ''}`}
                     onClick={() => toggleActionItem(item.id)}
                   >
-                    {item.status === 'completed' && <i className="fa-solid fa-check" style={{ fontSize: 10 }} />}
+                    {item.status === 'completed' && <Check />}
                   </button>
                   <div className="meetings-summary-action-text">
                     <div className={item.status === 'completed' ? 'done' : ''}>{item.title}</div>
@@ -2399,14 +2401,14 @@ export const MeetingSummaryView: React.FC<MeetingSummaryViewProps> = ({ data, lo
             {/* Decisions */}
             <div className="meetings-summary-card">
               <div className="meetings-summary-card-header">
-                <i className="fa-solid fa-gavel" />
+                <Gavel />
                 Key Decisions ({data.decisions.length})
               </div>
               {data.decisions.length === 0 ? (
                 <div style={{ fontSize: 12, color: 'var(--mtg-text-muted)' }}>No key decisions identified.</div>
               ) : data.decisions.map((d, i) => (
                 <div key={i} className="meetings-summary-decision">
-                  <i className="fa-solid fa-circle-check" />
+                  <CheckCircle2 />
                   <div className="meetings-summary-decision-text">{d}</div>
                 </div>
               ))}
@@ -2418,7 +2420,7 @@ export const MeetingSummaryView: React.FC<MeetingSummaryViewProps> = ({ data, lo
         {!loading && data && data.timelineEvents.length > 0 && (
           <div className="meetings-summary-card">
             <div className="meetings-summary-card-header">
-              <i className="fa-solid fa-timeline" />
+              <Activity />
               Meeting Timeline
             </div>
             <div className="meetings-summary-timeline">

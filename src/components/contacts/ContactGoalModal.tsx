@@ -13,6 +13,8 @@ import {
 } from '../../types/contactGoalTypes';
 import { Contact } from '../../types';
 
+import { Bot, X } from 'lucide-react';
+
 // ==================== TYPES ====================
 
 interface ContactGoalModalProps {
@@ -109,7 +111,7 @@ export const ContactGoalModal: React.FC<ContactGoalModalProps> = ({
             onClick={onClose}
             className="p-2 rounded-lg hover:bg-zinc-100 dark:hover:bg-zinc-800 text-zinc-500 transition"
           >
-            <i className="fa-solid fa-xmark" />
+            <X />
           </button>
         </div>
 
@@ -189,7 +191,7 @@ export const ContactGoalModal: React.FC<ContactGoalModalProps> = ({
           <div className="flex items-start justify-between p-3 bg-indigo-50 dark:bg-indigo-900/20 rounded-xl border border-indigo-100 dark:border-indigo-800/40">
             <div className="flex-1 mr-3">
               <div className="flex items-center gap-1.5">
-                <i className="fa-solid fa-robot text-indigo-500 text-xs" />
+                <Bot className="text-indigo-500 text-xs" />
                 <span className="text-sm font-semibold text-indigo-800 dark:text-indigo-200">
                   Autopilot
                 </span>

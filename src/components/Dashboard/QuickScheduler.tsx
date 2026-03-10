@@ -4,6 +4,8 @@ import { dataService } from '../../services/dataService';
 import { createGoogleCalendarEvent, getSessionUserSync } from '../../services/authService';
 import { googleCalendarService } from '../../services/googleCalendarService';
 
+import { CalendarCheck, CalendarPlus, ChevronLeft, ChevronRight, ExternalLink, Loader2, MapPin, Plus, Search, Trash2, Users, Video, X } from 'lucide-react';
+
 interface ScheduledEvent {
   id: string;
   title: string;
@@ -306,7 +308,7 @@ const QuickScheduler: React.FC<QuickSchedulerProps> = ({ onEventCreated }) => {
       {/* Header */}
       <div className="flex justify-between items-center mb-6 pb-4 border-b border-zinc-100 dark:border-zinc-900">
         <div className="flex items-center gap-2">
-          <i className="fa-solid fa-calendar-plus text-blue-500"></i>
+          <CalendarPlus className="text-blue-500" />
           <h3 className="font-medium text-lg dark:text-white text-zinc-900">Quick Scheduler</h3>
           {hasCalendarSync && (
             <span className="text-[10px] px-1.5 py-0.5 bg-emerald-100 dark:bg-emerald-900/30 text-emerald-600 dark:text-emerald-400 rounded font-semibold">
@@ -335,7 +337,7 @@ const QuickScheduler: React.FC<QuickSchedulerProps> = ({ onEventCreated }) => {
           {/* Selected Date Header */}
           <div className="mb-3 pb-3 border-b border-zinc-200 dark:border-zinc-800">
             <div className="flex items-center gap-2 text-blue-600 dark:text-blue-400">
-              <i className="fa-solid fa-calendar-check"></i>
+              <CalendarCheck />
               <span className="text-sm font-semibold">{formatSelectedDate()}</span>
             </div>
           </div>
@@ -398,7 +400,7 @@ const QuickScheduler: React.FC<QuickSchedulerProps> = ({ onEventCreated }) => {
                         onClick={() => handleRemoveAttendee(attendee.id)}
                         className="hover:text-red-500 transition"
                       >
-                        <i className="fa-solid fa-times text-[10px]"></i>
+                        <X className="text-[10px]" />
                       </button>
                     </span>
                   ))}
@@ -407,7 +409,7 @@ const QuickScheduler: React.FC<QuickSchedulerProps> = ({ onEventCreated }) => {
 
               {/* Search Input */}
               <div className="relative">
-                <i className="fa-solid fa-search absolute left-3 top-1/2 -translate-y-1/2 text-zinc-400 text-xs"></i>
+                <Search className="absolute left-3 top-1/2 -translate-y-1/2 text-zinc-400 text-xs" />
                 <input
                   ref={attendeeInputRef}
                   type="text"
@@ -475,12 +477,12 @@ const QuickScheduler: React.FC<QuickSchedulerProps> = ({ onEventCreated }) => {
             >
               {isSyncing ? (
                 <>
-                  <i className="fa-solid fa-circle-notch fa-spin"></i>
+                  <Loader2 className="animate-spin" />
                   Syncing...
                 </>
               ) : (
                 <>
-                  <i className="fa-solid fa-plus"></i>
+                  <Plus />
                   Schedule Event
                 </>
               )}
@@ -497,7 +499,7 @@ const QuickScheduler: React.FC<QuickSchedulerProps> = ({ onEventCreated }) => {
             className="w-8 h-8 rounded-full hover:bg-zinc-100 dark:hover:bg-zinc-900 text-zinc-400 hover:text-zinc-900 dark:hover:text-white transition flex items-center justify-center"
             onClick={handlePrevMonth}
           >
-            <i className="fa-solid fa-chevron-left text-xs"></i>
+            <ChevronLeft className="text-xs" />
           </button>
           <h4 className="text-sm font-semibold dark:text-white text-zinc-900">
             {currentDate.toLocaleString('default', { month: 'long', year: 'numeric' })}
@@ -506,7 +508,7 @@ const QuickScheduler: React.FC<QuickSchedulerProps> = ({ onEventCreated }) => {
             className="w-8 h-8 rounded-full hover:bg-zinc-100 dark:hover:bg-zinc-900 text-zinc-400 hover:text-zinc-900 dark:hover:text-white transition flex items-center justify-center"
             onClick={handleNextMonth}
           >
-            <i className="fa-solid fa-chevron-right text-xs"></i>
+            <ChevronRight className="text-xs" />
           </button>
         </div>
 
@@ -586,13 +588,13 @@ const QuickScheduler: React.FC<QuickSchedulerProps> = ({ onEventCreated }) => {
           </h4>
           <span className="text-[10px] text-zinc-500">
             {selectedDayEvents.length + getEventsForDay(selectedDay || new Date().getDate()).length} events
-            {loadingGoogleEvents && <i className="fa-solid fa-circle-notch fa-spin ml-1"></i>}
+            {loadingGoogleEvents && <Loader2 className="ml-1 animate-spin" />}
           </span>
         </div>
 
         {selectedDayEvents.length === 0 && getEventsForDay(selectedDay || new Date().getDate()).length === 0 ? (
           <div className="text-center py-6 text-zinc-400 text-sm">
-            <i className="fa-regular fa-calendar-check mb-2 text-xl"></i>
+            <CalendarCheck className="mb-2 text-xl" />
             <p className="font-light text-xs">No events scheduled</p>
             <p className="text-[10px] text-zinc-500 mt-1">Click a day to view events</p>
           </div>
@@ -608,7 +610,7 @@ const QuickScheduler: React.FC<QuickSchedulerProps> = ({ onEventCreated }) => {
                 >
                   <div className="flex-shrink-0 w-10 text-center">
                     <div className="text-[10px] font-bold text-emerald-500 uppercase">
-                      <i className="fa-brands fa-google"></i>
+                      <ExternalLink />
                     </div>
                     <div className="text-sm font-bold text-zinc-900 dark:text-white">
                       {new Date(event.start).toLocaleTimeString('en-US', { hour: 'numeric', minute: '2-digit', hour12: true })}
@@ -618,7 +620,7 @@ const QuickScheduler: React.FC<QuickSchedulerProps> = ({ onEventCreated }) => {
                     <h5 className="text-sm font-semibold text-zinc-900 dark:text-white truncate">{event.title}</h5>
                     {event.location && (
                       <div className="flex items-center gap-1 mt-1 text-xs text-zinc-500">
-                        <i className="fa-solid fa-location-dot text-[10px]"></i>
+                        <MapPin className="text-[10px]" />
                         <span className="truncate">{event.location}</span>
                       </div>
                     )}
@@ -629,13 +631,13 @@ const QuickScheduler: React.FC<QuickSchedulerProps> = ({ onEventCreated }) => {
                         rel="noopener noreferrer"
                         className="inline-flex items-center gap-1 mt-1 text-[10px] text-blue-500 hover:text-blue-600 transition"
                       >
-                        <i className="fa-solid fa-video"></i>
+                        <Video />
                         Join Meet
                       </a>
                     )}
                     {(event.attendees?.length ?? 0) > 0 && (
                       <div className="flex items-center gap-1 mt-1 text-[10px] text-zinc-400">
-                        <i className="fa-solid fa-users"></i>
+                        <Users />
                         <span>{event.attendees?.length} attendee{(event.attendees?.length ?? 0) > 1 ? 's' : ''}</span>
                       </div>
                     )}
@@ -653,7 +655,7 @@ const QuickScheduler: React.FC<QuickSchedulerProps> = ({ onEventCreated }) => {
                 >
                   <div className="flex-shrink-0 w-10 text-center">
                     <div className="text-[10px] font-bold text-blue-500 uppercase">
-                      {event.synced === 'google' ? <i className="fa-brands fa-google"></i> : 'New'}
+                      {event.synced === 'google' ? <ExternalLink /> : 'New'}
                     </div>
                     <div className="text-sm font-bold text-zinc-900 dark:text-white">
                       {event.time}
@@ -671,7 +673,7 @@ const QuickScheduler: React.FC<QuickSchedulerProps> = ({ onEventCreated }) => {
                         rel="noopener noreferrer"
                         className="inline-flex items-center gap-1 mt-1 text-[10px] text-blue-500 hover:text-blue-600 transition"
                       >
-                        <i className="fa-solid fa-video"></i>
+                        <Video />
                         Join Meet
                       </a>
                     )}
@@ -680,7 +682,7 @@ const QuickScheduler: React.FC<QuickSchedulerProps> = ({ onEventCreated }) => {
                     onClick={() => handleDeleteEvent(event.id)}
                     className="opacity-0 group-hover:opacity-100 w-6 h-6 rounded flex items-center justify-center text-zinc-400 hover:text-red-500 hover:bg-red-50 dark:hover:bg-red-900/20 transition"
                   >
-                    <i className="fa-solid fa-trash text-xs"></i>
+                    <Trash2 className="text-xs" />
                   </button>
                 </div>
               ))}

@@ -1,6 +1,8 @@
 // Message Scheduling & Reminders System
 import React, { useState, useMemo } from 'react';
 
+import { AlarmClock, Bell, Clock, MessageSquare, Pen, Repeat, Send, Trash2, X } from 'lucide-react';
+
 interface ScheduledMessage {
   id: string;
   content: string;
@@ -180,7 +182,7 @@ export const MessageScheduling: React.FC<MessageSchedulingProps> = ({
       <div className="flex items-center gap-2">
         {upcomingCount > 0 && (
           <div className="flex items-center gap-1.5 px-2 py-1 rounded-full bg-amber-100 dark:bg-amber-900/40 text-amber-600 dark:text-amber-400">
-            <i className="fa-solid fa-clock text-xs" />
+            <Clock className="text-xs" />
             <span className="text-xs font-medium">{upcomingCount} upcoming</span>
           </div>
         )}
@@ -195,7 +197,7 @@ export const MessageScheduling: React.FC<MessageSchedulingProps> = ({
         <div className="flex items-center justify-between mb-3">
           <div className="flex items-center gap-2">
             <div className="w-8 h-8 rounded-full bg-amber-100 dark:bg-amber-900/40 flex items-center justify-center">
-              <i className="fa-solid fa-clock text-amber-500 text-sm" />
+              <Clock className="text-amber-500 text-sm" />
             </div>
             <div>
               <h3 className="text-sm font-bold text-zinc-800 dark:text-white">Schedule & Reminders</h3>
@@ -211,7 +213,7 @@ export const MessageScheduling: React.FC<MessageSchedulingProps> = ({
                 onClick={() => setShowScheduleModal(true)}
                 className="flex items-center gap-1 px-2 py-1 rounded-lg text-xs font-medium bg-amber-500 text-white hover:bg-amber-600 transition"
               >
-                <i className="fa-solid fa-paper-plane" />
+                <Send />
                 Schedule
               </button>
             )}
@@ -220,7 +222,7 @@ export const MessageScheduling: React.FC<MessageSchedulingProps> = ({
                 onClick={() => setShowReminderModal(true)}
                 className="flex items-center gap-1 px-2 py-1 rounded-lg text-xs font-medium bg-purple-500 text-white hover:bg-purple-600 transition"
               >
-                <i className="fa-solid fa-bell" />
+                <Bell />
                 Remind
               </button>
             )}
@@ -237,7 +239,7 @@ export const MessageScheduling: React.FC<MessageSchedulingProps> = ({
                 : 'text-zinc-600 dark:text-zinc-400 hover:text-zinc-800 dark:hover:text-white'
             }`}
           >
-            <i className="fa-solid fa-paper-plane" />
+            <Send />
             Scheduled ({(scheduledMessages || []).filter(m => m.status === 'pending').length})
           </button>
           <button
@@ -248,7 +250,7 @@ export const MessageScheduling: React.FC<MessageSchedulingProps> = ({
                 : 'text-zinc-600 dark:text-zinc-400 hover:text-zinc-800 dark:hover:text-white'
             }`}
           >
-            <i className="fa-solid fa-bell" />
+            <Bell />
             Reminders ({(reminders || []).filter(r => !r.completed).length})
           </button>
         </div>
@@ -278,7 +280,7 @@ export const MessageScheduling: React.FC<MessageSchedulingProps> = ({
           filteredScheduled.length === 0 ? (
             <div className="p-8 text-center">
               <div className="w-12 h-12 rounded-full bg-zinc-100 dark:bg-zinc-700 flex items-center justify-center mx-auto mb-3">
-                <i className="fa-solid fa-paper-plane text-zinc-400 text-lg" />
+                <Send className="text-zinc-400 text-lg" />
               </div>
               <p className="text-sm text-zinc-500 dark:text-zinc-400">No scheduled messages</p>
               <p className="text-xs text-zinc-400 dark:text-zinc-500 mt-1">
@@ -314,12 +316,12 @@ export const MessageScheduling: React.FC<MessageSchedulingProps> = ({
                       </p>
                       <div className="flex items-center gap-3 mt-2">
                         <span className={`text-[10px] font-medium ${timeInfo.isOverdue ? 'text-red-500' : 'text-zinc-500'}`} title={timeInfo.absolute}>
-                          <i className="fa-solid fa-clock mr-1" />
+                          <Clock className="mr-1" />
                           {timeInfo.relative}
                         </span>
                         {message.recurring && (
                           <span className="text-[10px] text-purple-500">
-                            <i className="fa-solid fa-repeat mr-1" />
+                            <Repeat className="mr-1" />
                             {message.recurring.frequency}
                           </span>
                         )}
@@ -335,7 +337,7 @@ export const MessageScheduling: React.FC<MessageSchedulingProps> = ({
                             }}
                             className="p-1 text-zinc-400 hover:text-indigo-500 transition"
                           >
-                            <i className="fa-solid fa-pen text-xs" />
+                            <Pen className="text-xs" />
                           </button>
                         )}
                         {onCancelScheduled && (
@@ -343,7 +345,7 @@ export const MessageScheduling: React.FC<MessageSchedulingProps> = ({
                             onClick={() => onCancelScheduled(message.id)}
                             className="p-1 text-zinc-400 hover:text-red-500 transition"
                           >
-                            <i className="fa-solid fa-times text-xs" />
+                            <X className="text-xs" />
                           </button>
                         )}
                       </div>
@@ -357,7 +359,7 @@ export const MessageScheduling: React.FC<MessageSchedulingProps> = ({
           filteredReminders.length === 0 ? (
             <div className="p-8 text-center">
               <div className="w-12 h-12 rounded-full bg-zinc-100 dark:bg-zinc-700 flex items-center justify-center mx-auto mb-3">
-                <i className="fa-solid fa-bell text-zinc-400 text-lg" />
+                <Bell className="text-zinc-400 text-lg" />
               </div>
               <p className="text-sm text-zinc-500 dark:text-zinc-400">No reminders</p>
               <p className="text-xs text-zinc-400 dark:text-zinc-500 mt-1">
@@ -404,11 +406,11 @@ export const MessageScheduling: React.FC<MessageSchedulingProps> = ({
                       )}
                       <div className="flex items-center gap-3 mt-2">
                         <span className="text-[10px] text-zinc-500">
-                          <i className="fa-solid fa-comment mr-1" />
+                          <MessageSquare className="mr-1" />
                           {reminder.threadName}
                         </span>
                         <span className={`text-[10px] font-medium ${timeInfo.isOverdue && !reminder.completed ? 'text-red-500' : 'text-zinc-500'}`} title={timeInfo.absolute}>
-                          <i className="fa-solid fa-clock mr-1" />
+                          <Clock className="mr-1" />
                           {timeInfo.relative}
                         </span>
                       </div>
@@ -424,7 +426,7 @@ export const MessageScheduling: React.FC<MessageSchedulingProps> = ({
                             className="p-1 text-zinc-400 hover:text-amber-500 transition"
                             title="Snooze 1 hour"
                           >
-                            <i className="fa-solid fa-snooze text-xs" />
+                            <AlarmClock className="text-xs" />
                           </button>
                         )}
                         {onDeleteReminder && (
@@ -432,7 +434,7 @@ export const MessageScheduling: React.FC<MessageSchedulingProps> = ({
                             onClick={() => onDeleteReminder(reminder.id)}
                             className="p-1 text-zinc-400 hover:text-red-500 transition"
                           >
-                            <i className="fa-solid fa-trash text-xs" />
+                            <Trash2 className="text-xs" />
                           </button>
                         )}
                       </div>
@@ -754,7 +756,7 @@ export const ScheduleButton: React.FC<{
       }`}
       title="Schedule message"
     >
-      <i className="fa-solid fa-clock text-sm" />
+      <Clock className="text-sm" />
     </button>
   );
 };

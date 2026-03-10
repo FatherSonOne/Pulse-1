@@ -13,6 +13,8 @@ import { ToolCard } from './ToolCard';
 import { ContextualSuggestions } from './ContextualSuggestions';
 import { QuickAccessBar, MobileQuickAccessBar } from './QuickAccessBar';
 
+import { Search, X } from 'lucide-react';
+
 interface ToolsPanelProps {
   onToolSelect: (toolId: string) => void;
   onClose?: () => void;
@@ -148,7 +150,7 @@ export const ToolsPanel: React.FC<ToolsPanelProps> = ({
                 className="w-8 h-8 rounded-lg border border-zinc-200 dark:border-zinc-800 flex items-center justify-center hover:border-zinc-300 dark:hover:border-zinc-700 transition-colors"
                 aria-label="Close tools panel"
               >
-                <i className="fa-solid fa-times text-zinc-600 dark:text-zinc-400 text-sm"></i>
+                <X className="text-zinc-600 dark:text-zinc-400 text-sm" />
               </button>
             </div>
 
@@ -197,7 +199,7 @@ export const ToolsPanel: React.FC<ToolsPanelProps> = ({
             {/* Empty State */}
             {displayedTools.length === 0 && (
               <div className="flex flex-col items-center justify-center py-12 text-center">
-                <i className="fa-solid fa-magnifying-glass text-4xl text-zinc-300 dark:text-zinc-700 mb-4"></i>
+                <Search className="text-4xl text-zinc-300 dark:text-zinc-700 mb-4" />
                 <p className="text-sm text-zinc-500 dark:text-zinc-400">
                   No tools found matching "{searchQuery}"
                 </p>
@@ -248,7 +250,7 @@ export const ToolsPanel: React.FC<ToolsPanelProps> = ({
               className="w-8 h-8 rounded-lg border border-zinc-200 dark:border-zinc-800 flex items-center justify-center hover:border-zinc-300 dark:hover:border-zinc-700 transition-colors"
               aria-label="Close tools panel"
             >
-              <i className="fa-solid fa-times text-zinc-600 dark:text-zinc-400 text-sm"></i>
+              <X className="text-zinc-600 dark:text-zinc-400 text-sm" />
             </button>
           )}
         </div>
@@ -303,7 +305,7 @@ export const ToolsPanel: React.FC<ToolsPanelProps> = ({
         {/* Empty State */}
         {displayedTools.length === 0 && (
           <div className="flex flex-col items-center justify-center py-12 text-center">
-            <i className="fa-solid fa-magnifying-glass text-4xl text-zinc-300 dark:text-zinc-700 mb-4"></i>
+            <Search className="text-4xl text-zinc-300 dark:text-zinc-700 mb-4" />
             <p className="text-sm text-zinc-500 dark:text-zinc-400 mb-1">
               No tools found
             </p>

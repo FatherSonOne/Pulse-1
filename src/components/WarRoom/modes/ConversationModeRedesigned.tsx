@@ -3,6 +3,8 @@ import { AIMessage, ThinkingStep } from '../../../services/ragService';
 import { VoiceControl } from '../VoiceControl';
 import './ConversationModeRedesigned.css';
 
+import { Download, Feather, MessagesSquare, PenTool, Plus, Send, SquarePen, X } from 'lucide-react';
+
 interface ConversationModeRedesignedProps {
   messages: AIMessage[];
   isLoading: boolean;
@@ -205,7 +207,7 @@ export const ConversationModeRedesigned: React.FC<ConversationModeRedesignedProp
           <header className="cvr-header">
             <div className="cvr-header-left">
               <h2 className="cvr-header-title">
-                <i className="fa fa-comments" />
+                <MessagesSquare className="fa" />
                 Conversation
               </h2>
               {(isListening || isSpeaking || isLoading) && (
@@ -352,7 +354,7 @@ export const ConversationModeRedesigned: React.FC<ConversationModeRedesignedProp
                   disabled={!input.trim()}
                   className={`cvr-send-btn ${input.trim() ? 'active' : ''}`}
                 >
-                  <i className="fa fa-paper-plane" />
+                  <Send className="fa" />
                 </button>
               </div>
             </div>
@@ -364,7 +366,7 @@ export const ConversationModeRedesigned: React.FC<ConversationModeRedesignedProp
           {/* Notes Header */}
           <div className="cvr-notes-header">
             <div className="cvr-notes-title">
-              <i className="fa fa-pen-fancy" />
+              <PenTool className="fa" />
               Session Notes
               {notes.length > 0 && (
                 <span className="cvr-notes-count">{notes.length}</span>
@@ -372,14 +374,14 @@ export const ConversationModeRedesigned: React.FC<ConversationModeRedesignedProp
             </div>
             <div className="cvr-notes-actions">
               <button className="cvr-notes-btn" title="Export notes">
-                <i className="fa fa-download" />
+                <Download className="fa" />
               </button>
               <button
                 className="cvr-notes-btn"
                 onClick={() => setNotePanelVisible(false)}
                 title="Close panel"
               >
-                <i className="fa fa-times" />
+                <X className="fa" />
               </button>
             </div>
           </div>
@@ -387,7 +389,7 @@ export const ConversationModeRedesigned: React.FC<ConversationModeRedesignedProp
           {/* Scribe Status */}
           <div className="cvr-scribe-status">
             <div className={`cvr-scribe-avatar ${isScribeWriting ? 'writing' : ''}`}>
-              <i className="fa fa-feather-pointed" />
+              <Feather className="fa" />
             </div>
             <div className="cvr-scribe-info">
               <div className="cvr-scribe-name">Session Scribe</div>
@@ -412,7 +414,7 @@ export const ConversationModeRedesigned: React.FC<ConversationModeRedesignedProp
           <div className="cvr-notes-list">
             {notes.length === 0 && !writingNoteId ? (
               <div className="cvr-notes-empty">
-                <i className="fa fa-pen-to-square" />
+                <SquarePen className="fa" />
                 <p>No notes yet</p>
                 <span>The scribe will capture key moments</span>
               </div>
@@ -431,7 +433,7 @@ export const ConversationModeRedesigned: React.FC<ConversationModeRedesignedProp
                           className="cvr-note-action-btn"
                           title="Delete note"
                         >
-                          <i className="fa fa-times" />
+                          <X className="fa" />
                         </button>
                       </div>
                     </div>
@@ -494,7 +496,7 @@ export const ConversationModeRedesigned: React.FC<ConversationModeRedesignedProp
                 disabled={!newNoteText.trim()}
                 className="cvr-add-note-btn"
               >
-                <i className="fa fa-plus" style={{ marginRight: '0.375rem' }} />
+                <Plus className="fa" />
                 Add Note
               </button>
             </div>

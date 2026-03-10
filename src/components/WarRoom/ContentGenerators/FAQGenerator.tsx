@@ -3,6 +3,8 @@ import { KnowledgeDoc } from '../../../services/ragService';
 import { processWithModel } from '../../../services/geminiService';
 import toast from 'react-hot-toast';
 
+import { Copy, Download, FileText, HelpCircle, Loader2, Maximize2, Minimize2, RefreshCw, Search, Sparkles, X } from 'lucide-react';
+
 interface FAQItem {
   question: string;
   answer: string;
@@ -231,7 +233,7 @@ Requirements:
         <div className="p-4 border-b border-white/10 flex items-center justify-between shrink-0">
           <div className="flex items-center gap-3">
             <div className="w-10 h-10 bg-blue-500/20 rounded-lg flex items-center justify-center">
-              <i className="fa fa-circle-question text-blue-400"></i>
+              <HelpCircle className="fa text-blue-400" />
             </div>
             <div>
               <h3 className="text-lg font-bold">FAQ Generator</h3>
@@ -241,7 +243,7 @@ Requirements:
             </div>
           </div>
           <button onClick={onClose} className="war-room-btn war-room-btn-icon-sm">
-            <i className="fa fa-times"></i>
+            <X className="fa" />
           </button>
         </div>
 
@@ -251,7 +253,7 @@ Requirements:
             <div className="text-center py-8">
               {isGenerating ? (
                 <div>
-                  <i className="fa fa-spinner fa-spin text-4xl text-blue-400 mb-4"></i>
+                  <Loader2 className="fa text-4xl text-blue-400 mb-4 animate-spin" />
                   <p className="text-sm war-room-text-secondary mb-4">
                     Generating FAQ...
                   </p>
@@ -269,7 +271,7 @@ Requirements:
                 </div>
               ) : (
                 <div>
-                  <i className="fa fa-circle-question text-4xl text-blue-400 mb-4"></i>
+                  <HelpCircle className="fa text-4xl text-blue-400 mb-4" />
                   <p className="text-lg font-medium mb-2">Generate FAQ</p>
                   <p className="text-sm war-room-text-secondary mb-6 max-w-md mx-auto">
                     Automatically extract frequently asked questions and answers from your documents.
@@ -294,7 +296,7 @@ Requirements:
                     disabled={docsToUse.length === 0}
                     className="war-room-btn war-room-btn-primary"
                   >
-                    <i className="fa fa-sparkles mr-2"></i>
+                    <Sparkles className="fa mr-2" />
                     Generate FAQ
                   </button>
                 </div>
@@ -315,7 +317,7 @@ Requirements:
               <div className="flex flex-wrap items-center gap-3 mb-4">
                 {/* Search */}
                 <div className="relative flex-1 min-w-[200px]">
-                  <i className="fa fa-search absolute left-3 top-1/2 -translate-y-1/2 war-room-text-secondary text-sm"></i>
+                  <Search className="fa absolute left-3 top-1/2 -translate-y-1/2 war-room-text-secondary text-sm" />
                   <input
                     type="text"
                     value={searchQuery}
@@ -344,14 +346,14 @@ Requirements:
                     className="war-room-btn war-room-btn-icon-sm"
                     title="Expand all"
                   >
-                    <i className="fa fa-expand text-xs"></i>
+                    <Maximize2 className="fa text-xs" />
                   </button>
                   <button
                     onClick={collapseAll}
                     className="war-room-btn war-room-btn-icon-sm"
                     title="Collapse all"
                   >
-                    <i className="fa fa-compress text-xs"></i>
+                    <Minimize2 className="fa text-xs" />
                   </button>
                 </div>
               </div>
@@ -360,7 +362,7 @@ Requirements:
               <div className="space-y-2">
                 {filteredItems.length === 0 ? (
                   <div className="text-center py-8 war-room-text-secondary">
-                    <i className="fa fa-search text-2xl mb-2"></i>
+                    <Search className="fa text-2xl mb-2" />
                     <p>No questions match your search</p>
                   </div>
                 ) : (
@@ -393,7 +395,7 @@ Requirements:
                             </p>
                             {item.sources.length > 0 && (
                               <p className="text-xs war-room-text-muted">
-                                <i className="fa fa-file-lines mr-1"></i>
+                                <FileText className="fa mr-1" />
                                 Sources: {item.sources.join(', ')}
                               </p>
                             )}
@@ -424,21 +426,21 @@ Requirements:
                   onClick={() => setFaq(null)}
                   className="war-room-btn text-sm"
                 >
-                  <i className="fa fa-refresh mr-2"></i>
+                  <RefreshCw className="fa mr-2" />
                   Regenerate
                 </button>
                 <button
                   onClick={copyToClipboard}
                   className="war-room-btn text-sm"
                 >
-                  <i className="fa fa-copy mr-2"></i>
+                  <Copy className="fa mr-2" />
                   Copy
                 </button>
                 <button
                   onClick={exportFAQ}
                   className="war-room-btn war-room-btn-primary text-sm"
                 >
-                  <i className="fa fa-download mr-2"></i>
+                  <Download className="fa mr-2" />
                   Export
                 </button>
               </>

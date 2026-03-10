@@ -2,15 +2,7 @@
 // "Control Room" aesthetic
 
 import React, { useState, useEffect } from 'react';
-import {
-  Settings2,
-  Bell,
-  Sparkles,
-  Vibrate,
-  Play,
-  Radio,
-  ChevronDown,
-} from 'lucide-react';
+import { Bell, Bot, Brain, ChevronDown, Mic, Play, Radio, Settings2, Sparkles, Vibrate, Wand2 } from 'lucide-react';
 import { settingsService, PulseSettings } from '../../../services/settingsService';
 import { VOX_MODES } from '../../../services/voxer/voxModeTypes';
 
@@ -182,7 +174,7 @@ export const GeneralVoxSettings: React.FC<GeneralVoxSettingsProps> = ({
                 className="w-10 h-10 rounded-xl flex items-center justify-center"
                 style={{ background: `${accentColor}20` }}
               >
-                <i className="fa-solid fa-microphone-lines text-lg" style={{ color: accentColor }}></i>
+                <Mic className="text-lg" />
               </div>
               <div>
                 <span className={`font-medium ${tc.text}`}>Live Transcription</span>
@@ -216,7 +208,7 @@ export const GeneralVoxSettings: React.FC<GeneralVoxSettingsProps> = ({
                 className="w-10 h-10 rounded-xl flex items-center justify-center"
                 style={{ background: `${accentColor}20` }}
               >
-                <i className="fa-solid fa-brain text-lg" style={{ color: accentColor }}></i>
+                <Brain className="text-lg" />
               </div>
               <div>
                 <span className={`font-medium ${tc.text}`}>Auto-Analyze</span>
@@ -250,7 +242,7 @@ export const GeneralVoxSettings: React.FC<GeneralVoxSettingsProps> = ({
                 className="w-10 h-10 rounded-xl flex items-center justify-center"
                 style={{ background: `${accentColor}20` }}
               >
-                <i className="fa-solid fa-robot text-lg" style={{ color: accentColor }}></i>
+                <Bot className="text-lg" />
               </div>
               <div>
                 <span className={`font-medium ${tc.text}`}>Pre-Send AI Review</span>
@@ -316,7 +308,7 @@ export const GeneralVoxSettings: React.FC<GeneralVoxSettingsProps> = ({
                 className="w-10 h-10 rounded-xl flex items-center justify-center"
                 style={{ background: `${accentColor}20` }}
               >
-                <i className="fa-solid fa-wand-magic-sparkles text-lg" style={{ color: accentColor }}></i>
+                <Wand2 className="text-lg" />
               </div>
               <div>
                 <span className={`font-medium ${tc.text}`}>Auto-Enhance Audio</span>

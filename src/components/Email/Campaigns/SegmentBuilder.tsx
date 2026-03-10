@@ -10,6 +10,8 @@ import {
 } from '../../../services/emailSegmentService';
 import { supabase } from '../../../services/supabase';
 
+import { Loader2, Users, X } from 'lucide-react';
+
 interface SegmentBuilderProps {
   segment?: EmailSegment | null; // null/undefined = new
   onSave: (segment: EmailSegment) => void;
@@ -115,7 +117,7 @@ export const SegmentBuilder: React.FC<SegmentBuilderProps> = ({ segment, onSave,
             aria-label="Close"
             className="w-8 h-8 flex items-center justify-center rounded-lg text-stone-400 hover:bg-stone-100 dark:hover:bg-zinc-800 transition-colors"
           >
-            <i className="fa-solid fa-xmark text-sm" />
+            <X className="text-sm" />
           </button>
         </div>
 
@@ -166,12 +168,12 @@ export const SegmentBuilder: React.FC<SegmentBuilderProps> = ({ segment, onSave,
         <div className="flex items-center gap-2 px-4 py-3 bg-stone-50 dark:bg-zinc-800 rounded-xl">
           {previewing ? (
             <>
-              <i className="fa-solid fa-spinner animate-spin text-rose-500" />
+              <Loader2 className="animate-spin text-rose-500" />
               <span className="text-sm text-stone-500 dark:text-zinc-400">Calculating…</span>
             </>
           ) : (
             <>
-              <i className="fa-solid fa-users text-rose-500" />
+              <Users className="text-rose-500" />
               <span className="text-sm font-medium text-stone-900 dark:text-white">
                 {previewCount !== null ? `${previewCount} contacts match` : '— contacts match'}
               </span>
@@ -192,7 +194,7 @@ export const SegmentBuilder: React.FC<SegmentBuilderProps> = ({ segment, onSave,
             disabled={saving || !name.trim()}
             className="flex-1 py-2.5 rounded-xl text-sm font-semibold bg-gradient-to-r from-rose-500 to-red-500 text-white shadow-sm disabled:opacity-50 transition-opacity hover:opacity-90"
           >
-            {saving ? <i className="fa-solid fa-spinner animate-spin" /> : 'Save Segment'}
+            {saving ? <Loader2 className="animate-spin" /> : 'Save Segment'}
           </button>
         </div>
       </div>

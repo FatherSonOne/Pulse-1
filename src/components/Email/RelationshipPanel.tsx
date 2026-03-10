@@ -3,6 +3,8 @@ import React, { useState, useEffect } from 'react';
 import { supabase } from '../../services/supabase';
 import { CachedEmail } from '../../services/emailSyncService';
 
+import { Loader2, X } from 'lucide-react';
+
 interface ContactInfo {
   id?: string;
   email: string;
@@ -194,7 +196,7 @@ export const RelationshipPanel: React.FC<RelationshipPanelProps> = ({
   if (loading) {
     return (
       <div className="w-72 border-l border-stone-200 dark:border-zinc-800 bg-stone-50 dark:bg-zinc-900/50 p-4 flex items-center justify-center">
-        <i className="fa-solid fa-circle-notch fa-spin text-rose-500"></i>
+        <Loader2 className="text-rose-500 animate-spin" />
       </div>
     );
   }
@@ -210,7 +212,7 @@ export const RelationshipPanel: React.FC<RelationshipPanelProps> = ({
           onClick={onClose}
           className="w-6 h-6 rounded hover:bg-stone-200 dark:hover:bg-zinc-800 flex items-center justify-center text-stone-400 dark:text-zinc-500 hover:text-stone-600 dark:hover:text-white transition"
         >
-          <i className="fa-solid fa-xmark text-xs"></i>
+          <X className="text-xs" />
         </button>
       </div>
 

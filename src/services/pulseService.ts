@@ -243,12 +243,15 @@ class PulseService {
     const { data: { user } } = await supabase.auth.getUser();
     if (!user) throw new Error('Not authenticated');
 
-    // First, get conversations
+    // First, get conversations (excluding ones soft-deleted by this user)
     const { data: conversations, error } = await supabase
       .from('pulse_conversations')
       .select('*')
       .or(`user1_id.eq.${user.id},user2_id.eq.${user.id}`)
       .order('last_message_at', { ascending: false, nullsFirst: false });
+
+    // Filter out conversations deleted by this user
+    // (is_deleted_by_user1/2 may not exist in older DB schemas — handle gracefully)
 
     if (error) {
       console.error('Error fetching conversations:', error);
@@ -280,16 +283,23 @@ class PulseService {
       (profiles || []).map(p => [p.id, p])
     );
 
-    // Transform to include other_user and unread_count
-    return conversations.map(conv => {
-      const isUser1 = conv.user1_id === user.id;
-      const otherUserId = isUser1 ? conv.user2_id : conv.user1_id;
-      return {
-        ...conv,
-        other_user: profileMap.get(otherUserId) || null,
-        unread_count: isUser1 ? conv.user1_unread_count : conv.user2_unread_count
-      };
-    });
+    // Transform to include other_user and unread_count, filter soft-deleted
+    return conversations
+      .filter(conv => {
+        const isUser1 = conv.user1_id === user.id;
+        return isUser1
+          ? !conv.is_deleted_by_user1
+          : !conv.is_deleted_by_user2;
+      })
+      .map(conv => {
+        const isUser1 = conv.user1_id === user.id;
+        const otherUserId = isUser1 ? conv.user2_id : conv.user1_id;
+        return {
+          ...conv,
+          other_user: profileMap.get(otherUserId) || null,
+          unread_count: isUser1 ? conv.user1_unread_count : conv.user2_unread_count
+        };
+      });
   }
 
   /**
@@ -427,7 +437,28 @@ class PulseService {
       throw error;
     }
 
-    return data;
+    // If the user previously deleted this conversation, restore it now that
+    // they're actively starting a new exchange.
+    const conversationId = data as string;
+    const { data: conv } = await supabase
+      .from('pulse_conversations')
+      .select('user1_id, is_deleted_by_user1, is_deleted_by_user2')
+      .eq('id', conversationId)
+      .single();
+
+    if (conv) {
+      const isUser1 = conv.user1_id === user.id;
+      const deleteField = isUser1 ? 'is_deleted_by_user1' : 'is_deleted_by_user2';
+      const wasDeleted = isUser1 ? conv.is_deleted_by_user1 : conv.is_deleted_by_user2;
+      if (wasDeleted) {
+        await supabase
+          .from('pulse_conversations')
+          .update({ [deleteField]: false })
+          .eq('id', conversationId);
+      }
+    }
+
+    return conversationId;
   }
 
   /**
@@ -457,6 +488,36 @@ class PulseService {
 
     if (error) {
       console.error('Error archiving conversation:', error);
+      throw error;
+    }
+  }
+
+  /**
+   * Delete a conversation (removes it for the current user only via soft delete)
+   */
+  async deleteConversation(conversationId: string): Promise<void> {
+    const { data: { user } } = await supabase.auth.getUser();
+    if (!user) throw new Error('Not authenticated');
+
+    const { data: conv, error: fetchError } = await supabase
+      .from('pulse_conversations')
+      .select('user1_id, user2_id')
+      .eq('id', conversationId)
+      .single();
+
+    if (fetchError) throw fetchError;
+
+    const deleteField = conv.user1_id === user.id
+      ? 'is_deleted_by_user1'
+      : 'is_deleted_by_user2';
+
+    const { error } = await supabase
+      .from('pulse_conversations')
+      .update({ [deleteField]: true })
+      .eq('id', conversationId);
+
+    if (error) {
+      console.error('Error deleting conversation:', error);
       throw error;
     }
   }

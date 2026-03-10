@@ -4,6 +4,8 @@ import { emailSyncService, CachedEmail } from '../../services/emailSyncService';
 import { emailAIService } from '../../services/emailAIService';
 import './DailyBriefing.css';
 
+import { Check, ChevronDown, ChevronRight, ChevronUp, Inbox, Loader2, MailOpen, Zap } from 'lucide-react';
+
 interface DailyBriefingProps {
   onEmailClick: (email: CachedEmail) => void;
   onViewAll: () => void;
@@ -94,7 +96,7 @@ export const DailyBriefing: React.FC<DailyBriefingProps> = ({
     return (
       <div className="email-daily-briefing briefing-loading">
         <div className="briefing-loading-content">
-          <i className="fa-solid fa-circle-notch fa-spin briefing-loading-spinner"></i>
+          <Loader2 className="briefing-loading-spinner animate-spin" />
           <span className="briefing-loading-text">Loading your daily briefing...</span>
         </div>
       </div>
@@ -112,7 +114,7 @@ export const DailyBriefing: React.FC<DailyBriefingProps> = ({
         <div className="briefing-header">
           <div className="briefing-header-content">
             <div className="briefing-icon-wrapper">
-              <i className="fa-solid fa-envelope-open-text briefing-icon"></i>
+              <MailOpen className="briefing-icon" />
             </div>
             <div className="briefing-title-section">
               <h2>Daily Briefing</h2>
@@ -121,7 +123,7 @@ export const DailyBriefing: React.FC<DailyBriefingProps> = ({
               </p>
             </div>
           </div>
-          <i className="fa-solid fa-chevron-down" style={{ color: 'rgba(255, 255, 255, 0.7)' }}></i>
+          <ChevronDown />
         </div>
       </div>
     );
@@ -133,7 +135,7 @@ export const DailyBriefing: React.FC<DailyBriefingProps> = ({
       <div className="briefing-header">
         <div className="briefing-header-content">
           <div className="briefing-icon-wrapper">
-            <i className="fa-solid fa-envelope-open-text briefing-icon"></i>
+            <MailOpen className="briefing-icon" />
           </div>
           <div className="briefing-title-section">
             <h2>Your Email Pulse</h2>
@@ -151,7 +153,7 @@ export const DailyBriefing: React.FC<DailyBriefingProps> = ({
             onClick={() => setCollapsed(true)}
             className="briefing-collapse-btn"
           >
-            <i className="fa-solid fa-chevron-up"></i>
+            <ChevronUp />
           </button>
         </div>
       </div>
@@ -188,7 +190,7 @@ export const DailyBriefing: React.FC<DailyBriefingProps> = ({
         {briefing.priorityEmails.length > 0 && (
           <div className="briefing-priority-section">
             <div className="briefing-section-header">
-              <i className="fa-solid fa-bolt briefing-section-icon"></i>
+              <Zap className="briefing-section-icon" />
               <span className="briefing-section-title">Top Priority</span>
             </div>
             <div className="briefing-email-list">
@@ -212,7 +214,7 @@ export const DailyBriefing: React.FC<DailyBriefingProps> = ({
                       )}
                     </div>
                   </div>
-                  <i className="fa-solid fa-chevron-right briefing-email-arrow"></i>
+                  <ChevronRight className="briefing-email-arrow" />
                 </button>
               ))}
             </div>
@@ -223,7 +225,7 @@ export const DailyBriefing: React.FC<DailyBriefingProps> = ({
         {briefing.priorityEmails.length === 0 && briefing.newCount === 0 && (
           <div className="briefing-empty-state">
             <div className="briefing-empty-icon">
-              <i className="fa-solid fa-check"></i>
+              <Check />
             </div>
             <p className="briefing-empty-title">You're all caught up!</p>
             <p className="briefing-empty-text">No urgent emails need your attention.</p>
@@ -236,7 +238,7 @@ export const DailyBriefing: React.FC<DailyBriefingProps> = ({
             onClick={onViewAll}
             className="briefing-priority-inbox-btn"
           >
-            <i className="fa-solid fa-inbox"></i>
+            <Inbox />
             Open Priority Inbox
           </button>
         )}

@@ -2,7 +2,9 @@
 // Voice control system for hands-free operation
 
 import React, { useState, useEffect, useRef, useCallback } from 'react';
-import { 
+import { ChevronRight, Mic, Settings } from 'lucide-react';
+import {
+
   VoiceCommand, 
   VoiceCommandResult, 
   VoiceCommandHistory,
@@ -72,7 +74,7 @@ const VoiceListeningOverlay: React.FC<VoiceListeningOverlayProps> = ({
           <div className="absolute inset-0 rounded-full bg-gradient-to-br from-orange-500 to-pink-500 animate-pulse" />
           <div className="absolute inset-2 rounded-full bg-gradient-to-br from-orange-400 to-pink-400 animate-ping opacity-75" />
           <div className="absolute inset-4 rounded-full bg-black flex items-center justify-center">
-            <i className="fa-solid fa-microphone text-4xl text-white animate-pulse"></i>
+            <Mic className="text-4xl text-white animate-pulse" />
           </div>
         </div>
 
@@ -162,7 +164,7 @@ const CommandList: React.FC<CommandListProps> = ({
                   )}
                 </div>
               </div>
-              <i className="fa-solid fa-chevron-right text-zinc-300 dark:text-zinc-600 group-hover:text-zinc-400 dark:group-hover:text-zinc-500 transition"></i>
+              <ChevronRight className="text-zinc-300 dark:text-zinc-600 group-hover:text-zinc-400 dark:group-hover:text-zinc-500 transition" />
             </div>
           </button>
         );
@@ -339,7 +341,7 @@ export const VoiceCommandsHub: React.FC<VoiceCommandsHubProps> = ({
       <div className="px-4 py-3 border-b border-zinc-200 dark:border-zinc-800">
         <div className="flex items-center justify-between mb-3">
           <h3 className="font-bold text-lg dark:text-white flex items-center gap-2">
-            <i className="fa-solid fa-microphone-lines text-orange-500"></i>
+            <Mic className="text-orange-500" />
             Voice Commands
           </h3>
           <div className="flex items-center gap-2">
@@ -351,7 +353,7 @@ export const VoiceCommandsHub: React.FC<VoiceCommandsHubProps> = ({
                   : 'hover:bg-zinc-100 dark:hover:bg-zinc-800 text-zinc-400'
               }`}
             >
-              <i className="fa-solid fa-gear"></i>
+              <Settings />
             </button>
             <button
               onClick={onToggle}
@@ -372,7 +374,7 @@ export const VoiceCommandsHub: React.FC<VoiceCommandsHubProps> = ({
           disabled={!isEnabled || isListening}
           className="w-full py-4 bg-gradient-to-r from-orange-500 to-pink-500 hover:from-orange-600 hover:to-pink-600 disabled:from-zinc-300 disabled:to-zinc-400 text-white rounded-2xl font-bold text-lg transition transform hover:scale-[1.02] disabled:scale-100 disabled:cursor-not-allowed flex items-center justify-center gap-3"
         >
-          <i className="fa-solid fa-microphone text-xl"></i>
+          <Mic className="text-xl" />
           {isListening ? 'Listening...' : `Say "${wakeWordConfig.wakeWord}"`}
         </button>
       </div>

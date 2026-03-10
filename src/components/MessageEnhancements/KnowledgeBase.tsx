@@ -1,6 +1,8 @@
 // Knowledge Base Integration Component
 import React, { useState, useMemo } from 'react';
 
+import { BookOpen, ExternalLink, FileQuestion, Lightbulb, Loader2, Plus, Puzzle, Search, X } from 'lucide-react';
+
 interface KnowledgeArticle {
   id: string;
   title: string;
@@ -102,7 +104,7 @@ export const KnowledgeBase: React.FC<KnowledgeBaseProps> = ({
     return (
       <div className="flex items-center gap-2">
         <div className="flex items-center gap-1.5 px-2 py-1 rounded-full bg-amber-100 dark:bg-amber-900/40 text-amber-600 dark:text-amber-400 text-xs font-medium">
-          <i className="fa-solid fa-lightbulb" />
+          <Lightbulb />
           <span>{totalSuggestions} helpful resources</span>
         </div>
       </div>
@@ -115,7 +117,7 @@ export const KnowledgeBase: React.FC<KnowledgeBaseProps> = ({
       <div className="px-4 py-3 border-b border-zinc-200 dark:border-zinc-700 bg-gradient-to-r from-amber-50 to-orange-50 dark:from-amber-900/20 dark:to-orange-900/20">
         <div className="flex items-center gap-2">
           <div className="w-8 h-8 rounded-full bg-amber-100 dark:bg-amber-900/40 flex items-center justify-center">
-            <i className="fa-solid fa-book-open text-amber-500 text-sm" />
+            <BookOpen className="text-amber-500 text-sm" />
           </div>
           <div>
             <h3 className="text-sm font-bold text-zinc-800 dark:text-white">Knowledge Base</h3>
@@ -129,7 +131,7 @@ export const KnowledgeBase: React.FC<KnowledgeBaseProps> = ({
       {/* Search */}
       <div className="p-3 border-b border-zinc-200 dark:border-zinc-700">
         <div className="relative">
-          <i className="fa-solid fa-search absolute left-3 top-1/2 -translate-y-1/2 text-zinc-400 text-sm" />
+          <Search className="absolute left-3 top-1/2 -translate-y-1/2 text-zinc-400 text-sm" />
           <input
             type="text"
             value={searchQuery}
@@ -138,7 +140,7 @@ export const KnowledgeBase: React.FC<KnowledgeBaseProps> = ({
             className="w-full pl-9 pr-3 py-2 rounded-lg border border-zinc-200 dark:border-zinc-700 bg-zinc-50 dark:bg-zinc-900 text-sm text-zinc-800 dark:text-white focus:ring-2 focus:ring-amber-500 focus:border-transparent outline-none"
           />
           {isSearching && (
-            <i className="fa-solid fa-circle-notch fa-spin absolute right-3 top-1/2 -translate-y-1/2 text-zinc-400" />
+            <Loader2 className="absolute right-3 top-1/2 -translate-y-1/2 text-zinc-400 animate-spin" />
           )}
         </div>
       </div>
@@ -185,7 +187,7 @@ export const KnowledgeBase: React.FC<KnowledgeBaseProps> = ({
           <div className="p-2">
             {suggestedArticles.length === 0 ? (
               <div className="text-center py-6 text-zinc-400 dark:text-zinc-500">
-                <i className="fa-solid fa-file-circle-question text-2xl mb-2" />
+                <FileQuestion className="text-2xl mb-2" />
                 <p className="text-xs">No relevant articles found</p>
               </div>
             ) : (
@@ -233,7 +235,7 @@ export const KnowledgeBase: React.FC<KnowledgeBaseProps> = ({
           <div className="p-2">
             {suggestedContext.length === 0 ? (
               <div className="text-center py-6 text-zinc-400 dark:text-zinc-500">
-                <i className="fa-solid fa-puzzle-piece text-2xl mb-2" />
+                <Puzzle className="text-2xl mb-2" />
                 <p className="text-xs">No context suggestions available</p>
               </div>
             ) : (
@@ -267,7 +269,7 @@ export const KnowledgeBase: React.FC<KnowledgeBaseProps> = ({
                             onClick={() => onInsertContext?.(ctx.content)}
                             className="flex items-center gap-1 px-2 py-0.5 rounded text-[10px] font-medium bg-amber-100 dark:bg-amber-900/40 text-amber-700 dark:text-amber-300 hover:bg-amber-200 dark:hover:bg-amber-900/60 transition"
                           >
-                            <i className="fa-solid fa-plus" />
+                            <Plus />
                             Insert
                           </button>
                         </div>
@@ -328,7 +330,7 @@ export const KnowledgeBase: React.FC<KnowledgeBaseProps> = ({
                   </div>
                 </div>
                 <button onClick={() => setSelectedArticle(null)} className="text-zinc-400 hover:text-zinc-600">
-                  <i className="fa-solid fa-times" />
+                  <X />
                 </button>
               </div>
             </div>
@@ -345,7 +347,7 @@ export const KnowledgeBase: React.FC<KnowledgeBaseProps> = ({
                   rel="noopener noreferrer"
                   className="flex items-center gap-1.5 text-sm text-indigo-600 dark:text-indigo-400 hover:underline"
                 >
-                  <i className="fa-solid fa-external-link" />
+                  <ExternalLink />
                   Open source
                 </a>
               )}
@@ -375,7 +377,7 @@ export const KnowledgeSuggestionChip: React.FC<{
     onClick={onClick}
     className="inline-flex items-center gap-1 px-2 py-0.5 rounded-full bg-amber-100 dark:bg-amber-900/40 text-amber-700 dark:text-amber-300 text-[10px] font-medium hover:bg-amber-200 dark:hover:bg-amber-900/60 transition"
   >
-    <i className="fa-solid fa-lightbulb" />
+    <Lightbulb />
     {title}
   </button>
 );

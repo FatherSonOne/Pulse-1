@@ -13,6 +13,8 @@ import {
 import { compareDocuments } from '../../../services/advancedAIService';
 import { KnowledgeDoc } from '../../../services/ragService';
 
+import { AlertTriangle, Clock, FileText, Fingerprint, Scale, Tag, X } from 'lucide-react';
+
 interface ComparativeAnalysisProps {
   documents: KnowledgeDoc[];
   apiKey: string;
@@ -84,7 +86,7 @@ export const ComparativeAnalysis: React.FC<ComparativeAnalysisProps> = ({
   if (documents.length < 2) {
     return (
       <div className="flex flex-col items-center justify-center h-64 text-gray-400">
-        <i className="fas fa-balance-scale text-4xl mb-4 opacity-50" />
+        <Scale className="fas text-4xl mb-4 opacity-50" />
         <p>Select at least 2 documents to compare</p>
       </div>
     );
@@ -96,7 +98,7 @@ export const ComparativeAnalysis: React.FC<ComparativeAnalysisProps> = ({
       <div className="flex items-center justify-between p-4 border-b border-gray-800">
         <div className="flex items-center gap-3">
           <div className="p-2 bg-gradient-to-br from-blue-500/20 to-purple-500/20 rounded-lg">
-            <i className="fas fa-balance-scale text-blue-400" />
+            <Scale className="fas text-blue-400" />
           </div>
           <div>
             <h2 className="text-lg font-semibold text-white">Comparative Analysis</h2>
@@ -110,7 +112,7 @@ export const ComparativeAnalysis: React.FC<ComparativeAnalysisProps> = ({
             onClick={onClose}
             className="p-2 text-gray-400 hover:text-white hover:bg-gray-800 rounded-lg transition-colors"
           >
-            <i className="fas fa-times" />
+            <X className="fas" />
           </button>
         )}
       </div>
@@ -186,7 +188,7 @@ export const ComparativeAnalysis: React.FC<ComparativeAnalysisProps> = ({
       {error && (
         <div className="flex-1 flex flex-col items-center justify-center p-8">
           <div className="p-4 bg-red-500/10 rounded-full mb-4">
-            <i className="fas fa-exclamation-triangle text-3xl text-red-400" />
+            <AlertTriangle className="fas text-3xl text-red-400" />
           </div>
           <p className="text-red-400 mb-4">{error}</p>
           <button
@@ -270,11 +272,11 @@ export const ComparativeAnalysis: React.FC<ComparativeAnalysisProps> = ({
                 {/* Metadata */}
                 <div className="flex items-center gap-4 text-xs text-gray-500">
                   <span>
-                    <i className="fas fa-clock mr-1" />
+                    <Clock className="fas mr-1" />
                     Analyzed in {(result.analysis_duration_ms / 1000).toFixed(1)}s
                   </span>
                   <span>
-                    <i className="fas fa-file-alt mr-1" />
+                    <FileText className="fas mr-1" />
                     ~{Math.round(result.total_tokens_analyzed / 4)} tokens processed
                   </span>
                 </div>
@@ -471,7 +473,7 @@ const UniquePointCard: React.FC<UniquePointCardProps> = ({
       <ul className="space-y-2">
         {point.points.map((p, i) => (
           <li key={i} className="flex items-start gap-2 text-sm text-gray-400">
-            <i className="fas fa-fingerprint text-purple-400 mt-1" />
+            <Fingerprint className="fas text-purple-400 mt-1" />
             {p}
           </li>
         ))}
@@ -496,7 +498,7 @@ const ThemeCard: React.FC<ThemeCardProps> = ({
       <div className="flex items-start justify-between gap-4 mb-3">
         <div>
           <h4 className="font-medium text-white flex items-center gap-2">
-            <i className="fas fa-tag text-purple-400" />
+            <Tag className="fas text-purple-400" />
             {theme.name}
           </h4>
           <p className="text-sm text-gray-400 mt-1">{theme.description}</p>

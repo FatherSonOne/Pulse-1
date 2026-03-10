@@ -11,7 +11,7 @@ interface SetupCompleteProps {
   onFinish: () => void;
 }
 
-export const SetupComplete: React.FC<SetupCompleteProps> = ({ integration, onFinish }) => {
+const SetupCompleteBase: React.FC<SetupCompleteProps> = ({ integration, onFinish }) => {
   const platformNames = {
     hubspot: 'HubSpot',
     salesforce: 'Salesforce',
@@ -118,3 +118,6 @@ export const SetupComplete: React.FC<SetupCompleteProps> = ({ integration, onFin
     </div>
   );
 };
+
+export const SetupComplete = React.memo(SetupCompleteBase);
+SetupComplete.displayName = 'SetupComplete';

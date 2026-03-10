@@ -11,6 +11,8 @@ import { WarRoomMode, MissionType, RoomType } from './ModeSwitcher';
 import { MissionLauncher } from './MissionLauncher';
 import './WarRoomHub.css';
 
+import { ArrowRight, Compass, GripHorizontal, Search, ZoomOut } from 'lucide-react';
+
 // ============================================
 // Types
 // ============================================
@@ -172,7 +174,7 @@ const ModeCardComponent: React.FC<{
 
     <div className="wrh-card-action">
       <span>{isActive ? 'Continue' : 'Launch'}</span>
-      <i className="fa fa-arrow-right" />
+      <ArrowRight className="fa" />
     </div>
   </button>
 );
@@ -273,12 +275,12 @@ export const WarRoomHub: React.FC<WarRoomHubProps> = ({
               onClick={() => setShowMissionLauncher(true)}
               title="Open Mission Launcher"
             >
-              <i className="fa fa-compass" />
+              <Compass className="fa" />
               <span>Missions</span>
             </button>
 
             <div className="wrh-search">
-              <i className="fa fa-search" />
+              <Search className="fa" />
               <input
                 ref={searchInputRef}
                 type="text"
@@ -298,7 +300,7 @@ export const WarRoomHub: React.FC<WarRoomHubProps> = ({
             className={`wrh-category-btn ${!selectedCategory ? 'active' : ''}`}
             onClick={() => setSelectedCategory(null)}
           >
-            <i className="fa fa-grip" />
+            <GripHorizontal className="fa" />
             <span>All</span>
           </button>
           {categories.map((cat) => (
@@ -329,7 +331,7 @@ export const WarRoomHub: React.FC<WarRoomHubProps> = ({
 
           {filteredModes.length === 0 && (
             <div className="wrh-empty-state">
-              <i className="fa fa-search-minus" />
+              <ZoomOut className="fa" />
               <p>No modes match "{searchQuery}"</p>
               <button type="button" onClick={() => { setSearchQuery(''); setSelectedCategory(null); }}>
                 Clear filters

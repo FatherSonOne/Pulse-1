@@ -1,6 +1,8 @@
 import React, { useState, useRef, useEffect } from 'react';
 import { AIMessage, ThinkingStep, KnowledgeDoc } from '../../services/ragService';
 
+import { BarChart, Database, Download, Lightbulb, List, Minimize2, Send, Terminal, TrendingUp, Volume2, Zap } from 'lucide-react';
+
 interface CommandCenterProps {
   messages: AIMessage[];
   isLoading: boolean;
@@ -67,7 +69,7 @@ export const CommandCenter: React.FC<CommandCenterProps> = ({
       {/* Top Left - System Metrics - Hidden on mobile */}
       <div className="hidden md:block col-span-3 row-span-4 bg-rose-50 dark:bg-gradient-to-br dark:from-rose-900/20 dark:to-pink-900/20 border border-rose-200 dark:border-rose-500/30 rounded-lg p-3 overflow-y-auto">
         <div className="flex items-center gap-2 mb-3">
-          <i className="fa fa-chart-line text-rose-600 dark:text-rose-400"></i>
+          <TrendingUp className="fa text-rose-600 dark:text-rose-400" />
           <h3 className="text-sm font-bold text-rose-600 dark:text-rose-400">SYSTEM METRICS</h3>
         </div>
 
@@ -136,7 +138,7 @@ export const CommandCenter: React.FC<CommandCenterProps> = ({
       <div className="flex-1 md:flex-none md:col-span-6 md:row-span-8 bg-white dark:bg-black border border-rose-200 dark:border-rose-500/30 rounded-lg flex flex-col overflow-hidden min-h-0">
         <div className="px-3 md:px-4 py-2 bg-gray-100 dark:bg-gray-900 border-b border-rose-200 dark:border-rose-500/30 flex items-center justify-between shrink-0">
           <div className="flex items-center gap-2">
-            <i className="fa fa-terminal text-rose-600 dark:text-rose-400"></i>
+            <Terminal className="fa text-rose-600 dark:text-rose-400" />
             <h3 className="text-xs md:text-sm font-bold text-rose-600 dark:text-rose-400">MAIN CONSOLE</h3>
           </div>
           <div className="text-xs text-gray-500 dark:text-gray-400">{messages.length} msgs</div>
@@ -194,7 +196,7 @@ export const CommandCenter: React.FC<CommandCenterProps> = ({
               className="px-3 md:px-4 py-2 bg-rose-600 hover:bg-rose-700 rounded text-sm font-medium disabled:opacity-30 text-white"
             >
               <span className="hidden md:inline">SEND</span>
-              <i className="md:hidden fa fa-paper-plane"></i>
+              <Send className="md:hidden fa" />
             </button>
           </div>
         </div>
@@ -203,7 +205,7 @@ export const CommandCenter: React.FC<CommandCenterProps> = ({
       {/* Top Right - Knowledge Base - Hidden on mobile */}
       <div className="hidden md:block col-span-3 row-span-6 bg-rose-50 dark:bg-gradient-to-br dark:from-rose-900/25 dark:to-pink-900/30 border border-rose-200 dark:border-rose-500/30 rounded-lg p-3 overflow-y-auto">
         <div className="flex items-center gap-2 mb-3">
-          <i className="fa fa-database text-rose-600 dark:text-rose-400"></i>
+          <Database className="fa text-rose-600 dark:text-rose-400" />
           <h3 className="text-sm font-bold text-rose-600 dark:text-rose-400">KNOWLEDGE BASE</h3>
         </div>
 
@@ -246,7 +248,7 @@ export const CommandCenter: React.FC<CommandCenterProps> = ({
       {/* Bottom Left - Session Stats - Hidden on mobile */}
       <div className="hidden md:block col-span-3 row-span-4 bg-purple-50 dark:bg-gradient-to-br dark:from-purple-900/20 dark:to-pink-900/20 border border-purple-200 dark:border-purple-500/30 rounded-lg p-3 overflow-y-auto">
         <div className="flex items-center gap-2 mb-3">
-          <i className="fa fa-chart-bar text-purple-600 dark:text-purple-400"></i>
+          <BarChart className="fa text-purple-600 dark:text-purple-400" />
           <h3 className="text-sm font-bold text-purple-600 dark:text-purple-400">SESSION STATS</h3>
         </div>
 
@@ -275,7 +277,7 @@ export const CommandCenter: React.FC<CommandCenterProps> = ({
       {/* Bottom Middle - Quick Actions - Hidden on mobile */}
       <div className="hidden md:block col-span-3 row-span-4 bg-rose-50 dark:bg-gradient-to-br dark:from-rose-900/20 dark:to-pink-900/20 border border-rose-200 dark:border-rose-500/30 rounded-lg p-3 overflow-y-auto">
         <div className="flex items-center gap-2 mb-3">
-          <i className="fa fa-bolt text-rose-600 dark:text-rose-400"></i>
+          <Zap className="fa text-rose-600 dark:text-rose-400" />
           <h3 className="text-sm font-bold text-rose-600 dark:text-rose-400">QUICK ACTIONS</h3>
         </div>
 
@@ -284,28 +286,28 @@ export const CommandCenter: React.FC<CommandCenterProps> = ({
             onClick={onGenerateAudio}
             className="w-full px-3 py-2 bg-rose-100 dark:bg-rose-600/25 hover:bg-rose-200 dark:hover:bg-rose-600/35 border border-rose-200 dark:border-rose-500/30 rounded text-xs text-rose-700 dark:text-rose-100 flex items-center gap-2 transition-colors"
           >
-            <i className="fa fa-volume-up"></i>
+            <Volume2 className="fa" />
             Generate Audio Summary
           </button>
           <button
             onClick={onExport}
             className="w-full px-3 py-2 bg-rose-100 dark:bg-rose-600/25 hover:bg-rose-200 dark:hover:bg-rose-600/35 border border-rose-200 dark:border-rose-500/30 rounded text-xs text-rose-700 dark:text-rose-100 flex items-center gap-2 transition-colors"
           >
-            <i className="fa fa-download"></i>
+            <Download className="fa" />
             Export Conversation
           </button>
           <button
             onClick={() => onSendMessage('Summarize this conversation')}
             className="w-full px-3 py-2 bg-rose-100 dark:bg-rose-600/25 hover:bg-rose-200 dark:hover:bg-rose-600/35 border border-rose-200 dark:border-rose-500/30 rounded text-xs text-rose-700 dark:text-rose-100 flex items-center gap-2 transition-colors"
           >
-            <i className="fa fa-compress"></i>
+            <Minimize2 className="fa" />
             Summarize Session
           </button>
           <button
             onClick={() => onSendMessage('What are the key insights?')}
             className="w-full px-3 py-2 bg-rose-100 dark:bg-rose-600/25 hover:bg-rose-200 dark:hover:bg-rose-600/35 border border-rose-200 dark:border-rose-500/30 rounded text-xs text-rose-700 dark:text-rose-100 flex items-center gap-2 transition-colors"
           >
-            <i className="fa fa-lightbulb"></i>
+            <Lightbulb className="fa" />
             Extract Insights
           </button>
         </div>
@@ -314,7 +316,7 @@ export const CommandCenter: React.FC<CommandCenterProps> = ({
       {/* Bottom Right - System Log - Hidden on mobile */}
       <div className="hidden md:block col-span-6 row-span-6 bg-gray-50 dark:bg-black border border-gray-300 dark:border-gray-500/30 rounded-lg p-3 overflow-y-auto font-mono text-xs">
         <div className="flex items-center gap-2 mb-3">
-          <i className="fa fa-list text-gray-600 dark:text-gray-400"></i>
+          <List className="fa text-gray-600 dark:text-gray-400" />
           <h3 className="text-sm font-bold text-gray-600 dark:text-gray-400">SYSTEM LOG</h3>
         </div>
 

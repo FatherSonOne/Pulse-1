@@ -1,21 +1,5 @@
 import { useState, useEffect } from 'react';
-import {
-  FileText,
-  GitBranch,
-  MessageSquare,
-  Users,
-  Clock,
-  Tag,
-  ExternalLink,
-  ChevronRight,
-  CheckCircle,
-  AlertCircle,
-  Search,
-  Lightbulb,
-  RefreshCw,
-  BookOpen,
-  Link2
-} from 'lucide-react';
+import { AlertCircle, BookOpen, CheckCircle, ChevronRight, Clock, ExternalLink, FileText, GitBranch, Lightbulb, Link2, Loader2, MessageSquare, RefreshCw, Search, Tag, Users, Wand2 } from 'lucide-react';
 import { generateThreadContext, generateHandoffSummary } from '../../services/geminiService';
 import { ThreadContext, HandoffSummary, Message } from '../../types';
 import './ContextPanel.css';
@@ -306,9 +290,9 @@ export const ContextPanel: React.FC<ContextPanelProps> = ({
           title="Analyze Conversation"
         >
           {loading ? (
-            <i className="fa-solid fa-circle-notch fa-spin"></i>
+            <Loader2 className="animate-spin" />
           ) : (
-            <i className="fa-solid fa-wand-magic-sparkles"></i>
+            <Wand2 />
           )}
         </button>
       </div>

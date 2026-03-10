@@ -9,7 +9,9 @@ import { AnimatedIcon } from '../ui/AnimatedIcon';
 import { ContactCircle, CIRCLE_COLOR_PALETTE } from '../../types/contactCircleTypes';
 import { Contact } from '../../types';
 import { RelationshipProfile, getRelationshipHealthColor } from '../../types/relationshipTypes';
+import { MessageSquare, Trash2, UserX, Video, X } from 'lucide-react';
 import {
+
   updateCircle,
   deleteCircle,
   removeMember,
@@ -95,7 +97,7 @@ const MemberCard: React.FC<MemberCardProps> = ({ contact, profile, onRemove, onC
         className="flex-shrink-0 opacity-0 group-hover:opacity-100 w-6 h-6 flex items-center justify-center rounded-full text-zinc-400 hover:text-rose-500 hover:bg-rose-50 dark:hover:bg-rose-900/20 transition-all"
         title="Remove from circle"
       >
-        <i className="fa-solid fa-xmark text-xs" />
+        <X className="text-xs" />
       </button>
     </div>
   );
@@ -182,7 +184,7 @@ export const CircleDetail: React.FC<CircleDetailProps> = ({
             onClick={onClose}
             className="p-2 hover:bg-zinc-100 dark:hover:bg-zinc-800 rounded-lg text-zinc-500 transition"
           >
-            <i className="fa-solid fa-xmark" />
+            <X />
           </button>
           <span className="text-sm font-semibold text-zinc-800 dark:text-zinc-100">Circle Details</span>
         </div>
@@ -275,13 +277,13 @@ export const CircleDetail: React.FC<CircleDetailProps> = ({
             onClick={() => onBulkMessage(localCircle)}
             className="flex items-center gap-1.5 px-3 py-1.5 bg-indigo-50 dark:bg-indigo-900/20 text-indigo-600 dark:text-indigo-400 rounded-lg text-xs font-medium hover:bg-indigo-100 dark:hover:bg-indigo-900/30 transition-colors"
           >
-            <i className="fa-solid fa-message text-xs" />
+            <MessageSquare className="text-xs" />
             Message all
           </button>
           <button
             className="flex items-center gap-1.5 px-3 py-1.5 bg-green-50 dark:bg-green-900/20 text-green-600 dark:text-green-400 rounded-lg text-xs font-medium hover:bg-green-100 dark:hover:bg-green-900/30 transition-colors"
           >
-            <i className="fa-solid fa-video text-xs" />
+            <Video className="text-xs" />
             Group meeting
           </button>
         </div>
@@ -296,7 +298,7 @@ export const CircleDetail: React.FC<CircleDetailProps> = ({
 
           {memberContacts.length === 0 ? (
             <div className="py-8 text-center text-zinc-400">
-              <i className="fa-solid fa-user-slash text-2xl mb-2" />
+              <UserX className="text-2xl mb-2" />
               <p className="text-sm">No members in this circle</p>
             </div>
           ) : (
@@ -342,7 +344,7 @@ export const CircleDetail: React.FC<CircleDetailProps> = ({
                 onClick={() => setIsDeleting(true)}
                 className="flex items-center gap-2 text-xs text-rose-600 dark:text-rose-400 hover:text-rose-700 dark:hover:text-rose-300 transition-colors"
               >
-                <i className="fa-solid fa-trash-can" />
+                <Trash2 />
                 Delete this circle
               </button>
             )}

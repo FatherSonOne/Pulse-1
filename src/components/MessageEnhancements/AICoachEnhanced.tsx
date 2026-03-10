@@ -2,6 +2,8 @@
 import React, { useState, useEffect, useMemo } from 'react';
 import type { AICoachSuggestion } from '../../types/messageEnhancements';
 
+import { Bot, Wand2, X } from 'lucide-react';
+
 interface EnhancedCoachSuggestion extends AICoachSuggestion {
   category: 'tone' | 'clarity' | 'timing' | 'structure' | 'empathy' | 'action';
   priority: number;
@@ -211,7 +213,7 @@ const AICoachEnhancedComponent: React.FC<AICoachEnhancedProps> = ({
     return (
       <div className="flex items-center gap-2 py-2">
         <div className="flex items-center gap-1.5 text-xs text-purple-600 dark:text-purple-400">
-          <i className="fa-solid fa-wand-magic-sparkles" />
+          <Wand2 />
           <span>{suggestions.length} suggestion{suggestions.length !== 1 ? 's' : ''}</span>
         </div>
         {suggestions[0]?.quickFix && (
@@ -231,7 +233,7 @@ const AICoachEnhancedComponent: React.FC<AICoachEnhancedProps> = ({
       {/* Header */}
       <div className="flex items-center justify-between">
         <div className="flex items-center gap-2 text-xs">
-          <i className="fa-solid fa-robot text-purple-500" />
+          <Bot className="text-purple-500" />
           <span className="font-bold text-zinc-600 dark:text-zinc-300">AI Coach</span>
           <span className="text-zinc-400">•</span>
           <span className="text-zinc-500 dark:text-zinc-400">
@@ -242,7 +244,7 @@ const AICoachEnhancedComponent: React.FC<AICoachEnhancedProps> = ({
           onClick={onDismiss}
           className="text-zinc-400 hover:text-zinc-600 dark:hover:text-zinc-300 p-1"
         >
-          <i className="fa-solid fa-times text-xs" />
+          <X className="text-xs" />
         </button>
       </div>
 
@@ -278,7 +280,7 @@ const AICoachEnhancedComponent: React.FC<AICoachEnhancedProps> = ({
                   onClick={() => handleDismiss(index)}
                   className="text-zinc-400 hover:text-zinc-600 dark:hover:text-zinc-300 p-0.5"
                 >
-                  <i className="fa-solid fa-times text-[10px]" />
+                  <X className="text-[10px]" />
                 </button>
               </div>
 
@@ -289,7 +291,7 @@ const AICoachEnhancedComponent: React.FC<AICoachEnhancedProps> = ({
                     onClick={() => onApplySuggestion(suggestion.alternativeText!)}
                     className="text-xs px-2.5 py-1 rounded-lg bg-white dark:bg-zinc-800 border border-zinc-200 dark:border-zinc-700 text-zinc-700 dark:text-zinc-300 hover:border-blue-400 dark:hover:border-blue-500 transition-colors flex items-center gap-1"
                   >
-                    <i className="fa-solid fa-wand-sparkles text-[10px]" />
+                    <Wand2 className="text-[10px]" />
                     {suggestion.quickFix || 'Apply fix'}
                   </button>
                 )}
@@ -325,7 +327,7 @@ export const InlineCoachTip: React.FC<{
 }> = ({ tip, onApply, onDismiss }) => {
   return (
     <div className="flex items-center gap-2 px-3 py-1.5 bg-purple-50 dark:bg-purple-900/20 rounded-lg animate-fade-in">
-      <i className="fa-solid fa-wand-magic-sparkles text-purple-500 text-xs" />
+      <Wand2 className="text-purple-500 text-xs" />
       <span className="text-xs text-purple-700 dark:text-purple-300 flex-1">{tip}</span>
       {onApply && (
         <button
@@ -339,7 +341,7 @@ export const InlineCoachTip: React.FC<{
         onClick={onDismiss}
         className="text-purple-400 hover:text-purple-600 dark:hover:text-purple-300"
       >
-        <i className="fa-solid fa-times text-[10px]" />
+        <X className="text-[10px]" />
       </button>
     </div>
   );

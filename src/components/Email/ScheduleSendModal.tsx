@@ -1,6 +1,8 @@
 // ScheduleSendModal.tsx - Schedule email to send later
 import React, { useState } from 'react';
 
+import { Clock, Send, X } from 'lucide-react';
+
 interface ScheduleSendModalProps {
   onSchedule: (scheduledFor: Date) => void;
   onClose: () => void;
@@ -78,14 +80,14 @@ export const ScheduleSendModal: React.FC<ScheduleSendModalProps> = ({ onSchedule
       {/* Header */}
       <div className="flex items-center justify-between px-4 py-3 border-b border-zinc-800">
         <div className="flex items-center gap-2 text-white font-medium text-sm">
-          <i className="fa-solid fa-paper-plane text-blue-500"></i>
+          <Send className="text-blue-500" />
           <span>Schedule send</span>
         </div>
         <button
           onClick={onClose}
           className="w-6 h-6 rounded hover:bg-zinc-800 flex items-center justify-center text-zinc-400 hover:text-white transition"
         >
-          <i className="fa-solid fa-xmark text-xs"></i>
+          <X className="text-xs" />
         </button>
       </div>
 
@@ -132,7 +134,7 @@ export const ScheduleSendModal: React.FC<ScheduleSendModalProps> = ({ onSchedule
           disabled={!customDate}
           className="w-full mt-2 bg-blue-500 hover:bg-blue-600 disabled:bg-zinc-700 disabled:text-zinc-500 text-white font-medium py-1.5 rounded-lg transition text-sm flex items-center justify-center gap-2"
         >
-          <i className="fa-solid fa-clock"></i>
+          <Clock />
           Schedule
         </button>
       </div>

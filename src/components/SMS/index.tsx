@@ -7,6 +7,8 @@ import { SMSChat } from './SMSChat';
 import { SMSConversation } from '../../types/sms';
 import { smsService } from '../../services/smsService';
 
+import { Phone, Plus, Smartphone, X } from 'lucide-react';
+
 interface SMSViewProps {
   contacts?: any[]; // Optional contacts for integration
 }
@@ -92,7 +94,7 @@ export const SMSView: React.FC<SMSViewProps> = () => {
           <div className="flex-1 flex items-center justify-center bg-zinc-950">
             <div className="text-center text-zinc-500 p-8">
               <div className="w-20 h-20 rounded-2xl bg-zinc-900 flex items-center justify-center mx-auto mb-4">
-                <i className="fa-solid fa-mobile-screen-button text-3xl text-green-600"></i>
+                <Smartphone className="text-3xl text-green-600" />
               </div>
               <p className="text-xl font-medium mb-2 text-white">SMS Messages</p>
               <p className="text-sm text-zinc-500 max-w-xs mx-auto mb-6">
@@ -102,7 +104,7 @@ export const SMSView: React.FC<SMSViewProps> = () => {
                 onClick={handleNewMessage}
                 className="inline-flex items-center gap-2 px-4 py-2 bg-green-600 hover:bg-green-500 text-white rounded-lg transition"
               >
-                <i className="fa-solid fa-plus"></i>
+                <Plus />
                 New Message
               </button>
             </div>
@@ -120,7 +122,7 @@ export const SMSView: React.FC<SMSViewProps> = () => {
                 onClick={() => setShowNewMessageModal(false)}
                 className="w-8 h-8 rounded-lg hover:bg-zinc-800 flex items-center justify-center text-zinc-400 hover:text-white transition"
               >
-                <i className="fa-solid fa-xmark"></i>
+                <X />
               </button>
             </div>
 
@@ -130,7 +132,7 @@ export const SMSView: React.FC<SMSViewProps> = () => {
                   Phone Number
                 </label>
                 <div className="relative">
-                  <i className="fa-solid fa-phone absolute left-3 top-1/2 -translate-y-1/2 text-zinc-500"></i>
+                  <Phone className="absolute left-3 top-1/2 -translate-y-1/2 text-zinc-500" />
                   <input
                     type="tel"
                     value={newPhoneNumber}

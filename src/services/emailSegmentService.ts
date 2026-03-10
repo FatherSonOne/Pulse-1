@@ -197,7 +197,9 @@ class EmailSegmentService {
       }
     }
 
-    const { data, error } = await query.limit(1000);
+    // No JS-side limit — filtering happens in SQL via the query above.
+    // Supabase defaults to 1000 rows; PostgREST max is configurable server-side.
+    const { data, error } = await query;
     if (error) throw error;
     return (data ?? []).map((row: { email: string }) => row.email).filter(Boolean);
   }

@@ -1,5 +1,7 @@
 import React, { useEffect, useRef, useState } from 'react';
 
+import { Volume2 } from 'lucide-react';
+
 interface VoiceAgentVisualizerProps {
   isListening: boolean;
   isSpeaking: boolean;
@@ -378,7 +380,7 @@ export const VoiceAgentVisualizer: React.FC<VoiceAgentVisualizerProps> = ({
           {isSpeaking && transcriptText && (
             <div className="bg-green-500/10 dark:bg-green-900/20 backdrop-blur-sm border border-green-500/30 rounded-2xl px-6 py-3 max-w-md">
               <p className="text-sm text-green-700 dark:text-green-300">
-                <i className="fa fa-volume-up mr-2"></i>
+                <Volume2 className="fa mr-2" />
                 {transcriptText}
               </p>
             </div>

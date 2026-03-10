@@ -1,6 +1,8 @@
 // Voice Context Extractor - Enhanced Voice-to-Text with Context Extraction
 import React, { useState, useRef, useEffect } from 'react';
 
+import { AtSign, Calendar, CheckSquare, HelpCircle } from 'lucide-react';
+
 interface ExtractedContext {
   transcription: string;
   summary: string;
@@ -358,7 +360,7 @@ export const VoiceContextExtractor: React.FC<VoiceContextExtractorProps> = ({
           {extractedContext.actionItems.length > 0 && (
             <div>
               <div className="text-xs font-bold text-zinc-500 dark:text-zinc-400 uppercase tracking-wider mb-1 flex items-center gap-1">
-                <i className="fa-solid fa-check-square text-emerald-500" />
+                <CheckSquare className="text-emerald-500" />
                 Action Items
               </div>
               <ul className="space-y-1">
@@ -376,7 +378,7 @@ export const VoiceContextExtractor: React.FC<VoiceContextExtractorProps> = ({
           {extractedContext.dates.length > 0 && (
             <div className="flex items-center gap-2 flex-wrap">
               <span className="text-xs text-zinc-500 dark:text-zinc-400">
-                <i className="fa-solid fa-calendar text-blue-500 mr-1" />
+                <Calendar className="text-blue-500 mr-1" />
                 Dates:
               </span>
               {extractedContext.dates.map((date, idx) => (
@@ -391,7 +393,7 @@ export const VoiceContextExtractor: React.FC<VoiceContextExtractorProps> = ({
           {extractedContext.mentions.length > 0 && (
             <div className="flex items-center gap-2 flex-wrap">
               <span className="text-xs text-zinc-500 dark:text-zinc-400">
-                <i className="fa-solid fa-at text-purple-500 mr-1" />
+                <AtSign className="text-purple-500 mr-1" />
                 Mentions:
               </span>
               {extractedContext.mentions.map((mention, idx) => (
@@ -406,7 +408,7 @@ export const VoiceContextExtractor: React.FC<VoiceContextExtractorProps> = ({
           {extractedContext.questions.length > 0 && (
             <div>
               <div className="text-xs font-bold text-zinc-500 dark:text-zinc-400 uppercase tracking-wider mb-1 flex items-center gap-1">
-                <i className="fa-solid fa-question-circle text-amber-500" />
+                <HelpCircle className="text-amber-500" />
                 Questions Asked
               </div>
               <ul className="space-y-1">

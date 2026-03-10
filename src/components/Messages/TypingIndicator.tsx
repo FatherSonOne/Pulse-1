@@ -86,4 +86,4 @@ export const TypingIndicatorDots: React.FC<{ size?: 'sm' | 'md' | 'lg' }> = ({ s
   );
 };
 
-export default TypingIndicator;
+export default React.memo(TypingIndicator);

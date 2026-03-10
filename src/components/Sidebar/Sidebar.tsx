@@ -4,6 +4,8 @@ import { WorkspaceSwitcher } from './WorkspaceSwitcher';
 import { PulseAssistantButton } from '../PulseAssistant/PulseAssistantButton';
 import './Sidebar.css';
 
+import { HelpCircle, Settings } from 'lucide-react';
+
 // ============================================
 // TYPES
 // ============================================
@@ -290,7 +292,7 @@ export const Sidebar: React.FC<SidebarProps> = ({
                 title="User Guide"
                 className="w-8 h-8 flex items-center justify-center rounded-lg text-zinc-400 hover:text-white hover:bg-zinc-800 transition-colors"
               >
-                <i className="fa-solid fa-circle-question text-base" />
+                <HelpCircle className="text-base" />
               </button>
               {renderNotificationCenter?.()}
             </div>
@@ -328,7 +330,7 @@ export const Sidebar: React.FC<SidebarProps> = ({
               title="User Guide"
               className="w-8 h-8 flex items-center justify-center rounded-lg text-zinc-400 hover:text-white hover:bg-zinc-800 transition-colors"
             >
-              <i className="fa-solid fa-circle-question text-base" />
+              <HelpCircle className="text-base" />
             </button>
             {renderNotificationCenter?.()}
           </div>
@@ -404,7 +406,7 @@ export const Sidebar: React.FC<SidebarProps> = ({
             title="Settings"
           >
             <div className="sidebar-footer-icon">
-              <i className="fa-solid fa-gear" />
+              <Settings />
             </div>
             {!isCollapsed && (
               <span className="sidebar-footer-text">Settings</span>

@@ -2,6 +2,7 @@
 // Shows AI feedback on voice messages before sending
 
 import React, { useState } from 'react';
+import { AlertCircle, Bot, Brain, Check, CheckCircle2, Info, Lightbulb, Pen, RotateCcw, Send, Sparkles, Wand2, X } from 'lucide-react';
 import {
   VoxFeedback,
   FeedbackIssue,
@@ -89,7 +90,7 @@ export const AIFeedbackModal: React.FC<AIFeedbackModalProps> = ({
           <div className="flex items-center justify-between">
             <div className="flex items-center gap-3">
               <div className="w-10 h-10 rounded-xl bg-gradient-to-br from-purple-500 to-pink-500 flex items-center justify-center">
-                <i className="fa-solid fa-robot text-white" />
+                <Bot className="text-white" />
               </div>
               <div>
                 <h3 className="font-bold dark:text-white">AI Review</h3>
@@ -100,7 +101,7 @@ export const AIFeedbackModal: React.FC<AIFeedbackModalProps> = ({
               onClick={onClose}
               className="w-8 h-8 rounded-lg hover:bg-white/50 dark:hover:bg-zinc-800 flex items-center justify-center transition"
             >
-              <i className="fa-solid fa-times text-zinc-400" />
+              <X className="text-zinc-400" />
             </button>
           </div>
         </div>
@@ -111,7 +112,7 @@ export const AIFeedbackModal: React.FC<AIFeedbackModalProps> = ({
             // Loading State
             <div className="p-8 text-center">
               <div className="w-16 h-16 rounded-full bg-purple-100 dark:bg-purple-900/30 flex items-center justify-center mx-auto mb-4 animate-pulse">
-                <i className="fa-solid fa-brain text-purple-500 text-2xl animate-pulse" />
+                <Brain className="text-purple-500 text-2xl animate-pulse" />
               </div>
               <p className="text-sm text-zinc-600 dark:text-zinc-400">Analyzing your message...</p>
               <div className="mt-4 flex justify-center gap-1">
@@ -171,12 +172,12 @@ export const AIFeedbackModal: React.FC<AIFeedbackModalProps> = ({
                     <div className="flex items-center gap-2 mb-1">
                       {feedback.isReadyToSend ? (
                         <>
-                          <i className="fa-solid fa-circle-check text-emerald-500" />
+                          <CheckCircle2 className="text-emerald-500" />
                           <span className="font-semibold text-emerald-600 dark:text-emerald-400">Ready to Send</span>
                         </>
                       ) : (
                         <>
-                          <i className="fa-solid fa-circle-exclamation text-amber-500" />
+                          <AlertCircle className="text-amber-500" />
                           <span className="font-semibold text-amber-600 dark:text-amber-400">Review Suggested</span>
                         </>
                       )}
@@ -239,7 +240,7 @@ export const AIFeedbackModal: React.FC<AIFeedbackModalProps> = ({
                   <div className="p-3 bg-zinc-50 dark:bg-zinc-800 rounded-lg text-sm text-zinc-700 dark:text-zinc-300 leading-relaxed">
                     {showImproved && feedback.improvedTranscription ? (
                       <div className="text-emerald-700 dark:text-emerald-300">
-                        <i className="fa-solid fa-sparkles text-emerald-500 mr-2" />
+                        <Sparkles className="text-emerald-500 mr-2" />
                         {feedback.improvedTranscription}
                       </div>
                     ) : (
@@ -265,7 +266,7 @@ export const AIFeedbackModal: React.FC<AIFeedbackModalProps> = ({
                           }}
                           className="text-xs text-purple-500 hover:text-purple-600 px-2 py-1 bg-purple-50 dark:bg-purple-900/20 rounded"
                         >
-                          <i className="fa-solid fa-check mr-1" />
+                          <Check className="mr-1" />
                           Apply
                         </button>
                       </div>
@@ -277,7 +278,7 @@ export const AIFeedbackModal: React.FC<AIFeedbackModalProps> = ({
                         }}
                         className="text-xs text-zinc-500 hover:text-zinc-700"
                       >
-                        <i className="fa-solid fa-pen mr-1" />
+                        <Pen className="mr-1" />
                         Edit
                       </button>
                     )}
@@ -305,7 +306,7 @@ export const AIFeedbackModal: React.FC<AIFeedbackModalProps> = ({
                               <p className="text-sm text-zinc-700 dark:text-zinc-300">{issue.message}</p>
                               {issue.suggestion && (
                                 <p className="text-xs text-zinc-500 mt-1">
-                                  <i className="fa-solid fa-lightbulb text-amber-500 mr-1" />
+                                  <Lightbulb className="text-amber-500 mr-1" />
                                   {issue.suggestion}
                                 </p>
                               )}
@@ -332,7 +333,7 @@ export const AIFeedbackModal: React.FC<AIFeedbackModalProps> = ({
                         className="w-full text-left p-3 rounded-lg border border-zinc-200 dark:border-zinc-700 hover:border-purple-300 dark:hover:border-purple-700 hover:bg-purple-50 dark:hover:bg-purple-900/10 transition group"
                       >
                         <div className="flex items-start gap-2">
-                          <i className="fa-solid fa-wand-magic-sparkles text-purple-500 mt-0.5" />
+                          <Wand2 className="text-purple-500 mt-0.5" />
                           <div className="flex-1">
                             <p className="text-sm text-zinc-700 dark:text-zinc-300 group-hover:text-purple-700 dark:group-hover:text-purple-300">
                               {suggestion.suggestedText}
@@ -350,7 +351,7 @@ export const AIFeedbackModal: React.FC<AIFeedbackModalProps> = ({
             // No feedback state
             <div className="p-8 text-center">
               <div className="w-16 h-16 rounded-full bg-zinc-100 dark:bg-zinc-800 flex items-center justify-center mx-auto mb-4">
-                <i className="fa-solid fa-robot text-zinc-400 text-2xl" />
+                <Bot className="text-zinc-400 text-2xl" />
               </div>
               <p className="text-sm text-zinc-500">No feedback available</p>
             </div>
@@ -364,7 +365,7 @@ export const AIFeedbackModal: React.FC<AIFeedbackModalProps> = ({
               onClick={onReRecord}
               className="flex-1 py-2.5 px-4 rounded-xl border border-zinc-300 dark:border-zinc-700 text-zinc-700 dark:text-zinc-300 font-semibold hover:bg-zinc-100 dark:hover:bg-zinc-800 transition flex items-center justify-center gap-2"
             >
-              <i className="fa-solid fa-rotate-left" />
+              <RotateCcw />
               Re-record
             </button>
             <button
@@ -375,14 +376,14 @@ export const AIFeedbackModal: React.FC<AIFeedbackModalProps> = ({
                   : 'bg-gradient-to-r from-amber-500 to-orange-500 text-white hover:from-amber-600 hover:to-orange-600'
               }`}
             >
-              <i className="fa-solid fa-paper-plane" />
+              <Send />
               {feedback?.isReadyToSend ? 'Send' : 'Send Anyway'}
             </button>
           </div>
           
           {!feedback?.isReadyToSend && (
             <p className="text-[10px] text-center text-zinc-400 mt-2">
-              <i className="fa-solid fa-info-circle mr-1" />
+              <Info className="mr-1" />
               Review the feedback above before sending
             </p>
           )}

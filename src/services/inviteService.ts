@@ -16,6 +16,19 @@ export interface TeamInvite {
   expiresAt: Date;
 }
 
+// Resolve the current user's primary workspace id
+const getPrimaryWorkspaceId = async (userId: string): Promise<string | null> => {
+  const { data, error } = await supabase
+    .from('workspace_members')
+    .select('workspace_id')
+    .eq('user_id', userId)
+    .order('created_at', { ascending: true })
+    .limit(1)
+    .single();
+  if (error || !data) return null;
+  return data.workspace_id;
+};
+
 export interface InviteResult {
   success: boolean;
   message: string;
@@ -35,39 +48,35 @@ export const createInvitation = async (
   workspaceName: string = 'Pulse Team'
 ): Promise<InviteResult> => {
   try {
-    const inviteToken = generateInviteToken();
-    const expiresAt = new Date();
-    expiresAt.setDate(expiresAt.getDate() + 7); // 7 day expiry
+    const workspaceId = await getPrimaryWorkspaceId(invitedByUserId);
 
-    // Store invitation in Supabase
+    if (!workspaceId) {
+      // No workspace found — generate a local token but skip DB storage
+      const inviteToken = generateInviteToken();
+      return { success: true, message: 'Invitation created successfully', inviteId: inviteToken };
+    }
+
+    // Insert into workspace_invites; token + expires_at have DB defaults
     const { data, error } = await supabase
-      .from('team_invites')
+      .from('workspace_invites')
       .insert({
-        id: inviteToken,
+        workspace_id: workspaceId,
         email: email.toLowerCase().trim(),
+        role: 'member',
         invited_by: invitedByUserId,
-        invited_by_name: invitedByName,
-        workspace_name: workspaceName,
-        status: 'pending',
-        expires_at: expiresAt.toISOString()
       })
-      .select()
+      .select('token')
       .single();
 
     if (error) {
       console.error('Failed to create invitation:', error);
-      // If table doesn't exist, still allow sending email
-      if (error.code === '42P01') {
-        console.log('team_invites table not found, proceeding without database storage');
-      } else {
-        throw error;
-      }
+      throw error;
     }
 
     return {
       success: true,
       message: 'Invitation created successfully',
-      inviteId: inviteToken
+      inviteId: data.token
     };
   } catch (error: any) {
     console.error('Create invitation error:', error);
@@ -324,24 +333,33 @@ Powered by Pulse | logosvision.org
 export const getSentInvitations = async (userId: string): Promise<TeamInvite[]> => {
   try {
     const { data, error } = await supabase
-      .from('team_invites')
-      .select('*')
+      .from('workspace_invites')
+      .select('token, email, invited_by, workspace_id, accepted_at, expires_at, created_at, workspaces(name)')
       .eq('invited_by', userId)
       .order('created_at', { ascending: false });
 
     if (error) throw error;
 
-    return (data || []).map(inv => ({
-      id: inv.id,
-      email: inv.email,
-      invitedBy: inv.invited_by,
-      invitedByName: inv.invited_by_name,
-      workspaceId: inv.workspace_id || '',
-      workspaceName: inv.workspace_name,
-      status: inv.status,
-      createdAt: new Date(inv.created_at),
-      expiresAt: new Date(inv.expires_at)
-    }));
+    const now = new Date();
+    return (data || []).map((inv: any) => {
+      const expiresAt = new Date(inv.expires_at);
+      const status: TeamInvite['status'] =
+        inv.accepted_at ? 'accepted'
+        : expiresAt < now ? 'expired'
+        : 'pending';
+
+      return {
+        id: inv.token,
+        email: inv.email,
+        invitedBy: inv.invited_by,
+        invitedByName: '',
+        workspaceId: inv.workspace_id,
+        workspaceName: inv.workspaces?.name ?? '',
+        status,
+        createdAt: new Date(inv.created_at),
+        expiresAt,
+      };
+    });
   } catch (error) {
     console.error('Get sent invitations error:', error);
     return [];
@@ -349,15 +367,13 @@ export const getSentInvitations = async (userId: string): Promise<TeamInvite[]> 
 };
 
 // Accept an invitation
-export const acceptInvitation = async (inviteToken: string, userId: string): Promise<InviteResult> => {
+export const acceptInvitation = async (inviteToken: string, _userId: string): Promise<InviteResult> => {
   try {
-    const { data, error } = await supabase
-      .from('team_invites')
-      .update({ status: 'accepted', accepted_by: userId, accepted_at: new Date().toISOString() })
-      .eq('id', inviteToken)
-      .eq('status', 'pending')
-      .select()
-      .single();
+    const { error } = await supabase
+      .from('workspace_invites')
+      .update({ accepted_at: new Date().toISOString() })
+      .eq('token', inviteToken)
+      .is('accepted_at', null);
 
     if (error) throw error;
 

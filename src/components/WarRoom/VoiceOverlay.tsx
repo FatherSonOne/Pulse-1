@@ -15,6 +15,8 @@
 import React, { useState, useEffect, useRef } from 'react';
 import { useVoiceToText } from '../../hooks/useVoiceToText';
 
+import { ChevronDown, Send } from 'lucide-react';
+
 // ─── Types ────────────────────────────────────────────────────────────────────
 
 export interface VoiceOverlayProps {
@@ -228,7 +230,7 @@ export const VoiceOverlay: React.FC<VoiceOverlayProps> = ({ onSendMessage, onClo
             gap: 5,
           }}
         >
-          <i className="fa fa-paper-plane" style={{ fontSize: 11 }} />
+          <Send className="fa" />
           SEND
         </button>
       )}
@@ -267,7 +269,7 @@ export const VoiceOverlay: React.FC<VoiceOverlayProps> = ({ onSendMessage, onClo
           alignItems: 'center',
         }}
       >
-        <i className="fa fa-chevron-down" />
+        <ChevronDown className="fa" />
       </button>
     </div>
   );

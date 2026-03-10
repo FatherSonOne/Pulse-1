@@ -5,6 +5,8 @@ import React, { useState } from 'react';
 import { motion, AnimatePresence } from 'framer-motion';
 import type { ToneAnalyzerProps } from './types';
 
+import { Loader2 } from 'lucide-react';
+
 const ToneAnalyzer: React.FC<ToneAnalyzerProps> = ({ analysis, isAnalyzing, onClick }) => {
   const [showTooltip, setShowTooltip] = useState(false);
 
@@ -54,7 +56,7 @@ const ToneAnalyzer: React.FC<ToneAnalyzerProps> = ({ analysis, isAnalyzing, onCl
       >
         <span className="tone-icon" aria-hidden="true">
           {isAnalyzing ? (
-            <i className="fa-solid fa-circle-notch fa-spin text-xs" />
+            <Loader2 className="text-xs animate-spin" />
           ) : analysis ? (
             getToneIcon(analysis.tone)
           ) : (

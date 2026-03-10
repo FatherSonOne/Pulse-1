@@ -3,6 +3,7 @@
 
 import React from 'react';
 import { motion } from 'framer-motion';
+import { Wand2, X, Check, Lightbulb } from 'lucide-react';
 import type { AIComposerProps, AISuggestion } from './types';
 
 const AIComposer: React.FC<AIComposerProps> = ({
@@ -42,7 +43,7 @@ const AIComposer: React.FC<AIComposerProps> = ({
     >
       {/* Header */}
       <div className="ai-composer-header">
-        <i className="fa-solid fa-wand-magic-sparkles ai-composer-icon" aria-hidden="true" />
+        <Wand2 className="ai-composer-icon" aria-hidden="true" />
         <h3 className="ai-composer-title">AI Suggestions</h3>
         <button
           type="button"
@@ -50,7 +51,7 @@ const AIComposer: React.FC<AIComposerProps> = ({
           className="ml-auto text-zinc-400 hover:text-white transition"
           aria-label="Close AI suggestions"
         >
-          <i className="fa-solid fa-xmark text-xs" />
+          <X className="text-xs" />
         </button>
       </div>
 
@@ -123,7 +124,7 @@ const AIComposer: React.FC<AIComposerProps> = ({
                       transition: 'all 150ms',
                     }}
                   >
-                    <i className="fa-solid fa-check text-xs" />
+                    <Check className="text-xs" />
                   </button>
                   <button
                     type="button"
@@ -148,7 +149,7 @@ const AIComposer: React.FC<AIComposerProps> = ({
                       transition: 'all 150ms',
                     }}
                   >
-                    <i className="fa-solid fa-xmark text-xs" />
+                    <X className="text-xs" />
                   </button>
                 </div>
               </div>
@@ -160,7 +161,7 @@ const AIComposer: React.FC<AIComposerProps> = ({
       {/* No Suggestions State */}
       {!isLoading && suggestions.length === 0 && (
         <div className="text-center py-6 text-zinc-500 text-sm">
-          <i className="fa-solid fa-lightbulb text-2xl mb-2 opacity-50" />
+          <Lightbulb className="text-2xl mb-2 opacity-50" />
           <p>Type more to get AI suggestions</p>
         </div>
       )}

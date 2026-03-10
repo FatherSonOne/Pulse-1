@@ -11,7 +11,9 @@ import {
   CreateCollectionPayload,
   SmartCollectionRules,
 } from '../../../types/organization';
+import { Check, FileText, FolderOpen, Loader2, MousePointer, Pencil, Trash2, Wand2 } from 'lucide-react';
 import {
+
   getUserCollections,
   createCollection,
   updateCollection,
@@ -213,7 +215,7 @@ export const CollectionManager: React.FC<CollectionManagerProps> = ({
   if (loading) {
     return (
       <div className="flex items-center justify-center p-4">
-        <i className="fa fa-spinner fa-spin text-gray-400"></i>
+        <Loader2 className="fa text-gray-400 animate-spin" />
       </div>
     );
   }
@@ -224,7 +226,7 @@ export const CollectionManager: React.FC<CollectionManagerProps> = ({
       <div className="p-3 border-b border-gray-200 dark:border-gray-700 bg-gray-50 dark:bg-gray-900/50">
         <div className="flex items-center justify-between">
           <h3 className="text-sm font-medium text-gray-700 dark:text-gray-300">
-            <i className="fa fa-folder-open mr-2 text-blue-500"></i>
+            <FolderOpen className="fa mr-2 text-blue-500" />
             {docId ? 'Add to Collection' : 'Collections'}
           </h3>
           <button
@@ -258,7 +260,7 @@ export const CollectionManager: React.FC<CollectionManagerProps> = ({
                     : 'bg-gray-100 dark:bg-gray-700 text-gray-600 dark:text-gray-300'
                 }`}
               >
-                <i className="fa fa-hand-pointer-o"></i>
+                <MousePointer className="fa" />
                 Manual
               </button>
               <button
@@ -269,7 +271,7 @@ export const CollectionManager: React.FC<CollectionManagerProps> = ({
                     : 'bg-gray-100 dark:bg-gray-700 text-gray-600 dark:text-gray-300'
                 }`}
               >
-                <i className="fa fa-magic"></i>
+                <Wand2 className="fa" />
                 Smart
               </button>
             </div>
@@ -344,7 +346,7 @@ export const CollectionManager: React.FC<CollectionManagerProps> = ({
           {formType === 'smart' && (
             <div className="space-y-2 p-2 bg-purple-50 dark:bg-purple-900/20 rounded-lg">
               <div className="text-xs font-medium text-purple-700 dark:text-purple-300">
-                <i className="fa fa-magic mr-1"></i>
+                <Wand2 className="fa mr-1" />
                 Smart Rules
               </div>
 
@@ -450,7 +452,7 @@ export const CollectionManager: React.FC<CollectionManagerProps> = ({
                             : 'border-gray-300 dark:border-gray-600 hover:border-blue-400'
                         }`}
                       >
-                        {isInCollection && <i className="fa fa-check text-xs"></i>}
+                        {isInCollection && <Check className="fa text-xs" />}
                       </button>
                     )}
 
@@ -458,9 +460,9 @@ export const CollectionManager: React.FC<CollectionManagerProps> = ({
                     {docId && collection.type === 'smart' && (
                       <div className="w-5 h-5 flex items-center justify-center">
                         {isInCollection ? (
-                          <i className="fa fa-check text-purple-500 text-xs"></i>
+                          <Check className="fa text-purple-500 text-xs" />
                         ) : (
-                          <i className="fa fa-magic text-purple-400 text-xs"></i>
+                          <Wand2 className="fa text-purple-400 text-xs" />
                         )}
                       </div>
                     )}
@@ -493,7 +495,7 @@ export const CollectionManager: React.FC<CollectionManagerProps> = ({
                             {collection.name}
                           </span>
                           {collection.type === 'smart' && (
-                            <i className="fa fa-magic text-purple-400 text-[10px]" title="Smart Collection"></i>
+                            <Wand2 className="fa text-purple-400 text-[10px]" />
                           )}
                         </div>
                         {collection.description && (
@@ -527,13 +529,13 @@ export const CollectionManager: React.FC<CollectionManagerProps> = ({
                           onClick={() => startEditing(collection)}
                           className="p-1.5 text-gray-400 hover:text-blue-500 hover:bg-blue-50 dark:hover:bg-blue-900/20 rounded transition-colors"
                         >
-                          <i className="fa fa-pencil text-xs"></i>
+                          <Pencil className="fa text-xs" />
                         </button>
                         <button
                           onClick={() => handleDeleteCollection(collection.id)}
                           className="p-1.5 text-gray-400 hover:text-red-500 hover:bg-red-50 dark:hover:bg-red-900/20 rounded transition-colors"
                         >
-                          <i className="fa fa-trash text-xs"></i>
+                          <Trash2 className="fa text-xs" />
                         </button>
                       </div>
                     )}
@@ -552,7 +554,7 @@ export const CollectionManager: React.FC<CollectionManagerProps> = ({
                               className="text-xs text-gray-500 dark:text-gray-400 py-1 px-2 bg-white dark:bg-gray-800 rounded truncate cursor-pointer hover:bg-gray-100 dark:hover:bg-gray-700"
                               onClick={() => onCollectionSelect?.(collection.id, [docId])}
                             >
-                              <i className="fa fa-file-text-o mr-2"></i>
+                              <FileText className="fa mr-2" />
                               {docId.slice(0, 8)}...
                             </div>
                           ))}

@@ -17,11 +17,19 @@ import PostMeetingPrompt from './PostMeetingPrompt';
 import { postMeetingService, MeetingFollowUp as PostMeetingFollowUp } from '../services/postMeetingService';
 import CustomEventTypesManager from './CustomEventTypesManager';
 import { customEventTypesService } from '../services/customEventTypesService';
+import { EventCreationModal } from './Calendar/EventCreationModal';
+import { CalendarAIPanel } from './Calendar/CalendarAIPanel';
 import CommandPalette from './CommandPalette';
 import ShortcutsHelp from './ShortcutsHelp';
 import JumpToDate from './JumpToDate';
 import ConflictResolutionBanner, { EventConflict, detectConflicts } from './ConflictResolutionBanner';
 import './Calendar.css';
+import { AlignLeft, AlertTriangle, ArrowLeftRight, ArrowRight, Bell, Brain, Calendar as CalendarIcon, CalendarCheck, CalendarDays, CalendarPlus, Car, Check, CheckCircle, ChevronRight, ClipboardList, Clock, Copy, Ellipsis, ExternalLink, FileDown, Grid3X3, HelpCircle, Lightbulb, ListChecks, Loader2, MapPin, Maximize2, Pen, PieChart, Plus, RefreshCw, Repeat, Search, Send, Settings, Sliders, Star, Sun, Trash2, Unplug, UserCog, Users, Video, Wand2, X } from 'lucide-react';
+import { CalendarContextMenu } from './Calendar/CalendarContextMenu';
+import { CalendarSidebar } from './Calendar/CalendarSidebar';
+import { CalendarInlineModals } from './Calendar/CalendarInlineModals';
+import { CalendarSettingsPanel } from './Calendar/CalendarSettingsPanel';
+import { ViewMode, RecurrenceType, ReminderTime, EVENT_COLORS, EVENT_TYPES, TIME_ZONES, Team, autoDetectEventType } from './Calendar/calendarTypes';
 import {
   calendarAIService,
   SchedulingSuggestion,
@@ -41,81 +49,6 @@ interface CalendarProps {
   contacts: Contact[];
   openTaskPanel?: boolean;
   onNavigateToIntegrations?: () => void;
-}
-
-type ViewMode = 'month' | 'week' | 'day' | 'year' | 'agenda';
-type RecurrenceType = 'none' | 'daily' | 'weekly' | 'monthly' | 'yearly';
-type ReminderTime = 'none' | '5min' | '15min' | '30min' | '1hour' | '1day';
-
-// Event color presets
-const EVENT_COLORS = [
-  { id: 'zinc', name: 'Default', class: 'bg-zinc-800 dark:bg-zinc-700' },
-  { id: 'blue', name: 'Blue', class: 'bg-blue-600' },
-  { id: 'green', name: 'Green', class: 'bg-emerald-600' },
-  { id: 'red', name: 'Red', class: 'bg-red-600' },
-  { id: 'purple', name: 'Purple', class: 'bg-purple-600' },
-  { id: 'amber', name: 'Amber', class: 'bg-amber-600' },
-  { id: 'pink', name: 'Pink', class: 'bg-pink-600' },
-  { id: 'indigo', name: 'Indigo', class: 'bg-indigo-600' },
-];
-
-// Event type presets
-const EVENT_TYPES = [
-  { id: 'event',     name: 'Event',       icon: 'fa-calendar',          color: '#6b7280' },
-  { id: 'meet',      name: 'Meeting',     icon: 'fa-video',             color: '#3b82f6' },
-  { id: 'call',      name: 'Call',        icon: 'fa-phone',             color: '#10b981' },
-  { id: 'focus',     name: 'Focus Time',  icon: 'fa-brain',             color: '#8b5cf6' },
-  { id: 'personal',  name: 'Personal',    icon: 'fa-user',              color: '#f59e0b' },
-  { id: 'deadline',  name: 'Deadline',    icon: 'fa-flag',              color: '#ef4444' },
-  { id: 'travel',    name: 'Travel',      icon: 'fa-plane',             color: '#06b6d4' },
-  { id: 'social',    name: 'Social',      icon: 'fa-users',             color: '#ec4899' },
-  { id: 'health',    name: 'Health',      icon: 'fa-heart-pulse',       color: '#f97316' },
-  { id: 'reminder',  name: 'Reminder',    icon: 'fa-bell',              color: '#a3a3a3' },
-];
-
-// Smart auto-categorization based on event title/description/location
-const autoDetectEventType = (title: string, description?: string, location?: string): string => {
-  const text = `${title} ${description || ''} ${location || ''}`.toLowerCase();
-
-  // Video / online meeting
-  if (/zoom|google meet|teams|webex|whereby|facetime|skype|video call|video meeting/.test(text)) return 'meet';
-  // In-person meeting / call
-  if (/standup|sync|1:1|one.on.one|check.in|review|retro|sprint|scrum|board meeting|all.hands/.test(text)) return 'meet';
-  if (/call|phone|dial/.test(text) && !/recall|callback/.test(text)) return 'call';
-  // Focus / deep work
-  if (/focus|deep work|heads.down|no.interrupt|coding|writing|study|research|prep/.test(text)) return 'focus';
-  // Travel
-  if (/flight|airport|hotel|commute|drive to|travel|trip|vacation|conf(?:erence)?\s+trip/.test(text)) return 'travel';
-  // Deadline
-  if (/deadline|due|submit|launch|release|ship|milestone/.test(text)) return 'deadline';
-  // Health
-  if (/doctor|dentist|therapy|gym|workout|exercise|yoga|run|physio|appointment|checkup/.test(text)) return 'health';
-  // Social
-  if (/lunch|dinner|breakfast|coffee|happy hour|party|birthday|wedding|social|outing/.test(text)) return 'social';
-  // Personal
-  if (/personal|family|kids?|school|errand|grocery|haircut|car/.test(text)) return 'personal';
-
-  return 'event';
-};
-
-// Time zone list (simplified)
-const TIME_ZONES = [
-  { id: 'local', name: 'Local Time', offset: '' },
-  { id: 'utc', name: 'UTC', offset: '+0:00' },
-  { id: 'est', name: 'Eastern', offset: '-5:00' },
-  { id: 'pst', name: 'Pacific', offset: '-8:00' },
-  { id: 'gmt', name: 'London', offset: '+0:00' },
-  { id: 'cet', name: 'Central Europe', offset: '+1:00' },
-  { id: 'ist', name: 'India', offset: '+5:30' },
-  { id: 'jst', name: 'Japan', offset: '+9:00' },
-];
-
-// Team interface for custom team groupings
-interface Team {
-  id: string;
-  name: string;
-  color: string;
-  memberIds: string[];
 }
 
 const Calendar: React.FC<CalendarProps> = ({ contacts, openTaskPanel = false, onNavigateToIntegrations }) => {
@@ -1974,7 +1907,7 @@ const Calendar: React.FC<CalendarProps> = ({ contacts, openTaskPanel = false, on
                   onContextMenu={(e) => handleContextMenu(e, 'event', date, ev.id)}
                   title="All-day event"
                 >
-                    <i className="fa-solid fa-sun mr-0.5 sm:mr-1 text-[6px] sm:text-[8px] opacity-75 hidden sm:inline"></i>
+                    <Sun className="mr-0.5 sm:mr-1 text-[6px] sm:text-[8px] opacity-75 hidden sm:inline" />
                     <span className="truncate">{ev.title}</span>
                 </div>
             ))}
@@ -1986,7 +1919,7 @@ const Calendar: React.FC<CalendarProps> = ({ contacts, openTaskPanel = false, on
                   onClick={(e) => { e.stopPropagation(); openEventDetail(ev); }}
                   onContextMenu={(e) => handleContextMenu(e, 'event', date, ev.id)}
                 >
-                    {ev.type === 'meet' && <i className="fa-solid fa-video mr-0.5 sm:mr-1 hidden sm:inline"></i>}
+                    {ev.type === 'meet' && <Video className="mr-0.5 sm:mr-1 hidden sm:inline" />}
                     <span className="truncate">{ev.title}</span>
                 </div>
             ))}
@@ -2001,319 +1934,127 @@ const Calendar: React.FC<CalendarProps> = ({ contacts, openTaskPanel = false, on
     );
   };
 
+  // ── Stable callbacks for React.memo-wrapped sub-components ────────────────
+  const handleCloseEventModal = useCallback(() => {
+    setShowEventModal(false);
+    setEditingEvent(null);
+  }, []);
+
+  const handleOpenInviteModal = useCallback((contact: Contact) => {
+    setInviteContact(contact);
+    setShowInviteModal(true);
+  }, []);
+
+  const handleOpenGoalModal = useCallback((goal: any) => {
+    setEditingGoal(goal);
+    setShowGoalModal(true);
+  }, []);
+
+  const handleCloseGoalModal = useCallback(() => {
+    setShowGoalModal(false);
+    setEditingGoal(null);
+  }, []);
+
+  const handleSaveGoal = useCallback((newGoal: any) => {
+    if (editingGoal) {
+      setGoals(prev => prev.map(g => g.id === editingGoal.id ? newGoal : g));
+    } else {
+      setGoals(prev => [...prev, newGoal]);
+    }
+    setShowGoalModal(false);
+    setEditingGoal(null);
+  }, [editingGoal]);
+
+  const handleDeleteGoal = useCallback((id: string) => {
+    setGoals(prev => prev.filter(g => g.id !== id));
+    setShowGoalModal(false);
+    setEditingGoal(null);
+  }, []);
+
+  const handleCloseMeetingPrep = useCallback(() => {
+    setShowMeetingPrepModal(false);
+    setPrepEvent(null);
+  }, []);
+
+  const handleCloseRescheduleModal = useCallback(() => {
+    setShowRescheduleModal(false);
+    setRescheduleEvent(null);
+  }, []);
+
+  const handleFollowUpCreateAction = useCallback((suggestion: any) => {
+    if (suggestion.type === 'event') {
+      setNewEventTitle(suggestion.title);
+      setNewEventDate(suggestion.suggestedTime.toISOString().split('T')[0]);
+      setNewEventTime(
+        `${suggestion.suggestedTime.getHours().toString().padStart(2, '0')}:${suggestion.suggestedTime.getMinutes().toString().padStart(2, '0')}`
+      );
+      setNewEventDesc(suggestion.description || '');
+      setShowEventModal(true);
+    }
+    postMeetingService.markAsActioned(activeFollowUpPrompt!.id);
+    setActiveFollowUpPrompt(null);
+  }, [activeFollowUpPrompt]);
+
+  const handleFollowUpDismiss = useCallback((id: string) => {
+    postMeetingService.dismissFollowUp(id);
+    setActiveFollowUpPrompt(null);
+  }, []);
+
+  const handleFollowUpSkip = useCallback((id: string) => {
+    postMeetingService.dismissFollowUp(id);
+    setActiveFollowUpPrompt(null);
+  }, []);
+
   return (
     <div className={`pulse-calendar h-full flex-1 min-h-0 flex flex-col bg-white dark:bg-zinc-950 overflow-hidden animate-fade-in relative${focusMode ? ' cal-focus-mode' : ''}`}>
 
-      {/* Context Menu - Fixed positioning relative to viewport */}
-      {contextMenu.visible && (
-        <div
-          className="fixed z-[100] bg-white dark:bg-zinc-900 rounded-xl shadow-2xl border border-zinc-200 dark:border-zinc-800 py-2 min-w-[180px] animate-fade-in"
-          style={{
-            left: `${contextMenu.x}px`,
-            top: `${contextMenu.y}px`,
-          }}
-          onClick={(e) => e.stopPropagation()}
-        >
-          {contextMenu.type === 'day' ? (
-            <>
-              <button
-                onClick={handleQuickEvent}
-                className="w-full px-4 py-2.5 text-left text-sm text-zinc-700 dark:text-zinc-300 hover:bg-zinc-100 dark:hover:bg-zinc-800 flex items-center gap-3 transition"
-              >
-                <i className="fa-solid fa-plus text-blue-500 w-4"></i>
-                New Event
-              </button>
-              <button
-                onClick={() => {
-                  if (contextMenu.date) {
-                    setNewEventDate(contextMenu.date.toISOString().split('T')[0]);
-                    setNewEventTime('09:00');
-                    setShowEventModal(true);
-                  }
-                  closeContextMenu();
-                }}
-                className="w-full px-4 py-2.5 text-left text-sm text-zinc-700 dark:text-zinc-300 hover:bg-zinc-100 dark:hover:bg-zinc-800 flex items-center gap-3 transition"
-              >
-                <i className="fa-solid fa-video text-green-500 w-4"></i>
-                Schedule Meeting
-              </button>
-              <div className="border-t border-zinc-100 dark:border-zinc-800 my-1"></div>
-              <div className="px-4 py-2 text-xs text-zinc-400">
-                {contextMenu.date?.toLocaleDateString('en-US', {
-                  weekday: 'long',
-                  month: 'long',
-                  day: 'numeric'
-                })}
-              </div>
-            </>
-          ) : (
-            <>
-              <button
-                onClick={handleEditEvent}
-                className="w-full px-4 py-2.5 text-left text-sm text-zinc-700 dark:text-zinc-300 hover:bg-zinc-100 dark:hover:bg-zinc-800 flex items-center gap-3 transition"
-              >
-                <i className="fa-solid fa-pen text-blue-500 w-4"></i>
-                Edit Event
-              </button>
-              <button
-                onClick={handleDuplicateEvent}
-                className="w-full px-4 py-2.5 text-left text-sm text-zinc-700 dark:text-zinc-300 hover:bg-zinc-100 dark:hover:bg-zinc-800 flex items-center gap-3 transition"
-              >
-                <i className="fa-regular fa-copy text-zinc-400 w-4"></i>
-                Duplicate
-              </button>
-              <div className="border-t border-zinc-100 dark:border-zinc-800 my-1"></div>
-              <button
-                onClick={handleDeleteEvent}
-                className="w-full px-4 py-2.5 text-left text-sm text-red-600 hover:bg-red-50 dark:hover:bg-red-900/20 flex items-center gap-3 transition"
-              >
-                <i className="fa-solid fa-trash w-4"></i>
-                Delete Event
-              </button>
-            </>
-          )}
-        </div>
-      )}
+      <CalendarContextMenu
+        contextMenu={contextMenu}
+        handleQuickEvent={handleQuickEvent}
+        setNewEventDate={setNewEventDate}
+        setNewEventTime={setNewEventTime}
+        setShowEventModal={setShowEventModal}
+        closeContextMenu={closeContextMenu}
+        handleEditEvent={handleEditEvent}
+        handleDuplicateEvent={handleDuplicateEvent}
+        handleDeleteEvent={handleDeleteEvent}
+      />
 
-      {/* Event Modal - Enhanced */}
-      {showEventModal && (
-          <div className="absolute inset-0 z-50 bg-white/80 dark:bg-black/80 backdrop-blur-sm flex items-center justify-center animate-fade-in p-4 overflow-y-auto">
-              <form onSubmit={handleCreateEvent} className="bg-white dark:bg-zinc-900 border border-zinc-200 dark:border-zinc-800 rounded-2xl w-full max-w-lg p-6 shadow-2xl animate-scale-in my-8">
-                  <div className="flex items-center justify-between mb-6">
-                    <h3 className="text-xl font-bold dark:text-white text-zinc-900">{editingEvent ? 'Edit Event' : 'New Event'}</h3>
-                    <button type="button" onClick={() => { setShowEventModal(false); resetForm(); }} className="text-zinc-400 hover:text-zinc-600">
-                      <i className="fa-solid fa-xmark"></i>
-                    </button>
-                  </div>
-
-                  <div className="space-y-4">
-                      {/* Event Type Selector */}
-                      <div>
-                          <label className="text-xs text-zinc-500 uppercase font-bold mb-2 block">Event Type</label>
-                          <div className="flex gap-2 flex-wrap">
-                            {allEventTypes.map(type => (
-                              <button
-                                key={type.id}
-                                type="button"
-                                onClick={() => setNewEventType(type.id as CalendarEvent['type'])}
-                                className="px-3 py-2 rounded-lg text-xs font-medium flex items-center gap-2 transition border"
-                                style={newEventType === type.id
-                                  ? { backgroundColor: type.color, color: '#fff', borderColor: type.color }
-                                  : { backgroundColor: 'transparent', color: type.color, borderColor: type.color + '40' }}
-                              >
-                                <i className={`fa-solid ${type.icon}`}></i> {type.name}
-                              </button>
-                            ))}
-                            {/* Manage custom types button */}
-                            <button
-                              type="button"
-                              onClick={() => setShowCustomTypesManager(true)}
-                              className="px-3 py-2 rounded-lg text-xs font-medium flex items-center gap-1.5 transition border border-dashed border-zinc-300 dark:border-zinc-600 text-zinc-400 hover:text-zinc-600 dark:hover:text-zinc-300 hover:border-zinc-400"
-                            >
-                              <i className="fa-solid fa-sliders"></i> Manage
-                            </button>
-                          </div>
-                      </div>
-
-                      <div>
-                          <label className="text-xs text-zinc-500 uppercase font-bold mb-1 block">Title</label>
-                          <input
-                            type="text"
-                            tabIndex={0}
-                            autoFocus
-                            className="w-full bg-zinc-50 dark:bg-zinc-950 border border-zinc-200 dark:border-zinc-800 rounded-lg p-3 dark:text-white text-zinc-900 focus:border-zinc-400 focus:ring-2 focus:ring-blue-500 outline-none transition"
-                            placeholder="Event Title"
-                            value={newEventTitle}
-                            onChange={(e) => {
-                              setNewEventTitle(e.target.value);
-                              // Auto-detect event type from title
-                              if (e.target.value.length > 3) {
-                                const detected = autoDetectEventType(e.target.value, newEventDesc, newEventLocation);
-                                setNewEventType(detected);
-                              }
-                            }}
-                            required
-                          />
-                      </div>
-
-                      {/* All Day Toggle */}
-                      <div className="flex items-center gap-3">
-                        <label className="relative inline-flex items-center cursor-pointer" tabIndex={0} onKeyDown={(e) => { if (e.key === 'Enter' || e.key === ' ') { e.preventDefault(); setNewEventAllDay(!newEventAllDay); } }}>
-                          <input
-                            type="checkbox"
-                            tabIndex={-1}
-                            checked={newEventAllDay}
-                            onChange={(e) => setNewEventAllDay(e.target.checked)}
-                            className="sr-only peer"
-                          />
-                          <div className="w-9 h-5 bg-zinc-200 peer-focus:outline-none peer-focus:ring-2 peer-focus:ring-blue-500 rounded-full peer dark:bg-zinc-700 peer-checked:after:translate-x-full rtl:peer-checked:after:-translate-x-full peer-checked:after:border-white after:content-[''] after:absolute after:top-[2px] after:start-[2px] after:bg-white after:border-zinc-300 after:border after:rounded-full after:h-4 after:w-4 after:transition-all dark:border-zinc-600 peer-checked:bg-blue-600"></div>
-                        </label>
-                        <span className="text-sm text-zinc-600 dark:text-zinc-400">All Day Event</span>
-                      </div>
-
-                      <div className="grid grid-cols-2 gap-4">
-                          <div>
-                            <label className="text-xs text-zinc-500 uppercase font-bold mb-1 block">Date</label>
-                            <input
-                                type="date"
-                                tabIndex={0}
-                                className="w-full bg-zinc-50 dark:bg-zinc-950 border border-zinc-200 dark:border-zinc-800 rounded-lg p-3 dark:text-white text-zinc-900 focus:border-zinc-400 focus:ring-2 focus:ring-blue-500 outline-none transition"
-                                value={newEventDate}
-                                onChange={(e) => setNewEventDate(e.target.value)}
-                                required
-                            />
-                          </div>
-                          {!newEventAllDay && (
-                            <div className="grid grid-cols-2 gap-2">
-                              <div>
-                                <label className="text-xs text-zinc-500 uppercase font-bold mb-1 block">Start</label>
-                                <input
-                                    type="time"
-                                    step="60"
-                                    tabIndex={0}
-                                    className="w-full bg-zinc-50 dark:bg-zinc-950 border border-zinc-200 dark:border-zinc-800 rounded-lg p-3 dark:text-white text-zinc-900 focus:border-zinc-400 focus:ring-2 focus:ring-blue-500 outline-none transition"
-                                    value={newEventTime || '09:00'}
-                                    onChange={(e) => setNewEventTime(e.target.value)}
-                                />
-                              </div>
-                              <div>
-                                <label className="text-xs text-zinc-500 uppercase font-bold mb-1 block">End</label>
-                                <input
-                                    type="time"
-                                    step="60"
-                                    tabIndex={0}
-                                    className="w-full bg-zinc-50 dark:bg-zinc-950 border border-zinc-200 dark:border-zinc-800 rounded-lg p-3 dark:text-white text-zinc-900 focus:border-zinc-400 focus:ring-2 focus:ring-blue-500 outline-none transition"
-                                    value={newEventEndTime || '10:00'}
-                                    onChange={(e) => setNewEventEndTime(e.target.value)}
-                                />
-                              </div>
-                            </div>
-                          )}
-                      </div>
-
-                      {/* Location */}
-                      <div>
-                          <label className="text-xs text-zinc-500 uppercase font-bold mb-1 block">Location</label>
-                          <input
-                            type="text"
-                            tabIndex={0}
-                            className="w-full bg-zinc-50 dark:bg-zinc-950 border border-zinc-200 dark:border-zinc-800 rounded-lg p-3 dark:text-white text-zinc-900 focus:border-zinc-400 focus:ring-2 focus:ring-blue-500 outline-none transition"
-                            placeholder="Add location or meeting link"
-                            value={newEventLocation}
-                            onChange={(e) => setNewEventLocation(e.target.value)}
-                          />
-                      </div>
-
-                      {/* Color Picker */}
-                      <div>
-                          <label className="text-xs text-zinc-500 uppercase font-bold mb-2 block">Color</label>
-                          <div className="flex gap-2 flex-wrap" role="radiogroup" aria-label="Event color">
-                            {EVENT_COLORS.map((color, index) => (
-                              <button
-                                key={color.id}
-                                type="button"
-                                tabIndex={0}
-                                onClick={() => setNewEventColor(color.class)}
-                                className={`w-8 h-8 rounded-full ${color.class} transition ring-2 ring-offset-2 focus:ring-blue-500 focus:outline-none ${newEventColor === color.class ? 'ring-blue-500' : 'ring-transparent hover:ring-zinc-300'}`}
-                                title={color.name}
-                                aria-label={color.name}
-                              />
-                            ))}
-                          </div>
-                      </div>
-
-                      {/* Recurrence */}
-                      <div>
-                          <label className="text-xs text-zinc-500 uppercase font-bold mb-1 block">Repeat</label>
-                          <select
-                            tabIndex={0}
-                            value={newEventRecurrence}
-                            onChange={(e) => setNewEventRecurrence(e.target.value as RecurrenceType)}
-                            className="w-full bg-zinc-50 dark:bg-zinc-950 border border-zinc-200 dark:border-zinc-800 rounded-lg p-3 dark:text-white text-zinc-900 focus:border-zinc-400 focus:ring-2 focus:ring-blue-500 outline-none transition"
-                          >
-                            <option value="none">Does not repeat</option>
-                            <option value="daily">Daily</option>
-                            <option value="weekly">Weekly</option>
-                            <option value="monthly">Monthly</option>
-                            <option value="yearly">Yearly</option>
-                          </select>
-                      </div>
-
-                      {/* Reminder */}
-                      <div>
-                          <label className="text-xs text-zinc-500 uppercase font-bold mb-1 block">Reminder</label>
-                          <select
-                            tabIndex={0}
-                            value={newEventReminder}
-                            onChange={(e) => setAndPersistReminder(e.target.value as ReminderTime)}
-                            className="w-full bg-zinc-50 dark:bg-zinc-950 border border-zinc-200 dark:border-zinc-800 rounded-lg p-3 dark:text-white text-zinc-900 focus:border-zinc-400 focus:ring-2 focus:ring-blue-500 outline-none transition"
-                          >
-                            <option value="none">No reminder</option>
-                            <option value="5min">5 minutes before</option>
-                            <option value="15min">15 minutes before</option>
-                            <option value="30min">30 minutes before</option>
-                            <option value="1hour">1 hour before</option>
-                            <option value="1day">1 day before</option>
-                          </select>
-                      </div>
-
-                      {/* Attendees */}
-                      <div>
-                          <label className="text-xs text-zinc-500 uppercase font-bold mb-2 block">Attendees</label>
-                          <div className="flex flex-wrap gap-2 mb-2">
-                            {newEventAttendees.map(id => {
-                              const contact = contacts.find(c => c.id === id);
-                              return contact ? (
-                                <span key={id} className="inline-flex items-center gap-1 px-2 py-1 bg-zinc-100 dark:bg-zinc-800 rounded-full text-xs">
-                                  <span className={`w-4 h-4 rounded-full ${contact.avatarColor} flex items-center justify-center text-[8px] text-white font-bold`}>
-                                    {contact.name.charAt(0)}
-                                  </span>
-                                  {contact.name}
-                                  <button type="button" onClick={() => removeAttendee(id)} className="ml-1 text-zinc-400 hover:text-red-500">
-                                    <i className="fa-solid fa-xmark text-[10px]"></i>
-                                  </button>
-                                </span>
-                              ) : null;
-                            })}
-                          </div>
-                          <div className="flex gap-2 overflow-x-auto pb-2">
-                            {contacts.filter(c => !newEventAttendees.includes(c.id)).slice(0, 6).map(contact => (
-                              <button
-                                key={contact.id}
-                                type="button"
-                                onClick={() => addAttendee(contact.id)}
-                                className="flex items-center gap-2 px-3 py-2 bg-zinc-50 dark:bg-zinc-800 rounded-lg text-xs hover:bg-zinc-100 dark:hover:bg-zinc-700 transition whitespace-nowrap"
-                              >
-                                <span className={`w-5 h-5 rounded-full ${contact.avatarColor} flex items-center justify-center text-[10px] text-white font-bold`}>
-                                  {contact.name.charAt(0)}
-                                </span>
-                                {contact.name}
-                              </button>
-                            ))}
-                          </div>
-                      </div>
-
-                      <div>
-                          <label className="text-xs text-zinc-500 uppercase font-bold mb-1 block">Description</label>
-                          <textarea
-                             className="w-full bg-zinc-50 dark:bg-zinc-950 border border-zinc-200 dark:border-zinc-800 rounded-lg p-3 dark:text-white text-zinc-900 focus:border-zinc-400 outline-none resize-none h-20"
-                             placeholder="Add description or notes..."
-                             value={newEventDesc}
-                             onChange={(e) => setNewEventDesc(e.target.value)}
-                          />
-                      </div>
-                  </div>
-
-                  <div className="mt-6 flex justify-end gap-3">
-                      <button type="button" onClick={() => { setShowEventModal(false); resetForm(); }} className="px-5 py-2 text-zinc-500 hover:text-zinc-900 dark:hover:text-white transition text-sm font-medium">Cancel</button>
-                      <button type="submit" className="px-5 py-2 bg-zinc-900 dark:bg-white text-white dark:text-black rounded-lg text-sm font-bold uppercase tracking-wide hover:opacity-90 transition flex items-center gap-2">
-                        <i className={`fa-solid ${editingEvent ? 'fa-check' : 'fa-plus'}`}></i>
-                        {editingEvent ? 'Save Changes' : 'Create Event'}
-                      </button>
-                  </div>
-              </form>
-          </div>
-      )}
+      <EventCreationModal
+        isOpen={showEventModal}
+        editingEvent={editingEvent}
+        newEventTitle={newEventTitle}
+        onTitleChange={setNewEventTitle}
+        newEventDate={newEventDate}
+        onDateChange={setNewEventDate}
+        newEventTime={newEventTime}
+        onTimeChange={setNewEventTime}
+        newEventEndTime={newEventEndTime}
+        onEndTimeChange={setNewEventEndTime}
+        newEventAllDay={newEventAllDay}
+        onAllDayChange={setNewEventAllDay}
+        newEventDesc={newEventDesc}
+        onDescChange={setNewEventDesc}
+        newEventLocation={newEventLocation}
+        onLocationChange={setNewEventLocation}
+        newEventColor={newEventColor}
+        onColorChange={setNewEventColor}
+        newEventType={newEventType}
+        onTypeChange={setNewEventType}
+        newEventRecurrence={newEventRecurrence}
+        onRecurrenceChange={setNewEventRecurrence}
+        newEventReminder={newEventReminder}
+        onReminderChange={setAndPersistReminder}
+        newEventAttendees={newEventAttendees}
+        onAddAttendee={(id) => setNewEventAttendees(prev => [...prev, id])}
+        onRemoveAttendee={(id) => setNewEventAttendees(prev => prev.filter(a => a !== id))}
+        allEventTypes={allEventTypes}
+        contacts={contacts}
+        autoDetectEventType={autoDetectEventType}
+        onSubmit={handleCreateEvent}
+        onClose={handleCloseEventModal}
+        onOpenCustomTypesManager={() => setShowCustomTypesManager(true)}
+      />
 
       {/* Event Detail Modal - Enhanced with Google Calendar fields */}
       {showEventDetail && selectedEvent && (
@@ -2332,27 +2073,27 @@ const Calendar: React.FC<CalendarProps> = ({ contacts, openTaskPanel = false, on
                               </>
                             ) : <span>Event</span>;
                           })()}
-                          {selectedEvent.source === 'google' && <i className="fa-brands fa-google ml-1" aria-hidden="true"></i>}
-                          {selectedEvent.source === 'outlook' && <i className="fa-brands fa-microsoft ml-1" aria-hidden="true"></i>}
+                          {selectedEvent.source === 'google' && <ExternalLink className="ml-1" />}
+                          {selectedEvent.source === 'outlook' && <Grid3X3 className="ml-1" />}
                         </div>
                         <h3 className="text-xl font-bold text-white">{selectedEvent.title}</h3>
                         {/* Conflict badge — shown when this event overlaps a cross-provider duplicate */}
                         {syncConflicts.some(c => c.eventA.id === selectedEvent.id || c.eventB.id === selectedEvent.id) && (
                           <div className="mt-2 inline-flex items-center gap-1.5 px-2 py-1 bg-amber-400/30 border border-amber-300/50 rounded-full text-[10px] font-semibold text-amber-100 uppercase tracking-wide">
-                            <i className="fa-solid fa-triangle-exclamation text-[9px]" aria-hidden="true" />
+                            <AlertTriangle className="text-[9px]" />
                             Possible duplicate
                           </div>
                         )}
                       </div>
                       <button onClick={() => setShowEventDetail(false)} className="text-white/80 hover:text-white">
-                        <i className="fa-solid fa-xmark"></i>
+                        <X />
                       </button>
                     </div>
                   </div>
                   <div className="p-6 space-y-4">
                     {/* Time */}
                     <div className="flex items-center gap-3 text-sm">
-                      <i className="fa-solid fa-clock text-zinc-400 w-5"></i>
+                      <Clock className="text-zinc-400 w-5" />
                       <div className="dark:text-white">
                         {selectedEvent.allDay ? (
                           <span>All day</span>
@@ -2371,7 +2112,7 @@ const Calendar: React.FC<CalendarProps> = ({ contacts, openTaskPanel = false, on
                     {/* Meeting Link (Google Meet or any URL) */}
                     {selectedEvent.meetLink && (
                       <div className="flex items-center gap-3 text-sm">
-                        <i className="fa-solid fa-video text-blue-500 w-5" aria-hidden="true"></i>
+                        <Video className="text-blue-500 w-5" />
                         <div className="flex items-center gap-2 flex-1 min-w-0">
                           <a
                             href={selectedEvent.meetLink}
@@ -2391,7 +2132,7 @@ const Calendar: React.FC<CalendarProps> = ({ contacts, openTaskPanel = false, on
                             title="Copy link"
                             className="flex-shrink-0 w-6 h-6 flex items-center justify-center rounded-md text-zinc-400 hover:text-zinc-700 dark:hover:text-zinc-200 hover:bg-zinc-100 dark:hover:bg-zinc-800 transition"
                           >
-                            <i className="fa-regular fa-copy text-[11px]" aria-hidden="true"></i>
+                            <Copy className="text-[11px]" />
                           </button>
                         </div>
                       </div>
@@ -2400,7 +2141,7 @@ const Calendar: React.FC<CalendarProps> = ({ contacts, openTaskPanel = false, on
                     {/* Location */}
                     {selectedEvent.location && (
                       <div className="flex items-center gap-3 text-sm">
-                        <i className="fa-solid fa-location-dot text-zinc-400 w-5"></i>
+                        <MapPin className="text-zinc-400 w-5" />
                         <span className="dark:text-white">{selectedEvent.location}</span>
                       </div>
                     )}
@@ -2408,7 +2149,7 @@ const Calendar: React.FC<CalendarProps> = ({ contacts, openTaskPanel = false, on
                     {/* Organizer */}
                     {selectedEvent.organizer && (
                       <div className="flex items-center gap-3 text-sm">
-                        <i className="fa-solid fa-user-tie text-zinc-400 w-5"></i>
+                        <UserCog className="text-zinc-400 w-5" />
                         <span className="dark:text-white">
                           Organized by {selectedEvent.organizer.displayName || selectedEvent.organizer.email}
                         </span>
@@ -2418,7 +2159,7 @@ const Calendar: React.FC<CalendarProps> = ({ contacts, openTaskPanel = false, on
                     {/* Attendees — avatar chips with response status */}
                     {selectedEvent.attendeesDetailed && selectedEvent.attendeesDetailed.length > 0 ? (
                       <div className="flex items-start gap-3 text-sm">
-                        <i className="fa-solid fa-users text-zinc-400 w-5 mt-1" aria-hidden="true"></i>
+                        <Users className="text-zinc-400 w-5 mt-1" />
                         <div className="flex-1">
                           <div className="text-xs text-zinc-500 dark:text-zinc-400 mb-2">
                             {selectedEvent.attendeesDetailed.length} attendee{selectedEvent.attendeesDetailed.length !== 1 ? 's' : ''}
@@ -2449,7 +2190,7 @@ const Calendar: React.FC<CalendarProps> = ({ contacts, openTaskPanel = false, on
                       </div>
                     ) : selectedEvent.attendees && selectedEvent.attendees.length > 0 && (
                       <div className="flex items-start gap-3 text-sm">
-                        <i className="fa-solid fa-users text-zinc-400 w-5 mt-1" aria-hidden="true"></i>
+                        <Users className="text-zinc-400 w-5 mt-1" />
                         <div className="flex-1">
                           <div className="text-xs text-zinc-500 dark:text-zinc-400 mb-2">
                             {selectedEvent.attendees.length} attendee{selectedEvent.attendees.length !== 1 ? 's' : ''}
@@ -2475,7 +2216,7 @@ const Calendar: React.FC<CalendarProps> = ({ contacts, openTaskPanel = false, on
                     {/* Recurrence */}
                     {selectedEvent.recurrence && selectedEvent.recurrence.length > 0 && (
                       <div className="flex items-center gap-3 text-sm">
-                        <i className="fa-solid fa-repeat text-zinc-400 w-5"></i>
+                        <Repeat className="text-zinc-400 w-5" />
                         <span className="dark:text-white text-zinc-600">Recurring event</span>
                       </div>
                     )}
@@ -2483,7 +2224,7 @@ const Calendar: React.FC<CalendarProps> = ({ contacts, openTaskPanel = false, on
                     {/* Reminders */}
                     {selectedEvent.reminders && !selectedEvent.reminders.useDefault && selectedEvent.reminders.overrides && (
                       <div className="flex items-start gap-3 text-sm">
-                        <i className="fa-solid fa-bell text-zinc-400 w-5 mt-0.5"></i>
+                        <Bell className="text-zinc-400 w-5 mt-0.5" />
                         <div className="flex-1">
                           {selectedEvent.reminders.overrides.map((reminder, i) => (
                             <div key={i} className="text-zinc-500 text-xs">
@@ -2497,7 +2238,7 @@ const Calendar: React.FC<CalendarProps> = ({ contacts, openTaskPanel = false, on
                     {/* Description */}
                     {selectedEvent.description && (
                       <div className="flex items-start gap-3 text-sm">
-                        <i className="fa-solid fa-align-left text-zinc-400 w-5"></i>
+                        <AlignLeft className="text-zinc-400 w-5" />
                         <p className="text-zinc-600 dark:text-zinc-400 whitespace-pre-wrap">{selectedEvent.description}</p>
                       </div>
                     )}
@@ -2511,7 +2252,7 @@ const Calendar: React.FC<CalendarProps> = ({ contacts, openTaskPanel = false, on
                           rel="noopener noreferrer"
                           className="text-xs text-blue-500 hover:underline flex items-center gap-1"
                         >
-                          <i className="fa-brands fa-google"></i>
+                          <ExternalLink />
                           Open in Google Calendar
                         </a>
                       </div>
@@ -2533,7 +2274,7 @@ const Calendar: React.FC<CalendarProps> = ({ contacts, openTaskPanel = false, on
                         }}
                         className="flex-1 px-4 py-2 bg-zinc-100 dark:bg-zinc-800 rounded-lg text-sm font-medium text-zinc-700 dark:text-zinc-300 hover:bg-zinc-200 dark:hover:bg-zinc-700 transition flex items-center justify-center gap-2"
                       >
-                        <i className="fa-solid fa-pen text-xs"></i> Edit
+                        <Pen className="text-xs" /> Edit
                       </button>
                       <button
                         onClick={async () => {
@@ -2554,7 +2295,7 @@ const Calendar: React.FC<CalendarProps> = ({ contacts, openTaskPanel = false, on
                         }}
                         className="px-4 py-2 bg-red-50 dark:bg-red-900/20 rounded-lg text-sm font-medium text-red-600 hover:bg-red-100 dark:hover:bg-red-900/40 transition flex items-center justify-center gap-2"
                       >
-                        <i className="fa-solid fa-trash text-xs"></i> Delete
+                        <Trash2 className="text-xs" /> Delete
                       </button>
                     </div>
                   </div>
@@ -2568,13 +2309,13 @@ const Calendar: React.FC<CalendarProps> = ({ contacts, openTaskPanel = false, on
             <div className="p-4 border-b border-zinc-200 dark:border-zinc-800 flex items-center justify-between">
               <h3 className="font-bold dark:text-white">Upcoming Events</h3>
               <button onClick={() => setShowUpcoming(false)} className="text-zinc-400 hover:text-zinc-600">
-                <i className="fa-solid fa-xmark"></i>
+                <X />
               </button>
             </div>
             <div className="flex-1 overflow-y-auto p-4 space-y-3">
               {upcomingEvents.length === 0 ? (
                 <div className="text-center text-zinc-500 py-8">
-                  <i className="fa-solid fa-calendar-check text-3xl mb-3 opacity-50"></i>
+                  <CalendarCheck className="text-3xl mb-3 opacity-50" />
                   <p className="text-sm">No upcoming events</p>
                 </div>
               ) : (
@@ -2593,7 +2334,7 @@ const Calendar: React.FC<CalendarProps> = ({ contacts, openTaskPanel = false, on
                           {!event.allDay && ` at ${event.start.toLocaleTimeString([], { hour: '2-digit', minute: '2-digit' })}`}
                         </div>
                       </div>
-                      <i className="fa-solid fa-chevron-right text-zinc-300 group-hover:text-zinc-500 text-xs"></i>
+                      <ChevronRight className="text-zinc-300 group-hover:text-zinc-500 text-xs" />
                     </div>
                   </button>
                 ))
@@ -2627,10 +2368,10 @@ const Calendar: React.FC<CalendarProps> = ({ contacts, openTaskPanel = false, on
               onChange={(e) => setSearchQuery(e.target.value)}
               className="w-full bg-zinc-50 dark:bg-zinc-900 border border-zinc-200 dark:border-zinc-800 rounded-lg px-3 py-1.5 text-xs pl-8 outline-none focus:ring-2 focus:ring-blue-500 dark:text-white"
             />
-            <i className="fa-solid fa-search absolute left-2.5 top-1/2 -translate-y-1/2 text-zinc-400 text-[10px]"></i>
+            <Search className="absolute left-2.5 top-1/2 -translate-y-1/2 text-zinc-400 text-[10px]" />
             {searchQuery && (
               <button onClick={() => setSearchQuery('')} className="absolute right-2 top-1/2 -translate-y-1/2 text-zinc-400 hover:text-zinc-600">
-                <i className="fa-solid fa-xmark text-[10px]"></i>
+                <X className="text-[10px]" />
               </button>
             )}
           </div>
@@ -2657,7 +2398,7 @@ const Calendar: React.FC<CalendarProps> = ({ contacts, openTaskPanel = false, on
               className={`flex items-center gap-1.5 px-2.5 py-1.5 rounded-lg text-xs font-medium border transition ${showNLInput ? 'bg-violet-500 border-violet-500 text-white' : 'border-zinc-200 dark:border-zinc-800 text-zinc-500 dark:text-zinc-400 hover:text-violet-600 hover:border-violet-300'}`}
               title="AI quick-add (type naturally)"
             >
-              <i className="fa-solid fa-wand-magic-sparkles text-[10px]"></i>
+              <Wand2 className="text-[10px]" />
               <span className="hidden lg:inline">Quick Add</span>
             </button>
           )}
@@ -2670,7 +2411,7 @@ const Calendar: React.FC<CalendarProps> = ({ contacts, openTaskPanel = false, on
             onClick={() => setShowEventModal(true)}
             className="flex items-center gap-1.5 px-2.5 py-1.5 bg-zinc-900 dark:bg-white text-white dark:text-black rounded-lg text-xs font-bold hover:opacity-90 transition"
           >
-            <i className="fa-solid fa-plus text-[10px]"></i>
+            <Plus className="text-[10px]" />
             <span className="hidden sm:inline">New</span>
           </button>
 
@@ -2682,7 +2423,7 @@ const Calendar: React.FC<CalendarProps> = ({ contacts, openTaskPanel = false, on
               className={`w-8 h-8 flex items-center justify-center rounded-lg border transition ${showUpcoming ? 'bg-blue-500 border-blue-500 text-white' : 'border-zinc-200 dark:border-zinc-800 text-zinc-400 hover:text-zinc-900 dark:hover:text-white'}`}
               title="Upcoming Events"
             >
-              <i className="fa-solid fa-clock text-xs"></i>
+              <Clock className="text-xs" />
             </button>
             {/* Tasks */}
             <button
@@ -2690,7 +2431,7 @@ const Calendar: React.FC<CalendarProps> = ({ contacts, openTaskPanel = false, on
               className={`w-8 h-8 flex items-center justify-center rounded-lg border transition ${showTaskPanel ? 'bg-zinc-100 dark:bg-zinc-800 border-zinc-300 dark:border-zinc-700 text-zinc-900 dark:text-white' : 'border-zinc-200 dark:border-zinc-800 text-zinc-400 hover:text-zinc-900 dark:hover:text-white'}`}
               title="Tasks"
             >
-              <i className="fa-solid fa-list-check text-xs"></i>
+              <ListChecks className="text-xs" />
             </button>
             {/* Sync status indicator */}
             {(googleConnected || outlookConnected) && (
@@ -2718,13 +2459,13 @@ const Calendar: React.FC<CalendarProps> = ({ contacts, openTaskPanel = false, on
                   <p className="font-semibold mb-1 text-zinc-200">Calendar Sync</p>
                   {googleConnected && (
                     <div className="flex items-center gap-1.5 text-zinc-400">
-                      <i className="fa-brands fa-google text-[10px]" aria-hidden="true" />
+                      <ExternalLink className="text-[10px]" />
                       Google {syncingGoogle ? '· syncing…' : '· connected'}
                     </div>
                   )}
                   {outlookConnected && (
                     <div className="flex items-center gap-1.5 text-zinc-400 mt-0.5">
-                      <i className="fa-brands fa-microsoft text-[10px]" aria-hidden="true" />
+                      <Grid3X3 className="text-[10px]" />
                       Outlook {syncingOutlook ? '· syncing…' : '· connected'}
                     </div>
                   )}
@@ -2745,7 +2486,7 @@ const Calendar: React.FC<CalendarProps> = ({ contacts, openTaskPanel = false, on
                 title="Google Calendar not connected — connect in Settings"
                 className="w-8 h-8 flex items-center justify-center rounded-lg border border-zinc-200 dark:border-zinc-800 text-zinc-300 dark:text-zinc-600 cursor-default"
               >
-                <i className="fa-brands fa-google text-xs" aria-hidden="true" />
+                <ExternalLink className="text-xs" />
               </button>
             )}
             {/* Settings */}
@@ -2754,7 +2495,7 @@ const Calendar: React.FC<CalendarProps> = ({ contacts, openTaskPanel = false, on
               className={`w-8 h-8 flex items-center justify-center rounded-lg border transition ${showCalendarSettings ? 'bg-zinc-900 dark:bg-white border-zinc-900 dark:border-white text-white dark:text-black' : 'border-zinc-200 dark:border-zinc-800 text-zinc-400 hover:text-zinc-900 dark:hover:text-white'}`}
               title="Calendar Settings"
             >
-              <i className="fa-solid fa-gear text-xs"></i>
+              <Settings className="text-xs" />
             </button>
             {/* AI Panel */}
             <button
@@ -2782,7 +2523,7 @@ const Calendar: React.FC<CalendarProps> = ({ contacts, openTaskPanel = false, on
               title="Jump to date (⌘J)"
               className={`w-8 h-8 flex items-center justify-center rounded-lg border transition hidden md:flex ${showJumpToDate ? 'bg-zinc-900 dark:bg-white border-zinc-900 dark:border-white text-white dark:text-black' : 'border-zinc-200 dark:border-zinc-800 text-zinc-400 hover:text-zinc-700 dark:hover:text-white'}`}
             >
-              <i className="fa-solid fa-calendar-days text-xs" aria-hidden="true" />
+              <CalendarDays className="text-xs" />
             </button>
 
             {/* Focus mode */}
@@ -2792,7 +2533,7 @@ const Calendar: React.FC<CalendarProps> = ({ contacts, openTaskPanel = false, on
               title={focusMode ? 'Exit focus mode (⌘F)' : 'Focus mode (⌘F)'}
               className={`w-8 h-8 flex items-center justify-center rounded-lg border transition hidden md:flex ${focusMode ? 'bg-indigo-600 border-indigo-600 text-white' : 'border-zinc-200 dark:border-zinc-800 text-zinc-400 hover:text-indigo-600 hover:border-indigo-300'}`}
             >
-              <i className="fa-solid fa-expand text-xs" aria-hidden="true" />
+              <Maximize2 className="text-xs" />
             </button>
 
             {/* ⋯ More / Export menu */}
@@ -2803,7 +2544,7 @@ const Calendar: React.FC<CalendarProps> = ({ contacts, openTaskPanel = false, on
                 title="More options"
                 className={`w-8 h-8 flex items-center justify-center rounded-lg border transition ${showExportMenu ? 'bg-zinc-900 dark:bg-white border-zinc-900 dark:border-white text-white dark:text-black' : 'border-zinc-200 dark:border-zinc-800 text-zinc-400 hover:text-zinc-700 dark:hover:text-white'}`}
               >
-                <i className="fa-solid fa-ellipsis text-xs" aria-hidden="true" />
+                <Ellipsis className="text-xs" />
               </button>
               {showExportMenu && (
                 <div
@@ -2817,7 +2558,7 @@ const Calendar: React.FC<CalendarProps> = ({ contacts, openTaskPanel = false, on
                     onClick={exportAsICS}
                     className="w-full flex items-center gap-2.5 px-3 py-2.5 text-sm text-zinc-700 dark:text-zinc-200 hover:bg-zinc-50 dark:hover:bg-zinc-800 transition text-left"
                   >
-                    <i className="fa-solid fa-file-arrow-down text-indigo-500 w-4" aria-hidden="true" />
+                    <FileDown className="text-indigo-500 w-4" />
                     <div>
                       <div className="font-medium">Export as .ics</div>
                       <div className="text-[10px] text-zinc-400 capitalize">
@@ -2871,307 +2612,42 @@ const Calendar: React.FC<CalendarProps> = ({ contacts, openTaskPanel = false, on
       )}
 
       <div className="flex-1 min-h-0 flex overflow-hidden">
-         {/* Resizable Sidebar - Hidden on small screens, collapsible on medium */}
-         <div
-           ref={sidebarRef}
-           style={{ width: `${sidebarWidth}px`, minWidth: '160px', maxWidth: '400px' }}
-           className="bg-zinc-50 dark:bg-zinc-900/30 border-r border-zinc-200 dark:border-zinc-800 p-3 lg:p-4 overflow-y-auto hidden lg:flex flex-col relative flex-shrink-0"
-         >
-             {/* Resize Handle */}
-             <div
-               onMouseDown={handleMouseDown}
-               className={`absolute right-0 top-0 bottom-0 w-2 cursor-col-resize hover:bg-blue-500/50 transition ${isResizing ? 'bg-blue-500' : 'bg-transparent hover:bg-blue-500/30'}`}
-             />
-
-             <div className="mb-4 lg:mb-6">
-                 <h3 className="text-[10px] lg:text-xs font-bold text-zinc-400 uppercase tracking-widest mb-2 lg:mb-3">My Calendars</h3>
-                 <div className="space-y-2">
-                     <label className="flex items-center gap-2 text-xs lg:text-sm text-zinc-600 dark:text-zinc-300 cursor-pointer group">
-                         <input
-                            type="checkbox"
-                            checked={visibleCalendars.has('user')}
-                            onChange={() => toggleCalendarVisibility('user')}
-                            className="w-3.5 h-3.5 lg:w-4 lg:h-4 rounded border-zinc-300 dark:border-zinc-700 bg-white dark:bg-zinc-800 checked:bg-zinc-900 dark:checked:bg-white checked:border-transparent transition"
-                         />
-                         <span className="group-hover:text-zinc-900 dark:group-hover:text-white transition truncate">Local Events</span>
-                     </label>
-                 </div>
-             </div>
-
-             {/* Google Calendars */}
-             {googleConnected && googleCalendars.length > 0 && (
-               <div className="mb-4 lg:mb-6">
-                 <h3 className="text-[10px] lg:text-xs font-bold text-zinc-400 uppercase tracking-widest mb-2 lg:mb-3 flex items-center justify-between">
-                   <span className="flex items-center gap-1.5 truncate">
-                     <i className="fa-brands fa-google text-[8px] lg:text-[10px]"></i> <span className="truncate">Google Calendars</span>
-                   </span>
-                   <button
-                     onClick={() => setShowCreateCalendarModal(true)}
-                     className="text-blue-500 hover:text-blue-600 transition flex-shrink-0"
-                     title="Create New Calendar"
-                   >
-                     <i className="fa-solid fa-plus text-[10px]"></i>
-                   </button>
-                 </h3>
-                 {/* Color palette for the picker */}
-                 {(() => {
-                   const CAL_PALETTE = [
-                     '#ef4444','#f97316','#eab308','#22c55e',
-                     '#14b8a6','#3b82f6','#8b5cf6','#ec4899',
-                     '#6b7280','#0ea5e9','#10b981','#f43f5e',
-                   ];
-                   return (
-                     <div className="space-y-1">
-                       {googleCalendars.map(cal => {
-                         const dotColor = calendarColors[cal.id] || cal.backgroundColor || '#3b82f6';
-                         const isPickerOpen = colorPickerOpenFor === cal.id;
-                         return (
-                           <div key={cal.id} className="relative">
-                             <div className="flex items-center gap-2 group">
-                               {/* Color dot — click to open picker */}
-                               <button
-                                 onClick={(e) => { e.stopPropagation(); setColorPickerOpenFor(isPickerOpen ? null : cal.id); }}
-                                 className="w-3 h-3 rounded-full flex-shrink-0 ring-2 ring-transparent hover:ring-zinc-300 dark:hover:ring-zinc-600 transition focus:outline-none focus-visible:ring-indigo-400"
-                                 style={{ backgroundColor: dotColor }}
-                                 aria-label={`Change color for ${cal.summary}`}
-                                 title="Change calendar color"
-                               />
-                               <label className="flex items-center gap-1.5 flex-1 min-w-0 text-xs lg:text-sm text-zinc-600 dark:text-zinc-300 cursor-pointer">
-                                 <input
-                                   type="checkbox"
-                                   checked={visibleCalendars.has(cal.id)}
-                                   onChange={() => toggleCalendarVisibility(cal.id)}
-                                   className="w-3.5 h-3.5 rounded border-zinc-300 dark:border-zinc-700 bg-white dark:bg-zinc-800 checked:border-transparent transition flex-shrink-0"
-                                   style={{ accentColor: dotColor }}
-                                 />
-                                 <span className="group-hover:text-zinc-900 dark:group-hover:text-white transition truncate flex items-center gap-1">
-                                   {cal.primary && <i className="fa-solid fa-star text-amber-400 text-[8px] flex-shrink-0" aria-hidden="true"></i>}
-                                   <span className="truncate">{cal.summary}</span>
-                                 </span>
-                               </label>
-                             </div>
-                             {/* Color picker popover */}
-                             {isPickerOpen && (
-                               <div className="absolute left-0 top-6 z-20 p-2 bg-white dark:bg-zinc-800 border border-zinc-200 dark:border-zinc-700 rounded-xl shadow-xl grid grid-cols-6 gap-1.5"
-                                 onMouseDown={e => e.stopPropagation()}
-                               >
-                                 {CAL_PALETTE.map(hex => (
-                                   <button
-                                     key={hex}
-                                     onClick={() => setCalendarColor(cal.id, hex)}
-                                     className={`w-5 h-5 rounded-full transition hover:scale-110 focus:outline-none focus-visible:ring-2 focus-visible:ring-offset-1 focus-visible:ring-indigo-500 ${dotColor === hex ? 'ring-2 ring-offset-1 ring-zinc-700 dark:ring-white' : ''}`}
-                                     style={{ backgroundColor: hex }}
-                                     aria-label={hex}
-                                   />
-                                 ))}
-                               </div>
-                             )}
-                           </div>
-                         );
-                       })}
-                     </div>
-                   );
-                 })()}
-                 {lastSynced && (
-                   <p className="text-[9px] lg:text-[10px] text-zinc-400 mt-2 truncate">
-                     Last synced: {lastSynced.toLocaleTimeString()}
-                   </p>
-                 )}
-                 {syncError && (
-                   <p className="text-[9px] lg:text-[10px] text-red-500 mt-2 truncate">{syncError}</p>
-                 )}
-               </div>
-             )}
-
-             {!googleConnected && (
-               <div className="mb-8 p-4 bg-zinc-100 dark:bg-zinc-800/50 rounded-xl border border-zinc-200 dark:border-zinc-700">
-                 <div className="flex items-center gap-2 mb-2">
-                   <i className="fa-brands fa-google text-blue-500"></i>
-                   <span className="text-sm font-medium dark:text-white">Google Calendar</span>
-                 </div>
-                 <p className="text-xs text-zinc-500 dark:text-zinc-400 mb-3">
-                   Connect to sync your events and enable AI scheduling
-                 </p>
-                 <button
-                   onClick={() => {
-                     if (onNavigateToIntegrations) {
-                       onNavigateToIntegrations();
-                     }
-                   }}
-                   className="w-full flex items-center justify-center gap-2 bg-white dark:bg-zinc-900 border border-zinc-200 dark:border-zinc-700 rounded-lg px-3 py-2 text-sm font-medium text-zinc-700 dark:text-zinc-300 hover:bg-zinc-50 dark:hover:bg-zinc-800 transition shadow-sm"
-                 >
-                   <i className="fa-solid fa-cog text-sm"></i>
-                   Connect in Settings
-                 </button>
-                 {syncError && (
-                   <p className="text-[10px] text-amber-600 dark:text-amber-400 mt-2 flex items-center gap-1">
-                     <i className="fa-solid fa-triangle-exclamation"></i>
-                     {syncError}
-                   </p>
-                 )}
-               </div>
-             )}
-             
-             {/* Team Section with Team Selection */}
-             <div className="flex-1">
-                 <div className="flex items-center justify-between mb-4">
-                   <h3 className="text-xs font-bold text-zinc-400 uppercase tracking-widest">Team</h3>
-                   <div className="flex items-center gap-2">
-                     <button
-                       onClick={() => setShowTeamModal(true)}
-                       className="text-blue-500 hover:text-blue-600 transition"
-                       title="Create New Team"
-                     >
-                       <i className="fa-solid fa-plus text-[10px]"></i>
-                     </button>
-                     {selectedTeam && teams.length > 1 && (
-                       <button
-                         onClick={() => openEditTeam(selectedTeam)}
-                         className="text-zinc-400 hover:text-zinc-600 transition"
-                         title="Edit Team"
-                       >
-                         <i className="fa-solid fa-pen text-[10px]"></i>
-                       </button>
-                     )}
-                   </div>
-                 </div>
-
-                 {/* Team Selector Dropdown */}
-                 {teams.length > 1 && (
-                   <select
-                     value={selectedTeamId}
-                     onChange={(e) => setSelectedTeamId(e.target.value)}
-                     className="w-full mb-4 bg-white dark:bg-zinc-800 border border-zinc-200 dark:border-zinc-700 rounded-lg px-3 py-2 text-sm outline-none"
-                   >
-                     {teams.map(team => (
-                       <option key={team.id} value={team.id}>{team.name}</option>
-                     ))}
-                   </select>
-                 )}
-
-                 <div className="space-y-2">
-                     {teamMembers.length === 0 ? (
-                       <div className="text-center py-4">
-                         <i className="fa-solid fa-users text-zinc-300 dark:text-zinc-600 text-2xl mb-2"></i>
-                         <p className="text-xs text-zinc-500">No team members yet</p>
-                         <button
-                           onClick={() => openEditTeam(selectedTeam)}
-                           className="text-xs text-blue-500 hover:text-blue-600 mt-2"
-                         >
-                           Add members
-                         </button>
-                       </div>
-                     ) : (
-                       <>
-                       {teamMembers.map(contact => {
-                         const overlayOn = overlayMemberIds.has(contact.id);
-                         return (
-                          <div key={contact.id} className="flex items-center gap-2 text-sm text-zinc-600 dark:text-zinc-300 group p-2 rounded-lg hover:bg-white dark:hover:bg-zinc-800 transition">
-                              <div className="flex items-center gap-2 flex-1 min-w-0">
-                                  <div className={`w-6 h-6 rounded-full ${contact.avatarColor} flex-shrink-0 flex items-center justify-center text-white text-xs font-bold`}>
-                                    {contact.name.charAt(0)}
-                                  </div>
-                                  <div className="flex-1 min-w-0">
-                                    <span className="group-hover:text-zinc-900 dark:group-hover:text-white truncate block transition">{contact.name}</span>
-                                    <span className="text-[10px] text-zinc-400 truncate block">{contact.email}</span>
-                                  </div>
-                              </div>
-                              {/* Show-on-calendar overlay toggle (week/day only) */}
-                              {(viewMode === 'week' || viewMode === 'day') && (
-                                <button
-                                  onClick={() => setOverlayMemberIds(prev => {
-                                    const next = new Set(prev);
-                                    if (next.has(contact.id)) next.delete(contact.id);
-                                    else next.add(contact.id);
-                                    return next;
-                                  })}
-                                  aria-label={overlayOn ? `Hide ${contact.name}'s schedule` : `Show ${contact.name}'s schedule`}
-                                  title={overlayOn ? `Hide ${contact.name}'s schedule` : `Show ${contact.name}'s schedule`}
-                                  className={`w-6 h-6 flex-shrink-0 flex items-center justify-center rounded-md border transition ${
-                                    overlayOn
-                                      ? `${contact.avatarColor} border-transparent text-white`
-                                      : 'border-zinc-300 dark:border-zinc-600 text-zinc-400 hover:text-zinc-600 dark:hover:text-zinc-200'
-                                  }`}
-                                >
-                                  <i className={`fa-solid ${overlayOn ? 'fa-eye' : 'fa-eye-slash'} text-[10px]`} aria-hidden="true" />
-                                </button>
-                              )}
-                              {/* Send Calendar Invite Button */}
-                              <button
-                                onClick={() => {
-                                  setInviteContact(contact);
-                                  setShowInviteModal(true);
-                                }}
-                                className="opacity-0 group-hover:opacity-100 w-7 h-7 flex items-center justify-center rounded-lg bg-blue-500 text-white hover:bg-blue-600 transition flex-shrink-0"
-                                title="Schedule meeting with this contact"
-                              >
-                                <i className="fa-solid fa-calendar-plus text-[10px]" aria-hidden="true"></i>
-                              </button>
-                          </div>
-                         );
-                       })}
-                       {/* Free-time finder button (only relevant in week/day) */}
-                       {teamMembers.length > 0 && (viewMode === 'week' || viewMode === 'day') && (
-                         <button
-                           onClick={() => setShowFreeTimeFinder(f => !f)}
-                           className={`mt-1 w-full flex items-center gap-2 px-2 py-1.5 rounded-lg text-xs font-medium transition ${
-                             showFreeTimeFinder
-                               ? 'bg-emerald-100 dark:bg-emerald-900/40 text-emerald-700 dark:text-emerald-300'
-                               : 'text-zinc-500 dark:text-zinc-400 hover:bg-white dark:hover:bg-zinc-800 hover:text-zinc-700 dark:hover:text-white'
-                           }`}
-                         >
-                           <i className="fa-solid fa-clock text-[10px]" aria-hidden="true" />
-                           Find free time
-                         </button>
-                       )}
-
-                       {/* Free-time results */}
-                       {showFreeTimeFinder && (viewMode === 'week' || viewMode === 'day') && (
-                         <div className="mt-2 border border-emerald-200 dark:border-emerald-800/60 rounded-xl overflow-hidden">
-                           <div className="px-3 py-2 bg-emerald-50 dark:bg-emerald-950/40 border-b border-emerald-200 dark:border-emerald-800/60 flex items-center gap-2">
-                             <i className="fa-solid fa-wand-magic-sparkles text-emerald-500 text-[10px]" aria-hidden="true" />
-                             <span className="text-[10px] font-semibold text-emerald-700 dark:text-emerald-300 uppercase tracking-wider">
-                               Available slots
-                             </span>
-                           </div>
-                           {freeTimeSlots.length === 0 ? (
-                             <div className="px-3 py-3 text-xs text-zinc-400 dark:text-zinc-500 text-center">
-                               No free slots found this {viewMode === 'week' ? 'week' : 'day'}
-                             </div>
-                           ) : (
-                             <div className="divide-y divide-emerald-100 dark:divide-emerald-900/40 max-h-40 overflow-y-auto">
-                               {freeTimeSlots.map((slot, i) => {
-                                 const fmt = (d: Date) => d.toLocaleTimeString([], { hour: 'numeric', minute: '2-digit' });
-                                 const dur = Math.round((slot.end.getTime() - slot.start.getTime()) / 60000);
-                                 return (
-                                   <button
-                                     key={i}
-                                     className="w-full text-left px-3 py-2 hover:bg-emerald-50 dark:hover:bg-emerald-950/40 transition group"
-                                     title="Click to create an event in this slot"
-                                     onClick={() => {
-                                       setNewEventDate(slot.start.toISOString().split('T')[0]);
-                                       setNewEventTime(slot.start.toLocaleTimeString('en-GB', { hour: '2-digit', minute: '2-digit' }));
-                                       setShowEventModal(true);
-                                     }}
-                                   >
-                                     <div className="text-[11px] font-medium text-zinc-700 dark:text-zinc-200 group-hover:text-emerald-700 dark:group-hover:text-emerald-300 transition">
-                                       {fmt(slot.start)} – {fmt(slot.end)}
-                                     </div>
-                                     <div className="text-[10px] text-zinc-400 dark:text-zinc-500">
-                                       {slot.dayLabel} · {dur} min
-                                     </div>
-                                   </button>
-                                 );
-                               })}
-                             </div>
-                           )}
-                         </div>
-                       )}
-                       </>
-                     )}
-                 </div>
-             </div>
-         </div>
+         <CalendarSidebar
+           sidebarRef={sidebarRef}
+           sidebarWidth={sidebarWidth}
+           handleMouseDown={handleMouseDown}
+           isResizing={isResizing}
+           visibleCalendars={visibleCalendars}
+           toggleCalendarVisibility={toggleCalendarVisibility}
+           googleConnected={googleConnected}
+           googleCalendars={googleCalendars}
+           calendarColors={calendarColors}
+           colorPickerOpenFor={colorPickerOpenFor}
+           setColorPickerOpenFor={setColorPickerOpenFor}
+           setCalendarColor={setCalendarColor}
+           lastSynced={lastSynced}
+           syncError={syncError}
+           setShowCreateCalendarModal={setShowCreateCalendarModal}
+           onNavigateToIntegrations={onNavigateToIntegrations}
+           teams={teams}
+           selectedTeam={selectedTeam}
+           selectedTeamId={selectedTeamId}
+           setSelectedTeamId={setSelectedTeamId}
+           teamMembers={teamMembers}
+           setShowTeamModal={setShowTeamModal}
+           openEditTeam={openEditTeam}
+           viewMode={viewMode}
+           overlayMemberIds={overlayMemberIds}
+           setOverlayMemberIds={setOverlayMemberIds}
+           setInviteContact={setInviteContact}
+           setShowInviteModal={setShowInviteModal}
+           showFreeTimeFinder={showFreeTimeFinder}
+           setShowFreeTimeFinder={setShowFreeTimeFinder}
+           freeTimeSlots={freeTimeSlots}
+           setNewEventDate={setNewEventDate}
+           setNewEventTime={setNewEventTime}
+           setShowEventModal={setShowEventModal}
+         />
 
          {/* Calendar Grid - Premium Views */}
          <div
@@ -3235,7 +2711,7 @@ const Calendar: React.FC<CalendarProps> = ({ contacts, openTaskPanel = false, on
                  aria-live="polite"
                >
                  <div className="flex items-center gap-2.5 px-4 py-2.5 bg-zinc-900/90 dark:bg-zinc-100/90 text-white dark:text-zinc-900 text-sm font-medium rounded-full shadow-xl backdrop-blur-sm animate-fade-in">
-                   <i className="fa-solid fa-left-right text-indigo-400 dark:text-indigo-600 text-xs" aria-hidden="true" />
+                   <ArrowLeftRight className="text-indigo-400 dark:text-indigo-600 text-xs" />
                    Swipe left or right to navigate weeks
                  </div>
                </div>
@@ -3295,7 +2771,7 @@ const Calendar: React.FC<CalendarProps> = ({ contacts, openTaskPanel = false, on
                      <h3 className="text-xs font-bold text-zinc-500 uppercase tracking-widest flex items-center gap-2">
                          Tasks
                      </h3>
-                     <button onClick={() => setShowTaskPanel(false)} className="text-zinc-400 hover:text-zinc-900 dark:hover:text-white"><i className="fa-solid fa-xmark"></i></button>
+                     <button onClick={() => setShowTaskPanel(false)} className="text-zinc-400 hover:text-zinc-900 dark:hover:text-white"><X /></button>
                  </div>
 
                  <div className="space-y-1">
@@ -3304,7 +2780,7 @@ const Calendar: React.FC<CalendarProps> = ({ contacts, openTaskPanel = false, on
                              <div 
                                 className={`mt-1 w-4 h-4 rounded border flex items-center justify-center transition ${task.completed ? 'bg-zinc-900 dark:bg-white border-zinc-900 dark:border-white' : 'border-zinc-300 dark:border-zinc-600 group-hover:border-zinc-500'}`}
                              >
-                                 {task.completed && <i className="fa-solid fa-check text-[10px] text-white dark:text-black"></i>}
+                                 {task.completed && <Check className="text-[10px] text-white dark:text-black" />}
                              </div>
                              <div className="flex-1">
                                  <div className={`text-sm ${task.completed ? 'text-zinc-400 line-through' : 'text-zinc-800 dark:text-zinc-200 font-medium'}`}>{task.title}</div>
@@ -3319,7 +2795,7 @@ const Calendar: React.FC<CalendarProps> = ({ contacts, openTaskPanel = false, on
                      
                      <div className="mt-4 pt-4 border-t border-zinc-100 dark:border-zinc-800">
                          <button className="flex items-center gap-2 text-sm text-zinc-500 hover:text-zinc-900 dark:hover:text-white transition w-full p-2 rounded">
-                             <i className="fa-solid fa-plus"></i> Add new task
+                             <Plus /> Add new task
                          </button>
                      </div>
                  </div>
@@ -3327,1226 +2803,121 @@ const Calendar: React.FC<CalendarProps> = ({ contacts, openTaskPanel = false, on
          )}
       </div>
 
-      {/* Team Management Modal */}
-      {showTeamModal && (
-        <div className="absolute inset-0 z-50 bg-black/60 backdrop-blur-sm flex items-center justify-center animate-fade-in p-4">
-          <div className="bg-white dark:bg-zinc-900 border border-zinc-200 dark:border-zinc-800 rounded-2xl w-full max-w-md shadow-2xl animate-scale-in">
-            <div className="p-6 border-b border-zinc-200 dark:border-zinc-800 flex items-center justify-between">
-              <h3 className="text-lg font-bold dark:text-white">
-                {editingTeam ? 'Edit Team' : 'Create New Team'}
-              </h3>
-              <button onClick={() => { setShowTeamModal(false); resetTeamForm(); }} className="text-zinc-400 hover:text-zinc-600">
-                <i className="fa-solid fa-xmark"></i>
-              </button>
-            </div>
-            <div className="p-6 space-y-4">
-              <div>
-                <label className="text-xs text-zinc-500 uppercase font-bold mb-1 block">Team Name</label>
-                <input
-                  type="text"
-                  value={newTeamName}
-                  onChange={(e) => setNewTeamName(e.target.value)}
-                  placeholder="e.g., Marketing Team"
-                  className="w-full bg-zinc-50 dark:bg-zinc-950 border border-zinc-200 dark:border-zinc-800 rounded-lg p-3 dark:text-white outline-none"
-                />
-              </div>
-
-              <div>
-                <label className="text-xs text-zinc-500 uppercase font-bold mb-2 block">Team Color</label>
-                <div className="flex gap-2 flex-wrap">
-                  {EVENT_COLORS.map(color => (
-                    <button
-                      key={color.id}
-                      type="button"
-                      onClick={() => setNewTeamColor(color.class)}
-                      className={`w-8 h-8 rounded-full ${color.class} transition ring-2 ring-offset-2 ${newTeamColor === color.class ? 'ring-blue-500' : 'ring-transparent'}`}
-                    />
-                  ))}
-                </div>
-              </div>
-
-              <div>
-                <label className="text-xs text-zinc-500 uppercase font-bold mb-2 block">Team Members</label>
-                <div className="max-h-48 overflow-y-auto space-y-2 border border-zinc-200 dark:border-zinc-800 rounded-lg p-2">
-                  {contacts.map(contact => (
-                    <label key={contact.id} className="flex items-center gap-3 p-2 rounded-lg hover:bg-zinc-50 dark:hover:bg-zinc-800 cursor-pointer">
-                      <input
-                        type="checkbox"
-                        checked={newTeamMembers.includes(contact.id)}
-                        onChange={(e) => {
-                          if (e.target.checked) {
-                            setNewTeamMembers(prev => [...prev, contact.id]);
-                          } else {
-                            setNewTeamMembers(prev => prev.filter(id => id !== contact.id));
-                          }
-                        }}
-                        className="w-4 h-4 rounded"
-                      />
-                      <div className={`w-6 h-6 rounded-full ${contact.avatarColor} flex items-center justify-center text-white text-xs font-bold`}>
-                        {contact.name.charAt(0)}
-                      </div>
-                      <span className="text-sm dark:text-white">{contact.name}</span>
-                    </label>
-                  ))}
-                </div>
-              </div>
-            </div>
-            <div className="p-6 border-t border-zinc-200 dark:border-zinc-800 flex justify-between">
-              {editingTeam && teams.length > 1 && (
-                <button
-                  onClick={() => {
-                    handleDeleteTeam(editingTeam.id);
-                    setShowTeamModal(false);
-                    resetTeamForm();
-                  }}
-                  className="px-4 py-2 text-red-500 hover:bg-red-50 dark:hover:bg-red-900/20 rounded-lg transition"
-                >
-                  Delete Team
-                </button>
-              )}
-              <div className="flex gap-3 ml-auto">
-                <button onClick={() => { setShowTeamModal(false); resetTeamForm(); }} className="px-4 py-2 text-zinc-500 hover:text-zinc-900 dark:hover:text-white transition">
-                  Cancel
-                </button>
-                <button
-                  onClick={editingTeam ? handleUpdateTeam : handleCreateTeam}
-                  className="px-5 py-2 bg-zinc-900 dark:bg-white text-white dark:text-black rounded-lg text-sm font-bold hover:opacity-90 transition"
-                >
-                  {editingTeam ? 'Save Changes' : 'Create Team'}
-                </button>
-              </div>
-            </div>
-          </div>
-        </div>
-      )}
-
-      {/* Calendar Invite Modal */}
-      {showInviteModal && inviteContact && (
-        <div className="absolute inset-0 z-50 bg-black/60 backdrop-blur-sm flex items-center justify-center animate-fade-in p-4">
-          <div className="bg-white dark:bg-zinc-900 border border-zinc-200 dark:border-zinc-800 rounded-2xl w-full max-w-md shadow-2xl animate-scale-in">
-            <div className="p-6 border-b border-zinc-200 dark:border-zinc-800">
-              <div className="flex items-center justify-between mb-4">
-                <h3 className="text-lg font-bold dark:text-white">Schedule Meeting</h3>
-                <button onClick={() => { setShowInviteModal(false); setInviteContact(null); }} className="text-zinc-400 hover:text-zinc-600">
-                  <i className="fa-solid fa-xmark"></i>
-                </button>
-              </div>
-              <div className="flex items-center gap-3 p-3 bg-zinc-50 dark:bg-zinc-800 rounded-lg">
-                <div className={`w-10 h-10 rounded-full ${inviteContact.avatarColor} flex items-center justify-center text-white font-bold`}>
-                  {inviteContact.name.charAt(0)}
-                </div>
-                <div>
-                  <div className="font-medium dark:text-white">{inviteContact.name}</div>
-                  <div className="text-xs text-zinc-500">{inviteContact.email}</div>
-                </div>
-              </div>
-            </div>
-            <form
-              onSubmit={(e) => {
-                e.preventDefault();
-                const form = e.target as HTMLFormElement;
-                const formData = new FormData(form);
-                handleSendInvite(inviteContact, {
-                  title: formData.get('title') as string,
-                  date: formData.get('date') as string,
-                  startTime: formData.get('startTime') as string,
-                  endTime: formData.get('endTime') as string,
-                  description: formData.get('description') as string,
-                });
-              }}
-              className="p-6 space-y-4"
-            >
-              <div>
-                <label className="text-xs text-zinc-500 uppercase font-bold mb-1 block">Meeting Title</label>
-                <input
-                  type="text"
-                  name="title"
-                  required
-                  placeholder="e.g., Project Discussion"
-                  className="w-full bg-zinc-50 dark:bg-zinc-950 border border-zinc-200 dark:border-zinc-800 rounded-lg p-3 dark:text-white outline-none"
-                />
-              </div>
-              <div className="grid grid-cols-2 gap-4">
-                <div>
-                  <label className="text-xs text-zinc-500 uppercase font-bold mb-1 block">Date</label>
-                  <input
-                    type="date"
-                    name="date"
-                    required
-                    defaultValue={new Date().toISOString().split('T')[0]}
-                    className="w-full bg-zinc-50 dark:bg-zinc-950 border border-zinc-200 dark:border-zinc-800 rounded-lg p-3 dark:text-white outline-none"
-                  />
-                </div>
-                <div className="grid grid-cols-2 gap-2">
-                  <div>
-                    <label className="text-xs text-zinc-500 uppercase font-bold mb-1 block">Start</label>
-                    <input
-                      type="time"
-                      name="startTime"
-                      required
-                      defaultValue="10:00"
-                      className="w-full bg-zinc-50 dark:bg-zinc-950 border border-zinc-200 dark:border-zinc-800 rounded-lg p-3 dark:text-white outline-none"
-                    />
-                  </div>
-                  <div>
-                    <label className="text-xs text-zinc-500 uppercase font-bold mb-1 block">End</label>
-                    <input
-                      type="time"
-                      name="endTime"
-                      required
-                      defaultValue="11:00"
-                      className="w-full bg-zinc-50 dark:bg-zinc-950 border border-zinc-200 dark:border-zinc-800 rounded-lg p-3 dark:text-white outline-none"
-                    />
-                  </div>
-                </div>
-              </div>
-              <div>
-                <label className="text-xs text-zinc-500 uppercase font-bold mb-1 block">Description (Optional)</label>
-                <textarea
-                  name="description"
-                  rows={3}
-                  placeholder="Add meeting details..."
-                  className="w-full bg-zinc-50 dark:bg-zinc-950 border border-zinc-200 dark:border-zinc-800 rounded-lg p-3 dark:text-white outline-none resize-none"
-                />
-              </div>
-              <div className="pt-4 flex justify-end gap-3">
-                <button type="button" onClick={() => { setShowInviteModal(false); setInviteContact(null); }} className="px-4 py-2 text-zinc-500 hover:text-zinc-900 dark:hover:text-white transition">
-                  Cancel
-                </button>
-                <button type="submit" className="px-5 py-2 bg-blue-500 text-white rounded-lg text-sm font-bold hover:bg-blue-600 transition flex items-center gap-2">
-                  <i className="fa-solid fa-paper-plane"></i>
-                  Send Invite
-                </button>
-              </div>
-            </form>
-          </div>
-        </div>
-      )}
-
-      {/* Create New Google Calendar Modal */}
-      {showCreateCalendarModal && (
-        <div className="absolute inset-0 z-50 bg-black/60 backdrop-blur-sm flex items-center justify-center animate-fade-in p-4">
-          <div className="bg-white dark:bg-zinc-900 border border-zinc-200 dark:border-zinc-800 rounded-2xl w-full max-w-md shadow-2xl animate-scale-in">
-            <div className="p-6 border-b border-zinc-200 dark:border-zinc-800 flex items-center justify-between">
-              <h3 className="text-lg font-bold dark:text-white flex items-center gap-2">
-                <i className="fa-brands fa-google text-blue-500"></i>
-                Create New Calendar
-              </h3>
-              <button onClick={() => setShowCreateCalendarModal(false)} className="text-zinc-400 hover:text-zinc-600">
-                <i className="fa-solid fa-xmark"></i>
-              </button>
-            </div>
-            <div className="p-6 space-y-4">
-              <div>
-                <label className="text-xs text-zinc-500 uppercase font-bold mb-1 block">Calendar Name</label>
-                <input
-                  type="text"
-                  value={newCalendarName}
-                  onChange={(e) => setNewCalendarName(e.target.value)}
-                  placeholder="e.g., Work Projects"
-                  className="w-full bg-zinc-50 dark:bg-zinc-950 border border-zinc-200 dark:border-zinc-800 rounded-lg p-3 dark:text-white outline-none"
-                />
-              </div>
-              <div>
-                <label className="text-xs text-zinc-500 uppercase font-bold mb-1 block">Description (Optional)</label>
-                <textarea
-                  value={newCalendarDescription}
-                  onChange={(e) => setNewCalendarDescription(e.target.value)}
-                  rows={3}
-                  placeholder="What is this calendar for?"
-                  className="w-full bg-zinc-50 dark:bg-zinc-950 border border-zinc-200 dark:border-zinc-800 rounded-lg p-3 dark:text-white outline-none resize-none"
-                />
-              </div>
-            </div>
-            <div className="p-6 border-t border-zinc-200 dark:border-zinc-800 flex justify-end gap-3">
-              <button onClick={() => setShowCreateCalendarModal(false)} className="px-4 py-2 text-zinc-500 hover:text-zinc-900 dark:hover:text-white transition">
-                Cancel
-              </button>
-              <button
-                onClick={handleCreateGoogleCalendar}
-                disabled={creatingCalendar || !newCalendarName.trim()}
-                className="px-5 py-2 bg-blue-500 text-white rounded-lg text-sm font-bold hover:bg-blue-600 transition flex items-center gap-2 disabled:opacity-50"
-              >
-                {creatingCalendar ? (
-                  <>
-                    <i className="fa-solid fa-spinner animate-spin"></i>
-                    Creating...
-                  </>
-                ) : (
-                  <>
-                    <i className="fa-solid fa-plus"></i>
-                    Create Calendar
-                  </>
-                )}
-              </button>
-            </div>
-          </div>
-        </div>
-      )}
-
-      {/* Calendar Settings Panel (Slide-in from right) */}
-      {showCalendarSettings && (
-        <div className="absolute right-0 top-0 bottom-0 w-96 bg-white dark:bg-zinc-950 border-l border-zinc-200 dark:border-zinc-800 shadow-2xl z-50 animate-slide-in-right flex flex-col">
-          <div className="p-6 border-b border-zinc-200 dark:border-zinc-800 flex items-center justify-between">
-            <h3 className="text-lg font-bold dark:text-white flex items-center gap-2">
-              <i className="fa-solid fa-gear text-zinc-400"></i>
-              Calendar Settings
-            </h3>
-            <button onClick={() => setShowCalendarSettings(false)} className="text-zinc-400 hover:text-zinc-600 dark:hover:text-white">
-              <i className="fa-solid fa-xmark"></i>
-            </button>
-          </div>
-          <div className="flex-1 overflow-y-auto p-6 space-y-6">
-            {/* View Preferences */}
-            <div>
-              <h4 className="text-xs font-bold text-zinc-500 uppercase tracking-wider mb-4">View Preferences</h4>
-              <div className="space-y-4">
-                <div>
-                  <label className="text-sm text-zinc-600 dark:text-zinc-400 mb-2 block">Default View</label>
-                  <select
-                    value={viewMode}
-                    onChange={(e) => setViewMode(e.target.value as ViewMode)}
-                    className="w-full bg-zinc-50 dark:bg-zinc-900 border border-zinc-200 dark:border-zinc-800 rounded-lg px-3 py-2 text-sm outline-none"
-                  >
-                    <option value="day">Day</option>
-                    <option value="week">Week</option>
-                    <option value="month">Month</option>
-                    <option value="year">Year</option>
-                  </select>
-                </div>
-
-                <div>
-                  <label className="text-sm text-zinc-600 dark:text-zinc-400 mb-2 block">Week Starts On</label>
-                  <select
-                    value={weekStartsOn}
-                    onChange={(e) => setWeekStartsOn(e.target.value as 'sunday' | 'monday')}
-                    className="w-full bg-zinc-50 dark:bg-zinc-900 border border-zinc-200 dark:border-zinc-800 rounded-lg px-3 py-2 text-sm outline-none"
-                  >
-                    <option value="sunday">Sunday</option>
-                    <option value="monday">Monday</option>
-                  </select>
-                </div>
-
-                <label className="flex items-center gap-3 cursor-pointer">
-                  <input
-                    type="checkbox"
-                    checked={showWeekNumbers}
-                    onChange={(e) => setShowWeekNumbers(e.target.checked)}
-                    className="w-4 h-4 rounded"
-                  />
-                  <span className="text-sm text-zinc-600 dark:text-zinc-400">Show Week Numbers</span>
-                </label>
-              </div>
-            </div>
-
-            {/* Time Zone */}
-            <div>
-              <h4 className="text-xs font-bold text-zinc-500 uppercase tracking-wider mb-4">Time Zone</h4>
-              <select
-                value={selectedTimeZone}
-                onChange={(e) => setSelectedTimeZone(e.target.value)}
-                className="w-full bg-zinc-50 dark:bg-zinc-900 border border-zinc-200 dark:border-zinc-800 rounded-lg px-3 py-2 text-sm outline-none"
-              >
-                {TIME_ZONES.map(tz => (
-                  <option key={tz.id} value={tz.id}>{tz.name} {tz.offset && `(UTC${tz.offset})`}</option>
-                ))}
-              </select>
-            </div>
-
-            {/* Google Calendar */}
-            <div>
-              <h4 className="text-xs font-bold text-zinc-500 uppercase tracking-wider mb-4">Google Calendar</h4>
-              <div className="space-y-3">
-                {googleConnected ? (
-                  <>
-                    <div className="flex items-center gap-2 text-sm text-green-600 dark:text-green-400">
-                      <i className="fa-solid fa-check-circle"></i>
-                      Connected
-                    </div>
-                    <button
-                      onClick={syncGoogleCalendar}
-                      disabled={syncingGoogle}
-                      className="w-full flex items-center justify-center gap-2 bg-zinc-100 dark:bg-zinc-800 rounded-lg px-4 py-3 text-sm font-medium hover:bg-zinc-200 dark:hover:bg-zinc-700 transition"
-                    >
-                      <i className={`fa-solid fa-sync ${syncingGoogle ? 'animate-spin' : ''}`}></i>
-                      {syncingGoogle ? 'Syncing...' : 'Sync Now'}
-                    </button>
-                    {lastSynced && (
-                      <p className="text-xs text-zinc-500 text-center">
-                        Last synced: {lastSynced.toLocaleString()}
-                      </p>
-                    )}
-                  </>
-                ) : (
-                  <button
-                    onClick={() => {
-                      setShowCalendarSettings(false);
-                      if (onNavigateToIntegrations) onNavigateToIntegrations();
-                    }}
-                    className="w-full flex items-center justify-center gap-2 bg-blue-500 text-white rounded-lg px-4 py-3 text-sm font-medium hover:bg-blue-600 transition"
-                  >
-                    <i className="fa-brands fa-google"></i>
-                    Connect Google Calendar
-                  </button>
-                )}
-              </div>
-            </div>
-
-            {/* Outlook Calendar */}
-            <div>
-              <h4 className="text-xs font-bold text-zinc-500 uppercase tracking-wider mb-4">
-                <i className="fa-brands fa-microsoft mr-1.5 text-[#0078d4]"></i>
-                Outlook Calendar
-              </h4>
-              <div className="space-y-3">
-                {outlookConnected ? (
-                  <>
-                    <div className="flex items-center gap-2 text-sm text-green-600 dark:text-green-400">
-                      <i className="fa-solid fa-check-circle"></i>
-                      Connected{outlookUserEmail ? ` — ${outlookUserEmail}` : ''}
-                    </div>
-                    <button
-                      onClick={syncOutlookCalendar}
-                      disabled={syncingOutlook}
-                      className="w-full flex items-center justify-center gap-2 bg-zinc-100 dark:bg-zinc-800 rounded-lg px-4 py-3 text-sm font-medium hover:bg-zinc-200 dark:hover:bg-zinc-700 transition"
-                    >
-                      <i className={`fa-solid fa-sync ${syncingOutlook ? 'animate-spin' : ''}`}></i>
-                      {syncingOutlook ? 'Syncing...' : 'Sync Now'}
-                    </button>
-                    <button
-                      onClick={disconnectOutlook}
-                      className="w-full flex items-center justify-center gap-2 border border-red-200 dark:border-red-900 text-red-500 rounded-lg px-4 py-2 text-sm hover:bg-red-50 dark:hover:bg-red-950 transition"
-                    >
-                      <i className="fa-solid fa-plug-circle-xmark"></i>
-                      Disconnect Outlook
-                    </button>
-                    {outlookError && (
-                      <p className="text-xs text-red-500">{outlookError}</p>
-                    )}
-                  </>
-                ) : (
-                  <>
-                    <p className="text-xs text-zinc-500 dark:text-zinc-400">
-                      Sync events from your Microsoft 365 or Outlook.com calendar.
-                      {!import.meta.env.VITE_MICROSOFT_CLIENT_ID && (
-                        <span className="block mt-1 text-amber-600 dark:text-amber-400">
-                          <i className="fa-solid fa-triangle-exclamation mr-1"></i>
-                          Set VITE_MICROSOFT_CLIENT_ID to enable.
-                        </span>
-                      )}
-                    </p>
-                    <button
-                      onClick={connectOutlook}
-                      disabled={!import.meta.env.VITE_MICROSOFT_CLIENT_ID}
-                      className="w-full flex items-center justify-center gap-2 bg-[#0078d4] text-white rounded-lg px-4 py-3 text-sm font-medium hover:bg-[#106ebe] transition disabled:opacity-40 disabled:cursor-not-allowed"
-                    >
-                      <i className="fa-brands fa-microsoft"></i>
-                      Sign in with Microsoft
-                    </button>
-                    {outlookError && (
-                      <p className="text-xs text-red-500">{outlookError}</p>
-                    )}
-                  </>
-                )}
-              </div>
-            </div>
-
-            {/* Event Defaults */}
-            <div>
-              <h4 className="text-xs font-bold text-zinc-500 uppercase tracking-wider mb-4">Event Defaults</h4>
-              <div className="space-y-4">
-                <div>
-                  <label className="text-sm text-zinc-600 dark:text-zinc-400 mb-2 block">Default Reminder</label>
-                  <select
-                    value={newEventReminder}
-                    onChange={(e) => setAndPersistReminder(e.target.value as ReminderTime)}
-                    className="w-full bg-zinc-50 dark:bg-zinc-900 border border-zinc-200 dark:border-zinc-800 rounded-lg px-3 py-2 text-sm outline-none"
-                  >
-                    <option value="none">No reminder</option>
-                    <option value="5min">5 minutes before</option>
-                    <option value="15min">15 minutes before</option>
-                    <option value="30min">30 minutes before</option>
-                    <option value="1hour">1 hour before</option>
-                    <option value="1day">1 day before</option>
-                  </select>
-                </div>
-                <div>
-                  <label className="text-sm text-zinc-600 dark:text-zinc-400 mb-2 block">Default Event Color</label>
-                  <div className="flex gap-2 flex-wrap">
-                    {EVENT_COLORS.map(color => (
-                      <button
-                        key={color.id}
-                        onClick={() => setNewEventColor(color.class)}
-                        className={`w-8 h-8 rounded-full ${color.class} transition ring-2 ring-offset-2 ${newEventColor === color.class ? 'ring-blue-500' : 'ring-transparent'}`}
-                      />
-                    ))}
-                  </div>
-                </div>
-              </div>
-            </div>
-          </div>
-        </div>
-      )}
-
-      {/* AI Assistant Panel */}
-      {showAIPanel && (
-        <div className="cal-ai-panel absolute right-0 top-0 bottom-0 w-[420px] bg-white dark:bg-zinc-950 border-l border-zinc-200 dark:border-zinc-800 shadow-2xl z-50 flex flex-col animate-slide-in-right">
-          {/* AI Panel Header */}
-          <div className="p-4 border-b border-zinc-200 dark:border-zinc-800 bg-gradient-to-r from-purple-500/10 to-pink-500/10">
-            <div className="flex items-center justify-between mb-4">
-              <h3 className="text-lg font-bold dark:text-white flex items-center gap-2">
-                <i className="fa-solid fa-wand-magic-sparkles text-purple-500"></i>
-                AI Calendar Assistant
-              </h3>
-              <button onClick={() => setShowAIPanel(false)} className="text-zinc-400 hover:text-zinc-600 dark:hover:text-white">
-                <i className="fa-solid fa-xmark"></i>
-              </button>
-            </div>
-
-            {/* Natural Language Input */}
-            <div className="relative">
-              <input
-                type="text"
-                value={naturalLanguageInput}
-                onChange={(e) => setNaturalLanguageInput(e.target.value)}
-                onKeyDown={(e) => e.key === 'Enter' && handleNaturalLanguageSubmit()}
-                placeholder="Try: 'Schedule a call with John tomorrow at 2pm'"
-                className="w-full bg-white dark:bg-zinc-900 border border-zinc-200 dark:border-zinc-700 rounded-xl px-4 py-3 pr-12 text-sm outline-none focus:ring-2 focus:ring-purple-500"
-              />
-              <button
-                onClick={handleNaturalLanguageSubmit}
-                disabled={aiLoading || !naturalLanguageInput.trim()}
-                className="absolute right-2 top-1/2 -translate-y-1/2 w-8 h-8 flex items-center justify-center bg-purple-500 text-white rounded-lg hover:bg-purple-600 disabled:opacity-50 transition"
-              >
-                {aiLoading ? <i className="fa-solid fa-spinner animate-spin text-sm"></i> : <i className="fa-solid fa-arrow-right text-sm"></i>}
-              </button>
-            </div>
-          </div>
-
-          {/* AI Panel Tabs */}
-          <div className="flex border-b border-zinc-200 dark:border-zinc-800">
-            {[
-              { id: 'assistant', label: 'Assistant', icon: 'fa-robot' },
-              { id: 'insights', label: 'Insights', icon: 'fa-lightbulb' },
-              { id: 'analytics', label: 'Analytics', icon: 'fa-chart-line' },
-              { id: 'goals', label: 'Goals', icon: 'fa-bullseye' },
-            ].map(tab => (
-              <button
-                key={tab.id}
-                onClick={() => setAIPanelTab(tab.id as typeof aiPanelTab)}
-                className={`flex-1 px-3 py-3 text-xs font-medium flex items-center justify-center gap-1.5 transition ${aiPanelTab === tab.id ? 'text-purple-600 border-b-2 border-purple-500 bg-purple-50 dark:bg-purple-900/20' : 'text-zinc-500 hover:text-zinc-900 dark:hover:text-white'}`}
-              >
-                <i className={`fa-solid ${tab.icon}`}></i>
-                {tab.label}
-              </button>
-            ))}
-          </div>
-
-          {/* AI Panel Content */}
-          <div className="flex-1 overflow-y-auto p-4 space-y-4">
-            {aiLoading && (
-              <div className="flex items-center justify-center py-8">
-                <div className="flex items-center gap-3 text-purple-500">
-                  <i className="fa-solid fa-spinner animate-spin text-xl"></i>
-                  <span className="text-sm">AI is analyzing your calendar...</span>
-                </div>
-              </div>
-            )}
-
-            {/* Suggested Events from Conversations */}
-            <SuggestedEventsPanel
-              onAcceptEvent={(eventData) => {
-                setNewEventTitle(eventData.title || '');
-                setNewEventDate(eventData.start ? eventData.start.toISOString().split('T')[0] : new Date().toISOString().split('T')[0]);
-                setNewEventTime(eventData.start ? `${eventData.start.getHours().toString().padStart(2, '0')}:${eventData.start.getMinutes().toString().padStart(2, '0')}` : '09:00');
-                setNewEventEndTime(eventData.end ? `${eventData.end.getHours().toString().padStart(2, '0')}:${eventData.end.getMinutes().toString().padStart(2, '0')}` : '10:00');
-                setNewEventDesc(eventData.description || '');
-                setNewEventLocation(eventData.location || '');
-                setNewEventType(eventData.type || 'event');
-                setShowEventModal(true);
-              }}
-            />
-
-            {/* Assistant Tab */}
-            {aiPanelTab === 'assistant' && !aiLoading && (
-              <div className="space-y-4">
-                {/* Quick Actions */}
-                <div>
-                  <h4 className="text-xs font-bold text-zinc-500 uppercase tracking-wider mb-3">Quick Actions</h4>
-                  <div className="grid grid-cols-2 gap-2">
-                    <button onClick={() => handleGetSuggestions(30)} className="p-3 bg-zinc-50 dark:bg-zinc-900 rounded-xl text-left hover:bg-zinc-100 dark:hover:bg-zinc-800 transition">
-                      <i className="fa-solid fa-clock text-blue-500 mb-2"></i>
-                      <p className="text-xs font-medium dark:text-white">Find Meeting Time</p>
-                      <p className="text-[10px] text-zinc-500">30 min slot</p>
-                    </button>
-                    <button onClick={handleSuggestFocusBlocks} className="p-3 bg-zinc-50 dark:bg-zinc-900 rounded-xl text-left hover:bg-zinc-100 dark:hover:bg-zinc-800 transition">
-                      <i className="fa-solid fa-brain text-indigo-500 mb-2"></i>
-                      <p className="text-xs font-medium dark:text-white">Add Focus Time</p>
-                      <p className="text-[10px] text-zinc-500">Protect deep work</p>
-                    </button>
-                    <button onClick={handleDetectConflicts} className="p-3 bg-zinc-50 dark:bg-zinc-900 rounded-xl text-left hover:bg-zinc-100 dark:hover:bg-zinc-800 transition">
-                      <i className="fa-solid fa-triangle-exclamation text-amber-500 mb-2"></i>
-                      <p className="text-xs font-medium dark:text-white">Check Conflicts</p>
-                      <p className="text-[10px] text-zinc-500">Find overlaps</p>
-                    </button>
-                    <button onClick={handleAnalyzeTravelBuffers} className="p-3 bg-zinc-50 dark:bg-zinc-900 rounded-xl text-left hover:bg-zinc-100 dark:hover:bg-zinc-800 transition">
-                      <i className="fa-solid fa-car text-green-500 mb-2"></i>
-                      <p className="text-xs font-medium dark:text-white">Travel Buffers</p>
-                      <p className="text-[10px] text-zinc-500">Check gaps</p>
-                    </button>
-                  </div>
-                </div>
-
-                {/* Scheduling Suggestions */}
-                {schedulingSuggestions.length > 0 && (
-                  <div>
-                    <h4 className="text-xs font-bold text-zinc-500 uppercase tracking-wider mb-3 flex items-center gap-2">
-                      <i className="fa-solid fa-lightbulb text-amber-500"></i>
-                      Suggested Times
-                    </h4>
-                    <div className="space-y-2">
-                      {schedulingSuggestions.slice(0, 5).map((suggestion, i) => (
-                        <button
-                          key={i}
-                          onClick={() => {
-                            setNewEventDate(suggestion.date.toISOString().split('T')[0]);
-                            setNewEventTime(suggestion.startTime);
-                            setNewEventEndTime(suggestion.endTime);
-                            setShowEventModal(true);
-                          }}
-                          className="w-full p-3 bg-zinc-50 dark:bg-zinc-900 rounded-xl text-left hover:bg-blue-50 dark:hover:bg-blue-900/20 transition flex items-center justify-between group"
-                        >
-                          <div>
-                            <p className="text-sm font-medium dark:text-white">
-                              {suggestion.date.toLocaleDateString('en-US', { weekday: 'short', month: 'short', day: 'numeric' })}
-                            </p>
-                            <p className="text-xs text-zinc-500">{suggestion.startTime} - {suggestion.endTime}</p>
-                            <p className="text-[10px] text-blue-500 mt-1">{suggestion.reason}</p>
-                          </div>
-                          <div className="flex items-center gap-2">
-                            <span className="text-xs font-bold text-green-500">{suggestion.score}%</span>
-                            <i className="fa-solid fa-plus text-zinc-400 group-hover:text-blue-500 transition"></i>
-                          </div>
-                        </button>
-                      ))}
-                    </div>
-                  </div>
-                )}
-
-                {/* Focus Blocks */}
-                {focusBlocks.length > 0 && (
-                  <div>
-                    <h4 className="text-xs font-bold text-zinc-500 uppercase tracking-wider mb-3 flex items-center gap-2">
-                      <i className="fa-solid fa-brain text-indigo-500"></i>
-                      Suggested Focus Blocks
-                    </h4>
-                    <div className="space-y-2">
-                      {focusBlocks.slice(0, 4).map((block) => (
-                        <div key={block.id} className="p-3 bg-indigo-50 dark:bg-indigo-900/20 rounded-xl flex items-center justify-between">
-                          <div>
-                            <p className="text-sm font-medium text-indigo-900 dark:text-indigo-200">
-                              {block.date.toLocaleDateString('en-US', { weekday: 'short', month: 'short', day: 'numeric' })}
-                            </p>
-                            <p className="text-xs text-indigo-600 dark:text-indigo-400">{block.startTime} - {block.endTime}</p>
-                            <p className="text-[10px] text-indigo-500 capitalize mt-1">{block.type.replace('_', ' ')}</p>
-                          </div>
-                          <button
-                            onClick={() => handleAddFocusBlock(block)}
-                            className="px-3 py-1.5 bg-indigo-500 text-white text-xs rounded-lg hover:bg-indigo-600 transition"
-                          >
-                            Add
-                          </button>
-                        </div>
-                      ))}
-                    </div>
-                  </div>
-                )}
-
-                {/* Conflicts */}
-                {conflicts.length > 0 && (
-                  <div>
-                    <h4 className="text-xs font-bold text-zinc-500 uppercase tracking-wider mb-3 flex items-center gap-2">
-                      <i className="fa-solid fa-triangle-exclamation text-amber-500"></i>
-                      Conflicts Detected ({conflicts.length})
-                    </h4>
-                    <div className="space-y-2">
-                      {conflicts.map((conflict, i) => (
-                        <div key={i} className="p-3 bg-amber-50 dark:bg-amber-900/20 rounded-xl border border-amber-200 dark:border-amber-800">
-                          <div className="flex items-center gap-2 mb-2">
-                            <span className={`px-2 py-0.5 rounded text-[10px] font-bold uppercase ${conflict.priority === 'high' ? 'bg-red-100 text-red-700' : conflict.priority === 'medium' ? 'bg-amber-100 text-amber-700' : 'bg-zinc-100 text-zinc-700'}`}>
-                              {conflict.priority}
-                            </span>
-                          </div>
-                          <p className="text-sm font-medium dark:text-white">{conflict.conflictingEvents[0].title}</p>
-                          <p className="text-xs text-zinc-500 mb-2">conflicts with {conflict.conflictingEvents[1].title}</p>
-                          {conflict.suggestedResolutions[0] && (
-                            <button
-                              onClick={() => handleSmartReschedule(conflict.conflictingEvents[0])}
-                              className="text-xs text-amber-600 hover:text-amber-800 font-medium"
-                            >
-                              <i className="fa-solid fa-magic mr-1"></i>
-                              {conflict.suggestedResolutions[0].description}
-                            </button>
-                          )}
-                        </div>
-                      ))}
-                    </div>
-                  </div>
-                )}
-
-                {/* Travel Buffers */}
-                {travelBuffers.length > 0 && (
-                  <div>
-                    <h4 className="text-xs font-bold text-zinc-500 uppercase tracking-wider mb-3 flex items-center gap-2">
-                      <i className="fa-solid fa-car text-green-500"></i>
-                      Travel Buffer Alerts
-                    </h4>
-                    <div className="space-y-2">
-                      {travelBuffers.map((buffer, i) => (
-                        <div key={i} className="p-3 bg-green-50 dark:bg-green-900/20 rounded-xl">
-                          <p className="text-sm font-medium dark:text-white">{buffer.fromEvent.title} → {buffer.toEvent.title}</p>
-                          <p className="text-xs text-green-600 dark:text-green-400">{buffer.recommendation}</p>
-                        </div>
-                      ))}
-                    </div>
-                  </div>
-                )}
-              </div>
-            )}
-
-            {/* Insights Tab */}
-            {aiPanelTab === 'insights' && !aiLoading && (
-              <div className="space-y-4">
-                <button onClick={handleAnalyzeRelationships} className="w-full p-3 bg-zinc-50 dark:bg-zinc-900 rounded-xl text-left hover:bg-zinc-100 dark:hover:bg-zinc-800 transition">
-                  <i className="fa-solid fa-users text-purple-500 mr-2"></i>
-                  <span className="text-sm font-medium dark:text-white">Refresh Relationship Insights</span>
-                </button>
-
-                {relationshipInsights.length > 0 && (
-                  <div className="space-y-3">
-                    {relationshipInsights.slice(0, 8).map((insight) => (
-                      <div key={insight.contact.id} className="p-3 bg-zinc-50 dark:bg-zinc-900 rounded-xl">
-                        <div className="flex items-center gap-3 mb-2">
-                          <div className={`w-8 h-8 rounded-full ${insight.contact.avatarColor} flex items-center justify-center text-white text-xs font-bold`}>
-                            {insight.contact.name.charAt(0)}
-                          </div>
-                          <div className="flex-1">
-                            <p className="text-sm font-medium dark:text-white">{insight.contact.name}</p>
-                            <p className="text-[10px] text-zinc-500">{insight.contact.email}</p>
-                          </div>
-                          <span className={`px-2 py-0.5 rounded text-[10px] font-bold ${
-                            insight.relationshipHealth === 'strong' ? 'bg-green-100 text-green-700' :
-                            insight.relationshipHealth === 'healthy' ? 'bg-blue-100 text-blue-700' :
-                            insight.relationshipHealth === 'needs_attention' ? 'bg-amber-100 text-amber-700' :
-                            'bg-red-100 text-red-700'
-                          }`}>
-                            {insight.relationshipHealth.replace('_', ' ')}
-                          </span>
-                        </div>
-                        <div className="text-xs text-zinc-500 space-y-1">
-                          <p><i className="fa-solid fa-calendar mr-1"></i> Last met: {insight.lastMeeting ? insight.lastMeeting.toLocaleDateString() : 'Never'}</p>
-                          <p><i className="fa-solid fa-clock mr-1"></i> {insight.daysSinceLastContact} days since last contact</p>
-                          {insight.upcomingMilestones.length > 0 && (
-                            <p className="text-amber-600"><i className="fa-solid fa-star mr-1"></i> {insight.upcomingMilestones[0].description} in {insight.upcomingMilestones[0].daysUntil} days</p>
-                          )}
-                        </div>
-                        {insight.suggestedActions.length > 0 && (
-                          <button
-                            onClick={() => {
-                              setInviteContact(insight.contact);
-                              setShowInviteModal(true);
-                            }}
-                            className="mt-2 text-xs text-purple-500 hover:text-purple-700 font-medium"
-                          >
-                            <i className="fa-solid fa-calendar-plus mr-1"></i>
-                            Schedule catch-up
-                          </button>
-                        )}
-                      </div>
-                    ))}
-                  </div>
-                )}
-              </div>
-            )}
-
-            {/* Analytics Tab */}
-            {aiPanelTab === 'analytics' && !aiLoading && (
-              <div className="space-y-4">
-                <button onClick={handleGenerateAnalytics} className="w-full p-3 bg-zinc-50 dark:bg-zinc-900 rounded-xl text-left hover:bg-zinc-100 dark:hover:bg-zinc-800 transition">
-                  <i className="fa-solid fa-sync text-blue-500 mr-2"></i>
-                  <span className="text-sm font-medium dark:text-white">Refresh Analytics</span>
-                </button>
-
-                {analytics && (
-                  <div className="space-y-4">
-                    {/* Overview Cards */}
-                    <div className="grid grid-cols-2 gap-3">
-                      <div className="p-4 bg-blue-50 dark:bg-blue-900/20 rounded-xl text-center">
-                        <p className="text-2xl font-bold text-blue-600">{analytics.totalMeetingHours}h</p>
-                        <p className="text-xs text-blue-500">Meeting Hours</p>
-                      </div>
-                      <div className="p-4 bg-green-50 dark:bg-green-900/20 rounded-xl text-center">
-                        <p className="text-2xl font-bold text-green-600">{analytics.focusTimeHours}h</p>
-                        <p className="text-xs text-green-500">Focus Time</p>
-                      </div>
-                    </div>
-
-                    {/* Productivity Score */}
-                    <div className="p-4 bg-zinc-50 dark:bg-zinc-900 rounded-xl">
-                      <div className="flex items-center justify-between mb-2">
-                        <p className="text-sm font-medium dark:text-white">Productivity Score</p>
-                        <span className={`text-xl font-bold ${analytics.productivityScore >= 70 ? 'text-green-500' : analytics.productivityScore >= 50 ? 'text-amber-500' : 'text-red-500'}`}>
-                          {analytics.productivityScore}%
-                        </span>
-                      </div>
-                      <div className="h-2 bg-zinc-200 dark:bg-zinc-700 rounded-full overflow-hidden">
-                        <div
-                          className={`h-full transition-all ${analytics.productivityScore >= 70 ? 'bg-green-500' : analytics.productivityScore >= 50 ? 'bg-amber-500' : 'bg-red-500'}`}
-                          style={{ width: `${analytics.productivityScore}%` }}
-                        />
-                      </div>
-                    </div>
-
-                    {/* Meeting Overload Warning */}
-                    {analytics.meetingOverload && (
-                      <div className="p-3 bg-red-50 dark:bg-red-900/20 rounded-xl border border-red-200 dark:border-red-800">
-                        <p className="text-sm font-medium text-red-700 dark:text-red-300">
-                          <i className="fa-solid fa-exclamation-triangle mr-2"></i>
-                          Meeting Overload Detected
-                        </p>
-                        <p className="text-xs text-red-600 dark:text-red-400 mt-1">Over 50% of your time is in meetings</p>
-                      </div>
-                    )}
-
-                    {/* Time by Category */}
-                    <div>
-                      <h4 className="text-xs font-bold text-zinc-500 uppercase tracking-wider mb-3">Time by Event Type</h4>
-                      <div className="space-y-2">
-                        {Object.entries(analytics.timeByCategory).map(([type, hours]) => (
-                          <div key={type} className="flex items-center justify-between">
-                            <span className="text-sm capitalize dark:text-zinc-300">{type}</span>
-                            <span className="text-sm font-medium dark:text-white">{typeof hours === 'number' ? hours.toFixed(1) : hours}h</span>
-                          </div>
-                        ))}
-                      </div>
-                    </div>
-
-                    {/* Recommendations */}
-                    {analytics.recommendations.length > 0 && (
-                      <div>
-                        <h4 className="text-xs font-bold text-zinc-500 uppercase tracking-wider mb-3">AI Recommendations</h4>
-                        <div className="space-y-2">
-                          {analytics.recommendations.map((rec, i) => (
-                            <div key={i} className="p-3 bg-purple-50 dark:bg-purple-900/20 rounded-xl">
-                              <p className="text-xs text-purple-700 dark:text-purple-300">
-                                <i className="fa-solid fa-lightbulb mr-2"></i>
-                                {rec}
-                              </p>
-                            </div>
-                          ))}
-                        </div>
-                      </div>
-                    )}
-                  </div>
-                )}
-              </div>
-            )}
-
-            {/* Goals Tab */}
-            {aiPanelTab === 'goals' && !aiLoading && (
-              <div className="space-y-4">
-                <div className="flex items-center justify-between">
-                  <h4 className="text-xs font-bold text-zinc-500 uppercase tracking-wider">Your Goals</h4>
-                  <button
-                    onClick={() => {
-                      setEditingGoal(null);
-                      setShowGoalModal(true);
-                    }}
-                    className="text-xs text-purple-500 hover:text-purple-700 font-medium"
-                  >
-                    <i className="fa-solid fa-plus mr-1"></i> Add Goal
-                  </button>
-                </div>
-
-                {/* Goals List */}
-                <div className="space-y-2">
-                  {goals.map(goal => (
-                    <div key={goal.id} className="p-3 bg-zinc-50 dark:bg-zinc-900 rounded-xl">
-                      <div className="flex items-center justify-between mb-2">
-                        <div className="flex items-center gap-2">
-                          <div className={`w-3 h-3 rounded-full ${goal.color}`}></div>
-                          <span className="text-sm font-medium dark:text-white">{goal.title}</span>
-                        </div>
-                        <button
-                          onClick={() => {
-                            setEditingGoal(goal);
-                            setShowGoalModal(true);
-                          }}
-                          className="text-zinc-400 hover:text-zinc-600"
-                        >
-                          <i className="fa-solid fa-pen text-xs"></i>
-                        </button>
-                      </div>
-                      <p className="text-xs text-zinc-500">{goal.category} • {goal.targetHoursPerWeek}h/week target</p>
-                    </div>
-                  ))}
-                </div>
-
-                <button onClick={handleAnalyzeGoalAlignment} className="w-full p-3 bg-purple-50 dark:bg-purple-900/20 rounded-xl text-left hover:bg-purple-100 dark:hover:bg-purple-900/30 transition">
-                  <i className="fa-solid fa-chart-pie text-purple-500 mr-2"></i>
-                  <span className="text-sm font-medium text-purple-700 dark:text-purple-300">Analyze Goal Alignment</span>
-                </button>
-
-                {/* Goal Alignments */}
-                {goalAlignments.length > 0 && (
-                  <div className="space-y-3">
-                    {goalAlignments.map(alignment => (
-                      <div key={alignment.goal.id} className="p-3 bg-zinc-50 dark:bg-zinc-900 rounded-xl">
-                        <div className="flex items-center justify-between mb-2">
-                          <div className="flex items-center gap-2">
-                            <div className={`w-3 h-3 rounded-full ${alignment.goal.color}`}></div>
-                            <span className="text-sm font-medium dark:text-white">{alignment.goal.title}</span>
-                          </div>
-                          <span className="text-xs font-bold">{Math.round(alignment.allocatedTime / 60)}h / {alignment.goal.targetHoursPerWeek}h</span>
-                        </div>
-                        <div className="h-2 bg-zinc-200 dark:bg-zinc-700 rounded-full overflow-hidden mb-2">
-                          <div
-                            className={`h-full ${alignment.goal.color} transition-all`}
-                            style={{ width: `${Math.min(100, (alignment.allocatedTime / alignment.targetTime) * 100)}%` }}
-                          />
-                        </div>
-                        <p className="text-[10px] text-zinc-500">{alignment.recommendation}</p>
-                      </div>
-                    ))}
-                  </div>
-                )}
-              </div>
-            )}
-          </div>
-        </div>
-      )}
-
-      {/* Meeting Prep Modal */}
-      {showMeetingPrepModal && meetingPrep && prepEvent && (
-        <div className="absolute inset-0 z-50 bg-black/60 backdrop-blur-sm flex items-center justify-center animate-fade-in p-4">
-          <div className="bg-white dark:bg-zinc-900 border border-zinc-200 dark:border-zinc-800 rounded-2xl w-full max-w-lg shadow-2xl animate-scale-in max-h-[90vh] overflow-hidden flex flex-col">
-            <div className="p-6 border-b border-zinc-200 dark:border-zinc-800 flex items-center justify-between">
-              <div>
-                <h3 className="text-lg font-bold dark:text-white flex items-center gap-2">
-                  <i className="fa-solid fa-clipboard-list text-purple-500"></i>
-                  Meeting Prep
-                </h3>
-                <p className="text-sm text-zinc-500 mt-1">{prepEvent.title}</p>
-              </div>
-              <button onClick={() => { setShowMeetingPrepModal(false); setMeetingPrep(null); setPrepEvent(null); }} className="text-zinc-400 hover:text-zinc-600">
-                <i className="fa-solid fa-xmark"></i>
-              </button>
-            </div>
-            <div className="flex-1 overflow-y-auto p-6 space-y-6">
-              {/* Attendees */}
-              {meetingPrep.attendees.length > 0 && (
-                <div>
-                  <h4 className="text-xs font-bold text-zinc-500 uppercase tracking-wider mb-3">Attendees</h4>
-                  <div className="space-y-2">
-                    {meetingPrep.attendees.map(attendee => (
-                      <div key={attendee.email} className="flex items-center gap-3 p-2 bg-zinc-50 dark:bg-zinc-800 rounded-lg">
-                        <div className="w-8 h-8 rounded-full bg-blue-500 flex items-center justify-center text-white text-xs font-bold">
-                          {(attendee.name || attendee.email).charAt(0).toUpperCase()}
-                        </div>
-                        <div>
-                          <p className="text-sm font-medium dark:text-white">{attendee.name || attendee.email}</p>
-                          {attendee.lastInteraction && (
-                            <p className="text-[10px] text-zinc-500">Last met: {attendee.lastInteraction.toLocaleDateString()}</p>
-                          )}
-                        </div>
-                      </div>
-                    ))}
-                  </div>
-                </div>
-              )}
-
-              {/* Suggested Agenda */}
-              {meetingPrep.suggestedAgenda.length > 0 && (
-                <div>
-                  <h4 className="text-xs font-bold text-zinc-500 uppercase tracking-wider mb-3">Suggested Agenda</h4>
-                  <ol className="list-decimal list-inside space-y-1">
-                    {meetingPrep.suggestedAgenda.map((item, i) => (
-                      <li key={i} className="text-sm dark:text-zinc-300">{item}</li>
-                    ))}
-                  </ol>
-                </div>
-              )}
-
-              {/* Talking Points */}
-              {meetingPrep.talkingPoints.length > 0 && (
-                <div>
-                  <h4 className="text-xs font-bold text-zinc-500 uppercase tracking-wider mb-3">Talking Points</h4>
-                  <ul className="space-y-2">
-                    {meetingPrep.talkingPoints.map((point, i) => (
-                      <li key={i} className="flex items-start gap-2">
-                        <i className="fa-solid fa-check text-green-500 mt-1 text-xs"></i>
-                        <span className="text-sm dark:text-zinc-300">{point}</span>
-                      </li>
-                    ))}
-                  </ul>
-                </div>
-              )}
-
-              {/* Questions to Ask */}
-              {meetingPrep.questionsToAsk.length > 0 && (
-                <div>
-                  <h4 className="text-xs font-bold text-zinc-500 uppercase tracking-wider mb-3">Questions to Ask</h4>
-                  <ul className="space-y-2">
-                    {meetingPrep.questionsToAsk.map((q, i) => (
-                      <li key={i} className="flex items-start gap-2">
-                        <i className="fa-solid fa-question-circle text-blue-500 mt-1 text-xs"></i>
-                        <span className="text-sm dark:text-zinc-300">{q}</span>
-                      </li>
-                    ))}
-                  </ul>
-                </div>
-              )}
-
-              {/* Context Notes */}
-              {meetingPrep.contextNotes && (
-                <div>
-                  <h4 className="text-xs font-bold text-zinc-500 uppercase tracking-wider mb-3">Context</h4>
-                  <p className="text-sm text-zinc-600 dark:text-zinc-400 bg-zinc-50 dark:bg-zinc-800 p-3 rounded-lg">{meetingPrep.contextNotes}</p>
-                </div>
-              )}
-            </div>
-            <div className="p-4 border-t border-zinc-200 dark:border-zinc-800">
-              <button onClick={() => { setShowMeetingPrepModal(false); setMeetingPrep(null); setPrepEvent(null); }} className="w-full py-2 bg-zinc-900 dark:bg-white text-white dark:text-black rounded-lg text-sm font-bold hover:opacity-90 transition">
-                Done
-              </button>
-            </div>
-          </div>
-        </div>
-      )}
-
-      {/* Smart Reschedule Modal */}
-      {showRescheduleModal && rescheduleEvent && (
-        <div className="absolute inset-0 z-50 bg-black/60 backdrop-blur-sm flex items-center justify-center animate-fade-in p-4">
-          <div className="bg-white dark:bg-zinc-900 border border-zinc-200 dark:border-zinc-800 rounded-2xl w-full max-w-md shadow-2xl animate-scale-in">
-            <div className="p-6 border-b border-zinc-200 dark:border-zinc-800">
-              <div className="flex items-center justify-between">
-                <h3 className="text-lg font-bold dark:text-white flex items-center gap-2">
-                  <i className="fa-solid fa-calendar-alt text-blue-500"></i>
-                  Smart Reschedule
-                </h3>
-                <button onClick={() => { setShowRescheduleModal(false); setRescheduleEvent(null); setRescheduleOptions([]); }} className="text-zinc-400 hover:text-zinc-600">
-                  <i className="fa-solid fa-xmark"></i>
-                </button>
-              </div>
-              <p className="text-sm text-zinc-500 mt-2">Reschedule: {rescheduleEvent.title}</p>
-            </div>
-            <div className="p-6 space-y-3 max-h-80 overflow-y-auto">
-              {rescheduleOptions.length === 0 ? (
-                <p className="text-sm text-zinc-500 text-center py-4">No available time slots found</p>
-              ) : (
-                rescheduleOptions.map((option, i) => (
-                  <button
-                    key={i}
-                    onClick={() => handleApplyReschedule(option)}
-                    className="w-full p-4 bg-zinc-50 dark:bg-zinc-800 rounded-xl text-left hover:bg-blue-50 dark:hover:bg-blue-900/20 transition group"
-                  >
-                    <div className="flex items-center justify-between">
-                      <div>
-                        <p className="text-sm font-medium dark:text-white">
-                          {option.newStart.toLocaleDateString('en-US', { weekday: 'short', month: 'short', day: 'numeric' })}
-                        </p>
-                        <p className="text-xs text-zinc-500">
-                          {option.newStart.toLocaleTimeString([], { hour: '2-digit', minute: '2-digit' })} - {option.newEnd.toLocaleTimeString([], { hour: '2-digit', minute: '2-digit' })}
-                        </p>
-                        <p className="text-[10px] text-blue-500 mt-1">{option.reason}</p>
-                      </div>
-                      <div className="flex items-center gap-2">
-                        <span className="text-xs font-bold text-green-500">{option.availabilityScore}%</span>
-                        <i className="fa-solid fa-arrow-right text-zinc-400 group-hover:text-blue-500 transition"></i>
-                      </div>
-                    </div>
-                  </button>
-                ))
-              )}
-            </div>
-          </div>
-        </div>
-      )}
-
-      {/* Goal Editor Modal */}
-      {showGoalModal && (
-        <div className="absolute inset-0 z-50 bg-black/60 backdrop-blur-sm flex items-center justify-center animate-fade-in p-4">
-          <div className="bg-white dark:bg-zinc-900 border border-zinc-200 dark:border-zinc-800 rounded-2xl w-full max-w-md shadow-2xl animate-scale-in">
-            <div className="p-6 border-b border-zinc-200 dark:border-zinc-800 flex items-center justify-between">
-              <h3 className="text-lg font-bold dark:text-white">
-                {editingGoal ? 'Edit Goal' : 'New Goal'}
-              </h3>
-              <button onClick={() => { setShowGoalModal(false); setEditingGoal(null); }} className="text-zinc-400 hover:text-zinc-600">
-                <i className="fa-solid fa-xmark"></i>
-              </button>
-            </div>
-            <form
-              onSubmit={(e) => {
-                e.preventDefault();
-                const form = e.target as HTMLFormElement;
-                const formData = new FormData(form);
-                const newGoal: Goal = {
-                  id: editingGoal?.id || `goal-${Date.now()}`,
-                  title: formData.get('title') as string,
-                  category: formData.get('category') as string,
-                  priority: parseInt(formData.get('priority') as string),
-                  targetHoursPerWeek: parseInt(formData.get('hours') as string),
-                  color: formData.get('color') as string || 'bg-blue-500',
-                };
-                if (editingGoal) {
-                  setGoals(prev => prev.map(g => g.id === editingGoal.id ? newGoal : g));
-                } else {
-                  setGoals(prev => [...prev, newGoal]);
-                }
-                setShowGoalModal(false);
-                setEditingGoal(null);
-              }}
-              className="p-6 space-y-4"
-            >
-              <div>
-                <label className="text-xs text-zinc-500 uppercase font-bold mb-1 block">Goal Title</label>
-                <input
-                  type="text"
-                  name="title"
-                  defaultValue={editingGoal?.title}
-                  required
-                  placeholder="e.g., Deep Work"
-                  className="w-full bg-zinc-50 dark:bg-zinc-950 border border-zinc-200 dark:border-zinc-800 rounded-lg p-3 dark:text-white outline-none"
-                />
-              </div>
-              <div>
-                <label className="text-xs text-zinc-500 uppercase font-bold mb-1 block">Category</label>
-                <input
-                  type="text"
-                  name="category"
-                  defaultValue={editingGoal?.category}
-                  required
-                  placeholder="e.g., focus, meetings, client"
-                  className="w-full bg-zinc-50 dark:bg-zinc-950 border border-zinc-200 dark:border-zinc-800 rounded-lg p-3 dark:text-white outline-none"
-                />
-              </div>
-              <div className="grid grid-cols-2 gap-4">
-                <div>
-                  <label className="text-xs text-zinc-500 uppercase font-bold mb-1 block">Hours/Week</label>
-                  <input
-                    type="number"
-                    name="hours"
-                    defaultValue={editingGoal?.targetHoursPerWeek || 10}
-                    required
-                    min="1"
-                    max="40"
-                    className="w-full bg-zinc-50 dark:bg-zinc-950 border border-zinc-200 dark:border-zinc-800 rounded-lg p-3 dark:text-white outline-none"
-                  />
-                </div>
-                <div>
-                  <label className="text-xs text-zinc-500 uppercase font-bold mb-1 block">Priority</label>
-                  <select
-                    name="priority"
-                    defaultValue={editingGoal?.priority || 1}
-                    className="w-full bg-zinc-50 dark:bg-zinc-950 border border-zinc-200 dark:border-zinc-800 rounded-lg p-3 dark:text-white outline-none"
-                  >
-                    <option value="1">High</option>
-                    <option value="2">Medium</option>
-                    <option value="3">Low</option>
-                  </select>
-                </div>
-              </div>
-              <div>
-                <label className="text-xs text-zinc-500 uppercase font-bold mb-2 block">Color</label>
-                <div className="flex gap-2 flex-wrap">
-                  {EVENT_COLORS.map(color => (
-                    <label key={color.id} className="cursor-pointer">
-                      <input type="radio" name="color" value={color.class} defaultChecked={editingGoal?.color === color.class || (!editingGoal && color.id === 'blue')} className="sr-only peer" />
-                      <div className={`w-8 h-8 rounded-full ${color.class} transition ring-2 ring-offset-2 ring-transparent peer-checked:ring-purple-500`}></div>
-                    </label>
-                  ))}
-                </div>
-              </div>
-              <div className="pt-4 flex justify-between">
-                {editingGoal && (
-                  <button
-                    type="button"
-                    onClick={() => {
-                      setGoals(prev => prev.filter(g => g.id !== editingGoal.id));
-                      setShowGoalModal(false);
-                      setEditingGoal(null);
-                    }}
-                    className="px-4 py-2 text-red-500 hover:bg-red-50 dark:hover:bg-red-900/20 rounded-lg transition"
-                  >
-                    Delete
-                  </button>
-                )}
-                <div className="flex gap-3 ml-auto">
-                  <button type="button" onClick={() => { setShowGoalModal(false); setEditingGoal(null); }} className="px-4 py-2 text-zinc-500 hover:text-zinc-900 dark:hover:text-white transition">
-                    Cancel
-                  </button>
-                  <button type="submit" className="px-5 py-2 bg-purple-500 text-white rounded-lg text-sm font-bold hover:bg-purple-600 transition">
-                    {editingGoal ? 'Save' : 'Create'}
-                  </button>
-                </div>
-              </div>
-            </form>
-          </div>
-        </div>
-      )}
-
-      {/* Day Detail Modal */}
-      <DayDetailModal
-        show={showDayDetail}
-        date={dayDetailDate}
-        events={dayDetailEvents}
-        onClose={() => {
-          setShowDayDetail(false);
-          setDayDetailDate(null);
-          setDayDetailEvents([]);
-        }}
-        onEventClick={(event) => {
-          setShowDayDetail(false);
-          openEventDetail(event);
-        }}
-        onCreateEvent={() => {
-          setShowDayDetail(false);
-          if (dayDetailDate) {
-            setNewEventDate(dayDetailDate.toISOString().split('T')[0]);
-          }
-          setShowEventModal(true);
-        }}
+      <CalendarInlineModals
+        showTeamModal={showTeamModal}
+        setShowTeamModal={setShowTeamModal}
+        editingTeam={editingTeam}
+        resetTeamForm={resetTeamForm}
+        newTeamName={newTeamName}
+        setNewTeamName={setNewTeamName}
+        newTeamColor={newTeamColor}
+        setNewTeamColor={setNewTeamColor}
+        contacts={contacts}
+        newTeamMembers={newTeamMembers}
+        setNewTeamMembers={setNewTeamMembers}
+        teams={teams}
+        handleDeleteTeam={handleDeleteTeam}
+        handleUpdateTeam={handleUpdateTeam}
+        handleCreateTeam={handleCreateTeam}
+        showInviteModal={showInviteModal}
+        setShowInviteModal={setShowInviteModal}
+        inviteContact={inviteContact}
+        setInviteContact={setInviteContact}
+        handleSendInvite={handleSendInvite}
+        showCreateCalendarModal={showCreateCalendarModal}
+        setShowCreateCalendarModal={setShowCreateCalendarModal}
+        newCalendarName={newCalendarName}
+        setNewCalendarName={setNewCalendarName}
+        newCalendarDescription={newCalendarDescription}
+        setNewCalendarDescription={setNewCalendarDescription}
+        handleCreateGoogleCalendar={handleCreateGoogleCalendar}
+        creatingCalendar={creatingCalendar}
       />
 
-      {/* Post-Meeting Follow-Up Prompt */}
-      {activeFollowUpPrompt && (
-        <div className="fixed bottom-6 right-6 max-w-md z-[100] animate-fade-in">
-          <PostMeetingPrompt
-            followUp={activeFollowUpPrompt}
-            onCreateAction={(suggestion) => {
-              // Handle action creation based on type
-              if (suggestion.type === 'meeting' && suggestion.suggestedTime) {
-                setNewEventTitle(suggestion.title);
-                setNewEventDate(suggestion.suggestedTime.toISOString().split('T')[0]);
-                setNewEventTime(`${suggestion.suggestedTime.getHours().toString().padStart(2, '0')}:${suggestion.suggestedTime.getMinutes().toString().padStart(2, '0')}`);
-                setNewEventDesc(suggestion.description || '');
-                setShowEventModal(true);
-              }
-              // Could also handle task, reminder, note types here
-              postMeetingService.markAsActioned(activeFollowUpPrompt.id);
-              setActiveFollowUpPrompt(null);
-            }}
-            onDismiss={(id) => {
-              postMeetingService.dismissFollowUp(id);
-              setActiveFollowUpPrompt(null);
-            }}
-            onSkip={(id) => {
-              postMeetingService.dismissFollowUp(id);
-              setActiveFollowUpPrompt(null);
-            }}
-          />
-        </div>
-      )}
+      <CalendarSettingsPanel
+        showCalendarSettings={showCalendarSettings}
+        setShowCalendarSettings={setShowCalendarSettings}
+        viewMode={viewMode}
+        setViewMode={setViewMode}
+        weekStartsOn={weekStartsOn}
+        setWeekStartsOn={setWeekStartsOn}
+        showWeekNumbers={showWeekNumbers}
+        setShowWeekNumbers={setShowWeekNumbers}
+        selectedTimeZone={selectedTimeZone}
+        setSelectedTimeZone={setSelectedTimeZone}
+        googleConnected={googleConnected}
+        syncGoogleCalendar={syncGoogleCalendar}
+        syncingGoogle={syncingGoogle}
+        lastSynced={lastSynced}
+        onNavigateToIntegrations={onNavigateToIntegrations}
+        outlookConnected={outlookConnected}
+        outlookUserEmail={outlookUserEmail}
+        outlookError={outlookError}
+        syncOutlookCalendar={syncOutlookCalendar}
+        syncingOutlook={syncingOutlook}
+        disconnectOutlook={disconnectOutlook}
+        connectOutlook={connectOutlook}
+        newEventReminder={newEventReminder}
+        setAndPersistReminder={setAndPersistReminder}
+        newEventColor={newEventColor}
+        setNewEventColor={setNewEventColor}
+      />
+
+      <CalendarAIPanel
+        showAIPanel={showAIPanel}
+        onClose={() => setShowAIPanel(false)}
+        aiPanelTab={aiPanelTab}
+        onTabChange={setAIPanelTab}
+        aiLoading={aiLoading}
+        naturalLanguageInput={naturalLanguageInput}
+        onNaturalLanguageChange={setNaturalLanguageInput}
+        onNaturalLanguageSubmit={handleNaturalLanguageSubmit}
+        onGetSuggestions={handleGetSuggestions}
+        onSuggestFocusBlocks={handleSuggestFocusBlocks}
+        onDetectConflicts={handleDetectConflicts}
+        onAnalyzeTravelBuffers={handleAnalyzeTravelBuffers}
+        onAddFocusBlock={handleAddFocusBlock}
+        onSmartReschedule={handleSmartReschedule}
+        schedulingSuggestions={schedulingSuggestions}
+        focusBlocks={focusBlocks}
+        conflicts={conflicts}
+        travelBuffers={travelBuffers}
+        onOpenEventModal={() => setShowEventModal(true)}
+        onSetNewEventDate={setNewEventDate}
+        onSetNewEventTime={setNewEventTime}
+        onSetNewEventEndTime={setNewEventEndTime}
+        onSetNewEventTitle={setNewEventTitle}
+        onSetNewEventDesc={setNewEventDesc}
+        onSetNewEventLocation={setNewEventLocation}
+        onSetNewEventType={setNewEventType}
+        relationshipInsights={relationshipInsights}
+        onAnalyzeRelationships={handleAnalyzeRelationships}
+        onOpenInviteModal={handleOpenInviteModal}
+        analytics={analytics}
+        onGenerateAnalytics={handleGenerateAnalytics}
+        goals={goals}
+        goalAlignments={goalAlignments}
+        showGoalModal={showGoalModal}
+        editingGoal={editingGoal}
+        onOpenGoalModal={handleOpenGoalModal}
+        onCloseGoalModal={handleCloseGoalModal}
+        onSaveGoal={handleSaveGoal}
+        onDeleteGoal={handleDeleteGoal}
+        onAnalyzeGoalAlignment={handleAnalyzeGoalAlignment}
+        showMeetingPrepModal={showMeetingPrepModal}
+        meetingPrep={meetingPrep}
+        prepEvent={prepEvent}
+        onCloseMeetingPrep={handleCloseMeetingPrep}
+        showRescheduleModal={showRescheduleModal}
+        rescheduleEvent={rescheduleEvent}
+        rescheduleOptions={rescheduleOptions}
+        onCloseRescheduleModal={handleCloseRescheduleModal}
+        onApplyReschedule={handleApplyReschedule}
+        activeFollowUpPrompt={activeFollowUpPrompt}
+        onFollowUpCreateAction={handleFollowUpCreateAction}
+        onFollowUpDismiss={handleFollowUpDismiss}
+        onFollowUpSkip={handleFollowUpSkip}
+      />
 
       {/* Custom Event Types Manager */}
       {showCustomTypesManager && (
@@ -4602,14 +2973,14 @@ const Calendar: React.FC<CalendarProps> = ({ contacts, openTaskPanel = false, on
           role="status"
           aria-live="polite"
         >
-          <i className="fa-solid fa-expand text-xs" aria-hidden="true" />
+          <Maximize2 className="text-xs" />
           Focus mode — sidebars hidden
           <button
             onClick={() => setFocusMode(false)}
             aria-label="Exit focus mode"
             className="ml-1 opacity-70 hover:opacity-100 transition-opacity"
           >
-            <i className="fa-solid fa-xmark text-xs" aria-hidden="true" />
+            <X className="text-xs" />
           </button>
           <span className="opacity-50 ml-1">⌘F or Esc</span>
         </div>

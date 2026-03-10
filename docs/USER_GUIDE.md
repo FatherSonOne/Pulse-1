@@ -1,7 +1,7 @@
 # Pulse User's Guide
 
 **Version**: 25.1.2
-**Last Updated**: March 7, 2026
+**Last Updated**: March 9, 2026
 **For**: All Pulse users — personal, team, and enterprise
 
 ---
@@ -2066,15 +2066,14 @@ Click the **gear icon** at the bottom of the sidebar, or click your avatar → *
 - Enable or disable **two-factor authentication** (2FA) — strongly recommended
 - Manage your active sessions — see all devices logged in and revoke any
 
-### Dark Mode & Themes
+### Appearance & Accessibility
 
 1. Go to **Settings → Appearance**.
 2. Toggle **Dark Mode** on or off — applies immediately.
-3. Choose an **Accent Color**:
-   - 7 preset colors available
-   - Enter a custom hex code for any color
-4. Choose a **Font Size**: Small, Medium (default), Large
-5. Toggle **Reduced Motion** if you prefer less animation
+3. Choose an **Accent Color** from 7 brand presets (Pulse Rose, Pulse Pink, Heartbeat Coral, Vision Purple, Entomate Teal, Ocean Blue, Warm Amber) — or enter any custom hex code.
+4. Choose a **Font Size**: Small, Default, or Large.
+5. Toggle **High Contrast** for sharper text separation on all backgrounds.
+6. Toggle **Reduced Motion** to minimize animations throughout the app.
 
 ### Notification Preferences
 
@@ -2154,6 +2153,57 @@ If you're connecting Pulse to external tools or using Pulse's API:
    - **Read Receipts** — whether sent receipts are shared
    - **Data Retention** — how long your messages are stored (7 days to indefinitely)
    - **Analytics Opt-out** — opt out of usage analytics
+
+### AI & Intelligence
+
+Configure the AI engine that powers your Pulse workspace.
+
+1. Go to **Settings → AI & Intelligence**.
+2. Under **AI Model**, choose your primary model (e.g., Gemini Flash for speed, or a deeper reasoning model for complex tasks).
+3. Toggle **Advanced Reasoning** on if you want the AI to take more time on complex questions before answering.
+4. Under **Voice Agent**, configure:
+   - **Agent Voice** — choose the voice character for spoken AI responses
+   - **Turn Detection Mode** — "Semantic" (waits for a natural pause) or "Server VAD" (detects silence automatically)
+   - **Voice Activity Eagerness** — how quickly the agent responds after you stop speaking
+   - **Interaction Mode** — VAD (hands-free, auto-detects speech) or PTT (push-to-talk)
+5. Under **Knowledge Base**, set your default search scope and toggle automatic document analysis.
+6. Under **Devices**, select your preferred microphone, speaker, and camera for AI voice sessions.
+7. Use the **Test Devices** button to confirm your hardware is working correctly.
+8. Enable **Quota Notifications** to get a browser alert when your AI API quota recovers or when fallback mode activates.
+
+**Tip:** The AI Health Monitor at the top of this page shows the real-time status of all AI services — green means fully operational.
+
+### War Room Settings
+
+Customize your War Room AI analysis environment.
+
+1. Go to **Settings → War Room**.
+2. Set your **Default Mode** — the view that opens when you launch War Room (Command Center, Brainstorm, Analysis, etc.).
+3. Set **AI Depth**: Fast (quick answers), Balanced (default), or Deep (thorough multi-step reasoning).
+4. Toggle **Token Streaming** on to see AI responses appear word-by-word as they generate, rather than waiting for the full response.
+5. Toggle **Thinking Panel** to show or hide the AI's internal reasoning steps as it works.
+6. Toggle **Annotations** to enable inline notes and highlights on War Room documents.
+
+### Activity Monitor & Presence
+
+Control how your presence and activity appear to others in your workspace.
+
+1. Go to **Settings → Activity Monitor**.
+2. Toggle **Live Presence** to show or hide your online status from teammates. When off, you appear offline to others even while using the app.
+3. Toggle **Leaderboard Participation** to include or exclude your activity from the workspace communication leaderboard.
+4. Set your **Activity Data Retention** period — how many days of your activity history is stored (30, 60, or 90 days).
+
+**Tip:** Admins see a full Activity Monitor dashboard under Settings → Admin Dashboard with live presence for the whole workspace.
+
+### Features & Labs
+
+Turn individual Pulse features on or off — useful for reducing clutter or trying experimental capabilities.
+
+1. Go to **Settings → Features & Labs**.
+2. Toggle **Advanced Mode** to instantly enable all advanced and experimental features at once.
+3. Scroll through the feature categories and use the toggles to enable or disable individual features. Changes apply immediately — no restart needed.
+
+**Tip:** If a feature you've seen documented isn't appearing, check here first — it may be toggled off.
 
 ### Exporting Your Data
 

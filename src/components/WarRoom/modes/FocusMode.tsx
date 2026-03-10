@@ -5,6 +5,8 @@ import { VoiceAgentVisualizerEnhanced } from '../VoiceAgentVisualizerEnhanced';
 import { VoiceControl } from '../VoiceControl';
 import { MarkdownRenderer } from '../../shared/MarkdownRenderer';
 
+import { BookOpen, Brain, Crosshair, Flame, Leaf, Lock, Send, Share2, Sun } from 'lucide-react';
+
 interface FocusModeProps {
   messages: AIMessage[];
   isLoading: boolean;
@@ -142,7 +144,7 @@ The user is in a focused deep work session about "${topic}".
             {/* Session Stats */}
             {sessionsCompleted > 0 && (
               <span className="war-room-badge text-xs mr-2">
-                <i className="fa fa-fire mr-1 text-orange-400"></i>
+                <Flame className="fa mr-1 text-orange-400" />
                 {sessionsCompleted}
               </span>
             )}
@@ -162,7 +164,7 @@ The user is in a focused deep work session about "${topic}".
               className="war-room-btn war-room-btn-icon-sm"
               title="Export session"
             >
-              <i className="fa fa-share-nodes text-xs"></i>
+              <Share2 className="fa text-xs" />
             </button>
           </div>
         </div>
@@ -190,9 +192,9 @@ The user is in a focused deep work session about "${topic}".
             {topic && isTopicLocked && !isZenMode && (
               <div className="mb-8 war-room-panel px-6 py-3 bg-rose-500/10 border-rose-500/30">
                 <div className="flex items-center gap-2 text-rose-300">
-                  <i className="fa fa-crosshairs"></i>
+                  <Crosshair className="fa" />
                   <span className="font-medium">{topic}</span>
-                  <i className="fa fa-lock text-xs opacity-50"></i>
+                  <Lock className="fa text-xs opacity-50" />
                 </div>
               </div>
             )}
@@ -214,7 +216,7 @@ The user is in a focused deep work session about "${topic}".
                       <div className="flex flex-wrap gap-2 justify-center">
                         {lastAssistant.citations.map((c: any, i: number) => (
                           <span key={i} className="war-room-badge text-xs">
-                            <i className="fa fa-book-open mr-1"></i>
+                            <BookOpen className="fa mr-1" />
                             {c.title}
                           </span>
                         ))}
@@ -229,7 +231,7 @@ The user is in a focused deep work session about "${topic}".
             {isLoading && (
               <div className="flex flex-col items-center gap-4">
                 <div className="w-16 h-16 rounded-full bg-rose-500/20 flex items-center justify-center animate-pulse">
-                  <i className="fa fa-brain text-2xl text-rose-400"></i>
+                  <Brain className="fa text-2xl text-rose-400" />
                 </div>
                 <p className="war-room-text-secondary">Thinking deeply...</p>
               </div>
@@ -238,7 +240,7 @@ The user is in a focused deep work session about "${topic}".
             {/* Empty State */}
             {messages.length === 0 && !isLoading && (
               <div className={`text-center ${isZenMode ? 'text-white/60' : 'war-room-text-secondary'}`}>
-                <i className="fa fa-leaf text-4xl mb-4 opacity-30"></i>
+                <Leaf className="fa text-4xl mb-4 opacity-30" />
                 <p className="text-lg mb-2">Focus Mode</p>
                 <p className="text-sm opacity-70">
                   Set a topic, start the timer, and begin your deep work session
@@ -338,7 +340,7 @@ The user is in a focused deep work session about "${topic}".
                 input.trim() ? 'war-room-btn-primary' : ''
               }`}
             >
-              <i className="fa fa-paper-plane text-xs"></i>
+              <Send className="fa text-xs" />
             </button>
           </div>
         </div>
@@ -351,7 +353,7 @@ The user is in a focused deep work session about "${topic}".
               onClick={() => setIsZenMode(false)}
               className="war-room-btn text-xs px-3 py-1 opacity-50 hover:opacity-100"
             >
-              <i className="fa fa-sun mr-1"></i>
+              <Sun className="fa mr-1" />
               Exit Zen
             </button>
           </div>

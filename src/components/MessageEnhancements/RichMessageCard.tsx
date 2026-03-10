@@ -8,7 +8,7 @@ interface RichMessageCardProps {
   onAction?: (action: string, data: any) => void;
 }
 
-export const RichMessageCardComponent: React.FC<RichMessageCardProps> = ({ card, onAction }) => {
+const RichMessageCardComponentBase: React.FC<RichMessageCardProps> = ({ card, onAction }) => {
   const renderCard = () => {
     switch (card.type) {
       case 'link':
@@ -122,3 +122,6 @@ export const RichMessageCardComponent: React.FC<RichMessageCardProps> = ({ card,
   
   return <div className="my-2">{renderCard()}</div>;
 };
+
+export const RichMessageCardComponent = React.memo(RichMessageCardComponentBase);
+RichMessageCardComponent.displayName = 'RichMessageCardComponent';

@@ -4,7 +4,9 @@
 // ============================================
 
 import React, { useState } from 'react';
+import { CalendarCheck, ChevronRight, Circle, HelpCircle, Mail, X } from 'lucide-react';
 import {
+
   MeetingPrepCard as MeetingPrepCardType,
   AttendeeProfile,
   getRelationshipHealthColor,
@@ -46,7 +48,7 @@ export const MeetingPrepCardComponent: React.FC<MeetingPrepCardProps> = ({
               : 'bg-purple-100 dark:bg-purple-900/30 text-purple-600 dark:text-purple-400'
           }`}
         >
-          <i className="fa-solid fa-calendar-check"></i>
+          <CalendarCheck />
         </div>
 
         <div className="flex-1 min-w-0">
@@ -62,7 +64,7 @@ export const MeetingPrepCardComponent: React.FC<MeetingPrepCardProps> = ({
           <span className="text-xs font-medium text-purple-600 dark:text-purple-400">
             View Prep
           </span>
-          <i className="fa-solid fa-chevron-right text-xs text-zinc-400"></i>
+          <ChevronRight className="text-xs text-zinc-400" />
         </div>
       </div>
     );
@@ -87,7 +89,7 @@ export const MeetingPrepCardComponent: React.FC<MeetingPrepCardProps> = ({
                   : 'bg-purple-100 dark:bg-purple-900/30 text-purple-600 dark:text-purple-400'
               }`}
             >
-              <i className="fa-solid fa-calendar-check text-xl"></i>
+              <CalendarCheck className="text-xl" />
             </div>
             <div>
               <h3 className="font-semibold text-zinc-900 dark:text-white">
@@ -112,7 +114,7 @@ export const MeetingPrepCardComponent: React.FC<MeetingPrepCardProps> = ({
               onClick={onDismiss}
               className="p-2 text-zinc-400 hover:text-zinc-600 dark:hover:text-zinc-300 transition"
             >
-              <i className="fa-solid fa-xmark"></i>
+              <X />
             </button>
           )}
         </div>
@@ -165,7 +167,7 @@ export const MeetingPrepCardComponent: React.FC<MeetingPrepCardProps> = ({
                   key={idx}
                   className="flex items-start gap-2 text-sm text-zinc-700 dark:text-zinc-300"
                 >
-                  <i className="fa-solid fa-circle text-[4px] text-purple-500 mt-2"></i>
+                  <Circle className="text-[4px] text-purple-500 mt-2" />
                   <span>{point}</span>
                 </li>
               ))}
@@ -185,7 +187,7 @@ export const MeetingPrepCardComponent: React.FC<MeetingPrepCardProps> = ({
                   key={idx}
                   className="flex items-start gap-2 text-sm text-zinc-700 dark:text-zinc-300"
                 >
-                  <i className="fa-solid fa-circle-question text-blue-500 text-xs mt-0.5"></i>
+                  <HelpCircle className="text-blue-500 text-xs mt-0.5" />
                   <span>{question}</span>
                 </li>
               ))}
@@ -205,7 +207,7 @@ export const MeetingPrepCardComponent: React.FC<MeetingPrepCardProps> = ({
                   key={idx}
                   className="flex items-center gap-2 p-2 bg-zinc-50 dark:bg-zinc-800 rounded-lg text-sm"
                 >
-                  <i className="fa-solid fa-envelope text-zinc-400 text-xs"></i>
+                  <Mail className="text-zinc-400 text-xs" />
                   <span className="text-zinc-700 dark:text-zinc-300 truncate">
                     {email.subject}
                   </span>
@@ -346,7 +348,7 @@ export const MeetingPrepBanner: React.FC<MeetingPrepBannerProps> = ({
             : 'bg-purple-200 dark:bg-purple-900/30 text-purple-600 dark:text-purple-400'
         }`}
       >
-        <i className="fa-solid fa-calendar-check"></i>
+        <CalendarCheck />
       </div>
 
       <div className="flex-1 min-w-0">

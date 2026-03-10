@@ -4,7 +4,9 @@
 // ============================================
 
 import React, { useState } from 'react';
+import { Building2, Check, CheckCircle, GitMerge, Phone, Users, X } from 'lucide-react';
 import {
+
   DuplicateGroup,
   DuplicateContact,
   RelationshipProfile,
@@ -83,7 +85,7 @@ export const DuplicateDetectionModal: React.FC<DuplicateDetectionModalProps> = (
               onClick={onClose}
               className="p-2 text-zinc-400 hover:text-zinc-600 dark:hover:text-zinc-300 transition"
             >
-              <i className="fa-solid fa-xmark text-lg"></i>
+              <X className="text-lg" />
             </button>
           </div>
         </div>
@@ -94,7 +96,7 @@ export const DuplicateDetectionModal: React.FC<DuplicateDetectionModalProps> = (
           <div className="w-1/2 border-r border-zinc-200 dark:border-zinc-800 overflow-y-auto">
             {duplicates.length === 0 ? (
               <div className="flex flex-col items-center justify-center h-full text-zinc-400 p-6">
-                <i className="fa-solid fa-check-circle text-4xl mb-3 text-green-500"></i>
+                <CheckCircle className="text-4xl mb-3 text-green-500" />
                 <p className="text-sm font-medium">No duplicates found</p>
                 <p className="text-xs mt-1">Your contacts are clean!</p>
               </div>
@@ -143,19 +145,19 @@ export const DuplicateDetectionModal: React.FC<DuplicateDetectionModalProps> = (
                     </h4>
                     <ul className="text-sm text-purple-700 dark:text-purple-400 space-y-1">
                       <li className="flex items-start gap-2">
-                        <i className="fa-solid fa-check text-xs mt-1"></i>
+                        <Check className="text-xs mt-1" />
                         <span>All interactions will be combined</span>
                       </li>
                       <li className="flex items-start gap-2">
-                        <i className="fa-solid fa-check text-xs mt-1"></i>
+                        <Check className="text-xs mt-1" />
                         <span>Tags and notes will be merged</span>
                       </li>
                       <li className="flex items-start gap-2">
-                        <i className="fa-solid fa-check text-xs mt-1"></i>
+                        <Check className="text-xs mt-1" />
                         <span>VIP/Favorite status preserved</span>
                       </li>
                       <li className="flex items-start gap-2">
-                        <i className="fa-solid fa-check text-xs mt-1"></i>
+                        <Check className="text-xs mt-1" />
                         <span>Duplicate emails will be linked</span>
                       </li>
                     </ul>
@@ -176,7 +178,7 @@ export const DuplicateDetectionModal: React.FC<DuplicateDetectionModalProps> = (
                       </span>
                     ) : (
                       <>
-                        <i className="fa-solid fa-code-merge mr-2"></i>
+                        <GitMerge className="mr-2" />
                         Merge Contacts
                       </>
                     )}
@@ -191,7 +193,7 @@ export const DuplicateDetectionModal: React.FC<DuplicateDetectionModalProps> = (
               </div>
             ) : (
               <div className="flex flex-col items-center justify-center h-full text-zinc-400 p-6">
-                <i className="fa-solid fa-users text-3xl mb-3"></i>
+                <Users className="text-3xl mb-3" />
                 <p className="text-sm">Select a group to review</p>
               </div>
             )}
@@ -264,7 +266,7 @@ const DuplicateGroupCard: React.FC<DuplicateGroupCardProps> = ({
           className="p-1 text-zinc-400 hover:text-zinc-600 dark:hover:text-zinc-300 transition"
           title="Not a duplicate"
         >
-          <i className="fa-solid fa-xmark text-xs"></i>
+          <X className="text-xs" />
         </button>
       </div>
 
@@ -320,7 +322,7 @@ const DuplicateProfileCard: React.FC<DuplicateProfileCardProps> = ({
           </div>
           {isSelected && (
             <div className="absolute -bottom-1 -right-1 w-5 h-5 bg-purple-500 rounded-full flex items-center justify-center">
-              <i className="fa-solid fa-check text-white text-[10px]"></i>
+              <Check className="text-white text-[10px]" />
             </div>
           )}
         </div>
@@ -349,13 +351,13 @@ const DuplicateProfileCard: React.FC<DuplicateProfileCardProps> = ({
         <div className="mt-3 pt-3 border-t border-zinc-100 dark:border-zinc-800 flex flex-wrap gap-x-4 gap-y-1 text-xs text-zinc-500 dark:text-zinc-400">
           {profile?.company && (
             <span>
-              <i className="fa-solid fa-building mr-1"></i>
+              <Building2 className="mr-1" />
               {profile.company}
             </span>
           )}
           {profile?.phone && (
             <span>
-              <i className="fa-solid fa-phone mr-1"></i>
+              <Phone className="mr-1" />
               {profile.phone}
             </span>
           )}

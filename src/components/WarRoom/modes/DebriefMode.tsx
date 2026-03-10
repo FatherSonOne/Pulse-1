@@ -2,6 +2,8 @@ import React, { useState, useRef, useEffect, useMemo } from 'react';
 import { AIMessage, ThinkingStep } from '../../../services/ragService';
 import { SessionExport } from '../shared';
 
+import { Check, ClipboardCheck, Lightbulb, ListChecks, MessagesSquare, Pen, Play, Plus, Send, Share2, Wand2, X } from 'lucide-react';
+
 interface ActionItem {
   id: string;
   text: string;
@@ -178,7 +180,7 @@ ${actionsList || 'None captured yet'}`);
         <div className="max-w-lg w-full p-8">
           <div className="text-center mb-8">
             <div className="w-20 h-20 mx-auto mb-4 rounded-full bg-gradient-to-br from-rose-500/20 to-pink-500/20 flex items-center justify-center">
-              <i className="fa fa-clipboard-check text-3xl text-rose-500 dark:text-rose-400"></i>
+              <ClipboardCheck className="fa text-3xl text-rose-500 dark:text-rose-400" />
             </div>
             <h2 className="text-2xl font-bold war-room-text-primary mb-2">Debrief Mode</h2>
             <p className="war-room-text-secondary">
@@ -203,7 +205,7 @@ ${actionsList || 'None captured yet'}`);
               disabled={!sessionContext.trim()}
               className="w-full mt-4 war-room-btn war-room-btn-primary py-3"
             >
-              <i className="fa fa-play mr-2"></i>
+              <Play className="fa mr-2" />
               Start Debrief
             </button>
           </div>
@@ -234,7 +236,7 @@ ${actionsList || 'None captured yet'}`);
         {/* Context Header */}
         <div className="p-4 border-b border-white/10 bg-gradient-to-r from-rose-500/10 to-red-500/10">
           <div className="flex items-center gap-2 mb-1">
-            <i className="fa fa-clipboard-check text-rose-500 dark:text-rose-400"></i>
+            <ClipboardCheck className="fa text-rose-500 dark:text-rose-400" />
             <h3 className="text-sm font-semibold war-room-text-primary truncate">{sessionContext}</h3>
           </div>
           <div className="flex items-center gap-2 text-xs war-room-text-secondary">
@@ -303,7 +305,7 @@ ${actionsList || 'None captured yet'}`);
                     disabled={!newInsightText.trim()}
                     className="war-room-btn war-room-btn-icon-sm war-room-btn-primary"
                   >
-                    <i className="fa fa-plus text-xs"></i>
+                    <Plus className="fa text-xs" />
                   </button>
                 </div>
               </div>
@@ -330,7 +332,7 @@ ${actionsList || 'None captured yet'}`);
                               onClick={() => handleDeleteInsight(insight.id)}
                               className="opacity-0 group-hover:opacity-100 transition-opacity text-red-400 hover:text-red-300"
                             >
-                              <i className="fa fa-times text-xs"></i>
+                              <X className="fa text-xs" />
                             </button>
                           </div>
                         </div>
@@ -342,7 +344,7 @@ ${actionsList || 'None captured yet'}`);
 
               {insights.length === 0 && (
                 <div className="text-center py-8 war-room-text-secondary">
-                  <i className="fa fa-lightbulb text-2xl opacity-30 mb-2"></i>
+                  <Lightbulb className="fa text-2xl opacity-30 mb-2" />
                   <p className="text-sm">No insights yet</p>
                   <p className="text-xs opacity-70">Capture key learnings as you debrief</p>
                 </div>
@@ -384,7 +386,7 @@ ${actionsList || 'None captured yet'}`);
                     disabled={!newActionText.trim()}
                     className="war-room-btn war-room-btn-icon-sm war-room-btn-primary"
                   >
-                    <i className="fa fa-plus text-xs"></i>
+                    <Plus className="fa text-xs" />
                   </button>
                 </div>
               </div>
@@ -407,7 +409,7 @@ ${actionsList || 'None captured yet'}`);
                               : 'border-white/30 hover:border-emerald-500'
                           }`}
                         >
-                          {action.completed && <i className="fa fa-check text-white text-xs"></i>}
+                          {action.completed && <Check className="fa text-white text-xs" />}
                         </button>
                         <div className="flex-1">
                           <p className={`text-sm war-room-text-primary ${action.completed ? 'line-through' : ''}`}>
@@ -419,7 +421,7 @@ ${actionsList || 'None captured yet'}`);
                           onClick={() => handleDeleteAction(action.id)}
                           className="opacity-0 group-hover:opacity-100 transition-opacity text-red-400 hover:text-red-300"
                         >
-                          <i className="fa fa-times text-xs"></i>
+                          <X className="fa text-xs" />
                         </button>
                       </div>
                     </div>
@@ -429,7 +431,7 @@ ${actionsList || 'None captured yet'}`);
 
               {actionItems.length === 0 && (
                 <div className="text-center py-8 war-room-text-secondary">
-                  <i className="fa fa-list-check text-2xl opacity-30 mb-2"></i>
+                  <ListChecks className="fa text-2xl opacity-30 mb-2" />
                   <p className="text-sm">No action items yet</p>
                   <p className="text-xs opacity-70">Capture next steps and follow-ups</p>
                 </div>
@@ -445,7 +447,7 @@ ${actionsList || 'None captured yet'}`);
             disabled={isLoading}
             className="w-full war-room-btn war-room-btn-primary py-2"
           >
-            <i className="fa fa-wand-magic-sparkles mr-2"></i>
+            <Wand2 className="fa mr-2" />
             Generate Summary
           </button>
         </div>
@@ -457,7 +459,7 @@ ${actionsList || 'None captured yet'}`);
         <div className="shrink-0 p-3 border-b border-white/10 flex items-center justify-between bg-black/20">
           <div className="flex items-center gap-3">
             <h3 className="text-sm font-semibold war-room-text-primary">
-              <i className="fa fa-comments mr-2 text-rose-500 dark:text-rose-400"></i>
+              <MessagesSquare className="fa mr-2 text-rose-500 dark:text-rose-400" />
               Debrief Discussion
             </h3>
           </div>
@@ -467,7 +469,7 @@ ${actionsList || 'None captured yet'}`);
             className="war-room-btn war-room-btn-icon-sm"
             title="Export debrief"
           >
-            <i className="fa fa-share-nodes text-xs"></i>
+            <Share2 className="fa text-xs" />
           </button>
         </div>
 
@@ -492,7 +494,7 @@ ${actionsList || 'None captured yet'}`);
             <div className="h-full flex items-center justify-center">
               <div className="text-center max-w-md">
                 <div className="w-16 h-16 mx-auto mb-4 rounded-full bg-gradient-to-br from-rose-500/20 to-pink-500/20 flex items-center justify-center">
-                  <i className="fa fa-comments text-2xl text-rose-500 dark:text-rose-400"></i>
+                  <MessagesSquare className="fa text-2xl text-rose-500 dark:text-rose-400" />
                 </div>
                 <h3 className="text-lg font-semibold war-room-text-primary mb-2">
                   Ready to Debrief
@@ -517,7 +519,7 @@ ${actionsList || 'None captured yet'}`);
                 >
                   {msg.role === 'assistant' && (
                     <div className="flex items-center gap-2 mb-2 pb-2 border-b border-white/10">
-                      <i className="fa fa-clipboard-check text-rose-500 dark:text-rose-400 text-xs"></i>
+                      <ClipboardCheck className="fa text-rose-500 dark:text-rose-400 text-xs" />
                       <span className="text-xs text-rose-500 dark:text-rose-400 font-medium">Debrief AI</span>
                     </div>
                   )}
@@ -532,7 +534,7 @@ ${actionsList || 'None captured yet'}`);
               <div className="war-room-message-ai">
                 <div className="flex items-center gap-3">
                   <div className="w-5 h-5 rounded-full bg-rose-500/30 flex items-center justify-center">
-                    <i className="fa fa-clipboard-check text-rose-500 dark:text-rose-400 text-xs animate-pulse"></i>
+                    <ClipboardCheck className="fa text-rose-500 dark:text-rose-400 text-xs animate-pulse" />
                   </div>
                   <span className="text-sm war-room-text-secondary">Processing debrief...</span>
                 </div>
@@ -547,7 +549,7 @@ ${actionsList || 'None captured yet'}`);
         <div className="shrink-0 p-4 war-room-input-area">
           <div className="flex items-center gap-2">
             <div className="flex-1 war-room-panel-inset flex items-center gap-2 px-4 py-3">
-              <i className="fa fa-pen text-rose-500 dark:text-rose-400 text-sm"></i>
+              <Pen className="fa text-rose-500 dark:text-rose-400 text-sm" />
               <input
                 type="text"
                 value={input}
@@ -564,7 +566,7 @@ ${actionsList || 'None captured yet'}`);
                   input.trim() ? 'war-room-btn-primary' : ''
                 }`}
               >
-                <i className="fa fa-paper-plane text-xs"></i>
+                <Send className="fa text-xs" />
               </button>
             </div>
           </div>

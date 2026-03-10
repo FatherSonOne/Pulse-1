@@ -13,6 +13,8 @@
 import React, { useState, useEffect, useRef, useCallback } from 'react';
 import { WarRoomMode } from './ModeSwitcher';
 
+import { Search } from 'lucide-react';
+
 // ─── Types ────────────────────────────────────────────────────────────────────
 
 export type PaletteCategory = 'generate' | 'navigate' | 'board';
@@ -156,7 +158,7 @@ export const ActionPalette: React.FC<ActionPaletteProps> = ({ isOpen, onClose, a
             borderBottom: '1px solid var(--wr-border)',
           }}
         >
-          <i className="fa fa-magnifying-glass" style={{ color: 'var(--wr-text-muted)', fontSize: 14 }} />
+          <Search className="fa" />
           <input
             ref={inputRef}
             value={query}

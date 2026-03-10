@@ -1,6 +1,8 @@
 // Notification Preferences Panel
 import React, { useState } from 'react';
 
+import { Bell, BellOff } from 'lucide-react';
+
 interface NotificationChannel {
   id: string;
   name: string;
@@ -157,7 +159,7 @@ export const NotificationPreferences: React.FC<NotificationPreferencesProps> = (
         <div className="flex items-center justify-between mb-3">
           <div className="flex items-center gap-2">
             <div className="w-8 h-8 rounded-full bg-violet-100 dark:bg-violet-900/40 flex items-center justify-center">
-              <i className="fa-solid fa-bell text-violet-500 text-sm" />
+              <Bell className="text-violet-500 text-sm" />
             </div>
             <div>
               <h3 className="text-sm font-bold text-zinc-800 dark:text-white">Notifications</h3>
@@ -507,7 +509,7 @@ export const NotificationBadge: React.FC<{
         ? 'bg-zinc-200 dark:bg-zinc-700 text-zinc-500'
         : 'bg-red-500 text-white'
     }`}>
-      {isMuted ? <i className="fa-solid fa-bell-slash text-[8px]" /> : count > 99 ? '99+' : count}
+      {isMuted ? <BellOff className="text-[8px]" /> : count > 99 ? '99+' : count}
     </div>
   );
 };

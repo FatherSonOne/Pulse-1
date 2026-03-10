@@ -10,6 +10,8 @@ import { AIMessage, ThinkingStep } from '../../../services/ragService';
 import { MarkdownRenderer } from '../../shared/MarkdownRenderer';
 import './FocusModeRedesigned.css';
 
+import { ArrowUp, Bookmark, Brain, Crosshair, FastForward, Flame, History, Lock, Moon, Pause, Play, RotateCw, Sun, Target } from 'lucide-react';
+
 // ============= TYPES =============
 
 interface FocusModeRedesignedProps {
@@ -158,27 +160,27 @@ const TimerDisplay: React.FC<{
       <div className="fm-timer-controls">
         {!timer.isRunning ? (
           <button onClick={onStart} className="fm-timer-btn fm-timer-btn-primary">
-            <i className="fa fa-play" />
+            <Play className="fa" />
             <span>Start</span>
           </button>
         ) : (
           <button onClick={onPause} className="fm-timer-btn">
-            <i className="fa fa-pause" />
+            <Pause className="fa" />
             <span>Pause</span>
           </button>
         )}
         <button onClick={onReset} className="fm-timer-btn">
-          <i className="fa fa-redo" />
+          <RotateCw className="fa" />
         </button>
         {timer.mode !== 'idle' && (
           <button onClick={onSkip} className="fm-timer-btn">
-            <i className="fa fa-forward" />
+            <FastForward className="fa" />
           </button>
         )}
       </div>
       {sessionsCompleted > 0 && (
         <div className="fm-sessions-badge">
-          <i className="fa fa-fire" />
+          <Flame className="fa" />
           <span>{sessionsCompleted} session{sessionsCompleted !== 1 ? 's' : ''}</span>
         </div>
       )}
@@ -201,16 +203,16 @@ const TopicInput: React.FC<{
       {isLocked ? (
         <div className="fm-topic-locked">
           <div className="fm-topic-icon">
-            <i className="fa fa-crosshairs" />
+            <Crosshair className="fa" />
           </div>
           <span className="fm-topic-text">{topic}</span>
           <button onClick={onUnlock} className="fm-topic-unlock">
-            <i className="fa fa-lock" />
+            <Lock className="fa" />
           </button>
         </div>
       ) : (
         <div className="fm-topic-input-wrapper">
-          <i className="fa fa-bullseye fm-topic-input-icon" />
+          <Target className="fa fm-topic-input-icon" />
           <input
             ref={inputRef}
             type="text"
@@ -226,7 +228,7 @@ const TopicInput: React.FC<{
           />
           {topic.trim() && (
             <button onClick={onLock} className="fm-topic-lock-btn">
-              <i className="fa fa-lock" />
+              <Lock className="fa" />
               <span>Lock</span>
             </button>
           )}
@@ -252,7 +254,7 @@ const ResponseCard: React.FC<{
       <div className="fm-response-citations">
         {message.citations.map((cite: any, i: number) => (
           <span key={i} className="fm-citation">
-            <i className="fa fa-bookmark" />
+            <Bookmark className="fa" />
             {typeof cite === 'string' ? cite : cite.title}
           </span>
         ))}
@@ -266,7 +268,7 @@ const ThinkingState: React.FC = () => (
   <div className="fm-thinking">
     <div className="fm-thinking-orb">
       <div className="fm-thinking-pulse" />
-      <i className="fa fa-brain" />
+      <Brain className="fa" />
     </div>
     <span>Processing...</span>
   </div>
@@ -282,7 +284,7 @@ const MessageHistory: React.FC<{
   return (
     <div className="fm-history">
       <div className="fm-history-header">
-        <i className="fa fa-clock-rotate-left" />
+        <History className="fa" />
         <span>Recent</span>
       </div>
       <div className="fm-history-list">
@@ -508,14 +510,14 @@ export const FocusModeRedesigned: React.FC<FocusModeRedesignedProps> = ({
               className={`fm-header-btn ${showHistory ? 'active' : ''}`}
               title="Toggle History"
             >
-              <i className="fa fa-clock-rotate-left" />
+              <History className="fa" />
             </button>
             <button
               onClick={() => setIsZenMode(true)}
               className="fm-header-btn"
               title="Zen Mode (Esc)"
             >
-              <i className="fa fa-moon" />
+              <Moon className="fa" />
             </button>
           </div>
         </header>
@@ -579,7 +581,7 @@ export const FocusModeRedesigned: React.FC<FocusModeRedesignedProps> = ({
             disabled={!input.trim() || isLoading}
             className="fm-send-btn"
           >
-            <i className="fa fa-arrow-up" />
+            <ArrowUp className="fa" />
           </button>
         </div>
 
@@ -589,7 +591,7 @@ export const FocusModeRedesigned: React.FC<FocusModeRedesignedProps> = ({
             onClick={() => setIsZenMode(false)}
             className="fm-zen-exit"
           >
-            <i className="fa fa-sun" />
+            <Sun className="fa" />
             <span>Exit Zen Mode</span>
           </button>
         )}

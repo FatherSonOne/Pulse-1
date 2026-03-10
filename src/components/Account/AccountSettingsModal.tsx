@@ -3,6 +3,8 @@ import React, { useState, useEffect } from 'react';
 import { settingsService } from '../../services/settingsService';
 import toast from 'react-hot-toast';
 
+import { Bell, Loader2, Palette, Settings, Sliders, User, X } from 'lucide-react';
+
 interface AccountSettingsModalProps {
   isOpen: boolean;
   onClose: () => void;
@@ -132,7 +134,7 @@ export const AccountSettingsModal: React.FC<AccountSettingsModalProps> = ({
         <div className="flex items-center justify-between px-6 py-4 border-b border-zinc-200 dark:border-zinc-800 bg-gradient-to-r from-rose-500/10 to-pink-500/10">
           <div className="flex items-center gap-3">
             <div className="w-10 h-10 rounded-lg bg-gradient-to-br from-rose-500 to-pink-500 flex items-center justify-center">
-              <i className="fa-solid fa-gear text-white"></i>
+              <Settings className="text-white" />
             </div>
             <div>
               <h2 className="text-xl font-bold text-zinc-900 dark:text-white">Account Settings</h2>
@@ -144,7 +146,7 @@ export const AccountSettingsModal: React.FC<AccountSettingsModalProps> = ({
             className="w-10 h-10 rounded-lg hover:bg-zinc-100 dark:hover:bg-zinc-800 flex items-center justify-center text-zinc-500 dark:text-zinc-400 hover:text-zinc-700 dark:hover:text-white transition"
             title="Close"
           >
-            <i className="fa-solid fa-xmark"></i>
+            <X />
           </button>
         </div>
 
@@ -158,7 +160,7 @@ export const AccountSettingsModal: React.FC<AccountSettingsModalProps> = ({
                 : 'text-zinc-600 dark:text-zinc-400 hover:text-zinc-900 dark:hover:text-white'
             }`}
           >
-            <i className="fa-solid fa-user text-xs"></i>
+            <User className="text-xs" />
             <span>Profile</span>
           </button>
           <button
@@ -169,7 +171,7 @@ export const AccountSettingsModal: React.FC<AccountSettingsModalProps> = ({
                 : 'text-zinc-600 dark:text-zinc-400 hover:text-zinc-900 dark:hover:text-white'
             }`}
           >
-            <i className="fa-solid fa-sliders text-xs"></i>
+            <Sliders className="text-xs" />
             <span>Preferences</span>
           </button>
           <button
@@ -180,7 +182,7 @@ export const AccountSettingsModal: React.FC<AccountSettingsModalProps> = ({
                 : 'text-zinc-600 dark:text-zinc-400 hover:text-zinc-900 dark:hover:text-white'
             }`}
           >
-            <i className="fa-solid fa-bell text-xs"></i>
+            <Bell className="text-xs" />
             <span>Notifications</span>
           </button>
           <button
@@ -191,7 +193,7 @@ export const AccountSettingsModal: React.FC<AccountSettingsModalProps> = ({
                 : 'text-zinc-600 dark:text-zinc-400 hover:text-zinc-900 dark:hover:text-white'
             }`}
           >
-            <i className="fa-solid fa-palette text-xs"></i>
+            <Palette className="text-xs" />
             <span>Appearance</span>
           </button>
         </div>
@@ -200,7 +202,7 @@ export const AccountSettingsModal: React.FC<AccountSettingsModalProps> = ({
         <div className="flex-1 overflow-y-auto p-6 min-h-[500px]">
           {loading ? (
             <div className="flex items-center justify-center h-64">
-              <i className="fa-solid fa-spinner fa-spin text-3xl text-rose-500"></i>
+              <Loader2 className="text-3xl text-rose-500 animate-spin" />
             </div>
           ) : (
             <>
@@ -571,7 +573,7 @@ export const AccountSettingsModal: React.FC<AccountSettingsModalProps> = ({
           </button>
           {saving && (
             <div className="text-sm text-zinc-500 dark:text-zinc-400 flex items-center gap-2">
-              <i className="fa-solid fa-spinner fa-spin"></i>
+              <Loader2 className="animate-spin" />
               Saving...
             </div>
           )}

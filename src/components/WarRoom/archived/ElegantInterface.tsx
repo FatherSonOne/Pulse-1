@@ -3,6 +3,8 @@ import { AIMessage, ThinkingStep } from '../../../services/ragService';
 import { VoiceControl } from '../VoiceControl';
 import { VoiceAgentVisualizerEnhanced } from '../VoiceAgentVisualizerEnhanced';
 
+import { Send } from 'lucide-react';
+
 interface ElegantInterfaceProps {
   messages: AIMessage[];
   isLoading: boolean;
@@ -189,7 +191,7 @@ export const ElegantInterface: React.FC<ElegantInterfaceProps> = ({
               disabled={!input.trim()}
               className={`war-room-btn war-room-btn-icon-sm ${input.trim() ? 'war-room-btn-primary' : ''}`}
             >
-              <i className="fa fa-paper-plane text-xs"></i>
+              <Send className="fa text-xs" />
             </button>
           </div>
         </div>

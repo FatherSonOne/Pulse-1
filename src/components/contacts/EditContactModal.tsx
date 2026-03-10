@@ -1,6 +1,8 @@
 import React, { useState, useEffect } from 'react';
 import { Contact } from '../../types';
 
+import { Check, Loader2, UserPen, X } from 'lucide-react';
+
 interface EditContactModalProps {
   isOpen: boolean;
   contact: Contact | null;
@@ -83,10 +85,10 @@ export const EditContactModal: React.FC<EditContactModalProps> = ({
         {/* Header */}
         <div className="p-4 border-b border-zinc-200 dark:border-zinc-800 flex justify-between items-center flex-shrink-0">
           <h3 className="font-bold dark:text-white flex items-center gap-2">
-            <i className="fa-solid fa-user-pen text-blue-500"></i> Edit Contact
+            <UserPen className="text-blue-500" /> Edit Contact
           </h3>
           <button onClick={onClose} className="text-zinc-400 hover:text-zinc-600 dark:hover:text-zinc-200 transition">
-            <i className="fa-solid fa-xmark"></i>
+            <X />
           </button>
         </div>
 
@@ -175,7 +177,7 @@ export const EditContactModal: React.FC<EditContactModalProps> = ({
                       onClick={() => handleRemoveGroup(group)}
                       className="hover:text-blue-900 dark:hover:text-blue-100"
                     >
-                      <i className="fa-solid fa-xmark text-[10px]"></i>
+                      <X className="text-[10px]" />
                     </button>
                   </span>
                 ))}
@@ -224,7 +226,7 @@ export const EditContactModal: React.FC<EditContactModalProps> = ({
             disabled={!form.name.trim() || !form.email.trim() || isSaving}
             className="px-6 py-2 rounded-lg text-sm font-bold bg-blue-600 text-white hover:bg-blue-700 disabled:opacity-50 transition flex items-center gap-2"
           >
-            {isSaving ? <i className="fa-solid fa-circle-notch fa-spin"></i> : <i className="fa-solid fa-check"></i>}
+            {isSaving ? <Loader2 className="animate-spin" /> : <Check />}
             Save Changes
           </button>
         </div>

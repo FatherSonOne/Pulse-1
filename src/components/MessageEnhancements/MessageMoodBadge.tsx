@@ -7,7 +7,7 @@ interface MessageMoodBadgeProps {
   size?: 'small' | 'medium' | 'large';
 }
 
-export const MessageMoodBadge: React.FC<MessageMoodBadgeProps> = ({ mood, size = 'small' }) => {
+const MessageMoodBadgeBase: React.FC<MessageMoodBadgeProps> = ({ mood, size = 'small' }) => {
   const sizeClasses = {
     small: 'text-[10px] px-1.5 py-0.5',
     medium: 'text-xs px-2 py-1',
@@ -29,3 +29,6 @@ export const MessageMoodBadge: React.FC<MessageMoodBadgeProps> = ({ mood, size =
     </div>
   );
 };
+
+export const MessageMoodBadge = React.memo(MessageMoodBadgeBase);
+MessageMoodBadge.displayName = 'MessageMoodBadge';

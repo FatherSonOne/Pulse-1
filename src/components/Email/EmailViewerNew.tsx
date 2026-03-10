@@ -9,6 +9,8 @@ import MeetingExtractor from './MeetingExtractor';
 import ActionItemExtractor from './ActionItemExtractor';
 import toast from 'react-hot-toast';
 
+import { Archive, ArrowLeft, Calendar, CalendarCheck, CheckCircle2, CheckSquare, Clock, DollarSign, EllipsisVertical, File, Folder, Loader2, Mail, Reply, ReplyAll, Share, Sparkles, Trash2, UserCircle, Wand2 } from 'lucide-react';
+
 interface EmailViewerNewProps {
   email: CachedEmail;
   thread: EmailThread | null;
@@ -224,7 +226,7 @@ export const EmailViewerNew: React.FC<EmailViewerNewProps> = ({
           title="Back"
           aria-label="Go back to email list"
         >
-          <i className="fa-solid fa-arrow-left" aria-hidden="true"></i>
+          <ArrowLeft />
         </button>
 
         <div className="flex-1"></div>
@@ -235,7 +237,7 @@ export const EmailViewerNew: React.FC<EmailViewerNewProps> = ({
           title="Archive"
           aria-label="Archive this email"
         >
-          <i className="fa-solid fa-box-archive" aria-hidden="true"></i>
+          <Archive />
         </button>
 
         <button
@@ -244,7 +246,7 @@ export const EmailViewerNew: React.FC<EmailViewerNewProps> = ({
           title="Delete"
           aria-label="Delete this email"
         >
-          <i className="fa-solid fa-trash" aria-hidden="true"></i>
+          <Trash2 />
         </button>
 
         <button
@@ -253,7 +255,7 @@ export const EmailViewerNew: React.FC<EmailViewerNewProps> = ({
           title="Mark as unread"
           aria-label="Mark this email as unread"
         >
-          <i className="fa-solid fa-envelope" aria-hidden="true"></i>
+          <Mail />
         </button>
 
         <button
@@ -262,7 +264,7 @@ export const EmailViewerNew: React.FC<EmailViewerNewProps> = ({
           title="Snooze"
           aria-label="Snooze this email"
         >
-          <i className="fa-solid fa-clock" aria-hidden="true"></i>
+          <Clock />
         </button>
 
         <button
@@ -270,7 +272,7 @@ export const EmailViewerNew: React.FC<EmailViewerNewProps> = ({
           title="Move to"
           aria-label="Move to folder"
         >
-          <i className="fa-solid fa-folder" aria-hidden="true"></i>
+          <Folder />
         </button>
 
         <button
@@ -279,7 +281,7 @@ export const EmailViewerNew: React.FC<EmailViewerNewProps> = ({
           aria-label="More actions"
           aria-haspopup="true"
         >
-          <i className="fa-solid fa-ellipsis-vertical" aria-hidden="true"></i>
+          <EllipsisVertical />
         </button>
 
         <div className="w-px h-5 bg-stone-200 dark:bg-zinc-700 mx-1" role="separator" aria-hidden="true"></div>
@@ -293,7 +295,7 @@ export const EmailViewerNew: React.FC<EmailViewerNewProps> = ({
           aria-label="Toggle contact info panel"
           aria-pressed={showRelationshipPanel}
         >
-          <i className="fa-solid fa-user-circle" aria-hidden="true"></i>
+          <UserCircle />
         </button>
       </div>
 
@@ -317,8 +319,8 @@ export const EmailViewerNew: React.FC<EmailViewerNewProps> = ({
               aria-label="Create task from this email"
             >
               {creatingTask
-                ? <i className="fa-solid fa-spinner animate-spin" aria-hidden="true" />
-                : <i className="fa-solid fa-check-square" aria-hidden="true" />
+                ? <Loader2 className="animate-spin" />
+                : <CheckSquare />
               }
               Create Task
             </button>
@@ -327,7 +329,7 @@ export const EmailViewerNew: React.FC<EmailViewerNewProps> = ({
               className="flex items-center gap-1.5 px-3 py-1.5 rounded-lg text-xs font-medium bg-blue-50 dark:bg-blue-500/10 text-blue-600 dark:text-blue-400 hover:bg-blue-100 dark:hover:bg-blue-500/20 transition-all"
               aria-label="View contact info for email sender"
             >
-              <i className="fa-solid fa-user-circle" aria-hidden="true" />
+              <UserCircle />
               View Contact
             </button>
           </div>
@@ -372,7 +374,7 @@ export const EmailViewerNew: React.FC<EmailViewerNewProps> = ({
           <div className="mx-6 mt-4 p-4 rounded-xl bg-gradient-to-r from-purple-500/10 to-pink-500/10 border border-purple-500/20">
             <div className="flex items-center justify-between mb-2">
               <div className="flex items-center gap-2 text-purple-600 dark:text-purple-400 text-sm font-medium">
-                <i className="fa-solid fa-wand-magic-sparkles"></i>
+                <Wand2 />
                 <span>AI Summary</span>
               </div>
               <div className="flex items-center gap-2">
@@ -409,7 +411,7 @@ export const EmailViewerNew: React.FC<EmailViewerNewProps> = ({
                 <ul className="space-y-1">
                   {currentAnalysis.actionItems.map((item, idx) => (
                     <li key={idx} className="flex items-start gap-2 text-sm text-stone-600 dark:text-zinc-400">
-                      <i className="fa-solid fa-circle-check text-purple-500 mt-0.5"></i>
+                      <CheckCircle2 className="text-purple-500 mt-0.5" />
                       <span>{item}</span>
                     </li>
                   ))}
@@ -424,19 +426,19 @@ export const EmailViewerNew: React.FC<EmailViewerNewProps> = ({
               <div className="mt-3 pt-3 border-t border-purple-500/20 flex flex-wrap gap-3">
                 {currentAnalysis.entities.meetingRequests && (
                   <div className="flex items-center gap-1.5 text-xs text-blue-600 dark:text-blue-400">
-                    <i className="fa-solid fa-calendar-check"></i>
+                    <CalendarCheck />
                     <span>Meeting request detected</span>
                   </div>
                 )}
                 {currentAnalysis.entities.dates?.map((d, idx) => (
                   <div key={idx} className="flex items-center gap-1.5 text-xs text-cyan-600 dark:text-cyan-400">
-                    <i className="fa-regular fa-calendar"></i>
+                    <Calendar />
                     <span>{d.text}</span>
                   </div>
                 ))}
                 {currentAnalysis.entities.amounts?.map((a, idx) => (
                   <div key={idx} className="flex items-center gap-1.5 text-xs text-emerald-600 dark:text-emerald-400">
-                    <i className="fa-solid fa-dollar-sign"></i>
+                    <DollarSign />
                     <span>{a.text}</span>
                   </div>
                 ))}
@@ -465,7 +467,7 @@ export const EmailViewerNew: React.FC<EmailViewerNewProps> = ({
           <div className="mx-6 mt-4 p-4 rounded-xl bg-stone-100 dark:bg-zinc-800/50 border border-stone-200 dark:border-zinc-700/50">
             <div className="flex items-center justify-between">
               <div className="flex items-center gap-2 text-stone-500 dark:text-zinc-400 text-sm">
-                <i className="fa-solid fa-wand-magic-sparkles"></i>
+                <Wand2 />
                 <span>AI can summarize this email, extract action items, and suggest replies</span>
               </div>
               <button
@@ -475,12 +477,12 @@ export const EmailViewerNew: React.FC<EmailViewerNewProps> = ({
               >
                 {analyzing ? (
                   <>
-                    <i className="fa-solid fa-circle-notch fa-spin"></i>
+                    <Loader2 className="animate-spin" />
                     Analyzing...
                   </>
                 ) : (
                   <>
-                    <i className="fa-solid fa-sparkles"></i>
+                    <Sparkles />
                     Analyze with AI
                   </>
                 )}
@@ -586,7 +588,7 @@ export const EmailViewerNew: React.FC<EmailViewerNewProps> = ({
                               key={attIdx}
                               className="flex items-center gap-2 px-3 py-2 bg-stone-100 dark:bg-zinc-800 rounded-lg text-sm"
                             >
-                              <i className="fa-solid fa-file text-stone-500 dark:text-zinc-500"></i>
+                              <File className="text-stone-500 dark:text-zinc-500" />
                               <span className="text-stone-900 dark:text-white">{att.filename || 'Attachment'}</span>
                               <span className="text-stone-500 dark:text-zinc-500">{att.size || ''}</span>
                             </div>
@@ -602,7 +604,7 @@ export const EmailViewerNew: React.FC<EmailViewerNewProps> = ({
                         className="flex items-center gap-2 px-4 py-2 bg-stone-100 dark:bg-zinc-800 hover:bg-stone-200 dark:hover:bg-zinc-700 rounded-lg text-sm text-stone-900 dark:text-white transition"
                         aria-label={`Reply to ${msg.from_name || msg.from_email}`}
                       >
-                        <i className="fa-solid fa-reply" aria-hidden="true"></i>
+                        <Reply />
                         Reply
                       </button>
                       <button
@@ -610,14 +612,14 @@ export const EmailViewerNew: React.FC<EmailViewerNewProps> = ({
                         className="flex items-center gap-2 px-4 py-2 bg-stone-100 dark:bg-zinc-800 hover:bg-stone-200 dark:hover:bg-zinc-700 rounded-lg text-sm text-stone-900 dark:text-white transition"
                         aria-label="Reply to all recipients"
                       >
-                        <i className="fa-solid fa-reply-all" aria-hidden="true"></i>
+                        <ReplyAll />
                         Reply All
                       </button>
                       <button
                         className="flex items-center gap-2 px-4 py-2 bg-stone-100 dark:bg-zinc-800 hover:bg-stone-200 dark:hover:bg-zinc-700 rounded-lg text-sm text-stone-900 dark:text-white transition"
                         aria-label="Forward this message"
                       >
-                        <i className="fa-solid fa-share" aria-hidden="true"></i>
+                        <Share />
                         Forward
                       </button>
                     </div>
@@ -644,7 +646,7 @@ export const EmailViewerNew: React.FC<EmailViewerNewProps> = ({
             tabIndex={0}
             aria-label="Click to reply to this email"
           >
-            <i className="fa-solid fa-reply text-stone-500 dark:text-zinc-500" aria-hidden="true"></i>
+            <Reply className="text-stone-500 dark:text-zinc-500" />
             <span className="text-stone-500 dark:text-zinc-400">Click to reply...</span>
           </div>
         </div>

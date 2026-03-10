@@ -10,7 +10,9 @@ import {
   TAG_ICONS,
   CreateTagPayload,
 } from '../../../types/organization';
+import { Check, Loader2, Pencil, Tags, Trash2 } from 'lucide-react';
 import {
+
   getUserTags,
   createTag,
   updateTag,
@@ -176,7 +178,7 @@ export const TagManager: React.FC<TagManagerProps> = ({
   if (loading) {
     return (
       <div className="flex items-center justify-center p-4">
-        <i className="fa fa-spinner fa-spin text-gray-400"></i>
+        <Loader2 className="fa text-gray-400 animate-spin" />
       </div>
     );
   }
@@ -208,7 +210,7 @@ export const TagManager: React.FC<TagManagerProps> = ({
       <div className="p-3 border-b border-gray-200 dark:border-gray-700 bg-gray-50 dark:bg-gray-900/50">
         <div className="flex items-center justify-between">
           <h3 className="text-sm font-medium text-gray-700 dark:text-gray-300">
-            <i className="fa fa-tags mr-2 text-rose-500"></i>
+            <Tags className="fa mr-2 text-rose-500" />
             {docId ? 'Document Tags' : 'Manage Tags'}
           </h3>
           <button
@@ -357,7 +359,7 @@ export const TagManager: React.FC<TagManagerProps> = ({
                           : 'border-gray-300 dark:border-gray-600 hover:border-rose-400'
                       }`}
                     >
-                      {isAssigned && <i className="fa fa-check text-xs"></i>}
+                      {isAssigned && <Check className="fa text-xs" />}
                     </button>
                   )}
 
@@ -396,13 +398,13 @@ export const TagManager: React.FC<TagManagerProps> = ({
                         onClick={() => startEditing(tag)}
                         className="p-1.5 text-gray-400 hover:text-blue-500 hover:bg-blue-50 dark:hover:bg-blue-900/20 rounded transition-colors"
                       >
-                        <i className="fa fa-pencil text-xs"></i>
+                        <Pencil className="fa text-xs" />
                       </button>
                       <button
                         onClick={() => handleDeleteTag(tag.id)}
                         className="p-1.5 text-gray-400 hover:text-red-500 hover:bg-red-50 dark:hover:bg-red-900/20 rounded transition-colors"
                       >
-                        <i className="fa fa-trash text-xs"></i>
+                        <Trash2 className="fa text-xs" />
                       </button>
                     </div>
                   )}

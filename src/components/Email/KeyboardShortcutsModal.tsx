@@ -2,6 +2,8 @@
 import React, { useEffect, useRef } from 'react';
 import { keyboardShortcuts } from '../../hooks/useEmailKeyboardShortcuts';
 
+import { Keyboard, X } from 'lucide-react';
+
 interface KeyboardShortcutsModalProps {
   onClose: () => void;
 }
@@ -47,7 +49,7 @@ export const KeyboardShortcutsModal: React.FC<KeyboardShortcutsModalProps> = ({
         <div className="flex items-center justify-between px-6 py-4 border-b border-stone-200 dark:border-zinc-800">
           <div className="flex items-center gap-3">
             <div className="w-10 h-10 rounded-xl bg-gradient-to-br from-rose-500 to-orange-500 flex items-center justify-center" aria-hidden="true">
-              <i className="fa-solid fa-keyboard text-white"></i>
+              <Keyboard className="text-white" />
             </div>
             <div>
               <h2 id="keyboard-shortcuts-title" className="text-lg font-semibold text-stone-900 dark:text-white">Keyboard Shortcuts</h2>
@@ -60,7 +62,7 @@ export const KeyboardShortcutsModal: React.FC<KeyboardShortcutsModalProps> = ({
             className="w-8 h-8 rounded-lg hover:bg-stone-100 dark:hover:bg-zinc-800 flex items-center justify-center text-stone-500 dark:text-zinc-500 hover:text-stone-700 dark:hover:text-white transition"
             aria-label="Close keyboard shortcuts"
           >
-            <i className="fa-solid fa-xmark" aria-hidden="true"></i>
+            <X />
           </button>
         </div>
 

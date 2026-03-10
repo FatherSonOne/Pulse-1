@@ -4,6 +4,8 @@ import { MessageChannel } from '../../types/messages';
 import { messageChannelService } from '../../services/messageChannelService';
 import toast from 'react-hot-toast';
 
+import { Hash, Lock, MessageSquareX, Plus, Trash2, Users } from 'lucide-react';
+
 interface ChannelListProps {
   workspaceId: string;
   selectedChannel: MessageChannel | null;
@@ -91,7 +93,7 @@ export const ChannelList: React.FC<ChannelListProps> = ({
       {/* Header */}
       <div className="px-4 py-4 border-b border-rose-900/20 dark:border-rose-900/30 bg-gradient-to-b from-rose-50/50 to-white dark:from-rose-950/20 dark:to-zinc-950 flex items-center justify-between">
         <h2 className="text-gradient-rose font-semibold flex items-center gap-2">
-          <i className="fa-solid fa-hashtag text-rose-500"></i>
+          <Hash className="text-rose-500" />
           Channels
         </h2>
         <button
@@ -99,7 +101,7 @@ export const ChannelList: React.FC<ChannelListProps> = ({
           className="w-12 h-12 rounded-lg bg-gradient-to-br from-rose-500/10 to-pink-500/10 border border-rose-500/20 hover:from-rose-500/20 hover:to-pink-500/20 hover:border-rose-500/40 flex items-center justify-center transition-all hover-scale"
           title="Create channel"
         >
-          <i className="fa-solid fa-plus text-sm text-rose-500"></i>
+          <Plus className="text-sm text-rose-500" />
         </button>
       </div>
 
@@ -128,7 +130,7 @@ export const ChannelList: React.FC<ChannelListProps> = ({
               onChange={(e) => setIsGroup(e.target.checked)}
               className="w-4 h-4 rounded border-zinc-600 text-rose-500 focus:ring-rose-500 bg-zinc-800"
             />
-            <i className="fa-solid fa-users-rectangle text-rose-400"></i>
+            <Users className="text-rose-400" />
             Private Group Chat
           </label>
           <div className="flex gap-2">
@@ -161,7 +163,7 @@ export const ChannelList: React.FC<ChannelListProps> = ({
           </div>
         ) : channels.length === 0 ? (
           <div className="px-4 py-8 text-center text-zinc-500 text-sm">
-            <i className="fa-solid fa-comment-slash text-2xl mb-2 block"></i>
+            <MessageSquareX className="text-2xl mb-2 block" />
             No channels yet. Create one to start!
           </div>
         ) : (
@@ -179,9 +181,9 @@ export const ChannelList: React.FC<ChannelListProps> = ({
                 >
                   <div className="channel-icon">
                     {channel.is_public ? (
-                      <i className="fa-solid fa-hashtag"></i>
+                      <Hash />
                     ) : (
-                      <i className="fa-solid fa-lock"></i>
+                      <Lock />
                     )}
                   </div>
                   <div className="flex-1 min-w-0">
@@ -197,7 +199,7 @@ export const ChannelList: React.FC<ChannelListProps> = ({
                     className="w-12 h-12 min-w-[48px] min-h-[48px] rounded opacity-0 group-hover:opacity-100 hover:bg-rose-500/20 transition-all ml-2 flex items-center justify-center"
                     title="Delete channel"
                   >
-                    <i className="fa-solid fa-trash text-sm text-rose-500"></i>
+                    <Trash2 className="text-sm text-rose-500" />
                   </button>
                 </button>
               ))}
@@ -216,7 +218,7 @@ export const ChannelList: React.FC<ChannelListProps> = ({
                     onClick={() => onSelectChannel(channel)}
                   >
                     <div className="channel-icon">
-                      <i className="fa-solid fa-users"></i>
+                      <Users />
                     </div>
                     <div className="flex-1 min-w-0">
                       <span className="channel-name truncate block">{channel.name}</span>
@@ -226,7 +228,7 @@ export const ChannelList: React.FC<ChannelListProps> = ({
                       className="w-12 h-12 min-w-[48px] min-h-[48px] rounded opacity-0 group-hover:opacity-100 hover:bg-rose-500/20 transition-all ml-2 flex items-center justify-center"
                       title="Delete group"
                     >
-                      <i className="fa-solid fa-trash text-sm text-rose-500"></i>
+                      <Trash2 className="text-sm text-rose-500" />
                     </button>
                   </button>
                 ))}
@@ -242,7 +244,7 @@ export const ChannelList: React.FC<ChannelListProps> = ({
           onClick={() => setShowNewChannel(true)}
           className="w-full py-2 text-sm text-zinc-500 hover:text-white hover:bg-zinc-800 rounded-lg transition flex items-center justify-center gap-2"
         >
-          <i className="fa-solid fa-plus text-xs"></i>
+          <Plus className="text-xs" />
           Add Channel
         </button>
       </div>

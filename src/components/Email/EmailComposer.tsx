@@ -3,6 +3,8 @@ import React, { useState, useRef } from 'react';
 import { Email, EmailAddress } from '../../types/email';
 import toast from 'react-hot-toast';
 
+import { Bold, Italic, Link, Loader2, Minus, Paperclip, Save, Send, Square, Trash2, Underline, X } from 'lucide-react';
+
 interface EmailComposerProps {
   userEmail: string;
   userName: string;
@@ -99,13 +101,13 @@ export const EmailComposer: React.FC<EmailComposerProps> = ({
               onClick={() => setIsMinimized(false)}
               className="w-6 h-6 rounded hover:bg-zinc-800 flex items-center justify-center text-zinc-400"
             >
-              <i className="fa-solid fa-window-maximize text-xs"></i>
+              <Square className="text-xs" />
             </button>
             <button
               onClick={onClose}
               className="w-6 h-6 rounded hover:bg-zinc-800 flex items-center justify-center text-zinc-400"
             >
-              <i className="fa-solid fa-xmark text-xs"></i>
+              <X className="text-xs" />
             </button>
           </div>
         </div>
@@ -131,7 +133,7 @@ export const EmailComposer: React.FC<EmailComposerProps> = ({
               className="w-7 h-7 rounded hover:bg-zinc-800 flex items-center justify-center text-zinc-400 hover:text-white transition"
               title="Minimize"
             >
-              <i className="fa-solid fa-window-minimize text-xs"></i>
+              <Minus className="text-xs" />
             </button>
             <button
               onClick={() => setIsMaximized(!isMaximized)}
@@ -145,7 +147,7 @@ export const EmailComposer: React.FC<EmailComposerProps> = ({
               className="w-7 h-7 rounded hover:bg-zinc-800 flex items-center justify-center text-zinc-400 hover:text-white transition"
               title="Close"
             >
-              <i className="fa-solid fa-xmark text-sm"></i>
+              <X className="text-sm" />
             </button>
           </div>
         </div>
@@ -248,12 +250,12 @@ export const EmailComposer: React.FC<EmailComposerProps> = ({
               >
                 {sending ? (
                   <>
-                    <i className="fa-solid fa-circle-notch fa-spin"></i>
+                    <Loader2 className="animate-spin" />
                     Sending...
                   </>
                 ) : (
                   <>
-                    <i className="fa-solid fa-paper-plane"></i>
+                    <Send />
                     Send
                   </>
                 )}
@@ -262,16 +264,16 @@ export const EmailComposer: React.FC<EmailComposerProps> = ({
               {/* Formatting toolbar */}
               <div className="flex items-center gap-1 ml-4 border-l border-zinc-800 pl-4">
                 <button className="w-8 h-8 rounded hover:bg-zinc-800 flex items-center justify-center text-zinc-500 hover:text-white transition" title="Bold">
-                  <i className="fa-solid fa-bold text-xs"></i>
+                  <Bold className="text-xs" />
                 </button>
                 <button className="w-8 h-8 rounded hover:bg-zinc-800 flex items-center justify-center text-zinc-500 hover:text-white transition" title="Italic">
-                  <i className="fa-solid fa-italic text-xs"></i>
+                  <Italic className="text-xs" />
                 </button>
                 <button className="w-8 h-8 rounded hover:bg-zinc-800 flex items-center justify-center text-zinc-500 hover:text-white transition" title="Underline">
-                  <i className="fa-solid fa-underline text-xs"></i>
+                  <Underline className="text-xs" />
                 </button>
                 <button className="w-8 h-8 rounded hover:bg-zinc-800 flex items-center justify-center text-zinc-500 hover:text-white transition" title="Link">
-                  <i className="fa-solid fa-link text-xs"></i>
+                  <Link className="text-xs" />
                 </button>
               </div>
             </div>
@@ -288,21 +290,21 @@ export const EmailComposer: React.FC<EmailComposerProps> = ({
                 className="w-8 h-8 rounded hover:bg-zinc-800 flex items-center justify-center text-zinc-500 hover:text-white transition"
                 title="Attach file"
               >
-                <i className="fa-solid fa-paperclip"></i>
+                <Paperclip />
               </button>
               <button
                 onClick={handleSaveDraft}
                 className="w-8 h-8 rounded hover:bg-zinc-800 flex items-center justify-center text-zinc-500 hover:text-white transition"
                 title="Save draft"
               >
-                <i className="fa-solid fa-floppy-disk"></i>
+                <Save />
               </button>
               <button
                 onClick={onClose}
                 className="w-8 h-8 rounded hover:bg-red-500/20 flex items-center justify-center text-zinc-500 hover:text-red-500 transition"
                 title="Discard"
               >
-                <i className="fa-solid fa-trash"></i>
+                <Trash2 />
               </button>
             </div>
           </div>

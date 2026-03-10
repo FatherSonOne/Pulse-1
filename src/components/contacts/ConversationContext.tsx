@@ -9,6 +9,8 @@ import React, { useState, useEffect, useRef } from 'react';
 import { Contact } from '../../types';
 import { RelationshipProfile } from '../../types/relationshipTypes';
 
+import { X } from 'lucide-react';
+
 // ==================== TYPES ====================
 
 interface ConversationContextProps {
@@ -113,7 +115,7 @@ export const ConversationContext: React.FC<ConversationContextProps> = ({
             onClick={handleDismiss}
             className="w-6 h-6 flex items-center justify-center rounded-full text-zinc-400 hover:text-zinc-600 dark:hover:text-zinc-300 hover:bg-zinc-100 dark:hover:bg-zinc-800 transition-colors"
           >
-            <i className="fa-solid fa-xmark text-xs" />
+            <X className="text-xs" />
           </button>
         </div>
 

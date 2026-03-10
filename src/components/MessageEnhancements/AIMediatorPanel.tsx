@@ -1,6 +1,8 @@
 // AI Mediator Panel - Conflict Detection and Resolution Assistant
 import React, { useState, useEffect } from 'react';
 
+import { Lightbulb, X } from 'lucide-react';
+
 interface ConflictSignal {
   id: string;
   type: 'tension' | 'disagreement' | 'frustration' | 'miscommunication';
@@ -245,7 +247,7 @@ export const AIMediatorPanel: React.FC<AIMediatorPanelProps> = ({
             }}
             className="p-1.5 rounded-lg hover:bg-white/50 dark:hover:bg-black/20 text-zinc-400 hover:text-zinc-600 dark:hover:text-zinc-300"
           >
-            <i className="fa-solid fa-times text-xs" />
+            <X className="text-xs" />
           </button>
           <i className={`fa-solid fa-chevron-${expanded ? 'up' : 'down'} text-xs text-zinc-400`} />
         </div>
@@ -318,7 +320,7 @@ export const AIMediatorPanel: React.FC<AIMediatorPanelProps> = ({
           {/* Quick tips */}
           <div className="bg-white/50 dark:bg-black/20 rounded-lg p-3">
             <div className="text-xs font-bold text-zinc-600 dark:text-zinc-300 mb-2 flex items-center gap-1.5">
-              <i className="fa-solid fa-lightbulb text-amber-500" />
+              <Lightbulb className="text-amber-500" />
               Quick Tips
             </div>
             <ul className="text-xs text-zinc-600 dark:text-zinc-400 space-y-1.5">

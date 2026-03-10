@@ -7,6 +7,8 @@ import { smsService } from '../../services/smsService';
 import { VoiceTextButton } from '../shared/VoiceTextButton';
 import { format, isToday, isYesterday, isSameDay } from 'date-fns';
 
+import { ArrowLeft, EllipsisVertical, Phone, Send } from 'lucide-react';
+
 interface SMSChatProps {
   conversation: SMSConversation;
   onBack?: () => void;
@@ -118,7 +120,7 @@ export const SMSChat: React.FC<SMSChatProps> = ({
               onClick={onBack}
               className="md:hidden w-8 h-8 rounded-lg bg-zinc-800 hover:bg-zinc-700 flex items-center justify-center text-zinc-400 transition"
             >
-              <i className="fa-solid fa-arrow-left text-sm"></i>
+              <ArrowLeft className="text-sm" />
             </button>
           )}
 
@@ -144,13 +146,13 @@ export const SMSChat: React.FC<SMSChatProps> = ({
               className="w-8 h-8 rounded-lg hover:bg-zinc-800 flex items-center justify-center text-zinc-400 hover:text-green-500 transition"
               title="Call"
             >
-              <i className="fa-solid fa-phone text-sm"></i>
+              <Phone className="text-sm" />
             </button>
             <button
               className="w-8 h-8 rounded-lg hover:bg-zinc-800 flex items-center justify-center text-zinc-400 hover:text-white transition"
               title="More options"
             >
-              <i className="fa-solid fa-ellipsis-vertical text-sm"></i>
+              <EllipsisVertical className="text-sm" />
             </button>
           </div>
         </div>
@@ -269,7 +271,7 @@ export const SMSChat: React.FC<SMSChatProps> = ({
             {isSending ? (
               <div className="animate-spin rounded-full h-4 w-4 border-2 border-white border-t-transparent"></div>
             ) : (
-              <i className="fa-solid fa-paper-plane text-sm"></i>
+              <Send className="text-sm" />
             )}
           </button>
         </div>

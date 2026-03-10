@@ -12,6 +12,8 @@
 import React, { useState, useRef, useEffect } from 'react';
 import { AIMessage, ThinkingStep } from '../../../services/ragService';
 
+import { Link, Satellite, Send } from 'lucide-react';
+
 // ─── Types ────────────────────────────────────────────────────────────────────
 
 export interface IntelModeProps {
@@ -218,7 +220,7 @@ const IntelMessageBubble: React.FC<{
               marginBottom: 5,
             }}
           >
-            <i className="fa fa-link" style={{ marginRight: 5 }} />
+            <Link className="fa" />
             [{activeCitation}] {activeCitationData.title}
           </div>
           <div
@@ -340,7 +342,7 @@ export const IntelMode: React.FC<IntelModeProps> = ({
           backgroundColor: 'var(--wr-bg-secondary)',
         }}
       >
-        <i className="fa fa-satellite-dish" style={{ fontSize: 14, color: 'var(--wr-accent-secondary)' }} />
+        <Satellite className="fa" />
         <div style={{ flex: 1 }}>
           <div
             style={{
@@ -435,10 +437,7 @@ export const IntelMode: React.FC<IntelModeProps> = ({
               textAlign: 'center',
             }}
           >
-            <i
-              className="fa fa-satellite-dish"
-              style={{ fontSize: 36, color: 'var(--wr-accent-secondary)', opacity: 0.3 }}
-            />
+            <Satellite className="fa" />
             <div>
               <div
                 style={{
@@ -478,10 +477,7 @@ export const IntelMode: React.FC<IntelModeProps> = ({
               gap: 8,
             }}
           >
-            <i
-              className="fa fa-satellite-dish wr-data-pulse"
-              style={{ fontSize: 13, color: 'var(--wr-accent-secondary)' }}
-            />
+            <Satellite className="fa wr-data-pulse" />
             <span
               style={{
                 fontFamily: 'var(--wr-font-mono)',
@@ -555,7 +551,7 @@ export const IntelMode: React.FC<IntelModeProps> = ({
               transition: 'all var(--wr-transition-fast)',
             }}
           >
-            <i className="fa fa-paper-plane" style={{ marginRight: 5 }} />
+            <Send className="fa" />
             TRANSMIT
           </button>
         </div>

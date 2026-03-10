@@ -1,5 +1,7 @@
 import React, { useState, useEffect } from 'react';
+import { Check, Pen, Plus, Tag, Trash2, X } from 'lucide-react';
 import {
+
   customEventTypesService,
   CustomEventType,
   AVAILABLE_ICONS,
@@ -83,7 +85,7 @@ const CustomEventTypesManager: React.FC<CustomEventTypesManagerProps> = ({
             onClick={onClose}
             className="w-8 h-8 flex items-center justify-center rounded-lg text-zinc-400 hover:text-zinc-700 dark:hover:text-white hover:bg-zinc-100 dark:hover:bg-zinc-800 transition"
           >
-            <i className="fa-solid fa-xmark" />
+            <X />
           </button>
         </div>
 
@@ -92,7 +94,7 @@ const CustomEventTypesManager: React.FC<CustomEventTypesManagerProps> = ({
           {types.length === 0 && !showForm && (
             <div className="text-center py-8">
               <div className="w-12 h-12 rounded-2xl bg-zinc-100 dark:bg-zinc-800 flex items-center justify-center mx-auto mb-3">
-                <i className="fa-solid fa-tag text-zinc-400 text-xl" />
+                <Tag className="text-zinc-400 text-xl" />
               </div>
               <p className="text-sm text-zinc-500 dark:text-zinc-400">No custom types yet</p>
               <p className="text-xs text-zinc-400 dark:text-zinc-500 mt-1">Create your first custom event category</p>
@@ -130,14 +132,14 @@ const CustomEventTypesManager: React.FC<CustomEventTypesManagerProps> = ({
                         className="w-7 h-7 flex items-center justify-center rounded-lg text-zinc-400 hover:text-blue-500 hover:bg-blue-50 dark:hover:bg-blue-900/20 transition"
                         title="Edit"
                       >
-                        <i className="fa-solid fa-pen text-xs" />
+                        <Pen className="text-xs" />
                       </button>
                       <button
                         onClick={() => handleDelete(type.id)}
                         className="w-7 h-7 flex items-center justify-center rounded-lg text-zinc-400 hover:text-red-500 hover:bg-red-50 dark:hover:bg-red-900/20 transition"
                         title="Delete"
                       >
-                        <i className="fa-solid fa-trash text-xs" />
+                        <Trash2 className="text-xs" />
                       </button>
                     </div>
                   </div>
@@ -219,13 +221,13 @@ const CustomEventTypesManager: React.FC<CustomEventTypesManagerProps> = ({
                       title={color}
                     >
                       {formColor === color && (
-                        <i className="fa-solid fa-check text-white text-[10px]" />
+                        <Check className="text-white text-[10px]" />
                       )}
                     </button>
                   ))}
                   {/* Custom hex */}
                   <label className="w-7 h-7 rounded-full border-2 border-dashed border-zinc-300 dark:border-zinc-600 flex items-center justify-center cursor-pointer hover:border-zinc-400 transition" title="Custom color">
-                    <i className="fa-solid fa-plus text-zinc-400 text-[10px]" />
+                    <Plus className="text-zinc-400 text-[10px]" />
                     <input
                       type="color"
                       value={formColor}
@@ -262,7 +264,7 @@ const CustomEventTypesManager: React.FC<CustomEventTypesManagerProps> = ({
               onClick={() => setIsCreating(true)}
               className="w-full py-2.5 rounded-xl border-2 border-dashed border-zinc-200 dark:border-zinc-700 text-sm text-zinc-500 dark:text-zinc-400 hover:border-zinc-400 dark:hover:border-zinc-500 hover:text-zinc-700 dark:hover:text-zinc-300 transition flex items-center justify-center gap-2"
             >
-              <i className="fa-solid fa-plus" />
+              <Plus />
               Add Custom Type
             </button>
           )}

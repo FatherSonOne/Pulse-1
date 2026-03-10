@@ -1,5 +1,7 @@
 import React, { useState, useMemo } from 'react';
 
+import { Flame, PieChart } from 'lucide-react';
+
 // Types
 interface ConversationMetrics {
   totalMessages: number;
@@ -174,7 +176,7 @@ export const ConversationInsights: React.FC<ConversationInsightsProps> = ({
       <div className="bg-gradient-to-r from-cyan-500/10 to-blue-500/10 dark:from-cyan-900/20 dark:to-blue-900/20 rounded-xl p-4 border border-cyan-200 dark:border-cyan-800">
         <div className="flex items-center gap-3 mb-4">
           <div className="w-10 h-10 rounded-full bg-white dark:bg-zinc-800 flex items-center justify-center shadow-sm">
-            <i className="fa-solid fa-chart-pie text-cyan-500" />
+            <PieChart className="text-cyan-500" />
           </div>
           <div>
             <p className="text-xs text-zinc-500 dark:text-zinc-400 uppercase tracking-wide">Conversation Insights</p>
@@ -197,7 +199,7 @@ export const ConversationInsights: React.FC<ConversationInsightsProps> = ({
           </div>
           <div className="bg-white/50 dark:bg-zinc-800/50 rounded-lg p-3 text-center">
             <div className="flex items-center justify-center gap-1">
-              <i className="fa-solid fa-fire text-orange-500" />
+              <Flame className="text-orange-500" />
               <p className="text-2xl font-bold text-orange-600 dark:text-orange-400">{metrics.currentStreak}</p>
             </div>
             <p className="text-xs text-zinc-500">Day Streak</p>
@@ -439,7 +441,7 @@ export const InsightsBadge: React.FC<InsightsBadgeProps> = ({ unreadInsights, on
     onClick={onClick}
     className="relative p-2 rounded-lg hover:bg-zinc-100 dark:hover:bg-zinc-800 transition"
   >
-    <i className="fa-solid fa-chart-pie text-zinc-500" />
+    <PieChart className="text-zinc-500" />
     {unreadInsights > 0 && (
       <span className="absolute -top-1 -right-1 w-4 h-4 rounded-full bg-cyan-500 text-white text-[10px] flex items-center justify-center">
         {unreadInsights}

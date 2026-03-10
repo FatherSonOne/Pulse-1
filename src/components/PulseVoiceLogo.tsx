@@ -10,6 +10,8 @@ import React, { useState, useEffect, useCallback, useRef } from 'react';
 import { VoiceCommandModal } from './VoiceCommands/VoiceCommandModal';
 import { VoiceCommandPanel } from './VoiceCommands/VoiceCommandPanel';
 
+import { Mic } from 'lucide-react';
+
 interface PulseVoiceLogoProps {
   onNavigate?: (view: string) => void;
   userId?: string;
@@ -231,7 +233,7 @@ export const PulseVoiceLogo: React.FC<PulseVoiceLogoProps> = ({
 
           {/* Microphone indicator */}
           <div className="pulse-mic-indicator">
-            <i className="fa fa-microphone"></i>
+            <Mic className="fa" />
           </div>
         </button>
 

@@ -3,6 +3,8 @@ import React, { useState, useEffect } from 'react';
 import { supabase } from '../../services/supabase';
 import toast from 'react-hot-toast';
 
+import { Filter, Loader2, Pen, Plus, Trash2, X } from 'lucide-react';
+
 interface EmailFilter {
   id: string;
   user_id: string;
@@ -240,7 +242,7 @@ export const FilterManager: React.FC<FilterManagerProps> = ({
         <div className="flex items-center justify-between px-6 py-4 border-b border-stone-200 dark:border-zinc-800">
           <div className="flex items-center gap-3">
             <div className="w-10 h-10 rounded-xl bg-gradient-to-br from-blue-500 to-cyan-500 flex items-center justify-center">
-              <i className="fa-solid fa-filter text-white"></i>
+              <Filter className="text-white" />
             </div>
             <div>
               <h2 id="filter-manager-title" className="text-lg font-semibold text-stone-900 dark:text-white">
@@ -256,7 +258,7 @@ export const FilterManager: React.FC<FilterManagerProps> = ({
             className="w-8 h-8 rounded-lg hover:bg-stone-100 dark:hover:bg-zinc-800 flex items-center justify-center text-stone-500 dark:text-zinc-500 hover:text-stone-700 dark:hover:text-white transition"
             aria-label="Close"
           >
-            <i className="fa-solid fa-xmark"></i>
+            <X />
           </button>
         </div>
 
@@ -425,11 +427,11 @@ export const FilterManager: React.FC<FilterManagerProps> = ({
             <>
               {loading ? (
                 <div className="flex items-center justify-center py-12">
-                  <i className="fa-solid fa-circle-notch fa-spin text-2xl text-stone-400 dark:text-zinc-600"></i>
+                  <Loader2 className="text-2xl text-stone-400 dark:text-zinc-600 animate-spin" />
                 </div>
               ) : filters.length === 0 ? (
                 <div className="text-center py-12 text-stone-500 dark:text-zinc-500">
-                  <i className="fa-solid fa-filter text-4xl mb-4 opacity-50"></i>
+                  <Filter className="text-4xl mb-4 opacity-50" />
                   <p className="font-medium">No filters yet</p>
                   <p className="text-sm mt-1">Create filters to automatically organize your emails</p>
                 </div>
@@ -531,14 +533,14 @@ export const FilterManager: React.FC<FilterManagerProps> = ({
                             className="w-8 h-8 rounded-lg hover:bg-stone-100 dark:hover:bg-zinc-800 flex items-center justify-center text-stone-500 dark:text-zinc-500 hover:text-stone-700 dark:hover:text-white transition"
                             title="Edit filter"
                           >
-                            <i className="fa-solid fa-pen text-xs"></i>
+                            <Pen className="text-xs" />
                           </button>
                           <button
                             onClick={() => handleDeleteFilter(filter.id)}
                             className="w-8 h-8 rounded-lg hover:bg-red-500/10 flex items-center justify-center text-stone-500 dark:text-zinc-500 hover:text-red-500 transition"
                             title="Delete filter"
                           >
-                            <i className="fa-solid fa-trash text-xs"></i>
+                            <Trash2 className="text-xs" />
                           </button>
                         </div>
                       </div>
@@ -562,7 +564,7 @@ export const FilterManager: React.FC<FilterManagerProps> = ({
                 }}
                 className="mt-4 w-full flex items-center justify-center gap-2 px-4 py-3 bg-blue-500 hover:bg-blue-600 rounded-lg text-white font-medium transition"
               >
-                <i className="fa-solid fa-plus"></i>
+                <Plus />
                 Create New Filter
               </button>
             </>

@@ -4,6 +4,8 @@
 import React, { useState, useRef, useCallback, useEffect } from 'react';
 import { VoiceBookmark, BookmarkCollection } from '../../services/voxer/advancedVoxerTypes';
 
+import { Bookmark, Pen, Play, Plus, Trash2, X } from 'lucide-react';
+
 // ============================================
 // TYPES
 // ============================================
@@ -130,7 +132,7 @@ const BookmarkEditor: React.FC<BookmarkEditorProps> = ({
         {/* Header */}
         <div className="px-4 py-3 border-b border-zinc-200 dark:border-zinc-800 flex items-center justify-between">
           <div className="flex items-center gap-2">
-            <i className="fa-solid fa-bookmark text-orange-500"></i>
+            <Bookmark className="text-orange-500" />
             <h3 className="font-bold dark:text-white">
               {existingBookmark ? 'Edit Bookmark' : 'Add Bookmark'}
             </h3>
@@ -138,7 +140,7 @@ const BookmarkEditor: React.FC<BookmarkEditorProps> = ({
           <div className="flex items-center gap-2">
             <span className="text-sm text-zinc-500 font-mono">@ {formatTime(timestamp)}</span>
             <button onClick={onClose} className="text-zinc-400 hover:text-zinc-600 dark:hover:text-white transition">
-              <i className="fa-solid fa-times"></i>
+              <X />
             </button>
           </div>
         </div>
@@ -219,7 +221,7 @@ const BookmarkEditor: React.FC<BookmarkEditorProps> = ({
                     onClick={() => handleRemoveTag(tag)}
                     className="text-zinc-400 hover:text-red-500"
                   >
-                    <i className="fa-solid fa-times text-[10px]"></i>
+                    <X className="text-[10px]" />
                   </button>
                 </span>
               ))}
@@ -250,7 +252,7 @@ const BookmarkEditor: React.FC<BookmarkEditorProps> = ({
               onClick={onDelete}
               className="px-4 py-2.5 bg-red-50 dark:bg-red-900/20 hover:bg-red-100 dark:hover:bg-red-900/30 text-red-600 dark:text-red-400 rounded-xl font-medium transition"
             >
-              <i className="fa-solid fa-trash mr-1"></i>
+              <Trash2 className="mr-1" />
               Delete
             </button>
           )}
@@ -344,7 +346,7 @@ const BookmarksList: React.FC<BookmarksListProps> = ({
   if (bookmarks.length === 0) {
     return (
       <div className="text-center py-6 text-zinc-500">
-        <i className="fa-solid fa-bookmark text-2xl mb-2 opacity-50"></i>
+        <Bookmark className="text-2xl mb-2 opacity-50" />
         <p className="text-sm">No bookmarks yet</p>
         <p className="text-xs mt-1">Click on the timeline to add one</p>
       </div>
@@ -362,7 +364,7 @@ const BookmarksList: React.FC<BookmarksListProps> = ({
             onClick={() => onSeek(bookmark.timestamp)}
             className={`w-8 h-8 rounded-full ${bookmark.color} flex items-center justify-center text-white text-xs hover:scale-110 transition`}
           >
-            <i className="fa-solid fa-play"></i>
+            <Play />
           </button>
           
           <div className="flex-1 min-w-0">
@@ -392,13 +394,13 @@ const BookmarksList: React.FC<BookmarksListProps> = ({
               onClick={() => onEdit(bookmark)}
               className="w-7 h-7 rounded-lg hover:bg-zinc-200 dark:hover:bg-zinc-700 flex items-center justify-center text-zinc-400 hover:text-zinc-600 dark:hover:text-white"
             >
-              <i className="fa-solid fa-pen text-[10px]"></i>
+              <Pen className="text-[10px]" />
             </button>
             <button
               onClick={() => onRemove(bookmark.id)}
               className="w-7 h-7 rounded-lg hover:bg-red-100 dark:hover:bg-red-900/30 flex items-center justify-center text-zinc-400 hover:text-red-500"
             >
-              <i className="fa-solid fa-trash text-[10px]"></i>
+              <Trash2 className="text-[10px]" />
             </button>
           </div>
         </div>
@@ -526,7 +528,7 @@ export const VoiceBookmarks: React.FC<VoiceBookmarksProps> = ({
             onClick={() => { setEditingBookmark(null); setSelectedTimestamp(currentTime); setShowEditor(true); }}
             className="text-xs text-orange-500 hover:text-orange-600 font-medium"
           >
-            <i className="fa-solid fa-plus mr-1"></i>
+            <Plus className="mr-1" />
             Add
           </button>
         </div>

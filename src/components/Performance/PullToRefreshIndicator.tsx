@@ -1,5 +1,7 @@
 import { motion } from 'framer-motion';
 
+import { ArrowDown, Check } from 'lucide-react';
+
 interface PullToRefreshIndicatorProps {
   pullDistance: number;
   isRefreshing: boolean;
@@ -94,9 +96,9 @@ export function PullToRefreshIndicator({
               style={{ rotate: rotation }}
             >
               {progress >= 1 ? (
-                <i className="fa-solid fa-check"></i>
+                <Check />
               ) : (
-                <i className="fa-solid fa-arrow-down"></i>
+                <ArrowDown />
               )}
             </motion.div>
           </motion.div>

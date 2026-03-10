@@ -4,6 +4,8 @@
 import React, { useState, useEffect, useCallback, useRef } from 'react';
 import { SilentModeSettings, TranscriptionModeMessage } from '../../services/voxer/advancedVoxerTypes';
 
+import { Captions, Mic, Plus, Reply, Settings, Trash2, Volume2, VolumeX, Wand2, X, Zap } from 'lucide-react';
+
 // ============================================
 // TYPES
 // ============================================
@@ -148,7 +150,7 @@ const TranscriptionMessageCard: React.FC<TranscriptionMessageCardProps> = ({
         </p>
         <div className="flex items-center gap-2 mt-2">
           <span className="text-[10px] text-zinc-400">
-            <i className="fa-solid fa-wand-magic-sparkles mr-1"></i>
+            <Wand2 className="mr-1" />
             Auto-transcribed
           </span>
           <span className="text-[10px] text-zinc-400">
@@ -164,7 +166,7 @@ const TranscriptionMessageCard: React.FC<TranscriptionMessageCardProps> = ({
       {message.replied ? (
         <div className="bg-emerald-50 dark:bg-emerald-900/20 rounded-lg p-3">
           <div className="text-xs text-emerald-600 dark:text-emerald-400 font-medium mb-1">
-            <i className="fa-solid fa-reply mr-1"></i>
+            <Reply className="mr-1" />
             Your reply (sent as voice):
           </div>
           <p className="text-sm text-zinc-600 dark:text-zinc-400">"{message.replyText}"</p>
@@ -186,7 +188,7 @@ const TranscriptionMessageCard: React.FC<TranscriptionMessageCardProps> = ({
               disabled={!replyText.trim()}
               className="px-4 py-2 bg-purple-500 hover:bg-purple-600 text-white rounded-lg text-sm font-medium transition disabled:opacity-50"
             >
-              <i className="fa-solid fa-microphone mr-1"></i>
+              <Mic className="mr-1" />
               Send
             </button>
           </div>
@@ -194,7 +196,7 @@ const TranscriptionMessageCard: React.FC<TranscriptionMessageCardProps> = ({
             onClick={() => setShowQuickReplies(!showQuickReplies)}
             className="text-xs text-purple-500 hover:text-purple-600"
           >
-            <i className="fa-solid fa-bolt mr-1"></i>
+            <Zap className="mr-1" />
             Quick replies
           </button>
           {showQuickReplies && (
@@ -217,14 +219,14 @@ const TranscriptionMessageCard: React.FC<TranscriptionMessageCardProps> = ({
             onClick={() => setShowReplyInput(true)}
             className="flex-1 py-2 bg-zinc-100 dark:bg-zinc-800 hover:bg-zinc-200 dark:hover:bg-zinc-700 rounded-lg text-sm font-medium text-zinc-700 dark:text-zinc-300 transition"
           >
-            <i className="fa-solid fa-reply mr-2"></i>
+            <Reply className="mr-2" />
             Reply
           </button>
           <button
             onClick={() => setShowQuickReplies(!showQuickReplies)}
             className="px-4 py-2 bg-purple-100 dark:bg-purple-900/30 hover:bg-purple-200 dark:hover:bg-purple-900/50 rounded-lg text-sm font-medium text-purple-600 dark:text-purple-400 transition"
           >
-            <i className="fa-solid fa-bolt"></i>
+            <Zap />
           </button>
         </div>
       )}
@@ -261,11 +263,11 @@ const SilentModeSettingsModal: React.FC<SilentModeSettingsModalProps> = ({
         {/* Header */}
         <div className="px-4 py-3 border-b border-zinc-200 dark:border-zinc-800 flex items-center justify-between">
           <h3 className="font-bold dark:text-white flex items-center gap-2">
-            <i className="fa-solid fa-volume-xmark text-purple-500"></i>
+            <VolumeX className="text-purple-500" />
             Silent Mode Settings
           </h3>
           <button onClick={onClose} className="text-zinc-400 hover:text-zinc-600 dark:hover:text-white transition">
-            <i className="fa-solid fa-times"></i>
+            <X />
           </button>
         </div>
 
@@ -350,7 +352,7 @@ const SilentModeSettingsModal: React.FC<SilentModeSettingsModalProps> = ({
                     }}
                     className="w-8 h-8 rounded-lg hover:bg-red-100 dark:hover:bg-red-900/30 text-zinc-400 hover:text-red-500 transition"
                   >
-                    <i className="fa-solid fa-trash text-xs"></i>
+                    <Trash2 className="text-xs" />
                   </button>
                 </div>
               ))}
@@ -359,7 +361,7 @@ const SilentModeSettingsModal: React.FC<SilentModeSettingsModalProps> = ({
                   onClick={() => setLocalSettings(s => ({ ...s, quickReplies: [...s.quickReplies, ''] }))}
                   className="w-full py-2 border-2 border-dashed border-zinc-200 dark:border-zinc-700 rounded-lg text-sm text-zinc-500 hover:border-purple-500 hover:text-purple-500 transition"
                 >
-                  <i className="fa-solid fa-plus mr-2"></i>
+                  <Plus className="mr-2" />
                   Add quick reply
                 </button>
               )}
@@ -427,7 +429,7 @@ export const SilentModePanel: React.FC<SilentModeProps> = ({
             onClick={() => setShowSettings(true)}
             className="w-8 h-8 rounded-full hover:bg-zinc-100 dark:hover:bg-zinc-800 flex items-center justify-center text-zinc-400 hover:text-zinc-600 dark:hover:text-white transition"
           >
-            <i className="fa-solid fa-gear"></i>
+            <Settings />
           </button>
           <button
             onClick={onToggle}
@@ -447,7 +449,7 @@ export const SilentModePanel: React.FC<SilentModeProps> = ({
         {!isEnabled ? (
           <div className="text-center py-12">
             <div className="w-20 h-20 rounded-full bg-zinc-100 dark:bg-zinc-800 flex items-center justify-center mx-auto mb-4">
-              <i className="fa-solid fa-volume-high text-3xl text-zinc-400"></i>
+              <Volume2 className="text-3xl text-zinc-400" />
             </div>
             <h4 className="font-semibold dark:text-white mb-2">Silent Mode is Off</h4>
             <p className="text-sm text-zinc-500 max-w-xs mx-auto">
@@ -457,7 +459,7 @@ export const SilentModePanel: React.FC<SilentModeProps> = ({
         ) : incomingMessages.length === 0 ? (
           <div className="text-center py-12">
             <div className="w-20 h-20 rounded-full bg-purple-100 dark:bg-purple-900/30 flex items-center justify-center mx-auto mb-4">
-              <i className="fa-solid fa-closed-captioning text-3xl text-purple-500"></i>
+              <Captions className="text-3xl text-purple-500" />
             </div>
             <h4 className="font-semibold dark:text-white mb-2">No Messages Yet</h4>
             <p className="text-sm text-zinc-500 max-w-xs mx-auto">

@@ -55,6 +55,8 @@ import { AttachmentManager } from './AttachmentManager';
 import { BackupSync } from './BackupSync';
 import { SmartSuggestions } from './SmartSuggestions';
 
+import { Check, X } from 'lucide-react';
+
 export type ToolType = 'analytics' | 'collaboration' | 'productivity' | 'intelligence' | 'proactive' | 'communication' | 'personalization' | 'security' | 'mediaHub' | null;
 
 interface ToolOverlayProps {
@@ -156,7 +158,7 @@ const ToolOverlay: React.FC<ToolOverlayProps> = ({
           className="w-12 h-12 rounded-xl bg-zinc-100 dark:bg-zinc-800 hover:bg-red-100 dark:hover:bg-red-900/30 hover:text-red-500 flex items-center justify-center transition group"
           title="Close and return to chat"
         >
-          <i className="fa-solid fa-xmark text-zinc-400 group-hover:text-red-500 text-lg"></i>
+          <X className="text-zinc-400 group-hover:text-red-500 text-lg" />
         </button>
       </div>
 
@@ -363,7 +365,7 @@ const ToolOverlay: React.FC<ToolOverlayProps> = ({
           onClick={onClose}
           className={`w-full py-3 rounded-xl ${config.bgColor} text-white font-semibold flex items-center justify-center gap-2 hover:opacity-90 transition shadow-lg`}
         >
-          <i className="fa-solid fa-check"></i>
+          <Check />
           Done - Return to Chat
         </button>
       </div>

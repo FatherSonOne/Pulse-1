@@ -1,5 +1,7 @@
 import React, { useState, useCallback, useRef } from 'react';
 
+import { CloudUpload, Play, Volume1, Volume2 } from 'lucide-react';
+
 // Types
 interface NotificationSound {
   id: string;
@@ -373,11 +375,11 @@ export const NotificationSounds: React.FC<NotificationSoundsProps> = ({
     <div style={styles.container}>
       <div style={styles.header}>
         <div style={styles.title}>
-          <i className="fa-solid fa-volume-high" />
+          <Volume2 />
           Notification Sounds
         </div>
         <div style={styles.masterVolume}>
-          <i className="fa-solid fa-volume-low" style={{ color: '#64748b', fontSize: '12px' }} />
+          <Volume1 />
           <input
             type="range"
             min="0"
@@ -386,7 +388,7 @@ export const NotificationSounds: React.FC<NotificationSoundsProps> = ({
             onChange={e => setMasterVolume(Number(e.target.value))}
             style={styles.volumeSlider}
           />
-          <i className="fa-solid fa-volume-high" style={{ color: '#64748b', fontSize: '12px' }} />
+          <Volume2 />
         </div>
       </div>
 
@@ -456,7 +458,7 @@ export const NotificationSounds: React.FC<NotificationSoundsProps> = ({
                             <div style={{ ...styles.soundWave, animationDelay: '0.2s' }} />
                           </div>
                         ) : (
-                          <i className="fa-solid fa-play" />
+                          <Play />
                         )}
                       </button>
                     </div>
@@ -537,7 +539,7 @@ export const NotificationSounds: React.FC<NotificationSoundsProps> = ({
             onClick={() => fileInputRef.current?.click()}
           >
             <div style={styles.uploadIcon}>
-              <i className="fa-solid fa-cloud-arrow-up" />
+              <CloudUpload />
             </div>
             <div style={styles.uploadText}>Upload Custom Sound</div>
             <div style={styles.uploadHint}>MP3, WAV, OGG (max 1MB)</div>

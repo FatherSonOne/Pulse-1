@@ -7,6 +7,8 @@ import { MarkdownRenderer } from './shared';
 import './shared/PulseTypography.css';
 import toast from 'react-hot-toast';
 
+import { ArrowRight, Bookmark, Bot, CheckCircle, Copy, FlaskConical, GitFork, History, Key, LayoutGrid, Loader2, MessagesSquare, Play, Send, Trash2, Wand2 } from 'lucide-react';
+
 interface AILabProps {
   apiKey: string;
 }
@@ -646,7 +648,7 @@ Respond helpfully and naturally.`,
     return (
       <div className="h-full bg-white dark:bg-zinc-950 rounded-2xl overflow-hidden border border-zinc-200 dark:border-zinc-800 flex flex-col items-center justify-center p-8">
         <div className="w-20 h-20 rounded-full bg-gradient-to-br from-purple-500 to-indigo-600 flex items-center justify-center mb-6">
-          <i className="fa-solid fa-flask text-3xl text-white"></i>
+          <FlaskConical className="text-3xl text-white" />
         </div>
         <h2 className="text-xl font-bold dark:text-white text-zinc-900 mb-2">AI Lab</h2>
         <p className="text-zinc-500 text-center mb-6 max-w-md">
@@ -658,7 +660,7 @@ Respond helpfully and naturally.`,
           rel="noopener noreferrer"
           className="px-6 py-3 bg-gradient-to-r from-purple-600 to-indigo-600 text-white rounded-xl font-bold hover:opacity-90 transition flex items-center gap-2"
         >
-          <i className="fa-solid fa-key"></i> Get API Key
+          <Key /> Get API Key
         </a>
       </div>
     );
@@ -671,7 +673,7 @@ Respond helpfully and naturally.`,
         <div className="flex justify-between items-center mb-4">
           <div className="flex items-center gap-3">
             <div className="w-10 h-10 rounded-full bg-white/20 flex items-center justify-center">
-              <i className="fa-solid fa-flask text-white"></i>
+              <FlaskConical className="text-white" />
             </div>
             <div>
               <h2 className="text-lg font-bold text-white">AI Lab</h2>
@@ -684,7 +686,7 @@ Respond helpfully and naturally.`,
                 onClick={() => { setSelectedAgent(null); setViewMode('agents'); }}
                 className="px-3 py-1.5 bg-white/10 hover:bg-white/20 text-white rounded-lg text-sm font-medium transition"
               >
-                <i className="fa-solid fa-grid-2 mr-2"></i>
+                <LayoutGrid className="mr-2" />
                 All Agents
               </button>
             )}
@@ -693,7 +695,7 @@ Respond helpfully and naturally.`,
                 onClick={() => setViewMode('chat')}
                 className="px-3 py-1.5 bg-white/10 hover:bg-white/20 text-white rounded-lg text-sm font-medium transition"
               >
-                <i className="fa-solid fa-comments mr-2"></i>
+                <MessagesSquare className="mr-2" />
                 Chat Mode
               </button>
             )}
@@ -820,7 +822,7 @@ Respond helpfully and naturally.`,
                   onClick={() => setShowSaveTemplate(true)}
                   className="px-3 py-1.5 bg-zinc-100 dark:bg-zinc-800 rounded-lg text-xs font-medium text-zinc-600 dark:text-zinc-400 hover:bg-zinc-200 dark:hover:bg-zinc-700"
                 >
-                  <i className="fa-solid fa-bookmark mr-1"></i> Save Template
+                  <Bookmark className="mr-1" /> Save Template
                 </button>
               )}
             </div>
@@ -841,7 +843,7 @@ Respond helpfully and naturally.`,
                 />
                 {selectedFile && (
                   <p className="mt-2 text-sm text-zinc-500">
-                    <i className="fa-solid fa-check-circle text-green-500 mr-1"></i>
+                    <CheckCircle className="text-green-500 mr-1" />
                     {selectedFile.name}
                   </p>
                 )}
@@ -880,12 +882,12 @@ Respond helpfully and naturally.`,
             >
               {isProcessing ? (
                 <>
-                  <i className="fa-solid fa-circle-notch fa-spin"></i>
+                  <Loader2 className="animate-spin" />
                   Processing...
                 </>
               ) : (
                 <>
-                  <i className="fa-solid fa-wand-magic-sparkles"></i>
+                  <Wand2 />
                   Process with AI
                 </>
               )}
@@ -905,7 +907,7 @@ Respond helpfully and naturally.`,
                     onClick={copyToClipboard}
                     className="text-xs text-purple-600 dark:text-purple-400 hover:underline font-mono"
                   >
-                    <i className="fa-regular fa-copy mr-1"></i> Copy
+                    <Copy className="mr-1" /> Copy
                   </button>
                 </div>
                 <div className="bg-zinc-50 dark:bg-zinc-900 border border-zinc-200 dark:border-zinc-800 rounded-xl p-5 relative overflow-hidden">
@@ -916,7 +918,7 @@ Respond helpfully and naturally.`,
             ) : (
               <div className="h-full flex items-center justify-center text-center">
                 <div className="text-zinc-400">
-                  <i className="fa-solid fa-wand-magic-sparkles text-4xl mb-4 block opacity-50"></i>
+                  <Wand2 className="text-4xl mb-4 block opacity-50" />
                   <p className="font-light">Output will appear here after processing</p>
                 </div>
               </div>
@@ -932,7 +934,7 @@ Respond helpfully and naturally.`,
           {!selectedAgent ? (
             <div className="flex-1 flex items-center justify-center p-8">
               <div className="text-center">
-                <i className="fa-solid fa-robot text-4xl text-zinc-300 mb-4"></i>
+                <Bot className="text-4xl text-zinc-300 mb-4" />
                 <h3 className="font-bold text-zinc-700 dark:text-zinc-300 mb-2">Select an Agent</h3>
                 <p className="text-sm text-zinc-500 mb-4">Choose an agent to start chatting</p>
                 <div className="flex flex-wrap justify-center gap-2">
@@ -959,7 +961,7 @@ Respond helpfully and naturally.`,
                   <span className="font-semibold dark:text-white">{selectedAgent.name}</span>
                 </div>
                 <button onClick={clearChat} className="text-xs text-zinc-500 hover:text-red-500">
-                  <i className="fa-solid fa-trash mr-1"></i> Clear
+                  <Trash2 className="mr-1" /> Clear
                 </button>
               </div>
 
@@ -1010,7 +1012,7 @@ Respond helpfully and naturally.`,
                         <span>{selectedAgent?.name || 'AI'}</span>
                         <span className="animate-pulse">•••</span>
                       </div>
-                      <i className="fa-solid fa-circle-notch fa-spin text-purple-500"></i>
+                      <Loader2 className="text-purple-500 animate-spin" />
                     </div>
                   </div>
                 )}
@@ -1032,7 +1034,7 @@ Respond helpfully and naturally.`,
                     disabled={isProcessing || !input.trim()}
                     className="px-4 py-3 bg-purple-600 hover:bg-purple-500 disabled:bg-zinc-400 text-white rounded-xl font-semibold transition"
                   >
-                    <i className="fa-solid fa-paper-plane"></i>
+                    <Send />
                   </button>
                 </div>
               </div>
@@ -1056,7 +1058,7 @@ Respond helpfully and naturally.`,
           <div className="flex-1 overflow-y-auto p-4 space-y-3">
             {filteredHistory.length === 0 ? (
               <div className="text-center text-zinc-400 py-8">
-                <i className="fa-solid fa-clock-rotate-left text-4xl mb-4 opacity-50"></i>
+                <History className="text-4xl mb-4 opacity-50" />
                 <p>No history yet</p>
               </div>
             ) : (
@@ -1079,7 +1081,7 @@ Respond helpfully and naturally.`,
                           <i className={`fa-${item.starred ? 'solid' : 'regular'} fa-star`}></i>
                         </button>
                         <button onClick={() => deleteHistoryItem(item.id)} className="text-zinc-400 hover:text-red-500">
-                          <i className="fa-solid fa-trash text-xs"></i>
+                          <Trash2 className="text-xs" />
                         </button>
                       </div>
                     </div>
@@ -1101,7 +1103,7 @@ Respond helpfully and naturally.`,
               <div key={workflow.id} className="bg-zinc-50 dark:bg-zinc-900 border border-zinc-200 dark:border-zinc-800 rounded-xl p-5">
                 <div className="flex items-center gap-3 mb-3">
                   <div className="w-10 h-10 rounded-lg bg-purple-100 dark:bg-purple-900/30 flex items-center justify-center">
-                    <i className="fa-solid fa-diagram-project text-purple-600"></i>
+                    <GitFork className="text-purple-600" />
                   </div>
                   <div>
                     <h3 className="font-bold dark:text-white">{workflow.name}</h3>
@@ -1117,7 +1119,7 @@ Respond helpfully and naturally.`,
                           <i className={`fa-solid ${agent?.icon || 'fa-robot'} text-white text-xs`}></i>
                         </div>
                         {idx < workflow.steps.length - 1 && (
-                          <i className="fa-solid fa-arrow-right text-xs text-zinc-400"></i>
+                          <ArrowRight className="text-xs text-zinc-400" />
                         )}
                       </React.Fragment>
                     );
@@ -1131,7 +1133,7 @@ Respond helpfully and naturally.`,
                   disabled={isRunningWorkflow}
                   className="w-full py-2 bg-purple-600 hover:bg-purple-500 disabled:bg-zinc-400 text-white rounded-lg text-sm font-semibold transition"
                 >
-                  <i className="fa-solid fa-play mr-2"></i> Run Workflow
+                  <Play className="mr-2" /> Run Workflow
                 </button>
               </div>
             ))}
@@ -1157,7 +1159,7 @@ Respond helpfully and naturally.`,
                       <h3 className="font-semibold text-sm dark:text-white">{template.name}</h3>
                     </div>
                     <button onClick={() => deleteTemplate(template.id)} className="text-zinc-400 hover:text-red-500">
-                      <i className="fa-solid fa-trash text-xs"></i>
+                      <Trash2 className="text-xs" />
                     </button>
                   </div>
                   <p className="text-xs text-zinc-500 line-clamp-2 mb-3">{template.prompt}</p>
@@ -1165,7 +1167,7 @@ Respond helpfully and naturally.`,
                     onClick={() => loadTemplate(template)}
                     className="w-full py-2 bg-zinc-200 dark:bg-zinc-800 hover:bg-zinc-300 dark:hover:bg-zinc-700 rounded-lg text-xs font-semibold transition"
                   >
-                    <i className="fa-solid fa-arrow-right mr-1"></i> Use Template
+                    <ArrowRight className="mr-1" /> Use Template
                   </button>
                 </div>
               );

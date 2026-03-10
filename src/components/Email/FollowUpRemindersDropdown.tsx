@@ -3,6 +3,8 @@ import React, { useState, useEffect, useRef } from 'react';
 import { supabase } from '../../services/supabase';
 import { CachedEmail } from '../../services/emailSyncService';
 
+import { Bell, CheckCircle, Loader2, Reply, X } from 'lucide-react';
+
 interface FollowUpItem {
   sentEmail: CachedEmail;
   daysSince: number;
@@ -211,7 +213,7 @@ export const FollowUpRemindersDropdown: React.FC<FollowUpRemindersDropdownProps>
         } ${pulseClass}`}
         title={hasReminders ? `${visibleFollowUps.length} follow-up reminder${visibleFollowUps.length > 1 ? 's' : ''}` : 'No follow-up reminders'}
       >
-        <i className="fa-solid fa-bell"></i>
+        <Bell />
         <span className="hidden sm:inline">Follow-ups</span>
         {hasReminders && (
           <span className="bg-red-500 text-white text-[10px] px-1.5 py-0.5 rounded-full font-bold min-w-[18px] flex items-center justify-center">
@@ -228,7 +230,7 @@ export const FollowUpRemindersDropdown: React.FC<FollowUpRemindersDropdownProps>
           <div className="flex items-center justify-between px-4 py-3 border-b border-stone-200 dark:border-zinc-800 bg-gradient-to-r from-amber-500/10 to-orange-500/10">
             <div className="flex items-center gap-3">
               <div className="w-8 h-8 rounded-lg bg-gradient-to-br from-amber-500 to-orange-500 flex items-center justify-center">
-                <i className="fa-solid fa-bell text-white text-sm"></i>
+                <Bell className="text-white text-sm" />
               </div>
               <div>
                 <h3 className="font-semibold text-stone-900 dark:text-white text-sm">Follow-up Reminders</h3>
@@ -242,7 +244,7 @@ export const FollowUpRemindersDropdown: React.FC<FollowUpRemindersDropdownProps>
               className="w-8 h-8 rounded-lg hover:bg-stone-100 dark:hover:bg-zinc-800 flex items-center justify-center text-stone-500 dark:text-zinc-400 hover:text-stone-700 dark:hover:text-white transition"
               title="Close"
             >
-              <i className="fa-solid fa-xmark text-sm"></i>
+              <X className="text-sm" />
             </button>
           </div>
 
@@ -250,13 +252,13 @@ export const FollowUpRemindersDropdown: React.FC<FollowUpRemindersDropdownProps>
           {loading ? (
             <div className="p-8 flex items-center justify-center">
               <div className="text-center">
-                <i className="fa-solid fa-circle-notch fa-spin text-rose-500 text-2xl mb-2"></i>
+                <Loader2 className="text-rose-500 text-2xl mb-2 animate-spin" />
                 <p className="text-stone-600 dark:text-zinc-400 text-sm">Checking for follow-ups...</p>
               </div>
             </div>
           ) : visibleFollowUps.length === 0 ? (
             <div className="p-8 text-center">
-              <i className="fa-solid fa-check-circle text-4xl text-green-500 mb-3"></i>
+              <CheckCircle className="text-4xl text-green-500 mb-3" />
               <p className="text-stone-600 dark:text-zinc-400 text-sm">All caught up! No follow-ups needed.</p>
             </div>
           ) : (
@@ -296,7 +298,7 @@ export const FollowUpRemindersDropdown: React.FC<FollowUpRemindersDropdownProps>
                             }}
                             className="flex items-center gap-1.5 px-3 py-1.5 bg-gradient-to-r from-rose-500 to-orange-500 hover:from-rose-600 hover:to-orange-600 text-white text-xs font-medium rounded-lg transition"
                           >
-                            <i className="fa-solid fa-reply"></i>
+                            <Reply />
                             Follow Up
                           </button>
                           <button

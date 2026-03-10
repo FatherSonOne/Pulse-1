@@ -2,6 +2,8 @@ import React, { useState, useRef, useEffect } from 'react';
 import { CalendarEvent, Contact } from '../types';
 import { calendarAIService } from '../services/calendarAIService';
 
+import { AlertTriangle, Check, Clock, Lightbulb, Loader2, MapPin, Sparkles, Users } from 'lucide-react';
+
 interface NaturalLanguageEventInputProps {
   contacts: Contact[];
   onEventCreated: (event: Partial<CalendarEvent>) => void;
@@ -122,14 +124,14 @@ export const NaturalLanguageEventInput: React.FC<NaturalLanguageEventInputProps>
           {/* Loading Spinner */}
           {isProcessing && (
             <div className="absolute right-4 top-1/2 -translate-y-1/2">
-              <i className="fa-solid fa-spinner animate-spin text-blue-500"></i>
+              <Loader2 className="animate-spin text-blue-500" />
             </div>
           )}
 
           {/* AI Icon */}
           {!isProcessing && input && (
             <div className="absolute right-4 top-1/2 -translate-y-1/2">
-              <i className="fa-solid fa-sparkles text-purple-500"></i>
+              <Sparkles className="text-purple-500" />
             </div>
           )}
         </div>
@@ -158,7 +160,7 @@ export const NaturalLanguageEventInput: React.FC<NaturalLanguageEventInputProps>
                 {/* Date & Time */}
                 {preview.start && (
                   <div className="flex items-center gap-2 text-zinc-700 dark:text-zinc-300">
-                    <i className="fa-regular fa-clock w-4 text-zinc-400"></i>
+                    <Clock className="w-4 text-zinc-400" />
                     <span>
                       {formatPreviewTime(preview.start)}
                       {preview.end && ` • ${getDuration()}`}
@@ -169,7 +171,7 @@ export const NaturalLanguageEventInput: React.FC<NaturalLanguageEventInputProps>
                 {/* Location */}
                 {preview.location && (
                   <div className="flex items-center gap-2 text-zinc-700 dark:text-zinc-300">
-                    <i className="fa-solid fa-location-dot w-4 text-zinc-400"></i>
+                    <MapPin className="w-4 text-zinc-400" />
                     <span className="truncate">{preview.location}</span>
                   </div>
                 )}
@@ -177,7 +179,7 @@ export const NaturalLanguageEventInput: React.FC<NaturalLanguageEventInputProps>
                 {/* Attendees */}
                 {preview.attendees && preview.attendees.length > 0 && (
                   <div className="flex items-center gap-2 text-zinc-700 dark:text-zinc-300">
-                    <i className="fa-solid fa-user-group w-4 text-zinc-400"></i>
+                    <Users className="w-4 text-zinc-400" />
                     <span className="truncate">
                       {preview.attendees.slice(0, 3).join(', ')}
                       {preview.attendees.length > 3 && ` +${preview.attendees.length - 3} more`}
@@ -192,7 +194,7 @@ export const NaturalLanguageEventInput: React.FC<NaturalLanguageEventInputProps>
                   type="submit"
                   className="flex-1 px-4 py-2 bg-blue-500 hover:bg-blue-600 text-white rounded-lg font-medium transition"
                 >
-                  <i className="fa-solid fa-check mr-2"></i>
+                  <Check className="mr-2" />
                   Create Event
                 </button>
                 <button
@@ -210,7 +212,7 @@ export const NaturalLanguageEventInput: React.FC<NaturalLanguageEventInputProps>
 
             {/* Tip */}
             <div className="px-4 py-2 bg-zinc-50 dark:bg-zinc-900 border-t border-zinc-200 dark:border-zinc-700 text-xs text-zinc-500">
-              <i className="fa-solid fa-lightbulb mr-1"></i>
+              <Lightbulb className="mr-1" />
               Press <kbd className="px-1.5 py-0.5 bg-zinc-200 dark:bg-zinc-800 rounded">Enter</kbd> to create or <kbd className="px-1.5 py-0.5 bg-zinc-200 dark:bg-zinc-800 rounded">Esc</kbd> to cancel
             </div>
           </div>
@@ -219,7 +221,7 @@ export const NaturalLanguageEventInput: React.FC<NaturalLanguageEventInputProps>
         {/* Error Message */}
         {error && (
           <div className="absolute top-full left-0 right-0 mt-2 p-3 bg-red-50 dark:bg-red-900/20 border border-red-200 dark:border-red-800 rounded-lg text-sm text-red-700 dark:text-red-400">
-            <i className="fa-solid fa-triangle-exclamation mr-2"></i>
+            <AlertTriangle className="mr-2" />
             {error}
           </div>
         )}

@@ -6,6 +6,8 @@
 import React, { useState, useEffect, useRef, useCallback } from 'react';
 import { supabase } from '../../services/supabase';
 
+import { Loader2, RefreshCw, Zap } from 'lucide-react';
+
 // ==================== TYPES ====================
 
 interface UserPresence {
@@ -282,7 +284,7 @@ const ActivityMonitor: React.FC = () => {
   if (loading) {
     return (
       <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'center', minHeight: 300, color: '#52525b' }}>
-        <i className="fa-solid fa-circle-notch fa-spin" style={{ fontSize: 22, marginRight: 12 }} />
+        <Loader2 className="animate-spin" />
         Loading activity data…
       </div>
     );
@@ -467,7 +469,7 @@ const ActivityMonitor: React.FC = () => {
       <div style={{ background: 'rgba(255,255,255,0.03)', border: '1px solid rgba(255,255,255,0.08)', borderRadius: 16, overflow: 'hidden' }}>
         <div style={{ padding: '14px 20px', borderBottom: '1px solid rgba(255,255,255,0.06)', display: 'flex', alignItems: 'center', justifyContent: 'space-between' }}>
           <div style={{ display: 'flex', alignItems: 'center', gap: 8 }}>
-            <i className="fa-solid fa-bolt" style={{ color: '#f59e0b', fontSize: 13 }} />
+            <Zap />
             <span style={{ fontWeight: 700, color: '#fff', fontSize: 14 }}>Event Feed</span>
           </div>
           <div style={{ display: 'flex', alignItems: 'center', gap: 10 }}>
@@ -483,7 +485,7 @@ const ActivityMonitor: React.FC = () => {
                 display: 'flex', alignItems: 'center', gap: 5,
               }}
             >
-              <i className="fa-solid fa-rotate" />
+              <RefreshCw />
               Refresh
             </button>
           </div>

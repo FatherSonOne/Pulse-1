@@ -2,6 +2,8 @@ import React, { useState, useEffect, useRef } from 'react';
 import { AIMessage, ThinkingStep } from '../../services/ragService';
 import { MatrixRain } from '../effects/MatrixRain';
 
+import { Send } from 'lucide-react';
+
 interface NeuralTerminalProps {
   messages: AIMessage[];
   isLoading: boolean;
@@ -206,7 +208,7 @@ export const NeuralTerminal: React.FC<NeuralTerminalProps> = ({
             onClick={() => { if (input.trim()) { onSendMessage(input.trim()); setInput(''); } }}
             className="md:hidden px-3 py-1.5 bg-cyan-600 hover:bg-cyan-700 text-white rounded-lg text-sm font-bold"
           >
-            <i className="fa fa-paper-plane"></i>
+            <Send className="fa" />
           </button>
           <span className="hidden md:inline text-green-700 dark:text-green-400 text-xs font-bold">
             {input.length > 0 && `[${input.length} chars]`}

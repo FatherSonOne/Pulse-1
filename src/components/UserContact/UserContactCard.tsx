@@ -7,6 +7,8 @@ import { useUserPresence } from '../../hooks/usePresence';
 import type { EnrichedUserProfile } from '../../types/userContact';
 import './UserContactCard.css';
 
+import { AlertCircle, Briefcase, Building2, Check, CheckCircle2, Circle, Loader2, Lock, Mail, MessageSquare, Pencil, Phone, RefreshCw, StickyNote, UserCog, X } from 'lucide-react';
+
 interface UserContactCardProps {
   userId: string;
   onClose: () => void;
@@ -156,7 +158,7 @@ export const UserContactCard: React.FC<UserContactCardProps> = ({ userId, onClos
       <div className="user-contact-card-overlay" onClick={onClose}>
         <div className="user-contact-card" onClick={(e) => e.stopPropagation()}>
           <div className="card-error">
-            <i className="fa-solid fa-exclamation-circle"></i>
+            <AlertCircle />
             <p>{error || 'Profile not found'}</p>
             <p className="text-sm text-zinc-500 mt-2">
               Unable to load profile for user ID: {userId?.substring(0, 8)}...
@@ -175,12 +177,12 @@ export const UserContactCard: React.FC<UserContactCardProps> = ({ userId, onClos
               >
                 {loading ? (
                   <>
-                    <i className="fa-solid fa-circle-notch fa-spin mr-1"></i>
+                    <Loader2 className="mr-1 animate-spin" />
                     Retrying...
                   </>
                 ) : (
                   <>
-                    <i className="fa-solid fa-refresh mr-1"></i>
+                    <RefreshCw className="mr-1" />
                     Retry
                   </>
                 )}
@@ -211,7 +213,7 @@ export const UserContactCard: React.FC<UserContactCardProps> = ({ userId, onClos
               <i className={`fa-${isFavorite ? 'solid' : 'regular'} fa-star`}></i>
             </button>
             <button onClick={onClose} className="btn-icon">
-              <i className="fa-solid fa-times"></i>
+              <X />
             </button>
           </div>
         </div>
@@ -241,7 +243,7 @@ export const UserContactCard: React.FC<UserContactCardProps> = ({ userId, onClos
             )}
             {profile.isVerified && (
               <span className="verified-badge">
-                <i className="fa-solid fa-circle-check"></i> Verified
+                <CheckCircle2 /> Verified
               </span>
             )}
           </div>
@@ -249,11 +251,11 @@ export const UserContactCard: React.FC<UserContactCardProps> = ({ userId, onClos
           <div className="profile-status">
             {isOnline ? (
               <span className="status-online">
-                <i className="fa-solid fa-circle"></i> Active now
+                <Circle /> Active now
               </span>
             ) : (
               <span className="status-offline">
-                <i className="fa-regular fa-circle"></i> {lastActive.text}
+                <Circle /> {lastActive.text}
               </span>
             )}
           </div>
@@ -276,7 +278,7 @@ export const UserContactCard: React.FC<UserContactCardProps> = ({ userId, onClos
           <div className="info-grid">
             {profile.email && (
               <div className="info-item">
-                <i className="fa-solid fa-envelope"></i>
+                <Mail />
                 <div className="info-content">
                   <span className="info-label">Email</span>
                   <a href={`mailto:${profile.email}`} className="info-value">
@@ -288,7 +290,7 @@ export const UserContactCard: React.FC<UserContactCardProps> = ({ userId, onClos
             
             {profile.phone && (
               <div className="info-item">
-                <i className="fa-solid fa-phone"></i>
+                <Phone />
                 <div className="info-content">
                   <span className="info-label">Phone</span>
                   <a href={`tel:${profile.phone}`} className="info-value">
@@ -304,13 +306,13 @@ export const UserContactCard: React.FC<UserContactCardProps> = ({ userId, onClos
         <div className="card-section private-section">
           <div className="section-header">
             <div className="section-label">
-              <i className="fa-solid fa-lock"></i>
+              <Lock />
               My Private Notes
               <span className="private-badge">Only visible to you</span>
             </div>
             {!editing && (
               <button onClick={() => setEditing(true)} className="btn-edit">
-                <i className="fa-solid fa-pencil"></i>
+                <Pencil />
                 Edit
               </button>
             )}
@@ -415,12 +417,12 @@ export const UserContactCard: React.FC<UserContactCardProps> = ({ userId, onClos
                 >
                   {saving ? (
                     <>
-                      <i className="fa-solid fa-circle-notch fa-spin"></i>
+                      <Loader2 className="animate-spin" />
                       Saving...
                     </>
                   ) : (
                     <>
-                      <i className="fa-solid fa-check"></i>
+                      <Check />
                       Save
                     </>
                   )}
@@ -431,7 +433,7 @@ export const UserContactCard: React.FC<UserContactCardProps> = ({ userId, onClos
             <div className="info-grid">
               {nickname && (
                 <div className="info-item">
-                  <i className="fa-solid fa-user-tag"></i>
+                  <UserCog />
                   <div className="info-content">
                     <span className="info-label">Nickname</span>
                     <span className="info-value">{nickname}</span>
@@ -441,7 +443,7 @@ export const UserContactCard: React.FC<UserContactCardProps> = ({ userId, onClos
               
               {customNotes && (
                 <div className="info-item">
-                  <i className="fa-solid fa-note-sticky"></i>
+                  <StickyNote />
                   <div className="info-content">
                     <span className="info-label">Notes</span>
                     <span className="info-value">{customNotes}</span>
@@ -451,7 +453,7 @@ export const UserContactCard: React.FC<UserContactCardProps> = ({ userId, onClos
               
               {customPhone && (
                 <div className="info-item">
-                  <i className="fa-solid fa-phone"></i>
+                  <Phone />
                   <div className="info-content">
                     <span className="info-label">Additional Phone</span>
                     <a href={`tel:${customPhone}`} className="info-value">{customPhone}</a>
@@ -461,7 +463,7 @@ export const UserContactCard: React.FC<UserContactCardProps> = ({ userId, onClos
               
               {customEmail && (
                 <div className="info-item">
-                  <i className="fa-solid fa-envelope"></i>
+                  <Mail />
                   <div className="info-content">
                     <span className="info-label">Additional Email</span>
                     <a href={`mailto:${customEmail}`} className="info-value">{customEmail}</a>
@@ -471,7 +473,7 @@ export const UserContactCard: React.FC<UserContactCardProps> = ({ userId, onClos
               
               {customCompany && (
                 <div className="info-item">
-                  <i className="fa-solid fa-building"></i>
+                  <Building2 />
                   <div className="info-content">
                     <span className="info-label">Company</span>
                     <span className="info-value">{customCompany}</span>
@@ -481,7 +483,7 @@ export const UserContactCard: React.FC<UserContactCardProps> = ({ userId, onClos
               
               {customRole && (
                 <div className="info-item">
-                  <i className="fa-solid fa-briefcase"></i>
+                  <Briefcase />
                   <div className="info-content">
                     <span className="info-label">Role</span>
                     <span className="info-value">{customRole}</span>
@@ -491,7 +493,7 @@ export const UserContactCard: React.FC<UserContactCardProps> = ({ userId, onClos
               
               {!nickname && !customNotes && !customPhone && !customEmail && !customCompany && !customRole && (
                 <div className="empty-state">
-                  <i className="fa-regular fa-note-sticky"></i>
+                  <StickyNote />
                   <p>No private notes yet</p>
                   <small>Click Edit to add your personal notes about this contact</small>
                 </div>
@@ -503,7 +505,7 @@ export const UserContactCard: React.FC<UserContactCardProps> = ({ userId, onClos
         {/* Actions */}
         <div className="card-actions">
           <button className="btn-action" onClick={onClose}>
-            <i className="fa-solid fa-comment"></i>
+            <MessageSquare />
             Send Message
           </button>
         </div>

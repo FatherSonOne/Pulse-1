@@ -15,6 +15,8 @@ import { VoiceSessionHistory } from './VoiceSessionHistory';
 import { RealtimeHistoryItem, WAR_ROOM_AGENTS } from '../../services/realtimeAgentService';
 import toast from 'react-hot-toast';
 
+import { BookOpen, History, MessagesSquare, Mic, Minus, Settings, X } from 'lucide-react';
+
 interface ContextDocument {
   id: string;
   title: string;
@@ -167,7 +169,7 @@ export const VoiceAgentPanel: React.FC<VoiceAgentPanelProps> = ({
         className="fixed bottom-4 right-4 z-50 w-14 h-14 rounded-full bg-gradient-to-br from-cyan-500 to-blue-600 text-white shadow-lg hover:shadow-xl hover:scale-105 transition-all flex items-center justify-center"
         title="Open Voice Agent"
       >
-        <i className="fa fa-microphone text-xl" />
+        <Mic className="fa text-xl" />
         <div className="absolute -top-1 -right-1 w-3 h-3 bg-green-500 rounded-full animate-pulse" />
       </button>
     );
@@ -186,7 +188,7 @@ export const VoiceAgentPanel: React.FC<VoiceAgentPanelProps> = ({
           {/* Voice Icon with Animation */}
           <div className="relative">
             <div className="w-10 h-10 rounded-full bg-gradient-to-br from-cyan-500 to-blue-600 flex items-center justify-center">
-              <i className="fa fa-microphone text-white" />
+              <Mic className="fa text-white" />
             </div>
             <div className="absolute inset-0 rounded-full bg-cyan-500/30 animate-ping" />
           </div>
@@ -200,7 +202,7 @@ export const VoiceAgentPanel: React.FC<VoiceAgentPanelProps> = ({
               </span>
               {contextFiles.length > 0 && (
                 <span className="flex items-center gap-1 px-2 py-0.5 bg-emerald-500/20 text-emerald-400 rounded-full">
-                  <i className="fa fa-book-open text-[10px]" />
+                  <BookOpen className="fa text-[10px]" />
                   {contextFiles.length} doc{contextFiles.length !== 1 ? 's' : ''}
                 </span>
               )}
@@ -218,7 +220,7 @@ export const VoiceAgentPanel: React.FC<VoiceAgentPanelProps> = ({
             }`}
             title="Toggle History (Ctrl+H)"
           >
-            <i className="fa fa-history" />
+            <History className="fa" />
           </button>
 
           {/* Settings */}
@@ -229,7 +231,7 @@ export const VoiceAgentPanel: React.FC<VoiceAgentPanelProps> = ({
             }`}
             title="Settings"
           >
-            <i className="fa fa-cog" />
+            <Settings className="fa" />
           </button>
 
           {/* Expand/Collapse */}
@@ -249,7 +251,7 @@ export const VoiceAgentPanel: React.FC<VoiceAgentPanelProps> = ({
             className="p-2 rounded-lg text-gray-400 hover:text-white transition-colors"
             title="Minimize"
           >
-            <i className="fa fa-minus" />
+            <Minus className="fa" />
           </button>
 
           {/* Close */}
@@ -259,7 +261,7 @@ export const VoiceAgentPanel: React.FC<VoiceAgentPanelProps> = ({
               className="p-2 rounded-lg text-gray-400 hover:text-red-400 transition-colors"
               title="Close"
             >
-              <i className="fa fa-times" />
+              <X className="fa" />
             </button>
           )}
         </div>
@@ -360,11 +362,11 @@ export const VoiceAgentPanel: React.FC<VoiceAgentPanelProps> = ({
       <div className="p-2 bg-gray-900 border-t border-gray-800 flex items-center justify-between text-xs text-gray-500">
         <div className="flex items-center gap-4">
           <span>
-            <i className="fa fa-comments mr-1" />
+            <MessagesSquare className="fa mr-1" />
             {history.filter(h => h.type === 'message').length} messages
           </span>
           <span>
-            <i className="fa fa-cog mr-1" />
+            <Settings className="fa mr-1" />
             {history.filter(h => h.type === 'function_call').length} tool calls
           </span>
         </div>

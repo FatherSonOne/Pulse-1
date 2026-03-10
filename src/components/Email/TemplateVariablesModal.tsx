@@ -2,6 +2,8 @@
 import React, { useState, useEffect } from 'react';
 import { EmailTemplate, emailSyncService } from '../../services/emailSyncService';
 
+import { Check, Code, X } from 'lucide-react';
+
 interface TemplateVariablesModalProps {
   template: EmailTemplate;
   onApply: (subject: string | undefined, body: string) => void;
@@ -73,7 +75,7 @@ export const TemplateVariablesModal: React.FC<TemplateVariablesModalProps> = ({
         <div className="flex items-center justify-between px-5 py-4 border-b border-zinc-800">
           <div className="flex items-center gap-3">
             <div className="w-9 h-9 rounded-lg bg-gradient-to-br from-amber-500 to-orange-600 flex items-center justify-center">
-              <i className="fa-solid fa-code text-white text-sm"></i>
+              <Code className="text-white text-sm" />
             </div>
             <div>
               <h2 className="text-base font-semibold text-white">Fill in Variables</h2>
@@ -84,7 +86,7 @@ export const TemplateVariablesModal: React.FC<TemplateVariablesModalProps> = ({
             onClick={onClose}
             className="w-7 h-7 rounded-lg hover:bg-zinc-800 flex items-center justify-center text-zinc-400 hover:text-white transition"
           >
-            <i className="fa-solid fa-xmark text-sm"></i>
+            <X className="text-sm" />
           </button>
         </div>
 
@@ -129,7 +131,7 @@ export const TemplateVariablesModal: React.FC<TemplateVariablesModalProps> = ({
             onClick={handleApply}
             className="flex-1 flex items-center justify-center gap-2 px-4 py-2.5 bg-amber-500 hover:bg-amber-600 text-black font-medium rounded-lg text-sm transition"
           >
-            <i className="fa-solid fa-check"></i>
+            <Check />
             Apply Template
           </button>
           <button

@@ -5,6 +5,8 @@ import React, { useState, useEffect, useCallback } from 'react';
 import { VoiceCoachAnalysis, VoiceImprovement } from '../../services/voxer/advancedVoxerTypes';
 import { processWithModel } from '../../services/geminiService';
 
+import { AlertCircle, CheckCircle, Copy, Drama, GraduationCap, Lightbulb, ListChecks, PenTool, RotateCw, Send, Shield, Target, Wand2, X, Zap } from 'lucide-react';
+
 // ============================================
 // TYPES
 // ============================================
@@ -140,7 +142,7 @@ const ImprovementCard: React.FC<ImprovementCardProps> = ({ improvement }) => {
           </div>
           <p className="text-xs text-zinc-600 dark:text-zinc-400 mb-1">{improvement.issue}</p>
           <p className="text-xs text-emerald-600 dark:text-emerald-400">
-            <i className="fa-solid fa-lightbulb mr-1"></i>
+            <Lightbulb className="mr-1" />
             {improvement.suggestion}
           </p>
           {improvement.example && (
@@ -281,7 +283,7 @@ Return ONLY valid JSON, no markdown or extra text.`;
         <div className="px-6 py-4 border-b border-zinc-200 dark:border-zinc-800 flex items-center justify-between bg-gradient-to-r from-purple-500/10 to-blue-500/10">
           <div className="flex items-center gap-3">
             <div className="w-10 h-10 rounded-xl bg-gradient-to-br from-purple-500 to-blue-500 flex items-center justify-center text-white">
-              <i className="fa-solid fa-user-graduate"></i>
+              <GraduationCap />
             </div>
             <div>
               <h2 className="font-bold text-lg dark:text-white">AI Voice Coach</h2>
@@ -292,7 +294,7 @@ Return ONLY valid JSON, no markdown or extra text.`;
             onClick={onClose}
             className="w-8 h-8 rounded-full hover:bg-zinc-100 dark:hover:bg-zinc-800 flex items-center justify-center text-zinc-400 hover:text-zinc-600 dark:hover:text-white transition"
           >
-            <i className="fa-solid fa-times"></i>
+            <X />
           </button>
         </div>
 
@@ -301,7 +303,7 @@ Return ONLY valid JSON, no markdown or extra text.`;
           {isAnalyzing ? (
             <div className="flex flex-col items-center justify-center py-16">
               <div className="w-16 h-16 rounded-full bg-purple-100 dark:bg-purple-900/30 flex items-center justify-center mb-4">
-                <i className="fa-solid fa-wand-magic-sparkles text-2xl text-purple-500 animate-pulse"></i>
+                <Wand2 className="text-2xl text-purple-500 animate-pulse" />
               </div>
               <p className="text-zinc-600 dark:text-zinc-400 font-medium">Analyzing your message...</p>
               <p className="text-xs text-zinc-400 mt-1">Checking pace, clarity, tone & more</p>
@@ -376,14 +378,14 @@ Return ONLY valid JSON, no markdown or extra text.`;
                     {/* Tone & Energy */}
                     <div className="flex gap-3">
                       <div className="flex-1 bg-purple-50 dark:bg-purple-900/20 rounded-xl p-3 flex items-center gap-3">
-                        <i className="fa-solid fa-masks-theater text-purple-500"></i>
+                        <Drama className="text-purple-500" />
                         <div>
                           <div className="text-xs text-purple-600 dark:text-purple-400 font-medium">Tone</div>
                           <div className="text-sm text-zinc-700 dark:text-zinc-300 capitalize">{analysis.tone?.primary}</div>
                         </div>
                       </div>
                       <div className="flex-1 bg-yellow-50 dark:bg-yellow-900/20 rounded-xl p-3 flex items-center gap-3">
-                        <i className="fa-solid fa-bolt text-yellow-500"></i>
+                        <Zap className="text-yellow-500" />
                         <div>
                           <div className="text-xs text-yellow-600 dark:text-yellow-400 font-medium">Energy</div>
                           <div className="text-sm text-zinc-700 dark:text-zinc-300 capitalize">{analysis.energy?.level}</div>
@@ -396,7 +398,7 @@ Return ONLY valid JSON, no markdown or extra text.`;
                 {activeTab === 'details' && (
                   <div className="space-y-4">
                     <h3 className="font-semibold text-zinc-700 dark:text-zinc-300 flex items-center gap-2">
-                      <i className="fa-solid fa-list-check text-purple-500"></i>
+                      <ListChecks className="text-purple-500" />
                       Improvement Suggestions
                     </h3>
                     {analysis.improvements && analysis.improvements.length > 0 ? (
@@ -407,7 +409,7 @@ Return ONLY valid JSON, no markdown or extra text.`;
                       </div>
                     ) : (
                       <div className="text-center py-8 text-zinc-500">
-                        <i className="fa-solid fa-check-circle text-3xl text-emerald-500 mb-2"></i>
+                        <CheckCircle className="text-3xl text-emerald-500 mb-2" />
                         <p>No major improvements needed!</p>
                       </div>
                     )}
@@ -416,7 +418,7 @@ Return ONLY valid JSON, no markdown or extra text.`;
                     {analysis.clarity?.suggestion && (
                       <div className="bg-blue-50 dark:bg-blue-900/10 rounded-xl p-4 mt-4">
                         <div className="font-medium text-sm text-blue-700 dark:text-blue-300 mb-1">
-                          <i className="fa-solid fa-bullseye mr-2"></i>Clarity
+                          <Target className="mr-2" />Clarity
                         </div>
                         <p className="text-xs text-blue-600 dark:text-blue-400">{analysis.clarity.suggestion}</p>
                       </div>
@@ -425,7 +427,7 @@ Return ONLY valid JSON, no markdown or extra text.`;
                     {analysis.confidence?.suggestion && (
                       <div className="bg-emerald-50 dark:bg-emerald-900/10 rounded-xl p-4">
                         <div className="font-medium text-sm text-emerald-700 dark:text-emerald-300 mb-1">
-                          <i className="fa-solid fa-shield mr-2"></i>Confidence
+                          <Shield className="mr-2" />Confidence
                         </div>
                         <p className="text-xs text-emerald-600 dark:text-emerald-400">{analysis.confidence.suggestion}</p>
                       </div>
@@ -436,7 +438,7 @@ Return ONLY valid JSON, no markdown or extra text.`;
                 {activeTab === 'rewrite' && (
                   <div className="space-y-4">
                     <h3 className="font-semibold text-zinc-700 dark:text-zinc-300 flex items-center gap-2">
-                      <i className="fa-solid fa-pen-fancy text-purple-500"></i>
+                      <PenTool className="text-purple-500" />
                       Suggested Rewrite
                     </h3>
                     
@@ -452,14 +454,14 @@ Return ONLY valid JSON, no markdown or extra text.`;
                     {analysis.rephrasedVersion && (
                       <div>
                         <div className="text-xs font-medium text-emerald-600 dark:text-emerald-400 mb-2 flex items-center gap-2">
-                          <i className="fa-solid fa-wand-magic-sparkles"></i>
+                          <Wand2 />
                           AI-Improved Version:
                         </div>
                         <div className="bg-emerald-50 dark:bg-emerald-900/20 border border-emerald-200 dark:border-emerald-800 rounded-xl p-4 text-sm text-emerald-700 dark:text-emerald-300">
                           "{analysis.rephrasedVersion}"
                         </div>
                         <button className="mt-2 text-xs text-purple-600 dark:text-purple-400 hover:underline">
-                          <i className="fa-solid fa-copy mr-1"></i>
+                          <Copy className="mr-1" />
                           Copy to use as script
                         </button>
                       </div>
@@ -470,7 +472,7 @@ Return ONLY valid JSON, no markdown or extra text.`;
             </>
           ) : (
             <div className="flex flex-col items-center justify-center py-16 text-zinc-500">
-              <i className="fa-solid fa-circle-exclamation text-3xl mb-2"></i>
+              <AlertCircle className="text-3xl mb-2" />
               <p>No transcription available to analyze</p>
             </div>
           )}
@@ -482,14 +484,14 @@ Return ONLY valid JSON, no markdown or extra text.`;
             onClick={onReRecord}
             className="flex-1 py-3 bg-zinc-100 dark:bg-zinc-800 hover:bg-zinc-200 dark:hover:bg-zinc-700 rounded-xl font-semibold text-zinc-700 dark:text-zinc-300 transition flex items-center justify-center gap-2"
           >
-            <i className="fa-solid fa-redo"></i>
+            <RotateCw />
             Re-record
           </button>
           <button
             onClick={onSendAnyway}
             className="flex-1 py-3 bg-gradient-to-r from-purple-500 to-blue-500 hover:from-purple-600 hover:to-blue-600 text-white rounded-xl font-semibold transition flex items-center justify-center gap-2"
           >
-            <i className="fa-solid fa-paper-plane"></i>
+            <Send />
             Send Anyway
           </button>
         </div>

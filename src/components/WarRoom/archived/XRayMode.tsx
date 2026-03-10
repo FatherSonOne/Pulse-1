@@ -2,6 +2,8 @@ import React, { useState, useRef, useEffect } from 'react';
 import { AIMessage, ThinkingStep } from '../../services/ragService';
 import { TokenStream } from '../TokenStream';
 
+import { Send } from 'lucide-react';
+
 interface Token {
   text: string;
   confidence: number;
@@ -159,7 +161,7 @@ export const XRayMode: React.FC<XRayModeProps> = ({
               className="px-3 md:px-4 py-2 bg-rose-600/10 hover:bg-rose-600/20 dark:bg-rose-600/30 dark:hover:bg-rose-600/50 border border-rose-500/30 rounded text-rose-600 dark:text-rose-400 font-mono text-sm disabled:opacity-30 font-bold transition-all"
             >
               <span className="hidden md:inline">SEND</span>
-              <i className="md:hidden fa fa-paper-plane"></i>
+              <Send className="md:hidden fa" />
             </button>
           </div>
         </div>

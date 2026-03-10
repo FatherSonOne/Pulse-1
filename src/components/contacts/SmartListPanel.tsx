@@ -6,6 +6,8 @@
 import React from 'react';
 import { SmartListType, SYSTEM_SMART_LISTS } from '../../types/relationshipTypes';
 
+import { AlertTriangle, Flame } from 'lucide-react';
+
 interface SmartListPanelProps {
   activeList: SmartListType | null;
   counts: Partial<Record<SmartListType, number>>;
@@ -84,7 +86,7 @@ export const SmartListPanel: React.FC<SmartListPanelProps> = ({
         <div className="grid grid-cols-2 gap-2">
           <div className="bg-gradient-to-br from-orange-50 to-amber-50 dark:from-orange-900/10 dark:to-amber-900/10 rounded-lg p-3">
             <div className="flex items-center gap-2 mb-1">
-              <i className="fa-solid fa-fire text-orange-500 text-xs"></i>
+              <Flame className="text-orange-500 text-xs" />
               <span className="text-xs text-orange-700 dark:text-orange-400 font-medium">Hot</span>
             </div>
             <div className="text-lg font-bold text-orange-600 dark:text-orange-400">
@@ -94,7 +96,7 @@ export const SmartListPanel: React.FC<SmartListPanelProps> = ({
 
           <div className="bg-gradient-to-br from-red-50 to-rose-50 dark:from-red-900/10 dark:to-rose-900/10 rounded-lg p-3">
             <div className="flex items-center gap-2 mb-1">
-              <i className="fa-solid fa-triangle-exclamation text-red-500 text-xs"></i>
+              <AlertTriangle className="text-red-500 text-xs" />
               <span className="text-xs text-red-700 dark:text-red-400 font-medium">At Risk</span>
             </div>
             <div className="text-lg font-bold text-red-600 dark:text-red-400">
@@ -107,4 +109,4 @@ export const SmartListPanel: React.FC<SmartListPanelProps> = ({
   );
 };
 
-export default SmartListPanel;
+export default React.memo(SmartListPanel);

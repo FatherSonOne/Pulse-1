@@ -6,6 +6,8 @@
 import React from 'react';
 import { motion, AnimatePresence } from 'framer-motion';
 
+import { ChevronRight, Inbox, Share, X } from 'lucide-react';
+
 interface ForwardingMessage {
   id: string;
   text: string;
@@ -62,14 +64,14 @@ export const ForwardMessageModal: React.FC<ForwardMessageModalProps> = ({
           {/* Header */}
           <div className="p-4 border-b border-zinc-200 dark:border-zinc-800 flex justify-between items-center">
             <h3 className="font-bold dark:text-white flex items-center gap-2">
-              <i className="fa-solid fa-share text-blue-500"></i>
+              <Share className="text-blue-500" />
               Forward Message
             </h3>
             <button
               onClick={onClose}
               className="w-8 h-8 rounded-lg hover:bg-zinc-100 dark:hover:bg-zinc-800 flex items-center justify-center transition"
             >
-              <i className="fa-solid fa-xmark text-zinc-500"></i>
+              <X className="text-zinc-500" />
             </button>
           </div>
 
@@ -101,13 +103,13 @@ export const ForwardMessageModal: React.FC<ForwardMessageModalProps> = ({
                     <span className="text-sm dark:text-white font-medium group-hover:text-blue-600 dark:group-hover:text-blue-400 transition">
                       {thread.contactName}
                     </span>
-                    <i className="fa-solid fa-chevron-right text-xs text-zinc-400 ml-auto opacity-0 group-hover:opacity-100 transition"></i>
+                    <ChevronRight className="text-xs text-zinc-400 ml-auto opacity-0 group-hover:opacity-100 transition" />
                   </button>
                 ))}
               </div>
             ) : (
               <div className="text-center py-8 text-zinc-400 dark:text-zinc-500">
-                <i className="fa-solid fa-inbox text-2xl mb-2"></i>
+                <Inbox className="text-2xl mb-2" />
                 <p className="text-sm">No other conversations available</p>
               </div>
             )}
@@ -118,4 +120,4 @@ export const ForwardMessageModal: React.FC<ForwardMessageModalProps> = ({
   );
 };
 
-export default ForwardMessageModal;
+export default React.memo(ForwardMessageModal);

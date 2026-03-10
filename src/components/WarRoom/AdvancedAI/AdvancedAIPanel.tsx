@@ -8,6 +8,8 @@ import { ComparativeAnalysis } from './ComparativeAnalysis';
 import { KnowledgeGraphViewer } from './KnowledgeGraphViewer';
 import { KnowledgeDoc } from '../../../services/ragService';
 
+import { Brain, Check, GitFork, Info, Scale, X, Zap } from 'lucide-react';
+
 interface AdvancedAIPanelProps {
   documents: KnowledgeDoc[];
   apiKey: string;
@@ -43,7 +45,7 @@ export const AdvancedAIPanel: React.FC<AdvancedAIPanelProps> = ({
         <div className="flex items-center gap-4">
           <div className="flex items-center gap-2">
             <div className="p-2 bg-gradient-to-br from-blue-500/20 via-purple-500/20 to-pink-500/20 rounded-lg">
-              <i className="fas fa-brain text-purple-400" />
+              <Brain className="fas text-purple-400" />
             </div>
             <h2 className="text-lg font-semibold text-white">Advanced AI</h2>
           </div>
@@ -58,7 +60,7 @@ export const AdvancedAIPanel: React.FC<AdvancedAIPanelProps> = ({
                   : 'text-gray-400 hover:text-white'
               }`}
             >
-              <i className="fas fa-balance-scale" />
+              <Scale className="fas" />
               Compare
             </button>
             <button
@@ -69,7 +71,7 @@ export const AdvancedAIPanel: React.FC<AdvancedAIPanelProps> = ({
                   : 'text-gray-400 hover:text-white'
               }`}
             >
-              <i className="fas fa-project-diagram" />
+              <GitFork className="fas" />
               Knowledge Graph
             </button>
           </div>
@@ -85,7 +87,7 @@ export const AdvancedAIPanel: React.FC<AdvancedAIPanelProps> = ({
               onClick={onClose}
               className="p-2 text-gray-400 hover:text-white hover:bg-gray-800 rounded-lg transition-colors"
             >
-              <i className="fas fa-times" />
+              <X className="fas" />
             </button>
           )}
         </div>
@@ -135,7 +137,7 @@ export const AdvancedAIPanel: React.FC<AdvancedAIPanelProps> = ({
                     {doc.title}
                   </span>
                   {isSelected && (
-                    <i className="fas fa-check ml-1 text-[10px]" />
+                    <Check className="fas ml-1 text-[10px]" />
                   )}
                 </button>
               );
@@ -167,7 +169,7 @@ export const AdvancedAIPanel: React.FC<AdvancedAIPanelProps> = ({
       <div className="px-4 py-2 border-t border-gray-800 bg-gray-900/30 flex items-center justify-between text-xs text-gray-500">
         <div className="flex items-center gap-4">
           <span>
-            <i className="fas fa-info-circle mr-1" />
+            <Info className="fas mr-1" />
             {activeView === 'compare'
               ? 'Select 2+ documents to compare'
               : 'Build knowledge graph from selected documents'}
@@ -175,7 +177,7 @@ export const AdvancedAIPanel: React.FC<AdvancedAIPanelProps> = ({
         </div>
         <div className="flex items-center gap-2">
           <span className="flex items-center gap-1">
-            <i className="fas fa-bolt text-amber-500" />
+            <Zap className="fas text-amber-500" />
             Powered by Gemini AI
           </span>
         </div>

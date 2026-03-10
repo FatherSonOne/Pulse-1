@@ -6,6 +6,8 @@
 import React from 'react';
 import { motion, AnimatePresence } from 'framer-motion';
 
+import { Clock, X } from 'lucide-react';
+
 interface ScheduledMessage {
   id: string;
   text: string;
@@ -59,14 +61,14 @@ export const ScheduleMessageModal: React.FC<ScheduleMessageModalProps> = ({
           {/* Header */}
           <div className="p-4 border-b border-zinc-200 dark:border-zinc-800 flex justify-between items-center">
             <h3 className="font-bold dark:text-white flex items-center gap-2">
-              <i className="fa-solid fa-clock text-blue-500"></i>
+              <Clock className="text-blue-500" />
               Schedule Message
             </h3>
             <button
               onClick={onClose}
               className="w-8 h-8 rounded-lg hover:bg-zinc-100 dark:hover:bg-zinc-800 flex items-center justify-center transition"
             >
-              <i className="fa-solid fa-xmark text-zinc-500"></i>
+              <X className="text-zinc-500" />
             </button>
           </div>
 

@@ -2,6 +2,8 @@ import React, { useState, useRef, useEffect } from 'react';
 import { queryPerplexity, deepResearch, quickResearch, streamPerplexity, PerplexityModel, PERPLEXITY_MODELS } from '../services/perplexityService';
 import { saveArchiveItem } from '../services/dbService';
 
+import { BarChart3, Bookmark, Brain, Copy, Key, Link, Loader2, MessagesSquare, Microscope, Send, Sliders, Trash2, User, X, Zap } from 'lucide-react';
+
 interface LiveAIProps {
   apiKey: string; // Gemini API key (for future voice integration)
   perplexityKey?: string;
@@ -134,7 +136,7 @@ const LiveAI: React.FC<LiveAIProps> = ({ apiKey, perplexityKey, onClose }) => {
     return (
       <div className="h-full bg-white dark:bg-zinc-950 rounded-2xl overflow-hidden border border-zinc-200 dark:border-zinc-800 flex flex-col items-center justify-center p-8">
         <div className="w-20 h-20 rounded-full bg-gradient-to-br from-cyan-500 to-blue-600 flex items-center justify-center mb-6">
-          <i className="fa-solid fa-brain text-3xl text-white"></i>
+          <Brain className="text-3xl text-white" />
         </div>
         <h2 className="text-xl font-bold dark:text-white text-zinc-900 mb-2">Live AI Research</h2>
         <p className="text-zinc-500 text-center mb-6 max-w-md">
@@ -146,7 +148,7 @@ const LiveAI: React.FC<LiveAIProps> = ({ apiKey, perplexityKey, onClose }) => {
           rel="noopener noreferrer"
           className="px-6 py-3 bg-gradient-to-r from-cyan-600 to-blue-600 text-white rounded-xl font-bold hover:opacity-90 transition flex items-center gap-2"
         >
-          <i className="fa-solid fa-key"></i> Get API Key
+          <Key /> Get API Key
         </a>
       </div>
     );
@@ -158,7 +160,7 @@ const LiveAI: React.FC<LiveAIProps> = ({ apiKey, perplexityKey, onClose }) => {
       <div className="bg-gradient-to-r from-cyan-600 to-blue-600 p-4 flex justify-between items-center">
         <div className="flex items-center gap-3">
           <div className="w-10 h-10 rounded-full bg-white/20 flex items-center justify-center">
-            <i className="fa-solid fa-bolt text-white"></i>
+            <Zap className="text-white" />
           </div>
           <div>
             <h2 className="text-lg font-bold text-white">Live AI Research</h2>
@@ -170,14 +172,14 @@ const LiveAI: React.FC<LiveAIProps> = ({ apiKey, perplexityKey, onClose }) => {
             onClick={() => setShowSettings(!showSettings)}
             className="w-9 h-9 rounded-lg bg-white/10 text-white hover:bg-white/20 transition flex items-center justify-center"
           >
-            <i className="fa-solid fa-sliders"></i>
+            <Sliders />
           </button>
           {onClose && (
             <button
               onClick={onClose}
               className="w-9 h-9 rounded-lg bg-white/10 text-white hover:bg-white/20 transition flex items-center justify-center"
             >
-              <i className="fa-solid fa-xmark"></i>
+              <X />
             </button>
           )}
         </div>
@@ -200,9 +202,9 @@ const LiveAI: React.FC<LiveAIProps> = ({ apiKey, perplexityKey, onClose }) => {
                         : 'text-zinc-500 hover:text-zinc-900 dark:hover:text-white'
                     }`}
                   >
-                    {mode === 'quick' && <><i className="fa-solid fa-bolt mr-1"></i> Quick</>}
-                    {mode === 'deep' && <><i className="fa-solid fa-microscope mr-1"></i> Deep</>}
-                    {mode === 'conversation' && <><i className="fa-solid fa-comments mr-1"></i> Stream</>}
+                    {mode === 'quick' && <><Zap className="mr-1" /> Quick</>}
+                    {mode === 'deep' && <><Microscope className="mr-1" /> Deep</>}
+                    {mode === 'conversation' && <><MessagesSquare className="mr-1" /> Stream</>}
                   </button>
                 ))}
               </div>
@@ -228,7 +230,7 @@ const LiveAI: React.FC<LiveAIProps> = ({ apiKey, perplexityKey, onClose }) => {
         {results.length === 0 && (
           <div className="flex flex-col items-center justify-center h-full text-center py-12">
             <div className="w-24 h-24 rounded-full bg-gradient-to-br from-cyan-100 to-blue-100 dark:from-cyan-900/30 dark:to-blue-900/30 flex items-center justify-center mb-6">
-              <i className="fa-solid fa-magnifying-glass-chart text-4xl text-cyan-600 dark:text-cyan-400"></i>
+              <BarChart3 className="text-4xl text-cyan-600 dark:text-cyan-400" />
             </div>
             <h3 className="text-lg font-semibold dark:text-white text-zinc-900 mb-2">Ask Anything</h3>
             <p className="text-zinc-500 text-sm max-w-md mb-6">
@@ -260,7 +262,7 @@ const LiveAI: React.FC<LiveAIProps> = ({ apiKey, perplexityKey, onClose }) => {
             {/* Query */}
             <div className="flex items-start gap-3 mb-4">
               <div className="w-8 h-8 rounded-full bg-zinc-200 dark:bg-zinc-800 flex items-center justify-center flex-shrink-0">
-                <i className="fa-solid fa-user text-zinc-500 text-sm"></i>
+                <User className="text-zinc-500 text-sm" />
               </div>
               <div className="flex-1 bg-zinc-100 dark:bg-zinc-900 rounded-2xl rounded-tl-none px-4 py-3">
                 <p className="text-sm dark:text-white text-zinc-900">{result.query}</p>
@@ -270,7 +272,7 @@ const LiveAI: React.FC<LiveAIProps> = ({ apiKey, perplexityKey, onClose }) => {
             {/* Answer */}
             <div className="flex items-start gap-3">
               <div className="w-8 h-8 rounded-full bg-gradient-to-br from-cyan-500 to-blue-600 flex items-center justify-center flex-shrink-0">
-                <i className="fa-solid fa-bolt text-white text-sm"></i>
+                <Zap className="text-white text-sm" />
               </div>
               <div className="flex-1">
                 <div className="bg-white dark:bg-zinc-900 border border-zinc-200 dark:border-zinc-800 rounded-2xl rounded-tl-none p-4">
@@ -285,7 +287,7 @@ const LiveAI: React.FC<LiveAIProps> = ({ apiKey, perplexityKey, onClose }) => {
                     </div>
                   ) : (
                     <div className="flex items-center gap-2 text-zinc-400">
-                      <i className="fa-solid fa-circle-notch fa-spin"></i>
+                      <Loader2 className="animate-spin" />
                       <span className="text-sm">Researching...</span>
                     </div>
                   )}
@@ -294,7 +296,7 @@ const LiveAI: React.FC<LiveAIProps> = ({ apiKey, perplexityKey, onClose }) => {
                   {result.citations.length > 0 && (
                     <div className="mt-4 pt-4 border-t border-zinc-100 dark:border-zinc-800">
                       <div className="text-[10px] text-zinc-400 uppercase font-bold mb-2 flex items-center gap-1">
-                        <i className="fa-solid fa-link"></i> Sources
+                        <Link /> Sources
                       </div>
                       <div className="flex flex-wrap gap-2">
                         {result.citations.slice(0, 5).map((url, i) => (
@@ -342,13 +344,13 @@ const LiveAI: React.FC<LiveAIProps> = ({ apiKey, perplexityKey, onClose }) => {
                       onClick={() => navigator.clipboard.writeText(result.answer)}
                       className="px-2 py-1 text-[10px] text-zinc-400 hover:text-zinc-900 dark:hover:text-white transition"
                     >
-                      <i className="fa-regular fa-copy mr-1"></i> Copy
+                      <Copy className="mr-1" /> Copy
                     </button>
                     <button
                       onClick={() => saveToArchives(result)}
                       className="px-2 py-1 text-[10px] text-zinc-400 hover:text-zinc-900 dark:hover:text-white transition"
                     >
-                      <i className="fa-regular fa-bookmark mr-1"></i> Save
+                      <Bookmark className="mr-1" /> Save
                     </button>
                   </div>
                 )}
@@ -366,7 +368,7 @@ const LiveAI: React.FC<LiveAIProps> = ({ apiKey, perplexityKey, onClose }) => {
             onClick={clearResults}
             className="mb-3 text-xs text-zinc-400 hover:text-zinc-600 dark:hover:text-zinc-300 transition"
           >
-            <i className="fa-solid fa-broom mr-1"></i> Clear conversation
+            <Trash2 className="mr-1" /> Clear conversation
           </button>
         )}
         <div className="flex gap-3">
@@ -386,9 +388,9 @@ const LiveAI: React.FC<LiveAIProps> = ({ apiKey, perplexityKey, onClose }) => {
             className="px-6 py-3 bg-gradient-to-r from-cyan-600 to-blue-600 hover:from-cyan-500 hover:to-blue-500 text-white rounded-xl font-bold transition disabled:opacity-50 flex items-center gap-2"
           >
             {isSearching ? (
-              <i className="fa-solid fa-circle-notch fa-spin"></i>
+              <Loader2 className="animate-spin" />
             ) : (
-              <i className="fa-solid fa-paper-plane"></i>
+              <Send />
             )}
             <span className="hidden md:inline">Search</span>
           </button>

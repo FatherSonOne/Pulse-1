@@ -12,7 +12,9 @@ import {
   PERMISSION_PRESETS,
   PermissionPreset,
 } from '../../../types/collaboration';
+import { CheckCircle, Copy, Info, Link, Loader2, Plus, Send, Share2, ShieldHalf, UserMinus, Users, X } from 'lucide-react';
 import {
+
   getDocumentShares,
   createDocumentShare,
   deleteDocumentShare,
@@ -215,7 +217,7 @@ export const ShareModal: React.FC<ShareModalProps> = ({
           <div className="flex items-center justify-between">
             <div>
               <h2 className="text-lg font-semibold text-gray-800 dark:text-white flex items-center gap-2">
-                <i className="fa fa-share-alt text-rose-500"></i>
+                <Share2 className="fa text-rose-500" />
                 Share {type === 'document' ? 'Document' : 'Project'}
               </h2>
               <p className="text-sm text-gray-500 dark:text-gray-400 mt-0.5 truncate max-w-xs">
@@ -226,7 +228,7 @@ export const ShareModal: React.FC<ShareModalProps> = ({
               onClick={onClose}
               className="p-2 text-gray-400 hover:text-gray-600 dark:hover:text-gray-200 hover:bg-white/50 dark:hover:bg-gray-700 rounded-lg transition-colors"
             >
-              <i className="fa fa-times"></i>
+              <X className="fa" />
             </button>
           </div>
         </div>
@@ -250,7 +252,7 @@ export const ShareModal: React.FC<ShareModalProps> = ({
               onClick={handleShare}
               className="px-4 py-2.5 bg-gradient-to-r from-rose-500 to-pink-500 hover:from-rose-600 hover:to-pink-600 text-white rounded-lg text-sm font-medium transition-all flex items-center gap-2"
             >
-              <i className="fa fa-paper-plane"></i>
+              <Send className="fa" />
               Share
             </button>
           </div>
@@ -336,7 +338,7 @@ export const ShareModal: React.FC<ShareModalProps> = ({
         <div className="p-4 border-b border-gray-200 dark:border-gray-700 bg-gray-50/50 dark:bg-gray-900/30">
           <div className="flex items-center justify-between">
             <div className="flex items-center gap-2">
-              <i className="fa fa-link text-gray-400"></i>
+              <Link className="fa text-gray-400" />
               <span className="text-sm font-medium text-gray-700 dark:text-gray-300">
                 Public link
               </span>
@@ -345,14 +347,14 @@ export const ShareModal: React.FC<ShareModalProps> = ({
             {publicLink ? (
               <div className="flex items-center gap-2">
                 <span className="text-xs text-green-600 dark:text-green-400 flex items-center gap-1">
-                  <i className="fa fa-check-circle"></i>
+                  <CheckCircle className="fa" />
                   Active
                 </span>
                 <button
                   onClick={handleCopyLink}
                   className="px-3 py-1 bg-gray-100 dark:bg-gray-700 hover:bg-gray-200 dark:hover:bg-gray-600 text-gray-700 dark:text-gray-300 rounded text-xs transition-colors flex items-center gap-1"
                 >
-                  <i className="fa fa-copy"></i>
+                  <Copy className="fa" />
                   Copy link
                 </button>
               </div>
@@ -363,9 +365,9 @@ export const ShareModal: React.FC<ShareModalProps> = ({
                 className="px-3 py-1 bg-gray-100 dark:bg-gray-700 hover:bg-gray-200 dark:hover:bg-gray-600 text-gray-700 dark:text-gray-300 rounded text-xs transition-colors flex items-center gap-1 disabled:opacity-50"
               >
                 {isCreatingLink ? (
-                  <i className="fa fa-spinner fa-spin"></i>
+                  <Loader2 className="fa animate-spin" />
                 ) : (
-                  <i className="fa fa-plus"></i>
+                  <Plus className="fa" />
                 )}
                 Create link
               </button>
@@ -384,7 +386,7 @@ export const ShareModal: React.FC<ShareModalProps> = ({
           )}
 
           <p className="text-[10px] text-gray-400 mt-2">
-            <i className="fa fa-info-circle mr-1"></i>
+            <Info className="fa mr-1" />
             Anyone with the link can view this {type}
           </p>
         </div>
@@ -393,11 +395,11 @@ export const ShareModal: React.FC<ShareModalProps> = ({
         <div className="max-h-64 overflow-y-auto">
           {loading ? (
             <div className="p-6 text-center">
-              <i className="fa fa-spinner fa-spin text-gray-400"></i>
+              <Loader2 className="fa text-gray-400 animate-spin" />
             </div>
           ) : shares.filter(s => !s.public_link).length === 0 ? (
             <div className="p-6 text-center">
-              <i className="fa fa-users text-2xl text-gray-300 dark:text-gray-600 mb-2"></i>
+              <Users className="fa text-2xl text-gray-300 dark:text-gray-600 mb-2" />
               <p className="text-sm text-gray-400">Not shared with anyone yet</p>
             </div>
           ) : (
@@ -437,7 +439,7 @@ export const ShareModal: React.FC<ShareModalProps> = ({
                       className="p-1.5 text-gray-400 hover:text-red-500 hover:bg-red-50 dark:hover:bg-red-900/20 rounded transition-colors"
                       title="Remove access"
                     >
-                      <i className="fa fa-user-minus text-xs"></i>
+                      <UserMinus className="fa text-xs" />
                     </button>
                   </div>
                 );
@@ -449,7 +451,7 @@ export const ShareModal: React.FC<ShareModalProps> = ({
         {/* Footer */}
         <div className="p-3 border-t border-gray-200 dark:border-gray-700 bg-gray-50 dark:bg-gray-900/50 flex items-center justify-between">
           <p className="text-[10px] text-gray-400">
-            <i className="fa fa-shield-halved mr-1"></i>
+            <ShieldHalf className="fa mr-1" />
             Only people you share with can access
           </p>
           <button

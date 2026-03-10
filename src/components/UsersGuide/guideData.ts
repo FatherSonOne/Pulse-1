@@ -1,5 +1,5 @@
 // Pulse User's Guide — Full Rich Section Data
-// Version 25.1.2 · March 7, 2026
+// Version 25.1.2 · March 9, 2026
 // Auto-maintained by the /users-guide slash command.
 
 export interface Shortcut {
@@ -1858,26 +1858,55 @@ export const guideSections: GuideSection[] = [
     id: 'settings',
     title: 'Settings & Customization',
     icon: '⚙️',
-    summary: 'Dark mode, accent colors, notification preferences, connected accounts, workspace management, API keys, privacy controls, and data export.',
+    summary: 'Appearance, accessibility, AI model configuration, War Room, notification preferences, connected accounts, Features & Labs, workspace management, API keys, privacy controls, and data export.',
     steps: [
       'Click the gear icon at the bottom of the sidebar, or click your avatar → Settings.',
-      'Go to Appearance to toggle Dark Mode and choose an accent color (7 presets or custom hex).',
+      'Go to Appearance to toggle Dark Mode, choose an accent color (7 brand presets or custom hex), set font size, and toggle High Contrast or Reduced Motion.',
+      'Go to AI & Intelligence to choose your AI model, configure voice agent behavior, and select microphone and speaker devices.',
+      'Go to War Room to set the default mode, AI depth, and streaming behavior.',
       'Go to Notifications to configure per-channel alert preferences and Quiet Hours.',
       'Go to Connected Accounts to add or remove Google, Microsoft, Slack, CRM, and SMS.',
-      'Go to Workspace → Members to invite team members or change roles.',
-      'Go to API Keys to generate personal API keys for external integrations.',
+      'Go to Features & Labs to enable or disable individual features and toggle Advanced Mode.',
       'Go to Privacy to control online status, read receipts, and data retention.',
       'Go to Data Management to export or delete your data.',
     ],
     subsections: [
       {
         id: 'appearance',
-        title: 'Appearance',
+        title: 'Appearance & Accessibility',
         steps: [
           'Toggle Dark Mode — applies immediately across all of Pulse.',
-          'Choose an Accent Color: 7 presets or enter a custom hex code.',
-          'Choose Font Size: Small, Medium (default), or Large.',
-          'Toggle Reduced Motion if you prefer less animation.',
+          'Choose an Accent Color: 7 brand presets (Pulse Rose, Pulse Pink, Heartbeat Coral, Vision Purple, Entomate Teal, Ocean Blue, Warm Amber) or enter a custom hex code.',
+          'Choose Font Size: Small, Default, or Large.',
+          'Toggle High Contrast for sharper text separation on all backgrounds.',
+          'Toggle Reduced Motion to minimize animations throughout the app.',
+        ],
+      },
+      {
+        id: 'ai-intelligence',
+        title: 'AI & Intelligence',
+        description: 'Configure the AI engine that powers your Pulse workspace — model selection, voice agent, and device setup.',
+        steps: [
+          'Go to Settings → AI & Intelligence.',
+          'Under AI Model, choose your primary model (e.g., Gemini Flash for speed, or a deeper reasoning model for complex tasks).',
+          'Toggle Advanced Reasoning to have the AI think longer before answering complex questions.',
+          'Under Voice Agent, configure: agent voice character, turn detection mode (Semantic or Server VAD), voice activity eagerness, and interaction mode (VAD or Push-to-Talk).',
+          'Under Knowledge Base, set your default search scope and toggle automatic document analysis.',
+          'Under Devices, select your preferred microphone, speaker, and camera. Use Test Devices to confirm hardware.',
+          'Enable Quota Notifications to get an alert when your AI quota recovers or fallback mode activates.',
+        ],
+        note: 'The AI Health Monitor at the top of this page shows real-time status of all AI services.',
+      },
+      {
+        id: 'war-room-settings',
+        title: 'War Room Settings',
+        steps: [
+          'Go to Settings → War Room.',
+          'Set Default Mode — the view that opens when you launch War Room.',
+          'Set AI Depth: Fast (quick answers), Balanced (default), or Deep (thorough multi-step reasoning).',
+          'Toggle Token Streaming to see responses appear word-by-word rather than waiting for the full response.',
+          'Toggle Thinking Panel to show or hide the AI\'s internal reasoning steps.',
+          'Toggle Annotations to enable inline notes and highlights on War Room documents.',
         ],
       },
       {
@@ -1889,6 +1918,27 @@ export const guideSections: GuideSection[] = [
           'Toggle Sound on/off for desktop notifications.',
           'Choose delivery: in-app only, or in-app + email digest.',
         ],
+      },
+      {
+        id: 'activity-monitor',
+        title: 'Activity Monitor & Presence',
+        steps: [
+          'Go to Settings → Activity Monitor.',
+          'Toggle Live Presence to show or hide your online status from teammates.',
+          'Toggle Leaderboard Participation to include or exclude your activity from the workspace leaderboard.',
+          'Set your Activity Data Retention period: 30, 60, or 90 days.',
+        ],
+        note: 'Admins see a full workspace-wide Activity Monitor under Settings → Admin Dashboard.',
+      },
+      {
+        id: 'features-labs',
+        title: 'Features & Labs',
+        steps: [
+          'Go to Settings → Features & Labs.',
+          'Toggle Advanced Mode to instantly enable all advanced and experimental features.',
+          'Scroll through feature categories and toggle individual features on or off. Changes apply immediately.',
+        ],
+        note: 'If a documented feature isn\'t visible, check here — it may be toggled off.',
       },
       {
         id: 'workspace-settings',
@@ -1975,7 +2025,9 @@ export const guideSections: GuideSection[] = [
       },
     ],
     tips: [
-      'Choose 7 accent color presets or enter any custom hex code to match your brand.',
+      'Choose 7 brand accent color presets or enter any custom hex code to match your personal or company style.',
+      'Use Settings → AI & Intelligence to pick your AI model and configure the Voice Agent — different voices and turn-detection modes feel very different in practice.',
+      'Settings → Features & Labs lets you enable or disable any individual feature. If something is missing, check here first.',
       'Quiet Hours prevents all notifications during your chosen hours — critical for work-life balance.',
       'Generate scoped API keys (read-only vs. read-write) and revoke them individually at any time.',
       'Admins: the Activity Monitor tab gives you a live view of who is online, new signups, and recent admin events — no page reload needed.',

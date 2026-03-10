@@ -29,6 +29,8 @@ import { VoiceTextButton } from '../shared/VoiceTextButton';
 import '../shared/PulseTypography.css';
 import toast from 'react-hot-toast';
 
+import { AlertCircle, AlertTriangle, Check, ChevronDown, Hand, Loader2, Mic, PhoneOff, Send, Volume2, X } from 'lucide-react';
+
 // ============= TYPES =============
 
 type VoiceOption = 'alloy' | 'ash' | 'ballad' | 'coral' | 'echo' | 'sage' | 'shimmer' | 'verse' | 'marin' | 'cedar';
@@ -629,7 +631,7 @@ export const RealtimeVoiceAgent = React.forwardRef<RealtimeVoiceAgentRef, Realti
               className="px-2 py-1 text-xs bg-cyan-500/20 text-cyan-400 rounded-full border border-cyan-500/30 hover:bg-cyan-500/30 transition-colors"
             >
               {WAR_ROOM_AGENTS[currentAgent]?.name || currentAgent}
-              <i className="fa fa-chevron-down ml-1 text-[10px]" />
+              <ChevronDown className="fa ml-1 text-[10px]" />
             </button>
           )}
         </div>
@@ -656,7 +658,7 @@ export const RealtimeVoiceAgent = React.forwardRef<RealtimeVoiceAgentRef, Realti
                   className="p-2 rounded-lg bg-orange-500/20 text-orange-400 hover:bg-orange-500/30 transition-colors"
                   title="Interrupt"
                 >
-                  <i className="fa fa-hand-paper" />
+                  <Hand className="fa" />
                 </button>
               )}
 
@@ -666,7 +668,7 @@ export const RealtimeVoiceAgent = React.forwardRef<RealtimeVoiceAgentRef, Realti
                 className="p-2 rounded-lg bg-red-500/20 text-red-400 hover:bg-red-500/30 transition-colors"
                 title="Disconnect"
               >
-                <i className="fa fa-phone-slash" />
+                <PhoneOff className="fa" />
               </button>
             </>
           ) : (
@@ -677,12 +679,12 @@ export const RealtimeVoiceAgent = React.forwardRef<RealtimeVoiceAgentRef, Realti
             >
               {isConnecting ? (
                 <>
-                  <i className="fa fa-spinner fa-spin mr-2" />
+                  <Loader2 className="fa mr-2 animate-spin" />
                   Connecting...
                 </>
               ) : (
                 <>
-                  <i className="fa fa-microphone mr-2" />
+                  <Mic className="fa mr-2" />
                   Start Voice
                 </>
               )}
@@ -744,13 +746,13 @@ export const RealtimeVoiceAgent = React.forwardRef<RealtimeVoiceAgentRef, Realti
         <div className="flex justify-center gap-4 pb-4">
           {isListening && (
             <div className="flex items-center gap-2 text-cyan-400 text-sm">
-              <i className="fa fa-microphone animate-pulse" />
+              <Mic className="fa animate-pulse" />
               Listening...
             </div>
           )}
           {isSpeaking && (
             <div className="flex items-center gap-2 text-purple-400 text-sm">
-              <i className="fa fa-volume-up animate-pulse" />
+              <Volume2 className="fa animate-pulse" />
               Speaking...
             </div>
           )}
@@ -821,7 +823,7 @@ export const RealtimeVoiceAgent = React.forwardRef<RealtimeVoiceAgentRef, Realti
           <div className="bg-gray-900 border border-cyan-500/30 rounded-xl p-6 max-w-md w-full mx-4 shadow-2xl">
             <div className="flex items-center gap-3 mb-4">
               <div className="w-10 h-10 rounded-full bg-yellow-500/20 flex items-center justify-center">
-                <i className="fa fa-exclamation-triangle text-yellow-500" />
+                <AlertTriangle className="fa text-yellow-500" />
               </div>
               <div>
                 <h3 className="text-lg font-semibold text-white">Approval Required</h3>
@@ -844,14 +846,14 @@ export const RealtimeVoiceAgent = React.forwardRef<RealtimeVoiceAgentRef, Realti
                 onClick={handleReject}
                 className="flex-1 px-4 py-2 rounded-lg bg-gray-800 text-gray-300 hover:bg-gray-700 transition-colors"
               >
-                <i className="fa fa-times mr-2" />
+                <X className="fa mr-2" />
                 Reject
               </button>
               <button
                 onClick={handleApprove}
                 className="flex-1 px-4 py-2 rounded-lg bg-gradient-to-r from-green-500 to-emerald-500 text-white hover:from-green-400 hover:to-emerald-400 transition-colors"
               >
-                <i className="fa fa-check mr-2" />
+                <Check className="fa mr-2" />
                 Approve
               </button>
             </div>
@@ -862,7 +864,7 @@ export const RealtimeVoiceAgent = React.forwardRef<RealtimeVoiceAgentRef, Realti
       {/* Error Display */}
       {error && (
         <div className="p-3 bg-red-500/10 border-t border-red-500/30 text-red-400 text-sm">
-          <i className="fa fa-exclamation-circle mr-2" />
+          <AlertCircle className="fa mr-2" />
           {error}
         </div>
       )}
@@ -903,7 +905,7 @@ export const RealtimeVoiceAgent = React.forwardRef<RealtimeVoiceAgentRef, Realti
               type="submit"
               className="px-4 py-2 bg-cyan-500/20 text-cyan-400 rounded-lg hover:bg-cyan-500/30 transition-colors"
             >
-              <i className="fa fa-paper-plane" />
+              <Send className="fa" />
             </button>
           </form>
         </div>

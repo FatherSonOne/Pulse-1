@@ -5,6 +5,8 @@ import React, { useEffect, useState } from 'react';
 import { motion } from 'framer-motion';
 import type { AttachmentPreviewProps, AttachmentFile } from './types';
 
+import { X } from 'lucide-react';
+
 const AttachmentPreview: React.FC<AttachmentPreviewProps> = ({
   attachments,
   onRemove,
@@ -214,7 +216,7 @@ const AttachmentPreview: React.FC<AttachmentPreviewProps> = ({
               e.currentTarget.style.borderColor = 'rgba(255, 255, 255, 0.2)';
             }}
           >
-            <i className="fa-solid fa-xmark text-xs" aria-hidden="true" />
+            <X className="text-xs" />
           </button>
         </motion.div>
       ))}

@@ -43,4 +43,4 @@ const AILabEmptyState: React.FC<AILabEmptyStateProps> = ({
   );
 };
 
-export default AILabEmptyState;
+export default React.memo(AILabEmptyState);

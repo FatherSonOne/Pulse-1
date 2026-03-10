@@ -4,7 +4,9 @@
 // ============================================
 
 import React, { useState, useRef, useEffect } from 'react';
+import { Bot, EllipsisVertical, Wand2, X } from 'lucide-react';
 import {
+
   TodayFeedItem,
   TodayFeedSuggestedAction,
   FEED_ITEM_TYPE_CONFIG,
@@ -136,7 +138,7 @@ export const TodayFeedCard: React.FC<TodayFeedCardProps> = ({
             </span>
             {item.metadata?.isAutopilot && (
               <span className="inline-flex items-center gap-1 px-1.5 py-0.5 rounded-full text-[10px] font-semibold bg-indigo-100 dark:bg-indigo-900/30 text-indigo-600 dark:text-indigo-400">
-                <i className="fa-solid fa-robot text-[9px]" />
+                <Bot className="text-[9px]" />
                 Autopilot
               </span>
             )}
@@ -176,7 +178,7 @@ export const TodayFeedCard: React.FC<TodayFeedCardProps> = ({
                   onClick={() => setShowDraft(true)}
                   className="flex items-center gap-1 text-xs text-indigo-500 dark:text-indigo-400 hover:text-indigo-600 dark:hover:text-indigo-300 mt-1 transition-colors"
                 >
-                  <i className="fa-solid fa-wand-magic-sparkles text-xs" />
+                  <Wand2 className="text-xs" />
                   <span>View AI draft</span>
                 </button>
               )}
@@ -202,7 +204,7 @@ export const TodayFeedCard: React.FC<TodayFeedCardProps> = ({
               className="w-7 h-7 flex items-center justify-center rounded-lg text-zinc-400 hover:text-zinc-600 dark:hover:text-zinc-300 hover:bg-zinc-100 dark:hover:bg-zinc-800 transition-colors"
               aria-label="More options"
             >
-              <i className="fa-solid fa-ellipsis-vertical text-sm" />
+              <EllipsisVertical className="text-sm" />
             </button>
 
             {showMenu && (
@@ -227,7 +229,7 @@ export const TodayFeedCard: React.FC<TodayFeedCardProps> = ({
                   onClick={handleDismiss}
                   className="w-full text-left flex items-center gap-2 px-3 py-2.5 text-xs text-rose-500 dark:text-rose-400 hover:bg-rose-50 dark:hover:bg-rose-900/20 transition-colors"
                 >
-                  <i className="fa-solid fa-xmark" />
+                  <X />
                   Dismiss
                 </button>
               </div>

@@ -1,6 +1,8 @@
 import { useState, useEffect } from 'react';
 import { pushNotificationService } from '../../services/pushNotificationService';
 
+import { AlertTriangle, AtSign, Ban, Bell, BellRing, CheckCircle, Loader2, MessageSquare, Moon, Reply, ShieldHalf } from 'lucide-react';
+
 /**
  * NotificationSettings Component
  * Manages push notification preferences and settings
@@ -65,7 +67,7 @@ export function NotificationSettings() {
     return (
       <div className="bg-amber-50 dark:bg-amber-900/20 border border-amber-200 dark:border-amber-800 rounded-xl p-4">
         <div className="flex items-start gap-3">
-          <i className="fa-solid fa-triangle-exclamation text-amber-600 dark:text-amber-400 mt-0.5"></i>
+          <AlertTriangle className="text-amber-600 dark:text-amber-400 mt-0.5" />
           <div>
             <h4 className="font-semibold text-amber-900 dark:text-amber-100 mb-1">
               Push Notifications Not Supported
@@ -90,7 +92,7 @@ export function NotificationSettings() {
                 ? 'bg-emerald-100 dark:bg-emerald-900/30 text-emerald-600 dark:text-emerald-400'
                 : 'bg-zinc-100 dark:bg-zinc-800 text-zinc-400'
             }`}>
-              <i className="fa-solid fa-bell text-xl"></i>
+              <Bell className="text-xl" />
             </div>
             <div>
               <h3 className="font-semibold text-zinc-900 dark:text-white">
@@ -121,7 +123,7 @@ export function NotificationSettings() {
               } disabled:opacity-50 disabled:cursor-not-allowed`}
             >
               {loading ? (
-                <i className="fa-solid fa-spinner fa-spin"></i>
+                <Loader2 className="animate-spin" />
               ) : isSubscribed ? (
                 'Disable'
               ) : (
@@ -134,7 +136,7 @@ export function NotificationSettings() {
         {permission === 'denied' && (
           <div className="mt-4 p-4 bg-red-50 dark:bg-red-900/20 border border-red-200 dark:border-red-800 rounded-lg">
             <div className="flex items-start gap-3">
-              <i className="fa-solid fa-ban text-red-600 dark:text-red-400 mt-0.5"></i>
+              <Ban className="text-red-600 dark:text-red-400 mt-0.5" />
               <div>
                 <h4 className="font-medium text-red-900 dark:text-red-100 mb-1">
                   Notifications Blocked
@@ -150,7 +152,7 @@ export function NotificationSettings() {
         {isSubscribed && (
           <div className="mt-4 p-4 bg-emerald-50 dark:bg-emerald-900/20 border border-emerald-200 dark:border-emerald-800 rounded-lg">
             <div className="flex items-start gap-3">
-              <i className="fa-solid fa-check-circle text-emerald-600 dark:text-emerald-400 mt-0.5"></i>
+              <CheckCircle className="text-emerald-600 dark:text-emerald-400 mt-0.5" />
               <div>
                 <h4 className="font-medium text-emerald-900 dark:text-emerald-100 mb-1">
                   Notifications Enabled
@@ -171,31 +173,31 @@ export function NotificationSettings() {
         </h3>
         <div className="space-y-3">
           <div className="flex items-center gap-3">
-            <i className="fa-solid fa-message text-emerald-600 dark:text-emerald-400"></i>
+            <MessageSquare className="text-emerald-600 dark:text-emerald-400" />
             <span className="text-sm text-zinc-700 dark:text-zinc-300">
               New message alerts
             </span>
           </div>
           <div className="flex items-center gap-3">
-            <i className="fa-solid fa-at text-emerald-600 dark:text-emerald-400"></i>
+            <AtSign className="text-emerald-600 dark:text-emerald-400" />
             <span className="text-sm text-zinc-700 dark:text-zinc-300">
               Mention notifications
             </span>
           </div>
           <div className="flex items-center gap-3">
-            <i className="fa-solid fa-reply text-emerald-600 dark:text-emerald-400"></i>
+            <Reply className="text-emerald-600 dark:text-emerald-400" />
             <span className="text-sm text-zinc-700 dark:text-zinc-300">
               Direct message replies
             </span>
           </div>
           <div className="flex items-center gap-3">
-            <i className="fa-solid fa-bell-concierge text-emerald-600 dark:text-emerald-400"></i>
+            <BellRing className="text-emerald-600 dark:text-emerald-400" />
             <span className="text-sm text-zinc-700 dark:text-zinc-300">
               Important updates
             </span>
           </div>
           <div className="flex items-center gap-3">
-            <i className="fa-solid fa-moon text-emerald-600 dark:text-emerald-400"></i>
+            <Moon className="text-emerald-600 dark:text-emerald-400" />
             <span className="text-sm text-zinc-700 dark:text-zinc-300">
               Do Not Disturb mode (coming soon)
             </span>
@@ -206,7 +208,7 @@ export function NotificationSettings() {
       {/* Privacy Notice */}
       <div className="bg-zinc-50 dark:bg-zinc-800/50 border border-zinc-200 dark:border-zinc-700 rounded-xl p-4">
         <div className="flex items-start gap-3">
-          <i className="fa-solid fa-shield-halved text-zinc-500 dark:text-zinc-400 mt-0.5"></i>
+          <ShieldHalf className="text-zinc-500 dark:text-zinc-400 mt-0.5" />
           <div>
             <h4 className="font-medium text-zinc-900 dark:text-zinc-100 mb-1 text-sm">
               Your Privacy

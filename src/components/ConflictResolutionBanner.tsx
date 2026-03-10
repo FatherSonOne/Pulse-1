@@ -1,6 +1,8 @@
 import React, { useState } from 'react';
 import { CalendarEvent } from '../types';
 
+import { AlertTriangle, X } from 'lucide-react';
+
 // ─── Types ────────────────────────────────────────────────────────────────────
 
 export interface EventConflict {
@@ -60,7 +62,7 @@ const ConflictCard: React.FC<{
     <div className="flex flex-col sm:flex-row items-start sm:items-center gap-3 px-4 py-3 bg-amber-50 dark:bg-amber-950/30 border border-amber-200 dark:border-amber-800/60 rounded-xl text-sm">
       {/* Warning icon */}
       <div className="flex-shrink-0 w-7 h-7 flex items-center justify-center rounded-full bg-amber-100 dark:bg-amber-900/50">
-        <i className="fa-solid fa-triangle-exclamation text-amber-500 text-xs" aria-hidden="true" />
+        <AlertTriangle className="text-amber-500 text-xs" />
       </div>
 
       {/* Description */}
@@ -106,7 +108,7 @@ const ConflictCard: React.FC<{
           title="Keep both events"
           className="w-6 h-6 flex items-center justify-center rounded-full text-zinc-400 hover:text-zinc-600 dark:hover:text-zinc-200 hover:bg-zinc-100 dark:hover:bg-zinc-800 transition-colors"
         >
-          <i className="fa-solid fa-xmark text-xs" aria-hidden="true" />
+          <X className="text-xs" />
         </button>
       </div>
     </div>

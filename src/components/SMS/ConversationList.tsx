@@ -6,6 +6,8 @@ import { SMSConversation } from '../../types/sms';
 import { smsService } from '../../services/smsService';
 import { formatDistanceToNow } from 'date-fns';
 
+import { FlaskConical, MessageSquareX, Plus, Search, Smartphone } from 'lucide-react';
+
 interface ConversationListProps {
   selectedConversation: SMSConversation | null;
   onSelectConversation: (conversation: SMSConversation) => void;
@@ -66,7 +68,7 @@ export const ConversationList: React.FC<ConversationListProps> = ({
       <div className="p-4 border-b border-zinc-800">
         <div className="flex items-center justify-between mb-4">
           <h2 className="text-lg font-semibold text-white flex items-center gap-2">
-            <i className="fa-solid fa-mobile-screen-button text-green-500"></i>
+            <Smartphone className="text-green-500" />
             SMS Messages
           </h2>
           <button
@@ -74,13 +76,13 @@ export const ConversationList: React.FC<ConversationListProps> = ({
             className="w-8 h-8 rounded-lg bg-green-600 hover:bg-green-500 flex items-center justify-center text-white transition"
             title="New Message"
           >
-            <i className="fa-solid fa-plus text-sm"></i>
+            <Plus className="text-sm" />
           </button>
         </div>
 
         {/* Search */}
         <div className="relative">
-          <i className="fa-solid fa-search absolute left-3 top-1/2 -translate-y-1/2 text-zinc-500 text-sm"></i>
+          <Search className="absolute left-3 top-1/2 -translate-y-1/2 text-zinc-500 text-sm" />
           <input
             type="text"
             placeholder="Search conversations..."
@@ -94,7 +96,7 @@ export const ConversationList: React.FC<ConversationListProps> = ({
         {smsService.isMockMode() && (
           <div className="mt-3 px-3 py-1.5 bg-amber-900/30 border border-amber-700/50 rounded-lg">
             <p className="text-xs text-amber-400 flex items-center gap-2">
-              <i className="fa-solid fa-flask"></i>
+              <FlaskConical />
               Demo Mode - Using mock data
             </p>
           </div>
@@ -109,7 +111,7 @@ export const ConversationList: React.FC<ConversationListProps> = ({
           </div>
         ) : filteredConversations.length === 0 ? (
           <div className="p-4 text-center text-zinc-500">
-            <i className="fa-solid fa-message-slash text-2xl mb-2 block"></i>
+            <MessageSquareX className="text-2xl mb-2 block" />
             <p className="text-sm">No conversations found</p>
           </div>
         ) : (

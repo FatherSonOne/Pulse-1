@@ -1,6 +1,8 @@
 import React, { useState } from 'react';
 import { WarRoomMode } from './ModeSwitcher';
 
+import { Compass, Database, Mic, Pin, Wand2 } from 'lucide-react';
+
 // ─── Types ────────────────────────────────────────────────────────────────────
 
 interface ModeConfig {
@@ -163,7 +165,7 @@ export const ModeToolbar: React.FC<ModeToolbarProps> = ({
           marginRight: 4,
         }}
       >
-        <i className="fa fa-database" style={{ fontSize: 13 }} />
+        <Database className="fa" />
         <span style={{ ...labelStyle, color: sourceOpen ? 'var(--wr-accent-secondary)' : undefined }}>
           Intel
         </span>
@@ -243,7 +245,7 @@ export const ModeToolbar: React.FC<ModeToolbarProps> = ({
             color: notesOpen ? 'var(--wr-accent-warning)' : 'var(--wr-text-muted)',
           }}
         >
-          <i className="fa fa-thumbtack" style={{ fontSize: 13 }} />
+          <Pin className="fa" />
           <span style={{ ...labelStyle, color: notesOpen ? 'var(--wr-accent-warning)' : undefined }}>
             Board
           </span>
@@ -260,7 +262,7 @@ export const ModeToolbar: React.FC<ModeToolbarProps> = ({
               borderBottom: voiceOpen ? '2px solid #f43f5e' : '2px solid transparent',
             }}
           >
-            <i className="fa fa-microphone" style={{ fontSize: 13, filter: voiceOpen ? 'drop-shadow(0 0 4px #f43f5e80)' : undefined }} />
+            <Mic className="fa" />
             <span style={{ ...labelStyle, color: voiceOpen ? '#f43f5e' : undefined }}>
               Voice
             </span>
@@ -281,7 +283,7 @@ export const ModeToolbar: React.FC<ModeToolbarProps> = ({
               padding: '6px 12px',
             }}
           >
-            <i className="fa fa-wand-magic-sparkles" style={{ fontSize: 12 }} />
+            <Wand2 className="fa" />
             <span style={{ ...labelStyle, fontSize: 10, letterSpacing: '0.06em' }}>Actions</span>
             <kbd
               style={{
@@ -313,7 +315,7 @@ export const ModeToolbar: React.FC<ModeToolbarProps> = ({
               padding: '6px 12px',
             }}
           >
-            <i className="fa fa-compass" style={{ fontSize: 12, color: 'var(--wr-accent-warning)' }} />
+            <Compass className="fa" />
             <span style={{ ...labelStyle, fontSize: 10, letterSpacing: '0.06em' }}>Mission</span>
           </button>
         )}

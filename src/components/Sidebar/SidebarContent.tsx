@@ -8,6 +8,8 @@ import React, { Suspense, lazy } from 'react';
 import { motion } from 'framer-motion';
 import { ToolsPanel } from '../ToolsPanel';
 
+import { AlertTriangle, Download, Inbox, MessagesSquare, Plus, Search, Settings, TrendingUp, Users } from 'lucide-react';
+
 // Lazy load tab content components for better performance
 const CRMPanel = lazy(() => import('../crm/CRMSidepanel'));
 const AnalyticsPanel = lazy(() => import('../Analytics/AnalyticsDashboard'));
@@ -47,7 +49,7 @@ const MessagesContent: React.FC = () => (
   <div className="sidebar-messages-content">
     <div className="sidebar-section-header">
       <h3 className="sidebar-section-title">
-        <i className="fa-solid fa-messages text-blue-500" />
+        <MessagesSquare className="text-blue-500" />
         Conversations
       </h3>
       <button
@@ -55,12 +57,12 @@ const MessagesContent: React.FC = () => (
         aria-label="New conversation"
         title="New conversation"
       >
-        <i className="fa-solid fa-plus" />
+        <Plus />
       </button>
     </div>
 
     <div className="sidebar-search">
-      <i className="fa-solid fa-search sidebar-search-icon" />
+      <Search className="sidebar-search-icon" />
       <input
         type="text"
         placeholder="Search conversations..."
@@ -71,7 +73,7 @@ const MessagesContent: React.FC = () => (
     <div className="sidebar-messages-list">
       {/* Placeholder for thread list - will be replaced with actual thread list component */}
       <div className="sidebar-empty-state">
-        <i className="fa-solid fa-inbox text-4xl text-zinc-300 dark:text-zinc-700 mb-3" />
+        <Inbox className="text-4xl text-zinc-300 dark:text-zinc-700 mb-3" />
         <p className="text-sm text-zinc-500 dark:text-zinc-400 text-center">
           Thread list will be displayed here
         </p>
@@ -89,7 +91,7 @@ const CRMContent: React.FC = () => (
     <div className="sidebar-crm-content">
       <div className="sidebar-section-header">
         <h3 className="sidebar-section-title">
-          <i className="fa-solid fa-users text-green-500" />
+          <Users className="text-green-500" />
           CRM
         </h3>
         <button
@@ -97,7 +99,7 @@ const CRMContent: React.FC = () => (
           aria-label="CRM settings"
           title="CRM settings"
         >
-          <i className="fa-solid fa-cog" />
+          <Settings />
         </button>
       </div>
       <CRMPanel />
@@ -111,7 +113,7 @@ const AnalyticsContent: React.FC = () => (
     <div className="sidebar-analytics-content">
       <div className="sidebar-section-header">
         <h3 className="sidebar-section-title">
-          <i className="fa-solid fa-chart-line text-orange-500" />
+          <TrendingUp className="text-orange-500" />
           Analytics
         </h3>
         <button
@@ -119,7 +121,7 @@ const AnalyticsContent: React.FC = () => (
           aria-label="Analytics settings"
           title="Analytics settings"
         >
-          <i className="fa-solid fa-download" />
+          <Download />
         </button>
       </div>
       <AnalyticsPanel />
@@ -178,7 +180,7 @@ export const SidebarContent: React.FC<SidebarContentProps> = ({
       default:
         return (
           <div className="sidebar-error-state">
-            <i className="fa-solid fa-exclamation-triangle text-4xl text-red-400 mb-3" />
+            <AlertTriangle className="text-4xl text-red-400 mb-3" />
             <p className="text-sm text-zinc-500 dark:text-zinc-400">
               Unknown tab: {activeTab}
             </p>

@@ -36,4 +36,4 @@ export const SkeletonTaskCard: React.FC<SkeletonTaskCardProps> = ({ className = 
   );
 };
 
-export default SkeletonTaskCard;
+export default React.memo(SkeletonTaskCard);

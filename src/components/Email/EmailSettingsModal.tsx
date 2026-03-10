@@ -10,6 +10,8 @@ import { emailAccountsService, EmailAccount, EmailAccountInput } from '../../ser
 import { emailSyncService, SyncState } from '../../services/emailSyncService';
 import toast from 'react-hot-toast';
 
+import { ExternalLink, FastForward, Filter, Info, List, Pen, Plus, RefreshCw, Settings, SlidersHorizontal, Star, Tags, UserCircle, X, Zap } from 'lucide-react';
+
 interface EmailSettingsModalProps {
   isOpen: boolean;
   onClose: () => void;
@@ -442,7 +444,7 @@ export const EmailSettingsModal: React.FC<EmailSettingsModalProps> = ({
         <div className="flex items-center justify-between px-6 py-4 border-b border-stone-200 dark:border-zinc-800 bg-gradient-to-r from-rose-500/10 to-orange-500/10">
           <div className="flex items-center gap-3">
             <div className="w-10 h-10 rounded-lg bg-gradient-to-br from-rose-500 to-orange-500 flex items-center justify-center">
-              <i className="fa-solid fa-gear text-white"></i>
+              <Settings className="text-white" />
             </div>
             <div>
               <h2 className="text-xl font-bold text-stone-900 dark:text-white">Email Settings</h2>
@@ -454,7 +456,7 @@ export const EmailSettingsModal: React.FC<EmailSettingsModalProps> = ({
             className="w-10 h-10 rounded-lg hover:bg-stone-100 dark:hover:bg-zinc-800 flex items-center justify-center text-stone-500 dark:text-zinc-400 hover:text-stone-700 dark:hover:text-white transition"
             title="Close"
           >
-            <i className="fa-solid fa-xmark"></i>
+            <X />
           </button>
         </div>
 
@@ -468,7 +470,7 @@ export const EmailSettingsModal: React.FC<EmailSettingsModalProps> = ({
                 : 'text-stone-600 dark:text-zinc-400 hover:text-stone-900 dark:hover:text-white'
             }`}
           >
-            <i className="fa-solid fa-sliders-h mr-2"></i>
+            <SlidersHorizontal className="mr-2" />
             General
           </button>
           <button
@@ -479,7 +481,7 @@ export const EmailSettingsModal: React.FC<EmailSettingsModalProps> = ({
                 : 'text-stone-600 dark:text-zinc-400 hover:text-stone-900 dark:hover:text-white'
             }`}
           >
-            <i className="fa-brands fa-google mr-2"></i>
+            <ExternalLink className="mr-2" />
             Gmail Settings
           </button>
           <button
@@ -490,7 +492,7 @@ export const EmailSettingsModal: React.FC<EmailSettingsModalProps> = ({
                 : 'text-stone-600 dark:text-zinc-400 hover:text-stone-900 dark:hover:text-white'
             }`}
           >
-            <i className="fa-solid fa-arrows-rotate mr-2"></i>
+            <RefreshCw className="mr-2" />
             Sync
           </button>
           <button
@@ -501,7 +503,7 @@ export const EmailSettingsModal: React.FC<EmailSettingsModalProps> = ({
                 : 'text-stone-600 dark:text-zinc-400 hover:text-stone-900 dark:hover:text-white'
             }`}
           >
-            <i className="fa-solid fa-user-circle mr-2"></i>
+            <UserCircle className="mr-2" />
             Accounts
           </button>
           <button
@@ -512,7 +514,7 @@ export const EmailSettingsModal: React.FC<EmailSettingsModalProps> = ({
                 : 'text-stone-600 dark:text-zinc-400 hover:text-stone-900 dark:hover:text-white'
             }`}
           >
-            <i className="fa-solid fa-bolt mr-2"></i>
+            <Zap className="mr-2" />
             Automation
           </button>
         </div>
@@ -707,13 +709,13 @@ export const EmailSettingsModal: React.FC<EmailSettingsModalProps> = ({
                     className="flex items-start gap-4 p-4 bg-stone-50 dark:bg-zinc-900/50 rounded-xl border border-stone-200 dark:border-zinc-800 hover:border-rose-500/50 hover:bg-rose-50/50 dark:hover:bg-rose-900/10 transition group"
                   >
                     <div className="w-10 h-10 rounded-lg bg-gradient-to-br from-blue-500 to-blue-600 flex items-center justify-center flex-shrink-0 group-hover:scale-110 transition">
-                      <i className="fa-solid fa-gear text-white"></i>
+                      <Settings className="text-white" />
                     </div>
                     <div className="text-left">
                       <div className="font-medium text-stone-900 dark:text-white mb-1">General Settings</div>
                       <div className="text-xs text-stone-500 dark:text-zinc-400">Account, signature, and preferences</div>
                     </div>
-                    <i className="fa-solid fa-external-link text-stone-400 ml-auto mt-1"></i>
+                    <ExternalLink className="text-stone-400 ml-auto mt-1" />
                   </button>
 
                   <button
@@ -721,13 +723,13 @@ export const EmailSettingsModal: React.FC<EmailSettingsModalProps> = ({
                     className="flex items-start gap-4 p-4 bg-stone-50 dark:bg-zinc-900/50 rounded-xl border border-stone-200 dark:border-zinc-800 hover:border-rose-500/50 hover:bg-rose-50/50 dark:hover:bg-rose-900/10 transition group"
                   >
                     <div className="w-10 h-10 rounded-lg bg-gradient-to-br from-purple-500 to-purple-600 flex items-center justify-center flex-shrink-0 group-hover:scale-110 transition">
-                      <i className="fa-solid fa-filter text-white"></i>
+                      <Filter className="text-white" />
                     </div>
                     <div className="text-left">
                       <div className="font-medium text-stone-900 dark:text-white mb-1">Filters & Blocked Addresses</div>
                       <div className="text-xs text-stone-500 dark:text-zinc-400">Manage email filters and blocked senders</div>
                     </div>
-                    <i className="fa-solid fa-external-link text-stone-400 ml-auto mt-1"></i>
+                    <ExternalLink className="text-stone-400 ml-auto mt-1" />
                   </button>
 
                   <button
@@ -735,13 +737,13 @@ export const EmailSettingsModal: React.FC<EmailSettingsModalProps> = ({
                     className="flex items-start gap-4 p-4 bg-stone-50 dark:bg-zinc-900/50 rounded-xl border border-stone-200 dark:border-zinc-800 hover:border-rose-500/50 hover:bg-rose-50/50 dark:hover:bg-rose-900/10 transition group"
                   >
                     <div className="w-10 h-10 rounded-lg bg-gradient-to-br from-green-500 to-green-600 flex items-center justify-center flex-shrink-0 group-hover:scale-110 transition">
-                      <i className="fa-solid fa-forward text-white"></i>
+                      <FastForward className="text-white" />
                     </div>
                     <div className="text-left">
                       <div className="font-medium text-stone-900 dark:text-white mb-1">Forwarding & POP/IMAP</div>
                       <div className="text-xs text-stone-500 dark:text-zinc-400">Email forwarding and access settings</div>
                     </div>
-                    <i className="fa-solid fa-external-link text-stone-400 ml-auto mt-1"></i>
+                    <ExternalLink className="text-stone-400 ml-auto mt-1" />
                   </button>
 
                   <button
@@ -749,13 +751,13 @@ export const EmailSettingsModal: React.FC<EmailSettingsModalProps> = ({
                     className="flex items-start gap-4 p-4 bg-stone-50 dark:bg-zinc-900/50 rounded-xl border border-stone-200 dark:border-zinc-800 hover:border-rose-500/50 hover:bg-rose-50/50 dark:hover:bg-rose-900/10 transition group"
                   >
                     <div className="w-10 h-10 rounded-lg bg-gradient-to-br from-amber-500 to-amber-600 flex items-center justify-center flex-shrink-0 group-hover:scale-110 transition">
-                      <i className="fa-solid fa-tags text-white"></i>
+                      <Tags className="text-white" />
                     </div>
                     <div className="text-left">
                       <div className="font-medium text-stone-900 dark:text-white mb-1">Labels</div>
                       <div className="text-xs text-stone-500 dark:text-zinc-400">Create and manage email labels</div>
                     </div>
-                    <i className="fa-solid fa-external-link text-stone-400 ml-auto mt-1"></i>
+                    <ExternalLink className="text-stone-400 ml-auto mt-1" />
                   </button>
 
                   <button
@@ -763,13 +765,13 @@ export const EmailSettingsModal: React.FC<EmailSettingsModalProps> = ({
                     className="flex items-start gap-4 p-4 bg-stone-50 dark:bg-zinc-900/50 rounded-xl border border-stone-200 dark:border-zinc-800 hover:border-rose-500/50 hover:bg-rose-50/50 dark:hover:bg-rose-900/10 transition group"
                   >
                     <div className="w-10 h-10 rounded-lg bg-gradient-to-br from-pink-500 to-pink-600 flex items-center justify-center flex-shrink-0 group-hover:scale-110 transition">
-                      <i className="fa-solid fa-pen text-white"></i>
+                      <Pen className="text-white" />
                     </div>
                     <div className="text-left">
                       <div className="font-medium text-stone-900 dark:text-white mb-1">Signature</div>
                       <div className="text-xs text-stone-500 dark:text-zinc-400">Edit your email signature</div>
                     </div>
-                    <i className="fa-solid fa-external-link text-stone-400 ml-auto mt-1"></i>
+                    <ExternalLink className="text-stone-400 ml-auto mt-1" />
                   </button>
 
                   <button
@@ -777,20 +779,20 @@ export const EmailSettingsModal: React.FC<EmailSettingsModalProps> = ({
                     className="flex items-start gap-4 p-4 bg-stone-50 dark:bg-zinc-900/50 rounded-xl border border-stone-200 dark:border-zinc-800 hover:border-rose-500/50 hover:bg-rose-50/50 dark:hover:bg-rose-900/10 transition group"
                   >
                     <div className="w-10 h-10 rounded-lg bg-gradient-to-br from-cyan-500 to-cyan-600 flex items-center justify-center flex-shrink-0 group-hover:scale-110 transition">
-                      <i className="fa-solid fa-list text-white"></i>
+                      <List className="text-white" />
                     </div>
                     <div className="text-left">
                       <div className="font-medium text-stone-900 dark:text-white mb-1">All Settings</div>
                       <div className="text-xs text-stone-500 dark:text-zinc-400">View all Gmail settings</div>
                     </div>
-                    <i className="fa-solid fa-external-link text-stone-400 ml-auto mt-1"></i>
+                    <ExternalLink className="text-stone-400 ml-auto mt-1" />
                   </button>
                 </div>
 
                 {gmailProfile && (
                   <div className="mt-6 p-4 bg-blue-50 dark:bg-blue-900/20 rounded-xl border border-blue-200 dark:border-blue-800">
                     <div className="flex items-center gap-3 mb-2">
-                      <i className="fa-solid fa-info-circle text-blue-500"></i>
+                      <Info className="text-blue-500" />
                       <span className="font-medium text-blue-900 dark:text-blue-100">Gmail Account Info</span>
                     </div>
                     <div className="text-sm text-blue-800 dark:text-blue-200">
@@ -889,7 +891,7 @@ export const EmailSettingsModal: React.FC<EmailSettingsModalProps> = ({
                           </div>
                           {account.is_primary && (
                             <span className="inline-flex items-center text-xs text-rose-600 dark:text-rose-400 mt-1">
-                              <i className="fa-solid fa-star mr-1"></i>
+                              <Star className="mr-1" />
                               Primary
                             </span>
                           )}
@@ -986,7 +988,7 @@ export const EmailSettingsModal: React.FC<EmailSettingsModalProps> = ({
                     disabled={accountsLoading}
                     className="w-full px-4 py-3 bg-gradient-to-r from-rose-500 to-orange-500 hover:from-rose-600 hover:to-orange-600 text-white font-medium rounded-lg transition"
                   >
-                    <i className="fa-solid fa-plus mr-2"></i>
+                    <Plus className="mr-2" />
                     Add account
                   </button>
                 </div>

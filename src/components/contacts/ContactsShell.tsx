@@ -14,6 +14,8 @@ import { CirclesView } from './CirclesView';
 import { ContactsOnboarding, shouldShowContactsTour } from './ContactsOnboarding';
 import { useContactsKeyboard } from './useContactsKeyboard';
 
+import { Search } from 'lucide-react';
+
 // ==================== TYPES ====================
 
 type ContactsMode = 'today' | 'people' | 'circles';
@@ -138,7 +140,7 @@ export const ContactsShell: React.FC<ContactsShellProps> = (props) => {
               className="hidden sm:flex items-center gap-1 px-2 py-1 text-[10px] text-zinc-400 dark:text-zinc-600 rounded border border-zinc-200 dark:border-zinc-700 hover:border-zinc-300 dark:hover:border-zinc-600 transition-colors"
               title="Search contacts (⌘K)"
             >
-              <i className="fa-solid fa-magnifying-glass text-[9px]" />
+              <Search className="text-[9px]" />
               <span>⌘K</span>
             </button>
           </div>

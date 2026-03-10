@@ -1,5 +1,7 @@
 import React, { useState, useMemo } from 'react';
 
+import { AlertTriangle, History, RotateCw } from 'lucide-react';
+
 // Types
 interface StatusEvent {
   id: string;
@@ -325,7 +327,7 @@ export const MessageStatusTimeline: React.FC<MessageStatusTimelineProps> = ({
     <div style={styles.container}>
       <div style={styles.header}>
         <div style={styles.title}>
-          <i className="fa-solid fa-clock-rotate-left" />
+          <History />
           Message Status
         </div>
         <span style={{
@@ -356,7 +358,7 @@ export const MessageStatusTimeline: React.FC<MessageStatusTimelineProps> = ({
       {/* Failed Banner */}
       {status.currentStatus === 'failed' && (
         <div style={styles.failedBanner}>
-          <i className="fa-solid fa-exclamation-triangle" style={{ color: '#f87171', fontSize: '16px' }} />
+          <AlertTriangle />
           <div style={{ flex: 1 }}>
             <div style={{ fontSize: '13px', color: '#f87171', fontWeight: 500 }}>
               Message failed to send
@@ -369,7 +371,7 @@ export const MessageStatusTimeline: React.FC<MessageStatusTimelineProps> = ({
           </div>
           {onRetry && (
             <button style={styles.retryButton} onClick={onRetry}>
-              <i className="fa-solid fa-rotate-right" />
+              <RotateCw />
               Retry
             </button>
           )}

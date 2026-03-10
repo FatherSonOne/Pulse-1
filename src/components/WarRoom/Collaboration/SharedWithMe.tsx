@@ -7,6 +7,8 @@ import React, { useState, useEffect } from 'react';
 import { SharedWithMeItem } from '../../../types/collaboration';
 import { getSharedWithMe } from '../../../services/collaborationService';
 
+import { Clock, FolderOpen, Loader2, Share2 } from 'lucide-react';
+
 interface SharedWithMeProps {
   userId: string;
   onDocumentClick?: (docId: string) => void;
@@ -76,7 +78,7 @@ export const SharedWithMe: React.FC<SharedWithMeProps> = ({
   if (loading) {
     return (
       <div className="flex items-center justify-center p-4">
-        <i className="fa fa-spinner fa-spin text-gray-400"></i>
+        <Loader2 className="fa text-gray-400 animate-spin" />
       </div>
     );
   }
@@ -87,7 +89,7 @@ export const SharedWithMe: React.FC<SharedWithMeProps> = ({
       <div className="p-3 border-b border-gray-200 dark:border-gray-700 bg-gradient-to-r from-blue-50 to-indigo-50 dark:from-blue-900/20 dark:to-indigo-900/20">
         <div className="flex items-center justify-between">
           <h3 className="text-sm font-medium text-gray-700 dark:text-gray-300 flex items-center gap-2">
-            <i className="fa fa-share-alt text-blue-500"></i>
+            <Share2 className="fa text-blue-500" />
             Shared with Me
           </h3>
           <span className="text-xs text-gray-400 bg-white dark:bg-gray-700 px-1.5 py-0.5 rounded">
@@ -123,7 +125,7 @@ export const SharedWithMe: React.FC<SharedWithMeProps> = ({
       <div className="max-h-72 overflow-y-auto">
         {filteredItems.length === 0 ? (
           <div className="p-6 text-center">
-            <i className="fa fa-folder-open text-3xl text-gray-300 dark:text-gray-600 mb-2"></i>
+            <FolderOpen className="fa text-3xl text-gray-300 dark:text-gray-600 mb-2" />
             <p className="text-sm text-gray-400">
               {items.length === 0 ? 'Nothing shared with you yet' : 'No matching items'}
             </p>
@@ -185,7 +187,7 @@ export const SharedWithMe: React.FC<SharedWithMeProps> = ({
                 {/* Expiration warning */}
                 {item.expires_at && new Date(item.expires_at) < new Date(Date.now() + 7 * 24 * 60 * 60 * 1000) && (
                   <span className="text-[10px] text-amber-500 flex items-center gap-1 shrink-0">
-                    <i className="fa fa-clock"></i>
+                    <Clock className="fa" />
                     Expires soon
                   </span>
                 )}

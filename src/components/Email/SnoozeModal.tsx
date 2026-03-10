@@ -1,6 +1,8 @@
 // SnoozeModal.tsx - Quick snooze time picker
 import React, { useState } from 'react';
 
+import { Clock, X } from 'lucide-react';
+
 interface SnoozeModalProps {
   onSnooze: (snoozeUntil: Date) => void;
   onClose: () => void;
@@ -95,14 +97,14 @@ export const SnoozeModal: React.FC<SnoozeModalProps> = ({ onSnooze, onClose }) =
         {/* Header */}
         <div className="flex items-center justify-between px-4 py-3 border-b border-zinc-800">
           <div className="flex items-center gap-2 text-white font-medium">
-            <i className="fa-solid fa-clock text-amber-500"></i>
+            <Clock className="text-amber-500" />
             <span>Snooze until</span>
           </div>
           <button
             onClick={onClose}
             className="w-7 h-7 rounded hover:bg-zinc-800 flex items-center justify-center text-zinc-400 hover:text-white transition"
           >
-            <i className="fa-solid fa-xmark"></i>
+            <X />
           </button>
         </div>
 
@@ -154,7 +156,7 @@ export const SnoozeModal: React.FC<SnoozeModalProps> = ({ onSnooze, onClose }) =
             disabled={!customDate}
             className="w-full mt-3 bg-amber-500 hover:bg-amber-600 disabled:bg-zinc-700 disabled:text-zinc-500 text-black font-medium py-2 rounded-lg transition flex items-center justify-center gap-2"
           >
-            <i className="fa-solid fa-clock"></i>
+            <Clock />
             Snooze
           </button>
         </div>

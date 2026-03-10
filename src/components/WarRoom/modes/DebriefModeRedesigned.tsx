@@ -3,6 +3,8 @@ import { AIMessage, ThinkingStep } from '../../../services/ragService';
 import { SessionExport } from '../shared';
 import './DebriefModeRedesigned.css';
 
+import { Check, CheckCircle, ClipboardCheck, Lightbulb, ListChecks, Menu, MessagesSquare, Pen, Play, Plus, Send, Share2, Wand2, X } from 'lucide-react';
+
 interface ActionItem {
   id: string;
   text: string;
@@ -197,7 +199,7 @@ ${actionsList || 'None captured yet'}`);
           <div className="dbr-setup-header">
             <div className="dbr-archive-icon">
               <div className="dbr-icon-core">
-                <i className="fa fa-clipboard-check" />
+                <ClipboardCheck className="fa" />
               </div>
               <div className="dbr-icon-rings">
                 <div className="dbr-icon-ring" />
@@ -245,7 +247,7 @@ ${actionsList || 'None captured yet'}`);
               disabled={!sessionContext.trim()}
               className="dbr-btn dbr-btn-primary dbr-btn-lg"
             >
-              <i className="fa fa-play" />
+              <Play className="fa" />
               Start Debrief
             </button>
           </div>
@@ -274,20 +276,20 @@ ${actionsList || 'None captured yet'}`);
           {/* Context Header */}
           <div className="dbr-context-header">
             <div className="dbr-context-badge">
-              <i className="fa fa-clipboard-check" />
+              <ClipboardCheck className="fa" />
               <span className="dbr-context-text">{sessionContext}</span>
             </div>
             <div className="dbr-context-stats">
               <span>
-                <i className="fa fa-lightbulb" />
+                <Lightbulb className="fa" />
                 {insights.length} insights
               </span>
               <span>
-                <i className="fa fa-list-check" />
+                <ListChecks className="fa" />
                 {actionItems.length} actions
               </span>
               <span>
-                <i className="fa fa-check-circle" />
+                <CheckCircle className="fa" />
                 {actionItems.filter(a => a.completed).length} done
               </span>
             </div>
@@ -315,7 +317,7 @@ ${actionsList || 'None captured yet'}`);
               onClick={() => setActiveTab('insights')}
               className={`dbr-tab ${activeTab === 'insights' ? 'active' : ''}`}
             >
-              <i className="fa fa-lightbulb" />
+              <Lightbulb className="fa" />
               Insights
               {insights.length > 0 && (
                 <span className="dbr-tab-count">{insights.length}</span>
@@ -325,7 +327,7 @@ ${actionsList || 'None captured yet'}`);
               onClick={() => setActiveTab('actions')}
               className={`dbr-tab ${activeTab === 'actions' ? 'active' : ''}`}
             >
-              <i className="fa fa-list-check" />
+              <ListChecks className="fa" />
               Actions
               {actionItems.length > 0 && (
                 <span className="dbr-tab-count">{actionItems.length}</span>
@@ -364,7 +366,7 @@ ${actionsList || 'None captured yet'}`);
                     disabled={!newInsightText.trim()}
                     className="dbr-add-btn"
                   >
-                    <i className="fa fa-plus" />
+                    <Plus className="fa" />
                   </button>
                 </div>
               </div>
@@ -391,7 +393,7 @@ ${actionsList || 'None captured yet'}`);
                               onClick={() => handleDeleteInsight(insight.id)}
                               className="dbr-insight-delete"
                             >
-                              <i className="fa fa-times" />
+                              <X className="fa" />
                             </button>
                           </div>
                         </div>
@@ -402,7 +404,7 @@ ${actionsList || 'None captured yet'}`);
 
                 {insights.length === 0 && (
                   <div className="dbr-empty-state">
-                    <i className="fa fa-lightbulb" />
+                    <Lightbulb className="fa" />
                     <p>No insights yet</p>
                     <span>Capture key learnings as you debrief</span>
                   </div>
@@ -438,7 +440,7 @@ ${actionsList || 'None captured yet'}`);
                     disabled={!newActionText.trim()}
                     className="dbr-add-btn"
                   >
-                    <i className="fa fa-plus" />
+                    <Plus className="fa" />
                   </button>
                 </div>
               </div>
@@ -455,7 +457,7 @@ ${actionsList || 'None captured yet'}`);
                         onClick={() => handleToggleAction(action.id)}
                         className={`dbr-action-checkbox ${action.completed ? 'checked' : ''}`}
                       >
-                        <i className="fa fa-check" />
+                        <Check className="fa" />
                       </button>
                       <div className="dbr-action-details">
                         <p className="dbr-action-text">{action.text}</p>
@@ -467,7 +469,7 @@ ${actionsList || 'None captured yet'}`);
                         onClick={() => handleDeleteAction(action.id)}
                         className="dbr-action-delete"
                       >
-                        <i className="fa fa-times" />
+                        <X className="fa" />
                       </button>
                     </div>
                   </div>
@@ -475,7 +477,7 @@ ${actionsList || 'None captured yet'}`);
 
                 {actionItems.length === 0 && (
                   <div className="dbr-empty-state">
-                    <i className="fa fa-list-check" />
+                    <ListChecks className="fa" />
                     <p>No action items yet</p>
                     <span>Capture next steps and follow-ups</span>
                   </div>
@@ -491,7 +493,7 @@ ${actionsList || 'None captured yet'}`);
               disabled={isLoading}
               className="dbr-generate-btn"
             >
-              <i className="fa fa-wand-magic-sparkles" />
+              <Wand2 className="fa" />
               Generate Summary
             </button>
           </div>
@@ -507,10 +509,10 @@ ${actionsList || 'None captured yet'}`);
                 className="dbr-header-btn dbr-mobile-toggle"
                 title="Toggle sidebar"
               >
-                <i className="fa fa-bars" />
+                <Menu className="fa" />
               </button>
               <h2 className="dbr-header-title">
-                <i className="fa fa-comments" />
+                <MessagesSquare className="fa" />
                 Debrief Discussion
               </h2>
             </div>
@@ -520,7 +522,7 @@ ${actionsList || 'None captured yet'}`);
                 className="dbr-header-btn"
                 title="Export debrief"
               >
-                <i className="fa fa-share-nodes" />
+                <Share2 className="fa" />
               </button>
             </div>
           </header>
@@ -544,7 +546,7 @@ ${actionsList || 'None captured yet'}`);
             {messages.length === 0 ? (
               <div className="dbr-empty-chat">
                 <div className="dbr-empty-icon">
-                  <i className="fa fa-comments" />
+                  <MessagesSquare className="fa" />
                   <div className="dbr-empty-icon-ring" />
                   <div className="dbr-empty-icon-ring delay-1" />
                   <div className="dbr-empty-icon-ring delay-2" />
@@ -561,7 +563,7 @@ ${actionsList || 'None captured yet'}`);
                   {msg.role === 'assistant' && (
                     <div className="dbr-message-header">
                       <div className="dbr-ai-badge">
-                        <i className="fa fa-clipboard-check" />
+                        <ClipboardCheck className="fa" />
                         <span>Debrief AI</span>
                       </div>
                     </div>
@@ -577,7 +579,7 @@ ${actionsList || 'None captured yet'}`);
               <div className="dbr-message dbr-message-ai">
                 <div className="dbr-loading">
                   <div className="dbr-loading-icon">
-                    <i className="fa fa-clipboard-check" />
+                    <ClipboardCheck className="fa" />
                   </div>
                   <span className="dbr-loading-text">Processing debrief...</span>
                 </div>
@@ -590,7 +592,7 @@ ${actionsList || 'None captured yet'}`);
           {/* Input Area */}
           <div className="dbr-input-area">
             <div className="dbr-input-container">
-              <i className="fa fa-pen dbr-input-icon" />
+              <Pen className="fa dbr-input-icon" />
               <input
                 type="text"
                 value={input}
@@ -605,7 +607,7 @@ ${actionsList || 'None captured yet'}`);
                 disabled={!input.trim() || isLoading}
                 className={`dbr-send-btn ${input.trim() ? 'active' : ''}`}
               >
-                <i className="fa fa-paper-plane" />
+                <Send className="fa" />
               </button>
             </div>
           </div>

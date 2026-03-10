@@ -1,6 +1,8 @@
 // Contact Insights Panel with Relationship Analytics
 import React, { useState, useMemo } from 'react';
 
+import { ArrowDown, ArrowUp, CalendarPlus, Clock, Lightbulb, Mail, Minus } from 'lucide-react';
+
 interface ContactData {
   id: string;
   name: string;
@@ -198,7 +200,7 @@ export const ContactInsights: React.FC<ContactInsightsProps> = ({
             <div className="flex items-center gap-2 mt-1">
               {contact.email && (
                 <span className="text-[10px] text-zinc-400 flex items-center gap-1">
-                  <i className="fa-solid fa-envelope" />
+                  <Mail />
                   {contact.email}
                 </span>
               )}
@@ -212,9 +214,9 @@ export const ContactInsights: React.FC<ContactInsightsProps> = ({
               <span className={`text-[10px] text-${healthColor}-500`}>/ 100</span>
             </div>
             <p className="text-[10px] text-zinc-400 mt-1 flex items-center justify-end gap-1">
-              {health.trend === 'improving' && <i className="fa-solid fa-arrow-up text-green-500" />}
-              {health.trend === 'declining' && <i className="fa-solid fa-arrow-down text-red-500" />}
-              {health.trend === 'stable' && <i className="fa-solid fa-minus text-zinc-400" />}
+              {health.trend === 'improving' && <ArrowUp className="text-green-500" />}
+              {health.trend === 'declining' && <ArrowDown className="text-red-500" />}
+              {health.trend === 'stable' && <Minus className="text-zinc-400" />}
               {health.trend}
             </p>
           </div>
@@ -306,7 +308,7 @@ export const ContactInsights: React.FC<ContactInsightsProps> = ({
                 <div className="space-y-2">
                   {health.suggestions.map((suggestion, idx) => (
                     <div key={idx} className="flex items-start gap-2 p-2 bg-amber-50 dark:bg-amber-900/20 rounded-lg">
-                      <i className="fa-solid fa-lightbulb text-amber-500 text-xs mt-0.5" />
+                      <Lightbulb className="text-amber-500 text-xs mt-0.5" />
                       <p className="text-xs text-amber-700 dark:text-amber-400">{suggestion}</p>
                     </div>
                   ))}
@@ -352,7 +354,7 @@ export const ContactInsights: React.FC<ContactInsightsProps> = ({
                 onClick={onScheduleFollowUp}
                 className="w-full flex items-center justify-center gap-2 px-3 py-2 rounded-lg text-xs font-medium bg-blue-500 text-white hover:bg-blue-600 transition"
               >
-                <i className="fa-solid fa-calendar-plus" />
+                <CalendarPlus />
                 Schedule Follow-up
               </button>
             )}
@@ -449,7 +451,7 @@ export const ContactInsights: React.FC<ContactInsightsProps> = ({
             {recentActivity.length === 0 ? (
               <div className="text-center py-8">
                 <div className="w-12 h-12 rounded-full bg-zinc-100 dark:bg-zinc-700 flex items-center justify-center mx-auto mb-3">
-                  <i className="fa-solid fa-clock text-zinc-400 text-lg" />
+                  <Clock className="text-zinc-400 text-lg" />
                 </div>
                 <p className="text-sm text-zinc-500 dark:text-zinc-400">No recent activity</p>
               </div>

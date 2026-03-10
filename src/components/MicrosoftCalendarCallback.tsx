@@ -1,6 +1,8 @@
 import React, { useEffect, useRef, useState } from 'react';
 import { outlookCalendarService } from '../services/outlookCalendarService';
 
+import { Check, X } from 'lucide-react';
+
 type Status = 'processing' | 'success' | 'error';
 
 export const MicrosoftCalendarCallback: React.FC = () => {
@@ -63,7 +65,7 @@ export const MicrosoftCalendarCallback: React.FC = () => {
         {status === 'success' && (
           <>
             <div className="w-12 h-12 bg-green-100 dark:bg-green-900/30 rounded-full flex items-center justify-center mx-auto">
-              <i className="fa-solid fa-check text-green-600 dark:text-green-400 text-xl" />
+              <Check className="text-green-600 dark:text-green-400 text-xl" />
             </div>
             <p className="text-zinc-800 dark:text-zinc-100 font-semibold text-lg">
               Outlook calendar connected!
@@ -77,7 +79,7 @@ export const MicrosoftCalendarCallback: React.FC = () => {
         {status === 'error' && (
           <>
             <div className="w-12 h-12 bg-rose-100 dark:bg-rose-900/30 rounded-full flex items-center justify-center mx-auto">
-              <i className="fa-solid fa-xmark text-rose-600 dark:text-rose-400 text-xl" />
+              <X className="text-rose-600 dark:text-rose-400 text-xl" />
             </div>
             <p className="text-zinc-800 dark:text-zinc-100 font-semibold text-lg">
               Connection failed

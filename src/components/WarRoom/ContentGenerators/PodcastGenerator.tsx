@@ -4,6 +4,8 @@ import { processWithModel } from '../../../services/geminiService';
 import { generateSpeech, getVoices } from '../../../services/elevenLabsService';
 import toast from 'react-hot-toast';
 
+import { Activity, Clock, Copy, Download, Loader2, MessagesSquare, Podcast, RefreshCw, Sparkles, Square, Volume2, X } from 'lucide-react';
+
 interface DialogueLine {
   speaker: 'host1' | 'host2';
   text: string;
@@ -406,7 +408,7 @@ REQUIREMENTS:
         <div className="p-4 border-b border-white/10 flex items-center justify-between shrink-0">
           <div className="flex items-center gap-3">
             <div className="w-10 h-10 bg-gradient-to-br from-purple-500 to-pink-500 rounded-lg flex items-center justify-center">
-              <i className="fa fa-podcast text-white"></i>
+              <Podcast className="fa text-white" />
             </div>
             <div>
               <h3 className="text-lg font-bold">Audio Overview</h3>
@@ -416,7 +418,7 @@ REQUIREMENTS:
             </div>
           </div>
           <button onClick={onClose} className="war-room-btn war-room-btn-icon-sm">
-            <i className="fa fa-times"></i>
+            <X className="fa" />
           </button>
         </div>
 
@@ -426,7 +428,7 @@ REQUIREMENTS:
             <div className="text-center py-8">
               {isGeneratingScript ? (
                 <div>
-                  <i className="fa fa-spinner fa-spin text-4xl text-purple-400 mb-4"></i>
+                  <Loader2 className="fa text-4xl text-purple-400 mb-4 animate-spin" />
                   <p className="text-sm war-room-text-secondary mb-4">
                     Creating podcast script...
                   </p>
@@ -445,7 +447,7 @@ REQUIREMENTS:
               ) : (
                 <div>
                   <div className="w-20 h-20 mx-auto mb-4 bg-gradient-to-br from-purple-500/20 to-pink-500/20 rounded-full flex items-center justify-center">
-                    <i className="fa fa-podcast text-4xl text-purple-400"></i>
+                    <Podcast className="fa text-4xl text-purple-400" />
                   </div>
                   <p className="text-lg font-medium mb-2">Create Audio Overview</p>
                   <p className="text-sm war-room-text-secondary mb-6 max-w-md mx-auto">
@@ -545,7 +547,7 @@ REQUIREMENTS:
                     disabled={docsToUse.length === 0}
                     className="war-room-btn war-room-btn-primary px-6"
                   >
-                    <i className="fa fa-sparkles mr-2"></i>
+                    <Sparkles className="fa mr-2" />
                     Generate Podcast Script
                   </button>
                 </div>
@@ -558,8 +560,8 @@ REQUIREMENTS:
                 <h4 className="font-bold text-lg mb-1">{script.title}</h4>
                 <p className="text-sm war-room-text-secondary">{script.description}</p>
                 <div className="flex items-center gap-4 mt-2 text-xs war-room-text-muted">
-                  <span><i className="fa fa-clock mr-1"></i> {script.duration}</span>
-                  <span><i className="fa fa-comments mr-1"></i> {script.lines.length} exchanges</span>
+                  <span><Clock className="fa mr-1" /> {script.duration}</span>
+                  <span><MessagesSquare className="fa mr-1" /> {script.lines.length} exchanges</span>
                 </div>
               </div>
 
@@ -568,7 +570,7 @@ REQUIREMENTS:
                 <div className="war-room-panel p-4 mb-4 text-center">
                   {isGeneratingAudio ? (
                     <div>
-                      <i className="fa fa-waveform fa-beat text-2xl text-purple-400 mb-2"></i>
+                      <Activity className="fa text-2xl text-purple-400 mb-2" />
                       <p className="text-sm war-room-text-secondary mb-2">
                         Generating audio with ElevenLabs...
                       </p>
@@ -591,7 +593,7 @@ REQUIREMENTS:
                         onClick={generateAudioWithElevenLabs}
                         className="war-room-btn war-room-btn-primary"
                       >
-                        <i className="fa fa-waveform mr-2"></i>
+                        <Activity className="fa mr-2" />
                         Generate Premium Audio
                       </button>
                     </div>
@@ -613,7 +615,7 @@ REQUIREMENTS:
                       onClick={handleStop}
                       className="war-room-btn war-room-btn-icon"
                     >
-                      <i className="fa fa-stop"></i>
+                      <Square className="fa" />
                     </button>
                   </div>
 
@@ -692,7 +694,7 @@ REQUIREMENTS:
                       </div>
                       {i === currentLineIndex && isPlaying && (
                         <div className="shrink-0">
-                          <i className="fa fa-volume-high text-purple-400 animate-pulse"></i>
+                          <Volume2 className="fa text-purple-400 animate-pulse" />
                         </div>
                       )}
                     </div>
@@ -721,21 +723,21 @@ REQUIREMENTS:
                   onClick={() => setScript(null)}
                   className="war-room-btn text-sm"
                 >
-                  <i className="fa fa-refresh mr-2"></i>
+                  <RefreshCw className="fa mr-2" />
                   Regenerate
                 </button>
                 <button
                   onClick={copyScript}
                   className="war-room-btn text-sm"
                 >
-                  <i className="fa fa-copy mr-2"></i>
+                  <Copy className="fa mr-2" />
                   Copy
                 </button>
                 <button
                   onClick={exportScript}
                   className="war-room-btn war-room-btn-primary text-sm"
                 >
-                  <i className="fa fa-download mr-2"></i>
+                  <Download className="fa mr-2" />
                   Export
                 </button>
               </>

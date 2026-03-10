@@ -4,6 +4,8 @@
 import React, { useState, useRef, useCallback } from 'react';
 import { VoxReaction, ReactionType, REACTION_EMOJIS, REACTION_SOUNDS } from '../../services/voxer/advancedVoxerTypes';
 
+import { Check, RotateCw, Volume2 } from 'lucide-react';
+
 // ============================================
 // TYPES
 // ============================================
@@ -140,7 +142,7 @@ const ReactionPicker: React.FC<ReactionPickerProps> = ({
           {customRecording ? (
             <div className="flex items-center gap-2">
               <div className="flex-1 bg-emerald-50 dark:bg-emerald-900/20 rounded-lg p-2 text-xs text-emerald-600 dark:text-emerald-400">
-                <i className="fa-solid fa-check mr-1"></i> Recorded!
+                <Check className="mr-1" /> Recorded!
               </div>
               <button
                 onClick={handleSelectCustom}
@@ -152,7 +154,7 @@ const ReactionPicker: React.FC<ReactionPickerProps> = ({
                 onClick={() => setCustomRecording(null)}
                 className="px-3 py-2 bg-zinc-200 dark:bg-zinc-700 hover:bg-zinc-300 dark:hover:bg-zinc-600 rounded-lg text-xs transition"
               >
-                <i className="fa-solid fa-redo"></i>
+                <RotateCw />
               </button>
             </div>
           ) : (
@@ -217,7 +219,7 @@ const ReactionDisplay: React.FC<ReactionDisplayProps> = ({ reactions, onPlayReac
             <span className="text-zinc-500 text-xs">{reacts.length}</span>
           )}
           {type === 'custom' && (
-            <i className="fa-solid fa-volume-high text-[10px] text-zinc-400"></i>
+            <Volume2 className="text-[10px] text-zinc-400" />
           )}
         </button>
       ))}

@@ -110,4 +110,4 @@ const VoxRecordArea: React.FC<VoxRecordAreaProps> = ({
   );
 };
 
-export default VoxRecordArea;
+export default React.memo(VoxRecordArea);

@@ -2,7 +2,9 @@
 // Displays comprehensive AI analysis of voice messages
 
 import React, { useState } from 'react';
+import { Bot, Calendar, Check, HeartPulse, HelpCircle, MapPin, Sparkles, User, X } from 'lucide-react';
 import {
+
   VoxAnalysis,
   ActionItem,
   SuggestedResponse,
@@ -114,7 +116,7 @@ export const AIAnalysisPanel: React.FC<AIAnalysisPanelProps> = ({
     return (
       <div className={`bg-white dark:bg-zinc-900 rounded-xl border border-zinc-200 dark:border-zinc-800 p-6 text-center ${className}`}>
         <div className="w-12 h-12 rounded-full bg-purple-100 dark:bg-purple-900/30 flex items-center justify-center mx-auto mb-3">
-          <i className="fa-solid fa-robot text-purple-500 text-xl" />
+          <Bot className="text-purple-500 text-xl" />
         </div>
         <p className="text-sm text-zinc-500">No analysis available</p>
         <p className="text-xs text-zinc-400 mt-1">Select a vox to see AI insights</p>
@@ -157,7 +159,7 @@ export const AIAnalysisPanel: React.FC<AIAnalysisPanelProps> = ({
         <div className="flex items-center justify-between">
           <div className="flex items-center gap-2">
             <div className="w-8 h-8 rounded-lg bg-gradient-to-br from-purple-500 to-pink-500 flex items-center justify-center">
-              <i className="fa-solid fa-robot text-white text-sm" />
+              <Bot className="text-white text-sm" />
             </div>
             <div>
               <h3 className="font-bold text-sm dark:text-white">AI Analysis</h3>
@@ -171,7 +173,7 @@ export const AIAnalysisPanel: React.FC<AIAnalysisPanelProps> = ({
               onClick={onClose}
               className="w-8 h-8 rounded-lg hover:bg-white/50 dark:hover:bg-zinc-800 flex items-center justify-center transition"
             >
-              <i className="fa-solid fa-times text-zinc-400" />
+              <X className="text-zinc-400" />
             </button>
           )}
         </div>
@@ -190,7 +192,7 @@ export const AIAnalysisPanel: React.FC<AIAnalysisPanelProps> = ({
           )}
           {analysis.emotion && (
             <div className="flex items-center gap-1.5 px-2.5 py-1 rounded-full text-xs font-medium bg-blue-50 dark:bg-blue-900/20 text-blue-500">
-              <i className="fa-solid fa-heart-pulse" />
+              <HeartPulse />
               {analysis.emotion}
             </div>
           )}
@@ -249,7 +251,7 @@ export const AIAnalysisPanel: React.FC<AIAnalysisPanelProps> = ({
                           : 'border-zinc-300 dark:border-zinc-600 group-hover:border-emerald-500'
                       }`}
                     >
-                      {item.completed && <i className="fa-solid fa-check text-[8px]" />}
+                      {item.completed && <Check className="text-[8px]" />}
                     </button>
                     <div className="flex-1">
                       <p className={`text-sm ${item.completed ? 'line-through text-zinc-400' : 'text-zinc-700 dark:text-zinc-300'}`}>
@@ -261,7 +263,7 @@ export const AIAnalysisPanel: React.FC<AIAnalysisPanelProps> = ({
                         </span>
                         {item.assignedTo && (
                           <span className="text-[9px] text-zinc-400">
-                            <i className="fa-solid fa-user mr-1" />
+                            <User className="mr-1" />
                             {item.assignedTo}
                           </span>
                         )}
@@ -282,7 +284,7 @@ export const AIAnalysisPanel: React.FC<AIAnalysisPanelProps> = ({
               <ul className="mt-2 pl-6 space-y-1.5">
                 {analysis.questions.map((question, i) => (
                   <li key={i} className="flex items-start gap-2 text-sm text-zinc-600 dark:text-zinc-400">
-                    <i className="fa-solid fa-question-circle text-amber-500 mt-0.5" />
+                    <HelpCircle className="text-amber-500 mt-0.5" />
                     {question}
                   </li>
                 ))}
@@ -371,7 +373,7 @@ export const AIAnalysisPanel: React.FC<AIAnalysisPanelProps> = ({
                     <span className="text-[10px] text-zinc-400 uppercase tracking-wider">People:</span>
                     {analysis.mentions.people.map((person, i) => (
                       <span key={i} className="px-2 py-0.5 text-xs bg-blue-50 dark:bg-blue-900/20 text-blue-600 rounded">
-                        <i className="fa-solid fa-user mr-1" />
+                        <User className="mr-1" />
                         {person}
                       </span>
                     ))}
@@ -382,7 +384,7 @@ export const AIAnalysisPanel: React.FC<AIAnalysisPanelProps> = ({
                     <span className="text-[10px] text-zinc-400 uppercase tracking-wider">Dates:</span>
                     {analysis.mentions.dates.map((date, i) => (
                       <span key={i} className="px-2 py-0.5 text-xs bg-purple-50 dark:bg-purple-900/20 text-purple-600 rounded">
-                        <i className="fa-solid fa-calendar mr-1" />
+                        <Calendar className="mr-1" />
                         {date.text}
                       </span>
                     ))}
@@ -393,7 +395,7 @@ export const AIAnalysisPanel: React.FC<AIAnalysisPanelProps> = ({
                     <span className="text-[10px] text-zinc-400 uppercase tracking-wider">Places:</span>
                     {analysis.mentions.locations.map((loc, i) => (
                       <span key={i} className="px-2 py-0.5 text-xs bg-emerald-50 dark:bg-emerald-900/20 text-emerald-600 rounded">
-                        <i className="fa-solid fa-location-dot mr-1" />
+                        <MapPin className="mr-1" />
                         {loc}
                       </span>
                     ))}
@@ -408,7 +410,7 @@ export const AIAnalysisPanel: React.FC<AIAnalysisPanelProps> = ({
       {/* Footer */}
       <div className="px-4 py-3 border-t border-zinc-200 dark:border-zinc-800 bg-zinc-50 dark:bg-zinc-900/50">
         <p className="text-[10px] text-zinc-400 text-center">
-          <i className="fa-solid fa-sparkles mr-1" />
+          <Sparkles className="mr-1" />
           Analysis took {analysis.processingTime}ms
         </p>
       </div>
@@ -431,7 +433,7 @@ export const AnalysisBadge: React.FC<AnalysisBadgeProps> = ({ analysis, onClick 
       onClick={onClick}
       className="flex items-center gap-2 px-2 py-1 rounded-lg bg-purple-50 dark:bg-purple-900/20 hover:bg-purple-100 dark:hover:bg-purple-900/40 transition text-xs"
     >
-      <i className="fa-solid fa-robot text-purple-500" />
+      <Bot className="text-purple-500" />
       <span className="text-purple-700 dark:text-purple-300">
         {analysis.keyPoints.length} key points
       </span>

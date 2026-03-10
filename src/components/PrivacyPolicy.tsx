@@ -1,5 +1,7 @@
 import React from 'react';
 
+import { ArrowLeft } from 'lucide-react';
+
 interface PrivacyPolicyProps {
   onBack?: () => void;
 }
@@ -22,7 +24,7 @@ const PrivacyPolicy: React.FC<PrivacyPolicyProps> = ({ onBack }) => {
                 onClick={onBack}
                 className="w-8 h-8 flex items-center justify-center rounded-lg hover:bg-zinc-100 dark:hover:bg-zinc-800 transition"
               >
-                <i className="fa-solid fa-arrow-left text-zinc-500"></i>
+                <ArrowLeft className="text-zinc-500" />
               </button>
             )}
             <a href="/" className="flex items-center gap-2">

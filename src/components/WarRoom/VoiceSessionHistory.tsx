@@ -15,6 +15,8 @@ import { RealtimeHistoryItem } from '../../services/realtimeAgentService';
 import { MarkdownRenderer } from '../shared';
 import '../shared/PulseTypography.css';
 
+import { Download, FileCode, FileText, Inbox, Search, Trash2 } from 'lucide-react';
+
 interface VoiceSessionHistoryProps {
   history: RealtimeHistoryItem[];
   currentAgent: string;
@@ -157,7 +159,7 @@ export const VoiceSessionHistory: React.FC<VoiceSessionHistoryProps> = ({
               className="p-1.5 text-gray-400 hover:text-white transition-colors"
               title="Export"
             >
-              <i className="fa fa-download" />
+              <Download className="fa" />
             </button>
 
             {showExportMenu && (
@@ -166,21 +168,21 @@ export const VoiceSessionHistory: React.FC<VoiceSessionHistoryProps> = ({
                   onClick={() => exportToClipboard('text')}
                   className="w-full px-3 py-2 text-left text-sm text-gray-300 hover:bg-gray-800 rounded-t-lg"
                 >
-                  <i className="fa fa-file-alt mr-2" />
+                  <FileText className="fa mr-2" />
                   Copy as Text
                 </button>
                 <button
                   onClick={() => exportToClipboard('markdown')}
                   className="w-full px-3 py-2 text-left text-sm text-gray-300 hover:bg-gray-800"
                 >
-                  <i className="fa fa-file-code mr-2" />
+                  <FileCode className="fa mr-2" />
                   Copy as Markdown
                 </button>
                 <button
                   onClick={() => exportToClipboard('json')}
                   className="w-full px-3 py-2 text-left text-sm text-gray-300 hover:bg-gray-800 rounded-b-lg"
                 >
-                  <i className="fa fa-file-code mr-2" />
+                  <FileCode className="fa mr-2" />
                   Copy as JSON
                 </button>
               </div>
@@ -194,7 +196,7 @@ export const VoiceSessionHistory: React.FC<VoiceSessionHistoryProps> = ({
               className="p-1.5 text-gray-400 hover:text-red-400 transition-colors"
               title="Clear History"
             >
-              <i className="fa fa-trash" />
+              <Trash2 className="fa" />
             </button>
           )}
         </div>
@@ -204,7 +206,7 @@ export const VoiceSessionHistory: React.FC<VoiceSessionHistoryProps> = ({
       <div className="p-2 border-b border-gray-800 space-y-2">
         {/* Search */}
         <div className="relative">
-          <i className="fa fa-search absolute left-3 top-1/2 -translate-y-1/2 text-gray-500 text-sm" />
+          <Search className="fa absolute left-3 top-1/2 -translate-y-1/2 text-gray-500 text-sm" />
           <input
             type="text"
             value={searchQuery}
@@ -238,7 +240,7 @@ export const VoiceSessionHistory: React.FC<VoiceSessionHistoryProps> = ({
       <div className="flex-1 overflow-y-auto p-2 space-y-2">
         {filteredHistory.length === 0 ? (
           <div className="flex flex-col items-center justify-center h-32 text-gray-500">
-            <i className="fa fa-inbox text-3xl mb-2" />
+            <Inbox className="fa text-3xl mb-2" />
             <p className="text-sm">
               {history.length === 0 ? 'No history yet' : 'No matching items'}
             </p>

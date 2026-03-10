@@ -26,6 +26,8 @@ import { CircleBubbleChart } from './CircleBubbleChart';
 import { CircleDetail } from './CircleDetail';
 import { NetworkAnalyticsCard } from './NetworkAnalyticsCard';
 
+import { Loader2, Plus, Wand2 } from 'lucide-react';
+
 // ==================== TYPES ====================
 
 interface CirclesViewProps {
@@ -244,9 +246,9 @@ export const CirclesView: React.FC<CirclesViewProps> = ({
               className="flex items-center gap-1.5 px-3 py-1.5 bg-indigo-50 dark:bg-indigo-900/20 text-indigo-600 dark:text-indigo-400 rounded-lg text-xs font-medium hover:bg-indigo-100 dark:hover:bg-indigo-900/30 transition-colors disabled:opacity-50"
             >
               {detecting ? (
-                <i className="fa-solid fa-circle-notch animate-spin text-xs" />
+                <Loader2 className="animate-spin text-xs" />
               ) : (
-                <i className="fa-solid fa-wand-magic-sparkles text-xs" />
+                <Wand2 className="text-xs" />
               )}
               {detecting ? 'Detecting…' : 'Auto-detect'}
             </button>
@@ -255,7 +257,7 @@ export const CirclesView: React.FC<CirclesViewProps> = ({
               onClick={() => setShowNewModal(true)}
               className="flex items-center gap-1.5 px-3 py-1.5 bg-zinc-100 dark:bg-zinc-800 text-zinc-600 dark:text-zinc-300 rounded-lg text-xs font-medium hover:bg-zinc-200 dark:hover:bg-zinc-700 transition-colors"
             >
-              <i className="fa-solid fa-plus text-xs" />
+              <Plus className="text-xs" />
               New Circle
             </button>
           </div>

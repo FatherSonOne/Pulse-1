@@ -1,5 +1,7 @@
 import React, { useState, useMemo, useCallback, useEffect } from 'react';
 
+import { Bell, Bot, Hourglass, Moon, Plus, Sliders, Target, VolumeX, Zap } from 'lucide-react';
+
 // Types
 type ConversationMode = 'available' | 'focus' | 'dnd' | 'away' | 'custom';
 
@@ -415,7 +417,7 @@ export const ConversationModes: React.FC<ConversationModesProps> = ({
     <div style={styles.container}>
       <div style={styles.header}>
         <div style={styles.title}>
-          <i className="fa-solid fa-sliders" />
+          <Sliders />
           Status & Modes
         </div>
         <div style={{
@@ -432,7 +434,7 @@ export const ConversationModes: React.FC<ConversationModesProps> = ({
         {/* Timer indicator */}
         {timerMinutes !== null && (
           <div style={styles.timer}>
-            <i className="fa-solid fa-hourglass-half" style={{ color: '#a78bfa' }} />
+            <Hourglass />
             <span style={styles.timerText}>
               {activeModeConfig.label} ends in
             </span>
@@ -448,21 +450,21 @@ export const ConversationModes: React.FC<ConversationModesProps> = ({
             style={styles.quickButton}
             onClick={() => handleTimedMode('focus', 30)}
           >
-            <i className="fa-solid fa-bullseye" style={{ color: '#8B5CF6' }} />
+            <Target />
             Focus 30m
           </button>
           <button
             style={styles.quickButton}
             onClick={() => handleTimedMode('focus', 60)}
           >
-            <i className="fa-solid fa-bullseye" style={{ color: '#8B5CF6' }} />
+            <Target />
             Focus 1h
           </button>
           <button
             style={styles.quickButton}
             onClick={() => handleTimedMode('dnd', 60)}
           >
-            <i className="fa-solid fa-moon" style={{ color: '#EF4444' }} />
+            <Moon />
             DND 1h
           </button>
         </div>
@@ -498,7 +500,7 @@ export const ConversationModes: React.FC<ConversationModesProps> = ({
                       backgroundColor: 'rgba(16, 185, 129, 0.2)',
                       color: '#34d399'
                     }}>
-                      <i className="fa-solid fa-bell" />
+                      <Bell />
                       Notifs
                     </span>
                   )}
@@ -508,7 +510,7 @@ export const ConversationModes: React.FC<ConversationModesProps> = ({
                       backgroundColor: 'rgba(245, 158, 11, 0.2)',
                       color: '#fbbf24'
                     }}>
-                      <i className="fa-solid fa-bolt" />
+                      <Zap />
                       Urgent
                     </span>
                   )}
@@ -518,7 +520,7 @@ export const ConversationModes: React.FC<ConversationModesProps> = ({
                       backgroundColor: 'rgba(100, 116, 139, 0.2)',
                       color: '#94a3b8'
                     }}>
-                      <i className="fa-solid fa-volume-xmark" />
+                      <VolumeX />
                       Muted
                     </span>
                   )}
@@ -534,7 +536,7 @@ export const ConversationModes: React.FC<ConversationModesProps> = ({
             <div style={styles.sectionTitle}>Auto-Reply Message</div>
             <div style={styles.autoReplySection}>
               <div style={styles.autoReplyLabel}>
-                <i className="fa-solid fa-robot" />
+                <Bot />
                 Automatic response when messaged
                 <button style={styles.editButton}>Edit</button>
               </div>
@@ -585,7 +587,7 @@ export const ConversationModes: React.FC<ConversationModesProps> = ({
             );
           })}
           <button style={styles.addScheduleButton}>
-            <i className="fa-solid fa-plus" />
+            <Plus />
             Add Schedule
           </button>
         </div>

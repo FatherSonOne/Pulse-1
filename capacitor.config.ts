@@ -9,7 +9,7 @@ const config: CapacitorConfig = {
     // Uncomment below for local development testing
     // url: 'http://localhost:5173',
     // cleartext: true
-    clearCache: true, // Clear WebView cache on app start
+    clearCache: false, // Vite uses content-hash filenames — cache is safe; no need to wipe on every update
   },
   android: {
     buildOptions: {

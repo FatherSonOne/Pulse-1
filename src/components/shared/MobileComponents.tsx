@@ -14,6 +14,8 @@ import {
 } from '../../utils/mobile';
 import { isOnline, onOnlineStatusChange, getPendingActionsCount } from '../../utils/offlineManager';
 
+import { ArrowDown, Check, RefreshCw, Wifi } from 'lucide-react';
+
 // ============================================
 // OFFLINE INDICATOR
 // ============================================
@@ -69,18 +71,18 @@ export function OfflineIndicator({ className = '' }: OfflineIndicatorProps) {
         {online ? (
           pendingCount > 0 ? (
             <>
-              <i className="fa fa-sync fa-spin mr-2" />
+              <RefreshCw className="fa mr-2 animate-spin" />
               Syncing {pendingCount} pending action{pendingCount > 1 ? 's' : ''}...
             </>
           ) : (
             <>
-              <i className="fa fa-check mr-2" />
+              <Check className="fa mr-2" />
               Back online
             </>
           )
         ) : (
           <>
-            <i className="fa fa-wifi mr-2" style={{ opacity: 0.5 }} />
+            <Wifi className="fa mr-2" />
             You're offline. Changes will sync when reconnected.
           </>
         )}
@@ -138,7 +140,7 @@ export function PullToRefresh({
             transform: isRefreshing ? undefined : `rotate(${rotation}deg)`,
           }}
         >
-          <i className="fa fa-arrow-down text-white text-sm" />
+          <ArrowDown className="fa text-white text-sm" />
         </div>
       </div>
 

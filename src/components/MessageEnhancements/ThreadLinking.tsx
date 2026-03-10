@@ -1,6 +1,8 @@
 // Thread Linking & Cross-references Component
 import React, { useState, useMemo } from 'react';
 
+import { ArrowRight, GitFork, Link, Loader2, Plus, Quote, Search, Unlink, X } from 'lucide-react';
+
 interface LinkedThread {
   id: string;
   contactName: string;
@@ -131,7 +133,7 @@ export const ThreadLinking: React.FC<ThreadLinkingProps> = ({
         onClick={() => setShowLinkModal(true)}
         className="flex items-center gap-1.5 px-2 py-1 rounded-full bg-indigo-100 dark:bg-indigo-900/40 text-indigo-600 dark:text-indigo-400 text-xs font-medium hover:bg-indigo-200 dark:hover:bg-indigo-900/60 transition"
       >
-        <i className="fa-solid fa-link" />
+        <Link />
         <span>{totalLinks} linked</span>
       </button>
     );
@@ -144,7 +146,7 @@ export const ThreadLinking: React.FC<ThreadLinkingProps> = ({
         <div className="flex items-center justify-between">
           <div className="flex items-center gap-2">
             <div className="w-8 h-8 rounded-full bg-indigo-100 dark:bg-indigo-900/40 flex items-center justify-center">
-              <i className="fa-solid fa-diagram-project text-indigo-500 text-sm" />
+              <GitFork className="text-indigo-500 text-sm" />
             </div>
             <div>
               <h3 className="text-sm font-bold text-zinc-800 dark:text-white">Thread Links</h3>
@@ -157,7 +159,7 @@ export const ThreadLinking: React.FC<ThreadLinkingProps> = ({
             onClick={() => setShowLinkModal(true)}
             className="flex items-center gap-1.5 px-2.5 py-1.5 rounded-lg text-xs font-medium bg-indigo-500 text-white hover:bg-indigo-600 transition"
           >
-            <i className="fa-solid fa-plus" />
+            <Plus />
             Link
           </button>
         </div>
@@ -193,7 +195,7 @@ export const ThreadLinking: React.FC<ThreadLinkingProps> = ({
           <div className="p-2">
             {!linkedThreads || linkedThreads.length === 0 ? (
               <div className="text-center py-6 text-zinc-400 dark:text-zinc-500">
-                <i className="fa-solid fa-link-slash text-2xl mb-2" />
+                <Unlink className="text-2xl mb-2" />
                 <p className="text-xs">No linked threads yet</p>
               </div>
             ) : (
@@ -236,14 +238,14 @@ export const ThreadLinking: React.FC<ThreadLinkingProps> = ({
                           className="p-1.5 rounded text-zinc-400 hover:text-indigo-500 hover:bg-indigo-50 dark:hover:bg-indigo-900/20"
                           title="Go to thread"
                         >
-                          <i className="fa-solid fa-arrow-right text-xs" />
+                          <ArrowRight className="text-xs" />
                         </button>
                         <button
                           onClick={() => onUnlinkThread?.(thread.id)}
                           className="p-1.5 rounded text-zinc-400 hover:text-red-500 hover:bg-red-50 dark:hover:bg-red-900/20"
                           title="Unlink"
                         >
-                          <i className="fa-solid fa-unlink text-xs" />
+                          <Unlink className="text-xs" />
                         </button>
                       </div>
                     </div>
@@ -258,7 +260,7 @@ export const ThreadLinking: React.FC<ThreadLinkingProps> = ({
           <div className="p-2">
             {!crossReferences || crossReferences.length === 0 ? (
               <div className="text-center py-6 text-zinc-400 dark:text-zinc-500">
-                <i className="fa-solid fa-quote-left text-2xl mb-2" />
+                <Quote className="text-2xl mb-2" />
                 <p className="text-xs">No cross-references yet</p>
               </div>
             ) : (
@@ -303,7 +305,7 @@ export const ThreadLinking: React.FC<ThreadLinkingProps> = ({
               <div className="flex items-center justify-between">
                 <h3 className="text-lg font-bold text-zinc-800 dark:text-white">Link Thread</h3>
                 <button onClick={() => setShowLinkModal(false)} className="text-zinc-400 hover:text-zinc-600">
-                  <i className="fa-solid fa-times" />
+                  <X />
                 </button>
               </div>
             </div>
@@ -314,7 +316,7 @@ export const ThreadLinking: React.FC<ThreadLinkingProps> = ({
                   Search Threads
                 </label>
                 <div className="relative">
-                  <i className="fa-solid fa-search absolute left-3 top-1/2 -translate-y-1/2 text-zinc-400 text-sm" />
+                  <Search className="absolute left-3 top-1/2 -translate-y-1/2 text-zinc-400 text-sm" />
                   <input
                     type="text"
                     value={searchQuery}
@@ -323,7 +325,7 @@ export const ThreadLinking: React.FC<ThreadLinkingProps> = ({
                     className="w-full pl-9 pr-3 py-2 rounded-lg border border-zinc-300 dark:border-zinc-600 bg-white dark:bg-zinc-900 text-zinc-800 dark:text-white focus:ring-2 focus:ring-indigo-500 focus:border-transparent outline-none"
                   />
                   {isSearching && (
-                    <i className="fa-solid fa-circle-notch fa-spin absolute right-3 top-1/2 -translate-y-1/2 text-zinc-400" />
+                    <Loader2 className="absolute right-3 top-1/2 -translate-y-1/2 text-zinc-400 animate-spin" />
                   )}
                 </div>
               </div>
@@ -402,7 +404,7 @@ export const ThreadReferenceBadge: React.FC<{
     onClick={onClick}
     className="inline-flex items-center gap-1 px-1.5 py-0.5 rounded bg-indigo-100 dark:bg-indigo-900/40 text-indigo-600 dark:text-indigo-400 text-[10px] font-medium hover:bg-indigo-200 dark:hover:bg-indigo-900/60 transition"
   >
-    <i className="fa-solid fa-link" />
+    <Link />
     {threadName}
   </button>
 );

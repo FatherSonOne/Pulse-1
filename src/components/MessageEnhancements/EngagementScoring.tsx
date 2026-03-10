@@ -1,6 +1,8 @@
 // Engagement Scoring System
 import React, { useMemo, useState } from 'react';
 
+import { ArrowDown, ArrowUp, Circle, Flame, Lightbulb, Minus, TrendingDown, TrendingUp } from 'lucide-react';
+
 interface EngagementMetrics {
   overallScore: number; // 0-100
   components: {
@@ -224,9 +226,9 @@ export const EngagementScoring: React.FC<EngagementScoringProps> = React.memo(({
             metrics.trend === 'falling' ? 'bg-red-100 dark:bg-red-900/40 text-red-700 dark:text-red-300' :
             'bg-zinc-100 dark:bg-zinc-700 text-zinc-600 dark:text-zinc-400'
           }`}>
-            {metrics.trend === 'rising' && <i className="fa-solid fa-arrow-trend-up" />}
-            {metrics.trend === 'falling' && <i className="fa-solid fa-arrow-trend-down" />}
-            {metrics.trend === 'stable' && <i className="fa-solid fa-minus" />}
+            {metrics.trend === 'rising' && <TrendingUp />}
+            {metrics.trend === 'falling' && <TrendingDown />}
+            {metrics.trend === 'stable' && <Minus />}
             <span className="capitalize">{metrics.trend}</span>
           </div>
         </div>
@@ -314,7 +316,7 @@ export const EngagementScoring: React.FC<EngagementScoringProps> = React.memo(({
         {metrics.insights.length > 0 && (
           <div className="mt-4 pt-3 border-t border-zinc-200 dark:border-zinc-700">
             <div className="flex items-center gap-1.5 mb-2">
-              <i className="fa-solid fa-lightbulb text-amber-500 text-xs" />
+              <Lightbulb className="text-amber-500 text-xs" />
               <span className="text-[10px] font-bold text-zinc-500 dark:text-zinc-400 uppercase tracking-wider">
                 Insights
               </span>
@@ -322,7 +324,7 @@ export const EngagementScoring: React.FC<EngagementScoringProps> = React.memo(({
             <div className="space-y-1.5">
               {metrics.insights.map((insight, idx) => (
                 <div key={idx} className="text-xs text-zinc-600 dark:text-zinc-400 flex items-start gap-1.5">
-                  <i className="fa-solid fa-circle text-[4px] mt-1.5 text-zinc-400" />
+                  <Circle className="text-[4px] mt-1.5 text-zinc-400" />
                   {insight}
                 </div>
               ))}
@@ -349,10 +351,10 @@ export const EngagementBadge: React.FC<{
 
   return (
     <div className={`inline-flex items-center gap-1 px-1.5 py-0.5 rounded text-[10px] font-medium ${getColor(score)}`}>
-      <i className="fa-solid fa-fire" />
+      <Flame />
       <span>{score}</span>
-      {trend === 'rising' && <i className="fa-solid fa-arrow-up text-[8px]" />}
-      {trend === 'falling' && <i className="fa-solid fa-arrow-down text-[8px]" />}
+      {trend === 'rising' && <ArrowUp className="text-[8px]" />}
+      {trend === 'falling' && <ArrowDown className="text-[8px]" />}
     </div>
   );
 };

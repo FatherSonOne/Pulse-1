@@ -2,6 +2,8 @@ import React from 'react';
 import { createPortal } from 'react-dom';
 import { CalendarEvent } from '../types';
 
+import { CalendarX, ChevronRight, MapPin, Plus, Users, X } from 'lucide-react';
+
 interface DayDetailModalProps {
   show: boolean;
   date: Date | null;
@@ -72,7 +74,7 @@ export const DayDetailModal: React.FC<DayDetailModalProps> = ({
               className="p-2 rounded-full hover:bg-gray-100 dark:hover:bg-gray-700 transition-colors"
               aria-label="Close"
             >
-              <i className="fa-solid fa-xmark text-xl text-gray-500 dark:text-gray-400" />
+              <X className="text-xl text-gray-500 dark:text-gray-400" />
             </button>
           </div>
 
@@ -86,7 +88,7 @@ export const DayDetailModal: React.FC<DayDetailModalProps> = ({
                 onClick={onCreateEvent}
                 className="px-3 py-1 rounded-full bg-gray-100 dark:bg-gray-700 text-gray-700 dark:text-gray-300 hover:bg-gray-200 dark:hover:bg-gray-600 font-medium transition-colors"
               >
-                <i className="fa-solid fa-plus mr-1" />
+                <Plus className="mr-1" />
                 Add Event
               </button>
             )}
@@ -97,7 +99,7 @@ export const DayDetailModal: React.FC<DayDetailModalProps> = ({
         <div className="overflow-y-auto max-h-[calc(90vh-140px)] px-6 py-4">
           {events.length === 0 ? (
             <div className="text-center py-12">
-              <i className="fa-solid fa-calendar-xmark text-4xl text-gray-300 dark:text-gray-600 mb-3" />
+              <CalendarX className="text-4xl text-gray-300 dark:text-gray-600 mb-3" />
               <p className="text-gray-500 dark:text-gray-400">No events scheduled for this day</p>
               {onCreateEvent && (
                 <button
@@ -128,18 +130,18 @@ export const DayDetailModal: React.FC<DayDetailModalProps> = ({
                             <h4 className="font-semibold text-white truncate">{event.title}</h4>
                             {event.location && (
                               <p className="text-sm text-white/80 mt-1 truncate">
-                                <i className="fa-solid fa-location-dot mr-1" />
+                                <MapPin className="mr-1" />
                                 {event.location}
                               </p>
                             )}
                             {event.attendees && event.attendees.length > 0 && (
                               <p className="text-sm text-white/80 mt-1">
-                                <i className="fa-solid fa-users mr-1" />
+                                <Users className="mr-1" />
                                 {event.attendees.length} {event.attendees.length === 1 ? 'attendee' : 'attendees'}
                               </p>
                             )}
                           </div>
-                          <i className="fa-solid fa-chevron-right text-white/60 ml-2" />
+                          <ChevronRight className="text-white/60 ml-2" />
                         </div>
                       </div>
                     ))}
@@ -176,18 +178,18 @@ export const DayDetailModal: React.FC<DayDetailModalProps> = ({
                             <h4 className="font-semibold text-white truncate">{event.title}</h4>
                             {event.location && (
                               <p className="text-sm text-white/80 mt-1 truncate">
-                                <i className="fa-solid fa-location-dot mr-1" />
+                                <MapPin className="mr-1" />
                                 {event.location}
                               </p>
                             )}
                             {event.attendees && event.attendees.length > 0 && (
                               <p className="text-sm text-white/80 mt-1">
-                                <i className="fa-solid fa-users mr-1" />
+                                <Users className="mr-1" />
                                 {event.attendees.length} {event.attendees.length === 1 ? 'attendee' : 'attendees'}
                               </p>
                             )}
                           </div>
-                          <i className="fa-solid fa-chevron-right text-white/60 ml-2" />
+                          <ChevronRight className="text-white/60 ml-2" />
                         </div>
                       </div>
                     ))}

@@ -5,6 +5,8 @@ import React, { useState, useEffect, useRef, useCallback } from 'react';
 import { Contact } from '../../types';
 import { voiceRoomService } from '../../services/voiceRoomService';
 
+import { Headphones, Lock, MicOff, Monitor, PhoneOff, Plus, Radio, Settings, UserPlus, X } from 'lucide-react';
+
 // ============================================
 // TYPES
 // ============================================
@@ -282,21 +284,21 @@ export const VoiceRooms: React.FC<VoiceRoomsProps> = ({
           <div className="p-4 border-b border-zinc-800">
             <div className="flex items-center justify-between mb-3">
               <h2 className="text-lg font-bold text-white flex items-center gap-2">
-                <i className="fa-solid fa-tower-broadcast text-orange-500"></i>
+                <Radio className="text-orange-500" />
                 Voice Rooms
               </h2>
               <button
                 onClick={onClose}
                 className="w-8 h-8 rounded-full hover:bg-zinc-800 flex items-center justify-center text-zinc-400 hover:text-white transition"
               >
-                <i className="fa-solid fa-times"></i>
+                <X />
               </button>
             </div>
             <button
               onClick={() => setShowCreateRoom(true)}
               className="w-full py-2 bg-zinc-800 hover:bg-zinc-700 rounded-xl text-sm text-zinc-300 transition flex items-center justify-center gap-2"
             >
-              <i className="fa-solid fa-plus"></i>
+              <Plus />
               Create Room
             </button>
           </div>
@@ -330,7 +332,7 @@ export const VoiceRooms: React.FC<VoiceRoomsProps> = ({
                               {room.participants.length}/{room.maxParticipants}
                             </span>
                             {room.isPrivate && (
-                              <i className="fa-solid fa-lock text-[10px] text-zinc-500"></i>
+                              <Lock className="text-[10px] text-zinc-500" />
                             )}
                           </div>
                         </div>
@@ -350,7 +352,7 @@ export const VoiceRooms: React.FC<VoiceRoomsProps> = ({
                               <span className={`text-zinc-400 truncate ${speakingUsers.has(participant.userId) ? 'text-emerald-400' : ''}`}>
                                 {participant.name}
                               </span>
-                              {participant.isMuted && <i className="fa-solid fa-microphone-slash text-[10px] text-red-400"></i>}
+                              {participant.isMuted && <MicOff className="text-[10px] text-red-400" />}
                             </div>
                           ))}
                           {room.participants.length > 4 && (
@@ -386,7 +388,7 @@ export const VoiceRooms: React.FC<VoiceRoomsProps> = ({
                     onClick={() => setShowSettings(true)}
                     className="w-10 h-10 rounded-full hover:bg-zinc-800 flex items-center justify-center text-zinc-400 hover:text-white transition"
                   >
-                    <i className="fa-solid fa-gear"></i>
+                    <Settings />
                   </button>
                 </div>
               </div>
@@ -408,7 +410,7 @@ export const VoiceRooms: React.FC<VoiceRoomsProps> = ({
                           {participant.name.charAt(0)}
                           {participant.isScreenSharing && (
                             <div className="absolute -bottom-1 -right-1 w-6 h-6 rounded-full bg-blue-500 flex items-center justify-center">
-                              <i className="fa-solid fa-desktop text-[10px] text-white"></i>
+                              <Monitor className="text-[10px] text-white" />
                             </div>
                           )}
                         </div>
@@ -416,12 +418,12 @@ export const VoiceRooms: React.FC<VoiceRoomsProps> = ({
                         <div className="flex items-center gap-2 mt-2">
                           {participant.isMuted && (
                             <span className="w-6 h-6 rounded-full bg-red-500/20 flex items-center justify-center">
-                              <i className="fa-solid fa-microphone-slash text-[10px] text-red-400"></i>
+                              <MicOff className="text-[10px] text-red-400" />
                             </span>
                           )}
                           {participant.isDeafened && (
                             <span className="w-6 h-6 rounded-full bg-red-500/20 flex items-center justify-center">
-                              <i className="fa-solid fa-headphones-simple text-[10px] text-red-400"></i>
+                              <Headphones className="text-[10px] text-red-400" />
                             </span>
                           )}
                         </div>
@@ -433,7 +435,7 @@ export const VoiceRooms: React.FC<VoiceRoomsProps> = ({
                   {Array.from({ length: Math.max(0, 4 - activeRoom.participants.length) }).map((_, i) => (
                     <div key={`empty-${i}`} className="p-4 rounded-2xl border border-dashed border-zinc-800 flex items-center justify-center min-h-[150px]">
                       <div className="text-center text-zinc-600">
-                        <i className="fa-solid fa-user-plus text-2xl mb-2"></i>
+                        <UserPlus className="text-2xl mb-2" />
                         <p className="text-xs">Waiting...</p>
                       </div>
                     </div>
@@ -472,7 +474,7 @@ export const VoiceRooms: React.FC<VoiceRoomsProps> = ({
                     className="w-14 h-14 rounded-full bg-zinc-800 hover:bg-zinc-700 text-white flex items-center justify-center transition"
                     title="Share Screen"
                   >
-                    <i className="fa-solid fa-desktop text-xl"></i>
+                    <Monitor className="text-xl" />
                   </button>
 
                   <button
@@ -480,7 +482,7 @@ export const VoiceRooms: React.FC<VoiceRoomsProps> = ({
                     className="w-14 h-14 rounded-full bg-red-500 hover:bg-red-600 text-white flex items-center justify-center transition"
                     title="Leave Room"
                   >
-                    <i className="fa-solid fa-phone-slash text-xl"></i>
+                    <PhoneOff className="text-xl" />
                   </button>
                 </div>
               </div>
@@ -489,7 +491,7 @@ export const VoiceRooms: React.FC<VoiceRoomsProps> = ({
             <div className="flex-1 flex items-center justify-center">
               <div className="text-center">
                 <div className="w-24 h-24 rounded-full bg-zinc-900 flex items-center justify-center mx-auto mb-6">
-                  <i className="fa-solid fa-tower-broadcast text-4xl text-zinc-600"></i>
+                  <Radio className="text-4xl text-zinc-600" />
                 </div>
                 <h3 className="text-xl font-bold text-white mb-2">Select a Voice Room</h3>
                 <p className="text-zinc-400 max-w-sm">
@@ -568,7 +570,7 @@ const CreateRoomModal: React.FC<CreateRoomModalProps> = ({ onClose, onCreate }) 
         <div className="p-4 border-b border-zinc-800 flex items-center justify-between">
           <h3 className="font-bold text-white">Create Voice Room</h3>
           <button onClick={onClose} className="text-zinc-400 hover:text-white transition">
-            <i className="fa-solid fa-times"></i>
+            <X />
           </button>
         </div>
 

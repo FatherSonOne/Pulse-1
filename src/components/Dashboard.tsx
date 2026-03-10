@@ -13,6 +13,8 @@ import { teamService, Team, TeamWithMembers, TeamMember as TeamMemberType } from
 import { AttentionDashboard } from './attention';
 import { attentionService } from '../services/attentionService';
 
+import { Archive, ArrowRight, BookUser, Check, CheckCircle, CheckCircle2, CheckSquare, ChevronRight, Clock, Copy, Flame, Heart, Lightbulb, List, Loader2, MessageSquare, MessagesSquare, Mic, Plus, Search, Send, Sparkles, Target, TrendingUp, UserCheck, UserPlus, Users, X, Zap } from 'lucide-react';
+
 // Auto-refresh interval in milliseconds (5 minutes)
 const BRIEFING_REFRESH_INTERVAL = 5 * 60 * 1000;
 
@@ -262,7 +264,7 @@ const TodaysPriorities: React.FC<TodaysPrioritiesProps> = ({ priorities, isLoadi
       <div className="flex items-center justify-between mb-3 sm:mb-4">
         <div className="flex items-center gap-2">
           <div className="w-7 h-7 sm:w-8 sm:h-8 rounded-lg bg-gradient-to-br from-rose-500 to-pink-500 flex items-center justify-center shadow-lg glow-rose-sm">
-            <i className="fa-solid fa-bolt text-white text-xs"></i>
+            <Zap className="text-white text-xs" />
           </div>
           <h2 className="text-sm sm:text-base font-bold text-zinc-900 dark:text-white uppercase tracking-wider">Today's Priorities</h2>
         </div>
@@ -1158,9 +1160,9 @@ const Dashboard: React.FC<DashboardProps> = ({ user, apiKey, setView }) => {
                       }}
                       title="Click to go directly to this item"
                     >
-                      <i className="fa-solid fa-bullseye text-rose-400"></i>
+                      <Target className="text-rose-400" />
                       <span className="text-sm text-rose-300 font-medium">{briefing.focusRecommendation}</span>
-                      <i className="fa-solid fa-arrow-right text-rose-400/60 text-xs group-hover:text-rose-400 transition-colors"></i>
+                      <ArrowRight className="text-rose-400/60 text-xs group-hover:text-rose-400 transition-colors" />
                     </div>
                   )}
                 </div>
@@ -1202,7 +1204,7 @@ const Dashboard: React.FC<DashboardProps> = ({ user, apiKey, setView }) => {
                 {briefing.highlights && briefing.highlights.length > 0 && (
                   <div className="flex-1 space-y-2 sm:space-y-3">
                     <h3 className="text-[10px] sm:text-xs font-bold text-rose-400/80 uppercase tracking-widest flex items-center gap-2">
-                      <i className="fa-solid fa-fire"></i>
+                      <Flame />
                       Key Highlights
                     </h3>
                     <div className="grid gap-2 dashboard-stagger">
@@ -1224,7 +1226,7 @@ const Dashboard: React.FC<DashboardProps> = ({ user, apiKey, setView }) => {
                             </div>
                             <div className="text-xs text-zinc-500 mt-0.5 line-clamp-2 sm:line-clamp-1">{highlight.detail}</div>
                           </div>
-                          <i className="fa-solid fa-chevron-right text-xs text-zinc-600 group-hover:text-rose-400 transition"></i>
+                          <ChevronRight className="text-xs text-zinc-600 group-hover:text-rose-400 transition" />
                         </div>
                       ))}
                     </div>
@@ -1234,7 +1236,7 @@ const Dashboard: React.FC<DashboardProps> = ({ user, apiKey, setView }) => {
                 {/* Suggestions Section */}
                 <div className="flex-1 space-y-2 sm:space-y-3">
                   <h3 className="text-[10px] sm:text-xs font-bold text-rose-400/80 uppercase tracking-widest flex items-center gap-2">
-                    <i className="fa-solid fa-lightbulb"></i>
+                    <Lightbulb />
                     Action Items
                   </h3>
                   <div className="grid gap-2 dashboard-stagger">
@@ -1249,7 +1251,7 @@ const Dashboard: React.FC<DashboardProps> = ({ user, apiKey, setView }) => {
                           <div className="flex-1 min-w-0 pr-2 sm:pr-3">
                             <div className="flex items-center gap-2 flex-wrap">
                               {suggestion.type === 'ai_assist' && (
-                                <i className="fa-solid fa-sparkles text-rose-400 text-sm animate-pulse"></i>
+                                <Sparkles className="text-rose-400 text-sm animate-pulse" />
                               )}
                               <div className="font-medium text-sm text-zinc-200 line-clamp-1">{suggestion.action}</div>
                               {suggestion.priority === 'urgent' && (
@@ -1262,7 +1264,7 @@ const Dashboard: React.FC<DashboardProps> = ({ user, apiKey, setView }) => {
                                 onClick={() => handleAIFeatureClick(suggestion.aiFeature!)}
                                 className="mt-2 px-3 py-1.5 bg-gradient-to-r from-rose-500 to-pink-500 hover:from-rose-600 hover:to-pink-600 text-white text-xs font-semibold rounded-md transition-all duration-200 hover:shadow-lg hover:shadow-rose-500/30 active:scale-95"
                               >
-                                <i className="fa-solid fa-sparkles mr-1.5"></i>
+                                <Sparkles className="mr-1.5" />
                                 Try AI Feature
                               </button>
                             )}
@@ -1372,14 +1374,14 @@ const Dashboard: React.FC<DashboardProps> = ({ user, apiKey, setView }) => {
               <div className="absolute inset-0 bg-white/95 dark:bg-zinc-950/95 z-20 flex items-center justify-center animate-fade-in rounded-lg">
                 <div className="text-center">
                   <div className="w-10 h-10 border-2 border-emerald-500 rounded-full flex items-center justify-center mx-auto mb-3">
-                    <i className="fa-solid fa-check text-emerald-500"></i>
+                    <Check className="text-emerald-500" />
                   </div>
                   <h3 className="text-sm font-bold uppercase tracking-widest dark:text-white text-zinc-900">Saved</h3>
                   <button
                     onClick={() => setView(AppView.ARCHIVES)}
                     className="mt-2 text-xs text-zinc-400 hover:text-rose-500 transition flex items-center gap-1.5 mx-auto"
                   >
-                    <i className="fa-solid fa-archive text-[10px]"></i>
+                    <Archive className="text-[10px]" />
                     <span>View in Archive</span>
                   </button>
                 </div>
@@ -1418,7 +1420,7 @@ const Dashboard: React.FC<DashboardProps> = ({ user, apiKey, setView }) => {
                 disabled={!journalText}
                 className="w-9 h-9 rounded-lg hover:bg-zinc-100 dark:hover:bg-zinc-900 text-zinc-400 transition flex items-center justify-center"
               >
-                <i className="fa-solid fa-copy"></i>
+                <Copy />
               </button>
               <button
                 onClick={handleArchive}
@@ -1525,7 +1527,7 @@ const Dashboard: React.FC<DashboardProps> = ({ user, apiKey, setView }) => {
             <div className="relative z-10">
               <div className="flex items-center gap-4 mb-4">
                 <div className="w-10 h-10 bg-zinc-200 dark:bg-zinc-800 rounded-full flex items-center justify-center text-zinc-900 dark:text-white">
-                  <i className="fa-solid fa-microphone text-lg"></i>
+                  <Mic className="text-lg" />
                 </div>
                 <h3 className="font-medium text-lg dark:text-white text-zinc-900">Voice Assistant</h3>
               </div>
@@ -1553,7 +1555,7 @@ const Dashboard: React.FC<DashboardProps> = ({ user, apiKey, setView }) => {
                   className="w-full bg-zinc-800 border border-zinc-700 rounded-lg pl-4 pr-10 py-3 text-sm text-white placeholder-zinc-500 focus:border-rose-500/50 focus:ring-1 focus:ring-rose-500/20 focus:outline-none transition-all duration-150"
                 />
                 <button type="submit" className="absolute right-3 top-3 text-zinc-400 hover:text-white transition">
-                  {loadingTools ? <i className="fa-solid fa-circle-notch fa-spin"></i> : <i className="fa-solid fa-arrow-right"></i>}
+                  {loadingTools ? <Loader2 className="animate-spin" /> : <ArrowRight />}
                 </button>
               </div>
             </form>
@@ -1592,7 +1594,7 @@ const Dashboard: React.FC<DashboardProps> = ({ user, apiKey, setView }) => {
             onClick={() => setShowQuickActions(!showQuickActions)}
             className={`w-14 h-14 rounded-full shadow-xl flex items-center justify-center transition-all ${showQuickActions ? 'bg-zinc-800 rotate-45' : 'bg-gradient-to-br from-rose-500 to-pink-500 hover:from-rose-600 hover:to-pink-600'} text-white`}
           >
-            <i className="fa-solid fa-plus text-xl"></i>
+            <Plus className="text-xl" />
           </button>
         </div>,
         document.body
@@ -1630,7 +1632,7 @@ const Dashboard: React.FC<DashboardProps> = ({ user, apiKey, setView }) => {
           <div className="bg-zinc-50 dark:bg-zinc-900/50 rounded-xl p-4 border border-zinc-100 dark:border-zinc-800">
             <div className="flex items-center justify-between mb-2">
               <span className="text-xs font-bold text-zinc-600 dark:text-zinc-400 uppercase">Tasks Done</span>
-              <i className="fa-solid fa-check-circle text-rose-500"></i>
+              <CheckCircle className="text-rose-500" />
             </div>
             <div className="text-2xl font-bold text-zinc-800 dark:text-zinc-100">{productivityMetrics.tasksCompleted}</div>
             <div className="text-[10px] text-zinc-500">of {productivityMetrics.tasksTotal} total</div>
@@ -1638,7 +1640,7 @@ const Dashboard: React.FC<DashboardProps> = ({ user, apiKey, setView }) => {
           <div className="bg-zinc-50 dark:bg-zinc-900/50 rounded-xl p-4 border border-zinc-100 dark:border-zinc-800">
             <div className="flex items-center justify-between mb-2">
               <span className="text-xs font-bold text-zinc-600 dark:text-zinc-400 uppercase">Messages</span>
-              <i className="fa-solid fa-message text-pink-500"></i>
+              <MessageSquare className="text-pink-500" />
             </div>
             <div className="text-2xl font-bold text-zinc-800 dark:text-zinc-100">{productivityMetrics.messagesSent + productivityMetrics.messagesReceived}</div>
             <div className="text-[10px] text-zinc-500">{productivityMetrics.messagesSent} sent, {productivityMetrics.messagesReceived} received</div>
@@ -1646,7 +1648,7 @@ const Dashboard: React.FC<DashboardProps> = ({ user, apiKey, setView }) => {
           <div className="bg-zinc-50 dark:bg-zinc-900/50 rounded-xl p-4 border border-zinc-100 dark:border-zinc-800">
             <div className="flex items-center justify-between mb-2">
               <span className="text-xs font-bold text-zinc-600 dark:text-zinc-400 uppercase">Focus Time</span>
-              <i className="fa-solid fa-bullseye text-rose-500"></i>
+              <Target className="text-rose-500" />
             </div>
             <div className="text-2xl font-bold text-zinc-800 dark:text-zinc-100">{formatFocusTime(productivityMetrics.focusTime)}</div>
             <div className="text-[10px] text-zinc-500">Deep work today</div>
@@ -1654,7 +1656,7 @@ const Dashboard: React.FC<DashboardProps> = ({ user, apiKey, setView }) => {
           <div className="bg-zinc-50 dark:bg-zinc-900/50 rounded-xl p-4 border border-zinc-100 dark:border-zinc-800">
             <div className="flex items-center justify-between mb-2">
               <span className="text-xs font-bold text-zinc-600 dark:text-zinc-400 uppercase">Avg Response</span>
-              <i className="fa-solid fa-clock text-pink-500"></i>
+              <Clock className="text-pink-500" />
             </div>
             <div className="text-2xl font-bold text-zinc-800 dark:text-zinc-100">{productivityMetrics.responseTime}m</div>
             <div className="text-[10px] text-zinc-500">Message response time</div>
@@ -1781,7 +1783,7 @@ const Dashboard: React.FC<DashboardProps> = ({ user, apiKey, setView }) => {
               })}
             {goals.filter(goal => goal.enabled !== false).length === 0 && (
               <div className="text-center py-8 text-zinc-400">
-                <i className="fa-solid fa-bullseye mb-2 text-2xl"></i>
+                <Target className="mb-2 text-2xl" />
                 <p className="text-sm">No goals enabled. Click "Edit Goals" to get started.</p>
               </div>
             )}
@@ -1864,7 +1866,7 @@ const Dashboard: React.FC<DashboardProps> = ({ user, apiKey, setView }) => {
             if (membersToDisplay.length === 0) {
               return (
                 <div className="text-center py-8 text-zinc-400">
-                  <i className="fa-solid fa-users mb-2 text-2xl"></i>
+                  <Users className="mb-2 text-2xl" />
                   <p className="text-sm mb-3">
                     {selectedTeamId ? 'No members in this team yet.' : 'No team members yet.'}
                   </p>
@@ -1918,7 +1920,7 @@ const Dashboard: React.FC<DashboardProps> = ({ user, apiKey, setView }) => {
                       <span className="text-xs text-zinc-500 capitalize">{member.status}</span>
                     </div>
                     <button className="opacity-0 group-hover:opacity-100 w-8 h-8 rounded-lg bg-rose-50 dark:bg-rose-900/20 text-rose-500 flex items-center justify-center transition">
-                      <i className="fa-solid fa-message text-xs"></i>
+                      <MessageSquare className="text-xs" />
                     </button>
                   </div>
                 ))}
@@ -1947,7 +1949,7 @@ const Dashboard: React.FC<DashboardProps> = ({ user, apiKey, setView }) => {
                 {/* Communication Health */}
                 <div className="p-4 bg-gradient-to-br from-emerald-50 to-cyan-50 dark:from-emerald-950/20 dark:to-cyan-950/20 rounded-xl border border-emerald-200 dark:border-emerald-800">
                   <div className="flex items-center gap-2 mb-4">
-                    <i className="fa-solid fa-message text-emerald-600 dark:text-emerald-400"></i>
+                    <MessageSquare className="text-emerald-600 dark:text-emerald-400" />
                     <h4 className="font-semibold text-sm text-zinc-900 dark:text-white">Communication Health</h4>
                   </div>
                   <div className="grid grid-cols-2 gap-4">
@@ -1984,7 +1986,7 @@ const Dashboard: React.FC<DashboardProps> = ({ user, apiKey, setView }) => {
                 {/* Votes/Decisions */}
                 <div className="p-4 bg-gradient-to-br from-rose-50 to-pink-50 dark:from-rose-950/20 dark:to-pink-950/20 rounded-xl border border-rose-200 dark:border-rose-800">
                   <div className="flex items-center gap-2 mb-4">
-                    <i className="fa-solid fa-check-to-slot text-rose-600 dark:text-rose-400"></i>
+                    <CheckSquare className="text-rose-600 dark:text-rose-400" />
                     <h4 className="font-semibold text-sm text-zinc-900 dark:text-white">Votes & Decisions</h4>
                   </div>
                   <div className="grid grid-cols-2 gap-4">
@@ -2012,7 +2014,7 @@ const Dashboard: React.FC<DashboardProps> = ({ user, apiKey, setView }) => {
                 {/* Projects/Outcomes */}
                 <div className="p-4 bg-gradient-to-br from-purple-50 to-pink-50 dark:from-purple-950/20 dark:to-pink-950/20 rounded-xl border border-purple-200 dark:border-purple-800">
                   <div className="flex items-center gap-2 mb-4">
-                    <i className="fa-solid fa-bullseye text-purple-600 dark:text-purple-400"></i>
+                    <Target className="text-purple-600 dark:text-purple-400" />
                     <h4 className="font-semibold text-sm text-zinc-900 dark:text-white">Projects & Outcomes</h4>
                   </div>
                   <div className="grid grid-cols-2 gap-4">
@@ -2039,7 +2041,7 @@ const Dashboard: React.FC<DashboardProps> = ({ user, apiKey, setView }) => {
               </div>
             ) : (
               <div className="text-center py-8 text-zinc-400">
-                <i className="fa-solid fa-chart-line mb-2 text-2xl"></i>
+                <TrendingUp className="mb-2 text-2xl" />
                 <p className="text-sm">No team health data available yet.</p>
               </div>
             )}
@@ -2062,7 +2064,7 @@ const Dashboard: React.FC<DashboardProps> = ({ user, apiKey, setView }) => {
             <div className="flex items-center justify-between p-6 border-b border-zinc-200 dark:border-zinc-800">
               <div>
                 <h3 className="text-xl font-bold dark:text-white flex items-center gap-2">
-                  <i className="fa-solid fa-users text-pink-500"></i>
+                  <Users className="text-pink-500" />
                   {selectedTeamId ? 'Edit Team' : 'Create New Team'}
                 </h3>
                 <p className="text-xs text-zinc-500 mt-1">Add Pulse users and contacts to your team</p>
@@ -2075,7 +2077,7 @@ const Dashboard: React.FC<DashboardProps> = ({ user, apiKey, setView }) => {
                 setTeamBuilderSelectedMembers([]);
                 setTeamBuilderTab('pulse');
               }} className="w-8 h-8 rounded-lg flex items-center justify-center text-zinc-400 hover:text-zinc-600 dark:hover:text-zinc-300 hover:bg-zinc-100 dark:hover:bg-zinc-800 transition">
-                <i className="fa-solid fa-times"></i>
+                <X />
               </button>
             </div>
 
@@ -2116,7 +2118,7 @@ const Dashboard: React.FC<DashboardProps> = ({ user, apiKey, setView }) => {
                       : 'text-zinc-500 hover:text-zinc-700 dark:hover:text-zinc-300'
                   }`}
                 >
-                  <i className="fa-solid fa-user-check mr-2"></i>Pulse Users
+                  <UserCheck className="mr-2" />Pulse Users
                 </button>
                 <button
                   onClick={() => setTeamBuilderTab('contacts')}
@@ -2126,14 +2128,14 @@ const Dashboard: React.FC<DashboardProps> = ({ user, apiKey, setView }) => {
                       : 'text-zinc-500 hover:text-zinc-700 dark:hover:text-zinc-300'
                   }`}
                 >
-                  <i className="fa-solid fa-address-book mr-2"></i>Contacts
+                  <BookUser className="mr-2" />Contacts
                 </button>
               </div>
 
               {/* Search */}
               <div className="mb-4">
                 <div className="relative">
-                  <i className="fa-solid fa-search absolute left-3 top-1/2 -translate-y-1/2 text-zinc-400 text-sm"></i>
+                  <Search className="absolute left-3 top-1/2 -translate-y-1/2 text-zinc-400 text-sm" />
                   <input
                     type="text"
                     value={teamBuilderSearchQuery}
@@ -2163,7 +2165,7 @@ const Dashboard: React.FC<DashboardProps> = ({ user, apiKey, setView }) => {
                           }}
                           className="text-zinc-400 hover:text-red-500"
                         >
-                          <i className="fa-solid fa-times"></i>
+                          <X />
                         </button>
                       </div>
                     ))}
@@ -2186,7 +2188,7 @@ const Dashboard: React.FC<DashboardProps> = ({ user, apiKey, setView }) => {
                       return (
                         <div className="text-center py-12">
                           <div className="w-16 h-16 bg-zinc-100 dark:bg-zinc-800 rounded-full flex items-center justify-center mx-auto mb-4">
-                            <i className="fa-solid fa-user-plus text-2xl text-zinc-400"></i>
+                            <UserPlus className="text-2xl text-zinc-400" />
                           </div>
                           <p className="text-sm text-zinc-500 dark:text-zinc-400 mb-2">No Pulse users found</p>
                           <p className="text-xs text-zinc-400 dark:text-zinc-500">Start messaging Pulse users to see them here</p>
@@ -2215,7 +2217,7 @@ const Dashboard: React.FC<DashboardProps> = ({ user, apiKey, setView }) => {
                           <div className="flex-1 min-w-0">
                             <div className="font-medium text-sm dark:text-white truncate flex items-center gap-2">
                               {user.display_name || user.full_name || 'Pulse User'}
-                              {user.is_verified && <i className="fa-solid fa-circle-check text-rose-500 text-xs"></i>}
+                              {user.is_verified && <CheckCircle2 className="text-rose-500 text-xs" />}
                             </div>
                             {user.handle && (
                               <div className="text-xs text-emerald-500 truncate">@{user.handle}</div>
@@ -2266,7 +2268,7 @@ const Dashboard: React.FC<DashboardProps> = ({ user, apiKey, setView }) => {
                       return (
                         <div className="text-center py-12">
                           <div className="w-16 h-16 bg-zinc-100 dark:bg-zinc-800 rounded-full flex items-center justify-center mx-auto mb-4">
-                            <i className="fa-solid fa-address-book text-2xl text-zinc-400"></i>
+                            <BookUser className="text-2xl text-zinc-400" />
                           </div>
                           <p className="text-sm text-zinc-500 dark:text-zinc-400 mb-2">No SMS-enabled contacts found</p>
                           <p className="text-xs text-zinc-400 dark:text-zinc-500">Add contacts with phone numbers to see them here</p>
@@ -2303,7 +2305,7 @@ const Dashboard: React.FC<DashboardProps> = ({ user, apiKey, setView }) => {
                                 className="px-2 py-1 text-xs font-medium text-emerald-600 dark:text-emerald-400 hover:bg-emerald-50 dark:hover:bg-emerald-950/20 rounded transition"
                                 title="Invite to Pulse"
                               >
-                                <i className="fa-solid fa-paper-plane"></i>
+                                <Send />
                               </button>
                             )}
                             <button
@@ -2444,13 +2446,13 @@ const Dashboard: React.FC<DashboardProps> = ({ user, apiKey, setView }) => {
             <div className="flex items-center justify-between p-6 border-b border-zinc-200 dark:border-zinc-800">
               <div>
                 <h3 className="text-xl font-bold dark:text-white flex items-center gap-2">
-                  <i className="fa-solid fa-bullseye text-rose-500"></i>
+                  <Target className="text-rose-500" />
                   Edit Goals
                 </h3>
                 <p className="text-xs text-zinc-500 mt-1">Customize your weekly productivity targets</p>
               </div>
               <button onClick={() => setShowGoalEditor(false)} className="w-8 h-8 rounded-lg flex items-center justify-center text-zinc-400 hover:text-zinc-600 dark:hover:text-zinc-300 hover:bg-zinc-100 dark:hover:bg-zinc-800 transition">
-                <i className="fa-solid fa-times"></i>
+                <X />
               </button>
             </div>
 
@@ -2464,7 +2466,7 @@ const Dashboard: React.FC<DashboardProps> = ({ user, apiKey, setView }) => {
                     : 'border-transparent text-zinc-500 hover:text-zinc-700 dark:hover:text-zinc-300'
                 }`}
               >
-                <i className="fa-solid fa-list mr-2"></i>
+                <List className="mr-2" />
                 All Goals
               </button>
               <button
@@ -2475,7 +2477,7 @@ const Dashboard: React.FC<DashboardProps> = ({ user, apiKey, setView }) => {
                     : 'border-transparent text-zinc-500 hover:text-zinc-700 dark:hover:text-zinc-300'
                 }`}
               >
-                <i className="fa-solid fa-chart-line mr-2"></i>
+                <TrendingUp className="mr-2" />
                 Productivity
               </button>
               <button
@@ -2486,7 +2488,7 @@ const Dashboard: React.FC<DashboardProps> = ({ user, apiKey, setView }) => {
                     : 'border-transparent text-zinc-500 hover:text-zinc-700 dark:hover:text-zinc-300'
                 }`}
               >
-                <i className="fa-solid fa-comments mr-2"></i>
+                <MessagesSquare className="mr-2" />
                 Communication
               </button>
               <button
@@ -2497,7 +2499,7 @@ const Dashboard: React.FC<DashboardProps> = ({ user, apiKey, setView }) => {
                     : 'border-transparent text-zinc-500 hover:text-zinc-700 dark:hover:text-zinc-300'
                 }`}
               >
-                <i className="fa-solid fa-heart mr-2"></i>
+                <Heart className="mr-2" />
                 Wellness
               </button>
             </div>
@@ -2618,7 +2620,7 @@ const Dashboard: React.FC<DashboardProps> = ({ user, apiKey, setView }) => {
               {goals.filter(goal => goalEditorTab === 'all' || goal.category === goalEditorTab).length === 0 && (
                 <div className="text-center py-12">
                   <div className="w-16 h-16 bg-zinc-100 dark:bg-zinc-800 rounded-full flex items-center justify-center mx-auto mb-4">
-                    <i className="fa-solid fa-bullseye text-2xl text-zinc-400"></i>
+                    <Target className="text-2xl text-zinc-400" />
                   </div>
                   <p className="text-sm text-zinc-500 dark:text-zinc-400">No goals in this category yet</p>
                 </div>
