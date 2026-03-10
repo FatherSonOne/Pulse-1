@@ -25,7 +25,7 @@ import { warRoomExportService, WarRoomExportData } from '../services/warRoomExpo
 // Lazy load heavy components that may crash on mobile
 const AudioVisualizer = lazy(() => import('./WarRoom/AudioVisualizer').then(m => ({ default: m.AudioVisualizer })));
 const TokenStream = lazy(() => import('./WarRoom/TokenStream').then(m => ({ default: m.TokenStream })));
-const VoiceControl = lazy(() => import('./WarRoom/VoiceControl').then(m => ({ default: m.VoiceControl })));
+
 const ThinkingPanel = lazy(() => import('./WarRoom/ThinkingPanel').then(m => ({ default: m.ThinkingPanel })));
 // Legacy modes — moved to archived/ in Phase 1. Still functional, pending removal in Phase 4.
 const NeuralTerminal = lazy(() => import('./WarRoom/archived/NeuralTerminal').then(m => ({ default: m.NeuralTerminal })));
@@ -48,6 +48,9 @@ import { WarRoomModalStack } from './WarRoom/WarRoomModalStack';
 import { WarRoomLayout } from './WarRoom/WarRoomLayout';
 import { MissionLauncher } from './WarRoom/MissionLauncher';
 import { useBoardNotes } from './WarRoom/useBoardNotes';
+import { WarRoomHeader } from './WarRoom/WarRoomHeader';
+import { InputArea } from './WarRoom/InputArea';
+import { AgentType } from './WarRoom/AgentSelector';
 
 // Import voice synthesis hook - this is lightweight
 import { useVoiceSynthesis } from './WarRoom/VoiceSynthesis';
@@ -85,110 +88,6 @@ interface LiveDashboardProps {
   apiKey: string;
   userId: string;
 }
-
-// Agent type
-type AgentType = 'general' | 'skeptic' | 'scribe' | 'deep-diver';
-
-// Agent definitions for the selector
-const AGENTS: { id: AgentType; name: string; icon: string; description: string; color: string }[] = [
-  { id: 'general', name: 'General', icon: 'fa-lightbulb', description: 'Balanced AI assistant for any task', color: 'from-amber-500 to-yellow-500' },
-  { id: 'skeptic', name: 'Skeptic', icon: 'fa-scale-balanced', description: 'Critical thinker, questions assumptions', color: 'from-purple-500 to-indigo-500' },
-  { id: 'scribe', name: 'Scribe', icon: 'fa-pen-fancy', description: 'Note-taker and summarizer', color: 'from-emerald-500 to-teal-500' },
-  { id: 'deep-diver', name: 'Deep Diver', icon: 'fa-microscope', description: 'In-depth analysis and research', color: 'from-blue-500 to-cyan-500' },
-];
-
-// War Room styled Agent Selector component
-const AgentSelector: React.FC<{
-  activeAgent: AgentType;
-  onAgentChange: (agent: AgentType) => void;
-}> = ({ activeAgent, onAgentChange }) => {
-  const [isOpen, setIsOpen] = useState(false);
-  const buttonRef = useRef<HTMLButtonElement>(null);
-  const menuRef = useRef<HTMLDivElement>(null);
-
-  const selectedAgent = AGENTS.find(a => a.id === activeAgent) || AGENTS[0];
-
-  // Close on outside click
-  useEffect(() => {
-    const handleClickOutside = (e: MouseEvent) => {
-      if (menuRef.current && !menuRef.current.contains(e.target as Node) &&
-          buttonRef.current && !buttonRef.current.contains(e.target as Node)) {
-        setIsOpen(false);
-      }
-    };
-
-    if (isOpen) {
-      document.addEventListener('mousedown', handleClickOutside);
-    }
-    return () => document.removeEventListener('mousedown', handleClickOutside);
-  }, [isOpen]);
-
-  // Close on Escape
-  useEffect(() => {
-    const handleEscape = (e: KeyboardEvent) => {
-      if (e.key === 'Escape') setIsOpen(false);
-    };
-    if (isOpen) {
-      document.addEventListener('keydown', handleEscape);
-    }
-    return () => document.removeEventListener('keydown', handleEscape);
-  }, [isOpen]);
-
-  return (
-    <div className="relative">
-      <button
-        ref={buttonRef}
-        onClick={() => setIsOpen(!isOpen)}
-        className="war-room-btn px-3 py-1.5 flex items-center gap-2"
-      >
-        <span className={`w-2 h-2 rounded-full bg-gradient-to-r ${selectedAgent.color}`} />
-        <i className={`fa ${selectedAgent.icon} text-sm`}></i>
-        <span className="text-sm font-medium hidden sm:inline">{selectedAgent.name}</span>
-        <i className={`fa fa-chevron-down text-xs war-room-text-secondary transition-transform ${isOpen ? 'rotate-180' : ''}`}></i>
-      </button>
-
-      {isOpen && (
-        <div
-          ref={menuRef}
-          className="absolute top-full right-0 mt-2 w-64 war-room-panel z-50 overflow-hidden"
-        >
-          <div className="text-xs war-room-text-secondary px-3 py-2 font-semibold uppercase tracking-wider border-b border-white/10">
-            AI Agent Persona
-          </div>
-          <div className="p-1">
-            {AGENTS.map(agent => (
-              <button
-                key={agent.id}
-                onClick={() => {
-                  onAgentChange(agent.id);
-                  setIsOpen(false);
-                }}
-                className={`war-room-list-item w-full p-2.5 text-left ${
-                  activeAgent === agent.id ? 'active' : ''
-                }`}
-              >
-                <div className="flex items-center gap-3">
-                  <div className={`w-8 h-8 rounded-lg bg-gradient-to-br ${agent.color} bg-opacity-20 flex items-center justify-center`}>
-                    <i className={`fa ${agent.icon} text-sm ${activeAgent === agent.id ? 'text-white' : ''}`}></i>
-                  </div>
-                  <div className="flex-1 min-w-0">
-                    <div className="text-sm font-medium">{agent.name}</div>
-                    <div className={`text-xs truncate ${activeAgent === agent.id ? 'text-white/70' : 'war-room-text-secondary'}`}>
-                      {agent.description}
-                    </div>
-                  </div>
-                  {activeAgent === agent.id && (
-                    <Check className="fa text-xs" />
-                  )}
-                </div>
-              </button>
-            ))}
-          </div>
-        </div>
-      )}
-    </div>
-  );
-};
 
 const LiveDashboard: React.FC<LiveDashboardProps> = ({ apiKey, userId }) => {
   // Projects / War Rooms
@@ -338,7 +237,6 @@ const LiveDashboard: React.FC<LiveDashboardProps> = ({ apiKey, userId }) => {
   const [showVoiceAgentPanel, setShowVoiceAgentPanel] = useState(false);
   const [voiceAgentExpanded, setVoiceAgentExpanded] = useState(false);
   const openaiApiKey = localStorage.getItem('openai_api_key') || import.meta.env.VITE_OPENAI_API_KEY || '';
-
 
   // Handle resize and orientation changes for mobile responsiveness
   useEffect(() => {
@@ -1872,215 +1770,33 @@ const LiveDashboard: React.FC<LiveDashboardProps> = ({ apiKey, userId }) => {
 
       {/* Main Content */}
       <div className="flex-1 flex flex-col min-w-0 overflow-hidden">
-        {/* Header */}
-        <div className="war-room-header relative h-14 md:h-16 flex items-center justify-between px-2 md:px-4 shrink-0 z-30">
-          <div className="flex items-center gap-2 md:gap-3">
-            {/* Back to Modes button - show when not on hub */}
-            {!showWarRoomHub && (
-              <button
-                type="button"
-                onClick={() => setShowWarRoomHub(true)}
-                className="flex items-center gap-2 px-3 py-1.5 rounded-lg text-sm font-medium transition-all
-                  bg-zinc-100 hover:bg-zinc-200 dark:bg-zinc-800 dark:hover:bg-zinc-700
-                  text-zinc-600 dark:text-zinc-300 border border-zinc-200 dark:border-zinc-700"
-                title="Back to Mode Selection"
-              >
-                <LayoutGrid className="fa" />
-                <span className="hidden sm:inline">Hub</span>
-              </button>
-            )}
-
-            {/* War Room title when on hub */}
-            {showWarRoomHub && (
-              <div className="flex items-center gap-2">
-                <div className="w-8 h-8 rounded-lg flex items-center justify-center" style={{ background: 'var(--wr-accent-primary)' }}>
-                  <BookOpen className="fa text-white text-sm" />
-                </div>
-                <span className="text-sm font-bold" style={{ color: 'var(--wr-accent-primary)' }}>
-                  War Room
-                </span>
-              </div>
-            )}
-
-            {/* Project badge - only show when in a mode */}
-            {!showWarRoomHub && selectedProject && !isMobile && (
-              <div className="war-room-badge flex items-center gap-2 px-3 py-1.5">
-                <i className={`fa ${selectedProject.icon}`} style={{ color: selectedProject.color }}></i>
-                <span className="text-sm font-medium">{selectedProject.name}</span>
-              </div>
-            )}
-
-            {/* Session info - only show when in a mode */}
-            {!showWarRoomHub && selectedSessionId && !isMobile && (
-              <div className="text-sm flex items-center">
-                <span className="war-room-text-secondary">Session:</span>
-                <span className="ml-2 font-medium truncate max-w-[150px]">
-                  {sessions.find(s => s.id === selectedSessionId)?.title}
-                </span>
-              </div>
-            )}
-          </div>
-
-          {/* CENTER: Context Button — toggles IntelDesk source panel */}
-          <button
-            onClick={() => setContextPanelOpen((v) => !v)}
-            className={`flex items-center gap-2 px-4 py-2 rounded-full transition-all font-medium text-sm ${
-              contextPanelOpen
-                ? 'bg-cyan-500/20 text-cyan-300 border border-cyan-500/40 shadow-lg shadow-cyan-500/10'
-                : activeContextDocs.size > 0
-                  ? 'bg-emerald-500/20 text-emerald-400 border border-emerald-500/30 hover:bg-emerald-500/30'
-                  : 'bg-rose-500/10 text-rose-400 border border-rose-500/20 hover:bg-rose-500/20'
-            }`}
-          >
-            <Database className="fa" />
-            <span className="hidden sm:inline">Sources</span>
-            {activeContextDocs.size > 0 && (
-              <span className={`text-xs px-1.5 py-0.5 rounded-full ${contextPanelOpen ? 'bg-cyan-500/20' : 'bg-emerald-500/30'}`}>
-                {activeContextDocs.size}
-              </span>
-            )}
-            <i className={`fa fa-chevron-${contextPanelOpen ? 'left' : 'right'} text-xs transition-transform`}></i>
-          </button>
-
-          {/* Desktop Controls - Simplified */}
-          <div className="hidden lg:flex items-center gap-2">
-            {/* Mode switching handled by WarRoomLayout's ModeToolbar (Phase 1) */}
-
-            {/* Voice Agent Button - OpenAI Realtime */}
-            <button
-              onClick={() => setShowVoiceAgentPanel(true)}
-              className={`px-3 py-1.5 rounded-full text-sm transition-all flex items-center gap-2 font-medium ${
-                showVoiceAgentPanel
-                  ? 'bg-gradient-to-r from-rose-500 to-pink-500 text-white shadow-lg shadow-rose-500/30'
-                  : 'bg-rose-500/10 text-rose-400 border border-rose-500/20 hover:bg-rose-500/20 hover:shadow-lg hover:shadow-rose-500/20'
-              }`}
-              title="Open Voice Agent (OpenAI Realtime)"
-            >
-              <i className={`fa fa-waveform-lines ${showVoiceAgentPanel ? 'animate-pulse' : ''}`}></i>
-              <span className="hidden xl:inline">Voice Agent</span>
-            </button>
-
-            {/* Export Button - Only show when there are messages */}
-            {messages.length > 0 && (
-              <button
-                onClick={() => setShowExportModal(true)}
-                className="px-3 py-1.5 bg-gray-100 hover:bg-gray-200 dark:bg-gray-800 dark:hover:bg-gray-700 border border-gray-200 dark:border-gray-700 rounded-full text-sm text-gray-700 dark:text-gray-300 transition-all flex items-center gap-2 font-medium"
-              >
-                <Share2 className="fa" />
-                <span className="hidden xl:inline">Export</span>
-              </button>
-            )}
-          </div>
-
-          {/* Mobile/Tablet Controls */}
-          <div className="flex lg:hidden items-center gap-1">
-            {/* Voice Agent Button - Mobile */}
-            <button
-              onClick={() => setShowVoiceAgentPanel(true)}
-              className={`p-2 rounded-full text-sm transition-all ${
-                showVoiceAgentPanel
-                  ? 'bg-gradient-to-r from-rose-500 to-pink-500 text-white shadow-lg'
-                  : 'text-rose-400 hover:bg-rose-500/20'
-              }`}
-              title="Voice Agent"
-            >
-              <Activity className="fa" />
-            </button>
-
-            {/* Quick action buttons on mobile */}
-            <button
-              onClick={() => setVoiceEnabled(!voiceEnabled)}
-              className={`p-2 rounded-full text-sm transition-all ${
-                voiceEnabled
-                  ? 'bg-rose-600 text-white'
-                  : 'text-gray-600 dark:text-gray-300 hover:bg-gray-100 dark:hover:bg-gray-800'
-              }`}
-            >
-              <Mic className="fa" />
-            </button>
-
-            <button
-              onClick={() => setEnableExtendedThinking(!enableExtendedThinking)}
-              className={`p-2 rounded-full text-sm transition-all ${
-                enableExtendedThinking
-                  ? 'bg-rose-600 text-white'
-                  : 'text-gray-600 dark:text-gray-300 hover:bg-gray-100 dark:hover:bg-gray-800'
-              }`}
-            >
-              <Brain className="fa" />
-            </button>
-
-            {/* Mobile menu toggle */}
-            <button
-              onClick={(e) => {
-                e.stopPropagation();
-                setShowMobileMenu(!showMobileMenu);
-              }}
-              className="mobile-menu-container p-2 rounded-full text-gray-600 dark:text-gray-300 hover:bg-gray-100 dark:hover:bg-gray-800"
-            >
-              <EllipsisVertical className="fa" />
-            </button>
-          </div>
-        </div>
-
-        {/* Context Panel overlay retired in Phase 9.
-            Sources button in header now controls IntelDesk via contextPanelOpen.
-            Knowledge Bank accessible via ⌘K palette or KnowledgeBank modal. */}
-
-        {/* Mobile Menu Dropdown */}
-        {showMobileMenu && isMobile && (
-          <div
-            className="mobile-menu-container fixed top-16 right-2 z-[9990] bg-white dark:bg-gray-900 rounded-xl shadow-xl border border-gray-200 dark:border-rose-500/30 p-3 min-w-[220px] max-h-[calc(100vh-5rem)] overflow-y-auto"
-            onClick={(e) => e.stopPropagation()}
-          >
-            <div className="space-y-2">
-              {/* Mode switching handled by WarRoomLayout's ModeToolbar (Phase 1) */}
-
-              {/* Voice Controls */}
-              <button
-                onClick={() => { setVoiceSynthesisEnabled(!voiceSynthesisEnabled); setShowMobileMenu(false); }}
-                className={`w-full text-left px-3 py-2 rounded-lg text-sm flex items-center gap-3 ${
-                  voiceSynthesisEnabled ? 'bg-rose-100 dark:bg-rose-600/20 text-rose-700 dark:text-rose-200' : 'hover:bg-gray-100 dark:hover:bg-gray-800 text-gray-700 dark:text-gray-300'
-                }`}
-              >
-                <Volume2 className="fa w-5" />
-                Voice Output {voiceSynthesisEnabled ? 'On' : 'Off'}
-              </button>
-
-              {/* Agent Selector - War Room Style */}
-              <div className="px-3 py-2">
-                <span className="text-xs font-semibold text-gray-500 dark:text-gray-400 uppercase mb-1 block">Agent</span>
-                <AgentSelector
-                  activeAgent={activeAgent}
-                  onAgentChange={(agent) => { setActiveAgent(agent); settingsService.set('liveBoardSelectedAgent', agent); setShowMobileMenu(false); }}
-                />
-              </div>
-
-
-              {/* Audio & Export */}
-              {messages.length > 0 && (
-                <>
-                  <button
-                    onClick={() => { handleGenerateAudioOverview(); setShowMobileMenu(false); }}
-                    disabled={isGeneratingAudio}
-                    className="w-full text-left px-3 py-2 rounded-lg text-sm flex items-center gap-3 hover:bg-gray-100 dark:hover:bg-gray-800 text-gray-700 dark:text-gray-300 disabled:opacity-50"
-                  >
-                    <Headphones className="fa w-5" />
-                    {isGeneratingAudio ? 'Generating...' : 'Generate Audio'}
-                  </button>
-
-                  <button
-                    onClick={() => { setShowExportModal(true); setShowMobileMenu(false); }}
-                    className="w-full text-left px-3 py-2 rounded-lg text-sm flex items-center gap-3 hover:bg-gray-100 dark:hover:bg-gray-800 text-gray-700 dark:text-gray-300"
-                  >
-                    <Share2 className="fa w-5" />
-                    Export Session
-                  </button>
-                </>
-              )}
-            </div>
-          </div>
-        )}
+        <WarRoomHeader
+          showWarRoomHub={showWarRoomHub}
+          setShowWarRoomHub={setShowWarRoomHub}
+          selectedProject={selectedProject}
+          selectedSessionId={selectedSessionId}
+          sessions={sessions}
+          isMobile={isMobile}
+          contextPanelOpen={contextPanelOpen}
+          setContextPanelOpen={setContextPanelOpen}
+          activeContextDocs={activeContextDocs}
+          showVoiceAgentPanel={showVoiceAgentPanel}
+          setShowVoiceAgentPanel={setShowVoiceAgentPanel}
+          messages={messages}
+          setShowExportModal={setShowExportModal}
+          voiceEnabled={voiceEnabled}
+          setVoiceEnabled={setVoiceEnabled}
+          enableExtendedThinking={enableExtendedThinking}
+          setEnableExtendedThinking={setEnableExtendedThinking}
+          showMobileMenu={showMobileMenu}
+          setShowMobileMenu={setShowMobileMenu}
+          voiceSynthesisEnabled={voiceSynthesisEnabled}
+          setVoiceSynthesisEnabled={setVoiceSynthesisEnabled}
+          activeAgent={activeAgent}
+          setActiveAgent={setActiveAgent}
+          isGeneratingAudio={isGeneratingAudio}
+          handleGenerateAudioOverview={handleGenerateAudioOverview}
+        />
 
         {/* Mode-Based Content Rendering */}
         <WarRoomLayout
@@ -2129,326 +1845,38 @@ const LiveDashboard: React.FC<LiveDashboardProps> = ({ apiKey, userId }) => {
           />
         )}
 
-        {/* Input Area - Only show when not using a mode that has its own input */}
-        {selectedSessionId && !['tactical', 'focus', 'elegant-interface', 'analyst', 'strategist', 'brainstorm', 'debrief'].includes(warRoomMode) && (
-          <div
-            className="p-2 md:p-4 border-t border-rose-200 bg-white/90 dark:border-rose-500/40 dark:bg-[#1c1b23]/95 backdrop-blur-xl shrink-0 md:rounded-2xl shadow-[0_12px_48px_-28px_rgba(255,82,134,0.55)] transition-all duration-300 hover:shadow-[0_16px_60px_-28px_rgba(255,82,134,0.65)]"
-          >
-            {/* Active Document Indicators - hidden on mobile to save space */}
-            {/* Active Context Panel - Above Input */}
-            {showActiveContext && (
-              <div className="mb-2 p-2 md:p-3 bg-gradient-to-r from-rose-900/20 to-pink-900/20 border border-rose-500/20 rounded-xl">
-                <div className="flex items-center justify-between mb-2">
-                  <div className="flex items-center gap-2">
-                    <Layers className="fa text-rose-400 text-sm" />
-                    <span className="text-xs md:text-sm font-semibold text-rose-300">
-                      ACTIVE CONTEXT
-                    </span>
-                    <span className="text-xs px-2 py-0.5 bg-rose-900/40 border border-rose-500/30 rounded-full text-rose-300">
-                      {activeContextDocs.size} / {documents.filter(d => d.processing_status === 'completed').length}
-                    </span>
-                    {!isMobile && (
-                      <span className="text-[10px] text-rose-400/70">
-                        ~{Math.round(estimateContextTokens())} tokens
-                      </span>
-                    )}
-                  </div>
-                  <div className="flex items-center gap-1">
-                    {documents.filter(d => d.processing_status === 'completed').length > 0 && (
-                      <>
-                        {activeContextDocs.size > 0 && (
-                          <button
-                            onClick={clearActiveContext}
-                            className="text-[10px] md:text-xs px-2 py-0.5 hover:bg-red-900/20 rounded text-red-400 transition-colors"
-                            title="Clear all"
-                          >
-                            <X className="fa mr-1" />
-                            {!isMobile && 'Clear'}
-                          </button>
-                        )}
-                        {activeContextDocs.size < documents.filter(d => d.processing_status === 'completed').length && (
-                          <button
-                            onClick={addAllDocsToContext}
-                            className="text-[10px] md:text-xs px-2 py-0.5 hover:bg-rose-900/20 rounded text-rose-300 transition-colors"
-                            title="Add all documents"
-                          >
-                            <Plus className="fa mr-1" />
-                            {!isMobile && 'Add All'}
-                          </button>
-                        )}
-                      </>
-                    )}
-                    <button
-                      onClick={() => setShowActiveContext(false)}
-                      className="w-5 h-5 flex items-center justify-center hover:bg-rose-900/20 rounded text-rose-400"
-                      title="Hide context panel"
-                    >
-                      <ChevronUp className="fa text-xs" />
-                    </button>
-                  </div>
-                </div>
-                
-                {activeContextDocs.size === 0 ? (
-                  <div className="text-center py-2">
-                    <p className="text-xs text-rose-300/70 mb-1">
-                      <Info className="fa mr-1" />
-                      No documents in active context
-                    </p>
-                    {documents.length === 0 ? (
-                      <p className="text-xs text-rose-300/50">
-                        Upload documents in sidebar to get started →
-                      </p>
-                    ) : (
-                      <p className="text-xs text-rose-300/50">
-                        Click checkboxes in sidebar to add documents ✓
-                      </p>
-                    )}
-                  </div>
-                ) : (
-                  <div className="flex flex-wrap gap-1">
-                    {activeContextDocuments.map((doc) => (
-                      <div
-                        key={doc.id}
-                        className="flex items-center gap-1 px-2 py-1 bg-rose-900/30 border border-rose-500/30 rounded-full text-xs group hover:border-rose-400 transition-colors"
-                      >
-                        <FileText className="fa text-rose-400 text-[10px]" />
-                        <span className="text-rose-200 truncate max-w-[100px] md:max-w-[150px]">
-                          {doc.title}
-                        </span>
-                        {!isMobile && doc.ai_keywords && doc.ai_keywords.length > 0 && (
-                          <span className="text-[10px] text-rose-300/70">
-                            ({doc.ai_keywords.length} topics)
-                          </span>
-                        )}
-                        <button
-                          onClick={() => toggleDocInContext(doc.id)}
-                          className="w-4 h-4 flex items-center justify-center hover:bg-red-900/50 rounded-full opacity-70 group-hover:opacity-100 transition-opacity"
-                          title="Remove from context"
-                        >
-                          <X className="fa text-red-400 text-[10px]" />
-                        </button>
-                      </div>
-                    ))}
-                  </div>
-                )}
-              </div>
-            )}
-
-            {/* Show context panel toggle when hidden */}
-            {!showActiveContext && (
-              <div className="mb-2 px-3 py-1 bg-rose-900/10 border border-rose-500/20 rounded-lg flex items-center justify-between cursor-pointer hover:bg-rose-900/20 transition-colors" onClick={() => setShowActiveContext(true)}>
-                <span className="text-xs text-rose-300">
-                  <Layers className="fa mr-1" />
-                  {activeContextDocs.size} document{activeContextDocs.size !== 1 ? 's' : ''} in context
-                </span>
-                <button
-                  className="text-xs px-2 py-0.5 hover:bg-rose-900/20 rounded text-rose-300"
-                >
-                  <ChevronDown className="fa mr-1" />
-                  Show
-                </button>
-              </div>
-            )}
-
-            {/* Voice Control */}
-            {voiceEnabled && (
-              <div className="mb-2 md:mb-3">
-                <ErrorBoundary 
-                  componentName="Voice Control"
-                  fallback={
-                    <div className="text-center py-2 text-amber-500 text-sm">
-                      <MicOff className="fa mr-2" />
-                      Voice input unavailable
-                    </div>
-                  }
-                >
-                  <Suspense fallback={<div className="h-10 animate-pulse bg-gray-700/50 rounded-lg"></div>}>
-                    <VoiceControl
-                      enabled={voiceEnabled}
-                      mode={voiceMode}
-                      wakeWord="hey pulse"
-                      onTranscript={(text, isFinal) => {
-                        if (isFinal) {
-                          setInput(text);
-                          handleSendMessage();
-                        } else {
-                          setInput(text);
-                        }
-                      }}
-                      onCommand={(cmd) => {
-                        if (cmd === 'show_thinking') {
-                          setShowThinkingLogs(true);
-                        } else if (cmd === 'hide_thinking') {
-                          setShowThinkingLogs(false);
-                        } else if (cmd.startsWith('switch_mode:')) {
-                          const mode = cmd.split(':')[1] as WarRoomMode;
-                          setWarRoomMode(mode);
-                          toast.success(`Switched to ${mode}!`);
-                        }
-                      }}
-                      onListeningChange={(isListening) => {
-                        setVisualizerType(isListening ? 'listening' : 'idle');
-                      }}
-                    />
-                  </Suspense>
-                </ErrorBoundary>
-              </div>
-            )}
-
-            {/* Enhanced Input Area - Cursor-style with agent selector */}
-            <div className="flex flex-col gap-2">
-              {/* Quick Actions Row */}
-              <div className="flex items-center justify-between px-1">
-                {/* Left side: Agent selector + actions */}
-                <div className="flex items-center gap-2">
-                  {/* Agent/Persona Selector - Cursor-style dropdown */}
-                  <div className="relative group">
-                    <button
-                      data-agent-trigger
-                      onClick={() => {
-                        const dropdown = document.getElementById('agent-dropdown');
-                        dropdown?.classList.toggle('hidden');
-                      }}
-                      className="flex items-center gap-1.5 px-2.5 py-1.5 bg-gray-100 dark:bg-gray-800 hover:bg-gray-200 dark:hover:bg-gray-700 border border-gray-200 dark:border-gray-600 rounded-lg text-xs font-medium text-gray-700 dark:text-gray-300 transition-all"
-                    >
-                      <i className={`fa ${activeAgent === 'pulse' ? 'fa-robot' : activeAgent === 'analyst' ? 'fa-chart-line' : activeAgent === 'creative' ? 'fa-palette' : activeAgent === 'coder' ? 'fa-code' : 'fa-brain'} text-rose-500`}></i>
-                      <span className="hidden sm:inline capitalize">{activeAgent}</span>
-                      <ChevronDown className="fa text-[10px] opacity-60" />
-                    </button>
-                    <div
-                      id="agent-dropdown"
-                      className="hidden absolute bottom-full left-0 mb-1 w-48 bg-white dark:bg-gray-800 border border-gray-200 dark:border-gray-600 rounded-lg shadow-xl z-50 py-1"
-                    >
-                      {['pulse', 'analyst', 'creative', 'coder', 'researcher'].map((agent) => (
-                        <button
-                          key={agent}
-                          onClick={() => {
-                            setActiveAgent(agent as any);
-                            settingsService.set('liveBoardSelectedAgent', agent);
-                            document.getElementById('agent-dropdown')?.classList.add('hidden');
-                          }}
-                          className={`w-full px-3 py-2 text-left text-sm flex items-center gap-2 hover:bg-gray-100 dark:hover:bg-gray-700 ${activeAgent === agent ? 'text-rose-500 bg-rose-50 dark:bg-rose-900/20' : 'text-gray-700 dark:text-gray-300'}`}
-                        >
-                          <i className={`fa ${agent === 'pulse' ? 'fa-robot' : agent === 'analyst' ? 'fa-chart-line' : agent === 'creative' ? 'fa-palette' : agent === 'coder' ? 'fa-code' : 'fa-brain'} w-4`}></i>
-                          <span className="capitalize">{agent}</span>
-                          {activeAgent === agent && <Check className="fa ml-auto text-xs" />}
-                        </button>
-                      ))}
-                    </div>
-                  </div>
-
-                  {/* Divider */}
-                  <div className="w-px h-5 bg-gray-300 dark:bg-gray-600 hidden sm:block"></div>
-
-                  {/* Quick Actions */}
-                  <div className="flex items-center gap-1">
-                    {/* Upload File */}
-                    <button
-                      onClick={() => {
-                        const fileInput = document.querySelector('input[type="file"][accept=".txt,.md,.json,.csv,.pdf,.docx,.doc,.xlsx,.xls,.png,.jpg,.jpeg,.gif,.webp"]') as HTMLInputElement;
-                        fileInput?.click();
-                      }}
-                      className="p-1.5 hover:bg-gray-100 dark:hover:bg-gray-700 rounded-lg text-gray-500 dark:text-gray-400 hover:text-rose-500 transition-all"
-                      title="Upload file"
-                    >
-                      <Paperclip className="fa text-sm" />
-                    </button>
-
-                    {/* Voice Input Toggle */}
-                    <button
-                      onClick={() => setVoiceEnabled(!voiceEnabled)}
-                      className={`p-1.5 rounded-lg transition-all ${voiceEnabled ? 'bg-rose-100 dark:bg-rose-900/30 text-rose-500' : 'hover:bg-gray-100 dark:hover:bg-gray-700 text-gray-500 dark:text-gray-400 hover:text-rose-500'}`}
-                      title={voiceEnabled ? 'Disable voice input' : 'Enable voice input'}
-                    >
-                      <i className={`fa ${voiceEnabled ? 'fa-microphone' : 'fa-microphone-slash'} text-sm`}></i>
-                    </button>
-
-                    {/* Deep Think Toggle */}
-                    <button
-                      onClick={() => setEnableExtendedThinking(!enableExtendedThinking)}
-                      className={`p-1.5 rounded-lg transition-all ${enableExtendedThinking ? 'bg-purple-100 dark:bg-purple-900/30 text-purple-500' : 'hover:bg-gray-100 dark:hover:bg-gray-700 text-gray-500 dark:text-gray-400 hover:text-purple-500'}`}
-                      title={enableExtendedThinking ? 'Deep thinking enabled' : 'Enable deep thinking'}
-                    >
-                      <Brain className="fa text-sm" />
-                    </button>
-                  </div>
-                </div>
-
-                {/* Right side: Context info */}
-                <div className="flex items-center gap-2 text-[10px] text-gray-500 dark:text-gray-400">
-                  {/* Context Window Indicator */}
-                  <div className="hidden sm:flex items-center gap-1.5 px-2 py-1 bg-gray-100 dark:bg-gray-800 rounded-md" title="Estimated context usage">
-                    <Layers className="fa text-rose-400" />
-                    <span>~{Math.round(estimateContextTokens()).toLocaleString()}</span>
-                    <span className="text-gray-400">/</span>
-                    <span>200K</span>
-                    <div className="w-12 h-1.5 bg-gray-300 dark:bg-gray-600 rounded-full overflow-hidden ml-1">
-                      <div
-                        className="h-full bg-gradient-to-r from-rose-500 to-pink-500 rounded-full transition-all"
-                        style={{ width: `${Math.min((estimateContextTokens() / 200000) * 100, 100)}%` }}
-                      ></div>
-                    </div>
-                  </div>
-
-                  {/* Active docs count - mobile */}
-                  <div className="sm:hidden flex items-center gap-1 px-2 py-1 bg-gray-100 dark:bg-gray-800 rounded-md">
-                    <FileText className="fa text-rose-400" />
-                    <span>{activeContextDocs.size}</span>
-                  </div>
-                </div>
-              </div>
-
-              {/* Main Input Row */}
-              <div className="flex gap-2">
-                <input
-                  type="text"
-                  value={input}
-                  onChange={(e) => setInput(e.target.value)}
-                  onKeyDown={(e) => e.key === 'Enter' && !e.shiftKey && handleSendMessage()}
-                  placeholder={isMobile ? 'Ask anything...' : (documents.length > 0 ? 'Ask about your documents...' : 'Ask anything...')}
-                  className="flex-1 px-4 md:px-6 py-2.5 md:py-3 bg-white dark:bg-gray-800 border border-gray-200 dark:border-rose-500/30 rounded-full focus:border-rose-500 focus:outline-none text-gray-900 dark:text-white shadow-sm text-sm md:text-base"
-                  disabled={isLoading}
-                />
-                <button
-                  onClick={handleSendMessage}
-                  disabled={isLoading || !input.trim()}
-                  className="px-4 md:px-6 py-2.5 md:py-3 bg-gradient-to-r from-rose-600 to-pink-600 hover:from-rose-700 hover:to-pink-700 rounded-full font-medium text-white disabled:opacity-50 disabled:cursor-not-allowed shadow-lg hover:shadow-xl transition-all"
-                >
-                  <Send className="fa" />
-                </button>
-              </div>
-
-              {/* Suggested Prompts - Below Input */}
-              {suggestions.length > 0 && showSuggestions && (
-                <div className="flex items-center gap-2 mt-2 overflow-x-auto pb-1">
-                  <span className="text-[10px] text-gray-400 dark:text-gray-500 shrink-0">
-                    <Wand2 className="fa mr-1" />
-                    Try:
-                  </span>
-                  {suggestions.slice(0, 3).map((s) => (
-                    <button
-                      key={s.id}
-                      onClick={() => handleUseSuggestion(s)}
-                      className="px-3 py-1 bg-gray-100 dark:bg-gray-800 hover:bg-gray-200 dark:hover:bg-gray-700 border border-gray-200 dark:border-gray-600 rounded-full text-xs whitespace-nowrap text-gray-600 dark:text-gray-300 hover:text-rose-500 dark:hover:text-rose-400 transition-colors"
-                    >
-                      {s.suggestion_text.length > 60 ? s.suggestion_text.substring(0, 60) + '...' : s.suggestion_text}
-                    </button>
-                  ))}
-                  {suggestions.length > 3 && (
-                    <span className="text-[10px] text-gray-400 dark:text-gray-500">+{suggestions.length - 3} more</span>
-                  )}
-                  <button
-                    onClick={() => setShowSuggestions(false)}
-                    className="p-1 hover:bg-gray-200 dark:hover:bg-gray-700 rounded text-gray-400 hover:text-gray-600 dark:hover:text-gray-300 transition-colors shrink-0"
-                    title="Hide suggestions"
-                  >
-                    <X className="fa text-[10px]" />
-                  </button>
-                </div>
-              )}
-            </div>
-          </div>
-        )}
+        <InputArea
+          selectedSessionId={selectedSessionId}
+          warRoomMode={warRoomMode}
+          showActiveContext={showActiveContext}
+          setShowActiveContext={setShowActiveContext}
+          activeContextDocs={activeContextDocs}
+          documents={documents}
+          activeContextDocuments={activeContextDocuments}
+          estimateContextTokens={estimateContextTokens}
+          clearActiveContext={clearActiveContext}
+          addAllDocsToContext={addAllDocsToContext}
+          toggleDocInContext={toggleDocInContext}
+          isMobile={isMobile}
+          voiceEnabled={voiceEnabled}
+          setVoiceEnabled={setVoiceEnabled}
+          voiceMode={voiceMode}
+          setInput={setInput}
+          handleSendMessage={handleSendMessage}
+          setShowThinkingLogs={setShowThinkingLogs}
+          setWarRoomMode={setWarRoomMode}
+          setVisualizerType={setVisualizerType}
+          input={input}
+          isLoading={isLoading}
+          suggestions={suggestions}
+          showSuggestions={showSuggestions}
+          setShowSuggestions={setShowSuggestions}
+          handleUseSuggestion={handleUseSuggestion}
+          activeAgent={activeAgent}
+          setActiveAgent={setActiveAgent}
+          enableExtendedThinking={enableExtendedThinking}
+          setEnableExtendedThinking={setEnableExtendedThinking}
+        />
 
         {/* Audio Player */}
         {audioUrl && (
