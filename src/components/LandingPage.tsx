@@ -1270,39 +1270,11 @@ const LandingPage: React.FC<LandingPageProps> = ({ onGetStarted }) => {
         </section>
       </div>
 
-      {/* ── B: Integration Logo Wall ── */}
-      <section className="py-20 px-6 bg-zinc-900/20 border-y border-zinc-800/30 relative overflow-hidden">
-        <div className="absolute inset-0 pointer-events-none" style={{ background: 'radial-gradient(ellipse at 50% 100%, rgba(244,63,94,0.07) 0%, transparent 60%)' }} />
-        <div className="max-w-7xl mx-auto relative z-10">
-          <div className="text-center mb-12">
-            <div className="inline-flex items-center gap-2 px-3 py-1.5 rounded-full bg-zinc-800/60 border border-zinc-700/50 text-zinc-400 text-xs font-bold uppercase tracking-widest mb-4">
-              <span className="relative flex h-2 w-2">
-                <span className="animate-ping absolute inline-flex h-full w-full rounded-full bg-rose-400 opacity-75"></span>
-                <span className="relative inline-flex rounded-full h-2 w-2 bg-rose-500"></span>
-              </span>
-              Live Sync
-            </div>
-            <h2 className="text-3xl sm:text-5xl font-bold text-transparent bg-clip-text bg-gradient-to-r from-white via-zinc-200 to-zinc-400 mb-3">Works With Everything You Use</h2>
-            <p className="text-zinc-500 text-base max-w-xl mx-auto">Native integrations — no middleware, no Zapier required. Real-time bidirectional sync across every platform.</p>
-          </div>
-          <div className="grid grid-cols-4 sm:grid-cols-7 gap-3">
-            {PLATFORMS.map(p => (
-              <div
-                key={p.name}
-                className="group flex flex-col items-center gap-2.5 p-4 rounded-2xl bg-zinc-900/60 border border-zinc-800 hover:border-zinc-600 transition-all duration-300 hover:-translate-y-1.5 cursor-default"
-              >
-                <div
-                  className="w-10 h-10 rounded-xl flex items-center justify-center transition-all duration-300 group-hover:scale-110 group-hover:shadow-lg"
-                  style={{ backgroundColor: p.color, boxShadow: `0 4px 14px ${p.color}45` }}
-                >
-                  <i className={`${p.icon} text-base text-white`}></i>
-                </div>
-                <span className="text-[10px] font-medium text-zinc-500 group-hover:text-zinc-300 transition-colors text-center leading-tight">{p.name}</span>
-              </div>
-            ))}
-          </div>
-        </div>
-      </section>
+      {/* ── B: Integration Logo Wall — hidden until integrations ship ── */}
+      {/* TODO: Re-enable this section once platform integrations are live */}
+      {/* <section className="py-20 px-6 bg-zinc-900/20 border-y border-zinc-800/30 relative overflow-hidden">
+        ...
+      </section> */}
 
       {/* ── G + F: Mobile Preview + Keyboard Shortcuts ── */}
       <section className="py-24 px-6 relative overflow-hidden">
