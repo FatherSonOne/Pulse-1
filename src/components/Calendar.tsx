@@ -2004,6 +2004,78 @@ const Calendar: React.FC<CalendarProps> = ({ contacts, openTaskPanel = false, on
     );
   };
 
+  // ── Stable callbacks for React.memo-wrapped sub-components ────────────────
+  const handleCloseEventModal = useCallback(() => {
+    setShowEventModal(false);
+    setEditingEvent(null);
+  }, []);
+
+  const handleOpenInviteModal = useCallback((contact: Contact) => {
+    setInviteContact(contact);
+    setShowInviteModal(true);
+  }, []);
+
+  const handleOpenGoalModal = useCallback((goal: any) => {
+    setEditingGoal(goal);
+    setShowGoalModal(true);
+  }, []);
+
+  const handleCloseGoalModal = useCallback(() => {
+    setShowGoalModal(false);
+    setEditingGoal(null);
+  }, []);
+
+  const handleSaveGoal = useCallback((newGoal: any) => {
+    if (editingGoal) {
+      setGoals(prev => prev.map(g => g.id === editingGoal.id ? newGoal : g));
+    } else {
+      setGoals(prev => [...prev, newGoal]);
+    }
+    setShowGoalModal(false);
+    setEditingGoal(null);
+  }, [editingGoal]);
+
+  const handleDeleteGoal = useCallback((id: string) => {
+    setGoals(prev => prev.filter(g => g.id !== id));
+    setShowGoalModal(false);
+    setEditingGoal(null);
+  }, []);
+
+  const handleCloseMeetingPrep = useCallback(() => {
+    setShowMeetingPrepModal(false);
+    setPrepEvent(null);
+  }, []);
+
+  const handleCloseRescheduleModal = useCallback(() => {
+    setShowRescheduleModal(false);
+    setRescheduleEvent(null);
+  }, []);
+
+  const handleFollowUpCreateAction = useCallback((suggestion: any) => {
+    if (suggestion.type === 'event') {
+      setNewEventTitle(suggestion.title);
+      setNewEventDate(suggestion.suggestedTime.toISOString().split('T')[0]);
+      setNewEventTime(
+        `${suggestion.suggestedTime.getHours().toString().padStart(2, '0')}:${suggestion.suggestedTime.getMinutes().toString().padStart(2, '0')}`
+      );
+      setNewEventDesc(suggestion.description || '');
+      setShowEventModal(true);
+    }
+    postMeetingService.markAsActioned(activeFollowUpPrompt!.id);
+    setActiveFollowUpPrompt(null);
+  }, [activeFollowUpPrompt]);
+
+  const handleFollowUpDismiss = useCallback((id: string) => {
+    postMeetingService.dismissFollowUp(id);
+    setActiveFollowUpPrompt(null);
+  }, []);
+
+  const handleFollowUpSkip = useCallback((id: string) => {
+    postMeetingService.dismissFollowUp(id);
+    setActiveFollowUpPrompt(null);
+  }, []);
+
+
   return (
     <div className={`pulse-calendar h-full flex-1 min-h-0 flex flex-col bg-white dark:bg-zinc-950 overflow-hidden animate-fade-in relative${focusMode ? ' cal-focus-mode' : ''}`}>
 
@@ -2110,7 +2182,7 @@ const Calendar: React.FC<CalendarProps> = ({ contacts, openTaskPanel = false, on
         contacts={contacts}
         autoDetectEventType={autoDetectEventType}
         onSubmit={handleCreateEvent}
-        onClose={() => { setShowEventModal(false); setEditingEvent(null); }}
+        onClose={handleCloseEventModal}
         onOpenCustomTypesManager={() => setShowCustomTypesManager(true)}
       />
 
@@ -3616,49 +3688,31 @@ const Calendar: React.FC<CalendarProps> = ({ contacts, openTaskPanel = false, on
         onSetNewEventType={setNewEventType}
         relationshipInsights={relationshipInsights}
         onAnalyzeRelationships={handleAnalyzeRelationships}
-        onOpenInviteModal={(contact) => { setInviteContact(contact); setShowInviteModal(true); }}
+        onOpenInviteModal={handleOpenInviteModal}
         analytics={analytics}
         onGenerateAnalytics={handleGenerateAnalytics}
         goals={goals}
         goalAlignments={goalAlignments}
         showGoalModal={showGoalModal}
         editingGoal={editingGoal}
-        onOpenGoalModal={(goal) => { setEditingGoal(goal); setShowGoalModal(true); }}
-        onCloseGoalModal={() => { setShowGoalModal(false); setEditingGoal(null); }}
-        onSaveGoal={(newGoal) => {
-          if (editingGoal) {
-            setGoals(prev => prev.map(g => g.id === editingGoal.id ? newGoal : g));
-          } else {
-            setGoals(prev => [...prev, newGoal]);
-          }
-          setShowGoalModal(false);
-          setEditingGoal(null);
-        }}
-        onDeleteGoal={(id) => { setGoals(prev => prev.filter(g => g.id !== id)); setShowGoalModal(false); setEditingGoal(null); }}
+        onOpenGoalModal={handleOpenGoalModal}
+        onCloseGoalModal={handleCloseGoalModal}
+        onSaveGoal={handleSaveGoal}
+        onDeleteGoal={handleDeleteGoal}
         onAnalyzeGoalAlignment={handleAnalyzeGoalAlignment}
         showMeetingPrepModal={showMeetingPrepModal}
         meetingPrep={meetingPrep}
         prepEvent={prepEvent}
-        onCloseMeetingPrep={() => { setShowMeetingPrepModal(false); setPrepEvent(null); }}
+        onCloseMeetingPrep={handleCloseMeetingPrep}
         showRescheduleModal={showRescheduleModal}
         rescheduleEvent={rescheduleEvent}
         rescheduleOptions={rescheduleOptions}
-        onCloseRescheduleModal={() => { setShowRescheduleModal(false); setRescheduleEvent(null); }}
+        onCloseRescheduleModal={handleCloseRescheduleModal}
         onApplyReschedule={handleApplyReschedule}
         activeFollowUpPrompt={activeFollowUpPrompt}
-        onFollowUpCreateAction={(suggestion) => {
-          if (suggestion.type === 'event') {
-            setNewEventTitle(suggestion.title);
-            setNewEventDate(suggestion.suggestedTime.toISOString().split('T')[0]);
-            setNewEventTime(`${suggestion.suggestedTime.getHours().toString().padStart(2, '0')}:${suggestion.suggestedTime.getMinutes().toString().padStart(2, '0')}`);
-            setNewEventDesc(suggestion.description || '');
-            setShowEventModal(true);
-          }
-          postMeetingService.markAsActioned(activeFollowUpPrompt!.id);
-          setActiveFollowUpPrompt(null);
-        }}
-        onFollowUpDismiss={(id) => { postMeetingService.dismissFollowUp(id); setActiveFollowUpPrompt(null); }}
-        onFollowUpSkip={(id) => { postMeetingService.dismissFollowUp(id); setActiveFollowUpPrompt(null); }}
+        onFollowUpCreateAction={handleFollowUpCreateAction}
+        onFollowUpDismiss={handleFollowUpDismiss}
+        onFollowUpSkip={handleFollowUpSkip}
       />
 
       {/* Custom Event Types Manager */}
