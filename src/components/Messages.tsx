@@ -138,6 +138,9 @@ import {
 } from './Messages/modals';
 import { MessagesTopModals } from './Messages/MessagesTopModals';
 import { MessagesEndModals } from './Messages/MessagesEndModals';
+import { ConversationSidebar } from './Messages/ConversationSidebar';
+import { MessageInputSection } from './Messages/MessageInputSection';
+import { MESSAGE_TEMPLATES as MSG_TEMPLATES_CONST, REACTION_CATEGORIES as REACTION_CATS_CONST, generateSmartTemplateText as genSmartTemplate } from './Messages/messageConstants';
 
 const COMMON_REACTIONS = ['👍', '❤️', '😂', '😮', '😢', '🔥'];
 
@@ -230,24 +233,9 @@ const QuickAddContact: React.FC<QuickAddContactProps> = ({ onAddContact, onConta
 };
 
 // Extended reaction emoji picker
-const REACTION_CATEGORIES = {
-  'Frequently Used': ['👍', '❤️', '😂', '😮', '😢', '🔥', '🎉', '🙏'],
-  'Smileys': ['😀', '😊', '😄', '🤔', '😎', '🥳', '😍', '🤩'],
-  'Gestures': ['👏', '🙌', '✌️', '🤝', '💪', '👊', '🫡', '✅'],
-  'Objects': ['💡', '📌', '⚡', '🚀', '💯', '🎯', '⭐', '💎'],
-};
-
+const REACTION_CATEGORIES = REACTION_CATS_CONST;
 // Smart message templates - these are base templates that get personalized
-const MESSAGE_TEMPLATES = [
-  { id: 'ack', label: 'Acknowledge', baseText: 'Got it, thanks!', contextKey: 'acknowledge' },
-  { id: 'looking', label: 'Looking into it', baseText: "I'll look into this and get back to you shortly.", contextKey: 'investigate' },
-  { id: 'meeting', label: 'Schedule meeting', baseText: "Let's schedule a quick call to discuss. What times work for you?", contextKey: 'meeting' },
-  { id: 'followup', label: 'Follow up', baseText: "Just following up on this. Any updates?", contextKey: 'followup' },
-  { id: 'thanks', label: 'Thank you', baseText: 'Thanks for the update!', contextKey: 'thanks' },
-  { id: 'approve', label: 'Approve', baseText: 'Looks good to me. Approved! ✅', contextKey: 'approve' },
-  { id: 'delay', label: 'Need more time', baseText: "I'll need a bit more time on this. Can we extend the deadline?", contextKey: 'delay' },
-  { id: 'delegate', label: 'Delegate', baseText: "I'm looping in the right person who can help with this.", contextKey: 'delegate' },
-];
+const MESSAGE_TEMPLATES = MSG_TEMPLATES_CONST;
 
 // Helper function to convert URLs in text to clickable links
 const renderTextWithLinks = (text: string): React.ReactNode => {
@@ -296,41 +284,7 @@ const renderTextWithLinks = (text: string): React.ReactNode => {
 };
 
 // Generate smart/contextual template text based on conversation context
-const generateSmartTemplateText = (
-  templateId: string,
-  baseText: string,
-  contactName: string,
-  lastMessage?: string
-): string => {
-  const firstName = contactName.split(' ')[0];
-  const timeOfDay = new Date().getHours();
-  const greeting = timeOfDay < 12 ? 'morning' : timeOfDay < 17 ? 'afternoon' : 'evening';
-
-  switch (templateId) {
-    case 'ack':
-      return lastMessage?.includes('?')
-        ? `Got it, ${firstName}! I'll look into that.`
-        : `Thanks for letting me know, ${firstName}!`;
-    case 'looking':
-      return `Hey ${firstName}, I'm looking into this now and will get back to you shortly.`;
-    case 'meeting':
-      return `Hi ${firstName}! Let's schedule a quick call to discuss. What times work for you this week?`;
-    case 'followup':
-      return `Hi ${firstName}, just following up on our previous conversation. Any updates on your end?`;
-    case 'thanks':
-      return lastMessage?.toLowerCase().includes('done') || lastMessage?.toLowerCase().includes('complete')
-        ? `Amazing work, ${firstName}! Really appreciate you getting this done.`
-        : `Thanks for the update, ${firstName}!`;
-    case 'approve':
-      return `Looks great, ${firstName}! Approved ✅`;
-    case 'delay':
-      return `Hey ${firstName}, I'll need a bit more time on this. Would it be possible to extend the deadline?`;
-    case 'delegate':
-      return `Hi ${firstName}, I'm going to loop in the right person who can better help with this.`;
-    default:
-      return baseText;
-  }
-};
+const generateSmartTemplateText = genSmartTemplate;
 
 // Keyboard shortcuts configuration
 const KEYBOARD_SHORTCUTS = {
@@ -2757,258 +2711,44 @@ const Messages: React.FC<MessagesProps> = ({ apiKey, contacts, initialContactId,
         handleSelectConversation={handleSelectConversation}
       />
 
-      {/* Sidebar (Threads) - Desktop: 30% width, Mobile: Hidden (shown via drawer) */}
-      <div ref={sidebarRef} className={`w-full md:w-[30%] md:min-w-[280px] md:max-w-[400px] border-r border-zinc-200 dark:border-zinc-800 bg-zinc-50 dark:bg-zinc-900/50 flex-shrink-0 flex flex-col ${mobileView === 'chat' ? 'max-md:hidden' : ''}`}>
-        <div className="p-5 flex justify-between items-center">
-          <h2 className="font-bold text-lg text-zinc-900 dark:text-white tracking-tight">Pulse Messages</h2>
-          <div className="flex items-center gap-2">
-            <button onClick={() => setShowInviteModal(true)} className="w-12 h-12 rounded-lg text-rose-500 hover:bg-rose-100 dark:hover:bg-rose-900/30 flex items-center justify-center transition" title="Invite team member">
-              <UserPlus className="text-sm" />
-            </button>
-            <button onClick={() => setShowCellularSMS(true)} className="w-12 h-12 rounded-lg text-emerald-600 hover:bg-emerald-100 dark:hover:bg-emerald-900/30 flex items-center justify-center transition" title="Cellular SMS">
-              <Smartphone className="text-sm" />
-            </button>
-            <button onClick={() => setShowShortcuts(true)} className="w-12 h-12 rounded-lg text-zinc-400 hover:bg-zinc-200 dark:hover:bg-zinc-800 flex items-center justify-center transition" title="Keyboard shortcuts">
-              <Keyboard className="text-sm" />
-            </button>
-            <button onClick={() => setShowNewChatModal(true)} className="w-12 h-12 rounded-lg bg-zinc-200 dark:bg-zinc-800 text-zinc-600 dark:text-zinc-300 flex items-center justify-center transition" title="New message">
-              <SquarePen className="text-sm" />
-            </button>
-          </div>
-        </div>
-
-        {/* Thread Filter Dropdown */}
-        <div className="px-4 pb-3 relative">
-          <div className="flex items-center gap-2">
-            {/* Filter Dropdown */}
-            <div className="relative flex-1">
-              <button
-                onClick={() => setShowFilterDropdown(!showFilterDropdown)}
-                className="w-full flex items-center justify-between px-3 py-2 bg-white dark:bg-zinc-800 border border-zinc-200 dark:border-zinc-700 rounded-lg text-sm hover:border-zinc-300 dark:hover:border-zinc-600 transition"
-              >
-                <span className="flex items-center gap-2">
-                  <i className={`fa-solid ${
-                    threadFilter === 'all' ? 'fa-inbox' :
-                    threadFilter === 'unread' ? 'fa-circle' :
-                    threadFilter === 'pinned' ? 'fa-thumbtack' :
-                    threadFilter === 'with-tasks' ? 'fa-check-square' :
-                    'fa-gavel'
-                  } text-xs text-zinc-500`}></i>
-                  <span className="text-zinc-700 dark:text-zinc-300">
-                    {threadFilter === 'all' ? 'All Messages' :
-                     threadFilter === 'unread' ? 'Unread' :
-                     threadFilter === 'pinned' ? 'Pinned' :
-                     threadFilter === 'with-tasks' ? 'With Tasks' :
-                     'With Votes'}
-                  </span>
-                </span>
-                <i className={`fa-solid fa-chevron-down text-xs text-zinc-400 transition-transform ${showFilterDropdown ? 'rotate-180' : ''}`}></i>
-              </button>
-              {showFilterDropdown && (
-                <div className="absolute top-full left-0 right-0 mt-1 bg-white dark:bg-zinc-800 border border-zinc-200 dark:border-zinc-700 rounded-lg shadow-lg z-50 py-1 animate-fade-in">
-                  {([
-                    { key: 'all', label: 'All Messages', icon: 'fa-inbox' },
-                    { key: 'unread', label: 'Unread', icon: 'fa-circle' },
-                    { key: 'pinned', label: 'Pinned', icon: 'fa-thumbtack' },
-                    { key: 'with-tasks', label: 'With Tasks', icon: 'fa-check-square' },
-                    { key: 'with-decisions', label: 'With Votes', icon: 'fa-gavel' },
-                  ] as const).map(filter => (
-                    <button
-                      key={filter.key}
-                      onClick={() => { setThreadFilter(filter.key as any); setShowFilterDropdown(false); }}
-                      className={`w-full flex items-center gap-2 px-3 py-2 text-sm hover:bg-zinc-100 dark:hover:bg-zinc-700 transition ${threadFilter === filter.key ? 'bg-zinc-100 dark:bg-zinc-700 text-zinc-900 dark:text-white' : 'text-zinc-600 dark:text-zinc-400'}`}
-                    >
-                      <i className={`fa-solid ${filter.icon} text-xs w-4`}></i>
-                      {filter.label}
-                      {threadFilter === filter.key && <Check className="text-xs ml-auto text-emerald-500" />}
-                    </button>
-                  ))}
-                  <div className="border-t border-zinc-200 dark:border-zinc-700 my-1"></div>
-                  <button
-                    onClick={() => { setShowArchived(!showArchived); setShowFilterDropdown(false); }}
-                    className={`w-full flex items-center gap-2 px-3 py-2 text-sm hover:bg-zinc-100 dark:hover:bg-zinc-700 transition ${showArchived ? 'text-amber-600 dark:text-amber-400' : 'text-zinc-600 dark:text-zinc-400'}`}
-                  >
-                    <Archive className="text-xs w-4" />
-                    {showArchived ? 'Hide Archived' : 'Show Archived'}
-                    {showArchived && <Check className="text-xs ml-auto text-amber-500" />}
-                  </button>
-                </div>
-              )}
-            </div>
-          </div>
-        </div>
-
-        {/* Search Bar */}
-        <div className="px-4 pb-3">
-          <div className="relative">
-            <input
-              ref={searchInputRef}
-              type="text"
-              placeholder="Search messages..."
-              value={searchQuery}
-              onChange={e => handleSearch(e.target.value)}
-              onFocus={() => setIsSearchOpen(true)}
-              className="w-full bg-white dark:bg-zinc-800 border border-zinc-200 dark:border-zinc-700 rounded-lg px-3 py-2 text-sm pl-9 outline-none focus:ring-2 focus:ring-blue-500"
-            />
-            <Search className="absolute left-3 top-1/2 -translate-y-1/2 text-zinc-400 text-xs" />
-            {searchQuery && (
-              <button onClick={() => { setSearchQuery(''); setSearchResults([]); }} className="absolute right-3 top-1/2 -translate-y-1/2 text-zinc-400 hover:text-zinc-600">
-                <X className="text-xs" />
-              </button>
-            )}
-          </div>
-          {isSearchOpen && searchQuery && (
-            <div className="mt-2 flex gap-2">
-              {(['all', 'files', 'decisions', 'tasks'] as const).map(f => (
-                <button key={f} onClick={() => { setSearchFilter(f); handleSearch(searchQuery); }} className={`px-2 py-1 rounded text-xs ${searchFilter === f ? 'bg-blue-500 text-white' : 'bg-zinc-200 dark:bg-zinc-700 text-zinc-600 dark:text-zinc-300'}`}>
-                  {f.charAt(0).toUpperCase() + f.slice(1)}
-                </button>
-              ))}
-            </div>
-          )}
-        </div>
-
-        {/* Search Results */}
-        {searchQuery && searchResults.length > 0 && (
-          <div className="px-2 pb-2 border-b border-zinc-200 dark:border-zinc-800">
-            <div className="text-xs text-zinc-500 px-2 mb-2">{searchResults.length} results</div>
-            <div className="max-h-48 overflow-y-auto space-y-1">
-              {searchResults.slice(0, 5).map(result => (
-                <button
-                  key={result.message.id}
-                  onClick={() => { setActiveThreadId(result.thread.id); setActivePulseConversation(null); setMobileView('chat'); setSearchQuery(''); setSearchResults([]); }}
-                  className="w-full text-left p-2 rounded-lg hover:bg-zinc-100 dark:hover:bg-zinc-800 transition"
-                >
-                  <div className="text-xs font-medium dark:text-white truncate">{result.thread.contactName}</div>
-                  <div className="text-xs text-zinc-500 truncate">{result.message.text}</div>
-                </button>
-              ))}
-            </div>
-          </div>
-        )}
-
-        <div
-          ref={threadListRef}
-          className="overflow-y-auto flex-1 px-2"
-          style={{ position: 'relative' }}
-        >
-          {/* Pulse Conversations Only - SMS threads moved to Cellular SMS sub-page */}
-          {pulseConversations.length > 0 ? (
-            <div style={{ height: conversationsTotalHeight, position: 'relative' }}>
-              {virtualConversations.map(({ item: conv, style }) => {
-                const otherUser = conv.other_user;
-                if (!otherUser) return null;
-                const hasUnread = (conv.unread_count || 0) > 0;
-                return (
-                  <div key={conv.id} style={style}>
-                    <div
-                      className={`p-3 rounded-xl cursor-pointer transition relative group flex items-center gap-3
-                        ${activePulseConversation === conv.id ? 'bg-emerald-50 dark:bg-emerald-900/20 shadow-sm ring-1 ring-emerald-200 dark:ring-emerald-800' : 'hover:bg-zinc-100 dark:hover:bg-zinc-800/50'}`}
-                    >
-                      <button
-                        onClick={(e) => {
-                          e.stopPropagation();
-                          setSelectedContactUserId(otherUser.id);
-                          setShowContactPanel(true);
-                        }}
-                        className="w-10 h-10 rounded-full bg-gradient-to-br from-rose-500 to-pink-600 flex items-center justify-center text-white text-sm font-bold flex-shrink-0 relative hover:ring-2 hover:ring-emerald-500/50 transition-all"
-                        title="View contact details"
-                      >
-                        {otherUser.avatar_url ? (
-                          <img src={otherUser.avatar_url} alt="" className="w-full h-full rounded-full object-cover" />
-                        ) : (
-                          (otherUser.display_name || otherUser.handle || '?').charAt(0).toUpperCase()
-                        )}
-                        {/* Online indicator */}
-                        <div className="absolute -bottom-0.5 -right-0.5">
-                          <OnlineIndicator userId={otherUser.id} size="medium" />
-                        </div>
-                        {otherUser.is_verified && (
-                          <div className="absolute -top-0.5 -right-0.5 w-4 h-4 bg-blue-500 rounded-full flex items-center justify-center border-2 border-white dark:border-zinc-900">
-                            <Check className="text-[7px] text-white" />
-                          </div>
-                        )}
-                      </button>
-                      <div onClick={() => handleSelectConversation(conv.id)} className="flex-1 overflow-hidden min-w-0">
-                        <div className="flex justify-between items-baseline mb-0.5">
-                          <div className="flex items-center gap-1.5 flex-1 min-w-0">
-                            <h3
-                              className={`text-sm truncate ${hasUnread ? 'font-bold' : 'font-medium'} text-zinc-900 dark:text-zinc-100`}
-                            >
-                              {otherUser.display_name || otherUser.full_name || otherUser.handle || 'Unknown'}
-                            </h3>
-                            {/* Phase 4.2: Role badge in conversation list */}
-                            {otherUser.is_verified && (
-                              <UserBadge role="member" size="xs" showIcon={true} showLabel={false} />
-                            )}
-                          </div>
-                          {conv.last_message_at && (
-                            <span className="text-[10px] text-zinc-400 whitespace-nowrap ml-2">
-                              {new Date(conv.last_message_at).toLocaleTimeString([], { hour: '2-digit', minute: '2-digit' })}
-                            </span>
-                          )}
-                        </div>
-                        <div className="flex items-center gap-1">
-                          <AtSign className="text-emerald-500 text-[10px]" />
-                          {otherUser.handle && <span className="text-[10px] text-emerald-600 dark:text-emerald-400">@{otherUser.handle}</span>}
-                          {conv.last_message_preview && (
-                            <p className="text-xs truncate text-zinc-500 ml-1">{conv.last_message_preview}</p>
-                          )}
-                        </div>
-                      </div>
-                      {/* Thread Badges - Pin/Star indicators */}
-                      <ThreadBadges actions={messageEnhancements.getThreadActions(conv.id)} />
-                      {hasUnread && (
-                        <div className="w-5 h-5 bg-emerald-500 rounded-full flex items-center justify-center">
-                          <span className="text-[10px] text-white font-bold">{conv.unread_count}</span>
-                        </div>
-                      )}
-                      {/* Thread Actions Menu - Pin/Star/Mute/Archive/Delete */}
-                      <div className="opacity-0 group-hover:opacity-100 transition-opacity">
-                        <ThreadActionsMenu
-                          actions={messageEnhancements.getThreadActions(conv.id)}
-                          onTogglePin={() => messageEnhancements.toggleThreadPin(conv.id)}
-                          onToggleStar={() => messageEnhancements.toggleThreadStar(conv.id)}
-                          onToggleMute={() => messageEnhancements.toggleThreadMute(conv.id)}
-                          onToggleArchive={() => messageEnhancements.toggleThreadArchive(conv.id)}
-                          onDelete={() => handleDeletePulseConversation(conv.id)}
-                        />
-                      </div>
-                    </div>
-                  </div>
-                );
-              })}
-            </div>
-          ) : (
-            /* Empty state when no Pulse conversations */
-            <div className="flex flex-col items-center justify-center py-12 text-center px-4">
-              <div className="w-20 h-20 rounded-2xl bg-gradient-to-br from-rose-100 to-pink-100 dark:from-rose-900/30 dark:to-pink-900/30 flex items-center justify-center mb-4">
-                <MessagesSquare className="text-3xl text-rose-500" />
-              </div>
-              <h3 className="text-zinc-900 dark:text-white font-semibold mb-2">No Pulse Messages Yet</h3>
-              <p className="text-zinc-500 text-sm mb-4 max-w-[200px]">
-                Start a conversation with a Pulse user to get started.
-              </p>
-              <button
-                onClick={() => setShowNewChatModal(true)}
-                className="px-4 py-2 bg-gradient-to-r from-rose-500 to-pink-600 text-white text-sm font-medium rounded-lg hover:from-rose-600 hover:to-pink-700 transition shadow-lg shadow-rose-500/30"
-              >
-                <Plus className="mr-2" />
-                New Conversation
-              </button>
-              {threads.length > 0 && (
-                <button
-                  onClick={() => setShowCellularSMS(true)}
-                  className="mt-3 px-4 py-2 bg-zinc-100 dark:bg-zinc-800 text-zinc-700 dark:text-zinc-300 text-sm font-medium rounded-lg hover:bg-zinc-200 dark:hover:bg-zinc-700 transition"
-                >
-                  <Smartphone className="mr-2 text-green-500" />
-                  View SMS ({threads.length})
-                </button>
-              )}
-            </div>
-          )}
-        </div>
-      </div>
+      <ConversationSidebar
+        sidebarRef={sidebarRef}
+        mobileView={mobileView}
+        setShowInviteModal={setShowInviteModal}
+        setShowCellularSMS={setShowCellularSMS}
+        setShowShortcuts={setShowShortcuts}
+        setShowNewChatModal={setShowNewChatModal}
+        threadFilter={threadFilter}
+        setThreadFilter={setThreadFilter}
+        showFilterDropdown={showFilterDropdown}
+        setShowFilterDropdown={setShowFilterDropdown}
+        showArchived={showArchived}
+        setShowArchived={setShowArchived}
+        searchInputRef={searchInputRef}
+        searchQuery={searchQuery}
+        handleSearch={handleSearch}
+        isSearchOpen={isSearchOpen}
+        setIsSearchOpen={setIsSearchOpen}
+        searchResults={searchResults}
+        searchFilter={searchFilter}
+        setSearchFilter={setSearchFilter}
+        setActiveThreadId={setActiveThreadId}
+        setActivePulseConversation={setActivePulseConversation}
+        setMobileView={setMobileView}
+        setSearchQuery={setSearchQuery}
+        setSearchResults={setSearchResults}
+        threadListRef={threadListRef}
+        pulseConversations={pulseConversations}
+        conversationsTotalHeight={conversationsTotalHeight}
+        virtualConversations={virtualConversations}
+        activePulseConversation={activePulseConversation}
+        setSelectedContactUserId={setSelectedContactUserId}
+        setShowContactPanel={setShowContactPanel}
+        handleSelectConversation={handleSelectConversation}
+        messageEnhancements={messageEnhancements}
+        handleDeletePulseConversation={handleDeletePulseConversation}
+        threads={threads}
+      />
 
       {/* Main Chat Area - 70% width on desktop for split-view */}
       {/* Pulse Conversation View */}
@@ -3889,7 +3629,6 @@ const Messages: React.FC<MessagesProps> = ({ apiKey, contacts, initialContactId,
             </div>
           )}
 
-
           {/* Phase 3: RadialMenu for Reactions */}
           {radialMenuMessageId && radialMenu.isOpen && (
             <RadialMenu
@@ -4638,571 +4377,67 @@ const Messages: React.FC<MessagesProps> = ({ apiKey, contacts, initialContactId,
         focusThreadId={focusThreadId}
         setFocusThreadId={setFocusThreadId}
       />
-      {/* Message Input Portal - Fixed at viewport bottom (for regular threads only, Pulse uses inline input) */}
-      {activeThread && !activePulseConversation && (
-        <MessageInputPortal
-          sidebarWidth={sidebarRef.current?.offsetWidth || 0}
-          isActive={true}
-          usePortal={true}
-        >
-           {/* View-Only Mode Banner for Non-Pulse Users on PC */}
-           {isViewOnlyMode && (
-             <div className="mb-4 p-4 bg-amber-50 dark:bg-amber-900/20 border border-amber-200 dark:border-amber-800 rounded-xl">
-               <div className="flex items-start gap-3">
-                 <div className="w-10 h-10 bg-amber-100 dark:bg-amber-900/40 rounded-full flex items-center justify-center flex-shrink-0">
-                   <Smartphone className="text-amber-600 dark:text-amber-400" />
-                 </div>
-                 <div className="flex-1">
-                   <h4 className="font-semibold text-amber-800 dark:text-amber-200 text-sm mb-1">Send from your phone</h4>
-                   <p className="text-xs text-amber-700 dark:text-amber-300 mb-2">
-                     {activeContact?.name || 'This contact'} isn't on Pulse yet. Open the app on your mobile device to send SMS messages.
-                   </p>
-                   <button
-                     onClick={() => {
-                       const contact = contacts.find(c => c.id === activeThread?.contactId);
-                       if (contact) {
-                         setInviteTargetContact(contact);
-                         setShowInviteToPulseModal(true);
-                       }
-                     }}
-                     className="text-xs font-medium text-amber-600 dark:text-amber-400 hover:underline inline-flex items-center gap-1"
-                   >
-                     <Rocket /> Invite to Pulse for free messaging
-                   </button>
-                 </div>
-               </div>
-             </div>
-           )}
-
-           {/* SMS Mode Banner for Native Apps */}
-           {isNonPulseThread && canSendNativeSms && (
-             <div className="mb-3 px-3 py-2 bg-blue-50 dark:bg-blue-900/20 border border-blue-200 dark:border-blue-800 rounded-lg flex items-center gap-2 text-xs">
-               <MessageSquare className="text-blue-500" />
-               <span className="text-blue-700 dark:text-blue-300">
-                 Messages to {activeContact?.name || 'this contact'} will be sent as SMS via your carrier
-               </span>
-               <button
-                 onClick={() => {
-                   const contact = contacts.find(c => c.id === activeThread?.contactId);
-                   if (contact) {
-                     setInviteTargetContact(contact);
-                     setShowInviteToPulseModal(true);
-                   }
-                 }}
-                 className="ml-auto text-blue-600 dark:text-blue-400 hover:underline font-medium"
-               >
-                 Invite to Pulse
-               </button>
-             </div>
-           )}
-
-           {/* Message Templates Popup */}
-           {showTemplates && (
-             <div className="absolute bottom-full left-4 right-4 mb-2 bg-white dark:bg-zinc-900 border border-zinc-200 dark:border-zinc-800 rounded-xl shadow-xl p-3 animate-slide-up z-30">
-               <div className="flex items-center justify-between mb-3">
-                 <span className="text-xs font-bold text-zinc-500 uppercase tracking-wider">Quick Templates</span>
-                 <button onClick={() => setShowTemplates(false)} className="text-zinc-400 hover:text-zinc-600">
-                   <X className="text-xs" />
-                 </button>
-               </div>
-               <div className="grid grid-cols-2 gap-2">
-                 {MESSAGE_TEMPLATES.map(template => {
-                   // Generate smart preview text
-                   const previewText = activeThread
-                     ? generateSmartTemplateText(
-                         template.id,
-                         template.baseText,
-                         activeThread.contactName,
-                         activeThread.messages[activeThread.messages.length - 1]?.sender === 'other'
-                           ? activeThread.messages[activeThread.messages.length - 1]?.text
-                           : undefined
-                       )
-                     : template.baseText;
-                   return (
-                     <button
-                       key={template.id}
-                       onClick={() => useTemplate(template)}
-                       className="text-left p-2 rounded-lg bg-zinc-50 dark:bg-zinc-800 hover:bg-zinc-100 dark:hover:bg-zinc-700 transition"
-                     >
-                       <div className="text-xs font-medium dark:text-white flex items-center gap-1.5">
-                         <Wand2 className="text-purple-400 text-[8px]" />
-                         {template.label}
-                       </div>
-                       <div className="text-[10px] text-zinc-500 truncate">{previewText}</div>
-                     </button>
-                   );
-                 })}
-               </div>
-             </div>
-           )}
-
-           {/* Extended Emoji Picker */}
-           {showEmojiPicker && !emojiPickerMessageId && (
-             <div className="absolute bottom-full left-4 mb-2 bg-white dark:bg-zinc-900 border border-zinc-200 dark:border-zinc-800 rounded-xl shadow-xl p-3 animate-slide-up z-30 w-80">
-               <div className="flex items-center justify-between mb-3">
-                 <span className="text-xs font-bold text-zinc-500 uppercase tracking-wider">Add Emoji</span>
-                 <button onClick={() => setShowEmojiPicker(false)} className="text-zinc-400 hover:text-zinc-600">
-                   <X className="text-xs" />
-                 </button>
-               </div>
-               <div className="space-y-3 max-h-48 overflow-y-auto">
-                 {Object.entries(REACTION_CATEGORIES).map(([category, emojis]) => (
-                   <div key={category}>
-                     <div className="text-[10px] text-zinc-400 mb-1">{category}</div>
-                     <div className="flex flex-wrap gap-1">
-                       {emojis.map(emoji => (
-                         <button
-                           key={emoji}
-                           onClick={() => { setInputText(prev => prev + emoji); setShowEmojiPicker(false); }}
-                           className="w-8 h-8 flex items-center justify-center hover:bg-zinc-100 dark:hover:bg-zinc-800 rounded text-lg"
-                         >
-                           {emoji}
-                         </button>
-                       ))}
-                     </div>
-                   </div>
-                 ))}
-               </div>
-             </div>
-           )}
-
-           {/* Phase 2: AI Coach - Real-time draft analysis */}
-           {showAICoach && inputText.length > 10 && activeThread && (
-             <div className="mb-3">
-               <MessageEnhancementErrorBoundary featureName="AI Features">
-                 <React.Suspense fallback={<FeatureSkeleton />}>
-                   <BundleAI.AICoachEnhanced
-                     draftText={inputText}
-                     recentMessages={activeThread.messages.slice(-10).map(m => ({
-                       text: m.text,
-                       sender: m.sender,
-                       timestamp: m.timestamp
-                     }))}
-                     contactName={activeThread.contactName}
-                     onApplySuggestion={(newText) => setInputText(newText)}
-                     onDismiss={() => setShowAICoach(false)}
-                   />
-                 </React.Suspense>
-               </MessageEnhancementErrorBoundary>
-             </div>
-           )}
-
-           {/* Smart Compose - AI-powered message suggestions */}
-           {showSmartCompose && messageEnhancements.smartSuggestions.length > 0 && (
-             <div className="mb-3">
-               <SmartCompose
-                 text={inputText}
-                 suggestions={messageEnhancements.smartSuggestions}
-                 onSelectSuggestion={(text) => setInputText(text)}
-                 loading={messageEnhancements.loadingSuggestions}
-               />
-             </div>
-           )}
-
-           {/* Quick Actions Bar - One-click actions */}
-           {showQuickActionsBar && activeThread && (
-             <div className="mb-3">
-               <QuickActions
-                 onEmojiReaction={(emoji) => {
-                   // Add emoji to input
-                   setInputText(prev => prev + emoji);
-                 }}
-                 onVoiceMessage={() => {
-                   // Start voice recording
-                   if (!isRecording) {
-                     startRecording();
-                   }
-                 }}
-                 onSmartReply={handleSmartReply}
-               />
-             </div>
-           )}
-
-           {/* Phase 2: AI Mediator - Conflict detection */}
-           {showAIMediator && activeThread && activeThread.messages.length > 5 && (
-             <div className="mb-3">
-               <MessageEnhancementErrorBoundary featureName="AI Features">
-                 <React.Suspense fallback={<FeatureSkeleton />}>
-                   <BundleAI.AIMediatorPanel
-                     messages={activeThread.messages.slice(-15).map(m => ({
-                       id: m.id,
-                       text: m.text,
-                       sender: m.sender,
-                       timestamp: m.timestamp
-                     }))}
-                     contactName={activeThread.contactName}
-                     onApplySuggestion={(suggestion) => {
-                       if (suggestion.suggestedText) {
-                         setInputText(suggestion.suggestedText);
-                       }
-                     }}
-                     onDismiss={() => setShowAIMediator(false)}
-                   />
-                 </React.Suspense>
-               </MessageEnhancementErrorBoundary>
-             </div>
-           )}
-
-           {/* Phase 2: Quick Phrases */}
-           {showQuickPhrases && (
-             <div className="mb-3">
-               <MessageEnhancementErrorBoundary featureName="AI Features">
-                 <React.Suspense fallback={<FeatureSkeleton />}>
-                   <BundleAI.QuickPhrases
-                     onSelect={(phrase) => {
-                       setInputText(phrase);
-                       setShowQuickPhrases(false);
-                     }}
-                     context="general"
-                   />
-                 </React.Suspense>
-               </MessageEnhancementErrorBoundary>
-             </div>
-           )}
-
-           {isProposalMode && (
-               <div className="absolute bottom-full left-4 right-4 mb-2 bg-amber-50 dark:bg-amber-900/20 border border-amber-200 dark:border-amber-800 p-2 rounded-lg flex items-center justify-between text-xs text-amber-800 dark:text-amber-200 animate-slide-up">
-                   <span className="font-bold flex items-center gap-2"><Scale /> Proposal Mode Active</span>
-                   <button onClick={() => setIsProposalMode(false)}><X /></button>
-               </div>
-           )}
-
-           {/* Recording Indicator */}
-           {isRecording && (
-             <div className="absolute bottom-full left-4 right-4 mb-2 bg-red-50 dark:bg-red-900/20 border border-red-200 dark:border-red-800 p-3 rounded-lg flex items-center justify-between animate-slide-up">
-               <div className="flex items-center gap-3">
-                 <div className="w-3 h-3 rounded-full bg-red-500 animate-pulse"></div>
-                 <span className="text-sm text-red-700 dark:text-red-300 font-medium">Recording... {formatDuration(recordingDuration)}</span>
-               </div>
-               <button onClick={stopRecording} className="px-3 py-1 bg-red-500 text-white rounded-lg text-sm font-medium hover:bg-red-600 transition">
-                 Stop & Send
-               </button>
-             </div>
-           )}
-
-           {/* Phase 2: Voice Context Extractor Panel */}
-           {showVoiceExtractor && (
-             <div className="mb-3">
-               <MessageEnhancementErrorBoundary featureName="AI Features">
-                 <React.Suspense fallback={<FeatureSkeleton />}>
-                   <BundleAI.VoiceContextExtractor
-                     onTranscriptionComplete={(context) => {
-                       // Add the transcription to the input with extracted action items
-                       let enhancedText = context.transcription;
-                       if (context.actionItems.length > 0) {
-                         enhancedText += '\n\nAction items:\n' + context.actionItems.map(item => `- ${item}`).join('\n');
-                       }
-                       setInputText(enhancedText);
-                       setShowVoiceExtractor(false);
-                     }}
-                     onError={(error) => console.error('Voice extraction error:', error)}
-                   />
-                 </React.Suspense>
-               </MessageEnhancementErrorBoundary>
-             </div>
-           )}
-
-           {/* Meeting Deflector - Suggests async alternatives when meeting intent is detected */}
-           {showMeetingDeflector && inputText.length > 20 && (
-             <MeetingDeflector
-               messageText={inputText}
-               apiKey={apiKey}
-               onAcceptSuggestion={(type, template) => {
-                 setInputText(template);
-                 setShowMeetingDeflector(false);
-               }}
-               onDismiss={() => setShowMeetingDeflector(false)}
-             />
-           )}
-
-           <div className={`flex gap-1 sm:gap-2 items-end relative bg-zinc-50 dark:bg-zinc-900 p-1.5 sm:p-2 rounded-xl border transition ${isProposalMode ? 'border-amber-400' : isRecording ? 'border-red-400' : 'border-zinc-200 dark:border-zinc-800'}`}>
-             {/* Left Action Buttons - Collapsed on mobile */}
-             <div className="flex gap-0.5 sm:gap-1 relative flex-shrink-0">
-               <button
-                  onClick={() => setIsProposalMode(!isProposalMode)}
-                  className={`w-8 h-8 sm:w-10 sm:h-10 rounded-lg transition flex items-center justify-center flex-shrink-0 ${isProposalMode ? 'bg-amber-500 text-white' : 'text-zinc-400 hover:bg-zinc-200 dark:hover:bg-zinc-800'}`}
-                  title="Make Proposal (Ctrl+Shift+P)"
-               >
-                  <Gavel className="text-xs sm:text-sm" />
-               </button>
-               <button
-                  onClick={() => setShowTemplates(!showTemplates)}
-                  className={`hidden sm:flex w-8 h-8 sm:w-10 sm:h-10 rounded-lg transition items-center justify-center flex-shrink-0 ${showTemplates ? 'bg-blue-500 text-white' : 'text-zinc-400 hover:bg-zinc-200 dark:hover:bg-zinc-800'}`}
-                  title="Message Templates (Ctrl+Shift+T)"
-               >
-                  <Zap className="text-xs sm:text-sm" />
-               </button>
-               <button
-                  onClick={() => setShowEmojiPicker(!showEmojiPicker)}
-                  className={`w-8 h-8 sm:w-10 sm:h-10 rounded-lg transition flex items-center justify-center flex-shrink-0 ${showEmojiPicker ? 'bg-yellow-500 text-white' : 'text-zinc-400 hover:bg-zinc-200 dark:hover:bg-zinc-800'}`}
-                  title="Add Emoji (Ctrl+Shift+E)"
-               >
-                  <Smile className="text-xs sm:text-sm" />
-               </button>
-
-               {/* Phase 2: Quick Phrases Button - Hidden on mobile */}
-               <button
-                  onClick={() => setShowQuickPhrases(!showQuickPhrases)}
-                  className={`hidden sm:flex w-8 h-8 sm:w-10 sm:h-10 rounded-lg transition items-center justify-center flex-shrink-0 ${showQuickPhrases ? 'bg-purple-500 text-white' : 'text-zinc-400 hover:bg-zinc-200 dark:hover:bg-zinc-800'}`}
-                  title="Quick Phrases"
-               >
-                  <MessageCircle className="text-xs sm:text-sm" />
-               </button>
-
-               {/* Attachment Menu Button */}
-               <div className="relative" ref={attachmentMenuRef}>
-                 <button
-                    onClick={() => setShowAttachmentMenu(!showAttachmentMenu)}
-                    className={`w-8 h-8 sm:w-10 sm:h-10 rounded-lg transition flex items-center justify-center flex-shrink-0 ${showAttachmentMenu ? 'bg-orange-500 text-white' : 'text-zinc-400 hover:bg-zinc-200 dark:hover:bg-zinc-800'}`}
-                    title="Attach File, Image, Video, or Link"
-                 >
-                    <Plus className="text-xs sm:text-sm" />
-                 </button>
-
-                 {/* Attachment Menu Dropdown */}
-                 {showAttachmentMenu && (
-                   <div className="absolute bottom-full left-0 mb-2 bg-white dark:bg-zinc-900 rounded-xl shadow-2xl border border-zinc-200 dark:border-zinc-800 overflow-hidden z-50 min-w-[200px] animate-scale-in origin-bottom-left">
-                     <div className="p-2">
-                       <button
-                         onClick={() => imageInputRef.current?.click()}
-                         className="w-full px-4 py-3 text-left hover:bg-zinc-100 dark:hover:bg-zinc-800 rounded-lg transition flex items-center gap-3 group"
-                       >
-                         <div className="w-10 h-10 rounded-lg bg-blue-100 dark:bg-blue-900/30 flex items-center justify-center group-hover:bg-blue-200 dark:group-hover:bg-blue-900/50 transition">
-                           <Image className="text-blue-600 dark:text-blue-400" />
-                         </div>
-                         <div>
-                           <div className="text-sm font-medium dark:text-white">Photo</div>
-                           <div className="text-xs text-zinc-500">Upload an image</div>
-                         </div>
-                       </button>
-
-                       <button
-                         onClick={() => videoInputRef.current?.click()}
-                         className="w-full px-4 py-3 text-left hover:bg-zinc-100 dark:hover:bg-zinc-800 rounded-lg transition flex items-center gap-3 group"
-                       >
-                         <div className="w-10 h-10 rounded-lg bg-purple-100 dark:bg-purple-900/30 flex items-center justify-center group-hover:bg-purple-200 dark:group-hover:bg-purple-900/50 transition">
-                           <Video className="text-purple-600 dark:text-purple-400" />
-                         </div>
-                         <div>
-                           <div className="text-sm font-medium dark:text-white">Video</div>
-                           <div className="text-xs text-zinc-500">Upload a video</div>
-                         </div>
-                       </button>
-
-                       <button
-                         onClick={() => fileInputRef.current?.click()}
-                         className="w-full px-4 py-3 text-left hover:bg-zinc-100 dark:hover:bg-zinc-800 rounded-lg transition flex items-center gap-3 group"
-                       >
-                         <div className="w-10 h-10 rounded-lg bg-emerald-100 dark:bg-emerald-900/30 flex items-center justify-center group-hover:bg-emerald-200 dark:group-hover:bg-emerald-900/50 transition">
-                           <File className="text-emerald-600 dark:text-emerald-400" />
-                         </div>
-                         <div>
-                           <div className="text-sm font-medium dark:text-white">File</div>
-                           <div className="text-xs text-zinc-500">Upload a document</div>
-                         </div>
-                       </button>
-
-                       <div className="border-t border-zinc-200 dark:border-zinc-800 my-1"></div>
-
-                       <button
-                         onClick={handleAddLink}
-                         className="w-full px-4 py-3 text-left hover:bg-zinc-100 dark:hover:bg-zinc-800 rounded-lg transition flex items-center gap-3 group"
-                       >
-                         <div className="w-10 h-10 rounded-lg bg-orange-100 dark:bg-orange-900/30 flex items-center justify-center group-hover:bg-orange-200 dark:group-hover:bg-orange-900/50 transition">
-                           <Link className="text-orange-600 dark:text-orange-400" />
-                         </div>
-                         <div>
-                           <div className="text-sm font-medium dark:text-white">Link</div>
-                           <div className="text-xs text-zinc-500">Add a URL</div>
-                         </div>
-                       </button>
-                     </div>
-                   </div>
-                 )}
-               </div>
-
-               {/* Hidden File Inputs */}
-               <input
-                 type="file"
-                 ref={fileInputRef}
-                 className="hidden"
-                 onChange={handleFileUpload}
-                 accept=".pdf,.doc,.docx,.xls,.xlsx,.txt,.csv,.zip,.rar"
-               />
-               <input
-                 type="file"
-                 ref={imageInputRef}
-                 className="hidden"
-                 onChange={handleImageUpload}
-                 accept="image/*"
-               />
-               <input
-                 type="file"
-                 ref={videoInputRef}
-                 className="hidden"
-                 onChange={handleVideoUpload}
-                 accept="video/*"
-               />
-             </div>
-
-             {/* Message Input - IntentComposer, MessageInput (AI-augmented), or standard textarea */}
-             {useIntentComposer ? (
-               <div className="flex-1">
-                 <IntentComposer
-                   value={inputText}
-                   onChange={setInputText}
-                   onSend={() => {
-                     if (activePulseConversation) {
-                       sendPulseMessage(inputText);
-                     } else if (isNonPulseThread && canSendNativeSms) {
-                       handleSendSms(inputText);
-                     } else if (!isViewOnlyMode) {
-                       handleSend(inputText);
-                     }
-                   }}
-                   apiKey={apiKey}
-                   showAnalysis={true}
-                   placeholder={isProposalMode ? "State your proposal clearly..." : isRecording ? "Recording voice message..." : "Type a message..."}
-                   disabled={isRecording}
-                   setActiveToolOverlay={setActiveToolOverlay}
-                 />
-               </div>
-             ) : apiKey ? (
-               <div className="flex-1">
-                 <MessageInput
-                   onSend={(text) => {
-                     if (activePulseConversation) {
-                       sendPulseMessage(text);
-                     } else if (isNonPulseThread && canSendNativeSms) {
-                       handleSendSms(text);
-                     } else if (!isViewOnlyMode) {
-                       handleSend(text);
-                     }
-                   }}
-                   onTyping={(isTyping) => {
-                     // Send typing indicator if connected to a Pulse thread
-                     if (isTyping && activeThread && !isNonPulseThread) {
-                       // Typing indicator logic can be implemented here
-                     }
-                   }}
-                   placeholder={isProposalMode ? "State your proposal clearly..." : isRecording ? "Recording voice message..." : "Type a message..."}
-                   aiEnabled={true}
-                   voiceEnabled={false}
-                   maxLength={2000}
-                   channelId={activeThread?.id}
-                   setActiveToolOverlay={setActiveToolOverlay}
-                 />
-               </div>
-             ) : (
-               <textarea
-                 className="flex-1 bg-transparent dark:text-white text-zinc-900 placeholder-zinc-400 text-sm focus:outline-none resize-none py-2.5 max-h-32 scrollbar-hide font-light"
-                 placeholder={isProposalMode ? "State your proposal clearly..." : isRecording ? "Recording voice message..." : "Type a message..."}
-                 rows={1}
-                 value={inputText}
-                 onChange={(e) => setInputText(e.target.value)}
-                 onKeyDown={(e) => { if(e.key === 'Enter' && !e.shiftKey) { e.preventDefault(); isNonPulseThread && canSendNativeSms ? handleSendSms(inputText) : !isViewOnlyMode && handleSend(); }}}
-                 disabled={isRecording}
-               />
-             )}
-
-             {/* Right Action Buttons - Collapsed on mobile */}
-             <div className="flex gap-0.5 sm:gap-1 flex-shrink-0">
-               {/* Voice buttons only shown when NOT using MessageInput component */}
-               {!apiKey && (
-                 <>
-                   {/* Voice-to-Text Dictation Button */}
-                   <VoiceTextButton
-                  onTranscript={(text) => setInputText(prev => prev + (prev && !prev.endsWith(' ') ? ' ' : '') + text)}
-                  size="sm"
-                  disabled={isRecording}
-                  className="text-zinc-400 hover:bg-zinc-200 dark:hover:bg-zinc-800 w-8 h-8 sm:w-10 sm:h-10"
-               />
-               <button
-                  onClick={isRecording ? stopRecording : startRecording}
-                  className={`w-8 h-8 sm:w-10 sm:h-10 rounded-lg transition flex items-center justify-center flex-shrink-0 ${isRecording ? 'bg-red-500 text-white animate-pulse' : 'text-zinc-400 hover:bg-zinc-200 dark:hover:bg-zinc-800'}`}
-                  title={isRecording ? "Stop Recording" : "Voice Message"}
-               >
-                  <i className={`fa-solid ${isRecording ? 'fa-stop' : 'fa-microphone'} text-xs sm:text-sm`}></i>
-               </button>
-                 </>
-               )}
-               {/* Hidden on mobile */}
-               <button
-                  onClick={() => setShowScheduleModal(true)}
-                  disabled={!inputText.trim()}
-                  className="hidden sm:flex w-8 h-8 sm:w-10 sm:h-10 rounded-lg transition items-center justify-center flex-shrink-0 text-zinc-400 hover:bg-zinc-200 dark:hover:bg-zinc-800 disabled:opacity-40"
-                  title="Schedule Message"
-               >
-                  <Clock className="text-xs sm:text-sm" />
-               </button>
-               {/* Phase 2: Voice Context Extractor Toggle - Hidden on mobile */}
-               <button
-                  onClick={() => setShowVoiceExtractor(!showVoiceExtractor)}
-                  className={`hidden sm:flex w-8 h-8 sm:w-10 sm:h-10 rounded-lg transition items-center justify-center flex-shrink-0 ${showVoiceExtractor ? 'bg-blue-500 text-white' : 'text-zinc-400 hover:bg-zinc-200 dark:hover:bg-zinc-800'}`}
-                  title="AI Voice Transcription"
-               >
-                  <MessageCircle className="text-xs sm:text-sm" />
-               </button>
-               {/* Phase 2: Translation Widget - Hidden on mobile */}
-               {/*
-                <div className="hidden sm:block">
-                  <MessageEnhancementErrorBoundary featureName="AI Features">
-                    <React.Suspense fallback={<FeatureSkeleton />}>
-                      <BundleAI.TranslationWidgetEnhanced
-                        originalText={inputText}
-                        onTranslate={(translation) => setInputText(translation.translatedText)}
-                        compact={true}
-                      />
-                    </React.Suspense>
-                  </MessageEnhancementErrorBoundary>
-                </div>
-               */}
-               <button
-                  onClick={handleSmartReply}
-                  disabled={loadingAI || isBotChat}
-                  className="hidden sm:flex w-8 h-8 sm:w-10 sm:h-10 rounded-lg transition items-center justify-center flex-shrink-0 text-zinc-400 hover:bg-zinc-200 dark:hover:bg-zinc-800 disabled:opacity-40"
-                  title="AI Smart Reply"
-               >
-                  <i className={`fa-solid ${loadingAI ? 'fa-circle-notch fa-spin' : 'fa-wand-magic-sparkles'} text-xs sm:text-sm`}></i>
-               </button>
-               {isNonPulseThread && canSendNativeSms ? (
-                 // SMS Send Button for non-Pulse users on mobile
-                 <button
-                   onClick={() => handleSendSms(inputText)}
-                   disabled={!inputText.trim()}
-                   className="w-8 h-8 sm:w-10 sm:h-10 rounded-lg bg-blue-600 hover:bg-blue-500 text-white flex items-center justify-center transition hover:scale-105 disabled:opacity-50 disabled:hover:scale-100"
-                   title="Send SMS"
-                 >
-                   <MessageSquare className="text-xs sm:text-sm" />
-                 </button>
-               ) : isViewOnlyMode ? (
-                 // Disabled button for view-only mode
-                 <button
-                   disabled
-                   className="w-8 h-8 sm:w-10 sm:h-10 rounded-lg bg-zinc-300 dark:bg-zinc-700 text-zinc-500 flex items-center justify-center cursor-not-allowed"
-                   title="Send from your mobile device"
-                 >
-                   <Lock className="text-xs sm:text-sm" />
-                 </button>
-               ) : (
-                 // Regular send button
-                 <button onClick={() => handleSend()} disabled={isRecording || (!inputText.trim())} className="w-8 h-8 sm:w-10 sm:h-10 rounded-lg bg-zinc-900 dark:bg-white text-white dark:text-black flex items-center justify-center transition hover:scale-105 disabled:opacity-50 disabled:hover:scale-100">
-                   <ArrowUp className="text-xs sm:text-sm" />
-                 </button>
-               )}
-             </div>
-           </div>
-
-           {/* Scheduled Messages Indicator */}
-           {scheduledMessages.filter(m => m.threadId === activeThreadId).length > 0 && (
-             <div className="mt-2 flex items-center gap-2 text-xs text-zinc-500">
-               <Clock />
-               <span>{scheduledMessages.filter(m => m.threadId === activeThreadId).length} message(s) scheduled for this conversation</span>
-               <button onClick={() => setShowScheduleModal(true)} className="text-blue-500 hover:underline">View</button>
-             </div>
-           )}
-        </MessageInputPortal>
-      )}
+      <MessageInputSection
+        activeThread={activeThread}
+        activePulseConversation={activePulseConversation}
+        sidebarWidth={sidebarRef.current?.offsetWidth || 0}
+        isViewOnlyMode={isViewOnlyMode}
+        isNonPulseThread={isNonPulseThread}
+        canSendNativeSms={canSendNativeSms}
+        activeContact={activeContact}
+        contacts={contacts}
+        setInviteTargetContact={setInviteTargetContact}
+        setShowInviteToPulseModal={setShowInviteToPulseModal}
+        showTemplates={showTemplates}
+        setShowTemplates={setShowTemplates}
+        showEmojiPicker={showEmojiPicker}
+        emojiPickerMessageId={emojiPickerMessageId}
+        setShowEmojiPicker={setShowEmojiPicker}
+        inputText={inputText}
+        setInputText={setInputText}
+        showAICoach={showAICoach}
+        setShowAICoach={setShowAICoach}
+        showSmartCompose={showSmartCompose}
+        messageEnhancements={messageEnhancements}
+        showQuickActionsBar={showQuickActionsBar}
+        isRecording={isRecording}
+        startRecording={startRecording}
+        handleSmartReply={handleSmartReply}
+        showAIMediator={showAIMediator}
+        setShowAIMediator={setShowAIMediator}
+        showQuickPhrases={showQuickPhrases}
+        setShowQuickPhrases={setShowQuickPhrases}
+        isProposalMode={isProposalMode}
+        setIsProposalMode={setIsProposalMode}
+        recordingDuration={recordingDuration}
+        stopRecording={stopRecording}
+        showVoiceExtractor={showVoiceExtractor}
+        setShowVoiceExtractor={setShowVoiceExtractor}
+        apiKey={apiKey}
+        useIntentComposer={useIntentComposer}
+        sendPulseMessage={sendPulseMessage}
+        handleSendSms={handleSendSms}
+        handleSend={handleSend}
+        setActiveToolOverlay={setActiveToolOverlay}
+        showAttachmentMenu={showAttachmentMenu}
+        setShowAttachmentMenu={setShowAttachmentMenu}
+        attachmentMenuRef={attachmentMenuRef}
+        imageInputRef={imageInputRef}
+        videoInputRef={videoInputRef}
+        fileInputRef={fileInputRef}
+        handleFileUpload={handleFileUpload}
+        handleImageUpload={handleImageUpload}
+        handleVideoUpload={handleVideoUpload}
+        handleAddLink={handleAddLink}
+        loadingAI={loadingAI}
+        isBotChat={isBotChat}
+        setShowScheduleModal={setShowScheduleModal}
+        scheduledMessages={scheduledMessages}
+        activeThreadId={activeThreadId}
+        showMeetingDeflector={showMeetingDeflector}
+        setShowMeetingDeflector={setShowMeetingDeflector}
+        useTemplate={useTemplate}
+      />
 
       <style>{`
         @keyframes slideInRight {
