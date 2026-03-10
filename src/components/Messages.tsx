@@ -134,6 +134,8 @@ import {
   InviteTeamModal,
   InviteToPulseModal,
 } from './Messages/modals';
+import { MessagesTopModals } from './Messages/MessagesTopModals';
+import { MessagesEndModals } from './Messages/MessagesEndModals';
 
 const COMMON_REACTIONS = ['👍', '❤️', '😂', '😮', '😢', '🔥'];
 
@@ -2147,12 +2149,18 @@ const Messages: React.FC<MessagesProps> = ({ apiKey, contacts, initialContactId,
   const THREAD_ITEM_HEIGHT = 72; // p-3 (12px top + 12px bottom) + h-10 avatar (40px) + ~8px line-heights
   const [threadListHeight, setThreadListHeight] = useState(600);
 
+  // Filter out conversations with missing other_user to avoid blank gaps in virtual list
+  const validPulseConversations = useMemo(
+    () => pulseConversations.filter(c => c.other_user),
+    [pulseConversations]
+  );
+
   const {
     virtualItems: virtualConversations,
     totalHeight: conversationsTotalHeight,
     containerRef: threadListRef,
   } = useVirtualList({
-    items: pulseConversations,
+    items: validPulseConversations,
     itemHeight: THREAD_ITEM_HEIGHT,
     containerHeight: threadListHeight,
     overscan: 5,
@@ -2177,7 +2185,7 @@ const Messages: React.FC<MessagesProps> = ({ apiKey, contacts, initialContactId,
     totalHeight: drawerTotalHeight,
     containerRef: drawerListRef,
   } = useVirtualList({
-    items: pulseConversations,
+    items: validPulseConversations,
     itemHeight: THREAD_ITEM_HEIGHT,
     containerHeight: drawerListHeight,
     overscan: 3,
@@ -2325,6 +2333,27 @@ const Messages: React.FC<MessagesProps> = ({ apiKey, contacts, initialContactId,
         : [...prev, threadId]
     );
   }, []);
+
+  const handleDeletePulseConversation = useCallback(async (conversationId: string) => {
+    if (!window.confirm('Delete this conversation? This cannot be undone.')) return;
+
+    // Remove from local state immediately
+    setPulseConversations(prev => prev.filter(c => c.id !== conversationId));
+
+    // Clear active if this was selected
+    if (activePulseConversation === conversationId) {
+      setActivePulseConversation(null);
+      setMobileView('list');
+    }
+
+    // Persist to DB (soft delete per-user)
+    try {
+      await pulseService.deleteConversation(conversationId);
+    } catch (error) {
+      console.error('Failed to persist conversation delete:', error);
+      // Already removed from UI; no rollback needed
+    }
+  }, [activePulseConversation]);
 
   const toggleMuteThread = useCallback((threadId: string) => {
     setMutedThreads(prev =>
@@ -2663,442 +2692,68 @@ const Messages: React.FC<MessagesProps> = ({ apiKey, contacts, initialContactId,
   return (
     <div className={`${fullPage ? 'h-screen' : 'h-full'} flex bg-white dark:bg-zinc-950 ${fullPage ? '' : 'rounded-2xl border border-zinc-200 dark:border-zinc-800 shadow-xl'} overflow-hidden relative animate-fade-in`}>
       
-      {/* New Chat Modal */}
-      {showNewChatModal && (
-        <div className="absolute inset-0 z-50 bg-black/60 backdrop-blur-sm flex items-center justify-center animate-fade-in p-4">
-          <div className="bg-white dark:bg-zinc-900 w-full max-w-md rounded-2xl shadow-2xl animate-scale-in border border-zinc-200 dark:border-zinc-800">
-            <div className="p-4 border-b border-zinc-200 dark:border-zinc-800 flex justify-between items-center">
-              <h3 className="font-bold dark:text-white flex items-center gap-2">
-                <Plus className="text-rose-500" /> New Conversation
-              </h3>
-              <button onClick={() => { setShowNewChatModal(false); setPulseUserSearch(''); setPulseSearchResults([]); }}>
-                <X className="text-zinc-500 hover:text-zinc-700 dark:hover:text-zinc-300" />
-              </button>
-            </div>
-
-            <div className="p-4">
-              {/* Pulse Users Only */}
-              <div className="space-y-4">
-                  <div className="relative">
-                    <Search className="absolute left-3 top-1/2 -translate-y-1/2 text-zinc-400 text-sm" />
-                    <input
-                      type="text"
-                      value={pulseUserSearch}
-                      onChange={(e) => setPulseUserSearch(e.target.value)}
-                      placeholder="Search by @handle or name..."
-                      className="w-full pl-10 pr-4 py-3 bg-zinc-100 dark:bg-zinc-800 border border-zinc-200 dark:border-zinc-700 rounded-xl text-sm dark:text-white focus:outline-none focus:ring-2 focus:ring-emerald-500 focus:border-transparent"
-                      autoFocus
-                    />
-                    {isSearchingPulseUsers && (
-                      <Loader2 className="absolute right-3 top-1/2 -translate-y-1/2 text-emerald-500 animate-spin" />
-                    )}
-                  </div>
-
-                  {pulseUserSearch.length < 1 ? (
-                    // Show recent contacts and suggestions when no search
-                    <div className="space-y-4 max-h-80 overflow-y-auto">
-                      {/* Recent Contacts */}
-                      {recentPulseContacts.length > 0 && (
-                        <div>
-                          <p className="text-[10px] font-bold text-zinc-500 uppercase tracking-wider mb-2 px-1">
-                            <History className="mr-1" /> Recent
-                          </p>
-                          <div className="space-y-1">
-                            {recentPulseContacts.map((user) => (
-                              <button
-                                key={user.id}
-                                onClick={() => startPulseConversation(user)}
-                                className="w-full flex items-center gap-3 p-2.5 rounded-xl hover:bg-emerald-50 dark:hover:bg-emerald-900/20 transition text-left"
-                              >
-                                <div className="w-9 h-9 rounded-full bg-gradient-to-tr from-rose-500 to-pink-600 flex items-center justify-center text-white font-bold text-sm">
-                                  {user.avatar_url ? (
-                                    <img src={user.avatar_url} alt="" className="w-full h-full rounded-full object-cover" />
-                                  ) : (
-                                    (user.display_name || user.full_name || 'U').charAt(0)
-                                  )}
-                                </div>
-                                <div className="flex-1 min-w-0">
-                                  <div className="font-medium dark:text-white truncate text-sm flex items-center gap-1">
-                                    {user.display_name || user.full_name || 'Pulse User'}
-                                    {user.is_verified && <CheckCircle2 className="text-blue-500 text-[10px]" />}
-                                  </div>
-                                  {user.handle && <div className="text-[11px] text-emerald-500 truncate">@{user.handle}</div>}
-                                </div>
-                                <MessageSquare className="text-emerald-400 text-xs" />
-                              </button>
-                            ))}
-                          </div>
-                        </div>
-                      )}
-
-                      {/* Suggested Users */}
-                      {suggestedPulseUsers.length > 0 && (
-                        <div>
-                          <p className="text-[10px] font-bold text-zinc-500 uppercase tracking-wider mb-2 px-1">
-                            <Users className="mr-1" /> Discover Pulse Users
-                          </p>
-                          <div className="space-y-1">
-                            {suggestedPulseUsers.slice(0, 8).map((user) => (
-                              <button
-                                key={user.id}
-                                onClick={() => startPulseConversation(user)}
-                                className="w-full flex items-center gap-3 p-2.5 rounded-xl hover:bg-emerald-50 dark:hover:bg-emerald-900/20 transition text-left"
-                              >
-                                <div className="w-9 h-9 rounded-full bg-gradient-to-tr from-rose-500 to-pink-600 flex items-center justify-center text-white font-bold text-sm">
-                                  {user.avatar_url ? (
-                                    <img src={user.avatar_url} alt="" className="w-full h-full rounded-full object-cover" />
-                                  ) : (
-                                    (user.display_name || user.full_name || 'U').charAt(0)
-                                  )}
-                                </div>
-                                <div className="flex-1 min-w-0">
-                                  <div className="font-medium dark:text-white truncate text-sm flex items-center gap-1">
-                                    {user.display_name || user.full_name || 'Pulse User'}
-                                    {user.is_verified && <CheckCircle2 className="text-blue-500 text-[10px]" />}
-                                  </div>
-                                  {user.handle && <div className="text-[11px] text-emerald-500 truncate">@{user.handle}</div>}
-                                </div>
-                                <Plus className="text-zinc-400 text-xs" />
-                              </button>
-                            ))}
-                          </div>
-                        </div>
-                      )}
-
-                      {/* No suggestions available */}
-                      {recentPulseContacts.length === 0 && suggestedPulseUsers.length === 0 && (
-                        <div className="text-center py-8">
-                          <div className="w-16 h-16 bg-emerald-100 dark:bg-emerald-900/30 rounded-full flex items-center justify-center mx-auto mb-4">
-                            <AtSign className="text-2xl text-emerald-500" />
-                          </div>
-                          <p className="text-sm text-zinc-500 dark:text-zinc-400">
-                            Search for Pulse users by their @handle or name
-                          </p>
-                        </div>
-                      )}
-                    </div>
-                  ) : pulseSearchResults.length === 0 && !isSearchingPulseUsers ? (
-                    <div className="text-center py-8">
-                      <div className="w-16 h-16 bg-zinc-100 dark:bg-zinc-800 rounded-full flex items-center justify-center mx-auto mb-4">
-                        <UserX className="text-2xl text-zinc-400" />
-                      </div>
-                      <p className="text-sm text-zinc-500 dark:text-zinc-400">
-                        No users found for "{pulseUserSearch}"
-                      </p>
-                      <p className="text-xs text-zinc-400 dark:text-zinc-500 mt-2">
-                        Try a different search term
-                      </p>
-                    </div>
-                  ) : (
-                    <div className="space-y-2 max-h-64 overflow-y-auto">
-                      {pulseSearchResults.map((user) => (
-                        <button
-                          key={user.id}
-                          onClick={() => startPulseConversation(user)}
-                          className="w-full flex items-center gap-3 p-3 rounded-xl hover:bg-emerald-50 dark:hover:bg-emerald-900/20 transition text-left border border-transparent hover:border-emerald-200 dark:hover:border-emerald-800"
-                        >
-                          <div className="w-10 h-10 rounded-full bg-gradient-to-tr from-rose-500 to-pink-600 flex items-center justify-center text-white font-bold">
-                            {user.avatar_url ? (
-                              <img src={user.avatar_url} alt="" className="w-full h-full rounded-full object-cover" />
-                            ) : (
-                              (user.display_name || user.full_name || 'U').charAt(0)
-                            )}
-                          </div>
-                          <div className="flex-1 min-w-0">
-                            <div className="font-medium dark:text-white truncate flex items-center gap-2">
-                              {user.display_name || user.full_name || 'Pulse User'}
-                              {user.is_verified && (
-                                <CheckCircle2 className="text-blue-500 text-xs" />
-                              )}
-                            </div>
-                            {user.handle && (
-                              <div className="text-xs text-emerald-500 truncate">@{user.handle}</div>
-                            )}
-                          </div>
-                          <MessageSquare className="text-emerald-400 text-sm" />
-                        </button>
-                      ))}
-                    </div>
-                  )}
-                </div>
-            </div>
-
-            <div className="border-t border-zinc-200 dark:border-zinc-800 mt-4 pt-4 px-4 pb-4">
-              <button
-                onClick={() => { setShowNewChatModal(false); setPulseUserSearch(''); setPulseSearchResults([]); }}
-                className="w-full text-center text-sm text-zinc-500 hover:text-zinc-700 dark:hover:text-zinc-300"
-              >
-                Cancel
-              </button>
-            </div>
-          </div>
-        </div>
-      )}
-
-      {/* Artifact Modal */}
-      {showArtifactModal && (
-          <div className="absolute inset-0 z-50 bg-black/60 backdrop-blur-sm flex items-center justify-center animate-fade-in p-4">
-              <div className="bg-white dark:bg-zinc-900 w-full max-w-2xl h-[80%] rounded-2xl shadow-2xl flex flex-col overflow-hidden animate-scale-in border border-zinc-200 dark:border-zinc-800">
-                  <div className="p-4 border-b border-zinc-200 dark:border-zinc-800 flex justify-between items-center bg-zinc-50 dark:bg-zinc-950">
-                      <h3 className="font-bold dark:text-white flex items-center gap-2"><FileText /> Channel Artifact</h3>
-                      <button onClick={() => setShowArtifactModal(false)}><X className="text-zinc-500" /></button>
-                  </div>
-                  <div className="flex-1 overflow-y-auto p-8">
-                      {loadingArtifact ? (
-                          <div className="flex flex-col items-center justify-center h-full gap-4">
-                              <Loader2 className="text-2xl text-blue-500 animate-spin" />
-                              <p className="text-sm text-zinc-500">Generating spec from conversation history...</p>
-                          </div>
-                      ) : artifact ? (
-                          <div className="prose dark:prose-invert max-w-none text-sm">
-                              <h1 className="text-2xl font-bold mb-4">{artifact.title}</h1>
-                              <div className="bg-blue-50 dark:bg-blue-900/20 p-4 rounded-xl mb-6 text-blue-800 dark:text-blue-200 italic">
-                                  {artifact.overview}
-                              </div>
-                              <h3 className="font-bold uppercase text-xs tracking-wider text-zinc-500 mb-2">Decisions Log</h3>
-                              <ul className="list-disc list-inside mb-6 space-y-1">
-                                  {artifact.decisions.map((d, i) => <li key={i} className="text-zinc-700 dark:text-zinc-300">{d}</li>)}
-                              </ul>
-                              <h3 className="font-bold uppercase text-xs tracking-wider text-zinc-500 mb-2">Specifications</h3>
-                              <div className="whitespace-pre-wrap font-mono text-zinc-600 dark:text-zinc-400 bg-zinc-50 dark:bg-zinc-800 p-4 rounded-xl mb-6">
-                                  {artifact.spec}
-                              </div>
-                              <h3 className="font-bold uppercase text-xs tracking-wider text-zinc-500 mb-2">Milestones</h3>
-                              <div className="space-y-2">
-                                  {artifact.milestones.map((m, i) => (
-                                      <div key={i} className="flex items-center gap-2">
-                                          <div className="w-2 h-2 rounded-full bg-emerald-500"></div>
-                                          <span className="text-zinc-700 dark:text-zinc-300">{m}</span>
-                                      </div>
-                                  ))}
-                              </div>
-                          </div>
-                      ) : (
-                          <div className="text-center text-zinc-500">Failed to generate artifact.</div>
-                      )}
-                  </div>
-                  <div className="p-4 border-t border-zinc-200 dark:border-zinc-800 flex justify-end">
-                      <button 
-                          onClick={handleExportToDocs} 
-                          disabled={loadingArtifact || !artifact || exportingToDocs}
-                          className="bg-blue-50 hover:bg-blue-100 text-blue-700 border border-blue-200 px-6 py-2 rounded-lg text-sm font-bold uppercase tracking-wider transition disabled:opacity-50 mr-3 flex items-center gap-2"
-                      >
-                          {exportingToDocs ? <Loader2 className="animate-spin" /> : <FileText />}
-                          Export to Docs
-                      </button>
-                      <button onClick={handleSaveArtifact} disabled={loadingArtifact || !artifact} className="bg-blue-600 hover:bg-blue-500 text-white px-6 py-2 rounded-lg text-sm font-bold uppercase tracking-wider transition disabled:opacity-50">
-                          Save to Wiki
-                      </button>
-                  </div>
-              </div>
-          </div>
-      )}
-
-      {/* Schedule Message Modal */}
-      <ScheduleMessageModal
-        isOpen={showScheduleModal}
-        onClose={() => setShowScheduleModal(false)}
-        messageText={inputText}
+      <MessagesTopModals
+        showNewChatModal={showNewChatModal}
+        setShowNewChatModal={setShowNewChatModal}
+        pulseUserSearch={pulseUserSearch}
+        setPulseUserSearch={setPulseUserSearch}
+        pulseSearchResults={pulseSearchResults}
+        setPulseSearchResults={setPulseSearchResults}
+        isSearchingPulseUsers={isSearchingPulseUsers}
+        recentPulseContacts={recentPulseContacts}
+        suggestedPulseUsers={suggestedPulseUsers}
+        startPulseConversation={startPulseConversation}
+        showArtifactModal={showArtifactModal}
+        setShowArtifactModal={setShowArtifactModal}
+        loadingArtifact={loadingArtifact}
+        artifact={artifact}
+        exportingToDocs={exportingToDocs}
+        handleExportToDocs={handleExportToDocs}
+        handleSaveArtifact={handleSaveArtifact}
+        showScheduleModal={showScheduleModal}
+        setShowScheduleModal={setShowScheduleModal}
+        inputText={inputText}
         scheduleDate={scheduleDate}
         scheduleTime={scheduleTime}
-        onDateChange={setScheduleDate}
-        onTimeChange={setScheduleTime}
+        setScheduleDate={setScheduleDate}
+        setScheduleTime={setScheduleTime}
         scheduledMessages={scheduledMessages}
-        onSchedule={handleScheduleMessage}
-      />
-
-      {/* Forward Message Modal */}
-      {showForwardModal && forwardingMessage && (
-        <div className="absolute inset-0 z-50 bg-black/60 backdrop-blur-sm flex items-center justify-center animate-fade-in p-4">
-          <div className="bg-white dark:bg-zinc-900 w-full max-w-md rounded-2xl shadow-2xl animate-scale-in border border-zinc-200 dark:border-zinc-800">
-            <div className="p-4 border-b border-zinc-200 dark:border-zinc-800 flex justify-between items-center">
-              <h3 className="font-bold dark:text-white flex items-center gap-2">
-                <Share className="text-blue-500" /> Forward Message
-              </h3>
-              <button onClick={() => setShowForwardModal(false)}><X className="text-zinc-500" /></button>
-            </div>
-            <div className="p-4">
-              <div className="bg-zinc-50 dark:bg-zinc-800 p-3 rounded-lg text-sm text-zinc-600 dark:text-zinc-300 mb-4">
-                {forwardingMessage.text}
-              </div>
-              <div className="text-xs text-zinc-500 mb-2">Select conversation:</div>
-              <div className="space-y-2 max-h-60 overflow-y-auto">
-                {threads.filter(t => t.id !== activeThreadId).map(t => (
-                  <button key={t.id} onClick={() => handleForwardMessage(t.id)} className="w-full flex items-center gap-3 p-2 rounded-lg hover:bg-zinc-100 dark:hover:bg-zinc-800 transition">
-                    <div className={`w-8 h-8 rounded-full ${t.avatarColor} flex items-center justify-center text-white text-xs font-bold`}>{t.contactName.charAt(0)}</div>
-                    <span className="text-sm dark:text-white">{t.contactName}</span>
-                  </button>
-                ))}
-              </div>
-            </div>
-          </div>
-        </div>
-      )}
-
-      {/* Keyboard Shortcuts Modal */}
-      {showShortcuts && (
-        <div className="absolute inset-0 z-50 bg-black/60 backdrop-blur-sm flex items-center justify-center animate-fade-in p-4">
-          <div className="bg-white dark:bg-zinc-900 w-full max-w-md rounded-2xl shadow-2xl animate-scale-in border border-zinc-200 dark:border-zinc-800">
-            <div className="p-4 border-b border-zinc-200 dark:border-zinc-800 flex justify-between items-center">
-              <h3 className="font-bold dark:text-white flex items-center gap-2">
-                <Keyboard className="text-blue-500" /> Keyboard Shortcuts
-              </h3>
-              <button onClick={() => setShowShortcuts(false)}><X className="text-zinc-500" /></button>
-            </div>
-            <div className="p-4 space-y-2">
-              {Object.entries(KEYBOARD_SHORTCUTS).map(([key, action]) => (
-                <div key={key} className="flex justify-between items-center py-2 border-b border-zinc-100 dark:border-zinc-800">
-                  <span className="text-sm text-zinc-600 dark:text-zinc-300">{action}</span>
-                  <kbd className="px-2 py-1 bg-zinc-100 dark:bg-zinc-800 rounded text-xs font-mono">{key}</kbd>
-                </div>
-              ))}
-            </div>
-          </div>
-        </div>
-      )}
-
-      {/* Thread Statistics Panel */}
-      <ConversationStatsModal
-        isOpen={showStatsPanel && !!activeThread}
-        onClose={() => setShowStatsPanel(false)}
-        stats={activeThread ? messagesExportService.getThreadStatistics(activeThread) : null}
-      />
-
-      {/* Invite Team Modal */}
-      <InviteTeamModal
-        isOpen={showInviteModal}
-        onClose={() => { setShowInviteModal(false); setInviteEmail(''); setInviteStatus('idle'); setInviteMessage(''); }}
+        handleScheduleMessage={handleScheduleMessage}
+        showForwardModal={showForwardModal}
+        setShowForwardModal={setShowForwardModal}
+        forwardingMessage={forwardingMessage}
+        threads={threads}
+        activeThreadId={activeThreadId}
+        handleForwardMessage={handleForwardMessage}
+        showShortcuts={showShortcuts}
+        setShowShortcuts={setShowShortcuts}
+        showStatsPanel={showStatsPanel}
+        setShowStatsPanel={setShowStatsPanel}
+        activeThread={activeThread}
+        showInviteModal={showInviteModal}
+        setShowInviteModal={setShowInviteModal}
         inviteEmail={inviteEmail}
-        onEmailChange={setInviteEmail}
+        setInviteEmail={setInviteEmail}
         inviteStatus={inviteStatus}
+        setInviteStatus={setInviteStatus}
         inviteMessage={inviteMessage}
-        onSendInvite={handleSendInvite}
+        setInviteMessage={setInviteMessage}
+        handleSendInvite={handleSendInvite}
+        showDeleteConfirm={showDeleteConfirm}
+        setShowDeleteConfirm={setShowDeleteConfirm}
+        threadToDelete={threadToDelete}
+        setThreadToDelete={setThreadToDelete}
+        handleDeleteThread={handleDeleteThread}
+        isDrawerOpen={isDrawerOpen}
+        closeDrawer={closeDrawer}
+        setShowCellularSMS={setShowCellularSMS}
+        pulseConversations={pulseConversations}
+        drawerListRef={drawerListRef}
+        drawerTotalHeight={drawerTotalHeight}
+        virtualDrawerConversations={virtualDrawerConversations}
+        activePulseConversation={activePulseConversation}
+        handleSelectConversation={handleSelectConversation}
       />
-
-      {/* Delete Confirmation Modal */}
-      {showDeleteConfirm && threadToDelete && (
-        <div className="absolute inset-0 z-50 bg-black/60 backdrop-blur-sm flex items-center justify-center animate-fade-in p-4">
-          <div className="bg-white dark:bg-zinc-900 w-full max-w-sm rounded-2xl shadow-2xl animate-scale-in border border-zinc-200 dark:border-zinc-800">
-            <div className="p-6 text-center">
-              <div className="w-16 h-16 rounded-full bg-red-100 dark:bg-red-900/30 flex items-center justify-center mx-auto mb-4">
-                <Trash2 className="text-2xl text-red-500" />
-              </div>
-              <h3 className="font-bold text-lg dark:text-white mb-2">Delete Conversation?</h3>
-              <p className="text-sm text-zinc-600 dark:text-zinc-400 mb-6">
-                This will permanently delete this conversation and all its messages. This action cannot be undone.
-              </p>
-              <div className="flex gap-3">
-                <button
-                  onClick={() => { setShowDeleteConfirm(false); setThreadToDelete(null); }}
-                  className="flex-1 px-4 py-2.5 rounded-xl border border-zinc-300 dark:border-zinc-700 text-zinc-700 dark:text-zinc-300 font-medium hover:bg-zinc-100 dark:hover:bg-zinc-800 transition"
-                >
-                  Cancel
-                </button>
-                <button
-                  onClick={handleDeleteThread}
-                  className="flex-1 px-4 py-2.5 rounded-xl bg-red-500 text-white font-medium hover:bg-red-600 transition"
-                >
-                  Delete
-                </button>
-              </div>
-            </div>
-          </div>
-        </div>
-      )}
-
-      {/* Mobile Drawer - Shows sidebar on mobile via swipe or hamburger */}
-      <div className="md:hidden">
-        <MobileDrawer
-          isOpen={isDrawerOpen}
-          onClose={closeDrawer}
-          side="left"
-          width="85%"
-        >
-          <div className="flex-1 overflow-y-auto flex flex-col bg-zinc-50 dark:bg-zinc-900/50">
-            {/* Sidebar content for mobile drawer */}
-            <div className="p-5 flex justify-between items-center border-b border-zinc-200 dark:border-zinc-800">
-              <h2 className="font-bold text-lg text-zinc-900 dark:text-white tracking-tight">Pulse Messages</h2>
-              <button onClick={closeDrawer} className="w-12 h-12 flex items-center justify-center text-zinc-500 hover:bg-zinc-100 dark:hover:bg-zinc-800 rounded-lg transition" aria-label="Close drawer">
-                <X className="text-lg" />
-              </button>
-            </div>
-
-            <div className="px-4 py-3 flex items-center gap-2 border-b border-zinc-200 dark:border-zinc-800">
-              <button onClick={() => { setShowInviteModal(true); closeDrawer(); }} className="w-12 h-12 rounded-lg text-rose-500 hover:bg-rose-100 dark:hover:bg-rose-900/30 flex items-center justify-center transition" title="Invite team member">
-                <UserPlus className="text-sm" />
-              </button>
-              <button onClick={() => { setShowCellularSMS(true); closeDrawer(); }} className="w-12 h-12 rounded-lg text-emerald-600 hover:bg-emerald-100 dark:hover:bg-emerald-900/30 flex items-center justify-center transition" title="Cellular SMS">
-                <Smartphone className="text-sm" />
-              </button>
-              <button onClick={() => { setShowShortcuts(true); closeDrawer(); }} className="w-12 h-12 rounded-lg text-zinc-400 hover:bg-zinc-200 dark:hover:bg-zinc-800 flex items-center justify-center transition" title="Keyboard shortcuts">
-                <Keyboard className="text-sm" />
-              </button>
-              <button onClick={() => { setShowNewChatModal(true); closeDrawer(); }} className="w-12 h-12 rounded-lg bg-zinc-200 dark:bg-zinc-800 text-zinc-600 dark:text-zinc-300 flex items-center justify-center transition" title="New message">
-                <SquarePen className="text-sm" />
-              </button>
-            </div>
-
-            <div
-              ref={drawerListRef}
-              className="px-2 py-2 flex-1 overflow-y-auto"
-              style={{ position: 'relative' }}
-            >
-              {pulseConversations.length > 0 ? (
-                <div style={{ height: drawerTotalHeight, position: 'relative' }}>
-                  {virtualDrawerConversations.map(({ item: conv, style }) => {
-                    const otherUser = conv.other_user;
-                    if (!otherUser) return null;
-                    const hasUnread = (conv.unread_count || 0) > 0;
-                    return (
-                      <div key={conv.id} style={style}>
-                        <div
-                          onClick={() => handleSelectConversation(conv.id)}
-                          className={`p-3 rounded-xl cursor-pointer transition flex items-center gap-3
-                            ${activePulseConversation === conv.id ? 'bg-emerald-50 dark:bg-emerald-900/20' : 'hover:bg-zinc-100 dark:hover:bg-zinc-800/50'}`}
-                        >
-                          <div className="w-10 h-10 rounded-full bg-gradient-to-br from-rose-500 to-pink-600 flex items-center justify-center text-white text-sm font-bold flex-shrink-0">
-                            {otherUser.avatar_url ? (
-                              <img src={otherUser.avatar_url} alt="" className="w-full h-full rounded-full object-cover" />
-                            ) : (
-                              (otherUser.display_name || otherUser.handle || '?').charAt(0).toUpperCase()
-                            )}
-                          </div>
-                          <div className="flex-1 min-w-0">
-                            <h3 className={`text-sm truncate ${hasUnread ? 'font-bold dark:text-white' : 'font-medium text-zinc-700 dark:text-zinc-300'}`}>
-                              {otherUser.display_name || otherUser.full_name || otherUser.handle || 'Unknown'}
-                            </h3>
-                            {otherUser.handle && <span className="text-[10px] text-emerald-600 dark:text-emerald-400">@{otherUser.handle}</span>}
-                          </div>
-                          {hasUnread && (
-                            <div className="w-5 h-5 bg-emerald-500 rounded-full flex items-center justify-center">
-                              <span className="text-[10px] text-white font-bold">{conv.unread_count}</span>
-                            </div>
-                          )}
-                        </div>
-                      </div>
-                    );
-                  })}
-                </div>
-              ) : (
-                <div className="flex flex-col items-center justify-center py-12 text-center px-4">
-                  <div className="w-16 h-16 rounded-2xl bg-gradient-to-br from-rose-100 to-pink-100 dark:from-rose-900/30 dark:to-pink-900/30 flex items-center justify-center mb-4">
-                    <MessagesSquare className="text-2xl text-rose-500" />
-                  </div>
-                  <h3 className="text-zinc-900 dark:text-white font-semibold mb-2">No Messages Yet</h3>
-                  <p className="text-zinc-500 text-sm mb-4">Start a conversation with a Pulse user.</p>
-                  <button
-                    onClick={() => { setShowNewChatModal(true); closeDrawer(); }}
-                    className="px-4 py-2 bg-gradient-to-r from-rose-500 to-pink-600 text-white text-sm font-medium rounded-lg"
-                  >
-                    <Plus className="mr-2" />
-                    New Conversation
-                  </button>
-                </div>
-              )}
-            </div>
-          </div>
-        </MobileDrawer>
-      </div>
 
       {/* Sidebar (Threads) - Desktop: 30% width, Mobile: Hidden (shown via drawer) */}
       <div ref={sidebarRef} className={`w-full md:w-[30%] md:min-w-[280px] md:max-w-[400px] border-r border-zinc-200 dark:border-zinc-800 bg-zinc-50 dark:bg-zinc-900/50 flex-shrink-0 flex flex-col ${mobileView === 'chat' ? 'max-md:hidden' : ''}`}>
@@ -5994,277 +5649,47 @@ const Messages: React.FC<MessagesProps> = ({ apiKey, contacts, initialContactId,
       </div>
       )}
 
-      {/* Invite to Pulse Modal */}
-      <InviteToPulseModal
-        isOpen={showInviteToPulseModal}
-        onClose={() => { setShowInviteToPulseModal(false); setInviteToPulseSent(false); setInviteToPulseCopied(false); setInviteTargetContact(null); }}
-        targetContact={inviteTargetContact}
-        isSent={inviteToPulseSent}
-        isCopied={inviteToPulseCopied}
-        onSendEmail={() => {
-          if (inviteTargetContact?.email) {
-            const userName = localStorage.getItem('pulse_user_name') || 'Your friend';
-            const mailtoLink = generateEarlyAccessInvite(
-              inviteTargetContact.email,
-              userName,
-              inviteTargetContact.name.split(' ')[0]
-            );
-            window.open(mailtoLink, '_blank');
-            setInviteToPulseSent(true);
-          }
-        }}
-        onCopyLink={() => {
-          const userName = localStorage.getItem('pulse_user_name') || 'A friend';
-          const shareText = generateShareableInviteText(userName);
-          navigator.clipboard.writeText(shareText);
-          setInviteToPulseCopied(true);
-          setTimeout(() => setInviteToPulseCopied(false), 3000);
-        }}
-        onSendSMS={() => {
-          if (inviteTargetContact?.phone) {
-            const userName = localStorage.getItem('pulse_user_name') || 'A friend';
-            const shareText = generateShareableInviteText(userName);
-            window.open(`sms:${inviteTargetContact.phone}?body=${encodeURIComponent(shareText)}`, '_blank');
-          }
-        }}
-        onDone={() => { setShowInviteToPulseModal(false); setInviteToPulseSent(false); setInviteTargetContact(null); }}
+      <MessagesEndModals
+        showInviteToPulseModal={showInviteToPulseModal}
+        setShowInviteToPulseModal={setShowInviteToPulseModal}
+        inviteTargetContact={inviteTargetContact}
+        setInviteTargetContact={setInviteTargetContact}
+        inviteToPulseSent={inviteToPulseSent}
+        setInviteToPulseSent={setInviteToPulseSent}
+        inviteToPulseCopied={inviteToPulseCopied}
+        setInviteToPulseCopied={setInviteToPulseCopied}
+        showContactPanel={showContactPanel}
+        setShowContactPanel={setShowContactPanel}
+        selectedContactUserId={selectedContactUserId}
+        setSelectedContactUserId={setSelectedContactUserId}
+        showAchievements={showAchievements}
+        messageEnhancements={messageEnhancements}
+        showAnalyticsDashboard={showAnalyticsDashboard}
+        setShowAnalyticsDashboard={setShowAnalyticsDashboard}
+        threads={threads}
+        showNetworkGraph={showNetworkGraph}
+        setShowNetworkGraph={setShowNetworkGraph}
+        setActiveThreadId={setActiveThreadId}
+        setMobileView={setMobileView}
+        showContextPanel={showContextPanel}
+        setShowContextPanel={setShowContextPanel}
+        activeThread={activeThread}
+        activePulseConv={activePulseConv}
+        apiKey={apiKey}
+        currentUser={currentUser}
+        showTaskExtractor={showTaskExtractor}
+        setShowTaskExtractor={setShowTaskExtractor}
+        contacts={contacts}
+        showChannelArtifactPanel={showChannelArtifactPanel}
+        setShowChannelArtifactPanel={setShowChannelArtifactPanel}
+        showFeatureSettings={showFeatureSettings}
+        setShowFeatureSettings={setShowFeatureSettings}
+        isFocusModeActive={isFocusModeActive}
+        setIsFocusModeActive={setIsFocusModeActive}
+        activeThreadId={activeThreadId}
+        focusThreadId={focusThreadId}
+        setFocusThreadId={setFocusThreadId}
       />
-
-      {/* Contact Details Slide-Out Panel */}
-      {showContactPanel && selectedContactUserId && (
-        <>
-          {/* Backdrop */}
-          <div 
-            className="fixed inset-0 bg-black/40 backdrop-blur-sm z-40 transition-opacity duration-300"
-            onClick={() => {
-              setShowContactPanel(false);
-              setTimeout(() => setSelectedContactUserId(null), 300);
-            }}
-          />
-          {/* Slide-out panel */}
-          <div 
-            className="fixed top-0 right-0 bottom-0 w-full max-w-md bg-white dark:bg-zinc-900 shadow-2xl z-50 transform transition-transform duration-300 ease-out overflow-hidden"
-            style={{
-              animation: showContactPanel ? 'slideInRight 0.3s ease-out' : 'slideOutRight 0.3s ease-in'
-            }}
-          >
-            <UserContactCard
-              userId={selectedContactUserId}
-              onClose={() => {
-                setShowContactPanel(false);
-                setTimeout(() => setSelectedContactUserId(null), 300);
-              }}
-            />
-          </div>
-        </>
-      )}
-
-      {/* ===== ACHIEVEMENT TOASTS ===== */}
-      {showAchievements && messageEnhancements.newAchievements.map(achievement => (
-        <AchievementToast
-          key={achievement.id}
-          achievement={achievement}
-          onDismiss={() => messageEnhancements.dismissAchievement(achievement.id)}
-        />
-      ))}
-
-      {/* ===== MESSAGE ANALYTICS DASHBOARD MODAL ===== */}
-      {showAnalyticsDashboard && (
-        <div className="fixed inset-0 z-[80] bg-black/60 backdrop-blur-sm flex items-center justify-center animate-fade-in p-4">
-          <div className="bg-white dark:bg-zinc-900 w-full max-w-4xl max-h-[90vh] rounded-2xl shadow-2xl animate-scale-in border border-zinc-200 dark:border-zinc-800 overflow-hidden flex flex-col">
-            <div className="flex items-center justify-between p-4 border-b border-zinc-200 dark:border-zinc-800">
-              <h2 className="text-lg font-bold dark:text-white flex items-center gap-2">
-                <TrendingUp className="text-indigo-500" />
-                Message Analytics Dashboard
-              </h2>
-              <button
-                onClick={() => setShowAnalyticsDashboard(false)}
-                className="w-8 h-8 flex items-center justify-center rounded-lg hover:bg-zinc-100 dark:hover:bg-zinc-800 text-zinc-500"
-              >
-                <X />
-              </button>
-            </div>
-            <div className="flex-1 overflow-y-auto p-4">
-              <MessageAnalyticsDashboard
-                threads={threads}
-                timeRange="week"
-              />
-            </div>
-          </div>
-        </div>
-      )}
-
-      {/* ===== NETWORK GRAPH MODAL ===== */}
-      {showNetworkGraph && (
-        <div className="fixed inset-0 z-[80] bg-black/60 backdrop-blur-sm flex items-center justify-center animate-fade-in p-4">
-          <div className="bg-white dark:bg-zinc-900 w-full max-w-3xl max-h-[80vh] rounded-2xl shadow-2xl animate-scale-in border border-zinc-200 dark:border-zinc-800 overflow-hidden flex flex-col">
-            <div className="flex items-center justify-between p-4 border-b border-zinc-200 dark:border-zinc-800">
-              <h2 className="text-lg font-bold dark:text-white flex items-center gap-2">
-                <GitFork className="text-purple-500" />
-                Connection Network
-              </h2>
-              <button
-                onClick={() => setShowNetworkGraph(false)}
-                className="w-8 h-8 flex items-center justify-center rounded-lg hover:bg-zinc-100 dark:hover:bg-zinc-800 text-zinc-500"
-              >
-                <X />
-              </button>
-            </div>
-            <div className="flex-1 overflow-y-auto p-4">
-              <NetworkGraph
-                threads={threads}
-                onNodeClick={(contactId) => {
-                  const thread = threads.find(t => t.contactId === contactId);
-                  if (thread) {
-                    setActiveThreadId(thread.id);
-                    setShowNetworkGraph(false);
-                    setMobileView('chat');
-                  }
-                }}
-              />
-            </div>
-          </div>
-        </div>
-      )}
-
-      {/* ===== CONTEXT PANEL SIDEBAR ===== */}
-      {showContextPanel && (activeThread || activePulseConv) && (
-        <div className="fixed top-0 right-0 bottom-0 w-full max-w-md bg-white dark:bg-zinc-900 shadow-2xl z-40 transform transition-transform duration-300 ease-out overflow-hidden border-l border-zinc-200 dark:border-zinc-800" style={{ animation: 'slideInRight 0.3s ease-out' }}>
-          <div className="h-full flex flex-col">
-            <div className="flex items-center justify-between p-4 border-b border-zinc-200 dark:border-zinc-800">
-              <h2 className="text-lg font-bold dark:text-white flex items-center gap-2">
-                <Layers className="text-purple-500" />
-                Context & Insights
-              </h2>
-              <button
-                onClick={() => setShowContextPanel(false)}
-                className="w-8 h-8 flex items-center justify-center rounded-lg hover:bg-zinc-100 dark:hover:bg-zinc-800 text-zinc-500"
-              >
-                <X />
-              </button>
-            </div>
-            <div className="flex-1 overflow-y-auto">
-              <ContextPanel
-                threadId={activeThread?.id || activePulseConv?.id || ''}
-                messages={activeThread?.messages || activePulseConv?.messages?.map(m => ({
-                  id: m.id,
-                  sender: m.sender_id === currentUser?.id ? 'me' : m.sender?.name || 'Unknown',
-                  text: m.content,
-                  timestamp: new Date(m.created_at),
-                  source: 'pulse' as const
-                })) || []}
-                apiKey={apiKey}
-                onDocClick={(doc) => {
-                  // Handle document click - could open in new tab or navigate
-                  if (doc.url) window.open(doc.url, '_blank');
-                }}
-                onDecisionClick={(decision) => {
-                  // Handle decision click - scroll to message or show details
-                  console.log('Decision clicked:', decision);
-                }}
-              />
-            </div>
-          </div>
-        </div>
-      )}
-
-      {/* ===== TASK EXTRACTOR PANEL ===== */}
-      {showTaskExtractor && (activeThread || activePulseConv) && (
-        <div className="fixed inset-0 z-[80] bg-black/60 backdrop-blur-sm flex items-center justify-center animate-fade-in p-4">
-          <div className="bg-white dark:bg-zinc-900 w-full max-w-3xl max-h-[85vh] rounded-2xl shadow-2xl animate-scale-in border border-zinc-200 dark:border-zinc-800 overflow-hidden flex flex-col">
-            <div className="flex items-center justify-between p-4 border-b border-zinc-200 dark:border-zinc-800">
-              <h2 className="text-lg font-bold dark:text-white flex items-center gap-2">
-                <ListChecks className="text-emerald-500" />
-                Extract Tasks from Conversation
-              </h2>
-              <button
-                onClick={() => setShowTaskExtractor(false)}
-                className="w-8 h-8 flex items-center justify-center rounded-lg hover:bg-zinc-100 dark:hover:bg-zinc-800 text-zinc-500"
-              >
-                <X />
-              </button>
-            </div>
-            <div className="flex-1 overflow-y-auto">
-              <TaskExtractor
-                workspaceId={activeThread?.id || activePulseConv?.id || ''}
-                userId={currentUser?.id || ''}
-                messages={activeThread?.messages || activePulseConv?.messages?.map(m => ({
-                  id: m.id,
-                  sender: m.sender_id === currentUser?.id ? 'me' : m.sender?.name || 'Unknown',
-                  text: m.content,
-                  timestamp: new Date(m.created_at),
-                  source: 'pulse' as const
-                })) || []}
-                contacts={contacts}
-                apiKey={apiKey}
-                onTaskCreated={(task) => {
-                  console.log('Task created:', task);
-                  // Could show a toast or update UI
-                }}
-              />
-            </div>
-          </div>
-        </div>
-      )}
-
-      {/* ===== CHANNEL ARTIFACT PANEL ===== */}
-      {showChannelArtifactPanel && (activeThread || activePulseConv) && (
-        <div className="fixed inset-0 z-[80] bg-black/60 backdrop-blur-sm flex items-center justify-center animate-fade-in p-4">
-          <div className="bg-white dark:bg-zinc-900 w-full max-w-4xl max-h-[90vh] rounded-2xl shadow-2xl animate-scale-in border border-zinc-200 dark:border-zinc-800 overflow-hidden flex flex-col">
-            <div className="flex items-center justify-between p-4 border-b border-zinc-200 dark:border-zinc-800">
-              <h2 className="text-lg font-bold dark:text-white flex items-center gap-2">
-                <FileOutput className="text-blue-500" />
-                Export as Living Document
-              </h2>
-              <button
-                onClick={() => setShowChannelArtifactPanel(false)}
-                className="w-8 h-8 flex items-center justify-center rounded-lg hover:bg-zinc-100 dark:hover:bg-zinc-800 text-zinc-500"
-              >
-                <X />
-              </button>
-            </div>
-            <div className="flex-1 overflow-y-auto">
-              <ChannelArtifactComponent
-                channelId={activeThread?.id || activePulseConv?.id || ''}
-                channelName={activeThread?.contactName || activePulseConv?.other_user?.name || 'Conversation'}
-                messages={activeThread?.messages || activePulseConv?.messages?.map(m => ({
-                  id: m.id,
-                  sender: m.sender_id === currentUser?.id ? 'me' : m.sender?.name || 'Unknown',
-                  text: m.content,
-                  timestamp: new Date(m.created_at),
-                  source: 'pulse' as const
-                })) || []}
-                apiKey={apiKey}
-                onExport={(artifact, format) => {
-                  console.log('Exported artifact:', artifact, 'format:', format);
-                  // Handle export - could download file or open in new tab
-                }}
-              />
-            </div>
-          </div>
-        </div>
-      )}
-
-      {/* ===== FEATURE SETTINGS PANEL (Phase 3) ===== */}
-      {showFeatureSettings && (
-        <FeatureSettingsPanel
-          isOpen={showFeatureSettings}
-          onClose={() => setShowFeatureSettings(false)}
-        />
-      )}
-
-      {/* ===== FOCUS MODE OVERLAY ===== */}
-      <FocusMode
-        isActive={isFocusModeActive}
-        threadId={activeThreadId || focusThreadId || 'main'}
-        threadName={activeThread?.contactName || activePulseConv?.other_user?.name || 'Conversation'}
-        userId={currentUser.id}
-        onClose={() => {
-          setIsFocusModeActive(false);
-          setFocusThreadId(null);
-        }}
-      />
-
       {/* Message Input Portal - Fixed at viewport bottom (for regular threads only, Pulse uses inline input) */}
       {activeThread && !activePulseConversation && (
         <MessageInputPortal
