@@ -1,7 +1,7 @@
 import React, { useState, useEffect, lazy, Suspense } from 'react';
 import './LandingPage.css';
 
-import { Apple, ArrowDown, Battery, Bell, Book, BookOpen, Bot, Check, ChevronUp, Download, ExternalLink, Eye, Gavel, Heart, HeartPulse, HelpCircle, Inbox, Info, Keyboard, Layers, LayoutGrid, Mic, Network, Play, Rocket, Search, ShieldHalf, Signal, Smartphone, Wand2, Wifi, X } from 'lucide-react';
+import { Apple, ArrowDown, Battery, Bell, Book, BookOpen, Bot, Check, ChevronUp, Download, ExternalLink, Eye, Gavel, Heart, HeartPulse, HelpCircle, Info, Keyboard, Layers, LayoutGrid, Mic, Network, Play, Rocket, Search, ShieldHalf, Signal, Smartphone, Wand2, Wifi, X } from 'lucide-react';
 
 // Lazy-load the guide — guideData.ts is 26k lines and must NOT land in the main bundle
 const UsersGuide = lazy(() => import('./UsersGuide/UsersGuide'));
@@ -146,6 +146,7 @@ const LandingPage: React.FC<LandingPageProps> = ({ onGetStarted }) => {
   const [openFaq, setOpenFaq] = useState<number | null>(null);
   const [shortcutsOpen, setShortcutsOpen] = useState(false);
   const [downloadsOpen, setDownloadsOpen] = useState(false);
+  const [orbitPaused, setOrbitPaused] = useState(false);
 
   // Scroll-triggered section backgrounds — fade in/out as user scrolls through each section
   useEffect(() => {
@@ -828,105 +829,6 @@ const LandingPage: React.FC<LandingPageProps> = ({ onGetStarted }) => {
           </div>
         </div>
 
-        {/* ── Hero App Preview — Unified Inbox mockup ── */}
-        <div className="max-w-5xl mx-auto mt-14 relative z-10 px-2 animate-fade-in animation-delay-500" aria-hidden="true">
-          <div className="rounded-2xl overflow-hidden border border-zinc-700/40 shadow-2xl shadow-black/60" style={{ background: 'rgba(9,9,11,0.97)', backdropFilter: 'blur(20px)' }}>
-            {/* macOS window chrome */}
-            <div className="flex items-center gap-2 px-4 py-2.5 border-b border-zinc-800/50" style={{ background: 'rgba(14,14,17,0.99)' }}>
-              <div className="flex gap-1.5">
-                <div className="w-2.5 h-2.5 rounded-full" style={{ background: '#ff5f56' }} />
-                <div className="w-2.5 h-2.5 rounded-full" style={{ background: '#ffbd2e' }} />
-                <div className="w-2.5 h-2.5 rounded-full" style={{ background: '#27c93f' }} />
-              </div>
-              <span className="text-[11px] text-zinc-500 mx-auto tracking-wide">Pulse — Unified Inbox</span>
-            </div>
-            {/* 3-pane body */}
-            <div className="flex" style={{ height: '320px' }}>
-              {/* Icon nav rail */}
-              <div className="w-11 border-r border-zinc-800/40 flex flex-col items-center py-3 gap-2.5 shrink-0" style={{ background: 'rgba(10,10,13,0.99)' }}>
-                {([
-                  { active: true,  icon: <Inbox className="w-4 h-4" /> },
-                  { active: false, icon: <Mic className="w-4 h-4 text-zinc-600" /> },
-                  { active: false, icon: <svg viewBox="0 0 20 20" width={16} height={16} fill="none" stroke="currentColor" strokeWidth={1.5} className="text-zinc-600"><rect x="3" y="4" width="14" height="11" rx="2"/><polyline points="3,7 10,12 17,7"/></svg> },
-                  { active: false, icon: <svg viewBox="0 0 20 20" width={16} height={16} fill="none" stroke="currentColor" strokeWidth={1.5} className="text-zinc-600"><rect x="3" y="2" width="14" height="16" rx="2"/><line x1="6" y1="8" x2="14" y2="8"/><line x1="6" y1="12" x2="10" y2="12"/></svg> },
-                  { active: false, icon: <svg viewBox="0 0 20 20" width={16} height={16} fill="currentColor" className="text-zinc-600"><circle cx="10" cy="7" r="3.5"/><path d="M4 17a6 6 0 0112 0"/></svg> },
-                  { active: false, icon: <svg viewBox="0 0 20 20" width={16} height={16} fill="none" stroke="currentColor" strokeWidth={1.5} className="text-zinc-600"><rect x="2" y="2" width="7" height="7" rx="1.5"/><rect x="11" y="2" width="7" height="7" rx="1.5"/><rect x="2" y="11" width="7" height="7" rx="1.5"/><rect x="11" y="11" width="7" height="7" rx="1.5" className="lp-throb-sm"/></svg> },
-                  { active: false, icon: <svg viewBox="0 0 20 20" width={16} height={16} fill="none" stroke="currentColor" strokeWidth={1.5} className="text-zinc-600"><circle cx="10" cy="10" r="7.5"/><line x1="10" y1="6" x2="10" y2="10.5"/><circle cx="10" cy="13.5" r=".6" fill="currentColor" stroke="none"/></svg> },
-                ] as { active: boolean; icon: React.ReactNode }[]).map((item, i) => (
-                  <div key={i} className={`w-7 h-7 rounded-lg flex items-center justify-center ${item.active ? 'bg-rose-500 text-white' : ''}`}>
-                    {item.icon}
-                  </div>
-                ))}
-              </div>
-              {/* Thread list */}
-              <div className="w-52 border-r border-zinc-800/40 flex flex-col shrink-0" style={{ background: 'rgba(12,12,15,0.98)' }}>
-                <div className="px-3 pt-3 pb-2 border-b border-zinc-800/30">
-                  <div className="text-[9px] font-bold text-zinc-600 uppercase tracking-widest mb-2">Unified Inbox</div>
-                  <div className="flex items-center gap-1.5 px-2 py-1.5 rounded-lg border border-zinc-800/40" style={{ background: 'rgba(24,24,28,0.7)' }}>
-                    <Search className="text-zinc-600 w-3 h-3 shrink-0" />
-                    <span className="text-[9px] text-zinc-600">Search all channels…</span>
-                  </div>
-                </div>
-                {[
-                  { name: 'Sarah Chen',    badge: 'EMAIL', bc: 'text-blue-400 bg-blue-500/15',       msg: 'Re: Q4 proposal — looks great!',  active: true  },
-                  { name: 'Dev Team',      badge: 'SLACK', bc: 'text-emerald-400 bg-emerald-500/15', msg: '⊙ Build deployed to staging',     active: false },
-                  { name: '+1 (555) 0147', badge: 'SMS',   bc: 'text-green-400 bg-green-500/15',     msg: 'Confirming for tomorrow 3pm',     active: false },
-                  { name: 'Marcus Lee',    badge: 'VOX',   bc: 'text-rose-400 bg-rose-500/15',       msg: '🎙 Voice message · 0:47',         active: false },
-                  { name: 'Product Team',  badge: 'SLACK', bc: 'text-emerald-400 bg-emerald-500/15', msg: 'Launch checklist — 3 items left', active: false },
-                ].map((item, i) => (
-                  <div key={i} className={`px-3 py-2 border-b border-zinc-800/20 cursor-default ${item.active ? 'border-l-2 border-l-rose-500' : 'hover:bg-zinc-800/20'}`} style={item.active ? { background: 'rgba(244,63,94,0.05)' } : {}}>
-                    <div className="flex items-center justify-between mb-0.5 gap-1">
-                      <span className="text-[10px] font-semibold text-white truncate">{item.name}</span>
-                      <span className={`text-[7px] font-bold px-1 py-0.5 rounded shrink-0 ${item.bc}`}>{item.badge}</span>
-                    </div>
-                    <span className="text-[9px] text-zinc-500 line-clamp-1">{item.msg}</span>
-                  </div>
-                ))}
-              </div>
-              {/* Main chat pane */}
-              <div className="flex-1 flex flex-col min-w-0" style={{ background: 'rgba(9,9,11,0.97)' }}>
-                <div className="flex items-center gap-2.5 px-4 py-2.5 border-b border-zinc-800/40 shrink-0">
-                  <div className="w-7 h-7 rounded-full flex items-center justify-center text-[9px] font-bold text-white shrink-0" style={{ background: 'linear-gradient(135deg,#f43f5e,#ec4899)' }}>SC</div>
-                  <div className="min-w-0">
-                    <div className="text-[11px] font-bold text-white">Sarah Chen</div>
-                    <div className="text-[8px] text-emerald-400">● Active now · VP Product @ Acme</div>
-                  </div>
-                  <div className="ml-auto flex items-center gap-2 shrink-0 text-zinc-600">
-                    <svg viewBox="0 0 20 20" width={14} height={14} fill="none" stroke="currentColor" strokeWidth={1.5}><rect x="3" y="2" width="14" height="16" rx="2"/><line x1="6" y1="8" x2="14" y2="8"/></svg>
-                    <svg viewBox="0 0 20 20" width={14} height={14} fill="currentColor"><path d="M11 2L4 12h6l-1 6 7-10h-6z" className="lp-flash"/></svg>
-                  </div>
-                </div>
-                <div className="flex-1 overflow-hidden flex flex-col justify-end px-4 py-3 gap-2">
-                  <div className="flex gap-2 items-end" style={{ maxWidth: '80%' }}>
-                    <div className="w-5 h-5 rounded-full flex items-center justify-center text-[7px] font-bold text-white shrink-0" style={{ background: 'linear-gradient(135deg,#f43f5e,#ec4899)' }}>SC</div>
-                    <div className="rounded-2xl rounded-bl-sm px-3 py-2 text-[10px] text-zinc-200 leading-relaxed border border-zinc-700/30" style={{ background: 'rgba(39,39,46,0.7)' }}>
-                      Hey! Just reviewed the Q4 proposal. The strategy section is really compelling — I think leadership will love it.
-                    </div>
-                  </div>
-                  <div className="flex gap-2 items-end justify-end">
-                    <div className="rounded-2xl rounded-br-sm px-3 py-2 text-[10px] text-white leading-relaxed" style={{ maxWidth: '80%', background: 'linear-gradient(135deg,#f43f5e,#ec4899)' }}>
-                      Thanks Sarah! I added the exec summary you suggested. Want to jump on a quick call before the board meeting?
-                    </div>
-                  </div>
-                  <div className="flex gap-2 items-end" style={{ maxWidth: '80%' }}>
-                    <div className="w-5 h-5 rounded-full flex items-center justify-center text-[7px] font-bold text-white shrink-0" style={{ background: 'linear-gradient(135deg,#f43f5e,#ec4899)' }}>SC</div>
-                    <div className="rounded-2xl rounded-bl-sm px-3 py-2 text-[10px] text-zinc-200 leading-relaxed border border-zinc-700/30" style={{ background: 'rgba(39,39,46,0.7)' }}>
-                      Absolutely. Tuesday works — I'll send a calendar invite.
-                    </div>
-                  </div>
-                  {/* AI Insights */}
-                  <div className="flex items-start gap-2 px-3 py-2 rounded-xl border border-purple-500/20 mt-1" style={{ background: 'rgba(139,92,246,0.06)' }}>
-                    <svg viewBox="0 0 20 20" width={12} height={12} fill="currentColor" className="text-purple-400 mt-0.5 shrink-0"><path d="M11 2L4 12h6l-1 6 7-10h-6z" className="lp-flash"/></svg>
-                    <div>
-                      <div className="text-[8px] font-bold text-purple-400 uppercase tracking-widest mb-0.5">AI Insights</div>
-                      <p className="text-[9px] text-zinc-400 leading-relaxed">Follow-up detected · Suggested action: <span className="text-purple-300 font-semibold">Block Tuesday 2–3pm</span> · Sentiment: <span className="text-emerald-400">Positive 94%</span></p>
-                    </div>
-                  </div>
-                </div>
-              </div>
-            </div>
-          </div>
-        </div>
       </section>
 
       {/* ── Stats Strip ── */}
@@ -948,7 +850,7 @@ const LandingPage: React.FC<LandingPageProps> = ({ onGetStarted }) => {
       <div id="features">
 
         {/* Section A — Voice-First Communication */}
-        <section id="section-voxer" className="py-24 px-6 relative">
+        <section id="section-voxer" className="py-24 px-6 relative overflow-hidden">
           {/* Voxer "Sonic Pulse" themed bg — indigo + pink, fades in with scroll */}
           <div
             className="absolute inset-0 pointer-events-none transition-opacity duration-700"
@@ -975,100 +877,111 @@ const LandingPage: React.FC<LandingPageProps> = ({ onGetStarted }) => {
               </p>
             </div>
 
-            <div className="grid lg:grid-cols-2 gap-10 items-start">
-              {/* Left — mode cards */}
-              <div className="grid sm:grid-cols-2 gap-5">
-                {VOX_MODES.map((mode, i) => (
-                  <div
-                    key={mode.name}
-                    className="group p-5 rounded-2xl bg-zinc-900/80 border border-zinc-800 hover:border-rose-500/50 transition-all duration-300 hover:-translate-y-1.5 animate-fade-in"
-                    style={{ animationDelay: `${i * 0.08}s` }}
-                  >
-                    <div className="w-10 h-10 rounded-xl bg-rose-500/10 flex items-center justify-center mb-3 group-hover:bg-rose-500/20 transition-colors">
-                      <span className="text-rose-500">{voxSvg(i)}</span>
-                    </div>
-                    <h3 className="text-sm font-bold text-white mb-1.5">{mode.name}</h3>
-                    <p className="text-zinc-500 text-xs leading-relaxed">{mode.desc}</p>
-                  </div>
-                ))}
-                {/* Unified Inbox callout */}
-                <div className="group p-5 rounded-2xl bg-gradient-to-br from-rose-500/10 to-pink-500/5 border border-rose-500/25 hover:border-rose-500/50 transition-all duration-300 hover:-translate-y-1.5 animate-fade-in sm:col-span-2">
-                  <div className="w-10 h-10 rounded-xl bg-rose-500/15 flex items-center justify-center mb-3">
-                    <Inbox className="text-rose-400" />
-                  </div>
-                  <h3 className="text-sm font-bold text-white mb-1.5">Unified Inbox</h3>
-                  <p className="text-zinc-500 text-xs leading-relaxed mb-3">8 platforms, one stream — Email, Slack, SMS, Discord, Teams, Figma, Jira, internal.</p>
-                  <div className="flex flex-wrap gap-1">
-                    {['Email', 'Slack', 'SMS', 'Discord', 'Teams', 'Figma', 'Jira'].map(p => (
-                      <span key={p} className="px-1.5 py-0.5 bg-zinc-800/80 border border-zinc-700/50 rounded text-[10px] text-zinc-400">{p}</span>
-                    ))}
-                  </div>
-                </div>
-              </div>
+            {/* ── Desktop: radial orbital layout ── */}
+            <div className="relative flex items-center justify-center overflow-visible" style={{ height: '960px' }}>
+              {/* Orbital ring decorations — centered via inset-0 m-auto */}
+              <div className="absolute inset-0 m-auto rounded-full border border-rose-500/10 pointer-events-none" style={{ width: '860px', height: '860px' }} />
+              <div className="absolute inset-0 m-auto rounded-full border border-indigo-500/10 pointer-events-none" style={{ width: '560px', height: '560px' }} />
+              {/* Ambient center glow */}
+              <div className="absolute inset-0 m-auto rounded-full pointer-events-none" style={{ width: '420px', height: '420px', background: 'radial-gradient(circle, rgba(244,63,94,0.09) 0%, transparent 70%)' }} />
 
-              {/* Right — Waveform visualization panel */}
-              <div className="rounded-2xl overflow-hidden border border-zinc-800/60 sticky top-28" aria-hidden="true" style={{ background: 'rgba(10,10,14,0.97)' }}>
-                {/* Panel header */}
-                <div className="flex items-center gap-2.5 px-5 py-3.5 border-b border-zinc-800/50" style={{ background: 'rgba(14,14,18,0.99)' }}>
-                  <span className="relative flex h-2 w-2 shrink-0">
-                    <span className="animate-ping absolute inline-flex h-full w-full rounded-full bg-rose-400 opacity-75"></span>
-                    <span className="relative inline-flex rounded-full h-2 w-2 bg-rose-500"></span>
-                  </span>
-                  <span className="text-[10px] font-bold text-rose-400 uppercase tracking-widest">Live Recording — Real-Time Transcription</span>
-                </div>
-                {/* Waveform */}
-                <div className="px-5 pt-6 pb-4">
-                  <svg viewBox="0 0 560 90" className="w-full" preserveAspectRatio="xMidYMid meet" style={{ height: '80px' }}>
-                    {[14,24,38,54,68,78,70,56,38,22,14,32,54,72,80,76,60,42,26,16,34,58,76,80,68,50,32,18].map((h, i) => (
-                      <rect
-                        key={i}
-                        x={i * 20 + 4}
-                        y={(90 - h) / 2}
-                        width={12}
-                        height={h}
-                        rx={6}
-                        fill="#f43f5e"
-                        fillOpacity={Math.min(0.95, 0.55 + h / 160)}
-                        className={(['lp-bar-a','lp-bar-b','lp-bar-c','lp-bar-d','lp-bar-e'])[i % 5]}
-                      />
-                    ))}
-                  </svg>
-                </div>
-                {/* Transcription */}
-                <div className="mx-5 mb-5 px-4 py-3 rounded-xl border border-zinc-700/30" style={{ background: 'rgba(20,20,26,0.8)' }}>
-                  <div className="text-[9px] font-bold text-zinc-600 uppercase tracking-widest mb-1.5">Transcription</div>
-                  <p className="text-[12px] text-zinc-300 font-medium leading-relaxed">
-                    I'll loop in the design team on the mockups
-                    <span className="inline-block w-0.5 h-3 bg-rose-400 ml-1 align-middle lp-rec-dot"></span>
-                  </p>
-                </div>
-                {/* Controls */}
-                <div className="px-5 pb-5 flex flex-col gap-4">
-                  <div className="flex items-center justify-center gap-4">
-                    <button type="button" title="Pause" className="w-10 h-10 rounded-full flex items-center justify-center border border-zinc-700/60 text-zinc-400 hover:border-rose-500/40 transition" style={{ background: 'rgba(28,28,34,0.8)' }}>
-                      <svg viewBox="0 0 20 20" width={16} height={16} fill="currentColor"><rect x="5" y="4" width="3" height="12" rx="1"/><rect x="12" y="4" width="3" height="12" rx="1"/></svg>
+              {/* Center: Live Recording Panel */}
+              <div className="absolute z-10" style={{ left: '50%', top: '50%', transform: 'translate(-50%, -50%)', width: '360px' }}>
+                <div className="rounded-2xl overflow-hidden border border-zinc-800/80" aria-hidden="true" style={{ background: 'rgba(10,10,14,0.98)', boxShadow: '0 0 60px rgba(244,63,94,0.14)' }}>
+                  <div className="flex items-center gap-2.5 px-4 py-3 border-b border-zinc-800/50" style={{ background: 'rgba(14,14,18,0.99)' }}>
+                    <span className="relative flex h-2 w-2 shrink-0">
+                      <span className="animate-ping absolute inline-flex h-full w-full rounded-full bg-rose-400 opacity-75"></span>
+                      <span className="relative inline-flex rounded-full h-2 w-2 bg-rose-500"></span>
+                    </span>
+                    <span className="text-[9px] font-bold text-rose-400 uppercase tracking-widest">Live Recording — Real-Time Transcription</span>
+                  </div>
+                  <div className="px-4 pt-5 pb-3">
+                    <svg viewBox="0 0 280 70" className="w-full" style={{ height: '58px' }}>
+                      {[14,24,38,54,68,78,70,56,38,22,14,32,54,72,80,76,60,42,26,16,34,58,76,80,68,50,32,18].map((h, idx) => (
+                        <rect
+                          key={idx}
+                          x={idx * 10 + 1}
+                          y={(70 - h * 0.75) / 2}
+                          width={7}
+                          height={h * 0.75}
+                          rx={3.5}
+                          fill="#f43f5e"
+                          fillOpacity={Math.min(0.95, 0.55 + h / 160)}
+                          className={(['lp-bar-a','lp-bar-b','lp-bar-c','lp-bar-d','lp-bar-e'])[idx % 5]}
+                        />
+                      ))}
+                    </svg>
+                  </div>
+                  <div className="mx-4 mb-3 px-3 py-2.5 rounded-xl border border-zinc-700/30" style={{ background: 'rgba(20,20,26,0.8)' }}>
+                    <div className="text-[8px] font-bold text-zinc-600 uppercase tracking-widest mb-1">Transcription</div>
+                    <p className="text-[11px] text-zinc-300 font-medium leading-relaxed">
+                      I'll loop in the design team on the mockups
+                      <span className="inline-block w-0.5 h-3 bg-rose-400 ml-1 align-middle lp-rec-dot"></span>
+                    </p>
+                  </div>
+                  <div className="pb-4 flex items-center justify-center gap-3">
+                    <button type="button" title="Pause" className="w-9 h-9 rounded-full flex items-center justify-center border border-zinc-700/60 text-zinc-400" style={{ background: 'rgba(28,28,34,0.8)' }}>
+                      <svg viewBox="0 0 20 20" width={13} height={13} fill="currentColor"><rect x="5" y="4" width="3" height="12" rx="1"/><rect x="12" y="4" width="3" height="12" rx="1"/></svg>
                     </button>
-                    <button type="button" title="Record" className="w-14 h-14 rounded-full flex items-center justify-center shadow-lg transition hover:scale-105" style={{ background: 'linear-gradient(135deg,#f43f5e,#ec4899)', boxShadow: '0 0 24px rgba(244,63,94,0.45)' }}>
-                      <Mic className="text-white w-6 h-6" />
+                    <button type="button" title="Record" className="w-12 h-12 rounded-full flex items-center justify-center" style={{ background: 'linear-gradient(135deg,#f43f5e,#ec4899)', boxShadow: '0 0 22px rgba(244,63,94,0.5)' }}>
+                      <Mic className="text-white w-5 h-5" />
                     </button>
-                    <button type="button" title="AI Analysis" className="w-10 h-10 rounded-full flex items-center justify-center border border-purple-500/30 text-purple-400 hover:border-purple-500/60 transition" style={{ background: 'rgba(139,92,246,0.08)' }}>
-                      <svg viewBox="0 0 20 20" width={16} height={16} fill="currentColor"><path d="M11 2L4 12h6l-1 6 7-10h-6z" className="lp-flash"/></svg>
+                    <button type="button" title="AI Analysis" className="w-9 h-9 rounded-full flex items-center justify-center border border-purple-500/30 text-purple-400" style={{ background: 'rgba(139,92,246,0.08)' }}>
+                      <svg viewBox="0 0 20 20" width={13} height={13} fill="currentColor"><path d="M11 2L4 12h6l-1 6 7-10h-6z" className="lp-flash"/></svg>
                     </button>
                   </div>
-                  <div className="flex items-center justify-center gap-2 flex-wrap">
+                  <div className="pb-4 px-3 flex items-center justify-center gap-1.5 flex-wrap">
                     {[
                       { label: 'Noise Reduction', color: '#f43f5e' },
                       { label: 'AI Analysis',     color: '#8b5cf6' },
                       { label: '90+ Languages',   color: '#22c55e' },
                     ].map(tag => (
-                      <span key={tag.label} className="px-2.5 py-1 rounded-full text-[9px] font-bold uppercase tracking-wide border" style={{ color: tag.color, borderColor: `${tag.color}40`, background: `${tag.color}0f` }}>
+                      <span key={tag.label} className="px-2 py-0.5 rounded-full text-[8px] font-bold uppercase tracking-wide border" style={{ color: tag.color, borderColor: `${tag.color}40`, background: `${tag.color}0f` }}>
                         {tag.label} ✓
                       </span>
                     ))}
                   </div>
                 </div>
               </div>
+
+              {/* Orbit ring — rotates, carrying the 7 mode cards with it */}
+              <div
+                className={`lp-orbit-ring${orbitPaused ? ' paused' : ''}`}
+                style={{ position: 'absolute', top: 0, left: 0, width: '100%', height: '100%', zIndex: 5 }}
+              >
+                {VOX_MODES.map((mode, i) => {
+                  const angleDeg = (360 / 7) * i - 90;
+                  const angleRad = angleDeg * (Math.PI / 180);
+                  const orbitR = 410;
+                  const cx = Math.round(Math.cos(angleRad) * orbitR);
+                  const cy = Math.round(Math.sin(angleRad) * orbitR);
+                  return (
+                    <div
+                      key={mode.name}
+                      className="lp-orbit-card group p-5 rounded-2xl border border-zinc-700/60 hover:border-rose-500/60 transition-colors cursor-default"
+                      style={{
+                        position: 'absolute',
+                        left: `calc(50% + ${cx}px)`,
+                        top: `calc(50% + ${cy}px)`,
+                        width: '190px',
+                        background: 'rgba(18,18,26,0.96)',
+                        backdropFilter: 'blur(10px)',
+                        boxShadow: '0 4px 24px rgba(0,0,0,0.4)',
+                      }}
+                      onMouseEnter={() => setOrbitPaused(true)}
+                      onMouseLeave={() => setOrbitPaused(false)}
+                    >
+                      <div className="w-9 h-9 rounded-xl bg-rose-500/10 flex items-center justify-center mb-3 group-hover:bg-rose-500/20 transition-colors">
+                        <span className="text-rose-500">{voxSvg(i)}</span>
+                      </div>
+                      <h3 className="text-sm font-bold text-white mb-1.5 leading-tight">{mode.name}</h3>
+                      <p className="text-zinc-400 text-[11px] leading-relaxed">{mode.desc}</p>
+                    </div>
+                  );
+                })}
+              </div>
             </div>
+
           </div>
         </section>
 

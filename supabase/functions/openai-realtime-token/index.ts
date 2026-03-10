@@ -1,7 +1,8 @@
 // Supabase Edge Function to generate OpenAI Realtime ephemeral tokens
 // This proxy is needed because OpenAI's API doesn't support CORS for browser requests
 
-import { serve } from 'https://deno.land/std@0.168.0/http/server.ts';
+import { serve } from 'https://deno.land/std@0.208.0/http/server.ts';
+import { createClient } from 'https://esm.sh/@supabase/supabase-js@2.39.0';
 
 const corsHeaders = {
   'Access-Control-Allow-Origin': '*',
@@ -16,21 +17,46 @@ serve(async (req) => {
   }
 
   try {
-    // Get the OpenAI API key from the request body or environment
-    const body = await req.json();
-    const openaiApiKey = body.apiKey || Deno.env.get('OPENAI_API_KEY');
-
-    if (!openaiApiKey) {
+    // ── Authentication ────────────────────────────────────────────────────────
+    // Every caller must present a valid Supabase JWT. This prevents
+    // unauthenticated users from burning the server's OpenAI credits.
+    const authHeader = req.headers.get('Authorization');
+    if (!authHeader?.startsWith('Bearer ')) {
       return new Response(
-        JSON.stringify({ error: 'OpenAI API key is required' }),
-        { status: 400, headers: { ...corsHeaders, 'Content-Type': 'application/json' } }
+        JSON.stringify({ error: 'Authentication required' }),
+        { status: 401, headers: { ...corsHeaders, 'Content-Type': 'application/json' } }
       );
     }
 
+    const supabaseClient = createClient(
+      Deno.env.get('SUPABASE_URL')!,
+      Deno.env.get('SUPABASE_ANON_KEY')!,
+      { global: { headers: { Authorization: authHeader } } }
+    );
+
+    const { data: { user } } = await supabaseClient.auth.getUser();
+    if (!user) {
+      return new Response(
+        JSON.stringify({ error: 'Invalid or expired token' }),
+        { status: 401, headers: { ...corsHeaders, 'Content-Type': 'application/json' } }
+      );
+    }
+
+    // ── OpenAI key — always from server env, never from request body ──────────
+    const openaiApiKey = Deno.env.get('OPENAI_API_KEY');
+    if (!openaiApiKey) {
+      console.error('[openai-realtime-token] OPENAI_API_KEY env var not set');
+      return new Response(
+        JSON.stringify({ error: 'OpenAI API key is not configured' }),
+        { status: 500, headers: { ...corsHeaders, 'Content-Type': 'application/json' } }
+      );
+    }
+
+    const body = await req.json();
     const model = body.model || 'gpt-4o-realtime-preview';
     const voice = body.voice || 'alloy';
 
-    console.log(`Generating ephemeral token for model: ${model}, voice: ${voice}`);
+    console.log(`[openai-realtime-token] user=${user.id} model=${model} voice=${voice}`);
 
     // Call OpenAI's realtime sessions endpoint
     const response = await fetch('https://api.openai.com/v1/realtime/sessions', {
@@ -39,17 +65,13 @@ serve(async (req) => {
         'Authorization': `Bearer ${openaiApiKey}`,
         'Content-Type': 'application/json',
       },
-      body: JSON.stringify({
-        model: model,
-        voice: voice,
-      }),
+      body: JSON.stringify({ model, voice }),
     });
 
     if (!response.ok) {
       const errorText = await response.text();
-      console.error('OpenAI API error:', response.status, errorText);
+      console.error('[openai-realtime-token] OpenAI API error:', response.status, errorText);
 
-      // Try to parse error for better message
       let errorMessage = `OpenAI API error: ${response.status}`;
       try {
         const errorJson = JSON.parse(errorText);
@@ -65,8 +87,6 @@ serve(async (req) => {
     }
 
     const data = await response.json();
-
-    // Extract the ephemeral token
     const token = data.client_secret?.value || data.value;
 
     if (!token) {
@@ -76,7 +96,7 @@ serve(async (req) => {
       );
     }
 
-    console.log('Ephemeral token generated successfully');
+    console.log('[openai-realtime-token] Ephemeral token generated successfully');
 
     return new Response(
       JSON.stringify({ token, expiresAt: data.client_secret?.expires_at }),
@@ -84,7 +104,7 @@ serve(async (req) => {
     );
 
   } catch (error) {
-    console.error('Edge function error:', error);
+    console.error('[openai-realtime-token] Edge function error:', error);
     return new Response(
       JSON.stringify({ error: error.message || 'Internal server error' }),
       { status: 500, headers: { ...corsHeaders, 'Content-Type': 'application/json' } }

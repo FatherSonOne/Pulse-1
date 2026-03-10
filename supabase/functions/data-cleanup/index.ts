@@ -195,7 +195,7 @@ async function cleanupUserData(
 
   const dataTypes = [
     { type: 'emails', days: policy.emails_retention_days, table: 'emails' },
-    { type: 'calendar', days: policy.calendar_retention_days, table: 'events' },
+    { type: 'calendar', days: policy.calendar_retention_days, table: 'calendar_events' },
     { type: 'contacts', days: policy.contacts_retention_days, table: 'contacts' },
     { type: 'messages', days: policy.messages_retention_days, table: 'messages' },
   ];

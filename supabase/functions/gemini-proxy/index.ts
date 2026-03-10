@@ -21,11 +21,6 @@ const MAX_HISTORY_MESSAGES = 50;
 
 // ==================== Types ====================
 
-interface RateLimitEntry {
-  count: number;
-  resetAt: number;
-}
-
 interface GeminiRequest {
   prompt: string;
   model?: string;
@@ -40,49 +35,43 @@ interface ErrorResponse {
   details?: string;
 }
 
-// ==================== Rate Limiting ====================
+// ==================== Rate Limiting (DB-backed) ====================
+// Uses a Supabase table so limits are enforced across all Deno isolates.
+// Falls open if the DB call fails to avoid blocking legitimate requests.
 
-const rateLimitStore = new Map<string, RateLimitEntry>();
-
-function getRateLimitKey(userId: string): string {
-  return `ratelimit:${userId}`;
-}
-
-function checkRateLimit(userId: string, isAnonymous: boolean): boolean {
-  const key = getRateLimitKey(userId);
+async function checkRateLimitDB(
+  supabase: any,
+  userId: string,
+  isAnonymous: boolean
+): Promise<{ allowed: boolean; remaining: number; resetAt: number }> {
+  const limit = isAnonymous ? MAX_REQUESTS_PER_MINUTE_ANONYMOUS : MAX_REQUESTS_PER_MINUTE;
   const now = Date.now();
-  const entry = rateLimitStore.get(key);
+  // Bucket = floor of current timestamp to the nearest window boundary
+  const windowStart = new Date(Math.floor(now / RATE_LIMIT_WINDOW) * RATE_LIMIT_WINDOW).toISOString();
+  const resetAt = Math.floor(now / RATE_LIMIT_WINDOW) * RATE_LIMIT_WINDOW + RATE_LIMIT_WINDOW;
 
-  // Clean up expired entries
-  if (entry && now > entry.resetAt) {
-    rateLimitStore.delete(key);
+  try {
+    const { data: count, error } = await supabase.rpc(
+      'check_and_increment_gemini_rate_limit',
+      { p_user_id: userId, p_window_start: windowStart }
+    );
+
+    if (error) {
+      // Fail open — let the request through if DB is unavailable
+      console.warn('[GeminiProxy] Rate limit DB error (fail open):', error.message);
+      return { allowed: true, remaining: limit - 1, resetAt };
+    }
+
+    const requestCount = count as number;
+    return {
+      allowed: requestCount <= limit,
+      remaining: Math.max(0, limit - requestCount),
+      resetAt,
+    };
+  } catch (err) {
+    console.warn('[GeminiProxy] Rate limit check threw (fail open):', err);
+    return { allowed: true, remaining: limit - 1, resetAt };
   }
-
-  const currentEntry = rateLimitStore.get(key) || { count: 0, resetAt: now + RATE_LIMIT_WINDOW };
-  const limit = isAnonymous ? MAX_REQUESTS_PER_MINUTE_ANONYMOUS : MAX_REQUESTS_PER_MINUTE;
-
-  if (currentEntry.count >= limit) {
-    return false;
-  }
-
-  currentEntry.count++;
-  rateLimitStore.set(key, currentEntry);
-  return true;
-}
-
-function getRateLimitInfo(userId: string, isAnonymous: boolean): { remaining: number; resetAt: number } {
-  const key = getRateLimitKey(userId);
-  const entry = rateLimitStore.get(key);
-  const limit = isAnonymous ? MAX_REQUESTS_PER_MINUTE_ANONYMOUS : MAX_REQUESTS_PER_MINUTE;
-
-  if (!entry) {
-    return { remaining: limit, resetAt: Date.now() + RATE_LIMIT_WINDOW };
-  }
-
-  return {
-    remaining: Math.max(0, limit - entry.count),
-    resetAt: entry.resetAt,
-  };
 }
 
 // ==================== Input Validation ====================
@@ -249,8 +238,9 @@ serve(async (req: Request) => {
 
     // ==================== Rate Limiting ====================
 
-    if (!checkRateLimit(userId, isAnonymous)) {
-      const rateLimitInfo = getRateLimitInfo(userId, isAnonymous);
+    const rateLimitResult = await checkRateLimitDB(supabase, userId, isAnonymous);
+    if (!rateLimitResult.allowed) {
+      const rateLimitInfo = rateLimitResult;
 
       await logRequest(supabase, userId, 'rate_limited', false, 'Rate limit exceeded');
 
@@ -314,7 +304,7 @@ serve(async (req: Request) => {
 
     // ==================== Return Response ====================
 
-    const rateLimitInfo = getRateLimitInfo(userId, isAnonymous);
+    const rateLimitInfo = rateLimitResult;
 
     return new Response(
       JSON.stringify({

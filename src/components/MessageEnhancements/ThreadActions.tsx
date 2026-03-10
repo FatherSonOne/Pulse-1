@@ -1,6 +1,6 @@
-// Thread Management Component - Pin, Mute, Archive, Star
+// Thread Management Component - Pin, Mute, Archive, Star, Delete
 import React from 'react';
-import { Pin, BellOff, Archive, Star, MoreVertical } from 'lucide-react';
+import { Pin, BellOff, Archive, Star, MoreVertical, Trash2 } from 'lucide-react';
 
 export interface ThreadActions {
   isPinned: boolean;
@@ -15,6 +15,7 @@ interface ThreadActionsMenuProps {
   onToggleMute: () => void;
   onToggleArchive: () => void;
   onToggleStar: () => void;
+  onDelete?: () => void;
   onExport?: () => void;
 }
 
@@ -24,6 +25,7 @@ export const ThreadActionsMenu: React.FC<ThreadActionsMenuProps> = ({
   onToggleMute,
   onToggleArchive,
   onToggleStar,
+  onDelete,
   onExport
 }) => {
   const [isOpen, setIsOpen] = React.useState(false);
@@ -98,7 +100,23 @@ export const ThreadActionsMenu: React.FC<ThreadActionsMenuProps> = ({
                 {actions.isArchived ? 'Unarchive' : 'Archive'} Thread
               </span>
             </button>
-            
+
+            {onDelete && (
+              <>
+                <div className="h-px bg-gray-200 dark:bg-gray-700 my-1" />
+                <button
+                  onClick={() => {
+                    onDelete();
+                    setIsOpen(false);
+                  }}
+                  className="w-full px-3 py-2 text-left text-sm hover:bg-red-50 dark:hover:bg-red-900/20 flex items-center gap-2"
+                >
+                  <Trash2 className="w-4 h-4 text-red-500" />
+                  <span className="text-red-600 dark:text-red-400">Delete Thread</span>
+                </button>
+              </>
+            )}
+
             {onExport && (
               <>
                 <div className="h-px bg-gray-200 dark:bg-gray-700 my-1" />
