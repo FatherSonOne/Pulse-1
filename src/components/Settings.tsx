@@ -107,7 +107,7 @@ const Settings: React.FC<SettingsProps> = ({ user, isDarkMode, toggleTheme, init
       case 'ai_intelligence':  return <AIIntelligenceSettings />;
       case 'integrations':     return <IntegrationsSettings user={user} userId={user?.id || ''} />;
       case 'notifications':    return <NotificationsSettingsSection />;
-      case 'team':             return <TeamSettings userId={user?.id || ''} />;
+      case 'team':             return <TeamSettings userId={user?.id || ''} userName={user?.name || ''} />;
       case 'accessibility':    return <AccessibilitySettings />;
       case 'privacy_data':     return <PrivacyDataSettings />;
       case 'features_labs':    return <FeaturesLabsSettings />;
@@ -148,7 +148,7 @@ const Settings: React.FC<SettingsProps> = ({ user, isDarkMode, toggleTheme, init
   );
 
   return (
-    <div className="h-full bg-white dark:bg-zinc-950 flex flex-col">
+    <div data-settings className="h-full bg-white dark:bg-zinc-950 flex flex-col">
       <MobileHeader />
 
       <div className="flex-1 flex flex-col md:flex-row overflow-hidden rounded-2xl border border-zinc-200 dark:border-zinc-800 shadow-xl">
@@ -224,7 +224,7 @@ const Settings: React.FC<SettingsProps> = ({ user, isDarkMode, toggleTheme, init
                   if (e.key === 'Escape') { onClose?.(); }
                 }}
                 className={`w-full flex items-center gap-3 px-4 py-3 rounded-xl transition-all duration-200 group animate-slide-in-right ${activeSection === section.id ? 'bg-blue-600/10 text-blue-600 dark:text-blue-400 font-semibold' : 'text-zinc-500 dark:text-zinc-400 hover:text-zinc-900 dark:hover:text-white hover:bg-zinc-200 dark:hover:bg-zinc-800'}`}
-                style={{ animationDelay: `${idx * 50}ms` }}
+                style={{ animationDelay: `${Math.min(idx, 4) * 40}ms` }}
               >
                 <i className={`fa-solid ${section.icon} w-5 text-center transition-transform group-hover:scale-110`}></i>
                 <span className="text-sm">{section.label}</span>

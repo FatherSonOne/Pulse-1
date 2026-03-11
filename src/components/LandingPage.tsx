@@ -148,6 +148,58 @@ const LandingPage: React.FC<LandingPageProps> = ({ onGetStarted }) => {
   const [downloadsOpen, setDownloadsOpen] = useState(false);
   const [orbitPaused, setOrbitPaused] = useState(false);
 
+  // ── Live transcription typewriter ──────────────────────────────────
+  const liveTranscriptPhrases = [
+    "I'll loop in the design team on the mockups",
+    "Can we move the standup to Thursday morning?",
+    "Pushing the release to next sprint — let's align",
+    "Quick heads-up: client approved the proposal",
+    "Flag this for review before EOD please",
+  ];
+  const [liveTranscriptText, setLiveTranscriptText] = useState('');
+  const [liveTranscriptPhrase, setLiveTranscriptPhrase] = useState(0);
+
+  useEffect(() => {
+    const phrase = liveTranscriptPhrases[liveTranscriptPhrase];
+    let charIdx = 0;
+    let typingTimer: ReturnType<typeof setTimeout>;
+
+    const typeNext = () => {
+      charIdx++;
+      setLiveTranscriptText(phrase.slice(0, charIdx));
+      if (charIdx < phrase.length) {
+        typingTimer = setTimeout(typeNext, 42 + Math.random() * 28);
+      } else {
+        // pause, then cycle to next phrase
+        typingTimer = setTimeout(() => {
+          setLiveTranscriptText('');
+          setLiveTranscriptPhrase(i => (i + 1) % liveTranscriptPhrases.length);
+        }, 2800);
+      }
+    };
+
+    typingTimer = setTimeout(typeNext, 42);
+    return () => clearTimeout(typingTimer);
+  // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [liveTranscriptPhrase]);
+
+  // ── Theme toggle (dark = default, persisted to localStorage) ──
+  const [isDarkMode, setIsDarkMode] = useState<boolean>(() => {
+    try {
+      const stored = localStorage.getItem('lp-theme');
+      if (stored === 'light') return false;
+      if (stored === 'dark')  return true;
+    } catch { /* private browsing */ }
+    return true;
+  });
+  const toggleTheme = () => {
+    setIsDarkMode(prev => {
+      const next = !prev;
+      try { localStorage.setItem('lp-theme', next ? 'dark' : 'light'); } catch {}
+      return next;
+    });
+  };
+
   // Scroll-triggered section backgrounds — fade in/out as user scrolls through each section
   useEffect(() => {
     const ids = ['section-voxer', 'section-decisions', 'section-crm'];
@@ -255,7 +307,7 @@ const LandingPage: React.FC<LandingPageProps> = ({ onGetStarted }) => {
   };
 
   return (
-    <div className="min-h-screen bg-zinc-950 text-white overflow-x-hidden overflow-y-auto selection:bg-rose-500/30 selection:text-rose-200">
+    <div className={`min-h-screen ${isDarkMode ? 'bg-zinc-950 lp-dark text-white selection:text-rose-200' : 'bg-stone-50 lp-light text-stone-900 selection:text-rose-700'} overflow-x-hidden overflow-y-auto selection:bg-rose-500/30`}>
 
       {/* ── Skip to main content (ADA) ── */}
       <a
@@ -300,22 +352,22 @@ const LandingPage: React.FC<LandingPageProps> = ({ onGetStarted }) => {
             aria-hidden="true"
           />
           {/* Panel */}
-          <div className="absolute top-0 right-0 bottom-0 w-full max-w-3xl bg-zinc-950 border-l border-zinc-800 shadow-2xl drawer-open flex flex-col">
+          <div className={`absolute top-0 right-0 bottom-0 w-full max-w-3xl border-l shadow-2xl drawer-open flex flex-col ${isDarkMode ? 'bg-zinc-950 border-zinc-800' : 'bg-white border-stone-200'}`}>
             {/* Drawer header */}
-            <div className="flex items-center justify-between px-6 py-4 border-b border-zinc-800 bg-zinc-950/95 backdrop-blur-sm shrink-0">
+            <div className={`flex items-center justify-between px-6 py-4 border-b backdrop-blur-sm shrink-0 ${isDarkMode ? 'border-zinc-800 bg-zinc-950/95' : 'border-stone-200 bg-white/95'}`}>
               <div className="flex items-center gap-3">
                 <div className="w-8 h-8 rounded-lg bg-rose-500/10 border border-rose-500/25 flex items-center justify-center" aria-hidden="true">
                   <BookOpen className="text-rose-400 text-sm" />
                 </div>
                 <div>
-                  <div id="guide-drawer-title" className="font-bold text-white">Pulse User Guide</div>
-                  <div className="text-xs text-zinc-500">Complete feature documentation</div>
+                  <div id="guide-drawer-title" className={`font-bold ${isDarkMode ? 'text-white' : 'text-stone-900'}`}>Pulse User Guide</div>
+                  <div className={`text-xs ${isDarkMode ? 'text-zinc-500' : 'text-stone-500'}`}>Complete feature documentation</div>
                 </div>
               </div>
               <button
                 type="button"
                 onClick={() => setIsGuideOpen(false)}
-                className="w-9 h-9 rounded-lg bg-zinc-900 border border-zinc-800 hover:border-rose-500/40 hover:bg-zinc-800 text-zinc-400 hover:text-white transition flex items-center justify-center"
+                className={`w-9 h-9 rounded-lg border hover:border-rose-500/40 transition flex items-center justify-center ${isDarkMode ? 'bg-zinc-900 border-zinc-800 hover:bg-zinc-800 text-zinc-400 hover:text-white' : 'bg-stone-100 border-stone-200 text-stone-500 hover:text-stone-900 hover:bg-stone-200'}`}
                 aria-label="Close User Guide"
               >
                 <X />
@@ -329,7 +381,7 @@ const LandingPage: React.FC<LandingPageProps> = ({ onGetStarted }) => {
                   <span className="text-sm">Loading guide…</span>
                 </div>
               }>
-                <UsersGuide isDarkMode={true} />
+                <UsersGuide isDarkMode={isDarkMode} />
               </Suspense>
             </div>
           </div>
@@ -489,7 +541,7 @@ const LandingPage: React.FC<LandingPageProps> = ({ onGetStarted }) => {
               className="flex items-center gap-3 cursor-pointer group bg-transparent border-0 p-0"
               aria-label="Pulse — return to sign in"
             >
-              <div className="w-10 h-10 rounded-xl bg-[#0f172a] flex items-center justify-center shadow-lg border border-zinc-800 group-hover:scale-110 transition-transform duration-300">
+              <div className={`w-10 h-10 rounded-xl flex items-center justify-center shadow-lg border border-zinc-800 group-hover:scale-110 transition-transform duration-300 ${isDarkMode ? 'bg-[#0f172a]' : 'bg-stone-100'}`}>
                 <svg viewBox="0 0 64 64" className="w-6 h-6" aria-hidden="true">
                   <defs>
                     <linearGradient id="pulse-grad-nav" x1="0%" y1="0%" x2="100%" y2="100%">
@@ -654,6 +706,30 @@ const LandingPage: React.FC<LandingPageProps> = ({ onGetStarted }) => {
           </div>
 
           <div className="flex items-center gap-3">
+            {/* Theme toggle — sun (dark→light) / moon (light→dark) */}
+            <button
+              type="button"
+              onClick={toggleTheme}
+              aria-label={isDarkMode ? 'Switch to light mode' : 'Switch to dark mode'}
+              title={isDarkMode ? 'Switch to light mode' : 'Switch to dark mode'}
+              className={`w-9 h-9 flex items-center justify-center rounded-lg border transition-all duration-200 hover:scale-105 active:scale-95 ${
+                isDarkMode
+                  ? 'border-zinc-700/70 bg-zinc-900/60 hover:border-amber-400/50 text-zinc-400 hover:text-amber-400'
+                  : 'border-stone-300 bg-white hover:border-rose-400/50 text-stone-500 hover:text-rose-500'
+              }`}
+            >
+              {isDarkMode ? (
+                /* Sun — click to go light */
+                <svg viewBox="0 0 20 20" width={16} height={16} fill="currentColor" aria-hidden="true">
+                  <path fillRule="evenodd" d="M10 2a.75.75 0 01.75.75v1.5a.75.75 0 01-1.5 0v-1.5A.75.75 0 0110 2zm4.95 2.636a.75.75 0 010 1.06l-1.06 1.061a.75.75 0 11-1.06-1.06l1.06-1.061a.75.75 0 011.06 0zM10 6a4 4 0 100 8 4 4 0 000-8zm-8 4a.75.75 0 01.75-.75h1.5a.75.75 0 010 1.5h-1.5A.75.75 0 012 10zm13.5 0a.75.75 0 01.75-.75h1.5a.75.75 0 010 1.5h-1.5a.75.75 0 01-.75-.75zm-2.636 4.95a.75.75 0 010-1.061l1.06-1.06a.75.75 0 111.061 1.06l-1.06 1.06a.75.75 0 01-1.061 0zm-8.84 0a.75.75 0 01-1.061 0l-1.06-1.06a.75.75 0 011.06-1.061l1.061 1.06a.75.75 0 010 1.061zM10 16.5a.75.75 0 01.75.75v1.5a.75.75 0 01-1.5 0v-1.5a.75.75 0 01.75-.75z" clipRule="evenodd" />
+                </svg>
+              ) : (
+                /* Moon — click to go dark */
+                <svg viewBox="0 0 20 20" width={16} height={16} fill="currentColor" aria-hidden="true">
+                  <path fillRule="evenodd" d="M7.455 2.004a.75.75 0 01.26.77 7 7 0 009.958 7.967.75.75 0 011.067.853A8.5 8.5 0 116.647 1.921a.75.75 0 01.808.083z" clipRule="evenodd" />
+                </svg>
+              )}
+            </button>
             {/* User Guide button — always visible */}
             <button
               type="button"
@@ -686,7 +762,7 @@ const LandingPage: React.FC<LandingPageProps> = ({ onGetStarted }) => {
       <main id="main-content">
 
       {/* ── Hero Section ── */}
-      <section className="relative pt-40 pb-20 px-6 min-h-[92vh] flex items-center justify-center overflow-visible">
+      <section className={`relative pt-40 pb-20 px-6 min-h-[92vh] flex items-center justify-center overflow-visible${isDarkMode ? '' : ' bg-stone-200'}`}>
 
         {/* Floating particles */}
         <div className="absolute inset-0 pointer-events-none z-[1] overflow-hidden">
@@ -699,8 +775,8 @@ const LandingPage: React.FC<LandingPageProps> = ({ onGetStarted }) => {
           <div className="particle absolute top-[50%] right-[40%] w-3 h-3 bg-rose-500/30 rounded-full blur-sm" style={{ animationDelay: '12s' }}></div>
         </div>
 
-        {/* Background gradients — bolder than before */}
-        <div className="absolute inset-0 pointer-events-none z-0 overflow-hidden">
+        {/* Background gradients — dark mode only */}
+        <div className="absolute inset-0 pointer-events-none z-0 overflow-hidden" style={{ opacity: isDarkMode ? 1 : 0 }}>
           <div className="absolute top-0 left-1/2 -translate-x-1/2 w-[1400px] h-[800px] bg-gradient-to-br from-rose-500/45 via-pink-500/30 to-transparent rounded-full blur-[160px] opacity-75 mix-blend-screen"></div>
           <div className="absolute bottom-0 right-0 w-[1000px] h-[800px] bg-gradient-to-tl from-purple-500/30 via-pink-600/20 to-transparent rounded-full blur-[140px] opacity-55 mix-blend-screen"></div>
           <div className="absolute top-40 left-0 w-[700px] h-[700px] bg-gradient-to-br from-rose-600/20 via-pink-700/10 to-transparent rounded-full blur-[120px] opacity-50 mix-blend-screen"></div>
@@ -708,11 +784,13 @@ const LandingPage: React.FC<LandingPageProps> = ({ onGetStarted }) => {
 
           {/* Grid pattern */}
           <div className="absolute inset-0 z-[1]" style={{
-            backgroundImage: `linear-gradient(rgba(244,63,94,0.18) 1px, transparent 1px), linear-gradient(90deg, rgba(236,72,153,0.18) 1px, transparent 1px), linear-gradient(rgba(168,85,247,0.12) 1px, transparent 1px), linear-gradient(90deg, rgba(244,63,94,0.12) 1px, transparent 1px)`,
+            backgroundImage: isDarkMode
+              ? `linear-gradient(rgba(244,63,94,0.18) 1px, transparent 1px), linear-gradient(90deg, rgba(236,72,153,0.18) 1px, transparent 1px), linear-gradient(rgba(168,85,247,0.12) 1px, transparent 1px), linear-gradient(90deg, rgba(244,63,94,0.12) 1px, transparent 1px)`
+              : `linear-gradient(rgba(244,63,94,0.08) 1px, transparent 1px), linear-gradient(90deg, rgba(236,72,153,0.07) 1px, transparent 1px), linear-gradient(rgba(168,85,247,0.05) 1px, transparent 1px), linear-gradient(90deg, rgba(244,63,94,0.05) 1px, transparent 1px)`,
             backgroundSize: '64px 64px, 64px 64px, 32px 32px, 32px 32px',
             maskImage: 'radial-gradient(ellipse at center, black 50%, transparent 100%)',
             WebkitMaskImage: 'radial-gradient(ellipse at center, black 50%, transparent 100%)',
-            opacity: 0.9,
+            opacity: isDarkMode ? 0.9 : 0.7,
           }}></div>
         </div>
 
@@ -800,32 +878,6 @@ const LandingPage: React.FC<LandingPageProps> = ({ onGetStarted }) => {
               Launch Pulse
               <Rocket />
             </button>
-            <a
-              href="https://play.google.com/apps/internaltest/4701381285127016770"
-              target="_blank"
-              rel="noopener noreferrer"
-              className="w-full sm:w-auto px-8 py-4 bg-zinc-900/50 border border-zinc-700 text-white rounded-xl text-lg font-medium hover:bg-zinc-800 hover:border-green-500/40 transition flex items-center justify-center gap-3 hover:scale-105 active:scale-95"
-            >
-              <Play className="text-green-400" />
-              Get on Google Play
-            </a>
-            <a
-              href="https://github.com/FatherSonOne/Pulse-1/releases/download/v25.1.1/Pulse.Setup.25.1.1.exe"
-              target="_blank"
-              rel="noopener noreferrer"
-              className="w-full sm:w-auto px-8 py-4 bg-zinc-900/50 border border-zinc-700 text-white rounded-xl text-lg font-medium hover:bg-zinc-800 hover:border-blue-500/40 transition flex items-center justify-center gap-3 hover:scale-105 active:scale-95"
-            >
-              <LayoutGrid className="text-blue-400" />
-              Download for PC
-            </a>
-            <button
-              onClick={() => scrollToSection('features')}
-              className="w-full sm:w-auto px-8 py-4 bg-zinc-900/50 border border-zinc-800 text-white rounded-xl text-lg font-medium hover:bg-zinc-800 hover:border-rose-500/30 transition flex items-center justify-center gap-2 animate-float"
-              type="button"
-            >
-              Explore Features
-              <ArrowDown />
-            </button>
           </div>
         </div>
 
@@ -850,11 +902,11 @@ const LandingPage: React.FC<LandingPageProps> = ({ onGetStarted }) => {
       <div id="features">
 
         {/* Section A — Voice-First Communication */}
-        <section id="section-voxer" className="py-24 px-6 relative overflow-hidden">
+        <section id="section-voxer" className={`py-24 px-6 relative overflow-hidden${isDarkMode ? '' : ' bg-stone-50'}`}>
           {/* Voxer "Sonic Pulse" themed bg — indigo + pink, fades in with scroll */}
           <div
             className="absolute inset-0 pointer-events-none transition-opacity duration-700"
-            style={{ opacity: Math.min(sectionVis['section-voxer'] ?? 0, 1) }}
+            style={{ opacity: isDarkMode ? Math.min(sectionVis['section-voxer'] ?? 0, 1) : 0 }}
           >
             <div className="absolute inset-0" style={{
               background: 'radial-gradient(ellipse at 15% 50%, rgba(99,102,241,0.18) 0%, transparent 55%), radial-gradient(ellipse at 85% 30%, rgba(236,72,153,0.13) 0%, transparent 50%), radial-gradient(ellipse at 50% 90%, rgba(139,92,246,0.10) 0%, transparent 45%)',
@@ -887,8 +939,8 @@ const LandingPage: React.FC<LandingPageProps> = ({ onGetStarted }) => {
 
               {/* Center: Live Recording Panel */}
               <div className="absolute z-10" style={{ left: '50%', top: '50%', transform: 'translate(-50%, -50%)', width: '360px' }}>
-                <div className="rounded-2xl overflow-hidden border border-zinc-800/80" aria-hidden="true" style={{ background: 'rgba(10,10,14,0.98)', boxShadow: '0 0 60px rgba(244,63,94,0.14)' }}>
-                  <div className="flex items-center gap-2.5 px-4 py-3 border-b border-zinc-800/50" style={{ background: 'rgba(14,14,18,0.99)' }}>
+                <div className="rounded-2xl overflow-hidden border border-zinc-800/80" aria-hidden="true" style={{ background: isDarkMode ? 'rgba(10,10,14,0.98)' : 'rgba(255,255,255,0.97)', boxShadow: '0 0 60px rgba(244,63,94,0.14)' }}>
+                  <div className="flex items-center gap-2.5 px-4 py-3 border-b border-zinc-800/50" style={{ background: isDarkMode ? 'rgba(14,14,18,0.99)' : 'rgba(245,244,241,0.99)' }}>
                     <span className="relative flex h-2 w-2 shrink-0">
                       <span className="animate-ping absolute inline-flex h-full w-full rounded-full bg-rose-400 opacity-75"></span>
                       <span className="relative inline-flex rounded-full h-2 w-2 bg-rose-500"></span>
@@ -912,15 +964,15 @@ const LandingPage: React.FC<LandingPageProps> = ({ onGetStarted }) => {
                       ))}
                     </svg>
                   </div>
-                  <div className="mx-4 mb-3 px-3 py-2.5 rounded-xl border border-zinc-700/30" style={{ background: 'rgba(20,20,26,0.8)' }}>
+                  <div className="mx-4 mb-3 px-3 py-2.5 rounded-xl border border-zinc-700/30" style={{ background: isDarkMode ? 'rgba(20,20,26,0.8)' : 'rgba(245,244,241,0.8)' }}>
                     <div className="text-[8px] font-bold text-zinc-600 uppercase tracking-widest mb-1">Transcription</div>
-                    <p className="text-[11px] text-zinc-300 font-medium leading-relaxed">
-                      I'll loop in the design team on the mockups
-                      <span className="inline-block w-0.5 h-3 bg-rose-400 ml-1 align-middle lp-rec-dot"></span>
+                    <p className="text-[11px] text-zinc-300 font-medium leading-relaxed min-h-[2.5em]">
+                      {liveTranscriptText}
+                      <span className="inline-block w-0.5 h-3 bg-rose-400 ml-0.5 align-middle lp-rec-dot"></span>
                     </p>
                   </div>
                   <div className="pb-4 flex items-center justify-center gap-3">
-                    <button type="button" title="Pause" className="w-9 h-9 rounded-full flex items-center justify-center border border-zinc-700/60 text-zinc-400" style={{ background: 'rgba(28,28,34,0.8)' }}>
+                    <button type="button" title="Pause" className="w-9 h-9 rounded-full flex items-center justify-center border border-zinc-700/60 text-zinc-400" style={{ background: isDarkMode ? 'rgba(28,28,34,0.8)' : 'rgba(241,240,238,0.8)' }}>
                       <svg viewBox="0 0 20 20" width={13} height={13} fill="currentColor"><rect x="5" y="4" width="3" height="12" rx="1"/><rect x="12" y="4" width="3" height="12" rx="1"/></svg>
                     </button>
                     <button type="button" title="Record" className="w-12 h-12 rounded-full flex items-center justify-center" style={{ background: 'linear-gradient(135deg,#f43f5e,#ec4899)', boxShadow: '0 0 22px rgba(244,63,94,0.5)' }}>
@@ -964,9 +1016,9 @@ const LandingPage: React.FC<LandingPageProps> = ({ onGetStarted }) => {
                         left: `calc(50% + ${cx}px)`,
                         top: `calc(50% + ${cy}px)`,
                         width: '190px',
-                        background: 'rgba(18,18,26,0.96)',
+                        background: isDarkMode ? 'rgba(18,18,26,0.96)' : 'rgba(255,255,255,0.96)',
                         backdropFilter: 'blur(10px)',
-                        boxShadow: '0 4px 24px rgba(0,0,0,0.4)',
+                        boxShadow: isDarkMode ? '0 4px 24px rgba(0,0,0,0.4)' : '0 4px 16px rgba(120,53,15,0.08)',
                       }}
                       onMouseEnter={() => setOrbitPaused(true)}
                       onMouseLeave={() => setOrbitPaused(false)}
@@ -988,11 +1040,11 @@ const LandingPage: React.FC<LandingPageProps> = ({ onGetStarted }) => {
         <SectionDivider />
 
         {/* Section C — Decisions and Execution */}
-        <section id="section-decisions" className="py-24 px-6 relative">
+        <section id="section-decisions" className={`py-24 px-6 relative${isDarkMode ? '' : ' bg-stone-50'}`}>
           {/* Decision hub themed bg — rose radial glow + pure dark, from DecisionTaskHub.css */}
           <div
             className="absolute inset-0 pointer-events-none transition-opacity duration-700"
-            style={{ opacity: Math.min(sectionVis['section-decisions'] ?? 0, 1) }}
+            style={{ opacity: isDarkMode ? Math.min(sectionVis['section-decisions'] ?? 0, 1) : 0 }}
           >
             <div className="absolute inset-0" style={{
               background: 'radial-gradient(ellipse at 50% 40%, rgba(244,63,94,0.16) 0%, transparent 55%), radial-gradient(ellipse at 20% 80%, rgba(20,184,166,0.12) 0%, transparent 45%), radial-gradient(ellipse at 80% 70%, rgba(168,85,247,0.09) 0%, transparent 40%)',
@@ -1096,11 +1148,11 @@ const LandingPage: React.FC<LandingPageProps> = ({ onGetStarted }) => {
         <SectionDivider />
 
         {/* Section D — Relationship Intelligence */}
-        <section id="section-crm" className="py-24 px-6 bg-zinc-900/30 border-y border-zinc-800/40 relative">
+        <section id="section-crm" className={`py-24 px-6 border-y relative${isDarkMode ? ' bg-zinc-900/30 border-zinc-800/40' : ' bg-stone-100 border-stone-200/60'}`}>
           {/* Living Network themed bg — indigo constellation + cyan, from Contacts.css */}
           <div
             className="absolute inset-0 pointer-events-none transition-opacity duration-700"
-            style={{ opacity: Math.min(sectionVis['section-crm'] ?? 0, 1) }}
+            style={{ opacity: isDarkMode ? Math.min(sectionVis['section-crm'] ?? 0, 1) : 0 }}
           >
             <div className="absolute inset-0" style={{
               background: 'radial-gradient(ellipse at 10% 25%, rgba(99,102,241,0.18) 0%, transparent 50%), radial-gradient(ellipse at 90% 75%, rgba(6,182,212,0.15) 0%, transparent 50%), radial-gradient(ellipse at 50% 50%, rgba(99,102,241,0.08) 0%, transparent 70%)',

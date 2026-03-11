@@ -800,3 +800,303 @@
     opacity: 1;
   }
 }
+
+/* ============================================================
+   PULSE PREMIUM DARK — OVERRIDE BLOCK
+   Scoped to [data-settings] to prevent bleed.
+   Fixes residual Tailwind blue utilities + opaque surfaces.
+   Priority order: P0 → P1 → P2
+   ============================================================ */
+
+/* ── P1.8 Canvas — true black in dark mode ── */
+.dark [data-settings],
+.dark [data-settings] .dark\:bg-zinc-950 {
+  background-color: #000000 !important;
+}
+
+/* ── P0.2 + P2.11 Sidebar & card surfaces — translucent rgba ── */
+.dark [data-settings] .dark\:bg-zinc-900 {
+  background-color: var(--set-surface) !important;
+}
+
+.dark [data-settings] .dark\:border-zinc-800 {
+  border-color: var(--set-border) !important;
+}
+
+.dark [data-settings] .dark\:border-zinc-700 {
+  border-color: var(--set-border) !important;
+}
+
+/* ── P0.1 Nav active item — rose replaces blue-600/10 ── */
+/* Uses inset box-shadow for left indicator — respects border-radius */
+[data-settings] nav .bg-blue-600\/10 {
+  background-color: var(--set-primary-soft) !important;
+  box-shadow: inset 3px 0 0 var(--set-primary);
+}
+
+[data-settings] nav .text-blue-600 {
+  color: var(--set-primary) !important;
+}
+
+.dark [data-settings] nav .dark\:text-blue-400 {
+  color: var(--set-primary) !important;
+}
+
+/* ── P1.6 Nav inactive hover — rose-tinted replaces zinc-800 ── */
+.dark [data-settings] nav button:not(.bg-blue-600\/10):hover {
+  background-color: var(--set-primary-softer) !important;
+}
+
+/* ── P0.3 Toggle switches — rose replaces bg-blue-600 ── */
+[data-settings] .bg-blue-600 {
+  background-color: var(--set-primary) !important;
+}
+
+/* ── P0.4 Input & textarea focus rings — rose ── */
+[data-settings] input:focus,
+[data-settings] textarea:focus {
+  border-color: var(--set-primary) !important;
+  box-shadow: 0 0 0 3px var(--set-primary-soft),
+              0 0 16px rgba(244, 63, 94, 0.15) !important;
+  outline: none !important;
+}
+
+/* Override Tailwind focus-ring color utility */
+[data-settings] .focus\:ring-blue-500:focus {
+  --tw-ring-color: rgba(244, 63, 94, 0.35) !important;
+}
+
+[data-settings] .focus\:border-blue-500:focus {
+  border-color: var(--set-primary) !important;
+}
+
+/* ── P0.5 CTA Save button — rose gradient replaces zinc-900/white ── */
+.dark [data-settings] .dark\:bg-white.dark\:text-black {
+  background: linear-gradient(135deg, var(--set-primary) 0%, var(--set-primary-alt) 100%) !important;
+  background-color: transparent !important;
+  color: #ffffff !important;
+  border-color: transparent !important;
+  box-shadow: 0 4px 12px rgba(244, 63, 94, 0.35) !important;
+}
+
+.dark [data-settings] .dark\:bg-white.dark\:text-black:hover:not(:disabled) {
+  box-shadow: 0 6px 20px rgba(244, 63, 94, 0.48) !important;
+  transform: translateY(-1px);
+}
+
+.dark [data-settings] .dark\:text-black {
+  color: #ffffff !important;
+}
+
+/* ── P1.7 Theme picker active state — rose replaces blue-500 ── */
+[data-settings] .border-blue-500 {
+  border-color: var(--set-primary) !important;
+}
+
+[data-settings] .bg-blue-500\/10 {
+  background-color: var(--set-primary-soft) !important;
+}
+
+[data-settings] .text-blue-500 {
+  color: var(--set-primary) !important;
+}
+
+/* ── P2.9 Avatar gradient — rose replaces blue-to-purple ── */
+[data-settings] .from-blue-500.to-purple-600 {
+  background-image: linear-gradient(
+    135deg,
+    var(--set-primary) 0%,
+    var(--set-primary-alt) 100%
+  ) !important;
+}
+
+/* ── Input backgrounds in dark — subtle translucent surface ── */
+.dark [data-settings] input.dark\:bg-zinc-800,
+.dark [data-settings] textarea.dark\:bg-zinc-800 {
+  background-color: var(--set-surface-raised) !important;
+}
+
+/* ── Ensure search input area has rose ring on focus ── */
+.dark [data-settings] .dark\:border-zinc-700:focus {
+  border-color: var(--set-primary) !important;
+}
+
+/* ============================================================
+   INTEGRATIONS — CONNECTED badge de-amplified
+   Green is semantically correct but too loud vs rose system.
+   Mute to subtle/low-chroma treatment.
+   ============================================================ */
+[data-settings] .connected-badge {
+  background: rgba(16, 185, 129, 0.06) !important;
+  border-color: rgba(16, 185, 129, 0.22) !important;
+  color: rgba(16, 185, 129, 0.72) !important;
+  box-shadow: none !important;
+  animation: none !important;
+}
+
+[data-settings] .connected-badge::before {
+  background: rgba(16, 185, 129, 0.65) !important;
+  animation-duration: 3s !important;
+}
+
+/* ============================================================
+   DEVELOPER TOOLS — Palette corrections
+   Cyan / per-key colors → rose primary.
+   Purple (Public API) intentionally kept — AI context rule.
+   ============================================================ */
+
+/* Cyan Save button (OpenAI) */
+[data-settings] .bg-cyan-600 {
+  background-color: var(--set-primary) !important;
+  box-shadow: 0 4px 12px rgba(244, 63, 94, 0.30) !important;
+}
+
+[data-settings] .hover\:bg-cyan-700:hover {
+  background-color: var(--set-primary-alt) !important;
+}
+
+/* Cyan focus ring on OpenAI input */
+[data-settings] .focus\:border-cyan-500:focus {
+  border-color: var(--set-primary) !important;
+}
+
+[data-settings] .focus\:ring-cyan-500\/30:focus {
+  --tw-ring-color: rgba(244, 63, 94, 0.25) !important;
+}
+
+/* Cyan icon label + link color */
+[data-settings] .text-cyan-500:not(svg):not(path) {
+  color: var(--set-primary) !important;
+}
+
+[data-settings] a.text-cyan-500 {
+  color: var(--set-primary) !important;
+}
+
+/* ============================================================
+   ABOUT PULSE — Showcase treatment
+   Goal: premium, cinematic, memorable.
+   ============================================================ */
+
+/* ── Hero backdrop: rose radial glow ── */
+[data-settings] .py-12.text-center {
+  position: relative;
+  overflow: hidden;
+}
+
+[data-settings] .py-12.text-center::before {
+  content: '';
+  position: absolute;
+  top: 35%;
+  left: 50%;
+  width: 480px;
+  height: 480px;
+  transform: translate(-50%, -50%);
+  background: radial-gradient(
+    ellipse at center,
+    rgba(244, 63, 94, 0.10) 0%,
+    rgba(244, 63, 94, 0.04) 45%,
+    transparent 72%
+  );
+  pointer-events: none;
+  animation: aboutGlowBreath 5s ease-in-out infinite;
+  z-index: 0;
+}
+
+/* ── Hero backdrop: rose dot grid ── */
+[data-settings] .py-12.text-center::after {
+  content: '';
+  position: absolute;
+  inset: 0;
+  background-image: radial-gradient(circle, rgba(244, 63, 94, 0.10) 1px, transparent 1px);
+  background-size: 22px 22px;
+  opacity: 0.45;
+  pointer-events: none;
+  z-index: 0;
+  -webkit-mask-image: radial-gradient(ellipse at 50% 40%, black 20%, transparent 75%);
+          mask-image: radial-gradient(ellipse at 50% 40%, black 20%, transparent 75%);
+}
+
+/* Content above pseudo-elements */
+[data-settings] .py-12.text-center > * {
+  position: relative;
+  z-index: 1;
+}
+
+@keyframes aboutGlowBreath {
+  0%, 100% { opacity: 0.65; transform: translate(-50%, -50%) scale(0.95); }
+  50%       { opacity: 1;    transform: translate(-50%, -50%) scale(1.12); }
+}
+
+/* ── Logo float — compositor-only (transform), static rose shadow ── */
+[data-settings] .py-12.text-center svg.w-20 {
+  animation: aboutLogoFloat 4s ease-in-out infinite;
+  will-change: transform;
+  filter: drop-shadow(0 8px 24px rgba(244, 63, 94, 0.40));
+}
+
+@keyframes aboutLogoFloat {
+  0%, 100% { transform: translateY(0px);   }
+  50%       { transform: translateY(-11px); }
+}
+
+/* ── Waveform path: draw-in then glow pulse ── */
+[data-settings] .py-12.text-center svg path[stroke-width="5"] {
+  stroke-dasharray: 120;
+  stroke-dashoffset: 120;
+  animation:
+    aboutWaveDraw 1.8s cubic-bezier(0.16, 1, 0.3, 1) 0.4s forwards,
+    aboutWaveGlow  3s ease-in-out 2.2s infinite;
+}
+
+@keyframes aboutWaveDraw {
+  to { stroke-dashoffset: 0; }
+}
+
+@keyframes aboutWaveGlow {
+  0%, 100% { opacity: 0.85; }
+  50%       { opacity: 1;    filter: drop-shadow(0 0 6px rgba(244, 63, 94, 0.85)); }
+}
+
+/* ── Title / version / buttons: staggered fade-up ── */
+[data-settings] .py-12.text-center h2 {
+  animation: aboutFadeUp 0.7s cubic-bezier(0.16, 1, 0.3, 1) 0.9s both;
+}
+
+[data-settings] .py-12.text-center > p {
+  animation: aboutFadeUp 0.7s cubic-bezier(0.16, 1, 0.3, 1) 1.1s both;
+}
+
+[data-settings] .py-12.text-center .flex.gap-4 {
+  animation: aboutFadeUp 0.7s cubic-bezier(0.16, 1, 0.3, 1) 1.3s both;
+}
+
+@keyframes aboutFadeUp {
+  from { opacity: 0; transform: translateY(20px); }
+  to   { opacity: 1; transform: translateY(0);    }
+}
+
+/* ── Link cards: rose hover ── */
+[data-settings] a.hover\:border-blue-500:hover {
+  border-color: var(--set-primary) !important;
+  background-color: var(--set-primary-softer) !important;
+}
+
+[data-settings] a:hover .group-hover\:text-blue-500 {
+  color: var(--set-primary) !important;
+}
+
+/* ── Heart icon: cardiac lub-dub rhythm ── */
+[data-settings] .text-rose-500.mx-1 {
+  display: inline-block;
+  animation: heartLubDub 2.4s ease-in-out infinite;
+  transform-origin: center;
+}
+
+@keyframes heartLubDub {
+  0%, 100% { transform: scale(1);    }
+  8%        { transform: scale(1.35); }
+  16%       { transform: scale(1);    }
+  24%       { transform: scale(1.22); }
+  36%, 80%  { transform: scale(1);    }
+}

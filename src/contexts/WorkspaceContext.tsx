@@ -139,8 +139,19 @@ export const WorkspaceProvider: React.FC<WorkspaceProviderProps> = ({ children }
           }
         }
 
-        const list = await workspaceService.getUserWorkspaces(user.id);
+        let list = await workspaceService.getUserWorkspaces(user.id);
         if (cancelled) return;
+
+        // First-time user: auto-create a default workspace so the switcher is always visible
+        if (list.length === 0) {
+          try {
+            const created = await workspaceService.createWorkspace('My Workspace');
+            list = [created];
+          } catch {
+            // Non-fatal — switcher will remain hidden until user manually creates one
+          }
+        }
+
         setWorkspaces(list);
 
         const active = resolveActiveWorkspace(list);
