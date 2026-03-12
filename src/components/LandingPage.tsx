@@ -885,7 +885,7 @@ const LandingPage: React.FC<LandingPageProps> = ({ onGetStarted }) => {
 
       {/* ── Stats Strip ── */}
       <div className="bg-zinc-900/80 border-y border-rose-500/15 py-5">
-        <div className="max-w-7xl mx-auto px-6 grid grid-cols-4 sm:grid-cols-8">
+        <div className="w-full px-6 grid grid-cols-4 sm:grid-cols-8">
           {STATS.map((stat, i) => (
             <div key={stat.label} className="flex flex-col items-center py-1 relative">
               {i > 0 && <div className="absolute left-0 top-1/2 -translate-y-1/2 w-px h-10 bg-rose-500/20" />}
