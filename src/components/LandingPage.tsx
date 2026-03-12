@@ -605,7 +605,7 @@ const LandingPage: React.FC<LandingPageProps> = ({ onGetStarted }) => {
                 <div className="p-2">
                   {/* Windows PC */}
                   <a
-                    href="https://github.com/FatherSonOne/Pulse-1/releases/download/v25.1.1/Pulse.Setup.25.1.1.exe"
+                    href="https://github.com/FatherSonOne/Pulse-1/releases/download/v25.1.2/Pulse.Setup.25.1.2.exe"
                     target="_blank"
                     rel="noopener noreferrer"
                     className="flex items-center gap-3 px-3 py-2.5 rounded-xl hover:bg-zinc-800 group transition"
@@ -1633,7 +1633,7 @@ const LandingPage: React.FC<LandingPageProps> = ({ onGetStarted }) => {
           </p>
 
           <div className="grid grid-cols-2 md:grid-cols-4 gap-6">
-            <DownloadButton icon="fa-brands fa-windows" platform="Windows PC" subtext="Desktop Installer · x64" active={true} href="https://github.com/FatherSonOne/Pulse-1/releases/download/v25.1.1/Pulse.Setup.25.1.1.exe" />
+            <DownloadButton icon="fa-brands fa-windows" platform="Windows PC" subtext="Desktop Installer · x64" active={true} href="https://github.com/FatherSonOne/Pulse-1/releases/download/v25.1.2/Pulse.Setup.25.1.2.exe" />
             <DownloadButton icon="fa-brands fa-apple" platform="macOS / iOS" subtext="Universal" active={false} />
 
             {/* Android Card */}
@@ -1719,8 +1719,8 @@ const LandingPage: React.FC<LandingPageProps> = ({ onGetStarted }) => {
                 <span className="absolute -left-[41px] w-6 h-6 rounded-full bg-zinc-800 border border-zinc-700 flex items-center justify-center text-xs font-bold text-white">1</span>
                 <strong className="text-white block mb-1">Download the installer</strong>
                 Click <strong className="text-blue-400">Download for PC</strong> above, or grab it directly from{' '}
-                <a href="https://github.com/FatherSonOne/Pulse-1/releases/tag/v25.1.1" target="_blank" rel="noopener noreferrer" className="text-blue-400 hover:text-blue-300 underline">GitHub Releases</a>.
-                Choose <code className="bg-zinc-800 px-1.5 py-0.5 rounded text-blue-400 text-xs">Pulse.Setup.25.1.1.exe</code> (installer) or <code className="bg-zinc-800 px-1.5 py-0.5 rounded text-blue-400 text-xs">Pulse.25.1.1.exe</code> (portable, no install needed).
+                <a href="https://github.com/FatherSonOne/Pulse-1/releases/tag/v25.1.2" target="_blank" rel="noopener noreferrer" className="text-blue-400 hover:text-blue-300 underline">GitHub Releases</a>.
+                Choose <code className="bg-zinc-800 px-1.5 py-0.5 rounded text-blue-400 text-xs">Pulse.Setup.25.1.2.exe</code> (installer) or <code className="bg-zinc-800 px-1.5 py-0.5 rounded text-blue-400 text-xs">Pulse.25.1.2.exe</code> (portable, no install needed).
               </li>
               <li className="relative">
                 <span className="absolute -left-[41px] w-6 h-6 rounded-full bg-zinc-800 border border-zinc-700 flex items-center justify-center text-xs font-bold text-white">2</span>
