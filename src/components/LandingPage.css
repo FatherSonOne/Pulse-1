@@ -74,6 +74,17 @@ kbd {
   font-family: 'JetBrains Mono', 'Courier New', monospace;
 }
 
+/* ── Gradient text descender fix ──────────────────────────────────────────
+   -webkit-background-clip: text clips at the element's padding box.
+   With zero bottom padding the descender zone (y, p, g, etc.) sits outside
+   the clip area and is invisible. Adding padding-bottom extends the clip box
+   downward so all descenders are fully painted.
+   Targets every element that carries both Tailwind utility classes.
+   ──────────────────────────────────────────────────────────────────────── */
+.text-transparent.bg-clip-text {
+  padding-bottom: 0.12em;
+}
+
 /* ============================================================
    ACCESSIBILITY — Rose focus ring
    Replaces browser-default blue outline globally
