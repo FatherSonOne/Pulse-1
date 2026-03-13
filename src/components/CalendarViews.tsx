@@ -971,11 +971,11 @@ export const DayView: React.FC<ViewProps> = ({
 
 interface CalendarHeaderProps {
   currentDate: Date;
-  viewMode: 'year' | 'month' | 'week' | 'day';
+  viewMode: 'year' | 'month' | 'week' | 'day' | 'agenda' | 'timeline';
   onPrev: () => void;
   onNext: () => void;
   onToday: () => void;
-  onViewChange: (view: 'year' | 'month' | 'week' | 'day') => void;
+  onViewChange: (view: 'year' | 'month' | 'week' | 'day' | 'agenda' | 'timeline') => void;
 }
 
 export const CalendarHeader: React.FC<CalendarHeaderProps> = ({
@@ -1040,7 +1040,7 @@ export const CalendarHeader: React.FC<CalendarHeaderProps> = ({
       </div>
 
       <div className="cal-view-switcher" role="group" aria-label="Calendar view">
-        {(['year', 'month', 'week', 'day'] as const).map(view => (
+        {(['year', 'month', 'week', 'day', 'agenda', 'timeline'] as const).map(view => (
           <button
             key={view}
             className={`cal-view-btn ${viewMode === view ? 'active' : ''}`}

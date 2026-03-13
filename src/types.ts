@@ -124,6 +124,18 @@ export interface CalendarEvent {
   attendeesDetailed?: CalendarEventAttendee[];
   /** Which provider calendar this event lives in (e.g. "primary", "work@company.com", Outlook folder id) */
   providerCalendarId?: string;
+  // DB-schema fields (present when loaded directly from Supabase calendar_events table)
+  date?: string;
+  start_time?: string;
+  end_time?: string;
+  all_day?: boolean;
+  recurrence_rule?: string | null;
+  recurrence_end?: string | null;
+  recurrence_parent_id?: string | null;
+  is_recurring_exception?: boolean;
+  deleted_at?: string | null;
+  team_calendar_id?: string | null;
+  event_status?: 'tentative' | 'confirmed' | 'cancelled';
 }
 
 export interface Task {

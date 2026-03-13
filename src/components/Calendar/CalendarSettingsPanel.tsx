@@ -1,6 +1,7 @@
 import React from 'react';
 import { AlertTriangle, CheckCircle, Grid3X3, Settings, Unplug, X } from 'lucide-react';
 import { EVENT_COLORS, TIME_ZONES, ViewMode, ReminderTime } from './calendarTypes';
+import { BookingPageManager } from './BookingPageManager';
 
 interface CalendarSettingsPanelProps {
   showCalendarSettings: boolean;
@@ -201,6 +202,12 @@ export const CalendarSettingsPanel: React.FC<CalendarSettingsPanelProps> = ({
               </>
             )}
           </div>
+        </div>
+
+        {/* Booking Pages */}
+        <div>
+          <h4 className="text-xs font-bold text-zinc-500 uppercase tracking-wider mb-4">Booking Pages</h4>
+          <BookingPageManager />
         </div>
 
         {/* Event Defaults */}

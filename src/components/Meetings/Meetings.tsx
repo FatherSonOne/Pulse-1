@@ -6,6 +6,8 @@ import { saveArchiveItem, getArchives } from '../../services/dbService';
 import { Contact, CalendarEvent, ArchiveItem } from '../../types';
 import AudioVisualizer from '../AudioVisualizer';
 import './Meetings.css';
+import PulseVideoRoom, { MeetingEndSummary } from './PulseVideoRoom';
+import { createPulseRoom } from '../../services/pulseVideoService';
 
 // Import new components
 import { ArrowLeft, ArrowRight, Copy, Ellipsis, Hand, History, LayoutGrid, MessageSquare, Mic, PhoneOff, PlayCircle, Send, Upload, Users, Wand2, X } from 'lucide-react';
@@ -140,6 +142,9 @@ const Meetings: React.FC<MeetingsProps> = ({ apiKey, contacts, initialContactId,
   const [scheduleTime, setScheduleTime] = useState('');
   const [scheduleAttendees, setScheduleAttendees] = useState<Set<string>>(new Set());
 
+  // Pulse Video (Daily.co) room state
+  const [activeRoom, setActiveRoom] = useState<{ url: string; name: string } | null>(null);
+
   // ============================================
   // INITIALIZATION
   // ============================================
@@ -216,13 +221,32 @@ const Meetings: React.FC<MeetingsProps> = ({ apiKey, contacts, initialContactId,
     setMeetingLinkInput('');
   };
 
-  const startMeeting = (platform: Platform) => {
-    if (platform === 'pulse') {
+  // Creates a real Daily.co room then enters the active view
+  const createAndJoinPulseRoom = async (title: string, eventId?: string) => {
+    try {
+      const room = await createPulseRoom(eventId, title);
+      const code = room.roomName;
+      setMeetingCode(code);
+      setActiveMeetingTitle(title);
+      setActiveParticipants([]);
+      setActiveRoom(room);
+      setView('active');
+    } catch (err) {
+      console.error('[Meetings] Failed to create Pulse room:', err);
+      // Fallback: still enter active view with a local code
       const code = generateMeetingCode();
       setMeetingCode(code);
-      setActiveMeetingTitle('Instant Pulse Meeting');
+      setActiveMeetingTitle(title);
       setActiveParticipants([]);
+      setActiveRoom(null);
       setView('active');
+    }
+  };
+
+  const startMeeting = (platform: Platform) => {
+    if (platform === 'pulse') {
+      createAndJoinPulseRoom('Instant Pulse Meeting');
+      return;
     } else {
       let url = '';
       switch(platform) {
@@ -859,6 +883,47 @@ const Meetings: React.FC<MeetingsProps> = ({ apiKey, contacts, initialContactId,
   // ============================================
   // RENDER: ACTIVE MEETING VIEW
   // ============================================
+
+  // If we have a real Daily room, render PulseVideoRoom (full-screen)
+  if (activeRoom) {
+    return (
+      <div className="meetings-container">
+        <PulseVideoRoom
+          roomUrl={activeRoom.url}
+          roomName={activeRoom.name}
+          meetingTitle={activeMeetingTitle}
+          isHost
+          onLeave={(summary?: MeetingEndSummary) => {
+            setActiveRoom(null);
+            if (summary && (summary.transcript || summary.summary)) {
+              // Parse structured Gemini JSON if available, else treat as plain text
+              let structured: { keyPoints?: string[]; actionItems?: { text: string; owner?: string }[]; decisions?: string[] } = {};
+              try { structured = JSON.parse(summary.summary); } catch { /* plain text summary */ }
+              setSummaryData({
+                aiSummary: summary.summary,
+                keyPoints: structured.keyPoints ?? [],
+                actionItems: (structured.actionItems ?? []).map(a => ({
+                  id: crypto.randomUUID(),
+                  text: a.text,
+                  assignee: a.owner ?? '',
+                  status: 'pending' as const,
+                  priority: 'medium' as const,
+                })),
+                decisions: structured.decisions ?? [],
+                timelineEvents: [],
+                participants: activeParticipants,
+                duration: Math.round(summary.durationSeconds / 60),
+                meetingTitle: activeMeetingTitle,
+              });
+              setView('summary');
+            } else {
+              setView('dashboard');
+            }
+          }}
+        />
+      </div>
+    );
+  }
 
   return (
     <div className="meetings-container">

@@ -10,6 +10,9 @@ import PrivacyPolicy from './components/PrivacyPolicy';
 import TermsOfService from './components/TermsOfService';
 import LandingPage from './components/LandingPage';
 import { WorkspaceInviteAccept } from './components/WorkspaceInviteAccept';
+import BookingPage from './components/BookingPage';
+import PulseVideoRoom from './components/Meetings/PulseVideoRoom';
+import { getRoomByName } from './services/pulseVideoService';
 
 // Lazy-load route components for better code splitting
 const Messages = lazy(() => import('./components/Messages'));
@@ -71,9 +74,61 @@ import { HelpCircle } from 'lucide-react';
 // Uses inline=true so it fills the content area via flex layout rather than fixed/absolute positioning
 const PageLoader = () => <EnhancedLoadingScreen inline />;
 
+// Standalone page for direct /meet/:roomName links — no sidebar needed
+const PulseRoomPage: React.FC<{ roomName: string }> = ({ roomName }) => {
+  const [roomUrl, setRoomUrl] = React.useState<string | null>(null);
+  const [error, setError] = React.useState('');
+
+  React.useEffect(() => {
+    getRoomByName(roomName).then(room => {
+      if (room) {
+        setRoomUrl(room.room_url);
+      } else {
+        setError('Meeting not found or has expired.');
+      }
+    });
+  }, [roomName]);
+
+  if (error) {
+    return (
+      <div className="flex items-center justify-center h-screen bg-black text-white flex-col gap-3">
+        <p className="text-white/60">{error}</p>
+        <button type="button" onClick={() => window.location.href = '/'} className="text-rose-400 text-sm hover:underline">
+          Go to Pulse
+        </button>
+      </div>
+    );
+  }
+
+  if (!roomUrl) {
+    return (
+      <div className="flex items-center justify-center h-screen bg-black">
+        <div className="w-6 h-6 border-2 border-rose-500 border-t-transparent rounded-full animate-spin" />
+      </div>
+    );
+  }
+
+  return (
+    <div className="h-screen">
+      <PulseVideoRoom
+        roomUrl={roomUrl}
+        roomName={roomName}
+        meetingTitle="Pulse Meeting"
+        isHost={false}
+        onLeave={() => { window.location.href = '/'; }}
+      />
+    </div>
+  );
+};
+
 const App: React.FC = () => {
   // Check for public routes that don't require authentication
   const path = window.location.pathname;
+
+  // Public booking page — no auth required
+  if (path.startsWith('/book/')) {
+    return <BookingPage />;
+  }
 
   // Workspace invite acceptance (handles auth check internally)
   if (path === '/invite') {
@@ -114,6 +169,13 @@ const App: React.FC = () => {
   // API Documentation (public)
   if (path === '/docs/api' || path === '/api/docs') {
     return <ApiDocumentation />;
+  }
+
+  // Pulse Video room direct link (e.g., /meet/pulse-abc123def456789)
+  const pulseRoomMatch = path.match(/^\/meet\/([a-z0-9-]+)$/i);
+  if (pulseRoomMatch) {
+    const roomName = pulseRoomMatch[1];
+    return <PulseRoomPage roomName={roomName} />;
   }
 
   // Check for meeting link (e.g., /meeting/abc-defg-hij)

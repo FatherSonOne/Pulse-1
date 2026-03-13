@@ -289,6 +289,14 @@ const calendarEventToGoogleEvent = (event: Partial<CalendarEvent>): Partial<Goog
     googleEvent.attendees = event.attendees.map(email => ({ email }));
   }
 
+  // Map Pulse recurrence_rule (RRULE string) to Google's recurrence array format
+  if ((event as any).recurrence_rule) {
+    const rule = (event as any).recurrence_rule as string;
+    googleEvent.recurrence = [rule.startsWith('RRULE:') ? rule : `RRULE:${rule}`];
+  } else if (event.recurrence?.length) {
+    googleEvent.recurrence = event.recurrence;
+  }
+
   // Add Google Meet conferencing if event is a meet
   if (event.type === 'meet') {
     const requestId = (crypto as any)?.randomUUID?.() || `meet-${Date.now()}`;

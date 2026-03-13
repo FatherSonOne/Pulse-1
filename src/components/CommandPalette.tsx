@@ -5,7 +5,7 @@ import { Search } from 'lucide-react';
 
 // ─── Types ────────────────────────────────────────────────────────────────────
 
-type ViewMode = 'month' | 'week' | 'day' | 'year' | 'agenda';
+type ViewMode = 'month' | 'week' | 'day' | 'year' | 'agenda' | 'timeline';
 
 interface CommandAction {
   id: string;

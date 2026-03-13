@@ -281,6 +281,12 @@ class OutlookCalendarService {
     return !!token && Date.now() < expiry;
   }
 
+  /** Returns the current access token if connected, or null. */
+  getAccessToken(): string | null {
+    const { token, expiry } = loadToken();
+    return (token && Date.now() < expiry) ? token : null;
+  }
+
   // ── Token management ──────────────────────────────────────────────────────
 
   private async getValidToken(): Promise<string> {

@@ -186,16 +186,46 @@ export const getMeetingRecordings = async (): Promise<MeetingRecording[]> => {
     const userId = dataService.getUserId();
     if (!userId) return [];
 
-    const { data: rows, error } = await supabase
+    // Primary: read from pulse_video_rooms (Daily.co cloud recordings)
+    const { data: videoRooms, error: vrError } = await supabase
+      .from('pulse_video_rooms')
+      .select('id, title, created_at, duration_seconds, recording_url, transcript, summary')
+      .eq('created_by', userId)
+      .eq('status', 'ended')
+      .order('created_at', { ascending: false });
+
+    const dailyRecordings: MeetingRecording[] = (videoRooms ?? []).map((r: any) => {
+      // Parse structured summary JSON if available
+      let summaryText: string | null = null;
+      if (r.summary) {
+        try {
+          const parsed = JSON.parse(r.summary);
+          summaryText = parsed.aiSummary ?? r.summary;
+        } catch {
+          summaryText = r.summary;
+        }
+      }
+      return {
+        id: r.id,
+        title: r.title ?? 'Pulse Meeting',
+        startTime: r.created_at ? new Date(r.created_at) : null,
+        durationMinutes: r.duration_seconds ? Math.round(r.duration_seconds / 60) : null,
+        audioFileUrl: r.recording_url ?? '',
+        transcript: r.transcript ?? null,
+        summary: summaryText,
+        attendees: [],
+      };
+    }).filter((r: MeetingRecording) => r.audioFileUrl || r.transcript);
+
+    // Fallback: legacy meetings table (AI Scribe recordings)
+    const { data: legacyRows } = await supabase
       .from('meetings')
       .select('id, title, start_time, duration_minutes, audio_file_url, transcript, summary, attendees')
       .eq('created_by', userId)
       .not('audio_file_url', 'is', null)
       .order('start_time', { ascending: false });
 
-    if (error || !rows) return [];
-
-    return rows.map((r: any) => ({
+    const legacyRecordings: MeetingRecording[] = (legacyRows ?? []).map((r: any) => ({
       id: r.id,
       title: r.title,
       startTime: r.start_time ? new Date(r.start_time) : null,
@@ -205,6 +235,9 @@ export const getMeetingRecordings = async (): Promise<MeetingRecording[]> => {
       summary: r.summary,
       attendees: Array.isArray(r.attendees) ? r.attendees : [],
     }));
+
+    // Merge: Daily recordings first (most recent), then legacy
+    return [...dailyRecordings, ...legacyRecordings];
   } catch (err) {
     console.error('getMeetingRecordings error:', err);
     return [];

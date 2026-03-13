@@ -8,6 +8,7 @@ import { CalendarEvent } from '../types';
 import { googleCalendarService, GoogleCalendar } from './googleCalendarService';
 import { outlookCalendarService, OutlookCalendar } from './outlookCalendarService';
 import { dataService } from './dataService';
+import { expandRecurringEvent } from './recurringEventService';
 
 // ─── Provider descriptor ──────────────────────────────────────────────────────
 
@@ -185,8 +186,14 @@ class UnifiedCalendarService {
     // Local
     if (!prefs.disabledCalendars.includes(calKey('local', 'local'))) {
       try {
-        const local = await dataService.getEvents(startDate, endDate);
-        all.push(...local);
+        const raw = await dataService.getEvents(startDate, endDate);
+        for (const ev of raw) {
+          if (ev.recurrence_rule) {
+            all.push(...expandRecurringEvent(ev, startDate, endDate));
+          } else {
+            all.push(ev);
+          }
+        }
       } catch (err) {
         console.warn('[Unified] Local events error:', err);
       }

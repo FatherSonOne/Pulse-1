@@ -34,6 +34,7 @@ release/
 # IDE
 .vscode/
 .idea/
+.cursor/
 *.swp
 *.swo
 *~
@@ -150,6 +151,9 @@ messages_fix.patch
 test-debug.js
 test-minimal.test.ts
 test-vitest-assertion.test.ts
+
+# Test/temp images
+test.png
 
 # Backup files
 *.backup

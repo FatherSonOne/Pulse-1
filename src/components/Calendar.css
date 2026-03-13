@@ -1,59 +1,114 @@
-/* ============================================
-   PULSE CALENDAR - Art Deco meets Swiss Design
-   ============================================
-   A sophisticated calendar with geometric precision,
-   bold typography, and refined micro-interactions
+/* ============================================================
+   PULSE CALENDAR — Pulse Premium Dark · Rose Accent System
+   ============================================================
+   Redesigned: Inter font · #f43f5e rose · glassmorphism ·
+   spring easing · true black canvas
 */
 
-/* CSS Custom Properties */
+/* ── Design Tokens ────────────────────────────────────────── */
 .pulse-calendar {
-  --cal-bg: #fafafa;
-  --cal-bg-elevated: #ffffff;
-  --cal-bg-subtle: #f4f4f5;
-  --cal-border: #e4e4e7;
-  --cal-border-subtle: #f0f0f2;
-  --cal-text: #18181b;
-  --cal-text-muted: #71717a;
-  --cal-text-subtle: #a1a1aa;
-  --cal-accent: #dc2626;
-  --cal-accent-amber: #f59e0b;
-  --cal-accent-emerald: #10b981;
-  --cal-accent-violet: #8b5cf6;
-  --cal-accent-sky: #0ea5e9;
-  --cal-today-ring: rgba(220, 38, 38, 0.2);
-  --cal-shadow-sm: 0 1px 2px rgba(0,0,0,0.04);
-  --cal-shadow-md: 0 4px 12px rgba(0,0,0,0.08);
-  --cal-shadow-lg: 0 12px 40px rgba(0,0,0,0.12);
-  --cal-radius-sm: 6px;
-  --cal-radius-md: 12px;
-  --cal-radius-lg: 20px;
-  --cal-transition: 200ms cubic-bezier(0.4, 0, 0.2, 1);
-  --cal-transition-slow: 400ms cubic-bezier(0.4, 0, 0.2, 1);
+  /* Light mode */
+  --cal-bg:              #f8f8f8;
+  --cal-bg-elevated:     #ffffff;
+  --cal-bg-subtle:       rgba(0, 0, 0, 0.03);
+  --cal-border:          rgba(0, 0, 0, 0.08);
+  --cal-border-subtle:   rgba(0, 0, 0, 0.05);
+  --cal-text:            #0f0f0f;
+  --cal-text-muted:      #52525b;
+  --cal-text-subtle:     #6b7280;
+  --cal-accent:          #f43f5e;
+  --cal-accent-soft:     rgba(244, 63, 94, 0.10);
+  --cal-accent-glow:     rgba(244, 63, 94, 0.25);
+  --cal-accent-amber:    #f59e0b;
+  --cal-accent-emerald:  #10b981;
+  --cal-accent-violet:   #8b5cf6;
+  --cal-accent-sky:      #0ea5e9;
+  --cal-today-ring:      rgba(244, 63, 94, 0.20);
+  --cal-shadow-sm:       0 1px 3px rgba(0,0,0,0.06);
+  --cal-shadow-md:       0 4px 12px rgba(0,0,0,0.08);
+  --cal-shadow-lg:       0 12px 40px rgba(0,0,0,0.12);
+  --cal-radius-sm:       6px;
+  --cal-radius-md:       12px;
+  --cal-radius-lg:       20px;
+  --cal-transition:      200ms cubic-bezier(0.16, 1, 0.3, 1);
+  --cal-transition-slow: 400ms cubic-bezier(0.16, 1, 0.3, 1);
 }
 
 .dark .pulse-calendar {
-  --cal-bg: #09090b;
-  --cal-bg-elevated: #18181b;
-  --cal-bg-subtle: #27272a;
-  --cal-border: #3f3f46;
-  --cal-border-subtle: #27272a;
-  --cal-text: #fafafa;
-  --cal-text-muted: #a1a1aa;
-  --cal-text-subtle: #71717a;
-  --cal-today-ring: rgba(220, 38, 38, 0.3);
-  --cal-shadow-sm: 0 1px 2px rgba(0,0,0,0.2);
-  --cal-shadow-md: 0 4px 12px rgba(0,0,0,0.3);
-  --cal-shadow-lg: 0 12px 40px rgba(0,0,0,0.4);
+  /* Dark mode — true black canvas, translucent surfaces */
+  --cal-bg:             #000000;
+  --cal-bg-elevated:    rgba(255, 255, 255, 0.03);
+  --cal-bg-subtle:      rgba(255, 255, 255, 0.055);
+  --cal-border:         rgba(255, 255, 255, 0.06);
+  --cal-border-subtle:  rgba(255, 255, 255, 0.04);
+  --cal-text:           #fafafa;
+  --cal-text-muted:     #b4b4b8;
+  --cal-text-subtle:    #6b7280;
+  --cal-accent:         #f43f5e;
+  --cal-accent-soft:    rgba(244, 63, 94, 0.12);
+  --cal-accent-glow:    rgba(244, 63, 94, 0.30);
+  --cal-today-ring:     rgba(244, 63, 94, 0.25);
+  --cal-shadow-sm:      0 1px 4px rgba(0,0,0,0.50);
+  --cal-shadow-md:      0 4px 16px rgba(0,0,0,0.60);
+  --cal-shadow-lg:      0 12px 40px rgba(0,0,0,0.70);
 }
 
-/* Typography - Using system fonts with geometric feel */
+/* ── Accessibility: reduced motion ───────────────────────── */
+@media (prefers-reduced-motion: reduce) {
+  .pulse-calendar *,
+  .pulse-calendar *::before,
+  .pulse-calendar *::after {
+    animation-duration: 0.01ms !important;
+    animation-iteration-count: 1 !important;
+    transition-duration: 0.01ms !important;
+  }
+}
+
+/* ── Focus ring ──────────────────────────────────────────── */
+.pulse-calendar *:focus-visible {
+  outline: 2px solid #f43f5e;
+  outline-offset: 2px;
+  border-radius: 4px;
+}
+.pulse-calendar *:focus:not(:focus-visible) { outline: none; }
+
+/* ── Scrollbars ──────────────────────────────────────────── */
 .pulse-calendar {
-  font-family: 'SF Pro Display', -apple-system, BlinkMacSystemFont, 'Segoe UI', system-ui, sans-serif;
+  scrollbar-width: thin;
+  scrollbar-color: rgba(244, 63, 94, 0.25) transparent;
+}
+.pulse-calendar ::-webkit-scrollbar       { width: 6px; height: 6px; }
+.pulse-calendar ::-webkit-scrollbar-track { background: transparent; }
+.pulse-calendar ::-webkit-scrollbar-thumb {
+  background: rgba(244, 63, 94, 0.25);
+  border-radius: 3px;
+}
+.pulse-calendar ::-webkit-scrollbar-thumb:hover {
+  background: rgba(244, 63, 94, 0.45);
+}
+
+/* ── List stagger animation ──────────────────────────────── */
+@keyframes calEnter {
+  from { opacity: 0; transform: translateY(6px); }
+  to   { opacity: 1; transform: translateY(0); }
+}
+
+/* ── Focus heartbeat ─────────────────────────────────────── */
+@keyframes calHeartbeat {
+  0%   { opacity: 0; }
+  35%  { opacity: 1; }
+  100% { opacity: 0.4; }
+}
+
+/* ── Typography ──────────────────────────────────────────── */
+/* Typography - Inter replaces SF Pro Display */
+.pulse-calendar {
+  font-family: 'Inter', -apple-system, BlinkMacSystemFont, system-ui, sans-serif;
   font-feature-settings: 'tnum' on, 'lnum' on;
 }
 
 .cal-font-display {
-  font-family: 'SF Pro Display', -apple-system, BlinkMacSystemFont, system-ui, sans-serif;
+  font-family: 'Inter', -apple-system, BlinkMacSystemFont, system-ui, sans-serif;
   font-weight: 600;
   letter-spacing: -0.02em;
 }
@@ -144,8 +199,8 @@
   text-transform: uppercase;
   letter-spacing: 0.1em;
   color: var(--cal-accent);
-  background: rgba(220, 38, 38, 0.08);
-  border: 1px solid rgba(220, 38, 38, 0.2);
+  background: var(--cal-accent-soft);
+  border: 1px solid var(--cal-accent-glow);
   transition: var(--cal-transition);
   cursor: pointer;
 }
@@ -183,8 +238,8 @@
 }
 
 .cal-view-btn.active {
-  background: var(--cal-bg-elevated);
-  color: var(--cal-text);
+  background: var(--cal-accent-soft);
+  color: var(--cal-accent);
   box-shadow: var(--cal-shadow-sm);
 }
 
@@ -268,7 +323,7 @@
 
 .cal-mini-month.current-month {
   border-color: var(--cal-accent);
-  background: linear-gradient(135deg, rgba(220, 38, 38, 0.03) 0%, transparent 100%);
+  background: linear-gradient(135deg, rgba(244, 63, 94, 0.04) 0%, transparent 100%);
 }
 
 .cal-mini-month.current-month::before {
@@ -473,11 +528,13 @@
 }
 
 .cal-event-pill {
-  padding: 3px 8px;
+  padding: 3px 8px 3px 6px;
   border-radius: 4px;
+  border-left: 2px solid currentColor;
   font-size: 0.6875rem;
   font-weight: 600;
   color: white;
+  background: rgba(255, 255, 255, 0.15);
   white-space: nowrap;
   overflow: hidden;
   text-overflow: ellipsis;
@@ -505,7 +562,7 @@
   cursor: pointer;
   border-radius: 4px;
   transition: var(--cal-transition);
-  background: rgba(220, 38, 38, 0.05);
+  background: var(--cal-accent-soft);
   display: inline-block;
   margin-top: 2px;
 }
@@ -515,15 +572,15 @@
   background: var(--cal-accent);
 }
 
-/* Event Colors */
-.cal-event-red { background: #dc2626; }
-.cal-event-amber { background: #f59e0b; }
-.cal-event-emerald { background: #10b981; }
-.cal-event-sky { background: #0ea5e9; }
-.cal-event-violet { background: #8b5cf6; }
-.cal-event-pink { background: #ec4899; }
-.cal-event-indigo { background: #6366f1; }
-.cal-event-zinc { background: #71717a; }
+/* Event Colors — translucent fill + left border via color inheritance */
+.cal-event-red    { background: rgba(244,  63,  94, 0.18); color: #f43f5e; }
+.cal-event-amber  { background: rgba(245, 158,  11, 0.18); color: #f59e0b; }
+.cal-event-emerald{ background: rgba( 16, 185, 129, 0.18); color: #10b981; }
+.cal-event-sky    { background: rgba( 14, 165, 233, 0.18); color: #0ea5e9; }
+.cal-event-violet { background: rgba(139,  92, 246, 0.18); color: #8b5cf6; }
+.cal-event-pink   { background: rgba(236,  72, 153, 0.18); color: #ec4899; }
+.cal-event-indigo { background: rgba( 99, 102, 241, 0.18); color: #6366f1; }
+.cal-event-zinc   { background: rgba(113, 113, 122, 0.18); color: #71717a; }
 
 /* Type-aware event styles (inline styles override bg, border) */
 .cal-event-typed {
@@ -1490,13 +1547,13 @@
 }
 
 .dark .cal-more-events {
-  color: #fca5a5; /* light red — sufficient on dark bg */
-  background: rgba(252, 165, 165, 0.1);
+  color: var(--cal-accent);
+  background: var(--cal-accent-soft);
 }
 
 .dark .cal-more-events:hover {
-  color: #18181b;
-  background: #fca5a5;
+  color: white;
+  background: var(--cal-accent);
 }
 
 /* Week view all-day gutter label */
@@ -1514,3 +1571,41 @@
   user-select: none;
   pointer-events: none;
 }
+
+/* ============================================================
+   GLASS DROPDOWNS / POPOVERS
+   ============================================================ */
+.cal-popover,
+.cal-context-menu,
+.cal-color-picker-dropdown {
+  background: rgba(255, 255, 255, 0.97);
+  -webkit-backdrop-filter: blur(24px) saturate(180%);
+          backdrop-filter: blur(24px) saturate(180%);
+  border: 1px solid rgba(244, 63, 94, 0.18);
+  border-radius: 16px;
+  box-shadow:
+    0 12px 32px rgba(0, 0, 0, 0.12),
+    0 0 0 1px rgba(244, 63, 94, 0.04) inset;
+}
+
+.dark .cal-popover,
+.dark .cal-context-menu,
+.dark .cal-color-picker-dropdown {
+  background: rgba(10, 10, 10, 0.95);
+  -webkit-backdrop-filter: blur(24px) saturate(180%);
+          backdrop-filter: blur(24px) saturate(180%);
+  border: 1px solid rgba(255, 255, 255, 0.08);
+  box-shadow:
+    0 12px 40px rgba(0, 0, 0, 0.70),
+    0 0 0 1px rgba(244, 63, 94, 0.08) inset;
+}
+
+/* ============================================================
+   CALENDAR EVENT LIST STAGGER (agenda / event list views)
+   ============================================================ */
+.cal-event-list .cal-event-pill:nth-child(1) { animation: calEnter 220ms cubic-bezier(0.16, 1, 0.3, 1) both; animation-delay:   0ms; }
+.cal-event-list .cal-event-pill:nth-child(2) { animation: calEnter 220ms cubic-bezier(0.16, 1, 0.3, 1) both; animation-delay:  40ms; }
+.cal-event-list .cal-event-pill:nth-child(3) { animation: calEnter 220ms cubic-bezier(0.16, 1, 0.3, 1) both; animation-delay:  80ms; }
+.cal-event-list .cal-event-pill:nth-child(4) { animation: calEnter 220ms cubic-bezier(0.16, 1, 0.3, 1) both; animation-delay: 120ms; }
+.cal-event-list .cal-event-pill:nth-child(5) { animation: calEnter 220ms cubic-bezier(0.16, 1, 0.3, 1) both; animation-delay: 160ms; }
+.cal-event-list .cal-event-pill:nth-child(n+6) { animation: none; will-change: auto; }

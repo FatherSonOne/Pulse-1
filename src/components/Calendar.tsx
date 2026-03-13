@@ -6,6 +6,7 @@ import { googleCalendarService, GoogleCalendar } from '../services/googleCalenda
 import { outlookCalendarService } from '../services/outlookCalendarService';
 import { unifiedCalendarService } from '../services/unifiedCalendarService';
 import { YearView, MonthView, WeekView, DayView, CalendarHeader, AgendaView, OverlayEvent } from './CalendarViews';
+import { CalendarTimelineView } from './Calendar/CalendarTimelineView';
 import DayDetailModal from './DayDetailModal';
 import useSwipeGesture from '../hooks/useSwipeGesture';
 import usePullToRefresh from '../hooks/usePullToRefresh';
@@ -29,6 +30,8 @@ import { CalendarContextMenu } from './Calendar/CalendarContextMenu';
 import { CalendarSidebar } from './Calendar/CalendarSidebar';
 import { CalendarInlineModals } from './Calendar/CalendarInlineModals';
 import { CalendarSettingsPanel } from './Calendar/CalendarSettingsPanel';
+import { RSVPPanel } from './Calendar/RSVPPanel';
+import { EventCommentThread } from './Calendar/EventCommentThread';
 import { ViewMode, RecurrenceType, ReminderTime, EVENT_COLORS, EVENT_TYPES, TIME_ZONES, Team, autoDetectEventType } from './Calendar/calendarTypes';
 import {
   calendarAIService,
@@ -173,6 +176,7 @@ const Calendar: React.FC<CalendarProps> = ({ contacts, openTaskPanel = false, on
   }, []);
   const [newEventLocation, setNewEventLocation] = useState('');
   const [newEventAllDay, setNewEventAllDay] = useState(false);
+  const [newEventStatus, setNewEventStatus] = useState<'confirmed' | 'tentative' | 'cancelled'>('confirmed');
 
   // Quick Scheduler State
   const [showQuickScheduler, setShowQuickScheduler] = useState(false);
@@ -185,6 +189,7 @@ const Calendar: React.FC<CalendarProps> = ({ contacts, openTaskPanel = false, on
   // Event Detail View
   const [selectedEvent, setSelectedEvent] = useState<CalendarEvent | null>(null);
   const [showEventDetail, setShowEventDetail] = useState(false);
+  const [eventDetailTab, setEventDetailTab] = useState<'details' | 'attendees' | 'comments'>('details');
 
   // Day Detail Modal State
   const [showDayDetail, setShowDayDetail] = useState(false);
@@ -508,8 +513,8 @@ const Calendar: React.FC<CalendarProps> = ({ contacts, openTaskPanel = false, on
   const handlePrev = useCallback(() => {
     const newDate = new Date(currentDate);
     if (viewMode === 'year') newDate.setFullYear(newDate.getFullYear() - 1);
-    else if (viewMode === 'month') newDate.setMonth(newDate.getMonth() - 1);
-    else if (viewMode === 'week') newDate.setDate(newDate.getDate() - 7);
+    else if (viewMode === 'month' || viewMode === 'agenda') newDate.setMonth(newDate.getMonth() - 1);
+    else if (viewMode === 'week' || viewMode === 'timeline') newDate.setDate(newDate.getDate() - 14);
     else newDate.setDate(newDate.getDate() - 1);
     setCurrentDate(newDate);
   }, [currentDate, viewMode]);
@@ -517,8 +522,8 @@ const Calendar: React.FC<CalendarProps> = ({ contacts, openTaskPanel = false, on
   const handleNext = useCallback(() => {
     const newDate = new Date(currentDate);
     if (viewMode === 'year') newDate.setFullYear(newDate.getFullYear() + 1);
-    else if (viewMode === 'month') newDate.setMonth(newDate.getMonth() + 1);
-    else if (viewMode === 'week') newDate.setDate(newDate.getDate() + 7);
+    else if (viewMode === 'month' || viewMode === 'agenda') newDate.setMonth(newDate.getMonth() + 1);
+    else if (viewMode === 'week' || viewMode === 'timeline') newDate.setDate(newDate.getDate() + 14);
     else newDate.setDate(newDate.getDate() + 1);
     setCurrentDate(newDate);
   }, [currentDate, viewMode]);
@@ -1372,6 +1377,7 @@ const Calendar: React.FC<CalendarProps> = ({ contacts, openTaskPanel = false, on
           location: newEventLocation,
           attendees: newEventAttendees.map(id => contacts.find(c => c.id === id)?.email || id),
           type: newEventType,
+          event_status: newEventStatus,
       };
 
       // Create in Google Calendar if connected
@@ -1447,6 +1453,7 @@ const Calendar: React.FC<CalendarProps> = ({ contacts, openTaskPanel = false, on
     setNewEventReminder((localStorage.getItem('cal_default_reminder') as ReminderTime | null) ?? '15min');
     setNewEventLocation('');
     setNewEventAllDay(false);
+    setNewEventStatus('confirmed');
     setEditingEvent(null);
   };
 
@@ -1656,6 +1663,7 @@ const Calendar: React.FC<CalendarProps> = ({ contacts, openTaskPanel = false, on
   // Open event detail
   const openEventDetail = useCallback((event: CalendarEvent) => {
     setSelectedEvent(event);
+    setEventDetailTab('details');
     setShowEventDetail(true);
   }, []);
 
@@ -2048,6 +2056,8 @@ const Calendar: React.FC<CalendarProps> = ({ contacts, openTaskPanel = false, on
         newEventAttendees={newEventAttendees}
         onAddAttendee={(id) => setNewEventAttendees(prev => [...prev, id])}
         onRemoveAttendee={(id) => setNewEventAttendees(prev => prev.filter(a => a !== id))}
+        newEventStatus={newEventStatus}
+        onStatusChange={setNewEventStatus}
         allEventTypes={allEventTypes}
         contacts={contacts}
         autoDetectEventType={autoDetectEventType}
@@ -2090,7 +2100,27 @@ const Calendar: React.FC<CalendarProps> = ({ contacts, openTaskPanel = false, on
                       </button>
                     </div>
                   </div>
-                  <div className="p-6 space-y-4">
+                  {/* Tab bar */}
+                  <div className="flex border-b border-zinc-100 dark:border-zinc-800 px-4">
+                    {(['details', 'attendees', 'comments'] as const).map(tab => (
+                      <button
+                        key={tab}
+                        onClick={() => setEventDetailTab(tab)}
+                        className={`px-4 py-2.5 text-xs font-semibold uppercase tracking-wide border-b-2 transition -mb-px ${
+                          eventDetailTab === tab
+                            ? 'border-rose-500 text-rose-500'
+                            : 'border-transparent text-zinc-400 hover:text-zinc-600 dark:hover:text-zinc-300'
+                        }`}
+                      >
+                        {tab === 'details' ? 'Details' : tab === 'attendees' ? 'Attendees' : 'Comments'}
+                      </button>
+                    ))}
+                  </div>
+
+                  <div className="p-6">
+                    {/* ── DETAILS TAB ────────────────────────────────── */}
+                    {eventDetailTab === 'details' && (
+                    <div className="space-y-4">
                     {/* Time */}
                     <div className="flex items-center gap-3 text-sm">
                       <Clock className="text-zinc-400 w-5" />
@@ -2109,34 +2139,78 @@ const Calendar: React.FC<CalendarProps> = ({ contacts, openTaskPanel = false, on
                       </div>
                     </div>
 
-                    {/* Meeting Link (Google Meet or any URL) */}
-                    {selectedEvent.meetLink && (
-                      <div className="flex items-center gap-3 text-sm">
-                        <Video className="text-blue-500 w-5" />
-                        <div className="flex items-center gap-2 flex-1 min-w-0">
-                          <a
-                            href={selectedEvent.meetLink}
-                            target="_blank"
-                            rel="noopener noreferrer"
-                            className="text-blue-500 hover:underline font-medium truncate"
-                          >
-                            {selectedEvent.meetLink.includes('meet.google') ? 'Join Google Meet' :
-                             selectedEvent.meetLink.includes('teams.microsoft') ? 'Join Teams Meeting' :
-                             selectedEvent.meetLink.includes('zoom.us') ? 'Join Zoom Meeting' :
-                             'Join Meeting'}
-                          </a>
-                          <button
-                            onClick={() => {
-                              navigator.clipboard.writeText(selectedEvent.meetLink!).catch(() => {});
-                            }}
-                            title="Copy link"
-                            className="flex-shrink-0 w-6 h-6 flex items-center justify-center rounded-md text-zinc-400 hover:text-zinc-700 dark:hover:text-zinc-200 hover:bg-zinc-100 dark:hover:bg-zinc-800 transition"
-                          >
-                            <Copy className="text-[11px]" />
-                          </button>
+                    {/* Meeting Link — Pulse Meet gets a native Join button; others open external */}
+                    {selectedEvent.meetLink && (() => {
+                      const link = selectedEvent.meetLink!;
+                      const isPulseMeet = link.includes('/meet/pulse-');
+                      const now = new Date();
+                      const minsUntilStart = (selectedEvent.start.getTime() - now.getTime()) / 60000;
+                      const isActive = minsUntilStart <= 15 && now < selectedEvent.end;
+                      const roomName = isPulseMeet ? link.split('/meet/')[1] : null;
+
+                      if (isPulseMeet) {
+                        return (
+                          <div className="space-y-2">
+                            {/* Join button */}
+                            <button
+                              type="button"
+                              onClick={() => { window.location.href = link; }}
+                              className={`w-full flex items-center justify-center gap-2 py-2.5 rounded-xl font-semibold text-sm transition-all ${
+                                isActive
+                                  ? 'bg-rose-500 hover:bg-rose-600 text-white shadow-lg shadow-rose-500/20'
+                                  : 'bg-rose-500/10 hover:bg-rose-500/20 text-rose-500 border border-rose-500/20'
+                              }`}
+                            >
+                              <Video size={15} />
+                              {isActive ? 'Join Now — Pulse Meet' : minsUntilStart > 0 ? `Join in ${Math.round(minsUntilStart)} min` : 'Join Pulse Meet'}
+                            </button>
+                            {/* Copy + room code row */}
+                            <div className="flex items-center gap-2">
+                              <span className="flex-1 text-[11px] text-zinc-400 dark:text-zinc-500 truncate font-mono">
+                                {window.location.origin}{link}
+                              </span>
+                              <button
+                                type="button"
+                                onClick={() => navigator.clipboard.writeText(`${window.location.origin}${link}`).catch(() => {})}
+                                title="Copy link"
+                                className="shrink-0 p-1 rounded text-zinc-400 hover:text-rose-500 transition"
+                              >
+                                <Copy size={12} />
+                              </button>
+                            </div>
+                          </div>
+                        );
+                      }
+
+                      // External provider link
+                      const label = link.includes('meet.google') ? 'Join Google Meet' :
+                                    link.includes('teams.microsoft') ? 'Join Teams Meeting' :
+                                    link.includes('zoom.us') ? 'Join Zoom Meeting' :
+                                    'Join Meeting';
+                      return (
+                        <div className="flex items-center gap-3 text-sm">
+                          <Video className="text-zinc-400 w-5 shrink-0" />
+                          <div className="flex items-center gap-2 flex-1 min-w-0">
+                            <a
+                              href={link}
+                              target="_blank"
+                              rel="noopener noreferrer"
+                              className="text-rose-500 hover:underline font-medium truncate"
+                            >
+                              {label}
+                            </a>
+                            <button
+                              type="button"
+                              onClick={() => navigator.clipboard.writeText(link).catch(() => {})}
+                              title="Copy link"
+                              className="shrink-0 w-6 h-6 flex items-center justify-center rounded-md text-zinc-400 hover:text-zinc-700 dark:hover:text-zinc-200 hover:bg-zinc-100 dark:hover:bg-zinc-800 transition"
+                            >
+                              <Copy size={11} />
+                            </button>
+                          </div>
                         </div>
-                      </div>
-                    )}
+                      );
+                    })()}
 
                     {/* Location */}
                     {selectedEvent.location && (
@@ -2255,6 +2329,27 @@ const Calendar: React.FC<CalendarProps> = ({ contacts, openTaskPanel = false, on
                           <ExternalLink />
                           Open in Google Calendar
                         </a>
+                      </div>
+                    )}
+
+                    </div>
+                    )}
+
+                    {/* ── ATTENDEES TAB ──────────────────────────────── */}
+                    {eventDetailTab === 'attendees' && (
+                      <RSVPPanel
+                        eventId={selectedEvent.id}
+                        isOrganizer={true}
+                      />
+                    )}
+
+                    {/* ── COMMENTS TAB ───────────────────────────────── */}
+                    {eventDetailTab === 'comments' && (
+                      <div className="min-h-[280px]">
+                        <EventCommentThread
+                          eventId={selectedEvent.id}
+                          currentUserId={''}
+                        />
                       </div>
                     )}
 
@@ -2760,6 +2855,14 @@ const Calendar: React.FC<CalendarProps> = ({ contacts, openTaskPanel = false, on
                    setNewEventDate(date.toISOString().split('T')[0]);
                    setShowEventModal(true);
                  }}
+               />
+             )}
+
+             {viewMode === 'timeline' && (
+               <CalendarTimelineView
+                 currentDate={currentDate}
+                 events={filteredEvents}
+                 onEventClick={openEventDetail}
                />
              )}
          </div>

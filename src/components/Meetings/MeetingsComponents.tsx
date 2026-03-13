@@ -1453,17 +1453,65 @@ export const RecordingsModal: React.FC<RecordingsModalProps> = ({ isOpen, onClos
                 </div>
               </div>
 
-              {/* Transcript */}
-              {selected.summary && (
-                <div style={{ marginBottom: 12 }}>
-                  <div style={{ fontSize: 11, fontWeight: 700, textTransform: 'uppercase', letterSpacing: 1, color: 'var(--mtg-text-muted)', marginBottom: 8 }}>
-                    Summary
+              {/* AI Summary — renders structured JSON or plain text */}
+              {selected.summary && (() => {
+                let parsed: { aiSummary?: string; keyPoints?: string[]; actionItems?: { text: string; owner?: string; priority?: string }[]; decisions?: string[]; topics?: string[]; sentiment?: string } | null = null;
+                try { parsed = JSON.parse(selected.summary!); } catch { /* plain text */ }
+
+                if (parsed) {
+                  return (
+                    <div style={{ marginBottom: 16, display: 'flex', flexDirection: 'column', gap: 12 }}>
+                      {parsed.aiSummary && (
+                        <div>
+                          <div style={{ fontSize: 11, fontWeight: 700, textTransform: 'uppercase', letterSpacing: 1, color: 'var(--mtg-text-muted)', marginBottom: 6 }}>AI Summary</div>
+                          <div style={{ fontSize: 13, color: 'var(--mtg-text-secondary)', lineHeight: 1.7 }}>{parsed.aiSummary}</div>
+                        </div>
+                      )}
+                      {parsed.keyPoints && parsed.keyPoints.length > 0 && (
+                        <div>
+                          <div style={{ fontSize: 11, fontWeight: 700, textTransform: 'uppercase', letterSpacing: 1, color: 'var(--mtg-text-muted)', marginBottom: 6 }}>Key Points</div>
+                          <ul style={{ margin: 0, paddingLeft: 16, display: 'flex', flexDirection: 'column', gap: 4 }}>
+                            {parsed.keyPoints.map((p, i) => <li key={i} style={{ fontSize: 13, color: 'var(--mtg-text-secondary)' }}>{p}</li>)}
+                          </ul>
+                        </div>
+                      )}
+                      {parsed.actionItems && parsed.actionItems.length > 0 && (
+                        <div>
+                          <div style={{ fontSize: 11, fontWeight: 700, textTransform: 'uppercase', letterSpacing: 1, color: 'var(--mtg-text-muted)', marginBottom: 6 }}>Action Items</div>
+                          <div style={{ display: 'flex', flexDirection: 'column', gap: 4 }}>
+                            {parsed.actionItems.map((a, i) => (
+                              <div key={i} style={{ display: 'flex', alignItems: 'flex-start', gap: 8, fontSize: 13 }}>
+                                <span style={{ width: 16, height: 16, borderRadius: 4, border: '2px solid var(--mtg-border)', display: 'inline-block', flexShrink: 0, marginTop: 1 }} />
+                                <span style={{ color: 'var(--mtg-text-secondary)', flex: 1 }}>
+                                  {a.text}
+                                  {a.owner && <span style={{ color: 'var(--mtg-text-muted)', fontSize: 11 }}> — {a.owner}</span>}
+                                </span>
+                                {a.priority === 'high' && <span style={{ fontSize: 10, background: 'rgba(244,63,94,0.15)', color: '#f43f5e', padding: '1px 6px', borderRadius: 4, flexShrink: 0 }}>HIGH</span>}
+                              </div>
+                            ))}
+                          </div>
+                        </div>
+                      )}
+                      {parsed.decisions && parsed.decisions.length > 0 && (
+                        <div>
+                          <div style={{ fontSize: 11, fontWeight: 700, textTransform: 'uppercase', letterSpacing: 1, color: 'var(--mtg-text-muted)', marginBottom: 6 }}>Decisions</div>
+                          <ul style={{ margin: 0, paddingLeft: 16, display: 'flex', flexDirection: 'column', gap: 4 }}>
+                            {parsed.decisions.map((d, i) => <li key={i} style={{ fontSize: 13, color: 'var(--mtg-text-secondary)' }}>{d}</li>)}
+                          </ul>
+                        </div>
+                      )}
+                    </div>
+                  );
+                }
+
+                // Plain text summary fallback
+                return (
+                  <div style={{ marginBottom: 12 }}>
+                    <div style={{ fontSize: 11, fontWeight: 700, textTransform: 'uppercase', letterSpacing: 1, color: 'var(--mtg-text-muted)', marginBottom: 8 }}>Summary</div>
+                    <div style={{ fontSize: 13, color: 'var(--mtg-text-secondary)', lineHeight: 1.6 }}>{selected.summary}</div>
                   </div>
-                  <div style={{ fontSize: 13, color: 'var(--mtg-text-secondary)', lineHeight: 1.6 }}>
-                    {selected.summary}
-                  </div>
-                </div>
-              )}
+                );
+              })()}
 
               <div style={{ fontSize: 11, fontWeight: 700, textTransform: 'uppercase', letterSpacing: 1, color: 'var(--mtg-text-muted)', marginBottom: 8 }}>
                 Transcript

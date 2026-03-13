@@ -1,6 +1,9 @@
 import React from 'react';
 import { X, Sliders } from 'lucide-react';
 import { CalendarEvent, Contact } from '../../types';
+import { RecurrencePicker } from './RecurrencePicker';
+import { VideoLinkSelector } from './VideoLinkSelector';
+import { EventStatusBadge, EventStatus } from './EventStatusBadge';
 
 // Shape that mirrors the allEventTypes entries in Calendar.tsx
 interface EventTypeOption {
@@ -60,9 +63,14 @@ export interface EventCreationModalProps {
 
   newEventRecurrence: RecurrenceType;
   onRecurrenceChange: (v: RecurrenceType) => void;
+  newEventRrule?: string | null;
+  onRruleChange?: (v: string | null) => void;
 
   newEventReminder: ReminderTime;
   onReminderChange: (v: ReminderTime) => void;
+
+  newEventStatus?: EventStatus;
+  onStatusChange?: (v: EventStatus) => void;
 
   newEventAttendees: string[];
   onAddAttendee: (id: string) => void;
@@ -96,10 +104,12 @@ export const EventCreationModal = React.memo<EventCreationModalProps>((props) =>
           </h3>
           <button
             type="button"
+            aria-label="Close"
+            title="Close"
             onClick={props.onClose}
             className="text-zinc-400 hover:text-zinc-600"
           >
-            <X />
+            <X aria-hidden="true" />
           </button>
         </div>
 
@@ -171,6 +181,7 @@ export const EventCreationModal = React.memo<EventCreationModalProps>((props) =>
               <input
                 type="checkbox"
                 tabIndex={-1}
+                aria-label="All day event"
                 checked={props.newEventAllDay}
                 onChange={(e) => props.onAllDayChange(e.target.checked)}
                 className="sr-only peer"
@@ -187,6 +198,7 @@ export const EventCreationModal = React.memo<EventCreationModalProps>((props) =>
               <input
                 type="date"
                 tabIndex={0}
+                aria-label="Event date"
                 className="w-full bg-zinc-50 dark:bg-zinc-950 border border-zinc-200 dark:border-zinc-800 rounded-lg p-3 dark:text-white text-zinc-900 focus:border-zinc-400 focus:ring-2 focus:ring-blue-500 outline-none transition"
                 value={props.newEventDate}
                 onChange={(e) => props.onDateChange(e.target.value)}
@@ -201,6 +213,7 @@ export const EventCreationModal = React.memo<EventCreationModalProps>((props) =>
                     type="time"
                     step="60"
                     tabIndex={0}
+                    aria-label="Start time"
                     className="w-full bg-zinc-50 dark:bg-zinc-950 border border-zinc-200 dark:border-zinc-800 rounded-lg p-3 dark:text-white text-zinc-900 focus:border-zinc-400 focus:ring-2 focus:ring-blue-500 outline-none transition"
                     value={props.newEventTime || '09:00'}
                     onChange={(e) => props.onTimeChange(e.target.value)}
@@ -212,6 +225,7 @@ export const EventCreationModal = React.memo<EventCreationModalProps>((props) =>
                     type="time"
                     step="60"
                     tabIndex={0}
+                    aria-label="End time"
                     className="w-full bg-zinc-50 dark:bg-zinc-950 border border-zinc-200 dark:border-zinc-800 rounded-lg p-3 dark:text-white text-zinc-900 focus:border-zinc-400 focus:ring-2 focus:ring-blue-500 outline-none transition"
                     value={props.newEventEndTime || '10:00'}
                     onChange={(e) => props.onEndTimeChange(e.target.value)}
@@ -255,18 +269,36 @@ export const EventCreationModal = React.memo<EventCreationModalProps>((props) =>
           {/* Recurrence */}
           <div>
             <label className="text-xs text-zinc-500 uppercase font-bold mb-1 block">Repeat</label>
-            <select
-              tabIndex={0}
-              value={props.newEventRecurrence}
-              onChange={(e) => props.onRecurrenceChange(e.target.value as RecurrenceType)}
-              className="w-full bg-zinc-50 dark:bg-zinc-950 border border-zinc-200 dark:border-zinc-800 rounded-lg p-3 dark:text-white text-zinc-900 focus:border-zinc-400 focus:ring-2 focus:ring-blue-500 outline-none transition"
-            >
-              <option value="none">Does not repeat</option>
-              <option value="daily">Daily</option>
-              <option value="weekly">Weekly</option>
-              <option value="monthly">Monthly</option>
-              <option value="yearly">Yearly</option>
-            </select>
+            {props.onRruleChange ? (
+              <RecurrencePicker
+                value={props.newEventRrule ?? null}
+                onChange={props.onRruleChange}
+                eventDate={props.newEventDate || new Date().toISOString().split('T')[0]}
+              />
+            ) : (
+              <select
+                tabIndex={0}
+                aria-label="Repeat frequency"
+                value={props.newEventRecurrence}
+                onChange={(e) => props.onRecurrenceChange(e.target.value as RecurrenceType)}
+                className="w-full bg-zinc-50 dark:bg-zinc-950 border border-zinc-200 dark:border-zinc-800 rounded-lg p-3 dark:text-white text-zinc-900 focus:border-zinc-400 focus:ring-2 focus:ring-rose-500 outline-none transition"
+              >
+                <option value="none">Does not repeat</option>
+                <option value="daily">Daily</option>
+                <option value="weekly">Weekly</option>
+                <option value="monthly">Monthly</option>
+                <option value="yearly">Yearly</option>
+              </select>
+            )}
+          </div>
+
+          {/* Video conferencing */}
+          <div>
+            <label className="text-xs text-zinc-500 uppercase font-bold mb-2 block">Video conferencing</label>
+            <VideoLinkSelector
+              eventTitle={props.newEventTitle}
+              eventDate={props.newEventDate}
+            />
           </div>
 
           {/* Reminder */}
@@ -274,6 +306,7 @@ export const EventCreationModal = React.memo<EventCreationModalProps>((props) =>
             <label className="text-xs text-zinc-500 uppercase font-bold mb-1 block">Reminder</label>
             <select
               tabIndex={0}
+              aria-label="Reminder time"
               value={props.newEventReminder}
               onChange={(e) => props.onReminderChange(e.target.value as ReminderTime)}
               className="w-full bg-zinc-50 dark:bg-zinc-950 border border-zinc-200 dark:border-zinc-800 rounded-lg p-3 dark:text-white text-zinc-900 focus:border-zinc-400 focus:ring-2 focus:ring-blue-500 outline-none transition"
@@ -287,6 +320,29 @@ export const EventCreationModal = React.memo<EventCreationModalProps>((props) =>
             </select>
           </div>
 
+          {/* Event Status */}
+          {props.onStatusChange && (
+            <div>
+              <label className="text-xs text-zinc-500 uppercase font-bold mb-2 block">Status</label>
+              <div className="flex gap-2">
+                {(['confirmed', 'tentative', 'cancelled'] as EventStatus[]).map(s => (
+                  <button
+                    key={s}
+                    type="button"
+                    onClick={() => props.onStatusChange!(s)}
+                    className={`flex items-center gap-1.5 px-3 py-1.5 rounded-lg text-xs font-medium border transition ${
+                      (props.newEventStatus ?? 'confirmed') === s
+                        ? 'border-transparent ring-2 ring-rose-500'
+                        : 'border-zinc-200 dark:border-zinc-700 hover:border-rose-300 dark:hover:border-rose-700'
+                    }`}
+                  >
+                    <EventStatusBadge status={s} />
+                  </button>
+                ))}
+              </div>
+            </div>
+          )}
+
           {/* Attendees */}
           <div>
             <label className="text-xs text-zinc-500 uppercase font-bold mb-2 block">Attendees</label>
@@ -299,8 +355,8 @@ export const EventCreationModal = React.memo<EventCreationModalProps>((props) =>
                       {contact.name.charAt(0)}
                     </span>
                     {contact.name}
-                    <button type="button" onClick={() => props.onRemoveAttendee(id)} className="ml-1 text-zinc-400 hover:text-red-500">
-                      <X className="text-[10px]" />
+                    <button type="button" aria-label={`Remove ${contact.name}`} title={`Remove ${contact.name}`} onClick={() => props.onRemoveAttendee(id)} className="ml-1 text-zinc-400 hover:text-red-500">
+                      <X className="text-[10px]" aria-hidden="true" />
                     </button>
                   </span>
                 ) : null;

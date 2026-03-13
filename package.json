@@ -117,6 +117,8 @@
     "@capacitor/share": "^8.0.0",
     "@capacitor/splash-screen": "^8.0.0",
     "@capgo/capacitor-native-biometric": "^8.3.7",
+    "@daily-co/daily-js": "^0.87.0",
+    "@daily-co/daily-react": "^0.24.0",
     "@google/genai": "^1.31.0",
     "@hubspot/api-client": "^13.4.0",
     "@modelcontextprotocol/sdk": "^1.25.1",
