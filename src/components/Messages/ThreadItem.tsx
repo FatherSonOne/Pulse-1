@@ -64,8 +64,8 @@ const ThreadItem: React.FC<ThreadItemProps> = ({
     <motion.div
       className={`thread-item relative px-4 py-3 cursor-pointer transition-colors ${
         isActive
-          ? 'bg-blue-50 dark:bg-blue-900/20 border-l-4 border-blue-500'
-          : 'hover:bg-zinc-50 dark:hover:bg-zinc-800/50 border-l-4 border-transparent'
+          ? 'bg-rose-500/[0.08] border-l-4 border-[#f43f5e]'
+          : 'hover:bg-white/[0.04] border-l-4 border-transparent'
       }`}
       onClick={onClick}
       whileHover={{ x: 2 }}
@@ -85,18 +85,18 @@ const ThreadItem: React.FC<ThreadItemProps> = ({
         {/* Avatar */}
         <div className="flex-shrink-0 relative">
           {isGroup ? (
-            <div className="w-12 h-12 rounded-full bg-gradient-to-br from-purple-500 to-pink-500 flex items-center justify-center text-white font-bold text-sm">
+            <div className="w-12 h-12 rounded-full bg-gradient-to-br from-rose-600 to-rose-400 flex items-center justify-center text-white font-bold text-sm">
               <Users />
             </div>
           ) : (
-            <div className="w-12 h-12 rounded-full bg-gradient-to-br from-blue-500 to-cyan-500 flex items-center justify-center text-white font-bold text-sm">
+            <div className="w-12 h-12 rounded-full bg-gradient-to-br from-rose-500 to-pink-500 flex items-center justify-center text-white font-bold text-sm">
               {getInitials(channel.name)}
             </div>
           )}
 
           {/* Unread badge */}
           {channel.unread_count && channel.unread_count > 0 && (
-            <div className="absolute -top-1 -right-1 min-w-[20px] h-5 px-1.5 rounded-full bg-red-500 text-white text-xs font-bold flex items-center justify-center">
+            <div className="absolute -top-1 -right-1 min-w-[20px] h-5 px-1.5 rounded-full bg-[#f43f5e] text-white text-xs font-bold flex items-center justify-center">
               {channel.unread_count > 99 ? '99+' : channel.unread_count}
             </div>
           )}
@@ -110,8 +110,8 @@ const ThreadItem: React.FC<ThreadItemProps> = ({
               <h3
                 className={`text-sm font-semibold truncate ${
                   isActive
-                    ? 'text-blue-600 dark:text-blue-400'
-                    : 'text-zinc-900 dark:text-white'
+                    ? 'text-[#fb7185]'
+                    : 'text-[#e2e8f0]'
                 }`}
               >
                 {channel.name}
@@ -125,7 +125,7 @@ const ThreadItem: React.FC<ThreadItemProps> = ({
             </div>
 
             {/* Timestamp */}
-            <span className="text-xs text-zinc-500 dark:text-zinc-400 flex-shrink-0 ml-2">
+            <span className="text-xs text-[#94a3b8] flex-shrink-0 ml-2">
               {formatTimestamp(channel.last_message_at)}
             </span>
           </div>
@@ -134,8 +134,8 @@ const ThreadItem: React.FC<ThreadItemProps> = ({
           <p
             className={`text-sm truncate ${
               channel.unread_count && channel.unread_count > 0
-                ? 'text-zinc-700 dark:text-zinc-300 font-medium'
-                : 'text-zinc-500 dark:text-zinc-400'
+                ? 'text-[#e2e8f0] font-medium'
+                : 'text-[#94a3b8]'
             }`}
           >
             {truncateMessage(channel.last_message)}
@@ -143,7 +143,7 @@ const ThreadItem: React.FC<ThreadItemProps> = ({
 
           {/* Thread count indicator (if applicable) */}
           {(channel as any).thread_count > 0 && (
-            <div className="flex items-center gap-1 mt-1 text-xs text-zinc-400">
+            <div className="flex items-center gap-1 mt-1 text-xs text-[#94a3b8]">
               <MessageCircle />
               <span>{(channel as any).thread_count} replies</span>
             </div>
@@ -155,7 +155,7 @@ const ThreadItem: React.FC<ThreadItemProps> = ({
       <div className="thread-item-actions absolute top-3 right-4 opacity-0 group-hover:opacity-100 transition-opacity">
         <div className="flex items-center gap-1">
           <button
-            className="p-1 rounded hover:bg-zinc-200 dark:hover:bg-zinc-700 transition-colors"
+            className="p-1 rounded hover:bg-white/[0.08] transition-colors"
             onClick={(e) => {
               e.stopPropagation();
               // Handle pin/unpin
@@ -163,10 +163,10 @@ const ThreadItem: React.FC<ThreadItemProps> = ({
             aria-label={isPinned ? 'Unpin thread' : 'Pin thread'}
             title={isPinned ? 'Unpin thread' : 'Pin thread'}
           >
-            <i className={`fa-solid fa-thumbtack text-xs ${isPinned ? 'text-blue-500' : 'text-zinc-400'}`}></i>
+            <i className={`fa-solid fa-thumbtack text-xs ${isPinned ? 'text-[#f43f5e]' : 'text-[#94a3b8]'}`}></i>
           </button>
           <button
-            className="p-1 rounded hover:bg-zinc-200 dark:hover:bg-zinc-700 transition-colors"
+            className="p-1 rounded hover:bg-white/[0.08] transition-colors"
             onClick={(e) => {
               e.stopPropagation();
               // Handle mute
@@ -174,7 +174,7 @@ const ThreadItem: React.FC<ThreadItemProps> = ({
             aria-label="Mute thread"
             title="Mute thread"
           >
-            <BellOff className="text-xs text-zinc-400" />
+            <BellOff className="text-xs text-[#94a3b8]" />
           </button>
         </div>
       </div>

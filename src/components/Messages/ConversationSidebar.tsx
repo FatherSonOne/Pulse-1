@@ -63,7 +63,7 @@ export const ConversationSidebar: React.FC<ConversationSidebarProps> = ({
   handleSelectConversation, messageEnhancements, handleDeletePulseConversation, threads,
 }) => {
   return (
-    <div ref={sidebarRef} className={`w-full md:w-[30%] md:min-w-[280px] md:max-w-[400px] border-r border-zinc-200 dark:border-zinc-800 bg-zinc-50 dark:bg-zinc-900/50 flex-shrink-0 flex flex-col ${mobileView === 'chat' ? 'max-md:hidden' : ''}`}>
+    <div ref={sidebarRef} className={`w-full md:w-[30%] md:min-w-[280px] md:max-w-[400px] border-r border-zinc-200 dark:border-zinc-700 bg-white dark:bg-zinc-950 flex-shrink-0 flex flex-col ${mobileView === 'chat' ? 'max-md:hidden' : ''}`}>
       <div className="p-5 flex justify-between items-center">
         <h2 className="font-bold text-lg text-zinc-900 dark:text-white tracking-tight">Pulse Messages</h2>
         <div className="flex items-center gap-2">
@@ -73,10 +73,10 @@ export const ConversationSidebar: React.FC<ConversationSidebarProps> = ({
           <button onClick={() => setShowCellularSMS(true)} className="w-12 h-12 rounded-lg text-emerald-600 hover:bg-emerald-100 dark:hover:bg-emerald-900/30 flex items-center justify-center transition" title="Cellular SMS">
             <Smartphone className="text-sm" />
           </button>
-          <button onClick={() => setShowShortcuts(true)} className="w-12 h-12 rounded-lg text-zinc-400 hover:bg-zinc-200 dark:hover:bg-zinc-800 flex items-center justify-center transition" title="Keyboard shortcuts">
+          <button onClick={() => setShowShortcuts(true)} className="w-12 h-12 rounded-lg text-zinc-500 dark:text-zinc-400 hover:bg-zinc-100 dark:hover:bg-zinc-800 flex items-center justify-center transition" title="Keyboard shortcuts">
             <Keyboard className="text-sm" />
           </button>
-          <button onClick={() => setShowNewChatModal(true)} className="w-12 h-12 rounded-lg bg-zinc-200 dark:bg-zinc-800 text-zinc-600 dark:text-zinc-300 flex items-center justify-center transition" title="New message">
+          <button onClick={() => setShowNewChatModal(true)} className="w-12 h-12 rounded-lg bg-rose-500/10 border border-rose-500/20 text-rose-500 hover:bg-rose-500/20 flex items-center justify-center transition" title="New message">
             <SquarePen className="text-sm" />
           </button>
         </div>
@@ -89,7 +89,7 @@ export const ConversationSidebar: React.FC<ConversationSidebarProps> = ({
           <div className="relative flex-1">
             <button
               onClick={() => setShowFilterDropdown(!showFilterDropdown)}
-              className="w-full flex items-center justify-between px-3 py-2 bg-white dark:bg-zinc-800 border border-zinc-200 dark:border-zinc-700 rounded-lg text-sm hover:border-zinc-300 dark:hover:border-zinc-600 transition"
+              className="w-full flex items-center justify-between px-3 py-2 bg-zinc-50 dark:bg-zinc-800 border border-zinc-200 dark:border-zinc-700 rounded-lg text-sm hover:border-rose-500/30 transition"
             >
               <span className="flex items-center gap-2">
                 <i className={`fa-solid ${
@@ -98,8 +98,8 @@ export const ConversationSidebar: React.FC<ConversationSidebarProps> = ({
                   threadFilter === 'pinned' ? 'fa-thumbtack' :
                   threadFilter === 'with-tasks' ? 'fa-check-square' :
                   'fa-gavel'
-                } text-xs text-zinc-500`}></i>
-                <span className="text-zinc-700 dark:text-zinc-300">
+                } text-xs text-zinc-500 dark:text-zinc-400`}></i>
+                <span className="text-zinc-900 dark:text-zinc-100">
                   {threadFilter === 'all' ? 'All Messages' :
                    threadFilter === 'unread' ? 'Unread' :
                    threadFilter === 'pinned' ? 'Pinned' :
@@ -107,10 +107,10 @@ export const ConversationSidebar: React.FC<ConversationSidebarProps> = ({
                    'With Votes'}
                 </span>
               </span>
-              <i className={`fa-solid fa-chevron-down text-xs text-zinc-400 transition-transform ${showFilterDropdown ? 'rotate-180' : ''}`}></i>
+              <i className={`fa-solid fa-chevron-down text-xs text-zinc-500 dark:text-zinc-400 transition-transform ${showFilterDropdown ? 'rotate-180' : ''}`}></i>
             </button>
             {showFilterDropdown && (
-              <div className="absolute top-full left-0 right-0 mt-1 bg-white dark:bg-zinc-800 border border-zinc-200 dark:border-zinc-700 rounded-lg shadow-lg z-50 py-1 animate-fade-in">
+              <div className="absolute top-full left-0 right-0 mt-1 bg-white dark:bg-zinc-800 border border-zinc-200 dark:border-zinc-700 rounded-lg shadow-lg shadow-black/10 dark:shadow-black/30 z-50 py-1 animate-fade-in">
                 {([
                   { key: 'all', label: 'All Messages', icon: 'fa-inbox' },
                   { key: 'unread', label: 'Unread', icon: 'fa-circle' },
@@ -121,7 +121,7 @@ export const ConversationSidebar: React.FC<ConversationSidebarProps> = ({
                   <button
                     key={filter.key}
                     onClick={() => { setThreadFilter(filter.key as any); setShowFilterDropdown(false); }}
-                    className={`w-full flex items-center gap-2 px-3 py-2 text-sm hover:bg-zinc-100 dark:hover:bg-zinc-700 transition ${threadFilter === filter.key ? 'bg-zinc-100 dark:bg-zinc-700 text-zinc-900 dark:text-white' : 'text-zinc-600 dark:text-zinc-400'}`}
+                    className={`w-full flex items-center gap-2 px-3 py-2 text-sm hover:bg-rose-50 dark:hover:bg-rose-500/10 transition ${threadFilter === filter.key ? 'bg-rose-50 dark:bg-rose-500/10 text-rose-600 dark:text-rose-400' : 'text-zinc-500 dark:text-zinc-400'}`}
                   >
                     <i className={`fa-solid ${filter.icon} text-xs w-4`}></i>
                     {filter.label}
@@ -131,7 +131,7 @@ export const ConversationSidebar: React.FC<ConversationSidebarProps> = ({
                 <div className="border-t border-zinc-200 dark:border-zinc-700 my-1"></div>
                 <button
                   onClick={() => { setShowArchived(!showArchived); setShowFilterDropdown(false); }}
-                  className={`w-full flex items-center gap-2 px-3 py-2 text-sm hover:bg-zinc-100 dark:hover:bg-zinc-700 transition ${showArchived ? 'text-amber-600 dark:text-amber-400' : 'text-zinc-600 dark:text-zinc-400'}`}
+                  className={`w-full flex items-center gap-2 px-3 py-2 text-sm hover:bg-rose-50 dark:hover:bg-rose-500/10 transition ${showArchived ? 'text-amber-500' : 'text-zinc-500 dark:text-zinc-400'}`}
                 >
                   <Archive className="text-xs w-4" />
                   {showArchived ? 'Hide Archived' : 'Show Archived'}
@@ -153,11 +153,11 @@ export const ConversationSidebar: React.FC<ConversationSidebarProps> = ({
             value={searchQuery}
             onChange={e => handleSearch(e.target.value)}
             onFocus={() => setIsSearchOpen(true)}
-            className="w-full bg-white dark:bg-zinc-800 border border-zinc-200 dark:border-zinc-700 rounded-lg px-3 py-2 text-sm pl-9 outline-none focus:ring-2 focus:ring-blue-500"
+            className="w-full bg-zinc-50 dark:bg-zinc-800 border border-zinc-200 dark:border-zinc-700 rounded-lg px-3 py-2 text-sm pl-9 outline-none text-zinc-900 dark:text-zinc-100 placeholder-zinc-400 dark:placeholder-zinc-500 focus:ring-2 focus:ring-rose-500/30 focus:border-rose-500/40 transition"
           />
-          <Search className="absolute left-3 top-1/2 -translate-y-1/2 text-zinc-400 text-xs" />
+          <Search className="absolute left-3 top-1/2 -translate-y-1/2 text-zinc-500 dark:text-zinc-400 text-xs" />
           {searchQuery && (
-            <button onClick={() => { setSearchQuery(''); setSearchResults([]); }} className="absolute right-3 top-1/2 -translate-y-1/2 text-zinc-400 hover:text-zinc-600">
+            <button onClick={() => { setSearchQuery(''); setSearchResults([]); }} className="absolute right-3 top-1/2 -translate-y-1/2 text-zinc-500 dark:text-zinc-400 hover:text-zinc-900 dark:hover:text-zinc-100">
               <X className="text-xs" />
             </button>
           )}
@@ -165,7 +165,7 @@ export const ConversationSidebar: React.FC<ConversationSidebarProps> = ({
         {isSearchOpen && searchQuery && (
           <div className="mt-2 flex gap-2">
             {(['all', 'files', 'decisions', 'tasks'] as const).map(f => (
-              <button key={f} onClick={() => { setSearchFilter(f); handleSearch(searchQuery); }} className={`px-2 py-1 rounded text-xs ${searchFilter === f ? 'bg-blue-500 text-white' : 'bg-zinc-200 dark:bg-zinc-700 text-zinc-600 dark:text-zinc-300'}`}>
+              <button key={f} onClick={() => { setSearchFilter(f); handleSearch(searchQuery); }} className={`px-2 py-1 rounded text-xs ${searchFilter === f ? 'bg-rose-500 text-white' : 'bg-zinc-100 dark:bg-zinc-800 text-zinc-500 dark:text-zinc-400 hover:text-zinc-900 dark:hover:text-zinc-100'}`}>
                 {f.charAt(0).toUpperCase() + f.slice(1)}
               </button>
             ))}
@@ -175,17 +175,17 @@ export const ConversationSidebar: React.FC<ConversationSidebarProps> = ({
 
       {/* Search Results */}
       {searchQuery && searchResults.length > 0 && (
-        <div className="px-2 pb-2 border-b border-zinc-200 dark:border-zinc-800">
-          <div className="text-xs text-zinc-500 px-2 mb-2">{searchResults.length} results</div>
+        <div className="px-2 pb-2 border-b border-zinc-200 dark:border-zinc-700">
+          <div className="text-xs text-zinc-500 dark:text-zinc-400 px-2 mb-2">{searchResults.length} results</div>
           <div className="max-h-48 overflow-y-auto space-y-1">
             {searchResults.slice(0, 5).map(result => (
               <button
                 key={result.message.id}
                 onClick={() => { setActiveThreadId(result.thread.id); setActivePulseConversation(null); setMobileView('chat'); setSearchQuery(''); setSearchResults([]); }}
-                className="w-full text-left p-2 rounded-lg hover:bg-zinc-100 dark:hover:bg-zinc-800 transition"
+                className="w-full text-left p-2 rounded-lg hover:bg-rose-50 dark:hover:bg-rose-500/10 transition"
               >
-                <div className="text-xs font-medium dark:text-white truncate">{result.thread.contactName}</div>
-                <div className="text-xs text-zinc-500 truncate">{result.message.text}</div>
+                <div className="text-xs font-medium text-zinc-900 dark:text-zinc-100 truncate">{result.thread.contactName}</div>
+                <div className="text-xs text-zinc-500 dark:text-zinc-400 truncate">{result.message.text}</div>
               </button>
             ))}
           </div>
@@ -208,7 +208,7 @@ export const ConversationSidebar: React.FC<ConversationSidebarProps> = ({
                 <div key={conv.id} style={style}>
                   <div
                     className={`p-3 rounded-xl cursor-pointer transition relative group flex items-center gap-3
-                      ${activePulseConversation === conv.id ? 'bg-emerald-50 dark:bg-emerald-900/20 shadow-sm ring-1 ring-emerald-200 dark:ring-emerald-800' : 'hover:bg-zinc-100 dark:hover:bg-zinc-800/50'}`}
+                      ${activePulseConversation === conv.id ? 'bg-rose-50 dark:bg-rose-500/10 shadow-sm ring-1 ring-rose-500/20' : 'hover:bg-rose-50 dark:hover:bg-rose-500/5'}`}
                   >
                     <button
                       onClick={(e) => {
@@ -229,7 +229,7 @@ export const ConversationSidebar: React.FC<ConversationSidebarProps> = ({
                         <OnlineIndicator userId={otherUser.id} size="medium" />
                       </div>
                       {otherUser.is_verified && (
-                        <div className="absolute -top-0.5 -right-0.5 w-4 h-4 bg-blue-500 rounded-full flex items-center justify-center border-2 border-white dark:border-zinc-900">
+                        <div className="absolute -top-0.5 -right-0.5 w-4 h-4 bg-blue-500 rounded-full flex items-center justify-center border-2 border-white dark:border-zinc-950">
                           <Check className="text-[7px] text-white" />
                         </div>
                       )}
@@ -248,7 +248,7 @@ export const ConversationSidebar: React.FC<ConversationSidebarProps> = ({
                           )}
                         </div>
                         {conv.last_message_at && (
-                          <span className="text-[10px] text-zinc-400 whitespace-nowrap ml-2">
+                          <span className="text-[10px] text-zinc-400 dark:text-zinc-500 whitespace-nowrap ml-2">
                             {new Date(conv.last_message_at).toLocaleTimeString([], { hour: '2-digit', minute: '2-digit' })}
                           </span>
                         )}
@@ -257,7 +257,7 @@ export const ConversationSidebar: React.FC<ConversationSidebarProps> = ({
                         <AtSign className="text-emerald-500 text-[10px]" />
                         {otherUser.handle && <span className="text-[10px] text-emerald-600 dark:text-emerald-400">@{otherUser.handle}</span>}
                         {conv.last_message_preview && (
-                          <p className="text-xs truncate text-zinc-500 ml-1">{conv.last_message_preview}</p>
+                          <p className="text-xs truncate text-zinc-500 dark:text-zinc-400 ml-1">{conv.last_message_preview}</p>
                         )}
                       </div>
                     </div>
@@ -287,11 +287,11 @@ export const ConversationSidebar: React.FC<ConversationSidebarProps> = ({
         ) : (
           /* Empty state when no Pulse conversations */
           <div className="flex flex-col items-center justify-center py-12 text-center px-4">
-            <div className="w-20 h-20 rounded-2xl bg-gradient-to-br from-rose-100 to-pink-100 dark:from-rose-900/30 dark:to-pink-900/30 flex items-center justify-center mb-4">
+            <div className="w-20 h-20 rounded-2xl bg-rose-50 dark:bg-rose-500/10 border border-rose-100 dark:border-rose-500/20 flex items-center justify-center mb-4">
               <MessagesSquare className="text-3xl text-rose-500" />
             </div>
             <h3 className="text-zinc-900 dark:text-white font-semibold mb-2">No Pulse Messages Yet</h3>
-            <p className="text-zinc-500 text-sm mb-4 max-w-[200px]">
+            <p className="text-zinc-500 dark:text-zinc-400 text-sm mb-4 max-w-[200px]">
               Start a conversation with a Pulse user to get started.
             </p>
             <button
@@ -304,7 +304,7 @@ export const ConversationSidebar: React.FC<ConversationSidebarProps> = ({
             {threads.length > 0 && (
               <button
                 onClick={() => setShowCellularSMS(true)}
-                className="mt-3 px-4 py-2 bg-zinc-100 dark:bg-zinc-800 text-zinc-700 dark:text-zinc-300 text-sm font-medium rounded-lg hover:bg-zinc-200 dark:hover:bg-zinc-700 transition"
+                className="mt-3 px-4 py-2 bg-zinc-100 dark:bg-zinc-800 border border-zinc-200 dark:border-zinc-700 text-zinc-500 dark:text-zinc-400 text-sm font-medium rounded-lg hover:bg-zinc-200 dark:hover:bg-zinc-700 hover:text-zinc-900 dark:hover:text-zinc-100 transition"
               >
                 <Smartphone className="mr-2 text-green-500" />
                 View SMS ({threads.length})

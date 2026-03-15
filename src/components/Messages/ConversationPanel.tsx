@@ -83,10 +83,10 @@ const ConversationPanel: React.FC<ConversationPanelProps> = ({
         animate={{ opacity: 1, y: 0 }}
         transition={{ duration: 0.3 }}
       >
-        <div className={`flex gap-2 max-w-[70%] ${isOwnMessage ? 'flex-row-reverse' : 'flex-row'}`}>
+        <div className={`flex gap-2.5 max-w-[70%] ${isOwnMessage ? 'flex-row-reverse' : 'flex-row'}`}>
           {/* Avatar */}
           {!isOwnMessage && (
-            <div className="flex-shrink-0 w-8 h-8 rounded-full bg-gradient-to-br from-blue-500 to-cyan-500 flex items-center justify-center text-white text-xs font-bold">
+            <div className="flex-shrink-0 w-9 h-9 rounded-full bg-gradient-to-br from-rose-500 to-pink-500 flex items-center justify-center text-white text-xs font-bold">
               {message.sender_name ? message.sender_name.slice(0, 2).toUpperCase() : 'U'}
             </div>
           )}
@@ -95,43 +95,43 @@ const ConversationPanel: React.FC<ConversationPanelProps> = ({
           <div className="flex flex-col">
             {/* Sender name (for other users) */}
             {!isOwnMessage && message.sender_name && (
-              <span className="text-xs text-zinc-500 dark:text-zinc-400 mb-1 px-3">
+              <span className="text-[13px] font-semibold text-[#fb7185] mb-1 px-3">
                 {message.sender_name}
               </span>
             )}
 
             {/* Message bubble */}
             <div
-              className={`message-bubble px-4 py-2 rounded-2xl ${
+              className={`message-bubble px-4 py-2.5 ${
                 isOwnMessage
-                  ? 'bg-blue-500 text-white rounded-br-md'
-                  : 'bg-zinc-100 dark:bg-zinc-800 text-zinc-900 dark:text-white rounded-bl-md'
+                  ? 'bg-gradient-to-br from-[#f43f5e] to-[#ec4899] text-white rounded-2xl rounded-tr-sm'
+                  : 'bg-[#1e293b] border border-white/[0.06] text-[#e2e8f0] rounded-2xl rounded-tl-sm'
               }`}
             >
-              <p className="text-sm whitespace-pre-wrap break-words">{message.content}</p>
+              <p className="text-sm leading-relaxed whitespace-pre-wrap break-words">{message.content}</p>
 
               {/* Edited indicator */}
               {message.edited_at && (
-                <span className="text-xs opacity-70 mt-1 inline-block">(edited)</span>
+                <span className="text-xs opacity-60 mt-1 inline-block">(edited)</span>
               )}
             </div>
 
             {/* Reactions */}
             {message.reactions && Object.keys(message.reactions).length > 0 && (
-              <div className="flex flex-wrap gap-1 mt-1 px-3">
+              <div className="flex flex-wrap gap-1 mt-1.5 px-1">
                 {Object.entries(message.reactions).map(([emoji, users]) => (
                   <button
                     key={emoji}
-                    className={`reaction-badge px-2 py-1 rounded-full text-xs flex items-center gap-1 transition-colors ${
+                    className={`reaction-badge px-2 py-0.5 rounded-full text-xs flex items-center gap-1 transition-colors ${
                       users.includes(currentUserId)
-                        ? 'bg-blue-100 dark:bg-blue-900/30 border border-blue-300 dark:border-blue-700'
-                        : 'bg-zinc-100 dark:bg-zinc-800 border border-zinc-200 dark:border-zinc-700 hover:bg-zinc-200 dark:hover:bg-zinc-700'
+                        ? 'bg-rose-500/20 border border-rose-500/30 text-[#fb7185]'
+                        : 'bg-[#1e293b] border border-white/[0.07] text-[#94a3b8] hover:bg-white/[0.08]'
                     }`}
                     onClick={() => onAddReaction?.(message.id, emoji)}
                     aria-label={`${emoji} reaction (${users.length})`}
                   >
                     <span>{emoji}</span>
-                    <span className="text-zinc-600 dark:text-zinc-400">{users.length}</span>
+                    <span>{users.length}</span>
                   </button>
                 ))}
               </div>
@@ -139,7 +139,7 @@ const ConversationPanel: React.FC<ConversationPanelProps> = ({
 
             {/* Timestamp */}
             <span
-              className={`text-xs text-zinc-400 mt-1 px-3 ${isOwnMessage ? 'text-right' : 'text-left'}`}
+              className={`text-[11px] text-[#94a3b8] mt-1 px-1 ${isOwnMessage ? 'text-right' : 'text-left'}`}
             >
               {formatMessageTime(message.created_at)}
             </span>
@@ -151,7 +151,7 @@ const ConversationPanel: React.FC<ConversationPanelProps> = ({
 
   return (
     <motion.div
-      className={`conversation-panel flex flex-col h-full bg-white dark:bg-zinc-900 ${className}`}
+      className={`conversation-panel flex flex-col h-full bg-[#0f172a] ${className}`}
       initial={{ opacity: 0, x: 20 }}
       animate={{ opacity: 1, x: 0 }}
       transition={{ duration: 0.3 }}
@@ -159,11 +159,11 @@ const ConversationPanel: React.FC<ConversationPanelProps> = ({
       {channel ? (
         <>
           {/* Header */}
-          <div className="conversation-header flex-shrink-0 px-6 py-4 border-b border-zinc-200 dark:border-zinc-800">
+          <div className="conversation-header flex-shrink-0 px-6 py-4 border-b border-white/[0.07]">
             <div className="flex items-center justify-between">
               <div className="flex items-center gap-3">
                 {/* Channel avatar */}
-                <div className="w-10 h-10 rounded-full bg-gradient-to-br from-blue-500 to-cyan-500 flex items-center justify-center text-white font-bold">
+                <div className="w-10 h-10 rounded-full bg-gradient-to-br from-rose-500 to-pink-500 flex items-center justify-center text-white font-bold">
                   {channel.is_group ? (
                     <Users />
                   ) : (
@@ -173,14 +173,14 @@ const ConversationPanel: React.FC<ConversationPanelProps> = ({
 
                 {/* Channel info */}
                 <div>
-                  <h2 className="text-lg font-bold text-zinc-900 dark:text-white">
+                  <h2 className="text-lg font-bold text-[#e2e8f0]">
                     {channel.name}
                   </h2>
                   {channel.description && (
-                    <p className="text-sm text-zinc-500 dark:text-zinc-400">{channel.description}</p>
+                    <p className="text-sm text-[#94a3b8]">{channel.description}</p>
                   )}
                   {channel.members && channel.members.length > 0 && (
-                    <p className="text-xs text-zinc-400 dark:text-zinc-500">
+                    <p className="text-xs text-[#94a3b8]/70">
                       {channel.members.length} member{channel.members.length !== 1 ? 's' : ''}
                     </p>
                   )}
@@ -190,18 +190,18 @@ const ConversationPanel: React.FC<ConversationPanelProps> = ({
               {/* Action buttons */}
               <div className="flex items-center gap-2">
                 <button
-                  className="p-2 rounded-lg hover:bg-zinc-100 dark:hover:bg-zinc-800 transition-colors"
+                  className="p-2 rounded-lg hover:bg-rose-500/[0.12] transition-colors"
                   aria-label="Thread details"
                   title="Thread details"
                 >
-                  <Info className="text-zinc-600 dark:text-zinc-400" />
+                  <Info className="text-[#94a3b8] hover:text-[#fb7185]" />
                 </button>
                 <button
-                  className="p-2 rounded-lg hover:bg-zinc-100 dark:hover:bg-zinc-800 transition-colors"
+                  className="p-2 rounded-lg hover:bg-rose-500/[0.12] transition-colors"
                   aria-label="Search in thread"
                   title="Search in thread"
                 >
-                  <Search className="text-zinc-600 dark:text-zinc-400" />
+                  <Search className="text-[#94a3b8] hover:text-[#fb7185]" />
                 </button>
               </div>
             </div>
@@ -222,11 +222,11 @@ const ConversationPanel: React.FC<ConversationPanelProps> = ({
             ) : messages.length === 0 ? (
               <div className="flex items-center justify-center h-full">
                 <div className="text-center">
-                  <div className="w-16 h-16 mx-auto mb-4 rounded-full bg-zinc-100 dark:bg-zinc-800 flex items-center justify-center">
-                    <MessageSquare className="text-2xl text-zinc-400" />
+                  <div className="w-16 h-16 mx-auto mb-4 rounded-full bg-rose-500/[0.1] flex items-center justify-center">
+                    <MessageSquare className="text-2xl text-[#fb7185]" />
                   </div>
-                  <p className="text-sm text-zinc-500 dark:text-zinc-400">No messages yet</p>
-                  <p className="text-xs text-zinc-400 dark:text-zinc-500 mt-1">
+                  <p className="text-sm text-[#94a3b8]">No messages yet</p>
+                  <p className="text-xs text-[#94a3b8]/60 mt-1">
                     Start the conversation!
                   </p>
                 </div>
@@ -236,10 +236,10 @@ const ConversationPanel: React.FC<ConversationPanelProps> = ({
                 {Object.entries(messageGroups).map(([date, dateMessages]) => (
                   <div key={date} className="message-group mb-6">
                     {/* Date divider */}
-                    <div className="flex items-center justify-center mb-4">
-                      <div className="px-3 py-1 rounded-full bg-zinc-100 dark:bg-zinc-800 text-xs font-medium text-zinc-500 dark:text-zinc-400">
-                        {date}
-                      </div>
+                    <div className="flex items-center gap-3 mb-4">
+                      <div className="flex-1 h-px bg-rose-500/20" />
+                      <span className="text-[10px] font-semibold text-[#94a3b8] uppercase tracking-[3px] flex-shrink-0">{date}</span>
+                      <div className="flex-1 h-px bg-rose-500/20" />
                     </div>
 
                     {/* Messages for this date */}
@@ -256,7 +256,7 @@ const ConversationPanel: React.FC<ConversationPanelProps> = ({
           </div>
 
           {/* Message input area */}
-          <div className="message-input-area flex-shrink-0 border-t border-zinc-200 dark:border-zinc-800">
+          <div className="message-input-area flex-shrink-0 border-t border-white/[0.07]">
             {renderMessageInput ? renderMessageInput() : null}
           </div>
         </>
@@ -264,13 +264,13 @@ const ConversationPanel: React.FC<ConversationPanelProps> = ({
         // Empty state - no channel selected
         <div className="flex items-center justify-center h-full">
           <div className="text-center max-w-sm">
-            <div className="w-20 h-20 mx-auto mb-4 rounded-full bg-gradient-to-br from-blue-500 to-cyan-500 flex items-center justify-center">
-              <MessagesSquare className="text-3xl text-white" />
+            <div className="w-20 h-20 mx-auto mb-5 rounded-full bg-rose-500/[0.1] border border-rose-500/20 flex items-center justify-center">
+              <MessagesSquare className="text-3xl text-[#fb7185]" />
             </div>
-            <h3 className="text-lg font-bold text-zinc-900 dark:text-white mb-2">
+            <h3 className="text-lg font-bold text-[#e2e8f0] mb-2">
               Select a thread
             </h3>
-            <p className="text-sm text-zinc-500 dark:text-zinc-400">
+            <p className="text-sm text-[#94a3b8]">
               Choose a conversation from the list to start messaging
             </p>
           </div>

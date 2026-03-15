@@ -171,9 +171,9 @@ export const MessageChat: React.FC<MessageChatProps> = ({
   const isDarkMode = document.documentElement.classList.contains('dark');
 
   return (
-    <div className="h-full flex flex-col bg-zinc-950">
+    <div className="h-full flex flex-col bg-[#0f172a]">
       {/* Header */}
-      <div className="px-6 py-4 border-b border-zinc-800 flex items-center justify-between">
+      <div className="px-6 py-4 border-b border-white/[0.07] flex items-center justify-between">
         <div className="flex items-center gap-3">
           {channel.is_group ? (
             <div className="w-10 h-10 rounded-lg bg-gradient-to-br from-rose-500/20 to-pink-500/20 border border-rose-500/30 flex items-center justify-center">
@@ -198,25 +198,25 @@ export const MessageChat: React.FC<MessageChatProps> = ({
         </div>
         <div className="flex items-center gap-1">
           <button
-            className="w-9 h-9 rounded-lg hover:bg-zinc-800 flex items-center justify-center transition text-zinc-400 hover:text-white"
+            className="w-9 h-9 rounded-lg hover:bg-rose-500/[0.12] flex items-center justify-center transition text-[#94a3b8] hover:text-[#fb7185]"
             title="Search messages"
           >
             <Search className="text-sm" />
           </button>
           <button
-            className="w-9 h-9 rounded-lg hover:bg-zinc-800 flex items-center justify-center transition text-zinc-400 hover:text-white"
+            className="w-9 h-9 rounded-lg hover:bg-rose-500/[0.12] flex items-center justify-center transition text-[#94a3b8] hover:text-[#fb7185]"
             title="Pinned messages"
           >
             <Pin className="text-sm" />
           </button>
           <button
-            className="w-9 h-9 rounded-lg hover:bg-zinc-800 flex items-center justify-center transition text-zinc-400 hover:text-white"
+            className="w-9 h-9 rounded-lg hover:bg-rose-500/[0.12] flex items-center justify-center transition text-[#94a3b8] hover:text-[#fb7185]"
             title="Channel members"
           >
             <Users className="text-sm" />
           </button>
           <button
-            className="w-9 h-9 rounded-lg hover:bg-zinc-800 flex items-center justify-center transition text-zinc-400 hover:text-white"
+            className="w-9 h-9 rounded-lg hover:bg-rose-500/[0.12] flex items-center justify-center transition text-[#94a3b8] hover:text-[#fb7185]"
             title="Channel settings"
           >
             <Settings className="text-sm" />
@@ -251,10 +251,10 @@ export const MessageChat: React.FC<MessageChatProps> = ({
               return (
                 <React.Fragment key={message.id}>
                   {showDate && (
-                    <div className="flex items-center gap-4 py-4">
-                      <div className="flex-1 h-px bg-zinc-800"></div>
-                      <span className="text-xs text-zinc-500 font-medium">{formatDate(message.created_at)}</span>
-                      <div className="flex-1 h-px bg-zinc-800"></div>
+                    <div className="flex items-center gap-3 py-4">
+                      <div className="flex-1 h-px bg-rose-500/20"></div>
+                      <span className="text-[10px] font-semibold text-[#94a3b8] uppercase tracking-[3px]">{formatDate(message.created_at)}</span>
+                      <div className="flex-1 h-px bg-rose-500/20"></div>
                     </div>
                   )}
                   <div className={`message-bubble ${isOwnMessage ? 'message-bubble-sent' : 'message-bubble-received'} group ${message.is_pinned ? 'ring-2 ring-yellow-500/30' : ''}`}>
@@ -334,7 +334,7 @@ export const MessageChat: React.FC<MessageChatProps> = ({
                                 className={`px-2 py-0.5 rounded-full text-xs flex items-center gap-1 transition ${
                                   (users as string[]).includes(currentUserId)
                                     ? 'bg-rose-500/20 text-rose-400 border border-rose-500/30'
-                                    : 'bg-zinc-800 dark:bg-zinc-700 text-zinc-400 hover:bg-zinc-700 dark:hover:bg-zinc-600'
+                                    : 'bg-[#1e293b] border border-white/[0.07] text-[#94a3b8] hover:bg-white/[0.08]'
                                 }`}
                               >
                                 <span>{emoji}</span>

@@ -2753,9 +2753,9 @@ const Messages: React.FC<MessagesProps> = ({ apiKey, contacts, initialContactId,
       {/* Main Chat Area - 70% width on desktop for split-view */}
       {/* Pulse Conversation View */}
       {activePulseConv && !activeThread && (
-        <div className={`flex-1 flex flex-col min-w-0 bg-white dark:bg-zinc-950  ${mobileView === 'list' ? 'max-md:hidden' : ''}`}>
+        <div className={`flex-1 flex flex-col min-w-0 bg-white dark:bg-zinc-950 ${mobileView === 'list' ? 'max-md:hidden' : ''}`}>
           {/* Pulse Chat Header - Fixed at top */}
-          <div className="min-h-16 border-b border-zinc-200 dark:border-zinc-800 flex items-center justify-between px-4 py-2 z-10 bg-white dark:bg-zinc-950/80 backdrop-blur-md flex-shrink-0 mobile-header-safe">
+          <div className="min-h-16 border-b border-zinc-200 dark:border-zinc-800 flex items-center justify-between px-4 py-2 z-10 bg-white/90 dark:bg-zinc-950/90 backdrop-blur-md flex-shrink-0 mobile-header-safe">
             <div className="flex items-center gap-3">
               {/* Mobile Menu Button (visible only on mobile) */}
               <button onClick={openDrawer} className="md:hidden text-zinc-500 w-12 h-12 flex items-center justify-center hover:bg-zinc-100 dark:hover:bg-zinc-800 rounded-lg transition" title="Open menu">
@@ -3749,7 +3749,7 @@ const Messages: React.FC<MessagesProps> = ({ apiKey, contacts, initialContactId,
       <div className={`flex-1 flex flex-col relative min-w-0 bg-white dark:bg-zinc-950 ${mobileView === 'list' ? 'max-md:hidden' : ''}`}>
 
         {/* Header - Mobile Optimized - Fixed at top */}
-        <div className="min-h-[56px] md:h-16 border-b border-zinc-200 dark:border-zinc-800 flex items-center justify-between px-2 sm:px-4 z-10 bg-white dark:bg-zinc-950/80 backdrop-blur-md flex-shrink-0 gap-2 mobile-header-safe">
+        <div className="min-h-[56px] md:h-16 border-b border-zinc-200 dark:border-zinc-800 flex items-center justify-between px-2 sm:px-4 z-10 bg-white/90 dark:bg-zinc-950/90 backdrop-blur-md flex-shrink-0 gap-2 mobile-header-safe">
           <div className="flex items-center gap-2 min-w-0 flex-shrink">
              {/* Mobile Menu Button (visible only on mobile) */}
              <button onClick={openDrawer} className="md:hidden text-zinc-500 w-12 h-12 flex items-center justify-center hover:bg-zinc-100 dark:hover:bg-zinc-800 rounded-lg transition flex-shrink-0" title="Open menu">

@@ -89,12 +89,12 @@ export const ChannelList: React.FC<ChannelListProps> = ({
   };
 
   return (
-    <div className="h-full flex flex-col bg-zinc-950">
+    <div className="h-full flex flex-col bg-[#0f172a]">
       {/* Header */}
-      <div className="px-4 py-4 border-b border-rose-900/20 dark:border-rose-900/30 bg-gradient-to-b from-rose-50/50 to-white dark:from-rose-950/20 dark:to-zinc-950 flex items-center justify-between">
-        <h2 className="text-gradient-rose font-semibold flex items-center gap-2">
-          <Hash className="text-rose-500" />
-          Channels
+      <div className="px-4 py-4 border-b border-white/[0.07] bg-[#0f172a] flex items-center justify-between">
+        <h2 className="text-[#e2e8f0] font-bold flex items-center gap-2">
+          <Hash className="text-[#fb7185]" />
+          Pulse Messages
         </h2>
         <button
           onClick={() => setShowNewChannel(true)}
@@ -170,7 +170,7 @@ export const ChannelList: React.FC<ChannelListProps> = ({
           <>
             {/* Public Channels */}
             <div className="mb-4">
-              <div className="px-4 py-2 text-[10px] font-bold text-zinc-500 uppercase tracking-widest">
+              <div className="px-4 py-2 text-[10px] font-bold text-[#f43f5e] uppercase tracking-[2px]">
                 Channels
               </div>
               {channels.filter(c => !c.is_group).map((channel) => (
@@ -208,7 +208,7 @@ export const ChannelList: React.FC<ChannelListProps> = ({
             {/* Group Chats */}
             {channels.filter(c => c.is_group).length > 0 && (
               <div>
-                <div className="px-4 py-2 text-[10px] font-bold text-zinc-500 uppercase tracking-widest">
+                <div className="px-4 py-2 text-[10px] font-bold text-[#94a3b8] uppercase tracking-[2px]">
                   Group Chats
                 </div>
                 {channels.filter(c => c.is_group).map((channel) => (
@@ -239,10 +239,10 @@ export const ChannelList: React.FC<ChannelListProps> = ({
       </div>
 
       {/* Footer */}
-      <div className="px-4 py-3 border-t border-zinc-800">
+      <div className="px-4 py-3 border-t border-white/[0.07]">
         <button
           onClick={() => setShowNewChannel(true)}
-          className="w-full py-2 text-sm text-zinc-500 hover:text-white hover:bg-zinc-800 rounded-lg transition flex items-center justify-center gap-2"
+          className="w-full py-2 text-sm text-[#94a3b8] hover:text-[#fb7185] hover:bg-rose-500/[0.08] rounded-lg transition flex items-center justify-center gap-2"
         >
           <Plus className="text-xs" />
           Add Channel

@@ -27,9 +27,9 @@ export const MessagesView: React.FC<MessagesViewProps> = ({
   const [showChannelList, setShowChannelList] = useState(true);
 
   return (
-    <div className="h-full flex bg-zinc-950 animate-fadeIn">
+    <div className="h-full flex bg-[#0f172a] animate-fadeIn">
       {/* Channel Sidebar - Hidden on mobile when chat is open */}
-      <div className={`w-64 flex-shrink-0 border-r border-zinc-800 ${
+      <div className={`w-64 flex-shrink-0 border-r border-white/[0.07] ${
         selectedChannel && !showChannelList ? 'hidden md:block' : ''
       }`}>
         <ChannelList
@@ -63,13 +63,13 @@ export const MessagesView: React.FC<MessagesViewProps> = ({
             />
           </>
         ) : (
-          <div className="flex-1 flex items-center justify-center bg-zinc-950">
-            <div className="text-center text-zinc-500 p-8">
-              <div className="w-20 h-20 rounded-2xl bg-zinc-900 flex items-center justify-center mx-auto mb-4">
-                <MessagesSquare className="text-3xl text-zinc-700" />
+          <div className="flex-1 flex items-center justify-center bg-[#0f172a]">
+            <div className="text-center p-8">
+              <div className="w-20 h-20 rounded-2xl bg-rose-500/[0.1] border border-rose-500/20 flex items-center justify-center mx-auto mb-5">
+                <MessagesSquare className="text-3xl text-[#fb7185]" />
               </div>
-              <p className="text-xl font-medium mb-2 text-white">Select a channel</p>
-              <p className="text-sm text-zinc-500 max-w-xs mx-auto">
+              <p className="text-xl font-bold mb-2 text-[#e2e8f0]">Select a channel</p>
+              <p className="text-sm text-[#94a3b8] max-w-xs mx-auto">
                 Choose a channel from the sidebar or create a new one to start messaging your team.
               </p>
             </div>

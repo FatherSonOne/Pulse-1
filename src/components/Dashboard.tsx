@@ -2,18 +2,20 @@
 import React, { useState, useEffect, useMemo, useCallback, useRef } from 'react';
 import ReactDOM from 'react-dom';
 import { User, AppView, BatchedNotification, CalendarEvent, Task, Thread, Contact } from '../types';
-import { generateJournalInsight, generateSearchResponse, generateDailyBriefing } from '../services/geminiService';
+import { generateJournalInsight, generateSearchResponse, generateDailyBriefing, generateThinkingResponse } from '../services/geminiService';
 import { saveArchiveItem } from '../services/dbService';
 import { dataService } from '../services/dataService';
 import { briefingService, BriefingContext } from '../services/briefingService';
 import QuickScheduler from './Dashboard/QuickScheduler';
+import CollapsibleWidget from './Dashboard/CollapsibleWidget';
 import { pulseService, SearchUserResult } from '../services/pulseService';
 import { calculateTeamHealthMetrics, TeamHealthMetrics } from '../services/teamHealthService';
 import { teamService, Team, TeamWithMembers, TeamMember as TeamMemberType } from '../services/teamService';
 import { AttentionDashboard } from './attention';
 import { attentionService } from '../services/attentionService';
+import { emailSyncService } from '../services/emailSyncService';
 
-import { Archive, ArrowRight, BookUser, Check, CheckCircle, CheckCircle2, CheckSquare, ChevronRight, Clock, Copy, Flame, Heart, Lightbulb, List, Loader2, MessageSquare, MessagesSquare, Mic, Plus, Search, Send, Sparkles, Target, TrendingUp, UserCheck, UserPlus, Users, X, Zap } from 'lucide-react';
+import { Archive, ArrowRight, BookUser, Calendar, Check, CheckCircle, CheckCircle2, CheckSquare, ChevronRight, Clock, Copy, Flame, Heart, Lightbulb, List, Loader2, Mail, MessageSquare, MessagesSquare, Mic, Plus, Search, Send, Sparkles, Target, TrendingUp, UserCheck, UserPlus, Users, X, Zap } from 'lucide-react';
 
 // Auto-refresh interval in milliseconds (5 minutes)
 const BRIEFING_REFRESH_INTERVAL = 5 * 60 * 1000;
@@ -107,16 +109,7 @@ interface BriefingStats {
 
 // ============= SKELETON COMPONENTS =============
 
-const WidgetSkeleton: React.FC<{ height?: string }> = ({ height = 'h-48' }) => (
-  <div className={`bg-white dark:bg-zinc-950 border border-zinc-200 dark:border-zinc-800 rounded-2xl p-6 ${height} animate-pulse`}>
-    <div className="h-4 bg-zinc-200 dark:bg-zinc-800 rounded w-1/3 mb-4"></div>
-    <div className="space-y-3">
-      <div className="h-3 bg-zinc-200 dark:bg-zinc-800 rounded w-full"></div>
-      <div className="h-3 bg-zinc-200 dark:bg-zinc-800 rounded w-5/6"></div>
-      <div className="h-3 bg-zinc-200 dark:bg-zinc-800 rounded w-4/6"></div>
-    </div>
-  </div>
-);
+// WidgetSkeleton removed — was defined but never used
 
 const BriefingSkeleton: React.FC = () => (
   <div className="gradient-dashboard-hero border border-rose-800/30 rounded-xl sm:rounded-2xl p-8 animate-pulse relative overflow-hidden glow-rose-sm">
@@ -173,54 +166,7 @@ function getContextualGreeting(userName?: string): { greeting: string; icon: str
   }
 }
 
-// ============= COLLAPSIBLE WIDGET WRAPPER =============
-
-interface CollapsibleWidgetProps {
-  id: string;
-  title: string;
-  icon: string;
-  iconColor?: string;
-  isExpanded: boolean;
-  onToggle: (id: string) => void;
-  headerAction?: React.ReactNode;
-  children: React.ReactNode;
-  className?: string;
-}
-
-const CollapsibleWidget: React.FC<CollapsibleWidgetProps> = ({
-  id,
-  title,
-  icon,
-  iconColor = 'text-rose-500',
-  isExpanded,
-  onToggle,
-  headerAction,
-  children,
-  className = ''
-}) => (
-  <div className={`dashboard-widget-surface backdrop-blur-sm border border-zinc-200 dark:border-zinc-800/80 rounded-2xl overflow-hidden transition-all duration-150 hover:border-rose-500/40 dark:hover:border-rose-500/30 card-elevated hover:glow-rose-sm ${className}`}>
-    <div
-      className="flex items-center justify-between p-4 cursor-pointer hover:bg-rose-50/50 dark:hover:bg-rose-950/30 transition-all duration-150"
-      onClick={() => onToggle(id)}
-    >
-      <div className="flex items-center gap-3">
-        <div className="w-8 h-8 rounded-lg bg-gradient-to-br from-rose-500/20 to-pink-500/20 dark:from-rose-500/20 dark:to-pink-500/20 flex items-center justify-center border border-rose-500/20 shadow-sm">
-          <i className={`fa-solid ${icon} ${iconColor}`}></i>
-        </div>
-        <h3 className="font-semibold text-zinc-900 dark:text-white">{title}</h3>
-      </div>
-      <div className="flex items-center gap-2">
-        {headerAction && <div onClick={e => e.stopPropagation()}>{headerAction}</div>}
-        <i className={`fa-solid fa-chevron-down text-zinc-400 transition-transform duration-150 ${isExpanded ? 'rotate-180' : ''}`}></i>
-      </div>
-    </div>
-    <div className={`transition-all duration-300 overflow-hidden ${isExpanded ? 'max-h-[2000px] opacity-100' : 'max-h-0 opacity-0'}`}>
-      <div className="p-4 pt-0 border-t border-zinc-100 dark:border-zinc-800/50">
-        {children}
-      </div>
-    </div>
-  </div>
-);
+// CollapsibleWidget is now extracted — imported from ./Dashboard/CollapsibleWidget
 
 // ============= TODAY'S PRIORITIES COMPONENT =============
 
@@ -271,7 +217,7 @@ const TodaysPriorities: React.FC<TodaysPrioritiesProps> = ({ priorities, isLoadi
         <span className="text-xs text-gradient-rose font-semibold">{priorities.length} items</span>
       </div>
 
-      <div className="grid grid-cols-1 sm:grid-cols-2 md:grid-cols-3 lg:grid-cols-5 gap-2 sm:gap-3">
+      <div className="grid grid-cols-1 sm:grid-cols-2 md:grid-cols-3 lg:grid-cols-5 gap-2 sm:gap-3 dashboard-stagger">
         {priorities.map((item) => (
           <div
             key={item.id}
@@ -281,8 +227,8 @@ const TodaysPriorities: React.FC<TodaysPrioritiesProps> = ({ priorities, isLoadi
             <div className="flex items-start gap-2 sm:gap-3">
               <div className={`w-9 h-9 sm:w-8 sm:h-8 rounded-lg flex items-center justify-center shrink-0 ${
                 item.type === 'task' ? 'bg-rose-100 text-rose-600 dark:bg-rose-900/30 dark:text-rose-400' :
-                item.type === 'event' ? 'bg-purple-100 text-purple-600' :
-                'bg-emerald-100 text-emerald-600'
+                item.type === 'event' ? 'bg-purple-100 text-purple-600 dark:bg-purple-900/30 dark:text-purple-400' :
+                'bg-emerald-100 text-emerald-600 dark:bg-emerald-900/30 dark:text-emerald-400'
               }`}>
                 <i className={`fa-solid ${getTypeIcon(item.type)} text-sm`}></i>
               </div>
@@ -363,6 +309,9 @@ const Dashboard: React.FC<DashboardProps> = ({ user, apiKey, setView }) => {
   const [teamBuilderSearchQuery, setTeamBuilderSearchQuery] = useState('');
   const [teamBuilderSelectedMembers, setTeamBuilderSelectedMembers] = useState<Array<{ type: 'pulse_user' | 'contact'; id: string; name: string }>>([]);
   const [teamBuilderTab, setTeamBuilderTab] = useState<'pulse' | 'contacts'>('pulse');
+  const [teamBuilderError, setTeamBuilderError] = useState<string | null>(null);
+  const [confirmDeleteTeam, setConfirmDeleteTeam] = useState(false);
+  const [journalCopied, setJournalCopied] = useState(false);
   const [loadingTeams, setLoadingTeams] = useState(false);
   const [teamBuilderContacts, setTeamBuilderContacts] = useState<Contact[]>([]);
   const [loadingTeamBuilderContacts, setLoadingTeamBuilderContacts] = useState(false);
@@ -384,6 +333,15 @@ const Dashboard: React.FC<DashboardProps> = ({ user, apiKey, setView }) => {
   const [searchResult, setSearchResult] = useState<{text: string, sources: any[]} | null>(null);
   const [loadingTools, setLoadingTools] = useState(false);
 
+  // Mini Pulse AI State
+  const [pulseAiQuery, setPulseAiQuery] = useState('');
+  const [pulseAiResponse, setPulseAiResponse] = useState<string | null>(null);
+  const [loadingPulseAi, setLoadingPulseAi] = useState(false);
+
+  // Unread Pulse State
+  const [emailUnreadCount, setEmailUnreadCount] = useState(0);
+  const [voxUnreadCount, setVoxUnreadCount] = useState(0);
+
   // Daily Briefing State
   const [briefing, setBriefing] = useState<BriefingData | null>(null);
   const [briefingStats, setBriefingStats] = useState<BriefingStats | null>(null);
@@ -391,9 +349,17 @@ const Dashboard: React.FC<DashboardProps> = ({ user, apiKey, setView }) => {
   const [lastBriefingRefresh, setLastBriefingRefresh] = useState<Date | null>(null);
   const briefingRefreshRef = useRef<NodeJS.Timeout | null>(null);
 
-  // Attention Budget State
-  const [attentionLoad, setAttentionLoad] = useState(65);
+  // Attention Budget State — attentionLoad derived from batchedNotifications
   const [batchedNotifications, setBatchedNotifications] = useState<BatchedNotification[]>([]);
+  const attentionLoad = useMemo(() => {
+    const count = batchedNotifications.length;
+    // Tiered formula: 0 items = 10%, 5 items ≈ 40%, 10 items ≈ 65%, 15+ items = 85%
+    if (count === 0) return 10;
+    if (count <= 3) return 10 + count * 8;
+    if (count <= 7) return 34 + (count - 3) * 7;
+    if (count <= 12) return 62 + (count - 7) * 4;
+    return Math.min(85 + (count - 12) * 2, 98);
+  }, [batchedNotifications]);
 
   // Enhanced Analytics State
   const [analyticsTimeRange, setAnalyticsTimeRange] = useState<'day' | 'week' | 'month'>('week');
@@ -430,7 +396,19 @@ const Dashboard: React.FC<DashboardProps> = ({ user, apiKey, setView }) => {
       setThreads(threadsData);
       setPriorities(prioritiesData);
       setWeeklyData(weeklyDataResult);
-      
+
+      // Fetch unread counts for Unread Pulse widget
+      try {
+        const [emailUnread, voxRecordings] = await Promise.all([
+          emailSyncService.getUnreadCount('inbox'),
+          dataService.getVoxerRecordings(),
+        ]);
+        setEmailUnreadCount(emailUnread);
+        setVoxUnreadCount(voxRecordings.filter((r: any) => !r.played).length);
+      } catch {
+        // Non-critical — leave counts at 0
+      }
+
       // Filter out SMS-only contacts and use Pulse users instead
       // SMS contacts typically have names with { } or # symbols from the SMS system
       const filteredTeamData = teamData.filter(m => 
@@ -715,14 +693,49 @@ const Dashboard: React.FC<DashboardProps> = ({ user, apiKey, setView }) => {
       return d.getDate() === now.getDate() && e.type === 'meet';
     }).length;
 
+    // focusTime: sum of 'focus'-type event durations today (minutes),
+    // fallback to completed tasks × 30 min estimate if no focus events
+    const today = new Date();
+    const todayFocusEvents = events.filter(e => {
+      const d = new Date(e.start);
+      return e.type === 'focus' &&
+        d.getDate() === today.getDate() &&
+        d.getMonth() === today.getMonth() &&
+        d.getFullYear() === today.getFullYear();
+    });
+    const focusTime = todayFocusEvents.length > 0
+      ? Math.round(todayFocusEvents.reduce((sum, e) => {
+          const ms = new Date(e.end).getTime() - new Date(e.start).getTime();
+          return sum + ms / 60000;
+        }, 0))
+      : completedTasks * 30; // estimated: ~30 min per completed task
+
+    // responseTime: average minutes between receiving a message and replying,
+    // computed across all threads. Returns 0 if insufficient data.
+    const responseTimes: number[] = [];
+    threads.forEach(thread => {
+      const msgs = [...thread.messages].sort(
+        (a, b) => new Date(a.timestamp).getTime() - new Date(b.timestamp).getTime()
+      );
+      for (let i = 1; i < msgs.length; i++) {
+        if (msgs[i].sender === 'me' && msgs[i - 1].sender === 'other') {
+          const gapMin = (new Date(msgs[i].timestamp).getTime() - new Date(msgs[i - 1].timestamp).getTime()) / 60000;
+          if (gapMin > 0 && gapMin < 480) responseTimes.push(gapMin); // ignore gaps > 8h
+        }
+      }
+    });
+    const responseTime = responseTimes.length > 0
+      ? Math.round(responseTimes.reduce((a, b) => a + b, 0) / responseTimes.length)
+      : 0; // 0 = no data
+
     return {
       tasksCompleted: completedTasks,
       tasksTotal: totalTasks,
       messagesSent: sentMessages,
       messagesReceived: receivedMessages,
       meetingsAttended: todayMeetings,
-      focusTime: 180,
-      responseTime: 12,
+      focusTime,
+      responseTime,
     };
   }, [tasks, threads, events]);
 
@@ -885,7 +898,8 @@ const Dashboard: React.FC<DashboardProps> = ({ user, apiKey, setView }) => {
   const handleShare = () => {
     if (!journalText) return;
     navigator.clipboard.writeText(journalText).then(() => {
-      alert("Journal entry copied to clipboard!");
+      setJournalCopied(true);
+      setTimeout(() => setJournalCopied(false), 2000);
     });
   };
 
@@ -900,6 +914,20 @@ const Dashboard: React.FC<DashboardProps> = ({ user, apiKey, setView }) => {
       console.error(e);
     }
     setLoadingTools(false);
+  };
+
+  const handlePulseAiQuery = async (query: string) => {
+    if (!query.trim() || !effectiveApiKey) return;
+    setLoadingPulseAi(true);
+    setPulseAiQuery(query);
+    try {
+      const result = await generateThinkingResponse(effectiveApiKey, query);
+      setPulseAiResponse(result || 'No response generated.');
+    } catch (err) {
+      setPulseAiResponse('Could not reach Pulse AI. Please try again.');
+    } finally {
+      setLoadingPulseAi(false);
+    }
   };
 
   const handleSuggestionAction = (type: 'message' | 'event' | 'task' | 'email' | 'vox' | 'contact' | 'ai_assist') => {
@@ -1072,12 +1100,65 @@ const Dashboard: React.FC<DashboardProps> = ({ user, apiKey, setView }) => {
     { id: 'search', label: 'Search', icon: 'fa-magnifying-glass', color: 'bg-gradient-to-br from-sky-500 to-blue-500', view: AppView.MULTI_MODAL },
   ], []);
 
+  // Derived: upcoming events (next 3 future events sorted by start time)
+  const upcomingEvents = useMemo(() => {
+    const now = new Date();
+    return events
+      .filter(e => new Date(e.start) > now)
+      .sort((a, b) => new Date(a.start).getTime() - new Date(b.start).getTime())
+      .slice(0, 3);
+  }, [events]);
+
+  // Derived: message unread count from threads
+  const messageUnreadCount = useMemo(() => threads.filter(t => t.unread).length, [threads]);
+
   const wordCount = journalText.trim().split(/\s+/).filter(Boolean).length;
   const charCount = journalText.length;
   const contextualGreeting = getContextualGreeting(user?.name);
 
   return (
     <div className="space-y-4 sm:space-y-6 overflow-y-auto h-full pr-1 sm:pr-2 animate-fade-in pb-10 mobile-scroll">
+
+      {/* Top AI Web Search Bar */}
+      <div className="relative">
+        <form onSubmit={handleSearch}>
+          <div className="relative flex items-center">
+            <Search className="absolute left-4 text-zinc-400 w-4 h-4 pointer-events-none" />
+            <input
+              type="text"
+              value={searchQuery}
+              onChange={(e) => setSearchQuery(e.target.value)}
+              placeholder="Search the web with AI..."
+              className="w-full bg-white dark:bg-zinc-900 border border-zinc-200 dark:border-zinc-800 rounded-2xl pl-11 pr-28 py-3.5 text-sm text-zinc-900 dark:text-white placeholder-zinc-400 focus:border-rose-500/60 focus:ring-2 focus:ring-rose-500/20 focus:ring-offset-0 focus:outline-none transition-all shadow-sm"
+            />
+            <button
+              type="submit"
+              className="absolute right-3 bg-gradient-to-r from-rose-500 to-pink-500 text-white px-4 py-1.5 rounded-xl text-xs font-semibold hover:opacity-90 transition flex items-center gap-1.5"
+            >
+              {loadingTools ? <Loader2 className="animate-spin w-3 h-3" /> : <><Sparkles className="w-3 h-3" />Search</>}
+            </button>
+          </div>
+        </form>
+        {searchResult && (
+          <div className="mt-2 bg-white dark:bg-zinc-900 border border-zinc-200 dark:border-zinc-800 rounded-2xl p-4 text-sm leading-relaxed text-zinc-700 dark:text-zinc-300 shadow-sm animate-fade-in">
+            <div className="flex items-center gap-2 mb-2 text-xs text-zinc-400 font-medium uppercase tracking-wide">
+              <Sparkles className="w-3 h-3 text-rose-400" /> AI Web Search
+            </div>
+            <div>{searchResult.text}</div>
+            {searchResult.sources?.length > 0 && (
+              <div className="mt-3 pt-3 border-t border-zinc-100 dark:border-zinc-800 flex flex-wrap gap-2">
+                {searchResult.sources.slice(0, 3).map((s: any, i: number) => (
+                  <a key={i} href={s.web?.uri} target="_blank" rel="noopener noreferrer"
+                    className="text-xs text-rose-500 hover:text-rose-400 underline underline-offset-2 truncate max-w-[200px]">
+                    {s.web?.title || s.web?.uri}
+                  </a>
+                ))}
+              </div>
+            )}
+            <button onClick={() => setSearchResult(null)} className="mt-2 text-xs text-zinc-400 hover:text-zinc-600 dark:hover:text-zinc-300">Dismiss</button>
+          </div>
+        )}
+      </div>
 
       {/* Daily Briefing Hero - Enhanced with Beautiful Gradients */}
       {loadingBriefing || isLoading ? (
@@ -1130,13 +1211,13 @@ const Dashboard: React.FC<DashboardProps> = ({ user, apiKey, setView }) => {
                     <i className={`fa-solid ${contextualGreeting.icon}`}></i>
                     Daily Overview
                     {lastBriefingRefresh && (
-                      <span className="text-zinc-600 normal-case ml-2">
+                      <span className="text-zinc-400 normal-case ml-2">
                         Updated {lastBriefingRefresh.toLocaleTimeString([], { hour: '2-digit', minute: '2-digit' })}
                       </span>
                     )}
                   </div>
-                  <h1 className="text-xl sm:text-2xl lg:text-3xl font-light mb-3 sm:mb-4 text-white tracking-tight">{contextualGreeting.greeting}</h1>
-                  <p className="text-zinc-400 leading-relaxed text-sm sm:text-base max-w-2xl font-light">{briefing.summary}</p>
+                  <h1 className="text-xl sm:text-2xl lg:text-3xl font-semibold mb-3 sm:mb-4 text-white tracking-tight">{contextualGreeting.greeting}</h1>
+                  <p className="text-zinc-200 leading-relaxed text-sm sm:text-base max-w-2xl">{briefing.summary}</p>
                   {briefing.focusRecommendation && (
                     <div
                       className="mt-4 inline-flex items-center gap-2 px-4 py-2 bg-rose-500/10 border border-rose-500/20 rounded-lg cursor-pointer hover:bg-rose-500/20 hover:border-rose-500/40 transition-all duration-200 group"
@@ -1179,21 +1260,21 @@ const Dashboard: React.FC<DashboardProps> = ({ user, apiKey, setView }) => {
               {/* Quick Stats Row - Enhanced with Glassmorphism */}
               {briefingStats && (
                 <div className="grid grid-cols-4 gap-2 sm:gap-4 mb-4 sm:mb-6">
-                  <div className="glass-card hover:glass-rose transition-all duration-150 rounded-lg sm:rounded-xl p-2 sm:p-3 text-center group cursor-pointer card-hover-lift">
-                    <div className="text-lg sm:text-2xl font-bold text-gradient-rose">{briefingStats.unreadMessages}</div>
-                    <div className="text-[9px] sm:text-[10px] text-zinc-400 group-hover:text-zinc-300 uppercase tracking-wider transition-colors">Unread</div>
+                  <div className="glass-card glass-rose-hover bg-black/25 transition-all duration-150 rounded-lg sm:rounded-xl p-2 sm:p-3 text-center group cursor-pointer card-hover-lift">
+                    <div className="text-lg sm:text-2xl font-bold text-rose-300">{briefingStats.unreadMessages}</div>
+                    <div className="text-[9px] sm:text-[10px] text-zinc-300 group-hover:text-white uppercase tracking-wider transition-colors">Unread</div>
                   </div>
-                  <div className="glass-card hover:glass-rose transition-all duration-150 rounded-lg sm:rounded-xl p-2 sm:p-3 text-center group cursor-pointer card-hover-lift">
-                    <div className="text-lg sm:text-2xl font-bold text-gradient-rose-purple">{briefingStats.pendingTasks}</div>
-                    <div className="text-[9px] sm:text-[10px] text-zinc-400 group-hover:text-zinc-300 uppercase tracking-wider transition-colors">Tasks</div>
+                  <div className="glass-card glass-rose-hover bg-black/25 transition-all duration-150 rounded-lg sm:rounded-xl p-2 sm:p-3 text-center group cursor-pointer card-hover-lift">
+                    <div className="text-lg sm:text-2xl font-bold text-pink-300">{briefingStats.pendingTasks}</div>
+                    <div className="text-[9px] sm:text-[10px] text-zinc-300 group-hover:text-white uppercase tracking-wider transition-colors">Tasks</div>
                   </div>
-                  <div className="glass-card hover:glass-rose transition-all duration-150 rounded-lg sm:rounded-xl p-2 sm:p-3 text-center group cursor-pointer card-hover-lift">
-                    <div className="text-lg sm:text-2xl font-bold bg-gradient-to-r from-rose-300 to-pink-400 bg-clip-text text-transparent">{briefingStats.todayMeetings}</div>
-                    <div className="text-[9px] sm:text-[10px] text-zinc-400 group-hover:text-zinc-300 uppercase tracking-wider transition-colors">Meetings</div>
+                  <div className="glass-card glass-rose-hover bg-black/25 transition-all duration-150 rounded-lg sm:rounded-xl p-2 sm:p-3 text-center group cursor-pointer card-hover-lift">
+                    <div className="text-lg sm:text-2xl font-bold text-rose-200">{briefingStats.todayMeetings}</div>
+                    <div className="text-[9px] sm:text-[10px] text-zinc-300 group-hover:text-white uppercase tracking-wider transition-colors">Meetings</div>
                   </div>
-                  <div className="glass-card hover:glass-rose transition-all duration-150 rounded-lg sm:rounded-xl p-2 sm:p-3 text-center group cursor-pointer card-hover-lift">
-                    <div className="text-lg sm:text-2xl font-bold bg-gradient-to-r from-pink-300 to-purple-400 bg-clip-text text-transparent">{briefingStats.unplayedVoxes}</div>
-                    <div className="text-[9px] sm:text-[10px] text-zinc-400 group-hover:text-zinc-300 uppercase tracking-wider transition-colors">Voxes</div>
+                  <div className="glass-card glass-rose-hover bg-black/25 transition-all duration-150 rounded-lg sm:rounded-xl p-2 sm:p-3 text-center group cursor-pointer card-hover-lift">
+                    <div className="text-lg sm:text-2xl font-bold text-pink-200">{briefingStats.unplayedVoxes}</div>
+                    <div className="text-[9px] sm:text-[10px] text-zinc-300 group-hover:text-white uppercase tracking-wider transition-colors">Voxes</div>
                   </div>
                 </div>
               )}
@@ -1219,14 +1300,14 @@ const Dashboard: React.FC<DashboardProps> = ({ user, apiKey, setView }) => {
                           </div>
                           <div className="flex-1 min-w-0">
                             <div className="flex items-center gap-2 flex-wrap">
-                              <div className="font-medium text-sm sm:text-sm text-zinc-200 line-clamp-1">{highlight.title}</div>
+                              <div className="font-medium text-sm sm:text-sm text-zinc-900 line-clamp-1">{highlight.title}</div>
                               {highlight.priority === 'urgent' && (
                                 <span className="px-1.5 py-0.5 text-[9px] bg-red-500/20 text-red-400 rounded uppercase font-bold shrink-0">Urgent</span>
                               )}
                             </div>
-                            <div className="text-xs text-zinc-500 mt-0.5 line-clamp-2 sm:line-clamp-1">{highlight.detail}</div>
+                            <div className="text-xs text-zinc-900 mt-0.5 line-clamp-2 sm:line-clamp-1">{highlight.detail}</div>
                           </div>
-                          <ChevronRight className="text-xs text-zinc-600 group-hover:text-rose-400 transition" />
+                          <ChevronRight className="text-xs text-zinc-400 group-hover:text-rose-400 transition" />
                         </div>
                       ))}
                     </div>
@@ -1253,12 +1334,12 @@ const Dashboard: React.FC<DashboardProps> = ({ user, apiKey, setView }) => {
                               {suggestion.type === 'ai_assist' && (
                                 <Sparkles className="text-rose-400 text-sm animate-pulse" />
                               )}
-                              <div className="font-medium text-sm text-zinc-200 line-clamp-1">{suggestion.action}</div>
+                              <div className="font-medium text-sm text-zinc-900 line-clamp-1">{suggestion.action}</div>
                               {suggestion.priority === 'urgent' && (
                                 <span className="px-1.5 py-0.5 text-[9px] bg-red-500/20 text-red-400 rounded uppercase font-bold shrink-0">Urgent</span>
                               )}
                             </div>
-                            <div className="text-xs text-zinc-500 mt-0.5 line-clamp-2 sm:line-clamp-1">{suggestion.reason}</div>
+                            <div className="text-xs text-zinc-900 mt-0.5 line-clamp-2 sm:line-clamp-1">{suggestion.reason}</div>
                             {suggestion.type === 'ai_assist' && suggestion.aiFeature && (
                               <button
                                 onClick={() => handleAIFeatureClick(suggestion.aiFeature!)}
@@ -1321,16 +1402,17 @@ const Dashboard: React.FC<DashboardProps> = ({ user, apiKey, setView }) => {
       {/* Attention & Focus Dashboard */}
       {user?.id && (
         <CollapsibleWidget
-          id="attention"
+          id="attention-focus"
           title="Attention & Focus"
           icon="fa-brain"
           iconColor="text-purple-500"
-          isExpanded={expandedWidgets.has('attention')}
+          isExpanded={expandedWidgets.has('attention-focus')}
           onToggle={toggleWidget}
+          className="animate-spring-enter"
           headerAction={
             <button
               onClick={() => setView(AppView.SETTINGS)}
-              className="text-xs text-zinc-400 hover:text-zinc-200 transition"
+              className="text-xs text-zinc-500 dark:text-zinc-400 hover:text-zinc-900 dark:hover:text-zinc-200 transition"
             >
               Settings
             </button>
@@ -1350,11 +1432,12 @@ const Dashboard: React.FC<DashboardProps> = ({ user, apiKey, setView }) => {
         </CollapsibleWidget>
       )}
 
-      <div className="grid grid-cols-1 lg:grid-cols-3 gap-4 sm:gap-6">
+      <div className="grid grid-cols-1 lg:grid-cols-3 gap-4 sm:gap-6 dashboard-stagger">
 
         {/* Enhanced Quick Journal */}
         <CollapsibleWidget
           id="journal"
+          className="animate-spring-enter"
           title="Journal"
           icon="fa-book"
           iconColor="text-rose-500"
@@ -1363,7 +1446,7 @@ const Dashboard: React.FC<DashboardProps> = ({ user, apiKey, setView }) => {
           headerAction={
             <button
               onClick={() => setView(AppView.ARCHIVES)}
-              className="text-xs text-zinc-400 hover:text-zinc-200 transition"
+              className="text-xs text-zinc-500 dark:text-zinc-400 hover:text-zinc-900 dark:hover:text-zinc-200 transition"
             >
               View All
             </button>
@@ -1389,13 +1472,13 @@ const Dashboard: React.FC<DashboardProps> = ({ user, apiKey, setView }) => {
             )}
 
             <textarea
-              className="w-full bg-transparent border-0 p-0 text-base focus:ring-0 resize-none mb-2 min-h-[200px] dark:text-zinc-200 text-zinc-800 placeholder-zinc-300 dark:placeholder-zinc-700 leading-relaxed font-light"
+              className="w-full bg-transparent border-0 p-0 text-base focus:ring-0 resize-none mb-2 min-h-[200px] dark:text-zinc-200 text-zinc-800 placeholder-zinc-400 dark:placeholder-zinc-500 leading-relaxed font-light"
               placeholder="Write your thoughts..."
               value={journalText}
               onChange={(e) => setJournalText(e.target.value)}
             />
 
-            <div className="flex justify-end gap-4 text-[10px] text-zinc-400 font-mono mb-4">
+            <div className="flex justify-end gap-4 text-[10px] text-zinc-500 font-mono mb-4">
               <span>{wordCount} words</span>
               <span>{charCount} chars</span>
             </div>
@@ -1418,9 +1501,10 @@ const Dashboard: React.FC<DashboardProps> = ({ user, apiKey, setView }) => {
               <button
                 onClick={handleShare}
                 disabled={!journalText}
-                className="w-9 h-9 rounded-lg hover:bg-zinc-100 dark:hover:bg-zinc-900 text-zinc-400 transition flex items-center justify-center"
+                className={`w-9 h-9 rounded-lg transition flex items-center justify-center ${journalCopied ? 'bg-emerald-100 dark:bg-emerald-900/30 text-emerald-600 dark:text-emerald-400' : 'hover:bg-zinc-100 dark:hover:bg-zinc-900 text-zinc-400'}`}
+                title={journalCopied ? 'Copied!' : 'Copy to clipboard'}
               >
-                <Copy />
+                {journalCopied ? <Check /> : <Copy />}
               </button>
               <button
                 onClick={handleArchive}
@@ -1435,10 +1519,10 @@ const Dashboard: React.FC<DashboardProps> = ({ user, apiKey, setView }) => {
             {recentJournals.length > 0 && (
               <div className="mt-4 pt-4 border-t border-zinc-100 dark:border-zinc-900">
                 <div className="flex items-center justify-between mb-3">
-                  <h4 className="text-[10px] font-bold text-zinc-400 uppercase tracking-widest">Recent</h4>
+                  <h4 className="text-[10px] font-bold text-zinc-500 uppercase tracking-widest">Recent</h4>
                   <button
                     onClick={() => setView(AppView.ARCHIVES)}
-                    className="text-[10px] text-zinc-400 hover:text-rose-500 transition"
+                    className="text-[10px] text-zinc-500 hover:text-rose-500 transition"
                   >
                     See all
                   </button>
@@ -1448,7 +1532,7 @@ const Dashboard: React.FC<DashboardProps> = ({ user, apiKey, setView }) => {
                     <button
                       key={journal.id}
                       onClick={() => setView(AppView.ARCHIVES)}
-                      className="w-full text-left p-2 rounded-lg hover:bg-zinc-50 dark:hover:bg-zinc-900 transition group"
+                      className="w-full text-left p-2 rounded-lg hover:bg-zinc-50 dark:hover:bg-zinc-900 border-l-2 border-rose-500/20 dark:border-rose-500/15 hover:border-rose-500/60 dark:hover:border-rose-500/50 transition-colors duration-150 group"
                     >
                       <div className="flex items-center gap-2">
                         <span className="text-xs text-zinc-500 dark:text-zinc-500 shrink-0">
@@ -1467,18 +1551,27 @@ const Dashboard: React.FC<DashboardProps> = ({ user, apiKey, setView }) => {
         </CollapsibleWidget>
 
         {/* Quick Scheduler Widget */}
-        <QuickScheduler />
+        <CollapsibleWidget
+          id="scheduler"
+          title="Quick Scheduler"
+          icon="fa-calendar-plus"
+          iconColor="text-rose-500"
+          isExpanded={expandedWidgets.has('scheduler')}
+          onToggle={toggleWidget}
+        >
+          <QuickScheduler />
+        </CollapsibleWidget>
 
         {/* Attention & Widgets Column */}
-        <div className="flex flex-col gap-6">
+        <div className="flex flex-col gap-6 animate-spring-enter">
 
           {/* Attention Budget Widget */}
           <CollapsibleWidget
-            id="attention"
+            id="attention-budget"
             title="Attention Budget"
             icon="fa-brain"
             iconColor="text-rose-400"
-            isExpanded={expandedWidgets.has('attention')}
+            isExpanded={expandedWidgets.has('attention-budget')}
             onToggle={toggleWidget}
             headerAction={
               <span className={`text-xs font-bold px-2 py-1 rounded ${attentionLoad > 80 ? 'bg-red-100 text-red-600' : 'bg-rose-100 text-rose-600 dark:bg-rose-900/30 dark:text-rose-400'}`}>
@@ -1502,70 +1595,153 @@ const Dashboard: React.FC<DashboardProps> = ({ user, apiKey, setView }) => {
             {batchedNotifications.length > 0 ? (
               <div className="bg-zinc-50 dark:bg-zinc-900 rounded-xl p-4 border border-zinc-100 dark:border-zinc-800">
                 <div className="flex justify-between items-center mb-3">
-                  <span className="text-xs font-bold uppercase text-zinc-400">Batched ({batchedNotifications.length})</span>
+                  <span className="text-xs font-bold uppercase text-zinc-500">Batched ({batchedNotifications.length})</span>
                   <button onClick={() => setBatchedNotifications([])} className="text-xs text-rose-500 hover:underline">Clear All</button>
                 </div>
                 <div className="space-y-2">
                   {batchedNotifications.slice(0, 3).map(n => (
                     <div key={n.id} className="flex items-start gap-3 p-2 bg-white dark:bg-zinc-950 rounded-lg border border-zinc-100 dark:border-zinc-800">
-                      <div className="text-[10px] font-bold text-zinc-400 uppercase mt-0.5 min-w-[40px]">{n.source}</div>
+                      <div className="text-[10px] font-bold text-zinc-500 uppercase mt-0.5 min-w-[40px]">{n.source}</div>
                       <div className="flex-1 min-w-0">
                         <div className="text-xs text-zinc-700 dark:text-zinc-300 truncate">{n.message}</div>
-                        <div className="text-[10px] text-zinc-400">{n.time.toLocaleTimeString([], {hour:'2-digit', minute:'2-digit'})}</div>
+                        <div className="text-[10px] text-zinc-500">{n.time.toLocaleTimeString([], {hour:'2-digit', minute:'2-digit'})}</div>
                       </div>
                     </div>
                   ))}
                 </div>
               </div>
             ) : (
-              <div className="text-center text-zinc-400 text-sm py-4">No batched notifications.</div>
+              <div className="text-center text-zinc-500 text-sm py-4">No batched notifications.</div>
             )}
           </CollapsibleWidget>
 
-          {/* Live Session CTA */}
-          <div className="bg-zinc-100 dark:bg-zinc-900 rounded-2xl p-6 shadow-sm relative overflow-hidden group border border-zinc-200 dark:border-zinc-800">
-            <div className="relative z-10">
-              <div className="flex items-center gap-4 mb-4">
-                <div className="w-10 h-10 bg-zinc-200 dark:bg-zinc-800 rounded-full flex items-center justify-center text-zinc-900 dark:text-white">
-                  <Mic className="text-lg" />
-                </div>
-                <h3 className="font-medium text-lg dark:text-white text-zinc-900">Voice Assistant</h3>
+          {/* Mini Pulse AI */}
+          <div className="dashboard-widget-surface backdrop-blur-lg rounded-2xl p-5 relative overflow-hidden border border-zinc-200/80 dark:border-zinc-800/60 card-elevated hover:border-rose-500/30 transition-all duration-150">
+            <div className="flex items-center gap-3 mb-4">
+              <div className="w-8 h-8 bg-gradient-to-br from-rose-500/20 to-pink-500/20 border border-rose-500/20 rounded-full flex items-center justify-center">
+                <Sparkles className="w-4 h-4 text-rose-500" />
               </div>
-              <p className="text-zinc-500 text-sm mb-6 font-light">Interact with Pulse using real-time voice and video.</p>
-              <button
-                onClick={() => setView(AppView.LIVE)}
-                className="bg-zinc-900 dark:bg-white text-white dark:text-black px-5 py-2.5 rounded-lg text-xs font-bold uppercase tracking-widest hover:opacity-90 transition"
-              >
-                Start Session
-              </button>
+              <h3 className="font-medium text-base dark:text-white text-zinc-900">Ask Pulse AI</h3>
             </div>
-          </div>
-
-          {/* Mini Search Widget */}
-          <div className="bg-zinc-900 dark:bg-black rounded-2xl p-6 shadow-sm text-white relative border border-zinc-800">
-            <h3 className="font-medium text-lg mb-4 relative z-10">Grounding Search</h3>
-
-            <form onSubmit={handleSearch} className="relative z-10">
+            {/* Quick chips */}
+            <div className="flex flex-wrap gap-1.5 mb-3">
+              {["Summarize my day", "What's urgent?", "Draft a reply"].map(chip => (
+                <button key={chip} onClick={() => handlePulseAiQuery(chip)}
+                  className="text-xs px-3 py-1 rounded-full bg-zinc-100 dark:bg-zinc-800 text-zinc-600 dark:text-zinc-300 hover:bg-rose-50 dark:hover:bg-rose-500/10 hover:text-rose-600 dark:hover:text-rose-400 border border-zinc-200 dark:border-zinc-700 transition-all">
+                  {chip}
+                </button>
+              ))}
+            </div>
+            {/* Input */}
+            <form onSubmit={(e) => { e.preventDefault(); handlePulseAiQuery(pulseAiQuery); }}>
               <div className="relative">
                 <input
                   type="text"
-                  value={searchQuery}
-                  onChange={(e) => setSearchQuery(e.target.value)}
-                  placeholder="Search the web..."
-                  className="w-full bg-zinc-800 border border-zinc-700 rounded-lg pl-4 pr-10 py-3 text-sm text-white placeholder-zinc-500 focus:border-rose-500/50 focus:ring-1 focus:ring-rose-500/20 focus:outline-none transition-all duration-150"
+                  value={pulseAiQuery}
+                  onChange={(e) => setPulseAiQuery(e.target.value)}
+                  placeholder="Ask anything..."
+                  className="w-full bg-zinc-50 dark:bg-zinc-800/60 border border-zinc-200 dark:border-zinc-700 rounded-xl px-3 py-2 text-sm text-zinc-900 dark:text-white placeholder-zinc-400 focus:border-rose-500/40 focus:outline-none transition-all pr-8"
                 />
-                <button type="submit" className="absolute right-3 top-3 text-zinc-400 hover:text-white transition">
-                  {loadingTools ? <Loader2 className="animate-spin" /> : <ArrowRight />}
+                <button type="submit" className="absolute right-2 top-2 text-zinc-400 hover:text-rose-400 transition">
+                  {loadingPulseAi ? <Loader2 className="animate-spin w-4 h-4" /> : <ArrowRight className="w-4 h-4" />}
                 </button>
               </div>
             </form>
-
-            {searchResult && (
-              <div className="mt-4 pt-4 border-t border-zinc-800 text-sm leading-relaxed text-zinc-300 font-light animate-fade-in relative z-10">
-                <div className="line-clamp-3">{searchResult.text}</div>
+            {/* Response */}
+            {pulseAiResponse && (
+              <div className="mt-3 pt-3 border-t border-zinc-100 dark:border-zinc-800 text-xs leading-relaxed text-zinc-600 dark:text-zinc-400 animate-fade-in">
+                <p className="line-clamp-4">{pulseAiResponse}</p>
+                <div className="flex items-center justify-between mt-2">
+                  <button onClick={() => setView(AppView.LIVE_AI)}
+                    className="text-xs text-rose-500 hover:text-rose-400 font-medium">
+                    Open Pulse AI →
+                  </button>
+                  <button onClick={() => setPulseAiResponse(null)} className="text-xs text-zinc-400 hover:text-zinc-500">Clear</button>
+                </div>
               </div>
             )}
           </div>
+
+          {/* Upcoming Events */}
+          <div className="dashboard-widget-surface backdrop-blur-lg rounded-2xl p-5 border border-zinc-200/80 dark:border-zinc-800/60 card-elevated hover:border-rose-500/30 transition-all duration-150">
+            <div className="flex items-center justify-between mb-4">
+              <div className="flex items-center gap-3">
+                <div className="w-8 h-8 bg-gradient-to-br from-rose-500/20 to-pink-500/20 border border-rose-500/20 rounded-full flex items-center justify-center">
+                  <Calendar className="w-4 h-4 text-rose-500" />
+                </div>
+                <h3 className="font-medium text-base dark:text-white text-zinc-900">Upcoming Events</h3>
+              </div>
+              <button onClick={() => setView(AppView.CALENDAR)} className="text-xs text-rose-500 hover:text-rose-400 font-medium">View all</button>
+            </div>
+            {upcomingEvents.length === 0 ? (
+              <p className="text-xs text-zinc-400 text-center py-3">No upcoming events</p>
+            ) : (
+              <div className="space-y-2">
+                {upcomingEvents.map(event => {
+                  const start = new Date(event.start);
+                  const now = new Date();
+                  const diffMs = start.getTime() - now.getTime();
+                  const diffMins = Math.floor(diffMs / 60000);
+                  const diffHours = Math.floor(diffMins / 60);
+                  const diffDays = Math.floor(diffHours / 24);
+                  const countdown = diffDays > 0
+                    ? `in ${diffDays}d`
+                    : diffHours > 0
+                    ? `in ${diffHours}h`
+                    : diffMins > 0
+                    ? `in ${diffMins}m`
+                    : 'now';
+                  const timeStr = start.toLocaleTimeString([], { hour: 'numeric', minute: '2-digit' });
+                  return (
+                    <div key={event.id} className="flex items-center justify-between gap-2 py-2 border-b border-zinc-100 dark:border-zinc-800 last:border-0">
+                      <div className="flex items-center gap-2 min-w-0">
+                        <div className="w-2 h-2 rounded-full bg-rose-500 shrink-0" />
+                        <span className="text-sm text-zinc-800 dark:text-zinc-200 truncate">{event.title}</span>
+                      </div>
+                      <div className="flex items-center gap-2 shrink-0 text-right">
+                        <span className="text-xs text-zinc-400">{timeStr}</span>
+                        <span className="text-xs font-medium text-rose-500 bg-rose-500/10 px-1.5 py-0.5 rounded-full">{countdown}</span>
+                      </div>
+                    </div>
+                  );
+                })}
+              </div>
+            )}
+          </div>
+
+          {/* Unread Pulse */}
+          <div className="dashboard-widget-surface backdrop-blur-lg rounded-2xl p-5 border border-zinc-200/80 dark:border-zinc-800/60 card-elevated hover:border-rose-500/30 transition-all duration-150">
+            <div className="flex items-center gap-3 mb-4">
+              <div className="w-8 h-8 bg-gradient-to-br from-rose-500/20 to-pink-500/20 border border-rose-500/20 rounded-full flex items-center justify-center">
+                <Zap className="w-4 h-4 text-rose-500" />
+              </div>
+              <h3 className="font-medium text-base dark:text-white text-zinc-900">Unread Pulse</h3>
+            </div>
+            <div className="space-y-2">
+              {[
+                { label: 'Messages', count: messageUnreadCount, icon: MessageSquare, view: AppView.MESSAGES },
+                { label: 'Email', count: emailUnreadCount, icon: Mail, view: AppView.EMAIL },
+                { label: 'Vox', count: voxUnreadCount, icon: Mic, view: AppView.VOXER },
+              ].map(({ label, count, icon: Icon, view }) => (
+                <button key={label} onClick={() => setView(view)}
+                  className="w-full flex items-center justify-between px-3 py-2.5 rounded-xl bg-zinc-50 dark:bg-zinc-800/60 hover:bg-rose-50 dark:hover:bg-rose-500/10 border border-zinc-200 dark:border-zinc-700/50 hover:border-rose-500/30 transition-all group">
+                  <div className="flex items-center gap-2.5">
+                    <Icon className="w-4 h-4 text-zinc-400 group-hover:text-rose-400 transition-colors" />
+                    <span className="text-sm text-zinc-700 dark:text-zinc-300">{label}</span>
+                  </div>
+                  <div className="flex items-center gap-1.5">
+                    {count > 0 ? (
+                      <span className="text-xs font-semibold text-white bg-rose-500 px-2 py-0.5 rounded-full min-w-[1.5rem] text-center">{count}</span>
+                    ) : (
+                      <span className="text-xs text-zinc-400">All clear</span>
+                    )}
+                    <ChevronRight className="w-3 h-3 text-zinc-400 group-hover:text-rose-400 transition-colors" />
+                  </div>
+                </button>
+              ))}
+            </div>
+          </div>
+
         </div>
       </div>
 
@@ -1625,11 +1801,11 @@ const Dashboard: React.FC<DashboardProps> = ({ user, apiKey, setView }) => {
             ))}
           </div>
         }
-        className="animate-slide-up"
+        className="animate-spring-enter"
       >
         {/* Metric Cards */}
-        <div className="grid grid-cols-2 md:grid-cols-4 gap-4 mb-6">
-          <div className="bg-zinc-50 dark:bg-zinc-900/50 rounded-xl p-4 border border-zinc-100 dark:border-zinc-800">
+        <div className="grid grid-cols-2 md:grid-cols-4 gap-4 mb-6 dashboard-stagger">
+          <div className="dashboard-widget-surface backdrop-blur-lg rounded-xl p-4 border border-zinc-200/80 dark:border-zinc-800/60 card-elevated hover:border-rose-500/30 transition-all duration-150">
             <div className="flex items-center justify-between mb-2">
               <span className="text-xs font-bold text-zinc-600 dark:text-zinc-400 uppercase">Tasks Done</span>
               <CheckCircle className="text-rose-500" />
@@ -1637,7 +1813,7 @@ const Dashboard: React.FC<DashboardProps> = ({ user, apiKey, setView }) => {
             <div className="text-2xl font-bold text-zinc-800 dark:text-zinc-100">{productivityMetrics.tasksCompleted}</div>
             <div className="text-[10px] text-zinc-500">of {productivityMetrics.tasksTotal} total</div>
           </div>
-          <div className="bg-zinc-50 dark:bg-zinc-900/50 rounded-xl p-4 border border-zinc-100 dark:border-zinc-800">
+          <div className="dashboard-widget-surface backdrop-blur-lg rounded-xl p-4 border border-zinc-200/80 dark:border-zinc-800/60 card-elevated hover:border-rose-500/30 transition-all duration-150">
             <div className="flex items-center justify-between mb-2">
               <span className="text-xs font-bold text-zinc-600 dark:text-zinc-400 uppercase">Messages</span>
               <MessageSquare className="text-pink-500" />
@@ -1645,21 +1821,27 @@ const Dashboard: React.FC<DashboardProps> = ({ user, apiKey, setView }) => {
             <div className="text-2xl font-bold text-zinc-800 dark:text-zinc-100">{productivityMetrics.messagesSent + productivityMetrics.messagesReceived}</div>
             <div className="text-[10px] text-zinc-500">{productivityMetrics.messagesSent} sent, {productivityMetrics.messagesReceived} received</div>
           </div>
-          <div className="bg-zinc-50 dark:bg-zinc-900/50 rounded-xl p-4 border border-zinc-100 dark:border-zinc-800">
+          <div className="dashboard-widget-surface backdrop-blur-lg rounded-xl p-4 border border-zinc-200/80 dark:border-zinc-800/60 card-elevated hover:border-rose-500/30 transition-all duration-150">
             <div className="flex items-center justify-between mb-2">
               <span className="text-xs font-bold text-zinc-600 dark:text-zinc-400 uppercase">Focus Time</span>
               <Target className="text-rose-500" />
             </div>
             <div className="text-2xl font-bold text-zinc-800 dark:text-zinc-100">{formatFocusTime(productivityMetrics.focusTime)}</div>
-            <div className="text-[10px] text-zinc-500">Deep work today</div>
+            <div className="text-[10px] text-zinc-500">
+              {events.some(e => e.type === 'focus') ? 'Deep work today' : 'Est. from tasks'}
+            </div>
           </div>
-          <div className="bg-zinc-50 dark:bg-zinc-900/50 rounded-xl p-4 border border-zinc-100 dark:border-zinc-800">
+          <div className="dashboard-widget-surface backdrop-blur-lg rounded-xl p-4 border border-zinc-200/80 dark:border-zinc-800/60 card-elevated hover:border-rose-500/30 transition-all duration-150">
             <div className="flex items-center justify-between mb-2">
               <span className="text-xs font-bold text-zinc-600 dark:text-zinc-400 uppercase">Avg Response</span>
               <Clock className="text-pink-500" />
             </div>
-            <div className="text-2xl font-bold text-zinc-800 dark:text-zinc-100">{productivityMetrics.responseTime}m</div>
-            <div className="text-[10px] text-zinc-500">Message response time</div>
+            <div className="text-2xl font-bold text-zinc-800 dark:text-zinc-100">
+              {productivityMetrics.responseTime > 0 ? `${productivityMetrics.responseTime}m` : '—'}
+            </div>
+            <div className="text-[10px] text-zinc-500">
+              {productivityMetrics.responseTime > 0 ? 'Avg response time' : 'No data yet'}
+            </div>
           </div>
         </div>
 
@@ -1706,7 +1888,7 @@ const Dashboard: React.FC<DashboardProps> = ({ user, apiKey, setView }) => {
       </CollapsibleWidget>
 
       {/* Goals & Team Section */}
-      <div className="grid grid-cols-1 lg:grid-cols-2 gap-6">
+      <div className="grid grid-cols-1 lg:grid-cols-2 gap-6 dashboard-stagger">
         {/* Goals Progress */}
         <CollapsibleWidget
           id="goals"
@@ -1715,6 +1897,7 @@ const Dashboard: React.FC<DashboardProps> = ({ user, apiKey, setView }) => {
           iconColor="text-rose-500"
           isExpanded={expandedWidgets.has('goals')}
           onToggle={toggleWidget}
+          className="animate-spring-enter"
           headerAction={
             <button
               onClick={(e) => { e.stopPropagation(); setShowGoalEditor(true); }}
@@ -1725,12 +1908,12 @@ const Dashboard: React.FC<DashboardProps> = ({ user, apiKey, setView }) => {
           }
           className="animate-slide-up"
         >
-          <div className="space-y-4">
+          <div className="space-y-4 dashboard-stagger">
             {goals
               .filter(goal => goal.enabled !== false)
               .map(goal => {
                 const colorClasses = {
-                  blue: 'bg-rose-500',
+                  blue: 'bg-blue-500',
                   green: 'bg-green-500',
                   purple: 'bg-purple-500',
                   red: 'bg-red-500',
@@ -1749,7 +1932,7 @@ const Dashboard: React.FC<DashboardProps> = ({ user, apiKey, setView }) => {
                     <div className="flex items-center justify-between mb-1">
                       <div className="flex items-center gap-2">
                         {goal.icon && (
-                          <i className={`fa-solid ${goal.icon} text-xs text-zinc-400`}></i>
+                          <i className={`fa-solid ${goal.icon} text-xs text-zinc-500`}></i>
                         )}
                         <span className="text-sm font-medium text-zinc-700 dark:text-zinc-300">{goal.title}</span>
                       </div>
@@ -1782,7 +1965,7 @@ const Dashboard: React.FC<DashboardProps> = ({ user, apiKey, setView }) => {
                 );
               })}
             {goals.filter(goal => goal.enabled !== false).length === 0 && (
-              <div className="text-center py-8 text-zinc-400">
+              <div className="text-center py-8 text-zinc-500">
                 <Target className="mb-2 text-2xl" />
                 <p className="text-sm">No goals enabled. Click "Edit Goals" to get started.</p>
               </div>
@@ -1798,6 +1981,7 @@ const Dashboard: React.FC<DashboardProps> = ({ user, apiKey, setView }) => {
           iconColor="text-pink-400"
           isExpanded={expandedWidgets.has('team')}
           onToggle={toggleWidget}
+          className="animate-spring-enter"
           headerAction={
             <div className="flex items-center gap-2" onClick={e => e.stopPropagation()}>
               {teams.length > 0 && (
@@ -1865,7 +2049,7 @@ const Dashboard: React.FC<DashboardProps> = ({ user, apiKey, setView }) => {
 
             if (membersToDisplay.length === 0) {
               return (
-                <div className="text-center py-8 text-zinc-400">
+                <div className="text-center py-8 text-zinc-500">
                   <Users className="mb-2 text-2xl" />
                   <p className="text-sm mb-3">
                     {selectedTeamId ? 'No members in this team yet.' : 'No team members yet.'}
@@ -1895,12 +2079,12 @@ const Dashboard: React.FC<DashboardProps> = ({ user, apiKey, setView }) => {
             }
 
             return (
-              <div className="space-y-3">
+              <div className="space-y-3 dashboard-stagger">
                 {membersToDisplay.slice(0, 5).map(member => (
                   <div
                     key={member.id}
                     onClick={() => setView(AppView.MESSAGES)}
-                    className="flex items-center gap-3 p-3 rounded-xl hover:bg-zinc-50 dark:hover:bg-zinc-900 transition cursor-pointer group"
+                    className="flex items-center gap-3 p-3 rounded-xl hover:bg-zinc-50 dark:hover:bg-zinc-900 border-l-2 border-rose-500/20 dark:border-rose-500/15 hover:border-rose-500/60 dark:hover:border-rose-500/50 transition-colors duration-150 cursor-pointer group"
                   >
                     <div className="relative">
                       <div className={`w-10 h-10 rounded-full ${member.avatarColor} flex items-center justify-center text-white font-bold`}>
@@ -1937,8 +2121,8 @@ const Dashboard: React.FC<DashboardProps> = ({ user, apiKey, setView }) => {
             icon="fa-heart-pulse"
             iconColor="text-rose-400"
             isExpanded={expandedWidgets.has('team-health')}
+            className="lg:col-span-2 animate-spring-enter"
             onToggle={toggleWidget}
-            className="animate-slide-up"
           >
             {loadingTeamHealth ? (
               <div className="py-8 flex items-center justify-center">
@@ -1947,7 +2131,7 @@ const Dashboard: React.FC<DashboardProps> = ({ user, apiKey, setView }) => {
             ) : teamHealthMetrics ? (
               <div className="space-y-6">
                 {/* Communication Health */}
-                <div className="p-4 bg-gradient-to-br from-emerald-50 to-cyan-50 dark:from-emerald-950/20 dark:to-cyan-950/20 rounded-xl border border-emerald-200 dark:border-emerald-800">
+                <div className="p-4 bg-gradient-to-br from-emerald-50 to-cyan-50 dark:from-emerald-950/40 dark:to-cyan-950/40 rounded-xl border border-emerald-200 dark:border-emerald-800/60">
                   <div className="flex items-center gap-2 mb-4">
                     <MessageSquare className="text-emerald-600 dark:text-emerald-400" />
                     <h4 className="font-semibold text-sm text-zinc-900 dark:text-white">Communication Health</h4>
@@ -1957,7 +2141,7 @@ const Dashboard: React.FC<DashboardProps> = ({ user, apiKey, setView }) => {
                       <div className="text-xs text-zinc-500 mb-1">Engagement Score</div>
                       <div className="flex items-baseline gap-2">
                         <span className="text-2xl font-bold text-emerald-600 dark:text-emerald-400">{teamHealthMetrics.communicationHealth.engagementScore}</span>
-                        <span className="text-xs text-zinc-400">/100</span>
+                        <span className="text-xs text-zinc-500">/100</span>
                       </div>
                     </div>
                     <div>
@@ -1984,7 +2168,7 @@ const Dashboard: React.FC<DashboardProps> = ({ user, apiKey, setView }) => {
                 </div>
 
                 {/* Votes/Decisions */}
-                <div className="p-4 bg-gradient-to-br from-rose-50 to-pink-50 dark:from-rose-950/20 dark:to-pink-950/20 rounded-xl border border-rose-200 dark:border-rose-800">
+                <div className="p-4 bg-gradient-to-br from-rose-50 to-pink-50 dark:from-rose-950/40 dark:to-pink-950/40 rounded-xl border border-rose-200 dark:border-rose-800/60">
                   <div className="flex items-center gap-2 mb-4">
                     <CheckSquare className="text-rose-600 dark:text-rose-400" />
                     <h4 className="font-semibold text-sm text-zinc-900 dark:text-white">Votes & Decisions</h4>
@@ -2012,7 +2196,7 @@ const Dashboard: React.FC<DashboardProps> = ({ user, apiKey, setView }) => {
                 </div>
 
                 {/* Projects/Outcomes */}
-                <div className="p-4 bg-gradient-to-br from-purple-50 to-pink-50 dark:from-purple-950/20 dark:to-pink-950/20 rounded-xl border border-purple-200 dark:border-purple-800">
+                <div className="p-4 bg-gradient-to-br from-purple-50 to-pink-50 dark:from-purple-950/40 dark:to-pink-950/40 rounded-xl border border-purple-200 dark:border-purple-800/60">
                   <div className="flex items-center gap-2 mb-4">
                     <Target className="text-purple-600 dark:text-purple-400" />
                     <h4 className="font-semibold text-sm text-zinc-900 dark:text-white">Projects & Outcomes</h4>
@@ -2040,7 +2224,7 @@ const Dashboard: React.FC<DashboardProps> = ({ user, apiKey, setView }) => {
                 </div>
               </div>
             ) : (
-              <div className="text-center py-8 text-zinc-400">
+              <div className="text-center py-8 text-zinc-500">
                 <TrendingUp className="mb-2 text-2xl" />
                 <p className="text-sm">No team health data available yet.</p>
               </div>
@@ -2058,6 +2242,8 @@ const Dashboard: React.FC<DashboardProps> = ({ user, apiKey, setView }) => {
           setTeamBuilderSearchQuery('');
           setTeamBuilderSelectedMembers([]);
           setTeamBuilderTab('pulse');
+          setTeamBuilderError(null);
+          setConfirmDeleteTeam(false);
         }}>
           <div className="bg-white dark:bg-zinc-900 rounded-2xl w-full max-w-2xl max-h-[90vh] shadow-2xl flex flex-col animate-scale-in border border-zinc-200 dark:border-zinc-800" onClick={e => e.stopPropagation()}>
             {/* Header */}
@@ -2076,6 +2262,8 @@ const Dashboard: React.FC<DashboardProps> = ({ user, apiKey, setView }) => {
                 setTeamBuilderSearchQuery('');
                 setTeamBuilderSelectedMembers([]);
                 setTeamBuilderTab('pulse');
+                setTeamBuilderError(null);
+                setConfirmDeleteTeam(false);
               }} className="w-8 h-8 rounded-lg flex items-center justify-center text-zinc-400 hover:text-zinc-600 dark:hover:text-zinc-300 hover:bg-zinc-100 dark:hover:bg-zinc-800 transition">
                 <X />
               </button>
@@ -2299,11 +2487,9 @@ const Dashboard: React.FC<DashboardProps> = ({ user, apiKey, setView }) => {
                           <div className="flex items-center gap-2">
                             {!contact.pulseUserId && (
                               <button
-                                onClick={() => {
-                                  alert('Invite to Pulse functionality coming soon!');
-                                }}
-                                className="px-2 py-1 text-xs font-medium text-emerald-600 dark:text-emerald-400 hover:bg-emerald-50 dark:hover:bg-emerald-950/20 rounded transition"
-                                title="Invite to Pulse"
+                                disabled
+                                className="px-2 py-1 text-xs font-medium text-zinc-400 dark:text-zinc-600 cursor-not-allowed rounded"
+                                title="Invite to Pulse — coming soon"
                               >
                                 <Send />
                               </button>
@@ -2347,16 +2533,32 @@ const Dashboard: React.FC<DashboardProps> = ({ user, apiKey, setView }) => {
                   setTeamBuilderSearchQuery('');
                   setTeamBuilderSelectedMembers([]);
                   setTeamBuilderTab('pulse');
+                  setTeamBuilderError(null);
+                  setConfirmDeleteTeam(false);
                 }}
                 className="px-4 py-2 text-sm font-medium text-zinc-600 dark:text-zinc-400 hover:text-zinc-800 dark:hover:text-zinc-200 transition"
               >
                 Cancel
               </button>
-              <div className="flex items-center gap-3">
+              <div className="flex flex-col gap-3">
+                {/* Inline error/confirm feedback */}
+                {teamBuilderError && (
+                  <div className="px-4 py-2 bg-red-50 dark:bg-red-950/30 border border-red-200 dark:border-red-800/60 rounded-lg text-xs text-red-600 dark:text-red-400">
+                    {teamBuilderError}
+                  </div>
+                )}
+                {confirmDeleteTeam && (
+                  <div className="px-4 py-2 bg-red-50 dark:bg-red-950/30 border border-red-200 dark:border-red-800/60 rounded-lg text-xs text-red-700 dark:text-red-300 flex items-center justify-between gap-4">
+                    <span>Delete this team permanently?</span>
+                    <button onClick={() => setConfirmDeleteTeam(false)} className="font-medium text-zinc-500 hover:text-zinc-700 dark:hover:text-zinc-300 transition">Cancel</button>
+                  </div>
+                )}
+                <div className="flex items-center gap-3">
                 {selectedTeamId && (
                   <button
                     onClick={async () => {
-                      if (!confirm('Are you sure you want to delete this team?')) return;
+                      if (!confirmDeleteTeam) { setConfirmDeleteTeam(true); return; }
+                      setConfirmDeleteTeam(false);
                       try {
                         await teamService.deleteTeam(selectedTeamId);
                         await loadTeams();
@@ -2368,7 +2570,7 @@ const Dashboard: React.FC<DashboardProps> = ({ user, apiKey, setView }) => {
                         setTeamBuilderSelectedMembers([]);
                       } catch (error) {
                         console.error('Failed to delete team:', error);
-                        alert('Failed to delete team. Please try again.');
+                        setTeamBuilderError('Failed to delete team. Please try again.');
                       }
                     }}
                     className="px-4 py-2 text-sm font-medium text-red-600 dark:text-red-400 hover:bg-red-50 dark:hover:bg-red-950/20 rounded-lg transition"
@@ -2379,9 +2581,10 @@ const Dashboard: React.FC<DashboardProps> = ({ user, apiKey, setView }) => {
                 <button
                   onClick={async () => {
                     if (!teamBuilderName.trim()) {
-                      alert('Please enter a team name');
+                      setTeamBuilderError('Please enter a team name.');
                       return;
                     }
+                    setTeamBuilderError(null);
 
                     try {
                       if (selectedTeamId) {
@@ -2425,14 +2628,15 @@ const Dashboard: React.FC<DashboardProps> = ({ user, apiKey, setView }) => {
                     } catch (error: any) {
                       console.error('Failed to save team:', error);
                       const errorMessage = error?.message || error?.error?.message || 'Unknown error';
-                      alert(`Failed to save team: ${errorMessage}\n\nIf you see "relation does not exist", please run the database migration: supabase/migrations/021_user_teams.sql`);
+                      setTeamBuilderError(`Failed to save team: ${errorMessage}`);
                     }
                   }}
                   className="px-6 py-2 bg-rose-500 hover:bg-rose-600 text-white rounded-lg font-semibold transition shadow-lg shadow-rose-500/25"
                 >
                   {selectedTeamId ? 'Save Changes' : 'Create Team'}
                 </button>
-              </div>
+                </div>{/* end buttons row */}
+              </div>{/* end footer flex-col */}
             </div>
           </div>
         </div>
@@ -2510,7 +2714,7 @@ const Dashboard: React.FC<DashboardProps> = ({ user, apiKey, setView }) => {
                 .filter(goal => goalEditorTab === 'all' || goal.category === goalEditorTab)
                 .map(goal => {
                   const colorClasses = {
-                    blue: 'bg-rose-500',
+                    blue: 'bg-blue-500',
                     green: 'bg-green-500',
                     purple: 'bg-purple-500',
                     red: 'bg-red-500',
