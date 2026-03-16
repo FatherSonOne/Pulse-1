@@ -10,7 +10,7 @@ import './index.css'
 import './components/shared/PulseTypography.css'
 
 // DEVELOPMENT: Force clear service worker cache on version mismatch
-const APP_VERSION = '25.1.3';
+const APP_VERSION = '28.2.0';
 const VERSION_KEY = 'pulse_app_version';
 
 async function clearOldCache() {
