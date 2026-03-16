@@ -343,8 +343,8 @@ export default defineConfig(({ mode }) => {
                 }
               }
             ],
-            navigateFallback: '/index.html',
-            navigateFallbackDenylist: [/^\/api/, /^\/auth/]
+            navigateFallback: null, // Vercel handles SPA routing; no SW nav fallback needed
+            navigateFallbackDenylist: [] // empty — navigateFallback is disabled
           },
           devOptions: {
             enabled: false, // Enable in dev if needed
