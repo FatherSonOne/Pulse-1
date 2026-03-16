@@ -212,7 +212,8 @@ export default defineConfig(({ mode }) => {
           'react',
           'react-dom',
           'react-router-dom',
-          '@supabase/supabase-js'
+          '@supabase/supabase-js',
+          '@react-google-maps/api',
         ],
         exclude: [
           'lucide-react',
