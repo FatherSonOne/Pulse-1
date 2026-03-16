@@ -73,12 +73,16 @@
   font-weight: 400;
   letter-spacing: -0.01em;
   line-height: 1.5;
-  color: #fafafa;
+  color: #1c1917;
   background: transparent;
   outline: none;
   word-wrap: break-word;
   overflow-wrap: break-word;
   white-space: pre-wrap;
+}
+
+.dark .message-input-area {
+  color: #fafafa;
 }
 
 .message-input-area[contenteditable]:empty::before {
@@ -95,11 +99,19 @@
 /* Markdown preview styling */
 .message-input-area strong {
   font-weight: 700;
+  color: inherit;
+}
+
+.dark .message-input-area strong {
   color: #FAFAFA;
 }
 
 .message-input-area em {
   font-style: italic;
+  color: inherit;
+}
+
+.dark .message-input-area em {
   color: #E4E4E7;
 }
 
@@ -501,20 +513,8 @@
   box-shadow: 0 0 0 1px rgba(244, 63, 94, 0.2), 0 4px 12px rgba(0, 0, 0, 0.1);
 }
 
-.light .message-input-area {
-  color: #1c1917;
-}
-
 .light .message-input-area[contenteditable]:empty::before {
   color: #a8a29e;
-}
-
-.light .message-input-area strong {
-  color: #1c1917;
-}
-
-.light .message-input-area em {
-  color: #292524;
 }
 
 .light .message-input-area code {

@@ -21,7 +21,7 @@ export const SmartTimestamp: React.FC<SmartTimestampProps> = React.memo(({ date,
   // Guard against undefined/null dates
   if (!date) {
     return (
-      <span className={`text-[10px] text-zinc-400 dark:text-zinc-600 ${className}`}>
+      <span className={`text-[10px] text-zinc-500 dark:text-zinc-400 ${className}`}>
         —
       </span>
     );
@@ -32,7 +32,7 @@ export const SmartTimestamp: React.FC<SmartTimestampProps> = React.memo(({ date,
 
   return (
     <span
-      className={`text-[10px] text-zinc-400 dark:text-zinc-600 group-hover:text-zinc-500 dark:group-hover:text-zinc-500 transition-colors ${className}`}
+      className={`text-[10px] text-zinc-500 dark:text-zinc-400 group-hover:text-zinc-400 dark:group-hover:text-zinc-300 transition-colors ${className}`}
       title={fullTime}
     >
       {smartTime}

@@ -171,7 +171,7 @@ export const MessageChat: React.FC<MessageChatProps> = ({
   const isDarkMode = document.documentElement.classList.contains('dark');
 
   return (
-    <div className="h-full flex flex-col bg-[#0f172a]">
+    <div className="h-full flex flex-col bg-black">
       {/* Header */}
       <div className="px-6 py-4 border-b border-white/[0.07] flex items-center justify-between">
         <div className="flex items-center gap-3">
@@ -307,7 +307,7 @@ export const MessageChat: React.FC<MessageChatProps> = ({
 
                           {/* Edited indicator */}
                           {message.edited_at && (
-                            <span className="text-[10px] text-zinc-600 dark:text-zinc-500">(edited)</span>
+                            <span className="text-[10px] text-zinc-500 dark:text-zinc-400">(edited)</span>
                           )}
                         </div>
 
@@ -349,14 +349,14 @@ export const MessageChat: React.FC<MessageChatProps> = ({
                       <div className="flex gap-0.5 opacity-0 group-hover:opacity-100 transition-all flex-shrink-0">
                         <button
                           onClick={() => handleReaction(message.id, '👍')}
-                          className="w-7 h-7 rounded hover:bg-zinc-800 flex items-center justify-center text-zinc-500 hover:text-white transition"
+                          className="w-7 h-7 rounded hover:bg-zinc-800 flex items-center justify-center text-zinc-500 hover:text-rose-400 transition"
                           title="Add reaction"
                         >
                           <Smile className="text-xs" />
                         </button>
                         <button
                           onClick={() => handlePinMessage(message.id)}
-                          className={`w-7 h-7 rounded hover:bg-zinc-800 flex items-center justify-center transition ${message.is_pinned ? 'text-yellow-500' : 'text-zinc-500 hover:text-yellow-500'}`}
+                          className={`w-7 h-7 rounded hover:bg-zinc-800 flex items-center justify-center transition ${message.is_pinned ? 'text-yellow-500' : 'text-zinc-500 hover:text-rose-400'}`}
                           title={message.is_pinned ? 'Unpin message' : 'Pin message'}
                         >
                           <Pin className="text-xs" />

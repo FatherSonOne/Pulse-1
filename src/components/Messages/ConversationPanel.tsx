@@ -102,10 +102,10 @@ const ConversationPanel: React.FC<ConversationPanelProps> = ({
 
             {/* Message bubble */}
             <div
-              className={`message-bubble px-4 py-2.5 ${
+              className={`message-bubble ${
                 isOwnMessage
-                  ? 'bg-gradient-to-br from-[#f43f5e] to-[#ec4899] text-white rounded-2xl rounded-tr-sm'
-                  : 'bg-[#1e293b] border border-white/[0.06] text-[#e2e8f0] rounded-2xl rounded-tl-sm'
+                  ? 'message-bubble-sent'
+                  : 'message-bubble-received'
               }`}
             >
               <p className="text-sm leading-relaxed whitespace-pre-wrap break-words">{message.content}</p>
@@ -151,7 +151,7 @@ const ConversationPanel: React.FC<ConversationPanelProps> = ({
 
   return (
     <motion.div
-      className={`conversation-panel flex flex-col h-full bg-[#0f172a] ${className}`}
+      className={`conversation-panel flex flex-col h-full bg-black ${className}`}
       initial={{ opacity: 0, x: 20 }}
       animate={{ opacity: 1, x: 0 }}
       transition={{ duration: 0.3 }}

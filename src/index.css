@@ -1544,16 +1544,7 @@ html, body {
   box-shadow: 0 4px 16px rgba(244, 63, 94, 0.4);
 }
 
-/* Keep .dark override consistent (in case dark class is present) */
-.dark .message-bubble-sent {
-  background: linear-gradient(135deg, #f43f5e, #ec4899);
-  box-shadow: 0 2px 12px rgba(244, 63, 94, 0.35);
-}
-
-.dark .message-bubble-sent:hover {
-  background: linear-gradient(135deg, #e11d48, #db2777);
-  box-shadow: 0 4px 16px rgba(244, 63, 94, 0.45);
-}
+/* .dark .message-bubble-sent — defined in messages.css (single source of truth) */
 
 .message-bubble-received {
   background: #f8fafc;
@@ -1570,15 +1561,7 @@ html, body {
   box-shadow: 0 2px 6px rgba(0, 0, 0, 0.1);
 }
 
-.dark .message-bubble-received {
-  background: rgba(255, 255, 255, 0.04);
-  border-color: rgba(255, 255, 255, 0.06);
-  color: #fafafa;
-}
-
-.dark .message-bubble-received:hover {
-  background: rgba(255, 255, 255, 0.07);
-}
+/* .dark .message-bubble-received — defined in messages.css (single source of truth) */
 
 /* Channel List Styles */
 .channel-item {
