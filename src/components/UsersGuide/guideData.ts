@@ -1,5 +1,5 @@
 // Pulse User's Guide — Full Rich Section Data
-// Version 25.1.2 · March 9, 2026
+// Version 25.1.2 · March 16, 2026
 // Auto-maintained by the /users-guide slash command.
 
 export interface Shortcut {
@@ -193,16 +193,41 @@ export const guideSections: GuideSection[] = [
     id: 'dashboard',
     title: 'Dashboard',
     icon: '🏠',
-    summary: 'Your home screen — a live snapshot of messages, tasks, meetings, and AI-powered nudges for what needs your attention right now.',
+    badge: 'Updated',
+    summary: 'Your home screen — AI web search, Mini Pulse AI, upcoming events with live countdowns, unread counts at a glance, and smart nudges for what needs your attention.',
     steps: [
       'Click Dashboard in the sidebar (or press G→D) to open your home view.',
-      'Quick Stats Cards at the top show: unread messages, pending tasks, today\'s meetings, and recent activity. Click any card to jump to that section.',
-      'Upcoming Meetings shows your next 3 meetings with one-click join links.',
-      'Priority Messages shows your most important unread messages, ranked by AI urgency.',
+      'AI Web Search Bar at the top — type any question to search the web with AI and get a summary with source links.',
+      'Quick Stats Cards show: unread messages, pending tasks, today\'s meetings, and recent activity. Click any to jump to that section.',
+      'Mini Pulse AI widget — tap a quick chip ("Summarize my day", "What\'s urgent?", "Draft a reply") or type your own question. Responses appear inline; click Open Pulse AI for the full assistant.',
+      'Upcoming Events widget shows your next 3 calendar events with live countdown badges (in 2h, in 15m, now).',
+      'Unread Pulse widget shows unread counts for Messages, Email, and Vox as tappable rows — click any to jump directly there.',
       'Quick Scheduler lets you create a meeting or appointment without leaving the Dashboard.',
-      'AI Nudges appear as banners for overdue tasks, stalled decisions, unread priority emails, and meeting prep alerts.',
+      'AI Nudges appear as banners for overdue tasks, stalled decisions, follow-up reminders, and meeting prep alerts.',
     ],
     subsections: [
+      {
+        id: 'ai-web-search',
+        title: 'AI Web Search Bar',
+        steps: [
+          'Click the search bar at the top of the Dashboard.',
+          'Type any question — market research, competitive intel, current events, anything.',
+          'Press Enter — Pulse returns an AI-written summary with up to 3 source links.',
+          'Click Dismiss to clear the result.',
+        ],
+        note: 'Use the web search bar for quick research without opening a new browser tab.',
+      },
+      {
+        id: 'mini-pulse-ai',
+        title: 'Mini Pulse AI',
+        steps: [
+          'Find the Ask Pulse AI widget on your Dashboard.',
+          'Tap a quick chip or type your own question in the input box.',
+          'Press Enter — an inline response appears immediately below.',
+          'Click Open Pulse AI → to continue the conversation in the full AI assistant.',
+          'Click Clear to dismiss the response.',
+        ],
+      },
       {
         id: 'quick-scheduler',
         title: 'Quick Scheduler',
@@ -220,14 +245,15 @@ export const guideSections: GuideSection[] = [
           'Stalled decisions appear when a vote is waiting for you — click to vote.',
           'Follow-up reminders appear for contacts you haven\'t reached recently.',
           'Meeting prep alerts appear for meetings starting within the next hour.',
-          'Click Dismiss to clear a nudge, or Snooze to be reminded later.',
+          'Click Dismiss to clear a nudge.',
         ],
       },
     ],
     tips: [
       'The Dashboard refreshes automatically — no need to reload.',
-      'Open Pulse AI (Ctrl+/) and type "summarize my day" for an instant daily brief.',
-      'Click any Quick Stats card to jump directly to that section with context loaded.',
+      'Tap "Summarize my day" in Mini Pulse AI for an instant brief right on the Dashboard.',
+      'The Upcoming Events countdown updates live — no need to check the clock.',
+      'Click any Unread Pulse row to jump straight to that section with your unread items ready.',
     ],
     useCases: [
       {
@@ -236,9 +262,9 @@ export const guideSections: GuideSection[] = [
         scenario: 'You open Pulse at 8 AM and want to know what your day looks like in under 3 minutes.',
         steps: [
           'Scan the Quick Stats: 12 unread emails, 3 pending tasks, 2 meetings today.',
-          'Press Ctrl+/ and type "summarize my day" — Pulse AI reads your calendar and tasks.',
-          'Click the Upcoming Meetings widget — your 10 AM standup has a one-click join.',
-          'Click the Priority Messages card — respond to your manager\'s deadline change email.',
+          'Tap the "Summarize my day" chip in Mini Pulse AI — a brief appears right on the Dashboard.',
+          'Check the Upcoming Events widget — your 10 AM standup is in 2 hours.',
+          'The Unread Pulse widget shows 4 unread Messages — click to jump straight there.',
           'Check the AI nudges — a decision you need to vote on by today is highlighted. Click to vote.',
           'Done in under 3 minutes with complete situational awareness.',
         ],
@@ -958,15 +984,18 @@ export const guideSections: GuideSection[] = [
     id: 'calendar',
     title: 'Calendar & Scheduling',
     icon: '📅',
-    summary: 'Connect Google or Microsoft Calendar, drag to reschedule, find times for all attendees, and use Meeting Deflector to protect your focus time.',
+    badge: 'Updated',
+    summary: 'Connect Google or Microsoft Calendar, create recurring events, RSVP with comments, share calendars, publish booking pages, and use Meeting Deflector to protect your focus time.',
     steps: [
       'Connect your calendar: Settings → Connected Accounts → Connect Calendar. Choose Google or Microsoft.',
-      'Click Calendar in the sidebar and toggle between Day, Week, and Month views.',
-      'Click any empty time slot on the calendar to create a new event.',
-      'Drag and drop any event to a new time slot to reschedule — attendees are notified automatically.',
-      'Accept or decline calendar invites from your inbox: Accept, Maybe, or Decline.',
+      'Click Calendar in the sidebar and toggle between Day, Week, Month, and Timeline views.',
+      'Click any empty time slot to create a new event. Set title, date, time, status, guests, and video link.',
+      'Drag and drop any event to reschedule — attendees are notified automatically.',
+      'Create recurring events with daily, weekly, monthly, or custom patterns.',
+      'Accept or decline calendar invites from your inbox. Open an event\'s Attendees tab to see RSVP status.',
+      'Open an event\'s Comments tab to collaborate with attendees before or after the meeting.',
+      'Share your calendar with teammates or publish a Booking Page so others can self-schedule.',
       'Use Meeting Deflector on any invite to get AI analysis and a draft decline message.',
-      'Click Find Time in the event editor to see open slots that work for all attendees.',
     ],
     subsections: [
       {
@@ -976,11 +1005,55 @@ export const guideSections: GuideSection[] = [
           'Click any empty time slot.',
           'Enter an event title.',
           'Set date, time, and duration.',
+          'Set status: Confirmed, Tentative, or Cancelled.',
           'Add guests by name or email — Pulse suggests from your contacts.',
           'Add a video meeting link: choose Pulse Video, Google Meet, or Zoom.',
           'Add agenda or notes for the event.',
           'Click Create Event — guests receive email invites automatically.',
         ],
+      },
+      {
+        id: 'recurring-events',
+        title: 'Recurring Events',
+        steps: [
+          'When creating or editing an event, click Recurrence.',
+          'Choose a pattern: Daily, Weekly, Monthly, or Custom.',
+          'Set an end date, a number of occurrences, or leave it open-ended.',
+          'Click Save — Pulse generates all future occurrences.',
+          'To edit a recurring event, choose Only this event or All future events.',
+        ],
+      },
+      {
+        id: 'event-comments',
+        title: 'Event Comments',
+        steps: [
+          'Open any event and click the Comments tab.',
+          'Type a comment and press Send — all attendees can see and reply.',
+          'Use comments to share pre-meeting notes, agenda items, or post-meeting follow-ups.',
+        ],
+      },
+      {
+        id: 'shared-calendars',
+        title: 'Shared Calendars',
+        steps: [
+          'Go to Settings → Calendar → Shared Calendars.',
+          'Click Add Shared Calendar and enter a person\'s email or name.',
+          'Choose access level: View only or Edit.',
+          'They receive an email invitation. You can also subscribe to a calendar link someone shares with you.',
+        ],
+      },
+      {
+        id: 'booking-pages',
+        title: 'Booking Pages',
+        steps: [
+          'Go to Calendar → Booking Pages and click Create Booking Page.',
+          'Set your availability windows and preferred meeting duration.',
+          'Add a video link, location, or instructions.',
+          'Click Save — you get a shareable link (e.g. pulse.app/book/yourname).',
+          'Share the link in your email signature or anywhere online.',
+          'When someone books, the event appears on your calendar and both parties get a confirmation.',
+        ],
+        note: 'Booking Pages eliminate back-and-forth scheduling emails for recurring meeting types.',
       },
       {
         id: 'meeting-deflector',
@@ -1026,8 +1099,10 @@ export const guideSections: GuideSection[] = [
     ],
     tips: [
       'Connect multiple calendars (Work and Personal) — Pulse displays them with color coding.',
-      'Meeting Deflector takes 5 seconds and can reclaim hours per week — use it on every invite.',
+      'Timeline view shows 14 days as a Gantt chart — great for project scheduling and multi-day events.',
       'Add two reminders to important meetings: 1 day before and 15 minutes before.',
+      'Meeting Deflector takes 5 seconds and can reclaim hours per week — use it on every invite.',
+      'Publish a Booking Page to eliminate scheduling emails for client calls and recurring meetings.',
     ],
     useCases: [
       {

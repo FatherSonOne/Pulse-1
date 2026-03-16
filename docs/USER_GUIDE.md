@@ -1,7 +1,7 @@
 # Pulse User's Guide
 
 **Version**: 25.1.2
-**Last Updated**: March 9, 2026
+**Last Updated**: March 16, 2026
 **For**: All Pulse users — personal, team, and enterprise
 
 ---
@@ -189,10 +189,33 @@ The Dashboard is the first screen you see when you open Pulse. It gives you a re
 
 ### What You See
 
+The Dashboard is organized into several widgets, each focused on a different slice of your day:
+
+- **AI Web Search Bar** — A full-width search bar at the top of the Dashboard. Type any question and Pulse searches the web using AI, returning a summary with source links. Great for quick research without leaving your workspace.
 - **Quick Stats Cards** — Unread messages, pending tasks, today's meetings, and recent activity counts. Click any card to jump directly to that section.
-- **Upcoming Meetings** — Your next 3 scheduled meetings with one-click join links
-- **Priority Messages** — Your most important unread messages, ranked by urgency using AI
-- **Quick Scheduler** — Create a meeting or appointment without leaving the Dashboard
+- **Mini Pulse AI** — An always-visible AI assistant widget on your Dashboard. Use quick-tap chips ("Summarize my day", "What's urgent?", "Draft a reply") or type any question. Responses appear inline — click **Open Pulse AI** to expand into the full AI assistant.
+- **Upcoming Events** — Your next 3 calendar events with a live countdown badge showing how far away each one is (e.g., *in 2h*, *in 15m*, *now*). Click **View all** to open your full calendar.
+- **Unread Pulse** — A quick-glance widget showing your unread count for Messages, Email, and Vox. Click any row to jump directly to that section and see what's waiting.
+- **Quick Scheduler** — Create a meeting or appointment without leaving the Dashboard.
+- **AI Nudges** — Banners for overdue tasks, stalled decisions, follow-up reminders, and meeting prep alerts.
+
+### Using the AI Web Search Bar
+
+1. Click the search bar at the top of the Dashboard.
+2. Type any question — e.g., "What is the current EUR/USD rate?" or "Best practices for onboarding remote employees."
+3. Press **Enter** or click **Search**.
+4. Pulse returns an AI-written summary with up to 3 source links you can open.
+5. Click **Dismiss** to clear the result and return to the normal Dashboard view.
+
+**Tip:** Use the web search bar for quick market research, competitive intel, or any question you'd normally open a new browser tab for.
+
+### Using Mini Pulse AI
+
+1. Scroll to the **Ask Pulse AI** widget on your Dashboard.
+2. Tap one of the quick chips to ask a common question instantly, or type your own question in the input box.
+3. Press **Enter** — a response appears inline below the input.
+4. For a longer conversation or more detailed answers, click **Open Pulse AI →** to open the full AI assistant.
+5. Click **Clear** to dismiss the response.
 
 ### Using the Quick Scheduler
 
@@ -217,10 +240,10 @@ Click any nudge to jump directly to the relevant item. Click **Dismiss** to clea
 <details>
 <summary><strong>Advanced: Customizing your Dashboard view</strong></summary>
 
-While the Dashboard layout is fixed, you can control what appears on it:
+While the Dashboard layout is fixed, you can control what appears in each widget:
 
-- **Priority Messages** pulls from your Smart Folders — adjust your folder rules in Settings → Email Filters to control what gets promoted to the Dashboard.
-- **Upcoming Meetings** always shows your next 3 — connect your calendar in Settings → Connected Accounts to populate this.
+- **Upcoming Events** pulls from your connected calendars — connect your calendar in Settings → Connected Accounts to populate this.
+- **Unread Pulse** counts update in real time — mark items as read in Messages and Email to reset your counts.
 - **Quick Stats** include only unread items — use bulk-mark-as-read in Messages and Email to reset your counts.
 
 </details>
@@ -231,9 +254,9 @@ While the Dashboard layout is fixed, you can control what appears on it:
 **Scenario:** You open Pulse at 8 AM and want to quickly know what your day looks like.
 
 1. **Dashboard** — Scan the Quick Stats: 12 unread emails, 3 pending tasks, 2 meetings today.
-2. Click the **Pulse AI** button (`Ctrl+/`) and type "summarize my day" — it reads your calendar and tasks and gives you a brief.
-3. Click the **Upcoming Meetings** widget to see your 10 AM standup. One-click join is ready.
-4. Click the Priority Messages card — the top message is from your manager about a deadline change. Reply immediately.
+2. Tap the **"Summarize my day"** chip in the Mini Pulse AI widget — it reads your calendar and tasks and gives you a brief right on the Dashboard.
+3. Check the **Upcoming Events** widget — your 10 AM standup is in 2 hours. The countdown badge shows exactly how long you have.
+4. The **Unread Pulse** widget shows 4 unread Messages — click it to jump straight there and triage.
 5. Check the AI nudges — a decision you need to vote on by today is highlighted. Click to vote.
 
 Total time: under 3 minutes. You know exactly what your day holds.
@@ -1111,19 +1134,32 @@ Result: You leave every sprint planning with zero missing follow-ups and a writt
 ### Viewing Your Schedule
 
 - Click **Calendar** in the sidebar.
-- Toggle between **Day**, **Week**, and **Month** views using the buttons at the top.
-- Click any event to see full details: attendees, video link, agenda, and notes.
+- Toggle between **Day**, **Week**, **Month**, and **Timeline** views using the buttons at the top.
+- Click any event to see full details: attendees, video link, agenda, comments, and notes.
 - Color coding shows events by calendar (Work, Personal, etc.).
+
+**Timeline View** — The 14-day timeline (Gantt-style) shows all events across two weeks as horizontal bars. It's ideal for seeing project schedules and multi-day events at a glance.
 
 ### Creating an Event
 
 1. Click any empty time slot on the calendar.
 2. Enter an event title.
 3. Set the date, time, and duration.
-4. Add guests by typing their names or emails — Pulse suggests contacts.
-5. Add a video meeting link — choose Pulse Video, Google Meet, or Zoom.
-6. Add an agenda or notes for the event.
-7. Click **Create Event** — guests receive email invites automatically.
+4. Set the **status**: Confirmed, Tentative, or Cancelled.
+5. Add guests by typing their names or emails — Pulse suggests contacts.
+6. Add a video meeting link — choose Pulse Video, Google Meet, or Zoom.
+7. Add an agenda or notes for the event.
+8. Click **Create Event** — guests receive email invites automatically.
+
+### Recurring Events
+
+Create events that repeat automatically:
+
+1. When creating or editing an event, click **Recurrence**.
+2. Choose a pattern: Daily, Weekly, Monthly, or Custom (e.g., every 2 weeks on Tuesday and Thursday).
+3. Set an end date or a number of occurrences, or leave it open-ended.
+4. Click **Save** — Pulse generates all future occurrences.
+5. To edit a recurring event, choose whether to update **Only this event** or **All future events**.
 
 ### Drag-to-Reschedule
 
@@ -1137,6 +1173,40 @@ Reschedule events without opening them:
 - When you receive a calendar invite, it appears in your inbox with **Accept**, **Maybe**, and **Decline** buttons.
 - Click your choice — the organizer is notified automatically.
 - You can add a note to your response (e.g., "I'll be 5 minutes late").
+- Open an event and go to the **Attendees** tab to see who has accepted, declined, or not yet responded.
+
+### Event Comments
+
+Collaborate directly on an event without switching to a separate chat:
+
+1. Open any event and click the **Comments** tab.
+2. Type a comment and press **Send** — all attendees can see and reply.
+3. Use comments to share pre-meeting notes, agenda items, or follow-ups after the meeting.
+
+### Shared Calendars
+
+Share your calendar with teammates or clients:
+
+1. Go to **Settings → Calendar → Shared Calendars**.
+2. Click **Add Shared Calendar** and enter the person's email or name.
+3. Choose the access level: **View only** or **Edit**.
+4. The person receives an email invitation to view your calendar.
+
+You can also subscribe to a shared calendar someone else created — just click the link they share with you.
+
+### Booking Pages
+
+Let others book time with you directly, without back-and-forth emails:
+
+1. Go to **Calendar → Booking Pages** and click **Create Booking Page**.
+2. Set your availability windows (e.g., Mon–Fri 9 AM–5 PM).
+3. Choose the meeting duration (15 min, 30 min, 60 min, or custom).
+4. Add a video link, location, or instructions for the booking.
+5. Click **Save** — you get a shareable link (e.g., `pulse.app/book/yourname`).
+6. Share that link in your email signature, social profiles, or anywhere you like.
+7. When someone books a slot, it appears on your calendar and both parties receive a confirmation email.
+
+**Tip:** Booking Pages eliminate scheduling emails entirely for recurring meeting types like client check-ins or job interviews.
 
 ### Meeting Deflector
 
