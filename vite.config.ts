@@ -37,12 +37,6 @@ export default defineConfig(({ mode }) => {
           output: {
             manualChunks: (id) => {
               if (id.includes('node_modules')) {
-                // React core - critical, loads first
-                if (id.includes('/react-dom/') || id.includes('/react/') ||
-                    id.includes('scheduler')) {
-                  return 'react-vendor';
-                }
-
                 // Framer Motion - heavy animation library
                 if (id.includes('framer-motion')) {
                   return 'framer-motion';
@@ -364,7 +358,8 @@ export default defineConfig(({ mode }) => {
       resolve: {
         alias: {
           '@': path.resolve(__dirname, '.'),
-        }
+        },
+        dedupe: ['react', 'react-dom'],
       },
       test: {
         globals: true,
