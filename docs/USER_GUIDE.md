@@ -1,6 +1,6 @@
 # Pulse User's Guide
 
-**Version**: 25.1.2
+**Version**: 25.1.3
 **Last Updated**: March 16, 2026
 **For**: All Pulse users — personal, team, and enterprise
 
@@ -191,13 +191,40 @@ The Dashboard is the first screen you see when you open Pulse. It gives you a re
 
 The Dashboard is organized into several widgets, each focused on a different slice of your day:
 
-- **AI Web Search Bar** — A full-width search bar at the top of the Dashboard. Type any question and Pulse searches the web using AI, returning a summary with source links. Great for quick research without leaving your workspace.
+- **Daily Overview** — A full-width AI-generated briefing at the top of the Dashboard. Pulse reads your calendar, tasks, messages, email, and voice messages and produces a personalized summary every morning (and refreshes every 5 minutes). Includes a greeting, a written summary, Key Highlights, Action Items, and a Focus Recommendation.
+- **AI Web Search Bar** — A full-width search bar below the Daily Overview. Type any question and Pulse searches the web using AI, returning a summary with source links.
 - **Quick Stats Cards** — Unread messages, pending tasks, today's meetings, and recent activity counts. Click any card to jump directly to that section.
 - **Mini Pulse AI** — An always-visible AI assistant widget on your Dashboard. Use quick-tap chips ("Summarize my day", "What's urgent?", "Draft a reply") or type any question. Responses appear inline — click **Open Pulse AI** to expand into the full AI assistant.
 - **Upcoming Events** — Your next 3 calendar events with a live countdown badge showing how far away each one is (e.g., *in 2h*, *in 15m*, *now*). Click **View all** to open your full calendar.
 - **Unread Pulse** — A quick-glance widget showing your unread count for Messages, Email, and Vox. Click any row to jump directly to that section and see what's waiting.
 - **Quick Scheduler** — Create a meeting or appointment without leaving the Dashboard.
 - **AI Nudges** — Banners for overdue tasks, stalled decisions, follow-up reminders, and meeting prep alerts.
+
+### Daily Overview — Your AI Morning Briefing
+
+The **Daily Overview** is the first thing you see on your Dashboard. Every time you open Pulse (and every 5 minutes while it's open), the AI reads across all your connected channels — calendar, tasks, messages, email, and voice messages — and writes you a personalized briefing.
+
+**What's in the Daily Overview:**
+
+- **Greeting** — A time-aware greeting (Good morning, Good afternoon, etc.) with the current context.
+- **Summary** — 1–2 sentences summing up your day: what's on, what's urgent, what needs attention.
+- **Focus Recommendation** — A highlighted suggestion for the single most important thing to tackle first. Click it to jump directly to that item.
+- **Quick Stats** — Four at-a-glance numbers: Unread messages, Pending tasks, Today's meetings, Unplayed Voxes.
+- **Key Highlights** — Up to 4 cards pulling the most important items from your calendar, tasks, messages, and email. Click any card to go straight to that item.
+- **Action Items** — Up to 4 smart suggestions for things you should do today. Each has an action button (reply, calendar, task, message, microphone, etc.) — click it to act immediately.
+
+**How to use it:**
+
+1. Open Pulse — the Daily Overview loads automatically at the top of your Dashboard.
+2. Read the greeting and summary for an instant picture of your day.
+3. Click the **Focus Recommendation** to jump to your most important item right away.
+4. Scan the **Key Highlights** cards — click any to go directly to that item.
+5. Work through the **Action Items** — click the button on the right of each card to take action.
+6. Click the **refresh icon** (top right of the briefing) to regenerate the briefing at any time.
+
+**Tip:** The briefing refreshes automatically every 5 minutes. If you just got a new email or completed a task, click the refresh icon to get an updated view immediately.
+
+**Tip:** If you haven't connected your calendar or email yet, the briefing will be minimal. The more accounts you connect in Settings → Connected Accounts, the richer and more useful your briefing becomes.
 
 ### Using the AI Web Search Bar
 
@@ -253,11 +280,12 @@ While the Dashboard layout is fixed, you can control what appears in each widget
 
 **Scenario:** You open Pulse at 8 AM and want to quickly know what your day looks like.
 
-1. **Dashboard** — Scan the Quick Stats: 12 unread emails, 3 pending tasks, 2 meetings today.
-2. Tap the **"Summarize my day"** chip in the Mini Pulse AI widget — it reads your calendar and tasks and gives you a brief right on the Dashboard.
-3. Check the **Upcoming Events** widget — your 10 AM standup is in 2 hours. The countdown badge shows exactly how long you have.
-4. The **Unread Pulse** widget shows 4 unread Messages — click it to jump straight there and triage.
-5. Check the AI nudges — a decision you need to vote on by today is highlighted. Click to vote.
+1. **Daily Overview** loads automatically at the top — read the greeting and one-line summary. You can instantly see: 4 unread messages, 3 pending tasks, 2 meetings today.
+2. Click the **Focus Recommendation** — it tells you the most important thing to do first. Jump there in one click.
+3. Scan the **Key Highlights** — your 10 AM standup is flagged. Click the card to open the calendar event.
+4. Work through the **Action Items** — there's a follow-up email to send. Click the envelope button to open the compose window.
+5. Check the **Upcoming Events** widget below — the countdown badge says your standup is in 2 hours.
+6. Check the AI nudges — a decision you need to vote on by today is highlighted. Click to vote.
 
 Total time: under 3 minutes. You know exactly what your day holds.
 

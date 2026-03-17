@@ -1260,22 +1260,21 @@ const Dashboard: React.FC<DashboardProps> = ({ user, apiKey, setView }) => {
               {/* Quick Stats Row - Enhanced with Glassmorphism */}
               {briefingStats && (
                 <div className="grid grid-cols-4 gap-2 sm:gap-4 mb-4 sm:mb-6">
-                  <div className="glass-card glass-rose-hover bg-black/25 transition-all duration-150 rounded-lg sm:rounded-xl p-2 sm:p-3 text-center group cursor-pointer card-hover-lift">
-                    <div className="text-lg sm:text-2xl font-bold text-rose-300">{briefingStats.unreadMessages}</div>
-                    <div className="text-[9px] sm:text-[10px] text-zinc-300 group-hover:text-white uppercase tracking-wider transition-colors">Unread</div>
-                  </div>
-                  <div className="glass-card glass-rose-hover bg-black/25 transition-all duration-150 rounded-lg sm:rounded-xl p-2 sm:p-3 text-center group cursor-pointer card-hover-lift">
-                    <div className="text-lg sm:text-2xl font-bold text-pink-300">{briefingStats.pendingTasks}</div>
-                    <div className="text-[9px] sm:text-[10px] text-zinc-300 group-hover:text-white uppercase tracking-wider transition-colors">Tasks</div>
-                  </div>
-                  <div className="glass-card glass-rose-hover bg-black/25 transition-all duration-150 rounded-lg sm:rounded-xl p-2 sm:p-3 text-center group cursor-pointer card-hover-lift">
-                    <div className="text-lg sm:text-2xl font-bold text-rose-200">{briefingStats.todayMeetings}</div>
-                    <div className="text-[9px] sm:text-[10px] text-zinc-300 group-hover:text-white uppercase tracking-wider transition-colors">Meetings</div>
-                  </div>
-                  <div className="glass-card glass-rose-hover bg-black/25 transition-all duration-150 rounded-lg sm:rounded-xl p-2 sm:p-3 text-center group cursor-pointer card-hover-lift">
-                    <div className="text-lg sm:text-2xl font-bold text-pink-200">{briefingStats.unplayedVoxes}</div>
-                    <div className="text-[9px] sm:text-[10px] text-zinc-300 group-hover:text-white uppercase tracking-wider transition-colors">Voxes</div>
-                  </div>
+                  {[
+                    { value: briefingStats.unreadMessages, label: 'Unread' },
+                    { value: briefingStats.pendingTasks, label: 'Tasks' },
+                    { value: briefingStats.todayMeetings, label: 'Meetings' },
+                    { value: briefingStats.unplayedVoxes, label: 'Voxes' },
+                  ].map(({ value, label }) => (
+                    <div
+                      key={label}
+                      className="glass-rose-hover transition-all duration-150 rounded-lg sm:rounded-xl p-2 sm:p-3 text-center group cursor-pointer card-hover-lift border border-rose-500/20"
+                      style={{ background: 'rgba(244, 63, 94, 0.06)', backdropFilter: 'blur(16px)' }}
+                    >
+                      <div className="text-lg sm:text-2xl font-bold text-white">{value}</div>
+                      <div className="text-[9px] sm:text-[10px] text-white/60 group-hover:text-white uppercase tracking-wider transition-colors">{label}</div>
+                    </div>
+                  ))}
                 </div>
               )}
 
@@ -1340,15 +1339,6 @@ const Dashboard: React.FC<DashboardProps> = ({ user, apiKey, setView }) => {
                               )}
                             </div>
                             <div className="text-xs text-zinc-900 mt-0.5 line-clamp-2 sm:line-clamp-1">{suggestion.reason}</div>
-                            {suggestion.type === 'ai_assist' && suggestion.aiFeature && (
-                              <button
-                                onClick={() => handleAIFeatureClick(suggestion.aiFeature!)}
-                                className="mt-2 px-3 py-1.5 bg-gradient-to-r from-rose-500 to-pink-500 hover:from-rose-600 hover:to-pink-600 text-white text-xs font-semibold rounded-md transition-all duration-200 hover:shadow-lg hover:shadow-rose-500/30 active:scale-95"
-                              >
-                                <Sparkles className="mr-1.5" />
-                                Try AI Feature
-                              </button>
-                            )}
                           </div>
                           <button
                             onClick={() => suggestion.type === 'ai_assist' && suggestion.aiFeature ? handleAIFeatureClick(suggestion.aiFeature) : handleSuggestionAction(suggestion.type)}
@@ -1357,11 +1347,12 @@ const Dashboard: React.FC<DashboardProps> = ({ user, apiKey, setView }) => {
                             <i className={`fa-solid ${
                               suggestion.type === 'ai_assist' ? 'fa-sparkles' :
                               suggestion.type === 'message' ? 'fa-reply' :
-                              suggestion.type === 'event' ? 'fa-calendar' :
+                              suggestion.type === 'event' ? 'fa-calendar-check' :
+                              suggestion.type === 'task' ? 'fa-list-check' :
                               suggestion.type === 'email' ? 'fa-envelope' :
                               suggestion.type === 'vox' ? 'fa-microphone' :
-                              suggestion.type === 'contact' ? 'fa-user' :
-                              'fa-check'
+                              suggestion.type === 'contact' ? 'fa-user-plus' :
+                              'fa-arrow-right'
                             } text-sm sm:text-xs`}></i>
                           </button>
                         </div>

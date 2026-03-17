@@ -1,5 +1,5 @@
 // Pulse User's Guide — Full Rich Section Data
-// Version 25.1.2 · March 16, 2026
+// Version 25.1.3 · March 16, 2026
 // Auto-maintained by the /users-guide slash command.
 
 export interface Shortcut {
@@ -194,12 +194,14 @@ export const guideSections: GuideSection[] = [
     title: 'Dashboard',
     icon: '🏠',
     badge: 'Updated',
-    summary: 'Your home screen — AI web search, Mini Pulse AI, upcoming events with live countdowns, unread counts at a glance, and smart nudges for what needs your attention.',
+    summary: 'Your home screen — an AI Daily Overview briefing, web search, Mini Pulse AI, upcoming events with live countdowns, unread counts at a glance, and smart nudges for what needs your attention.',
     steps: [
       'Click Dashboard in the sidebar (or press G→D) to open your home view.',
-      'AI Web Search Bar at the top — type any question to search the web with AI and get a summary with source links.',
-      'Quick Stats Cards show: unread messages, pending tasks, today\'s meetings, and recent activity. Click any to jump to that section.',
-      'Mini Pulse AI widget — tap a quick chip ("Summarize my day", "What\'s urgent?", "Draft a reply") or type your own question. Responses appear inline; click Open Pulse AI for the full assistant.',
+      'Daily Overview at the top — Pulse reads all your channels and generates a personalized briefing with a greeting, summary, Key Highlights, Action Items, and a Focus Recommendation.',
+      'Click any Key Highlight card to jump directly to that item. Click the action button on any Action Item to act on it immediately.',
+      'Click the Focus Recommendation to jump straight to the most important thing on your plate.',
+      'AI Web Search Bar — type any question to search the web with AI and get a summary with source links.',
+      'Mini Pulse AI widget — tap a quick chip or type your own question. Responses appear inline; click Open Pulse AI for the full assistant.',
       'Upcoming Events widget shows your next 3 calendar events with live countdown badges (in 2h, in 15m, now).',
       'Unread Pulse widget shows unread counts for Messages, Email, and Vox as tappable rows — click any to jump directly there.',
       'Quick Scheduler lets you create a meeting or appointment without leaving the Dashboard.',
@@ -207,10 +209,25 @@ export const guideSections: GuideSection[] = [
     ],
     subsections: [
       {
+        id: 'daily-overview',
+        title: 'Daily Overview — AI Morning Briefing',
+        description: 'Pulse reads across all your connected channels and generates a personalized briefing every time you open the Dashboard (and auto-refreshes every 5 minutes).',
+        steps: [
+          'Greeting — a time-aware greeting with a quick overview of your day.',
+          'Summary — 1–2 sentences covering what\'s on, what\'s urgent, and what needs attention.',
+          'Focus Recommendation — the single most important thing to tackle first. Click it to jump there.',
+          'Quick Stats — four numbers at a glance: Unread messages, Pending tasks, Today\'s meetings, Unplayed Voxes.',
+          'Key Highlights — up to 4 cards showing the most important items from your calendar, tasks, messages, and email. Click any card to go straight to that item.',
+          'Action Items — up to 4 smart suggested actions. Each has an action button (reply, calendar, task, envelope, microphone, etc.) — click it to act immediately.',
+          'Click the refresh icon (top right) to regenerate the briefing at any time.',
+        ],
+        note: 'Connect more accounts in Settings → Connected Accounts for a richer, more accurate briefing.',
+      },
+      {
         id: 'ai-web-search',
         title: 'AI Web Search Bar',
         steps: [
-          'Click the search bar at the top of the Dashboard.',
+          'Click the search bar below the Daily Overview.',
           'Type any question — market research, competitive intel, current events, anything.',
           'Press Enter — Pulse returns an AI-written summary with up to 3 source links.',
           'Click Dismiss to clear the result.',
@@ -250,10 +267,11 @@ export const guideSections: GuideSection[] = [
       },
     ],
     tips: [
-      'The Dashboard refreshes automatically — no need to reload.',
-      'Tap "Summarize my day" in Mini Pulse AI for an instant brief right on the Dashboard.',
+      'The Daily Overview auto-refreshes every 5 minutes — click the refresh icon to force an update.',
+      'Click the Focus Recommendation in the Daily Overview to jump straight to your most important item.',
       'The Upcoming Events countdown updates live — no need to check the clock.',
       'Click any Unread Pulse row to jump straight to that section with your unread items ready.',
+      'Connect more accounts in Settings → Connected Accounts for a richer Daily Overview briefing.',
     ],
     useCases: [
       {
@@ -261,11 +279,11 @@ export const guideSections: GuideSection[] = [
         title: 'Starting Your Morning with Pulse',
         scenario: 'You open Pulse at 8 AM and want to know what your day looks like in under 3 minutes.',
         steps: [
-          'Scan the Quick Stats: 12 unread emails, 3 pending tasks, 2 meetings today.',
-          'Tap the "Summarize my day" chip in Mini Pulse AI — a brief appears right on the Dashboard.',
+          'The Daily Overview loads automatically — read the greeting and summary for an instant picture.',
+          'Click the Focus Recommendation to jump straight to the most important thing on your plate.',
+          'Scan the Key Highlights cards — click any to go directly to that item.',
+          'Work through the Action Items — click the action button on each to reply, schedule, or act.',
           'Check the Upcoming Events widget — your 10 AM standup is in 2 hours.',
-          'The Unread Pulse widget shows 4 unread Messages — click to jump straight there.',
-          'Check the AI nudges — a decision you need to vote on by today is highlighted. Click to vote.',
           'Done in under 3 minutes with complete situational awareness.',
         ],
       },
