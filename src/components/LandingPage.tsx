@@ -149,6 +149,7 @@ const LandingPage: React.FC<LandingPageProps> = ({ onGetStarted }) => {
   const [orbitPaused, setOrbitPaused] = useState(false);
   const [mobileMenuOpen, setMobileMenuOpen] = useState(false);
   const heroCanvasRef = useRef<HTMLCanvasElement>(null);
+  const crmCanvasRef  = useRef<HTMLCanvasElement>(null);
 
   // ── Live transcription typewriter ──────────────────────────────────
   const liveTranscriptPhrases = [
@@ -393,6 +394,149 @@ const LandingPage: React.FC<LandingPageProps> = ({ onGetStarted }) => {
 
     resize();
     for (let i = 0; i < N_PARTS; i++) parts.push(makePt());
+    window.addEventListener('resize', resize);
+    loop();
+
+    return () => {
+      cancelAnimationFrame(rafId);
+      window.removeEventListener('resize', resize);
+    };
+  }, []);
+
+  // ── CRM mesh-network canvas ─────────────────────────────────────────────────
+  useEffect(() => {
+    const canvas = crmCanvasRef.current;
+    if (!canvas) return;
+    const ctx = canvas.getContext('2d');
+    if (!ctx) return;
+
+    let rafId = 0;
+    let W = 0, H = 0;
+    const GLOW = 0.17;
+    const CONNECT_DIST = 160;
+
+    type MeshNode = { x: number; y: number; vx: number; vy: number; r: number; color: string; alpha: number; health: number; label: string };
+    const nodes: MeshNode[] = [];
+
+    const NAMED = [
+      { label: 'Sarah K.',  health: 92, color: '#818cf8' },
+      { label: 'Marcus T.', health: 78, color: '#818cf8' },
+      { label: 'Elena R.',  health: 85, color: '#c084fc' },
+      { label: 'James L.',  health: 61, color: '#c084fc' },
+      { label: 'Nina W.',   health: 95, color: '#818cf8' },
+    ];
+    const COLORS = ['#818cf8','#c084fc','#22d3ee','#a78bfa'];
+
+    function buildNodes() {
+      nodes.length = 0;
+      // Named contacts — larger, scattered across canvas
+      NAMED.forEach((n, i) => {
+        nodes.push({
+          x: W * (0.15 + (i / NAMED.length) * 0.7),
+          y: H * (0.2 + (i % 3) * 0.25 + Math.random() * 0.15),
+          vx: (Math.random() - 0.5) * 0.55,
+          vy: (Math.random() - 0.5) * 0.55,
+          r: 7, color: n.color, alpha: 1, health: n.health, label: n.label,
+        });
+      });
+      // Secondary mesh nodes
+      for (let i = 0; i < 28; i++) {
+        nodes.push({
+          x: Math.random() * W, y: Math.random() * H,
+          vx: (Math.random() - 0.5) * 0.65,
+          vy: (Math.random() - 0.5) * 0.65,
+          r: 3 + Math.random() * 2.5,
+          color: COLORS[i % COLORS.length],
+          alpha: 0.45 + Math.random() * 0.35,
+          health: 25 + Math.random() * 70,
+          label: '',
+        });
+      }
+    }
+
+    function resize() {
+      W = canvas.offsetWidth;
+      H = canvas.offsetHeight;
+      canvas.width  = W;
+      canvas.height = H;
+      buildNodes();
+    }
+
+    function draw() {
+      ctx.clearRect(0, 0, W, H);
+
+      // Drift nodes — bounce off edges
+      nodes.forEach(n => {
+        n.x += n.vx;
+        n.y += n.vy;
+        if (n.x < n.r)     { n.x = n.r;     n.vx = Math.abs(n.vx); }
+        if (n.x > W - n.r) { n.x = W - n.r; n.vx = -Math.abs(n.vx); }
+        if (n.y < n.r)     { n.y = n.r;     n.vy = Math.abs(n.vy); }
+        if (n.y > H - n.r) { n.y = H - n.r; n.vy = -Math.abs(n.vy); }
+      });
+
+      // Connection lines
+      for (let i = 0; i < nodes.length; i++) {
+        for (let j = i + 1; j < nodes.length; j++) {
+          const dx = nodes[i].x - nodes[j].x;
+          const dy = nodes[i].y - nodes[j].y;
+          const dist = Math.sqrt(dx * dx + dy * dy);
+          if (dist < CONNECT_DIST) {
+            const a = (1 - dist / CONNECT_DIST) * 0.28 * GLOW * 6;
+            ctx.beginPath();
+            ctx.moveTo(nodes[i].x, nodes[i].y);
+            ctx.lineTo(nodes[j].x, nodes[j].y);
+            ctx.strokeStyle = `rgba(99,102,241,${a})`;
+            ctx.lineWidth = 0.8;
+            ctx.stroke();
+          }
+        }
+      }
+
+      // Draw nodes
+      nodes.forEach(n => {
+        const hp = n.health / 100;
+        const hColor = hp > 0.7 ? '#34d399' : hp > 0.4 ? '#fbbf24' : '#f87171';
+
+        // Health arc
+        ctx.beginPath();
+        ctx.arc(n.x, n.y, n.r + 3, -Math.PI / 2, -Math.PI / 2 + Math.PI * 2 * hp);
+        ctx.strokeStyle = hColor + 'bb';
+        ctx.lineWidth = 1.5;
+        ctx.stroke();
+
+        // Soft glow
+        if (GLOW > 0.1) {
+          const ng = ctx.createRadialGradient(n.x, n.y, 0, n.x, n.y, n.r * 4);
+          ng.addColorStop(0, n.color + '30');
+          ng.addColorStop(1, 'transparent');
+          ctx.fillStyle = ng;
+          ctx.beginPath();
+          ctx.arc(n.x, n.y, n.r * 4, 0, Math.PI * 2);
+          ctx.fill();
+        }
+
+        // Node circle
+        ctx.beginPath();
+        ctx.arc(n.x, n.y, n.r, 0, Math.PI * 2);
+        ctx.fillStyle = n.color;
+        ctx.globalAlpha = n.alpha;
+        ctx.fill();
+        ctx.globalAlpha = 1;
+
+        // Label for named contacts
+        if (n.label) {
+          ctx.font = 'bold 9px -apple-system, sans-serif';
+          ctx.fillStyle = 'rgba(255,255,255,0.65)';
+          ctx.textAlign = 'center';
+          ctx.fillText(n.label, n.x, n.y + n.r + 12);
+        }
+      });
+    }
+
+    function loop() { rafId = requestAnimationFrame(loop); draw(); }
+
+    resize();
     window.addEventListener('resize', resize);
     loop();
 
@@ -1333,176 +1477,246 @@ const LandingPage: React.FC<LandingPageProps> = ({ onGetStarted }) => {
         <SectionDivider />
 
         {/* Section D — Relationship Intelligence */}
-        <section id="section-crm" className={`py-24 px-6 border-y relative${isDarkMode ? ' bg-zinc-900/30 border-zinc-800/40' : ' bg-stone-100 border-stone-200/60'}`}>
-          {/* Living Network themed bg — indigo constellation + cyan, from Contacts.css */}
+        <section id="section-crm" className={`py-24 px-6 border-y relative overflow-hidden${isDarkMode ? ' bg-zinc-950/60 border-zinc-800/40' : ' bg-stone-50 border-stone-200/60'}`}>
+          {/* Indigo space background */}
           <div
             className="absolute inset-0 pointer-events-none transition-opacity duration-700"
             style={{ opacity: isDarkMode ? Math.min(sectionVis['section-crm'] ?? 0, 1) : 0 }}
           >
             <div className="absolute inset-0" style={{
-              background: 'radial-gradient(ellipse at 10% 25%, rgba(99,102,241,0.18) 0%, transparent 50%), radial-gradient(ellipse at 90% 75%, rgba(6,182,212,0.15) 0%, transparent 50%), radial-gradient(ellipse at 50% 50%, rgba(99,102,241,0.08) 0%, transparent 70%)',
-            }}></div>
-            {/* Constellation dots — network node pattern like Contacts bubble visualization */}
+              background: 'radial-gradient(ellipse at 20% 30%, rgba(99,102,241,0.18) 0%, transparent 52%), radial-gradient(ellipse at 80% 70%, rgba(168,85,247,0.13) 0%, transparent 50%), radial-gradient(ellipse at 50% 50%, rgba(99,102,241,0.07) 0%, transparent 70%)',
+            }} />
+            {/* Grid dot overlay — always visible */}
             <div className="absolute inset-0" style={{
-              backgroundImage: 'radial-gradient(circle, rgba(99,102,241,0.22) 1.5px, transparent 1.5px)',
-              backgroundSize: '55px 55px',
-              maskImage: 'radial-gradient(ellipse at 15% 30%, black 25%, transparent 65%)',
-              WebkitMaskImage: 'radial-gradient(ellipse at 15% 30%, black 25%, transparent 65%)',
-            }}></div>
+              backgroundImage: 'radial-gradient(circle, rgba(99,102,241,0.22) 1px, transparent 1px)',
+              backgroundSize: '48px 48px',
+            }} />
           </div>
+
           <div className="max-w-7xl mx-auto relative z-10">
-            <div className="mb-14 animate-fade-in">
-              <div className="inline-flex items-center gap-2 px-3 py-1.5 rounded-full bg-rose-500/10 border border-rose-500/25 text-rose-400 text-xs font-bold uppercase tracking-widest mb-4">
-                <Network /> Relationships and CRM
+
+            {/* ── Header (centered) ── */}
+            <div className="text-center mb-14 animate-fade-in">
+              <div className={`inline-flex items-center gap-2 px-3 py-1.5 rounded-full text-xs font-bold uppercase tracking-widest mb-4${isDarkMode ? ' bg-indigo-500/10 border border-indigo-500/25 text-indigo-400' : ' bg-indigo-50 border border-indigo-200 text-indigo-600'}`}>
+                <Network size={12} /> Relationships and CRM
               </div>
-              <h2 className="text-4xl sm:text-6xl font-bold mb-4 text-transparent bg-clip-text bg-gradient-to-r from-white via-rose-100 to-pink-200">
+              <h2 className={`text-5xl sm:text-8xl font-bold mb-5 text-transparent bg-clip-text${isDarkMode ? ' bg-gradient-to-r from-white via-indigo-100 to-violet-200' : ' bg-gradient-to-r from-zinc-900 via-indigo-900 to-violet-800'}`}>
                 Know Your Network
               </h2>
-              <p className="text-zinc-400 text-lg max-w-2xl">
+              <p className={`text-lg max-w-2xl mx-auto mb-8 leading-relaxed${isDarkMode ? ' text-zinc-400' : ' text-zinc-600'}`}>
                 Deep relationship intelligence with 0–100 health scoring, contact circles, and bidirectional sync with Logos Vision — so every conversation in Pulse keeps your case records current.
               </p>
+              <div className="flex items-center justify-center gap-3 flex-wrap">
+                <button
+                  onClick={() => scrollToSection('section-crm')}
+                  className="inline-flex items-center gap-2 px-6 py-2.5 rounded-full text-sm font-bold text-white transition-all duration-200 hover:-translate-y-0.5"
+                  style={{ background: 'linear-gradient(135deg, #6366f1 0%, #a855f7 100%)', boxShadow: '0 4px 20px rgba(99,102,241,0.4)' }}
+                >
+                  <Network size={14} /> Explore Network
+                </button>
+                <button className={`inline-flex items-center gap-2 px-6 py-2.5 rounded-full text-sm font-bold transition-all duration-200${isDarkMode ? ' text-indigo-300 border border-indigo-500/30 hover:border-indigo-500/60' : ' text-indigo-600 border border-indigo-200 hover:border-indigo-400'}`}>
+                  View Docs
+                </button>
+              </div>
             </div>
 
-            <div className="grid lg:grid-cols-2 gap-8 mb-8">
-              {/* Relationship features */}
-              <div className="space-y-4">
+            {/* ── Contact Mesh Canvas — no card, floats over section bg ── */}
+            <div className="relative mb-12" style={{ height: '380px' }}>
+              <canvas
+                ref={crmCanvasRef}
+                className="absolute inset-0 w-full h-full"
+              />
+              {/* Edge fades so nodes dissolve into section background */}
+              <div className="absolute inset-0 pointer-events-none" style={{
+                background: isDarkMode
+                  ? 'linear-gradient(to bottom, rgba(3,3,15,0.55) 0%, transparent 18%, transparent 82%, rgba(3,3,15,0.55) 100%), linear-gradient(to right, rgba(3,3,15,0.5) 0%, transparent 14%, transparent 86%, rgba(3,3,15,0.5) 100%)'
+                  : 'linear-gradient(to bottom, rgba(249,249,252,0.55) 0%, transparent 18%, transparent 82%, rgba(249,249,252,0.55) 100%), linear-gradient(to right, rgba(249,249,252,0.5) 0%, transparent 14%, transparent 86%, rgba(249,249,252,0.5) 100%)',
+              }} />
+              {/* Legend */}
+              <div className="absolute bottom-2 left-1/2 -translate-x-1/2 flex items-center gap-4 pointer-events-none">
+                {[
+                  { color: '#34d399', label: 'Healthy' },
+                  { color: '#fbbf24', label: 'Cooling' },
+                  { color: '#f87171', label: 'At Risk' },
+                ].map(l => (
+                  <span key={l.label} className="flex items-center gap-1.5 text-[10px] font-semibold" style={{ color: l.color }}>
+                    <span className="inline-block w-1.5 h-1.5 rounded-full" style={{ background: l.color }} />
+                    {l.label}
+                  </span>
+                ))}
+              </div>
+            </div>
+
+            {/* ── Feature cards — 3 col ── */}
+            <div className="grid md:grid-cols-3 gap-4 mb-8">
+              {[
+                {
+                  color: '#818cf8', bgColor: 'rgba(99,102,241,0.1)', borderColor: 'rgba(99,102,241,0.2)',
+                  hoverBorder: 'rgba(99,102,241,0.45)',
+                  title: 'Relationship Health Score',
+                  desc: '0–100 score computed from interaction frequency, sentiment, and response time. Get alerts before relationships go cold.',
+                  icon: (
+                    <svg viewBox="0 0 20 20" width={16} height={16} fill="#818cf8" aria-hidden="true">
+                      <path d="M10 17S3 12 3 7a3.5 3.5 0 017-1.3A3.5 3.5 0 0117 7c0 5-7 10-7 10z" className="lp-throb-sm" />
+                    </svg>
+                  ),
+                },
+                {
+                  color: '#c084fc', bgColor: 'rgba(168,85,247,0.1)', borderColor: 'rgba(168,85,247,0.2)',
+                  hoverBorder: 'rgba(168,85,247,0.45)',
+                  title: 'Contact Circles',
+                  desc: 'Bubble-chart visualization showing your network by proximity, value, and engagement depth.',
+                  icon: (
+                    <svg viewBox="0 0 20 20" width={16} height={16} fill="#c084fc" aria-hidden="true">
+                      <circle cx="10" cy="10" r="3" />
+                      <circle cx="10" cy="10" r="7" fill="none" stroke="#c084fc" strokeWidth={0.8} strokeDasharray="3 3" opacity={0.4} />
+                      <g className="lp-orbit-g"><circle cx="10" cy="3" r="1.5" /></g>
+                    </svg>
+                  ),
+                },
+                {
+                  color: '#22d3ee', bgColor: 'rgba(6,182,212,0.1)', borderColor: 'rgba(6,182,212,0.2)',
+                  hoverBorder: 'rgba(6,182,212,0.45)',
+                  title: 'Network Analytics',
+                  desc: 'Communication pattern analysis, interaction heatmaps, and predictive engagement recommendations.',
+                  icon: (
+                    <svg viewBox="0 0 20 20" width={16} height={16} fill="#22d3ee" aria-hidden="true">
+                      <rect x="1.5"  y="14" width="3" height="4"  rx="1" className="lp-bar-a" />
+                      <rect x="6.5"  y="10" width="3" height="8"  rx="1" className="lp-bar-b" />
+                      <rect x="11.5" y="6"  width="3" height="12" rx="1" className="lp-bar-c" />
+                      <rect x="16.5" y="8"  width="2" height="10" rx="1" className="lp-bar-d" />
+                    </svg>
+                  ),
+                },
+              ].map(card => (
+                <div
+                  key={card.title}
+                  className="group flex gap-4 p-5 rounded-2xl transition-all duration-300 cursor-default"
+                  style={{
+                    background: isDarkMode ? 'rgba(255,255,255,0.03)' : 'rgba(255,255,255,0.75)',
+                    backdropFilter: 'blur(16px)',
+                    border: `1px solid ${isDarkMode ? card.borderColor : card.borderColor.replace(/0\.\d+\)/, '0.4)')}`,
+                    boxShadow: isDarkMode ? '0 4px 24px rgba(0,0,0,0.25)' : '0 4px 20px rgba(0,0,0,0.05)',
+                  }}
+                  onMouseEnter={e => { (e.currentTarget as HTMLDivElement).style.borderColor = card.hoverBorder; }}
+                  onMouseLeave={e => { (e.currentTarget as HTMLDivElement).style.borderColor = isDarkMode ? card.borderColor : card.borderColor.replace(/0\.\d+\)/, '0.4)'); }}
+                >
+                  <div className="w-10 h-10 rounded-xl flex items-center justify-center shrink-0 transition-all duration-300"
+                    style={{ background: card.bgColor, border: `1px solid ${card.borderColor}` }}>
+                    {card.icon}
+                  </div>
+                  <div>
+                    <h3 className={`font-bold mb-1.5 text-sm${isDarkMode ? ' text-white' : ' text-zinc-900'}`}>{card.title}</h3>
+                    <p className={`text-xs leading-relaxed${isDarkMode ? ' text-zinc-500' : ' text-zinc-500'}`}>{card.desc}</p>
+                  </div>
+                </div>
+              ))}
+            </div>
+
+            {/* ── Logos Vision sync panel — full width ── */}
+            <div
+              className="rounded-2xl overflow-hidden"
+              style={{
+                background: isDarkMode ? 'rgba(255,255,255,0.02)' : 'rgba(255,255,255,0.8)',
+                backdropFilter: 'blur(20px)',
+                border: isDarkMode ? '1px solid rgba(99,102,241,0.15)' : '1px solid rgba(99,102,241,0.2)',
+                boxShadow: isDarkMode ? '0 4px 40px rgba(99,102,241,0.08)' : '0 4px 24px rgba(99,102,241,0.06)',
+              }}
+            >
+              {/* Panel header */}
+              <div className={`flex items-center gap-3 px-6 py-4${isDarkMode ? ' border-b border-white/5' : ' border-b border-indigo-100/60'}`}>
+                <div className="w-9 h-9 rounded-xl flex items-center justify-center shrink-0" style={{ background: 'linear-gradient(135deg, #6366f1 0%, #a855f7 100%)', boxShadow: '0 4px 14px rgba(99,102,241,0.4)' }}>
+                  <Eye className="text-white" size={15} />
+                </div>
+                <div>
+                  <h3 className={`text-sm font-bold${isDarkMode ? ' text-white' : ' text-zinc-900'}`}>Logos Vision</h3>
+                  <span className="text-xs text-indigo-400">Bidirectional sync — live</span>
+                </div>
+                <span className="ml-auto flex items-center gap-1.5 text-xs text-emerald-400 font-semibold">
+                  <span className="relative flex h-2 w-2">
+                    <span className="animate-ping absolute inline-flex h-full w-full rounded-full bg-emerald-400 opacity-75" />
+                    <span className="relative inline-flex rounded-full h-2 w-2 bg-emerald-500" />
+                  </span>
+                  Connected
+                </span>
+              </div>
+
+              {/* 2×2 sync items */}
+              <div className="grid sm:grid-cols-2 gap-px p-px" style={{ background: isDarkMode ? 'rgba(255,255,255,0.04)' : 'rgba(99,102,241,0.06)' }}>
                 {[
                   {
-                    icon: 'fa-solid fa-heart',
-                    title: 'Relationship Health Score',
-                    desc: '0 to 100 score computed from interaction frequency, sentiment, and response time. Get alerts before relationships go cold.',
+                    color: '#818cf8', bg: 'rgba(99,102,241,0.08)', border: 'rgba(99,102,241,0.12)',
+                    label: 'Conversation → Case Log',
+                    desc: 'Send a Voxer message in Pulse — a case log entry is automatically created in Logos Vision.',
+                    icon: (
+                      <svg viewBox="0 0 20 20" width={13} height={13} fill="#818cf8" aria-hidden="true">
+                        <path d="M2 4a2 2 0 012-2h8a2 2 0 012 2v5a2 2 0 01-2 2H8L5 14v-3H4a2 2 0 01-2-2V4z" />
+                        <path d="M8 8a2 2 0 012-2h5a2 2 0 012 2v3a2 2 0 01-2 2h-1v2l-2-2h-2a2 2 0 01-2-2" opacity={0.5} />
+                      </svg>
+                    ),
                   },
                   {
-                    icon: 'fa-solid fa-circle-dot',
-                    title: 'Contact Circles',
-                    desc: 'Bubble-chart visualization showing your network by proximity, value, and engagement depth.',
+                    color: '#c084fc', bg: 'rgba(168,85,247,0.08)', border: 'rgba(168,85,247,0.12)',
+                    label: 'Activity Feed Sync',
+                    desc: 'Every touchpoint — calls, messages, notes — surfaces instantly in the Logos Vision activity timeline.',
+                    icon: (
+                      <svg viewBox="0 0 20 20" width={13} height={13} fill="#c084fc" aria-hidden="true">
+                        <path d="M11 2L4 12h6l-1 6 7-10h-6z" className="lp-flash" />
+                      </svg>
+                    ),
                   },
                   {
-                    icon: 'fa-solid fa-chart-simple',
-                    title: 'Network Analytics',
-                    desc: 'Communication pattern analysis, interaction heatmaps, and predictive engagement recommendations.',
+                    color: '#f472b6', bg: 'rgba(236,72,153,0.08)', border: 'rgba(236,72,153,0.12)',
+                    label: 'AI Field Population',
+                    desc: 'Pulse pools conversation data to auto-fill contact fields, case details, and relationship context.',
+                    icon: (
+                      <svg viewBox="0 0 20 20" width={13} height={13} fill="none" stroke="#f472b6" strokeWidth={1.5} strokeLinecap="round" aria-hidden="true">
+                        <line x1="4" y1="16" x2="13" y2="7" />
+                        <path d="M13 3l2 2-7 7-2-2z" fill="#f472b6" fillOpacity={0.35} strokeWidth={1} />
+                        <circle cx="16" cy="4" r="1" fill="#f472b6" stroke="none" className="lp-rec-dot" />
+                        <line x1="16" y1="1" x2="16" y2="2.5" /><line x1="16" y1="5.5" x2="16" y2="7" />
+                        <line x1="18.5" y1="4" x2="17" y2="4" /><line x1="15" y1="4" x2="13.5" y2="4" />
+                      </svg>
+                    ),
+                  },
+                  {
+                    color: '#22d3ee', bg: 'rgba(6,182,212,0.08)', border: 'rgba(6,182,212,0.12)',
+                    label: 'Records Flow Back',
+                    desc: 'Case outcomes and status updates in Logos Vision surface in your Pulse relationship feed and health score.',
+                    icon: (
+                      <svg viewBox="0 0 20 20" width={13} height={13} fill="none" stroke="#22d3ee" strokeWidth={1.5} strokeLinecap="round" strokeLinejoin="round" aria-hidden="true">
+                        <path d="M17 10a7 7 0 11-7-7" className="lp-flash" />
+                        <polyline points="13,3 17,3 17,7" />
+                      </svg>
+                    ),
                   },
                 ].map((item, i) => (
-                  <div key={item.title} className="flex gap-4 p-5 rounded-2xl bg-zinc-950/80 border border-zinc-800 hover:border-rose-500/30 transition-all duration-300 group">
-                    <div className="lp-icon-wrap-rose w-10 h-10 rounded-xl bg-rose-500/10 flex items-center justify-center shrink-0 group-hover:bg-rose-500/20 transition-all duration-300">
-                      <span className="text-rose-400">
-                        {[
-                          // 0 — Relationship Health Score: pulsing heart
-                          <svg viewBox="0 0 20 20" width={16} height={16} fill="currentColor" aria-hidden="true">
-                            <path d="M10 17S3 12 3 7a3.5 3.5 0 017-1.3A3.5 3.5 0 0117 7c0 5-7 10-7 10z" className="lp-throb-sm" />
-                          </svg>,
-                          // 1 — Contact Circles: orbiting dot around central circle
-                          <svg viewBox="0 0 20 20" width={16} height={16} fill="currentColor" aria-hidden="true">
-                            <circle cx="10" cy="10" r="3" />
-                            <circle cx="10" cy="10" r="7" fill="none" stroke="currentColor" strokeWidth={0.8} strokeDasharray="3 3" opacity={0.4} />
-                            <g className="lp-orbit-g">
-                              <circle cx="10" cy="3" r="1.5" />
-                            </g>
-                          </svg>,
-                          // 2 — Network Analytics: animated 4-bar chart
-                          <svg viewBox="0 0 20 20" width={16} height={16} fill="currentColor" aria-hidden="true">
-                            <rect x="1.5"  y="14" width="3" height="4"  rx="1" className="lp-bar-a" />
-                            <rect x="6.5"  y="10" width="3" height="8"  rx="1" className="lp-bar-b" />
-                            <rect x="11.5" y="6"  width="3" height="12" rx="1" className="lp-bar-c" />
-                            <rect x="16.5" y="8"  width="2" height="10" rx="1" className="lp-bar-d" />
-                          </svg>,
-                        ][i]}
-                      </span>
+                  <div
+                    key={item.label}
+                    className="group flex gap-3 p-5 transition-all duration-250 cursor-default"
+                    style={{ background: isDarkMode ? 'rgba(4,4,20,0.5)' : 'rgba(255,255,255,0.9)' }}
+                    onMouseEnter={e => { (e.currentTarget as HTMLDivElement).style.background = isDarkMode ? item.bg : `${item.bg.replace('0.08','0.12')}`; }}
+                    onMouseLeave={e => { (e.currentTarget as HTMLDivElement).style.background = isDarkMode ? 'rgba(4,4,20,0.5)' : 'rgba(255,255,255,0.9)'; }}
+                  >
+                    <div className="w-8 h-8 rounded-lg flex items-center justify-center shrink-0 mt-0.5"
+                      style={{ background: item.bg, border: `1px solid ${item.border}` }}>
+                      {item.icon}
                     </div>
-                    <div>
-                      <h3 className="font-bold text-white mb-1 text-sm">{item.title}</h3>
-                      <p className="text-zinc-500 text-xs leading-relaxed">{item.desc}</p>
+                    <div className="min-w-0">
+                      <p className={`text-xs font-bold mb-1${isDarkMode ? ' text-white' : ' text-zinc-900'}`}>{item.label}</p>
+                      <p className={`text-xs leading-relaxed${isDarkMode ? ' text-zinc-500' : ' text-zinc-500'}`}>{item.desc}</p>
+                      {/* Sync flow dots */}
+                      <div className="flex items-center gap-1 mt-2">
+                        {[0,1,2].map(d => (
+                          <span key={d} className="inline-block w-1 h-1 rounded-full" style={{ background: item.color, opacity: 0, animation: `lp-sync-dot 1.8s ease-in-out ${d * 0.3}s infinite` }} />
+                        ))}
+                      </div>
                     </div>
                   </div>
                 ))}
               </div>
-
-              {/* Logos Vision Sync */}
-              <div>
-                <div className="flex items-center gap-3 mb-5">
-                  <div className="w-9 h-9 rounded-xl flex items-center justify-center shrink-0" style={{ background: 'linear-gradient(135deg, #6366f1 0%, #a855f7 100%)', boxShadow: '0 4px 14px rgba(99,102,241,0.4)' }}>
-                    <Eye className="text-white text-sm" />
-                  </div>
-                  <div>
-                    <h3 className="text-sm font-bold text-white">Logos Vision</h3>
-                    <span className="text-xs text-indigo-400">Bidirectional sync — live</span>
-                  </div>
-                  <span className="ml-auto flex items-center gap-1.5 text-xs text-emerald-400 font-medium">
-                    <span className="relative flex h-2 w-2">
-                      <span className="animate-ping absolute inline-flex h-full w-full rounded-full bg-emerald-400 opacity-75"></span>
-                      <span className="relative inline-flex rounded-full h-2 w-2 bg-emerald-500"></span>
-                    </span>
-                    Connected
-                  </span>
-                </div>
-
-                <div className="space-y-3">
-                  {[
-                    {
-                      icon: 'fa-solid fa-comments',
-                      color: '#6366f1',
-                      label: 'Conversation → Case Log',
-                      desc: 'Meet a client and send a Voxer message or reply in Pulse — a case log entry is automatically created in Logos Vision.',
-                    },
-                    {
-                      icon: 'fa-solid fa-bolt',
-                      color: '#a855f7',
-                      label: 'Activity Feed Sync',
-                      desc: 'Every touchpoint in Pulse — calls, messages, notes — surfaces instantly in the client\'s Logos Vision activity timeline.',
-                    },
-                    {
-                      icon: 'fa-solid fa-wand-magic-sparkles',
-                      color: '#ec4899',
-                      label: 'AI Field Population',
-                      desc: 'Pulse pools data from your conversations to auto-fill contact fields, case details, and relationship context in Logos Vision.',
-                    },
-                    {
-                      icon: 'fa-solid fa-rotate',
-                      color: '#06b6d4',
-                      label: 'Records Flow Back',
-                      desc: 'Case outcomes, notes, and status updates in Logos Vision surface in your Pulse relationship feed and contact health score.',
-                    },
-                  ].map((item, i) => (
-                    <div key={item.label} className="flex gap-3 p-4 rounded-xl bg-zinc-950/80 border border-zinc-800 hover:border-indigo-500/30 transition-all duration-300 group">
-                      <div className="w-8 h-8 rounded-lg flex items-center justify-center shrink-0 mt-0.5" style={{ backgroundColor: `${item.color}20`, border: `1px solid ${item.color}40` }}>
-                        <span style={{ color: item.color }}>
-                          {[
-                            // 0 — Conversation → Case Log: two chat bubbles
-                            <svg viewBox="0 0 20 20" width={14} height={14} fill="currentColor" aria-hidden="true">
-                              <path d="M2 4a2 2 0 012-2h8a2 2 0 012 2v5a2 2 0 01-2 2H8L5 14v-3H4a2 2 0 01-2-2V4z" />
-                              <path d="M8 8a2 2 0 012-2h5a2 2 0 012 2v3a2 2 0 01-2 2h-1v2l-2-2h-2a2 2 0 01-2-2" opacity={0.5} />
-                            </svg>,
-                            // 1 — Activity Feed Sync: flashing bolt
-                            <svg viewBox="0 0 20 20" width={14} height={14} fill="currentColor" aria-hidden="true">
-                              <path d="M11 2L4 12h6l-1 6 7-10h-6z" className="lp-flash" />
-                            </svg>,
-                            // 2 — AI Field Population: wand with sparkle points
-                            <svg viewBox="0 0 20 20" width={14} height={14} fill="none" stroke="currentColor" strokeWidth={1.5} strokeLinecap="round" aria-hidden="true">
-                              <line x1="4" y1="16" x2="13" y2="7" />
-                              <path d="M13 3l2 2-7 7-2-2z" fill="currentColor" fillOpacity={0.35} strokeWidth={1} />
-                              <circle cx="16" cy="4" r="1" fill="currentColor" stroke="none" className="lp-rec-dot" />
-                              <line x1="16" y1="1"   x2="16" y2="2.5" />
-                              <line x1="16" y1="5.5" x2="16" y2="7" />
-                              <line x1="18.5" y1="4" x2="17" y2="4" />
-                              <line x1="15"   y1="4" x2="13.5" y2="4" />
-                            </svg>,
-                            // 3 — Records Flow Back: rotating circular arrow
-                            <svg viewBox="0 0 20 20" width={14} height={14} fill="none" stroke="currentColor" strokeWidth={1.5} strokeLinecap="round" strokeLinejoin="round" aria-hidden="true">
-                              <path d="M17 10a7 7 0 11-7-7" className="lp-flash" />
-                              <polyline points="13,3 17,3 17,7" />
-                            </svg>,
-                          ][i]}
-                        </span>
-                      </div>
-                      <div>
-                        <p className="text-xs font-bold text-white mb-0.5">{item.label}</p>
-                        <p className="text-zinc-500 text-xs leading-relaxed">{item.desc}</p>
-                      </div>
-                    </div>
-                  ))}
-                </div>
-              </div>
             </div>
+
           </div>
         </section>
       </div>
@@ -1523,10 +1737,10 @@ const LandingPage: React.FC<LandingPageProps> = ({ onGetStarted }) => {
             <div className="flex flex-col items-center">
               <div className="mb-8 text-center">
                 <div className="inline-flex items-center gap-2 px-3 py-1.5 rounded-full bg-zinc-800/60 border border-zinc-700/50 text-zinc-400 text-xs font-bold uppercase tracking-widest mb-4">
-                  <Smartphone className="text-green-400" /> Mobile App
+                  <Smartphone className="text-zinc-400" /> Mobile App
                 </div>
                 <h2 className="text-3xl sm:text-4xl font-bold text-white mb-3">Pulse in Your Pocket</h2>
-                <p className="text-zinc-400 text-base max-w-sm mx-auto">Full-featured Android app. Everything from the web — voice messages, inbox, decisions, CRM — all native.</p>
+                <p className="text-zinc-400 text-base max-w-sm mx-auto">The full Pulse experience in your pocket. Voice messages, AI briefings, decisions, and meetings — native on Android.</p>
               </div>
               {/* Phone frame */}
               <div className="relative" style={{ width: '260px', height: '540px' }}>
@@ -1575,7 +1789,7 @@ const LandingPage: React.FC<LandingPageProps> = ({ onGetStarted }) => {
                     {[
                       { name: 'Sarah K.', msg: 'Vox Drop from 2 min ago', time: '2m', dot: '#f43f5e', icon: 'fa-solid fa-microphone' },
                       { name: 'Dev Team', msg: 'Sprint planning at 3 PM confirmed', time: '18m', dot: '#6366f1', icon: 'fa-brands fa-slack' },
-                      { name: 'HubSpot', msg: 'Deal stage updated: Proposal Sent', time: '1h', dot: '#f97316', icon: 'fa-brands fa-hubspot' },
+                      { name: 'Calendar', msg: 'Team standup in 15 min', time: '15m', dot: '#6366f1', icon: 'fa-solid fa-calendar' },
                     ].map((m, i) => (
                       <div key={i} className="flex items-center gap-2.5 p-2 rounded-lg bg-zinc-900/60 border border-zinc-800/60">
                         <div className="w-7 h-7 rounded-full flex items-center justify-center shrink-0" style={{ backgroundColor: `${m.dot}20`, border: `1px solid ${m.dot}40` }}>
@@ -1687,55 +1901,94 @@ const LandingPage: React.FC<LandingPageProps> = ({ onGetStarted }) => {
           <div className="grid lg:grid-cols-3 gap-8">
             {/* Pulse Card */}
             <div className="relative group animate-fade-in animation-delay-200">
-              <div className="absolute inset-0 bg-gradient-to-br from-rose-500/30 to-pink-500/25 rounded-3xl blur-2xl opacity-0 group-hover:opacity-100 transition-all duration-500"></div>
-              <div className="relative h-full bg-zinc-950/90 backdrop-blur-sm border border-zinc-800 rounded-3xl p-8 hover:border-rose-500/60 transition-all duration-300 flex flex-col hover:-translate-y-2 card-elevated-rose">
-                <div className="w-14 h-14 bg-zinc-900 rounded-2xl flex items-center justify-center mb-6 border border-zinc-800 group-hover:border-rose-500/50 group-hover:scale-110 transition duration-300">
-                  <HeartPulse className="text-2xl text-rose-500" />
+              <div className="absolute inset-0 bg-gradient-to-br from-rose-500/30 to-pink-500/25 rounded-3xl blur-2xl opacity-0 group-hover:opacity-100 transition-all duration-500 [transition-timing-function:cubic-bezier(0.16,1,0.3,1)]"></div>
+              <div className="relative h-full bg-zinc-950/90 backdrop-blur-sm border border-zinc-800 rounded-3xl hover:border-rose-500/60 transition-all duration-150 flex flex-col hover:-translate-y-2 card-elevated-rose overflow-hidden">
+                <div className="flex items-center justify-center h-24 bg-gradient-to-br from-rose-500/10 via-rose-500/5 to-transparent border-b border-rose-500/15 group-hover:from-rose-500/15 transition-colors duration-150">
+                  <svg viewBox="0 0 64 64" width="52" height="52" fill="none">
+                    <path d="M8 32 L18 32 L24 16 L32 48 L40 24 L48 40 L56 32" stroke="#f43f5e" strokeWidth="4" strokeLinecap="round" strokeLinejoin="round"/>
+                  </svg>
                 </div>
-                <h3 className="text-2xl font-bold mb-4 text-white">Pulse</h3>
-                <div className="text-sm font-bold text-rose-500 tracking-wider uppercase mb-4">Communication and Intelligence</div>
-                <p className="text-zinc-400 mb-6 flex-grow">The voice and ears of your organization. Real-time messaging, 7 voice modes, and AI transcription that turns every word into action.</p>
-                <ul className="space-y-3 text-zinc-300 text-sm">
-                  <li className="flex items-center gap-2"><Check className="text-rose-500" /> 7 Voxer Modes</li>
-                  <li className="flex items-center gap-2"><Check className="text-rose-500" /> 8-Platform Unified Inbox</li>
-                  <li className="flex items-center gap-2"><Check className="text-rose-500" /> AI Transcription + Action Items</li>
-                </ul>
+                <div className="p-8 flex flex-col flex-grow">
+                  <h3 className="text-2xl font-bold mb-4 text-white">Pulse</h3>
+                  <div className="text-sm font-bold text-rose-500 tracking-wider uppercase mb-4">Communication and Intelligence</div>
+                  <p className="text-zinc-400 mb-6 flex-grow">The voice and ears of your organization. Real-time messaging, 7 voice modes, and AI transcription that turns every word into action.</p>
+                  <ul className="space-y-3 text-zinc-300 text-sm">
+                    <li className="flex items-center gap-2"><Check className="text-rose-500" /> 7 Voxer Modes</li>
+                    <li className="flex items-center gap-2"><Check className="text-rose-500" /> 8-Platform Unified Inbox</li>
+                    <li className="flex items-center gap-2"><Check className="text-rose-500" /> AI Transcription + Action Items</li>
+                  </ul>
+                </div>
               </div>
             </div>
 
             {/* Logos Vision Card */}
             <div className="relative group animate-fade-in animation-delay-300">
-              <div className="absolute inset-0 bg-gradient-to-br from-blue-500/30 to-cyan-500/25 rounded-3xl blur-2xl opacity-0 group-hover:opacity-100 transition-all duration-500"></div>
-              <div className="relative h-full bg-zinc-950/90 backdrop-blur-sm border border-zinc-800 rounded-3xl p-8 hover:border-blue-500/60 transition-all duration-300 flex flex-col hover:-translate-y-2 card-elevated">
-                <div className="w-14 h-14 bg-zinc-900 rounded-2xl flex items-center justify-center mb-6 border border-zinc-800 group-hover:border-blue-500/50 group-hover:scale-110 transition duration-300">
-                  <Eye className="text-2xl text-blue-500" />
+              <div className="absolute inset-0 bg-gradient-to-br from-teal-400/25 to-teal-500/20 rounded-3xl blur-2xl opacity-0 group-hover:opacity-100 transition-all duration-500 [transition-timing-function:cubic-bezier(0.16,1,0.3,1)]"></div>
+              <div className="relative h-full bg-zinc-950/90 backdrop-blur-sm border border-zinc-800 rounded-3xl hover:border-teal-400/60 transition-all duration-150 flex flex-col hover:-translate-y-2 hover:shadow-[0_8px_32px_rgba(34,166,164,0.25)] card-elevated overflow-hidden">
+                <div className="flex items-center justify-center h-24 bg-gradient-to-br from-teal-400/10 via-teal-400/5 to-transparent border-b border-teal-400/15 group-hover:from-teal-400/15 transition-colors duration-150">
+                  <svg viewBox="0 0 80 80" width="52" height="52" fill="none">
+                    <circle cx="40" cy="40" r="38" fill="none" stroke="#b2f5ea" strokeWidth="1.2" opacity="0.35"/>
+                    <circle cx="40" cy="40" r="30" fill="none" stroke="#6ee7d4" strokeWidth="1.6" opacity="0.55"/>
+                    <circle cx="40" cy="40" r="22" fill="none" stroke="#22d3b8" strokeWidth="2"   opacity="0.75"/>
+                    <circle cx="40" cy="40" r="14" fill="none" stroke="#0d9488" strokeWidth="2.5" opacity="0.90"/>
+                    <circle cx="40" cy="40" r="9"  fill="rgba(0,200,255,0.25)"/>
+                    <circle cx="40" cy="40" r="5"  fill="#00c8ff"/>
+                  </svg>
                 </div>
-                <h3 className="text-2xl font-bold mb-4 text-white">Logos Vision</h3>
-                <div className="text-sm font-bold text-blue-500 tracking-wider uppercase mb-4">CRM and Relationships</div>
-                <p className="text-zinc-400 mb-6 flex-grow">The memory of your organization. Deep relationship intelligence with health scoring and 4 native CRM integrations that auto-sync every interaction.</p>
-                <ul className="space-y-3 text-zinc-300 text-sm">
-                  <li className="flex items-center gap-2"><Check className="text-blue-500" /> 0-100 Relationship Scoring</li>
-                  <li className="flex items-center gap-2"><Check className="text-blue-500" /> 4 CRM Integrations</li>
-                  <li className="flex items-center gap-2"><Check className="text-blue-500" /> Network Visualization</li>
-                </ul>
+                <div className="p-8 flex flex-col flex-grow">
+                  <h3 className="text-2xl font-bold mb-4 text-white">Logos Vision</h3>
+                  <div className="text-sm font-bold text-teal-400 tracking-wider uppercase mb-4">CRM and Relationships</div>
+                  <p className="text-zinc-400 mb-6 flex-grow">The memory of your organization. Deep relationship intelligence with health scoring and 4 native CRM integrations that auto-sync every interaction.</p>
+                  <ul className="space-y-3 text-zinc-300 text-sm">
+                    <li className="flex items-center gap-2"><Check className="text-teal-400" /> 0-100 Relationship Scoring</li>
+                    <li className="flex items-center gap-2"><Check className="text-teal-400" /> 4 CRM Integrations</li>
+                    <li className="flex items-center gap-2"><Check className="text-teal-400" /> Network Visualization</li>
+                  </ul>
+                </div>
               </div>
             </div>
 
-            {/* Entomate Card */}
+            {/* Entomate Card — brand: Acid Lime #C8FF32 / Vermillion #FF4A1C / Periwinkle #8B8BFF */}
             <div className="relative group animate-fade-in animation-delay-400">
-              <div className="absolute inset-0 bg-gradient-to-br from-emerald-500/30 to-teal-500/25 rounded-3xl blur-2xl opacity-0 group-hover:opacity-100 transition-all duration-500"></div>
-              <div className="relative h-full bg-zinc-950/90 backdrop-blur-sm border border-zinc-800 rounded-3xl p-8 hover:border-emerald-500/60 transition-all duration-300 flex flex-col hover:-translate-y-2 card-elevated">
-                <div className="w-14 h-14 bg-zinc-900 rounded-2xl flex items-center justify-center mb-6 border border-zinc-800 group-hover:border-emerald-500/50 group-hover:scale-110 transition duration-300">
-                  <Bot className="text-2xl text-emerald-500" />
+              <div className="absolute inset-0 rounded-3xl blur-2xl opacity-0 group-hover:opacity-100 transition-all duration-500 [transition-timing-function:cubic-bezier(0.16,1,0.3,1)]" style={{background: 'radial-gradient(ellipse at 50% 30%, rgba(200,255,50,0.16) 0%, rgba(139,139,255,0.08) 60%, transparent 100%)'}}></div>
+              <div className="relative h-full bg-zinc-950/90 backdrop-blur-sm border border-zinc-800 rounded-3xl transition-all duration-150 flex flex-col hover:-translate-y-2 card-elevated overflow-hidden" style={{'--tw-border-opacity': '1'} as React.CSSProperties} onMouseEnter={e => (e.currentTarget.style.borderColor = 'rgba(200,255,50,0.4)', e.currentTarget.style.boxShadow = '0 8px 32px rgba(200,255,50,0.15), 0 0 0 1px rgba(139,139,255,0.08)')} onMouseLeave={e => (e.currentTarget.style.borderColor = '', e.currentTarget.style.boxShadow = '')}>
+                <div className="flex items-center justify-center h-24 border-b transition-colors duration-150" style={{background: 'linear-gradient(135deg, rgba(200,255,50,0.07) 0%, rgba(139,139,255,0.04) 50%, transparent 100%)', borderColor: 'rgba(200,255,50,0.1)'}}>
+                  {/* Entomate — Catalyst Node (Primary Mark) */}
+                  <svg viewBox="0 0 64 64" fill="none" width="52" height="52" className="lp-en-catalyst" aria-label="Entomate">
+                    {/* Outer hexagon ring */}
+                    <path d="M32 4 L56 18 L56 46 L32 60 L8 46 L8 18 Z" stroke="#C8FF32" strokeWidth="1.5" strokeOpacity="0.3" fill="none"/>
+                    {/* Inner hexagon */}
+                    <path d="M32 14 L48 23 L48 41 L32 50 L16 41 L16 23 Z" stroke="#C8FF32" strokeWidth="1" strokeOpacity="0.45" fill="rgba(200,255,50,0.04)"/>
+                    {/* Center node */}
+                    <circle cx="32" cy="32" r="8" fill="#C8FF32" opacity="0.9"/>
+                    {/* Node connector lines */}
+                    <line x1="32" y1="14" x2="32" y2="24" stroke="#C8FF32" strokeWidth="1.5" strokeOpacity="0.6"/>
+                    <line x1="32" y1="40" x2="32" y2="50" stroke="#C8FF32" strokeWidth="1.5" strokeOpacity="0.6"/>
+                    <line x1="16" y1="23" x2="24" y2="27" stroke="#C8FF32" strokeWidth="1.5" strokeOpacity="0.6"/>
+                    <line x1="48" y1="23" x2="40" y2="27" stroke="#C8FF32" strokeWidth="1.5" strokeOpacity="0.6"/>
+                    <line x1="16" y1="41" x2="24" y2="37" stroke="#C8FF32" strokeWidth="1.5" strokeOpacity="0.6"/>
+                    <line x1="48" y1="41" x2="40" y2="37" stroke="#C8FF32" strokeWidth="1.5" strokeOpacity="0.6"/>
+                    {/* Satellite nodes — top/bottom: lime, left: periwinkle, right: vermillion */}
+                    <circle cx="32" cy="14" r="4" fill="#C8FF32" opacity="0.7"/>
+                    <circle cx="32" cy="50" r="4" fill="#C8FF32" opacity="0.7"/>
+                    <circle cx="16" cy="23" r="3" fill="#8B8BFF" opacity="0.85"/>
+                    <circle cx="48" cy="23" r="3" fill="#FF4A1C" opacity="0.85"/>
+                    <circle cx="16" cy="41" r="3" fill="#FF4A1C" opacity="0.85"/>
+                    <circle cx="48" cy="41" r="3" fill="#8B8BFF" opacity="0.85"/>
+                    {/* Inner dark dot */}
+                    <circle cx="32" cy="32" r="3" fill="#0E0E0F" opacity="0.8"/>
+                  </svg>
                 </div>
-                <h3 className="text-2xl font-bold mb-4 text-white">Entomate</h3>
-                <div className="text-sm font-bold text-emerald-500 tracking-wider uppercase mb-4">Automation and Workflow</div>
-                <p className="text-zinc-400 mb-6 flex-grow">The hands of your organization. Intelligent agents that execute tasks, move data between systems, and automate complex multi-step workflows.</p>
-                <ul className="space-y-3 text-zinc-300 text-sm">
-                  <li className="flex items-center gap-2"><Check className="text-emerald-500" /> Workflow Builders</li>
-                  <li className="flex items-center gap-2"><Check className="text-emerald-500" /> Auto-Task Execution</li>
-                  <li className="flex items-center gap-2"><Check className="text-emerald-500" /> Cross-Platform Actions</li>
-                </ul>
+                <div className="p-8 flex flex-col flex-grow">
+                  <h3 className="text-2xl font-bold mb-4 text-white">Entomate</h3>
+                  <div className="text-sm font-bold tracking-wider uppercase mb-4" style={{color: '#C8FF32'}}>Automation and Workflow</div>
+                  <p className="text-zinc-400 mb-6 flex-grow">The hands of your organization. Intelligent agents that execute tasks, move data between systems, and automate complex multi-step workflows.</p>
+                  <ul className="space-y-3 text-zinc-300 text-sm">
+                    <li className="flex items-center gap-2"><Check style={{color: '#C8FF32'}} /> Workflow Builders</li>
+                    <li className="flex items-center gap-2"><Check style={{color: '#C8FF32'}} /> Auto-Task Execution</li>
+                    <li className="flex items-center gap-2"><Check style={{color: '#C8FF32'}} /> Cross-Platform Actions</li>
+                  </ul>
+                </div>
               </div>
             </div>
           </div>

@@ -490,6 +490,18 @@ a.duration-300,
 
 .lp-rec-dot   { animation: lp-rec-dot  1s    ease-in-out infinite; }
 
+@keyframes lp-sync-dot {
+  0%, 100% { opacity: 0; transform: scale(0.5); }
+  50%       { opacity: 0.85; transform: scale(1); }
+}
+
+/* Entomate — Catalyst Node pulse (mirrors brand-system.html) */
+@keyframes lp-en-catalyst-pulse {
+  0%, 100% { opacity: 1;    transform: scale(1);    filter: drop-shadow(0 0  8px rgba(200,255,50,0.5)); }
+  50%       { opacity: 0.78; transform: scale(0.97); filter: drop-shadow(0 0 22px rgba(200,255,50,0.85)); }
+}
+.lp-en-catalyst { animation: lp-en-catalyst-pulse 3s ease-in-out infinite; }
+
 .lp-throb-sm  { animation: lp-throb-sm 1.5s  ease-in-out infinite; }
 
 .lp-orbit-g   {

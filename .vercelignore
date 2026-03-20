@@ -1,0 +1,10 @@
+node_modules/
+android/
+ios/
+dist/
+output/
+.gradle/
+*.apk
+*.aab
+docs/*.docx
+docs/*.pdf
