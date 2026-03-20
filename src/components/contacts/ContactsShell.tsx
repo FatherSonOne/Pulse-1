@@ -13,12 +13,13 @@ import { TodayView } from './TodayView';
 import { CirclesView } from './CirclesView';
 import { ContactsOnboarding, shouldShowContactsTour } from './ContactsOnboarding';
 import { useContactsKeyboard } from './useContactsKeyboard';
+import ContactMapView from './map/ContactMapView';
 
 import { Search } from 'lucide-react';
 
 // ==================== TYPES ====================
 
-type ContactsMode = 'today' | 'people' | 'circles';
+type ContactsMode = 'today' | 'people' | 'circles' | 'map';
 
 interface ContactsShellProps {
   contacts: Contact[];
@@ -27,6 +28,9 @@ interface ContactsShellProps {
   onUpdateContact?: (updatedContact: Contact) => void;
   onAddContact?: (contact: Omit<Contact, 'id'>) => Promise<Contact | null>;
   openAddContact?: boolean;
+  isDarkMode?: boolean;
+  userId?: string;
+  initialMode?: ContactsMode;
 }
 
 // ==================== TAB CONFIG ====================
@@ -61,12 +65,19 @@ const TABS: ModeTab[] = [
     description: 'How your network connects',
     shortcut: '3',
   },
+  {
+    id: 'map',
+    label: 'Map',
+    icon: 'location',
+    description: 'Where your contacts are',
+    shortcut: '4',
+  },
 ];
 
 // ==================== MAIN COMPONENT ====================
 
 export const ContactsShell: React.FC<ContactsShellProps> = (props) => {
-  const [activeMode, setActiveMode] = useState<ContactsMode>('today');
+  const [activeMode, setActiveMode] = useState<ContactsMode>(props.initialMode ?? 'today');
   const [showTour, setShowTour] = useState(() => shouldShowContactsTour());
 
   // Focus the People tab's search input (via data attribute selector)
@@ -167,6 +178,18 @@ export const ContactsShell: React.FC<ContactsShellProps> = (props) => {
             contacts={props.contacts}
             onAction={props.onAction}
           />
+        )}
+        {activeMode === 'map' && (
+          <div className="w-full h-full p-3">
+            <ContactMapView
+              contacts={props.contacts}
+              circles={[]}
+              isDarkMode={props.isDarkMode ?? false}
+              userId={props.userId ?? ''}
+              onContactAction={props.onAction}
+              onContactUpdated={props.onUpdateContact}
+            />
+          </div>
         )}
       </div>
 

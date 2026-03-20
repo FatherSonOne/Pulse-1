@@ -9,6 +9,9 @@ interface ContactsProps {
   onUpdateContact?: (updatedContact: Contact) => void;
   onAddContact?: (contact: Omit<Contact, 'id'>) => Promise<Contact | null>;
   openAddContact?: boolean;
+  isDarkMode?: boolean;
+  userId?: string;
+  initialMode?: 'today' | 'people' | 'circles' | 'map';
 }
 
 const Contacts: React.FC<ContactsProps> = (props) => {

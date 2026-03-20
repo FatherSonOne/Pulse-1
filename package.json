@@ -32,7 +32,7 @@
   "build": {
     "appId": "io.qntmpulse.desktop",
     "productName": "Pulse",
-    "copyright": "Copyright \u00c2\u00a9 2025 Pulse",
+    "copyright": "Copyright Â© 2025 Pulse",
     "asar": true,
     "directories": {
       "output": "release",
@@ -111,9 +111,12 @@
     "@anthropic-studio/shared-hub": "file:../shared-hub",
     "@capacitor/android": "^8.0.0",
     "@capacitor/app": "^8.0.0",
+    "@capacitor/camera": "^8.0.2",
     "@capacitor/cli": "^8.0.0",
     "@capacitor/core": "^8.0.0",
+    "@capacitor/geolocation": "^8.1.0",
     "@capacitor/preferences": "^8.0.0",
+    "@capacitor/push-notifications": "^8.0.2",
     "@capacitor/share": "^8.0.0",
     "@capacitor/splash-screen": "^8.0.0",
     "@capgo/capacitor-native-biometric": "^8.3.7",

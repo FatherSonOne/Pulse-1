@@ -4,6 +4,8 @@
 import { useState, useEffect, useCallback } from 'react';
 import { Capacitor } from '@capacitor/core';
 import { Preferences } from '@capacitor/preferences';
+import { PushNotifications } from '@capacitor/push-notifications';
+import { Geolocation } from '@capacitor/geolocation';
 
 export type PermissionName = 'microphone' | 'camera' | 'notifications' | 'sms' | 'contacts' | 'location';
 
@@ -34,7 +36,7 @@ const INITIAL_STATE: PermissionState = {
 const PERMISSIONS_REQUESTED_KEY = 'pulse_permissions_requested';
 const PERMISSIONS_COMPLETED_KEY = 'pulse_permissions_completed'; // Tracks which permissions have been handled
 const PERMISSIONS_VERSION_KEY = 'pulse_permissions_version'; // For future permission changes
-const CURRENT_PERMISSIONS_VERSION = '1'; // Increment when adding new required permissions
+const CURRENT_PERMISSIONS_VERSION = '2'; // Incremented when Location step was added to modal
 
 // Check if running on native platform
 export const isNativePlatform = (): boolean => Capacitor.isNativePlatform();
@@ -79,14 +81,20 @@ export const requestCameraPermission = async (): Promise<PermissionState> => {
  * We mark it as granted since native notifications would be handled by a Capacitor plugin.
  */
 export const requestNotificationPermission = async (): Promise<PermissionState> => {
-  // On native platforms, Web Notifications API doesn't work in WebViews
-  // Native push notifications require @capacitor/push-notifications plugin
-  // For now, we'll mark as "granted" on native to not block the flow
+  // On native platforms, use @capacitor/push-notifications for proper Android 13+ support
   if (isNativePlatform()) {
-    console.log('[Permissions] Native platform - skipping web notification request');
-    // On Android, POST_NOTIFICATIONS permission is auto-granted for apps targeting < API 33
-    // For API 33+, we would need to use the native permission system
-    return { granted: true, denied: false, prompt: false, checking: false };
+    try {
+      const result = await PushNotifications.requestPermissions();
+      return {
+        granted: result.receive === 'granted',
+        denied: result.receive === 'denied',
+        prompt: result.receive === 'prompt',
+        checking: false,
+      };
+    } catch (error) {
+      console.error('[Permissions] Error requesting push notifications:', error);
+      return { granted: false, denied: false, prompt: true, checking: false };
+    }
   }
 
   if (!('Notification' in window)) {
@@ -124,8 +132,24 @@ export const checkNotificationPermission = (): PermissionState => {
 
 /**
  * Request location permission
+ * On native, uses @capacitor/geolocation for proper runtime permission request.
  */
 export const requestLocationPermission = async (): Promise<PermissionState> => {
+  if (isNativePlatform()) {
+    try {
+      const result = await Geolocation.requestPermissions({ permissions: ['location'] });
+      return {
+        granted: result.location === 'granted',
+        denied: result.location === 'denied',
+        prompt: result.location === 'prompt',
+        checking: false,
+      };
+    } catch (error) {
+      console.error('[Permissions] Error requesting geolocation:', error);
+      return { granted: false, denied: false, prompt: true, checking: false };
+    }
+  }
+
   if (!('geolocation' in navigator)) {
     return { granted: false, denied: true, prompt: false, checking: false };
   }
@@ -160,17 +184,34 @@ export const checkSmsCapability = (): PermissionState => {
 };
 
 /**
- * Contacts permission - handled via Google API on web, native permissions on mobile
+ * Contacts permission — on native returns runtime state (READ_CONTACTS is declared in
+ * manifest but must still be granted by the user on Android 6+).
+ * On web, the Contact Picker API is not widely supported so access is OAuth-based.
  */
-export const checkContactsCapability = (): PermissionState => {
-  // On web, contacts are accessed via Google API (OAuth-based)
-  // On native, READ_CONTACTS permission is declared in manifest
-  return {
-    granted: true, // We declare the permission, actual grant happens at runtime
-    denied: false,
-    prompt: isNativePlatform(),
-    checking: false,
-  };
+export const checkContactsCapability = async (): Promise<PermissionState> => {
+  if (isNativePlatform()) {
+    // READ_CONTACTS is in the manifest; report as prompt until the user grants it
+    // (no Capacitor 8 contacts plugin exists to query the exact state, so we default
+    // to "needs prompt" which the PermissionRequestModal handles at first launch)
+    return { granted: false, denied: false, prompt: true, checking: false };
+  }
+
+  // Web: Contact Picker API (navigator.contacts) is only in Chrome on Android
+  if ('contacts' in navigator) {
+    return { granted: true, denied: false, prompt: false, checking: false };
+  }
+
+  // Web without Contact Picker API — access is OAuth-based, treat as unavailable
+  return { granted: false, denied: false, prompt: false, checking: false };
+};
+
+/**
+ * Request contacts permission (native only — just prompts the user the first time
+ * they try to access contacts, since we have no Capacitor 8 contacts plugin).
+ */
+export const requestContactsPermission = async (): Promise<PermissionState> => {
+  // No dedicated Capacitor 8 contacts plugin; fall back to checkContactsCapability
+  return checkContactsCapability();
 };
 
 // Helper to get storage value
@@ -224,7 +265,6 @@ export function usePermissions() {
   const [hasRequestedOnStartup, setHasRequestedOnStartup] = useState(false);
   const [completedPermissions, setCompletedPermissions] = useState<Set<PermissionName>>(new Set());
   const [isRequesting, setIsRequesting] = useState(false);
-  const [showPermissionModal, setShowPermissionModal] = useState(false);
   const [isInitialized, setIsInitialized] = useState(false);
 
   // Load completed permissions and check version on mount
@@ -268,7 +308,7 @@ export function usePermissions() {
     const smsState = checkSmsCapability();
 
     // Check contacts capability
-    const contactsState = checkContactsCapability();
+    const contactsState = await checkContactsCapability();
 
     // For microphone and camera, we need to use permissions API if available
     let micState: PermissionState = { granted: false, denied: false, prompt: true, checking: false };
@@ -322,6 +362,16 @@ export function usePermissions() {
     checkPermissions();
   }, [checkPermissions]);
 
+  // Mark a permission as completed without requesting OS dialog (used when skipping)
+  const markPermissionCompleted = useCallback(async (name: PermissionName): Promise<void> => {
+    setCompletedPermissions(prev => {
+      const updated = new Set([...prev, name]);
+      saveCompletedPermissions(updated).catch(console.error);
+      return updated;
+    });
+    console.log(`[Permissions] ${name} marked completed (skipped)`);
+  }, []);
+
   // Request a specific permission and mark it as completed
   const requestPermission = useCallback(async (name: PermissionName): Promise<PermissionState> => {
     setIsRequesting(true);
@@ -345,7 +395,7 @@ export function usePermissions() {
         result = checkSmsCapability();
         break;
       case 'contacts':
-        result = checkContactsCapability();
+        result = await requestContactsPermission();
         break;
       default:
         result = { granted: false, denied: false, prompt: true, checking: false };
@@ -413,7 +463,7 @@ export function usePermissions() {
 
     // 4. Check SMS and contacts capability (no user prompt needed)
     results.sms = checkSmsCapability();
-    results.contacts = checkContactsCapability();
+    results.contacts = await checkContactsCapability();
     newCompleted.add('sms');
     newCompleted.add('contacts');
 
@@ -467,7 +517,7 @@ export function usePermissions() {
   // 2. OR were previously granted but are now revoked
   const getPermissionsToRequest = useCallback((): PermissionName[] => {
     const toRequest: PermissionName[] = [];
-    const essentialPermissions: PermissionName[] = ['microphone', 'camera', 'notifications', 'contacts'];
+    const essentialPermissions: PermissionName[] = ['microphone', 'camera', 'notifications', 'contacts', 'location'];
 
     for (const name of essentialPermissions) {
       const state = permissions[name];
@@ -518,10 +568,9 @@ export function usePermissions() {
     hasRequestedOnStartup,
     completedPermissions,
     isInitialized,
-    showPermissionModal,
-    setShowPermissionModal,
     checkPermissions,
     requestPermission,
+    markPermissionCompleted,
     requestAllPermissions,
     resetPermissionRequest,
     getPermissionMessage,

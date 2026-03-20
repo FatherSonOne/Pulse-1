@@ -1,5 +1,6 @@
 import React, { useState, useEffect } from 'react';
 import { Contact } from '../../types';
+import LocationEditModal from './map/LocationEditModal';
 
 import { Check, Loader2, UserPen, X } from 'lucide-react';
 
@@ -17,6 +18,8 @@ export const EditContactModal: React.FC<EditContactModalProps> = ({
   onSave
 }) => {
   const [isSaving, setIsSaving] = useState(false);
+  const [showLocationEdit, setShowLocationEdit] = useState(false);
+  const [localContact, setLocalContact] = useState<Contact | null>(contact);
   const [form, setForm] = useState({
     name: '',
     email: '',
@@ -27,9 +30,13 @@ export const EditContactModal: React.FC<EditContactModalProps> = ({
     groups: [] as string[],
   });
 
+  // Sync localContact when contact prop changes
+  useEffect(() => { setLocalContact(contact); }, [contact]);
+
   // Sync form with contact when modal opens
   useEffect(() => {
     if (contact && isOpen) {
+      setLocalContact(contact);
       setForm({
         name: contact.name || '',
         email: contact.email || '',
@@ -80,6 +87,7 @@ export const EditContactModal: React.FC<EditContactModalProps> = ({
   const PRESET_GROUPS = ['VIP', 'Prospect', 'Customer', 'Partner', 'Vendor', 'Team', 'Family', 'Friend'];
 
   return (
+    <>
     <div className="fixed inset-0 z-[70] bg-black/60 backdrop-blur-sm flex items-center justify-center p-4 animate-fade-in">
       <div className="bg-white dark:bg-zinc-900 w-full max-w-lg rounded-2xl shadow-2xl border border-zinc-200 dark:border-zinc-800 animate-scale-in max-h-[90vh] overflow-hidden flex flex-col">
         {/* Header */}
@@ -213,6 +221,38 @@ export const EditContactModal: React.FC<EditContactModalProps> = ({
           </div>
         </div>
 
+        {/* Location section */}
+        <div className="px-4 pb-4">
+          <div className="rounded-xl border border-zinc-200 dark:border-zinc-700 p-3">
+            <div className="flex items-center justify-between mb-2">
+              <p className="text-xs font-bold text-zinc-500 dark:text-zinc-400 uppercase tracking-wider">
+                <i className="fa-solid fa-map-location-dot mr-1.5 text-rose-400" />Locations
+              </p>
+              <button
+                type="button"
+                onClick={() => setShowLocationEdit(true)}
+                className="text-xs text-rose-500 hover:text-rose-600 font-medium transition-colors"
+              >
+                {(localContact?.homeAddress || localContact?.workAddress) ? 'Edit' : 'Set Locations'}
+              </button>
+            </div>
+            <div className="space-y-1.5">
+              <div className="flex items-start gap-2 text-xs">
+                <span className="text-base leading-none">🏠</span>
+                <span className="text-zinc-600 dark:text-zinc-400 flex-1">
+                  {localContact?.homeAddress || <span className="text-zinc-400 dark:text-zinc-600 italic">No home location</span>}
+                </span>
+              </div>
+              <div className="flex items-start gap-2 text-xs">
+                <span className="text-base leading-none">🏢</span>
+                <span className="text-zinc-600 dark:text-zinc-400 flex-1">
+                  {localContact?.workAddress || <span className="text-zinc-400 dark:text-zinc-600 italic">No work location</span>}
+                </span>
+              </div>
+            </div>
+          </div>
+        </div>
+
         {/* Footer */}
         <div className="p-4 border-t border-zinc-200 dark:border-zinc-800 flex justify-between gap-3 flex-shrink-0">
           <button
@@ -232,5 +272,20 @@ export const EditContactModal: React.FC<EditContactModalProps> = ({
         </div>
       </div>
     </div>
+
+    {showLocationEdit && localContact && (
+      <LocationEditModal
+        contact={localContact}
+        isOpen={showLocationEdit}
+        isDarkMode={document.documentElement.classList.contains('dark')}
+        onClose={() => setShowLocationEdit(false)}
+        onSave={updated => {
+          setLocalContact(updated);
+          setShowLocationEdit(false);
+          onSave(updated);
+        }}
+      />
+    )}
+    </>
   );
 };

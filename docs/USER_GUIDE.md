@@ -1,7 +1,7 @@
 # Pulse User's Guide
 
 **Version**: 25.1.3
-**Last Updated**: March 16, 2026
+**Last Updated**: March 17, 2026
 **For**: All Pulse users — personal, team, and enterprise
 
 ---
@@ -2632,5 +2632,5 @@ Use Settings → Data Management → Export My Data before initiating account de
 
 ---
 
-*Pulse User's Guide — Version 25.1.1 — Updated March 5, 2026*
+*Pulse User's Guide — Version 25.1.3 — Updated March 17, 2026*
 *This guide is updated regularly as new features are added. Run `/users-guide` in Claude Code to regenerate it.*

@@ -86,42 +86,55 @@ export const ContactsOnboarding: React.FC<ContactsOnboardingProps> = ({ onComple
   }
 
   return (
-    <div className="fixed inset-0 z-[70] flex items-center justify-center bg-black/50 backdrop-blur-sm p-4">
-      <div className="w-full max-w-sm bg-white dark:bg-zinc-900 rounded-2xl shadow-2xl overflow-hidden">
+    <div className="fixed inset-0 z-[70] flex items-center justify-center bg-black/60 backdrop-blur-md p-4">
+      <div className="w-full max-w-sm bg-white/90 dark:bg-zinc-900/85 backdrop-blur-xl border border-black/[0.06] dark:border-white/[0.07] shadow-2xl shadow-black/20 dark:shadow-black/50 rounded-2xl overflow-hidden animate-perm-enter">
 
-        {/* Progress bar */}
-        <div className="h-1 bg-zinc-100 dark:bg-zinc-800">
-          <div
-            className="h-full bg-indigo-500 transition-all duration-500"
-            style={{ width: `${((step + 1) / TOUR_STEPS.length) * 100}%` }}
-          />
-        </div>
+        {/* Sky-500 accent strip (Contacts accent color) */}
+        <div className="h-1 w-full bg-gradient-to-r from-sky-500 to-blue-600" />
 
         <div className="p-6">
-          {/* Step icon */}
+          {/* Segmented progress dots */}
+          <div className="flex gap-1.5 mb-5">
+            {TOUR_STEPS.map((_, i) => (
+              <div
+                key={i}
+                className={`h-1 flex-1 rounded-full transition-all duration-300 ${
+                  i < step
+                    ? 'bg-gradient-to-r from-rose-500 to-pink-500'
+                    : i === step
+                    ? 'bg-sky-400 animate-pulse'
+                    : 'bg-zinc-200 dark:bg-zinc-700/60'
+                }`}
+              />
+            ))}
+          </div>
+
+          {/* Step icon — 72×72 sky accent */}
           <div className="flex justify-center mb-4">
-            <div className="w-14 h-14 rounded-2xl bg-indigo-50 dark:bg-indigo-900/20 flex items-center justify-center shadow-sm">
+            <div className="w-[72px] h-[72px] rounded-2xl bg-sky-500/15 border border-sky-500/30 flex items-center justify-center">
               <AnimatedIcon icon={currentStep.icon} size={32} />
             </div>
           </div>
 
           {/* Content */}
-          <h3 className="text-lg font-bold text-zinc-800 dark:text-zinc-100 text-center mb-2">
+          <h3 className="text-lg font-bold text-zinc-900 dark:text-white text-center mb-2">
             {currentStep.title}
           </h3>
           <p className="text-sm text-zinc-500 dark:text-zinc-400 text-center leading-relaxed">
             {currentStep.body}
           </p>
 
-          {/* Dots */}
+          {/* Dot nav */}
           <div className="flex items-center justify-center gap-1.5 mt-5">
             {TOUR_STEPS.map((_, i) => (
               <button
                 key={i}
+                type="button"
+                aria-label={`Go to step ${i + 1}`}
                 onClick={() => setStep(i)}
                 className={`rounded-full transition-all ${
                   i === step
-                    ? 'w-4 h-1.5 bg-indigo-500'
+                    ? 'w-4 h-1.5 bg-sky-500'
                     : 'w-1.5 h-1.5 bg-zinc-300 dark:bg-zinc-600'
                 }`}
               />
@@ -132,14 +145,16 @@ export const ContactsOnboarding: React.FC<ContactsOnboardingProps> = ({ onComple
         {/* Footer */}
         <div className="px-6 pb-5 flex items-center justify-between">
           <button
+            type="button"
             onClick={handleSkip}
             className="text-xs text-zinc-400 hover:text-zinc-600 dark:hover:text-zinc-300 transition-colors"
           >
             Skip tour
           </button>
           <button
+            type="button"
             onClick={handleNext}
-            className="px-5 py-2 bg-indigo-600 hover:bg-indigo-700 text-white text-sm font-semibold rounded-xl transition-colors"
+            className="px-5 py-2 bg-gradient-to-r from-sky-500 to-blue-600 hover:brightness-110 active:scale-[0.98] text-white text-sm font-semibold rounded-xl transition-all duration-150 shadow-md"
           >
             {isLast ? 'Get started' : 'Next →'}
           </button>

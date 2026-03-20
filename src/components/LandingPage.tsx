@@ -1,4 +1,4 @@
-import React, { useState, useEffect, lazy, Suspense } from 'react';
+import React, { useState, useEffect, useRef, lazy, Suspense } from 'react';
 import './LandingPage.css';
 
 import { Apple, ArrowDown, Battery, Bell, Book, BookOpen, Bot, Check, ChevronUp, Download, ExternalLink, Eye, Gavel, Heart, HeartPulse, HelpCircle, Info, Keyboard, Layers, LayoutGrid, Mic, Network, Play, Rocket, Search, ShieldHalf, Signal, Smartphone, Wand2, Wifi, X } from 'lucide-react';
@@ -147,6 +147,8 @@ const LandingPage: React.FC<LandingPageProps> = ({ onGetStarted }) => {
   const [shortcutsOpen, setShortcutsOpen] = useState(false);
   const [downloadsOpen, setDownloadsOpen] = useState(false);
   const [orbitPaused, setOrbitPaused] = useState(false);
+  const [mobileMenuOpen, setMobileMenuOpen] = useState(false);
+  const heroCanvasRef = useRef<HTMLCanvasElement>(null);
 
   // ── Live transcription typewriter ──────────────────────────────────
   const liveTranscriptPhrases = [
@@ -219,7 +221,7 @@ const LandingPage: React.FC<LandingPageProps> = ({ onGetStarted }) => {
     return () => observer.disconnect();
   }, []);
 
-  // Scroll progress bar + back-to-top visibility
+  // Scroll progress bar + back-to-top visibility + mobile menu auto-close
   useEffect(() => {
     const onScroll = () => {
       const doc = document.documentElement;
@@ -227,16 +229,17 @@ const LandingPage: React.FC<LandingPageProps> = ({ onGetStarted }) => {
       const scrollHeight = doc.scrollHeight - doc.clientHeight;
       setScrollProgress(scrollHeight > 0 ? scrollTop / scrollHeight : 0);
       setShowBackToTop(scrollTop > 500);
+      if (mobileMenuOpen && scrollTop > 100) setMobileMenuOpen(false);
     };
     window.addEventListener('scroll', onScroll, { passive: true });
     return () => window.removeEventListener('scroll', onScroll);
-  }, []);
+  }, [mobileMenuOpen]);
 
-  // Lock body scroll + close on Escape when guide drawer is open
+  // Lock body scroll when guide drawer or mobile menu is open
   useEffect(() => {
-    document.body.style.overflow = isGuideOpen ? 'hidden' : '';
+    document.body.style.overflow = (isGuideOpen || mobileMenuOpen) ? 'hidden' : '';
     return () => { document.body.style.overflow = ''; };
-  }, [isGuideOpen]);
+  }, [isGuideOpen, mobileMenuOpen]);
 
   useEffect(() => {
     if (!isGuideOpen) return;
@@ -244,6 +247,160 @@ const LandingPage: React.FC<LandingPageProps> = ({ onGetStarted }) => {
     document.addEventListener('keydown', onKey);
     return () => document.removeEventListener('keydown', onKey);
   }, [isGuideOpen]);
+
+  // Close mobile menu on Esc key or when viewport widens to ≥ 768px
+  useEffect(() => {
+    if (!mobileMenuOpen) return;
+    const onKey = (e: KeyboardEvent) => { if (e.key === 'Escape') setMobileMenuOpen(false); };
+    const onResize = () => { if (window.innerWidth >= 768) setMobileMenuOpen(false); };
+    document.addEventListener('keydown', onKey);
+    window.addEventListener('resize', onResize);
+    return () => {
+      document.removeEventListener('keydown', onKey);
+      window.removeEventListener('resize', onResize);
+    };
+  }, [mobileMenuOpen]);
+
+  // ── Hero signal-wave canvas animation ──────────────────────────────────────
+  useEffect(() => {
+    const canvas = heroCanvasRef.current;
+    if (!canvas) return;
+    const ctx = canvas.getContext('2d');
+    if (!ctx) return;
+
+    // Settings locked from playground: glow 92%, speed 47%, particles 100%
+    const GLOW     = 0.92;
+    const SPD_BASE = 0.18 + (47 / 100) * 2.6; // ≈ 1.40
+    const N_PARTS  = 90;
+
+    const pal = ['#f43f5e','#ec4899','#fb7185','#f97316','#ef4444','#e11d48','#db2777'];
+    const waves = Array.from({ length: 7 }, (_, i) => ({
+      yFrac:     0.08 + i * 0.13,
+      freq:      0.0022 + i * 0.0007,
+      amp:       10 + i * 4,
+      phase:     (i * 0.9) % (Math.PI * 2),
+      speedMul:  0.35 + i * 0.15,
+      color:     pal[i % pal.length],
+      opacity:   0.14 + i * 0.06,
+      lw:        0.7 + (i % 3) * 0.8,
+      ecgTimer:  i * 40,
+      ecgCool:   180 + i * 40,
+      ecgActive: false,
+      ecgProg:   0,
+    }));
+
+    type Pt = { x: number; wi: number; speed: number; size: number; opacity: number; phase: number };
+    const parts: Pt[] = [];
+    let W = canvas.offsetWidth;
+    let H = canvas.offsetHeight;
+    let time = 0;
+    let rafId = 0;
+
+    const makePt = (): Pt => ({
+      x:       Math.random() * W,
+      wi:      Math.floor(Math.random() * 7),
+      speed:   0.3 + Math.random() * 1.8,
+      size:    0.8 + Math.random() * 2.2,
+      opacity: 0.35 + Math.random() * 0.65,
+      phase:   Math.random() * Math.PI * 2,
+    });
+
+    const resize = () => {
+      const dpr = window.devicePixelRatio || 1;
+      W = canvas.offsetWidth;
+      H = canvas.offsetHeight;
+      canvas.width  = W * dpr;
+      canvas.height = H * dpr;
+      ctx.scale(dpr, dpr);
+    };
+
+    const ecgShape = (t: number): number => {
+      if (t < 0.12) return t * 0.6;
+      if (t < 0.22) return 0.072 - (t - 0.12) * 0.72;
+      if (t < 0.33) return -(t - 0.22) * 1.8;
+      if (t < 0.44) return -0.198 + (t - 0.33) * 13;
+      if (t < 0.55) return 1.23 - (t - 0.44) * 15;
+      if (t < 0.66) return -0.42 + (t - 0.55) * 4.8;
+      return 0;
+    };
+
+    const strokeWave = (w: (typeof waves)[0], y: number) => {
+      ctx.beginPath();
+      let first = true;
+      for (let x = 0; x <= W; x += 2) {
+        let wy: number;
+        if (w.ecgActive && x < w.ecgProg) {
+          const rel = (w.ecgProg - x) / 90;
+          wy = rel < 1
+            ? y + ecgShape(rel) * w.amp * 2.8
+            : y + Math.sin(x * w.freq + w.phase + time * w.speedMul) * w.amp;
+        } else {
+          wy = y + Math.sin(x * w.freq + w.phase + time * w.speedMul) * w.amp;
+        }
+        const fy = y + (wy - y) * (1 - (x / W) * 0.45);
+        if (first) { ctx.moveTo(x, fy); first = false; } else ctx.lineTo(x, fy);
+      }
+      ctx.stroke();
+    };
+
+    const loop = () => {
+      rafId = requestAnimationFrame(loop);
+      ctx.clearRect(0, 0, W, H);
+      time += SPD_BASE * 0.016;
+
+      waves.forEach(w => {
+        const y = w.yFrac * H;
+        w.ecgTimer += SPD_BASE * 0.45;
+        if (w.ecgTimer > w.ecgCool && !w.ecgActive) { w.ecgActive = true; w.ecgProg = 0; w.ecgTimer = 0; }
+        if (w.ecgActive) { w.ecgProg += SPD_BASE * 3.5; if (w.ecgProg > W) { w.ecgActive = false; w.ecgProg = 0; } }
+
+        ctx.save();
+        ctx.shadowColor = w.color; ctx.shadowBlur = 18 * GLOW;
+        ctx.strokeStyle = w.color; ctx.lineWidth = w.lw + 2.5;
+        ctx.globalAlpha = w.opacity * 0.35 * GLOW;
+        strokeWave(w, y);
+        ctx.shadowBlur = 0; ctx.globalAlpha = w.opacity; ctx.lineWidth = w.lw;
+        strokeWave(w, y);
+        ctx.restore();
+      });
+
+      parts.forEach(p => {
+        p.x += p.speed * SPD_BASE * 0.75;
+        if (p.x > W) { p.x = 0; p.wi = Math.floor(Math.random() * waves.length); }
+        const w = waves[p.wi];
+        if (!w) return;
+        const baseY = w.yFrac * H;
+        const wy = baseY + Math.sin(p.x * w.freq + w.phase + time * w.speedMul + p.phase) * w.amp;
+        const fy = baseY + (wy - baseY) * (1 - (p.x / W) * 0.45);
+        ctx.beginPath();
+        ctx.arc(p.x, fy, p.size, 0, Math.PI * 2);
+        ctx.fillStyle = w.color;
+        ctx.globalAlpha = p.opacity * (0.35 + 0.65 * GLOW);
+        ctx.shadowColor = w.color; ctx.shadowBlur = 9 * GLOW;
+        ctx.fill(); ctx.shadowBlur = 0;
+      });
+
+      const cx = W * 0.65, cy = H * 0.5;
+      const gr = ctx.createRadialGradient(cx, cy, 0, cx, cy, W * 0.52);
+      gr.addColorStop(0,   `rgba(244,63,94,${(0.2 * GLOW).toFixed(2)})`);
+      gr.addColorStop(0.4, `rgba(236,72,153,${(0.09 * GLOW).toFixed(2)})`);
+      gr.addColorStop(1,   'rgba(244,63,94,0)');
+      ctx.beginPath();
+      ctx.arc(cx, cy, W * 0.52, 0, Math.PI * 2);
+      ctx.fillStyle = gr; ctx.globalAlpha = 1;
+      ctx.fill();
+    };
+
+    resize();
+    for (let i = 0; i < N_PARTS; i++) parts.push(makePt());
+    window.addEventListener('resize', resize);
+    loop();
+
+    return () => {
+      cancelAnimationFrame(rafId);
+      window.removeEventListener('resize', resize);
+    };
+  }, []);
 
   const scrollToSection = (id: string) => {
     const element = document.getElementById(id);
@@ -531,7 +688,7 @@ const LandingPage: React.FC<LandingPageProps> = ({ onGetStarted }) => {
 
       {/* ── Navigation ── */}
       <nav aria-label="Main navigation" className="fixed top-0 left-0 right-0 z-[100] bg-zinc-950/85 backdrop-blur-xl border-b border-zinc-800/50">
-        <div className="max-w-7xl mx-auto px-6 py-4 flex items-center justify-between">
+        <div className="max-w-7xl mx-auto px-4 py-3 md:px-6 md:py-4 flex items-center justify-between">
 
           {/* Left: Pulse logo + QntmEcos badge */}
           <div className="flex items-center gap-4">
@@ -569,11 +726,12 @@ const LandingPage: React.FC<LandingPageProps> = ({ onGetStarted }) => {
             </a>
           </div>
 
-          <div className="flex items-center gap-6 text-sm font-medium text-zinc-400">
+          <div className="hidden md:flex items-center gap-6 text-sm font-medium text-zinc-400">
             {/* Primary nav */}
             <button type="button" onClick={() => scrollToSection('features')} className="hover:text-white transition">Features</button>
             <button type="button" onClick={() => scrollToSection('ecosystem')} className="hover:text-white transition">Ecosystem</button>
             <button type="button" onClick={() => scrollToSection('scenarios')} className="hover:text-white transition">Scenarios</button>
+            <button type="button" onClick={() => scrollToSection('pricing')} className="hover:text-white transition">Pricing</button>
 
             {/* ── Downloads dropdown ── */}
             <div
@@ -706,6 +864,51 @@ const LandingPage: React.FC<LandingPageProps> = ({ onGetStarted }) => {
           </div>
 
           <div className="flex items-center gap-3">
+            {/* Hamburger — mobile only, ghost style (no rose fill per budget rule) */}
+            <button
+              type="button"
+              onClick={() => setMobileMenuOpen(prev => !prev)}
+              aria-label={mobileMenuOpen ? 'Close navigation menu' : 'Open navigation menu'}
+              aria-expanded={mobileMenuOpen}
+              aria-controls="lp-mobile-menu"
+              className={`md:hidden w-11 h-11 flex items-center justify-center rounded-lg border transition-all duration-200 hover:scale-105 active:scale-95 ${
+                isDarkMode
+                  ? 'border-zinc-700/70 bg-zinc-900/60 hover:border-zinc-500/50 text-zinc-400 hover:text-white'
+                  : 'border-stone-300 bg-white hover:border-stone-400 text-stone-500 hover:text-stone-900'
+              }`}
+            >
+              <svg viewBox="0 0 20 20" width={18} height={18} fill="none" aria-hidden="true" overflow="visible">
+                {/* Top bar — rotates to first arm of X */}
+                <line
+                  x1="3" y1="5" x2="17" y2="5"
+                  stroke="currentColor" strokeWidth="1.75" strokeLinecap="round"
+                  style={{
+                    transformOrigin: '10px 5px',
+                    transform: mobileMenuOpen ? 'translateY(5px) rotate(45deg)' : 'none',
+                    transition: 'transform 220ms cubic-bezier(0.16, 1, 0.3, 1)',
+                  }}
+                />
+                {/* Middle bar — fades out */}
+                <line
+                  x1="3" y1="10" x2="17" y2="10"
+                  stroke="currentColor" strokeWidth="1.75" strokeLinecap="round"
+                  style={{
+                    opacity: mobileMenuOpen ? 0 : 1,
+                    transition: 'opacity 150ms ease',
+                  }}
+                />
+                {/* Bottom bar — rotates to second arm of X */}
+                <line
+                  x1="3" y1="15" x2="17" y2="15"
+                  stroke="currentColor" strokeWidth="1.75" strokeLinecap="round"
+                  style={{
+                    transformOrigin: '10px 15px',
+                    transform: mobileMenuOpen ? 'translateY(-5px) rotate(-45deg)' : 'none',
+                    transition: 'transform 220ms cubic-bezier(0.16, 1, 0.3, 1)',
+                  }}
+                />
+              </svg>
+            </button>
             {/* Theme toggle — sun (dark→light) / moon (light→dark) */}
             <button
               type="button"
@@ -743,7 +946,7 @@ const LandingPage: React.FC<LandingPageProps> = ({ onGetStarted }) => {
             <button
               onClick={onGetStarted}
               type="button"
-              className="px-5 py-2.5 bg-zinc-800/90 backdrop-blur-sm border border-zinc-700/80 hover:border-rose-500/50 text-zinc-100 hover:text-white rounded-lg text-sm font-semibold transition-all duration-300 hover:scale-105 active:scale-95 hover:bg-zinc-700/90 hover:shadow-lg hover:shadow-rose-500/10"
+              className="px-3 py-2 md:px-5 md:py-2.5 bg-zinc-800/90 backdrop-blur-sm border border-zinc-700/80 hover:border-rose-500/50 text-zinc-100 hover:text-white rounded-lg text-xs md:text-sm font-semibold transition-all duration-300 hover:scale-105 active:scale-95 hover:bg-zinc-700/90 hover:shadow-lg hover:shadow-rose-500/10"
             >
               Log In
             </button>
@@ -758,129 +961,111 @@ const LandingPage: React.FC<LandingPageProps> = ({ onGetStarted }) => {
         </div>
       </nav>
 
+      {/* ── Mobile menu panel — slide-down glass, md:hidden via CSS ── */}
+      <div
+        id="lp-mobile-menu"
+        role="navigation"
+        aria-label="Mobile navigation"
+        className={`lp-mobile-menu ${mobileMenuOpen ? 'open' : 'closed'}`}
+      >
+        {/* Stacked nav links */}
+        <button type="button" onClick={() => { setMobileMenuOpen(false); scrollToSection('features'); }} className="lp-mobile-nav-link">Features</button>
+        <button type="button" onClick={() => { setMobileMenuOpen(false); scrollToSection('ecosystem'); }} className="lp-mobile-nav-link">Ecosystem</button>
+        <button type="button" onClick={() => { setMobileMenuOpen(false); scrollToSection('scenarios'); }} className="lp-mobile-nav-link">Scenarios</button>
+        <button type="button" onClick={() => { setMobileMenuOpen(false); scrollToSection('pricing'); }} className="lp-mobile-nav-link">Pricing</button>
+        <button type="button" onClick={() => { setMobileMenuOpen(false); scrollToSection('download'); }} className="lp-mobile-nav-link">Download</button>
+        <div className="lp-mobile-divider" />
+        <a href="/docs" onClick={() => setMobileMenuOpen(false)} className="lp-mobile-nav-link">Docs</a>
+        <a href="/privacy" onClick={() => setMobileMenuOpen(false)} className="lp-mobile-nav-link">Privacy</a>
+        <div className="lp-mobile-divider" />
+        {/* CTAs */}
+        <button onClick={onGetStarted} type="button" className="lp-mobile-cta-primary">Get Started</button>
+        <button onClick={onGetStarted} type="button" className="lp-mobile-cta-ghost">Log In</button>
+      </div>
+
       {/* ── Main content landmark (ADA) ── */}
       <main id="main-content">
 
-      {/* ── Hero Section ── */}
-      <section className={`relative pt-40 pb-20 px-6 min-h-[92vh] flex items-center justify-center overflow-visible${isDarkMode ? '' : ' bg-stone-200'}`}>
+      {/* ── Hero Section — Asymmetric Signal ── */}
+      <section
+        className="relative flex items-center min-h-screen overflow-hidden"
+        style={{ background: isDarkMode ? '#0f172a' : '#fafaf9' }}
+      >
+        {/* Signal wave canvas — right 65%, absolute positioned */}
+        <canvas
+          ref={heroCanvasRef}
+          className="hero-signal-canvas"
+          style={{ opacity: isDarkMode ? 1 : 0.2 }}
+          aria-hidden="true"
+        />
 
-        {/* Floating particles */}
-        <div className="absolute inset-0 pointer-events-none z-[1] overflow-hidden">
-          <div className="particle absolute top-[20%] left-[10%] w-2 h-2 bg-rose-500/40 rounded-full blur-sm" style={{ animationDelay: '0s' }}></div>
-          <div className="particle absolute top-[60%] left-[15%] w-3 h-3 bg-pink-500/25 rounded-full blur-sm" style={{ animationDelay: '2s' }}></div>
-          <div className="particle absolute top-[40%] right-[20%] w-2 h-2 bg-purple-500/35 rounded-full blur-sm" style={{ animationDelay: '4s' }}></div>
-          <div className="particle absolute top-[70%] right-[10%] w-3 h-3 bg-rose-500/25 rounded-full blur-sm" style={{ animationDelay: '6s' }}></div>
-          <div className="particle absolute top-[30%] left-[50%] w-2 h-2 bg-pink-500/35 rounded-full blur-sm" style={{ animationDelay: '8s' }}></div>
-          <div className="particle absolute top-[80%] left-[30%] w-2 h-2 bg-purple-500/25 rounded-full blur-sm" style={{ animationDelay: '10s' }}></div>
-          <div className="particle absolute top-[50%] right-[40%] w-3 h-3 bg-rose-500/30 rounded-full blur-sm" style={{ animationDelay: '12s' }}></div>
-        </div>
+        {/* Grid overlay — radial mask, right-biased */}
+        <div className="hero-asymm-grid" aria-hidden="true" />
 
-        {/* Background gradients — dark mode only */}
-        <div className="absolute inset-0 pointer-events-none z-0 overflow-hidden" style={{ opacity: isDarkMode ? 1 : 0 }}>
-          <div className="absolute top-0 left-1/2 -translate-x-1/2 w-[1400px] h-[800px] bg-gradient-to-br from-rose-500/45 via-pink-500/30 to-transparent rounded-full blur-[160px] opacity-75 mix-blend-screen"></div>
-          <div className="absolute bottom-0 right-0 w-[1000px] h-[800px] bg-gradient-to-tl from-purple-500/30 via-pink-600/20 to-transparent rounded-full blur-[140px] opacity-55 mix-blend-screen"></div>
-          <div className="absolute top-40 left-0 w-[700px] h-[700px] bg-gradient-to-br from-rose-600/20 via-pink-700/10 to-transparent rounded-full blur-[120px] opacity-50 mix-blend-screen"></div>
-          <div className="absolute top-1/2 left-1/2 -translate-x-1/2 -translate-y-1/2 w-[1100px] h-[1100px] bg-gradient-radial from-rose-500/15 via-pink-600/8 to-transparent rounded-full blur-3xl opacity-70"></div>
-
-          {/* Grid pattern */}
-          <div className="absolute inset-0 z-[1]" style={{
-            backgroundImage: isDarkMode
-              ? `linear-gradient(rgba(244,63,94,0.18) 1px, transparent 1px), linear-gradient(90deg, rgba(236,72,153,0.18) 1px, transparent 1px), linear-gradient(rgba(168,85,247,0.12) 1px, transparent 1px), linear-gradient(90deg, rgba(244,63,94,0.12) 1px, transparent 1px)`
-              : `linear-gradient(rgba(244,63,94,0.08) 1px, transparent 1px), linear-gradient(90deg, rgba(236,72,153,0.07) 1px, transparent 1px), linear-gradient(rgba(168,85,247,0.05) 1px, transparent 1px), linear-gradient(90deg, rgba(244,63,94,0.05) 1px, transparent 1px)`,
-            backgroundSize: '64px 64px, 64px 64px, 32px 32px, 32px 32px',
-            maskImage: 'radial-gradient(ellipse at center, black 50%, transparent 100%)',
-            WebkitMaskImage: 'radial-gradient(ellipse at center, black 50%, transparent 100%)',
-            opacity: isDarkMode ? 0.9 : 0.7,
-          }}></div>
-        </div>
-
-        {/* ECG cardiogram — draws across screen then fades, loops */}
+        {/* Left gradient fade — text readable against canvas glow */}
         <div
-          className="absolute bottom-0 left-0 right-0 pointer-events-none z-[1]"
-          style={{ height: '200px' }}
-        >
-          <svg
-            viewBox="0 0 1200 200"
-            style={{ width: '100%', height: '200px', display: 'block' }}
-            preserveAspectRatio="none"
-          >
-            <defs>
-              <filter id="ecg-glow" x="-10%" y="-80%" width="120%" height="260%">
-                <feGaussianBlur stdDeviation="5" result="blur"/>
-                <feMerge>
-                  <feMergeNode in="blur"/>
-                  <feMergeNode in="SourceGraphic"/>
-                </feMerge>
-              </filter>
-            </defs>
+          className="hero-asymm-fade"
+          style={{
+            background: isDarkMode
+              ? 'linear-gradient(90deg, #0f172a 32%, rgba(15,23,42,0.78) 55%, transparent 80%)'
+              : 'linear-gradient(90deg, #fafaf9 32%, rgba(250,250,249,0.78) 55%, transparent 80%)',
+          }}
+          aria-hidden="true"
+        />
 
-            {/* Soft glow trail — wide blurred stroke */}
-            <path
-              className="ecg-glow-trail"
-              d="M0 110 L310 110 L335 92 L358 110 L395 110 L412 8 L422 192 L438 110 L480 110 L500 94 L532 72 L562 110 L1200 110"
-              stroke="#f43f5e"
-              strokeWidth="12"
-              fill="none"
-              strokeLinecap="round"
-              strokeLinejoin="round"
-              filter="url(#ecg-glow)"
-              pathLength="1"
-              style={{ strokeDasharray: 1, strokeDashoffset: 1 }}
-            />
+        {/* Grain texture — premium feel */}
+        <div className="hero-grain-overlay" style={{ opacity: isDarkMode ? 0.22 : 0.05 }} aria-hidden="true" />
 
-            {/* Main bright ECG line */}
-            <path
-              className="ecg-draw"
-              d="M0 110 L310 110 L335 92 L358 110 L395 110 L412 8 L422 192 L438 110 L480 110 L500 94 L532 72 L562 110 L1200 110"
-              stroke="#fb7185"
-              strokeWidth="3.5"
-              fill="none"
-              strokeLinecap="round"
-              strokeLinejoin="round"
-              pathLength="1"
-              style={{ strokeDasharray: 1, strokeDashoffset: 1 }}
-            />
-          </svg>
-        </div>
+        {/* Text content — left column */}
+        <div className="hero-asymm-content">
 
-        <div className="max-w-5xl mx-auto text-center relative z-10 pt-8 pb-8">
-          <div className="inline-flex items-center gap-2 px-4 py-2 bg-zinc-900/80 backdrop-blur-md rounded-full text-sm font-medium text-rose-300 mb-8 border border-rose-500/25 shadow-lg shadow-rose-900/30 animate-fade-in animation-delay-100">
-            <span className="relative flex h-2 w-2">
-              <span className="animate-ping absolute inline-flex h-full w-full rounded-full bg-rose-400 opacity-75"></span>
-              <span className="relative inline-flex rounded-full h-2 w-2 bg-rose-500"></span>
+          {/* Logo mark */}
+          <div className="flex items-center gap-3 mb-7 animate-blur-reveal blur-delay-0" aria-label="Pulse">
+            <div className="hero-logo-container">
+              <QntmEcosIcon size={30} />
+            </div>
+            <span style={{
+              fontFamily: "'Syne', 'Inter', system-ui, sans-serif",
+              fontWeight: 800,
+              fontSize: '17px',
+              letterSpacing: '0.1em',
+              color: isDarkMode ? '#ffffff' : '#1c1917',
+              textTransform: 'uppercase',
+            }}>PULSE</span>
+          </div>
+
+          {/* Badge */}
+          <div className="hero-asymm-badge animate-blur-reveal blur-delay-1">
+            <span className="relative flex h-2 w-2 flex-shrink-0" aria-hidden="true">
+              <span className="animate-ping absolute inline-flex h-full w-full rounded-full bg-rose-400 opacity-75" />
+              <span className="relative inline-flex rounded-full h-2 w-2 bg-rose-500" />
             </span>
             The Central Nervous System for High-Performance Teams
           </div>
 
-          {/* Pulsing glow */}
-          <div className="absolute left-1/2 -translate-x-1/2 top-1/2 -translate-y-1/2 w-[1100px] h-[650px] pointer-events-none z-[2]">
-            <div className="absolute inset-0 bg-gradient-to-r from-rose-500/40 via-pink-500/35 to-purple-500/30 rounded-full blur-[160px] animate-pulse-glow-slow"></div>
-          </div>
-
-          <h1 className="text-5xl sm:text-7xl font-bold mb-8 leading-[1.15] tracking-tight relative z-10 pb-4">
-            <span className="block text-white animate-fade-in animation-delay-200">Every Signal. Every Voice.</span>
-            <span className="block mt-2 mb-2 text-transparent bg-clip-text bg-gradient-to-r from-rose-400 via-pink-500 to-purple-500 animate-fade-in animation-delay-300">
-              Every Decision.
-            </span>
-            <span className="block text-zinc-300 text-4xl sm:text-5xl font-semibold animate-fade-in animation-delay-400">Unified in Pulse.</span>
+          {/* Headline — hard stop at "Every Decision." */}
+          <h1
+            className="hero-asymm-headline animate-blur-reveal blur-delay-2"
+            style={{ color: isDarkMode ? '#ffffff' : '#1c1917' }}
+          >
+            <span className="ha-line">Every Signal.</span>
+            <span className="ha-line">Every Voice.</span>
+            <span className="ha-line ha-gradient">Every Decision.</span>
           </h1>
 
-          <p className="text-xl text-zinc-400 mb-12 max-w-2xl mx-auto leading-relaxed animate-fade-in animation-delay-500">
-            7 voice messaging modes. 8 unified platforms. 4 AI providers. Real-time transcription, CRM sync, and decision tracking — all in one living interface built for teams that move fast.
-          </p>
-
-          <div className="flex flex-col sm:flex-row items-center justify-center gap-4 animate-fade-in animation-delay-500">
+          {/* Single CTA */}
+          <div className="animate-blur-reveal blur-delay-3">
             <button
               onClick={onGetStarted}
-              className="w-full sm:w-auto px-8 py-4 bg-white text-zinc-950 rounded-xl text-lg font-bold hover:bg-zinc-200 transition shadow-xl hover:scale-105 active:scale-95 flex items-center justify-center gap-2"
+              className="hero-asymm-cta"
               type="button"
             >
               Launch Pulse
-              <Rocket />
+              <Rocket size={16} />
             </button>
           </div>
-        </div>
 
+        </div>
       </section>
 
       {/* ── Stats Strip ── */}
@@ -1747,6 +1932,204 @@ const LandingPage: React.FC<LandingPageProps> = ({ onGetStarted }) => {
         </div>
       </section>
 
+      {/* ── Pricing Section ── */}
+      <section id="pricing" className="py-24 px-6 border-t border-zinc-800/50 relative overflow-hidden">
+        {/* Background glow */}
+        <div className="absolute inset-0 pointer-events-none">
+          <div className="absolute top-0 left-1/2 -translate-x-1/2 w-[900px] h-[400px] bg-rose-500/5 rounded-full blur-3xl" />
+        </div>
+        <div className="max-w-6xl mx-auto relative z-10">
+          <div className="text-center mb-16">
+            <div className="inline-flex items-center gap-2 px-3 py-1.5 rounded-full bg-zinc-800/60 border border-zinc-700/50 text-rose-400 text-xs font-bold uppercase tracking-widest mb-4">
+              <i className="fa-solid fa-tag" aria-hidden="true"></i> Pricing
+            </div>
+            <h2 className="text-3xl sm:text-4xl font-bold text-white mb-3">Simple, transparent pricing</h2>
+            <p className="text-zinc-400 text-base max-w-xl mx-auto">Everything your team needs to communicate, coordinate, and close deals — no hidden fees.</p>
+          </div>
+
+          <div className="grid grid-cols-1 md:grid-cols-3 gap-6 items-stretch">
+
+            {/* ── Starter ── */}
+            <div className="relative flex flex-col rounded-2xl border border-zinc-800 bg-zinc-900/60 backdrop-blur-sm p-8 hover:border-zinc-700 transition-all duration-300">
+              <div className="mb-6">
+                <p className="text-xs font-bold uppercase tracking-widest text-zinc-500 mb-2">Starter</p>
+                <div className="flex items-end gap-1 mb-1">
+                  <span className="text-4xl font-extrabold text-white">$79</span>
+                  <span className="text-zinc-500 mb-1">/month</span>
+                </div>
+                <p className="text-xs text-zinc-600">$948/yr · up to 5 users</p>
+                <p className="text-sm text-zinc-400 mt-2">Small teams getting organized</p>
+              </div>
+
+              <ul className="space-y-3 mb-8 flex-1 text-sm">
+                {[
+                  'Unified Inbox (Email, Internal)',
+                  'Multi-AI Chat (Claude, Gemini, GPT)',
+                  'Contacts + Google Sync',
+                  'Decision & Task Hub',
+                  'Calendar & Meetings',
+                  'Analytics Dashboard',
+                ].map(f => (
+                  <li key={f} className="flex items-start gap-2.5 text-zinc-300">
+                    <i className="fa-solid fa-check text-rose-500 mt-0.5 shrink-0" aria-hidden="true"></i>
+                    {f}
+                  </li>
+                ))}
+                <li className="pt-3 border-t border-zinc-800 space-y-2">
+                  {[
+                    ['Users', 'Up to 5'],
+                    ['AI Messages/mo', '500'],
+                    ['SMS Messages/mo', '100'],
+                    ['Storage', '5 GB'],
+                    ['Support', 'Email'],
+                  ].map(([k, v]) => (
+                    <div key={k} className="flex justify-between text-xs">
+                      <span className="text-zinc-500">{k}</span>
+                      <span className="text-zinc-300 font-medium">{v}</span>
+                    </div>
+                  ))}
+                </li>
+              </ul>
+
+              <button
+                type="button"
+                onClick={onGetStarted}
+                className="w-full py-3 rounded-xl border border-zinc-700 text-white text-sm font-semibold hover:border-rose-500/50 hover:bg-zinc-800 transition-all duration-200"
+              >
+                Get Started
+              </button>
+            </div>
+
+            {/* ── Professional (featured) ── */}
+            <div className="relative flex flex-col rounded-2xl border border-rose-500/40 bg-zinc-900/80 backdrop-blur-sm p-8 shadow-[0_0_40px_rgba(244,63,94,0.12)] hover:shadow-[0_0_60px_rgba(244,63,94,0.18)] transition-all duration-300 scale-[1.02]">
+              <div className="absolute -top-3.5 left-1/2 -translate-x-1/2 px-4 py-1 rounded-full bg-rose-500 text-white text-[11px] font-bold uppercase tracking-wider shadow-lg">
+                Most Popular
+              </div>
+              <div className="mb-6">
+                <p className="text-xs font-bold uppercase tracking-widest text-rose-400 mb-2">Professional</p>
+                <div className="flex items-end gap-1 mb-1">
+                  <span className="text-4xl font-extrabold text-white">$149</span>
+                  <span className="text-zinc-500 mb-1">/month</span>
+                </div>
+                <p className="text-xs text-zinc-600">$1,788/yr · up to 15 users</p>
+                <p className="text-sm text-zinc-400 mt-2">Growing teams who live in their inbox</p>
+              </div>
+
+              <ul className="space-y-3 mb-8 flex-1 text-sm">
+                <li className="flex items-start gap-2.5 text-zinc-400 text-xs font-medium italic">
+                  <i className="fa-solid fa-circle-check text-rose-500/60 mt-0.5 shrink-0" aria-hidden="true"></i>
+                  Everything in Starter, plus:
+                </li>
+                {/* Logos Vision CRM — featured highlight */}
+                <li className="flex items-start gap-2.5">
+                  <i className="fa-solid fa-star text-rose-400 mt-0.5 shrink-0" aria-hidden="true"></i>
+                  <span className="text-white font-semibold">
+                    Logos Vision CRM
+                    <span className="ml-2 inline-flex items-center px-1.5 py-0.5 rounded text-[10px] font-bold uppercase tracking-wide bg-rose-500/15 text-rose-400 border border-rose-500/20">Included</span>
+                    <span className="block text-xs text-zinc-400 font-normal mt-0.5">Full pipeline, contacts, deals & activity sync — built in</span>
+                  </span>
+                </li>
+                <li className="flex items-start gap-2.5 text-zinc-300">
+                  <i className="fa-solid fa-check text-rose-400/60 mt-0.5 shrink-0" aria-hidden="true"></i>
+                  <span className="text-zinc-400 text-xs">3rd-party CRM integrations (HubSpot, Salesforce, Pipedrive)</span>
+                </li>
+                {[
+                  'SMS (Twilio) + Slack integration',
+                  'Voxer Voice (recording, transcription, AI)',
+                  'AI Auto-responses & Coaching',
+                  'Contact Map View (Mapbox)',
+                ].map(f => (
+                  <li key={f} className="flex items-start gap-2.5 text-zinc-200">
+                    <i className="fa-solid fa-check text-rose-400 mt-0.5 shrink-0" aria-hidden="true"></i>
+                    {f}
+                  </li>
+                ))}
+                <li className="pt-3 border-t border-rose-500/20 space-y-2">
+                  {[
+                    ['Users', 'Up to 15'],
+                    ['AI Messages/mo', '2,000'],
+                    ['SMS Messages/mo', '500'],
+                    ['Storage', '25 GB'],
+                    ['Support', 'Priority email + chat'],
+                  ].map(([k, v]) => (
+                    <div key={k} className="flex justify-between text-xs">
+                      <span className="text-zinc-500">{k}</span>
+                      <span className="text-rose-300 font-medium">{v}</span>
+                    </div>
+                  ))}
+                </li>
+              </ul>
+
+              <button
+                type="button"
+                onClick={onGetStarted}
+                className="w-full py-3 rounded-xl bg-gradient-to-r from-rose-500 to-pink-500 text-white text-sm font-bold hover:from-rose-400 hover:to-pink-400 transition-all duration-200 shadow-lg shadow-rose-500/20 hover:shadow-rose-500/30 hover:-translate-y-0.5"
+              >
+                Start Free Trial
+              </button>
+            </div>
+
+            {/* ── Business ── */}
+            <div className="relative flex flex-col rounded-2xl border border-zinc-800 bg-zinc-900/60 backdrop-blur-sm p-8 hover:border-zinc-700 transition-all duration-300">
+              <div className="mb-6">
+                <p className="text-xs font-bold uppercase tracking-widest text-zinc-500 mb-2">Business</p>
+                <div className="flex items-end gap-1 mb-1">
+                  <span className="text-4xl font-extrabold text-white">$249</span>
+                  <span className="text-zinc-500 mb-1">/month</span>
+                </div>
+                <p className="text-xs text-zinc-600">$2,988/yr · unlimited users</p>
+                <p className="text-sm text-zinc-400 mt-2">Teams that need everything</p>
+              </div>
+
+              <ul className="space-y-3 mb-8 flex-1 text-sm">
+                <li className="flex items-start gap-2.5 text-zinc-400 text-xs font-medium italic">
+                  <i className="fa-solid fa-circle-check text-rose-500/60 mt-0.5 shrink-0" aria-hidden="true"></i>
+                  Everything in Professional, plus:
+                </li>
+                {[
+                  'Unlimited users',
+                  'Unlimited AI messages',
+                  'Advanced analytics & reporting',
+                  'Custom automations & workflows',
+                  'Admin dashboard & team management',
+                  'Mobile app (Android)',
+                ].map(f => (
+                  <li key={f} className="flex items-start gap-2.5 text-zinc-300">
+                    <i className="fa-solid fa-check text-rose-500 mt-0.5 shrink-0" aria-hidden="true"></i>
+                    {f}
+                  </li>
+                ))}
+                <li className="pt-3 border-t border-zinc-800 space-y-2">
+                  {[
+                    ['Users', 'Unlimited'],
+                    ['AI Messages/mo', 'Unlimited'],
+                    ['SMS Messages/mo', 'Unlimited'],
+                    ['Storage', 'Unlimited'],
+                    ['Support', 'Dedicated account manager'],
+                  ].map(([k, v]) => (
+                    <div key={k} className="flex justify-between text-xs">
+                      <span className="text-zinc-500">{k}</span>
+                      <span className="text-zinc-300 font-medium">{v}</span>
+                    </div>
+                  ))}
+                </li>
+              </ul>
+
+              <button
+                type="button"
+                onClick={onGetStarted}
+                className="w-full py-3 rounded-xl border border-zinc-700 text-white text-sm font-semibold hover:border-rose-500/50 hover:bg-zinc-800 transition-all duration-200"
+              >
+                Contact Sales
+              </button>
+            </div>
+
+          </div>
+
+          <p className="text-center text-xs text-zinc-600 mt-8">All plans include a 14-day free trial · No credit card required · Cancel anytime</p>
+        </div>
+      </section>
+
       {/* ── D: FAQ Accordion ── */}
       <section className="py-20 px-6 bg-zinc-900/20 border-t border-zinc-800/30">
         <div className="max-w-3xl mx-auto">
@@ -1851,6 +2234,9 @@ const LandingPage: React.FC<LandingPageProps> = ({ onGetStarted }) => {
                 </li>
                 <li>
                   <button type="button" onClick={() => scrollToSection('ecosystem')} className="hover:text-rose-500 transition text-left">Ecosystem</button>
+                </li>
+                <li>
+                  <button type="button" onClick={() => scrollToSection('pricing')} className="hover:text-rose-500 transition text-left">Pricing</button>
                 </li>
                 <li>
                   <a href="https://play.google.com/apps/internaltest/4701381285127016770" target="_blank" rel="noopener noreferrer" className="hover:text-rose-500 transition">Android App</a>

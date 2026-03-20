@@ -25,7 +25,8 @@ export enum AppView {
   TEST_MATRIX = 'TEST_MATRIX',
   ANALYTICS = 'ANALYTICS',
   DECISIONS_TASKS = 'DECISIONS_TASKS',
-  USERS_GUIDE = 'USERS_GUIDE'
+  USERS_GUIDE = 'USERS_GUIDE',
+  CONTACT_MAP = 'CONTACT_MAP',
 }
 
 export interface MessageLog {
@@ -84,6 +85,15 @@ export interface Contact {
   userRole?: 'owner' | 'admin' | 'moderator' | 'member' | 'guest' | 'bot'; // Phase 4.2: User role for badges
   lastSeen?: Date; // Phase 4.4: Last activity timestamp
   isTyping?: boolean; // Phase 4.4: Typing indicator
+  // Map / Location fields
+  homeLat?: number;
+  homeLng?: number;
+  homeAddress?: string;
+  workLat?: number;
+  workLng?: number;
+  workAddress?: string;
+  geoAccuracy?: 'none' | 'approximate' | 'precise';
+  locationUpdatedAt?: Date;
 }
 
 export interface CalendarEventAttendee {

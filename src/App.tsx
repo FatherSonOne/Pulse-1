@@ -684,7 +684,11 @@ const App: React.FC = () => {
             case AppView.CALENDAR:
               return <Calendar contacts={contacts} openTaskPanel={openTaskPanel} onNavigateToIntegrations={() => { setSettingsSection('integrations'); setView(AppView.SETTINGS); }} />;
             case AppView.CONTACTS:
-              return <Contacts contacts={contacts} onAction={handleContactAction} onSyncComplete={handleSyncContacts} onUpdateContact={handleUpdateContact} onAddContact={handleAddContact} openAddContact={openAddContact} />;
+              return <Contacts contacts={contacts} onAction={handleContactAction} onSyncComplete={handleSyncContacts} onUpdateContact={handleUpdateContact} onAddContact={handleAddContact} openAddContact={openAddContact} isDarkMode={isDarkMode} userId={user?.id} />;
+            case AppView.CONTACT_MAP:
+              // Redirect legacy deep-links to Contacts with map tab pre-selected
+              setView(AppView.CONTACTS);
+              return null;
             case AppView.EMAIL:
               return user ? <EmailClient user={user} onUpdateUser={() => setUser({...user})} apiKey={apiKey} /> : null;
             case AppView.ARCHIVES:

@@ -33,6 +33,15 @@ const config: CapacitorConfig = {
       showSpinner: false,
       splashFullScreen: true,
       splashImmersive: true
+    },
+    PushNotifications: {
+      presentationOptions: ['badge', 'sound', 'alert']
+    },
+    Camera: {
+      // No special config needed; plugin uses system camera and photo picker
+    },
+    Geolocation: {
+      // No special config needed; uses ACCESS_FINE/COARSE_LOCATION from manifest
     }
   }
 };

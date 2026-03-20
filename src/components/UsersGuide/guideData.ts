@@ -1,5 +1,5 @@
 // Pulse User's Guide — Full Rich Section Data
-// Version 25.1.3 · March 16, 2026
+// Version 25.1.3 · March 17, 2026
 // Auto-maintained by the /users-guide slash command.
 
 export interface Shortcut {

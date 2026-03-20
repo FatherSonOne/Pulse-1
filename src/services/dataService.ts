@@ -42,6 +42,15 @@ export interface DBContact {
   last_synced?: string;
   created_at: string;
   updated_at: string;
+  // Map / Location fields
+  home_lat?: number;
+  home_lng?: number;
+  home_address?: string;
+  work_lat?: number;
+  work_lng?: number;
+  work_address?: string;
+  geo_accuracy?: 'none' | 'approximate' | 'precise';
+  location_updated_at?: string;
 }
 
 export interface DBCalendarEvent {
@@ -155,6 +164,14 @@ function dbToContact(db: DBContact): Contact {
     groups: db.groups || [],
     source: db.source,
     lastSynced: db.last_synced ? new Date(db.last_synced) : undefined,
+    homeLat: db.home_lat,
+    homeLng: db.home_lng,
+    homeAddress: db.home_address,
+    workLat: db.work_lat,
+    workLng: db.work_lng,
+    workAddress: db.work_address,
+    geoAccuracy: db.geo_accuracy,
+    locationUpdatedAt: db.location_updated_at ? new Date(db.location_updated_at) : undefined,
   };
 }
 
@@ -176,6 +193,14 @@ function contactToDb(contact: Partial<Contact>, userId: string): Partial<DBConta
     groups: contact.groups,
     source: contact.source,
     last_synced: contact.lastSynced?.toISOString(),
+    home_lat: contact.homeLat,
+    home_lng: contact.homeLng,
+    home_address: contact.homeAddress,
+    work_lat: contact.workLat,
+    work_lng: contact.workLng,
+    work_address: contact.workAddress,
+    geo_accuracy: contact.geoAccuracy,
+    location_updated_at: contact.locationUpdatedAt?.toISOString(),
   };
 }
 

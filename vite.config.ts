@@ -37,6 +37,14 @@ export default defineConfig(({ mode }) => {
           output: {
             manualChunks: (id) => {
               if (id.includes('node_modules')) {
+                // React core — must be isolated so it loads before any chunk that calls React.memo
+                if (id.includes('/node_modules/react/') ||
+                    id.includes('/node_modules/react-dom/') ||
+                    id.includes('/node_modules/react-is/') ||
+                    id.includes('/node_modules/scheduler/')) {
+                  return 'react-core';
+                }
+
                 // Framer Motion - heavy animation library
                 if (id.includes('framer-motion')) {
                   return 'framer-motion';
