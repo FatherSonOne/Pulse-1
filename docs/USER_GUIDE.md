@@ -1,7 +1,7 @@
 # Pulse User's Guide
 
 **Version**: 25.1.3
-**Last Updated**: March 17, 2026
+**Last Updated**: March 27, 2026
 **For**: All Pulse users — personal, team, and enterprise
 
 ---
@@ -438,6 +438,17 @@ Click **Highlights** on any conversation to see a quick summary of:
 6. Use **Conversation Highlights** weekly to pull out commitments and action items.
 
 </details>
+
+### Ecosystem Bot Messages
+
+When you have connected apps via the **Ecosystem Bridge** (see Section 17), those apps can post bot messages directly into your channels. Bot messages look different from regular messages — they have a colored bot avatar and a distinct card layout depending on the message type:
+
+- **Task Assigned cards** (from Entomate) — show a task title, priority level, assignee, and due date. Click **View Task** to open the task in Entomate directly.
+- **Meeting Recap cards** (from Entomate or Logos Vision) — show a meeting summary, key decisions, and extracted action items. Click any action item to open it.
+
+Bot messages appear in the channel alongside regular messages but are visually distinct. They cannot be replied to directly — use the action buttons on the card to respond.
+
+**Tip:** Bot messages are sent by the ecosystem app, not by a person — you will see a bot name ("Entomate" or "Logos Vision") and a robot icon instead of a user avatar.
 
 ---
 
@@ -1316,6 +1327,7 @@ Click **Contacts** in the sidebar to see everyone you communicate with. Pulse au
 **Contact views:**
 - **List View** — Alphabetical list with quick-scan info
 - **Card View** — Visual card layout with photos
+- **Map View** — Google Maps view showing where your contacts are located (home and work)
 - **Network View** — Visual map showing how contacts relate to each other
 - **Today Feed** — Relationship actions that need attention today
 
@@ -1405,6 +1417,28 @@ Enable Autopilot to get automated reminders to stay in touch:
 2. Toggle **Autopilot** on.
 3. Set a check-in frequency: Weekly, Monthly, Quarterly.
 4. Pulse reminds you to reach out at that interval, and marks the contact in the Today Feed.
+
+### Contact Map
+
+The **Map View** gives you a geographic view of your entire contact network using Google Maps.
+
+**What you can do in the Contact Map:**
+
+- See all your contacts plotted on a live map — home location and work location shown as separate pins
+- Click any pin to open a quick-access panel: message, send a Vox, or start a meeting with that contact
+- Filter by **Contact Circle**, **Category**, or **Relationship Health** using the filter bar at the top
+- Toggle **Radius Rings** around yourself to see which contacts are within 5, 10, or 25 miles
+- Share your real-time location with specific contacts using **Location Sharing** — they see your live position on their map
+
+**Adding a location to a contact:**
+1. Open a contact's profile and click **Edit**.
+2. Scroll to the **Location** section.
+3. Enter a home address or work address — Pulse geocodes it automatically.
+4. Click **Save**. The contact appears on the Map View immediately.
+
+**Tip:** The map auto-centers on your own location when you open it. If you have location permission enabled, Pulse shows a blue dot for your current position.
+
+**Tip:** Use the filter bar to show only a specific Contact Circle on the map — great for planning in-person outreach before a regional sales trip.
 
 ### Network Visualization
 
@@ -2232,6 +2266,26 @@ To access the Admin Dashboard:
 3. Click the **Activity** tab to open the Activity Monitor.
 
 **Tip:** The Activity Monitor refreshes automatically every 30 seconds. You do not need to reload the page.
+
+### Ecosystem Bridge
+
+The **Ecosystem Bridge** connects Pulse with other apps in the QntmEcos suite — currently **Entomate** (AI-powered task and contact management) and **Logos Vision** (donation and ministry CRM). Once connected, these apps can send bot messages directly into your Pulse channels.
+
+**To set up a connection:**
+
+1. Go to **Settings → Ecosystem Bridge**.
+2. Select the app you want to connect (Entomate or Logos Vision) from the **App** dropdown.
+3. Enter the **API URL** for that app's Supabase functions endpoint.
+4. Click **Generate** next to **Service Token** — this is the token Pulse sends when calling the other app. Copy it into the other app's `inbound_token` field.
+5. Click **Generate** next to **Inbound Token** — this is the token the other app sends to Pulse. Copy it into the other app's `service_token` field.
+6. Click **Save Connection**.
+7. Click **Test** on the saved connection to verify the bridge is live.
+
+**Connected app cards** show each linked app with its status (active/inactive), a **Tokens** button to view or copy tokens, a **Test** button to ping the connection, and an eye icon to toggle the connection on or off.
+
+**Recent Events** at the bottom of the page shows a live log of the last 20 messages received from ecosystem apps — useful for confirming that bot messages are flowing correctly.
+
+**Tip:** Tokens work in pairs. Pulse's Service Token → goes into the other app's Inbound Token field. The other app's Service Token → goes into Pulse's Inbound Token field. They are mirrors of each other.
 
 ### API Keys
 

@@ -1,5 +1,5 @@
 // Pulse User's Guide — Full Rich Section Data
-// Version 25.1.3 · March 17, 2026
+// Version 25.1.3 · March 27, 2026
 // Auto-maintained by the /users-guide slash command.
 
 export interface Shortcut {
@@ -57,7 +57,7 @@ export const CATEGORIES: { label: string; ids: string[] }[] = [
   { label: 'Meetings & Time',    ids: ['meetings', 'calendar'] },
   { label: 'People & Decisions', ids: ['contacts', 'decisions-tasks'] },
   { label: 'AI & Intelligence',  ids: ['ai-features', 'analytics'] },
-  { label: 'Integrations',       ids: ['crm', 'tools', 'search'] },
+  { label: 'Integrations',       ids: ['crm', 'tools', 'search', 'ecosystem-bridge'] },
   { label: 'App & Settings',     ids: ['settings', 'mobile', 'shortcuts', 'troubleshooting'] },
 ];
 
@@ -295,7 +295,8 @@ export const guideSections: GuideSection[] = [
     id: 'messaging',
     title: 'Unified Messaging',
     icon: '💬',
-    summary: 'One inbox for all conversations — internal messages, direct messages, threads, reactions, smart folders, and powerful message enhancements.',
+    badge: 'Updated',
+    summary: 'One inbox for all conversations — internal messages, direct messages, threads, reactions, smart folders, powerful message enhancements, and ecosystem bot messages.',
     steps: [
       'Click Messages in the sidebar to open your unified inbox.',
       'All conversations across all channels appear sorted by most recent. Unread messages have a blue dot.',
@@ -361,6 +362,19 @@ export const guideSections: GuideSection[] = [
           'Choose from: Archive, Mark as Read, Delete, or Add Label.',
           'Bulk actions are ideal for cleaning up your inbox after a busy period.',
         ],
+      },
+      {
+        id: 'ecosystem-bot-messages',
+        title: 'Ecosystem Bot Messages',
+        description: 'Connected apps (Entomate, Logos Vision) can post rich bot cards directly into your channels.',
+        steps: [
+          'Task Assigned cards (from Entomate) — show task title, priority, assignee, and due date. Click View Task to open in Entomate.',
+          'Meeting Recap cards — show a meeting summary, key decisions, and extracted action items.',
+          'Bot messages appear with a colored bot avatar and app name instead of a user avatar.',
+          'Use the action buttons on the card to respond — bot messages cannot be replied to directly.',
+          'Set up connected apps in Settings → Ecosystem Bridge.',
+        ],
+        note: 'Bot messages from the Ecosystem Bridge are sent by the connected app, not a person.',
       },
     ],
     tips: [
@@ -1156,7 +1170,8 @@ export const guideSections: GuideSection[] = [
     id: 'contacts',
     title: 'Contacts & Relationships',
     icon: '👥',
-    summary: 'Full relationship management — AI insights, health scores, contact circles, autopilot reminders, network visualization, and meeting prep cards.',
+    badge: 'Updated',
+    summary: 'Full relationship management — AI insights, health scores, contact circles, autopilot reminders, network visualization, interactive Contact Map, and meeting prep cards.',
     steps: [
       'Click Contacts in the sidebar — contacts are imported from all your connected accounts.',
       'Click any contact to open their full profile: history, CRM data, notes, goals, and relationship score.',
@@ -1164,6 +1179,7 @@ export const guideSections: GuideSection[] = [
       'Enable Relationship Autopilot on any contact to get recurring check-in reminders.',
       'Check the Today Feed for relationship actions that need attention today.',
       'Create Contact Circles to group related contacts (e.g., "Q1 Prospects") — visualized as a bubble chart.',
+      'Switch to Map View to see all contacts plotted geographically on Google Maps.',
     ],
     subsections: [
       {
@@ -1189,6 +1205,21 @@ export const guideSections: GuideSection[] = [
           'Sentiment Trend — whether recent interactions have been positive, neutral, or tense.',
         ],
         note: 'Relationship Score below 40 means the relationship is going cold — a signal to reach out.',
+      },
+      {
+        id: 'contact-map',
+        title: 'Contact Map',
+        description: 'A Google Maps view of your entire contact network — home and work locations, radius rings, and real-time location sharing.',
+        steps: [
+          'Click Map View at the top of the Contacts section to open the interactive map.',
+          'Each contact with a saved address appears as a pin — home and work shown separately.',
+          'Click any pin to open a quick-action panel: message, send a Vox, or start a meeting.',
+          'Use the filter bar to show only a specific Circle, Category, or Relationship Health range.',
+          'Toggle Radius Rings to see which contacts are within 5, 10, or 25 miles of you.',
+          'Enable Location Sharing with specific contacts — they see your live position on their map.',
+          'Add a location to a contact: open their profile → Edit → enter home or work address → Save.',
+        ],
+        note: 'The map auto-centers on your own location. A blue dot marks your current position when location permission is granted.',
       },
       {
         id: 'meeting-prep',
@@ -1951,7 +1982,8 @@ export const guideSections: GuideSection[] = [
     id: 'settings',
     title: 'Settings & Customization',
     icon: '⚙️',
-    summary: 'Appearance, accessibility, AI model configuration, War Room, notification preferences, connected accounts, Features & Labs, workspace management, API keys, privacy controls, and data export.',
+    badge: 'Updated',
+    summary: 'Appearance, accessibility, AI model configuration, War Room, notification preferences, connected accounts, Ecosystem Bridge, Features & Labs, workspace management, API keys, privacy controls, and data export.',
     steps: [
       'Click the gear icon at the bottom of the sidebar, or click your avatar → Settings.',
       'Go to Appearance to toggle Dark Mode, choose an accent color (7 brand presets or custom hex), set font size, and toggle High Contrast or Reduced Motion.',
@@ -1959,6 +1991,7 @@ export const guideSections: GuideSection[] = [
       'Go to War Room to set the default mode, AI depth, and streaming behavior.',
       'Go to Notifications to configure per-channel alert preferences and Quiet Hours.',
       'Go to Connected Accounts to add or remove Google, Microsoft, Slack, CRM, and SMS.',
+      'Go to Ecosystem Bridge to connect Entomate and Logos Vision — generate secure tokens and test the live connection.',
       'Go to Features & Labs to enable or disable individual features and toggle Advanced Mode.',
       'Go to Privacy to control online status, read receipts, and data retention.',
       'Go to Data Management to export or delete your data.',
@@ -2022,6 +2055,22 @@ export const guideSections: GuideSection[] = [
           'Set your Activity Data Retention period: 30, 60, or 90 days.',
         ],
         note: 'Admins see a full workspace-wide Activity Monitor under Settings → Admin Dashboard.',
+      },
+      {
+        id: 'ecosystem-bridge',
+        title: 'Ecosystem Bridge',
+        description: 'Connect Pulse to Entomate and Logos Vision — enabling bot messages, shared tokens, and cross-app event tracking.',
+        steps: [
+          'Go to Settings → Ecosystem Bridge.',
+          'Select the app to connect (Entomate or Logos Vision) from the App dropdown.',
+          'Enter the API URL for that app\'s functions endpoint.',
+          'Click Generate next to Service Token — copy this into the other app\'s inbound_token field.',
+          'Click Generate next to Inbound Token — copy this into the other app\'s service_token field.',
+          'Click Save Connection, then click Test to verify the bridge is live.',
+          'Connected app cards show status, a Tokens button, a Test button, and an on/off toggle.',
+          'Recent Events shows the last 20 messages received from ecosystem apps.',
+        ],
+        note: 'Tokens are paired mirrors: Pulse\'s Service Token goes into the other app\'s Inbound Token, and vice versa.',
       },
       {
         id: 'features-labs',
