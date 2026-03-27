@@ -4,7 +4,7 @@ import { MessageChannel } from '../../types/messages';
 import { messageChannelService } from '../../services/messageChannelService';
 import toast from 'react-hot-toast';
 
-import { Hash, Lock, MessageSquareX, Plus, Trash2, Users } from 'lucide-react';
+import { Bot, Hash, Lock, MessageSquareX, Plus, Trash2, Users } from 'lucide-react';
 
 interface ChannelListProps {
   workspaceId: string;
@@ -169,45 +169,42 @@ export const ChannelList: React.FC<ChannelListProps> = ({
         ) : (
           <>
             {/* Public Channels */}
-            <div className="mb-4">
-              <div className="px-4 py-2 text-[10px] font-bold text-[#f43f5e] uppercase tracking-[2px]">
-                Channels
-              </div>
-              {channels.filter(c => !c.is_group).map((channel) => (
-                <button
-                  key={channel.id}
-                  className={`channel-item ${selectedChannel?.id === channel.id ? 'active' : ''}`}
-                  onClick={() => onSelectChannel(channel)}
-                >
-                  <div className="channel-icon">
-                    {channel.is_public ? (
-                      <Hash />
-                    ) : (
-                      <Lock />
-                    )}
-                  </div>
-                  <div className="flex-1 min-w-0">
-                    <span className="channel-name truncate block">{channel.name}</span>
-                  </div>
-                  {channel.unread_count && channel.unread_count > 0 && (
-                    <span className="unread-badge">
-                      {channel.unread_count}
-                    </span>
-                  )}
+            {channels.filter(c => !c.is_group && !(c as any).is_bot_channel).length > 0 && (
+              <div className="mb-4">
+                <div className="px-4 py-2 text-[10px] font-bold text-[#f43f5e] uppercase tracking-[2px]">
+                  Channels
+                </div>
+                {channels.filter(c => !c.is_group && !(c as any).is_bot_channel).map((channel) => (
                   <button
-                    onClick={(e) => handleDeleteChannel(channel.id, e)}
-                    className="w-12 h-12 min-w-[48px] min-h-[48px] rounded opacity-0 group-hover:opacity-100 hover:bg-rose-500/20 transition-all ml-2 flex items-center justify-center"
-                    title="Delete channel"
+                    key={channel.id}
+                    className={`channel-item ${selectedChannel?.id === channel.id ? 'active' : ''}`}
+                    onClick={() => onSelectChannel(channel)}
                   >
-                    <Trash2 className="text-sm text-rose-500" />
+                    <div className="channel-icon">
+                      {channel.is_public ? <Hash /> : <Lock />}
+                    </div>
+                    <div className="flex-1 min-w-0">
+                      <span className="channel-name truncate block">{channel.name}</span>
+                    </div>
+                    {channel.unread_count && channel.unread_count > 0 ? (
+                      <span className="unread-badge">{channel.unread_count}</span>
+                    ) : null}
+                    <button
+                      type="button"
+                      onClick={(e) => handleDeleteChannel(channel.id, e)}
+                      className="w-12 h-12 min-w-[48px] min-h-[48px] rounded opacity-0 group-hover:opacity-100 hover:bg-rose-500/20 transition-all ml-2 flex items-center justify-center"
+                      title="Delete channel"
+                    >
+                      <Trash2 className="text-sm text-rose-500" />
+                    </button>
                   </button>
-                </button>
-              ))}
-            </div>
+                ))}
+              </div>
+            )}
 
             {/* Group Chats */}
             {channels.filter(c => c.is_group).length > 0 && (
-              <div>
+              <div className="mb-4">
                 <div className="px-4 py-2 text-[10px] font-bold text-[#94a3b8] uppercase tracking-[2px]">
                   Group Chats
                 </div>
@@ -224,12 +221,41 @@ export const ChannelList: React.FC<ChannelListProps> = ({
                       <span className="channel-name truncate block">{channel.name}</span>
                     </div>
                     <button
+                      type="button"
                       onClick={(e) => handleDeleteChannel(channel.id, e)}
                       className="w-12 h-12 min-w-[48px] min-h-[48px] rounded opacity-0 group-hover:opacity-100 hover:bg-rose-500/20 transition-all ml-2 flex items-center justify-center"
                       title="Delete group"
                     >
                       <Trash2 className="text-sm text-rose-500" />
                     </button>
+                  </button>
+                ))}
+              </div>
+            )}
+
+            {/* Integrations (Bot Channels) */}
+            {channels.filter(c => (c as any).is_bot_channel).length > 0 && (
+              <div>
+                <div className="px-4 py-2 text-[10px] font-bold text-violet-400 uppercase tracking-[2px] flex items-center gap-1.5">
+                  <Bot className="w-3 h-3" />
+                  Integrations
+                </div>
+                {channels.filter(c => (c as any).is_bot_channel).map((channel) => (
+                  <button
+                    type="button"
+                    key={channel.id}
+                    className={`channel-item ${selectedChannel?.id === channel.id ? 'active' : ''}`}
+                    onClick={() => onSelectChannel(channel)}
+                  >
+                    <div className="channel-icon text-violet-400">
+                      <Bot />
+                    </div>
+                    <div className="flex-1 min-w-0">
+                      <span className="channel-name truncate block text-violet-300/80">{channel.name}</span>
+                    </div>
+                    {channel.unread_count && channel.unread_count > 0 ? (
+                      <span className="unread-badge bg-violet-500">{channel.unread_count}</span>
+                    ) : null}
                   </button>
                 ))}
               </div>

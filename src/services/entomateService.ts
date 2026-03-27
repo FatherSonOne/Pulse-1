@@ -1,9 +1,25 @@
 // ============================================
 // ENTOMATE INTEGRATION SERVICE
 // Sync automation events from entomate platform
+// + Ecosystem Bridge bot message support
 // ============================================
 
 import { UnifiedMessage, MessageSource } from '../types';
+import { supabase } from './supabase';
+import type { BotMessageType, BotAction, BotMessageMetadata } from '../types/messages';
+
+const ENTOMATE_BOT_ID = 'e0000000-0000-0000-0000-e00000000001';
+
+export interface BotMessagePayload {
+  workspaceId: string;
+  channelPurpose?: string;
+  channelId?: string;
+  content: string;
+  messageType: BotMessageType;
+  metadata?: BotMessageMetadata;
+  actions?: BotAction[];
+  notifyUsers?: string[];
+}
 
 /**
  * Entomate Automation Event Types
@@ -385,6 +401,150 @@ export class EntomateService {
     }
 
     return content;
+  }
+
+  // ==================== ECOSYSTEM BRIDGE — BOT MESSAGES ====================
+
+  /**
+   * Post a bot message to a Pulse channel on behalf of Entomate.
+   * Resolves or creates the bot channel automatically.
+   */
+  async handleBotMessage(payload: BotMessagePayload): Promise<{ messageId: string }> {
+    const { workspaceId, channelPurpose, content, messageType, metadata, actions, notifyUsers } = payload;
+
+    let channelId = payload.channelId;
+    if (!channelId && channelPurpose) {
+      channelId = await this.resolveOrCreateBotChannel(workspaceId, channelPurpose);
+    }
+    if (!channelId) throw new Error('No channel specified or resolved');
+
+    const { data, error } = await supabase
+      .from('chat_messages')
+      .insert({
+        workspace_id: workspaceId,
+        channel_id: channelId,
+        sender_id: ENTOMATE_BOT_ID,
+        bot_content: content,
+        is_bot_message: true,
+        bot_app: 'entomate',
+        bot_message_type: messageType,
+        bot_metadata: metadata || {},
+        bot_actions: actions || [],
+        // encrypted_content and nonce are intentionally NULL for bot messages
+      })
+      .select('id')
+      .single();
+
+    if (error) throw new Error(`Failed to post bot message: ${error.message}`);
+
+    if (notifyUsers?.length) {
+      await this.sendBotNotifications(notifyUsers, content, metadata);
+    }
+
+    return { messageId: data.id };
+  }
+
+  /**
+   * Find or create a bot-managed channel for a given workspace + purpose.
+   */
+  async resolveOrCreateBotChannel(workspaceId: string, purpose: string): Promise<string> {
+    const { data: existing } = await supabase
+      .from('ecosystem_bot_channels')
+      .select('channel_id')
+      .eq('workspace_id', workspaceId)
+      .eq('bot_app', 'entomate')
+      .eq('channel_purpose', purpose)
+      .single();
+
+    if (existing) return existing.channel_id;
+
+    const nameMap: Record<string, { name: string; description: string }> = {
+      meetings: { name: 'entomate-meetings', description: 'Meeting summaries and action items from Entomate' },
+      alerts: { name: 'entomate-alerts', description: 'Automation alerts from Entomate' },
+      action_items: { name: 'entomate-tasks', description: 'Task assignments from Entomate' },
+      automations: { name: 'entomate-automations', description: 'Automation workflow updates from Entomate' },
+    };
+    const info = nameMap[purpose] || { name: `entomate-${purpose}`, description: `Entomate ${purpose}` };
+
+    const { data: channel, error } = await supabase
+      .from('message_channels')
+      .insert({
+        workspace_id: workspaceId,
+        name: info.name,
+        description: info.description,
+        is_public: true,
+        is_group: false,
+        is_bot_channel: true,
+        bot_app: 'entomate',
+        created_by: ENTOMATE_BOT_ID,
+      })
+      .select('id')
+      .single();
+
+    if (error) throw new Error(`Failed to create bot channel: ${error.message}`);
+
+    await supabase.from('ecosystem_bot_channels').insert({
+      workspace_id: workspaceId,
+      bot_app: 'entomate',
+      channel_id: channel.id,
+      channel_purpose: purpose,
+    });
+
+    return channel.id;
+  }
+
+  /**
+   * Send pulse_notifications to a list of users on behalf of the bot.
+   */
+  async sendBotNotifications(
+    userIds: string[],
+    content: string,
+    metadata?: BotMessageMetadata
+  ): Promise<void> {
+    if (!userIds?.length) return;
+
+    const notifications = userIds.map((userId) => ({
+      user_id: userId,
+      type: 'ecosystem',
+      content: (content || '').slice(0, 200),
+      metadata: { source: 'entomate', ...(metadata || {}) },
+      read: false,
+    }));
+
+    const { error } = await supabase.from('pulse_notifications').insert(notifications);
+    if (error) console.error('Failed to send bot notifications:', error.message);
+  }
+
+  /**
+   * Initialize a workspace for Entomate — creates all default bot channels.
+   * Call once when a workspace connects to Entomate.
+   */
+  async setupWorkspace(workspaceId: string): Promise<{
+    created: string[];
+    existing: string[];
+  }> {
+    const purposes = ['meetings', 'alerts', 'action_items', 'automations'];
+    const created: string[] = [];
+    const existing: string[] = [];
+
+    for (const purpose of purposes) {
+      const { data: existingReg } = await supabase
+        .from('ecosystem_bot_channels')
+        .select('channel_id')
+        .eq('workspace_id', workspaceId)
+        .eq('bot_app', 'entomate')
+        .eq('channel_purpose', purpose)
+        .single();
+
+      if (existingReg) {
+        existing.push(purpose);
+      } else {
+        await this.resolveOrCreateBotChannel(workspaceId, purpose);
+        created.push(purpose);
+      }
+    }
+
+    return { created, existing };
   }
 
   // ==================== HEALTH CHECK ====================

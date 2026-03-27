@@ -3,12 +3,13 @@
 // Version: 2.0 | Date: 2026-02-08
 
 import React, { useState, useEffect, useRef } from 'react';
-import { ChannelMessage, MessageChannel } from '../../types/messages';
+import { ChannelMessage, MessageChannel, AnyChannelMessage, isBotMessage } from '../../types/messages';
 import { messageChannelService } from '../../services/messageChannelService';
 import { UserContactCard } from '../UserContact/UserContactCard';
 import { VoiceTextButton } from '../shared/VoiceTextButton';
 import { SmartTimestamp } from './SmartTimestamp';
 import { UserBadge, UserRole } from './UserBadge';
+import { BotMessage } from './BotMessage';
 import { getAccessibleUserColor } from '../../utils/userColors';
 import toast from 'react-hot-toast';
 
@@ -257,6 +258,12 @@ export const MessageChat: React.FC<MessageChatProps> = ({
                       <div className="flex-1 h-px bg-rose-500/20"></div>
                     </div>
                   )}
+                  {/* Bot messages render with BotMessage component */}
+                  {isBotMessage(message as AnyChannelMessage) ? (
+                    <BotMessage message={message as any} />
+                  ) : null}
+
+                  {!isBotMessage(message as AnyChannelMessage) && (
                   <div className={`message-bubble ${isOwnMessage ? 'message-bubble-sent' : 'message-bubble-received'} group ${message.is_pinned ? 'ring-2 ring-yellow-500/30' : ''}`}>
                     <div className="flex items-start gap-3">
                       {/* Avatar - Left aligned for all messages */}
@@ -373,6 +380,7 @@ export const MessageChat: React.FC<MessageChatProps> = ({
                       </div>
                     </div>
                   </div>
+                  )}
                 </React.Fragment>
               );
             })}

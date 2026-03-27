@@ -111,11 +111,10 @@ export class WebhookService {
         event.payload,
         'slack'
       );
-      // Store or process message
       console.log('Processed Slack webhook message:', message.id);
     });
 
-    // Entomate event handler
+    // Entomate — legacy automation event handler
     this.registerHandler('entomate', 'automation.completed', async (event) => {
       const entomateEvent = entomateService.processWebhook(
         event.payload as EntomateWebhookPayload
@@ -123,6 +122,107 @@ export class WebhookService {
       const message = entomateService.mapEventToUnified(entomateEvent);
       console.log('Processed Entomate webhook:', message.id);
     });
+
+    // ── Ecosystem Bridge: Entomate bot message handlers ───────────────────
+
+    // Meeting processed → post formatted recap to #entomate-meetings
+    this.registerHandler('entomate', 'meeting.processed', async (event) => {
+      const d = event.payload.data || event.payload;
+      if (!d.workspaceId) return;
+
+      const sentimentEmoji = d.sentiment === 'positive' ? '😊' : d.sentiment === 'negative' ? '😔' : '😐';
+      const decisionsText = d.keyDecisions?.length
+        ? `\n\n**Key Decisions**\n${d.keyDecisions.map((dec: string) => `• ${dec}`).join('\n')}`
+        : '';
+      const actionItemsText = d.actionItems?.length
+        ? `\n\n**Action Items (${d.actionItems.length})**\n${d.actionItems.map((a: any) => `• ${a.description}${a.assignee ? ` → ${a.assignee}` : ''}`).join('\n')}`
+        : '';
+
+      await entomateService.handleBotMessage({
+        workspaceId: d.workspaceId,
+        channelPurpose: 'meetings',
+        content: `## 📋 Meeting Summary: ${d.meetingTitle || 'Meeting'}\n\n**Sentiment:** ${sentimentEmoji} ${d.sentiment || 'neutral'}\n\n**Summary**\n${d.summary || ''}${decisionsText}${actionItemsText}\n\n---\n*Processed by Entomate${d.entomate_url ? ` • [View Full Meeting](${d.entomate_url})` : ''}*`,
+        messageType: 'meeting_recap',
+        metadata: {
+          meetingId: event.payload.entityId,
+          actionItems: d.actionItems,
+          keyDecisions: d.keyDecisions,
+          sentiment: d.sentiment,
+          sourceUrl: d.entomate_url,
+        },
+        actions: d.entomate_url
+          ? [{ label: 'View Full Meeting', action: 'open_meeting', url: d.entomate_url }]
+          : [],
+        notifyUsers: d.attendees?.map((a: any) => a.userId).filter(Boolean),
+      });
+    });
+
+    // Task created → post task card to #entomate-tasks
+    this.registerHandler('entomate', 'task.created', async (event) => {
+      const d = event.payload.data || event.payload;
+      if (!d.workspaceId) return;
+
+      await entomateService.handleBotMessage({
+        workspaceId: d.workspaceId,
+        channelPurpose: 'action_items',
+        content: `## ✅ New Task Assigned\n\n**${d.taskTitle || d.description}**\nAssigned to: **${d.assignee || 'Unassigned'}**\nPriority: ${d.priority || 'Normal'}${d.dueDate ? `\nDue: ${d.dueDate}` : ''}${d.meetingTitle ? `\n\nFrom meeting: ${d.meetingTitle}` : ''}${d.entomate_url ? `\n\n---\n*[View in Entomate](${d.entomate_url})*` : ''}`,
+        messageType: 'action_items',
+        metadata: {
+          taskId: event.payload.entityId,
+          sourceUrl: d.entomate_url,
+        },
+        actions: d.entomate_url
+          ? [{ label: 'View Task', action: 'view_task', url: d.entomate_url }]
+          : [],
+      });
+    });
+
+    // Agent action completed → post to #entomate-alerts
+    this.registerHandler('entomate', 'agent.action_completed', async (event) => {
+      const d = event.payload.data || event.payload;
+      if (!d.workspaceId) return;
+
+      const statusEmoji = d.status === 'success' ? '✅' : d.status === 'failed' ? '❌' : '⚡';
+
+      await entomateService.handleBotMessage({
+        workspaceId: d.workspaceId,
+        channelPurpose: 'alerts',
+        content: `${statusEmoji} **Agent Action Completed**\n\n**Agent:** ${d.agentName || 'Entomate Agent'}\n**Action:** ${d.actionDescription || ''}\n**Status:** ${d.status}`,
+        messageType: 'alert',
+        metadata: {
+          agentActionId: event.payload.entityId,
+          sourceUrl: d.entomate_url,
+        },
+        actions: d.entomate_url
+          ? [{ label: 'View Details', action: 'open_meeting', url: d.entomate_url }]
+          : [],
+      });
+    });
+
+    // Automation triggered → post to #entomate-automations
+    this.registerHandler('entomate', 'automation.triggered', async (event) => {
+      const d = event.payload.data || event.payload;
+      if (!d.workspaceId) return;
+
+      const entomateEvent = entomateService.processWebhook(event.payload as EntomateWebhookPayload);
+      const statusEmoji = d.status === 'success' ? '✅' : d.status === 'failed' ? '❌' : '⚡';
+
+      await entomateService.handleBotMessage({
+        workspaceId: d.workspaceId,
+        channelPurpose: 'automations',
+        content: `## ⚡ Automation: ${d.automationName || entomateEvent.automationName}\n\nStatus: ${statusEmoji} ${d.status || entomateEvent.status}\n${d.triggerDescription ? `Trigger: ${d.triggerDescription}\n` : ''}${d.actionCount ? `Actions completed: ${d.actionCount}` : ''}`,
+        messageType: 'alert',
+        metadata: {
+          automationId: event.payload.entityId,
+          sourceUrl: d.entomate_url,
+        },
+        actions: d.entomate_url
+          ? [{ label: 'View Automation', action: 'open_meeting', url: d.entomate_url }]
+          : [],
+      });
+    });
+
+    // ──────────────────────────────────────────────────────────────────────
 
     // Gmail event handler
     this.registerHandler('gmail', 'message.received', async (event) => {

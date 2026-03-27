@@ -71,3 +71,92 @@ export interface ThreadMessage extends ChannelMessage {
   parent_id: string;
   replies?: ChannelMessage[];
 }
+
+// =====================================================
+// ECOSYSTEM BRIDGE — Bot Message Types
+// =====================================================
+
+export type BotMessageType = 'text' | 'meeting_recap' | 'action_items' | 'alert' | 'card';
+
+export interface BotAction {
+  label: string;
+  action: 'open_meeting' | 'view_task' | 'approve' | 'sync_crm' | 'custom';
+  url?: string;
+}
+
+export interface BotMessageMetadata {
+  meetingId?: string;
+  actionItemIds?: string[];
+  automationId?: string;
+  sourceUrl?: string;
+  actionItems?: Array<{
+    id?: string;
+    description: string;
+    assignee?: string;
+    priority?: string;
+    dueDate?: string;
+  }>;
+  keyDecisions?: string[];
+  sentiment?: 'positive' | 'negative' | 'neutral';
+  agentActionId?: string;
+  taskId?: string;
+  [key: string]: any;
+}
+
+/** Bot message — extends ChannelMessage with bot-specific fields */
+export interface BotChannelMessage extends ChannelMessage {
+  is_bot_message: true;
+  bot_content: string;         // Plaintext content (not E2EE)
+  bot_app: string;             // 'entomate' | 'logos_vision'
+  bot_message_type: BotMessageType;
+  bot_metadata: BotMessageMetadata;
+  bot_actions: BotAction[];
+}
+
+/** Union type for message list rendering */
+export type AnyChannelMessage = ChannelMessage | BotChannelMessage;
+
+export function isBotMessage(msg: AnyChannelMessage): msg is BotChannelMessage {
+  return (msg as BotChannelMessage).is_bot_message === true;
+}
+
+// =====================================================
+// ECOSYSTEM CONFIG TYPES
+// =====================================================
+
+export interface EcosystemConfig {
+  id: string;
+  app_name: 'entomate' | 'logos_vision' | 'pulse';
+  api_url: string;
+  service_token: string;
+  inbound_token: string;
+  enabled: boolean;
+  features: Record<string, boolean>;
+  last_heartbeat?: string;
+  created_at: string;
+  updated_at: string;
+}
+
+export interface EcosystemEvent {
+  id: string;
+  event_id: string;
+  source: string;
+  event_type: string;
+  entity_type?: string;
+  entity_id?: string;
+  direction: 'inbound' | 'outbound';
+  status: 'received' | 'processed' | 'failed' | 'ignored';
+  payload?: Record<string, any>;
+  error_message?: string;
+  processing_time_ms?: number;
+  created_at: string;
+}
+
+export interface EcosystemBotChannel {
+  id: string;
+  workspace_id: string;
+  bot_app: string;
+  channel_id: string;
+  channel_purpose: string;
+  created_at: string;
+}
