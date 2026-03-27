@@ -7,7 +7,7 @@ import './Settings.css';
 // Sub-components
 import { AccountSettings } from './Settings/AccountSettings';
 import { AIIntelligenceSettings } from './Settings/AIIntelligenceSettings';
-import { IntegrationsSettings } from './Settings/IntegrationsSettings';
+import { IntegrationsSettings } from './settings/IntegrationsSettings';
 import { NotificationsSettingsSection } from './Settings/NotificationsSettingsSection';
 import { TeamSettings } from './Settings/TeamSettings';
 import { AccessibilitySettings } from './Settings/AccessibilitySettings';
