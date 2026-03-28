@@ -6,6 +6,7 @@
 
 import { serve } from 'https://deno.land/std@0.168.0/http/server.ts';
 import { createClient } from 'https://esm.sh/@supabase/supabase-js@2';
+import { handleContextRequest } from './contextHandler.ts';
 
 const corsHeaders = {
   'Access-Control-Allow-Origin': '*',
@@ -136,6 +137,12 @@ async function routeEvent(
     case 'meeting.action_items_extracted':
       return handleActionItemsExtracted(supabase, event);
 
+    case 'meeting.briefing':
+      return handleMeetingBriefing(supabase, event);
+
+    case 'context.request':
+      return handleContextRequest(supabase, event);
+
     case 'task.created':
     case 'task.updated':
     case 'task.completed':
@@ -172,22 +179,63 @@ const ENTOMATE_BOT_ID = 'e0000000-0000-0000-0000-e00000000001';
 async function handleMeetingProcessed(supabase: any, event: EcosystemEvent): Promise<void> {
   const {
     workspaceId, meetingTitle, summary, keyDecisions,
-    actionItems, sentiment, attendees, entomate_url
+    actionItems, sentiment, attendees, entomate_url,
+    // MIP fields (optional — backward compatible)
+    intelligenceProfile, profileSections, contextUsed, outputQualityScore,
   } = event.data;
 
   if (!workspaceId) throw new Error('workspaceId required in event.data');
 
   const channelId = await resolveOrCreateBotChannel(supabase, workspaceId, 'meetings');
 
-  const sentimentEmoji = sentiment === 'positive' ? '😊' : sentiment === 'negative' ? '😔' : '😐';
-  const decisionsText = keyDecisions?.length
-    ? `\n\n**Key Decisions**\n${keyDecisions.map((d: string) => `• ${d}`).join('\n')}`
-    : '';
-  const actionItemsText = actionItems?.length
-    ? `\n\n**Action Items (${actionItems.length})**\n${actionItems.map((a: any) => `• ${a.description}${a.assignee ? ` → ${a.assignee}` : ''}`).join('\n')}`
-    : '';
+  // Build content — profile-shaped when MIP data is present, generic otherwise
+  let content: string;
 
-  const content = `## 📋 Meeting Summary: ${meetingTitle}\n\n**Sentiment:** ${sentimentEmoji} ${sentiment || 'neutral'}\n\n**Summary**\n${summary}${decisionsText}${actionItemsText}\n\n---\n*Processed by Entomate${entomate_url ? ` • [View Full Meeting](${entomate_url})` : ''}*`;
+  if (intelligenceProfile && profileSections?.length) {
+    // ── MIP-enriched recap ──
+    const qualityStars = outputQualityScore != null
+      ? '★'.repeat(Math.round(outputQualityScore * 5)) + '☆'.repeat(5 - Math.round(outputQualityScore * 5))
+      : '';
+    const qualityLine = qualityStars ? ` | **Quality:** ${qualityStars}` : '';
+
+    const profileHeader = `## ${intelligenceProfile.icon || '📋'} ${intelligenceProfile.name} — Meeting Summary: ${meetingTitle}`;
+    const profileBadge = `**Profile:** ${intelligenceProfile.icon || '📋'} ${intelligenceProfile.name}${qualityLine}`;
+
+    const sections = profileSections
+      .map((s: any) => `### ${s.title}\n${s.content}`)
+      .join('\n\n');
+
+    const actionItemsText = actionItems?.length
+      ? `\n\n### Action Items (${actionItems.length})\n${actionItems.map((a: any) => `• ${a.description}${a.assignee ? ` → ${a.assignee}` : ''}${a.dueDate ? ` (due ${a.dueDate})` : ''}`).join('\n')}`
+      : '';
+
+    const contextLine = contextUsed
+      ? `*Context: ${contextUsed.participantCount || 0} contacts, ${contextUsed.pastMeetingsReferenced || 0} past meetings, ${contextUsed.conversationThreadsUsed || 0} Pulse thread${(contextUsed.conversationThreadsUsed || 0) !== 1 ? 's' : ''} referenced*`
+      : '';
+
+    content = `${profileHeader}\n\n${profileBadge}\n\n${sections}${actionItemsText}\n\n---\n*Processed by Entomate with ${intelligenceProfile.name} intelligence profile*\n${contextLine}`;
+  } else {
+    // ── Generic recap (backward compatible) ──
+    const sentimentEmoji = sentiment === 'positive' ? '😊' : sentiment === 'negative' ? '😔' : '😐';
+    const decisionsText = keyDecisions?.length
+      ? `\n\n**Key Decisions**\n${keyDecisions.map((d: string) => `• ${d}`).join('\n')}`
+      : '';
+    const actionItemsText = actionItems?.length
+      ? `\n\n**Action Items (${actionItems.length})**\n${actionItems.map((a: any) => `• ${a.description}${a.assignee ? ` → ${a.assignee}` : ''}`).join('\n')}`
+      : '';
+
+    content = `## 📋 Meeting Summary: ${meetingTitle}\n\n**Sentiment:** ${sentimentEmoji} ${sentiment || 'neutral'}\n\n**Summary**\n${summary}${decisionsText}${actionItemsText}\n\n---\n*Processed by Entomate${entomate_url ? ` • [View Full Meeting](${entomate_url})` : ''}*`;
+  }
+
+  // Build actions — add MIP actions when profile is present
+  const actions: Array<{ label: string; action: string; url?: string; meetingId?: string; profileSlug?: string }> = [];
+  if (entomate_url) {
+    actions.push({ label: 'View Full Meeting', action: 'open_meeting', url: entomate_url });
+  }
+  if (intelligenceProfile) {
+    actions.push({ label: 'Rate This Summary', action: 'rate_meeting', meetingId: event.entityId });
+    actions.push({ label: 'View Profile', action: 'view_profile', profileSlug: intelligenceProfile.slug });
+  }
 
   await insertBotMessage(supabase, {
     workspaceId,
@@ -201,18 +249,113 @@ async function handleMeetingProcessed(supabase: any, event: EcosystemEvent): Pro
       keyDecisions,
       sentiment,
       sourceUrl: entomate_url,
+      // MIP metadata for frontend rendering
+      ...(intelligenceProfile && { intelligenceProfile }),
+      ...(profileSections && { profileSections }),
+      ...(contextUsed && { contextUsed }),
+      ...(outputQualityScore != null && { outputQualityScore }),
     },
-    actions: [
-      ...(entomate_url ? [{ label: 'View Full Meeting', action: 'open_meeting', url: entomate_url }] : []),
-    ],
+    actions,
   });
 
   // Notify attendees
   if (attendees?.length) {
     const userIds = attendees.map((a: any) => a.userId).filter(Boolean);
-    await sendBotNotifications(supabase, userIds, `Meeting recap available: ${meetingTitle}`, {
+    const profileNote = intelligenceProfile ? ` (${intelligenceProfile.name})` : '';
+    await sendBotNotifications(supabase, userIds, `Meeting recap available: ${meetingTitle}${profileNote}`, {
       type: 'meeting_recap',
       meetingId: event.entityId,
+    });
+  }
+}
+
+async function handleMeetingBriefing(supabase: any, event: EcosystemEvent): Promise<void> {
+  const {
+    workspaceId, meetingId, meetingTitle, scheduledAt,
+    profileName, profileIcon, participants,
+    contextHighlights, openActionItems, entomate_url,
+  } = event.data;
+
+  if (!workspaceId) throw new Error('workspaceId required in event.data');
+
+  const channelId = await resolveOrCreateBotChannel(supabase, workspaceId, 'meetings');
+
+  // Calculate time until meeting
+  const meetingTime = scheduledAt ? new Date(scheduledAt) : null;
+  const now = new Date();
+  let timeLabel = '';
+  if (meetingTime) {
+    const diffMs = meetingTime.getTime() - now.getTime();
+    const diffMin = Math.round(diffMs / 60000);
+    if (diffMin > 0 && diffMin < 60) timeLabel = `Starting in ${diffMin} minute${diffMin !== 1 ? 's' : ''}`;
+    else if (diffMin >= 60) timeLabel = `Starting in ${Math.round(diffMin / 60)} hour${Math.round(diffMin / 60) !== 1 ? 's' : ''}`;
+    else timeLabel = 'Starting soon';
+  }
+
+  // Build participant lines
+  const participantLines = (participants || [])
+    .map((p: any) => `• ${p.name}${p.role ? ` — ${p.role}` : ''}${p.meetingCount ? ` (${p.meetingCount} previous meeting${p.meetingCount !== 1 ? 's' : ''})` : ''}`)
+    .join('\n');
+
+  // Build context highlights
+  const highlightLines = (contextHighlights || [])
+    .map((h: string) => `• ${h}`)
+    .join('\n');
+
+  // Build open action items
+  const actionItemLines = (openActionItems || [])
+    .map((item: any) => {
+      const due = item.dueDate ? ` (due ${item.dueDate})` : '';
+      const warn = item.dueDate && new Date(item.dueDate) <= new Date(Date.now() + 3 * 86400000) ? ' ⚠️' : '';
+      return `• ${item.description}${item.assignee ? ` → ${item.assignee}` : ''}${due}${warn}`;
+    })
+    .join('\n');
+
+  const profileLine = profileName ? ` | ${profileIcon || '📋'} ${profileName} profile active` : '';
+  const timeLine = timeLabel ? `**${timeLabel}**` : '';
+
+  let content = `## 🔮 Meeting Briefing: ${meetingTitle}\n${timeLine}${profileLine}\n`;
+
+  if (participantLines) {
+    content += `\n### Participants\n${participantLines}\n`;
+  }
+  if (highlightLines) {
+    content += `\n### Context Highlights\n${highlightLines}\n`;
+  }
+  if (actionItemLines) {
+    content += `\n### Open Items Going In\n${actionItemLines}\n`;
+  }
+
+  content += `\n---\n*Intelligence assembled by Entomate${entomate_url ? ` • [Open in Entomate](${entomate_url})` : ''}*`;
+
+  const actions: Array<{ label: string; action: string; url?: string }> = [];
+  if (entomate_url) {
+    actions.push({ label: 'Open in Entomate', action: 'open_meeting', url: entomate_url });
+  }
+
+  await insertBotMessage(supabase, {
+    workspaceId,
+    channelId,
+    senderId: ENTOMATE_BOT_ID,
+    content,
+    messageType: 'meeting_briefing',
+    metadata: {
+      meetingId,
+      scheduledAt,
+      profileName,
+      participants,
+      openActionItems,
+      sourceUrl: entomate_url,
+    },
+    actions,
+  });
+
+  // Notify participant user IDs if provided
+  const userIds = (participants || []).map((p: any) => p.userId).filter(Boolean);
+  if (userIds.length) {
+    await sendBotNotifications(supabase, userIds, `Meeting briefing ready: ${meetingTitle}`, {
+      type: 'meeting_briefing',
+      meetingId,
     });
   }
 }

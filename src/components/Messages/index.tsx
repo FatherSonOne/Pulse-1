@@ -83,6 +83,11 @@ export const MessagesView: React.FC<MessagesViewProps> = ({
 export { ChannelList } from './ChannelList';
 export { MessageChat } from './MessageChat';
 
+// Bot Message Cards
+export { MeetingRecapCard } from './MeetingRecapCard';
+export { MeetingBriefingCard } from './MeetingBriefingCard';
+export { ActionItemsCard } from './ActionItemsCard';
+
 // Split-View Components (Phase 2)
 export { default as ThreadListPanel } from './ThreadListPanel';
 export { default as ThreadItem } from './ThreadItem';
