@@ -20,6 +20,7 @@ import { AboutSettings } from './Settings/AboutSettings';
 import { BillingSettings } from './Settings/BillingSettings';
 import { DeveloperSettings } from './Settings/DeveloperSettings';
 import { AdminSettings } from './Settings/AdminSettings';
+import { EcosystemSettings } from './settings/EcosystemSettings';
 
 interface SettingsProps {
   user?: User | null;
@@ -33,6 +34,7 @@ const SECTIONS = [
   { id: 'account', icon: 'fa-user', label: 'My Account' },
   { id: 'ai_intelligence', icon: 'fa-brain', label: 'AI & Intelligence' },
   { id: 'integrations', icon: 'fa-plug', label: 'Integrations' },
+  { id: 'ecosystem', icon: 'fa-circle-nodes', label: 'Ecosystem Bridge' },
   { id: 'notifications', icon: 'fa-bell', label: 'Notifications' },
   { id: 'features_labs', icon: 'fa-flask', label: 'Features & Labs' },
   { id: 'war_room', icon: 'fa-shield', label: 'War Room' },
@@ -53,6 +55,7 @@ const SECTION_KEYWORDS: Record<string, string[]> = {
   account: ['profile', 'avatar', 'name', 'email', 'theme', 'dark', 'light', 'appearance', 'logout', 'sign out', 'password'],
   ai_intelligence: ['ai', 'intelligence', 'model', 'gpt', 'claude', 'gemini', 'voice agent', 'quota', 'voxer', 'brain'],
   integrations: ['slack', 'gmail', 'twilio', 'calendar', 'google', 'contacts', 'maps', 'connect', 'integration'],
+  ecosystem: ['ecosystem', 'bridge', 'entomate', 'logos vision', 'qntmecos', 'bot', 'webhook', 'token', 'connection'],
   notifications: ['bell', 'alert', 'push', 'email notification', 'sound', 'vibration', 'quiet hours', 'vip'],
   features_labs: ['feature', 'lab', 'beta', 'experimental', 'toggle', 'enable', 'disable', 'advanced mode'],
   war_room: ['war room', 'mission', 'intel', 'focus', 'analyst', 'strategist', 'brainstorm', 'command', 'ai depth', 'reasoning'],
@@ -87,7 +90,7 @@ const Settings: React.FC<SettingsProps> = ({ user, isDarkMode, toggleTheme, init
   useEffect(() => {
     const params = new URLSearchParams(window.location.search);
     const sectionParam = params.get('settings');
-    const validIds = [...SECTIONS.map(s => s.id), 'desktop_app', 'admin'];
+    const validIds = [...SECTIONS.map(s => s.id), 'desktop_app', 'ecosystem', 'admin'];
     if (sectionParam && validIds.includes(sectionParam)) {
       setActiveSection(sectionParam);
     }
@@ -106,6 +109,7 @@ const Settings: React.FC<SettingsProps> = ({ user, isDarkMode, toggleTheme, init
       case 'account':          return <AccountSettings user={user} isDarkMode={isDarkMode} toggleTheme={toggleTheme} />;
       case 'ai_intelligence':  return <AIIntelligenceSettings />;
       case 'integrations':     return <IntegrationsSettings user={user} userId={user?.id || ''} />;
+      case 'ecosystem':        return <EcosystemSettings userId={user?.id || ''} />;
       case 'notifications':    return <NotificationsSettingsSection />;
       case 'team':             return <TeamSettings userId={user?.id || ''} userName={user?.name || ''} />;
       case 'accessibility':    return <AccessibilitySettings />;

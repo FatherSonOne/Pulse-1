@@ -2230,3 +2230,8 @@ html, body {
   transform: translateX(16px);
   transition: all 0.2s ease-in;
 }
+/* Ecosystem Bridge — connection line shimmer */
+@keyframes slideRight {
+  from { transform: translateX(-100%); }
+  to   { transform: translateX(200%); }
+}

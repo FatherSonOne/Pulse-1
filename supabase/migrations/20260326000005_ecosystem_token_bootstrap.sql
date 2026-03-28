@@ -1,27 +1,30 @@
 -- =====================================================
 -- ECOSYSTEM BRIDGE: Token Bootstrap
--- Generates service tokens for Entomate and Logos Vision connections.
+-- Seeds ecosystem_config with canonical inbound URLs
+-- and generates service tokens for Entomate + Logos Vision.
 --
--- HOW TOKENS WORK:
---   Each connection stores TWO tokens:
+-- CANONICAL URLS (never change unless Supabase project changes):
+--   Pulse:        https://ucaeuszgoihoyrvhewxk.supabase.co/functions/v1/ecosystem-inbound
+--   Entomate:     https://epftmicjaxrthmpyoguy.supabase.co/functions/v1/ecosystem-inbound
+--   Logos Vision: https://psjgmdnrehcwvppbeqjy.supabase.co/functions/v1/ecosystem-inbound
 --
---   service_token  = the token PULSE sends to the other app
---                    (goes in Entomate's/LV's ecosystem_config.inbound_token)
+-- HOW TOKENS WORK (values are SWAPPED across apps):
 --
---   inbound_token  = the token the other app sends TO PULSE
---                    (goes in Entomate's/LV's ecosystem_config.service_token)
+--   Pulse ecosystem_config row for 'entomate':
+--     service_token = TOKEN_A   ← Pulse sends this TO Entomate
+--     inbound_token = TOKEN_B   ← Entomate sends this TO Pulse
 --
---   They are mirrors of each other across the two databases.
+--   Entomate ecosystem_config row for 'pulse':
+--     service_token = TOKEN_B   ← same as Pulse's inbound_token
+--     inbound_token = TOKEN_A   ← same as Pulse's service_token
 --
--- AFTER RUNNING:
---   SELECT app_name, api_url, service_token, inbound_token
---   FROM ecosystem_config;
---
---   Copy the values into the other app's ecosystem_config table.
+-- AFTER RUNNING: retrieve tokens to copy to other apps:
+--   SELECT app_name,
+--          service_token AS "→ paste as inbound_token in that app",
+--          inbound_token AS "→ paste as service_token in that app"
+--   FROM ecosystem_config ORDER BY app_name;
 -- =====================================================
 
--- Insert Entomate connection config with auto-generated tokens
--- Replace the api_url with your actual Entomate URL
 INSERT INTO ecosystem_config (
   app_name,
   api_url,
@@ -31,19 +34,13 @@ INSERT INTO ecosystem_config (
   features
 ) VALUES (
   'entomate',
-  'https://your-entomate-project.supabase.co/functions/v1',
-  encode(gen_random_bytes(32), 'hex'),   -- Pulse → Entomate token
-  encode(gen_random_bytes(32), 'hex'),   -- Entomate → Pulse token
-  false,   -- disabled until URLs are confirmed
-  '{
-    "bot_messages": true,
-    "sync_tasks": true,
-    "notifications": true,
-    "meeting_recaps": true
-  }'::jsonb
-) ON CONFLICT (app_name) DO NOTHING;   -- Don't overwrite existing tokens
+  'https://epftmicjaxrthmpyoguy.supabase.co/functions/v1/ecosystem-inbound',
+  encode(gen_random_bytes(32), 'hex'),
+  encode(gen_random_bytes(32), 'hex'),
+  false,   -- enable after confirming tokens are in Entomate
+  '{"bot_messages": true, "sync_tasks": true, "notifications": true, "meeting_recaps": true}'::jsonb
+) ON CONFLICT (app_name) DO NOTHING;
 
--- Insert Logos Vision connection config with auto-generated tokens
 INSERT INTO ecosystem_config (
   app_name,
   api_url,
@@ -53,34 +50,33 @@ INSERT INTO ecosystem_config (
   features
 ) VALUES (
   'logos_vision',
-  'https://your-logos-vision-project.supabase.co/functions/v1',
-  encode(gen_random_bytes(32), 'hex'),   -- Pulse → LV token
-  encode(gen_random_bytes(32), 'hex'),   -- LV → Pulse token
+  'https://psjgmdnrehcwvppbeqjy.supabase.co/functions/v1/ecosystem-inbound',
+  encode(gen_random_bytes(32), 'hex'),
+  encode(gen_random_bytes(32), 'hex'),
   false,
-  '{
-    "contact_sync": true,
-    "donation_alerts": true,
-    "notifications": true
-  }'::jsonb
+  '{"contact_sync": true, "donation_alerts": true, "notifications": true}'::jsonb
 ) ON CONFLICT (app_name) DO NOTHING;
 
 -- =====================================================
--- AFTER RUNNING THIS MIGRATION:
--- Run this query and copy the results to set up the other apps:
--- =====================================================
+-- WHAT TO INSERT IN ENTOMATE'S ecosystem_config:
 --
--- SELECT
---   app_name,
---   api_url,
---   service_token  AS "copy_to_other_app_inbound_token",
---   inbound_token  AS "copy_to_other_app_service_token"
--- FROM ecosystem_config
--- ORDER BY app_name;
+--   INSERT INTO ecosystem_config (app_name, api_url, service_token, inbound_token, enabled)
+--   VALUES (
+--     'pulse',
+--     'https://ucaeuszgoihoyrvhewxk.supabase.co/functions/v1/ecosystem-inbound',
+--     '<Pulse inbound_token for entomate row>',   ← Entomate sends this to Pulse
+--     '<Pulse service_token for entomate row>',   ← Pulse sends this to Entomate
+--     true
+--   );
 --
--- =====================================================
--- WHAT TO PUT IN ENTOMATE'S ecosystem_config:
---   app_name      = 'pulse'
---   api_url       = 'https://YOUR-PULSE-PROJECT.supabase.co/functions/v1'
---   service_token = (Pulse's inbound_token)   ← Entomate sends this to Pulse
---   inbound_token = (Pulse's service_token)   ← Pulse sends this to Entomate
+-- WHAT TO INSERT IN LOGOS VISION'S ecosystem_config:
+--
+--   INSERT INTO ecosystem_config (app_name, api_url, service_token, inbound_token, enabled)
+--   VALUES (
+--     'pulse',
+--     'https://ucaeuszgoihoyrvhewxk.supabase.co/functions/v1/ecosystem-inbound',
+--     '<Pulse inbound_token for logos_vision row>',
+--     '<Pulse service_token for logos_vision row>',
+--     true
+--   );
 -- =====================================================
