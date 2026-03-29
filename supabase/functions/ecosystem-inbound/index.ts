@@ -9,7 +9,7 @@ import { handleContextRequest } from './contextHandler.ts';
 
 const corsHeaders: Record<string, string> = {
   'Access-Control-Allow-Origin': '*',
-  'Access-Control-Allow-Headers': 'authorization, x-client-info, apikey, content-type, x-ecosystem-token',
+  'Access-Control-Allow-Headers': 'authorization, x-client-info, apikey, content-type, x-ecosystem-token, x-ecosystem-source, x-ecosystem-event-id',
   'Access-Control-Allow-Methods': 'GET, POST, OPTIONS',
 };
 
