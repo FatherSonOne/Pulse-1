@@ -10,7 +10,7 @@ import { supabase } from '../../services/supabase';
 import { loginWithGoogle, loginWithMicrosoft, revokeGoogleAccess, disconnectGoogleAccount } from '../../services/authService';
 import {
   RefreshCw, Check, AlertTriangle, Info, Plug, Mail,
-  Phone, Shield, Unlink, Server, X,
+  Phone, Shield, Unlink, Server,
   Lock, Loader2, Download, Rocket, Ban,
 } from 'lucide-react';
 
@@ -1391,6 +1391,20 @@ export const IntegrationsSettings: React.FC<IntegrationsSettingsProps> = ({ user
           <div className="text-center py-4">
             <span className="text-xs bg-zinc-200 dark:bg-zinc-700 text-zinc-600 dark:text-zinc-400 px-3 py-1 rounded-full">Coming Soon</span>
           </div>
+        </div>
+      </div>
+
+      {/* Ecosystem Bridge moved to its own Settings section (Settings > Ecosystem Bridge) */}
+      <div className="mt-8 rounded-xl border border-violet-500/20 bg-violet-500/[0.04] px-5 py-4 flex items-center gap-3">
+        <div className="w-8 h-8 rounded-lg bg-violet-500/15 flex items-center justify-center flex-shrink-0">
+          <i className="fa-solid fa-circle-nodes text-violet-500 text-sm" />
+        </div>
+        <div>
+          <p className="text-sm font-semibold text-zinc-900 dark:text-white">Ecosystem Bridge</p>
+          <p className="text-xs text-zinc-500 dark:text-zinc-400">
+            Connect Pulse, Entomate &amp; Logos Vision — see the{' '}
+            <span className="text-violet-600 dark:text-violet-300 font-medium">Ecosystem Bridge</span> section in the sidebar.
+          </p>
         </div>
       </div>
     </div>
