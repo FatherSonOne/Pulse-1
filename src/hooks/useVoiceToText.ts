@@ -146,6 +146,7 @@ export function useVoiceToText(options: UseVoiceToTextOptions = {}): UseVoiceToT
   const mediaRecorderRef = useRef<MediaRecorder | null>(null);
   const audioChunksRef = useRef<Blob[]>([]);
   const streamRef = useRef<MediaStream | null>(null);
+  const startOpenAIRef = useRef<(() => void) | null>(null);
 
   // Determine provider support
   const SpeechRecognitionClass = getWebSpeechRecognition();
@@ -218,6 +219,16 @@ export function useVoiceToText(options: UseVoiceToTextOptions = {}): UseVoiceToT
       };
 
       recognition.onerror = (event: SpeechRecognitionErrorEvent) => {
+        // Auto-fallback to OpenAI Whisper on network/service errors if key is available
+        if ((event.error === 'network' || event.error === 'service-not-allowed') && openaiSupported && startOpenAIRef.current) {
+          console.log('Web Speech API failed, falling back to OpenAI Whisper...');
+          recognitionRef.current = null;
+          setIsListening(false);
+          setActiveProvider('openai');
+          startOpenAIRef.current();
+          return;
+        }
+
         const errorMessages: Record<string, string> = {
           'not-allowed': 'Microphone access denied. Please allow microphone permissions.',
           'no-speech': 'No speech detected. Please try again.',
@@ -245,7 +256,7 @@ export function useVoiceToText(options: UseVoiceToTextOptions = {}): UseVoiceToT
       setError(errorMsg);
       onError?.(errorMsg);
     }
-  }, [SpeechRecognitionClass, continuous, language, onFinalResult, onInterimResult, onError]);
+  }, [SpeechRecognitionClass, continuous, language, openaiSupported, onFinalResult, onInterimResult, onError]);
 
   const stopWebSpeech = useCallback(() => {
     if (recognitionRef.current) {
@@ -360,6 +371,9 @@ export function useVoiceToText(options: UseVoiceToTextOptions = {}): UseVoiceToT
       onError?.(errorMsg);
     }
   }, [openaiApiKey, language, onFinalResult, onError]);
+
+  // Keep ref in sync for web-speech fallback
+  startOpenAIRef.current = startOpenAI;
 
   const stopOpenAI = useCallback(() => {
     if (mediaRecorderRef.current && mediaRecorderRef.current.state !== 'inactive') {

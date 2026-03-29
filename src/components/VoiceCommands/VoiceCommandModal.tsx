@@ -77,6 +77,8 @@ export const VoiceCommandModal: React.FC<VoiceCommandModalProps> = ({
 
   // Voice command state
   const [mode, setMode] = useState<'idle' | 'listening' | 'processing' | 'speaking'>('idle');
+  const modeRef = useRef(mode);
+  modeRef.current = mode;
   const [transcript, setTranscript] = useState('');
   const [interimTranscript, setInterimTranscript] = useState('');
   const [response, setResponse] = useState('');
@@ -322,8 +324,8 @@ export const VoiceCommandModal: React.FC<VoiceCommandModalProps> = ({
 
       recognition.onend = () => {
         // Only set to idle if we're still in listening mode
-        // (not if we've moved to processing)
-        if (mode === 'listening') {
+        // (not if we've moved to processing). Use ref to avoid stale closure.
+        if (modeRef.current === 'listening') {
           setMode('idle');
         }
       };
@@ -334,7 +336,7 @@ export const VoiceCommandModal: React.FC<VoiceCommandModalProps> = ({
       setError('Failed to start speech recognition');
       setMode('idle');
     }
-  }, [SpeechRecognitionClass, mode]);
+  }, [SpeechRecognitionClass]);
 
   // Stop listening and process command
   const stopListening = useCallback(() => {

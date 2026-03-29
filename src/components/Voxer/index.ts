@@ -21,7 +21,6 @@ export { VoiceBookmarks } from './VoiceBookmarks';
 export { SilentModePanel, SilentModeIndicator, DEFAULT_SILENT_MODE_SETTINGS } from './SilentMode';
 export { VoxPlaylists, AddToPlaylistModal } from './VoxPlaylists';
 export { CollaborativeVox } from './CollaborativeVox';
-export { VoiceCommandsHub, FloatingVoiceButton } from './VoiceCommandsHub';
 export { VoxPreviewPanel } from './VoxPreviewPanel';
 
 // Phase 5: AI Enhancements

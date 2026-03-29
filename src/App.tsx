@@ -51,7 +51,6 @@ import GoogleAccountSelector from './components/GoogleAccountSelector';
 import { ExtensionLogin, ExtensionOAuthCallback, ExtensionCallback, ExtensionError } from './components/ExtensionAuth';
 import { MicrosoftCalendarCallback } from './components/MicrosoftCalendarCallback';
 import { ApiDocumentation } from './components/ApiKeys';
-import { VoiceCommandButton } from './components/VoiceCommands';
 import PulseVoiceLogo from './components/PulseVoiceLogo';
 import { voiceCommandService } from './services/voiceCommandService';
 import PermissionRequestModal from './components/PermissionRequestModal';
@@ -350,6 +349,31 @@ const App: React.FC = () => {
           // We can only open Contacts; selecting a specific contact UI is handled within Contacts.
           setView(AppView.CONTACTS);
           setIsMobileMenuOpen(false);
+          break;
+        }
+        case 'send_email': {
+          // Dispatch pre-fill data for email composer
+          window.dispatchEvent(new CustomEvent('pulse:compose-email', {
+            detail: { recipient: action.recipient, subject: action.subject, body: action.body },
+          }));
+          break;
+        }
+        case 'send_sms': {
+          window.dispatchEvent(new CustomEvent('pulse:compose-sms', {
+            detail: { recipient: action.recipient, message: action.message },
+          }));
+          break;
+        }
+        case 'create_task': {
+          window.dispatchEvent(new CustomEvent('pulse:create-task', {
+            detail: { title: action.title, dueDate: action.dueDate, priority: action.priority },
+          }));
+          break;
+        }
+        case 'schedule_meeting': {
+          window.dispatchEvent(new CustomEvent('pulse:create-event', {
+            detail: { title: action.title, participants: action.participants, time: action.time },
+          }));
           break;
         }
       }

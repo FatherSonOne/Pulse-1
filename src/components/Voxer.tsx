@@ -37,7 +37,6 @@ import { VoiceBookmarks } from './Voxer/VoiceBookmarks';
 import { SilentModePanel, SilentModeIndicator, DEFAULT_SILENT_MODE_SETTINGS } from './Voxer/SilentMode';
 import { VoxPlaylists, AddToPlaylistModal } from './Voxer/VoxPlaylists';
 import { CollaborativeVox } from './Voxer/CollaborativeVox';
-import { VoiceCommandsHub, FloatingVoiceButton } from './Voxer/VoiceCommandsHub';
 import { VoxPreviewPanel } from './Voxer/VoxPreviewPanel';
 
 // Selection and Archive/Download functionality

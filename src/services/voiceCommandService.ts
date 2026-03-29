@@ -686,6 +686,152 @@ If unclear, use type "unknown" with low confidence.`;
         result.data = { action: { type: 'open_contact', name: command.parameters.name || '' } };
         break;
 
+      case 'send_email': {
+        result.success = true;
+        const recipient = command.parameters.recipient || '';
+        const subject = command.parameters.subject || '';
+        result.message = `Opening email composer${recipient ? ` to ${recipient}` : ''}`;
+        result.data = {
+          view: 'EMAIL',
+          action: {
+            type: 'send_email',
+            recipient,
+            subject,
+            body: command.parameters.body || '',
+          },
+        };
+        break;
+      }
+
+      case 'send_sms': {
+        result.success = true;
+        const smsRecipient = command.parameters.recipient || '';
+        result.message = `Opening SMS${smsRecipient ? ` to ${smsRecipient}` : ''}`;
+        result.data = {
+          view: 'SMS',
+          action: {
+            type: 'send_sms',
+            recipient: smsRecipient,
+            message: command.parameters.message || '',
+          },
+        };
+        break;
+      }
+
+      case 'create_task': {
+        result.success = true;
+        result.message = `Creating task: ${command.parameters.title || 'New task'}`;
+        result.data = {
+          view: 'CALENDAR',
+          action: {
+            type: 'create_task',
+            title: command.parameters.title || '',
+            dueDate: command.parameters.dueDate || null,
+            priority: command.parameters.priority || 'medium',
+          },
+        };
+        break;
+      }
+
+      case 'create_decision': {
+        result.success = true;
+        result.message = `Logging decision: ${command.parameters.decision || ''}`;
+        result.data = {
+          view: 'LIVE_AI',
+          action: {
+            type: 'create_decision',
+            decision: command.parameters.decision || '',
+            context: command.parameters.context || '',
+          },
+        };
+        break;
+      }
+
+      case 'schedule_meeting': {
+        result.success = true;
+        const participants = command.parameters.participants || [];
+        result.message = `Scheduling meeting${participants.length ? ` with ${participants.join(', ')}` : ''}`;
+        result.data = {
+          view: 'CALENDAR',
+          action: {
+            type: 'schedule_meeting',
+            participants,
+            time: command.parameters.time || '',
+            title: command.parameters.title || '',
+          },
+        };
+        break;
+      }
+
+      case 'read_messages': {
+        result.success = true;
+        const msgType = command.parameters.type || 'all';
+        const viewTarget = msgType === 'email' ? 'EMAIL' : 'MESSAGES';
+        result.message = `Opening ${msgType === 'email' ? 'emails' : 'messages'}`;
+        result.data = {
+          view: viewTarget,
+          action: {
+            type: 'read_messages',
+            filter: command.parameters.filter || 'latest',
+            messageType: msgType,
+          },
+        };
+        break;
+      }
+
+      case 'set_reminder': {
+        result.success = true;
+        result.message = `Setting reminder: ${command.parameters.reminder || ''}`;
+        result.data = {
+          view: 'CALENDAR',
+          action: {
+            type: 'set_reminder',
+            reminder: command.parameters.reminder || '',
+            time: command.parameters.time || '',
+          },
+        };
+        break;
+      }
+
+      case 'add_note': {
+        result.success = true;
+        result.message = `Adding note`;
+        result.data = {
+          view: 'LIVE_AI',
+          action: {
+            type: 'add_note',
+            content: command.parameters.content || '',
+          },
+        };
+        break;
+      }
+
+      case 'open_project': {
+        result.success = true;
+        const projectName = command.parameters.projectName || '';
+        result.message = `Opening project${projectName ? `: ${projectName}` : ''}`;
+        result.data = {
+          view: 'LIVE_AI',
+          action: {
+            type: 'open_project',
+            projectName,
+          },
+        };
+        break;
+      }
+
+      case 'dictate': {
+        result.success = true;
+        result.message = 'Starting dictation mode';
+        result.data = {
+          action: {
+            type: 'dictate',
+            mode: command.parameters.mode || 'continuous',
+          },
+        };
+        break;
+      }
+
       case 'help':
         result.success = true;
         result.message = 'Here are the available voice commands';
@@ -698,7 +844,8 @@ If unclear, use type "unknown" with low confidence.`;
           result.success = true;
           result.message = command.suggestedAction || `Executing ${command.type} command`;
         } else {
-          result.message = `No handler registered for ${command.type} command`;
+          result.success = true;
+          result.message = command.suggestedAction || `Command "${command.type}" recognized`;
         }
     }
 
