@@ -2,11 +2,13 @@
 // Renders bot messages from Entomate and other ecosystem apps
 // Bot messages bypass E2EE — they use bot_content (plaintext)
 
-import React from 'react';
-import { ExternalLink, Bot } from 'lucide-react';
+import React, { useState } from 'react';
+import { ExternalLink, Bot, Star } from 'lucide-react';
 import { SmartTimestamp } from './SmartTimestamp';
 import { MeetingRecapCard } from './MeetingRecapCard';
+import { MeetingBriefingCard } from './MeetingBriefingCard';
 import { ActionItemsCard } from './ActionItemsCard';
+import { supabase } from '../../services/supabase';
 import type { BotChannelMessage, BotAction } from '../../types/messages';
 
 interface BotMessageProps {
@@ -29,6 +31,8 @@ const BOT_CONFIG: Record<string, { name: string; emoji: string; avatarBg: string
 };
 
 export const BotMessage: React.FC<BotMessageProps> = ({ message }) => {
+  const [ratingState, setRatingState] = useState<{ rating: number; submitted: boolean } | null>(null);
+
   const bot = BOT_CONFIG[message.bot_app] || {
     name: message.bot_app,
     emoji: '🤖',
@@ -39,6 +43,38 @@ export const BotMessage: React.FC<BotMessageProps> = ({ message }) => {
   const handleAction = (action: BotAction) => {
     if (action.url) {
       window.open(action.url, '_blank', 'noopener,noreferrer');
+      return;
+    }
+    // Rate meeting — show inline star rating
+    if (action.action === 'rate_meeting' && action.meetingId) {
+      setRatingState({ rating: 0, submitted: false });
+      return;
+    }
+    // View profile — open in Entomate
+    if (action.action === 'view_profile' && action.profileSlug) {
+      const entomate = message.bot_metadata?.sourceUrl;
+      // Derive the Entomate base URL from the meeting URL, or use a sensible default
+      const baseUrl = entomate
+        ? new URL(entomate).origin
+        : 'https://entomate.app';
+      window.open(`${baseUrl}/profiles/${action.profileSlug}`, '_blank', 'noopener,noreferrer');
+    }
+  };
+
+  const submitRating = async (rating: number, meetingId: string) => {
+    setRatingState({ rating, submitted: true });
+    // Send meeting.feedback event to Entomate via ecosystem-outbound edge function
+    try {
+      const { error } = await supabase.functions.invoke('ecosystem-outbound', {
+        body: {
+          eventType: 'meeting.feedback',
+          targetApp: 'entomate',
+          data: { meetingId, rating },
+        },
+      });
+      if (error) console.warn('[BotMessage] Failed to submit meeting rating:', error.message);
+    } catch {
+      // Non-critical — rating is best-effort
     }
   };
 
@@ -69,6 +105,13 @@ export const BotMessage: React.FC<BotMessageProps> = ({ message }) => {
             actions={message.bot_actions}
             onAction={handleAction}
           />
+        ) : message.bot_message_type === 'meeting_briefing' ? (
+          <MeetingBriefingCard
+            content={message.bot_content}
+            metadata={message.bot_metadata}
+            actions={message.bot_actions}
+            onAction={handleAction}
+          />
         ) : message.bot_message_type === 'action_items' ? (
           <ActionItemsCard
             content={message.bot_content}
@@ -91,10 +134,71 @@ export const BotMessage: React.FC<BotMessageProps> = ({ message }) => {
             onAction={handleAction}
           />
         )}
+
+        {/* Inline rating UI (triggered by "Rate This Summary" action) */}
+        {ratingState && (
+          <InlineRating
+            rating={ratingState.rating}
+            submitted={ratingState.submitted}
+            meetingId={message.bot_metadata?.meetingId || ''}
+            onRate={(r) => submitRating(r, message.bot_metadata?.meetingId || '')}
+            onClose={() => setRatingState(null)}
+          />
+        )}
       </div>
     </div>
   );
 };
+
+// ── Inline rating (Phase 4: feedback loop) ─────────────────────────────────
+
+function InlineRating({ rating, submitted, meetingId, onRate, onClose }: {
+  rating: number;
+  submitted: boolean;
+  meetingId: string;
+  onRate: (r: number) => void;
+  onClose: () => void;
+}) {
+  const [hovered, setHovered] = useState(0);
+
+  if (submitted) {
+    return (
+      <div className="mt-2 flex items-center gap-2 text-xs text-emerald-400 bg-emerald-500/10 border border-emerald-500/20 rounded-lg px-3 py-2">
+        <span>Thanks for your feedback!</span>
+        <span className="text-amber-400">
+          {'★'.repeat(rating)}{'☆'.repeat(5 - rating)}
+        </span>
+        <button type="button" onClick={onClose} className="ml-auto text-zinc-500 hover:text-zinc-300">dismiss</button>
+      </div>
+    );
+  }
+
+  return (
+    <div className="mt-2 flex items-center gap-3 bg-white/[0.03] border border-white/[0.08] rounded-lg px-3 py-2">
+      <span className="text-xs text-zinc-400">Rate this summary:</span>
+      <div className="flex items-center gap-0.5">
+        {Array.from({ length: 5 }, (_, i) => (
+          <button
+            key={i}
+            type="button"
+            title={`Rate ${i + 1} star${i > 0 ? 's' : ''}`}
+            onMouseEnter={() => setHovered(i + 1)}
+            onMouseLeave={() => setHovered(0)}
+            onClick={() => onRate(i + 1)}
+            className="p-0.5 transition-transform hover:scale-125"
+          >
+            <Star className={`w-4 h-4 transition-colors ${
+              (hovered || rating) > i
+                ? 'text-amber-400 fill-amber-400'
+                : 'text-zinc-600'
+            }`} />
+          </button>
+        ))}
+      </div>
+      <button type="button" onClick={onClose} className="ml-auto text-xs text-zinc-500 hover:text-zinc-300">cancel</button>
+    </div>
+  );
+}
 
 // ── Inline card components ─────────────────────────────────────────────────
 
@@ -164,6 +268,7 @@ function ActionButton({
 
   return (
     <button
+      type="button"
       onClick={() => onAction(action)}
       className={`${base} ${styles}`}
     >

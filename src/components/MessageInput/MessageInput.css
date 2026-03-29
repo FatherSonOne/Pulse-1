@@ -501,62 +501,63 @@
 
 /* ============================================
    Light Mode Overrides
+   Note: App uses .dark on <html>; light = absence of .dark
    ============================================ */
-.light .message-input-container {
+:root:not(.dark) .message-input-container {
   background: rgba(0, 0, 0, 0.03);
   border-color: rgba(0, 0, 0, 0.1);
   box-shadow: 0 2px 8px rgba(0, 0, 0, 0.08);
 }
 
-.light .message-input-container:focus-within {
+:root:not(.dark) .message-input-container:focus-within {
   border-color: rgba(244, 63, 94, 0.5);
   box-shadow: 0 0 0 1px rgba(244, 63, 94, 0.2), 0 4px 12px rgba(0, 0, 0, 0.1);
 }
 
-.light .message-input-area[contenteditable]:empty::before {
+:root:not(.dark) .message-input-area[contenteditable]:empty::before {
   color: #a8a29e;
 }
 
-.light .message-input-area code {
+:root:not(.dark) .message-input-area code {
   background: rgba(139, 92, 246, 0.08);
   color: #7c3aed;
 }
 
-.light .message-input-area::-webkit-scrollbar-thumb {
+:root:not(.dark) .message-input-area::-webkit-scrollbar-thumb {
   background: rgba(0, 0, 0, 0.1);
 }
 
-.light .message-action-bar {
-  background: rgba(255, 255, 255, 0.8);
-  border-top-color: rgba(0, 0, 0, 0.06);
+:root:not(.dark) .message-action-bar {
+  background: linear-gradient(135deg, rgba(15, 23, 42, 0.06) 0%, rgba(244, 63, 94, 0.10) 100%);
+  border-top-color: rgba(244, 63, 94, 0.15);
 }
 
-.light .voice-input-button {
+:root:not(.dark) .voice-input-button {
   border-color: rgba(0, 0, 0, 0.12);
   color: #78716c;
 }
 
-.light .ai-toggle-button {
+:root:not(.dark) .ai-toggle-button {
   border-color: #d6d3d1;
   color: #78716c;
 }
 
-.light .simple-action-button {
+:root:not(.dark) .simple-action-button {
   border-color: #d6d3d1;
   color: #78716c;
 }
 
-.light .simple-action-button:hover {
+:root:not(.dark) .simple-action-button:hover {
   background: rgba(244, 63, 94, 0.08);
   border-color: rgba(244, 63, 94, 0.3);
   color: #f43f5e;
 }
 
-.light .character-counter {
+:root:not(.dark) .character-counter {
   color: #a8a29e;
 }
 
-.light .draft-indicator {
+:root:not(.dark) .draft-indicator {
   color: #a8a29e;
 }
 

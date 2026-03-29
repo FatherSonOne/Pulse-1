@@ -1,6 +1,7 @@
 /**
  * FeatureSettingsPanel - Settings UI for Progressive Disclosure
  * Phase 3: Feature Refinements - Task 4
+ * Dark mode optimized
  *
  * Features:
  * - Categorized feature toggles
@@ -8,9 +9,10 @@
  * - Bulk enable/disable by category
  * - Reset to defaults
  * - Visual feedback for changes
+ * - Full dark/light mode support
  */
 
-import React, { useState } from 'react';
+import React, { useState, useMemo } from 'react';
 import { motion, AnimatePresence } from 'framer-motion';
 import { RotateCcw, Search, Sliders, X } from 'lucide-react';
 import {
@@ -25,6 +27,21 @@ interface FeatureSettingsPanelProps {
   onClose: () => void;
 }
 
+/** Detect dark mode from <html class="dark"> set by App.tsx */
+function useIsDark() {
+  const [dark, setDark] = useState(() =>
+    document.documentElement.classList.contains('dark')
+  );
+  React.useEffect(() => {
+    const observer = new MutationObserver(() => {
+      setDark(document.documentElement.classList.contains('dark'));
+    });
+    observer.observe(document.documentElement, { attributes: true, attributeFilter: ['class'] });
+    return () => observer.disconnect();
+  }, []);
+  return dark;
+}
+
 export const FeatureSettingsPanel: React.FC<FeatureSettingsPanelProps> = ({
   isOpen,
   onClose
@@ -37,10 +54,99 @@ export const FeatureSettingsPanel: React.FC<FeatureSettingsPanelProps> = ({
     setAdvancedMode
   } = useFeatures();
 
+  const isDark = useIsDark();
+
   const [searchQuery, setSearchQuery] = useState('');
   const [expandedCategories, setExpandedCategories] = useState<Set<string>>(
     new Set(['priority', 'advanced'])
   );
+
+  // ── Theme palette ──
+  const t = useMemo(() => {
+    if (isDark) {
+      return {
+        // Panel
+        panelBg: '#09090b',
+        panelShadow: '-4px 0 32px rgba(0, 0, 0, 0.6)',
+        // Header
+        headerBg: 'linear-gradient(135deg, rgba(244, 63, 94, 0.12) 0%, rgba(236, 72, 153, 0.08) 100%)',
+        headerBorder: 'rgba(244, 63, 94, 0.25)',
+        // Text
+        textPrimary: '#fafafa',
+        textSecondary: '#a1a1aa',
+        textMuted: '#71717a',
+        // Surfaces
+        surface: 'rgba(255, 255, 255, 0.04)',
+        surfaceBorder: 'rgba(255, 255, 255, 0.08)',
+        surfaceHover: 'rgba(255, 255, 255, 0.06)',
+        // Input
+        inputBg: 'rgba(255, 255, 255, 0.05)',
+        inputBorder: 'rgba(244, 63, 94, 0.25)',
+        inputText: '#fafafa',
+        inputPlaceholder: '#71717a',
+        // Category
+        categoryBg: 'rgba(244, 63, 94, 0.08)',
+        categoryBorder: 'rgba(244, 63, 94, 0.2)',
+        categoryText: '#fafafa',
+        // Feature row
+        featureBg: 'rgba(255, 255, 255, 0.03)',
+        featureBorder: 'rgba(255, 255, 255, 0.07)',
+        featureText: '#e4e4e7',
+        // Toggle
+        toggleOff: '#3f3f46',
+        toggleKnob: '#fafafa',
+        // Footer
+        footerBg: 'rgba(244, 63, 94, 0.06)',
+        footerBorder: 'rgba(255, 255, 255, 0.06)',
+        resetBtnBg: 'rgba(255, 255, 255, 0.04)',
+        resetBtnBorder: 'rgba(244, 63, 94, 0.3)',
+        // Buttons
+        enableBtnBg: 'rgba(244, 63, 94, 0.12)',
+        enableBtnBorder: 'rgba(244, 63, 94, 0.25)',
+        disableBtnBg: 'rgba(255, 255, 255, 0.04)',
+        disableBtnBorder: 'rgba(255, 255, 255, 0.08)',
+        disableBtnText: '#a1a1aa',
+        // Scrollbar
+        scrollThumb: 'rgba(255, 255, 255, 0.08)',
+        scrollThumbHover: 'rgba(244, 63, 94, 0.3)',
+      };
+    }
+    return {
+      panelBg: '#ffffff',
+      panelShadow: '-4px 0 24px rgba(0, 0, 0, 0.15)',
+      headerBg: 'linear-gradient(135deg, rgba(244, 63, 94, 0.08) 0%, rgba(236, 72, 153, 0.08) 100%)',
+      headerBorder: 'rgba(244, 63, 94, 0.2)',
+      textPrimary: '#18181b',
+      textSecondary: '#52525b',
+      textMuted: '#71717a',
+      surface: '#ffffff',
+      surfaceBorder: 'rgba(0, 0, 0, 0.08)',
+      surfaceHover: 'rgba(0, 0, 0, 0.03)',
+      inputBg: '#ffffff',
+      inputBorder: 'rgba(244, 63, 94, 0.2)',
+      inputText: '#18181b',
+      inputPlaceholder: '#a1a1aa',
+      categoryBg: 'rgba(244, 63, 94, 0.05)',
+      categoryBorder: 'rgba(244, 63, 94, 0.2)',
+      categoryText: '#18181b',
+      featureBg: '#ffffff',
+      featureBorder: 'rgba(0, 0, 0, 0.1)',
+      featureText: '#18181b',
+      toggleOff: '#e4e4e7',
+      toggleKnob: '#ffffff',
+      footerBg: 'rgba(244, 63, 94, 0.05)',
+      footerBorder: 'rgba(0, 0, 0, 0.1)',
+      resetBtnBg: '#ffffff',
+      resetBtnBorder: 'rgba(244, 63, 94, 0.3)',
+      enableBtnBg: 'rgba(244, 63, 94, 0.1)',
+      enableBtnBorder: 'rgba(244, 63, 94, 0.2)',
+      disableBtnBg: 'rgba(0, 0, 0, 0.05)',
+      disableBtnBorder: 'rgba(0, 0, 0, 0.1)',
+      disableBtnText: '#71717a',
+      scrollThumb: 'rgba(0, 0, 0, 0.08)',
+      scrollThumbHover: 'rgba(244, 63, 94, 0.3)',
+    };
+  }, [isDark]);
 
   // Toggle category expansion
   const toggleCategory = (categoryId: string) => {
@@ -109,7 +215,7 @@ export const FeatureSettingsPanel: React.FC<FeatureSettingsPanelProps> = ({
               left: 0,
               right: 0,
               bottom: 0,
-              background: 'rgba(0, 0, 0, 0.5)',
+              background: isDark ? 'rgba(0, 0, 0, 0.7)' : 'rgba(0, 0, 0, 0.5)',
               zIndex: 9999,
               backdropFilter: 'blur(4px)'
             }}
@@ -127,8 +233,8 @@ export const FeatureSettingsPanel: React.FC<FeatureSettingsPanelProps> = ({
               right: 0,
               bottom: 0,
               width: 'min(480px, 100vw)',
-              background: 'white',
-              boxShadow: '-4px 0 24px rgba(0, 0, 0, 0.2)',
+              background: t.panelBg,
+              boxShadow: t.panelShadow,
               zIndex: 10000,
               display: 'flex',
               flexDirection: 'column',
@@ -140,13 +246,13 @@ export const FeatureSettingsPanel: React.FC<FeatureSettingsPanelProps> = ({
             <div
               style={{
                 padding: '24px',
-                borderBottom: '2px solid rgba(244, 63, 94, 0.2)',
-                background: 'linear-gradient(135deg, rgba(244, 63, 94, 0.08) 0%, rgba(236, 72, 153, 0.08) 100%)'
+                borderBottom: `2px solid ${t.headerBorder}`,
+                background: t.headerBg
               }}
             >
               <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between', marginBottom: '16px' }}>
-                <h2 style={{ fontSize: '24px', fontWeight: '700', color: '#18181B', margin: 0 }}>
-                  <Sliders className="mr-3 text-rose-500" />
+                <h2 style={{ fontSize: '24px', fontWeight: '700', color: t.textPrimary, margin: 0, display: 'flex', alignItems: 'center' }}>
+                  <Sliders style={{ marginRight: '12px', color: '#f43f5e' }} />
                   Feature Settings
                 </h2>
                 <button
@@ -156,7 +262,7 @@ export const FeatureSettingsPanel: React.FC<FeatureSettingsPanelProps> = ({
                     height: '40px',
                     borderRadius: '50%',
                     border: 'none',
-                    background: 'rgba(244, 63, 94, 0.1)',
+                    background: isDark ? 'rgba(244, 63, 94, 0.15)' : 'rgba(244, 63, 94, 0.1)',
                     color: '#f43f5e',
                     cursor: 'pointer',
                     display: 'flex',
@@ -173,7 +279,7 @@ export const FeatureSettingsPanel: React.FC<FeatureSettingsPanelProps> = ({
 
               {/* Search */}
               <div style={{ position: 'relative' }}>
-                <Search />
+                <Search style={{ position: 'absolute', left: '12px', top: '50%', transform: 'translateY(-50%)', width: '16px', height: '16px', color: t.textMuted }} />
                 <input
                   type="text"
                   placeholder="Search features..."
@@ -182,12 +288,14 @@ export const FeatureSettingsPanel: React.FC<FeatureSettingsPanelProps> = ({
                   style={{
                     width: '100%',
                     padding: '12px 12px 12px 40px',
-                    border: '2px solid rgba(244, 63, 94, 0.2)',
+                    border: `2px solid ${t.inputBorder}`,
                     borderRadius: '12px',
                     fontSize: '14px',
-                    background: 'white',
+                    background: t.inputBg,
+                    color: t.inputText,
                     outline: 'none',
-                    transition: 'border-color 0.2s'
+                    transition: 'border-color 0.2s',
+                    boxSizing: 'border-box',
                   }}
                 />
               </div>
@@ -197,19 +305,19 @@ export const FeatureSettingsPanel: React.FC<FeatureSettingsPanelProps> = ({
                 style={{
                   marginTop: '16px',
                   padding: '12px',
-                  background: 'white',
+                  background: t.surface,
                   borderRadius: '12px',
-                  border: '2px solid rgba(244, 63, 94, 0.2)',
+                  border: `2px solid ${t.inputBorder}`,
                   display: 'flex',
                   alignItems: 'center',
                   justifyContent: 'space-between'
                 }}
               >
                 <div>
-                  <div style={{ fontSize: '14px', fontWeight: '600', color: '#18181B' }}>
+                  <div style={{ fontSize: '14px', fontWeight: '600', color: t.textPrimary }}>
                     Advanced Mode
                   </div>
-                  <div style={{ fontSize: '12px', color: '#71717A' }}>
+                  <div style={{ fontSize: '12px', color: t.textMuted }}>
                     Show all features and settings
                   </div>
                 </div>
@@ -220,7 +328,7 @@ export const FeatureSettingsPanel: React.FC<FeatureSettingsPanelProps> = ({
                     height: '28px',
                     borderRadius: '14px',
                     border: 'none',
-                    background: advancedMode ? '#f43f5e' : '#E4E4E7',
+                    background: advancedMode ? '#f43f5e' : t.toggleOff,
                     cursor: 'pointer',
                     position: 'relative',
                     transition: 'background 0.2s'
@@ -232,12 +340,14 @@ export const FeatureSettingsPanel: React.FC<FeatureSettingsPanelProps> = ({
                       width: '22px',
                       height: '22px',
                       borderRadius: '50%',
-                      background: 'white',
+                      background: t.toggleKnob,
                       position: 'absolute',
                       top: '3px',
                       left: advancedMode ? '27px' : '3px',
                       transition: 'left 0.2s',
-                      boxShadow: '0 2px 4px rgba(0, 0, 0, 0.2)'
+                      boxShadow: isDark
+                        ? '0 2px 6px rgba(0, 0, 0, 0.5)'
+                        : '0 2px 4px rgba(0, 0, 0, 0.2)'
                     }}
                   />
                 </button>
@@ -245,7 +355,10 @@ export const FeatureSettingsPanel: React.FC<FeatureSettingsPanelProps> = ({
             </div>
 
             {/* Content */}
-            <div style={{ flex: 1, overflowY: 'auto', padding: '16px 24px' }}>
+            <div
+              className="feature-settings-scroll"
+              style={{ flex: 1, overflowY: 'auto', padding: '16px 24px' }}
+            >
               {Object.entries(FEATURE_CATEGORIES).map(([categoryId, category]) => {
                 const isExpanded = expandedCategories.has(categoryId);
                 const filteredFeatures = category.features.filter(matchesSearch);
@@ -267,21 +380,22 @@ export const FeatureSettingsPanel: React.FC<FeatureSettingsPanelProps> = ({
                       style={{
                         width: '100%',
                         padding: '14px',
-                        background: 'rgba(244, 63, 94, 0.05)',
-                        border: '1px solid rgba(244, 63, 94, 0.2)',
+                        background: t.categoryBg,
+                        border: `1px solid ${t.categoryBorder}`,
                         borderRadius: '12px',
                         cursor: 'pointer',
                         display: 'flex',
                         alignItems: 'center',
                         justifyContent: 'space-between',
-                        marginBottom: isExpanded ? '8px' : '0'
+                        marginBottom: isExpanded ? '8px' : '0',
+                        transition: 'background 0.15s ease',
                       }}
                     >
                       <div style={{ textAlign: 'left', flex: 1 }}>
-                        <div style={{ fontSize: '15px', fontWeight: '600', color: '#18181B' }}>
+                        <div style={{ fontSize: '15px', fontWeight: '600', color: t.categoryText }}>
                           {category.name}
                         </div>
-                        <div style={{ fontSize: '12px', color: '#71717A' }}>
+                        <div style={{ fontSize: '12px', color: t.textMuted }}>
                           {category.description}
                         </div>
                       </div>
@@ -307,17 +421,18 @@ export const FeatureSettingsPanel: React.FC<FeatureSettingsPanelProps> = ({
                               key={featureId}
                               style={{
                                 padding: '12px',
-                                background: 'white',
-                                border: '1px solid rgba(0, 0, 0, 0.1)',
+                                background: t.featureBg,
+                                border: `1px solid ${t.featureBorder}`,
                                 borderRadius: '8px',
                                 marginBottom: '8px',
                                 display: 'flex',
                                 alignItems: 'center',
-                                justifyContent: 'space-between'
+                                justifyContent: 'space-between',
+                                transition: 'background 0.15s ease',
                               }}
                             >
                               <div style={{ flex: 1 }}>
-                                <div style={{ fontSize: '14px', fontWeight: '500', color: '#18181B' }}>
+                                <div style={{ fontSize: '14px', fontWeight: '500', color: t.featureText }}>
                                   {FEATURE_NAMES[featureId as keyof FeatureFlags]}
                                   {isPriority && (
                                     <span
@@ -344,11 +459,12 @@ export const FeatureSettingsPanel: React.FC<FeatureSettingsPanelProps> = ({
                                   height: '24px',
                                   borderRadius: '12px',
                                   border: 'none',
-                                  background: isEnabled ? '#f43f5e' : '#E4E4E7',
+                                  background: isEnabled ? '#f43f5e' : t.toggleOff,
                                   cursor: isPriority ? 'not-allowed' : 'pointer',
                                   position: 'relative',
                                   transition: 'background 0.2s',
-                                  opacity: isPriority ? 0.5 : 1
+                                  opacity: isPriority ? 0.5 : 1,
+                                  flexShrink: 0,
                                 }}
                                 aria-label={`Toggle ${FEATURE_NAMES[featureId as keyof FeatureFlags]}`}
                               >
@@ -357,12 +473,14 @@ export const FeatureSettingsPanel: React.FC<FeatureSettingsPanelProps> = ({
                                     width: '18px',
                                     height: '18px',
                                     borderRadius: '50%',
-                                    background: 'white',
+                                    background: t.toggleKnob,
                                     position: 'absolute',
                                     top: '3px',
                                     left: isEnabled ? '23px' : '3px',
                                     transition: 'left 0.2s',
-                                    boxShadow: '0 2px 4px rgba(0, 0, 0, 0.2)'
+                                    boxShadow: isDark
+                                      ? '0 2px 6px rgba(0, 0, 0, 0.5)'
+                                      : '0 2px 4px rgba(0, 0, 0, 0.2)'
                                   }}
                                 />
                               </button>
@@ -378,13 +496,14 @@ export const FeatureSettingsPanel: React.FC<FeatureSettingsPanelProps> = ({
                               style={{
                                 flex: 1,
                                 padding: '8px',
-                                background: 'rgba(244, 63, 94, 0.1)',
-                                border: '1px solid rgba(244, 63, 94, 0.2)',
+                                background: t.enableBtnBg,
+                                border: `1px solid ${t.enableBtnBorder}`,
                                 borderRadius: '8px',
                                 color: '#f43f5e',
                                 fontSize: '12px',
                                 fontWeight: '600',
-                                cursor: 'pointer'
+                                cursor: 'pointer',
+                                transition: 'background 0.15s ease',
                               }}
                             >
                               Enable All
@@ -394,13 +513,14 @@ export const FeatureSettingsPanel: React.FC<FeatureSettingsPanelProps> = ({
                               style={{
                                 flex: 1,
                                 padding: '8px',
-                                background: 'rgba(0, 0, 0, 0.05)',
-                                border: '1px solid rgba(0, 0, 0, 0.1)',
+                                background: t.disableBtnBg,
+                                border: `1px solid ${t.disableBtnBorder}`,
                                 borderRadius: '8px',
-                                color: '#71717A',
+                                color: t.disableBtnText,
                                 fontSize: '12px',
                                 fontWeight: '600',
-                                cursor: 'pointer'
+                                cursor: 'pointer',
+                                transition: 'background 0.15s ease',
                               }}
                             >
                               Disable All
@@ -418,8 +538,8 @@ export const FeatureSettingsPanel: React.FC<FeatureSettingsPanelProps> = ({
             <div
               style={{
                 padding: '16px 24px',
-                borderTop: '1px solid rgba(0, 0, 0, 0.1)',
-                background: 'rgba(244, 63, 94, 0.05)'
+                borderTop: `1px solid ${t.footerBorder}`,
+                background: t.footerBg
               }}
             >
               <button
@@ -431,8 +551,8 @@ export const FeatureSettingsPanel: React.FC<FeatureSettingsPanelProps> = ({
                 style={{
                   width: '100%',
                   padding: '12px',
-                  background: 'white',
-                  border: '2px solid rgba(244, 63, 94, 0.3)',
+                  background: t.resetBtnBg,
+                  border: `2px solid ${t.resetBtnBorder}`,
                   borderRadius: '12px',
                   color: '#f43f5e',
                   fontSize: '14px',
@@ -441,10 +561,11 @@ export const FeatureSettingsPanel: React.FC<FeatureSettingsPanelProps> = ({
                   display: 'flex',
                   alignItems: 'center',
                   justifyContent: 'center',
-                  gap: '8px'
+                  gap: '8px',
+                  transition: 'background 0.15s ease',
                 }}
               >
-                <RotateCcw />
+                <RotateCcw size={16} />
                 Reset to Defaults
               </button>
             </div>

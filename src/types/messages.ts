@@ -76,12 +76,49 @@ export interface ThreadMessage extends ChannelMessage {
 // ECOSYSTEM BRIDGE — Bot Message Types
 // =====================================================
 
-export type BotMessageType = 'text' | 'meeting_recap' | 'action_items' | 'alert' | 'card';
+export type BotMessageType = 'text' | 'meeting_recap' | 'meeting_briefing' | 'action_items' | 'alert' | 'card';
 
 export interface BotAction {
   label: string;
-  action: 'open_meeting' | 'view_task' | 'approve' | 'sync_crm' | 'custom';
+  action: 'open_meeting' | 'view_task' | 'approve' | 'sync_crm' | 'rate_meeting' | 'view_profile' | 'custom';
   url?: string;
+  meetingId?: string;
+  profileSlug?: string;
+}
+
+// =====================================================
+// MIP (Meeting Intelligence Profiles) Types
+// =====================================================
+
+export interface MIPIntelligenceProfile {
+  name: string;
+  icon: string;
+  slug: string;
+  tone?: 'formal' | 'conversational' | 'technical';
+}
+
+export interface MIPProfileSection {
+  title: string;
+  content: string;
+}
+
+export interface MIPContextUsed {
+  participantCount?: number;
+  pastMeetingsReferenced?: number;
+  conversationThreadsUsed?: number;
+  tokensBudget?: number;
+}
+
+export interface MIPBriefingParticipant {
+  name: string;
+  role?: string;
+  meetingCount?: number;
+}
+
+export interface MIPOpenActionItem {
+  description: string;
+  assignee?: string;
+  dueDate?: string;
 }
 
 export interface BotMessageMetadata {
@@ -100,6 +137,16 @@ export interface BotMessageMetadata {
   sentiment?: 'positive' | 'negative' | 'neutral';
   agentActionId?: string;
   taskId?: string;
+  // MIP fields
+  intelligenceProfile?: MIPIntelligenceProfile;
+  profileSections?: MIPProfileSection[];
+  contextUsed?: MIPContextUsed;
+  outputQualityScore?: number;
+  // Briefing fields
+  scheduledAt?: string;
+  profileName?: string;
+  participants?: MIPBriefingParticipant[];
+  openActionItems?: MIPOpenActionItem[];
   [key: string]: any;
 }
 
@@ -128,6 +175,7 @@ export interface EcosystemConfig {
   id: string;
   app_name: 'entomate' | 'logos_vision' | 'pulse';
   api_url: string;
+  bot_url?: string;
   service_token: string;
   inbound_token: string;
   enabled: boolean;

@@ -70,9 +70,7 @@ export const ConversationSidebar: React.FC<ConversationSidebarProps> = ({
           <button onClick={() => setShowInviteModal(true)} className="w-12 h-12 rounded-lg text-rose-500 hover:bg-rose-100 dark:hover:bg-rose-900/30 flex items-center justify-center transition" title="Invite team member">
             <UserPlus className="text-sm" />
           </button>
-          <button onClick={() => setShowCellularSMS(true)} className="w-12 h-12 rounded-lg text-emerald-600 hover:bg-emerald-100 dark:hover:bg-emerald-900/30 flex items-center justify-center transition" title="Cellular SMS">
-            <Smartphone className="text-sm" />
-          </button>
+          {/* SMS toggle hidden — SMS is not in active development */}
           <button onClick={() => setShowShortcuts(true)} className="w-12 h-12 rounded-lg text-zinc-500 dark:text-zinc-400 hover:bg-zinc-100 dark:hover:bg-zinc-800 flex items-center justify-center transition" title="Keyboard shortcuts">
             <Keyboard className="text-sm" />
           </button>
@@ -301,15 +299,7 @@ export const ConversationSidebar: React.FC<ConversationSidebarProps> = ({
               <Plus className="mr-2" />
               New Conversation
             </button>
-            {threads.length > 0 && (
-              <button
-                onClick={() => setShowCellularSMS(true)}
-                className="mt-3 px-4 py-2 bg-zinc-100 dark:bg-zinc-800 border border-zinc-200 dark:border-zinc-700 text-zinc-500 dark:text-zinc-400 text-sm font-medium rounded-lg hover:bg-zinc-200 dark:hover:bg-zinc-700 hover:text-zinc-900 dark:hover:text-zinc-100 transition"
-              >
-                <Smartphone className="mr-2 text-green-500" />
-                View SMS ({threads.length})
-              </button>
-            )}
+            {/* SMS button hidden — SMS is not in active development */}
           </div>
         )}
       </div>

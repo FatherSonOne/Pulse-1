@@ -150,7 +150,7 @@ export const MeetingExtractor: React.FC<MeetingExtractorProps> = ({
       // Get attendees
       const attendees: string[] = [email.from_email];
       if (email.to_emails) {
-        attendees.push(...email.to_emails);
+        attendees.push(...email.to_emails.map(r => typeof r === 'string' ? r : (r.name || r.email)));
       }
 
       setMeeting({

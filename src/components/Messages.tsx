@@ -2624,15 +2624,7 @@ const Messages: React.FC<MessagesProps> = ({ apiKey, contacts, initialContactId,
             <div className="text-xs text-zinc-500 dark:text-zinc-400">
               <span className="font-medium text-rose-600 dark:text-rose-400">{pulseConversations.length}</span> Pulse chats
             </div>
-            {threads.length > 0 && (
-              <button
-                onClick={() => setShowCellularSMS(true)}
-                className="text-xs text-green-600 dark:text-green-400 hover:underline"
-              >
-                <Smartphone className="mr-1" />
-                {threads.length} SMS
-              </button>
-            )}
+            {/* SMS button hidden — SMS is not in active development */}
           </div>
         </div>
       )}

@@ -1,8 +1,9 @@
 // src/components/Messages/MeetingRecapCard.tsx
 // Rich meeting summary card for Entomate bot messages
+// Supports MIP (Meeting Intelligence Profiles) enriched recaps
 
 import React, { useState } from 'react';
-import { ChevronDown, ChevronUp, ExternalLink, CheckSquare, MessageSquare } from 'lucide-react';
+import { ChevronDown, ChevronUp, ExternalLink, CheckSquare, MessageSquare, Star, Sparkles } from 'lucide-react';
 import type { BotMessageMetadata, BotAction } from '../../types/messages';
 
 interface MeetingRecapCardProps {
@@ -17,6 +18,9 @@ export const MeetingRecapCard: React.FC<MeetingRecapCardProps> = ({
 }) => {
   const [expanded, setExpanded] = useState(true);
 
+  const profile = metadata.intelligenceProfile;
+  const hasProfile = !!profile;
+
   const sentimentConfig = {
     positive: { emoji: '😊', color: 'text-emerald-400', bg: 'bg-emerald-500/10 border-emerald-500/20' },
     negative: { emoji: '😔', color: 'text-rose-400', bg: 'bg-rose-500/10 border-rose-500/20' },
@@ -25,6 +29,10 @@ export const MeetingRecapCard: React.FC<MeetingRecapCardProps> = ({
 
   const sentiment = metadata.sentiment || 'neutral';
   const sentConf = sentimentConfig[sentiment] || sentimentConfig.neutral;
+
+  // Quality score as filled/empty stars (0-1 scale → 1-5 stars)
+  const qualityScore = metadata.outputQualityScore;
+  const filledStars = qualityScore != null ? Math.round(qualityScore * 5) : 0;
 
   // Extract summary text (strip markdown headers for display)
   const summaryText = content
@@ -35,19 +43,55 @@ export const MeetingRecapCard: React.FC<MeetingRecapCardProps> = ({
     .slice(0, 200);
 
   return (
-    <div className="rounded-xl border border-violet-500/20 bg-violet-500/5 overflow-hidden mt-1">
+    <div className={`rounded-xl border overflow-hidden mt-1 ${
+      hasProfile
+        ? 'border-indigo-500/25 bg-indigo-500/5'
+        : 'border-violet-500/20 bg-violet-500/5'
+    }`}>
       {/* Card header */}
-      <div className="flex items-center justify-between px-4 py-3 border-b border-violet-500/10">
-        <div className="flex items-center gap-2">
-          <div className="w-8 h-8 rounded-lg bg-violet-500/20 flex items-center justify-center">
-            <MessageSquare className="w-4 h-4 text-violet-400" />
+      <div className={`flex items-center justify-between px-4 py-3 border-b ${
+        hasProfile ? 'border-indigo-500/10' : 'border-violet-500/10'
+      }`}>
+        <div className="flex items-center gap-2 flex-wrap">
+          <div className={`w-8 h-8 rounded-lg flex items-center justify-center ${
+            hasProfile ? 'bg-indigo-500/20' : 'bg-violet-500/20'
+          }`}>
+            {hasProfile ? (
+              <span className="text-base leading-none">{profile.icon || '📋'}</span>
+            ) : (
+              <MessageSquare className="w-4 h-4 text-violet-400" />
+            )}
           </div>
-          <div>
-            <span className="text-sm font-semibold text-violet-300">Meeting Recap</span>
-            <div className={`inline-flex items-center gap-1 ml-2 px-2 py-0.5 rounded-full border text-xs ${sentConf.bg} ${sentConf.color}`}>
+          <div className="flex items-center gap-2 flex-wrap">
+            {hasProfile ? (
+              <>
+                <span className="text-sm font-semibold text-indigo-300">{profile.name}</span>
+                <span className="text-[9px] font-bold uppercase tracking-widest text-indigo-400/80 bg-indigo-500/15 border border-indigo-500/25 px-1.5 py-0.5 rounded-full flex items-center gap-1">
+                  <Sparkles className="w-2.5 h-2.5" />
+                  MIP
+                </span>
+              </>
+            ) : (
+              <span className="text-sm font-semibold text-violet-300">Meeting Recap</span>
+            )}
+            {/* Sentiment badge */}
+            <div className={`inline-flex items-center gap-1 px-2 py-0.5 rounded-full border text-xs ${sentConf.bg} ${sentConf.color}`}>
               <span>{sentConf.emoji}</span>
               <span className="capitalize">{sentiment}</span>
             </div>
+            {/* Quality score */}
+            {qualityScore != null && (
+              <div className="inline-flex items-center gap-0.5 px-2 py-0.5 rounded-full border border-amber-500/20 bg-amber-500/10 text-xs">
+                {Array.from({ length: 5 }, (_, i) => (
+                  <Star
+                    key={i}
+                    className={`w-2.5 h-2.5 ${
+                      i < filledStars ? 'text-amber-400 fill-amber-400' : 'text-zinc-600'
+                    }`}
+                  />
+                ))}
+              </div>
+            )}
           </div>
         </div>
         <button
@@ -69,10 +113,26 @@ export const MeetingRecapCard: React.FC<MeetingRecapCardProps> = ({
       {/* Expanded content */}
       {expanded && (
         <div className="px-4 py-3 space-y-3">
-          {/* Markdown content rendered simply */}
-          <div className="text-sm text-zinc-300 whitespace-pre-wrap leading-relaxed">
-            {renderMarkdown(content)}
-          </div>
+          {/* Profile sections (MIP-enriched) — rendered as structured blocks */}
+          {hasProfile && metadata.profileSections?.length ? (
+            <div className="space-y-3">
+              {metadata.profileSections.map((section, i) => (
+                <div key={i} className="rounded-lg bg-white/[0.03] border border-white/[0.06] p-3">
+                  <div className="text-xs font-bold text-indigo-400 uppercase tracking-wider mb-1.5">
+                    {section.title}
+                  </div>
+                  <div className="text-sm text-zinc-300 leading-relaxed whitespace-pre-wrap">
+                    {section.content}
+                  </div>
+                </div>
+              ))}
+            </div>
+          ) : (
+            /* Generic markdown content */
+            <div className="text-sm text-zinc-300 whitespace-pre-wrap leading-relaxed">
+              {renderMarkdown(content)}
+            </div>
+          )}
 
           {/* Key Decisions */}
           {metadata.keyDecisions?.length && (
@@ -118,19 +178,42 @@ export const MeetingRecapCard: React.FC<MeetingRecapCardProps> = ({
               </ul>
             </div>
           )}
+
+          {/* Context usage footer (MIP only) */}
+          {hasProfile && metadata.contextUsed && (
+            <div className="flex items-center gap-3 text-[11px] text-zinc-500 pt-1">
+              <span>{metadata.contextUsed.participantCount || 0} contacts</span>
+              <span className="text-zinc-700">•</span>
+              <span>{metadata.contextUsed.pastMeetingsReferenced || 0} past meetings</span>
+              <span className="text-zinc-700">•</span>
+              <span>{metadata.contextUsed.conversationThreadsUsed || 0} Pulse threads</span>
+            </div>
+          )}
         </div>
       )}
 
       {/* Action buttons */}
       {actions.length > 0 && (
-        <div className="px-4 py-3 border-t border-violet-500/10 flex flex-wrap gap-2">
+        <div className={`px-4 py-3 border-t flex flex-wrap gap-2 ${
+          hasProfile ? 'border-indigo-500/10' : 'border-violet-500/10'
+        }`}>
           {actions.map((action, i) => (
             <button
               key={i}
               onClick={() => onAction?.(action) || (action.url && window.open(action.url, '_blank'))}
-              className="flex items-center gap-1.5 px-3 py-1.5 rounded-lg text-xs font-medium bg-violet-500/20 hover:bg-violet-500/30 text-violet-300 border border-violet-500/25 hover:border-violet-500/40 transition"
+              className={`flex items-center gap-1.5 px-3 py-1.5 rounded-lg text-xs font-medium transition ${
+                hasProfile
+                  ? 'bg-indigo-500/20 hover:bg-indigo-500/30 text-indigo-300 border border-indigo-500/25 hover:border-indigo-500/40'
+                  : 'bg-violet-500/20 hover:bg-violet-500/30 text-violet-300 border border-violet-500/25 hover:border-violet-500/40'
+              }`}
             >
-              {action.url && <ExternalLink className="w-3 h-3" />}
+              {action.action === 'rate_meeting' ? (
+                <Star className="w-3 h-3" />
+              ) : action.action === 'view_profile' ? (
+                <Sparkles className="w-3 h-3" />
+              ) : action.url ? (
+                <ExternalLink className="w-3 h-3" />
+              ) : null}
               {action.label}
             </button>
           ))}

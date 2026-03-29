@@ -23,6 +23,7 @@ export const EcosystemSettings: React.FC<EcosystemSettingsProps> = ({ userId }) 
   const [ecosystemEventsExpanded, setEcosystemEventsExpanded] = useState(false);
   const [newAppName, setNewAppName] = useState<EcosystemAppName>('entomate');
   const [newApiUrl, setNewApiUrl] = useState(ECOSYSTEM_APPS.entomate.inboundUrl);
+  const [newBotUrl, setNewBotUrl] = useState(ECOSYSTEM_APPS.entomate.botUrl ?? '');
   const [newServiceToken, setNewServiceToken] = useState('');
   const [newInboundToken, setNewInboundToken] = useState('');
   const [ecosystemSaving, setEcosystemSaving] = useState(false);
@@ -70,6 +71,7 @@ export const EcosystemSettings: React.FC<EcosystemSettingsProps> = ({ userId }) 
       const { error } = await supabase.from('ecosystem_config').upsert({
         app_name: newAppName,
         api_url: newApiUrl,
+        bot_url: newBotUrl || null,
         service_token: newServiceToken,
         inbound_token: newInboundToken,
         enabled: true,
@@ -89,11 +91,25 @@ export const EcosystemSettings: React.FC<EcosystemSettingsProps> = ({ userId }) 
   const testEcosystemConnection = async (config: EcosystemConfig) => {
     setEcosystemTestStatus(s => ({ ...s, [config.app_name]: 'testing' }));
     try {
-      const res = await fetch(`${config.api_url}/health`, {
-        headers: { 'X-Ecosystem-Token': config.service_token },
-        signal: AbortSignal.timeout(5000),
+      // Call Pulse's own edge function with the app's inbound_token
+      // The function validates X-Ecosystem-Token against ecosystem_config.inbound_token
+      const { error } = await supabase.functions.invoke('ecosystem-inbound', {
+        body: {
+          id: crypto.randomUUID(),
+          source: config.app_name,
+          timestamp: new Date().toISOString(),
+          serviceToken: config.inbound_token,
+          eventType: 'heartbeat',
+          data: {},
+        },
+        headers: {
+          'X-Ecosystem-Token': config.inbound_token,
+        },
       });
-      setEcosystemTestStatus(s => ({ ...s, [config.app_name]: res.ok ? 'ok' : 'error' }));
+      setEcosystemTestStatus(s => ({
+        ...s,
+        [config.app_name]: error ? 'error' : 'ok',
+      }));
     } catch {
       setEcosystemTestStatus(s => ({ ...s, [config.app_name]: 'error' }));
     }
@@ -246,12 +262,25 @@ export const EcosystemSettings: React.FC<EcosystemSettingsProps> = ({ userId }) 
                         <span className={`w-2 h-2 rounded-full ${config.enabled ? 'bg-emerald-500' : 'bg-zinc-400 dark:bg-zinc-600'}`}
                           style={config.enabled ? { boxShadow: '0 0 4px #10b981' } : {}} />
                       </div>
-                      <div className="text-[10px] text-violet-600/70 dark:text-violet-300/60 font-mono mt-0.5 break-all leading-relaxed">{config.api_url}</div>
-                      {config.last_heartbeat && (
-                        <div className="text-[10px] text-zinc-500 mt-0.5">
+                      <div className="text-[10px] text-violet-600/70 dark:text-violet-300/60 font-mono mt-0.5 break-all leading-relaxed">Inbound: {config.api_url}</div>
+                      <div className="text-[10px] font-mono mt-0.5 break-all leading-relaxed">
+                        {config.bot_url ? (
+                          <span className="text-violet-600/70 dark:text-violet-300/60">Bot API: {config.bot_url}</span>
+                        ) : (
+                          <span className="text-zinc-400 dark:text-zinc-600">Bot API: Not configured</span>
+                        )}
+                      </div>
+                      {config.last_heartbeat ? (
+                        <div className={`text-[10px] mt-0.5 ${
+                          Date.now() - new Date(config.last_heartbeat).getTime() > 30 * 60 * 1000
+                            ? 'text-amber-500'
+                            : 'text-emerald-500'
+                        }`}>
                           Last ping: {new Date(config.last_heartbeat).toLocaleString()}
                         </div>
-                      )}
+                      ) : config.enabled ? (
+                        <div className="text-[10px] text-zinc-400 dark:text-zinc-600 mt-0.5">No heartbeat yet</div>
+                      ) : null}
                     </div>
                     <div className="flex items-center gap-2 flex-shrink-0">
                       <button type="button"
@@ -327,6 +356,7 @@ export const EcosystemSettings: React.FC<EcosystemSettingsProps> = ({ userId }) 
               const app = e.target.value as EcosystemAppName;
               setNewAppName(app);
               setNewApiUrl(ECOSYSTEM_APPS[app].inboundUrl);
+              setNewBotUrl(ECOSYSTEM_APPS[app].botUrl ?? '');
             }}
             title="Select app to connect"
             aria-label="Select app to connect"
@@ -351,6 +381,23 @@ export const EcosystemSettings: React.FC<EcosystemSettingsProps> = ({ userId }) 
             placeholder="Auto-filled from app selection"
             aria-label="Inbound URL for selected app"
             className="w-full px-3 py-2 bg-zinc-100 dark:bg-zinc-900 border border-violet-500/20 rounded-lg text-xs text-violet-600 dark:text-violet-300 font-mono cursor-default select-all"
+          />
+        </div>
+
+        {/* Bot URL — optional, editable */}
+        <div>
+          <label className="block text-xs text-zinc-500 mb-1">
+            Bot URL
+            <span className="ml-1.5 text-zinc-400 dark:text-zinc-600 opacity-70">(optional)</span>
+          </label>
+          <input
+            type="url"
+            value={newBotUrl}
+            onChange={(e) => setNewBotUrl(e.target.value)}
+            placeholder="No bot API configured for this app"
+            title="Bot API URL for selected app"
+            aria-label="Bot API URL for selected app"
+            className="w-full px-3 py-2 bg-white dark:bg-zinc-800 border border-zinc-300 dark:border-zinc-700 rounded-lg text-xs text-zinc-700 dark:text-zinc-300 font-mono placeholder-zinc-400 dark:placeholder-zinc-600 focus:outline-none focus:border-violet-500 transition"
           />
         </div>
 
