@@ -1,0 +1,1254 @@
+-- ============================================================================
+-- PHASE 1: RLS LOCKDOWN MIGRATION
+-- ============================================================================
+-- Generated: 2026-02-26
+-- Purpose: Replace all permissive "USING (true)" policies with proper
+--          user-scoped policies, and enable RLS on tables that lack it.
+--
+-- STRATEGY:
+--   1. Drop all "Allow all" / overly permissive policies
+--   2. Replace with auth.uid()-based policies
+--   3. Enable RLS on tables that don't have it yet
+--   4. Add user_id columns where missing (with backfill notes)
+--
+-- NOTE: Some tables use TEXT user_id (legacy) vs UUID user_id.
+--       We handle both patterns. Conversion to UUID is a Phase 2 task.
+--
+-- IMPORTANT: Test this in a staging environment first!
+-- ============================================================================
+
+BEGIN;
+
+-- ============================================================================
+-- HELPER FUNCTION: Check if user is a workspace member
+-- (Temporary — Phase 2 will create a proper workspaces/members model)
+-- ============================================================================
+
+-- For now, workspace_id often equals the user's own ID (single-user workspace).
+-- We'll use a function that can be extended later for team workspaces.
+CREATE OR REPLACE FUNCTION public.user_has_workspace_access(ws_id UUID)
+RETURNS BOOLEAN
+LANGUAGE sql
+SECURITY DEFINER
+STABLE
+AS $$
+  -- Phase 1: user IS their own workspace
+  -- Phase 2: will check workspace_members table
+  SELECT auth.uid() = ws_id
+$$;
+
+
+-- ============================================================================
+-- SECTION 1: Tables with USING(true) policies — DROP & REPLACE
+-- ============================================================================
+
+-- -------------------------
+-- emails (user_id TEXT)
+-- -------------------------
+DROP POLICY IF EXISTS "Allow all access" ON emails;
+CREATE POLICY "Users can view own emails"
+  ON emails FOR SELECT USING (user_id = auth.uid()::text);
+CREATE POLICY "Users can insert own emails"
+  ON emails FOR INSERT WITH CHECK (user_id = auth.uid()::text);
+CREATE POLICY "Users can update own emails"
+  ON emails FOR UPDATE USING (user_id = auth.uid()::text);
+CREATE POLICY "Users can delete own emails"
+  ON emails FOR DELETE USING (user_id = auth.uid()::text);
+
+-- -------------------------
+-- contacts (user_id TEXT)
+-- -------------------------
+DROP POLICY IF EXISTS "Allow all access" ON contacts;
+CREATE POLICY "Users can view own contacts"
+  ON contacts FOR SELECT USING (user_id = auth.uid()::text);
+CREATE POLICY "Users can insert own contacts"
+  ON contacts FOR INSERT WITH CHECK (user_id = auth.uid()::text);
+CREATE POLICY "Users can update own contacts"
+  ON contacts FOR UPDATE USING (user_id = auth.uid()::text);
+CREATE POLICY "Users can delete own contacts"
+  ON contacts FOR DELETE USING (user_id = auth.uid()::text);
+
+-- -------------------------
+-- archives (user_id TEXT)
+-- -------------------------
+DROP POLICY IF EXISTS "Allow all access" ON archives;
+CREATE POLICY "Users can view own archives"
+  ON archives FOR SELECT USING (user_id = auth.uid()::text);
+CREATE POLICY "Users can insert own archives"
+  ON archives FOR INSERT WITH CHECK (user_id = auth.uid()::text);
+CREATE POLICY "Users can update own archives"
+  ON archives FOR UPDATE USING (user_id = auth.uid()::text);
+CREATE POLICY "Users can delete own archives"
+  ON archives FOR DELETE USING (user_id = auth.uid()::text);
+
+-- -------------------------
+-- sms_conversations (user_id TEXT)
+-- -------------------------
+DROP POLICY IF EXISTS "Allow all access" ON sms_conversations;
+CREATE POLICY "Users can view own sms_conversations"
+  ON sms_conversations FOR SELECT USING (user_id = auth.uid()::text);
+CREATE POLICY "Users can insert own sms_conversations"
+  ON sms_conversations FOR INSERT WITH CHECK (user_id = auth.uid()::text);
+CREATE POLICY "Users can update own sms_conversations"
+  ON sms_conversations FOR UPDATE USING (user_id = auth.uid()::text);
+CREATE POLICY "Users can delete own sms_conversations"
+  ON sms_conversations FOR DELETE USING (user_id = auth.uid()::text);
+
+-- -------------------------
+-- sms_messages (user_id UUID)
+-- -------------------------
+DROP POLICY IF EXISTS "Allow all access" ON sms_messages;
+CREATE POLICY "Users can view own sms_messages"
+  ON sms_messages FOR SELECT USING (user_id = auth.uid());
+CREATE POLICY "Users can insert own sms_messages"
+  ON sms_messages FOR INSERT WITH CHECK (user_id = auth.uid());
+CREATE POLICY "Users can update own sms_messages"
+  ON sms_messages FOR UPDATE USING (user_id = auth.uid());
+CREATE POLICY "Users can delete own sms_messages"
+  ON sms_messages FOR DELETE USING (user_id = auth.uid());
+
+-- -------------------------
+-- slack_channels (user_id TEXT)
+-- -------------------------
+DROP POLICY IF EXISTS "Allow all access" ON slack_channels;
+CREATE POLICY "Users can view own slack_channels"
+  ON slack_channels FOR SELECT USING (user_id = auth.uid()::text);
+CREATE POLICY "Users can insert own slack_channels"
+  ON slack_channels FOR INSERT WITH CHECK (user_id = auth.uid()::text);
+CREATE POLICY "Users can update own slack_channels"
+  ON slack_channels FOR UPDATE USING (user_id = auth.uid()::text);
+CREATE POLICY "Users can delete own slack_channels"
+  ON slack_channels FOR DELETE USING (user_id = auth.uid()::text);
+
+-- -------------------------
+-- voxer_recordings (user_id TEXT)
+-- -------------------------
+DROP POLICY IF EXISTS "Allow all access" ON voxer_recordings;
+CREATE POLICY "Users can view own voxer_recordings"
+  ON voxer_recordings FOR SELECT USING (user_id = auth.uid()::text);
+CREATE POLICY "Users can insert own voxer_recordings"
+  ON voxer_recordings FOR INSERT WITH CHECK (user_id = auth.uid()::text);
+CREATE POLICY "Users can update own voxer_recordings"
+  ON voxer_recordings FOR UPDATE USING (user_id = auth.uid()::text);
+CREATE POLICY "Users can delete own voxer_recordings"
+  ON voxer_recordings FOR DELETE USING (user_id = auth.uid()::text);
+
+-- -------------------------
+-- key_results (user_id UUID) — No RLS enabled either
+-- -------------------------
+DROP POLICY IF EXISTS "Allow all access" ON key_results;
+ALTER TABLE key_results ENABLE ROW LEVEL SECURITY;
+CREATE POLICY "Users can view own key_results"
+  ON key_results FOR SELECT USING (user_id = auth.uid());
+CREATE POLICY "Users can insert own key_results"
+  ON key_results FOR INSERT WITH CHECK (user_id = auth.uid());
+CREATE POLICY "Users can update own key_results"
+  ON key_results FOR UPDATE USING (user_id = auth.uid());
+CREATE POLICY "Users can delete own key_results"
+  ON key_results FOR DELETE USING (user_id = auth.uid());
+
+-- -------------------------
+-- goals (owner_id UUID)
+-- -------------------------
+DROP POLICY IF EXISTS "Allow all access to goals" ON goals;
+CREATE POLICY "Users can view own goals"
+  ON goals FOR SELECT USING (owner_id = auth.uid());
+CREATE POLICY "Users can insert own goals"
+  ON goals FOR INSERT WITH CHECK (owner_id = auth.uid());
+CREATE POLICY "Users can update own goals"
+  ON goals FOR UPDATE USING (owner_id = auth.uid());
+CREATE POLICY "Users can delete own goals"
+  ON goals FOR DELETE USING (owner_id = auth.uid());
+
+-- -------------------------
+-- decisions (workspace_id UUID)
+-- -------------------------
+DROP POLICY IF EXISTS "Allow all decisions" ON decisions;
+CREATE POLICY "Users can view own decisions"
+  ON decisions FOR SELECT USING (public.user_has_workspace_access(workspace_id));
+CREATE POLICY "Users can insert own decisions"
+  ON decisions FOR INSERT WITH CHECK (public.user_has_workspace_access(workspace_id));
+CREATE POLICY "Users can update own decisions"
+  ON decisions FOR UPDATE USING (public.user_has_workspace_access(workspace_id));
+CREATE POLICY "Users can delete own decisions"
+  ON decisions FOR DELETE USING (public.user_has_workspace_access(workspace_id));
+
+-- -------------------------
+-- decision_votes (user_id TEXT)
+-- -------------------------
+DROP POLICY IF EXISTS "Allow all decision_votes" ON decision_votes;
+CREATE POLICY "Users can view own decision_votes"
+  ON decision_votes FOR SELECT USING (user_id = auth.uid()::text);
+CREATE POLICY "Users can insert own decision_votes"
+  ON decision_votes FOR INSERT WITH CHECK (user_id = auth.uid()::text);
+CREATE POLICY "Users can update own decision_votes"
+  ON decision_votes FOR UPDATE USING (user_id = auth.uid()::text);
+CREATE POLICY "Users can delete own decision_votes"
+  ON decision_votes FOR DELETE USING (user_id = auth.uid()::text);
+
+-- -------------------------
+-- extracted_tasks (workspace_id UUID)
+-- -------------------------
+DROP POLICY IF EXISTS "Allow all extracted_tasks" ON extracted_tasks;
+CREATE POLICY "Users can view own extracted_tasks"
+  ON extracted_tasks FOR SELECT USING (public.user_has_workspace_access(workspace_id));
+CREATE POLICY "Users can insert own extracted_tasks"
+  ON extracted_tasks FOR INSERT WITH CHECK (public.user_has_workspace_access(workspace_id));
+CREATE POLICY "Users can update own extracted_tasks"
+  ON extracted_tasks FOR UPDATE USING (public.user_has_workspace_access(workspace_id));
+CREATE POLICY "Users can delete own extracted_tasks"
+  ON extracted_tasks FOR DELETE USING (public.user_has_workspace_access(workspace_id));
+
+-- -------------------------
+-- focus_sessions (user_id UUID)
+-- -------------------------
+DROP POLICY IF EXISTS "Allow all focus_sessions" ON focus_sessions;
+CREATE POLICY "Users can view own focus_sessions"
+  ON focus_sessions FOR SELECT USING (user_id = auth.uid());
+CREATE POLICY "Users can insert own focus_sessions"
+  ON focus_sessions FOR INSERT WITH CHECK (user_id = auth.uid());
+CREATE POLICY "Users can update own focus_sessions"
+  ON focus_sessions FOR UPDATE USING (user_id = auth.uid());
+CREATE POLICY "Users can delete own focus_sessions"
+  ON focus_sessions FOR DELETE USING (user_id = auth.uid());
+
+-- -------------------------
+-- messages (user_id UUID) — No RLS enabled either
+-- -------------------------
+ALTER TABLE messages ENABLE ROW LEVEL SECURITY;
+CREATE POLICY "Users can view own messages"
+  ON messages FOR SELECT USING (user_id = auth.uid());
+CREATE POLICY "Users can insert own messages"
+  ON messages FOR INSERT WITH CHECK (user_id = auth.uid());
+CREATE POLICY "Users can update own messages"
+  ON messages FOR UPDATE USING (user_id = auth.uid());
+CREATE POLICY "Users can delete own messages"
+  ON messages FOR DELETE USING (user_id = auth.uid());
+
+-- -------------------------
+-- threads (user_id TEXT)
+-- -------------------------
+CREATE POLICY "Users can view own threads"
+  ON threads FOR SELECT USING (user_id = auth.uid()::text);
+CREATE POLICY "Users can insert own threads"
+  ON threads FOR INSERT WITH CHECK (user_id = auth.uid()::text);
+CREATE POLICY "Users can update own threads"
+  ON threads FOR UPDATE USING (user_id = auth.uid()::text);
+CREATE POLICY "Users can delete own threads"
+  ON threads FOR DELETE USING (user_id = auth.uid()::text);
+
+-- -------------------------
+-- unified_messages (user_id TEXT)
+-- -------------------------
+CREATE POLICY "Users can view own unified_messages"
+  ON unified_messages FOR SELECT USING (user_id = auth.uid()::text);
+CREATE POLICY "Users can insert own unified_messages"
+  ON unified_messages FOR INSERT WITH CHECK (user_id = auth.uid()::text);
+CREATE POLICY "Users can update own unified_messages"
+  ON unified_messages FOR UPDATE USING (user_id = auth.uid()::text);
+CREATE POLICY "Users can delete own unified_messages"
+  ON unified_messages FOR DELETE USING (user_id = auth.uid()::text);
+
+-- -------------------------
+-- tasks (user_id TEXT) — No RLS enabled
+-- -------------------------
+ALTER TABLE tasks ENABLE ROW LEVEL SECURITY;
+CREATE POLICY "Users can view own tasks"
+  ON tasks FOR SELECT USING (user_id = auth.uid()::text);
+CREATE POLICY "Users can insert own tasks"
+  ON tasks FOR INSERT WITH CHECK (user_id = auth.uid()::text);
+CREATE POLICY "Users can update own tasks"
+  ON tasks FOR UPDATE USING (user_id = auth.uid()::text);
+CREATE POLICY "Users can delete own tasks"
+  ON tasks FOR DELETE USING (user_id = auth.uid()::text);
+
+-- -------------------------
+-- task_updates (user_id TEXT)
+-- -------------------------
+DROP POLICY IF EXISTS "Allow all task_updates" ON task_updates;
+CREATE POLICY "Users can view own task_updates"
+  ON task_updates FOR SELECT USING (user_id = auth.uid()::text);
+CREATE POLICY "Users can insert own task_updates"
+  ON task_updates FOR INSERT WITH CHECK (user_id = auth.uid()::text);
+CREATE POLICY "Users can update own task_updates"
+  ON task_updates FOR UPDATE USING (user_id = auth.uid()::text);
+
+-- -------------------------
+-- task_dependencies (user_id TEXT)
+-- -------------------------
+DROP POLICY IF EXISTS "Allow inserting dependencies" ON task_dependencies;
+CREATE POLICY "Users can view own task_dependencies"
+  ON task_dependencies FOR SELECT USING (user_id = auth.uid()::text);
+CREATE POLICY "Users can insert own task_dependencies"
+  ON task_dependencies FOR INSERT WITH CHECK (user_id = auth.uid()::text);
+CREATE POLICY "Users can delete own task_dependencies"
+  ON task_dependencies FOR DELETE USING (user_id = auth.uid()::text);
+
+-- -------------------------
+-- calendar_events (user_id TEXT) — No RLS enabled
+-- -------------------------
+ALTER TABLE calendar_events ENABLE ROW LEVEL SECURITY;
+CREATE POLICY "Users can view own calendar_events"
+  ON calendar_events FOR SELECT USING (user_id = auth.uid()::text);
+CREATE POLICY "Users can insert own calendar_events"
+  ON calendar_events FOR INSERT WITH CHECK (user_id = auth.uid()::text);
+CREATE POLICY "Users can update own calendar_events"
+  ON calendar_events FOR UPDATE USING (user_id = auth.uid()::text);
+CREATE POLICY "Users can delete own calendar_events"
+  ON calendar_events FOR DELETE USING (user_id = auth.uid()::text);
+
+-- -------------------------
+-- outcomes (user_id TEXT)
+-- -------------------------
+DROP POLICY IF EXISTS "Allow all access" ON outcomes;
+ALTER TABLE outcomes ENABLE ROW LEVEL SECURITY;
+CREATE POLICY "Users can view own outcomes"
+  ON outcomes FOR SELECT USING (user_id = auth.uid()::text);
+CREATE POLICY "Users can insert own outcomes"
+  ON outcomes FOR INSERT WITH CHECK (user_id = auth.uid()::text);
+CREATE POLICY "Users can update own outcomes"
+  ON outcomes FOR UPDATE USING (user_id = auth.uid()::text);
+CREATE POLICY "Users can delete own outcomes"
+  ON outcomes FOR DELETE USING (user_id = auth.uid()::text);
+
+-- -------------------------
+-- broadcasts (user_id UUID)
+-- -------------------------
+DROP POLICY IF EXISTS "Allow all operations on broadcasts" ON broadcasts;
+CREATE POLICY "Users can view own broadcasts"
+  ON broadcasts FOR SELECT USING (user_id = auth.uid());
+CREATE POLICY "Users can insert own broadcasts"
+  ON broadcasts FOR INSERT WITH CHECK (user_id = auth.uid());
+CREATE POLICY "Users can update own broadcasts"
+  ON broadcasts FOR UPDATE USING (user_id = auth.uid());
+CREATE POLICY "Users can delete own broadcasts"
+  ON broadcasts FOR DELETE USING (user_id = auth.uid());
+
+-- -------------------------
+-- attention_logs (user_id UUID)
+-- -------------------------
+DROP POLICY IF EXISTS "Allow all attention_logs" ON attention_logs;
+CREATE POLICY "Users can view own attention_logs"
+  ON attention_logs FOR SELECT USING (user_id = auth.uid());
+CREATE POLICY "Users can insert own attention_logs"
+  ON attention_logs FOR INSERT WITH CHECK (user_id = auth.uid());
+
+-- -------------------------
+-- attention_settings (user_id UUID)
+-- -------------------------
+DROP POLICY IF EXISTS "Allow all attention_settings" ON attention_settings;
+CREATE POLICY "Users can view own attention_settings"
+  ON attention_settings FOR SELECT USING (user_id = auth.uid());
+CREATE POLICY "Users can insert own attention_settings"
+  ON attention_settings FOR INSERT WITH CHECK (user_id = auth.uid());
+CREATE POLICY "Users can update own attention_settings"
+  ON attention_settings FOR UPDATE USING (user_id = auth.uid());
+
+-- -------------------------
+-- integrations (user_id UUID)
+-- -------------------------
+DROP POLICY IF EXISTS "Allow all integrations" ON integrations;
+ALTER TABLE integrations ENABLE ROW LEVEL SECURITY;
+CREATE POLICY "Users can view own integrations"
+  ON integrations FOR SELECT USING (user_id = auth.uid());
+CREATE POLICY "Users can insert own integrations"
+  ON integrations FOR INSERT WITH CHECK (user_id = auth.uid());
+CREATE POLICY "Users can update own integrations"
+  ON integrations FOR UPDATE USING (user_id = auth.uid());
+CREATE POLICY "Users can delete own integrations"
+  ON integrations FOR DELETE USING (user_id = auth.uid());
+
+-- -------------------------
+-- user_settings (user_id UUID)
+-- -------------------------
+DROP POLICY IF EXISTS "Allow all user_settings" ON user_settings;
+CREATE POLICY "Users can view own user_settings"
+  ON user_settings FOR SELECT USING (user_id = auth.uid());
+CREATE POLICY "Users can insert own user_settings"
+  ON user_settings FOR INSERT WITH CHECK (user_id = auth.uid());
+CREATE POLICY "Users can update own user_settings"
+  ON user_settings FOR UPDATE USING (user_id = auth.uid());
+
+-- -------------------------
+-- admin_settings (user_id UUID)
+-- Keeping slightly permissive for read — admins need visibility
+-- -------------------------
+DROP POLICY IF EXISTS "Allow all admin_settings" ON admin_settings;
+CREATE POLICY "Users can view own admin_settings"
+  ON admin_settings FOR SELECT USING (user_id = auth.uid());
+CREATE POLICY "Users can insert own admin_settings"
+  ON admin_settings FOR INSERT WITH CHECK (user_id = auth.uid());
+CREATE POLICY "Users can update own admin_settings"
+  ON admin_settings FOR UPDATE USING (user_id = auth.uid());
+
+-- -------------------------
+-- admin_activity_logs (user_id UUID)
+-- -------------------------
+DROP POLICY IF EXISTS "Allow all admin_activity_logs" ON admin_activity_logs;
+CREATE POLICY "Users can view own admin_activity_logs"
+  ON admin_activity_logs FOR SELECT USING (user_id = auth.uid());
+CREATE POLICY "Users can insert own admin_activity_logs"
+  ON admin_activity_logs FOR INSERT WITH CHECK (user_id = auth.uid());
+
+-- -------------------------
+-- audit_logs (user_id UUID)
+-- -------------------------
+DROP POLICY IF EXISTS "Allow all audit_logs" ON audit_logs;
+CREATE POLICY "Users can view own audit_logs"
+  ON audit_logs FOR SELECT USING (user_id = auth.uid());
+CREATE POLICY "Users can insert own audit_logs"
+  ON audit_logs FOR INSERT WITH CHECK (user_id = auth.uid());
+
+-- -------------------------
+-- customer_sentiment (user_id TEXT)
+-- -------------------------
+DROP POLICY IF EXISTS "Allow all customer_sentiment" ON customer_sentiment;
+CREATE POLICY "Users can view own customer_sentiment"
+  ON customer_sentiment FOR SELECT USING (user_id = auth.uid()::text);
+CREATE POLICY "Users can insert own customer_sentiment"
+  ON customer_sentiment FOR INSERT WITH CHECK (user_id = auth.uid()::text);
+CREATE POLICY "Users can update own customer_sentiment"
+  ON customer_sentiment FOR UPDATE USING (user_id = auth.uid()::text);
+
+-- -------------------------
+-- predictions — NO user_id column, add one
+-- -------------------------
+ALTER TABLE predictions ADD COLUMN IF NOT EXISTS user_id UUID REFERENCES auth.users(id);
+CREATE POLICY "Users can view own predictions"
+  ON predictions FOR SELECT USING (user_id = auth.uid());
+CREATE POLICY "Users can insert own predictions"
+  ON predictions FOR INSERT WITH CHECK (user_id = auth.uid());
+
+-- -------------------------
+-- relationships (created_by TEXT)
+-- -------------------------
+DROP POLICY IF EXISTS "Allow all relationships" ON relationships;
+CREATE POLICY "Users can view own relationships"
+  ON relationships FOR SELECT USING (created_by = auth.uid()::text);
+CREATE POLICY "Users can insert own relationships"
+  ON relationships FOR INSERT WITH CHECK (created_by = auth.uid()::text);
+CREATE POLICY "Users can update own relationships"
+  ON relationships FOR UPDATE USING (created_by = auth.uid()::text);
+CREATE POLICY "Users can delete own relationships"
+  ON relationships FOR DELETE USING (created_by = auth.uid()::text);
+
+-- -------------------------
+-- relationship_events (user_id UUID)
+-- -------------------------
+DROP POLICY IF EXISTS "Allow all relationship_events" ON relationship_events;
+CREATE POLICY "Users can view own relationship_events"
+  ON relationship_events FOR SELECT USING (user_id = auth.uid());
+CREATE POLICY "Users can insert own relationship_events"
+  ON relationship_events FOR INSERT WITH CHECK (user_id = auth.uid());
+CREATE POLICY "Users can update own relationship_events"
+  ON relationship_events FOR UPDATE USING (user_id = auth.uid());
+
+-- -------------------------
+-- reserved_handles (user_id UUID)
+-- -------------------------
+DROP POLICY IF EXISTS "Allow all reserved_handles" ON reserved_handles;
+CREATE POLICY "Users can view own reserved_handles"
+  ON reserved_handles FOR SELECT USING (user_id = auth.uid());
+CREATE POLICY "Users can insert own reserved_handles"
+  ON reserved_handles FOR INSERT WITH CHECK (user_id = auth.uid());
+
+-- -------------------------
+-- outcome_milestones (user_id TEXT)
+-- -------------------------
+DROP POLICY IF EXISTS "Allow all outcome_milestones" ON outcome_milestones;
+CREATE POLICY "Users can view own outcome_milestones"
+  ON outcome_milestones FOR SELECT USING (user_id = auth.uid()::text);
+CREATE POLICY "Users can insert own outcome_milestones"
+  ON outcome_milestones FOR INSERT WITH CHECK (user_id = auth.uid()::text);
+CREATE POLICY "Users can update own outcome_milestones"
+  ON outcome_milestones FOR UPDATE USING (user_id = auth.uid()::text);
+CREATE POLICY "Users can delete own outcome_milestones"
+  ON outcome_milestones FOR DELETE USING (user_id = auth.uid()::text);
+
+-- -------------------------
+-- quick_vox_favorites (user_id UUID)
+-- -------------------------
+DROP POLICY IF EXISTS "Allow all quick_vox_favorites" ON quick_vox_favorites;
+CREATE POLICY "Users can view own quick_vox_favorites"
+  ON quick_vox_favorites FOR SELECT USING (user_id = auth.uid());
+CREATE POLICY "Users can insert own quick_vox_favorites"
+  ON quick_vox_favorites FOR INSERT WITH CHECK (user_id = auth.uid());
+CREATE POLICY "Users can delete own quick_vox_favorites"
+  ON quick_vox_favorites FOR DELETE USING (user_id = auth.uid());
+
+-- -------------------------
+-- quick_vox_status (user_id UUID)
+-- -------------------------
+DROP POLICY IF EXISTS "Allow all quick_vox_status" ON quick_vox_status;
+CREATE POLICY "Users can view own quick_vox_status"
+  ON quick_vox_status FOR SELECT USING (user_id = auth.uid());
+CREATE POLICY "Users can upsert own quick_vox_status"
+  ON quick_vox_status FOR INSERT WITH CHECK (user_id = auth.uid());
+CREATE POLICY "Users can update own quick_vox_status"
+  ON quick_vox_status FOR UPDATE USING (user_id = auth.uid());
+
+-- -------------------------
+-- quick_vox_messages (sender_id UUID)
+-- Messaging: sender OR recipient can see
+-- -------------------------
+DROP POLICY IF EXISTS "Allow all quick_vox_messages" ON quick_vox_messages;
+CREATE POLICY "Users can view own quick_vox_messages"
+  ON quick_vox_messages FOR SELECT USING (sender_id = auth.uid() OR recipient_id = auth.uid());
+CREATE POLICY "Users can send quick_vox_messages"
+  ON quick_vox_messages FOR INSERT WITH CHECK (sender_id = auth.uid());
+CREATE POLICY "Users can update own quick_vox_messages"
+  ON quick_vox_messages FOR UPDATE USING (sender_id = auth.uid());
+
+-- -------------------------
+-- vox_drops (sender_id UUID)
+-- -------------------------
+DROP POLICY IF EXISTS "Allow all vox_drops" ON vox_drops;
+CREATE POLICY "Users can view own vox_drops"
+  ON vox_drops FOR SELECT USING (sender_id = auth.uid() OR recipient_id = auth.uid());
+CREATE POLICY "Users can send vox_drops"
+  ON vox_drops FOR INSERT WITH CHECK (sender_id = auth.uid());
+CREATE POLICY "Users can update own vox_drops"
+  ON vox_drops FOR UPDATE USING (sender_id = auth.uid());
+
+-- -------------------------
+-- vox_notes (user_id UUID)
+-- -------------------------
+DROP POLICY IF EXISTS "Allow all vox_notes" ON vox_notes;
+CREATE POLICY "Users can view own vox_notes"
+  ON vox_notes FOR SELECT USING (user_id = auth.uid());
+CREATE POLICY "Users can insert own vox_notes"
+  ON vox_notes FOR INSERT WITH CHECK (user_id = auth.uid());
+CREATE POLICY "Users can update own vox_notes"
+  ON vox_notes FOR UPDATE USING (user_id = auth.uid());
+CREATE POLICY "Users can delete own vox_notes"
+  ON vox_notes FOR DELETE USING (user_id = auth.uid());
+
+-- -------------------------
+-- vox_notifications (user_id UUID)
+-- -------------------------
+DROP POLICY IF EXISTS "Allow all vox_notifications" ON vox_notifications;
+CREATE POLICY "Users can view own vox_notifications"
+  ON vox_notifications FOR SELECT USING (user_id = auth.uid());
+CREATE POLICY "Users can insert own vox_notifications"
+  ON vox_notifications FOR INSERT WITH CHECK (user_id = auth.uid());
+CREATE POLICY "Users can update own vox_notifications"
+  ON vox_notifications FOR UPDATE USING (user_id = auth.uid());
+
+-- -------------------------
+-- pulse_notifications (user_id UUID)
+-- -------------------------
+DROP POLICY IF EXISTS "Allow all pulse_notifications" ON pulse_notifications;
+CREATE POLICY "Users can view own pulse_notifications"
+  ON pulse_notifications FOR SELECT USING (user_id = auth.uid());
+CREATE POLICY "Users can insert own pulse_notifications"
+  ON pulse_notifications FOR INSERT WITH CHECK (user_id = auth.uid());
+CREATE POLICY "Users can update own pulse_notifications"
+  ON pulse_notifications FOR UPDATE USING (user_id = auth.uid());
+
+-- -------------------------
+-- pulse_nudges (user_id UUID)
+-- -------------------------
+DROP POLICY IF EXISTS "Allow all pulse_nudges" ON pulse_nudges;
+CREATE POLICY "Users can view own pulse_nudges"
+  ON pulse_nudges FOR SELECT USING (user_id = auth.uid());
+CREATE POLICY "Users can insert own pulse_nudges"
+  ON pulse_nudges FOR INSERT WITH CHECK (user_id = auth.uid());
+CREATE POLICY "Users can update own pulse_nudges"
+  ON pulse_nudges FOR UPDATE USING (user_id = auth.uid());
+
+-- -------------------------
+-- pulse_tasks (user_id UUID)
+-- -------------------------
+DROP POLICY IF EXISTS "Allow all pulse_tasks" ON pulse_tasks;
+CREATE POLICY "Users can view own pulse_tasks"
+  ON pulse_tasks FOR SELECT USING (user_id = auth.uid());
+CREATE POLICY "Users can insert own pulse_tasks"
+  ON pulse_tasks FOR INSERT WITH CHECK (user_id = auth.uid());
+CREATE POLICY "Users can update own pulse_tasks"
+  ON pulse_tasks FOR UPDATE USING (user_id = auth.uid());
+CREATE POLICY "Users can delete own pulse_tasks"
+  ON pulse_tasks FOR DELETE USING (user_id = auth.uid());
+
+-- -------------------------
+-- pulse_typing (user_id UUID)
+-- -------------------------
+DROP POLICY IF EXISTS "Allow all pulse_typing" ON pulse_typing;
+CREATE POLICY "Users can view own pulse_typing"
+  ON pulse_typing FOR SELECT USING (user_id = auth.uid());
+CREATE POLICY "Users can insert own pulse_typing"
+  ON pulse_typing FOR INSERT WITH CHECK (user_id = auth.uid());
+CREATE POLICY "Users can update own pulse_typing"
+  ON pulse_typing FOR UPDATE USING (user_id = auth.uid());
+
+-- -------------------------
+-- pulse_users (auth_user_id UUID)
+-- Public profiles may need to be visible — keep SELECT open for now
+-- -------------------------
+DROP POLICY IF EXISTS "Allow all pulse_users" ON pulse_users;
+CREATE POLICY "Anyone can view pulse_users"
+  ON pulse_users FOR SELECT USING (true);
+CREATE POLICY "Users can insert own pulse_users"
+  ON pulse_users FOR INSERT WITH CHECK (auth_user_id = auth.uid());
+CREATE POLICY "Users can update own pulse_users"
+  ON pulse_users FOR UPDATE USING (auth_user_id = auth.uid());
+
+-- -------------------------
+-- pulse_channels (owner_id UUID)
+-- Channels may need public visibility for discovery
+-- -------------------------
+DROP POLICY IF EXISTS "Allow all pulse_channels" ON pulse_channels;
+CREATE POLICY "Anyone can view pulse_channels"
+  ON pulse_channels FOR SELECT USING (true);
+CREATE POLICY "Owners can insert pulse_channels"
+  ON pulse_channels FOR INSERT WITH CHECK (owner_id = auth.uid());
+CREATE POLICY "Owners can update pulse_channels"
+  ON pulse_channels FOR UPDATE USING (owner_id = auth.uid());
+CREATE POLICY "Owners can delete pulse_channels"
+  ON pulse_channels FOR DELETE USING (owner_id = auth.uid());
+
+-- -------------------------
+-- pulse_channel_subscriptions (owner_id UUID)
+-- -------------------------
+DROP POLICY IF EXISTS "Allow all operations on pulse_channel_subscriptions" ON pulse_channel_subscriptions;
+CREATE POLICY "Users can view own pulse_channel_subscriptions"
+  ON pulse_channel_subscriptions FOR SELECT USING (owner_id = auth.uid());
+CREATE POLICY "Users can insert own pulse_channel_subscriptions"
+  ON pulse_channel_subscriptions FOR INSERT WITH CHECK (owner_id = auth.uid());
+CREATE POLICY "Users can delete own pulse_channel_subscriptions"
+  ON pulse_channel_subscriptions FOR DELETE USING (owner_id = auth.uid());
+
+-- -------------------------
+-- pulse_blockers (owner_id UUID)
+-- -------------------------
+DROP POLICY IF EXISTS "Allow all pulse_blockers" ON pulse_blockers;
+CREATE POLICY "Users can view own pulse_blockers"
+  ON pulse_blockers FOR SELECT USING (owner_id = auth.uid());
+CREATE POLICY "Users can insert own pulse_blockers"
+  ON pulse_blockers FOR INSERT WITH CHECK (owner_id = auth.uid());
+CREATE POLICY "Users can update own pulse_blockers"
+  ON pulse_blockers FOR UPDATE USING (owner_id = auth.uid());
+
+-- -------------------------
+-- pulse_context_summaries (created_by UUID)
+-- -------------------------
+DROP POLICY IF EXISTS "Allow all pulse_context_summaries" ON pulse_context_summaries;
+CREATE POLICY "Users can view own pulse_context_summaries"
+  ON pulse_context_summaries FOR SELECT USING (created_by = auth.uid());
+CREATE POLICY "Users can insert own pulse_context_summaries"
+  ON pulse_context_summaries FOR INSERT WITH CHECK (created_by = auth.uid());
+
+-- -------------------------
+-- pulse_decisions (created_by UUID)
+-- -------------------------
+DROP POLICY IF EXISTS "Allow all pulse_decisions" ON pulse_decisions;
+CREATE POLICY "Users can view own pulse_decisions"
+  ON pulse_decisions FOR SELECT USING (created_by = auth.uid());
+CREATE POLICY "Users can insert own pulse_decisions"
+  ON pulse_decisions FOR INSERT WITH CHECK (created_by = auth.uid());
+CREATE POLICY "Users can update own pulse_decisions"
+  ON pulse_decisions FOR UPDATE USING (created_by = auth.uid());
+
+-- -------------------------
+-- pulse_outcomes (created_by UUID)
+-- -------------------------
+DROP POLICY IF EXISTS "Allow all pulse_outcomes" ON pulse_outcomes;
+CREATE POLICY "Users can view own pulse_outcomes"
+  ON pulse_outcomes FOR SELECT USING (created_by = auth.uid());
+CREATE POLICY "Users can insert own pulse_outcomes"
+  ON pulse_outcomes FOR INSERT WITH CHECK (created_by = auth.uid());
+CREATE POLICY "Users can update own pulse_outcomes"
+  ON pulse_outcomes FOR UPDATE USING (created_by = auth.uid());
+
+-- -------------------------
+-- pulse_files (sender_id UUID)
+-- -------------------------
+DROP POLICY IF EXISTS "Allow all pulse_files" ON pulse_files;
+CREATE POLICY "Users can view own pulse_files"
+  ON pulse_files FOR SELECT USING (sender_id = auth.uid());
+CREATE POLICY "Users can insert own pulse_files"
+  ON pulse_files FOR INSERT WITH CHECK (sender_id = auth.uid());
+
+-- -------------------------
+-- pulse_follows (sender_id UUID)
+-- -------------------------
+DROP POLICY IF EXISTS "Allow all pulse_follows" ON pulse_follows;
+CREATE POLICY "Users can view own pulse_follows"
+  ON pulse_follows FOR SELECT USING (sender_id = auth.uid());
+CREATE POLICY "Users can insert own pulse_follows"
+  ON pulse_follows FOR INSERT WITH CHECK (sender_id = auth.uid());
+CREATE POLICY "Users can delete own pulse_follows"
+  ON pulse_follows FOR DELETE USING (sender_id = auth.uid());
+
+-- -------------------------
+-- user_retention_cohorts (user_id TEXT)
+-- -------------------------
+DROP POLICY IF EXISTS "Allow all user_retention_cohorts" ON user_retention_cohorts;
+CREATE POLICY "Users can view own user_retention_cohorts"
+  ON user_retention_cohorts FOR SELECT USING (user_id = auth.uid()::text);
+CREATE POLICY "Users can insert own user_retention_cohorts"
+  ON user_retention_cohorts FOR INSERT WITH CHECK (user_id = auth.uid()::text);
+
+-- -------------------------
+-- user_roles (user_id UUID) — Admin managed, restrict to self-view
+-- -------------------------
+DROP POLICY IF EXISTS "Admins can manage role assignments" ON user_roles;
+CREATE POLICY "Users can view own roles"
+  ON user_roles FOR SELECT USING (user_id = auth.uid());
+-- INSERT/UPDATE/DELETE restricted to service_role (admin backend)
+
+-- -------------------------
+-- roles — System table, read-only for authenticated users
+-- -------------------------
+DROP POLICY IF EXISTS "Admins can manage roles" ON roles;
+CREATE POLICY "Authenticated users can view roles"
+  ON roles FOR SELECT TO authenticated USING (true);
+-- Mutations restricted to service_role
+
+-- -------------------------
+-- retention_policies — Admin-only, no user_id
+-- -------------------------
+-- Keep SELECT open for authenticated, mutations via service_role
+CREATE POLICY "Authenticated users can view retention_policies"
+  ON retention_policies FOR SELECT TO authenticated USING (true);
+
+-- -------------------------
+-- sso_configs (user_id UUID) — Admin table
+-- -------------------------
+DROP POLICY IF EXISTS "Admins can manage SSO configs" ON sso_configs;
+DROP POLICY IF EXISTS "Admins can view SSO configs" ON sso_configs;
+CREATE POLICY "Users can view own sso_configs"
+  ON sso_configs FOR SELECT USING (user_id = auth.uid());
+CREATE POLICY "Users can manage own sso_configs"
+  ON sso_configs FOR ALL USING (user_id = auth.uid());
+
+-- -------------------------
+-- webhook_deliveries (workspace_id UUID)
+-- -------------------------
+DROP POLICY IF EXISTS "Allow all webhook_deliveries" ON webhook_deliveries;
+CREATE POLICY "Users can view own webhook_deliveries"
+  ON webhook_deliveries FOR SELECT USING (public.user_has_workspace_access(workspace_id));
+
+-- -------------------------
+-- webhooks — Needs user_id column added
+-- -------------------------
+ALTER TABLE webhooks ADD COLUMN IF NOT EXISTS user_id UUID REFERENCES auth.users(id);
+DROP POLICY IF EXISTS "Allow all webhooks" ON webhooks;
+CREATE POLICY "Users can view own webhooks"
+  ON webhooks FOR SELECT USING (user_id = auth.uid());
+CREATE POLICY "Users can insert own webhooks"
+  ON webhooks FOR INSERT WITH CHECK (user_id = auth.uid());
+CREATE POLICY "Users can update own webhooks"
+  ON webhooks FOR UPDATE USING (user_id = auth.uid());
+CREATE POLICY "Users can delete own webhooks"
+  ON webhooks FOR DELETE USING (user_id = auth.uid());
+
+
+-- ============================================================================
+-- SECTION 2: Video Vox tables — member-based access
+-- ============================================================================
+
+DROP POLICY IF EXISTS "Allow all on video_vox_conversations" ON video_vox_conversations;
+DROP POLICY IF EXISTS "Allow all on video_vox_conversation_members" ON video_vox_conversation_members;
+DROP POLICY IF EXISTS "Allow all on video_vox_messages" ON video_vox_messages;
+DROP POLICY IF EXISTS "Allow all on video_vox_reactions" ON video_vox_reactions;
+DROP POLICY IF EXISTS "Allow all on video_vox_read_receipts" ON video_vox_read_receipts;
+DROP POLICY IF EXISTS "Allow all on video_vox_bookmarks" ON video_vox_bookmarks;
+DROP POLICY IF EXISTS "Allow all on video_vox_ai_queue" ON video_vox_ai_queue;
+
+-- Conversations: user must be a member
+CREATE POLICY "Members can view video_vox_conversations"
+  ON video_vox_conversations FOR SELECT
+  USING (auth.uid() = ANY(participant_ids) OR created_by = auth.uid());
+CREATE POLICY "Users can create video_vox_conversations"
+  ON video_vox_conversations FOR INSERT
+  WITH CHECK (created_by = auth.uid());
+CREATE POLICY "Members can update video_vox_conversations"
+  ON video_vox_conversations FOR UPDATE
+  USING (auth.uid() = ANY(participant_ids) OR created_by = auth.uid());
+
+-- Conversation members
+CREATE POLICY "Members can view video_vox_conversation_members"
+  ON video_vox_conversation_members FOR SELECT
+  USING (user_id = auth.uid() OR conversation_id IN (
+    SELECT id FROM video_vox_conversations WHERE auth.uid() = ANY(participant_ids)
+  ));
+CREATE POLICY "Users can join video_vox_conversation_members"
+  ON video_vox_conversation_members FOR INSERT
+  WITH CHECK (user_id = auth.uid());
+
+-- Messages: only if you're in the conversation
+CREATE POLICY "Members can view video_vox_messages"
+  ON video_vox_messages FOR SELECT
+  USING (conversation_id IN (
+    SELECT id FROM video_vox_conversations WHERE auth.uid() = ANY(participant_ids)
+  ));
+CREATE POLICY "Members can send video_vox_messages"
+  ON video_vox_messages FOR INSERT
+  WITH CHECK (sender_id = auth.uid());
+CREATE POLICY "Senders can update video_vox_messages"
+  ON video_vox_messages FOR UPDATE
+  USING (sender_id = auth.uid());
+CREATE POLICY "Senders can delete video_vox_messages"
+  ON video_vox_messages FOR DELETE
+  USING (sender_id = auth.uid());
+
+-- Reactions
+CREATE POLICY "Members can view video_vox_reactions"
+  ON video_vox_reactions FOR SELECT
+  USING (user_id = auth.uid() OR message_id IN (
+    SELECT id FROM video_vox_messages WHERE conversation_id IN (
+      SELECT id FROM video_vox_conversations WHERE auth.uid() = ANY(participant_ids)
+    )
+  ));
+CREATE POLICY "Users can add video_vox_reactions"
+  ON video_vox_reactions FOR INSERT WITH CHECK (user_id = auth.uid());
+CREATE POLICY "Users can remove video_vox_reactions"
+  ON video_vox_reactions FOR DELETE USING (user_id = auth.uid());
+
+-- Read receipts
+CREATE POLICY "Users can view own video_vox_read_receipts"
+  ON video_vox_read_receipts FOR SELECT USING (user_id = auth.uid());
+CREATE POLICY "Users can insert own video_vox_read_receipts"
+  ON video_vox_read_receipts FOR INSERT WITH CHECK (user_id = auth.uid());
+CREATE POLICY "Users can update own video_vox_read_receipts"
+  ON video_vox_read_receipts FOR UPDATE USING (user_id = auth.uid());
+
+-- Bookmarks
+CREATE POLICY "Users can view own video_vox_bookmarks"
+  ON video_vox_bookmarks FOR SELECT USING (user_id = auth.uid());
+CREATE POLICY "Users can insert own video_vox_bookmarks"
+  ON video_vox_bookmarks FOR INSERT WITH CHECK (user_id = auth.uid());
+CREATE POLICY "Users can delete own video_vox_bookmarks"
+  ON video_vox_bookmarks FOR DELETE USING (user_id = auth.uid());
+
+-- AI queue
+CREATE POLICY "Users can view own video_vox_ai_queue"
+  ON video_vox_ai_queue FOR SELECT USING (user_id = auth.uid());
+CREATE POLICY "Users can insert own video_vox_ai_queue"
+  ON video_vox_ai_queue FOR INSERT WITH CHECK (user_id = auth.uid());
+CREATE POLICY "Users can update own video_vox_ai_queue"
+  ON video_vox_ai_queue FOR UPDATE USING (user_id = auth.uid());
+
+
+-- ============================================================================
+-- SECTION 3: Workspace-scoped tables
+-- ============================================================================
+
+-- outcome_blockers (workspace_id UUID)
+DROP POLICY IF EXISTS "Allow all outcome_blockers" ON outcome_blockers;
+CREATE POLICY "Users can view own outcome_blockers"
+  ON outcome_blockers FOR SELECT USING (public.user_has_workspace_access(workspace_id));
+CREATE POLICY "Users can insert own outcome_blockers"
+  ON outcome_blockers FOR INSERT WITH CHECK (public.user_has_workspace_access(workspace_id));
+CREATE POLICY "Users can update own outcome_blockers"
+  ON outcome_blockers FOR UPDATE USING (public.user_has_workspace_access(workspace_id));
+CREATE POLICY "Users can delete own outcome_blockers"
+  ON outcome_blockers FOR DELETE USING (public.user_has_workspace_access(workspace_id));
+
+-- workspace_outcomes (workspace_id UUID)
+DROP POLICY IF EXISTS "Allow all workspace_outcomes" ON workspace_outcomes;
+CREATE POLICY "Users can view own workspace_outcomes"
+  ON workspace_outcomes FOR SELECT USING (public.user_has_workspace_access(workspace_id));
+CREATE POLICY "Users can insert own workspace_outcomes"
+  ON workspace_outcomes FOR INSERT WITH CHECK (public.user_has_workspace_access(workspace_id));
+CREATE POLICY "Users can update own workspace_outcomes"
+  ON workspace_outcomes FOR UPDATE USING (public.user_has_workspace_access(workspace_id));
+
+-- workspace_participants (workspace_id UUID)
+DROP POLICY IF EXISTS "Allow inserting participants" ON workspace_participants;
+CREATE POLICY "Users can view own workspace_participants"
+  ON workspace_participants FOR SELECT USING (public.user_has_workspace_access(workspace_id));
+CREATE POLICY "Users can insert own workspace_participants"
+  ON workspace_participants FOR INSERT WITH CHECK (public.user_has_workspace_access(workspace_id));
+
+-- team_vox_messages (workspace_id UUID)
+DROP POLICY IF EXISTS "Allow all team_vox_messages" ON team_vox_messages;
+CREATE POLICY "Users can view own team_vox_messages"
+  ON team_vox_messages FOR SELECT USING (public.user_has_workspace_access(workspace_id));
+CREATE POLICY "Users can insert own team_vox_messages"
+  ON team_vox_messages FOR INSERT WITH CHECK (public.user_has_workspace_access(workspace_id));
+CREATE POLICY "Users can update own team_vox_messages"
+  ON team_vox_messages FOR UPDATE USING (public.user_has_workspace_access(workspace_id));
+
+-- vox_team_channels (workspace_id UUID)
+DROP POLICY IF EXISTS "Allow all vox_team_channels" ON vox_team_channels;
+CREATE POLICY "Users can view own vox_team_channels"
+  ON vox_team_channels FOR SELECT USING (public.user_has_workspace_access(workspace_id));
+CREATE POLICY "Users can insert own vox_team_channels"
+  ON vox_team_channels FOR INSERT WITH CHECK (public.user_has_workspace_access(workspace_id));
+CREATE POLICY "Users can update own vox_team_channels"
+  ON vox_team_channels FOR UPDATE USING (public.user_has_workspace_access(workspace_id));
+
+-- vox_workspaces (owner_id UUID)
+DROP POLICY IF EXISTS "Allow all vox_workspaces" ON vox_workspaces;
+CREATE POLICY "Users can view own vox_workspaces"
+  ON vox_workspaces FOR SELECT USING (owner_id = auth.uid());
+CREATE POLICY "Users can insert own vox_workspaces"
+  ON vox_workspaces FOR INSERT WITH CHECK (owner_id = auth.uid());
+CREATE POLICY "Users can update own vox_workspaces"
+  ON vox_workspaces FOR UPDATE USING (owner_id = auth.uid());
+
+
+-- ============================================================================
+-- SECTION 4: CRM tables (owner_id TEXT)
+-- ============================================================================
+
+DROP POLICY IF EXISTS "Allow all crm_companies" ON crm_companies;
+DROP POLICY IF EXISTS "Allow all crm_contacts" ON crm_contacts;
+DROP POLICY IF EXISTS "Allow all crm_deals" ON crm_deals;
+
+CREATE POLICY "Users can view own crm_companies"
+  ON crm_companies FOR SELECT USING (owner_id = auth.uid()::text);
+CREATE POLICY "Users can insert own crm_companies"
+  ON crm_companies FOR INSERT WITH CHECK (owner_id = auth.uid()::text);
+CREATE POLICY "Users can update own crm_companies"
+  ON crm_companies FOR UPDATE USING (owner_id = auth.uid()::text);
+CREATE POLICY "Users can delete own crm_companies"
+  ON crm_companies FOR DELETE USING (owner_id = auth.uid()::text);
+
+CREATE POLICY "Users can view own crm_contacts"
+  ON crm_contacts FOR SELECT USING (owner_id = auth.uid()::text);
+CREATE POLICY "Users can insert own crm_contacts"
+  ON crm_contacts FOR INSERT WITH CHECK (owner_id = auth.uid()::text);
+CREATE POLICY "Users can update own crm_contacts"
+  ON crm_contacts FOR UPDATE USING (owner_id = auth.uid()::text);
+CREATE POLICY "Users can delete own crm_contacts"
+  ON crm_contacts FOR DELETE USING (owner_id = auth.uid()::text);
+
+CREATE POLICY "Users can view own crm_deals"
+  ON crm_deals FOR SELECT USING (owner_id = auth.uid()::text);
+CREATE POLICY "Users can insert own crm_deals"
+  ON crm_deals FOR INSERT WITH CHECK (owner_id = auth.uid()::text);
+CREATE POLICY "Users can update own crm_deals"
+  ON crm_deals FOR UPDATE USING (owner_id = auth.uid()::text);
+CREATE POLICY "Users can delete own crm_deals"
+  ON crm_deals FOR DELETE USING (owner_id = auth.uid()::text);
+
+
+-- ============================================================================
+-- SECTION 5: Tables without RLS — ENABLE + ADD POLICIES
+-- ============================================================================
+
+-- action_items (user_id UUID)
+ALTER TABLE action_items ENABLE ROW LEVEL SECURITY;
+CREATE POLICY "Users can manage own action_items"
+  ON action_items FOR ALL USING (user_id = auth.uid()) WITH CHECK (user_id = auth.uid());
+
+-- ai_agents (user_id UUID)
+ALTER TABLE ai_agents ENABLE ROW LEVEL SECURITY;
+CREATE POLICY "Users can manage own ai_agents"
+  ON ai_agents FOR ALL USING (user_id = auth.uid()) WITH CHECK (user_id = auth.uid());
+
+-- agents (created_by TEXT)
+ALTER TABLE agents ENABLE ROW LEVEL SECURITY;
+CREATE POLICY "Users can manage own agents"
+  ON agents FOR ALL USING (created_by = auth.uid()::text) WITH CHECK (created_by = auth.uid()::text);
+
+-- agent_runs (created_by TEXT)
+ALTER TABLE agent_runs ENABLE ROW LEVEL SECURITY;
+CREATE POLICY "Users can manage own agent_runs"
+  ON agent_runs FOR ALL USING (created_by = auth.uid()::text) WITH CHECK (created_by = auth.uid()::text);
+
+-- agent_run_steps (created_by TEXT)
+ALTER TABLE agent_run_steps ENABLE ROW LEVEL SECURITY;
+CREATE POLICY "Users can manage own agent_run_steps"
+  ON agent_run_steps FOR ALL USING (created_by = auth.uid()::text) WITH CHECK (created_by = auth.uid()::text);
+
+-- agent_execution_logs — No user column, add one
+ALTER TABLE agent_execution_logs ADD COLUMN IF NOT EXISTS user_id UUID REFERENCES auth.users(id);
+ALTER TABLE agent_execution_logs ENABLE ROW LEVEL SECURITY;
+CREATE POLICY "Users can manage own agent_execution_logs"
+  ON agent_execution_logs FOR ALL USING (user_id = auth.uid()) WITH CHECK (user_id = auth.uid());
+
+-- automations (created_by UUID)
+ALTER TABLE automations ENABLE ROW LEVEL SECURITY;
+CREATE POLICY "Users can manage own automations"
+  ON automations FOR ALL USING (created_by = auth.uid()) WITH CHECK (created_by = auth.uid());
+
+-- automation_logs (created_by UUID)
+ALTER TABLE automation_logs ENABLE ROW LEVEL SECURITY;
+CREATE POLICY "Users can manage own automation_logs"
+  ON automation_logs FOR ALL USING (created_by = auth.uid()) WITH CHECK (created_by = auth.uid());
+
+-- automation_templates (created_by UUID)
+ALTER TABLE automation_templates ENABLE ROW LEVEL SECURITY;
+CREATE POLICY "Users can view own automation_templates"
+  ON automation_templates FOR SELECT USING (created_by = auth.uid() OR created_by IS NULL);
+CREATE POLICY "Users can insert own automation_templates"
+  ON automation_templates FOR INSERT WITH CHECK (created_by = auth.uid());
+CREATE POLICY "Users can update own automation_templates"
+  ON automation_templates FOR UPDATE USING (created_by = auth.uid());
+
+-- channels (user_id UUID)
+ALTER TABLE channels ENABLE ROW LEVEL SECURITY;
+CREATE POLICY "Users can manage own channels"
+  ON channels FOR ALL USING (user_id = auth.uid()) WITH CHECK (user_id = auth.uid());
+
+-- conversations (user_id UUID)
+ALTER TABLE conversations ENABLE ROW LEVEL SECURITY;
+CREATE POLICY "Users can manage own conversations"
+  ON conversations FOR ALL USING (user_id = auth.uid()) WITH CHECK (user_id = auth.uid());
+
+-- conversation_messages (user_id UUID)
+ALTER TABLE conversation_messages ENABLE ROW LEVEL SECURITY;
+CREATE POLICY "Users can manage own conversation_messages"
+  ON conversation_messages FOR ALL USING (user_id = auth.uid()) WITH CHECK (user_id = auth.uid());
+
+-- conversation_graphs (user_id UUID)
+ALTER TABLE conversation_graphs ENABLE ROW LEVEL SECURITY;
+CREATE POLICY "Users can manage own conversation_graphs"
+  ON conversation_graphs FOR ALL USING (user_id = auth.uid()) WITH CHECK (user_id = auth.uid());
+
+-- crm_sync_log (user_id UUID)
+ALTER TABLE crm_sync_log ENABLE ROW LEVEL SECURITY;
+CREATE POLICY "Users can manage own crm_sync_log"
+  ON crm_sync_log FOR ALL USING (user_id = auth.uid()) WITH CHECK (user_id = auth.uid());
+
+-- embeddings (assigned_to_user_id UUID)
+ALTER TABLE embeddings ENABLE ROW LEVEL SECURITY;
+CREATE POLICY "Users can view own embeddings"
+  ON embeddings FOR SELECT USING (assigned_to_user_id = auth.uid());
+CREATE POLICY "Users can insert own embeddings"
+  ON embeddings FOR INSERT WITH CHECK (assigned_to_user_id = auth.uid());
+
+-- entomate_* tables
+ALTER TABLE entomate_projects ENABLE ROW LEVEL SECURITY;
+CREATE POLICY "Users can manage own entomate_projects"
+  ON entomate_projects FOR ALL USING (owner_id = auth.uid()) WITH CHECK (owner_id = auth.uid());
+
+ALTER TABLE entomate_project_tasks ENABLE ROW LEVEL SECURITY;
+CREATE POLICY "Users can manage own entomate_project_tasks"
+  ON entomate_project_tasks FOR ALL USING (owner_id = auth.uid()) WITH CHECK (owner_id = auth.uid());
+
+ALTER TABLE entomate_meetings ENABLE ROW LEVEL SECURITY;
+CREATE POLICY "Users can manage own entomate_meetings"
+  ON entomate_meetings FOR ALL USING (created_by = auth.uid()) WITH CHECK (created_by = auth.uid());
+
+ALTER TABLE entomate_action_items ENABLE ROW LEVEL SECURITY;
+CREATE POLICY "Users can manage own entomate_action_items"
+  ON entomate_action_items FOR ALL USING (assigned_to_user_id = auth.uid()) WITH CHECK (assigned_to_user_id = auth.uid());
+
+ALTER TABLE entomate_automations ENABLE ROW LEVEL SECURITY;
+CREATE POLICY "Users can manage own entomate_automations"
+  ON entomate_automations FOR ALL USING (created_by = auth.uid()) WITH CHECK (created_by = auth.uid());
+
+ALTER TABLE entomate_automation_logs ENABLE ROW LEVEL SECURITY;
+CREATE POLICY "Users can manage own entomate_automation_logs"
+  ON entomate_automation_logs FOR ALL USING (created_by = auth.uid()) WITH CHECK (created_by = auth.uid());
+
+-- logos_* tables
+ALTER TABLE logos_tasks ENABLE ROW LEVEL SECURITY;
+CREATE POLICY "Users can manage own logos_tasks"
+  ON logos_tasks FOR ALL USING (user_id = auth.uid()) WITH CHECK (user_id = auth.uid());
+
+ALTER TABLE logos_cases ENABLE ROW LEVEL SECURITY;
+CREATE POLICY "Users can manage own logos_cases"
+  ON logos_cases FOR ALL USING (created_by = auth.uid()::text) WITH CHECK (created_by = auth.uid()::text);
+
+ALTER TABLE logos_contacts ENABLE ROW LEVEL SECURITY;
+CREATE POLICY "Users can manage own logos_contacts"
+  ON logos_contacts FOR ALL USING (created_by = auth.uid()::text) WITH CHECK (created_by = auth.uid()::text);
+
+ALTER TABLE logos_notes ENABLE ROW LEVEL SECURITY;
+CREATE POLICY "Users can manage own logos_notes"
+  ON logos_notes FOR ALL USING (created_by = auth.uid()::text) WITH CHECK (created_by = auth.uid()::text);
+
+ALTER TABLE logos_projects ENABLE ROW LEVEL SECURITY;
+CREATE POLICY "Users can manage own logos_projects"
+  ON logos_projects FOR ALL USING (owner_id = auth.uid()::text) WITH CHECK (owner_id = auth.uid()::text);
+
+ALTER TABLE logos_sync_logs ENABLE ROW LEVEL SECURITY;
+CREATE POLICY "Users can manage own logos_sync_logs"
+  ON logos_sync_logs FOR ALL USING (user_id = auth.uid()) WITH CHECK (user_id = auth.uid());
+
+ALTER TABLE logos_pulse_activity ENABLE ROW LEVEL SECURITY;
+CREATE POLICY "Users can manage own logos_pulse_activity"
+  ON logos_pulse_activity FOR ALL USING (pulse_user_id = auth.uid()) WITH CHECK (pulse_user_id = auth.uid());
+
+-- logos_pulse_mappings — no user_id, add one
+ALTER TABLE logos_pulse_mappings ADD COLUMN IF NOT EXISTS user_id UUID REFERENCES auth.users(id);
+ALTER TABLE logos_pulse_mappings ENABLE ROW LEVEL SECURITY;
+CREATE POLICY "Users can manage own logos_pulse_mappings"
+  ON logos_pulse_mappings FOR ALL USING (user_id = auth.uid()) WITH CHECK (user_id = auth.uid());
+
+-- meetings (created_by UUID)
+ALTER TABLE meetings ENABLE ROW LEVEL SECURITY;
+CREATE POLICY "Users can manage own meetings"
+  ON meetings FOR ALL USING (created_by = auth.uid()) WITH CHECK (created_by = auth.uid());
+
+-- message_impact (user_id UUID)
+ALTER TABLE message_impact ENABLE ROW LEVEL SECURITY;
+CREATE POLICY "Users can manage own message_impact"
+  ON message_impact FOR ALL USING (user_id = auth.uid()) WITH CHECK (user_id = auth.uid());
+
+-- message_sync_state (user_id UUID)
+ALTER TABLE message_sync_state ENABLE ROW LEVEL SECURITY;
+CREATE POLICY "Users can manage own message_sync_state"
+  ON message_sync_state FOR ALL USING (user_id = auth.uid()) WITH CHECK (user_id = auth.uid());
+
+-- projects (owner_id UUID)
+ALTER TABLE projects ENABLE ROW LEVEL SECURITY;
+CREATE POLICY "Users can manage own projects"
+  ON projects FOR ALL USING (owner_id = auth.uid()) WITH CHECK (owner_id = auth.uid());
+
+-- project_templates (created_by UUID)
+ALTER TABLE project_templates ENABLE ROW LEVEL SECURITY;
+CREATE POLICY "Users can view own project_templates"
+  ON project_templates FOR SELECT USING (created_by = auth.uid() OR created_by IS NULL);
+CREATE POLICY "Users can insert own project_templates"
+  ON project_templates FOR INSERT WITH CHECK (created_by = auth.uid());
+CREATE POLICY "Users can update own project_templates"
+  ON project_templates FOR UPDATE USING (created_by = auth.uid());
+
+-- search_documents (user_id UUID)
+ALTER TABLE search_documents ENABLE ROW LEVEL SECURITY;
+CREATE POLICY "Users can manage own search_documents"
+  ON search_documents FOR ALL USING (user_id = auth.uid()) WITH CHECK (user_id = auth.uid());
+
+-- search_index (user_id TEXT)
+ALTER TABLE search_index ENABLE ROW LEVEL SECURITY;
+CREATE POLICY "Users can manage own search_index"
+  ON search_index FOR ALL USING (user_id = auth.uid()::text) WITH CHECK (user_id = auth.uid()::text);
+
+-- teams (user_id TEXT)
+ALTER TABLE teams ENABLE ROW LEVEL SECURITY;
+CREATE POLICY "Users can manage own teams"
+  ON teams FOR ALL USING (user_id = auth.uid()::text) WITH CHECK (user_id = auth.uid()::text);
+
+-- users (user_id UUID) — this is the app users table
+ALTER TABLE users ENABLE ROW LEVEL SECURITY;
+CREATE POLICY "Users can view own user record"
+  ON users FOR SELECT USING (user_id = auth.uid());
+CREATE POLICY "Users can update own user record"
+  ON users FOR UPDATE USING (user_id = auth.uid());
+
+-- workspace_settings (workspace_id UUID)
+ALTER TABLE workspace_settings ENABLE ROW LEVEL SECURITY;
+CREATE POLICY "Users can manage own workspace_settings"
+  ON workspace_settings FOR ALL USING (public.user_has_workspace_access(workspace_id))
+  WITH CHECK (public.user_has_workspace_access(workspace_id));
+
+-- integration_logs — no user column, add one
+ALTER TABLE integration_logs ADD COLUMN IF NOT EXISTS user_id UUID REFERENCES auth.users(id);
+ALTER TABLE integration_logs ENABLE ROW LEVEL SECURITY;
+CREATE POLICY "Users can manage own integration_logs"
+  ON integration_logs FOR ALL USING (user_id = auth.uid()) WITH CHECK (user_id = auth.uid());
+
+-- customer_health — no user_id, add one
+ALTER TABLE customer_health ADD COLUMN IF NOT EXISTS user_id UUID REFERENCES auth.users(id);
+ALTER TABLE customer_health ENABLE ROW LEVEL SECURITY;
+CREATE POLICY "Users can manage own customer_health"
+  ON customer_health FOR ALL USING (user_id = auth.uid()) WITH CHECK (user_id = auth.uid());
+
+-- customer_health_history — no user_id, add one
+ALTER TABLE customer_health_history ADD COLUMN IF NOT EXISTS user_id UUID REFERENCES auth.users(id);
+CREATE POLICY "Users can view own customer_health_history"
+  ON customer_health_history FOR SELECT USING (user_id = auth.uid());
+CREATE POLICY "Users can insert own customer_health_history"
+  ON customer_health_history FOR INSERT WITH CHECK (user_id = auth.uid());
+
+-- customer_alerts — no user_id, add one
+ALTER TABLE customer_alerts ADD COLUMN IF NOT EXISTS user_id UUID REFERENCES auth.users(id);
+CREATE POLICY "Users can view own customer_alerts"
+  ON customer_alerts FOR SELECT USING (user_id = auth.uid());
+CREATE POLICY "Users can insert own customer_alerts"
+  ON customer_alerts FOR INSERT WITH CHECK (user_id = auth.uid());
+CREATE POLICY "Users can update own customer_alerts"
+  ON customer_alerts FOR UPDATE USING (user_id = auth.uid());
+
+-- integration_field_mappings — no user_id, add one
+ALTER TABLE integration_field_mappings ADD COLUMN IF NOT EXISTS user_id UUID REFERENCES auth.users(id);
+CREATE POLICY "Users can manage own integration_field_mappings"
+  ON integration_field_mappings FOR ALL USING (user_id = auth.uid()) WITH CHECK (user_id = auth.uid());
+
+-- integration_sync_logs — no user_id, add one
+ALTER TABLE integration_sync_logs ADD COLUMN IF NOT EXISTS user_id UUID REFERENCES auth.users(id);
+CREATE POLICY "Users can view own integration_sync_logs"
+  ON integration_sync_logs FOR SELECT USING (user_id = auth.uid());
+CREATE POLICY "Users can insert own integration_sync_logs"
+  ON integration_sync_logs FOR INSERT WITH CHECK (user_id = auth.uid());
+
+
+-- ============================================================================
+-- SECTION 6: Fix the subtasks workspace_id = auth.uid() pattern
+-- (Already correct for Phase 1 — workspace IS user for now)
+-- ============================================================================
+-- No changes needed — the existing pattern works for single-user isolation.
+-- Phase 2 will migrate to proper workspace_members lookup.
+
+
+-- ============================================================================
+-- SECTION 7: Remaining permissive policies to clean up
+-- ============================================================================
+
+-- These had USING(true) but also had proper policies alongside them.
+-- Drop only the permissive "Allow all" ones, keep the good ones.
+
+-- chat_messages: has proper "Allow viewing/inserting" policies already
+DROP POLICY IF EXISTS "Allow inserting messages" ON chat_messages;
+-- The existing "Allow viewing messages" checks workspace membership, keep it.
+
+-- ephemeral_workspaces: public read is intentional (discovery), keep SELECT open
+-- but restrict mutations
+DROP POLICY IF EXISTS "Allow all ephemeral_workspaces" ON ephemeral_workspaces;
+
+-- in_app_messages: public read of active messages is intentional for notifications
+-- Keep existing policy
+
+
+-- ============================================================================
+-- VERIFICATION INDEXES (for RLS performance)
+-- ============================================================================
+
+CREATE INDEX IF NOT EXISTS idx_emails_user_id ON emails(user_id);
+CREATE INDEX IF NOT EXISTS idx_contacts_user_id ON contacts(user_id);
+CREATE INDEX IF NOT EXISTS idx_archives_user_id ON archives(user_id);
+CREATE INDEX IF NOT EXISTS idx_sms_conversations_user_id ON sms_conversations(user_id);
+CREATE INDEX IF NOT EXISTS idx_sms_messages_user_id ON sms_messages(user_id);
+CREATE INDEX IF NOT EXISTS idx_voxer_recordings_user_id ON voxer_recordings(user_id);
+CREATE INDEX IF NOT EXISTS idx_calendar_events_user_id ON calendar_events(user_id);
+CREATE INDEX IF NOT EXISTS idx_tasks_user_id ON tasks(user_id);
+CREATE INDEX IF NOT EXISTS idx_messages_user_id ON messages(user_id);
+CREATE INDEX IF NOT EXISTS idx_conversations_user_id ON conversations(user_id);
+CREATE INDEX IF NOT EXISTS idx_outcomes_user_id ON outcomes(user_id);
+CREATE INDEX IF NOT EXISTS idx_relationships_created_by ON relationships(created_by);
+CREATE INDEX IF NOT EXISTS idx_quick_vox_messages_sender ON quick_vox_messages(sender_id);
+CREATE INDEX IF NOT EXISTS idx_quick_vox_messages_recipient ON quick_vox_messages(recipient_id);
+CREATE INDEX IF NOT EXISTS idx_vox_drops_sender ON vox_drops(sender_id);
+CREATE INDEX IF NOT EXISTS idx_vox_drops_recipient ON vox_drops(recipient_id);
+CREATE INDEX IF NOT EXISTS idx_video_vox_conversations_participants ON video_vox_conversations USING GIN(participant_ids);
+CREATE INDEX IF NOT EXISTS idx_video_vox_messages_conversation ON video_vox_messages(conversation_id);
+CREATE INDEX IF NOT EXISTS idx_video_vox_messages_sender ON video_vox_messages(sender_id);
+
+
+COMMIT;
+
+-- ============================================================================
+-- POST-MIGRATION NOTES:
+-- ============================================================================
+-- 
+-- 1. BACKFILL REQUIRED: Tables where we added user_id columns need backfill:
+--    - predictions.user_id
+--    - webhooks.user_id  
+--    - agent_execution_logs.user_id
+--    - logos_pulse_mappings.user_id
+--    - integration_logs.user_id
+--    - customer_health.user_id
+--    - customer_health_history.user_id
+--    - customer_alerts.user_id
+--    - integration_field_mappings.user_id
+--    - integration_sync_logs.user_id
+--
+--    Until backfilled, rows with NULL user_id will be invisible to all users.
+--    Run backfill scripts or use service_role to update existing data.
+--
+-- 2. SERVICE ROLE: Backend operations (cron jobs, webhooks, system processes)
+--    should use the service_role key which bypasses RLS.
+--
+-- 3. TEXT vs UUID: Several tables use TEXT user_id columns (legacy pattern).
+--    Phase 2 should standardize these to UUID with proper FK constraints.
+--
+-- 4. PHASE 2 TODO: Create workspaces + workspace_members tables and update
+--    user_has_workspace_access() to check membership instead of equality.
+--
+-- ============================================================================
