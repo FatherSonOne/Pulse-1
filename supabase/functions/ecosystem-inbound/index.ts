@@ -4,13 +4,13 @@
 // Validates service tokens, logs events, routes to handlers
 // =====================================================
 
-import { serve } from 'https://deno.land/std@0.168.0/http/server.ts';
 import { createClient } from 'https://esm.sh/@supabase/supabase-js@2';
 import { handleContextRequest } from './contextHandler.ts';
 
-const corsHeaders = {
+const corsHeaders: Record<string, string> = {
   'Access-Control-Allow-Origin': '*',
   'Access-Control-Allow-Headers': 'authorization, x-client-info, apikey, content-type, x-ecosystem-token',
+  'Access-Control-Allow-Methods': 'GET, POST, OPTIONS',
 };
 
 interface EcosystemEvent {
@@ -26,9 +26,9 @@ interface EcosystemEvent {
   replyTo?: string;
 }
 
-serve(async (req) => {
+Deno.serve(async (req) => {
   if (req.method === 'OPTIONS') {
-    return new Response('ok', { headers: corsHeaders });
+    return new Response(null, { status: 204, headers: corsHeaders });
   }
 
   const startTime = Date.now();
@@ -37,6 +37,14 @@ serve(async (req) => {
     Deno.env.get('SUPABASE_URL')!,
     Deno.env.get('SUPABASE_SERVICE_ROLE_KEY')!
   );
+
+  // Lightweight health probe (no token required — confirms function is reachable)
+  if (req.method === 'GET') {
+    return new Response(
+      JSON.stringify({ status: 'ok', app: 'pulse', timestamp: new Date().toISOString() }),
+      { status: 200, headers: { ...corsHeaders, 'Content-Type': 'application/json' } }
+    );
+  }
 
   try {
     // Validate service token from header or body
@@ -163,6 +171,9 @@ async function routeEvent(
     case 'contact.updated':
     case 'contact.created':
       return handleContactEvent(supabase, event);
+
+    case 'heartbeat':
+      return handleHeartbeat(supabase, event);
 
     default:
       console.log(`[ecosystem-inbound] No handler for event type: ${event.eventType}`);
@@ -481,6 +492,12 @@ async function handleContactEvent(supabase: any, event: EcosystemEvent): Promise
       remote_entity_id: event.entityId,
     }, { onConflict: 'local_entity_type,local_entity_id,remote_app' });
   }
+}
+
+async function handleHeartbeat(supabase: any, event: EcosystemEvent): Promise<void> {
+  // No-op handler — token validation already passed upstream.
+  // The calling app's heartbeat function updates last_heartbeat on success.
+  console.log(`[ecosystem-inbound] Heartbeat received from ${event.source}`);
 }
 
 // =====================================================

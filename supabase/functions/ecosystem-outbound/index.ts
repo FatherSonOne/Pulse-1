@@ -64,7 +64,7 @@ serve(async (req) => {
     // Look up target app config
     const { data: config, error: configError } = await supabase
       .from('ecosystem_config')
-      .select('api_url, service_token, enabled')
+      .select('api_url, service_token, features, enabled')
       .eq('app_name', targetApp)
       .single();
 
@@ -86,12 +86,18 @@ serve(async (req) => {
     };
 
     // POST to target app's inbound endpoint
+    const outboundHeaders: Record<string, string> = {
+      'Content-Type': 'application/json',
+      'X-Ecosystem-Token': config.service_token,
+    };
+    // Supabase edge functions require an anon key to pass the API gateway
+    if (config.features?.gateway_key) {
+      outboundHeaders['Authorization'] = `Bearer ${config.features.gateway_key}`;
+    }
+
     const resp = await fetch(config.api_url, {
       method: 'POST',
-      headers: {
-        'Content-Type': 'application/json',
-        'X-Ecosystem-Token': config.service_token,
-      },
+      headers: outboundHeaders,
       body: JSON.stringify(event),
     });
 

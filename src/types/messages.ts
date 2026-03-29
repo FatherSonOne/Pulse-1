@@ -175,6 +175,7 @@ export interface EcosystemConfig {
   id: string;
   app_name: 'entomate' | 'logos_vision' | 'pulse';
   api_url: string;
+  bot_url?: string;
   service_token: string;
   inbound_token: string;
   enabled: boolean;
