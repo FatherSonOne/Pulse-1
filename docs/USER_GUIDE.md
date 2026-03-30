@@ -1,7 +1,7 @@
 # Pulse User's Guide
 
 **Version**: 25.1.3
-**Last Updated**: March 27, 2026
+**Last Updated**: March 29, 2026
 **For**: All Pulse users — personal, team, and enterprise
 
 ---
@@ -444,9 +444,12 @@ Click **Highlights** on any conversation to see a quick summary of:
 When you have connected apps via the **Ecosystem Bridge** (see Section 17), those apps can post bot messages directly into your channels. Bot messages look different from regular messages — they have a colored bot avatar and a distinct card layout depending on the message type:
 
 - **Task Assigned cards** (from Entomate) — show a task title, priority level, assignee, and due date. Click **View Task** to open the task in Entomate directly.
-- **Meeting Recap cards** (from Entomate or Logos Vision) — show a meeting summary, key decisions, and extracted action items. Click any action item to open it.
+- **Meeting Recap cards** (from Entomate or Logos Vision) — show a meeting summary with sentiment analysis, key decisions, quality score, and extracted action items. Click any action item to open it.
+- **Meeting Briefing cards** — show pre-meeting context: participant history, open action items, and context highlights. These appear before upcoming meetings so you walk in prepared.
 
 Bot messages appear in the channel alongside regular messages but are visually distinct. They cannot be replied to directly — use the action buttons on the card to respond.
+
+**Tip:** Bot messages flow into dedicated bot channels (like #entomate-meetings) if you've set them up in the Ecosystem Bridge settings. Otherwise, they appear in your general message feed.
 
 **Tip:** Bot messages are sent by the ecosystem app, not by a person — you will see a bot name ("Entomate" or "Logos Vision") and a robot icon instead of a user avatar.
 
@@ -1097,6 +1100,39 @@ Understand your meeting patterns and habits:
    - Comparison trends week-over-week
 
 **Tip:** If meeting analytics show you're spending more than 30% of your week in meetings, use the Meeting Deflector (Section 9) to reclaim time.
+
+### Meeting Briefing Cards
+
+Before a meeting starts, Pulse prepares a **Meeting Briefing Card** — a context summary so you walk in prepared.
+
+1. Open the **Messages** section or the **Meetings Dashboard**.
+2. When a meeting is approaching, a Briefing Card appears automatically.
+3. The card shows:
+   - **Time until meeting** — with an urgency indicator (turns red when less than 15 minutes away)
+   - **Participant list** — who is attending and how many previous meetings you've had with each person
+   - **Context highlights** — key points from previous meeting notes relevant to this meeting
+   - **Open action items** — unresolved tasks from past meetings with this group, including due dates and assignees
+4. Click **Join** to enter the meeting directly from the card.
+5. Click **View Details** to see the full meeting information.
+
+**Tip:** Briefing Cards appear automatically based on your calendar — no setup needed. They pull context from your past meetings, messages, and tasks.
+
+### Meeting Recap Cards
+
+After a meeting ends, Pulse generates a **Meeting Recap Card** — a structured summary of what happened.
+
+1. Recap Cards appear in your **Messages** feed after a Pulse Video meeting.
+2. Each Recap Card includes:
+   - **Meeting Intelligence Profile (MIP)** — a structured AI summary of the meeting
+   - **Sentiment analysis** — an overall mood indicator (positive, neutral, or negative) with an emoji badge
+   - **Quality score** — a 1–5 star rating on the summary's accuracy and completeness
+   - **Key decisions** — the most important decisions made during the meeting
+   - **Action items** — tasks assigned during the meeting with assignees (shows the first 5, with a count of any additional items)
+   - **Context usage** — how many contacts, past meetings, and Pulse threads were referenced during the session
+3. Click any section to expand it for full details with formatted notes.
+4. Action items from Recap Cards sync to your **Decisions & Tasks** section.
+
+**Tip:** Meeting Intelligence Profiles (MIP) give you richer summaries than a simple transcript — they capture decisions, sentiment, and follow-ups in a structured format you can quickly scan.
 
 ### Meeting History
 
@@ -1800,6 +1836,47 @@ AI Lab is a collection of specialized AI-powered workspaces, each designed for a
 
 **Tip:** Each AI Lab workspace is independent — you can run a Proposal Builder session while a Channel Digest is being generated.
 
+### Voice Commands
+
+Control Pulse entirely with your voice — hands-free navigation, actions, and queries.
+
+**To open Voice Commands:**
+1. Click the **microphone icon** in the sidebar or press the designated voice shortcut.
+2. The Voice Command Modal opens as a full-screen overlay with a circular animated waveform.
+
+**Using Voice Commands:**
+1. **Hold the spacebar** and speak your command naturally.
+2. Release the spacebar — Pulse processes your speech and executes the command.
+3. The interface shows real-time visual feedback: **Listening** (recording your voice), **Processing** (understanding your request), and **Speaking** (responding with audio feedback).
+
+**What you can say:**
+- "Go to Meetings" — navigates to the Meetings section
+- "Show my tasks" — opens Decisions & Tasks
+- "Send a message to Sarah" — opens a new message to Sarah
+- "Read my latest emails" — opens your email inbox
+- Any natural-language request — the AI interprets and routes your command
+
+**Voice Command Panel:**
+1. Click the **expand arrow** on the voice modal to open the full Voice Command Panel.
+2. Four tabs are available:
+   - **Commands** — browse all available voice commands
+   - **Templates** — pre-built command phrases you can use or customize
+   - **History** — review past voice commands with confidence scores
+   - **Settings** — configure voice behavior
+
+**Voice Command Settings:**
+- **Spoken Feedback** — toggle whether Pulse speaks responses back to you
+- **AI-Powered Parsing** — enable advanced AI interpretation of natural-language commands
+- **Auto-Execute** — when on, Pulse runs commands immediately; when off, it asks for confirmation first
+- **Language** — choose from 9 languages: English (US, UK, AU), Spanish, French, German, Italian, Portuguese, Japanese, and Chinese
+
+**Voice Agents:**
+Choose from 8 AI voice characters for spoken feedback: Alloy, Ash, Ballad, Coral, Echo, Sage, Shimmer, and Verse.
+
+**Fallback:** If the primary voice engine (OpenAI Whisper) is unavailable, Pulse automatically falls back to your browser's built-in speech recognition — so voice commands always work.
+
+**Tip:** You can also type commands in the text input field at the bottom of the Voice Command Panel instead of speaking — useful in quiet environments.
+
 ### War Room — Strategic AI Workspace
 
 The **War Room** is Pulse's deep-work AI hub for research, planning, decision-making, and content creation. Access it by clicking **War Room** in the sidebar.
@@ -2281,11 +2358,26 @@ The **Ecosystem Bridge** connects Pulse with other apps in the QntmEcos suite �
 6. Click **Save Connection**.
 7. Click **Test** on the saved connection to verify the bridge is live.
 
-**Connected app cards** show each linked app with its status (active/inactive), a **Tokens** button to view or copy tokens, a **Test** button to ping the connection, and an eye icon to toggle the connection on or off.
+**Connection Dashboard:** The Ecosystem Bridge settings page shows a visual dashboard with the connection status of all three apps (Logos Vision, Pulse, and Entomate) at a glance. Each connected app card shows its status (active/inactive), a **Tokens** button to view or copy tokens, a **Test** button to ping the connection, and a toggle to enable or disable the connection.
 
-**Recent Events** at the bottom of the page shows a live log of the last 20 messages received from ecosystem apps — useful for confirming that bot messages are flowing correctly.
+**Bot Channels:** When you connect Entomate, Pulse can automatically create dedicated bot channels for receiving Entomate messages:
 
-**Tip:** Tokens work in pairs. Pulse's Service Token → goes into the other app's Inbound Token field. The other app's Service Token → goes into Pulse's Inbound Token field. They are mirrors of each other.
+- **#entomate-meetings** — receives meeting-related updates from Entomate
+- **#entomate-tasks** — receives task assignments and updates
+- **#entomate-alerts** — receives alerts and notifications
+
+These channels keep ecosystem messages organized and separate from your regular conversations.
+
+**Auto-Export:** Pulse can automatically export data to connected apps:
+
+- **Meeting feedback** — when you rate a meeting, the feedback is sent to the connected app
+- **Meeting exports** — export full meeting data (summaries, action items, participants) to Entomate or Logos Vision for further processing
+
+Exports happen securely using the same token-based authentication as inbound messages.
+
+**Recent Events** at the bottom of the page shows a live log of the last 20 messages sent and received across all ecosystem apps — useful for confirming that the bridge is working correctly.
+
+**Tip:** Tokens work in pairs. Pulse's Service Token goes into the other app's Inbound Token field. The other app's Service Token goes into Pulse's Inbound Token field. They are mirrors of each other.
 
 ### API Keys
 

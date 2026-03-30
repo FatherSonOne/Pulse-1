@@ -454,7 +454,7 @@ export class EntomateService {
       .eq('workspace_id', workspaceId)
       .eq('bot_app', 'entomate')
       .eq('channel_purpose', purpose)
-      .single();
+      .maybeSingle();
 
     if (existing) return existing.channel_id;
 
@@ -466,31 +466,62 @@ export class EntomateService {
     };
     const info = nameMap[purpose] || { name: `entomate-${purpose}`, description: `Entomate ${purpose}` };
 
-    const { data: channel, error } = await supabase
+    // Check if the channel already exists by name (e.g. from a previous partial setup)
+    const { data: existingChannel } = await supabase
       .from('message_channels')
-      .insert({
-        workspace_id: workspaceId,
-        name: info.name,
-        description: info.description,
-        is_public: true,
-        is_group: false,
-        is_bot_channel: true,
-        bot_app: 'entomate',
-        created_by: ENTOMATE_BOT_ID,
-      })
       .select('id')
-      .single();
+      .eq('workspace_id', workspaceId)
+      .eq('name', info.name)
+      .maybeSingle();
 
-    if (error) throw new Error(`Failed to create bot channel: ${error.message}`);
+    let channelId: string;
 
-    await supabase.from('ecosystem_bot_channels').insert({
-      workspace_id: workspaceId,
-      bot_app: 'entomate',
-      channel_id: channel.id,
-      channel_purpose: purpose,
-    });
+    if (existingChannel) {
+      channelId = existingChannel.id;
+      // Ensure bot flags are set on the existing channel
+      await supabase
+        .from('message_channels')
+        .update({ is_bot_channel: true, bot_app: 'entomate' })
+        .eq('id', channelId);
+    } else {
+      const { data: channel, error } = await supabase
+        .from('message_channels')
+        .insert({
+          workspace_id: workspaceId,
+          name: info.name,
+          description: info.description,
+          is_public: true,
+          is_group: false,
+          is_bot_channel: true,
+          bot_app: 'entomate',
+          created_by: ENTOMATE_BOT_ID,
+        })
+        .select('id')
+        .single();
 
-    return channel.id;
+      if (error) throw new Error(`Failed to create bot channel: ${error.message}`);
+      channelId = channel.id;
+    }
+
+    // Register the channel — check first to avoid 409 conflicts
+    const { data: existingReg } = await supabase
+      .from('ecosystem_bot_channels')
+      .select('id')
+      .eq('workspace_id', workspaceId)
+      .eq('bot_app', 'entomate')
+      .eq('channel_purpose', purpose)
+      .maybeSingle();
+
+    if (!existingReg) {
+      await supabase.from('ecosystem_bot_channels').insert({
+        workspace_id: workspaceId,
+        bot_app: 'entomate',
+        channel_id: channelId,
+        channel_purpose: purpose,
+      });
+    }
+
+    return channelId;
   }
 
   /**
@@ -534,7 +565,7 @@ export class EntomateService {
         .eq('workspace_id', workspaceId)
         .eq('bot_app', 'entomate')
         .eq('channel_purpose', purpose)
-        .single();
+        .maybeSingle();
 
       if (existingReg) {
         existing.push(purpose);

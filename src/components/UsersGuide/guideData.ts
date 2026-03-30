@@ -1,5 +1,5 @@
 // Pulse User's Guide — Full Rich Section Data
-// Version 25.1.3 · March 27, 2026
+// Version 25.1.3 · March 29, 2026
 // Auto-maintained by the /users-guide slash command.
 
 export interface Shortcut {
@@ -26,6 +26,7 @@ export interface SubSection {
   description?: string;
   steps: string[];
   note?: string;
+  badge?: 'New' | 'Updated';
 }
 
 export interface AdvancedBlock {
@@ -366,12 +367,15 @@ export const guideSections: GuideSection[] = [
       {
         id: 'ecosystem-bot-messages',
         title: 'Ecosystem Bot Messages',
-        description: 'Connected apps (Entomate, Logos Vision) can post rich bot cards directly into your channels.',
+        badge: 'Updated',
+        description: 'Connected apps (Entomate, Logos Vision) can post rich bot cards directly into your channels, including task cards, meeting recaps, and briefing cards.',
         steps: [
           'Task Assigned cards (from Entomate) — show task title, priority, assignee, and due date. Click View Task to open in Entomate.',
-          'Meeting Recap cards — show a meeting summary, key decisions, and extracted action items.',
+          'Meeting Recap cards — show a meeting summary with sentiment analysis, key decisions, quality score, and extracted action items.',
+          'Meeting Briefing cards — show pre-meeting context: participant history, open action items, and context highlights.',
           'Bot messages appear with a colored bot avatar and app name instead of a user avatar.',
           'Use the action buttons on the card to respond — bot messages cannot be replied to directly.',
+          'Bot messages flow into dedicated bot channels (#entomate-meetings, #entomate-tasks, #entomate-alerts) if configured.',
           'Set up connected apps in Settings → Ecosystem Bridge.',
         ],
         note: 'Bot messages from the Ecosystem Bridge are sent by the connected app, not a person.',
@@ -858,7 +862,8 @@ export const guideSections: GuideSection[] = [
     id: 'meetings',
     title: 'Meetings Hub',
     icon: '📹',
-    summary: 'Full video meeting platform — templates, agenda builder, action items, recordings, breakout rooms, analytics, and multi-platform support.',
+    badge: 'Updated',
+    summary: 'Full video meeting platform — templates, agenda builder, action items, recordings, breakout rooms, analytics, Meeting Intelligence Profiles, briefing cards, and recap cards.',
     steps: [
       'Click Meetings in the sidebar to open the Meetings Dashboard.',
       'Paste a meeting link or enter a code in the join field at the top and click Join.',
@@ -959,6 +964,36 @@ export const guideSections: GuideSection[] = [
           'Waiting room on/off.',
         ],
       },
+      {
+        id: 'meeting-briefing-cards',
+        title: 'Meeting Briefing Cards',
+        description: 'Pre-meeting context cards that help you walk into meetings prepared.',
+        steps: [
+          'Briefing Cards appear automatically in Messages and the Meetings Dashboard when a meeting is approaching.',
+          'Shows time until meeting with urgency indicator (turns red when less than 15 minutes away).',
+          'Lists participants and how many previous meetings you\'ve had with each person.',
+          'Highlights context from previous meeting notes relevant to this meeting.',
+          'Shows open action items from past meetings with due dates and assignees.',
+          'Click Join to enter the meeting directly, or View Details for full meeting info.',
+        ],
+        note: 'Briefing Cards pull context from your past meetings, messages, and tasks automatically — no setup needed.',
+      },
+      {
+        id: 'meeting-recap-cards',
+        title: 'Meeting Recap Cards & Intelligence Profiles',
+        description: 'Post-meeting AI summaries with structured insights, sentiment, and action items.',
+        steps: [
+          'Recap Cards appear in your Messages feed after a Pulse Video meeting ends.',
+          'Meeting Intelligence Profile (MIP) provides a structured AI summary of the meeting.',
+          'Sentiment analysis shows the overall mood: positive, neutral, or negative with an emoji badge.',
+          'Quality score rates the summary\'s accuracy and completeness on a 1–5 star scale.',
+          'Key decisions section highlights the most important outcomes.',
+          'Action items list shows tasks assigned during the meeting with assignees (first 5 shown, with count for more).',
+          'Context usage stats show how many contacts, past meetings, and Pulse threads were referenced.',
+          'Click any section to expand for full formatted details.',
+        ],
+        note: 'Action items from Recap Cards sync automatically to your Decisions & Tasks section.',
+      },
     ],
     tables: [
       {
@@ -977,6 +1012,8 @@ export const guideSections: GuideSection[] = [
       'Share the agenda with participants 30 minutes before the meeting using Agenda Builder.',
       'Use Bulk Invite to send a meeting invitation to an entire Contact Circle at once.',
       'Past meeting recordings are searchable by transcript content — find any moment by keyword.',
+      'Meeting Briefing Cards appear automatically before meetings — no setup needed. They pull from your past meetings, messages, and tasks.',
+      'Meeting Intelligence Profiles (MIP) in Recap Cards give richer summaries than transcripts — decisions, sentiment, and follow-ups in one view.',
     ],
     useCases: [
       {
@@ -1008,7 +1045,6 @@ export const guideSections: GuideSection[] = [
         ],
       },
     ],
-    badge: 'New',
   },
 
   // ── 9. CALENDAR ──────────────────────────────────────────────────────────
@@ -1578,6 +1614,24 @@ export const guideSections: GuideSection[] = [
         ],
       },
       {
+        id: 'voice-commands',
+        title: 'Voice Commands',
+        description: 'Control Pulse hands-free with natural-language voice commands.',
+        steps: [
+          'Click the microphone icon in the sidebar to open the Voice Command Modal.',
+          'Hold the spacebar and speak your command naturally, then release.',
+          'Visual feedback shows the current state: Listening, Processing, or Speaking.',
+          'Say navigation commands: "Go to Meetings", "Show my tasks", "Open email".',
+          'Say action commands: "Send a message to Sarah", "Create a new task".',
+          'Open the Voice Command Panel for browsing commands, templates, and history.',
+          'Configure in Settings: spoken feedback, AI-powered parsing, auto-execute, and language (9 languages supported).',
+          'Choose from 8 AI voice characters: Alloy, Ash, Ballad, Coral, Echo, Sage, Shimmer, Verse.',
+          'Type commands in the text input field if you prefer not to speak.',
+          'Automatic fallback: if Whisper is unavailable, browser speech recognition takes over.',
+        ],
+        note: 'Voice Commands always work — Pulse falls back to browser speech recognition if the primary engine is unavailable.',
+      },
+      {
         id: 'ai-lab',
         title: 'AI Lab — Specialized Workspaces',
         steps: [
@@ -2059,16 +2113,20 @@ export const guideSections: GuideSection[] = [
       {
         id: 'ecosystem-bridge',
         title: 'Ecosystem Bridge',
-        description: 'Connect Pulse to Entomate and Logos Vision — enabling bot messages, shared tokens, and cross-app event tracking.',
+        badge: 'Updated',
+        description: 'Connect Pulse to Entomate and Logos Vision — enabling bot messages, bot channels, auto-export, and cross-app event tracking.',
         steps: [
           'Go to Settings → Ecosystem Bridge.',
+          'The visual dashboard shows connection status of all three apps (Logos Vision, Pulse, Entomate) at a glance.',
           'Select the app to connect (Entomate or Logos Vision) from the App dropdown.',
           'Enter the API URL for that app\'s functions endpoint.',
           'Click Generate next to Service Token — copy this into the other app\'s inbound_token field.',
           'Click Generate next to Inbound Token — copy this into the other app\'s service_token field.',
           'Click Save Connection, then click Test to verify the bridge is live.',
           'Connected app cards show status, a Tokens button, a Test button, and an on/off toggle.',
-          'Recent Events shows the last 20 messages received from ecosystem apps.',
+          'Bot Channels: connecting Entomate creates dedicated channels (#entomate-meetings, #entomate-tasks, #entomate-alerts).',
+          'Auto-Export: meeting feedback and full meeting data can be exported to connected apps automatically.',
+          'Recent Events shows the last 20 messages sent and received across all ecosystem apps.',
         ],
         note: 'Tokens are paired mirrors: Pulse\'s Service Token goes into the other app\'s Inbound Token, and vice versa.',
       },
