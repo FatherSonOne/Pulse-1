@@ -3,12 +3,13 @@
 // Bot messages bypass E2EE — they use bot_content (plaintext)
 
 import React, { useState } from 'react';
-import { ExternalLink, Bot, Star } from 'lucide-react';
+import { ExternalLink, Bot, Star, Loader2 } from 'lucide-react';
 import { SmartTimestamp } from './SmartTimestamp';
 import { MeetingRecapCard } from './MeetingRecapCard';
 import { MeetingBriefingCard } from './MeetingBriefingCard';
 import { ActionItemsCard } from './ActionItemsCard';
 import { supabase } from '../../services/supabase';
+import { getMeetingRecordingById, exportMeetingToEntomate } from '../../services/meetingService';
 import type { BotChannelMessage, BotAction } from '../../types/messages';
 
 interface BotMessageProps {
@@ -32,6 +33,7 @@ const BOT_CONFIG: Record<string, { name: string; emoji: string; avatarBg: string
 
 export const BotMessage: React.FC<BotMessageProps> = ({ message }) => {
   const [ratingState, setRatingState] = useState<{ rating: number; submitted: boolean } | null>(null);
+  const [exportAllState, setExportAllState] = useState<'idle' | 'exporting' | 'done' | 'error'>('idle');
 
   const bot = BOT_CONFIG[message.bot_app] || {
     name: message.bot_app,
@@ -48,6 +50,11 @@ export const BotMessage: React.FC<BotMessageProps> = ({ message }) => {
     // Rate meeting — show inline star rating
     if (action.action === 'rate_meeting' && action.meetingId) {
       setRatingState({ rating: 0, submitted: false });
+      return;
+    }
+    // Export all recordings to Entomate
+    if (action.action === 'export_all_recordings') {
+      handleExportAll();
       return;
     }
     // View profile — open in Entomate
@@ -75,6 +82,27 @@ export const BotMessage: React.FC<BotMessageProps> = ({ message }) => {
       if (error) console.warn('[BotMessage] Failed to submit meeting rating:', error.message);
     } catch {
       // Non-critical — rating is best-effort
+    }
+  };
+
+  const handleExportAll = async () => {
+    const recordings = message.bot_metadata?.recordings || [];
+    if (!recordings.length || exportAllState === 'exporting') return;
+    setExportAllState('exporting');
+    try {
+      let failed = 0;
+      for (const rec of recordings) {
+        const fullRecording = await getMeetingRecordingById(rec.id, rec.source);
+        if (fullRecording) {
+          const result = await exportMeetingToEntomate(fullRecording, rec.source);
+          if (!result.success) failed++;
+        } else {
+          failed++;
+        }
+      }
+      setExportAllState(failed === recordings.length ? 'error' : 'done');
+    } catch {
+      setExportAllState('error');
     }
   };
 
@@ -133,6 +161,24 @@ export const BotMessage: React.FC<BotMessageProps> = ({ message }) => {
             actions={message.bot_actions}
             onAction={handleAction}
           />
+        )}
+
+        {/* Export all status */}
+        {exportAllState === 'exporting' && (
+          <div className="mt-2 flex items-center gap-2 text-xs text-violet-400 bg-violet-500/10 border border-violet-500/20 rounded-lg px-3 py-2">
+            <Loader2 className="w-3 h-3 animate-spin" />
+            <span>Exporting recordings to Entomate...</span>
+          </div>
+        )}
+        {exportAllState === 'done' && (
+          <div className="mt-2 flex items-center gap-2 text-xs text-emerald-400 bg-emerald-500/10 border border-emerald-500/20 rounded-lg px-3 py-2">
+            <span>All recordings exported to Entomate!</span>
+          </div>
+        )}
+        {exportAllState === 'error' && (
+          <div className="mt-2 flex items-center gap-2 text-xs text-rose-400 bg-rose-500/10 border border-rose-500/20 rounded-lg px-3 py-2">
+            <span>Some recordings failed to export. Try again later.</span>
+          </div>
         )}
 
         {/* Inline rating UI (triggered by "Rate This Summary" action) */}

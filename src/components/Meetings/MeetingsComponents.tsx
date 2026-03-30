@@ -7,10 +7,14 @@ import {
   getMeetingRecordings,
   getMeetingSettings,
   saveMeetingSettings,
+  exportMeetingToEntomate,
+  isEntomateConnected,
+  autoExportIfEnabled,
   MeetingAnalyticsData,
   MeetingRecording,
   MeetingSettings,
   DEFAULT_MEETING_SETTINGS,
+  ExportStatus,
 } from '../../services/meetingService';
 
 // ============================================
@@ -1275,16 +1279,20 @@ export const RecordingsModal: React.FC<RecordingsModalProps> = ({ isOpen, onClos
   const [currentTime, setCurrentTime] = useState(0);
   const [duration, setDuration] = useState(0);
   const audioRef = useRef<HTMLAudioElement>(null);
+  const [entomateConnected, setEntomateConnected] = useState(false);
+  const [exportStatuses, setExportStatuses] = useState<Record<string, ExportStatus>>({});
 
   useEffect(() => {
     if (!isOpen) return;
     setLoading(true);
     setSelected(null);
     setSearch('');
+    setExportStatuses({});
     getMeetingRecordings().then(r => {
       setRecordings(r);
       setLoading(false);
     });
+    isEntomateConnected().then(setEntomateConnected);
   }, [isOpen]);
 
   useEffect(() => {
@@ -1318,6 +1326,12 @@ export const RecordingsModal: React.FC<RecordingsModalProps> = ({ isOpen, onClos
     const rect = e.currentTarget.getBoundingClientRect();
     const pct = (e.clientX - rect.left) / rect.width;
     audioRef.current.currentTime = pct * duration;
+  };
+
+  const handleExportToEntomate = async (rec: MeetingRecording) => {
+    setExportStatuses(prev => ({ ...prev, [rec.id]: 'exporting' }));
+    const result = await exportMeetingToEntomate(rec);
+    setExportStatuses(prev => ({ ...prev, [rec.id]: result.success ? 'exported' : 'error' }));
   };
 
   const renderTranscript = () => {
@@ -1416,6 +1430,25 @@ export const RecordingsModal: React.FC<RecordingsModalProps> = ({ isOpen, onClos
                         {r.attendees.length > 0 ? ` · ${r.attendees.length} attendees` : ''}
                       </div>
                     </div>
+                    {entomateConnected && (() => {
+                      const status = exportStatuses[r.id] || 'idle';
+                      return (
+                        <button
+                          type="button"
+                          className="meetings-recording-play-btn"
+                          title={status === 'exported' ? 'Exported to Entomate' : status === 'exporting' ? 'Exporting...' : 'Export to Entomate'}
+                          onClick={(e) => { e.stopPropagation(); handleExportToEntomate(r); }}
+                          disabled={status === 'exporting' || status === 'exported'}
+                          style={{
+                            color: status === 'exported' ? '#10b981' : status === 'error' ? '#f43f5e' : undefined,
+                          }}
+                        >
+                          {status === 'exporting' ? <Loader2 className="animate-spin" style={{ width: 14, height: 14 }} /> :
+                           status === 'exported' ? <Check style={{ width: 14, height: 14 }} /> :
+                           <Upload style={{ width: 14, height: 14 }} />}
+                        </button>
+                      );
+                    })()}
                     <div className="meetings-recording-play-btn">
                       <Play />
                     </div>
@@ -1450,6 +1483,32 @@ export const RecordingsModal: React.FC<RecordingsModalProps> = ({ isOpen, onClos
                   <a href={selected.audioFileUrl} download className="meetings-download-btn">
                     <Download /> Download
                   </a>
+                  {entomateConnected && (() => {
+                    const status = exportStatuses[selected.id] || 'idle';
+                    return (
+                      <button
+                        type="button"
+                        className="meetings-download-btn"
+                        disabled={status === 'exporting' || status === 'exported'}
+                        onClick={() => handleExportToEntomate(selected)}
+                        title={status === 'exported' ? 'Already exported to Entomate' : 'Export to Entomate for AI analysis'}
+                        style={{
+                          background: status === 'exported' ? 'rgba(16,185,129,0.15)' : status === 'error' ? 'rgba(244,63,94,0.15)' : undefined,
+                          color: status === 'exported' ? '#10b981' : status === 'error' ? '#f43f5e' : undefined,
+                        }}
+                      >
+                        {status === 'exporting' ? (
+                          <><Loader2 className="animate-spin" style={{ width: 14, height: 14 }} /> Exporting...</>
+                        ) : status === 'exported' ? (
+                          <><Check style={{ width: 14, height: 14 }} /> Exported</>
+                        ) : status === 'error' ? (
+                          <><Upload style={{ width: 14, height: 14 }} /> Retry</>
+                        ) : (
+                          <><Upload style={{ width: 14, height: 14 }} /> Export to Entomate</>
+                        )}
+                      </button>
+                    );
+                  })()}
                 </div>
               </div>
 
@@ -1765,12 +1824,14 @@ export const MeetingSettingsModal: React.FC<MeetingSettingsModalProps> = ({ isOp
   const [settings, setSettings] = useState<MeetingSettings>(DEFAULT_MEETING_SETTINGS);
   const [section, setSection] = useState<SettingsSection>('general');
   const [saved, setSaved] = useState(false);
+  const [entomateAvailable, setEntomateAvailable] = useState(false);
 
   useEffect(() => {
     if (isOpen) {
       setSettings(getMeetingSettings());
       setSaved(false);
       setSection('general');
+      isEntomateConnected().then(setEntomateAvailable);
     }
   }, [isOpen]);
 
@@ -1961,6 +2022,36 @@ export const MeetingSettingsModal: React.FC<MeetingSettingsModalProps> = ({ isOp
                         )}
                       </button>
                     ))}
+                  </div>
+
+                  {/* Entomate Integration */}
+                  <div className="meetings-settings-section-title" style={{ marginTop: 24 }}>Entomate</div>
+
+                  <div className="meetings-settings-row">
+                    <div className="meetings-settings-row-text">
+                      <div className="meetings-settings-row-label">
+                        Auto-Export to Entomate
+                        {!entomateAvailable && (
+                          <span style={{
+                            marginLeft: 8, fontSize: 10, padding: '2px 7px',
+                            background: 'rgba(244,63,94,0.1)', borderRadius: 10,
+                            color: '#f43f5e', fontWeight: 600,
+                          }}>Not Connected</span>
+                        )}
+                      </div>
+                      <div className="meetings-settings-row-desc">
+                        Automatically send recordings to Entomate for AI transcription, sentiment analysis, and action item extraction when meetings end
+                      </div>
+                    </div>
+                    <button
+                      type="button"
+                      className={`meetings-toggle ${settings.autoExportToEntomate ? 'on' : ''}`}
+                      onClick={() => update('autoExportToEntomate', !settings.autoExportToEntomate)}
+                      role="switch"
+                      aria-checked={settings.autoExportToEntomate ? 'true' : 'false'}
+                      aria-label="Auto-Export to Entomate"
+                      disabled={!entomateAvailable}
+                    />
                   </div>
                 </>
               )}

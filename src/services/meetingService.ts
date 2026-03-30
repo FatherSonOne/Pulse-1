@@ -1,5 +1,6 @@
 import { supabase } from './supabase';
 import { dataService } from './dataService';
+import { ECOSYSTEM_APPS } from '../config/ecosystem';
 
 // ============================================
 // TYPES
@@ -36,6 +37,7 @@ export interface MeetingSettings {
   breakoutRoomsEnabled: boolean;
   joinSoundEnabled: boolean;
   hostVideoDefault: boolean;
+  autoExportToEntomate: boolean;
 }
 
 // ============================================
@@ -51,6 +53,7 @@ export const DEFAULT_MEETING_SETTINGS: MeetingSettings = {
   breakoutRoomsEnabled: false,
   joinSoundEnabled: true,
   hostVideoDefault: true,
+  autoExportToEntomate: false,
 };
 
 const MEETING_SETTINGS_KEY = 'pulse_meeting_settings';
@@ -265,5 +268,189 @@ export const saveMeetingSettings = (settings: MeetingSettings): void => {
     localStorage.setItem(MEETING_SETTINGS_KEY, JSON.stringify(settings));
   } catch (err) {
     console.error('saveMeetingSettings error:', err);
+  }
+};
+
+// ============================================
+// ENTOMATE EXPORT
+// ============================================
+
+export type ExportStatus = 'idle' | 'exporting' | 'exported' | 'error';
+
+/**
+ * Fetch a single recording by ID (for bot action export).
+ */
+export const getMeetingRecordingById = async (
+  recordingId: string,
+  source: 'pulse_video' | 'ai_scribe'
+): Promise<MeetingRecording | null> => {
+  try {
+    if (source === 'pulse_video') {
+      const { data } = await supabase
+        .from('pulse_video_rooms')
+        .select('id, title, created_at, duration_seconds, recording_url, transcript')
+        .eq('id', recordingId)
+        .single();
+      if (!data) return null;
+      return {
+        id: data.id,
+        title: data.title || 'Pulse Meeting',
+        startTime: data.created_at ? new Date(data.created_at) : null,
+        durationMinutes: data.duration_seconds ? Math.round(data.duration_seconds / 60) : null,
+        audioFileUrl: data.recording_url || '',
+        transcript: data.transcript || null,
+        summary: null,
+        attendees: [],
+      };
+    } else {
+      const { data } = await supabase
+        .from('meetings')
+        .select('id, title, start_time, duration_minutes, audio_file_url, transcript, attendees')
+        .eq('id', recordingId)
+        .single();
+      if (!data) return null;
+      return {
+        id: data.id,
+        title: data.title,
+        startTime: data.start_time ? new Date(data.start_time) : null,
+        durationMinutes: data.duration_minutes,
+        audioFileUrl: data.audio_file_url || '',
+        transcript: data.transcript || null,
+        summary: null,
+        attendees: Array.isArray(data.attendees) ? data.attendees : [],
+      };
+    }
+  } catch (err) {
+    console.error('getMeetingRecordingById error:', err);
+    return null;
+  }
+};
+
+/**
+ * Check if a meeting has already been exported to Entomate
+ * by looking for a prior meeting.export event in ecosystem_events.
+ */
+export const checkEntomateExportStatus = async (meetingId: string): Promise<boolean> => {
+  try {
+    const { data } = await supabase
+      .from('ecosystem_events')
+      .select('id')
+      .eq('event_type', 'meeting.export')
+      .eq('direction', 'outbound')
+      .eq('status', 'processed')
+      .contains('payload', { meetingId })
+      .limit(1);
+    return (data?.length ?? 0) > 0;
+  } catch {
+    return false;
+  }
+};
+
+/**
+ * Check if Entomate ecosystem connection is configured and enabled.
+ */
+export const isEntomateConnected = async (): Promise<boolean> => {
+  try {
+    const { data } = await supabase
+      .from('ecosystem_config')
+      .select('enabled')
+      .eq('app_name', 'entomate')
+      .single();
+    return data?.enabled === true;
+  } catch {
+    return false;
+  }
+};
+
+/**
+ * Export a Pulse meeting recording to Entomate for AI processing.
+ * Sends via the ecosystem-outbound edge function.
+ */
+/**
+ * Auto-export a just-ended meeting to Entomate if the setting is enabled.
+ * Called from meeting end handlers — fires and forgets (logs errors, never throws).
+ */
+export const autoExportIfEnabled = async (meeting: {
+  id?: string;
+  title: string;
+  transcript?: string | null;
+  audioUrl?: string | null;
+  attendees?: string[];
+  durationMinutes?: number;
+  source?: 'pulse_video' | 'ai_scribe' | 'voxer';
+}): Promise<void> => {
+  try {
+    const settings = getMeetingSettings();
+    if (!settings.autoExportToEntomate) return;
+
+    const connected = await isEntomateConnected();
+    if (!connected) return;
+
+    const recording: MeetingRecording = {
+      id: meeting.id || crypto.randomUUID(),
+      title: meeting.title,
+      startTime: new Date(),
+      durationMinutes: meeting.durationMinutes || null,
+      audioFileUrl: meeting.audioUrl || '',
+      transcript: meeting.transcript || null,
+      summary: null,
+      attendees: meeting.attendees || [],
+    };
+
+    const result = await exportMeetingToEntomate(recording, meeting.source || 'ai_scribe');
+    if (result.success) {
+      console.log(`[autoExport] Meeting "${meeting.title}" exported to Entomate`);
+    } else {
+      console.warn(`[autoExport] Export failed: ${result.error}`);
+    }
+  } catch (err) {
+    console.error('[autoExport] Error:', err);
+  }
+};
+
+export const exportMeetingToEntomate = async (
+  recording: MeetingRecording,
+  source: 'pulse_video' | 'ai_scribe' | 'voxer' = 'pulse_video'
+): Promise<{ success: boolean; error?: string }> => {
+  try {
+    const session = await supabase.auth.getSession();
+    const token = session.data.session?.access_token;
+    if (!token) return { success: false, error: 'Not authenticated' };
+
+    const outboundUrl = ECOSYSTEM_APPS.pulse.inboundUrl.replace('ecosystem-inbound', 'ecosystem-outbound');
+
+    const resp = await fetch(outboundUrl, {
+      method: 'POST',
+      headers: {
+        'Content-Type': 'application/json',
+        'Authorization': `Bearer ${token}`,
+      },
+      body: JSON.stringify({
+        eventType: 'meeting.export',
+        targetApp: 'entomate',
+        entityType: 'meeting',
+        entityId: recording.id,
+        data: {
+          meetingId: recording.id,
+          title: recording.title,
+          audioUrl: recording.audioFileUrl || null,
+          transcript: recording.transcript || null,
+          attendees: recording.attendees.map(name => ({ name })),
+          durationMinutes: recording.durationMinutes || 0,
+          recordedAt: recording.startTime?.toISOString() || new Date().toISOString(),
+          source,
+        },
+      }),
+    });
+
+    if (!resp.ok) {
+      const body = await resp.json().catch(() => ({}));
+      return { success: false, error: body.error || `Export failed (${resp.status})` };
+    }
+
+    return { success: true };
+  } catch (err) {
+    console.error('exportMeetingToEntomate error:', err);
+    return { success: false, error: (err as Error).message };
   }
 };

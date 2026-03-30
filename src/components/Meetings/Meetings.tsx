@@ -8,6 +8,7 @@ import AudioVisualizer from '../AudioVisualizer';
 import './Meetings.css';
 import PulseVideoRoom, { MeetingEndSummary } from './PulseVideoRoom';
 import { createPulseRoom } from '../../services/pulseVideoService';
+import { autoExportIfEnabled } from '../../services/meetingService';
 
 // Import new components
 import { ArrowLeft, ArrowRight, Copy, Ellipsis, Hand, History, LayoutGrid, MessageSquare, Mic, PhoneOff, PlayCircle, Send, Upload, Users, Wand2, X } from 'lucide-react';
@@ -575,6 +576,15 @@ const Meetings: React.FC<MeetingsProps> = ({ apiKey, contacts, initialContactId,
           tags: ['meeting', 'scribe', 'auto-save'],
           relatedContactId: activeParticipants[0]?.id,
         });
+
+        // Auto-export to Entomate (fire-and-forget)
+        autoExportIfEnabled({
+          title: activeMeetingTitle,
+          transcript: rawNotes,
+          attendees: activeParticipants.map(p => p.name),
+          durationMinutes: durationMins,
+          source: 'ai_scribe',
+        });
       } catch (e) {
         console.error('Summary generation error:', e);
       }
@@ -916,6 +926,15 @@ const Meetings: React.FC<MeetingsProps> = ({ apiKey, contacts, initialContactId,
                 meetingTitle: activeMeetingTitle,
               });
               setView('summary');
+
+              // Auto-export to Entomate (fire-and-forget)
+              autoExportIfEnabled({
+                title: activeMeetingTitle,
+                transcript: summary.transcript || null,
+                attendees: activeParticipants.map(p => p.name),
+                durationMinutes: Math.round(summary.durationSeconds / 60),
+                source: 'pulse_video',
+              });
             } else {
               setView('dashboard');
             }

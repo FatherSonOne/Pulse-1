@@ -7,6 +7,7 @@
 //
 // Supported event types:
 //   meeting.feedback — User rates a meeting summary (→ Entomate)
+//   meeting.export   — Export a Pulse recording to Entomate for AI processing
 // =====================================================
 
 import { serve } from 'https://deno.land/std@0.168.0/http/server.ts';
@@ -20,6 +21,8 @@ const corsHeaders = {
 interface OutboundRequest {
   eventType: string;
   targetApp: 'entomate' | 'logos_vision';
+  entityType?: string;
+  entityId?: string;
   data: Record<string, any>;
 }
 
@@ -56,7 +59,7 @@ serve(async (req) => {
     }
 
     // Allowed outbound event types (whitelist to prevent abuse)
-    const ALLOWED_EVENTS = ['meeting.feedback'];
+    const ALLOWED_EVENTS = ['meeting.feedback', 'meeting.export', 'meeting.export_request'];
     if (!ALLOWED_EVENTS.includes(eventType)) {
       return json({ error: `Event type '${eventType}' is not allowed for outbound` }, 403);
     }
@@ -73,12 +76,14 @@ serve(async (req) => {
     }
 
     // Build the ecosystem event payload
-    const event = {
+    const event: Record<string, unknown> = {
       id: crypto.randomUUID(),
       source: 'pulse',
       timestamp: new Date().toISOString(),
       serviceToken: config.service_token,
       eventType,
+      entityType: body.entityType || undefined,
+      entityId: body.entityId || undefined,
       data: {
         ...data,
         userId: user.id, // Always set from JWT, not from client
@@ -89,6 +94,8 @@ serve(async (req) => {
     const outboundHeaders: Record<string, string> = {
       'Content-Type': 'application/json',
       'X-Ecosystem-Token': config.service_token,
+      'X-Ecosystem-Source': 'pulse',
+      'X-Ecosystem-Event-Id': event.id as string,
     };
     // Supabase edge functions require an anon key to pass the API gateway
     if (config.features?.gateway_key) {

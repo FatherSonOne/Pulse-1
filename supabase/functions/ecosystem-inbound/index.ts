@@ -172,6 +172,12 @@ async function routeEvent(
     case 'contact.created':
       return handleContactEvent(supabase, event);
 
+    case 'meeting.recordings_list':
+      return handleRecordingsListRequest(supabase, event);
+
+    case 'meeting.export_request':
+      return handleExportRequest(supabase, event);
+
     case 'heartbeat':
       return handleHeartbeat(supabase, event);
 
@@ -494,10 +500,275 @@ async function handleContactEvent(supabase: any, event: EcosystemEvent): Promise
   }
 }
 
+/**
+ * Handle meeting.recordings_list — Entomate requests available Pulse recordings.
+ * Returns a list of recent recordings that Entomate can then request individually
+ * via meeting.export events, or that can be auto-synced.
+ */
+async function handleRecordingsListRequest(supabase: any, event: EcosystemEvent): Promise<void> {
+  const { workspaceId, since, limit: reqLimit } = event.data;
+  if (!workspaceId) throw new Error('workspaceId required');
+
+  const maxRecordings = Math.min(reqLimit || 20, 50);
+  const sinceDate = since ? new Date(since).toISOString() : new Date(Date.now() - 30 * 86400000).toISOString();
+
+  // Fetch recent video room recordings
+  const { data: videoRooms } = await supabase
+    .from('pulse_video_rooms')
+    .select('id, title, created_at, duration_seconds, recording_url, transcript, summary')
+    .eq('status', 'ended')
+    .gte('created_at', sinceDate)
+    .not('recording_url', 'is', null)
+    .order('created_at', { ascending: false })
+    .limit(maxRecordings);
+
+  // Fetch legacy meeting recordings
+  const { data: legacyMeetings } = await supabase
+    .from('meetings')
+    .select('id, title, start_time, duration_minutes, audio_file_url, transcript, summary, attendees')
+    .gte('created_at', sinceDate)
+    .not('audio_file_url', 'is', null)
+    .order('start_time', { ascending: false })
+    .limit(maxRecordings);
+
+  // Check which have already been exported
+  const allIds = [
+    ...(videoRooms || []).map((r: any) => r.id),
+    ...(legacyMeetings || []).map((r: any) => r.id),
+  ];
+
+  const { data: exportedEvents } = allIds.length > 0
+    ? await supabase
+        .from('ecosystem_events')
+        .select('payload')
+        .eq('event_type', 'meeting.export')
+        .eq('direction', 'outbound')
+        .eq('status', 'processed')
+    : { data: [] };
+
+  const exportedIds = new Set(
+    (exportedEvents || [])
+      .map((e: any) => e.payload?.meetingId)
+      .filter(Boolean)
+  );
+
+  const recordings = [
+    ...(videoRooms || []).map((r: any) => ({
+      id: r.id,
+      title: r.title || 'Pulse Meeting',
+      recordedAt: r.created_at,
+      durationMinutes: r.duration_seconds ? Math.round(r.duration_seconds / 60) : null,
+      hasAudio: !!r.recording_url,
+      hasTranscript: !!r.transcript,
+      source: 'pulse_video',
+      alreadyExported: exportedIds.has(r.id),
+    })),
+    ...(legacyMeetings || []).map((r: any) => ({
+      id: r.id,
+      title: r.title,
+      recordedAt: r.start_time || r.created_at,
+      durationMinutes: r.duration_minutes,
+      hasAudio: !!r.audio_file_url,
+      hasTranscript: !!r.transcript,
+      attendeeCount: Array.isArray(r.attendees) ? r.attendees.length : 0,
+      source: 'ai_scribe',
+      alreadyExported: exportedIds.has(r.id),
+    })),
+  ];
+
+  // Post the recordings list to #entomate-meetings channel
+  const channelId = await resolveOrCreateBotChannel(supabase, workspaceId, 'meetings');
+  const unexported = recordings.filter(r => !r.alreadyExported);
+
+  if (unexported.length > 0) {
+    const listText = unexported.slice(0, 10).map((r: any) =>
+      `• **${r.title}** — ${new Date(r.recordedAt).toLocaleDateString()}${r.durationMinutes ? ` (${r.durationMinutes} min)` : ''}`
+    ).join('\n');
+
+    await insertBotMessage(supabase, {
+      workspaceId,
+      channelId,
+      senderId: ENTOMATE_BOT_ID,
+      content: `## 🎙️ Recordings Available for Export\n\n${unexported.length} recording${unexported.length !== 1 ? 's' : ''} not yet sent to Entomate:\n\n${listText}${unexported.length > 10 ? `\n\n...and ${unexported.length - 10} more` : ''}`,
+      messageType: 'recordings_list',
+      metadata: {
+        recordings: unexported,
+        totalCount: unexported.length,
+        requestedBy: event.source,
+      },
+      actions: [
+        { label: 'Export All to Entomate', action: 'export_all_recordings' },
+      ],
+    });
+  }
+}
+
 async function handleHeartbeat(supabase: any, event: EcosystemEvent): Promise<void> {
   // No-op handler — token validation already passed upstream.
   // The calling app's heartbeat function updates last_heartbeat on success.
   console.log(`[ecosystem-inbound] Heartbeat received from ${event.source}`);
+}
+
+// =====================================================
+// SERVICE-TO-SERVICE OUTBOUND
+// =====================================================
+
+/**
+ * Send an event directly to another app's inbound endpoint.
+ * Used for service-to-service communication (no user JWT needed).
+ */
+async function sendServiceEvent(
+  supabase: any,
+  targetApp: string,
+  event: {
+    eventType: string;
+    entityType?: string;
+    entityId?: string;
+    data: Record<string, any>;
+  }
+): Promise<{ success: boolean; error?: string }> {
+  const { data: config, error: configError } = await supabase
+    .from('ecosystem_config')
+    .select('api_url, service_token, features, enabled')
+    .eq('app_name', targetApp)
+    .single();
+
+  if (configError || !config || !config.enabled) {
+    return { success: false, error: `Target app '${targetApp}' not configured` };
+  }
+
+  const eventId = crypto.randomUUID();
+  const payload = {
+    id: eventId,
+    source: 'pulse',
+    timestamp: new Date().toISOString(),
+    serviceToken: config.service_token,
+    eventType: event.eventType,
+    entityType: event.entityType,
+    entityId: event.entityId,
+    data: event.data,
+  };
+
+  const headers: Record<string, string> = {
+    'Content-Type': 'application/json',
+    'X-Ecosystem-Token': config.service_token,
+    'X-Ecosystem-Source': 'pulse',
+    'X-Ecosystem-Event-Id': eventId,
+  };
+  if (config.features?.gateway_key) {
+    headers['Authorization'] = `Bearer ${config.features.gateway_key}`;
+  }
+
+  const resp = await fetch(config.api_url, {
+    method: 'POST',
+    headers,
+    body: JSON.stringify(payload),
+  });
+
+  if (!resp.ok) {
+    const errBody = await resp.text().catch(() => '');
+    console.error(`[sendServiceEvent] POST to ${targetApp} failed (${resp.status}):`, errBody);
+    return { success: false, error: `Delivery failed: ${resp.status}` };
+  }
+
+  await supabase.from('ecosystem_events').insert({
+    event_id: eventId,
+    source: 'pulse',
+    event_type: event.eventType,
+    entity_type: event.entityType,
+    entity_id: event.entityId,
+    direction: 'outbound',
+    status: 'processed',
+    payload: event.data,
+  });
+
+  return { success: true };
+}
+
+// =====================================================
+// EXPORT REQUEST HANDLER
+// =====================================================
+
+/**
+ * Handle meeting.export_request — Entomate requests a specific recording.
+ * Looks up the recording in Pulse and sends it back as meeting.export.
+ */
+async function handleExportRequest(supabase: any, event: EcosystemEvent): Promise<void> {
+  const { recordingId, source: requestedSource } = event.data;
+  if (!recordingId) throw new Error('recordingId required');
+
+  let recording: any = null;
+  let source = 'pulse_video';
+
+  // Try pulse_video_rooms first
+  const { data: videoRoom } = await supabase
+    .from('pulse_video_rooms')
+    .select('id, title, created_at, duration_seconds, recording_url, transcript, summary')
+    .eq('id', recordingId)
+    .single();
+
+  if (videoRoom) {
+    recording = {
+      id: videoRoom.id,
+      title: videoRoom.title || 'Pulse Meeting',
+      audioUrl: videoRoom.recording_url || null,
+      transcript: videoRoom.transcript || null,
+      durationMinutes: videoRoom.duration_seconds ? Math.round(videoRoom.duration_seconds / 60) : 0,
+      recordedAt: videoRoom.created_at,
+      attendees: [],
+    };
+  }
+
+  // Fallback: legacy meetings table
+  if (!recording) {
+    const { data: legacyMeeting } = await supabase
+      .from('meetings')
+      .select('id, title, start_time, duration_minutes, audio_file_url, transcript, attendees')
+      .eq('id', recordingId)
+      .single();
+
+    if (legacyMeeting) {
+      source = 'ai_scribe';
+      recording = {
+        id: legacyMeeting.id,
+        title: legacyMeeting.title,
+        audioUrl: legacyMeeting.audio_file_url || null,
+        transcript: legacyMeeting.transcript || null,
+        durationMinutes: legacyMeeting.duration_minutes || 0,
+        recordedAt: legacyMeeting.start_time || legacyMeeting.created_at,
+        attendees: (legacyMeeting.attendees || []).map((name: string) => ({ name })),
+      };
+    }
+  }
+
+  if (!recording) {
+    throw new Error(`Recording ${recordingId} not found`);
+  }
+
+  if (!recording.audioUrl && !recording.transcript) {
+    throw new Error(`Recording ${recordingId} has no audio or transcript`);
+  }
+
+  // Send meeting.export back to the requesting app
+  const result = await sendServiceEvent(supabase, event.source, {
+    eventType: 'meeting.export',
+    entityType: 'meeting',
+    entityId: recording.id,
+    data: {
+      meetingId: recording.id,
+      title: recording.title,
+      audioUrl: recording.audioUrl,
+      transcript: recording.transcript,
+      attendees: recording.attendees,
+      durationMinutes: recording.durationMinutes,
+      recordedAt: recording.recordedAt,
+      source: requestedSource || source,
+    },
+  });
+
+  if (!result.success) {
+    throw new Error(`Failed to send recording to ${event.source}: ${result.error}`);
+  }
 }
 
 // =====================================================

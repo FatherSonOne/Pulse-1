@@ -1,5 +1,6 @@
 import { CalendarEvent } from '../types';
 import { supabase } from './supabase';
+import { isEntomateConnected } from './meetingService';
 
 export interface MeetingFollowUp {
   id: string;
@@ -82,16 +83,16 @@ class PostMeetingService {
       );
     });
 
-    recentlyEnded.forEach(event => {
+    for (const event of recentlyEnded) {
       this.createFollowUpPrompt(event);
       this.promptedEventIds.add(event.id);
-    });
+    }
   }
 
   /**
    * Generate follow-up suggestions based on meeting details
    */
-  private generateSuggestions(event: CalendarEvent): FollowUpSuggestion[] {
+  private async generateSuggestions(event: CalendarEvent): Promise<FollowUpSuggestion[]> {
     const suggestions: FollowUpSuggestion[] = [];
 
     // Suggest follow-up meeting (in 1-2 weeks)
@@ -136,14 +137,30 @@ class PostMeetingService {
       icon: 'fa-note-sticky',
     });
 
+    // Suggest exporting to Entomate for AI analysis (if connected)
+    try {
+      const connected = await isEntomateConnected();
+      if (connected) {
+        suggestions.push({
+          type: 'task',
+          title: 'Export to Entomate',
+          description: `Send recording to Entomate for AI transcription, sentiment analysis & action items`,
+          priority: 'medium',
+          icon: 'fa-share-from-square',
+        });
+      }
+    } catch {
+      // Entomate not available — skip suggestion
+    }
+
     return suggestions;
   }
 
   /**
    * Create a follow-up prompt for a meeting
    */
-  private createFollowUpPrompt(event: CalendarEvent): MeetingFollowUp {
-    const suggestions = this.generateSuggestions(event);
+  private async createFollowUpPrompt(event: CalendarEvent): Promise<MeetingFollowUp> {
+    const suggestions = await this.generateSuggestions(event);
 
     const followUp: MeetingFollowUp = {
       id: `followup_${event.id}_${Date.now()}`,
