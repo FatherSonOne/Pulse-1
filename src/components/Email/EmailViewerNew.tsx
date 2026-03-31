@@ -1,7 +1,9 @@
 // EmailViewerNew.tsx - Email detail/thread view for cached emails
-import React, { useState } from 'react';
+import React, { useState, useMemo } from 'react';
+import DOMPurify from 'isomorphic-dompurify';
 import { CachedEmail, EmailThread, emailSyncService } from '../../services/emailSyncService';
 import { emailAIService, EmailAnalysis } from '../../services/emailAIService';
+import { getGmailService } from '../../services/gmailService';
 import { supabase } from '../../services/supabase';
 import SnoozeModal from './SnoozeModal';
 import RelationshipPanel from './RelationshipPanel';
@@ -16,6 +18,8 @@ interface EmailViewerNewProps {
   thread: EmailThread | null;
   onClose: () => void;
   onReply: (email: CachedEmail, prefilledBody?: string) => void;
+  onReplyAll?: (email: CachedEmail) => void;
+  onForward?: (email: CachedEmail) => void;
   onArchive: () => void;
   onTrash: () => void;
   onToggleStar: () => void;
@@ -28,6 +32,8 @@ export const EmailViewerNew: React.FC<EmailViewerNewProps> = ({
   thread,
   onClose,
   onReply,
+  onReplyAll,
+  onForward,
   onArchive,
   onTrash,
   onToggleStar,
@@ -569,30 +575,78 @@ export const EmailViewerNew: React.FC<EmailViewerNewProps> = ({
                 {/* Message body */}
                 {isExpanded && (
                   <div className="p-4">
-                    {/* Body content */}
+                    {/* Body content — HTML sanitized with DOMPurify to prevent XSS */}
                     <div className="prose prose-stone dark:prose-invert prose-sm max-w-none">
-                      <div className="whitespace-pre-wrap text-stone-700 dark:text-zinc-300">
-                        {msg.body_text || msg.snippet}
-                      </div>
+                      {msg.body_html ? (
+                        <div
+                          className="text-stone-700 dark:text-zinc-300 [&_img]:max-w-full [&_a]:text-rose-600 dark:[&_a]:text-rose-400"
+                          dangerouslySetInnerHTML={{
+                            __html: DOMPurify.sanitize(msg.body_html, {
+                              FORBID_TAGS: ['script', 'style', 'form'],
+                              FORBID_ATTR: ['onerror', 'onclick', 'onload'],
+                            }),
+                          }}
+                        />
+                      ) : (
+                        <div className="whitespace-pre-wrap text-stone-700 dark:text-zinc-300">
+                          {msg.body_text || msg.snippet}
+                        </div>
+                      )}
                     </div>
 
-                    {/* Attachments */}
+                    {/* Attachments with download */}
                     {msg.has_attachments && msg.attachments && msg.attachments.length > 0 && (
                       <div className="mt-4 pt-4 border-t border-stone-200 dark:border-zinc-800">
                         <div className="text-sm text-stone-500 dark:text-zinc-500 mb-2">
                           {msg.attachments.length} Attachment{msg.attachments.length > 1 ? 's' : ''}
                         </div>
                         <div className="flex flex-wrap gap-2">
-                          {msg.attachments.map((att: any, attIdx: number) => (
-                            <div
-                              key={attIdx}
-                              className="flex items-center gap-2 px-3 py-2 bg-stone-100 dark:bg-zinc-800 rounded-lg text-sm"
-                            >
-                              <File className="text-stone-500 dark:text-zinc-500" />
-                              <span className="text-stone-900 dark:text-white">{att.filename || 'Attachment'}</span>
-                              <span className="text-stone-500 dark:text-zinc-500">{att.size || ''}</span>
-                            </div>
-                          ))}
+                          {msg.attachments.map((att: any, attIdx: number) => {
+                            const formatSize = (bytes: number) => {
+                              if (!bytes) return '';
+                              if (bytes < 1024) return `${bytes} B`;
+                              if (bytes < 1024 * 1024) return `${(bytes / 1024).toFixed(1)} KB`;
+                              return `${(bytes / (1024 * 1024)).toFixed(1)} MB`;
+                            };
+
+                            const handleDownload = async () => {
+                              if (!att.attachmentId || !msg.gmail_id) return;
+                              try {
+                                const gmail = getGmailService();
+                                const base64Data = await gmail.downloadAttachment(msg.gmail_id, att.attachmentId);
+                                // Convert base64url to base64, then to blob
+                                const base64 = base64Data.replace(/-/g, '+').replace(/_/g, '/');
+                                const binary = atob(base64);
+                                const bytes = new Uint8Array(binary.length);
+                                for (let i = 0; i < binary.length; i++) bytes[i] = binary.charCodeAt(i);
+                                const blob = new Blob([bytes], { type: att.mimeType || 'application/octet-stream' });
+                                const url = URL.createObjectURL(blob);
+                                const a = document.createElement('a');
+                                a.href = url;
+                                a.download = att.filename || 'attachment';
+                                a.click();
+                                URL.revokeObjectURL(url);
+                              } catch (err) {
+                                console.error('Download failed:', err);
+                                toast.error('Failed to download attachment');
+                              }
+                            };
+
+                            return (
+                              <button
+                                type="button"
+                                key={attIdx}
+                                onClick={handleDownload}
+                                disabled={!att.attachmentId}
+                                className="flex items-center gap-2 px-3 py-2 bg-stone-100 dark:bg-zinc-800 rounded-lg text-sm hover:bg-stone-200 dark:hover:bg-zinc-700 transition cursor-pointer disabled:opacity-50 disabled:cursor-default"
+                                title={att.attachmentId ? `Download ${att.filename || 'attachment'}` : att.filename || 'Attachment'}
+                              >
+                                <File className="text-stone-500 dark:text-zinc-500" />
+                                <span className="text-stone-900 dark:text-white">{att.filename || 'Attachment'}</span>
+                                {att.size > 0 && <span className="text-stone-500 dark:text-zinc-500">{formatSize(att.size)}</span>}
+                              </button>
+                            );
+                          })}
                         </div>
                       </div>
                     )}
@@ -608,7 +662,7 @@ export const EmailViewerNew: React.FC<EmailViewerNewProps> = ({
                         Reply
                       </button>
                       <button
-                        onClick={() => onReply(msg)}
+                        onClick={() => onReplyAll ? onReplyAll(msg) : onReply(msg)}
                         className="flex items-center gap-2 px-4 py-2 bg-stone-100 dark:bg-zinc-800 hover:bg-stone-200 dark:hover:bg-zinc-700 rounded-lg text-sm text-stone-900 dark:text-white transition"
                         aria-label="Reply to all recipients"
                       >
@@ -616,6 +670,7 @@ export const EmailViewerNew: React.FC<EmailViewerNewProps> = ({
                         Reply All
                       </button>
                       <button
+                        onClick={() => onForward ? onForward(msg) : onReply(msg)}
                         className="flex items-center gap-2 px-4 py-2 bg-stone-100 dark:bg-zinc-800 hover:bg-stone-200 dark:hover:bg-zinc-700 rounded-lg text-sm text-stone-900 dark:text-white transition"
                         aria-label="Forward this message"
                       >

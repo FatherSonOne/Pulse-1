@@ -345,6 +345,7 @@ export const EmailSettingsModal: React.FC<EmailSettingsModalProps> = ({
     if (!vacationStart || !vacationEnd) return;
     setVacationSaving(true);
     try {
+      // Save local config
       const saved = await vacationResponderService.saveConfig({
         enabled: vacationEnabled,
         start_date: vacationStart,
@@ -356,8 +357,26 @@ export const EmailSettingsModal: React.FC<EmailSettingsModalProps> = ({
         only_first_email: vacationOnlyFirst,
       });
       setVacationConfig(saved);
+
+      // Sync to Gmail's native vacation responder
+      try {
+        const gmail = getGmailService();
+        await gmail.setVacationSettings({
+          enableAutoReply: vacationEnabled,
+          responseSubject: vacationSubject,
+          responseBodyPlainText: vacationMessage,
+          restrictToContacts: vacationOnlyContacts,
+          startTime: vacationStart ? new Date(vacationStart).getTime() : null,
+          endTime: vacationEnd ? new Date(vacationEnd).getTime() : null,
+        });
+        toast.success(vacationEnabled ? 'Vacation responder activated in Gmail' : 'Vacation responder deactivated');
+      } catch (gmailError) {
+        console.error('Error syncing vacation to Gmail:', gmailError);
+        toast.error('Saved locally but failed to sync to Gmail');
+      }
     } catch (error) {
       console.error('Error saving vacation responder:', error);
+      toast.error('Failed to save vacation responder');
     } finally {
       setVacationSaving(false);
     }

@@ -1,5 +1,6 @@
 // Email Accounts Service
 // Manage multiple email accounts for unified inbox
+// Uses Supabase directly (no API routes needed)
 
 import { supabase } from './supabase';
 
@@ -23,35 +24,27 @@ export type EmailAccountInput = Omit<
 >;
 
 class EmailAccountsService {
-  private async getAccessToken(): Promise<string> {
-    const { data, error } = await supabase.auth.getSession();
-    if (error || !data.session?.access_token) {
-      throw new Error('Not authenticated');
-    }
-    return data.session.access_token;
-  }
-
-  private async request<T>(path: string, options?: RequestInit): Promise<T> {
-    const token = await this.getAccessToken();
-    const response = await fetch(path, {
-      ...options,
-      headers: {
-        'Content-Type': 'application/json',
-        Authorization: `Bearer ${token}`,
-        ...(options?.headers || {}),
-      },
-    });
-
-    const payload = await response.json().catch(() => ({}));
-    if (!response.ok) {
-      throw new Error(payload?.error || 'Request failed');
-    }
-
-    return (payload?.data ?? payload) as T;
+  private async getUserId(): Promise<string> {
+    const { data: { user }, error } = await supabase.auth.getUser();
+    if (error || !user) throw new Error('Not authenticated');
+    return user.id;
   }
 
   async list(): Promise<EmailAccount[]> {
-    return this.request<EmailAccount[]>('/api/email/accounts');
+    const userId = await this.getUserId();
+
+    const { data, error } = await supabase
+      .from('email_accounts')
+      .select('*')
+      .eq('user_id', userId)
+      .order('is_primary', { ascending: false });
+
+    if (error) {
+      console.error('[EmailAccountsService] Error listing accounts:', error);
+      throw new Error(`Failed to list accounts: ${error.message}`);
+    }
+
+    return data || [];
   }
 
   async getPrimary(): Promise<EmailAccount | null> {
@@ -60,32 +53,78 @@ class EmailAccountsService {
   }
 
   async create(input: EmailAccountInput): Promise<EmailAccount> {
-    return this.request<EmailAccount>('/api/email/accounts', {
-      method: 'POST',
-      body: JSON.stringify({
-        ...input,
+    const userId = await this.getUserId();
+
+    const { data, error } = await supabase
+      .from('email_accounts')
+      .insert({
+        user_id: userId,
+        provider: input.provider,
         email_address: input.email_address.toLowerCase(),
-      }),
-    });
+        display_name: input.display_name,
+        is_primary: input.is_primary,
+        sync_enabled: input.sync_enabled,
+        integration_id: input.integration_id,
+      })
+      .select()
+      .single();
+
+    if (error) {
+      console.error('[EmailAccountsService] Error creating account:', error);
+      throw new Error(`Failed to create account: ${error.message}`);
+    }
+
+    return data;
   }
 
   async update(id: string, updates: Partial<EmailAccountInput>): Promise<EmailAccount> {
-    return this.request<EmailAccount>(`/api/email/accounts/${id}`, {
-      method: 'PATCH',
-      body: JSON.stringify({
+    const userId = await this.getUserId();
+
+    const { data, error } = await supabase
+      .from('email_accounts')
+      .update({
         ...updates,
         email_address: updates.email_address?.toLowerCase(),
-      }),
-    });
+        updated_at: new Date().toISOString(),
+      })
+      .eq('id', id)
+      .eq('user_id', userId)
+      .select()
+      .single();
+
+    if (error) {
+      console.error('[EmailAccountsService] Error updating account:', error);
+      throw new Error(`Failed to update account: ${error.message}`);
+    }
+
+    return data;
   }
 
   async delete(id: string): Promise<void> {
-    await this.request(`/api/email/accounts/${id}`, {
-      method: 'DELETE',
-    });
+    const userId = await this.getUserId();
+
+    const { error } = await supabase
+      .from('email_accounts')
+      .delete()
+      .eq('id', id)
+      .eq('user_id', userId);
+
+    if (error) {
+      console.error('[EmailAccountsService] Error deleting account:', error);
+      throw new Error(`Failed to delete account: ${error.message}`);
+    }
   }
 
   async setPrimary(id: string): Promise<EmailAccount> {
+    const userId = await this.getUserId();
+
+    // Unset all other primaries first
+    await supabase
+      .from('email_accounts')
+      .update({ is_primary: false, updated_at: new Date().toISOString() })
+      .eq('user_id', userId)
+      .neq('id', id);
+
     return this.update(id, { is_primary: true });
   }
 

@@ -655,6 +655,59 @@ app.post('/api/email/confidential/:id/revoke', async (req, res) => {
   }
 });
 
+// ==========================
+// Gemini AI Proxy
+// ==========================
+// Keeps GEMINI_API_KEY server-side only — client never sees the key
+
+const GEMINI_API_KEY = process.env.GEMINI_API_KEY || process.env.VITE_GEMINI_API_KEY;
+const GEMINI_BASE_URL = 'https://generativelanguage.googleapis.com/v1beta/models/gemini-2.5-flash:generateContent';
+
+app.get('/api/email/ai/status', (req, res) => {
+  res.json({ available: !!GEMINI_API_KEY });
+});
+
+app.post('/api/email/ai', async (req, res) => {
+  try {
+    if (!GEMINI_API_KEY) {
+      return res.status(503).json({ error: 'Gemini API key not configured on server' });
+    }
+
+    // Authenticate user
+    const supabase = getSupabaseClient(req);
+    await getUserId(supabase); // throws if not authenticated
+
+    const { prompt, temperature, maxOutputTokens } = req.body;
+    if (!prompt || typeof prompt !== 'string') {
+      return res.status(400).json({ error: 'prompt is required' });
+    }
+
+    const geminiResponse = await fetch(`${GEMINI_BASE_URL}?key=${GEMINI_API_KEY}`, {
+      method: 'POST',
+      headers: { 'Content-Type': 'application/json' },
+      body: JSON.stringify({
+        contents: [{ parts: [{ text: prompt }] }],
+        generationConfig: {
+          temperature: temperature ?? 0.7,
+          maxOutputTokens: maxOutputTokens ?? 1024,
+        },
+      }),
+    });
+
+    if (!geminiResponse.ok) {
+      const errorData = await geminiResponse.json().catch(() => ({}));
+      const msg = errorData.error?.message || `Gemini API error: ${geminiResponse.status}`;
+      return res.status(geminiResponse.status).json({ error: msg });
+    }
+
+    const data = await geminiResponse.json();
+    const text = data.candidates?.[0]?.content?.parts?.[0]?.text || '';
+    res.json({ text });
+  } catch (error) {
+    res.status(error.status || 500).json({ error: error.message || 'AI proxy error' });
+  }
+});
+
 // OpenAI Realtime WebSocket Proxy (for environments that need it)
 app.get('/api/realtime/ws-info', (req, res) => {
   res.json({

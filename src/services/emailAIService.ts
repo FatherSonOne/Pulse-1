@@ -42,57 +42,68 @@ export interface ToneCheckResult {
 // ========================================
 
 class EmailAIService {
-  private apiKey: string | null = null;
-  private baseUrl = 'https://generativelanguage.googleapis.com/v1beta/models/gemini-2.5-flash:generateContent';
+  private backendUrl: string;
+  private available: boolean | null = null; // cached availability
 
   constructor() {
-    // API key should be fetched from environment or secure storage
-    this.apiKey = import.meta.env.VITE_GEMINI_API_KEY || null;
+    this.backendUrl = import.meta.env.VITE_BACKEND_URL || 'http://localhost:3003';
   }
 
   /**
-   * Check if AI features are available
+   * Check if AI features are available (key is on server, not client)
    */
   isAvailable(): boolean {
-    return !!this.apiKey;
+    // Optimistic: assume available until proven otherwise
+    // The server will return 503 if key is missing
+    return this.available !== false;
   }
 
   /**
-   * Make a request to Gemini API
+   * Get the current Supabase access token for authenticating with backend
+   */
+  private async getAuthToken(): Promise<string> {
+    const { data: { session } } = await supabase.auth.getSession();
+    if (!session?.access_token) {
+      throw new Error('Not authenticated');
+    }
+    return session.access_token;
+  }
+
+  /**
+   * Make an AI request via the backend proxy (API key stays server-side)
    */
   private async geminiRequest(prompt: string, formattingContext?: 'email-draft' | 'email-analysis' | 'summary' | 'chat'): Promise<string> {
-    if (!this.apiKey) {
-      throw new Error('Gemini API key not configured');
-    }
+    const token = await this.getAuthToken();
 
     // Apply formatting if context provided
     const formattedPrompt = formattingContext
       ? withFormattedOutput(prompt, formattingContext)
       : prompt;
 
-    const response = await fetch(`${this.baseUrl}?key=${this.apiKey}`, {
+    const response = await fetch(`${this.backendUrl}/api/email/ai`, {
       method: 'POST',
       headers: {
         'Content-Type': 'application/json',
+        'Authorization': `Bearer ${token}`,
       },
       body: JSON.stringify({
-        contents: [{
-          parts: [{ text: formattedPrompt }]
-        }],
-        generationConfig: {
-          temperature: 0.7,
-          maxOutputTokens: 1024,
-        }
-      })
+        prompt: formattedPrompt,
+        temperature: 0.7,
+        maxOutputTokens: 1024,
+      }),
     });
 
     if (!response.ok) {
-      const error = await response.json();
-      throw new Error(error.error?.message || 'Gemini API error');
+      const errorData = await response.json().catch(() => ({}));
+      if (response.status === 503) {
+        this.available = false;
+      }
+      throw new Error(errorData.error || 'AI proxy error');
     }
 
+    this.available = true;
     const data = await response.json();
-    return data.candidates?.[0]?.content?.parts?.[0]?.text || '';
+    return data.text || '';
   }
 
   /**

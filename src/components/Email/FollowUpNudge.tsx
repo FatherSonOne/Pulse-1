@@ -1,6 +1,7 @@
 // FollowUpNudge.tsx - Smart follow-up reminder component
 import React, { useState, useEffect } from 'react';
 import { supabase } from '../../services/supabase';
+import { settingsService } from '../../services/settingsService';
 import { CachedEmail } from '../../services/emailSyncService';
 
 import { Bell, Loader2, Reply } from 'lucide-react';
@@ -37,9 +38,10 @@ export const FollowUpNudge: React.FC<FollowUpNudgeProps> = ({
       const { data: { user } } = await supabase.auth.getUser();
       if (!user) return;
 
-      // Get sent emails from last 14 days
-      const fourteenDaysAgo = new Date();
-      fourteenDaysAgo.setDate(fourteenDaysAgo.getDate() - 14);
+      // Get configurable follow-up window (default 14 days)
+      const followUpDays = (await settingsService.get('followUpDaysWindow')) || 14;
+      const cutoffDate = new Date();
+      cutoffDate.setDate(cutoffDate.getDate() - followUpDays);
 
       const { data: sentEmails } = await supabase
         .from('cached_emails')
@@ -47,7 +49,7 @@ export const FollowUpNudge: React.FC<FollowUpNudgeProps> = ({
         .eq('user_id', user.id)
         .eq('is_sent', true)
         .eq('is_trashed', false)
-        .gte('received_at', fourteenDaysAgo.toISOString())
+        .gte('received_at', cutoffDate.toISOString())
         .order('received_at', { ascending: false });
 
       if (!sentEmails || sentEmails.length === 0) {

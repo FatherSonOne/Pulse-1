@@ -159,15 +159,26 @@ class EmailCampaignService {
     try {
       const gmail = getGmailService();
       let sent = 0;
+      let bounced = 0;
 
       for (const email of recipientEmails) {
-        await gmail.sendEmail({
-          to: [email],
-          subject: campaign.subject,
-          body: campaign.body_html ?? campaign.body_text ?? '',
-          isHtml: !!campaign.body_html,
-        });
-        sent++;
+        try {
+          await gmail.sendEmail({
+            to: [email],
+            subject: campaign.subject,
+            body: campaign.body_html ?? campaign.body_text ?? '',
+            isHtml: !!campaign.body_html,
+          });
+          sent++;
+        } catch (err) {
+          console.error(`[Campaign] Failed to send to ${email}:`, err);
+          bounced++;
+        }
+
+        // Rate limit: ~1 email per second to avoid Gmail API throttling
+        if (sent + bounced < recipientEmails.length) {
+          await new Promise(resolve => setTimeout(resolve, 1000));
+        }
       }
 
       await this.update(id, {
@@ -183,14 +194,21 @@ class EmailCampaignService {
             delivered: sent,
             opened: 0,
             clicked: 0,
-            bounced: 0,
+            bounced,
             unsubscribed: 0,
           },
         })
         .eq('id', id);
+
+      if (bounced > 0) {
+        throw new Error(`Sent ${sent} of ${recipientEmails.length} emails (${bounced} failed)`);
+      }
     } catch (error) {
-      // Rollback to draft on failure
-      await this.update(id, { status: 'draft' });
+      // Only rollback to draft if nothing was sent
+      const campaign2 = await this.getById(id);
+      if (campaign2.stats.sent === 0) {
+        await this.update(id, { status: 'draft' });
+      }
       throw error;
     }
   }

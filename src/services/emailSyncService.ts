@@ -2,6 +2,7 @@
 import { supabase } from './supabase';
 import { getGmailService, GmailMessage } from './gmailService';
 import { settingsService } from './settingsService';
+import { emailAIService } from './emailAIService';
 
 // ========================================
 // TYPES
@@ -136,6 +137,38 @@ class EmailSyncService {
     }
   }
 
+  /**
+   * Background AI analysis of recently synced unread emails
+   * Analyzes up to 10 unread emails that haven't been analyzed yet
+   */
+  private async backgroundAnalyzeNewEmails(userId: string): Promise<void> {
+    if (!emailAIService.isAvailable()) return;
+
+    const { data: unanalyzed } = await supabase
+      .from('cached_emails')
+      .select('*')
+      .eq('user_id', userId)
+      .eq('is_read', false)
+      .is('analyzed_at', null)
+      .order('received_at', { ascending: false })
+      .limit(10);
+
+    if (!unanalyzed || unanalyzed.length === 0) return;
+
+    console.log(`[EmailSync] Background analyzing ${unanalyzed.length} unread emails`);
+
+    for (const email of unanalyzed) {
+      try {
+        await emailAIService.analyzeAndSave(email as CachedEmail);
+        // Rate limit: 1 analysis per second to avoid API throttling
+        await new Promise((resolve) => setTimeout(resolve, 1000));
+      } catch (err) {
+        console.log('[EmailSync] AI analysis failed for email:', email.id, err);
+        break; // Stop on first failure (likely API quota)
+      }
+    }
+  }
+
   // ========================================
   // SYNC METHODS
   // ========================================
@@ -170,42 +203,82 @@ class EmailSyncService {
 
       // Get Gmail service
       const gmail = getGmailService();
+      const fetchedSyncState = await this.getSyncState();
 
-      // Get last sync date to fetch only new emails
-      const syncState = await this.getSyncState();
+      // Try incremental sync via historyId (much more efficient)
+      if (fetchedSyncState?.history_id) {
+        try {
+          console.log(`[EmailSync] Attempting incremental sync from historyId ${fetchedSyncState.history_id}`);
+          const historyResult = await gmail.getHistory(fetchedSyncState.history_id, 500);
+
+          // Collect changed message IDs
+          const changedIds = new Set<string>();
+          for (const entry of historyResult.history) {
+            entry.messagesAdded?.forEach((m) => changedIds.add(m.message.id));
+            entry.labelsAdded?.forEach((m) => changedIds.add(m.message.id));
+            entry.labelsRemoved?.forEach((m) => changedIds.add(m.message.id));
+          }
+
+          if (changedIds.size > 0) {
+            console.log(`[EmailSync] Incremental: ${changedIds.size} changed messages`);
+            // Fetch full details for changed messages and cache them
+            for (const msgId of changedIds) {
+              try {
+                const messages = await gmail.getMessages(1, 'INBOX', `rfc822msgid:${msgId}`);
+                if (messages.length > 0) {
+                  await this.cacheEmail(user.id, messages[0]);
+                  syncedCount++;
+                }
+              } catch {
+                // Message may have been deleted
+              }
+            }
+          }
+
+          // Update historyId for next sync
+          await this.updateSyncState(user.id, {
+            sync_status: 'idle',
+            history_id: historyResult.historyId,
+            last_incremental_sync_at: new Date().toISOString(),
+            last_full_sync_at: new Date().toISOString(),
+            total_emails_cached: syncedCount,
+            error_count: errorCount,
+          });
+
+          // Background AI analysis
+          if (syncedCount > 0) {
+            this.backgroundAnalyzeNewEmails(user.id).catch((err) =>
+              console.log('[EmailSync] Background AI analysis skipped:', err.message)
+            );
+          }
+
+          return { synced: syncedCount, errors: errorCount, categories: categoryCounts };
+        } catch (historyError) {
+          // historyId expired or invalid — fall through to full sync
+          console.log('[EmailSync] Incremental sync failed, falling back to full sync:', historyError);
+        }
+      }
+
+      // Full sync fallback — fetch by date or all recent
       let query: string | undefined = undefined;
-
-      if (syncState?.last_full_sync_at) {
-        // Go back 1 day from last sync to ensure we don't miss any emails
-        const lastSyncDate = new Date(syncState.last_full_sync_at);
+      if (fetchedSyncState?.last_full_sync_at) {
+        const lastSyncDate = new Date(fetchedSyncState.last_full_sync_at);
         lastSyncDate.setDate(lastSyncDate.getDate() - 1);
-
-        // Format date for Gmail query (YYYY/MM/DD)
         const formattedDate = `${lastSyncDate.getFullYear()}/${String(lastSyncDate.getMonth() + 1).padStart(2, '0')}/${String(lastSyncDate.getDate()).padStart(2, '0')}`;
         query = `after:${formattedDate}`;
-        console.log(`[EmailSync] Fetching emails after ${formattedDate} (going back 1 day from last sync for safety)`);
+        console.log(`[EmailSync] Full sync: fetching emails after ${formattedDate}`);
       } else {
         console.log('[EmailSync] First sync - fetching all recent emails');
       }
 
       // Fetch messages from Gmail
-      console.log('[EmailSync] Fetching messages from Gmail...');
       const messages = await gmail.getMessages(maxResults, 'INBOX', query);
       console.log(`[EmailSync] Fetched ${messages.length} inbox messages`);
 
-      // Log the most recent message date to debug
-      if (messages.length > 0) {
-        const mostRecent = messages[0];
-        console.log('[EmailSync] Most recent message:', {
-          date: mostRecent.timestamp,
-          subject: (mostRecent as any).metadata?.subject
-        });
-      }
-
-      // Also fetch sent, starred, drafts (with same date filter)
+      // Also fetch sent, starred
       const [sentMessages, starredMessages] = await Promise.all([
         gmail.getSentMessages(50, query),
-        gmail.getStarredMessages(50, query)
+        gmail.getStarredMessages(50, query),
       ]);
 
       console.log(`[EmailSync] Fetched ${sentMessages.length} sent, ${starredMessages.length} starred`);
@@ -240,13 +313,29 @@ class EmailSyncService {
 
       console.log(`[EmailSync] Successfully cached ${syncedCount} emails, ${errorCount} errors`);
 
+      // Get current historyId for future incremental syncs
+      let historyId: string | null = null;
+      try {
+        const profile = await gmail.getProfile();
+        // Gmail profile returns historyId as part of response
+        historyId = (profile as any).historyId || null;
+      } catch { /* non-critical */ }
+
       // Update sync state
       await this.updateSyncState(user.id, {
         sync_status: 'idle',
         last_full_sync_at: new Date().toISOString(),
         total_emails_cached: syncedCount,
-        error_count: errorCount
+        error_count: errorCount,
+        ...(historyId ? { history_id: historyId } : {}),
       });
+
+      // Background AI analysis of new unread emails (non-blocking)
+      if (syncedCount > 0) {
+        this.backgroundAnalyzeNewEmails(user.id).catch((err) =>
+          console.log('[EmailSync] Background AI analysis skipped:', err.message)
+        );
+      }
 
       return { synced: syncedCount, errors: errorCount, categories: categoryCounts };
     } catch (error) {
@@ -313,7 +402,7 @@ class EmailSyncService {
         subject: msg.metadata?.subject || subject,
         snippet: content.substring(0, 200),
         body_text: bodyText,
-        body_html: '',
+        body_html: msg.metadata?.bodyHtml || '',
         labels: labels,
         is_read: isRead,
         is_starred: isStarred,
@@ -322,8 +411,8 @@ class EmailSyncService {
         is_sent: isSent,
         is_archived: isArchived,
         is_trashed: isTrashed,
-        has_attachments: false,
-        attachments: [],
+        has_attachments: (msg.metadata?.attachments?.length || 0) > 0,
+        attachments: msg.metadata?.attachments || [],
         received_at: msg.timestamp instanceof Date ? msg.timestamp.toISOString() : new Date(msg.timestamp).toISOString(),
         synced_at: new Date().toISOString(),
         updated_at: new Date().toISOString()

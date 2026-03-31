@@ -7,14 +7,23 @@ import { supabase } from './supabase';
  * Uses Supabase OAuth token for authentication
  */
 
+interface GmailMessagePart {
+  mimeType: string;
+  filename?: string;
+  body?: { data?: string; attachmentId?: string; size?: number };
+  parts?: GmailMessagePart[];
+}
+
 export interface GmailMessage {
   id: string;
   threadId: string;
   snippet: string;
   payload: {
     headers: Array<{ name: string; value: string }>;
-    body?: { data?: string };
-    parts?: Array<{ mimeType: string; body?: { data?: string } }>;
+    body?: { data?: string; attachmentId?: string; size?: number };
+    mimeType?: string;
+    filename?: string;
+    parts?: GmailMessagePart[];
   };
   internalDate: string;
   labelIds?: string[];
@@ -323,6 +332,68 @@ export class GmailService {
   }
 
   /**
+   * Extract HTML body from message payload (preserves HTML for rendering)
+   */
+  getEmailBodyHtml(message: GmailMessage): string {
+    // Check direct body (single-part HTML message)
+    if (message.payload.mimeType === 'text/html' && message.payload.body?.data) {
+      return this.decodeBase64Url(message.payload.body.data);
+    }
+
+    // Search parts recursively
+    const findHtml = (parts?: GmailMessagePart[]): string => {
+      if (!parts) return '';
+      for (const part of parts) {
+        if (part.mimeType === 'text/html' && part.body?.data) {
+          return this.decodeBase64Url(part.body.data);
+        }
+        if (part.parts) {
+          const nested = findHtml(part.parts);
+          if (nested) return nested;
+        }
+      }
+      return '';
+    };
+
+    return findHtml(message.payload.parts);
+  }
+
+  /**
+   * Extract attachment metadata from message payload
+   */
+  getAttachmentMeta(message: GmailMessage): { attachmentId: string; filename: string; mimeType: string; size: number }[] {
+    const attachments: { attachmentId: string; filename: string; mimeType: string; size: number }[] = [];
+
+    const collectAttachments = (parts?: GmailMessagePart[]) => {
+      if (!parts) return;
+      for (const part of parts) {
+        if (part.filename && part.body?.attachmentId) {
+          attachments.push({
+            attachmentId: part.body.attachmentId,
+            filename: part.filename,
+            mimeType: part.mimeType,
+            size: part.body.size || 0,
+          });
+        }
+        if (part.parts) collectAttachments(part.parts);
+      }
+    };
+
+    collectAttachments(message.payload.parts);
+    return attachments;
+  }
+
+  /**
+   * Download an attachment by message ID and attachment ID
+   */
+  async downloadAttachment(messageId: string, attachmentId: string): Promise<string> {
+    const response = await this.gmailRequest(
+      `users/me/messages/${messageId}/attachments/${attachmentId}`
+    );
+    return response.data || ''; // base64url-encoded content
+  }
+
+  /**
    * Convert Gmail message to UnifiedMessage format
    */
   private convertToUnifiedMessage(gmailMsg: GmailMessage): UnifiedMessage {
@@ -366,6 +437,8 @@ export class GmailService {
         subject: subject,
         to: to,
         labels: gmailMsg.labelIds || [],
+        bodyHtml: this.getEmailBodyHtml(gmailMsg),
+        attachments: this.getAttachmentMeta(gmailMsg),
       },
     };
   }
@@ -797,6 +870,82 @@ export class GmailService {
    */
   async getTrashMessages(maxResults: number = 50): Promise<UnifiedMessage[]> {
     return this.getMessages(maxResults, 'TRASH');
+  }
+
+  // ========================================
+  // SETTINGS / VACATION
+  // ========================================
+
+  /**
+   * Get Gmail vacation (auto-reply) settings
+   */
+  async getVacationSettings(): Promise<{
+    enableAutoReply: boolean;
+    responseSubject: string;
+    responseBodyPlainText: string;
+    responseBodyHtml: string;
+    restrictToContacts: boolean;
+    restrictToDomain: boolean;
+    startTime: string | null;
+    endTime: string | null;
+  }> {
+    const response = await this.gmailRequest('users/me/settings/vacation');
+    return {
+      enableAutoReply: response.enableAutoReply || false,
+      responseSubject: response.responseSubject || '',
+      responseBodyPlainText: response.responseBodyPlainText || '',
+      responseBodyHtml: response.responseBodyHtml || '',
+      restrictToContacts: response.restrictToContacts || false,
+      restrictToDomain: response.restrictToDomain || false,
+      startTime: response.startTime ? String(response.startTime) : null,
+      endTime: response.endTime ? String(response.endTime) : null,
+    };
+  }
+
+  /**
+   * Set Gmail vacation (auto-reply) settings
+   */
+  async setVacationSettings(settings: {
+    enableAutoReply: boolean;
+    responseSubject?: string;
+    responseBodyPlainText?: string;
+    restrictToContacts?: boolean;
+    startTime?: number | null;
+    endTime?: number | null;
+  }): Promise<void> {
+    await this.gmailRequest('users/me/settings/vacation', {
+      method: 'PUT',
+      body: {
+        enableAutoReply: settings.enableAutoReply,
+        responseSubject: settings.responseSubject || '',
+        responseBodyPlainText: settings.responseBodyPlainText || '',
+        restrictToContacts: settings.restrictToContacts ?? false,
+        restrictToDomain: false,
+        ...(settings.startTime ? { startTime: settings.startTime } : {}),
+        ...(settings.endTime ? { endTime: settings.endTime } : {}),
+      },
+    });
+  }
+
+  // ========================================
+  // HISTORY (for incremental sync)
+  // ========================================
+
+  /**
+   * Get history of changes since a given historyId
+   */
+  async getHistory(startHistoryId: string, maxResults: number = 100): Promise<{
+    history: Array<{ id: string; messagesAdded?: Array<{ message: { id: string; threadId: string; labelIds?: string[] } }>; messagesDeleted?: Array<{ message: { id: string } }>; labelsAdded?: Array<{ message: { id: string }; labelIds: string[] }>; labelsRemoved?: Array<{ message: { id: string }; labelIds: string[] }> }>;
+    historyId: string;
+  }> {
+    const response = await this.gmailRequest('users/me/history', {
+      params: { startHistoryId, maxResults, historyTypes: 'messageAdded,messageDeleted,labelAdded,labelRemoved' },
+    });
+
+    return {
+      history: response.history || [],
+      historyId: response.historyId || startHistoryId,
+    };
   }
 }
 

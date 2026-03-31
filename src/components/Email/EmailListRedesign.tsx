@@ -1,6 +1,8 @@
 // EmailListRedesign.tsx - Modern email list with enhanced UI
-import React from 'react';
+import React, { useState, useCallback } from 'react';
 import { CachedEmail, EmailFolder, EmailCategory } from '../../services/emailSyncService';
+import { supabase } from '../../services/supabase';
+import toast from 'react-hot-toast';
 
 import { Archive, Bookmark, Clock, Inbox, MailOpen, Paperclip, RefreshCw, Trash2, Wand2 } from 'lucide-react';
 
@@ -17,6 +19,9 @@ interface EmailListRedesignProps {
   activeCategory?: EmailCategory;
   onCategoryChange?: (category: EmailCategory) => void;
   categoryCounts?: Record<string, number>;
+  hasMore?: boolean;
+  loadingMore?: boolean;
+  onLoadMore?: () => void;
 }
 
 export const EmailListRedesign: React.FC<EmailListRedesignProps> = ({
@@ -32,7 +37,53 @@ export const EmailListRedesign: React.FC<EmailListRedesignProps> = ({
   activeCategory,
   onCategoryChange,
   categoryCounts,
+  hasMore = false,
+  loadingMore = false,
+  onLoadMore,
 }) => {
+  // Bulk selection state
+  const [selectedIds, setSelectedIds] = useState<Set<string>>(new Set());
+  const [bulkLoading, setBulkLoading] = useState(false);
+
+  const toggleSelect = useCallback((emailId: string) => {
+    setSelectedIds((prev) => {
+      const next = new Set(prev);
+      if (next.has(emailId)) next.delete(emailId);
+      else next.add(emailId);
+      return next;
+    });
+  }, []);
+
+  const toggleSelectAll = useCallback(() => {
+    if (selectedIds.size === emails.length) {
+      setSelectedIds(new Set());
+    } else {
+      setSelectedIds(new Set(emails.map((e) => e.id)));
+    }
+  }, [emails, selectedIds.size]);
+
+  const runBulkAction = useCallback(async (action: string, params?: Record<string, any>) => {
+    if (selectedIds.size === 0) return;
+    setBulkLoading(true);
+    try {
+      const token = (await supabase.auth.getSession()).data.session?.access_token;
+      const backendUrl = import.meta.env.VITE_BACKEND_URL || 'http://localhost:3003';
+      const response = await fetch(`${backendUrl}/api/email/bulk`, {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json', Authorization: `Bearer ${token}` },
+        body: JSON.stringify({ emailIds: Array.from(selectedIds), action, params }),
+      });
+      if (!response.ok) throw new Error('Bulk action failed');
+      toast.success(`${action} applied to ${selectedIds.size} email${selectedIds.size > 1 ? 's' : ''}`);
+      setSelectedIds(new Set());
+      // Refresh will happen via parent
+    } catch (err) {
+      toast.error('Bulk action failed');
+    } finally {
+      setBulkLoading(false);
+    }
+  }, [selectedIds]);
+
   // Format relative time
   const formatTime = (dateStr: string) => {
     const date = new Date(dateStr);
@@ -210,55 +261,52 @@ export const EmailListRedesign: React.FC<EmailListRedesignProps> = ({
         <div className="flex items-center gap-2 px-4 py-2.5">
           <input
             type="checkbox"
+            checked={selectedIds.size > 0 && selectedIds.size === emails.length}
+            onChange={toggleSelectAll}
             aria-label="Select all emails"
             className={`w-4 h-4 rounded border-stone-300 dark:border-zinc-600 bg-white dark:bg-zinc-800 text-${accentColor}-500 focus:ring-${accentColor}-500/30`}
           />
           <div className="h-4 w-px bg-stone-300 dark:bg-zinc-700"></div>
           <button
-            className="p-2 rounded-lg hover:bg-stone-200 dark:hover:bg-zinc-800 text-stone-500 dark:text-zinc-500 hover:text-stone-700 dark:hover:text-white transition"
-            title="Refresh"
-            aria-label="Refresh emails"
-          >
-            <RefreshCw className="text-sm" />
-          </button>
-          <button
-            className="p-2 rounded-lg hover:bg-stone-200 dark:hover:bg-zinc-800 text-stone-500 dark:text-zinc-500 hover:text-stone-700 dark:hover:text-white transition"
+            type="button"
+            onClick={() => runBulkAction('archive')}
+            disabled={selectedIds.size === 0 || bulkLoading}
+            className="p-2 rounded-lg hover:bg-stone-200 dark:hover:bg-zinc-800 text-stone-500 dark:text-zinc-500 hover:text-stone-700 dark:hover:text-white transition disabled:opacity-40"
             title="Archive selected"
             aria-label="Archive selected emails"
           >
             <Archive className="text-sm" />
           </button>
           <button
-            className="p-2 rounded-lg hover:bg-stone-200 dark:hover:bg-zinc-800 text-stone-500 dark:text-zinc-500 hover:text-red-500 transition"
+            type="button"
+            onClick={() => runBulkAction('delete')}
+            disabled={selectedIds.size === 0 || bulkLoading}
+            className="p-2 rounded-lg hover:bg-stone-200 dark:hover:bg-zinc-800 text-stone-500 dark:text-zinc-500 hover:text-red-500 transition disabled:opacity-40"
             title="Delete selected"
             aria-label="Delete selected emails"
           >
             <Trash2 className="text-sm" />
           </button>
           <button
-            className="p-2 rounded-lg hover:bg-stone-200 dark:hover:bg-zinc-800 text-stone-500 dark:text-zinc-500 hover:text-stone-700 dark:hover:text-white transition"
+            type="button"
+            onClick={() => runBulkAction('markAsRead')}
+            disabled={selectedIds.size === 0 || bulkLoading}
+            className="p-2 rounded-lg hover:bg-stone-200 dark:hover:bg-zinc-800 text-stone-500 dark:text-zinc-500 hover:text-stone-700 dark:hover:text-white transition disabled:opacity-40"
             title="Mark as read"
             aria-label="Mark selected emails as read"
           >
             <MailOpen className="text-sm" />
           </button>
-          <button
-            className="p-2 rounded-lg hover:bg-stone-200 dark:hover:bg-zinc-800 text-stone-500 dark:text-zinc-500 hover:text-stone-700 dark:hover:text-white transition"
-            title="Snooze"
-            aria-label="Snooze selected emails"
-          >
-            <Clock className="text-sm" />
-          </button>
           <div className="flex-1"></div>
           <span className="text-xs font-medium text-stone-500 dark:text-zinc-500" aria-live="polite">
-            {emails.length} {emails.length === 1 ? 'email' : 'emails'}
+            {selectedIds.size > 0 ? `${selectedIds.size} selected` : `${emails.length} ${emails.length === 1 ? 'email' : 'emails'}`}
           </span>
         </div>
       </div>
 
       {/* Email items */}
       <div className="divide-y divide-stone-100 dark:divide-zinc-800/50" role="list">
-        {emails.map((email) => {
+        {emails.map((email, _idx) => {
           const isSelected = selectedEmail?.id === email.id;
           const priorityBar = getPriorityIndicator(email);
 
@@ -290,6 +338,8 @@ export const EmailListRedesign: React.FC<EmailListRedesignProps> = ({
               <div className="pt-1" onClick={(e) => e.stopPropagation()}>
                 <input
                   type="checkbox"
+                  checked={selectedIds.has(email.id)}
+                  onChange={() => toggleSelect(email.id)}
                   className={`w-4 h-4 rounded border-stone-300 dark:border-zinc-600 bg-white dark:bg-zinc-800 text-${accentColor}-500 focus:ring-${accentColor}-500/30 transition`}
                 />
               </div>
@@ -391,6 +441,27 @@ export const EmailListRedesign: React.FC<EmailListRedesignProps> = ({
           );
         })}
       </div>
+
+      {/* Load More */}
+      {hasMore && onLoadMore && (
+        <div className="px-4 py-4 flex justify-center border-t border-stone-200 dark:border-zinc-800">
+          <button
+            type="button"
+            onClick={onLoadMore}
+            disabled={loadingMore}
+            className={`px-6 py-2.5 rounded-lg text-sm font-medium transition disabled:opacity-50 bg-stone-100 dark:bg-zinc-800 hover:bg-stone-200 dark:hover:bg-zinc-700 text-stone-700 dark:text-zinc-300`}
+          >
+            {loadingMore ? (
+              <span className="flex items-center gap-2">
+                <i className="fa-solid fa-spinner fa-spin"></i>
+                Loading...
+              </span>
+            ) : (
+              'Load more emails'
+            )}
+          </button>
+        </div>
+      )}
     </div>
   );
 };

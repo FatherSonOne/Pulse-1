@@ -67,8 +67,22 @@ export const DailyBriefing: React.FC<DailyBriefingProps> = ({
         e.subject?.toLowerCase().includes('invite')
       );
 
-      // Get emails needing follow-up (sent without response)
-      const followUpCount = 0; // TODO: Implement follow-up detection
+      // Get emails needing follow-up: sent emails in last 14 days without a reply in the same thread
+      const fourteenDaysAgo = new Date(now.getTime() - 14 * 24 * 60 * 60 * 1000);
+      const sentEmails = await emailSyncService.getEmailsByFolder('sent', 50, 0);
+      const recentSent = sentEmails.filter(e => new Date(e.received_at) > fourteenDaysAgo);
+
+      let followUpCount = 0;
+      for (const sent of recentSent) {
+        if (!sent.thread_id) continue;
+        // Check if there's a newer non-sent email in the same thread (i.e. a reply)
+        const hasReply = emails.some(e =>
+          e.thread_id === sent.thread_id &&
+          !e.is_sent &&
+          new Date(e.received_at) > new Date(sent.received_at)
+        );
+        if (!hasReply) followUpCount++;
+      }
 
       // Get top priority emails (up to 3)
       const priorityEmails = emails

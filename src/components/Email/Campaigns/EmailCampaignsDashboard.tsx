@@ -407,12 +407,12 @@ const CampaignTable: React.FC<TableProps> = ({
 
               {/* Open rate */}
               <td className="px-4 py-3 hidden lg:table-cell text-stone-600 dark:text-zinc-300 whitespace-nowrap tabular-nums">
-                {openRate}
+                {campaign.stats.sent > 0 ? openRate : <span className="text-xs text-stone-400 dark:text-zinc-600 italic">coming soon</span>}
               </td>
 
               {/* Click rate */}
               <td className="px-4 py-3 hidden lg:table-cell text-stone-600 dark:text-zinc-300 whitespace-nowrap tabular-nums">
-                {clickRate}
+                {campaign.stats.sent > 0 ? clickRate : <span className="text-xs text-stone-400 dark:text-zinc-600 italic">coming soon</span>}
               </td>
 
               {/* Sent date */}
