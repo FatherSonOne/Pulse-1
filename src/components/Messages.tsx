@@ -141,6 +141,7 @@ import { MessagesEndModals } from './Messages/MessagesEndModals';
 import { ConversationSidebar } from './Messages/ConversationSidebar';
 import { MessageInputSection } from './Messages/MessageInputSection';
 import { MESSAGE_TEMPLATES as MSG_TEMPLATES_CONST, REACTION_CATEGORIES as REACTION_CATS_CONST, generateSmartTemplateText as genSmartTemplate } from './Messages/messageConstants';
+import { usePulseMessagesStore } from '../store/pulseMessagesStore';
 
 const COMMON_REACTIONS = ['👍', '❤️', '😂', '😮', '😢', '🔥'];
 
@@ -678,6 +679,18 @@ const Messages: React.FC<MessagesProps> = ({ apiKey, contacts, initialContactId,
   const [inviteToPulseCopied, setInviteToPulseCopied] = useState(false);
   const [inviteTargetContact, setInviteTargetContact] = useState<Contact | null>(null);
 
+  // Pulse pagination state
+  const [hasMorePulseMessages, setHasMorePulseMessages] = useState(false);
+  const [isLoadingMoreMessages, setIsLoadingMoreMessages] = useState(false);
+
+  // Pulse editing state
+  const [editingPulseMessageId, setEditingPulseMessageId] = useState<string | null>(null);
+  const [editPulseText, setEditPulseText] = useState('');
+
+  // Pulse typing indicator state
+  const [otherUserTyping, setOtherUserTyping] = useState(false);
+  const typingBroadcastTimeoutRef = useRef<ReturnType<typeof setTimeout> | null>(null);
+
   // Pulse message reactions and features state
   const [pulseMessageReactions, setPulseMessageReactions] = useState<Record<string, Array<{ emoji: string; count: number; me: boolean }>>>({});
   const [starredPulseMessages, setStarredPulseMessages] = useState<Set<string>>(new Set());
@@ -786,27 +799,61 @@ const Messages: React.FC<MessagesProps> = ({ apiKey, contacts, initialContactId,
     }
   }, []);
 
-  // Load Pulse conversations, suggestions, and recent contacts on mount
+  // ===== ZUSTAND STORE BRIDGE =====
+  // The store is the source of truth for Pulse state.
+  // We bridge store -> local state so existing JSX keeps working.
+  // New code should use the store directly via usePulseMessagesStore.
+  const pulseStore = usePulseMessagesStore();
+
+  // Initialize store on mount
   useEffect(() => {
-    const loadPulseData = async () => {
-      try {
-        // Load conversations
-        const conversations = await pulseService.getConversations();
-        setPulseConversations(conversations);
-
-        // Load recent contacts for quick access
-        const recentContacts = await pulseService.getRecentContacts(5);
-        setRecentPulseContacts(recentContacts);
-
-        // Load suggested users for discovery
-        const suggestions = await pulseService.getAllUsers(20);
-        setSuggestedPulseUsers(suggestions);
-      } catch (error) {
-        console.error('Failed to load Pulse data:', error);
-      }
-    };
-    loadPulseData();
+    pulseStore.loadConversations();
+    pulseStore.loadRecentContacts();
+    pulseStore.loadSuggestedUsers();
   }, []);
+
+  // Bridge: store conversations -> local state
+  useEffect(() => {
+    setPulseConversations(pulseStore.conversations);
+  }, [pulseStore.conversations]);
+
+  useEffect(() => {
+    setSuggestedPulseUsers(pulseStore.suggestedUsers);
+  }, [pulseStore.suggestedUsers]);
+
+  useEffect(() => {
+    setRecentPulseContacts(pulseStore.recentContacts);
+  }, [pulseStore.recentContacts]);
+
+  // Bridge: store messages -> local state
+  useEffect(() => {
+    setPulseMessages(pulseStore.messages);
+  }, [pulseStore.messages]);
+
+  // Bridge: store reactions/stars -> local state
+  useEffect(() => {
+    setPulseMessageReactions(pulseStore.reactions);
+  }, [pulseStore.reactions]);
+
+  useEffect(() => {
+    setStarredPulseMessages(pulseStore.starredIds);
+  }, [pulseStore.starredIds]);
+
+  // Bridge: store active conversation -> local state
+  useEffect(() => {
+    setActivePulseConversation(pulseStore.activeConversationId);
+  }, [pulseStore.activeConversationId]);
+
+  // Bridge: store editing -> local state
+  useEffect(() => {
+    setEditingPulseMessageId(pulseStore.editingMessageId);
+    setEditPulseText(pulseStore.editText);
+  }, [pulseStore.editingMessageId, pulseStore.editText]);
+
+  // Bridge: store typing -> local state
+  useEffect(() => {
+    setOtherUserTyping(pulseStore.otherUserTyping);
+  }, [pulseStore.otherUserTyping]);
 
   // Auto-scroll to bottom when new messages arrive
   useEffect(() => {
@@ -851,6 +898,59 @@ const Messages: React.FC<MessagesProps> = ({ apiKey, contacts, initialContactId,
     };
   }, [currentUser?.id]);
 
+  // Real-time subscription for reaction changes
+  useEffect(() => {
+    if (!currentUser?.id) return;
+
+    const unsubscribe = pulseService.subscribeToReactions(async () => {
+      // Reload reactions for currently visible messages
+      const messageIds = pulseMessages.filter(m => !m.id.startsWith('temp-')).map(m => m.id);
+      if (messageIds.length > 0) {
+        const reactions = await pulseService.getReactionsForMessages(messageIds);
+        setPulseMessageReactions(reactions);
+      }
+    });
+
+    return () => {
+      unsubscribe();
+    };
+  }, [currentUser?.id, pulseMessages]);
+
+  // Subscribe to typing indicators for the active Pulse conversation
+  useEffect(() => {
+    if (!activePulseConversation) {
+      setOtherUserTyping(false);
+      return;
+    }
+
+    const unsubscribe = pulseService.subscribeToTyping(
+      activePulseConversation,
+      (isTyping) => setOtherUserTyping(isTyping)
+    );
+
+    return () => {
+      unsubscribe();
+      setOtherUserTyping(false);
+    };
+  }, [activePulseConversation]);
+
+  // Broadcast typing status when user types in Pulse conversation
+  const broadcastPulseTyping = useCallback(() => {
+    if (!activePulseConversation) return;
+    pulseService.broadcastTyping(activePulseConversation, true);
+
+    // Clear previous timeout
+    if (typingBroadcastTimeoutRef.current) {
+      clearTimeout(typingBroadcastTimeoutRef.current);
+    }
+    // Stop typing after 3s of no input
+    typingBroadcastTimeoutRef.current = setTimeout(() => {
+      if (activePulseConversation) {
+        pulseService.broadcastTyping(activePulseConversation, false);
+      }
+    }, 3000);
+  }, [activePulseConversation]);
+
   // Debounced Pulse user search - trigger at 1 character for faster discovery
   useEffect(() => {
     if (!pulseUserSearch || pulseUserSearch.length < 1) {
@@ -878,7 +978,6 @@ const Messages: React.FC<MessagesProps> = ({ apiKey, contacts, initialContactId,
   useEffect(() => {
     if (inputText.length > 10) {
       const tools = getAllToolActions((toolId) => {
-        console.log('Launching tool:', toolId);
         saveRecentTool(toolId);
         // TODO: Implement actual tool launch logic via ToolOverlay
       });
@@ -947,10 +1046,6 @@ const Messages: React.FC<MessagesProps> = ({ apiKey, contacts, initialContactId,
           if (overlayType) {
             // Launch the tool in its overlay
             setActiveToolOverlay(overlayType);
-            console.log(`Launched ${toolId} in ${overlayType} overlay`);
-          } else {
-            // Tool doesn't have an overlay mapping - log for future implementation
-            console.warn(`No overlay mapping for tool: ${toolId}`);
           }
         }
       }
@@ -991,10 +1086,25 @@ const Messages: React.FC<MessagesProps> = ({ apiKey, contacts, initialContactId,
     setActiveThreadId('');
     setActivePulseConversation(conversationId);
     setMobileView('chat');
+    setEditingPulseMessageId(null);
+    setEditPulseText('');
 
     try {
-      const messages = await pulseService.getMessages(conversationId);
+      // Use paginated fetch to know if there are older messages
+      const { messages, hasMore } = await pulseService.getMessagesPaginated(conversationId, 50);
       setPulseMessages(messages);
+      setHasMorePulseMessages(hasMore);
+
+      // Load reactions and stars for these messages
+      const messageIds = messages.map(m => m.id);
+      if (messageIds.length > 0) {
+        const [reactions, stars] = await Promise.all([
+          pulseService.getReactionsForMessages(messageIds),
+          pulseService.getStarredMessageIds()
+        ]);
+        setPulseMessageReactions(reactions);
+        setStarredPulseMessages(stars);
+      }
 
       // Mark messages as read
       await pulseService.markAsRead(conversationId);
@@ -1007,10 +1117,39 @@ const Messages: React.FC<MessagesProps> = ({ apiKey, contacts, initialContactId,
     }
   }, []);
 
+  // Load more (older) messages for pagination
+  const loadMorePulseMessages = useCallback(async () => {
+    if (!activePulseConversation || isLoadingMoreMessages || !hasMorePulseMessages) return;
+    setIsLoadingMoreMessages(true);
+
+    try {
+      const oldestMessage = pulseMessages[0];
+      const beforeDate = oldestMessage?.created_at;
+      const { messages: olderMessages, hasMore } = await pulseService.getMessagesPaginated(
+        activePulseConversation, 50, beforeDate
+      );
+
+      if (olderMessages.length > 0) {
+        setPulseMessages(prev => [...olderMessages, ...prev]);
+        setHasMorePulseMessages(hasMore);
+
+        // Load reactions for newly loaded messages
+        const newIds = olderMessages.map(m => m.id);
+        const reactions = await pulseService.getReactionsForMessages(newIds);
+        setPulseMessageReactions(prev => ({ ...prev, ...reactions }));
+      } else {
+        setHasMorePulseMessages(false);
+      }
+    } catch (error) {
+      console.error('Failed to load more messages:', error);
+    } finally {
+      setIsLoadingMoreMessages(false);
+    }
+  }, [activePulseConversation, isLoadingMoreMessages, hasMorePulseMessages, pulseMessages]);
+
   // Send a Pulse message
   const sendPulseMessage = useCallback(async (content: string) => {
     if (!activePulseConversation || !content.trim()) {
-      console.log('sendPulseMessage: early return - no conversation or empty content');
       return;
     }
 
@@ -1027,10 +1166,10 @@ const Messages: React.FC<MessagesProps> = ({ apiKey, contacts, initialContactId,
     // Create a unique ID that won't conflict
     const tempId = `temp-${Date.now()}-${Math.random().toString(36).substr(2, 9)}`;
 
-    // Optimistically add message to UI - use a sender_id that's definitively not the other user's
+    // Optimistically add message to UI
     const optimisticMessage: PulseMessage = {
       id: tempId,
-      sender_id: 'optimistic-self', // Use a marker that clearly isn't the other_user.id
+      sender_id: currentUser.id,
       recipient_id: conversation.other_user.id,
       thread_id: activePulseConversation,
       content: messageContent,
@@ -1049,16 +1188,13 @@ const Messages: React.FC<MessagesProps> = ({ apiKey, contacts, initialContactId,
     setPulseMessages(prev => [...prev, optimisticMessage]);
 
     try {
-      console.log('Sending message to:', conversation.other_user.id, 'content:', messageContent);
       const messageId = await pulseService.sendMessage(conversation.other_user.id, messageContent);
-      console.log('Message sent, ID:', messageId);
 
       // Small delay to let the database sync
       await new Promise(resolve => setTimeout(resolve, 100));
 
       // Reload messages to get the real message from server
       const messages = await pulseService.getMessages(activePulseConversation);
-      console.log('Reloaded messages:', messages.length);
       setPulseMessages(messages);
 
       // Reload conversations to update preview
@@ -1076,8 +1212,21 @@ const Messages: React.FC<MessagesProps> = ({ apiKey, contacts, initialContactId,
   // Get active Pulse conversation details
   const activePulseConv = pulseConversations.find(c => c.id === activePulseConversation);
 
-  // Handle Pulse message reactions
-  const handlePulseReaction = useCallback((messageId: string, emoji: string) => {
+  // Load reactions for currently visible messages
+  const loadReactionsForMessages = useCallback(async (messages: PulseMessage[]) => {
+    if (messages.length === 0) return;
+    const messageIds = messages.filter(m => !m.id.startsWith('temp-')).map(m => m.id);
+    if (messageIds.length === 0) return;
+    const reactions = await pulseService.getReactionsForMessages(messageIds);
+    setPulseMessageReactions(reactions);
+  }, []);
+
+  // Handle Pulse message reactions - persisted to Supabase
+  const handlePulseReaction = useCallback(async (messageId: string, emoji: string) => {
+    // Skip optimistic messages
+    if (messageId.startsWith('temp-')) return;
+
+    // Optimistic update
     setPulseMessageReactions(prev => {
       const reactions = prev[messageId] || [];
       const existingIdx = reactions.findIndex(r => r.emoji === emoji);
@@ -1095,7 +1244,20 @@ const Messages: React.FC<MessagesProps> = ({ apiKey, contacts, initialContactId,
       }
       return { ...prev, [messageId]: [...reactions, { emoji, count: 1, me: true }] };
     });
-  }, []);
+
+    // Persist to Supabase
+    try {
+      await pulseService.toggleReaction(messageId, emoji);
+    } catch (error) {
+      console.error('Failed to toggle reaction:', error);
+      // Reload from server to fix optimistic mismatch
+      const messageIds = pulseMessages.filter(m => !m.id.startsWith('temp-')).map(m => m.id);
+      if (messageIds.length > 0) {
+        const reactions = await pulseService.getReactionsForMessages(messageIds);
+        setPulseMessageReactions(reactions);
+      }
+    }
+  }, [pulseMessages]);
 
   // Create RadialMenu items for reactions
   const createReactionItems = useCallback((messageId: string) => {
@@ -1175,8 +1337,11 @@ const Messages: React.FC<MessagesProps> = ({ apiKey, contacts, initialContactId,
     ];
   }, [handlePulseReaction, radialMenu]);
 
-  // Toggle starred Pulse messages
-  const toggleStarPulseMessage = useCallback((messageId: string) => {
+  // Toggle starred Pulse messages - persisted to Supabase
+  const toggleStarPulseMessage = useCallback(async (messageId: string) => {
+    if (messageId.startsWith('temp-')) return;
+
+    // Optimistic update
     setStarredPulseMessages(prev => {
       const newSet = new Set(prev);
       if (newSet.has(messageId)) {
@@ -1186,6 +1351,16 @@ const Messages: React.FC<MessagesProps> = ({ apiKey, contacts, initialContactId,
       }
       return newSet;
     });
+
+    // Persist to Supabase
+    try {
+      await pulseService.toggleStar(messageId);
+    } catch (error) {
+      console.error('Failed to toggle star:', error);
+      // Reload from server
+      const stars = await pulseService.getStarredMessageIds();
+      setStarredPulseMessages(stars);
+    }
   }, []);
 
   // Copy Pulse message to clipboard
@@ -1299,8 +1474,8 @@ const Messages: React.FC<MessagesProps> = ({ apiKey, contacts, initialContactId,
   }, [openPulseContextMenu]);
 
   const handleSwipeRightReply = useCallback((msgId: string) => {
-    // Use functional setState to avoid dependency on activePulseMessages array
-    setActivePulseMessages((messages) => {
+    // Use functional setState to avoid dependency on pulseMessages array
+    setPulseMessages((messages) => {
       const message = messages.find(m => m.id === msgId);
       if (message) {
         setReplyingToPulseMessage(message);
@@ -1992,32 +2167,70 @@ const Messages: React.FC<MessagesProps> = ({ apiKey, contacts, initialContactId,
   }, [apiKey, isPlayingId]);
 
   // --- File Upload Handler ---
-  const handleFileUpload = useCallback((e: React.ChangeEvent<HTMLInputElement>) => {
+  const handleFileUpload = useCallback(async (e: React.ChangeEvent<HTMLInputElement>) => {
     const file = e.target.files?.[0];
     if (!file) return;
-    const isImage = file.type.startsWith('image/');
-    const attachment: Attachment = {
-      type: isImage ? 'image' : 'file',
-      name: file.name,
-      url: URL.createObjectURL(file),
-      size: `${(file.size / 1024).toFixed(1)} KB`
-    };
-    handleSend('', attachment);
+
+    // If in a Pulse conversation, upload to Supabase storage
+    if (activePulseConversation && activePulseConv?.other_user) {
+      try {
+        await pulseService.sendMessageWithAttachment(
+          activePulseConv.other_user.id,
+          file,
+          file.name
+        );
+        // Reload messages
+        const messages = await pulseService.getMessages(activePulseConversation);
+        setPulseMessages(messages);
+        const conversations = await pulseService.getConversations();
+        setPulseConversations(conversations);
+      } catch (error) {
+        console.error('Failed to upload file:', error);
+      }
+    } else {
+      // Legacy thread fallback
+      const isImage = file.type.startsWith('image/');
+      const attachment: Attachment = {
+        type: isImage ? 'image' : 'file',
+        name: file.name,
+        url: URL.createObjectURL(file),
+        size: `${(file.size / 1024).toFixed(1)} KB`
+      };
+      handleSend('', attachment);
+    }
+
     if (fileInputRef.current) fileInputRef.current.value = '';
     setShowAttachmentMenu(false);
-  }, []);
+  }, [activePulseConversation, activePulseConv]);
 
   // --- Image Upload Handler ---
-  const handleImageUpload = useCallback((e: React.ChangeEvent<HTMLInputElement>) => {
+  const handleImageUpload = useCallback(async (e: React.ChangeEvent<HTMLInputElement>) => {
     const file = e.target.files?.[0];
     if (!file) return;
-    const attachment: Attachment = {
-      type: 'image',
-      name: file.name,
-      url: URL.createObjectURL(file),
-      size: `${(file.size / 1024).toFixed(1)} KB`
-    };
-    handleSend('', attachment);
+
+    // If in a Pulse conversation, upload to Supabase storage
+    if (activePulseConversation && activePulseConv?.other_user) {
+      try {
+        await pulseService.sendMessageWithAttachment(
+          activePulseConv.other_user.id,
+          file
+        );
+        const messages = await pulseService.getMessages(activePulseConversation);
+        setPulseMessages(messages);
+        const conversations = await pulseService.getConversations();
+        setPulseConversations(conversations);
+      } catch (error) {
+        console.error('Failed to upload image:', error);
+      }
+    } else {
+      const attachment: Attachment = {
+        type: 'image',
+        name: file.name,
+        url: URL.createObjectURL(file),
+        size: `${(file.size / 1024).toFixed(1)} KB`
+      };
+      handleSend('', attachment);
+    }
     if (imageInputRef.current) imageInputRef.current.value = '';
     setShowAttachmentMenu(false);
   }, []);
@@ -2228,7 +2441,12 @@ const Messages: React.FC<MessagesProps> = ({ apiKey, contacts, initialContactId,
     return () => clearInterval(interval);
   }, [scheduledMessages, activeThreadId]);
 
-  // Voice recording handlers
+  // Voice recording handlers - use ref for duration to avoid stale closure
+  const recordingDurationRef = useRef(0);
+  useEffect(() => {
+    recordingDurationRef.current = recordingDuration;
+  }, [recordingDuration]);
+
   const startRecording = useCallback(async () => {
     try {
       const stream = await navigator.mediaDevices.getUserMedia({ audio: true });
@@ -2247,7 +2465,7 @@ const Messages: React.FC<MessagesProps> = ({ apiKey, contacts, initialContactId,
           type: 'audio',
           name: `Voice message ${new Date().toLocaleTimeString()}`,
           url: audioUrl,
-          duration: recordingDuration
+          duration: recordingDurationRef.current
         };
         handleSend('🎤 Voice message', attachment);
         stream.getTracks().forEach(track => track.stop());
@@ -2262,7 +2480,7 @@ const Messages: React.FC<MessagesProps> = ({ apiKey, contacts, initialContactId,
     } catch (err) {
       console.error('Microphone access denied:', err);
     }
-  }, [recordingDuration]);
+  }, [handleSend]);
 
   const stopRecording = useCallback(() => {
     if (mediaRecorderRef.current && isRecording) {
@@ -2358,7 +2576,7 @@ const Messages: React.FC<MessagesProps> = ({ apiKey, contacts, initialContactId,
     }, 300);
   }, []);
 
-  // Message editing
+  // Message editing (legacy threads)
   const startEditMessage = useCallback((msg: Message) => {
     if (msg.sender !== 'me') return;
     setEditingMessageId(msg.id);
@@ -2382,7 +2600,45 @@ const Messages: React.FC<MessagesProps> = ({ apiKey, contacts, initialContactId,
     setEditText('');
   }, [editingMessageId, editText, activeThreadId]);
 
-  // Message forwarding
+  // Pulse message editing
+  const startEditPulseMessage = useCallback((msg: PulseMessage) => {
+    if (msg.sender_id !== currentUser.id) return;
+    setEditingPulseMessageId(msg.id);
+    setEditPulseText(msg.content);
+  }, [currentUser.id]);
+
+  const saveEditPulseMessage = useCallback(async () => {
+    if (!editingPulseMessageId || !editPulseText.trim()) return;
+
+    // Optimistic update
+    setPulseMessages(prev => prev.map(m =>
+      m.id === editingPulseMessageId
+        ? { ...m, content: editPulseText, metadata: { ...m.metadata, edited: true, edited_at: new Date().toISOString() } }
+        : m
+    ));
+    const savedId = editingPulseMessageId;
+    const savedText = editPulseText;
+    setEditingPulseMessageId(null);
+    setEditPulseText('');
+
+    try {
+      await pulseService.editMessage(savedId, savedText);
+    } catch (error) {
+      console.error('Failed to edit message:', error);
+      // Reload from server on failure
+      if (activePulseConversation) {
+        const messages = await pulseService.getMessages(activePulseConversation);
+        setPulseMessages(messages);
+      }
+    }
+  }, [editingPulseMessageId, editPulseText, activePulseConversation]);
+
+  const cancelEditPulseMessage = useCallback(() => {
+    setEditingPulseMessageId(null);
+    setEditPulseText('');
+  }, []);
+
+  // Message forwarding (legacy threads)
   const handleForwardMessage = useCallback((targetThreadId: string) => {
     if (!forwardingMessage) return;
     const forwardedMsg: Message = {
@@ -2401,6 +2657,20 @@ const Messages: React.FC<MessagesProps> = ({ apiKey, contacts, initialContactId,
     setForwardingMessage(null);
     setShowForwardModal(false);
   }, [forwardingMessage]);
+
+  // Pulse message forwarding
+  const handleForwardPulseMessage = useCallback(async (messageId: string, targetRecipientId: string) => {
+    try {
+      await pulseService.forwardMessage(messageId, targetRecipientId);
+      // Refresh conversations
+      const conversations = await pulseService.getConversations();
+      setPulseConversations(conversations);
+    } catch (error) {
+      console.error('Failed to forward message:', error);
+    }
+    setForwardingMessage(null);
+    setShowForwardModal(false);
+  }, []);
 
   // Use template
   // Use smart template with context-aware text generation
@@ -3140,6 +3410,19 @@ const Messages: React.FC<MessagesProps> = ({ apiKey, contacts, initialContactId,
 
           {/* Pulse Messages - Scrollable area */}
           <div className="flex-1 overflow-y-auto p-4 md:p-6">
+            {/* Load More button for pagination */}
+            {hasMorePulseMessages && (
+              <div className="flex justify-center mb-4">
+                <button
+                  type="button"
+                  onClick={loadMorePulseMessages}
+                  disabled={isLoadingMoreMessages}
+                  className="px-4 py-2 text-xs font-medium rounded-full bg-zinc-100 dark:bg-zinc-800 text-zinc-600 dark:text-zinc-400 hover:bg-zinc-200 dark:hover:bg-zinc-700 transition disabled:opacity-50"
+                >
+                  {isLoadingMoreMessages ? 'Loading...' : 'Load older messages'}
+                </button>
+              </div>
+            )}
             {pulseMessages.length === 0 ? (
               <div className="flex flex-col items-center justify-center h-full text-center">
                 <div className="w-20 h-20 bg-gradient-to-br from-rose-100 to-pink-100 dark:from-rose-900/30 dark:to-pink-900/30 rounded-full flex items-center justify-center mb-4">
@@ -3288,6 +3571,58 @@ const Messages: React.FC<MessagesProps> = ({ apiKey, contacts, initialContactId,
                             }}
                             onContextMenu={(e) => handlePulseMessageContextMenu(e, msg.id)}
                           >
+                            {/* Media content (images, audio, files) */}
+                            {msg.media_url && msg.content_type === 'image' && (
+                              <img
+                                src={msg.media_url}
+                                alt="Shared image"
+                                className="max-w-full rounded-lg mb-2 cursor-pointer hover:opacity-90 transition"
+                                loading="lazy"
+                                onClick={() => window.open(msg.media_url!, '_blank')}
+                              />
+                            )}
+                            {msg.media_url && msg.content_type === 'voice' && (
+                              <audio
+                                src={msg.media_url}
+                                controls
+                                className="max-w-full mb-2"
+                                preload="metadata"
+                              />
+                            )}
+                            {msg.media_url && msg.content_type === 'file' && (
+                              <a
+                                href={msg.media_url}
+                                target="_blank"
+                                rel="noopener noreferrer"
+                                className="flex items-center gap-2 px-3 py-2 mb-2 rounded-lg bg-white/10 dark:bg-black/10 hover:bg-white/20 dark:hover:bg-black/20 transition text-sm"
+                              >
+                                <i className="fa-solid fa-file text-zinc-400"></i>
+                                <span className="truncate">{msg.content || 'Attachment'}</span>
+                              </a>
+                            )}
+
+                            {/* Inline edit mode */}
+                            {editingPulseMessageId === msg.id ? (
+                              <div className="flex flex-col gap-2">
+                                <input
+                                  type="text"
+                                  value={editPulseText}
+                                  onChange={(e) => setEditPulseText(e.target.value)}
+                                  aria-label="Edit message"
+                                  placeholder="Edit message..."
+                                  onKeyDown={(e) => {
+                                    if (e.key === 'Enter') saveEditPulseMessage();
+                                    if (e.key === 'Escape') cancelEditPulseMessage();
+                                  }}
+                                  className="w-full px-2 py-1 rounded bg-white/20 dark:bg-black/20 border border-zinc-300 dark:border-zinc-600 text-sm focus:outline-none focus:ring-1 focus:ring-blue-400"
+                                  autoFocus
+                                />
+                                <div className="flex gap-2 text-[10px]">
+                                  <button type="button" onClick={saveEditPulseMessage} className="text-emerald-400 hover:underline">Save</button>
+                                  <button type="button" onClick={cancelEditPulseMessage} className="text-zinc-400 hover:underline">Cancel</button>
+                                </div>
+                              </div>
+                            ) : (
                             <p
                               className="whitespace-pre-wrap break-words"
                               style={{
@@ -3298,6 +3633,7 @@ const Messages: React.FC<MessagesProps> = ({ apiKey, contacts, initialContactId,
                             >
                               {renderTextWithLinks(msg.content)}
                             </p>
+                            )}
                             <div
                               className="mt-1.5 flex items-center gap-2"
                               style={{
@@ -3309,6 +3645,9 @@ const Messages: React.FC<MessagesProps> = ({ apiKey, contacts, initialContactId,
                               }}
                             >
                               <SmartTimestamp time={msg.created_at} />
+                              {msg.metadata?.edited && (
+                                <span className="text-[9px] italic opacity-70">edited</span>
+                              )}
                               {isMe && msg.is_read && (
                                 <span className="flex items-center gap-0.5" style={{ opacity: 0.9 }}>
                                   <CheckCheck />
@@ -3393,6 +3732,19 @@ const Messages: React.FC<MessagesProps> = ({ apiKey, contacts, initialContactId,
                                   <Share className="text-purple-500 w-4" />
                                   Share
                                 </button>
+                                {/* Edit - only for own messages */}
+                                {isMe && msg.content_type === 'text' && (
+                                  <button
+                                    onClick={() => {
+                                      startEditPulseMessage(msg);
+                                      closePulseContextMenu();
+                                    }}
+                                    className="w-full px-4 py-2.5 text-left text-sm text-zinc-700 dark:text-zinc-300 hover:bg-zinc-100 dark:hover:bg-zinc-800 flex items-center gap-3 transition"
+                                  >
+                                    <i className="fa-solid fa-pen text-blue-500 w-4"></i>
+                                    Edit
+                                  </button>
+                                )}
                                 <button
                                   onClick={() => {
                                     // Forward to another conversation
@@ -3439,8 +3791,8 @@ const Messages: React.FC<MessagesProps> = ({ apiKey, contacts, initialContactId,
               })
             )}
 
-            {/* Phase 4.4: Typing Indicator */}
-            {activePulseConv?.other_user?.isTyping && (
+            {/* Typing Indicator - wired to Supabase Realtime broadcast */}
+            {otherUserTyping && activePulseConv?.other_user && (
               <div className="flex justify-start mb-4 px-4">
                 <TypingIndicator
                   userName={activePulseConv.other_user.display_name || activePulseConv.other_user.handle || 'User'}
@@ -4085,7 +4437,6 @@ const Messages: React.FC<MessagesProps> = ({ apiKey, contacts, initialContactId,
                                                             handleExtractTask(msg);
                                                         } else if (action === 'add-to-calendar') {
                                                             // TODO: Implement calendar integration
-                                                            console.log('Add to calendar:', data);
                                                         }
                                                     }}
                                                 />
@@ -4386,7 +4737,10 @@ const Messages: React.FC<MessagesProps> = ({ apiKey, contacts, initialContactId,
         emojiPickerMessageId={emojiPickerMessageId}
         setShowEmojiPicker={setShowEmojiPicker}
         inputText={inputText}
-        setInputText={setInputText}
+        setInputText={(val: React.SetStateAction<string>) => {
+          setInputText(val);
+          if (activePulseConversation) broadcastPulseTyping();
+        }}
         showAICoach={showAICoach}
         setShowAICoach={setShowAICoach}
         showSmartCompose={showSmartCompose}

@@ -34,8 +34,6 @@ const TestMatrix = lazy(() => import('./components/TestMatrix'));
 const AnalyticsDashboard = lazy(() => import('./components/Analytics').then(module => ({ default: module.AnalyticsDashboard })));
 const UsersGuide = lazy(() => import('./components/UsersGuide/UsersGuide'));
 
-import { ChatProvider } from './context/ChatContext';
-import { ChatInterface } from './components/ChatInterface';
 import { SocialHealthMonitor } from './components/health/SocialHealthMonitor';
 import { ContextHandoff } from './components/health/ContextHandoff';
 import { NotificationCenter } from './components/NotificationCenter';

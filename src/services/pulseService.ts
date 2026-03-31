@@ -705,6 +705,506 @@ class PulseService {
       supabase.removeChannel(channel);
     };
   }
+  // ========================================
+  // REACTION METHODS
+  // ========================================
+
+  /**
+   * Get all reactions for a list of message IDs
+   */
+  async getReactionsForMessages(messageIds: string[]): Promise<Record<string, Array<{ emoji: string; count: number; me: boolean }>>> {
+    if (messageIds.length === 0) return {};
+
+    const { data: { user } } = await supabase.auth.getUser();
+    if (!user) return {};
+
+    const { data, error } = await supabase
+      .from('pulse_message_reactions')
+      .select('message_id, user_id, emoji')
+      .in('message_id', messageIds);
+
+    if (error) {
+      console.error('Error fetching reactions:', error);
+      return {};
+    }
+
+    // Aggregate into { messageId: [{ emoji, count, me }] }
+    const result: Record<string, Array<{ emoji: string; count: number; me: boolean }>> = {};
+    for (const row of data || []) {
+      if (!result[row.message_id]) result[row.message_id] = [];
+      const existing = result[row.message_id].find(r => r.emoji === row.emoji);
+      if (existing) {
+        existing.count++;
+        if (row.user_id === user.id) existing.me = true;
+      } else {
+        result[row.message_id].push({
+          emoji: row.emoji,
+          count: 1,
+          me: row.user_id === user.id
+        });
+      }
+    }
+    return result;
+  }
+
+  /**
+   * Add a reaction to a message (toggle: removes if already exists)
+   * Returns true if added, false if removed
+   */
+  async toggleReaction(messageId: string, emoji: string): Promise<boolean> {
+    const { data: { user } } = await supabase.auth.getUser();
+    if (!user) throw new Error('Not authenticated');
+
+    // Check if reaction already exists
+    const { data: existing } = await supabase
+      .from('pulse_message_reactions')
+      .select('id')
+      .eq('message_id', messageId)
+      .eq('user_id', user.id)
+      .eq('emoji', emoji)
+      .maybeSingle();
+
+    if (existing) {
+      // Remove it
+      const { error } = await supabase
+        .from('pulse_message_reactions')
+        .delete()
+        .eq('id', existing.id);
+
+      if (error) {
+        console.error('Error removing reaction:', error);
+        throw error;
+      }
+      return false;
+    } else {
+      // Add it
+      const { error } = await supabase
+        .from('pulse_message_reactions')
+        .insert({
+          message_id: messageId,
+          user_id: user.id,
+          emoji
+        });
+
+      if (error) {
+        console.error('Error adding reaction:', error);
+        throw error;
+      }
+      return true;
+    }
+  }
+
+  /**
+   * Subscribe to reaction changes in real-time
+   */
+  subscribeToReactions(
+    onReactionChange: () => void
+  ): () => void {
+    const channelName = `pulse-reactions-${Date.now()}`;
+
+    const channel = supabase
+      .channel(channelName)
+      .on(
+        'postgres_changes',
+        {
+          event: '*',
+          schema: 'public',
+          table: 'pulse_message_reactions'
+        },
+        () => {
+          onReactionChange();
+        }
+      )
+      .subscribe();
+
+    return () => {
+      supabase.removeChannel(channel);
+    };
+  }
+
+  // ========================================
+  // STARRED MESSAGES METHODS
+  // ========================================
+
+  /**
+   * Get all starred message IDs for the current user
+   */
+  async getStarredMessageIds(): Promise<Set<string>> {
+    const { data: { user } } = await supabase.auth.getUser();
+    if (!user) return new Set();
+
+    const { data, error } = await supabase
+      .from('pulse_starred_messages')
+      .select('message_id')
+      .eq('user_id', user.id);
+
+    if (error) {
+      console.error('Error fetching starred messages:', error);
+      return new Set();
+    }
+
+    return new Set((data || []).map(d => d.message_id));
+  }
+
+  /**
+   * Toggle star on a message. Returns true if starred, false if unstarred.
+   */
+  async toggleStar(messageId: string): Promise<boolean> {
+    const { data: { user } } = await supabase.auth.getUser();
+    if (!user) throw new Error('Not authenticated');
+
+    // Check if already starred
+    const { data: existing } = await supabase
+      .from('pulse_starred_messages')
+      .select('id')
+      .eq('message_id', messageId)
+      .eq('user_id', user.id)
+      .maybeSingle();
+
+    if (existing) {
+      const { error } = await supabase
+        .from('pulse_starred_messages')
+        .delete()
+        .eq('id', existing.id);
+
+      if (error) {
+        console.error('Error unstarring message:', error);
+        throw error;
+      }
+      return false;
+    } else {
+      const { error } = await supabase
+        .from('pulse_starred_messages')
+        .insert({
+          message_id: messageId,
+          user_id: user.id
+        });
+
+      if (error) {
+        console.error('Error starring message:', error);
+        throw error;
+      }
+      return true;
+    }
+  }
+
+  // ========================================
+  // FILE UPLOAD METHODS
+  // ========================================
+
+  /**
+   * Upload a file to Supabase storage and return the public URL
+   */
+  async uploadAttachment(file: File): Promise<{ url: string; contentType: 'image' | 'voice' | 'file' }> {
+    const { data: { user } } = await supabase.auth.getUser();
+    if (!user) throw new Error('Not authenticated');
+
+    // Determine content type
+    let contentType: 'image' | 'voice' | 'file' = 'file';
+    if (file.type.startsWith('image/')) contentType = 'image';
+    else if (file.type.startsWith('audio/')) contentType = 'voice';
+
+    // Create unique path: user_id/timestamp_filename
+    const ext = file.name.split('.').pop() || 'bin';
+    const path = `${user.id}/${Date.now()}_${Math.random().toString(36).substr(2, 6)}.${ext}`;
+
+    const { error: uploadError } = await supabase.storage
+      .from('pulse-attachments')
+      .upload(path, file, {
+        cacheControl: '3600',
+        upsert: false
+      });
+
+    if (uploadError) {
+      console.error('Error uploading attachment:', uploadError);
+      throw uploadError;
+    }
+
+    const { data: urlData } = supabase.storage
+      .from('pulse-attachments')
+      .getPublicUrl(path);
+
+    return {
+      url: urlData.publicUrl,
+      contentType
+    };
+  }
+
+  /**
+   * Send a message with an attachment (upload file then send)
+   */
+  async sendMessageWithAttachment(
+    recipientId: string,
+    file: File,
+    caption?: string
+  ): Promise<string> {
+    const { url, contentType } = await this.uploadAttachment(file);
+    return this.sendMessage(recipientId, caption || file.name, contentType, url);
+  }
+
+  // ========================================
+  // MESSAGE EDITING
+  // ========================================
+
+  /**
+   * Edit a message (only sender can edit, only text content)
+   */
+  async editMessage(messageId: string, newContent: string): Promise<void> {
+    const { data: { user } } = await supabase.auth.getUser();
+    if (!user) throw new Error('Not authenticated');
+
+    const { error } = await supabase
+      .from('pulse_messages')
+      .update({
+        content: newContent,
+        metadata: { edited: true, edited_at: new Date().toISOString() },
+        updated_at: new Date().toISOString()
+      })
+      .eq('id', messageId)
+      .eq('sender_id', user.id); // Only sender can edit
+
+    if (error) {
+      console.error('Error editing message:', error);
+      throw error;
+    }
+  }
+
+  // ========================================
+  // PAGINATION
+  // ========================================
+
+  /**
+   * Get messages with cursor-based pagination
+   * Returns messages older than the cursor (for "load more" scrolling up)
+   */
+  async getMessagesPaginated(
+    conversationId: string,
+    limit: number = 50,
+    beforeDate?: string
+  ): Promise<{ messages: PulseMessage[]; hasMore: boolean }> {
+    let query = supabase
+      .from('pulse_messages')
+      .select('*')
+      .eq('thread_id', conversationId)
+      .eq('is_deleted', false)
+      .order('created_at', { ascending: false })
+      .limit(limit + 1); // Fetch one extra to check if there are more
+
+    if (beforeDate) {
+      query = query.lt('created_at', beforeDate);
+    }
+
+    const { data: messages, error } = await query;
+
+    if (error) {
+      console.error('Error fetching paginated messages:', error);
+      throw error;
+    }
+
+    if (!messages || messages.length === 0) {
+      return { messages: [], hasMore: false };
+    }
+
+    const hasMore = messages.length > limit;
+    const trimmed = hasMore ? messages.slice(0, limit) : messages;
+
+    // Reverse to ascending order for display
+    trimmed.reverse();
+
+    // Collect all unique user IDs
+    const userIds = [...new Set([
+      ...trimmed.map(m => m.sender_id),
+      ...trimmed.map(m => m.recipient_id)
+    ])];
+
+    const { data: profiles } = await supabase
+      .from('user_profiles')
+      .select('*')
+      .in('id', userIds);
+
+    const profileMap = new Map(
+      (profiles || []).map(p => [p.id, p])
+    );
+
+    const enriched = trimmed.map(msg => ({
+      ...msg,
+      sender: profileMap.get(msg.sender_id) || null,
+      recipient: profileMap.get(msg.recipient_id) || null
+    }));
+
+    return { messages: enriched, hasMore };
+  }
+
+  // ========================================
+  // TYPING INDICATORS
+  // ========================================
+
+  /**
+   * Broadcast typing status via Supabase Realtime Presence
+   */
+  broadcastTyping(conversationId: string, isTyping: boolean): void {
+    const channelName = `typing:${conversationId}`;
+    const channel = supabase.channel(channelName);
+
+    channel.send({
+      type: 'broadcast',
+      event: 'typing',
+      payload: { isTyping, timestamp: Date.now() }
+    });
+  }
+
+  /**
+   * Subscribe to typing indicators for a conversation
+   */
+  subscribeToTyping(
+    conversationId: string,
+    onTypingChange: (isTyping: boolean) => void
+  ): () => void {
+    const channelName = `typing:${conversationId}`;
+    let typingTimeout: ReturnType<typeof setTimeout> | null = null;
+
+    const channel = supabase
+      .channel(channelName)
+      .on('broadcast', { event: 'typing' }, (payload) => {
+        const { isTyping } = payload.payload;
+        onTypingChange(isTyping);
+
+        // Auto-clear typing after 5s of no updates
+        if (typingTimeout) clearTimeout(typingTimeout);
+        if (isTyping) {
+          typingTimeout = setTimeout(() => onTypingChange(false), 5000);
+        }
+      })
+      .subscribe();
+
+    return () => {
+      if (typingTimeout) clearTimeout(typingTimeout);
+      supabase.removeChannel(channel);
+    };
+  }
+
+  // ========================================
+  // MESSAGE FORWARDING
+  // ========================================
+
+  /**
+   * Forward a message to another conversation
+   */
+  async forwardMessage(messageId: string, targetRecipientId: string): Promise<string> {
+    const { data: { user } } = await supabase.auth.getUser();
+    if (!user) throw new Error('Not authenticated');
+
+    // Fetch the original message
+    const { data: original, error: fetchError } = await supabase
+      .from('pulse_messages')
+      .select('content, content_type, media_url')
+      .eq('id', messageId)
+      .single();
+
+    if (fetchError || !original) {
+      throw new Error('Message not found');
+    }
+
+    // Send as a new message with forwarded metadata
+    const { data, error } = await supabase
+      .rpc('send_pulse_message', {
+        p_sender_id: user.id,
+        p_recipient_id: targetRecipientId,
+        p_content: original.content,
+        p_content_type: original.content_type,
+        p_media_url: original.media_url || null
+      });
+
+    if (error) {
+      console.error('Error forwarding message:', error);
+      throw error;
+    }
+
+    return data;
+  }
+
+  // ========================================
+  // SCHEDULED MESSAGES
+  // ========================================
+
+  /**
+   * Schedule a message for future delivery
+   */
+  async scheduleMessage(
+    recipientId: string,
+    content: string,
+    scheduledFor: Date
+  ): Promise<string> {
+    const { data: { user } } = await supabase.auth.getUser();
+    if (!user) throw new Error('Not authenticated');
+
+    const { data, error } = await supabase
+      .from('pulse_scheduled_messages')
+      .insert({
+        sender_id: user.id,
+        recipient_id: recipientId,
+        content,
+        scheduled_for: scheduledFor.toISOString(),
+        status: 'pending'
+      })
+      .select('id')
+      .single();
+
+    if (error) {
+      console.error('Error scheduling message:', error);
+      throw error;
+    }
+
+    return data.id;
+  }
+
+  /**
+   * Get pending scheduled messages for the current user
+   */
+  async getScheduledMessages(): Promise<Array<{
+    id: string;
+    recipient_id: string;
+    content: string;
+    scheduled_for: string;
+    status: string;
+    created_at: string;
+  }>> {
+    const { data: { user } } = await supabase.auth.getUser();
+    if (!user) return [];
+
+    const { data, error } = await supabase
+      .from('pulse_scheduled_messages')
+      .select('*')
+      .eq('sender_id', user.id)
+      .eq('status', 'pending')
+      .order('scheduled_for', { ascending: true });
+
+    if (error) {
+      console.error('Error fetching scheduled messages:', error);
+      return [];
+    }
+
+    return data || [];
+  }
+
+  /**
+   * Cancel a scheduled message
+   */
+  async cancelScheduledMessage(messageId: string): Promise<void> {
+    const { data: { user } } = await supabase.auth.getUser();
+    if (!user) throw new Error('Not authenticated');
+
+    const { error } = await supabase
+      .from('pulse_scheduled_messages')
+      .update({ status: 'cancelled' })
+      .eq('id', messageId)
+      .eq('sender_id', user.id);
+
+    if (error) {
+      console.error('Error cancelling scheduled message:', error);
+      throw error;
+    }
+  }
 }
 
 export const pulseService = new PulseService();
