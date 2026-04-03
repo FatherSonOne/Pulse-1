@@ -12,13 +12,17 @@ import {
   getTopContacts,
   generateInsights,
   DashboardData,
-  ContactEngagement
+  ContactEngagement,
+  ResponseTimeStats,
+  SentimentOverview,
+  CommunicationTrends
 } from '../../services/analyticsService';
 import { RelationshipsView } from './RelationshipsView';
 import { ConflictsView } from './ConflictsView';
 import { KudosView } from './KudosView';
 import { PredictionsView } from './PredictionsView';
 import { AnimatedIcon } from '../ui/AnimatedIcon';
+import { AIFeatureErrorBoundary } from '../decisions/AIFeatureErrorBoundary';
 import './AnalyticsDashboard.css';
 import './AnalyticsEnhancements.css';
 import './AnalyticsEnhancementsPart2.css';
@@ -39,11 +43,11 @@ export const AnalyticsDashboard: React.FC<AnalyticsDashboardProps> = ({ onClose 
 
   // Data states
   const [dashboardData, setDashboardData] = useState<DashboardData | null>(null);
-  const [responseStats, setResponseStats] = useState<any>(null);
-  const [sentimentData, setSentimentData] = useState<any>(null);
-  const [trends, setTrends] = useState<any>(null);
+  const [responseStats, setResponseStats] = useState<ResponseTimeStats | null>(null);
+  const [sentimentData, setSentimentData] = useState<SentimentOverview | null>(null);
+  const [trends, setTrends] = useState<CommunicationTrends | null>(null);
   const [topContacts, setTopContacts] = useState<ContactEngagement[]>([]);
-  const [insights, setInsights] = useState<any[]>([]);
+  const [insights, setInsights] = useState<Array<{ type: string; title: string; description: string; priority: string }>>([]);
 
   const daysFromRange = (range: TimeRange): number => {
     switch (range) {
@@ -58,20 +62,26 @@ export const AnalyticsDashboard: React.FC<AnalyticsDashboardProps> = ({ onClose 
     setLoading(true);
     const days = daysFromRange(timeRange);
 
-    const [dashboard, response, sentiment, trend, contacts, insight] = await Promise.all([
+    const [dashboard, response, sentiment, trend, contacts] = await Promise.all([
       getDashboardData(days),
       getResponseTimeStats(days),
       getSentimentOverview(days),
       getCommunicationTrends(days),
       getTopContacts(10),
-      generateInsights()
     ]);
 
     if (dashboard.success) setDashboardData(dashboard.data!);
-    if (response.success) setResponseStats(response.data);
-    if (sentiment.success) setSentimentData(sentiment.data);
-    if (trend.success) setTrends(trend.data);
+    if (response.success) setResponseStats(response.data!);
+    if (sentiment.success) setSentimentData(sentiment.data!);
+    if (trend.success) setTrends(trend.data!);
     if (contacts.success) setTopContacts(contacts.data!);
+
+    // Generate insights using already-fetched data to avoid redundant API calls
+    const insight = await generateInsights({
+      dashboard: dashboard.data,
+      response: response.data,
+      sentiment: sentiment.data,
+    });
     if (insight.success) setInsights(insight.data!);
 
     setLoading(false);
@@ -667,16 +677,32 @@ export const AnalyticsDashboard: React.FC<AnalyticsDashboardProps> = ({ onClose 
           )}
 
           {/* Relationships View */}
-          {viewMode === 'relationships' && <RelationshipsView timeRange={timeRange} />}
+          {viewMode === 'relationships' && (
+            <AIFeatureErrorBoundary featureName="Relationship Health">
+              <RelationshipsView timeRange={timeRange} />
+            </AIFeatureErrorBoundary>
+          )}
 
           {/* Conflicts View */}
-          {viewMode === 'conflicts' && <ConflictsView timeRange={timeRange} />}
+          {viewMode === 'conflicts' && (
+            <AIFeatureErrorBoundary featureName="Conflict Detection">
+              <ConflictsView timeRange={timeRange} />
+            </AIFeatureErrorBoundary>
+          )}
 
           {/* Kudos View */}
-          {viewMode === 'kudos' && <KudosView timeRange={timeRange} />}
+          {viewMode === 'kudos' && (
+            <AIFeatureErrorBoundary featureName="Recognition & Kudos">
+              <KudosView timeRange={timeRange} />
+            </AIFeatureErrorBoundary>
+          )}
 
           {/* Predictions View */}
-          {viewMode === 'predictions' && <PredictionsView timeRange={timeRange} />}
+          {viewMode === 'predictions' && (
+            <AIFeatureErrorBoundary featureName="Predictive Analytics">
+              <PredictionsView timeRange={timeRange} />
+            </AIFeatureErrorBoundary>
+          )}
         </main>
       )}
     </div>

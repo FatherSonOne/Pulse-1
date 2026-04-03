@@ -38,19 +38,7 @@ import { CalendarEvent } from '../../types';
 import { postMeetingService, MeetingFollowUp as PostMeetingFollowUp } from '../../services/postMeetingService';
 import SuggestedEventsPanel from '../SuggestedEventsPanel';
 import PostMeetingPrompt from '../PostMeetingPrompt';
-
-// EVENT_COLORS is re-declared here for use in the Goal Editor Modal.
-// In a future cleanup pass this can be imported from a shared constants file.
-const EVENT_COLORS = [
-  { id: 'zinc',   name: 'Default', class: 'bg-zinc-800 dark:bg-zinc-700' },
-  { id: 'blue',   name: 'Blue',    class: 'bg-blue-600' },
-  { id: 'green',  name: 'Green',   class: 'bg-emerald-600' },
-  { id: 'red',    name: 'Red',     class: 'bg-red-600' },
-  { id: 'purple', name: 'Purple',  class: 'bg-purple-600' },
-  { id: 'amber',  name: 'Amber',   class: 'bg-amber-600' },
-  { id: 'pink',   name: 'Pink',    class: 'bg-pink-600' },
-  { id: 'indigo', name: 'Indigo',  class: 'bg-indigo-600' },
-];
+import { EVENT_COLORS } from './calendarTypes';
 
 export interface CalendarAIPanelProps {
   // Panel visibility
@@ -550,7 +538,7 @@ export const CalendarAIPanel: React.FC<CalendarAIPanelProps> = (props) => {
                       <div className="h-2 bg-zinc-200 dark:bg-zinc-700 rounded-full overflow-hidden mb-2">
                         <div
                           className={`h-full ${alignment.goal.color} transition-all`}
-                          style={{ width: `${Math.min(100, (alignment.allocatedTime / alignment.targetTime) * 100)}%` }}
+                          style={{ width: `${Math.min(100, (alignment.allocatedTime / (alignment.targetTime || 1)) * 100)}%` }}
                         />
                       </div>
                       <p className="text-[10px] text-zinc-500">{alignment.recommendation}</p>

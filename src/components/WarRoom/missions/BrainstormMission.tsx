@@ -1,8 +1,10 @@
 import React, { useState, useRef, useEffect } from 'react';
 import { AIMessage, ThinkingStep } from '../../../services/ragService';
 import { SessionExport } from '../shared';
+import { dataService } from '../../../services/dataService';
+import toast from 'react-hot-toast';
 
-import { ArrowDown, ArrowRight, ArrowUp, BookOpen, Check, Lightbulb, Plus, Rocket, Send, Share2, Wand2, X } from 'lucide-react';
+import { Archive, ArrowDown, ArrowRight, ArrowUp, BookOpen, Check, Lightbulb, Plus, Rocket, Send, Share2, Wand2, X } from 'lucide-react';
 
 interface Idea {
   id: string;
@@ -160,6 +162,54 @@ ${ideas.length > 10 ? `... and ${ideas.length - 10} more` : ''}
     if (e.key === 'Enter' && !e.shiftKey) {
       e.preventDefault();
       handleSend();
+    }
+  };
+
+  const saveBrainstormToArchive = async () => {
+    try {
+      const sortedForExport = [...ideas].sort((a, b) => b.votes - a.votes);
+      const topIdeaSet = new Set(topIdeas);
+
+      let content = `# Brainstorm: ${challenge}\n\n`;
+      if (context) {
+        content += `## Context\n${context}\n\n`;
+      }
+
+      content += `## All Ideas (${ideas.length})\n\n`;
+      sortedForExport.forEach((idea, i) => {
+        const star = topIdeaSet.has(idea.id) ? ' ⭐' : '';
+        content += `${i + 1}. **${idea.text}** — ${idea.votes} vote${idea.votes !== 1 ? 's' : ''} [${idea.category}]${star}\n`;
+      });
+
+      if (topIdeas.length > 0) {
+        content += `\n## Top Selected Ideas\n\n`;
+        topIdeas.forEach((id, i) => {
+          const idea = ideas.find(item => item.id === id);
+          if (idea) {
+            content += `${i + 1}. **${idea.text}** — ${idea.votes} vote${idea.votes !== 1 ? 's' : ''}\n`;
+          }
+        });
+      }
+
+      await dataService.createArchive({
+        type: 'artifact',
+        title: `Brainstorm: ${challenge.substring(0, 80)}${challenge.length > 80 ? '...' : ''}`,
+        content,
+        date: new Date(),
+        tags: ['brainstorm', 'war-room', 'mission'],
+        metadata: {
+          missionType: 'brainstorm',
+          challenge,
+          context,
+          ideasCount: ideas.length,
+          topIdeasCount: topIdeas.length,
+        },
+      });
+
+      toast.success('Brainstorm saved to Archives');
+    } catch (error) {
+      console.error('Failed to save brainstorm to archives:', error);
+      toast.error('Failed to save brainstorm');
     }
   };
 
@@ -497,8 +547,16 @@ ${ideas.length > 10 ? `... and ${ideas.length - 10} more` : ''}
           )}
         </div>
 
-        {/* Export */}
-        <div className="p-3 border-t border-white/10">
+        {/* Export & Save */}
+        <div className="p-3 border-t border-white/10 space-y-2">
+          <button
+            onClick={saveBrainstormToArchive}
+            disabled={ideas.length === 0}
+            className="w-full war-room-btn py-2"
+          >
+            <Archive className="fa mr-2" />
+            Save to Archives
+          </button>
           <button
             onClick={() => setShowExport(true)}
             className="w-full war-room-btn py-2"

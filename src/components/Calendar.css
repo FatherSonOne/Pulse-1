@@ -1129,14 +1129,6 @@
   50% { opacity: 0.6; }
 }
 
-.cal-animate-fade {
-  animation: calFadeIn var(--cal-transition) ease-out;
-}
-
-.cal-animate-slide {
-  animation: calSlideUp var(--cal-transition-slow) ease-out;
-}
-
 .cal-animate-scale {
   animation: calScaleIn var(--cal-transition) ease-out;
 }
@@ -1358,19 +1350,7 @@
   }
 }
 
-/* ============================================
-   ANIMATION — calScaleIn for modals/popovers
-   ============================================ */
-@keyframes calScaleIn {
-  from {
-    opacity: 0;
-    transform: scale(0.95) translateY(-4px);
-  }
-  to {
-    opacity: 1;
-    transform: scale(1) translateY(0);
-  }
-}
+/* calScaleIn defined above — duplicate removed */
 
 /* ============================================
    FOCUS-VISIBLE — keyboard navigation styles

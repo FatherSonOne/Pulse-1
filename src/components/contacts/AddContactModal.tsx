@@ -1,7 +1,13 @@
 import React, { useState } from 'react';
 import { Contact } from '../../types';
+import toast from 'react-hot-toast';
 
 import { Loader2, Plus, UserPlus, X } from 'lucide-react';
+
+const AVATAR_COLORS = [
+  'bg-blue-500', 'bg-emerald-500', 'bg-purple-500', 'bg-amber-500',
+  'bg-rose-500', 'bg-cyan-500', 'bg-indigo-500', 'bg-teal-500',
+];
 
 interface AddContactModalProps {
   isOpen: boolean;
@@ -36,7 +42,7 @@ export const AddContactModal: React.FC<AddContactModalProps> = ({
         role: form.role || 'Contact',
         company: form.company || undefined,
         notes: form.notes || undefined,
-        avatarColor: 'bg-blue-500', // Default, should be randomized or handled by parent
+        avatarColor: AVATAR_COLORS[Math.floor(Math.random() * AVATAR_COLORS.length)],
         status: 'offline',
         groups: [],
         source: 'local'
@@ -45,6 +51,7 @@ export const AddContactModal: React.FC<AddContactModalProps> = ({
       onClose();
     } catch (error) {
       console.error(error);
+      toast.error('Failed to add contact');
     } finally {
       setIsAdding(false);
     }

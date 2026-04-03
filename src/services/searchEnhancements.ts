@@ -2,22 +2,7 @@ import { unifiedSearchService, SearchResult, SearchFilters, SearchSourceError } 
 import searchQueryParser from './searchQueryParser';
 import { supabase } from './supabase';
 
-// Adapter: converts searchQueryParser output (array-based operators) to flat object format
-interface ParsedSearchQuery {
-  baseQuery: string;
-  operators: Record<string, string>;
-}
-
-function parseSearchQuery(query: string): ParsedSearchQuery {
-  const parsed = searchQueryParser.parse(query);
-  const operators: Record<string, string> = {};
-  for (const op of parsed.operators) {
-    if (!op.negate && !(op.field in operators)) {
-      operators[op.field] = String(op.value);
-    }
-  }
-  return { baseQuery: parsed.freeText, operators };
-}
+// Uses searchQueryParser.parseToFlatOperators() — no local adapter needed
 
 // ============================================
 // SONAR WEB SEARCH TYPES AND INTERFACES
@@ -127,12 +112,11 @@ export class SearchEnhancements {
   async enhancedSearch(
     query: string,
     userId: string,
-    apiKey: string,
     filters?: SearchFilters,
     useAI: boolean = true,
     onSourceComplete?: (results: SearchResult[], completedSource: string) => void
   ): Promise<{ results: SearchResult[]; errors: SearchSourceError[] }> {
-    const parsed = parseSearchQuery(query);
+    const parsed = searchQueryParser.parseToFlatOperators(query);
 
     // Perform regular search
     const { results: rawResults, errors } = await unifiedSearchService.search(
@@ -146,9 +130,9 @@ export class SearchEnhancements {
     let results = rawResults;
 
     // If AI is enabled and we have results, enhance with semantic search
-    if (useAI && apiKey && results.length > 0 && parsed.baseQuery) {
+    if (useAI && results.length > 0 && parsed.baseQuery) {
       try {
-        const aiResults = await this.semanticSearch(query, results, apiKey);
+        const aiResults = await this.semanticSearch(query, results);
         // Merge and deduplicate
         const resultMap = new Map<string, SearchResult>();
         results.forEach(r => resultMap.set(r.id, r));
@@ -168,12 +152,11 @@ export class SearchEnhancements {
   }
 
   /**
-   * Semantic search using AI
+   * Semantic search using AI (proxied through gemini-proxy edge function)
    */
   private async semanticSearch(
     query: string,
-    existingResults: SearchResult[],
-    apiKey: string
+    existingResults: SearchResult[]
   ): Promise<SearchResult[]> {
     // Create context from existing results
     const context = existingResults.slice(0, 20).map(r => ({
@@ -183,13 +166,7 @@ export class SearchEnhancements {
     }));
 
     try {
-      const response = await fetch(`https://generativelanguage.googleapis.com/v1beta/models/gemini-2.5-flash:generateContent?key=${apiKey}`, {
-        method: 'POST',
-        headers: { 'Content-Type': 'application/json' },
-        body: JSON.stringify({
-          contents: [{
-            parts: [{
-              text: `You are a semantic search assistant. Given this search query and context, identify which items are most relevant semantically.
+      const prompt = `You are a semantic search assistant. Given this search query and context, identify which items are most relevant semantically.
 
 Search Query: "${query}"
 
@@ -198,18 +175,23 @@ ${context.map((c, i) => `${i + 1}. [${c.type}] ${c.content}`).join('\n')}
 
 IMPORTANT: Return ONLY a valid JSON array of item numbers ranked by semantic relevance. No explanation, no text, just the array.
 Example correct response: [3, 1, 5, 2, 4]
-Do not include any other text or markdown formatting.`
-            }]
-          }],
-          generationConfig: {
-            temperature: 0.1,
-            maxOutputTokens: 100,
-          }
-        }),
+Do not include any other text or markdown formatting.`;
+
+      const { data, error } = await supabase.functions.invoke('gemini-proxy', {
+        body: {
+          prompt,
+          operation: 'semanticRerank',
+          model: 'gemini-2.5-flash',
+          temperature: 0.1,
+        },
       });
 
-      const data = await response.json();
-      const text = data.candidates?.[0]?.content?.parts?.[0]?.text || '[]';
+      if (error) {
+        console.error('Semantic search proxy error:', error.message);
+        return existingResults;
+      }
+
+      const text = data?.result || '[]';
 
       // Clean up the response more aggressively
       let cleanedText = text
@@ -510,83 +492,6 @@ Do not include any other text or markdown formatting.`
     }
   }
 
-  /**
-   * Quick web research - optimized for fast answers
-   */
-  async quickWebResearch(query: string): Promise<SonarWebResult | null> {
-    return this.sonarWebSearch(query, {
-      model: 'sonar',
-      systemPrompt: 'Provide a concise, factual answer in 2-3 sentences. Include key facts only.',
-      temperature: 0.1,
-      maxTokens: 256,
-      searchRecencyFilter: 'week',
-    });
-  }
-
-  /**
-   * Deep web research - for comprehensive answers
-   */
-  async deepWebResearch(query: string): Promise<SonarWebResult | null> {
-    return this.sonarWebSearch(query, {
-      model: 'sonar-pro',
-      systemPrompt: `You are an expert research analyst. Provide comprehensive, well-structured answers with:
-1. A clear summary at the start
-2. Detailed explanation with specific facts and data
-3. Multiple perspectives if relevant
-Be thorough but organized.`,
-      temperature: 0.3,
-      maxTokens: 2048,
-      searchRecencyFilter: 'month',
-      returnImages: true,
-    });
-  }
-
-  /**
-   * Research with reasoning - for complex queries requiring step-by-step analysis
-   */
-  async reasoningWebResearch(query: string): Promise<SonarWebResult | null> {
-    return this.sonarWebSearch(query, {
-      model: 'sonar-reasoning',
-      systemPrompt: `You are an expert analyst. Break down complex questions step-by-step:
-1. Identify key aspects of the question
-2. Research each aspect thoroughly
-3. Synthesize findings with clear reasoning
-4. Provide a well-supported conclusion`,
-      temperature: 0.2,
-      maxTokens: 4096,
-      searchRecencyFilter: 'month',
-    });
-  }
-
-  /**
-   * Combined search: local data + web search for comprehensive results
-   */
-  async combinedSearch(
-    query: string,
-    userId: string,
-    apiKey: string,
-    filters?: SearchFilters,
-    options?: {
-      includeWebSearch?: boolean;
-      webSearchModel?: 'sonar' | 'sonar-pro' | 'sonar-reasoning';
-    }
-  ): Promise<{
-    localResults: SearchResult[];
-    webResult: SonarWebResult | null;
-  }> {
-    // Run local search and web search in parallel
-    const [localResults, webResult] = await Promise.all([
-      this.enhancedSearch(query, userId, apiKey, filters, true),
-      options?.includeWebSearch !== false
-        ? this.sonarWebSearch(query, { model: options?.webSearchModel || 'sonar' })
-        : Promise.resolve(null),
-    ]);
-
-    return {
-      localResults,
-      webResult,
-    };
-  }
 }
 
 export const searchEnhancements = new SearchEnhancements();

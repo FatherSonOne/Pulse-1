@@ -134,8 +134,6 @@ export const SubtaskList: React.FC<SubtaskListProps> = ({
         // Reload subtasks to show the newly created ones
         loadSubtasks();
 
-        // Show success message in console
-        console.log(`Generated ${generatedSubtasks.length} subtasks with AI`);
       } else {
         console.warn('AI subtask generation returned no results');
         alert('Unable to generate subtasks. Please check your API key in Settings.');

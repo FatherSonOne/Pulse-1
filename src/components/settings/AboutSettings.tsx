@@ -28,10 +28,40 @@ export const AboutSettings: React.FC = () => {
           <path d="M8 32 L18 32 L24 16 L32 48 L40 24 L48 40 L56 32" stroke="url(#about-pulse-grad)" strokeWidth="5" strokeLinecap="round" strokeLinejoin="round" fill="none" />
         </svg>
         <h2 className="text-3xl font-bold dark:text-white text-zinc-900 mb-2">Pulse</h2>
-        <p className="text-zinc-500 mb-6">Version 2.4.0 (Beta)</p>
+        <p className="text-zinc-500 mb-6">Version {__APP_VERSION__ || '2.4.0'} (Beta)</p>
 
         <div className="flex gap-4">
-          <button className="px-6 py-2.5 bg-zinc-900 dark:bg-white text-white dark:text-black font-semibold rounded-full hover:scale-105 transition transform">
+          <button
+            onClick={async () => {
+              const toastId = toast.loading('Checking for updates...');
+              try {
+                if ('serviceWorker' in navigator) {
+                  const reg = await navigator.serviceWorker.getRegistration();
+                  if (reg) {
+                    await reg.update();
+                    // Short delay to allow SW to detect new version
+                    await new Promise(r => setTimeout(r, 1500));
+                    if (reg.waiting) {
+                      toast('A new version is available! Reload to update.', {
+                        id: toastId,
+                        icon: '🔄',
+                        duration: 6000,
+                      });
+                    } else {
+                      toast.success('You are running the latest version!', { id: toastId });
+                    }
+                  } else {
+                    toast.success('You are running the latest version!', { id: toastId });
+                  }
+                } else {
+                  toast.success('You are running the latest version!', { id: toastId });
+                }
+              } catch {
+                toast.error('Could not check for updates', { id: toastId });
+              }
+            }}
+            className="px-6 py-2.5 bg-zinc-900 dark:bg-white text-white dark:text-black font-semibold rounded-full hover:scale-105 transition transform"
+          >
             Check for Updates
           </button>
           <button
@@ -64,13 +94,13 @@ export const AboutSettings: React.FC = () => {
             <ArrowRight className="text-zinc-400 group-hover:text-blue-500 transition" />
           </div>
         </a>
-        <a href="https://github.com/pulse/pulse" target="_blank" rel="noreferrer" className="p-4 bg-white dark:bg-zinc-900 border border-zinc-200 dark:border-zinc-800 rounded-xl hover:border-blue-500 transition group">
+        <a href="https://github.com/Aegis-FM/pulse" target="_blank" rel="noreferrer" className="p-4 bg-white dark:bg-zinc-900 border border-zinc-200 dark:border-zinc-800 rounded-xl hover:border-blue-500 transition group">
           <div className="flex items-center justify-between">
             <span className="font-medium dark:text-white text-zinc-900">GitHub Repository</span>
             <Github className="text-zinc-400 group-hover:text-black dark:group-hover:text-white transition" />
           </div>
         </a>
-        <a href="#" className="p-4 bg-white dark:bg-zinc-900 border border-zinc-200 dark:border-zinc-800 rounded-xl hover:border-blue-500 transition group">
+        <a href="/docs/help" className="p-4 bg-white dark:bg-zinc-900 border border-zinc-200 dark:border-zinc-800 rounded-xl hover:border-blue-500 transition group">
           <div className="flex items-center justify-between">
             <span className="font-medium dark:text-white text-zinc-900">Help Center</span>
             <HelpCircle className="text-zinc-400 group-hover:text-blue-500 transition" />

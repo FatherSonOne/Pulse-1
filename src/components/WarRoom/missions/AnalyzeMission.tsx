@@ -1,8 +1,10 @@
 import React, { useState, useRef, useEffect } from 'react';
 import { AIMessage, ThinkingStep } from '../../../services/ragService';
+import { dataService } from '../../../services/dataService';
+import toast from 'react-hot-toast';
 import { SessionExport } from '../shared';
 
-import { ArrowRight, BarChart3, BookOpen, Database, FileText, Lightbulb, MessagesSquare, Minimize2, Plus, Send, Share2, X } from 'lucide-react';
+import { Archive, ArrowRight, BarChart3, BookOpen, Database, FileText, Lightbulb, MessagesSquare, Minimize2, Plus, Send, Share2, X } from 'lucide-react';
 
 interface DataPoint {
   id: string;
@@ -193,6 +195,59 @@ Include:
 
     if (phasePrompts[phase]) {
       onSendMessage(`[ANALYZE MISSION - Phase: ${phase}]\n${phasePrompts[phase]}`);
+    }
+  };
+
+  const saveAnalysisToArchive = async () => {
+    try {
+      const categories = [...new Set(dataPoints.map(d => d.category))];
+      let markdown = `# Analysis: ${analysisGoal}\n\n`;
+      markdown += `**Date:** ${new Date().toLocaleDateString()}\n`;
+      markdown += `**Data Points:** ${dataPoints.length}\n`;
+      markdown += `**Insights:** ${insights.length}\n\n`;
+
+      if (dataPoints.length > 0) {
+        markdown += `## Data Points\n\n`;
+        categories.forEach(category => {
+          markdown += `### ${category}\n`;
+          dataPoints.filter(d => d.category === category).forEach(d => {
+            markdown += `- **${d.label}:** ${d.value}${d.source ? ` _(source: ${d.source})_` : ''}\n`;
+          });
+          markdown += '\n';
+        });
+      }
+
+      if (insights.length > 0) {
+        markdown += `## Insights\n\n`;
+        (['trend', 'anomaly', 'correlation', 'recommendation'] as Insight['type'][]).forEach(type => {
+          const typeInsights = insights.filter(i => i.type === type);
+          if (typeInsights.length > 0) {
+            markdown += `### ${type.charAt(0).toUpperCase() + type.slice(1)}s\n`;
+            typeInsights.forEach(i => {
+              markdown += `- [${i.confidence}] ${i.text}\n`;
+            });
+            markdown += '\n';
+          }
+        });
+      }
+
+      await dataService.createArchive({
+        type: 'artifact',
+        title: `Analysis: ${analysisGoal.substring(0, 80)}${analysisGoal.length > 80 ? '...' : ''}`,
+        content: markdown,
+        date: new Date(),
+        tags: ['analysis', 'war-room', 'mission'],
+        metadata: {
+          missionType: 'analyze',
+          analysisGoal,
+          dataPointsCount: dataPoints.length,
+          insightsCount: insights.length,
+        },
+      });
+      toast.success('Analysis saved to Archives');
+    } catch (error) {
+      console.error('Failed to save analysis:', error);
+      toast.error('Failed to save analysis');
     }
   };
 
@@ -510,8 +565,16 @@ Include:
           )}
         </div>
 
-        {/* Export */}
-        <div className="p-3 border-t border-white/10">
+        {/* Export & Archive */}
+        <div className="p-3 border-t border-white/10 space-y-2">
+          <button
+            onClick={saveAnalysisToArchive}
+            disabled={!analysisGoal.trim()}
+            className="w-full war-room-btn bg-gradient-to-r from-emerald-600 to-green-600 hover:from-emerald-700 hover:to-green-700 text-white py-2 font-semibold"
+          >
+            <Archive className="fa mr-2" />
+            Save to Archives
+          </button>
           <button
             onClick={() => setShowExport(true)}
             className="w-full war-room-btn py-2"

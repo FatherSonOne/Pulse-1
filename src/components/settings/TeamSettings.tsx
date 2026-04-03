@@ -1,21 +1,50 @@
 import React, { useState, useEffect } from 'react';
 import { sendTeamInvite, getPendingTeamInvites, resendTeamInvite, revokeTeamInvite, type TeamInvite } from '../../services/teamService';
+import { supabase } from '../../services/supabase';
 import { Loader2, Mail, Send, Users } from 'lucide-react';
 import toast from 'react-hot-toast';
+
+interface TeamMember {
+  id: string;
+  display_name: string;
+  handle: string | null;
+  avatar_url: string | null;
+  role: string;
+}
 
 interface TeamSettingsProps {
   userId: string;
   userName: string;
 }
 
-export const TeamSettings: React.FC<TeamSettingsProps> = ({ userName }) => {
+export const TeamSettings: React.FC<TeamSettingsProps> = ({ userId, userName }) => {
   const [pendingInvites, setPendingInvites] = useState<TeamInvite[]>([]);
+  const [teamMembers, setTeamMembers] = useState<TeamMember[]>([]);
   const [inviteEmail, setInviteEmail] = useState('');
   const [isInviting, setIsInviting] = useState(false);
 
   useEffect(() => {
     getPendingTeamInvites().then(setPendingInvites).catch(() => {});
-  }, []);
+
+    // Load actual team members from pulse_profiles
+    const loadMembers = async () => {
+      try {
+        const { data } = await supabase
+          .from('pulse_profiles')
+          .select('id, display_name, handle, avatar_url')
+          .limit(50);
+        if (data) {
+          setTeamMembers(data.map(m => ({
+            ...m,
+            role: m.id === userId ? 'Admin' : 'Member',
+          })));
+        }
+      } catch (err) {
+        console.error('Error loading team members:', err);
+      }
+    };
+    loadMembers();
+  }, [userId]);
 
   return (
     <div className="space-y-8 animate-slide-up">
@@ -108,17 +137,34 @@ export const TeamSettings: React.FC<TeamSettingsProps> = ({ userName }) => {
 
       <div className="bg-white dark:bg-zinc-900 border border-zinc-200 dark:border-zinc-800 rounded-xl overflow-hidden">
         <div className="p-4 border-b border-zinc-200 dark:border-zinc-700 bg-zinc-50 dark:bg-zinc-800/50">
-          <h4 className="text-sm font-bold dark:text-white text-zinc-900">Current Members</h4>
+          <h4 className="text-sm font-bold dark:text-white text-zinc-900">Current Members ({teamMembers.length})</h4>
         </div>
-        <div className="p-4 flex items-center gap-3">
-          <div className="w-10 h-10 rounded-full bg-gradient-to-tr from-blue-500 to-purple-500 flex items-center justify-center text-white font-bold">
-            {userName.charAt(0)}
-          </div>
-          <div className="flex-1">
-            <p className="text-sm font-bold dark:text-white text-zinc-900">{userName} (You)</p>
-            <p className="text-xs text-zinc-500">Admin</p>
-          </div>
-          <span className="px-2 py-1 bg-emerald-100 dark:bg-emerald-900/30 text-emerald-600 dark:text-emerald-400 text-xs rounded-full font-medium">Active</span>
+        <div className="divide-y divide-zinc-200 dark:divide-zinc-700">
+          {teamMembers.map((member) => (
+            <div key={member.id} className="p-4 flex items-center gap-3">
+              <div className="w-10 h-10 rounded-full bg-gradient-to-tr from-blue-500 to-purple-500 flex items-center justify-center text-white font-bold overflow-hidden">
+                {member.avatar_url ? (
+                  <img src={member.avatar_url} alt={member.display_name} className="w-full h-full object-cover" />
+                ) : (
+                  (member.display_name || '?').charAt(0)
+                )}
+              </div>
+              <div className="flex-1">
+                <p className="text-sm font-bold dark:text-white text-zinc-900">
+                  {member.display_name || 'Unknown'} {member.id === userId ? '(You)' : ''}
+                </p>
+                <p className="text-xs text-zinc-500">
+                  {member.handle ? `@${member.handle}` : member.role}
+                </p>
+              </div>
+              <span className="px-2 py-1 bg-emerald-100 dark:bg-emerald-900/30 text-emerald-600 dark:text-emerald-400 text-xs rounded-full font-medium">
+                {member.role}
+              </span>
+            </div>
+          ))}
+          {teamMembers.length === 0 && (
+            <div className="p-8 text-center text-zinc-500 text-sm">Loading members...</div>
+          )}
         </div>
       </div>
     </div>

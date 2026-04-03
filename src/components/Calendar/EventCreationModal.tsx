@@ -4,6 +4,7 @@ import { CalendarEvent, Contact } from '../../types';
 import { RecurrencePicker } from './RecurrencePicker';
 import { VideoLinkSelector } from './VideoLinkSelector';
 import { EventStatusBadge, EventStatus } from './EventStatusBadge';
+import { EVENT_COLORS, RecurrenceType, ReminderTime } from './calendarTypes';
 
 // Shape that mirrors the allEventTypes entries in Calendar.tsx
 interface EventTypeOption {
@@ -12,21 +13,6 @@ interface EventTypeOption {
   icon: string;
   color: string;
 }
-
-// EVENT_COLORS constant — duplicated here until a shared constants module exists.
-const EVENT_COLORS = [
-  { id: 'zinc',   name: 'Default', class: 'bg-zinc-800 dark:bg-zinc-700' },
-  { id: 'blue',   name: 'Blue',    class: 'bg-blue-600' },
-  { id: 'green',  name: 'Green',   class: 'bg-emerald-600' },
-  { id: 'red',    name: 'Red',     class: 'bg-red-600' },
-  { id: 'purple', name: 'Purple',  class: 'bg-purple-600' },
-  { id: 'amber',  name: 'Amber',   class: 'bg-amber-600' },
-  { id: 'pink',   name: 'Pink',    class: 'bg-pink-600' },
-  { id: 'indigo', name: 'Indigo',  class: 'bg-indigo-600' },
-];
-
-type RecurrenceType = 'none' | 'daily' | 'weekly' | 'monthly' | 'yearly';
-type ReminderTime = 'none' | '5min' | '15min' | '30min' | '1hour' | '1day';
 
 export interface EventCreationModalProps {
   // Visibility

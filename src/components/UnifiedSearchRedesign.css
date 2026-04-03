@@ -1622,3 +1622,144 @@
   display: flex;
   gap: 6px;
 }
+
+/* ── Export dropdown ──────────────────────────────────────────────────────── */
+.export-dropdown-wrapper {
+  position: relative;
+  display: inline-flex;
+}
+
+.export-dropdown {
+  position: absolute;
+  top: 100%;
+  right: 0;
+  margin-top: 4px;
+  display: flex;
+  flex-direction: column;
+  min-width: 120px;
+  background: var(--search-card-bg);
+  border: 1px solid var(--search-border);
+  border-radius: 8px;
+  box-shadow: 0 4px 16px rgba(0,0,0,.12);
+  z-index: 50;
+  overflow: hidden;
+}
+
+.export-dropdown button {
+  padding: 8px 12px;
+  font-size: 0.8rem;
+  text-align: left;
+  border: none;
+  background: transparent;
+  color: var(--search-text);
+  cursor: pointer;
+  transition: background 0.15s;
+}
+
+.export-dropdown button:hover {
+  background: var(--search-hover);
+}
+
+/* ── Clipboard item actions ──────────────────────────────────────────────── */
+.clipboard-item-actions {
+  display: flex;
+  gap: 2px;
+  align-items: center;
+  flex-shrink: 0;
+}
+
+.clipboard-icon-btn {
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  width: 20px;
+  height: 20px;
+  border: none;
+  border-radius: 4px;
+  background: transparent;
+  color: var(--search-text-muted);
+  cursor: pointer;
+  transition: background 0.15s, color 0.15s;
+}
+
+.clipboard-icon-btn:hover {
+  background: var(--search-hover);
+  color: var(--search-text);
+}
+
+.clipboard-delete-btn:hover {
+  color: #ef4444;
+}
+
+/* ── Saved search row ────────────────────────────────────────────────────── */
+.filter-option-row {
+  display: flex;
+  align-items: center;
+  gap: 2px;
+}
+
+.filter-option-row .filter-option-btn {
+  flex: 1;
+  min-width: 0;
+}
+
+.filter-delete-btn {
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  width: 20px;
+  height: 20px;
+  border: none;
+  border-radius: 4px;
+  background: transparent;
+  color: var(--search-text-muted);
+  cursor: pointer;
+  opacity: 0;
+  transition: opacity 0.15s, background 0.15s, color 0.15s;
+  flex-shrink: 0;
+}
+
+.filter-option-row:hover .filter-delete-btn {
+  opacity: 1;
+}
+
+.filter-delete-btn:hover {
+  background: var(--search-hover);
+  color: #ef4444;
+}
+
+/* ── Sonar model select ──────────────────────────────────────────────────── */
+.sonar-model-select {
+  width: 100%;
+  padding: 5px 8px;
+  margin-top: 4px;
+  font-size: 0.75rem;
+  border: 1px solid var(--search-border);
+  border-radius: 6px;
+  background: var(--search-card-bg);
+  color: var(--search-text);
+  cursor: pointer;
+  outline: none;
+  transition: border-color 0.15s;
+}
+
+.sonar-model-select:focus {
+  border-color: var(--search-primary);
+}
+
+/* ── Clipboard count badge ───────────────────────────────────────────────── */
+.clipboard-count-badge {
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  min-width: 18px;
+  height: 18px;
+  padding: 0 5px;
+  margin-left: 6px;
+  font-size: 0.65rem;
+  font-weight: 600;
+  border-radius: 9px;
+  background: var(--search-primary);
+  color: #fff;
+  vertical-align: middle;
+}

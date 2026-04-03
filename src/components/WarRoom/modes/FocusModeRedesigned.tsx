@@ -252,7 +252,7 @@ const ResponseCard: React.FC<{
     </div>
     {message.citations && message.citations.length > 0 && (
       <div className="fm-response-citations">
-        {message.citations.map((cite: any, i: number) => (
+        {message.citations.map((cite, i) => (
           <span key={i} className="fm-citation">
             <Bookmark className="fa" />
             {typeof cite === 'string' ? cite : cite.title}

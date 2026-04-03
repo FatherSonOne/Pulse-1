@@ -1,4 +1,5 @@
 import React, { useState, useEffect, useRef, useCallback, useMemo, Suspense, lazy } from 'react';
+import { useWarRoomStore, Token } from '../store/warRoomStore';
 import { settingsService } from '../services/settingsService';
 import { Capacitor } from '@capacitor/core';
 import { ragService, AISession, KnowledgeDoc, AIMessage, AIProject, PromptSuggestion, ThinkingStep } from '../services/ragService';
@@ -7,7 +8,7 @@ import toast from 'react-hot-toast';
 import './WarRoomStyles.css';
 import { ErrorBoundary } from './shared/ErrorBoundary';
 import { ModeSwitcher, WarRoomMode, MissionType, RoomType } from './WarRoom/ModeSwitcher';
-import { FocusMode, AnalystMode, DataAnalystModeRedesigned, StrategistMode, StrategistModeRedesigned, BrainstormMode, BrainstormModeRedesigned, DebriefMode, DebriefModeRedesigned, ConversationModeRedesigned } from './WarRoom/modes';
+import { DataAnalystModeRedesigned, StrategistModeRedesigned, BrainstormModeRedesigned, DebriefModeRedesigned, ConversationModeRedesigned } from './WarRoom/modes';
 import { ResearchMission, DecisionMission, BrainstormMission, PlanMission, AnalyzeMission, CreateMission } from './WarRoom/missions';
 
 // NotebookLM-style components
@@ -27,12 +28,7 @@ const AudioVisualizer = lazy(() => import('./WarRoom/AudioVisualizer').then(m =>
 const TokenStream = lazy(() => import('./WarRoom/TokenStream').then(m => ({ default: m.TokenStream })));
 
 const ThinkingPanel = lazy(() => import('./WarRoom/ThinkingPanel').then(m => ({ default: m.ThinkingPanel })));
-// Legacy modes — moved to archived/ in Phase 1. Still functional, pending removal in Phase 4.
-const NeuralTerminal = lazy(() => import('./WarRoom/archived/NeuralTerminal').then(m => ({ default: m.NeuralTerminal })));
-const SentientInterface = lazy(() => import('./WarRoom/archived/SentientInterface').then(m => ({ default: m.SentientInterface })));
-const XRayMode = lazy(() => import('./WarRoom/archived/XRayMode').then(m => ({ default: m.XRayMode })));
 const CommandCenter = lazy(() => import('./WarRoom/modes/CommandCenter').then(m => ({ default: m.CommandCenter })));
-const ElegantInterface = lazy(() => import('./WarRoom/archived/ElegantInterface').then(m => ({ default: m.ElegantInterface })));
 const MatrixRain = lazy(() => import('./WarRoom/effects/MatrixRain').then(m => ({ default: m.MatrixRain })));
 const GlitchEffect = lazy(() => import('./WarRoom/effects/GlitchEffect').then(m => ({ default: m.GlitchEffect })));
 const VoiceAgentPanel = lazy(() => import('./WarRoom/VoiceAgentPanel').then(m => ({ default: m.VoiceAgentPanel })));
@@ -77,111 +73,102 @@ const LoadingFallback: React.FC<{ message?: string }> = ({ message = 'Loading...
   );
 };
 
-interface Token {
-  text: string;
-  confidence: number;
-  alternatives?: string[];
-  timestamp: number;
-}
-
 interface LiveDashboardProps {
   apiKey: string;
   userId: string;
 }
 
 const LiveDashboard: React.FC<LiveDashboardProps> = ({ apiKey, userId }) => {
-  // Projects / War Rooms
-  const [projects, setProjects] = useState<AIProject[]>([]);
-  const [selectedProjectId, setSelectedProjectId] = useState<string | null>(null);
-  const [showCreateProject, setShowCreateProject] = useState(false);
-  const [newProjectName, setNewProjectName] = useState('');
+  // ── Zustand store — all War Room state ───────────────────────────────────
+  const {
+    projects, setProjects,
+    selectedProjectId, setSelectedProjectId,
+    showCreateProject, setShowCreateProject,
+    newProjectName, setNewProjectName,
+    sessions, setSessions,
+    selectedSessionId, setSelectedSessionId,
+    messages, setMessages,
+    input, setInput,
+    isLoading, setIsLoading,
+    missionMessages, setMissionMessages,
+    isCreatingSession, setIsCreatingSession,
+    newSessionTitle, setNewSessionTitle,
+    activeAgent, setActiveAgent,
+    documents, setDocuments,
+    showDocUpload, setShowDocUpload,
+    uploadingFiles, setUploadingFiles,
+    uploadProgress, setUploadProgress,
+    activeContextDocs, setActiveContextDocs,
+    showActiveContext, setShowActiveContext,
+    isDeletingDoc, setIsDeletingDoc,
+    showMindMap, setShowMindMap,
+    showChartGenerator, setShowChartGenerator,
+    generatedChart, setGeneratedChart,
+    showStudyGuide, setShowStudyGuide,
+    showFAQ, setShowFAQ,
+    showTimeline, setShowTimeline,
+    showPodcast, setShowPodcast,
+    showOrganize, setShowOrganize,
+    organizingDocId, setOrganizingDocId,
+    showAdvancedAI, setShowAdvancedAI,
+    contextPanelOpen, setContextPanelOpen,
+    showKnowledgeBank, setShowKnowledgeBank,
+    showShareModal, setShowShareModal,
+    sharingDoc, setSharingDoc,
+    viewingDoc, setViewingDoc,
+    viewerHighlightText, setViewerHighlightText,
+    viewerScrollOffset, setViewerScrollOffset,
+    isSidebarOpen, setIsSidebarOpen,
+    isMobile, setIsMobile,
+    showMobileMenu, setShowMobileMenu,
+    audioUrl, setAudioUrl,
+    isGeneratingAudio, setIsGeneratingAudio,
+    showExportModal, setShowExportModal,
+    expandedRooms, setExpandedRooms,
+    showSessionExport, setShowSessionExport,
+    isExporting, setIsExporting,
+    warRoomMode, setWarRoomMode,
+    currentMission, setCurrentMission,
+    currentRoom, setCurrentRoom,
+    showWarRoomHub, setShowWarRoomHub,
+    showMissionLauncher, setShowMissionLauncher,
+    voiceEnabled, setVoiceEnabled,
+    voiceMode, setVoiceMode,
+    currentTokens, setCurrentTokens,
+    isAIStreaming, setIsAIStreaming,
+    audioData, setAudioData,
+    visualizerType, setVisualizerType,
+    voiceSynthesisEnabled, setVoiceSynthesisEnabled,
+    voiceGender, setVoiceGender,
+    glitchTrigger, setGlitchTrigger,
+    showThinkingLogs, setShowThinkingLogs,
+    thinkingLogs, setThinkingLogs,
+    expandedThinking, setExpandedThinking,
+    enableExtendedThinking, setEnableExtendedThinking,
+    suggestions, setSuggestions,
+    showSuggestions, setShowSuggestions,
+    showVoiceAgentPanel, setShowVoiceAgentPanel,
+    voiceAgentExpanded, setVoiceAgentExpanded,
+  } = useWarRoomStore();
 
-  // Sessions
-  const [sessions, setSessions] = useState<AISession[]>([]);
-  const [selectedSessionId, setSelectedSessionId] = useState<string | null>(null);
-  const [messages, setMessages] = useState<AIMessage[]>([]);
-  const [input, setInput] = useState('');
-  const [isLoading, setIsLoading] = useState(false);
-  
-  // Per-mission conversation history storage
-  // Format: { missionType-sessionId: AIMessage[] }
-  const [missionMessages, setMissionMessages] = useState<Map<string, AIMessage[]>>(() => {
-    try {
-      const stored = localStorage.getItem('war-room-mission-messages');
-      if (stored) {
-        const parsed = JSON.parse(stored);
-        return new Map(Object.entries(parsed));
-      }
-    } catch (e) {
-      console.error('Failed to load mission messages from localStorage:', e);
-    }
-    return new Map();
-  });
-  
-  // Documents with enhanced visibility
-  const [documents, setDocuments] = useState<KnowledgeDoc[]>([]);
-  const [showDocUpload, setShowDocUpload] = useState(false);
-  const [uploadingFiles, setUploadingFiles] = useState<Set<string>>(new Set());
-  const [uploadProgress, setUploadProgress] = useState<Map<string, number>>(new Map());
-  
-  // Active Context Management
-  const [activeContextDocs, setActiveContextDocs] = useState<Set<string>>(new Set());
-  const [showActiveContext, setShowActiveContext] = useState(true);
-  const [isDeletingDoc, setIsDeletingDoc] = useState(false);
-  
-  // NotebookLM Features
-  const [showMindMap, setShowMindMap] = useState(false);
-  const [showChartGenerator, setShowChartGenerator] = useState(false);
-  const [generatedChart, setGeneratedChart] = useState<string | null>(null);
+  // ── Local refs & hooks (not in store) ────────────────────────────────────
+  const messagesEndRef = useRef<HTMLDivElement>(null);
+  const openaiApiKey = localStorage.getItem('openai_api_key') || import.meta.env.VITE_OPENAI_API_KEY || '';
 
-  // Content Generators (Phase 2 & 3)
-  const [showStudyGuide, setShowStudyGuide] = useState(false);
-  const [showFAQ, setShowFAQ] = useState(false);
-  const [showTimeline, setShowTimeline] = useState(false);
-  const [showPodcast, setShowPodcast] = useState(false);
-  const [showOrganize, setShowOrganize] = useState(false);
-  const [organizingDocId, setOrganizingDocId] = useState<string | undefined>(undefined);
-  const [showAdvancedAI, setShowAdvancedAI] = useState(false);
-
-  // Context Panel Collapsible State - Now in header toolbar
-  // @deprecated — isContextPanelExpanded full-screen overlay retired in Phase 9
-  // const [isContextPanelExpanded, setIsContextPanelExpanded] = useState(false);
-  const [contextPanelOpen, setContextPanelOpen] = useState(window.innerWidth >= 768);
-  const [showKnowledgeBank, setShowKnowledgeBank] = useState(false);
-
-  // Sharing State
-  const [showShareModal, setShowShareModal] = useState(false);
-  const [sharingDoc, setSharingDoc] = useState<KnowledgeDoc | null>(null);
-
-  // Document Viewer State
-  const [viewingDoc, setViewingDoc] = useState<KnowledgeDoc | null>(null);
-  const [viewerHighlightText, setViewerHighlightText] = useState<string | undefined>(undefined);
-  const [viewerScrollOffset, setViewerScrollOffset] = useState<number | undefined>(undefined);
-  
-  // UI State
-  // Use a function to detect mobile more reliably
+  // Mobile detection helper (kept local for resize handler)
   const checkIsMobile = () => {
     const width = window.innerWidth;
     const height = window.innerHeight;
-    // Consider mobile if width is small OR if it's a touch device with small screen
     const isSmallScreen = Math.min(width, height) <= 768;
     const isTouchDevice = 'ontouchstart' in window || navigator.maxTouchPoints > 0;
     return isSmallScreen || (isTouchDevice && width <= 1024);
   };
 
-  const [isSidebarOpen, setIsSidebarOpen] = useState(false); // Collapsed by default
-  const [isMobile, setIsMobile] = useState(checkIsMobile);
-  const [showMobileMenu, setShowMobileMenu] = useState(false);
-  const [audioUrl, setAudioUrl] = useState<string | null>(null);
-  const [isGeneratingAudio, setIsGeneratingAudio] = useState(false);
-  const messagesEndRef = useRef<HTMLDivElement>(null);
-  
-  // New Session State
-  const [isCreatingSession, setIsCreatingSession] = useState(false);
-  const [newSessionTitle, setNewSessionTitle] = useState('');
+  // Voice Synthesis Hook
+  const { speak, isSpeaking } = useVoiceSynthesis(voiceSynthesisEnabled, voiceGender);
 
-  // Agent Persona State
-  const [activeAgent, setActiveAgent] = useState<'general' | 'skeptic' | 'scribe' | 'deep-diver'>('general');
+  // The Board — persistent notes across all modes
+  const { notes: boardNotes, addNote: addBoardNote, deleteNote: deleteBoardNote, clearNotes: clearBoardNotes } = useBoardNotes();
 
   // Load persisted agent selection
   useEffect(() => {
@@ -192,51 +179,12 @@ const LiveDashboard: React.FC<LiveDashboardProps> = ({ apiKey, userId }) => {
     });
   }, []);
 
-  // AI Thinking Visibility
-  const [thinkingLogs, setThinkingLogs] = useState<Map<string, ThinkingStep[]>>(new Map());
-  const [expandedThinking, setExpandedThinking] = useState<Set<string>>(new Set());
-  const [enableExtendedThinking, setEnableExtendedThinking] = useState(false);
-
-  // Prompt Suggestions
-  const [suggestions, setSuggestions] = useState<PromptSuggestion[]>([]);
-  const [showSuggestions, setShowSuggestions] = useState(true);
-
-  // Export
-  const [showExportModal, setShowExportModal] = useState(false);
-
-  // Sidebar tree expansion state
-  const [expandedRooms, setExpandedRooms] = useState<Set<string>>(new Set());
-  const [showSessionExport, setShowSessionExport] = useState(false);
-  const [isExporting, setIsExporting] = useState(false);
-
-  // War Room Neural Interface
-  const [warRoomMode, setWarRoomMode] = useState<WarRoomMode>('tactical');
-  const [currentMission, setCurrentMission] = useState<MissionType>('research');
-  const [currentRoom, setCurrentRoom] = useState<RoomType>('war-room');
-  const [showWarRoomHub, setShowWarRoomHub] = useState(true); // Show landing page on start
-  const [showMissionLauncher, setShowMissionLauncher] = useState(false);
-  const [voiceEnabled, setVoiceEnabled] = useState(false);
-  const [voiceMode, setVoiceMode] = useState<'push-to-talk' | 'always-on' | 'wake-word'>('push-to-talk');
-  const [currentTokens, setCurrentTokens] = useState<Token[]>([]);
-  const [isAIStreaming, setIsAIStreaming] = useState(false);
-  const [audioData, setAudioData] = useState<number[]>([]);
-  const [visualizerType, setVisualizerType] = useState<'listening' | 'thinking' | 'speaking' | 'idle'>('idle');
-  const [voiceSynthesisEnabled, setVoiceSynthesisEnabled] = useState(false);
-  const [voiceGender, setVoiceGender] = useState<'male' | 'female' | 'neutral'>('female');
-  const [glitchTrigger, setGlitchTrigger] = useState(false);
-
-  // Voice Synthesis Hook
-  const { speak, isSpeaking } = useVoiceSynthesis(voiceSynthesisEnabled, voiceGender);
-
-  // The Board — persistent notes across all modes
-  const { notes: boardNotes, addNote: addBoardNote, deleteNote: deleteBoardNote, clearNotes: clearBoardNotes } = useBoardNotes();
-  
-  const [showThinkingLogs, setShowThinkingLogs] = useState(true);
-
-  // OpenAI Realtime Voice Agent
-  const [showVoiceAgentPanel, setShowVoiceAgentPanel] = useState(false);
-  const [voiceAgentExpanded, setVoiceAgentExpanded] = useState(false);
-  const openaiApiKey = localStorage.getItem('openai_api_key') || import.meta.env.VITE_OPENAI_API_KEY || '';
+  // Load saved War Room default mode from settings
+  useEffect(() => {
+    settingsService.get('warRoomDefaultMode').then((mode) => {
+      if (mode) setWarRoomMode(mode as WarRoomMode);
+    });
+  }, []);
 
   // Handle resize and orientation changes for mobile responsiveness
   useEffect(() => {
@@ -276,16 +224,6 @@ const LiveDashboard: React.FC<LiveDashboardProps> = ({ apiKey, userId }) => {
       loadSessions();
     }
   }, [userId]);
-
-  // Save mission messages to localStorage whenever they change
-  useEffect(() => {
-    try {
-      const obj = Object.fromEntries(missionMessages);
-      localStorage.setItem('war-room-mission-messages', JSON.stringify(obj));
-    } catch (e) {
-      console.error('Failed to save mission messages to localStorage:', e);
-    }
-  }, [missionMessages]);
 
   // Helper function to get messages for current mission/session
   const getCurrentMissionKey = () => {

@@ -5,21 +5,21 @@ import { ChevronRight, Menu, Search, X } from 'lucide-react';
 import './Settings.css';
 
 // Sub-components
-import { AccountSettings } from './Settings/AccountSettings';
-import { AIIntelligenceSettings } from './Settings/AIIntelligenceSettings';
+import { AccountSettings } from './settings/AccountSettings';
+import { AIIntelligenceSettings } from './settings/AIIntelligenceSettings';
 import { IntegrationsSettings } from './settings/IntegrationsSettings';
-import { NotificationsSettingsSection } from './Settings/NotificationsSettingsSection';
-import { TeamSettings } from './Settings/TeamSettings';
-import { AccessibilitySettings } from './Settings/AccessibilitySettings';
-import { PrivacyDataSettings } from './Settings/PrivacyDataSettings';
-import { FeaturesLabsSettings } from './Settings/FeaturesLabsSettings';
-import { WarRoomSettings } from './Settings/WarRoomSettings';
-import { ActivityMonitorSettings } from './Settings/ActivityMonitorSettings';
-import { DesktopAppSettings } from './Settings/DesktopAppSettings';
-import { AboutSettings } from './Settings/AboutSettings';
-import { BillingSettings } from './Settings/BillingSettings';
-import { DeveloperSettings } from './Settings/DeveloperSettings';
-import { AdminSettings } from './Settings/AdminSettings';
+import { NotificationsSettingsSection } from './settings/NotificationsSettingsSection';
+import { TeamSettings } from './settings/TeamSettings';
+import { AccessibilitySettings } from './settings/AccessibilitySettings';
+import { PrivacyDataSettings } from './settings/PrivacyDataSettings';
+import { FeaturesLabsSettings } from './settings/FeaturesLabsSettings';
+import { WarRoomSettings } from './settings/WarRoomSettings';
+import { ActivityMonitorSettings } from './settings/ActivityMonitorSettings';
+import { DesktopAppSettings } from './settings/DesktopAppSettings';
+import { AboutSettings } from './settings/AboutSettings';
+import { BillingSettings } from './settings/BillingSettings';
+import { DeveloperSettings } from './settings/DeveloperSettings';
+import { AdminSettings } from './settings/AdminSettings';
 import { EcosystemSettings } from './settings/EcosystemSettings';
 
 interface SettingsProps {

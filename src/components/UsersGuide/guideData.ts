@@ -962,7 +962,9 @@ export const guideSections: GuideSection[] = [
           'Auto-record or manual recording preference.',
           'Default meeting duration.',
           'Waiting room on/off.',
+          'Auto-Export to Entomate — automatically send recordings to Entomate for AI processing when meetings end.',
         ],
+        badge: 'Updated',
       },
       {
         id: 'meeting-briefing-cards',
@@ -2126,6 +2128,9 @@ export const guideSections: GuideSection[] = [
           'Connected app cards show status, a Tokens button, a Test button, and an on/off toggle.',
           'Bot Channels: connecting Entomate creates dedicated channels (#entomate-meetings, #entomate-tasks, #entomate-alerts).',
           'Auto-Export: meeting feedback and full meeting data can be exported to connected apps automatically.',
+          'Auto-Export on Meeting End: enable in Meeting Settings to send recordings to Entomate the moment a meeting ends.',
+          'Recording Pull: Entomate can request your available recordings — a list appears in #entomate-meetings with an Export All button.',
+          'Export Requests: Entomate can request individual recordings on-demand — Pulse looks them up and sends them back automatically.',
           'Recent Events shows the last 20 messages sent and received across all ecosystem apps.',
         ],
         note: 'Tokens are paired mirrors: Pulse\'s Service Token goes into the other app\'s Inbound Token, and vice versa.',
@@ -2547,5 +2552,5 @@ export const guideSections: GuideSection[] = [
   },
 ];
 
-export const guideVersion = '25.1.1';
-export const guideUpdated = 'March 5, 2026';
+export const guideVersion = '25.1.4';
+export const guideUpdated = 'March 29, 2026';

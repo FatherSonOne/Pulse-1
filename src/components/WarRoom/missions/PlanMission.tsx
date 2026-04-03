@@ -1,8 +1,10 @@
 import React, { useState, useRef, useEffect } from 'react';
 import { AIMessage, ThinkingStep } from '../../../services/ragService';
+import { dataService } from '../../../services/dataService';
+import toast from 'react-hot-toast';
 import { SessionExport } from '../shared';
 
-import { ArrowRight, BookOpen, Check, CheckCircle, Circle, Map, MessagesSquare, Minus, Plus, Send, Share2, Wand2, XCircle } from 'lucide-react';
+import { Archive, ArrowRight, BookOpen, Check, CheckCircle, Circle, Map, MessagesSquare, Minus, Plus, Send, Share2, Wand2, XCircle } from 'lucide-react';
 
 interface Milestone {
   id: string;
@@ -73,6 +75,7 @@ export const PlanMission: React.FC<PlanMissionProps> = ({
   const [risks, setRisks] = useState<Risk[]>([]);
   const [newRiskText, setNewRiskText] = useState('');
   const [expandedMilestone, setExpandedMilestone] = useState<string | null>(null);
+  const [isSaving, setIsSaving] = useState(false);
   const messagesEndRef = useRef<HTMLDivElement>(null);
 
   useEffect(() => {
@@ -168,6 +171,85 @@ Risks: ${risks.map(r => `[${r.impact}] ${r.description}`).join('; ')}
     onSendMessage(`[PLAN MISSION - Phase: ${currentPhase}]\n${prompt}\n\nPlan Context:${planContext}`);
   };
 
+  const savePlanToArchive = async () => {
+    if (!projectName.trim()) {
+      toast.error('Add a project name before saving');
+      return;
+    }
+    setIsSaving(true);
+    try {
+      const lines: string[] = [
+        `# ${projectName}`,
+        '',
+        `**Goal:** ${projectGoal}`,
+        '',
+      ];
+
+      if (successCriteria.length > 0) {
+        lines.push('## Success Criteria', '');
+        successCriteria.forEach(c => lines.push(`- ${c}`));
+        lines.push('');
+      }
+
+      if (inScope.length > 0 || outOfScope.length > 0) {
+        lines.push('## Scope', '');
+        if (inScope.length > 0) {
+          lines.push('### In Scope', '');
+          inScope.forEach(item => lines.push(`- ${item}`));
+          lines.push('');
+        }
+        if (outOfScope.length > 0) {
+          lines.push('### Out of Scope', '');
+          outOfScope.forEach(item => lines.push(`- ${item}`));
+          lines.push('');
+        }
+      }
+
+      if (milestones.length > 0) {
+        lines.push('## Milestones', '');
+        milestones.forEach((m, i) => {
+          lines.push(`### ${i + 1}. ${m.name}`);
+          if (m.tasks.length > 0) {
+            m.tasks.forEach(t => lines.push(`- [ ] ${t.name}`));
+          }
+          lines.push('');
+        });
+      }
+
+      if (risks.length > 0) {
+        lines.push('## Risks', '');
+        risks.forEach(r => {
+          lines.push(`- **[${r.impact.toUpperCase()}]** ${r.description}${r.mitigation ? ` — _Mitigation:_ ${r.mitigation}` : ''}`);
+        });
+        lines.push('');
+      }
+
+      const content = lines.join('\n');
+
+      await dataService.createArchive({
+        type: 'artifact',
+        title: `Plan: ${projectName.substring(0, 80)}${projectName.length > 80 ? '...' : ''}`,
+        content,
+        date: new Date(),
+        tags: ['plan', 'war-room', 'mission'],
+        metadata: {
+          missionType: 'plan',
+          projectName,
+          projectGoal,
+          milestonesCount: milestones.length,
+          risksCount: risks.length,
+        },
+      });
+
+      toast.success('Plan saved to Archives');
+    } catch (err) {
+      console.error('Failed to save plan to archive:', err);
+      toast.error('Failed to save plan to Archives');
+    } finally {
+      setIsSaving(false);
+    }
+  };
+
   const handleSend = () => {
     const message = input.trim();
     if (!message) return;
@@ -223,7 +305,7 @@ Generate an executive summary including:
         <div className="p-4 border-b border-white/10 wr-mission-accent-bg">
           <div className="flex items-center gap-2 mb-2">
             <Map className="fa text-rose-500" />
-            <h3 className="text-sm font-semibold text-black dark:text-white">Plan Mission</h3>
+            <h3 className="text-sm font-semibold war-room-text-primary">Plan Mission</h3>
           </div>
           {projectName && (
             <p className="text-xs war-room-text-secondary line-clamp-2">{projectName}</p>
@@ -278,7 +360,7 @@ Generate an executive summary including:
                     {isComplete ? <Check className="fa" /> : <i className={`fa ${phase.icon}`}></i>}
                   </div>
                   <div className="text-left">
-                    <p className={`text-xs font-medium ${isActive ? 'text-rose-400' : 'text-black dark:text-white'}`}>
+                    <p className={`text-xs font-medium ${isActive ? 'text-rose-400' : 'war-room-text-primary'}`}>
                       {phase.label}
                     </p>
                     <p className="text-[10px] war-room-text-secondary">{phase.description}</p>
@@ -391,7 +473,7 @@ Generate an executive summary including:
                 </h4>
                 <div className="space-y-1">
                   {inScope.map((item, i) => (
-                    <div key={i} className="text-xs text-black dark:text-white">• {item}</div>
+                    <div key={i} className="text-xs war-room-text-primary">• {item}</div>
                   ))}
                   {inScope.length === 0 && (
                     <p className="text-xs war-room-text-secondary italic">No items</p>
@@ -405,7 +487,7 @@ Generate an executive summary including:
                 </h4>
                 <div className="space-y-1">
                   {outOfScope.map((item, i) => (
-                    <div key={i} className="text-xs text-black dark:text-white">• {item}</div>
+                    <div key={i} className="text-xs war-room-text-primary">• {item}</div>
                   ))}
                   {outOfScope.length === 0 && (
                     <p className="text-xs war-room-text-secondary italic">No items</p>
@@ -458,7 +540,7 @@ Generate an executive summary including:
                         <span className="w-6 h-6 rounded-full bg-rose-500/20 text-rose-400 text-xs flex items-center justify-center">
                           {i + 1}
                         </span>
-                        <span className="text-sm text-black dark:text-white">{milestone.name}</span>
+                        <span className="text-sm war-room-text-primary">{milestone.name}</span>
                       </div>
                       <div className="flex items-center gap-2">
                         <span className="war-room-badge text-[10px]">{milestone.tasks.length}</span>
@@ -530,7 +612,7 @@ Generate an executive summary including:
                     risk.impact === 'medium' ? 'bg-yellow-500/10 border-yellow-500/30' :
                     'bg-blue-500/10 border-blue-500/30'
                   }`}>
-                    <p className="text-sm text-black dark:text-white mb-2">{risk.description}</p>
+                    <p className="text-sm war-room-text-primary mb-2">{risk.description}</p>
                     <div className="flex items-center gap-1">
                       <span className="text-xs war-room-text-secondary mr-2">Impact:</span>
                       {(['low', 'medium', 'high'] as const).map(level => (
@@ -590,8 +672,16 @@ Generate an executive summary including:
           )}
         </div>
 
-        {/* Export */}
-        <div className="p-3 border-t border-white/10">
+        {/* Export & Save */}
+        <div className="p-3 border-t border-white/10 space-y-2">
+          <button
+            onClick={savePlanToArchive}
+            disabled={isSaving || !projectName.trim()}
+            className="w-full war-room-btn bg-gradient-to-r from-emerald-600 to-green-600 hover:from-emerald-700 hover:to-green-700 text-white py-2 font-semibold disabled:opacity-40 disabled:cursor-not-allowed"
+          >
+            <Archive className="fa mr-2" />
+            {isSaving ? 'Saving...' : 'Save to Archives'}
+          </button>
           <button
             onClick={() => setShowExport(true)}
             className="w-full war-room-btn py-2"
@@ -612,7 +702,7 @@ Generate an executive summary including:
                 <div className="w-16 h-16 mx-auto mb-4 rounded-full bg-gradient-to-br from-rose-500/20 to-pink-500/20 flex items-center justify-center">
                   <Map className="fa text-2xl text-rose-500" />
                 </div>
-                <h3 className="text-lg font-semibold text-black dark:text-white mb-2">
+                <h3 className="text-lg font-semibold war-room-text-primary mb-2">
                   Plan Mission
                 </h3>
                 <p className="text-sm war-room-text-secondary">

@@ -1,33 +1,7 @@
 import React, { useState, useEffect } from 'react';
 import { NotificationSettings } from '../NotificationSettings';
 import { settingsService } from '../../services/settingsService';
-
-interface ToggleItemProps {
-  label: string;
-  desc: string;
-  active: boolean;
-  onToggle: () => void;
-}
-
-const ToggleItem: React.FC<ToggleItemProps> = ({ label, desc, active, onToggle }) => (
-  <div className="flex justify-between items-center group cursor-pointer" onClick={onToggle}>
-    <div>
-      <div className="dark:text-white text-zinc-900 font-medium text-sm">{label}</div>
-      <div className="text-zinc-500 text-xs">{desc}</div>
-    </div>
-    <button
-      className={`w-12 h-6 rounded-full p-1 transition-colors duration-300 ease-in-out ${
-        active ? 'bg-blue-600' : 'bg-zinc-300 dark:bg-zinc-700'
-      }`}
-    >
-      <div
-        className={`w-4 h-4 rounded-full bg-white shadow-md transform transition-transform duration-300 ${
-          active ? 'translate-x-6' : 'translate-x-0'
-        }`}
-      />
-    </button>
-  </div>
-);
+import { ToggleItem } from './shared/ToggleItem';
 
 export const NotificationsSettingsSection: React.FC = () => {
   const [enableAllNotifications, setEnableAllNotifications] = useState(true);
@@ -66,18 +40,22 @@ export const NotificationsSettingsSection: React.FC = () => {
           label=""
           desc=""
           active={enableAllNotifications}
-          onToggle={() => setEnableAllNotifications(!enableAllNotifications)}
+          onToggle={() => {
+            const v = !enableAllNotifications;
+            setEnableAllNotifications(v);
+            settingsService.set('enableAllNotifications', v);
+          }}
         />
       </div>
 
       {enableAllNotifications && (
         <NotificationSettings
           notifSound={notifSound}
-          setNotifSound={setNotifSound}
+          setNotifSound={(v: boolean) => { setNotifSound(v); settingsService.set('notifSound', v); }}
           notifDesktop={notifDesktop}
-          setNotifDesktop={setNotifDesktop}
+          setNotifDesktop={(v: boolean) => { setNotifDesktop(v); settingsService.set('notifDesktop', v); }}
           notifEmail={notifEmail}
-          setNotifEmail={setNotifEmail}
+          setNotifEmail={(v: boolean) => { setNotifEmail(v); settingsService.set('notifEmail', v); }}
           ToggleItem={ToggleItem}
         />
       )}

@@ -27,6 +27,7 @@ interface ContactsShellProps {
   onSyncComplete?: (newContacts: Contact[]) => void;
   onUpdateContact?: (updatedContact: Contact) => void;
   onAddContact?: (contact: Omit<Contact, 'id'>) => Promise<Contact | null>;
+  onDeleteContact?: (contactId: string) => Promise<boolean>;
   openAddContact?: boolean;
   isDarkMode?: boolean;
   userId?: string;
@@ -170,6 +171,7 @@ export const ContactsShell: React.FC<ContactsShellProps> = (props) => {
             onSyncComplete={props.onSyncComplete}
             onUpdateContact={props.onUpdateContact}
             onAddContact={props.onAddContact}
+            onDeleteContact={props.onDeleteContact}
             openAddContact={props.openAddContact}
           />
         )}

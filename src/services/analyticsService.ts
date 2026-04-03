@@ -98,6 +98,32 @@ export interface DashboardData {
   }>;
 }
 
+export interface ResponseTimeStats {
+  avgResponseTime: number;
+  fastestResponse: number;
+  slowestResponse: number;
+  within1h: number;
+  within24h: number;
+  after24h: number;
+  byChannel: Record<string, number>;
+}
+
+export interface SentimentOverview {
+  avgSentiment: number;
+  sentimentTrend: 'improving' | 'declining' | 'stable';
+  positivePercent: number;
+  neutralPercent: number;
+  negativePercent: number;
+  dailySentiment: Array<{ date: string; sentiment: number }>;
+}
+
+export interface CommunicationTrends {
+  dailyVolume: Array<{ date: string; sent: number; received: number }>;
+  weekdayDistribution: Record<string, number>;
+  hourlyDistribution: Record<string, number>;
+  channelTrends: Record<string, Array<{ date: string; count: number }>>;
+}
+
 export interface AnalyticsOverview {
   currentPeriod: {
     totalMessages: number;
@@ -171,6 +197,7 @@ export async function getDashboardData(days: number = 30): Promise<{
 
 /**
  * Get daily metrics for a date range
+ * @deprecated No consumers — not called from any component as of 2026-04-02
  */
 export async function getDailyMetrics(
   startDate: Date,
@@ -217,6 +244,7 @@ export async function getTopContacts(
 
 /**
  * Get contact engagement details
+ * @deprecated No consumers — not called from any component as of 2026-04-02
  */
 export async function getContactEngagement(
   contactIdentifier: string
@@ -239,6 +267,7 @@ export async function getContactEngagement(
 
 /**
  * Get period summary (week, month, etc.)
+ * @deprecated No consumers — not called from any component as of 2026-04-02. Table never populated.
  */
 export async function getPeriodSummary(
   periodType: 'week' | 'month' | 'quarter' | 'year',
@@ -389,24 +418,22 @@ export async function getResponseTimeStats(
   days: number = 30
 ): Promise<{
   success: boolean;
-  data?: {
-    avgResponseTime: number;
-    fastestResponse: number;
-    slowestResponse: number;
-    within1h: number;
-    within24h: number;
-    after24h: number;
-    byChannel: Record<string, number>;
-  };
+  data?: ResponseTimeStats;
   error?: string;
 }> {
   try {
+    const { data: { user } } = await supabase.auth.getUser();
+    if (!user) {
+      return { success: false, error: 'Not authenticated' };
+    }
+
     const startDate = new Date();
     startDate.setDate(startDate.getDate() - days);
 
     const { data, error } = await supabase
       .from('analytics_response_times')
       .select('*')
+      .eq('user_id', user.id)
       .gte('incoming_at', startDate.toISOString())
       .eq('was_responded', true);
 
@@ -475,12 +502,7 @@ export async function getCommunicationTrends(
   days: number = 30
 ): Promise<{
   success: boolean;
-  data?: {
-    dailyVolume: Array<{ date: string; sent: number; received: number }>;
-    weekdayDistribution: Record<string, number>;
-    hourlyDistribution: Record<string, number>;
-    channelTrends: Record<string, Array<{ date: string; count: number }>>;
-  };
+  data?: CommunicationTrends;
   error?: string;
 }> {
   try {
@@ -528,7 +550,9 @@ export async function getCommunicationTrends(
     const channelTrends: Record<string, Array<{ date: string; count: number }>> = {
       email: [],
       sms: [],
-      slack: []
+      slack: [],
+      voxer: [],
+      pulse: []
     };
     (metrics || []).forEach(m => {
       channelTrends.email.push({
@@ -542,6 +566,18 @@ export async function getCommunicationTrends(
       channelTrends.slack.push({
         date: m.date,
         count: (m.slack_sent || 0) + (m.slack_received || 0)
+      });
+      channelTrends.voxer.push({
+        date: m.date,
+        count: (m.voxer_sent || 0) + (m.voxer_received || 0)
+      });
+      channelTrends.pulse.push({
+        date: m.date,
+        count: (m.messages_sent || 0) + (m.messages_received || 0)
+          - (m.emails_sent || 0) - (m.emails_received || 0)
+          - (m.sms_sent || 0) - (m.sms_received || 0)
+          - (m.slack_sent || 0) - (m.slack_received || 0)
+          - (m.voxer_sent || 0) - (m.voxer_received || 0)
       });
     });
 
@@ -567,14 +603,7 @@ export async function getSentimentOverview(
   days: number = 30
 ): Promise<{
   success: boolean;
-  data?: {
-    avgSentiment: number;
-    sentimentTrend: 'improving' | 'declining' | 'stable';
-    positivePercent: number;
-    neutralPercent: number;
-    negativePercent: number;
-    dailySentiment: Array<{ date: string; sentiment: number }>;
-  };
+  data?: SentimentOverview;
   error?: string;
 }> {
   try {
@@ -665,20 +694,38 @@ export async function getSentimentOverview(
 }
 
 /**
- * Generate AI insights from analytics data
+ * Generate AI insights from analytics data.
+ * Accepts optional pre-fetched data to avoid redundant API calls when
+ * the caller has already loaded dashboard/response/sentiment data.
  */
-export async function generateInsights(): Promise<{
+export async function generateInsights(prefetched?: {
+  dashboard?: DashboardData;
+  response?: ResponseTimeStats;
+  sentiment?: SentimentOverview;
+}): Promise<{
   success: boolean;
   data?: Array<{ type: string; title: string; description: string; priority: 'high' | 'medium' | 'low' }>;
   error?: string;
 }> {
   try {
-    // Get various analytics data
-    const [dashboardResult, responseResult, sentimentResult] = await Promise.all([
-      getDashboardData(30),
-      getResponseTimeStats(30),
-      getSentimentOverview(30)
-    ]);
+    let dashboardResult: { success: boolean; data?: DashboardData };
+    let responseResult: { success: boolean; data?: ResponseTimeStats };
+    let sentimentResult: { success: boolean; data?: SentimentOverview };
+
+    if (prefetched?.dashboard && prefetched?.response && prefetched?.sentiment) {
+      dashboardResult = { success: true, data: prefetched.dashboard };
+      responseResult = { success: true, data: prefetched.response };
+      sentimentResult = { success: true, data: prefetched.sentiment };
+    } else {
+      const [d, r, s] = await Promise.all([
+        getDashboardData(30),
+        getResponseTimeStats(30),
+        getSentimentOverview(30)
+      ]);
+      dashboardResult = d;
+      responseResult = r;
+      sentimentResult = s;
+    }
 
     const insights: Array<{ type: string; title: string; description: string; priority: 'high' | 'medium' | 'low' }> = [];
 
@@ -767,6 +814,7 @@ export async function generateInsights(): Promise<{
 
 /**
  * Enhanced Analytics - Comprehensive dashboard combining all analytics services
+ * @deprecated No consumers — not called from any component as of 2026-04-02
  */
 export async function getEnhancedAnalytics(days: number = 30): Promise<{
   success: boolean;
@@ -882,6 +930,7 @@ export async function getEnhancedAnalytics(days: number = 30): Promise<{
 /**
  * Process a message through all analytics services
  * This should be called whenever a new message is sent or received
+ * @deprecated No consumers — not called from any component as of 2026-04-02. Use analyticsCollector.trackMessageEvent() instead.
  */
 export async function processMessageAnalytics(
   messageContent: string,
@@ -968,6 +1017,7 @@ export async function processMessageAnalytics(
 /**
  * Run periodic analytics calculations
  * This should be scheduled to run daily
+ * @deprecated No consumers — never scheduled or called as of 2026-04-02
  */
 export async function runPeriodicAnalyticsUpdate(): Promise<{
   success: boolean;

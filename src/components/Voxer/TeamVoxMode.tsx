@@ -36,7 +36,7 @@ import VoxRecordArea from './VoxRecordArea';
 import { useVoxRecording } from '../../hooks/useVoxRecording';
 import { voxModeService } from '../../services/voxer/voxModeService';
 // analyticsCollector loaded dynamically to avoid svc-crm-analytics chunk TDZ
-import type { VoxWorkspace, VoxTeamChannel, TeamVoxMessage } from '../../services/voxer/voxModeTypes';
+import { VOX_MODES, type VoxWorkspace, type VoxTeamChannel, type TeamVoxMessage } from '../../services/voxer/voxModeTypes';
 import toast from 'react-hot-toast';
 import './Voxer.css';
 
@@ -60,11 +60,10 @@ import { PlaybackSpeedControl } from './PlaybackSpeedControl';
 import { VoxEmptyState } from './VoxEmptyState';
 import { getEmptyStateConfig } from './voxEmptyStates';
 
-// Mode color for Team Vox
-const MODE_COLOR = '#F59E0B';
+// Mode color from shared palette
+const MODE_COLOR = VOX_MODES.team_vox.color;
 
 interface TeamVoxModeProps {
-  contacts?: any[];
   apiKey?: string;
   onBack: () => void;
   isDarkMode?: boolean;
@@ -78,7 +77,6 @@ const CHANNEL_ICONS: Record<string, React.ReactNode> = {
 };
 
 const TeamVoxMode: React.FC<TeamVoxModeProps> = ({
-  contacts = [],
   apiKey,
   onBack,
   isDarkMode = false,
@@ -112,6 +110,16 @@ const TeamVoxMode: React.FC<TeamVoxModeProps> = ({
   const [menuAnchorRect, setMenuAnchorRect] = useState<DOMRect | null>(null);
   const [showDownloadModal, setShowDownloadModal] = useState(false);
   const [downloadItem, setDownloadItem] = useState<VoxSelectionItem | null>(null);
+
+  // Y3: Notification preference state (persisted to localStorage)
+  const [notificationPref, setNotificationPref] = useState<'all' | 'mentions' | 'mute'>('all');
+
+  // Y4: Channel settings edit state
+  const [editChannelName, setEditChannelName] = useState('');
+  const [editChannelDesc, setEditChannelDesc] = useState('');
+
+  // Y5: Reaction picker state
+  const [reactionPickerMessageId, setReactionPickerMessageId] = useState<string | null>(null);
 
   const audioRef = useRef<HTMLAudioElement>(null);
   const messagesEndRef = useRef<HTMLDivElement>(null);
@@ -163,8 +171,8 @@ const TeamVoxMode: React.FC<TeamVoxModeProps> = ({
     handlePointerUp,
     handleToggleRecording,
   } = useVoxRecording({
-    onRecordingComplete: (data) => {
-      console.log('Team Vox recording complete:', data.duration, 'seconds');
+    onRecordingComplete: (_data) => {
+      // Recording complete - ready for preview
     },
   });
 
@@ -425,12 +433,12 @@ const TeamVoxMode: React.FC<TeamVoxModeProps> = ({
       if (selectedChannel) setSelectedChannel(null);
       else onBack();
     },
-    onSwitchMode: (mode) => {
-      console.log('Switch to mode:', mode);
+    onSwitchMode: (_mode) => {
+      // Mode switch handled by parent
     },
     onDownload: () => {
       if (isSelectionMode && selectionCount > 0) {
-        console.log('Download selected items');
+        // Download handled by selection toolbar
       }
     },
     onArchive: () => {
@@ -467,8 +475,28 @@ const TeamVoxMode: React.FC<TeamVoxModeProps> = ({
   useEffect(() => {
     if (selectedChannel) {
       loadMessages();
+      // Y3: Load persisted notification preference for this channel
+      try {
+        const stored = localStorage.getItem(`vox_team_notif_${selectedChannel.id}`);
+        if (stored) {
+          const parsed = JSON.parse(stored);
+          setNotificationPref(parsed.pref || 'all');
+        } else {
+          setNotificationPref('all');
+        }
+      } catch {
+        setNotificationPref('all');
+      }
     }
   }, [selectedChannel]);
+
+  // Y4: Populate channel settings edit fields when modal opens
+  useEffect(() => {
+    if (showChannelSettings && selectedChannel) {
+      setEditChannelName(selectedChannel.name);
+      setEditChannelDesc(selectedChannel.description || '');
+    }
+  }, [showChannelSettings, selectedChannel]);
 
   useEffect(() => {
     messagesEndRef.current?.scrollIntoView({ behavior: 'smooth' });
@@ -1034,7 +1062,7 @@ const TeamVoxMode: React.FC<TeamVoxModeProps> = ({
                             </div>
                           )}
 
-                          <div className={`rounded-xl p-4 ${tc.cardBg} border ${tc.border} ${getMessageTypeStyle(message.messageType)} relative`}>
+                          <div className={`group rounded-xl p-4 ${tc.cardBg} border ${tc.border} ${getMessageTypeStyle(message.messageType)} relative`}>
                             {/* Phase 2: Selection Checkbox */}
                             {isSelectionMode && (
                               <button
@@ -1185,20 +1213,130 @@ const TeamVoxMode: React.FC<TeamVoxModeProps> = ({
                                 )}
 
                                 {/* Reactions */}
-                                {Object.keys(message.reactions).length > 0 && (
+                                {Object.keys(message.reactions).length > 0 ? (
                                   <div className="flex items-center gap-1 mt-2 flex-wrap">
                                     {Object.entries(message.reactions).map(([emoji, userIds]) => (
                                       <button
                                         key={emoji}
                                         className={`px-2 py-1 rounded-full text-xs flex items-center gap-1 ${tc.cardBg} border ${tc.border} ${tc.hoverBg}`}
+                                        onClick={() => {
+                                          const userId = voxModeService.getUserId();
+                                          setMessages((prev) =>
+                                            prev.map((m) => {
+                                              if (m.id !== message.id) return m;
+                                              const reactions = { ...m.reactions };
+                                              const existing = reactions[emoji] || [];
+                                              if (existing.includes(userId)) {
+                                                reactions[emoji] = existing.filter((id: string) => id !== userId);
+                                                if (reactions[emoji].length === 0) delete reactions[emoji];
+                                              } else {
+                                                reactions[emoji] = [...existing, userId];
+                                              }
+                                              return { ...m, reactions };
+                                            })
+                                          );
+                                        }}
                                       >
                                         <span>{emoji}</span>
                                         <span className={tc.textMuted}>{userIds.length}</span>
                                       </button>
                                     ))}
-                                    <button className={`p-1 rounded-full ${tc.btnGhost}`}>
+                                    <div className="relative">
+                                      <button
+                                        className={`p-1 rounded-full ${tc.btnGhost}`}
+                                        onClick={(e) => {
+                                          e.stopPropagation();
+                                          setReactionPickerMessageId(
+                                            reactionPickerMessageId === message.id ? null : message.id
+                                          );
+                                        }}
+                                        title="Add reaction"
+                                      >
+                                        <Smile className={`w-4 h-4 ${tc.textMuted}`} />
+                                      </button>
+                                      {reactionPickerMessageId === message.id && (
+                                        <div
+                                          className={`absolute bottom-full left-0 mb-1 flex gap-1 p-2 rounded-xl border ${tc.cardBg} ${tc.border} shadow-lg z-20`}
+                                          onClick={(e) => e.stopPropagation()}
+                                        >
+                                          {['👍', '❤️', '😂', '🔥', '👏', '🎉'].map((emoji) => (
+                                            <button
+                                              key={emoji}
+                                              className="w-8 h-8 flex items-center justify-center rounded-lg hover:bg-amber-500/20 transition-colors text-lg"
+                                              onClick={() => {
+                                                const userId = voxModeService.getUserId();
+                                                setMessages((prev) =>
+                                                  prev.map((m) => {
+                                                    if (m.id !== message.id) return m;
+                                                    const reactions = { ...m.reactions };
+                                                    const existing = reactions[emoji] || [];
+                                                    if (existing.includes(userId)) {
+                                                      reactions[emoji] = existing.filter((id: string) => id !== userId);
+                                                      if (reactions[emoji].length === 0) delete reactions[emoji];
+                                                    } else {
+                                                      reactions[emoji] = [...existing, userId];
+                                                    }
+                                                    return { ...m, reactions };
+                                                  })
+                                                );
+                                                setReactionPickerMessageId(null);
+                                              }}
+                                            >
+                                              {emoji}
+                                            </button>
+                                          ))}
+                                        </div>
+                                      )}
+                                    </div>
+                                  </div>
+                                ) : (
+                                  /* Y5: Show reaction trigger even when no reactions exist */
+                                  <div className="relative mt-2">
+                                    <button
+                                      className={`p-1 rounded-full ${tc.btnGhost} opacity-0 group-hover:opacity-100 transition-opacity`}
+                                      onClick={(e) => {
+                                        e.stopPropagation();
+                                        setReactionPickerMessageId(
+                                          reactionPickerMessageId === message.id ? null : message.id
+                                        );
+                                      }}
+                                      title="Add reaction"
+                                    >
                                       <Smile className={`w-4 h-4 ${tc.textMuted}`} />
                                     </button>
+                                    {reactionPickerMessageId === message.id && (
+                                      <div
+                                        className={`absolute bottom-full left-0 mb-1 flex gap-1 p-2 rounded-xl border ${tc.cardBg} ${tc.border} shadow-lg z-20`}
+                                        onClick={(e) => e.stopPropagation()}
+                                      >
+                                        {['👍', '❤️', '😂', '🔥', '👏', '🎉'].map((emoji) => (
+                                          <button
+                                            key={emoji}
+                                            className="w-8 h-8 flex items-center justify-center rounded-lg hover:bg-amber-500/20 transition-colors text-lg"
+                                            onClick={() => {
+                                              const userId = voxModeService.getUserId();
+                                              setMessages((prev) =>
+                                                prev.map((m) => {
+                                                  if (m.id !== message.id) return m;
+                                                  const reactions = { ...m.reactions };
+                                                  const existing = reactions[emoji] || [];
+                                                  if (existing.includes(userId)) {
+                                                    reactions[emoji] = existing.filter((id: string) => id !== userId);
+                                                    if (reactions[emoji].length === 0) delete reactions[emoji];
+                                                  } else {
+                                                    reactions[emoji] = [...existing, userId];
+                                                  }
+                                                  return { ...m, reactions };
+                                                })
+                                              );
+                                              setReactionPickerMessageId(null);
+                                            }}
+                                          >
+                                            {emoji}
+                                          </button>
+                                        ))}
+                                      </div>
+                                    )}
                                   </div>
                                 )}
                               </div>
@@ -1227,10 +1365,15 @@ const TeamVoxMode: React.FC<TeamVoxModeProps> = ({
                                     anchorRect={menuAnchorRect!}
                                     onArchive={() => handleArchiveMessage(message)}
                                     onDownload={() => handleDownloadMessage(message)}
-                                    onDelete={() => {
-                                      setMessages(prev => prev.filter(m => m.id !== message.id));
+                                    onDelete={async () => {
+                                      const success = await voxModeService.deleteTeamVoxMessage(message.id);
+                                      if (success) {
+                                        setMessages(prev => prev.filter(m => m.id !== message.id));
+                                        toast.success('Message deleted');
+                                      } else {
+                                        toast.error('Failed to delete message');
+                                      }
                                       setShowMessageMenu(null);
-                                      toast.success('Message deleted');
                                     }}
                                     onClose={() => setShowMessageMenu(null)}
                                   />
@@ -1592,9 +1735,9 @@ const TeamVoxMode: React.FC<TeamVoxModeProps> = ({
 
             <div className="space-y-3">
               {[
-                { value: 'all', label: 'All Messages', desc: 'Get notified for every message' },
-                { value: 'mentions', label: 'Mentions Only', desc: "Only when you're @mentioned" },
-                { value: 'mute', label: 'Mute', desc: 'No notifications' }
+                { value: 'all' as const, label: 'All Messages', desc: 'Get notified for every message' },
+                { value: 'mentions' as const, label: 'Mentions Only', desc: "Only when you're @mentioned" },
+                { value: 'mute' as const, label: 'Mute', desc: 'No notifications' }
               ].map((option) => (
                 <label
                   key={option.value}
@@ -1607,7 +1750,8 @@ const TeamVoxMode: React.FC<TeamVoxModeProps> = ({
                   <input
                     type="radio"
                     name="notification"
-                    defaultChecked={option.value === 'all'}
+                    checked={notificationPref === option.value}
+                    onChange={() => setNotificationPref(option.value)}
                     className="w-4 h-4 text-amber-500"
                   />
                 </label>
@@ -1615,7 +1759,20 @@ const TeamVoxMode: React.FC<TeamVoxModeProps> = ({
             </div>
 
             <button
-              onClick={() => setShowNotificationSettings(false)}
+              onClick={() => {
+                if (selectedChannel) {
+                  try {
+                    localStorage.setItem(
+                      `vox_team_notif_${selectedChannel.id}`,
+                      JSON.stringify({ pref: notificationPref, updatedAt: new Date().toISOString() })
+                    );
+                    toast.success(`Notifications set to "${notificationPref === 'all' ? 'All Messages' : notificationPref === 'mentions' ? 'Mentions Only' : 'Muted'}"`);
+                  } catch {
+                    toast.error('Failed to save notification settings');
+                  }
+                }
+                setShowNotificationSettings(false);
+              }}
               className={`w-full mt-6 px-4 py-3 rounded-xl font-medium transition-all ${tc.btnPrimary}`}
             >
               Save Settings
@@ -1646,17 +1803,21 @@ const TeamVoxMode: React.FC<TeamVoxModeProps> = ({
 
             <div className="space-y-4">
               <div>
-                <label className={`block text-sm font-medium ${tc.textSecondary} mb-2`}>Channel Name</label>
+                <label htmlFor="channel-settings-name" className={`block text-sm font-medium ${tc.textSecondary} mb-2`}>Channel Name</label>
                 <input
+                  id="channel-settings-name"
                   type="text"
-                  defaultValue={selectedChannel.name}
+                  value={editChannelName}
+                  onChange={(e) => setEditChannelName(e.target.value)}
                   className={`w-full px-4 py-3 rounded-xl ${tc.inputBg} ${tc.text} border focus:outline-none focus:ring-2 focus:ring-amber-500/50 transition-all`}
                 />
               </div>
               <div>
-                <label className={`block text-sm font-medium ${tc.textSecondary} mb-2`}>Description</label>
+                <label htmlFor="channel-settings-desc" className={`block text-sm font-medium ${tc.textSecondary} mb-2`}>Description</label>
                 <textarea
-                  defaultValue={selectedChannel.description}
+                  id="channel-settings-desc"
+                  value={editChannelDesc}
+                  onChange={(e) => setEditChannelDesc(e.target.value)}
                   placeholder="What's this channel about?"
                   rows={3}
                   className={`w-full px-4 py-3 rounded-xl ${tc.inputBg} ${tc.text} border focus:outline-none focus:ring-2 focus:ring-amber-500/50 transition-all resize-none`}
@@ -1680,8 +1841,44 @@ const TeamVoxMode: React.FC<TeamVoxModeProps> = ({
                 Cancel
               </button>
               <button
-                onClick={() => {
-                  console.log('Saving channel settings');
+                onClick={async () => {
+                  if (!selectedChannel) return;
+                  const trimmedName = editChannelName.trim();
+                  if (!trimmedName) {
+                    toast.error('Channel name cannot be empty');
+                    return;
+                  }
+                  const desc = editChannelDesc.trim();
+                  try {
+                    const updated = await voxModeService.updateTeamChannel(selectedChannel.id, {
+                      name: trimmedName,
+                      description: desc,
+                    });
+                    if (updated) {
+                      // Update local selectedChannel state
+                      setSelectedChannel({ ...selectedChannel, name: trimmedName, description: desc });
+                      // Update the channel inside workspaces list so sidebar reflects changes
+                      setWorkspaces(prev => prev.map(ws => ({
+                        ...ws,
+                        channels: ws.channels.map(ch =>
+                          ch.id === selectedChannel.id ? { ...ch, name: trimmedName, description: desc } : ch
+                        ),
+                      })));
+                      if (selectedWorkspace) {
+                        setSelectedWorkspace({
+                          ...selectedWorkspace,
+                          channels: selectedWorkspace.channels.map(ch =>
+                            ch.id === selectedChannel.id ? { ...ch, name: trimmedName, description: desc } : ch
+                          ),
+                        });
+                      }
+                      toast.success('Channel settings saved');
+                    } else {
+                      toast.error('Failed to save channel settings');
+                    }
+                  } catch {
+                    toast.error('Failed to save channel settings');
+                  }
                   setShowChannelSettings(false);
                 }}
                 className={`flex-1 px-4 py-3 rounded-xl font-medium transition-all ${tc.btnPrimary}`}

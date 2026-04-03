@@ -71,6 +71,7 @@ export const CommandCenter: React.FC<CommandCenterProps> = ({
         <div className="flex items-center gap-2 mb-3">
           <TrendingUp className="fa text-rose-600 dark:text-rose-400" />
           <h3 className="text-sm font-bold text-rose-600 dark:text-rose-400">SYSTEM METRICS</h3>
+          <span className="text-[9px] px-1.5 py-0.5 rounded bg-amber-100 dark:bg-amber-500/20 text-amber-700 dark:text-amber-400 font-bold tracking-wider">SIMULATED</span>
         </div>
 
         <div className="space-y-3 text-xs">

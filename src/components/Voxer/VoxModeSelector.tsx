@@ -16,7 +16,7 @@ import {
   Video,
   X,
 } from 'lucide-react';
-import { VOX_MODES, VoxMode, VoxModeInfo } from '../../services/voxer/voxModeTypes';
+import { VOX_MODES, VoxMode, VoxModeInfo, ALL_MODE_COLORS } from '../../services/voxer/voxModeTypes';
 import VoxerSettings from './VoxerSettings';
 
 interface VoxModeSelectorProps {
@@ -69,16 +69,8 @@ const MODE_ICONS: Record<VoxMode, React.ReactNode> = {
   video_vox: <Video className="w-5 h-5" />,
 };
 
-const MODE_COLORS: Record<string, string> = {
-  classic: '#F97316',
-  pulse_radio: '#8B5CF6',
-  voice_threads: '#10B981',
-  team_vox: '#F59E0B',
-  vox_notes: '#EC4899',
-  quick_vox: '#3B82F6',
-  vox_drop: '#EF4444',
-  video_vox: '#06B6D4', // Cyan for Video Vox
-};
+// Mode colors sourced from shared palette (voxModeTypes.ts)
+const MODE_COLORS = ALL_MODE_COLORS;
 
 // Industrial dot matrix pattern for CMF Nothing aesthetic
 const DotMatrix: React.FC<{ color: string; isDarkMode: boolean }> = ({ color, isDarkMode }) => {

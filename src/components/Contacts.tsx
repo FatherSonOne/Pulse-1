@@ -8,6 +8,7 @@ interface ContactsProps {
   onSyncComplete?: (newContacts: Contact[]) => void;
   onUpdateContact?: (updatedContact: Contact) => void;
   onAddContact?: (contact: Omit<Contact, 'id'>) => Promise<Contact | null>;
+  onDeleteContact?: (contactId: string) => Promise<boolean>;
   openAddContact?: boolean;
   isDarkMode?: boolean;
   userId?: string;

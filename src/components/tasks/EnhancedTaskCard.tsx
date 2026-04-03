@@ -117,8 +117,8 @@ const EnhancedTaskCardComponent: React.FC<EnhancedTaskCardProps> = ({
   };
 
   const isOverdue = (): boolean => {
-    if (!task.due_date || task.status === 'done') return false;
-    return new Date(task.due_date) < new Date();
+    if (!task.deadline || task.status === 'done') return false;
+    return new Date(task.deadline) < new Date();
   };
 
   const formatDate = (dateString: string) => {
@@ -234,7 +234,7 @@ const EnhancedTaskCardComponent: React.FC<EnhancedTaskCardProps> = ({
         {(aiAssignee || aiDuration || blockedTasks.length > 0 || blockingTasks.length > 0) && (
           <div className="task-ai-features">
             {/* AI Suggested Assignee */}
-            {aiAssignee && !task.assigned_to && (
+            {aiAssignee && !task.assignee_id && (
               <div className="ai-feature-item ai-assignee">
                 <User size={14} />
                 <span className="ai-label">AI suggests:</span>
@@ -278,15 +278,15 @@ const EnhancedTaskCardComponent: React.FC<EnhancedTaskCardProps> = ({
         {/* Bottom meta row */}
         <div className="task-meta">
           {/* Assignee */}
-          {task.assigned_to && (
+          {task.assignee_id && (
             <div className="task-assignee">
               <User size={14} />
-              <span>{task.assigned_to}</span>
+              <span>{task.assignee_id}</span>
             </div>
           )}
 
           {/* Due Date */}
-          {task.due_date && (
+          {task.deadline && (
             <div className={`task-due ${isOverdue() ? 'overdue' : ''}`}>
               {isOverdue() ? (
                 <AlertCircle size={14} />
@@ -295,7 +295,7 @@ const EnhancedTaskCardComponent: React.FC<EnhancedTaskCardProps> = ({
               )}
               <span>
                 {isOverdue() ? 'Overdue: ' : ''}
-                {formatDate(task.due_date)}
+                {formatDate(task.deadline)}
               </span>
             </div>
           )}

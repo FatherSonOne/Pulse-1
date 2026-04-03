@@ -11,7 +11,7 @@ import { ContactDetail } from './ContactDetail';
 import { supabase } from '../../services/supabase';
 import './Contacts.css';
 
-import { ArrowDown, ArrowUp, Bell, Building2, Check, ChevronRight, Copy, Flame, History, LayoutGrid, Lightbulb, List, Mail, MapPin, MessageSquare, Minus, Network, Pen, Phone, Plus, Radio, RefreshCw, Search, Star, UserX, Users, Video, Wand2, X } from 'lucide-react';
+import { ArrowDown, ArrowUp, Bell, Building2, Check, ChevronRight, Copy, LayoutGrid, Lightbulb, List, Mail, MapPin, MessageSquare, Network, Phone, Plus, Radio, RefreshCw, Search, Star, UserX, Users, Video, Wand2, X } from 'lucide-react';
 
 // ============================================
 // TYPES
@@ -23,6 +23,7 @@ interface ContactsRedesignedProps {
   onSyncComplete?: (newContacts: Contact[]) => void;
   onUpdateContact?: (updatedContact: Contact) => void;
   onAddContact?: (contact: Omit<Contact, 'id'>) => Promise<Contact | null>;
+  onDeleteContact?: (contactId: string) => Promise<boolean>;
   openAddContact?: boolean;
 }
 
@@ -430,245 +431,6 @@ const ListRow: React.FC<ListRowProps> = ({
 };
 
 // ============================================
-// DETAIL PANEL COMPONENT
-// ============================================
-
-interface DetailPanelProps {
-  contact: Contact;
-  profile?: RelationshipProfile | null;
-  leadScore?: LeadScore | null;
-  onClose: () => void;
-  onAction: (action: 'message' | 'vox' | 'meet') => void;
-  onEdit: () => void;
-}
-
-const DetailPanel: React.FC<DetailPanelProps> = ({
-  contact,
-  profile,
-  leadScore,
-  onClose,
-  onAction,
-  onEdit,
-}) => {
-  const [activeTab, setActiveTab] = useState<'overview' | 'activity' | 'ai'>('overview');
-  const healthColor = profile ? getRelationshipHealthColor(profile.relationshipScore) : '#6b7280';
-
-  return (
-    <div className="contacts-detail">
-      <div className="contacts-detail-header">
-        <span className="contacts-detail-title">Contact Details</span>
-        <div style={{ display: 'flex', gap: 8 }}>
-          <button className="contacts-detail-close" onClick={onEdit}>
-            <Pen />
-          </button>
-          <button className="contacts-detail-close" onClick={onClose}>
-            <X />
-          </button>
-        </div>
-      </div>
-
-      <div className="contacts-detail-content">
-        {/* Profile Section */}
-        <div className="contacts-detail-profile">
-          <div className="contacts-detail-avatar">
-            <div className="contacts-detail-avatar-ring" />
-            <div
-              className="contacts-detail-avatar-inner"
-              style={{ backgroundColor: contact.avatarColor || '#6366f1' }}
-            >
-              {contact.name.charAt(0)}
-            </div>
-            <div
-              className="contacts-detail-avatar-status"
-              style={{
-                backgroundColor:
-                  contact.status === 'online' ? 'var(--cnt-status-online)' :
-                  contact.status === 'busy' ? 'var(--cnt-status-busy)' :
-                  'var(--cnt-status-offline)'
-              }}
-            />
-          </div>
-          <div className="contacts-detail-name">{contact.name}</div>
-          <div className="contacts-detail-role">{contact.role || 'Contact'}</div>
-          {contact.company && (
-            <div className="contacts-detail-company">
-              <Building2 />
-              {contact.company}
-            </div>
-          )}
-        </div>
-
-        {/* Action Buttons */}
-        <div className="contacts-detail-actions">
-          <button className="contacts-detail-action message" onClick={() => onAction('message')}>
-            <MessageSquare />
-            <span>Message</span>
-          </button>
-          <button className="contacts-detail-action vox" onClick={() => onAction('vox')}>
-            <Radio />
-            <span>Vox</span>
-          </button>
-          <button className="contacts-detail-action meet" onClick={() => onAction('meet')}>
-            <Video />
-            <span>Meet</span>
-          </button>
-        </div>
-
-        {/* Relationship Health Card */}
-        {profile && (
-          <div className="contacts-detail-health">
-            <div className="contacts-detail-health-header">
-              <span className="contacts-detail-health-title">Relationship Health</span>
-              <span className="contacts-detail-health-score" style={{ color: healthColor }}>
-                {profile.relationshipScore}%
-              </span>
-            </div>
-            <div className="contacts-detail-health-bar">
-              <div
-                className="contacts-detail-health-fill"
-                style={{
-                  width: `${profile.relationshipScore}%`,
-                  backgroundColor: healthColor,
-                }}
-              />
-            </div>
-            <div className="contacts-detail-health-label">
-              {profile.relationshipTrend === 'rising' && (
-                <>
-                  <ArrowUp />
-                  <span>Trending up</span>
-                </>
-              )}
-              {profile.relationshipTrend === 'falling' && (
-                <>
-                  <ArrowDown />
-                  <span>Trending down</span>
-                </>
-              )}
-              {profile.relationshipTrend === 'stable' && (
-                <>
-                  <Minus />
-                  <span>Stable</span>
-                </>
-              )}
-            </div>
-          </div>
-        )}
-
-        {/* Tabs */}
-        <div className="contacts-detail-tabs">
-          <button
-            className={`contacts-detail-tab ${activeTab === 'overview' ? 'active' : ''}`}
-            onClick={() => setActiveTab('overview')}
-          >
-            Overview
-          </button>
-          <button
-            className={`contacts-detail-tab ${activeTab === 'activity' ? 'active' : ''}`}
-            onClick={() => setActiveTab('activity')}
-          >
-            Activity
-          </button>
-          <button
-            className={`contacts-detail-tab ${activeTab === 'ai' ? 'active' : ''}`}
-            onClick={() => setActiveTab('ai')}
-          >
-            <Wand2 />
-            AI
-          </button>
-        </div>
-
-        {/* Tab Content */}
-        {activeTab === 'overview' && (
-          <div className="contacts-detail-section">
-            <div className="contacts-detail-section-title">Contact Info</div>
-            {contact.email && (
-              <div className="contacts-detail-info-item">
-                <div className="contacts-detail-info-icon">
-                  <Mail />
-                </div>
-                <span className="contacts-detail-info-value">{contact.email}</span>
-              </div>
-            )}
-            {contact.phone && (
-              <div className="contacts-detail-info-item">
-                <div className="contacts-detail-info-icon">
-                  <Phone />
-                </div>
-                <span className="contacts-detail-info-value">{contact.phone}</span>
-              </div>
-            )}
-            {contact.address && (
-              <div className="contacts-detail-info-item">
-                <div className="contacts-detail-info-icon">
-                  <MapPin />
-                </div>
-                <span className="contacts-detail-info-value">{contact.address}</span>
-              </div>
-            )}
-          </div>
-        )}
-
-        {activeTab === 'activity' && (
-          <div className="contacts-empty" style={{ padding: 24 }}>
-            <div className="contacts-empty-icon" style={{ width: 48, height: 48, fontSize: 18 }}>
-              <History />
-            </div>
-            <div className="contacts-empty-title" style={{ fontSize: 14 }}>No Activity Yet</div>
-            <div className="contacts-empty-desc" style={{ fontSize: 12 }}>
-              Activity history will appear here
-            </div>
-          </div>
-        )}
-
-        {activeTab === 'ai' && (
-          profile ? (
-            <div className="contacts-detail-section">
-              <div className="contacts-detail-section-title">AI Insights</div>
-              <div style={{
-                padding: 16,
-                background: 'var(--cnt-bg-tertiary)',
-                borderRadius: 12,
-                fontSize: 13,
-                color: 'var(--cnt-text-secondary)',
-                lineHeight: 1.6,
-              }}>
-                {profile.isVip && (
-                  <div style={{ marginBottom: 12, display: 'flex', alignItems: 'center', gap: 8 }}>
-                    <Star />
-                    <span>VIP Contact - Prioritize engagement</span>
-                  </div>
-                )}
-                {leadScore && leadScore.leadStatus === 'hot' && (
-                  <div style={{ marginBottom: 12, display: 'flex', alignItems: 'center', gap: 8 }}>
-                    <Flame />
-                    <span>Hot lead - High conversion potential</span>
-                  </div>
-                )}
-                <div style={{ display: 'flex', alignItems: 'center', gap: 8 }}>
-                  <Lightbulb />
-                  <span>Based on {profile.totalInteractions || 0} interactions</span>
-                </div>
-              </div>
-            </div>
-          ) : (
-            <div className="contacts-empty" style={{ padding: 24 }}>
-              <div className="contacts-empty-icon" style={{ width: 48, height: 48, fontSize: 18 }}>
-                <Wand2 />
-              </div>
-              <div className="contacts-empty-title" style={{ fontSize: 14 }}>No Insights Yet</div>
-              <div className="contacts-empty-desc" style={{ fontSize: 12 }}>
-                AI insights will appear after interactions
-              </div>
-            </div>
-          )
-        )}
-      </div>
-    </div>
-  );
-};
-
-// ============================================
 // MAIN COMPONENT
 // ============================================
 
@@ -678,6 +440,7 @@ export const ContactsRedesigned: React.FC<ContactsRedesignedProps> = ({
   onSyncComplete,
   onUpdateContact,
   onAddContact,
+  onDeleteContact,
   openAddContact,
 }) => {
   // State
@@ -1021,6 +784,10 @@ export const ContactsRedesigned: React.FC<ContactsRedesignedProps> = ({
           onClose={() => setSelectedContact(null)}
           onAction={(action) => onAction(action, selectedContact.id)}
           onEdit={() => handleEditContact(selectedContact)}
+          onDelete={onDeleteContact ? async () => {
+            const ok = await onDeleteContact(selectedContact.id);
+            if (ok) setSelectedContact(null);
+          } : undefined}
         />
       )}
 

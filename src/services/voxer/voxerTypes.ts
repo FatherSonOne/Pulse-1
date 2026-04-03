@@ -212,8 +212,8 @@ export interface Vox {
   // Organization
   starred?: boolean;
   tags?: string[];
-  notes?: VoxNote[];
-  
+  notes?: VoxAnnotation[];
+
   // Timestamps
   createdAt: Date;
   sentAt?: Date;
@@ -221,7 +221,12 @@ export interface Vox {
   readAt?: Date;
 }
 
-export interface VoxNote {
+/**
+ * VoxAnnotation - a short text annotation attached to a Vox message.
+ * (Renamed from VoxNote to avoid collision with the VoxNote type in
+ * voxModeTypes.ts which represents a full voice-memo in the Vox Notes mode.)
+ */
+export interface VoxAnnotation {
   id: string;
   voxId: string;
   content: string;

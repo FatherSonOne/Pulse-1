@@ -80,6 +80,22 @@ export interface PulseSettings {
   aiAnalysisEnabled: boolean;
   aiVoiceEnabled: boolean;
 
+  // AI Intelligence (panel-level)
+  primaryAIModel: string;
+  enableAdvancedReasoning: boolean;
+  agentVoice: string;
+  turnDetectionMode: 'semantic' | 'server';
+  voiceActivityEagerness: 'low' | 'medium' | 'high';
+  interactionMode: 'vad' | 'ptt';
+  defaultSearchScope: string;
+  autoAnalyzeDocs: boolean;
+
+  // Notifications (section-level)
+  enableAllNotifications: boolean;
+  notifSound: boolean;
+  notifDesktop: boolean;
+  notifEmail: boolean;
+
   // Email (Phase 4)
   emailNotificationBundling: boolean;
   emailAutoArchiveDays: number;
@@ -94,6 +110,7 @@ export interface PulseSettings {
 
   // API Keys (encrypted/hashed in sync)
   openaiApiKey: string;
+  geminiApiKey: string;
   claudeApiKey: string;
   assemblyaiApiKey: string;
   elevenlabsApiKey: string;
@@ -210,6 +227,22 @@ const DEFAULT_SETTINGS: PulseSettings = {
   aiAnalysisEnabled: true,
   aiVoiceEnabled: true,
 
+  // AI Intelligence (panel-level)
+  primaryAIModel: 'gemini-2.5-flash',
+  enableAdvancedReasoning: false,
+  agentVoice: 'nova',
+  turnDetectionMode: 'semantic',
+  voiceActivityEagerness: 'medium',
+  interactionMode: 'vad',
+  defaultSearchScope: 'current_project',
+  autoAnalyzeDocs: true,
+
+  // Notifications (section-level)
+  enableAllNotifications: true,
+  notifSound: true,
+  notifDesktop: true,
+  notifEmail: false,
+
   // Email (Phase 4)
   emailNotificationBundling: true,
   emailAutoArchiveDays: 0,
@@ -227,6 +260,7 @@ const DEFAULT_SETTINGS: PulseSettings = {
 
   // API Keys
   openaiApiKey: '',
+  geminiApiKey: '',
   claudeApiKey: '',
   assemblyaiApiKey: '',
   elevenlabsApiKey: '',
@@ -427,6 +461,7 @@ class SettingsService {
       // Don't sync API keys to cloud (security)
       const safeSettings = { ...settings };
       delete (safeSettings as any).openaiApiKey;
+      delete (safeSettings as any).geminiApiKey;
       delete (safeSettings as any).claudeApiKey;
       delete (safeSettings as any).assemblyaiApiKey;
       delete (safeSettings as any).elevenlabsApiKey;
@@ -482,6 +517,7 @@ class SettingsService {
 
     // API Keys
     settings.openaiApiKey = localStorage.getItem('openai_api_key') || '';
+    settings.geminiApiKey = localStorage.getItem('gemini_api_key') || '';
     settings.claudeApiKey = localStorage.getItem('claude_api_key') || '';
     settings.assemblyaiApiKey = localStorage.getItem('assemblyai_api_key') || '';
     settings.elevenlabsApiKey = localStorage.getItem('elevenlabs_api_key') || '';
@@ -504,6 +540,7 @@ class SettingsService {
       accentColor: 'accentColor',
       customColor: 'customColor',
       openaiApiKey: 'openai_api_key',
+      geminiApiKey: 'gemini_api_key',
       claudeApiKey: 'claude_api_key',
       assemblyaiApiKey: 'assemblyai_api_key',
       elevenlabsApiKey: 'elevenlabs_api_key',

@@ -1,9 +1,10 @@
 /**
  * AI-Powered Search Features
  * Categorization, tagging, and semantic enhancements
+ * All calls proxied through gemini-proxy edge function (no client-side API keys)
  */
 
-const apiKey = import.meta.env.VITE_API_KEY || import.meta.env.VITE_GEMINI_API_KEY || '';
+import { supabase } from './supabase';
 
 export interface AICategory {
   category: string;
@@ -18,6 +19,26 @@ export interface AITags {
 
 export class SearchAI {
   /**
+   * Call Gemini via the secure edge function proxy
+   */
+  private async callGeminiProxy(prompt: string, operation: string): Promise<string> {
+    const { data, error } = await supabase.functions.invoke('gemini-proxy', {
+      body: {
+        prompt,
+        operation,
+        model: 'gemini-2.5-flash',
+        temperature: 0.3,
+      },
+    });
+
+    if (error) {
+      throw new Error(`Gemini proxy error: ${error.message}`);
+    }
+
+    return data?.result || '';
+  }
+
+  /**
    * AI-powered categorization of content
    */
   async categorizeContent(
@@ -25,33 +46,15 @@ export class SearchAI {
     content: string,
     existingCategories?: string[]
   ): Promise<AICategory> {
-    if (!apiKey) {
-      return { category: 'general', confidence: 0 };
-    }
-
     try {
-      const response = await fetch(
-        `https://generativelanguage.googleapis.com/v1beta/models/gemini-2.5-flash:generateContent?key=${apiKey}`,
-        {
-          method: 'POST',
-          headers: { 'Content-Type': 'application/json' },
-          body: JSON.stringify({
-            contents: [{
-              parts: [{
-                text: `Analyze this content and suggest the best category from: ${existingCategories?.join(', ') || 'ideas, todo, reference, conversation, project, personal, work'}
+      const prompt = `Analyze this content and suggest the best category from: ${existingCategories?.join(', ') || 'ideas, todo, reference, conversation, project, personal, work'}
 
 Title: "${title}"
 Content: "${content.substring(0, 500)}"
 
-Return JSON: {"category": "category_name", "confidence": 0.0-1.0, "reasoning": "brief explanation"}`
-              }]
-            }],
-          }),
-        }
-      );
+Return JSON: {"category": "category_name", "confidence": 0.0-1.0, "reasoning": "brief explanation"}`;
 
-      const data = await response.json();
-      const text = data.candidates?.[0]?.content?.parts?.[0]?.text || '{}';
+      const text = await this.callGeminiProxy(prompt, 'searchCategorize');
       const parsed = JSON.parse(text.replace(/```json\n?/g, '').replace(/```\n?/g, ''));
 
       return {
@@ -69,33 +72,15 @@ Return JSON: {"category": "category_name", "confidence": 0.0-1.0, "reasoning": "
    * AI-powered tag suggestions
    */
   async suggestTags(title: string, content: string, existingTags?: string[]): Promise<AITags> {
-    if (!apiKey) {
-      return { tags: [], confidence: 0 };
-    }
-
     try {
-      const response = await fetch(
-        `https://generativelanguage.googleapis.com/v1beta/models/gemini-2.5-flash:generateContent?key=${apiKey}`,
-        {
-          method: 'POST',
-          headers: { 'Content-Type': 'application/json' },
-          body: JSON.stringify({
-            contents: [{
-              parts: [{
-                text: `Analyze this content and suggest 3-5 relevant tags. ${existingTags?.length ? `Existing tags: ${existingTags.join(', ')}` : ''}
+      const prompt = `Analyze this content and suggest 3-5 relevant tags. ${existingTags?.length ? `Existing tags: ${existingTags.join(', ')}` : ''}
 
 Title: "${title}"
 Content: "${content.substring(0, 500)}"
 
-Return JSON: {"tags": ["tag1", "tag2"], "confidence": 0.0-1.0}`
-              }]
-            }],
-          }),
-        }
-      );
+Return JSON: {"tags": ["tag1", "tag2"], "confidence": 0.0-1.0}`;
 
-      const data = await response.json();
-      const text = data.candidates?.[0]?.content?.parts?.[0]?.text || '{}';
+      const text = await this.callGeminiProxy(prompt, 'searchTags');
       const parsed = JSON.parse(text.replace(/```json\n?/g, '').replace(/```\n?/g, ''));
 
       return {
@@ -112,36 +97,20 @@ Return JSON: {"tags": ["tag1", "tag2"], "confidence": 0.0-1.0}`
    * Summarize multiple search results
    */
   async summarizeResults(results: Array<{ title: string; content: string }>): Promise<string> {
-    if (!apiKey || results.length === 0) {
-      return '';
-    }
+    if (results.length === 0) return '';
 
     try {
-      const context = results.slice(0, 10).map((r, i) => 
+      const context = results.slice(0, 10).map((r, i) =>
         `${i + 1}. ${r.title}: ${r.content.substring(0, 200)}`
       ).join('\n\n');
 
-      const response = await fetch(
-        `https://generativelanguage.googleapis.com/v1beta/models/gemini-2.5-flash:generateContent?key=${apiKey}`,
-        {
-          method: 'POST',
-          headers: { 'Content-Type': 'application/json' },
-          body: JSON.stringify({
-            contents: [{
-              parts: [{
-                text: `Summarize these search results into a brief, actionable summary (2-3 sentences):
+      const prompt = `Summarize these search results into a brief, actionable summary (2-3 sentences):
 
 ${context}
 
-Summary:`
-              }]
-            }],
-          }),
-        }
-      );
+Summary:`;
 
-      const data = await response.json();
-      return data.candidates?.[0]?.content?.parts?.[0]?.text || '';
+      return await this.callGeminiProxy(prompt, 'searchSummarize');
     } catch (error) {
       console.error('AI summarization error:', error);
       return '';

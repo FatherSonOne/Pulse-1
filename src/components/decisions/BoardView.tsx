@@ -30,6 +30,7 @@ interface BoardViewProps {
   filters: FilterState;
   currentUserId: string;
   workspaceId: string;
+  linkedTaskCounts?: Record<string, number>;
   onTaskStatusChange?: (taskId: string, newStatus: Task['status']) => void;
   onDecisionStatusChange?: (decisionId: string, newStatus: Decision['status']) => void;
   onDecisionDecompose?: (decision: DecisionWithVotes) => void;
@@ -140,6 +141,7 @@ export const BoardView: React.FC<BoardViewProps> = ({
   filters,
   currentUserId,
   workspaceId,
+  linkedTaskCounts = {},
   onTaskStatusChange,
   onDecisionStatusChange,
   onDecisionDecompose,
@@ -336,6 +338,7 @@ export const BoardView: React.FC<BoardViewProps> = ({
                   decision={decision}
                   currentUserId={currentUserId}
                   workspaceId={workspaceId}
+                  linkedTaskCount={linkedTaskCounts[decision.id] || 0}
                   onVote={onVote}
                   onGenerateTasks={onDecisionDecompose ? () => onDecisionDecompose(decision) : undefined}
                 />

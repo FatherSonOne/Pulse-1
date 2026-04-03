@@ -52,7 +52,7 @@ import { voxModeService } from '../../services/voxer/voxModeService';
 import VoxModeToolbar from './VoxModeToolbar';
 import VoxRecordArea from './VoxRecordArea';
 // analyticsCollector loaded dynamically to avoid svc-crm-analytics chunk TDZ
-import type { VoiceThread, VoiceThreadMessage, PulseUser } from '../../services/voxer/voxModeTypes';
+import { VOX_MODES, type VoiceThread, type VoiceThreadMessage, type PulseUser } from '../../services/voxer/voxModeTypes';
 import toast from 'react-hot-toast';
 import './VoiceThreadsMode.css';
 
@@ -76,10 +76,10 @@ import { PlaybackSpeedControl } from './PlaybackSpeedControl';
 import { VoxEmptyState } from './VoxEmptyState';
 import { getEmptyStateConfig } from './voxEmptyStates';
 
-// Mode color for Voice Threads - Emerald/Teal
-const MODE_COLOR = '#10B981';
-const MODE_COLOR_LIGHT = '#34D399';
-const MODE_COLOR_DARK = '#059669';
+// Mode colors from shared palette
+const MODE_COLOR = VOX_MODES.voice_threads.color;
+const MODE_COLOR_LIGHT = VOX_MODES.voice_threads.colorLight!;
+const MODE_COLOR_DARK = VOX_MODES.voice_threads.colorDark!;
 
 // Quick reaction emojis
 const QUICK_REACTIONS = ['❤️', '👍', '🎯', '🔥', '💡', '👏'];
@@ -447,7 +447,7 @@ const VoiceThreadsMode: React.FC<VoiceThreadsModeProps> = ({
   const [selectedParticipants, setSelectedParticipants] = useState<string[]>([]);
   const [threadSubject, setThreadSubject] = useState('');
   const [searchQuery, setSearchQuery] = useState('');
-  const [messageSearchQuery, setMessageSearchQuery] = useState('');
+  // messageSearchQuery removed — unused (thread-level search uses searchQuery instead)
   const [pulseUsers, setPulseUsers] = useState<PulseUser[]>([]);
   const [showMobileSidebar, setShowMobileSidebar] = useState(false);
   const [showMessageActions, setShowMessageActions] = useState<string | null>(null);
@@ -462,6 +462,17 @@ const VoiceThreadsMode: React.FC<VoiceThreadsModeProps> = ({
 
   // Bookmarks
   const [bookmarkedMessages, setBookmarkedMessages] = useState<Set<string>>(new Set());
+
+  // Pinned messages filter
+  const [showPinnedOnly, setShowPinnedOnly] = useState(false);
+
+  // Manage Participants modal
+  const [showParticipantsModal, setShowParticipantsModal] = useState(false);
+
+  // Inline Edit Subject
+  const [isEditingSubject, setIsEditingSubject] = useState(false);
+  const [editSubjectValue, setEditSubjectValue] = useState('');
+  const [isSavingSubject, setIsSavingSubject] = useState(false);
 
   // Loading states
   const [isLoadingThreads, setIsLoadingThreads] = useState(true);
@@ -524,8 +535,8 @@ const VoiceThreadsMode: React.FC<VoiceThreadsModeProps> = ({
     handlePointerUp,
     handleToggleRecording,
   } = useVoxRecording({
-    onRecordingComplete: (data) => {
-      console.log('Voice Thread recording complete:', data.duration, 'seconds');
+    onRecordingComplete: (_data) => {
+      // Recording complete - ready for preview
     },
     defaultRecordingMode: 'tap', // Threads work better with tap mode
   });
@@ -576,7 +587,7 @@ const VoiceThreadsMode: React.FC<VoiceThreadsModeProps> = ({
     },
     onDownloadSelected: () => {
       if (isSelectionMode && selectionCount > 0) {
-        console.log('Download selected:', selectionCount);
+        // Download handled by selection toolbar
       }
     },
     onArchive: () => {
@@ -676,12 +687,13 @@ const VoiceThreadsMode: React.FC<VoiceThreadsModeProps> = ({
       loadMessages(selectedThread.id);
       setShowMobileSidebar(false);
     }
-    // Reset AI overlays when switching threads
+    // Reset AI overlays and filters when switching threads
     setMeetingNotes(null);
     setConversationSummary(null);
     setSmartReplies([]);
     setShowSummary(false);
     setShowSmartReplies(false);
+    setShowPinnedOnly(false);
   }, [selectedThread]);
 
   const loadMessages = async (threadId: string) => {
@@ -1097,6 +1109,74 @@ const VoiceThreadsMode: React.FC<VoiceThreadsModeProps> = ({
     setShowThreadSettings(false);
     if (selectedThread?.id === threadId) {
       setSelectedThread(null);
+    }
+  }, [selectedThread]);
+
+  const handleSaveSubject = useCallback(async () => {
+    if (!selectedThread) return;
+    const trimmed = editSubjectValue.trim();
+    if (!trimmed) {
+      toast.error('Subject cannot be empty');
+      return;
+    }
+    setIsSavingSubject(true);
+    try {
+      const success = await voxModeService.updateVoiceThreadSubject(selectedThread.id, trimmed);
+      if (success) {
+        setThreads(prev => prev.map(t =>
+          t.id === selectedThread.id ? { ...t, subject: trimmed } : t
+        ));
+        setSelectedThread(prev => prev ? { ...prev, subject: trimmed } : prev);
+        toast.success('Thread subject updated');
+      } else {
+        toast.error('Failed to update subject');
+      }
+    } catch {
+      toast.error('Failed to update subject');
+    } finally {
+      setIsSavingSubject(false);
+      setIsEditingSubject(false);
+    }
+  }, [selectedThread, editSubjectValue]);
+
+  const handleAddParticipant = useCallback(async (participantId: string) => {
+    if (!selectedThread) return;
+    try {
+      const updated = await voxModeService.addParticipantToThread(selectedThread.id, participantId);
+      if (updated) {
+        setThreads(prev => prev.map(t =>
+          t.id === selectedThread.id ? { ...t, participants: updated } : t
+        ));
+        setSelectedThread(prev => prev ? { ...prev, participants: updated } : prev);
+        toast.success('Participant added');
+      } else {
+        toast.error('Failed to add participant');
+      }
+    } catch {
+      toast.error('Failed to add participant');
+    }
+  }, [selectedThread]);
+
+  const handleRemoveParticipant = useCallback(async (participantId: string) => {
+    if (!selectedThread) return;
+    const userId = voxModeService.getUserId();
+    if (participantId === userId) {
+      toast.error('You cannot remove yourself');
+      return;
+    }
+    try {
+      const updated = await voxModeService.removeParticipantFromThread(selectedThread.id, participantId);
+      if (updated) {
+        setThreads(prev => prev.map(t =>
+          t.id === selectedThread.id ? { ...t, participants: updated } : t
+        ));
+        setSelectedThread(prev => prev ? { ...prev, participants: updated } : prev);
+        toast.success('Participant removed');
+      } else {
+        toast.error('Failed to remove participant');
+      }
+    } catch {
+      toast.error('Failed to remove participant');
     }
   }, [selectedThread]);
 
@@ -1535,7 +1615,46 @@ const VoiceThreadsMode: React.FC<VoiceThreadsModeProps> = ({
                     </div>
                   </div>
                   <div className="vt-thread-hero-info">
-                    <h2>{selectedThread.subject || getParticipantNames(selectedThread)}</h2>
+                    {isEditingSubject ? (
+                      <div className="vt-inline-edit-subject">
+                        <input
+                          type="text"
+                          value={editSubjectValue}
+                          onChange={(e) => setEditSubjectValue(e.target.value)}
+                          onKeyDown={(e) => {
+                            if (e.key === 'Enter') {
+                              handleSaveSubject();
+                            } else if (e.key === 'Escape') {
+                              setIsEditingSubject(false);
+                            }
+                          }}
+                          autoFocus
+                          placeholder="Thread subject..."
+                          className="vt-subject-input"
+                          disabled={isSavingSubject}
+                        />
+                        <button
+                          type="button"
+                          onClick={handleSaveSubject}
+                          className="vt-subject-save"
+                          disabled={isSavingSubject}
+                          title="Save"
+                        >
+                          {isSavingSubject ? <Loader2 className="w-4 h-4 animate-spin" /> : <Check className="w-4 h-4" />}
+                        </button>
+                        <button
+                          type="button"
+                          onClick={() => setIsEditingSubject(false)}
+                          className="vt-subject-cancel"
+                          disabled={isSavingSubject}
+                          title="Cancel"
+                        >
+                          <X className="w-4 h-4" />
+                        </button>
+                      </div>
+                    ) : (
+                      <h2>{selectedThread.subject || getParticipantNames(selectedThread)}</h2>
+                    )}
                     <div className="vt-thread-hero-meta">
                       <span><Users className="w-3 h-3" /> {selectedThread.participants.length}</span>
                       <span><MessageCircle className="w-3 h-3" /> {selectedThread.messageCount}</span>
@@ -1570,7 +1689,9 @@ const VoiceThreadsMode: React.FC<VoiceThreadsModeProps> = ({
                 <div className="vt-pinned-banner">
                   <Pin className="w-4 h-4" />
                   <span>{messages.filter(m => m.isPinned).length} pinned message(s)</span>
-                  <button type="button" className="vt-view-pinned">View</button>
+                  <button type="button" className="vt-view-pinned" onClick={() => setShowPinnedOnly(prev => !prev)}>
+                    {showPinnedOnly ? 'Show All' : 'View'}
+                  </button>
                 </div>
               )}
 
@@ -1595,7 +1716,7 @@ const VoiceThreadsMode: React.FC<VoiceThreadsModeProps> = ({
                     }}
                   />
                 ) : (
-                  messages.map((message) => {
+                  (showPinnedOnly ? messages.filter(m => m.isPinned) : messages).map((message) => {
                     const isMe = message.senderId === voxModeService.getUserId();
                     const isCurrentlyPlaying = playingMessageId === message.id;
 
@@ -1781,10 +1902,19 @@ const VoiceThreadsMode: React.FC<VoiceThreadsModeProps> = ({
                                 anchorRect={menuAnchorRect!}
                                 onArchive={() => handleArchiveMessage(message)}
                                 onDownload={() => handleDownloadMessage(message)}
-                                onDelete={() => {
-                                  setMessages(prev => prev.filter(m => m.id !== message.id));
+                                onDelete={async () => {
                                   setShowMessageMenu(null);
-                                  toast.success('Message deleted');
+                                  try {
+                                    const success = await voxModeService.deleteVoiceThreadMessage(message.id);
+                                    if (success) {
+                                      setMessages(prev => prev.filter(m => m.id !== message.id));
+                                      toast.success('Message deleted');
+                                    } else {
+                                      toast.error('Failed to delete message — you can only delete your own messages');
+                                    }
+                                  } catch {
+                                    toast.error('Failed to delete message');
+                                  }
                                 }}
                                 onClose={() => setShowMessageMenu(null)}
                               />
@@ -1821,8 +1951,7 @@ const VoiceThreadsMode: React.FC<VoiceThreadsModeProps> = ({
 
                         {/* Message Actions Menu */}
                         {showMessageActions === message.id && (
-                          <div className="vt-message-actions-menu" style={{ border: '2px solid red' }}>
-                            {console.log('Rendering menu for message:', message.id)}
+                          <div className="vt-message-actions-menu">
                             <button type="button" onClick={() => handleReply(message)}>
                               <Reply className="w-4 h-4" /> Reply
                             </button>
@@ -1836,10 +1965,24 @@ const VoiceThreadsMode: React.FC<VoiceThreadsModeProps> = ({
                               {message.isBookmarked ? <Bookmark className="w-4 h-4" /> : <BookmarkPlus className="w-4 h-4" />}
                               {message.isBookmarked ? 'Remove Bookmark' : 'Bookmark'}
                             </button>
-                            <button type="button">
+                            <button type="button" onClick={() => {
+                              navigator.clipboard.writeText(message.audioUrl).then(() => {
+                                toast.success('Audio link copied to clipboard');
+                              }).catch(() => {
+                                toast.error('Failed to copy link');
+                              });
+                              setShowMessageActions(null);
+                            }}>
                               <Forward className="w-4 h-4" /> Forward
                             </button>
-                            <button type="button">
+                            <button type="button" onClick={() => {
+                              navigator.clipboard.writeText(message.audioUrl).then(() => {
+                                toast.success('Link copied to clipboard');
+                              }).catch(() => {
+                                toast.error('Failed to copy link');
+                              });
+                              setShowMessageActions(null);
+                            }}>
                               <Copy className="w-4 h-4" /> Copy Link
                             </button>
                           </div>
@@ -2086,10 +2229,17 @@ const VoiceThreadsMode: React.FC<VoiceThreadsModeProps> = ({
                   <button type="button" onClick={() => handleToggleThreadPin(selectedThread.id)}>
                     <Pin className="w-5 h-5" /> {selectedThread.isPinned ? 'Unpin Thread' : 'Pin Thread'}
                   </button>
-                  <button type="button">
+                  <button type="button" onClick={() => {
+                    setShowThreadSettings(false);
+                    setShowParticipantsModal(true);
+                  }}>
                     <Users className="w-5 h-5" /> Manage Participants
                   </button>
-                  <button type="button">
+                  <button type="button" onClick={() => {
+                    setEditSubjectValue(selectedThread.subject || '');
+                    setIsEditingSubject(true);
+                    setShowThreadSettings(false);
+                  }}>
                     <Edit3 className="w-5 h-5" /> Edit Subject
                   </button>
                   <button type="button" onClick={() => handleArchiveThread(selectedThread.id)} className="danger">
@@ -2097,6 +2247,95 @@ const VoiceThreadsMode: React.FC<VoiceThreadsModeProps> = ({
                   </button>
                 </div>
               </div>
+            </div>
+          </div>
+        </div>
+      )}
+
+      {/* Manage Participants Modal */}
+      {showParticipantsModal && selectedThread && (
+        <div className="vt-modal-overlay">
+          <div className="vt-modal-backdrop" onClick={() => setShowParticipantsModal(false)} />
+          <div className="vt-modal">
+            <div className="vt-modal-header">
+              <div className="vt-modal-icon">
+                <Users className="w-5 h-5" />
+              </div>
+              <h3>Manage Participants</h3>
+              <button type="button" onClick={() => setShowParticipantsModal(false)} title="Close">
+                <X className="w-5 h-5" />
+              </button>
+            </div>
+
+            <div className="vt-modal-form">
+              {/* Current Participants */}
+              <div className="vt-form-group">
+                <label>Current Participants ({selectedThread.participants.length})</label>
+                <div className="vt-participant-list">
+                  {selectedThread.participants.map((pId) => {
+                    const contact = availableContacts.find(c => c.id === pId);
+                    const isCurrentUser = pId === voxModeService.getUserId();
+                    return (
+                      <div key={pId} className="vt-participant selected">
+                        <div className="vt-participant-avatar" style={{ backgroundColor: contact?.avatarColor || '#6B7280' }}>
+                          {contact?.name?.charAt(0) || '?'}
+                        </div>
+                        <div className="vt-participant-info">
+                          <span>{contact?.name || (isCurrentUser ? 'You' : 'Unknown')}</span>
+                          {contact?.handle && <span className="vt-participant-handle">@{contact.handle}</span>}
+                          {isCurrentUser && <span className="vt-participant-handle">(you)</span>}
+                        </div>
+                        {!isCurrentUser && (
+                          <button
+                            type="button"
+                            className="vt-participant-remove"
+                            onClick={() => handleRemoveParticipant(pId)}
+                            title="Remove participant"
+                          >
+                            <X className="w-4 h-4" />
+                          </button>
+                        )}
+                      </div>
+                    );
+                  })}
+                </div>
+              </div>
+
+              {/* Add New Participants */}
+              <div className="vt-form-group">
+                <label>Add Participants</label>
+                <div className="vt-participant-list">
+                  {availableContacts
+                    .filter(c => !selectedThread.participants.includes(c.id))
+                    .map((contact) => (
+                      <button
+                        key={contact.id}
+                        type="button"
+                        onClick={() => handleAddParticipant(contact.id)}
+                        className="vt-participant"
+                      >
+                        <div className="vt-participant-avatar" style={{ backgroundColor: contact.avatarColor }}>
+                          {contact.name.charAt(0)}
+                        </div>
+                        <div className="vt-participant-info">
+                          <span>{contact.name}</span>
+                          {contact.handle && <span className="vt-participant-handle">@{contact.handle}</span>}
+                        </div>
+                        <Plus className="w-4 h-4 vt-check" />
+                      </button>
+                    ))
+                  }
+                  {availableContacts.filter(c => !selectedThread.participants.includes(c.id)).length === 0 && (
+                    <div className="vt-no-contacts">All users are already participants</div>
+                  )}
+                </div>
+              </div>
+            </div>
+
+            <div className="vt-modal-actions">
+              <button type="button" onClick={() => setShowParticipantsModal(false)} className="vt-submit-btn">
+                Done
+              </button>
             </div>
           </div>
         </div>

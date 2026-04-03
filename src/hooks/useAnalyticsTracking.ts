@@ -60,7 +60,7 @@ export function useAnalyticsTracking() {
  */
 export function createMessageEvent(
   message: any,
-  channel: 'email' | 'sms' | 'slack',
+  channel: 'email' | 'sms' | 'slack' | 'voxer' | 'pulse',
   isSent: boolean
 ): MessageEvent {
   return {

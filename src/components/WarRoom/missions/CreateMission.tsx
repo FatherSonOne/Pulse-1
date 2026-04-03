@@ -1,8 +1,10 @@
 import React, { useState, useRef, useEffect } from 'react';
 import { AIMessage, ThinkingStep } from '../../../services/ragService';
+import { dataService } from '../../../services/dataService';
+import toast from 'react-hot-toast';
 import { SessionExport } from '../shared';
 
-import { ArrowRight, BookOpen, CheckCheck, CheckCircle, Copy, MessagesSquare, Pen, PenTool, Plus, Save, Send, Share2, Wand2, X } from 'lucide-react';
+import { Archive, ArrowRight, BookOpen, CheckCheck, CheckCircle, Copy, MessagesSquare, Pen, PenTool, Plus, Save, Send, Share2, Wand2, X } from 'lucide-react';
 
 interface ContentDraft {
   id: string;
@@ -188,6 +190,56 @@ Follow this outline: ${outline.join(' > ')}
 Use a ${tone.toLowerCase()} tone.
 Target audience: ${audience || 'general'}
 Include these key points: ${keyPoints.join(', ')}`);
+  };
+
+  const saveContentToArchive = async () => {
+    try {
+      const typeName = CONTENT_TYPES.find(t => t.id === contentType)?.name || contentType || 'Content';
+      let markdown = `# ${typeName}: ${topic}\n\n`;
+      markdown += `**Date:** ${new Date().toLocaleDateString()}\n`;
+      markdown += `**Content Type:** ${typeName}\n`;
+      markdown += `**Audience:** ${audience || 'General'}\n`;
+      markdown += `**Tone:** ${tone}\n\n`;
+
+      if (keyPoints.length > 0) {
+        markdown += `## Key Points\n\n`;
+        keyPoints.forEach(point => {
+          markdown += `- ${point}\n`;
+        });
+        markdown += '\n';
+      }
+
+      if (outline.length > 0) {
+        markdown += `## Outline\n\n`;
+        outline.forEach((item, i) => {
+          markdown += `${i + 1}. ${item}\n`;
+        });
+        markdown += '\n';
+      }
+
+      if (currentDraft) {
+        markdown += `## Draft\n\n${currentDraft}\n`;
+      }
+
+      await dataService.createArchive({
+        type: 'artifact',
+        title: `${typeName}: ${topic.substring(0, 80)}${topic.length > 80 ? '...' : ''}`,
+        content: markdown,
+        date: new Date(),
+        tags: ['content', 'war-room', 'mission', contentType || 'unknown'],
+        metadata: {
+          missionType: 'create',
+          topic,
+          contentType: contentType || 'unknown',
+          audience,
+          tone,
+        },
+      });
+      toast.success('Content saved to Archives');
+    } catch (error) {
+      console.error('Failed to save content:', error);
+      toast.error('Failed to save content');
+    }
   };
 
   const currentPhaseIndex = PHASES.findIndex(p => p.id === currentPhase);
@@ -561,8 +613,16 @@ Include these key points: ${keyPoints.join(', ')}`);
           )}
         </div>
 
-        {/* Export */}
-        <div className="p-3 border-t border-white/10">
+        {/* Export & Archive */}
+        <div className="p-3 border-t border-white/10 space-y-2">
+          <button
+            onClick={saveContentToArchive}
+            disabled={!topic.trim()}
+            className="w-full war-room-btn bg-gradient-to-r from-emerald-600 to-green-600 hover:from-emerald-700 hover:to-green-700 text-white py-2 font-semibold"
+          >
+            <Archive className="fa mr-2" />
+            Save to Archives
+          </button>
           <button
             onClick={() => setShowExport(true)}
             className="w-full war-room-btn py-2"

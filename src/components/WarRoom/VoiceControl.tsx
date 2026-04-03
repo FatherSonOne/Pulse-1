@@ -35,6 +35,7 @@ export const VoiceControl: React.FC<VoiceControlProps> = ({
   const audioContextRef = useRef<AudioContext | null>(null);
   const analyserRef = useRef<AnalyserNode | null>(null);
   const animationFrameRef = useRef<number>();
+  const streamRef = useRef<MediaStream | null>(null);
 
   useEffect(() => {
     if (!enabled) {
@@ -189,8 +190,12 @@ export const VoiceControl: React.FC<VoiceControlProps> = ({
         animationFrameRef.current = undefined;
       }
       if (audioContextRef.current && audioContextRef.current.state !== 'closed') {
-        audioContextRef.current.close().catch(err => console.log('AudioContext cleanup'));
+        audioContextRef.current.close().catch(() => {});
         audioContextRef.current = null;
+      }
+      if (streamRef.current) {
+        streamRef.current.getTracks().forEach(t => t.stop());
+        streamRef.current = null;
       }
       return;
     }
@@ -201,30 +206,31 @@ export const VoiceControl: React.FC<VoiceControlProps> = ({
     const initAudio = async () => {
       try {
         const stream = await navigator.mediaDevices.getUserMedia({ audio: true });
+        streamRef.current = stream;
         const audioContext = new AudioContext();
         const analyser = audioContext.createAnalyser();
         const source = audioContext.createMediaStreamSource(stream);
-        
+
         source.connect(analyser);
         analyser.fftSize = 256;
-        
+
         audioContextRef.current = audioContext;
         analyserRef.current = analyser;
-        
+
         const updateLevel = () => {
-          if (!analyserRef.current || !audioContextRef.current) return;
-          
+          if (!analyserRef.current || !audioContextRef.current || audioContextRef.current.state === 'closed') return;
+
           const dataArray = new Uint8Array(analyserRef.current.frequencyBinCount);
           analyserRef.current.getByteFrequencyData(dataArray);
-          
+
           const average = dataArray.reduce((a, b) => a + b) / dataArray.length;
           const level = average / 255;
           setAudioLevel(level);
           onAudioLevel?.(level);
-          
+
           animationFrameRef.current = requestAnimationFrame(updateLevel);
         };
-        
+
         updateLevel();
       } catch (error) {
         console.error('Audio level detection error:', error);
@@ -238,7 +244,11 @@ export const VoiceControl: React.FC<VoiceControlProps> = ({
         cancelAnimationFrame(animationFrameRef.current);
       }
       if (audioContextRef.current && audioContextRef.current.state !== 'closed') {
-        audioContextRef.current.close().catch(err => console.log('AudioContext cleanup'));
+        audioContextRef.current.close().catch(() => {});
+      }
+      if (streamRef.current) {
+        streamRef.current.getTracks().forEach(t => t.stop());
+        streamRef.current = null;
       }
     };
   }, [enabled, onAudioLevel]);

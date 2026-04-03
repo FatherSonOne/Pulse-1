@@ -65,23 +65,35 @@ export const decisionService = {
   },
 
   // Get all decisions for a workspace (excludes archived by default)
-  async getWorkspaceDecisions(workspaceId: string): Promise<DecisionWithVotes[]> {
+  async getWorkspaceDecisions(
+    workspaceId: string,
+    options?: { limit?: number; offset?: number }
+  ): Promise<{ decisions: DecisionWithVotes[]; hasMore: boolean }> {
+    const limit = options?.limit ?? 50;
+    const offset = options?.offset ?? 0;
+
     const { data: decisions, error } = await supabase
       .from('decisions')
       .select('*, votes:decision_votes(*)')
       .eq('workspace_id', workspaceId)
-      .is('archived_at', null) // Exclude archived decisions
-      .order('created_at', { ascending: false });
+      .is('archived_at', null)
+      .order('created_at', { ascending: false })
+      .range(offset, offset + limit);
 
     if (error) {
       console.error('Error fetching decisions:', error);
-      return [];
+      return { decisions: [], hasMore: false };
     }
 
-    return decisions.map(d => ({
+    const mapped = decisions.map(d => ({
       ...d,
       vote_counts: this.calculateVoteCounts(d.votes || [])
     }));
+
+    return {
+      decisions: mapped,
+      hasMore: (decisions?.length ?? 0) > limit,
+    };
   },
 
   // Cast a vote on a decision
@@ -148,6 +160,21 @@ export const decisionService = {
 
     if (error) {
       console.error('Error updating decision status:', error);
+      return false;
+    }
+
+    return true;
+  },
+
+  // Update a decision (generic partial update)
+  async updateDecision(decisionId: string, updates: Partial<Decision>): Promise<boolean> {
+    const { error } = await supabase
+      .from('decisions')
+      .update({ ...updates, updated_at: new Date().toISOString() })
+      .eq('id', decisionId);
+
+    if (error) {
+      console.error('Error updating decision:', error);
       return false;
     }
 

@@ -137,20 +137,30 @@ export const taskService = {
   },
 
   // Get all tasks for a workspace (excludes archived by default)
-  async getWorkspaceTasks(workspaceId: string): Promise<Task[]> {
+  async getWorkspaceTasks(
+    workspaceId: string,
+    options?: { limit?: number; offset?: number }
+  ): Promise<{ tasks: Task[]; hasMore: boolean }> {
+    const limit = options?.limit ?? 50;
+    const offset = options?.offset ?? 0;
+
     const { data: tasks, error } = await supabase
       .from('extracted_tasks')
       .select('*')
       .eq('workspace_id', workspaceId)
-      .is('archived_at', null) // Exclude archived tasks
-      .order('extracted_at', { ascending: false });
+      .is('archived_at', null)
+      .order('extracted_at', { ascending: false })
+      .range(offset, offset + limit);
 
     if (error) {
       console.error('Error fetching tasks:', error);
-      return [];
+      return { tasks: [], hasMore: false };
     }
 
-    return tasks || [];
+    return {
+      tasks: tasks || [],
+      hasMore: (tasks?.length ?? 0) > limit,
+    };
   },
 
   // Get tasks assigned to a user (excludes archived)
@@ -341,6 +351,23 @@ export const taskService = {
     }
 
     return data?.length || 0;
+  },
+
+  /**
+   * Delete a task permanently
+   */
+  async deleteTask(taskId: string): Promise<boolean> {
+    const { error } = await supabase
+      .from('extracted_tasks')
+      .delete()
+      .eq('id', taskId);
+
+    if (error) {
+      console.error('Error deleting task:', error);
+      return false;
+    }
+
+    return true;
   },
 
   /**

@@ -148,13 +148,29 @@ class VideoVoxService {
 
     if (error || !data) return [];
 
-    const conversations: VideoVoxConversation[] = [];
+    // Filter to valid conversation rows first
+    const validItems = data.filter(item => item.video_vox_conversations != null);
 
-    for (const item of data) {
+    // Batch participant lookup: collect ALL unique participant IDs across every conversation
+    const allParticipantIds = new Set<string>();
+    for (const item of validItems) {
       const conv = item.video_vox_conversations as any;
-      if (!conv) continue;
+      for (const pid of (conv.participant_ids || [])) {
+        allParticipantIds.add(pid);
+      }
+    }
 
-      const participants = await this.getParticipantDetails(conv.participant_ids);
+    // Single query for all participant details (eliminates N+1)
+    const allParticipants = await this.getParticipantDetails([...allParticipantIds]);
+    const participantMap = new Map(allParticipants.map(p => [p.id, p]));
+
+    // Map results back to each conversation
+    const conversations: VideoVoxConversation[] = [];
+    for (const item of validItems) {
+      const conv = item.video_vox_conversations as any;
+      const participants = (conv.participant_ids || [])
+        .map((pid: string) => participantMap.get(pid))
+        .filter(Boolean) as Array<{ id: string; name: string; handle?: string; avatarUrl?: string; avatarColor: string }>;
       const mapped = this.mapDbToConversation(conv, participants);
       conversations.push(mapped);
     }
@@ -219,7 +235,65 @@ class VideoVoxService {
   // ============================================
 
   /**
-   * Upload and send a video message
+   * Upload a file to Supabase Storage via XMLHttpRequest for real progress tracking.
+   * The Supabase JS SDK's `.upload()` does not expose upload progress events,
+   * so we use XHR against the Storage REST API directly.
+   */
+  private uploadWithProgress(
+    bucket: string,
+    path: string,
+    blob: Blob,
+    contentType: string,
+    onProgress?: (percent: number) => void
+  ): Promise<{ error: Error | null }> {
+    return new Promise((resolve) => {
+      const xhr = new XMLHttpRequest();
+      const supabaseUrl = import.meta.env.VITE_SUPABASE_URL;
+      const supabaseKey = import.meta.env.VITE_SUPABASE_ANON_KEY;
+
+      if (!supabaseUrl || !supabaseKey) {
+        resolve({ error: new Error('Supabase config not available for XHR upload') });
+        return;
+      }
+
+      const url = `${supabaseUrl}/storage/v1/object/${bucket}/${path}`;
+
+      xhr.upload.onprogress = (event) => {
+        if (event.lengthComputable && onProgress) {
+          const percent = Math.round((event.loaded / event.total) * 100);
+          onProgress(percent);
+        }
+      };
+
+      xhr.onload = () => {
+        if (xhr.status >= 200 && xhr.status < 300) {
+          resolve({ error: null });
+        } else {
+          resolve({ error: new Error(`Upload failed with status ${xhr.status}: ${xhr.responseText}`) });
+        }
+      };
+
+      xhr.onerror = () => {
+        resolve({ error: new Error('Network error during upload') });
+      };
+
+      xhr.onabort = () => {
+        resolve({ error: new Error('Upload aborted') });
+      };
+
+      xhr.open('POST', url, true);
+      xhr.setRequestHeader('Authorization', `Bearer ${supabaseKey}`);
+      xhr.setRequestHeader('apikey', supabaseKey);
+      xhr.setRequestHeader('Content-Type', contentType);
+      // x-upsert header set to false to match original behavior
+      xhr.setRequestHeader('x-upsert', 'false');
+      xhr.send(blob);
+    });
+  }
+
+  /**
+   * Upload and send a video message.
+   * Accepts an optional onProgress callback for real upload progress tracking.
    */
   async uploadAndSendVideoVox(
     recipientIds: string[],
@@ -233,7 +307,8 @@ class VideoVoxService {
       quotedText?: string;
       mentions?: string[];
       expiresAt?: Date;
-    }
+    },
+    onProgress?: (percent: number) => void
   ): Promise<VideoVoxMessage | null> {
     const userId = await this.ensureUserId();
     if (!userId) {
@@ -242,6 +317,9 @@ class VideoVoxService {
     }
 
     try {
+      // Phase 1: Setup (0-5%)
+      onProgress?.(2);
+
       // Get or create conversation
       const conversation = await this.getOrCreateConversation(recipientIds);
       if (!conversation) {
@@ -259,36 +337,49 @@ class VideoVoxService {
       const senderName = userData?.display_name || 'Unknown';
       const senderHandle = userData?.handle;
 
+      onProgress?.(5);
+
       // Generate unique file names
       const messageId = crypto.randomUUID();
       const videoFileName = `video_vox/${conversation.id}/${userId}/${messageId}.webm`;
       const thumbFileName = `video_vox/${conversation.id}/${userId}/${messageId}_thumb.jpg`;
 
-      // Upload video
-      const { error: videoUploadError } = await supabase.storage
-        .from('voxer')
-        .upload(videoFileName, videoBlob, {
-          contentType: 'video/webm',
-          upsert: false
-        });
+      // Phase 2: Upload video with real progress (5-85%)
+      // Video upload is the heaviest part, so it gets the largest progress range.
+      const { error: videoUploadError } = await this.uploadWithProgress(
+        'voxer',
+        videoFileName,
+        videoBlob,
+        'video/webm',
+        (percent) => {
+          // Map video upload 0-100% to overall 5-85%
+          const overallPercent = 5 + Math.round(percent * 0.8);
+          onProgress?.(overallPercent);
+        }
+      );
 
       if (videoUploadError) {
         console.error('Error uploading video:', videoUploadError);
         return null;
       }
 
-      // Upload thumbnail
-      const { error: thumbUploadError } = await supabase.storage
-        .from('voxer')
-        .upload(thumbFileName, thumbnailBlob, {
-          contentType: 'image/jpeg',
-          upsert: false
-        });
+      // Phase 3: Upload thumbnail (85-90%)
+      onProgress?.(85);
+      const { error: thumbUploadError } = await this.uploadWithProgress(
+        'voxer',
+        thumbFileName,
+        thumbnailBlob,
+        'image/jpeg'
+        // No progress callback for thumbnail -- it's small and fast
+      );
 
       if (thumbUploadError) {
         console.error('Error uploading thumbnail:', thumbUploadError);
       }
 
+      onProgress?.(90);
+
+      // Phase 4: Insert DB record and finalize (90-100%)
       // Get public URLs
       const { data: videoUrlData } = supabase.storage.from('voxer').getPublicUrl(videoFileName);
       const { data: thumbUrlData } = supabase.storage.from('voxer').getPublicUrl(thumbFileName);
@@ -326,12 +417,15 @@ class VideoVoxService {
         return null;
       }
 
+      onProgress?.(95);
+
       // Queue AI processing in background
       this.queueAIProcessing(messageId, videoBlob);
 
       // Create notification for recipients
       await this.notifyRecipients(conversation.id, messageId, senderName, recipientIds);
 
+      onProgress?.(100);
       return this.mapDbToMessage(messageData);
     } catch (error) {
       console.error('Error in uploadAndSendVideoVox:', error);
@@ -738,12 +832,20 @@ Return as JSON.` }
         .update({ processing_status: 'failed' })
         .eq('id', messageId);
 
+      // Increment attempts with a separate fetch-then-update since Supabase JS SDK
+      // does not support raw SQL expressions in .update()
+      const { data: queueEntry } = await supabase
+        .from('video_vox_ai_queue')
+        .select('attempts')
+        .eq('message_id', messageId)
+        .single();
+
       await supabase
         .from('video_vox_ai_queue')
         .update({
           status: 'failed',
           error_message: error.message,
-          attempts: supabase.sql`attempts + 1`
+          attempts: (queueEntry?.attempts ?? 0) + 1
         })
         .eq('message_id', messageId);
 
@@ -774,11 +876,57 @@ Return as JSON.` }
   // ============================================
 
   /**
+   * Escape special characters for Postgres ilike patterns.
+   * Prevents user input containing %, _, or \ from being interpreted
+   * as wildcards or escape sequences.
+   */
+  private sanitizeIlikeInput(input: string): string {
+    return input
+      .replace(/\\/g, '\\\\')  // escape backslashes first
+      .replace(/%/g, '\\%')    // escape percent
+      .replace(/_/g, '\\_');   // escape underscore
+  }
+
+  /**
+   * Compute a relevance score for a search result based on:
+   *  - Field weight (caption > summary > transcript)
+   *  - Match position (earlier = more relevant)
+   *  - Density (how much of the field the query covers)
+   * Returns a score in the range (0, 1].
+   */
+  private computeRelevanceScore(
+    fieldValue: string,
+    query: string,
+    fieldWeight: number
+  ): number {
+    const lowerField = fieldValue.toLowerCase();
+    const lowerQuery = query.toLowerCase();
+    const matchIndex = lowerField.indexOf(lowerQuery);
+
+    if (matchIndex === -1) return 0;
+
+    // Position score: earlier matches score higher (1.0 at start, decays toward 0.3)
+    const positionScore = 1.0 - (matchIndex / lowerField.length) * 0.7;
+
+    // Density score: longer matches relative to field length score higher
+    const densityScore = Math.min(1.0, lowerQuery.length / lowerField.length * 5);
+
+    // Weighted combination: field weight (0-1) * 0.5 + position * 0.3 + density * 0.2
+    const score = fieldWeight * 0.5 + positionScore * 0.3 + densityScore * 0.2;
+
+    // Clamp to (0, 1]
+    return Math.min(1.0, Math.max(0.01, parseFloat(score.toFixed(3))));
+  }
+
+  /**
    * Search videos by content
    */
   async searchVideos(query: string): Promise<VideoVoxSearchResult[]> {
     const userId = await this.ensureUserId();
     if (!userId || !query.trim()) return [];
+
+    // Sanitize user input to prevent ilike injection (Y18)
+    const sanitized = this.sanitizeIlikeInput(query.trim());
 
     // Search in transcripts, captions, and topics
     const { data, error } = await supabase
@@ -788,25 +936,35 @@ Return as JSON.` }
         video_vox_conversations!inner (participant_ids)
       `)
       .contains('video_vox_conversations.participant_ids', [userId])
-      .or(`transcript.ilike.%${query}%,caption.ilike.%${query}%,summary.ilike.%${query}%`)
+      .or(`transcript.ilike.%${sanitized}%,caption.ilike.%${sanitized}%,summary.ilike.%${sanitized}%`)
       .order('created_at', { ascending: false })
       .limit(50);
 
     if (error || !data) return [];
 
+    // Field weights: caption (highest) > summary > transcript (lowest)
+    const FIELD_WEIGHTS = {
+      caption: 1.0,
+      summary: 0.7,
+      transcript: 0.4,
+    } as const;
+
     const results: VideoVoxSearchResult[] = data.map(m => {
       const message = this.mapDbToMessage(m);
       let matchType: 'transcript' | 'caption' | 'topic' | 'summary' = 'transcript';
       let matchText = '';
+      let relevanceScore = 0.01;
 
-      const lowerQuery = query.toLowerCase();
+      const lowerQuery = query.trim().toLowerCase();
 
       if (m.caption?.toLowerCase().includes(lowerQuery)) {
         matchType = 'caption';
         matchText = m.caption;
+        relevanceScore = this.computeRelevanceScore(m.caption, query.trim(), FIELD_WEIGHTS.caption);
       } else if (m.summary?.toLowerCase().includes(lowerQuery)) {
         matchType = 'summary';
         matchText = m.summary;
+        relevanceScore = this.computeRelevanceScore(m.summary, query.trim(), FIELD_WEIGHTS.summary);
       } else if (m.transcript?.toLowerCase().includes(lowerQuery)) {
         matchType = 'transcript';
         // Extract snippet around match
@@ -814,15 +972,19 @@ Return as JSON.` }
         const start = Math.max(0, index - 50);
         const end = Math.min(m.transcript.length, index + query.length + 50);
         matchText = '...' + m.transcript.substring(start, end) + '...';
+        relevanceScore = this.computeRelevanceScore(m.transcript, query.trim(), FIELD_WEIGHTS.transcript);
       }
 
       return {
         message,
         matchType,
         matchText,
-        relevanceScore: 1.0 // Could implement better scoring
+        relevanceScore,
       };
     });
+
+    // Sort by relevance descending so best matches appear first
+    results.sort((a, b) => b.relevanceScore - a.relevanceScore);
 
     return results;
   }

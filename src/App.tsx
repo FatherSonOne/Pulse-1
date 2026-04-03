@@ -658,6 +658,14 @@ const App: React.FC = () => {
     return newContact;
   }, []);
 
+  const handleDeleteContact = useCallback(async (contactId: string): Promise<boolean> => {
+    const ok = await dataService.deleteContact(contactId);
+    if (ok) {
+      setContacts(prev => prev.filter(c => c.id !== contactId));
+    }
+    return ok;
+  }, []);
+
   const handleContactAction = (action: 'message' | 'vox' | 'meet', contactId: string) => {
     setSelectedContactId(contactId);
     if (action === 'message') setView(AppView.MESSAGES);
@@ -706,7 +714,7 @@ const App: React.FC = () => {
             case AppView.CALENDAR:
               return <Calendar contacts={contacts} openTaskPanel={openTaskPanel} onNavigateToIntegrations={() => { setSettingsSection('integrations'); setView(AppView.SETTINGS); }} />;
             case AppView.CONTACTS:
-              return <Contacts contacts={contacts} onAction={handleContactAction} onSyncComplete={handleSyncContacts} onUpdateContact={handleUpdateContact} onAddContact={handleAddContact} openAddContact={openAddContact} isDarkMode={isDarkMode} userId={user?.id} />;
+              return <Contacts contacts={contacts} onAction={handleContactAction} onSyncComplete={handleSyncContacts} onUpdateContact={handleUpdateContact} onAddContact={handleAddContact} onDeleteContact={handleDeleteContact} openAddContact={openAddContact} isDarkMode={isDarkMode} userId={user?.id} />;
             case AppView.CONTACT_MAP:
               // Redirect legacy deep-links to Contacts with map tab pre-selected
               setView(AppView.CONTACTS);

@@ -497,6 +497,21 @@ class SearchQueryParser {
 
     return suggestions.slice(0, 10); // Limit to 10 suggestions
   }
+
+  /**
+   * Parse query and return a flat operator map (first non-negated value wins).
+   * Convenience method used by searchEnhancements.
+   */
+  parseToFlatOperators(query: string): { baseQuery: string; operators: Record<string, string> } {
+    const parsed = this.parse(query);
+    const operators: Record<string, string> = {};
+    for (const op of parsed.operators) {
+      if (!op.negate && !(op.field in operators)) {
+        operators[op.field] = String(op.value);
+      }
+    }
+    return { baseQuery: parsed.freeText, operators };
+  }
 }
 
 // Singleton instance

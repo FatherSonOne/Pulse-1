@@ -1,6 +1,7 @@
 import React, { useState, useEffect } from 'react';
 import { Contact } from '../../types';
 import LocationEditModal from './map/LocationEditModal';
+import toast from 'react-hot-toast';
 
 import { Check, Loader2, UserPen, X } from 'lucide-react';
 
@@ -67,6 +68,7 @@ export const EditContactModal: React.FC<EditContactModalProps> = ({
       onClose();
     } catch (error) {
       console.error('Error saving contact:', error);
+      toast.error('Failed to save contact');
     } finally {
       setIsSaving(false);
     }

@@ -198,6 +198,7 @@ export interface ArchiveItem {
   aiSummary?: string;
   exportedAt?: Date;
   pinnedAt?: Date;
+  pinned?: boolean;
   starred?: boolean;
   viewCount?: number;
   lastViewedAt?: Date;

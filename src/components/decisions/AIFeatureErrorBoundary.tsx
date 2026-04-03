@@ -57,8 +57,6 @@ export class AIFeatureErrorBoundary extends Component<Props, State> {
       retryCount: this.state.retryCount
     };
 
-    console.log('[AIFeatureErrorBoundary] Error logged:', errorData);
-
     // TODO: Send to error tracking service
     // Example: Sentry.captureException(error, { extra: errorData });
   };

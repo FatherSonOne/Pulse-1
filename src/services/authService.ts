@@ -53,6 +53,33 @@ declare global {
 
 const USER_KEY = 'pulse_user_session';
 
+// "Keep me logged in" sentinel: if the user has opted out of persistent sessions,
+// auto-logout when the browser is restarted (sessionStorage is cleared on close).
+// We set a sessionStorage sentinel on every page load. If it's missing on load AND
+// the user has opted out, this is a fresh browser launch → clear the session.
+(() => {
+  try {
+    const keepLoggedIn = localStorage.getItem('pulse_keep_logged_in');
+    const sessionAlive = sessionStorage.getItem('pulse_session_active');
+
+    if (keepLoggedIn === 'false' && !sessionAlive) {
+      // Fresh browser launch with "keep logged in" disabled — clear session
+      localStorage.removeItem(USER_KEY);
+      // Clear Supabase auth tokens (key prefix varies by project)
+      Object.keys(localStorage).forEach(key => {
+        if (key.startsWith('sb-') && key.endsWith('-auth-token')) {
+          localStorage.removeItem(key);
+        }
+      });
+    }
+
+    // Mark this tab/session as active
+    sessionStorage.setItem('pulse_session_active', '1');
+  } catch {
+    // Ignore errors in environments where storage is unavailable
+  }
+})();
+
 // Convert Supabase user to app User type
 const mapSupabaseUser = (supabaseUser: SupabaseUser): User => {
   const metadata = supabaseUser.user_metadata || {};

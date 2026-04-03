@@ -10,6 +10,8 @@ interface TaskSectionProps {
   tasks: Task[];
   accentColor: string;
   defaultExpanded?: boolean;
+  selectedTaskIds?: Set<string>;
+  onToggleTaskSelect?: (taskId: string) => void;
   onStatusChange: (taskId: string, status: Task['status']) => Promise<void>;
   onDelete?: (taskId: string) => Promise<void>;
   onEdit?: (task: Task) => void;
@@ -22,6 +24,8 @@ export const TaskSection: React.FC<TaskSectionProps> = memo(({
   tasks,
   accentColor,
   defaultExpanded = true,
+  selectedTaskIds,
+  onToggleTaskSelect,
   onStatusChange,
   onDelete,
   onEdit,
@@ -62,16 +66,28 @@ export const TaskSection: React.FC<TaskSectionProps> = memo(({
       {isExpanded && (
         <div className="task-section-content">
           {tasks.map((task, index) => (
-            <EnhancedTaskCard
-              key={task.id}
-              task={task}
-              onStatusChange={onStatusChange}
-              onDelete={onDelete}
-              onEdit={onEdit}
-              style={{
-                animationDelay: `${index * 0.05}s`
-              }}
-            />
+            <div key={task.id} className={`task-section-card-wrapper ${selectedTaskIds?.has(task.id) ? 'selected' : ''}`}>
+              {onToggleTaskSelect && (
+                <button
+                  type="button"
+                  className={`task-select-checkbox ${selectedTaskIds?.has(task.id) ? 'checked' : ''}`}
+                  onClick={() => onToggleTaskSelect(task.id)}
+                  aria-label={selectedTaskIds?.has(task.id) ? 'Deselect task' : 'Select task'}
+                  aria-pressed={selectedTaskIds?.has(task.id) ? 'true' : 'false'}
+                >
+                  {selectedTaskIds?.has(task.id) ? '✓' : ''}
+                </button>
+              )}
+              <EnhancedTaskCard
+                task={task}
+                onStatusChange={onStatusChange}
+                onDelete={onDelete}
+                onEdit={onEdit}
+                style={{
+                  animationDelay: `${index * 0.05}s`
+                }}
+              />
+            </div>
           ))}
         </div>
       )}

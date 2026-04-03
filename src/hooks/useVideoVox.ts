@@ -474,24 +474,24 @@ export function useVideoVoxSend(): UseVideoVoxSendReturn {
     try {
       setIsSending(true);
       setError(null);
-      setProgress(10);
+      setProgress(0);
 
-      // Simulate upload progress
-      const progressInterval = setInterval(() => {
-        setProgress(prev => Math.min(prev + 10, 90));
-      }, 200);
-
+      // Real progress tracking via XHR onprogress in the service layer.
+      // The service's uploadAndSendVideoVox accepts an onProgress callback that
+      // reports actual byte-level upload progress (video upload: 5-85%,
+      // thumbnail: 85-90%, DB insert/finalize: 90-100%).
       const message = await videoVoxService.uploadAndSendVideoVox(
         recipientIds,
         videoBlob,
         thumbnailBlob,
         duration,
-        options
+        options,
+        (percent) => {
+          setProgress(percent);
+        }
       );
 
-      clearInterval(progressInterval);
       setProgress(100);
-
       return message;
     } catch (err: any) {
       setError(err.message || 'Failed to send video');

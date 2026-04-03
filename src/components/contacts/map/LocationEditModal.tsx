@@ -42,7 +42,7 @@ const LocationEditModal: React.FC<LocationEditModalProps> = ({
 
   const handlePlaceChanged = (
     type: 'home' | 'work',
-    ref: React.MutableRefObject<PlaceResult | null>
+    _ref: React.MutableRefObject<google.maps.places.Autocomplete | null>
   ) => {
     const autocomplete = type === 'home' ? homeRef.current : workRef.current;
     if (!autocomplete) return;

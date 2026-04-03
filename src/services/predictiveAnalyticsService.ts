@@ -140,6 +140,7 @@ export async function getLatestBurnoutIndicator(): Promise<{
 
 /**
  * Get burnout history
+ * @deprecated No consumers — not called from any component as of 2026-04-02
  */
 export async function getBurnoutHistory(
   days: number = 30
@@ -349,6 +350,7 @@ export async function assessBurnoutRisk(): Promise<{
 
 /**
  * Predict relationship health trend
+ * @deprecated No consumers — not called from any component as of 2026-04-02
  */
 export async function predictRelationshipTrend(
   contactIdentifier: string
@@ -473,6 +475,7 @@ export async function predictRelationshipTrend(
 
 /**
  * Predict response time for a contact
+ * @deprecated No consumers — not called from any component as of 2026-04-02
  */
 export async function predictResponseTime(
   contactIdentifier: string
@@ -586,6 +589,7 @@ export async function predictResponseTime(
 
 /**
  * Store ML training data
+ * @deprecated No consumers — not called from any component as of 2026-04-02
  */
 export async function storeTrainingData(
   features: Record<string, any>,

@@ -1,6 +1,8 @@
 import React, { useState, useRef, useEffect } from 'react';
 import { AIMessage, ThinkingStep } from '../../../services/ragService';
+import { dataService } from '../../../services/dataService';
 import { SessionExport } from '../shared';
+import toast from 'react-hot-toast';
 
 import { ArrowRight, BookOpen, Check, CheckCircle, MessagesSquare, Plus, Route, Send, Share2, Wand2, X } from 'lucide-react';
 
@@ -523,10 +525,31 @@ Provide:
 
               {finalChoice && (
                 <button
-                  onClick={() => {
+                  onClick={async () => {
                     const selectedOption = options.find(o => o.id === finalChoice);
-                    const decisionSummary = `Decision: ${decision}\n\nChosen Option: ${selectedOption?.name}\nScore: ${calculateOptionScore(finalChoice)}/5\n\nOptions Considered:\n${rankedOptions.map((o, i) => `${i + 1}. ${o.name} (${o.score}/5)`).join('\n')}`;
-                    alert(`Decision Complete!\n\n${decisionSummary}\n\nIn a full implementation, this would:\n- Save to your workspace decisions\n- Notify stakeholders\n- Create follow-up tasks\n- Archive this mission`);
+                    const decisionSummary = `Decision: ${decision}\n\nChosen Option: ${selectedOption?.name}\nScore: ${calculateOptionScore(finalChoice)}/5\n\nOptions Considered:\n${rankedOptions.map((o, i) => `${i + 1}. ${o.name} (${o.score}/5)`).join('\n')}\n\nCriteria:\n${criteria.map(c => `- ${c.name} (weight: ${c.weight})`).join('\n')}`;
+                    try {
+                      await dataService.createArchive({
+                        type: 'decision_log',
+                        title: `Decision: ${decision.substring(0, 80)}${decision.length > 80 ? '...' : ''}`,
+                        content: decisionSummary,
+                        date: new Date(),
+                        tags: ['decision', 'war-room', 'mission'],
+                        metadata: {
+                          missionType: 'decision',
+                          decision,
+                          chosenOption: selectedOption?.name,
+                          chosenOptionId: finalChoice,
+                          options: options.map(o => ({ name: o.name, description: o.description })),
+                          criteria: criteria.map(c => ({ name: c.name, weight: c.weight })),
+                          scores,
+                        },
+                      });
+                      toast.success('Decision saved to Archives');
+                    } catch (error) {
+                      console.error('Failed to save decision:', error);
+                      toast.error('Failed to save decision');
+                    }
                   }}
                   className="w-full war-room-btn bg-gradient-to-r from-emerald-600 to-green-600 hover:from-emerald-700 hover:to-green-700 text-white py-3 font-semibold"
                 >

@@ -16,6 +16,7 @@ import {
   Archive,
 } from 'lucide-react';
 import JSZip from 'jszip';
+import { Mp3Encoder } from 'lamejs';
 import { VoxSelectionItem } from '../../hooks/useVoxSelection';
 
 interface VoxDownloadModalProps {
@@ -140,12 +141,10 @@ export const VoxDownloadModal: React.FC<VoxDownloadModalProps> = ({
         return wavBlob;
       }
 
-      // For MP3, we'd need a library like lamejs
-      // For now, fallback to WAV if MP3 is requested but not available
-      console.warn('MP3 encoding requires additional library - using WAV');
-      const fallbackBlob = audioBufferToWav(audioBuffer);
+      // MP3 encoding via lamejs
+      const mp3Blob = await audioBufferToMp3(audioBuffer);
       await audioContext.close();
-      return fallbackBlob;
+      return mp3Blob;
     } catch (err) {
       console.error('Conversion error:', err);
       return null;
@@ -153,6 +152,47 @@ export const VoxDownloadModal: React.FC<VoxDownloadModalProps> = ({
   }, []);
 
   // WAV encoding helper
+  const audioBufferToMp3 = async (audioBuffer: AudioBuffer): Promise<Blob> => {
+    const numChannels = audioBuffer.numberOfChannels;
+    const sampleRate = audioBuffer.sampleRate;
+    const kbps = 128;
+
+    const encoder = new Mp3Encoder(numChannels, sampleRate, kbps);
+    const mp3Data: Int8Array[] = [];
+    const sampleBlockSize = 1152; // lamejs processes 1152 samples at a time
+
+    // Convert Float32 channel data to Int16
+    const floatToInt16 = (float32: Float32Array): Int16Array => {
+      const int16 = new Int16Array(float32.length);
+      for (let i = 0; i < float32.length; i++) {
+        const s = Math.max(-1, Math.min(1, float32[i]));
+        int16[i] = s < 0 ? s * 0x8000 : s * 0x7FFF;
+      }
+      return int16;
+    };
+
+    const left = floatToInt16(audioBuffer.getChannelData(0));
+    const right = numChannels > 1 ? floatToInt16(audioBuffer.getChannelData(1)) : undefined;
+
+    for (let i = 0; i < left.length; i += sampleBlockSize) {
+      const leftChunk = left.subarray(i, i + sampleBlockSize);
+      const rightChunk = right?.subarray(i, i + sampleBlockSize);
+      const mp3buf = rightChunk
+        ? encoder.encodeBuffer(leftChunk, rightChunk)
+        : encoder.encodeBuffer(leftChunk);
+      if (mp3buf.length > 0) {
+        mp3Data.push(mp3buf);
+      }
+    }
+
+    const flush = encoder.flush();
+    if (flush.length > 0) {
+      mp3Data.push(flush);
+    }
+
+    return new Blob(mp3Data, { type: 'audio/mp3' });
+  };
+
   const audioBufferToWav = (audioBuffer: AudioBuffer): Blob => {
     const numChannels = audioBuffer.numberOfChannels;
     const sampleRate = audioBuffer.sampleRate;

@@ -29,10 +29,12 @@ export function PulseAIProactiveChecker({
   const runCheck = useCallback(async (cancelled: { value: boolean }) => {
     if (!workspaceId || !user) return;
     try {
-      const [decisions, tasks] = await Promise.all([
+      const [decResult, taskResult] = await Promise.all([
         decisionService.getWorkspaceDecisions(workspaceId),
         taskService.getWorkspaceTasks(workspaceId),
       ]);
+      const decisions = decResult.decisions;
+      const tasks = taskResult.tasks;
 
       if (cancelled.value) return;
 

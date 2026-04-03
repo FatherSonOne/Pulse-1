@@ -26,7 +26,7 @@ interface GeminiRequest {
   model?: string;
   temperature?: number;
   history?: Array<{ role: string; text: string }>;
-  operation?: 'smartReply' | 'draftAnalysis' | 'summarization' | 'sentiment' | 'translation';
+  operation?: 'smartReply' | 'draftAnalysis' | 'summarization' | 'sentiment' | 'translation' | 'searchCategorize' | 'searchTags' | 'searchSummarize' | 'semanticRerank';
 }
 
 interface ErrorResponse {

@@ -5,6 +5,7 @@
 // ============================================
 
 import React, { useState, useEffect } from 'react';
+import toast from 'react-hot-toast';
 import {
   ContactGoal,
   GoalFrequency,
@@ -76,7 +77,7 @@ export const ContactGoalModal: React.FC<ContactGoalModalProps> = ({
       });
       onClose();
     } catch {
-      /* TODO: show error toast */
+      toast.error('Failed to save goal');
     } finally {
       setIsSaving(false);
     }

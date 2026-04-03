@@ -295,19 +295,6 @@ export async function removeMember(
 }
 
 /**
- * Move a contact from one circle to another.
- */
-export async function moveMember(
-  contactId: string,
-  fromCircleId: string,
-  toCircleId: string,
-  userId: string
-): Promise<void> {
-  await removeMember(fromCircleId, userId, contactId);
-  await addMembers(toCircleId, userId, [contactId]);
-}
-
-/**
  * Get contacts not assigned to any circle.
  */
 export async function getOrphanContacts(
@@ -330,10 +317,7 @@ export async function calculateCircleHealth(
   try {
     const profiles = await relationshipIntelligenceService.getProfiles({ userId });
     const memberScores = profiles
-      .filter(p => {
-        // Match profiles by email against contacts — handled at call site
-        return memberContactIds.length > 0; // placeholder — scores are always valid
-      })
+      .filter(p => memberContactIds.includes(p.contactEmail))
       .map(p => p.relationshipScore);
     if (memberScores.length === 0) return 50; // default when no profiles
     return Math.round(memberScores.reduce((a, b) => a + b, 0) / memberScores.length);

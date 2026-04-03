@@ -1,20 +1,7 @@
 import React from 'react';
 import { FlaskConical } from 'lucide-react';
 import { useFeatures, FEATURE_CATEGORIES, FEATURE_NAMES } from '../../contexts/FeatureContext';
-
-const ToggleItem = ({ label, desc, active, onToggle }: { label: string; desc: string; active: boolean; onToggle: () => void }) => (
-  <div className="flex justify-between items-center group cursor-pointer" onClick={onToggle}>
-    <div>
-      <div className="dark:text-white text-zinc-900 font-medium text-sm">{label}</div>
-      <div className="text-zinc-500 text-xs">{desc}</div>
-    </div>
-    <button
-      className={`w-12 h-6 rounded-full p-1 transition-colors duration-300 ease-in-out ${active ? 'bg-blue-600' : 'bg-zinc-300 dark:bg-zinc-700'}`}
-    >
-      <div className={`w-4 h-4 rounded-full bg-white shadow-md transform transition-transform duration-300 ${active ? 'translate-x-6' : 'translate-x-0'}`} />
-    </button>
-  </div>
-);
+import { ToggleItem } from './shared/ToggleItem';
 
 export const FeaturesLabsSettings: React.FC = () => {
   const { features, toggleFeature, advancedMode, setAdvancedMode } = useFeatures();

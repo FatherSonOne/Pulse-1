@@ -1,4 +1,5 @@
 import React, { useEffect, useState } from 'react';
+import toast from 'react-hot-toast';
 import { Contact } from '../../../types';
 import {
   checkLocationConsent,
@@ -59,6 +60,8 @@ const LocationSharePanel: React.FC<LocationSharePanelProps> = ({ contact, myUser
       } else {
         stopLocationBroadcast();
       }
+    } catch {
+      toast.error('Failed to update location sharing');
     } finally {
       setSaving(false);
     }

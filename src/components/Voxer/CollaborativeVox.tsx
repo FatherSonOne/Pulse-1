@@ -1,7 +1,7 @@
 // Collaborative Vox Component
 // Multiple people recording one message together
 
-import React, { useState, useRef, useCallback } from 'react';
+import React, { useState, useRef, useCallback, useEffect } from 'react';
 import { 
   CollaborativeVox as CollabVoxType, 
   CollabVoxSegment, 
@@ -407,7 +407,25 @@ export const CollaborativeVox: React.FC<CollaborativeVoxProps> = ({
   const [selectedContacts, setSelectedContacts] = useState<string[]>([]);
   const [activeCollab, setActiveCollab] = useState<CollabVoxType | null>(null);
 
+  // Track blob URLs for segment audio so they can be revoked to prevent memory leaks
+  const segmentBlobUrlsRef = useRef<Set<string>>(new Set());
+
+  // Cleanup all blob URLs on unmount
+  useEffect(() => {
+    return () => {
+      segmentBlobUrlsRef.current.forEach((url) => {
+        URL.revokeObjectURL(url);
+      });
+      segmentBlobUrlsRef.current.clear();
+    };
+  }, []);
+
   const resetForm = () => {
+    // Revoke all segment blob URLs when resetting
+    segmentBlobUrlsRef.current.forEach((url) => {
+      URL.revokeObjectURL(url);
+    });
+    segmentBlobUrlsRef.current.clear();
     setStep('create');
     setTitle('');
     setDescription('');
@@ -471,12 +489,15 @@ export const CollaborativeVox: React.FC<CollaborativeVoxProps> = ({
 
   const handleAddSegment = (audioBlob: Blob, transcription?: string) => {
     if (activeCollab) {
+      const audioUrl = URL.createObjectURL(audioBlob);
+      segmentBlobUrlsRef.current.add(audioUrl);
+
       const newSegment: Omit<CollabVoxSegment, 'id' | 'order'> = {
         collabVoxId: activeCollab.id,
         userId: currentUser.id,
         userName: currentUser.name,
         userAvatarColor: currentUser.avatarColor,
-        audioUrl: URL.createObjectURL(audioBlob),
+        audioUrl,
         duration: 5, // Would be calculated from actual audio
         status: 'recorded',
         transcription,
@@ -516,6 +537,12 @@ export const CollaborativeVox: React.FC<CollaborativeVoxProps> = ({
             currentUserId={currentUser.id}
             onAddSegment={handleAddSegment}
             onRemoveSegment={(segmentId) => {
+              // Revoke blob URL for the removed segment
+              const segment = activeCollab.segments.find(s => s.id === segmentId);
+              if (segment?.audioUrl && segment.audioUrl.startsWith('blob:')) {
+                URL.revokeObjectURL(segment.audioUrl);
+                segmentBlobUrlsRef.current.delete(segment.audioUrl);
+              }
               setActiveCollab(prev => prev ? {
                 ...prev,
                 segments: prev.segments.filter(s => s.id !== segmentId),

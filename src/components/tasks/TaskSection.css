@@ -129,6 +129,52 @@
   background: rgba(244, 63, 94, 0.06);
 }
 
+/* Bulk selection */
+.task-section-card-wrapper {
+  display: flex;
+  align-items: flex-start;
+  gap: 8px;
+}
+
+.task-section-card-wrapper.selected {
+  background: var(--dt-accent-softer, rgba(102, 126, 234, 0.06));
+  border-radius: 8px;
+  padding: 2px;
+}
+
+.task-section-card-wrapper > .enhanced-task-card {
+  flex: 1;
+  min-width: 0;
+}
+
+.task-select-checkbox {
+  flex-shrink: 0;
+  width: 20px;
+  height: 20px;
+  margin-top: 12px;
+  border: 2px solid var(--dt-border, #d1d5db);
+  border-radius: 4px;
+  background: transparent;
+  cursor: pointer;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  font-size: 12px;
+  font-weight: 700;
+  color: white;
+  padding: 0;
+  transition: all 0.15s ease;
+}
+
+.task-select-checkbox.checked {
+  background: var(--dt-accent, #667eea);
+  border-color: var(--dt-accent, #667eea);
+}
+
+.task-select-checkbox:hover {
+  border-color: var(--dt-accent, #667eea);
+}
+
 /* Mobile responsive */
 @media (max-width: 768px) {
   .task-section {

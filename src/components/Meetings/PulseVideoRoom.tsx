@@ -31,7 +31,6 @@ import {
   notifyRecordingStarted,
   notifyRecordingStopped,
   saveTranscript,
-  pollForRecording,
 } from '../../services/pulseVideoService';
 import { supabase } from '../../services/supabaseClient';
 
@@ -51,6 +50,14 @@ interface PulseVideoRoomProps {
   meetingTitle?: string;
   isHost?: boolean;
   onLeave: (summary?: MeetingEndSummary) => void;
+  /** Start with mic muted */
+  initialMicOff?: boolean;
+  /** Start with camera off */
+  initialCameraOff?: boolean;
+  /** Auto-start cloud recording (host only) */
+  autoRecord?: boolean;
+  /** Auto-start live transcription */
+  autoTranscribe?: boolean;
 }
 
 interface ChatMessage {
@@ -134,14 +141,18 @@ const MeetingRoom: React.FC<{
   isHost: boolean;
   token: string;
   onLeave: (summary?: MeetingEndSummary) => void;
-}> = ({ roomUrl, roomName, meetingTitle, isHost, token, onLeave }) => {
+  initialMicOff: boolean;
+  initialCameraOff: boolean;
+  autoRecord: boolean;
+  autoTranscribe: boolean;
+}> = ({ roomUrl, roomName, meetingTitle, isHost, token, onLeave, initialMicOff, initialCameraOff, autoRecord, autoTranscribe }) => {
   const daily = useDaily();
   const localId = useLocalSessionId();
   const remoteIds = useParticipantIds({ filter: 'remote' });
 
   const [isJoined, setIsJoined] = useState(false);
-  const [micOn, setMicOn] = useState(true);
-  const [cameraOn, setCameraOn] = useState(true);
+  const [micOn, setMicOn] = useState(!initialMicOff);
+  const [cameraOn, setCameraOn] = useState(!initialCameraOff);
   const [screenSharing, setScreenSharing] = useState(false);
   const [isRecording, setIsRecording] = useState(false);
   const [sidePanel, setSidePanel] = useState<'none' | 'chat' | 'participants'>('none');
@@ -166,6 +177,21 @@ const MeetingRoom: React.FC<{
       timerRef.current = setInterval(() => {
         setElapsed(Math.floor((Date.now() - startTimeRef.current) / 1000));
       }, 1000);
+
+      // Apply initial device states from meeting settings
+      if (initialMicOff) daily.setLocalAudio(false);
+      if (initialCameraOff) daily.setLocalVideo(false);
+
+      // Auto-start recording if enabled (host only)
+      if (autoRecord && isHost) {
+        daily.startRecording().catch((err: unknown) => console.warn('[PulseVideoRoom] Auto-record failed:', err));
+      }
+
+      // Auto-start transcription if enabled
+      if (autoTranscribe && isHost) {
+        daily.startTranscription({ language: 'en' }).catch((err: unknown) => console.warn('[PulseVideoRoom] Auto-transcribe failed:', err));
+        setTranscriptEnabled(true);
+      }
     });
 
     return () => {
@@ -650,6 +676,10 @@ const PulseVideoRoom: React.FC<PulseVideoRoomProps> = ({
   meetingTitle = 'Pulse Meeting',
   isHost = false,
   onLeave,
+  initialMicOff = false,
+  initialCameraOff = false,
+  autoRecord = false,
+  autoTranscribe = false,
 }) => {
   const [stage, setStage] = useState<'lobby' | 'joining' | 'active'>('lobby');
   const [token, setToken] = useState('');
@@ -699,6 +729,10 @@ const PulseVideoRoom: React.FC<PulseVideoRoomProps> = ({
         isHost={isHost}
         token={token}
         onLeave={handleLeave}
+        initialMicOff={initialMicOff}
+        initialCameraOff={initialCameraOff}
+        autoRecord={autoRecord}
+        autoTranscribe={autoTranscribe}
       />
     </DailyProvider>
   );

@@ -74,7 +74,6 @@ export const VoxSelectToolbar: React.FC<VoxSelectToolbarProps> = ({
 
         // Show success notification (simple approach without external toast library)
         const successMessage = `Conversation archived to Pulse Archives (${selectedItems.length} message${selectedItems.length > 1 ? 's' : ''})`;
-        console.log('✅', successMessage);
 
         // Create a simple visual notification
         const notification = document.createElement('div');

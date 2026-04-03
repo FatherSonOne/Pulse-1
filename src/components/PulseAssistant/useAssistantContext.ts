@@ -55,12 +55,12 @@ export function useAssistantContext(
       // ── Decisions & Tasks ──────────────────────────────────────────────
       if (DECISION_TASK_SECTIONS.includes(activeView)) {
         try {
-          const [dec, tsk] = await Promise.all([
+          const [decResult, tskResult] = await Promise.all([
             decisionService.getWorkspaceDecisions(workspaceId),
             taskService.getWorkspaceTasks(workspaceId),
           ]);
-          newCtx.decisions = dec;
-          newCtx.tasks = tsk;
+          newCtx.decisions = decResult.decisions;
+          newCtx.tasks = tskResult.tasks;
         } catch (e) {
           console.error('[PulseAssistant] Failed to load decisions/tasks:', e);
           newCtx.decisions = [];

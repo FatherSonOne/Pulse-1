@@ -58,11 +58,10 @@ interface VoiceRoomsProps {
 // ============================================
 // VOICE ROOMS COMPONENT
 // ============================================
-// Mock data removed - now using Supabase persistence
-
-// ============================================
-// VOICE ROOMS COMPONENT
-// ============================================
+// Wired to voiceRoomService for Supabase persistence.
+// NOTE: Requires voice_rooms & voice_room_participants tables.
+// If those tables do not exist yet, the component gracefully
+// falls back to local-only state and logs the error.
 
 export const VoiceRooms: React.FC<VoiceRoomsProps> = ({
   isOpen,
@@ -73,6 +72,7 @@ export const VoiceRooms: React.FC<VoiceRoomsProps> = ({
   // State
   const [rooms, setRooms] = useState<VoiceRoom[]>([]);
   const [isLoadingRooms, setIsLoadingRooms] = useState(true);
+  const [loadError, setLoadError] = useState<string | null>(null);
   const [activeRoomId, setActiveRoomId] = useState<string | null>(null);
   const [isMuted, setIsMuted] = useState(false);
   const [isDeafened, setIsDeafened] = useState(false);
@@ -85,6 +85,68 @@ export const VoiceRooms: React.FC<VoiceRoomsProps> = ({
   const audioContextRef = useRef<AudioContext | null>(null);
   const analyserRef = useRef<AnalyserNode | null>(null);
   const animationRef = useRef<number | null>(null);
+
+  // ============================================
+  // LOAD ROOMS ON MOUNT
+  // ============================================
+
+  useEffect(() => {
+    if (!isOpen) return;
+
+    let cancelled = false;
+
+    const loadRooms = async () => {
+      setIsLoadingRooms(true);
+      setLoadError(null);
+      try {
+        const fetched = await voiceRoomService.getRooms();
+        if (cancelled) return;
+
+        // Map service shape -> component shape (field name alignment)
+        const mapped: VoiceRoom[] = fetched.map((r) => ({
+          id: r.id,
+          name: r.name,
+          icon: r.icon || 'fa-microphone',
+          color: r.color,
+          participants: (r.participants || []).map((p) => ({
+            userId: p.userId,
+            name: p.userName,
+            avatarColor: p.avatarColor || 'bg-zinc-600',
+            isMuted: p.isMuted ?? false,
+            isDeafened: false,
+            isSpeaking: p.isSpeaking ?? false,
+            joinedAt: p.joinedAt ? new Date(p.joinedAt) : new Date(),
+          })),
+          maxParticipants: r.maxParticipants,
+          isPrivate: r.isPrivate,
+          category: r.category,
+          description: r.description,
+          createdAt: r.createdAt ? new Date(r.createdAt) : new Date(),
+          settings: {
+            bitrate: r.settings?.bitrate ?? 64000,
+            voiceActivity: r.settings?.voiceActivity ?? true,
+            echoCancel: r.settings?.echoCancel ?? true,
+            noiseSuppression: r.settings?.noiseSuppression ?? true,
+            autoGainControl: r.settings?.autoGainControl ?? true,
+          },
+        }));
+
+        setRooms(mapped);
+      } catch (err) {
+        if (cancelled) return;
+        console.error('[VoiceRooms] Failed to load rooms:', err);
+        setLoadError('Could not load voice rooms. The feature may not be configured yet.');
+      } finally {
+        if (!cancelled) setIsLoadingRooms(false);
+      }
+    };
+
+    loadRooms();
+
+    return () => {
+      cancelled = true;
+    };
+  }, [isOpen]);
 
   // ============================================
   // ROOM ACTIONS
@@ -111,7 +173,12 @@ export const VoiceRooms: React.FC<VoiceRoomsProps> = ({
       const source = audioContextRef.current.createMediaStreamSource(stream);
       source.connect(analyserRef.current);
 
-      // Add user to room
+      // Persist join to backend (fire-and-forget; local state updates immediately)
+      voiceRoomService
+        .joinRoom(roomId, currentUser.id, currentUser.name, currentUser.avatarColor)
+        .catch((err) => console.error('[VoiceRooms] Backend joinRoom failed:', err));
+
+      // Add user to room (optimistic local update)
       setRooms(prev => prev.map(room => {
         if (room.id === roomId) {
           return {
@@ -164,7 +231,12 @@ export const VoiceRooms: React.FC<VoiceRoomsProps> = ({
       animationRef.current = null;
     }
 
-    // Remove user from room
+    // Persist leave to backend (fire-and-forget)
+    voiceRoomService
+      .leaveRoom(activeRoomId, currentUser.id)
+      .catch((err) => console.error('[VoiceRooms] Backend leaveRoom failed:', err));
+
+    // Remove user from room (optimistic local update)
     setRooms(prev => prev.map(room => {
       if (room.id === activeRoomId) {
         return {
@@ -305,7 +377,57 @@ export const VoiceRooms: React.FC<VoiceRoomsProps> = ({
 
           {/* Room List */}
           <div className="flex-1 overflow-y-auto p-2">
-            {Object.entries(roomsByCategory).map(([category, categoryRooms]) => (
+            {/* Loading state */}
+            {isLoadingRooms && (
+              <div className="flex flex-col items-center justify-center py-12 text-zinc-500">
+                <div className="w-8 h-8 border-2 border-zinc-600 border-t-orange-500 rounded-full animate-spin mb-3" />
+                <span className="text-xs">Loading rooms...</span>
+              </div>
+            )}
+
+            {/* Error state */}
+            {!isLoadingRooms && loadError && (
+              <div className="flex flex-col items-center justify-center py-12 px-4 text-center">
+                <div className="w-12 h-12 rounded-full bg-red-500/10 flex items-center justify-center mb-3">
+                  <Radio className="text-red-400" />
+                </div>
+                <p className="text-xs text-zinc-400 mb-3">{loadError}</p>
+                <button
+                  type="button"
+                  onClick={() => {
+                    // Re-trigger load by toggling a dummy state
+                    setIsLoadingRooms(true);
+                    setLoadError(null);
+                    voiceRoomService.getRooms().then((fetched) => {
+                      setRooms(fetched.map((r) => ({
+                        id: r.id, name: r.name, icon: r.icon || 'fa-microphone',
+                        color: r.color, participants: [], maxParticipants: r.maxParticipants,
+                        isPrivate: r.isPrivate, category: r.category, description: r.description,
+                        createdAt: r.createdAt ? new Date(r.createdAt) : new Date(),
+                        settings: { bitrate: 64000, voiceActivity: true, echoCancel: true, noiseSuppression: true, autoGainControl: true },
+                      })));
+                    }).catch(() => setLoadError('Still unable to load rooms.')).finally(() => setIsLoadingRooms(false));
+                  }}
+                  className="text-xs text-orange-400 hover:text-orange-300 underline transition"
+                >
+                  Retry
+                </button>
+              </div>
+            )}
+
+            {/* Empty state */}
+            {!isLoadingRooms && !loadError && rooms.length === 0 && (
+              <div className="flex flex-col items-center justify-center py-12 px-4 text-center">
+                <div className="w-12 h-12 rounded-full bg-zinc-800 flex items-center justify-center mb-3">
+                  <Radio className="text-zinc-500" />
+                </div>
+                <p className="text-sm text-zinc-400 mb-1">No voice rooms yet</p>
+                <p className="text-xs text-zinc-600">Create your first room to start talking with your team.</p>
+              </div>
+            )}
+
+            {/* Room categories */}
+            {!isLoadingRooms && !loadError && Object.entries(roomsByCategory).map(([category, categoryRooms]) => (
               <div key={category} className="mb-4">
                 <div className="px-3 py-2 text-[10px] font-bold text-zinc-500 uppercase tracking-wider">
                   {category}
@@ -507,8 +629,49 @@ export const VoiceRooms: React.FC<VoiceRoomsProps> = ({
       {showCreateRoom && (
         <CreateRoomModal
           onClose={() => setShowCreateRoom(false)}
-          onCreate={(room) => {
-            setRooms(prev => [...prev, room]);
+          onCreate={async (room) => {
+            // Persist to backend; use returned room (with server-generated id) if available
+            try {
+              const persisted = await voiceRoomService.createRoom({
+                name: room.name,
+                icon: room.icon,
+                color: room.color,
+                maxParticipants: room.maxParticipants,
+                isPrivate: room.isPrivate,
+                category: room.category,
+                description: room.description,
+                settings: room.settings,
+              });
+              if (persisted) {
+                const mapped: VoiceRoom = {
+                  id: persisted.id,
+                  name: persisted.name,
+                  icon: persisted.icon || room.icon,
+                  color: persisted.color,
+                  participants: [],
+                  maxParticipants: persisted.maxParticipants,
+                  isPrivate: persisted.isPrivate,
+                  category: persisted.category,
+                  description: persisted.description,
+                  createdAt: persisted.createdAt ? new Date(persisted.createdAt) : new Date(),
+                  settings: {
+                    bitrate: persisted.settings?.bitrate ?? 64000,
+                    voiceActivity: persisted.settings?.voiceActivity ?? true,
+                    echoCancel: persisted.settings?.echoCancel ?? true,
+                    noiseSuppression: persisted.settings?.noiseSuppression ?? true,
+                    autoGainControl: persisted.settings?.autoGainControl ?? true,
+                  },
+                };
+                setRooms(prev => [...prev, mapped]);
+              } else {
+                // Backend returned null — fall back to local-only room
+                console.warn('[VoiceRooms] createRoom returned null, using local room');
+                setRooms(prev => [...prev, room]);
+              }
+            } catch (err) {
+              console.error('[VoiceRooms] Backend createRoom failed, using local room:', err);
+              setRooms(prev => [...prev, room]);
+            }
             setShowCreateRoom(false);
           }}
         />

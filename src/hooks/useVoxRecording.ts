@@ -58,6 +58,7 @@ export interface UseVoxRecordingOptions {
   customAudioConstraints?: Partial<AudioQualityPreset>;
   defaultRecordingMode?: 'hold' | 'tap'; // Default recording mode
   onModeChange?: (mode: 'hold' | 'tap') => void; // Callback when mode changes
+  deviceId?: string; // Specific audio input device ID from settings
 }
 
 export interface UseVoxRecordingReturn {
@@ -87,6 +88,7 @@ export function useVoxRecording(options: UseVoxRecordingOptions = {}): UseVoxRec
     customAudioConstraints,
     defaultRecordingMode,
     onModeChange,
+    deviceId,
   } = options;
 
   // Load recording mode from localStorage or use default
@@ -145,32 +147,21 @@ export function useVoxRecording(options: UseVoxRecordingOptions = {}): UseVoxRec
       cleanup(); // Ensure clean state
 
       // Request microphone access with high-quality audio constraints
+      const audioConstraints: MediaTrackConstraints = {
+        sampleRate: { ideal: audioSettings.sampleRate },
+        channelCount: { exact: audioSettings.channelCount },
+        echoCancellation: { ideal: audioSettings.echoCancellation },
+        noiseSuppression: { ideal: audioSettings.noiseSuppression },
+        autoGainControl: { ideal: audioSettings.autoGainControl },
+      };
+      // Use specific device if provided via settings
+      if (deviceId) {
+        audioConstraints.deviceId = { exact: deviceId };
+      }
       const stream = await navigator.mediaDevices.getUserMedia({
-        audio: {
-          // Sample rate - higher = better quality
-          sampleRate: { ideal: audioSettings.sampleRate },
-          // Mono is fine for voice, reduces file size
-          channelCount: { exact: audioSettings.channelCount },
-          // Echo cancellation - keeps enabled for calls
-          echoCancellation: { ideal: audioSettings.echoCancellation },
-          // Noise suppression - can cause muffled sound when too aggressive
-          noiseSuppression: { ideal: audioSettings.noiseSuppression },
-          // Auto gain control - can cause pumping/breathing artifacts
-          autoGainControl: { ideal: audioSettings.autoGainControl },
-        }
+        audio: audioConstraints,
       });
       streamRef.current = stream;
-
-      // Log actual audio track settings for debugging
-      const audioTrack = stream.getAudioTracks()[0];
-      const settings = audioTrack.getSettings();
-      console.log('Audio recording settings:', {
-        sampleRate: settings.sampleRate,
-        channelCount: settings.channelCount,
-        echoCancellation: settings.echoCancellation,
-        noiseSuppression: settings.noiseSuppression,
-        autoGainControl: settings.autoGainControl,
-      });
 
       // Setup AudioContext with matching sample rate for visualization
       const audioContext = new AudioContext({ sampleRate: audioSettings.sampleRate });
@@ -198,8 +189,6 @@ export function useVoxRecording(options: UseVoxRecordingOptions = {}): UseVoxRec
         mimeType = 'audio/webm'; // Fallback
       }
 
-      console.log('Using audio codec:', mimeType, 'at bitrate:', codecBitrate);
-
       // Setup MediaRecorder with bitrate for better quality
       const mediaRecorder = new MediaRecorder(stream, {
         mimeType,
@@ -215,17 +204,13 @@ export function useVoxRecording(options: UseVoxRecordingOptions = {}): UseVoxRec
       };
 
       mediaRecorder.onstop = async () => {
-        console.log('MediaRecorder stopped, chunks:', chunksRef.current.length);
-
         if (chunksRef.current.length === 0) {
-          console.warn('No audio chunks recorded - aborting');
           cleanup();
           setState('idle');
           return;
         }
 
         const blob = new Blob(chunksRef.current, { type: mimeType });
-        console.log('Created blob, size:', blob.size, 'type:', blob.type);
         const url = URL.createObjectURL(blob);
         const finalDuration = (Date.now() - startTimeRef.current) / 1000;
 
@@ -237,7 +222,7 @@ export function useVoxRecording(options: UseVoxRecordingOptions = {}): UseVoxRec
           audioBuffer = await tempContext.decodeAudioData(arrayBuffer);
           tempContext.close();
         } catch (e) {
-          console.warn('Could not decode audio for waveform:', e);
+          // Waveform generation is non-critical; continue without it
         }
 
         const data: RecordingData = {
@@ -247,21 +232,17 @@ export function useVoxRecording(options: UseVoxRecordingOptions = {}): UseVoxRec
           audioBuffer,
         };
 
-        console.log('Setting recordingData:', { url, duration: finalDuration, hasAudioBuffer: !!audioBuffer });
         setRecordingData(data);
         cleanup();
 
         if (autoAnalyze) {
-          console.log('Transitioning to analyzing state');
           setState('analyzing');
           // Trigger analysis here if needed
         } else {
-          console.log('Transitioning to preview state');
           setState('preview');
         }
 
         onRecordingComplete?.(data);
-        console.log('Recording complete callback fired');
       };
 
       // Start recording
@@ -318,7 +299,6 @@ export function useVoxRecording(options: UseVoxRecordingOptions = {}): UseVoxRec
   }, [cleanup, recordingData]);
 
   const sendRecording = useCallback(() => {
-    console.log('sendRecording called - resetting state to idle');
     // Reset state but keep data for caller to use
     setState('idle');
     setDuration(0);

@@ -4,7 +4,7 @@
  */
 
 import React, { useState, useCallback, useEffect, useMemo } from 'react';
-import { searchService, SearchResult, SearchOptions } from '../../services/searchService';
+import { searchService, MessageMessageSearchResult, SearchOptions } from '../../services/searchService';
 import { supabase } from '../../services/supabase';
 import { useDebounce } from '../../hooks/useDebounce';
 
@@ -20,7 +20,7 @@ interface SearchFilters {
 }
 
 interface SearchPanelProps {
-  onResultClick?: (result: SearchResult) => void;
+  onResultClick?: (result: MessageSearchResult) => void;
   onClose?: () => void;
   className?: string;
 }
@@ -127,12 +127,12 @@ const HighlightedText: React.FC<{ text: string }> = ({ text }) => {
   );
 };
 
-interface SearchResultItemProps {
-  result: SearchResult;
+interface MessageSearchResultItemProps {
+  result: MessageSearchResult;
   onClick: () => void;
 }
 
-const SearchResultItem: React.FC<SearchResultItemProps> = ({ result, onClick }) => {
+const MessageSearchResultItem: React.FC<MessageSearchResultItemProps> = ({ result, onClick }) => {
   const formatDate = (date: Date) => {
     const now = new Date();
     const diff = now.getTime() - date.getTime();
@@ -194,7 +194,7 @@ export const SearchPanel: React.FC<SearchPanelProps> = ({
   const [query, setQuery] = useState('');
   const debouncedQuery = useDebounce(query, 300);
   const [filters, setFilters] = useState<SearchFilters>({});
-  const [results, setResults] = useState<SearchResult[]>([]);
+  const [results, setResults] = useState<MessageSearchResult[]>([]);
   const [isSearching, setIsSearching] = useState(false);
   const [showFilters, setShowFilters] = useState(false);
   const [recentSearches, setRecentSearches] = useState<string[]>([]);
@@ -237,7 +237,7 @@ export const SearchPanel: React.FC<SearchPanelProps> = ({
     }
   }, [debouncedQuery, filters, handleSearch]);
 
-  const handleResultClick = (result: SearchResult) => {
+  const handleResultClick = (result: MessageSearchResult) => {
     onResultClick?.(result);
   };
 
@@ -386,7 +386,7 @@ export const SearchPanel: React.FC<SearchPanelProps> = ({
                   {resultCount} result{resultCount !== 1 ? 's' : ''} found
                 </p>
                 {results.map((result) => (
-                  <SearchResultItem
+                  <MessageSearchResultItem
                     key={result.id}
                     result={result}
                     onClick={() => handleResultClick(result)}

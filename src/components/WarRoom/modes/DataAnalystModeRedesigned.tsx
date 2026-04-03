@@ -468,7 +468,7 @@ export const DataAnalystModeRedesigned: React.FC<DataAnalystModeRedesignedProps>
              doc.file_type?.includes('url') ? 'url' : 'document') as DataSource['type'],
       status: 'indexed' as const,
       summary: doc.summary,
-      relevanceScore: 0.8 + Math.random() * 0.2
+      relevanceScore: 0.8 + Math.random() * 0.2 // Placeholder — real relevance scoring not yet wired
     })),
     [documents]
   );
@@ -479,7 +479,7 @@ export const DataAnalystModeRedesigned: React.FC<DataAnalystModeRedesignedProps>
   useEffect(() => {
     const lastAssistant = messages.filter(m => m.role === 'assistant').slice(-1)[0];
     if (lastAssistant?.citations) {
-      setCitations(lastAssistant.citations.map((c: any, i: number) => ({
+      setCitations(lastAssistant.citations.map((c, i) => ({
         id: `citation-${i}`,
         source: c.title || c.documentName || 'Source',
         excerpt: c.excerpt || c.content || '',

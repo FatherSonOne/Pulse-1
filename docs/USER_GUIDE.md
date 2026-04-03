@@ -1,6 +1,6 @@
 # Pulse User's Guide
 
-**Version**: 25.1.3
+**Version**: 25.1.4
 **Last Updated**: March 29, 2026
 **For**: All Pulse users — personal, team, and enterprise
 
@@ -1161,6 +1161,12 @@ Customize your meeting experience:
    - Recording preferences (auto-record or manual)
    - Default meeting duration
    - Waiting room on/off
+
+**Entomate Auto-Export:**
+
+Under **Meeting Settings → Integrations**, you can enable **Auto-Export to Entomate**. When turned on, Pulse automatically sends meeting recordings and transcripts to Entomate for AI processing the moment a meeting ends — whether it's a Pulse Video call or an AI Scribe session. Entomate will transcribe the audio, generate a summary, extract action items, and send a recap back to your **#entomate-meetings** channel.
+
+**Tip:** You can also manually export individual recordings from the Recordings panel using the **Export to Entomate** button.
 
 <details>
 <summary><strong>Use Case: Running a productive sprint planning session</strong></summary>
@@ -2372,8 +2378,18 @@ These channels keep ecosystem messages organized and separate from your regular 
 
 - **Meeting feedback** — when you rate a meeting, the feedback is sent to the connected app
 - **Meeting exports** — export full meeting data (summaries, action items, participants) to Entomate or Logos Vision for further processing
+- **Auto-export on meeting end** — when enabled in Meeting Settings, recordings and transcripts are sent to Entomate automatically when a meeting ends
 
 Exports happen securely using the same token-based authentication as inbound messages.
+
+**Recording Pull:** Connected apps like Entomate can request a list of your Pulse recordings. When a pull request is received:
+
+1. Pulse queries your recent recordings (both Pulse Video and AI Scribe).
+2. A formatted list appears in the **#entomate-meetings** bot channel showing unexported recordings.
+3. Click **Export All to Entomate** to send all unexported recordings at once.
+4. Individual recordings can also be requested by Entomate on-demand — Pulse looks them up and sends them back automatically.
+
+**Tip:** Recording pull is initiated by Entomate — you don't need to do anything. Just make sure the Ecosystem Bridge is connected and the bot channels are set up.
 
 **Recent Events** at the bottom of the page shows a live log of the last 20 messages sent and received across all ecosystem apps — useful for confirming that the bridge is working correctly.
 

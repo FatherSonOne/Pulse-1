@@ -11,6 +11,9 @@ interface ActiveViewProps {
   decisions: DecisionWithVotes[];
   currentUserId?: string;
   workspaceId?: string;
+  linkedTaskCounts?: Record<string, number>;
+  selectedTaskIds?: Set<string>;
+  onToggleTaskSelect?: (taskId: string) => void;
   onStatusChange: (taskId: string, status: Task['status']) => Promise<void>;
   onDelete?: (taskId: string) => Promise<void>;
   onEdit?: (task: Task) => void;
@@ -22,6 +25,9 @@ export const ActiveView: React.FC<ActiveViewProps> = ({
   decisions,
   currentUserId,
   workspaceId = '',
+  linkedTaskCounts = {},
+  selectedTaskIds,
+  onToggleTaskSelect,
   onStatusChange,
   onDelete,
   onEdit,
@@ -109,6 +115,7 @@ export const ActiveView: React.FC<ActiveViewProps> = ({
                 decision={decision}
                 currentUserId={currentUserId || ''}
                 workspaceId={workspaceId}
+                linkedTaskCount={linkedTaskCounts[decision.id] || 0}
                 onGenerateTasks={() => onDecisionAction?.(decision, 'generate-tasks')}
                 onVote={() => onDecisionAction?.(decision, 'vote')}
               />
@@ -127,6 +134,8 @@ export const ActiveView: React.FC<ActiveViewProps> = ({
         onStatusChange={onStatusChange}
         onDelete={onDelete}
         onEdit={onEdit}
+        selectedTaskIds={selectedTaskIds}
+        onToggleTaskSelect={onToggleTaskSelect}
       />
 
       {/* Blocked Section - Critical attention needed */}
@@ -139,6 +148,8 @@ export const ActiveView: React.FC<ActiveViewProps> = ({
         onStatusChange={onStatusChange}
         onDelete={onDelete}
         onEdit={onEdit}
+        selectedTaskIds={selectedTaskIds}
+        onToggleTaskSelect={onToggleTaskSelect}
       />
 
       {/* In Review Section */}
@@ -151,6 +162,8 @@ export const ActiveView: React.FC<ActiveViewProps> = ({
         onStatusChange={onStatusChange}
         onDelete={onDelete}
         onEdit={onEdit}
+        selectedTaskIds={selectedTaskIds}
+        onToggleTaskSelect={onToggleTaskSelect}
       />
 
       {/* In Progress Section */}
@@ -163,6 +176,8 @@ export const ActiveView: React.FC<ActiveViewProps> = ({
         onStatusChange={onStatusChange}
         onDelete={onDelete}
         onEdit={onEdit}
+        selectedTaskIds={selectedTaskIds}
+        onToggleTaskSelect={onToggleTaskSelect}
       />
 
       {/* To Do Section */}
@@ -175,6 +190,8 @@ export const ActiveView: React.FC<ActiveViewProps> = ({
         onStatusChange={onStatusChange}
         onDelete={onDelete}
         onEdit={onEdit}
+        selectedTaskIds={selectedTaskIds}
+        onToggleTaskSelect={onToggleTaskSelect}
       />
 
       {/* Recently Completed Section - Faded, collapsed by default */}
@@ -187,6 +204,8 @@ export const ActiveView: React.FC<ActiveViewProps> = ({
         onStatusChange={onStatusChange}
         onDelete={onDelete}
         onEdit={onEdit}
+        selectedTaskIds={selectedTaskIds}
+        onToggleTaskSelect={onToggleTaskSelect}
       />
     </div>
   );

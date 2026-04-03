@@ -23,7 +23,7 @@ import VoxRecordArea from './VoxRecordArea';
 import { useVoxRecording } from '../../hooks/useVoxRecording';
 import { voxModeService } from '../../services/voxer/voxModeService';
 // analyticsCollector loaded dynamically to avoid svc-crm-analytics chunk TDZ
-import type { QuickVoxFavorite, QuickVoxMessage, QuickVoxStatus } from '../../services/voxer/voxModeTypes';
+import { VOX_MODES, type QuickVoxFavorite, type QuickVoxMessage, type QuickVoxStatus } from '../../services/voxer/voxModeTypes';
 import toast from 'react-hot-toast';
 import './Voxer.css';
 
@@ -47,18 +47,16 @@ import { PlaybackSpeedControl } from './PlaybackSpeedControl';
 import { VoxEmptyState } from './VoxEmptyState';
 import { getEmptyStateConfig } from './voxEmptyStates';
 
-// Mode color for Quick Vox
-const MODE_COLOR = '#3B82F6';
+// Mode color from shared palette
+const MODE_COLOR = VOX_MODES.quick_vox.color;
 
 interface QuickVoxModeProps {
-  contacts?: any[];
   apiKey?: string;
   onBack: () => void;
   isDarkMode?: boolean;
 }
 
 const QuickVoxMode: React.FC<QuickVoxModeProps> = ({
-  contacts = [],
   apiKey,
   onBack,
   isDarkMode = false,
@@ -126,8 +124,8 @@ const QuickVoxMode: React.FC<QuickVoxModeProps> = ({
     handlePointerUp,
     handleToggleRecording,
   } = useVoxRecording({
-    onRecordingComplete: (data) => {
-      console.log('Quick Vox recording complete:', data.duration, 'seconds');
+    onRecordingComplete: (_data) => {
+      // Recording complete - ready for preview
     },
   });
 
@@ -294,12 +292,12 @@ const QuickVoxMode: React.FC<QuickVoxModeProps> = ({
       if (selectedContact) setSelectedContact(null);
       else onBack();
     },
-    onSwitchMode: (mode) => {
-      console.log('Switch to mode:', mode);
+    onSwitchMode: (_mode) => {
+      // Mode switch handled by parent
     },
     onDownload: () => {
       if (isSelectionMode && selectionCount > 0) {
-        console.log('Download selected items');
+        // Download handled by selection toolbar
       }
     },
     onArchive: () => {

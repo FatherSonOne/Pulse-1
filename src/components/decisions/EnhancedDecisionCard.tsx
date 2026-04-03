@@ -4,8 +4,9 @@ import { taskService } from '../../services/taskService';
 import { decisionAnalyticsService, RiskAssessment } from '../../services/decisionAnalyticsService';
 import { taskIntelligenceService } from '../../services/taskIntelligenceService';
 import { consensusDetectorService } from '../../services/consensusDetectorService'; // Phase 2: Consensus detection
-import { CheckCircle, Clock, AlertCircle, TrendingUp, Users, Bell, Sparkles, ListTodo, AlertTriangle, Info } from 'lucide-react';
+import { CheckCircle, Clock, AlertCircle, TrendingUp, Bell, Sparkles, ListTodo, AlertTriangle, Info } from 'lucide-react';
 import { TaskExtractionModal, ExtractedTask } from '../tasks/TaskExtractionModal';
+import { notificationService } from '../../services/notificationService';
 import '../DecisionCard.css';
 import './EnhancedDecisionCard.css';
 
@@ -13,6 +14,7 @@ interface EnhancedDecisionCardProps {
   decision: DecisionWithVotes;
   currentUserId: string;
   workspaceId: string;
+  linkedTaskCount?: number; // Pre-computed count to avoid N+1 queries
   onVote?: () => void;
   onOpenMission?: (decision: DecisionWithVotes) => void;
   onGenerateTasks?: (decision: DecisionWithVotes) => void; // Phase 2: Open DecisionDecomposer
@@ -49,6 +51,9 @@ const arePropsEqual = (
   if (prevProps.currentUserId !== nextProps.currentUserId) return false;
   if (prevProps.workspaceId !== nextProps.workspaceId) return false;
 
+  // Check if linked task count changed
+  if ((prevProps.linkedTaskCount ?? 0) !== (nextProps.linkedTaskCount ?? 0)) return false;
+
   // Props are equal, skip re-render
   return true;
 };
@@ -57,6 +62,7 @@ const EnhancedDecisionCardComponent: React.FC<EnhancedDecisionCardProps> = ({
   decision,
   currentUserId,
   workspaceId,
+  linkedTaskCount: linkedTaskCountProp,
   onVote,
   onOpenMission,
   onGenerateTasks
@@ -68,31 +74,26 @@ const EnhancedDecisionCardComponent: React.FC<EnhancedDecisionCardProps> = ({
 
   // AI features state
   const [riskAssessment, setRiskAssessment] = useState<RiskAssessment | null>(null);
-  const [suggestedStakeholders, setSuggestedStakeholders] = useState<string[]>([]);
+  const [consensusResult, setConsensusResult] = useState<{ reached: boolean; winning_choice: string | null; confidence: number; reasoning: string } | null>(null);
   const [loadingRisk, setLoadingRisk] = useState(false);
-  const [loadingStakeholders, setLoadingStakeholders] = useState(false);
   const [generatingTasks, setGeneratingTasks] = useState(false);
 
   // Task extraction modal state
   const [showTaskExtractionModal, setShowTaskExtractionModal] = useState(false);
   const [extractedTasks, setExtractedTasks] = useState<ExtractedTask[]>([]);
-  const [linkedTaskCount, setLinkedTaskCount] = useState<number>(0);
+  const [linkedTaskCount, setLinkedTaskCount] = useState<number>(linkedTaskCountProp ?? 0);
+
+  // Sync prop to state when it changes
+  useEffect(() => {
+    if (linkedTaskCountProp !== undefined) {
+      setLinkedTaskCount(linkedTaskCountProp);
+    }
+  }, [linkedTaskCountProp]);
 
   // Reload base data whenever the decision id or vote array changes
   useEffect(() => {
     loadData();
-    loadLinkedTasks();
   }, [decision.id, decision.votes]);
-
-  const loadLinkedTasks = async () => {
-    try {
-      const tasks = await taskService.getWorkspaceTasks(workspaceId);
-      const linkedTasks = tasks.filter(t => t.metadata?.decision_id === decision.id);
-      setLinkedTaskCount(linkedTasks.length);
-    } catch (error) {
-      console.error('Failed to load linked tasks:', error);
-    }
-  };
 
   // Load AI insights only once per decision, or when the vote *count* changes.
   // Using vote count (not the full array reference) prevents redundant API calls
@@ -162,9 +163,19 @@ const EnhancedDecisionCardComponent: React.FC<EnhancedDecisionCardProps> = ({
       }
     }
 
-    // Load AI-suggested stakeholders if already stored
-    if (decision.ai_suggested_stakeholders && decision.ai_suggested_stakeholders.length > 0) {
-      setSuggestedStakeholders(decision.ai_suggested_stakeholders);
+    // Run consensus detection when enough votes exist
+    if (decision.status === 'voting' && (decision.votes?.length ?? 0) >= 3) {
+      try {
+        const result = consensusDetectorService.detectConsensus(decision);
+        setConsensusResult({
+          reached: result.reached,
+          winning_choice: result.winning_choice,
+          confidence: result.confidence,
+          reasoning: result.reasoning,
+        });
+      } catch {
+        // Consensus detection is non-critical
+      }
     }
   };
 
@@ -183,9 +194,15 @@ const EnhancedDecisionCardComponent: React.FC<EnhancedDecisionCardProps> = ({
   };
 
   const handleSendReminder = async () => {
-    // TODO: Implement send reminder functionality
-    // This would integrate with notification service or email
-    alert(`Reminder sent for: "${decision.title}"\n\nIn production, this would send notifications to stakeholders who haven't voted yet.`);
+    try {
+      await notificationService.notifyDecisionEvent({
+        type: 'new_vote',
+        decisionTitle: decision.title,
+        actionUrl: `/decisions?id=${decision.id}`,
+      });
+    } catch (error) {
+      console.error('Failed to send reminder:', error);
+    }
   };
 
   // Phase 7.5: Keyboard navigation handlers
@@ -258,8 +275,7 @@ const EnhancedDecisionCardComponent: React.FC<EnhancedDecisionCardProps> = ({
       createdTasks.push(newTask);
     }
 
-    // Reload task count to update the badge
-    await loadLinkedTasks();
+    setLinkedTaskCount(prev => prev + createdTasks.length);
 
     alert(`Successfully created ${createdTasks.length} ${createdTasks.length === 1 ? 'task' : 'tasks'} from this decision!\n\nSwitch to the Tasks tab to view them.`);
   };
@@ -314,14 +330,6 @@ const EnhancedDecisionCardComponent: React.FC<EnhancedDecisionCardProps> = ({
     return labels[voteType] || voteType;
   };
 
-  const getPredictedCompletion = () => {
-    if (decision.ai_predicted_completion) {
-      const date = new Date(decision.ai_predicted_completion);
-      return date.toLocaleDateString();
-    }
-    return null;
-  };
-
   return (
     <div className={`decision-card enhanced-decision-card status-${decision.status}`} role="article" aria-label={`Decision: ${decision.title}`}>
       <div className="decision-header">
@@ -366,13 +374,21 @@ const EnhancedDecisionCardComponent: React.FC<EnhancedDecisionCardProps> = ({
               </div>
             )}
 
-            {/* Predicted Completion Badge */}
-            {getPredictedCompletion() && decision.status === 'voting' && (
-              <div className="ai-badge completion-badge" title="AI predicted completion date">
-                <Clock size={14} />
-                <span>{getPredictedCompletion()}</span>
+            {/* Consensus Badge */}
+            {consensusResult && decision.status === 'voting' && (
+              <div
+                className="ai-badge"
+                style={{
+                  backgroundColor: consensusResult.reached ? '#10b98115' : '#f59e0b15',
+                  color: consensusResult.reached ? '#10b981' : '#f59e0b'
+                }}
+                title={consensusResult.reasoning}
+              >
+                {consensusResult.reached ? <CheckCircle size={14} /> : <Clock size={14} />}
+                <span>{consensusResult.reached ? `Consensus: ${consensusResult.winning_choice}` : 'No consensus yet'}</span>
               </div>
             )}
+
           </div>
         </div>
 
@@ -387,25 +403,6 @@ const EnhancedDecisionCardComponent: React.FC<EnhancedDecisionCardProps> = ({
           </span>
         </div>
 
-        {/* AI Suggested Stakeholders */}
-        {suggestedStakeholders.length > 0 && (
-          <div className="stakeholder-suggestions">
-            <div className="stakeholder-header">
-              <Users size={14} />
-              <span>AI-suggested stakeholders:</span>
-            </div>
-            <div className="stakeholder-chips">
-              {suggestedStakeholders.map((stakeholder, idx) => (
-                <div key={idx} className="stakeholder-chip">
-                  <div className="stakeholder-avatar">
-                    {stakeholder.charAt(0).toUpperCase()}
-                  </div>
-                  <span>{stakeholder}</span>
-                </div>
-              ))}
-            </div>
-          </div>
-        )}
 
         {/* AI Risk Recommendations — hidden when quota exhausted */}
         {riskAssessment && riskAssessment.confidence !== -1 && riskAssessment.recommendations.length > 0 && riskAssessment.riskLevel !== 'low' && (
@@ -580,7 +577,7 @@ const EnhancedDecisionCardComponent: React.FC<EnhancedDecisionCardProps> = ({
       {showTaskExtractionModal && (
         <TaskExtractionModal
           tasks={extractedTasks}
-          decisionTitle={decision.proposal_text || decision.title || 'this decision'}
+          decisionTitle={decision.title || 'this decision'}
           onClose={() => setShowTaskExtractionModal(false)}
           onSave={handleSaveExtractedTasks}
         />

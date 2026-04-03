@@ -58,8 +58,6 @@ export const DEFAULT_MEETING_SETTINGS: MeetingSettings = {
 
 const MEETING_SETTINGS_KEY = 'pulse_meeting_settings';
 
-const DAY_LABELS = ['Sun', 'Mon', 'Tue', 'Wed', 'Thu', 'Fri', 'Sat'];
-
 // ============================================
 // ANALYTICS
 // ============================================

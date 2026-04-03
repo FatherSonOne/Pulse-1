@@ -29,7 +29,7 @@ import VoxModeToolbar from './VoxModeToolbar';
 import VoxRecordArea from './VoxRecordArea';
 import { useVoxRecording } from '../../hooks/useVoxRecording';
 import { voxModeService } from '../../services/voxer/voxModeService';
-import type { VoxDrop } from '../../services/voxer/voxModeTypes';
+import { VOX_MODES, type VoxDrop } from '../../services/voxer/voxModeTypes';
 import './Voxer.css';
 
 // Phase 2: Selection Mode
@@ -53,18 +53,16 @@ import { PlaybackSpeedControl } from './PlaybackSpeedControl';
 import { VoxEmptyState } from './VoxEmptyState';
 import { getEmptyStateConfig } from './voxEmptyStates';
 
-// Mode color for Vox Drop
-const MODE_COLOR = '#EF4444';
+// Mode color from shared palette
+const MODE_COLOR = VOX_MODES.vox_drop.color;
 
 interface VoxDropModeProps {
-  contacts?: any[];
   apiKey?: string;
   onBack: () => void;
   isDarkMode?: boolean;
 }
 
 const VoxDropMode: React.FC<VoxDropModeProps> = ({
-  contacts = [],
   apiKey,
   onBack,
   isDarkMode = false,
@@ -123,6 +121,13 @@ const VoxDropMode: React.FC<VoxDropModeProps> = ({
   const [showDownloadModal, setShowDownloadModal] = useState(false);
   const [downloadItem, setDownloadItem] = useState<VoxSelectionItem | null>(null);
 
+  // Inline edit state for scheduled drops
+  const [editingDropId, setEditingDropId] = useState<string | null>(null);
+  const [editTitle, setEditTitle] = useState('');
+  const [editMessage, setEditMessage] = useState('');
+  const [editScheduleDate, setEditScheduleDate] = useState('');
+  const [editScheduleTime, setEditScheduleTime] = useState('');
+
   // Use the recording hook for click-to-record with preview
   const {
     state: recordingState,
@@ -139,8 +144,8 @@ const VoxDropMode: React.FC<VoxDropModeProps> = ({
     handlePointerUp,
     handleToggleRecording,
   } = useVoxRecording({
-    onRecordingComplete: (data) => {
-      console.log('Vox Drop recording complete:', data.duration, 'seconds');
+    onRecordingComplete: (_data) => {
+      // Recording complete - ready for preview
     },
   });
 
@@ -319,12 +324,12 @@ const VoxDropMode: React.FC<VoxDropModeProps> = ({
       onBack();
     },
     onGoBack: onBack,
-    onSwitchMode: (mode) => {
-      console.log('Switch to mode:', mode);
+    onSwitchMode: (_mode) => {
+      // Mode switch handled by parent
     },
     onDownload: () => {
       if (isSelectionMode && selectionCount > 0) {
-        console.log('Download selected items');
+        // Download handled by selection toolbar
       }
     },
     onArchive: () => {
@@ -401,6 +406,42 @@ const VoxDropMode: React.FC<VoxDropModeProps> = ({
     if (success) {
       setScheduledDrops(scheduledDrops.filter(d => d.id !== dropId));
     }
+  };
+
+  const handleStartEdit = (drop: VoxDrop) => {
+    setEditingDropId(drop.id);
+    setEditTitle(drop.title || '');
+    setEditMessage(drop.message || '');
+    const d = drop.scheduledFor;
+    setEditScheduleDate(d.toISOString().slice(0, 10));
+    setEditScheduleTime(d.toTimeString().slice(0, 5));
+  };
+
+  const handleCancelEdit = () => {
+    setEditingDropId(null);
+    setEditTitle('');
+    setEditMessage('');
+    setEditScheduleDate('');
+    setEditScheduleTime('');
+  };
+
+  const handleSaveEdit = async () => {
+    if (!editingDropId) return;
+    const scheduledFor = editScheduleDate && editScheduleTime
+      ? new Date(`${editScheduleDate}T${editScheduleTime}`)
+      : undefined;
+    const updated = await voxModeService.updateVoxDrop(editingDropId, {
+      title: editTitle || undefined,
+      message: editMessage || undefined,
+      scheduledFor,
+    });
+    if (updated) {
+      setScheduledDrops(prev => prev.map(d => d.id === editingDropId ? updated : d));
+      toast.success('Drop updated');
+    } else {
+      toast.error('Failed to update drop');
+    }
+    handleCancelEdit();
   };
 
   const handleScheduleDrop = async () => {
@@ -657,6 +698,77 @@ const VoxDropMode: React.FC<VoxDropModeProps> = ({
                     </button>
 
                   <div className="flex-1 min-w-0">
+                    {editingDropId === drop.id ? (
+                      /* Inline Edit Mode */
+                      <div className="space-y-2">
+                        <input
+                          type="text"
+                          value={editTitle}
+                          onChange={(e) => setEditTitle(e.target.value)}
+                          placeholder="Drop title"
+                          className={`w-full px-3 py-1.5 rounded-lg text-sm font-semibold border ${
+                            isDarkMode
+                              ? 'bg-gray-700/60 border-gray-600 text-white placeholder-gray-400'
+                              : 'bg-white border-gray-300 text-gray-900 placeholder-gray-400'
+                          } focus:outline-none focus:ring-2 focus:ring-red-500/40`}
+                          autoFocus
+                        />
+                        <div className="flex items-center gap-2">
+                          <input
+                            type="date"
+                            value={editScheduleDate}
+                            onChange={(e) => setEditScheduleDate(e.target.value)}
+                            title="Scheduled date"
+                            aria-label="Scheduled date"
+                            className={`flex-1 px-3 py-1.5 rounded-lg text-sm border ${
+                              isDarkMode
+                                ? 'bg-gray-700/60 border-gray-600 text-white'
+                                : 'bg-white border-gray-300 text-gray-900'
+                            } focus:outline-none focus:ring-2 focus:ring-red-500/40`}
+                          />
+                          <input
+                            type="time"
+                            value={editScheduleTime}
+                            onChange={(e) => setEditScheduleTime(e.target.value)}
+                            title="Scheduled time"
+                            aria-label="Scheduled time"
+                            className={`w-28 px-3 py-1.5 rounded-lg text-sm border ${
+                              isDarkMode
+                                ? 'bg-gray-700/60 border-gray-600 text-white'
+                                : 'bg-white border-gray-300 text-gray-900'
+                            } focus:outline-none focus:ring-2 focus:ring-red-500/40`}
+                          />
+                        </div>
+                        <textarea
+                          value={editMessage}
+                          onChange={(e) => setEditMessage(e.target.value)}
+                          placeholder="Message (optional)"
+                          rows={2}
+                          className={`w-full px-3 py-1.5 rounded-lg text-sm border resize-none ${
+                            isDarkMode
+                              ? 'bg-gray-700/60 border-gray-600 text-white placeholder-gray-400'
+                              : 'bg-white border-gray-300 text-gray-900 placeholder-gray-400'
+                          } focus:outline-none focus:ring-2 focus:ring-red-500/40`}
+                        />
+                        <div className="flex items-center gap-2 pt-1">
+                          <button
+                            type="button"
+                            onClick={handleSaveEdit}
+                            className="px-3 py-1 rounded-lg text-xs font-medium text-white bg-red-500 hover:bg-red-600 transition-colors"
+                          >
+                            Save
+                          </button>
+                          <button
+                            type="button"
+                            onClick={handleCancelEdit}
+                            className={`px-3 py-1 rounded-lg text-xs font-medium ${tc.btnGhost}`}
+                          >
+                            Cancel
+                          </button>
+                        </div>
+                      </div>
+                    ) : (
+                      <>
                     {/* Title & Status */}
                     <div className="flex items-center gap-2 mb-1 flex-wrap">
                       <h3 className={`font-semibold truncate ${tc.text}`}>
@@ -707,11 +819,17 @@ const VoxDropMode: React.FC<VoxDropModeProps> = ({
                         {drop.message}
                       </p>
                     )}
+                      </>
+                    )}
                   </div>
 
                   {/* Actions */}
                   <div className="flex items-center gap-1 md:gap-2 opacity-0 group-hover:opacity-100 transition-opacity shrink-0">
-                    <button className={`p-2 rounded-xl ${tc.btnGhost}`} aria-label="Edit">
+                    <button
+                      onClick={() => handleStartEdit(drop)}
+                      className={`p-2 rounded-xl ${tc.btnGhost}`}
+                      aria-label="Edit"
+                    >
                       <Edit3 className="w-4 h-4" />
                     </button>
                     <button

@@ -100,6 +100,7 @@ function dbToArchive(db: DBArchive): ArchiveItem {
     aiSummary: db.ai_summary,
     exportedAt: db.exported_at ? new Date(db.exported_at) : undefined,
     pinnedAt: db.pinned_at ? new Date(db.pinned_at) : undefined,
+    pinned: !!db.pinned_at,
     starred: db.starred,
     viewCount: db.view_count,
     lastViewedAt: db.last_viewed_at ? new Date(db.last_viewed_at) : undefined,
@@ -151,17 +152,28 @@ class ArchiveService {
     this.userId = userId;
   }
 
-  private getUserId(): string {
-    if (!this.userId) {
-      const stored = localStorage.getItem('pulse_user_id');
-      if (stored) {
-        this.userId = stored;
-        return stored;
+  private async getUserId(): Promise<string> {
+    if (this.userId) return this.userId;
+
+    // Primary: get from Supabase auth session
+    try {
+      const { data: { user } } = await supabase.auth.getUser();
+      if (user?.id) {
+        this.userId = user.id;
+        return user.id;
       }
-      this.userId = crypto.randomUUID();
-      localStorage.setItem('pulse_user_id', this.userId);
+    } catch {
+      // Auth call failed, try fallbacks
     }
-    return this.userId;
+
+    // Fallback: localStorage cached user ID (set by auth flow)
+    const stored = localStorage.getItem('pulse_user_id');
+    if (stored) {
+      this.userId = stored;
+      return stored;
+    }
+
+    throw new Error('Not authenticated: no user ID available');
   }
 
   // ============= ARCHIVES CRUD =============
@@ -177,10 +189,12 @@ class ArchiveService {
     limit?: number;
     offset?: number;
   }): Promise<ArchiveItem[]> {
+    const userId = await this.getUserId();
     let query = supabase
       .from('archives')
       .select('*')
-      .eq('user_id', this.getUserId());
+      .eq('user_id', userId)
+      .is('deleted_at', null);
 
     if (options?.type) {
       query = query.eq('archive_type', options.type);
@@ -201,7 +215,7 @@ class ArchiveService {
       query = query.overlaps('tags', options.tags);
     }
     if (options?.search) {
-      query = query.or(`title.ilike.%${options.search}%,content.ilike.%${options.search}%`);
+      query = query.textSearch('search_vector', options.search);
     }
 
     query = query.order('date', { ascending: false });
@@ -245,10 +259,11 @@ class ArchiveService {
   }
 
   async createArchive(archive: Omit<ArchiveItem, 'id'>): Promise<ArchiveItem | null> {
+    const userId = await this.getUserId();
     const { data, error } = await supabase
       .from('archives')
       .insert([{
-        user_id: this.getUserId(),
+        user_id: userId,
         archive_type: archive.type,
         title: archive.title,
         content: archive.content,
@@ -264,7 +279,7 @@ class ArchiveService {
         visibility: archive.visibility || 'private',
         starred: archive.starred || false,
         view_count: 0,
-        created_by: this.getUserId(),
+        created_by: userId,
       }])
       .select()
       .single();
@@ -311,10 +326,39 @@ class ArchiveService {
   }
 
   async deleteArchive(id: string): Promise<boolean> {
-    // First, delete from Google Drive if exported
-    const archive = await this.getArchive(id);
-    if (archive?.driveFileId) {
-      await googleDriveService.deleteFile(archive.driveFileId);
+    // Soft delete: set deleted_at timestamp
+    const { error } = await supabase
+      .from('archives')
+      .update({ deleted_at: new Date().toISOString() })
+      .eq('id', id);
+
+    if (error) {
+      console.error('Error soft-deleting archive:', error);
+      return false;
+    }
+
+    return true;
+  }
+
+  async restoreArchive(id: string): Promise<boolean> {
+    const { error } = await supabase
+      .from('archives')
+      .update({ deleted_at: null })
+      .eq('id', id);
+
+    return !error;
+  }
+
+  async permanentlyDeleteArchive(id: string): Promise<boolean> {
+    // Hard delete — also remove from Google Drive if exported
+    const { data: archive } = await supabase
+      .from('archives')
+      .select('drive_file_id')
+      .eq('id', id)
+      .single();
+
+    if (archive?.drive_file_id) {
+      await googleDriveService.deleteFile(archive.drive_file_id);
     }
 
     const { error } = await supabase
@@ -323,7 +367,7 @@ class ArchiveService {
       .eq('id', id);
 
     if (error) {
-      console.error('Error deleting archive:', error);
+      console.error('Error permanently deleting archive:', error);
       return false;
     }
 
@@ -365,10 +409,11 @@ class ArchiveService {
   // ============= COLLECTIONS =============
 
   async getCollections(): Promise<ArchiveCollection[]> {
+    const userId = await this.getUserId();
     const { data, error } = await supabase
       .from('archive_collections')
       .select('*')
-      .eq('user_id', this.getUserId())
+      .eq('user_id', userId)
       .order('pinned_at', { ascending: false, nullsFirst: false })
       .order('name');
 
@@ -397,10 +442,11 @@ class ArchiveService {
     color: string;
     icon: string;
   }): Promise<ArchiveCollection | null> {
+    const userId = await this.getUserId();
     const { data, error } = await supabase
       .from('archive_collections')
       .insert([{
-        user_id: this.getUserId(),
+        user_id: userId,
         name: collection.name,
         description: collection.description,
         color: collection.color,
@@ -465,10 +511,11 @@ class ArchiveService {
   // ============= SMART FOLDERS =============
 
   async getSmartFolders(): Promise<SmartFolder[]> {
+    const userId = await this.getUserId();
     const { data, error } = await supabase
       .from('smart_folders')
       .select('*')
-      .eq('user_id', this.getUserId())
+      .eq('user_id', userId)
       .order('name');
 
     if (error) {
@@ -494,10 +541,11 @@ class ArchiveService {
     rules: SmartFolderRule[];
     ruleOperator: 'and' | 'or';
   }): Promise<SmartFolder | null> {
+    const userId = await this.getUserId();
     const { data, error } = await supabase
       .from('smart_folders')
       .insert([{
-        user_id: this.getUserId(),
+        user_id: userId,
         name: folder.name,
         description: folder.description,
         color: folder.color,
@@ -654,40 +702,52 @@ class ArchiveService {
 
   // ============= AI FEATURES =============
 
+  private async callGemini(prompt: string, operation: string, temp = 0.4): Promise<string> {
+    const { data, error } = await supabase.functions.invoke('gemini-proxy', {
+      body: { prompt, operation, model: 'gemini-2.5-flash', temperature: temp },
+    });
+    if (error) throw new Error(`Gemini proxy error: ${error.message}`);
+    return data?.result || '';
+  }
+
   async analyzeArchiveWithAI(archiveId: string): Promise<void> {
-    // This would integrate with your AI service (Gemini, etc.)
-    // For now, we'll use a simplified analysis
     try {
       const archive = await this.getArchive(archiveId);
       if (!archive) return;
 
-      // Simple sentiment analysis based on keywords
-      const positiveWords = ['great', 'good', 'excellent', 'happy', 'success', 'approved', 'completed'];
-      const negativeWords = ['bad', 'problem', 'issue', 'failed', 'rejected', 'blocked', 'urgent'];
-
-      const content = archive.content.toLowerCase();
-      const positiveCount = positiveWords.filter(w => content.includes(w)).length;
-      const negativeCount = negativeWords.filter(w => content.includes(w)).length;
-
       let sentiment: 'positive' | 'neutral' | 'negative' = 'neutral';
-      if (positiveCount > negativeCount) sentiment = 'positive';
-      if (negativeCount > positiveCount) sentiment = 'negative';
+      let aiTags: string[] = [];
+      let aiSummary = '';
 
-      // Generate AI tags based on content patterns
-      const aiTags: string[] = [];
-      if (content.includes('meeting') || content.includes('call')) aiTags.push('meeting');
-      if (content.includes('decision') || content.includes('decided')) aiTags.push('decision');
-      if (content.includes('action') || content.includes('todo') || content.includes('task')) aiTags.push('action-item');
-      if (content.includes('question') || content.includes('?')) aiTags.push('question');
-      if (content.includes('deadline') || content.includes('due')) aiTags.push('deadline');
+      try {
+        const result = await this.callGemini(
+          `Analyze this content and return ONLY valid JSON with no markdown:\n{"sentiment": "positive"|"neutral"|"negative", "tags": ["tag1", "tag2", ...], "summary": "2-3 sentence summary"}\n\nTitle: ${archive.title}\n\n${archive.content.substring(0, 4000)}`,
+          'sentiment',
+          0.3
+        );
+        const parsed = JSON.parse(result.replace(/```json\n?/g, '').replace(/```\n?/g, '').trim());
+        sentiment = parsed.sentiment || 'neutral';
+        aiTags = Array.isArray(parsed.tags) ? parsed.tags.slice(0, 10) : [];
+        aiSummary = parsed.summary || '';
+      } catch {
+        // Fallback: keyword-based analysis
+        const content = archive.content.toLowerCase();
+        const positiveWords = ['great', 'good', 'excellent', 'happy', 'success', 'approved', 'completed'];
+        const negativeWords = ['bad', 'problem', 'issue', 'failed', 'rejected', 'blocked', 'urgent'];
+        const positiveCount = positiveWords.filter(w => content.includes(w)).length;
+        const negativeCount = negativeWords.filter(w => content.includes(w)).length;
+        if (positiveCount > negativeCount) sentiment = 'positive';
+        if (negativeCount > positiveCount) sentiment = 'negative';
+        if (content.includes('meeting') || content.includes('call')) aiTags.push('meeting');
+        if (content.includes('decision') || content.includes('decided')) aiTags.push('decision');
+        if (content.includes('action') || content.includes('todo') || content.includes('task')) aiTags.push('action-item');
+        if (content.includes('question') || content.includes('?')) aiTags.push('question');
+        if (content.includes('deadline') || content.includes('due')) aiTags.push('deadline');
+        aiSummary = archive.content.substring(0, 200) + (archive.content.length > 200 ? '...' : '');
+      }
 
-      // Generate simple summary (first 200 chars)
-      const aiSummary = archive.content.substring(0, 200) + (archive.content.length > 200 ? '...' : '');
-
-      // Find related items by matching tags and content keywords
       const relatedItemIds = await this.findRelatedItems(archive);
 
-      // Update the archive with AI analysis
       await supabase
         .from('archives')
         .update({
@@ -705,10 +765,11 @@ class ArchiveService {
 
   private async findRelatedItems(archive: ArchiveItem): Promise<string[]> {
     // Find items with similar tags or content
+    const userId = await this.getUserId();
     const { data } = await supabase
       .from('archives')
       .select('id, tags, title')
-      .eq('user_id', this.getUserId())
+      .eq('user_id', userId)
       .neq('id', archive.id)
       .limit(50);
 
@@ -762,21 +823,25 @@ class ArchiveService {
     const archive = await this.getArchive(archiveId);
     if (!archive) return '';
 
-    // Simple summarization - in production, use AI service
-    const content = archive.content;
-    const sentences = content.split(/[.!?]+/).filter(s => s.trim().length > 10);
-    const summary = sentences.slice(0, 3).join('. ').trim();
+    let summary: string;
+    try {
+      summary = await this.callGemini(
+        `Summarize the following content in 2-3 concise sentences:\n\nTitle: ${archive.title}\n\n${archive.content.substring(0, 4000)}`,
+        'summarization',
+        0.3
+      );
+    } catch {
+      // Fallback: first 3 sentences
+      const sentences = archive.content.split(/[.!?]+/).filter(s => s.trim().length > 10);
+      summary = sentences.slice(0, 3).join('. ').trim() + (sentences.length > 3 ? '...' : '.');
+    }
 
-    // Update archive with summary
     await supabase
       .from('archives')
-      .update({
-        ai_summary: summary + (sentences.length > 3 ? '...' : '.'),
-        updated_at: new Date().toISOString()
-      })
+      .update({ ai_summary: summary, updated_at: new Date().toISOString() })
       .eq('id', archiveId);
 
-    return summary + (sentences.length > 3 ? '...' : '.');
+    return summary;
   }
 
   async extractActionItems(archiveId: string): Promise<string[]> {
@@ -828,24 +893,21 @@ class ArchiveService {
     const archive = await this.getArchive(archiveId);
     if (!archive) return '';
 
-    // In production, this would use a translation API (Google Translate, DeepL, etc.)
-    // For now, return a placeholder message
     const languageNames: Record<string, string> = {
-      es: 'Spanish',
-      fr: 'French',
-      de: 'German',
-      it: 'Italian',
-      pt: 'Portuguese',
-      zh: 'Chinese',
-      ja: 'Japanese',
-      ko: 'Korean',
+      es: 'Spanish', fr: 'French', de: 'German', it: 'Italian',
+      pt: 'Portuguese', zh: 'Chinese', ja: 'Japanese', ko: 'Korean',
     };
-
     const langName = languageNames[targetLanguage] || targetLanguage;
 
-    // Placeholder - in production integrate with translation API
-    console.log(`[archiveService] Translation to ${langName} requested for archive ${archiveId}`);
-    return `[Translation to ${langName} requires API integration]\n\nOriginal content:\n${archive.content}`;
+    try {
+      return await this.callGemini(
+        `Translate the following text to ${langName}. Return ONLY the translated text, no commentary:\n\n${archive.content.substring(0, 4000)}`,
+        'translation',
+        0.2
+      );
+    } catch {
+      return `[Translation to ${langName} unavailable]\n\nOriginal content:\n${archive.content}`;
+    }
   }
 
   async createTaskFromArchive(archiveId: string): Promise<{ success: boolean; taskId?: string }> {
@@ -854,10 +916,11 @@ class ArchiveService {
 
     try {
       // Create a task in the tasks table (if exists)
+      const userId = await this.getUserId();
       const { data, error } = await supabase
         .from('tasks')
         .insert([{
-          user_id: this.getUserId(),
+          user_id: userId,
           title: `Task from: ${archive.title}`,
           description: archive.content.substring(0, 500),
           source_archive_id: archiveId,
@@ -905,10 +968,11 @@ class ArchiveService {
     types?: ArchiveType[];
     limit?: number;
   }): Promise<ArchiveTimelineEvent[]> {
+    const userId = await this.getUserId();
     let query = supabase
       .from('archives')
       .select('id, archive_type, title, content, date, tags, related_contact_id')
-      .eq('user_id', this.getUserId());
+      .eq('user_id', userId);
 
     if (options?.startDate) {
       query = query.gte('date', options.startDate.toISOString());
@@ -975,12 +1039,14 @@ class ArchiveService {
       tags: { tag: string; count: number }[];
     };
   }> {
-    // Full-text search
+    // Full-text search using tsvector index
+    const userId = await this.getUserId();
     let searchQuery = supabase
       .from('archives')
       .select('*', { count: 'exact' })
-      .eq('user_id', this.getUserId())
-      .or(`title.ilike.%${query}%,content.ilike.%${query}%,tags.cs.{${query}}`);
+      .eq('user_id', userId)
+      .is('deleted_at', null)
+      .textSearch('search_vector', query);
 
     if (options?.types?.length) {
       searchQuery = searchQuery.in('archive_type', options.types);
@@ -1046,7 +1112,7 @@ class ArchiveService {
     recentActivity: number;
     exportedCount: number;
   }> {
-    const userId = this.getUserId();
+    const userId = await this.getUserId();
 
     // Total count
     const { count: totalCount } = await supabase

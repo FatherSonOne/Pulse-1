@@ -131,6 +131,9 @@ export const SharedCalendarPanel: React.FC<SharedCalendarPanelProps> = ({
   const [loading, setLoading]       = useState(true);
   const [showCreate, setShowCreate] = useState(false);
   const [deletingId, setDeletingId] = useState<string | null>(null);
+  const [editingCalId, setEditingCalId] = useState<string | null>(null);
+  const [editName, setEditName] = useState('');
+  const [editSaving, setEditSaving] = useState(false);
 
   const load = useCallback(async () => {
     try {
@@ -144,6 +147,17 @@ export const SharedCalendarPanel: React.FC<SharedCalendarPanelProps> = ({
   }, []);
 
   useEffect(() => { void load(); }, [load]);
+
+  async function handleSaveEdit() {
+    if (!editingCalId || !editName.trim()) return;
+    setEditSaving(true);
+    try {
+      await updateTeamCalendar(editingCalId, { name: editName.trim() });
+      setCalendars(prev => prev.map(c => c.id === editingCalId ? { ...c, name: editName.trim() } : c));
+      setEditingCalId(null);
+    } catch { /* ignore */ }
+    finally { setEditSaving(false); }
+  }
 
   async function handleDelete(id: string) {
     setDeletingId(id);
@@ -222,6 +236,7 @@ export const SharedCalendarPanel: React.FC<SharedCalendarPanelProps> = ({
               <div className="flex items-center gap-1 opacity-0 group-hover:opacity-100 transition">
                 <button
                   type="button"
+                  onClick={() => { setEditingCalId(cal.id); setEditName(cal.name); }}
                   className="text-zinc-400 hover:text-zinc-600 dark:hover:text-zinc-300 transition"
                   title="Manage calendar"
                 >
@@ -243,6 +258,30 @@ export const SharedCalendarPanel: React.FC<SharedCalendarPanelProps> = ({
           </div>
         ))}
       </div>
+
+      {/* Inline rename editor */}
+      {editingCalId && (
+        <div className="mt-2 p-2 bg-zinc-100 dark:bg-zinc-800 rounded-lg">
+          <label className="text-[10px] text-zinc-400 uppercase tracking-wider">Rename Calendar</label>
+          <div className="flex gap-1.5 mt-1">
+            <input
+              type="text"
+              value={editName}
+              onChange={e => setEditName(e.target.value)}
+              onKeyDown={e => { if (e.key === 'Enter') handleSaveEdit(); if (e.key === 'Escape') setEditingCalId(null); }}
+              placeholder="Calendar name"
+              className="flex-1 px-2 py-1 text-xs bg-white dark:bg-zinc-900 border border-zinc-200 dark:border-zinc-700 rounded"
+              autoFocus
+            />
+            <button type="button" onClick={handleSaveEdit} disabled={editSaving || !editName.trim()} className="px-2 py-1 text-xs bg-rose-500 text-white rounded disabled:opacity-50">
+              {editSaving ? '…' : 'Save'}
+            </button>
+            <button type="button" onClick={() => setEditingCalId(null)} title="Cancel rename" className="px-2 py-1 text-xs text-zinc-500 hover:text-zinc-700 dark:hover:text-zinc-300">
+              <X className="w-3 h-3" />
+            </button>
+          </div>
+        </div>
+      )}
 
       {/* Create modal */}
       {showCreate && (

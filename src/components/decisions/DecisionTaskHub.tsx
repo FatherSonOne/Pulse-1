@@ -44,6 +44,8 @@ import {
   Undo,
   Download,
   Sparkles,
+  Trash2,
+  CheckSquare,
 } from 'lucide-react';
 import './DecisionTaskHub.css';
 
@@ -80,6 +82,12 @@ export const DecisionTaskHub: React.FC<DecisionTaskHubProps> = ({
   const [tasks, setTasks] = useState<Task[]>([]);
   const [decisionsLoading, setDecisionsLoading] = useState(true);
   const [tasksLoading, setTasksLoading] = useState(true);
+  const [hasMoreDecisions, setHasMoreDecisions] = useState(false);
+  const [hasMoreTasks, setHasMoreTasks] = useState(false);
+  const [loadingMore, setLoadingMore] = useState(false);
+
+  // Bulk selection state
+  const [selectedTaskIds, setSelectedTaskIds] = useState<Set<string>>(new Set());
   const [aiPriorities, setAiPriorities] = useState<AITaskPriority[]>([]);
   const [showPrioritizer, setShowPrioritizer] = useState(false);
 
@@ -123,6 +131,9 @@ export const DecisionTaskHub: React.FC<DecisionTaskHubProps> = ({
   // Templates state
   const [showTemplates, setShowTemplates] = useState(false);
 
+  // Workspace members for assignee dropdowns
+  const [workspaceMembers, setWorkspaceMembers] = useState<User[]>([]);
+
   // Debounced versions to throttle expensive AI regeneration
   const debouncedDecisions = useDebounce(decisions, 800);
   const debouncedTasks = useDebounce(tasks, 800);
@@ -144,6 +155,29 @@ export const DecisionTaskHub: React.FC<DecisionTaskHubProps> = ({
     }
   }, [effectiveWorkspaceId]);
 
+  // Load workspace members for assignee dropdowns
+  useEffect(() => {
+    if (!effectiveWorkspaceId) return;
+    const loadMembers = async () => {
+      try {
+        const { data } = await supabase
+          .from('workspace_members')
+          .select('*, profiles(*)')
+          .eq('workspace_id', effectiveWorkspaceId);
+        if (data) {
+          setWorkspaceMembers(
+            data
+              .filter((m: any) => m.profiles)
+              .map((m: any) => m.profiles as User)
+          );
+        }
+      } catch (error) {
+        console.error('Failed to load workspace members:', error);
+      }
+    };
+    loadMembers();
+  }, [effectiveWorkspaceId]);
+
   // Generate metrics and nudges when data changes (debounced to avoid rapid re-runs)
   useEffect(() => {
     if (debouncedDecisions.length > 0) {
@@ -158,7 +192,6 @@ export const DecisionTaskHub: React.FC<DecisionTaskHubProps> = ({
   useEffect(() => {
     if (!effectiveWorkspaceId) return;
 
-    console.log('🔄 Setting up real-time subscriptions for workspace:', effectiveWorkspaceId);
     setConnectionStatus('connecting');
 
     // Subscribe to decisions changes
@@ -173,12 +206,10 @@ export const DecisionTaskHub: React.FC<DecisionTaskHubProps> = ({
           filter: `workspace_id=eq.${effectiveWorkspaceId}`
         },
         (payload) => {
-          console.log('📊 Decision change detected:', payload);
           handleDecisionChange(payload);
         }
       )
       .subscribe((status) => {
-        console.log('Decisions channel status:', status);
         updateConnectionStatus(status);
       });
 
@@ -194,16 +225,15 @@ export const DecisionTaskHub: React.FC<DecisionTaskHubProps> = ({
           filter: `workspace_id=eq.${effectiveWorkspaceId}`
         },
         (payload) => {
-          console.log('✅ Task change detected:', payload);
           handleTaskChange(payload);
         }
       )
       .subscribe((status) => {
-        console.log('Tasks channel status:', status);
         updateConnectionStatus(status);
       });
 
-    // Subscribe to decision_votes changes
+    // Subscribe to decision_votes changes (filtered to decisions in this workspace)
+    const decisionIds = decisions.map(d => d.id);
     const votesChannel = supabase
       .channel('votes-changes')
       .on(
@@ -211,21 +241,19 @@ export const DecisionTaskHub: React.FC<DecisionTaskHubProps> = ({
         {
           event: '*',
           schema: 'public',
-          table: 'decision_votes'
+          table: 'decision_votes',
+          ...(decisionIds.length > 0 ? { filter: `decision_id=in.(${decisionIds.join(',')})` } : {})
         },
         (payload) => {
-          console.log('🗳️ Vote change detected:', payload);
           handleVoteChange(payload);
         }
       )
       .subscribe((status) => {
-        console.log('Votes channel status:', status);
         updateConnectionStatus(status);
       });
 
     // Cleanup on unmount
     return () => {
-      console.log('🔌 Cleaning up real-time subscriptions');
       decisionsChannel.unsubscribe();
       tasksChannel.unsubscribe();
       votesChannel.unsubscribe();
@@ -313,11 +341,10 @@ export const DecisionTaskHub: React.FC<DecisionTaskHubProps> = ({
   const loadDecisions = useCallback(async () => {
     setDecisionsLoading(true);
     try {
-      console.log('🔍 Loading decisions for workspace:', effectiveWorkspaceId);
-      const allDecisions = await decisionService.getWorkspaceDecisions(effectiveWorkspaceId);
-      console.log('✅ Loaded decisions:', allDecisions.length, allDecisions);
+      const { decisions: allDecisions, hasMore } = await decisionService.getWorkspaceDecisions(effectiveWorkspaceId);
 
       setDecisions(allDecisions);
+      setHasMoreDecisions(hasMore);
 
       // Update selectedDecision if it exists to maintain reference
       setSelectedDecision(prev => {
@@ -326,7 +353,7 @@ export const DecisionTaskHub: React.FC<DecisionTaskHubProps> = ({
         return updated || prev;
       });
     } catch (error) {
-      console.error('❌ Failed to load decisions:', error);
+      console.error('Failed to load decisions:', error);
       setDecisions([]);
     } finally {
       setDecisionsLoading(false);
@@ -336,10 +363,9 @@ export const DecisionTaskHub: React.FC<DecisionTaskHubProps> = ({
   const loadTasks = useCallback(async () => {
     setTasksLoading(true);
     try {
-      console.log('🔍 Loading tasks for workspace:', effectiveWorkspaceId);
-      const allTasks = await taskService.getWorkspaceTasks(effectiveWorkspaceId);
-      console.log('✅ Loaded tasks:', allTasks.length, allTasks);
+      const { tasks: allTasks, hasMore } = await taskService.getWorkspaceTasks(effectiveWorkspaceId);
       setTasks(allTasks);
+      setHasMoreTasks(hasMore);
     } catch (error) {
       console.error('Failed to load tasks:', error);
       setTasks([]);
@@ -350,9 +376,7 @@ export const DecisionTaskHub: React.FC<DecisionTaskHubProps> = ({
 
   const generateMetrics = useCallback(async () => {
     try {
-      console.log('🔢 Generating metrics from decisions:', decisions.length);
       const calculatedMetrics = await decisionAnalyticsService.calculateDecisionVelocity(decisions);
-      console.log('📊 Metrics generated:', calculatedMetrics);
       setMetrics(calculatedMetrics);
     } catch (error) {
       console.error('❌ Failed to generate metrics:', error);
@@ -363,13 +387,10 @@ export const DecisionTaskHub: React.FC<DecisionTaskHubProps> = ({
     if (!user) return;
 
     try {
-      console.log('🔔 Generating nudges from:', decisions.length, 'decisions and', tasks.length, 'tasks');
       const apiKey = localStorage.getItem('gemini_api_key') ||
                      import.meta.env.VITE_GEMINI_API_KEY ||
                      import.meta.env.VITE_API_KEY ||
                      '';
-      console.log('🔑 API Key source:', localStorage.getItem('gemini_api_key') ? 'localStorage' : import.meta.env.VITE_GEMINI_API_KEY ? 'VITE_GEMINI_API_KEY' : import.meta.env.VITE_API_KEY ? 'VITE_API_KEY' : 'none');
-      console.log('🔑 API Key present:', apiKey ? `Yes (${apiKey.substring(0, 10)}...)` : 'No');
       const generatedNudges = await proactiveSuggestionsService.generateNudges(
         decisions,
         tasks,
@@ -377,9 +398,7 @@ export const DecisionTaskHub: React.FC<DecisionTaskHubProps> = ({
         apiKey
       );
 
-      console.log('📌 Generated nudges:', generatedNudges.length);
       const activeNudges = generatedNudges.filter(n => !dismissedNudges.has(n.id));
-      console.log('✅ Active nudges after filtering:', activeNudges.length);
       setNudges(activeNudges);
     } catch (error) {
       console.error('❌ Failed to generate nudges:', error);
@@ -389,6 +408,32 @@ export const DecisionTaskHub: React.FC<DecisionTaskHubProps> = ({
   const handleVote = useCallback(() => {
     loadDecisions();
   }, [loadDecisions]);
+
+  const handleLoadMore = useCallback(async () => {
+    setLoadingMore(true);
+    try {
+      if (hasMoreDecisions) {
+        const { decisions: more, hasMore } = await decisionService.getWorkspaceDecisions(
+          effectiveWorkspaceId,
+          { offset: decisions.length }
+        );
+        setDecisions(prev => [...prev, ...more]);
+        setHasMoreDecisions(hasMore);
+      }
+      if (hasMoreTasks) {
+        const { tasks: more, hasMore } = await taskService.getWorkspaceTasks(
+          effectiveWorkspaceId,
+          { offset: tasks.length }
+        );
+        setTasks(prev => [...prev, ...more]);
+        setHasMoreTasks(hasMore);
+      }
+    } catch (error) {
+      console.error('Failed to load more:', error);
+    } finally {
+      setLoadingMore(false);
+    }
+  }, [effectiveWorkspaceId, decisions.length, tasks.length, hasMoreDecisions, hasMoreTasks]);
 
   const handleRefresh = useCallback(() => {
     loadDecisions();
@@ -483,15 +528,15 @@ export const DecisionTaskHub: React.FC<DecisionTaskHubProps> = ({
         d.status,
         '-',
         new Date(d.created_at).toLocaleDateString(),
-        d.deadline ? new Date(d.deadline).toLocaleDateString() : 'N/A'
+        d.decided_at ? new Date(d.decided_at).toLocaleDateString() : 'N/A'
       ]),
       ...tasks.map(t => [
         'Task',
         `"${t.title.replace(/"/g, '""')}"`,
         t.status,
         t.priority || 'N/A',
-        new Date(t.created_at).toLocaleDateString(),
-        t.due_date ? new Date(t.due_date).toLocaleDateString() : 'N/A'
+        new Date(t.extracted_at).toLocaleDateString(),
+        t.deadline ? new Date(t.deadline).toLocaleDateString() : 'N/A'
       ])
     ];
     const csv = [headers.join(','), ...rows.map(r => r.join(','))].join('\n');
@@ -507,8 +552,6 @@ export const DecisionTaskHub: React.FC<DecisionTaskHubProps> = ({
   }, [decisions, tasks]);
 
   const handleAssistantAction = useCallback((action: { type: string; data: any }) => {
-    console.log('Assistant action executed:', action);
-
     switch (action.type) {
       case 'create_decision':
         handleOpenDecisionMission();
@@ -517,16 +560,14 @@ export const DecisionTaskHub: React.FC<DecisionTaskHubProps> = ({
         loadTasks();
         break;
       case 'send_reminder':
-        console.log('Send reminder:', action.data);
         break;
       default:
-        console.log('Unknown action type:', action.type);
+        break;
     }
   }, [handleOpenDecisionMission, loadTasks]);
 
   // Enhanced nudge action handlers
   const handleNudgeAction = useCallback(async (nudge: Nudge) => {
-    console.log('Handle nudge action:', nudge);
 
     switch (nudge.actionType) {
       case 'send_reminder':
@@ -563,7 +604,7 @@ export const DecisionTaskHub: React.FC<DecisionTaskHubProps> = ({
         break;
 
       default:
-        console.log('Unknown action type:', nudge.actionType);
+        break;
     }
   }, [decisions, tasks, handleDismissNudge, handleOpenDecisionMission]);
 
@@ -579,7 +620,6 @@ export const DecisionTaskHub: React.FC<DecisionTaskHubProps> = ({
   }, []);
 
   const handleDecisionChange = useCallback((payload: any) => {
-    console.log('📊 Processing decision change:', payload.eventType);
     loadDecisions();
     setTimeout(() => {
       generateMetrics();
@@ -588,7 +628,6 @@ export const DecisionTaskHub: React.FC<DecisionTaskHubProps> = ({
   }, [loadDecisions, generateMetrics, generateNudges]);
 
   const handleTaskChange = useCallback((payload: any) => {
-    console.log('✅ Processing task change:', payload.eventType);
     loadTasks();
     setTimeout(() => {
       generateNudges();
@@ -596,7 +635,6 @@ export const DecisionTaskHub: React.FC<DecisionTaskHubProps> = ({
   }, [loadTasks, generateNudges]);
 
   const handleVoteChange = useCallback((payload: any) => {
-    console.log('🗳️ Processing vote change:', payload.eventType);
     loadDecisions();
     setTimeout(() => {
       generateMetrics();
@@ -625,6 +663,48 @@ export const DecisionTaskHub: React.FC<DecisionTaskHubProps> = ({
   const handleTaskEdit = useCallback((task: Task) => {
     setTaskToEdit(task);
   }, []);
+
+  // Bulk selection handlers
+  const handleToggleTaskSelect = useCallback((taskId: string) => {
+    setSelectedTaskIds(prev => {
+      const next = new Set(prev);
+      if (next.has(taskId)) {
+        next.delete(taskId);
+      } else {
+        next.add(taskId);
+      }
+      return next;
+    });
+  }, []);
+
+  const handleClearSelection = useCallback(() => {
+    setSelectedTaskIds(new Set());
+  }, []);
+
+  const handleBulkStatusChange = useCallback(async (newStatus: Task['status']) => {
+    try {
+      await Promise.all(
+        Array.from(selectedTaskIds).map(id => taskService.updateTaskStatus(id, newStatus))
+      );
+      setSelectedTaskIds(new Set());
+      await loadTasks();
+    } catch (error) {
+      console.error('Failed to bulk update tasks:', error);
+    }
+  }, [selectedTaskIds, loadTasks]);
+
+  const handleBulkDelete = useCallback(async () => {
+    if (!window.confirm(`Delete ${selectedTaskIds.size} selected task${selectedTaskIds.size > 1 ? 's' : ''}?`)) return;
+    try {
+      await Promise.all(
+        Array.from(selectedTaskIds).map(id => taskService.deleteTask(id))
+      );
+      setSelectedTaskIds(new Set());
+      await loadTasks();
+    } catch (error) {
+      console.error('Failed to bulk delete tasks:', error);
+    }
+  }, [selectedTaskIds, loadTasks]);
 
   const handleTaskSave = useCallback(async (taskId: string, updates: Partial<Task>) => {
     try {
@@ -693,8 +773,7 @@ export const DecisionTaskHub: React.FC<DecisionTaskHubProps> = ({
         title: applied.title,
         description: applied.description,
         decision_type: applied.decision_type as any,
-        created_by: user?.id || '',
-        template_id: applied.template_id
+        proposed_by: user?.id || '',
       });
 
       if (applied.suggested_tasks && applied.suggested_tasks.length > 0 && newDecision) {
@@ -904,6 +983,18 @@ export const DecisionTaskHub: React.FC<DecisionTaskHubProps> = ({
     return filtered;
   }, [decisions, filters]);
 
+  // Pre-compute linked task counts per decision to avoid N+1 queries in cards
+  const linkedTaskCounts = useMemo(() => {
+    const counts: Record<string, number> = {};
+    for (const task of tasks) {
+      const decisionId = task.metadata?.decision_id || task.metadata?.generated_from_decision;
+      if (decisionId) {
+        counts[decisionId] = (counts[decisionId] || 0) + 1;
+      }
+    }
+    return counts;
+  }, [tasks]);
+
   // Computed values
   const urgentNudges = useMemo(
     () => nudges.filter(n => n.priority === 'urgent'),
@@ -1003,27 +1094,90 @@ export const DecisionTaskHub: React.FC<DecisionTaskHubProps> = ({
       {/* Filter Bar */}
       <FilterBar filters={filters} onChange={setFilters} />
 
+      {/* Bulk Action Toolbar */}
+      {selectedTaskIds.size > 0 && (
+        <div className="hub-bulk-toolbar">
+          <span className="hub-bulk-count">
+            <CheckSquare size={16} />
+            {selectedTaskIds.size} selected
+          </span>
+          <div className="hub-bulk-actions">
+            <select
+              className="hub-bulk-status-select"
+              defaultValue=""
+              aria-label="Bulk change task status"
+              onChange={(e) => {
+                if (e.target.value) {
+                  handleBulkStatusChange(e.target.value as Task['status']);
+                  e.target.value = '';
+                }
+              }}
+            >
+              <option value="" disabled>Change status...</option>
+              <option value="todo">To Do</option>
+              <option value="in_progress">In Progress</option>
+              <option value="in_review">In Review</option>
+              <option value="done">Done</option>
+              <option value="cancelled">Cancelled</option>
+            </select>
+            <button
+              type="button"
+              className="hub-bulk-delete"
+              onClick={handleBulkDelete}
+              title="Delete selected tasks"
+            >
+              <Trash2 size={16} />
+              Delete
+            </button>
+            <button
+              type="button"
+              className="hub-bulk-clear"
+              onClick={handleClearSelection}
+              title="Clear selection"
+            >
+              <X size={16} />
+            </button>
+          </div>
+        </div>
+      )}
+
       {/* Main Content */}
       <div className="hub-content">
-        {mode === 'active' && (
+        {/* Skeleton loading states */}
+        {(decisionsLoading || tasksLoading) && (
+          <div className="hub-loading-skeletons">
+            {[...Array(3)].map((_, i) => (
+              <SkeletonDecisionCard key={`skel-d-${i}`} />
+            ))}
+            {[...Array(4)].map((_, i) => (
+              <SkeletonTaskCard key={`skel-t-${i}`} />
+            ))}
+          </div>
+        )}
+
+        {!decisionsLoading && !tasksLoading && mode === 'active' && (
           <ActiveView
             decisions={filteredDecisions}
             tasks={filteredTasks}
             currentUserId={user?.id}
             workspaceId={effectiveWorkspaceId}
+            linkedTaskCounts={linkedTaskCounts}
+            selectedTaskIds={selectedTaskIds}
+            onToggleTaskSelect={handleToggleTaskSelect}
             onStatusChange={handleTaskStatusChange}
             onDelete={handleTaskDelete}
             onEdit={handleTaskEdit}
             onDecisionAction={handleDecisionAction}
           />
         )}
-        {mode === 'board' && (
+        {!decisionsLoading && !tasksLoading && mode === 'board' && (
           <BoardView
             decisions={filteredDecisions}
             tasks={filteredTasks}
             filters={filters}
             currentUserId={user?.id || ''}
             workspaceId={effectiveWorkspaceId}
+            linkedTaskCounts={linkedTaskCounts}
             onTaskStatusChange={handleTaskStatusChange}
             onDecisionStatusChange={async (decisionId, newStatus) => {
               try {
@@ -1038,7 +1192,7 @@ export const DecisionTaskHub: React.FC<DecisionTaskHubProps> = ({
             onTaskEdit={handleTaskEdit}
           />
         )}
-        {mode === 'archive' && (
+        {!decisionsLoading && !tasksLoading && mode === 'archive' && (
           <ArchiveView
             decisions={filteredDecisions}
             tasks={filteredTasks}
@@ -1046,6 +1200,20 @@ export const DecisionTaskHub: React.FC<DecisionTaskHubProps> = ({
             onTaskReopen={handleTaskReopen}
             onDecisionReopen={handleDecisionReopen}
           />
+        )}
+
+        {/* Load More */}
+        {(hasMoreDecisions || hasMoreTasks) && !decisionsLoading && !tasksLoading && (
+          <div className="hub-load-more">
+            <button
+              type="button"
+              className="hub-load-more-button"
+              onClick={handleLoadMore}
+              disabled={loadingMore}
+            >
+              {loadingMore ? 'Loading...' : 'Load More'}
+            </button>
+          </div>
         )}
       </div>
 
@@ -1109,6 +1277,7 @@ export const DecisionTaskHub: React.FC<DecisionTaskHubProps> = ({
         <ReassignTaskModal
           task={taskToReassign}
           currentAssignee={taskToReassign.assignee_id}
+          workspaceMembers={workspaceMembers}
           onClose={() => setTaskToReassign(null)}
           onReassign={handleReassignTask}
         />,
@@ -1156,7 +1325,7 @@ export const DecisionTaskHub: React.FC<DecisionTaskHubProps> = ({
           task={taskToEdit}
           onClose={() => setTaskToEdit(null)}
           onSave={handleTaskSave}
-          workspaceMembers={[]}
+          workspaceMembers={workspaceMembers}
         />,
         document.body
       )}
@@ -1168,7 +1337,7 @@ export const DecisionTaskHub: React.FC<DecisionTaskHubProps> = ({
           currentUserId={user?.id || ''}
           onClose={() => setShowCreateTask(false)}
           onCreate={handleTaskCreate}
-          workspaceMembers={[]}
+          workspaceMembers={workspaceMembers}
         />,
         document.body
       )}
@@ -1178,7 +1347,7 @@ export const DecisionTaskHub: React.FC<DecisionTaskHubProps> = ({
         <DecisionDecomposer
           decision={decisionToDecompose}
           workspaceId={effectiveWorkspaceId}
-          workspaceMembers={[]}
+          workspaceMembers={workspaceMembers}
           onClose={() => setDecisionToDecompose(null)}
           onTasksGenerated={handleDecompositionComplete}
           apiKey={localStorage.getItem('gemini_api_key') || import.meta.env.VITE_GEMINI_API_KEY || import.meta.env.VITE_API_KEY || ''}

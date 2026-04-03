@@ -75,7 +75,7 @@ export function useBoardNotes(): UseBoardNotesReturn {
   const addNote = useCallback(
     (content: string, type: NoteType = 'finding', meta?: BoardNoteMeta): BoardNote => {
       const note: BoardNote = {
-        id: `note-${Date.now()}-${Math.random().toString(36).slice(2, 7)}`,
+        id: crypto.randomUUID(),
         type,
         content: content.trim(),
         createdAt: Date.now(),

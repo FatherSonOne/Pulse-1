@@ -175,9 +175,7 @@ export const proactiveSuggestionsService = {
     // 7. Use AI for advanced suggestions (if API key provided)
     if (apiKey && apiKey !== '' && nudges.length < 5) {
       try {
-        console.log('🤖 Attempting AI nudge generation...');
         const aiNudges = await this.generateAINudges(decisions, tasks, apiKey);
-        console.log('✅ AI nudges generated:', aiNudges.length);
         nudges.push(...aiNudges);
       } catch (error: any) {
         // Gracefully handle API errors without polluting console

@@ -80,11 +80,11 @@ export const decisionAnalyticsService = {
 
     // Calculate average time to resolution
     const decidedDecisions = recentDecisions.filter(
-      d => d.status === 'decided' && d.resolved_at
+      d => d.status === 'decided' && d.decided_at
     );
     const totalResolutionTime = decidedDecisions.reduce((sum, d) => {
       const created = new Date(d.created_at).getTime();
-      const resolved = new Date(d.resolved_at!).getTime();
+      const resolved = new Date(d.decided_at!).getTime();
       return sum + (resolved - created);
     }, 0);
     const avgTimeToResolution = decidedDecisions.length > 0
@@ -116,11 +116,11 @@ export const decisionAnalyticsService = {
       Math.abs(velocityChange) < 10 ? 'stable' : velocityChange > 0 ? 'up' : 'down';
 
     // Resolution time trend
-    const prevDecidedDecisions = previousWeekDecisions.filter(d => d.status === 'decided' && d.resolved_at);
+    const prevDecidedDecisions = previousWeekDecisions.filter(d => d.status === 'decided' && d.decided_at);
     const prevResolutionTime = prevDecidedDecisions.length > 0
       ? prevDecidedDecisions.reduce((sum, d) => {
           const created = new Date(d.created_at).getTime();
-          const resolved = new Date(d.resolved_at!).getTime();
+          const resolved = new Date(d.decided_at!).getTime();
           return sum + (resolved - created);
         }, 0) / prevDecidedDecisions.length / (1000 * 60 * 60)
       : avgTimeToResolution;
@@ -214,7 +214,7 @@ export const decisionAnalyticsService = {
 
     const prompt = `Analyze this decision and assess its risk level:
 
-Decision: ${decision.proposal_text}
+Decision: ${decision.title}
 Type: ${decision.decision_type}
 Status: ${decision.status}
 Total Votes: ${totalVotes}
@@ -302,7 +302,7 @@ Return JSON with:
       const contactNames = contacts.map(c => c.name).join(', ');
       const prompt = `Based on this decision, identify which stakeholders should be involved:
 
-Decision: ${decision.proposal_text}
+Decision: ${decision.title}
 Type: ${decision.decision_type}
 
 Available contacts: ${contactNames}

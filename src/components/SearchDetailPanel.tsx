@@ -1,6 +1,7 @@
 import React from 'react';
-import { X, Copy, ExternalLink, Mail, MessageSquare, Mic, StickyNote, CheckSquare, Calendar, Users, Phone, Folder, FileText } from 'lucide-react';
+import { X, Copy, ExternalLink, ArrowRight, Mail, MessageSquare, Mic, StickyNote, CheckSquare, Calendar, Users, Phone, Folder, FileText } from 'lucide-react';
 import { SearchResult, SearchResultType } from '../services/unifiedSearchService';
+import { AppView } from '../types';
 
 interface SearchDetailPanelProps {
   result: SearchResult | null;
@@ -46,6 +47,28 @@ export const SearchDetailPanel: React.FC<SearchDetailPanelProps> = ({ result, on
     navigator.clipboard.writeText(result.content).catch(console.error);
   };
 
+  const TYPE_TO_VIEW: Partial<Record<SearchResultType, AppView>> = {
+    email: AppView.EMAIL,
+    message: AppView.MESSAGES,
+    unified_message: AppView.MESSAGES,
+    thread: AppView.MESSAGES,
+    vox: AppView.VOXER,
+    task: AppView.DECISIONS_TASKS,
+    event: AppView.CALENDAR,
+    contact: AppView.CONTACTS,
+    sms: AppView.SMS,
+    note: AppView.DASHBOARD,
+    archive: AppView.ARCHIVES,
+  };
+
+  const handleGoToSource = () => {
+    const targetView = TYPE_TO_VIEW[result.type];
+    if (targetView) {
+      window.dispatchEvent(new CustomEvent('pulse:navigate', { detail: { view: targetView } }));
+      onClose();
+    }
+  };
+
   return (
     <div
       className="fixed inset-y-0 right-0 z-50 w-full max-w-xl bg-white dark:bg-gray-900 shadow-2xl flex flex-col border-l border-gray-200 dark:border-gray-700"
@@ -89,6 +112,14 @@ export const SearchDetailPanel: React.FC<SearchDetailPanelProps> = ({ result, on
           className="flex items-center gap-1.5 px-3 py-1.5 text-xs font-medium rounded-lg border border-gray-200 dark:border-gray-700 text-gray-600 dark:text-gray-400 hover:bg-gray-50 dark:hover:bg-gray-800 transition-colors"
         >
           <Copy size={13} /> Copy text
+        </button>
+        <button
+          type="button"
+          onClick={handleGoToSource}
+          className="flex items-center gap-1.5 px-3 py-1.5 text-xs font-medium rounded-lg border border-gray-200 dark:border-gray-700 text-gray-600 dark:text-gray-400 hover:bg-gray-50 dark:hover:bg-gray-800 transition-colors"
+          aria-label={`Go to ${typeLabel(result.type)}`}
+        >
+          <ArrowRight size={13} /> Go to {typeLabel(result.type)}
         </button>
         {meta.url && (
           <a

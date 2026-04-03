@@ -1,0 +1,30 @@
+import React from 'react';
+
+interface ToggleItemProps {
+  label: string;
+  desc: string;
+  active: boolean;
+  onToggle: () => void;
+}
+
+export const ToggleItem: React.FC<ToggleItemProps> = ({ label, desc, active, onToggle }) => (
+  <div className="flex justify-between items-center group cursor-pointer" onClick={onToggle}>
+    <div>
+      <div className="dark:text-white text-zinc-900 font-medium text-sm">{label}</div>
+      <div className="text-zinc-500 text-xs">{desc}</div>
+    </div>
+    <button
+      type="button"
+      aria-label={`Toggle ${label}`}
+      className={`w-12 h-6 rounded-full p-1 transition-colors duration-300 ease-in-out ${
+        active ? 'bg-blue-600' : 'bg-zinc-300 dark:bg-zinc-700'
+      }`}
+    >
+      <div
+        className={`w-4 h-4 rounded-full bg-white shadow-md transform transition-transform duration-300 ${
+          active ? 'translate-x-6' : 'translate-x-0'
+        }`}
+      />
+    </button>
+  </div>
+);

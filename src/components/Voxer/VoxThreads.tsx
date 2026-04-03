@@ -2,7 +2,7 @@
 // Nested conversation replies to specific moments
 
 import React, { useState, useRef, useCallback } from 'react';
-import { VoxThread, VoxThreadReply } from '../../services/voxer/advancedVoxerTypes';
+import { VoxInlineThread, VoxInlineThreadReply } from '../../services/voxer/advancedVoxerTypes';
 
 import { CheckCircle, Clock, MessagesSquare, Reply, RotateCw, Send, X } from 'lucide-react';
 
@@ -11,7 +11,7 @@ import { CheckCircle, Clock, MessagesSquare, Reply, RotateCw, Send, X } from 'lu
 // ============================================
 
 interface VoxThreadsProps {
-  thread: VoxThread | null;
+  thread: VoxInlineThread | null;
   parentVoxDuration: number;
   parentVoxTranscription?: string;
   currentUserId: string;
@@ -23,7 +23,7 @@ interface VoxThreadsProps {
 }
 
 interface ThreadReplyProps {
-  reply: VoxThreadReply;
+  reply: VoxInlineThreadReply;
   onPlay: (url: string) => void;
   onReply: (replyId: string) => void;
   isPlaying: boolean;
@@ -420,7 +420,7 @@ export const VoxThreads: React.FC<VoxThreadsProps> = ({
   };
 
   // Render nested replies recursively
-  const renderReplies = (replies: VoxThreadReply[], parentId?: string, depth = 0) => {
+  const renderReplies = (replies: VoxInlineThreadReply[], parentId?: string, depth = 0) => {
     return replies
       .filter(r => r.parentReplyId === parentId)
       .map(reply => (

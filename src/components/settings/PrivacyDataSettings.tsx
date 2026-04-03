@@ -1,22 +1,9 @@
 import React, { useState, useEffect } from 'react';
 import { settingsService } from '../../services/settingsService';
 import { supabase } from '../../services/supabase';
-import { ShieldHalf, Download, RefreshCw } from 'lucide-react';
+import { ShieldHalf, Download, RefreshCw, RotateCcw } from 'lucide-react';
 import toast from 'react-hot-toast';
-
-const ToggleItem = ({ label, desc, active, onToggle }: { label: string; desc: string; active: boolean; onToggle: () => void }) => (
-  <div className="flex justify-between items-center group cursor-pointer" onClick={onToggle}>
-    <div>
-      <div className="dark:text-white text-zinc-900 font-medium text-sm">{label}</div>
-      <div className="text-zinc-500 text-xs">{desc}</div>
-    </div>
-    <button
-      className={`w-12 h-6 rounded-full p-1 transition-colors duration-300 ease-in-out ${active ? 'bg-blue-600' : 'bg-zinc-300 dark:bg-zinc-700'}`}
-    >
-      <div className={`w-4 h-4 rounded-full bg-white shadow-md transform transition-transform duration-300 ${active ? 'translate-x-6' : 'translate-x-0'}`} />
-    </button>
-  </div>
-);
+import { ToggleItem } from './shared/ToggleItem';
 
 export const PrivacyDataSettings: React.FC = () => {
   const [analyticsTracking, setAnalyticsTracking] = useState(true);
@@ -144,18 +131,59 @@ export const PrivacyDataSettings: React.FC = () => {
               <Download className="mr-2" /> Export JSON
             </button>
           </div>
+
+          <div className="h-px bg-zinc-100 dark:bg-zinc-800"></div>
+
+          <div className="flex items-center justify-between">
+            <div>
+              <p className="text-sm font-medium dark:text-white text-zinc-900">Restore Default Settings</p>
+              <p className="text-xs text-zinc-500">Reset all settings to their original defaults</p>
+            </div>
+            <button
+              onClick={async () => {
+                if (!confirm('Reset all settings to defaults? This cannot be undone.')) return;
+                const toastId = toast.loading('Restoring defaults...');
+                try {
+                  await settingsService.reset();
+                  toast.success('Settings restored to defaults. Reloading...', { id: toastId });
+                  setTimeout(() => window.location.reload(), 1500);
+                } catch {
+                  toast.error('Failed to reset settings', { id: toastId });
+                }
+              }}
+              className="px-4 py-2 border border-amber-300 dark:border-amber-700 text-amber-600 dark:text-amber-400 rounded-lg text-sm hover:bg-amber-50 dark:hover:bg-amber-900/20 transition"
+            >
+              <RotateCcw className="mr-2" /> Reset Defaults
+            </button>
+          </div>
         </div>
       </div>
 
       <div className="bg-red-50 dark:bg-red-900/10 border border-red-200 dark:border-red-900/30 rounded-xl p-6 flex items-center justify-between">
         <div>
           <h4 className="text-sm font-bold text-red-600 dark:text-red-400 mb-1">Delete My Account</h4>
-          <p className="text-xs text-red-500/80">Permanently remove your account and all associated data. Open Privacy Dashboard to complete this action with confirmation.</p>
+          <p className="text-xs text-red-500/80">Permanently remove your account and all associated data. This action cannot be undone.</p>
         </div>
         <button
-          onClick={() => {
-            // Navigate to Privacy Dashboard where the full confirmation flow lives
-            toast('Open Privacy Dashboard → Privacy tab to delete your account.', { icon: 'ℹ️' });
+          onClick={async () => {
+            const confirmed = confirm('Are you sure you want to delete your account? This will permanently remove all your data and cannot be undone.');
+            if (!confirmed) return;
+            const doubleConfirm = prompt('Type "DELETE" to confirm account deletion:');
+            if (doubleConfirm !== 'DELETE') {
+              toast('Account deletion cancelled.', { icon: 'ℹ️' });
+              return;
+            }
+            const toastId = toast.loading('Deleting account...');
+            try {
+              const { data: { user } } = await supabase.auth.getUser();
+              if (!user) throw new Error('Not authenticated');
+              const { error } = await supabase.rpc('delete_user_account', { target_user_id: user.id });
+              if (error) throw error;
+              toast.success('Account deleted. Signing out...', { id: toastId });
+              setTimeout(() => { supabase.auth.signOut(); window.location.href = '/'; }, 2000);
+            } catch (err: any) {
+              toast.error(err.message || 'Failed to delete account', { id: toastId });
+            }
           }}
           className="px-4 py-2 bg-red-600 hover:bg-red-700 text-white font-semibold rounded-lg text-sm transition"
         >

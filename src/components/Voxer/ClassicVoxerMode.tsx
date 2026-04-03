@@ -45,7 +45,7 @@ import RecordingPreview from './RecordingPreview';
 import VoxModeHeader from './VoxModeHeader';
 import VoxModeToolbar from './VoxModeToolbar';
 import VoxRecordArea from './VoxRecordArea';
-import { useVoxRecording } from '../../hooks/useVoxRecording';
+
 import { blobToBase64 } from '../../services/audioService';
 import { transcribeMedia, processWithModel } from '../../services/geminiService';
 import { dataService } from '../../services/dataService';
@@ -262,8 +262,24 @@ const ClassicVoxerMode: React.FC<ClassicVoxerModeProps> = ({
   const audioRef = useRef<HTMLAudioElement>(null);
   const messagesEndRef = useRef<HTMLDivElement>(null);
 
+  // Track all blob URLs created via URL.createObjectURL() so they can be
+  // revoked on component unmount or when no longer needed, preventing memory leaks.
+  const blobUrlsRef = useRef<Set<string>>(new Set());
+
   // Theme colors
   const accentColor = '#F97316'; // Classic Voxer orange
+
+  // Cleanup all blob URLs on component unmount to prevent memory leaks (G6 fix).
+  // Individual URLs are also revoked when replaced or deleted, but this
+  // catch-all ensures nothing leaks if the component is torn down mid-use.
+  useEffect(() => {
+    return () => {
+      blobUrlsRef.current.forEach((url) => {
+        URL.revokeObjectURL(url);
+      });
+      blobUrlsRef.current.clear();
+    };
+  }, []);
 
   // Load recordings on mount
   useEffect(() => {
@@ -283,6 +299,7 @@ const ClassicVoxerMode: React.FC<ClassicVoxerModeProps> = ({
                   const response = await fetch(url);
                   blob = await response.blob();
                   url = URL.createObjectURL(blob);
+                  blobUrlsRef.current.add(url);
                 } else if (url.startsWith('blob:')) {
                   // Old blob URL - skip it as it's no longer valid
                   console.warn('Skipping invalid blob URL:', url);
@@ -292,6 +309,7 @@ const ClassicVoxerMode: React.FC<ClassicVoxerModeProps> = ({
                   const response = await fetch(url);
                   blob = await response.blob();
                   url = URL.createObjectURL(blob);
+                  blobUrlsRef.current.add(url);
                 }
               } catch (e) {
                 console.error('Error loading recording from URL:', url, e);
@@ -312,6 +330,7 @@ const ClassicVoxerMode: React.FC<ClassicVoxerModeProps> = ({
               status: dbRec.status || 'sent',
               analysis: dbRec.analysis || undefined,
               starred: dbRec.starred || false,
+              replyToId: dbRec.analysis?.reply_to_id || undefined,
             };
           })
         );
@@ -497,6 +516,7 @@ const ClassicVoxerMode: React.FC<ClassicVoxerModeProps> = ({
         }
 
         const url = URL.createObjectURL(blob);
+        blobUrlsRef.current.add(url);
 
         // Decode audio for waveform
         let audioBuffer: AudioBuffer | undefined;
@@ -593,13 +613,19 @@ const ClassicVoxerMode: React.FC<ClassicVoxerModeProps> = ({
   }, [isRecording, startRecording, stopRecording]);
 
   const cancelRecording = useCallback(() => {
+    // Revoke the blob URL from the discarded pending recording to free memory
+    if (pendingRecording?.url) {
+      URL.revokeObjectURL(pendingRecording.url);
+      blobUrlsRef.current.delete(pendingRecording.url);
+    }
     setPendingRecording(null);
     setTranscript('');
-  }, []);
+  }, [pendingRecording]);
 
   const sendRecording = useCallback(async () => {
     if (!pendingRecording || !activeContactId) return;
 
+    const isReply = !!replyingTo;
     const newRecording: Recording = {
       id: `rec-${Date.now()}`,
       blob: pendingRecording.blob,
@@ -610,11 +636,13 @@ const ClassicVoxerMode: React.FC<ClassicVoxerModeProps> = ({
       sender: 'me',
       contactId: activeContactId,
       status: 'sent',
+      replyToId: replyingTo?.id || undefined,
     };
 
     setRecordings(prev => [...prev, newRecording]);
     setPendingRecording(null);
     setTranscript('');
+    setReplyingTo(null);
 
     // Save to database (don't pass id - let database generate UUID)
     try {
@@ -625,18 +653,28 @@ const ClassicVoxerMode: React.FC<ClassicVoxerModeProps> = ({
         is_outgoing: true,
         transcript: transcript,
         recorded_at: new Date().toISOString(),
+        // Store reply-to association as metadata in analysis JSON
+        // Available for backend reply threading when supported
+        ...(newRecording.replyToId ? {
+          analysis: { reply_to_id: newRecording.replyToId },
+        } : {}),
       });
-      toast.success('Vox sent!');
+      toast.success(isReply ? 'Reply sent!' : 'Vox sent!');
     } catch (e) {
       console.error('Error saving recording:', e);
     }
-  }, [pendingRecording, activeContactId, transcript]);
+  }, [pendingRecording, activeContactId, transcript, replyingTo]);
 
   const retryRecording = useCallback(() => {
+    // Revoke the blob URL from the discarded pending recording to free memory
+    if (pendingRecording?.url) {
+      URL.revokeObjectURL(pendingRecording.url);
+      blobUrlsRef.current.delete(pendingRecording.url);
+    }
     setPendingRecording(null);
     setTranscript('');
     startRecording();
-  }, [startRecording]);
+  }, [startRecording, pendingRecording]);
 
   // ============================================
   // PLAYBACK FUNCTIONS
@@ -668,10 +706,16 @@ const ClassicVoxerMode: React.FC<ClassicVoxerModeProps> = ({
   }, [recordings]);
 
   const deleteRecording = useCallback(async (recordingId: string) => {
+    // Revoke the blob URL for the deleted recording to free memory
+    const recording = recordings.find(r => r.id === recordingId);
+    if (recording?.url && recording.url.startsWith('blob:')) {
+      URL.revokeObjectURL(recording.url);
+      blobUrlsRef.current.delete(recording.url);
+    }
     setRecordings(prev => prev.filter(r => r.id !== recordingId));
     await dataService.deleteVoxerRecording(recordingId);
     toast.success('Vox deleted');
-  }, []);
+  }, [recordings]);
 
   // Format duration
   const formatDuration = (seconds: number) => {
@@ -1005,14 +1049,20 @@ const ClassicVoxerMode: React.FC<ClassicVoxerModeProps> = ({
     onGoBack: () => {
       if (activeContactId) setActiveContactId('');
     },
-    onSwitchMode: (mode) => {
-      // Handle mode switching - would need to be passed from parent
-      console.log('Switch to mode:', mode);
+    onSwitchMode: (_mode) => {
+      // Switch mode by navigating back to the mode selector
+      onBack();
     },
     onDownload: () => {
       if (isSelectionMode && selectionCount > 0) {
-        // Trigger download modal
-        console.log('Download selected items');
+        // Download selected items - use first selected item
+        const firstSelectedId = Array.from(selectedItems)[0];
+        const rec = recordings.find(r => r.id === firstSelectedId);
+        if (rec) handleDownloadMessage(rec);
+      } else if (playingId) {
+        // Download the currently playing message
+        const playing = recordings.find(r => r.id === playingId);
+        if (playing) handleDownloadMessage(playing);
       }
     },
     onArchive: () => {
@@ -1200,6 +1250,7 @@ const ClassicVoxerMode: React.FC<ClassicVoxerModeProps> = ({
                 activeThreadRecordings.map(recording => (
                   <div
                     key={recording.id}
+                    id={`vox-msg-${recording.id}`}
                     className={`classic-voxer-message ${recording.sender === 'me' ? 'sent' : 'received'}`}
                   >
                     <div className="classic-voxer-message-content">
@@ -1237,6 +1288,27 @@ const ClassicVoxerMode: React.FC<ClassicVoxerModeProps> = ({
                           {isSelected(recording.id) && <Check className="w-5 h-5 text-white font-bold" />}
                         </button>
                       )}
+
+                      {/* Reply-to context indicator */}
+                      {recording.replyToId && (() => {
+                        const parent = activeThreadRecordings.find(r => r.id === recording.replyToId);
+                        return (
+                          <div
+                            className="classic-voxer-reply-indicator"
+                            onClick={() => {
+                              // Scroll to parent message
+                              const el = document.getElementById(`vox-msg-${recording.replyToId}`);
+                              el?.scrollIntoView({ behavior: 'smooth', block: 'center' });
+                            }}
+                          >
+                            <Reply className="w-3 h-3 shrink-0 opacity-60" />
+                            <span className="truncate text-xs opacity-70">
+                              {parent?.transcription?.slice(0, 40) || 'Voice message'}
+                              {parent?.transcription && parent.transcription.length > 40 ? '...' : ''}
+                            </span>
+                          </div>
+                        );
+                      })()}
 
                       {/* Playback controls */}
                       <button
@@ -1833,9 +1905,8 @@ const ClassicVoxerMode: React.FC<ClassicVoxerModeProps> = ({
             <VoxAutoChapters
               chapters={activeChapters}
               currentTime={0}
-              onSeek={(time) => {
-                // Implement seek functionality if needed
-                console.log('Seek to:', time);
+              onSeek={(_time) => {
+                // TODO: Implement seek functionality
               }}
               isDarkMode={isDarkMode}
               accentColor="#06B6D4"

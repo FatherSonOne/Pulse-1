@@ -58,15 +58,6 @@ export interface MeetingInsights {
   weeklyTrend: number[];
 }
 
-export interface RecordingItem {
-  id: string;
-  meetingTitle: string;
-  date: Date;
-  duration: number;
-  size: string;
-  thumbnail?: string;
-}
-
 // ============================================
 // PLATFORM CONFIGURATION
 // ============================================
@@ -392,12 +383,14 @@ interface UpcomingMeetingsProps {
   meetings: CalendarEvent[];
   onJoin: (meeting: CalendarEvent) => void;
   onSchedule: () => void;
+  onViewAll?: () => void;
 }
 
 export const UpcomingMeetings: React.FC<UpcomingMeetingsProps> = ({
   meetings,
   onJoin,
   onSchedule,
+  onViewAll,
 }) => (
   <div className="meetings-upcoming-card">
     <div className="meetings-section-header">
@@ -405,7 +398,7 @@ export const UpcomingMeetings: React.FC<UpcomingMeetingsProps> = ({
         <Calendar />
         Upcoming
       </div>
-      <button className="meetings-section-action">View All</button>
+      <button className="meetings-section-action" onClick={onViewAll}>View All</button>
     </div>
     <div className="meetings-upcoming-list">
       {meetings.slice(0, 3).map((meeting) => {
@@ -425,16 +418,28 @@ export const UpcomingMeetings: React.FC<UpcomingMeetingsProps> = ({
             <div className="meetings-upcoming-info">
               <div className="meetings-upcoming-title">{meeting.title}</div>
               <div className="meetings-upcoming-attendees">
-                {['JD', 'SK', 'MR'].slice(0, 3).map((initials, i) => (
-                  <div
-                    key={i}
-                    className="meetings-upcoming-avatar"
-                    style={{ backgroundColor: ['#7c3aed', '#10b981', '#f59e0b'][i] }}
-                  >
-                    {initials}
-                  </div>
-                ))}
-                <span className="meetings-upcoming-count">+2</span>
+                {(meeting.attendees ?? []).slice(0, 3).map((email, i) => {
+                  const initials = email
+                    .split('@')[0]
+                    .split(/[._-]/)
+                    .slice(0, 2)
+                    .map(part => part.charAt(0).toUpperCase())
+                    .join('');
+                  return (
+                    <div
+                      key={i}
+                      className="meetings-upcoming-avatar"
+                      style={{ backgroundColor: ['#7c3aed', '#10b981', '#f59e0b'][i % 3] }}
+                    >
+                      {initials || '?'}
+                    </div>
+                  );
+                })}
+                {(meeting.attendees?.length ?? 0) > 3 && (
+                  <span className="meetings-upcoming-count">
+                    +{(meeting.attendees?.length ?? 0) - 3}
+                  </span>
+                )}
               </div>
             </div>
             <button
@@ -1636,9 +1641,16 @@ export const DeviceTestModal: React.FC<DeviceTestModalProps> = ({ isOpen, onClos
     animFrameRef.current = requestAnimationFrame(updateMicLevel);
   };
 
-  const startDevices = async () => {
+  const startDevices = async (micId?: string, camId?: string) => {
+    // Release previous stream before acquiring new one
+    stopStream();
+
     try {
-      const stream = await navigator.mediaDevices.getUserMedia({ video: true, audio: true });
+      const constraints: MediaStreamConstraints = {
+        audio: micId ? { deviceId: { exact: micId } } : true,
+        video: camId ? { deviceId: { exact: camId } } : true,
+      };
+      const stream = await navigator.mediaDevices.getUserMedia(constraints);
       streamRef.current = stream;
       setMicPermission('granted');
       setCameraPermission('granted');
@@ -1671,9 +1683,18 @@ export const DeviceTestModal: React.FC<DeviceTestModalProps> = ({ isOpen, onClos
       setMicLevel(0);
       setMicPermission('pending');
       setCameraPermission('pending');
+      setSelectedMic('');
+      setSelectedCamera('');
     }
     return () => stopStream();
   }, [isOpen]);
+
+  // Re-acquire stream when user selects a different mic or camera
+  useEffect(() => {
+    if (!isOpen || micPermission !== 'granted') return;
+    if (!selectedMic && !selectedCamera) return;
+    startDevices(selectedMic || undefined, selectedCamera || undefined);
+  }, [selectedMic, selectedCamera]);
 
   const testSpeaker = () => {
     try {
@@ -2378,15 +2399,47 @@ export const MeetingSummaryView: React.FC<MeetingSummaryViewProps> = ({ data, lo
   const [showExportMenu, setShowExportMenu] = useState(false);
   const [actionItems, setActionItems] = useState<ActionItem[]>(data?.actionItems || []);
   const [copiedToast, setCopiedToast] = useState(false);
+  const [entomateConnected, setEntomateConnected] = useState(false);
+  const [entomateExporting, setEntomateExporting] = useState(false);
 
   useEffect(() => {
     if (data?.actionItems) setActionItems(data.actionItems);
   }, [data]);
 
+  useEffect(() => {
+    isEntomateConnected().then(setEntomateConnected);
+  }, []);
+
   const toggleActionItem = (id: string) => {
     setActionItems(prev => prev.map(a =>
       a.id === id ? { ...a, status: a.status === 'completed' ? 'pending' : 'completed' } : a
     ));
+  };
+
+  const handleExportToEntomate = async () => {
+    if (!data) return;
+    setEntomateExporting(true);
+    try {
+      const recording: MeetingRecording = {
+        id: crypto.randomUUID(),
+        title: data.meetingTitle,
+        startTime: new Date(),
+        durationMinutes: data.duration || null,
+        audioFileUrl: '',
+        transcript: data.aiSummary || null,
+        summary: data.aiSummary || null,
+        attendees: data.participants.map(p => p.name),
+      };
+      const result = await exportMeetingToEntomate(recording, 'pulse_video');
+      if (result.success) {
+        setCopiedToast(true);
+        setTimeout(() => setCopiedToast(false), 2000);
+      }
+    } catch (err) {
+      console.error('Entomate export failed:', err);
+    }
+    setEntomateExporting(false);
+    setShowExportMenu(false);
   };
 
   const copyToClipboard = () => {
@@ -2473,6 +2526,12 @@ export const MeetingSummaryView: React.FC<MeetingSummaryViewProps> = ({ data, lo
                 <FileText />
                 Save as PDF
               </button>
+              {entomateConnected && (
+                <button onClick={handleExportToEntomate} disabled={entomateExporting}>
+                  <Upload />
+                  {entomateExporting ? 'Exporting...' : 'Export to Entomate'}
+                </button>
+              )}
             </div>
           )}
         </div>

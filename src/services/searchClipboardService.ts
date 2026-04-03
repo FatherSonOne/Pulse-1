@@ -150,41 +150,6 @@ export class SearchClipboardService {
   }
 
   /**
-   * Link two clipboard items together
-   */
-  async linkItems(userId: string, itemId1: string, itemId2: string): Promise<boolean> {
-    try {
-      const [item1, item2] = await Promise.all([
-        this.getClipboardItem(userId, itemId1),
-        this.getClipboardItem(userId, itemId2),
-      ]);
-
-      if (!item1 || !item2) return false;
-
-      // Add each other to related items
-      const related1 = item1.relatedItems || [];
-      if (!related1.find((r: any) => r.id === itemId2)) {
-        related1.push({ type: 'clipboard', id: itemId2 });
-      }
-
-      const related2 = item2.relatedItems || [];
-      if (!related2.find((r: any) => r.id === itemId1)) {
-        related2.push({ type: 'clipboard', id: itemId1 });
-      }
-
-      await Promise.all([
-        this.updateClipboardItem(userId, itemId1, { relatedItems: related1 }),
-        this.updateClipboardItem(userId, itemId2, { relatedItems: related2 }),
-      ]);
-
-      return true;
-    } catch (error) {
-      console.error('Error linking items:', error);
-      return false;
-    }
-  }
-
-  /**
    * Get a single clipboard item
    */
   async getClipboardItem(userId: string, itemId: string): Promise<ClipboardItem | null> {

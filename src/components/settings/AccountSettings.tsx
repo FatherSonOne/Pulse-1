@@ -2,7 +2,9 @@ import React, { useState, useEffect, useRef } from 'react';
 import { pulseService, UserProfile } from '../../services/pulseService';
 import { supabase } from '../../services/supabase';
 import { logoutUser } from '../../services/authService';
+import { settingsService } from '../../services/settingsService';
 import { Camera, Check, Loader2, LogOut, User as UserIcon } from 'lucide-react';
+import { ToggleItem } from './shared/ToggleItem';
 
 interface AccountSettingsProps {
   user?: { id: string; name?: string; email?: string; connectedProviders?: any } | null;
@@ -10,36 +12,10 @@ interface AccountSettingsProps {
   toggleTheme: () => void;
 }
 
-const ToggleItem = ({
-  label,
-  desc,
-  active,
-  onToggle,
-}: {
-  label: string;
-  desc: string;
-  active: boolean;
-  onToggle: () => void;
-}) => (
-  <div className="flex justify-between items-center group cursor-pointer" onClick={onToggle}>
-    <div>
-      <div className="dark:text-white text-zinc-900 font-medium text-sm">{label}</div>
-      <div className="text-zinc-500 text-xs">{desc}</div>
-    </div>
-    <button
-      className={`w-12 h-6 rounded-full p-1 transition-colors duration-300 ease-in-out ${active ? 'bg-blue-600' : 'bg-zinc-300 dark:bg-zinc-700'}`}
-    >
-      <div
-        className={`w-4 h-4 rounded-full bg-white shadow-md transform transition-transform duration-300 ${active ? 'translate-x-6' : 'translate-x-0'}`}
-      />
-    </button>
-  </div>
-);
-
 export const AccountSettings: React.FC<AccountSettingsProps> = ({ user, isDarkMode, toggleTheme }) => {
   const [name, setName] = useState(user?.name || 'Demo User');
   const [email, setEmail] = useState(user?.email || 'user@example.com');
-  const [keepLoggedIn, setKeepLoggedIn] = useState(true);
+  const [keepLoggedIn, setKeepLoggedIn] = useState(() => localStorage.getItem('pulse_keep_logged_in') !== 'false');
   const [pulseProfile, setPulseProfile] = useState<UserProfile | null>(null);
   const [handle, setHandle] = useState('');
   const [handleError, setHandleError] = useState<string | null>(null);
@@ -72,6 +48,24 @@ export const AccountSettings: React.FC<AccountSettingsProps> = ({ user, isDarkMo
     };
     loadProfile();
   }, []);
+
+  // Unsaved changes guard
+  const isDirty = pulseProfile && (
+    name !== (pulseProfile.display_name || '') ||
+    bio !== (pulseProfile.bio || '') ||
+    handle !== (pulseProfile.handle || '')
+  );
+
+  useEffect(() => {
+    const handler = (e: BeforeUnloadEvent) => {
+      if (isDirty) {
+        e.preventDefault();
+        e.returnValue = '';
+      }
+    };
+    window.addEventListener('beforeunload', handler);
+    return () => window.removeEventListener('beforeunload', handler);
+  }, [isDirty]);
 
   // Debounced handle availability check
   useEffect(() => {
@@ -369,7 +363,11 @@ export const AccountSettings: React.FC<AccountSettingsProps> = ({ user, isDarkMo
             label="Keep me logged in"
             desc="Stay signed in on this browser until you explicitly log out"
             active={keepLoggedIn}
-            onToggle={() => setKeepLoggedIn(!keepLoggedIn)}
+            onToggle={() => {
+              const v = !keepLoggedIn;
+              setKeepLoggedIn(v);
+              localStorage.setItem('pulse_keep_logged_in', String(v));
+            }}
           />
 
           <div className="pt-4 border-t border-zinc-100 dark:border-zinc-800">

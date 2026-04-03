@@ -36,12 +36,13 @@ export const NaturalLanguageEventInput: React.FC<NaturalLanguageEventInputProps>
 
   // Debounced parsing for live preview
   useEffect(() => {
+    clearTimeout(debounceTimer.current);
+
     if (input.trim().length < 5) {
       setPreview(null);
       return;
     }
 
-    clearTimeout(debounceTimer.current);
     debounceTimer.current = setTimeout(async () => {
       try {
         setIsProcessing(true);

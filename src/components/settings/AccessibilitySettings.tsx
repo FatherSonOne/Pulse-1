@@ -1,20 +1,7 @@
 import React, { useState, useEffect } from 'react';
 import { settingsService } from '../../services/settingsService';
 import { Accessibility } from 'lucide-react';
-
-const ToggleItem = ({ label, desc, active, onToggle }: { label: string; desc: string; active: boolean; onToggle: () => void }) => (
-  <div className="flex justify-between items-center group cursor-pointer" onClick={onToggle}>
-    <div>
-      <div className="dark:text-white text-zinc-900 font-medium text-sm">{label}</div>
-      <div className="text-zinc-500 text-xs">{desc}</div>
-    </div>
-    <button
-      className={`w-12 h-6 rounded-full p-1 transition-colors duration-300 ease-in-out ${active ? 'bg-blue-600' : 'bg-zinc-300 dark:bg-zinc-700'}`}
-    >
-      <div className={`w-4 h-4 rounded-full bg-white shadow-md transform transition-transform duration-300 ${active ? 'translate-x-6' : 'translate-x-0'}`} />
-    </button>
-  </div>
-);
+import { ToggleItem } from './shared/ToggleItem';
 
 export const AccessibilitySettings: React.FC = () => {
   const [accentColor, setAccentColor] = useState('rose');
@@ -37,7 +24,6 @@ export const AccessibilitySettings: React.FC = () => {
   // Apply accent color to CSS custom properties
   useEffect(() => {
     const applyColor = (hex: string) => {
-      // Convert hex to RGB
       const r = parseInt(hex.slice(1, 3), 16);
       const g = parseInt(hex.slice(3, 5), 16);
       const b = parseInt(hex.slice(5, 7), 16);
@@ -45,9 +31,9 @@ export const AccessibilitySettings: React.FC = () => {
       document.documentElement.style.setProperty('--accent-primary', hex);
       document.documentElement.style.setProperty('--accent-primary-rgb', `${r}, ${g}, ${b}`);
 
-      // Save to localStorage
-      localStorage.setItem('accentColor', accentColor);
-      localStorage.setItem('customColor', hex);
+      // Save via settingsService (handles localStorage + cloud sync)
+      settingsService.set('accentColor', accentColor);
+      settingsService.set('customColor', hex);
     };
 
     if (accentColor === 'custom') {
@@ -57,16 +43,7 @@ export const AccessibilitySettings: React.FC = () => {
     }
   }, [accentColor, customColor]);
 
-  // Load saved color on mount
-  useEffect(() => {
-    const savedAccent = localStorage.getItem('accentColor');
-    const savedCustom = localStorage.getItem('customColor');
-
-    if (savedAccent) setAccentColor(savedAccent);
-    if (savedCustom) setCustomColor(savedCustom);
-  }, []);
-
-  // Load fontSize, highContrast, reducedMotion from settingsService on mount
+  // Load all settings from settingsService on mount (single source of truth)
   useEffect(() => {
     const load = async () => {
       const [accent, custom, fontSz, hc, rm] = await Promise.all([

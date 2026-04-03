@@ -40,7 +40,7 @@ export class RealtimeTranscriptionService {
   private websocket: WebSocket | null = null;
   private mediaRecorder: MediaRecorder | null = null;
   private audioContext: AudioContext | null = null;
-  private processor: ScriptProcessorNode | null = null;
+  private processorNode: AudioWorkletNode | ScriptProcessorNode | null = null;
   private state: RealtimeTranscriptionState = 'idle';
   private callbacks: RealtimeTranscriptionCallbacks | null = null;
   private segmentId = 0;
@@ -171,13 +171,16 @@ export class RealtimeTranscriptionService {
 
     this.websocket.onopen = () => {
       this.setState('connected');
-      this.startAudioStreaming(stream);
+      this.startAudioStreaming(stream).catch((err) => {
+        this.setState('error');
+        this.callbacks?.onError(err instanceof Error ? err : new Error(String(err)));
+      });
     };
 
     this.websocket.onmessage = (event) => {
       try {
         const data = JSON.parse(event.data);
-        
+
         if (data.channel?.alternatives?.[0]) {
           const alternative = data.channel.alternatives[0];
           const text = alternative.transcript;
@@ -252,7 +255,10 @@ export class RealtimeTranscriptionService {
 
     this.websocket.onopen = () => {
       this.setState('connected');
-      this.startAudioStreaming(stream);
+      this.startAudioStreaming(stream).catch((err) => {
+        this.setState('error');
+        this.callbacks?.onError(err instanceof Error ? err : new Error(String(err)));
+      });
     };
 
     this.websocket.onmessage = (event) => {
@@ -306,7 +312,26 @@ export class RealtimeTranscriptionService {
   // AUDIO STREAMING
   // ============================================
 
-  private startAudioStreaming(stream: MediaStream): void {
+  /**
+   * AudioWorklet processor source code (inlined as a Blob URL to avoid
+   * shipping a separate .js file).  Runs on the audio rendering thread
+   * and posts Float32 chunks back to the main thread via MessagePort.
+   */
+  private static readonly WORKLET_PROCESSOR_SRC = /* js */ `
+    class PcmStreamProcessor extends AudioWorkletProcessor {
+      process(inputs) {
+        const input = inputs[0];
+        if (input && input[0] && input[0].length > 0) {
+          // Copy the Float32 samples so they survive the transfer
+          this.port.postMessage(new Float32Array(input[0]));
+        }
+        return true; // keep processor alive
+      }
+    }
+    registerProcessor('pcm-stream-processor', PcmStreamProcessor);
+  `;
+
+  private async startAudioStreaming(stream: MediaStream): Promise<void> {
     this.setState('transcribing');
 
     // Create audio context
@@ -315,27 +340,86 @@ export class RealtimeTranscriptionService {
     });
 
     const source = this.audioContext.createMediaStreamSource(stream);
-    
-    // Create processor for PCM data
-    this.processor = this.audioContext.createScriptProcessor(4096, 1, 1);
-    
-    this.processor.onaudioprocess = (e) => {
+
+    // Try AudioWorklet first (modern path), fall back to deprecated
+    // ScriptProcessorNode for older browsers that lack support.
+    if (this.audioContext.audioWorklet) {
+      try {
+        await this.startWithAudioWorklet(source);
+        return;
+      } catch (err) {
+        console.warn('AudioWorklet setup failed, falling back to ScriptProcessorNode:', err);
+      }
+    }
+
+    // Fallback: ScriptProcessorNode (deprecated but widely supported)
+    this.startWithScriptProcessor(source);
+  }
+
+  /**
+   * Modern path: register an AudioWorkletProcessor via Blob URL and
+   * stream PCM data to the WebSocket from its message port.
+   */
+  private async startWithAudioWorklet(source: MediaStreamAudioSourceNode): Promise<void> {
+    const blob = new Blob(
+      [RealtimeTranscriptionService.WORKLET_PROCESSOR_SRC],
+      { type: 'application/javascript' }
+    );
+    const workletUrl = URL.createObjectURL(blob);
+
+    try {
+      await this.audioContext!.audioWorklet.addModule(workletUrl);
+    } finally {
+      URL.revokeObjectURL(workletUrl);
+    }
+
+    const workletNode = new AudioWorkletNode(this.audioContext!, 'pcm-stream-processor');
+
+    workletNode.port.onmessage = (event: MessageEvent<Float32Array>) => {
       if (this.websocket?.readyState === WebSocket.OPEN) {
-        const inputData = e.inputBuffer.getChannelData(0);
-        
-        // Convert to 16-bit PCM
+        const inputData = event.data;
+        // Convert Float32 [-1,1] to 16-bit PCM
         const pcmData = new Int16Array(inputData.length);
         for (let i = 0; i < inputData.length; i++) {
           const s = Math.max(-1, Math.min(1, inputData[i]));
           pcmData[i] = s < 0 ? s * 0x8000 : s * 0x7FFF;
         }
-        
         this.websocket.send(pcmData.buffer);
       }
     };
 
-    source.connect(this.processor);
-    this.processor.connect(this.audioContext.destination);
+    source.connect(workletNode);
+    // AudioWorkletNode does not require connection to destination to
+    // receive input, but some browsers need the graph to be "active".
+    workletNode.connect(this.audioContext!.destination);
+
+    this.processorNode = workletNode;
+  }
+
+  /**
+   * Legacy fallback using the deprecated ScriptProcessorNode.
+   * Kept for browsers that do not yet support AudioWorklet.
+   */
+  private startWithScriptProcessor(source: MediaStreamAudioSourceNode): void {
+    const processor = this.audioContext!.createScriptProcessor(4096, 1, 1);
+
+    processor.onaudioprocess = (e: AudioProcessingEvent) => {
+      if (this.websocket?.readyState === WebSocket.OPEN) {
+        const inputData = e.inputBuffer.getChannelData(0);
+        // Convert Float32 [-1,1] to 16-bit PCM
+        const pcmData = new Int16Array(inputData.length);
+        for (let i = 0; i < inputData.length; i++) {
+          const s = Math.max(-1, Math.min(1, inputData[i]));
+          pcmData[i] = s < 0 ? s * 0x8000 : s * 0x7FFF;
+        }
+        this.websocket.send(pcmData.buffer);
+      }
+    };
+
+    source.connect(processor);
+    processor.connect(this.audioContext!.destination);
+
+    this.processorNode = processor;
   }
 
   // ============================================
@@ -360,9 +444,13 @@ export class RealtimeTranscriptionService {
     }
 
     // Stop audio processing
-    if (this.processor) {
-      this.processor.disconnect();
-      this.processor = null;
+    if (this.processorNode) {
+      this.processorNode.disconnect();
+      // Close the port if it's an AudioWorkletNode
+      if ('port' in this.processorNode) {
+        (this.processorNode as AudioWorkletNode).port.close();
+      }
+      this.processorNode = null;
     }
 
     if (this.audioContext && this.audioContext.state !== 'closed') {

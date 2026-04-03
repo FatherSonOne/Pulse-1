@@ -39,8 +39,9 @@ import VoxModeToolbar from './VoxModeToolbar';
 import VoxRecordArea from './VoxRecordArea';
 import { useVoxRecording } from '../../hooks/useVoxRecording';
 import { voxModeService } from '../../services/voxer/voxModeService';
+import { supabase } from '../../services/supabase';
 // analyticsCollector loaded dynamically to avoid svc-crm-analytics chunk TDZ
-import type { PulseChannel, Broadcast } from '../../services/voxer/voxModeTypes';
+import { VOX_MODES, type PulseChannel, type Broadcast } from '../../services/voxer/voxModeTypes';
 import toast from 'react-hot-toast';
 import './PulseRadio.css';
 
@@ -78,8 +79,9 @@ interface PulseRadioProps {
   isDarkMode?: boolean;
 }
 
-const MODE_COLOR = '#8B5CF6';
-const MODE_COLOR_LIGHT = '#A78BFA';
+// Mode colors from shared palette
+const MODE_COLOR = VOX_MODES.pulse_radio.color;
+const MODE_COLOR_LIGHT = VOX_MODES.pulse_radio.colorLight!;
 
 // ============================================
 // LAYERED AUDIO VISUALIZER COMPONENT
@@ -274,6 +276,9 @@ const PulseRadio: React.FC<PulseRadioProps> = ({ onBack, apiKey, isDarkMode = fa
   const [activeBroadcastRoom, setActiveBroadcastRoom] = useState<Broadcast | null>(null);
   const [showMobileSidebar, setShowMobileSidebar] = useState(false);
   const [likedBroadcasts, setLikedBroadcasts] = useState<Set<string>>(new Set());
+  const [editingChannel, setEditingChannel] = useState(false);
+  const [editChannelName, setEditChannelName] = useState('');
+  const [editChannelDescription, setEditChannelDescription] = useState('');
 
   // Phase 2: Selection Mode State
   const {
@@ -324,8 +329,8 @@ const PulseRadio: React.FC<PulseRadioProps> = ({ onBack, apiKey, isDarkMode = fa
     handlePointerUp,
     handleToggleRecording,
   } = useVoxRecording({
-    onRecordingComplete: (data) => {
-      console.log('Broadcast recording complete:', data.duration, 'seconds');
+    onRecordingComplete: (_data) => {
+      // Recording complete - ready for preview
     },
     defaultRecordingMode: 'tap',
   });
@@ -356,12 +361,12 @@ const PulseRadio: React.FC<PulseRadioProps> = ({ onBack, apiKey, isDarkMode = fa
       onBack();
     },
     onGoBack: onBack,
-    onSwitchMode: (mode) => {
-      console.log('Switch to mode:', mode);
+    onSwitchMode: (_mode) => {
+      // Mode switch handled by parent
     },
     onDownload: () => {
       if (isSelectionMode && selectionCount > 0) {
-        console.log('Download selected broadcasts');
+        // Download handled by selection toolbar
       }
     },
     onArchive: () => {
@@ -469,9 +474,9 @@ const PulseRadio: React.FC<PulseRadioProps> = ({ onBack, apiKey, isDarkMode = fa
     // Discussion responses are broadcasts that reply to the original broadcast
     const response = await voxModeService.uploadAndPublishBroadcast(
       activeBroadcastRoom.channelId,
+      `Re: ${activeBroadcastRoom.title}`,
       recordingData.blob,
       recordingData.duration,
-      `Re: ${activeBroadcastRoom.title}`,
       [] // No special notifications for responses
     );
 
@@ -1238,8 +1243,69 @@ const PulseRadio: React.FC<PulseRadioProps> = ({ onBack, apiKey, isDarkMode = fa
                   <Radio className="w-8 h-8" />
                 </div>
                 <div>
-                  <h4>{selectedChannel.name}</h4>
-                  <span>{selectedChannel.subscriberCount} subscribers</span>
+                  {editingChannel ? (
+                    <div className="pulse-radio-inline-edit-fields">
+                      <input
+                        type="text"
+                        value={editChannelName}
+                        onChange={(e) => setEditChannelName(e.target.value)}
+                        placeholder="Channel name"
+                        className="pulse-radio-inline-input"
+                        autoFocus
+                      />
+                      <input
+                        type="text"
+                        value={editChannelDescription}
+                        onChange={(e) => setEditChannelDescription(e.target.value)}
+                        placeholder="Channel description"
+                        className="pulse-radio-inline-input"
+                      />
+                      <div className="pulse-radio-inline-edit-actions">
+                        <button
+                          type="button"
+                          className="pulse-radio-inline-save"
+                          onClick={async () => {
+                            if (!editChannelName.trim()) {
+                              toast.error('Channel name cannot be empty');
+                              return;
+                            }
+                            try {
+                              const { error } = await supabase
+                                .from('pulse_channels')
+                                .update({ name: editChannelName.trim(), description: editChannelDescription.trim() })
+                                .eq('id', selectedChannel.id);
+                              if (error) throw error;
+                              setChannels(channels.map(ch =>
+                                ch.id === selectedChannel.id
+                                  ? { ...ch, name: editChannelName.trim(), description: editChannelDescription.trim() }
+                                  : ch
+                              ));
+                              setSelectedChannel({ ...selectedChannel, name: editChannelName.trim(), description: editChannelDescription.trim() });
+                              setEditingChannel(false);
+                              toast.success('Channel updated');
+                            } catch (err) {
+                              console.error('Failed to update channel:', err);
+                              toast.error('Failed to update channel');
+                            }
+                          }}
+                        >
+                          <Check className="w-4 h-4" /> Save
+                        </button>
+                        <button
+                          type="button"
+                          className="pulse-radio-inline-cancel"
+                          onClick={() => setEditingChannel(false)}
+                        >
+                          <X className="w-4 h-4" /> Cancel
+                        </button>
+                      </div>
+                    </div>
+                  ) : (
+                    <>
+                      <h4>{selectedChannel.name}</h4>
+                      <span>{selectedChannel.subscriberCount} subscribers</span>
+                    </>
+                  )}
                 </div>
               </div>
 
@@ -1267,9 +1333,47 @@ const PulseRadio: React.FC<PulseRadioProps> = ({ onBack, apiKey, isDarkMode = fa
               <div className="pulse-radio-settings-section">
                 <h5>Actions</h5>
                 <div className="pulse-radio-settings-actions">
-                  <button type="button"><Edit3 className="w-5 h-5" /> Edit Channel</button>
-                  <button type="button"><Users className="w-5 h-5" /> Manage Subscribers</button>
-                  <button type="button" className="danger"><Trash2 className="w-5 h-5" /> Delete Channel</button>
+                  <button
+                    type="button"
+                    onClick={() => {
+                      setEditChannelName(selectedChannel.name);
+                      setEditChannelDescription(selectedChannel.description || '');
+                      setEditingChannel(true);
+                    }}
+                  >
+                    <Edit3 className="w-5 h-5" /> Edit Channel
+                  </button>
+                  <button
+                    type="button"
+                    onClick={() => toast('Subscriber management coming soon', { icon: '\u2139\uFE0F' })}
+                  >
+                    <Users className="w-5 h-5" /> Manage Subscribers
+                  </button>
+                  <button
+                    type="button"
+                    className="danger"
+                    onClick={async () => {
+                      const confirmed = window.confirm(`Delete channel "${selectedChannel.name}"? This cannot be undone.`);
+                      if (!confirmed) return;
+                      try {
+                        const { error } = await supabase
+                          .from('pulse_channels')
+                          .delete()
+                          .eq('id', selectedChannel.id);
+                        if (error) throw error;
+                        setChannels(channels.filter(ch => ch.id !== selectedChannel.id));
+                        setSelectedChannel(null);
+                        setBroadcasts([]);
+                        setShowChannelSettings(false);
+                        toast.success('Channel deleted');
+                      } catch (err) {
+                        console.error('Failed to delete channel:', err);
+                        toast.error('Failed to delete channel');
+                      }
+                    }}
+                  >
+                    <Trash2 className="w-5 h-5" /> Delete Channel
+                  </button>
                 </div>
               </div>
             </div>

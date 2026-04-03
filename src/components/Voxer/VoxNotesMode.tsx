@@ -35,7 +35,7 @@ import VoxRecordArea from './VoxRecordArea';
 import { useVoxRecording } from '../../hooks/useVoxRecording';
 import { voxModeService } from '../../services/voxer/voxModeService';
 // analyticsCollector loaded dynamically to avoid svc-crm-analytics chunk TDZ
-import type { VoxNote, LinkedItem } from '../../services/voxer/voxModeTypes';
+import { VOX_MODES, type VoxNote, type LinkedItem } from '../../services/voxer/voxModeTypes';
 import toast from 'react-hot-toast';
 import './Voxer.css';
 
@@ -59,8 +59,8 @@ import { PlaybackSpeedControl } from './PlaybackSpeedControl';
 import { VoxEmptyState } from './VoxEmptyState';
 import { getEmptyStateConfig } from './voxEmptyStates';
 
-// Mode color for Vox Notes
-const MODE_COLOR = '#EC4899';
+// Mode color from shared palette
+const MODE_COLOR = VOX_MODES.vox_notes.color;
 
 interface VoxNotesModeProps {
   apiKey?: string;
@@ -97,6 +97,8 @@ const VoxNotesMode: React.FC<VoxNotesModeProps> = ({
   const [menuAnchorRect, setMenuAnchorRect] = useState<DOMRect | null>(null);
   const [showDownloadModal, setShowDownloadModal] = useState(false);
   const [downloadItem, setDownloadItem] = useState<VoxSelectionItem | null>(null);
+  const [showTagInput, setShowTagInput] = useState(false);
+  const [newTagText, setNewTagText] = useState('');
 
   const audioRef = useRef<HTMLAudioElement>(null);
 
@@ -142,8 +144,8 @@ const VoxNotesMode: React.FC<VoxNotesModeProps> = ({
     handlePointerUp,
     handleToggleRecording,
   } = useVoxRecording({
-    onRecordingComplete: async (data) => {
-      console.log('Recording complete:', data.duration, 'seconds');
+    onRecordingComplete: async (_data) => {
+      // Recording complete - ready for preview
     },
   });
 
@@ -289,12 +291,12 @@ const VoxNotesMode: React.FC<VoxNotesModeProps> = ({
       if (selectedNote) setSelectedNote(null);
       else onBack();
     },
-    onSwitchMode: (mode) => {
-      console.log('Switch to mode:', mode);
+    onSwitchMode: (_mode) => {
+      // Mode switch handled by parent
     },
     onDownload: () => {
       if (isSelectionMode && selectionCount > 0) {
-        console.log('Download selected notes');
+        // Download handled by selection toolbar
       }
     },
     onArchive: () => {
@@ -386,7 +388,6 @@ const VoxNotesMode: React.FC<VoxNotesModeProps> = ({
   // Auto-select first note when notes load (if none selected)
   useEffect(() => {
     if (notes.length > 0 && !selectedNote) {
-      console.log('Auto-selecting first note:', notes[0].title);
       setSelectedNote(notes[0]);
     }
   }, [notes]);
@@ -399,13 +400,7 @@ const VoxNotesMode: React.FC<VoxNotesModeProps> = ({
 
   const loadNotes = async () => {
     try {
-      console.log('Loading Vox Notes...');
       const data = await voxModeService.getMyVoxNotes(searchQuery || undefined);
-      console.log(`Loaded ${data.length} Vox Notes`, data.map(n => ({
-        id: n.id,
-        title: n.title,
-        createdAt: n.createdAt
-      })));
       setNotes(data);
     } catch (error) {
       console.error('Error loading Vox Notes:', error);
@@ -439,12 +434,59 @@ const VoxNotesMode: React.FC<VoxNotesModeProps> = ({
     }
   };
 
+  const handleDeleteNote = async (note: VoxNote) => {
+    if (!window.confirm('Delete this note?')) return;
+    const success = await voxModeService.deleteVoxNote(note.id);
+    if (success) {
+      setNotes(prev => prev.filter(n => n.id !== note.id));
+      if (selectedNote?.id === note.id) {
+        setSelectedNote(null);
+      }
+      toast.success('Note deleted');
+    } else {
+      toast.error('Failed to delete note');
+    }
+  };
+
+  const handleCopyTranscript = async (note: VoxNote) => {
+    try {
+      await navigator.clipboard.writeText(note.transcript || '');
+      toast.success('Transcript copied to clipboard');
+    } catch {
+      toast.error('Failed to copy transcript');
+    }
+  };
+
+  const handleAddTag = async (note: VoxNote) => {
+    const tag = newTagText.trim();
+    if (!tag) return;
+    const updatedTags = [...(note.tags || []), tag];
+    const success = await voxModeService.updateVoxNote(note.id, { tags: updatedTags });
+    if (success) {
+      const updatedNote = { ...note, tags: updatedTags };
+      setNotes(prev => prev.map(n => n.id === note.id ? updatedNote : n));
+      if (selectedNote?.id === note.id) {
+        setSelectedNote(updatedNote);
+      }
+      setNewTagText('');
+      setShowTagInput(false);
+      toast.success(`Tag "${tag}" added`);
+    } else {
+      toast.error('Failed to add tag');
+    }
+  };
+
   const handleUpdateTitle = async () => {
     if (!selectedNote || !editTitle.trim()) return;
 
-    const updatedNote = { ...selectedNote, title: editTitle };
-    setNotes(notes.map(n => n.id === selectedNote.id ? updatedNote : n));
-    setSelectedNote(updatedNote);
+    const success = await voxModeService.updateVoxNote(selectedNote.id, { title: editTitle });
+    if (success) {
+      const updatedNote = { ...selectedNote, title: editTitle };
+      setNotes(notes.map(n => n.id === selectedNote.id ? updatedNote : n));
+      setSelectedNote(updatedNote);
+    } else {
+      toast.error('Failed to update title');
+    }
     setIsEditing(false);
   };
 
@@ -539,23 +581,6 @@ const VoxNotesMode: React.FC<VoxNotesModeProps> = ({
     if (filterTag && !note.tags.includes(filterTag)) return false;
     return true;
   });
-
-  // Debug logging
-  console.log('Vox Notes Filter Status:', {
-    totalNotes: notes.length,
-    filteredNotes: filteredNotes.length,
-    showFavoritesOnly,
-    filterTag,
-    selectedNote: selectedNote?.title
-  });
-
-  if (notes.length > 0 && filteredNotes.length === 0) {
-    console.warn('⚠️ All notes filtered out!', {
-      totalNotes: notes.length,
-      showFavoritesOnly,
-      filterTag
-    });
-  }
 
   const groupedNotes = filteredNotes.reduce((acc, note) => {
     const dateKey = note.createdAt.toDateString();
@@ -801,9 +826,8 @@ const VoxNotesMode: React.FC<VoxNotesModeProps> = ({
                           onArchive={() => handleArchiveNote(note)}
                           onDownload={() => handleDownloadNote(note)}
                           onDelete={() => {
-                            setNotes(prev => prev.filter(n => n.id !== note.id));
                             setShowMessageMenu(null);
-                            toast.success('Note deleted');
+                            handleDeleteNote(note);
                           }}
                           onClose={() => setShowMessageMenu(null)}
                         />
@@ -993,10 +1017,18 @@ const VoxNotesMode: React.FC<VoxNotesModeProps> = ({
                     >
                       <Star className={`w-5 h-5 ${selectedNote.isFavorite ? 'fill-current' : ''}`} />
                     </button>
-                    <button className={`p-2 rounded-xl ${tc.btnGhost}`} aria-label="Copy">
+                    <button
+                      onClick={() => handleCopyTranscript(selectedNote)}
+                      className={`p-2 rounded-xl ${tc.btnGhost}`}
+                      aria-label="Copy"
+                    >
                       <Copy className="w-5 h-5" />
                     </button>
-                    <button className={`p-2 rounded-xl ${tc.btnGhost}`} aria-label="Delete">
+                    <button
+                      onClick={() => handleDeleteNote(selectedNote)}
+                      className={`p-2 rounded-xl ${tc.btnGhost}`}
+                      aria-label="Delete"
+                    >
                       <Trash2 className="w-5 h-5" />
                     </button>
                   </div>
@@ -1094,11 +1126,47 @@ const VoxNotesMode: React.FC<VoxNotesModeProps> = ({
                         {tag}
                       </span>
                     ))}
-                    <button className={`px-3 py-1 rounded-full text-sm transition-all flex items-center gap-1 ${tc.cardBg} border ${tc.border} ${tc.textSecondary} ${tc.hoverBg}`}>
+                    <button
+                      onClick={() => setShowTagInput(!showTagInput)}
+                      className={`px-3 py-1 rounded-full text-sm transition-all flex items-center gap-1 ${tc.cardBg} border ${tc.border} ${tc.textSecondary} ${tc.hoverBg}`}
+                    >
                       <Plus className="w-3 h-3" />
                       Add Tag
                     </button>
                   </div>
+                  {showTagInput && (
+                    <div className="flex items-center gap-2 mt-2">
+                      <input
+                        type="text"
+                        value={newTagText}
+                        onChange={(e) => setNewTagText(e.target.value)}
+                        onKeyDown={(e) => {
+                          if (e.key === 'Enter') handleAddTag(selectedNote);
+                          if (e.key === 'Escape') { setShowTagInput(false); setNewTagText(''); }
+                        }}
+                        placeholder="Enter tag name..."
+                        aria-label="New tag name"
+                        autoFocus
+                        className={`px-3 py-1 rounded-lg text-sm border ${tc.border} ${tc.cardBg} ${tc.text} focus:outline-none focus:ring-2`}
+                        style={{ focusRingColor: MODE_COLOR } as React.CSSProperties}
+                      />
+                      <button
+                        onClick={() => handleAddTag(selectedNote)}
+                        className="p-1 rounded-lg transition-all"
+                        style={{ color: MODE_COLOR }}
+                        aria-label="Confirm tag"
+                      >
+                        <Check className="w-4 h-4" />
+                      </button>
+                      <button
+                        onClick={() => { setShowTagInput(false); setNewTagText(''); }}
+                        className={`p-1 rounded-lg transition-all ${tc.textMuted}`}
+                        aria-label="Cancel"
+                      >
+                        <X className="w-4 h-4" />
+                      </button>
+                    </div>
+                  )}
                 </div>
 
                 {/* Linked Items */}

@@ -27,6 +27,7 @@ import {
   ExternalLink,
   Loader2,
   Maximize2,
+  Minimize2,
   Command,
 } from 'lucide-react';
 import { SearchResult, SearchResultType, SearchFilters, SearchSortOptions, SearchSourceError } from '../services/unifiedSearchService';
@@ -37,11 +38,13 @@ import { searchExport } from '../services/searchExport';
 import { savedSearchesService, SavedSearch } from '../services/savedSearches';
 import { voiceSearchService } from '../services/voiceSearch';
 import { searchAnalyticsService } from '../services/searchAnalyticsService';
+import toast from 'react-hot-toast';
 import './UnifiedSearchRedesign.css';
 import { SearchResultSkeleton } from './SearchResultSkeleton';
 import { OperatorReferencePopover } from './OperatorReferencePopover';
 import { SaveSearchModal } from './SaveSearchModal';
 import { SearchDetailPanel } from './SearchDetailPanel';
+import { SearchResultCard } from './SearchResultCard';
 
 // ── Icon maps ─────────────────────────────────────────────────────────────────
 
@@ -180,8 +183,10 @@ export default function UnifiedSearchRedesign() {
   const [showOperatorPopover, setShowOperatorPopover] = useState(false);
 
   // ── Modals & detail panel ────────────────────────────────────────────────────
-  const [showSaveModal, setShowSaveModal] = useState(false);
-  const [detailResult,  setDetailResult]  = useState<SearchResult | null>(null);
+  const [showSaveModal,  setShowSaveModal]  = useState(false);
+  const [detailResult,   setDetailResult]   = useState<SearchResult | null>(null);
+  const [showExportMenu, setShowExportMenu] = useState(false);
+  const [clipboardExpanded, setClipboardExpanded] = useState(false);
 
   // ── Pagination ───────────────────────────────────────────────────────────────
   const [visibleCount, setVisibleCount] = useState(20);
@@ -194,9 +199,10 @@ export default function UnifiedSearchRedesign() {
   const searchGeneration = useRef(0);
   const sentinelRef      = useRef<HTMLDivElement>(null);
   const heartbeatTimer   = useRef<ReturnType<typeof setTimeout> | null>(null);
+  const exportMenuRef    = useRef<HTMLDivElement>(null);
 
   const userId = dataService.getUserId();
-  const apiKey = import.meta.env.VITE_API_KEY || import.meta.env.VITE_GEMINI_API_KEY || '';
+  // API key no longer needed client-side — Gemini calls proxied through gemini-proxy edge function
 
   const isEmptyState = !loading && searchResults.length === 0 && !webSearchResult && !searchQuery.trim();
 
@@ -212,6 +218,18 @@ export default function UnifiedSearchRedesign() {
     });
     setShowSuggestions(true);
   };
+
+  // ── Close export menu on outside click ───────────────────────────────────────
+  useEffect(() => {
+    if (!showExportMenu) return;
+    const handleClick = (e: MouseEvent) => {
+      if (exportMenuRef.current && !exportMenuRef.current.contains(e.target as Node)) {
+        setShowExportMenu(false);
+      }
+    };
+    document.addEventListener('mousedown', handleClick);
+    return () => document.removeEventListener('mousedown', handleClick);
+  }, [showExportMenu]);
 
   // ── External event listeners ─────────────────────────────────────────────────
   useEffect(() => {
@@ -277,7 +295,7 @@ export default function UnifiedSearchRedesign() {
       };
 
       const { results, errors } = await searchEnhancements.enhancedSearch(
-        debouncedSearchQuery, userId, apiKey, activeFilters, useAISearch,
+        debouncedSearchQuery, userId, activeFilters, useAISearch,
         (partial) => {
           if (searchGeneration.current !== generation) return;
           setSearchResults(partial);
@@ -294,7 +312,7 @@ export default function UnifiedSearchRedesign() {
     } finally {
       if (searchGeneration.current === generation) setLoading(false);
     }
-  }, [debouncedSearchQuery, filters, selectedTypes, useAISearch, useWebSearch, webSearchModel, userId, apiKey]);
+  }, [debouncedSearchQuery, filters, selectedTypes, useAISearch, useWebSearch, webSearchModel, userId]);
 
   // ── Auto-search on debounced query change ─────────────────────────────────────
   useEffect(() => {
@@ -367,8 +385,8 @@ export default function UnifiedSearchRedesign() {
   // ── Action handlers ────────────────────────────────────────────────────────────
   const handleClipResult = async (result: SearchResult) => {
     searchAnalyticsService.trackClick(userId, searchQuery, result.type);
-    try { await searchClipboardService.clipSearchResult(userId, result); await loadClipboardItems(); }
-    catch { /* silent */ }
+    try { await searchClipboardService.clipSearchResult(userId, result); await loadClipboardItems(); toast.success('Clipped to clipboard'); }
+    catch { toast.error('Failed to clip result'); }
   };
 
   const handleQuickNote = async () => {
@@ -387,7 +405,7 @@ export default function UnifiedSearchRedesign() {
   };
 
   const handleVoiceSearch = async () => {
-    if (!voiceSearchService.isVoiceSearchSupported()) return alert('Voice search not supported');
+    if (!voiceSearchService.isVoiceSearchSupported()) { toast.error('Voice search is not supported in this browser'); return; }
     setIsListening(true);
     try { const res = await voiceSearchService.startListening(); setSearchQuery(res.transcript); performSearch(); }
     catch { /* silent */ }
@@ -401,11 +419,13 @@ export default function UnifiedSearchRedesign() {
   };
 
   const handleBatchClip = async () => {
-    for (const r of searchResults.filter(r => selectedResults.has(r.id))) {
+    const items = searchResults.filter(r => selectedResults.has(r.id));
+    for (const r of items) {
       try { await searchClipboardService.clipSearchResult(userId, r); } catch { /* skip */ }
     }
     await loadClipboardItems();
     setSelectedResults(new Set());
+    toast.success(`Clipped ${items.length} item${items.length !== 1 ? 's' : ''}`);
   };
 
   const handleBatchExport = () => {
@@ -437,45 +457,7 @@ export default function UnifiedSearchRedesign() {
     else if (e.key === 'Escape')  { e.preventDefault(); setSearchQuery(''); searchInputRef.current?.focus(); }
   };
 
-  // ── Result card ────────────────────────────────────────────────────────────────
-  const ResultCard = ({ result }: { result: SearchResult }) => {
-    const Icon       = getIcon(result.type);
-    const isSelected = selectedResults.has(result.id);
-    return (
-      <div
-        className={`result-card-modern group ${isSelected ? 'selected' : ''}`}
-        role="article"
-        tabIndex={0}
-        onClick={() => setDetailResult(result)}
-        onKeyDown={e => { if (e.key === 'Enter') setDetailResult(result); }}
-      >
-        <button
-          type="button"
-          className={`result-select-btn ${isSelected ? 'selected' : ''}`}
-          title={isSelected ? 'Deselect' : 'Select'}
-          aria-label={isSelected ? 'Deselect result' : 'Select result'}
-          onClick={e => toggleResultSelect(result.id, e)}
-        >
-          <CheckSquare size={13} />
-        </button>
-
-        {/* Badge + timestamp row */}
-        <div className="result-header-row">
-          <span className="result-source-badge">
-            <Icon size={11} />
-            <span>{result.type.replace('_', ' ')}</span>
-          </span>
-          <span className="result-timestamp">{formatTimestamp(result.timestamp)}</span>
-        </div>
-
-        {/* Title — topic level, prominent */}
-        <h4 className="result-title-modern">{result.title}</h4>
-
-        {/* Snippet — content level, subordinate */}
-        <p className="result-snippet">{result.content}</p>
-      </div>
-    );
-  };
+  // ResultCard is now extracted to SearchResultCard.tsx (React.memo'd)
 
   // ── Render ─────────────────────────────────────────────────────────────────────
   return (
@@ -515,7 +497,19 @@ export default function UnifiedSearchRedesign() {
           <div className="search-header-divider" />
 
           <button type="button" className="search-action-btn" title="Save search" disabled={!searchQuery.trim()} onClick={() => setShowSaveModal(true)} aria-label="Save current search"><Bookmark size={15} /></button>
-          <button type="button" className="search-action-btn" title="Export" onClick={() => handleExport(window.confirm('Export as CSV? (Cancel = Markdown)') ? 'csv' : 'markdown')} aria-label="Export results"><Download size={15} /></button>
+          <div className="export-dropdown-wrapper" ref={exportMenuRef}>
+            <button type="button" className="search-action-btn" title="Export" aria-label="Export results"
+              onClick={() => setShowExportMenu(v => !v)}>
+              <Download size={15} />
+            </button>
+            {showExportMenu && (
+              <div className="export-dropdown">
+                <button type="button" onClick={() => { handleExport('csv'); setShowExportMenu(false); }}>CSV</button>
+                <button type="button" onClick={() => { handleExport('markdown'); setShowExportMenu(false); }}>Markdown</button>
+                <button type="button" onClick={() => { handleExport('pdf'); setShowExportMenu(false); }}>PDF (Print)</button>
+              </div>
+            )}
+          </div>
         </div>
       </header>
 
@@ -533,7 +527,7 @@ export default function UnifiedSearchRedesign() {
       <div
         className={`search-redesign-body ${showClipboard ? 'clipboard-open' : ''}`}
         style={{
-          gridTemplateColumns: `${showFilters ? 'var(--search-sidebar-width)' : '0px'} 1fr ${showClipboard ? 'var(--search-clipboard-width)' : '0px'}`,
+          gridTemplateColumns: `${showFilters ? 'var(--search-sidebar-width)' : '0px'} 1fr ${showClipboard ? (clipboardExpanded ? '420px' : 'var(--search-clipboard-width)') : '0px'}`,
         }}
       >
         {/* ── LEFT: Filters ────────────────────────────────────────────────── */}
@@ -543,11 +537,23 @@ export default function UnifiedSearchRedesign() {
             <h3>Saved Searches</h3>
             <div className="filter-options">
               {savedSearches.slice(0, 6).map(s => (
-                <button type="button" key={s.id} className="filter-option-btn"
-                  onClick={() => { setSearchQuery(s.query); setFilters(s.filters); }}>
-                  <Bookmark size={13} />
-                  <span className="filter-name-text">{s.name}</span>
-                </button>
+                <div key={s.id} className="filter-option-row">
+                  <button type="button" className="filter-option-btn"
+                    onClick={() => { setSearchQuery(s.query); setFilters(s.filters); }}>
+                    <Bookmark size={13} />
+                    <span className="filter-name-text">{s.name}</span>
+                  </button>
+                  <button type="button" className="filter-delete-btn"
+                    title="Delete saved search" aria-label={`Delete saved search "${s.name}"`}
+                    onClick={async (e) => {
+                      e.stopPropagation();
+                      await savedSearchesService.deleteSavedSearch(userId, s.id);
+                      const updated = await savedSearchesService.getSavedSearches(userId);
+                      setSavedSearches(updated);
+                    }}>
+                    <X size={11} />
+                  </button>
+                </div>
               ))}
               {savedSearches.length === 0 && (
                 <span className="filter-empty-note">No saved searches yet</span>
@@ -584,6 +590,15 @@ export default function UnifiedSearchRedesign() {
               <button type="button" className={`filter-option-btn ${useWebSearch ? 'active' : ''}`} onClick={toggleWebSearch} aria-pressed={useWebSearch ? 'true' : 'false'}>
                 <Globe size={13} /><span>Web search</span>
               </button>
+              {useWebSearch && (
+                <select className="sonar-model-select" value={webSearchModel}
+                  onChange={e => setWebSearchModel(e.target.value as 'sonar' | 'sonar-pro' | 'sonar-reasoning')}
+                  aria-label="Web search model">
+                  <option value="sonar">Sonar (Fast)</option>
+                  <option value="sonar-pro">Sonar Pro (Deep)</option>
+                  <option value="sonar-reasoning">Sonar Reasoning</option>
+                </select>
+              )}
             </div>
           </div>
 
@@ -742,7 +757,7 @@ export default function UnifiedSearchRedesign() {
                   const CatIcon = cat.icon;
                   return (
                     <button type="button" key={cat.type} className="search-category-card" role="listitem"
-                      onClick={() => { setSearchQuery(cat.query); searchInputRef.current?.focus(); }}>
+                      onClick={() => { setSelectedTypes(new Set([cat.type])); setSearchQuery(''); searchInputRef.current?.focus(); }}>
                       <CatIcon size={22} className="category-icon" />
                       <span>{cat.label}</span>
                     </button>
@@ -837,6 +852,10 @@ export default function UnifiedSearchRedesign() {
           {selectedResults.size > 0 && (
             <div className="batch-toolbar">
               <span className="batch-toolbar-count">{selectedResults.size} selected</span>
+              <button type="button" className="batch-btn-secondary" aria-label="Select all visible results"
+                onClick={() => setSelectedResults(new Set(searchResults.slice(0, visibleCount).map(r => r.id)))}>
+                Select all
+              </button>
               <button type="button" className="batch-btn-primary" onClick={handleBatchClip}>Clip all</button>
               <button type="button" className="batch-btn-secondary" onClick={handleBatchExport}>Export CSV</button>
               <button type="button" className="batch-clear-btn" onClick={() => setSelectedResults(new Set())}>Clear</button>
@@ -855,11 +874,11 @@ export default function UnifiedSearchRedesign() {
                       <span className="timeline-date-label">{group.label}</span>
                       <div className="timeline-date-line" />
                     </div>
-                    {group.items.map(result => <ResultCard key={result.id} result={result} />)}
+                    {group.items.map(result => <SearchResultCard key={result.id} result={result} isSelected={selectedResults.has(result.id)} onSelect={toggleResultSelect} onDetail={setDetailResult} />)}
                   </React.Fragment>
                 ))
               : searchResults.slice(0, visibleCount).map(result => (
-                  <ResultCard key={result.id} result={result} />
+                  <SearchResultCard key={result.id} result={result} isSelected={selectedResults.has(result.id)} onSelect={toggleResultSelect} onDetail={setDetailResult} />
                 ))
             }
 
@@ -876,7 +895,7 @@ export default function UnifiedSearchRedesign() {
 
           <div className="clipboard-header">
             {/* Small caps section title */}
-            <h3>Clipboard</h3>
+            <h3>Clipboard{clipboardItems.length > 0 && <span className="clipboard-count-badge">{clipboardItems.length}</span>}</h3>
             <div className="clipboard-header-actions">
               <button type="button" className="search-action-btn"
                 onClick={() => setClipboardView(v => v === 'notes' ? 'categories' : 'notes')}
@@ -885,8 +904,9 @@ export default function UnifiedSearchRedesign() {
                 {clipboardView === 'notes' ? <Folder size={14} /> : <StickyNote size={14} />}
               </button>
               <button type="button" className="search-action-btn"
-                title="Expand" aria-label="Expand clipboard">
-                <Maximize2 size={14} />
+                title={clipboardExpanded ? 'Collapse' : 'Expand'} aria-label={clipboardExpanded ? 'Collapse clipboard' : 'Expand clipboard'}
+                onClick={() => setClipboardExpanded(v => !v)}>
+                {clipboardExpanded ? <Minimize2 size={14} /> : <Maximize2 size={14} />}
               </button>
             </div>
           </div>
@@ -914,11 +934,28 @@ export default function UnifiedSearchRedesign() {
             {clipboardItems.map(item => (
               <div key={item.id} className="clipboard-item-card">
                 <div className="clipboard-item-row">
-                  {/* Item title — small but readable */}
                   <p className="clipboard-item-title">{item.title}</p>
-                  <Pin size={11} className={`clipboard-pin-icon${item.pinned ? ' pinned' : ''}`} />
+                  <div className="clipboard-item-actions">
+                    <button type="button" className="clipboard-icon-btn"
+                      title={item.pinned ? 'Unpin' : 'Pin'} aria-label={item.pinned ? 'Unpin item' : 'Pin item'}
+                      onClick={async (e) => {
+                        e.stopPropagation();
+                        await searchClipboardService.updateClipboardItem(userId, item.id, { pinned: !item.pinned });
+                        loadClipboardItems();
+                      }}>
+                      <Pin size={11} className={`clipboard-pin-icon${item.pinned ? ' pinned' : ''}`} />
+                    </button>
+                    <button type="button" className="clipboard-icon-btn clipboard-delete-btn"
+                      title="Remove" aria-label="Remove clipboard item"
+                      onClick={async (e) => {
+                        e.stopPropagation();
+                        await searchClipboardService.deleteClipboardItem(userId, item.id);
+                        loadClipboardItems();
+                      }}>
+                      <X size={11} />
+                    </button>
+                  </div>
                 </div>
-                {/* Safe plain-text preview — no HTML injection */}
                 <p className="clipboard-item-preview">{stripHtml(item.content)}</p>
                 <div className="clipboard-item-meta">
                   <span>{formatTimestamp(new Date(item.createdAt))}</span>

@@ -431,7 +431,7 @@ export const ResearchMission: React.FC<ResearchMissionProps> = ({
                 {/* Citations */}
                 {msg.role === 'assistant' && msg.citations && msg.citations.length > 0 && (
                   <div className="mt-2 pt-2 border-t border-white/10 flex flex-wrap gap-1">
-                    {msg.citations.map((c: any, i: number) => (
+                    {msg.citations.map((c, i) => (
                       <span key={i} className="war-room-badge text-xs">
                         <BookOpen className="fa mr-1" />
                         {c.title}

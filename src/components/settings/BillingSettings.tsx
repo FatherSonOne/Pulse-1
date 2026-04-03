@@ -155,9 +155,9 @@ export const BillingSettings: React.FC = () => {
       <div className="rounded-xl p-6" style={{ background: 'var(--set-surface)', border: '1px solid var(--set-border)' }}>
         <h4 className="mb-4" style={{ fontSize: '11px', fontWeight: 600, textTransform: 'uppercase', letterSpacing: '0.12em', color: 'var(--set-text-muted)' }}>Billing Information</h4>
         {[
-          { label: 'Current Plan', value: 'Individual (Free)', isLast: false },
-          { label: 'Billing Cycle', value: 'N/A', isLast: false },
-          { label: 'Next Invoice', value: 'N/A', isLast: true },
+          { label: 'Current Plan', value: currentPlan?.planName ? `${currentPlan.planName}` : 'Individual (Free)', isLast: false },
+          { label: 'Billing Cycle', value: currentPlan?.billingInterval || 'N/A', isLast: false },
+          { label: 'Next Invoice', value: currentPlan?.currentPeriodEnd ? new Date(currentPlan.currentPeriodEnd).toLocaleDateString() : 'N/A', isLast: true },
         ].map(({ label, value, isLast }) => (
           <div key={label} className="flex items-center justify-between py-3" style={{ borderBottom: isLast ? 'none' : '1px solid var(--set-border)' }}>
             <span className="text-sm" style={{ color: 'var(--set-text-secondary)' }}>{label}</span>

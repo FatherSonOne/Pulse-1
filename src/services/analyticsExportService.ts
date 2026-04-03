@@ -222,22 +222,46 @@ export class AnalyticsExportService {
     // Get top contacts
     const topContacts = await this.getTopContacts(userId, dateRange);
 
-    // Calculate response time average (placeholder)
-    const responseTimeAvg = 15; // minutes
+    // Calculate response time average from analytics_response_times
+    const { data: rtData } = await supabase
+      .from('analytics_response_times')
+      .select('response_time_minutes')
+      .eq('user_id', userId)
+      .gte('incoming_at', dateRange.start)
+      .lte('incoming_at', dateRange.end);
+    const responseTimeAvg = rtData && rtData.length > 0
+      ? rtData.reduce((sum, r) => sum + (r.response_time_minutes || 0), 0) / rtData.length
+      : 0;
 
-    // Get sentiment breakdown (placeholder)
+    // Get sentiment breakdown from daily metrics
+    const { data: sentData } = await supabase
+      .from('analytics_daily_metrics')
+      .select('positive_messages, neutral_messages, negative_messages')
+      .eq('user_id', userId)
+      .gte('date', dateRange.start.split('T')[0])
+      .lte('date', dateRange.end.split('T')[0]);
+    const totalPos = sentData?.reduce((s, m) => s + (m.positive_messages || 0), 0) || 0;
+    const totalNeu = sentData?.reduce((s, m) => s + (m.neutral_messages || 0), 0) || 0;
+    const totalNeg = sentData?.reduce((s, m) => s + (m.negative_messages || 0), 0) || 0;
+    const totalSent = totalPos + totalNeu + totalNeg || 1;
     const sentimentBreakdown = {
-      positive: 65,
-      neutral: 28,
-      negative: 7
+      positive: Math.round((totalPos / totalSent) * 100),
+      neutral: Math.round((totalNeu / totalSent) * 100),
+      negative: Math.round((totalNeg / totalSent) * 100)
     };
 
-    // Get message types (placeholder)
-    const messageTypes = {
-      text: 2500,
-      voice: 300,
-      video: 47
-    };
+    // Get message types from unified_messages
+    const { data: typeData } = await supabase
+      .from('unified_messages')
+      .select('platform')
+      .eq('user_id', userId)
+      .gte('timestamp', dateRange.start)
+      .lte('timestamp', dateRange.end);
+    const messageTypes = { text: 0, voice: 0, video: 0 };
+    (typeData || []).forEach(m => {
+      if (m.platform === 'voxer') messageTypes.voice++;
+      else messageTypes.text++;
+    });
 
     // Get hourly activity
     const hourlyActivity = await this.getHourlyActivity(userId, dateRange);
@@ -302,56 +326,79 @@ export class AnalyticsExportService {
   }
 
   /**
-   * Get message trend data
+   * Get message trend data from daily metrics
    */
   private async getMessageTrend(
     userId: string,
     dateRange: { start: string; end: string }
   ): Promise<{ date: string; count: number }[]> {
-    // This would query messages grouped by date
-    // For now, return sample data
-    const days = Math.min(7, Math.ceil((new Date(dateRange.end).getTime() - new Date(dateRange.start).getTime()) / (24 * 60 * 60 * 1000)));
+    const { data, error } = await supabase
+      .from('analytics_daily_metrics')
+      .select('date, messages_sent, messages_received')
+      .eq('user_id', userId)
+      .gte('date', dateRange.start.split('T')[0])
+      .lte('date', dateRange.end.split('T')[0])
+      .order('date', { ascending: true });
 
-    return Array.from({ length: days }, (_, i) => {
-      const date = new Date(Date.now() - (days - 1 - i) * 24 * 60 * 60 * 1000);
-      return {
-        date: date.toLocaleDateString('en-US', { weekday: 'short', month: 'short', day: 'numeric' }),
-        count: Math.floor(Math.random() * 200) + 100
-      };
-    });
+    if (error || !data) return [];
+
+    return data.map(m => ({
+      date: new Date(m.date).toLocaleDateString('en-US', { weekday: 'short', month: 'short', day: 'numeric' }),
+      count: (m.messages_sent || 0) + (m.messages_received || 0)
+    }));
   }
 
   /**
-   * Get top contacts
+   * Get top contacts from engagement data
    */
   private async getTopContacts(
     userId: string,
-    dateRange: { start: string; end: string }
+    _dateRange: { start: string; end: string }
   ): Promise<{ name: string; email?: string; count: number }[]> {
-    // This would query messages grouped by contact
-    // For now, return sample data
-    return [
-      { name: 'Alice Chen', email: 'alice@example.com', count: 342 },
-      { name: 'Bob Smith', email: 'bob@example.com', count: 256 },
-      { name: 'Carol Davis', email: 'carol@example.com', count: 198 },
-      { name: 'David Wilson', email: 'david@example.com', count: 167 },
-      { name: 'Eve Thompson', email: 'eve@example.com', count: 145 }
-    ];
+    const { data, error } = await supabase
+      .from('analytics_contact_engagement')
+      .select('contact_name, contact_identifier, total_messages_sent, total_messages_received')
+      .eq('user_id', userId)
+      .order('engagement_score', { ascending: false })
+      .limit(5);
+
+    if (error || !data) return [];
+
+    return data.map(c => ({
+      name: c.contact_name || c.contact_identifier,
+      email: c.contact_identifier.includes('@') ? c.contact_identifier : undefined,
+      count: (c.total_messages_sent || 0) + (c.total_messages_received || 0)
+    }));
   }
 
   /**
-   * Get hourly activity data
+   * Get hourly activity data from daily metrics
    */
   private async getHourlyActivity(
     userId: string,
     dateRange: { start: string; end: string }
   ): Promise<{ hour: number; count: number }[]> {
-    // This would query messages grouped by hour
-    // For now, return sample data
-    return Array.from({ length: 24 }, (_, hour) => ({
-      hour,
-      count: Math.floor(Math.random() * 150) + 20
-    }));
+    const { data, error } = await supabase
+      .from('analytics_daily_metrics')
+      .select('messages_by_hour')
+      .eq('user_id', userId)
+      .gte('date', dateRange.start.split('T')[0])
+      .lte('date', dateRange.end.split('T')[0]);
+
+    const hourly: Record<number, number> = {};
+    for (let i = 0; i < 24; i++) hourly[i] = 0;
+
+    if (!error && data) {
+      data.forEach(m => {
+        if (m.messages_by_hour && typeof m.messages_by_hour === 'object') {
+          Object.entries(m.messages_by_hour as Record<string, number>).forEach(([hour, count]) => {
+            hourly[parseInt(hour)] = (hourly[parseInt(hour)] || 0) + (count || 0);
+          });
+        }
+      });
+    }
+
+    return Array.from({ length: 24 }, (_, hour) => ({ hour, count: hourly[hour] || 0 }));
   }
 
   /**

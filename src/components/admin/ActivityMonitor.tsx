@@ -5,6 +5,7 @@
 
 import React, { useState, useEffect, useRef, useCallback } from 'react';
 import { supabase } from '../../services/supabase';
+import { settingsService } from '../../services/settingsService';
 
 import { Loader2, RefreshCw, Zap } from 'lucide-react';
 
@@ -154,6 +155,8 @@ const ActivityMonitor: React.FC = () => {
   const [loading, setLoading] = useState(true);
   const [lastRefresh, setLastRefresh] = useState(new Date());
   const timerRef = useRef<ReturnType<typeof setInterval>>();
+  const [hideFromLeaderboard, setHideFromLeaderboard] = useState(false);
+  const [currentUserId, setCurrentUserId] = useState<string | null>(null);
 
   // ── Fetch: presence ──────────────────────────────────────────
   const fetchPresence = useCallback(async () => {
@@ -254,8 +257,31 @@ const ActivityMonitor: React.FC = () => {
   }, [fetchPresence, fetchMsgStats, fetchFeed]);
 
   useEffect(() => {
+    // Load current user ID and leaderboard setting
+    const loadUserSettings = async () => {
+      try {
+        const { data: { user } } = await supabase.auth.getUser();
+        if (user) setCurrentUserId(user.id);
+        const lbSetting = await settingsService.get('activityMonitorLeaderboard');
+        if (lbSetting === false) setHideFromLeaderboard(true);
+      } catch {}
+    };
+    loadUserSettings();
+
     loadAll();
-    timerRef.current = setInterval(loadAll, 30_000);
+
+    // Respect sync frequency setting
+    const syncFreq = localStorage.getItem('pulse_sync_frequency') || 'realtime';
+    const intervalMap: Record<string, number> = {
+      realtime: 10_000,
+      '15min': 15 * 60_000,
+      hourly: 60 * 60_000,
+    };
+    const interval = intervalMap[syncFreq];
+    if (interval) {
+      timerRef.current = setInterval(loadAll, interval);
+    }
+    // 'manual' = no auto-refresh
 
     // Real-time: re-fetch presence when any user's online_status changes
     const ch = supabase
@@ -276,8 +302,12 @@ const ActivityMonitor: React.FC = () => {
   const weekAgo      = Date.now() - 7 * 86_400_000;
   const newToday     = users.filter(u => u.createdAt.getTime() > dayAgo).length;
   const newThisWeek  = users.filter(u => u.createdAt.getTime() > weekAgo).length;
-  const total7d      = msgStats.reduce((s, u) => s + u.totalSent7d, 0);
-  const maxMsg       = Math.max(...msgStats.map(u => u.totalSent7d), 1);
+  // Filter current user from leaderboard if they opted out
+  const filteredMsgStats = hideFromLeaderboard && currentUserId
+    ? msgStats.filter(u => u.userId !== currentUserId)
+    : msgStats;
+  const total7d      = filteredMsgStats.reduce((s, u) => s + u.totalSent7d, 0);
+  const maxMsg       = Math.max(...filteredMsgStats.map(u => u.totalSent7d), 1);
 
   // ─────────────────────────────────────────────────────────────
 
@@ -444,7 +474,7 @@ const ActivityMonitor: React.FC = () => {
             )
           ) : (
             <div style={{ display: 'flex', flexDirection: 'column', gap: 10 }}>
-              {msgStats.slice(0, 10).map((u, i) => (
+              {filteredMsgStats.slice(0, 10).map((u, i) => (
                 <div key={u.userId} style={{ display: 'flex', alignItems: 'center', gap: 12 }}>
                   <span style={{ width: 20, textAlign: 'right', fontSize: 12, fontWeight: 700, color: i < 3 ? ['#f59e0b','#9ca3af','#b45309'][i] : '#3f3f46' }}>{i + 1}</span>
                   <Initials name={u.name} size={28} />

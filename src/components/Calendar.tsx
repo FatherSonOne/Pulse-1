@@ -4,7 +4,8 @@ import { fetchCalendarEvents, fetchTasks } from '../services/authService';
 import { dataService } from '../services/dataService';
 import { googleCalendarService, GoogleCalendar } from '../services/googleCalendarService';
 import { outlookCalendarService } from '../services/outlookCalendarService';
-import { unifiedCalendarService } from '../services/unifiedCalendarService';
+import { supabase } from '../services/supabase';
+import { downloadICS } from '../services/calendarExportService';
 import { YearView, MonthView, WeekView, DayView, CalendarHeader, AgendaView, OverlayEvent } from './CalendarViews';
 import { CalendarTimelineView } from './Calendar/CalendarTimelineView';
 import DayDetailModal from './DayDetailModal';
@@ -55,6 +56,9 @@ interface CalendarProps {
 }
 
 const Calendar: React.FC<CalendarProps> = ({ contacts, openTaskPanel = false, onNavigateToIntegrations }) => {
+  // Current user ID from Supabase auth
+  const [currentUserId, setCurrentUserId] = useState<string>('');
+
   // Mobile detection
   const [isMobile, setIsMobile] = useState(window.innerWidth < 768);
   /** Show swipe hint the first time user enters WeekView on mobile */
@@ -86,10 +90,14 @@ const Calendar: React.FC<CalendarProps> = ({ contacts, openTaskPanel = false, on
   /** Whether the free-time finder panel is open */
   const [showFreeTimeFinder, setShowFreeTimeFinder] = useState(false);
 
-  // Team Management State
-  const [teams, setTeams] = useState<Team[]>([
-    { id: 'default-team', name: 'My Team', color: 'bg-blue-500', memberIds: [] }
-  ]);
+  // Team Management State — persisted to localStorage
+  const [teams, setTeams] = useState<Team[]>(() => {
+    try {
+      const stored = localStorage.getItem('cal_teams');
+      if (stored) return JSON.parse(stored);
+    } catch { /* ignore */ }
+    return [{ id: 'default-team', name: 'My Team', color: 'bg-blue-500', memberIds: [] }];
+  });
   const [selectedTeamId, setSelectedTeamId] = useState<string>('default-team');
   const [showTeamModal, setShowTeamModal] = useState(false);
   const [editingTeam, setEditingTeam] = useState<Team | null>(null);
@@ -136,12 +144,18 @@ const Calendar: React.FC<CalendarProps> = ({ contacts, openTaskPanel = false, on
   const [goalAlignments, setGoalAlignments] = useState<GoalAlignment[]>([]);
   const [analytics, setAnalytics] = useState<CalendarAnalytics | null>(null);
 
-  // Goals State
-  const [goals, setGoals] = useState<Goal[]>([
-    { id: 'goal-1', title: 'Deep Work', category: 'focus', priority: 1, targetHoursPerWeek: 20, color: 'bg-blue-500' },
-    { id: 'goal-2', title: 'Team Meetings', category: 'collaboration', priority: 2, targetHoursPerWeek: 8, color: 'bg-green-500' },
-    { id: 'goal-3', title: 'Client Work', category: 'client', priority: 3, targetHoursPerWeek: 10, color: 'bg-purple-500' },
-  ]);
+  // Goals State — persisted to localStorage
+  const [goals, setGoals] = useState<Goal[]>(() => {
+    try {
+      const stored = localStorage.getItem('cal_goals');
+      if (stored) return JSON.parse(stored);
+    } catch { /* ignore */ }
+    return [
+      { id: 'goal-1', title: 'Deep Work', category: 'focus', priority: 1, targetHoursPerWeek: 20, color: 'bg-blue-500' },
+      { id: 'goal-2', title: 'Team Meetings', category: 'collaboration', priority: 2, targetHoursPerWeek: 8, color: 'bg-green-500' },
+      { id: 'goal-3', title: 'Client Work', category: 'client', priority: 3, targetHoursPerWeek: 10, color: 'bg-purple-500' },
+    ];
+  });
   const [showGoalModal, setShowGoalModal] = useState(false);
   const [editingGoal, setEditingGoal] = useState<Goal | null>(null);
 
@@ -178,10 +192,6 @@ const Calendar: React.FC<CalendarProps> = ({ contacts, openTaskPanel = false, on
   const [newEventAllDay, setNewEventAllDay] = useState(false);
   const [newEventStatus, setNewEventStatus] = useState<'confirmed' | 'tentative' | 'cancelled'>('confirmed');
 
-  // Quick Scheduler State
-  const [showQuickScheduler, setShowQuickScheduler] = useState(false);
-  const [quickSchedulerDate, setQuickSchedulerDate] = useState<Date | null>(null);
-
   // Drag and Drop State
   const [draggedEvent, setDraggedEvent] = useState<CalendarEvent | null>(null);
   const [dragOverDate, setDragOverDate] = useState<Date | null>(null);
@@ -215,13 +225,13 @@ const Calendar: React.FC<CalendarProps> = ({ contacts, openTaskPanel = false, on
     })),
   ], [customEventTypes]);
 
-  // Settings Panel
-  const [showSettings, setShowSettings] = useState(false);
+  // Settings Panel (showCalendarSettings used below)
   const [selectedTimeZone, setSelectedTimeZone] = useState(TIME_ZONES[0].id);
   const [weekStartsOn, setWeekStartsOn] = useState<'sunday' | 'monday'>('sunday');
   const [showWeekNumbers, setShowWeekNumbers] = useState(false);
 
-  // Search/Filter
+  // Search/Filter — debounced for performance
+  const [searchInput, setSearchInput] = useState('');
   const [searchQuery, setSearchQuery] = useState('');
   const [filterEventType, setFilterEventType] = useState<string>('all');
 
@@ -293,6 +303,38 @@ const Calendar: React.FC<CalendarProps> = ({ contacts, openTaskPanel = false, on
     };
     loadData();
   }, []);
+
+  // Resolve current user ID from Supabase auth
+  useEffect(() => {
+    const resolve = async () => {
+      try {
+        const { data: { user } } = await supabase.auth.getUser();
+        if (user?.id) setCurrentUserId(user.id);
+      } catch { /* auth not available yet */ }
+    };
+    resolve();
+    const { data: { subscription } } = supabase.auth.onAuthStateChange((_event, session) => {
+      setCurrentUserId(session?.user?.id ?? '');
+    });
+    return () => subscription.unsubscribe();
+  }, []);
+
+  // Persist teams to localStorage on change
+  useEffect(() => {
+    localStorage.setItem('cal_teams', JSON.stringify(teams));
+  }, [teams]);
+
+  // Persist goals to localStorage on change
+  useEffect(() => {
+    localStorage.setItem('cal_goals', JSON.stringify(goals));
+  }, [goals]);
+
+  // Debounce search input by 300ms
+  useEffect(() => {
+    if (!searchInput) { setSearchQuery(''); return; }
+    const timer = setTimeout(() => setSearchQuery(searchInput), 300);
+    return () => clearTimeout(timer);
+  }, [searchInput]);
 
   // Sync with Google Calendar
   const syncGoogleCalendar = useCallback(async (fetchHistorical = false) => {
@@ -896,7 +938,7 @@ const Calendar: React.FC<CalendarProps> = ({ contacts, openTaskPanel = false, on
     if (!newTeamName.trim()) return;
 
     const newTeam: Team = {
-      id: `team-${Date.now()}`,
+      id: `team-${crypto.randomUUID()}`,
       name: newTeamName.trim(),
       color: newTeamColor,
       memberIds: newTeamMembers,
@@ -955,7 +997,7 @@ const Calendar: React.FC<CalendarProps> = ({ contacts, openTaskPanel = false, on
     const end = new Date(`${eventDetails.date}T${eventDetails.endTime}`);
 
     const newEvent: CalendarEvent = {
-      id: Date.now().toString(),
+      id: crypto.randomUUID(),
       title: eventDetails.title,
       start,
       end,
@@ -1359,6 +1401,24 @@ const Calendar: React.FC<CalendarProps> = ({ contacts, openTaskPanel = false, on
         }
       }
 
+      // Update in Outlook if it's an Outlook event
+      if (editingEvent.outlookEventId && outlookConnected) {
+        try {
+          await outlookCalendarService.updateEvent(
+            editingEvent.outlookEventId,
+            updatedEvent,
+            editingEvent.calendarId || 'primary'
+          );
+        } catch (error) {
+          console.error('Failed to update Outlook Calendar event:', error);
+        }
+      }
+
+      // Persist update to Supabase (non-blocking)
+      dataService.updateEvent(editingEvent.id, updatedEvent).catch(err =>
+        console.error('Failed to persist event update:', err)
+      );
+
       setEvents(prev => prev.map(ev =>
         ev.id === editingEvent.id ? updatedEvent : ev
       ));
@@ -1366,7 +1426,7 @@ const Calendar: React.FC<CalendarProps> = ({ contacts, openTaskPanel = false, on
     } else {
       // Create new event
       const newEvent: CalendarEvent = {
-          id: Date.now().toString(),
+          id: crypto.randomUUID(),
           title: newEventTitle,
           start,
           end,
@@ -1391,6 +1451,15 @@ const Calendar: React.FC<CalendarProps> = ({ contacts, openTaskPanel = false, on
           console.error('Failed to create Google Calendar event:', error);
           // Still add locally even if Google sync fails
         }
+      }
+
+      // Persist to Supabase (non-blocking)
+      if (!newEvent.googleEventId) {
+        dataService.createEvent(newEvent).then(saved => {
+          if (saved) {
+            setEvents(prev => prev.map(ev => ev.id === newEvent.id ? { ...ev, id: saved.id } : ev));
+          }
+        }).catch(err => console.error('Failed to persist event:', err));
       }
 
       setEvents(prev => [...prev, newEvent]);
@@ -1483,9 +1552,6 @@ const Calendar: React.FC<CalendarProps> = ({ contacts, openTaskPanel = false, on
    */
   const exportAsICS = useCallback(() => {
     const pad = (n: number) => String(n).padStart(2, '0');
-    const toICSDate = (d: Date) =>
-      `${d.getFullYear()}${pad(d.getMonth() + 1)}${pad(d.getDate())}T` +
-      `${pad(d.getHours())}${pad(d.getMinutes())}${pad(d.getSeconds())}`;
 
     // Determine the window to export
     const windowStart = new Date(currentDate);
@@ -1509,45 +1575,12 @@ const Calendar: React.FC<CalendarProps> = ({ contacts, openTaskPanel = false, on
       e.start >= windowStart && e.start <= windowEnd
     );
 
-    const lines: string[] = [
-      'BEGIN:VCALENDAR',
-      'VERSION:2.0',
-      'PRODID:-//Pulse Calendar//EN',
-      'CALSCALE:GREGORIAN',
-    ];
-
-    scope.forEach(ev => {
-      lines.push('BEGIN:VEVENT');
-      lines.push(`UID:${ev.id}@pulse-calendar`);
-      lines.push(`DTSTAMP:${toICSDate(new Date())}`);
-      if (ev.allDay) {
-        const ds = ev.start;
-        const de = ev.end;
-        lines.push(`DTSTART;VALUE=DATE:${ds.getFullYear()}${pad(ds.getMonth()+1)}${pad(ds.getDate())}`);
-        lines.push(`DTEND;VALUE=DATE:${de.getFullYear()}${pad(de.getMonth()+1)}${pad(de.getDate())}`);
-      } else {
-        lines.push(`DTSTART:${toICSDate(ev.start)}`);
-        lines.push(`DTEND:${toICSDate(ev.end)}`);
-      }
-      lines.push(`SUMMARY:${ev.title.replace(/\n/g, '\\n')}`);
-      if (ev.description) lines.push(`DESCRIPTION:${ev.description.replace(/\n/g, '\\n')}`);
-      if (ev.location)    lines.push(`LOCATION:${ev.location.replace(/\n/g, '\\n')}`);
-      if (ev.meetLink)    lines.push(`URL:${ev.meetLink}`);
-      lines.push('END:VEVENT');
-    });
-
-    lines.push('END:VCALENDAR');
-    const blob = new Blob([lines.join('\r\n')], { type: 'text/calendar;charset=utf-8' });
-    const url  = URL.createObjectURL(blob);
-    const a    = document.createElement('a');
     const label = viewMode === 'week'  ? `week-of-${windowStart.toISOString().slice(0,10)}` :
                   viewMode === 'day'   ? currentDate.toISOString().slice(0,10) :
                   viewMode === 'month' ? `${currentDate.getFullYear()}-${pad(currentDate.getMonth()+1)}` :
                   String(currentDate.getFullYear());
-    a.href     = url;
-    a.download = `pulse-calendar-${label}.ics`;
-    a.click();
-    URL.revokeObjectURL(url);
+
+    downloadICS(scope, `pulse-calendar-${label}.ics`);
     setShowExportMenu(false);
   }, [currentDate, viewMode, filteredEvents]);
 
@@ -1786,7 +1819,11 @@ const Calendar: React.FC<CalendarProps> = ({ contacts, openTaskPanel = false, on
 
   const handleDeleteEvent = () => {
     if (contextMenu.eventId) {
-      setEvents(prev => prev.filter(e => e.id !== contextMenu.eventId));
+      const eventId = contextMenu.eventId;
+      setEvents(prev => prev.filter(e => e.id !== eventId));
+      dataService.deleteEvent(eventId).catch(err =>
+        console.error('Failed to delete event from DB:', err)
+      );
     }
     closeContextMenu();
   };
@@ -1797,7 +1834,7 @@ const Calendar: React.FC<CalendarProps> = ({ contacts, openTaskPanel = false, on
       if (event) {
         const duplicated: CalendarEvent = {
           ...event,
-          id: Date.now().toString(),
+          id: crypto.randomUUID(),
           title: `${event.title} (Copy)`,
         };
         setEvents(prev => [...prev, duplicated]);
@@ -2348,7 +2385,7 @@ const Calendar: React.FC<CalendarProps> = ({ contacts, openTaskPanel = false, on
                       <div className="min-h-[280px]">
                         <EventCommentThread
                           eventId={selectedEvent.id}
-                          currentUserId={''}
+                          currentUserId={currentUserId}
                         />
                       </div>
                     )}
@@ -2385,6 +2422,21 @@ const Calendar: React.FC<CalendarProps> = ({ contacts, openTaskPanel = false, on
                               console.error('Failed to delete from Google Calendar:', error);
                             }
                           }
+                          // Sync deletion with Outlook if it's an Outlook event
+                          if (selectedEvent.outlookEventId && outlookConnected) {
+                            try {
+                              await outlookCalendarService.deleteEvent(
+                                selectedEvent.outlookEventId,
+                                selectedEvent.calendarId || 'primary'
+                              );
+                            } catch (error) {
+                              console.error('Failed to delete from Outlook Calendar:', error);
+                            }
+                          }
+                          // Persist deletion to Supabase
+                          dataService.deleteEvent(selectedEvent.id).catch(err =>
+                            console.error('Failed to delete event from DB:', err)
+                          );
                           setEvents(prev => prev.filter(e => e.id !== selectedEvent.id));
                           setShowEventDetail(false);
                         }}
@@ -2459,13 +2511,13 @@ const Calendar: React.FC<CalendarProps> = ({ contacts, openTaskPanel = false, on
             <input
               type="text"
               placeholder="Search events..."
-              value={searchQuery}
-              onChange={(e) => setSearchQuery(e.target.value)}
+              value={searchInput}
+              onChange={(e) => setSearchInput(e.target.value)}
               className="w-full bg-zinc-50 dark:bg-zinc-900 border border-zinc-200 dark:border-zinc-800 rounded-lg px-3 py-1.5 text-xs pl-8 outline-none focus:ring-2 focus:ring-blue-500 dark:text-white"
             />
             <Search className="absolute left-2.5 top-1/2 -translate-y-1/2 text-zinc-400 text-[10px]" />
-            {searchQuery && (
-              <button onClick={() => setSearchQuery('')} className="absolute right-2 top-1/2 -translate-y-1/2 text-zinc-400 hover:text-zinc-600">
+            {searchInput && (
+              <button onClick={() => { setSearchInput(''); setSearchQuery(''); }} className="absolute right-2 top-1/2 -translate-y-1/2 text-zinc-400 hover:text-zinc-600">
                 <X className="text-[10px]" />
               </button>
             )}
@@ -2785,7 +2837,6 @@ const Calendar: React.FC<CalendarProps> = ({ contacts, openTaskPanel = false, on
                  currentDate={currentDate}
                  events={filteredEvents}
                  onDateClick={(date) => {
-                   setQuickSchedulerDate(date);
                    setNewEventDate(date.toISOString().split('T')[0]);
                    setShowEventModal(true);
                  }}

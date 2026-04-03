@@ -1,4 +1,4 @@
-import React, { useState, useEffect } from 'react';
+import React, { useState, useEffect, useRef } from 'react';
 import { Contact } from '../../types';
 import { LeadGradeBadge, LeadStatusBadge } from './LeadScoreIndicator';
 import { LeadScoreCard } from './LeadScoreIndicator';
@@ -18,7 +18,8 @@ import { ContactGoalModal } from './ContactGoalModal';
 import { RelationshipAutopilotToggle } from './RelationshipAutopilotToggle';
 import { supabase } from '../../services/supabase';
 
-import { ArrowRight, Cake, Check, Clock, Globe, Lightbulb, Loader2, Mail, MailOpen, MapPin, MessageSquare, Pen, Phone, Radio, Sparkles, Star, Target, Video, X } from 'lucide-react';
+import toast from 'react-hot-toast';
+import { ArrowRight, Cake, Check, Clock, Globe, Lightbulb, Loader2, Mail, MailOpen, MapPin, MessageSquare, Pen, Phone, Radio, Sparkles, Star, Target, Trash2, Video, X } from 'lucide-react';
 
 // ==================== TYPES ====================
 
@@ -28,6 +29,7 @@ interface ContactDetailProps {
   onClose: () => void;
   onAction: (action: 'message' | 'vox' | 'meet', contactId: string) => void;
   onEdit: (contact: Contact) => void;
+  onDelete?: () => Promise<void>;
   relationshipProfile?: RelationshipProfile | null;
   insights?: RelationshipInsights | null;
   leadScore?: LeadScore | null;
@@ -98,6 +100,7 @@ export const ContactDetail: React.FC<ContactDetailProps> = ({
   onClose,
   onAction,
   onEdit,
+  onDelete,
   relationshipProfile,
   insights,
   leadScore,
@@ -109,6 +112,8 @@ export const ContactDetail: React.FC<ContactDetailProps> = ({
   const [notesEditing, setNotesEditing] = useState(false);
   const [goal, setGoal] = useState<ContactGoal | null>(null);
   const [goalModalOpen, setGoalModalOpen] = useState(false);
+  const [isDeleting, setIsDeleting] = useState(false);
+  const notesRef = useRef<HTMLTextAreaElement>(null);
 
   // ----- Email history (Phase 3) -----
   const [emailHistory, setEmailHistory] = useState<EmailHistoryItem[]>([]);
@@ -607,7 +612,21 @@ export const ContactDetail: React.FC<ContactDetailProps> = ({
           <div className="flex items-center justify-between mb-3">
             <SectionHeader icon="fa-solid fa-note-sticky" label="Notes" />
             <button
-              onClick={() => setNotesEditing(v => !v)}
+              onClick={async () => {
+                if (notesEditing && notesRef.current && contact) {
+                  const newNotes = notesRef.current.value.trim();
+                  if (newNotes !== (contact.notes ?? '').trim()) {
+                    try {
+                      await supabase.from('contacts').update({ notes: newNotes || null }).eq('id', contact.id);
+                      contact.notes = newNotes || undefined;
+                      toast.success('Notes saved');
+                    } catch {
+                      toast.error('Failed to save notes');
+                    }
+                  }
+                }
+                setNotesEditing(v => !v);
+              }}
               className="text-xs text-indigo-500 hover:text-indigo-600 dark:text-indigo-400 dark:hover:text-indigo-300 font-medium"
             >
               {notesEditing ? 'Done' : 'Edit'}
@@ -615,6 +634,7 @@ export const ContactDetail: React.FC<ContactDetailProps> = ({
           </div>
           {notesEditing ? (
             <textarea
+              ref={notesRef}
               defaultValue={contact.notes ?? ''}
               className="w-full min-h-[80px] text-sm text-zinc-700 dark:text-zinc-300 bg-zinc-50 dark:bg-zinc-900 border border-zinc-200 dark:border-zinc-700 rounded-xl p-3 resize-none focus:outline-none focus:ring-2 focus:ring-indigo-500"
               placeholder="Add notes about this contact..."
@@ -674,6 +694,31 @@ export const ContactDetail: React.FC<ContactDetailProps> = ({
             </div>
           )}
         </div>
+
+        {/* ── Danger Zone ── */}
+        {onDelete && (
+          <div className="px-6 py-4 border-t border-red-100 dark:border-red-900/30">
+            <button
+              type="button"
+              onClick={async () => {
+                if (!confirm('Are you sure you want to delete this contact? This action cannot be undone.')) return;
+                setIsDeleting(true);
+                try {
+                  await onDelete();
+                  toast.success('Contact deleted');
+                } catch {
+                  toast.error('Failed to delete contact');
+                  setIsDeleting(false);
+                }
+              }}
+              disabled={isDeleting}
+              className="flex items-center gap-2 px-4 py-2 text-sm font-medium text-red-600 dark:text-red-400 bg-red-50 dark:bg-red-900/20 rounded-lg hover:bg-red-100 dark:hover:bg-red-900/30 transition-colors disabled:opacity-50"
+            >
+              {isDeleting ? <Loader2 className="animate-spin text-sm" /> : <Trash2 className="text-sm" />}
+              Delete Contact
+            </button>
+          </div>
+        )}
 
       </div>
     </div>

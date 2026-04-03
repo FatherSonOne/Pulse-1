@@ -1516,6 +1516,27 @@
 }
 
 /* ============================================
+   REPLY INDICATOR (inside message bubble)
+   ============================================ */
+
+.classic-voxer-reply-indicator {
+  display: flex;
+  align-items: center;
+  gap: 6px;
+  padding: 4px 8px;
+  margin-bottom: 6px;
+  background: var(--cv-bg-tertiary);
+  border-left: 2px solid var(--cv-accent);
+  border-radius: 0 6px 6px 0;
+  cursor: pointer;
+  transition: background 0.15s ease;
+}
+
+.classic-voxer-reply-indicator:hover {
+  background: var(--cv-bg-hover);
+}
+
+/* ============================================
    REPLY BAR
    ============================================ */
 

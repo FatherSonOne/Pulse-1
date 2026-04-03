@@ -182,20 +182,24 @@ export const PRIORITY_CONFIG: Record<PriorityLevel, {
 };
 
 // ============================================
-// VOX THREADS
+// VOX INLINE THREADS
+// (In-message reply threads attached to a specific Vox at a timestamp.
+//  Renamed from VoxThread/VoxThreadReply to avoid confusion with
+//  VoiceThread in voxModeTypes.ts which represents full async
+//  conversation threads in the Voice Threads mode.)
 // ============================================
 
-export interface VoxThread {
+export interface VoxInlineThread {
   id: string;
   parentVoxId: string;
   parentTimestamp?: number;  // Specific moment being replied to (in seconds)
-  replies: VoxThreadReply[];
+  replies: VoxInlineThreadReply[];
   createdAt: Date;
   lastActivityAt: Date;
   participantIds: string[];
 }
 
-export interface VoxThreadReply {
+export interface VoxInlineThreadReply {
   id: string;
   threadId: string;
   parentReplyId?: string;  // For nested replies

@@ -23,12 +23,19 @@ export interface AISession {
   project_id?: string;
 }
 
+export interface AICitation {
+  title: string;
+  source?: string;
+  excerpt?: string;
+  similarity?: number;
+}
+
 export interface AIMessage {
   id: string;
   role: 'user' | 'assistant';
   content: string;
   created_at: string;
-  citations?: any[];
+  citations?: AICitation[];
 }
 
 export interface AIProject {
@@ -293,7 +300,7 @@ export const ragService = {
       .order('created_at', { ascending: true });
   },
 
-  async addMessage(sessionId: string, userId: string | null, role: 'user' | 'assistant', content: string, citations: any[] = []) {
+  async addMessage(sessionId: string, userId: string | null, role: 'user' | 'assistant', content: string, citations: AICitation[] = []) {
     return await supabase.from('ai_messages').insert({
       session_id: sessionId,
       user_id: userId,

@@ -138,9 +138,6 @@ export const CreateTaskModal: React.FC<CreateTaskModalProps> = ({
         setMetadata({ ...metadata, dependencies: parsed.dependencies });
       }
 
-      // Show success message
-      console.log('✓ Task parsed with AI:', parsed);
-
       // Switch to form mode so user can review/edit
       setInputMode('form');
 

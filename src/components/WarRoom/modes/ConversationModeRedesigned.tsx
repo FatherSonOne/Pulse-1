@@ -373,7 +373,23 @@ export const ConversationModeRedesigned: React.FC<ConversationModeRedesignedProp
               )}
             </div>
             <div className="cvr-notes-actions">
-              <button className="cvr-notes-btn" title="Export notes">
+              <button
+                className="cvr-notes-btn"
+                title="Export notes"
+                onClick={() => {
+                  if (notes.length === 0) return;
+                  const md = notes.map(n =>
+                    `### ${n.type.toUpperCase()} — ${new Date(n.timestamp).toLocaleString()}\n\n${n.text}`
+                  ).join('\n\n---\n\n');
+                  const blob = new Blob([`# Session Notes\n\n${md}`], { type: 'text/markdown' });
+                  const url = URL.createObjectURL(blob);
+                  const a = document.createElement('a');
+                  a.href = url;
+                  a.download = `session-notes-${new Date().toISOString().split('T')[0]}.md`;
+                  a.click();
+                  URL.revokeObjectURL(url);
+                }}
+              >
                 <Download className="fa" />
               </button>
               <button

@@ -17,7 +17,7 @@ export interface SearchOptions {
   offset?: number;
 }
 
-export interface SearchResult {
+export interface MessageSearchResult {
   id: string;
   content: string;
   threadId: string;
@@ -40,7 +40,7 @@ class SearchService {
   /**
    * Search messages with full-text search and filters
    */
-  async searchMessages(options: SearchOptions): Promise<SearchResult[]> {
+  async searchMessages(options: SearchOptions): Promise<MessageSearchResult[]> {
     const {
       query,
       threadId,
@@ -94,7 +94,7 @@ class SearchService {
   /**
    * Fallback search using ILIKE when full-text search is unavailable
    */
-  private async fallbackSearch(options: SearchOptions): Promise<SearchResult[]> {
+  private async fallbackSearch(options: SearchOptions): Promise<MessageSearchResult[]> {
     const { query, threadId, senderIds, dateRange, hasAttachments, limit = 50 } = options;
 
     let queryBuilder = supabase

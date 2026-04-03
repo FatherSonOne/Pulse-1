@@ -1,38 +1,9 @@
 import React, { useState, useEffect } from 'react';
-import { areNotificationsEnabled, enableQuotaNotifications, sendTestNotification } from '../../services/geminiQuotaNotifications';
+import { enableQuotaNotifications, sendTestNotification } from '../../services/geminiQuotaNotifications';
 import { settingsService } from '../../services/settingsService';
 import AIHealthMonitor from '../AIHealthMonitor';
 import { Bell, Book, Brain, Cpu, Headset, Mic, Play, Sliders, Volume2 } from 'lucide-react';
-
-const ToggleItem = ({
-  label,
-  desc,
-  active,
-  onToggle,
-}: {
-  label: string;
-  desc: string;
-  active: boolean;
-  onToggle: () => void;
-}) => (
-  <div className="flex justify-between items-center group cursor-pointer" onClick={onToggle}>
-    <div>
-      <div className="dark:text-white text-zinc-900 font-medium text-sm">{label}</div>
-      <div className="text-zinc-500 text-xs">{desc}</div>
-    </div>
-    <button
-      className={`w-12 h-6 rounded-full p-1 transition-colors duration-300 ease-in-out ${
-        active ? 'bg-blue-600' : 'bg-zinc-300 dark:bg-zinc-700'
-      }`}
-    >
-      <div
-        className={`w-4 h-4 rounded-full bg-white shadow-md transform transition-transform duration-300 ${
-          active ? 'translate-x-6' : 'translate-x-0'
-        }`}
-      />
-    </button>
-  </div>
-);
+import { ToggleItem } from './shared/ToggleItem';
 
 export const AIIntelligenceSettings: React.FC = () => {
   // AI model state
@@ -52,21 +23,16 @@ export const AIIntelligenceSettings: React.FC = () => {
   // Device state
   const [audioInputs, setAudioInputs] = useState<MediaDeviceInfo[]>([]);
   const [audioOutputs, setAudioOutputs] = useState<MediaDeviceInfo[]>([]);
-  const [videoInputs, setVideoInputs] = useState<MediaDeviceInfo[]>([]);
   const [selectedAudioInput, setSelectedAudioInput] = useState('');
   const [selectedAudioOutput, setSelectedAudioOutput] = useState('');
-  const [selectedVideoInput, setSelectedVideoInput] = useState('');
   const [deviceError, setDeviceError] = useState(false);
   const [isTestingDevices, setIsTestingDevices] = useState(false);
-  const [testStream, setTestStream] = useState<MediaStream | null>(null);
 
-  // Device enumeration on mount
+  // Device enumeration on mount + load saved device preferences
   useEffect(() => {
     const getDevices = async () => {
       try {
-        // Request permission briefly to ensure labels are available
-        const stream = await navigator.mediaDevices.getUserMedia({ audio: true, video: true });
-        // Stop immediately after getting permission
+        const stream = await navigator.mediaDevices.getUserMedia({ audio: true });
         stream.getTracks().forEach((t) => t.stop());
         setDeviceError(false);
 
@@ -74,16 +40,22 @@ export const AIIntelligenceSettings: React.FC = () => {
 
         const aIn = devices.filter((d) => d.kind === 'audioinput');
         const aOut = devices.filter((d) => d.kind === 'audiooutput');
-        const vIn = devices.filter((d) => d.kind === 'videoinput');
 
         setAudioInputs(aIn);
         setAudioOutputs(aOut);
-        setVideoInputs(vIn);
 
-        // Set defaults if not set
-        if (!selectedAudioInput && aIn.length > 0) setSelectedAudioInput(aIn[0].deviceId);
-        if (!selectedAudioOutput && aOut.length > 0) setSelectedAudioOutput(aOut[0].deviceId);
-        if (!selectedVideoInput && vIn.length > 0) setSelectedVideoInput(vIn[0].deviceId);
+        // Load saved device preferences from settingsService
+        const [savedMic, savedSpeaker] = await Promise.all([
+          settingsService.get('voxMicrophoneDeviceId'),
+          settingsService.get('voxSpeakerDeviceId'),
+        ]);
+
+        // Use saved device if it's still available, otherwise default to first
+        const micAvailable = savedMic && aIn.some(d => d.deviceId === savedMic);
+        const speakerAvailable = savedSpeaker && aOut.some(d => d.deviceId === savedSpeaker);
+
+        setSelectedAudioInput(micAvailable ? savedMic : (aIn[0]?.deviceId || ''));
+        setSelectedAudioOutput(speakerAvailable ? savedSpeaker : (aOut[0]?.deviceId || ''));
       } catch (e) {
         console.error('Error enumerating devices', e);
         setDeviceError(true);
@@ -188,7 +160,10 @@ export const AIIntelligenceSettings: React.FC = () => {
             </label>
             <select
               value={primaryAIModel}
-              onChange={(e) => setPrimaryAIModel(e.target.value)}
+              onChange={(e) => {
+                setPrimaryAIModel(e.target.value);
+                settingsService.set('primaryAIModel', e.target.value);
+              }}
               className="w-full bg-zinc-50 dark:bg-zinc-800 border border-zinc-200 dark:border-zinc-700 rounded-lg px-4 py-2.5 dark:text-white text-zinc-900 focus:border-blue-500 focus:outline-none"
             >
               <option value="gemini-2.5-flash">Gemini 2.5 Flash (Fastest)</option>
@@ -206,7 +181,11 @@ export const AIIntelligenceSettings: React.FC = () => {
             label="Enable Advanced Reasoning"
             desc="Use slower but more powerful models (e.g. Gemini 1.5 Pro) for complex queries in War Room"
             active={enableAdvancedReasoning}
-            onToggle={() => setEnableAdvancedReasoning(!enableAdvancedReasoning)}
+            onToggle={() => {
+              const v = !enableAdvancedReasoning;
+              setEnableAdvancedReasoning(v);
+              settingsService.set('enableAdvancedReasoning', v);
+            }}
           />
         </div>
       </div>
@@ -227,7 +206,7 @@ export const AIIntelligenceSettings: React.FC = () => {
                 value={agentVoice}
                 onChange={(e) => {
                   setAgentVoice(e.target.value);
-                  localStorage.setItem('pulse_ai_voice_model', e.target.value);
+                  settingsService.set('agentVoice', e.target.value);
                 }}
                 className="flex-1 bg-zinc-50 dark:bg-zinc-800 border border-zinc-200 dark:border-zinc-700 rounded-lg px-4 py-2.5 dark:text-white text-zinc-900 focus:border-blue-500 focus:outline-none"
               >
@@ -258,7 +237,10 @@ export const AIIntelligenceSettings: React.FC = () => {
             </label>
             <div className="grid grid-cols-2 gap-2">
               <button
-                onClick={() => setTurnDetectionMode('semantic')}
+                onClick={() => {
+                  setTurnDetectionMode('semantic');
+                  settingsService.set('turnDetectionMode', 'semantic');
+                }}
                 className={`px-4 py-3 rounded-lg border text-sm font-medium transition-all ${
                   turnDetectionMode === 'semantic'
                     ? 'bg-blue-50 dark:bg-blue-900/20 border-blue-500 text-blue-600 dark:text-blue-400'
@@ -271,7 +253,10 @@ export const AIIntelligenceSettings: React.FC = () => {
                 </span>
               </button>
               <button
-                onClick={() => setTurnDetectionMode('server')}
+                onClick={() => {
+                  setTurnDetectionMode('server');
+                  settingsService.set('turnDetectionMode', 'server');
+                }}
                 className={`px-4 py-3 rounded-lg border text-sm font-medium transition-all ${
                   turnDetectionMode === 'server'
                     ? 'bg-blue-50 dark:bg-blue-900/20 border-blue-500 text-blue-600 dark:text-blue-400'
@@ -301,7 +286,9 @@ export const AIIntelligenceSettings: React.FC = () => {
                 }
                 onChange={(e) => {
                   const val = parseInt(e.target.value);
-                  setVoiceActivityEagerness(val === 0 ? 'low' : val === 1 ? 'medium' : 'high');
+                  const eagerness = val === 0 ? 'low' : val === 1 ? 'medium' : 'high';
+                  setVoiceActivityEagerness(eagerness);
+                  settingsService.set('voiceActivityEagerness', eagerness as 'low' | 'medium' | 'high');
                 }}
                 className="w-full h-2 bg-zinc-200 dark:bg-zinc-700 rounded-lg appearance-none cursor-pointer accent-blue-500"
               />
@@ -317,7 +304,11 @@ export const AIIntelligenceSettings: React.FC = () => {
             label="Push-to-Talk Mode"
             desc="Disable voice activity detection and only listen when button is held"
             active={interactionMode === 'ptt'}
-            onToggle={() => setInteractionMode(interactionMode === 'ptt' ? 'vad' : 'ptt')}
+            onToggle={() => {
+              const v = interactionMode === 'ptt' ? 'vad' : 'ptt';
+              setInteractionMode(v);
+              settingsService.set('interactionMode', v as 'vad' | 'ptt');
+            }}
           />
         </div>
       </div>
@@ -335,7 +326,10 @@ export const AIIntelligenceSettings: React.FC = () => {
             </label>
             <select
               value={defaultSearchScope}
-              onChange={(e) => setDefaultSearchScope(e.target.value)}
+              onChange={(e) => {
+                setDefaultSearchScope(e.target.value);
+                settingsService.set('defaultSearchScope', e.target.value);
+              }}
               className="w-full bg-zinc-50 dark:bg-zinc-800 border border-zinc-200 dark:border-zinc-700 rounded-lg px-4 py-2.5 dark:text-white text-zinc-900 focus:border-blue-500 focus:outline-none"
             >
               <option value="current_project">Current Project Context</option>
@@ -348,7 +342,11 @@ export const AIIntelligenceSettings: React.FC = () => {
             label="Auto-Analyze New Documents"
             desc="Automatically generate summaries and extract keywords when uploading files (Uses API credits)"
             active={autoAnalyzeDocs}
-            onToggle={() => setAutoAnalyzeDocs(!autoAnalyzeDocs)}
+            onToggle={() => {
+              const v = !autoAnalyzeDocs;
+              setAutoAnalyzeDocs(v);
+              settingsService.set('autoAnalyzeDocs', v);
+            }}
           />
         </div>
       </div>
@@ -374,7 +372,10 @@ export const AIIntelligenceSettings: React.FC = () => {
             <div className="relative">
               <select
                 value={selectedAudioInput}
-                onChange={(e) => setSelectedAudioInput(e.target.value)}
+                onChange={(e) => {
+                  setSelectedAudioInput(e.target.value);
+                  settingsService.set('voxMicrophoneDeviceId', e.target.value);
+                }}
                 className="w-full bg-zinc-50 dark:bg-zinc-800 border border-zinc-200 dark:border-zinc-700 rounded-lg px-4 py-2.5 pr-10 appearance-none text-sm dark:text-white text-zinc-900 focus:border-blue-500 focus:outline-none"
               >
                 {audioInputs.map((device) => (
@@ -395,7 +396,10 @@ export const AIIntelligenceSettings: React.FC = () => {
             <div className="relative">
               <select
                 value={selectedAudioOutput}
-                onChange={(e) => setSelectedAudioOutput(e.target.value)}
+                onChange={(e) => {
+                  setSelectedAudioOutput(e.target.value);
+                  settingsService.set('voxSpeakerDeviceId', e.target.value);
+                }}
                 className="w-full bg-zinc-50 dark:bg-zinc-800 border border-zinc-200 dark:border-zinc-700 rounded-lg px-4 py-2.5 pr-10 appearance-none text-sm dark:text-white text-zinc-900 focus:border-blue-500 focus:outline-none"
               >
                 {audioOutputs.map((device) => (
@@ -416,13 +420,10 @@ export const AIIntelligenceSettings: React.FC = () => {
                 try {
                   const stream = await navigator.mediaDevices.getUserMedia({
                     audio: selectedAudioInput ? { deviceId: selectedAudioInput } : true,
-                    video: selectedVideoInput ? { deviceId: selectedVideoInput } : true,
                   });
-                  setTestStream(stream);
-                  alert('Audio/Video Test Successful!');
+                  alert('Audio Test Successful!');
                   setTimeout(() => {
                     stream.getTracks().forEach((track) => track.stop());
-                    setTestStream(null);
                     setIsTestingDevices(false);
                   }, 3000);
                 } catch (error) {
@@ -452,6 +453,10 @@ export const AIIntelligenceSettings: React.FC = () => {
           </div>
           <button
             type="button"
+            onClick={() => {
+              window.history.pushState({}, '', '?settings=voxer_audio');
+              window.dispatchEvent(new CustomEvent('navigate-settings', { detail: 'voxer_audio' }));
+            }}
             className="px-4 py-2 bg-purple-600 hover:bg-purple-700 text-white rounded-lg text-sm font-medium transition flex items-center gap-2"
           >
             <Sliders />

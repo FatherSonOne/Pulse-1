@@ -26,10 +26,15 @@ export interface VoxModeInfo {
   workflow: string[];
   icon: string;
   color: string;
+  colorLight?: string;
+  colorDark?: string;
   gradient: string;
   features: string[];
   bestFor: string[];
 }
+
+// Classic mode color (not a VoxMode but used by the mode selector)
+export const CLASSIC_MODE_COLOR = '#F97316';
 
 export const VOX_MODES: Record<VoxMode, VoxModeInfo> = {
   pulse_radio: {
@@ -47,6 +52,7 @@ export const VOX_MODES: Record<VoxMode, VoxModeInfo> = {
     ],
     icon: '📻',
     color: '#8B5CF6',
+    colorLight: '#A78BFA',
     gradient: 'from-purple-500 to-indigo-600',
     features: [
       'Multi-channel broadcasting',
@@ -77,6 +83,8 @@ export const VOX_MODES: Record<VoxMode, VoxModeInfo> = {
     ],
     icon: '💬',
     color: '#10B981',
+    colorLight: '#34D399',
+    colorDark: '#059669',
     gradient: 'from-emerald-500 to-teal-600',
     features: [
       'Threaded replies',
@@ -227,7 +235,7 @@ export const VOX_MODES: Record<VoxMode, VoxModeInfo> = {
       'Send your video message'
     ],
     icon: '🎬',
-    color: '#8B5CF6',
+    color: '#06B6D4',
     gradient: 'from-pink-500 via-purple-500 to-indigo-500',
     features: [
       'Cinematic letterbox framing',
@@ -244,6 +252,32 @@ export const VOX_MODES: Record<VoxMode, VoxModeInfo> = {
       'Face-to-face async'
     ]
   }
+};
+
+// ============================================
+// MODE COLOR HELPERS
+// ============================================
+
+/** Get the primary color for a vox mode */
+export const getVoxModeColor = (mode: VoxMode): string => VOX_MODES[mode].color;
+
+/** Get light variant (falls back to primary color) */
+export const getVoxModeColorLight = (mode: VoxMode): string =>
+  VOX_MODES[mode].colorLight || VOX_MODES[mode].color;
+
+/** Get dark variant (falls back to primary color) */
+export const getVoxModeColorDark = (mode: VoxMode): string =>
+  VOX_MODES[mode].colorDark || VOX_MODES[mode].color;
+
+/**
+ * All mode colors including classic, for use in selectors.
+ * Mirrors the old per-component MODE_COLORS record.
+ */
+export const ALL_MODE_COLORS: Record<string, string> = {
+  classic: CLASSIC_MODE_COLOR,
+  ...Object.fromEntries(
+    (Object.keys(VOX_MODES) as VoxMode[]).map((m) => [m, VOX_MODES[m].color])
+  ),
 };
 
 // ============================================

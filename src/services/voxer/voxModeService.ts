@@ -22,7 +22,6 @@ import type {
 
 class VoxModeService {
   private userId: string | null = null;
-  private initialized: boolean = false;
   private bucketChecked: boolean = false;
   private bucketExists: boolean = false;
 
@@ -81,8 +80,6 @@ class VoxModeService {
     const baseHandle = email ? email.split('@')[0].toLowerCase().replace(/[^a-z0-9]/g, '') : userId.slice(0, 8);
     const handle = `${baseHandle}${Math.floor(Math.random() * 1000)}`;
 
-    console.log('Creating new pulse user:', { userId, handle, displayName });
-
     // Create the pulse user
     const { data, error } = await supabase
       .from('pulse_users')
@@ -118,7 +115,6 @@ class VoxModeService {
       return null;
     }
 
-    console.log('Successfully created pulse user:', data);
     return this.mapDbToPulseUser(data);
   }
 
@@ -151,7 +147,6 @@ class VoxModeService {
 
       // If we can list files (even if empty), the bucket exists
       if (!listFilesError) {
-        console.log('Voxer storage bucket exists (verified via file listing)');
         this.bucketChecked = true;
         this.bucketExists = true;
         return true;
@@ -161,8 +156,6 @@ class VoxModeService {
       // Otherwise, assume it exists but we don't have permission to list
       if (listFilesError.message?.includes('not found') ||
           listFilesError.message?.includes('does not exist')) {
-        console.log('Voxer bucket not found, attempting to create...');
-
         // Try to create the bucket
         const { data, error: createError } = await supabase.storage.createBucket('voxer', {
           public: true,
@@ -174,7 +167,6 @@ class VoxModeService {
           // If it's a "already exists" error, that's actually fine (race condition)
           if (createError.message?.includes('already exists') ||
               createError.message?.includes('duplicate')) {
-            console.log('Voxer bucket already exists');
             this.bucketChecked = true;
             this.bucketExists = true;
             return true;
@@ -188,7 +180,6 @@ class VoxModeService {
           return false;
         }
 
-        console.log('Successfully created voxer storage bucket:', data);
         this.bucketChecked = true;
         this.bucketExists = true;
         return true;
@@ -196,7 +187,6 @@ class VoxModeService {
 
       // Got an error listing files, but not a "not found" error
       // Assume bucket exists but we don't have list permission
-      console.log('Voxer bucket likely exists (cannot verify due to permissions)');
       this.bucketChecked = true;
       this.bucketExists = true;
       return true;
@@ -301,79 +291,6 @@ class VoxModeService {
 
     if (error || !data) return [];
     return data.map(user => this.mapUserProfileToPulseUser(user));
-  }
-
-  /**
-   * Gets test Pulse users for development/testing purposes.
-   * These are pre-created users that can be used to test messaging features.
-   */
-  async getTestPulseUsers(): Promise<PulseUser[]> {
-    const testUserIds = [
-      '00000000-0000-0000-0000-000000000001',
-      '00000000-0000-0000-0000-000000000002',
-    ];
-
-    const { data, error } = await supabase
-      .from('pulse_users')
-      .select('*')
-      .in('id', testUserIds);
-
-    if (error || !data) return [];
-    return data.map(user => this.mapDbToPulseUser(user));
-  }
-
-  /**
-   * Creates test users if they don't exist in the database.
-   * This is useful for development when the migration hasn't been run.
-   */
-  async ensureTestUsersExist(): Promise<void> {
-    const testUsers = [
-      {
-        id: '00000000-0000-0000-0000-000000000001',
-        handle: 'testpulseuser',
-        display_name: 'Test Pulse User',
-        avatar_color: '#8B5CF6',
-        bio: 'A test user for messaging and vox testing',
-        is_verified: true,
-        follower_count: 100,
-        following_count: 50,
-      },
-      {
-        id: '00000000-0000-0000-0000-000000000002',
-        handle: 'demopulseuser',
-        display_name: 'Demo Pulse User',
-        avatar_color: '#10B981',
-        bio: 'Another test user for group conversations',
-        is_verified: false,
-        follower_count: 25,
-        following_count: 30,
-      },
-    ];
-
-    for (const user of testUsers) {
-      const { data: existing } = await supabase
-        .from('pulse_users')
-        .select('id')
-        .eq('id', user.id)
-        .single();
-
-      if (!existing) {
-        await supabase.from('pulse_users').insert([{
-          ...user,
-          settings: {
-            notificationsEnabled: true,
-            emailNotifications: false,
-            pushNotifications: false,
-            defaultVoxMode: 'quick_vox',
-            autoPlayIncoming: true,
-            transcriptionEnabled: true,
-            privacyLevel: 'public',
-          },
-          created_at: new Date().toISOString(),
-          last_active_at: new Date().toISOString(),
-        }]);
-      }
-    }
   }
 
   async getPulseUsersByIds(userIds: string[]): Promise<PulseUser[]> {
@@ -486,7 +403,6 @@ class VoxModeService {
     }
 
     const userId = pulseUser.id;
-    console.log('Creating channel for user:', userId);
 
     const { data, error } = await supabase
       .from('pulse_channels')
@@ -509,11 +425,10 @@ class VoxModeService {
       return null;
     }
 
-    console.log('Successfully created channel:', data);
     return this.mapDbToChannel(data);
   }
 
-  async getMyChannels(): Promise<PulseChannel[]> {
+  async getMyChannels(limit: number = 50, offset: number = 0): Promise<PulseChannel[]> {
     const userId = await this.ensureUserId();
     if (!userId) return [];
 
@@ -521,7 +436,8 @@ class VoxModeService {
       .from('pulse_channels')
       .select('*')
       .eq('owner_id', userId)
-      .order('created_at', { ascending: false });
+      .order('created_at', { ascending: false })
+      .range(offset, offset + limit - 1);
 
     if (error || !data) return [];
     return data.map(channel => this.mapDbToChannel(channel));
@@ -650,12 +566,13 @@ class VoxModeService {
     }
   }
 
-  async getChannelBroadcasts(channelId: string): Promise<Broadcast[]> {
+  async getChannelBroadcasts(channelId: string, limit: number = 50, offset: number = 0): Promise<Broadcast[]> {
     const { data, error } = await supabase
       .from('broadcasts')
       .select('*')
       .eq('channel_id', channelId)
-      .order('published_at', { ascending: false });
+      .order('published_at', { ascending: false })
+      .range(offset, offset + limit - 1);
 
     if (error || !data) return [];
     return data.map(broadcast => this.mapDbToBroadcast(broadcast));
@@ -692,7 +609,7 @@ class VoxModeService {
     return this.mapDbToVoiceThread(data);
   }
 
-  async getMyVoiceThreads(): Promise<VoiceThread[]> {
+  async getMyVoiceThreads(limit: number = 50, offset: number = 0): Promise<VoiceThread[]> {
     const userId = await this.ensureUserId();
     if (!userId) return [];
 
@@ -701,7 +618,8 @@ class VoxModeService {
       .select('*')
       .contains('participants', [userId])
       .eq('is_archived', false)
-      .order('last_activity_at', { ascending: false });
+      .order('last_activity_at', { ascending: false })
+      .range(offset, offset + limit - 1);
 
     if (error || !data) return [];
     return data.map(thread => this.mapDbToVoiceThread(thread));
@@ -749,7 +667,6 @@ class VoxModeService {
         .getPublicUrl(fileName);
 
       const audioUrl = urlData.publicUrl;
-      console.log('Uploaded voice thread audio:', audioUrl);
 
       // Send the message with the uploaded URL
       return await this.sendVoiceThreadMessage(
@@ -837,15 +754,121 @@ class VoxModeService {
     return this.mapDbToVoiceThreadMessage(data);
   }
 
-  async getThreadMessages(threadId: string): Promise<VoiceThreadMessage[]> {
+  async deleteVoiceThreadMessage(messageId: string): Promise<boolean> {
+    const userId = await this.ensureUserId();
+    if (!userId) return false;
+
+    const { error } = await supabase
+      .from('voice_thread_messages')
+      .delete()
+      .eq('id', messageId)
+      .eq('sender_id', userId);
+
+    if (error) {
+      console.error('Error deleting voice thread message:', error);
+      return false;
+    }
+    return true;
+  }
+
+  async getThreadMessages(threadId: string, limit: number = 50, offset: number = 0): Promise<VoiceThreadMessage[]> {
     const { data, error } = await supabase
       .from('voice_thread_messages')
       .select('*')
       .eq('thread_id', threadId)
-      .order('created_at', { ascending: true });
+      .order('created_at', { ascending: true })
+      .range(offset, offset + limit - 1);
 
     if (error || !data) return [];
     return data.map(message => this.mapDbToVoiceThreadMessage(message));
+  }
+
+  async updateVoiceThreadSubject(threadId: string, subject: string): Promise<boolean> {
+    const userId = await this.ensureUserId();
+    if (!userId) return false;
+
+    const { error } = await supabase
+      .from('voice_threads')
+      .update({ subject })
+      .eq('id', threadId)
+      .contains('participants', [userId]);
+
+    if (error) {
+      console.error('Error updating voice thread subject:', error);
+      return false;
+    }
+    return true;
+  }
+
+  async addParticipantToThread(threadId: string, participantId: string): Promise<string[] | null> {
+    const userId = await this.ensureUserId();
+    if (!userId) return null;
+
+    // Fetch current thread to get participant list
+    const { data: thread, error: fetchError } = await supabase
+      .from('voice_threads')
+      .select('participants')
+      .eq('id', threadId)
+      .contains('participants', [userId])
+      .single();
+
+    if (fetchError || !thread) {
+      console.error('Error fetching thread for participant add:', fetchError);
+      return null;
+    }
+
+    const currentParticipants: string[] = thread.participants || [];
+    if (currentParticipants.includes(participantId)) {
+      return currentParticipants; // already a participant
+    }
+
+    const updatedParticipants = [...currentParticipants, participantId];
+    const { error } = await supabase
+      .from('voice_threads')
+      .update({ participants: updatedParticipants })
+      .eq('id', threadId);
+
+    if (error) {
+      console.error('Error adding participant to thread:', error);
+      return null;
+    }
+    return updatedParticipants;
+  }
+
+  async removeParticipantFromThread(threadId: string, participantId: string): Promise<string[] | null> {
+    const userId = await this.ensureUserId();
+    if (!userId) return null;
+
+    // Fetch current thread
+    const { data: thread, error: fetchError } = await supabase
+      .from('voice_threads')
+      .select('participants')
+      .eq('id', threadId)
+      .contains('participants', [userId])
+      .single();
+
+    if (fetchError || !thread) {
+      console.error('Error fetching thread for participant remove:', fetchError);
+      return null;
+    }
+
+    const currentParticipants: string[] = thread.participants || [];
+    const updatedParticipants = currentParticipants.filter(p => p !== participantId);
+
+    if (updatedParticipants.length === currentParticipants.length) {
+      return currentParticipants; // participant wasn't in the list
+    }
+
+    const { error } = await supabase
+      .from('voice_threads')
+      .update({ participants: updatedParticipants })
+      .eq('id', threadId);
+
+    if (error) {
+      console.error('Error removing participant from thread:', error);
+      return null;
+    }
+    return updatedParticipants;
   }
 
   // ============================================
@@ -879,7 +902,7 @@ class VoxModeService {
     return this.mapDbToWorkspace(data);
   }
 
-  async getMyWorkspaces(): Promise<VoxWorkspace[]> {
+  async getMyWorkspaces(limit: number = 50, offset: number = 0): Promise<VoxWorkspace[]> {
     const userId = await this.ensureUserId();
     if (!userId) return [];
 
@@ -887,17 +910,21 @@ class VoxModeService {
       .from('vox_workspaces')
       .select('*, vox_team_channels(*)')
       .contains('member_ids', [userId])
-      .order('created_at', { ascending: false });
+      .order('created_at', { ascending: false })
+      .range(offset, offset + limit - 1);
 
     if (error || !data) return [];
     return data.map(workspace => this.mapDbToWorkspace(workspace));
   }
 
   async addMemberToWorkspace(workspaceId: string, memberId: string): Promise<boolean> {
-    // First get current members
+    const userId = await this.ensureUserId();
+    if (!userId) return false;
+
+    // Fetch workspace and verify ownership
     const { data: workspace, error: fetchError } = await supabase
       .from('vox_workspaces')
-      .select('member_ids')
+      .select('member_ids, owner_id')
       .eq('id', workspaceId)
       .single();
 
@@ -906,10 +933,15 @@ class VoxModeService {
       return false;
     }
 
+    // Only workspace owner can add members
+    if (workspace.owner_id !== userId) {
+      console.error('Only the workspace owner can add members');
+      return false;
+    }
+
     // Check if member already exists
     const currentMembers: string[] = workspace.member_ids || [];
     if (currentMembers.includes(memberId)) {
-      console.log('Member already in workspace');
       return true;
     }
 
@@ -930,7 +962,10 @@ class VoxModeService {
   }
 
   async removeMemberFromWorkspace(workspaceId: string, memberId: string): Promise<boolean> {
-    // First get current members
+    const userId = await this.ensureUserId();
+    if (!userId) return false;
+
+    // Fetch workspace and verify ownership
     const { data: workspace, error: fetchError } = await supabase
       .from('vox_workspaces')
       .select('member_ids, owner_id')
@@ -939,6 +974,12 @@ class VoxModeService {
 
     if (fetchError || !workspace) {
       console.error('Error fetching workspace:', fetchError);
+      return false;
+    }
+
+    // Only workspace owner can remove members
+    if (workspace.owner_id !== userId) {
+      console.error('Only the workspace owner can remove members');
       return false;
     }
 
@@ -1037,18 +1078,12 @@ class VoxModeService {
         .getPublicUrl(fileName);
 
       const audioUrl = urlData.publicUrl;
-      console.log('Uploaded team vox audio:', audioUrl);
 
       // Transcribe the audio if no transcript provided
       let finalTranscript = transcript || '';
       if (!finalTranscript) {
         try {
-          const geminiKey = import.meta.env.VITE_API_KEY ||
-                            import.meta.env.VITE_GEMINI_API_KEY ||
-                            localStorage.getItem('gemini_api_key') ||
-                            '';
-
-          console.log('Transcription: geminiKey available:', !!geminiKey);
+          const geminiKey = this.getGeminiApiKey() || '';
 
           if (geminiKey) {
             // Convert blob to base64
@@ -1062,12 +1097,8 @@ class VoxModeService {
               reader.readAsDataURL(audioBlob);
             });
 
-            console.log('Starting Team Vox transcription with Gemini...');
             const result = await transcribeMedia(geminiKey, base64, 'audio/webm');
             finalTranscript = result || '';
-            console.log('Team Vox transcribed successfully:', finalTranscript.substring(0, 100) + (finalTranscript.length > 100 ? '...' : ''));
-          } else {
-            console.warn('No Gemini API key - skipping Team Vox transcription');
           }
         } catch (transcriptError) {
           console.error('Team Vox transcription failed:', transcriptError);
@@ -1104,8 +1135,8 @@ class VoxModeService {
 
     const user = await this.getPulseUser();
 
-    // Extract action items from transcript using AI (simplified here)
-    const actionItems = transcript ? this.extractActionItems(transcript) : [];
+    // Extract action items from transcript using Gemini AI (with keyword fallback)
+    const actionItems = transcript ? await this.extractActionItemsAI(transcript) : [];
 
     const { data, error } = await supabase
       .from('team_vox_messages')
@@ -1153,12 +1184,53 @@ class VoxModeService {
     return this.mapDbToTeamVoxMessage(data);
   }
 
-  async getChannelMessages(channelId: string): Promise<TeamVoxMessage[]> {
+  async deleteTeamVoxMessage(messageId: string): Promise<boolean> {
+    const userId = await this.ensureUserId();
+    if (!userId) return false;
+
+    const { error } = await supabase
+      .from('team_vox_messages')
+      .delete()
+      .eq('id', messageId)
+      .eq('sender_id', userId);
+
+    if (error) {
+      console.error('Error deleting team vox message:', error);
+      return false;
+    }
+    return true;
+  }
+
+  async updateTeamChannel(
+    channelId: string,
+    updates: { name?: string; description?: string }
+  ): Promise<VoxTeamChannel | null> {
+    const dbUpdates: Record<string, any> = {};
+    if (updates.name !== undefined) dbUpdates.name = updates.name;
+    if (updates.description !== undefined) dbUpdates.description = updates.description;
+
+    const { data, error } = await supabase
+      .from('vox_team_channels')
+      .update(dbUpdates)
+      .eq('id', channelId)
+      .select()
+      .single();
+
+    if (error) {
+      console.error('Error updating team channel:', error);
+      return null;
+    }
+
+    return this.mapDbToTeamChannel(data);
+  }
+
+  async getChannelMessages(channelId: string, limit: number = 50, offset: number = 0): Promise<TeamVoxMessage[]> {
     const { data, error } = await supabase
       .from('team_vox_messages')
       .select('*')
       .eq('channel_id', channelId)
-      .order('created_at', { ascending: true });
+      .order('created_at', { ascending: true })
+      .range(offset, offset + limit - 1);
 
     if (error || !data) {
       console.error('Error fetching channel messages:', error);
@@ -1207,17 +1279,9 @@ class VoxModeService {
       // Transcribe the audio
       let transcript = '';
       try {
-        // Get API key from environment variables and localStorage
-        const geminiKey = import.meta.env.VITE_API_KEY ||
-                          import.meta.env.VITE_GEMINI_API_KEY ||
-                          localStorage.getItem('gemini_api_key') ||
-                          '';
+        const geminiKey = this.getGeminiApiKey() || '';
 
-        console.log('Transcription: geminiKey available:', !!geminiKey);
-
-        if (!geminiKey) {
-          console.warn('No Gemini API key available - skipping transcription');
-        } else {
+        if (geminiKey) {
           // Convert blob to base64
           const base64 = await new Promise<string>((resolve, reject) => {
             const reader = new FileReader();
@@ -1229,11 +1293,8 @@ class VoxModeService {
             reader.readAsDataURL(audioBlob);
           });
 
-          console.log('Starting transcription with Gemini...');
           const result = await transcribeMedia(geminiKey, base64, 'audio/webm');
-
           transcript = result || '';
-          console.log('Vox note transcribed successfully:', transcript.substring(0, 100) + (transcript.length > 100 ? '...' : ''));
         }
       } catch (transcriptError) {
         console.error('Transcription failed:', transcriptError);
@@ -1259,7 +1320,7 @@ class VoxModeService {
 
     // Auto-generate title and tags from transcript
     const autoTitle = title || this.generateTitleFromTranscript(transcript);
-    const autoTags = this.extractTagsFromTranscript(transcript);
+    const autoTags = await this.extractTagsAI(transcript);
     const summary = await this.generateSummary(transcript);
 
     const { data, error } = await supabase
@@ -1288,7 +1349,41 @@ class VoxModeService {
     return this.mapDbToVoxNote(data);
   }
 
-  async getMyVoxNotes(searchQuery?: string): Promise<VoxNote[]> {
+  async updateVoxNote(noteId: string, updates: { title?: string; tags?: string[]; is_favorite?: boolean }): Promise<boolean> {
+    const userId = await this.ensureUserId();
+    if (!userId) return false;
+
+    const { error } = await supabase
+      .from('vox_notes')
+      .update({ ...updates, updated_at: new Date().toISOString() })
+      .eq('id', noteId)
+      .eq('user_id', userId);
+
+    if (error) {
+      console.error('Error updating vox note:', error);
+      return false;
+    }
+    return true;
+  }
+
+  async deleteVoxNote(noteId: string): Promise<boolean> {
+    const userId = await this.ensureUserId();
+    if (!userId) return false;
+
+    const { error } = await supabase
+      .from('vox_notes')
+      .delete()
+      .eq('id', noteId)
+      .eq('user_id', userId);
+
+    if (error) {
+      console.error('Error deleting vox note:', error);
+      return false;
+    }
+    return true;
+  }
+
+  async getMyVoxNotes(searchQuery?: string, limit: number = 50, offset: number = 0): Promise<VoxNote[]> {
     const userId = await this.ensureUserId();
     if (!userId) return [];
 
@@ -1301,6 +1396,8 @@ class VoxModeService {
     if (searchQuery) {
       query = query.or(`transcript.ilike.%${searchQuery}%,title.ilike.%${searchQuery}%,tags.cs.{${searchQuery}}`);
     }
+
+    query = query.range(offset, offset + limit - 1);
 
     const { data, error } = await query;
 
@@ -1386,7 +1483,6 @@ class VoxModeService {
       const invalidIds = data
         .filter(fav => !validPulseUserIds.has(fav.contact_id))
         .map(fav => fav.contact_id);
-      console.log('Removing invalid Quick Vox favorites:', invalidIds);
 
       // Delete invalid favorites from database
       await supabase
@@ -1438,7 +1534,6 @@ class VoxModeService {
         .getPublicUrl(fileName);
 
       const audioUrl = urlData.publicUrl;
-      console.log('Uploaded quick vox audio:', audioUrl);
 
       // Send the message with the uploaded URL
       return await this.sendQuickVox(recipientId, audioUrl, duration);
@@ -1485,7 +1580,7 @@ class VoxModeService {
     return this.mapDbToQuickVoxMessage(data);
   }
 
-  async getQuickVoxConversation(contactId: string): Promise<QuickVoxMessage[]> {
+  async getQuickVoxConversation(contactId: string, limit: number = 50, offset: number = 0): Promise<QuickVoxMessage[]> {
     const userId = await this.ensureUserId();
     if (!userId) return [];
 
@@ -1493,7 +1588,8 @@ class VoxModeService {
       .from('quick_vox_messages')
       .select('*')
       .or(`and(sender_id.eq.${userId},recipient_id.eq.${contactId}),and(sender_id.eq.${contactId},recipient_id.eq.${userId})`)
-      .order('created_at', { ascending: true });
+      .order('created_at', { ascending: true })
+      .range(offset, offset + limit - 1);
 
     if (error || !data) return [];
     return data.map(message => this.mapDbToQuickVoxMessage(message));
@@ -1559,7 +1655,6 @@ class VoxModeService {
         .getPublicUrl(fileName);
 
       const audioUrl = urlData.publicUrl;
-      console.log('Uploaded vox drop audio:', audioUrl);
 
       // Schedule the drop with the uploaded URL
       return await this.scheduleVoxDrop(
@@ -1614,7 +1709,7 @@ class VoxModeService {
     return this.mapDbToVoxDrop(data);
   }
 
-  async getMyScheduledDrops(): Promise<VoxDrop[]> {
+  async getMyScheduledDrops(limit: number = 50, offset: number = 0): Promise<VoxDrop[]> {
     const userId = await this.ensureUserId();
     if (!userId) return [];
 
@@ -1623,13 +1718,14 @@ class VoxModeService {
       .select('*')
       .eq('sender_id', userId)
       .in('status', ['scheduled'])
-      .order('scheduled_for', { ascending: true });
+      .order('scheduled_for', { ascending: true })
+      .range(offset, offset + limit - 1);
 
     if (error || !data) return [];
     return data.map(drop => this.mapDbToVoxDrop(drop));
   }
 
-  async getReceivedDrops(): Promise<VoxDrop[]> {
+  async getReceivedDrops(limit: number = 50, offset: number = 0): Promise<VoxDrop[]> {
     const userId = await this.ensureUserId();
     if (!userId) return [];
 
@@ -1638,10 +1734,40 @@ class VoxModeService {
       .select('*')
       .contains('recipient_ids', [userId])
       .eq('status', 'delivered')
-      .order('delivered_at', { ascending: false });
+      .order('delivered_at', { ascending: false })
+      .range(offset, offset + limit - 1);
 
     if (error || !data) return [];
     return data.map(drop => this.mapDbToVoxDrop(drop));
+  }
+
+  async updateVoxDrop(
+    dropId: string,
+    updates: { title?: string; message?: string; scheduledFor?: Date }
+  ): Promise<VoxDrop | null> {
+    const userId = await this.ensureUserId();
+    if (!userId) return null;
+
+    const dbUpdates: Record<string, unknown> = {};
+    if (updates.title !== undefined) dbUpdates.title = updates.title;
+    if (updates.message !== undefined) dbUpdates.message = updates.message;
+    if (updates.scheduledFor !== undefined) dbUpdates.scheduled_for = updates.scheduledFor.toISOString();
+
+    const { data, error } = await supabase
+      .from('vox_drops')
+      .update(dbUpdates)
+      .eq('id', dropId)
+      .eq('sender_id', userId)
+      .eq('status', 'scheduled')
+      .select()
+      .single();
+
+    if (error) {
+      console.error('Error updating vox drop:', error);
+      return null;
+    }
+
+    return this.mapDbToVoxDrop(data);
   }
 
   async cancelVoxDrop(dropId: string): Promise<boolean> {
@@ -1760,6 +1886,13 @@ class VoxModeService {
   // HELPER FUNCTIONS
   // ============================================
 
+  private getGeminiApiKey(): string | null {
+    const key = import.meta.env.VITE_API_KEY ||
+      import.meta.env.VITE_GEMINI_API_KEY ||
+      localStorage.getItem('gemini_api_key');
+    return key || null;
+  }
+
   private generateAvatarColor(): string {
     const colors = ['#8B5CF6', '#10B981', '#F59E0B', '#EC4899', '#3B82F6', '#EF4444'];
     return colors[Math.floor(Math.random() * colors.length)];
@@ -1773,41 +1906,133 @@ class VoxModeService {
   }
 
   private extractTagsFromTranscript(transcript: string): string[] {
-    // Simple keyword extraction - in production, use AI
+    // Keyword-based extraction as synchronous fallback
     const keywords = ['meeting', 'idea', 'task', 'reminder', 'important', 'urgent', 'follow-up', 'decision'];
     const found: string[] = [];
     const lower = transcript.toLowerCase();
-
     for (const keyword of keywords) {
-      if (lower.includes(keyword)) {
-        found.push(keyword);
-      }
+      if (lower.includes(keyword)) found.push(keyword);
     }
-
     return found.slice(0, 5);
   }
 
   private extractActionItems(transcript: string): string[] {
-    // Simple extraction - look for "need to", "should", "will", "action item"
+    // Keyword-based extraction as synchronous fallback
     const sentences = transcript.split(/[.!?]/);
     const actionItems: string[] = [];
     const triggers = ['need to', 'should', 'will', 'must', 'action item', 'todo', 'to do'];
-
     for (const sentence of sentences) {
       const lower = sentence.toLowerCase();
-      if (triggers.some(t => lower.includes(t))) {
-        actionItems.push(sentence.trim());
-      }
+      if (triggers.some(t => lower.includes(t))) actionItems.push(sentence.trim());
     }
-
     return actionItems.slice(0, 5);
   }
 
+  /**
+   * Generate a summary using Gemini AI, with keyword fallback.
+   */
   private async generateSummary(transcript: string): Promise<string> {
-    // In production, call Gemini API for summary
-    // For now, return first 2 sentences
+    const apiKey = this.getGeminiApiKey();
+    if (!apiKey || transcript.length < 50) {
+      // Fallback: first 2 sentences
+      const sentences = transcript.split(/[.!?]/).filter(s => s.trim());
+      return sentences.slice(0, 2).join('. ') + '.';
+    }
+
+    try {
+      const response = await fetch(
+        `https://generativelanguage.googleapis.com/v1beta/models/gemini-2.0-flash:generateContent?key=${apiKey}`,
+        {
+          method: 'POST',
+          headers: { 'Content-Type': 'application/json' },
+          body: JSON.stringify({
+            contents: [{ parts: [{ text: `Summarize the following voice message transcript in 1-2 concise sentences. Return only the summary, no preamble.\n\nTranscript: "${transcript}"` }] }],
+            generationConfig: { maxOutputTokens: 150, temperature: 0.3 },
+          }),
+        }
+      );
+
+      if (!response.ok) throw new Error('Gemini API error');
+
+      const data = await response.json();
+      const summary = data?.candidates?.[0]?.content?.parts?.[0]?.text?.trim();
+      if (summary) return summary;
+    } catch {
+      // Fall through to keyword fallback
+    }
+
     const sentences = transcript.split(/[.!?]/).filter(s => s.trim());
     return sentences.slice(0, 2).join('. ') + '.';
+  }
+
+  /**
+   * Extract action items using Gemini AI, with keyword fallback.
+   */
+  async extractActionItemsAI(transcript: string): Promise<string[]> {
+    const apiKey = this.getGeminiApiKey();
+    if (!apiKey || transcript.length < 30) return this.extractActionItems(transcript);
+
+    try {
+      const response = await fetch(
+        `https://generativelanguage.googleapis.com/v1beta/models/gemini-2.0-flash:generateContent?key=${apiKey}`,
+        {
+          method: 'POST',
+          headers: { 'Content-Type': 'application/json' },
+          body: JSON.stringify({
+            contents: [{ parts: [{ text: `Extract action items from this voice message transcript. Return a JSON array of strings, max 5 items. If none found, return []. No markdown.\n\nTranscript: "${transcript}"` }] }],
+            generationConfig: { maxOutputTokens: 200, temperature: 0.2 },
+          }),
+        }
+      );
+
+      if (!response.ok) throw new Error('Gemini API error');
+
+      const data = await response.json();
+      const text = data?.candidates?.[0]?.content?.parts?.[0]?.text?.trim();
+      if (text) {
+        const parsed = JSON.parse(text);
+        if (Array.isArray(parsed)) return parsed.slice(0, 5);
+      }
+    } catch {
+      // Fall through to keyword fallback
+    }
+
+    return this.extractActionItems(transcript);
+  }
+
+  /**
+   * Extract tags using Gemini AI, with keyword fallback.
+   */
+  async extractTagsAI(transcript: string): Promise<string[]> {
+    const apiKey = this.getGeminiApiKey();
+    if (!apiKey || transcript.length < 30) return this.extractTagsFromTranscript(transcript);
+
+    try {
+      const response = await fetch(
+        `https://generativelanguage.googleapis.com/v1beta/models/gemini-2.0-flash:generateContent?key=${apiKey}`,
+        {
+          method: 'POST',
+          headers: { 'Content-Type': 'application/json' },
+          body: JSON.stringify({
+            contents: [{ parts: [{ text: `Extract 3-5 topic tags from this voice message transcript. Return a JSON array of lowercase single-word tags. No markdown.\n\nTranscript: "${transcript}"` }] }],
+            generationConfig: { maxOutputTokens: 100, temperature: 0.2 },
+          }),
+        }
+      );
+
+      if (!response.ok) throw new Error('Gemini API error');
+
+      const data = await response.json();
+      const text = data?.candidates?.[0]?.content?.parts?.[0]?.text?.trim();
+      if (text) {
+        const parsed = JSON.parse(text);
+        if (Array.isArray(parsed)) return parsed.slice(0, 5);
+      }
+    } catch {
+      // Fall through to keyword fallback
+    }
+
+    return this.extractTagsFromTranscript(transcript);
   }
 
   private async notifyChannelSubscribers(channelId: string, broadcastId: string, title: string): Promise<void> {

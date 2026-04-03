@@ -1,4 +1,4 @@
-import React from 'react';
+import React, { useState, useEffect, useRef } from 'react';
 import {
   Search,
   List,
@@ -44,6 +44,27 @@ const PRIORITY_OPTIONS = [
 ] as const;
 
 export const FilterBar: React.FC<FilterBarProps> = ({ filters, onChange }) => {
+  // Debounced search: local input state syncs to parent after 300ms idle
+  const [localSearch, setLocalSearch] = useState(filters.search);
+  const debounceRef = useRef<ReturnType<typeof setTimeout>>();
+
+  useEffect(() => {
+    // Sync external changes back (e.g. clear filters)
+    setLocalSearch(filters.search);
+  }, [filters.search]);
+
+  const handleSearchInputChange = (e: React.ChangeEvent<HTMLInputElement>) => {
+    const value = e.target.value;
+    setLocalSearch(value);
+    clearTimeout(debounceRef.current);
+    debounceRef.current = setTimeout(() => {
+      onChange({ ...filters, search: value });
+    }, 300);
+  };
+
+  // Cleanup on unmount
+  useEffect(() => () => clearTimeout(debounceRef.current), []);
+
   const hasActiveFilters =
     filters.search !== '' ||
     filters.status !== 'all' ||
@@ -59,9 +80,7 @@ export const FilterBar: React.FC<FilterBarProps> = ({ filters, onChange }) => {
     });
   };
 
-  const handleSearchChange = (e: React.ChangeEvent<HTMLInputElement>) => {
-    onChange({ ...filters, search: e.target.value });
-  };
+  // handleSearchChange is replaced by handleSearchInputChange with debounce above
 
   const handleStatusChange = (e: React.ChangeEvent<HTMLSelectElement>) => {
     onChange({
@@ -73,6 +92,23 @@ export const FilterBar: React.FC<FilterBarProps> = ({ filters, onChange }) => {
   const handlePriorityChange = (e: React.ChangeEvent<HTMLSelectElement>) => {
     const value = e.target.value === '' ? undefined : e.target.value as 'high' | 'medium' | 'low';
     onChange({ ...filters, priority: value });
+  };
+
+  const handleDateRangeChange = (e: React.ChangeEvent<HTMLSelectElement>) => {
+    const value = e.target.value;
+    if (value === '') {
+      onChange({ ...filters, dateRange: undefined });
+      return;
+    }
+    const now = new Date();
+    const end = new Date(now);
+    const start = new Date(now);
+    switch (value) {
+      case '7d': start.setDate(start.getDate() - 7); break;
+      case '30d': start.setDate(start.getDate() - 30); break;
+      case '90d': start.setDate(start.getDate() - 90); break;
+    }
+    onChange({ ...filters, dateRange: { start, end } });
   };
 
   const selectedStatusOption = TASK_STATUS_OPTIONS.find(opt => opt.value === filters.status);
@@ -87,8 +123,8 @@ export const FilterBar: React.FC<FilterBarProps> = ({ filters, onChange }) => {
           <input
             type="text"
             placeholder="Search tasks..."
-            value={filters.search}
-            onChange={handleSearchChange}
+            value={localSearch}
+            onChange={handleSearchInputChange}
             className="filter-bar__search-input"
           />
         </div>
@@ -132,11 +168,18 @@ export const FilterBar: React.FC<FilterBarProps> = ({ filters, onChange }) => {
           <ChevronDown className="filter-bar__select-chevron" size={16} />
         </div>
 
-        {/* Date Range (Placeholder for future implementation) */}
+        {/* Date Range */}
         <div className="filter-bar__select-wrapper filter-bar__select-wrapper--date">
           <Calendar className="filter-bar__select-icon" size={16} />
-          <select className="filter-bar__select" disabled>
-            <option>All Dates</option>
+          <select
+            className="filter-bar__select"
+            value={filters.dateRange ? '' : ''}
+            onChange={handleDateRangeChange}
+          >
+            <option value="">All Dates</option>
+            <option value="7d">Last 7 days</option>
+            <option value="30d">Last 30 days</option>
+            <option value="90d">Last 90 days</option>
           </select>
           <ChevronDown className="filter-bar__select-chevron" size={16} />
         </div>

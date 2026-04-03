@@ -1,7 +1,7 @@
 // Vox Reactions Component
 // Quick voice emoji reactions to messages
 
-import React, { useState, useRef, useCallback } from 'react';
+import React, { useState, useRef, useCallback, useEffect } from 'react';
 import { VoxReaction, ReactionType, REACTION_EMOJIS, REACTION_SOUNDS } from '../../services/voxer/advancedVoxerTypes';
 
 import { Check, RotateCw, Volume2 } from 'lucide-react';
@@ -245,6 +245,19 @@ export const VoxReactions: React.FC<VoxReactionsProps> = ({
   const buttonRef = useRef<HTMLButtonElement>(null);
   const audioRef = useRef<HTMLAudioElement>(null);
 
+  // Track blob URLs created for audio reactions so they can be revoked
+  const reactionBlobUrlsRef = useRef<Set<string>>(new Set());
+
+  // Cleanup all blob URLs on unmount to prevent memory leaks
+  useEffect(() => {
+    return () => {
+      reactionBlobUrlsRef.current.forEach((url) => {
+        URL.revokeObjectURL(url);
+      });
+      reactionBlobUrlsRef.current.clear();
+    };
+  }, []);
+
   const handleOpenPicker = useCallback((e: React.MouseEvent) => {
     e.preventDefault();
     e.stopPropagation();
@@ -260,15 +273,21 @@ export const VoxReactions: React.FC<VoxReactionsProps> = ({
     const existingReaction = reactions.find(r => r.userId === currentUserId && r.type === type);
     
     if (existingReaction && type !== 'custom') {
+      // Revoke blob URL for the removed reaction's audio if it was created here
+      if (existingReaction.audioUrl && existingReaction.audioUrl.startsWith('blob:')) {
+        URL.revokeObjectURL(existingReaction.audioUrl);
+        reactionBlobUrlsRef.current.delete(existingReaction.audioUrl);
+      }
       // Remove existing reaction
       onRemoveReaction(existingReaction.id);
     } else {
       // Add new reaction
       let audioUrl: string | undefined;
       let audioDuration: number | undefined;
-      
+
       if (audioBlob) {
         audioUrl = URL.createObjectURL(audioBlob);
+        reactionBlobUrlsRef.current.add(audioUrl);
         audioDuration = 2; // Max 2 seconds
       }
 

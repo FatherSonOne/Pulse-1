@@ -100,6 +100,26 @@ export function formatFullTimestamp(date: Date | undefined): string {
 
 
 /**
+ * Format a timestamp as a compact relative time string.
+ * Used by Analytics views (Observatory dashboard).
+ * Returns: "5m ago", "3h ago", "2d ago", or a localized date for older.
+ */
+export function formatTimeAgo(timestamp: string | undefined): string {
+  if (!timestamp) return '';
+  const date = new Date(timestamp);
+  const now = new Date();
+  const diffMs = now.getTime() - date.getTime();
+  const diffMins = Math.floor(diffMs / 60000);
+  const diffHours = Math.floor(diffMs / 3600000);
+  const diffDays = Math.floor(diffMs / 86400000);
+
+  if (diffMins < 60) return `${diffMins}m ago`;
+  if (diffHours < 24) return `${diffHours}h ago`;
+  if (diffDays < 7) return `${diffDays}d ago`;
+  return date.toLocaleDateString();
+}
+
+/**
  * Check if a date divider should be shown between two messages
  */
 export function shouldShowDateDivider(prevDate: Date | null, currentDate: Date): boolean {

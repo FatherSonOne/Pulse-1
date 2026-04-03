@@ -47,7 +47,7 @@ import {
 } from '../../hooks/useVideoVox';
 import { videoVoxService } from '../../services/voxer/videoVoxService';
 import { voxModeService } from '../../services/voxer/voxModeService';
-import type { VideoVoxMessage, VideoVoxConversation, PulseUser } from '../../services/voxer/voxModeTypes';
+import { VOX_MODES, type VideoVoxMessage, type VideoVoxConversation, type PulseUser } from '../../services/voxer/voxModeTypes';
 import './VideoVoxMode.css';
 
 // Phase 2: Selection Mode
@@ -75,8 +75,8 @@ import toast from 'react-hot-toast';
 // TYPES
 // ============================================
 
-// Mode color for Video Vox
-const MODE_COLOR = '#06B6D4';
+// Mode color from shared palette
+const MODE_COLOR = VOX_MODES.video_vox.color;
 
 interface VideoVoxModeProps {
   isDarkMode?: boolean;
@@ -780,12 +780,12 @@ const VideoVoxMode: React.FC<VideoVoxModeProps> = ({
         onClose?.();
       }
     },
-    onSwitchMode: (mode) => {
-      console.log('Switch to mode:', mode);
+    onSwitchMode: (_mode) => {
+      // Mode switch handled by parent
     },
     onDownload: () => {
       if (isSelectionMode && selectionCount > 0) {
-        console.log('Download selected items');
+        // Download handled by selection toolbar
       }
     },
     onArchive: () => {
@@ -824,7 +824,6 @@ const VideoVoxMode: React.FC<VideoVoxModeProps> = ({
   useEffect(() => {
     const loadContacts = async () => {
       const users = await voxModeService.getPulseUsersAsContacts();
-      console.log('Loaded Video Vox contacts:', users.length, users);
       setPulseContacts(users.length > 0 ? users : contacts);
     };
     loadContacts();

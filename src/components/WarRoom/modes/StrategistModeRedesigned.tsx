@@ -665,7 +665,7 @@ Please provide:
                         <div className="str-item-row">
                           <select
                             value={pro.weight}
-                            onChange={(e) => updatePro(pro.id, { weight: e.target.value as any })}
+                            onChange={(e) => updatePro(pro.id, { weight: e.target.value as ProConItem['weight'] })}
                             className={`str-weight-select ${pro.weight}`}
                           >
                             <option value="high">High</option>
@@ -713,7 +713,7 @@ Please provide:
                         <div className="str-item-row">
                           <select
                             value={con.weight}
-                            onChange={(e) => updateCon(con.id, { weight: e.target.value as any })}
+                            onChange={(e) => updateCon(con.id, { weight: e.target.value as ProConItem['weight'] })}
                             className={`str-weight-select ${con.weight}`}
                           >
                             <option value="high">High</option>
@@ -779,7 +779,7 @@ Please provide:
                           <span className="str-risk-label">Likelihood:</span>
                           <select
                             value={risk.likelihood}
-                            onChange={(e) => updateRisk(risk.id, { likelihood: e.target.value as any })}
+                            onChange={(e) => updateRisk(risk.id, { likelihood: e.target.value as RiskItem['likelihood'] })}
                             className={`str-weight-select ${risk.likelihood}`}
                           >
                             <option value="high">High</option>
@@ -791,7 +791,7 @@ Please provide:
                           <span className="str-risk-label">Impact:</span>
                           <select
                             value={risk.impact}
-                            onChange={(e) => updateRisk(risk.id, { impact: e.target.value as any })}
+                            onChange={(e) => updateRisk(risk.id, { impact: e.target.value as RiskItem['impact'] })}
                             className={`str-weight-select ${risk.impact}`}
                           >
                             <option value="high">High</option>
@@ -1050,7 +1050,7 @@ Please provide:
                         />
                         <select
                           value={milestone.status}
-                          onChange={(e) => updateMilestone(milestone.id, { status: e.target.value as any })}
+                          onChange={(e) => updateMilestone(milestone.id, { status: e.target.value as Milestone['status'] })}
                           className={`str-milestone-status ${milestone.status}`}
                           style={{ cursor: 'pointer' }}
                         >

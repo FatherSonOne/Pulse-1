@@ -7,7 +7,13 @@ import { settingsService } from '../settingsService';
 // TYPES
 // ============================================
 
-export interface TranscriptionResult {
+/**
+ * WhisperTranscriptionResult - Whisper-specific transcription output.
+ * (Renamed from TranscriptionResult to avoid collision with the canonical
+ * TranscriptionResult in voxerTypes.ts which has richer fields like
+ * id, confidence, provider, speakers, etc.)
+ */
+export interface WhisperTranscriptionResult {
   text: string;
   language?: string;
   duration?: number;
@@ -82,7 +88,7 @@ class WhisperService {
   async transcribe(
     audioBlob: Blob,
     options: TranscriptionOptions = {}
-  ): Promise<TranscriptionResult> {
+  ): Promise<WhisperTranscriptionResult> {
     const apiKey = await this.ensureApiKey();
 
     // Prepare form data
@@ -204,7 +210,7 @@ class WhisperService {
   async transcribeWithDetection(
     audioBlob: Blob,
     options: Omit<TranscriptionOptions, 'language'> = {}
-  ): Promise<TranscriptionResult & { detectedLanguage: string }> {
+  ): Promise<WhisperTranscriptionResult & { detectedLanguage: string }> {
     const result = await this.transcribe(audioBlob, options);
     return {
       ...result,
@@ -218,7 +224,7 @@ class WhisperService {
   async transcribeWithWordTimestamps(
     audioBlob: Blob,
     language?: string
-  ): Promise<TranscriptionResult> {
+  ): Promise<WhisperTranscriptionResult> {
     return this.transcribe(audioBlob, {
       language,
       timestampGranularities: ['word', 'segment'],

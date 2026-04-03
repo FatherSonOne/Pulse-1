@@ -38,8 +38,8 @@ function expandHull(pts: Array<{ lat: number; lng: number }>, factor = 0.0005) {
   const cx = pts.reduce((s, p) => s + p.lat, 0) / pts.length;
   const cy = pts.reduce((s, p) => s + p.lng, 0) / pts.length;
   return pts.map(p => ({
-    lat: p.lat + (p.lat - cx) * 0 + (p.lat > cx ? factor : -factor),
-    lng: p.lng + (p.lng - cy) * 0 + (p.lng > cy ? factor : -factor),
+    lat: p.lat + (p.lat - cx) * 0.3 + (p.lat > cx ? factor : -factor),
+    lng: p.lng + (p.lng - cy) * 0.3 + (p.lng > cy ? factor : -factor),
   }));
 }
 

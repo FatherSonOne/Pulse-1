@@ -1,13 +1,13 @@
-import React, { useState, useEffect } from 'react';
+import React, { useState } from 'react';
 import { X, User, Search } from 'lucide-react';
 import { Task } from '../../services/taskService';
-import { Contact } from '../../types';
-import { supabase } from '../../services/supabase';
+import { User as UserType } from '../../types';
 import './ReassignTaskModal.css';
 
 interface ReassignTaskModalProps {
   task: Task;
   currentAssignee?: string;
+  workspaceMembers?: UserType[];
   onClose: () => void;
   onReassign: (taskId: string, newAssignee: string) => Promise<void>;
 }
@@ -15,55 +15,21 @@ interface ReassignTaskModalProps {
 export const ReassignTaskModal: React.FC<ReassignTaskModalProps> = ({
   task,
   currentAssignee,
+  workspaceMembers = [],
   onClose,
   onReassign
 }) => {
-  const [contacts, setContacts] = useState<Contact[]>([]);
   const [searchQuery, setSearchQuery] = useState('');
   const [selectedAssignee, setSelectedAssignee] = useState(currentAssignee || '');
   const [isLoading, setIsLoading] = useState(false);
   const [error, setError] = useState<string | null>(null);
 
-  useEffect(() => {
-    loadContacts();
-  }, []);
-
-  const loadContacts = async () => {
-    try {
-      const { data: contactsData, error: contactsError } = await supabase
-        .from('contacts')
-        .select('*')
-        .order('name', { ascending: true });
-
-      if (contactsError) throw contactsError;
-
-      // Convert to Contact type
-      const mappedContacts: Contact[] = (contactsData || []).map((c: any) => ({
-        id: c.id,
-        name: c.name,
-        role: c.role || '',
-        company: c.company,
-        email: c.email,
-        phone: c.phone,
-        avatarColor: c.avatar_color || '#6b7280',
-        status: 'offline' as const,
-        source: 'local' as const,
-        contactType: c.contact_type,
-        isTeamMember: c.is_team_member,
-      }));
-
-      setContacts(mappedContacts);
-    } catch (err) {
-      console.error('Error loading contacts:', err);
-      setError('Failed to load contacts');
-    }
-  };
-
-  const filteredContacts = contacts.filter(contact =>
-    contact.name.toLowerCase().includes(searchQuery.toLowerCase()) ||
-    contact.email.toLowerCase().includes(searchQuery.toLowerCase()) ||
-    (contact.company && contact.company.toLowerCase().includes(searchQuery.toLowerCase()))
-  );
+  const filteredMembers = workspaceMembers.filter(member => {
+    const name = member.name || member.email || '';
+    const email = member.email || '';
+    const query = searchQuery.toLowerCase();
+    return name.toLowerCase().includes(query) || email.toLowerCase().includes(query);
+  });
 
   const handleReassign = async () => {
     if (!selectedAssignee) {
@@ -151,35 +117,34 @@ export const ReassignTaskModal: React.FC<ReassignTaskModalProps> = ({
           )}
 
           <div className="reassign-contacts-list">
-            {filteredContacts.length === 0 ? (
+            {filteredMembers.length === 0 ? (
               <div className="reassign-empty-state">
                 <User size={48} color="#ccc" />
-                <p>No contacts found</p>
+                <p>No workspace members found</p>
               </div>
             ) : (
-              filteredContacts.map((contact) => (
+              filteredMembers.map((member) => (
                 <button
-                  key={contact.id}
+                  key={member.id}
                   type="button"
                   className={`reassign-contact-item ${
-                    selectedAssignee === contact.email ? 'selected' : ''
+                    selectedAssignee === member.id ? 'selected' : ''
                   }`}
-                  onClick={() => setSelectedAssignee(contact.email)}
+                  onClick={() => setSelectedAssignee(member.id)}
                 >
                   <div
                     className="reassign-contact-avatar"
-                    style={{ backgroundColor: contact.avatarColor }}
+                    style={{ backgroundColor: (member as any).avatarColor || '#6b7280' }}
                   >
-                    {getInitials(contact.name)}
+                    {getInitials(member.name || member.email || '?')}
                   </div>
                   <div className="reassign-contact-info">
-                    <div className="reassign-contact-name">{contact.name}</div>
+                    <div className="reassign-contact-name">{member.name || member.email}</div>
                     <div className="reassign-contact-details">
-                      {contact.email}
-                      {contact.company && ` • ${contact.company}`}
+                      {member.email}
                     </div>
                   </div>
-                  {selectedAssignee === contact.email && (
+                  {selectedAssignee === member.id && (
                     <div className="reassign-contact-selected-indicator">
                       ✓
                     </div>

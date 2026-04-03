@@ -20,7 +20,7 @@ export type { WarRoomMode, MissionType, RoomType } from './ModeSwitcher';
 export { TokenStream } from './TokenStream';
 export { VoiceControl } from './VoiceControl';
 export { ThinkingPanel } from './ThinkingPanel';
-export { VoiceSynthesis, useVoiceSynthesis } from './VoiceSynthesis';
+export { useVoiceSynthesis } from './VoiceSynthesis';
 
 // ── Mode Components (canonical) ───────────────────────────────────────────────
 export { CommandCenter } from './modes/CommandCenter';

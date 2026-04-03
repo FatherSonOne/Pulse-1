@@ -490,6 +490,7 @@ const IntelPanel: React.FC<{
         <div className="wr-panel-title">
           <AreaChart className="fa wr-icon-glow" />
           <span>INTEL FEED</span>
+          <span style={{ fontSize: 9, padding: '1px 6px', borderRadius: 4, background: 'rgba(245,158,11,0.15)', color: '#f59e0b', fontWeight: 700, letterSpacing: '0.1em', marginLeft: 6 }}>SIMULATED</span>
         </div>
       </div>
 

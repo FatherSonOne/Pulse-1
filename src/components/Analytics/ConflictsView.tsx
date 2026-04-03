@@ -4,6 +4,7 @@
  */
 
 import React, { useState, useEffect } from 'react';
+import { formatTimeAgo } from '../../utils/dateUtils';
 import {
   getActiveConflicts,
   getAllConflicts,
@@ -83,19 +84,7 @@ export const ConflictsView: React.FC<ConflictsViewProps> = ({ timeRange }) => {
     }
   };
 
-  const formatTimeAgo = (timestamp: string): string => {
-    const date = new Date(timestamp);
-    const now = new Date();
-    const diffMs = now.getTime() - date.getTime();
-    const diffMins = Math.floor(diffMs / 60000);
-    const diffHours = Math.floor(diffMs / 3600000);
-    const diffDays = Math.floor(diffMs / 86400000);
-
-    if (diffMins < 60) return `${diffMins}m ago`;
-    if (diffHours < 24) return `${diffHours}h ago`;
-    if (diffDays < 7) return `${diffDays}d ago`;
-    return date.toLocaleDateString();
-  };
+  // formatTimeAgo imported from ../../utils/dateUtils
 
   const formatDuration = (hours: number | null): string => {
     if (!hours) return 'N/A';

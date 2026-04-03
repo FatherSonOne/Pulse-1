@@ -1,20 +1,8 @@
 import React, { useState, useEffect } from 'react';
 import { TrendingUp } from 'lucide-react';
 import { settingsService } from '../../services/settingsService';
-
-const ToggleItem = ({ label, desc, active, onToggle }: { label: string; desc: string; active: boolean; onToggle: () => void }) => (
-  <div className="flex justify-between items-center group cursor-pointer" onClick={onToggle}>
-    <div>
-      <div className="dark:text-white text-zinc-900 font-medium text-sm">{label}</div>
-      <div className="text-zinc-500 text-xs">{desc}</div>
-    </div>
-    <button
-      className={`w-12 h-6 rounded-full p-1 transition-colors duration-300 ease-in-out ${active ? 'bg-blue-600' : 'bg-zinc-300 dark:bg-zinc-700'}`}
-    >
-      <div className={`w-4 h-4 rounded-full bg-white shadow-md transform transition-transform duration-300 ${active ? 'translate-x-6' : 'translate-x-0'}`} />
-    </button>
-  </div>
-);
+import { supabase } from '../../services/supabase';
+import { ToggleItem } from './shared/ToggleItem';
 
 export const ActivityMonitorSettings: React.FC = () => {
   const [activityPresenceVisible, setActivityPresenceVisible] = useState(true);
@@ -47,10 +35,21 @@ export const ActivityMonitorSettings: React.FC = () => {
           label="Live Presence"
           desc="Let others see when you are online"
           active={activityPresenceVisible}
-          onToggle={() => {
+          onToggle={async () => {
             const v = !activityPresenceVisible;
             setActivityPresenceVisible(v);
             settingsService.set('activityMonitorPresenceVisible', v);
+            // Update user_profiles so other users see the change
+            try {
+              const { data: { user } } = await supabase.auth.getUser();
+              if (user) {
+                await supabase.from('user_profiles').update({
+                  online_status: v ? 'online' : 'offline',
+                }).eq('id', user.id);
+              }
+            } catch (err) {
+              console.error('Error updating presence visibility:', err);
+            }
           }}
         />
         <div className="h-px bg-zinc-100 dark:bg-zinc-800"></div>

@@ -1,10 +1,8 @@
-export { FocusMode } from './FocusMode';
-export { AnalystMode } from './AnalystMode';
+export { IntelMode } from './IntelMode';
+export { CommandCenter } from './CommandCenter';
+export { FocusModeRedesigned } from './FocusModeRedesigned';
 export { DataAnalystModeRedesigned } from './DataAnalystModeRedesigned';
-export { StrategistMode } from './StrategistMode';
 export { StrategistModeRedesigned } from './StrategistModeRedesigned';
-export { BrainstormMode } from './BrainstormMode';
 export { BrainstormModeRedesigned } from './BrainstormModeRedesigned';
-export { DebriefMode } from './DebriefMode';
 export { DebriefModeRedesigned } from './DebriefModeRedesigned';
 export { ConversationModeRedesigned } from './ConversationModeRedesigned';
