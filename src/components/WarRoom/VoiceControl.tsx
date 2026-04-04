@@ -327,6 +327,7 @@ export const VoiceControl: React.FC<VoiceControlProps> = ({
             value={mode}
             onChange={(e) => onChangeMode(e.target.value as any)}
             className="text-xs bg-transparent border border-gray-300 dark:border-gray-600 rounded-full px-2 py-1 text-gray-700 dark:text-gray-300 focus:outline-none focus:ring-2 focus:ring-rose-500/40"
+            aria-label="Voice input mode"
           >
             <option value="push-to-talk">Push</option>
             <option value="always-on">Always On</option>

@@ -126,7 +126,7 @@ export const DeveloperSettings: React.FC = () => {
                 </button>
               </div>
               <p className="text-xs text-zinc-500">
-                Required for OpenAI Realtime Voice Agents in the War Room. Get your key from{' '}
+                Required for OpenAI Realtime Voice Agents in Studio. Get your key from{' '}
                 <a
                   href="https://platform.openai.com/api-keys"
                   target="_blank"

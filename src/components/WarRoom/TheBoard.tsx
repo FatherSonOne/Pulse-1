@@ -40,7 +40,7 @@ function formatTime(ts: number): string {
 
 function exportToMarkdown(notes: BoardNote[]): string {
   const lines: string[] = [
-    '# Intelligence Board',
+    '# Artifacts',
     `_Exported ${new Date().toLocaleString()}_`,
     '',
   ];
@@ -68,7 +68,7 @@ function downloadMarkdown(notes: BoardNote[]): void {
   const url = URL.createObjectURL(blob);
   const a = document.createElement('a');
   a.href = url;
-  a.download = `intelligence-board-${new Date().toISOString().split('T')[0]}.md`;
+  a.download = `studio-artifacts-${new Date().toISOString().split('T')[0]}.md`;
   a.click();
   URL.revokeObjectURL(url);
 }
@@ -120,6 +120,7 @@ const NoteCard: React.FC<{
         <button
           onClick={onDelete}
           title="Remove note"
+          aria-label="Remove note"
           style={{
             background: 'none',
             border: 'none',
@@ -407,6 +408,7 @@ export const TheBoard: React.FC<TheBoardProps> = ({
           <button
             onClick={() => downloadMarkdown(notes)}
             title="Export board as Markdown"
+            aria-label="Export board as Markdown"
             style={{
               flex: 1,
               padding: '5px',
@@ -448,6 +450,7 @@ export const TheBoard: React.FC<TheBoardProps> = ({
               </button>
               <button
                 onClick={() => setShowConfirmClear(false)}
+                aria-label="Cancel clear"
                 style={{
                   padding: '5px 8px',
                   borderRadius: 'var(--wr-radius-sm)',
@@ -465,6 +468,7 @@ export const TheBoard: React.FC<TheBoardProps> = ({
             <button
               onClick={() => setShowConfirmClear(true)}
               title="Clear all notes"
+              aria-label="Clear all notes"
               style={{
                 padding: '5px 8px',
                 borderRadius: 'var(--wr-radius-sm)',

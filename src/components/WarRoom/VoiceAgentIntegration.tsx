@@ -61,16 +61,39 @@ export const VoiceAgentIntegration: React.FC<VoiceAgentIntegrationProps> = ({
   const [isLoading, setIsLoading] = useState(true);
   const [error, setError] = useState<string | null>(null);
 
-  // Resolve API key from props, environment, or localStorage
+  // Resolve API key: prefer edge-function token, fallback to env/localStorage for dev
   useEffect(() => {
     const resolveApiKey = async () => {
       setIsLoading(true);
       setError(null);
 
       try {
-        // Priority: props > env > localStorage
-        const key = apiKey
-          || import.meta.env.VITE_OPENAI_API_KEY
+        // If a key was passed as prop, use it directly
+        if (apiKey) {
+          setResolvedApiKey(apiKey);
+          onReady?.();
+          return;
+        }
+
+        // Try the openai-realtime-token edge function (server-side key)
+        if (import.meta.env.VITE_FORCE_LOCAL_KEYS !== 'true') {
+          try {
+            const { supabase } = await import('../../services/supabase');
+            const { data, error: fnError } = await supabase.functions.invoke('openai-realtime-token', {
+              body: { operation: 'resolve_key' },
+            });
+            if (!fnError && data?.key) {
+              setResolvedApiKey(data.key);
+              onReady?.();
+              return;
+            }
+          } catch {
+            // Edge function unavailable, fall through to local resolution
+          }
+        }
+
+        // Fallback: env > localStorage (for local development)
+        const key = import.meta.env.VITE_OPENAI_API_KEY
           || localStorage.getItem('openai_api_key')
           || '';
 

@@ -1305,7 +1305,7 @@ export const analyzeImage = async (apiKey: string, imageBase64: string, prompt: 
 
 export const generateEmbedding = async (apiKey: string, text: string): Promise<number[] | null> => {
   try {
-    const response = await fetch(`https://generativelanguage.googleapis.com/v1beta/models/text-embedding-004:embedContent?key=${apiKey}`, {
+    const response = await fetch(`https://generativelanguage.googleapis.com/v1beta/models/text-embedding-005:embedContent?key=${apiKey}`, {
       method: 'POST',
       headers: { 'Content-Type': 'application/json' },
       body: JSON.stringify({
@@ -1355,6 +1355,35 @@ export const processWithModel = async (apiKey: string, prompt: string, model: st
     'processWithModel'
   ) as Promise<string | null>;
 };
+
+// ==================== Proxy-based Model Processing ====================
+
+/**
+ * Process a prompt via the Supabase gemini-proxy edge function.
+ * No client-side API key required — the key lives server-side.
+ * Falls back to localStorage key when VITE_FORCE_LOCAL_KEYS is set.
+ */
+export async function processWithModelViaProxy(
+  prompt: string,
+  model: string = 'gemini-2.5-flash'
+): Promise<string> {
+  // Development fallback: use localStorage key directly
+  if (import.meta.env.VITE_FORCE_LOCAL_KEYS === 'true') {
+    const localKey = localStorage.getItem('gemini_api_key') || '';
+    if (localKey) {
+      const result = await processWithModel(localKey, prompt, model);
+      return result || '';
+    }
+  }
+
+  const { supabase } = await import('./supabase');
+  const { data, error } = await supabase.functions.invoke('gemini-proxy', {
+    body: { prompt, model, operation: 'war_room' },
+  });
+
+  if (error) throw new Error(`Gemini proxy error: ${error.message}`);
+  return data?.result || data?.text || '';
+}
 
 // ==================== Security Layer ====================
 

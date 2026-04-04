@@ -29,7 +29,18 @@ export type ActionType =
   | 'session_created'
   | 'session_revoked'
   | 'api_key_created'
-  | 'api_key_revoked';
+  | 'api_key_revoked'
+  | 'war_room_session_created'
+  | 'war_room_session_deleted'
+  | 'war_room_message_sent'
+  | 'war_room_doc_uploaded'
+  | 'war_room_doc_deleted'
+  | 'war_room_voice_session_started'
+  | 'war_room_voice_session_ended'
+  | 'war_room_mission_launched'
+  | 'war_room_decision_recorded'
+  | 'war_room_export'
+  | 'war_room_share';
 
 export type ActionCategory = 'auth' | 'data_access' | 'settings' | 'export' | 'security' | 'admin';
 
@@ -414,6 +425,17 @@ class ActivityService {
       service_connect: 'settings',
       service_disconnect: 'settings',
       security_alert_acknowledged: 'security',
+      war_room_session_created: 'data_access',
+      war_room_session_deleted: 'data_access',
+      war_room_message_sent: 'data_access',
+      war_room_doc_uploaded: 'data_access',
+      war_room_doc_deleted: 'data_access',
+      war_room_voice_session_started: 'security',
+      war_room_voice_session_ended: 'security',
+      war_room_mission_launched: 'data_access',
+      war_room_decision_recorded: 'data_access',
+      war_room_export: 'export',
+      war_room_share: 'export',
     };
 
     return categoryMap[actionType] || 'security';

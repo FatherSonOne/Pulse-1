@@ -253,7 +253,7 @@ export const WarRoomModalStack = React.memo<WarRoomModalStackProps>((props) => {
                   <button
                     onClick={() => {
                       const content = exportToMarkdown();
-                      const mailtoLink = `mailto:?subject=War Room Session&body=${encodeURIComponent(content)}`;
+                      const mailtoLink = `mailto:?subject=Studio Session&body=${encodeURIComponent(content)}`;
                       window.location.href = mailtoLink;
                       setShowExportModal(false);
                     }}

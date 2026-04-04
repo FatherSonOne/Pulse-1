@@ -1,17 +1,14 @@
 /**
- * War Room Components Index
- * Exports all War Room related components and utilities.
- *
- * Phase 1 changes:
- *  - Added WarRoomLayout, ModeToolbar (new foundation components)
- *  - NeuralTerminal, SentientInterface, XRayMode, LivingAI, ElegantInterface
- *    moved to ./archived/ — import from there if needed
+ * Pulse Studio Components Index
+ * Exports all Studio-related components and utilities.
  */
 
-// ── Foundation (Phase 1) ─────────────────────────────────────────────────────
-export { WarRoomLayout } from './WarRoomLayout';
-export type { WarRoomLayoutProps } from './WarRoomLayout';
-export { ModeToolbar } from './ModeToolbar';
+// ── Studio Layout (Phase 1 redesign) ────────────────────────────────────────
+export { StudioLayout } from './StudioLayout';
+export type { StudioLayoutProps } from './StudioLayout';
+export { StudioHeader } from './StudioHeader';
+export { PulseStudio } from './PulseStudio';
+export type { PulseStudioProps } from './PulseStudio';
 
 // ── Core Components ───────────────────────────────────────────────────────────
 export { AudioVisualizer } from './AudioVisualizer';
@@ -22,20 +19,21 @@ export { VoiceControl } from './VoiceControl';
 export { ThinkingPanel } from './ThinkingPanel';
 export { useVoiceSynthesis } from './VoiceSynthesis';
 
-// ── Mode Components (canonical) ───────────────────────────────────────────────
-export { CommandCenter } from './modes/CommandCenter';
+// ── Phase 2: Artifacts ───────────────────────────────────────────────────────
+export { InlineArtifact } from './ArtifactRenderers';
+export { parseMessageContent, hasLikelyArtifacts } from './artifactParser';
+export type { Artifact, MessageSegment, ArtifactType } from './artifactParser';
 
-// ── Effect Components ─────────────────────────────────────────────────────────
-export { MatrixRain } from './effects/MatrixRain';
-export { GlitchEffect } from './effects/GlitchEffect';
-export { ParticleField } from './effects/ParticleField';
+// ── Phase 3: Commands ────────────────────────────────────────────────────────
+export { useStudioCommands, STUDIO_COMMANDS, AGENT_MENTIONS } from './useStudioCommands';
 
-// ── OpenAI Realtime Voice Agent ───────────────────────────────────────────────
+// ── Phase 4: Utilities ───────────────────────────────────────────────────────
+export { FocusTimer } from './FocusTimer';
+export { StudioOnboarding, hasCompletedOnboarding } from './StudioOnboarding';
+export { MarkdownContent } from './MarkdownContent';
+export { useSwipeGesture } from './useSwipeGesture';
+
+// ── OpenAI Realtime Voice Agent ──────────────────────────────────────────────
 export { RealtimeVoiceAgent } from './RealtimeVoiceAgent';
 export { VoiceSessionHistory } from './VoiceSessionHistory';
 export { VoiceAgentPanel } from './VoiceAgentPanel';
-
-// ── Redesigned War Room Shell ─────────────────────────────────────────────────
-export { WarRoomRedesigned } from './WarRoomRedesigned';
-export { WarRoomHub } from './WarRoomHub';
-export { FloatingModeDock } from './FloatingModeDock';

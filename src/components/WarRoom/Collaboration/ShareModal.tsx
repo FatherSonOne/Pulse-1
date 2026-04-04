@@ -4,6 +4,7 @@
  */
 
 import React, { useState, useEffect, useRef } from 'react';
+import { warRoomAudit } from '../../../services/warRoomAuditService';
 import toast from 'react-hot-toast';
 import {
   DocumentShare,
@@ -146,6 +147,7 @@ export const ShareModal: React.FC<ShareModalProps> = ({
         setShares([share, ...shares]);
       }
 
+      warRoomAudit.shared(resourceId, type);
       toast.success(`Shared with ${email}`);
       setEmail('');
       setMessage('');

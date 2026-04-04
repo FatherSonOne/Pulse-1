@@ -16,8 +16,22 @@
 import { z } from 'zod';
 import { RealtimeTool, RealtimeToolContext } from './realtimeAgentService';
 import { ragService } from './ragService';
-import { processWithModel } from './geminiService';
+import { processWithModel, processWithModelViaProxy } from './geminiService';
 import { contextBankService, SearchResult } from './contextBankService';
+
+/**
+ * Resolve Gemini API key: prefers proxy (key stays server-side),
+ * falls back to localStorage for local development.
+ */
+function resolveGeminiApiKey(): string {
+  if (import.meta.env.VITE_FORCE_LOCAL_KEYS === 'true') {
+    return localStorage.getItem('gemini_api_key') || '';
+  }
+  // For functions that require an explicit key (e.g. embedding APIs),
+  // we still read from localStorage as a fallback since the proxy
+  // handles the main LLM calls.
+  return localStorage.getItem('gemini_api_key') || '';
+}
 
 // ============= CITATION TRACKING =============
 
@@ -60,7 +74,7 @@ export const ragSearchTool: RealtimeTool = {
     }
 
     const sessionId = context.sessionId || 'default';
-    const apiKey = localStorage.getItem('gemini_api_key') || '';
+    const apiKey = resolveGeminiApiKey();
 
     if (!apiKey) {
       return 'Error: API key not available for search. Please configure your Gemini API key in settings.';
@@ -217,8 +231,7 @@ export const searchDocumentsTool: RealtimeTool = {
     }
 
     try {
-      // Get API key from localStorage
-      const apiKey = localStorage.getItem('gemini_api_key') || '';
+      const apiKey = resolveGeminiApiKey();
       if (!apiKey) {
         return 'Error: API key not available for document search.';
       }
@@ -463,13 +476,18 @@ export const generateSummaryTool: RealtimeTool = {
 
       const prompt = `Summarize the following conversation:\n\n${textToSummarize}\n\n${formatInstructions[format]}`;
 
-      const apiKey = localStorage.getItem('gemini_api_key') || '';
-      if (!apiKey) {
-        return 'Error: API key not available for summarization.';
+      try {
+        const summary = await processWithModelViaProxy(prompt);
+        return `📋 Summary:\n\n${summary}`;
+      } catch {
+        // Fallback to direct API call with localStorage key
+        const apiKey = resolveGeminiApiKey();
+        if (!apiKey) {
+          return 'Error: API key not available for summarization.';
+        }
+        const summary = await processWithModel(apiKey, prompt);
+        return `📋 Summary:\n\n${summary}`;
       }
-
-      const summary = await processWithModel(apiKey, prompt);
-      return `📋 Summary:\n\n${summary}`;
     } catch (error) {
       console.error('Generate summary error:', error);
       return `Error generating summary: ${error instanceof Error ? error.message : 'Unknown error'}`;

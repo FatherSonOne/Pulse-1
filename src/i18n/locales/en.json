@@ -1,0 +1,16 @@
+{
+  "warRoom": {
+    "title": "Studio",
+    "hub": "Studio",
+    "sources": "Sources",
+    "voiceAgent": "Voice Agent",
+    "export": "Export",
+    "voiceOutput": "Voice Output",
+    "on": "On",
+    "off": "Off",
+    "agent": "Agent",
+    "generating": "Generating...",
+    "generateAudio": "Generate Audio",
+    "exportSession": "Export Session"
+  }
+}

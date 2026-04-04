@@ -49,6 +49,7 @@ export const AgentSelector: React.FC<{
         ref={buttonRef}
         onClick={() => setIsOpen(!isOpen)}
         className="war-room-btn px-3 py-1.5 flex items-center gap-2"
+        aria-label={`Select agent: ${selectedAgent.name}`}
       >
         <span className={`w-2 h-2 rounded-full bg-gradient-to-r ${selectedAgent.color}`} />
         <i className={`fa ${selectedAgent.icon} text-sm`}></i>

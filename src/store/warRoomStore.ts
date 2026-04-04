@@ -15,6 +15,15 @@ export interface Token {
   alternatives?: string[];
 }
 
+// ── Presence type (used by Realtime collaboration) ──────────────────────────
+export interface PresenceUser {
+  userId: string;
+  displayName: string;
+  avatarUrl?: string;
+  activeMode?: string;
+  joinedAt: string;
+}
+
 // ── State interface ─────────────────────────────────────────────────────────
 
 interface WarRoomState {
@@ -104,6 +113,9 @@ interface WarRoomState {
   suggestions: PromptSuggestion[];
   showSuggestions: boolean;
 
+  // ── Presence slice ─────────────────────────────────────────────────────
+  presence: Map<string, PresenceUser>;
+
   // ── Actions ────────────────────────────────────────────────────────────
 
   // Project actions
@@ -185,6 +197,9 @@ interface WarRoomState {
   setEnableExtendedThinking: (enable: boolean) => void;
   setSuggestions: (suggestions: PromptSuggestion[]) => void;
   setShowSuggestions: (show: boolean) => void;
+
+  // Presence actions
+  setPresence: (presence: Map<string, PresenceUser>) => void;
 }
 
 // ── Helper to load mission messages from localStorage ────────────────────────
@@ -304,18 +319,21 @@ export const useWarRoomStore = create<WarRoomState>()(
     suggestions: [],
     showSuggestions: true,
 
+    // Presence
+    presence: new Map<string, PresenceUser>(),
+
     // ── Actions ────────────────────────────────────────────────────────
 
     // Project
-    setProjects: (projects) => set({ projects }),
+    setProjects: (projects) => set({ projects: Array.isArray(projects) ? projects : [] }),
     setSelectedProjectId: (id) => set({ selectedProjectId: id }),
     setShowCreateProject: (show) => set({ showCreateProject: show }),
     setNewProjectName: (name) => set({ newProjectName: name }),
 
     // Session
-    setSessions: (sessions) => set({ sessions }),
+    setSessions: (sessions) => set({ sessions: Array.isArray(sessions) ? sessions : [] }),
     setSelectedSessionId: (id) => set({ selectedSessionId: id }),
-    setMessages: (messages) => set({ messages }),
+    setMessages: (messages) => set({ messages: Array.isArray(messages) ? messages : [] }),
     setInput: (input) => set({ input }),
     setIsLoading: (loading) => set({ isLoading: loading }),
     setMissionMessages: (updater) => set((state) => ({
@@ -326,7 +344,7 @@ export const useWarRoomStore = create<WarRoomState>()(
     setActiveAgent: (agent) => set({ activeAgent: agent }),
 
     // Document
-    setDocuments: (documents) => set({ documents }),
+    setDocuments: (documents) => set({ documents: Array.isArray(documents) ? documents : [] }),
     setShowDocUpload: (show) => set({ showDocUpload: show }),
     setUploadingFiles: (updater) => set((state) => ({
       uploadingFiles: resolveUpdater(updater, state.uploadingFiles),
@@ -401,6 +419,9 @@ export const useWarRoomStore = create<WarRoomState>()(
     setEnableExtendedThinking: (enable) => set({ enableExtendedThinking: enable }),
     setSuggestions: (suggestions) => set({ suggestions }),
     setShowSuggestions: (show) => set({ showSuggestions: show }),
+
+    // Presence
+    setPresence: (presence) => set({ presence }),
   }))
 );
 

@@ -1,5 +1,5 @@
 import React, { useState, useEffect, useRef, useCallback, useMemo, Suspense, lazy } from 'react';
-import { useWarRoomStore, Token } from '../store/warRoomStore';
+import { useWarRoomStore } from '../store/warRoomStore';
 import { settingsService } from '../services/settingsService';
 import { Capacitor } from '@capacitor/core';
 import { ragService, AISession, KnowledgeDoc, AIMessage, AIProject, PromptSuggestion, ThinkingStep } from '../services/ragService';
@@ -7,46 +7,24 @@ import { processWithModel, generateSpeech } from '../services/geminiService';
 import toast from 'react-hot-toast';
 import './WarRoomStyles.css';
 import { ErrorBoundary } from './shared/ErrorBoundary';
-import { ModeSwitcher, WarRoomMode, MissionType, RoomType } from './WarRoom/ModeSwitcher';
-import { DataAnalystModeRedesigned, StrategistModeRedesigned, BrainstormModeRedesigned, DebriefModeRedesigned, ConversationModeRedesigned } from './WarRoom/modes';
-import { ResearchMission, DecisionMission, BrainstormMission, PlanMission, AnalyzeMission, CreateMission } from './WarRoom/missions';
+import { WarRoomMode, MissionType, RoomType } from './WarRoom/ModeSwitcher';
 
-// NotebookLM-style components
-import { DocumentViewer } from './WarRoom/DocumentViewer';
-import { DocumentSearch } from './WarRoom/Search';
-import { processDocument, getAcceptString } from '../services/documentProcessors';
-import { StudyGuideGenerator, FAQGenerator, TimelineGenerator, PodcastGenerator } from './WarRoom/ContentGenerators';
-import { OrganizationSidebar, FavoriteButton, TagManager } from './WarRoom/Organization';
-import { recordDocumentView } from '../services/organizationService';
-import { ShareModal, ActivityBadge, SharedWithMe } from './WarRoom/Collaboration';
-import { recordActivity } from '../services/collaborationService';
-import { AdvancedAIPanel } from './WarRoom/AdvancedAI';
+// Phase 1 — Pulse Studio unified interface
+import { StudioLayout } from './WarRoom/StudioLayout';
+import { StudioHeader } from './WarRoom/StudioHeader';
+import { PulseStudio } from './WarRoom/PulseStudio';
+import { StudioOnboarding, hasCompletedOnboarding } from './WarRoom/StudioOnboarding';
+
+// Document processing (used by file upload handler)
+import { processDocument } from '../services/documentProcessors';
 import { warRoomExportService, WarRoomExportData } from '../services/warRoomExportService';
 
-// Lazy load heavy components that may crash on mobile
-const AudioVisualizer = lazy(() => import('./WarRoom/AudioVisualizer').then(m => ({ default: m.AudioVisualizer })));
-const TokenStream = lazy(() => import('./WarRoom/TokenStream').then(m => ({ default: m.TokenStream })));
-
-const ThinkingPanel = lazy(() => import('./WarRoom/ThinkingPanel').then(m => ({ default: m.ThinkingPanel })));
-const CommandCenter = lazy(() => import('./WarRoom/modes/CommandCenter').then(m => ({ default: m.CommandCenter })));
-const MatrixRain = lazy(() => import('./WarRoom/effects/MatrixRain').then(m => ({ default: m.MatrixRain })));
-const GlitchEffect = lazy(() => import('./WarRoom/effects/GlitchEffect').then(m => ({ default: m.GlitchEffect })));
-const VoiceAgentPanel = lazy(() => import('./WarRoom/VoiceAgentPanel').then(m => ({ default: m.VoiceAgentPanel })));
-const WarRoomRedesigned = lazy(() => import('./WarRoom/WarRoomRedesigned').then(m => ({ default: m.WarRoomRedesigned })));
-const FocusModeRedesigned = lazy(() => import('./WarRoom/modes/FocusModeRedesigned').then(m => ({ default: m.FocusModeRedesigned })));
-const WarRoomHub = lazy(() => import('./WarRoom/WarRoomHub').then(m => ({ default: m.WarRoomHub })));
-const FloatingModeDock = lazy(() => import('./WarRoom/FloatingModeDock').then(m => ({ default: m.FloatingModeDock })));
-const IntelMode = lazy(() => import('./WarRoom/modes/IntelMode').then(m => ({ default: m.IntelMode })));
-
-// New War Room Sidebar component
+// Studio sidebar, modals & services
 import { WarRoomSidebar, WarRoomProject, WarRoomSession, AIMessage as SidebarAIMessage } from './WarRoom/WarRoomSidebar';
 import { WarRoomModalStack } from './WarRoom/WarRoomModalStack';
-import { WarRoomLayout } from './WarRoom/WarRoomLayout';
-import { MissionLauncher } from './WarRoom/MissionLauncher';
 import { useBoardNotes } from './WarRoom/useBoardNotes';
-import { WarRoomHeader } from './WarRoom/WarRoomHeader';
-import { InputArea } from './WarRoom/InputArea';
 import { AgentType } from './WarRoom/AgentSelector';
+import { warRoomRealtimeService } from '../services/warRoomRealtimeService';
 
 // Import voice synthesis hook - this is lightweight
 import { useVoiceSynthesis } from './WarRoom/VoiceSynthesis';
@@ -149,11 +127,13 @@ const LiveDashboard: React.FC<LiveDashboardProps> = ({ apiKey, userId }) => {
     showSuggestions, setShowSuggestions,
     showVoiceAgentPanel, setShowVoiceAgentPanel,
     voiceAgentExpanded, setVoiceAgentExpanded,
+    setPresence,
   } = useWarRoomStore();
 
   // ── Local refs & hooks (not in store) ────────────────────────────────────
   const messagesEndRef = useRef<HTMLDivElement>(null);
   const openaiApiKey = localStorage.getItem('openai_api_key') || import.meta.env.VITE_OPENAI_API_KEY || '';
+  const [showOnboarding, setShowOnboarding] = useState(() => !hasCompletedOnboarding());
 
   // Mobile detection helper (kept local for resize handler)
   const checkIsMobile = () => {
@@ -283,6 +263,48 @@ const LiveDashboard: React.FC<LiveDashboardProps> = ({ apiKey, userId }) => {
     }
   }, [selectedSessionId]);
 
+  // Real-time presence & message sync
+  useEffect(() => {
+    if (!selectedSessionId || !userId) return;
+
+    warRoomRealtimeService.joinSession(
+      selectedSessionId,
+      {
+        userId,
+        displayName: userId,
+        joinedAt: new Date().toISOString(),
+      },
+      {
+        onPresenceSync: (users) => {
+          setPresence(users);
+        },
+        onNewMessage: (msg) => {
+          // Dedup: only append if not already in messages
+          const current = useWarRoomStore.getState().messages;
+          if (!current.some((m) => m.id === msg.id)) {
+            useWarRoomStore.getState().setMessages([...current, msg]);
+          }
+        },
+      }
+    );
+
+    // Subscribe to collaborative artifact events
+    warRoomRealtimeService.onArtifactEvent((event, payload) => {
+      if (payload.userId === userId) return; // ignore own events
+      if (event === 'pin') {
+        addBoardNote(payload.content, payload.type as any, {
+          sourceDocTitle: `Shared by ${payload.userName || 'collaborator'}`,
+        });
+        toast(`Collaborator pinned an artifact`, { icon: '📌', duration: 2000 });
+      }
+    });
+
+    return () => {
+      warRoomRealtimeService.leaveSession();
+      setPresence(new Map());
+    };
+  }, [selectedSessionId, userId]);
+
   // Auto-scroll
   useEffect(() => {
     messagesEndRef.current?.scrollIntoView({ behavior: 'smooth' });
@@ -291,7 +313,7 @@ const LiveDashboard: React.FC<LiveDashboardProps> = ({ apiKey, userId }) => {
   const loadProjects = useCallback(async () => {
     try {
       const { data } = await ragService.getProjects(userId);
-      if (data) setProjects(data);
+      if (Array.isArray(data)) setProjects(data);
     } catch (e) {
       console.error("Failed to load projects", e);
     }
@@ -301,7 +323,7 @@ const LiveDashboard: React.FC<LiveDashboardProps> = ({ apiKey, userId }) => {
     if (!userId) return;
     try {
       const { data } = await ragService.getSessions(userId, selectedProjectId || undefined);
-      if (data) setSessions(data);
+      if (Array.isArray(data)) setSessions(data);
     } catch (e) {
       console.error("Failed to load sessions", e);
     }
@@ -311,7 +333,7 @@ const LiveDashboard: React.FC<LiveDashboardProps> = ({ apiKey, userId }) => {
     if (!userId) return;
     try {
       const { data } = await ragService.getDocuments(userId, selectedProjectId || undefined);
-      if (data) {
+      if (Array.isArray(data)) {
         console.log('📚 Loaded documents:', data);
         setDocuments(data);
       }
@@ -323,7 +345,7 @@ const LiveDashboard: React.FC<LiveDashboardProps> = ({ apiKey, userId }) => {
   const loadMessages = async (sessionId: string) => {
     try {
       const { data } = await ragService.getMessages(sessionId);
-      if (data) setMessages(data);
+      if (Array.isArray(data)) setMessages(data);
     } catch (e) {
       console.error("Failed to load messages", e);
     }
@@ -333,7 +355,7 @@ const LiveDashboard: React.FC<LiveDashboardProps> = ({ apiKey, userId }) => {
     if (!selectedSessionId) return;
     try {
       const { data } = await ragService.getSuggestions(selectedSessionId);
-      if (data) setSuggestions(data);
+      if (Array.isArray(data)) setSuggestions(data);
     } catch (e) {
       console.error("Failed to load suggestions", e);
     }
@@ -341,7 +363,7 @@ const LiveDashboard: React.FC<LiveDashboardProps> = ({ apiKey, userId }) => {
 
   const handleCreateProject = async () => {
     if (!newProjectName.trim()) {
-      toast.error('Please enter a War Room name');
+      toast.error('Please enter a workspace name');
       return;
     }
     
@@ -351,25 +373,25 @@ const LiveDashboard: React.FC<LiveDashboardProps> = ({ apiKey, userId }) => {
       
       if (error) {
         console.error('[War Room] Project creation error:', error);
-        toast.error(`Failed to create War Room: ${error.message || 'Unknown error'}`);
+        toast.error(`Failed to create workspace: ${error.message || 'Unknown error'}`);
         return;
       }
       
       if (data) {
         console.log('[War Room] Project created successfully:', data);
-        toast.success('War Room created!');
+        toast.success('Workspace created!');
         setProjects([data, ...projects]);
         setSelectedProjectId(data.id);
         setNewProjectName('');
         setShowCreateProject(false);
       } else {
         console.error('[War Room] No data returned from createProject');
-        toast.error('Failed to create War Room: No data returned');
+        toast.error('Failed to create workspace: No data returned');
       }
     } catch (e) {
       console.error('[War Room] Project creation exception:', e);
       const errorMessage = e instanceof Error ? e.message : 'Unknown error';
-      toast.error(`Failed to create War Room: ${errorMessage}`);
+      toast.error(`Failed to create workspace: ${errorMessage}`);
     }
   };
 
@@ -552,11 +574,20 @@ const LiveDashboard: React.FC<LiveDashboardProps> = ({ apiKey, userId }) => {
       }
 
       // Step 3: Generate response with agent persona
+      const structuredOutputGuidance =
+        '\n\nFORMATTING GUIDELINES: When appropriate, structure your response using markdown sections with ## headings. ' +
+        'For comparisons use ## Pros / ## Cons sections. For tasks use ## Action Items with bullet lists. ' +
+        'For data comparisons use markdown tables. For brainstorming use ## Ideas with bullet lists. ' +
+        'For project phases use ## Timeline with labeled bullet points (Phase: description). ' +
+        'For summaries use ## Key Points or ## Summary with bullet lists. ' +
+        'For risk analysis use ## Risks with bullet lists or tables. ' +
+        'Always include a brief introductory paragraph before structured sections.';
+
       const agentPrompts: Record<string, string> = {
-        general: 'You are a helpful AI assistant with access to a knowledge base.',
-        skeptic: 'You are a critical thinker with access to a knowledge base. Question assumptions and challenge ideas constructively based on the provided sources.',
-        scribe: 'You are a meticulous note-taker with access to a knowledge base. Organize information clearly with bullet points and structure, citing sources.',
-        'deep-diver': 'You are an analytical researcher with access to a knowledge base. Provide comprehensive explanations with nuance, always citing your sources.'
+        general: 'You are a helpful AI assistant with access to a knowledge base.' + structuredOutputGuidance,
+        skeptic: 'You are a critical thinker with access to a knowledge base. Question assumptions and challenge ideas constructively based on the provided sources.' + structuredOutputGuidance,
+        scribe: 'You are a meticulous note-taker with access to a knowledge base. Organize information clearly with bullet points and structure, citing sources.' + structuredOutputGuidance,
+        'deep-diver': 'You are an analytical researcher with access to a knowledge base. Provide comprehensive explanations with nuance, always citing your sources.' + structuredOutputGuidance
       };
 
       if (enableExtendedThinking) {
@@ -947,7 +978,7 @@ const LiveDashboard: React.FC<LiveDashboardProps> = ({ apiKey, userId }) => {
       await ragService.deleteProject(id);
       setProjects(projects.filter(p => p.id !== id));
       if (selectedProjectId === id) setSelectedProjectId(null);
-      toast.success('War Room deleted');
+      toast.success('Workspace deleted');
     } catch (e) {
       toast.error('Failed to delete project');
     }
@@ -1099,7 +1130,7 @@ const LiveDashboard: React.FC<LiveDashboardProps> = ({ apiKey, userId }) => {
     const session = sessions.find(s => s.id === selectedSessionId);
     const timestamp = new Date().toLocaleString();
     
-    let markdown = `# War Room Session: ${session?.title || 'Untitled'}\n\n`;
+    let markdown = `# Studio Session: ${session?.title || 'Untitled'}\n\n`;
     markdown += `**Exported:** ${timestamp}\n`;
     markdown += `**Agent:** ${activeAgent}\n`;
     if (selectedProject) markdown += `**Project:** ${selectedProject.name}\n`;
@@ -1158,7 +1189,7 @@ const LiveDashboard: React.FC<LiveDashboardProps> = ({ apiKey, userId }) => {
     
     const summary = await processWithModel(
       apiKey,
-      `Create a concise summary of this War Room session. Include key points, decisions, and action items:\n\n${conversationText}`
+      `Create a concise summary of this Studio session. Include key points, decisions, and action items:\n\n${conversationText}`
     );
     
     return summary || 'Failed to generate summary';
@@ -1172,7 +1203,7 @@ const LiveDashboard: React.FC<LiveDashboardProps> = ({ apiKey, userId }) => {
         const url = URL.createObjectURL(blob);
         const a = document.createElement('a');
         a.href = url;
-        a.download = `war-room-${selectedSessionId?.slice(0, 8)}-${Date.now()}.md`;
+        a.download = `studio-${selectedSessionId?.slice(0, 8)}-${Date.now()}.md`;
         a.click();
         URL.revokeObjectURL(url);
         toast.success('Exported as Markdown!');
@@ -1182,7 +1213,7 @@ const LiveDashboard: React.FC<LiveDashboardProps> = ({ apiKey, userId }) => {
         const url = URL.createObjectURL(blob);
         const a = document.createElement('a');
         a.href = url;
-        a.download = `war-room-${selectedSessionId?.slice(0, 8)}-${Date.now()}.json`;
+        a.download = `studio-${selectedSessionId?.slice(0, 8)}-${Date.now()}.json`;
         a.click();
         URL.revokeObjectURL(url);
         toast.success('Exported as JSON!');
@@ -1203,305 +1234,18 @@ const LiveDashboard: React.FC<LiveDashboardProps> = ({ apiKey, userId }) => {
     }
   };
 
-  const selectedProject = projects.find(p => p.id === selectedProjectId);
+  const selectedProject = Array.isArray(projects) ? projects.find(p => p.id === selectedProjectId) : undefined;
 
-  // Handler for mode selection from hub
-  const handleModeSelectFromHub = (mode: WarRoomMode) => {
-    setWarRoomMode(mode);
-    setCurrentRoom('war-room');
-    setShowWarRoomHub(false);
-  };
+  // Note: War Room hub / mode selection removed in Phase 1 (Pulse Studio redesign).
+  // The unified PulseStudio component replaces all 7 modes.
 
-  // Handler for mission selection from hub
-  const handleMissionSelectFromHub = (mission: MissionType) => {
-    setCurrentMission(mission);
-    setCurrentRoom('missions');
-    setShowWarRoomHub(false);
-  };
+  // Artifacts panel state (controlled from here, passed to StudioLayout)
+  const [artifactsPanelOpen, setArtifactsPanelOpen] = useState(false);
 
-  // Handler to go back to hub
-  const handleBackToHub = () => {
-    setShowWarRoomHub(true);
-  };
-
-  // Render mode-specific interface
-  const renderModeContent = () => {
-    // Show War Room Hub landing page
-    if (showWarRoomHub) {
-      return (
-        <Suspense fallback={<LoadingFallback message="Loading War Room Hub..." />}>
-          <WarRoomHub
-            onModeSelect={handleModeSelectFromHub}
-            onMissionSelect={handleMissionSelectFromHub}
-            onRoomChange={setCurrentRoom}
-            currentMode={warRoomMode}
-            currentMission={currentMission}
-            currentRoom={currentRoom}
-            recentSessions={sessions.slice(0, 5).map(s => ({
-              id: s.id,
-              title: s.title,
-              mode: warRoomMode,
-              timestamp: new Date(s.created_at || Date.now())
-            }))}
-            onSessionSelect={(sessionId) => {
-              setSelectedSessionId(sessionId);
-              setShowWarRoomHub(false);
-            }}
-          />
-        </Suspense>
-      );
-    }
-
-    // Get messages for current mission/mode
-    const missionSpecificMessages = getMissionMessages();
-
-    const commonProps = {
-      messages: missionSpecificMessages,
-      isLoading,
-      thinkingLogs,
-      onSendMessage: (text: string) => {
-        // Directly send message without relying on input state
-        sendMessageDirect(text);
-      },
-      onNewSession: () => {
-        clearMissionMessages();
-        toast.success('Started new session! Previous conversation saved.');
-      }
-    };
-
-    const sessionTitle = sessions.find(s => s.id === selectedSessionId)?.title || 'Session';
-    const docSummaries = documents.map(d => ({ title: d.title, summary: d.ai_summary }));
-
-    // FloatingModeDock replaced by WarRoomLayout's ModeToolbar (Phase 1).
-    // renderWithDock kept as a passthrough so all call sites remain unchanged.
-    const renderWithDock = (content: React.ReactNode) => <>{content}</>;
-
-    // Handle Missions Room
-    if (currentRoom === 'missions') {
-      switch (currentMission) {
-        case 'research':
-          return renderWithDock(
-            <ResearchMission
-              {...commonProps}
-              sessionId={selectedSessionId || ''}
-              sessionTitle={sessionTitle}
-              documents={docSummaries}
-              activeContextCount={activeContextDocs.size}
-            />
-          );
-        case 'decision':
-          return renderWithDock(
-            <DecisionMission
-              {...commonProps}
-              sessionId={selectedSessionId || ''}
-              sessionTitle={sessionTitle}
-              documents={docSummaries}
-              activeContextCount={activeContextDocs.size}
-            />
-          );
-        case 'brainstorm':
-          return renderWithDock(
-            <BrainstormMission
-              {...commonProps}
-              sessionId={selectedSessionId || ''}
-              sessionTitle={sessionTitle}
-              documents={docSummaries}
-              activeContextCount={activeContextDocs.size}
-            />
-          );
-        case 'plan':
-          return renderWithDock(
-            <PlanMission
-              {...commonProps}
-              sessionId={selectedSessionId || ''}
-              sessionTitle={sessionTitle}
-              documents={docSummaries}
-              activeContextCount={activeContextDocs.size}
-            />
-          );
-        case 'analyze':
-          return renderWithDock(
-            <AnalyzeMission
-              {...commonProps}
-              sessionId={selectedSessionId || ''}
-              sessionTitle={sessionTitle}
-              documents={docSummaries}
-              activeContextCount={activeContextDocs.size}
-            />
-          );
-        case 'create':
-          return renderWithDock(
-            <CreateMission
-              {...commonProps}
-              sessionId={selectedSessionId || ''}
-              sessionTitle={sessionTitle}
-              documents={docSummaries}
-              activeContextCount={activeContextDocs.size}
-            />
-          );
-        default:
-          return renderWithDock(
-            <div className="h-full flex items-center justify-center war-room-text-secondary">
-              <div className="text-center">
-                <BookOpen className="fa text-4xl mb-4 opacity-30" />
-                <p>Mission type coming soon</p>
-              </div>
-            </div>
-          );
-      }
-    }
-
-    // Handle War Room modes
-    switch (warRoomMode) {
-      case 'tactical':
-        return renderWithDock(
-          <Suspense fallback={<LoadingFallback message="Loading Tactical Console..." />}>
-            <WarRoomRedesigned
-              messages={missionSpecificMessages}
-              isLoading={isLoading}
-              thinkingLogs={thinkingLogs}
-              documents={documents}
-              onSendMessage={(text: string) => sendMessageDirect(text)}
-              onGenerateAudio={() => toast.success('Audio generation coming soon!')}
-              onExport={() => {
-                const content = missionSpecificMessages.map(m => `[${m.role}]: ${m.content}`).join('\n\n');
-                const blob = new Blob([content], { type: 'text/plain' });
-                const url = URL.createObjectURL(blob);
-                const a = document.createElement('a');
-                a.href = url;
-                a.download = `war-room-session-${new Date().toISOString().split('T')[0]}.txt`;
-                a.click();
-                URL.revokeObjectURL(url);
-                toast.success('Session exported!');
-              }}
-              currentMode={warRoomMode}
-              sessionName={sessionTitle}
-              onModeChange={(mode) => setWarRoomMode(mode as WarRoomMode)}
-            />
-          </Suspense>
-        );
-
-      case 'focus':
-        return renderWithDock(
-          <Suspense fallback={<LoadingFallback message="Loading Focus Mode..." />}>
-            <FocusModeRedesigned
-              {...commonProps}
-              sessionId={selectedSessionId || ''}
-              sessionTitle={sessionTitle}
-              documents={docSummaries}
-              isSpeaking={isSpeaking}
-              voiceEnabled={voiceEnabled}
-              voiceMode={voiceMode}
-              onToggleVoiceEnabled={setVoiceEnabled}
-              onChangeVoiceMode={setVoiceMode}
-              onListeningChange={(v) => setVisualizerType(v ? 'listening' : 'idle')}
-            />
-          </Suspense>
-        );
-
-      case 'elegant-interface':
-        return renderWithDock(
-          <ConversationModeRedesigned
-            {...commonProps}
-            isSpeaking={isSpeaking}
-            voiceEnabled={voiceEnabled}
-            voiceMode={voiceMode}
-            onToggleVoiceEnabled={setVoiceEnabled}
-            onChangeVoiceMode={setVoiceMode}
-            onListeningChange={(v) => setVisualizerType(v ? 'listening' : 'idle')}
-          />
-        );
-
-      case 'analyst':
-        return renderWithDock(
-          <DataAnalystModeRedesigned
-            {...commonProps}
-            sessionId={selectedSessionId || ''}
-            sessionTitle={sessionTitle}
-            documents={docSummaries}
-            currentMode={warRoomMode}
-            currentMission={currentMission}
-            currentRoom={currentRoom}
-            onModeChange={setWarRoomMode}
-            onMissionChange={setCurrentMission}
-            onRoomChange={setCurrentRoom}
-          />
-        );
-
-      case 'strategist':
-        return renderWithDock(
-          <StrategistModeRedesigned
-            {...commonProps}
-            sessionId={selectedSessionId || ''}
-            sessionTitle={sessionTitle}
-            documents={docSummaries}
-          />
-        );
-
-      case 'brainstorm':
-        return renderWithDock(
-          <BrainstormModeRedesigned
-            {...commonProps}
-            sessionId={selectedSessionId || ''}
-            sessionTitle={sessionTitle}
-            documents={docSummaries}
-          />
-        );
-
-      case 'debrief':
-        return renderWithDock(
-          <DebriefModeRedesigned
-            {...commonProps}
-            sessionId={selectedSessionId || ''}
-            sessionTitle={sessionTitle}
-            documents={docSummaries}
-          />
-        );
-
-      case 'command-center':
-        return renderWithDock(
-          <Suspense fallback={<LoadingFallback message="Loading Command Center..." />}>
-            <WarRoomRedesigned
-              messages={missionSpecificMessages}
-              isLoading={isLoading}
-              thinkingLogs={thinkingLogs}
-              documents={documents}
-              onSendMessage={(text: string) => sendMessageDirect(text)}
-              onGenerateAudio={() => toast.success('Audio generation coming soon!')}
-              onExport={() => {
-                const content = missionSpecificMessages.map(m => `[${m.role}]: ${m.content}`).join('\n\n');
-                const blob = new Blob([content], { type: 'text/plain' });
-                const url = URL.createObjectURL(blob);
-                const a = document.createElement('a');
-                a.href = url;
-                a.download = `command-center-${new Date().toISOString().split('T')[0]}.txt`;
-                a.click();
-                URL.revokeObjectURL(url);
-                toast.success('Session exported!');
-              }}
-              currentMode={warRoomMode}
-              sessionName={sessionTitle}
-              onModeChange={(mode) => setWarRoomMode(mode as WarRoomMode)}
-            />
-          </Suspense>
-        );
-
-      case 'intel':
-        return renderWithDock(
-          <Suspense fallback={<LoadingFallback message="Loading Intel Mode..." />}>
-            <IntelMode
-              {...commonProps}
-              sessionId={selectedSessionId || ''}
-              sessionTitle={sessionTitle}
-              documents={docSummaries}
-              activeContextCount={activeContextDocs.size}
-            />
-          </Suspense>
-        );
-
-      default:
-        return renderWithDock(<div>Unknown mode</div>);
-    }
+  // File upload trigger for PulseStudio
+  const handleUploadClick = () => {
+    const fileInput = document.querySelector('input[type="file"][accept]') as HTMLInputElement;
+    fileInput?.click();
   };
 
   // Close mobile menu and agent dropdown when clicking outside
@@ -1523,7 +1267,7 @@ const LiveDashboard: React.FC<LiveDashboardProps> = ({ apiKey, userId }) => {
   }, [showMobileMenu]);
 
   // Map projects and sessions to sidebar format (memoized to prevent flickering)
-  const sidebarProjects: WarRoomProject[] = useMemo(() => projects.map(p => ({
+  const sidebarProjects: WarRoomProject[] = useMemo(() => (Array.isArray(projects) ? projects : []).map(p => ({
     id: p.id,
     name: p.name,
     icon: p.icon || 'fa-rocket',
@@ -1531,7 +1275,7 @@ const LiveDashboard: React.FC<LiveDashboardProps> = ({ apiKey, userId }) => {
     created_at: p.created_at,
   })), [projects]);
 
-  const sidebarSessions: WarRoomSession[] = useMemo(() => sessions.map(s => ({
+  const sidebarSessions: WarRoomSession[] = useMemo(() => (Array.isArray(sessions) ? sessions : []).map(s => ({
     id: s.id,
     title: s.title,
     project_id: s.project_id,
@@ -1540,7 +1284,8 @@ const LiveDashboard: React.FC<LiveDashboardProps> = ({ apiKey, userId }) => {
 
   // Memoized callbacks for sidebar to prevent re-renders
   const handleSidebarToggle = useCallback(() => {
-    setIsSidebarOpen(prev => !prev);
+    const current = useWarRoomStore.getState().isSidebarOpen;
+    setIsSidebarOpen(!current);
   }, []);
 
   const handleSidebarSelectSession = useCallback((id: string) => {
@@ -1571,7 +1316,7 @@ const LiveDashboard: React.FC<LiveDashboardProps> = ({ apiKey, userId }) => {
     const projectSessions = sessions.filter(s => s.project_id === projectId);
 
     // Generate comprehensive markdown for the entire war room
-    let markdown = `# War Room: ${project.name}\n\n`;
+    let markdown = `# Workspace: ${project.name}\n\n`;
     markdown += `**Created:** ${new Date(project.created_at || Date.now()).toLocaleDateString()}\n\n`;
     markdown += `---\n\n`;
     markdown += `## Sessions (${projectSessions.length})\n\n`;
@@ -1594,13 +1339,13 @@ const LiveDashboard: React.FC<LiveDashboardProps> = ({ apiKey, userId }) => {
     const url = URL.createObjectURL(blob);
     const a = document.createElement('a');
     a.href = url;
-    a.download = `war-room-${project.name.toLowerCase().replace(/\s+/g, '-')}-${Date.now()}.md`;
+    a.download = `studio-${project.name.toLowerCase().replace(/\s+/g, '-')}-${Date.now()}.md`;
     document.body.appendChild(a);
     a.click();
     document.body.removeChild(a);
     URL.revokeObjectURL(url);
 
-    toast.success(`Exported War Room: ${project.name}`);
+    toast.success(`Exported Workspace: ${project.name}`);
   }, [projects, sessions, getSessionMessagesForExport]);
 
   // Handle export for a single session
@@ -1613,7 +1358,7 @@ const LiveDashboard: React.FC<LiveDashboardProps> = ({ apiKey, userId }) => {
 
     let markdown = `# Session: ${session.title}\n\n`;
     if (project) {
-      markdown += `**War Room:** ${project.name}\n`;
+      markdown += `**Workspace:** ${project.name}\n`;
     }
     markdown += `**Created:** ${new Date(session.created_at || Date.now()).toLocaleDateString()}\n\n`;
     markdown += `---\n\n`;
@@ -1655,10 +1400,10 @@ const LiveDashboard: React.FC<LiveDashboardProps> = ({ apiKey, userId }) => {
         });
         setProjects(prev => [...prev, newProject]);
         setSelectedProjectId(newProject.id);
-        toast.success(`Created War Room: ${name}`);
+        toast.success(`Created Workspace: ${name}`);
       } catch (error) {
         console.error('Failed to create project:', error);
-        toast.error('Failed to create War Room');
+        toast.error('Failed to create workspace');
       }
     };
     createProject();
@@ -1686,7 +1431,7 @@ const LiveDashboard: React.FC<LiveDashboardProps> = ({ apiKey, userId }) => {
   }, [userId, selectedProjectId]);
 
   return (
-    <div className="war-room-container h-screen flex overflow-hidden relative">
+    <div className="pulse-studio-container h-screen flex overflow-hidden relative">
       {/* New War Room Sidebar Component */}
       <WarRoomSidebar
         isOpen={isSidebarOpen}
@@ -1706,11 +1451,9 @@ const LiveDashboard: React.FC<LiveDashboardProps> = ({ apiKey, userId }) => {
         getSessionMessages={getSessionMessagesForExport}
       />
 
-      {/* Main Content */}
+      {/* Main Content — Pulse Studio unified interface */}
       <div className="flex-1 flex flex-col min-w-0 overflow-hidden">
-        <WarRoomHeader
-          showWarRoomHub={showWarRoomHub}
-          setShowWarRoomHub={setShowWarRoomHub}
+        <StudioHeader
           selectedProject={selectedProject}
           selectedSessionId={selectedSessionId}
           sessions={sessions}
@@ -1726,8 +1469,6 @@ const LiveDashboard: React.FC<LiveDashboardProps> = ({ apiKey, userId }) => {
           setVoiceEnabled={setVoiceEnabled}
           enableExtendedThinking={enableExtendedThinking}
           setEnableExtendedThinking={setEnableExtendedThinking}
-          showMobileMenu={showMobileMenu}
-          setShowMobileMenu={setShowMobileMenu}
           voiceSynthesisEnabled={voiceSynthesisEnabled}
           setVoiceSynthesisEnabled={setVoiceSynthesisEnabled}
           activeAgent={activeAgent}
@@ -1736,21 +1477,15 @@ const LiveDashboard: React.FC<LiveDashboardProps> = ({ apiKey, userId }) => {
           handleGenerateAudioOverview={handleGenerateAudioOverview}
         />
 
-        {/* Mode-Based Content Rendering */}
-        <WarRoomLayout
-          currentMode={warRoomMode}
-          onModeChange={(mode) => {
-            setWarRoomMode(mode);
-            setCurrentRoom('war-room');
-            setShowWarRoomHub(false);
-          }}
-          onMissionLaunch={() => setShowMissionLauncher(true)}
-          sourceOpen={contextPanelOpen}
-          onSourceChange={setContextPanelOpen}
-          onKnowledgeBank={() => setShowKnowledgeBank(true)}
+        <StudioLayout
           className="flex-1 min-h-0"
           apiKey={apiKey}
           onVoiceSend={(text) => sendMessageDirect(text)}
+          sourceOpen={contextPanelOpen}
+          onSourceChange={setContextPanelOpen}
+          artifactsOpen={artifactsPanelOpen}
+          onArtifactsChange={setArtifactsPanelOpen}
+          onKnowledgeBank={() => setShowKnowledgeBank(true)}
           documents={documents}
           activeContextDocs={activeContextDocs}
           uploadingFiles={uploadingFiles}
@@ -1769,52 +1504,48 @@ const LiveDashboard: React.FC<LiveDashboardProps> = ({ apiKey, userId }) => {
           onDeleteNote={deleteBoardNote}
           onClearNotes={clearBoardNotes}
         >
-          {renderModeContent()}
-        </WarRoomLayout>
-
-        {/* Mission Launcher Modal - triggered from ModeToolbar */}
-        {showMissionLauncher && (
-          <MissionLauncher
-            onMissionSelect={(mission) => {
-              handleMissionSelectFromHub(mission);
-              setShowMissionLauncher(false);
+          <PulseStudio
+            selectedSessionId={selectedSessionId}
+            messages={messages}
+            isLoading={isLoading}
+            thinkingLogs={thinkingLogs}
+            input={input}
+            setInput={setInput}
+            onSendMessage={handleSendMessage}
+            onSendDirect={sendMessageDirect}
+            activeAgent={activeAgent}
+            setActiveAgent={setActiveAgent}
+            documents={documents}
+            activeContextDocs={activeContextDocs}
+            voiceEnabled={voiceEnabled}
+            setVoiceEnabled={setVoiceEnabled}
+            voiceMode={voiceMode}
+            enableExtendedThinking={enableExtendedThinking}
+            setEnableExtendedThinking={setEnableExtendedThinking}
+            expandedThinking={expandedThinking}
+            toggleThinking={toggleThinking}
+            suggestions={suggestions}
+            showSuggestions={showSuggestions}
+            setShowSuggestions={setShowSuggestions}
+            handleUseSuggestion={handleUseSuggestion}
+            onToggleSources={() => setContextPanelOpen(v => !v)}
+            onToggleArtifacts={() => setArtifactsPanelOpen(v => !v)}
+            sourcesOpen={contextPanelOpen}
+            artifactsOpen={artifactsPanelOpen}
+            onUploadClick={handleUploadClick}
+            onPinArtifact={(content, type) => {
+              const note = addBoardNote(content, type);
+              // Broadcast to collaborators
+              warRoomRealtimeService.broadcastArtifact('pin', {
+                artifactId: note.id,
+                content: content.substring(0, 500),
+                type,
+                userId,
+              });
             }}
-            onClose={() => setShowMissionLauncher(false)}
+            isMobile={isMobile}
           />
-        )}
-
-        <InputArea
-          selectedSessionId={selectedSessionId}
-          warRoomMode={warRoomMode}
-          showActiveContext={showActiveContext}
-          setShowActiveContext={setShowActiveContext}
-          activeContextDocs={activeContextDocs}
-          documents={documents}
-          activeContextDocuments={activeContextDocuments}
-          estimateContextTokens={estimateContextTokens}
-          clearActiveContext={clearActiveContext}
-          addAllDocsToContext={addAllDocsToContext}
-          toggleDocInContext={toggleDocInContext}
-          isMobile={isMobile}
-          voiceEnabled={voiceEnabled}
-          setVoiceEnabled={setVoiceEnabled}
-          voiceMode={voiceMode}
-          setInput={setInput}
-          handleSendMessage={handleSendMessage}
-          setShowThinkingLogs={setShowThinkingLogs}
-          setWarRoomMode={setWarRoomMode}
-          setVisualizerType={setVisualizerType}
-          input={input}
-          isLoading={isLoading}
-          suggestions={suggestions}
-          showSuggestions={showSuggestions}
-          setShowSuggestions={setShowSuggestions}
-          handleUseSuggestion={handleUseSuggestion}
-          activeAgent={activeAgent}
-          setActiveAgent={setActiveAgent}
-          enableExtendedThinking={enableExtendedThinking}
-          setEnableExtendedThinking={setEnableExtendedThinking}
-        />
+        </StudioLayout>
 
         {/* Audio Player */}
         {audioUrl && (
@@ -1823,6 +1554,11 @@ const LiveDashboard: React.FC<LiveDashboardProps> = ({ apiKey, userId }) => {
           </div>
         )}
       </div>
+
+      {/* Onboarding overlay — first visit only */}
+      {showOnboarding && (
+        <StudioOnboarding onComplete={() => setShowOnboarding(false)} />
+      )}
 
       <WarRoomModalStack
         showExportModal={showExportModal}
@@ -1877,13 +1613,12 @@ const LiveDashboard: React.FC<LiveDashboardProps> = ({ apiKey, userId }) => {
 
 // Wrap the entire component with error boundary for mobile safety
 const LiveDashboardWithErrorBoundary: React.FC<LiveDashboardProps> = (props) => (
-  <ErrorBoundary 
-    componentName="War Room"
+  <ErrorBoundary
+    componentName="Pulse Studio"
     onError={(error) => {
-      console.error('[War Room] Critical error:', error);
-      // On mobile, show a helpful message
+      console.error('[Studio] Critical error:', error);
       if (isMobilePlatform) {
-        toast.error('War Room encountered an issue. Some features may be limited on mobile.');
+        toast.error('Studio encountered an issue. Some features may be limited on mobile.');
       }
     }}
   >

@@ -1,5 +1,5 @@
 // Pulse User's Guide — Full Rich Section Data
-// Version 25.1.3 · March 29, 2026
+// Version 25.2.0 · April 4, 2026
 // Auto-maintained by the /users-guide slash command.
 
 export interface Shortcut {
@@ -59,6 +59,7 @@ export const CATEGORIES: { label: string; ids: string[] }[] = [
   { label: 'People & Decisions', ids: ['contacts', 'decisions-tasks'] },
   { label: 'AI & Intelligence',  ids: ['ai-features', 'analytics'] },
   { label: 'Integrations',       ids: ['crm', 'tools', 'search', 'ecosystem-bridge'] },
+  { label: 'Organization',       ids: ['archives'] },
   { label: 'App & Settings',     ids: ['settings', 'mobile', 'shortcuts', 'troubleshooting'] },
 ];
 
@@ -1648,35 +1649,36 @@ export const guideSections: GuideSection[] = [
         ],
       },
       {
-        id: 'war-room',
-        title: 'War Room — Strategic AI Workspace',
-        description: 'Click War Room in the sidebar to enter Pulse\'s deep-work AI hub with 7 modes and 6 guided missions.',
+        id: 'pulse-studio',
+        title: 'Pulse Studio — AI Research & Analysis Workspace',
+        description: 'Click Studio in the sidebar. A unified AI workspace where the AI adapts to your needs — no mode switching required.',
+        badge: 'Updated',
         steps: [
-          'Switch modes using the Mode Switcher or press number keys 1–7.',
-          'Mode 1 — Command Center: tactical operations and real-time coordination.',
-          'Mode 2 — Intel: research, intelligence gathering, and investigation.',
-          'Mode 3 — Deep Focus: distraction-free writing and long-form thinking.',
-          'Mode 4 — Data Analyst: structured data analysis and pattern recognition.',
-          'Mode 5 — Strategist: strategic planning and big-picture thinking.',
-          'Mode 6 — Brainstorm: creative ideation and idea generation.',
-          'Mode 7 — Debrief: post-project retrospectives and lessons learned.',
-          'Launch a Mission from the Missions tab: Research, Decision, Brainstorm, Plan, Analyze, or Create.',
-          'Use The Board to pin notes (Findings, Insights, Action Items, Questions, Decisions) that persist across sessions.',
-          'Press Ctrl+K / Cmd+K to open the Action Palette — a searchable command menu for quick War Room actions.',
+          'Upload sources in the left panel — documents, PDFs, and reference files.',
+          'Type naturally in the center canvas or use /commands for structured output.',
+          'Use /brainstorm, /decide, /analyze, /summarize, /plan, /debrief, /risks, or /compare.',
+          'Mention @skeptic, @scribe, or @deep-diver to switch AI personality mid-conversation.',
+          'AI auto-detects structured content and renders it as interactive Artifact cards.',
+          'Pin useful artifacts to the right panel for later export.',
+          'Use the Focus Timer for Pomodoro work sessions while chatting.',
+          'Press Ctrl+K / Cmd+K to open the Action Palette for quick commands.',
+          'Teammates in the same session appear as avatar indicators for real-time collaboration.',
         ],
       },
     ],
     tables: [
       {
-        title: 'War Room Guided Missions',
-        columns: ['Mission', 'Guides You Through'],
+        title: 'Studio Slash Commands',
+        columns: ['Command', 'What It Produces'],
         rows: [
-          ['Research', 'Define question → Explore perspectives → Analyze findings → Conclude'],
-          ['Decision', 'Define choice → List options → Set criteria → Evaluate → AI recommendation'],
-          ['Brainstorm', 'Set challenge → Generate ideas → Cluster → Converge → Refine top picks'],
-          ['Plan', 'Define goals → Scope → Milestones → Risks → Final plan'],
-          ['Analyze', 'Set goal → Collect data → Analyze → Extract insights → Report'],
-          ['Create', 'Set brief → Outline → Draft → Refine → Export'],
+          ['/brainstorm', '6–8 creative ideas in an Ideas artifact'],
+          ['/decide', 'Pros & Cons comparison with a recommendation'],
+          ['/analyze', 'Deep analysis with Key Points, Risks, and Action Items'],
+          ['/summarize', 'Concise summary with bullet points and action items'],
+          ['/plan', 'Structured roadmap with Timeline, Action Items, and Risks'],
+          ['/debrief', 'Retrospective with insights and lessons learned'],
+          ['/risks', 'Risk assessment with severity and mitigation strategies'],
+          ['/compare', 'Side-by-side option comparison'],
         ],
       },
       {
@@ -1696,8 +1698,8 @@ export const guideSections: GuideSection[] = [
     tips: [
       'The AI Assistant can take real actions — don\'t just ask questions, tell it what to do.',
       'Be specific: "Draft a reply to Sarah\'s last email" is far more powerful than "help me write an email".',
-      'In the War Room, press 1–7 to switch between modes instantly without reaching for the mouse.',
-      'The Board in the War Room saves notes across sessions — use it to build a running intelligence file.',
+      'In Studio, use /commands to structure AI output — /brainstorm, /decide, /analyze, /plan, and more.',
+      'The Artifacts Board in Studio saves pinned items across sessions — use it to build a running intelligence file.',
       'Chat history persists across sections during your session — pick up right where you left off.',
     ],
     useCases: [
@@ -1817,14 +1819,19 @@ export const guideSections: GuideSection[] = [
     id: 'analytics',
     title: 'Analytics',
     icon: '📊',
-    summary: 'Communication analytics, relationship health, team health, task completion, predictions, conflicts, kudos, and exportable reports.',
+    badge: 'Updated',
+    summary: 'Communication analytics, relationship health, team health, task completion, AI predictions with burnout indicators, conflict detection, kudos tracking, and exportable reports.',
     steps: [
       'Click Analytics in the sidebar.',
+      'Switch between 8 analytics modes: Overview, Velocity, Sentiment, Network, Relationships, Conflicts, Kudos, Predictions.',
+      'Use the time range selector: 7 days, 30 days, 90 days, or 365 days.',
       'Review Message Analytics: volume, response rates, and busiest communication hours.',
       'Check Relationship Health to see which contacts are active vs. going cold.',
       'Review Team Communication Health for cross-team collaboration patterns.',
       'Check Task Completion Rates: on-time percentage and trends by team member.',
-      'Read AI Predictions for forward-looking alerts.',
+      'Monitor AI Predictions for churn risk, optimal timing, engagement forecasts, and burnout indicators.',
+      'Use Conflicts View to track communication tensions and resolution progress.',
+      'Use Kudos View to measure team recognition culture and appreciation trends.',
       'Export any report as PDF, CSV, or Excel from the Export button.',
     ],
     subsections: [
@@ -1860,19 +1867,39 @@ export const guideSections: GuideSection[] = [
       },
       {
         id: 'predictions',
-        title: 'AI Predictions',
+        title: 'AI Predictions & Burnout Indicator',
+        badge: 'Updated',
         steps: [
-          '"Based on current pace, you\'ll miss the March deadline for Project X."',
-          '"Response rates are declining with Client Y — consider a personal outreach."',
-          'Predictions are based on historical patterns and current trajectory.',
+          'Churn Risk — predicts which contacts are likely to disengage based on declining interaction.',
+          'Optimal Timing — recommends best times to reach out to specific contacts.',
+          'Engagement Forecast — projects your communication volume for the coming week.',
+          'Burnout Indicator — monitors your work patterns for signs of burnout: rising response times, declining sentiment, extended hours, weekend activity.',
+          'Each prediction shows a confidence level and actionable recommendations.',
         ],
       },
       {
-        id: 'conflicts-kudos',
-        title: 'Conflicts & Kudos Views',
+        id: 'conflicts',
+        title: 'Conflicts View',
+        badge: 'Updated',
         steps: [
-          'Conflicts View — scheduling conflicts, overlapping task deadlines, competing priorities.',
-          'Kudos View — team recognition sent and received, morale indicators, top contributors.',
+          'Active conflict tracking with severity levels (Low, Medium, High, Critical).',
+          'Hot topics detection — identifies recurring friction points and sensitive subjects.',
+          'Resolution tracking with average resolution time and conflict-free day streaks.',
+          'Recurring pattern detection for conflicts with the same contacts.',
+          'AI-powered communication tips for de-escalation.',
+        ],
+      },
+      {
+        id: 'kudos',
+        title: 'Kudos & Recognition View',
+        badge: 'Updated',
+        steps: [
+          'Track recognition events: thank-yous, praise, celebrations, and milestone achievements.',
+          'Appreciation Score — how often you give and receive recognition.',
+          'Reciprocity Score — the balance between giving and receiving recognition.',
+          'Top Appreciators — who recognizes others most frequently.',
+          'Wins Tracker — celebrate team and individual achievements.',
+          'Recognition Trend — rising, falling, or stable culture indicator.',
         ],
       },
     ],
@@ -1898,19 +1925,61 @@ export const guideSections: GuideSection[] = [
     ],
   },
 
-  // ── 15. TOOLS ─────────────────────────────────────────────────────────────
+  // ── 15. ARCHIVES ──────────────────────────────────────────────────── NEW
+  {
+    id: 'archives',
+    title: 'Archives',
+    icon: '🗄️',
+    summary: 'Store and organize completed sessions, transcripts, decisions, meeting notes, documents, and more — fully searchable and restorable.',
+    badge: 'New',
+    steps: [
+      'Click Archives in the sidebar, or archive any item from its original section.',
+      'Filter by content type: Studio Sessions, Transcripts, Meeting Notes, Decision Logs, Journals, Summaries, Artifacts, Images, Videos, Documents.',
+      'Switch between List View, Grid View, and Timeline View.',
+      'Create Collections with custom colors and icons to group related archives.',
+      'Create Smart Folders with filter rules that update automatically.',
+      'Star important items for quick access.',
+      'View and restore previous versions via Version History.',
+      'Select multiple items for bulk operations: Tag, Move, Share, Export, or Delete.',
+      'Share archived content via email, Slack, or shareable URL.',
+      'Export individually or in bulk as Markdown, PDF, or CSV.',
+      'Use AI to translate, auto-tag, or summarize archived content.',
+    ],
+    tips: [
+      'Use Smart Folders to create dynamic views like "All meeting transcripts this quarter" that update automatically.',
+      'Archives are permanent — deleting from Archives is separate from archiving. Archived items reduce workspace clutter.',
+      'Star your most-referenced items for one-click access from the Starred filter.',
+    ],
+    useCases: [
+      {
+        id: 'uc-project-knowledge-base',
+        title: 'Building a Project Knowledge Base',
+        scenario: 'Your team completed a 6-month project and you want to preserve institutional knowledge.',
+        steps: [
+          'Archive all Studio sessions related to the project.',
+          'Archive finalized decisions with vote history and rationale.',
+          'Archive meeting transcripts and notes from key project meetings.',
+          'Create a Collection called "Project Alpha Archive" and move all items into it.',
+          'Use Timeline View to see the full project history chronologically.',
+          'Share the collection with new team members for onboarding context.',
+        ],
+      },
+    ],
+  },
+
+  // ── 16. TOOLS ─────────────────────────────────────────────────────────────
   {
     id: 'tools',
     title: 'Tools Panel',
     icon: '🛠️',
-    summary: 'Automation rules, bulk operations, webhook manager, AI Lab, and AI War Room — power features for advanced workflows.',
+    summary: 'Automation rules, bulk operations, webhook manager, AI Lab, and Pulse Studio — power features for advanced workflows.',
     steps: [
       'Click Tools in the sidebar to access the Tools Panel.',
       'Use Automation Rules to create trigger-action rules that run automatically.',
       'Use Bulk Operations to apply actions to many messages or contacts at once.',
       'Use Webhook Manager to send Pulse events to external systems via HTTP.',
       'Access AI Lab for the full brainstorming workspace.',
-      'Access AI War Room for multi-model collaborative analysis.',
+      'Access Pulse Studio for AI research, analysis, and content creation.',
     ],
     subsections: [
       {

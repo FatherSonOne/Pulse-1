@@ -650,7 +650,7 @@ export const ArchiveModals: React.FC = () => {
                           <option value="image">Image</option>
                           <option value="video">Video</option>
                           <option value="document">Document</option>
-                          <option value="war_room_session">War Room Session</option>
+                          <option value="war_room_session">Studio Session</option>
                         </select>
                       ) : rule.field === 'sentiment' ? (
                         <select value={rule.value as string} onChange={(e) => { const updated = [...newFolderRules]; updated[i] = { ...rule, value: e.target.value }; setNewFolderRules(updated); }} className="flex-1 px-3 py-2 bg-zinc-50 dark:bg-zinc-800 border border-zinc-200 dark:border-zinc-700 rounded-lg text-sm text-zinc-900 dark:text-white">

@@ -46,7 +46,7 @@ const getFilterLabel = (filter: ArchiveType | 'all' | 'starred') => {
     case 'image': return 'Image';
     case 'video': return 'Video';
     case 'document': return 'Document';
-    case 'war_room_session': return 'War Room Sessions';
+    case 'war_room_session': return 'Studio Sessions';
     default: return filter;
   }
 };
@@ -65,7 +65,7 @@ const getFilterShortLabel = (filter: ArchiveType | 'all' | 'starred') => {
     case 'image': return 'Image';
     case 'video': return 'Video';
     case 'document': return 'Document';
-    case 'war_room_session': return 'War Room';
+    case 'war_room_session': return 'Studio';
     default: return filter;
   }
 };

@@ -16,7 +16,8 @@ import React, { useState, useRef } from 'react';
 import { KnowledgeDoc } from '../../services/ragService';
 import { WarRoomMode } from './ModeSwitcher';
 
-import { Compass, Database, Eye, Plus, Satellite, Trash2, Upload, Wand2 } from 'lucide-react';
+import { Database, Eye, Plus, Satellite, Trash2, Upload } from 'lucide-react';
+import { MarkdownContent } from './MarkdownContent';
 
 // ─── Types ────────────────────────────────────────────────────────────────────
 
@@ -158,6 +159,7 @@ const SourceCard: React.FC<{
           onClick={onToggle}
           disabled={!isReady}
           title={isActive ? 'Remove from context' : 'Add to context'}
+          aria-label={isActive ? 'Remove from context' : 'Add to context'}
           style={{
             width: 28,
             height: 16,
@@ -190,6 +192,7 @@ const SourceCard: React.FC<{
           <button
             onClick={onView}
             title="View source"
+            aria-label="View source"
             style={{
               background: 'none',
               border: 'none',
@@ -208,6 +211,7 @@ const SourceCard: React.FC<{
         <button
           onClick={onDelete}
           title="Remove source"
+          aria-label="Remove source"
           style={{
             background: 'none',
             border: 'none',
@@ -236,7 +240,7 @@ const SourceCard: React.FC<{
             lineHeight: 1.65,
           }}
         >
-          {summary}
+          <MarkdownContent content={summary} />
         </div>
       )}
     </div>
@@ -317,7 +321,6 @@ export const IntelDesk: React.FC<IntelDeskProps> = ({
 }) => {
   const fileInputRef = useRef<HTMLInputElement>(null);
   const [search, setSearch] = useState('');
-  const [guideOpen, setGuideOpen] = useState(false);
 
   const completedDocs = documents.filter((d) => d.processing_status === 'completed');
   const activeCount = completedDocs.filter((d) => activeContextDocs.has(d.id)).length;
@@ -370,6 +373,7 @@ export const IntelDesk: React.FC<IntelDeskProps> = ({
         <button
           onClick={() => fileInputRef.current?.click()}
           title="Ingest new source"
+          aria-label="Ingest new source"
           style={{
             padding: '4px 9px',
             backgroundColor: 'var(--wr-accent-primary)',
@@ -403,6 +407,7 @@ export const IntelDesk: React.FC<IntelDeskProps> = ({
           accept=".pdf,.doc,.docx,.xls,.xlsx,.txt,.png,.jpg,.jpeg,.gif"
           style={{ display: 'none' }}
           onChange={onUpload}
+          aria-label="Upload source files"
         />
       </div>
 
@@ -574,78 +579,6 @@ export const IntelDesk: React.FC<IntelDeskProps> = ({
         )}
       </div>
 
-      {/* ── Notebook Guide ─────────────────────────────────────── */}
-      <div style={{ borderTop: '1px solid var(--wr-border)', flexShrink: 0 }}>
-        <button
-          onClick={() => setGuideOpen((v) => !v)}
-          style={{
-            width: '100%',
-            padding: '8px 12px',
-            display: 'flex',
-            alignItems: 'center',
-            gap: 7,
-            background: 'transparent',
-            border: 'none',
-            cursor: 'pointer',
-          }}
-        >
-          <Compass className="fa" />
-          <span
-            style={{
-              fontFamily: 'var(--wr-font-mono)',
-              fontSize: 10,
-              fontWeight: 700,
-              letterSpacing: '0.1em',
-              textTransform: 'uppercase',
-              color: 'var(--wr-text-secondary)',
-              flex: 1,
-              textAlign: 'left',
-            }}
-          >
-            Notebook Guide
-          </span>
-          <i
-            className={`fa fa-chevron-${guideOpen ? 'up' : 'down'}`}
-            style={{ fontSize: 9, color: 'var(--wr-text-muted)' }}
-          />
-        </button>
-
-        {guideOpen && (
-          <div style={{ padding: '0 12px 12px' }}>
-            {completedDocs.length === 0 ? (
-              <p
-                style={{
-                  fontSize: 10,
-                  color: 'var(--wr-text-muted)',
-                  fontFamily: 'var(--wr-font-mono)',
-                  textAlign: 'center',
-                  padding: '6px 0',
-                  margin: 0,
-                }}
-              >
-                Ingest sources to unlock the guide
-              </p>
-            ) : (
-              <div
-                style={{
-                  padding: '8px 10px',
-                  backgroundColor: 'var(--wr-bg-elevated)',
-                  borderRadius: 'var(--wr-radius-sm)',
-                  border: '1px solid var(--wr-border)',
-                  fontSize: 10,
-                  color: 'var(--wr-text-muted)',
-                  fontFamily: 'var(--wr-font-mono)',
-                  textAlign: 'center',
-                  lineHeight: 1.6,
-                }}
-              >
-                <Wand2 className="fa" />
-                AI question generation activates in Intel Mode (Phase 4)
-              </div>
-            )}
-          </div>
-        )}
-      </div>
     </div>
   );
 };

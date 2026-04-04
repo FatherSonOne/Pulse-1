@@ -179,7 +179,7 @@ export const AIIntelligenceSettings: React.FC = () => {
 
           <ToggleItem
             label="Enable Advanced Reasoning"
-            desc="Use slower but more powerful models (e.g. Gemini 1.5 Pro) for complex queries in War Room"
+            desc="Use slower but more powerful models (e.g. Gemini 1.5 Pro) for complex queries in Studio"
             active={enableAdvancedReasoning}
             onToggle={() => {
               const v = !enableAdvancedReasoning;

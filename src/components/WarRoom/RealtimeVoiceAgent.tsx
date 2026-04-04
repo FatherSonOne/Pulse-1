@@ -70,12 +70,17 @@ interface RealtimeVoiceAgentProps {
   onAgentSwitch?: (fromAgent: string, toAgent: string) => void;
   onConnectionChange?: (isConnected: boolean, isConnecting: boolean) => void;
   onAudioLevel?: (level: number, isListening: boolean, isSpeaking: boolean) => void;
+  onAutoplayBlocked?: () => void;
   className?: string;
 }
 
 export interface RealtimeVoiceAgentRef {
   connect: () => Promise<void>;
   disconnect: () => Promise<void>;
+  muteAudio: () => void;
+  unmuteAudio: () => void;
+  pauseSession: () => void;
+  resumeSession: () => void;
   isConnected: boolean;
   isConnecting: boolean;
 }
@@ -105,6 +110,7 @@ export const RealtimeVoiceAgent = React.forwardRef<RealtimeVoiceAgentRef, Realti
   onAgentSwitch,
   onConnectionChange,
   onAudioLevel,
+  onAutoplayBlocked,
   className = '',
 }, ref) => {
   // Default settings
@@ -189,6 +195,7 @@ export const RealtimeVoiceAgent = React.forwardRef<RealtimeVoiceAgentRef, Realti
         },
         noiseReduction: effectiveSettings.noiseReduction,
         preferredLanguage: effectiveSettings.language || 'en',
+        onAutoplayBlocked,
       };
 
       const newSession = createRealtimeSession(userId, config, projectId, sessionId);
@@ -207,7 +214,10 @@ export const RealtimeVoiceAgent = React.forwardRef<RealtimeVoiceAgentRef, Realti
         );
 
         // Index context files in the ContextBankService for RAG search
-        const geminiApiKey = localStorage.getItem('gemini_api_key') || '';
+        // Embedding APIs still need an explicit key; prefer env var, fallback to localStorage for dev
+        const geminiApiKey = import.meta.env.VITE_FORCE_LOCAL_KEYS === 'true'
+          ? (localStorage.getItem('gemini_api_key') || '')
+          : (import.meta.env.VITE_GEMINI_API_KEY || localStorage.getItem('gemini_api_key') || '');
         if (geminiApiKey) {
           const effectiveSessionId = sessionId || 'default';
           console.log(`📚 Indexing ${contextFiles.length} context files for RAG...`);
@@ -319,9 +329,21 @@ export const RealtimeVoiceAgent = React.forwardRef<RealtimeVoiceAgentRef, Realti
     disconnect: async () => {
       await disconnectRef.current?.();
     },
+    muteAudio: () => {
+      session?.muteAudio();
+    },
+    unmuteAudio: () => {
+      session?.unmuteAudio();
+    },
+    pauseSession: () => {
+      session?.pauseSession();
+    },
+    resumeSession: () => {
+      session?.resumeSession();
+    },
     isConnected,
     isConnecting,
-  }), [isConnected, isConnecting]);
+  }), [isConnected, isConnecting, session]);
 
   // Notify parent of connection state changes
   useEffect(() => {

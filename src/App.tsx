@@ -2,7 +2,6 @@
 import { Capacitor } from '@capacitor/core';
 import React, { useState, useEffect, useCallback, useRef, lazy, Suspense } from 'react';
 import LiveSession from './components/LiveSession';
-import PulseChat from './components/PulseChat';
 import { PulseVoiceChat } from './components/VoiceChat';
 import MessageContainer from './components/MessageContainer';
 import Login from './components/Login';
@@ -54,6 +53,7 @@ import { voiceCommandService } from './services/voiceCommandService';
 import PermissionRequestModal from './components/PermissionRequestModal';
 import { usePermissions } from './hooks/usePermissions';
 import { settingsService } from './services/settingsService';
+import { archiveService } from './services/archiveService';
 import { usePresence } from './hooks/usePresence';
 import { Sidebar } from './components/Sidebar';
 import { useAuth } from './hooks/useAuth';
@@ -702,7 +702,23 @@ const App: React.FC = () => {
         {(() => {
           switch (view) {
             case AppView.LIVE:
-              return <PulseVoiceChat apiKey={apiKey} userId={user?.id} onClose={() => setView(AppView.DASHBOARD)} />;
+              return <PulseVoiceChat
+                apiKey={apiKey}
+                userId={user?.id}
+                onClose={() => setView(AppView.DASHBOARD)}
+                onSendToArchive={async (notes) => {
+                  const content = notes.map(n => `[${n.type.toUpperCase()}] ${n.content}`).join('\n\n');
+                  await archiveService.createArchive({
+                    type: 'note',
+                    title: `Voice Chat Notes - ${new Date().toLocaleDateString()}`,
+                    content,
+                    date: new Date(),
+                    tags: ['voice-chat', 'notes'],
+                    visibility: 'private',
+                    starred: false,
+                  });
+                }}
+              />;
             case AppView.VOXER:
               return <Voxer apiKey={apiKey} contacts={contacts} initialContactId={selectedContactId} isDarkMode={isDarkMode} />;
             case AppView.MESSAGES:

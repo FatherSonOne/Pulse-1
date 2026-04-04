@@ -1,6 +1,76 @@
-import React, { useState, useCallback, useEffect } from 'react';
+import React, { useState, useCallback, useEffect, useRef } from 'react';
 
 import { AlertTriangle, Check, Crosshair, Info, Pen, X } from 'lucide-react';
+
+// ============================================
+// Topic matching utilities
+// ============================================
+
+const STOPWORDS = new Set([
+  'the', 'a', 'an', 'is', 'are', 'was', 'were', 'be', 'been', 'being',
+  'have', 'has', 'had', 'do', 'does', 'did', 'will', 'would', 'could',
+  'should', 'may', 'might', 'shall', 'can', 'this', 'that', 'these',
+  'those', 'it', 'its', 'of', 'in', 'on', 'at', 'to', 'for', 'with',
+  'by', 'from', 'as', 'into', 'about', 'between', 'through', 'during',
+  'before', 'after', 'above', 'below', 'and', 'or', 'but', 'not', 'no',
+  'nor', 'so', 'if', 'then', 'than', 'very', 'just', 'also', 'only',
+  'both', 'each', 'every', 'all', 'any', 'few', 'more', 'most', 'other',
+  'some', 'such', 'what', 'which', 'who', 'whom', 'how', 'when', 'where', 'why',
+]);
+
+/** Strip common English suffixes for rough stemming */
+function stemWord(word: string): string {
+  // Order matters: check longer suffixes first
+  const suffixes = ['tion', 'ment', 'ness', 'ing', 'est', 'ed', 'er', 'ly', 's'];
+  for (const suffix of suffixes) {
+    if (word.length > suffix.length + 2 && word.endsWith(suffix)) {
+      return word.slice(0, -suffix.length);
+    }
+  }
+  return word;
+}
+
+/** Extract meaningful keywords: lowercase, remove stopwords, stem */
+function extractKeywords(text: string): string[] {
+  return text
+    .toLowerCase()
+    .split(/\s+/)
+    .map(w => w.replace(/[^a-z0-9]/g, ''))
+    .filter(w => w.length > 0 && !STOPWORDS.has(w))
+    .map(stemWord);
+}
+
+export interface TopicRelevance {
+  isOnTopic: boolean;
+  score: number; // 0-1 fraction of topic keywords found in message
+  matchedKeywords: string[];
+  totalKeywords: number;
+}
+
+/** Check how relevant a message is to a topic. Returns relevance details. */
+function computeRelevance(message: string, topicText: string): TopicRelevance {
+  const topicKeywords = extractKeywords(topicText);
+  if (topicKeywords.length === 0) {
+    return { isOnTopic: true, score: 1, matchedKeywords: [], totalKeywords: 0 };
+  }
+
+  const messageKeywords = extractKeywords(message);
+  const matched = topicKeywords.filter(tk =>
+    messageKeywords.some(mk => mk.includes(tk) || tk.includes(mk))
+  );
+
+  const score = matched.length / topicKeywords.length;
+
+  return {
+    isOnTopic: matched.length > 0,
+    score,
+    matchedKeywords: matched,
+    totalKeywords: topicKeywords.length,
+  };
+}
+
+// Module-level checker reference (replaces window.__checkTopicLock)
+let _topicLockChecker: ((message: string) => TopicRelevance) | null = null;
 
 interface TopicLockProps {
   topic: string;
@@ -53,41 +123,40 @@ export const TopicLock: React.FC<TopicLockProps> = ({
     onLockChange(!isLocked);
   };
 
-  // Function to check if a message is on-topic
-  const checkOnTopic = useCallback((message: string): boolean => {
-    if (!isLocked || !topic) return true;
-
-    const topicWords = topic.toLowerCase().split(/\s+/);
-    const messageWords = message.toLowerCase().split(/\s+/);
-
-    // Check for topic keywords in message
-    const hasTopicKeyword = topicWords.some(tw =>
-      messageWords.some(mw => mw.includes(tw) || tw.includes(mw))
-    );
-
-    return hasTopicKeyword;
+  // Function to check if a message is on-topic (with relevance scoring)
+  const checkOnTopic = useCallback((message: string): TopicRelevance => {
+    if (!isLocked || !topic) {
+      return { isOnTopic: true, score: 1, matchedKeywords: [], totalKeywords: 0 };
+    }
+    return computeRelevance(message, topic);
   }, [isLocked, topic]);
 
-  // Expose check function via window for other components to use
+  // Store the checker in a ref so the hook can access it without globals
+  const checkerRef = useRef<(message: string) => TopicRelevance>(checkOnTopic);
+  const onOffTopicRef = useRef(onOffTopicAttempt);
+  const showWarningRef = useRef(setShowWarning);
+
   useEffect(() => {
-    (window as any).__checkTopicLock = (message: string): boolean => {
-      if (!isLocked || !topic) return true;
+    checkerRef.current = checkOnTopic;
+    onOffTopicRef.current = onOffTopicAttempt;
+    showWarningRef.current = setShowWarning;
+  }, [checkOnTopic, onOffTopicAttempt]);
 
-      const isOnTopic = checkOnTopic(message);
-
-      if (!isOnTopic) {
-        setShowWarning(true);
-        setTimeout(() => setShowWarning(false), 3000);
-        onOffTopicAttempt?.(message, topic);
+  // Publish checker via a stable module-level ref (no window global)
+  useEffect(() => {
+    _topicLockChecker = (message: string): TopicRelevance => {
+      const result = checkerRef.current(message);
+      if (!result.isOnTopic) {
+        showWarningRef.current(true);
+        setTimeout(() => showWarningRef.current(false), 3000);
+        onOffTopicRef.current?.(message, topic);
       }
-
-      return isOnTopic;
+      return result;
     };
-
     return () => {
-      delete (window as any).__checkTopicLock;
+      _topicLockChecker = null;
     };
-  }, [isLocked, topic, checkOnTopic, onOffTopicAttempt]);
+  }, [topic]);
 
   if (compact) {
     return (
@@ -173,6 +242,7 @@ export const TopicLock: React.FC<TopicLockProps> = ({
           <button
             onClick={handleSave}
             className="war-room-btn war-room-btn-primary war-room-btn-icon-sm"
+            aria-label="Save topic"
           >
             <Check className="fa" />
           </button>
@@ -182,6 +252,7 @@ export const TopicLock: React.FC<TopicLockProps> = ({
               setIsEditing(false);
             }}
             className="war-room-btn war-room-btn-icon-sm"
+            aria-label="Cancel editing"
           >
             <X className="fa" />
           </button>
@@ -235,9 +306,16 @@ export const TopicLock: React.FC<TopicLockProps> = ({
 // Hook for components to check topic compliance
 export const useTopicLock = () => {
   const checkMessage = useCallback((message: string): boolean => {
-    const checker = (window as any).__checkTopicLock;
-    return checker ? checker(message) : true;
+    if (!_topicLockChecker) return true;
+    return _topicLockChecker(message).isOnTopic;
   }, []);
 
-  return { checkMessage };
+  const checkRelevance = useCallback((message: string): TopicRelevance => {
+    if (!_topicLockChecker) {
+      return { isOnTopic: true, score: 1, matchedKeywords: [], totalKeywords: 0 };
+    }
+    return _topicLockChecker(message);
+  }, []);
+
+  return { checkMessage, checkRelevance };
 };

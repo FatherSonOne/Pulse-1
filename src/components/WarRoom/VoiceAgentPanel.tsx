@@ -12,7 +12,8 @@
 import React, { useState, useCallback, useRef, useEffect, useMemo } from 'react';
 import { RealtimeVoiceAgent, ContextFile } from './RealtimeVoiceAgent';
 import { VoiceSessionHistory } from './VoiceSessionHistory';
-import { RealtimeHistoryItem, WAR_ROOM_AGENTS } from '../../services/realtimeAgentService';
+import { RealtimeHistoryItem, WAR_ROOM_AGENTS, getActiveSession } from '../../services/realtimeAgentService';
+import { AudioAutoplayPrompt } from './AudioAutoplayPrompt';
 import toast from 'react-hot-toast';
 
 import { BookOpen, History, MessagesSquare, Mic, Minus, Settings, X } from 'lucide-react';
@@ -63,6 +64,9 @@ export const VoiceAgentPanel: React.FC<VoiceAgentPanelProps> = ({
     noiseReduction: 'near_field' as const,
     language: 'en' as const,
   });
+
+  // Autoplay blocked state
+  const [autoplayBlocked, setAutoplayBlocked] = useState(false);
 
   // Panel animation state
   const [isMinimized, setIsMinimized] = useState(false);
@@ -340,6 +344,7 @@ export const VoiceAgentPanel: React.FC<VoiceAgentPanelProps> = ({
             onTranscript={handleTranscript}
             onHistoryUpdate={handleHistoryUpdate}
             onAgentSwitch={handleAgentSwitch}
+            onAutoplayBlocked={() => setAutoplayBlocked(true)}
             className="flex-1"
           />
         </div>
@@ -357,6 +362,15 @@ export const VoiceAgentPanel: React.FC<VoiceAgentPanelProps> = ({
           </div>
         )}
       </div>
+
+      {/* Audio Autoplay Prompt */}
+      <AudioAutoplayPrompt
+        visible={autoplayBlocked}
+        onTap={() => {
+          getActiveSession()?.resumeAudio();
+          setAutoplayBlocked(false);
+        }}
+      />
 
       {/* Footer */}
       <div className="p-2 bg-gray-900 border-t border-gray-800 flex items-center justify-between text-xs text-gray-500">

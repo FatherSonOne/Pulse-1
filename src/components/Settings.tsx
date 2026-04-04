@@ -13,7 +13,7 @@ import { TeamSettings } from './settings/TeamSettings';
 import { AccessibilitySettings } from './settings/AccessibilitySettings';
 import { PrivacyDataSettings } from './settings/PrivacyDataSettings';
 import { FeaturesLabsSettings } from './settings/FeaturesLabsSettings';
-import { WarRoomSettings } from './settings/WarRoomSettings';
+import { StudioSettings } from './settings/StudioSettings';
 import { ActivityMonitorSettings } from './settings/ActivityMonitorSettings';
 import { DesktopAppSettings } from './settings/DesktopAppSettings';
 import { AboutSettings } from './settings/AboutSettings';
@@ -37,7 +37,7 @@ const SECTIONS = [
   { id: 'ecosystem', icon: 'fa-circle-nodes', label: 'Ecosystem Bridge' },
   { id: 'notifications', icon: 'fa-bell', label: 'Notifications' },
   { id: 'features_labs', icon: 'fa-flask', label: 'Features & Labs' },
-  { id: 'war_room', icon: 'fa-shield', label: 'War Room' },
+  { id: 'war_room', icon: 'fa-shield', label: 'Studio' },
   { id: 'activity_monitor', icon: 'fa-chart-line', label: 'Activity Monitor' },
   { id: 'team', icon: 'fa-users', label: 'Team Management' },
   { id: 'accessibility', icon: 'fa-universal-access', label: 'Accessibility' },
@@ -115,7 +115,7 @@ const Settings: React.FC<SettingsProps> = ({ user, isDarkMode, toggleTheme, init
       case 'accessibility':    return <AccessibilitySettings />;
       case 'privacy_data':     return <PrivacyDataSettings />;
       case 'features_labs':    return <FeaturesLabsSettings />;
-      case 'war_room':         return <WarRoomSettings />;
+      case 'war_room':         return <StudioSettings />;
       case 'activity_monitor': return <ActivityMonitorSettings />;
       case 'desktop_app':      return <DesktopAppSettings />;
       case 'about':            return <AboutSettings />;

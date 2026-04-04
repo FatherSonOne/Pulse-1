@@ -1,7 +1,7 @@
 # Pulse User's Guide
 
-**Version**: 25.1.4
-**Last Updated**: March 29, 2026
+**Version**: 25.2.0
+**Last Updated**: April 4, 2026
 **For**: All Pulse users — personal, team, and enterprise
 
 ---
@@ -22,12 +22,13 @@
 12. [AI Features](#12-ai-features)
 13. [CRM Integrations](#13-crm-integrations)
 14. [Analytics](#14-analytics)
-15. [Tools Panel](#15-tools-panel)
-16. [Search](#16-search)
-17. [Settings & Customization](#17-settings--customization)
-18. [Mobile & Desktop Apps](#18-mobile--desktop-apps)
-19. [Keyboard Shortcuts](#19-keyboard-shortcuts)
-20. [Troubleshooting & FAQ](#20-troubleshooting--faq)
+15. [Archives](#15-archives)
+16. [Tools Panel](#16-tools-panel)
+17. [Search](#17-search)
+18. [Settings & Customization](#18-settings--customization)
+19. [Mobile & Desktop Apps](#19-mobile--desktop-apps)
+20. [Keyboard Shortcuts](#20-keyboard-shortcuts)
+21. [Troubleshooting & FAQ](#21-troubleshooting--faq)
 
 ---
 
@@ -154,8 +155,10 @@ The left sidebar is your main navigation. It is organized into sections:
 
 - **Contacts** — Your contact directory with relationship insights
 - **Decisions & Tasks** — Collaborative decision-making and task tracking
+- **Studio** — AI research, analysis, and content workspace
 - **Tools** — Automation, AI Lab, and power tools
-- **Analytics** — Reports and communication metrics
+- **Analytics** — Reports, predictions, and communication metrics
+- **Archives** — Stored sessions, transcripts, decisions, and documents
 
 **Bottom**:
 
@@ -1883,51 +1886,140 @@ Choose from 8 AI voice characters for spoken feedback: Alloy, Ash, Ballad, Coral
 
 **Tip:** You can also type commands in the text input field at the bottom of the Voice Command Panel instead of speaking — useful in quiet environments.
 
-### War Room — Strategic AI Workspace
+### Pulse Studio — AI Research & Analysis Workspace
 
-The **War Room** is Pulse's deep-work AI hub for research, planning, decision-making, and content creation. Access it by clicking **War Room** in the sidebar.
+**Pulse Studio** is Pulse's unified AI workspace for research, analysis, planning, decision-making, and content creation. It replaces the previous multi-mode War Room with a single, intuitive interface where the AI adapts to your needs based on what you ask — no mode switching required.
 
-#### War Room Modes
+Access it by clicking **Studio** in the sidebar.
 
-The War Room has 7 operational modes — switch between them using the Mode Switcher at the top, or press the number keys **1–7**:
+#### Getting Started with Studio
 
-| Key | Mode | Best for |
-| --- | ---- | -------- |
-| `1` | **Command Center** | Tactical operations and real-time coordination |
-| `2` | **Intel** | Research, intelligence gathering, and investigation |
-| `3` | **Deep Focus** | Distraction-free writing and long-form thinking |
-| `4` | **Data Analyst** | Structured data analysis and pattern recognition |
-| `5` | **Strategist** | Strategic planning and big-picture thinking |
-| `6` | **Brainstorm** | Creative ideation and idea generation |
-| `7` | **Debrief** | Post-project retrospectives and lessons learned |
+The first time you open Pulse Studio, a 3-step onboarding guide walks you through the basics:
 
-#### Guided Missions
+1. **Add Your Sources** — Upload documents, paste URLs, or add context files to the left panel. The AI uses these as reference material.
+2. **Ask Anything** — Type naturally in the center canvas, use `/commands` for structured output, or mention `@agents` for specialized help.
+3. **Pin & Collect** — Save useful findings, tables, and insights to the Artifacts board on the right for later export.
 
-Missions are structured, step-by-step AI workflows for common high-stakes tasks. Launch a Mission from the Mode Switcher's **Missions** tab:
+You can skip the tutorial and return to it later from the Studio settings.
 
-| Mission | What it guides you through |
-| ------- | -------------------------- |
-| **Research** | Define your question → Explore perspectives → Analyze findings → Conclude with answers |
-| **Decision** | Define the choice → List options → Set criteria → Evaluate → Get AI recommendation |
-| **Brainstorm** | Set the challenge → Diverge (wild ideas) → Cluster ideas → Converge → Refine top picks |
-| **Plan** | Define goals → Scope the project → Break into milestones → Identify risks → Finalize plan |
-| **Analyze** | Set the analysis goal → Collect data → Analyze → Extract insights → Generate report |
-| **Create** | Set the brief → Build an outline → Write a draft → Refine → Export final content |
+#### The Three-Panel Layout
 
-**Tip:** Each Mission saves your progress automatically — you can pause and return to where you left off.
+Pulse Studio uses a responsive three-panel layout:
 
-#### The Board
+- **Left Panel — Sources** — Upload and manage documents, PDFs, and reference files. Toggle which sources are active for each conversation. The AI draws on active sources when answering your questions.
+- **Center — Conversation Canvas** — Your main workspace. Type questions, use slash commands, and read AI responses with inline artifacts. This is where all interaction happens.
+- **Right Panel — Artifacts Board** — Collected findings, tables, action items, and other structured content. Pin items from AI responses here and export them when your session is complete.
 
-The Board is a persistent intelligence notepad built into the War Room. Click **The Board** to open it alongside your work session.
+On mobile, the panels collapse into a single view — swipe left or right to switch between Sources, Canvas, and Artifacts.
+
+#### Slash Commands
+
+Type `/` followed by a command name to guide the AI's output format:
+
+| Command | What it produces |
+| ------- | ---------------- |
+| `/brainstorm` | 6–8 creative ideas in an Ideas artifact |
+| `/decide` | Pros & Cons comparison with a recommendation |
+| `/analyze` | Deep analysis with Key Points, Risks, and Action Items |
+| `/summarize` | Concise summary with bullet points and action items |
+| `/plan` | Structured roadmap with Timeline, Action Items, and Risks |
+| `/debrief` | Retrospective with insights and lessons learned |
+| `/risks` | Risk assessment with severity and mitigation strategies |
+| `/compare` | Side-by-side option comparison |
+
+**Tip:** You can combine commands with natural language: `/analyze What are the pros and cons of migrating our database to PostgreSQL?`
+
+#### AI Agent Personas
+
+Switch the AI's personality mid-conversation by mentioning an agent with `@` or using the agent dropdown:
+
+| Agent | What it does |
+| ----- | ------------ |
+| **General** | Balanced, all-purpose assistant — the default |
+| **@skeptic** | Critical thinker that questions assumptions and finds flaws |
+| **@scribe** | Note-taker and summarizer — excellent for documentation |
+| **@deep-diver** | Thorough researcher that explores topics in depth |
+
+**Example:** Type `Ask @skeptic if there are flaws in this business plan` — the AI switches to a critical analysis style for that response.
+
+#### Smart Artifacts
+
+When the AI generates structured content — summaries, pros/cons lists, action items, timelines, risk assessments, decision matrices, or idea lists — Pulse automatically detects and renders them as interactive **Artifact cards** inline in the conversation.
+
+Each artifact card includes:
+- A color-coded badge showing its type (summary, pros-cons, action-items, timeline, etc.)
+- A **Pin** button to save it to the Artifacts board on the right
+- Properly formatted lists, tables, and headings
+
+**Artifact types detected automatically:**
+
+| Type | When it appears |
+| ---- | --------------- |
+| **Summary** | AI generates a "Key Points" or "Summary" section |
+| **Pros & Cons** | AI lists Pros and Cons side by side |
+| **Action Items** | AI generates numbered action steps |
+| **Decision Matrix** | AI produces a comparison table |
+| **Ideas** | AI brainstorms an ideas list |
+| **Timeline** | AI creates a dated roadmap |
+| **Risk Assessment** | AI identifies risks with details |
+
+#### The Artifacts Board
+
+Click the right panel to open the Artifacts Board — a persistent collection of everything you've pinned during your session.
 
 - Pin five types of notes: **Findings**, **Insights**, **Action Items**, **Questions**, and **Decisions**
 - Notes are timestamped and persist across sessions
 - Filter notes by type to focus on what matters
-- Export everything as a Markdown file when your session is complete
+- Export everything as Markdown, PDF, or CSV when your session is complete
+
+#### Focus Timer
+
+Click the **timer icon** in the Studio header to launch a draggable Pomodoro focus timer:
+
+- **Work sessions:** 25 minutes of focused work
+- **Short breaks:** 5 minutes between work sessions
+- **Long breaks:** 15 minutes after every 4th work session
+- The timer floats in the corner — you can continue chatting while it runs
+- Minimize or close it at any time
+- Session counter tracks how many focus cycles you've completed
+
+#### Voice in Studio
+
+- Click the **microphone icon** to start a voice conversation with the AI
+- Toggle **voice synthesis** to hear AI responses spoken aloud
+- Choose from 8 AI voice characters: Alloy, Ash, Ballad, Coral, Echo, Sage, Shimmer, and Verse
+- Generate an **audio overview** of your session for listening on the go
+
+#### Quick-Start Actions
+
+When you first open Studio (or start a new session), six quick-action buttons help you get started:
+
+1. **Research a topic** — Opens with `/analyze` and Deep Diver agent
+2. **Analyze data** — Opens with `/analyze`
+3. **Brainstorm ideas** — Opens with `/brainstorm`
+4. **Make a decision** — Opens with `/decide`
+5. **Summarize sources** — Opens with `/summarize` and Scribe agent, auto-sends with your active sources
+6. **Quick question** — Opens an empty input for any natural-language question
+
+#### Guided Missions
+
+For structured multi-step workflows, Studio offers **Guided Missions** — step-by-step AI sessions for complex tasks:
+
+| Mission | What it guides you through |
+| ------- | -------------------------- |
+| **Decision** | Define the choice → List options → Set criteria → Evaluate → Get AI recommendation |
+
+Missions save your progress automatically — you can pause and return to where you left off.
+
+**Tip:** More mission types (Research, Brainstorm, Plan, Analyze, Create) are being added regularly.
 
 #### Action Palette
 
-Press `Cmd+K` (Mac) or `Ctrl+K` (Windows) inside the War Room to open the **Action Palette** — a searchable command menu for quick access to all War Room actions, mode switching, and board shortcuts without leaving your current work.
+Press `Cmd+K` (Mac) or `Ctrl+K` (Windows) inside Studio to open the **Action Palette** — a searchable command menu for quick access to all Studio actions, slash commands, and board shortcuts without leaving your current work.
+
+#### Real-Time Collaboration
+
+When teammates are viewing the same Studio session, their presence is shown via **avatar indicators** in the header. Artifacts pinned by any collaborator appear on everyone's board in real time.
 
 <details>
 <summary><strong>Advanced: Getting the most from the Pulse AI Assistant</strong></summary>
@@ -2088,25 +2180,71 @@ Click **Analytics** in the sidebar.
 - Team member completion rates
 - Overdue task trends
 
-### Analytics Predictions
+### Analytics Modes
 
-Pulse uses historical patterns to make forward-looking predictions:
-- "Based on current pace, you'll miss the March deadline for Project X."
-- "Response rates are declining with Client Y — consider a personal outreach."
+The Analytics Dashboard offers multiple focused views via tabs at the top:
+
+| Mode | What it shows |
+| ---- | ------------- |
+| **Overview** | Key metrics and top contacts at a glance |
+| **Velocity** | Communication speed and response times |
+| **Sentiment** | Overall communication tone trends |
+| **Network** | Relationship visualization and patterns |
+| **Relationships** | Contact engagement and interaction depth |
+| **Conflicts** | Tension detection and resolution tracking |
+| **Kudos** | Recognition and appreciation tracking |
+| **Predictions** | AI-powered forecasting and burnout indicators |
+
+Use the **time range selector** to filter data: 7 days, 30 days, 90 days, or 365 days.
+
+### Predictions View
+
+Pulse uses historical patterns and AI to make forward-looking predictions:
+
+- **Churn Risk** — Predicts which contacts are likely to disengage based on declining interaction patterns
+- **Optimal Timing** — Recommends the best times to reach out to specific contacts for maximum responsiveness
+- **Engagement Forecast** — Projects your communication volume and patterns for the coming week
+- **Burnout Indicator** — Monitors your own work patterns for signs of burnout:
+  - Rising response times
+  - Declining message sentiment
+  - Extended working hours beyond your normal schedule
+  - Increased weekend activity
+  - Declining response quality
+
+Each prediction shows a **confidence level** (color-coded) and **actionable recommendations** for what to do next.
+
+**Tip:** The Burnout Indicator is designed to help you — not to surveil. Only you can see your own burnout metrics.
 
 ### Conflicts View
 
-The **Conflicts View** in Analytics highlights:
-- Scheduling conflicts in your calendar
-- Overlapping task deadlines
-- Team members assigned to conflicting priorities
+The **Conflicts View** helps you identify and resolve communication tensions:
+
+- **Active Conflict Tracking** — Monitor ongoing disagreements with real-time severity levels (Low, Medium, High, Critical)
+- **Hot Topics Detection** — Identifies recurring friction points and sensitive subjects
+- **Resolution Tracking** — Track how conflicts are resolved and measure resolution time
+- **Recurring Patterns** — Spot repeated conflicts with the same contacts
+- **Communication Tips** — AI-powered suggestions for de-escalating tense situations
+
+**Key Metrics:**
+- Active conflicts count
+- Conflicts resolved in the last 7 and 30 days
+- Average resolution time
+- Conflict-free days streak
+
+Filter by: All, Active, Resolved, or Unresolved.
 
 ### Kudos View
 
-Track positive recognition across your team:
-- Kudos sent and received
-- Team morale indicators
-- Top contributors by kudos received
+Track recognition and appreciation across your team:
+
+- **Recognition Events** — Every thank-you, praise, celebration, and milestone detected in your messages
+- **Appreciation Score** — How often you give and receive recognition
+- **Reciprocity Score** — The balance between recognition given and received
+- **Top Appreciators** — Who recognizes others most frequently
+- **Wins Tracker** — Celebrate team and individual achievements
+- **Recognition Trend** — Whether your team's recognition culture is rising, falling, or stable
+
+Filter by: All, Received, or Given.
 
 ### Exporting Reports
 
@@ -2131,7 +2269,112 @@ Track positive recognition across your team:
 
 ---
 
-## 15. Tools Panel
+## 15. Archives
+
+The **Archives** section stores everything you've completed, closed, or filed away — War Room sessions, meeting transcripts, Vox transcripts, decision logs, notes, summaries, documents, and more. Everything in Archives is fully searchable and can be restored at any time.
+
+### Accessing Archives
+
+Click **Archives** in the sidebar, or archive any item from its original section using the **Archive** button.
+
+### Archive Types
+
+Archives are organized by content type. Use the type filter in the sidebar to view:
+
+| Type | What's stored |
+| ---- | ------------- |
+| **Studio Sessions** | Completed Pulse Studio conversations and artifacts |
+| **Transcripts** | Meeting and Vox transcripts |
+| **Meeting Notes** | Notes from video meetings and AI Scribe sessions |
+| **Decision Logs** | Finalized decisions with vote history |
+| **Journals** | Personal notes and reflections |
+| **Summaries** | AI-generated summaries |
+| **Artifacts** | Pinned items from Studio sessions |
+| **Images & Videos** | Media files |
+| **Documents** | Uploaded files and exports |
+
+### Viewing Archives
+
+Switch between three views to browse your archived content:
+
+- **List View** — Compact list sorted by date with quick-scan info
+- **Grid View** — Visual card layout with thumbnails
+- **Timeline View** — Chronological timeline showing archive activity over time
+
+### Collections & Smart Folders
+
+Organize your archives into custom groups:
+
+**Collections:**
+1. Click **New Collection** in the Archives sidebar.
+2. Name the collection and choose a color and icon.
+3. Drag archived items into the collection, or right-click an item and select **Move to Collection**.
+
+**Smart Folders:**
+1. Click **New Smart Folder** in the Archives sidebar.
+2. Set filter rules — e.g., "Type is Transcript AND Date is within 30 days."
+3. Save — the folder updates automatically as new items match the rules.
+
+### Starred Items
+
+Click the **star icon** on any archived item to mark it as a favorite. Use the **Starred** filter to quickly find your most important archived content.
+
+### Version History
+
+For archived content that has been edited over time:
+
+1. Open an archived item.
+2. Click **Version History**.
+3. Browse previous versions with timestamps.
+4. Click **Restore** on any version to bring it back.
+
+### Bulk Operations
+
+Select multiple archived items to perform batch actions:
+
+1. Click the **Select** button or press `Ctrl+A`.
+2. Check the items you want to act on.
+3. Choose an action: **Tag**, **Move to Collection**, **Share**, **Export**, or **Delete**.
+
+### Sharing & Export
+
+Share archived content with teammates or external contacts:
+
+- **Share** — Send a link via email, Slack, or copy a shareable URL
+- **Export** — Download individual items or bulk-export as Markdown, PDF, or CSV
+- **Social sharing** — Share to LinkedIn, Twitter, or Facebook (for public-facing content)
+
+### AI Processing
+
+Right-click any archived item for AI-powered actions:
+
+- **Translate** — Translate the content into another language
+- **Auto-Tag** — Let AI suggest tags based on the content
+- **Summarize** — Generate a summary of a long archived item
+
+**Tip:** Archives are permanent — deleting an item from Archives is a separate action from archiving it. Archived items don't count against your active workspace clutter.
+
+**Tip:** Use Smart Folders to create dynamic views like "All meeting transcripts from this quarter" that update automatically.
+
+<details>
+<summary><strong>Use Case: Building a project knowledge base</strong></summary>
+
+**Scenario:** Your team has completed a 6-month project and you want to preserve all the institutional knowledge.
+
+1. Archive all Studio sessions related to the project.
+2. Archive finalized decisions with their vote history and rationale.
+3. Archive meeting transcripts and notes from key project meetings.
+4. Create a Collection called "Project Alpha Archive" and move all items into it.
+5. Use the **Timeline View** to see the full project history in chronological order.
+6. Share the collection with new team members for onboarding context.
+
+Result: A complete, searchable record of every decision, discussion, and deliverable from the project.
+
+</details>
+
+---
+
+## 16. Tools Panel
 
 The **Tools** section gives you access to power features for automation, advanced AI, and bulk operations.
 
@@ -2141,7 +2384,7 @@ The **Tools** section gives you access to power features for automation, advance
 - **Bulk Operations** — Select many messages or contacts and perform batch actions
 - **Webhook Manager** — Send Pulse events to external systems via webhooks
 - **AI Lab** — Advanced AI brainstorming workspace (see Section 12)
-- **AI War Room** — Collaborative multi-model analysis workspace (see Section 12)
+- **Pulse Studio** — AI research and analysis workspace (see Section 12)
 
 ### Creating an Automation Rule
 
@@ -2198,7 +2441,7 @@ Connect Pulse to external systems:
 
 ---
 
-## 16. Search
+## 17. Search
 
 Pulse has a powerful unified search that covers all your data simultaneously — one search to find anything across every channel.
 
@@ -2268,7 +2511,7 @@ Set up alerts for specific search queries:
 
 ---
 
-## 17. Settings & Customization
+## 18. Settings & Customization
 
 ### Accessing Settings
 
@@ -2433,16 +2676,15 @@ Configure the AI engine that powers your Pulse workspace.
 
 **Tip:** The AI Health Monitor at the top of this page shows the real-time status of all AI services — green means fully operational.
 
-### War Room Settings
+### Studio Settings
 
-Customize your War Room AI analysis environment.
+Customize your Pulse Studio AI workspace.
 
-1. Go to **Settings → War Room**.
-2. Set your **Default Mode** — the view that opens when you launch War Room (Command Center, Brainstorm, Analysis, etc.).
-3. Set **AI Depth**: Fast (quick answers), Balanced (default), or Deep (thorough multi-step reasoning).
-4. Toggle **Token Streaming** on to see AI responses appear word-by-word as they generate, rather than waiting for the full response.
-5. Toggle **Thinking Panel** to show or hide the AI's internal reasoning steps as it works.
-6. Toggle **Annotations** to enable inline notes and highlights on War Room documents.
+1. Go to **Settings → Studio** (previously War Room).
+2. Set **AI Depth**: Fast (quick answers), Balanced (default), or Deep (thorough multi-step reasoning).
+3. Toggle **Token Streaming** on to see AI responses appear word-by-word as they generate, rather than waiting for the full response.
+4. Toggle **Thinking Panel** to show or hide the AI's internal reasoning steps as it works.
+5. Toggle **Annotations** to enable inline notes and highlights on Studio documents.
 
 ### Activity Monitor & Presence
 
@@ -2492,7 +2734,7 @@ Configure custom retention periods for compliance. For HIPAA or GDPR environment
 
 ---
 
-## 18. Mobile & Desktop Apps
+## 19. Mobile & Desktop Apps
 
 Pulse is available on Windows (desktop), Android (mobile), and in any modern web browser. Your workspace, contacts, messages, and settings sync instantly across all platforms.
 
@@ -2568,7 +2810,7 @@ On Android, you can interact with Pulse notifications without opening the app:
 
 ---
 
-## 19. Keyboard Shortcuts
+## 20. Keyboard Shortcuts
 
 ### Global Shortcuts
 
@@ -2661,7 +2903,7 @@ On Android, you can interact with Pulse notifications without opening the app:
 
 ---
 
-## 20. Troubleshooting & FAQ
+## 21. Troubleshooting & FAQ
 
 ### Messages aren't loading
 
@@ -2794,5 +3036,5 @@ Use Settings → Data Management → Export My Data before initiating account de
 
 ---
 
-*Pulse User's Guide — Version 25.1.3 — Updated March 17, 2026*
+*Pulse User's Guide — Version 25.2.0 — Updated April 4, 2026*
 *This guide is updated regularly as new features are added. Run `/users-guide` in Claude Code to regenerate it.*

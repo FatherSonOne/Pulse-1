@@ -8,6 +8,7 @@ dist/
 build/
 out/
 output/
+tsconfig.tsbuildinfo
 
 # Electron build output (binaries hosted on GitHub Releases, not committed to repo)
 release/

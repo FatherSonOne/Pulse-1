@@ -1,5 +1,6 @@
 import React, { useState } from 'react';
 import { AIMessage } from '../../../services/ragService';
+import { warRoomAudit } from '../../../services/warRoomAuditService';
 import toast from 'react-hot-toast';
 
 import { Clipboard, Code, Copy, Download, FileText, ListChecks, Share2, Sparkles, X } from 'lucide-react';
@@ -127,6 +128,7 @@ export const SessionExport: React.FC<SessionExportProps> = ({
   };
 
   const handleExport = (format: 'markdown' | 'json' | 'clipboard' | 'key-points') => {
+    warRoomAudit.exported(format, sessionId);
     try {
       if (format === 'markdown') {
         const content = generateMarkdown();

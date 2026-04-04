@@ -3,6 +3,7 @@ import ReactDOM from 'react-dom/client'
 import { Capacitor } from '@capacitor/core'
 import { App as CapacitorApp } from '@capacitor/app'
 import { supabase } from './services/supabase'
+import './i18n';
 import App from './App.tsx'
 import { AuthProvider } from './contexts/AuthContext'
 import { LoadingProvider } from './contexts/LoadingContext'

@@ -2,6 +2,7 @@ import React, { useState, useEffect, useRef, lazy, Suspense } from 'react';
 import './LandingPage.css';
 
 import { Apple, ArrowDown, Battery, Bell, Book, BookOpen, Bot, Check, ChevronUp, Download, ExternalLink, Eye, Gavel, Heart, HeartPulse, HelpCircle, Info, Keyboard, Layers, LayoutGrid, Mic, Network, Play, Rocket, Search, ShieldHalf, Signal, Smartphone, Wand2, Wifi, X } from 'lucide-react';
+import { STATS, VOX_MODES, CRM_PLATFORMS, PLATFORMS, FAQ_DATA, SHORTCUT_GROUPS, STUDIO_FEATURES, EMAIL_FEATURES, MESSAGING_FEATURES, CALENDAR_FEATURES, ANALYTICS_FEATURES } from './LandingPage/landingData';
 
 // Lazy-load the guide — guideData.ts is 26k lines and must NOT land in the main bundle
 const UsersGuide = lazy(() => import('./UsersGuide/UsersGuide'));
@@ -19,105 +20,7 @@ const QntmEcosIcon = ({ size = 28 }: { size?: number }) => (
   </svg>
 );
 
-const STATS = [
-  { value: '8', label: 'Unified Platforms' },
-  { value: '7', label: 'Voxer Modes' },
-  { value: '4', label: 'AI Providers' },
-  { value: '4', label: 'CRM Integrations' },
-  { value: '12', label: 'War Room Modes' },
-  { value: '90+', label: 'Languages' },
-  { value: '167+', label: 'Services' },
-];
-
-const VOX_MODES = [
-  { icon: 'fa-solid fa-wave-square', name: 'Classic Voxer', desc: 'Push-to-talk voice with waveform visualization and playback controls' },
-  { icon: 'fa-solid fa-bolt', name: 'Quick Vox', desc: 'One-tap record and send — the fastest way to drop a voice note' },
-  { icon: 'fa-solid fa-users', name: 'Team Vox', desc: 'Channel-based voice threads with @mentions and group transcription' },
-  { icon: 'fa-solid fa-clock', name: 'Vox Drop', desc: 'Schedule voice messages to deliver at the perfect moment' },
-  { icon: 'fa-solid fa-note-sticky', name: 'Vox Notes', desc: 'Personal voice journaling with AI summary and keyword extraction' },
-  { icon: 'fa-solid fa-video', name: 'Video Vox', desc: 'Async video messages with face-cam and screen recording' },
-  { icon: 'fa-solid fa-radio', name: 'Pulse Radio', desc: 'Live broadcast mode — stream to your entire team simultaneously' },
-];
-
-const CRM_PLATFORMS = [
-  { name: 'HubSpot', color: '#f97316', icon: 'fa-brands fa-hubspot', desc: 'Bi-directional sync: tasks, deals, calls, contacts' },
-  { name: 'Salesforce', color: '#00a1e0', icon: 'fa-solid fa-cloud', desc: 'SOQL queries, opportunities, activities, leads' },
-  { name: 'Pipedrive', color: '#28a745', icon: 'fa-solid fa-filter', desc: 'Activities, deals, persons, organization tracking' },
-  { name: 'Zoho CRM', color: '#e42527', icon: 'fa-solid fa-database', desc: 'Full CRUD: tasks, deals, contacts, calls' },
-];
-
-const PLATFORMS = [
-  { name: 'Slack', icon: 'fa-brands fa-slack', color: '#E01E5A' },
-  { name: 'Gmail', icon: 'fa-brands fa-google', color: '#EA4335' },
-  { name: 'Discord', icon: 'fa-brands fa-discord', color: '#5865F2' },
-  { name: 'Teams', icon: 'fa-brands fa-microsoft', color: '#6264A7' },
-  { name: 'Figma', icon: 'fa-brands fa-figma', color: '#A259FF' },
-  { name: 'Jira', icon: 'fa-brands fa-jira', color: '#0052CC' },
-  { name: 'Outlook', icon: 'fa-brands fa-microsoft', color: '#0078D4' },
-  { name: 'Zoom', icon: 'fa-solid fa-video', color: '#2D8CFF' },
-  { name: 'HubSpot', icon: 'fa-brands fa-hubspot', color: '#f97316' },
-  { name: 'Salesforce', icon: 'fa-solid fa-cloud', color: '#00a1e0' },
-  { name: 'Pipedrive', icon: 'fa-solid fa-filter', color: '#28a745' },
-  { name: 'Zoho', icon: 'fa-solid fa-database', color: '#e42527' },
-  { name: 'G Meet', icon: 'fa-brands fa-google', color: '#00897B' },
-  { name: 'SMS', icon: 'fa-solid fa-comment-sms', color: '#22c55e' },
-];
-
-const FAQ_DATA = [
-  { q: "Messages aren't loading — what do I do?", a: "Try a hard refresh (Ctrl+Shift+R), then log out and back in. If it persists, clear your browser cache or switch to Chrome." },
-  { q: "My email isn't syncing", a: "Go to Settings → Connected Accounts → Email. If the status shows Error or Disconnected, click Reconnect and re-authenticate with Google or Microsoft." },
-  { q: "I'm not receiving notifications", a: "Check Settings → Notifications. Also verify your browser allows Pulse to send notifications: address bar → Site settings → Notifications → Allow." },
-  { q: "Can't hear or record Voxer messages", a: "Check browser microphone permissions: address bar → Site settings → Microphone → Allow. Chrome is recommended for best audio support." },
-  { q: "Calendar events aren't showing", a: "Go to Settings → Connected Accounts → Calendar and click Sync Now. Check that you haven't hidden any calendars in the view filter." },
-  { q: "A contact appears twice", a: "Go to Contacts → Tools → Find Duplicates, select the pair, and click Merge. All data from both records is fully preserved." },
-  { q: "Is my data encrypted?", a: "Yes. Pulse stores all data with AES-256 encryption at rest and TLS in transit. Support staff cannot read your message content — only metadata, with your explicit written consent." },
-  { q: "How do I delete my account?", a: "Export your data first via Settings → Data Management → Export My Data. Then go to Settings → Data Management → Delete Account and type DELETE to confirm." },
-];
-
-const SHORTCUT_GROUPS = [
-  { label: 'Global', icon: 'fa-solid fa-globe', shortcuts: [
-    { keys: ['Ctrl', 'K'], desc: 'Unified search' },
-    { keys: ['Ctrl', '/'], desc: 'Pulse AI Assistant' },
-    { keys: ['Ctrl', 'Shift', 'P'], desc: 'Command palette' },
-    { keys: ['Esc'], desc: 'Close modal / panel' },
-    { keys: ['?'], desc: 'Contextual help' },
-  ]},
-  { label: 'Navigate', icon: 'fa-solid fa-compass', shortcuts: [
-    { keys: ['G', 'D'], desc: 'Dashboard' },
-    { keys: ['G', 'M'], desc: 'Messages' },
-    { keys: ['G', 'E'], desc: 'Email' },
-    { keys: ['G', 'V'], desc: 'Voxer' },
-    { keys: ['G', 'C'], desc: 'Calendar' },
-    { keys: ['G', 'T'], desc: 'Contacts' },
-  ]},
-  { label: 'Voxer', icon: 'fa-solid fa-microphone', shortcuts: [
-    { keys: ['Space'], desc: 'Toggle recording' },
-    { keys: ['1–8'], desc: 'Switch Vox mode' },
-    { keys: ['Ctrl', 'S'], desc: 'AI summarize' },
-    { keys: ['Esc'], desc: 'Cancel recording' },
-  ]},
-  { label: 'Email', icon: 'fa-solid fa-envelope', shortcuts: [
-    { keys: ['C'], desc: 'Compose new' },
-    { keys: ['R'], desc: 'Reply' },
-    { keys: ['F'], desc: 'Forward' },
-    { keys: ['E'], desc: 'Archive' },
-    { keys: ['Ctrl', 'Enter'], desc: 'Send' },
-  ]},
-  { label: 'Messaging', icon: 'fa-solid fa-comment', shortcuts: [
-    { keys: ['Enter'], desc: 'Send message' },
-    { keys: ['Shift', 'Enter'], desc: 'New line' },
-    { keys: ['@'], desc: '@mention picker' },
-    { keys: ['#'], desc: 'Topic picker' },
-    { keys: ['Ctrl', 'B'], desc: 'Bold' },
-  ]},
-  { label: 'Calendar', icon: 'fa-solid fa-calendar', shortcuts: [
-    { keys: ['T'], desc: 'Jump to today' },
-    { keys: ['N'], desc: 'New event' },
-    { keys: ['D'], desc: 'Day view' },
-    { keys: ['W'], desc: 'Week view' },
-    { keys: ['M'], desc: 'Month view' },
-  ]},
-];
+// Data arrays imported from ./LandingPage/landingData.ts
 
 // ── Sub-components ────────────────────────────────────────────────────────────
 
@@ -269,6 +172,10 @@ const LandingPage: React.FC<LandingPageProps> = ({ onGetStarted }) => {
     const ctx = canvas.getContext('2d');
     if (!ctx) return;
 
+    let isVisible = true;
+    const visObs = new IntersectionObserver(([entry]) => { isVisible = entry.isIntersecting; }, { threshold: 0 });
+    visObs.observe(canvas);
+
     // Settings locked from playground: glow 92%, speed 47%, particles 100%
     const GLOW     = 0.92;
     const SPD_BASE = 0.18 + (47 / 100) * 2.6; // ≈ 1.40
@@ -346,6 +253,7 @@ const LandingPage: React.FC<LandingPageProps> = ({ onGetStarted }) => {
 
     const loop = () => {
       rafId = requestAnimationFrame(loop);
+      if (!isVisible) return;
       ctx.clearRect(0, 0, W, H);
       time += SPD_BASE * 0.016;
 
@@ -400,6 +308,7 @@ const LandingPage: React.FC<LandingPageProps> = ({ onGetStarted }) => {
     return () => {
       cancelAnimationFrame(rafId);
       window.removeEventListener('resize', resize);
+      visObs.disconnect();
     };
   }, []);
 
@@ -409,6 +318,10 @@ const LandingPage: React.FC<LandingPageProps> = ({ onGetStarted }) => {
     if (!canvas) return;
     const ctx = canvas.getContext('2d');
     if (!ctx) return;
+
+    let crmVisible = true;
+    const crmVisObs = new IntersectionObserver(([entry]) => { crmVisible = entry.isIntersecting; }, { threshold: 0 });
+    crmVisObs.observe(canvas);
 
     let rafId = 0;
     let W = 0, H = 0;
@@ -534,7 +447,7 @@ const LandingPage: React.FC<LandingPageProps> = ({ onGetStarted }) => {
       });
     }
 
-    function loop() { rafId = requestAnimationFrame(loop); draw(); }
+    function loop() { rafId = requestAnimationFrame(loop); if (crmVisible) draw(); }
 
     resize();
     window.addEventListener('resize', resize);
@@ -543,6 +456,7 @@ const LandingPage: React.FC<LandingPageProps> = ({ onGetStarted }) => {
     return () => {
       cancelAnimationFrame(rafId);
       window.removeEventListener('resize', resize);
+      crmVisObs.disconnect();
     };
   }, []);
 
@@ -602,6 +516,11 @@ const LandingPage: React.FC<LandingPageProps> = ({ onGetStarted }) => {
         <circle cx="10" cy="10" r="2.5" fill="currentColor" />
         <circle cx="10" cy="10" r="5" stroke="currentColor" strokeWidth={1.2} className="lp-radio-a" />
         <circle cx="10" cy="10" r="5" stroke="currentColor" strokeWidth={1}   className="lp-radio-b" opacity={0.55} />
+      </svg>,
+      // 7 — Voice Threads: stacked speech bubbles
+      <svg viewBox="0 0 20 20" width={18} height={18} fill="currentColor" aria-hidden="true">
+        <path d="M2 4a2 2 0 012-2h8a2 2 0 012 2v5a2 2 0 01-2 2H8L5 14v-3H4a2 2 0 01-2-2V4z" opacity={0.5} />
+        <path d="M7 8a2 2 0 012-2h6a2 2 0 012 2v4a2 2 0 01-2 2h-1v2l-2.5-2H9a2 2 0 01-2-2V8z" />
       </svg>,
     ];
     return icons[idx] ?? null;
@@ -831,7 +750,7 @@ const LandingPage: React.FC<LandingPageProps> = ({ onGetStarted }) => {
       `}</style>
 
       {/* ── Navigation ── */}
-      <nav aria-label="Main navigation" className="fixed top-0 left-0 right-0 z-[100] bg-zinc-950/85 backdrop-blur-xl border-b border-zinc-800/50">
+      <nav aria-label="Main navigation" className={`fixed top-0 left-0 right-0 z-[100] backdrop-blur-xl border-b ${isDarkMode ? 'bg-zinc-950/85 border-zinc-800/50' : 'bg-white/85 border-stone-200/60'}`}>
         <div className="max-w-7xl mx-auto px-4 py-3 md:px-6 md:py-4 flex items-center justify-between">
 
           {/* Left: Pulse logo + QntmEcos badge */}
@@ -870,12 +789,12 @@ const LandingPage: React.FC<LandingPageProps> = ({ onGetStarted }) => {
             </a>
           </div>
 
-          <div className="hidden md:flex items-center gap-6 text-sm font-medium text-zinc-400">
+          <div className={`hidden md:flex items-center gap-6 text-sm font-medium ${isDarkMode ? 'text-zinc-400' : 'text-stone-500'}`}>
             {/* Primary nav */}
-            <button type="button" onClick={() => scrollToSection('features')} className="hover:text-white transition">Features</button>
-            <button type="button" onClick={() => scrollToSection('ecosystem')} className="hover:text-white transition">Ecosystem</button>
-            <button type="button" onClick={() => scrollToSection('scenarios')} className="hover:text-white transition">Scenarios</button>
-            <button type="button" onClick={() => scrollToSection('pricing')} className="hover:text-white transition">Pricing</button>
+            <button type="button" onClick={() => scrollToSection('features')} className={`transition ${isDarkMode ? 'hover:text-white' : 'hover:text-stone-900'}`}>Features</button>
+            <button type="button" onClick={() => scrollToSection('ecosystem')} className={`transition ${isDarkMode ? 'hover:text-white' : 'hover:text-stone-900'}`}>Ecosystem</button>
+            <button type="button" onClick={() => scrollToSection('scenarios')} className={`transition ${isDarkMode ? 'hover:text-white' : 'hover:text-stone-900'}`}>Scenarios</button>
+            <button type="button" onClick={() => scrollToSection('pricing')} className={`transition ${isDarkMode ? 'hover:text-white' : 'hover:text-stone-900'}`}>Pricing</button>
 
             {/* ── Downloads dropdown ── */}
             <div
@@ -995,15 +914,19 @@ const LandingPage: React.FC<LandingPageProps> = ({ onGetStarted }) => {
             </div>
 
             {/* Divider */}
-            <span className="w-px h-4 bg-zinc-800" aria-hidden="true" />
+            <span className={`w-px h-4 ${isDarkMode ? 'bg-zinc-800' : 'bg-stone-300'}`} aria-hidden="true" />
             {/* Docs & legal */}
-            <a href="/docs" className="flex items-center gap-1.5 hover:text-white transition">
+            <button type="button" onClick={() => setIsGuideOpen(true)} className={`flex items-center gap-1.5 transition ${isDarkMode ? 'hover:text-white' : 'hover:text-stone-900'}`}>
               <Book className="text-[11px]" />
               Docs
-            </a>
-            <a href="/privacy" className="flex items-center gap-1.5 hover:text-white transition">
+            </button>
+            <a href="/privacy" className={`flex items-center gap-1.5 transition ${isDarkMode ? 'hover:text-white' : 'hover:text-stone-900'}`}>
               <ShieldHalf className="text-[11px]" />
               Privacy
+            </a>
+            <a href="/terms" className={`flex items-center gap-1.5 transition ${isDarkMode ? 'hover:text-white' : 'hover:text-stone-900'}`}>
+              <Gavel className="text-[11px]" />
+              Terms
             </a>
           </div>
 
@@ -1119,8 +1042,9 @@ const LandingPage: React.FC<LandingPageProps> = ({ onGetStarted }) => {
         <button type="button" onClick={() => { setMobileMenuOpen(false); scrollToSection('pricing'); }} className="lp-mobile-nav-link">Pricing</button>
         <button type="button" onClick={() => { setMobileMenuOpen(false); scrollToSection('download'); }} className="lp-mobile-nav-link">Download</button>
         <div className="lp-mobile-divider" />
-        <a href="/docs" onClick={() => setMobileMenuOpen(false)} className="lp-mobile-nav-link">Docs</a>
+        <button type="button" onClick={() => { setMobileMenuOpen(false); setIsGuideOpen(true); }} className="lp-mobile-nav-link">Docs</button>
         <a href="/privacy" onClick={() => setMobileMenuOpen(false)} className="lp-mobile-nav-link">Privacy</a>
+        <a href="/terms" onClick={() => setMobileMenuOpen(false)} className="lp-mobile-nav-link">Terms</a>
         <div className="lp-mobile-divider" />
         {/* CTAs */}
         <button onClick={onGetStarted} type="button" className="lp-mobile-cta-primary">Get Started</button>
@@ -1251,7 +1175,7 @@ const LandingPage: React.FC<LandingPageProps> = ({ onGetStarted }) => {
                 <Mic /> Voxer
               </div>
               <h2 className="text-4xl sm:text-6xl font-bold mb-4 text-transparent bg-clip-text bg-gradient-to-r from-white via-rose-100 to-pink-200">
-                7 Ways to Speak
+                8 Ways to Speak
               </h2>
               <p className="text-zinc-400 text-lg max-w-2xl">
                 Voice messaging reimagined. From async voice drops to live team broadcasts — Voxer gives your voice the power it deserves, with AI transcription on every message.
@@ -1331,7 +1255,7 @@ const LandingPage: React.FC<LandingPageProps> = ({ onGetStarted }) => {
                 style={{ position: 'absolute', top: 0, left: 0, width: '100%', height: '100%', zIndex: 5 }}
               >
                 {VOX_MODES.map((mode, i) => {
-                  const angleDeg = (360 / 7) * i - 90;
+                  const angleDeg = (360 / VOX_MODES.length) * i - 90;
                   const angleRad = angleDeg * (Math.PI / 180);
                   const orbitR = 410;
                   const cx = Math.round(Math.cos(angleRad) * orbitR);
@@ -1363,6 +1287,282 @@ const LandingPage: React.FC<LandingPageProps> = ({ onGetStarted }) => {
               </div>
             </div>
 
+          </div>
+        </section>
+
+        <SectionDivider />
+
+        {/* Section B — Pulse Studio (AI War Room) */}
+        <section className={`py-24 px-6 relative overflow-hidden${isDarkMode ? '' : ' bg-stone-50'}`}>
+          <div className="absolute inset-0 pointer-events-none" style={{ opacity: isDarkMode ? 1 : 0 }}>
+            <div className="absolute inset-0" style={{
+              background: 'radial-gradient(ellipse at 30% 40%, rgba(139,92,246,0.14) 0%, transparent 55%), radial-gradient(ellipse at 70% 60%, rgba(236,72,153,0.10) 0%, transparent 50%)',
+            }} />
+          </div>
+          <div className="max-w-7xl mx-auto relative z-10">
+            <div className="mb-14 animate-fade-in">
+              <div className={`inline-flex items-center gap-2 px-3 py-1.5 rounded-full text-xs font-bold uppercase tracking-widest mb-4${isDarkMode ? ' bg-purple-500/10 border border-purple-500/25 text-purple-400' : ' bg-purple-50 border border-purple-200 text-purple-600'}`}>
+                <Wand2 size={12} /> Pulse Studio
+              </div>
+              <h2 className={`text-4xl sm:text-6xl font-bold mb-4 text-transparent bg-clip-text${isDarkMode ? ' bg-gradient-to-r from-white via-purple-100 to-violet-200' : ' bg-gradient-to-r from-zinc-900 via-purple-900 to-violet-800'}`}>
+                Your AI War Room
+              </h2>
+              <p className={`text-lg max-w-2xl${isDarkMode ? ' text-zinc-400' : ' text-zinc-600'}`}>
+                An AI-powered research and strategy workspace with 8 slash commands, 4 specialized agent personas, RAG document intelligence, and realtime voice agent.
+              </p>
+            </div>
+
+            <div className="grid sm:grid-cols-2 lg:grid-cols-3 gap-6">
+              {[
+                {
+                  title: '8 Slash Commands',
+                  desc: '/brainstorm, /decide, /analyze, /summarize, /plan, /debrief, /risks, /compare — structured AI outputs for every workflow.',
+                  tags: ['Brainstorm', 'Decide', 'Analyze', 'Plan'],
+                  icon: <svg viewBox="0 0 20 20" width={18} height={18} fill="none" stroke="currentColor" strokeWidth={1.5} strokeLinecap="round" aria-hidden="true"><path d="M4 17V3l12 7-12 7z" fill="currentColor" fillOpacity={0.15} /></svg>,
+                },
+                {
+                  title: '4 AI Agent Personas',
+                  desc: '@general for balanced analysis, @skeptic to challenge assumptions, @scribe for documentation, @deep-diver for thorough research.',
+                  tags: ['General', 'Skeptic', 'Scribe', 'Deep-Diver'],
+                  icon: <svg viewBox="0 0 20 20" width={18} height={18} fill="currentColor" aria-hidden="true"><circle cx="7" cy="6" r="2.5" /><path d="M2 17a5 5 0 0110 0" /><circle cx="14" cy="6" r="2" opacity={0.5} /><path d="M12 17a4 4 0 018 0" opacity={0.5} /></svg>,
+                },
+                {
+                  title: 'RAG Document Intelligence',
+                  desc: 'Upload PDFs, docs, and data sources. Every AI response draws from your uploaded context — grounded, not hallucinated.',
+                  tags: ['PDF Upload', 'Vector Search', 'Context-Aware'],
+                  icon: <svg viewBox="0 0 20 20" width={18} height={18} fill="none" stroke="currentColor" strokeWidth={1.4} strokeLinecap="round" aria-hidden="true"><path d="M4 3h9l3 3v11a1 1 0 01-1 1H4a1 1 0 01-1-1V4a1 1 0 011-1z" /><path d="M13 3v3h3" /><circle cx="10" cy="12" r="3" stroke="currentColor" strokeWidth={1.2} fill="currentColor" fillOpacity={0.1} /><path d="M12.1 14.1L15 17" /></svg>,
+                },
+                {
+                  title: 'Realtime Voice Agent',
+                  desc: 'Have live voice conversations with the AI agent. Ask questions, dictate, and get spoken responses in real time.',
+                  tags: ['Voice Input', 'Live Response', 'Hands-Free'],
+                  icon: <svg viewBox="0 0 20 20" width={18} height={18} fill="currentColor" aria-hidden="true"><path d="M10 1a3 3 0 00-3 3v5a3 3 0 006 0V4a3 3 0 00-3-3z" opacity={0.4} /><path d="M5 8v1a5 5 0 0010 0V8" fill="none" stroke="currentColor" strokeWidth={1.5} strokeLinecap="round" /><line x1="10" y1="14" x2="10" y2="17" stroke="currentColor" strokeWidth={1.5} strokeLinecap="round" /><line x1="7" y1="17" x2="13" y2="17" stroke="currentColor" strokeWidth={1.5} strokeLinecap="round" /></svg>,
+                },
+                {
+                  title: 'Session Management',
+                  desc: 'Save sessions by project. Revisit past research, export to Markdown or PDF, and collaborate with team members in real time.',
+                  tags: ['Projects', 'Export', 'Collaboration'],
+                  icon: <svg viewBox="0 0 20 20" width={18} height={18} fill="none" stroke="currentColor" strokeWidth={1.4} strokeLinecap="round" aria-hidden="true"><rect x="3" y="3" width="14" height="14" rx="2" /><line x1="3" y1="8" x2="17" y2="8" /><line x1="8" y1="8" x2="8" y2="17" /></svg>,
+                },
+                {
+                  title: 'Artifact Rendering',
+                  desc: 'Tables, code blocks, comparison matrices, and structured outputs render inline — not just text walls.',
+                  tags: ['Tables', 'Code', 'Charts'],
+                  icon: <svg viewBox="0 0 20 20" width={18} height={18} fill="currentColor" aria-hidden="true"><rect x="2" y="2" width="7" height="7" rx="1" opacity={0.35} /><rect x="11" y="2" width="7" height="7" rx="1" opacity={0.35} /><rect x="2" y="11" width="7" height="7" rx="1" opacity={0.35} /><rect x="11" y="11" width="7" height="7" rx="1" opacity={0.6} /></svg>,
+                },
+              ].map((item, i) => (
+                <div
+                  key={item.title}
+                  className={`group p-6 rounded-2xl border transition-all duration-300 hover:-translate-y-2 animate-fade-in${isDarkMode ? ' bg-zinc-900/80 border-zinc-800 hover:border-purple-500/40' : ' bg-white border-stone-200 hover:border-purple-400/50 shadow-sm'}`}
+                  style={{ animationDelay: `${i * 0.1}s` }}
+                >
+                  <div className={`w-11 h-11 rounded-xl flex items-center justify-center mb-4 transition-all duration-300${isDarkMode ? ' bg-purple-500/10 group-hover:bg-purple-500/20 text-purple-400' : ' bg-purple-50 group-hover:bg-purple-100 text-purple-600'}`}>
+                    {item.icon}
+                  </div>
+                  <h3 className={`font-bold mb-2${isDarkMode ? ' text-white' : ' text-zinc-900'}`}>{item.title}</h3>
+                  <p className={`text-sm leading-relaxed mb-4${isDarkMode ? ' text-zinc-500' : ' text-zinc-500'}`}>{item.desc}</p>
+                  <div className="flex flex-wrap gap-1.5">
+                    {item.tags.map(tag => (
+                      <span key={tag} className={`px-2 py-0.5 rounded text-[10px] font-medium${isDarkMode ? ' bg-purple-500/8 border border-purple-500/20 text-purple-400' : ' bg-purple-50 border border-purple-200 text-purple-600'}`}>{tag}</span>
+                    ))}
+                  </div>
+                </div>
+              ))}
+            </div>
+          </div>
+        </section>
+
+        <SectionDivider />
+
+        {/* Section B2 — Email */}
+        <section className={`py-24 px-6 relative overflow-hidden${isDarkMode ? '' : ' bg-stone-50'}`}>
+          <div className="absolute inset-0 pointer-events-none" style={{ opacity: isDarkMode ? 1 : 0 }}>
+            <div className="absolute inset-0" style={{
+              background: 'radial-gradient(ellipse at 70% 30%, rgba(59,130,246,0.12) 0%, transparent 55%), radial-gradient(ellipse at 30% 70%, rgba(99,102,241,0.08) 0%, transparent 50%)',
+            }} />
+          </div>
+          <div className="max-w-7xl mx-auto relative z-10">
+            <div className="mb-14 animate-fade-in">
+              <div className={`inline-flex items-center gap-2 px-3 py-1.5 rounded-full text-xs font-bold uppercase tracking-widest mb-4${isDarkMode ? ' bg-blue-500/10 border border-blue-500/25 text-blue-400' : ' bg-blue-50 border border-blue-200 text-blue-600'}`}>
+                <i className="fa-solid fa-envelope text-xs" aria-hidden="true"></i> Email
+              </div>
+              <h2 className={`text-4xl sm:text-6xl font-bold mb-4 text-transparent bg-clip-text${isDarkMode ? ' bg-gradient-to-r from-white via-blue-100 to-cyan-200' : ' bg-gradient-to-r from-zinc-900 via-blue-900 to-cyan-800'}`}>
+                Email, Reimagined
+              </h2>
+              <p className={`text-lg max-w-2xl${isDarkMode ? ' text-zinc-400' : ' text-zinc-600'}`}>
+                A full email client with AI superpowers — daily briefings, smart compose, campaign builder, and follow-up intelligence. Connected to Gmail with real-time sync.
+              </p>
+            </div>
+
+            <div className="grid sm:grid-cols-2 lg:grid-cols-3 gap-6">
+              {[
+                { title: 'Gmail Integration', desc: 'Real-time bidirectional sync with full thread support, labels, filters, snooze, and schedule-send.', tags: ['OAuth', 'Realtime Sync', 'Labels'] },
+                { title: 'AI Daily Briefing', desc: 'Every morning, get an AI-generated summary of priorities, pending decisions, urgent threads, and upcoming meetings.', tags: ['Priorities', 'Decisions', 'Meetings'] },
+                { title: 'Smart Compose & Templates', desc: 'AI-assisted email drafting with reusable templates, tone adjustment, and signature management.', tags: ['AI Draft', 'Templates', 'Signatures'] },
+                { title: 'Campaign Builder', desc: 'Create email campaigns with audience segmentation, template editor, and delivery scheduling.', tags: ['Segments', 'Scheduling', 'Analytics'] },
+                { title: 'Follow-Up Nudges', desc: 'AI detects threads going cold and nudges you before relationships slip through the cracks.', tags: ['Auto-Detect', 'Reminders', 'Health Score'] },
+                { title: 'Action Item Extraction', desc: 'AI identifies tasks, commitments, and deadlines buried in email threads and surfaces them as actionable items.', tags: ['Tasks', 'Deadlines', 'Tracking'] },
+              ].map((item, i) => (
+                <div
+                  key={item.title}
+                  className={`group p-6 rounded-2xl border transition-all duration-300 hover:-translate-y-2 animate-fade-in${isDarkMode ? ' bg-zinc-900/80 border-zinc-800 hover:border-blue-500/40' : ' bg-white border-stone-200 hover:border-blue-400/50 shadow-sm'}`}
+                  style={{ animationDelay: `${i * 0.1}s` }}
+                >
+                  <h3 className={`font-bold mb-2${isDarkMode ? ' text-white' : ' text-zinc-900'}`}>{item.title}</h3>
+                  <p className={`text-sm leading-relaxed mb-4${isDarkMode ? ' text-zinc-500' : ' text-zinc-500'}`}>{item.desc}</p>
+                  <div className="flex flex-wrap gap-1.5">
+                    {item.tags.map(tag => (
+                      <span key={tag} className={`px-2 py-0.5 rounded text-[10px] font-medium${isDarkMode ? ' bg-blue-500/8 border border-blue-500/20 text-blue-400' : ' bg-blue-50 border border-blue-200 text-blue-600'}`}>{tag}</span>
+                    ))}
+                  </div>
+                </div>
+              ))}
+            </div>
+          </div>
+        </section>
+
+        <SectionDivider />
+
+        {/* Section B3 — Messaging */}
+        <section className={`py-24 px-6 relative overflow-hidden${isDarkMode ? '' : ' bg-stone-50'}`}>
+          <div className="absolute inset-0 pointer-events-none" style={{ opacity: isDarkMode ? 1 : 0 }}>
+            <div className="absolute inset-0" style={{
+              background: 'radial-gradient(ellipse at 50% 40%, rgba(99,102,241,0.12) 0%, transparent 55%), radial-gradient(ellipse at 80% 70%, rgba(168,85,247,0.08) 0%, transparent 50%)',
+            }} />
+          </div>
+          <div className="max-w-7xl mx-auto relative z-10">
+            <div className="mb-14 animate-fade-in">
+              <div className={`inline-flex items-center gap-2 px-3 py-1.5 rounded-full text-xs font-bold uppercase tracking-widest mb-4${isDarkMode ? ' bg-indigo-500/10 border border-indigo-500/25 text-indigo-400' : ' bg-indigo-50 border border-indigo-200 text-indigo-600'}`}>
+                <i className="fa-solid fa-comments text-xs" aria-hidden="true"></i> Messaging
+              </div>
+              <h2 className={`text-4xl sm:text-6xl font-bold mb-4 text-transparent bg-clip-text${isDarkMode ? ' bg-gradient-to-r from-white via-indigo-100 to-violet-200' : ' bg-gradient-to-r from-zinc-900 via-indigo-900 to-violet-800'}`}>
+                Conversations That Convert
+              </h2>
+              <p className={`text-lg max-w-2xl${isDarkMode ? ' text-zinc-400' : ' text-zinc-600'}`}>
+                Real-time channels, async threads, and AI-powered focus mode — built for teams that communicate fast and stay organized.
+              </p>
+            </div>
+
+            <div className="grid sm:grid-cols-2 lg:grid-cols-3 gap-6">
+              {[
+                { title: 'Channels & Threads', desc: 'Organized conversations with split-view layout, thread nesting, and channel categories for every team.', tags: ['Split View', 'Threads', 'Categories'] },
+                { title: 'Focus Mode', desc: 'Distraction blocking with a Pomodoro-style timer, stats dashboard, and productivity tracking.', tags: ['Timer', 'Block Distractions', 'Stats'] },
+                { title: 'AI Summarization', desc: 'Missed a long thread? Get an instant AI summary of key points, decisions, and action items.', tags: ['Key Points', 'Decisions', 'Actions'] },
+                { title: 'Smart Auto-Response', desc: 'AI drafts contextual replies based on conversation history and your communication style.', tags: ['Context-Aware', 'Style Match', 'Quick Reply'] },
+                { title: 'Rich Text & Reactions', desc: 'Bold, code blocks, links, file attachments, emoji reactions, stars, and @mentions built in.', tags: ['Markdown', 'Reactions', 'Mentions'] },
+                { title: 'Unified Inbox', desc: 'Slack, Gmail, Outlook, and internal messages flow into one prioritized stream. No tab-switching.', tags: ['Slack', 'Gmail', 'Outlook'] },
+              ].map((item, i) => (
+                <div
+                  key={item.title}
+                  className={`group p-6 rounded-2xl border transition-all duration-300 hover:-translate-y-2 animate-fade-in${isDarkMode ? ' bg-zinc-900/80 border-zinc-800 hover:border-indigo-500/40' : ' bg-white border-stone-200 hover:border-indigo-400/50 shadow-sm'}`}
+                  style={{ animationDelay: `${i * 0.1}s` }}
+                >
+                  <h3 className={`font-bold mb-2${isDarkMode ? ' text-white' : ' text-zinc-900'}`}>{item.title}</h3>
+                  <p className={`text-sm leading-relaxed mb-4${isDarkMode ? ' text-zinc-500' : ' text-zinc-500'}`}>{item.desc}</p>
+                  <div className="flex flex-wrap gap-1.5">
+                    {item.tags.map(tag => (
+                      <span key={tag} className={`px-2 py-0.5 rounded text-[10px] font-medium${isDarkMode ? ' bg-indigo-500/8 border border-indigo-500/20 text-indigo-400' : ' bg-indigo-50 border border-indigo-200 text-indigo-600'}`}>{tag}</span>
+                    ))}
+                  </div>
+                </div>
+              ))}
+            </div>
+          </div>
+        </section>
+
+        <SectionDivider />
+
+        {/* Section B4 — Calendar */}
+        <section className={`py-24 px-6 relative overflow-hidden${isDarkMode ? '' : ' bg-stone-50'}`}>
+          <div className="absolute inset-0 pointer-events-none" style={{ opacity: isDarkMode ? 1 : 0 }}>
+            <div className="absolute inset-0" style={{
+              background: 'radial-gradient(ellipse at 40% 30%, rgba(16,185,129,0.12) 0%, transparent 55%), radial-gradient(ellipse at 60% 70%, rgba(20,184,166,0.08) 0%, transparent 50%)',
+            }} />
+          </div>
+          <div className="max-w-7xl mx-auto relative z-10">
+            <div className="mb-14 animate-fade-in">
+              <div className={`inline-flex items-center gap-2 px-3 py-1.5 rounded-full text-xs font-bold uppercase tracking-widest mb-4${isDarkMode ? ' bg-emerald-500/10 border border-emerald-500/25 text-emerald-400' : ' bg-emerald-50 border border-emerald-200 text-emerald-600'}`}>
+                <i className="fa-solid fa-calendar text-xs" aria-hidden="true"></i> Calendar
+              </div>
+              <h2 className={`text-4xl sm:text-6xl font-bold mb-4 text-transparent bg-clip-text${isDarkMode ? ' bg-gradient-to-r from-white via-emerald-100 to-teal-200' : ' bg-gradient-to-r from-zinc-900 via-emerald-900 to-teal-800'}`}>
+                Time, Orchestrated
+              </h2>
+              <p className={`text-lg max-w-2xl${isDarkMode ? ' text-zinc-400' : ' text-zinc-600'}`}>
+                Google and Outlook sync with an AI assistant that schedules smarter, detects conflicts, and prepares you for every meeting.
+              </p>
+            </div>
+
+            <div className="grid sm:grid-cols-2 lg:grid-cols-3 gap-6">
+              {[
+                { title: 'Dual Calendar Sync', desc: 'Bidirectional sync with Google Calendar and Outlook. Changes in Pulse reflect instantly in your native calendar.', tags: ['Google', 'Outlook', 'Realtime'] },
+                { title: 'AI Calendar Assistant', desc: 'Natural language scheduling, smart insights, analytics, and goal tracking — all in a 4-tab AI panel.', tags: ['NLP', 'Insights', 'Goals'] },
+                { title: 'Booking Pages', desc: 'Share availability links for easy scheduling. Invitees pick a slot, and the event creates itself.', tags: ['Share Link', 'Auto-Create', 'Availability'] },
+                { title: 'Video Conferencing', desc: 'One-click links for Pulse Meet, Google Meet, Zoom, or Microsoft Teams attached to any event.', tags: ['Zoom', 'Meet', 'Teams'] },
+                { title: 'Conflict Detection', desc: 'Smart alerts when events overlap, double-book, or clash with focus time blocks.', tags: ['Overlap Alert', 'Focus Time', 'Auto-Suggest'] },
+                { title: 'Meeting Prep', desc: 'AI-generated briefings before every meeting — attendee context, agenda items, and past discussion notes.', tags: ['Briefing', 'Attendees', 'Context'] },
+              ].map((item, i) => (
+                <div
+                  key={item.title}
+                  className={`group p-6 rounded-2xl border transition-all duration-300 hover:-translate-y-2 animate-fade-in${isDarkMode ? ' bg-zinc-900/80 border-zinc-800 hover:border-emerald-500/40' : ' bg-white border-stone-200 hover:border-emerald-400/50 shadow-sm'}`}
+                  style={{ animationDelay: `${i * 0.1}s` }}
+                >
+                  <h3 className={`font-bold mb-2${isDarkMode ? ' text-white' : ' text-zinc-900'}`}>{item.title}</h3>
+                  <p className={`text-sm leading-relaxed mb-4${isDarkMode ? ' text-zinc-500' : ' text-zinc-500'}`}>{item.desc}</p>
+                  <div className="flex flex-wrap gap-1.5">
+                    {item.tags.map(tag => (
+                      <span key={tag} className={`px-2 py-0.5 rounded text-[10px] font-medium${isDarkMode ? ' bg-emerald-500/8 border border-emerald-500/20 text-emerald-400' : ' bg-emerald-50 border border-emerald-200 text-emerald-600'}`}>{tag}</span>
+                    ))}
+                  </div>
+                </div>
+              ))}
+            </div>
+          </div>
+        </section>
+
+        <SectionDivider />
+
+        {/* Section B5 — Analytics */}
+        <section className={`py-24 px-6 relative overflow-hidden${isDarkMode ? '' : ' bg-stone-50'}`}>
+          <div className="absolute inset-0 pointer-events-none" style={{ opacity: isDarkMode ? 1 : 0 }}>
+            <div className="absolute inset-0" style={{
+              background: 'radial-gradient(ellipse at 50% 50%, rgba(245,158,11,0.10) 0%, transparent 55%), radial-gradient(ellipse at 80% 30%, rgba(244,63,94,0.06) 0%, transparent 50%)',
+            }} />
+          </div>
+          <div className="max-w-7xl mx-auto relative z-10">
+            <div className="mb-14 animate-fade-in">
+              <div className={`inline-flex items-center gap-2 px-3 py-1.5 rounded-full text-xs font-bold uppercase tracking-widest mb-4${isDarkMode ? ' bg-amber-500/10 border border-amber-500/25 text-amber-400' : ' bg-amber-50 border border-amber-200 text-amber-600'}`}>
+                <i className="fa-solid fa-chart-line text-xs" aria-hidden="true"></i> Analytics
+              </div>
+              <h2 className={`text-4xl sm:text-6xl font-bold mb-4 text-transparent bg-clip-text${isDarkMode ? ' bg-gradient-to-r from-white via-amber-100 to-orange-200' : ' bg-gradient-to-r from-zinc-900 via-amber-900 to-orange-800'}`}>
+                See Everything
+              </h2>
+              <p className={`text-lg max-w-2xl${isDarkMode ? ' text-zinc-400' : ' text-zinc-600'}`}>
+                8 analytics views with predictive insights, sentiment analysis, and team health monitoring — so you never fly blind.
+              </p>
+            </div>
+
+            <div className="grid sm:grid-cols-2 lg:grid-cols-4 gap-6">
+              {[
+                { title: 'Predictive Analytics', desc: 'AI forecasts trends and flags risks before they become problems.', tags: ['Forecasting', 'Risk Alerts'] },
+                { title: 'Sentiment Analysis', desc: 'Track communication health, tone shifts, and relationship strength across your network.', tags: ['Tone', 'Health Score'] },
+                { title: 'Team Velocity', desc: 'Monitor productivity, task completion rates, conflicts, and kudos in real time.', tags: ['Productivity', 'Conflicts', 'Kudos'] },
+                { title: '8 View Modes', desc: 'Overview, velocity, sentiment, network, relationships, conflicts, kudos, and predictions — all interactive.', tags: ['Dashboards', 'Export'] },
+              ].map((item, i) => (
+                <div
+                  key={item.title}
+                  className={`group p-6 rounded-2xl border transition-all duration-300 hover:-translate-y-2 animate-fade-in${isDarkMode ? ' bg-zinc-900/80 border-zinc-800 hover:border-amber-500/40' : ' bg-white border-stone-200 hover:border-amber-400/50 shadow-sm'}`}
+                  style={{ animationDelay: `${i * 0.1}s` }}
+                >
+                  <h3 className={`font-bold mb-2${isDarkMode ? ' text-white' : ' text-zinc-900'}`}>{item.title}</h3>
+                  <p className={`text-sm leading-relaxed mb-4${isDarkMode ? ' text-zinc-500' : ' text-zinc-500'}`}>{item.desc}</p>
+                  <div className="flex flex-wrap gap-1.5">
+                    {item.tags.map(tag => (
+                      <span key={tag} className={`px-2 py-0.5 rounded text-[10px] font-medium${isDarkMode ? ' bg-amber-500/8 border border-amber-500/20 text-amber-400' : ' bg-amber-50 border border-amber-200 text-amber-600'}`}>{tag}</span>
+                    ))}
+                  </div>
+                </div>
+              ))}
+            </div>
           </div>
         </section>
 
@@ -1911,11 +2111,13 @@ const LandingPage: React.FC<LandingPageProps> = ({ onGetStarted }) => {
                 <div className="p-8 flex flex-col flex-grow">
                   <h3 className="text-2xl font-bold mb-4 text-white">Pulse</h3>
                   <div className="text-sm font-bold text-rose-500 tracking-wider uppercase mb-4">Communication and Intelligence</div>
-                  <p className="text-zinc-400 mb-6 flex-grow">The voice and ears of your organization. Real-time messaging, 7 voice modes, and AI transcription that turns every word into action.</p>
+                  <p className="text-zinc-400 mb-6 flex-grow">The voice and ears of your organization. Real-time messaging, 8 voice modes, AI studio, full email client, calendar, and analytics — all in one interface.</p>
                   <ul className="space-y-3 text-zinc-300 text-sm">
-                    <li className="flex items-center gap-2"><Check className="text-rose-500" /> 7 Voxer Modes</li>
-                    <li className="flex items-center gap-2"><Check className="text-rose-500" /> 8-Platform Unified Inbox</li>
-                    <li className="flex items-center gap-2"><Check className="text-rose-500" /> AI Transcription + Action Items</li>
+                    <li className="flex items-center gap-2"><Check className="text-rose-500" /> 8 Voxer Modes + AI Transcription</li>
+                    <li className="flex items-center gap-2"><Check className="text-rose-500" /> AI Studio with 8 Slash Commands</li>
+                    <li className="flex items-center gap-2"><Check className="text-rose-500" /> Full Email, Messaging, Calendar</li>
+                    <li className="flex items-center gap-2"><Check className="text-rose-500" /> 7+ AI Models (Gemini, Claude, GPT)</li>
+                    <li className="flex items-center gap-2"><Check className="text-rose-500" /> Predictive Analytics Dashboard</li>
                   </ul>
                 </div>
               </div>
@@ -2029,7 +2231,7 @@ const LandingPage: React.FC<LandingPageProps> = ({ onGetStarted }) => {
                   { num: '1', system: 'PULSE', badgeClass: 'from-rose-500 to-pink-500', labelClass: 'text-gradient-rose', borderClass: 'hover:border-rose-500/40', title: 'The Signal', body: 'A high-priority email from a key client lands. Pulse flags it "Urgent", extracts requirements, and routes it to the grants channel with an AI summary.' },
                   { num: '2', system: 'LOGOS VISION', badgeClass: 'from-blue-500 to-cyan-500', labelClass: 'bg-gradient-to-r from-blue-400 to-cyan-400 bg-clip-text text-transparent', borderClass: 'hover:border-blue-500/40', title: 'The Context', body: 'The system links the message to the Client Record — pulling past grant history, success rates, and the assigned relationship manager automatically.' },
                   { num: '3', system: 'ENTOMATE', badgeClass: 'from-emerald-500 to-teal-500', labelClass: 'bg-gradient-to-r from-emerald-400 to-teal-400 bg-clip-text text-transparent', borderClass: 'hover:border-emerald-500/40', title: 'The Action', body: 'An Apply workflow fires. A task is created for the Grant Writer, a kickoff meeting is scheduled based on availability, and an acknowledgment email is drafted.' },
-                  { num: '4', system: 'WAR ROOM', badgeClass: 'from-purple-500 to-violet-500', labelClass: 'bg-gradient-to-r from-purple-400 to-violet-400 bg-clip-text text-transparent', borderClass: 'hover:border-purple-500/40', title: 'The Intelligence', body: 'War Room activates in Strategist Mode. The AI swarm researches grant requirements, compares past applications, and outputs a polished grant proposal draft in minutes.' },
+                  { num: '4', system: 'STUDIO', badgeClass: 'from-rose-500 to-pink-500', labelClass: 'bg-gradient-to-r from-rose-400 to-pink-400 bg-clip-text text-transparent', borderClass: 'hover:border-rose-500/40', title: 'The Intelligence', body: 'Studio researches grant requirements, compares past applications using your uploaded sources, and outputs a polished grant proposal draft in minutes.' },
                 ].map((step) => (
                   <div key={step.num} className={`bg-zinc-900/90 backdrop-blur-sm border border-zinc-800 p-7 rounded-2xl relative hover:-translate-y-2 transition-all duration-300 card-elevated ${step.borderClass} group animate-fade-in`}>
                     <div className={`absolute -top-4 -right-4 w-8 h-8 bg-gradient-to-br ${step.badgeClass} rounded-full flex items-center justify-center text-white font-bold shadow-lg text-sm`}>{step.num}</div>
@@ -2318,7 +2520,7 @@ const LandingPage: React.FC<LandingPageProps> = ({ onGetStarted }) => {
                 onClick={onGetStarted}
                 className="w-full py-3 rounded-xl bg-gradient-to-r from-rose-500 to-pink-500 text-white text-sm font-bold hover:from-rose-400 hover:to-pink-400 transition-all duration-200 shadow-lg shadow-rose-500/20 hover:shadow-rose-500/30 hover:-translate-y-0.5"
               >
-                Start Free Trial
+                Get Started
               </button>
             </div>
 
@@ -2379,7 +2581,7 @@ const LandingPage: React.FC<LandingPageProps> = ({ onGetStarted }) => {
 
           </div>
 
-          <p className="text-center text-xs text-zinc-600 mt-8">All plans include a 14-day free trial · No credit card required · Cancel anytime</p>
+          <p className="text-center text-xs text-zinc-600 mt-8">Early access pricing · Billing system launching soon · Contact us for team pricing</p>
         </div>
       </section>
 
@@ -2454,13 +2656,10 @@ const LandingPage: React.FC<LandingPageProps> = ({ onGetStarted }) => {
                 <span className="text-xl font-bold text-white">Pulse</span>
               </div>
               <p className="text-zinc-400 max-w-sm mb-6">
-                AI-driven communication, deep relationship intelligence, and automated workflows — all in one living interface for high-performance teams.
+                AI-powered messaging, email, 8 voice modes, calendar, CRM intelligence, research studio, and predictive analytics — all in one interface for high-performance teams.
               </p>
               <div className="flex gap-4 mb-8">
-                <SocialIcon icon="fa-brands fa-twitter" label="Follow Pulse on X (Twitter)" />
-                <SocialIcon icon="fa-brands fa-github" label="Pulse on GitHub" />
-                <SocialIcon icon="fa-brands fa-discord" label="Join the Pulse Discord" />
-                <SocialIcon icon="fa-brands fa-linkedin" label="Pulse on LinkedIn" />
+                <SocialIcon icon="fa-brands fa-github" label="Pulse on GitHub" href="https://github.com/FatherSonOne/Pulse-1" />
               </div>
 
               {/* QntmEcos developer credit */}
@@ -2512,11 +2711,10 @@ const LandingPage: React.FC<LandingPageProps> = ({ onGetStarted }) => {
                 </li>
                 <li><a href="/terms" className="hover:text-rose-500 transition">Terms of Service</a></li>
                 <li>
-                  <a href="/docs/SECURITY-AUDIT-REPORT.md" target="_blank" rel="noopener noreferrer" className="hover:text-rose-500 transition flex items-center gap-1">
-                    Security Audit <ExternalLink className="text-[10px]" />
+                  <a href="https://github.com/FatherSonOne/Pulse-1" target="_blank" rel="noopener noreferrer" className="hover:text-rose-500 transition flex items-center gap-1">
+                    GitHub <ExternalLink className="text-[10px]" />
                   </a>
                 </li>
-                <li><a href="#" className="hover:text-rose-500 transition">Compliance</a></li>
               </ul>
             </div>
           </div>
@@ -2573,8 +2771,8 @@ const DownloadButton = ({
   );
 };
 
-const SocialIcon = ({ icon, label }: { icon: string; label: string }) => (
-  <a href="#" aria-label={label} className="w-10 h-10 rounded-full bg-zinc-900 flex items-center justify-center text-zinc-400 hover:bg-rose-500 hover:text-white transition duration-300">
+const SocialIcon = ({ icon, label, href = '#' }: { icon: string; label: string; href?: string }) => (
+  <a href={href} target={href !== '#' ? '_blank' : undefined} rel={href !== '#' ? 'noopener noreferrer' : undefined} aria-label={label} className="w-10 h-10 rounded-full bg-zinc-900 flex items-center justify-center text-zinc-400 hover:bg-rose-500 hover:text-white transition duration-300">
     <i className={icon} aria-hidden="true"></i>
   </a>
 );

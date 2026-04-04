@@ -12,6 +12,7 @@
  */
 
 import { z } from 'zod';
+import { zodToJsonSchema } from 'zod-to-json-schema';
 
 // ============= TYPES =============
 
@@ -37,6 +38,8 @@ export interface RealtimeSessionConfig {
   noiseReduction?: 'near_field' | 'far_field' | null;
   /** Preferred language for the AI to speak (ISO 639-1 code) */
   preferredLanguage?: string;
+  /** Called when browser blocks audio autoplay, so the UI can prompt user interaction */
+  onAutoplayBlocked?: () => void;
 }
 
 export interface RealtimeHistoryItem {
@@ -333,6 +336,7 @@ export class RealtimeVoiceSession {
   private dataChannel: RTCDataChannel | null = null;
   private mediaStream: MediaStream | null = null;
   private audioElement: HTMLAudioElement | null = null;
+  private pendingAudioPlay = false;
 
   public history: RealtimeHistoryItem[] = [];
   public currentAgent: string = 'general';
@@ -428,6 +432,60 @@ You are currently in SILENT OBSERVER mode. Follow these rules strictly:
 6. Act as a helpful assistant that speaks only when spoken to`;
     }
     return ''; // Active mode doesn't need special instructions
+  }
+
+  // ============= MUTE / PAUSE =============
+
+  /**
+   * Mute the microphone — disables the local audio track so nothing is sent to OpenAI.
+   */
+  muteAudio(): void {
+    if (this.mediaStream) {
+      this.mediaStream.getAudioTracks().forEach(track => {
+        track.enabled = false;
+      });
+    }
+  }
+
+  /**
+   * Unmute the microphone — re-enables the local audio track.
+   */
+  unmuteAudio(): void {
+    if (this.mediaStream) {
+      this.mediaStream.getAudioTracks().forEach(track => {
+        track.enabled = true;
+      });
+    }
+  }
+
+  /**
+   * Pause the session — mutes mic AND mutes remote audio playback.
+   */
+  pauseSession(): void {
+    this.muteAudio();
+    if (this.audioElement) {
+      this.audioElement.muted = true;
+    }
+  }
+
+  /**
+   * Resume the session — unmutes mic AND unmutes remote audio playback.
+   */
+  resumeSession(): void {
+    this.unmuteAudio();
+    if (this.audioElement) {
+      this.audioElement.muted = false;
+    }
+  }
+
+  // ============= AUDIO AUTOPLAY =============
+
+  public resumeAudio(): void {
+    if (this.pendingAudioPlay && this.audioElement) {
+      this.audioElement.play().then(() => {
+        this.pendingAudioPlay = false;
+      }).catch(console.error);
+    }
   }
 
   // ============= CONTEXT MANAGEMENT =============
@@ -573,7 +631,9 @@ You are currently in SILENT OBSERVER mode. Follow these rules strictly:
           this.audioElement.srcObject = event.streams[0];
           // Ensure audio plays (handle autoplay restrictions)
           this.audioElement.play().catch((err) => {
-            console.warn('Audio autoplay blocked, user interaction required:', err);
+            console.warn('Audio autoplay blocked:', err);
+            this.pendingAudioPlay = true;
+            this.config.onAutoplayBlocked?.();
           });
         }
       };
@@ -765,7 +825,7 @@ You are currently in SILENT OBSERVER mode. Follow these rules strictly:
         type: 'function',
         name,
         description: tool.description,
-        parameters: this.zodToJsonSchema(tool.parameters),
+        parameters: zodToJsonSchema(tool.parameters, { target: 'openAi' }),
       });
     });
 
@@ -786,64 +846,6 @@ You are currently in SILENT OBSERVER mode. Follow these rules strictly:
     }
 
     return toolConfigs;
-  }
-
-  private zodToJsonSchema(schema: unknown): unknown {
-    // Simple Zod to JSON Schema conversion
-    // For production, use a proper library like zod-to-json-schema
-    try {
-      const zodSchema = schema as any;
-      const description = zodSchema.description || '';
-      
-      // Check if it's an object schema by looking for _def.shape or shape
-      const shape = zodSchema._def?.shape || zodSchema.shape;
-      if (shape) {
-        const properties: Record<string, unknown> = {};
-        const required: string[] = [];
-
-        Object.entries(shape).forEach(([key, value]) => {
-          properties[key] = this.zodTypeToJsonSchema(value);
-          // Check if optional by looking at _def.typeName
-          const typeDef = (value as any)?._def;
-          if (typeDef?.typeName !== 'ZodOptional') {
-            required.push(key);
-          }
-        });
-
-        return {
-          type: 'object',
-          description,
-          properties,
-          required,
-        };
-      }
-      return { type: 'object', description, properties: {}, required: [] };
-    } catch {
-      return { type: 'object', properties: {}, required: [] };
-    }
-  }
-
-  private zodTypeToJsonSchema(zodType: unknown): unknown {
-    const typeDef = (zodType as any)?._def;
-    const typeName = typeDef?.typeName;
-    const description = (zodType as any)?.description || '';
-
-    switch (typeName) {
-      case 'ZodString':
-        return { type: 'string', description };
-      case 'ZodNumber':
-        return { type: 'number', description };
-      case 'ZodBoolean':
-        return { type: 'boolean', description };
-      case 'ZodArray':
-        return { type: 'array', items: this.zodTypeToJsonSchema(typeDef?.type) };
-      case 'ZodOptional':
-        return this.zodTypeToJsonSchema(typeDef?.innerType);
-      case 'ZodEnum':
-        return { type: 'string', enum: typeDef?.values };
-      default:
-        return { type: 'string', description };
-    }
   }
 
   // ============= SERVER EVENT HANDLING =============
@@ -1007,21 +1009,25 @@ You are currently in SILENT OBSERVER mode. Follow these rules strictly:
       .map(turn => `${turn.role?.toUpperCase()}: ${turn.content || turn.transcript || ''}`)
       .join('\n\n');
 
-    // Generate summary using Gemini (available via localStorage API key)
-    const apiKey = localStorage.getItem('gemini_api_key') || '';
-    if (!apiKey) {
-      console.warn('No API key available for summarization');
-      return;
-    }
-
     try {
       // Import dynamically to avoid circular dependencies
-      const { processWithModel } = await import('./geminiService');
+      const { processWithModelViaProxy, processWithModel } = await import('./geminiService');
 
-      const summary = await processWithModel(
-        apiKey,
-        `Summarize this conversation concisely, preserving key facts, decisions, questions asked, and important context. Keep it under 200 words:\n\n${conversationText}`
-      );
+      const summaryPrompt = `Summarize this conversation concisely, preserving key facts, decisions, questions asked, and important context. Keep it under 200 words:\n\n${conversationText}`;
+
+      let summary: string | null = null;
+      try {
+        // Prefer server-side proxy (no client-side API key exposure)
+        summary = await processWithModelViaProxy(summaryPrompt);
+      } catch {
+        // Fallback to direct API call with localStorage key
+        const apiKey = localStorage.getItem('gemini_api_key') || '';
+        if (!apiKey) {
+          console.warn('No API key available for summarization');
+          return;
+        }
+        summary = await processWithModel(apiKey, summaryPrompt);
+      }
 
       if (!summary) {
         console.warn('Empty summary generated');

@@ -1,4 +1,4 @@
-import React, { useState, useRef, useCallback, useEffect, useMemo, Suspense, lazy } from 'react';
+import React, { useState, useRef, useCallback, useEffect, Suspense, lazy } from 'react';
 import { Capacitor } from '@capacitor/core';
 import { Share } from '@capacitor/share';
 import {
@@ -22,13 +22,16 @@ import {
   Sparkles,
   Brain,
   Waves,
-  MessageCircle,
   Clock,
   Check,
   Edit3,
   ExternalLink,
   Loader2,
-  AlertCircle
+  AlertCircle,
+  Paperclip,
+  CloudUpload,
+  FolderOpen,
+  Inbox
 } from 'lucide-react';
 import toast from 'react-hot-toast';
 import { ErrorBoundary } from '../shared/ErrorBoundary';
@@ -39,6 +42,7 @@ import {
   AIParticipantMode
 } from '../WarRoom/RealtimeVoiceAgent';
 import { RealtimeHistoryItem } from '../../services/realtimeAgentService';
+import VoiceChatVisualizer from './VoiceChatVisualizer';
 import './PulseVoiceChat.css';
 
 // Lazy load the voice agent
@@ -96,6 +100,8 @@ const PulseVoiceChat: React.FC<PulseVoiceChatProps> = ({
   const [isPaused, setIsPaused] = useState(false);
   const [audioLevel, setAudioLevel] = useState(0);
   const [isMuted, setIsMuted] = useState(false);
+  const [sessionStartTime, setSessionStartTime] = useState<number | null>(null);
+  const [sessionElapsed, setSessionElapsed] = useState(0);
 
   // Conversation
   const [messages, setMessages] = useState<ConversationMessage[]>([]);
@@ -123,14 +129,14 @@ const PulseVoiceChat: React.FC<PulseVoiceChatProps> = ({
 
   // Context files for RAG
   const [contextFiles, setContextFiles] = useState<ContextFile[]>([]);
+  const [showContextDrawer, setShowContextDrawer] = useState(false);
+  const [contextText, setContextText] = useState('');
 
   // Refs
-  const canvasRef = useRef<HTMLCanvasElement>(null);
-  const animationRef = useRef<number>();
+  const fileInputRef = useRef<HTMLInputElement>(null);
   const agentRef = useRef<RealtimeVoiceAgentRef>(null);
   const notesContainerRef = useRef<HTMLDivElement>(null);
-  const smoothedLevelRef = useRef(0);
-  const phaseRef = useRef(0);
+  const historyRef = useRef<HTMLDivElement>(null);
 
   // Detect if native platform
   const isNative = Capacitor.isNativePlatform();
@@ -451,15 +457,105 @@ const PulseVoiceChat: React.FC<PulseVoiceChatProps> = ({
     setCurrentTranscript('');
   }, []);
 
-  // Toggle pause
+  // Toggle pause — mutes mic AND mutes remote audio playback
   const handleTogglePause = () => {
-    setIsPaused(prev => !prev);
-    toast.success(isPaused ? 'Resumed' : 'Paused');
+    const newPaused = !isPaused;
+    setIsPaused(newPaused);
+    if (agentRef.current) {
+      if (newPaused) {
+        agentRef.current.pauseSession();
+      } else {
+        agentRef.current.resumeSession();
+      }
+    }
+    toast.success(newPaused ? 'Paused' : 'Resumed');
   };
 
-  // Toggle mute
+  // Toggle mute — actually disables the microphone audio track
   const handleToggleMute = () => {
-    setIsMuted(prev => !prev);
+    const newMuted = !isMuted;
+    setIsMuted(newMuted);
+    if (agentRef.current) {
+      if (newMuted) {
+        agentRef.current.muteAudio();
+      } else {
+        agentRef.current.unmuteAudio();
+      }
+    }
+  };
+
+  // ============= CONTEXT FILE MANAGEMENT =============
+
+  const handleFileUpload = useCallback((e: React.ChangeEvent<HTMLInputElement>) => {
+    const files = e.target.files;
+    if (!files) return;
+
+    Array.from(files).forEach(file => {
+      const reader = new FileReader();
+      reader.onload = (event) => {
+        const content = event.target?.result as string;
+        const newFile: ContextFile = {
+          id: generateId(),
+          name: file.name,
+          type: 'file',
+          content,
+          size: file.size
+        };
+        setContextFiles(prev => [...prev, newFile]);
+        toast.success(`Added: ${file.name}`);
+      };
+      reader.readAsText(file);
+    });
+
+    if (fileInputRef.current) {
+      fileInputRef.current.value = '';
+    }
+  }, []);
+
+  const handleAddTextContext = useCallback(() => {
+    if (!contextText.trim()) return;
+    const newContext: ContextFile = {
+      id: generateId(),
+      name: `Note ${contextFiles.filter(f => f.type === 'text').length + 1}`,
+      type: 'text',
+      content: contextText.trim()
+    };
+    setContextFiles(prev => [...prev, newContext]);
+    setContextText('');
+    toast.success('Context added');
+  }, [contextText, contextFiles]);
+
+  const removeContextFile = useCallback((id: string) => {
+    setContextFiles(prev => prev.filter(f => f.id !== id));
+  }, []);
+
+  // Export conversation transcript
+  const handleExportTranscript = useCallback(() => {
+    if (messages.length === 0) {
+      toast.error('No conversation to export');
+      return;
+    }
+    const header = `# Pulse Voice Chat Transcript\n\n**Exported:** ${new Date().toLocaleString()}\n\n---\n\n`;
+    const content = messages.map(msg => {
+      const speaker = msg.role === 'user' ? '**You**' : '**Pulse AI**';
+      return `${speaker} *(${msg.timestamp.toLocaleTimeString()})*:\n> ${msg.content.replace(/\n/g, '\n> ')}\n`;
+    }).join('\n');
+
+    const blob = new Blob([header + content], { type: 'text/markdown' });
+    const url = URL.createObjectURL(blob);
+    const a = document.createElement('a');
+    a.href = url;
+    a.download = `pulse-voice-chat-${new Date().toISOString().slice(0, 10)}.md`;
+    a.click();
+    URL.revokeObjectURL(url);
+    toast.success('Transcript exported');
+  }, [messages]);
+
+  const formatFileSize = (bytes?: number) => {
+    if (!bytes) return '';
+    if (bytes < 1024) return `${bytes} B`;
+    if (bytes < 1024 * 1024) return `${(bytes / 1024).toFixed(1)} KB`;
+    return `${(bytes / (1024 * 1024)).toFixed(1)} MB`;
   };
 
   // ============= CLEANUP ON UNMOUNT =============
@@ -476,378 +572,46 @@ const PulseVoiceChat: React.FC<PulseVoiceChatProps> = ({
     };
   }, []);
 
-  // ============= CANVAS VISUALIZATION =============
+  // Auto-scroll conversation history
+  useEffect(() => {
+    if (historyRef.current) {
+      historyRef.current.scrollTop = historyRef.current.scrollHeight;
+    }
+  }, [messages]);
+
+  // Canvas visualization extracted to VoiceChatVisualizer component
+
+  // Session timer
+  useEffect(() => {
+    if (isConnected && !sessionStartTime) {
+      setSessionStartTime(Date.now());
+    }
+    if (!isConnected && sessionStartTime) {
+      setSessionStartTime(null);
+      setSessionElapsed(0);
+    }
+  }, [isConnected, sessionStartTime]);
 
   useEffect(() => {
-    const canvas = canvasRef.current;
-    if (!canvas) return;
+    if (!sessionStartTime) return;
+    const interval = setInterval(() => {
+      setSessionElapsed(Math.floor((Date.now() - sessionStartTime) / 1000));
+    }, 1000);
+    return () => clearInterval(interval);
+  }, [sessionStartTime]);
 
-    const ctx = canvas.getContext('2d');
-    if (!ctx) return;
+  const formatElapsed = (secs: number) => {
+    const m = Math.floor(secs / 60);
+    const s = secs % 60;
+    return `${m}:${s.toString().padStart(2, '0')}`;
+  };
 
-    let w = 0, h = 0, cx = 0, cy = 0;
-
-    const resize = () => {
-      const rect = canvas.getBoundingClientRect();
-      const dpr = Math.min(2, window.devicePixelRatio || 1);
-      canvas.width = rect.width * dpr;
-      canvas.height = rect.height * dpr;
-      ctx.scale(dpr, dpr);
-      w = rect.width;
-      h = rect.height;
-      cx = w / 2;
-      cy = h / 2;
-    };
-
-    resize();
-    window.addEventListener('resize', resize);
-
-    const draw = () => {
-      const t = Date.now() / 1000;
-      const isDark = document.documentElement.classList.contains('dark');
-
-      // Smooth audio level
-      smoothedLevelRef.current += (audioLevel - smoothedLevelRef.current) * 0.12;
-      const smoothLevel = smoothedLevelRef.current;
-
-      // Update phase
-      phaseRef.current += 0.02 + smoothLevel * 0.05;
-
-      ctx.clearRect(0, 0, w, h);
-
-      // Determine colors based on state
-      let primaryColor: string;
-      let secondaryColor: string;
-      let glowColor: string;
-
-      switch (voiceState) {
-        case 'listening':
-          primaryColor = isDark ? '#f43f5e' : '#e11d48';
-          secondaryColor = isDark ? '#fb7185' : '#f43f5e';
-          glowColor = 'rgba(244, 63, 94, 0.3)';
-          break;
-        case 'thinking':
-          primaryColor = isDark ? '#8b5cf6' : '#7c3aed';
-          secondaryColor = isDark ? '#a78bfa' : '#8b5cf6';
-          glowColor = 'rgba(139, 92, 246, 0.3)';
-          break;
-        case 'speaking':
-          primaryColor = isDark ? '#22c55e' : '#16a34a';
-          secondaryColor = isDark ? '#4ade80' : '#22c55e';
-          glowColor = 'rgba(34, 197, 94, 0.3)';
-          break;
-        case 'connecting':
-          primaryColor = isDark ? '#f59e0b' : '#d97706';
-          secondaryColor = isDark ? '#fbbf24' : '#f59e0b';
-          glowColor = 'rgba(245, 158, 11, 0.3)';
-          break;
-        default:
-          primaryColor = isDark ? '#6b7280' : '#9ca3af';
-          secondaryColor = isDark ? '#9ca3af' : '#d1d5db';
-          glowColor = 'rgba(156, 163, 175, 0.2)';
-      }
-
-      // === AMBIENT BACKGROUND GLOW ===
-      const ambientRadius = Math.min(w, h) * 0.45;
-      const ambientGrad = ctx.createRadialGradient(cx, cy, 0, cx, cy, ambientRadius);
-
-      if (voiceState !== 'idle') {
-        ambientGrad.addColorStop(0, `${glowColor.replace('0.3', '0.15')}`);
-        ambientGrad.addColorStop(0.5, `${glowColor.replace('0.3', '0.05')}`);
-        ambientGrad.addColorStop(1, 'transparent');
-        ctx.fillStyle = ambientGrad;
-        ctx.fillRect(0, 0, w, h);
-      }
-
-      // === MAIN ORB ===
-      const baseOrbRadius = Math.min(w, h) * 0.18;
-      const breathe = 1 + Math.sin(t * 1.5) * 0.08;
-      const audioExpand = 1 + smoothLevel * 0.25;
-      const orbRadius = baseOrbRadius * breathe * audioExpand;
-
-      // Outer glow rings
-      for (let i = 4; i >= 0; i--) {
-        const ringRadius = orbRadius * (1.2 + i * 0.15) + Math.sin(t * 2 + i) * smoothLevel * 15;
-        const ringAlpha = (0.15 - i * 0.025) * (voiceState === 'idle' ? 0.5 : 1);
-
-        ctx.beginPath();
-        ctx.arc(cx, cy, ringRadius, 0, Math.PI * 2);
-        ctx.strokeStyle = primaryColor.replace(')', `, ${ringAlpha})`).replace('rgb', 'rgba').replace('#', '');
-
-        // Convert hex to rgba for proper alpha
-        if (primaryColor.startsWith('#')) {
-          const r = parseInt(primaryColor.slice(1, 3), 16);
-          const g = parseInt(primaryColor.slice(3, 5), 16);
-          const b = parseInt(primaryColor.slice(5, 7), 16);
-          ctx.strokeStyle = `rgba(${r}, ${g}, ${b}, ${ringAlpha})`;
-        }
-
-        ctx.lineWidth = 2 - i * 0.3;
-        ctx.stroke();
-      }
-
-      // Core orb with gradient
-      const orbGrad = ctx.createRadialGradient(
-        cx - orbRadius * 0.2,
-        cy - orbRadius * 0.2,
-        0,
-        cx,
-        cy,
-        orbRadius
-      );
-      orbGrad.addColorStop(0, secondaryColor);
-      orbGrad.addColorStop(0.7, primaryColor);
-      orbGrad.addColorStop(1, isDark ? 'rgba(0,0,0,0.3)' : 'rgba(0,0,0,0.2)');
-
-      ctx.beginPath();
-      ctx.arc(cx, cy, orbRadius, 0, Math.PI * 2);
-      ctx.fillStyle = orbGrad;
-      ctx.fill();
-
-      // === STATE-SPECIFIC VISUALIZATIONS ===
-
-      // LISTENING MODE - Radial sound waves coming IN
-      if (voiceState === 'listening' && !isPaused) {
-        const waveCount = 24;
-        const maxWaveLength = Math.min(w, h) * 0.35;
-
-        for (let i = 0; i < waveCount; i++) {
-          const angle = (i / waveCount) * Math.PI * 2;
-          const wavePhase = t * 3 + i * 0.3;
-          const waveAmplitude = smoothLevel * maxWaveLength * (0.3 + Math.sin(wavePhase) * 0.7);
-          const waveWidth = 3 + smoothLevel * 4;
-
-          const outerX = cx + Math.cos(angle) * (orbRadius * 2 + maxWaveLength);
-          const outerY = cy + Math.sin(angle) * (orbRadius * 2 + maxWaveLength);
-          const innerX = cx + Math.cos(angle) * (orbRadius + maxWaveLength - waveAmplitude);
-          const innerY = cy + Math.sin(angle) * (orbRadius + maxWaveLength - waveAmplitude);
-
-          const grad = ctx.createLinearGradient(outerX, outerY, innerX, innerY);
-          grad.addColorStop(0, 'transparent');
-          grad.addColorStop(0.5, `rgba(244, 63, 94, ${0.6 * smoothLevel})`);
-          grad.addColorStop(1, primaryColor);
-
-          ctx.beginPath();
-          ctx.moveTo(outerX, outerY);
-          ctx.lineTo(innerX, innerY);
-          ctx.strokeStyle = grad;
-          ctx.lineWidth = waveWidth;
-          ctx.lineCap = 'round';
-          ctx.stroke();
-        }
-
-        // Pulsing inner ring
-        const pulseRadius = orbRadius * (1.1 + Math.sin(t * 4) * smoothLevel * 0.15);
-        ctx.beginPath();
-        ctx.arc(cx, cy, pulseRadius, 0, Math.PI * 2);
-        ctx.strokeStyle = `rgba(244, 63, 94, ${0.5 + smoothLevel * 0.3})`;
-        ctx.lineWidth = 3 + smoothLevel * 3;
-        ctx.stroke();
-      }
-
-      // THINKING MODE - Neural network / constellation
-      if (voiceState === 'thinking') {
-        const nodeCount = 12;
-        const orbitRadius = orbRadius * 1.8;
-        const nodes: { x: number; y: number; size: number }[] = [];
-
-        for (let i = 0; i < nodeCount; i++) {
-          const angle = (i / nodeCount) * Math.PI * 2 + t * 0.5;
-          const wobble = Math.sin(t * 2 + i) * 15;
-          const x = cx + Math.cos(angle) * (orbitRadius + wobble);
-          const y = cy + Math.sin(angle) * (orbitRadius + wobble);
-          const size = 4 + Math.sin(t * 3 + i * 0.5) * 2;
-          nodes.push({ x, y, size });
-        }
-
-        // Draw connections
-        ctx.strokeStyle = 'rgba(139, 92, 246, 0.2)';
-        ctx.lineWidth = 1;
-        for (let i = 0; i < nodes.length; i++) {
-          for (let j = i + 1; j < nodes.length; j++) {
-            if ((i + j) % 3 === 0) {
-              ctx.beginPath();
-              ctx.moveTo(nodes[i].x, nodes[i].y);
-              ctx.lineTo(nodes[j].x, nodes[j].y);
-              ctx.stroke();
-            }
-          }
-          ctx.beginPath();
-          ctx.moveTo(nodes[i].x, nodes[i].y);
-          ctx.lineTo(cx, cy);
-          ctx.stroke();
-        }
-
-        // Draw nodes
-        nodes.forEach((node, i) => {
-          const pulse = 0.5 + Math.sin(t * 4 + i) * 0.5;
-          ctx.beginPath();
-          ctx.arc(node.x, node.y, node.size, 0, Math.PI * 2);
-          ctx.fillStyle = `rgba(139, 92, 246, ${0.5 + pulse * 0.5})`;
-          ctx.fill();
-        });
-
-        // Rotating inner elements
-        for (let i = 0; i < 3; i++) {
-          const ringAngle = t * (1 + i * 0.5) + (i * Math.PI * 2 / 3);
-          const ringX = cx + Math.cos(ringAngle) * orbRadius * 0.5;
-          const ringY = cy + Math.sin(ringAngle) * orbRadius * 0.5;
-
-          ctx.beginPath();
-          ctx.arc(ringX, ringY, 6, 0, Math.PI * 2);
-          ctx.fillStyle = secondaryColor;
-          ctx.fill();
-        }
-      }
-
-      // SPEAKING MODE - Outward emanating waves / bars
-      if (voiceState === 'speaking' && !isPaused) {
-        const barCount = 32;
-        const baseLength = orbRadius * 0.3;
-        const maxLength = Math.min(w, h) * 0.25;
-
-        for (let i = 0; i < barCount; i++) {
-          const angle = (i / barCount) * Math.PI * 2 - Math.PI / 2;
-
-          const freq = 0.3 + Math.sin(t * 8 + i * 0.4) * 0.3 + Math.sin(t * 12 + i * 0.2) * 0.2;
-          const barLength = baseLength + freq * smoothLevel * maxLength;
-
-          const startX = cx + Math.cos(angle) * (orbRadius + 5);
-          const startY = cy + Math.sin(angle) * (orbRadius + 5);
-          const endX = cx + Math.cos(angle) * (orbRadius + barLength);
-          const endY = cy + Math.sin(angle) * (orbRadius + barLength);
-
-          const grad = ctx.createLinearGradient(startX, startY, endX, endY);
-          grad.addColorStop(0, primaryColor);
-          grad.addColorStop(1, `rgba(34, 197, 94, ${0.3 * smoothLevel})`);
-
-          ctx.beginPath();
-          ctx.moveTo(startX, startY);
-          ctx.lineTo(endX, endY);
-          ctx.strokeStyle = grad;
-          ctx.lineWidth = 4 + freq * 4;
-          ctx.lineCap = 'round';
-          ctx.stroke();
-        }
-
-        // Concentric expanding rings
-        const ringCount = 3;
-        for (let i = 0; i < ringCount; i++) {
-          const ringPhase = ((t * 2 + i * 0.5) % 1);
-          const ringRadius = orbRadius * (1.2 + ringPhase * 1.5);
-          const ringAlpha = (1 - ringPhase) * 0.4 * smoothLevel;
-
-          ctx.beginPath();
-          ctx.arc(cx, cy, ringRadius, 0, Math.PI * 2);
-          ctx.strokeStyle = `rgba(34, 197, 94, ${ringAlpha})`;
-          ctx.lineWidth = 3;
-          ctx.stroke();
-        }
-      }
-
-      // CONNECTING MODE - Spinning loader
-      if (voiceState === 'connecting') {
-        const spinAngle = t * 3;
-        const arcLength = Math.PI * 0.6;
-
-        ctx.beginPath();
-        ctx.arc(cx, cy, orbRadius * 1.3, spinAngle, spinAngle + arcLength);
-        ctx.strokeStyle = primaryColor;
-        ctx.lineWidth = 4;
-        ctx.lineCap = 'round';
-        ctx.stroke();
-
-        ctx.beginPath();
-        ctx.arc(cx, cy, orbRadius * 1.3, spinAngle + Math.PI, spinAngle + Math.PI + arcLength);
-        ctx.strokeStyle = secondaryColor;
-        ctx.stroke();
-      }
-
-      // === CENTER ICON ===
-      ctx.save();
-      ctx.translate(cx, cy);
-
-      const iconSize = orbRadius * 0.4;
-      ctx.fillStyle = isDark ? 'rgba(255,255,255,0.9)' : 'rgba(255,255,255,0.95)';
-
-      if (voiceState === 'listening') {
-        // Microphone icon
-        ctx.beginPath();
-        ctx.roundRect(-iconSize * 0.25, -iconSize * 0.5, iconSize * 0.5, iconSize * 0.7, 8);
-        ctx.fill();
-        ctx.beginPath();
-        ctx.arc(0, -iconSize * 0.1, iconSize * 0.35, Math.PI, 0, false);
-        ctx.strokeStyle = ctx.fillStyle as string;
-        ctx.lineWidth = 3;
-        ctx.stroke();
-        ctx.beginPath();
-        ctx.moveTo(0, iconSize * 0.25);
-        ctx.lineTo(0, iconSize * 0.5);
-        ctx.stroke();
-      } else if (voiceState === 'thinking' || voiceState === 'connecting') {
-        // Dots animation
-        const dotCount = 3;
-        for (let i = 0; i < dotCount; i++) {
-          const dotX = (i - 1) * iconSize * 0.4;
-          const dotY = Math.sin(t * 5 + i * 0.5) * iconSize * 0.15;
-          ctx.beginPath();
-          ctx.arc(dotX, dotY, iconSize * 0.12, 0, Math.PI * 2);
-          ctx.fill();
-        }
-      } else if (voiceState === 'speaking') {
-        // Sound waves icon
-        for (let i = 0; i < 3; i++) {
-          const waveRadius = iconSize * (0.2 + i * 0.15);
-          const waveAlpha = 1 - i * 0.25;
-          ctx.beginPath();
-          ctx.arc(0, 0, waveRadius, -Math.PI * 0.4, Math.PI * 0.4);
-          ctx.strokeStyle = `rgba(255,255,255,${waveAlpha})`;
-          ctx.lineWidth = 3;
-          ctx.stroke();
-        }
-      } else {
-        // Idle - simple circle
-        ctx.beginPath();
-        ctx.arc(0, 0, iconSize * 0.3, 0, Math.PI * 2);
-        ctx.fill();
-      }
-
-      ctx.restore();
-
-      animationRef.current = requestAnimationFrame(draw);
-    };
-
-    draw();
-
-    return () => {
-      window.removeEventListener('resize', resize);
-      if (animationRef.current) {
-        cancelAnimationFrame(animationRef.current);
-      }
-    };
-  }, [voiceState, audioLevel, isPaused]);
-
-  // State label
-  const stateLabel = useMemo(() => {
-    switch (voiceState) {
-      case 'connecting': return 'Connecting...';
-      case 'listening': return isPaused ? 'Paused' : 'Listening...';
-      case 'thinking': return 'Thinking...';
-      case 'speaking': return 'Speaking...';
-      default: return 'Ready to connect';
-    }
-  }, [voiceState, isPaused]);
-
-  // State sublabel
-  const stateSubLabel = useMemo(() => {
-    switch (voiceState) {
-      case 'connecting': return 'Establishing connection to OpenAI';
-      case 'listening': return 'Speak naturally, I\'m hearing you';
-      case 'thinking': return 'Processing your message';
-      case 'speaking': return 'Responding to you';
-      default: return openaiApiKey ? 'Tap the button to start' : 'OpenAI API key required';
-    }
-  }, [voiceState, openaiApiKey]);
+  // Simple state label for header
+  const stateLabel = voiceState === 'connecting' ? 'Connecting...'
+    : voiceState === 'listening' ? (isPaused ? 'Paused' : 'Listening...')
+    : voiceState === 'thinking' ? 'Thinking...'
+    : voiceState === 'speaking' ? 'Speaking...'
+    : 'Ready to connect';
 
   return (
     <div className="pulse-voice-chat">
@@ -861,11 +625,25 @@ const PulseVoiceChat: React.FC<PulseVoiceChatProps> = ({
             <h1>Voice Chat</h1>
             <span className={`pvc-status pvc-status--${voiceState}`}>
               {isConnected ? stateLabel : 'Disconnected'}
+              {isConnected && sessionElapsed > 0 && (
+                <span className="pvc-timer"> {formatElapsed(sessionElapsed)}</span>
+              )}
             </span>
           </div>
         </div>
 
         <div className="pvc-header-right">
+          {/* Export transcript */}
+          <button
+            type="button"
+            className="pvc-icon-btn"
+            onClick={handleExportTranscript}
+            disabled={messages.length === 0}
+            title="Export Transcript"
+          >
+            <Download size={20} />
+          </button>
+
           {/* Notes toggle */}
           <button
             type="button"
@@ -910,23 +688,13 @@ const PulseVoiceChat: React.FC<PulseVoiceChatProps> = ({
         )}
 
         {/* Visualizer */}
-        <div className="pvc-visualizer-container">
-          <canvas ref={canvasRef} className="pvc-visualizer-canvas" />
-
-          {/* State label overlay */}
-          <div className="pvc-state-label">
-            <span className="pvc-state-label-main">{stateLabel}</span>
-            <span className="pvc-state-label-sub">{stateSubLabel}</span>
-          </div>
-
-          {/* Transcript preview */}
-          {currentTranscript && (
-            <div className="pvc-transcript-preview">
-              <MessageCircle size={14} />
-              <span>{currentTranscript}</span>
-            </div>
-          )}
-        </div>
+        <VoiceChatVisualizer
+          voiceState={voiceState}
+          audioLevel={audioLevel}
+          isPaused={isPaused}
+          currentTranscript={currentTranscript}
+          openaiApiKey={openaiApiKey}
+        />
 
         {/* Controls */}
         <div className="pvc-controls">
@@ -976,8 +744,34 @@ const PulseVoiceChat: React.FC<PulseVoiceChatProps> = ({
             >
               <MicOff size={20} />
             </button>
+            <button
+              type="button"
+              className={`pvc-control-btn pvc-control-btn--secondary ${contextFiles.length > 0 ? 'pvc-control-btn--has-context' : ''}`}
+              onClick={() => setShowContextDrawer(true)}
+              title="Add Context"
+            >
+              <Paperclip size={20} />
+              {contextFiles.length > 0 && (
+                <span className="pvc-badge">{contextFiles.length}</span>
+              )}
+            </button>
           </div>
         </div>
+
+        {/* Conversation history */}
+        {messages.length > 0 && (
+          <div className="pvc-history">
+            <div className="pvc-history-inner" ref={historyRef}>
+              {messages.slice(-6).map(msg => (
+                <div key={msg.id} className={`pvc-history-msg pvc-history-msg--${msg.role}`}>
+                  <div className={`pvc-history-bubble pvc-history-bubble--${msg.role}`}>
+                    {msg.content}
+                  </div>
+                </div>
+              ))}
+            </div>
+          </div>
+        )}
 
         {/* Quick note button */}
         <button
@@ -1130,6 +924,7 @@ const PulseVoiceChat: React.FC<PulseVoiceChatProps> = ({
                     <textarea
                       value={editingNoteContent}
                       onChange={(e) => setEditingNoteContent(e.target.value)}
+                      aria-label="Edit note"
                       autoFocus
                     />
                     <div className="pvc-note-edit-actions">
@@ -1167,7 +962,7 @@ const PulseVoiceChat: React.FC<PulseVoiceChatProps> = ({
             placeholder="Add a note..."
             value={newNoteText}
             onChange={(e) => setNewNoteText(e.target.value)}
-            onKeyPress={(e) => e.key === 'Enter' && handleAddManualNote()}
+            onKeyDown={(e) => e.key === 'Enter' && handleAddManualNote()}
           />
           <button
             type="button"
@@ -1210,6 +1005,31 @@ const PulseVoiceChat: React.FC<PulseVoiceChatProps> = ({
                 <option value="sage">Sage (Neutral)</option>
                 <option value="shimmer">Shimmer (Female)</option>
                 <option value="verse">Verse (Neutral)</option>
+                <option value="marin">Marin (Female)</option>
+                <option value="cedar">Cedar (Male)</option>
+              </select>
+            </div>
+
+            <div className="pvc-setting-group">
+              <label htmlFor="language-select">Language</label>
+              <select
+                id="language-select"
+                value={voiceSettings.language || 'en'}
+                onChange={(e) => setVoiceSettings(prev => ({ ...prev, language: e.target.value as any }))}
+                title="Select conversation language"
+              >
+                <option value="en">English</option>
+                <option value="es">Spanish (Espanol)</option>
+                <option value="fr">French (Francais)</option>
+                <option value="de">German (Deutsch)</option>
+                <option value="it">Italian (Italiano)</option>
+                <option value="pt">Portuguese (Portugues)</option>
+                <option value="nl">Dutch (Nederlands)</option>
+                <option value="pl">Polish (Polski)</option>
+                <option value="ru">Russian</option>
+                <option value="ja">Japanese</option>
+                <option value="ko">Korean</option>
+                <option value="zh">Chinese</option>
               </select>
             </div>
 
@@ -1223,6 +1043,19 @@ const PulseVoiceChat: React.FC<PulseVoiceChatProps> = ({
               >
                 <option value="semantic_vad">Semantic VAD (Smart)</option>
                 <option value="server_vad">Server VAD (Fast)</option>
+              </select>
+            </div>
+
+            <div className="pvc-setting-group">
+              <label htmlFor="noise-reduction">Noise Reduction</label>
+              <select
+                id="noise-reduction"
+                value={voiceSettings.noiseReduction || 'near_field'}
+                onChange={(e) => setVoiceSettings(prev => ({ ...prev, noiseReduction: e.target.value as any }))}
+                title="Select noise reduction mode"
+              >
+                <option value="near_field">Near Field (Close Mic)</option>
+                <option value="far_field">Far Field (Room Mic)</option>
               </select>
             </div>
 
@@ -1255,6 +1088,91 @@ const PulseVoiceChat: React.FC<PulseVoiceChatProps> = ({
           </div>
         </div>
       )}
+
+      {/* Context Drawer */}
+      {showContextDrawer && (
+        <div className="pvc-backdrop" onClick={() => setShowContextDrawer(false)} />
+      )}
+      <div className={`pvc-context-drawer ${showContextDrawer ? 'pvc-context-drawer--open' : ''}`}>
+        <div className="pvc-context-drawer-handle" onClick={() => setShowContextDrawer(false)}>
+          <div className="pvc-context-drawer-handle-bar" />
+        </div>
+        <div className="pvc-context-drawer-content">
+          <div className="pvc-context-drawer-header">
+            <h2>
+              <FolderOpen size={18} />
+              Conversation Context
+            </h2>
+            <button type="button" className="pvc-icon-btn" onClick={() => setShowContextDrawer(false)} title="Close context drawer">
+              <ChevronDown size={18} />
+            </button>
+          </div>
+          <p className="pvc-context-drawer-hint">Add documents or notes to provide context for your conversation.</p>
+
+          {/* File upload */}
+          <input
+            ref={fileInputRef}
+            type="file"
+            multiple
+            accept=".txt,.md,.json,.csv,.pdf,.doc,.docx"
+            onChange={handleFileUpload}
+            className="hidden"
+            aria-label="Upload context files"
+          />
+          <button
+            type="button"
+            className="pvc-context-upload-btn"
+            onClick={() => fileInputRef.current?.click()}
+          >
+            <CloudUpload size={18} />
+            Upload Files
+          </button>
+
+          {/* Text input */}
+          <div className="pvc-context-text-input">
+            <textarea
+              value={contextText}
+              onChange={(e) => setContextText(e.target.value)}
+              placeholder="Or paste text, notes, or URLs here..."
+              aria-label="Context text input"
+            />
+            <button
+              type="button"
+              onClick={handleAddTextContext}
+              disabled={!contextText.trim()}
+            >
+              <Plus size={16} />
+              Add Context
+            </button>
+          </div>
+
+          {/* File list */}
+          {contextFiles.length > 0 ? (
+            <div className="pvc-context-file-list">
+              <h4>Added Context ({contextFiles.length})</h4>
+              {contextFiles.map(file => (
+                <div key={file.id} className="pvc-context-file-item">
+                  <div className="pvc-context-file-info">
+                    <Paperclip size={14} />
+                    <span className="pvc-context-file-name">{file.name}</span>
+                    <span className="pvc-context-file-size">
+                      {file.type === 'file' ? formatFileSize(file.size) : `${file.content.length} chars`}
+                    </span>
+                  </div>
+                  <button type="button" onClick={() => removeContextFile(file.id)} title="Remove">
+                    <X size={14} />
+                  </button>
+                </div>
+              ))}
+            </div>
+          ) : (
+            <div className="pvc-context-empty">
+              <Inbox size={28} />
+              <p>No context files added yet</p>
+            </div>
+          )}
+        </div>
+      </div>
 
       {/* Backdrop for panels */}
       {(showExportMenu || showSettings) && (
