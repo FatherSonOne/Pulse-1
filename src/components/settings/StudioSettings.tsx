@@ -66,8 +66,8 @@ export const StudioSettings: React.FC = () => {
   return (
     <div className="space-y-8 animate-slide-up">
       <div className="section-header">
-        <h3><Shield /> Studio</h3>
-        <p>Configure default behavior for Pulse Studio.</p>
+        <h3><Shield /> War Room</h3>
+        <p>Configure default behavior for the War Room.</p>
       </div>
 
       <div className="bg-white dark:bg-zinc-900 border border-zinc-200 dark:border-zinc-800 rounded-xl p-6 space-y-6">
@@ -140,7 +140,7 @@ export const StudioSettings: React.FC = () => {
               setWarRoomDefaultAgent(e.target.value);
               settingsService.set('warRoomDefaultAgent', e.target.value);
             }}
-            title="Default Studio agent"
+            title="Default War Room agent"
             className="w-full px-3 py-2 border border-zinc-200 dark:border-zinc-700 rounded-lg bg-white dark:bg-zinc-800 text-zinc-900 dark:text-white text-sm focus:outline-none focus:ring-2 focus:ring-blue-500"
           >
             <option value="general">General</option>

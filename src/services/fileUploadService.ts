@@ -13,6 +13,7 @@
 import { supabase } from './supabase';
 import { fileSecurityService } from './fileSecurityService';
 import { rateLimitService } from './rateLimitService';
+import { usageTracker } from './usageTracker';
 import { sanitizationService } from './sanitizationService';
 
 // ==================== Types ====================
@@ -243,6 +244,7 @@ export class FileUploadService {
 
     // Record rate limit usage after successful upload
     await rateLimitService.recordRequest('file_upload', userId);
+    usageTracker.storageBytes(file.size);
 
     return {
       id: metaData?.id || uploadData.path,

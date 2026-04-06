@@ -4,6 +4,7 @@
 // ============================================
 
 import React, { useState, useEffect } from 'react';
+import toast from 'react-hot-toast';
 import { webhookService, WebhookSource, WebhookLogEntry } from '../../services/webhookService';
 import { AnimatedIcon } from '../ui/AnimatedIcon';
 
@@ -126,7 +127,7 @@ const WebhookManager: React.FC = () => {
 
   const copyToClipboard = (text: string) => {
     navigator.clipboard.writeText(text);
-    alert('Copied to clipboard!');
+    toast.success('Copied to clipboard!');
   };
 
   const testWebhook = async (webhook: WebhookConfig) => {
@@ -135,9 +136,9 @@ const WebhookManager: React.FC = () => {
 
     try {
       const success = await webhookService.testWebhook(url, webhook.source, webhook.events[0]);
-      alert(success ? 'Webhook test successful!' : 'Webhook test failed');
+      success ? toast.success('Webhook test successful!') : toast.error('Webhook test failed.');
     } catch (error) {
-      alert(`Webhook test error: ${error}`);
+      toast.error(`Webhook test error: ${error}`);
     }
   };
 

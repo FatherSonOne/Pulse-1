@@ -21,6 +21,7 @@ import { BillingSettings } from './settings/BillingSettings';
 import { DeveloperSettings } from './settings/DeveloperSettings';
 import { AdminSettings } from './settings/AdminSettings';
 import { EcosystemSettings } from './settings/EcosystemSettings';
+import { WorkspaceSettings } from './settings/WorkspaceSettings';
 
 interface SettingsProps {
   user?: User | null;
@@ -37,8 +38,9 @@ const SECTIONS = [
   { id: 'ecosystem', icon: 'fa-circle-nodes', label: 'Ecosystem Bridge' },
   { id: 'notifications', icon: 'fa-bell', label: 'Notifications' },
   { id: 'features_labs', icon: 'fa-flask', label: 'Features & Labs' },
-  { id: 'war_room', icon: 'fa-shield', label: 'Studio' },
+  { id: 'war_room', icon: 'fa-shield', label: 'War Room' },
   { id: 'activity_monitor', icon: 'fa-chart-line', label: 'Activity Monitor' },
+  { id: 'workspace', icon: 'fa-building', label: 'Workspace' },
   { id: 'team', icon: 'fa-users', label: 'Team Management' },
   { id: 'accessibility', icon: 'fa-universal-access', label: 'Accessibility' },
   { id: 'privacy_data', icon: 'fa-shield-halved', label: 'Privacy & Data' },
@@ -60,6 +62,7 @@ const SECTION_KEYWORDS: Record<string, string[]> = {
   features_labs: ['feature', 'lab', 'beta', 'experimental', 'toggle', 'enable', 'disable', 'advanced mode'],
   war_room: ['war room', 'mission', 'intel', 'focus', 'analyst', 'strategist', 'brainstorm', 'command', 'ai depth', 'reasoning'],
   activity_monitor: ['activity', 'presence', 'online', 'leaderboard', 'event feed', 'retention'],
+  workspace: ['workspace', 'organization', 'org', 'archive', 'delete workspace', 'danger zone', 'restore'],
   team: ['team', 'invite', 'member', 'colleague', 'share'],
   accessibility: ['font size', 'high contrast', 'reduced motion', 'visual', 'accessibility'],
   privacy_data: ['privacy', 'analytics', 'export', 'delete', 'data', 'cache', 'tracking', 'gdpr'],
@@ -111,6 +114,7 @@ const Settings: React.FC<SettingsProps> = ({ user, isDarkMode, toggleTheme, init
       case 'integrations':     return <IntegrationsSettings user={user} userId={user?.id || ''} />;
       case 'ecosystem':        return <EcosystemSettings userId={user?.id || ''} />;
       case 'notifications':    return <NotificationsSettingsSection />;
+      case 'workspace':        return <WorkspaceSettings />;
       case 'team':             return <TeamSettings userId={user?.id || ''} userName={user?.name || ''} />;
       case 'accessibility':    return <AccessibilitySettings />;
       case 'privacy_data':     return <PrivacyDataSettings />;

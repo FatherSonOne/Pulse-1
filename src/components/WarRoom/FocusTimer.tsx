@@ -1,5 +1,5 @@
 /**
- * FocusTimer — Floating Pomodoro timer widget for Pulse Studio.
+ * FocusTimer — Floating Pomodoro timer widget for War Room.
  *
  * Replaces the full-screen Focus Mode with a minimal, draggable widget
  * that sits in the corner of the canvas. Users can work + chat while

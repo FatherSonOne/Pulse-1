@@ -1096,7 +1096,7 @@ const Dashboard: React.FC<DashboardProps> = ({ user, apiKey, setView }) => {
     { id: 'email', label: 'Compose Email', icon: 'fa-envelope', color: 'bg-gradient-to-br from-pink-600 to-rose-500', view: AppView.EMAIL },
     { id: 'vox', label: 'Quick Vox', icon: 'fa-microphone', color: 'bg-gradient-to-br from-orange-500 to-amber-500', view: AppView.VOXER },
     { id: 'contact', label: 'New Contact', icon: 'fa-user-plus', color: 'bg-gradient-to-br from-emerald-500 to-teal-500', view: AppView.CONTACTS, openAddContact: true },
-    { id: 'warroom', label: 'Studio', icon: 'fa-book-open', color: 'bg-gradient-to-br from-rose-500 to-pink-600', view: AppView.LIVE },
+    { id: 'warroom', label: 'War Room', icon: 'fa-book-open', color: 'bg-gradient-to-br from-rose-500 to-pink-600', view: AppView.LIVE },
     { id: 'search', label: 'Search', icon: 'fa-magnifying-glass', color: 'bg-gradient-to-br from-sky-500 to-blue-500', view: AppView.MULTI_MODAL },
   ], []);
 

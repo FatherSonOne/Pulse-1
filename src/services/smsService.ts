@@ -2,6 +2,7 @@
 // SMS service layer - ready for real Twilio integration
 
 import { SMSConversation, SMSMessage, SendSMSResponse } from '../types/sms';
+import { usageTracker } from './usageTracker';
 
 // In-memory storage for SMS data (will be replaced with real Twilio integration)
 let conversations: SMSConversation[] = [];
@@ -93,6 +94,7 @@ export const smsService = {
       message.status = 'delivered';
     }, 1000);
 
+    usageTracker.smsSent();
     return { success: true, message };
   },
 

@@ -8,7 +8,7 @@ import React, {
   ReactNode,
 } from 'react';
 import { useAuth } from '../hooks/useAuth';
-import { workspaceService, Workspace, WorkspaceMember } from '../services/workspaceService';
+import { workspaceService, Workspace, WorkspaceMember, WorkspacePlan } from '../services/workspaceService';
 import { supabase } from '../services/supabase';
 
 // ---------------------------------------------------------------------------
@@ -32,13 +32,17 @@ export interface WorkspaceDataContextType {
 
 export interface WorkspaceActionsContextType {
   switchWorkspace: (workspaceId: string) => void;
-  createWorkspace: (name: string, description?: string) => Promise<Workspace>;
+  createWorkspace: (name: string, description?: string, plan?: WorkspacePlan) => Promise<Workspace>;
   updateWorkspace: (
     workspaceId: string,
     updates: Partial<Pick<Workspace, 'name' | 'description' | 'avatar_url' | 'slug'>>,
   ) => Promise<void>;
   refreshWorkspaces: () => Promise<void>;
   refreshMembers: () => Promise<void>;
+  softDeleteWorkspace: (workspaceId: string) => Promise<void>;
+  hardDeleteWorkspace: (workspaceId: string) => Promise<void>;
+  restoreWorkspace: (workspaceId: string) => Promise<void>;
+  deletedWorkspaces: Workspace[];
 }
 
 export interface WorkspacePermissionsContextType {
@@ -76,6 +80,7 @@ export const WorkspaceProvider: React.FC<WorkspaceProviderProps> = ({ children }
   const [currentWorkspace, setCurrentWorkspace] = useState<Workspace | null>(null);
   const [members, setMembers] = useState<WorkspaceMember[]>([]);
   const [isLoading, setIsLoading] = useState<boolean>(true);
+  const [deletedWorkspaces, setDeletedWorkspaces] = useState<Workspace[]>([]);
 
   // ---------------------------------------------------------------------------
   // Data fetching helpers
@@ -142,11 +147,19 @@ export const WorkspaceProvider: React.FC<WorkspaceProviderProps> = ({ children }
         let list = await workspaceService.getUserWorkspaces(user.id);
         if (cancelled) return;
 
-        // First-time user: auto-create a default workspace so the switcher is always visible
+        // No active workspaces — check for soft-deleted ones before auto-creating
         if (list.length === 0) {
           try {
-            const created = await workspaceService.createWorkspace('My Workspace');
-            list = [created];
+            const deleted = await workspaceService.getDeletedWorkspaces();
+            if (cancelled) return;
+            if (deleted.length > 0) {
+              setDeletedWorkspaces(deleted);
+              // Don't auto-create — show the interstitial instead
+            } else {
+              // First-time user: auto-create a default workspace
+              const created = await workspaceService.createWorkspace('My Workspace');
+              list = [created];
+            }
           } catch {
             // Non-fatal — switcher will remain hidden until user manually creates one
           }
@@ -236,8 +249,8 @@ export const WorkspaceProvider: React.FC<WorkspaceProviderProps> = ({ children }
   );
 
   const createWorkspace = useCallback(
-    async (name: string, description?: string): Promise<Workspace> => {
-      const created = await workspaceService.createWorkspace(name, description);
+    async (name: string, description?: string, plan?: WorkspacePlan): Promise<Workspace> => {
+      const created = await workspaceService.createWorkspace(name, description, plan || 'free');
       setWorkspaces((prev) => [...prev, created]);
       setCurrentWorkspace(created);
       localStorage.setItem(ACTIVE_WORKSPACE_KEY, created.id);
@@ -273,6 +286,46 @@ export const WorkspaceProvider: React.FC<WorkspaceProviderProps> = ({ children }
     await loadMembers(currentWorkspaceId);
   }, [loadMembers, currentWorkspaceId]);
 
+  const softDeleteWorkspace = useCallback(async (workspaceId: string): Promise<void> => {
+    await workspaceService.softDeleteWorkspace(workspaceId);
+    setWorkspaces((prev) => prev.filter((w) => w.id !== workspaceId));
+    if (currentWorkspace?.id === workspaceId) {
+      const remaining = workspaces.filter((w) => w.id !== workspaceId);
+      const fallback = remaining[0] ?? null;
+      setCurrentWorkspace(fallback);
+      if (fallback) localStorage.setItem(ACTIVE_WORKSPACE_KEY, fallback.id);
+      else localStorage.removeItem(ACTIVE_WORKSPACE_KEY);
+    }
+    // Refresh deleted list
+    const deleted = await workspaceService.getDeletedWorkspaces();
+    setDeletedWorkspaces(deleted);
+  }, [currentWorkspace, workspaces]);
+
+  const hardDeleteWorkspace = useCallback(async (workspaceId: string): Promise<void> => {
+    await workspaceService.hardDeleteWorkspace(workspaceId);
+    setWorkspaces((prev) => prev.filter((w) => w.id !== workspaceId));
+    setDeletedWorkspaces((prev) => prev.filter((w) => w.id !== workspaceId));
+    if (currentWorkspace?.id === workspaceId) {
+      const remaining = workspaces.filter((w) => w.id !== workspaceId);
+      const fallback = remaining[0] ?? null;
+      setCurrentWorkspace(fallback);
+      if (fallback) localStorage.setItem(ACTIVE_WORKSPACE_KEY, fallback.id);
+      else localStorage.removeItem(ACTIVE_WORKSPACE_KEY);
+    }
+  }, [currentWorkspace, workspaces]);
+
+  const restoreWorkspace = useCallback(async (workspaceId: string): Promise<void> => {
+    await workspaceService.restoreWorkspace(workspaceId);
+    setDeletedWorkspaces((prev) => prev.filter((w) => w.id !== workspaceId));
+    // Refresh active workspaces
+    const list = await loadWorkspaces();
+    const restored = list.find((w) => w.id === workspaceId);
+    if (restored && !currentWorkspace) {
+      setCurrentWorkspace(restored);
+      localStorage.setItem(ACTIVE_WORKSPACE_KEY, restored.id);
+    }
+  }, [loadWorkspaces, currentWorkspace]);
+
   // ---------------------------------------------------------------------------
   // Focused context values — each only re-creates when its own slice changes
   // ---------------------------------------------------------------------------
@@ -291,7 +344,11 @@ export const WorkspaceProvider: React.FC<WorkspaceProviderProps> = ({ children }
     updateWorkspace,
     refreshWorkspaces,
     refreshMembers,
-  }), [switchWorkspace, createWorkspace, updateWorkspace, refreshWorkspaces, refreshMembers]);
+    softDeleteWorkspace,
+    hardDeleteWorkspace,
+    restoreWorkspace,
+    deletedWorkspaces,
+  }), [switchWorkspace, createWorkspace, updateWorkspace, refreshWorkspaces, refreshMembers, softDeleteWorkspace, hardDeleteWorkspace, restoreWorkspace, deletedWorkspaces]);
 
   const permissionsValue = useMemo<WorkspacePermissionsContextType>(() => ({
     isOwner,

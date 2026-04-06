@@ -4,7 +4,6 @@
 // ============================================
 
 import { supabase } from './supabase';
-import { v4 as uuidv4 } from 'uuid';
 
 // ==================== TYPES ====================
 
@@ -57,62 +56,37 @@ class AdminService {
   /**
    * Get all users for admin management
    */
-  async getAllUsers(): Promise<AdminUser[]> {
-    // First, get all user profiles
-    const { data: profiles, error: profilesError } = await supabase
+  async getAllUsers(options?: { page?: number; pageSize?: number }): Promise<{ users: AdminUser[]; total: number }> {
+    const page = options?.page ?? 1;
+    const pageSize = options?.pageSize ?? 50;
+    const from = (page - 1) * pageSize;
+    const to = from + pageSize - 1;
+
+    // Get total count
+    const { count, error: countError } = await supabase
+      .from('user_profiles')
+      .select('*', { count: 'exact', head: true });
+
+    if (countError) {
+      console.error('Failed to count user profiles:', countError);
+    }
+
+    // Get paginated results
+    const { data: profiles, error } = await supabase
       .from('user_profiles')
       .select('*')
-      .order('created_at', { ascending: false });
+      .order('created_at', { ascending: false })
+      .range(from, to);
 
-    if (profilesError) {
-      console.error('Failed to fetch user profiles:', profilesError);
-      // Fall back to auth.admin.listUsers if profiles table doesn't have what we need
+    if (error) {
+      console.error('Failed to fetch user profiles:', error);
+      return { users: [], total: 0 };
     }
 
-    // Also get auth users for complete picture
-    const { data: authData, error: authError } = await supabase.auth.admin.listUsers();
-
-    if (authError) {
-      console.warn('Could not fetch auth users (may require service role):', authError);
-      // If we have profiles, use those
-      if (profiles && profiles.length > 0) {
-        return profiles.map(profile => this.mapProfileToAdminUser(profile));
-      }
-      return [];
-    }
-
-    const authUsers = authData?.users || [];
-
-    // Merge auth users with profiles
-    const usersMap = new Map<string, AdminUser>();
-
-    // Start with auth users
-    for (const authUser of authUsers) {
-      const profile = profiles?.find(p => p.id === authUser.id);
-      usersMap.set(authUser.id, {
-        id: authUser.id,
-        email: authUser.email || '',
-        name: profile?.display_name || profile?.full_name || authUser.user_metadata?.full_name || authUser.email?.split('@')[0] || 'Unknown',
-        role: profile?.role || 'user',
-        status: this.getUserStatus(authUser, profile),
-        lastActive: profile?.last_seen_at ? new Date(profile.last_seen_at) : new Date(authUser.last_sign_in_at || authUser.created_at),
-        createdAt: new Date(authUser.created_at),
-        messagesCount: profile?.messages_count || 0,
-        groupsCount: profile?.groups_count || 0,
-        avatarUrl: profile?.avatar_url || authUser.user_metadata?.avatar_url,
-      });
-    }
-
-    // Add any profiles that might not be in auth (shouldn't happen but just in case)
-    if (profiles) {
-      for (const profile of profiles) {
-        if (!usersMap.has(profile.id)) {
-          usersMap.set(profile.id, this.mapProfileToAdminUser(profile));
-        }
-      }
-    }
-
-    return Array.from(usersMap.values());
+    return {
+      users: (profiles || []).map(profile => this.mapProfileToAdminUser(profile)),
+      total: count || 0,
+    };
   }
 
   /**
@@ -171,27 +145,51 @@ class AdminService {
    * Delete user account
    */
   async deleteUser(userId: string): Promise<void> {
-    // First delete profile data
-    const { error: profileError } = await supabase
-      .from('user_profiles')
-      .delete()
-      .eq('id', userId);
+    const { data, error } = await supabase.functions.invoke('admin-manage-user', {
+      body: { action: 'delete_user', userId },
+    });
 
-    if (profileError) {
-      console.warn('Failed to delete user profile:', profileError);
+    if (error) {
+      throw new Error(`Failed to delete user: ${error.message}`);
     }
 
-    // Then delete auth user (requires service role)
-    try {
-      const { error: authError } = await supabase.auth.admin.deleteUser(userId);
-      if (authError) {
-        throw new Error(`Failed to delete auth user: ${authError.message}`);
-      }
-    } catch (err) {
-      console.warn('Could not delete auth user (may require service role):', err);
+    if (data?.error) {
+      throw new Error(data.error);
+    }
+  }
+
+  /**
+   * Ban a user (prevents login + sets profile status)
+   */
+  async banUser(userId: string): Promise<void> {
+    const { data, error } = await supabase.functions.invoke('admin-manage-user', {
+      body: { action: 'ban_user', userId },
+    });
+
+    if (error) {
+      throw new Error(`Failed to ban user: ${error.message}`);
     }
 
-    await this.logActivity('user_deleted', userId, 'User account deleted');
+    if (data?.error) {
+      throw new Error(data.error);
+    }
+  }
+
+  /**
+   * Unban a user (restores login + sets profile status to active)
+   */
+  async unbanUser(userId: string): Promise<void> {
+    const { data, error } = await supabase.functions.invoke('admin-manage-user', {
+      body: { action: 'unban_user', userId },
+    });
+
+    if (error) {
+      throw new Error(`Failed to unban user: ${error.message}`);
+    }
+
+    if (data?.error) {
+      throw new Error(data.error);
+    }
   }
 
   // ==================== DASHBOARD STATS ====================
@@ -260,13 +258,11 @@ class AdminService {
     const { error } = await supabase
       .from('admin_activity_logs')
       .insert({
-        id: uuidv4(),
         action,
         actor_id: user?.id,
         actor_name: user?.user_metadata?.full_name || user?.email || 'System',
         target_id: targetId,
         details,
-        created_at: new Date().toISOString(),
       });
 
     if (error) {
@@ -361,7 +357,7 @@ class AdminService {
     const { data, error } = await supabase
       .from('admin_settings')
       .upsert({
-        id: updates.id || uuidv4(),
+        id: updates.id || crypto.randomUUID(),
         ...settingsData,
       })
       .select()
@@ -390,7 +386,7 @@ class AdminService {
    * Export users as CSV
    */
   async exportUsersCSV(): Promise<string> {
-    const users = await this.getAllUsers();
+    const { users } = await this.getAllUsers({ page: 1, pageSize: 10000 });
 
     const headers = ['ID', 'Name', 'Email', 'Role', 'Status', 'Last Active', 'Created At', 'Messages Count', 'Groups Count'];
     const rows = users.map(user => [
@@ -426,6 +422,28 @@ class AdminService {
     return JSON.stringify(messages || [], null, 2);
   }
 
+  // ==================== SYSTEM HEALTH ====================
+
+  /**
+   * Get real system health metrics
+   */
+  async getSystemHealth(): Promise<{ dbLatencyMs: number; recentErrors: number }> {
+    // Measure DB round-trip latency
+    const start = performance.now();
+    await supabase.from('user_profiles').select('id', { count: 'exact', head: true });
+    const dbLatencyMs = Math.round(performance.now() - start);
+
+    // Count error-related activity logs in last 24h
+    const since = new Date(Date.now() - 24 * 60 * 60 * 1000).toISOString();
+    const { count } = await supabase
+      .from('admin_activity_logs')
+      .select('*', { count: 'exact', head: true })
+      .or('action.ilike.%error%,action.ilike.%fail%')
+      .gte('created_at', since);
+
+    return { dbLatencyMs, recentErrors: count || 0 };
+  }
+
   // ==================== PRIVATE HELPERS ====================
 
   private mapProfileToAdminUser(profile: any): AdminUser {
@@ -443,24 +461,6 @@ class AdminService {
     };
   }
 
-  private getUserStatus(authUser: any, profile: any): AdminUser['status'] {
-    // Check if user is banned/suspended
-    if (authUser.banned_until && new Date(authUser.banned_until) > new Date()) {
-      return 'suspended';
-    }
-
-    // Check profile status
-    if (profile?.status) {
-      return profile.status;
-    }
-
-    // Check if email is confirmed
-    if (!authUser.email_confirmed_at) {
-      return 'pending';
-    }
-
-    return 'active';
-  }
 }
 
 // Export singleton instance

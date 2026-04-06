@@ -1,5 +1,5 @@
 /**
- * useStudioCommands — Slash command + @agent mention system for Pulse Studio.
+ * useStudioCommands — Slash command + @agent mention system for War Room.
  *
  * Commands: /brainstorm, /decide, /analyze, /summarize, /plan, /debrief, /risks, /compare
  * Agents:   @analyst, @skeptic, @scribe, @deep-diver

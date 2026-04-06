@@ -7,6 +7,7 @@ import { rateLimitService } from "./rateLimitService";
 import { retryService } from "./retryService";
 import { sanitizationService } from "./sanitizationService";
 import { apiProxyService } from "./apiProxyService";
+import { usageTracker } from "./usageTracker";
 import { perplexityGenerateText, isPerplexityAvailable } from "./perplexityService";
 
 // ─── Perplexity fallback helper (internal) ────────────────────────────────────
@@ -1420,6 +1421,32 @@ export const secureGeminiService = {
       );
     }
 
+    // Check billing usage limit (soft gate — warns but doesn't block during rollout)
+    try {
+      const { supabase: sb } = await import('./supabase');
+      const { data: { user } } = await sb.auth.getUser();
+      if (user) {
+        const { data: member } = await sb.from('workspace_members').select('workspace_id').eq('user_id', user.id).limit(1).single();
+        if (member) {
+          const { data: ent } = await sb.from('entitlements').select('max_ai_messages_mo').eq('workspace_id', member.workspace_id).single();
+          if (ent?.max_ai_messages_mo !== null) {
+            const now = new Date();
+            const periodStart = new Date(now.getFullYear(), now.getMonth(), 1).toISOString().split('T')[0];
+            const { data: usage } = await sb.from('usage_records').select('quantity').eq('workspace_id', member.workspace_id).eq('metric', 'ai_messages').eq('period_start', periodStart).single();
+            const current = usage?.quantity || 0;
+            if (current >= ent.max_ai_messages_mo) {
+              throw new Error('You\'ve reached your AI message limit for this month. Upgrade your plan for more messages.');
+            }
+          }
+        }
+      }
+    } catch (limitError) {
+      if (limitError instanceof Error && limitError.message.includes('AI message limit')) {
+        throw limitError;
+      }
+      // Silently continue if entitlement check fails
+    }
+
     // Sanitize input
     const sanitizedContents = sanitizationService.sanitizeObject(contents);
 
@@ -1440,6 +1467,7 @@ export const secureGeminiService = {
 
         // Record rate limit usage
         await rateLimitService.recordRequest('api_gemini', userId);
+        usageTracker.aiMessage();
         return result;
       } catch (error) {
         console.warn('API proxy failed, falling back to direct API call:', error);
@@ -1467,6 +1495,7 @@ export const secureGeminiService = {
 
     // Record rate limit usage
     await rateLimitService.recordRequest('api_gemini', userId);
+    usageTracker.aiMessage();
     return result;
   },
 

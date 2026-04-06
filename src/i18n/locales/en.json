@@ -1,7 +1,7 @@
 {
   "warRoom": {
-    "title": "Studio",
-    "hub": "Studio",
+    "title": "War Room",
+    "hub": "War Room",
     "sources": "Sources",
     "voiceAgent": "Voice Agent",
     "export": "Export",
@@ -12,5 +12,84 @@
     "generating": "Generating...",
     "generateAudio": "Generate Audio",
     "exportSession": "Export Session"
+  },
+  "admin": {
+    "title": "Admin Dashboard",
+    "subtitle": "Manage users, messages, and system settings",
+    "tabs": {
+      "activity": "Activity",
+      "overview": "Overview",
+      "users": "Users",
+      "messages": "Messages",
+      "settings": "Settings",
+      "search": "Search",
+      "integrations": "Integrations",
+      "webhooks": "Webhooks"
+    },
+    "stats": {
+      "totalUsers": "Total Users",
+      "activeUsers": "Active Users",
+      "totalMessages": "Total Messages",
+      "pendingApprovals": "Pending Approvals",
+      "dbLatency": "DB Latency",
+      "errors24h": "Errors (24h)"
+    },
+    "actions": {
+      "approvePending": "Approve Pending",
+      "sendBroadcast": "Send Broadcast",
+      "viewReports": "View Reports",
+      "systemHealth": "System Health"
+    },
+    "users": {
+      "searchPlaceholder": "Search users...",
+      "allRoles": "All Roles",
+      "allStatus": "All Status",
+      "selectUser": "Select a user to view details",
+      "changeRole": "Change Role",
+      "accountStatus": "Account Status",
+      "dangerZone": "Danger Zone",
+      "banUser": "Ban User",
+      "deleteAccount": "Delete Account",
+      "backToList": "Back to list",
+      "accountCreated": "Account created",
+      "noUsersFound": "No users found"
+    },
+    "settings": {
+      "systemSettings": "System Settings",
+      "allowRegistrations": "Allow New Registrations",
+      "allowRegistrationsDesc": "Enable or disable new user signups",
+      "emailNotifications": "Email Notifications",
+      "emailNotificationsDesc": "Send email alerts for admin events",
+      "maintenanceMode": "Maintenance Mode",
+      "maintenanceModeDesc": "Temporarily disable access for non-admins",
+      "exportData": "Export Data",
+      "exportUsersCSV": "Export Users (CSV)",
+      "exportMessagesJSON": "Export Messages (JSON)"
+    },
+    "status": {
+      "systemOnline": "System Online",
+      "maintenanceActive": "Maintenance Mode",
+      "allOperational": "All Systems Operational"
+    },
+    "confirm": {
+      "deleteUserTitle": "Delete User Account",
+      "deleteUserMessage": "Are you sure you want to delete this user? This action cannot be undone.",
+      "cancel": "Cancel",
+      "confirm": "Confirm"
+    },
+    "toast": {
+      "userStatusUpdated": "User status updated.",
+      "userRoleUpdated": "User role updated.",
+      "userDeleted": "User deleted.",
+      "settingUpdated": "Setting updated.",
+      "exportUsersSuccess": "Users exported as CSV.",
+      "exportMessagesSuccess": "Messages exported as JSON.",
+      "failedUpdateStatus": "Failed to update user status.",
+      "failedUpdateRole": "Failed to update user role.",
+      "failedDeleteUser": "Failed to delete user.",
+      "failedUpdateSetting": "Failed to update setting.",
+      "failedExportUsers": "Failed to export users.",
+      "failedExportMessages": "Failed to export messages."
+    }
   }
 }

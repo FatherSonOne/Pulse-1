@@ -9,7 +9,7 @@ import './WarRoomStyles.css';
 import { ErrorBoundary } from './shared/ErrorBoundary';
 import { WarRoomMode, MissionType, RoomType } from './WarRoom/ModeSwitcher';
 
-// Phase 1 — Pulse Studio unified interface
+// Phase 1 — War Room unified interface
 import { StudioLayout } from './WarRoom/StudioLayout';
 import { StudioHeader } from './WarRoom/StudioHeader';
 import { PulseStudio } from './WarRoom/PulseStudio';
@@ -19,7 +19,7 @@ import { StudioOnboarding, hasCompletedOnboarding } from './WarRoom/StudioOnboar
 import { processDocument } from '../services/documentProcessors';
 import { warRoomExportService, WarRoomExportData } from '../services/warRoomExportService';
 
-// Studio sidebar, modals & services
+// War Room sidebar, modals & services
 import { WarRoomSidebar, WarRoomProject, WarRoomSession, AIMessage as SidebarAIMessage } from './WarRoom/WarRoomSidebar';
 import { WarRoomModalStack } from './WarRoom/WarRoomModalStack';
 import { useBoardNotes } from './WarRoom/useBoardNotes';
@@ -1130,7 +1130,7 @@ const LiveDashboard: React.FC<LiveDashboardProps> = ({ apiKey, userId }) => {
     const session = sessions.find(s => s.id === selectedSessionId);
     const timestamp = new Date().toLocaleString();
     
-    let markdown = `# Studio Session: ${session?.title || 'Untitled'}\n\n`;
+    let markdown = `# War Room Session: ${session?.title || 'Untitled'}\n\n`;
     markdown += `**Exported:** ${timestamp}\n`;
     markdown += `**Agent:** ${activeAgent}\n`;
     if (selectedProject) markdown += `**Project:** ${selectedProject.name}\n`;
@@ -1189,7 +1189,7 @@ const LiveDashboard: React.FC<LiveDashboardProps> = ({ apiKey, userId }) => {
     
     const summary = await processWithModel(
       apiKey,
-      `Create a concise summary of this Studio session. Include key points, decisions, and action items:\n\n${conversationText}`
+      `Create a concise summary of this War Room session. Include key points, decisions, and action items:\n\n${conversationText}`
     );
     
     return summary || 'Failed to generate summary';
@@ -1236,7 +1236,7 @@ const LiveDashboard: React.FC<LiveDashboardProps> = ({ apiKey, userId }) => {
 
   const selectedProject = Array.isArray(projects) ? projects.find(p => p.id === selectedProjectId) : undefined;
 
-  // Note: War Room hub / mode selection removed in Phase 1 (Pulse Studio redesign).
+  // Note: War Room hub / mode selection removed in Phase 1 (War Room redesign).
   // The unified PulseStudio component replaces all 7 modes.
 
   // Artifacts panel state (controlled from here, passed to StudioLayout)
@@ -1451,7 +1451,7 @@ const LiveDashboard: React.FC<LiveDashboardProps> = ({ apiKey, userId }) => {
         getSessionMessages={getSessionMessagesForExport}
       />
 
-      {/* Main Content — Pulse Studio unified interface */}
+      {/* Main Content — War Room unified interface */}
       <div className="flex-1 flex flex-col min-w-0 overflow-hidden">
         <StudioHeader
           selectedProject={selectedProject}
@@ -1614,11 +1614,11 @@ const LiveDashboard: React.FC<LiveDashboardProps> = ({ apiKey, userId }) => {
 // Wrap the entire component with error boundary for mobile safety
 const LiveDashboardWithErrorBoundary: React.FC<LiveDashboardProps> = (props) => (
   <ErrorBoundary
-    componentName="Pulse Studio"
+    componentName="War Room"
     onError={(error) => {
-      console.error('[Studio] Critical error:', error);
+      console.error('[WarRoom] Critical error:', error);
       if (isMobilePlatform) {
-        toast.error('Studio encountered an issue. Some features may be limited on mobile.');
+        toast.error('War Room encountered an issue. Some features may be limited on mobile.');
       }
     }}
   >

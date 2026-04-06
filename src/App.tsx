@@ -63,13 +63,39 @@ import { PulseAIProactiveChecker } from './components/PulseAssistant/PulseAIProa
 import { InstallPrompt } from './components/PWA/InstallPrompt';
 import { OnlineStatus } from './components/PWA/OnlineStatus';
 import { FeatureProvider } from './contexts/FeatureContext';
-import { WorkspaceProvider } from './contexts/WorkspaceContext';
+import { WorkspaceProvider, useWorkspaceData, useWorkspaceActions } from './contexts/WorkspaceContext';
+import { DeletedWorkspaceInterstitial } from './components/settings/DeletedWorkspaceInterstitial';
 
 import { HelpCircle } from 'lucide-react';
 
 // Loading fallback component for lazy-loaded routes
 // Uses inline=true so it fills the content area via flex layout rather than fixed/absolute positioning
 const PageLoader = () => <EnhancedLoadingScreen inline />;
+
+/**
+ * Gate that shows the deleted-workspace interstitial when the user
+ * has no active workspaces but owns soft-deleted ones.
+ */
+const WorkspaceGate: React.FC<{ children: React.ReactNode }> = ({ children }) => {
+  const { currentWorkspace, workspaces, isLoading } = useWorkspaceData();
+  const { deletedWorkspaces, createWorkspace } = useWorkspaceActions();
+
+  if (isLoading) return <EnhancedLoadingScreen />;
+
+  if (!currentWorkspace && workspaces.length === 0 && deletedWorkspaces.length > 0) {
+    return (
+      <DeletedWorkspaceInterstitial
+        deletedWorkspaces={deletedWorkspaces}
+        onCreateNew={async () => {
+          await createWorkspace('My Workspace');
+          window.location.reload();
+        }}
+      />
+    );
+  }
+
+  return <>{children}</>;
+};
 
 // Standalone page for direct /meet/:roomName links — no sidebar needed
 const PulseRoomPage: React.FC<{ roomName: string }> = ({ roomName }) => {
@@ -818,6 +844,7 @@ const App: React.FC = () => {
 
   return (
     <WorkspaceProvider>
+    <WorkspaceGate>
     <FeatureProvider defaultMode="simple">
       <MessageContainer userId={user?.id || 'anonymous'}>
         <div className="h-screen w-screen bg-zinc-50 dark:bg-black text-zinc-900 dark:text-zinc-100 flex flex-col md:flex-row overflow-hidden font-sans transition-colors duration-500">
@@ -967,6 +994,7 @@ const App: React.FC = () => {
         </div>
       </MessageContainer>
     </FeatureProvider>
+    </WorkspaceGate>
     </WorkspaceProvider>
   );
 };

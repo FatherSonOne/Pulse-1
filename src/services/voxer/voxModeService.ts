@@ -1,6 +1,7 @@
 // Vox Mode Service - Backend operations for all Vox communication styles
 import { supabase } from '../supabase';
 import { transcribeMedia } from '../geminiService';
+import { usageTracker } from '../usageTracker';
 import type {
   VoxMode,
   PulseUser,
@@ -661,6 +662,10 @@ class VoxModeService {
         return null;
       }
 
+      // Track Voxer usage (duration in minutes)
+      usageTracker.voxerMinutes(Math.ceil(duration / 60));
+      usageTracker.storageBytes(audioBlob.size);
+
       // Get public URL
       const { data: urlData } = supabase.storage
         .from('voxer')
@@ -1071,6 +1076,10 @@ class VoxModeService {
         console.error('Error uploading team vox audio:', uploadError);
         return null;
       }
+
+      // Track Voxer usage
+      usageTracker.voxerMinutes(Math.ceil(duration / 60));
+      usageTracker.storageBytes(audioBlob.size);
 
       // Get public URL
       const { data: urlData } = supabase.storage
@@ -1527,6 +1536,10 @@ class VoxModeService {
         console.error('Error uploading quick vox audio:', uploadError);
         return null;
       }
+
+      // Track Voxer usage
+      usageTracker.voxerMinutes(Math.ceil(duration / 60));
+      usageTracker.storageBytes(audioBlob.size);
 
       // Get public URL
       const { data: urlData } = supabase.storage

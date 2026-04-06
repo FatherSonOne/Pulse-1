@@ -252,7 +252,7 @@ export const PulseStudio: React.FC<PulseStudioProps> = ({
       <div className="ps-welcome-logo">
         <BookOpen size={28} />
       </div>
-      <h2>Pulse Studio</h2>
+      <h2>War Room</h2>
       <p>
         {hasDocuments
           ? `You have ${documents.length} source${documents.length !== 1 ? 's' : ''} loaded${activeDocCount > 0 ? ` (${activeDocCount} active)` : ''}. Ask anything about your documents or start a new conversation.`

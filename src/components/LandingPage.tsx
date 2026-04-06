@@ -1292,7 +1292,7 @@ const LandingPage: React.FC<LandingPageProps> = ({ onGetStarted }) => {
 
         <SectionDivider />
 
-        {/* Section B — Pulse Studio (AI War Room) */}
+        {/* Section B — War Room */}
         <section className={`py-24 px-6 relative overflow-hidden${isDarkMode ? '' : ' bg-stone-50'}`}>
           <div className="absolute inset-0 pointer-events-none" style={{ opacity: isDarkMode ? 1 : 0 }}>
             <div className="absolute inset-0" style={{
@@ -1302,7 +1302,7 @@ const LandingPage: React.FC<LandingPageProps> = ({ onGetStarted }) => {
           <div className="max-w-7xl mx-auto relative z-10">
             <div className="mb-14 animate-fade-in">
               <div className={`inline-flex items-center gap-2 px-3 py-1.5 rounded-full text-xs font-bold uppercase tracking-widest mb-4${isDarkMode ? ' bg-purple-500/10 border border-purple-500/25 text-purple-400' : ' bg-purple-50 border border-purple-200 text-purple-600'}`}>
-                <Wand2 size={12} /> Pulse Studio
+                <Wand2 size={12} /> War Room
               </div>
               <h2 className={`text-4xl sm:text-6xl font-bold mb-4 text-transparent bg-clip-text${isDarkMode ? ' bg-gradient-to-r from-white via-purple-100 to-violet-200' : ' bg-gradient-to-r from-zinc-900 via-purple-900 to-violet-800'}`}>
                 Your AI War Room
@@ -2114,7 +2114,7 @@ const LandingPage: React.FC<LandingPageProps> = ({ onGetStarted }) => {
                   <p className="text-zinc-400 mb-6 flex-grow">The voice and ears of your organization. Real-time messaging, 8 voice modes, AI studio, full email client, calendar, and analytics — all in one interface.</p>
                   <ul className="space-y-3 text-zinc-300 text-sm">
                     <li className="flex items-center gap-2"><Check className="text-rose-500" /> 8 Voxer Modes + AI Transcription</li>
-                    <li className="flex items-center gap-2"><Check className="text-rose-500" /> AI Studio with 8 Slash Commands</li>
+                    <li className="flex items-center gap-2"><Check className="text-rose-500" /> War Room with 8 Slash Commands</li>
                     <li className="flex items-center gap-2"><Check className="text-rose-500" /> Full Email, Messaging, Calendar</li>
                     <li className="flex items-center gap-2"><Check className="text-rose-500" /> 7+ AI Models (Gemini, Claude, GPT)</li>
                     <li className="flex items-center gap-2"><Check className="text-rose-500" /> Predictive Analytics Dashboard</li>
@@ -2231,7 +2231,7 @@ const LandingPage: React.FC<LandingPageProps> = ({ onGetStarted }) => {
                   { num: '1', system: 'PULSE', badgeClass: 'from-rose-500 to-pink-500', labelClass: 'text-gradient-rose', borderClass: 'hover:border-rose-500/40', title: 'The Signal', body: 'A high-priority email from a key client lands. Pulse flags it "Urgent", extracts requirements, and routes it to the grants channel with an AI summary.' },
                   { num: '2', system: 'LOGOS VISION', badgeClass: 'from-blue-500 to-cyan-500', labelClass: 'bg-gradient-to-r from-blue-400 to-cyan-400 bg-clip-text text-transparent', borderClass: 'hover:border-blue-500/40', title: 'The Context', body: 'The system links the message to the Client Record — pulling past grant history, success rates, and the assigned relationship manager automatically.' },
                   { num: '3', system: 'ENTOMATE', badgeClass: 'from-emerald-500 to-teal-500', labelClass: 'bg-gradient-to-r from-emerald-400 to-teal-400 bg-clip-text text-transparent', borderClass: 'hover:border-emerald-500/40', title: 'The Action', body: 'An Apply workflow fires. A task is created for the Grant Writer, a kickoff meeting is scheduled based on availability, and an acknowledgment email is drafted.' },
-                  { num: '4', system: 'STUDIO', badgeClass: 'from-rose-500 to-pink-500', labelClass: 'bg-gradient-to-r from-rose-400 to-pink-400 bg-clip-text text-transparent', borderClass: 'hover:border-rose-500/40', title: 'The Intelligence', body: 'Studio researches grant requirements, compares past applications using your uploaded sources, and outputs a polished grant proposal draft in minutes.' },
+                  { num: '4', system: 'WAR ROOM', badgeClass: 'from-rose-500 to-pink-500', labelClass: 'bg-gradient-to-r from-rose-400 to-pink-400 bg-clip-text text-transparent', borderClass: 'hover:border-rose-500/40', title: 'The Intelligence', body: 'The War Room researches grant requirements, compares past applications using your uploaded sources, and outputs a polished grant proposal draft in minutes.' },
                 ].map((step) => (
                   <div key={step.num} className={`bg-zinc-900/90 backdrop-blur-sm border border-zinc-800 p-7 rounded-2xl relative hover:-translate-y-2 transition-all duration-300 card-elevated ${step.borderClass} group animate-fade-in`}>
                     <div className={`absolute -top-4 -right-4 w-8 h-8 bg-gradient-to-br ${step.badgeClass} rounded-full flex items-center justify-center text-white font-bold shadow-lg text-sm`}>{step.num}</div>
@@ -2412,7 +2412,7 @@ const LandingPage: React.FC<LandingPageProps> = ({ onGetStarted }) => {
                   <span className="text-4xl font-extrabold text-white">$79</span>
                   <span className="text-zinc-500 mb-1">/month</span>
                 </div>
-                <p className="text-xs text-zinc-600">$948/yr · up to 5 users</p>
+                <p className="text-xs text-zinc-600">$790/yr (2 months free) · up to 5 users</p>
                 <p className="text-sm text-zinc-400 mt-2">Small teams getting organized</p>
               </div>
 
@@ -2466,7 +2466,7 @@ const LandingPage: React.FC<LandingPageProps> = ({ onGetStarted }) => {
                   <span className="text-4xl font-extrabold text-white">$149</span>
                   <span className="text-zinc-500 mb-1">/month</span>
                 </div>
-                <p className="text-xs text-zinc-600">$1,788/yr · up to 15 users</p>
+                <p className="text-xs text-zinc-600">$1,490/yr (2 months free) · up to 15 users</p>
                 <p className="text-sm text-zinc-400 mt-2">Growing teams who live in their inbox</p>
               </div>
 
@@ -2532,7 +2532,7 @@ const LandingPage: React.FC<LandingPageProps> = ({ onGetStarted }) => {
                   <span className="text-4xl font-extrabold text-white">$249</span>
                   <span className="text-zinc-500 mb-1">/month</span>
                 </div>
-                <p className="text-xs text-zinc-600">$2,988/yr · unlimited users</p>
+                <p className="text-xs text-zinc-600">$2,490/yr (2 months free) · unlimited users</p>
                 <p className="text-sm text-zinc-400 mt-2">Teams that need everything</p>
               </div>
 
@@ -2581,7 +2581,47 @@ const LandingPage: React.FC<LandingPageProps> = ({ onGetStarted }) => {
 
           </div>
 
-          <p className="text-center text-xs text-zinc-600 mt-8">Early access pricing · Billing system launching soon · Contact us for team pricing</p>
+          {/* ── Ecosystem Bundle Upsell ── */}
+          <div className="mt-10 max-w-3xl mx-auto rounded-2xl border border-emerald-500/30 bg-gradient-to-br from-emerald-500/5 to-cyan-500/5 p-8">
+            <div className="text-center mb-6">
+              <div className="inline-flex items-center gap-2 px-3 py-1 rounded-full bg-emerald-500/10 border border-emerald-500/20 text-emerald-400 text-xs font-bold uppercase tracking-widest mb-4">
+                Full Suite
+              </div>
+              <h3 className="text-2xl font-extrabold text-white mb-2">QntmEcos Ecosystem</h3>
+              <p className="text-sm text-zinc-400">Pulse + Logos Vision CRM + Entomate — one subscription, all three apps</p>
+              <div className="flex items-center justify-center gap-3 mt-4">
+                {['Pulse', 'Logos Vision', 'Entomate'].map((app) => (
+                  <span key={app} className="px-3 py-1.5 rounded-lg bg-white/5 border border-white/10 text-xs font-medium text-zinc-300">{app}</span>
+                ))}
+              </div>
+            </div>
+            <div className="grid grid-cols-1 sm:grid-cols-3 gap-4">
+              {[
+                { name: 'Ecosystem Starter', price: 139, yearly: 1390, users: '5 users', savings: '17% off individual' },
+                { name: 'Ecosystem Pro', price: 269, yearly: 2690, users: '15 users', savings: '18% off individual' },
+                { name: 'Ecosystem Business', price: 479, yearly: 4790, users: 'Unlimited', savings: '17% off individual' },
+              ].map((bundle) => (
+                <div key={bundle.name} className="rounded-xl border border-emerald-500/20 bg-zinc-900/60 p-5 text-center hover:border-emerald-500/40 transition-all">
+                  <p className="text-xs font-bold uppercase tracking-widest text-emerald-400 mb-2">{bundle.name}</p>
+                  <div className="flex items-end justify-center gap-1 mb-1">
+                    <span className="text-2xl font-extrabold text-white">${bundle.price}</span>
+                    <span className="text-zinc-500 mb-0.5 text-sm">/mo</span>
+                  </div>
+                  <p className="text-xs text-zinc-600 mb-2">${bundle.yearly.toLocaleString()}/yr · {bundle.users}</p>
+                  <p className="text-xs text-emerald-400 mb-4">{bundle.savings}</p>
+                  <button
+                    type="button"
+                    onClick={onGetStarted}
+                    className="w-full py-2.5 rounded-lg bg-gradient-to-r from-emerald-500 to-cyan-500 text-white text-sm font-bold hover:from-emerald-400 hover:to-cyan-400 transition-all duration-200 shadow-lg shadow-emerald-500/20"
+                  >
+                    Get Started
+                  </button>
+                </div>
+              ))}
+            </div>
+          </div>
+
+          <p className="text-center text-xs text-zinc-600 mt-8">All plans include a 14-day free trial · Cancel anytime · Annual billing saves 2 months</p>
         </div>
       </section>
 

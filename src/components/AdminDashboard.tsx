@@ -1,21 +1,30 @@
 
 import React, { useState, useEffect, useCallback } from 'react';
+import { useTranslation } from 'react-i18next';
 import AdminMessageEditor from './AdminMessageEditor';
 import { adminService, AdminUser, AdminSettings, DashboardStats, ActivityLogEntry } from '../services/adminService';
 import SearchAnalyticsDashboard from './admin/SearchAnalyticsDashboard';
 import ActivityMonitor from './admin/ActivityMonitor';
+import IntegrationManager from './admin/IntegrationManager';
+import WebhookManager from './admin/WebhookManager';
+import './admin/AdminDashboard.css';
 
-import { ArrowLeft, Ban, FileOutput, FileSpreadsheet, History, ListChecks, Search, Server, ShieldHalf, Trash2, User } from 'lucide-react';
+import toast from 'react-hot-toast';
+import { ArrowLeft, Ban, FileOutput, FileSpreadsheet, History, ListChecks, Plug, Link, Search, Server, ShieldHalf, Trash2, User } from 'lucide-react';
 
 interface AdminDashboardProps {
   userId: string;
 }
 
-type TabType = 'overview' | 'users' | 'messages' | 'settings' | 'search' | 'activity';
+type TabType = 'overview' | 'users' | 'messages' | 'settings' | 'search' | 'activity' | 'integrations' | 'webhooks';
 
 const AdminDashboard: React.FC<AdminDashboardProps> = ({ userId }) => {
+  const { t } = useTranslation();
   const [activeTab, setActiveTab] = useState<TabType>('activity');
   const [users, setUsers] = useState<AdminUser[]>([]);
+  const [totalUsers, setTotalUsers] = useState(0);
+  const [userPage, setUserPage] = useState(1);
+  const pageSize = 50;
   const [searchQuery, setSearchQuery] = useState('');
   const [roleFilter, setRoleFilter] = useState<'all' | AdminUser['role']>('all');
   const [statusFilter, setStatusFilter] = useState<'all' | AdminUser['status']>('all');
@@ -37,10 +46,20 @@ const AdminDashboard: React.FC<AdminDashboardProps> = ({ userId }) => {
   // Settings
   const [settings, setSettings] = useState<AdminSettings | null>(null);
 
+  // System health
+  const [systemHealth, setSystemHealth] = useState<{ dbLatencyMs: number; recentErrors: number }>({ dbLatencyMs: 0, recentErrors: 0 });
+
+  // Confirmation modal
+  const [confirmModal, setConfirmModal] = useState<{
+    title: string;
+    message: string;
+    onConfirm: () => void;
+  } | null>(null);
+
   // Load data on mount
   useEffect(() => {
     loadData();
-  }, []);
+  }, [loadData]);
 
   const loadData = useCallback(async () => {
     setLoading(true);
@@ -48,24 +67,27 @@ const AdminDashboard: React.FC<AdminDashboardProps> = ({ userId }) => {
 
     try {
       // Load all data in parallel
-      const [usersData, statsData, logsData, settingsData] = await Promise.all([
-        adminService.getAllUsers(),
+      const [usersResult, statsData, logsData, settingsData, healthData] = await Promise.all([
+        adminService.getAllUsers({ page: userPage, pageSize }),
         adminService.getDashboardStats(),
         adminService.getActivityLogs(10),
         adminService.getSettings(),
+        adminService.getSystemHealth(),
       ]);
 
-      setUsers(usersData);
+      setUsers(usersResult.users);
+      setTotalUsers(usersResult.total);
       setStats(statsData);
       setActivityLogs(logsData);
       setSettings(settingsData);
+      setSystemHealth(healthData);
     } catch (err) {
       console.error('Failed to load admin data:', err);
       setError('Failed to load data. Please try again.');
     } finally {
       setLoading(false);
     }
-  }, []);
+  }, [userPage]);
 
   // Filter users
   const filteredUsers = users.filter(user => {
@@ -88,7 +110,7 @@ const AdminDashboard: React.FC<AdminDashboardProps> = ({ userId }) => {
       setActivityLogs(logs);
     } catch (err) {
       console.error('Failed to update user status:', err);
-      alert('Failed to update user status. Please try again.');
+      toast.error(t('admin.toast.failedUpdateStatus'));
     }
   };
 
@@ -104,26 +126,29 @@ const AdminDashboard: React.FC<AdminDashboardProps> = ({ userId }) => {
       setActivityLogs(logs);
     } catch (err) {
       console.error('Failed to update user role:', err);
-      alert('Failed to update user role. Please try again.');
+      toast.error(t('admin.toast.failedUpdateRole'));
     }
   };
 
-  const handleDeleteUser = async (userId: string) => {
-    if (!confirm('Are you sure you want to delete this user? This action cannot be undone.')) {
-      return;
-    }
-
-    try {
-      await adminService.deleteUser(userId);
-      setUsers(prev => prev.filter(u => u.id !== userId));
-      setSelectedUser(null);
-      // Refresh stats
-      const statsData = await adminService.getDashboardStats();
-      setStats(statsData);
-    } catch (err) {
-      console.error('Failed to delete user:', err);
-      alert('Failed to delete user. Please try again.');
-    }
+  const handleDeleteUser = (userId: string) => {
+    setConfirmModal({
+      title: t('admin.confirm.deleteUserTitle'),
+      message: t('admin.confirm.deleteUserMessage'),
+      onConfirm: async () => {
+        setConfirmModal(null);
+        try {
+          await adminService.deleteUser(userId);
+          setUsers(prev => prev.filter(u => u.id !== userId));
+          setSelectedUser(null);
+          const statsData = await adminService.getDashboardStats();
+          setStats(statsData);
+          toast.success(t('admin.toast.userDeleted'));
+        } catch (err) {
+          console.error('Failed to delete user:', err);
+          toast.error(t('admin.toast.failedDeleteUser'));
+        }
+      },
+    });
   };
 
   const handleSettingChange = async (setting: keyof AdminSettings, value: boolean) => {
@@ -137,7 +162,7 @@ const AdminDashboard: React.FC<AdminDashboardProps> = ({ userId }) => {
       setSettings(updated);
     } catch (err) {
       console.error('Failed to update setting:', err);
-      alert('Failed to update setting. Please try again.');
+      toast.error(t('admin.toast.failedUpdateSetting'));
     }
   };
 
@@ -153,7 +178,7 @@ const AdminDashboard: React.FC<AdminDashboardProps> = ({ userId }) => {
       URL.revokeObjectURL(url);
     } catch (err) {
       console.error('Failed to export users:', err);
-      alert('Failed to export users. Please try again.');
+      toast.error(t('admin.toast.failedExportUsers'));
     }
   };
 
@@ -169,7 +194,7 @@ const AdminDashboard: React.FC<AdminDashboardProps> = ({ userId }) => {
       URL.revokeObjectURL(url);
     } catch (err) {
       console.error('Failed to export messages:', err);
-      alert('Failed to export messages. Please try again.');
+      toast.error(t('admin.toast.failedExportMessages'));
     }
   };
 
@@ -234,15 +259,15 @@ const AdminDashboard: React.FC<AdminDashboardProps> = ({ userId }) => {
               <div className="w-10 h-10 rounded-xl bg-gradient-to-br from-indigo-600 to-purple-600 flex items-center justify-center shadow-lg">
                 <ShieldHalf className="text-white" />
               </div>
-              Admin Dashboard
+              {t('admin.title')}
             </h1>
-            <p className="text-sm text-zinc-500 mt-1">Manage users, messages, and system settings</p>
+            <p className="text-sm text-zinc-500 mt-1">{t('admin.subtitle')}</p>
           </div>
           <div className="flex items-center gap-3">
             <div className={`px-3 py-1.5 rounded-full ${settings?.maintenanceMode ? 'bg-amber-500/10 border-amber-500/20' : 'bg-emerald-500/10 border-emerald-500/20'} border flex items-center gap-2`}>
               <div className={`w-2 h-2 ${settings?.maintenanceMode ? 'bg-amber-500' : 'bg-emerald-500'} rounded-full animate-pulse`}></div>
               <span className={`text-xs font-medium ${settings?.maintenanceMode ? 'text-amber-500' : 'text-emerald-500'}`}>
-                {settings?.maintenanceMode ? 'Maintenance Mode' : 'System Online'}
+                {settings?.maintenanceMode ? t('admin.status.maintenanceActive') : t('admin.status.systemOnline')}
               </span>
             </div>
           </div>
@@ -257,6 +282,8 @@ const AdminDashboard: React.FC<AdminDashboardProps> = ({ userId }) => {
             { id: 'messages', icon: 'fa-envelope', label: 'Messages' },
             { id: 'settings', icon: 'fa-gear', label: 'Settings' },
             { id: 'search', icon: 'fa-magnifying-glass-chart', label: 'Search' },
+            { id: 'integrations', icon: 'fa-plug', label: 'Integrations' },
+            { id: 'webhooks', icon: 'fa-link', label: 'Webhooks' },
           ].map(tab => (
             <button
               key={tab.id}
@@ -315,7 +342,7 @@ const AdminDashboard: React.FC<AdminDashboardProps> = ({ userId }) => {
               {[
                 { label: 'Approve Pending', icon: 'fa-user-check', color: 'emerald', action: () => setActiveTab('users') },
                 { label: 'Send Broadcast', icon: 'fa-bullhorn', color: 'blue', action: () => setActiveTab('messages') },
-                { label: 'View Reports', icon: 'fa-chart-bar', color: 'purple', action: () => {} },
+                { label: 'View Reports', icon: 'fa-chart-bar', color: 'purple', action: () => setActiveTab('search') },
                 { label: 'System Health', icon: 'fa-heartbeat', color: 'red', action: () => setActiveTab('settings') },
               ].map((action, i) => (
                 <button
@@ -334,11 +361,11 @@ const AdminDashboard: React.FC<AdminDashboardProps> = ({ userId }) => {
 
             {/* Two Column Layout */}
             <div className="grid grid-cols-1 lg:grid-cols-2 gap-6">
-              {/* Recent Activity */}
+              {/* Recent Users */}
               <div className="bg-zinc-50 dark:bg-zinc-900 rounded-2xl p-6 border border-zinc-200 dark:border-zinc-800">
                 <h3 className="text-lg font-semibold text-zinc-900 dark:text-white mb-4 flex items-center gap-2">
-                  <History className="text-zinc-500" />
-                  Recent Activity
+                  <User className="text-zinc-500" />
+                  Recent Users
                 </h3>
                 <div className="space-y-3">
                   {users.slice(0, 4).map((user) => (
@@ -421,16 +448,16 @@ const AdminDashboard: React.FC<AdminDashboardProps> = ({ userId }) => {
                 </div>
                 <div className="flex items-center gap-6">
                   <div className="text-center">
-                    <p className="text-2xl font-bold text-zinc-900 dark:text-white">99.9%</p>
-                    <p className="text-xs text-zinc-500">Uptime</p>
+                    <p className="text-2xl font-bold text-zinc-900 dark:text-white">{systemHealth.dbLatencyMs}ms</p>
+                    <p className="text-xs text-zinc-500">DB Latency</p>
                   </div>
                   <div className="text-center">
-                    <p className="text-2xl font-bold text-zinc-900 dark:text-white">24ms</p>
-                    <p className="text-xs text-zinc-500">Latency</p>
+                    <p className="text-2xl font-bold text-zinc-900 dark:text-white">{stats.totalUsers}</p>
+                    <p className="text-xs text-zinc-500">Users</p>
                   </div>
                   <div className="text-center">
-                    <p className="text-2xl font-bold text-zinc-900 dark:text-white">0</p>
-                    <p className="text-xs text-zinc-500">Errors</p>
+                    <p className={`text-2xl font-bold ${systemHealth.recentErrors > 0 ? 'text-red-500' : 'text-zinc-900 dark:text-white'}`}>{systemHealth.recentErrors}</p>
+                    <p className="text-xs text-zinc-500">Errors (24h)</p>
                   </div>
                 </div>
               </div>
@@ -514,6 +541,33 @@ const AdminDashboard: React.FC<AdminDashboardProps> = ({ userId }) => {
                   <p className="text-center text-zinc-500 py-8">No users found</p>
                 )}
               </div>
+
+              {/* Pagination */}
+              {totalUsers > pageSize && (
+                <div className="p-3 border-t border-zinc-200 dark:border-zinc-800 flex items-center justify-between">
+                  <span className="text-xs text-zinc-500">
+                    Page {userPage} of {Math.ceil(totalUsers / pageSize)} ({totalUsers} total)
+                  </span>
+                  <div className="flex gap-1">
+                    <button
+                      type="button"
+                      onClick={() => setUserPage(p => Math.max(1, p - 1))}
+                      disabled={userPage <= 1}
+                      className="px-3 py-1 text-xs rounded-lg border border-zinc-200 dark:border-zinc-700 text-zinc-600 dark:text-zinc-400 hover:bg-zinc-100 dark:hover:bg-zinc-800 disabled:opacity-30 transition"
+                    >
+                      Prev
+                    </button>
+                    <button
+                      type="button"
+                      onClick={() => setUserPage(p => Math.min(Math.ceil(totalUsers / pageSize), p + 1))}
+                      disabled={userPage >= Math.ceil(totalUsers / pageSize)}
+                      className="px-3 py-1 text-xs rounded-lg border border-zinc-200 dark:border-zinc-700 text-zinc-600 dark:text-zinc-400 hover:bg-zinc-100 dark:hover:bg-zinc-800 disabled:opacity-30 transition"
+                    >
+                      Next
+                    </button>
+                  </div>
+                </div>
+              )}
             </div>
 
             {/* User Detail */}
@@ -629,21 +683,58 @@ const AdminDashboard: React.FC<AdminDashboardProps> = ({ userId }) => {
 
                   {/* Danger Zone */}
                   <div className="p-6 border-t border-zinc-200 dark:border-zinc-800 bg-red-50 dark:bg-red-900/10">
-                    <h4 className="text-sm font-bold text-red-600 dark:text-red-400 mb-3">Danger Zone</h4>
+                    <h4 className="text-sm font-bold text-red-600 dark:text-red-400 mb-3">{t('admin.users.dangerZone')}</h4>
                     <div className="flex gap-3">
+                      {selectedUser.status === 'suspended' ? (
+                        <button
+                          type="button"
+                          onClick={async () => {
+                            try {
+                              await adminService.unbanUser(selectedUser.id);
+                              setUsers(prev => prev.map(u => u.id === selectedUser.id ? { ...u, status: 'active' as const } : u));
+                              setSelectedUser(prev => prev ? { ...prev, status: 'active' as const } : null);
+                              toast.success('User unbanned.');
+                            } catch (err) {
+                              toast.error('Failed to unban user.');
+                            }
+                          }}
+                          className="px-4 py-2 border border-emerald-300 dark:border-emerald-800 text-emerald-600 dark:text-emerald-400 rounded-xl text-sm font-medium hover:bg-emerald-100 dark:hover:bg-emerald-900/30 transition"
+                        >
+                          Unban User
+                        </button>
+                      ) : (
+                        <button
+                          type="button"
+                          onClick={() => {
+                            setConfirmModal({
+                              title: 'Ban User',
+                              message: 'This will prevent the user from logging in. Are you sure?',
+                              onConfirm: async () => {
+                                setConfirmModal(null);
+                                try {
+                                  await adminService.banUser(selectedUser.id);
+                                  setUsers(prev => prev.map(u => u.id === selectedUser.id ? { ...u, status: 'suspended' as const } : u));
+                                  setSelectedUser(prev => prev ? { ...prev, status: 'suspended' as const } : null);
+                                  toast.success('User banned.');
+                                } catch (err) {
+                                  toast.error('Failed to ban user.');
+                                }
+                              },
+                            });
+                          }}
+                          className="px-4 py-2 border border-red-300 dark:border-red-800 text-red-600 dark:text-red-400 rounded-xl text-sm font-medium hover:bg-red-100 dark:hover:bg-red-900/30 transition"
+                        >
+                          <Ban className="mr-2" />
+                          {t('admin.users.banUser')}
+                        </button>
+                      )}
                       <button
-                        onClick={() => handleUpdateUserStatus(selectedUser.id, 'suspended')}
-                        className="px-4 py-2 border border-red-300 dark:border-red-800 text-red-600 dark:text-red-400 rounded-xl text-sm font-medium hover:bg-red-100 dark:hover:bg-red-900/30 transition"
-                      >
-                        <Ban className="mr-2" />
-                        Ban User
-                      </button>
-                      <button
+                        type="button"
                         onClick={() => handleDeleteUser(selectedUser.id)}
                         className="px-4 py-2 border border-red-300 dark:border-red-800 text-red-600 dark:text-red-400 rounded-xl text-sm font-medium hover:bg-red-100 dark:hover:bg-red-900/30 transition"
                       >
                         <Trash2 className="mr-2" />
-                        Delete Account
+                        {t('admin.users.deleteAccount')}
                       </button>
                     </div>
                   </div>
@@ -681,11 +772,25 @@ const AdminDashboard: React.FC<AdminDashboardProps> = ({ userId }) => {
           </div>
         )}
 
+        {/* Integrations Tab */}
+        {activeTab === 'integrations' && (
+          <div className="animate-fade-in admin-scope">
+            <IntegrationManager />
+          </div>
+        )}
+
+        {/* Webhooks Tab */}
+        {activeTab === 'webhooks' && (
+          <div className="animate-fade-in admin-scope">
+            <WebhookManager />
+          </div>
+        )}
+
         {/* Settings Tab */}
         {activeTab === 'settings' && (
           <div className="p-6 space-y-6 animate-fade-in">
             <div className="bg-zinc-50 dark:bg-zinc-900 rounded-2xl p-6 border border-zinc-200 dark:border-zinc-800">
-              <h3 className="text-lg font-semibold text-zinc-900 dark:text-white mb-4">System Settings</h3>
+              <h3 className="text-lg font-semibold text-zinc-900 dark:text-white mb-4">{t('admin.settings.systemSettings')}</h3>
 
               <div className="space-y-4">
                 <div className="flex items-center justify-between p-4 bg-white dark:bg-zinc-950 rounded-xl border border-zinc-200 dark:border-zinc-800">
@@ -739,7 +844,7 @@ const AdminDashboard: React.FC<AdminDashboardProps> = ({ userId }) => {
             </div>
 
             <div className="bg-zinc-50 dark:bg-zinc-900 rounded-2xl p-6 border border-zinc-200 dark:border-zinc-800">
-              <h3 className="text-lg font-semibold text-zinc-900 dark:text-white mb-4">Export Data</h3>
+              <h3 className="text-lg font-semibold text-zinc-900 dark:text-white mb-4">{t('admin.settings.exportData')}</h3>
               <div className="flex gap-3">
                 <button
                   onClick={handleExportUsersCSV}
@@ -758,6 +863,24 @@ const AdminDashboard: React.FC<AdminDashboardProps> = ({ userId }) => {
           </div>
         )}
       </div>
+
+      {/* Confirmation Modal */}
+      {confirmModal && (
+        <div className="fixed inset-0 bg-black/50 flex items-center justify-center z-50" onClick={() => setConfirmModal(null)}>
+          <div className="bg-white dark:bg-zinc-900 rounded-2xl p-6 w-96 max-w-[90vw] animate-fade-in" onClick={(e) => e.stopPropagation()}>
+            <h3 className="font-medium text-zinc-900 dark:text-white text-lg mb-2">{confirmModal.title}</h3>
+            <p className="text-sm text-zinc-500 mb-6">{confirmModal.message}</p>
+            <div className="flex justify-end gap-2">
+              <button type="button" onClick={() => setConfirmModal(null)} className="px-4 py-2 text-zinc-500 hover:text-zinc-900 dark:hover:text-white transition">
+                {t('admin.confirm.cancel')}
+              </button>
+              <button type="button" onClick={confirmModal.onConfirm} className="px-4 py-2 bg-red-500 text-white rounded-xl font-medium hover:bg-red-400 transition">
+                {t('admin.confirm.confirm')}
+              </button>
+            </div>
+          </div>
+        </div>
+      )}
     </div>
   );
 };

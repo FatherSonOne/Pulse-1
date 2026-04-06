@@ -73,6 +73,9 @@ export interface InAppMessage {
   position: MessagePosition;
   styleType: MessageStyleType;
 
+  // Schedule
+  recurringSchedule: 'none' | 'daily' | 'weekly' | 'monthly';
+
   // Metadata
   createdBy?: string;
   createdAt: Date;
@@ -180,6 +183,7 @@ export interface CreateMessagePayload {
   displayDurationSeconds?: number;
   position?: MessagePosition;
   styleType?: MessageStyleType;
+  recurringSchedule?: 'none' | 'daily' | 'weekly' | 'monthly';
 }
 
 /**

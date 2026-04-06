@@ -4,7 +4,8 @@ import { WorkspaceSwitcher } from './WorkspaceSwitcher';
 import { PulseAssistantButton } from '../PulseAssistant/PulseAssistantButton';
 import './Sidebar.css';
 
-import { HelpCircle, Settings } from 'lucide-react';
+import { HelpCircle, Settings, AlertTriangle } from 'lucide-react';
+import { useEntitlements } from '../../hooks/useEntitlements';
 
 // ============================================
 // TYPES
@@ -90,7 +91,7 @@ const getNavSections = (isAdmin: boolean): NavSection[] => {
       color: 'amber',
       collapsible: true,
       items: [
-        { icon: 'fa-book-open', label: 'Studio', view: AppView.LIVE_AI },
+        { icon: 'fa-book-open', label: 'War Room', view: AppView.LIVE_AI },
         { icon: 'fa-comments', label: 'Pulse Chat', view: AppView.LIVE },
       ],
     },
@@ -217,6 +218,15 @@ export const Sidebar: React.FC<SidebarProps> = ({
 }) => {
   const isAdmin = user?.role === 'admin' || user?.isAdmin || false;
   const navSections = getNavSections(isAdmin);
+  const { isTrialing, trialDaysLeft, entitlements, isLoading: entLoading } = useEntitlements();
+
+  // Determine if we need to show a billing alert
+  const subStatus = entitlements?.is_trialing ? 'trialing' : null;
+  const showBillingAlert = !entLoading && (
+    (isTrialing && trialDaysLeft <= 7) ||
+    (entitlements && entitlements.max_ai_messages_mo !== null &&
+      (entitlements.usage?.ai_messages || 0) >= (entitlements.max_ai_messages_mo || 0) * 0.8)
+  );
 
   // State for tracking which collapsible sections are expanded
   const [expandedSections, setExpandedSections] = useState<Record<string, boolean>>({
@@ -378,6 +388,27 @@ export const Sidebar: React.FC<SidebarProps> = ({
               collapsed={isCollapsed}
             />
           </div>
+        )}
+
+        {/* Billing Alert Banner */}
+        {showBillingAlert && !isCollapsed && (
+          <button
+            onClick={() => handleNavClick(AppView.SETTINGS)}
+            className="mx-3 mb-2 p-2.5 rounded-lg text-left transition-all hover:opacity-90"
+            style={{
+              background: isTrialing ? 'rgba(245,158,11,0.1)' : 'rgba(239,68,68,0.1)',
+              border: `1px solid ${isTrialing ? 'rgba(245,158,11,0.2)' : 'rgba(239,68,68,0.2)'}`,
+            }}
+          >
+            <div className="flex items-center gap-2">
+              <AlertTriangle size={14} style={{ color: isTrialing ? '#f59e0b' : '#ef4444', flexShrink: 0 }} />
+              <span className="text-xs font-medium" style={{ color: isTrialing ? '#f59e0b' : '#ef4444' }}>
+                {isTrialing
+                  ? `Trial ends in ${trialDaysLeft}d`
+                  : 'Nearing usage limit'}
+              </span>
+            </div>
+          </button>
         )}
 
         {/* Footer */}

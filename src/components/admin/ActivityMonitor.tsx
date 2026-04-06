@@ -90,14 +90,9 @@ function eventColor(action: string): string {
 }
 
 function Initials({ name, size = 32 }: { name: string; size?: number }) {
+  const sizeClass = size === 32 ? 'w-8 h-8 text-[13px]' : size === 28 ? 'w-7 h-7 text-[11px]' : `w-[${size}px] h-[${size}px] text-[${Math.round(size * 0.4)}px]`;
   return (
-    <div style={{
-      width: size, height: size, borderRadius: '50%',
-      background: '#27272a',
-      display: 'flex', alignItems: 'center', justifyContent: 'center',
-      fontSize: size * 0.4, color: '#a1a1aa', fontWeight: 700, flexShrink: 0,
-      letterSpacing: 0,
-    }}>
+    <div className={`${sizeClass} rounded-full bg-zinc-200 dark:bg-zinc-800 flex items-center justify-center text-zinc-500 dark:text-zinc-400 font-bold shrink-0 tracking-normal`}>
       {(name || '?')[0].toUpperCase()}
     </div>
   );
@@ -109,19 +104,15 @@ function StatCard({ label, value, icon, color, pulse }: {
   label: string; value: number | string; icon: string; color: string; pulse?: boolean;
 }) {
   return (
-    <div style={{
-      background: 'rgba(255,255,255,0.03)',
-      border: '1px solid rgba(255,255,255,0.08)',
-      borderRadius: 12, padding: '16px 20px',
-    }}>
-      <div style={{ display: 'flex', alignItems: 'center', gap: 8, marginBottom: 8 }}>
+    <div className="bg-zinc-50 dark:bg-zinc-900/50 border border-zinc-200 dark:border-zinc-800 rounded-xl px-5 py-4">
+      <div className="flex items-center gap-2 mb-2">
         {pulse
-          ? <span style={{ width: 8, height: 8, borderRadius: '50%', background: color, display: 'inline-block', boxShadow: `0 0 8px ${color}` }} />
-          : <i className={`fa-solid ${icon}`} style={{ color, fontSize: 13 }} />
+          ? <span className="w-2 h-2 rounded-full inline-block" style={{ background: color, boxShadow: `0 0 8px ${color}` }} />
+          : <i className={`fa-solid ${icon} text-[13px]`} style={{ color }} />
         }
-        <span style={{ fontSize: 11, color: '#71717a', fontWeight: 600, textTransform: 'uppercase', letterSpacing: '0.06em' }}>{label}</span>
+        <span className="text-[11px] text-zinc-500 font-semibold uppercase tracking-wide">{label}</span>
       </div>
-      <div style={{ fontSize: 28, fontWeight: 700, color: '#fff', lineHeight: 1 }}>{typeof value === 'number' ? value.toLocaleString() : value}</div>
+      <div className="text-[28px] font-bold text-zinc-900 dark:text-white leading-none">{typeof value === 'number' ? value.toLocaleString() : value}</div>
     </div>
   );
 }
@@ -132,16 +123,12 @@ function PanelHeader({ icon, iconColor, title, right }: {
   icon: string; iconColor: string; title: string; right?: React.ReactNode;
 }) {
   return (
-    <div style={{
-      padding: '14px 20px',
-      borderBottom: '1px solid rgba(255,255,255,0.06)',
-      display: 'flex', alignItems: 'center', justifyContent: 'space-between',
-    }}>
-      <div style={{ display: 'flex', alignItems: 'center', gap: 8 }}>
-        <i className={`fa-solid ${icon}`} style={{ color: iconColor, fontSize: 13 }} />
-        <span style={{ fontWeight: 700, color: '#fff', fontSize: 14 }}>{title}</span>
+    <div className="px-5 py-3.5 border-b border-zinc-200 dark:border-zinc-800 flex items-center justify-between">
+      <div className="flex items-center gap-2">
+        <i className={`fa-solid ${icon} text-[13px]`} style={{ color: iconColor }} />
+        <span className="font-bold text-zinc-900 dark:text-white text-sm">{title}</span>
       </div>
-      {right && <div style={{ fontSize: 11, color: '#52525b' }}>{right}</div>}
+      {right && <div className="text-[11px] text-zinc-400 dark:text-zinc-500">{right}</div>}
     </div>
   );
 }
@@ -313,7 +300,7 @@ const ActivityMonitor: React.FC = () => {
 
   if (loading) {
     return (
-      <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'center', minHeight: 300, color: '#52525b' }}>
+      <div className="flex items-center justify-center min-h-[300px] text-zinc-400 dark:text-zinc-500">
         <Loader2 className="animate-spin" />
         Loading activity data…
       </div>
@@ -321,10 +308,10 @@ const ActivityMonitor: React.FC = () => {
   }
 
   return (
-    <div style={{ padding: '24px 0 40px' }}>
+    <div className="pt-6 pb-10">
 
       {/* ── Header KPIs ── */}
-      <div style={{ display: 'grid', gridTemplateColumns: 'repeat(5, 1fr)', gap: 12, marginBottom: 24 }}>
+      <div className="grid grid-cols-5 gap-3 mb-6">
         <StatCard label="Total Users"     value={users.length}  icon="fa-users"       color="#6366f1" />
         <StatCard label="Online Now"      value={onlineCount}   icon="fa-circle"      color="#22c55e" pulse />
         <StatCard label="Away / Busy"     value={awayCount}     icon="fa-moon"        color="#f59e0b" />
@@ -333,40 +320,34 @@ const ActivityMonitor: React.FC = () => {
       </div>
 
       {/* ── Panels row 1: Presence + Signups ── */}
-      <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr', gap: 20, marginBottom: 20 }}>
+      <div className="grid grid-cols-2 gap-5 mb-5">
 
         {/* Panel 1 — Live Presence */}
-        <div style={{ background: 'rgba(255,255,255,0.03)', border: '1px solid rgba(255,255,255,0.08)', borderRadius: 16, overflow: 'hidden' }}>
+        <div className="bg-zinc-50 dark:bg-zinc-900/50 border border-zinc-200 dark:border-zinc-800 rounded-2xl overflow-hidden">
           <PanelHeader
             icon="fa-circle"
             iconColor="#22c55e"
             title="Live Presence"
-            right={<span style={{ display: 'inline-flex', alignItems: 'center', gap: 5 }}><span style={{ width: 6, height: 6, borderRadius: '50%', background: '#22c55e', display: 'inline-block', boxShadow: '0 0 6px #22c55e' }} /> Realtime</span>}
+            right={<span className="inline-flex items-center gap-[5px]"><span className="w-1.5 h-1.5 rounded-full inline-block" style={{ background: '#22c55e', boxShadow: '0 0 6px #22c55e' }} /> Realtime</span>}
           />
-          <div style={{ maxHeight: 340, overflowY: 'auto' }}>
+          <div className="max-h-[340px] overflow-y-auto">
             {users.map(u => (
-              <div key={u.id} style={{
-                display: 'flex', alignItems: 'center', gap: 12,
-                padding: '10px 20px',
-                borderBottom: '1px solid rgba(255,255,255,0.04)',
-              }}>
+              <div key={u.id} className="flex items-center gap-3 px-5 py-2.5 border-b border-zinc-100 dark:border-zinc-800/50">
                 {/* Avatar + dot */}
-                <div style={{ position: 'relative', flexShrink: 0 }}>
+                <div className="relative shrink-0">
                   {u.avatarUrl
-                    ? <img src={u.avatarUrl} style={{ width: 32, height: 32, borderRadius: '50%', objectFit: 'cover' }} alt="" />
+                    ? <img src={u.avatarUrl} className="w-8 h-8 rounded-full object-cover" alt="" />
                     : <Initials name={u.name} size={32} />
                   }
-                  <span style={{
-                    position: 'absolute', bottom: 0, right: 0,
-                    width: 10, height: 10, borderRadius: '50%',
-                    background: statusDot(u.onlineStatus),
-                    border: '2px solid #09090b',
-                  }} />
+                  <span
+                    className="absolute bottom-0 right-0 w-2.5 h-2.5 rounded-full border-2 border-white dark:border-zinc-950"
+                    style={{ background: statusDot(u.onlineStatus) }}
+                  />
                 </div>
                 {/* Info */}
-                <div style={{ flex: 1, minWidth: 0 }}>
-                  <div style={{ fontSize: 13, fontWeight: 600, color: '#f4f4f5', overflow: 'hidden', textOverflow: 'ellipsis', whiteSpace: 'nowrap' }}>{u.name}</div>
-                  <div style={{ fontSize: 11, color: '#52525b' }}>
+                <div className="flex-1 min-w-0">
+                  <div className="text-[13px] font-semibold text-zinc-900 dark:text-white truncate">{u.name}</div>
+                  <div className="text-[11px] text-zinc-400 dark:text-zinc-500">
                     {u.onlineStatus === 'online'
                       ? 'Online now'
                       : u.lastActiveAt ? relativeTime(u.lastActiveAt) : 'Never seen'
@@ -374,79 +355,76 @@ const ActivityMonitor: React.FC = () => {
                   </div>
                 </div>
                 {/* Badge */}
-                <span style={{
-                  fontSize: 10, fontWeight: 700, padding: '2px 8px', borderRadius: 999,
-                  background: `${statusDot(u.onlineStatus)}18`,
-                  color: statusDot(u.onlineStatus),
-                  textTransform: 'uppercase', letterSpacing: '0.04em',
-                }}>
+                <span
+                  className="text-[10px] font-bold px-2 py-0.5 rounded-full uppercase tracking-[0.04em]"
+                  style={{
+                    background: `${statusDot(u.onlineStatus)}18`,
+                    color: statusDot(u.onlineStatus),
+                  }}
+                >
                   {statusLabel(u.onlineStatus)}
                 </span>
               </div>
             ))}
             {users.length === 0 && (
-              <div style={{ padding: 40, textAlign: 'center', color: '#52525b', fontSize: 13 }}>No users yet</div>
+              <div className="p-10 text-center text-zinc-400 dark:text-zinc-500 text-[13px]">No users yet</div>
             )}
           </div>
         </div>
 
         {/* Panel 2 — Recent Signups */}
-        <div style={{ background: 'rgba(255,255,255,0.03)', border: '1px solid rgba(255,255,255,0.08)', borderRadius: 16, overflow: 'hidden' }}>
+        <div className="bg-zinc-50 dark:bg-zinc-900/50 border border-zinc-200 dark:border-zinc-800 rounded-2xl overflow-hidden">
           <PanelHeader
             icon="fa-user-plus"
             iconColor="#06b6d4"
             title="Recent Signups"
             right={`${newToday} today · ${newThisWeek} this week`}
           />
-          <div style={{ maxHeight: 340, overflowY: 'auto' }}>
+          <div className="max-h-[340px] overflow-y-auto">
             {[...users]
               .sort((a, b) => b.createdAt.getTime() - a.createdAt.getTime())
               .slice(0, 20)
               .map(u => {
                 const isNew = u.createdAt.getTime() > dayAgo;
                 return (
-                  <div key={u.id} style={{
-                    display: 'flex', alignItems: 'center', gap: 12,
-                    padding: '10px 20px',
-                    borderBottom: '1px solid rgba(255,255,255,0.04)',
-                  }}>
+                  <div key={u.id} className="flex items-center gap-3 px-5 py-2.5 border-b border-zinc-100 dark:border-zinc-800/50">
                     <Initials name={u.name} size={32} />
-                    <div style={{ flex: 1, minWidth: 0 }}>
-                      <div style={{ display: 'flex', alignItems: 'center', gap: 6 }}>
-                        <span style={{ fontSize: 13, fontWeight: 600, color: '#f4f4f5', overflow: 'hidden', textOverflow: 'ellipsis', whiteSpace: 'nowrap' }}>{u.name}</span>
+                    <div className="flex-1 min-w-0">
+                      <div className="flex items-center gap-1.5">
+                        <span className="text-[13px] font-semibold text-zinc-900 dark:text-white truncate">{u.name}</span>
                         {isNew && (
-                          <span style={{ fontSize: 9, fontWeight: 700, padding: '1px 6px', borderRadius: 999, background: '#06b6d420', color: '#06b6d4', textTransform: 'uppercase', letterSpacing: '0.06em', flexShrink: 0 }}>New</span>
+                          <span className="text-[9px] font-bold px-1.5 py-px rounded-full bg-cyan-500/10 text-cyan-500 uppercase tracking-wide shrink-0">New</span>
                         )}
                       </div>
-                      <div style={{ fontSize: 11, color: '#52525b', overflow: 'hidden', textOverflow: 'ellipsis', whiteSpace: 'nowrap' }}>{u.email}</div>
+                      <div className="text-[11px] text-zinc-400 dark:text-zinc-500 truncate">{u.email}</div>
                     </div>
-                    <div style={{ textAlign: 'right', flexShrink: 0 }}>
-                      <div style={{ fontSize: 12, fontWeight: 700, color: '#a1a1aa' }}>{relativeTime(u.createdAt)}</div>
-                      <div style={{ fontSize: 11, color: '#52525b' }}>{u.messagesCount} msgs</div>
+                    <div className="text-right shrink-0">
+                      <div className="text-xs font-bold text-zinc-500 dark:text-zinc-400">{relativeTime(u.createdAt)}</div>
+                      <div className="text-[11px] text-zinc-400 dark:text-zinc-500">{u.messagesCount} msgs</div>
                     </div>
                   </div>
                 );
               })}
             {users.length === 0 && (
-              <div style={{ padding: 40, textAlign: 'center', color: '#52525b', fontSize: 13 }}>No users yet</div>
+              <div className="p-10 text-center text-zinc-400 dark:text-zinc-500 text-[13px]">No users yet</div>
             )}
           </div>
         </div>
       </div>
 
       {/* ── Panel 3: Message Leaderboard ── */}
-      <div style={{ background: 'rgba(255,255,255,0.03)', border: '1px solid rgba(255,255,255,0.08)', borderRadius: 16, overflow: 'hidden', marginBottom: 20 }}>
+      <div className="bg-zinc-50 dark:bg-zinc-900/50 border border-zinc-200 dark:border-zinc-800 rounded-2xl overflow-hidden mb-5">
         <PanelHeader
           icon="fa-ranking-star"
           iconColor="#a855f7"
           title="Message Activity — Last 7 Days"
           right={`${total7d.toLocaleString()} total sent`}
         />
-        <div style={{ padding: '16px 20px' }}>
+        <div className="px-5 py-4">
           {msgStats.length === 0 ? (
             // Fall back: show messages_count from user_profiles
             users.length > 0 ? (
-              <div style={{ display: 'flex', flexDirection: 'column', gap: 10 }}>
+              <div className="flex flex-col gap-2.5">
                 {[...users]
                   .filter(u => u.messagesCount > 0)
                   .sort((a, b) => b.messagesCount - a.messagesCount)
@@ -454,38 +432,48 @@ const ActivityMonitor: React.FC = () => {
                   .map((u, i) => {
                     const maxCount = Math.max(...users.map(x => x.messagesCount), 1);
                     return (
-                      <div key={u.id} style={{ display: 'flex', alignItems: 'center', gap: 12 }}>
-                        <span style={{ width: 20, textAlign: 'right', fontSize: 12, fontWeight: 700, color: i < 3 ? ['#f59e0b','#9ca3af','#b45309'][i] : '#3f3f46' }}>{i + 1}</span>
+                      <div key={u.id} className="flex items-center gap-3">
+                        <span
+                          className="w-5 text-right text-xs font-bold"
+                          style={{ color: i < 3 ? ['#f59e0b','#9ca3af','#b45309'][i] : undefined }}
+                        >
+                          <span className={i >= 3 ? 'text-zinc-400 dark:text-zinc-600' : ''}>{i + 1}</span>
+                        </span>
                         <Initials name={u.name} size={28} />
-                        <span style={{ fontSize: 13, color: '#e4e4e7', fontWeight: 500, width: 140, overflow: 'hidden', textOverflow: 'ellipsis', whiteSpace: 'nowrap', flexShrink: 0 }}>{u.name}</span>
-                        <div style={{ flex: 1, height: 6, background: 'rgba(255,255,255,0.06)', borderRadius: 999, overflow: 'hidden' }}>
-                          <div style={{ height: '100%', borderRadius: 999, background: 'linear-gradient(to right, #6366f1, #a855f7)', width: `${(u.messagesCount / maxCount) * 100}%`, transition: 'width 0.5s ease' }} />
+                        <span className="text-[13px] text-zinc-800 dark:text-zinc-200 font-medium w-[140px] truncate shrink-0">{u.name}</span>
+                        <div className="flex-1 h-1.5 bg-zinc-100 dark:bg-zinc-800 rounded-full overflow-hidden">
+                          <div className="h-full rounded-full bg-gradient-to-r from-indigo-500 to-purple-500 transition-[width] duration-500 ease-out" style={{ width: `${(u.messagesCount / maxCount) * 100}%` }} />
                         </div>
-                        <span style={{ fontSize: 13, fontWeight: 700, color: '#f4f4f5', flexShrink: 0, minWidth: 36, textAlign: 'right' }}>{u.messagesCount}</span>
+                        <span className="text-[13px] font-bold text-zinc-900 dark:text-white shrink-0 min-w-[36px] text-right">{u.messagesCount}</span>
                       </div>
                     );
                   })}
                 {users.every(u => u.messagesCount === 0) && (
-                  <div style={{ padding: '24px 0', textAlign: 'center', color: '#52525b', fontSize: 13 }}>No messages tracked yet — activity will appear once users start messaging.</div>
+                  <div className="py-6 text-center text-zinc-400 dark:text-zinc-500 text-[13px]">No messages tracked yet — activity will appear once users start messaging.</div>
                 )}
               </div>
             ) : (
-              <div style={{ padding: '24px 0', textAlign: 'center', color: '#52525b', fontSize: 13 }}>No data yet.</div>
+              <div className="py-6 text-center text-zinc-400 dark:text-zinc-500 text-[13px]">No data yet.</div>
             )
           ) : (
-            <div style={{ display: 'flex', flexDirection: 'column', gap: 10 }}>
+            <div className="flex flex-col gap-2.5">
               {filteredMsgStats.slice(0, 10).map((u, i) => (
-                <div key={u.userId} style={{ display: 'flex', alignItems: 'center', gap: 12 }}>
-                  <span style={{ width: 20, textAlign: 'right', fontSize: 12, fontWeight: 700, color: i < 3 ? ['#f59e0b','#9ca3af','#b45309'][i] : '#3f3f46' }}>{i + 1}</span>
+                <div key={u.userId} className="flex items-center gap-3">
+                  <span
+                    className="w-5 text-right text-xs font-bold"
+                    style={{ color: i < 3 ? ['#f59e0b','#9ca3af','#b45309'][i] : undefined }}
+                  >
+                    <span className={i >= 3 ? 'text-zinc-400 dark:text-zinc-600' : ''}>{i + 1}</span>
+                  </span>
                   <Initials name={u.name} size={28} />
-                  <span style={{ fontSize: 13, color: '#e4e4e7', fontWeight: 500, width: 140, overflow: 'hidden', textOverflow: 'ellipsis', whiteSpace: 'nowrap', flexShrink: 0 }}>{u.name}</span>
-                  <div style={{ flex: 1, height: 6, background: 'rgba(255,255,255,0.06)', borderRadius: 999, overflow: 'hidden' }}>
-                    <div style={{ height: '100%', borderRadius: 999, background: 'linear-gradient(to right, #6366f1, #a855f7)', width: `${(u.totalSent7d / maxMsg) * 100}%`, transition: 'width 0.5s ease' }} />
+                  <span className="text-[13px] text-zinc-800 dark:text-zinc-200 font-medium w-[140px] truncate shrink-0">{u.name}</span>
+                  <div className="flex-1 h-1.5 bg-zinc-100 dark:bg-zinc-800 rounded-full overflow-hidden">
+                    <div className="h-full rounded-full bg-gradient-to-r from-indigo-500 to-purple-500 transition-[width] duration-500 ease-out" style={{ width: `${(u.totalSent7d / maxMsg) * 100}%` }} />
                   </div>
-                  <div style={{ flexShrink: 0, textAlign: 'right', minWidth: 70 }}>
-                    <span style={{ fontSize: 13, fontWeight: 700, color: '#f4f4f5' }}>{u.totalSent7d}</span>
+                  <div className="shrink-0 text-right min-w-[70px]">
+                    <span className="text-[13px] font-bold text-zinc-900 dark:text-white">{u.totalSent7d}</span>
                     {u.todaySent > 0 && (
-                      <span style={{ fontSize: 11, color: '#22c55e', marginLeft: 6 }}>+{u.todaySent} today</span>
+                      <span className="text-[11px] text-green-500 ml-1.5">+{u.todaySent} today</span>
                     )}
                   </div>
                 </div>
@@ -496,60 +484,51 @@ const ActivityMonitor: React.FC = () => {
       </div>
 
       {/* ── Panel 4: Event Feed ── */}
-      <div style={{ background: 'rgba(255,255,255,0.03)', border: '1px solid rgba(255,255,255,0.08)', borderRadius: 16, overflow: 'hidden' }}>
-        <div style={{ padding: '14px 20px', borderBottom: '1px solid rgba(255,255,255,0.06)', display: 'flex', alignItems: 'center', justifyContent: 'space-between' }}>
-          <div style={{ display: 'flex', alignItems: 'center', gap: 8 }}>
+      <div className="bg-zinc-50 dark:bg-zinc-900/50 border border-zinc-200 dark:border-zinc-800 rounded-2xl overflow-hidden">
+        <div className="px-5 py-3.5 border-b border-zinc-200 dark:border-zinc-800 flex items-center justify-between">
+          <div className="flex items-center gap-2">
             <Zap />
-            <span style={{ fontWeight: 700, color: '#fff', fontSize: 14 }}>Event Feed</span>
+            <span className="font-bold text-zinc-900 dark:text-white text-sm">Event Feed</span>
           </div>
-          <div style={{ display: 'flex', alignItems: 'center', gap: 10 }}>
-            <span style={{ fontSize: 11, color: '#52525b' }}>
+          <div className="flex items-center gap-2.5">
+            <span className="text-[11px] text-zinc-400 dark:text-zinc-500">
               Auto-refreshes · last {relativeTime(lastRefresh)}
             </span>
             <button
               type="button"
               onClick={loadAll}
-              style={{
-                background: 'rgba(255,255,255,0.06)', border: '1px solid rgba(255,255,255,0.1)',
-                borderRadius: 6, padding: '3px 10px', fontSize: 11, color: '#a1a1aa', cursor: 'pointer',
-                display: 'flex', alignItems: 'center', gap: 5,
-              }}
+              className="bg-zinc-100 dark:bg-zinc-800 border border-zinc-200 dark:border-zinc-700 rounded-md px-2.5 py-0.5 text-[11px] text-zinc-500 dark:text-zinc-400 cursor-pointer flex items-center gap-[5px] hover:bg-zinc-200 dark:hover:bg-zinc-700 transition-colors"
             >
               <RefreshCw />
               Refresh
             </button>
           </div>
         </div>
-        <div style={{ maxHeight: 300, overflowY: 'auto' }}>
+        <div className="max-h-[300px] overflow-y-auto">
           {feed.length === 0 ? (
-            <div style={{ padding: 40, textAlign: 'center', color: '#52525b', fontSize: 13 }}>
+            <div className="p-10 text-center text-zinc-400 dark:text-zinc-500 text-[13px]">
               No events logged yet — actions taken in the app will appear here.
             </div>
           ) : (
             feed.map(ev => (
-              <div key={ev.id} style={{
-                display: 'flex', alignItems: 'flex-start', gap: 12,
-                padding: '10px 20px',
-                borderBottom: '1px solid rgba(255,255,255,0.04)',
-              }}>
-                <div style={{
-                  width: 30, height: 30, borderRadius: 8, flexShrink: 0,
-                  background: `${eventColor(ev.action)}14`,
-                  display: 'flex', alignItems: 'center', justifyContent: 'center',
-                }}>
-                  <i className={`fa-solid ${eventIcon(ev.action)}`} style={{ fontSize: 12, color: eventColor(ev.action) }} />
+              <div key={ev.id} className="flex items-start gap-3 px-5 py-2.5 border-b border-zinc-100 dark:border-zinc-800/50">
+                <div
+                  className="w-[30px] h-[30px] rounded-lg shrink-0 flex items-center justify-center"
+                  style={{ background: `${eventColor(ev.action)}14` }}
+                >
+                  <i className={`fa-solid ${eventIcon(ev.action)} text-xs`} style={{ color: eventColor(ev.action) }} />
                 </div>
-                <div style={{ flex: 1, minWidth: 0 }}>
-                  <div style={{ fontSize: 13, color: '#e4e4e7', lineHeight: 1.4 }}>
-                    <span style={{ fontWeight: 600 }}>{ev.actorName}</span>
+                <div className="flex-1 min-w-0">
+                  <div className="text-[13px] text-zinc-800 dark:text-zinc-200 leading-[1.4]">
+                    <span className="font-semibold">{ev.actorName}</span>
                     {' '}
-                    <span style={{ color: '#71717a' }}>{ev.action.replace(/_/g, ' ')}</span>
+                    <span className="text-zinc-500">{ev.action.replace(/_/g, ' ')}</span>
                   </div>
                   {ev.details && (
-                    <div style={{ fontSize: 11, color: '#52525b', marginTop: 2 }}>{ev.details}</div>
+                    <div className="text-[11px] text-zinc-400 dark:text-zinc-500 mt-0.5">{ev.details}</div>
                   )}
                 </div>
-                <span style={{ fontSize: 11, color: '#3f3f46', flexShrink: 0, paddingTop: 2 }}>{relativeTime(ev.createdAt)}</span>
+                <span className="text-[11px] text-zinc-400 dark:text-zinc-600 shrink-0 pt-0.5">{relativeTime(ev.createdAt)}</span>
               </div>
             ))
           )}

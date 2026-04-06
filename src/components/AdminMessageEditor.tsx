@@ -5,6 +5,7 @@
 // =====================================================
 
 import React, { useState, useEffect } from 'react';
+import toast from 'react-hot-toast';
 import { messageService } from '../services/messageService';
 import { Eye, Info, Mail, MailOpen, MousePointer, Palette, Plus, RotateCw, Send, SquarePen, Star, Trash2, TrendingUp, Users, XCircle, Zap } from 'lucide-react';
 import type {
@@ -136,7 +137,7 @@ const AdminMessageEditor: React.FC<AdminMessageEditorProps> = ({
       }
     } catch (error) {
       console.error('Failed to load messages:', error);
-      alert('Failed to load messages. Check console for details.');
+      toast.error('Failed to load messages.');
     } finally {
       setLoading(false);
     }
@@ -178,7 +179,7 @@ const AdminMessageEditor: React.FC<AdminMessageEditorProps> = ({
     setPosition(message.position);
     setStyleType(message.styleType);
     setAutoDismiss(message.displayDurationSeconds);
-    setRecurringSchedule((message as any).recurringSchedule || 'none');
+    setRecurringSchedule(message.recurringSchedule || 'none');
     setEditingId(message.id);
   };
 
@@ -220,7 +221,7 @@ const AdminMessageEditor: React.FC<AdminMessageEditorProps> = ({
         try {
           parsedFilter = JSON.parse(segmentFilter);
         } catch (err) {
-          alert('Invalid JSON in segment filter');
+          toast.error('Invalid JSON in segment filter.');
           setLoading(false);
           return;
         }
@@ -240,6 +241,7 @@ const AdminMessageEditor: React.FC<AdminMessageEditorProps> = ({
         displayDurationSeconds: autoDismiss,
         position,
         styleType,
+        recurringSchedule: recurringSchedule as CreateMessagePayload['recurringSchedule'],
       };
 
       // Use editingId to determine if we're updating or creating
@@ -247,12 +249,12 @@ const AdminMessageEditor: React.FC<AdminMessageEditorProps> = ({
         // Update existing message
         const updated = await messageService.updateMessage(editingId, payload);
         if (onSave) onSave(updated);
-        alert('Message updated successfully!');
+        toast.success('Message updated.');
       } else {
         // Create new message
         const created = await messageService.createMessage(payload);
         if (onSave) onSave(created);
-        alert('Message created successfully!');
+        toast.success('Message created.');
       }
 
       resetForm();
@@ -260,7 +262,7 @@ const AdminMessageEditor: React.FC<AdminMessageEditorProps> = ({
       loadMessages();
     } catch (error) {
       console.error('Failed to save message:', error);
-      alert('Failed to save message. Check console for details.');
+      toast.error('Failed to save message.');
     } finally {
       setLoading(false);
     }
@@ -281,11 +283,11 @@ const AdminMessageEditor: React.FC<AdminMessageEditorProps> = ({
         segment: message.segment,
       });
       await messageService.toggleMessageStatus(message.id, true);
-      alert('Message reactivated and ready to be sent again!');
+      toast.success('Message reactivated.');
       loadMessages();
     } catch (error) {
       console.error('Failed to resend message:', error);
-      alert('Failed to resend message.');
+      toast.error('Failed to resend message.');
     } finally {
       setLoading(false);
     }
@@ -297,11 +299,11 @@ const AdminMessageEditor: React.FC<AdminMessageEditorProps> = ({
     setLoading(true);
     try {
       await messageService.deleteMessage(messageId);
-      alert('Message deleted successfully!');
+      toast.success('Message deleted.');
       loadMessages();
     } catch (error) {
       console.error('Failed to delete message:', error);
-      alert('Failed to delete message. Check console for details.');
+      toast.error('Failed to delete message.');
     } finally {
       setLoading(false);
     }

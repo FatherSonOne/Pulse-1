@@ -94,7 +94,7 @@ function exportToMarkdown(data: WarRoomExportData, options: ExportFormat): strin
   const lines: string[] = [];
 
   // Header
-  lines.push(`# ${data.session.title || 'Studio Session'}`);
+  lines.push(`# ${data.session.title || 'War Room Session'}`);
   lines.push('');
 
   // Metadata block
@@ -146,7 +146,7 @@ function exportToMarkdown(data: WarRoomExportData, options: ExportFormat): strin
 
   // Footer
   lines.push('---');
-  lines.push(`_Exported from Pulse Studio on ${formatTimestamp(new Date())}_`);
+  lines.push(`_Exported from War Room on ${formatTimestamp(new Date())}_`);
 
   return lines.join('\n');
 }
@@ -159,7 +159,7 @@ function exportToHTML(data: WarRoomExportData, options: ExportFormat): string {
 <head>
   <meta charset="UTF-8">
   <meta name="viewport" content="width=device-width, initial-scale=1.0">
-  <title>${data.session.title || 'Studio Session'}</title>
+  <title>${data.session.title || 'War Room Session'}</title>
   <style>
     * { margin: 0; padding: 0; box-sizing: border-box; }
     body {
@@ -229,7 +229,7 @@ function exportToHTML(data: WarRoomExportData, options: ExportFormat): string {
 <body>
   <div class="container">
     <div class="header">
-      <h1>${escapeHtml(data.session.title || 'Studio Session')}</h1>
+      <h1>${escapeHtml(data.session.title || 'War Room Session')}</h1>
       <div class="meta">
         <span class="badge">${getModeDisplayName(data.mode)}</span>
         ${data.mission ? `<span class="badge">${getMissionDisplayName(data.mission)}</span>` : ''}
@@ -273,7 +273,7 @@ function exportToHTML(data: WarRoomExportData, options: ExportFormat): string {
   html += `
     </div>
     <div class="footer">
-      Exported from Pulse Studio on ${formatTimestamp(new Date())}
+      Exported from War Room on ${formatTimestamp(new Date())}
     </div>
   </div>
 </body>
@@ -362,7 +362,7 @@ class WarRoomExportService {
       // Create archive item
       const archiveData: Omit<ArchiveItem, 'id'> = {
         type: 'war_room_session',
-        title: `${data.session.title || 'Studio Session'} - ${getModeDisplayName(data.mode)}`,
+        title: `${data.session.title || 'War Room Session'} - ${getModeDisplayName(data.mode)}`,
         content,
         date: data.exportedAt,
         tags: [
@@ -372,7 +372,7 @@ class WarRoomExportService {
           data.project?.name || '',
         ].filter(Boolean),
         aiTags: ['exported', format.type],
-        aiSummary: `Studio session with ${data.messages.length} messages in ${getModeDisplayName(data.mode)} mode.`,
+        aiSummary: `War Room session with ${data.messages.length} messages in ${getModeDisplayName(data.mode)} mode.`,
       };
 
       const result = await archiveService.createArchive(archiveData);
@@ -475,7 +475,7 @@ class WarRoomExportService {
 
     try {
       await navigator.share({
-        title: data.session.title || 'Studio Session',
+        title: data.session.title || 'War Room Session',
         text: content.slice(0, 500) + '...',
       });
       return true;

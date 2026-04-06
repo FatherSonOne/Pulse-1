@@ -4,6 +4,7 @@
 // ============================================
 
 import React, { useState, useEffect } from 'react';
+import toast from 'react-hot-toast';
 import { logosVisionService } from '../../services/logosVisionService';
 import { entomateService } from '../../services/entomateService';
 import { AnimatedIcon } from '../ui/AnimatedIcon';
@@ -116,19 +117,48 @@ const IntegrationManager: React.FC = () => {
   const handleConnect = async (integration: Integration) => {
     updateIntegrationStatus(integration.id, 'pending');
 
-    // Simulate connection process
-    // In production, this would open OAuth flow or configuration modal
-    setTimeout(() => {
-      // For demo, just toggle status
-      const newStatus = integration.status === 'connected' ? 'disconnected' : 'connected';
-      updateIntegrationStatus(integration.id, newStatus);
-    }, 1500);
+    try {
+      let success = false;
+
+      switch (integration.id) {
+        case 'logos_vision':
+          success = await logosVisionService.healthCheck();
+          break;
+        case 'entomate':
+          success = await entomateService.healthCheck();
+          break;
+        case 'slack':
+          success = !!import.meta.env.VITE_SLACK_BOT_TOKEN;
+          break;
+        case 'gmail':
+          success = !!import.meta.env.VITE_GMAIL_ACCESS_TOKEN;
+          break;
+        case 'twilio':
+          success = !!import.meta.env.VITE_TWILIO_ACCOUNT_SID;
+          break;
+        case 'github':
+          success = !!import.meta.env.VITE_GITHUB_TOKEN;
+          break;
+        default:
+          success = false;
+      }
+
+      if (success) {
+        updateIntegrationStatus(integration.id, 'connected');
+        toast.success(`${integration.name} connected.`);
+      } else {
+        updateIntegrationStatus(integration.id, 'error');
+        toast.error(`${integration.name} connection failed. Check configuration.`);
+      }
+    } catch (err) {
+      updateIntegrationStatus(integration.id, 'error');
+      toast.error(`Failed to connect ${integration.name}.`);
+    }
   };
 
   const handleDisconnect = (integration: Integration) => {
-    if (confirm(`Are you sure you want to disconnect ${integration.name}?`)) {
-      updateIntegrationStatus(integration.id, 'disconnected');
-    }
+    updateIntegrationStatus(integration.id, 'disconnected');
+    toast.success(`${integration.name} disconnected.`);
   };
 
   const handleTest = async (integration: Integration) => {
@@ -150,9 +180,9 @@ const IntegrationManager: React.FC = () => {
           success = integration.status === 'connected';
       }
 
-      alert(success ? `${integration.name} connection successful!` : `${integration.name} connection failed.`);
+      success ? toast.success(`${integration.name} connection successful!`) : toast.error(`${integration.name} connection failed.`);
     } catch (error) {
-      alert(`Error testing ${integration.name}: ${error}`);
+      toast.error(`Error testing ${integration.name}: ${error}`);
     } finally {
       setTesting(null);
     }

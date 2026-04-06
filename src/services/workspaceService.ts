@@ -4,16 +4,56 @@ import { supabase } from './supabase';
 // Types
 // ---------------------------------------------------------------------------
 
+export type WorkspacePlan = 'free' | 'starter' | 'pro' | 'business' | 'ecosystem';
+
+export const WORKSPACE_PLAN_LABELS: Record<WorkspacePlan, string> = {
+  free: 'Free',
+  starter: 'Starter',
+  pro: 'Pro',
+  business: 'Business',
+  ecosystem: 'Ecosystem',
+};
+
+export const WORKSPACE_PLAN_LIMITS: Record<WorkspacePlan, number> = {
+  free: 50,
+  starter: 500,
+  pro: 5000,
+  business: 15000,
+  ecosystem: 25000,
+};
+
+export const SELF_SERVICE_PLANS: WorkspacePlan[] = ['free', 'starter', 'pro', 'business', 'ecosystem'];
+
+export const WORKSPACE_PLAN_DESCRIPTIONS: Record<WorkspacePlan, string> = {
+  free: 'Try it out with basic features',
+  starter: 'For small teams getting started',
+  pro: 'For growing organizations',
+  business: 'For established organizations with advanced needs',
+  ecosystem: 'Full suite: Pulse + Logos Vision + Entomate',
+};
+
+export const WORKSPACE_PLAN_APPS: Record<WorkspacePlan, string[]> = {
+  free: ['Pulse'],
+  starter: ['Pulse'],
+  pro: ['Pulse'],
+  business: ['Pulse'],
+  ecosystem: ['Pulse', 'Logos Vision', 'Entomate'],
+};
+
 export interface Workspace {
   id: string;
   name: string;
   slug: string | null;
   description: string | null;
   avatar_url: string | null;
-  plan: 'free' | 'pro' | 'team' | 'enterprise';
+  plan: WorkspacePlan;
   owner_id: string;
   created_at: string;
   updated_at: string;
+  stripeCustomerId?: string | null;
+  stripeSubscriptionId?: string | null;
+  deleted_at?: string | null;
+  deleted_by?: string | null;
 }
 
 export interface WorkspaceMember {
@@ -109,7 +149,7 @@ export const workspaceService = {
    * Creates a new workspace owned by the currently authenticated user.
    * Automatically inserts the owner as a workspace_member with role 'owner'.
    */
-  async createWorkspace(name: string, description?: string): Promise<Workspace> {
+  async createWorkspace(name: string, description?: string, plan: WorkspacePlan = 'free'): Promise<Workspace> {
     const userId = await getCurrentUserId();
 
     const { data: workspace, error: workspaceError } = await supabase
@@ -118,6 +158,7 @@ export const workspaceService = {
         name,
         description: description ?? null,
         owner_id: userId,
+        plan,
       })
       .select()
       .single();
@@ -196,6 +237,7 @@ export const workspaceService = {
     workspaceId: string,
     email: string,
     role: 'admin' | 'member' | 'viewer',
+    options?: { inviterName?: string; workspaceName?: string; personalMessage?: string },
   ): Promise<WorkspaceInvite> {
     const userId = await getCurrentUserId();
 
@@ -215,7 +257,73 @@ export const workspaceService = {
       .single();
 
     assertNoError(error, 'inviteMember');
-    return data as WorkspaceInvite;
+
+    const invite = data as WorkspaceInvite;
+
+    // Send invite email best-effort
+    try {
+      await this._sendInviteEmail(
+        email,
+        invite.token,
+        options?.workspaceName ?? 'your workspace',
+        options?.inviterName,
+        options?.personalMessage,
+      );
+    } catch (emailErr) {
+      console.warn('[workspaceService] invite email failed (non-fatal):', emailErr);
+    }
+
+    return invite;
+  },
+
+  /** Sends the invite notification email via the send-email edge function. */
+  async _sendInviteEmail(
+    toEmail: string,
+    token: string,
+    workspaceName: string,
+    inviterName?: string,
+    personalMessage?: string,
+  ): Promise<void> {
+    const { data: { session } } = await supabase.auth.getSession();
+    if (!session) return;
+
+    const inviteUrl = `${window.location.origin}/invite?token=${encodeURIComponent(token)}`;
+    const fromName = inviterName || 'A teammate';
+
+    const html = `
+      <div style="font-family:-apple-system,BlinkMacSystemFont,'Segoe UI',Roboto,sans-serif;max-width:520px;margin:0 auto;padding:32px 0">
+        <div style="text-align:center;margin-bottom:28px">
+          <div style="display:inline-block;padding:10px 20px;background:linear-gradient(135deg,#f43f5e,#ec4899);border-radius:12px">
+            <span style="color:#fff;font-weight:700;font-size:20px;letter-spacing:0.5px">Pulse</span>
+          </div>
+        </div>
+        <div style="background:#fff;border:1px solid #e5e7eb;border-radius:16px;padding:32px;text-align:center">
+          <h2 style="margin:0 0 8px;font-size:20px;color:#18181b">You're invited!</h2>
+          <p style="margin:0 0 20px;color:#71717a;font-size:14px">
+            ${fromName} invited you to join <strong>${workspaceName}</strong> on Pulse.
+          </p>
+          ${personalMessage ? `<p style="margin:0 0 20px;color:#52525b;font-size:13px;font-style:italic;background:#f4f4f5;border-radius:8px;padding:12px">"${personalMessage}"</p>` : ''}
+          <a href="${inviteUrl}" style="display:inline-block;padding:12px 32px;background:linear-gradient(135deg,#f43f5e,#ec4899);color:#fff;font-weight:600;font-size:14px;text-decoration:none;border-radius:10px;box-shadow:0 4px 12px rgba(244,63,94,0.3)">
+            Accept Invitation
+          </a>
+          <p style="margin:20px 0 0;color:#a1a1aa;font-size:12px">This invite expires in 7 days.</p>
+        </div>
+      </div>
+    `;
+
+    const SUPABASE_URL = import.meta.env.VITE_SUPABASE_URL;
+    await fetch(`${SUPABASE_URL}/functions/v1/send-email`, {
+      method: 'POST',
+      headers: {
+        'Content-Type': 'application/json',
+        'Authorization': `Bearer ${session.access_token}`,
+      },
+      body: JSON.stringify({
+        to: toEmail,
+        subject: `${fromName} invited you to ${workspaceName} on Pulse`,
+        html,
+      }),
+    });
   },
 
   /**
@@ -313,5 +421,58 @@ export const workspaceService = {
 
     assertNoError(error, 'getUserRole');
     return data?.role ?? null;
+  },
+
+  // -------------------------------------------------------------------------
+  // Workspace deletion & recovery
+  // -------------------------------------------------------------------------
+
+  /**
+   * Soft-deletes a workspace (30-day recovery window).
+   * Callable by owner or admin.
+   */
+  async softDeleteWorkspace(workspaceId: string): Promise<void> {
+    const { error } = await supabase.rpc('soft_delete_workspace', {
+      p_workspace_id: workspaceId,
+    });
+    assertNoError(error, 'softDeleteWorkspace');
+  },
+
+  /**
+   * Permanently deletes a workspace and all associated data.
+   * Owner-only.
+   */
+  async hardDeleteWorkspace(workspaceId: string): Promise<void> {
+    const { error } = await supabase.rpc('hard_delete_workspace', {
+      p_workspace_id: workspaceId,
+    });
+    assertNoError(error, 'hardDeleteWorkspace');
+  },
+
+  /**
+   * Restores a soft-deleted workspace within the 30-day recovery window.
+   * Owner-only.
+   */
+  async restoreWorkspace(workspaceId: string): Promise<void> {
+    const { error } = await supabase.rpc('restore_workspace', {
+      p_workspace_id: workspaceId,
+    });
+    assertNoError(error, 'restoreWorkspace');
+  },
+
+  /**
+   * Returns soft-deleted workspaces owned by the current user.
+   * Uses the workspaces_select_deleted RLS policy.
+   */
+  async getDeletedWorkspaces(): Promise<Workspace[]> {
+    const userId = await getCurrentUserId();
+    const { data, error } = await supabase
+      .from('workspaces')
+      .select('*')
+      .eq('owner_id', userId)
+      .not('deleted_at', 'is', null);
+
+    assertNoError(error, 'getDeletedWorkspaces');
+    return (data ?? []) as Workspace[];
   },
 };

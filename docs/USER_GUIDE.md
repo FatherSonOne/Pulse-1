@@ -1,7 +1,7 @@
 # Pulse User's Guide
 
-**Version**: 25.2.0
-**Last Updated**: April 4, 2026
+**Version**: 25.2.1
+**Last Updated**: April 5, 2026
 **For**: All Pulse users — personal, team, and enterprise
 
 ---
@@ -26,9 +26,10 @@
 16. [Tools Panel](#16-tools-panel)
 17. [Search](#17-search)
 18. [Settings & Customization](#18-settings--customization)
-19. [Mobile & Desktop Apps](#19-mobile--desktop-apps)
-20. [Keyboard Shortcuts](#20-keyboard-shortcuts)
-21. [Troubleshooting & FAQ](#21-troubleshooting--faq)
+19. [Billing & Plans](#19-billing--plans)
+20. [Mobile & Desktop Apps](#20-mobile--desktop-apps)
+21. [Keyboard Shortcuts](#21-keyboard-shortcuts)
+22. [Troubleshooting & FAQ](#22-troubleshooting--faq)
 
 ---
 
@@ -2271,7 +2272,7 @@ Filter by: All, Received, or Given.
 
 ## 15. Archives
 
-The **Archives** section stores everything you've completed, closed, or filed away — War Room sessions, meeting transcripts, Vox transcripts, decision logs, notes, summaries, documents, and more. Everything in Archives is fully searchable and can be restored at any time.
+The **Archives** section stores everything you've completed, closed, or filed away — Studio sessions, meeting transcripts, Vox transcripts, decision logs, notes, summaries, documents, and more. Everything in Archives is fully searchable and can be restored at any time.
 
 ### Accessing Archives
 
@@ -2567,11 +2568,36 @@ For team workspace administrators:
 
 1. Go to **Settings → Workspace**.
 2. Manage:
-   - Workspace name and logo
+   - Workspace name and description
    - Member list — invite, remove, or change roles
    - Role permissions — what each role can see and do
    - Data retention policies — how long messages and data are stored
    - Security settings — SSO, 2FA requirements
+
+### Workspace Deletion
+
+Workspace owners can archive or permanently delete a workspace:
+
+**Archive (Soft Delete):**
+
+1. Go to **Settings → Workspace**.
+2. Click **Archive Workspace**.
+3. Type the workspace name to confirm.
+4. The workspace is hidden from all members for **30 days**. During this period, it can be restored.
+5. After 30 days, the workspace is automatically purged.
+
+**Permanent Delete (Hard Delete):**
+
+1. Go to **Settings → Workspace**.
+2. Click **Delete Permanently**.
+3. Type the workspace name to confirm.
+4. All workspace data — messages, contacts, files, decisions, and settings — is deleted immediately and cannot be recovered.
+
+**Restoring an Archived Workspace:**
+
+If all your workspaces have been archived, Pulse shows a recovery screen listing your archived workspaces with a **Restore** button next to each. You can also create a new workspace from this screen.
+
+**Tip:** Archive first if you're unsure. You have a full 30-day window to change your mind before the data is permanently removed.
 
 ### Admin Dashboard & Activity Monitor
 
@@ -2680,7 +2706,7 @@ Configure the AI engine that powers your Pulse workspace.
 
 Customize your Pulse Studio AI workspace.
 
-1. Go to **Settings → Studio** (previously War Room).
+1. Go to **Settings → Studio**.
 2. Set **AI Depth**: Fast (quick answers), Balanced (default), or Deep (thorough multi-step reasoning).
 3. Toggle **Token Streaming** on to see AI responses appear word-by-word as they generate, rather than waiting for the full response.
 4. Toggle **Thinking Panel** to show or hide the AI's internal reasoning steps as it works.
@@ -2734,7 +2760,77 @@ Configure custom retention periods for compliance. For HIPAA or GDPR environment
 
 ---
 
-## 19. Mobile & Desktop Apps
+## 19. Billing & Plans
+
+Pulse uses a tiered billing system powered by Stripe. Workspace owners and admins can manage subscriptions, view usage, and upgrade or downgrade plans from the Billing settings.
+
+### Plans
+
+| Plan | Best For | Key Limits |
+| ---- | -------- | ---------- |
+| **Free** | Trying Pulse out | Limited AI messages, contacts, and storage |
+| **Starter** | Individuals and small teams | Higher limits on AI messages, SMS, contacts, and storage |
+| **Professional** | Growing teams | Generous limits across all features, priority support |
+| **Business** | Large organizations | Highest limits, advanced integrations, and dedicated support |
+| **Ecosystem** | QntmEcos suite users | Bundle pricing across Pulse, Entomate, and Logos Vision |
+
+### Viewing Your Current Plan
+
+1. Go to **Settings → Billing**.
+2. Your current plan is displayed at the top with a color-coded badge.
+3. Below the plan badge, you can see:
+   - Current billing cycle (monthly or yearly)
+   - Subscription status (active, trialing, past due, canceled)
+   - Trial information — if you're on a trial, the number of days remaining is shown
+
+### Upgrading or Changing Plans
+
+1. Go to **Settings → Billing**.
+2. Toggle between **Monthly** and **Yearly** billing to compare prices (yearly saves money).
+3. Click **Upgrade** on the plan you want.
+4. You're redirected to a secure Stripe checkout page to enter payment details.
+5. After checkout, you're returned to Pulse with a confirmation message.
+6. Your new plan takes effect immediately — entitlements update within moments.
+
+### Downgrading or Canceling
+
+1. Go to **Settings → Billing**.
+2. On your current plan card, click **Manage Subscription**.
+3. The Stripe Customer Portal opens, where you can:
+   - Switch to a lower plan
+   - Cancel your subscription (access continues until the end of the billing period)
+   - Update your payment method
+   - View and download past invoices
+
+### Usage Tracking
+
+Pulse tracks your workspace usage against your plan limits. The Billing page shows gauges for:
+
+- **AI Messages** — number of AI-powered messages sent this month
+- **SMS Sent** — text messages sent this month
+- **Storage** — total file storage used
+- **Contacts** — total contacts in your workspace
+- **Voxer Minutes** — voice message duration this month
+
+When you approach a limit (80%+), a warning banner appears. When you hit a limit, the affected feature shows an upgrade prompt.
+
+### Invoices
+
+1. Go to **Settings → Billing → Invoice History**.
+2. View past invoices with amount, status, and date.
+3. Click **View** to open the invoice in Stripe, or **Download PDF** for your records.
+
+### Feature Gating
+
+Some features are only available on certain plans. When you try to use a feature that requires a higher plan, Pulse shows an inline upgrade prompt explaining what you'll unlock and offering a one-click upgrade button.
+
+**Tip:** Workspace owners and admins can manage billing. Regular members can view the current plan but cannot make changes.
+
+**Tip:** Yearly billing typically saves 15-20% compared to monthly. Switch anytime from the Billing page.
+
+---
+
+## 20. Mobile & Desktop Apps
 
 Pulse is available on Windows (desktop), Android (mobile), and in any modern web browser. Your workspace, contacts, messages, and settings sync instantly across all platforms.
 
@@ -2810,7 +2906,7 @@ On Android, you can interact with Pulse notifications without opening the app:
 
 ---
 
-## 20. Keyboard Shortcuts
+## 21. Keyboard Shortcuts
 
 ### Global Shortcuts
 
@@ -2903,7 +2999,7 @@ On Android, you can interact with Pulse notifications without opening the app:
 
 ---
 
-## 21. Troubleshooting & FAQ
+## 22. Troubleshooting & FAQ
 
 ### Messages aren't loading
 

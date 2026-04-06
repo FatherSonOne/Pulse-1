@@ -1,6 +1,6 @@
 import React, { useState, useRef, useEffect } from 'react';
 import { useWorkspace } from '../../contexts/WorkspaceContext';
-import { Workspace, workspaceService } from '../../services/workspaceService';
+import { Workspace, WorkspacePlan, WORKSPACE_PLAN_LABELS, WORKSPACE_PLAN_DESCRIPTIONS, WORKSPACE_PLAN_APPS, workspaceService } from '../../services/workspaceService';
 import './WorkspaceSwitcher.css';
 
 import { ArrowLeft, Check, Copy, Plus, UserPlus } from 'lucide-react';
@@ -56,6 +56,8 @@ export const WorkspaceSwitcher: React.FC<WorkspaceSwitcherProps> = ({ isCollapse
 
   const [isOpen, setIsOpen] = useState(false);
   const [showCreateForm, setShowCreateForm] = useState(false);
+  const [createStep, setCreateStep] = useState<1 | 2>(1);
+  const [selectedPlan, setSelectedPlan] = useState<WorkspacePlan>('free');
   const [showInviteForm, setShowInviteForm] = useState(false);
   const [newName, setNewName] = useState('');
   const [inviteEmail, setInviteEmail] = useState('');
@@ -92,14 +94,15 @@ export const WorkspaceSwitcher: React.FC<WorkspaceSwitcherProps> = ({ isCollapse
     setIsOpen(false);
   };
 
-  const handleCreate = async (e: React.FormEvent) => {
-    e.preventDefault();
+  const handleCreate = async () => {
     if (!newName.trim()) return;
     setIsCreating(true);
     try {
-      const ws = await createWorkspace(newName.trim());
+      const ws = await createWorkspace(newName.trim(), undefined, selectedPlan);
       switchWorkspace(ws.id);
       setNewName('');
+      setSelectedPlan('free');
+      setCreateStep(1);
       setShowCreateForm(false);
       setIsOpen(false);
     } finally {
@@ -113,7 +116,9 @@ export const WorkspaceSwitcher: React.FC<WorkspaceSwitcherProps> = ({ isCollapse
     setIsInviting(true);
     setInviteError('');
     try {
-      const invite = await workspaceService.inviteMember(currentWorkspace.id, inviteEmail.trim(), inviteRole);
+      const invite = await workspaceService.inviteMember(currentWorkspace.id, inviteEmail.trim(), inviteRole, {
+        workspaceName: currentWorkspace.name,
+      });
       setInviteEmail('');
       setInviteLink(workspaceService.getInviteLink(invite.token));
     } catch (err: any) {
@@ -245,34 +250,125 @@ export const WorkspaceSwitcher: React.FC<WorkspaceSwitcherProps> = ({ isCollapse
             </>
           )}
 
-          {/* Create workspace form */}
+          {/* Create workspace wizard (2-step) */}
           {showCreateForm && (
             <div className="ws-panel-section">
               <button
                 type="button"
                 className="ws-back-btn"
-                onClick={() => setShowCreateForm(false)}
+                onClick={() => {
+                  if (createStep === 2) {
+                    setCreateStep(1);
+                  } else {
+                    setShowCreateForm(false);
+                    setCreateStep(1);
+                    setSelectedPlan('free');
+                  }
+                }}
               >
                 <ArrowLeft /> Back
               </button>
-              <div className="ws-panel-label">New workspace</div>
-              <form onSubmit={handleCreate} className="ws-form">
-                <input
-                  autoFocus
-                  className="ws-input"
-                  placeholder="Workspace name"
-                  value={newName}
-                  onChange={(e) => setNewName(e.target.value)}
-                  maxLength={50}
-                />
-                <button
-                  type="submit"
-                  className="ws-submit-btn"
-                  disabled={!newName.trim() || isCreating}
-                >
-                  {isCreating ? 'Creating…' : 'Create'}
-                </button>
-              </form>
+
+              {createStep === 1 && (
+                <>
+                  <div className="ws-panel-label">New workspace</div>
+                  <div className="ws-form">
+                    <input
+                      autoFocus
+                      className="ws-input"
+                      placeholder="Workspace name"
+                      value={newName}
+                      onChange={(e) => setNewName(e.target.value)}
+                      maxLength={50}
+                    />
+                    <button
+                      type="button"
+                      className="ws-submit-btn"
+                      disabled={!newName.trim()}
+                      onClick={() => setCreateStep(2)}
+                    >
+                      Next: Choose Plan
+                    </button>
+                  </div>
+                </>
+              )}
+
+              {createStep === 2 && (
+                <>
+                  <div className="ws-panel-label">Choose a plan</div>
+                  <div style={{ display: 'flex', flexDirection: 'column', gap: '6px', marginBottom: '10px' }}>
+                    {(['free', 'starter', 'pro', 'business', 'ecosystem'] as WorkspacePlan[]).map((plan) => {
+                      const isSelected = selectedPlan === plan;
+                      const prices: Record<WorkspacePlan, string> = {
+                        free: '$0', starter: '$79/mo', pro: '$149/mo', business: '$249/mo', ecosystem: 'From $139/mo',
+                      };
+                      const colors: Record<WorkspacePlan, string> = {
+                        free: '#6b7280', starter: '#3b82f6', pro: '#f43f5e', business: '#7c3aed', ecosystem: '#10b981',
+                      };
+                      return (
+                        <button
+                          key={plan}
+                          type="button"
+                          onClick={() => setSelectedPlan(plan)}
+                          className="ws-plan-card"
+                          style={{
+                            display: 'flex', alignItems: 'center', gap: '10px',
+                            padding: '10px 12px', borderRadius: '10px',
+                            border: isSelected ? `2px solid ${colors[plan]}` : '1px solid var(--ws-border, rgba(255,255,255,0.08))',
+                            background: isSelected ? `${colors[plan]}10` : 'transparent',
+                            cursor: 'pointer', textAlign: 'left', width: '100%',
+                            transition: 'all 0.15s',
+                          }}
+                        >
+                          <div style={{
+                            width: '32px', height: '32px', borderRadius: '8px',
+                            background: `linear-gradient(135deg, ${colors[plan]}, ${colors[plan]}cc)`,
+                            display: 'flex', alignItems: 'center', justifyContent: 'center', flexShrink: 0,
+                          }}>
+                            <span style={{ color: '#fff', fontSize: '12px', fontWeight: 700 }}>
+                              {WORKSPACE_PLAN_LABELS[plan][0]}
+                            </span>
+                          </div>
+                          <div style={{ flex: 1, minWidth: 0 }}>
+                            <div style={{ display: 'flex', alignItems: 'center', gap: '6px' }}>
+                              <span style={{ fontSize: '13px', fontWeight: 600, color: 'var(--ws-text, #fff)' }}>
+                                {WORKSPACE_PLAN_LABELS[plan]}
+                              </span>
+                              {plan === 'pro' && (
+                                <span style={{ fontSize: '9px', fontWeight: 700, padding: '1px 5px', borderRadius: '4px', background: '#f43f5e20', color: '#f43f5e', textTransform: 'uppercase' }}>Popular</span>
+                              )}
+                              {plan === 'ecosystem' && (
+                                <span style={{ fontSize: '9px', fontWeight: 700, padding: '1px 5px', borderRadius: '4px', background: '#10b98120', color: '#10b981', textTransform: 'uppercase' }}>Full Suite</span>
+                              )}
+                            </div>
+                            <div style={{ fontSize: '11px', color: 'var(--ws-text-muted, #a1a1aa)', marginTop: '1px' }}>
+                              {WORKSPACE_PLAN_DESCRIPTIONS[plan]}
+                            </div>
+                            {plan === 'ecosystem' && (
+                              <div style={{ display: 'flex', gap: '4px', marginTop: '4px' }}>
+                                {WORKSPACE_PLAN_APPS[plan].map((app) => (
+                                  <span key={app} style={{ fontSize: '9px', padding: '1px 5px', borderRadius: '4px', background: 'rgba(255,255,255,0.06)', color: 'var(--ws-text-muted, #a1a1aa)' }}>{app}</span>
+                                ))}
+                              </div>
+                            )}
+                          </div>
+                          <span style={{ fontSize: '13px', fontWeight: 700, color: colors[plan], flexShrink: 0 }}>
+                            {prices[plan]}
+                          </span>
+                        </button>
+                      );
+                    })}
+                  </div>
+                  <button
+                    type="button"
+                    className="ws-submit-btn"
+                    disabled={isCreating}
+                    onClick={handleCreate}
+                  >
+                    {isCreating ? 'Creating…' : `Create with ${WORKSPACE_PLAN_LABELS[selectedPlan]} Plan`}
+                  </button>
+                </>
+              )}
             </div>
           )}
 

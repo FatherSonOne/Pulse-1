@@ -1,5 +1,5 @@
 /**
- * StudioHeader — Clean, on-brand header for Pulse Studio.
+ * StudioHeader — Clean, on-brand header for War Room.
  * Replaces the tactical WarRoomHeader with a minimal, approachable design.
  */
 
@@ -66,7 +66,7 @@ export const StudioHeader: React.FC<StudioHeaderProps> = ({
         <div className="ps-logo">
           <BookOpen size={15} />
         </div>
-        <span>Studio</span>
+        <span>War Room</span>
 
         {/* Project badge */}
         {selectedProject && !isMobile && (

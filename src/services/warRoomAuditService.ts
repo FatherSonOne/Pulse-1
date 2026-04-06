@@ -1,6 +1,6 @@
 /**
- * Studio Audit Service
- * Fire-and-forget audit trail for all Studio operations.
+ * War Room Audit Service
+ * Fire-and-forget audit trail for all War Room operations.
  * Each method calls activityService.logActivity asynchronously.
  */
 
@@ -10,7 +10,7 @@ export const warRoomAudit = {
   sessionCreated(sessionId: string, projectId?: string) {
     activityService.logActivity({
       action_type: 'war_room_session_created',
-      description: 'Created Studio session',
+      description: 'Created War Room session',
       details: { sessionId, projectId },
     }).catch(console.error);
   },
@@ -18,7 +18,7 @@ export const warRoomAudit = {
   sessionDeleted(sessionId: string) {
     activityService.logActivity({
       action_type: 'war_room_session_deleted',
-      description: 'Deleted Studio session',
+      description: 'Deleted War Room session',
       details: { sessionId },
     }).catch(console.error);
   },
@@ -26,7 +26,7 @@ export const warRoomAudit = {
   messageSent(sessionId: string, agent: string) {
     activityService.logActivity({
       action_type: 'war_room_message_sent',
-      description: 'Sent message in Studio',
+      description: 'Sent message in War Room',
       details: { sessionId, agent },
     }).catch(console.error);
   },
@@ -42,7 +42,7 @@ export const warRoomAudit = {
   docDeleted(docId: string) {
     activityService.logActivity({
       action_type: 'war_room_doc_deleted',
-      description: 'Deleted Studio document',
+      description: 'Deleted War Room document',
       details: { docId },
     }).catch(console.error);
   },
@@ -74,7 +74,7 @@ export const warRoomAudit = {
   decisionRecorded(decision: string) {
     activityService.logActivity({
       action_type: 'war_room_decision_recorded',
-      description: 'Recorded decision in Studio',
+      description: 'Recorded decision in War Room',
       details: { decision: decision.substring(0, 100) },
     }).catch(console.error);
   },
@@ -82,7 +82,7 @@ export const warRoomAudit = {
   exported(format: string, sessionId: string) {
     activityService.logActivity({
       action_type: 'war_room_export',
-      description: `Exported Studio session as ${format}`,
+      description: `Exported War Room session as ${format}`,
       details: { format, sessionId },
     }).catch(console.error);
   },
@@ -90,7 +90,7 @@ export const warRoomAudit = {
   shared(resourceId: string, resourceType: string) {
     activityService.logActivity({
       action_type: 'war_room_share',
-      description: `Shared Studio ${resourceType}`,
+      description: `Shared War Room ${resourceType}`,
       details: { resourceId, resourceType },
     }).catch(console.error);
   },

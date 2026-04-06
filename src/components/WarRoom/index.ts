@@ -1,9 +1,9 @@
 /**
- * Pulse Studio Components Index
- * Exports all Studio-related components and utilities.
+ * War Room Components Index
+ * Exports all War Room components and utilities.
  */
 
-// ── Studio Layout (Phase 1 redesign) ────────────────────────────────────────
+// ── War Room Layout (Phase 1 redesign) ───────────────────────────────────────
 export { StudioLayout } from './StudioLayout';
 export type { StudioLayoutProps } from './StudioLayout';
 export { StudioHeader } from './StudioHeader';

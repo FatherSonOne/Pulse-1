@@ -1,5 +1,5 @@
 /**
- * StudioOnboarding — First-time welcome overlay for Pulse Studio.
+ * StudioOnboarding — First-time welcome overlay for War Room.
  *
  * Shows a quick 3-step guide on first visit:
  *  1. Upload sources
@@ -63,7 +63,7 @@ export const StudioOnboarding: React.FC<StudioOnboardingProps> = ({ onComplete }
           <BookOpen size={24} />
         </div>
 
-        <h2 className="ps-onboarding-title">Welcome to Pulse Studio</h2>
+        <h2 className="ps-onboarding-title">Welcome to the War Room</h2>
         <p className="ps-onboarding-subtitle">Your AI-powered research workspace</p>
 
         {/* Step content */}

@@ -1,5 +1,5 @@
 /**
- * StudioLayout — Unified 3-panel layout for Pulse Studio
+ * StudioLayout — Unified 3-panel layout for War Room
  *
  * Replaces WarRoomLayout + ModeToolbar + 7 mode components with a single
  * clean layout: [Sources Panel] | [Conversation Canvas] | [Artifacts Panel]

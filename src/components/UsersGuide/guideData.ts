@@ -1,5 +1,5 @@
 // Pulse User's Guide — Full Rich Section Data
-// Version 25.2.0 · April 4, 2026
+// Version 25.2.1 · April 5, 2026
 // Auto-maintained by the /users-guide slash command.
 
 export interface Shortcut {
@@ -60,7 +60,7 @@ export const CATEGORIES: { label: string; ids: string[] }[] = [
   { label: 'AI & Intelligence',  ids: ['ai-features', 'analytics'] },
   { label: 'Integrations',       ids: ['crm', 'tools', 'search', 'ecosystem-bridge'] },
   { label: 'Organization',       ids: ['archives'] },
-  { label: 'App & Settings',     ids: ['settings', 'mobile', 'shortcuts', 'troubleshooting'] },
+  { label: 'App & Settings',     ids: ['settings', 'billing', 'mobile', 'shortcuts', 'troubleshooting'] },
 ];
 
 // ─── SECTION DATA ─────────────────────────────────────────────────────────────
@@ -1363,7 +1363,6 @@ export const guideSections: GuideSection[] = [
         ],
       },
     ],
-    badge: 'Updated',
   },
 
   // ── 11. DECISIONS & TASKS ─────────────────────────────────────────────────
@@ -1559,7 +1558,7 @@ export const guideSections: GuideSection[] = [
     id: 'ai-features',
     title: 'AI Features',
     icon: '🤖',
-    summary: 'AI woven into every part of Pulse — global assistant, smart compose, translation in 90+ languages, tone analysis, action extraction, AI Lab workspaces, and the full War Room with 7 modes and 6 guided missions.',
+    summary: 'AI woven into every part of Pulse — global assistant, smart compose, translation in 90+ languages, tone analysis, action extraction, AI Lab workspaces, and Pulse Studio for research, analysis, and decision-making.',
     badge: 'Updated',
     steps: [
       'Press Ctrl+/ (or ⌘/ on Mac) or click the animated ECG icon in the sidebar to open the Pulse AI Assistant.',
@@ -1569,7 +1568,7 @@ export const guideSections: GuideSection[] = [
       'Translate any message: hover → click the globe icon → choose from 90+ languages.',
       'Click Summarize on any long thread to get a 2–4 sentence written summary.',
       'Click Extract Action Items on any email or message to pull tasks into your task list.',
-      'Click War Room in the sidebar for deep-work AI research, planning, and decision-making.',
+      'Click Studio in the sidebar for deep-work AI research, planning, and decision-making.',
     ],
     subsections: [
       {
@@ -1649,7 +1648,7 @@ export const guideSections: GuideSection[] = [
         ],
       },
       {
-        id: 'pulse-studio',
+        id: 'war-room',
         title: 'Pulse Studio — AI Research & Analysis Workspace',
         description: 'Click Studio in the sidebar. A unified AI workspace where the AI adapts to your needs — no mode switching required.',
         badge: 'Updated',
@@ -1742,7 +1741,6 @@ export const guideSections: GuideSection[] = [
         ],
       },
     ],
-    badge: 'Updated',
   },
 
   // ── 13. CRM ────────────────────────────────────────────────────────────────
@@ -2108,12 +2106,12 @@ export const guideSections: GuideSection[] = [
     title: 'Settings & Customization',
     icon: '⚙️',
     badge: 'Updated',
-    summary: 'Appearance, accessibility, AI model configuration, War Room, notification preferences, connected accounts, Ecosystem Bridge, Features & Labs, workspace management, API keys, privacy controls, and data export.',
+    summary: 'Appearance, accessibility, AI model configuration, Studio, notification preferences, connected accounts, Ecosystem Bridge, Features & Labs, workspace management, billing, API keys, privacy controls, and data export.',
     steps: [
       'Click the gear icon at the bottom of the sidebar, or click your avatar → Settings.',
       'Go to Appearance to toggle Dark Mode, choose an accent color (7 brand presets or custom hex), set font size, and toggle High Contrast or Reduced Motion.',
       'Go to AI & Intelligence to choose your AI model, configure voice agent behavior, and select microphone and speaker devices.',
-      'Go to War Room to set the default mode, AI depth, and streaming behavior.',
+      'Go to Studio to set AI depth, streaming behavior, and annotations.',
       'Go to Notifications to configure per-channel alert preferences and Quiet Hours.',
       'Go to Connected Accounts to add or remove Google, Microsoft, Slack, CRM, and SMS.',
       'Go to Ecosystem Bridge to connect Entomate and Logos Vision — generate secure tokens and test the live connection.',
@@ -2150,14 +2148,14 @@ export const guideSections: GuideSection[] = [
       },
       {
         id: 'war-room-settings',
-        title: 'War Room Settings',
+        title: 'Studio Settings',
+        badge: 'Updated',
         steps: [
-          'Go to Settings → War Room.',
-          'Set Default Mode — the view that opens when you launch War Room.',
+          'Go to Settings → Studio.',
           'Set AI Depth: Fast (quick answers), Balanced (default), or Deep (thorough multi-step reasoning).',
           'Toggle Token Streaming to see responses appear word-by-word rather than waiting for the full response.',
           'Toggle Thinking Panel to show or hide the AI\'s internal reasoning steps.',
-          'Toggle Annotations to enable inline notes and highlights on War Room documents.',
+          'Toggle Annotations to enable inline notes and highlights on Studio documents.',
         ],
       },
       {
@@ -2217,13 +2215,17 @@ export const guideSections: GuideSection[] = [
       {
         id: 'workspace-settings',
         title: 'Workspace Settings (Admins)',
+        badge: 'Updated',
         steps: [
           'Go to Settings → Workspace.',
-          'Manage workspace name and logo.',
+          'Manage workspace name and description.',
           'Member list — invite, remove, or change roles: Owner, Admin, Member, Guest.',
           'Role permissions — control what each role can see and do.',
           'Data retention policies — configure how long messages and data are stored.',
           'Security — enable SSO (SAML 2.0, Google Workspace, Microsoft Entra, Okta).',
+          'Archive Workspace — hides the workspace from all members for 30 days (restorable).',
+          'Delete Permanently — irreversibly removes all workspace data. Type the workspace name to confirm.',
+          'If all workspaces are archived, a recovery screen lets you restore any of them or create a new one.',
         ],
       },
       {
@@ -2306,10 +2308,76 @@ export const guideSections: GuideSection[] = [
       'Generate scoped API keys (read-only vs. read-write) and revoke them individually at any time.',
       'Admins: the Activity Monitor tab gives you a live view of who is online, new signups, and recent admin events — no page reload needed.',
     ],
-    badge: 'Updated',
   },
 
-  // ── 18. MOBILE ────────────────────────────────────────────────────────────
+  // ── 19. BILLING & PLANS ──────────────────────────────────────────────────
+  {
+    id: 'billing',
+    title: 'Billing & Plans',
+    icon: '💳',
+    badge: 'New',
+    summary: 'Stripe-powered billing with Free, Starter, Professional, Business, and Ecosystem tiers. View usage, manage subscriptions, and download invoices.',
+    steps: [
+      'Go to Settings → Billing to view your current plan, subscription status, and usage.',
+      'Toggle between Monthly and Yearly billing to compare prices (yearly saves 15–20%).',
+      'Click Upgrade on any plan card to start a secure Stripe checkout.',
+      'After checkout, you are returned to Pulse with a confirmation — your new plan takes effect immediately.',
+      'Click Manage Subscription to open the Stripe Customer Portal for downgrades, cancellations, and payment updates.',
+      'View Invoice History for past invoices with amount, status, and PDF download.',
+    ],
+    subsections: [
+      {
+        id: 'plan-tiers',
+        title: 'Available Plans',
+        steps: [
+          'Free — try Pulse with limited AI messages, contacts, and storage.',
+          'Starter — for individuals and small teams with higher limits.',
+          'Professional — for growing teams with generous limits and priority support.',
+          'Business — for large organizations with the highest limits and dedicated support.',
+          'Ecosystem — bundle pricing across Pulse, Entomate, and Logos Vision.',
+        ],
+      },
+      {
+        id: 'usage-tracking',
+        title: 'Usage Tracking',
+        steps: [
+          'The Billing page shows usage gauges for: AI Messages, SMS Sent, Storage, Contacts, and Voxer Minutes.',
+          'A warning banner appears when any metric reaches 80% of your plan limit.',
+          'When you hit a limit, the affected feature shows an inline upgrade prompt.',
+          'Usage resets at the start of each billing period.',
+        ],
+      },
+      {
+        id: 'feature-gating',
+        title: 'Feature Gating',
+        steps: [
+          'Some features are only available on certain plans.',
+          'When you try to use a gated feature, Pulse shows an upgrade prompt explaining what you will unlock.',
+          'Click the upgrade button in the prompt for a one-click upgrade to the required plan.',
+        ],
+      },
+    ],
+    tables: [
+      {
+        title: 'Plan Comparison',
+        columns: ['Plan', 'Best For', 'Key Limits'],
+        rows: [
+          ['Free', 'Trying Pulse out', 'Limited AI messages, contacts, and storage'],
+          ['Starter', 'Individuals / small teams', 'Higher AI, SMS, contacts, storage limits'],
+          ['Professional', 'Growing teams', 'Generous limits, priority support'],
+          ['Business', 'Large organizations', 'Highest limits, dedicated support'],
+          ['Ecosystem', 'QntmEcos suite users', 'Bundle pricing across all apps'],
+        ],
+      },
+    ],
+    tips: [
+      'Workspace owners and admins can manage billing. Regular members can view the current plan but cannot make changes.',
+      'Yearly billing typically saves 15–20% compared to monthly — switch anytime from the Billing page.',
+      'If you are on a trial, the number of days remaining is shown on the Billing page.',
+    ],
+  },
+
+  // ── 20. MOBILE ────────────────────────────────────────────────────────────
   {
     id: 'mobile',
     title: 'Mobile & Desktop Apps',
