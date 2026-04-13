@@ -18,62 +18,26 @@
       "purpose": "any"
     },
     {
-      "src": "/icons/icon-72.png",
-      "sizes": "72x72",
+      "src": "/icons/icon-192x192.png",
+      "sizes": "192x192",
       "type": "image/png"
     },
     {
-      "src": "/icons/icon-96.png",
-      "sizes": "96x96",
-      "type": "image/png"
-    },
-    {
-      "src": "/icons/icon-128.png",
-      "sizes": "128x128",
-      "type": "image/png"
-    },
-    {
-      "src": "/icons/icon-144.png",
-      "sizes": "144x144",
-      "type": "image/png"
-    },
-    {
-      "src": "/icons/icon-152.png",
-      "sizes": "152x152",
-      "type": "image/png"
-    },
-    {
-      "src": "/icons/icon-192.png",
+      "src": "/icons/icon-192x192-maskable.png",
       "sizes": "192x192",
       "type": "image/png",
-      "purpose": "any maskable"
+      "purpose": "maskable"
     },
     {
-      "src": "/icons/icon-384.png",
-      "sizes": "384x384",
+      "src": "/icons/icon-512x512.png",
+      "sizes": "512x512",
       "type": "image/png"
     },
     {
-      "src": "/icons/icon-512.png",
+      "src": "/icons/icon-512x512-maskable.png",
       "sizes": "512x512",
       "type": "image/png",
-      "purpose": "any maskable"
-    }
-  ],
-  "screenshots": [
-    {
-      "src": "/screenshots/desktop-home.png",
-      "sizes": "1280x720",
-      "type": "image/png",
-      "form_factor": "wide",
-      "label": "Pulse Desktop - Home"
-    },
-    {
-      "src": "/screenshots/mobile-messages.png",
-      "sizes": "750x1334",
-      "type": "image/png",
-      "form_factor": "narrow",
-      "label": "Pulse Mobile - Messages"
+      "purpose": "maskable"
     }
   ],
   "shortcuts": [
@@ -82,14 +46,13 @@
       "short_name": "Message",
       "description": "Start a new conversation",
       "url": "/messages/new",
-      "icons": [{ "src": "/icons/shortcut-message.png", "sizes": "192x192" }]
+      "icons": [{ "src": "/icons/message-shortcut.png", "sizes": "192x192" }]
     },
     {
       "name": "Search",
       "short_name": "Search",
       "description": "Search all messages",
-      "url": "/messages?search=true",
-      "icons": [{ "src": "/icons/shortcut-search.png", "sizes": "192x192" }]
+      "url": "/messages?search=true"
     }
   ],
   "related_applications": [],

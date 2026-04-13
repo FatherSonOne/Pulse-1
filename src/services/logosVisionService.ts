@@ -605,8 +605,10 @@ export class LogosVisionService {
   }
 }
 
-// Export singleton instance
-export const logosVisionService = new LogosVisionService(
-  import.meta.env.VITE_LOGOS_VISION_SUPABASE_URL || '',
-  import.meta.env.VITE_LOGOS_VISION_SUPABASE_KEY || ''
-);
+// Export singleton instance — only create if env vars are configured,
+// otherwise export null to avoid crashing the app when Logos Vision isn't set up.
+const lvUrl = import.meta.env.VITE_LOGOS_VISION_SUPABASE_URL;
+const lvKey = import.meta.env.VITE_LOGOS_VISION_SUPABASE_KEY;
+
+export const logosVisionService: LogosVisionService | null =
+  lvUrl && lvKey ? new LogosVisionService(lvUrl, lvKey) : null;

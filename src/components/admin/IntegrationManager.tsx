@@ -78,7 +78,7 @@ const IntegrationManager: React.FC = () => {
   const checkConnectionStatus = async () => {
     // Check Logos Vision connection
     try {
-      const logosConnected = await logosVisionService.healthCheck();
+      const logosConnected = logosVisionService ? await logosVisionService.healthCheck() : false;
       updateIntegrationStatus('logos_vision', logosConnected ? 'connected' : 'disconnected');
     } catch {
       updateIntegrationStatus('logos_vision', 'error');
@@ -122,7 +122,7 @@ const IntegrationManager: React.FC = () => {
 
       switch (integration.id) {
         case 'logos_vision':
-          success = await logosVisionService.healthCheck();
+          success = logosVisionService ? await logosVisionService.healthCheck() : false;
           break;
         case 'entomate':
           success = await entomateService.healthCheck();
@@ -169,7 +169,7 @@ const IntegrationManager: React.FC = () => {
 
       switch (integration.id) {
         case 'logos_vision':
-          success = await logosVisionService.healthCheck();
+          success = logosVisionService ? await logosVisionService.healthCheck() : false;
           break;
         case 'entomate':
           success = await entomateService.healthCheck();
