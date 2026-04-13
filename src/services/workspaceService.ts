@@ -22,7 +22,6 @@ export const WORKSPACE_PLAN_LIMITS: Record<WorkspacePlan, number> = {
   ecosystem: 25000,
 };
 
-export const SELF_SERVICE_PLANS: WorkspacePlan[] = ['free', 'starter', 'pro', 'business', 'ecosystem'];
 
 export const WORKSPACE_PLAN_DESCRIPTIONS: Record<WorkspacePlan, string> = {
   free: 'Try it out with basic features',
@@ -38,6 +37,22 @@ export const WORKSPACE_PLAN_APPS: Record<WorkspacePlan, string[]> = {
   pro: ['Pulse'],
   business: ['Pulse'],
   ecosystem: ['Pulse', 'Logos Vision', 'Entomate'],
+};
+
+export const WORKSPACE_PLAN_PRICES: Record<WorkspacePlan, string> = {
+  free: '$0',
+  starter: '$79/mo',
+  pro: '$149/mo',
+  business: '$249/mo',
+  ecosystem: 'From $139/mo',
+};
+
+export const WORKSPACE_PLAN_COLORS: Record<WorkspacePlan, string> = {
+  free: '#6b7280',
+  starter: '#3b82f6',
+  pro: '#f43f5e',
+  business: '#7c3aed',
+  ecosystem: '#10b981',
 };
 
 export interface Workspace {
@@ -62,10 +77,21 @@ export interface WorkspaceMember {
   role: 'owner' | 'admin' | 'member' | 'viewer';
   invited_by: string | null;
   joined_at: string;
-  // populated via join to pulse_users or auth
+  // populated via get_enriched_workspace_members RPC
   name?: string;
   email?: string;
   avatar_url?: string;
+  handle?: string;
+}
+
+export interface AuditLogEntry {
+  id: number;
+  workspace_id: string;
+  actor_id: string;
+  action: string;
+  target_id: string | null;
+  metadata: Record<string, unknown>;
+  created_at: string;
 }
 
 export interface WorkspaceInvite {
@@ -152,10 +178,19 @@ export const workspaceService = {
   async createWorkspace(name: string, description?: string, plan: WorkspacePlan = 'free'): Promise<Workspace> {
     const userId = await getCurrentUserId();
 
+    // Auto-generate a URL-safe slug from the name
+    const baseSlug = name
+      .toLowerCase()
+      .replace(/[^a-z0-9]+/g, '-')
+      .replace(/^-|-$/g, '')
+      .slice(0, 40) || 'workspace';
+    const slug = `${baseSlug}-${Date.now().toString(36)}`;
+
     const { data: workspace, error: workspaceError } = await supabase
       .from('workspaces')
       .insert({
         name,
+        slug,
         description: description ?? null,
         owner_id: userId,
         plan,
@@ -198,34 +233,39 @@ export const workspaceService = {
   },
 
   /**
-   * Deletes a workspace. Related workspace_members rows should be removed
-   * by a cascade constraint on the database.
-   */
-  async deleteWorkspace(workspaceId: string): Promise<void> {
-    const { error } = await supabase
-      .from('workspaces')
-      .delete()
-      .eq('id', workspaceId);
-
-    assertNoError(error, 'deleteWorkspace');
-  },
-
-  /**
-   * Returns all members of the workspace. Attempts to enrich each member
-   * with display_name and avatar_url from the pulse_users table via a
-   * left join. Falls back to raw member rows if the join is unavailable.
+   * Returns all members of the workspace enriched with display_name,
+   * avatar_url, email, and handle from user_profiles + auth.users via
+   * the get_enriched_workspace_members RPC.
    */
   async getMembers(workspaceId: string): Promise<WorkspaceMember[]> {
-    // NOTE: pulse_users.user_id is TEXT (not a UUID FK), so PostgREST relational
-    // join syntax cannot be used here. Fetch members directly; name/avatar
-    // enrichment can be added later via an RPC if needed.
-    const { data, error } = await supabase
-      .from('workspace_members')
-      .select('workspace_id, user_id, role, invited_by, joined_at')
-      .eq('workspace_id', workspaceId);
+    const { data, error } = await supabase.rpc('get_enriched_workspace_members', {
+      p_workspace_id: workspaceId,
+    });
 
     assertNoError(error, 'getMembers');
-    return (data ?? []) as WorkspaceMember[];
+
+    return ((data ?? []) as Array<{
+      workspace_id: string;
+      user_id: string;
+      role: WorkspaceMember['role'];
+      invited_by: string | null;
+      joined_at: string;
+      display_name: string | null;
+      full_name: string | null;
+      avatar_url: string | null;
+      email: string | null;
+      handle: string | null;
+    }>).map((row) => ({
+      workspace_id: row.workspace_id,
+      user_id: row.user_id,
+      role: row.role,
+      invited_by: row.invited_by,
+      joined_at: row.joined_at,
+      name: row.display_name || row.full_name || undefined,
+      email: row.email || undefined,
+      avatar_url: row.avatar_url || undefined,
+      handle: row.handle || undefined,
+    }));
   },
 
   /**
@@ -240,6 +280,20 @@ export const workspaceService = {
     options?: { inviterName?: string; workspaceName?: string; personalMessage?: string },
   ): Promise<WorkspaceInvite> {
     const userId = await getCurrentUserId();
+
+    // Enforce member limit for the workspace plan
+    const workspace = await this.getWorkspace(workspaceId);
+    const limit = WORKSPACE_PLAN_LIMITS[workspace.plan] ?? 50;
+    const [members, pendingInvites] = await Promise.all([
+      this.getMembers(workspaceId),
+      this.getPendingInvites(workspaceId),
+    ]);
+    const currentCount = members.length + pendingInvites.length;
+    if (currentCount >= limit) {
+      throw new Error(
+        `This workspace has reached its ${WORKSPACE_PLAN_LABELS[workspace.plan]} plan limit of ${limit} members. Upgrade your plan to add more.`,
+      );
+    }
 
     const expiresAt = new Date();
     expiresAt.setDate(expiresAt.getDate() + 7);
@@ -474,5 +528,87 @@ export const workspaceService = {
 
     assertNoError(error, 'getDeletedWorkspaces');
     return (data ?? []) as Workspace[];
+  },
+
+  // -------------------------------------------------------------------------
+  // Activity indicators
+  // -------------------------------------------------------------------------
+
+  /**
+   * Returns total unread message count across all channels in a workspace.
+   */
+  async getUnreadCount(workspaceId: string, userId: string): Promise<number> {
+    const { data, error } = await supabase.rpc('get_workspace_unread_count', {
+      p_workspace_id: workspaceId,
+      p_user_id: userId,
+    });
+    if (error) {
+      console.warn('[workspaceService] getUnreadCount failed:', error.message);
+      return 0;
+    }
+    return (data as number) ?? 0;
+  },
+
+  // -------------------------------------------------------------------------
+  // Ownership transfer
+  // -------------------------------------------------------------------------
+
+  /**
+   * Transfers workspace ownership to another member.
+   * The current owner is demoted to admin; the target becomes owner.
+   * Owner-only.
+   */
+  async transferOwnership(workspaceId: string, newOwnerId: string): Promise<void> {
+    const { data, error } = await supabase.rpc('transfer_workspace_ownership', {
+      p_workspace_id: workspaceId,
+      p_new_owner_id: newOwnerId,
+    });
+
+    assertNoError(error, 'transferOwnership — rpc');
+
+    const result = data as { success: boolean; error?: string };
+    if (!result.success) {
+      throw new Error(`[workspaceService] transferOwnership: ${result.error}`);
+    }
+  },
+
+  // -------------------------------------------------------------------------
+  // Audit log
+  // -------------------------------------------------------------------------
+
+  /**
+   * Writes an entry to the workspace audit log via SECURITY DEFINER RPC.
+   */
+  async writeAuditLog(
+    workspaceId: string,
+    action: string,
+    targetId?: string,
+    metadata?: Record<string, unknown>,
+  ): Promise<void> {
+    const userId = await getCurrentUserId();
+    const { error } = await supabase.rpc('write_workspace_audit', {
+      p_workspace_id: workspaceId,
+      p_actor_id: userId,
+      p_action: action,
+      p_target_id: targetId ?? null,
+      p_metadata: metadata ?? {},
+    });
+    if (error) console.warn('[workspaceService] writeAuditLog failed (non-fatal):', error.message);
+  },
+
+  /**
+   * Returns recent audit log entries for a workspace.
+   * Admin+ only (enforced by RLS).
+   */
+  async getAuditLog(workspaceId: string, limit = 50): Promise<AuditLogEntry[]> {
+    const { data, error } = await supabase
+      .from('workspace_audit_log')
+      .select('*')
+      .eq('workspace_id', workspaceId)
+      .order('created_at', { ascending: false })
+      .limit(limit);
+
+    assertNoError(error, 'getAuditLog');
+    return (data ?? []) as AuditLogEntry[];
   },
 };

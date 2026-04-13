@@ -1,6 +1,0 @@
-12/33
-67% (8 pass, 4 fail/mixed)
-Test Group 3 - Mode Identity & Branding (3/4 complete)
-Test 3.1: PASS - Mode colors distinct
-Test 3.2: PASS - Mode headers visible
-Test 3.3: FAIL - Active mode indicator broken (Classic always active)

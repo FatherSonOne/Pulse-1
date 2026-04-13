@@ -34,6 +34,7 @@ import {
   Inbox
 } from 'lucide-react';
 import toast from 'react-hot-toast';
+import { usePulseAI } from '../../contexts/PulseAIContext';
 import { ErrorBoundary } from '../shared/ErrorBoundary';
 import {
   RealtimeVoiceAgentRef,
@@ -140,6 +141,30 @@ const PulseVoiceChat: React.FC<PulseVoiceChatProps> = ({
 
   // Detect if native platform
   const isNative = Capacitor.isNativePlatform();
+
+  // Bridge: inject Pulse data context from the shared provider
+  const pulseAI = usePulseAI();
+  const pulseDataPrompt = pulseAI.buildPulseDataPrompt();
+
+  // Notify shared context that voice is active
+  useEffect(() => {
+    pulseAI.setIsVoiceActive(true);
+    return () => pulseAI.setIsVoiceActive(false);
+  }, [pulseAI]);
+
+  // Merge Pulse data context into context files for the voice agent
+  const effectiveContextFiles = React.useMemo<ContextFile[]>(() => {
+    if (!pulseDataPrompt || pulseDataPrompt === 'No Pulse data context available.') {
+      return contextFiles;
+    }
+    const pulseContextFile: ContextFile = {
+      id: 'pulse-data-context',
+      name: 'Pulse App Data',
+      content: `You are Pulse AI voice assistant. You have access to the user's live Pulse data.\n\n${pulseDataPrompt}`,
+      type: 'text',
+    };
+    return [pulseContextFile, ...contextFiles];
+  }, [contextFiles, pulseDataPrompt]);
 
   // Generate unique ID
   const generateId = () => `${Date.now()}-${Math.random().toString(36).substr(2, 9)}`;
@@ -814,7 +839,7 @@ const PulseVoiceChat: React.FC<PulseVoiceChatProps> = ({
                 sessionId="pulse-voice-chat"
                 openaiApiKey={openaiApiKey}
                 voiceSettings={voiceSettings}
-                contextFiles={contextFiles}
+                contextFiles={effectiveContextFiles}
                 aiMode={aiMode}
                 onTranscript={handleTranscript}
                 onHistoryUpdate={handleHistoryUpdate}

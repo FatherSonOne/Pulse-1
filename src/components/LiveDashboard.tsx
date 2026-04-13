@@ -363,7 +363,7 @@ const LiveDashboard: React.FC<LiveDashboardProps> = ({ apiKey, userId }) => {
 
   const handleCreateProject = async () => {
     if (!newProjectName.trim()) {
-      toast.error('Please enter a workspace name');
+      toast.error('Please enter a project name');
       return;
     }
     
@@ -373,25 +373,25 @@ const LiveDashboard: React.FC<LiveDashboardProps> = ({ apiKey, userId }) => {
       
       if (error) {
         console.error('[War Room] Project creation error:', error);
-        toast.error(`Failed to create workspace: ${error.message || 'Unknown error'}`);
+        toast.error(`Failed to create project: ${error.message || 'Unknown error'}`);
         return;
       }
       
       if (data) {
         console.log('[War Room] Project created successfully:', data);
-        toast.success('Workspace created!');
+        toast.success('Project created!');
         setProjects([data, ...projects]);
         setSelectedProjectId(data.id);
         setNewProjectName('');
         setShowCreateProject(false);
       } else {
         console.error('[War Room] No data returned from createProject');
-        toast.error('Failed to create workspace: No data returned');
+        toast.error('Failed to create project: No data returned');
       }
     } catch (e) {
       console.error('[War Room] Project creation exception:', e);
       const errorMessage = e instanceof Error ? e.message : 'Unknown error';
-      toast.error(`Failed to create workspace: ${errorMessage}`);
+      toast.error(`Failed to create project: ${errorMessage}`);
     }
   };
 
@@ -978,7 +978,7 @@ const LiveDashboard: React.FC<LiveDashboardProps> = ({ apiKey, userId }) => {
       await ragService.deleteProject(id);
       setProjects(projects.filter(p => p.id !== id));
       if (selectedProjectId === id) setSelectedProjectId(null);
-      toast.success('Workspace deleted');
+      toast.success('Project deleted');
     } catch (e) {
       toast.error('Failed to delete project');
     }
@@ -1316,7 +1316,7 @@ const LiveDashboard: React.FC<LiveDashboardProps> = ({ apiKey, userId }) => {
     const projectSessions = sessions.filter(s => s.project_id === projectId);
 
     // Generate comprehensive markdown for the entire war room
-    let markdown = `# Workspace: ${project.name}\n\n`;
+    let markdown = `# Project: ${project.name}\n\n`;
     markdown += `**Created:** ${new Date(project.created_at || Date.now()).toLocaleDateString()}\n\n`;
     markdown += `---\n\n`;
     markdown += `## Sessions (${projectSessions.length})\n\n`;
@@ -1345,7 +1345,7 @@ const LiveDashboard: React.FC<LiveDashboardProps> = ({ apiKey, userId }) => {
     document.body.removeChild(a);
     URL.revokeObjectURL(url);
 
-    toast.success(`Exported Workspace: ${project.name}`);
+    toast.success(`Exported Project: ${project.name}`);
   }, [projects, sessions, getSessionMessagesForExport]);
 
   // Handle export for a single session
@@ -1358,7 +1358,7 @@ const LiveDashboard: React.FC<LiveDashboardProps> = ({ apiKey, userId }) => {
 
     let markdown = `# Session: ${session.title}\n\n`;
     if (project) {
-      markdown += `**Workspace:** ${project.name}\n`;
+      markdown += `**Project:** ${project.name}\n`;
     }
     markdown += `**Created:** ${new Date(session.created_at || Date.now()).toLocaleDateString()}\n\n`;
     markdown += `---\n\n`;
@@ -1400,10 +1400,10 @@ const LiveDashboard: React.FC<LiveDashboardProps> = ({ apiKey, userId }) => {
         });
         setProjects(prev => [...prev, newProject]);
         setSelectedProjectId(newProject.id);
-        toast.success(`Created Workspace: ${name}`);
+        toast.success(`Created Project: ${name}`);
       } catch (error) {
         console.error('Failed to create project:', error);
-        toast.error('Failed to create workspace');
+        toast.error('Failed to create project');
       }
     };
     createProject();

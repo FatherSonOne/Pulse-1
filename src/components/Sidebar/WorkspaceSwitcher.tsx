@@ -1,6 +1,7 @@
-import React, { useState, useRef, useEffect } from 'react';
+import React, { useState, useRef, useEffect, useCallback } from 'react';
 import { useWorkspace } from '../../contexts/WorkspaceContext';
-import { Workspace, WorkspacePlan, WORKSPACE_PLAN_LABELS, WORKSPACE_PLAN_DESCRIPTIONS, WORKSPACE_PLAN_APPS, workspaceService } from '../../services/workspaceService';
+import { useAuth } from '../../hooks/useAuth';
+import { Workspace, WorkspacePlan, WORKSPACE_PLAN_LABELS, WORKSPACE_PLAN_DESCRIPTIONS, WORKSPACE_PLAN_APPS, WORKSPACE_PLAN_PRICES, WORKSPACE_PLAN_COLORS, workspaceService } from '../../services/workspaceService';
 import './WorkspaceSwitcher.css';
 
 import { ArrowLeft, Check, Copy, Plus, UserPlus } from 'lucide-react';
@@ -67,8 +68,27 @@ export const WorkspaceSwitcher: React.FC<WorkspaceSwitcherProps> = ({ isCollapse
   const [inviteError, setInviteError] = useState('');
   const [inviteLink, setInviteLink] = useState('');
   const [linkCopied, setLinkCopied] = useState(false);
+  const [unreadCounts, setUnreadCounts] = useState<Record<string, number>>({});
   const panelRef = useRef<HTMLDivElement>(null);
   const triggerRef = useRef<HTMLButtonElement>(null);
+
+  const { user } = useAuth();
+
+  // Fetch unread counts for all workspaces when panel opens
+  const loadUnreadCounts = useCallback(async () => {
+    if (!user?.id || workspaces.length === 0) return;
+    const counts: Record<string, number> = {};
+    await Promise.all(
+      workspaces.map(async (ws) => {
+        counts[ws.id] = await workspaceService.getUnreadCount(ws.id, user.id);
+      }),
+    );
+    setUnreadCounts(counts);
+  }, [user?.id, workspaces]);
+
+  useEffect(() => {
+    if (isOpen) loadUnreadCounts();
+  }, [isOpen, loadUnreadCounts]);
 
   // Close on outside click
   useEffect(() => {
@@ -88,6 +108,30 @@ export const WorkspaceSwitcher: React.FC<WorkspaceSwitcherProps> = ({ isCollapse
     document.addEventListener('mousedown', handler);
     return () => document.removeEventListener('mousedown', handler);
   }, [isOpen]);
+
+  // Keyboard navigation: Escape to close, arrow keys to navigate workspace list
+  useEffect(() => {
+    if (!isOpen || showCreateForm || showInviteForm) return;
+    const handler = (e: KeyboardEvent) => {
+      if (e.key === 'Escape') {
+        setIsOpen(false);
+        triggerRef.current?.focus();
+        return;
+      }
+      if (e.key === 'ArrowDown' || e.key === 'ArrowUp') {
+        e.preventDefault();
+        const items = panelRef.current?.querySelectorAll<HTMLButtonElement>('.ws-list-item');
+        if (!items?.length) return;
+        const currentIdx = Array.from(items).findIndex(el => el === document.activeElement);
+        const nextIdx = e.key === 'ArrowDown'
+          ? Math.min(currentIdx + 1, items.length - 1)
+          : Math.max(currentIdx - 1, 0);
+        items[nextIdx]?.focus();
+      }
+    };
+    document.addEventListener('keydown', handler);
+    return () => document.removeEventListener('keydown', handler);
+  }, [isOpen, showCreateForm, showInviteForm]);
 
   const handleSwitch = (ws: Workspace) => {
     switchWorkspace(ws.id);
@@ -157,6 +201,7 @@ export const WorkspaceSwitcher: React.FC<WorkspaceSwitcherProps> = ({ isCollapse
               currentId={currentWorkspace.id}
               onSwitch={handleSwitch}
               onCreateClick={() => setShowCreateForm(true)}
+              unreadCounts={unreadCounts}
             />
           </div>
         )}
@@ -299,12 +344,8 @@ export const WorkspaceSwitcher: React.FC<WorkspaceSwitcherProps> = ({ isCollapse
                   <div style={{ display: 'flex', flexDirection: 'column', gap: '6px', marginBottom: '10px' }}>
                     {(['free', 'starter', 'pro', 'business', 'ecosystem'] as WorkspacePlan[]).map((plan) => {
                       const isSelected = selectedPlan === plan;
-                      const prices: Record<WorkspacePlan, string> = {
-                        free: '$0', starter: '$79/mo', pro: '$149/mo', business: '$249/mo', ecosystem: 'From $139/mo',
-                      };
-                      const colors: Record<WorkspacePlan, string> = {
-                        free: '#6b7280', starter: '#3b82f6', pro: '#f43f5e', business: '#7c3aed', ecosystem: '#10b981',
-                      };
+                      const colors = WORKSPACE_PLAN_COLORS;
+                      const prices = WORKSPACE_PLAN_PRICES;
                       return (
                         <button
                           key={plan}
@@ -446,22 +487,29 @@ interface WorkspaceListProps {
   currentId: string;
   onSwitch: (ws: Workspace) => void;
   onCreateClick: () => void;
+  unreadCounts?: Record<string, number>;
 }
 
-const WorkspaceList: React.FC<WorkspaceListProps> = ({ workspaces, currentId, onSwitch, onCreateClick }) => (
+const WorkspaceList: React.FC<WorkspaceListProps> = ({ workspaces, currentId, onSwitch, onCreateClick, unreadCounts }) => (
   <>
-    {workspaces.map((ws) => (
-      <button
-        type="button"
-        key={ws.id}
-        className={`ws-list-item ${ws.id === currentId ? 'active' : ''}`}
-        onClick={() => onSwitch(ws)}
-      >
-        <WorkspaceAvatar workspace={ws} size={22} />
-        <span className="ws-list-name">{ws.name}</span>
-        {ws.id === currentId && <Check className="ws-list-check" />}
-      </button>
-    ))}
+    {workspaces.map((ws) => {
+      const unread = unreadCounts?.[ws.id] ?? 0;
+      return (
+        <button
+          type="button"
+          key={ws.id}
+          className={`ws-list-item ${ws.id === currentId ? 'active' : ''}`}
+          onClick={() => onSwitch(ws)}
+        >
+          <WorkspaceAvatar workspace={ws} size={22} />
+          <span className="ws-list-name">{ws.name}</span>
+          {unread > 0 && ws.id !== currentId && (
+            <span className="ws-unread-badge">{unread > 99 ? '99+' : unread}</span>
+          )}
+          {ws.id === currentId && <Check className="ws-list-check" />}
+        </button>
+      );
+    })}
     <button type="button" className="ws-list-item ws-list-create" onClick={onCreateClick}>
       <div className="ws-create-icon"><Plus /></div>
       <span>New workspace</span>

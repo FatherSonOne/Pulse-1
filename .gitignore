@@ -74,6 +74,12 @@ android/app/keystore.properties
 tmpclaude-*
 tmpclaude-*-cwd
 
+# MCP server config (contains API keys)
+.mcp.json
+
+# Archived scripts (contains OAuth secrets and debug files)
+docs/archive/scripts/
+
 # Claude Code runtime/local data (not shareable)
 .claude/history.jsonl
 .claude/projects/

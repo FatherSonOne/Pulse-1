@@ -757,3 +757,177 @@
 }
 
 .dark .pa-msg-markdown blockquote { color: #94a3b8; }
+
+/* Streaming cursor blink */
+.pa-streaming-cursor::after {
+  content: '▍';
+  display: inline;
+  animation: pa-blink 0.7s step-end infinite;
+  color: #ec4899;
+  font-weight: 300;
+  margin-left: 2px;
+}
+
+@keyframes pa-blink {
+  50% { opacity: 0; }
+}
+
+/* ============================================
+   PHASE 4 — New Features & Polish
+   ============================================ */
+
+/* ── 4C: Message feedback (thumbs + regenerate) ── */
+
+.pa-msg-feedback {
+  display: flex;
+  gap: 2px;
+  margin-top: 6px;
+  opacity: 0;
+  transition: opacity 0.15s ease;
+}
+
+.pa-message.assistant:hover .pa-msg-feedback,
+.pa-msg-feedback:focus-within {
+  opacity: 1;
+}
+
+.pa-feedback-btn {
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  width: 24px;
+  height: 24px;
+  border-radius: 6px;
+  border: none;
+  background: transparent;
+  color: #9ca3af;
+  cursor: pointer;
+  transition: all 0.15s ease;
+  padding: 0;
+}
+
+.pa-feedback-btn:hover {
+  background: rgba(0, 0, 0, 0.06);
+  color: #6b7280;
+}
+
+.pa-feedback-btn.active {
+  color: #ec4899;
+  background: rgba(236, 72, 153, 0.08);
+}
+
+.dark .pa-feedback-btn:hover {
+  background: rgba(255, 255, 255, 0.08);
+  color: #d1d5db;
+}
+
+.dark .pa-feedback-btn.active {
+  color: #f472b6;
+  background: rgba(244, 114, 182, 0.12);
+}
+
+/* ── 4D: Header actions (export, copy) ── */
+
+.pa-header-actions {
+  display: flex;
+  align-items: center;
+  gap: 4px;
+}
+
+.pa-header-btn {
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  width: 28px;
+  height: 28px;
+  border-radius: 6px;
+  border: none;
+  background: rgba(255, 255, 255, 0.15);
+  color: rgba(255, 255, 255, 0.8);
+  cursor: pointer;
+  transition: all 0.15s ease;
+  padding: 0;
+}
+
+.pa-header-btn:hover {
+  background: rgba(255, 255, 255, 0.25);
+  color: #fff;
+}
+
+/* ── 4A: Highlighted time-based chip ── */
+
+.pa-chip-highlight {
+  background: linear-gradient(135deg, #ec4899, #f43f5e) !important;
+  color: #fff !important;
+  border-color: transparent !important;
+  font-weight: 500;
+}
+
+.pa-chip-highlight:hover:not(:disabled) {
+  filter: brightness(1.1);
+  transform: translateY(-1px);
+}
+
+.dark .pa-chip-highlight {
+  background: linear-gradient(135deg, #be185d, #e11d48) !important;
+}
+
+/* ── 4E: Persistent quick actions bar ── */
+
+.pa-quick-bar {
+  border-top: 1px solid var(--hub-border, #e5e7eb);
+  flex-shrink: 0;
+}
+
+.pa-quick-bar-toggle {
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  gap: 6px;
+  width: 100%;
+  padding: 6px 16px;
+  border: none;
+  background: transparent;
+  color: #9ca3af;
+  font-size: 0.7rem;
+  font-weight: 500;
+  text-transform: uppercase;
+  letter-spacing: 0.5px;
+  cursor: pointer;
+  transition: color 0.15s ease;
+}
+
+.pa-quick-bar-toggle:hover {
+  color: #6b7280;
+}
+
+.dark .pa-quick-bar-toggle {
+  color: #6b7280;
+}
+
+.dark .pa-quick-bar-toggle:hover {
+  color: #9ca3af;
+}
+
+.pa-chevron {
+  transition: transform 0.2s ease;
+  transform: rotate(180deg);
+}
+
+.pa-chevron-up {
+  transform: rotate(0deg);
+}
+
+.pa-chips-compact {
+  padding: 0 12px 8px;
+  gap: 6px;
+}
+
+.pa-chip-sm {
+  font-size: 0.7rem !important;
+  padding: 4px 10px !important;
+}
+
+.dark .pa-quick-bar {
+  border-top-color: rgba(255, 255, 255, 0.08);
+}

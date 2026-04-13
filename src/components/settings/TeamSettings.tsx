@@ -1,172 +1,302 @@
-import React, { useState, useEffect } from 'react';
-import { sendTeamInvite, getPendingTeamInvites, resendTeamInvite, revokeTeamInvite, type TeamInvite } from '../../services/teamService';
-import { supabase } from '../../services/supabase';
-import { Loader2, Mail, Send, Users } from 'lucide-react';
+import React, { useState, useEffect, useCallback } from 'react';
+import { useWorkspaceData, useWorkspaceActions, useWorkspacePermissions } from '../../contexts/WorkspaceContext';
+import { workspaceService, WorkspaceMember, WorkspaceInvite, WORKSPACE_PLAN_LABELS, WORKSPACE_PLAN_LIMITS } from '../../services/workspaceService';
+import { Loader2, Mail, Send, Users, Shield, UserMinus, ChevronDown, Clock, X, RotateCcw } from 'lucide-react';
 import toast from 'react-hot-toast';
-
-interface TeamMember {
-  id: string;
-  display_name: string;
-  handle: string | null;
-  avatar_url: string | null;
-  role: string;
-}
 
 interface TeamSettingsProps {
   userId: string;
-  userName: string;
+  userName?: string;
 }
 
-export const TeamSettings: React.FC<TeamSettingsProps> = ({ userId, userName }) => {
-  const [pendingInvites, setPendingInvites] = useState<TeamInvite[]>([]);
-  const [teamMembers, setTeamMembers] = useState<TeamMember[]>([]);
+export const TeamSettings: React.FC<TeamSettingsProps> = ({ userId }) => {
+  const { currentWorkspace, members } = useWorkspaceData();
+  const { refreshMembers } = useWorkspaceActions();
+  const { isOwner, isAdmin, canManageMembers } = useWorkspacePermissions();
+
+  const [pendingInvites, setPendingInvites] = useState<WorkspaceInvite[]>([]);
   const [inviteEmail, setInviteEmail] = useState('');
+  const [inviteRole, setInviteRole] = useState<'admin' | 'member' | 'viewer'>('member');
   const [isInviting, setIsInviting] = useState(false);
+  const [roleDropdownOpen, setRoleDropdownOpen] = useState<string | null>(null);
+  const [isLoadingInvites, setIsLoadingInvites] = useState(false);
+
+  const workspaceId = currentWorkspace?.id;
+  const plan = currentWorkspace?.plan ?? 'free';
+  const memberLimit = WORKSPACE_PLAN_LIMITS[plan] ?? 50;
+
+  const loadInvites = useCallback(async () => {
+    if (!workspaceId) return;
+    setIsLoadingInvites(true);
+    try {
+      const invites = await workspaceService.getPendingInvites(workspaceId);
+      setPendingInvites(invites);
+    } catch {
+      // non-fatal
+    } finally {
+      setIsLoadingInvites(false);
+    }
+  }, [workspaceId]);
 
   useEffect(() => {
-    getPendingTeamInvites().then(setPendingInvites).catch(() => {});
+    loadInvites();
+  }, [loadInvites]);
 
-    // Load actual team members from pulse_profiles
-    const loadMembers = async () => {
-      try {
-        const { data } = await supabase
-          .from('pulse_profiles')
-          .select('id, display_name, handle, avatar_url')
-          .limit(50);
-        if (data) {
-          setTeamMembers(data.map(m => ({
-            ...m,
-            role: m.id === userId ? 'Admin' : 'Member',
-          })));
-        }
-      } catch (err) {
-        console.error('Error loading team members:', err);
-      }
-    };
-    loadMembers();
-  }, [userId]);
+  const handleInvite = async () => {
+    if (!inviteEmail || !workspaceId || !currentWorkspace) return;
+    setIsInviting(true);
+    try {
+      await workspaceService.inviteMember(workspaceId, inviteEmail, inviteRole, {
+        workspaceName: currentWorkspace.name,
+      });
+      toast.success(`Invite sent to ${inviteEmail}`);
+      setInviteEmail('');
+      setInviteRole('member');
+      await loadInvites();
+    } catch (err: unknown) {
+      const msg = err instanceof Error ? err.message : 'Failed to send invite';
+      toast.error(msg);
+    } finally {
+      setIsInviting(false);
+    }
+  };
+
+  const handleRoleChange = async (member: WorkspaceMember, newRole: 'admin' | 'member' | 'viewer') => {
+    if (!workspaceId) return;
+    try {
+      await workspaceService.updateMemberRole(workspaceId, member.user_id, newRole);
+      toast.success(`Updated ${member.name || 'member'} to ${newRole}`);
+      await refreshMembers();
+    } catch {
+      toast.error('Failed to update role');
+    }
+    setRoleDropdownOpen(null);
+  };
+
+  const handleRemoveMember = async (member: WorkspaceMember) => {
+    if (!workspaceId) return;
+    if (!confirm(`Remove ${member.name || member.email || 'this member'} from the workspace?`)) return;
+    try {
+      await workspaceService.removeMember(workspaceId, member.user_id);
+      toast.success('Member removed');
+      await refreshMembers();
+    } catch {
+      toast.error('Failed to remove member');
+    }
+  };
+
+  const handleRevokeInvite = async (invite: WorkspaceInvite) => {
+    if (!confirm(`Revoke invite for ${invite.email}?`)) return;
+    try {
+      // Delete the invite row directly
+      const { error } = await (await import('../../services/supabase')).supabase
+        .from('workspace_invites')
+        .delete()
+        .eq('id', invite.id);
+      if (error) throw error;
+      toast.success('Invite revoked');
+      await loadInvites();
+    } catch {
+      toast.error('Failed to revoke invite');
+    }
+  };
+
+  if (!currentWorkspace) {
+    return (
+      <div className="p-8 text-center text-zinc-500 text-sm">
+        No workspace selected.
+      </div>
+    );
+  }
+
+  const roleColors: Record<string, string> = {
+    owner: 'bg-rose-100 dark:bg-rose-900/30 text-rose-600 dark:text-rose-400',
+    admin: 'bg-amber-100 dark:bg-amber-900/30 text-amber-600 dark:text-amber-400',
+    member: 'bg-indigo-100 dark:bg-indigo-900/30 text-indigo-600 dark:text-indigo-400',
+    viewer: 'bg-zinc-100 dark:bg-zinc-700 text-zinc-600 dark:text-zinc-400',
+  };
 
   return (
     <div className="space-y-8 animate-slide-up">
+      {/* Header */}
       <div className="section-header">
-        <h3>
-          <Users /> Team Management
-        </h3>
+        <h3><Users /> Team Management</h3>
         <p>
-          Invite team members and manage access permissions.
+          Manage members and invitations for <strong>{currentWorkspace.name}</strong>.
+          <span className="ml-2 text-xs text-zinc-400">
+            {members.length} / {memberLimit} members ({WORKSPACE_PLAN_LABELS[plan]} plan)
+          </span>
         </p>
       </div>
 
-      <div className="bg-white dark:bg-zinc-900 border border-zinc-200 dark:border-zinc-800 rounded-xl p-6">
-        <h4 className="text-sm font-bold uppercase tracking-widest text-zinc-500 mb-6">Invite New Member</h4>
-        <div className="flex gap-2">
-          <input
-            type="email"
-            value={inviteEmail}
-            onChange={(e) => setInviteEmail(e.target.value)}
-            placeholder="colleague@company.com"
-            className="flex-1 bg-zinc-50 dark:bg-zinc-800 border border-zinc-200 dark:border-zinc-700 rounded-lg px-4 py-2.5 dark:text-white text-zinc-900 focus:outline-none focus:border-blue-500"
-          />
-          <button
-            onClick={async () => {
-              if (!inviteEmail) return;
-              setIsInviting(true);
-              const { success, error } = await sendTeamInvite(inviteEmail);
-              if (success) {
-                toast.success(`Invite sent to ${inviteEmail}`);
-                setInviteEmail('');
-                const updated = await getPendingTeamInvites();
-                setPendingInvites(updated);
-              } else {
-                toast.error(error || 'Failed to send invite');
-              }
-              setIsInviting(false);
-            }}
-            disabled={!inviteEmail || isInviting}
-            className="px-6 bg-blue-600 hover:bg-blue-700 text-white font-semibold rounded-lg transition disabled:opacity-50 flex items-center gap-2"
-          >
-            {isInviting ? <Loader2 className="animate-spin" /> : <Send />}
-            Send Invite
-          </button>
+      {/* Invite Form — admin+ only */}
+      {canManageMembers && (
+        <div className="bg-white dark:bg-zinc-900 border border-zinc-200 dark:border-zinc-800 rounded-xl p-6">
+          <h4 className="text-sm font-bold uppercase tracking-widest text-zinc-500 mb-6">Invite New Member</h4>
+          <div className="flex gap-2">
+            <input
+              type="email"
+              value={inviteEmail}
+              onChange={(e) => setInviteEmail(e.target.value)}
+              placeholder="colleague@company.com"
+              className="flex-1 bg-zinc-50 dark:bg-zinc-800 border border-zinc-200 dark:border-zinc-700 rounded-lg px-4 py-2.5 dark:text-white text-zinc-900 focus:outline-none focus:border-rose-500"
+              onKeyDown={(e) => e.key === 'Enter' && handleInvite()}
+            />
+            <select
+              value={inviteRole}
+              onChange={(e) => setInviteRole(e.target.value as 'admin' | 'member' | 'viewer')}
+              aria-label="Invite role"
+              className="bg-zinc-50 dark:bg-zinc-800 border border-zinc-200 dark:border-zinc-700 rounded-lg px-3 py-2.5 dark:text-white text-zinc-900 text-sm focus:outline-none focus:border-rose-500"
+            >
+              <option value="member">Member</option>
+              <option value="admin">Admin</option>
+              <option value="viewer">Viewer</option>
+            </select>
+            <button
+              type="button"
+              onClick={handleInvite}
+              disabled={!inviteEmail || isInviting}
+              className="px-6 bg-rose-600 hover:bg-rose-700 text-white font-semibold rounded-lg transition disabled:opacity-50 flex items-center gap-2"
+            >
+              {isInviting ? <Loader2 className="w-4 h-4 animate-spin" /> : <Send className="w-4 h-4" />}
+              Send
+            </button>
+          </div>
         </div>
-      </div>
+      )}
 
+      {/* Pending Invitations — admin+ only */}
+      {canManageMembers && pendingInvites.length > 0 && (
+        <div className="bg-white dark:bg-zinc-900 border border-zinc-200 dark:border-zinc-800 rounded-xl overflow-hidden">
+          <div className="p-4 border-b border-zinc-200 dark:border-zinc-700 bg-zinc-50 dark:bg-zinc-800/50">
+            <h4 className="text-sm font-bold dark:text-white text-zinc-900 flex items-center gap-2">
+              <Clock className="w-4 h-4 text-zinc-400" />
+              Pending Invitations ({pendingInvites.length})
+            </h4>
+          </div>
+          <div className="divide-y divide-zinc-200 dark:divide-zinc-700">
+            {pendingInvites.map((invite) => (
+              <div key={invite.id} className="p-4 flex items-center justify-between">
+                <div className="flex items-center gap-3">
+                  <div className="w-8 h-8 rounded-full bg-zinc-200 dark:bg-zinc-700 flex items-center justify-center text-zinc-500">
+                    <Mail className="w-4 h-4" />
+                  </div>
+                  <div>
+                    <p className="text-sm font-medium dark:text-white text-zinc-900">{invite.email}</p>
+                    <p className="text-xs text-zinc-500">
+                      {invite.role} &middot; expires {new Date(invite.expires_at).toLocaleDateString()}
+                    </p>
+                  </div>
+                </div>
+                <button
+                  type="button"
+                  className="text-xs font-medium text-red-500 hover:text-red-600 flex items-center gap-1"
+                  onClick={() => handleRevokeInvite(invite)}
+                >
+                  <X className="w-3 h-3" /> Revoke
+                </button>
+              </div>
+            ))}
+          </div>
+        </div>
+      )}
+
+      {/* Current Members */}
       <div className="bg-white dark:bg-zinc-900 border border-zinc-200 dark:border-zinc-800 rounded-xl overflow-hidden">
         <div className="p-4 border-b border-zinc-200 dark:border-zinc-700 bg-zinc-50 dark:bg-zinc-800/50">
-          <h4 className="text-sm font-bold dark:text-white text-zinc-900">Pending Invitations</h4>
+          <h4 className="text-sm font-bold dark:text-white text-zinc-900">
+            Workspace Members ({members.length})
+          </h4>
         </div>
         <div className="divide-y divide-zinc-200 dark:divide-zinc-700">
-          {pendingInvites.map((invite) => (
-            <div key={invite.id} className="p-4 flex items-center justify-between">
-              <div className="flex items-center gap-3">
-                <div className="w-8 h-8 rounded-full bg-zinc-200 dark:bg-zinc-700 flex items-center justify-center text-zinc-500">
-                  <Mail />
-                </div>
-                <div>
-                  <p className="text-sm font-medium dark:text-white text-zinc-900">{invite.email}</p>
-                  <p className="text-xs text-zinc-500">Sent {new Date(invite.created_at).toLocaleDateString()}</p>
-                </div>
-              </div>
-              <div className="flex gap-2">
-                <button
-                  className="text-xs font-medium text-blue-500 hover:text-blue-600"
-                  onClick={async () => {
-                    const { success } = await resendTeamInvite(invite.id);
-                    success ? toast.success(`Invite resent to ${invite.email}`) : toast.error('Failed to resend');
-                  }}
-                >Resend</button>
-                <button
-                  className="text-xs font-medium text-red-500 hover:text-red-600"
-                  onClick={async () => {
-                    if (!confirm(`Revoke invite for ${invite.email}?`)) return;
-                    const { success } = await revokeTeamInvite(invite.id);
-                    if (success) setPendingInvites(pendingInvites.filter(i => i.id !== invite.id));
-                    else toast.error('Failed to revoke');
-                  }}
-                >Revoke</button>
-              </div>
-            </div>
-          ))}
-          {pendingInvites.length === 0 && (
-            <div className="p-8 text-center text-zinc-500 text-sm">
-              No pending invitations.
-            </div>
-          )}
-        </div>
-      </div>
+          {members.map((member) => {
+            const displayName = member.name || member.email || 'Unknown';
+            const isCurrentUser = member.user_id === userId;
+            const isMemberOwner = member.role === 'owner';
 
-      <div className="bg-white dark:bg-zinc-900 border border-zinc-200 dark:border-zinc-800 rounded-xl overflow-hidden">
-        <div className="p-4 border-b border-zinc-200 dark:border-zinc-700 bg-zinc-50 dark:bg-zinc-800/50">
-          <h4 className="text-sm font-bold dark:text-white text-zinc-900">Current Members ({teamMembers.length})</h4>
-        </div>
-        <div className="divide-y divide-zinc-200 dark:divide-zinc-700">
-          {teamMembers.map((member) => (
-            <div key={member.id} className="p-4 flex items-center gap-3">
-              <div className="w-10 h-10 rounded-full bg-gradient-to-tr from-blue-500 to-purple-500 flex items-center justify-center text-white font-bold overflow-hidden">
-                {member.avatar_url ? (
-                  <img src={member.avatar_url} alt={member.display_name} className="w-full h-full object-cover" />
-                ) : (
-                  (member.display_name || '?').charAt(0)
+            return (
+              <div key={member.user_id} className="p-4 flex items-center gap-3">
+                {/* Avatar */}
+                <div className="w-10 h-10 rounded-full bg-gradient-to-tr from-rose-500 to-pink-500 flex items-center justify-center text-white font-bold overflow-hidden flex-shrink-0">
+                  {member.avatar_url ? (
+                    <img src={member.avatar_url} alt={displayName} className="w-full h-full object-cover" />
+                  ) : (
+                    displayName.charAt(0).toUpperCase()
+                  )}
+                </div>
+
+                {/* Info */}
+                <div className="flex-1 min-w-0">
+                  <p className="text-sm font-bold dark:text-white text-zinc-900 truncate">
+                    {displayName} {isCurrentUser && <span className="text-zinc-400 font-normal">(You)</span>}
+                  </p>
+                  <p className="text-xs text-zinc-500 truncate">
+                    {member.handle ? `@${member.handle}` : member.email || ''}
+                  </p>
+                </div>
+
+                {/* Role badge / dropdown */}
+                <div className="relative">
+                  {canManageMembers && !isMemberOwner && !isCurrentUser ? (
+                    <>
+                      <button
+                        type="button"
+                        onClick={() => setRoleDropdownOpen(roleDropdownOpen === member.user_id ? null : member.user_id)}
+                        className={`px-2.5 py-1 text-xs rounded-full font-medium flex items-center gap-1 ${roleColors[member.role]}`}
+                      >
+                        {member.role}
+                        <ChevronDown className="w-3 h-3" />
+                      </button>
+                      {roleDropdownOpen === member.user_id && (
+                        <div className="absolute right-0 top-8 z-50 bg-white dark:bg-zinc-800 border border-zinc-200 dark:border-zinc-700 rounded-lg shadow-lg py-1 min-w-[120px]">
+                          {(['admin', 'member', 'viewer'] as const).map((r) => (
+                            <button
+                              type="button"
+                              key={r}
+                              onClick={() => handleRoleChange(member, r)}
+                              className={`w-full text-left px-3 py-1.5 text-xs hover:bg-zinc-100 dark:hover:bg-zinc-700 ${
+                                member.role === r ? 'font-bold text-rose-500' : 'dark:text-zinc-300 text-zinc-700'
+                              }`}
+                            >
+                              {r.charAt(0).toUpperCase() + r.slice(1)}
+                            </button>
+                          ))}
+                        </div>
+                      )}
+                    </>
+                  ) : (
+                    <span className={`px-2.5 py-1 text-xs rounded-full font-medium ${roleColors[member.role]}`}>
+                      {member.role}
+                    </span>
+                  )}
+                </div>
+
+                {/* Remove button — admin+ can remove non-owners, can't remove self */}
+                {canManageMembers && !isMemberOwner && !isCurrentUser && (
+                  <button
+                    type="button"
+                    onClick={() => handleRemoveMember(member)}
+                    className="p-1.5 text-zinc-400 hover:text-red-500 transition"
+                    title="Remove member"
+                  >
+                    <UserMinus className="w-4 h-4" />
+                  </button>
                 )}
               </div>
-              <div className="flex-1">
-                <p className="text-sm font-bold dark:text-white text-zinc-900">
-                  {member.display_name || 'Unknown'} {member.id === userId ? '(You)' : ''}
-                </p>
-                <p className="text-xs text-zinc-500">
-                  {member.handle ? `@${member.handle}` : member.role}
-                </p>
-              </div>
-              <span className="px-2 py-1 bg-emerald-100 dark:bg-emerald-900/30 text-emerald-600 dark:text-emerald-400 text-xs rounded-full font-medium">
-                {member.role}
-              </span>
-            </div>
-          ))}
-          {teamMembers.length === 0 && (
+            );
+          })}
+          {members.length === 0 && (
             <div className="p-8 text-center text-zinc-500 text-sm">Loading members...</div>
           )}
         </div>
       </div>
+
+      {/* Non-admin notice */}
+      {!canManageMembers && (
+        <p className="text-xs text-zinc-400 text-center">
+          Contact your workspace admin to manage team members and invitations.
+        </p>
+      )}
     </div>
   );
 };

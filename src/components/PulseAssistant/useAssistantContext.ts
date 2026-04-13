@@ -6,6 +6,11 @@ import { taskService } from '../../services/taskService';
 import { dataService } from '../../services/dataService';
 import { emailSyncService } from '../../services/emailSyncService';
 import { googleCalendarService } from '../../services/googleCalendarService';
+import { workspaceService } from '../../services/workspaceService';
+import { teamService } from '../../services/teamService';
+import { settingsService } from '../../services/settingsService';
+import { searchService } from '../../services/searchService';
+import { savedSearchesService } from '../../services/savedSearches';
 
 // Sections that load decisions + tasks
 const DECISION_TASK_SECTIONS: AppView[] = [AppView.DECISIONS_TASKS, AppView.DASHBOARD];
@@ -148,6 +153,52 @@ export function useAssistantContext(
         }
       }
 
+      // ── Settings ─────────────────────────────────────────────────────
+      if (activeView === AppView.SETTINGS) {
+        try {
+          const [workspace, members, teams, settings] = await Promise.all([
+            workspaceService.getWorkspace(workspaceId),
+            workspaceService.getMembers(workspaceId),
+            teamService.getTeams(),
+            settingsService.getAll(),
+          ]);
+          const integrationsActive: string[] = [];
+          // Detect active integrations from settings/API keys
+          if (settings.emailNotifications) integrationsActive.push('Email Notifications');
+          if (settings.aiSuggestionsEnabled) integrationsActive.push('AI Suggestions');
+          if (settings.smartRepliesEnabled) integrationsActive.push('Smart Replies');
+          newCtx.settingsContext = {
+            workspaceName: workspace?.name,
+            workspacePlan: workspace?.plan,
+            memberCount: members.length,
+            teamCount: teams.length,
+            theme: settings.theme,
+            aiModel: settings.primaryAIModel || 'gemini-2.5-flash',
+            integrationsActive,
+          };
+        } catch (e) {
+          console.error('[PulseAssistant] Failed to load settings context:', e);
+        }
+      }
+
+      // ── Search ─────────────────────────────────────────────────────────
+      if (activeView === AppView.MULTI_MODAL) {
+        try {
+          const recentSearches = searchService.getRecentSearches();
+          let savedSearchCount = 0;
+          try {
+            const saved = await savedSearchesService.getSavedSearches(user.id);
+            savedSearchCount = saved.length;
+          } catch { /* saved searches optional */ }
+          newCtx.searchContext = {
+            recentSearches,
+            savedSearchCount,
+          };
+        } catch (e) {
+          console.error('[PulseAssistant] Failed to load search context:', e);
+        }
+      }
+
       // ── Archives ───────────────────────────────────────────────────────
       if (activeView === AppView.ARCHIVES) {
         try {
@@ -173,5 +224,10 @@ export function useAssistantContext(
     };
   }, [isOpen, activeView, workspaceId, user]);
 
-  return { context, sectionSummary, isLoading };
+  // Allow callers to refresh the summary without a full data reload
+  const refreshSummary = () => {
+    setSectionSummary(pulseAssistantService.getSectionSummary(context));
+  };
+
+  return { context, sectionSummary, isLoading, refreshSummary };
 }

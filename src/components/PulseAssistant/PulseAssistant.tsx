@@ -9,10 +9,18 @@ import {
   Loader,
   User as UserIcon,
   AlertCircle,
+  ThumbsUp,
+  ThumbsDown,
+  RefreshCw,
+  Download,
+  ChevronUp,
+  Copy,
+  Check,
 } from 'lucide-react';
 import { AppView, User } from '../../types';
 import { pulseAssistantService, SECTION_LABELS, SuggestedAction } from '../../services/pulseAssistantService';
 import { useWorkspace } from '../../contexts/WorkspaceContext';
+import { usePulseAI } from '../../contexts/PulseAIContext';
 import { useAssistantContext } from './useAssistantContext';
 import './PulseAssistant.css';
 
@@ -23,7 +31,7 @@ interface PulseAssistantProps {
   onClose: () => void;
   activeView: AppView;
   user: User;
-  isDarkMode: boolean;
+  proactiveMessage?: string;
 }
 
 interface ChatMessage {
@@ -32,6 +40,7 @@ interface ChatMessage {
   content: string;
   timestamp: Date;
   suggestedActions?: SuggestedAction[];
+  feedback?: 'up' | 'down';
 }
 
 // ─── Helpers ──────────────────────────────────────────────────────────────────
@@ -52,19 +61,27 @@ const PulseAssistant: React.FC<PulseAssistantProps> = ({
   onClose,
   activeView,
   user,
-  isDarkMode,
+  proactiveMessage,
 }) => {
   // Workspace context for workspaceId (PulseAssistant lives inside WorkspaceProvider)
   const { currentWorkspace } = useWorkspace();
   const workspaceId = currentWorkspace?.id ?? '';
 
   // Context hook — lazy-loads section data when panel is open
-  const { context, sectionSummary, isLoading: isContextLoading } = useAssistantContext(
+  const { context, sectionSummary, isLoading: isContextLoading, refreshSummary } = useAssistantContext(
     activeView,
     isOpen,
     user,
     workspaceId,
   );
+
+  // ── Bridge to shared PulseAI context (for voice chat integration) ──
+  const { setAssistantContext, setTextConversationSummary } = usePulseAI();
+
+  // Push loaded context to shared provider whenever it updates
+  useEffect(() => {
+    if (context.workspaceId) setAssistantContext(context);
+  }, [context, setAssistantContext]);
 
   // ── sessionStorage history — survives section switches, cleared on tab close ──
   const SESSION_KEY = 'pulse-ai-history';
@@ -84,6 +101,26 @@ const PulseAssistant: React.FC<PulseAssistantProps> = ({
   const [inputValue, setInputValue] = useState('');
   const [isLoading, setIsLoading] = useState(false);
   const [error, setError] = useState<string | null>(null);
+  const [showQuickBar, setShowQuickBar] = useState(false);
+  const [copiedExport, setCopiedExport] = useState(false);
+
+  // Inject proactive message when panel opens with a proactive finding
+  const proactiveInjectedRef = useRef(false);
+  useEffect(() => {
+    if (isOpen && proactiveMessage && messages.length === 0 && !proactiveInjectedRef.current) {
+      proactiveInjectedRef.current = true;
+      setMessages([{
+        id: `msg-proactive-${Date.now()}`,
+        role: 'assistant',
+        content: proactiveMessage,
+        timestamp: new Date(),
+        suggestedActions: pulseAssistantService.getSuggestedActions(activeView),
+      }]);
+    }
+    if (!isOpen) {
+      proactiveInjectedRef.current = false;
+    }
+  }, [isOpen, proactiveMessage, messages.length, activeView]);
 
   // Persist messages to sessionStorage whenever they change
   useEffect(() => {
@@ -92,7 +129,12 @@ const PulseAssistant: React.FC<PulseAssistantProps> = ({
     } catch {
       // sessionStorage unavailable — silent fail
     }
-  }, [messages]);
+    // Sync a brief conversation summary to shared context for voice AI
+    if (messages.length > 0) {
+      const last3 = messages.slice(-3).map(m => `${m.role}: ${m.content.slice(0, 100)}`).join(' | ');
+      setTextConversationSummary(last3);
+    }
+  }, [messages, setTextConversationSummary]);
 
   const messagesEndRef = useRef<HTMLDivElement>(null);
   const inputRef = useRef<HTMLInputElement>(null);
@@ -152,16 +194,40 @@ const PulseAssistant: React.FC<PulseAssistantProps> = ({
     setIsLoading(true);
 
     try {
-      const responseText = await pulseAssistantService.query(messageToSend, context, apiKey);
+      // Build conversation history for multi-turn context
+      const history = messages.map(m => ({ role: m.role, content: m.content }));
 
+      // Create a placeholder AI message for streaming
+      const aiMsgId = `msg-${Date.now()}-ai`;
       const aiMsg: ChatMessage = {
-        id: `msg-${Date.now()}-ai`,
+        id: aiMsgId,
         role: 'assistant',
-        content: responseText,
+        content: '',
         timestamp: new Date(),
-        suggestedActions: pulseAssistantService.getSuggestedActions(activeView),
       };
       setMessages(prev => [...prev, aiMsg]);
+
+      // Stream response — update the AI message as chunks arrive
+      const finalText = await pulseAssistantService.query(
+        messageToSend,
+        context,
+        apiKey,
+        history,
+        (accumulated: string) => {
+          setMessages(prev =>
+            prev.map(m => m.id === aiMsgId ? { ...m, content: accumulated } : m),
+          );
+        },
+      );
+
+      // Final update with suggested actions
+      setMessages(prev =>
+        prev.map(m =>
+          m.id === aiMsgId
+            ? { ...m, content: finalText, suggestedActions: pulseAssistantService.getSuggestedActions(activeView) }
+            : m,
+        ),
+      );
     } catch (err) {
       console.error('[PulseAssistant] Query failed:', err);
       setError('Failed to get a response from Pulse AI. Please try again.');
@@ -174,6 +240,7 @@ const PulseAssistant: React.FC<PulseAssistantProps> = ({
       setMessages(prev => [...prev, errMsg]);
     } finally {
       setIsLoading(false);
+      refreshSummary();
     }
   };
 
@@ -201,6 +268,70 @@ const PulseAssistant: React.FC<PulseAssistantProps> = ({
       window.dispatchEvent(
         new CustomEvent(action.event.name, { detail: action.event.detail }),
       );
+    }
+  };
+
+  // ── Time-based greeting ──
+  const timeGreeting = React.useMemo(
+    () => pulseAssistantService.getTimeBasedGreeting(user.name || 'there'),
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+    [user.name],
+  );
+
+  // ── "Ask Pulse AI about this" global event handler (4B) ──
+  useEffect(() => {
+    const handleAskAbout = (e: Event) => {
+      const detail = (e as CustomEvent).detail;
+      if (detail?.query) {
+        setInputValue(detail.query);
+        inputRef.current?.focus({ preventScroll: true });
+      }
+    };
+    window.addEventListener('pulse:ask-ai', handleAskAbout);
+    return () => window.removeEventListener('pulse:ask-ai', handleAskAbout);
+  }, []);
+
+  // ── Feedback handler (4C) ──
+  const handleFeedback = (msgId: string, feedback: 'up' | 'down') => {
+    setMessages(prev =>
+      prev.map(m => m.id === msgId ? { ...m, feedback } : m),
+    );
+  };
+
+  // ── Regenerate handler (4C) ──
+  const handleRegenerate = (msgId: string) => {
+    // Find the user message that preceded this AI response
+    const idx = messages.findIndex(m => m.id === msgId);
+    if (idx <= 0) return;
+    // Walk backwards to find the user message
+    let userQuery = '';
+    for (let i = idx - 1; i >= 0; i--) {
+      if (messages[i].role === 'user') {
+        userQuery = messages[i].content;
+        break;
+      }
+    }
+    if (!userQuery) return;
+    // Remove the old AI response and re-send
+    setMessages(prev => prev.filter(m => m.id !== msgId));
+    handleSend(userQuery);
+  };
+
+  // ── Export conversation (4D) ──
+  const handleExport = async (mode: 'clipboard' | 'download') => {
+    const md = pulseAssistantService.exportConversation(messages, 'markdown');
+    if (mode === 'clipboard') {
+      await navigator.clipboard.writeText(md);
+      setCopiedExport(true);
+      setTimeout(() => setCopiedExport(false), 2000);
+    } else {
+      const blob = new Blob([md], { type: 'text/markdown' });
+      const url = URL.createObjectURL(blob);
+      const a = document.createElement('a');
+      a.href = url;
+      a.download = `pulse-ai-chat-${new Date().toISOString().slice(0, 10)}.md`;
+      a.click();
+      URL.revokeObjectURL(url);
     }
   };
 
@@ -262,15 +393,35 @@ const PulseAssistant: React.FC<PulseAssistantProps> = ({
         </div>
 
         {messages.length > 0 && (
-          <button
-            type="button"
-            className="pa-close-btn pa-clear-btn"
-            onClick={handleClear}
-            aria-label="Clear conversation"
-            title="Clear conversation"
-          >
-            <span className="pa-clear-label">CLR</span>
-          </button>
+          <div className="pa-header-actions">
+            <button
+              type="button"
+              className="pa-header-btn"
+              onClick={() => handleExport('clipboard')}
+              aria-label="Copy conversation"
+              title="Copy conversation"
+            >
+              {copiedExport ? <Check size={14} aria-hidden="true" /> : <Copy size={14} aria-hidden="true" />}
+            </button>
+            <button
+              type="button"
+              className="pa-header-btn"
+              onClick={() => handleExport('download')}
+              aria-label="Export conversation"
+              title="Export as Markdown"
+            >
+              <Download size={14} aria-hidden="true" />
+            </button>
+            <button
+              type="button"
+              className="pa-close-btn pa-clear-btn"
+              onClick={handleClear}
+              aria-label="Clear conversation"
+              title="Clear conversation"
+            >
+              <span className="pa-clear-label">CLR</span>
+            </button>
+          </div>
         )}
 
         <button
@@ -311,7 +462,7 @@ const PulseAssistant: React.FC<PulseAssistantProps> = ({
             <div className="pa-welcome-icon" aria-hidden="true">
               <Bot size={36} />
             </div>
-            <h4>Hi, I'm Pulse AI</h4>
+            <h4>{timeGreeting.greeting}</h4>
             <p>
               I'm context-aware and know which section you're in. Ask me anything — or use a quick
               action below.
@@ -319,17 +470,18 @@ const PulseAssistant: React.FC<PulseAssistantProps> = ({
           </div>
         )}
 
-        {messages.map(message => (
+        {messages.filter(m => m.content || m.role === 'user').map(message => (
           <div
             key={message.id}
             className={`pa-message ${message.role}`}
+            aria-label={message.role === 'assistant' ? 'Pulse AI response' : 'Your message'}
           >
             <div className="pa-msg-icon" aria-hidden="true">
               {message.role === 'user' ? <UserIcon size={16} /> : <Bot size={16} />}
             </div>
             <div className="pa-msg-content">
               {message.role === 'assistant' ? (
-                <div className="pa-msg-text pa-msg-markdown">
+                <div className={`pa-msg-text pa-msg-markdown${isLoading && message.id === messages[messages.length - 1]?.id ? ' pa-streaming-cursor' : ''}`}>
                   <ReactMarkdown>{message.content}</ReactMarkdown>
                 </div>
               ) : (
@@ -338,6 +490,39 @@ const PulseAssistant: React.FC<PulseAssistantProps> = ({
               <div className="pa-msg-time" aria-hidden="true">
                 {message.timestamp.toLocaleTimeString([], { hour: '2-digit', minute: '2-digit' })}
               </div>
+              {/* Feedback + Regenerate (4C) */}
+              {message.role === 'assistant' && message.content && !isLoading && (
+                <div className="pa-msg-feedback">
+                  <button
+                    type="button"
+                    className={`pa-feedback-btn${message.feedback === 'up' ? ' active' : ''}`}
+                    onClick={() => handleFeedback(message.id, 'up')}
+                    aria-label="Helpful"
+                    title="Helpful"
+                  >
+                    <ThumbsUp size={12} />
+                  </button>
+                  <button
+                    type="button"
+                    className={`pa-feedback-btn${message.feedback === 'down' ? ' active' : ''}`}
+                    onClick={() => handleFeedback(message.id, 'down')}
+                    aria-label="Not helpful"
+                    title="Not helpful"
+                  >
+                    <ThumbsDown size={12} />
+                  </button>
+                  <button
+                    type="button"
+                    className="pa-feedback-btn"
+                    onClick={() => handleRegenerate(message.id)}
+                    aria-label="Regenerate response"
+                    title="Regenerate"
+                  >
+                    <RefreshCw size={12} />
+                  </button>
+                </div>
+              )}
+              {/* Suggested actions */}
               {message.role === 'assistant' && message.suggestedActions && message.suggestedActions.length > 0 && (
                 <div className="pa-suggested-actions" role="group" aria-label="Suggested actions">
                   {message.suggestedActions.map(action => (
@@ -357,7 +542,7 @@ const PulseAssistant: React.FC<PulseAssistantProps> = ({
           </div>
         ))}
 
-        {isLoading && (
+        {isLoading && messages.length > 0 && messages[messages.length - 1].role === 'assistant' && messages[messages.length - 1].content === '' && (
           <div className="pa-message assistant">
             <div className="pa-msg-icon" aria-hidden="true">
               <Bot size={16} />
@@ -381,11 +566,22 @@ const PulseAssistant: React.FC<PulseAssistantProps> = ({
         <div ref={messagesEndRef} />
       </div>
 
-      {/* ── Quick actions (only shown on welcome screen) ── */}
-      {messages.length === 0 && (
+      {/* ── Quick actions — full on welcome, collapsible after messages (4E) ── */}
+      {messages.length === 0 ? (
         <div className="pa-quick-actions">
           <div className="pa-quick-actions-label">Quick Actions</div>
           <div className="pa-chips">
+            {/* Time-based suggestion (4A) */}
+            <button
+              key={timeGreeting.suggestion.id}
+              type="button"
+              className="pa-chip pa-chip-highlight"
+              onClick={() => handleSend(timeGreeting.suggestion.query)}
+              disabled={isLoading || isContextLoading}
+              aria-label={timeGreeting.suggestion.label}
+            >
+              {timeGreeting.suggestion.label}
+            </button>
             {quickActions.map(action => (
               <button
                 key={action.id}
@@ -399,6 +595,34 @@ const PulseAssistant: React.FC<PulseAssistantProps> = ({
               </button>
             ))}
           </div>
+        </div>
+      ) : (
+        <div className={`pa-quick-bar${showQuickBar ? ' pa-quick-bar-open' : ''}`}>
+          <button
+            type="button"
+            className="pa-quick-bar-toggle"
+            onClick={() => setShowQuickBar(prev => !prev)}
+            aria-label={showQuickBar ? 'Hide quick actions' : 'Show quick actions'}
+          >
+            <ChevronUp size={14} className={`pa-chevron${showQuickBar ? ' pa-chevron-up' : ''}`} />
+            <span>Quick Actions</span>
+          </button>
+          {showQuickBar && (
+            <div className="pa-chips pa-chips-compact">
+              {quickActions.slice(0, 3).map(action => (
+                <button
+                  key={action.id}
+                  type="button"
+                  className="pa-chip pa-chip-sm"
+                  onClick={() => handleSend(action.query)}
+                  disabled={isLoading || isContextLoading}
+                  aria-label={action.label}
+                >
+                  {action.label}
+                </button>
+              ))}
+            </div>
+          )}
         </div>
       )}
 
@@ -416,7 +640,7 @@ const PulseAssistant: React.FC<PulseAssistantProps> = ({
             }
             value={inputValue}
             onChange={e => setInputValue(e.target.value)}
-            onKeyPress={handleKeyPress}
+            onKeyDown={handleKeyPress}
             disabled={isLoading}
             aria-label="Message Pulse AI"
           />
@@ -437,7 +661,13 @@ const PulseAssistant: React.FC<PulseAssistantProps> = ({
         <div className="pa-input-hint" aria-hidden="true">
           {isContextLoading
             ? `Fetching your ${sectionLabel} data for context…`
-            : 'Enter to send · Esc to close'}
+            : (() => {
+                const usage = pulseAssistantService.getTokenUsage();
+                const tokenStr = usage.queryCount > 0
+                  ? ` · ${(usage.totalTokens / 1000).toFixed(1)}k tokens`
+                  : '';
+                return `Enter to send · Esc to close${tokenStr}`;
+              })()}
         </div>
       </div>
     </div>

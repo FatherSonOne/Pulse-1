@@ -21,3 +21,5 @@ export type {
 
 export { FocusModeProvider, useFocusMode } from './FocusModeContext';
 export type { FocusModeContextState } from './FocusModeContext';
+
+export { PulseAIProvider, usePulseAI } from './PulseAIContext';

@@ -333,49 +333,5 @@ class TeamService {
 
 export const teamService = new TeamService();
 
-// ─── Invite helpers (Settings > Team section) ────────────────────────────────
-
-export interface TeamInvite {
-  id: string;
-  email: string;
-  status: 'pending' | 'accepted' | 'declined';
-  created_at: string;
-  updated_at: string;
-}
-
-export const sendTeamInvite = async (email: string): Promise<{ success: boolean; error?: string }> => {
-  const { data: { user } } = await supabase.auth.getUser();
-  if (!user) return { success: false, error: 'Not authenticated' };
-  const { error } = await supabase.from('team_invites').insert({
-    invited_by: user.id,
-    email: email.toLowerCase().trim(),
-    status: 'pending',
-  });
-  if (error) return { success: false, error: error.message };
-  return { success: true };
-};
-
-export const getPendingTeamInvites = async (): Promise<TeamInvite[]> => {
-  const { data: { user } } = await supabase.auth.getUser();
-  if (!user) return [];
-  const { data } = await supabase
-    .from('team_invites')
-    .select('*')
-    .eq('invited_by', user.id)
-    .eq('status', 'pending')
-    .order('created_at', { ascending: false });
-  return (data || []) as TeamInvite[];
-};
-
-export const resendTeamInvite = async (inviteId: string): Promise<{ success: boolean }> => {
-  const { error } = await supabase
-    .from('team_invites')
-    .update({ updated_at: new Date().toISOString() })
-    .eq('id', inviteId);
-  return { success: !error };
-};
-
-export const revokeTeamInvite = async (inviteId: string): Promise<{ success: boolean }> => {
-  const { error } = await supabase.from('team_invites').delete().eq('id', inviteId);
-  return { success: !error };
-};
+// Legacy team_invites helpers removed — workspace invites are now managed
+// via workspaceService.inviteMember() and the workspace_invites table.

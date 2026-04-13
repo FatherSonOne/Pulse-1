@@ -63,6 +63,7 @@ import { PulseAIProactiveChecker } from './components/PulseAssistant/PulseAIProa
 import { InstallPrompt } from './components/PWA/InstallPrompt';
 import { OnlineStatus } from './components/PWA/OnlineStatus';
 import { FeatureProvider } from './contexts/FeatureContext';
+import { PulseAIProvider } from './contexts/PulseAIContext';
 import { WorkspaceProvider, useWorkspaceData, useWorkspaceActions } from './contexts/WorkspaceContext';
 import { DeletedWorkspaceInterstitial } from './components/settings/DeletedWorkspaceInterstitial';
 
@@ -214,6 +215,7 @@ const App: React.FC = () => {
   const [view, setView] = useState<AppView>(initialMeetingCode ? AppView.MEETINGS : AppView.DASHBOARD);
   const [showPulseAI, setShowPulseAI] = useState(false);
   const [hasPulseAISuggestion, setHasPulseAISuggestion] = useState(false);
+  const [proactiveFindings, setProactiveFindings] = useState<string | undefined>(undefined);
   const [isDarkMode, setIsDarkMode] = useState(false); // Default to light mode
   const [isSidebarCollapsed, setIsSidebarCollapsed] = useState(false);
   const [isMobileMenuOpen, setIsMobileMenuOpen] = useState(false);
@@ -846,6 +848,7 @@ const App: React.FC = () => {
     <WorkspaceProvider>
     <WorkspaceGate>
     <FeatureProvider defaultMode="simple">
+    <PulseAIProvider user={user} activeView={view}>
       <MessageContainer userId={user?.id || 'anonymous'}>
         <div className="h-screen w-screen bg-zinc-50 dark:bg-black text-zinc-900 dark:text-zinc-100 flex flex-col md:flex-row overflow-hidden font-sans transition-colors duration-500">
 
@@ -971,7 +974,11 @@ const App: React.FC = () => {
         <PulseAIProactiveChecker
           user={user}
           isPanelOpen={showPulseAI}
-          onProactiveChange={setHasPulseAISuggestion}
+          onProactiveChange={(hasProactive, findings) => {
+            setHasPulseAISuggestion(hasProactive);
+            if (findings) setProactiveFindings(findings);
+            if (!hasProactive) setProactiveFindings(undefined);
+          }}
         />
       )}
 
@@ -982,7 +989,7 @@ const App: React.FC = () => {
           onClose={() => setShowPulseAI(false)}
           activeView={view}
           user={user}
-          isDarkMode={isDarkMode}
+          proactiveMessage={proactiveFindings}
         />
       )}
 
@@ -993,6 +1000,7 @@ const App: React.FC = () => {
       <OnlineStatus />
         </div>
       </MessageContainer>
+    </PulseAIProvider>
     </FeatureProvider>
     </WorkspaceGate>
     </WorkspaceProvider>

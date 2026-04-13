@@ -1560,7 +1560,7 @@ class DataService {
 
     return (data || []).map(db => ({
       id: db.id,
-      workspace_id: db.workspace_id || this.getUserId(),
+      workspace_id: db.workspace_id ?? '',
       thread_id: db.thread_id,
       title: db.title,
       description: db.description,

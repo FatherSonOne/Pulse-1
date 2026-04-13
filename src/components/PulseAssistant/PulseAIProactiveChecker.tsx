@@ -9,7 +9,7 @@ const CHECK_INTERVAL_MS = 10 * 60 * 1000; // 10 minutes
 interface PulseAIProactiveCheckerProps {
   user: User | null;
   isPanelOpen: boolean;
-  onProactiveChange: (hasProactive: boolean) => void;
+  onProactiveChange: (hasProactive: boolean, findings?: string) => void;
 }
 
 /**
@@ -39,7 +39,7 @@ export function PulseAIProactiveChecker({
       if (cancelled.value) return;
 
       // Overdue tasks
-      const hasOverdue = tasks.some(
+      const overdueTasks = tasks.filter(
         t =>
           t.deadline &&
           new Date(t.deadline) < new Date() &&
@@ -48,14 +48,14 @@ export function PulseAIProactiveChecker({
       );
 
       // Decisions awaiting the current user's vote
-      const hasPendingVotes = decisions.some(
+      const pendingVoteDecisions = decisions.filter(
         d =>
           d.status === 'voting' &&
           !d.votes?.some(v => v.user_id === user.id),
       );
 
       // Stale decisions (no activity in ≥24h)
-      const hasStale = decisions.some(d => {
+      const staleDecisions = decisions.filter(d => {
         if (d.status !== 'voting') return false;
         const lastActivity =
           d.votes && d.votes.length > 0
@@ -64,7 +64,36 @@ export function PulseAIProactiveChecker({
         return (Date.now() - lastActivity) / (1000 * 60 * 60) >= 24;
       });
 
-      onProactiveChange(hasOverdue || hasPendingVotes || hasStale);
+      const hasIssues = overdueTasks.length > 0 || pendingVoteDecisions.length > 0 || staleDecisions.length > 0;
+
+      if (hasIssues) {
+        // Build a descriptive findings message
+        const parts: string[] = [];
+        parts.push('Hey! I noticed a few things that need your attention:\n');
+
+        if (overdueTasks.length > 0) {
+          const taskList = overdueTasks.slice(0, 5).map(t => {
+            const deadline = t.deadline ? new Date(t.deadline).toLocaleDateString('en-US', { month: 'short', day: 'numeric' }) : '';
+            return `- **${t.title}**${deadline ? ` (due ${deadline})` : ''}`;
+          }).join('\n');
+          parts.push(`**${overdueTasks.length} overdue task${overdueTasks.length > 1 ? 's' : ''}:**\n${taskList}`);
+        }
+
+        if (pendingVoteDecisions.length > 0) {
+          const decList = pendingVoteDecisions.slice(0, 5).map(d => `- **${d.title}**`).join('\n');
+          parts.push(`**${pendingVoteDecisions.length} decision${pendingVoteDecisions.length > 1 ? 's' : ''} waiting for your vote:**\n${decList}`);
+        }
+
+        if (staleDecisions.length > 0) {
+          const staleList = staleDecisions.slice(0, 3).map(d => `- **${d.title}**`).join('\n');
+          parts.push(`**${staleDecisions.length} stale decision${staleDecisions.length > 1 ? 's' : ''}** (no activity in 24h+):\n${staleList}`);
+        }
+
+        parts.push('\nWould you like me to help you prioritize or take action on any of these?');
+        onProactiveChange(true, parts.join('\n\n'));
+      } else {
+        onProactiveChange(false);
+      }
     } catch (e) {
       console.error('[PulseAI] Proactive check failed:', e);
     }
@@ -81,9 +110,9 @@ export function PulseAIProactiveChecker({
     };
   }, [runCheck]);
 
-  // Clear badge when panel opens
+  // Clear badge when panel opens (findings already captured by parent)
   useEffect(() => {
-    if (isPanelOpen) onProactiveChange(false);
+    if (isPanelOpen) onProactiveChange(false, undefined);
   }, [isPanelOpen, onProactiveChange]);
 
   return null;
