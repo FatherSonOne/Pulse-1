@@ -1,7 +1,7 @@
 # Pulse User's Guide
 
-**Version**: 25.2.1
-**Last Updated**: April 5, 2026
+**Version**: 25.2.2
+**Last Updated**: April 12, 2026
 **For**: All Pulse users — personal, team, and enterprise
 
 ---
@@ -1778,7 +1778,9 @@ The **Pulse AI Assistant** is always available — press `Ctrl+/` (or `⌘/` on 
 - "What decisions are pending my vote?"
 - "Which contacts have I not spoken to in 30 days?"
 
-**Proactive suggestions:** A badge appears on the ECG button when Pulse has a proactive suggestion ready based on what's happening in your workspace. Click the button to see it.
+**Shared context between text and voice:** The text assistant and voice chat share the same context. Start a conversation by typing, then switch to voice to continue hands-free — or vice versa. Both assistants have access to your current section's data, conversation history, and workspace context.
+
+**Proactive suggestions:** A pulsing badge appears on the ECG button when Pulse detects something that needs your attention — overdue tasks, pending decision votes, or stale decisions. Open the assistant to see the suggestion and take action directly.
 
 **Tip:** The AI Assistant can take real actions — not just answer questions. Tell it to create tasks, draft replies, or update your calendar.
 
@@ -2569,10 +2571,32 @@ For team workspace administrators:
 1. Go to **Settings → Workspace**.
 2. Manage:
    - Workspace name and description
+   - **Workspace avatar** — click the camera icon on the workspace image to upload a custom photo. The avatar appears in the sidebar workspace switcher next to your workspace name.
    - Member list — invite, remove, or change roles
    - Role permissions — what each role can see and do
    - Data retention policies — how long messages and data are stored
    - Security settings — SSO, 2FA requirements
+
+### Ownership Transfer
+
+Transfer workspace ownership to another admin when you're stepping back or changing roles:
+
+1. Go to **Settings → Workspace**.
+2. Scroll to the **Transfer Ownership** section.
+3. Select the team member you want to transfer to (must have an Admin role).
+4. A confirmation dialog explains the consequences — you will be demoted to Admin, and the selected member becomes the new Owner.
+5. Confirm the transfer.
+
+**Tip:** Only workspace Owners can transfer ownership. The target must already be an Admin.
+
+### Audit Log
+
+View a timestamped history of all significant workspace changes:
+
+1. Go to **Settings → Workspace**.
+2. Scroll to the **Audit Log** section.
+3. The log shows recent events: member additions, role changes, setting updates, ownership transfers, and deletions.
+4. Each entry shows the action, who performed it, and when.
 
 ### Workspace Deletion
 
@@ -2598,6 +2622,36 @@ Workspace owners can archive or permanently delete a workspace:
 If all your workspaces have been archived, Pulse shows a recovery screen listing your archived workspaces with a **Restore** button next to each. You can also create a new workspace from this screen.
 
 **Tip:** Archive first if you're unsure. You have a full 30-day window to change your mind before the data is permanently removed.
+
+### Team Management
+
+Invite members, manage roles, and control team size within your plan limits.
+
+1. Go to **Settings → Team** to view all workspace members and pending invitations.
+2. Click **Invite** to send an email invitation — choose a role (Admin, Member, or Viewer) before sending.
+3. Your plan determines the maximum number of members. A warning appears when you approach the limit.
+4. Pending invitations can be **resent** or **canceled** from the invite list.
+5. Change any member's role from the member list — except the workspace Owner, who must transfer ownership first.
+6. Remove a member by clicking the remove button next to their name.
+
+**Plan member limits:**
+
+| Plan | Max Members |
+| ---- | ----------- |
+| Free | 3 |
+| Starter | 10 |
+| Professional | 50 |
+| Business | 200 |
+
+### Accepting Workspace Invitations
+
+When someone invites you to their workspace:
+
+1. You receive an email with a unique invite link.
+2. Click the link:
+   - **If you are already signed in** — the invitation is accepted immediately and the workspace appears in your sidebar switcher.
+   - **If you are not signed in** — Pulse saves your invitation and redirects you to login. After signing in, the invitation is accepted automatically.
+3. The new workspace is selected automatically after acceptance — you land directly in it.
 
 ### Admin Dashboard & Activity Monitor
 

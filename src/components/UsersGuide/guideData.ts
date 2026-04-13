@@ -1,5 +1,5 @@
 // Pulse User's Guide — Full Rich Section Data
-// Version 25.2.1 · April 5, 2026
+// Version 25.2.2 · April 12, 2026
 // Auto-maintained by the /users-guide slash command.
 
 export interface Shortcut {
@@ -1574,14 +1574,17 @@ export const guideSections: GuideSection[] = [
       {
         id: 'pulse-ai-assistant',
         title: 'Pulse AI Global Assistant',
+        badge: 'Updated',
         steps: [
           'Open with Ctrl+/ or the animated ECG waveform button in the sidebar.',
           'The assistant is context-aware — it loads data from your current section when you open it.',
           'Chat history is preserved across section switches during your session.',
+          'Text and voice assistants share context — start a conversation in the text panel, then continue hands-free with voice, or vice versa.',
           'Ask questions: "What meetings do I have this week?", "Summarize my emails from today."',
           'Give it actions: "Create a task for Sarah to review the proposal by Friday."',
           'Chain actions: "Summarize the overdue tasks, then draft a message to each assignee."',
-          'A badge on the ECG button means a proactive suggestion is waiting for you.',
+          'A pulsing badge on the ECG button means Pulse has detected something that needs your attention — overdue tasks, pending votes, or stale decisions.',
+          'Open the assistant to see the proactive suggestion and take action directly from the panel.',
         ],
       },
       {
@@ -2219,13 +2222,42 @@ export const guideSections: GuideSection[] = [
         steps: [
           'Go to Settings → Workspace.',
           'Manage workspace name and description.',
-          'Member list — invite, remove, or change roles: Owner, Admin, Member, Guest.',
+          'Upload a workspace avatar — click the camera icon on the workspace image to choose a custom photo. The avatar appears in the sidebar workspace switcher.',
+          'Member list — invite, remove, or change roles: Owner, Admin, Member, Guest. Member limits are enforced by your current plan tier.',
           'Role permissions — control what each role can see and do.',
           'Data retention policies — configure how long messages and data are stored.',
           'Security — enable SSO (SAML 2.0, Google Workspace, Microsoft Entra, Okta).',
+          'Transfer Ownership — select another admin and transfer the Owner role. A confirmation dialog explains the consequences before proceeding.',
+          'Audit Log — view a timestamped history of workspace changes: member additions, role changes, setting updates, and ownership transfers.',
           'Archive Workspace — hides the workspace from all members for 30 days (restorable).',
           'Delete Permanently — irreversibly removes all workspace data. Type the workspace name to confirm.',
           'If all workspaces are archived, a recovery screen lets you restore any of them or create a new one.',
+        ],
+      },
+      {
+        id: 'team-management',
+        title: 'Team Management',
+        badge: 'Updated',
+        description: 'Invite members, manage roles, and control team size within your plan limits.',
+        steps: [
+          'Go to Settings → Team to view all workspace members and pending invitations.',
+          'Click Invite to send an email invitation — choose a role (Admin, Member, or Viewer) before sending.',
+          'Your plan determines the maximum number of members. A warning appears when you approach the limit.',
+          'Pending invitations can be resent or canceled from the invite list.',
+          'Change any member\'s role from the member list — except the workspace Owner, who must transfer ownership first.',
+          'Remove a member by clicking the remove button next to their name.',
+        ],
+        note: 'Plan-based limits: Free allows up to 3 members, Starter up to 10, Professional up to 50, Business up to 200.',
+      },
+      {
+        id: 'workspace-invites',
+        title: 'Accepting Workspace Invitations',
+        badge: 'New',
+        steps: [
+          'When someone invites you, you receive an email with a unique invite link.',
+          'Click the link — if you are already signed in to Pulse, the invitation is accepted immediately and the workspace appears in your switcher.',
+          'If you are not signed in, Pulse saves your invitation and redirects you to login. After signing in, the invitation is accepted automatically.',
+          'The workspace is selected automatically after acceptance — you land directly in the new workspace.',
         ],
       },
       {
@@ -2689,5 +2721,5 @@ export const guideSections: GuideSection[] = [
   },
 ];
 
-export const guideVersion = '25.1.4';
-export const guideUpdated = 'March 29, 2026';
+export const guideVersion = '25.2.2';
+export const guideUpdated = 'April 12, 2026';
