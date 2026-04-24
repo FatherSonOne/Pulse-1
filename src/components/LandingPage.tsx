@@ -2,7 +2,7 @@ import React, { useState, useEffect, useRef, lazy, Suspense } from 'react';
 import './LandingPage.css';
 
 import { Apple, ArrowDown, Battery, Bell, Book, BookOpen, Bot, Check, ChevronUp, Download, ExternalLink, Eye, Gavel, Heart, HeartPulse, HelpCircle, Info, Keyboard, Layers, LayoutGrid, Mic, Network, Play, Rocket, Search, ShieldHalf, Signal, Smartphone, Wand2, Wifi, X } from 'lucide-react';
-import { STATS, VOX_MODES, CRM_PLATFORMS, PLATFORMS, FAQ_DATA, SHORTCUT_GROUPS, STUDIO_FEATURES, EMAIL_FEATURES, MESSAGING_FEATURES, CALENDAR_FEATURES, ANALYTICS_FEATURES } from './LandingPage/landingData';
+import { STATS, VOX_MODES, CRM_PLATFORMS, PLATFORMS, FAQ_DATA, SHORTCUT_GROUPS, STUDIO_FEATURES, EMAIL_FEATURES, MESSAGING_FEATURES, CALENDAR_FEATURES, ANALYTICS_FEATURES, PULSE_TEAM_FEATURES, PULSE_TEAM_PRICING } from './LandingPage/landingData';
 
 // Lazy-load the guide — guideData.ts is 26k lines and must NOT land in the main bundle
 const UsersGuide = lazy(() => import('./UsersGuide/UsersGuide'));
@@ -51,6 +51,7 @@ const LandingPage: React.FC<LandingPageProps> = ({ onGetStarted }) => {
   const [downloadsOpen, setDownloadsOpen] = useState(false);
   const [orbitPaused, setOrbitPaused] = useState(false);
   const [mobileMenuOpen, setMobileMenuOpen] = useState(false);
+  const [pricingCycle, setPricingCycle] = useState<'monthly' | 'yearly'>('monthly');
   const heroCanvasRef = useRef<HTMLCanvasElement>(null);
   const crmCanvasRef  = useRef<HTMLCanvasElement>(null);
 
@@ -2387,241 +2388,121 @@ const LandingPage: React.FC<LandingPageProps> = ({ onGetStarted }) => {
         </div>
       </section>
 
-      {/* ── Pricing Section ── */}
+      {/* ── Pricing Section — single-tier Pulse Team ── */}
       <section id="pricing" className="py-24 px-6 border-t border-zinc-800/50 relative overflow-hidden">
-        {/* Background glow */}
-        <div className="absolute inset-0 pointer-events-none">
+        {/* Background glow — rose/pink brand accent */}
+        <div className="absolute inset-0 pointer-events-none" aria-hidden="true">
           <div className="absolute top-0 left-1/2 -translate-x-1/2 w-[900px] h-[400px] bg-rose-500/5 rounded-full blur-3xl" />
+          <div className="absolute bottom-0 left-1/2 -translate-x-1/2 w-[600px] h-[300px] bg-fuchsia-500/5 rounded-full blur-3xl" />
         </div>
+
         <div className="max-w-6xl mx-auto relative z-10">
-          <div className="text-center mb-16">
+          {/* Section header */}
+          <div className="text-center mb-10">
             <div className="inline-flex items-center gap-2 px-3 py-1.5 rounded-full bg-zinc-800/60 border border-zinc-700/50 text-rose-400 text-xs font-bold uppercase tracking-widest mb-4">
               <i className="fa-solid fa-tag" aria-hidden="true"></i> Pricing
             </div>
-            <h2 className="text-3xl sm:text-4xl font-bold text-white mb-3">Simple, transparent pricing</h2>
-            <p className="text-zinc-400 text-base max-w-xl mx-auto">Everything your team needs to communicate, coordinate, and close deals — no hidden fees.</p>
+            <h2 className="text-3xl sm:text-4xl font-bold text-white mb-3">One plan. Everything included.</h2>
+            <p className="text-zinc-400 text-base max-w-xl mx-auto">
+              Simple pricing for the whole team — all features, no tiers, no per-seat add-ons.
+            </p>
           </div>
 
-          <div className="grid grid-cols-1 md:grid-cols-3 gap-6 items-stretch">
-
-            {/* ── Starter ── */}
-            <div className="relative flex flex-col rounded-2xl border border-zinc-800 bg-zinc-900/60 backdrop-blur-sm p-8 hover:border-zinc-700 transition-all duration-300">
-              <div className="mb-6">
-                <p className="text-xs font-bold uppercase tracking-widest text-zinc-500 mb-2">Starter</p>
-                <div className="flex items-end gap-1 mb-1">
-                  <span className="text-4xl font-extrabold text-white">$79</span>
-                  <span className="text-zinc-500 mb-1">/month</span>
-                </div>
-                <p className="text-xs text-zinc-600">$790/yr (2 months free) · up to 5 users</p>
-                <p className="text-sm text-zinc-400 mt-2">Small teams getting organized</p>
-              </div>
-
-              <ul className="space-y-3 mb-8 flex-1 text-sm">
-                {[
-                  'Unified Inbox (Email, Internal)',
-                  'Multi-AI Chat (Claude, Gemini, GPT)',
-                  'Contacts + Google Sync',
-                  'Decision & Task Hub',
-                  'Calendar & Meetings',
-                  'Analytics Dashboard',
-                ].map(f => (
-                  <li key={f} className="flex items-start gap-2.5 text-zinc-300">
-                    <i className="fa-solid fa-check text-rose-500 mt-0.5 shrink-0" aria-hidden="true"></i>
-                    {f}
-                  </li>
-                ))}
-                <li className="pt-3 border-t border-zinc-800 space-y-2">
-                  {[
-                    ['Users', 'Up to 5'],
-                    ['AI Messages/mo', '500'],
-                    ['SMS Messages/mo', '100'],
-                    ['Storage', '5 GB'],
-                    ['Support', 'Email'],
-                  ].map(([k, v]) => (
-                    <div key={k} className="flex justify-between text-xs">
-                      <span className="text-zinc-500">{k}</span>
-                      <span className="text-zinc-300 font-medium">{v}</span>
-                    </div>
-                  ))}
-                </li>
-              </ul>
-
-              <button
-                type="button"
-                onClick={onGetStarted}
-                className="w-full py-3 rounded-xl border border-zinc-700 text-white text-sm font-semibold hover:border-rose-500/50 hover:bg-zinc-800 transition-all duration-200"
-              >
-                Get Started
-              </button>
-            </div>
-
-            {/* ── Professional (featured) ── */}
-            <div className="relative flex flex-col rounded-2xl border border-rose-500/40 bg-zinc-900/80 backdrop-blur-sm p-8 shadow-[0_0_40px_rgba(244,63,94,0.12)] hover:shadow-[0_0_60px_rgba(244,63,94,0.18)] transition-all duration-300 scale-[1.02]">
-              <div className="absolute -top-3.5 left-1/2 -translate-x-1/2 px-4 py-1 rounded-full bg-rose-500 text-white text-[11px] font-bold uppercase tracking-wider shadow-lg">
-                Most Popular
-              </div>
-              <div className="mb-6">
-                <p className="text-xs font-bold uppercase tracking-widest text-rose-400 mb-2">Professional</p>
-                <div className="flex items-end gap-1 mb-1">
-                  <span className="text-4xl font-extrabold text-white">$149</span>
-                  <span className="text-zinc-500 mb-1">/month</span>
-                </div>
-                <p className="text-xs text-zinc-600">$1,490/yr (2 months free) · up to 15 users</p>
-                <p className="text-sm text-zinc-400 mt-2">Growing teams who live in their inbox</p>
-              </div>
-
-              <ul className="space-y-3 mb-8 flex-1 text-sm">
-                <li className="flex items-start gap-2.5 text-zinc-400 text-xs font-medium italic">
-                  <i className="fa-solid fa-circle-check text-rose-500/60 mt-0.5 shrink-0" aria-hidden="true"></i>
-                  Everything in Starter, plus:
-                </li>
-                {/* Logos Vision CRM — featured highlight */}
-                <li className="flex items-start gap-2.5">
-                  <i className="fa-solid fa-star text-rose-400 mt-0.5 shrink-0" aria-hidden="true"></i>
-                  <span className="text-white font-semibold">
-                    Logos Vision CRM
-                    <span className="ml-2 inline-flex items-center px-1.5 py-0.5 rounded text-[10px] font-bold uppercase tracking-wide bg-rose-500/15 text-rose-400 border border-rose-500/20">Included</span>
-                    <span className="block text-xs text-zinc-400 font-normal mt-0.5">Full pipeline, contacts, deals & activity sync — built in</span>
-                  </span>
-                </li>
-                <li className="flex items-start gap-2.5 text-zinc-300">
-                  <i className="fa-solid fa-check text-rose-400/60 mt-0.5 shrink-0" aria-hidden="true"></i>
-                  <span className="text-zinc-400 text-xs">3rd-party CRM integrations (HubSpot, Salesforce, Pipedrive)</span>
-                </li>
-                {[
-                  'SMS (Twilio) + Slack integration',
-                  'Voxer Voice (recording, transcription, AI)',
-                  'AI Auto-responses & Coaching',
-                  'Contact Map View (Mapbox)',
-                ].map(f => (
-                  <li key={f} className="flex items-start gap-2.5 text-zinc-200">
-                    <i className="fa-solid fa-check text-rose-400 mt-0.5 shrink-0" aria-hidden="true"></i>
-                    {f}
-                  </li>
-                ))}
-                <li className="pt-3 border-t border-rose-500/20 space-y-2">
-                  {[
-                    ['Users', 'Up to 15'],
-                    ['AI Messages/mo', '2,000'],
-                    ['SMS Messages/mo', '500'],
-                    ['Storage', '25 GB'],
-                    ['Support', 'Priority email + chat'],
-                  ].map(([k, v]) => (
-                    <div key={k} className="flex justify-between text-xs">
-                      <span className="text-zinc-500">{k}</span>
-                      <span className="text-rose-300 font-medium">{v}</span>
-                    </div>
-                  ))}
-                </li>
-              </ul>
-
-              <button
-                type="button"
-                onClick={onGetStarted}
-                className="w-full py-3 rounded-xl bg-gradient-to-r from-rose-500 to-pink-500 text-white text-sm font-bold hover:from-rose-400 hover:to-pink-400 transition-all duration-200 shadow-lg shadow-rose-500/20 hover:shadow-rose-500/30 hover:-translate-y-0.5"
-              >
-                Get Started
-              </button>
-            </div>
-
-            {/* ── Business ── */}
-            <div className="relative flex flex-col rounded-2xl border border-zinc-800 bg-zinc-900/60 backdrop-blur-sm p-8 hover:border-zinc-700 transition-all duration-300">
-              <div className="mb-6">
-                <p className="text-xs font-bold uppercase tracking-widest text-zinc-500 mb-2">Business</p>
-                <div className="flex items-end gap-1 mb-1">
-                  <span className="text-4xl font-extrabold text-white">$249</span>
-                  <span className="text-zinc-500 mb-1">/month</span>
-                </div>
-                <p className="text-xs text-zinc-600">$2,490/yr (2 months free) · unlimited users</p>
-                <p className="text-sm text-zinc-400 mt-2">Teams that need everything</p>
-              </div>
-
-              <ul className="space-y-3 mb-8 flex-1 text-sm">
-                <li className="flex items-start gap-2.5 text-zinc-400 text-xs font-medium italic">
-                  <i className="fa-solid fa-circle-check text-rose-500/60 mt-0.5 shrink-0" aria-hidden="true"></i>
-                  Everything in Professional, plus:
-                </li>
-                {[
-                  'Unlimited users',
-                  'Unlimited AI messages',
-                  'Advanced analytics & reporting',
-                  'Custom automations & workflows',
-                  'Admin dashboard & team management',
-                  'Mobile app (Android)',
-                ].map(f => (
-                  <li key={f} className="flex items-start gap-2.5 text-zinc-300">
-                    <i className="fa-solid fa-check text-rose-500 mt-0.5 shrink-0" aria-hidden="true"></i>
-                    {f}
-                  </li>
-                ))}
-                <li className="pt-3 border-t border-zinc-800 space-y-2">
-                  {[
-                    ['Users', 'Unlimited'],
-                    ['AI Messages/mo', 'Unlimited'],
-                    ['SMS Messages/mo', 'Unlimited'],
-                    ['Storage', 'Unlimited'],
-                    ['Support', 'Dedicated account manager'],
-                  ].map(([k, v]) => (
-                    <div key={k} className="flex justify-between text-xs">
-                      <span className="text-zinc-500">{k}</span>
-                      <span className="text-zinc-300 font-medium">{v}</span>
-                    </div>
-                  ))}
-                </li>
-              </ul>
-
-              <button
-                type="button"
-                onClick={onGetStarted}
-                className="w-full py-3 rounded-xl border border-zinc-700 text-white text-sm font-semibold hover:border-rose-500/50 hover:bg-zinc-800 transition-all duration-200"
-              >
-                Contact Sales
-              </button>
-            </div>
-
+          {/* Monthly / Yearly toggle */}
+          <div
+            className="mx-auto mb-10 flex items-center gap-1 p-1 rounded-xl bg-zinc-900/70 border border-zinc-800 w-fit"
+            role="tablist"
+            aria-label="Billing cycle"
+          >
+            <button
+              type="button"
+              role="tab"
+              aria-selected={pricingCycle === 'monthly'}
+              onClick={() => setPricingCycle('monthly')}
+              className={`px-5 py-2 rounded-lg text-sm font-medium transition-colors ${
+                pricingCycle === 'monthly'
+                  ? 'bg-gradient-to-r from-fuchsia-600 to-pink-600 text-white shadow-lg shadow-rose-500/20'
+                  : 'text-zinc-400 hover:text-white'
+              }`}
+            >
+              Monthly
+            </button>
+            <button
+              type="button"
+              role="tab"
+              aria-selected={pricingCycle === 'yearly'}
+              onClick={() => setPricingCycle('yearly')}
+              className={`px-5 py-2 rounded-lg text-sm font-medium transition-colors flex items-center gap-2 ${
+                pricingCycle === 'yearly'
+                  ? 'bg-gradient-to-r from-fuchsia-600 to-pink-600 text-white shadow-lg shadow-rose-500/20'
+                  : 'text-zinc-400 hover:text-white'
+              }`}
+            >
+              Yearly
+              <span className={`text-[10px] font-bold uppercase tracking-wide px-1.5 py-0.5 rounded ${
+                pricingCycle === 'yearly'
+                  ? 'bg-white/20 text-white'
+                  : 'bg-emerald-500/15 text-emerald-400 border border-emerald-500/20'
+              }`}>
+                2 months free
+              </span>
+            </button>
           </div>
 
-          {/* ── Ecosystem Bundle Upsell ── */}
-          <div className="mt-10 max-w-3xl mx-auto rounded-2xl border border-emerald-500/30 bg-gradient-to-br from-emerald-500/5 to-cyan-500/5 p-8">
-            <div className="text-center mb-6">
-              <div className="inline-flex items-center gap-2 px-3 py-1 rounded-full bg-emerald-500/10 border border-emerald-500/20 text-emerald-400 text-xs font-bold uppercase tracking-widest mb-4">
-                Full Suite
-              </div>
-              <h3 className="text-2xl font-extrabold text-white mb-2">QntmEcos Ecosystem</h3>
-              <p className="text-sm text-zinc-400">Pulse + Logos Vision CRM + Entomate — one subscription, all three apps</p>
-              <div className="flex items-center justify-center gap-3 mt-4">
-                {['Pulse', 'Logos Vision', 'Entomate'].map((app) => (
-                  <span key={app} className="px-3 py-1.5 rounded-lg bg-white/5 border border-white/10 text-xs font-medium text-zinc-300">{app}</span>
-                ))}
-              </div>
-            </div>
-            <div className="grid grid-cols-1 sm:grid-cols-3 gap-4">
-              {[
-                { name: 'Ecosystem Starter', price: 139, yearly: 1390, users: '5 users', savings: '17% off individual' },
-                { name: 'Ecosystem Pro', price: 269, yearly: 2690, users: '15 users', savings: '18% off individual' },
-                { name: 'Ecosystem Business', price: 479, yearly: 4790, users: 'Unlimited', savings: '17% off individual' },
-              ].map((bundle) => (
-                <div key={bundle.name} className="rounded-xl border border-emerald-500/20 bg-zinc-900/60 p-5 text-center hover:border-emerald-500/40 transition-all">
-                  <p className="text-xs font-bold uppercase tracking-widest text-emerald-400 mb-2">{bundle.name}</p>
-                  <div className="flex items-end justify-center gap-1 mb-1">
-                    <span className="text-2xl font-extrabold text-white">${bundle.price}</span>
-                    <span className="text-zinc-500 mb-0.5 text-sm">/mo</span>
+          {/* Pulse Team card — single centered tier */}
+          <div className="max-w-xl mx-auto">
+            <div className="relative rounded-2xl overflow-hidden shadow-2xl shadow-rose-500/10">
+              {/* Gradient accent bar — matches TrialExpiredBlock */}
+              <div className="h-1 bg-gradient-to-r from-fuchsia-500 via-pink-500 to-rose-500" aria-hidden="true" />
+
+              <div className="bg-gradient-to-br from-zinc-950 to-zinc-900 border-x border-b border-zinc-700/60 rounded-b-2xl p-8 sm:p-10 space-y-6">
+                {/* Header row */}
+                <div className="flex items-center justify-between gap-4">
+                  <div>
+                    <p className="text-xs font-bold uppercase tracking-widest text-rose-400 mb-1">Pulse Team</p>
+                    <h3 className="text-2xl sm:text-3xl font-bold text-white">
+                      ${pricingCycle === 'monthly' ? PULSE_TEAM_PRICING.monthly : PULSE_TEAM_PRICING.yearlyMonthlyEquiv}
+                      <span className="text-base font-normal text-zinc-400">/mo</span>
+                      <span className="ml-3 text-sm font-medium text-zinc-500">· {PULSE_TEAM_PRICING.trialDays} days free</span>
+                    </h3>
+                    <p className="text-xs text-zinc-500 mt-1.5">
+                      {pricingCycle === 'monthly'
+                        ? 'Billed monthly. Cancel anytime.'
+                        : `Billed $${PULSE_TEAM_PRICING.yearly.toLocaleString()} yearly (2 months free)`}
+                    </p>
                   </div>
-                  <p className="text-xs text-zinc-600 mb-2">${bundle.yearly.toLocaleString()}/yr · {bundle.users}</p>
-                  <p className="text-xs text-emerald-400 mb-4">{bundle.savings}</p>
-                  <button
-                    type="button"
-                    onClick={onGetStarted}
-                    className="w-full py-2.5 rounded-lg bg-gradient-to-r from-emerald-500 to-cyan-500 text-white text-sm font-bold hover:from-emerald-400 hover:to-cyan-400 transition-all duration-200 shadow-lg shadow-emerald-500/20"
-                  >
-                    Get Started
-                  </button>
+                  <div className="hidden sm:flex w-14 h-14 rounded-xl bg-gradient-to-br from-fuchsia-500 to-pink-600 items-center justify-center flex-shrink-0 shadow-lg shadow-rose-500/30">
+                    <HeartPulse size={26} className="text-white" />
+                  </div>
                 </div>
-              ))}
-            </div>
-          </div>
 
-          <p className="text-center text-xs text-zinc-600 mt-8">All plans include a 14-day free trial · Cancel anytime · Annual billing saves 2 months</p>
+                {/* Feature list */}
+                <ul className="space-y-3 pt-2">
+                  {PULSE_TEAM_FEATURES.map((feat) => (
+                    <li key={feat} className="flex items-start gap-3 text-sm text-zinc-200">
+                      <Check size={18} className="text-emerald-400 mt-0.5 flex-shrink-0" aria-hidden="true" />
+                      <span>{feat}</span>
+                    </li>
+                  ))}
+                </ul>
+
+                {/* CTA */}
+                <button
+                  type="button"
+                  onClick={onGetStarted}
+                  className="w-full py-3.5 rounded-xl bg-gradient-to-r from-fuchsia-600 via-pink-600 to-rose-600 hover:from-fuchsia-500 hover:via-pink-500 hover:to-rose-500 text-white font-semibold text-sm shadow-lg shadow-rose-500/30 hover:shadow-rose-500/50 transition-all duration-200 hover:-translate-y-0.5 active:translate-y-0 flex items-center justify-center gap-2"
+                >
+                  <Rocket size={16} aria-hidden="true" />
+                  Start free trial
+                </button>
+              </div>
+            </div>
+
+            {/* Trust footnote */}
+            <p className="text-center text-xs text-zinc-500 mt-6 px-4">
+              No credit card required to start. Cancel anytime. Secure checkout via Stripe.
+            </p>
+          </div>
         </div>
       </section>
 

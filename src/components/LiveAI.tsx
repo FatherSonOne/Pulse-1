@@ -1,12 +1,14 @@
 import React, { useState, useRef, useEffect } from 'react';
-import { queryPerplexity, deepResearch, quickResearch, streamPerplexity, PerplexityModel, PERPLEXITY_MODELS } from '../services/perplexityService';
+import { generateSearchResponse } from '../services/geminiService';
 import { saveArchiveItem } from '../services/dbService';
 
-import { BarChart3, Bookmark, Brain, Copy, Key, Link, Loader2, MessagesSquare, Microscope, Send, Sliders, Trash2, User, X, Zap } from 'lucide-react';
+import { BarChart3, Bookmark, Copy, Link, Loader2, MessagesSquare, Microscope, Send, Sliders, Trash2, User, X, Zap } from 'lucide-react';
+
+// Kept for UI compatibility — router picks the actual model per task.
+type LiveAIModel = 'sonar' | 'sonar-large' | 'sonar-huge';
 
 interface LiveAIProps {
   apiKey: string; // Gemini API key (for future voice integration)
-  perplexityKey?: string;
   onClose?: () => void;
 }
 
@@ -22,12 +24,13 @@ interface SearchResult {
 
 type SearchMode = 'quick' | 'deep' | 'conversation';
 
-const LiveAI: React.FC<LiveAIProps> = ({ apiKey, perplexityKey, onClose }) => {
+const LiveAI: React.FC<LiveAIProps> = ({ apiKey, onClose }) => {
+  void apiKey;
   const [query, setQuery] = useState('');
   const [results, setResults] = useState<SearchResult[]>([]);
   const [isSearching, setIsSearching] = useState(false);
   const [searchMode, setSearchMode] = useState<SearchMode>('quick');
-  const [selectedModel, setSelectedModel] = useState<PerplexityModel>('sonar');
+  const [selectedModel, setSelectedModel] = useState<LiveAIModel>('sonar');
   const [showSettings, setShowSettings] = useState(false);
   const [streamingText, setStreamingText] = useState('');
 
@@ -43,7 +46,8 @@ const LiveAI: React.FC<LiveAIProps> = ({ apiKey, perplexityKey, onClose }) => {
   }, [results, streamingText]);
 
   const handleSearch = async (searchQuery: string = query) => {
-    if (!searchQuery.trim() || !perplexityKey) return;
+    if (!searchQuery.trim()) return;
+    void selectedModel;
 
     setIsSearching(true);
     setQuery('');
@@ -54,51 +58,22 @@ const LiveAI: React.FC<LiveAIProps> = ({ apiKey, perplexityKey, onClose }) => {
       answer: '',
       citations: [],
       timestamp: new Date(),
-      isStreaming: searchMode === 'conversation'
+      isStreaming: false,
     };
 
     setResults(prev => [...prev, newResult]);
 
     try {
-      if (searchMode === 'conversation') {
-        // Streaming mode
-        let fullAnswer = '';
-        await streamPerplexity(
-          perplexityKey,
-          searchQuery,
-          (chunk) => {
-            fullAnswer += chunk;
-            setStreamingText(fullAnswer);
-          },
-          (citations) => {
-            setResults(prev => prev.map(r =>
-              r.id === newResult.id
-                ? { ...r, answer: fullAnswer, citations, isStreaming: false }
-                : r
-            ));
-            setStreamingText('');
-          },
-          { model: selectedModel }
-        );
-      } else if (searchMode === 'quick') {
-        const result = await quickResearch(perplexityKey, searchQuery);
-        if (result) {
-          setResults(prev => prev.map(r =>
-            r.id === newResult.id
-              ? { ...r, answer: result.answer, citations: result.sources }
-              : r
-          ));
-        }
-      } else {
-        const result = await deepResearch(perplexityKey, searchQuery);
-        if (result) {
-          setResults(prev => prev.map(r =>
-            r.id === newResult.id
-              ? { ...r, answer: result.answer, citations: result.citations, relatedQueries: result.relatedQueries }
-              : r
-          ));
-        }
-      }
+      const { text, groundingChunks } = await generateSearchResponse('', searchQuery);
+      const citations = (groundingChunks || [])
+        .map((c: any) => c?.web?.uri)
+        .filter((uri: any): uri is string => Boolean(uri));
+      setResults(prev => prev.map(r =>
+        r.id === newResult.id
+          ? { ...r, answer: text, citations, isStreaming: false }
+          : r
+      ));
+      setStreamingText('');
     } catch (error) {
       console.error('Search failed:', error);
       setResults(prev => prev.map(r =>
@@ -123,7 +98,7 @@ const LiveAI: React.FC<LiveAIProps> = ({ apiKey, perplexityKey, onClose }) => {
       type: 'research',
       title: result.query,
       content: `${result.answer}\n\nSources:\n${result.citations.join('\n')}`,
-      tags: ['perplexity', 'research', searchMode]
+      tags: ['research', searchMode]
     });
   };
 
@@ -131,28 +106,6 @@ const LiveAI: React.FC<LiveAIProps> = ({ apiKey, perplexityKey, onClose }) => {
     setResults([]);
     setStreamingText('');
   };
-
-  if (!perplexityKey) {
-    return (
-      <div className="h-full bg-white dark:bg-zinc-950 rounded-2xl overflow-hidden border border-zinc-200 dark:border-zinc-800 flex flex-col items-center justify-center p-8">
-        <div className="w-20 h-20 rounded-full bg-gradient-to-br from-cyan-500 to-blue-600 flex items-center justify-center mb-6">
-          <Brain className="text-3xl text-white" />
-        </div>
-        <h2 className="text-xl font-bold dark:text-white text-zinc-900 mb-2">Live AI Research</h2>
-        <p className="text-zinc-500 text-center mb-6 max-w-md">
-          Configure your Perplexity API key in Settings to enable real-time web research with AI.
-        </p>
-        <a
-          href="https://www.perplexity.ai/settings/api"
-          target="_blank"
-          rel="noopener noreferrer"
-          className="px-6 py-3 bg-gradient-to-r from-cyan-600 to-blue-600 text-white rounded-xl font-bold hover:opacity-90 transition flex items-center gap-2"
-        >
-          <Key /> Get API Key
-        </a>
-      </div>
-    );
-  }
 
   return (
     <div className="h-full bg-white dark:bg-zinc-950 rounded-2xl overflow-hidden border border-zinc-200 dark:border-zinc-800 flex flex-col animate-fade-in shadow-xl">
@@ -164,7 +117,7 @@ const LiveAI: React.FC<LiveAIProps> = ({ apiKey, perplexityKey, onClose }) => {
           </div>
           <div>
             <h2 className="text-lg font-bold text-white">Live AI Research</h2>
-            <p className="text-cyan-100 text-xs">Powered by Perplexity</p>
+            <p className="text-cyan-100 text-xs">Powered by Gemini Search Grounding</p>
           </div>
         </div>
         <div className="flex items-center gap-2">
@@ -213,12 +166,12 @@ const LiveAI: React.FC<LiveAIProps> = ({ apiKey, perplexityKey, onClose }) => {
               <label className="text-[10px] text-zinc-400 uppercase font-bold mb-1 block">Model</label>
               <select
                 value={selectedModel}
-                onChange={(e) => setSelectedModel(e.target.value as PerplexityModel)}
+                onChange={(e) => setSelectedModel(e.target.value as LiveAIModel)}
                 className="px-3 py-2 bg-zinc-100 dark:bg-zinc-800 border border-zinc-200 dark:border-zinc-700 rounded-lg text-sm dark:text-white"
               >
-                <option value="sonar">Sonar (Fast)</option>
-                <option value="sonar-large">Sonar Large</option>
-                <option value="sonar-huge">Sonar Huge (Best)</option>
+                <option value="sonar">Fast</option>
+                <option value="sonar-large">Large</option>
+                <option value="sonar-huge">Best</option>
               </select>
             </div>
           </div>

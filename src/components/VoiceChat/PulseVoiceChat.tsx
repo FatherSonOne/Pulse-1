@@ -91,8 +91,53 @@ const PulseVoiceChat: React.FC<PulseVoiceChatProps> = ({
   onSendToArchive,
   onSendToEmail
 }) => {
-  // Get OpenAI API key
-  const openaiApiKey = localStorage.getItem('openai_api_key') || import.meta.env.VITE_OPENAI_API_KEY || '';
+  // Ephemeral token fetched from the openai-realtime-token edge function.
+  // Platform-managed keys only — never reads env/localStorage for the OpenAI key.
+  const [openaiApiKey, setOpenaiApiKey] = useState<string>('');
+  const [isResolvingToken, setIsResolvingToken] = useState<boolean>(true);
+  const [tokenError, setTokenError] = useState<string | null>(null);
+
+  useEffect(() => {
+    let cancelled = false;
+    const resolveToken = async () => {
+      setIsResolvingToken(true);
+      setTokenError(null);
+      try {
+        // If a key was passed in as a prop (pre-fetched ephemeral token), prefer it
+        if (apiKey) {
+          if (!cancelled) {
+            setOpenaiApiKey(apiKey);
+            setIsResolvingToken(false);
+          }
+          return;
+        }
+
+        const { supabase } = await import('../../services/supabase');
+        const { data, error } = await supabase.functions.invoke('openai-realtime-token', {
+          body: { model: 'gpt-4o-realtime-preview', voice: 'alloy' },
+        });
+
+        if (cancelled) return;
+
+        if (error || !data?.token) {
+          setTokenError('OpenAI Realtime unavailable. Please try again later.');
+          setOpenaiApiKey('');
+        } else {
+          setOpenaiApiKey(data.token);
+        }
+      } catch (err) {
+        if (!cancelled) {
+          setTokenError('OpenAI Realtime unavailable. Please try again later.');
+          setOpenaiApiKey('');
+        }
+      } finally {
+        if (!cancelled) setIsResolvingToken(false);
+      }
+    };
+
+    resolveToken();
+    return () => { cancelled = true; };
+  }, [apiKey]);
 
   // Voice states
   const [voiceState, setVoiceState] = useState<VoiceState>('idle');
@@ -701,13 +746,24 @@ const PulseVoiceChat: React.FC<PulseVoiceChatProps> = ({
 
       {/* Main content */}
       <div className="pvc-content">
-        {/* API Key Warning */}
-        {!openaiApiKey && (
+        {/* Token resolution loading */}
+        {isResolvingToken && (
+          <div className="pvc-api-warning">
+            <Loader2 size={20} className="animate-spin" />
+            <div>
+              <strong>Preparing voice session...</strong>
+              <p>Fetching a secure session token.</p>
+            </div>
+          </div>
+        )}
+
+        {/* Token resolution error */}
+        {!isResolvingToken && !openaiApiKey && (
           <div className="pvc-api-warning">
             <AlertCircle size={20} />
             <div>
-              <strong>OpenAI API Key Required</strong>
-              <p>Add your API key in Settings &gt; AI Lab to enable voice chat.</p>
+              <strong>Voice chat unavailable</strong>
+              <p>{tokenError || 'OpenAI Realtime is temporarily unavailable. Please try again later.'}</p>
             </div>
           </div>
         )}

@@ -1,8 +1,10 @@
-import OpenAI from 'openai';
+import { supabase } from './supabase';
 
 /**
  * Whisper API Service
- * Uses OpenAI's Whisper model for accurate speech-to-text transcription
+ * Transcribes audio via the `whisper-proxy` Supabase edge function, which
+ * forwards to OpenAI's Whisper API server-side. Keeps the OpenAI key out of
+ * the browser bundle — the client only needs a valid Supabase session.
  */
 
 export interface WhisperTranscriptionOptions {
@@ -10,6 +12,7 @@ export interface WhisperTranscriptionOptions {
   prompt?: string; // Optional context to guide the model
   temperature?: number; // 0-1, lower is more deterministic
   response_format?: 'json' | 'text' | 'srt' | 'verbose_json' | 'vtt';
+  timestamp_granularities?: ('word' | 'segment')[]; // for verbose_json
 }
 
 export interface WhisperTranscriptionResult {
@@ -30,18 +33,45 @@ export interface WhisperTranscriptionResult {
   }>;
 }
 
-export class WhisperService {
-  private openai: OpenAI;
+// Extract a useful error message out of a Supabase functions.invoke() failure.
+// The SDK wraps the underlying Response in `error.context.response` — we try
+// to parse the OpenAI error body for something actionable.
+async function extractInvokeError(error: unknown, fallback: string): Promise<string> {
+  const message = error instanceof Error ? error.message : fallback;
+  const ctx = (error as { context?: { response?: Response } })?.context;
+  const resp = ctx?.response;
+  if (resp) {
+    try {
+      const body = await resp.clone().json();
+      if (body?.error?.message) return body.error.message;
+      if (body?.error && typeof body.error === 'string') return body.error;
+      if (body?.detail) return body.detail;
+    } catch {
+      try {
+        const text = await resp.clone().text();
+        if (text) return text;
+      } catch {
+        /* ignore */
+      }
+    }
+  }
+  return message;
+}
 
-  constructor(apiKey: string) {
-    this.openai = new OpenAI({
-      apiKey: apiKey,
-      dangerouslyAllowBrowser: true,
-    });
+export class WhisperService {
+  /**
+   * @param _apiKey deprecated — ignored. The edge function holds the OpenAI
+   *   key server-side. Kept as an optional constructor arg so existing callers
+   *   (e.g. `new WhisperService(openAiKey)` in audioVoiceServiceGemini.ts)
+   *   continue to compile without modification.
+   */
+  // eslint-disable-next-line @typescript-eslint/no-unused-vars
+  constructor(_apiKey?: string) {
+    // no-op
   }
 
   /**
-   * Transcribe audio using Whisper API
+   * Transcribe audio using Whisper API (via whisper-proxy edge function)
    * @param audioBlob - Audio file as Blob (supports mp3, mp4, mpeg, mpga, m4a, wav, webm)
    * @param options - Optional transcription parameters
    * @returns Transcription result with text and metadata
@@ -54,34 +84,47 @@ export class WhisperService {
       // Normalize mime type - strip codec info (e.g., 'audio/webm;codecs=opus' -> 'audio/webm')
       const baseMimeType = audioBlob.type ? audioBlob.type.split(';')[0] : 'audio/webm';
 
-      // Convert Blob to File (Whisper API requires File object)
+      // Convert Blob to File so the edge function sees a proper `file` field
       const audioFile = new File(
         [audioBlob],
         `audio-${Date.now()}.webm`,
         { type: baseMimeType }
       );
 
-      // Call Whisper API
-      const transcription = await this.openai.audio.transcriptions.create({
-        file: audioFile,
-        model: 'whisper-1',
-        language: options.language,
-        prompt: options.prompt,
-        temperature: options.temperature ?? 0.2, // Lower temperature for more accuracy
-        response_format: options.response_format || 'verbose_json',
+      const form = new FormData();
+      form.append('file', audioFile);
+      form.append('model', 'whisper-1');
+      form.append('response_format', options.response_format || 'verbose_json');
+      form.append('temperature', String(options.temperature ?? 0.2));
+      if (options.language) form.append('language', options.language);
+      if (options.prompt) form.append('prompt', options.prompt);
+      if (options.timestamp_granularities?.length) {
+        for (const g of options.timestamp_granularities) {
+          form.append('timestamp_granularities[]', g);
+        }
+      }
+      // endpoint defaults to 'transcriptions' server-side
+
+      const { data, error } = await supabase.functions.invoke('whisper-proxy', {
+        body: form,
       });
 
-      // Handle different response formats
-      if (typeof transcription === 'string') {
-        return { text: transcription };
+      if (error) {
+        const detail = await extractInvokeError(error, 'invoke failed');
+        throw new Error(`Whisper transcription failed: ${detail}`);
       }
 
-      // Verbose JSON response
+      // Handle text-mode responses (plain string)
+      if (typeof data === 'string') {
+        return { text: data };
+      }
+
+      // Verbose JSON / JSON response
       return {
-        text: transcription.text,
-        language: (transcription as any).language,
-        duration: (transcription as any).duration,
-        segments: (transcription as any).segments,
+        text: data?.text ?? '',
+        language: data?.language,
+        duration: data?.duration,
+        segments: data?.segments,
       };
     } catch (error) {
       console.error('Whisper transcription error:', error);
@@ -94,7 +137,7 @@ export class WhisperService {
   }
 
   /**
-   * Translate audio to English using Whisper
+   * Translate audio to English using Whisper (via whisper-proxy edge function)
    * @param audioBlob - Audio file in any supported language
    * @param options - Optional parameters
    * @returns English translation
@@ -104,7 +147,6 @@ export class WhisperService {
     options: Omit<WhisperTranscriptionOptions, 'language'> = {}
   ): Promise<WhisperTranscriptionResult> {
     try {
-      // Normalize mime type - strip codec info
       const baseMimeType = audioBlob.type ? audioBlob.type.split(';')[0] : 'audio/webm';
 
       const audioFile = new File(
@@ -113,23 +155,32 @@ export class WhisperService {
         { type: baseMimeType }
       );
 
-      const translation = await this.openai.audio.translations.create({
-        file: audioFile,
-        model: 'whisper-1',
-        prompt: options.prompt,
-        temperature: options.temperature ?? 0.2,
-        response_format: options.response_format || 'verbose_json',
+      const form = new FormData();
+      form.append('file', audioFile);
+      form.append('model', 'whisper-1');
+      form.append('response_format', options.response_format || 'verbose_json');
+      form.append('temperature', String(options.temperature ?? 0.2));
+      form.append('endpoint', 'translations'); // switch proxy to /audio/translations
+      if (options.prompt) form.append('prompt', options.prompt);
+
+      const { data, error } = await supabase.functions.invoke('whisper-proxy', {
+        body: form,
       });
 
-      if (typeof translation === 'string') {
-        return { text: translation };
+      if (error) {
+        const detail = await extractInvokeError(error, 'invoke failed');
+        throw new Error(`Whisper translation failed: ${detail}`);
+      }
+
+      if (typeof data === 'string') {
+        return { text: data };
       }
 
       return {
-        text: translation.text,
+        text: data?.text ?? '',
         language: 'en',
-        duration: (translation as any).duration,
-        segments: (translation as any).segments,
+        duration: data?.duration,
+        segments: data?.segments,
       };
     } catch (error) {
       console.error('Whisper translation error:', error);
@@ -175,7 +226,7 @@ export class WhisperService {
       } else {
         console.error(`Transcription ${index} failed:`, result.reason);
         return {
-          text: `[Transcription failed: ${result.reason.message}]`,
+          text: `[Transcription failed: ${result.reason?.message ?? String(result.reason)}]`,
         };
       }
     });
@@ -187,7 +238,7 @@ export class WhisperService {
    */
   async convertAudioFormat(
     audioBlob: Blob,
-    targetFormat: 'mp3' | 'wav' | 'webm' = 'mp3'
+    _targetFormat: 'mp3' | 'wav' | 'webm' = 'mp3'
   ): Promise<Blob> {
     // This is a placeholder - actual conversion would require a library like ffmpeg.wasm
     // For now, we'll just return the original blob
@@ -217,29 +268,39 @@ export class WhisperService {
     const maxSizeBytes = 25 * 1024 * 1024; // 25 MB
     return audioBlob.size <= maxSizeBytes;
   }
+
+  /**
+   * Whether the service is available. Always true now — the proxy is
+   * reachable whenever the user has a valid Supabase session.
+   */
+  isAvailable(): boolean {
+    return true;
+  }
 }
 
 /**
- * Create a singleton instance with API key
+ * Singleton instance. The apiKey arg is accepted for backwards compatibility
+ * but ignored — the edge function holds the OpenAI key server-side.
  */
 let whisperServiceInstance: WhisperService | null = null;
 
-export const getWhisperService = (apiKey: string): WhisperService => {
-  if (!whisperServiceInstance || whisperServiceInstance['openai'].apiKey !== apiKey) {
-    whisperServiceInstance = new WhisperService(apiKey);
+export const getWhisperService = (_apiKey?: string): WhisperService => {
+  if (!whisperServiceInstance) {
+    whisperServiceInstance = new WhisperService();
   }
   return whisperServiceInstance;
 };
 
 /**
- * Convenience function for quick transcription
+ * Convenience function for quick transcription.
+ * The apiKey arg is accepted for backwards compatibility but ignored.
  */
 export const transcribeAudio = async (
-  apiKey: string,
+  _apiKey: string | undefined,
   audioBlob: Blob,
   options?: WhisperTranscriptionOptions
 ): Promise<string> => {
-  const service = getWhisperService(apiKey);
+  const service = getWhisperService();
   const result = await service.transcribe(audioBlob, options);
   return result.text;
 };

@@ -1,9 +1,19 @@
 // src/services/messageAutoResponseService.ts
 // Auto-Response Service for Message System
-// Provides rule-based auto-responses with AI customization
+// Provides rule-based auto-responses with AI customization.
+//
+// Migrated from direct Gemini SDK (`processWithModel`) to the centralized
+// `ai-router` edge function via `invokeAIPrompt`. The router enforces
+// workspace-scoped metering, hard caps, and provider fallback.
 
 import { supabase } from './supabase';
-import { processWithModel } from './geminiService';
+import { invokeAIPrompt } from './ai/aiService';
+import { getCurrentWorkspaceId } from './ai/getWorkspaceId';
+import {
+  AICapExceededError,
+  AITrialExpiredError,
+  AIProviderUnavailableError,
+} from './ai/errors';
 import { ChannelMessage } from '../types/messages';
 
 // ==================== Types ====================
@@ -71,13 +81,18 @@ function checkRateLimit(userId: string): boolean {
 
 class MessageAutoResponseService {
   /**
-   * Check if any auto-response rules match the incoming message
-   * Returns the generated response or null if no match
+   * Check if any auto-response rules match the incoming message.
+   * Returns the generated response or null if no match.
+   *
+   * @param workspaceId Optional workspace override passed through to the AI
+   *   router when a rule uses AI customization. Falls back to the active
+   *   workspace in localStorage.
    */
   async checkAutoResponse(
     message: ChannelMessage,
     channelId: string,
-    userId: string
+    userId: string,
+    workspaceId?: string
   ): Promise<string | null> {
     try {
       // Check rate limiting
@@ -106,7 +121,11 @@ class MessageAutoResponseService {
       // Check each rule in priority order
       for (const rule of rules) {
         if (await this.matchesRule(message, channelId, rule as AutoResponseRule)) {
-          const response = await this.generateResponse(message, rule as AutoResponseRule);
+          const response = await this.generateResponse(
+            message,
+            rule as AutoResponseRule,
+            workspaceId
+          );
 
           if (response) {
             // Log the trigger
@@ -118,13 +137,21 @@ class MessageAutoResponseService {
 
       return null;
     } catch (error) {
+      // Bubble router errors up so UIs can render the right upgrade / outage prompt.
+      if (
+        error instanceof AICapExceededError ||
+        error instanceof AITrialExpiredError ||
+        error instanceof AIProviderUnavailableError
+      ) {
+        throw error;
+      }
       console.error('[AutoResponse] Error in checkAutoResponse:', error);
       return null;
     }
   }
 
   /**
-   * Check if a message matches a rule's trigger conditions
+   * Check if a message matches a rule's trigger conditions.
    */
   private async matchesRule(
     message: ChannelMessage,
@@ -169,7 +196,7 @@ class MessageAutoResponseService {
   }
 
   /**
-   * Check if current time is within the specified range
+   * Check if current time is within the specified range.
    */
   private isWithinTimeRange(timeRange: { start: string; end: string }): boolean {
     const now = new Date();
@@ -190,23 +217,28 @@ class MessageAutoResponseService {
   }
 
   /**
-   * Generate response from template with optional AI customization
+   * Generate response from template with optional AI customization.
    */
   private async generateResponse(
     message: ChannelMessage,
-    rule: AutoResponseRule
+    rule: AutoResponseRule,
+    workspaceId?: string
   ): Promise<string | null> {
     try {
       let response = rule.response_template;
 
-      // AI customization if enabled
+      // AI customization if enabled — routed through the ai-router
       if (rule.ai_customize) {
-        const apiKey = await this.getApiKey();
-        if (apiKey) {
-          const customized = await this.customizeWithAI(message, response, apiKey);
+        const wsId = workspaceId ?? getCurrentWorkspaceId();
+        if (wsId) {
+          const customized = await this.customizeWithAI(message, response, wsId);
           if (customized) {
             response = customized;
           }
+        } else {
+          // No workspace available → silently skip AI customization and use the
+          // raw template. Matches prior behavior when no API key was configured.
+          console.warn('[AutoResponse] No active workspace; skipping AI customization');
         }
       }
 
@@ -215,18 +247,28 @@ class MessageAutoResponseService {
 
       return response;
     } catch (error) {
+      // Re-throw cap/trial/provider errors so the caller can surface them;
+      // fall back to the raw template for anything else.
+      if (
+        error instanceof AICapExceededError ||
+        error instanceof AITrialExpiredError ||
+        error instanceof AIProviderUnavailableError
+      ) {
+        throw error;
+      }
       console.error('[AutoResponse] Error generating response:', error);
       return rule.response_template; // Fallback to template
     }
   }
 
   /**
-   * Use AI to customize the response based on message context
+   * Use AI to customize the response based on message context.
+   * Routed through the `quick_reply_suggestions` task of the ai-router.
    */
   private async customizeWithAI(
     message: ChannelMessage,
     template: string,
-    apiKey: string
+    workspaceId: string
   ): Promise<string | null> {
     try {
       const prompt = `Customize this auto-response template to make it more personal and contextual.
@@ -244,7 +286,11 @@ Instructions:
 
 Customized Response:`;
 
-      const customized = await processWithModel(apiKey, prompt, 'gemini-2.5-flash-lite');
+      const customized = await invokeAIPrompt(
+        'quick_reply_suggestions',
+        prompt,
+        { workspaceId, temperature: 0.6 }
+      );
 
       if (customized && customized.length > 0 && customized.length < 500) {
         return customized.trim();
@@ -252,13 +298,67 @@ Customized Response:`;
 
       return null;
     } catch (error) {
+      // Cap / trial / provider errors must propagate so the UI can prompt upgrade.
+      if (
+        error instanceof AICapExceededError ||
+        error instanceof AITrialExpiredError ||
+        error instanceof AIProviderUnavailableError
+      ) {
+        throw error;
+      }
       console.error('[AutoResponse] AI customization failed:', error);
       return null;
     }
   }
 
   /**
-   * Substitute variables in template
+   * Classify / categorize an incoming message against a set of candidate tags.
+   * Available for rule-engine callers that want router-managed classification
+   * via the `auto_tag` task. Not used internally by the rule-matching path
+   * (which is purely deterministic on keywords/senders/channels/time).
+   */
+  async classifyMessage(
+    message: ChannelMessage,
+    candidateTags: string[],
+    workspaceId?: string
+  ): Promise<string[]> {
+    const wsId = workspaceId ?? getCurrentWorkspaceId();
+    if (!wsId) {
+      throw new Error('No active workspace — AI unavailable');
+    }
+
+    const prompt = `Classify the following message into zero or more of these tags: ${candidateTags.join(', ')}.
+
+Message: "${message.content}"
+Sender: ${message.sender_name || 'Unknown'}
+
+Return ONLY a comma-separated list of matching tag names (or an empty string if none apply). No preamble.`;
+
+    try {
+      const raw = await invokeAIPrompt(
+        'auto_tag',
+        prompt,
+        { workspaceId: wsId, temperature: 0.1 }
+      );
+      return raw
+        .split(',')
+        .map((t) => t.trim())
+        .filter((t) => t.length > 0 && candidateTags.includes(t));
+    } catch (error) {
+      if (
+        error instanceof AICapExceededError ||
+        error instanceof AITrialExpiredError ||
+        error instanceof AIProviderUnavailableError
+      ) {
+        throw error;
+      }
+      console.error('[AutoResponse] Classification failed:', error);
+      return [];
+    }
+  }
+
+  /**
+   * Substitute variables in template.
    */
   private substituteVariables(template: string, message: ChannelMessage): string {
     const now = new Date();
@@ -271,19 +371,7 @@ Customized Response:`;
   }
 
   /**
-   * Get Gemini API key from localStorage
-   */
-  private async getApiKey(): Promise<string | null> {
-    try {
-      const apiKey = localStorage.getItem('gemini_api_key');
-      return apiKey || null;
-    } catch {
-      return null;
-    }
-  }
-
-  /**
-   * Log auto-response trigger
+   * Log auto-response trigger.
    */
   private async logResponse(
     ruleId: string,
@@ -309,7 +397,7 @@ Customized Response:`;
   // ==================== Rule Management ====================
 
   /**
-   * Get all auto-response rules for a user
+   * Get all auto-response rules for a user.
    */
   async getRules(userId: string): Promise<AutoResponseRule[]> {
     const { data, error } = await supabase
@@ -327,7 +415,7 @@ Customized Response:`;
   }
 
   /**
-   * Create a new auto-response rule
+   * Create a new auto-response rule.
    */
   async createRule(
     userId: string,
@@ -352,7 +440,7 @@ Customized Response:`;
   }
 
   /**
-   * Update an existing rule
+   * Update an existing rule.
    */
   async updateRule(
     ruleId: string,
@@ -375,7 +463,7 @@ Customized Response:`;
   }
 
   /**
-   * Delete a rule
+   * Delete a rule.
    */
   async deleteRule(ruleId: string): Promise<boolean> {
     try {
@@ -393,7 +481,7 @@ Customized Response:`;
   }
 
   /**
-   * Toggle rule enabled status
+   * Toggle rule enabled status.
    */
   async toggleRule(ruleId: string, enabled: boolean): Promise<boolean> {
     try {
@@ -411,7 +499,7 @@ Customized Response:`;
   }
 
   /**
-   * Get auto-response analytics
+   * Get auto-response analytics.
    */
   async getAnalytics(userId: string, days: number = 30): Promise<{
     totalResponses: number;

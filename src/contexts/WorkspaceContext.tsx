@@ -8,7 +8,7 @@ import React, {
   ReactNode,
 } from 'react';
 import { useAuth } from '../hooks/useAuth';
-import { workspaceService, Workspace, WorkspaceMember, WorkspacePlan } from '../services/workspaceService';
+import { workspaceService, Workspace, WorkspaceMember, WorkspacePlan, WorkspaceUpdatableFields } from '../services/workspaceService';
 import { supabase } from '../services/supabase';
 
 // ---------------------------------------------------------------------------
@@ -35,7 +35,7 @@ export interface WorkspaceActionsContextType {
   createWorkspace: (name: string, description?: string, plan?: WorkspacePlan) => Promise<Workspace>;
   updateWorkspace: (
     workspaceId: string,
-    updates: Partial<Pick<Workspace, 'name' | 'description' | 'avatar_url' | 'slug'>>,
+    updates: WorkspaceUpdatableFields,
   ) => Promise<void>;
   refreshWorkspaces: () => Promise<void>;
   refreshMembers: () => Promise<void>;
@@ -262,7 +262,7 @@ export const WorkspaceProvider: React.FC<WorkspaceProviderProps> = ({ children }
   const updateWorkspace = useCallback(
     async (
       workspaceId: string,
-      updates: Partial<Pick<Workspace, 'name' | 'description' | 'avatar_url' | 'slug'>>,
+      updates: WorkspaceUpdatableFields,
     ): Promise<void> => {
       const updated = await workspaceService.updateWorkspace(workspaceId, updates);
       setWorkspaces((prev) => prev.map((w) => (w.id === workspaceId ? updated : w)));

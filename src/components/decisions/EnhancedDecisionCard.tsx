@@ -147,14 +147,11 @@ const EnhancedDecisionCardComponent: React.FC<EnhancedDecisionCardProps> = ({
   };
 
   const loadAIInsights = async () => {
-    const apiKey = localStorage.getItem('gemini_api_key');
-    if (!apiKey) return;
-
     // Load risk assessment — service handles caching & 429 backoff internally
     if (decision.status === 'voting' || decision.status === 'proposed') {
       setLoadingRisk(true);
       try {
-        const risk = await decisionAnalyticsService.assessDecisionRisk(decision, apiKey);
+        const risk = await decisionAnalyticsService.assessDecisionRisk(decision, '');
         // confidence === -1 means quota exhausted; still store it so the UI can
         // show a friendly message instead of leaving the panel in loading state
         setRiskAssessment(risk);
@@ -226,16 +223,10 @@ const EnhancedDecisionCardComponent: React.FC<EnhancedDecisionCardProps> = ({
       return;
     }
 
-    const apiKey = localStorage.getItem('gemini_api_key');
-    if (!apiKey) {
-      alert('Please add your Gemini API key in settings to use AI task generation.');
-      return;
-    }
-
     setGeneratingTasks(true);
     try {
       // Extract tasks from decision using AI
-      const tasks = await taskIntelligenceService.extractTasksFromDecision(decision, apiKey);
+      const tasks = await taskIntelligenceService.extractTasksFromDecision(decision, '');
 
       if (tasks.length === 0) {
         alert('No tasks could be generated from this decision.');

@@ -4,7 +4,7 @@ import { supabase } from './supabase';
 // Types
 // ---------------------------------------------------------------------------
 
-export type WorkspacePlan = 'free' | 'starter' | 'pro' | 'business' | 'ecosystem';
+export type WorkspacePlan = 'free' | 'team' | 'starter' | 'pro' | 'business' | 'ecosystem';
 
 export const WORKSPACE_PLAN_LABELS: Record<WorkspacePlan, string> = {
   free: 'Free',
@@ -55,6 +55,10 @@ export const WORKSPACE_PLAN_COLORS: Record<WorkspacePlan, string> = {
   ecosystem: '#10b981',
 };
 
+export type OrgOnboardingStep = 'pending' | 'named' | 'complete';
+export type OrgSizeBucket = '1-10' | '11-50' | '51-200' | '200+';
+export type SessionTimeoutMinutes = 0 | 60 | 480 | 1440 | 10080;
+
 export interface Workspace {
   id: string;
   name: string;
@@ -69,6 +73,54 @@ export interface Workspace {
   stripeSubscriptionId?: string | null;
   deleted_at?: string | null;
   deleted_by?: string | null;
+  // Organization profile (UI: "Organization", DB: workspaces)
+  onboarding_step: OrgOnboardingStep;
+  auto_join_domain: string | null;
+  auto_join_enabled: boolean;
+  legal_name: string | null;
+  billing_email: string | null;
+  industry: string | null;
+  size_bucket: OrgSizeBucket | null;
+  // Security policy
+  enforce_2fa: boolean;
+  session_timeout_minutes: SessionTimeoutMinutes;
+  ip_allowlist: string[];
+}
+
+export type WorkspaceUpdatableFields = Partial<Pick<
+  Workspace,
+  | 'name'
+  | 'description'
+  | 'avatar_url'
+  | 'slug'
+  | 'onboarding_step'
+  | 'auto_join_domain'
+  | 'auto_join_enabled'
+  | 'legal_name'
+  | 'billing_email'
+  | 'industry'
+  | 'size_bucket'
+  | 'enforce_2fa'
+  | 'session_timeout_minutes'
+  | 'ip_allowlist'
+>>;
+
+export interface SignInActivityEntry {
+  session_id: string;
+  user_id: string;
+  user_email: string | null;
+  user_name: string | null;
+  device_name: string | null;
+  device_type: string | null;
+  browser_name: string | null;
+  os_name: string | null;
+  ip_address: string | null;
+  location: string | null;
+  is_active: boolean;
+  is_current: boolean;
+  last_active_at: string | null;
+  created_at: string;
+  revoked_at: string | null;
 }
 
 export interface WorkspaceMember {
@@ -175,7 +227,7 @@ export const workspaceService = {
    * Creates a new workspace owned by the currently authenticated user.
    * Automatically inserts the owner as a workspace_member with role 'owner'.
    */
-  async createWorkspace(name: string, description?: string, plan: WorkspacePlan = 'free'): Promise<Workspace> {
+  async createWorkspace(name: string, description?: string, plan: WorkspacePlan = 'team'): Promise<Workspace> {
     const userId = await getCurrentUserId();
 
     // Auto-generate a URL-safe slug from the name
@@ -211,6 +263,15 @@ export const workspaceService = {
 
     assertNoError(memberError, 'createWorkspace — insert owner member');
 
+    // Start a 30-day Pulse Team trial. Non-fatal if it fails (RPC is idempotent
+    // and can be retried manually). Done lazily via import to avoid circular deps.
+    try {
+      const billingService = (await import('./billingService')).default;
+      await billingService.startPulseTeamTrial(workspace.id);
+    } catch (e) {
+      console.warn('[workspaceService] Could not start Pulse Team trial:', e);
+    }
+
     return workspace as Workspace;
   },
 
@@ -219,7 +280,7 @@ export const workspaceService = {
    */
   async updateWorkspace(
     workspaceId: string,
-    updates: Partial<Pick<Workspace, 'name' | 'description' | 'avatar_url' | 'slug'>>,
+    updates: WorkspaceUpdatableFields,
   ): Promise<Workspace> {
     const { data, error } = await supabase
       .from('workspaces')
@@ -400,6 +461,15 @@ export const workspaceService = {
       throw new Error(`[workspaceService] acceptInvite: ${result.error}`);
     }
 
+    // Push the new seat count to Stripe. Non-fatal — billingService.syncSeats
+    // swallows errors so a flaky Stripe call never blocks joining a workspace.
+    try {
+      const billing = (await import('./billingService')).default;
+      await billing.syncSeats(result.workspace_id!);
+    } catch (e) {
+      console.warn('[workspaceService] acceptInvite — seat sync failed:', e);
+    }
+
     return result.workspace_id!;
   },
 
@@ -441,6 +511,14 @@ export const workspaceService = {
       .eq('user_id', userId);
 
     assertNoError(error, 'removeMember');
+
+    // Decrement the Stripe seat count. Fire-and-forget; billingService swallows errors.
+    try {
+      const billing = (await import('./billingService')).default;
+      await billing.syncSeats(workspaceId);
+    } catch (e) {
+      console.warn('[workspaceService] removeMember — seat sync failed:', e);
+    }
   },
 
   /**
@@ -594,6 +672,23 @@ export const workspaceService = {
       p_metadata: metadata ?? {},
     });
     if (error) console.warn('[workspaceService] writeAuditLog failed (non-fatal):', error.message);
+  },
+
+  // -------------------------------------------------------------------------
+  // Security — sign-in activity
+  // -------------------------------------------------------------------------
+
+  /**
+   * Returns recent sign-in activity for all members of a workspace.
+   * Owner/admin only (enforced inside the RPC).
+   */
+  async getSignInActivity(workspaceId: string, limit = 50): Promise<SignInActivityEntry[]> {
+    const { data, error } = await supabase.rpc('get_workspace_sign_in_activity', {
+      p_workspace_id: workspaceId,
+      p_limit: limit,
+    });
+    assertNoError(error, 'getSignInActivity');
+    return (data ?? []) as SignInActivityEntry[];
   },
 
   /**

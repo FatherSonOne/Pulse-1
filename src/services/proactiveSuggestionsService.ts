@@ -1,7 +1,9 @@
-import { GoogleGenAI } from "@google/genai";
 import { DecisionWithVotes } from "./decisionService";
 import { Task } from "./taskService";
 import { User } from "../types";
+import { invokeAIJson } from "./ai/aiService";
+import { getCurrentWorkspaceId } from "./ai/getWorkspaceId";
+import { AIRouterError } from "./ai/errors";
 
 export interface Nudge {
   id: string;
@@ -15,16 +17,38 @@ export interface Nudge {
   createdAt?: string;
 }
 
+interface AINudgeRaw {
+  type?: Nudge['type'];
+  priority?: Nudge['priority'];
+  message: string;
+  action?: string;
+}
+
 export const proactiveSuggestionsService = {
   /**
-   * Generate all current nudges based on decisions and tasks
+   * Generate all current nudges based on decisions and tasks.
+   *
+   * Routes AI nudges through the central `ai-router` edge function which
+   * handles provider selection, metering, hard caps, and prompt caching.
+   *
+   * @param decisions Current decisions to analyse.
+   * @param tasks Current tasks to analyse.
+   * @param user Current user (for pending-vote detection).
+   * @param apiKey DEPRECATED — unused. Retained for backward compatibility during
+   *   migration. Ignored by the router.
+   * @param workspaceId Optional workspace override. Falls back to
+   *   `getCurrentWorkspaceId()`.
    */
   async generateNudges(
     decisions: DecisionWithVotes[],
     tasks: Task[],
     user: User,
-    apiKey?: string
+    /** @deprecated Unused — router handles keys server-side. */
+    apiKey?: string,
+    workspaceId?: string
   ): Promise<Nudge[]> {
+    void apiKey; // deprecated — router handles keys server-side
+
     const nudges: Nudge[] = [];
 
     // 1. Stale decisions (no votes in 24h+)
@@ -172,21 +196,17 @@ export const proactiveSuggestionsService = {
       });
     }
 
-    // 7. Use AI for advanced suggestions (if API key provided)
-    if (apiKey && apiKey !== '' && nudges.length < 5) {
+    // 7. AI-powered advanced suggestions
+    if (nudges.length < 5) {
       try {
-        const aiNudges = await this.generateAINudges(decisions, tasks, apiKey);
+        const aiNudges = await this.generateAINudges(decisions, tasks, undefined, workspaceId);
         nudges.push(...aiNudges);
-      } catch (error: any) {
-        // Gracefully handle API errors without polluting console
-        if (error?.message?.includes('API Key')) {
-          console.warn('⚠️ Gemini API key invalid or missing. AI nudges disabled. Set VITE_GEMINI_API_KEY to enable.');
-        } else {
-          console.warn('⚠️ AI nudge generation failed:', error?.message || 'Unknown error');
-        }
+      } catch (error) {
+        // Re-throw router errors so UI can surface caps / trial / provider issues
+        if (error instanceof AIRouterError) throw error;
+        const msg = error instanceof Error ? error.message : 'Unknown error';
+        console.warn('⚠️ AI nudge generation failed:', msg);
       }
-    } else if (!apiKey || apiKey === '') {
-      console.info('ℹ️ AI nudges disabled: No Gemini API key provided');
     }
 
     // Sort by priority
@@ -197,30 +217,43 @@ export const proactiveSuggestionsService = {
   },
 
   /**
-   * Generate AI-powered suggestions
+   * Generate AI-powered suggestions via the central router.
+   *
+   * @param decisions Decisions to analyse.
+   * @param tasks Tasks to analyse.
+   * @param apiKey DEPRECATED — unused. Retained for backward compatibility during
+   *   migration. Ignored by the router.
+   * @param workspaceId Optional workspace override. Falls back to
+   *   `getCurrentWorkspaceId()`.
    */
   async generateAINudges(
     decisions: DecisionWithVotes[],
     tasks: Task[],
-    apiKey: string
+    /** @deprecated Unused — router handles keys server-side. */
+    apiKey?: string,
+    workspaceId?: string
   ): Promise<Nudge[]> {
-    try {
-      const ai = new GoogleGenAI({ apiKey });
+    void apiKey; // deprecated — router handles keys server-side
 
-      const decisionSummary = {
-        total: decisions.length,
-        voting: decisions.filter(d => d.status === 'voting').length,
-        decided: decisions.filter(d => d.status === 'decided').length,
-      };
+    const wsId = workspaceId ?? getCurrentWorkspaceId();
+    if (!wsId) {
+      throw new Error('No active workspace — AI unavailable');
+    }
 
-      const taskSummary = {
-        total: tasks.length,
-        todo: tasks.filter(t => t.status === 'todo').length,
-        inProgress: tasks.filter(t => t.status === 'in_progress').length,
-        done: tasks.filter(t => t.status === 'done').length,
-      };
+    const decisionSummary = {
+      total: decisions.length,
+      voting: decisions.filter(d => d.status === 'voting').length,
+      decided: decisions.filter(d => d.status === 'decided').length,
+    };
 
-      const prompt = `Analyze the current state and suggest 2-3 proactive actions:
+    const taskSummary = {
+      total: tasks.length,
+      todo: tasks.filter(t => t.status === 'todo').length,
+      inProgress: tasks.filter(t => t.status === 'in_progress').length,
+      done: tasks.filter(t => t.status === 'done').length,
+    };
+
+    const prompt = `Analyze the current state and suggest 2-3 proactive actions:
 
 Decisions: ${JSON.stringify(decisionSummary)}
 Tasks: ${JSON.stringify(taskSummary)}
@@ -238,31 +271,25 @@ Return JSON array of nudges:
   "action": "suggested action"
 }]`;
 
-      const response = await ai.models.generateContent({
-        model: 'gemini-2.5-flash',
-        contents: prompt,
-        config: {
-          temperature: 0.5,
-          responseMimeType: 'application/json',
-        },
-      });
+    const result = await invokeAIJson<AINudgeRaw[]>(
+      'proactive_nudge',
+      prompt,
+      {
+        workspaceId: wsId,
+        temperature: 0.5,
+      },
+    );
 
-      const result = JSON.parse(response.text);
+    if (!Array.isArray(result)) return [];
 
-      if (!Array.isArray(result)) return [];
-
-      return result.map((item, idx) => ({
-        id: `ai-nudge-${idx}`,
-        type: item.type || 'suggestion',
-        priority: item.priority || 'suggestion',
-        message: item.message,
-        action: item.action,
-        createdAt: new Date().toISOString(),
-      }));
-    } catch (error) {
-      // Error already handled by caller
-      throw error;
-    }
+    return result.map((item, idx) => ({
+      id: `ai-nudge-${idx}`,
+      type: item.type || 'suggestion',
+      priority: item.priority || 'suggestion',
+      message: item.message,
+      action: item.action,
+      createdAt: new Date().toISOString(),
+    }));
   },
 
   /**

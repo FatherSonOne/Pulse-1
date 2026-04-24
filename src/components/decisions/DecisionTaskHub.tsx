@@ -20,6 +20,7 @@ import { decisionAnalyticsService, DecisionMetrics } from '../../services/decisi
 import { proactiveSuggestionsService, Nudge } from '../../services/proactiveSuggestionsService';
 import { taskIntelligenceService, AITaskPriority } from '../../services/taskIntelligenceService';
 import { ragService, AIMessage, ThinkingStep } from '../../services/ragService';
+import { useAIErrorHandler } from '../../hooks/useAIErrorHandler';
 import { DecisionMission } from '../WarRoom/missions/DecisionMission';
 import { ConversationalAssistant } from './ConversationalAssistant';
 import { AlertsPanel } from './AlertsPanel';
@@ -76,6 +77,8 @@ export const DecisionTaskHub: React.FC<DecisionTaskHubProps> = ({
   workspaceId
 }) => {
   const { currentWorkspace } = useWorkspace();
+  // AI-router error handler (cap exceeded / provider down → toast + CTA)
+  const handleAIError = useAIErrorHandler();
   // Core state
   const [mode, setMode] = useState<HubMode>('active');
   const [decisions, setDecisions] = useState<DecisionWithVotes[]>([]);
@@ -387,15 +390,11 @@ export const DecisionTaskHub: React.FC<DecisionTaskHubProps> = ({
     if (!user) return;
 
     try {
-      const apiKey = localStorage.getItem('gemini_api_key') ||
-                     import.meta.env.VITE_GEMINI_API_KEY ||
-                     import.meta.env.VITE_API_KEY ||
-                     '';
       const generatedNudges = await proactiveSuggestionsService.generateNudges(
         decisions,
         tasks,
         user,
-        apiKey
+        ''
       );
 
       const activeNudges = generatedNudges.filter(n => !dismissedNudges.has(n.id));
@@ -886,13 +885,6 @@ export const DecisionTaskHub: React.FC<DecisionTaskHubProps> = ({
   }, [loadTasks]);
 
   const handleMissionSendMessage = useCallback(async (message: string) => {
-    const apiKey = user?.gemini_api_key || localStorage.getItem('gemini_api_key') || import.meta.env.VITE_GEMINI_API_KEY;
-
-    if (!apiKey) {
-      alert('Please add your Gemini API key in settings to use the Decision Mission.');
-      return;
-    }
-
     const userMessage: AIMessage = {
       id: `msg-${Date.now()}`,
       role: 'user',
@@ -906,7 +898,7 @@ export const DecisionTaskHub: React.FC<DecisionTaskHubProps> = ({
       const response = await ragService.chat(
         message,
         [],
-        apiKey,
+        '',
         (logs) => {
           setMissionThinkingLogs(new Map([[userMessage.id, logs]]));
         }
@@ -921,17 +913,23 @@ export const DecisionTaskHub: React.FC<DecisionTaskHubProps> = ({
       setMissionMessages(prev => [...prev, aiMessage]);
     } catch (error) {
       console.error('Failed to get AI response:', error);
-      const errorMessage: AIMessage = {
-        id: `msg-${Date.now()}-error`,
-        role: 'assistant',
-        content: 'Sorry, I encountered an error processing your request. Please try again.',
-        created_at: new Date().toISOString()
-      };
-      setMissionMessages(prev => [...prev, errorMessage]);
+      // Surface cap / trial / provider issues via toast + upgrade CTA.
+      // On handled errors skip appending a generic error bubble — the toast
+      // is already showing the user what happened.
+      const handled = handleAIError(error);
+      if (!handled) {
+        const errorMessage: AIMessage = {
+          id: `msg-${Date.now()}-error`,
+          role: 'assistant',
+          content: 'Sorry, I encountered an error processing your request. Please try again.',
+          created_at: new Date().toISOString()
+        };
+        setMissionMessages(prev => [...prev, errorMessage]);
+      }
     } finally {
       setMissionLoading(false);
     }
-  }, [user]);
+  }, [user, handleAIError]);
 
   const handleDecisionAction = useCallback((decision: DecisionWithVotes, action: string) => {
     if (action === 'generate-tasks') {
@@ -1350,7 +1348,7 @@ export const DecisionTaskHub: React.FC<DecisionTaskHubProps> = ({
           workspaceMembers={workspaceMembers}
           onClose={() => setDecisionToDecompose(null)}
           onTasksGenerated={handleDecompositionComplete}
-          apiKey={localStorage.getItem('gemini_api_key') || import.meta.env.VITE_GEMINI_API_KEY || import.meta.env.VITE_API_KEY || ''}
+          apiKey=""
         />,
         document.body
       )}
@@ -1372,7 +1370,6 @@ export const DecisionTaskHub: React.FC<DecisionTaskHubProps> = ({
             tasks={filteredTasks}
             onPrioritizationComplete={handlePrioritizationComplete}
             onClose={() => setShowPrioritizer(false)}
-            apiKey={localStorage.getItem('gemini_api_key') || import.meta.env.VITE_GEMINI_API_KEY || import.meta.env.VITE_API_KEY || ''}
           />,
           document.body
         )}

@@ -12,6 +12,7 @@ export interface Plan {
   max_ai_messages_mo: number | null;
   max_sms_mo: number | null;
   max_storage_bytes: number | null;
+  max_voxer_minutes_mo: number | null;
   max_contacts: number | null;
   max_pipelines: number | null;
   max_workflows: number | null;
@@ -24,11 +25,12 @@ export interface Plan {
 
 export interface Entitlements {
   workspace_id: string;
-  apps: Record<string, string | null>; // { pulse: "pro", logos_vision: "starter", entomate: null }
+  apps: Record<string, string | null>; // { pulse: "team", logos_vision: "starter", entomate: null }
   max_users: number | null;
   max_ai_messages_mo: number | null;
   max_sms_mo: number | null;
   max_storage_bytes: number | null;
+  max_voxer_minutes_mo: number | null;
   max_contacts: number | null;
   max_pipelines: number | null;
   max_workflows: number | null;
@@ -69,23 +71,34 @@ export interface Invoice {
 
 // ── Helpers ──────────────────────────────────────────────────────────
 
-const SUPABASE_URL = import.meta.env.VITE_SUPABASE_URL;
-
 async function callEdgeFunction(name: string, body?: Record<string, unknown>) {
   const { data: { session } } = await supabase.auth.getSession();
   if (!session) throw new Error('Not authenticated');
 
-  const res = await fetch(`${SUPABASE_URL}/functions/v1/${name}`, {
-    method: 'POST',
-    headers: {
-      'Content-Type': 'application/json',
-      'Authorization': `Bearer ${session.access_token}`,
-    },
-    body: body ? JSON.stringify(body) : undefined,
-  });
+  // Use supabase.functions.invoke — handles both apikey + Authorization headers
+  // that the Supabase edge function gateway requires.
+  const { data, error } = await supabase.functions.invoke(name, { body: body || {} });
 
-  const data = await res.json();
-  if (!res.ok) throw new Error(data.error || 'Edge function call failed');
+  if (error) {
+    // FunctionsHttpError exposes .context.response for non-2xx responses
+    const ctx = (error as { context?: { response?: Response } }).context;
+    const response = ctx?.response;
+
+    let bodyData: Record<string, unknown> | null = null;
+    if (response) {
+      try { bodyData = await response.clone().json(); } catch { /* not JSON */ }
+    }
+
+    // Log the full body so DevTools Console shows the actual Stripe error
+    if (bodyData) {
+      console.error(`[${name}] server response:`, bodyData);
+    }
+
+    const errorMsg = (bodyData?.error as string) || (error as Error).message;
+    const detail = bodyData?.detail as string | undefined;
+    const combined = detail ? `${errorMsg} — ${detail}` : errorMsg;
+    throw new Error(`${name}: ${combined}`);
+  }
   return data;
 }
 
@@ -110,22 +123,25 @@ const billingService = {
       .from('entitlements')
       .select('*')
       .eq('workspace_id', workspaceId)
-      .single();
+      .maybeSingle();
 
     if (error || !data) {
-      // Return free-tier defaults
+      // No entitlements row = no active subscription/trial.
+      // Every limit is 0 (all AI/SMS/storage/Voxer blocked) and no features flipped on.
+      // UI should detect apps.pulse === undefined and render TrialExpiredBlock.
       return {
         workspace_id: workspaceId,
         apps: {},
-        max_users: 5,
-        max_ai_messages_mo: 500,
-        max_sms_mo: 100,
-        max_storage_bytes: 5368709120,
-        max_contacts: 1000,
-        max_pipelines: 2,
-        max_workflows: 5,
-        max_workflow_runs_mo: 500,
-        max_integrations: 3,
+        max_users: 0,
+        max_ai_messages_mo: 0,
+        max_sms_mo: 0,
+        max_storage_bytes: 0,
+        max_voxer_minutes_mo: 0,
+        max_contacts: 0,
+        max_pipelines: 0,
+        max_workflows: 0,
+        max_workflow_runs_mo: 0,
+        max_integrations: 0,
         features: {},
         is_trialing: false,
         trial_ends_at: null,
@@ -163,7 +179,7 @@ const billingService = {
       .in('status', ['active', 'trialing', 'past_due'])
       .order('created_at', { ascending: false })
       .limit(1)
-      .single();
+      .maybeSingle();
 
     if (error || !data) return null;
     return data;
@@ -226,6 +242,7 @@ const billingService = {
       case 'ai_messages': limit = entitlements.max_ai_messages_mo; break;
       case 'sms_sent': limit = entitlements.max_sms_mo; break;
       case 'storage_bytes': limit = entitlements.max_storage_bytes; break;
+      case 'voxer_minutes': limit = entitlements.max_voxer_minutes_mo; break;
       case 'workflow_runs': limit = entitlements.max_workflow_runs_mo; break;
     }
 
@@ -241,11 +258,57 @@ const billingService = {
       case 'ai_messages': limit = entitlements.max_ai_messages_mo; break;
       case 'sms_sent': limit = entitlements.max_sms_mo; break;
       case 'storage_bytes': limit = entitlements.max_storage_bytes; break;
+      case 'voxer_minutes': limit = entitlements.max_voxer_minutes_mo; break;
       case 'workflow_runs': limit = entitlements.max_workflow_runs_mo; break;
     }
 
     if (limit === null) return false;
     return usage >= limit * 0.8;
+  },
+
+  // -- Trial / access state --
+
+  /**
+   * Whether the workspace has an active Pulse subscription (trialing or paid).
+   * False means the trial has expired OR no subscription has ever been created.
+   * UI should render TrialExpiredBlock when this is false.
+   */
+  hasActivePulseAccess(entitlements: Entitlements): boolean {
+    return !!entitlements.apps?.pulse;
+  },
+
+  /**
+   * Starts a 30-day Pulse Team trial for a freshly created workspace.
+   * Idempotent — calling twice is safe. Called from workspaceService.createWorkspace.
+   */
+  async startPulseTeamTrial(workspaceId: string): Promise<void> {
+    const { error } = await supabase.rpc('start_pulse_team_trial', {
+      p_workspace_id: workspaceId,
+    });
+    if (error) {
+      console.error('[billingService] start_pulse_team_trial failed:', error.message);
+      throw error;
+    }
+  },
+
+  /**
+   * Pushes the current workspace member count into Stripe as the subscription
+   * quantity. Called after invite acceptance and member removal so billing
+   * tracks the true seat count. Fire-and-forget — failures are logged and
+   * swallowed so membership operations never break because of Stripe hiccups.
+   *
+   * Returns the new quantity (or 1 when no Stripe sub exists yet).
+   */
+  async syncSeats(workspaceId: string): Promise<number> {
+    try {
+      const result = await callEdgeFunction('billing-sync-seats', {
+        workspace_id: workspaceId,
+      });
+      return (result?.quantity as number) ?? 1;
+    } catch (err) {
+      console.warn('[billingService] syncSeats failed (non-fatal):', err);
+      return 1;
+    }
   },
 
 };

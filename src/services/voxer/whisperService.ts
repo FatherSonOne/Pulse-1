@@ -1,7 +1,9 @@
-// Whisper Service - OpenAI Whisper API for speech recognition and transcription
-// Provides transcription, translation, and audio processing capabilities
+// Whisper Service - speech recognition and transcription.
+// Calls the `whisper-proxy` Supabase edge function, which forwards the audio
+// to OpenAI's Whisper API server-side. The OpenAI key lives on the server;
+// the browser only needs a valid Supabase session.
 
-import { settingsService } from '../settingsService';
+import { supabase } from '../supabase';
 
 // ============================================
 // TYPES
@@ -55,42 +57,39 @@ export interface TranslationResult {
 // WHISPER SERVICE
 // ============================================
 
-class WhisperService {
-  private apiKey: string | null = null;
-  private baseUrl = 'https://api.openai.com/v1/audio';
-
-  constructor() {
-    this.loadApiKey();
-  }
-
-  private async loadApiKey(): Promise<void> {
+// Extract a useful error message out of a Supabase functions.invoke() failure.
+// The SDK wraps the underlying Response in `error.context.response` — we try
+// to parse the OpenAI error body for something actionable.
+async function extractInvokeError(error: unknown, fallback: string): Promise<string> {
+  const message = error instanceof Error ? error.message : fallback;
+  const ctx = (error as { context?: { response?: Response } })?.context;
+  const resp = ctx?.response;
+  if (resp) {
     try {
-      const settings = await settingsService.getAll();
-      this.apiKey = settings.openaiApiKey || import.meta.env.VITE_OPENAI_API_KEY || null;
-    } catch (error) {
-      console.error('Failed to load OpenAI API key:', error);
+      const body = await resp.clone().json();
+      if (body?.error?.message) return body.error.message;
+      if (body?.error && typeof body.error === 'string') return body.error;
+      if (body?.detail) return body.detail;
+    } catch {
+      try {
+        const text = await resp.clone().text();
+        if (text) return text;
+      } catch {
+        /* ignore */
+      }
     }
   }
+  return message;
+}
 
-  private async ensureApiKey(): Promise<string> {
-    if (!this.apiKey) {
-      await this.loadApiKey();
-    }
-    if (!this.apiKey) {
-      throw new Error('OpenAI API key not configured. Please add your API key in Settings.');
-    }
-    return this.apiKey;
-  }
-
+class WhisperService {
   /**
-   * Transcribe audio to text using OpenAI Whisper
+   * Transcribe audio to text using OpenAI Whisper (via whisper-proxy edge function)
    */
   async transcribe(
     audioBlob: Blob,
     options: TranscriptionOptions = {}
   ): Promise<WhisperTranscriptionResult> {
-    const apiKey = await this.ensureApiKey();
-
     // Prepare form data
     const formData = new FormData();
 
@@ -123,27 +122,26 @@ class WhisperService {
     }
 
     try {
-      const response = await fetch(`${this.baseUrl}/transcriptions`, {
-        method: 'POST',
-        headers: {
-          'Authorization': `Bearer ${apiKey}`,
-        },
+      const { data, error } = await supabase.functions.invoke('whisper-proxy', {
         body: formData,
       });
 
-      if (!response.ok) {
-        const error = await response.json().catch(() => ({}));
-        throw new Error(error.error?.message || `Transcription failed: ${response.status}`);
+      if (error) {
+        const detail = await extractInvokeError(error, 'invoke failed');
+        throw new Error(`Transcription failed: ${detail}`);
       }
 
-      const data = await response.json();
+      // Proxy returns OpenAI's raw response shape
+      if (typeof data === 'string') {
+        return { text: data };
+      }
 
       return {
-        text: data.text,
-        language: data.language,
-        duration: data.duration,
-        words: data.words,
-        segments: data.segments,
+        text: data?.text ?? '',
+        language: data?.language,
+        duration: data?.duration,
+        words: data?.words,
+        segments: data?.segments,
       };
     } catch (error: any) {
       console.error('Whisper transcription error:', error);
@@ -152,14 +150,12 @@ class WhisperService {
   }
 
   /**
-   * Translate audio to English using OpenAI Whisper
+   * Translate audio to English using OpenAI Whisper (via whisper-proxy edge function)
    */
   async translate(
     audioBlob: Blob,
     options: Omit<TranscriptionOptions, 'language'> = {}
   ): Promise<TranslationResult> {
-    const apiKey = await this.ensureApiKey();
-
     const formData = new FormData();
 
     // Normalize mime type by stripping codec info
@@ -168,6 +164,7 @@ class WhisperService {
     const file = new File([audioBlob], `audio.${extension}`, { type: baseMimeType });
     formData.append('file', file);
     formData.append('model', 'whisper-1');
+    formData.append('endpoint', 'translations'); // switch proxy to /audio/translations
 
     if (options.prompt) {
       formData.append('prompt', options.prompt);
@@ -179,24 +176,22 @@ class WhisperService {
     formData.append('response_format', 'verbose_json');
 
     try {
-      const response = await fetch(`${this.baseUrl}/translations`, {
-        method: 'POST',
-        headers: {
-          'Authorization': `Bearer ${apiKey}`,
-        },
+      const { data, error } = await supabase.functions.invoke('whisper-proxy', {
         body: formData,
       });
 
-      if (!response.ok) {
-        const error = await response.json().catch(() => ({}));
-        throw new Error(error.error?.message || `Translation failed: ${response.status}`);
+      if (error) {
+        const detail = await extractInvokeError(error, 'invoke failed');
+        throw new Error(`Translation failed: ${detail}`);
       }
 
-      const data = await response.json();
+      if (typeof data === 'string') {
+        return { text: data };
+      }
 
       return {
-        text: data.text,
-        originalLanguage: data.language,
+        text: data?.text ?? '',
+        originalLanguage: data?.language,
       };
     } catch (error: any) {
       console.error('Whisper translation error:', error);
@@ -256,22 +251,21 @@ class WhisperService {
   }
 
   /**
-   * Check if API key is configured
+   * Whether the service is configured. Always true now — the proxy is
+   * reachable whenever the user has a valid Supabase session. Kept for
+   * backwards compatibility with callers like ClassicVoxerMode.tsx.
    */
   async isConfigured(): Promise<boolean> {
-    try {
-      await this.ensureApiKey();
-      return true;
-    } catch {
-      return false;
-    }
+    return true;
   }
 
   /**
-   * Update API key (called when settings change)
+   * @deprecated No-op. The OpenAI key now lives on the edge function; the
+   * browser never sees it. Kept so existing callers compile unchanged.
    */
-  setApiKey(key: string): void {
-    this.apiKey = key;
+  // eslint-disable-next-line @typescript-eslint/no-unused-vars
+  setApiKey(_key: string): void {
+    // no-op
   }
 }
 

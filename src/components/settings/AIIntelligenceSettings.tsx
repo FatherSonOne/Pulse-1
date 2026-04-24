@@ -1,15 +1,10 @@
 import React, { useState, useEffect } from 'react';
-import { enableQuotaNotifications, sendTestNotification } from '../../services/geminiQuotaNotifications';
 import { settingsService } from '../../services/settingsService';
 import AIHealthMonitor from '../AIHealthMonitor';
-import { Bell, Book, Brain, Cpu, Headset, Mic, Play, Sliders, Volume2 } from 'lucide-react';
+import { Book, Brain, Headset, Mic, Play, Sliders, Volume2 } from 'lucide-react';
 import { ToggleItem } from './shared/ToggleItem';
 
 export const AIIntelligenceSettings: React.FC = () => {
-  // AI model state
-  const [primaryAIModel, setPrimaryAIModel] = useState('gemini-2.5-flash');
-  const [enableAdvancedReasoning, setEnableAdvancedReasoning] = useState(false);
-
   // Voice Agent state
   const [agentVoice, setAgentVoice] = useState('nova');
   const [turnDetectionMode, setTurnDetectionMode] = useState<'semantic' | 'server'>('semantic');
@@ -68,10 +63,8 @@ export const AIIntelligenceSettings: React.FC = () => {
   // Load AI settings from settingsService on mount
   useEffect(() => {
     const load = async () => {
-      const [model, advReasoning, voice, turnMode, eagerness, iMode, searchScope, autoAnalyze] =
+      const [voice, turnMode, eagerness, iMode, searchScope, autoAnalyze] =
         await Promise.all([
-          settingsService.get('primaryAIModel'),
-          settingsService.get('enableAdvancedReasoning'),
           settingsService.get('agentVoice'),
           settingsService.get('turnDetectionMode'),
           settingsService.get('voiceActivityEagerness'),
@@ -80,8 +73,6 @@ export const AIIntelligenceSettings: React.FC = () => {
           settingsService.get('autoAnalyzeDocs'),
         ]);
 
-      if (model) setPrimaryAIModel(model as string);
-      if (advReasoning !== undefined) setEnableAdvancedReasoning(advReasoning as boolean);
       if (voice) setAgentVoice(voice as string);
       if (turnMode) setTurnDetectionMode(turnMode as 'semantic' | 'server');
       if (eagerness) setVoiceActivityEagerness(eagerness as string);
@@ -99,96 +90,13 @@ export const AIIntelligenceSettings: React.FC = () => {
           <Brain /> AI & Intelligence
         </h3>
         <p>
-          Configure the brain of your Pulse workspace. Choose models, voices, and reasoning
-          capabilities.
+          Configure your Pulse workspace voice, knowledge base, and audio hardware. AI models are
+          managed automatically by Pulse — the right model is picked for each task.
         </p>
       </div>
 
       {/* AI Health Monitor */}
       <AIHealthMonitor />
-
-      {/* Quota Notifications */}
-      <div className="bg-white dark:bg-zinc-900 border border-zinc-200 dark:border-zinc-800 rounded-xl p-6">
-        <h4 className="text-sm font-bold uppercase tracking-widest text-zinc-500 mb-4 flex items-center gap-2">
-          <Bell /> Quota Notifications
-        </h4>
-        <div className="space-y-4">
-          <p className="text-sm text-zinc-600 dark:text-zinc-400">
-            Get notified when your Gemini API quota recovers or when fallback mode activates.
-          </p>
-          <div className="flex gap-3">
-            <button
-              onClick={async () => {
-                const success = await enableQuotaNotifications();
-                if (success) {
-                  alert("Quota notifications enabled! You'll be notified when Gemini recovers.");
-                } else {
-                  alert(
-                    'Please allow notifications in your browser to enable this feature.'
-                  );
-                }
-              }}
-              className="px-4 py-2 bg-blue-500 hover:bg-blue-600 text-white rounded-lg text-sm font-medium transition"
-            >
-              Enable Notifications
-            </button>
-            <button
-              onClick={async () => {
-                const success = await sendTestNotification();
-                if (!success) {
-                  alert('Please enable notifications first.');
-                }
-              }}
-              className="px-4 py-2 bg-zinc-100 dark:bg-zinc-800 hover:bg-zinc-200 dark:hover:bg-zinc-700 text-zinc-700 dark:text-zinc-300 rounded-lg text-sm font-medium transition"
-            >
-              Test Notification
-            </button>
-          </div>
-        </div>
-      </div>
-
-      {/* General AI */}
-      <div className="bg-white dark:bg-zinc-900 border border-zinc-200 dark:border-zinc-800 rounded-xl p-6">
-        <h4 className="text-sm font-bold uppercase tracking-widest text-zinc-500 mb-6 flex items-center gap-2">
-          <Cpu /> General AI
-        </h4>
-
-        <div className="space-y-6">
-          <div className="space-y-2">
-            <label className="text-sm font-medium dark:text-white text-zinc-900">
-              Primary AI Model
-            </label>
-            <select
-              value={primaryAIModel}
-              onChange={(e) => {
-                setPrimaryAIModel(e.target.value);
-                settingsService.set('primaryAIModel', e.target.value);
-              }}
-              className="w-full bg-zinc-50 dark:bg-zinc-800 border border-zinc-200 dark:border-zinc-700 rounded-lg px-4 py-2.5 dark:text-white text-zinc-900 focus:border-blue-500 focus:outline-none"
-            >
-              <option value="gemini-2.5-flash">Gemini 2.5 Flash (Fastest)</option>
-              <option value="gemini-2.0-pro">Gemini 2.0 Pro (Balanced)</option>
-              <option value="gpt-4o">GPT-4o (OpenAI)</option>
-              <option value="claude-3.5-sonnet">Claude 3.5 Sonnet</option>
-              <option value="perplexity-sonar-small">Perplexity Sonar Small</option>
-            </select>
-            <p className="text-xs text-zinc-500">
-              The default model used for general queries, summaries, and chat.
-            </p>
-          </div>
-
-          <ToggleItem
-            label="Enable Advanced Reasoning"
-            desc="Use slower but more powerful models (e.g. Gemini 1.5 Pro) for complex queries in the War Room"
-            active={enableAdvancedReasoning}
-            onToggle={() => {
-              const v = !enableAdvancedReasoning;
-              setEnableAdvancedReasoning(v);
-              settingsService.set('enableAdvancedReasoning', v);
-            }}
-          />
-        </div>
-      </div>
 
       {/* Voice Agent */}
       <div className="bg-white dark:bg-zinc-900 border border-zinc-200 dark:border-zinc-800 rounded-xl p-6">
@@ -340,7 +248,7 @@ export const AIIntelligenceSettings: React.FC = () => {
 
           <ToggleItem
             label="Auto-Analyze New Documents"
-            desc="Automatically generate summaries and extract keywords when uploading files (Uses API credits)"
+            desc="Automatically generate summaries and extract keywords when uploading files"
             active={autoAnalyzeDocs}
             onToggle={() => {
               const v = !autoAnalyzeDocs;

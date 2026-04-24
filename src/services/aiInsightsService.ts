@@ -1,10 +1,28 @@
 /**
  * AI Insights Service
- * Claude AI-powered analysis for communication patterns, sentiment, and personalized recommendations
+ *
+ * Communication-analytics features (sentiment, conflict detection,
+ * recognition, personalised insights). All AI calls now route through the
+ * central `ai-router` edge function — no direct provider SDKs, no
+ * user-supplied Anthropic keys, no `api_keys` lookup.
+ *
+ * Task routing:
+ * - `sentiment_analysis`  → Gemini Flash (bulk sentiment + recognition)
+ * - `conflict_detection`  → Claude Haiku   (nuance matters for tension)
+ * - `pulse_assistant_chat`→ fallback for ad-hoc insight generation
+ *
+ * Fallback heuristics (basic*Analysis) remain as a safety net for
+ * workspaces that are capped, offline, or mid-outage.
  */
 
 import { supabase } from './supabase';
-import { generateClaudeResponse } from './anthropicService';
+import { invokeAIJson } from './ai/aiService';
+import { getCurrentWorkspaceId } from './ai/getWorkspaceId';
+import {
+  AICapExceededError,
+  AITrialExpiredError,
+  AIProviderUnavailableError,
+} from './ai/errors';
 
 export interface AIInsight {
   id: string;
@@ -55,31 +73,54 @@ export interface CommunicationInsight {
 }
 
 /**
- * Analyze sentiment in message content using Claude AI
+ * AI availability is now per-workspace (the router decides at request time).
+ * Kept as a permissive check — callers should still handle `AICapExceededError`
+ * and `AITrialExpiredError` from actual invocations.
+ */
+export function isAvailable(): boolean {
+  return true;
+}
+
+/**
+ * Re-throw router-level errors (cap, trial, provider) so the UI can render
+ * the correct upgrade / outage prompt. Other errors fall through to the
+ * per-function fallback heuristic.
+ */
+function rethrowIfRouterError(err: unknown): void {
+  if (
+    err instanceof AICapExceededError ||
+    err instanceof AITrialExpiredError ||
+    err instanceof AIProviderUnavailableError
+  ) {
+    throw err;
+  }
+}
+
+/**
+ * Analyze sentiment in message content via the ai-router.
+ *
+ * @param apiKey DEPRECATED — unused. Retained for backward compatibility.
+ * @param messageContent The message to analyse.
+ * @param context Optional context string.
+ * @param workspaceId Optional workspace override.
  */
 export async function analyzeSentiment(
   messageContent: string,
-  context?: string
+  context?: string,
+  workspaceId?: string
 ): Promise<{
   success: boolean;
   data?: SentimentAnalysisResult;
   error?: string;
 }> {
   try {
-    // Get user's API key
     const { data: { user } } = await supabase.auth.getUser();
     if (!user) {
       return { success: false, error: 'Not authenticated' };
     }
 
-    const { data: apiKeyData } = await supabase
-      .from('api_keys')
-      .select('anthropic_key')
-      .eq('user_id', user.id)
-      .single();
-
-    if (!apiKeyData?.anthropic_key) {
-      // Fallback to basic sentiment analysis if no API key
+    const wsId = workspaceId ?? getCurrentWorkspaceId();
+    if (!wsId) {
       return { success: true, data: basicSentimentAnalysis(messageContent) };
     }
 
@@ -97,16 +138,15 @@ Provide a JSON response with:
 
 Return only valid JSON, no other text.`;
 
-    const response = await generateClaudeResponse(
-      apiKeyData.anthropic_key,
+    const result = await invokeAIJson<SentimentAnalysisResult>(
+      'sentiment_analysis',
       prompt,
-      'claude-3-5-sonnet-20241022'
+      { workspaceId: wsId, temperature: 0.2 }
     );
-
-    const result = JSON.parse(response) as SentimentAnalysisResult;
 
     return { success: true, data: result };
   } catch (err: any) {
+    rethrowIfRouterError(err);
     console.error('Error analyzing sentiment with AI:', err);
     // Fallback to basic analysis
     return { success: true, data: basicSentimentAnalysis(messageContent) };
@@ -114,11 +154,18 @@ Return only valid JSON, no other text.`;
 }
 
 /**
- * Analyze message for conflict patterns using Claude AI
+ * Analyze a message for conflict patterns via the ai-router.
+ * Uses `conflict_detection` (Claude Haiku) — nuanced tension analysis benefits
+ * from Claude's reasoning over Gemini Flash.
+ *
+ * @param messageContent The message to analyse.
+ * @param conversationHistory Optional recent conversation context.
+ * @param workspaceId Optional workspace override.
  */
 export async function analyzeForConflict(
   messageContent: string,
-  conversationHistory?: string[]
+  conversationHistory?: string[],
+  workspaceId?: string
 ): Promise<{
   success: boolean;
   data?: ConflictAnalysisResult;
@@ -130,14 +177,8 @@ export async function analyzeForConflict(
       return { success: false, error: 'Not authenticated' };
     }
 
-    const { data: apiKeyData } = await supabase
-      .from('api_keys')
-      .select('anthropic_key')
-      .eq('user_id', user.id)
-      .single();
-
-    if (!apiKeyData?.anthropic_key) {
-      // Fallback to basic conflict detection
+    const wsId = workspaceId ?? getCurrentWorkspaceId();
+    if (!wsId) {
       return { success: true, data: basicConflictAnalysis(messageContent) };
     }
 
@@ -160,26 +201,31 @@ Provide a JSON response with:
 
 Return only valid JSON, no other text.`;
 
-    const response = await generateClaudeResponse(
-      apiKeyData.anthropic_key,
+    const result = await invokeAIJson<ConflictAnalysisResult>(
+      'conflict_detection',
       prompt,
-      'claude-3-5-sonnet-20241022'
+      { workspaceId: wsId, temperature: 0.2 }
     );
-
-    const result = JSON.parse(response) as ConflictAnalysisResult;
 
     return { success: true, data: result };
   } catch (err: any) {
+    rethrowIfRouterError(err);
     console.error('Error analyzing conflict with AI:', err);
     return { success: true, data: basicConflictAnalysis(messageContent) };
   }
 }
 
 /**
- * Analyze message for recognition/kudos using Claude AI
+ * Analyze a message for recognition / kudos / praise via the ai-router.
+ * Routes to `sentiment_analysis` — recognition detection is a sentiment-class
+ * task (Gemini Flash is well-suited and cheap).
+ *
+ * @param messageContent The message to analyse.
+ * @param workspaceId Optional workspace override.
  */
 export async function analyzeForRecognition(
-  messageContent: string
+  messageContent: string,
+  workspaceId?: string
 ): Promise<{
   success: boolean;
   data?: RecognitionAnalysisResult;
@@ -191,13 +237,8 @@ export async function analyzeForRecognition(
       return { success: false, error: 'Not authenticated' };
     }
 
-    const { data: apiKeyData } = await supabase
-      .from('api_keys')
-      .select('anthropic_key')
-      .eq('user_id', user.id)
-      .single();
-
-    if (!apiKeyData?.anthropic_key) {
+    const wsId = workspaceId ?? getCurrentWorkspaceId();
+    if (!wsId) {
       return { success: true, data: basicRecognitionAnalysis(messageContent) };
     }
 
@@ -215,26 +256,31 @@ Provide a JSON response with:
 
 Return only valid JSON, no other text.`;
 
-    const response = await generateClaudeResponse(
-      apiKeyData.anthropic_key,
+    const result = await invokeAIJson<RecognitionAnalysisResult>(
+      'sentiment_analysis',
       prompt,
-      'claude-3-5-sonnet-20241022'
+      { workspaceId: wsId, temperature: 0.2 }
     );
-
-    const result = JSON.parse(response) as RecognitionAnalysisResult;
 
     return { success: true, data: result };
   } catch (err: any) {
+    rethrowIfRouterError(err);
     console.error('Error analyzing recognition with AI:', err);
     return { success: true, data: basicRecognitionAnalysis(messageContent) };
   }
 }
 
 /**
- * Generate personalized communication insights
+ * Generate personalized communication insights via the ai-router.
+ * Uses the general `pulse_assistant_chat` task — open-ended analysis over
+ * the user's aggregated metrics.
+ *
+ * @param timeframe Reporting window (week/month/quarter).
+ * @param workspaceId Optional workspace override.
  */
 export async function generateCommunicationInsights(
-  timeframe: 'week' | 'month' | 'quarter' = 'week'
+  timeframe: 'week' | 'month' | 'quarter' = 'week',
+  workspaceId?: string
 ): Promise<{
   success: boolean;
   data?: CommunicationInsight[];
@@ -269,13 +315,8 @@ export async function generateCommunicationInsights(
       .select('*')
       .eq('user_id', user.id);
 
-    const { data: apiKeyData } = await supabase
-      .from('api_keys')
-      .select('anthropic_key')
-      .eq('user_id', user.id)
-      .single();
-
-    if (!apiKeyData?.anthropic_key) {
+    const wsId = workspaceId ?? getCurrentWorkspaceId();
+    if (!wsId) {
       return { success: true, data: generateBasicInsights(metrics, contacts, relationships) };
     }
 
@@ -310,28 +351,35 @@ Provide a JSON array of insights, each with:
 
 Focus on patterns, risks, opportunities, and specific actions the user can take.
 
-Return only valid JSON array, no other text.`;
+Return only a JSON object with an "insights" array, no other text.`;
 
-    const response = await generateClaudeResponse(
-      apiKeyData.anthropic_key,
+    // The router's JSON mode requires an object at the top level, so we wrap
+    // in `{ "insights": [...] }` rather than a bare array.
+    const parsed = await invokeAIJson<{ insights?: CommunicationInsight[] }>(
+      'pulse_assistant_chat',
       prompt,
-      'claude-3-5-sonnet-20241022'
+      { workspaceId: wsId, temperature: 0.5 }
     );
 
-    const insights = JSON.parse(response) as CommunicationInsight[];
-
+    const insights = parsed.insights || [];
     return { success: true, data: insights };
   } catch (err: any) {
+    rethrowIfRouterError(err);
     console.error('Error generating AI insights:', err);
-    return { success: false, error: err.message };
+    return { success: false, error: err?.message ?? 'Unknown error' };
   }
 }
 
 /**
- * Generate relationship improvement suggestions using Claude AI
+ * Generate relationship improvement suggestions via the ai-router.
+ * Uses `pulse_assistant_chat` — personalised advice based on relationship data.
+ *
+ * @param contactIdentifier The contact to generate suggestions for.
+ * @param workspaceId Optional workspace override.
  */
 export async function generateRelationshipSuggestions(
-  contactIdentifier: string
+  contactIdentifier: string,
+  workspaceId?: string
 ): Promise<{
   success: boolean;
   data?: {
@@ -374,13 +422,8 @@ export async function generateRelationshipSuggestions(
       return { success: false, error: 'No data found for contact' };
     }
 
-    const { data: apiKeyData } = await supabase
-      .from('api_keys')
-      .select('anthropic_key')
-      .eq('user_id', user.id)
-      .single();
-
-    if (!apiKeyData?.anthropic_key) {
+    const wsId = workspaceId ?? getCurrentWorkspaceId();
+    if (!wsId) {
       return {
         success: true,
         data: {
@@ -419,22 +462,26 @@ Be specific and actionable. Consider the relationship health and history.
 
 Return only valid JSON, no other text.`;
 
-    const response = await generateClaudeResponse(
-      apiKeyData.anthropic_key,
-      prompt,
-      'claude-3-5-sonnet-20241022'
-    );
-
-    const result = JSON.parse(response);
+    const result = await invokeAIJson<{
+      suggestions: string[];
+      talking_points: string[];
+      best_time_to_reach: string;
+      communication_style: string;
+    }>('pulse_assistant_chat', prompt, { workspaceId: wsId, temperature: 0.6 });
 
     return { success: true, data: result };
   } catch (err: any) {
+    rethrowIfRouterError(err);
     console.error('Error generating relationship suggestions:', err);
-    return { success: false, error: err.message };
+    return { success: false, error: err?.message ?? 'Unknown error' };
   }
 }
 
-// Fallback functions for when Claude AI is not available
+// ─────────────────────────────────────────────────────────────────────
+// Fallback heuristics — used when no workspace is active, or when the
+// router returns a non-fatal error (e.g. transient network failure).
+// Router-level errors (cap, trial, provider) bypass these and propagate.
+// ─────────────────────────────────────────────────────────────────────
 
 function basicSentimentAnalysis(content: string): SentimentAnalysisResult {
   const positiveWords = ['thank', 'great', 'excellent', 'love', 'happy', 'appreciate', 'wonderful'];
@@ -495,9 +542,9 @@ function basicRecognitionAnalysis(content: string): RecognitionAnalysisResult {
 }
 
 function generateBasicInsights(
-  metrics: any[],
-  contacts: any[],
-  relationships: any[]
+  metrics: any[] | null,
+  _contacts: any[] | null,
+  relationships: any[] | null
 ): CommunicationInsight[] {
   const insights: CommunicationInsight[] = [];
 

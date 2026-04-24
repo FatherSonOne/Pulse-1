@@ -1,14 +1,11 @@
 /**
  * Gemini API Health Monitor
  *
- * Continuously monitors Gemini API health, quota status, and automatically
- * switches between Gemini and Perplexity based on availability.
+ * Continuously monitors Gemini API health and quota status.
  */
 
-import { isPerplexityAvailable } from './perplexityService';
-
 export interface APIHealthStatus {
-  provider: 'gemini' | 'perplexity' | 'both' | 'none';
+  provider: 'gemini' | 'none';
   gemini: {
     available: boolean;
     status: 'ok' | 'quota_exceeded' | 'error' | 'unchecked';
@@ -16,10 +13,6 @@ export interface APIHealthStatus {
     errorMessage?: string;
     errorCode?: number;
     nextRetryAt?: Date;
-  };
-  perplexity: {
-    available: boolean;
-    configured: boolean;
   };
   fallbackActive: boolean;
 }
@@ -38,10 +31,6 @@ let currentStatus: APIHealthStatus = {
     available: false,
     status: 'unchecked',
     lastChecked: null,
-  },
-  perplexity: {
-    available: false,
-    configured: false,
   },
   fallbackActive: false,
 };
@@ -124,16 +113,13 @@ export async function checkGeminiHealth(): Promise<{
  */
 async function updateHealthStatus(): Promise<void> {
   const geminiHealth = await checkGeminiHealth();
-  const perplexityConfigured = isPerplexityAvailable();
 
   const nextRetryAt = geminiHealth.status === 'quota_exceeded'
     ? new Date(Date.now() + RETRY_BACKOFF_MS)
     : undefined;
 
   currentStatus = {
-    provider: geminiHealth.available
-      ? (perplexityConfigured ? 'both' : 'gemini')
-      : (perplexityConfigured ? 'perplexity' : 'none'),
+    provider: geminiHealth.available ? 'gemini' : 'none',
     gemini: {
       available: geminiHealth.available,
       status: geminiHealth.status,
@@ -142,11 +128,7 @@ async function updateHealthStatus(): Promise<void> {
       errorCode: geminiHealth.errorCode,
       nextRetryAt,
     },
-    perplexity: {
-      available: perplexityConfigured,
-      configured: perplexityConfigured,
-    },
-    fallbackActive: !geminiHealth.available && perplexityConfigured,
+    fallbackActive: false,
   };
 
   // Notify listeners
@@ -209,9 +191,8 @@ export function onHealthStatusChange(callback: (status: APIHealthStatus) => void
 /**
  * Get recommended provider based on current health
  */
-export function getRecommendedProvider(): 'gemini' | 'perplexity' | 'none' {
+export function getRecommendedProvider(): 'gemini' | 'none' {
   if (currentStatus.gemini.available) return 'gemini';
-  if (currentStatus.perplexity.available) return 'perplexity';
   return 'none';
 }
 
@@ -219,39 +200,25 @@ export function getRecommendedProvider(): 'gemini' | 'perplexity' | 'none' {
  * Check if we should show a quota warning
  */
 export function shouldShowQuotaWarning(): boolean {
-  return currentStatus.gemini.status === 'quota_exceeded' &&
-         currentStatus.fallbackActive;
+  return currentStatus.gemini.status === 'quota_exceeded';
 }
 
 /**
  * Get user-friendly status message
  */
 export function getStatusMessage(): string {
-  const { gemini, perplexity, fallbackActive } = currentStatus;
+  const { gemini } = currentStatus;
 
   if (gemini.available) {
     return '✅ Gemini API is working normally';
   }
 
   if (gemini.status === 'quota_exceeded') {
-    if (fallbackActive) {
-      const retryMsg = gemini.nextRetryAt
-        ? ` Will retry at ${gemini.nextRetryAt.toLocaleTimeString()}.`
-        : '';
-      return `⚠️ Gemini quota exceeded. Using Perplexity fallback.${retryMsg}`;
-    }
-    return '🔴 Gemini quota exceeded. No fallback configured.';
+    return '🔴 Gemini quota exceeded.';
   }
 
   if (gemini.status === 'error') {
-    if (fallbackActive) {
-      return `⚠️ Gemini unavailable (${gemini.errorMessage}). Using Perplexity.`;
-    }
     return `🔴 Gemini error: ${gemini.errorMessage}`;
-  }
-
-  if (perplexity.available) {
-    return '⚠️ Gemini not configured. Using Perplexity.';
   }
 
   return '🔴 No AI provider configured';

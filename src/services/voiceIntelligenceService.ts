@@ -1,11 +1,29 @@
 import { GoogleGenAI, Type } from '@google/genai';
 import { VoiceAnalysis, VoiceSummary, TaskFromVoice, DecisionFromVoice } from '../types';
-import { withFormattedOutput, getContextualFormattingHints } from './aiFormattingService';
+import { withFormattedOutput } from './aiFormattingService';
+import { invokeAIJson } from './ai/aiService';
+import { getCurrentWorkspaceId } from './ai/getWorkspaceId';
 
 /**
  * Voice Intelligence Service
- * Advanced voice/audio processing with AI-powered transcription,
- * analysis, task extraction, and decision detection.
+ *
+ * Two categories of calls live here:
+ *
+ * 1. RAW AUDIO TRANSCRIPTION (stays client-side for now)
+ *    `transcribe`, `analyzeVoiceMemo`, `analyzeMeeting`, `generateVoiceSummary`,
+ *    `detectVoiceCommand`, `diarizeSpeakers`, `analyzeSentiment`, `textToSpeech`.
+ *    These pass base64 audio to Gemini's multimodal audio models. The ai-router
+ *    does not currently accept binary audio payloads, so they continue to call
+ *    Gemini directly. Realtime/streaming audio is Phase 4.
+ *
+ * 2. TEXT-ONLY ANALYSIS (routed through ai-router)
+ *    `summarizeTranscript`  → `voxer_transcript_summary`  (bulk summarization)
+ *    `analyzeMeetingText`   → `meeting_summary`            (structured analysis)
+ *    `parseVoiceCommandText`→ `voice_command_parse`        (intent extraction)
+ *    `diarizeFromTranscript`→ `voxer_transcript_summary`   (talk-time stats)
+ *
+ *    These take an already-transcribed string and let the router pick the
+ *    right provider (Gemini Flash for bulk, Sonnet for structured extraction).
  */
 
 export interface VoiceTranscription {
@@ -48,7 +66,23 @@ const getApiKey = (): string => {
   return localStorage.getItem('gemini_api_key') || '';
 };
 
+/**
+ * Resolve workspace id for router calls, or throw a descriptive error.
+ */
+function resolveWorkspaceId(explicit?: string): string {
+  const id = explicit ?? getCurrentWorkspaceId();
+  if (!id) {
+    throw new Error('No active workspace — AI unavailable');
+  }
+  return id;
+}
+
 export const voiceIntelligenceService = {
+  // ────────────────────────────────────────────────────────────────────
+  // RAW AUDIO PATH — uses Gemini audio models directly (Phase 4 will
+  // move this server-side; realtime/streaming stays client-side).
+  // ────────────────────────────────────────────────────────────────────
+
   // Transcribe audio to text with timestamps
   async transcribe(
     audioBase64: string,
@@ -603,6 +637,9 @@ export const voiceIntelligenceService = {
   } {
     let mediaRecorder: MediaRecorder | null = null;
     let audioChunks: Blob[] = [];
+    // Interim callback is preserved for API compatibility — realtime partial
+    // transcript streaming is not yet implemented (see Phase 4).
+    // eslint-disable-next-line @typescript-eslint/no-unused-vars
     let interimCallback: ((text: string) => void) | null = null;
 
     return {
@@ -651,5 +688,270 @@ export const voiceIntelligenceService = {
         interimCallback = callback;
       }
     };
+  },
+
+  // ────────────────────────────────────────────────────────────────────
+  // TEXT-ONLY PATH — routes through ai-router (post-transcription analysis)
+  // ────────────────────────────────────────────────────────────────────
+
+  /**
+   * Summarize an already-transcribed voice message / voxer transcript.
+   * Routes to `voxer_transcript_summary` (bulk task → Gemini Flash).
+   *
+   * @param apiKey DEPRECATED — unused. Retained for backward compatibility.
+   * @param transcript The transcribed text to summarize.
+   * @param workspaceId Optional workspace override.
+   */
+  async summarizeTranscript(
+    transcript: string,
+    workspaceId?: string
+  ): Promise<VoiceSummary | null> {
+    if (!transcript?.trim()) return null;
+
+    const wsId = resolveWorkspaceId(workspaceId);
+
+    const prompt = `Create a comprehensive summary of this transcript. Include:
+1. Main summary (2-3 sentences)
+2. Key points as bullet items
+3. Overall sentiment (positive/neutral/negative)
+4. Main topics/themes discussed
+
+Transcript:
+"""
+${transcript}
+"""
+
+Return JSON in this exact format:
+{
+  "summary": "...",
+  "keyPoints": ["...", "..."],
+  "sentiment": "positive" | "neutral" | "negative",
+  "topics": ["...", "..."]
+}`;
+
+    try {
+      const result = await invokeAIJson<{
+        summary: string;
+        keyPoints: string[];
+        sentiment: 'positive' | 'neutral' | 'negative';
+        topics: string[];
+      }>('voxer_transcript_summary', prompt, { workspaceId: wsId, temperature: 0.4 });
+
+      return {
+        id: `summary-${Date.now()}`,
+        voiceMessageId: '',
+        transcriptionId: '',
+        ...result
+      } as VoiceSummary;
+    } catch (error) {
+      console.error('Transcript summary error:', error);
+      throw error;
+    }
+  },
+
+  /**
+   * Analyze an already-transcribed meeting for summary, action items, and decisions.
+   * Routes to `meeting_summary` (value task → Claude Sonnet) for structured extraction.
+   *
+   * @param transcript The transcribed meeting text.
+   * @param context Optional metadata (title, participants).
+   * @param workspaceId Optional workspace override.
+   */
+  async analyzeMeetingText(
+    transcript: string,
+    context?: { title?: string; participants?: string[] },
+    workspaceId?: string
+  ): Promise<MeetingAnalysis | null> {
+    if (!transcript?.trim()) return null;
+
+    const wsId = resolveWorkspaceId(workspaceId);
+
+    const contextInfo = context
+      ? `Meeting title: ${context.title || 'Unknown'}. Known participants: ${context.participants?.join(', ') || 'Unknown'}.`
+      : '';
+
+    const prompt = `Analyze this meeting transcript. ${contextInfo}
+
+Extract:
+1. Meeting title (if mentioned or infer from content)
+2. Participants mentioned
+3. Executive summary
+4. Key discussion points
+5. Action items with assignees and due dates if mentioned (priority: low/medium/high)
+6. Decisions made (with context and decidedBy)
+7. Main topics discussed with approximate time spent on each and sentiment
+8. Follow-up items needed
+9. Overall sentiment (positive/neutral/negative/mixed)
+
+Transcript:
+"""
+${transcript}
+"""
+
+Return JSON in this exact format:
+{
+  "title": "...",
+  "duration": 0,
+  "participants": ["..."],
+  "summary": "...",
+  "keyPoints": ["..."],
+  "actionItems": [
+    { "title": "...", "description": "...", "assignee": "...", "dueDate": "...", "priority": "medium" }
+  ],
+  "decisions": [
+    { "decision": "...", "context": "...", "decidedBy": "..." }
+  ],
+  "topics": [
+    { "topic": "...", "duration": 0, "sentiment": "neutral" }
+  ],
+  "followUps": ["..."],
+  "sentiment": "neutral"
+}`;
+
+    try {
+      const result = await invokeAIJson<any>(
+        'meeting_summary',
+        prompt,
+        { workspaceId: wsId, temperature: 0.3 }
+      );
+
+      return {
+        ...result,
+        actionItems: result.actionItems?.map((item: any) => ({
+          id: `voice-task-${Date.now()}-${Math.random().toString(36).substr(2, 9)}`,
+          voiceMessageId: '',
+          transcriptionId: '',
+          title: item.title,
+          description: item.description || '',
+          dueDate: item.dueDate ? new Date(item.dueDate) : undefined,
+          priority: item.priority || 'medium',
+          assignee: item.assignee,
+          tags: []
+        })) || [],
+        decisions: result.decisions?.map((item: any) => ({
+          id: `voice-decision-${Date.now()}-${Math.random().toString(36).substr(2, 9)}`,
+          voiceMessageId: '',
+          transcriptionId: '',
+          decision: item.decision,
+          context: item.context || '',
+          decisionDate: new Date(),
+          decidedBy: item.decidedBy || 'Unknown',
+          affectedTeams: []
+        })) || []
+      } as MeetingAnalysis;
+    } catch (error) {
+      console.error('Meeting text analysis error:', error);
+      throw error;
+    }
+  },
+
+  /**
+   * Parse a voice command from already-transcribed text.
+   * Routes to `voice_command_parse` for low-latency intent extraction.
+   *
+   * @param transcript The transcribed command text.
+   * @param availableCommands The list of valid commands to match against.
+   * @param workspaceId Optional workspace override.
+   */
+  async parseVoiceCommandText(
+    transcript: string,
+    availableCommands: string[],
+    workspaceId?: string
+  ): Promise<VoiceCommand | null> {
+    if (!transcript?.trim()) return null;
+
+    const wsId = resolveWorkspaceId(workspaceId);
+
+    const prompt = `Detect if the following utterance contains a voice command from this list: ${availableCommands.join(', ')}.
+If found, extract the command and any parameters mentioned. If no command detected, return { "command": "", "confidence": 0, "parameters": {} }.
+
+Utterance:
+"""
+${transcript}
+"""
+
+Return JSON in this exact format:
+{
+  "command": "...",
+  "confidence": 0.0,
+  "parameters": { "key": "value" }
+}`;
+
+    try {
+      const result = await invokeAIJson<VoiceCommand>(
+        'voice_command_parse',
+        prompt,
+        { workspaceId: wsId, temperature: 0.1 }
+      );
+
+      if (!result || result.confidence < 0.5 || !result.command) {
+        return null;
+      }
+      return result;
+    } catch (error) {
+      console.error('Voice command parse error:', error);
+      throw error;
+    }
+  },
+
+  /**
+   * Build speaker diarization / talk-time stats from an already-transcribed
+   * multi-speaker transcript. Routes to `voxer_transcript_summary` (bulk).
+   *
+   * @param transcript The transcribed text with speaker tags.
+   * @param knownSpeakers Optional hint listing expected speaker names.
+   * @param workspaceId Optional workspace override.
+   */
+  async diarizeFromTranscript(
+    transcript: string,
+    knownSpeakers?: string[],
+    workspaceId?: string
+  ): Promise<SpeakerDiarization[] | null> {
+    if (!transcript?.trim()) return null;
+
+    const wsId = resolveWorkspaceId(workspaceId);
+
+    const speakerHint = knownSpeakers && knownSpeakers.length > 0
+      ? `Known speakers: ${knownSpeakers.join(', ')}. Try to identify which speaker is which.`
+      : 'Identify different speakers as Speaker 1, Speaker 2, etc.';
+
+    const prompt = `Analyze this transcript for speaker diarization. ${speakerHint}
+
+For each speaker, provide:
+1. Speaker ID or name
+2. The segments they spoke (start/end in seconds if available, plus the text)
+3. Total talk time in seconds (approximate if not explicit)
+4. Overall sentiment (positive / neutral / negative)
+
+Transcript:
+"""
+${transcript}
+"""
+
+Return JSON in this exact format:
+{
+  "speakers": [
+    {
+      "speakerId": "speaker-1",
+      "speakerName": "Alice",
+      "segments": [{ "start": 0, "end": 10, "text": "..." }],
+      "talkTime": 120,
+      "sentiment": "neutral"
+    }
+  ]
+}`;
+
+    try {
+      const parsed = await invokeAIJson<{ speakers?: SpeakerDiarization[] }>(
+        'voxer_transcript_summary',
+        prompt,
+        { workspaceId: wsId, temperature: 0.3 }
+      );
+
+      return parsed.speakers || [];
+    } catch (error) {
+      console.error('Transcript diarization error:', error);
+      throw error;
+    }
   }
 };

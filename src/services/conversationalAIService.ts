@@ -1,7 +1,13 @@
-import { GoogleGenAI } from "@google/genai";
 import { DecisionWithVotes } from "./decisionService";
 import { Task } from "./taskService";
 import { User } from "../types";
+import { invokeAIPrompt, invokeAIJson } from "./ai/aiService";
+import { getCurrentWorkspaceId } from "./ai/getWorkspaceId";
+import {
+  AICapExceededError,
+  AITrialExpiredError,
+  AIProviderUnavailableError,
+} from "./ai/errors";
 
 // Simple in-memory cache with 5-minute TTL
 const AI_CACHE_TTL_MS = 5 * 60 * 1000; // 5 minutes
@@ -34,6 +40,20 @@ function setCache(key: string, response: string): void {
   responseCache.set(key, { response, timestamp: Date.now() });
 }
 
+/**
+ * Re-throw router-level errors so callers (and UI) can handle billing/provider states.
+ * All other errors are swallowed into user-friendly fallbacks.
+ */
+function rethrowRouterErrors(error: unknown): void {
+  if (
+    error instanceof AICapExceededError ||
+    error instanceof AITrialExpiredError ||
+    error instanceof AIProviderUnavailableError
+  ) {
+    throw error;
+  }
+}
+
 export interface QueryContext {
   decisions: DecisionWithVotes[];
   tasks: Task[];
@@ -57,19 +77,28 @@ export interface Blocker {
 export const conversationalAIService = {
   /**
    * Answer natural language queries about decisions and tasks
+   *
+   * @param query     The user's question
+   * @param context   Decisions/tasks/user context
+   * @param _apiKey   @deprecated — ignored. AI routing is handled server-side.
+   * @param workspaceId Optional workspace ID; falls back to the active workspace.
    */
   async answerQuery(
     query: string,
     context: QueryContext,
-    apiKey: string
+    _apiKey?: string,
+    workspaceId?: string
   ): Promise<string> {
     const cacheKey = getCacheKey(query, context);
     const cached = getCached(cacheKey);
     if (cached) return cached;
 
-    try {
-      const ai = new GoogleGenAI({ apiKey });
+    const wsId = workspaceId ?? getCurrentWorkspaceId();
+    if (!wsId) {
+      return 'I apologize, but no active workspace is selected. Please select a workspace first.';
+    }
 
+    try {
       // Prepare context data
       const decisionsData = context.decisions.map(d => ({
         id: d.id,
@@ -123,17 +152,15 @@ If the user wants to create something, respond with:
 
 Answer:`;
 
-      const response = await ai.models.generateContent({
-        model: 'gemini-2.5-flash',
-        contents: prompt,
-        config: {
-          temperature: 0.4,
-        },
+      const text = await invokeAIPrompt('rag_query', prompt, {
+        workspaceId: wsId,
+        temperature: 0.4,
       });
 
-      setCache(cacheKey, response.text);
-      return response.text;
+      setCache(cacheKey, text);
+      return text;
     } catch (error) {
+      rethrowRouterErrors(error);
       console.error('Query answering failed:', error);
       return 'I apologize, but I encountered an error processing your question. Please try again.';
     }
@@ -141,23 +168,34 @@ Answer:`;
 
   /**
    * Generate summary of pending decisions and tasks
+   *
+   * @param _apiKey   @deprecated — ignored. AI routing is handled server-side.
+   * @param workspaceId Optional workspace ID; falls back to the active workspace.
    */
   async summarizePending(
     decisions: DecisionWithVotes[],
     tasks: Task[],
-    apiKey: string
+    _apiKey?: string,
+    workspaceId?: string
   ): Promise<PendingSummary> {
+    const wsId = workspaceId ?? getCurrentWorkspaceId();
+    const votingDecisions = decisions.filter(d => d.status === 'voting');
+    const proposedDecisions = decisions.filter(d => d.status === 'proposed');
+    const todoTasks = tasks.filter(t => t.status === 'todo');
+    const inProgressTasks = tasks.filter(t => t.status === 'in_progress');
+    const overdueTasks = tasks.filter(t =>
+      t.due_date && new Date(t.due_date) < new Date() && t.status !== 'done'
+    );
+
+    const fallback: PendingSummary = {
+      summary: `You have ${votingDecisions.length} decisions pending votes and ${tasks.filter(t => t.status !== 'done').length} active tasks.`,
+      highlights: [],
+      recommendations: [],
+    };
+
+    if (!wsId) return fallback;
+
     try {
-      const ai = new GoogleGenAI({ apiKey });
-
-      const votingDecisions = decisions.filter(d => d.status === 'voting');
-      const proposedDecisions = decisions.filter(d => d.status === 'proposed');
-      const todoTasks = tasks.filter(t => t.status === 'todo');
-      const inProgressTasks = tasks.filter(t => t.status === 'in_progress');
-      const overdueTasks = tasks.filter(t =>
-        t.due_date && new Date(t.due_date) < new Date() && t.status !== 'done'
-      );
-
       const prompt = `Summarize the current state of decisions and tasks:
 
 Decisions:
@@ -185,34 +223,30 @@ Return JSON:
   "recommendations": ["rec1", "rec2"]
 }`;
 
-      const response = await ai.models.generateContent({
-        model: 'gemini-2.5-flash',
-        contents: prompt,
-        config: {
-          temperature: 0.4,
-          responseMimeType: 'application/json',
-        },
+      const result = await invokeAIJson<PendingSummary>('rag_query', prompt, {
+        workspaceId: wsId,
+        temperature: 0.4,
       });
-
-      const result = JSON.parse(response.text);
       return result;
     } catch (error) {
+      rethrowRouterErrors(error);
       console.error('Summary generation failed:', error);
-      return {
-        summary: `You have ${decisions.filter(d => d.status === 'voting').length} decisions pending votes and ${tasks.filter(t => t.status !== 'done').length} active tasks.`,
-        highlights: [],
-        recommendations: [],
-      };
+      return fallback;
     }
   },
 
   /**
    * Identify blockers in the workflow
+   *
+   * Pure heuristic — no LLM call, so no workspace/task mapping needed.
+   * Kept backward-compatible with the old (tasks, decisions, apiKey) signature.
+   *
+   * @param _apiKey @deprecated — ignored (this function doesn't invoke AI).
    */
   async identifyBlockers(
     tasks: Task[],
     decisions: DecisionWithVotes[],
-    apiKey: string
+    _apiKey?: string
   ): Promise<Blocker[]> {
     const blockers: Blocker[] = [];
 
@@ -261,14 +295,20 @@ Return JSON:
 
   /**
    * Generate personalized recommendations for next actions
+   *
+   * @param _apiKey   @deprecated — ignored. AI routing is handled server-side.
+   * @param workspaceId Optional workspace ID; falls back to the active workspace.
    */
   async suggestNextActions(
     context: QueryContext,
-    apiKey: string
+    _apiKey?: string,
+    workspaceId?: string
   ): Promise<string[]> {
-    try {
-      const ai = new GoogleGenAI({ apiKey });
+    const wsId = workspaceId ?? getCurrentWorkspaceId();
+    const fallback = ['Review your assigned tasks', 'Vote on pending decisions'];
+    if (!wsId) return fallback;
 
+    try {
       const myTasks = context.tasks.filter(t =>
         t.assigned_to === context.user.id && t.status !== 'done'
       );
@@ -294,20 +334,21 @@ Pending Decisions: ${myVotingDecisions.map(d => d.proposal_text).join(', ')}
 
 Return JSON array of 3-5 specific, actionable recommendations, prioritized by urgency.`;
 
-      const response = await ai.models.generateContent({
-        model: 'gemini-2.5-flash',
-        contents: prompt,
-        config: {
-          temperature: 0.4,
-          responseMimeType: 'application/json',
-        },
-      });
+      const result = await invokeAIJson<string[] | { recommendations?: string[] }>(
+        'rag_query',
+        prompt,
+        { workspaceId: wsId, temperature: 0.4 }
+      );
 
-      const result = JSON.parse(response.text);
-      return Array.isArray(result) ? result : [];
+      if (Array.isArray(result)) return result;
+      if (result && typeof result === 'object' && Array.isArray(result.recommendations)) {
+        return result.recommendations;
+      }
+      return fallback;
     } catch (error) {
+      rethrowRouterErrors(error);
       console.error('Next actions suggestion failed:', error);
-      return ['Review your assigned tasks', 'Vote on pending decisions'];
+      return fallback;
     }
   },
 

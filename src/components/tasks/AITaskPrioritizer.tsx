@@ -1,15 +1,19 @@
 import React, { useState, memo } from 'react';
 import { Task } from '../../services/taskService';
 import { taskIntelligenceService, AITaskPriority } from '../../services/taskIntelligenceService';
-import { Zap, RefreshCw, AlertCircle, TrendingUp, CheckCircle, Settings, X } from 'lucide-react';
-import { APIKeyModal } from '../settings/APIKeyModal';
+import { Zap, RefreshCw, AlertCircle, TrendingUp, CheckCircle, X } from 'lucide-react';
 import './AITaskPrioritizer.css';
 
 export interface AITaskPrioritizerProps {
   tasks: Task[];
   onPrioritizationComplete: (prioritizedTasks: AITaskPriority[]) => void;
   onClose?: () => void;
-  apiKey: string;
+  /**
+   * @deprecated No longer used — AI calls route through the ai-router edge
+   * function with platform-managed keys. Retained as an optional prop for
+   * backward compatibility with existing callers.
+   */
+  apiKey?: string;
 }
 
 // Custom comparison function to prevent unnecessary re-renders
@@ -26,9 +30,6 @@ const arePropsEqual = (
     if (prevProps.tasks[i].updated_at !== nextProps.tasks[i].updated_at) return false;
   }
 
-  // Check if API key changed
-  if (prevProps.apiKey !== nextProps.apiKey) return false;
-
   // Props are equal, skip re-render
   return true;
 };
@@ -37,21 +38,13 @@ const AITaskPrioritizerComponent: React.FC<AITaskPrioritizerProps> = ({
   tasks,
   onPrioritizationComplete,
   onClose,
-  apiKey
 }) => {
   const [isAnalyzing, setIsAnalyzing] = useState(false);
   const [error, setError] = useState<string | null>(null);
   const [lastAnalysis, setLastAnalysis] = useState<AITaskPriority[] | null>(null);
   const [showResults, setShowResults] = useState(false);
-  const [showAPIKeyModal, setShowAPIKeyModal] = useState(false);
 
   const handlePrioritize = async () => {
-    if (!apiKey) {
-      setError('API key is required for AI prioritization');
-      setShowAPIKeyModal(true);
-      return;
-    }
-
     if (tasks.length === 0) {
       setError('No tasks to prioritize');
       return;
@@ -61,9 +54,11 @@ const AITaskPrioritizerComponent: React.FC<AITaskPrioritizerProps> = ({
     setError(null);
 
     try {
+      // Router (ai-router edge function) handles auth + keys server-side —
+      // no client-side API key required.
       const prioritizedTasks = await taskIntelligenceService.intelligentPrioritization(
         tasks,
-        apiKey
+        undefined,
       );
 
       setLastAnalysis(prioritizedTasks);
@@ -71,7 +66,7 @@ const AITaskPrioritizerComponent: React.FC<AITaskPrioritizerProps> = ({
       // Don't apply automatically - wait for user to click Apply
     } catch (err) {
       console.error('AI prioritization failed:', err);
-      setError('Failed to analyze tasks. Please check your API key and try again.');
+      setError('Failed to analyze tasks. Please try again in a moment.');
     } finally {
       setIsAnalyzing(false);
     }
@@ -170,29 +165,8 @@ const AITaskPrioritizerComponent: React.FC<AITaskPrioritizerProps> = ({
         <div className="prioritizer-error" role="alert">
           <AlertCircle size={16} aria-hidden="true" />
           <span>{error}</span>
-          {!apiKey && (
-            <button
-              type="button"
-              className="configure-api-key-button"
-              onClick={() => setShowAPIKeyModal(true)}
-              aria-label="Configure Gemini API key for AI prioritization"
-            >
-              <Settings size={14} aria-hidden="true" />
-              Configure API Key
-            </button>
-          )}
         </div>
       )}
-
-      {/* API Key Configuration Modal */}
-      <APIKeyModal
-        isOpen={showAPIKeyModal}
-        onClose={() => setShowAPIKeyModal(false)}
-        onSave={() => {
-          setError(null);
-          setShowAPIKeyModal(false);
-        }}
-      />
 
       {/* Summary statistics */}
       {stats && showResults && (

@@ -65,7 +65,10 @@ import { OnlineStatus } from './components/PWA/OnlineStatus';
 import { FeatureProvider } from './contexts/FeatureContext';
 import { PulseAIProvider } from './contexts/PulseAIContext';
 import { WorkspaceProvider, useWorkspaceData, useWorkspaceActions } from './contexts/WorkspaceContext';
+import { TrialGate } from './components/billing/TrialGate';
 import { DeletedWorkspaceInterstitial } from './components/settings/DeletedWorkspaceInterstitial';
+import { OrgOnboardingModal } from './components/settings/OrgOnboardingModal';
+import { Toaster } from 'react-hot-toast';
 
 import { HelpCircle } from 'lucide-react';
 
@@ -265,7 +268,6 @@ const App: React.FC = () => {
   const [claudeKey, setClaudeKey] = useState(() => localStorage.getItem('claude_api_key') || '');
   const [assemblyKey, setAssemblyKey] = useState(() => localStorage.getItem('assemblyai_api_key') || '');
   const [elevenLabsKey, setElevenLabsKey] = useState(() => localStorage.getItem('elevenlabs_api_key') || '');
-  const [perplexityKey, setPerplexityKey] = useState(() => localStorage.getItem('perplexity_api_key') || import.meta.env.VITE_PERPLEXITY_API_KEY || '');
   const [mapboxKey, setMapboxKey] = useState(() => localStorage.getItem('mapbox_api_key') || '');
 
   // Refresh API keys when returning from settings
@@ -275,7 +277,6 @@ const App: React.FC = () => {
       setClaudeKey(localStorage.getItem('claude_api_key') || '');
       setAssemblyKey(localStorage.getItem('assemblyai_api_key') || '');
       setElevenLabsKey(localStorage.getItem('elevenlabs_api_key') || '');
-      setPerplexityKey(localStorage.getItem('perplexity_api_key') || import.meta.env.VITE_PERPLEXITY_API_KEY || '');
       setMapboxKey(localStorage.getItem('mapbox_api_key') || '');
     };
     
@@ -597,11 +598,18 @@ const App: React.FC = () => {
     return () => window.removeEventListener('keydown', handleSearchKey);
   }, []);
 
-  // Global navigation event — allows PulseAssistant suggested actions to navigate
+  // Global navigation event — allows PulseAssistant suggested actions + the
+  // AI-error handler's "Upgrade" CTA to navigate. `section` is honoured when
+  // navigating into AppView.SETTINGS (e.g. `section: 'billing'`).
   useEffect(() => {
     const handleNavigate = (e: Event) => {
-      const { view: targetView } = (e as CustomEvent<{ view: AppView }>).detail ?? {};
-      if (targetView) setView(targetView);
+      const { view: targetView, section } =
+        (e as CustomEvent<{ view: AppView; section?: string }>).detail ?? {};
+      if (!targetView) return;
+      if (targetView === AppView.SETTINGS && section) {
+        setSettingsSection(section);
+      }
+      setView(targetView);
     };
     window.addEventListener('pulse:navigate', handleNavigate);
     return () => window.removeEventListener('pulse:navigate', handleNavigate);
@@ -807,6 +815,10 @@ const App: React.FC = () => {
                   // Reset after a brief delay to allow Contacts to read it
                   setTimeout(() => setOpenAddContact(false), 100);
                 }
+              }} openSettings={(section) => {
+                setSettingsSection(section);
+                setView(AppView.SETTINGS);
+                setIsMobileMenuOpen(false);
               }} />;
           }
         })()}
@@ -847,8 +859,17 @@ const App: React.FC = () => {
   return (
     <WorkspaceProvider>
     <WorkspaceGate>
+    <TrialGate>
     <FeatureProvider defaultMode="simple">
     <PulseAIProvider user={user} activeView={view}>
+      {/* Global toast host — required by useAIErrorHandler + other toast-using
+          components (emailStore, archiveStore, AdminDashboard, etc). Mounted
+          once here so a single Toaster serves the whole app. */}
+      <Toaster position="top-right" gutter={8} />
+
+      {/* Blocking org-onboarding modal: appears when the active workspace has
+          onboarding_step='pending' and the user is the owner. Self-dismisses. */}
+      <OrgOnboardingModal />
       <MessageContainer userId={user?.id || 'anonymous'}>
         <div className="h-screen w-screen bg-zinc-50 dark:bg-black text-zinc-900 dark:text-zinc-100 flex flex-col md:flex-row overflow-hidden font-sans transition-colors duration-500">
 
@@ -1002,6 +1023,7 @@ const App: React.FC = () => {
       </MessageContainer>
     </PulseAIProvider>
     </FeatureProvider>
+    </TrialGate>
     </WorkspaceGate>
     </WorkspaceProvider>
   );

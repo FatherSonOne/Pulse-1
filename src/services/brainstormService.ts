@@ -2,17 +2,29 @@
  * Brainstorm Service
  * Backend-ready functions for AI-powered brainstorming features
  *
- * AI-powered brainstorming with multi-provider support:
- * - Gemini 2.5 Flash: Fast clustering, variations, SCAMPER
- * - GPT-4o: Detailed expansions, Six Hats perspectives
- * - Claude Sonnet 4: Synthesis, gap analysis, quality scoring
- * - OpenAI Embeddings: Similarity detection, connections
+ * All AI calls route through the central `ai-router` edge function, which
+ * selects the right provider per task (Gemini Flash for bulk/clustering,
+ * Claude Sonnet for synthesis/gap analysis), enforces metering, applies
+ * prompt caching, and handles automatic fallback on provider outage.
+ *
+ * Task routing:
+ * - `brainstorm_cluster`  → Gemini Flash (bulk) — clustering, variations, SCAMPER, enrichment
+ * - `brainstorm_synthesis` → Claude Sonnet (value) — Six Hats, synthesis, gap analysis, scoring
+ *
+ * Embedding-based similarity (checkSimilarity / findConnections) still uses
+ * the Gemini embeddings API directly — embeddings are not generative and are
+ * not in scope for the router.
  */
 
 import { supabase } from './supabase';
-import { processWithModel, generateEmbedding } from './geminiService';
-import { generateOpenAIResponse } from './openAiService';
-import { generateClaudeResponse } from './anthropicService';
+import { generateEmbedding } from './geminiService';
+import { invokeAIJson } from './ai/aiService';
+import { getCurrentWorkspaceId } from './ai/getWorkspaceId';
+import {
+  AICapExceededError,
+  AITrialExpiredError,
+  AIProviderUnavailableError,
+} from './ai/errors';
 
 // ============================================
 // Utility Functions
@@ -63,7 +75,35 @@ class AICache {
 const aiCache = new AICache();
 
 /**
- * Retry wrapper with exponential backoff
+ * Resolve the workspace id for a router call.
+ * Throws a descriptive error if no workspace is active.
+ */
+function resolveWorkspaceId(explicit?: string): string {
+  const id = explicit ?? getCurrentWorkspaceId();
+  if (!id) {
+    throw new Error('No active workspace — AI unavailable');
+  }
+  return id;
+}
+
+/**
+ * Re-throw router-level errors (cap, trial, provider) unchanged so the UI
+ * can render the correct upgrade / outage prompt. All other errors are
+ * swallowed by the per-function try/catch and returned as empty results.
+ */
+function rethrowIfRouterError(err: unknown): void {
+  if (
+    err instanceof AICapExceededError ||
+    err instanceof AITrialExpiredError ||
+    err instanceof AIProviderUnavailableError
+  ) {
+    throw err;
+  }
+}
+
+/**
+ * Retry wrapper with exponential backoff.
+ * Router cap/trial/provider errors are surfaced immediately (no retry).
  */
 async function withAIRetry<T>(
   operation: () => Promise<T>,
@@ -73,6 +113,9 @@ async function withAIRetry<T>(
     try {
       return await operation();
     } catch (error: any) {
+      // Don't retry router-level errors — they won't resolve on retry.
+      rethrowIfRouterError(error);
+
       if (attempt === maxRetries - 1) throw error;
 
       // Exponential backoff: 1s, 2s, 4s
@@ -82,23 +125,6 @@ async function withAIRetry<T>(
     }
   }
   throw new Error('All retries exhausted');
-}
-
-/**
- * Get API key from localStorage with fallback
- */
-function getAPIKey(provider: 'gemini' | 'openai' | 'claude'): string {
-  const keyMap = {
-    gemini: 'gemini_api_key',
-    openai: 'openai_api_key',
-    claude: 'anthropic_api_key'
-  };
-
-  const key = localStorage.getItem(keyMap[provider]);
-  if (!key) {
-    throw new Error(`${provider} API key not configured. Please set it in Settings.`);
-  }
-  return key;
 }
 
 /**
@@ -403,20 +429,23 @@ export async function deleteBrainstormSession(sessionId: string): Promise<boolea
 }
 
 // ============================================
-// AI-Powered Features (Backend Hooks)
+// AI-Powered Features (routed via ai-router)
 // ============================================
 
 /**
- * Auto-cluster ideas using AI
- * Analyzes idea content and groups them by themes
+ * Auto-cluster ideas using AI.
+ * Analyzes idea content and groups them by themes.
  *
- * @param ideas - Array of ideas to cluster
- * @param numClusters - Suggested number of clusters (3-5 recommended)
- * @returns Array of cluster suggestions with confidence scores
+ * @param apiKey DEPRECATED — unused. Retained for backward compatibility.
+ * @param ideas Array of ideas to cluster.
+ * @param numClusters Suggested number of clusters (3-5 recommended).
+ * @param workspaceId Optional workspace override (falls back to active workspace).
+ * @returns Array of cluster suggestions with confidence scores.
  */
 export async function autoClusterIdeas(
   ideas: BrainstormIdea[],
-  numClusters: number = 4
+  numClusters: number = 4,
+  workspaceId?: string
 ): Promise<ClusterSuggestion[]> {
   if (ideas.length === 0) return [];
   if (ideas.length < numClusters) {
@@ -428,12 +457,12 @@ export async function autoClusterIdeas(
   const cached = await aiCache.get(cacheKey);
   if (cached) return cached;
 
-  const apiKey = getAPIKey('gemini');
+  const wsId = resolveWorkspaceId(workspaceId);
 
   const prompt = `Analyze these ${ideas.length} brainstorming ideas and group them into ${numClusters} thematic clusters.
 
 Ideas:
-${ideas.map((idea, idx) => `[${idea.id}] ${idea.text}`).join('\n')}
+${ideas.map((idea) => `[${idea.id}] ${idea.text}`).join('\n')}
 
 For each cluster, provide:
 1. A concise, descriptive name (2-4 words)
@@ -454,15 +483,14 @@ Return ONLY valid JSON in this exact format:
 }`;
 
   try {
-    const response = await withAIRetry(async () => {
-      const result = await processWithModel(apiKey, prompt, 'gemini-2.5-flash');
-      if (!result) throw new Error('No response from AI');
-      return result;
-    });
+    const parsed = await withAIRetry(() =>
+      invokeAIJson<{ clusters?: ClusterSuggestion[] }>(
+        'brainstorm_cluster',
+        prompt,
+        { workspaceId: wsId, temperature: 0.4 }
+      )
+    );
 
-    // Parse JSON response
-    let jsonStr = response.replace(/```json/g, '').replace(/```/g, '').trim();
-    const parsed = JSON.parse(jsonStr);
     const clusters: ClusterSuggestion[] = parsed.clusters || [];
 
     // Cache result
@@ -470,22 +498,26 @@ Return ONLY valid JSON in this exact format:
 
     return clusters;
   } catch (error) {
+    rethrowIfRouterError(error);
     console.error('Auto-clustering error:', error);
     return [];
   }
 }
 
 /**
- * Find gaps and missing perspectives in brainstorm using Claude Sonnet 4
- * Identifies blind spots and suggests ideas to fill coverage gaps
+ * Find gaps and missing perspectives in brainstorm.
+ * Identifies blind spots and suggests ideas to fill coverage gaps.
+ * Routes to `brainstorm_synthesis` (Claude Sonnet) for nuanced analysis.
  *
- * @param topic - The brainstorm topic
- * @param ideas - Current ideas
- * @returns Gap analysis with suggestions
+ * @param topic The brainstorm topic.
+ * @param ideas Current ideas.
+ * @param workspaceId Optional workspace override.
+ * @returns Gap analysis with suggestions.
  */
 export async function findGaps(
   topic: string,
-  ideas: BrainstormIdea[]
+  ideas: BrainstormIdea[],
+  workspaceId?: string
 ): Promise<GapAnalysisResult> {
   if (ideas.length === 0) {
     return {
@@ -500,7 +532,7 @@ export async function findGaps(
   const cached = await aiCache.get(cacheKey);
   if (cached) return cached;
 
-  const apiKey = getAPIKey('claude');
+  const wsId = resolveWorkspaceId(workspaceId);
 
   const prompt = `You are an expert facilitator analyzing a brainstorming session for coverage gaps.
 
@@ -553,19 +585,21 @@ Return ONLY valid JSON in this exact format:
 }`;
 
   try {
-    const response = await withAIRetry(async () => {
-      const result = await generateClaudeResponse(apiKey, prompt, 'claude-sonnet-4-20250514');
-      if (!result) throw new Error('No response from AI');
-      return result;
-    });
-
-    // Parse JSON response
-    let jsonStr = response.replace(/```json/g, '').replace(/```/g, '').trim();
-    const parsed = JSON.parse(jsonStr);
+    const parsed = await withAIRetry(() =>
+      invokeAIJson<{
+        missingPerspectives?: string[];
+        blindSpots?: string[];
+        suggestedIdeas?: Array<Partial<BrainstormIdea> & { createdAt?: string }>;
+      }>(
+        'brainstorm_synthesis',
+        prompt,
+        { workspaceId: wsId, temperature: 0.7 }
+      )
+    );
 
     // Transform suggested ideas to proper format
-    const suggestedIdeas: BrainstormIdea[] = (parsed.suggestedIdeas || []).map((idea: any) => ({
-      ...idea,
+    const suggestedIdeas: BrainstormIdea[] = (parsed.suggestedIdeas || []).map((idea) => ({
+      ...(idea as BrainstormIdea),
       createdAt: new Date(idea.createdAt || Date.now())
     }));
 
@@ -580,6 +614,7 @@ Return ONLY valid JSON in this exact format:
 
     return result;
   } catch (error) {
+    rethrowIfRouterError(error);
     console.error('Gap analysis error:', error);
     return {
       missingPerspectives: [],
@@ -591,22 +626,26 @@ Return ONLY valid JSON in this exact format:
 
 /**
  * Expand a single idea with details using STAR framework
- * (Situation, Task, Action, Result)
+ * (Situation, Task, Action, Result).
  *
- * @param idea - The idea to expand
- * @param topic - Context topic
- * @returns Detailed expansion
+ * Routes to `brainstorm_cluster` — detailed idea enrichment is a bulk task.
+ *
+ * @param idea The idea to expand.
+ * @param topic Context topic.
+ * @param workspaceId Optional workspace override.
+ * @returns Detailed expansion.
  */
 export async function expandIdea(
   idea: BrainstormIdea,
-  topic: string
+  topic: string,
+  workspaceId?: string
 ): Promise<IdeaExpansion> {
   // Check cache
   const cacheKey = `expand-${idea.id}-${hashString(topic)}`;
   const cached = await aiCache.get(cacheKey);
   if (cached) return cached;
 
-  const apiKey = getAPIKey('openai');
+  const wsId = resolveWorkspaceId(workspaceId);
 
   const prompt = `Expand on this brainstorming idea with actionable details using the STAR framework:
 
@@ -644,21 +683,20 @@ Return ONLY valid JSON in this exact format:
 }`;
 
   try {
-    const response = await withAIRetry(async () => {
-      const result = await generateOpenAIResponse(apiKey, prompt, 'gpt-4o');
-      if (!result) throw new Error('No response from AI');
-      return result;
-    });
-
-    // Parse JSON response
-    let jsonStr = response.replace(/```json/g, '').replace(/```/g, '').trim();
-    const expansion: IdeaExpansion = JSON.parse(jsonStr);
+    const expansion = await withAIRetry(() =>
+      invokeAIJson<IdeaExpansion>(
+        'brainstorm_cluster',
+        prompt,
+        { workspaceId: wsId, temperature: 0.6 }
+      )
+    );
 
     // Cache result
     await aiCache.set(cacheKey, expansion);
 
     return expansion;
   } catch (error) {
+    rethrowIfRouterError(error);
     console.error('Idea expansion error:', error);
     return {
       description: 'Unable to expand idea at this time.',
@@ -670,22 +708,24 @@ Return ONLY valid JSON in this exact format:
 }
 
 /**
- * Generate variations of an idea using creative transformation techniques
+ * Generate variations of an idea using creative transformation techniques.
  *
- * @param idea - Source idea
- * @param topic - Context topic
- * @returns Array of idea variations
+ * @param idea Source idea.
+ * @param topic Context topic.
+ * @param workspaceId Optional workspace override.
+ * @returns Array of idea variations.
  */
 export async function generateVariations(
   idea: BrainstormIdea,
-  topic: string
+  topic: string,
+  workspaceId?: string
 ): Promise<IdeaVariation[]> {
   // Check cache
   const cacheKey = `variations-${idea.id}-${hashString(topic)}`;
   const cached = await aiCache.get(cacheKey);
   if (cached) return cached;
 
-  const apiKey = getAPIKey('gemini');
+  const wsId = resolveWorkspaceId(workspaceId);
 
   const prompt = `Generate 5 creative variations of this brainstorming idea using different transformation techniques:
 
@@ -728,15 +768,14 @@ Return ONLY valid JSON in this exact format:
 }`;
 
   try {
-    const response = await withAIRetry(async () => {
-      const result = await processWithModel(apiKey, prompt, 'gemini-2.5-flash');
-      if (!result) throw new Error('No response from AI');
-      return result;
-    });
+    const parsed = await withAIRetry(() =>
+      invokeAIJson<{ variations?: IdeaVariation[] }>(
+        'brainstorm_cluster',
+        prompt,
+        { workspaceId: wsId, temperature: 0.8 }
+      )
+    );
 
-    // Parse JSON response
-    let jsonStr = response.replace(/```json/g, '').replace(/```/g, '').trim();
-    const parsed = JSON.parse(jsonStr);
     const variations: IdeaVariation[] = parsed.variations || [];
 
     // Cache result
@@ -744,22 +783,26 @@ Return ONLY valid JSON in this exact format:
 
     return variations;
   } catch (error) {
+    rethrowIfRouterError(error);
     console.error('Variation generation error:', error);
     return [];
   }
 }
 
 /**
- * Synthesize top ideas into cohesive concepts using Claude Sonnet 4
- * Combines multiple ideas into powerful unified concepts
+ * Synthesize top ideas into cohesive concepts.
+ * Combines multiple ideas into powerful unified concepts.
+ * Routes to `brainstorm_synthesis` (Claude Sonnet) for quality synthesis.
  *
- * @param ideas - Top ideas to synthesize (3-8 recommended)
- * @param topic - Context topic
- * @returns Array of synthesized concepts
+ * @param ideas Top ideas to synthesize (3-8 recommended).
+ * @param topic Context topic.
+ * @param workspaceId Optional workspace override.
+ * @returns Array of synthesized concepts.
  */
 export async function synthesizeIdeas(
   ideas: BrainstormIdea[],
-  topic: string
+  topic: string,
+  workspaceId?: string
 ): Promise<SynthesisResult[]> {
   if (ideas.length < 2) return [];
 
@@ -768,7 +811,7 @@ export async function synthesizeIdeas(
   const cached = await aiCache.get(cacheKey);
   if (cached) return cached;
 
-  const apiKey = getAPIKey('claude');
+  const wsId = resolveWorkspaceId(workspaceId);
 
   const prompt = `You are a strategic innovation consultant. Combine these brainstorming ideas into 2-3 powerful, cohesive concepts.
 
@@ -810,15 +853,14 @@ Return ONLY valid JSON in this exact format:
 }`;
 
   try {
-    const response = await withAIRetry(async () => {
-      const result = await generateClaudeResponse(apiKey, prompt, 'claude-sonnet-4-20250514');
-      if (!result) throw new Error('No response from AI');
-      return result;
-    });
+    const parsed = await withAIRetry(() =>
+      invokeAIJson<{ syntheses?: SynthesisResult[] }>(
+        'brainstorm_synthesis',
+        prompt,
+        { workspaceId: wsId, temperature: 0.7 }
+      )
+    );
 
-    // Parse JSON response
-    let jsonStr = response.replace(/```json/g, '').replace(/```/g, '').trim();
-    const parsed = JSON.parse(jsonStr);
     const syntheses: SynthesisResult[] = parsed.syntheses || [];
 
     // Cache result
@@ -826,27 +868,31 @@ Return ONLY valid JSON in this exact format:
 
     return syntheses;
   } catch (error) {
+    rethrowIfRouterError(error);
     console.error('Synthesis error:', error);
     return [];
   }
 }
 
 /**
- * Score a synthesis result using multi-factor AI assessment
+ * Score a synthesis result using multi-factor AI assessment.
+ * Routes to `brainstorm_synthesis` — evaluation benefits from Sonnet-level reasoning.
  *
- * @param synthesis - The synthesis to score
- * @param topic - Original brainstorm topic
- * @returns Detailed scoring breakdown
+ * @param synthesis The synthesis to score.
+ * @param topic Original brainstorm topic.
+ * @param workspaceId Optional workspace override.
+ * @returns Detailed scoring breakdown.
  */
 export async function scoreSynthesis(
   synthesis: SynthesisResult,
-  topic: string
+  topic: string,
+  workspaceId?: string
 ): Promise<SynthesisScore> {
   const cacheKey = `score-${hashString(synthesis.name)}-${hashString(topic)}`;
   const cached = await aiCache.get(cacheKey);
   if (cached) return cached;
 
-  const apiKey = getAPIKey('claude');
+  const wsId = resolveWorkspaceId(workspaceId);
 
   const prompt = `You are an innovation strategist evaluating a synthesized concept.
 
@@ -892,18 +938,18 @@ Return ONLY valid JSON in this exact format:
 }`;
 
   try {
-    const response = await withAIRetry(async () => {
-      const result = await generateClaudeResponse(apiKey, prompt, 'claude-sonnet-4-20250514');
-      if (!result) throw new Error('No response from AI');
-      return result;
-    });
-
-    let jsonStr = response.replace(/```json/g, '').replace(/```/g, '').trim();
-    const score: SynthesisScore = JSON.parse(jsonStr);
+    const score = await withAIRetry(() =>
+      invokeAIJson<SynthesisScore>(
+        'brainstorm_synthesis',
+        prompt,
+        { workspaceId: wsId, temperature: 0.3 }
+      )
+    );
 
     await aiCache.set(cacheKey, score);
     return score;
   } catch (error) {
+    rethrowIfRouterError(error);
     console.error('Synthesis scoring error:', error);
     return {
       overall: 50,
@@ -919,13 +965,18 @@ Return ONLY valid JSON in this exact format:
 }
 
 /**
- * Check for similar/duplicate ideas using embeddings
- * Uses OpenAI embeddings + cosine similarity
+ * Check for similar/duplicate ideas using embeddings.
+ * Uses Gemini embeddings + cosine similarity — embeddings are NOT routed
+ * through ai-router (they are not generative model calls).
  *
- * @param newIdea - New idea text to check
- * @param existingIdeas - Existing ideas to compare against
- * @param threshold - Similarity threshold (0.0-1.0, default 0.75)
- * @returns Similar ideas if found, empty array if unique
+ * TODO(phase-4): Move embedding generation to a server-side endpoint so the
+ * Gemini API key is no longer required client-side. For now this is a no-op
+ * if no key is configured.
+ *
+ * @param newIdea New idea text to check.
+ * @param existingIdeas Existing ideas to compare against.
+ * @param threshold Similarity threshold (0.0-1.0, default 0.75).
+ * @returns Similar ideas if found, empty array if unique.
  */
 export async function checkSimilarity(
   newIdea: string,
@@ -934,9 +985,10 @@ export async function checkSimilarity(
 ): Promise<BrainstormIdea[]> {
   if (!newIdea || existingIdeas.length === 0) return [];
 
-  try {
-    const apiKey = getAPIKey('gemini');
+  const apiKey = localStorage.getItem('gemini_api_key');
+  if (!apiKey) return [];
 
+  try {
     // Generate embedding for new idea
     const newEmbedding = await generateEmbedding(apiKey, newIdea);
     if (!newEmbedding) return [];
@@ -975,15 +1027,19 @@ export async function checkSimilarity(
 }
 
 /**
- * Find connections between ideas using embeddings + AI explanation
+ * Find connections between ideas using embeddings + AI explanation.
+ * Embeddings stay client-side (Gemini embeddings API); the per-pair
+ * explanation step is routed through ai-router.
  *
- * @param ideas - Ideas to analyze for connections
- * @param minStrength - Minimum connection strength (0.0-1.0, default 0.6)
- * @returns Array of discovered connections
+ * @param ideas Ideas to analyze for connections.
+ * @param minStrength Minimum connection strength (0.0-1.0, default 0.6).
+ * @param workspaceId Optional workspace override.
+ * @returns Array of discovered connections.
  */
 export async function findConnections(
   ideas: BrainstormIdea[],
-  minStrength: number = 0.6
+  minStrength: number = 0.6,
+  workspaceId?: string
 ): Promise<IdeaConnection[]> {
   if (ideas.length < 2) return [];
 
@@ -991,9 +1047,10 @@ export async function findConnections(
   const cached = await aiCache.get(cacheKey);
   if (cached) return cached;
 
-  try {
-    const apiKey = getAPIKey('gemini');
+  const apiKey = localStorage.getItem('gemini_api_key');
+  if (!apiKey) return [];
 
+  try {
     // Generate embeddings for all ideas
     const embeddings: Map<string, number[]> = new Map();
 
@@ -1034,7 +1091,8 @@ export async function findConnections(
       }
     }
 
-    // Use AI to explain connections
+    // Use AI to explain connections (routed via ai-router).
+    const wsId = resolveWorkspaceId(workspaceId);
     const connections: IdeaConnection[] = [];
 
     for (const { idea1, idea2, similarity } of potentialConnections.slice(0, 10)) {
@@ -1054,20 +1112,20 @@ Return ONLY valid JSON:
 }`;
 
       try {
-        const response = await processWithModel(apiKey, prompt, 'gemini-2.5-flash');
-        if (response) {
-          const jsonStr = response.replace(/```json/g, '').replace(/```/g, '').trim();
-          const parsed = JSON.parse(jsonStr);
+        const parsed = await invokeAIJson<{
+          connectionType: IdeaConnection['connectionType'];
+          explanation: string;
+        }>('brainstorm_cluster', prompt, { workspaceId: wsId, temperature: 0.4 });
 
-          connections.push({
-            idea1Id: idea1.id,
-            idea2Id: idea2.id,
-            connectionType: parsed.connectionType,
-            explanation: parsed.explanation,
-            strength: similarity
-          });
-        }
+        connections.push({
+          idea1Id: idea1.id,
+          idea2Id: idea2.id,
+          connectionType: parsed.connectionType,
+          explanation: parsed.explanation,
+          strength: similarity
+        });
       } catch (error) {
+        rethrowIfRouterError(error);
         console.error('Connection explanation error:', error);
       }
     }
@@ -1075,30 +1133,33 @@ Return ONLY valid JSON:
     await aiCache.set(cacheKey, connections);
     return connections;
   } catch (error) {
+    rethrowIfRouterError(error);
     console.error('Find connections error:', error);
     return [];
   }
 }
 
 /**
- * Generate ideas using SCAMPER creative thinking technique
- * SCAMPER: Substitute, Combine, Adapt, Modify, Put to use, Eliminate, Reverse
+ * Generate ideas using SCAMPER creative thinking technique.
+ * SCAMPER: Substitute, Combine, Adapt, Modify, Put to use, Eliminate, Reverse.
  *
- * @param topic - Brainstorm topic
- * @param technique - SCAMPER technique to apply
- * @param existingIdeas - Current ideas for context
- * @returns Generated ideas following the technique
+ * @param topic Brainstorm topic.
+ * @param technique SCAMPER technique to apply.
+ * @param existingIdeas Current ideas for context.
+ * @param workspaceId Optional workspace override.
+ * @returns Generated ideas following the technique.
  */
 export async function scamperGenerate(
   topic: string,
   technique: 'substitute' | 'combine' | 'adapt' | 'modify' | 'put_to_use' | 'eliminate' | 'reverse',
-  existingIdeas: BrainstormIdea[]
+  existingIdeas: BrainstormIdea[],
+  workspaceId?: string
 ): Promise<BrainstormIdea[]> {
   const cacheKey = `scamper-${technique}-${hashString(topic)}-${existingIdeas.length}`;
   const cached = await aiCache.get(cacheKey);
   if (cached) return cached;
 
-  const apiKey = getAPIKey('gemini');
+  const wsId = resolveWorkspaceId(workspaceId);
 
   const techniquePrompts = {
     substitute: {
@@ -1172,47 +1233,50 @@ Return ONLY valid JSON in this exact format:
 }`;
 
   try {
-    const response = await withAIRetry(async () => {
-      const result = await processWithModel(apiKey, prompt, 'gemini-2.5-flash');
-      if (!result) throw new Error('No response from AI');
-      return result;
-    });
+    const parsed = await withAIRetry(() =>
+      invokeAIJson<{ ideas?: Array<Partial<BrainstormIdea> & { createdAt?: string }> }>(
+        'brainstorm_cluster',
+        prompt,
+        { workspaceId: wsId, temperature: 0.8 }
+      )
+    );
 
-    let jsonStr = response.replace(/```json/g, '').replace(/```/g, '').trim();
-    const parsed = JSON.parse(jsonStr);
-
-    const ideas: BrainstormIdea[] = (parsed.ideas || []).map((idea: any) => ({
-      ...idea,
+    const ideas: BrainstormIdea[] = (parsed.ideas || []).map((idea) => ({
+      ...(idea as BrainstormIdea),
       createdAt: new Date(idea.createdAt || Date.now())
     }));
 
     await aiCache.set(cacheKey, ideas);
     return ideas;
   } catch (error) {
+    rethrowIfRouterError(error);
     console.error('SCAMPER generation error:', error);
     return [];
   }
 }
 
 /**
- * Generate ideas from Six Thinking Hats perspective
- * Uses GPT-4o for nuanced perspective-based thinking
+ * Generate ideas from Six Thinking Hats perspective.
+ * Routes to `brainstorm_synthesis` (Claude Sonnet) — perspective-based
+ * thinking benefits from Sonnet-level nuance.
  *
- * @param topic - Brainstorm topic
- * @param hat - Which thinking hat perspective to use
- * @param existingIdeas - Current ideas for context
- * @returns Generated ideas from that perspective
+ * @param topic Brainstorm topic.
+ * @param hat Which thinking hat perspective to use.
+ * @param existingIdeas Current ideas for context.
+ * @param workspaceId Optional workspace override.
+ * @returns Generated ideas from that perspective.
  */
 export async function sixHatsGenerate(
   topic: string,
   hat: 'white' | 'red' | 'black' | 'yellow' | 'green' | 'blue',
-  existingIdeas: BrainstormIdea[]
+  existingIdeas: BrainstormIdea[],
+  workspaceId?: string
 ): Promise<BrainstormIdea[]> {
   const cacheKey = `sixhats-${hat}-${hashString(topic)}-${existingIdeas.length}`;
   const cached = await aiCache.get(cacheKey);
   if (cached) return cached;
 
-  const apiKey = getAPIKey('openai');
+  const wsId = resolveWorkspaceId(workspaceId);
 
   const hatPerspectives = {
     white: {
@@ -1327,23 +1391,23 @@ Return ONLY valid JSON in this exact format:
 }`;
 
   try {
-    const response = await withAIRetry(async () => {
-      const result = await generateOpenAIResponse(apiKey, prompt, 'gpt-4o');
-      if (!result) throw new Error('No response from AI');
-      return result;
-    });
+    const parsed = await withAIRetry(() =>
+      invokeAIJson<{ ideas?: Array<Partial<BrainstormIdea> & { createdAt?: string }> }>(
+        'brainstorm_synthesis',
+        prompt,
+        { workspaceId: wsId, temperature: 0.8 }
+      )
+    );
 
-    let jsonStr = response.replace(/```json/g, '').replace(/```/g, '').trim();
-    const parsed = JSON.parse(jsonStr);
-
-    const ideas: BrainstormIdea[] = (parsed.ideas || []).map((idea: any) => ({
-      ...idea,
+    const ideas: BrainstormIdea[] = (parsed.ideas || []).map((idea) => ({
+      ...(idea as BrainstormIdea),
       createdAt: new Date(idea.createdAt || Date.now())
     }));
 
     await aiCache.set(cacheKey, ideas);
     return ideas;
   } catch (error) {
+    rethrowIfRouterError(error);
     console.error('Six Hats generation error:', error);
     return [];
   }

@@ -1,7 +1,6 @@
 import React, { useState, useRef, useEffect } from 'react';
 import { useWorkspace } from '../shared/WorkspaceContext';
-import { processWithModel } from '../../../services/geminiService';
-import { searchPerplexity } from '../../../services/perplexityService';
+import { processWithModel, generateSearchResponse } from '../../../services/geminiService';
 import { generateClaudeResponse } from '../../../services/anthropicService';
 import ShareToChannelModal from '../shared/ShareToChannelModal';
 import AILabOutput from '../shared/AILabOutput';
@@ -29,7 +28,7 @@ interface Agent {
 }
 
 const AGENT_PRESETS: Omit<Agent, 'id' | 'status' | 'progress' | 'output'>[] = [
-  { name: 'Scout', role: 'researcher', model: 'Perplexity', color: 'cyan', task: 'Find relevant information' },
+  { name: 'Scout', role: 'researcher', model: 'Gemini Search', color: 'cyan', task: 'Find relevant information' },
   { name: 'Sage', role: 'analyst', model: 'Claude', color: 'violet', task: 'Analyze and synthesize data' },
   { name: 'Scribe', role: 'writer', model: 'Gemini', color: 'emerald', task: 'Draft content and reports' },
   { name: 'Judge', role: 'critic', model: 'Gemini', color: 'amber', task: 'Review and improve output' },
@@ -95,7 +94,7 @@ const IntelligenceHub: React.FC<IntelligenceHubProps> = ({ onBack, apiKey }) => 
     let draft = '';
     let finalReport = '';
 
-    // ─── Agent 1: Scout (Perplexity web research) ───
+    // ─── Agent 1: Scout (Gemini web search grounding) ───
     updateAgent('agent-0', { status: 'thinking', progress: 0 });
     addLog('🤔 Scout is analyzing the mission...');
     await delay(600);
@@ -104,16 +103,13 @@ const IntelligenceHub: React.FC<IntelligenceHubProps> = ({ onBack, apiKey }) => 
     addLog('⚡ Scout started searching the web...');
 
     try {
-      const perplexityKey = apiKeys.perplexity;
-      if (perplexityKey) {
-        const res = await searchPerplexity(perplexityKey, missionPrompt, 'research');
-        research = res.text;
-        if (res.citations?.length) {
-          research += `\n\nSources:\n${res.citations.slice(0, 5).map(c => `- ${c}`).join('\n')}`;
-        }
-      } else {
-        // Fallback to Gemini search
-        research = await processWithModel(apiKey, `Research the following topic thoroughly. Provide key facts, data, current developments, and important context:\n\n${missionPrompt}`) || '';
+      const res = await generateSearchResponse(apiKey, missionPrompt);
+      research = res.text || '';
+      const citations = (res.groundingChunks || [])
+        .map((c: any) => c?.web?.uri)
+        .filter((uri: any): uri is string => Boolean(uri));
+      if (citations.length) {
+        research += `\n\nSources:\n${citations.slice(0, 5).map(c => `- ${c}`).join('\n')}`;
       }
       updateAgent('agent-0', { status: 'complete', progress: 100, output: research.slice(0, 200) + '...' });
       addLog('✅ Scout completed research');

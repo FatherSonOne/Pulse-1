@@ -7,6 +7,10 @@
  * preventing API key exposure on the client side. All sensitive API keys
  * are managed server-side only.
  *
+ * AI calls (Gemini / OpenAI / Anthropic) are routed through the central
+ * `ai-router` edge function which handles provider selection, metering,
+ * hard caps, prompt caching, and automatic fallback.
+ *
  * Security Features:
  * - Server-side API key management
  * - Request validation and sanitization
@@ -18,6 +22,9 @@
 import { rateLimitService } from './rateLimitService';
 import { sanitizationService } from './sanitizationService';
 import { retryService } from './retryService';
+import { invokeAI } from './ai/aiService';
+import { getCurrentWorkspaceId } from './ai/getWorkspaceId';
+import type { AIMessage, AITask } from './ai/types';
 
 // ==================== Types ====================
 
@@ -57,8 +64,9 @@ export interface OpenAIProxyRequest {
 /**
  * Backend API endpoint configuration
  *
- * IMPORTANT: These endpoints must be implemented on your backend server.
- * See documentation in docs/backend-api-endpoints.md for implementation guide.
+ * NOTE: AI endpoints (Gemini / OpenAI / Anthropic) are now served by the
+ * `ai-router` Supabase edge function and are no longer reached via the
+ * backend URL below. Non-AI endpoints (CRM, health) continue to use it.
  */
 const BACKEND_API_BASE = import.meta.env.VITE_BACKEND_API_URL || 'http://localhost:3001/api';
 
@@ -80,18 +88,109 @@ const RATE_LIMIT_KEYS = {
   CRM: 'api_crm',
 } as const;
 
+// ==================== Helpers ====================
+
+/**
+ * Flatten Gemini `contents` (string | Part[] | Content[]) into a prompt string.
+ * The ai-router contract uses a plain `messages[{role, content}]` array, so
+ * we extract text parts and concatenate them.
+ */
+function geminiContentsToPrompt(contents: unknown): string {
+  if (typeof contents === 'string') return contents;
+  if (!contents) return '';
+
+  const parts: string[] = [];
+  const arr = Array.isArray(contents) ? contents : [contents];
+
+  for (const item of arr) {
+    if (typeof item === 'string') {
+      parts.push(item);
+      continue;
+    }
+    if (item && typeof item === 'object') {
+      const obj = item as Record<string, unknown>;
+      // Gemini Part shape: { text: string }
+      if (typeof obj.text === 'string') {
+        parts.push(obj.text);
+        continue;
+      }
+      // Gemini Content shape: { role, parts: Part[] }
+      if (Array.isArray(obj.parts)) {
+        for (const p of obj.parts) {
+          if (typeof p === 'string') parts.push(p);
+          else if (p && typeof p === 'object' && typeof (p as { text?: unknown }).text === 'string') {
+            parts.push((p as { text: string }).text);
+          }
+        }
+      }
+    }
+  }
+
+  return parts.filter(Boolean).join('\n').trim();
+}
+
+/**
+ * Convert OpenAI-style messages to the ai-router `AIMessage[]` shape.
+ * System prompts are hoisted out and returned separately.
+ */
+function openAIMessagesToAIParams(
+  messages: Array<{ role: string; content: string }>,
+): { messages: AIMessage[]; systemPrompt?: string } {
+  const systemParts: string[] = [];
+  const chat: AIMessage[] = [];
+
+  for (const m of messages) {
+    if (!m || typeof m.content !== 'string') continue;
+    if (m.role === 'system') {
+      systemParts.push(m.content);
+    } else if (m.role === 'assistant' || m.role === 'user') {
+      chat.push({ role: m.role, content: m.content });
+    } else {
+      // Fallback — treat unknown roles as user turns.
+      chat.push({ role: 'user', content: m.content });
+    }
+  }
+
+  // Ensure at least one user message (router requires messages[])
+  if (chat.length === 0 && systemParts.length > 0) {
+    chat.push({ role: 'user', content: systemParts.join('\n\n') });
+    return { messages: chat };
+  }
+
+  return {
+    messages: chat,
+    systemPrompt: systemParts.length > 0 ? systemParts.join('\n\n') : undefined,
+  };
+}
+
 // ==================== API Proxy Service ====================
 
 class APIProxyService {
   private userId: string | null = null;
   private sessionToken: string | null = null;
+  private workspaceId: string | null = null;
 
   /**
-   * Initialize the proxy service with user context
+   * Initialize the proxy service with user context.
+   *
+   * @param userId Current user id.
+   * @param sessionToken Session token (used for non-AI backend endpoints).
+   * @param workspaceId Optional workspace id. Falls back to
+   *   `getCurrentWorkspaceId()` at call time when not provided here.
    */
-  initialize(userId: string, sessionToken: string): void {
+  initialize(userId: string, sessionToken: string, workspaceId?: string): void {
     this.userId = userId;
     this.sessionToken = sessionToken;
+    this.workspaceId = workspaceId ?? null;
+  }
+
+  /** Resolve the workspace id to use for AI calls. */
+  private resolveWorkspaceId(): string {
+    const wsId = this.workspaceId ?? getCurrentWorkspaceId();
+    if (!wsId) {
+      throw new Error('No active workspace — AI unavailable');
+    }
+    return wsId;
   }
 
   /**
@@ -111,7 +210,8 @@ class APIProxyService {
   }
 
   /**
-   * Make a proxied request with full security measures
+   * Make a proxied request with full security measures.
+   * Used for non-AI endpoints (CRM).
    */
   private async proxyRequest<T>(
     endpoint: string,
@@ -216,208 +316,205 @@ class APIProxyService {
   // ==================== Gemini API Proxy Methods ====================
 
   /**
-   * Proxy Gemini API generateContent request
+   * Proxy Gemini `generateContent` through the central ai-router.
+   *
+   * Signature preserved for backward compatibility. The response shape
+   * mirrors Gemini's native result (`{ text, candidates, usageMetadata }`)
+   * so existing callers that read `result.text` continue to work.
    */
   async geminiGenerateContent(request: GeminiProxyRequest): Promise<any> {
-    const response = await this.proxyRequest<any>(
-      API_ENDPOINTS.GEMINI_PROXY,
-      RATE_LIMIT_KEYS.GEMINI,
+    const workspaceId = this.resolveWorkspaceId();
+    const prompt = geminiContentsToPrompt(request.contents);
+
+    // Pick task based on the caller's config hint. Default = generic chat.
+    // Callers passing `responseMimeType: 'application/json'` get jsonMode.
+    const config = (request.config ?? {}) as Record<string, unknown>;
+    const jsonMode = config.responseMimeType === 'application/json';
+    const temperature = typeof config.temperature === 'number' ? config.temperature : undefined;
+    const systemPrompt = typeof config.systemInstruction === 'string'
+      ? config.systemInstruction
+      : undefined;
+
+    const task: AITask = 'pulse_assistant_chat';
+
+    const result = await invokeAI(
+      task,
       {
-        action: 'generateContent',
-        ...request,
+        messages: [{ role: 'user', content: prompt }],
+        systemPrompt,
+        temperature,
+        jsonMode,
       },
-      {
-        retryConfig: { maxAttempts: 2, backoffMultiplier: 2 },
-        timeout: 60000, // 60 seconds for AI generation
-      }
+      { workspaceId },
     );
 
-    return response.data;
+    // Record rate limit usage for compat with existing observability
+    await rateLimitService.recordRequest(RATE_LIMIT_KEYS.GEMINI, this.userId || 'anonymous');
+
+    // Shape response to look like Gemini's native SDK result so callers
+    // that read `result.text` keep working.
+    return {
+      text: result.text,
+      candidates: [
+        {
+          content: { parts: [{ text: result.text }], role: 'model' },
+          finishReason: 'STOP',
+        },
+      ],
+      usageMetadata: {
+        promptTokenCount: result.tokens?.input ?? 0,
+        candidatesTokenCount: result.tokens?.output ?? 0,
+        totalTokenCount: (result.tokens?.input ?? 0) + (result.tokens?.output ?? 0),
+      },
+      provider: result.provider,
+      model: result.model,
+    };
   }
 
   /**
-   * Proxy Gemini API streaming request
+   * Proxy Gemini streaming request.
+   *
+   * The ai-router does not yet stream — the full response is emitted as a
+   * single chunk via `onChunk` so existing streaming call sites continue
+   * to work without modification.
    */
   async geminiStreamContent(
     request: GeminiProxyRequest,
     onChunk: (chunk: string) => void
   ): Promise<void> {
-    // Check rate limits first
-    const rateLimitCheck = await rateLimitService.checkLimit(
-      RATE_LIMIT_KEYS.GEMINI,
-      this.userId || 'anonymous'
-    );
-
-    if (!rateLimitCheck.allowed) {
-      throw new Error(
-        `Rate limit exceeded. Try again in ${Math.ceil(rateLimitCheck.retryAfter / 60)} minutes.`
-      );
-    }
-
-    const sanitizedRequest = sanitizationService.sanitizeObject(request);
-
-    const headers: Record<string, string> = {
-      'Content-Type': 'application/json',
-    };
-
-    if (this.sessionToken) {
-      headers['Authorization'] = `Bearer ${this.sessionToken}`;
-    }
-    if (this.userId) {
-      headers['X-User-ID'] = this.userId;
-    }
-
-    const response = await fetch(API_ENDPOINTS.GEMINI_STREAMING, {
-      method: 'POST',
-      headers,
-      body: JSON.stringify({
-        action: 'streamContent',
-        ...sanitizedRequest,
-      }),
-    });
-
-    if (!response.ok) {
-      throw new Error('Streaming request failed');
-    }
-
-    // Process streaming response
-    const reader = response.body?.getReader();
-    const decoder = new TextDecoder();
-
-    if (!reader) {
-      throw new Error('No response stream available');
-    }
-
-    try {
-      while (true) {
-        const { done, value } = await reader.read();
-        if (done) break;
-
-        const chunk = decoder.decode(value);
-        onChunk(chunk);
-      }
-
-      // Record usage after successful stream
-      await rateLimitService.recordRequest(RATE_LIMIT_KEYS.GEMINI, this.userId || 'anonymous');
-    } finally {
-      reader.releaseLock();
-    }
+    const result = await this.geminiGenerateContent(request);
+    const text = typeof result?.text === 'string' ? result.text : '';
+    if (text) onChunk(text);
   }
 
   // ==================== OpenAI API Proxy Methods ====================
 
   /**
-   * Proxy OpenAI API chat completion request
+   * Proxy OpenAI chat completion through the central ai-router.
+   *
+   * Signature preserved. The response shape mirrors OpenAI's chat completion
+   * result (`{ choices: [{ message: { content } }] }`) so existing callers
+   * keep working.
    */
   async openaiChatCompletion(request: OpenAIProxyRequest): Promise<any> {
-    const response = await this.proxyRequest<any>(
-      API_ENDPOINTS.OPENAI_PROXY,
-      RATE_LIMIT_KEYS.OPENAI,
+    const workspaceId = this.resolveWorkspaceId();
+    const { messages, systemPrompt } = openAIMessagesToAIParams(request.messages);
+
+    const result = await invokeAI(
+      'pulse_assistant_chat',
       {
-        action: 'chatCompletion',
-        ...request,
+        messages,
+        systemPrompt,
+        temperature: request.temperature,
+        maxOutputTokens: request.max_tokens,
       },
-      {
-        retryConfig: { maxAttempts: 2, backoffMultiplier: 2 },
-        timeout: 60000,
-      }
+      { workspaceId },
     );
 
-    return response.data;
+    await rateLimitService.recordRequest(RATE_LIMIT_KEYS.OPENAI, this.userId || 'anonymous');
+
+    return {
+      id: `chatcmpl-${Date.now()}`,
+      object: 'chat.completion',
+      created: Math.floor(Date.now() / 1000),
+      model: result.model,
+      choices: [
+        {
+          index: 0,
+          message: { role: 'assistant', content: result.text },
+          finish_reason: 'stop',
+        },
+      ],
+      usage: {
+        prompt_tokens: result.tokens?.input ?? 0,
+        completion_tokens: result.tokens?.output ?? 0,
+        total_tokens: (result.tokens?.input ?? 0) + (result.tokens?.output ?? 0),
+      },
+      provider: result.provider,
+    };
   }
 
   /**
-   * Proxy OpenAI streaming chat completion
+   * Proxy OpenAI streaming chat completion.
+   *
+   * The ai-router does not yet stream — the full response is emitted as a
+   * single chunk via `onChunk`.
    */
   async openaiStreamChatCompletion(
     request: OpenAIProxyRequest,
     onChunk: (chunk: string) => void
   ): Promise<void> {
-    const rateLimitCheck = await rateLimitService.checkLimit(
-      RATE_LIMIT_KEYS.OPENAI,
-      this.userId || 'anonymous'
-    );
-
-    if (!rateLimitCheck.allowed) {
-      throw new Error(
-        `Rate limit exceeded. Try again in ${Math.ceil(rateLimitCheck.retryAfter / 60)} minutes.`
-      );
-    }
-
-    const sanitizedRequest = sanitizationService.sanitizeObject(request);
-
-    const headers: Record<string, string> = {
-      'Content-Type': 'application/json',
-    };
-
-    if (this.sessionToken) {
-      headers['Authorization'] = `Bearer ${this.sessionToken}`;
-    }
-    if (this.userId) {
-      headers['X-User-ID'] = this.userId;
-    }
-
-    const response = await fetch(API_ENDPOINTS.OPENAI_STREAMING, {
-      method: 'POST',
-      headers,
-      body: JSON.stringify({
-        action: 'streamChatCompletion',
-        ...sanitizedRequest,
-      }),
-    });
-
-    if (!response.ok) {
-      throw new Error('Streaming request failed');
-    }
-
-    const reader = response.body?.getReader();
-    const decoder = new TextDecoder();
-
-    if (!reader) {
-      throw new Error('No response stream available');
-    }
-
-    try {
-      while (true) {
-        const { done, value } = await reader.read();
-        if (done) break;
-
-        const chunk = decoder.decode(value);
-        onChunk(chunk);
-      }
-
-      await rateLimitService.recordRequest(RATE_LIMIT_KEYS.OPENAI, this.userId || 'anonymous');
-    } finally {
-      reader.releaseLock();
-    }
+    const result = await this.openaiChatCompletion(request);
+    const text = result?.choices?.[0]?.message?.content;
+    if (typeof text === 'string' && text) onChunk(text);
   }
 
   // ==================== Anthropic API Proxy Methods ====================
 
   /**
-   * Proxy Anthropic API message request
+   * Proxy Anthropic message request through the central ai-router.
+   *
+   * Signature preserved. Accepts the Anthropic `messages.create` request
+   * shape (`{ model, messages, system?, max_tokens?, temperature? }`) and
+   * returns a result matching Anthropic's native response shape.
    */
   async anthropicMessage(request: any): Promise<any> {
-    const response = await this.proxyRequest<any>(
-      API_ENDPOINTS.ANTHROPIC_PROXY,
-      RATE_LIMIT_KEYS.ANTHROPIC,
+    const workspaceId = this.resolveWorkspaceId();
+
+    const rawMessages: Array<{ role: string; content: any }> = Array.isArray(request?.messages)
+      ? request.messages
+      : [];
+
+    const messages: AIMessage[] = rawMessages
+      .map(m => {
+        const content = typeof m.content === 'string'
+          ? m.content
+          : Array.isArray(m.content)
+            ? m.content.map((c: any) => (typeof c?.text === 'string' ? c.text : '')).join('\n')
+            : '';
+        const role = m.role === 'assistant' ? 'assistant' : 'user';
+        return { role: role as 'user' | 'assistant', content };
+      })
+      .filter(m => m.content);
+
+    const systemPrompt = typeof request?.system === 'string' ? request.system : undefined;
+
+    const result = await invokeAI(
+      'pulse_assistant_chat',
       {
-        action: 'message',
-        ...request,
+        messages,
+        systemPrompt,
+        temperature: typeof request?.temperature === 'number' ? request.temperature : undefined,
+        maxOutputTokens: typeof request?.max_tokens === 'number' ? request.max_tokens : undefined,
       },
-      {
-        retryConfig: { maxAttempts: 2, backoffMultiplier: 2 },
-        timeout: 60000,
-      }
+      { workspaceId },
     );
 
-    return response.data;
+    await rateLimitService.recordRequest(RATE_LIMIT_KEYS.ANTHROPIC, this.userId || 'anonymous');
+
+    // Shape response to match Anthropic's native SDK result.
+    return {
+      id: `msg_${Date.now()}`,
+      type: 'message',
+      role: 'assistant',
+      content: [{ type: 'text', text: result.text }],
+      model: result.model,
+      stop_reason: 'end_turn',
+      stop_sequence: null,
+      usage: {
+        input_tokens: result.tokens?.input ?? 0,
+        output_tokens: result.tokens?.output ?? 0,
+      },
+      provider: result.provider,
+    };
   }
 
   // ==================== CRM API Proxy Methods ====================
 
   /**
    * Proxy CRM API requests (HubSpot, Salesforce, etc.)
+   *
+   * Non-AI call — continues to route through the backend proxy endpoint.
    */
   async crmRequest(
     provider: 'hubspot' | 'salesforce' | 'pipedrive',
@@ -449,6 +546,7 @@ class APIProxyService {
   clearContext(): void {
     this.userId = null;
     this.sessionToken = null;
+    this.workspaceId = null;
   }
 
   /**

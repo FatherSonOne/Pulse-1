@@ -1,28 +1,51 @@
 import React, { useEffect, useRef, useState, useCallback } from 'react';
 import { GoogleGenAI, LiveServerMessage, Modality } from '@google/genai';
 import { ConnectionState, MessageLog } from '../types';
-import { 
-  createPcmBlob, 
-  decodeAudioData, 
-  blobToBase64, 
-  PCM_SAMPLE_RATE, 
-  OUTPUT_SAMPLE_RATE 
+import {
+  createPcmBlob,
+  decodeAudioData,
+  blobToBase64,
+  PCM_SAMPLE_RATE,
+  OUTPUT_SAMPLE_RATE,
 } from '../services/audioService';
 import { saveArchiveItem } from '../services/dbService';
+import { supabase } from '../services/supabase';
 import AudioVisualizer from './AudioVisualizer';
 
 import { RefreshCw, X } from 'lucide-react';
 
 const GEMINI_MODEL = 'gemini-2.5-flash-native-audio-preview-09-2025';
-const VIDEO_FRAME_RATE = 5; 
+const VIDEO_FRAME_RATE = 5;
 const JPEG_QUALITY = 0.5;
 
 interface LiveSessionProps {
-  apiKey: string;
+  /** @deprecated Ignored. The component now mints its own ephemeral token
+   *  via the gemini-live-token edge function. Kept for backward-compatible callers. */
+  apiKey?: string;
   onClose: () => void;
 }
 
-const LiveSession: React.FC<LiveSessionProps> = ({ apiKey, onClose }) => {
+// Fetch a short-lived Gemini Live auth token from our edge function.
+// The master GEMINI_API_KEY never reaches the browser.
+async function fetchGeminiLiveToken(): Promise<string> {
+  const { data, error } = await supabase.functions.invoke('gemini-live-token', {
+    body: { durationMinutes: 30 },
+  });
+  if (error) {
+    const ctx = (error as { context?: { response?: Response } }).context;
+    let detail = (error as Error).message;
+    try {
+      const body = await ctx?.response?.clone().json();
+      if (body?.detail) detail = body.detail;
+    } catch { /* not JSON */ }
+    throw new Error(`gemini-live-token: ${detail}`);
+  }
+  if (!data?.token) throw new Error('gemini-live-token: empty response');
+  return data.token;
+}
+
+const LiveSession: React.FC<LiveSessionProps> = ({ apiKey: _deprecatedApiKey, onClose }) => {
+  void _deprecatedApiKey; // intentionally unused — ephemeral token replaces it
   const [status, setStatus] = useState<ConnectionState>(ConnectionState.DISCONNECTED);
   const [messages, setMessages] = useState<MessageLog[]>([]);
   const [isVideoEnabled, setIsVideoEnabled] = useState(false);
@@ -74,15 +97,14 @@ const LiveSession: React.FC<LiveSessionProps> = ({ apiKey, onClose }) => {
   };
 
   const startSession = async () => {
-    if (!apiKey) {
-      console.error("No API key provided");
-      return;
-    }
-
     setStatus(ConnectionState.CONNECTING);
     initializeAudioContexts();
 
     try {
+      // Mint an ephemeral Gemini Live token via edge function.
+      // This replaces the old master-key-in-client-bundle pattern.
+      const ephemeralToken = await fetchGeminiLiveToken();
+
       const stream = await navigator.mediaDevices.getUserMedia({ audio: true });
       audioStreamRef.current = stream;
 
@@ -109,7 +131,7 @@ const LiveSession: React.FC<LiveSessionProps> = ({ apiKey, onClose }) => {
         };
       }
 
-      aiClientRef.current = new GoogleGenAI({ apiKey });
+      aiClientRef.current = new GoogleGenAI({ apiKey: ephemeralToken });
       
       sessionPromiseRef.current = aiClientRef.current.live.connect({
         model: GEMINI_MODEL,
@@ -324,17 +346,9 @@ const LiveSession: React.FC<LiveSessionProps> = ({ apiKey, onClose }) => {
   }, [messages]);
 
   useEffect(() => {
-    if (!initializedRef.current && apiKey) {
+    if (!initializedRef.current) {
       initializedRef.current = true;
       startSession();
-    } else if (!apiKey) {
-      setStatus(ConnectionState.ERROR);
-      setMessages(prev => [...prev, { 
-        id: Date.now().toString(), 
-        role: 'system', 
-        text: 'Error: No API key provided. Please set VITE_GEMINI_API_KEY in your .env file.', 
-        timestamp: new Date() 
-      }]);
     }
     return () => {
       disconnect();

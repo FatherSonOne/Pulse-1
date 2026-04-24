@@ -1,11 +1,13 @@
 import { unifiedSearchService, SearchResult, SearchFilters, SearchSourceError } from './unifiedSearchService';
 import searchQueryParser from './searchQueryParser';
 import { supabase } from './supabase';
+import { invokeAI } from './ai/aiService';
+import { getCurrentWorkspaceId } from './ai/getWorkspaceId';
 
 // Uses searchQueryParser.parseToFlatOperators() — no local adapter needed
 
 // ============================================
-// SONAR WEB SEARCH TYPES AND INTERFACES
+// WEB SEARCH TYPES AND INTERFACES
 // ============================================
 
 export interface SonarWebResult {
@@ -444,50 +446,44 @@ Do not include any other text or markdown formatting.`;
   }
 
   // ============================================
-  // SONAR WEB SEARCH METHODS
+  // WEB SEARCH METHODS
   // ============================================
 
   /**
-   * Perform web search using Perplexity Sonar API via Edge Function
-   * This provides real-time, web-grounded search results with citations
+   * Perform web search using Gemini Search Grounding via the ai-router `web_search` task.
+   * This provides real-time, web-grounded search results with citations.
+   *
+   * Method name and signature preserved for backward compatibility with existing callers.
    */
   async sonarWebSearch(
     query: string,
     options: SonarSearchOptions = {}
   ): Promise<SonarWebResult | null> {
+    void options;
     try {
-      // Use supabase.functions.invoke() so the client automatically attaches
-      // the current user's session token — avoids the raw-fetch 401 that
-      // occurs when VITE_SUPABASE_ANON_KEY is undefined or stale.
-      const { data, error } = await supabase.functions.invoke('perplexity-sonar', {
-        body: {
-          query,
-          model: options.model || 'sonar',
-          systemPrompt: options.systemPrompt,
-          temperature: options.temperature,
-          maxTokens: options.maxTokens,
-          searchRecencyFilter: options.searchRecencyFilter || 'month',
-          returnImages: options.returnImages || false,
-          returnRelatedQuestions: options.returnRelatedQuestions !== false,
-          searchDomainFilter: options.searchDomainFilter || [],
-        },
-      });
-
-      if (error) {
-        console.error('Sonar search error:', error.message);
+      const workspaceId = getCurrentWorkspaceId();
+      if (!workspaceId) {
+        console.error('Web search failed: no active workspace');
         return null;
       }
 
+      const result = await invokeAI(
+        'web_search',
+        { messages: [{ role: 'user', content: query }] },
+        { workspaceId },
+      );
+
+      const citations = (result.groundingChunks || [])
+        .map(c => c.uri)
+        .filter((uri): uri is string => Boolean(uri));
+
       return {
-        answer: data.answer || '',
-        citations: data.citations || [],
-        relatedQuestions: data.relatedQuestions || [],
-        images: data.images,
-        usage: data.usage,
-        model: data.model,
+        answer: result.text || '',
+        citations,
+        relatedQuestions: [],
       };
     } catch (error) {
-      console.error('Sonar web search failed:', error);
+      console.error('Web search failed:', error);
       return null;
     }
   }

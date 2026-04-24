@@ -13,12 +13,14 @@ interface UseEntitlementsReturn {
   isAtLimit: (metric: string) => boolean;
   /** Check if usage is at 80%+ of the plan limit */
   isNearLimit: (metric: string) => boolean;
-  /** Current Pulse tier: 'free' | 'starter' | 'pro' | 'business' | 'ecosystem' */
+  /** Current Pulse tier: 'team' | 'free' (= no active subscription/trial) */
   pulseTier: string;
   /** Whether the workspace is on a trial */
   isTrialing: boolean;
   /** Days left in trial (0 if not trialing) */
   trialDaysLeft: number;
+  /** Whether the workspace has an active Pulse subscription (trialing or paid). False = show TrialExpiredBlock. */
+  hasActivePulseAccess: boolean;
   /** Refresh entitlements from the database */
   refresh: () => Promise<void>;
 }
@@ -73,6 +75,11 @@ export function useEntitlements(): UseEntitlementsReturn {
     return (entitlements?.apps?.pulse as string) || 'free';
   }, [entitlements]);
 
+  const hasActivePulseAccess = useMemo(() => {
+    if (!entitlements) return false;
+    return billingService.hasActivePulseAccess(entitlements);
+  }, [entitlements]);
+
   const isTrialing = entitlements?.is_trialing || false;
 
   const trialDaysLeft = useMemo(() => {
@@ -91,6 +98,7 @@ export function useEntitlements(): UseEntitlementsReturn {
     pulseTier,
     isTrialing,
     trialDaysLeft,
+    hasActivePulseAccess,
     refresh: fetchEntitlements,
   };
 }

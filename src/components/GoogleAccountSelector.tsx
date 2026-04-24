@@ -57,6 +57,8 @@ declare global {
   }
 }
 
+let gsiInitializedForClientId: string | null = null;
+
 const GoogleAccountSelector: React.FC<GoogleAccountSelectorProps> = ({
   user,
   onUserChange,
@@ -90,6 +92,12 @@ const GoogleAccountSelector: React.FC<GoogleAccountSelectorProps> = ({
         return;
       }
 
+      // Skip re-initialization if already done for this client ID (e.g. StrictMode double-mount)
+      if (gsiInitializedForClientId === GOOGLE_CLIENT_ID) {
+        setIsInitialized(true);
+        return;
+      }
+
       try {
         window.google.accounts.id.initialize({
           client_id: GOOGLE_CLIENT_ID,
@@ -99,6 +107,7 @@ const GoogleAccountSelector: React.FC<GoogleAccountSelectorProps> = ({
           itp_support: true,
         });
 
+        gsiInitializedForClientId = GOOGLE_CLIENT_ID;
         setIsInitialized(true);
       } catch (error) {
         console.error('Error initializing Google Identity Services:', error);

@@ -294,18 +294,6 @@ export const TOOLS: Tool[] = [
     apiKeyName: 'AssemblyAI',
     isPro: true
   },
-  {
-    id: 'deep-search',
-    name: 'Deep Search',
-    description: 'Real-time web research with citations',
-    icon: 'fa-magnifying-glass-chart',
-    category: 'analysis',
-    keywords: ['search', 'research', 'web'],
-    requiresApiKey: true,
-    apiKeyName: 'Perplexity',
-    isPro: true
-  },
-
   // ========================================
   // Category 4: Utilities (Amber)
   // ========================================

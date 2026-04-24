@@ -364,6 +364,37 @@ deno_version = 2
 # [edge_runtime.secrets]
 # secret_key = "env(SECRET_VALUE)"
 
+# ai-router: JWT verification is handled inside the function (checks workspace
+# membership + metering against the authenticated user). Disabling platform-level
+# verify_jwt avoids the gateway 401 while still requiring the client to send a
+# valid Authorization bearer token, which the function validates via supabase.auth.getUser().
+[functions.ai-router]
+verify_jwt = false
+
+# Billing functions — each validates the user's JWT internally via supabase.auth.getUser()
+# and enforces workspace-level permission checks. Platform-level verify_jwt is disabled
+# to bypass the gateway 401 we hit when calling from authenticated sessions.
+[functions.billing-checkout]
+verify_jwt = false
+
+[functions.billing-portal]
+verify_jwt = false
+
+[functions.billing-entitlements]
+verify_jwt = false
+
+# Realtime token minters — same pattern. Functions authenticate the user
+# internally via supabase.auth.getUser(token) before minting ephemeral
+# provider-specific tokens (OpenAI Realtime, Gemini Live, Whisper).
+[functions.openai-realtime-token]
+verify_jwt = false
+
+[functions.gemini-live-token]
+verify_jwt = false
+
+[functions.whisper-proxy]
+verify_jwt = false
+
 [analytics]
 enabled = true
 port = 54327

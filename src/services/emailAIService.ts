@@ -1,7 +1,18 @@
-// Email AI Service - AI analysis and generation for emails using Gemini
+// Email AI Service - AI analysis and generation for emails.
+// All AI calls now route through the centralized ai-router edge function
+// via src/services/ai/aiService.ts. The legacy /api/email/ai backend proxy
+// has been bypassed.
 import { supabase } from './supabase';
 import { CachedEmail } from './emailSyncService';
-import { withFormattedOutput, getContextualFormattingHints } from './aiFormattingService';
+import { withFormattedOutput } from './aiFormattingService';
+import { invokeAIPrompt, invokeAIJson } from './ai/aiService';
+import { getCurrentWorkspaceId } from './ai/getWorkspaceId';
+import {
+  AICapExceededError,
+  AITrialExpiredError,
+  AIProviderUnavailableError,
+} from './ai/errors';
+import type { AITask } from './ai/types';
 
 // ========================================
 // TYPES
@@ -38,78 +49,89 @@ export interface ToneCheckResult {
 }
 
 // ========================================
+// HELPERS
+// ========================================
+
+/**
+ * Re-throw router-level errors so callers (and UI) can handle billing/provider states.
+ * All other errors fall through to caller-specific fallbacks.
+ */
+function rethrowRouterErrors(error: unknown): void {
+  if (
+    error instanceof AICapExceededError ||
+    error instanceof AITrialExpiredError ||
+    error instanceof AIProviderUnavailableError
+  ) {
+    throw error;
+  }
+}
+
+// ========================================
 // EMAIL AI SERVICE
 // ========================================
 
 class EmailAIService {
-  private backendUrl: string;
   private available: boolean | null = null; // cached availability
 
-  constructor() {
-    this.backendUrl = import.meta.env.VITE_BACKEND_URL || 'http://localhost:3003';
-  }
-
   /**
-   * Check if AI features are available (key is on server, not client)
+   * Check if AI features are available.
+   * With the centralized router, availability is determined per-call
+   * (workspace + auth + metering). Remains optimistic here.
    */
   isAvailable(): boolean {
-    // Optimistic: assume available until proven otherwise
-    // The server will return 503 if key is missing
     return this.available !== false;
   }
 
   /**
-   * Get the current Supabase access token for authenticating with backend
+   * Low-level AI invocation via the centralized router.
+   * Replaces the former backend proxy (`/api/email/ai`).
+   *
+   * @param task              AITask for router-side model selection
+   * @param prompt            Raw prompt text
+   * @param workspaceId       Optional workspace ID (falls back to active workspace)
+   * @param formattingContext Optional formatting wrapper for output style
+   * @param jsonMode          When true, request JSON output (used for analysis/tone)
    */
-  private async getAuthToken(): Promise<string> {
-    const { data: { session } } = await supabase.auth.getSession();
-    if (!session?.access_token) {
-      throw new Error('Not authenticated');
+  private async routerRequest(
+    task: AITask,
+    prompt: string,
+    workspaceId: string | undefined,
+    formattingContext?: 'email-draft' | 'email-analysis' | 'summary' | 'chat',
+    jsonMode = false,
+  ): Promise<string> {
+    const wsId = workspaceId ?? getCurrentWorkspaceId();
+    if (!wsId) {
+      throw new Error('No active workspace');
     }
-    return session.access_token;
-  }
 
-  /**
-   * Make an AI request via the backend proxy (API key stays server-side)
-   */
-  private async geminiRequest(prompt: string, formattingContext?: 'email-draft' | 'email-analysis' | 'summary' | 'chat'): Promise<string> {
-    const token = await this.getAuthToken();
-
-    // Apply formatting if context provided
     const formattedPrompt = formattingContext
       ? withFormattedOutput(prompt, formattingContext)
       : prompt;
 
-    const response = await fetch(`${this.backendUrl}/api/email/ai`, {
-      method: 'POST',
-      headers: {
-        'Content-Type': 'application/json',
-        'Authorization': `Bearer ${token}`,
-      },
-      body: JSON.stringify({
-        prompt: formattedPrompt,
+    try {
+      const text = await invokeAIPrompt(task, formattedPrompt, {
+        workspaceId: wsId,
         temperature: 0.7,
-        maxOutputTokens: 1024,
-      }),
-    });
-
-    if (!response.ok) {
-      const errorData = await response.json().catch(() => ({}));
-      if (response.status === 503) {
+        jsonMode,
+      });
+      this.available = true;
+      return text;
+    } catch (error) {
+      // Provider outages flip availability so callers can short-circuit.
+      if (error instanceof AIProviderUnavailableError) {
         this.available = false;
       }
-      throw new Error(errorData.error || 'AI proxy error');
+      throw error;
     }
-
-    this.available = true;
-    const data = await response.json();
-    return data.text || '';
   }
 
   /**
-   * Analyze an email for AI insights
+   * Analyze an email for AI insights.
+   *
+   * @param email         The email to analyze
+   * @param workspaceId   Optional workspace ID; falls back to the active workspace.
    */
-  async analyzeEmail(email: CachedEmail): Promise<EmailAnalysis> {
+  async analyzeEmail(email: CachedEmail, workspaceId?: string): Promise<EmailAnalysis> {
     const prompt = `Analyze this email and provide structured insights.
 
 EMAIL:
@@ -134,47 +156,51 @@ Respond in JSON format ONLY with this structure:
   "suggestedReplies": ["Short reply 1", "Short reply 2", "Short reply 3"]
 }`;
 
+    const fallback: EmailAnalysis = {
+      summary: email.snippet || 'Unable to generate summary',
+      category: 'updates',
+      priorityScore: 50,
+      sentiment: 'neutral',
+      actionItems: [],
+      entities: {
+        dates: [],
+        people: [],
+        amounts: [],
+        links: [],
+        meetingRequests: false,
+      },
+      suggestedReplies: [],
+    };
+
+    const wsId = workspaceId ?? getCurrentWorkspaceId();
+    if (!wsId) return fallback;
+
     try {
-      const result = await this.geminiRequest(prompt);
-
-      // Parse JSON from response
-      const jsonMatch = result.match(/\{[\s\S]*\}/);
-      if (!jsonMatch) {
-        throw new Error('No JSON in response');
-      }
-
-      const analysis = JSON.parse(jsonMatch[0]) as EmailAnalysis;
-      return analysis;
+      return await invokeAIJson<EmailAnalysis>('email_analysis', prompt, {
+        workspaceId: wsId,
+        temperature: 0.7,
+      });
     } catch (error) {
+      rethrowRouterErrors(error);
       console.error('Email analysis error:', error);
-      // Return default analysis on error
-      return {
-        summary: email.snippet || 'Unable to generate summary',
-        category: 'updates',
-        priorityScore: 50,
-        sentiment: 'neutral',
-        actionItems: [],
-        entities: {
-          dates: [],
-          people: [],
-          amounts: [],
-          links: [],
-          meetingRequests: false
-        },
-        suggestedReplies: []
-      };
+      return fallback;
     }
   }
 
   /**
-   * Generate an email draft based on user intent
+   * Generate an email draft based on user intent.
+   *
+   * Routes to `email_reply` when replying to an existing message, otherwise `email_draft`.
+   *
+   * @param params        Draft generation parameters
+   * @param workspaceId   Optional workspace ID; falls back to the active workspace.
    */
-  async generateDraft(params: DraftGenerationParams): Promise<string> {
+  async generateDraft(params: DraftGenerationParams, workspaceId?: string): Promise<string> {
     const toneDescriptions = {
       professional: 'professional and courteous, suitable for business communication',
       friendly: 'warm and friendly, personable but still appropriate',
       formal: 'formal and respectful, suitable for official correspondence',
-      concise: 'brief and to the point, no unnecessary words'
+      concise: 'brief and to the point, no unnecessary words',
     };
 
     let prompt = `Generate an email draft with the following requirements:
@@ -201,19 +227,28 @@ ADDITIONAL CONTEXT: ${params.context}`;
 
 Generate ONLY the email body text, no subject line. Do not include greetings like "Dear [Name]" if replying - start naturally.`;
 
+    const task: AITask = params.replyTo ? 'email_reply' : 'email_draft';
+
     try {
-      const draft = await this.geminiRequest(prompt, 'email-draft');
+      const draft = await this.routerRequest(task, prompt, workspaceId, 'email-draft');
       return draft.trim();
     } catch (error) {
+      rethrowRouterErrors(error);
       console.error('Draft generation error:', error);
       throw new Error('Failed to generate draft');
     }
   }
 
   /**
-   * Check the tone of an email before sending
+   * Check the tone of an email before sending.
+   *
+   * @param workspaceId   Optional workspace ID; falls back to the active workspace.
    */
-  async checkTone(emailBody: string, recipientContext?: string): Promise<ToneCheckResult> {
+  async checkTone(
+    emailBody: string,
+    recipientContext?: string,
+    workspaceId?: string,
+  ): Promise<ToneCheckResult> {
     const prompt = `Analyze the tone of this email and provide feedback.
 
 EMAIL BODY:
@@ -229,39 +264,47 @@ Respond in JSON format ONLY:
   "suggestions": ["list of improvement suggestions"]
 }`;
 
+    const fallback: ToneCheckResult = {
+      appropriate: true,
+      currentTone: 'Unable to analyze',
+      issues: [],
+      suggestions: [],
+    };
+
+    const wsId = workspaceId ?? getCurrentWorkspaceId();
+    if (!wsId) return fallback;
+
     try {
-      const result = await this.geminiRequest(prompt);
-
-      const jsonMatch = result.match(/\{[\s\S]*\}/);
-      if (!jsonMatch) {
-        throw new Error('No JSON in response');
-      }
-
-      return JSON.parse(jsonMatch[0]) as ToneCheckResult;
+      // Tone-check is analysis-like — reuse the email_analysis task.
+      return await invokeAIJson<ToneCheckResult>('email_analysis', prompt, {
+        workspaceId: wsId,
+        temperature: 0.7,
+      });
     } catch (error) {
+      rethrowRouterErrors(error);
       console.error('Tone check error:', error);
-      return {
-        appropriate: true,
-        currentTone: 'Unable to analyze',
-        issues: [],
-        suggestions: []
-      };
+      return fallback;
     }
   }
 
   /**
-   * Enhance/rewrite email text
+   * Enhance/rewrite email text.
+   *
+   * Treated as a draft-style generation task.
+   *
+   * @param workspaceId   Optional workspace ID; falls back to the active workspace.
    */
   async enhanceEmail(
     emailBody: string,
-    action: 'shorten' | 'elaborate' | 'formalize' | 'casualize' | 'fix_grammar'
+    action: 'shorten' | 'elaborate' | 'formalize' | 'casualize' | 'fix_grammar',
+    workspaceId?: string,
   ): Promise<string> {
     const actionDescriptions = {
       shorten: 'Make this email more concise while keeping all important information',
       elaborate: 'Add more professional detail and context to this email',
       formalize: 'Rewrite this email in a more formal, professional tone',
       casualize: 'Rewrite this email in a more casual, friendly tone',
-      fix_grammar: 'Fix any grammar, spelling, or punctuation errors in this email'
+      fix_grammar: 'Fix any grammar, spelling, or punctuation errors in this email',
     };
 
     const prompt = `${actionDescriptions[action]}:
@@ -271,18 +314,23 @@ ${emailBody}
 Return ONLY the improved email text, nothing else.`;
 
     try {
-      const enhanced = await this.geminiRequest(prompt, 'email-draft');
+      const enhanced = await this.routerRequest('email_draft', prompt, workspaceId, 'email-draft');
       return enhanced.trim();
     } catch (error) {
+      rethrowRouterErrors(error);
       console.error('Email enhancement error:', error);
       throw new Error('Failed to enhance email');
     }
   }
 
   /**
-   * Generate a thread summary
+   * Generate a thread summary.
+   *
+   * Uses `email_analysis` — threading is bulk-classification-like.
+   *
+   * @param workspaceId   Optional workspace ID; falls back to the active workspace.
    */
-  async summarizeThread(emails: CachedEmail[]): Promise<string> {
+  async summarizeThread(emails: CachedEmail[], workspaceId?: string): Promise<string> {
     const threadContent = emails.map((e, i) => `
 Message ${i + 1} (${new Date(e.received_at).toLocaleDateString()}):
 From: ${e.from_name || e.from_email}
@@ -294,9 +342,10 @@ ${e.body_text?.substring(0, 500) || e.snippet}
 ${threadContent}`;
 
     try {
-      const summary = await this.geminiRequest(prompt, 'summary');
+      const summary = await this.routerRequest('email_analysis', prompt, workspaceId, 'summary');
       return summary.trim();
     } catch (error) {
+      rethrowRouterErrors(error);
       console.error('Thread summary error:', error);
       return 'Unable to generate summary';
     }
@@ -334,15 +383,17 @@ ${threadContent}`;
 
   /**
    * Analyze and save email insights to database
+   *
+   * @param workspaceId   Optional workspace ID; falls back to the active workspace.
    */
-  async analyzeAndSave(email: CachedEmail): Promise<void> {
+  async analyzeAndSave(email: CachedEmail, workspaceId?: string): Promise<void> {
     if (!this.isAvailable()) {
       console.log('AI service not available, skipping analysis');
       return;
     }
 
     try {
-      const analysis = await this.analyzeEmail(email);
+      const analysis = await this.analyzeEmail(email, workspaceId);
 
       // Update the cached email with AI insights
       const { error } = await supabase
@@ -355,7 +406,7 @@ ${threadContent}`;
           ai_action_items: analysis.actionItems,
           ai_suggested_replies: analysis.suggestedReplies,
           ai_entities: analysis.entities,
-          analyzed_at: new Date().toISOString()
+          analyzed_at: new Date().toISOString(),
         })
         .eq('id', email.id);
 
@@ -363,12 +414,15 @@ ${threadContent}`;
         console.error('Error saving email analysis:', error);
       }
     } catch (error) {
+      rethrowRouterErrors(error);
       console.error('Error analyzing email:', error);
     }
   }
 
   /**
    * Generate daily briefing summary
+   *
+   * Pure aggregation over already-analyzed emails — no LLM call here.
    */
   async generateDailyBriefing(emails: CachedEmail[]): Promise<{
     summary: string;
@@ -387,7 +441,7 @@ ${threadContent}`;
       .slice(0, 5)
       .map(e => ({
         email: e,
-        reason: e.ai_summary || 'High priority based on sender'
+        reason: e.ai_summary || 'High priority based on sender',
       }));
 
     // Collect action items
@@ -397,7 +451,7 @@ ${threadContent}`;
         for (const item of email.ai_action_items) {
           actionItems.push({
             item,
-            fromEmail: email.from_name || email.from_email
+            fromEmail: email.from_name || email.from_email,
           });
         }
       }
@@ -418,7 +472,7 @@ ${threadContent}`;
     return {
       summary,
       priorities,
-      actionItems: actionItems.slice(0, 10)
+      actionItems: actionItems.slice(0, 10),
     };
   }
 }

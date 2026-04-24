@@ -289,7 +289,7 @@ export function usePermissions() {
         setHasRequestedOnStartup(hasRequested === 'true');
 
         setIsInitialized(true);
-        console.log('[Permissions] Initialized. Completed:', [...completed]);
+        console.debug('[Permissions] Initialized. Completed:', [...completed]);
       } catch (error) {
         console.error('[Permissions] Init error:', error);
         setIsInitialized(true);

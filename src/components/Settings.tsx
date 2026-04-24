@@ -22,6 +22,7 @@ import { DeveloperSettings } from './settings/DeveloperSettings';
 import { AdminSettings } from './settings/AdminSettings';
 import { EcosystemSettings } from './settings/EcosystemSettings';
 import { WorkspaceSettings } from './settings/WorkspaceSettings';
+import { SecuritySettings } from './settings/SecuritySettings';
 
 interface SettingsProps {
   user?: User | null;
@@ -40,8 +41,9 @@ const SECTIONS = [
   { id: 'features_labs', icon: 'fa-flask', label: 'Features & Labs' },
   { id: 'war_room', icon: 'fa-shield', label: 'War Room' },
   { id: 'activity_monitor', icon: 'fa-chart-line', label: 'Activity Monitor' },
-  { id: 'workspace', icon: 'fa-building', label: 'Workspace' },
+  { id: 'workspace', icon: 'fa-building', label: 'Organization' },
   { id: 'team', icon: 'fa-users', label: 'Team Management' },
+  { id: 'security', icon: 'fa-lock', label: 'Security' },
   { id: 'accessibility', icon: 'fa-universal-access', label: 'Accessibility' },
   { id: 'privacy_data', icon: 'fa-shield-halved', label: 'Privacy & Data' },
   { id: 'about', icon: 'fa-circle-info', label: 'About Pulse' },
@@ -62,8 +64,9 @@ const SECTION_KEYWORDS: Record<string, string[]> = {
   features_labs: ['feature', 'lab', 'beta', 'experimental', 'toggle', 'enable', 'disable', 'advanced mode'],
   war_room: ['war room', 'mission', 'intel', 'focus', 'analyst', 'strategist', 'brainstorm', 'command', 'ai depth', 'reasoning'],
   activity_monitor: ['activity', 'presence', 'online', 'leaderboard', 'event feed', 'retention'],
-  workspace: ['workspace', 'organization', 'org', 'archive', 'delete workspace', 'danger zone', 'restore'],
+  workspace: ['organization', 'org', 'workspace', 'legal name', 'logo', 'industry', 'size', 'domain', 'auto-join', 'archive', 'delete', 'danger zone', 'restore', 'transfer', 'audit'],
   team: ['team', 'invite', 'member', 'colleague', 'share'],
+  security: ['security', '2fa', 'two factor', 'mfa', 'session', 'timeout', 'ip allowlist', 'cidr', 'sign in', 'login', 'access'],
   accessibility: ['font size', 'high contrast', 'reduced motion', 'visual', 'accessibility'],
   privacy_data: ['privacy', 'analytics', 'export', 'delete', 'data', 'cache', 'tracking', 'gdpr'],
   about: ['version', 'update', 'install', 'pwa', 'info', 'about'],
@@ -116,6 +119,7 @@ const Settings: React.FC<SettingsProps> = ({ user, isDarkMode, toggleTheme, init
       case 'notifications':    return <NotificationsSettingsSection />;
       case 'workspace':        return <WorkspaceSettings />;
       case 'team':             return <TeamSettings userId={user?.id || ''} userName={user?.name || ''} />;
+      case 'security':         return <SecuritySettings />;
       case 'accessibility':    return <AccessibilitySettings />;
       case 'privacy_data':     return <PrivacyDataSettings />;
       case 'features_labs':    return <FeaturesLabsSettings />;

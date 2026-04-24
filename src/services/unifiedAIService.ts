@@ -1,14 +1,27 @@
-// Unified AI Service - Fallback between OpenAI, Claude, and Gemini
-import { generateOpenAIResponse } from './openAiService';
-import { generateClaudeResponse } from './anthropicService';
-import { GoogleGenAI } from "@google/genai";
+// Unified AI Service — thin compatibility shim over the central `ai-router`.
+//
+// Historically this module fanned out to OpenAI / Claude / Gemini with manual
+// retry + provider fallback. That responsibility has moved server-side: the
+// `ai-router` edge function now handles provider routing, automatic fallback,
+// metering, and hard caps. All multi-provider logic has been collapsed.
+//
+// The public surface (types + exported functions) is preserved so existing
+// call sites continue to compile. Provider-specific API keys on `AIConfig`
+// are ignored — the router holds its own keys server-side.
+
+import { invokeAIPrompt } from './ai/aiService';
+import { getCurrentWorkspaceId } from './ai/getWorkspaceId';
 
 export type AIProvider = 'openai' | 'claude' | 'gemini';
 
 export interface AIConfig {
+  /** @deprecated — router holds keys server-side. Ignored. */
   openaiKey?: string;
+  /** @deprecated — router holds keys server-side. Ignored. */
   claudeKey?: string;
+  /** @deprecated — router holds keys server-side. Ignored. */
   geminiKey?: string;
+  /** @deprecated — router decides provider per task. Ignored. */
   preferredProvider?: AIProvider;
 }
 
@@ -18,95 +31,73 @@ export interface AIResponse {
   model: string;
 }
 
-const generateGeminiResponse = async (apiKey: string, prompt: string): Promise<string> => {
-  const ai = new GoogleGenAI({ apiKey });
-  try {
-    const response = await ai.models.generateContent({
-      model: 'gemini-2.5-flash',
-      contents: prompt,
-    });
-    return response.text || "No response generated.";
-  } catch (error) {
-    console.error("Gemini Error:", error);
-    throw error;
-  }
-};
-
+/**
+ * Generate a text response with automatic provider fallback.
+ *
+ * Provider selection + fallback is now handled by the `ai-router` edge
+ * function. The `config` argument is retained for backward compatibility
+ * but all fields are ignored. Retry/backoff is handled by the router too,
+ * so the `options.maxRetries` parameter is ignored.
+ *
+ * @throws {AICapExceededError} When the workspace has hit its AI message cap.
+ * @throws {AITrialExpiredError} When the trial has expired.
+ * @throws {AIProviderUnavailableError} When all AI providers are down.
+ * @throws {AIRouterError} For other router failures.
+ */
 export const generateWithFallback = async (
   config: AIConfig,
   prompt: string,
-  options?: { maxRetries?: number }
+  options?: { maxRetries?: number; workspaceId?: string },
 ): Promise<AIResponse> => {
-  const maxRetries = options?.maxRetries ?? 2;
-  
-  // Build provider order based on preference and available keys
-  const providers: { provider: AIProvider; key: string; model: string }[] = [];
-  
-  // Add preferred provider first if available
-  if (config.preferredProvider === 'openai' && config.openaiKey) {
-    providers.push({ provider: 'openai', key: config.openaiKey, model: 'gpt-4o' });
-  } else if (config.preferredProvider === 'claude' && config.claudeKey) {
-    providers.push({ provider: 'claude', key: config.claudeKey, model: 'claude-3-5-sonnet-20241022' });
-  } else if (config.preferredProvider === 'gemini' && config.geminiKey) {
-    providers.push({ provider: 'gemini', key: config.geminiKey, model: 'gemini-2.5-flash' });
+  void config;   // deprecated — router handles keys + provider choice
+  void options?.maxRetries; // deprecated — router handles retries
+
+  const wsId = options?.workspaceId ?? getCurrentWorkspaceId();
+  if (!wsId) {
+    throw new Error('No active workspace — AI unavailable');
   }
-  
-  // Add remaining providers as fallbacks
-  if (config.openaiKey && !providers.some(p => p.provider === 'openai')) {
-    providers.push({ provider: 'openai', key: config.openaiKey, model: 'gpt-4o' });
-  }
-  if (config.claudeKey && !providers.some(p => p.provider === 'claude')) {
-    providers.push({ provider: 'claude', key: config.claudeKey, model: 'claude-3-5-sonnet-20241022' });
-  }
-  if (config.geminiKey && !providers.some(p => p.provider === 'gemini')) {
-    providers.push({ provider: 'gemini', key: config.geminiKey, model: 'gemini-2.5-flash' });
-  }
-  
-  if (providers.length === 0) {
-    throw new Error("No AI API keys configured");
-  }
-  
-  let lastError: Error | null = null;
-  
-  for (const { provider, key, model } of providers) {
-    for (let attempt = 0; attempt < maxRetries; attempt++) {
-      try {
-        let text: string;
-        
-        switch (provider) {
-          case 'openai':
-            text = await generateOpenAIResponse(key, prompt);
-            break;
-          case 'claude':
-            text = await generateClaudeResponse(key, prompt);
-            break;
-          case 'gemini':
-            text = await generateGeminiResponse(key, prompt);
-            break;
-        }
-        
-        return { text, provider, model };
-      } catch (error) {
-        console.warn(`[UnifiedAI] ${provider} attempt ${attempt + 1} failed:`, error);
-        lastError = error as Error;
-        
-        // Wait before retry (exponential backoff)
-        if (attempt < maxRetries - 1) {
-          await new Promise(resolve => setTimeout(resolve, 1000 * (attempt + 1)));
-        }
-      }
-    }
-    console.warn(`[UnifiedAI] ${provider} exhausted all retries, trying next provider...`);
-  }
-  
-  throw lastError || new Error("All AI providers failed");
+
+  // Generic text generation → general chat task. The router will pick an
+  // appropriate model (typically Gemini Flash for speed) and fall back to
+  // Claude on outage automatically.
+  const text = await invokeAIPrompt('pulse_assistant_chat', prompt, {
+    workspaceId: wsId,
+    temperature: 0.7,
+  });
+
+  // Provider + model fields are retained for API compatibility. The actual
+  // provider used server-side is reported in invokeAI's full result, but
+  // callers of this function only consume `text`, so we surface stable
+  // placeholder values rather than plumbing the full router result through.
+  return {
+    text: text || 'No response generated.',
+    provider: 'gemini',
+    model: 'ai-router',
+  };
 };
 
-// Convenience function for quick calls with auto-fallback
+/**
+ * Convenience one-shot call with automatic provider fallback.
+ *
+ * @param prompt The user prompt.
+ * @param config Deprecated. Kept for API compatibility — all fields ignored.
+ * @param workspaceId Optional workspace override. Falls back to
+ *   `getCurrentWorkspaceId()`.
+ */
 export const askAI = async (
   prompt: string,
-  config: AIConfig
+  config: AIConfig,
+  workspaceId?: string,
 ): Promise<string> => {
-  const response = await generateWithFallback(config, prompt);
+  const response = await generateWithFallback(config, prompt, { workspaceId });
   return response.text;
 };
+
+// Re-export router error types so callers can catch them without a
+// separate import.
+export {
+  AIRouterError,
+  AICapExceededError,
+  AITrialExpiredError,
+  AIProviderUnavailableError,
+} from './ai/errors';

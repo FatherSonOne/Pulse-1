@@ -44,7 +44,7 @@ export const PLATFORMS = [
 
 export const FAQ_DATA = [
   { q: "What is Pulse?", a: "Pulse is an AI-powered communication and productivity platform that combines messaging, email, voice (Voxer), calendar, contacts with CRM intelligence, an AI research studio, and analytics — all in one interface. Built for high-performance teams." },
-  { q: "What AI models does Pulse support?", a: "Pulse integrates 7+ AI providers: Google Gemini (primary), Anthropic Claude, OpenAI GPT-4, Perplexity for web research, ElevenLabs for voice synthesis, OpenAI Whisper and AssemblyAI for transcription. You can switch between models in Settings → AI & Intelligence." },
+  { q: "What AI models does Pulse support?", a: "Pulse integrates multiple AI providers: Google Gemini (primary, with built-in web search grounding), Anthropic Claude, OpenAI GPT-4, ElevenLabs for voice synthesis, OpenAI Whisper and AssemblyAI for transcription. You can switch between models in Settings → AI & Intelligence." },
   { q: "What is the War Room?", a: "The War Room is your AI command center — a research and strategy workspace with 8 slash commands (/brainstorm, /decide, /analyze, /summarize, /plan, /debrief, /risks, /compare), 4 specialized AI agents, RAG document intelligence, voice agent, and session management. Upload your docs and get context-aware AI responses." },
   { q: "What are the 8 Voxer modes?", a: "Classic Voxer (push-to-talk), Quick Vox (one-tap record), Team Vox (channel-based with @mentions), Vox Drop (scheduled delivery), Vox Notes (voice journaling), Video Vox (async video messages), Pulse Radio (live broadcast), and Voice Threads (async threaded conversations). All modes include AI transcription." },
   { q: "Which CRM platforms does Pulse integrate with?", a: "Pulse offers 4 native CRM integrations: HubSpot, Salesforce, Pipedrive, and Zoho CRM. Additionally, Pulse includes Logos Vision — a built-in relationship intelligence system with 0-100 health scoring and bidirectional sync." },
@@ -164,3 +164,21 @@ export const ANALYTICS_FEATURES = [
   { title: 'Team Velocity', desc: 'Monitor productivity, task completion rates, conflicts, and kudos in real time.', tags: ['Productivity', 'Conflicts', 'Kudos'] },
   { title: '8 View Modes', desc: 'Overview, velocity, sentiment, network, relationships, conflicts, kudos, and predictions — all interactive.', tags: ['Dashboards', 'Export'] },
 ];
+
+// ── Pricing — Pulse Team tier ───────────────────────────────────────────────
+// Keep in sync with src/components/billing/TrialExpiredBlock.tsx FEATURES.
+export const PULSE_TEAM_FEATURES = [
+  'Unlimited team seats',
+  'All 6 Voxer modes (Quick, Team, Drop, Threads, Radio, Notes)',
+  'Video Vox + Studio RAG',
+  'Email, calendar, messaging, meetings',
+  'Advanced analytics + full ecosystem bridge',
+  '2,000 AI messages / 500 SMS / 50 GB storage / mo',
+];
+
+export const PULSE_TEAM_PRICING = {
+  monthly: 100,      // $/mo billed monthly
+  yearly: 1000,      // $/yr billed annually (2 months free vs. monthly)
+  yearlyMonthlyEquiv: Math.round(1000 / 12), // ≈ $83/mo display value
+  trialDays: 30,
+};

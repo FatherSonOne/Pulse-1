@@ -1,7 +1,12 @@
 // Voxer AI Service - Phase 5 Enhancements
 // Provides AI-powered features: summarization, smart replies, meeting notes, auto-chapters
+//
+// All LLM calls route through the centralized ai-router edge function via
+// src/services/ai/aiService.ts. The router handles provider selection, metering,
+// hard caps, and prompt caching automatically.
 
-import { GoogleGenAI } from '@google/genai';
+import { invokeAIJson } from '../ai/aiService';
+import { getCurrentWorkspaceId } from '../ai/getWorkspaceId';
 
 export interface VoxMessage {
   id: string;
@@ -48,20 +53,57 @@ export interface Chapter {
   summary: string;
 }
 
+// ─── Internal raw-response shapes from the model ─────────────────────────
+
+interface RawConversationSummary {
+  overview?: string;
+  keyPoints?: string[];
+  actionItems?: string[];
+  topics?: string[];
+}
+
+interface RawSmartReplyResponse {
+  replies?: SmartReply[];
+}
+
+interface RawMeetingNotes {
+  title?: string;
+  summary?: string;
+  keyDecisions?: string[];
+  actionItems?: Array<{ task: string; assignee?: string; dueDate?: string }>;
+  nextSteps?: string[];
+}
+
+interface RawChapter {
+  title?: string;
+  summary?: string;
+  startPercentage: number;
+}
+
+interface RawChapterResponse {
+  chapters?: RawChapter[];
+}
+
 /**
- * Summarize a conversation from multiple voice messages
+ * Summarize a conversation from multiple voice messages.
+ *
+ * @param apiKey DEPRECATED — unused. Router handles keys server-side.
+ * @param messages The voice messages to summarize.
+ * @param workspaceId Optional workspace override; defaults to the active workspace.
  */
 export async function summarizeConversation(
-  apiKey: string,
-  messages: VoxMessage[]
+  apiKey: string | undefined,
+  messages: VoxMessage[],
+  workspaceId?: string,
 ): Promise<ConversationSummary | null> {
   if (messages.length === 0) return null;
 
-  const ai = new GoogleGenAI({ apiKey });
+  const wsId = workspaceId ?? getCurrentWorkspaceId();
+  if (!wsId) throw new Error('No active workspace — AI unavailable');
 
   // Build conversation transcript
   const transcript = messages
-    .map((msg, i) => {
+    .map((msg) => {
       const time = msg.timestamp.toLocaleTimeString('en-US', {
         hour: 'numeric',
         minute: '2-digit'
@@ -102,51 +144,38 @@ Format your response as JSON with this structure:
   "topics": ["Topic 1", "Topic 2"]
 }`;
 
-  try {
-    const response = await ai.models.generateContent({
-      model: 'gemini-2.5-flash',
-      contents: prompt,
-    });
+  const parsed = await invokeAIJson<RawConversationSummary>(
+    'voxer_transcript_summary',
+    prompt,
+    { workspaceId: wsId, temperature: 0.3 },
+  );
 
-    const text = response.text || '';
-
-    // Extract JSON from response
-    const jsonMatch = text.match(/\{[\s\S]*\}/);
-    if (jsonMatch) {
-      const parsed = JSON.parse(jsonMatch[0]);
-      return {
-        overview: parsed.overview || 'No summary available',
-        keyPoints: parsed.keyPoints || [],
-        actionItems: parsed.actionItems || [],
-        participants,
-        duration: formatDuration(totalDuration),
-        messageCount: messages.length,
-      };
-    }
-
-    return null;
-  } catch (error: any) {
-    console.error('Conversation summarization error:', error);
-    const msg = String(error?.message || error || '');
-    if (msg.includes('API key') || msg.includes('API_KEY') || msg.includes('invalid') || msg.includes('unauthorized')) {
-      throw new Error('AI features require API configuration');
-    }
-    if (msg.includes('network') || msg.includes('fetch') || msg.includes('ECONNREFUSED')) {
-      throw new Error('Network error — please try again');
-    }
-    throw new Error('AI summarizer unavailable (beta)');
-  }
+  return {
+    overview: parsed.overview || 'No summary available',
+    keyPoints: parsed.keyPoints || [],
+    actionItems: parsed.actionItems || [],
+    participants,
+    duration: formatDuration(totalDuration),
+    messageCount: messages.length,
+  };
 }
 
 /**
- * Generate smart reply suggestions based on the last message
+ * Generate smart reply suggestions based on the last message.
+ *
+ * @param apiKey DEPRECATED — unused. Router handles keys server-side.
+ * @param lastMessage The message to generate replies for.
+ * @param conversationContext Optional recent messages for context.
+ * @param workspaceId Optional workspace override; defaults to the active workspace.
  */
 export async function generateSmartReplies(
-  apiKey: string,
+  apiKey: string | undefined,
   lastMessage: VoxMessage,
-  conversationContext?: VoxMessage[]
+  conversationContext?: VoxMessage[],
+  workspaceId?: string,
 ): Promise<SmartReply[]> {
-  const ai = new GoogleGenAI({ apiKey });
+  const wsId = workspaceId ?? getCurrentWorkspaceId();
+  if (!wsId) throw new Error('No active workspace — AI unavailable');
 
   // Build context if available
   let context = '';
@@ -179,45 +208,33 @@ Format as JSON:
   ]
 }`;
 
-  try {
-    const response = await ai.models.generateContent({
-      model: 'gemini-2.5-flash',
-      contents: prompt,
-    });
+  const parsed = await invokeAIJson<RawSmartReplyResponse>(
+    'voxer_smart_reply',
+    prompt,
+    { workspaceId: wsId, temperature: 0.7 },
+  );
 
-    const text = response.text || '';
-    const jsonMatch = text.match(/\{[\s\S]*\}/);
-
-    if (jsonMatch) {
-      const parsed = JSON.parse(jsonMatch[0]);
-      return parsed.replies || [];
-    }
-
-    return [];
-  } catch (error: any) {
-    console.error('Smart replies generation error:', error);
-    const msg = String(error?.message || error || '');
-    if (msg.includes('API key') || msg.includes('API_KEY') || msg.includes('invalid') || msg.includes('unauthorized')) {
-      throw new Error('AI features require API configuration');
-    }
-    if (msg.includes('network') || msg.includes('fetch') || msg.includes('ECONNREFUSED')) {
-      throw new Error('Network error — please try again');
-    }
-    throw new Error('AI replies unavailable (beta)');
-  }
+  return parsed.replies || [];
 }
 
 /**
- * Generate meeting notes from a voice conversation
+ * Generate meeting notes from a voice conversation.
+ *
+ * @param apiKey DEPRECATED — unused. Router handles keys server-side.
+ * @param messages The voice messages that make up the meeting.
+ * @param meetingTitle Optional custom title for the meeting notes.
+ * @param workspaceId Optional workspace override; defaults to the active workspace.
  */
 export async function generateMeetingNotes(
-  apiKey: string,
+  apiKey: string | undefined,
   messages: VoxMessage[],
-  meetingTitle?: string
+  meetingTitle?: string,
+  workspaceId?: string,
 ): Promise<MeetingNotes | null> {
   if (messages.length === 0) return null;
 
-  const ai = new GoogleGenAI({ apiKey });
+  const wsId = workspaceId ?? getCurrentWorkspaceId();
+  if (!wsId) throw new Error('No active workspace — AI unavailable');
 
   const transcript = messages
     .map(msg => {
@@ -263,55 +280,43 @@ Format as JSON:
   "nextSteps": ["Step 1", "Step 2"]
 }`;
 
-  try {
-    const response = await ai.models.generateContent({
-      model: 'gemini-2.5-flash',
-      contents: prompt,
-    });
+  const parsed = await invokeAIJson<RawMeetingNotes>(
+    'meeting_summary',
+    prompt,
+    { workspaceId: wsId, temperature: 0.3 },
+  );
 
-    const text = response.text || '';
-    const jsonMatch = text.match(/\{[\s\S]*\}/);
-
-    if (jsonMatch) {
-      const parsed = JSON.parse(jsonMatch[0]);
-      return {
-        title: parsed.title || meetingTitle || 'Voice Meeting',
-        date,
-        participants,
-        summary: parsed.summary || '',
-        keyDecisions: parsed.keyDecisions || [],
-        actionItems: parsed.actionItems || [],
-        nextSteps: parsed.nextSteps || [],
-      };
-    }
-
-    return null;
-  } catch (error: any) {
-    console.error('Meeting notes generation error:', error);
-    const msg = String(error?.message || error || '');
-    if (msg.includes('API key') || msg.includes('API_KEY') || msg.includes('invalid') || msg.includes('unauthorized')) {
-      throw new Error('AI features require API configuration');
-    }
-    if (msg.includes('network') || msg.includes('fetch') || msg.includes('ECONNREFUSED')) {
-      throw new Error('Network error — please try again');
-    }
-    throw new Error('AI meeting notes unavailable (beta)');
-  }
+  return {
+    title: parsed.title || meetingTitle || 'Voice Meeting',
+    date,
+    participants,
+    summary: parsed.summary || '',
+    keyDecisions: parsed.keyDecisions || [],
+    actionItems: parsed.actionItems || [],
+    nextSteps: parsed.nextSteps || [],
+  };
 }
 
 /**
- * Generate auto-chapters for a long voice message
- * Breaks down a long transcription into topic-based segments
+ * Generate auto-chapters for a long voice message.
+ * Breaks down a long transcription into topic-based segments.
+ *
+ * @param apiKey DEPRECATED — unused. Router handles keys server-side.
+ * @param transcription The full voice-message transcription.
+ * @param duration Total duration of the message in seconds.
+ * @param workspaceId Optional workspace override; defaults to the active workspace.
  */
 export async function generateAutoChapters(
-  apiKey: string,
+  apiKey: string | undefined,
   transcription: string,
-  duration: number
+  duration: number,
+  workspaceId?: string,
 ): Promise<Chapter[]> {
   // Only generate chapters for messages longer than 2 minutes
   if (duration < 120) return [];
 
-  const ai = new GoogleGenAI({ apiKey });
+  const wsId = workspaceId ?? getCurrentWorkspaceId();
+  if (!wsId) throw new Error('No active workspace — AI unavailable');
 
   const prompt = `Analyze this voice message transcription and break it into logical chapters/topics.
 
@@ -332,39 +337,28 @@ Format as JSON:
   ]
 }`;
 
-  try {
-    const response = await ai.models.generateContent({
-      model: 'gemini-2.5-flash',
-      contents: prompt,
-    });
+  const parsed = await invokeAIJson<RawChapterResponse>(
+    'voxer_transcript_summary',
+    prompt,
+    { workspaceId: wsId, temperature: 0.3 },
+  );
 
-    const text = response.text || '';
-    const jsonMatch = text.match(/\{[\s\S]*\}/);
+  const rawChapters = parsed.chapters || [];
+  const chapters: Chapter[] = rawChapters.map((ch, index, arr) => {
+    const startTime = Math.round((ch.startPercentage / 100) * duration);
+    const nextStartTime = index < arr.length - 1
+      ? Math.round((arr[index + 1].startPercentage / 100) * duration)
+      : duration;
 
-    if (jsonMatch) {
-      const parsed = JSON.parse(jsonMatch[0]);
-      const chapters: Chapter[] = (parsed.chapters || []).map((ch: any, index: number, arr: any[]) => {
-        const startTime = Math.round((ch.startPercentage / 100) * duration);
-        const nextStartTime = index < arr.length - 1
-          ? Math.round((arr[index + 1].startPercentage / 100) * duration)
-          : duration;
+    return {
+      startTime,
+      endTime: nextStartTime,
+      title: ch.title || `Chapter ${index + 1}`,
+      summary: ch.summary || '',
+    };
+  });
 
-        return {
-          startTime,
-          endTime: nextStartTime,
-          title: ch.title || `Chapter ${index + 1}`,
-          summary: ch.summary || '',
-        };
-      });
-
-      return chapters;
-    }
-
-    return [];
-  } catch (error) {
-    console.error('Auto-chapters generation error:', error);
-    return [];
-  }
+  return chapters;
 }
 
 /**

@@ -1,9 +1,13 @@
 /**
  * Advanced AI Service
  * Comparative Analysis and Knowledge Graph
+ *
+ * Migrated from direct Gemini SDK calls (`processWithModel`) to the central
+ * ai-router edge function. All LLM calls route through `invokeAIJson` which
+ * enforces workspace membership, hard-cap metering, task-to-model routing,
+ * and automatic provider fallback.
  */
 
-import { processWithModel } from './geminiService';
 import {
   ComparisonResult,
   ComparisonPoint,
@@ -22,24 +26,100 @@ import {
   getCachedComparison,
   getCachedKnowledgeGraph,
 } from '../utils/aiCache';
+import { invokeAIJson } from './ai/aiService';
+import { getCurrentWorkspaceId } from './ai/getWorkspaceId';
+import {
+  AICapExceededError,
+  AITrialExpiredError,
+  AIProviderUnavailableError,
+} from './ai/errors';
+
+// ─── Internal helpers ──────────────────────────────────────────────────
+
+function resolveWorkspaceId(override?: string): string {
+  const wsId = override ?? getCurrentWorkspaceId();
+  if (!wsId) throw new Error('No active workspace — AI unavailable');
+  return wsId;
+}
+
+function rethrowRouterErrors(err: unknown): void {
+  if (
+    err instanceof AICapExceededError ||
+    err instanceof AITrialExpiredError ||
+    err instanceof AIProviderUnavailableError
+  ) {
+    throw err;
+  }
+}
+
+// ─── Router response shape types ──────────────────────────────────────
+
+interface ComparisonAnalysisResponse {
+  summary?: string;
+  agreements?: ComparisonPoint[];
+  contradictions?: ComparisonPoint[];
+  unique_points?: UniquePoint[];
+  themes?: Theme[];
+  synthesis?: string;
+}
+
+interface EntityExtractionResponse {
+  entities?: Array<{
+    text: string;
+    type: EntityType;
+    confidence?: number;
+    context?: string;
+  }>;
+  relationships?: Array<{
+    source_entity: string;
+    target_entity: string;
+    relationship_type: string;
+    confidence?: number;
+    context?: string;
+  }>;
+}
+
+interface InsightsResponse {
+  keyFindings?: string[];
+  trends?: string[];
+  recommendations?: string[];
+}
+
+interface SimilarityResponse {
+  similarity?: number;
+  commonTopics?: string[];
+}
 
 // ============================================
 // COMPARATIVE ANALYSIS
 // ============================================
 
 /**
- * Compare multiple documents and generate analysis
+ * Compare multiple documents and generate analysis.
+ *
+ * Routed to `document_compare` (Claude Sonnet) — reasoning-heavy task.
+ *
+ * @param documents Documents to compare (minimum 2).
+ * @param apiKey DEPRECATED — unused. The ai-router manages provider keys
+ *   server-side. Retained for backward compatibility during migration.
+ * @param onProgress Progress callback.
+ * @param workspaceId Optional workspace override; falls back to active workspace.
  */
 export async function compareDocuments(
   documents: KnowledgeDoc[],
-  apiKey: string,
-  onProgress?: (progress: number, status: string) => void
+  /** @deprecated Router manages keys server-side. Pass `undefined`. */
+  apiKey?: string,
+  onProgress?: (progress: number, status: string) => void,
+  workspaceId?: string,
 ): Promise<ComparisonResult> {
+  void apiKey;
   const startTime = Date.now();
 
   if (documents.length < 2) {
     throw new Error('At least 2 documents are required for comparison');
   }
+
+  const wsId = resolveWorkspaceId(workspaceId);
 
   onProgress?.(10, 'Preparing documents...');
 
@@ -112,25 +192,20 @@ Return ONLY valid JSON, no markdown or explanation.`;
 
   onProgress?.(50, 'Generating comparative analysis...');
 
-  const response = await processWithModel(apiKey, comparisonPrompt, 'gemini-1.5-flash');
-
-  onProgress?.(80, 'Processing results...');
-
-  // Parse the response
-  let analysis;
+  let analysis: ComparisonAnalysisResponse;
   try {
-    // Clean the response - remove markdown code blocks if present
-    let cleanedResponse = response
-      .replace(/```json\n?/g, '')
-      .replace(/```\n?/g, '')
-      .trim();
-
-    analysis = JSON.parse(cleanedResponse);
-  } catch (e) {
-    console.error('Failed to parse comparison response:', response);
+    analysis = await invokeAIJson<ComparisonAnalysisResponse>(
+      'document_compare',
+      comparisonPrompt,
+      { workspaceId: wsId, temperature: 0.3 },
+    );
+  } catch (error) {
+    rethrowRouterErrors(error);
+    console.error('Failed to parse comparison response:', error);
     throw new Error('Failed to parse comparison analysis');
   }
 
+  onProgress?.(80, 'Processing results...');
   onProgress?.(100, 'Complete!');
 
   return {
@@ -154,13 +229,23 @@ Return ONLY valid JSON, no markdown or explanation.`;
 // ============================================
 
 /**
- * Extract entities and relationships from documents to build a knowledge graph
+ * Extract entities and relationships from documents to build a knowledge graph.
+ *
+ * @param documents Documents to analyze.
+ * @param apiKey DEPRECATED — unused. Retained for backward compatibility.
+ * @param onProgress Progress callback.
+ * @param workspaceId Optional workspace override; falls back to active workspace.
  */
 export async function buildKnowledgeGraph(
   documents: KnowledgeDoc[],
-  apiKey: string,
-  onProgress?: (progress: number, status: string) => void
+  /** @deprecated Router manages keys server-side. Pass `undefined`. */
+  apiKey?: string,
+  onProgress?: (progress: number, status: string) => void,
+  workspaceId?: string,
 ): Promise<KnowledgeGraph> {
+  void apiKey;
+  const wsId = resolveWorkspaceId(workspaceId);
+
   onProgress?.(10, 'Extracting entities...');
 
   // Extract entities from each document
@@ -172,7 +257,7 @@ export async function buildKnowledgeGraph(
     const progress = 10 + (i / documents.length) * 50;
     onProgress?.(progress, `Analyzing ${doc.title}...`);
 
-    const { entities, relationships } = await extractEntitiesFromDocument(doc, apiKey);
+    const { entities, relationships } = await extractEntitiesFromDocument(doc, wsId);
     allEntities.push(...entities);
     allRelationships.push(...relationships);
   }
@@ -276,11 +361,14 @@ export async function buildKnowledgeGraph(
 }
 
 /**
- * Extract entities and relationships from a single document
+ * Extract entities and relationships from a single document.
+ *
+ * Routed to `knowledge_graph_extract`. Note: this is an internal helper —
+ * the outer `buildKnowledgeGraph` resolves the workspace ID and passes it in.
  */
 async function extractEntitiesFromDocument(
   doc: KnowledgeDoc,
-  apiKey: string
+  workspaceId: string,
 ): Promise<{ entities: ExtractedEntity[]; relationships: EntityRelationship[] }> {
   const content = doc.text_content?.slice(0, 10000) || doc.ai_summary || '';
 
@@ -318,20 +406,13 @@ Focus on the most important entities (up to 30) and relationships (up to 40).
 Return ONLY valid JSON.`;
 
   try {
-    const response = await processWithModel(apiKey, prompt, 'gemini-1.5-flash');
+    const result = await invokeAIJson<EntityExtractionResponse>(
+      'knowledge_graph_extract',
+      prompt,
+      { workspaceId, temperature: 0.2 },
+    );
 
-    let result;
-    try {
-      const cleanedResponse = response
-        .replace(/```json\n?/g, '')
-        .replace(/```\n?/g, '')
-        .trim();
-      result = JSON.parse(cleanedResponse);
-    } catch {
-      return { entities: [], relationships: [] };
-    }
-
-    const entities: ExtractedEntity[] = (result.entities || []).map((e: any) => ({
+    const entities: ExtractedEntity[] = (result.entities || []).map((e) => ({
       text: e.text,
       type: e.type as EntityType,
       start_offset: 0,
@@ -341,7 +422,7 @@ Return ONLY valid JSON.`;
       doc_id: doc.id,
     }));
 
-    const relationships: EntityRelationship[] = (result.relationships || []).map((r: any) => ({
+    const relationships: EntityRelationship[] = (result.relationships || []).map((r) => ({
       source_entity: r.source_entity,
       target_entity: r.target_entity,
       relationship_type: r.relationship_type,
@@ -352,6 +433,7 @@ Return ONLY valid JSON.`;
 
     return { entities, relationships };
   } catch (error) {
+    rethrowRouterErrors(error);
     console.error('Entity extraction failed:', error);
     return { entities: [], relationships: [] };
   }
@@ -375,16 +457,27 @@ function findNodeKey(nodeMap: Map<string, GraphNode>, entityName: string): strin
 // ============================================
 
 /**
- * Generate key insights from documents
+ * Generate key insights from documents.
+ *
+ * Routed to `document_compare` — multi-document theme analysis.
+ *
+ * @param documents Documents to analyze.
+ * @param apiKey DEPRECATED — unused. Retained for backward compatibility.
+ * @param workspaceId Optional workspace override; falls back to active workspace.
  */
 export async function generateInsights(
   documents: KnowledgeDoc[],
-  apiKey: string
+  /** @deprecated Router manages keys server-side. Pass `undefined`. */
+  apiKey?: string,
+  workspaceId?: string,
 ): Promise<{
   keyFindings: string[];
   trends: string[];
   recommendations: string[];
 }> {
+  void apiKey;
+  const wsId = resolveWorkspaceId(workspaceId);
+
   const content = documents
     .map(d => `[${d.title}]: ${d.ai_summary || d.text_content?.slice(0, 3000) || ''}`)
     .join('\n\n');
@@ -403,15 +496,19 @@ Return JSON with:
 Provide 3-5 items for each category. Be specific and actionable.
 Return ONLY valid JSON.`;
 
-  const response = await processWithModel(apiKey, prompt, 'gemini-1.5-flash');
-
   try {
-    const cleanedResponse = response
-      .replace(/```json\n?/g, '')
-      .replace(/```\n?/g, '')
-      .trim();
-    return JSON.parse(cleanedResponse);
-  } catch {
+    const result = await invokeAIJson<InsightsResponse>(
+      'document_compare',
+      prompt,
+      { workspaceId: wsId, temperature: 0.4 },
+    );
+    return {
+      keyFindings: result.keyFindings || [],
+      trends: result.trends || [],
+      recommendations: result.recommendations || [],
+    };
+  } catch (error) {
+    rethrowRouterErrors(error);
     return {
       keyFindings: [],
       trends: [],
@@ -425,13 +522,24 @@ Return ONLY valid JSON.`;
 // ============================================
 
 /**
- * Calculate similarity between documents
+ * Calculate similarity between documents.
+ *
+ * Routed to `document_compare` — pairwise semantic comparison.
+ *
+ * @param documents Documents to compare pairwise.
+ * @param apiKey DEPRECATED — unused. Retained for backward compatibility.
+ * @param workspaceId Optional workspace override; falls back to active workspace.
  */
 export async function calculateDocumentSimilarity(
   documents: KnowledgeDoc[],
-  apiKey: string
+  /** @deprecated Router manages keys server-side. Pass `undefined`. */
+  apiKey?: string,
+  workspaceId?: string,
 ): Promise<{ docId1: string; docId2: string; similarity: number; commonTopics: string[] }[]> {
+  void apiKey;
   if (documents.length < 2) return [];
+
+  const wsId = resolveWorkspaceId(workspaceId);
 
   const pairs: { docId1: string; docId2: string; similarity: number; commonTopics: string[] }[] = [];
 
@@ -459,12 +567,11 @@ Similarity is 0-1 (0 = completely different, 1 = identical topics).
 Return ONLY valid JSON.`;
 
       try {
-        const response = await processWithModel(apiKey, prompt, 'gemini-1.5-flash');
-        const cleanedResponse = response
-          .replace(/```json\n?/g, '')
-          .replace(/```\n?/g, '')
-          .trim();
-        const result = JSON.parse(cleanedResponse);
+        const result = await invokeAIJson<SimilarityResponse>(
+          'document_compare',
+          prompt,
+          { workspaceId: wsId, temperature: 0.2 },
+        );
 
         pairs.push({
           docId1: doc1.id,
@@ -472,7 +579,8 @@ Return ONLY valid JSON.`;
           similarity: result.similarity || 0,
           commonTopics: result.commonTopics || [],
         });
-      } catch {
+      } catch (error) {
+        rethrowRouterErrors(error);
         pairs.push({
           docId1: doc1.id,
           docId2: doc2.id,
@@ -491,31 +599,47 @@ Return ONLY valid JSON.`;
 // ============================================
 
 /**
- * Compare documents with caching
+ * Compare documents with caching.
+ *
+ * @param documents Documents to compare.
+ * @param apiKey DEPRECATED — unused. Retained for backward compatibility.
+ * @param onProgress Progress callback.
+ * @param workspaceId Optional workspace override; falls back to active workspace.
  */
 export async function compareDocumentsCached(
   documents: KnowledgeDoc[],
-  apiKey: string,
-  onProgress?: (progress: number, status: string) => void
+  /** @deprecated Router manages keys server-side. Pass `undefined`. */
+  apiKey?: string,
+  onProgress?: (progress: number, status: string) => void,
+  workspaceId?: string,
 ): Promise<ComparisonResult> {
+  void apiKey;
   const docIds = documents.map(d => d.id);
 
   return getCachedComparison(docIds, () =>
-    compareDocuments(documents, apiKey, onProgress)
+    compareDocuments(documents, undefined, onProgress, workspaceId)
   );
 }
 
 /**
- * Build knowledge graph with caching
+ * Build knowledge graph with caching.
+ *
+ * @param documents Documents to analyze.
+ * @param apiKey DEPRECATED — unused. Retained for backward compatibility.
+ * @param onProgress Progress callback.
+ * @param workspaceId Optional workspace override; falls back to active workspace.
  */
 export async function buildKnowledgeGraphCached(
   documents: KnowledgeDoc[],
-  apiKey: string,
-  onProgress?: (progress: number, status: string) => void
+  /** @deprecated Router manages keys server-side. Pass `undefined`. */
+  apiKey?: string,
+  onProgress?: (progress: number, status: string) => void,
+  workspaceId?: string,
 ): Promise<KnowledgeGraph> {
+  void apiKey;
   const docIds = documents.map(d => d.id);
 
   return getCachedKnowledgeGraph(docIds, () =>
-    buildKnowledgeGraph(documents, apiKey, onProgress)
+    buildKnowledgeGraph(documents, undefined, onProgress, workspaceId)
   );
 }

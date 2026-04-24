@@ -114,7 +114,6 @@ export interface PulseSettings {
   claudeApiKey: string;
   assemblyaiApiKey: string;
   elevenlabsApiKey: string;
-  perplexityApiKey: string;
   mapboxApiKey: string;
 
   // Accessibility
@@ -264,7 +263,6 @@ const DEFAULT_SETTINGS: PulseSettings = {
   claudeApiKey: '',
   assemblyaiApiKey: '',
   elevenlabsApiKey: '',
-  perplexityApiKey: '',
   mapboxApiKey: '',
 
   // Accessibility
@@ -404,12 +402,10 @@ class SettingsService {
         .from('user_settings')
         .select('settings, updated_at')
         .eq('user_id', user.id)
-        .single();
+        .maybeSingle();
 
-      // If table doesn't exist (406) or schema error, disable cloud sync
       if (error) {
         if (error.code === 'PGRST204' || error.code === 'PGRST116' || error.message?.includes('406')) {
-          // Use debug-level - this is expected if table hasn't been created yet
           console.debug('[Settings Debug] Cloud sync disabled - user_settings table not available (expected during initial setup)');
           this.cloudSyncDisabled = true;
         }
@@ -465,7 +461,6 @@ class SettingsService {
       delete (safeSettings as any).claudeApiKey;
       delete (safeSettings as any).assemblyaiApiKey;
       delete (safeSettings as any).elevenlabsApiKey;
-      delete (safeSettings as any).perplexityApiKey;
       delete (safeSettings as any).mapboxApiKey;
 
       const { error } = await supabase
@@ -521,7 +516,6 @@ class SettingsService {
     settings.claudeApiKey = localStorage.getItem('claude_api_key') || '';
     settings.assemblyaiApiKey = localStorage.getItem('assemblyai_api_key') || '';
     settings.elevenlabsApiKey = localStorage.getItem('elevenlabs_api_key') || '';
-    settings.perplexityApiKey = localStorage.getItem('perplexity_api_key') || '';
     settings.mapboxApiKey = localStorage.getItem('mapbox_api_key') || '';
 
     // Save migrated settings
@@ -544,7 +538,6 @@ class SettingsService {
       claudeApiKey: 'claude_api_key',
       assemblyaiApiKey: 'assemblyai_api_key',
       elevenlabsApiKey: 'elevenlabs_api_key',
-      perplexityApiKey: 'perplexity_api_key',
       mapboxApiKey: 'mapbox_api_key',
     };
 

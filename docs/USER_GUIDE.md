@@ -1,7 +1,7 @@
 # Pulse User's Guide
 
-**Version**: 25.2.2
-**Last Updated**: April 12, 2026
+**Version**: 25.3.0
+**Last Updated**: April 23, 2026
 **For**: All Pulse users — personal, team, and enterprise
 
 ---
@@ -2739,22 +2739,23 @@ If you're connecting Pulse to external tools or using Pulse's API:
 
 ### AI & Intelligence
 
-Configure the AI engine that powers your Pulse workspace.
+Configure voice, hardware, and knowledge base settings for the AI features in your workspace.
+
+Pulse's AI runs on a managed platform — you don't need to provide your own Gemini, Claude, or OpenAI API keys. The right model is picked for you on every request: fast models for bulk tasks, high-quality models for conversations and complex reasoning, all billed under your Pulse Team subscription.
 
 1. Go to **Settings → AI & Intelligence**.
-2. Under **AI Model**, choose your primary model (e.g., Gemini Flash for speed, or a deeper reasoning model for complex tasks).
-3. Toggle **Advanced Reasoning** on if you want the AI to take more time on complex questions before answering.
-4. Under **Voice Agent**, configure:
+2. Under **Voice Agent**, configure:
    - **Agent Voice** — choose the voice character for spoken AI responses
    - **Turn Detection Mode** — "Semantic" (waits for a natural pause) or "Server VAD" (detects silence automatically)
    - **Voice Activity Eagerness** — how quickly the agent responds after you stop speaking
    - **Interaction Mode** — VAD (hands-free, auto-detects speech) or PTT (push-to-talk)
-5. Under **Knowledge Base**, set your default search scope and toggle automatic document analysis.
-6. Under **Devices**, select your preferred microphone, speaker, and camera for AI voice sessions.
-7. Use the **Test Devices** button to confirm your hardware is working correctly.
-8. Enable **Quota Notifications** to get a browser alert when your AI API quota recovers or when fallback mode activates.
+3. Under **Knowledge Base**, set your default search scope and toggle automatic document analysis.
+4. Under **Devices**, select your preferred microphone, speaker, and camera for AI voice sessions.
+5. Use the **Test Devices** button to confirm your hardware is working correctly.
 
-**Tip:** The AI Health Monitor at the top of this page shows the real-time status of all AI services — green means fully operational.
+**Tip:** The AI Health Monitor at the top of this page shows the real-time status of the AI service — green means fully operational.
+
+**Note:** If you need web-grounded answers with real-time citations (e.g., "latest news about…"), use Pulse AI or Live AI — both now search the web via Gemini Search Grounding and return source links with every answer.
 
 ### Studio Settings
 
@@ -2816,71 +2817,91 @@ Configure custom retention periods for compliance. For HIPAA or GDPR environment
 
 ## 19. Billing & Plans
 
-Pulse uses a tiered billing system powered by Stripe. Workspace owners and admins can manage subscriptions, view usage, and upgrade or downgrade plans from the Billing settings.
+Pulse uses one simple subscription tier — **Pulse Team** — powered by Stripe. Every new workspace starts with a 30-day free trial; no credit card required to sign up. Workspace owners and admins can manage the subscription, view usage, and open the Stripe Customer Portal from the Billing settings.
 
-### Plans
+### Pulse Team — $100/mo
 
-| Plan | Best For | Key Limits |
-| ---- | -------- | ---------- |
-| **Free** | Trying Pulse out | Limited AI messages, contacts, and storage |
-| **Starter** | Individuals and small teams | Higher limits on AI messages, SMS, contacts, and storage |
-| **Professional** | Growing teams | Generous limits across all features, priority support |
-| **Business** | Large organizations | Highest limits, advanced integrations, and dedicated support |
-| **Ecosystem** | QntmEcos suite users | Bundle pricing across Pulse, Entomate, and Logos Vision |
+Every feature is included on every workspace. One tier, no gating.
+
+| | Pulse Team |
+| -- | -- |
+| **Price** | $100/month, or $1,000/year (2 months free) |
+| **Trial** | 30 days free — no credit card required |
+| **Team seats** | Unlimited |
+| **AI messages** | 2,000 / month |
+| **SMS** | 500 / month |
+| **Storage** | 50 GB |
+| **Voxer minutes** | 500 / month |
+| **Features** | All 6 Voxer modes, Video Vox, Studio RAG, Email, Calendar, Messaging, Meetings, Advanced Analytics, Full Ecosystem Bridge |
+
+### How the Trial Works
+
+- When you create a workspace, Pulse automatically starts a 30-day trial of Pulse Team.
+- Every feature is unlocked during the trial — you get the full Pulse experience.
+- A **TRIAL · Xd LEFT** badge appears in Settings → Plan & Billing and counts down to zero.
+- Add a payment method any time before the trial ends and you'll continue uninterrupted — you won't be charged until day 30.
+- If the trial ends without a payment method, you'll see a full-screen upgrade prompt the next time you open Pulse. You can still access Settings → Plan & Billing to subscribe; everything else is blocked until then.
 
 ### Viewing Your Current Plan
 
-1. Go to **Settings → Billing**.
-2. Your current plan is displayed at the top with a color-coded badge.
-3. Below the plan badge, you can see:
-   - Current billing cycle (monthly or yearly)
-   - Subscription status (active, trialing, past due, canceled)
-   - Trial information — if you're on a trial, the number of days remaining is shown
+1. Go to **Settings → Plan & Billing**.
+2. The top card shows your current state:
+   - **TRIAL · Xd LEFT** if you're still in the 30-day trial
+   - **ACTIVE** if you're on a paid subscription
+   - **PAST DUE** or **CANCELS SOON** if something needs attention
+3. Below the status, the card shows the renewal date and your billing cycle.
 
-### Upgrading or Changing Plans
+### Starting a Paid Subscription
 
-1. Go to **Settings → Billing**.
-2. Toggle between **Monthly** and **Yearly** billing to compare prices (yearly saves money).
-3. Click **Upgrade** on the plan you want.
-4. You're redirected to a secure Stripe checkout page to enter payment details.
-5. After checkout, you're returned to Pulse with a confirmation message.
-6. Your new plan takes effect immediately — entitlements update within moments.
+1. Go to **Settings → Plan & Billing**.
+2. Toggle between **Monthly** ($100/mo) and **Yearly** ($1,000/yr — saves 2 months).
+3. Click **Upgrade now**.
+4. You're redirected to a secure Stripe checkout page. If you're still inside the trial, the first charge is scheduled for the day your trial ends — not today.
+5. Enter payment details and confirm.
+6. Pulse reopens with a success banner. Your subscription is now **ACTIVE**.
 
-### Downgrading or Canceling
+### Managing Your Subscription
 
-1. Go to **Settings → Billing**.
-2. On your current plan card, click **Manage Subscription**.
-3. The Stripe Customer Portal opens, where you can:
-   - Switch to a lower plan
-   - Cancel your subscription (access continues until the end of the billing period)
+1. Go to **Settings → Plan & Billing**.
+2. On the plan card, click **Manage Subscription**.
+3. The Stripe Customer Portal opens in a new tab, where you can:
    - Update your payment method
+   - Switch between Monthly and Yearly
+   - Cancel your subscription (access continues until the end of the current billing period)
    - View and download past invoices
 
 ### Usage Tracking
 
-Pulse tracks your workspace usage against your plan limits. The Billing page shows gauges for:
+The Plan & Billing page shows four live usage meters for the current month:
 
-- **AI Messages** — number of AI-powered messages sent this month
+- **AI Messages** — AI requests sent across Pulse AI, Studio, email drafts, summaries, etc.
 - **SMS Sent** — text messages sent this month
-- **Storage** — total file storage used
-- **Contacts** — total contacts in your workspace
-- **Voxer Minutes** — voice message duration this month
+- **Storage** — total file storage used (voice notes, attachments, archives)
+- **Voxer Minutes** — voice message recording duration this month
 
-When you approach a limit (80%+), a warning banner appears. When you hit a limit, the affected feature shows an upgrade prompt.
+All meters reset on the 1st of each month.
+
+**Warning at 80%:** A warning banner appears when any metric crosses 80% of its limit.
+
+**Hard block at 100%:** Pulse stops new requests for that metric when the cap is reached. A clear message explains what's blocked and when the meter resets. You can upgrade via the Stripe portal at any time, but overage buckets are not available on Pulse Team — the meters simply resume next month.
 
 ### Invoices
 
-1. Go to **Settings → Billing → Invoice History**.
-2. View past invoices with amount, status, and date.
+1. Go to **Settings → Plan & Billing → Invoice History** (near the bottom of the page).
+2. Each invoice shows amount, status, and date.
 3. Click **View** to open the invoice in Stripe, or **Download PDF** for your records.
 
-### Feature Gating
+### Trial Ending Emails
 
-Some features are only available on certain plans. When you try to use a feature that requires a higher plan, Pulse shows an inline upgrade prompt explaining what you'll unlock and offering a one-click upgrade button.
+Pulse sends automatic reminder emails during and after the trial:
 
-**Tip:** Workspace owners and admins can manage billing. Regular members can view the current plan but cannot make changes.
+- **3 days before the trial ends** — "Your Pulse trial ends in 3 days."
+- **Day the trial ends** — if no payment method is on file, a reminder with a direct link to upgrade.
+- **Payment failures** — if a recurring charge fails, you'll get a note to update your card before your workspace is paused.
 
-**Tip:** Yearly billing typically saves 15-20% compared to monthly. Switch anytime from the Billing page.
+**Tip:** Workspace owners and admins can manage billing. Regular members can view the current plan but cannot make payment changes.
+
+**Tip:** Yearly billing saves the equivalent of 2 months. You can switch between Monthly and Yearly at any time from the Stripe Customer Portal.
 
 ---
 

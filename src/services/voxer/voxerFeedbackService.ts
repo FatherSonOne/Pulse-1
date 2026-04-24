@@ -1,7 +1,10 @@
 // Voxer AI Feedback Service
-// Provides AI-powered feedback on voice messages before sending
+// Provides AI-powered feedback on voice messages before sending.
+//
+// All LLM calls route through the central `ai-router` edge function which
+// handles provider selection, metering, hard caps, fallback on outage, and
+// prompt caching automatically.
 
-import { GoogleGenAI } from "@google/genai";
 import {
   VoxFeedback,
   FeedbackIssue,
@@ -9,16 +12,35 @@ import {
   FeedbackSeverity,
   FeedbackCategory,
 } from './voxerTypes';
+import { invokeAIJson } from '../ai/aiService';
+import { getCurrentWorkspaceId } from '../ai/getWorkspaceId';
 
 // ============================================
 // FEEDBACK SERVICE CLASS
 // ============================================
 
 export class VoxerFeedbackService {
+  /**
+   * @deprecated — retained for backward compatibility during migration.
+   *   The `ai-router` edge function holds the provider key server-side.
+   *   This field is unused.
+   */
   private apiKey: string;
 
-  constructor(apiKey: string) {
+  private workspaceId?: string;
+
+  constructor(apiKey: string, workspaceId?: string) {
     this.apiKey = apiKey;
+    this.workspaceId = workspaceId;
+    void this.apiKey; // silence unused-field warnings in strict TS configs
+  }
+
+  private resolveWorkspaceId(workspaceId?: string): string {
+    const wsId = workspaceId ?? this.workspaceId ?? getCurrentWorkspaceId();
+    if (!wsId) {
+      throw new Error('No active workspace — AI unavailable');
+    }
+    return wsId;
   }
 
   // ============================================
@@ -32,9 +54,10 @@ export class VoxerFeedbackService {
       relationship?: 'professional' | 'casual' | 'formal';
       purpose?: 'update' | 'request' | 'response' | 'general';
       previousMessages?: string[];
-    }
+    },
+    workspaceId?: string,
   ): Promise<VoxFeedback> {
-    const ai = new GoogleGenAI({ apiKey: this.apiKey });
+    const wsId = this.resolveWorkspaceId(workspaceId);
 
     const contextInfo = context ? `
 Context:
@@ -55,7 +78,7 @@ Analyze the message and provide comprehensive feedback in JSON format:
 {
   "overallScore": 0-100,
   "isReadyToSend": true|false,
-  
+
   "contentIssues": [
     {
       "category": "content",
@@ -65,7 +88,7 @@ Analyze the message and provide comprehensive feedback in JSON format:
       "highlightText": "relevant text from message"
     }
   ],
-  
+
   "toneIssues": [
     {
       "category": "tone",
@@ -74,7 +97,7 @@ Analyze the message and provide comprehensive feedback in JSON format:
       "suggestion": "how to improve"
     }
   ],
-  
+
   "clarityIssues": [
     {
       "category": "clarity",
@@ -83,7 +106,7 @@ Analyze the message and provide comprehensive feedback in JSON format:
       "suggestion": "how to clarify"
     }
   ],
-  
+
   "suggestions": [
     {
       "type": "rephrase|add_context|clarify|soften|strengthen|structure",
@@ -92,9 +115,9 @@ Analyze the message and provide comprehensive feedback in JSON format:
       "reason": "why this change helps"
     }
   ],
-  
+
   "improvedTranscription": "full improved version of the message (or null if not needed)",
-  
+
   "wordCount": number,
   "hasActionItems": true|false,
   "hasQuestions": true|false
@@ -114,22 +137,12 @@ Feedback Rules:
 Return ONLY valid JSON.`;
 
     try {
-      const response = await ai.models.generateContent({
-        model: 'gemini-2.5-flash',
-        contents: prompt,
-      });
-
-      const resultText = response.text || '{}';
-      let parsed: any;
-      
-      try {
-        const jsonMatch = resultText.match(/\{[\s\S]*\}/);
-        parsed = JSON.parse(jsonMatch ? jsonMatch[0] : resultText);
-      } catch (e) {
-        console.error('Failed to parse feedback JSON:', e);
-        parsed = {};
-      }
-
+      // Coaching feedback is user-facing quality-sensitive work → pulse_assistant_chat.
+      const parsed = await invokeAIJson<Record<string, unknown>>(
+        'pulse_assistant_chat',
+        prompt,
+        { workspaceId: wsId, temperature: 0.4 },
+      );
       return this.formatFeedbackResult(parsed, transcription);
     } catch (error) {
       console.error('Feedback analysis error:', error);
@@ -141,13 +154,16 @@ Return ONLY valid JSON.`;
   // QUICK FEEDBACK (Lightweight)
   // ============================================
 
-  async quickFeedback(transcription: string): Promise<{
+  async quickFeedback(
+    transcription: string,
+    workspaceId?: string,
+  ): Promise<{
     score: number;
     isReady: boolean;
     topIssue: string | null;
     topSuggestion: string | null;
   }> {
-    const ai = new GoogleGenAI({ apiKey: this.apiKey });
+    const wsId = this.resolveWorkspaceId(workspaceId);
 
     const prompt = `Quickly review this voice message before sending. Return JSON only:
 {
@@ -160,15 +176,12 @@ Return ONLY valid JSON.`;
 Message: "${transcription.slice(0, 500)}"`;
 
     try {
-      const response = await ai.models.generateContent({
-        model: 'gemini-2.5-flash',
-        contents: prompt,
-      });
-
-      const jsonMatch = response.text?.match(/\{[\s\S]*\}/);
-      if (jsonMatch) {
-        return JSON.parse(jsonMatch[0]);
-      }
+      return await invokeAIJson<{
+        score: number;
+        isReady: boolean;
+        topIssue: string | null;
+        topSuggestion: string | null;
+      }>('quick_reply_suggestions', prompt, { workspaceId: wsId, temperature: 0.3 });
     } catch (error) {
       console.error('Quick feedback error:', error);
     }
@@ -185,13 +198,16 @@ Message: "${transcription.slice(0, 500)}"`;
   // TONE ANALYSIS
   // ============================================
 
-  async analyzeTone(transcription: string): Promise<{
+  async analyzeTone(
+    transcription: string,
+    workspaceId?: string,
+  ): Promise<{
     dominantTone: string;
     toneScore: number;
     isAppropriate: boolean;
     suggestions: string[];
   }> {
-    const ai = new GoogleGenAI({ apiKey: this.apiKey });
+    const wsId = this.resolveWorkspaceId(workspaceId);
 
     const prompt = `Analyze the tone of this voice message:
 
@@ -206,15 +222,12 @@ Return JSON:
 }`;
 
     try {
-      const response = await ai.models.generateContent({
-        model: 'gemini-2.5-flash',
-        contents: prompt,
-      });
-
-      const jsonMatch = response.text?.match(/\{[\s\S]*\}/);
-      if (jsonMatch) {
-        return JSON.parse(jsonMatch[0]);
-      }
+      return await invokeAIJson<{
+        dominantTone: string;
+        toneScore: number;
+        isAppropriate: boolean;
+        suggestions: string[];
+      }>('sentiment_analysis', prompt, { workspaceId: wsId, temperature: 0.2 });
     } catch (error) {
       console.error('Tone analysis error:', error);
     }
@@ -233,15 +246,16 @@ Return JSON:
 
   async checkCompleteness(
     transcription: string,
-    expectedElements?: string[]
+    expectedElements?: string[],
+    workspaceId?: string,
   ): Promise<{
     isComplete: boolean;
     missingElements: string[];
     completenessScore: number;
   }> {
-    const ai = new GoogleGenAI({ apiKey: this.apiKey });
+    const wsId = this.resolveWorkspaceId(workspaceId);
 
-    const elementsPrompt = expectedElements?.length 
+    const elementsPrompt = expectedElements?.length
       ? `Expected elements: ${expectedElements.join(', ')}`
       : 'Check for: greeting, main point, action items (if any), closing';
 
@@ -259,15 +273,11 @@ Return JSON:
 }`;
 
     try {
-      const response = await ai.models.generateContent({
-        model: 'gemini-2.5-flash',
-        contents: prompt,
-      });
-
-      const jsonMatch = response.text?.match(/\{[\s\S]*\}/);
-      if (jsonMatch) {
-        return JSON.parse(jsonMatch[0]);
-      }
+      return await invokeAIJson<{
+        isComplete: boolean;
+        missingElements: string[];
+        completenessScore: number;
+      }>('voxer_transcript_summary', prompt, { workspaceId: wsId, temperature: 0.3 });
     } catch (error) {
       console.error('Completeness check error:', error);
     }
@@ -285,12 +295,13 @@ Return JSON:
 
   async improveMessage(
     transcription: string,
-    improvements: Array<'clarity' | 'tone' | 'brevity' | 'professionalism' | 'completeness'>
+    improvements: Array<'clarity' | 'tone' | 'brevity' | 'professionalism' | 'completeness'>,
+    workspaceId?: string,
   ): Promise<{
     improved: string;
     changes: string[];
   }> {
-    const ai = new GoogleGenAI({ apiKey: this.apiKey });
+    const wsId = this.resolveWorkspaceId(workspaceId);
 
     const prompt = `Improve this voice message focusing on: ${improvements.join(', ')}
 
@@ -305,15 +316,11 @@ Return JSON:
 Keep the speaker's voice and intent, just improve based on the requested areas.`;
 
     try {
-      const response = await ai.models.generateContent({
-        model: 'gemini-2.5-flash',
-        contents: prompt,
-      });
-
-      const jsonMatch = response.text?.match(/\{[\s\S]*\}/);
-      if (jsonMatch) {
-        return JSON.parse(jsonMatch[0]);
-      }
+      return await invokeAIJson<{ improved: string; changes: string[] }>(
+        'quick_reply_suggestions',
+        prompt,
+        { workspaceId: wsId, temperature: 0.5 },
+      );
     } catch (error) {
       console.error('Improve message error:', error);
     }
@@ -330,25 +337,26 @@ Keep the speaker's voice and intent, just improve based on the requested areas.`
 
   async rephrase(
     text: string,
-    style: 'professional' | 'casual' | 'formal' | 'friendly' | 'concise'
+    style: 'professional' | 'casual' | 'formal' | 'friendly' | 'concise',
+    workspaceId?: string,
   ): Promise<string[]> {
-    const ai = new GoogleGenAI({ apiKey: this.apiKey });
+    const wsId = this.resolveWorkspaceId(workspaceId);
 
     const prompt = `Provide 3 alternative phrasings for this text in a ${style} style:
 
 "${text}"
 
-Return JSON array of strings: ["option 1", "option 2", "option 3"]`;
+Return JSON with a single "options" array:
+{ "options": ["option 1", "option 2", "option 3"] }`;
 
     try {
-      const response = await ai.models.generateContent({
-        model: 'gemini-2.5-flash',
-        contents: prompt,
-      });
-
-      const jsonMatch = response.text?.match(/\[[\s\S]*\]/);
-      if (jsonMatch) {
-        return JSON.parse(jsonMatch[0]);
+      const parsed = await invokeAIJson<{ options?: string[] }>(
+        'quick_reply_suggestions',
+        prompt,
+        { workspaceId: wsId, temperature: 0.6 },
+      );
+      if (Array.isArray(parsed.options) && parsed.options.length > 0) {
+        return parsed.options;
       }
     } catch (error) {
       console.error('Rephrase error:', error);
@@ -387,33 +395,42 @@ Return JSON array of strings: ["option 1", "option 2", "option 3"]`;
     return {
       id: `feedback-${Date.now()}`,
       voxId: '',
-      
+
       overallScore: parsed.overallScore ?? 85,
       isReadyToSend: parsed.isReadyToSend ?? true,
-      
+
       contentIssues: formatIssues(parsed.contentIssues, 'content'),
       toneIssues: formatIssues(parsed.toneIssues, 'tone'),
       clarityIssues: formatIssues(parsed.clarityIssues, 'clarity'),
-      
+
       suggestions: formatSuggestions(parsed.suggestions),
-      
+
       improvedTranscription: parsed.improvedTranscription,
-      
+
       wordCount: parsed.wordCount ?? transcription.split(/\s+/).length,
       estimatedDuration: (parsed.wordCount ?? transcription.split(/\s+/).length) / 150 * 60,
       hasActionItems: parsed.hasActionItems ?? false,
       hasQuestions: parsed.hasQuestions ?? transcription.includes('?'),
-      
+
       analyzedAt: new Date(),
     };
   }
 
   // ============================================
-  // API KEY MANAGEMENT
+  // API KEY MANAGEMENT (deprecated — kept for API compatibility)
   // ============================================
 
+  /**
+   * @deprecated — the `ai-router` edge function holds provider keys
+   *   server-side. Calling this is a no-op.
+   */
   setApiKey(key: string): void {
     this.apiKey = key;
+  }
+
+  /** Set the workspace ID used for router calls. */
+  setWorkspaceId(workspaceId: string): void {
+    this.workspaceId = workspaceId;
   }
 }
 
@@ -424,11 +441,10 @@ Return JSON array of strings: ["option 1", "option 2", "option 3"]`;
 let feedbackServiceInstance: VoxerFeedbackService | null = null;
 
 export const getVoxerFeedbackService = (apiKey?: string): VoxerFeedbackService => {
-  if (!feedbackServiceInstance && apiKey) {
-    feedbackServiceInstance = new VoxerFeedbackService(apiKey);
-  }
   if (!feedbackServiceInstance) {
-    throw new Error('VoxerFeedbackService not initialized. Provide an API key.');
+    // apiKey is accepted for backward compatibility but unused; the router
+    // handles keys server-side. We accept any value (including empty).
+    feedbackServiceInstance = new VoxerFeedbackService(apiKey ?? '');
   }
   return feedbackServiceInstance;
 };

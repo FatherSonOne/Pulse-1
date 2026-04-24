@@ -1,27 +1,48 @@
 // Voxer Analysis Service
-// AI-powered analysis of voice messages: summaries, action items, sentiment, and more
+// AI-powered analysis of voice messages: summaries, action items, sentiment, and more.
+//
+// All LLM calls route through the central `ai-router` edge function which
+// handles provider selection, metering, hard caps, fallback on outage, and
+// prompt caching automatically.
 
-import { GoogleGenAI, Type } from "@google/genai";
 import {
   VoxAnalysis,
   ActionItem,
   SuggestedResponse,
-  VoxMentions,
   SentimentType,
   UrgencyLevel,
   EmotionType,
 } from './voxerTypes';
-import { withFormattedOutput, getContextualFormattingHints } from '../aiFormattingService';
+import { withFormattedOutput } from '../aiFormattingService';
+import { invokeAIJson, invokeAIPrompt } from '../ai/aiService';
+import { getCurrentWorkspaceId } from '../ai/getWorkspaceId';
 
 // ============================================
 // ANALYSIS SERVICE CLASS
 // ============================================
 
 export class VoxerAnalysisService {
+  /**
+   * @deprecated — retained for backward compatibility during migration.
+   *   The `ai-router` edge function holds the provider key server-side.
+   *   This field is unused.
+   */
   private apiKey: string;
 
-  constructor(apiKey: string) {
+  private workspaceId?: string;
+
+  constructor(apiKey: string, workspaceId?: string) {
     this.apiKey = apiKey;
+    this.workspaceId = workspaceId;
+    void this.apiKey; // silence unused-field warnings in strict TS configs
+  }
+
+  private resolveWorkspaceId(workspaceId?: string): string {
+    const wsId = workspaceId ?? this.workspaceId ?? getCurrentWorkspaceId();
+    if (!wsId) {
+      throw new Error('No active workspace — AI unavailable');
+    }
+    return wsId;
   }
 
   // ============================================
@@ -34,10 +55,11 @@ export class VoxerAnalysisService {
       senderName?: string;
       previousMessages?: string[];
       channelType?: 'direct' | 'group';
-    }
+    },
+    workspaceId?: string,
   ): Promise<VoxAnalysis> {
     const startTime = Date.now();
-    const ai = new GoogleGenAI({ apiKey: this.apiKey });
+    const wsId = this.resolveWorkspaceId(workspaceId);
 
     const contextInfo = context ? `
 Context:
@@ -101,28 +123,13 @@ Rules:
     const prompt = withFormattedOutput(basePrompt, 'voice-analysis');
 
     try {
-      const response = await ai.models.generateContent({
-        model: 'gemini-2.5-flash',
-        contents: prompt,
-        config: {
-          responseMimeType: "application/json",
-        },
-      });
-
-      const resultText = response.text || '{}';
-      let parsed: any;
-      
-      try {
-        // Try to extract JSON from response
-        const jsonMatch = resultText.match(/\{[\s\S]*\}/);
-        parsed = JSON.parse(jsonMatch ? jsonMatch[0] : resultText);
-      } catch (e) {
-        console.error('Failed to parse analysis JSON:', e);
-        parsed = {};
-      }
+      const parsed = await invokeAIJson<Record<string, unknown>>(
+        'voxer_transcript_summary',
+        prompt,
+        { workspaceId: wsId, temperature: 0.3 },
+      );
 
       const processingTime = Date.now() - startTime;
-
       return this.formatAnalysisResult(parsed, transcription, processingTime);
     } catch (error) {
       console.error('Vox analysis error:', error);
@@ -134,14 +141,17 @@ Rules:
   // QUICK ANALYSIS (Lightweight)
   // ============================================
 
-  async quickAnalyze(transcription: string): Promise<{
+  async quickAnalyze(
+    transcription: string,
+    workspaceId?: string,
+  ): Promise<{
     sentiment: SentimentType;
     urgency: UrgencyLevel;
     hasActionItems: boolean;
     hasQuestions: boolean;
     topicCount: number;
   }> {
-    const ai = new GoogleGenAI({ apiKey: this.apiKey });
+    const wsId = this.resolveWorkspaceId(workspaceId);
 
     const prompt = `Quickly analyze this voice message. Return JSON only:
 {
@@ -155,15 +165,13 @@ Rules:
 Message: "${transcription.slice(0, 500)}"`;
 
     try {
-      const response = await ai.models.generateContent({
-        model: 'gemini-2.5-flash',
-        contents: prompt,
-      });
-
-      const jsonMatch = response.text?.match(/\{[\s\S]*\}/);
-      if (jsonMatch) {
-        return JSON.parse(jsonMatch[0]);
-      }
+      return await invokeAIJson<{
+        sentiment: SentimentType;
+        urgency: UrgencyLevel;
+        hasActionItems: boolean;
+        hasQuestions: boolean;
+        topicCount: number;
+      }>('sentiment_analysis', prompt, { workspaceId: wsId, temperature: 0.2 });
     } catch (error) {
       console.error('Quick analysis error:', error);
     }
@@ -181,43 +189,45 @@ Message: "${transcription.slice(0, 500)}"`;
   // EXTRACT ACTION ITEMS ONLY
   // ============================================
 
-  async extractActionItems(transcription: string): Promise<ActionItem[]> {
-    const ai = new GoogleGenAI({ apiKey: this.apiKey });
+  async extractActionItems(
+    transcription: string,
+    workspaceId?: string,
+  ): Promise<ActionItem[]> {
+    const wsId = this.resolveWorkspaceId(workspaceId);
 
     const prompt = `Extract all action items from this message. Include both explicit ("Please do X") and implicit ("We need to X") tasks.
 
 Message: "${transcription}"
 
-Return JSON array:
-[
-  {
-    "text": "task description",
-    "assignedTo": "person or null",
-    "priority": "low|medium|high",
-    "extractedFrom": "relevant quote from message"
-  }
-]
+Return JSON with a single "items" array:
+{
+  "items": [
+    {
+      "text": "task description",
+      "assignedTo": "person or null",
+      "priority": "low|medium|high",
+      "extractedFrom": "relevant quote from message"
+    }
+  ]
+}
 
-Return ONLY the JSON array, no explanations.`;
+Return ONLY the JSON, no explanations.`;
 
     try {
-      const response = await ai.models.generateContent({
-        model: 'gemini-2.5-flash',
-        contents: prompt,
-      });
-
-      const jsonMatch = response.text?.match(/\[[\s\S]*\]/);
-      if (jsonMatch) {
-        const items = JSON.parse(jsonMatch[0]);
-        return items.map((item: any, index: number) => ({
-          id: `action-${Date.now()}-${index}`,
-          text: item.text || '',
-          assignedTo: item.assignedTo || undefined,
-          priority: item.priority || 'medium',
-          extractedFrom: item.extractedFrom,
-          completed: false,
-        }));
-      }
+      const parsed = await invokeAIJson<{ items?: Array<Record<string, unknown>> }>(
+        'voxer_transcript_summary',
+        prompt,
+        { workspaceId: wsId, temperature: 0.2 },
+      );
+      const items = parsed.items ?? [];
+      return items.map((item, index: number) => ({
+        id: `action-${Date.now()}-${index}`,
+        text: (item.text as string) || '',
+        assignedTo: (item.assignedTo as string) || undefined,
+        priority: (item.priority as 'low' | 'medium' | 'high') || 'medium',
+        extractedFrom: item.extractedFrom as string | undefined,
+        completed: false,
+      }));
     } catch (error) {
       console.error('Extract action items error:', error);
     }
@@ -231,9 +241,10 @@ Return ONLY the JSON array, no explanations.`;
 
   async generateResponses(
     transcription: string,
-    context?: { relationship?: string; previousExchange?: string }
+    context?: { relationship?: string; previousExchange?: string },
+    workspaceId?: string,
   ): Promise<SuggestedResponse[]> {
-    const ai = new GoogleGenAI({ apiKey: this.apiKey });
+    const wsId = this.resolveWorkspaceId(workspaceId);
 
     const contextInfo = context ? `
 Relationship: ${context.relationship || 'colleague'}
@@ -245,35 +256,34 @@ ${contextInfo}
 
 Message: "${transcription}"
 
-Provide diverse responses in JSON:
-[
-  {
-    "text": "response text",
-    "tone": "professional|casual|friendly|formal",
-    "intent": "acknowledge|answer|clarify|confirm|decline"
-  }
-]
+Provide diverse responses in JSON with a single "suggestions" array:
+{
+  "suggestions": [
+    {
+      "text": "response text",
+      "tone": "professional|casual|friendly|formal",
+      "intent": "acknowledge|answer|clarify|confirm|decline"
+    }
+  ]
+}
 
-Make responses natural and appropriate. Return ONLY JSON array.`;
+Make responses natural and appropriate. Return ONLY JSON.`;
 
     const prompt = withFormattedOutput(basePrompt, 'chat');
 
     try {
-      const response = await ai.models.generateContent({
-        model: 'gemini-2.5-flash',
-        contents: prompt,
-      });
-
-      const jsonMatch = response.text?.match(/\[[\s\S]*\]/);
-      if (jsonMatch) {
-        const suggestions = JSON.parse(jsonMatch[0]);
-        return suggestions.map((s: any, index: number) => ({
-          id: `resp-${Date.now()}-${index}`,
-          text: s.text || '',
-          tone: s.tone || 'professional',
-          intent: s.intent || 'acknowledge',
-        }));
-      }
+      const parsed = await invokeAIJson<{ suggestions?: Array<Record<string, unknown>> }>(
+        'quick_reply_suggestions',
+        prompt,
+        { workspaceId: wsId, temperature: 0.6 },
+      );
+      const suggestions = parsed.suggestions ?? [];
+      return suggestions.map((s, index: number) => ({
+        id: `resp-${Date.now()}-${index}`,
+        text: (s.text as string) || '',
+        tone: (s.tone as SuggestedResponse['tone']) || 'professional',
+        intent: (s.intent as SuggestedResponse['intent']) || 'acknowledge',
+      }));
     } catch (error) {
       console.error('Generate responses error:', error);
     }
@@ -286,7 +296,8 @@ Make responses natural and appropriate. Return ONLY JSON array.`;
   // ============================================
 
   async summarizeConversation(
-    messages: Array<{ sender: string; text: string; timestamp: Date }>
+    messages: Array<{ sender: string; text: string; timestamp: Date }>,
+    workspaceId?: string,
   ): Promise<{
     summary: string;
     totalActionItems: ActionItem[];
@@ -294,7 +305,7 @@ Make responses natural and appropriate. Return ONLY JSON array.`;
     keyDecisions: string[];
     nextSteps: string[];
   }> {
-    const ai = new GoogleGenAI({ apiKey: this.apiKey });
+    const wsId = this.resolveWorkspaceId(workspaceId);
 
     const formattedMessages = messages
       .map(m => `[${m.sender}]: ${m.text}`)
@@ -316,27 +327,27 @@ Return JSON:
     const prompt = withFormattedOutput(basePrompt, 'summary');
 
     try {
-      const response = await ai.models.generateContent({
-        model: 'gemini-2.5-flash',
-        contents: prompt,
-      });
+      const parsed = await invokeAIJson<{
+        summary?: string;
+        totalActionItems?: Array<Record<string, unknown>>;
+        openQuestions?: string[];
+        keyDecisions?: string[];
+        nextSteps?: string[];
+      }>('voxer_transcript_summary', prompt, { workspaceId: wsId, temperature: 0.3 });
 
-      const jsonMatch = response.text?.match(/\{[\s\S]*\}/);
-      if (jsonMatch) {
-        const parsed = JSON.parse(jsonMatch[0]);
-        return {
-          summary: parsed.summary || '',
-          totalActionItems: (parsed.totalActionItems || []).map((a: any, i: number) => ({
-            id: `action-conv-${i}`,
-            text: a.text,
-            assignedTo: a.assignedTo,
-            priority: a.priority || 'medium',
-          })),
-          openQuestions: parsed.openQuestions || [],
-          keyDecisions: parsed.keyDecisions || [],
-          nextSteps: parsed.nextSteps || [],
-        };
-      }
+      return {
+        summary: parsed.summary || '',
+        totalActionItems: (parsed.totalActionItems || []).map((a, i: number) => ({
+          id: `action-conv-${i}`,
+          text: (a.text as string) || '',
+          assignedTo: a.assignedTo as string | undefined,
+          priority: (a.priority as 'low' | 'medium' | 'high') || 'medium',
+          completed: false,
+        })),
+        openQuestions: parsed.openQuestions || [],
+        keyDecisions: parsed.keyDecisions || [],
+        nextSteps: parsed.nextSteps || [],
+      };
     } catch (error) {
       console.error('Summarize conversation error:', error);
     }
@@ -356,16 +367,17 @@ Return JSON:
 
   private formatAnalysisResult(
     parsed: any,
-    transcription: string,
-    processingTime: number
+    _transcription: string,
+    processingTime: number,
   ): VoxAnalysis {
+    void _transcription; // reserved for future enrichment
     return {
       id: `analysis-${Date.now()}`,
       voxId: '',
-      
+
       summary: parsed.summary || 'No summary available',
       keyPoints: parsed.keyPoints || [],
-      
+
       actionItems: (parsed.actionItems || []).map((a: any, i: number) => ({
         id: `action-${Date.now()}-${i}`,
         text: a.text || '',
@@ -375,10 +387,10 @@ Return JSON:
         completed: false,
         extractedFrom: a.extractedFrom,
       })),
-      
+
       questions: parsed.questions || [],
       decisions: parsed.decisions || [],
-      
+
       suggestedFollowUps: parsed.suggestedFollowUps || [],
       suggestedResponses: (parsed.suggestedResponses || []).map((s: any, i: number) => ({
         id: `resp-${Date.now()}-${i}`,
@@ -386,12 +398,12 @@ Return JSON:
         tone: s.tone || 'professional',
         intent: s.intent || 'acknowledge',
       })),
-      
+
       sentiment: (parsed.sentiment as SentimentType) || 'neutral',
       urgency: (parsed.urgency as UrgencyLevel) || 'low',
       emotion: parsed.emotion as EmotionType,
       toneDescription: parsed.toneDescription,
-      
+
       topics: parsed.topics || [],
       mentions: {
         people: parsed.mentions?.people || [],
@@ -409,18 +421,37 @@ Return JSON:
         organizations: parsed.mentions?.organizations || [],
         events: parsed.mentions?.events || [],
       },
-      
+
       analyzedAt: new Date(),
       processingTime,
     };
   }
 
   // ============================================
-  // API KEY MANAGEMENT
+  // API KEY MANAGEMENT (deprecated — kept for API compatibility)
   // ============================================
 
+  /**
+   * @deprecated — the `ai-router` edge function holds provider keys
+   *   server-side. Calling this is a no-op.
+   */
   setApiKey(key: string): void {
     this.apiKey = key;
+  }
+
+  /** Set the workspace ID used for router calls. */
+  setWorkspaceId(workspaceId: string): void {
+    this.workspaceId = workspaceId;
+  }
+
+  /** Invoke a fire-and-forget text prompt — exposed for ad-hoc callers. */
+  protected async invokeText(
+    task: Parameters<typeof invokeAIPrompt>[0],
+    prompt: string,
+    workspaceId?: string,
+  ): Promise<string> {
+    const wsId = this.resolveWorkspaceId(workspaceId);
+    return invokeAIPrompt(task, prompt, { workspaceId: wsId });
   }
 }
 
@@ -431,11 +462,10 @@ Return JSON:
 let analysisServiceInstance: VoxerAnalysisService | null = null;
 
 export const getVoxerAnalysisService = (apiKey?: string): VoxerAnalysisService => {
-  if (!analysisServiceInstance && apiKey) {
-    analysisServiceInstance = new VoxerAnalysisService(apiKey);
-  }
   if (!analysisServiceInstance) {
-    throw new Error('VoxerAnalysisService not initialized. Provide an API key.');
+    // apiKey is accepted for backward compatibility but unused; the router
+    // handles keys server-side. We accept any value (including empty).
+    analysisServiceInstance = new VoxerAnalysisService(apiKey ?? '');
   }
   return analysisServiceInstance;
 };

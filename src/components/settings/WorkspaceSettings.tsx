@@ -1,10 +1,17 @@
 import React, { useState, useRef, useEffect, useCallback } from 'react';
-import { AlertTriangle, Building2, Archive, Trash2, Camera, Loader2, ArrowRightLeft, ScrollText, Clock } from 'lucide-react';
+import { AlertTriangle, Building2, Archive, Trash2, Camera, Loader2, ArrowRightLeft, ScrollText, Clock, Globe, Briefcase, Users, Mail } from 'lucide-react';
 import toast from 'react-hot-toast';
 import { useWorkspaceData, useWorkspaceActions, useWorkspacePermissions } from '../../contexts/WorkspaceContext';
-import { workspaceService, AuditLogEntry } from '../../services/workspaceService';
+import { workspaceService, AuditLogEntry, OrgSizeBucket } from '../../services/workspaceService';
 import { DeleteWorkspaceDialog } from './DeleteWorkspaceDialog';
 import { supabase } from '../../services/supabase';
+
+const SIZE_OPTIONS: { value: OrgSizeBucket; label: string }[] = [
+  { value: '1-10',   label: '1–10' },
+  { value: '11-50',  label: '11–50' },
+  { value: '51-200', label: '51–200' },
+  { value: '200+',   label: '200+' },
+];
 
 export const WorkspaceSettings: React.FC = () => {
   const { currentWorkspace, members } = useWorkspaceData();
@@ -17,9 +24,30 @@ export const WorkspaceSettings: React.FC = () => {
   // Edit state
   const [name, setName] = useState(currentWorkspace?.name ?? '');
   const [description, setDescription] = useState(currentWorkspace?.description ?? '');
+  const [legalName, setLegalName] = useState(currentWorkspace?.legal_name ?? '');
+  const [industry, setIndustry] = useState(currentWorkspace?.industry ?? '');
+  const [sizeBucket, setSizeBucket] = useState<OrgSizeBucket | ''>(currentWorkspace?.size_bucket ?? '');
+  const [billingEmail, setBillingEmail] = useState(currentWorkspace?.billing_email ?? '');
+  const [autoJoinDomain, setAutoJoinDomain] = useState(currentWorkspace?.auto_join_domain ?? '');
+  const [autoJoinEnabled, setAutoJoinEnabled] = useState(currentWorkspace?.auto_join_enabled ?? false);
+  const [isSavingMembership, setIsSavingMembership] = useState(false);
+  const [isSavingBilling, setIsSavingBilling] = useState(false);
   const [isSaving, setIsSaving] = useState(false);
   const [isUploadingAvatar, setIsUploadingAvatar] = useState(false);
   const avatarInputRef = useRef<HTMLInputElement>(null);
+
+  // Sync local form state when the active workspace changes.
+  useEffect(() => {
+    if (!currentWorkspace) return;
+    setName(currentWorkspace.name ?? '');
+    setDescription(currentWorkspace.description ?? '');
+    setLegalName(currentWorkspace.legal_name ?? '');
+    setIndustry(currentWorkspace.industry ?? '');
+    setSizeBucket(currentWorkspace.size_bucket ?? '');
+    setBillingEmail(currentWorkspace.billing_email ?? '');
+    setAutoJoinDomain(currentWorkspace.auto_join_domain ?? '');
+    setAutoJoinEnabled(currentWorkspace.auto_join_enabled ?? false);
+  }, [currentWorkspace?.id]);
 
   // Transfer state
   const [showTransfer, setShowTransfer] = useState(false);
@@ -51,7 +79,7 @@ export const WorkspaceSettings: React.FC = () => {
   if (!currentWorkspace) {
     return (
       <div className="text-zinc-500 dark:text-zinc-400 text-sm p-6">
-        No workspace selected.
+        No organization selected.
       </div>
     );
   }
@@ -97,7 +125,7 @@ export const WorkspaceSettings: React.FC = () => {
 
   const handleSave = async () => {
     if (!name.trim()) {
-      toast.error('Workspace name is required');
+      toast.error('Organization name is required');
       return;
     }
     setIsSaving(true);
@@ -105,13 +133,61 @@ export const WorkspaceSettings: React.FC = () => {
       await updateWorkspace(currentWorkspace.id, {
         name: name.trim(),
         description: description.trim() || null,
+        legal_name: legalName.trim() || null,
+        industry: industry.trim() || null,
+        size_bucket: sizeBucket || null,
       });
-      toast.success('Workspace updated');
+      toast.success('Organization updated');
     } catch (err: unknown) {
-      const msg = err instanceof Error ? err.message : 'Failed to update workspace';
+      const msg = err instanceof Error ? err.message : 'Failed to update organization';
       toast.error(msg);
     } finally {
       setIsSaving(false);
+    }
+  };
+
+  const handleSaveMembership = async () => {
+    const normalizedDomain = autoJoinDomain.trim().toLowerCase().replace(/^@/, '');
+    if (autoJoinEnabled && !normalizedDomain) {
+      toast.error('Enter a domain to enable auto-join');
+      return;
+    }
+    if (normalizedDomain && !/^[a-z0-9]([a-z0-9-]{0,61}[a-z0-9])?(\.[a-z0-9]([a-z0-9-]{0,61}[a-z0-9])?)+$/.test(normalizedDomain)) {
+      toast.error('Enter a valid domain (e.g., acme.com)');
+      return;
+    }
+    setIsSavingMembership(true);
+    try {
+      await updateWorkspace(currentWorkspace.id, {
+        auto_join_domain: normalizedDomain || null,
+        auto_join_enabled: !!normalizedDomain && autoJoinEnabled,
+      });
+      toast.success('Membership policy updated');
+    } catch (err: unknown) {
+      const msg = err instanceof Error ? err.message : 'Failed to update membership policy';
+      toast.error(msg);
+    } finally {
+      setIsSavingMembership(false);
+    }
+  };
+
+  const handleSaveBilling = async () => {
+    const trimmed = billingEmail.trim();
+    if (trimmed && !/^[^\s@]+@[^\s@]+\.[^\s@]+$/.test(trimmed)) {
+      toast.error('Enter a valid email address');
+      return;
+    }
+    setIsSavingBilling(true);
+    try {
+      await updateWorkspace(currentWorkspace.id, {
+        billing_email: trimmed || null,
+      });
+      toast.success('Billing contact updated');
+    } catch (err: unknown) {
+      const msg = err instanceof Error ? err.message : 'Failed to update billing contact';
+      toast.error(msg);
+    } finally {
+      setIsSavingBilling(false);
     }
   };
 
@@ -119,19 +195,19 @@ export const WorkspaceSettings: React.FC = () => {
     if (!deleteMode) return;
     setIsDeleting(true);
     const toastId = toast.loading(
-      deleteMode === 'soft' ? 'Archiving workspace...' : 'Permanently deleting workspace...',
+      deleteMode === 'soft' ? 'Archiving organization...' : 'Permanently deleting organization...',
     );
     try {
       if (deleteMode === 'soft') {
         await softDeleteWorkspace(currentWorkspace.id);
-        toast.success('Workspace archived. You have 30 days to restore it.', { id: toastId });
+        toast.success('Organization archived. You have 30 days to restore it.', { id: toastId });
       } else {
         await hardDeleteWorkspace(currentWorkspace.id);
-        toast.success('Workspace permanently deleted.', { id: toastId });
+        toast.success('Organization permanently deleted.', { id: toastId });
       }
       setDeleteMode(null);
     } catch (err: unknown) {
-      const msg = err instanceof Error ? err.message : 'Failed to delete workspace';
+      const msg = err instanceof Error ? err.message : 'Failed to delete organization';
       toast.error(msg, { id: toastId });
     } finally {
       setIsDeleting(false);
@@ -164,14 +240,14 @@ export const WorkspaceSettings: React.FC = () => {
 
   return (
     <div className="space-y-8 max-w-2xl">
-      {/* Workspace info */}
+      {/* Organization info */}
       <div>
         <h3 className="text-lg font-bold text-zinc-900 dark:text-white mb-1 flex items-center gap-2">
           <Building2 className="w-5 h-5 text-rose-500" />
-          Workspace
+          Organization
         </h3>
         <p className="text-sm text-zinc-500 dark:text-zinc-400">
-          Manage your workspace name, description, and lifecycle.
+          Your organization profile, membership policy, and lifecycle.
         </p>
       </div>
 
@@ -212,17 +288,30 @@ export const WorkspaceSettings: React.FC = () => {
           </div>
           <div>
             <p className="text-sm font-bold text-zinc-900 dark:text-white">{currentWorkspace.name}</p>
-            <p className="text-xs text-zinc-500">{currentWorkspace.slug ? `slug: ${currentWorkspace.slug}` : 'Workspace'}</p>
+            <p className="text-xs text-zinc-500">{currentWorkspace.slug ? `slug: ${currentWorkspace.slug}` : 'Organization'}</p>
           </div>
         </div>
 
         <div>
-          <label className="block text-sm font-medium text-zinc-700 dark:text-zinc-300 mb-1">Name</label>
+          <label className="block text-sm font-medium text-zinc-700 dark:text-zinc-300 mb-1">Organization name</label>
           <input
             type="text"
             value={name}
             onChange={(e) => setName(e.target.value)}
             disabled={!isAdmin}
+            maxLength={80}
+            className="w-full px-3 py-2 text-sm border border-zinc-300 dark:border-zinc-700 rounded-lg bg-white dark:bg-zinc-800 text-zinc-900 dark:text-white disabled:opacity-50 focus:outline-none focus:ring-2 focus:ring-rose-500/50"
+          />
+        </div>
+        <div>
+          <label className="block text-sm font-medium text-zinc-700 dark:text-zinc-300 mb-1">Legal name <span className="text-xs text-zinc-400 font-normal">(optional)</span></label>
+          <input
+            type="text"
+            value={legalName}
+            onChange={(e) => setLegalName(e.target.value)}
+            disabled={!isAdmin}
+            placeholder="e.g., Acme Incorporated"
+            maxLength={120}
             className="w-full px-3 py-2 text-sm border border-zinc-300 dark:border-zinc-700 rounded-lg bg-white dark:bg-zinc-800 text-zinc-900 dark:text-white disabled:opacity-50 focus:outline-none focus:ring-2 focus:ring-rose-500/50"
           />
         </div>
@@ -236,12 +325,51 @@ export const WorkspaceSettings: React.FC = () => {
             className="w-full px-3 py-2 text-sm border border-zinc-300 dark:border-zinc-700 rounded-lg bg-white dark:bg-zinc-800 text-zinc-900 dark:text-white disabled:opacity-50 resize-none focus:outline-none focus:ring-2 focus:ring-rose-500/50"
           />
         </div>
+        <div className="grid grid-cols-1 sm:grid-cols-2 gap-3">
+          <div>
+            <label className="block text-sm font-medium text-zinc-700 dark:text-zinc-300 mb-1 flex items-center gap-1.5">
+              <Briefcase className="w-3.5 h-3.5 text-zinc-400" /> Industry
+            </label>
+            <input
+              type="text"
+              value={industry}
+              onChange={(e) => setIndustry(e.target.value)}
+              disabled={!isAdmin}
+              placeholder="e.g., Media, SaaS, Consulting"
+              maxLength={60}
+              className="w-full px-3 py-2 text-sm border border-zinc-300 dark:border-zinc-700 rounded-lg bg-white dark:bg-zinc-800 text-zinc-900 dark:text-white disabled:opacity-50 focus:outline-none focus:ring-2 focus:ring-rose-500/50"
+            />
+          </div>
+          <div>
+            <label className="block text-sm font-medium text-zinc-700 dark:text-zinc-300 mb-1 flex items-center gap-1.5">
+              <Users className="w-3.5 h-3.5 text-zinc-400" /> Team size
+            </label>
+            <select
+              value={sizeBucket}
+              onChange={(e) => setSizeBucket(e.target.value as OrgSizeBucket | '')}
+              disabled={!isAdmin}
+              aria-label="Team size"
+              className="w-full px-3 py-2 text-sm border border-zinc-300 dark:border-zinc-700 rounded-lg bg-white dark:bg-zinc-800 text-zinc-900 dark:text-white disabled:opacity-50 focus:outline-none focus:ring-2 focus:ring-rose-500/50"
+            >
+              <option value="">Select size...</option>
+              {SIZE_OPTIONS.map(o => (
+                <option key={o.value} value={o.value}>{o.label}</option>
+              ))}
+            </select>
+          </div>
+        </div>
         {isAdmin && (
           <div className="flex justify-end">
             <button
               type="button"
               onClick={handleSave}
-              disabled={isSaving || (name.trim() === currentWorkspace.name && (description.trim() || '') === (currentWorkspace.description || ''))}
+              disabled={isSaving || (
+                name.trim() === (currentWorkspace.name ?? '') &&
+                (description.trim() || '') === (currentWorkspace.description || '') &&
+                (legalName.trim() || '') === (currentWorkspace.legal_name || '') &&
+                (industry.trim() || '') === (currentWorkspace.industry || '') &&
+                (sizeBucket || '') === (currentWorkspace.size_bucket || '')
+              )}
               className="px-4 py-2 text-sm font-semibold text-white bg-rose-500 hover:bg-rose-600 rounded-lg transition disabled:opacity-40 disabled:cursor-not-allowed"
             >
               {isSaving ? 'Saving...' : 'Save Changes'}
@@ -249,6 +377,90 @@ export const WorkspaceSettings: React.FC = () => {
           </div>
         )}
       </div>
+
+      {/* Membership policy — admin+ */}
+      {isAdmin && (
+        <div className="bg-white dark:bg-zinc-900 border border-zinc-200 dark:border-zinc-800 rounded-xl p-6 space-y-4">
+          <div className="flex items-center gap-2">
+            <Globe className="w-4 h-4 text-zinc-500" />
+            <h4 className="text-sm font-bold text-zinc-900 dark:text-white">Membership policy</h4>
+          </div>
+          <p className="text-xs text-zinc-500 dark:text-zinc-400">
+            When enabled, anyone signing up with this email domain automatically joins your organization as a Member.
+          </p>
+
+          <div>
+            <label className="block text-sm font-medium text-zinc-700 dark:text-zinc-300 mb-1">Auto-join domain</label>
+            <input
+              type="text"
+              value={autoJoinDomain}
+              onChange={(e) => setAutoJoinDomain(e.target.value)}
+              placeholder="acme.com"
+              autoComplete="off"
+              className="w-full px-3 py-2 text-sm border border-zinc-300 dark:border-zinc-700 rounded-lg bg-white dark:bg-zinc-800 text-zinc-900 dark:text-white focus:outline-none focus:ring-2 focus:ring-rose-500/50"
+            />
+            <p className="text-[11px] text-zinc-400 mt-1">No "@" — just the domain.</p>
+          </div>
+
+          <label className="flex items-center gap-3 cursor-pointer select-none">
+            <input
+              type="checkbox"
+              checked={autoJoinEnabled}
+              onChange={(e) => setAutoJoinEnabled(e.target.checked)}
+              className="w-4 h-4 text-rose-500 border-zinc-300 rounded focus:ring-rose-500"
+            />
+            <span className="text-sm text-zinc-700 dark:text-zinc-300">Enable auto-join for this domain</span>
+          </label>
+
+          <div className="flex justify-end">
+            <button
+              type="button"
+              onClick={handleSaveMembership}
+              disabled={isSavingMembership || (
+                (autoJoinDomain.trim().toLowerCase().replace(/^@/, '')) === (currentWorkspace.auto_join_domain || '') &&
+                autoJoinEnabled === (currentWorkspace.auto_join_enabled ?? false)
+              )}
+              className="px-4 py-2 text-sm font-semibold text-white bg-rose-500 hover:bg-rose-600 rounded-lg transition disabled:opacity-40 disabled:cursor-not-allowed"
+            >
+              {isSavingMembership ? 'Saving...' : 'Save Policy'}
+            </button>
+          </div>
+        </div>
+      )}
+
+      {/* Billing contact — admin+ */}
+      {isAdmin && (
+        <div className="bg-white dark:bg-zinc-900 border border-zinc-200 dark:border-zinc-800 rounded-xl p-6 space-y-4">
+          <div className="flex items-center gap-2">
+            <Mail className="w-4 h-4 text-zinc-500" />
+            <h4 className="text-sm font-bold text-zinc-900 dark:text-white">Billing contact</h4>
+          </div>
+          <p className="text-xs text-zinc-500 dark:text-zinc-400">
+            Where invoices, receipts, and payment notices are sent. Defaults to the owner's email if empty.
+          </p>
+          <div>
+            <label className="block text-sm font-medium text-zinc-700 dark:text-zinc-300 mb-1">Billing email</label>
+            <input
+              type="email"
+              value={billingEmail}
+              onChange={(e) => setBillingEmail(e.target.value)}
+              placeholder="billing@acme.com"
+              autoComplete="off"
+              className="w-full px-3 py-2 text-sm border border-zinc-300 dark:border-zinc-700 rounded-lg bg-white dark:bg-zinc-800 text-zinc-900 dark:text-white focus:outline-none focus:ring-2 focus:ring-rose-500/50"
+            />
+          </div>
+          <div className="flex justify-end">
+            <button
+              type="button"
+              onClick={handleSaveBilling}
+              disabled={isSavingBilling || (billingEmail.trim() === (currentWorkspace.billing_email || ''))}
+              className="px-4 py-2 text-sm font-semibold text-white bg-rose-500 hover:bg-rose-600 rounded-lg transition disabled:opacity-40 disabled:cursor-not-allowed"
+            >
+              {isSavingBilling ? 'Saving...' : 'Save Contact'}
+            </button>
+          </div>
+        </div>
+      )}
 
       {/* Transfer Ownership — owner only */}
       {isOwner && nonOwnerMembers.length > 0 && (
@@ -353,7 +565,7 @@ export const WorkspaceSettings: React.FC = () => {
           </div>
 
           <p className="text-xs text-red-600/80 dark:text-red-400/80">
-            Archiving hides the workspace from all members. The owner has 30 days to restore it before
+            Archiving hides the organization from all members. The owner has 30 days to restore it before
             data becomes eligible for permanent deletion.
           </p>
 
@@ -364,7 +576,7 @@ export const WorkspaceSettings: React.FC = () => {
               className="flex items-center gap-2 px-4 py-2 text-sm font-semibold border border-amber-300 dark:border-amber-700 text-amber-700 dark:text-amber-400 rounded-lg hover:bg-amber-50 dark:hover:bg-amber-900/20 transition"
             >
               <Archive className="w-4 h-4" />
-              Archive Workspace
+              Archive Organization
             </button>
 
             {isOwner && (

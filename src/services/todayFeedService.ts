@@ -118,7 +118,9 @@ function alertToFeedItem(alert: RelationshipAlert, userId: string): TodayFeedIte
   const contactId = profile?.id ?? alert.profileId ?? '';
 
   return {
-    id: `alert_${alert.id}`,
+    // Pure UUID so Postgres accepts the INSERT. The original alert id lives in
+    // metadata.sourceAlertId and drives deduplication on subsequent pulls.
+    id: crypto.randomUUID(),
     userId,
     contactId,
     contactName:  profile?.contactName ?? 'Unknown',
@@ -218,7 +220,8 @@ function goalToFeedItem(
 ): TodayFeedItem {
   const channel = goal.channel === 'any' ? 'message' : goal.channel;
   return {
-    id: `autopilot_${goal.id}`,
+    // Pure UUID — dedup tracked via metadata.sourceGoalId below.
+    id: crypto.randomUUID(),
     userId: goal.userId,
     contactId: goal.contactId,
     contactName: contact.name,
@@ -249,15 +252,15 @@ function goalToFeedItem(
 export function buildAutopilotFeedItems(
   goals: ContactGoal[],
   contacts: Contact[],
-  existingItemIds: Set<string>
+  existingSourceGoalIds: Set<string>,
 ): TodayFeedItem[] {
   const contactMap = new Map(contacts.map(c => [c.id, c]));
   const now = new Date();
   const items: TodayFeedItem[] = [];
 
   for (const goal of goals) {
-    const itemId = `autopilot_${goal.id}`;
-    if (existingItemIds.has(itemId)) continue;
+    // Dedup by the original goal id (stored in metadata.sourceGoalId on existing rows).
+    if (existingSourceGoalIds.has(goal.id)) continue;
     if (!goal.autopilotEnabled) continue;
     if (new Date(goal.nextActionAt) > now) continue;
 
@@ -291,7 +294,19 @@ export async function generateTodayFeed(userId: string): Promise<TodayFeedItem[]
       existingItems = loadFromLocalStorage(userId);
     }
 
-    const existingIds = new Set(existingItems.map(i => i.id));
+    // Dedup by source IDs stored in metadata. Row `id` is a random UUID on every
+    // insert — it's only used as the primary key. The stable identity of an item
+    // is `metadata.sourceAlertId` (for alerts) or `metadata.sourceGoalId` (for autopilot).
+    const existingSourceAlertIds = new Set(
+      existingItems
+        .map(i => i.metadata?.sourceAlertId as string | undefined)
+        .filter((x): x is string => !!x),
+    );
+    const existingSourceGoalIds = new Set(
+      existingItems
+        .map(i => i.metadata?.sourceGoalId as string | undefined)
+        .filter((x): x is string => !!x),
+    );
 
     // 2. Fetch relationship alerts and convert to feed items
     relationshipAlertService.setUserId(userId);
@@ -299,8 +314,7 @@ export async function generateTodayFeed(userId: string): Promise<TodayFeedItem[]
     const newItems: TodayFeedItem[] = [];
 
     for (const alert of alerts) {
-      const feedId = `alert_${alert.id}`;
-      if (!existingIds.has(feedId)) {
+      if (!existingSourceAlertIds.has(alert.id)) {
         newItems.push(alertToFeedItem(alert, userId));
       }
     }

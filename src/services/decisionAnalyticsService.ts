@@ -1,14 +1,33 @@
-import { GoogleGenAI } from "@google/genai";
 import type { DecisionWithVotes } from "./decisionService";
 import { Contact } from "../types";
+import { invokeAIJson } from "./ai/aiService";
+import { getCurrentWorkspaceId } from "./ai/getWorkspaceId";
+import {
+  AICapExceededError,
+  AITrialExpiredError,
+  AIProviderUnavailableError,
+  AIRouterError,
+} from "./ai/errors";
 
 // ---------------------------------------------------------------------------
 // Rate-limit helpers
 // ---------------------------------------------------------------------------
 
-/** True when an error looks like a Gemini 429 / quota-exhausted response. */
+/**
+ * True when a router error is a cap / trial / provider-outage sentinel that
+ * callers should treat as "AI currently unavailable" rather than a hard bug.
+ * Mirrors the old Gemini 429 / RESOURCE_EXHAUSTED path.
+ */
 function isRateLimitError(error: unknown): boolean {
   if (!error) return false;
+  if (error instanceof AICapExceededError) return true;
+  if (error instanceof AITrialExpiredError) return true;
+  if (error instanceof AIProviderUnavailableError) return true;
+  if (error instanceof AIRouterError) {
+    return error.code === 'cap_exceeded'
+      || error.code === 'trial_expired'
+      || error.code === 'provider_unavailable';
+  }
   const msg = String((error as { message?: string })?.message ?? error);
   return msg.includes('429') || msg.includes('RESOURCE_EXHAUSTED') || msg.includes('quota');
 }
@@ -192,14 +211,26 @@ export const decisionAnalyticsService = {
    * AI-powered risk assessment for a decision.
    *
    * Results are cached per (decisionId + voteCount) so repeated mounts of the
-   * same card don't re-hit the API.  On 429 / quota errors the method returns a
-   * rate-limited sentinel without logging an error (the caller can check
-   * `confidence === -1` to distinguish "quota exhausted" from real failures).
+   * same card don't re-hit the API.  On cap / trial / provider errors the
+   * method returns a rate-limited sentinel without logging an error (the
+   * caller can check `confidence === -1` to distinguish "quota exhausted"
+   * from real failures).
+   *
+   * Routes through `ai-router` → Claude Haiku (quality matters for risk).
+   *
+   * @param decision The decision to assess.
+   * @param apiKey DEPRECATED — unused. Router handles keys server-side.
+   *   Retained for backward compatibility during migration.
+   * @param workspaceId Optional workspace override. Falls back to
+   *   `getCurrentWorkspaceId()`.
    */
   async assessDecisionRisk(
     decision: DecisionWithVotes,
-    apiKey: string
+    apiKey: string | undefined,
+    workspaceId?: string,
   ): Promise<RiskAssessment> {
+    void apiKey; // deprecated — router handles keys server-side
+
     const voteData = decision.votes || [];
     const cacheKey = `${decision.id}:${voteData.length}`;
 
@@ -234,22 +265,28 @@ Return JSON with:
   "confidence": 0-100
 }`;
 
+    const wsId = workspaceId ?? getCurrentWorkspaceId();
+    if (!wsId) {
+      // No workspace — return safe default rather than throwing, matching the
+      // original behaviour where a missing API key yielded a soft fallback.
+      return {
+        riskLevel: 'low',
+        reasoning: 'No active workspace — risk assessment unavailable',
+        recommendations: ['Select a workspace to enable AI risk analysis'],
+        confidence: 0,
+      };
+    }
+
     const maxRetries = 2;
     const baseDelayMs = 2000;
 
     for (let attempt = 0; attempt <= maxRetries; attempt++) {
       try {
-        const ai = new GoogleGenAI({ apiKey });
-        const response = await ai.models.generateContent({
-          model: 'gemini-2.5-flash',
-          contents: prompt,
-          config: {
-            temperature: 0.3,
-            responseMimeType: 'application/json',
-          },
-        });
-
-        const result: RiskAssessment = JSON.parse(response.text);
+        const result = await invokeAIJson<RiskAssessment>(
+          'decision_risk_analysis',
+          prompt,
+          { workspaceId: wsId, temperature: 0.3 },
+        );
         riskCache.set(cacheKey, result);
         return result;
       } catch (error) {
@@ -263,7 +300,7 @@ Return JSON with:
           const rateLimited: RiskAssessment = {
             riskLevel: 'low',
             reasoning: 'AI quota exceeded — assessment unavailable',
-            recommendations: ['Check your Gemini API quota at https://ai.dev/rate-limit'],
+            recommendations: ['AI message cap reached for this workspace. Try again after the cap resets, or upgrade your plan.'],
             confidence: -1,
           };
           return rateLimited;
@@ -289,16 +326,25 @@ Return JSON with:
   },
 
   /**
-   * Identify suggested stakeholders for a decision based on content
+   * Identify suggested stakeholders for a decision based on content.
+   *
+   * Routes through `ai-router` using `decision_risk_analysis` (context /
+   * stakeholder analysis routes to the same Claude Haiku path as risk).
+   *
+   * @param decision The decision needing stakeholders.
+   * @param contacts Available contacts to choose from.
+   * @param apiKey DEPRECATED — unused. Router handles keys server-side.
+   * @param workspaceId Optional workspace override.
    */
   async identifyStakeholders(
     decision: DecisionWithVotes,
     contacts: Contact[],
-    apiKey: string
+    apiKey: string | undefined,
+    workspaceId?: string,
   ): Promise<string[]> {
-    try {
-      const ai = new GoogleGenAI({ apiKey });
+    void apiKey; // deprecated — router handles keys server-side
 
+    try {
       const contactNames = contacts.map(c => c.name).join(', ');
       const prompt = `Based on this decision, identify which stakeholders should be involved:
 
@@ -309,17 +355,15 @@ Available contacts: ${contactNames}
 
 Return JSON array of contact names who should be involved: ["name1", "name2"]`;
 
-      const response = await ai.models.generateContent({
-        model: 'gemini-2.5-flash',
-        contents: prompt,
-        config: {
-          temperature: 0.3,
-          responseMimeType: 'application/json',
-        },
-      });
+      const wsId = workspaceId ?? getCurrentWorkspaceId();
+      if (!wsId) return [];
 
-      const result = JSON.parse(response.text);
-      return Array.isArray(result) ? result : [];
+      const result = await invokeAIJson<unknown>(
+        'decision_risk_analysis',
+        prompt,
+        { workspaceId: wsId, temperature: 0.3 },
+      );
+      return Array.isArray(result) ? (result as string[]) : [];
     } catch (error) {
       console.error('Stakeholder identification failed:', error);
       return [];
@@ -327,20 +371,31 @@ Return JSON array of contact names who should be involved: ["name1", "name2"]`;
   },
 
   /**
-   * Generate AI insights summary for decisions
+   * Generate AI insights summary for decisions.
+   *
+   * Routes through `ai-router` using `rag_query` — this is a metric-narration
+   * task (summarise + trends + recommendations) rather than a risk judgment,
+   * so the lighter RAG-tier model is appropriate.
+   *
+   * @param metrics Computed decision metrics.
+   * @param decisions Raw decision list (reserved for future use).
+   * @param apiKey DEPRECATED — unused. Router handles keys server-side.
+   * @param workspaceId Optional workspace override.
    */
   async generateInsightsSummary(
     metrics: DecisionMetrics,
     decisions: DecisionWithVotes[],
-    apiKey: string
+    apiKey: string | undefined,
+    workspaceId?: string,
   ): Promise<{
     summary: string;
     trends: string[];
     recommendations: string[];
   }> {
-    try {
-      const ai = new GoogleGenAI({ apiKey });
+    void apiKey; // deprecated — router handles keys server-side
+    void decisions; // reserved — prompt uses metrics only today
 
+    try {
       const prompt = `Analyze these decision metrics and provide insights:
 
 Metrics:
@@ -362,16 +417,24 @@ Return JSON:
   "recommendations": ["rec1", "rec2"]
 }`;
 
-      const response = await ai.models.generateContent({
-        model: 'gemini-2.5-flash',
-        contents: prompt,
-        config: {
-          temperature: 0.4,
-          responseMimeType: 'application/json',
-        },
-      });
+      const wsId = workspaceId ?? getCurrentWorkspaceId();
+      if (!wsId) {
+        return {
+          summary: 'Decision analytics are being calculated.',
+          trends: [],
+          recommendations: [],
+        };
+      }
 
-      const result = JSON.parse(response.text);
+      const result = await invokeAIJson<{
+        summary: string;
+        trends: string[];
+        recommendations: string[];
+      }>(
+        'rag_query',
+        prompt,
+        { workspaceId: wsId, temperature: 0.4 },
+      );
       return result;
     } catch (error) {
       console.error('Insights generation failed:', error);

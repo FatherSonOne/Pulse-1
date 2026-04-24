@@ -47,7 +47,6 @@ interface WorkspaceState {
     claude: string;
     assembly: string;
     elevenlabs: string;
-    perplexity: string;
     mapbox: string;
   };
 
@@ -77,13 +76,13 @@ export const WorkspaceProvider: React.FC<{ children: ReactNode }> = ({ children 
   const [isLoadingTeamData, setIsLoadingTeamData] = useState(false);
 
   // Load API keys from localStorage/env
+  // gemini: router handles key server-side, callers just receive '' and pass through
   const apiKeys = {
-    gemini: import.meta.env.VITE_API_KEY || import.meta.env.VITE_GEMINI_API_KEY || '',
+    gemini: '',
     openai: localStorage.getItem('openai_api_key') || '',
     claude: localStorage.getItem('claude_api_key') || '',
     assembly: localStorage.getItem('assemblyai_api_key') || '',
     elevenlabs: localStorage.getItem('elevenlabs_api_key') || '',
-    perplexity: localStorage.getItem('perplexity_api_key') || import.meta.env.VITE_PERPLEXITY_API_KEY || '',
     mapbox: localStorage.getItem('mapbox_api_key') || '',
   };
 

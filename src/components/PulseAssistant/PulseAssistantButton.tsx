@@ -97,6 +97,8 @@ export const PulseAssistantButton: React.FC<PulseAssistantButtonProps> = ({
 
           {/* ── Glowing dot at the leading edge — hot rose-pink ── */}
           <motion.circle
+            cx={DOT_KX[0]}
+            cy={DOT_KY[0]}
             r="3.2"
             fill="#ff7096"
             filter="url(#pa-ecg-dot-glow)"

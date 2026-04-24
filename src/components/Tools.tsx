@@ -13,23 +13,21 @@ import {
 import { blobToBase64 } from '../services/audioService';
 import { transcribeAudio, generateMeetingInsights } from '../services/assemblyService';
 import { generateSpeech as generateElevenLabsSpeech, getVoices } from '../services/elevenLabsService';
-import { searchPerplexity } from '../services/perplexityService';
 import { geocodeAddress, getStaticMapUrl, getNavigationRoute } from '../services/mapboxService';
 import { generateWithFallback, AIProvider } from '../services/unifiedAIService';
 
-import { ArrowLeft, ArrowRight, BarChart3, Bot, CloudUpload, Code, Copy, Download, Eye, FileAudio, Film, Flag, FlaskConical, Image, Lightbulb, Link, Loader2, MapPin, Mic, Play, Podcast, Quote, Route, Users, Volume2, Wand2, Zap } from 'lucide-react';
+import { ArrowLeft, ArrowRight, Bot, CloudUpload, Code, Copy, Download, Eye, FileAudio, Film, Flag, FlaskConical, Image, Lightbulb, Loader2, MapPin, Mic, Play, Podcast, Quote, Route, Users, Volume2, Wand2, Zap } from 'lucide-react';
 
 interface ToolsProps {
   apiKey: string;
   assemblyKey?: string;
   elevenLabsKey?: string;
-  perplexityKey?: string;
   mapboxKey?: string;
   openaiKey?: string;
   claudeKey?: string;
 }
 
-type ToolId = 'reason' | 'video' | 'video_gen' | 'transcribe' | 'code' | 'vision' | 'image_edit' | 'maps' | 'meeting_intel' | 'voice_studio' | 'deep_search' | 'route_planner' | 'ai_assistant' | null;
+type ToolId = 'reason' | 'video' | 'video_gen' | 'transcribe' | 'code' | 'vision' | 'image_edit' | 'maps' | 'meeting_intel' | 'voice_studio' | 'route_planner' | 'ai_assistant' | null;
 
 interface ToolTileConfig {
   id: ToolId;
@@ -135,15 +133,6 @@ const TOOL_TILES: ToolTileConfig[] = [
     partner: 'ElevenLabs'
   },
   {
-    id: 'deep_search',
-    icon: 'fa-magnifying-glass-chart',
-    label: 'Deep Search',
-    description: 'Real-time web research with citations',
-    color: 'sky',
-    gradient: 'from-sky-500 to-blue-600',
-    partner: 'Perplexity'
-  },
-  {
     id: 'route_planner',
     icon: 'fa-route',
     label: 'Route Planner',
@@ -163,7 +152,7 @@ const TOOL_TILES: ToolTileConfig[] = [
   },
 ];
 
-const Tools: React.FC<ToolsProps> = ({ apiKey, assemblyKey, elevenLabsKey, perplexityKey, mapboxKey, openaiKey, claudeKey }) => {
+const Tools: React.FC<ToolsProps> = ({ apiKey, assemblyKey, elevenLabsKey, mapboxKey, openaiKey, claudeKey }) => {
   const [activeTool, setActiveTool] = useState<ToolId>(null);
   
   // Reason State
@@ -233,12 +222,6 @@ const Tools: React.FC<ToolsProps> = ({ apiKey, assemblyKey, elevenLabsKey, perpl
   const [isGeneratingSpeech, setIsGeneratingSpeech] = useState(false);
   const [selectedVoice, setSelectedVoice] = useState('21m00Tcm4TlvDq8ikWAM');
   const [availableVoices, setAvailableVoices] = useState<any[]>([]);
-
-  // Deep Search State (Perplexity)
-  const [searchQuery, setSearchQuery] = useState('');
-  const [searchResult, setSearchResult] = useState('');
-  const [searchCitations, setSearchCitations] = useState<string[]>([]);
-  const [isSearching, setIsSearching] = useState(false);
 
   // Route Planner State (Mapbox)
   const [startAddress, setStartAddress] = useState('');
@@ -492,23 +475,6 @@ const Tools: React.FC<ToolsProps> = ({ apiKey, assemblyKey, elevenLabsKey, perpl
     } catch (e) {
       console.error(e);
     }
-  };
-
-  // Deep Search Handler (Perplexity)
-  const handleDeepSearch = async () => {
-    if (!searchQuery.trim() || !perplexityKey) return;
-    setIsSearching(true);
-    setSearchResult('');
-    setSearchCitations([]);
-    try {
-      const { text, citations } = await searchPerplexity(perplexityKey, searchQuery);
-      setSearchResult(text);
-      setSearchCitations(citations);
-    } catch (e) {
-      console.error(e);
-      setSearchResult("Error searching. Check your API key.");
-    }
-    setIsSearching(false);
   };
 
   // Route Planner Handler (Mapbox)
@@ -1243,66 +1209,6 @@ const Tools: React.FC<ToolsProps> = ({ apiKey, assemblyKey, elevenLabsKey, perpl
                     <Download /> Download
                   </a>
                 </div>
-              </div>
-            )}
-          </div>
-        )}
-
-        {/* Deep Search (Perplexity) */}
-        {activeTool === 'deep_search' && (
-          <div className="max-w-3xl mx-auto space-y-6 animate-slide-up">
-            <div className="bg-white dark:bg-zinc-900 p-6 rounded-2xl border border-zinc-200 dark:border-zinc-800 shadow-sm">
-              <div className="flex gap-2">
-                <input 
-                  type="text" 
-                  className="flex-1 bg-zinc-50 dark:bg-zinc-950 border border-zinc-200 dark:border-zinc-800 rounded-xl px-4 py-3 text-sm dark:text-white text-zinc-900 focus:outline-none focus:border-sky-500 transition"
-                  placeholder="Research any topic with real-time web data..."
-                  value={searchQuery}
-                  onChange={(e) => setSearchQuery(e.target.value)}
-                  onKeyDown={(e) => e.key === 'Enter' && handleDeepSearch()}
-                />
-                <button 
-                  onClick={handleDeepSearch}
-                  disabled={isSearching || !searchQuery.trim() || !perplexityKey}
-                  className="bg-sky-500 hover:bg-sky-400 text-white px-6 rounded-xl font-bold uppercase tracking-widest text-xs transition shadow-lg shadow-sky-500/20 disabled:opacity-50"
-                >
-                  {isSearching ? <Loader2 className="animate-spin" /> : <BarChart3 />}
-                </button>
-              </div>
-              {!perplexityKey && (
-                <p className="text-xs text-amber-500 mt-2">⚠️ Perplexity API key required</p>
-              )}
-            </div>
-
-            {searchResult && (
-              <div className="bg-white dark:bg-zinc-900 p-8 rounded-2xl border border-zinc-200 dark:border-zinc-800 shadow-sm animate-fade-in relative overflow-hidden">
-                <div className="absolute top-0 left-0 w-1 h-full bg-sky-500"></div>
-                <h3 className="text-sky-500 text-xs font-bold uppercase tracking-widest mb-4 flex items-center gap-2">
-                  <BarChart3 /> Research Result
-                </h3>
-                <div className="prose dark:prose-invert max-w-none text-sm leading-relaxed text-zinc-700 dark:text-zinc-300 whitespace-pre-wrap">
-                  {searchResult}
-                </div>
-
-                {searchCitations.length > 0 && (
-                  <div className="mt-6 pt-6 border-t border-zinc-100 dark:border-zinc-800">
-                    <h4 className="text-xs font-bold text-zinc-400 uppercase tracking-widest mb-3">Sources</h4>
-                    <div className="flex flex-wrap gap-2">
-                      {searchCitations.map((url, i) => (
-                        <a 
-                          key={i}
-                          href={url}
-                          target="_blank"
-                          rel="noreferrer"
-                          className="inline-flex items-center gap-1 px-3 py-1 rounded-full bg-sky-50 dark:bg-sky-900/20 text-sky-600 dark:text-sky-400 text-xs hover:bg-sky-100 dark:hover:bg-sky-900/40 transition"
-                        >
-                          <Link />
-                          {new URL(url).hostname}
-                        </a>
-                      ))}
-                    </div>
-                  </div>
-                )}
               </div>
             )}
           </div>

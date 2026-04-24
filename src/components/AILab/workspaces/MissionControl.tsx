@@ -1,9 +1,8 @@
 import React, { useState, useRef, useEffect } from 'react';
 import { useWorkspace } from '../shared/WorkspaceContext';
 import { processWithModel } from '../../../services/geminiService';
-import { generateDailyBriefing } from '../../../services/geminiService';
+import { generateDailyBriefing, generateSearchResponse } from '../../../services/geminiService';
 import { briefingService } from '../../../services/briefingService';
-import { searchPerplexity } from '../../../services/perplexityService';
 import AILabOutput from '../shared/AILabOutput';
 import AILabEmptyState from '../shared/AILabEmptyState';
 import { useToast } from '../shared/AILabToast';
@@ -123,11 +122,14 @@ const MissionControl: React.FC<MissionControlProps> = ({ onBack, apiKey }) => {
       if (!query.trim()) return;
       setIsSearching(true);
       try {
-        const res = await searchPerplexity(apiKey, query, 'research');
-        panelSearchResults[panelId] = { text: res.text, citations: res.citations || [] };
+        const res = await generateSearchResponse(apiKey, query);
+        const citations = (res.groundingChunks || [])
+          .map((c: any) => c?.web?.uri)
+          .filter((uri: any): uri is string => Boolean(uri));
+        panelSearchResults[panelId] = { text: res.text, citations };
         refreshPanel();
       } catch (err) {
-        panelSearchResults[panelId] = { text: 'Search failed. Check your API key.', citations: [] };
+        panelSearchResults[panelId] = { text: 'Search failed. Please try again.', citations: [] };
         refreshPanel();
       } finally {
         setIsSearching(false);

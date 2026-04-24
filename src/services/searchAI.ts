@@ -1,10 +1,14 @@
 /**
  * AI-Powered Search Features
- * Categorization, tagging, and semantic enhancements
- * All calls proxied through gemini-proxy edge function (no client-side API keys)
+ * Categorization, tagging, and semantic enhancements.
+ *
+ * All calls route through the central `ai-router` edge function which handles
+ * provider selection, metering, hard caps, and prompt caching automatically.
  */
 
-import { supabase } from './supabase';
+import { invokeAIJson, invokeAIPrompt } from './ai/aiService';
+import { getCurrentWorkspaceId } from './ai/getWorkspaceId';
+import { AIRouterError } from './ai/errors';
 
 export interface AICategory {
   category: string;
@@ -17,36 +21,39 @@ export interface AITags {
   confidence: number;
 }
 
+interface CategoryRaw {
+  category?: string;
+  confidence?: number;
+  reasoning?: string;
+}
+
+interface TagsRaw {
+  tags?: string[];
+  confidence?: number;
+}
+
 export class SearchAI {
   /**
-   * Call Gemini via the secure edge function proxy
-   */
-  private async callGeminiProxy(prompt: string, operation: string): Promise<string> {
-    const { data, error } = await supabase.functions.invoke('gemini-proxy', {
-      body: {
-        prompt,
-        operation,
-        model: 'gemini-2.5-flash',
-        temperature: 0.3,
-      },
-    });
-
-    if (error) {
-      throw new Error(`Gemini proxy error: ${error.message}`);
-    }
-
-    return data?.result || '';
-  }
-
-  /**
-   * AI-powered categorization of content
+   * AI-powered categorization of content.
+   *
+   * @param title Title to categorise.
+   * @param content Content body (first 500 chars used).
+   * @param existingCategories Optional list of allowed categories.
+   * @param workspaceId Optional workspace override. Falls back to
+   *   `getCurrentWorkspaceId()`.
    */
   async categorizeContent(
     title: string,
     content: string,
-    existingCategories?: string[]
+    existingCategories?: string[],
+    workspaceId?: string
   ): Promise<AICategory> {
     try {
+      const wsId = workspaceId ?? getCurrentWorkspaceId();
+      if (!wsId) {
+        throw new Error('No active workspace — AI unavailable');
+      }
+
       const prompt = `Analyze this content and suggest the best category from: ${existingCategories?.join(', ') || 'ideas, todo, reference, conversation, project, personal, work'}
 
 Title: "${title}"
@@ -54,8 +61,11 @@ Content: "${content.substring(0, 500)}"
 
 Return JSON: {"category": "category_name", "confidence": 0.0-1.0, "reasoning": "brief explanation"}`;
 
-      const text = await this.callGeminiProxy(prompt, 'searchCategorize');
-      const parsed = JSON.parse(text.replace(/```json\n?/g, '').replace(/```\n?/g, ''));
+      const parsed = await invokeAIJson<CategoryRaw>(
+        'auto_tag',
+        prompt,
+        { workspaceId: wsId, temperature: 0.3 },
+      );
 
       return {
         category: parsed.category || 'general',
@@ -63,16 +73,34 @@ Return JSON: {"category": "category_name", "confidence": 0.0-1.0, "reasoning": "
         reasoning: parsed.reasoning,
       };
     } catch (error) {
+      // Re-throw router errors so UI can surface caps / trial / provider issues
+      if (error instanceof AIRouterError) throw error;
       console.error('AI categorization error:', error);
       return { category: 'general', confidence: 0 };
     }
   }
 
   /**
-   * AI-powered tag suggestions
+   * AI-powered tag suggestions.
+   *
+   * @param title Title to analyse.
+   * @param content Content body (first 500 chars used).
+   * @param existingTags Optional existing tags to consider/align with.
+   * @param workspaceId Optional workspace override. Falls back to
+   *   `getCurrentWorkspaceId()`.
    */
-  async suggestTags(title: string, content: string, existingTags?: string[]): Promise<AITags> {
+  async suggestTags(
+    title: string,
+    content: string,
+    existingTags?: string[],
+    workspaceId?: string
+  ): Promise<AITags> {
     try {
+      const wsId = workspaceId ?? getCurrentWorkspaceId();
+      if (!wsId) {
+        throw new Error('No active workspace — AI unavailable');
+      }
+
       const prompt = `Analyze this content and suggest 3-5 relevant tags. ${existingTags?.length ? `Existing tags: ${existingTags.join(', ')}` : ''}
 
 Title: "${title}"
@@ -80,26 +108,43 @@ Content: "${content.substring(0, 500)}"
 
 Return JSON: {"tags": ["tag1", "tag2"], "confidence": 0.0-1.0}`;
 
-      const text = await this.callGeminiProxy(prompt, 'searchTags');
-      const parsed = JSON.parse(text.replace(/```json\n?/g, '').replace(/```\n?/g, ''));
+      const parsed = await invokeAIJson<TagsRaw>(
+        'auto_tag',
+        prompt,
+        { workspaceId: wsId, temperature: 0.3 },
+      );
 
       return {
         tags: parsed.tags || [],
         confidence: parsed.confidence || 0.5,
       };
     } catch (error) {
+      // Re-throw router errors so UI can surface caps / trial / provider issues
+      if (error instanceof AIRouterError) throw error;
       console.error('AI tag suggestion error:', error);
       return { tags: [], confidence: 0 };
     }
   }
 
   /**
-   * Summarize multiple search results
+   * Summarize multiple search results.
+   *
+   * @param results Up to 10 results summarised into 2-3 sentences.
+   * @param workspaceId Optional workspace override. Falls back to
+   *   `getCurrentWorkspaceId()`.
    */
-  async summarizeResults(results: Array<{ title: string; content: string }>): Promise<string> {
+  async summarizeResults(
+    results: Array<{ title: string; content: string }>,
+    workspaceId?: string
+  ): Promise<string> {
     if (results.length === 0) return '';
 
     try {
+      const wsId = workspaceId ?? getCurrentWorkspaceId();
+      if (!wsId) {
+        throw new Error('No active workspace — AI unavailable');
+      }
+
       const context = results.slice(0, 10).map((r, i) =>
         `${i + 1}. ${r.title}: ${r.content.substring(0, 200)}`
       ).join('\n\n');
@@ -110,8 +155,14 @@ ${context}
 
 Summary:`;
 
-      return await this.callGeminiProxy(prompt, 'searchSummarize');
+      return await invokeAIPrompt(
+        'smart_search_rewrite',
+        prompt,
+        { workspaceId: wsId, temperature: 0.3 },
+      );
     } catch (error) {
+      // Re-throw router errors so UI can surface caps / trial / provider issues
+      if (error instanceof AIRouterError) throw error;
       console.error('AI summarization error:', error);
       return '';
     }

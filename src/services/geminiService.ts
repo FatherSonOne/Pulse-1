@@ -2,40 +2,30 @@
 import { GoogleGenAI, Type } from "@google/genai";
 import { DraftAnalysis, ThreadContext, CatchUpSummary, AsyncSuggestion, Task, TeamHealth, Nudge, HandoffSummary, VoiceAnalysis, ChannelArtifact } from "../types";
 import { googleCalendarService } from "./googleCalendarService";
-import { withFormattedOutput, getContextualFormattingHints, FormattingContext } from "./aiFormattingService";
+import { withFormattedOutput } from "./aiFormattingService";
 import { rateLimitService } from "./rateLimitService";
 import { retryService } from "./retryService";
 import { sanitizationService } from "./sanitizationService";
-import { apiProxyService } from "./apiProxyService";
 import { usageTracker } from "./usageTracker";
-import { perplexityGenerateText, isPerplexityAvailable } from "./perplexityService";
+import { invokeAI, invokeAIPrompt, invokeAIJson } from "./ai/aiService";
+import { getCurrentWorkspaceId } from "./ai/getWorkspaceId";
+import {
+  AIRouterError,
+  AICapExceededError,
+  AITrialExpiredError,
+  AIProviderUnavailableError,
+} from "./ai/errors";
 
-// ─── Perplexity fallback helper (internal) ────────────────────────────────────
-// Tries the primaryFn; on failure, falls back to Perplexity for text responses.
-// Only use for text-in / text-out functions — NOT for image/audio/video/embeddings.
-async function withFallback<T extends string | null>(
-  primaryFn: () => Promise<T>,
-  fallbackPrompt: string,
-  label: string,
-  fallbackSystem?: string
-): Promise<T | string | null> {
-  try {
-    return await primaryFn();
-  } catch (err) {
-    console.warn(`[gemini:${label}] Primary call failed — trying Perplexity fallback`, err);
-    if (!isPerplexityAvailable()) {
-      console.error(`[gemini:${label}] No Perplexity key available.`);
-      return null;
-    }
-    try {
-      const text = await perplexityGenerateText(fallbackPrompt, fallbackSystem);
-      console.info(`[gemini:${label}] Perplexity fallback succeeded.`);
-      return text;
-    } catch (fallbackErr) {
-      console.error(`[gemini:${label}] Perplexity fallback also failed:`, fallbackErr);
-      return null;
-    }
-  }
+// ─── Router error handling ────────────────────────────────────────────────────
+// These errors must bubble up so the UI can render the right upgrade prompts.
+// Everything else falls through to the legacy `return null` behavior for
+// backward compatibility with the 25+ downstream callers.
+function isRouterHardError(err: unknown): err is AIRouterError {
+  return (
+    err instanceof AICapExceededError ||
+    err instanceof AITrialExpiredError ||
+    err instanceof AIProviderUnavailableError
+  );
 }
 
 // Cache for calendar context to avoid too many API calls
@@ -43,6 +33,7 @@ let calendarContextCache: { context: string; timestamp: number } | null = null;
 const CALENDAR_CACHE_TTL = 5 * 60 * 1000; // 5 minutes
 
 // Get calendar context for AI awareness
+// UNCHANGED — pure context fetcher (no LLM involved)
 export const getCalendarContextForAI = async (): Promise<string> => {
   // Return cached context if still valid
   if (calendarContextCache && Date.now() - calendarContextCache.timestamp < CALENDAR_CACHE_TTL) {
@@ -59,39 +50,71 @@ export const getCalendarContextForAI = async (): Promise<string> => {
   }
 };
 
+// ─── Search / Maps (migrated — text only; grounding no longer returned) ──────
+// NOTE: The router does not expose Gemini googleSearch/googleMaps grounding tools,
+// so groundingChunks will always be empty. Callers should handle empty arrays.
+// `apiKey` parameter is ignored (router uses server-side keys).
+
+// Web-grounded search via the ai-router's 'web_search' task, which auto-enables
+// Gemini's googleSearch tool. Cheaper, one vendor, real citations via groundingChunks.
 export const generateSearchResponse = async (apiKey: string, query: string) => {
-  const ai = new GoogleGenAI({ apiKey });
+  void apiKey;
   try {
-    const response = await ai.models.generateContent({
-      model: 'gemini-2.5-flash',
-      contents: query,
-      config: { tools: [{ googleSearch: {} }] },
-    });
-    const text = response.text || "No response generated.";
-    const groundingChunks = response.candidates?.[0]?.groundingMetadata?.groundingChunks || [];
-    return { text, groundingChunks };
+    const workspaceId = getCurrentWorkspaceId();
+    if (!workspaceId) return { text: "No response generated.", groundingChunks: [] };
+    const formattedQuery = `${query}
+
+Format your response in clean GitHub-flavored markdown so it's easy to scan:
+- Open with a 1-2 sentence summary, then break the rest into short sections.
+- Use ## subheadings for distinct topics, **bold** for key terms, and bullet lists for facts, features, or steps.
+- Keep paragraphs short (max 2-3 sentences). Never return one large block of text.
+- Do not include a heading for the summary itself, and do not list sources at the end (they are rendered separately).`;
+    const result = await invokeAI(
+      'web_search',
+      { messages: [{ role: 'user', content: formattedQuery }] },
+      { workspaceId },
+    );
+    return {
+      text: result.text || "No response generated.",
+      // Re-wrap into the legacy { web: { uri, title } } shape that existing
+      // callers (search UI, result cards) already know how to render.
+      groundingChunks: (result.groundingChunks || []).map(c => ({
+        web: { uri: c.uri, title: c.title },
+      })),
+    };
   } catch (error) {
+    if (isRouterHardError(error)) throw error;
     console.error("Search Error:", error);
     throw error;
   }
 };
 
 export const generateMapsResponse = async (apiKey: string, query: string) => {
-  const ai = new GoogleGenAI({ apiKey });
+  void apiKey;
   try {
-    const response = await ai.models.generateContent({
-      model: 'gemini-2.5-flash',
-      contents: query,
-      config: { tools: [{ googleMaps: {} }] },
-    });
-    const text = response.text || "No location data found.";
-    const groundingChunks = response.candidates?.[0]?.groundingMetadata?.groundingChunks || [];
-    return { text, groundingChunks };
+    const workspaceId = getCurrentWorkspaceId();
+    if (!workspaceId) return { text: "Error retrieving map data.", groundingChunks: [] };
+    const result = await invokeAI(
+      'web_search',
+      { messages: [{ role: 'user', content: query }] },
+      { workspaceId },
+    );
+    return {
+      text: result.text || "No location data found.",
+      groundingChunks: (result.groundingChunks || []).map(c => ({
+        web: { uri: c.uri, title: c.title },
+      })),
+    };
   } catch (error) {
+    if (isRouterHardError(error)) throw error;
     console.error("Maps Error:", error);
     return { text: "Error retrieving map data.", groundingChunks: [] };
   }
 };
+
+// ─── Image generation — KEPT on direct SDK ───────────────────────────────────
+// Uses gemini-2.5-flash-image / gemini-3-pro-image-preview — specialized image
+// models that are not routed through ai-router.
 
 export const generateImage = async (apiKey: string, prompt: string) => {
   const ai = new GoogleGenAI({ apiKey });
@@ -154,31 +177,32 @@ export const generateProImage = async (apiKey: string, prompt: string, aspectRat
   }
 };
 
+// ─── Text generation — migrated to router ────────────────────────────────────
+
 export const generateJournalInsight = async (apiKey: string, text: string) => {
-  const ai = new GoogleGenAI({ apiKey });
+  void apiKey;
   const prompt = `Analyze this journal entry and provide a very brief, empathetic insight or advice (max 2 sentences). Entry: "${text}"`;
-  return withFallback(
-    async () => {
-      const response = await ai.models.generateContent({
-        model: 'gemini-2.5-flash-lite',
-        contents: withFormattedOutput(prompt, 'journal'),
-      });
-      return response.text ?? null;
-    },
-    prompt,
-    'generateJournalInsight'
-  );
+  try {
+    const workspaceId = getCurrentWorkspaceId();
+    if (!workspaceId) return null;
+    const result = await invokeAIPrompt('sentiment_analysis', withFormattedOutput(prompt, 'journal'), { workspaceId });
+    return result ?? null;
+  } catch (err) {
+    if (isRouterHardError(err)) throw err;
+    console.error('[gemini:generateJournalInsight] Primary call failed', err);
+    return null;
+  }
 };
 
 export const generateSmartReply = async (apiKey: string, history: {role: string, text: string}[]) => {
-  const ai = new GoogleGenAI({ apiKey });
+  void apiKey;
   const conversation = history.map(h => `${h.role}: ${h.text}`).join('\n');
 
   // Get calendar context for scheduling-related replies
   let calendarContext = '';
   try {
     calendarContext = await getCalendarContextForAI();
-  } catch (e) {
+  } catch {
     // Ignore calendar errors
   }
 
@@ -188,35 +212,39 @@ export const generateSmartReply = async (apiKey: string, history: {role: string,
 
   const userPrompt = `Read the following conversation and draft a professional, concise, and friendly reply for the user. Do not include quotes. Just the reply text.\n\nConversation:\n${conversation}`;
 
-  return withFallback(
-    async () => {
-      const response = await ai.models.generateContent({
-        model: 'gemini-2.5-flash-lite',
-        contents: withFormattedOutput(`${systemPrompt}\n\n${userPrompt}`, 'chat'),
-      });
-      return response.text ?? null;
-    },
-    userPrompt,
-    'generateSmartReply',
-    systemPrompt
-  );
+  try {
+    const workspaceId = getCurrentWorkspaceId();
+    if (!workspaceId) return null;
+    const result = await invokeAIPrompt('quick_reply_suggestions', withFormattedOutput(userPrompt, 'chat'), {
+      workspaceId,
+      systemPrompt,
+    });
+    return result ?? null;
+  } catch (err) {
+    if (isRouterHardError(err)) throw err;
+    console.error('[gemini:generateSmartReply] Primary call failed', err);
+    return null;
+  }
 };
 
 export const generateSummary = async (apiKey: string, text: string) => {
-  const ai = new GoogleGenAI({ apiKey });
+  void apiKey;
   const prompt = `Summarize the following text or conversation into 3 key bullet points:\n\n${text}`;
-  return withFallback(
-    async () => {
-      const response = await ai.models.generateContent({
-        model: 'gemini-2.5-flash',
-        contents: withFormattedOutput(prompt, 'summary'),
-      });
-      return response.text ?? null;
-    },
-    prompt,
-    'generateSummary'
-  );
+  try {
+    const workspaceId = getCurrentWorkspaceId();
+    if (!workspaceId) return null;
+    const result = await invokeAIPrompt('message_summary', withFormattedOutput(prompt, 'summary'), { workspaceId });
+    return result ?? null;
+  } catch (err) {
+    if (isRouterHardError(err)) throw err;
+    console.error('[gemini:generateSummary] Primary call failed', err);
+    return null;
+  }
 };
+
+// ─── Audio transcription — KEPT on direct SDK ────────────────────────────────
+// Uses gemini-2.5-flash with audio inlineData (base64). The router does not
+// yet accept audio/video binary payloads — that's Phase 4 territory.
 
 export const transcribeMedia = async (apiKey: string, mediaBase64: string, mimeType: string = 'audio/webm') => {
   const ai = new GoogleGenAI({ apiKey });
@@ -255,22 +283,17 @@ export const generateMeetingNote = async (apiKey: string, audioBase64: string, m
       },
     });
     return response.text;
-  } catch (e) {
+  } catch {
     return null;
   }
 };
 
-export const generateDailyBriefing = async (apiKey: string, context: string) => {
-  if (!apiKey || apiKey.trim() === '') {
-    throw new Error('Gemini API key is required. Please set it in Settings.');
-  }
+// ─── Daily briefing (migrated, JSON mode) ────────────────────────────────────
 
-  const ai = new GoogleGenAI({ apiKey: apiKey.trim() });
-  try {
-    const response = await ai.models.generateContent({
-      model: 'gemini-2.5-flash',
-      contents: withFormattedOutput(
-        `You are a top-tier executive assistant for Pulse, a comprehensive personal productivity and communication platform.
+export const generateDailyBriefing = async (apiKey: string, context: string) => {
+  void apiKey;
+
+  const briefingPrompt = `You are a top-tier executive assistant for Pulse, a comprehensive personal productivity and communication platform.
 
 Analyze the following comprehensive daily context which includes data from:
 - Calendar events and meetings
@@ -292,142 +315,89 @@ Generate a highly personalized and actionable daily briefing that:
 7. Identifies workload imbalances and recommends redistributing tasks
 8. Warns about complex tasks without deadlines
 
-Context:
-${context}`,
-        'briefing'
-      ),
-      config: {
-        responseMimeType: "application/json",
-        responseSchema: {
-          type: Type.OBJECT,
-          properties: {
-            greeting: { type: Type.STRING, description: "A personalized greeting acknowledging the time of day" },
-            summary: { type: Type.STRING, description: "A 2-3 sentence executive summary of the day ahead, highlighting key priorities and any concerns" },
-            highlights: {
-              type: Type.ARRAY,
-              description: "Key items that need attention, pulled from the context data",
-              items: {
-                type: Type.OBJECT,
-                properties: {
-                  category: { type: Type.STRING, enum: ["calendar", "task", "message", "email", "vox", "contact", "project"] },
-                  title: { type: Type.STRING, description: "Brief title of the highlight" },
-                  detail: { type: Type.STRING, description: "Specific detail from the context" },
-                  priority: { type: Type.STRING, enum: ["urgent", "high", "medium", "low"] }
-                },
-                required: ["category", "title", "detail", "priority"]
-              }
-            },
-            suggestions: {
-              type: Type.ARRAY,
-              description: "Specific actionable suggestions based on the context",
-              items: {
-                type: Type.OBJECT,
-                properties: {
-                  action: { type: Type.STRING, description: "What the user should do" },
-                  reason: { type: Type.STRING, description: "Why this action is recommended based on the context" },
-                  type: { type: Type.STRING, enum: ["message", "event", "task", "email", "vox", "contact", "ai_assist"] },
-                  priority: { type: Type.STRING, enum: ["urgent", "high", "medium", "low"] },
-                  aiFeature: { type: Type.STRING, description: "Optional: Which AI feature to use (subtask_generation, prioritization, natural_language, etc.)" }
-                },
-                required: ["action", "reason", "type", "priority"]
-              }
-            },
-            focusRecommendation: { type: Type.STRING, description: "A single sentence recommendation for what to focus on first" }
-          },
-          required: ["greeting", "summary", "highlights", "suggestions", "focusRecommendation"]
-        }
-      }
-    });
-    let jsonStr = response.text || '{}';
-    jsonStr = jsonStr.replace(/```json/g, '').replace(/```/g, '').trim();
-    return JSON.parse(jsonStr);
-  } catch (e: any) {
-    // Check for leaked API key error specifically
-    const errorMessage = e?.message || e?.error?.message || String(e);
-    const isLeakedKeyError = 
-      e?.status === 403 || 
-      e?.code === 403 || 
-      (e?.error?.code === 403 && errorMessage?.toLowerCase().includes('leaked'));
-    
-    if (isLeakedKeyError) {
-      console.error('Gemini API Key Error: Your API key has been reported as leaked and needs to be replaced. Please get a new API key from https://aistudio.google.com/apikey and update it in Settings.');
-    } else {
-      console.error('Briefing generation error:', e);
-    }
-    
-    // Attempt Perplexity fallback for non-key errors
-    if (!isLeakedKeyError && isPerplexityAvailable()) {
-      try {
-        console.info('[gemini:generateDailyBriefing] Attempting Perplexity fallback...');
-        const briefingPrompt = `You are a top-tier executive assistant. Generate a personalized daily briefing as JSON with these fields:
-- greeting: personalized greeting for the time of day
-- summary: 2-3 sentence executive summary highlighting key priorities
+Return JSON with these fields:
+- greeting: personalized greeting acknowledging the time of day
+- summary: 2-3 sentence executive summary of the day ahead, highlighting key priorities and any concerns
 - highlights: array of {category, title, detail, priority} items needing attention
-- suggestions: array of {action, reason, type, priority} actionable suggestions
+    - category: one of calendar, task, message, email, vox, contact, project
+    - priority: one of urgent, high, medium, low
+- suggestions: array of {action, reason, type, priority, aiFeature?} actionable suggestions
+    - type: one of message, event, task, email, vox, contact, ai_assist
+    - priority: one of urgent, high, medium, low
 - focusRecommendation: single sentence on what to focus on first
 
 Context:
 ${context}
 
 Return ONLY valid JSON.`;
-        const text = await perplexityGenerateText(briefingPrompt);
-        const cleaned = text.replace(/```json/g, '').replace(/```/g, '').trim();
-        return JSON.parse(cleaned);
-      } catch (fallbackErr) {
-        console.error('[gemini:generateDailyBriefing] Perplexity fallback failed:', fallbackErr);
-      }
-    }
 
+  try {
+    const workspaceId = getCurrentWorkspaceId();
+    if (!workspaceId) {
+      return {
+        greeting: "Welcome back.",
+        summary: "Your dashboard is ready. Connect your accounts to get personalized insights.",
+        highlights: [],
+        suggestions: [],
+        focusRecommendation: "Start by reviewing your tasks and calendar for today."
+      };
+    }
+    return await invokeAIJson('thread_digest', withFormattedOutput(briefingPrompt, 'briefing'), { workspaceId });
+  } catch (e) {
+    if (isRouterHardError(e)) throw e;
+    console.error('Briefing generation error:', e);
     return {
       greeting: "Welcome back.",
-      summary: isLeakedKeyError
-        ? "Your Gemini API key needs to be updated. Please go to Settings to configure a new API key from Google AI Studio."
-        : "Your dashboard is ready. Connect your accounts to get personalized insights.",
+      summary: "Your dashboard is ready. Connect your accounts to get personalized insights.",
       highlights: [],
       suggestions: [],
-      focusRecommendation: isLeakedKeyError
-        ? "Update your Gemini API key in Settings to restore AI features."
-        : "Start by reviewing your tasks and calendar for today."
+      focusRecommendation: "Start by reviewing your tasks and calendar for today."
     };
   }
 };
 
 export const generateThinkingResponse = async (apiKey: string, prompt: string) => {
-  const ai = new GoogleGenAI({ apiKey });
-  return withFallback(
-    async () => {
-      const response = await ai.models.generateContent({
-        model: 'gemini-3-pro-preview',
-        contents: prompt,
-        config: { thinkingConfig: { thinkingBudget: 32768 } },
-      });
-      return response.text ?? null;
-    },
-    prompt,
-    'generateThinkingResponse',
-    'You are a thoughtful AI assistant. Think carefully and provide a detailed, reasoned response.'
-  );
+  void apiKey;
+  try {
+    const workspaceId = getCurrentWorkspaceId();
+    if (!workspaceId) return null;
+    const result = await invokeAIPrompt('rag_query', prompt, {
+      workspaceId,
+      systemPrompt: 'You are a thoughtful AI assistant. Think carefully and provide a detailed, reasoned response.',
+    });
+    return result ?? null;
+  } catch (err) {
+    if (isRouterHardError(err)) throw err;
+    console.error('[gemini:generateThinkingResponse] Primary call failed', err);
+    return null;
+  }
 };
 
 export const generateCode = async (apiKey: string, prompt: string) => {
-  const ai = new GoogleGenAI({ apiKey });
+  void apiKey;
   const codePrompt = `Write clean code for: ${prompt}. Return ONLY code with brief explanatory comments.`;
-  return withFallback(
-    async () => {
-      const response = await ai.models.generateContent({
-        model: 'gemini-3-pro-preview',
-        contents: withFormattedOutput(
-          `You are an expert software engineer. ${codePrompt}`,
-          'code'
-        ),
-      });
-      return response.text ?? null;
-    },
-    codePrompt,
-    'generateCode',
-    'You are an expert software engineer. Return ONLY code with brief explanatory comments.'
-  );
+  try {
+    const workspaceId = getCurrentWorkspaceId();
+    if (!workspaceId) return null;
+    const result = await invokeAIPrompt(
+      'content_generation',
+      withFormattedOutput(`You are an expert software engineer. ${codePrompt}`, 'code'),
+      {
+        workspaceId,
+        systemPrompt: 'You are an expert software engineer. Return ONLY code with brief explanatory comments.',
+      }
+    );
+    return result ?? null;
+  } catch (err) {
+    if (isRouterHardError(err)) throw err;
+    console.error('[gemini:generateCode] Primary call failed', err);
+    return null;
+  }
 };
+
+// ─── Video — KEPT on direct SDK ──────────────────────────────────────────────
+// Uses veo-3.1-fast-generate-preview (video gen) and gemini-3-pro-preview with
+// video inlineData for analysis — specialized models not in router.
 
 export const analyzeVideo = async (apiKey: string, videoBase64: string, mimeType: string, prompt: string) => {
   const ai = new GoogleGenAI({ apiKey });
@@ -483,6 +453,9 @@ export const generateVideo = async (apiKey: string, prompt: string, imageBase64?
   }
 };
 
+// ─── Speech (TTS) — KEPT on direct SDK ───────────────────────────────────────
+// Uses gemini-2.5-flash-preview-tts — specialized TTS model not in router.
+
 export const generateSpeech = async (apiKey: string, text: string) => {
   const ai = new GoogleGenAI({ apiKey });
   try {
@@ -495,13 +468,15 @@ export const generateSpeech = async (apiKey: string, text: string) => {
       },
     });
     return response.candidates?.[0]?.content?.parts?.[0]?.inlineData?.data;
-  } catch (e) {
+  } catch {
     return null;
   }
 };
 
+// ─── Chat (migrated, multi-turn via router) ──────────────────────────────────
+
 export const chatWithBot = async (apiKey: string, history: {role: string, text: string}[], newMessage: string, includeCalendarContext: boolean = true) => {
-  const ai = new GoogleGenAI({ apiKey });
+  void apiKey;
 
   // Get calendar context for AI awareness
   let systemContext = '';
@@ -516,31 +491,37 @@ export const chatWithBot = async (apiKey: string, history: {role: string, text: 
     }
   }
 
-  const conversationContext = history.map(h => `${h.role === 'me' ? 'User' : 'Assistant'}: ${h.text}`).join('\n');
-  const fallbackPrompt = conversationContext
-    ? `Previous conversation:\n${conversationContext}\n\nUser: ${newMessage}`
-    : newMessage;
-
-  const result = await withFallback(
-    async () => {
-      const chat = ai.chats.create({
-        model: 'gemini-3-pro-preview',
-        systemInstruction: withFormattedOutput(
-          systemContext || 'You are a helpful AI assistant.',
-          'chat'
-        ),
-        history: history.map(h => ({
-          role: h.role === 'me' ? 'user' : 'model',
-          parts: [{ text: h.text }],
-        })),
-      });
-      const response = await chat.sendMessage({ message: newMessage });
-      return response.text ?? null;
-    },
-    fallbackPrompt,
-    'chatWithBot',
-    systemContext || 'You are a helpful AI assistant.'
+  const systemPrompt = withFormattedOutput(
+    systemContext || 'You are a helpful AI assistant.',
+    'chat'
   );
+
+  let result: string | null = null;
+  try {
+    const workspaceId = getCurrentWorkspaceId();
+    if (workspaceId) {
+      // Convert history to the router's message format.
+      const messages: Array<{ role: 'user' | 'assistant'; content: string }> = history.map(h => ({
+        role: h.role === 'me' ? 'user' as const : 'assistant' as const,
+        content: h.text,
+      }));
+      // Append the current user turn — router contract requires user turn at end.
+      messages.push({ role: 'user', content: newMessage });
+
+      const aiResult = await invokeAI(
+        'pulse_assistant_chat',
+        {
+          messages,
+          systemPrompt,
+        },
+        { workspaceId }
+      );
+      result = aiResult.text ?? null;
+    }
+  } catch (err) {
+    if (isRouterHardError(err)) throw err;
+    console.error('[gemini:chatWithBot] Primary call failed', err);
+  }
 
   return result ?? "I'm having trouble connecting right now.";
 };
@@ -548,142 +529,91 @@ export const chatWithBot = async (apiKey: string, history: {role: string, text: 
 // --- Context Aware Functions ---
 
 export const analyzeDraftIntent = async (apiKey: string, draft: string): Promise<DraftAnalysis | null> => {
+  void apiKey;
   if (!draft || draft.length < 5) return null;
-  const ai = new GoogleGenAI({ apiKey });
   try {
-    const response = await ai.models.generateContent({
-      model: 'gemini-2.5-flash-lite',
-      contents: `Analyze intent: "${draft}". Return JSON.`,
-      config: {
-        responseMimeType: "application/json",
-        responseSchema: {
-           type: Type.OBJECT,
-           properties: {
-             intent: { type: Type.STRING, enum: ["decision", "fyi", "request", "brainstorm", "social"] },
-             suggestion: { type: Type.STRING },
-             improvedText: { type: Type.STRING },
-             confidence: { type: Type.NUMBER }
-           },
-           required: ["intent", "suggestion", "improvedText", "confidence"]
-        }
-      }
-    });
-    return JSON.parse(response.text || '{}') as DraftAnalysis;
+    const workspaceId = getCurrentWorkspaceId();
+    if (!workspaceId) return null;
+    return await invokeAIJson<DraftAnalysis>(
+      'email_analysis',
+      `Analyze intent: "${draft}". Return JSON with fields: intent (one of: decision, fyi, request, brainstorm, social), suggestion (string), improvedText (string), confidence (number 0-1).`,
+      { workspaceId }
+    );
   } catch (e) {
+    if (isRouterHardError(e)) throw e;
     return null;
   }
 };
 
 export const generateThreadContext = async (apiKey: string, history: string): Promise<ThreadContext | null> => {
-  const ai = new GoogleGenAI({ apiKey });
+  void apiKey;
   try {
-    const response = await ai.models.generateContent({
-       model: 'gemini-2.5-flash',
-       contents: `Analyze history. Extract decisions, topics, related docs.\nHistory:\n${history}`,
-       config: {
-         responseMimeType: "application/json",
-         responseSchema: {
-           type: Type.OBJECT,
-           properties: {
-             decisions: { type: Type.ARRAY, items: { type: Type.STRING } },
-             keyTopics: { type: Type.ARRAY, items: { type: Type.STRING } },
-             relatedDocs: { 
-               type: Type.ARRAY, 
-               items: { 
-                 type: Type.OBJECT,
-                 properties: {
-                   name: { type: Type.STRING },
-                   type: { type: Type.STRING, enum: ["pdf", "doc", "sheet", "image"] },
-                   url: { type: Type.STRING }
-                 }
-               }
-             }
-           }
-         }
-       }
-    });
-    return JSON.parse(response.text || '{}') as ThreadContext;
+    const workspaceId = getCurrentWorkspaceId();
+    if (!workspaceId) return null;
+    return await invokeAIJson<ThreadContext>(
+      'thread_digest',
+      `Analyze history. Extract decisions, topics, related docs.\nHistory:\n${history}\n\nReturn JSON with fields: decisions (string array), keyTopics (string array), relatedDocs (array of {name, type: pdf|doc|sheet|image, url}).`,
+      { workspaceId }
+    );
   } catch (e) {
+    if (isRouterHardError(e)) throw e;
     return null;
   }
 };
 
 export const generateCatchUpSummary = async (apiKey: string, history: string): Promise<CatchUpSummary | null> => {
-   const ai = new GoogleGenAI({ apiKey });
-   try {
-     const response = await ai.models.generateContent({
-       model: 'gemini-2.5-flash',
-       contents: withFormattedOutput(
-         `Create catch up summary. Focus on changes, decisions, blockers.\nHistory:\n${history}`,
-         'summary'
-       ),
-       config: {
-         responseMimeType: "application/json",
-         responseSchema: {
-           type: Type.OBJECT,
-           properties: {
-             summary: { type: Type.STRING },
-             decisionsMade: { type: Type.ARRAY, items: { type: Type.STRING } },
-             blockers: { type: Type.ARRAY, items: { type: Type.STRING } },
-             actionItems: { type: Type.ARRAY, items: { type: Type.STRING } }
-           }
-         }
-       }
-     });
-     return JSON.parse(response.text || '{}') as CatchUpSummary;
-   } catch (e) {
-     return null;
-   }
+  void apiKey;
+  try {
+    const workspaceId = getCurrentWorkspaceId();
+    if (!workspaceId) return null;
+    return await invokeAIJson<CatchUpSummary>(
+      'thread_digest',
+      withFormattedOutput(
+        `Create catch up summary. Focus on changes, decisions, blockers.\nHistory:\n${history}\n\nReturn JSON with fields: summary (string), decisionsMade (string array), blockers (string array), actionItems (string array).`,
+        'summary'
+      ),
+      { workspaceId }
+    );
+  } catch (e) {
+    if (isRouterHardError(e)) throw e;
+    return null;
+  }
 };
 
 // --- Attention Intelligence Functions ---
 
 export const detectMeetingIntent = async (apiKey: string, text: string): Promise<AsyncSuggestion | null> => {
+  void apiKey;
   if (!text || text.length < 5) return null;
-  const ai = new GoogleGenAI({ apiKey });
   try {
-    const response = await ai.models.generateContent({
-      model: 'gemini-2.5-flash-lite',
-      contents: `Meeting intent detection for: "${text}". If yes, suggest async alternative. Return JSON.`,
-      config: {
-        responseMimeType: "application/json",
-        responseSchema: {
-          type: Type.OBJECT,
-          properties: {
-            detected: { type: Type.BOOLEAN },
-            type: { type: Type.STRING, enum: ['poll', 'video', 'doc'] },
-            reason: { type: Type.STRING },
-            template: { type: Type.STRING }
-          },
-          required: ["detected", "type", "reason", "template"]
-        }
-      }
-    });
-    const result = JSON.parse(response.text || '{}') as AsyncSuggestion;
-    if (!result.detected) return null;
+    const workspaceId = getCurrentWorkspaceId();
+    if (!workspaceId) return null;
+    const result = await invokeAIJson<AsyncSuggestion>(
+      'meeting_summary',
+      `Meeting intent detection for: "${text}". If yes, suggest async alternative. Return JSON with fields: detected (boolean), type (one of: poll, video, doc), reason (string), template (string).`,
+      { workspaceId }
+    );
+    if (!result?.detected) return null;
     return result;
   } catch (e) {
+    if (isRouterHardError(e)) throw e;
     return null;
   }
 };
 
 export const analyzeMessageUrgency = async (apiKey: string, senderRole: string, message: string): Promise<'high' | 'medium' | 'low'> => {
-  const ai = new GoogleGenAI({ apiKey });
+  void apiKey;
   try {
-    const response = await ai.models.generateContent({
-      model: 'gemini-2.5-flash-lite',
-      contents: `Analyze urgency. Sender: ${senderRole}. Msg: ${message}. Return JSON {priority: high/medium/low}.`,
-      config: {
-        responseMimeType: "application/json",
-        responseSchema: {
-          type: Type.OBJECT,
-          properties: { priority: { type: Type.STRING, enum: ['high', 'medium', 'low'] } }
-        }
-      }
-    });
-    const result = JSON.parse(response.text || '{}');
+    const workspaceId = getCurrentWorkspaceId();
+    if (!workspaceId) return 'medium';
+    const result = await invokeAIJson<{ priority?: 'high' | 'medium' | 'low' }>(
+      'auto_tag',
+      `Analyze urgency. Sender: ${senderRole}. Msg: ${message}. Return JSON {priority: "high" | "medium" | "low"}.`,
+      { workspaceId }
+    );
     return result.priority || 'medium';
   } catch (e) {
+    if (isRouterHardError(e)) throw e;
     return 'medium';
   }
 };
@@ -691,27 +621,20 @@ export const analyzeMessageUrgency = async (apiKey: string, senderRole: string, 
 // --- Task Workflow Functions ---
 
 export const extractTaskFromMessage = async (apiKey: string, message: string, contactList: string[]): Promise<(Partial<Task> & { assigneeName?: string }) | null> => {
-  const ai = new GoogleGenAI({ apiKey });
+  void apiKey;
   try {
-    const response = await ai.models.generateContent({
-      model: 'gemini-2.5-flash',
-      contents: `Extract action item from message: "${message}". 
-      Available contacts: ${contactList.join(', ')}. 
-      Return JSON with title, assignee (closest name match or 'Unassigned'), and dueDate (YYYY-MM-DD if explicit, otherwise null).`,
-      config: {
-        responseMimeType: "application/json",
-        responseSchema: {
-          type: Type.OBJECT,
-          properties: {
-            title: { type: Type.STRING },
-            assigneeName: { type: Type.STRING },
-            dueDate: { type: Type.STRING } // ISO date string
-          },
-          required: ["title"]
-        }
-      }
-    });
-    const data = JSON.parse(response.text || '{}');
+    const workspaceId = getCurrentWorkspaceId();
+    if (!workspaceId) return null;
+    const data = await invokeAIJson<{ title?: string; assigneeName?: string; dueDate?: string }>(
+      'task_prioritization',
+      `Extract action item from message: "${message}".
+Available contacts: ${contactList.join(', ')}.
+Return JSON with fields:
+- title (string, required)
+- assigneeName (string, closest name match or 'Unassigned')
+- dueDate (YYYY-MM-DD if explicit, otherwise null or omitted)`,
+      { workspaceId }
+    );
     if (!data.title) return null;
     return {
       title: data.title,
@@ -719,6 +642,7 @@ export const extractTaskFromMessage = async (apiKey: string, message: string, co
       assigneeName: data.assigneeName,
     };
   } catch (e) {
+    if (isRouterHardError(e)) throw e;
     console.error("Task Extraction Error", e);
     return null;
   }
@@ -738,14 +662,24 @@ export const parseNaturalLanguageTask = async (
   estimatedHours?: number;
   dependencies?: string[];
 } | null> => {
-  const ai = new GoogleGenAI({ apiKey });
-
+  void apiKey;
   const memberNames = workspaceMembers.map(m => m.name).join(', ');
 
   try {
-    const response = await ai.models.generateContent({
-      model: 'gemini-2.5-flash',
-      contents: `You are an expert task parser. Parse the following natural language input into a structured task.
+    const workspaceId = getCurrentWorkspaceId();
+    if (!workspaceId) return null;
+    const parsed = await invokeAIJson<{
+      title?: string;
+      description?: string;
+      priority?: 'low' | 'medium' | 'high' | 'urgent';
+      deadline?: string;
+      assigneeName?: string;
+      tags?: string[];
+      estimatedHours?: number;
+      dependencies?: string[];
+    }>(
+      'task_prioritization',
+      `You are an expert task parser. Parse the following natural language input into a structured task.
 
 Available team members: ${memberNames || 'None specified'}
 
@@ -754,7 +688,7 @@ Input: "${input}"
 Extract and return JSON with these fields:
 - title: (string, required) Brief task title (5-10 words max)
 - description: (string, optional) Additional details if provided
-- priority: (string) One of: urgent, high, medium, low
+- priority: (string, required) One of: urgent, high, medium, low
   - urgent: uses words like "ASAP", "urgent", "critical", "emergency"
   - high: uses "important", "soon", "priority"
   - medium: default if no urgency indicated
@@ -773,28 +707,21 @@ Extract and return JSON with these fields:
 - dependencies: (string array, optional) If "after X" or "depends on Y" mentioned
 
 Return ONLY valid JSON, no explanations.`,
-      config: {
-        responseMimeType: "application/json",
-        responseSchema: {
-          type: Type.OBJECT,
-          properties: {
-            title: { type: Type.STRING },
-            description: { type: Type.STRING },
-            priority: { type: Type.STRING, enum: ['urgent', 'high', 'medium', 'low'] },
-            deadline: { type: Type.STRING },
-            assigneeName: { type: Type.STRING },
-            tags: { type: Type.ARRAY, items: { type: Type.STRING } },
-            estimatedHours: { type: Type.NUMBER },
-            dependencies: { type: Type.ARRAY, items: { type: Type.STRING } }
-          },
-          required: ["title", "priority"]
-        }
-      }
-    });
-
-    const parsed = JSON.parse(response.text || '{}');
-    return parsed.title ? parsed : null;
+      { workspaceId }
+    );
+    if (!parsed.title) return null;
+    return {
+      title: parsed.title,
+      description: parsed.description,
+      priority: parsed.priority || 'medium',
+      deadline: parsed.deadline,
+      assigneeName: parsed.assigneeName,
+      tags: parsed.tags,
+      estimatedHours: parsed.estimatedHours,
+      dependencies: parsed.dependencies,
+    };
   } catch (e) {
+    if (isRouterHardError(e)) throw e;
     console.error('NL Task Parsing Error:', e);
     return null;
   }
@@ -805,13 +732,13 @@ export const parseNaturalLanguageTaskWithFallback = async (
   input: string,
   workspaceMembers: Array<{ name: string; id: string }> = []
 ): Promise<ReturnType<typeof parseNaturalLanguageTask>> => {
-  const memberNames = workspaceMembers.map(m => m.name).join(', ');
-
-  return withFallback(
-    async () => parseNaturalLanguageTask(apiKey, input, workspaceMembers),
-    `Parse this into a task: "${input}". Available team: ${memberNames}. Return JSON with: title, description, priority (urgent/high/medium/low), deadline (ISO date), assigneeName, tags, estimatedHours.`,
-    'parseNaturalLanguageTask'
-  );
+  try {
+    return await parseNaturalLanguageTask(apiKey, input, workspaceMembers);
+  } catch (err) {
+    if (isRouterHardError(err)) throw err;
+    console.error('[gemini:parseNaturalLanguageTask] Primary call failed', err);
+    return null;
+  }
 };
 
 export const generateSubtasksFromTask = async (
@@ -825,18 +752,20 @@ export const generateSubtasksFromTask = async (
   estimatedHours?: number;
   order: number;
 }> | null> => {
-  const ai = new GoogleGenAI({ apiKey });
-
+  void apiKey;
   try {
+    const workspaceId = getCurrentWorkspaceId();
+    if (!workspaceId) return null;
+
     const contextInfo = [
       `Task: ${taskTitle}`,
       taskDescription ? `Description: ${taskDescription}` : '',
       taskPriority ? `Priority: ${taskPriority}` : ''
     ].filter(Boolean).join('\n');
 
-    const response = await ai.models.generateContent({
-      model: 'gemini-2.5-flash',
-      contents: `You are an expert project manager helping break down tasks into actionable subtasks.
+    const parsed = await invokeAIJson<Array<{ title: string; estimatedHours?: number; order: number }>>(
+      'task_prioritization',
+      `You are an expert project manager helping break down tasks into actionable subtasks.
 
 ${contextInfo}
 
@@ -859,26 +788,11 @@ Example output:
 ]
 
 Return ONLY the JSON array, no explanations.`,
-      config: {
-        responseMimeType: "application/json",
-        responseSchema: {
-          type: Type.ARRAY,
-          items: {
-            type: Type.OBJECT,
-            properties: {
-              title: { type: Type.STRING },
-              estimatedHours: { type: Type.NUMBER },
-              order: { type: Type.NUMBER }
-            },
-            required: ["title", "order"]
-          }
-        }
-      }
-    });
-
-    const parsed = JSON.parse(response.text || '[]');
+      { workspaceId }
+    );
     return Array.isArray(parsed) && parsed.length > 0 ? parsed : null;
   } catch (e) {
+    if (isRouterHardError(e)) throw e;
     console.error('Subtask Generation Error:', e);
     return null;
   }
@@ -898,50 +812,27 @@ export const generateSubtasksFromTaskWithFallback = async (
   try {
     return await generateSubtasksFromTask(apiKey, taskTitle, taskDescription, taskPriority, maxSubtasks);
   } catch (err) {
-    console.warn('[gemini:generateSubtasksFromTask] Primary call failed — trying Perplexity fallback', err);
-    if (!isPerplexityAvailable()) {
-      console.error('[gemini:generateSubtasksFromTask] No Perplexity key available.');
-      return null;
-    }
-    try {
-      const fallbackPrompt = `Break down this task into ${maxSubtasks} actionable subtasks: "${taskTitle}"${taskDescription ? '. ' + taskDescription : ''}. Return JSON array with objects containing: title (string), estimatedHours (number, optional), order (number). Return ONLY the JSON array, no explanations.`;
-      const text = await perplexityGenerateText(fallbackPrompt);
-      console.info('[gemini:generateSubtasksFromTask] Perplexity fallback succeeded.');
-
-      // Try to parse the response
-      const cleaned = text.replace(/```json/g, '').replace(/```/g, '').trim();
-      const parsed = JSON.parse(cleaned);
-      return Array.isArray(parsed) && parsed.length > 0 ? parsed : null;
-    } catch (fallbackErr) {
-      console.error('[gemini:generateSubtasksFromTask] Perplexity fallback also failed:', fallbackErr);
-      return null;
-    }
+    if (isRouterHardError(err)) throw err;
+    console.error('[gemini:generateSubtasksFromTask] Primary call failed', err);
+    return null;
   }
 };
 
 export const analyzeOutcomeProgress = async (apiKey: string, history: string, goal: string): Promise<{status: string, progress: number, blockers: string[]}> => {
-  const ai = new GoogleGenAI({ apiKey });
+  void apiKey;
   try {
-    const response = await ai.models.generateContent({
-      model: 'gemini-2.5-flash',
-      contents: `Analyze chat history against goal: "${goal}".
-      Determine status (on_track, at_risk, completed, blocked), progress (0-100), and list blockers.
-      History: ${history}`,
-      config: {
-        responseMimeType: "application/json",
-        responseSchema: {
-          type: Type.OBJECT,
-          properties: {
-            status: { type: Type.STRING, enum: ['on_track', 'at_risk', 'completed', 'blocked'] },
-            progress: { type: Type.NUMBER },
-            blockers: { type: Type.ARRAY, items: { type: Type.STRING } }
-          },
-          required: ["status", "progress", "blockers"]
-        }
-      }
-    });
-    return JSON.parse(response.text || '{}');
+    const workspaceId = getCurrentWorkspaceId();
+    if (!workspaceId) return { status: 'on_track', progress: 0, blockers: [] };
+    return await invokeAIJson<{ status: string; progress: number; blockers: string[] }>(
+      'rag_query',
+      `Analyze chat history against goal: "${goal}".
+Determine status (on_track, at_risk, completed, blocked), progress (0-100), and list blockers.
+Return JSON with fields: status (one of: on_track, at_risk, completed, blocked), progress (number 0-100), blockers (string array).
+History: ${history}`,
+      { workspaceId }
+    );
   } catch (e) {
+    if (isRouterHardError(e)) throw e;
     return { status: 'on_track', progress: 0, blockers: [] };
   }
 };
@@ -949,98 +840,77 @@ export const analyzeOutcomeProgress = async (apiKey: string, history: string, go
 // --- Social Health & Relationship Functions ---
 
 export const analyzeTeamHealth = async (apiKey: string, history: string): Promise<TeamHealth | null> => {
-  const ai = new GoogleGenAI({ apiKey });
+  void apiKey;
   try {
-    const response = await ai.models.generateContent({
-      model: 'gemini-2.5-flash',
-      contents: withFormattedOutput(
+    const workspaceId = getCurrentWorkspaceId();
+    if (!workspaceId) return null;
+    return await invokeAIJson<TeamHealth>(
+      'sentiment_analysis',
+      withFormattedOutput(
         `Analyze communication health. Look for unanswered questions, uneven participation, tense sentiment.
-      History: ${history}`,
+History: ${history}
+
+Return JSON with fields: score (number 0-100), status (one of: healthy, at_risk, critical), issues (string array), reliability (one of: high, medium, low).`,
         'team-health'
       ),
-      config: {
-        responseMimeType: "application/json",
-        responseSchema: {
-          type: Type.OBJECT,
-          properties: {
-            score: { type: Type.NUMBER, description: "Health score 0-100" },
-            status: { type: Type.STRING, enum: ['healthy', 'at_risk', 'critical'] },
-            issues: { type: Type.ARRAY, items: { type: Type.STRING } },
-            reliability: { type: Type.STRING, enum: ['high', 'medium', 'low'] }
-          },
-          required: ["score", "status", "issues", "reliability"]
-        }
-      }
-    });
-    return JSON.parse(response.text || '{}') as TeamHealth;
+      { workspaceId }
+    );
   } catch (e) {
+    if (isRouterHardError(e)) throw e;
     return null;
   }
 };
 
 export const generateNudge = async (apiKey: string, history: string): Promise<Nudge | null> => {
-  const ai = new GoogleGenAI({ apiKey });
+  void apiKey;
   try {
-    const response = await ai.models.generateContent({
-      model: 'gemini-2.5-flash-lite',
-      contents: withFormattedOutput(
-        `Analyze last messages. Suggest if user should follow up (delay), clarify (confusion), or de-escalate (tension). If all good, return null.
-      History: ${history}`,
+    const workspaceId = getCurrentWorkspaceId();
+    if (!workspaceId) return null;
+    const result = await invokeAIJson<{ suggestion?: Nudge }>(
+      'proactive_nudge',
+      withFormattedOutput(
+        `Analyze last messages. Suggest if user should follow up (delay), clarify (confusion), or de-escalate (tension). If all good, return {"suggestion": null}.
+History: ${history}
+
+Return JSON with field: suggestion — an object with {type: one of "follow_up" | "clarify" | "de_escalate" | "praise", message: "Short private suggestion to user"} or null.`,
         'nudge'
       ),
-      config: {
-        responseMimeType: "application/json",
-        responseSchema: {
-          type: Type.OBJECT,
-          properties: {
-            suggestion: {
-              type: Type.OBJECT,
-              properties: {
-                type: { type: Type.STRING, enum: ['follow_up', 'clarify', 'de_escalate', 'praise'] },
-                message: { type: Type.STRING, description: "Short private suggestion to user" }
-              }
-            }
-          }
-        }
-      }
-    });
-    const result = JSON.parse(response.text || '{}');
-    return result.suggestion || null;
+      { workspaceId }
+    );
+    return result?.suggestion || null;
   } catch (e) {
+    if (isRouterHardError(e)) throw e;
     return null;
   }
 };
 
 export const generateHandoffSummary = async (apiKey: string, history: string): Promise<HandoffSummary | null> => {
-  const ai = new GoogleGenAI({ apiKey });
+  void apiKey;
   try {
-    const response = await ai.models.generateContent({
-      model: 'gemini-2.5-flash',
-      contents: withFormattedOutput(
+    const workspaceId = getCurrentWorkspaceId();
+    if (!workspaceId) return null;
+    return await invokeAIJson<HandoffSummary>(
+      'thread_digest',
+      withFormattedOutput(
         `Create handoff summary for new person joining.
-      History: ${history}`,
+History: ${history}
+
+Return JSON with fields: context (string), keyDecisions (string array), pendingActions (string array).`,
         'summary'
       ),
-      config: {
-        responseMimeType: "application/json",
-        responseSchema: {
-          type: Type.OBJECT,
-          properties: {
-            context: { type: Type.STRING },
-            keyDecisions: { type: Type.ARRAY, items: { type: Type.STRING } },
-            pendingActions: { type: Type.ARRAY, items: { type: Type.STRING } }
-          },
-          required: ["context", "keyDecisions", "pendingActions"]
-        }
-      }
-    });
-    return JSON.parse(response.text || '{}') as HandoffSummary;
+      { workspaceId }
+    );
   } catch (e) {
+    if (isRouterHardError(e)) throw e;
     return null;
   }
 };
 
 // --- Cross-App & Multi-Modal Functions ---
+
+// ─── Voice memo analysis — KEPT on direct SDK ────────────────────────────────
+// Uses gemini-2.5-flash with audio inlineData (base64) — multimodal audio input
+// not yet supported by the router.
 
 export const analyzeVoiceMemo = async (apiKey: string, audioBase64: string): Promise<VoiceAnalysis | null> => {
   const ai = new GoogleGenAI({ apiKey });
@@ -1078,30 +948,19 @@ export const analyzeVoiceMemo = async (apiKey: string, audioBase64: string): Pro
 };
 
 export const generateChannelArtifact = async (apiKey: string, history: string, title: string): Promise<ChannelArtifact | null> => {
-  const ai = new GoogleGenAI({ apiKey });
+  void apiKey;
   try {
-    const response = await ai.models.generateContent({
-      model: 'gemini-2.5-flash',
-      contents: `Transform this chat history into a structured Wiki Artifact for project "${title}".
-      Return JSON: title, overview (paragraph), spec (Markdown content describing features/requirements derived from chat), decisions (list), milestones (list).
-      History: ${history}`,
-      config: {
-        responseMimeType: "application/json",
-        responseSchema: {
-          type: Type.OBJECT,
-          properties: {
-            title: { type: Type.STRING },
-            overview: { type: Type.STRING },
-            spec: { type: Type.STRING, description: "Markdown formatted spec" },
-            decisions: { type: Type.ARRAY, items: { type: Type.STRING } },
-            milestones: { type: Type.ARRAY, items: { type: Type.STRING } }
-          },
-          required: ["title", "overview", "spec", "decisions", "milestones"]
-        }
-      }
-    });
-    return JSON.parse(response.text || '{}') as ChannelArtifact;
+    const workspaceId = getCurrentWorkspaceId();
+    if (!workspaceId) return null;
+    return await invokeAIJson<ChannelArtifact>(
+      'content_generation',
+      `Transform this chat history into a structured Wiki Artifact for project "${title}".
+Return JSON with fields: title (string), overview (paragraph string), spec (Markdown content describing features/requirements derived from chat), decisions (string array), milestones (string array).
+History: ${history}`,
+      { workspaceId }
+    );
   } catch (e) {
+    if (isRouterHardError(e)) throw e;
     return null;
   }
 };
@@ -1127,7 +986,7 @@ export const generateEmailDraft = async (
     recipientName?: string;
   }
 ): Promise<EmailDraft | null> => {
-  if (!apiKey) return null;
+  void apiKey;
 
   const toneDescriptions = {
     professional: 'professional and business-appropriate',
@@ -1154,29 +1013,17 @@ export const generateEmailDraft = async (
 
        Return JSON: { "subject": "subject line", "body": "email body text", "suggestions": ["alternative phrase 1", "alternative phrase 2"] }`;
 
-  const result = await withFallback(
-    async () => {
-      const response = await fetch(`https://generativelanguage.googleapis.com/v1beta/models/gemini-2.5-flash:generateContent?key=${apiKey}`, {
-        method: 'POST',
-        headers: { 'Content-Type': 'application/json' },
-        body: JSON.stringify({
-          contents: [{ parts: [{ text: withFormattedOutput(basePrompt, 'email-draft') }] }],
-          generationConfig: { responseMimeType: 'application/json' },
-        }),
-      });
-      const data = await response.json();
-      const text = data.candidates?.[0]?.content?.parts?.[0]?.text;
-      return text ?? null;
-    },
-    `${basePrompt}\n\nIMPORTANT: Return ONLY valid JSON with fields: subject, body, suggestions.`,
-    'generateEmailDraft'
-  );
-
-  if (!result) return null;
   try {
-    const cleaned = (result as string).replace(/```json/g, '').replace(/```/g, '').trim();
-    return JSON.parse(cleaned) as EmailDraft;
-  } catch {
+    const workspaceId = getCurrentWorkspaceId();
+    if (!workspaceId) return null;
+    return await invokeAIJson<EmailDraft>(
+      'email_draft',
+      withFormattedOutput(basePrompt, 'email-draft'),
+      { workspaceId }
+    );
+  } catch (err) {
+    if (isRouterHardError(err)) throw err;
+    console.error('[gemini:generateEmailDraft] Primary call failed', err);
     return null;
   }
 };
@@ -1186,7 +1033,8 @@ export const improveEmailText = async (
   text: string,
   improvement: 'shorten' | 'elaborate' | 'fix_grammar' | 'make_friendlier' | 'make_formal'
 ): Promise<string | null> => {
-  if (!apiKey || !text) return null;
+  void apiKey;
+  if (!text) return null;
 
   const instructions = {
     shorten: 'Make this text more concise while keeping the main points',
@@ -1198,28 +1046,23 @@ export const improveEmailText = async (
 
   const rawPrompt = `${instructions[improvement]}:\n\n${text}\n\nReturn only the improved text, nothing else.`;
 
-  return withFallback(
-    async () => {
-      const response = await fetch(`https://generativelanguage.googleapis.com/v1beta/models/gemini-2.5-flash:generateContent?key=${apiKey}`, {
-        method: 'POST',
-        headers: { 'Content-Type': 'application/json' },
-        body: JSON.stringify({
-          contents: [{ parts: [{ text: withFormattedOutput(rawPrompt, 'email-draft') }] }],
-        }),
-      });
-      const data = await response.json();
-      return data.candidates?.[0]?.content?.parts?.[0]?.text ?? null;
-    },
-    rawPrompt,
-    'improveEmailText'
-  ) as Promise<string | null>;
+  try {
+    const workspaceId = getCurrentWorkspaceId();
+    if (!workspaceId) return null;
+    const result = await invokeAIPrompt('email_reply', withFormattedOutput(rawPrompt, 'email-draft'), { workspaceId });
+    return result ?? null;
+  } catch (err) {
+    if (isRouterHardError(err)) throw err;
+    console.error('[gemini:improveEmailText] Primary call failed', err);
+    return null;
+  }
 };
 
 export const generateEmailSuggestions = async (
   apiKey: string,
   emailContext: { from: string; subject: string; body: string }
 ): Promise<string[] | null> => {
-  if (!apiKey) return null;
+  void apiKey;
 
   const rawPrompt = `Given this email:
 From: ${emailContext.from}
@@ -1229,55 +1072,43 @@ Body: ${emailContext.body}
 Generate 3 smart reply suggestions (short, 1-2 sentences each).
 Return JSON array: ["suggestion 1", "suggestion 2", "suggestion 3"]`;
 
-  const result = await withFallback(
-    async () => {
-      const response = await fetch(`https://generativelanguage.googleapis.com/v1beta/models/gemini-2.5-flash:generateContent?key=${apiKey}`, {
-        method: 'POST',
-        headers: { 'Content-Type': 'application/json' },
-        body: JSON.stringify({
-          contents: [{ parts: [{ text: withFormattedOutput(rawPrompt, 'chat') }] }],
-          generationConfig: { responseMimeType: 'application/json' },
-        }),
-      });
-      const data = await response.json();
-      const text = data.candidates?.[0]?.content?.parts?.[0]?.text;
-      return text ?? null;
-    },
-    `${rawPrompt}\n\nIMPORTANT: Return ONLY a JSON array like ["reply 1", "reply 2", "reply 3"].`,
-    'generateEmailSuggestions'
-  );
-
-  if (!result) return null;
   try {
-    const cleaned = (result as string).replace(/```json/g, '').replace(/```/g, '').trim();
-    return JSON.parse(cleaned);
-  } catch {
+    const workspaceId = getCurrentWorkspaceId();
+    if (!workspaceId) return null;
+    return await invokeAIJson<string[]>(
+      'quick_reply_suggestions',
+      withFormattedOutput(rawPrompt, 'chat'),
+      { workspaceId }
+    );
+  } catch (err) {
+    if (isRouterHardError(err)) throw err;
+    console.error('[gemini:generateEmailSuggestions] Primary call failed', err);
     return null;
   }
 };
 
 // AI Lab Functions
 export const summarizeText = async (apiKey: string, text: string): Promise<string | null> => {
-  if (!apiKey || !text) return null;
+  void apiKey;
+  if (!text) return null;
 
   const prompt = `Summarize the following text concisely, capturing the key points and main ideas:\n\n${text}\n\nProvide a clear, well-structured summary.`;
 
-  return withFallback(
-    async () => {
-      const response = await fetch(`https://generativelanguage.googleapis.com/v1beta/models/gemini-2.5-flash:generateContent?key=${apiKey}`, {
-        method: 'POST',
-        headers: { 'Content-Type': 'application/json' },
-        body: JSON.stringify({
-          contents: [{ parts: [{ text: withFormattedOutput(prompt, 'summary') }] }],
-        }),
-      });
-      const data = await response.json();
-      return data.candidates?.[0]?.content?.parts?.[0]?.text ?? null;
-    },
-    prompt,
-    'summarizeText'
-  ) as Promise<string | null>;
+  try {
+    const workspaceId = getCurrentWorkspaceId();
+    if (!workspaceId) return null;
+    const result = await invokeAIPrompt('message_summary', withFormattedOutput(prompt, 'summary'), { workspaceId });
+    return result ?? null;
+  } catch (err) {
+    if (isRouterHardError(err)) throw err;
+    console.error('[gemini:summarizeText] Primary call failed', err);
+    return null;
+  }
 };
+
+// ─── Image analysis — KEPT on direct SDK ─────────────────────────────────────
+// Text output from image input (multimodal). Router does not yet support
+// image payloads — that's Phase 4 territory.
 
 export const analyzeImage = async (apiKey: string, imageBase64: string, prompt: string): Promise<string | null> => {
   if (!apiKey || !imageBase64) return null;
@@ -1303,6 +1134,9 @@ export const analyzeImage = async (apiKey: string, imageBase64: string, prompt: 
     return null;
   }
 };
+
+// ─── Embeddings — KEPT on direct SDK ─────────────────────────────────────────
+// Uses text-embedding-005 — not a generative model, not in router.
 
 export const generateEmbedding = async (apiKey: string, text: string): Promise<number[] | null> => {
   try {
@@ -1330,82 +1164,78 @@ export const generateEmbedding = async (apiKey: string, text: string): Promise<n
   }
 };
 
-export const processWithModel = async (apiKey: string, prompt: string, model: string = 'gemini-2.5-flash'): Promise<string | null> => {
-  if (!apiKey || !prompt) return null;
+// ─── Generic text processing (migrated) ──────────────────────────────────────
+// The `model` parameter is IGNORED — the router picks per-task.
+// Kept in the signature for backward compatibility with the 25+ downstream callers.
 
-  return withFallback(
-    async () => {
-      const response = await fetch(`https://generativelanguage.googleapis.com/v1beta/models/${model}:generateContent?key=${apiKey}`, {
-        method: 'POST',
-        headers: { 'Content-Type': 'application/json' },
-        body: JSON.stringify({
-          contents: [{ parts: [{ text: withFormattedOutput(prompt, 'default') }] }],
-        }),
-      });
+export const processWithModel = async (
+  apiKey: string,
+  prompt: string,
+  model: string = 'gemini-2.5-flash' // IGNORED — router decides per task
+): Promise<string | null> => {
+  void apiKey;
+  void model;
+  if (!prompt) return null;
 
-      if (!response.ok) {
-        const errorData = await response.json().catch(() => ({}));
-        console.error(`API Error (${response.status}):`, errorData);
-        throw new Error(`HTTP error! status: ${response.status}`);
-      }
-
-      const data = await response.json();
-      return data.candidates?.[0]?.content?.parts?.[0]?.text ?? null;
-    },
-    prompt,
-    'processWithModel'
-  ) as Promise<string | null>;
+  try {
+    const workspaceId = getCurrentWorkspaceId();
+    if (!workspaceId) return null;
+    const result = await invokeAIPrompt(
+      'pulse_assistant_chat',
+      withFormattedOutput(prompt, 'default'),
+      { workspaceId }
+    );
+    return result ?? null;
+  } catch (err) {
+    if (isRouterHardError(err)) throw err;
+    console.error('[gemini:processWithModel] Primary call failed', err);
+    return null;
+  }
 };
 
 // ==================== Proxy-based Model Processing ====================
 
 /**
- * Process a prompt via the Supabase gemini-proxy edge function.
- * No client-side API key required — the key lives server-side.
- * Falls back to localStorage key when VITE_FORCE_LOCAL_KEYS is set.
+ * Historically routed through the `gemini-proxy` edge function; now a thin
+ * re-export of `processWithModel`. The router handles keys and proxying,
+ * so the separate proxy path is obsolete.
+ *
+ * NOTE: Signature differs from `processWithModel` — no `apiKey` first arg.
+ * Downstream callers must continue to call this with (prompt, model?).
  */
 export async function processWithModelViaProxy(
   prompt: string,
   model: string = 'gemini-2.5-flash'
 ): Promise<string> {
-  // Development fallback: use localStorage key directly
-  if (import.meta.env.VITE_FORCE_LOCAL_KEYS === 'true') {
-    const localKey = localStorage.getItem('gemini_api_key') || '';
-    if (localKey) {
-      const result = await processWithModel(localKey, prompt, model);
-      return result || '';
-    }
-  }
-
-  const { supabase } = await import('./supabase');
-  const { data, error } = await supabase.functions.invoke('gemini-proxy', {
-    body: { prompt, model, operation: 'war_room' },
-  });
-
-  if (error) throw new Error(`Gemini proxy error: ${error.message}`);
-  return data?.result || data?.text || '';
+  const result = await processWithModel('', prompt, model);
+  return result || '';
 }
 
 // ==================== Security Layer ====================
 
 /**
- * Secure wrapper for Gemini API calls with rate limiting and retry logic
- * This layer should be used for all new implementations
+ * Secure wrapper for Gemini API calls with rate limiting and retry logic.
+ *
+ * Migrated to route through `ai-router` for all text generation. Rate limiting
+ * is still applied client-side as a belt-and-braces measure on top of the
+ * router's workspace-level hard caps.
  */
 export const secureGeminiService = {
   /**
-   * Check if backend API proxy is available
+   * Historical health check for the backend API proxy. With router-based
+   * routing this is always available (the router handles its own fallbacks),
+   * so we return true and keep the method for API compatibility.
    */
   async isProxyAvailable(): Promise<boolean> {
-    try {
-      return await apiProxyService.healthCheck();
-    } catch {
-      return false;
-    }
+    return true;
   },
 
   /**
-   * Secure generate content with rate limiting and retry
+   * Secure generate content — migrated to route through ai-router.
+   * `contents` may be a string or a Gemini-style `{ parts: [...] }` / array
+   * structure. Non-string inputs are best-effort flattened to text.
+   * `config` is accepted for backward compatibility but largely ignored —
+   * the router picks the model, temperature, and JSON mode per task.
    */
   async generateContent(
     model: string,
@@ -1413,7 +1243,9 @@ export const secureGeminiService = {
     config?: any,
     userId: string = 'anonymous'
   ): Promise<any> {
-    // Check rate limits
+    void model;
+
+    // Check rate limits (client-side belt-and-braces)
     const rateLimitCheck = await rateLimitService.checkLimit('api_gemini', userId);
     if (!rateLimitCheck.allowed) {
       throw new Error(
@@ -1421,74 +1253,51 @@ export const secureGeminiService = {
       );
     }
 
-    // Check billing usage limit (soft gate — warns but doesn't block during rollout)
-    try {
-      const { supabase: sb } = await import('./supabase');
-      const { data: { user } } = await sb.auth.getUser();
-      if (user) {
-        const { data: member } = await sb.from('workspace_members').select('workspace_id').eq('user_id', user.id).limit(1).single();
-        if (member) {
-          const { data: ent } = await sb.from('entitlements').select('max_ai_messages_mo').eq('workspace_id', member.workspace_id).single();
-          if (ent?.max_ai_messages_mo !== null) {
-            const now = new Date();
-            const periodStart = new Date(now.getFullYear(), now.getMonth(), 1).toISOString().split('T')[0];
-            const { data: usage } = await sb.from('usage_records').select('quantity').eq('workspace_id', member.workspace_id).eq('metric', 'ai_messages').eq('period_start', periodStart).single();
-            const current = usage?.quantity || 0;
-            if (current >= ent.max_ai_messages_mo) {
-              throw new Error('You\'ve reached your AI message limit for this month. Upgrade your plan for more messages.');
-            }
-          }
-        }
-      }
-    } catch (limitError) {
-      if (limitError instanceof Error && limitError.message.includes('AI message limit')) {
-        throw limitError;
-      }
-      // Silently continue if entitlement check fails
-    }
-
     // Sanitize input
     const sanitizedContents = sanitizationService.sanitizeObject(contents);
 
-    // Try to use API proxy if available
-    const useProxy = await this.isProxyAvailable();
+    // Flatten contents to a plain prompt string.
+    let prompt = '';
+    if (typeof sanitizedContents === 'string') {
+      prompt = sanitizedContents;
+    } else if (sanitizedContents?.parts && Array.isArray(sanitizedContents.parts)) {
+      prompt = sanitizedContents.parts
+        .map((p: any) => (typeof p?.text === 'string' ? p.text : ''))
+        .filter(Boolean)
+        .join('\n');
+    } else if (Array.isArray(sanitizedContents)) {
+      prompt = sanitizedContents
+        .map((c: any) => {
+          if (typeof c === 'string') return c;
+          if (c?.parts && Array.isArray(c.parts)) {
+            return c.parts.map((p: any) => p?.text ?? '').join('\n');
+          }
+          return '';
+        })
+        .filter(Boolean)
+        .join('\n');
+    } else {
+      prompt = JSON.stringify(sanitizedContents ?? '');
+    }
 
-    if (useProxy) {
-      try {
-        const result = await retryService.executeWithRetry(
-          async () => await apiProxyService.geminiGenerateContent({
-            model,
-            contents: sanitizedContents,
-            config,
-          }),
-          3, // max attempts
-          2  // backoff multiplier
+    const workspaceId = getCurrentWorkspaceId();
+    if (!workspaceId) {
+      throw new Error('No active workspace — AI unavailable.');
+    }
+
+    const text = await retryService.executeWithRetry(
+      async () => {
+        const aiResult = await invokeAI(
+          'pulse_assistant_chat',
+          {
+            messages: [{ role: 'user', content: prompt }],
+            temperature: config?.temperature,
+            jsonMode: config?.responseMimeType === 'application/json',
+          },
+          { workspaceId }
         );
-
-        // Record rate limit usage
-        await rateLimitService.recordRequest('api_gemini', userId);
-        usageTracker.aiMessage();
-        return result;
-      } catch (error) {
-        console.warn('API proxy failed, falling back to direct API call:', error);
-        // Fall through to direct API call
-      }
-    }
-
-    // Fallback to direct API call (legacy behavior)
-    // WARNING: This exposes API key on client side
-    const apiKey = localStorage.getItem('gemini_api_key') || '';
-    if (!apiKey) {
-      throw new Error('Gemini API key not configured. Please configure the backend API proxy or add an API key in settings.');
-    }
-
-    const ai = new GoogleGenAI({ apiKey });
-    const result = await retryService.executeWithRetry(
-      async () => await ai.models.generateContent({
-        model,
-        contents: sanitizedContents,
-        config,
-      }),
+        return aiResult.text;
+      },
       3,
       2
     );
@@ -1496,7 +1305,10 @@ export const secureGeminiService = {
     // Record rate limit usage
     await rateLimitService.recordRequest('api_gemini', userId);
     usageTracker.aiMessage();
-    return result;
+
+    // Shape matches the legacy Gemini SDK response so existing callers that
+    // read `.text` keep working.
+    return { text };
   },
 
   /**
@@ -1522,39 +1334,30 @@ export const secureGeminiService = {
 };
 
 // Convenience wrapper for voice command service and other consumers
-// that expect a simple chat interface
-// DEPRECATED: Use secureGeminiService instead for new implementations
+// that expect a simple chat interface.
+// DEPRECATED: Use secureGeminiService instead for new implementations.
 export const geminiService = {
   async chat(prompt: string, options?: { temperature?: number }): Promise<string> {
-    // Get API key from localStorage
-    const apiKey = localStorage.getItem('gemini_api_key') || '';
-
     const sanitizedPrompt = sanitizationService.sanitizeText(prompt, { maxLength: 10000 });
 
-    if (apiKey) {
-      try {
-        const ai = new GoogleGenAI({ apiKey });
-        const response = await ai.models.generateContent({
-          model: 'gemini-2.5-flash',
-          contents: sanitizedPrompt,
-          config: { temperature: options?.temperature ?? 0.7 },
-        });
-        return response.text || '';
-      } catch (error) {
-        console.warn('[geminiService.chat] Gemini failed — trying Perplexity fallback:', error);
+    try {
+      const workspaceId = getCurrentWorkspaceId();
+      if (workspaceId) {
+        const aiResult = await invokeAI(
+          'pulse_assistant_chat',
+          {
+            messages: [{ role: 'user', content: sanitizedPrompt }],
+            temperature: options?.temperature ?? 0.7,
+          },
+          { workspaceId }
+        );
+        return aiResult.text || '';
       }
-    } else {
-      console.warn('[geminiService.chat] No Gemini API key — trying Perplexity fallback');
+    } catch (error) {
+      if (isRouterHardError(error)) throw error;
+      console.error('[geminiService.chat] Router call failed:', error);
     }
 
-    if (isPerplexityAvailable()) {
-      try {
-        return await perplexityGenerateText(sanitizedPrompt);
-      } catch (fallbackErr) {
-        console.error('[geminiService.chat] Perplexity fallback failed:', fallbackErr);
-      }
-    }
-
-    throw new Error('AI service unavailable: both Gemini and Perplexity failed or are not configured.');
+    throw new Error('AI service unavailable: router call failed or workspace not configured.');
   },
 };

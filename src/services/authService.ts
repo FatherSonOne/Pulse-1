@@ -634,48 +634,55 @@ export const connectProvider = async (provider: 'google' | 'microsoft' | 'icloud
 };
 
 // Real Google Contacts Sync via Google People API
+let inFlightSync: Promise<Contact[]> | null = null;
+
 export const syncGoogleContacts = async (): Promise<Contact[]> => {
+  // Dedupe concurrent calls (e.g. React StrictMode double-mount in dev)
+  if (inFlightSync) return inFlightSync;
+
+  inFlightSync = (async () => {
+    try {
+      const { data: { user }, error: authError } = await supabase.auth.getUser();
+      if (authError || !user) {
+        console.debug('[Auth Debug] Skipping contact sync - not authenticated');
+        return [];
+      }
+
+      const { googleContactsService } = await import('./googleContactsService');
+
+      const connected = await googleContactsService.isConnected();
+      if (!connected) {
+        console.debug('[Auth Debug] Google Contacts not connected (expected when not authenticated or permission not granted)');
+        return [];
+      }
+
+      const contacts = await googleContactsService.getAllContacts();
+      if (contacts.length > 0) {
+        console.log(`Synced ${contacts.length} contacts from Google`);
+      } else {
+        console.debug('[Auth Debug] No contacts synced from Google (expected if no contacts exist)');
+      }
+      return contacts;
+    } catch (error: any) {
+      if (error?.name === 'AbortError') {
+        console.debug('[Auth Debug] Contact sync aborted (expected during initialization)');
+        return [];
+      }
+
+      if (error.code === 'GOOGLE_CONTACTS_PERMISSION_DENIED') {
+        console.debug('[Auth Debug] Google Contacts permission not granted (expected)');
+        return [];
+      }
+
+      console.warn('Failed to sync Google contacts:', error);
+      return [];
+    }
+  })();
+
   try {
-    // Check if user is authenticated first
-    const { data: { user }, error: authError } = await supabase.auth.getUser();
-    if (authError || !user) {
-      console.debug('[Auth Debug] Skipping contact sync - not authenticated');
-      return [];
-    }
-
-    // Dynamically import to avoid circular dependencies
-    const { googleContactsService } = await import('./googleContactsService');
-
-    const connected = await googleContactsService.isConnected();
-    if (!connected) {
-      // Use debug-level logging - this is expected when user isn't logged in or hasn't granted contacts permission
-      console.debug('[Auth Debug] Google Contacts not connected (expected when not authenticated or permission not granted)');
-      return [];
-    }
-
-    const contacts = await googleContactsService.getAllContacts();
-    // Only log if contacts were actually synced (avoid noise when 0)
-    if (contacts.length > 0) {
-      console.log(`Synced ${contacts.length} contacts from Google`);
-    } else {
-      console.debug('[Auth Debug] No contacts synced from Google (expected if no contacts exist)');
-    }
-    return contacts;
-  } catch (error: any) {
-    // Silently handle abort errors (expected during initialization)
-    if (error?.name === 'AbortError') {
-      console.debug('[Auth Debug] Contact sync aborted (expected during initialization)');
-      return [];
-    }
-
-    // Use debug-level for permission errors (expected), warn for other errors
-    if (error.code === 'GOOGLE_CONTACTS_PERMISSION_DENIED') {
-      console.debug('[Auth Debug] Google Contacts permission not granted (expected)');
-      return [];
-    }
-
-    console.warn('Failed to sync Google contacts:', error);
-    return [];
+    return await inFlightSync;
+  } finally {
+    inFlightSync = null;
   }
 };
 

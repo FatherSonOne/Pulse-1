@@ -35,7 +35,6 @@
   /* ---- Partner Brand Colors ---- */
   --logos-vision-purple: #8B5CF6;
   --entomate-teal: #00A86B;
-  --perplexity-blue: #20B2AA;
 
   /* ---- Semantic Colors ---- */
   --success: #10B981;
@@ -486,11 +485,6 @@ code {
 /* Entomate */
 .partner-entomate {
   --partner-color: var(--entomate-teal);
-}
-
-/* Perplexity */
-.partner-perplexity {
-  --partner-color: var(--perplexity-blue);
 }
 
 /* ============================================

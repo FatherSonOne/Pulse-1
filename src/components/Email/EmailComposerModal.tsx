@@ -11,6 +11,7 @@ import ScheduleSendModal from './ScheduleSendModal';
 import TemplatesModal from './TemplatesModal';
 import TemplateVariablesModal from './TemplateVariablesModal';
 import { VoiceTextButton } from '../shared/VoiceTextButton';
+import { useAIErrorHandler } from '../../hooks/useAIErrorHandler';
 import toast from 'react-hot-toast';
 
 import { Bold, ChevronDown, Clock, FileText, Gauge, HardDrive, Italic, Link, Loader2, Lock, Maximize2, Minimize2, Minus, Paperclip, Pen, PenTool, Save, Send, Smile, SpellCheck, Square, Trash2, Underline, UserCog, Video, Wand2, X } from 'lucide-react';
@@ -54,6 +55,9 @@ export const EmailComposerModal: React.FC<EmailComposerModalProps> = ({
     }
     return quotedReply;
   };
+
+  // AI-router error handler (cap exceeded / provider down → toast + CTA)
+  const handleAIError = useAIErrorHandler();
 
   // Form state - prefer initial values (for undo restore), then replyTo, then empty
   const [to, setTo] = useState<string>(initialTo || replyTo?.from_email || '');
@@ -284,7 +288,9 @@ export const EmailComposerModal: React.FC<EmailComposerModalProps> = ({
       toast.success('Draft generated!');
     } catch (error) {
       console.error('Draft generation error:', error);
-      toast.error('Failed to generate draft');
+      if (!handleAIError(error)) {
+        toast.error('Failed to generate draft');
+      }
     } finally {
       setAiGenerating(false);
     }
@@ -314,8 +320,10 @@ export const EmailComposerModal: React.FC<EmailComposerModalProps> = ({
       setToneCheckResult(result);
     } catch (error) {
       console.error('Tone check error:', error);
-      toast.error('Failed to check tone');
       setShowToneCheck(false);
+      if (!handleAIError(error)) {
+        toast.error('Failed to check tone');
+      }
     }
   };
 
@@ -351,7 +359,9 @@ export const EmailComposerModal: React.FC<EmailComposerModalProps> = ({
       toast.success(`Email ${actionNames[action]}!`);
     } catch (error) {
       console.error('Enhancement error:', error);
-      toast.error('Failed to enhance email');
+      if (!handleAIError(error)) {
+        toast.error('Failed to enhance email');
+      }
     } finally {
       setEnhancing(false);
     }

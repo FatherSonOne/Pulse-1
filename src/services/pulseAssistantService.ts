@@ -1,9 +1,9 @@
-import { GoogleGenAI, HarmCategory, HarmBlockThreshold } from "@google/genai";
 import { AppView, User, Contact, CalendarEvent, Thread, ArchiveItem } from "../types";
 import { DecisionWithVotes } from "./decisionService";
 import { Task } from "./taskService";
 import { CachedEmail } from "./emailSyncService";
-import { settingsService } from "./settingsService";
+import { invokeAI } from "./ai/aiService";
+import { getCurrentWorkspaceId } from "./ai/getWorkspaceId";
 
 // ─── Pulse App Knowledge Base ────────────────────────────────────────────────
 // Injected into every AI query so Pulse AI can guide users through the entire app.
@@ -434,189 +434,163 @@ const SECTION_SUGGESTED_ACTIONS: Partial<Record<AppView, SuggestedAction[]>> = {
   ],
 };
 
-// ─── Service ──────────────────────────────────────────────────────────────────
+// ─── System instruction builder (pure, testable) ─────────────────────────────
 
-export const pulseAssistantService = {
-  /**
-   * Query the AI with the current section context.
-   * API key resolution: localStorage → VITE_GEMINI_API_KEY → VITE_API_KEY
-   */
-  async query(
-    userQuery: string,
-    context: AssistantContext,
-    apiKey: string,
-    history?: Array<{ role: 'user' | 'assistant'; content: string }>,
-    onChunk?: (chunk: string) => void,
-  ): Promise<string> {
-    const cacheKey = buildCacheKey(userQuery, context);
-    const cached = getCached(cacheKey);
-    if (cached) return cached;
+function buildSystemInstruction(context: AssistantContext): string {
+  const sectionLabel = SECTION_LABELS[context.section] ?? context.section;
+  const contextBlocks: string[] = [];
 
-    try {
-      const ai = new GoogleGenAI({ apiKey });
-      const sectionLabel = SECTION_LABELS[context.section] ?? context.section;
+  // Decisions & Tasks
+  const decisionsData = (context.decisions ?? []).slice(0, 15).map(d => ({
+    id: d.id,
+    title: d.title,
+    status: d.status,
+    type: d.decision_type,
+    votes: d.votes?.length ?? 0,
+    vote_counts: d.vote_counts,
+    created_at: d.created_at,
+  }));
+  const tasksData = (context.tasks ?? []).slice(0, 15).map(t => ({
+    id: t.id,
+    title: t.title,
+    status: t.status,
+    priority: t.priority,
+    assignee_id: t.assignee_id,
+    deadline: t.deadline,
+  }));
+  if (decisionsData.length > 0) {
+    contextBlocks.push(`Decisions (${decisionsData.length} total):\n${JSON.stringify(decisionsData, null, 2)}`);
+  }
+  if (tasksData.length > 0) {
+    contextBlocks.push(`Tasks (${tasksData.length} total):\n${JSON.stringify(tasksData, null, 2)}`);
+  }
 
-      // Read model from user settings, fallback to default
-      let modelName = 'gemini-2.5-flash';
-      try {
-        const savedModel = await settingsService.get('primaryAIModel');
-        if (savedModel) modelName = savedModel;
-      } catch { /* use default */ }
+  // Threads / Messages
+  const threadsData = (context.threads ?? []).slice(0, 10).map(t => ({
+    id: t.id,
+    contact: t.contactName,
+    message_count: t.messages?.length ?? 0,
+    unread: t.unread,
+    pinned: t.pinned,
+  }));
+  if (threadsData.length > 0) {
+    contextBlocks.push(`Message Threads (${threadsData.length} total):\n${JSON.stringify(threadsData, null, 2)}`);
+  }
 
-      const contextBlocks: string[] = [];
+  // Emails
+  if (context.emailUnreadCount !== undefined || (context.emails ?? []).length > 0) {
+    const emailsData = (context.emails ?? []).slice(0, 10).map(e => ({
+      id: e.id,
+      subject: e.subject,
+      from: e.from,
+      date: e.date,
+      read: e.read,
+      starred: e.starred,
+      snippet: e.snippet?.slice(0, 120),
+    }));
+    const unreadStr = context.emailUnreadCount !== undefined
+      ? `Unread count: ${context.emailUnreadCount}\n`
+      : '';
+    if (emailsData.length > 0 || unreadStr) {
+      contextBlocks.push(`Email Inbox:\n${unreadStr}${JSON.stringify(emailsData, null, 2)}`);
+    }
+  }
 
-      // Decisions & Tasks
-      const decisionsData = (context.decisions ?? []).slice(0, 15).map(d => ({
-        id: d.id,
-        title: d.title,
-        status: d.status,
-        type: d.decision_type,
-        votes: d.votes?.length ?? 0,
-        vote_counts: d.vote_counts,
-        created_at: d.created_at,
-      }));
-      const tasksData = (context.tasks ?? []).slice(0, 15).map(t => ({
-        id: t.id,
-        title: t.title,
-        status: t.status,
-        priority: t.priority,
-        assignee_id: t.assignee_id,
-        deadline: t.deadline,
-      }));
-      if (decisionsData.length > 0) {
-        contextBlocks.push(`Decisions (${decisionsData.length} total):\n${JSON.stringify(decisionsData, null, 2)}`);
-      }
-      if (tasksData.length > 0) {
-        contextBlocks.push(`Tasks (${tasksData.length} total):\n${JSON.stringify(tasksData, null, 2)}`);
-      }
+  // Calendar Events
+  const eventsData = (context.events ?? []).slice(0, 15).map(e => ({
+    id: e.id,
+    title: e.title,
+    start: e.start,
+    end: e.end,
+    location: e.location,
+    type: e.type,
+    attendees: Array.isArray(e.attendeesDetailed) ? e.attendeesDetailed.length : 0,
+  }));
+  if (eventsData.length > 0) {
+    contextBlocks.push(`Calendar Events (${eventsData.length}):\n${JSON.stringify(eventsData, null, 2)}`);
+  }
 
-      // Threads / Messages
-      const threadsData = (context.threads ?? []).slice(0, 10).map(t => ({
-        id: t.id,
-        contact: t.contactName,
-        message_count: t.messages?.length ?? 0,
-        unread: t.unread,
-        pinned: t.pinned,
-      }));
-      if (threadsData.length > 0) {
-        contextBlocks.push(`Message Threads (${threadsData.length} total):\n${JSON.stringify(threadsData, null, 2)}`);
-      }
+  // Contacts
+  const contactsData = (context.contacts ?? []).slice(0, 20).map(c => ({
+    id: c.id,
+    name: c.name,
+    email: c.email,
+    company: c.company,
+    lastSeen: c.lastSeen,
+    status: c.status,
+  }));
+  if (contactsData.length > 0) {
+    contextBlocks.push(`Contacts (${contactsData.length} total):\n${JSON.stringify(contactsData, null, 2)}`);
+  }
 
-      // Emails
-      if (context.emailUnreadCount !== undefined || (context.emails ?? []).length > 0) {
-        const emailsData = (context.emails ?? []).slice(0, 10).map(e => ({
-          id: e.id,
-          subject: e.subject,
-          from: e.from,
-          date: e.date,
-          read: e.read,
-          starred: e.starred,
-          snippet: e.snippet?.slice(0, 120),
-        }));
-        const unreadStr = context.emailUnreadCount !== undefined
-          ? `Unread count: ${context.emailUnreadCount}\n`
-          : '';
-        if (emailsData.length > 0 || unreadStr) {
-          contextBlocks.push(`Email Inbox:\n${unreadStr}${JSON.stringify(emailsData, null, 2)}`);
-        }
-      }
+  // Voxer recordings
+  const voxData = (context.voxerRecordings ?? []).slice(0, 10).map((v) => ({
+    id: v.id,
+    title: v.title ?? v.type ?? 'Vox',
+    duration: v.duration,
+    listened: v.listened,
+    created_at: v.created_at,
+    sender: v.sender_name ?? v.user_id,
+  }));
+  if (voxData.length > 0) {
+    const unlistened = voxData.filter(v => !v.listened).length;
+    contextBlocks.push(`Vox Messages (${voxData.length} total, ${unlistened} unlistened):\n${JSON.stringify(voxData, null, 2)}`);
+  }
 
-      // Calendar Events
-      const eventsData = (context.events ?? []).slice(0, 15).map(e => ({
-        id: e.id,
-        title: e.title,
-        start: e.start,
-        end: e.end,
-        location: e.location,
-        type: e.type,
-        attendees: Array.isArray(e.attendeesDetailed) ? e.attendeesDetailed.length : 0,
-      }));
-      if (eventsData.length > 0) {
-        contextBlocks.push(`Calendar Events (${eventsData.length}):\n${JSON.stringify(eventsData, null, 2)}`);
-      }
+  // Analytics metrics
+  if (context.analyticsMetrics) {
+    const m = context.analyticsMetrics;
+    contextBlocks.push(`Analytics Metrics (today):\n${JSON.stringify({
+      tasks_completed_today: m.tasksCompleted,
+      tasks_total: m.tasksTotal,
+      completion_rate: m.tasksTotal > 0 ? `${Math.round(m.tasksCompleted / m.tasksTotal * 100)}%` : '0%',
+      messages_sent: m.messagesSent,
+      messages_received: m.messagesReceived,
+      meetings_today: m.meetingsToday,
+      avg_response_time_minutes: m.avgResponseTime,
+    }, null, 2)}`);
+  }
 
-      // Contacts
-      const contactsData = (context.contacts ?? []).slice(0, 20).map(c => ({
-        id: c.id,
-        name: c.name,
-        email: c.email,
-        company: c.company,
-        lastSeen: c.lastSeen,
-        status: c.status,
-      }));
-      if (contactsData.length > 0) {
-        contextBlocks.push(`Contacts (${contactsData.length} total):\n${JSON.stringify(contactsData, null, 2)}`);
-      }
+  // Settings context
+  if (context.settingsContext) {
+    const s = context.settingsContext;
+    const parts: string[] = [];
+    if (s.workspaceName) parts.push(`Workspace: ${s.workspaceName}`);
+    if (s.workspacePlan) parts.push(`Plan: ${s.workspacePlan}`);
+    if (s.memberCount !== undefined) parts.push(`Members: ${s.memberCount}`);
+    if (s.teamCount !== undefined) parts.push(`Teams: ${s.teamCount}`);
+    if (s.theme) parts.push(`Theme: ${s.theme}`);
+    if (s.aiModel) parts.push(`AI model: ${s.aiModel}`);
+    if (s.integrationsActive && s.integrationsActive.length > 0) parts.push(`Active integrations: ${s.integrationsActive.join(', ')}`);
+    if (parts.length > 0) contextBlocks.push(`Settings & Workspace Info:\n${parts.join('\n')}`);
+  }
 
-      // Voxer recordings
-      const voxData = (context.voxerRecordings ?? []).slice(0, 10).map((v) => ({
-        id: v.id,
-        title: v.title ?? v.type ?? 'Vox',
-        duration: v.duration,
-        listened: v.listened,
-        created_at: v.created_at,
-        sender: v.sender_name ?? v.user_id,
-      }));
-      if (voxData.length > 0) {
-        const unlistened = voxData.filter(v => !v.listened).length;
-        contextBlocks.push(`Vox Messages (${voxData.length} total, ${unlistened} unlistened):\n${JSON.stringify(voxData, null, 2)}`);
-      }
+  // Search context
+  if (context.searchContext) {
+    const sc = context.searchContext;
+    const parts: string[] = [];
+    if (sc.recentSearches && sc.recentSearches.length > 0) parts.push(`Recent searches: ${sc.recentSearches.join(', ')}`);
+    if (sc.savedSearchCount !== undefined) parts.push(`Saved searches: ${sc.savedSearchCount}`);
+    if (parts.length > 0) contextBlocks.push(`Search Context:\n${parts.join('\n')}`);
+  }
 
-      // Analytics metrics
-      if (context.analyticsMetrics) {
-        const m = context.analyticsMetrics;
-        contextBlocks.push(`Analytics Metrics (today):\n${JSON.stringify({
-          tasks_completed_today: m.tasksCompleted,
-          tasks_total: m.tasksTotal,
-          completion_rate: m.tasksTotal > 0 ? `${Math.round(m.tasksCompleted / m.tasksTotal * 100)}%` : '0%',
-          messages_sent: m.messagesSent,
-          messages_received: m.messagesReceived,
-          meetings_today: m.meetingsToday,
-          avg_response_time_minutes: m.avgResponseTime,
-        }, null, 2)}`);
-      }
+  // Archives
+  const archiveData = (context.archives ?? []).slice(0, 15).map(a => ({
+    id: a.id,
+    title: a.title,
+    type: a.type,
+    archived_at: a.archivedAt,
+  }));
+  if (archiveData.length > 0) {
+    contextBlocks.push(`Archived Items (${archiveData.length} total):\n${JSON.stringify(archiveData, null, 2)}`);
+  }
 
-      // Settings context
-      if (context.settingsContext) {
-        const s = context.settingsContext;
-        const parts: string[] = [];
-        if (s.workspaceName) parts.push(`Workspace: ${s.workspaceName}`);
-        if (s.workspacePlan) parts.push(`Plan: ${s.workspacePlan}`);
-        if (s.memberCount !== undefined) parts.push(`Members: ${s.memberCount}`);
-        if (s.teamCount !== undefined) parts.push(`Teams: ${s.teamCount}`);
-        if (s.theme) parts.push(`Theme: ${s.theme}`);
-        if (s.aiModel) parts.push(`AI model: ${s.aiModel}`);
-        if (s.integrationsActive && s.integrationsActive.length > 0) parts.push(`Active integrations: ${s.integrationsActive.join(', ')}`);
-        if (parts.length > 0) contextBlocks.push(`Settings & Workspace Info:\n${parts.join('\n')}`);
-      }
+  const hasRealData = contextBlocks.length > 0;
+  if (!hasRealData) {
+    contextBlocks.push('(No data loaded for this section yet.)');
+  }
 
-      // Search context
-      if (context.searchContext) {
-        const sc = context.searchContext;
-        const parts: string[] = [];
-        if (sc.recentSearches && sc.recentSearches.length > 0) parts.push(`Recent searches: ${sc.recentSearches.join(', ')}`);
-        if (sc.savedSearchCount !== undefined) parts.push(`Saved searches: ${sc.savedSearchCount}`);
-        if (parts.length > 0) contextBlocks.push(`Search Context:\n${parts.join('\n')}`);
-      }
-
-      // Archives
-      const archiveData = (context.archives ?? []).slice(0, 15).map(a => ({
-        id: a.id,
-        title: a.title,
-        type: a.type,
-        archived_at: a.archivedAt,
-      }));
-      if (archiveData.length > 0) {
-        contextBlocks.push(`Archived Items (${archiveData.length} total):\n${JSON.stringify(archiveData, null, 2)}`);
-      }
-
-      const hasRealData = contextBlocks.length > 0;
-      if (!hasRealData) {
-        contextBlocks.push('(No data loaded for this section yet.)');
-      }
-
-      // Build system instruction with app knowledge + section context
-      const systemInstruction = `You are Pulse AI, an intelligent assistant embedded in the Pulse productivity app.
+  return `You are Pulse AI, an intelligent assistant embedded in the Pulse productivity app.
 
 ${PULSE_APP_KNOWLEDGE}
 
@@ -655,60 +629,95 @@ FORMATTING RULES:
 --- LIVE DATA ---
 ${contextBlocks.join('\n\n')}
 --- END DATA ---`;
+}
 
-      // Build multi-turn chat with conversation history
-      const chatHistory = (history ?? []).slice(-20).map(h => ({
-        role: (h.role === 'assistant' ? 'model' : 'user') as 'model' | 'user',
-        parts: [{ text: h.content }],
-      }));
+// ─── Service ──────────────────────────────────────────────────────────────────
 
-      const safetySettings = [
-        { category: HarmCategory.HARM_CATEGORY_HARASSMENT, threshold: HarmBlockThreshold.BLOCK_MEDIUM_AND_ABOVE },
-        { category: HarmCategory.HARM_CATEGORY_HATE_SPEECH, threshold: HarmBlockThreshold.BLOCK_MEDIUM_AND_ABOVE },
-        { category: HarmCategory.HARM_CATEGORY_SEXUALLY_EXPLICIT, threshold: HarmBlockThreshold.BLOCK_MEDIUM_AND_ABOVE },
-        { category: HarmCategory.HARM_CATEGORY_DANGEROUS_CONTENT, threshold: HarmBlockThreshold.BLOCK_MEDIUM_AND_ABOVE },
-      ];
+export const pulseAssistantService = {
+  /**
+   * Query the AI with the current section context.
+   *
+   * Routes through the central `ai-router` edge function which handles
+   * provider selection, metering, hard caps, and prompt caching automatically.
+   *
+   * @param userQuery The user's question.
+   * @param context The current app section context (data + user + workspace).
+   * @param apiKey DEPRECATED — unused. Retained for backward compatibility during
+   *   migration. Will be removed in Phase 3 when all callers are updated.
+   * @param history Optional prior conversation turns (last 20 are forwarded).
+   * @param onChunk Optional streaming callback. NOTE: the router does not yet
+   *   stream, so when provided, the full response is emitted as a single chunk
+   *   once available. Kept for API compatibility.
+   * @param workspaceId Optional workspace override. Falls back to
+   *   `context.workspaceId`, then `getCurrentWorkspaceId()`.
+   *
+   * @throws {AICapExceededError} When the workspace has hit its AI message cap.
+   * @throws {AITrialExpiredError} When the trial has expired.
+   * @throws {AIProviderUnavailableError} When all AI providers are down.
+   * @throws {AIRouterError} For other router failures (auth, invalid params).
+   */
+  async query(
+    userQuery: string,
+    context: AssistantContext,
+    apiKey: string | undefined,
+    history?: Array<{ role: 'user' | 'assistant'; content: string }>,
+    onChunk?: (chunk: string) => void,
+    workspaceId?: string,
+  ): Promise<string> {
+    void apiKey; // deprecated — router handles keys server-side
 
-      const chat = ai.chats.create({
-        model: modelName,
-        systemInstruction,
-        history: chatHistory,
-        safetySettings,
-      });
-
-      let result: string;
-
-      if (onChunk) {
-        // Streaming mode — send chunks to callback as they arrive
-        const stream = await chat.sendMessageStream({ message: userQuery });
-        let accumulated = '';
-        for await (const chunk of stream) {
-          const text = chunk.text ?? '';
-          if (text) {
-            accumulated += text;
-            onChunk(accumulated);
-          }
-          // Track token usage from last chunk
-          if (chunk.usageMetadata) {
-            trackTokenUsage(chunk.usageMetadata.promptTokenCount ?? 0, chunk.usageMetadata.candidatesTokenCount ?? 0);
-          }
-        }
-        result = accumulated || 'I was unable to generate a response. Please try again.';
-      } else {
-        // Non-streaming mode — wait for full response
-        const response = await chat.sendMessage({ message: userQuery });
-        result = response.text ?? 'I was unable to generate a response. Please try again.';
-        if (response.usageMetadata) {
-          trackTokenUsage(response.usageMetadata.promptTokenCount ?? 0, response.usageMetadata.candidatesTokenCount ?? 0);
-        }
-      }
-
-      setCache(cacheKey, result);
-      return result;
-    } catch (error) {
-      console.error('PulseAssistant query failed:', error);
-      return 'I encountered an error processing your request. Please check your API key and try again.';
+    const cacheKey = buildCacheKey(userQuery, context);
+    const cached = getCached(cacheKey);
+    if (cached) {
+      // Still invoke the streaming callback so UIs expecting chunks see the cached text.
+      if (onChunk) onChunk(cached);
+      return cached;
     }
+
+    const wsId = workspaceId ?? context.workspaceId ?? getCurrentWorkspaceId();
+    if (!wsId) {
+      throw new Error('No active workspace — AI unavailable');
+    }
+
+    const systemInstruction = buildSystemInstruction(context);
+
+    // Build multi-turn chat with conversation history (last 20 turns).
+    const chatHistory = (history ?? []).slice(-20).map(h => ({
+      role: h.role,
+      content: h.content,
+    }));
+
+    // Router contract: messages[] must include the current user turn at the end.
+    const messages = [
+      ...chatHistory,
+      { role: 'user' as const, content: userQuery },
+    ];
+
+    const result = await invokeAI(
+      'pulse_assistant_chat',
+      {
+        messages,
+        systemPrompt: systemInstruction,
+        temperature: 0.7,
+      },
+      { workspaceId: wsId },
+    );
+
+    const text = result.text || 'I was unable to generate a response. Please try again.';
+
+    // Track token usage for the session stats UI.
+    if (result.tokens) {
+      trackTokenUsage(result.tokens.input ?? 0, result.tokens.output ?? 0);
+    }
+
+    // The router does not yet stream; emit the full response as a single chunk
+    // so existing streaming call sites continue to work without modification.
+    if (onChunk) {
+      onChunk(text);
+    }
+
+    setCache(cacheKey, text);
+    return text;
   },
 
   /**

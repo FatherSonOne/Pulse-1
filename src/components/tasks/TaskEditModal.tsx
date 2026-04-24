@@ -73,13 +73,6 @@ export const TaskEditModal: React.FC<TaskEditModalProps> = ({
     setIsLoadingBlockers(true);
 
     try {
-      const apiKey = localStorage.getItem('gemini_api_key') ||
-                     import.meta.env.VITE_GEMINI_API_KEY || '';
-
-      if (!apiKey) {
-        return; // Silently skip if no API key
-      }
-
       // Fetch related tasks
       const allTasks = await fetchTasks();
       const workspaceTasks = allTasks.filter(t =>
@@ -87,9 +80,9 @@ export const TaskEditModal: React.FC<TaskEditModalProps> = ({
         t.id !== task.id
       );
 
-      // Call AI to predict blockers
+      // Call AI to predict blockers (router handles key server-side)
       const blockers = await taskIntelligenceService.predictBlockers(
-        apiKey,
+        '',
         task.title,
         task.description,
         workspaceTasks

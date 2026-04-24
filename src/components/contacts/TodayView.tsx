@@ -86,8 +86,13 @@ export const TodayView: React.FC<TodayViewProps> = ({ onAction, contacts = [] })
       if (contacts.length > 0) {
         try {
           const dueGoals = await getUpcomingActions(userId);
-          const existingIds = new Set(feedItems.map(i => i.id));
-          const autopilotItems = buildAutopilotFeedItems(dueGoals, contacts, existingIds);
+          // Dedup by the source goal id stored in metadata (row `id` is now a random UUID).
+          const existingSourceGoalIds = new Set(
+            feedItems
+              .map(i => i.metadata?.sourceGoalId as string | undefined)
+              .filter((x): x is string => !!x),
+          );
+          const autopilotItems = buildAutopilotFeedItems(dueGoals, contacts, existingSourceGoalIds);
           if (autopilotItems.length > 0) {
             allItems = [...autopilotItems, ...feedItems].sort((a, b) => a.priority - b.priority);
           }

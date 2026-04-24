@@ -38,6 +38,7 @@ import { archiveVoxerConversation } from '../../services/voxer/voxerArchiveServi
 import { VoxConversationSummary, VoxSmartReplies } from './index';
 import { summarizeConversation, generateSmartReplies } from '../../services/voxer/voxerAIService';
 import type { ConversationSummary, SmartReply } from '../../services/voxer/voxerAIService';
+import { useAIErrorHandler } from '../../hooks/useAIErrorHandler';
 
 // Phase 6: Final Polish
 import { useVoxerKeyboardShortcuts } from '../../hooks/useVoxerKeyboardShortcuts';
@@ -61,6 +62,9 @@ const QuickVoxMode: React.FC<QuickVoxModeProps> = ({
   onBack,
   isDarkMode = false,
 }) => {
+  // AI-router error handler (cap exceeded / provider down → toast + CTA)
+  const handleAIError = useAIErrorHandler();
+
   const [favorites, setFavorites] = useState<QuickVoxFavorite[]>([]);
   const [selectedContact, setSelectedContact] = useState<QuickVoxFavorite | null>(null);
   const [messages, setMessages] = useState<QuickVoxMessage[]>([]);
@@ -195,7 +199,9 @@ const QuickVoxMode: React.FC<QuickVoxModeProps> = ({
       }
     } catch (error) {
       console.error('Summarization error:', error);
-      toast.error('Failed to generate summary');
+      if (!handleAIError(error)) {
+        toast.error('Failed to generate summary');
+      }
     } finally {
       setIsGeneratingAI(false);
     }
@@ -243,7 +249,9 @@ const QuickVoxMode: React.FC<QuickVoxModeProps> = ({
       }
     } catch (error) {
       console.error('Smart replies error:', error);
-      toast.error('Failed to generate smart replies');
+      if (!handleAIError(error)) {
+        toast.error('Failed to generate smart replies');
+      }
     } finally {
       setIsGeneratingAI(false);
     }

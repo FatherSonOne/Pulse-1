@@ -70,27 +70,15 @@ export const CreateTaskModal: React.FC<CreateTaskModalProps> = ({
     setError(null);
 
     try {
-      // Get API key
-      const apiKey = localStorage.getItem('gemini_api_key') ||
-                     import.meta.env.VITE_GEMINI_API_KEY || '';
-
-      if (!apiKey) {
-        console.warn('No Gemini API key found. Using basic parsing.');
-        // Fall back to basic regex-based parsing
-        parseNaturalLanguageBasic(naturalLanguageInput);
-        setInputMode('form');
-        return;
-      }
-
       // Prepare workspace members for AI
       const membersList = workspaceMembers?.map(m => ({
         name: m.full_name || m.email,
         id: m.id
       })) || [];
 
-      // Call AI parser
+      // Call AI parser (router handles key server-side)
       const parsed = await parseNaturalLanguageTaskWithFallback(
-        apiKey,
+        '',
         naturalLanguageInput,
         membersList
       );
@@ -162,31 +150,13 @@ export const CreateTaskModal: React.FC<CreateTaskModalProps> = ({
     setError(null);
 
     try {
-      const apiKey = localStorage.getItem('gemini_api_key') ||
-                     import.meta.env.VITE_GEMINI_API_KEY || '';
-
-      if (!apiKey) {
-        // Fallback without AI
-        const daysMap = { urgent: 1, high: 3, medium: 7, low: 14 };
-        const daysToAdd = daysMap[priority] || 7;
-        const suggestedDate = new Date();
-        suggestedDate.setDate(suggestedDate.getDate() + daysToAdd);
-
-        setDeadlineSuggestion({
-          date: suggestedDate.toISOString().split('T')[0],
-          reasoning: `Based on ${priority} priority, suggested deadline is ${daysToAdd} days from now.`
-        });
-        setDeadline(suggestedDate.toISOString().split('T')[0]);
-        return;
-      }
-
       // Fetch current workspace tasks
       const currentTasks = await fetchTasks();
       const workspaceTasks = currentTasks.filter(t => t.workspace_id === workspaceId);
 
-      // Call AI to suggest deadline
+      // Call AI to suggest deadline (router handles key server-side)
       const suggestion = await taskIntelligenceService.suggestOptimalDeadline(
-        apiKey,
+        '',
         title,
         description,
         priority,

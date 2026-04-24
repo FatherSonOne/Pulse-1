@@ -1,11 +1,15 @@
 
 import React, { useState, useEffect, useMemo, useCallback, useRef } from 'react';
 import ReactDOM from 'react-dom';
+import ReactMarkdown from 'react-markdown';
 import { User, AppView, BatchedNotification, CalendarEvent, Task, Thread, Contact } from '../types';
 import { generateJournalInsight, generateSearchResponse, generateDailyBriefing, generateThinkingResponse } from '../services/geminiService';
 import { saveArchiveItem } from '../services/dbService';
 import { dataService } from '../services/dataService';
 import { briefingService, BriefingContext } from '../services/briefingService';
+import { useAIErrorHandler } from '../hooks/useAIErrorHandler';
+import { UsageWarningBanner } from './billing/UsageWarningBanner';
+import { OrgSetupChecklist } from './settings/OrgSetupChecklist';
 import QuickScheduler from './Dashboard/QuickScheduler';
 import CollapsibleWidget from './Dashboard/CollapsibleWidget';
 import { pulseService, SearchUserResult } from '../services/pulseService';
@@ -74,7 +78,8 @@ interface PriorityItem {
 interface DashboardProps {
   user: User | null;
   apiKey: string;
-  setView: (view: AppView, options?: { openTaskPanel?: boolean }) => void;
+  setView: (view: AppView, options?: { openTaskPanel?: boolean; openAddContact?: boolean }) => void;
+  openSettings?: (section: string) => void;
 }
 
 interface BriefingHighlight {
@@ -256,37 +261,11 @@ const TodaysPriorities: React.FC<TodaysPrioritiesProps> = ({ priorities, isLoadi
 
 // ============= MAIN DASHBOARD COMPONENT =============
 
-const Dashboard: React.FC<DashboardProps> = ({ user, apiKey, setView }) => {
-  // Also check localStorage for API key (in case user updates it in Settings)
-  // Prefer the prop, but fall back to localStorage
-  const [localApiKey, setLocalApiKey] = useState(() => localStorage.getItem('gemini_api_key') || '');
-  const effectiveApiKey = apiKey || localApiKey;
-  
-  // Listen for localStorage changes (e.g., when user updates API key in Settings)
-  useEffect(() => {
-    const handleStorageChange = () => {
-      const newKey = localStorage.getItem('gemini_api_key') || '';
-      if (newKey !== localApiKey) {
-        setLocalApiKey(newKey);
-      }
-    };
-    
-    // Listen to storage events (from other tabs/windows)
-    window.addEventListener('storage', handleStorageChange);
-    
-    // Also check periodically for changes (in case Settings updates same-tab localStorage)
-    const interval = setInterval(() => {
-      const newKey = localStorage.getItem('gemini_api_key') || '';
-      if (newKey !== localApiKey) {
-        handleStorageChange();
-      }
-    }, 1000);
-    
-    return () => {
-      window.removeEventListener('storage', handleStorageChange);
-      clearInterval(interval);
-    };
-  }, [localApiKey, apiKey]);
+const Dashboard: React.FC<DashboardProps> = ({ user, apiKey, setView, openSettings }) => {
+  // Router handles AI key server-side — client just passes '' to services
+  const effectiveApiKey = apiKey || '';
+  // AI-router error handler (cap exceeded / provider down → toast + CTA)
+  const handleAIError = useAIErrorHandler();
   // Real data state
   const [events, setEvents] = useState<CalendarEvent[]>([]);
   const [tasks, setTasks] = useState<Task[]>([]);
@@ -755,7 +734,7 @@ const Dashboard: React.FC<DashboardProps> = ({ user, apiKey, setView }) => {
 
   // Load briefing on mount and set up auto-refresh
   useEffect(() => {
-    if (effectiveApiKey && !isLoading) {
+    if (!isLoading) {
       // Initial load
       loadDailyBriefing();
 
@@ -770,14 +749,12 @@ const Dashboard: React.FC<DashboardProps> = ({ user, apiKey, setView }) => {
         }
       };
     }
-  }, [effectiveApiKey, isLoading]);
+  }, [isLoading]);
 
   // Also load quick stats separately for faster initial display
   useEffect(() => {
-    if (effectiveApiKey) {
-      loadBriefingStats();
-    }
-  }, [effectiveApiKey]);
+    loadBriefingStats();
+  }, []);
 
   const loadBriefingStats = async () => {
     try {
@@ -791,28 +768,12 @@ const Dashboard: React.FC<DashboardProps> = ({ user, apiKey, setView }) => {
   const loadDailyBriefing = async (silent = false) => {
     if (!silent) setLoadingBriefing(true);
 
-    // Check if API key is available
-    if (!effectiveApiKey || effectiveApiKey.trim() === '') {
-      console.warn('[Dashboard] No Gemini API key available. Please set it in Settings or environment variables.');
-      if (!briefing) {
-        setBriefing({
-          greeting: "Welcome back.",
-          summary: "Please configure your Gemini API key in Settings to enable AI-powered briefing generation.",
-          suggestions: [],
-          highlights: [],
-          focusRecommendation: "Go to Settings to add your Gemini API key from https://aistudio.google.com/apikey"
-        });
-      }
-      if (!silent) setLoadingBriefing(false);
-      return;
-    }
-
     try {
       // Gather comprehensive context from all data sources
       const context = await briefingService.gatherBriefingContext();
       const contextString = briefingService.buildContextString(context);
 
-      // Generate AI briefing with full context
+      // Generate AI briefing with full context (router handles key server-side)
       const data = await generateDailyBriefing(effectiveApiKey, contextString);
 
       if (data) {
@@ -826,19 +787,19 @@ const Dashboard: React.FC<DashboardProps> = ({ user, apiKey, setView }) => {
       await loadBriefingStats();
     } catch (error: any) {
       console.error('Failed to load daily briefing:', error);
+      // Let the global handler surface cap / trial / provider issues
+      // (a cap-exceeded toast is far more actionable than silently falling
+      // back to generic text). We still drop into the fallback briefing below
+      // so the dashboard keeps rendering usable content.
+      handleAIError(error);
       // Set a fallback briefing with helpful message
-      const errorMessage = error?.message || String(error);
       if (!briefing) {
         setBriefing({
           greeting: "Welcome back.",
-          summary: errorMessage?.includes('API key') 
-            ? "There's an issue with your Gemini API key. Please check Settings and ensure your API key is valid."
-            : "Unable to generate AI briefing at this time. Your dashboard is still functional.",
+          summary: "Unable to generate AI briefing at this time. Your dashboard is still functional.",
           suggestions: [],
           highlights: [],
-          focusRecommendation: errorMessage?.includes('API key')
-            ? "Verify your Gemini API key in Settings"
-            : "Check your tasks and calendar for today."
+          focusRecommendation: "Check your tasks and calendar for today."
         });
       }
     }
@@ -866,7 +827,7 @@ const Dashboard: React.FC<DashboardProps> = ({ user, apiKey, setView }) => {
   }, []);
 
   const handleJournalAnalyze = async () => {
-    if (!journalText.trim() || !effectiveApiKey) return;
+    if (!journalText.trim()) return;
     setSaving(true);
     const insight = await generateJournalInsight(effectiveApiKey, journalText);
     setJournalInsight(insight || '');
@@ -905,7 +866,7 @@ const Dashboard: React.FC<DashboardProps> = ({ user, apiKey, setView }) => {
 
   const handleSearch = async (e: React.FormEvent) => {
     e.preventDefault();
-    if (!searchQuery.trim() || !effectiveApiKey) return;
+    if (!searchQuery.trim()) return;
     setLoadingTools(true);
     try {
       const { text, groundingChunks } = await generateSearchResponse(effectiveApiKey, searchQuery);
@@ -917,7 +878,7 @@ const Dashboard: React.FC<DashboardProps> = ({ user, apiKey, setView }) => {
   };
 
   const handlePulseAiQuery = async (query: string) => {
-    if (!query.trim() || !effectiveApiKey) return;
+    if (!query.trim()) return;
     setLoadingPulseAi(true);
     setPulseAiQuery(query);
     try {
@@ -1119,6 +1080,12 @@ const Dashboard: React.FC<DashboardProps> = ({ user, apiKey, setView }) => {
   return (
     <div className="space-y-4 sm:space-y-6 overflow-y-auto h-full pr-1 sm:pr-2 animate-fade-in pb-10 mobile-scroll">
 
+      {/* Usage-warning banner — surfaces before the user hits a hard cap */}
+      <UsageWarningBanner />
+
+      {/* Organization setup checklist — shown to admins while onboarding_step='named' */}
+      {openSettings && <OrgSetupChecklist openSettings={openSettings} />}
+
       {/* Top AI Web Search Bar */}
       <div className="relative">
         <form onSubmit={handleSearch}>
@@ -1144,7 +1111,27 @@ const Dashboard: React.FC<DashboardProps> = ({ user, apiKey, setView }) => {
             <div className="flex items-center gap-2 mb-2 text-xs text-zinc-400 font-medium uppercase tracking-wide">
               <Sparkles className="w-3 h-3 text-rose-400" /> AI Web Search
             </div>
-            <div>{searchResult.text}</div>
+            <div className="text-sm leading-relaxed">
+              <ReactMarkdown
+                components={{
+                  p: ({ node, ...props }) => <p className="my-2 leading-relaxed text-zinc-700 dark:text-zinc-300" {...props} />,
+                  h1: ({ node, ...props }) => <h1 className="text-base font-semibold mt-4 mb-2 text-zinc-900 dark:text-white" {...props} />,
+                  h2: ({ node, ...props }) => <h2 className="text-sm font-semibold mt-4 mb-2 text-zinc-900 dark:text-white" {...props} />,
+                  h3: ({ node, ...props }) => <h3 className="text-sm font-semibold mt-3 mb-1.5 text-zinc-900 dark:text-white" {...props} />,
+                  ul: ({ node, ...props }) => <ul className="list-disc pl-5 my-2 space-y-1" {...props} />,
+                  ol: ({ node, ...props }) => <ol className="list-decimal pl-5 my-2 space-y-1" {...props} />,
+                  li: ({ node, ...props }) => <li className="leading-relaxed text-zinc-700 dark:text-zinc-300" {...props} />,
+                  strong: ({ node, ...props }) => <strong className="font-semibold text-zinc-900 dark:text-white" {...props} />,
+                  em: ({ node, ...props }) => <em className="italic text-zinc-700 dark:text-zinc-300" {...props} />,
+                  a: ({ node, ...props }) => <a target="_blank" rel="noopener noreferrer" className="text-rose-500 hover:text-rose-400 underline underline-offset-2" {...props} />,
+                  code: ({ node, ...props }) => <code className="px-1 py-0.5 rounded bg-zinc-100 dark:bg-zinc-800 text-rose-500 text-xs font-mono" {...props} />,
+                  blockquote: ({ node, ...props }) => <blockquote className="border-l-2 border-rose-400 pl-3 my-2 italic text-zinc-600 dark:text-zinc-400" {...props} />,
+                  hr: () => <hr className="my-3 border-zinc-200 dark:border-zinc-800" />,
+                }}
+              >
+                {searchResult.text}
+              </ReactMarkdown>
+            </div>
             {searchResult.sources?.length > 0 && (
               <div className="mt-3 pt-3 border-t border-zinc-100 dark:border-zinc-800 flex flex-wrap gap-2">
                 {searchResult.sources.slice(0, 3).map((s: any, i: number) => (

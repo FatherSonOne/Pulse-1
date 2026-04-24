@@ -1,9 +1,20 @@
 // src/services/messageSummarizationService.ts
 // Message Summarization Service
 // Provides thread summaries, daily digests, and catch-up summaries
+//
+// Migrated from direct Gemini SDK (`processWithModel`) to the centralized
+// `ai-router` edge function via `invokeAIJson` / `invokeAIPrompt`.
+// The router handles provider selection, workspace-scoped metering, hard-cap
+// enforcement, and fallback on provider outage.
 
 import { supabase } from './supabase';
-import { processWithModel } from './geminiService';
+import { invokeAIJson, invokeAIPrompt } from './ai/aiService';
+import { getCurrentWorkspaceId } from './ai/getWorkspaceId';
+import {
+  AICapExceededError,
+  AITrialExpiredError,
+  AIProviderUnavailableError,
+} from './ai/errors';
 import { messageChannelService } from './messageChannelService';
 import { ChannelMessage } from '../types/messages';
 
@@ -78,18 +89,51 @@ function clearCache(): void {
   summaryCache.clear();
 }
 
+// ==================== Helper: resolve workspace ====================
+
+function resolveWorkspaceId(workspaceId?: string): string {
+  const wsId = workspaceId ?? getCurrentWorkspaceId();
+  if (!wsId) {
+    throw new Error('No active workspace — AI unavailable');
+  }
+  return wsId;
+}
+
+/**
+ * Re-throw router-specific errors so UI can handle them distinctly.
+ * Anything else falls through to the caller's generic catch.
+ */
+function rethrowRouterErrors(error: unknown): never {
+  if (
+    error instanceof AICapExceededError ||
+    error instanceof AITrialExpiredError ||
+    error instanceof AIProviderUnavailableError
+  ) {
+    throw error;
+  }
+  throw error;
+}
+
 // ==================== Service Class ====================
 
 class MessageSummarizationService {
   /**
-   * Summarize a message thread
+   * Summarize a message thread.
+   *
+   * @param apiKey DEPRECATED — unused. The `ai-router` edge function manages
+   *   provider keys server-side. Retained for call-site backward compatibility.
+   * @param workspaceId Optional workspace override. Falls back to the active
+   *   workspace from localStorage.
    */
   async summarizeThread(
     channelId: string,
     threadId: string,
     userId: string,
-    apiKey: string
+    apiKey: string,
+    workspaceId?: string
   ): Promise<ThreadSummary> {
+    void apiKey; // deprecated — router handles keys server-side
+
     try {
       // Get thread messages first to validate
       const messages = await messageChannelService.getThreadMessages(threadId);
@@ -104,12 +148,14 @@ class MessageSummarizationService {
         return cached;
       }
 
+      const wsId = resolveWorkspaceId(workspaceId);
+
       // Build context for AI
       const context = messages
         .map((m) => `[${m.sender_name || 'Unknown'}]: ${m.content}`)
         .join('\n');
 
-      // Generate summary using Gemini Flash
+      // Generate summary via ai-router → thread_digest task
       const prompt = `Analyze this conversation thread and provide a structured summary.
 
 Thread Messages:
@@ -131,21 +177,29 @@ Return as JSON with this exact structure:
   "participants": ["name 1", "name 2", ...]
 }`;
 
-      const response = await processWithModel(apiKey, prompt, 'gemini-2.5-flash');
-
-      if (!response) {
-        throw new Error('Failed to generate summary');
+      let parsed: {
+        summary?: string;
+        keyPoints?: string[];
+        actionItems?: string[];
+        decisions?: string[];
+        participants?: string[];
+      };
+      try {
+        parsed = await invokeAIJson<typeof parsed>(
+          'thread_digest',
+          prompt,
+          { workspaceId: wsId, temperature: 0.3 }
+        );
+      } catch (err) {
+        rethrowRouterErrors(err);
       }
 
-      // Parse JSON response
-      const parsed = this.parseJSONResponse(response);
-
       const summary: ThreadSummary = {
-        summary: parsed.summary || 'No summary available',
-        keyPoints: Array.isArray(parsed.keyPoints) ? parsed.keyPoints : [],
-        actionItems: Array.isArray(parsed.actionItems) ? parsed.actionItems : [],
-        decisions: Array.isArray(parsed.decisions) ? parsed.decisions : [],
-        participants: Array.isArray(parsed.participants) ? parsed.participants : [],
+        summary: parsed!.summary || 'No summary available',
+        keyPoints: Array.isArray(parsed!.keyPoints) ? parsed!.keyPoints : [],
+        actionItems: Array.isArray(parsed!.actionItems) ? parsed!.actionItems : [],
+        decisions: Array.isArray(parsed!.decisions) ? parsed!.decisions : [],
+        participants: Array.isArray(parsed!.participants) ? parsed!.participants : [],
         messageCount: messages.length,
       };
 
@@ -173,14 +227,22 @@ Return as JSON with this exact structure:
   }
 
   /**
-   * Generate daily digest for a user
+   * Generate daily digest for a user.
+   *
+   * @param apiKey DEPRECATED — unused. Retained for call-site compatibility.
+   * @param workspaceIdOverride Optional workspace override for the AI router.
+   *   Defaults to the `workspaceId` argument (the workspace whose channels are
+   *   being digested), since that's almost always the intended billing scope.
    */
   async generateDailyDigest(
     userId: string,
     workspaceId: string,
     date: Date,
-    apiKey: string
+    apiKey: string,
+    workspaceIdOverride?: string
   ): Promise<DailyDigest> {
+    void apiKey; // deprecated — router handles keys server-side
+
     try {
       const dateStr = date.toISOString().split('T')[0];
 
@@ -188,6 +250,12 @@ Return as JSON with this exact structure:
       const cached = getCached<DailyDigest>('daily', dateStr);
       if (cached) {
         return cached;
+      }
+
+      // Router workspace = override → digest workspace → localStorage fallback
+      const wsId = workspaceIdOverride ?? workspaceId ?? getCurrentWorkspaceId();
+      if (!wsId) {
+        throw new Error('No active workspace — AI unavailable');
       }
 
       // Get all channels for workspace
@@ -236,8 +304,14 @@ Return as JSON:
 }`;
 
         try {
-          const channelResponse = await processWithModel(apiKey, channelPrompt, 'gemini-2.5-flash-lite');
-          const channelData = this.parseJSONResponse(channelResponse || '{}');
+          const channelData = await invokeAIJson<{
+            highlights?: string[];
+            actionItems?: string[];
+          }>(
+            'thread_digest',
+            channelPrompt,
+            { workspaceId: wsId, temperature: 0.3 }
+          );
 
           // Get top participants
           const participantCounts = new Map<string, number>();
@@ -262,6 +336,15 @@ Return as JSON:
             allActionItems.push(...channelData.actionItems);
           }
         } catch (error) {
+          // Surface cap / trial / provider errors immediately; swallow everything else
+          // so a single noisy channel doesn't kill the whole digest.
+          if (
+            error instanceof AICapExceededError ||
+            error instanceof AITrialExpiredError ||
+            error instanceof AIProviderUnavailableError
+          ) {
+            throw error;
+          }
           console.error(`[Summarization] Error summarizing channel ${channel.name}:`, error);
         }
       }
@@ -273,10 +356,19 @@ ${channelSummaries.map((c) => `#${c.channelName} (${c.messageCount} messages): $
 
 Provide a 2-3 sentence overview of the most important activities and outcomes from today.`;
 
-      const overallSummary = await processWithModel(apiKey, overallPrompt, 'gemini-2.5-flash-lite');
+      let overallSummary: string;
+      try {
+        overallSummary = await invokeAIPrompt(
+          'thread_digest',
+          overallPrompt,
+          { workspaceId: wsId, temperature: 0.3 }
+        );
+      } catch (err) {
+        rethrowRouterErrors(err);
+      }
 
       const digest: DailyDigest = {
-        summary: overallSummary || 'No significant activity today',
+        summary: overallSummary! || 'No significant activity today',
         channelSummaries,
         actionItems: [...new Set(allActionItems)], // Remove duplicates
         totalMessages: channelSummaries.reduce((sum, c) => sum + c.messageCount, 0),
@@ -307,14 +399,21 @@ Provide a 2-3 sentence overview of the most important activities and outcomes fr
   }
 
   /**
-   * Generate catch-up summary for messages since last visit
+   * Generate catch-up summary for messages since last visit.
+   *
+   * @param apiKey DEPRECATED — unused. Retained for call-site compatibility.
+   * @param workspaceId Optional workspace override. Falls back to the active
+   *   workspace from localStorage.
    */
   async generateCatchUpSummary(
     channelId: string,
     userId: string,
     sinceDate: Date,
-    apiKey: string
+    apiKey: string,
+    workspaceId?: string
   ): Promise<CatchUpSummary> {
+    void apiKey; // deprecated — router handles keys server-side
+
     try {
       const cacheKey = `${channelId}-${sinceDate.toISOString()}`;
       const cached = getCached<CatchUpSummary>('catchup', cacheKey);
@@ -341,10 +440,12 @@ Provide a 2-3 sentence overview of the most important activities and outcomes fr
         };
       }
 
+      const wsId = resolveWorkspaceId(workspaceId);
+
       // Build context
       const context = messages.map((m: any) => `[${m.sender_name || 'Unknown'}]: ${m.content}`).join('\n');
 
-      // Generate catch-up summary
+      // Generate catch-up summary (time-window → thread_digest)
       const prompt = `Analyze these messages and create a "while you were away" summary:
 
 Messages:
@@ -364,14 +465,27 @@ Return as JSON:
   "actionItems": ["item 1", "item 2", ...]
 }`;
 
-      const response = await processWithModel(apiKey, prompt, 'gemini-2.5-flash');
-      const parsed = this.parseJSONResponse(response || '{}');
+      let parsed: {
+        summary?: string;
+        keyChanges?: string[];
+        decisionsMade?: string[];
+        actionItems?: string[];
+      };
+      try {
+        parsed = await invokeAIJson<typeof parsed>(
+          'thread_digest',
+          prompt,
+          { workspaceId: wsId, temperature: 0.3 }
+        );
+      } catch (err) {
+        rethrowRouterErrors(err);
+      }
 
       const catchUpSummary: CatchUpSummary = {
-        summary: parsed.summary || 'New messages were exchanged',
-        keyChanges: Array.isArray(parsed.keyChanges) ? parsed.keyChanges : [],
-        decisonsMade: Array.isArray(parsed.decisionsMade) ? parsed.decisionsMade : [],
-        actionItems: Array.isArray(parsed.actionItems) ? parsed.actionItems : [],
+        summary: parsed!.summary || 'New messages were exchanged',
+        keyChanges: Array.isArray(parsed!.keyChanges) ? parsed!.keyChanges : [],
+        decisonsMade: Array.isArray(parsed!.decisionsMade) ? parsed!.decisionsMade : [],
+        actionItems: Array.isArray(parsed!.actionItems) ? parsed!.actionItems : [],
         messageCount: messages.length,
         timeframe: this.formatTimeframe(sinceDate),
       };
@@ -399,10 +513,42 @@ Return as JSON:
     }
   }
 
+  /**
+   * Summarize a single (short) message — uses the `message_summary` task.
+   *
+   * Thin convenience helper that wasn't exposed in the pre-migration file but
+   * is available for callers who want a terse, single-message summary routed
+   * through the cheaper `message_summary` task tier.
+   */
+  async summarizeSingleMessage(
+    message: ChannelMessage,
+    workspaceId?: string
+  ): Promise<string> {
+    const wsId = resolveWorkspaceId(workspaceId);
+
+    const prompt = `Summarize this message in one sentence, plain text only, no preamble:
+
+From: ${message.sender_name || 'Unknown'}
+Message: ${message.content}`;
+
+    try {
+      const text = await invokeAIPrompt(
+        'message_summary',
+        prompt,
+        { workspaceId: wsId, temperature: 0.2 }
+      );
+      return text.trim();
+    } catch (err) {
+      rethrowRouterErrors(err);
+    }
+  }
+
   // ==================== Helper Methods ====================
 
   /**
-   * Parse JSON response from AI (handles markdown code blocks)
+   * Parse JSON response from AI (handles markdown code blocks).
+   * Retained for any legacy code path that still passes raw strings through;
+   * the new `invokeAIJson` helper handles parsing itself.
    */
   private parseJSONResponse(response: string): any {
     try {

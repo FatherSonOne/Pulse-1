@@ -2,26 +2,22 @@
  * Calendar AI Service
  * Provides AI-powered calendar features including smart scheduling,
  * meeting prep, conflict resolution, and predictive analytics
+ *
+ * Migrated from direct Gemini SDK calls to the central ai-router edge function.
+ * All LLM invocations flow through `invokeAIJson` / `invokeAIPrompt` which
+ * enforce workspace membership, hard-cap metering, task-to-model routing,
+ * and automatic provider fallback.
  */
 
 import { CalendarEvent, Contact, Task } from '../types';
 import { googleCalendarService } from './googleCalendarService';
-import { chatWithBot } from './geminiService';
-
-// Helper to get API key from localStorage
-const getGeminiApiKey = (): string => {
-  return localStorage.getItem('gemini_api_key') || '';
-};
-
-// Helper to generate AI content using gemini
-const generateAIContent = async (prompt: string): Promise<string> => {
-  const apiKey = getGeminiApiKey();
-  if (!apiKey) {
-    throw new Error('Gemini API key not configured');
-  }
-  const response = await chatWithBot(apiKey, [], prompt, false);
-  return response || '';
-};
+import { invokeAIJson } from './ai/aiService';
+import { getCurrentWorkspaceId } from './ai/getWorkspaceId';
+import {
+  AICapExceededError,
+  AITrialExpiredError,
+  AIProviderUnavailableError,
+} from './ai/errors';
 
 // Types for AI Calendar Features
 export interface SchedulingSuggestion {
@@ -215,6 +211,67 @@ export interface CalendarAnalytics {
   recommendations: string[];
 }
 
+// ─── Internal helpers ──────────────────────────────────────────────────
+
+/**
+ * Resolve the active workspace ID or throw.
+ */
+function resolveWorkspaceId(override?: string): string {
+  const wsId = override ?? getCurrentWorkspaceId();
+  if (!wsId) throw new Error('No active workspace — AI unavailable');
+  return wsId;
+}
+
+/**
+ * Re-throw well-known router errors unchanged so UI can handle them.
+ * Swallow other errors and return the fallback value.
+ */
+function rethrowRouterErrors(err: unknown): void {
+  if (
+    err instanceof AICapExceededError ||
+    err instanceof AITrialExpiredError ||
+    err instanceof AIProviderUnavailableError
+  ) {
+    throw err;
+  }
+}
+
+// ─── Response shape types for JSON-mode calls ─────────────────────────
+
+interface ParsedEventResponse {
+  title?: string;
+  date?: string;
+  startTime?: string;
+  endTime?: string;
+  attendees?: string[];
+  location?: string | null;
+  type?: CalendarEvent['type'];
+  allDay?: boolean;
+  description?: string;
+}
+
+interface MeetingPrepResponse {
+  suggestedAgenda?: string[];
+  talkingPoints?: string[];
+  questionsToAsk?: string[];
+  contextNotes?: string;
+}
+
+interface MeetingFollowUpResponse {
+  actionItems?: Array<{
+    description: string;
+    assignee?: string | null;
+    priority?: 'high' | 'medium' | 'low';
+  }>;
+  commitments?: Array<{
+    description: string;
+    madeBy: string;
+  }>;
+  nextSteps?: string[];
+  summaryNotes?: string;
+  suggestedFollowUpDays?: number;
+}
+
 class CalendarAIService {
   private productivityPatterns: ProductivityPattern | null = null;
   private goals: Goal[] = [];
@@ -225,10 +282,20 @@ class CalendarAIService {
   // ============================================
 
   /**
-   * Parse natural language input to create calendar events
+   * Parse natural language input to create calendar events.
+   *
+   * @param input Natural-language event description.
+   * @param contacts Contact list used to match attendee names to emails.
+   * @param workspaceId Optional workspace override; falls back to active workspace.
    */
-  async parseNaturalLanguageEvent(input: string, contacts: Contact[]): Promise<Partial<CalendarEvent> | null> {
+  async parseNaturalLanguageEvent(
+    input: string,
+    contacts: Contact[],
+    workspaceId?: string,
+  ): Promise<Partial<CalendarEvent> | null> {
     try {
+      const wsId = resolveWorkspaceId(workspaceId);
+
       const prompt = `Parse this natural language event request and extract structured data.
 
 Input: "${input}"
@@ -254,8 +321,12 @@ Parse relative dates like "tomorrow", "next Tuesday", "in 2 hours" correctly.
 
 Return ONLY the JSON object, no explanation.`;
 
-      const response = await generateAIContent(prompt);
-      const parsed = JSON.parse(response.replace(/```json\n?|\n?```/g, '').trim());
+      // Bulk extraction / classification → auto_tag
+      const parsed = await invokeAIJson<ParsedEventResponse>(
+        'auto_tag',
+        prompt,
+        { workspaceId: wsId, temperature: 0.2 },
+      );
 
       // Convert to CalendarEvent format
       const event: Partial<CalendarEvent> = {
@@ -263,7 +334,7 @@ Return ONLY the JSON object, no explanation.`;
         type: parsed.type || 'event',
         allDay: parsed.allDay || false,
         description: parsed.description,
-        location: parsed.location,
+        location: parsed.location ?? undefined,
         attendees: parsed.attendees || [],
       };
 
@@ -276,13 +347,16 @@ Return ONLY the JSON object, no explanation.`;
 
       return event;
     } catch (error) {
+      rethrowRouterErrors(error);
       console.error('Failed to parse natural language event:', error);
       return null;
     }
   }
 
   /**
-   * Suggest optimal meeting times based on patterns and availability
+   * Suggest optimal meeting times based on patterns and availability.
+   *
+   * Pure scheduling math — no LLM involved — so no workspace needed.
    */
   async suggestMeetingTimes(
     duration: number, // minutes
@@ -314,6 +388,7 @@ Return ONLY the JSON object, no explanation.`;
       } catch (e) {
         console.log('Could not get free/busy for attendees');
       }
+      void freeBusy;
 
       // Check each day
       for (let day = 0; day < 7; day++) {
@@ -419,13 +494,18 @@ Return ONLY the JSON object, no explanation.`;
   // ============================================
 
   /**
-   * Generate comprehensive meeting prep briefing
+   * Generate comprehensive meeting prep briefing.
+   *
+   * Routed to `calendar_prep` (Claude Haiku) — user-facing output quality matters.
+   *
+   * @param workspaceId Optional workspace override; falls back to active workspace.
    */
   async generateMeetingPrep(
     event: CalendarEvent,
     contacts: Contact[],
     recentEmails?: any[],
-    previousMeetings?: CalendarEvent[]
+    previousMeetings?: CalendarEvent[],
+    workspaceId?: string,
   ): Promise<MeetingPrepBriefing> {
     const attendeeInsights: AttendeeInsight[] = [];
 
@@ -475,8 +555,13 @@ Generate a JSON response with:
 Return ONLY the JSON object.`;
 
     try {
-      const response = await generateAIContent(prompt);
-      const parsed = JSON.parse(response.replace(/```json\n?|\n?```/g, '').trim());
+      const wsId = resolveWorkspaceId(workspaceId);
+
+      const parsed = await invokeAIJson<MeetingPrepResponse>(
+        'calendar_prep',
+        prompt,
+        { workspaceId: wsId, temperature: 0.5 },
+      );
 
       return {
         eventId: event.id,
@@ -488,6 +573,7 @@ Return ONLY the JSON object.`;
         generatedAt: new Date(),
       };
     } catch (error) {
+      rethrowRouterErrors(error);
       console.error('Failed to generate meeting prep:', error);
       return {
         eventId: event.id,
@@ -506,7 +592,9 @@ Return ONLY the JSON object.`;
   // ============================================
 
   /**
-   * Detect and analyze scheduling conflicts
+   * Detect and analyze scheduling conflicts.
+   *
+   * Pure math — no LLM. Kept synchronous-friendly.
    */
   async detectConflicts(events: CalendarEvent[]): Promise<ConflictResolution[]> {
     const conflicts: ConflictResolution[] = [];
@@ -678,11 +766,16 @@ Return ONLY the JSON object.`;
   // ============================================
 
   /**
-   * Generate follow-up actions from meeting notes
+   * Generate follow-up actions from meeting notes.
+   *
+   * Routed to `calendar_prep` — briefing-style summarization of meeting outcomes.
+   *
+   * @param workspaceId Optional workspace override; falls back to active workspace.
    */
   async generateMeetingFollowUp(
     event: CalendarEvent,
-    meetingNotes?: string
+    meetingNotes?: string,
+    workspaceId?: string,
   ): Promise<MeetingFollowUp> {
     const prompt = `Analyze this meeting and extract follow-up items:
 
@@ -707,22 +800,27 @@ Generate a JSON response:
 Return ONLY JSON.`;
 
     try {
-      const response = await generateAIContent(prompt);
-      const parsed = JSON.parse(response.replace(/```json\n?|\n?```/g, '').trim());
+      const wsId = resolveWorkspaceId(workspaceId);
+
+      const parsed = await invokeAIJson<MeetingFollowUpResponse>(
+        'calendar_prep',
+        prompt,
+        { workspaceId: wsId, temperature: 0.4 },
+      );
 
       const followUpDate = new Date(event.start);
       followUpDate.setDate(followUpDate.getDate() + (parsed.suggestedFollowUpDays || 7));
 
       return {
         eventId: event.id,
-        actionItems: (parsed.actionItems || []).map((item: any, i: number) => ({
+        actionItems: (parsed.actionItems || []).map((item, i) => ({
           id: `action-${event.id}-${i}`,
           description: item.description,
-          assignee: item.assignee,
+          assignee: item.assignee ?? undefined,
           priority: item.priority || 'medium',
           status: 'pending',
         })),
-        commitments: (parsed.commitments || []).map((c: any) => ({
+        commitments: (parsed.commitments || []).map((c) => ({
           description: c.description,
           madeBy: c.madeBy,
           tracked: false,
@@ -732,6 +830,7 @@ Return ONLY JSON.`;
         summaryNotes: parsed.summaryNotes || '',
       };
     } catch (error) {
+      rethrowRouterErrors(error);
       console.error('Failed to generate follow-up:', error);
       return {
         eventId: event.id,
@@ -748,7 +847,9 @@ Return ONLY JSON.`;
   // ============================================
 
   /**
-   * Analyze travel needs between consecutive meetings
+   * Analyze travel needs between consecutive meetings.
+   *
+   * Pure heuristic — no LLM.
    */
   async analyzeTravelBuffers(events: CalendarEvent[]): Promise<TravelBuffer[]> {
     const buffers: TravelBuffer[] = [];
@@ -808,7 +909,9 @@ Return ONLY JSON.`;
   // ============================================
 
   /**
-   * Analyze relationships and suggest catch-ups
+   * Analyze relationships and suggest catch-ups.
+   *
+   * Pure math — no LLM.
    */
   async analyzeRelationships(
     contacts: Contact[],
@@ -991,7 +1094,9 @@ Return ONLY JSON.`;
   // ============================================
 
   /**
-   * Generate smart reschedule options
+   * Generate smart reschedule options.
+   *
+   * Pure math — no LLM.
    */
   async generateRescheduleOptions(
     event: CalendarEvent,
@@ -1056,6 +1161,7 @@ Return ONLY JSON.`;
   private getRescheduleReason(newTime: Date, oldTime: Date): string {
     const dayDiff = Math.floor((newTime.getTime() - oldTime.getTime()) / (1000 * 60 * 60 * 24));
     const hourDiff = newTime.getHours() - oldTime.getHours();
+    void hourDiff;
 
     if (dayDiff === 0) return 'Same day, different time';
     if (dayDiff === 1) return 'Next day availability';
@@ -1068,12 +1174,16 @@ Return ONLY JSON.`;
   // ============================================
 
   /**
-   * Process voice commands for calendar
+   * Process voice commands for calendar.
+   *
+   * @param workspaceId Optional workspace override; passed through to
+   *   `parseNaturalLanguageEvent` and `predictAvailability` as needed.
    */
   async processVoiceCommand(
     command: string,
     contacts: Contact[],
-    events: CalendarEvent[]
+    events: CalendarEvent[],
+    workspaceId?: string,
   ): Promise<{
     action: string;
     response: string;
@@ -1124,7 +1234,7 @@ Return ONLY JSON.`;
 
     // "Schedule/reschedule [event] to [time]"
     if (lowerCommand.includes('schedule') || lowerCommand.includes('reschedule')) {
-      const parsed = await this.parseNaturalLanguageEvent(command, contacts);
+      const parsed = await this.parseNaturalLanguageEvent(command, contacts, workspaceId);
       if (parsed) {
         return {
           action: 'create_event',
@@ -1171,7 +1281,7 @@ Return ONLY JSON.`;
     }
 
     // Default: try to parse as event creation
-    const parsed = await this.parseNaturalLanguageEvent(command, contacts);
+    const parsed = await this.parseNaturalLanguageEvent(command, contacts, workspaceId);
     if (parsed && parsed.title) {
       return {
         action: 'create_event',
@@ -1191,7 +1301,9 @@ Return ONLY JSON.`;
   // ============================================
 
   /**
-   * Predict when a contact is likely to be available
+   * Predict when a contact is likely to be available.
+   *
+   * Pure pattern analysis — no LLM.
    */
   async predictAvailability(
     contact: Contact,
@@ -1267,7 +1379,9 @@ Return ONLY JSON.`;
   }
 
   /**
-   * Analyze how calendar aligns with goals
+   * Analyze how calendar aligns with goals.
+   *
+   * Pure math — no LLM.
    */
   async analyzeGoalAlignment(
     events: CalendarEvent[],
@@ -1340,7 +1454,9 @@ Return ONLY JSON.`;
   // ============================================
 
   /**
-   * Generate comprehensive calendar analytics
+   * Generate comprehensive calendar analytics.
+   *
+   * Pure math — no LLM.
    */
   async generateAnalytics(
     events: CalendarEvent[],

@@ -1,7 +1,8 @@
-import { GoogleGenAI, Type } from "@google/genai";
 import { Task } from "./taskService";
 import { DecisionWithVotes } from "./decisionService";
 import { Contact } from "../types";
+import { invokeAIJson } from "./ai/aiService";
+import { getCurrentWorkspaceId } from "./ai/getWorkspaceId";
 
 export interface AITaskPriority {
   taskId: string;
@@ -20,16 +21,26 @@ export interface TaskDependency {
 
 export const taskIntelligenceService = {
   /**
-   * Generate AI priority scores for tasks
+   * Generate AI priority scores for tasks.
+   *
+   * Routes through `ai-router` using the `task_prioritization` task.
+   * Falls back to a deterministic scoring heuristic on any router failure.
+   *
+   * @param tasks Tasks to prioritise.
+   * @param apiKey DEPRECATED — unused. Router handles keys server-side.
+   *   Retained for backward compatibility during migration.
+   * @param workspaceId Optional workspace override. Falls back to
+   *   `getCurrentWorkspaceId()`.
    */
   async intelligentPrioritization(
     tasks: Task[],
-    apiKey: string
+    apiKey: string | undefined,
+    workspaceId?: string,
   ): Promise<AITaskPriority[]> {
-    try {
-      const ai = new GoogleGenAI({ apiKey });
+    void apiKey; // deprecated — router handles keys server-side
 
-      // Detect dependencies first
+    try {
+      // Detect dependencies first (local, no LLM call)
       const dependencies = await this.detectDependencies(tasks);
       const dependencyMap = new Map(
         dependencies.map(d => [d.taskId, d])
@@ -67,16 +78,17 @@ For each task, return:
 
 Return JSON array of prioritized tasks, sorted by aiScore descending.`;
 
-      const response = await ai.models.generateContent({
-        model: 'gemini-2.5-flash',
-        contents: prompt,
-        config: {
-          temperature: 0.3,
-          responseMimeType: 'application/json',
-        },
-      });
+      const wsId = workspaceId ?? getCurrentWorkspaceId();
+      if (!wsId) {
+        // No workspace — skip the LLM and fall through to the fallback.
+        throw new Error('No active workspace — AI prioritisation unavailable');
+      }
 
-      const result = JSON.parse(response.text);
+      const result = await invokeAIJson<AITaskPriority[]>(
+        'task_prioritization',
+        prompt,
+        { workspaceId: wsId, temperature: 0.3 },
+      );
       return Array.isArray(result) ? result : [];
     } catch (error) {
       console.error('Task prioritization failed:', error);
@@ -109,7 +121,8 @@ Return JSON array of prioritized tasks, sorted by aiScore descending.`;
   },
 
   /**
-   * Detect task dependencies based on content analysis
+   * Detect task dependencies based on content analysis.
+   * Pure keyword-based heuristic — no LLM call, no migration needed.
    */
   async detectDependencies(tasks: Task[]): Promise<TaskDependency[]> {
     // Simple keyword-based dependency detection
@@ -162,15 +175,24 @@ Return JSON array of prioritized tasks, sorted by aiScore descending.`;
   },
 
   /**
-   * Extract tasks from a finalized decision
+   * Extract tasks from a finalized decision.
+   *
+   * Routes through `ai-router` using `task_prioritization` — generating an
+   * implementation plan from a decision is a task-reasoning problem and
+   * shares the same model tier as priority scoring.
+   *
+   * @param decision The finalised decision to break down into tasks.
+   * @param apiKey DEPRECATED — unused. Router handles keys server-side.
+   * @param workspaceId Optional workspace override.
    */
   async extractTasksFromDecision(
     decision: DecisionWithVotes,
-    apiKey: string
+    apiKey: string | undefined,
+    workspaceId?: string,
   ): Promise<Partial<Task>[]> {
-    try {
-      const ai = new GoogleGenAI({ apiKey });
+    void apiKey; // deprecated — router handles keys server-side
 
+    try {
       const prompt = `Based on this decision, generate actionable tasks to implement it:
 
 Decision Title: ${decision.proposal_text}
@@ -189,16 +211,19 @@ For each task, provide:
 
 Return JSON array of tasks.`;
 
-      const response = await ai.models.generateContent({
-        model: 'gemini-2.5-flash',
-        contents: prompt,
-        config: {
-          temperature: 0.4,
-          responseMimeType: 'application/json',
-        },
-      });
+      const wsId = workspaceId ?? getCurrentWorkspaceId();
+      if (!wsId) return [];
 
-      const result = JSON.parse(response.text);
+      const result = await invokeAIJson<Array<{
+        title: string;
+        description: string;
+        priority: 'low' | 'medium' | 'high';
+        estimated_duration: string;
+      }>>(
+        'task_prioritization',
+        prompt,
+        { workspaceId: wsId, temperature: 0.4 },
+      );
 
       if (!Array.isArray(result)) return [];
 
@@ -220,16 +245,24 @@ Return JSON array of tasks.`;
   },
 
   /**
-   * Suggest assignee for a task based on content and contact history
+   * Suggest assignee for a task based on content and contact history.
+   *
+   * Routes through `ai-router` using `task_prioritization`.
+   *
+   * @param task The task needing an assignee.
+   * @param contacts Available contacts to pick from.
+   * @param apiKey DEPRECATED — unused. Router handles keys server-side.
+   * @param workspaceId Optional workspace override.
    */
   async suggestAssignee(
     task: Task,
     contacts: Contact[],
-    apiKey: string
+    apiKey: string | undefined,
+    workspaceId?: string,
   ): Promise<string | null> {
-    try {
-      const ai = new GoogleGenAI({ apiKey });
+    void apiKey; // deprecated — router handles keys server-side
 
+    try {
       const contactInfo = contacts.map(c => ({
         name: c.name,
         email: c.email,
@@ -249,17 +282,18 @@ If no good match, return null.
 
 Return JSON: { "suggestedAssignee": "name" | null, "reasoning": "brief explanation" }`;
 
-      const response = await ai.models.generateContent({
-        model: 'gemini-2.5-flash',
-        contents: prompt,
-        config: {
-          temperature: 0.3,
-          responseMimeType: 'application/json',
-        },
-      });
+      const wsId = workspaceId ?? getCurrentWorkspaceId();
+      if (!wsId) return null;
 
-      const result = JSON.parse(response.text);
-      return result.suggestedAssignee;
+      const result = await invokeAIJson<{
+        suggestedAssignee: string | null;
+        reasoning?: string;
+      }>(
+        'task_prioritization',
+        prompt,
+        { workspaceId: wsId, temperature: 0.3 },
+      );
+      return result?.suggestedAssignee ?? null;
     } catch (error) {
       console.error('Assignee suggestion failed:', error);
       return null;
@@ -267,7 +301,8 @@ Return JSON: { "suggestedAssignee": "name" | null, "reasoning": "brief explanati
   },
 
   /**
-   * Analyze workload distribution across assignees
+   * Analyze workload distribution across assignees.
+   * Pure local computation — no LLM call.
    */
   analyzeWorkload(tasks: Task[]): Map<string, {
     total: number;
@@ -307,7 +342,8 @@ Return JSON: { "suggestedAssignee": "name" | null, "reasoning": "brief explanati
   },
 
   /**
-   * Identify bottlenecks in task workflow
+   * Identify bottlenecks in task workflow.
+   * Pure local computation — no LLM call.
    */
   identifyBottlenecks(tasks: Task[], dependencies: TaskDependency[]): {
     blockedTasks: Task[];
@@ -342,18 +378,31 @@ Return JSON: { "suggestedAssignee": "name" | null, "reasoning": "brief explanati
   },
 
   /**
-   * Phase 5: Suggest optimal deadline for a task based on AI analysis
+   * Phase 5: Suggest optimal deadline for a task based on AI analysis.
+   *
+   * Routes through `ai-router` using `task_prioritization`. Falls back to a
+   * priority-based heuristic (urgent = 1 day, high = 3, medium = 7, low = 14)
+   * on any router failure.
+   *
+   * @param apiKey DEPRECATED — unused. Router handles keys server-side.
+   *   Kept as first arg for backward compatibility with existing callers.
+   * @param taskTitle Title of the task.
+   * @param taskDescription Optional description.
+   * @param taskPriority Priority string (urgent / high / medium / low).
+   * @param currentWorkload Existing tasks used to avoid scheduling conflicts.
+   * @param workspaceId Optional workspace override.
    */
   async suggestOptimalDeadline(
-    apiKey: string,
+    apiKey: string | undefined,
     taskTitle: string,
     taskDescription: string | undefined,
     taskPriority: string,
-    currentWorkload: Task[]
+    currentWorkload: Task[],
+    workspaceId?: string,
   ): Promise<{ suggestedDate: string; reasoning: string } | null> {
-    try {
-      const ai = new GoogleGenAI({ apiKey });
+    void apiKey; // deprecated — router handles keys server-side
 
+    try {
       // Analyze current workload
       const upcomingTasks = currentWorkload
         .filter(t => !t.is_completed && t.due_date)
@@ -395,32 +444,27 @@ Return JSON with:
   "reasoning": "Brief explanation of why this deadline makes sense (2-3 sentences)"
 }`;
 
-      const response = await ai.models.generateContent({
-        model: 'gemini-2.5-flash',
-        contents: prompt,
-        config: {
-          temperature: 0.4,
-          responseMimeType: 'application/json',
-          responseSchema: {
-            type: Type.OBJECT,
-            properties: {
-              suggestedDate: { type: Type.STRING },
-              reasoning: { type: Type.STRING }
-            },
-            required: ['suggestedDate', 'reasoning']
-          }
-        }
-      });
+      const wsId = workspaceId ?? getCurrentWorkspaceId();
+      if (!wsId) {
+        throw new Error('No active workspace — smart scheduling unavailable');
+      }
 
-      const result = JSON.parse(response.text || '{}');
+      const result = await invokeAIJson<{
+        suggestedDate?: string;
+        reasoning?: string;
+      }>(
+        'task_prioritization',
+        prompt,
+        { workspaceId: wsId, temperature: 0.4 },
+      );
 
-      if (!result.suggestedDate) {
+      if (!result?.suggestedDate) {
         return null;
       }
 
       return {
         suggestedDate: result.suggestedDate,
-        reasoning: result.reasoning
+        reasoning: result.reasoning ?? ''
       };
     } catch (error) {
       console.error('Smart scheduling failed:', error);
@@ -444,21 +488,37 @@ Return JSON with:
   },
 
   /**
-   * Phase 5: Predict potential blockers for a task
+   * Phase 5: Predict potential blockers for a task.
+   *
+   * Routes through `ai-router` using `task_prioritization`. Falls back to a
+   * keyword-based blocker detector (API / design / database heuristics) on
+   * any router failure.
+   *
+   * NOTE: The old Gemini path used a `responseSchema` enum constraint for
+   * `confidence`. The router's JSON mode does not forward schema constraints,
+   * so we rely on the prompt instruction and defensively validate the shape
+   * at the call site if strict typing is ever required.
+   *
+   * @param apiKey DEPRECATED — unused. Router handles keys server-side.
+   * @param taskTitle Title of the task.
+   * @param taskDescription Optional description.
+   * @param relatedTasks Sibling tasks in the workspace for context.
+   * @param workspaceId Optional workspace override.
    */
   async predictBlockers(
-    apiKey: string,
+    apiKey: string | undefined,
     taskTitle: string,
     taskDescription: string | undefined,
-    relatedTasks: Task[]
+    relatedTasks: Task[],
+    workspaceId?: string,
   ): Promise<Array<{
     blocker: string;
     confidence: 'high' | 'medium' | 'low';
     mitigation: string;
   }> | null> {
-    try {
-      const ai = new GoogleGenAI({ apiKey });
+    void apiKey; // deprecated — router handles keys server-side
 
+    try {
       const relatedTasksSummary = relatedTasks.map(t => ({
         title: t.title,
         description: t.description,
@@ -492,31 +552,20 @@ If no significant blockers are predicted, return an empty array.
 
 Return JSON array of blockers.`;
 
-      const response = await ai.models.generateContent({
-        model: 'gemini-2.5-flash',
-        contents: prompt,
-        config: {
-          temperature: 0.5,
-          responseMimeType: 'application/json',
-          responseSchema: {
-            type: Type.ARRAY,
-            items: {
-              type: Type.OBJECT,
-              properties: {
-                blocker: { type: Type.STRING },
-                confidence: {
-                  type: Type.STRING,
-                  enum: ['high', 'medium', 'low']
-                },
-                mitigation: { type: Type.STRING }
-              },
-              required: ['blocker', 'confidence', 'mitigation']
-            }
-          }
-        }
-      });
+      const wsId = workspaceId ?? getCurrentWorkspaceId();
+      if (!wsId) {
+        throw new Error('No active workspace — blocker prediction unavailable');
+      }
 
-      const result = JSON.parse(response.text || '[]');
+      const result = await invokeAIJson<Array<{
+        blocker: string;
+        confidence: 'high' | 'medium' | 'low';
+        mitigation: string;
+      }>>(
+        'task_prioritization',
+        prompt,
+        { workspaceId: wsId, temperature: 0.5 },
+      );
 
       if (!Array.isArray(result)) {
         return [];

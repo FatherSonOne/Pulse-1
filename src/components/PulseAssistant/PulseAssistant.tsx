@@ -22,6 +22,7 @@ import { pulseAssistantService, SECTION_LABELS, SuggestedAction } from '../../se
 import { useWorkspace } from '../../contexts/WorkspaceContext';
 import { usePulseAI } from '../../contexts/PulseAIContext';
 import { useAssistantContext } from './useAssistantContext';
+import { useAIErrorHandler } from '../../hooks/useAIErrorHandler';
 import './PulseAssistant.css';
 
 // ─── Types ────────────────────────────────────────────────────────────────────
@@ -41,17 +42,6 @@ interface ChatMessage {
   timestamp: Date;
   suggestedActions?: SuggestedAction[];
   feedback?: 'up' | 'down';
-}
-
-// ─── Helpers ──────────────────────────────────────────────────────────────────
-
-function getApiKey(): string {
-  return (
-    localStorage.getItem('gemini_api_key') ||
-    import.meta.env.VITE_GEMINI_API_KEY ||
-    import.meta.env.VITE_API_KEY ||
-    ''
-  );
 }
 
 // ─── Component ────────────────────────────────────────────────────────────────
@@ -77,6 +67,9 @@ const PulseAssistant: React.FC<PulseAssistantProps> = ({
 
   // ── Bridge to shared PulseAI context (for voice chat integration) ──
   const { setAssistantContext, setTextConversationSummary } = usePulseAI();
+
+  // ── AI error handler — shows the cap-exceeded / provider-down toasts ──
+  const handleAIError = useAIErrorHandler();
 
   // Push loaded context to shared provider whenever it updates
   useEffect(() => {
@@ -173,14 +166,6 @@ const PulseAssistant: React.FC<PulseAssistantProps> = ({
     const messageToSend = overrideMessage ?? inputValue.trim();
     if (!messageToSend || isLoading) return;
 
-    const apiKey = getApiKey();
-    if (!apiKey) {
-      setError(
-        'No Gemini API key found. Add VITE_GEMINI_API_KEY to your .env or set it in Settings → AI Lab.',
-      );
-      return;
-    }
-
     setInputValue('');
     setError(null);
 
@@ -211,7 +196,7 @@ const PulseAssistant: React.FC<PulseAssistantProps> = ({
       const finalText = await pulseAssistantService.query(
         messageToSend,
         context,
-        apiKey,
+        '',
         history,
         (accumulated: string) => {
           setMessages(prev =>
@@ -230,14 +215,24 @@ const PulseAssistant: React.FC<PulseAssistantProps> = ({
       );
     } catch (err) {
       console.error('[PulseAssistant] Query failed:', err);
-      setError('Failed to get a response from Pulse AI. Please try again.');
-      const errMsg: ChatMessage = {
-        id: `msg-${Date.now()}-err`,
-        role: 'assistant',
-        content: 'I encountered an error. Please check your API key and try again.',
-        timestamp: new Date(),
-      };
-      setMessages(prev => [...prev, errMsg]);
+      // Let the global AI-error handler surface cap / trial / provider issues
+      // with a proper toast + upgrade CTA before falling back to the generic
+      // in-panel error message.
+      const handled = handleAIError(err);
+      if (handled) {
+        // Drop the empty streaming placeholder so the UI doesn't leave a blank
+        // assistant bubble — the toast already communicated what happened.
+        setMessages(prev => prev.filter(m => m.content || m.role === 'user'));
+      } else {
+        setError('Failed to get a response from Pulse AI. Please try again.');
+        const errMsg: ChatMessage = {
+          id: `msg-${Date.now()}-err`,
+          role: 'assistant',
+          content: 'I encountered an error. Pulse AI is temporarily unavailable. Please try again.',
+          timestamp: new Date(),
+        };
+        setMessages(prev => [...prev, errMsg]);
+      }
     } finally {
       setIsLoading(false);
       refreshSummary();

@@ -1,5 +1,5 @@
 // Pulse User's Guide — Full Rich Section Data
-// Version 25.2.2 · April 12, 2026
+// Version 25.3.0 · April 23, 2026
 // Auto-maintained by the /users-guide slash command.
 
 export interface Shortcut {
@@ -2137,17 +2137,15 @@ export const guideSections: GuideSection[] = [
       {
         id: 'ai-intelligence',
         title: 'AI & Intelligence',
-        description: 'Configure the AI engine that powers your Pulse workspace — model selection, voice agent, and device setup.',
+        badge: 'Updated',
+        description: 'Configure voice agent, knowledge base, and hardware for the AI features in your workspace. AI providers are platform-managed — you don\'t supply your own keys.',
         steps: [
           'Go to Settings → AI & Intelligence.',
-          'Under AI Model, choose your primary model (e.g., Gemini Flash for speed, or a deeper reasoning model for complex tasks).',
-          'Toggle Advanced Reasoning to have the AI think longer before answering complex questions.',
           'Under Voice Agent, configure: agent voice character, turn detection mode (Semantic or Server VAD), voice activity eagerness, and interaction mode (VAD or Push-to-Talk).',
           'Under Knowledge Base, set your default search scope and toggle automatic document analysis.',
           'Under Devices, select your preferred microphone, speaker, and camera. Use Test Devices to confirm hardware.',
-          'Enable Quota Notifications to get an alert when your AI quota recovers or fallback mode activates.',
         ],
-        note: 'The AI Health Monitor at the top of this page shows real-time status of all AI services.',
+        note: 'Pulse automatically picks the best AI model for each task (fast for bulk summaries, high-quality for conversations and reasoning). No Gemini, Claude, or OpenAI keys to configure — everything runs under your Pulse Team subscription.',
       },
       {
         id: 'war-room-settings',
@@ -2346,66 +2344,73 @@ export const guideSections: GuideSection[] = [
   {
     id: 'billing',
     title: 'Billing & Plans',
+    badge: 'Updated',
     icon: '💳',
     badge: 'New',
-    summary: 'Stripe-powered billing with Free, Starter, Professional, Business, and Ecosystem tiers. View usage, manage subscriptions, and download invoices.',
+    summary: 'One plan — Pulse Team at $100/mo or $1,000/yr. Every new workspace gets a 30-day free trial, no credit card required. Stripe-powered checkout and Customer Portal for self-serve changes.',
     steps: [
-      'Go to Settings → Billing to view your current plan, subscription status, and usage.',
-      'Toggle between Monthly and Yearly billing to compare prices (yearly saves 15–20%).',
-      'Click Upgrade on any plan card to start a secure Stripe checkout.',
-      'After checkout, you are returned to Pulse with a confirmation — your new plan takes effect immediately.',
+      'Every new workspace starts with a 30-day free trial of Pulse Team — all features unlocked.',
+      'Go to Settings → Plan & Billing to see your trial countdown or current subscription state.',
+      'Click Upgrade now to start a paid subscription — you can switch between Monthly ($100) and Yearly ($1,000) before checkout.',
+      'If you\'re in a trial, the first charge is scheduled for day 30 — not the day you subscribe.',
+      'Click Manage Subscription after upgrading to open the Stripe Customer Portal (switch cycles, update card, cancel, download invoices).',
       'Click Manage Subscription to open the Stripe Customer Portal for downgrades, cancellations, and payment updates.',
       'View Invoice History for past invoices with amount, status, and PDF download.',
     ],
     subsections: [
       {
         id: 'plan-tiers',
-        title: 'Available Plans',
+        title: 'Pulse Team — What\'s Included',
         steps: [
-          'Free — try Pulse with limited AI messages, contacts, and storage.',
-          'Starter — for individuals and small teams with higher limits.',
-          'Professional — for growing teams with generous limits and priority support.',
-          'Business — for large organizations with the highest limits and dedicated support.',
-          'Ecosystem — bundle pricing across Pulse, Entomate, and Logos Vision.',
+          'Unlimited team seats — invite your whole workspace at no extra cost.',
+          'All 6 Voxer modes: Quick, Team, Drop, Threads, Radio, Notes — plus Video Vox and Studio RAG.',
+          'Email, Calendar, Messaging, Meetings, Contacts, Decisions & Tasks — every feature unlocked.',
+          'Advanced Analytics and the full QntmEcos Ecosystem Bridge (Entomate + Logos Vision sync).',
+          'Monthly allowances: 2,000 AI messages · 500 SMS · 50 GB storage · 500 Voxer minutes. All reset on the 1st.',
         ],
       },
       {
         id: 'usage-tracking',
         title: 'Usage Tracking',
         steps: [
-          'The Billing page shows usage gauges for: AI Messages, SMS Sent, Storage, Contacts, and Voxer Minutes.',
-          'A warning banner appears when any metric reaches 80% of your plan limit.',
+          'The Billing page shows four usage gauges: AI Messages, SMS Sent, Storage, and Voxer Minutes.',
+          'A warning banner appears when any metric reaches 80% of the monthly limit.',
           'When you hit a limit, the affected feature shows an inline upgrade prompt.',
           'Usage resets at the start of each billing period.',
         ],
       },
       {
-        id: 'feature-gating',
-        title: 'Feature Gating',
+        id: 'trial-lifecycle',
+        title: 'Trial Lifecycle',
         steps: [
-          'Some features are only available on certain plans.',
-          'When you try to use a gated feature, Pulse shows an upgrade prompt explaining what you will unlock.',
-          'Click the upgrade button in the prompt for a one-click upgrade to the required plan.',
+          'Every new workspace starts with a 30-day free trial of Pulse Team.',
+          'A TRIAL · Xd LEFT badge counts down on the Plan & Billing page.',
+          'Add a payment method any time before day 30 — the first charge is scheduled for the trial\'s end, not the day you add the card.',
+          'If the trial ends without a subscription, a full-screen upgrade prompt appears the next time Pulse loads. Plan & Billing is still reachable; all other features are blocked until you subscribe.',
+          'Pulse emails a reminder 3 days before the trial ends and on the day it ends.',
         ],
       },
     ],
     tables: [
       {
-        title: 'Plan Comparison',
-        columns: ['Plan', 'Best For', 'Key Limits'],
+        title: 'Pulse Team at a Glance',
+        columns: ['Item', 'Details'],
         rows: [
-          ['Free', 'Trying Pulse out', 'Limited AI messages, contacts, and storage'],
-          ['Starter', 'Individuals / small teams', 'Higher AI, SMS, contacts, storage limits'],
-          ['Professional', 'Growing teams', 'Generous limits, priority support'],
-          ['Business', 'Large organizations', 'Highest limits, dedicated support'],
-          ['Ecosystem', 'QntmEcos suite users', 'Bundle pricing across all apps'],
+          ['Price', '$100/month or $1,000/year (2 months free)'],
+          ['Trial', '30 days free — no credit card required'],
+          ['Team seats', 'Unlimited'],
+          ['AI messages', '2,000 per month'],
+          ['SMS', '500 per month'],
+          ['Storage', '50 GB'],
+          ['Voxer minutes', '500 per month'],
+          ['Features', 'All Voxer modes, Email, Calendar, Meetings, Analytics, Ecosystem Bridge'],
         ],
       },
     ],
     tips: [
-      'Workspace owners and admins can manage billing. Regular members can view the current plan but cannot make changes.',
-      'Yearly billing typically saves 15–20% compared to monthly — switch anytime from the Billing page.',
-      'If you are on a trial, the number of days remaining is shown on the Billing page.',
+      'Workspace owners and admins can manage billing. Regular members can view the current plan but cannot make payment changes.',
+      'Yearly billing saves the equivalent of 2 months — switch between Monthly and Yearly anytime from the Stripe Customer Portal.',
+      'Pulse emails reminders 3 days before your trial ends, on the day it ends, and when a recurring payment fails — so nothing silently breaks.',
     ],
   },
 

@@ -5,7 +5,7 @@
  * Provides a self-contained, ready-to-use voice agent experience.
  *
  * Features:
- * - Automatic API key handling from environment or localStorage
+ * - Platform-managed keys via openai-realtime-token edge function
  * - Ephemeral token generation
  * - Session management
  * - Multiple display modes (floating, embedded, fullscreen)
@@ -26,7 +26,7 @@ interface VoiceAgentIntegrationProps {
   sessionId?: string;
 
   // API configuration
-  apiKey?: string;  // OpenAI API key, falls back to env/localStorage
+  apiKey?: string;  // Optional pre-fetched ephemeral token; if omitted, fetched from edge function
 
   // Display options
   mode?: 'floating' | 'embedded' | 'fullscreen';
@@ -61,55 +61,40 @@ export const VoiceAgentIntegration: React.FC<VoiceAgentIntegrationProps> = ({
   const [isLoading, setIsLoading] = useState(true);
   const [error, setError] = useState<string | null>(null);
 
-  // Resolve API key: prefer edge-function token, fallback to env/localStorage for dev
+  // Resolve ephemeral token from the openai-realtime-token edge function.
+  // Platform-managed keys only — no client-side env/localStorage fallback.
   useEffect(() => {
     const resolveApiKey = async () => {
       setIsLoading(true);
       setError(null);
 
       try {
-        // If a key was passed as prop, use it directly
+        // If a key was passed as prop (e.g. pre-fetched ephemeral token), use it directly
         if (apiKey) {
           setResolvedApiKey(apiKey);
           onReady?.();
           return;
         }
 
-        // Try the openai-realtime-token edge function (server-side key)
-        if (import.meta.env.VITE_FORCE_LOCAL_KEYS !== 'true') {
-          try {
-            const { supabase } = await import('../../services/supabase');
-            const { data, error: fnError } = await supabase.functions.invoke('openai-realtime-token', {
-              body: { operation: 'resolve_key' },
-            });
-            if (!fnError && data?.key) {
-              setResolvedApiKey(data.key);
-              onReady?.();
-              return;
-            }
-          } catch {
-            // Edge function unavailable, fall through to local resolution
-          }
-        }
+        // Fetch an ephemeral token from the edge function (server-side key)
+        const { supabase } = await import('../../services/supabase');
+        const { data, error: fnError } = await supabase.functions.invoke('openai-realtime-token', {
+          body: { model: 'gpt-4o-realtime-preview', voice: 'alloy' },
+        });
 
-        // Fallback: env > localStorage (for local development)
-        const key = import.meta.env.VITE_OPENAI_API_KEY
-          || localStorage.getItem('openai_api_key')
-          || '';
-
-        if (!key) {
-          const errorMsg = 'OpenAI API key not found. Please configure VITE_OPENAI_API_KEY or set it in settings.';
+        if (fnError || !data?.token) {
+          const errorMsg = 'OpenAI Realtime unavailable. Please try again later.';
           setError(errorMsg);
           onError?.(new Error(errorMsg));
           return;
         }
 
-        setResolvedApiKey(key);
+        setResolvedApiKey(data.token);
         onReady?.();
       } catch (err) {
-        const errorMsg = err instanceof Error ? err.message : 'Failed to resolve API key';
+        const errorMsg = 'OpenAI Realtime unavailable. Please try again later.';
         setError(errorMsg);
-        onError?.(new Error(errorMsg));
+        onError?.(err instanceof Error ? err : new Error(errorMsg));
       } finally {
         setIsLoading(false);
       }

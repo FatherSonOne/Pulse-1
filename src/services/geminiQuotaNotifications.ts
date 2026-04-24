@@ -2,7 +2,7 @@
  * Gemini Quota Notification System
  *
  * Sends browser notifications when Gemini quota recovers or when
- * fallback mode is activated/deactivated.
+ * Gemini encounters errors.
  */
 
 import {
@@ -65,9 +65,6 @@ function handleStatusChange(newStatus: APIHealthStatus): void {
   const wasGeminiDown = !previousStatus.gemini.available;
   const isGeminiUp = newStatus.gemini.available;
 
-  const wasFallbackActive = previousStatus.fallbackActive;
-  const isFallbackActive = newStatus.fallbackActive;
-
   // Gemini recovered from quota/error
   if (wasGeminiDown && isGeminiUp) {
     showNotification('✅ Gemini API Recovered', {
@@ -84,41 +81,19 @@ function handleStatusChange(newStatus: APIHealthStatus): void {
   if (!wasGeminiDown && !isGeminiUp) {
     if (newStatus.gemini.status === 'quota_exceeded') {
       showNotification('⚠️ Gemini Quota Exceeded', {
-        body: isFallbackActive
-          ? 'Switched to Perplexity fallback. AI features still working.'
-          : 'AI features unavailable. Configure Perplexity as fallback.',
+        body: 'AI features unavailable until the quota resets.',
         tag: 'gemini-quota',
         requireInteraction: true,
       });
     } else {
       showNotification('⚠️ Gemini API Error', {
-        body: `${newStatus.gemini.errorMessage || 'Connection failed'}. ${
-          isFallbackActive ? 'Using Perplexity fallback.' : 'No fallback configured.'
-        }`,
+        body: `${newStatus.gemini.errorMessage || 'Connection failed'}.`,
         tag: 'gemini-error',
         requireInteraction: true,
       });
     }
 
     playNotificationSound('warning');
-  }
-
-  // Fallback activated
-  if (!wasFallbackActive && isFallbackActive) {
-    showNotification('🔄 Fallback Mode Active', {
-      body: 'Now using Perplexity AI while Gemini recovers.',
-      tag: 'fallback-active',
-      requireInteraction: false,
-    });
-  }
-
-  // Fallback deactivated (back to Gemini)
-  if (wasFallbackActive && !isFallbackActive && isGeminiUp) {
-    showNotification('✅ Back to Gemini', {
-      body: 'Primary AI provider restored. Fallback mode deactivated.',
-      tag: 'fallback-inactive',
-      requireInteraction: false,
-    });
   }
 
   previousStatus = newStatus;

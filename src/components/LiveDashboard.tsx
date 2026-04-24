@@ -132,7 +132,50 @@ const LiveDashboard: React.FC<LiveDashboardProps> = ({ apiKey, userId }) => {
 
   // ── Local refs & hooks (not in store) ────────────────────────────────────
   const messagesEndRef = useRef<HTMLDivElement>(null);
-  const openaiApiKey = localStorage.getItem('openai_api_key') || import.meta.env.VITE_OPENAI_API_KEY || '';
+  // Ephemeral OpenAI Realtime token fetched lazily from the openai-realtime-token
+  // edge function. Platform-managed keys only — never reads env/localStorage.
+  // Fetched on-demand when the Voice Agent panel is opened so we don't pay the
+  // round-trip cost on every dashboard mount.
+  const [openaiApiKey, setOpenaiApiKey] = useState<string>('');
+  const [isResolvingOpenaiToken, setIsResolvingOpenaiToken] = useState<boolean>(false);
+
+  useEffect(() => {
+    // Only fetch when the voice agent panel is actually opened
+    if (!showVoiceAgentPanel || openaiApiKey || isResolvingOpenaiToken) return;
+
+    let cancelled = false;
+    const resolveToken = async () => {
+      setIsResolvingOpenaiToken(true);
+      try {
+        const { supabase } = await import('../services/supabase');
+        const { data, error } = await supabase.functions.invoke('openai-realtime-token', {
+          body: { model: 'gpt-4o-realtime-preview', voice: 'alloy' },
+        });
+
+        if (cancelled) return;
+
+        if (error || !data?.token) {
+          console.error('[LiveDashboard] Failed to fetch ephemeral OpenAI token:', error);
+          toast.error('OpenAI Realtime unavailable. Please try again later.');
+          setOpenaiApiKey('');
+        } else {
+          setOpenaiApiKey(data.token);
+        }
+      } catch (err) {
+        if (!cancelled) {
+          console.error('[LiveDashboard] Exception fetching ephemeral OpenAI token:', err);
+          toast.error('OpenAI Realtime unavailable. Please try again later.');
+          setOpenaiApiKey('');
+        }
+      } finally {
+        if (!cancelled) setIsResolvingOpenaiToken(false);
+      }
+    };
+
+    resolveToken();
+    return () => { cancelled = true; };
+  }, [showVoiceAgentPanel, openaiApiKey, isResolvingOpenaiToken]);
+
   const [showOnboarding, setShowOnboarding] = useState(() => !hasCompletedOnboarding());
 
   // Mobile detection helper (kept local for resize handler)

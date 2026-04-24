@@ -1,12 +1,11 @@
 /**
  * AI Health Monitor Dashboard
  *
- * Real-time status display for Gemini and Perplexity APIs with
- * quota tracking, fallback status, and auto-refresh.
+ * Real-time status display for the Gemini API with quota tracking
+ * and auto-refresh.
  */
 
 import React, { useState, useEffect } from 'react';
-import { AnimatedIcon } from './ui/AnimatedIcon';
 import {
   getHealthStatus,
   onHealthStatusChange,
@@ -66,8 +65,6 @@ export const AIHealthMonitor: React.FC<{ compact?: boolean }> = ({ compact = fal
         <StatusIndicator status={status} />
         <span className="text-gray-600 dark:text-gray-400">
           {status.provider === 'gemini' && '✓ Gemini'}
-          {status.provider === 'perplexity' && '⚠ Fallback'}
-          {status.provider === 'both' && '✓ Both APIs'}
           {status.provider === 'none' && '✗ No API'}
         </span>
       </div>
@@ -133,32 +130,6 @@ export const AIHealthMonitor: React.FC<{ compact?: boolean }> = ({ compact = fal
         )}
       </div>
 
-      {/* Perplexity Status */}
-      <div className="mb-3">
-        <div className="flex items-center gap-2">
-          <StatusDot status={status.perplexity.configured ? 'ok' : 'warning'} />
-          <span className="font-medium text-gray-900 dark:text-white">
-            Perplexity AI (Fallback)
-          </span>
-        </div>
-        {!status.perplexity.configured && (
-          <p className="ml-6 text-xs text-gray-500 dark:text-gray-400 mt-1">
-            Not configured — add VITE_PERPLEXITY_API_KEY to enable fallback
-          </p>
-        )}
-      </div>
-
-      {/* Fallback Active Warning */}
-      {status.fallbackActive && (
-        <div className="mt-4 p-3 bg-amber-50 dark:bg-amber-900/20 border border-amber-200 dark:border-amber-800 rounded-md">
-          <p className="text-sm text-amber-800 dark:text-amber-200">
-            <AnimatedIcon icon="gear" size={14} /> <strong>Fallback Mode Active</strong>
-            <br />
-            All AI requests are using Perplexity while Gemini quota recovers.
-          </p>
-        </div>
-      )}
-
       {/* Action Links */}
       <div className="mt-4 pt-4 border-t border-gray-200 dark:border-gray-700">
         <div className="flex flex-wrap gap-3 text-xs">
@@ -178,14 +149,6 @@ export const AIHealthMonitor: React.FC<{ compact?: boolean }> = ({ compact = fal
           >
             → Google Cloud Billing
           </a>
-          <a
-            href="https://www.perplexity.ai/settings/api"
-            target="_blank"
-            rel="noopener noreferrer"
-            className="text-blue-600 dark:text-blue-400 hover:underline"
-          >
-            → Perplexity API Settings
-          </a>
         </div>
       </div>
     </div>
@@ -195,9 +158,6 @@ export const AIHealthMonitor: React.FC<{ compact?: boolean }> = ({ compact = fal
 const StatusIndicator: React.FC<{ status: APIHealthStatus }> = ({ status }) => {
   if (status.gemini.available) {
     return <span className="text-green-500">●</span>;
-  }
-  if (status.fallbackActive) {
-    return <span className="text-amber-500">●</span>;
   }
   return <span className="text-red-500">●</span>;
 };
