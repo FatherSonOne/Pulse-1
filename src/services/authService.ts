@@ -516,7 +516,7 @@ export const disconnectGoogleAccount = async (): Promise<void> => {
 export const onAuthStateChange = (callback: (user: User | null) => void) => {
   const { data: { subscription } } = supabase.auth.onAuthStateChange((event, session) => {
     console.log('[Auth] Auth state changed:', event);
-    
+
     // Handle token refresh events
     if (event === 'TOKEN_REFRESHED') {
       if (session) {
@@ -531,12 +531,24 @@ export const onAuthStateChange = (callback: (user: User | null) => void) => {
       }
     }
 
-    // Handle sign out
+    // Handle sign out — clear the Google token negative cache so the next
+    // sign-in picks up a fresh provider_token immediately.
     if (event === 'SIGNED_OUT') {
       console.log('[Auth] User signed out');
       localStorage.removeItem(USER_KEY);
+      import('./googleCalendarService')
+        .then(m => m.resetGoogleCalendarTokenCache?.())
+        .catch(() => {});
       callback(null);
       return;
+    }
+
+    // Fresh sign-in (including the redirect back from a Google OAuth flow)
+    // can produce a brand-new provider_token — clear the negative cache.
+    if (event === 'SIGNED_IN') {
+      import('./googleCalendarService')
+        .then(m => m.resetGoogleCalendarTokenCache?.())
+        .catch(() => {});
     }
 
     if (session?.user) {

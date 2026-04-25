@@ -169,19 +169,13 @@ export class GmailService {
       }
     }
 
-    // Last resort: try Supabase session refresh (this refreshes Supabase token, not Google's)
-    const { data: refreshData, error: refreshError } = await supabase.auth.refreshSession();
-
-    if (refreshError || !refreshData.session?.provider_token) {
-      // Create a specific error that can be caught gracefully by callers
-      const error = new Error('Your Google session has expired. Please sign out and sign back in with Google.');
-      (error as any).isSessionExpired = true;
-      (error as any).code = 'GOOGLE_SESSION_EXPIRED';
-      throw error;
-    }
-
-    this.accessToken = refreshData.session.provider_token;
-    return this.accessToken;
+    // No fallback to supabase.auth.refreshSession() — refreshing the Supabase
+    // session does NOT produce a Google provider_token, and calling it on every
+    // request fires TOKEN_REFRESHED storms that rate-limit the auth endpoint.
+    const error = new Error('Your Google session has expired. Please sign out and sign back in with Google.');
+    (error as any).isSessionExpired = true;
+    (error as any).code = 'GOOGLE_SESSION_EXPIRED';
+    throw error;
   }
 
   /**
@@ -477,7 +471,12 @@ export class GmailService {
 
       return messages;
     } catch (error) {
-      console.error('Error fetching Gmail messages:', error);
+      // GOOGLE_SESSION_EXPIRED is the expected "not connected" path — let the
+      // caller handle it (e.g. show a "Connect Gmail" button) without spamming
+      // the console on every parallel briefing call.
+      if ((error as any)?.code !== 'GOOGLE_SESSION_EXPIRED') {
+        console.error('Error fetching Gmail messages:', error);
+      }
       throw error;
     }
   }

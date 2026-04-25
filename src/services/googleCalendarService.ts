@@ -66,12 +66,25 @@ export interface GoogleCalendar {
   accessRole?: string;
 }
 
+// One-shot warnings — these conditions don't change within a session so
+// logging them on every API call just spams the console.
+let warnedMissingClientId = false;
+let warnedNoProviderToken = false;
+// Negative-cache: once we've confirmed there's no Google token, suppress
+// further attempts (and the supabase.auth.refreshSession fallback that
+// triggers the TOKEN_REFRESHED loop) for this window.
+let noTokenUntil = 0;
+const NO_TOKEN_TTL_MS = 60_000;
+
 // Refresh Google access token using the refresh token
 const refreshGoogleAccessToken = async (refreshToken: string): Promise<string | null> => {
   const clientId = import.meta.env.VITE_GOOGLE_CLIENT_ID;
 
   if (!clientId || !refreshToken) {
-    console.warn('[Google Calendar] Missing client ID or refresh token for Google token refresh');
+    if (!warnedMissingClientId) {
+      console.warn('[Google Calendar] Missing client ID or refresh token for Google token refresh');
+      warnedMissingClientId = true;
+    }
     return null;
   }
 
@@ -110,7 +123,10 @@ const refreshGoogleAccessToken = async (refreshToken: string): Promise<string | 
 // Get Google access token from Supabase session
 // This function tries to get the token and refresh if needed
 const getGoogleAccessToken = async (): Promise<string | null> => {
-  // First, try to get the current session
+  // Negative-cache short-circuit: avoids re-running the whole token dance on
+  // every parallel API call when we already know there is no Google token.
+  if (Date.now() < noTokenUntil) return null;
+
   let { data: { session }, error } = await supabase.auth.getSession();
 
   if (error) {
@@ -119,6 +135,7 @@ const getGoogleAccessToken = async (): Promise<string | null> => {
   }
 
   if (!session) {
+    noTokenUntil = Date.now() + NO_TOKEN_TTL_MS;
     return null;
   }
 
@@ -127,12 +144,11 @@ const getGoogleAccessToken = async (): Promise<string | null> => {
   // Google provider_token and every call will 401 — skip silently.
   const provider = session.user?.app_metadata?.provider;
   if (provider && provider !== 'google') {
+    noTokenUntil = Date.now() + NO_TOKEN_TTL_MS;
     return null;
   }
 
-  // The provider_token contains the Google OAuth access token
   if (session.provider_token) {
-    console.log('[Google Calendar] Got valid provider token');
     return session.provider_token;
   }
 
@@ -145,52 +161,45 @@ const getGoogleAccessToken = async (): Promise<string | null> => {
     }
   }
 
-  console.warn('[Google Calendar] No provider_token in session.');
-  console.log('[Google Calendar] Session provider:', session.user?.app_metadata?.provider);
-  console.log('[Google Calendar] User may need to re-authenticate with Google.');
-  console.log('[Google Calendar] To enable calendar access, user should click "Connect Calendar" button.');
+  if (!warnedNoProviderToken) {
+    console.warn('[Google Calendar] No Google provider_token — user must click "Connect Calendar" to grant access.');
+    warnedNoProviderToken = true;
+  }
+  noTokenUntil = Date.now() + NO_TOKEN_TTL_MS;
   return null;
 };
 
-// Refresh token if needed - try Google refresh token first, then Supabase session refresh
+// Try to obtain a token; returns null silently if the user simply has no
+// Google connection. We intentionally do NOT call supabase.auth.refreshSession
+// here — refreshing the Supabase session does not produce a Google provider
+// token and causes a TOKEN_REFRESHED storm that rate-limits the auth endpoint.
 const refreshTokenIfNeeded = async (): Promise<string | null> => {
-  const { data: { session }, error } = await supabase.auth.getSession();
+  if (Date.now() < noTokenUntil) return null;
 
+  const { data: { session }, error } = await supabase.auth.getSession();
   if (error || !session) return null;
 
-  // Not a Google session — skip silently, no point refreshing
   const provider = session.user?.app_metadata?.provider;
   if (provider && provider !== 'google') return null;
 
-  if (session.provider_token) {
-    return session.provider_token;
-  }
+  if (session.provider_token) return session.provider_token;
 
   const refreshToken = (session as any)?.provider_refresh_token;
   if (refreshToken) {
     const refreshed = await refreshGoogleAccessToken(refreshToken);
-    if (refreshed) {
-      return refreshed;
-    }
+    if (refreshed) return refreshed;
   }
 
-  // Fallback: refresh Supabase session (may not include provider_token)
-  console.log('[Google Calendar] Falling back to Supabase session refresh...');
-  const refreshResult = await supabase.auth.refreshSession();
+  noTokenUntil = Date.now() + NO_TOKEN_TTL_MS;
+  return null;
+};
 
-  if (refreshResult.error) {
-    console.error('[Google Calendar] Failed to refresh session:', refreshResult.error);
-    return null;
-  }
-
-  const refreshedSession = refreshResult.data.session;
-  if (!refreshedSession?.provider_token) {
-    console.warn('[Google Calendar] No provider token after session refresh');
-    console.warn('[Google Calendar] User may need to re-authenticate with Google');
-    return null;
-  }
-
-  return refreshedSession.provider_token;
+// Allow auth flows (sign-in, sign-out, "Connect Calendar") to clear the
+// negative cache so a freshly-granted token is picked up immediately.
+export const resetGoogleCalendarTokenCache = (): void => {
+  noTokenUntil = 0;
+  warnedNoProviderToken = false;
+  warnedMissingClientId = false;
 };
 
 // Convert Google Calendar event to app CalendarEvent format

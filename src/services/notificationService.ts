@@ -52,8 +52,9 @@ class NotificationService {
     // Register service worker for push notifications
     await this.registerServiceWorker();
 
-    // Preload notification sounds
-    await this.preloadSounds();
+    // Note: we no longer preload .mp3 files — playSound() uses the Web Audio
+    // API (soundGenerator) and the .mp3 fallback files are not bundled, which
+    // produced 404s on every page load.
 
     console.log('Notification service initialized');
   }
