@@ -150,7 +150,7 @@ export const TrialExpiredBlock: React.FC<TrialExpiredBlockProps> = ({
           </div>
 
           <p className="text-xs text-zinc-600 text-center">
-            Questions? Email support@pulse.app. Cancel anytime from Settings → Billing.
+            Questions? Email fm1@qntmecos.com. Cancel anytime from Settings → Billing.
           </p>
         </div>
       </div>

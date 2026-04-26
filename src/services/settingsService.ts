@@ -96,6 +96,26 @@ export interface PulseSettings {
   notifDesktop: boolean;
   notifEmail: boolean;
 
+  // Quiet hours — suppress non-urgent notifications during the configured window.
+  quietHoursEnabled: boolean;
+  quietHoursStart: string;        // "HH:mm" 24h
+  quietHoursEnd: string;          // "HH:mm" 24h
+  quietHoursDays: number[];       // 0=Sun ... 6=Sat
+
+  // Digest schedule — periodic summary email.
+  digestSchedule: 'off' | 'daily' | 'weekly';
+  digestTime: string;             // "HH:mm" 24h
+  digestDayOfWeek: number;        // 0=Sun ... 6=Sat (used when schedule='weekly')
+
+  // Per-channel routing — which delivery modes fire for each notification type.
+  notificationRouting: Record<string, { email: boolean; push: boolean; inApp: boolean }>;
+
+  // AI per-user overrides. Members can opt OUT of providers the org allows
+  // (cannot opt IN to a blocked provider) and can voluntarily enable PII
+  // masking even when the org doesn't enforce it.
+  aiProviderOverrides: { openai?: boolean; anthropic?: boolean; google?: boolean };
+  aiPiiMaskingEnabled: boolean;
+
   // Email (Phase 4)
   emailNotificationBundling: boolean;
   emailAutoArchiveDays: number;
@@ -107,6 +127,7 @@ export interface PulseSettings {
   calendarRetentionDays: number;
   contactsRetentionDays: number;
   messagesRetentionDays: number;
+  voxesRetentionDays: number;
 
   // API Keys (encrypted/hashed in sync)
   openaiApiKey: string;
@@ -242,6 +263,33 @@ const DEFAULT_SETTINGS: PulseSettings = {
   notifDesktop: true,
   notifEmail: false,
 
+  // Quiet hours — off by default; sensible 22:00–07:00 window pre-filled.
+  quietHoursEnabled: false,
+  quietHoursStart: '22:00',
+  quietHoursEnd: '07:00',
+  quietHoursDays: [0, 1, 2, 3, 4, 5, 6],
+
+  // Digest — off by default; weekly at 09:00 Monday when enabled.
+  digestSchedule: 'off',
+  digestTime: '09:00',
+  digestDayOfWeek: 1,
+
+  // AI overrides default to empty / off — org policy applies until the user opts in.
+  aiProviderOverrides: {},
+  aiPiiMaskingEnabled: false,
+
+  // Per-channel routing — defaults pick reasonable modes per channel.
+  notificationRouting: {
+    mentions:        { email: true,  push: true,  inApp: true  },
+    directMessages:  { email: true,  push: true,  inApp: true  },
+    voxes:           { email: false, push: true,  inApp: true  },
+    taskAssignments: { email: true,  push: true,  inApp: true  },
+    decisions:       { email: true,  push: false, inApp: true  },
+    calendarEvents:  { email: false, push: true,  inApp: true  },
+    billing:         { email: true,  push: false, inApp: true  },
+    securityAlerts:  { email: true,  push: true,  inApp: true  },
+  },
+
   // Email (Phase 4)
   emailNotificationBundling: true,
   emailAutoArchiveDays: 0,
@@ -256,6 +304,7 @@ const DEFAULT_SETTINGS: PulseSettings = {
   calendarRetentionDays: 365,
   contactsRetentionDays: -1,
   messagesRetentionDays: 180,
+  voxesRetentionDays: 90,
 
   // API Keys
   openaiApiKey: '',

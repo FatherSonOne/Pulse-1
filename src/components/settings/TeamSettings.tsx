@@ -3,6 +3,9 @@ import { useWorkspaceData, useWorkspaceActions, useWorkspacePermissions } from '
 import { workspaceService, WorkspaceMember, WorkspaceInvite, WORKSPACE_PLAN_LABELS, WORKSPACE_PLAN_LIMITS } from '../../services/workspaceService';
 import { Loader2, Mail, Send, Users, Shield, UserMinus, ChevronDown, Clock, X, RotateCcw } from 'lucide-react';
 import toast from 'react-hot-toast';
+import { BulkInviteCard } from './team/BulkInviteCard';
+import { GroupsManagementCard } from './team/GroupsManagementCard';
+import { RolePermissionsMatrixCard } from './team/RolePermissionsMatrixCard';
 
 interface TeamSettingsProps {
   userId: string;
@@ -165,6 +168,15 @@ export const TeamSettings: React.FC<TeamSettingsProps> = ({ userId }) => {
         </div>
       )}
 
+      {/* Bulk invite — admin+ only */}
+      {canManageMembers && workspaceId && (
+        <BulkInviteCard
+          workspaceId={workspaceId}
+          workspaceName={currentWorkspace.name}
+          onInvitesSent={loadInvites}
+        />
+      )}
+
       {/* Pending Invitations — admin+ only */}
       {canManageMembers && pendingInvites.length > 0 && (
         <div className="bg-white dark:bg-zinc-900 border border-zinc-200 dark:border-zinc-800 rounded-xl overflow-hidden">
@@ -290,6 +302,18 @@ export const TeamSettings: React.FC<TeamSettingsProps> = ({ userId }) => {
           )}
         </div>
       </div>
+
+      {/* Groups & departments */}
+      {workspaceId && (
+        <GroupsManagementCard
+          workspaceId={workspaceId}
+          members={members}
+          isAdmin={isAdmin}
+        />
+      )}
+
+      {/* Role permissions matrix (read-only reference) */}
+      <RolePermissionsMatrixCard />
 
       {/* Non-admin notice */}
       {!canManageMembers && (

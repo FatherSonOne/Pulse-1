@@ -4,6 +4,9 @@ import billingService, { type Invoice, type Subscription } from '../../services/
 import { useEntitlements } from '../../hooks/useEntitlements';
 import { UsageLimitWarning } from '../billing/UpgradePrompt';
 import { UsageWarningBanner } from '../billing/UsageWarningBanner';
+import { TaxIdCard } from './billing/TaxIdCard';
+import { BillingContactsCard } from './billing/BillingContactsCard';
+import { InvoicesCard } from './billing/InvoicesCard';
 
 // ── Constants ────────────────────────────────────────────────────────
 
@@ -693,90 +696,19 @@ export const BillingSettings: React.FC = () => {
         </div>
       )}
 
-      {/* Invoice History */}
-      {canManageBilling && invoices.length > 0 && (
-        <div
-          className="rounded-xl p-6"
-          style={{ background: 'var(--set-surface)', border: '1px solid var(--set-border)' }}
-        >
-          <h4
-            className="mb-4"
-            style={{
-              fontSize: '11px',
-              fontWeight: 600,
-              textTransform: 'uppercase',
-              letterSpacing: '0.12em',
-              color: 'var(--set-text-muted)',
-            }}
-          >
-            Invoice History
-          </h4>
-          <div className="space-y-0">
-            {invoices.map((inv) => (
-              <div
-                key={inv.id}
-                className="flex items-center justify-between py-3"
-                style={{ borderBottom: '1px solid var(--set-border)' }}
-              >
-                <div>
-                  <span className="text-sm" style={{ color: 'var(--set-text-main)' }}>
-                    {inv.period_start ? formatDate(inv.period_start) : 'N/A'}
-                  </span>
-                </div>
-                <div className="flex items-center gap-3">
-                  <span
-                    className="text-sm font-medium"
-                    style={{ color: 'var(--set-text-main)' }}
-                  >
-                    {formatCents(inv.amount_paid || inv.amount_due)}
-                  </span>
-                  <span
-                    className="px-2 py-0.5 text-xs rounded-full"
-                    style={{
-                      background:
-                        inv.status === 'paid'
-                          ? '#10b98120'
-                          : inv.status === 'open'
-                          ? '#f59e0b20'
-                          : '#ef444420',
-                      color:
-                        inv.status === 'paid'
-                          ? '#10b981'
-                          : inv.status === 'open'
-                          ? '#f59e0b'
-                          : '#ef4444',
-                    }}
-                  >
-                    {inv.status}
-                  </span>
-                  {inv.invoice_pdf && (
-                    <a
-                      href={inv.invoice_pdf}
-                      target="_blank"
-                      rel="noopener noreferrer"
-                      className="text-xs"
-                      style={{ color: 'var(--set-text-muted)' }}
-                      title="Download PDF"
-                    >
-                      PDF
-                    </a>
-                  )}
-                  {inv.invoice_url && (
-                    <a
-                      href={inv.invoice_url}
-                      target="_blank"
-                      rel="noopener noreferrer"
-                      className="text-xs"
-                      style={{ color: 'var(--set-primary)' }}
-                    >
-                      View
-                    </a>
-                  )}
-                </div>
-              </div>
-            ))}
-          </div>
-        </div>
+      {/* Invoice history — empty state + status filter + summary */}
+      {canManageBilling && (
+        <InvoicesCard invoices={invoices} />
+      )}
+
+      {/* Tax ID — admin+ */}
+      {canManageBilling && (
+        <TaxIdCard />
+      )}
+
+      {/* Additional billing contacts — admin+ */}
+      {canManageBilling && (
+        <BillingContactsCard />
       )}
 
       {/* Non-admin notice */}

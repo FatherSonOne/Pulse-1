@@ -14,6 +14,8 @@ export interface UserProfile {
   last_seen_at: string;
   created_at: string;
   updated_at: string;
+  language: string;
+  timezone: string;
 }
 
 export interface PulseMessage {

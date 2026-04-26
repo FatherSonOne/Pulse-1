@@ -123,7 +123,7 @@ convert icons/icon.svg -resize 128x128 icons/icon-128.png
 
 ## Support
 
-- Email: support@logosvision.org
+- Email: fm1@qntmecos.com
 - Website: https://pulse.logosvision.org
 
 ## License

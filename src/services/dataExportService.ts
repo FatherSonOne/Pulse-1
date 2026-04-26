@@ -445,7 +445,7 @@ This export will automatically expire and be deleted after 30 days.
 
 SUPPORT
 -------
-For questions about your data export, contact support@pulse.app
+For questions about your data export, contact fm1@qntmecos.com
 Privacy Policy: https://pulse.app/privacy
     `.trim();
   }

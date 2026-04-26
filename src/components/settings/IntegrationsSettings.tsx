@@ -9,6 +9,8 @@ import { SlackIntegration } from './integrations/SlackIntegration';
 import { TwilioIntegration } from './integrations/TwilioIntegration';
 import { MicrosoftIntegration } from './integrations/MicrosoftIntegration';
 import { ComingSoonIntegrations } from './integrations/ComingSoonIntegrations';
+import { OrgIntegrationsCard } from './integrations/OrgIntegrationsCard';
+import { MemberConnectionsCard } from './integrations/MemberConnectionsCard';
 
 interface IntegrationsSettingsProps {
   user?: User | null;
@@ -29,6 +31,10 @@ export const IntegrationsSettings: React.FC<IntegrationsSettingsProps> = ({ user
           Connect your accounts to sync data across all your platforms. Messages, calendars, and contacts will be unified in one place.
         </p>
       </div>
+
+      <OrgIntegrationsCard />
+
+      <MemberConnectionsCard />
 
       <SyncPreferences slackChannels={slackChannels} />
 

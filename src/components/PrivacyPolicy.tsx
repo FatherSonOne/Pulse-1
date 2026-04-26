@@ -321,7 +321,7 @@ const PrivacyPolicy: React.FC<PrivacyPolicyProps> = ({ onBack }) => {
               </p>
               <div className="bg-zinc-100 dark:bg-zinc-800 rounded-xl p-6">
                 <p className="text-zinc-700 dark:text-zinc-300 font-medium">Logos Vision LLC</p>
-                <p className="text-zinc-600 dark:text-zinc-400">Email: privacy@logosvision.org</p>
+                <p className="text-zinc-600 dark:text-zinc-400">Email: fm1@qntmecos.com</p>
                 <p className="text-zinc-600 dark:text-zinc-400">Website: https://logosvision.org</p>
               </div>
             </section>
@@ -335,7 +335,7 @@ const PrivacyPolicy: React.FC<PrivacyPolicyProps> = ({ onBack }) => {
             <span>|</span>
             <a href="/terms" className="hover:text-rose-500 transition">Terms of Service</a>
             <span>|</span>
-            <a href="mailto:privacy@logosvision.org" className="hover:text-rose-500 transition">Contact</a>
+            <a href="mailto:fm1@qntmecos.com" className="hover:text-rose-500 transition">Contact</a>
           </div>
           <p className="mt-4 text-xs text-zinc-400">
             &copy; {new Date().getFullYear()} Logos Vision LLC. All rights reserved.

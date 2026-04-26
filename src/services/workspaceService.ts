@@ -85,6 +85,16 @@ export interface Workspace {
   enforce_2fa: boolean;
   session_timeout_minutes: SessionTimeoutMinutes;
   ip_allowlist: string[];
+  // Compliance
+  legal_hold: boolean;
+  // Billing
+  billing_contacts: string[];
+  tax_id_type: string | null;
+  tax_id_value: string | null;
+  // AI policy
+  ai_allowed_providers: { openai?: boolean; anthropic?: boolean; google?: boolean } & Record<string, boolean | undefined>;
+  ai_pii_masking_enforced: boolean;
+  ai_output_retention_days: 0 | 7 | 30 | 90 | 365;
 }
 
 export type WorkspaceUpdatableFields = Partial<Pick<
@@ -103,7 +113,64 @@ export type WorkspaceUpdatableFields = Partial<Pick<
   | 'enforce_2fa'
   | 'session_timeout_minutes'
   | 'ip_allowlist'
+  | 'legal_hold'
+  | 'billing_contacts'
+  | 'tax_id_type'
+  | 'tax_id_value'
+  | 'ai_allowed_providers'
+  | 'ai_pii_masking_enforced'
+  | 'ai_output_retention_days'
 >>;
+
+export interface WorkspaceGroup {
+  id: string;
+  workspace_id: string;
+  name: string;
+  description: string | null;
+  color: string | null;
+  created_at: string;
+  updated_at: string;
+  created_by: string | null;
+  member_count?: number;
+}
+
+export interface WorkspaceGroupMember {
+  group_id: string;
+  user_id: string;
+  added_at: string;
+  added_by: string | null;
+}
+
+export type IntegrationKey =
+  | 'slack' | 'gmail' | 'google_calendar' | 'google_drive'
+  | 'microsoft' | 'twilio' | 'zapier';
+
+export type IntegrationScope = 'per_user' | 'shared';
+
+export interface WorkspaceIntegration {
+  id: string;
+  workspace_id: string;
+  integration_key: IntegrationKey;
+  scope: IntegrationScope;
+  is_enabled: boolean;
+  shared_config: Record<string, unknown>;
+  connected_by: string | null;
+  notes: string | null;
+  created_at: string;
+  updated_at: string;
+}
+
+export interface MemberConnectionRow {
+  user_id: string;
+  user_name: string | null;
+  user_email: string | null;
+  user_avatar_url: string | null;
+  user_role: 'owner' | 'admin' | 'member' | 'viewer';
+  joined_at: string;
+  providers: string[];
+  app_count: number;
+  last_connected_at: string | null;
+}
 
 export interface SignInActivityEntry {
   session_id: string;
@@ -672,6 +739,179 @@ export const workspaceService = {
       p_metadata: metadata ?? {},
     });
     if (error) console.warn('[workspaceService] writeAuditLog failed (non-fatal):', error.message);
+  },
+
+  // -------------------------------------------------------------------------
+  // Groups / departments
+  // -------------------------------------------------------------------------
+
+  /**
+   * Returns all groups in a workspace, with member counts.
+   * Visible to any workspace member (RLS-enforced).
+   */
+  async getGroups(workspaceId: string): Promise<WorkspaceGroup[]> {
+    const [{ data: groups, error: groupsErr }, { data: counts, error: countsErr }] = await Promise.all([
+      supabase
+        .from('workspace_groups')
+        .select('*')
+        .eq('workspace_id', workspaceId)
+        .order('name', { ascending: true }),
+      supabase
+        .from('workspace_group_members')
+        .select('group_id'),
+    ]);
+
+    assertNoError(groupsErr, 'getGroups — groups');
+    assertNoError(countsErr, 'getGroups — counts');
+
+    const countByGroup = new Map<string, number>();
+    for (const row of (counts ?? []) as Array<{ group_id: string }>) {
+      countByGroup.set(row.group_id, (countByGroup.get(row.group_id) ?? 0) + 1);
+    }
+
+    return ((groups ?? []) as WorkspaceGroup[]).map(g => ({
+      ...g,
+      member_count: countByGroup.get(g.id) ?? 0,
+    }));
+  },
+
+  /**
+   * Returns the user_ids of every member in a given group.
+   */
+  async getGroupMembers(groupId: string): Promise<string[]> {
+    const { data, error } = await supabase
+      .from('workspace_group_members')
+      .select('user_id')
+      .eq('group_id', groupId);
+
+    assertNoError(error, 'getGroupMembers');
+    return ((data ?? []) as Array<{ user_id: string }>).map(r => r.user_id);
+  },
+
+  /**
+   * Creates a new group within a workspace. Admin+ only (RLS-enforced).
+   */
+  async createGroup(
+    workspaceId: string,
+    name: string,
+    description?: string | null,
+    color?: string | null,
+  ): Promise<WorkspaceGroup> {
+    const userId = await getCurrentUserId();
+    const { data, error } = await supabase
+      .from('workspace_groups')
+      .insert({
+        workspace_id: workspaceId,
+        name: name.trim(),
+        description: description?.trim() || null,
+        color: color || null,
+        created_by: userId,
+      })
+      .select()
+      .single();
+
+    assertNoError(error, 'createGroup');
+    return data as WorkspaceGroup;
+  },
+
+  async updateGroup(
+    groupId: string,
+    updates: Partial<Pick<WorkspaceGroup, 'name' | 'description' | 'color'>>,
+  ): Promise<WorkspaceGroup> {
+    const { data, error } = await supabase
+      .from('workspace_groups')
+      .update(updates)
+      .eq('id', groupId)
+      .select()
+      .single();
+
+    assertNoError(error, 'updateGroup');
+    return data as WorkspaceGroup;
+  },
+
+  async deleteGroup(groupId: string): Promise<void> {
+    const { error } = await supabase
+      .from('workspace_groups')
+      .delete()
+      .eq('id', groupId);
+
+    assertNoError(error, 'deleteGroup');
+  },
+
+  async addGroupMember(groupId: string, userId: string): Promise<void> {
+    const actorId = await getCurrentUserId();
+    const { error } = await supabase
+      .from('workspace_group_members')
+      .insert({ group_id: groupId, user_id: userId, added_by: actorId });
+
+    assertNoError(error, 'addGroupMember');
+  },
+
+  async removeGroupMember(groupId: string, userId: string): Promise<void> {
+    const { error } = await supabase
+      .from('workspace_group_members')
+      .delete()
+      .eq('group_id', groupId)
+      .eq('user_id', userId);
+
+    assertNoError(error, 'removeGroupMember');
+  },
+
+  // -------------------------------------------------------------------------
+  // Integrations — org-managed policy + admin visibility
+  // -------------------------------------------------------------------------
+
+  /**
+   * Returns all workspace integration policy rows. Visible to any member.
+   */
+  async getWorkspaceIntegrations(workspaceId: string): Promise<WorkspaceIntegration[]> {
+    const { data, error } = await supabase
+      .from('workspace_integrations')
+      .select('*')
+      .eq('workspace_id', workspaceId)
+      .order('integration_key', { ascending: true });
+
+    assertNoError(error, 'getWorkspaceIntegrations');
+    return (data ?? []) as WorkspaceIntegration[];
+  },
+
+  /**
+   * Upserts (insert or update) the integration policy row for a key.
+   * Admin+ only (RLS-enforced).
+   */
+  async upsertWorkspaceIntegration(
+    workspaceId: string,
+    integrationKey: IntegrationKey,
+    fields: Partial<Pick<WorkspaceIntegration, 'scope' | 'is_enabled' | 'shared_config' | 'notes'>>,
+  ): Promise<WorkspaceIntegration> {
+    const userId = await getCurrentUserId();
+    const { data, error } = await supabase
+      .from('workspace_integrations')
+      .upsert(
+        {
+          workspace_id:    workspaceId,
+          integration_key: integrationKey,
+          connected_by:    fields.scope === 'shared' ? userId : null,
+          ...fields,
+        },
+        { onConflict: 'workspace_id,integration_key' },
+      )
+      .select()
+      .single();
+
+    assertNoError(error, 'upsertWorkspaceIntegration');
+    return data as WorkspaceIntegration;
+  },
+
+  /**
+   * Returns the admin view of every member's connected providers. Admin+ only.
+   */
+  async getMemberConnections(workspaceId: string): Promise<MemberConnectionRow[]> {
+    const { data, error } = await supabase.rpc('get_workspace_member_connections', {
+      p_workspace_id: workspaceId,
+    });
+    assertNoError(error, 'getMemberConnections');
+    return (data ?? []) as MemberConnectionRow[];
   },
 
   // -------------------------------------------------------------------------

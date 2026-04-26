@@ -23,6 +23,7 @@ import { AdminSettings } from './settings/AdminSettings';
 import { EcosystemSettings } from './settings/EcosystemSettings';
 import { WorkspaceSettings } from './settings/WorkspaceSettings';
 import { SecuritySettings } from './settings/SecuritySettings';
+import { ComplianceSettings } from './settings/ComplianceSettings';
 
 interface SettingsProps {
   user?: User | null;
@@ -44,6 +45,7 @@ const SECTIONS = [
   { id: 'workspace', icon: 'fa-building', label: 'Organization' },
   { id: 'team', icon: 'fa-users', label: 'Team Management' },
   { id: 'security', icon: 'fa-lock', label: 'Security' },
+  { id: 'compliance', icon: 'fa-scale-balanced', label: 'Compliance' },
   { id: 'accessibility', icon: 'fa-universal-access', label: 'Accessibility' },
   { id: 'privacy_data', icon: 'fa-shield-halved', label: 'Privacy & Data' },
   { id: 'about', icon: 'fa-circle-info', label: 'About Pulse' },
@@ -67,6 +69,7 @@ const SECTION_KEYWORDS: Record<string, string[]> = {
   workspace: ['organization', 'org', 'workspace', 'legal name', 'logo', 'industry', 'size', 'domain', 'auto-join', 'archive', 'delete', 'danger zone', 'restore', 'transfer', 'audit'],
   team: ['team', 'invite', 'member', 'colleague', 'share'],
   security: ['security', '2fa', 'two factor', 'mfa', 'session', 'timeout', 'ip allowlist', 'cidr', 'sign in', 'login', 'access'],
+  compliance: ['compliance', 'dpa', 'gdpr', 'data processing', 'audit log', 'csv', 'export', 'residency', 'region', 'legal hold', 'subprocessor'],
   accessibility: ['font size', 'high contrast', 'reduced motion', 'visual', 'accessibility'],
   privacy_data: ['privacy', 'analytics', 'export', 'delete', 'data', 'cache', 'tracking', 'gdpr'],
   about: ['version', 'update', 'install', 'pwa', 'info', 'about'],
@@ -120,6 +123,7 @@ const Settings: React.FC<SettingsProps> = ({ user, isDarkMode, toggleTheme, init
       case 'workspace':        return <WorkspaceSettings />;
       case 'team':             return <TeamSettings userId={user?.id || ''} userName={user?.name || ''} />;
       case 'security':         return <SecuritySettings />;
+      case 'compliance':       return <ComplianceSettings />;
       case 'accessibility':    return <AccessibilitySettings />;
       case 'privacy_data':     return <PrivacyDataSettings />;
       case 'features_labs':    return <FeaturesLabsSettings />;

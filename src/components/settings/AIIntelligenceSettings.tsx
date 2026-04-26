@@ -3,6 +3,8 @@ import { settingsService } from '../../services/settingsService';
 import AIHealthMonitor from '../AIHealthMonitor';
 import { Book, Brain, Headset, Mic, Play, Sliders, Volume2 } from 'lucide-react';
 import { ToggleItem } from './shared/ToggleItem';
+import { AIProvidersCard } from './ai/AIProvidersCard';
+import { AIDataPolicyCard } from './ai/AIDataPolicyCard';
 
 export const AIIntelligenceSettings: React.FC = () => {
   // Voice Agent state
@@ -97,6 +99,12 @@ export const AIIntelligenceSettings: React.FC = () => {
 
       {/* AI Health Monitor */}
       <AIHealthMonitor />
+
+      {/* Providers — org policy + per-user override */}
+      <AIProvidersCard />
+
+      {/* PII masking + AI output retention */}
+      <AIDataPolicyCard />
 
       {/* Voice Agent */}
       <div className="bg-white dark:bg-zinc-900 border border-zinc-200 dark:border-zinc-800 rounded-xl p-6">

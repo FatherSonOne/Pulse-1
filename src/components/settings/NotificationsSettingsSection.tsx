@@ -2,6 +2,9 @@ import React, { useState, useEffect } from 'react';
 import { NotificationSettings } from '../NotificationSettings';
 import { settingsService } from '../../services/settingsService';
 import { ToggleItem } from './shared/ToggleItem';
+import { QuietHoursCard } from './notifications/QuietHoursCard';
+import { DigestScheduleCard } from './notifications/DigestScheduleCard';
+import { NotificationRoutingCard } from './notifications/NotificationRoutingCard';
 
 export const NotificationsSettingsSection: React.FC = () => {
   const [enableAllNotifications, setEnableAllNotifications] = useState(true);
@@ -49,15 +52,21 @@ export const NotificationsSettingsSection: React.FC = () => {
       </div>
 
       {enableAllNotifications && (
-        <NotificationSettings
-          notifSound={notifSound}
-          setNotifSound={(v: boolean) => { setNotifSound(v); settingsService.set('notifSound', v); }}
-          notifDesktop={notifDesktop}
-          setNotifDesktop={(v: boolean) => { setNotifDesktop(v); settingsService.set('notifDesktop', v); }}
-          notifEmail={notifEmail}
-          setNotifEmail={(v: boolean) => { setNotifEmail(v); settingsService.set('notifEmail', v); }}
-          ToggleItem={ToggleItem}
-        />
+        <>
+          <NotificationSettings
+            notifSound={notifSound}
+            setNotifSound={(v: boolean) => { setNotifSound(v); settingsService.set('notifSound', v); }}
+            notifDesktop={notifDesktop}
+            setNotifDesktop={(v: boolean) => { setNotifDesktop(v); settingsService.set('notifDesktop', v); }}
+            notifEmail={notifEmail}
+            setNotifEmail={(v: boolean) => { setNotifEmail(v); settingsService.set('notifEmail', v); }}
+            ToggleItem={ToggleItem}
+          />
+
+          <QuietHoursCard />
+          <DigestScheduleCard />
+          <NotificationRoutingCard />
+        </>
       )}
     </div>
   );

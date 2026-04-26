@@ -359,7 +359,7 @@ export const HelpSupportModal: React.FC<HelpSupportModalProps> = ({
 
                 <div className="space-y-4">
                   <a
-                    href="mailto:qntmecos@gmail.com"
+                    href="mailto:fm1@qntmecos.com"
                     className="flex items-center gap-4 p-4 bg-white dark:bg-zinc-800/50 rounded-xl border border-zinc-200 dark:border-zinc-700 hover:border-zinc-300 dark:hover:border-zinc-600 transition"
                   >
                     <div className="w-12 h-12 rounded-lg bg-rose-100 dark:bg-rose-900/20 flex items-center justify-center flex-shrink-0">
@@ -367,7 +367,7 @@ export const HelpSupportModal: React.FC<HelpSupportModalProps> = ({
                     </div>
                     <div>
                       <h4 className="font-semibold text-zinc-900 dark:text-white">Email Support</h4>
-                      <p className="text-sm text-zinc-500 dark:text-zinc-400">qntmecos@gmail.com</p>
+                      <p className="text-sm text-zinc-500 dark:text-zinc-400">fm1@qntmecos.com</p>
                       <p className="text-xs text-zinc-400 dark:text-zinc-500 mt-1">Response time: 24-48 hours</p>
                     </div>
                   </a>

@@ -1,9 +1,11 @@
 import React, { useState, useEffect } from 'react';
 import { settingsService } from '../../services/settingsService';
-import { supabase } from '../../services/supabase';
-import { ShieldHalf, Download, RefreshCw, RotateCcw } from 'lucide-react';
+import { ShieldHalf, RefreshCw, RotateCcw } from 'lucide-react';
 import toast from 'react-hot-toast';
 import { ToggleItem } from './shared/ToggleItem';
+import { DataRetentionCard } from './privacy/DataRetentionCard';
+import { DataExportRequestCard } from './privacy/DataExportRequestCard';
+import { DataErasureCard } from './privacy/DataErasureCard';
 
 export const PrivacyDataSettings: React.FC = () => {
   const [analyticsTracking, setAnalyticsTracking] = useState(true);
@@ -33,10 +35,11 @@ export const PrivacyDataSettings: React.FC = () => {
           <ShieldHalf /> Privacy & Data
         </h3>
         <p>
-          Control your data collection settings and manage your personal information.
+          Control your data collection settings, retention windows, and personal-data rights.
         </p>
       </div>
 
+      {/* Data Collection */}
       <div className="bg-white dark:bg-zinc-900 border border-zinc-200 dark:border-zinc-800 rounded-xl p-6 space-y-6">
         <h4 className="text-sm font-bold uppercase tracking-widest text-zinc-500">Data Collection</h4>
         <ToggleItem
@@ -47,8 +50,14 @@ export const PrivacyDataSettings: React.FC = () => {
         />
         <div className="h-px bg-zinc-100 dark:bg-zinc-800"></div>
         <div>
-          <label className="text-sm font-bold uppercase tracking-widest text-zinc-500 mb-3 block">Nudge Reminder Frequency</label>
+          <label
+            htmlFor="nudge-frequency"
+            className="text-sm font-bold uppercase tracking-widest text-zinc-500 mb-3 block"
+          >
+            Nudge Reminder Frequency
+          </label>
           <select
+            id="nudge-frequency"
             value={nudgeFrequencyHours}
             onChange={(e) => {
               const v = Number(e.target.value);
@@ -67,6 +76,13 @@ export const PrivacyDataSettings: React.FC = () => {
         </div>
       </div>
 
+      {/* Data Retention — per-type windows */}
+      <DataRetentionCard />
+
+      {/* Export — GDPR Article 20 */}
+      <DataExportRequestCard />
+
+      {/* Misc data management */}
       <div className="bg-white dark:bg-zinc-900 border border-zinc-200 dark:border-zinc-800 rounded-xl p-6">
         <h4 className="text-sm font-bold uppercase tracking-widest text-zinc-500 mb-6">Data Management</h4>
 
@@ -77,10 +93,10 @@ export const PrivacyDataSettings: React.FC = () => {
               <p className="text-xs text-zinc-500">Clear cached data and force a fresh reload</p>
             </div>
             <button
+              type="button"
               onClick={() => {
                 const toastId = toast.loading('Rebuilding cache...');
                 try {
-                  // Clear all pulse- prefixed localStorage keys except API keys and settings
                   const keysToRemove = Object.keys(localStorage).filter(k =>
                     k.startsWith('pulse-') && k !== 'pulse_settings' && k !== 'pulse-api-keys'
                   );
@@ -90,45 +106,9 @@ export const PrivacyDataSettings: React.FC = () => {
                   toast.error('Failed to clear cache', { id: toastId });
                 }
               }}
-              className="px-4 py-2 border border-zinc-200 dark:border-zinc-700 rounded-lg text-sm hover:bg-zinc-50 dark:hover:bg-zinc-800 transition"
+              className="px-4 py-2 border border-zinc-200 dark:border-zinc-700 rounded-lg text-sm hover:bg-zinc-50 dark:hover:bg-zinc-800 transition flex items-center gap-2"
             >
-              <RefreshCw className="mr-2" /> Rebuild
-            </button>
-          </div>
-
-          <div className="h-px bg-zinc-100 dark:bg-zinc-800"></div>
-
-          <div className="flex items-center justify-between">
-            <div>
-              <p className="text-sm font-medium dark:text-white text-zinc-900">Export My Data</p>
-              <p className="text-xs text-zinc-500">Download a JSON copy of your settings and profile</p>
-            </div>
-            <button
-              onClick={async () => {
-                const toastId = toast.loading('Preparing export...');
-                try {
-                  const { data: { user } } = await supabase.auth.getUser();
-                  if (!user) throw new Error('Not authenticated');
-                  const { data: profile } = await supabase.from('pulse_profiles').select('*').eq('id', user.id).single();
-                  const allSettings = await settingsService.getAll?.() || {};
-                  const exportData = { exportedAt: new Date().toISOString(), email: user.email, profile: profile || {}, settings: allSettings };
-                  const blob = new Blob([JSON.stringify(exportData, null, 2)], { type: 'application/json' });
-                  const url = URL.createObjectURL(blob);
-                  const a = document.createElement('a');
-                  a.href = url;
-                  a.download = `pulse-export-${new Date().toISOString().split('T')[0]}.json`;
-                  document.body.appendChild(a);
-                  a.click();
-                  document.body.removeChild(a);
-                  URL.revokeObjectURL(url);
-                  toast.success('Data exported!', { id: toastId });
-                } catch {
-                  toast.error('Export failed', { id: toastId });
-                }
-              }}
-              className="px-4 py-2 border border-zinc-200 dark:border-zinc-700 rounded-lg text-sm hover:bg-zinc-50 dark:hover:bg-zinc-800 transition"
-            >
-              <Download className="mr-2" /> Export JSON
+              <RefreshCw className="w-4 h-4" /> Rebuild
             </button>
           </div>
 
@@ -140,6 +120,7 @@ export const PrivacyDataSettings: React.FC = () => {
               <p className="text-xs text-zinc-500">Reset all settings to their original defaults</p>
             </div>
             <button
+              type="button"
               onClick={async () => {
                 if (!confirm('Reset all settings to defaults? This cannot be undone.')) return;
                 const toastId = toast.loading('Restoring defaults...');
@@ -151,45 +132,16 @@ export const PrivacyDataSettings: React.FC = () => {
                   toast.error('Failed to reset settings', { id: toastId });
                 }
               }}
-              className="px-4 py-2 border border-amber-300 dark:border-amber-700 text-amber-600 dark:text-amber-400 rounded-lg text-sm hover:bg-amber-50 dark:hover:bg-amber-900/20 transition"
+              className="px-4 py-2 border border-amber-300 dark:border-amber-700 text-amber-600 dark:text-amber-400 rounded-lg text-sm hover:bg-amber-50 dark:hover:bg-amber-900/20 transition flex items-center gap-2"
             >
-              <RotateCcw className="mr-2" /> Reset Defaults
+              <RotateCcw className="w-4 h-4" /> Reset Defaults
             </button>
           </div>
         </div>
       </div>
 
-      <div className="bg-red-50 dark:bg-red-900/10 border border-red-200 dark:border-red-900/30 rounded-xl p-6 flex items-center justify-between">
-        <div>
-          <h4 className="text-sm font-bold text-red-600 dark:text-red-400 mb-1">Delete My Account</h4>
-          <p className="text-xs text-red-500/80">Permanently remove your account and all associated data. This action cannot be undone.</p>
-        </div>
-        <button
-          onClick={async () => {
-            const confirmed = confirm('Are you sure you want to delete your account? This will permanently remove all your data and cannot be undone.');
-            if (!confirmed) return;
-            const doubleConfirm = prompt('Type "DELETE" to confirm account deletion:');
-            if (doubleConfirm !== 'DELETE') {
-              toast('Account deletion cancelled.', { icon: 'ℹ️' });
-              return;
-            }
-            const toastId = toast.loading('Deleting account...');
-            try {
-              const { data: { user } } = await supabase.auth.getUser();
-              if (!user) throw new Error('Not authenticated');
-              const { error } = await supabase.rpc('delete_user_account', { target_user_id: user.id });
-              if (error) throw error;
-              toast.success('Account deleted. Signing out...', { id: toastId });
-              setTimeout(() => { supabase.auth.signOut(); window.location.href = '/'; }, 2000);
-            } catch (err: any) {
-              toast.error(err.message || 'Failed to delete account', { id: toastId });
-            }
-          }}
-          className="px-4 py-2 bg-red-600 hover:bg-red-700 text-white font-semibold rounded-lg text-sm transition"
-        >
-          Delete Account
-        </button>
-      </div>
+      {/* Erasure — GDPR Article 17 */}
+      <DataErasureCard />
     </div>
   );
 };

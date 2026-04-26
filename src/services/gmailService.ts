@@ -172,10 +172,10 @@ export class GmailService {
     // No fallback to supabase.auth.refreshSession() — refreshing the Supabase
     // session does NOT produce a Google provider_token, and calling it on every
     // request fires TOKEN_REFRESHED storms that rate-limit the auth endpoint.
-    const error = new Error('Your Google session has expired. Please sign out and sign back in with Google.');
-    (error as any).isSessionExpired = true;
-    (error as any).code = 'GOOGLE_SESSION_EXPIRED';
-    throw error;
+    const expiredError = new Error('Your Google session has expired. Please sign out and sign back in with Google.');
+    (expiredError as any).isSessionExpired = true;
+    (expiredError as any).code = 'GOOGLE_SESSION_EXPIRED';
+    throw expiredError;
   }
 
   /**
