@@ -308,7 +308,7 @@ export const EmergencyAlert: React.FC<EmergencyAlertProps> = ({
       <div className="relative z-10 max-w-md w-full mx-4">
         {/* Alert Icon */}
         <div className="flex justify-center mb-6">
-          <div className="w-24 h-24 rounded-full bg-white/20 flex items-center justify-center animate-bounce">
+          <div className="w-24 h-24 rounded-full bg-white/20 flex items-center justify-center animate-pulse">
             <CircleDot className="text-5xl text-white" />
           </div>
         </div>

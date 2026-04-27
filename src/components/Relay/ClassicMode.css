@@ -1613,7 +1613,6 @@
   width: 4px;
   border-radius: 2px;
   background: var(--cv-accent);
-  transition: height 0.05s ease;
   animation: cv-pulse-bar 0.5s ease-in-out infinite alternate;
 }
 

@@ -170,7 +170,6 @@
     var(--vox-primary) 0%,
     var(--vox-primary-light) 100%
   );
-  transition: height 0.05s ease-out;
   min-height: 4px;
 }
 
