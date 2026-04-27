@@ -7,6 +7,7 @@
 
 import React, { useState, useMemo } from 'react';
 import { motion, AnimatePresence } from 'framer-motion';
+import { AIProvenanceTag } from '../shared/AIProvenanceTag';
 
 // Types
 export interface DigestMessage {
@@ -243,12 +244,8 @@ export const FocusDigestCard: React.FC<FocusDigestCardProps> = ({
             {/* Header */}
             <div className="relative px-6 py-5 bg-gradient-to-r from-blue-600/20 via-purple-600/20 to-blue-600/20 border-b border-gray-700">
               <div className="flex items-center justify-between">
-                <div className="flex items-center gap-3">
-                  <div className="w-10 h-10 rounded-full bg-blue-500/20 flex items-center justify-center">
-                    <svg className="w-5 h-5 text-blue-400" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                      <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M3 8l7.89 5.26a2 2 0 002.22 0L21 8M5 19h14a2 2 0 002-2V7a2 2 0 00-2-2H5a2 2 0 00-2 2v10a2 2 0 002 2z" />
-                    </svg>
-                  </div>
+                <div className="flex flex-col gap-2">
+                  <AIProvenanceTag source="pulse-ai" kind="digest" />
                   <div>
                     <h2 className="text-lg font-semibold text-white">Focus Session Digest</h2>
                     <p className="text-sm text-gray-400">

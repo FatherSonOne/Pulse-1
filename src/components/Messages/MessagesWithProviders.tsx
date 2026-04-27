@@ -18,8 +18,7 @@
 
 import React from 'react';
 import { MessagesProvider, ToolsProvider, FocusModeProvider } from '../../contexts';
-import Messages from '../Messages'; // Original Messages component
-// import MessagesRefactored from './Messages.refactored.example'; // For testing the refactored version
+import Messages from '../Messages';
 
 interface MessagesWithProvidersProps {
   apiKey: string;
@@ -67,37 +66,5 @@ export const MessagesWithProviders: React.FC<MessagesWithProvidersProps> = ({
     </MessagesProvider>
   );
 };
-
-/**
- * MessagesWithProvidersRefactored
- *
- * This is an example showing how to use the refactored Messages component.
- * Uncomment when ready to switch to the refactored version.
- */
-/*
-export const MessagesWithProvidersRefactored: React.FC<MessagesWithProvidersProps> = ({
-  apiKey,
-  contacts,
-  initialContactId,
-  onAddContact,
-  currentUser,
-}) => {
-  return (
-    <MessagesProvider currentUser={currentUser}>
-      <ToolsProvider>
-        <FocusModeProvider>
-          <MessagesRefactored
-            apiKey={apiKey}
-            contacts={contacts}
-            initialContactId={initialContactId}
-            onAddContact={onAddContact}
-            currentUser={currentUser}
-          />
-        </FocusModeProvider>
-      </ToolsProvider>
-    </MessagesProvider>
-  );
-};
-*/
 
 export default MessagesWithProviders;

@@ -7,7 +7,6 @@ import {
   Clock,
   Users,
   CheckCircle,
-  X,
   Lightbulb,
   BarChart2,
   Send,
@@ -15,6 +14,7 @@ import {
   Zap
 } from 'lucide-react';
 import { detectMeetingIntent, AsyncSuggestion } from '../../services/geminiService';
+import { AIProvenanceTag } from '../shared/AIProvenanceTag';
 import './MeetingDeflector.css';
 
 interface MeetingDeflectorProps {
@@ -152,12 +152,12 @@ export const MeetingDeflector: React.FC<MeetingDeflectorProps> = ({
           <Lightbulb size={20} />
         </div>
         <div className="deflector-title">
+          <div className="mb-1">
+            <AIProvenanceTag source="gemini" kind="deflect" onDismiss={handleDismiss} />
+          </div>
           <h4>Consider an Async Alternative</h4>
           <p>{suggestion.reason}</p>
         </div>
-        <button className="btn-dismiss" onClick={handleDismiss}>
-          <X size={16} />
-        </button>
       </div>
 
       {!showAlternatives ? (

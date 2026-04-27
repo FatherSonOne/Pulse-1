@@ -4,6 +4,7 @@
 
 import React, { useState } from 'react';
 import { ChevronDown, ChevronUp, ExternalLink, CheckSquare, MessageSquare, Star, Sparkles } from 'lucide-react';
+import { AIProvenanceTag } from '../shared/AIProvenanceTag';
 import type { BotMessageMetadata, BotAction } from '../../types/messages';
 
 interface MeetingRecapCardProps {
@@ -63,16 +64,9 @@ export const MeetingRecapCard: React.FC<MeetingRecapCardProps> = ({
             )}
           </div>
           <div className="flex items-center gap-2 flex-wrap">
-            {hasProfile ? (
-              <>
-                <span className="text-sm font-semibold text-indigo-300">{profile.name}</span>
-                <span className="text-[9px] font-bold uppercase tracking-widest text-indigo-400/80 bg-indigo-500/15 border border-indigo-500/25 px-1.5 py-0.5 rounded-full flex items-center gap-1">
-                  <Sparkles className="w-2.5 h-2.5" />
-                  MIP
-                </span>
-              </>
-            ) : (
-              <span className="text-sm font-semibold text-violet-300">Meeting Recap</span>
+            <AIProvenanceTag source="pulse-ai" kind="recap" />
+            {hasProfile && (
+              <span className="text-sm font-semibold text-zinc-200 dark:text-zinc-100">{profile.name}</span>
             )}
             {/* Sentiment badge */}
             <div className={`inline-flex items-center gap-1 px-2 py-0.5 rounded-full border text-xs ${sentConf.bg} ${sentConf.color}`}>

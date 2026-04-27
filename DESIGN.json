@@ -1,0 +1,421 @@
+{
+  "schemaVersion": 2,
+  "generatedAt": "2026-04-26T00:00:00Z",
+  "title": "Design System: Pulse",
+  "extensions": {
+    "colorMeta": {
+      "rose-pulse": {
+        "role": "primary",
+        "displayName": "Rose Pulse",
+        "canonical": "oklch(63% 0.21 13)",
+        "tonalRamp": ["oklch(20% 0.07 13)", "oklch(30% 0.10 13)", "oklch(40% 0.14 13)", "oklch(50% 0.18 13)", "oklch(63% 0.21 13)", "oklch(73% 0.18 13)", "oklch(83% 0.12 13)", "oklch(95% 0.04 13)"]
+      },
+      "rose-deep": {
+        "role": "primary",
+        "displayName": "Rose Deep",
+        "canonical": "oklch(56% 0.21 12)",
+        "tonalRamp": ["oklch(18% 0.08 12)", "oklch(28% 0.12 12)", "oklch(38% 0.16 12)", "oklch(46% 0.19 12)", "oklch(56% 0.21 12)", "oklch(68% 0.18 12)", "oklch(80% 0.12 12)", "oklch(94% 0.04 12)"]
+      },
+      "rose-bright": {
+        "role": "primary",
+        "displayName": "Rose Bright",
+        "canonical": "oklch(72% 0.16 14)",
+        "tonalRamp": ["oklch(22% 0.05 14)", "oklch(32% 0.08 14)", "oklch(42% 0.11 14)", "oklch(52% 0.13 14)", "oklch(62% 0.15 14)", "oklch(72% 0.16 14)", "oklch(84% 0.10 14)", "oklch(96% 0.03 14)"]
+      },
+      "pink-companion": {
+        "role": "primary",
+        "displayName": "Pink Companion",
+        "canonical": "oklch(67% 0.23 0)",
+        "tonalRamp": ["oklch(22% 0.08 0)", "oklch(32% 0.12 0)", "oklch(42% 0.16 0)", "oklch(54% 0.20 0)", "oklch(67% 0.23 0)", "oklch(77% 0.18 0)", "oklch(86% 0.12 0)", "oklch(96% 0.04 0)"]
+      },
+      "ink-true": {
+        "role": "neutral",
+        "displayName": "Ink True",
+        "canonical": "oklch(15% 0 0)",
+        "tonalRamp": ["oklch(8% 0 0)", "oklch(15% 0 0)", "oklch(25% 0 0)", "oklch(38% 0 0)", "oklch(52% 0 0)", "oklch(68% 0 0)", "oklch(82% 0 0)", "oklch(94% 0 0)"]
+      },
+      "ink-cloth": {
+        "role": "neutral",
+        "displayName": "Ink Cloth",
+        "canonical": "oklch(40% 0.005 280)",
+        "tonalRamp": ["oklch(10% 0.005 280)", "oklch(20% 0.005 280)", "oklch(30% 0.005 280)", "oklch(40% 0.005 280)", "oklch(55% 0.005 280)", "oklch(70% 0.005 280)", "oklch(84% 0.005 280)", "oklch(95% 0.005 280)"]
+      },
+      "fog-muted": {
+        "role": "neutral",
+        "displayName": "Fog Muted",
+        "canonical": "oklch(52% 0.005 270)",
+        "tonalRamp": ["oklch(15% 0.005 270)", "oklch(25% 0.005 270)", "oklch(35% 0.005 270)", "oklch(45% 0.005 270)", "oklch(52% 0.005 270)", "oklch(68% 0.005 270)", "oklch(82% 0.005 270)", "oklch(95% 0.005 270)"]
+      },
+      "paper-pure": {
+        "role": "neutral",
+        "displayName": "Paper Pure",
+        "canonical": "oklch(100% 0 0)",
+        "tonalRamp": ["oklch(85% 0 0)", "oklch(88% 0 0)", "oklch(91% 0 0)", "oklch(94% 0 0)", "oklch(96% 0 0)", "oklch(98% 0 0)", "oklch(99% 0 0)", "oklch(100% 0 0)"]
+      },
+      "paper-warm": {
+        "role": "neutral",
+        "displayName": "Paper Warm",
+        "canonical": "oklch(97% 0.002 60)",
+        "tonalRamp": ["oklch(80% 0.002 60)", "oklch(85% 0.002 60)", "oklch(89% 0.002 60)", "oklch(92% 0.002 60)", "oklch(95% 0.002 60)", "oklch(97% 0.002 60)", "oklch(98% 0.002 60)", "oklch(99% 0.002 60)"]
+      },
+      "paper-soft": {
+        "role": "neutral",
+        "displayName": "Paper Soft",
+        "canonical": "oklch(95% 0 0)",
+        "tonalRamp": ["oklch(78% 0 0)", "oklch(83% 0 0)", "oklch(87% 0 0)", "oklch(91% 0 0)", "oklch(93% 0 0)", "oklch(95% 0 0)", "oklch(97% 0 0)", "oklch(99% 0 0)"]
+      },
+      "surface-cloud-50": {
+        "role": "neutral",
+        "displayName": "Surface Cloud 50",
+        "canonical": "oklch(98% 0 0)",
+        "tonalRamp": ["oklch(82% 0 0)", "oklch(86% 0 0)", "oklch(90% 0 0)", "oklch(93% 0 0)", "oklch(96% 0 0)", "oklch(98% 0 0)", "oklch(99% 0 0)", "oklch(100% 0 0)"]
+      },
+      "surface-mist-200": {
+        "role": "neutral",
+        "displayName": "Surface Mist 200",
+        "canonical": "oklch(76% 0.003 280)",
+        "tonalRamp": ["oklch(40% 0.003 280)", "oklch(50% 0.003 280)", "oklch(60% 0.003 280)", "oklch(68% 0.003 280)", "oklch(76% 0.003 280)", "oklch(84% 0.003 280)", "oklch(91% 0.003 280)", "oklch(97% 0.003 280)"]
+      },
+      "ink-near-true": {
+        "role": "neutral",
+        "displayName": "Ink Near-True (Dark Canvas)",
+        "canonical": "oklch(8% 0 0)",
+        "tonalRamp": ["oklch(0% 0 0)", "oklch(4% 0 0)", "oklch(8% 0 0)", "oklch(15% 0 0)", "oklch(25% 0 0)", "oklch(40% 0 0)", "oklch(60% 0 0)", "oklch(85% 0 0)"]
+      },
+      "status-overdue": {
+        "role": "tertiary",
+        "displayName": "Status Overdue",
+        "canonical": "oklch(64% 0.22 25)",
+        "tonalRamp": ["oklch(22% 0.10 25)", "oklch(32% 0.14 25)", "oklch(42% 0.18 25)", "oklch(52% 0.20 25)", "oklch(64% 0.22 25)", "oklch(74% 0.18 25)", "oklch(86% 0.12 25)", "oklch(96% 0.04 25)"]
+      },
+      "status-blocked": {
+        "role": "tertiary",
+        "displayName": "Status Blocked",
+        "canonical": "oklch(70% 0.18 50)",
+        "tonalRamp": ["oklch(25% 0.08 50)", "oklch(35% 0.12 50)", "oklch(45% 0.15 50)", "oklch(58% 0.17 50)", "oklch(70% 0.18 50)", "oklch(80% 0.14 50)", "oklch(90% 0.10 50)", "oklch(97% 0.03 50)"]
+      },
+      "status-in-progress": {
+        "role": "tertiary",
+        "displayName": "Status In Progress",
+        "canonical": "oklch(63% 0.20 250)",
+        "tonalRamp": ["oklch(22% 0.10 250)", "oklch(32% 0.14 250)", "oklch(42% 0.17 250)", "oklch(52% 0.19 250)", "oklch(63% 0.20 250)", "oklch(74% 0.16 250)", "oklch(86% 0.10 250)", "oklch(96% 0.03 250)"]
+      },
+      "status-done": {
+        "role": "tertiary",
+        "displayName": "Status Done",
+        "canonical": "oklch(72% 0.18 145)",
+        "tonalRamp": ["oklch(28% 0.08 145)", "oklch(38% 0.12 145)", "oklch(48% 0.15 145)", "oklch(60% 0.17 145)", "oklch(72% 0.18 145)", "oklch(82% 0.14 145)", "oklch(91% 0.09 145)", "oklch(97% 0.03 145)"]
+      },
+      "status-decided": {
+        "role": "tertiary",
+        "displayName": "Status Decided",
+        "canonical": "oklch(72% 0.16 165)",
+        "tonalRamp": ["oklch(28% 0.07 165)", "oklch(38% 0.10 165)", "oklch(48% 0.13 165)", "oklch(60% 0.15 165)", "oklch(72% 0.16 165)", "oklch(82% 0.13 165)", "oklch(91% 0.08 165)", "oklch(97% 0.03 165)"]
+      },
+      "status-in-review": {
+        "role": "tertiary",
+        "displayName": "Status In Review",
+        "canonical": "oklch(67% 0.22 305)",
+        "tonalRamp": ["oklch(24% 0.10 305)", "oklch(34% 0.14 305)", "oklch(44% 0.18 305)", "oklch(56% 0.21 305)", "oklch(67% 0.22 305)", "oklch(78% 0.17 305)", "oklch(88% 0.11 305)", "oklch(96% 0.04 305)"]
+      },
+      "status-proposed": {
+        "role": "tertiary",
+        "displayName": "Status Proposed",
+        "canonical": "oklch(60% 0.22 295)",
+        "tonalRamp": ["oklch(20% 0.10 295)", "oklch(30% 0.14 295)", "oklch(40% 0.18 295)", "oklch(50% 0.21 295)", "oklch(60% 0.22 295)", "oklch(72% 0.18 295)", "oklch(85% 0.12 295)", "oklch(96% 0.04 295)"]
+      },
+      "status-voting": {
+        "role": "tertiary",
+        "displayName": "Status Voting",
+        "canonical": "oklch(76% 0.16 70)",
+        "tonalRamp": ["oklch(28% 0.07 70)", "oklch(40% 0.11 70)", "oklch(52% 0.13 70)", "oklch(64% 0.15 70)", "oklch(76% 0.16 70)", "oklch(86% 0.12 70)", "oklch(93% 0.08 70)", "oklch(98% 0.03 70)"]
+      },
+      "status-pending": {
+        "role": "tertiary",
+        "displayName": "Status Pending",
+        "canonical": "oklch(85% 0.16 90)",
+        "tonalRamp": ["oklch(35% 0.07 90)", "oklch(45% 0.10 90)", "oklch(55% 0.13 90)", "oklch(70% 0.15 90)", "oklch(85% 0.16 90)", "oklch(91% 0.12 90)", "oklch(95% 0.08 90)", "oklch(99% 0.03 90)"]
+      },
+      "status-todo": {
+        "role": "tertiary",
+        "displayName": "Status Todo / Neutral",
+        "canonical": "oklch(56% 0.005 270)",
+        "tonalRamp": ["oklch(20% 0.005 270)", "oklch(30% 0.005 270)", "oklch(40% 0.005 270)", "oklch(48% 0.005 270)", "oklch(56% 0.005 270)", "oklch(70% 0.005 270)", "oklch(84% 0.005 270)", "oklch(96% 0.005 270)"]
+      }
+    },
+    "typographyMeta": {
+      "display": {
+        "displayName": "Display",
+        "purpose": "Large empty-state titles, hero section headers. Light weight 300 is intentional confidence."
+      },
+      "headline": {
+        "displayName": "Headline",
+        "purpose": "Page titles, modal headers, primary section headers."
+      },
+      "title": {
+        "displayName": "Title",
+        "purpose": "Card titles, conversation names, list-item primary text."
+      },
+      "body": {
+        "displayName": "Body",
+        "purpose": "Message content, paragraph copy, descriptions. Cap at 65-75ch for prose blocks."
+      },
+      "label": {
+        "displayName": "Mono Label",
+        "purpose": "The signature: status pills, timestamps, section sub-headers, AI provenance tags, kanban column titles. JetBrains Mono uppercase tracked 0.1em is non-negotiable."
+      }
+    },
+    "shadows": [
+      {
+        "name": "hairline-ambient-light",
+        "value": "0 1px 3px rgba(0,0,0,0.06)",
+        "purpose": "Default card rest state in light mode. Almost imperceptible."
+      },
+      {
+        "name": "card-light",
+        "value": "0 1px 3px rgba(0,0,0,0.06), 0 1px 2px rgba(0,0,0,0.04)",
+        "purpose": "Paired-shadow card in light mode."
+      },
+      {
+        "name": "card-hover-light",
+        "value": "0 4px 12px rgba(0,0,0,0.08)",
+        "purpose": "Hover lift in light mode, paired with translateY(-1px)."
+      },
+      {
+        "name": "card-hover-dark",
+        "value": "0 4px 16px rgba(0,0,0,0.40)",
+        "purpose": "Hover lift in dark mode."
+      },
+      {
+        "name": "modal-light",
+        "value": "0 20px 25px -5px rgba(0,0,0,0.10), 0 10px 10px -5px rgba(0,0,0,0.04)",
+        "purpose": "Modals and sheets in light mode. Reserved for floating surfaces."
+      },
+      {
+        "name": "modal-dark",
+        "value": "0 20px 25px -5px rgba(0,0,0,0.50), 0 10px 10px -5px rgba(0,0,0,0.30)",
+        "purpose": "Modals and sheets in dark mode."
+      },
+      {
+        "name": "focus-halo-light",
+        "value": "0 0 0 3px rgba(244,63,94,0.10)",
+        "purpose": "Keyboard focus state in light mode, paired with 2px coral outline."
+      },
+      {
+        "name": "focus-halo-dark",
+        "value": "0 0 0 3px rgba(244,63,94,0.20)",
+        "purpose": "Keyboard focus state in dark mode."
+      },
+      {
+        "name": "coral-halo",
+        "value": "0 0 0 1px #f43f5e, 0 4px 24px rgba(244,63,94,0.25)",
+        "purpose": "Reserved for primary-CTA hover and active recording/call indicators. The product's alive shadow."
+      },
+      {
+        "name": "primary-cta-rest",
+        "value": "0 4px 12px rgba(244,63,94,0.30)",
+        "purpose": "Primary gradient button at rest."
+      },
+      {
+        "name": "primary-cta-hover",
+        "value": "0 6px 20px rgba(244,63,94,0.40)",
+        "purpose": "Primary gradient button on hover."
+      }
+    ],
+    "motion": [
+      {
+        "name": "ease-fast",
+        "value": "150ms cubic-bezier(0.4, 0, 0.2, 1)",
+        "purpose": "Quick state changes: button press, hover swap, focus ring appearance."
+      },
+      {
+        "name": "ease-base",
+        "value": "220ms cubic-bezier(0.16, 1, 0.3, 1)",
+        "purpose": "Default transition curve. Near ease-out-expo. The system's heartbeat."
+      },
+      {
+        "name": "ease-slow",
+        "value": "300ms cubic-bezier(0.16, 1, 0.3, 1)",
+        "purpose": "Modal/sheet entrances, page transitions."
+      },
+      {
+        "name": "ease-exit",
+        "value": "150ms cubic-bezier(0.4, 0, 1, 1)",
+        "purpose": "Snappier exit curve for dismissals."
+      }
+    ],
+    "breakpoints": [
+      { "name": "sm", "value": "640px" },
+      { "name": "md", "value": "768px" },
+      { "name": "lg", "value": "1024px" },
+      { "name": "xl", "value": "1280px" },
+      { "name": "2xl", "value": "1536px" }
+    ]
+  },
+  "components": [
+    {
+      "name": "Primary CTA Button",
+      "kind": "button",
+      "refersTo": "button-primary",
+      "description": "Gradient rose-to-pink primary action. Reserved for the dominant action on a screen (Send, Save, Create).",
+      "html": "<button class=\"ds-btn-primary\">Send message</button>",
+      "css": ".ds-btn-primary { background: linear-gradient(135deg, #f43f5e 0%, #ec4899 100%); color: #ffffff; font-family: Inter, -apple-system, sans-serif; font-size: 15px; font-weight: 500; padding: 12px 20px; border: none; border-radius: 12px; box-shadow: 0 4px 12px rgba(244,63,94,0.30); cursor: pointer; transition: all 220ms cubic-bezier(0.16, 1, 0.3, 1); } .ds-btn-primary:hover { background: linear-gradient(135deg, #e11d48 0%, #db2777 100%); box-shadow: 0 6px 20px rgba(244,63,94,0.40); transform: translateY(-1px); } .ds-btn-primary:active { transform: translateY(0); box-shadow: 0 2px 8px rgba(244,63,94,0.30); } .ds-btn-primary:focus-visible { outline: 2px solid #f43f5e; outline-offset: 2px; box-shadow: 0 4px 12px rgba(244,63,94,0.30), 0 0 0 5px rgba(244,63,94,0.15); }"
+    },
+    {
+      "name": "Secondary Button",
+      "kind": "button",
+      "refersTo": "button-secondary",
+      "description": "Coral outline. Secondary action paired with a primary gradient CTA.",
+      "html": "<button class=\"ds-btn-secondary\">Cancel</button>",
+      "css": ".ds-btn-secondary { background: transparent; color: #f43f5e; font-family: Inter, -apple-system, sans-serif; font-size: 15px; font-weight: 500; padding: 10px 18px; border: 2px solid #f43f5e; border-radius: 12px; cursor: pointer; transition: all 200ms cubic-bezier(0.16, 1, 0.3, 1); } .ds-btn-secondary:hover { background: rgba(244,63,94,0.10); color: #e11d48; border-color: #e11d48; } .ds-btn-secondary:focus-visible { outline: 2px solid #f43f5e; outline-offset: 2px; box-shadow: 0 0 0 3px rgba(244,63,94,0.15); }"
+    },
+    {
+      "name": "Ghost Button",
+      "kind": "button",
+      "refersTo": "button-ghost",
+      "description": "Low-priority action. Toolbar buttons, dropdown items, dismissible inline actions.",
+      "html": "<button class=\"ds-btn-ghost\">Dismiss</button>",
+      "css": ".ds-btn-ghost { background: transparent; color: #52525b; font-family: Inter, -apple-system, sans-serif; font-size: 15px; font-weight: 500; padding: 8px 12px; border: none; border-radius: 8px; cursor: pointer; transition: background 150ms cubic-bezier(0.4, 0, 0.2, 1); } .ds-btn-ghost:hover { background: #f2f2f2; color: #0f0f0f; } .ds-btn-ghost:focus-visible { outline: 2px solid #f43f5e; outline-offset: 2px; }"
+    },
+    {
+      "name": "Text Input",
+      "kind": "input",
+      "refersTo": "input",
+      "description": "Default text field. 16px radius, hairline border, body type.",
+      "html": "<input class=\"ds-input\" type=\"text\" placeholder=\"Search messages…\" />",
+      "css": ".ds-input { background: #ffffff; color: #0f0f0f; font-family: Inter, -apple-system, sans-serif; font-size: 15px; font-weight: 400; line-height: 1.5; padding: 12px 16px; border: 1px solid rgba(0,0,0,0.08); border-radius: 16px; outline: none; width: 100%; transition: border-color 150ms cubic-bezier(0.4, 0, 0.2, 1), box-shadow 150ms cubic-bezier(0.4, 0, 0.2, 1); } .ds-input::placeholder { color: #6b7280; } .ds-input:hover { border-color: rgba(0,0,0,0.12); } .ds-input:focus-visible { border-color: #f43f5e; box-shadow: 0 0 0 3px rgba(244,63,94,0.10); }"
+    },
+    {
+      "name": "Card",
+      "kind": "card",
+      "refersTo": "card",
+      "description": "Default content surface. 12px radius, hairline border, flat at rest, paints in shadow on hover.",
+      "html": "<div class=\"ds-card\"><div class=\"ds-card-eyebrow\">CONVERSATION</div><div class=\"ds-card-title\">Q3 launch coordination</div><div class=\"ds-card-body\">Sasha shared an updated timeline. Three follow-ups extracted.</div></div>",
+      "css": ".ds-card { background: #ffffff; color: #0f0f0f; font-family: Inter, -apple-system, sans-serif; padding: 16px; border: 1px solid rgba(0,0,0,0.08); border-radius: 12px; box-shadow: 0 1px 3px rgba(0,0,0,0.06), 0 1px 2px rgba(0,0,0,0.04); transition: border-color 220ms cubic-bezier(0.16, 1, 0.3, 1), box-shadow 220ms cubic-bezier(0.16, 1, 0.3, 1), transform 220ms cubic-bezier(0.16, 1, 0.3, 1); } .ds-card:hover { border-color: rgba(0,0,0,0.12); box-shadow: 0 4px 12px rgba(0,0,0,0.08); transform: translateY(-1px); } .ds-card-eyebrow { font-family: 'JetBrains Mono', 'SF Mono', Consolas, monospace; font-size: 11px; font-weight: 500; letter-spacing: 0.1em; text-transform: uppercase; color: #6b7280; margin-bottom: 8px; } .ds-card-title { font-family: Inter, -apple-system, sans-serif; font-size: 18px; font-weight: 500; line-height: 1.375; color: #0f0f0f; margin-bottom: 6px; } .ds-card-body { font-family: Inter, -apple-system, sans-serif; font-size: 15px; font-weight: 400; line-height: 1.5; color: #52525b; }"
+    },
+    {
+      "name": "AI Provenance Tag",
+      "kind": "chip",
+      "refersTo": "chip-accent",
+      "description": "The signature component. Identifies any AI-generated artifact with its source so AI is always attributable, never mistaken for the user's own writing.",
+      "html": "<span class=\"ds-tag-ai\"><span class=\"ds-tag-ai-dot\"></span>CLAUDE · SUMMARY</span>",
+      "css": ".ds-tag-ai { display: inline-flex; align-items: center; gap: 6px; background: rgba(244,63,94,0.10); color: #e11d48; font-family: 'JetBrains Mono', 'SF Mono', Consolas, monospace; font-size: 11px; font-weight: 500; letter-spacing: 0.1em; text-transform: uppercase; padding: 4px 8px; border-radius: 4px; } .ds-tag-ai-dot { width: 6px; height: 6px; border-radius: 50%; background: #f43f5e; box-shadow: 0 0 8px rgba(244,63,94,0.5); }"
+    },
+    {
+      "name": "Status Pill",
+      "kind": "chip",
+      "refersTo": "chip",
+      "description": "Status vocabulary chip. Used for task states (overdue, in-progress, done) and decision states (proposed, voting, decided). Replaces the forbidden colored side-stripe.",
+      "html": "<span class=\"ds-pill-status ds-pill-in-progress\">IN PROGRESS</span>",
+      "css": ".ds-pill-status { display: inline-flex; align-items: center; padding: 4px 8px; font-family: 'JetBrains Mono', 'SF Mono', Consolas, monospace; font-size: 11px; font-weight: 500; letter-spacing: 0.1em; text-transform: uppercase; border-radius: 4px; border: 1px solid transparent; } .ds-pill-in-progress { background: rgba(59,130,246,0.10); color: #3b82f6; border-color: rgba(59,130,246,0.20); } .ds-pill-in-progress:hover { background: rgba(59,130,246,0.15); }"
+    },
+    {
+      "name": "Sidebar Nav Item",
+      "kind": "nav",
+      "refersTo": "button-ghost",
+      "description": "Sidebar navigation row. Coral text indicates active state, no background fill (per the no-stripe rule).",
+      "html": "<a class=\"ds-nav-item ds-nav-item-active\" href=\"#\"><svg class=\"ds-nav-icon\" viewBox=\"0 0 20 20\" fill=\"none\" xmlns=\"http://www.w3.org/2000/svg\"><path d=\"M3 7l7-4 7 4v9a1 1 0 01-1 1h-3v-5H7v5H4a1 1 0 01-1-1V7z\" stroke=\"currentColor\" stroke-width=\"1.5\" stroke-linejoin=\"round\"/></svg>Inbox<span class=\"ds-nav-badge\">12</span></a>",
+      "css": ".ds-nav-item { display: flex; align-items: center; gap: 10px; font-family: Inter, -apple-system, sans-serif; font-size: 14px; font-weight: 500; color: #52525b; padding: 8px 12px; border-radius: 8px; text-decoration: none; transition: color 150ms cubic-bezier(0.4, 0, 0.2, 1), background 150ms cubic-bezier(0.4, 0, 0.2, 1); } .ds-nav-item:hover { color: #0f0f0f; background: #f2f2f2; } .ds-nav-item-active { color: #f43f5e; background: transparent; } .ds-nav-icon { width: 18px; height: 18px; flex-shrink: 0; } .ds-nav-badge { margin-left: auto; font-family: 'JetBrains Mono', 'SF Mono', Consolas, monospace; font-size: 10px; font-weight: 500; padding: 2px 6px; border-radius: 9999px; background: rgba(244,63,94,0.10); color: #e11d48; }"
+    },
+    {
+      "name": "Search Input",
+      "kind": "input",
+      "refersTo": "input",
+      "description": "Search field with leading magnifier icon. Common throughout Pulse (messages, contacts, knowledge base).",
+      "html": "<div class=\"ds-search\"><svg class=\"ds-search-icon\" viewBox=\"0 0 20 20\" fill=\"none\" xmlns=\"http://www.w3.org/2000/svg\"><circle cx=\"9\" cy=\"9\" r=\"5.5\" stroke=\"currentColor\" stroke-width=\"1.5\"/><path d=\"M14 14l3 3\" stroke=\"currentColor\" stroke-width=\"1.5\" stroke-linecap=\"round\"/></svg><input class=\"ds-search-input\" type=\"search\" placeholder=\"Search…\" /></div>",
+      "css": ".ds-search { display: flex; align-items: center; gap: 10px; background: #ffffff; padding: 10px 14px; border: 1px solid rgba(0,0,0,0.08); border-radius: 16px; transition: border-color 150ms cubic-bezier(0.4, 0, 0.2, 1), box-shadow 150ms cubic-bezier(0.4, 0, 0.2, 1); } .ds-search:focus-within { border-color: #f43f5e; box-shadow: 0 0 0 3px rgba(244,63,94,0.10); } .ds-search-icon { width: 16px; height: 16px; color: #6b7280; flex-shrink: 0; } .ds-search-input { background: transparent; color: #0f0f0f; font-family: Inter, -apple-system, sans-serif; font-size: 15px; font-weight: 400; border: none; outline: none; width: 100%; } .ds-search-input::placeholder { color: #6b7280; }"
+    },
+    {
+      "name": "Message Bubble (Sent)",
+      "kind": "custom",
+      "refersTo": "card",
+      "description": "Outgoing message bubble. Coral border on white in light, coral fill in dark. The conversation surface where the brand voice lives most directly.",
+      "html": "<div class=\"ds-msg-sent\"><div class=\"ds-msg-text\">Pushed the new build to staging — ready for QA whenever you're up.</div><div class=\"ds-msg-time\">11:47 PM</div></div>",
+      "css": ".ds-msg-sent { background: #ffffff; color: #0f0f0f; padding: 12px 16px; border: 1px solid rgba(244,63,94,0.20); border-radius: 12px; max-width: 65ch; align-self: flex-end; } .ds-msg-text { font-family: Inter, -apple-system, sans-serif; font-size: 15px; font-weight: 400; line-height: 1.5; } .ds-msg-time { font-family: 'JetBrains Mono', 'SF Mono', Consolas, monospace; font-size: 10px; color: #6b7280; margin-top: 6px; text-align: right; }"
+    }
+  ],
+  "narrative": {
+    "northStar": "The Coral Cockpit",
+    "overview": "Pulse is the operator's command surface — a dense, instrument-grade interface for someone running ten things at once, where coral is the single living signal underneath an otherwise quiet, decisive chrome. Inter handles structure; JetBrains Mono handles labels and metadata; rose (#f43f5e) handles the heartbeat. Everything else recedes. The system rejects the grey-on-grey enterprise messaging look (Slack, Teams), the tabbed-form CRM density (Salesforce, HubSpot), and the gradient-purple AI-startup template that signals AI made this. It also rejects the opposite reflex — soft pastel friendliness, oversized cards, decorative gradients on hero panels. Pulse is closer to Linear's precision and Raycast's economy than to anything in the messaging-app category. The warmth comes from coral plus tinted neutrals plus tight copy, not from rounded corners and pastel illustrations. Both themes are first-class. Light mode is #f8f8f8 paper with rgba(0,0,0,0.08) borders — daylight, alert, focused. Dark mode is #000000 true-black canvas with translucent rgba(255,255,255,0.03) surfaces — late-night, deep-work, glass-on-graphite. Neither is the default; the user picks the room.",
+    "keyCharacteristics": [
+      "Coral-as-signal, never coral-as-decoration. The accent earns every appearance.",
+      "Tinted neutrals over true grey — even the black canvas (#000) sits next to translucent surfaces, never flat panels stacked on flat panels.",
+      "Inter for everything structural; JetBrains Mono for labels, timestamps, metadata, and tags. The mono label is the system's signature.",
+      "12px is the default radius. 8px is for chips and tight controls. 16-20px reserved for modals and sheets.",
+      "Motion uses cubic-bezier(0.16, 1, 0.3, 1) (a near-ease-out-expo) at 220ms — fast, decisive, no bounce."
+    ],
+    "rules": [
+      {
+        "name": "The Coral-As-Signal Rule",
+        "body": "Rose Pulse (#f43f5e) appears on ≤10% of any screen, reserved for: send/primary CTA, active state, unread, focus ring, urgent alerts. When everything is coral, nothing is. If a design has more than three coral elements visible at rest, one of them is wrong.",
+        "section": "colors"
+      },
+      {
+        "name": "The Tinted-Neutral Rule",
+        "body": "No #000, no #fff anywhere in the product UI surfaces. Light mode uses #f8f8f8 / #0f0f0f; dark mode uses #000000 only as the deep canvas, with translucent surfaces (rgba(255,255,255,0.03) and up) carrying every component.",
+        "section": "colors"
+      },
+      {
+        "name": "The Status-Stays-Status Rule",
+        "body": "The eleven status colors do not leave the status vocabulary. They never become decorative accents, never replace coral on a CTA, never tint a hero. Their meaning is their job.",
+        "section": "colors"
+      },
+      {
+        "name": "The Mono-Label Rule",
+        "body": "Every uppercase wide-tracked label uses JetBrains Mono, never Inter. The mono is what makes Pulse look like an instrument; using Inter for uppercase labels collapses it into Generic SaaS. Mono labels are always at least 0.05em tracked (typically 0.1em).",
+        "section": "typography"
+      },
+      {
+        "name": "The 65-Ch Rule",
+        "body": "Long-form prose (AI summaries, message bodies, knowledge-base content, decision notes) is capped at 65–75 characters per line. This is non-negotiable; AI-generated text in particular must inherit this constraint or it reads as a wall.",
+        "section": "typography"
+      },
+      {
+        "name": "The Light-Display Rule",
+        "body": "Display weights of 300 are intentional, not weak. Inter at 300 in 30-48px reads as quiet confidence. Don't fix them by bumping to 600; that's a pre-2020 reflex.",
+        "section": "typography"
+      },
+      {
+        "name": "The Translucency-Over-Tinting Rule",
+        "body": "In dark mode, surface depth comes from rgba(255,255,255,0.03) translucent layers, not from progressively-lighter opaque panels. Stacking opaque grey-#1A on grey-#222 on grey-#2A is a 2014 dark-mode reflex; Pulse stacks 3% white on 6% white on the true-black canvas, so the canvas stays felt at every layer.",
+        "section": "elevation"
+      },
+      {
+        "name": "The 2px-Lift-Cap Rule",
+        "body": "No hover ever lifts an element more than 2px (typically 1px). Anything larger reads as theatrical. CTAs may add a coral halo on hover; they may not also rise 4px and grow.",
+        "section": "elevation"
+      },
+      {
+        "name": "The Backdrop-Filter Discipline",
+        "body": "backdrop-filter: blur(...) is reserved for modals, command palette, dropdown menus, and floating panels. It is never applied to a card on a list. Glass-everywhere is the absolute ban; glass-on-purpose is fine.",
+        "section": "elevation"
+      }
+    ],
+    "dos": [
+      "Do keep coral on ≤10% of any screen — primary CTAs, active state, unread, focus, urgent alerts. The Coral-As-Signal Rule.",
+      "Do tint every neutral toward the brand hue. Light canvas is #f8f8f8, never #fff. Dark canvas is #000 only with translucent surfaces above — never opaque grey panels.",
+      "Do use JetBrains Mono uppercase tracked 0.1em for every label, timestamp, status, and section header. The mono is the signature.",
+      "Do cap prose at 65–75ch. AI summaries, message bodies, and knowledge-base content all inherit this.",
+      "Do use 220ms cubic-bezier(0.16, 1, 0.3, 1) as the default transition curve. It's the system's heartbeat.",
+      "Do test every screen in both light and dark before shipping. Both modes are first-class.",
+      "Do prefix every AI-generated artifact with a JetBrains Mono provenance tag (CLAUDE · SUMMARY, GEMINI · DRAFT). Make AI auditable.",
+      "Do stack translucent surfaces in dark mode (rgba(255,255,255,0.03) → 0.055 → 0.08) so the true-black canvas is always felt through the layers."
+    ],
+    "donts": [
+      "Don't use side-stripe borders (border-left: 3px solid <color> on cards or list items as a status accent). This is an absolute ban under impeccable's design laws and an existing migration target in the codebase. Replace with: status pill at the top-right corner, full 1px colored border + matching tinted background, or leading status icon + label.",
+      "Don't use gradient text. background-clip: text over a gradient is decorative and never meaningful in this product. Use solid color and weight contrast for emphasis.",
+      "Don't use #000 text on light or #fff text on dark anywhere. Use #0f0f0f and #fafafa. The half-step matters.",
+      "Don't apply backdrop-filter: blur(...) to anything in a list. Reserve glass for modals, command palette, dropdowns, and floating panels.",
+      "Don't ship the hero-metric template (big number + small label + four equal stat cards in a row). It's the SaaS cliché — replace with sparklines, a chart, or a single sentence in body type.",
+      "Don't stack opaque grey panels in dark mode (Slack/Teams reflex). Stack translucent surfaces on the true-black canvas.",
+      "Don't use the gradient-purple AI-startup template — purple-to-pink hero gradients, sparkle icons next to every button, AI in 8 places. Pulse's AI is visible through provenance tags and quality, not through purple chrome.",
+      "Don't use Material Design defaults, shadcn-as-shipped, or Bootstrap shapes. If a component looks like it could be in any other product, it's wrong.",
+      "Don't nest cards. A card inside a card is always a structural mistake.",
+      "Don't lift hover states more than 2px. Anything larger reads as theatrical.",
+      "Don't use Inter for uppercase tracked labels. Always JetBrains Mono. Inter-uppercase reads as Generic SaaS; Mono-uppercase reads as instrument.",
+      "Don't use status colors (the eleven semantic hues) as decorative accents anywhere outside their status vocabulary. They're meaning, not palette.",
+      "Don't use em dashes inside the product UI. Commas, colons, periods, parentheses only.",
+      "Don't apologize in copy. No Oops!, no Something went wrong, sorry. Be specific about what broke and what to do next. Confidence is the brand."
+    ]
+  }
+}

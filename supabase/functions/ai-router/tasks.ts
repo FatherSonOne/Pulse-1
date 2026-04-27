@@ -31,7 +31,8 @@ export type AITask =
   | 'conflict_detection'         // Conflict analysis → Haiku
   | 'content_generation'         // FAQ/podcast/study guide → Sonnet
   | 'voice_command_parse'        // Parse voice commands → Gemini Flash
-  | 'web_search';                // Web-grounded search with citations → Gemini Flash + googleSearch
+  | 'web_search'                 // Web-grounded search with citations → Gemini Flash + googleSearch
+  | 'translation';               // Text translation → Gemini Flash
 
 interface TaskConfig {
   provider: AIProvider;
@@ -130,6 +131,11 @@ export const TASK_MODELS: Record<AITask, TaskConfig> = {
   // web_search: Gemini with googleSearch grounding. Claude has no equivalent, so no fallback.
   // Caller MUST also pass params.webSearch=true to enable the tool.
   web_search: { provider: 'gemini', model: GEMINI_FLASH, fallback: null },
+  translation: {
+    provider: 'gemini', model: GEMINI_FLASH,
+    fallback: { provider: 'claude', model: CLAUDE_HAIKU },
+    maxOutputTokens: 1024,
+  },
 };
 
 export function isValidTask(task: string): task is AITask {

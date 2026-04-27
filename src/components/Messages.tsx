@@ -1,3 +1,22 @@
+// src/components/Messages.tsx
+//
+// @deprecated  Legacy Messages monolith — 4800+ lines.
+//
+// SLATED FOR REPLACEMENT by `MessagesSplitView` once Phase 5c-5d
+// migrate the features that only live here (focus mode, voice
+// recording, voxer integration, the Phase 3-11 enhancement panels,
+// and the Pulse-DM sidebar). See:
+//   docs/deep-dives/messages_PHASED_PLAN_2026-04-26.md  (Phase 5b/c/d)
+//
+// Until that migration finishes, this file remains the production
+// entry point (mounted by `MessagesWithProviders`). Once each feature
+// has a `MessagesSplitView`-hosted equivalent, the corresponding
+// section of this file will be deleted.
+//
+// **Do NOT add new features here.** Add them to a `MessagesSplitView`
+// plugin and pass via the `renderModals` / `renderGlobalOverlay` /
+// `renderTopBanner` slots, or via `renderMessageInput` /
+// `renderMessageBubble`.
 
 import React, { useState, useEffect, useRef, useCallback, useMemo } from 'react';
 import { lazy, Suspense } from 'react';
@@ -36,6 +55,7 @@ import { useMessageTrigger } from '../hooks/useMessageTrigger';
 import { useVirtualList } from '../hooks/useVirtualList';
 import { createInvitation, sendInvitationViaGmail, generateMailtoLink, generateEarlyAccessInvite, generateShareableInviteText } from '../services/inviteService';
 import { pulseService, SearchUserResult, PulseConversation, PulseMessage } from '../services/pulseService';
+import { messagePersonalService } from '../services/messagePersonalService';
 import { nativeSmsService } from '../services/nativeSmsService';
 import { canSendSms, openSmsApp, isNativePlatform } from '../services/permissionService';
 import { UserContactCard } from './UserContact/UserContactCard';
@@ -43,6 +63,7 @@ import { OnlineIndicator } from './UserContact/OnlineIndicator';
 import { useUserPresence } from '../hooks/usePresence';
 import { useAuth } from '../hooks/useAuth';
 import { CellularSMS } from './CellularSMS';
+import { useFeatureFlag } from '../lib/featureFlags';
 
 // Phase 1 Message Enhancements - Core features (loaded immediately - critical path)
 // Import directly from files to avoid loading entire 875KB index bundle
@@ -419,6 +440,21 @@ const Messages: React.FC<MessagesProps> = ({ apiKey, contacts, initialContactId,
 
   // --- NEW: Decision & Outcome State ---
   const [isProposalMode, setIsProposalMode] = useState(false);
+
+  // Proposal-mode is gated until real multi-user voting is wired up
+  // (votes are currently simulated client-side). See deep-dive issue #3.
+  const proposalModeEnabled = useFeatureFlag('proposalMode', currentUser?.id);
+  // Ref so the static-deps keyboard handler reads the current value.
+  const proposalModeEnabledRef = useRef(proposalModeEnabled);
+  useEffect(() => {
+    proposalModeEnabledRef.current = proposalModeEnabled;
+  }, [proposalModeEnabled]);
+  // Force-clear if the flag is off (e.g., user toggled it via shortcut earlier).
+  useEffect(() => {
+    if (!proposalModeEnabled && isProposalMode) {
+      setIsProposalMode(false);
+    }
+  }, [proposalModeEnabled, isProposalMode]);
   const [showOutcomeSetup, setShowOutcomeSetup] = useState(false);
   const [outcomeGoal, setOutcomeGoal] = useState('');
   const [creatingTaskForMsgId, setCreatingTaskForMsgId] = useState<string | null>(null);
@@ -442,9 +478,18 @@ const Messages: React.FC<MessagesProps> = ({ apiKey, contacts, initialContactId,
   const [useIntentComposer, setUseIntentComposer] = useState(true);
 
   // --- NEW ENHANCED FEATURES STATE ---
-  // Message scheduling
+  // Message scheduling — backed by pulse_scheduled_messages + pg_cron.
+  // The legacy in-memory polling implementation was lost on refresh and
+  // never delivered when the app was closed; the cron job handles delivery
+  // server-side every minute.
   const [showScheduleModal, setShowScheduleModal] = useState(false);
-  const [scheduledMessages, setScheduledMessages] = useState<Array<{id: string; text: string; scheduledFor: Date; threadId: string}>>([]);
+  const [scheduledMessages, setScheduledMessages] = useState<Array<{
+    id: string;
+    text: string;
+    scheduledFor: Date;
+    threadId: string;
+    recipientId: string;
+  }>>([]);
   const [scheduleDate, setScheduleDate] = useState('');
   const [scheduleTime, setScheduleTime] = useState('');
 
@@ -603,6 +648,33 @@ const Messages: React.FC<MessagesProps> = ({ apiKey, contacts, initialContactId,
   const mediaRecorderRef = useRef<MediaRecorder | null>(null);
   const recordingIntervalRef = useRef<number | null>(null);
   const audioChunksRef = useRef<Blob[]>([]);
+
+  // Cleanup recorder + audio context on unmount so we don't leak the
+  // mic stream or an open AudioContext when the user navigates away.
+  useEffect(() => {
+    return () => {
+      if (recordingIntervalRef.current !== null) {
+        clearInterval(recordingIntervalRef.current);
+        recordingIntervalRef.current = null;
+      }
+      const recorder = mediaRecorderRef.current;
+      if (recorder) {
+        try {
+          if (recorder.state !== 'inactive') recorder.stop();
+        } catch {
+          // already stopped
+        }
+        recorder.stream?.getTracks().forEach((t) => t.stop());
+        mediaRecorderRef.current = null;
+      }
+      audioChunksRef.current = [];
+      const ctx = audioContextRef.current;
+      if (ctx && ctx.state !== 'closed') {
+        ctx.close().catch(() => {});
+        audioContextRef.current = null;
+      }
+    };
+  }, []);
 
   // Thread organization
   const [threadFilter, setThreadFilter] = useState<'all' | 'unread' | 'pinned' | 'with-tasks' | 'with-decisions'>('all');
@@ -1362,6 +1434,109 @@ const Messages: React.FC<MessagesProps> = ({ apiKey, contacts, initialContactId,
       setStarredPulseMessages(stars);
     }
   }, []);
+
+  // Toggle bookmark for a Pulse message — persists to message_bookmarks.
+  // Optimistic update on the userBookmarks state mirror.
+  const toggleBookmarkPulseMessage = useCallback(async (messageId: string) => {
+    if (messageId.startsWith('temp-')) return;
+
+    const existing = userBookmarks.find(b => b.messageId === messageId);
+    if (existing) {
+      // Remove
+      setUserBookmarks(prev => prev.filter(b => b.id !== existing.id));
+      try {
+        await messagePersonalService.removeBookmark(existing.id);
+      } catch (err) {
+        console.error('[Messages] removeBookmark failed:', err);
+        // Re-add on failure
+        setUserBookmarks(prev => [...prev, existing]);
+      }
+      return;
+    }
+
+    // Add
+    const msg = pulseMessages.find(m => m.id === messageId);
+    if (!msg) return;
+    try {
+      const row = await messagePersonalService.addBookmark({ messageId });
+      setUserBookmarks(prev => [...prev, {
+        id: row.id,
+        messageId,
+        conversationId: activePulseConversation || '',
+        messagePreview: msg.content.slice(0, 200),
+        sender: msg.sender_id,
+        timestamp: new Date(msg.created_at),
+        createdAt: new Date(row.created_at),
+        note: row.note ?? undefined,
+        collection: row.collection ?? undefined,
+        tags: row.tags ?? [],
+      }]);
+    } catch (err) {
+      console.error('[Messages] addBookmark failed:', err);
+    }
+  }, [userBookmarks, pulseMessages, activePulseConversation]);
+
+  // Load user templates from DB on mount and whenever the user changes.
+  useEffect(() => {
+    let cancelled = false;
+    (async () => {
+      try {
+        const rows = await messagePersonalService.listTemplates();
+        if (cancelled) return;
+        setUserTemplates(rows.map(r => ({
+          id: r.id,
+          name: r.name,
+          category: r.category,
+          content: r.body,
+          variables: r.variables ?? [],
+          usageCount: r.usage_count,
+          lastUsed: r.last_used_at ?? undefined,
+          createdBy: r.user_id,
+          tags: r.tags ?? [],
+        })));
+      } catch (err) {
+        console.error('[Messages] load templates failed:', err);
+      }
+    })();
+    return () => { cancelled = true; };
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [currentUser?.id]);
+
+  // Load bookmarks from DB on mount and whenever the user changes.
+  useEffect(() => {
+    let cancelled = false;
+    (async () => {
+      try {
+        const rows = await messagePersonalService.listBookmarks();
+        if (cancelled) return;
+        // Hydrate to legacy shape using whatever pulse messages are
+        // currently in memory; rows for messages not yet loaded keep
+        // a minimal preview that gets enriched on next list-load.
+        setUserBookmarks(rows.map(r => {
+          const msg = pulseMessages.find(m => m.id === r.message_id);
+          return {
+            id: r.id,
+            messageId: r.message_id,
+            conversationId: '',
+            messagePreview: msg?.content?.slice(0, 200) ?? '',
+            sender: msg?.sender_id ?? '',
+            timestamp: msg ? new Date(msg.created_at) : new Date(r.created_at),
+            createdAt: new Date(r.created_at),
+            note: r.note ?? undefined,
+            collection: r.collection ?? undefined,
+            tags: r.tags ?? [],
+          };
+        }));
+      } catch (err) {
+        console.error('[Messages] load bookmarks failed:', err);
+      }
+    })();
+    return () => { cancelled = true; };
+    // pulseMessages intentionally excluded — re-running the load every
+    // time the messages array changes would thrash. The hydration above
+    // is best-effort; bookmark rows in the DB are the source of truth.
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [currentUser?.id]);
 
   // Copy Pulse message to clipboard
   const copyPulseMessage = useCallback((content: string) => {
@@ -2397,8 +2572,27 @@ const Messages: React.FC<MessagesProps> = ({ apiKey, contacts, initialContactId,
     setSearchResults(results.slice(0, 20));
   }, [threads, searchFilter]);
 
-  // Message scheduling
-  const handleScheduleMessage = useCallback(() => {
+  // Message scheduling — wired to pulse_scheduled_messages + pg_cron.
+  const loadScheduledMessages = useCallback(async () => {
+    try {
+      const rows = await pulseService.getScheduledMessages();
+      setScheduledMessages(rows.map(r => ({
+        id: r.id,
+        text: r.content,
+        scheduledFor: new Date(r.scheduled_for),
+        threadId: '',
+        recipientId: r.recipient_id,
+      })));
+    } catch (err) {
+      console.error('[Messages] failed to load scheduled messages:', err);
+    }
+  }, []);
+
+  useEffect(() => {
+    void loadScheduledMessages();
+  }, [loadScheduledMessages]);
+
+  const handleScheduleMessage = useCallback(async () => {
     if (!inputText.trim() || !scheduleDate || !scheduleTime) return;
 
     const scheduledFor = new Date(`${scheduleDate}T${scheduleTime}`);
@@ -2407,39 +2601,35 @@ const Messages: React.FC<MessagesProps> = ({ apiKey, contacts, initialContactId,
       return;
     }
 
-    const scheduled = {
-      id: `sched-${Date.now()}`,
-      text: inputText,
-      scheduledFor,
-      threadId: activeThreadId
-    };
+    // Scheduling is Pulse-only — needs a recipient_id. The legacy
+    // SMS-thread path requires a separate persistence path (deferred).
+    const recipientId = activePulseConv?.other_user?.id;
+    if (!recipientId) {
+      alert('Open a Pulse conversation to schedule a message.');
+      return;
+    }
 
-    setScheduledMessages(prev => [...prev, scheduled]);
-    setInputText('');
-    setShowScheduleModal(false);
-    setScheduleDate('');
-    setScheduleTime('');
-  }, [inputText, scheduleDate, scheduleTime, activeThreadId]);
+    try {
+      await pulseService.scheduleMessage(recipientId, inputText, scheduledFor);
+      await loadScheduledMessages();
+      setInputText('');
+      setShowScheduleModal(false);
+      setScheduleDate('');
+      setScheduleTime('');
+    } catch (err) {
+      console.error('[Messages] schedule failed:', err);
+      alert('Failed to schedule message. Please try again.');
+    }
+  }, [inputText, scheduleDate, scheduleTime, activePulseConv, loadScheduledMessages]);
 
-  // Check and send scheduled messages
-  useEffect(() => {
-    const interval = setInterval(() => {
-      const now = new Date();
-      scheduledMessages.forEach(msg => {
-        if (msg.scheduledFor <= now) {
-          // Send the message
-          const wasActiveThread = activeThreadId;
-          setActiveThreadId(msg.threadId);
-          handleSend(msg.text);
-          setActiveThreadId(wasActiveThread);
-          // Remove from scheduled
-          setScheduledMessages(prev => prev.filter(m => m.id !== msg.id));
-        }
-      });
-    }, 30000); // Check every 30 seconds
-
-    return () => clearInterval(interval);
-  }, [scheduledMessages, activeThreadId]);
+  const handleCancelScheduledMessage = useCallback(async (id: string) => {
+    try {
+      await pulseService.cancelScheduledMessage(id);
+      await loadScheduledMessages();
+    } catch (err) {
+      console.error('[Messages] cancel scheduled failed:', err);
+    }
+  }, [loadScheduledMessages]);
 
   // Voice recording handlers - use ref for duration to avoid stale closure
   const recordingDurationRef = useRef(0);
@@ -2711,10 +2901,12 @@ const Messages: React.FC<MessagesProps> = ({ apiKey, contacts, initialContactId,
         searchInputRef.current?.focus();
         return;
       }
-      // Ctrl+Shift+P for proposal mode
+      // Ctrl+Shift+P for proposal mode (gated)
       if (e.ctrlKey && e.shiftKey && e.key === 'P') {
         e.preventDefault();
-        setIsProposalMode(prev => !prev);
+        if (proposalModeEnabledRef.current) {
+          setIsProposalMode(prev => !prev);
+        }
         return;
       }
       // Ctrl+Shift+T for templates
@@ -2943,6 +3135,7 @@ const Messages: React.FC<MessagesProps> = ({ apiKey, contacts, initialContactId,
         threads={threads}
         activeThreadId={activeThreadId}
         handleForwardMessage={handleForwardMessage}
+        handleForwardPulseMessage={handleForwardPulseMessage}
         showShortcuts={showShortcuts}
         setShowShortcuts={setShowShortcuts}
         showStatsPanel={showStatsPanel}
@@ -4027,6 +4220,17 @@ const Messages: React.FC<MessagesProps> = ({ apiKey, contacts, initialContactId,
                   }
                 },
                 {
+                  label: userBookmarks.some(b => b.messageId === contextMenuMessageId)
+                    ? 'Remove bookmark'
+                    : 'Bookmark',
+                  icon: '🔖',
+                  onClick: () => {
+                    toggleBookmarkPulseMessage(contextMenuMessageId);
+                    contextMenu.close();
+                    setContextMenuMessageId(null);
+                  }
+                },
+                {
                   label: 'Copy Text',
                   icon: '📋',
                   onClick: () => {
@@ -4188,11 +4392,6 @@ const Messages: React.FC<MessagesProps> = ({ apiKey, contacts, initialContactId,
               </button>
             )}
           </div>
-
-          {/* DEPRECATED: Old Tools Drawer for SMS Mode - Replaced by SidebarTabs (Phase 4)
-              This code block has been removed and replaced with the new SidebarTabs component.
-              See: src/components/Sidebar/SidebarTabs.tsx
-          */}
         </div>
 
         {/* Outcome Setup Modal */}
@@ -4755,6 +4954,7 @@ const Messages: React.FC<MessagesProps> = ({ apiKey, contacts, initialContactId,
         setShowQuickPhrases={setShowQuickPhrases}
         isProposalMode={isProposalMode}
         setIsProposalMode={setIsProposalMode}
+        proposalModeEnabled={proposalModeEnabled}
         recordingDuration={recordingDuration}
         stopRecording={stopRecording}
         showVoiceExtractor={showVoiceExtractor}

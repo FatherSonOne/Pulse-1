@@ -102,7 +102,6 @@
   overflow: hidden;
   background-color: var(--split-view-bg-primary);
   border-right: 1px solid var(--split-view-border-color);
-  transition: width var(--split-view-transition-normal) var(--split-view-ease-standard);
 }
 
 /* Thread list panel fills its wrapper */

@@ -1,12 +1,23 @@
 import React, { useRef, useEffect } from 'react';
 import { motion, AnimatePresence } from 'framer-motion';
 import EnhancedLoadingScreen from '../EnhancedLoadingScreen';
-import { MessageChannel, ChannelMessage } from '../../types/messages';
+import { ChannelMessage } from '../../types/messages';
+import {
+  Conversation,
+  conversationDisplayName,
+  conversationDescription,
+  conversationIsGroup,
+} from '../../types/conversations';
 
 import { Info, MessageSquare, MessagesSquare, Search, Users } from 'lucide-react';
 
 interface ConversationPanelProps {
-  channel: MessageChannel | null;
+  /** The selected conversation — channel or Pulse DM. */
+  conversation: Conversation | null;
+  /** Messages already normalized to ChannelMessage shape by the host.
+   *  PulseMessage → ChannelMessage adaptation lives in the messageStore
+   *  (Phase 5c.7 / Phase 5d) so this panel doesn't need to know about
+   *  the underlying message kind. */
   messages: ChannelMessage[];
   currentUserId: string;
   onSendMessage?: (content: string) => void;
@@ -18,7 +29,7 @@ interface ConversationPanelProps {
 }
 
 const ConversationPanel: React.FC<ConversationPanelProps> = ({
-  channel,
+  conversation,
   messages,
   currentUserId,
   onSendMessage,
@@ -156,32 +167,45 @@ const ConversationPanel: React.FC<ConversationPanelProps> = ({
       animate={{ opacity: 1, x: 0 }}
       transition={{ duration: 0.3 }}
     >
-      {channel ? (
+      {conversation ? (
         <>
           {/* Header */}
           <div className="conversation-header flex-shrink-0 px-6 py-4 border-b border-white/[0.07]">
             <div className="flex items-center justify-between">
               <div className="flex items-center gap-3">
-                {/* Channel avatar */}
-                <div className="w-10 h-10 rounded-full bg-gradient-to-br from-rose-500 to-pink-500 flex items-center justify-center text-white font-bold">
-                  {channel.is_group ? (
-                    <Users />
-                  ) : (
-                    channel.name.slice(0, 2).toUpperCase()
-                  )}
-                </div>
+                {/* Avatar — channel uses initials/group icon; DM uses
+                 *  the other user's avatar_url when available. */}
+                {(() => {
+                  const name = conversationDisplayName(conversation);
+                  const isGroup = conversationIsGroup(conversation);
+                  const dmAvatarUrl = conversation.kind === 'dm' ? conversation.pulse.other_user?.avatar_url : null;
+                  if (dmAvatarUrl) {
+                    return (
+                      <img
+                        src={dmAvatarUrl}
+                        alt={name}
+                        className="w-10 h-10 rounded-full object-cover"
+                      />
+                    );
+                  }
+                  return (
+                    <div className="w-10 h-10 rounded-full bg-gradient-to-br from-rose-500 to-pink-500 flex items-center justify-center text-white font-bold">
+                      {isGroup ? <Users /> : name.slice(0, 2).toUpperCase()}
+                    </div>
+                  );
+                })()}
 
-                {/* Channel info */}
+                {/* Channel/DM info */}
                 <div>
                   <h2 className="text-lg font-bold text-[#e2e8f0]">
-                    {channel.name}
+                    {conversationDisplayName(conversation)}
                   </h2>
-                  {channel.description && (
-                    <p className="text-sm text-[#94a3b8]">{channel.description}</p>
+                  {conversationDescription(conversation) && (
+                    <p className="text-sm text-[#94a3b8]">{conversationDescription(conversation)}</p>
                   )}
-                  {channel.members && channel.members.length > 0 && (
+                  {conversation.kind === 'channel' && conversation.channel.members && conversation.channel.members.length > 0 && (
                     <p className="text-xs text-[#94a3b8]/70">
-                      {channel.members.length} member{channel.members.length !== 1 ? 's' : ''}
+                      {conversation.channel.members.length} member{conversation.channel.members.length !== 1 ? 's' : ''}
                     </p>
                   )}
                 </div>

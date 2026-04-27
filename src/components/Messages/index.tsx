@@ -1,5 +1,16 @@
 // src/components/Messages/index.tsx
-// Main Messages component with channels and chat
+//
+// @deprecated  Channel-only `MessagesView` — never wired into production.
+//
+// This was an early experiment at a channels-only Messages surface.
+// Production `MessagesWithProviders` mounts the legacy `Messages.tsx`
+// monolith; the canonical replacement is `MessagesSplitView`. This
+// component duplicates a subset of `MessagesSplitView`'s responsibility
+// and should be deleted once Phase 5b/c consolidation is complete.
+//
+// The barrel re-exports below remain useful — those are the components
+// that compose `MessagesSplitView`. Only the `MessagesView` default
+// export is deprecated.
 
 import React, { useState } from 'react';
 import { ChannelList } from './ChannelList';
@@ -15,6 +26,10 @@ interface MessagesViewProps {
   currentUserName?: string;
 }
 
+/**
+ * @deprecated  Use `MessagesSplitView` instead. Slated for removal in
+ * Phase 5c. See docs/deep-dives/messages_PHASED_PLAN_2026-04-26.md.
+ */
 export const MessagesView: React.FC<MessagesViewProps> = ({
   workspaceId = 'default-workspace',
   currentUserId: propUserId,
@@ -27,9 +42,9 @@ export const MessagesView: React.FC<MessagesViewProps> = ({
   const [showChannelList, setShowChannelList] = useState(true);
 
   return (
-    <div className="h-full flex bg-[#0f172a] animate-fadeIn">
+    <div className="h-full flex bg-gray-50 dark:bg-slate-900 animate-fadeIn">
       {/* Channel Sidebar - Hidden on mobile when chat is open */}
-      <div className={`w-64 flex-shrink-0 border-r border-white/[0.07] ${
+      <div className={`w-64 flex-shrink-0 border-r border-gray-200 dark:border-white/[0.07] ${
         selectedChannel && !showChannelList ? 'hidden md:block' : ''
       }`}>
         <ChannelList
@@ -47,10 +62,10 @@ export const MessagesView: React.FC<MessagesViewProps> = ({
         {selectedChannel ? (
           <>
             {/* Mobile back button */}
-            <div className="md:hidden px-4 py-2 border-b border-zinc-800">
+            <div className="md:hidden px-4 py-2 border-b border-gray-200 dark:border-zinc-800">
               <button
                 onClick={() => setShowChannelList(true)}
-                className="flex items-center gap-2 text-zinc-400 hover:text-white transition"
+                className="flex items-center gap-2 text-gray-600 dark:text-zinc-400 hover:text-gray-900 dark:hover:text-white transition"
               >
                 <ArrowLeft />
                 <span className="text-sm">Back to channels</span>
@@ -63,13 +78,13 @@ export const MessagesView: React.FC<MessagesViewProps> = ({
             />
           </>
         ) : (
-          <div className="flex-1 flex items-center justify-center bg-[#0f172a]">
+          <div className="flex-1 flex items-center justify-center bg-gray-50 dark:bg-slate-900">
             <div className="text-center p-8">
               <div className="w-20 h-20 rounded-2xl bg-rose-500/[0.1] border border-rose-500/20 flex items-center justify-center mx-auto mb-5">
-                <MessagesSquare className="text-3xl text-[#fb7185]" />
+                <MessagesSquare className="text-3xl text-rose-500 dark:text-[#fb7185]" />
               </div>
-              <p className="text-xl font-bold mb-2 text-[#e2e8f0]">Select a channel</p>
-              <p className="text-sm text-[#94a3b8] max-w-xs mx-auto">
+              <p className="text-xl font-bold mb-2 text-gray-900 dark:text-[#e2e8f0]">Select a channel</p>
+              <p className="text-sm text-gray-600 dark:text-[#94a3b8] max-w-xs mx-auto">
                 Choose a channel from the sidebar or create a new one to start messaging your team.
               </p>
             </div>

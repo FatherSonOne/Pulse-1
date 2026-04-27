@@ -1,6 +1,7 @@
 // Smart Compose Component
 import React, { useState, useEffect } from 'react';
-import { Sparkles, Zap } from 'lucide-react';
+import { Sparkles } from 'lucide-react';
+import { AIProvenanceTag } from '../shared/AIProvenanceTag';
 import type { SmartComposeSuggestion } from '../../types/messageEnhancements';
 
 interface SmartComposeProps {
@@ -35,17 +36,12 @@ export const SmartCompose: React.FC<SmartComposeProps> = ({
           </div>
         ) : (
           <>
-            <div className="px-3 py-2 border-b border-gray-200 dark:border-gray-700 bg-gray-50 dark:bg-gray-900 flex items-center gap-2">
-              <Zap className="w-4 h-4 text-blue-600 dark:text-blue-400" />
-              <span className="text-xs font-medium text-gray-700 dark:text-gray-300">
-                Smart Suggestions
-              </span>
-              <button
-                onClick={() => setVisible(false)}
-                className="ml-auto text-xs text-gray-500 hover:text-gray-700 dark:hover:text-gray-300"
-              >
-                Dismiss
-              </button>
+            <div className="px-3 py-2 border-b border-gray-200 dark:border-gray-700 bg-gray-50 dark:bg-gray-900 flex items-center">
+              <AIProvenanceTag
+                source="pulse-ai"
+                kind="suggestion"
+                onDismiss={() => setVisible(false)}
+              />
             </div>
             <div className="max-h-40 overflow-y-auto">
               {suggestions.map((suggestion, index) => (

@@ -3,6 +3,7 @@ import React, { useState, useEffect, useRef, useCallback } from 'react';
 import type { SmartComposeSuggestion } from '../../types/messageEnhancements';
 
 import { Wand2 } from 'lucide-react';
+import { AIProvenanceTag } from '../shared/AIProvenanceTag';
 
 interface SmartComposeEnhancedProps {
   value: string;
@@ -244,16 +245,19 @@ export const QuickPhrases: React.FC<QuickPhrasesProps> = ({ onSelect, context = 
   const currentPhrases = phrases[context] || phrases.general;
 
   return (
-    <div className="flex flex-wrap gap-1.5">
-      {currentPhrases.map((phrase, index) => (
-        <button
-          key={index}
-          onClick={() => onSelect(phrase)}
-          className="px-2.5 py-1 text-xs rounded-full bg-zinc-100 dark:bg-zinc-800 text-zinc-600 dark:text-zinc-400 hover:bg-blue-100 hover:text-blue-700 dark:hover:bg-blue-900/30 dark:hover:text-blue-300 transition-colors border border-zinc-200 dark:border-zinc-700 hover:border-blue-300 dark:hover:border-blue-600"
-        >
-          {phrase}
-        </button>
-      ))}
+    <div className="space-y-2">
+      <AIProvenanceTag source="pulse-ai" kind="phrase" />
+      <div className="flex flex-wrap gap-1.5">
+        {currentPhrases.map((phrase, index) => (
+          <button
+            key={index}
+            onClick={() => onSelect(phrase)}
+            className="px-2.5 py-1 text-xs rounded-full bg-zinc-100 dark:bg-zinc-800 text-zinc-600 dark:text-zinc-400 hover:bg-rose-500/[0.10] hover:text-rose-600 dark:hover:bg-rose-500/[0.15] dark:hover:text-rose-400 transition-colors border border-zinc-200 dark:border-zinc-700 hover:border-rose-300 dark:hover:border-rose-500/40"
+          >
+            {phrase}
+          </button>
+        ))}
+      </div>
     </div>
   );
 };
@@ -269,20 +273,18 @@ export const ToneAdjuster: React.FC<ToneAdjusterProps> = ({ originalText, onAdju
   const [selectedTone, setSelectedTone] = useState<string | null>(null);
 
   const tones = [
-    { id: 'formal', label: 'Formal', icon: 'fa-user-tie', color: 'text-blue-500' },
-    { id: 'friendly', label: 'Friendly', icon: 'fa-face-smile', color: 'text-amber-500' },
-    { id: 'concise', label: 'Concise', icon: 'fa-compress', color: 'text-emerald-500' },
-    { id: 'detailed', label: 'Detailed', icon: 'fa-expand', color: 'text-purple-500' },
-    { id: 'urgent', label: 'Urgent', icon: 'fa-bolt', color: 'text-red-500' }
+    { id: 'formal', label: 'Formal', icon: 'fa-user-tie' },
+    { id: 'friendly', label: 'Friendly', icon: 'fa-face-smile' },
+    { id: 'concise', label: 'Concise', icon: 'fa-compress' },
+    { id: 'detailed', label: 'Detailed', icon: 'fa-expand' },
+    { id: 'urgent', label: 'Urgent', icon: 'fa-bolt' }
   ];
 
   if (!originalText || originalText.length < 10) return null;
 
   return (
-    <div className="flex items-center gap-2">
-      <span className="text-[10px] text-zinc-500 dark:text-zinc-400 uppercase tracking-wider font-bold">
-        Adjust tone:
-      </span>
+    <div className="flex items-center gap-2 flex-wrap">
+      <AIProvenanceTag source="pulse-ai" kind="tone" />
       <div className="flex gap-1">
         {tones.map(tone => (
           <button
@@ -294,17 +296,17 @@ export const ToneAdjuster: React.FC<ToneAdjusterProps> = ({ originalText, onAdju
             disabled={loading}
             className={`p-1.5 rounded-lg transition-all ${
               selectedTone === tone.id
-                ? 'bg-zinc-200 dark:bg-zinc-700 scale-110'
-                : 'hover:bg-zinc-100 dark:hover:bg-zinc-800'
+                ? 'bg-rose-500/[0.10] dark:bg-rose-500/[0.15] text-rose-600 dark:text-rose-400'
+                : 'text-zinc-500 dark:text-zinc-400 hover:bg-zinc-100 dark:hover:bg-zinc-800 hover:text-rose-600 dark:hover:text-rose-400'
             } ${loading ? 'opacity-50 cursor-not-allowed' : ''}`}
             title={tone.label}
           >
-            <i className={`fa-solid ${tone.icon} ${tone.color} text-xs`} />
+            <i className={`fa-solid ${tone.icon} text-xs`} />
           </button>
         ))}
       </div>
       {loading && (
-        <div className="w-3 h-3 border-2 border-blue-500 border-t-transparent rounded-full animate-spin" />
+        <div className="w-3 h-3 border-2 border-rose-500 border-t-transparent rounded-full animate-spin" />
       )}
     </div>
   );

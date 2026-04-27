@@ -2,7 +2,8 @@
 import React, { useState, useEffect, useMemo } from 'react';
 import type { AICoachSuggestion } from '../../types/messageEnhancements';
 
-import { Bot, Wand2, X } from 'lucide-react';
+import { Wand2, X } from 'lucide-react';
+import { AIProvenanceTag } from '../shared/AIProvenanceTag';
 
 interface EnhancedCoachSuggestion extends AICoachSuggestion {
   category: 'tone' | 'clarity' | 'timing' | 'structure' | 'empathy' | 'action';
@@ -233,19 +234,15 @@ const AICoachEnhancedComponent: React.FC<AICoachEnhancedProps> = ({
       {/* Header */}
       <div className="flex items-center justify-between">
         <div className="flex items-center gap-2 text-xs">
-          <Bot className="text-purple-500" />
-          <span className="font-bold text-zinc-600 dark:text-zinc-300">AI Coach</span>
-          <span className="text-zinc-400">•</span>
+          <AIProvenanceTag
+            source="pulse-ai"
+            kind="coach"
+            onDismiss={onDismiss}
+          />
           <span className="text-zinc-500 dark:text-zinc-400">
             {suggestions.length} suggestion{suggestions.length !== 1 ? 's' : ''}
           </span>
         </div>
-        <button
-          onClick={onDismiss}
-          className="text-zinc-400 hover:text-zinc-600 dark:hover:text-zinc-300 p-1"
-        >
-          <X className="text-xs" />
-        </button>
       </div>
 
       {/* Suggestions */}

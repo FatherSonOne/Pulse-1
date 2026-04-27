@@ -1,23 +1,27 @@
 /**
- * Custom hook for managing split-view messages with keyboard shortcuts and animations
+ * Custom hook for managing split-view conversation list with keyboard
+ * shortcuts and animations. Generalized in Phase 5c to operate on a
+ * unified `Conversation[]` (channels + Pulse DMs) — the prior
+ * channels-only API is preserved as deprecated aliases below.
  */
 
 import { useState, useEffect, useCallback, useRef } from 'react';
-import { MessageChannel } from '../types/messages';
+import { Conversation, conversationId } from '../types/conversations';
 
 interface UseSplitViewMessagesOptions {
-  channels: MessageChannel[];
-  initialChannelId?: string | null;
-  onChannelChange?: (channelId: string | null) => void;
+  conversations: Conversation[];
+  initialConversationId?: string | null;
+  onConversationChange?: (conversationId: string | null) => void;
   enableKeyboardShortcuts?: boolean;
 }
 
 interface UseSplitViewMessagesReturn {
-  activeChannelId: string | null;
+  activeConversationId: string | null;
   searchQuery: string;
   isMobile: boolean;
   showMobileView: 'threads' | 'conversation';
-  selectChannel: (channelId: string) => void;
+  searchInputRef: React.RefObject<HTMLInputElement>;
+  selectConversation: (id: string) => void;
   setSearchQuery: (query: string) => void;
   navigateToNextThread: () => void;
   navigateToPreviousThread: () => void;
@@ -26,12 +30,12 @@ interface UseSplitViewMessagesReturn {
 }
 
 export const useSplitViewMessages = ({
-  channels,
-  initialChannelId = null,
-  onChannelChange,
+  conversations,
+  initialConversationId = null,
+  onConversationChange,
   enableKeyboardShortcuts = true
 }: UseSplitViewMessagesOptions): UseSplitViewMessagesReturn => {
-  const [activeChannelId, setActiveChannelId] = useState<string | null>(initialChannelId);
+  const [activeConversationId, setActiveConversationId] = useState<string | null>(initialConversationId);
   const [searchQuery, setSearchQuery] = useState('');
   const [isMobile, setIsMobile] = useState(false);
   const [showMobileView, setShowMobileView] = useState<'threads' | 'conversation'>('threads');
@@ -48,48 +52,46 @@ export const useSplitViewMessages = ({
     return () => window.removeEventListener('resize', checkMobile);
   }, []);
 
-  // Select channel handler
-  const selectChannel = useCallback((channelId: string) => {
-    setActiveChannelId(channelId);
-    if (onChannelChange) {
-      onChannelChange(channelId);
+  // Select conversation handler
+  const selectConversation = useCallback((id: string) => {
+    setActiveConversationId(id);
+    if (onConversationChange) {
+      onConversationChange(id);
     }
 
     // On mobile, switch to conversation view
     if (isMobile) {
       setShowMobileView('conversation');
     }
-  }, [isMobile, onChannelChange]);
+  }, [isMobile, onConversationChange]);
 
   // Navigate to next thread
   const navigateToNextThread = useCallback(() => {
-    if (channels.length === 0) return;
+    if (conversations.length === 0) return;
 
-    const currentIndex = channels.findIndex(ch => ch.id === activeChannelId);
-    const nextIndex = (currentIndex + 1) % channels.length;
-    selectChannel(channels[nextIndex].id);
-  }, [channels, activeChannelId, selectChannel]);
+    const currentIndex = conversations.findIndex((c) => conversationId(c) === activeConversationId);
+    const nextIndex = (currentIndex + 1) % conversations.length;
+    selectConversation(conversationId(conversations[nextIndex]));
+  }, [conversations, activeConversationId, selectConversation]);
 
   // Navigate to previous thread
   const navigateToPreviousThread = useCallback(() => {
-    if (channels.length === 0) return;
+    if (conversations.length === 0) return;
 
-    const currentIndex = channels.findIndex(ch => ch.id === activeChannelId);
-    const prevIndex = currentIndex <= 0 ? channels.length - 1 : currentIndex - 1;
-    selectChannel(channels[prevIndex].id);
-  }, [channels, activeChannelId, selectChannel]);
+    const currentIndex = conversations.findIndex((c) => conversationId(c) === activeConversationId);
+    const prevIndex = currentIndex <= 0 ? conversations.length - 1 : currentIndex - 1;
+    selectConversation(conversationId(conversations[prevIndex]));
+  }, [conversations, activeConversationId, selectConversation]);
 
   // Toggle mobile view between threads and conversation
   const toggleMobileView = useCallback(() => {
-    setShowMobileView(prev => prev === 'threads' ? 'conversation' : 'threads');
+    setShowMobileView((prev) => (prev === 'threads' ? 'conversation' : 'threads'));
   }, []);
 
-  // Jump to search
+  // Jump to search — uses an attached ref so we don't depend on a brittle
+  // selector. Consumers must attach `searchInputRef` to their search input.
   const jumpToSearch = useCallback(() => {
-    const searchInput = document.querySelector('input[aria-label="Search threads"]') as HTMLInputElement;
-    if (searchInput) {
-      searchInput.focus();
-    }
+    searchInputRef.current?.focus();
   }, []);
 
   // Keyboard shortcuts
@@ -108,25 +110,21 @@ export const useSplitViewMessages = ({
         return;
       }
 
-      // Ctrl/Cmd + ] - Next thread
       if ((e.ctrlKey || e.metaKey) && e.key === ']') {
         e.preventDefault();
         navigateToNextThread();
       }
 
-      // Ctrl/Cmd + [ - Previous thread
       if ((e.ctrlKey || e.metaKey) && e.key === '[') {
         e.preventDefault();
         navigateToPreviousThread();
       }
 
-      // Ctrl/Cmd + J - Jump to search
       if ((e.ctrlKey || e.metaKey) && e.key === 'j') {
         e.preventDefault();
         jumpToSearch();
       }
 
-      // Escape - Clear search
       if (e.key === 'Escape' && searchQuery) {
         e.preventDefault();
         setSearchQuery('');
@@ -140,26 +138,27 @@ export const useSplitViewMessages = ({
     navigateToNextThread,
     navigateToPreviousThread,
     jumpToSearch,
-    searchQuery
+    searchQuery,
   ]);
 
-  // Auto-select first channel if none selected and channels available
+  // Auto-select first conversation if none selected and any are available
   useEffect(() => {
-    if (!activeChannelId && channels.length > 0) {
-      setActiveChannelId(channels[0].id);
+    if (!activeConversationId && conversations.length > 0) {
+      setActiveConversationId(conversationId(conversations[0]));
     }
-  }, [channels, activeChannelId]);
+  }, [conversations, activeConversationId]);
 
   return {
-    activeChannelId,
+    activeConversationId,
     searchQuery,
     isMobile,
     showMobileView,
-    selectChannel,
+    searchInputRef,
+    selectConversation,
     setSearchQuery,
     navigateToNextThread,
     navigateToPreviousThread,
     toggleMobileView,
-    jumpToSearch
+    jumpToSearch,
   };
 };

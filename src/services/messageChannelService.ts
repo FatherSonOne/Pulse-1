@@ -1,4 +1,25 @@
 // src/services/messageChannelService.ts
+//
+// Workspace-channel messages service. Reads/writes `channel_messages`
+// (the canonical workspace channel table created in Phase 5a migration
+// `20260426000008_channel_messages_canonical.sql`).
+//
+// Reactions and read-receipts use the dedicated tables created by the
+// same migration:
+//   - message_reactions  (atomic, row-per-reaction)
+//   - message_reads      (composite-key (message_id, user_id))
+//
+// The legacy `channel_messages.reactions jsonb` column is DEPRECATED —
+// kept only for back-compat with rows written before atomic reactions
+// existed. New code MUST NOT write to it; readers should use the
+// `message_reactions` table (hydrated by `getMessages` / `getReactionsForMessages`).
+//
+// History:
+//   - Pre-Session 5a: queried `from('messages')` against a phantom
+//     schema that didn't exist in production (issue #0 in deep dive).
+//   - Session 5a (2026-04-26): canonical `channel_messages` table
+//     landed; this service flipped to it.
+
 import { supabase } from './supabase';
 import {
   ChannelMessage,
@@ -191,7 +212,7 @@ export const messageChannelService = {
     before?: string
   ): Promise<ChannelMessage[]> {
     let query = supabase
-      .from('messages')
+      .from('channel_messages')
       .select('*')
       .eq('channel_id', channelId)
       .is('thread_id', null) // Only get top-level messages
@@ -204,7 +225,28 @@ export const messageChannelService = {
 
     const { data, error } = await query;
     if (error) throw error;
-    return (data as ChannelMessage[]).reverse();
+    const messages = (data as ChannelMessage[]).reverse();
+
+    // Hydrate reactions from the atomic message_reactions table.
+    // The legacy JSON-blob `messages.reactions` field is preserved for
+    // backwards compatibility but not authoritative — UI consumers
+    // should treat the hydrated value here as truth.
+    if (messages.length > 0) {
+      try {
+        const reactionsByMessage = await this.getReactionsForMessages(
+          messages.map((m) => m.id)
+        );
+        for (const m of messages) {
+          if (reactionsByMessage[m.id]) {
+            m.reactions = reactionsByMessage[m.id];
+          }
+        }
+      } catch {
+        // Don't fail message loading if reaction hydration fails.
+      }
+    }
+
+    return messages;
   },
 
   async sendMessage(
@@ -216,7 +258,7 @@ export const messageChannelService = {
     threadId?: string
   ): Promise<ChannelMessage> {
     const { data, error } = await supabase
-      .from('messages')
+      .from('channel_messages')
       .insert([
         {
           channel_id: channelId,
@@ -239,7 +281,7 @@ export const messageChannelService = {
     content: string
   ): Promise<ChannelMessage> {
     const { data, error } = await supabase
-      .from('messages')
+      .from('channel_messages')
       .update({ content, edited_at: new Date().toISOString() })
       .eq('id', messageId)
       .select()
@@ -251,7 +293,7 @@ export const messageChannelService = {
 
   async deleteMessage(messageId: string): Promise<void> {
     const { error } = await supabase
-      .from('messages')
+      .from('channel_messages')
       .delete()
       .eq('id', messageId);
 
@@ -260,37 +302,30 @@ export const messageChannelService = {
 
   async pinMessage(messageId: string, isPinned: boolean): Promise<void> {
     const { error } = await supabase
-      .from('messages')
+      .from('channel_messages')
       .update({ is_pinned: isPinned })
       .eq('id', messageId);
 
     if (error) throw error;
   },
 
+  /**
+   * Add a reaction to a message. Atomic via the message_reactions table —
+   * concurrent inserts are de-duplicated by the (message_id, user_id, emoji)
+   * unique constraint. Replaces the previous JSON-blob read-modify-write
+   * pattern that could lose concurrent reactions.
+   */
   async addReaction(
     messageId: string,
     emoji: string,
     userId: string
   ): Promise<void> {
-    // Get current reactions
-    const { data: message } = await supabase
-      .from('messages')
-      .select('reactions')
-      .eq('id', messageId)
-      .single();
-
-    const reactions = message?.reactions || {};
-    if (!reactions[emoji]) {
-      reactions[emoji] = [];
-    }
-    if (!reactions[emoji].includes(userId)) {
-      reactions[emoji].push(userId);
-    }
-
     const { error } = await supabase
-      .from('messages')
-      .update({ reactions })
-      .eq('id', messageId);
+      .from('message_reactions')
+      .upsert(
+        { message_id: messageId, user_id: userId, emoji },
+        { onConflict: 'message_id,user_id,emoji', ignoreDuplicates: true }
+      );
 
     if (error) throw error;
   },
@@ -300,33 +335,121 @@ export const messageChannelService = {
     emoji: string,
     userId: string
   ): Promise<void> {
-    const { data: message } = await supabase
-      .from('messages')
-      .select('reactions')
-      .eq('id', messageId)
-      .single();
-
-    const reactions = message?.reactions || {};
-    if (reactions[emoji]) {
-      reactions[emoji] = reactions[emoji].filter((id: string) => id !== userId);
-      if (reactions[emoji].length === 0) {
-        delete reactions[emoji];
-      }
-    }
-
     const { error } = await supabase
-      .from('messages')
-      .update({ reactions })
-      .eq('id', messageId);
+      .from('message_reactions')
+      .delete()
+      .eq('message_id', messageId)
+      .eq('user_id', userId)
+      .eq('emoji', emoji);
 
     if (error) throw error;
+  },
+
+  /**
+   * Load all reactions for a list of messages, grouped by message id and
+   * shaped as `{ emoji: userId[] }` for back-compat with the legacy
+   * `ChannelMessage.reactions` field consumers.
+   */
+  async getReactionsForMessages(
+    messageIds: string[]
+  ): Promise<Record<string, Record<string, string[]>>> {
+    if (messageIds.length === 0) return {};
+    const { data, error } = await supabase
+      .from('message_reactions')
+      .select('message_id, user_id, emoji')
+      .in('message_id', messageIds);
+
+    if (error) throw error;
+
+    const grouped: Record<string, Record<string, string[]>> = {};
+    for (const row of data || []) {
+      const r = row as { message_id: string; user_id: string; emoji: string };
+      grouped[r.message_id] ??= {};
+      grouped[r.message_id][r.emoji] ??= [];
+      if (!grouped[r.message_id][r.emoji].includes(r.user_id)) {
+        grouped[r.message_id][r.emoji].push(r.user_id);
+      }
+    }
+    return grouped;
+  },
+
+  // ==================== Read Receipts ====================
+
+  /**
+   * Mark one or more messages as read by the current user. Idempotent —
+   * re-marking is a no-op via the message_reads composite primary key.
+   */
+  async markMessagesRead(
+    messageIds: string[],
+    userId: string
+  ): Promise<void> {
+    if (messageIds.length === 0 || !userId) return;
+    const rows = messageIds.map((id) => ({
+      message_id: id,
+      user_id: userId,
+    }));
+    const { error } = await supabase
+      .from('message_reads')
+      .upsert(rows, { onConflict: 'message_id,user_id', ignoreDuplicates: true });
+    if (error) throw error;
+  },
+
+  /**
+   * Load the readers for a batch of messages. Returns a map of
+   * messageId → list of `{ userId, readAt }`, sorted oldest-first.
+   */
+  async getReadsForMessages(
+    messageIds: string[]
+  ): Promise<Record<string, Array<{ userId: string; readAt: string }>>> {
+    if (messageIds.length === 0) return {};
+    const { data, error } = await supabase
+      .from('message_reads')
+      .select('message_id, user_id, read_at')
+      .in('message_id', messageIds)
+      .order('read_at', { ascending: true });
+
+    if (error) throw error;
+
+    const grouped: Record<string, Array<{ userId: string; readAt: string }>> = {};
+    for (const row of data || []) {
+      const r = row as { message_id: string; user_id: string; read_at: string };
+      grouped[r.message_id] ??= [];
+      grouped[r.message_id].push({ userId: r.user_id, readAt: r.read_at });
+    }
+    return grouped;
+  },
+
+  /**
+   * Subscribe to read-receipt changes on a channel's messages. Calls
+   * `onRead` with the new row when any reader marks a message read.
+   */
+  subscribeToChannelReads(
+    channelId: string,
+    onRead: (row: { messageId: string; userId: string; readAt: string }) => void
+  ) {
+    const channel = supabase
+      .channel(`channel-reads:${channelId}`)
+      .on(
+        'postgres_changes',
+        { event: 'INSERT', schema: 'public', table: 'message_reads' },
+        (payload) => {
+          const r = payload.new as {
+            message_id: string;
+            user_id: string;
+            read_at: string;
+          };
+          onRead({ messageId: r.message_id, userId: r.user_id, readAt: r.read_at });
+        }
+      )
+      .subscribe();
+    return () => supabase.removeChannel(channel);
   },
 
   // ==================== Thread Messages ====================
 
   async getThreadMessages(threadId: string): Promise<ChannelMessage[]> {
     const { data, error } = await supabase
-      .from('messages')
+      .from('channel_messages')
       .select('*')
       .eq('thread_id', threadId)
       .order('created_at', { ascending: true });
@@ -337,7 +460,7 @@ export const messageChannelService = {
 
   async getThreadCount(messageId: string): Promise<number> {
     const { count, error } = await supabase
-      .from('messages')
+      .from('channel_messages')
       .select('*', { count: 'exact', head: true })
       .eq('thread_id', messageId);
 
@@ -399,7 +522,7 @@ export const messageChannelService = {
     query: string
   ): Promise<ChannelMessage[]> {
     const { data, error } = await supabase
-      .from('messages')
+      .from('channel_messages')
       .select('*')
       .eq('channel_id', channelId)
       .ilike('content', `%${query}%`)
@@ -414,7 +537,7 @@ export const messageChannelService = {
 
   async getPinnedMessages(channelId: string): Promise<ChannelMessage[]> {
     const { data, error } = await supabase
-      .from('messages')
+      .from('channel_messages')
       .select('*')
       .eq('channel_id', channelId)
       .eq('is_pinned', true)
@@ -444,7 +567,7 @@ export const messageChannelService = {
         {
           event: 'INSERT',
           schema: 'public',
-          table: 'messages',
+          table: 'channel_messages',
           filter: `channel_id=eq.${channelId}`,
         },
         (payload) => {
@@ -667,7 +790,7 @@ export const messageChannelService = {
     filters: MessageSearchFilters = {}
   ): Promise<SearchResult[]> {
     let dbQuery = supabase
-      .from('messages')
+      .from('channel_messages')
       .select(`
         *,
         channels:channel_id (
@@ -767,41 +890,41 @@ export const messageChannelService = {
 
     // Get total count
     const { count: totalMessages } = await supabase
-      .from('messages')
+      .from('channel_messages')
       .select('*', { count: 'exact', head: true })
       .eq('channel_id', channelId);
 
     // Get this week count
     const { count: messagesThisWeek } = await supabase
-      .from('messages')
+      .from('channel_messages')
       .select('*', { count: 'exact', head: true })
       .eq('channel_id', channelId)
       .gte('created_at', weekAgo.toISOString());
 
     // Get this month count
     const { count: messagesThisMonth } = await supabase
-      .from('messages')
+      .from('channel_messages')
       .select('*', { count: 'exact', head: true })
       .eq('channel_id', channelId)
       .gte('created_at', monthAgo.toISOString());
 
     // Get pinned count
     const { count: pinnedCount } = await supabase
-      .from('messages')
+      .from('channel_messages')
       .select('*', { count: 'exact', head: true })
       .eq('channel_id', channelId)
       .eq('is_pinned', true);
 
     // Get attachment count
     const { count: attachmentCount } = await supabase
-      .from('messages')
+      .from('channel_messages')
       .select('*', { count: 'exact', head: true })
       .eq('channel_id', channelId)
       .not('attachments', 'is', null);
 
     // Get top contributors (simplified - in production use aggregation)
     const { data: recentMessages } = await supabase
-      .from('messages')
+      .from('channel_messages')
       .select('sender_id')
       .eq('channel_id', channelId)
       .order('created_at', { ascending: false })
@@ -943,7 +1066,7 @@ export const messageChannelService = {
     if (!readStatus?.last_read_at) {
       // Never read - count all messages
       const { count } = await supabase
-        .from('messages')
+        .from('channel_messages')
         .select('*', { count: 'exact', head: true })
         .eq('channel_id', channelId);
       return count || 0;
@@ -951,7 +1074,7 @@ export const messageChannelService = {
 
     // Count messages after last read
     const { count } = await supabase
-      .from('messages')
+      .from('channel_messages')
       .select('*', { count: 'exact', head: true })
       .eq('channel_id', channelId)
       .gt('created_at', readStatus.last_read_at);
@@ -961,8 +1084,14 @@ export const messageChannelService = {
 
   // ==================== Full Channel Subscription ====================
 
+  // Track active "full" subscriptions so subscribe is idempotent and
+  // unsubscribe pulls the same instance instead of creating a fresh one.
+  _fullChannels: new Map<string, ReturnType<typeof supabase.channel>>(),
+
   /**
-   * Subscribe to all channel events (messages, edits, deletes, reactions)
+   * Subscribe to all channel events (messages, edits, deletes, reactions).
+   * Idempotent: re-subscribing the same channelId removes the previous
+   * subscription first to avoid duplicate listeners.
    */
   async subscribeToChannelFull(
     channelId: string,
@@ -979,12 +1108,19 @@ export const messageChannelService = {
       return null;
     }
 
+    // Replace any existing subscription for this channelId.
+    const existing = this._fullChannels.get(channelId);
+    if (existing) {
+      supabase.removeChannel(existing);
+      this._fullChannels.delete(channelId);
+    }
+
     const channel = supabase.channel(`channel-full:${channelId}`);
 
     if (callbacks.onInsert) {
       channel.on(
         'postgres_changes',
-        { event: 'INSERT', schema: 'public', table: 'messages', filter: `channel_id=eq.${channelId}` },
+        { event: 'INSERT', schema: 'public', table: 'channel_messages', filter: `channel_id=eq.${channelId}` },
         (payload) => callbacks.onInsert!(payload.new as ChannelMessage)
       );
     }
@@ -992,7 +1128,7 @@ export const messageChannelService = {
     if (callbacks.onUpdate) {
       channel.on(
         'postgres_changes',
-        { event: 'UPDATE', schema: 'public', table: 'messages', filter: `channel_id=eq.${channelId}` },
+        { event: 'UPDATE', schema: 'public', table: 'channel_messages', filter: `channel_id=eq.${channelId}` },
         (payload) => callbacks.onUpdate!(payload.new as ChannelMessage)
       );
     }
@@ -1000,19 +1136,25 @@ export const messageChannelService = {
     if (callbacks.onDelete) {
       channel.on(
         'postgres_changes',
-        { event: 'DELETE', schema: 'public', table: 'messages', filter: `channel_id=eq.${channelId}` },
+        { event: 'DELETE', schema: 'public', table: 'channel_messages', filter: `channel_id=eq.${channelId}` },
         (payload) => callbacks.onDelete!((payload.old as any).id)
       );
     }
 
+    this._fullChannels.set(channelId, channel);
     return channel.subscribe();
   },
 
   /**
-   * Unsubscribe from full channel events
+   * Unsubscribe from full channel events. Safe to call when no
+   * subscription exists.
    */
   unsubscribeFromChannelFull(channelId: string) {
-    supabase.removeChannel(supabase.channel(`channel-full:${channelId}`));
+    const channel = this._fullChannels.get(channelId);
+    if (channel) {
+      supabase.removeChannel(channel);
+      this._fullChannels.delete(channelId);
+    }
   },
 };
 

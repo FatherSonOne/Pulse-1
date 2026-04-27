@@ -28,7 +28,8 @@ export type AITask =
   | 'conflict_detection'
   | 'content_generation'
   | 'voice_command_parse'
-  | 'web_search';
+  | 'web_search'
+  | 'translation';
 
 export interface AIMessage {
   role: 'user' | 'assistant';

@@ -53,6 +53,7 @@ interface MessageInputSectionProps {
   setShowQuickPhrases: (v: boolean) => void;
   isProposalMode: boolean;
   setIsProposalMode: (v: boolean) => void;
+  proposalModeEnabled?: boolean;
   recordingDuration: number;
   stopRecording: () => void;
   showVoiceExtractor: boolean;
@@ -96,6 +97,7 @@ export const MessageInputSection: React.FC<MessageInputSectionProps> = ({
   showAIMediator, setShowAIMediator,
   showQuickPhrases, setShowQuickPhrases,
   isProposalMode, setIsProposalMode,
+  proposalModeEnabled = false,
   recordingDuration, stopRecording,
   showVoiceExtractor, setShowVoiceExtractor,
   apiKey, useIntentComposer,
@@ -148,9 +150,9 @@ export const MessageInputSection: React.FC<MessageInputSectionProps> = ({
 
        {/* SMS Mode Banner for Native Apps */}
        {isNonPulseThread && canSendNativeSms && (
-         <div className="mb-3 px-3 py-2 bg-blue-50 dark:bg-blue-900/20 border border-blue-200 dark:border-blue-800 rounded-lg flex items-center gap-2 text-xs">
-           <MessageSquare className="text-blue-500" />
-           <span className="text-blue-700 dark:text-blue-300">
+         <div className="mb-3 px-3 py-2 bg-zinc-50 dark:bg-zinc-900/40 border border-zinc-200 dark:border-zinc-800 rounded-lg flex items-center gap-2 text-xs">
+           <MessageSquare className="text-zinc-500 dark:text-zinc-400" />
+           <span className="text-zinc-700 dark:text-zinc-300">
              Messages to {activeContact?.name || 'this contact'} will be sent as SMS via your carrier
            </span>
            <button
@@ -161,7 +163,7 @@ export const MessageInputSection: React.FC<MessageInputSectionProps> = ({
                  setShowInviteToPulseModal(true);
                }
              }}
-             className="ml-auto text-blue-600 dark:text-blue-400 hover:underline font-medium"
+             className="ml-auto text-rose-600 dark:text-rose-400 hover:underline font-medium"
            >
              Invite to Pulse
            </button>
@@ -197,7 +199,7 @@ export const MessageInputSection: React.FC<MessageInputSectionProps> = ({
                    className="text-left p-2 rounded-lg bg-zinc-50 dark:bg-zinc-800 hover:bg-zinc-100 dark:hover:bg-zinc-700 transition"
                  >
                    <div className="text-xs font-medium dark:text-white flex items-center gap-1.5">
-                     <Wand2 className="text-purple-400 text-[8px]" />
+                     <Wand2 className="text-zinc-400 dark:text-zinc-500 text-[8px]" />
                      {template.label}
                    </div>
                    <div className="text-[10px] text-zinc-500 truncate">{previewText}</div>
@@ -332,7 +334,7 @@ export const MessageInputSection: React.FC<MessageInputSectionProps> = ({
          </div>
        )}
 
-       {isProposalMode && (
+       {proposalModeEnabled && isProposalMode && (
            <div className="absolute bottom-full left-4 right-4 mb-2 bg-amber-50 dark:bg-amber-900/20 border border-amber-200 dark:border-amber-800 p-2 rounded-lg flex items-center justify-between text-xs text-amber-800 dark:text-amber-200 animate-slide-up">
                <span className="font-bold flex items-center gap-2"><Scale /> Proposal Mode Active</span>
                <button onClick={() => setIsProposalMode(false)}><X /></button>
@@ -387,26 +389,28 @@ export const MessageInputSection: React.FC<MessageInputSectionProps> = ({
          />
        )}
 
-       <div className={`flex gap-1 sm:gap-2 items-end relative bg-zinc-50 dark:bg-zinc-900 p-1.5 sm:p-2 rounded-xl border transition ${isProposalMode ? 'border-amber-400' : isRecording ? 'border-red-400' : 'border-zinc-200 dark:border-zinc-800'}`}>
+       <div className={`flex gap-1 sm:gap-2 items-end relative bg-zinc-50 dark:bg-zinc-900 p-1.5 sm:p-2 rounded-xl border transition ${proposalModeEnabled && isProposalMode ? 'border-amber-400' : isRecording ? 'border-red-400' : 'border-zinc-200 dark:border-zinc-800'}`}>
          {/* Left Action Buttons - Collapsed on mobile */}
          <div className="flex gap-0.5 sm:gap-1 relative flex-shrink-0">
-           <button
-              onClick={() => setIsProposalMode(!isProposalMode)}
-              className={`w-8 h-8 sm:w-10 sm:h-10 rounded-lg transition flex items-center justify-center flex-shrink-0 ${isProposalMode ? 'bg-amber-500 text-white' : 'text-zinc-400 hover:bg-zinc-200 dark:hover:bg-zinc-800'}`}
-              title="Make Proposal (Ctrl+Shift+P)"
-           >
-              <Gavel className="text-xs sm:text-sm" />
-           </button>
+           {proposalModeEnabled && (
+             <button
+                onClick={() => setIsProposalMode(!isProposalMode)}
+                className={`w-8 h-8 sm:w-10 sm:h-10 rounded-lg transition flex items-center justify-center flex-shrink-0 ${isProposalMode ? 'bg-rose-500/[0.10] text-rose-600 dark:bg-rose-500/[0.15] dark:text-rose-400' : 'text-zinc-400 hover:bg-zinc-200 dark:hover:bg-zinc-800'}`}
+                title="Make Proposal (Ctrl+Shift+P)"
+             >
+                <Gavel className="text-xs sm:text-sm" />
+             </button>
+           )}
            <button
               onClick={() => setShowTemplates(!showTemplates)}
-              className={`hidden sm:flex w-8 h-8 sm:w-10 sm:h-10 rounded-lg transition items-center justify-center flex-shrink-0 ${showTemplates ? 'bg-blue-500 text-white' : 'text-zinc-400 hover:bg-zinc-200 dark:hover:bg-zinc-800'}`}
+              className={`hidden sm:flex w-8 h-8 sm:w-10 sm:h-10 rounded-lg transition items-center justify-center flex-shrink-0 ${showTemplates ? 'bg-rose-500/[0.10] text-rose-600 dark:bg-rose-500/[0.15] dark:text-rose-400' : 'text-zinc-400 hover:bg-zinc-200 dark:hover:bg-zinc-800'}`}
               title="Message Templates (Ctrl+Shift+T)"
            >
               <Zap className="text-xs sm:text-sm" />
            </button>
            <button
               onClick={() => setShowEmojiPicker(!showEmojiPicker)}
-              className={`w-8 h-8 sm:w-10 sm:h-10 rounded-lg transition flex items-center justify-center flex-shrink-0 ${showEmojiPicker ? 'bg-yellow-500 text-white' : 'text-zinc-400 hover:bg-zinc-200 dark:hover:bg-zinc-800'}`}
+              className={`w-8 h-8 sm:w-10 sm:h-10 rounded-lg transition flex items-center justify-center flex-shrink-0 ${showEmojiPicker ? 'bg-rose-500/[0.10] text-rose-600 dark:bg-rose-500/[0.15] dark:text-rose-400' : 'text-zinc-400 hover:bg-zinc-200 dark:hover:bg-zinc-800'}`}
               title="Add Emoji (Ctrl+Shift+E)"
            >
               <Smile className="text-xs sm:text-sm" />
@@ -415,7 +419,7 @@ export const MessageInputSection: React.FC<MessageInputSectionProps> = ({
            {/* Phase 2: Quick Phrases Button - Hidden on mobile */}
            <button
               onClick={() => setShowQuickPhrases(!showQuickPhrases)}
-              className={`hidden sm:flex w-8 h-8 sm:w-10 sm:h-10 rounded-lg transition items-center justify-center flex-shrink-0 ${showQuickPhrases ? 'bg-purple-500 text-white' : 'text-zinc-400 hover:bg-zinc-200 dark:hover:bg-zinc-800'}`}
+              className={`hidden sm:flex w-8 h-8 sm:w-10 sm:h-10 rounded-lg transition items-center justify-center flex-shrink-0 ${showQuickPhrases ? 'bg-rose-500/[0.10] text-rose-600 dark:bg-rose-500/[0.15] dark:text-rose-400' : 'text-zinc-400 hover:bg-zinc-200 dark:hover:bg-zinc-800'}`}
               title="Quick Phrases"
            >
               <MessageCircle className="text-xs sm:text-sm" />
@@ -425,7 +429,7 @@ export const MessageInputSection: React.FC<MessageInputSectionProps> = ({
            <div className="relative" ref={attachmentMenuRef}>
              <button
                 onClick={() => setShowAttachmentMenu(!showAttachmentMenu)}
-                className={`w-8 h-8 sm:w-10 sm:h-10 rounded-lg transition flex items-center justify-center flex-shrink-0 ${showAttachmentMenu ? 'bg-orange-500 text-white' : 'text-zinc-400 hover:bg-zinc-200 dark:hover:bg-zinc-800'}`}
+                className={`w-8 h-8 sm:w-10 sm:h-10 rounded-lg transition flex items-center justify-center flex-shrink-0 ${showAttachmentMenu ? 'bg-rose-500/[0.10] text-rose-600 dark:bg-rose-500/[0.15] dark:text-rose-400' : 'text-zinc-400 hover:bg-zinc-200 dark:hover:bg-zinc-800'}`}
                 title="Attach File, Image, Video, or Link"
              >
                 <Plus className="text-xs sm:text-sm" />
@@ -439,8 +443,8 @@ export const MessageInputSection: React.FC<MessageInputSectionProps> = ({
                      onClick={() => imageInputRef.current?.click()}
                      className="w-full px-4 py-3 text-left hover:bg-zinc-100 dark:hover:bg-zinc-800 rounded-lg transition flex items-center gap-3 group"
                    >
-                     <div className="w-10 h-10 rounded-lg bg-blue-100 dark:bg-blue-900/30 flex items-center justify-center group-hover:bg-blue-200 dark:group-hover:bg-blue-900/50 transition">
-                       <Image className="text-blue-600 dark:text-blue-400" />
+                     <div className="w-10 h-10 rounded-lg bg-zinc-100 dark:bg-zinc-800 flex items-center justify-center group-hover:bg-rose-500/[0.10] dark:group-hover:bg-rose-500/[0.15] transition">
+                       <Image className="text-zinc-600 dark:text-zinc-300 group-hover:text-rose-600 dark:group-hover:text-rose-400 transition-colors" />
                      </div>
                      <div>
                        <div className="text-sm font-medium dark:text-white">Photo</div>
@@ -452,8 +456,8 @@ export const MessageInputSection: React.FC<MessageInputSectionProps> = ({
                      onClick={() => videoInputRef.current?.click()}
                      className="w-full px-4 py-3 text-left hover:bg-zinc-100 dark:hover:bg-zinc-800 rounded-lg transition flex items-center gap-3 group"
                    >
-                     <div className="w-10 h-10 rounded-lg bg-purple-100 dark:bg-purple-900/30 flex items-center justify-center group-hover:bg-purple-200 dark:group-hover:bg-purple-900/50 transition">
-                       <Video className="text-purple-600 dark:text-purple-400" />
+                     <div className="w-10 h-10 rounded-lg bg-zinc-100 dark:bg-zinc-800 flex items-center justify-center group-hover:bg-rose-500/[0.10] dark:group-hover:bg-rose-500/[0.15] transition">
+                       <Video className="text-zinc-600 dark:text-zinc-300 group-hover:text-rose-600 dark:group-hover:text-rose-400 transition-colors" />
                      </div>
                      <div>
                        <div className="text-sm font-medium dark:text-white">Video</div>
@@ -465,8 +469,8 @@ export const MessageInputSection: React.FC<MessageInputSectionProps> = ({
                      onClick={() => fileInputRef.current?.click()}
                      className="w-full px-4 py-3 text-left hover:bg-zinc-100 dark:hover:bg-zinc-800 rounded-lg transition flex items-center gap-3 group"
                    >
-                     <div className="w-10 h-10 rounded-lg bg-emerald-100 dark:bg-emerald-900/30 flex items-center justify-center group-hover:bg-emerald-200 dark:group-hover:bg-emerald-900/50 transition">
-                       <File className="text-emerald-600 dark:text-emerald-400" />
+                     <div className="w-10 h-10 rounded-lg bg-zinc-100 dark:bg-zinc-800 flex items-center justify-center group-hover:bg-rose-500/[0.10] dark:group-hover:bg-rose-500/[0.15] transition">
+                       <File className="text-zinc-600 dark:text-zinc-300 group-hover:text-rose-600 dark:group-hover:text-rose-400 transition-colors" />
                      </div>
                      <div>
                        <div className="text-sm font-medium dark:text-white">File</div>
@@ -480,8 +484,8 @@ export const MessageInputSection: React.FC<MessageInputSectionProps> = ({
                      onClick={handleAddLink}
                      className="w-full px-4 py-3 text-left hover:bg-zinc-100 dark:hover:bg-zinc-800 rounded-lg transition flex items-center gap-3 group"
                    >
-                     <div className="w-10 h-10 rounded-lg bg-orange-100 dark:bg-orange-900/30 flex items-center justify-center group-hover:bg-orange-200 dark:group-hover:bg-orange-900/50 transition">
-                       <Link className="text-orange-600 dark:text-orange-400" />
+                     <div className="w-10 h-10 rounded-lg bg-zinc-100 dark:bg-zinc-800 flex items-center justify-center group-hover:bg-rose-500/[0.10] dark:group-hover:bg-rose-500/[0.15] transition">
+                       <Link className="text-zinc-600 dark:text-zinc-300 group-hover:text-rose-600 dark:group-hover:text-rose-400 transition-colors" />
                      </div>
                      <div>
                        <div className="text-sm font-medium dark:text-white">Link</div>
@@ -610,7 +614,7 @@ export const MessageInputSection: React.FC<MessageInputSectionProps> = ({
            {/* Phase 2: Voice Context Extractor Toggle - Hidden on mobile */}
            <button
               onClick={() => setShowVoiceExtractor(!showVoiceExtractor)}
-              className={`hidden sm:flex w-8 h-8 sm:w-10 sm:h-10 rounded-lg transition items-center justify-center flex-shrink-0 ${showVoiceExtractor ? 'bg-blue-500 text-white' : 'text-zinc-400 hover:bg-zinc-200 dark:hover:bg-zinc-800'}`}
+              className={`hidden sm:flex w-8 h-8 sm:w-10 sm:h-10 rounded-lg transition items-center justify-center flex-shrink-0 ${showVoiceExtractor ? 'bg-rose-500/[0.10] text-rose-600 dark:bg-rose-500/[0.15] dark:text-rose-400' : 'text-zinc-400 hover:bg-zinc-200 dark:hover:bg-zinc-800'}`}
               title="AI Voice Transcription"
            >
               <MessageCircle className="text-xs sm:text-sm" />
@@ -628,7 +632,7 @@ export const MessageInputSection: React.FC<MessageInputSectionProps> = ({
              <button
                onClick={() => handleSendSms(inputText)}
                disabled={!inputText.trim()}
-               className="w-8 h-8 sm:w-10 sm:h-10 rounded-lg bg-blue-600 hover:bg-blue-500 text-white flex items-center justify-center transition hover:scale-105 disabled:opacity-50 disabled:hover:scale-100"
+               className="w-8 h-8 sm:w-10 sm:h-10 rounded-lg bg-gradient-to-br from-rose-500 to-pink-500 hover:from-rose-600 hover:to-pink-600 text-white flex items-center justify-center transition shadow-[0_4px_12px_rgba(244,63,94,0.30)] hover:shadow-[0_6px_20px_rgba(244,63,94,0.40)] disabled:opacity-50 disabled:shadow-none"
                title="Send SMS"
              >
                <MessageSquare className="text-xs sm:text-sm" />
@@ -637,14 +641,19 @@ export const MessageInputSection: React.FC<MessageInputSectionProps> = ({
              // Disabled button for view-only mode
              <button
                disabled
-               className="w-8 h-8 sm:w-10 sm:h-10 rounded-lg bg-zinc-300 dark:bg-zinc-700 text-zinc-500 flex items-center justify-center cursor-not-allowed"
+               className="w-8 h-8 sm:w-10 sm:h-10 rounded-lg bg-zinc-200 dark:bg-zinc-800 text-zinc-500 flex items-center justify-center cursor-not-allowed"
                title="Send from your mobile device"
              >
                <Lock className="text-xs sm:text-sm" />
              </button>
            ) : (
-             // Regular send button
-             <button onClick={() => handleSend()} disabled={isRecording || (!inputText.trim())} className="w-8 h-8 sm:w-10 sm:h-10 rounded-lg bg-zinc-900 dark:bg-white text-white dark:text-black flex items-center justify-center transition hover:scale-105 disabled:opacity-50 disabled:hover:scale-100">
+             // Regular send button — brand coral CTA
+             <button
+               onClick={() => handleSend()}
+               disabled={isRecording || (!inputText.trim())}
+               className="w-8 h-8 sm:w-10 sm:h-10 rounded-lg bg-gradient-to-br from-rose-500 to-pink-500 hover:from-rose-600 hover:to-pink-600 text-white flex items-center justify-center transition shadow-[0_4px_12px_rgba(244,63,94,0.30)] hover:shadow-[0_6px_20px_rgba(244,63,94,0.40)] disabled:opacity-50 disabled:shadow-none"
+               title="Send (Enter)"
+             >
                <ArrowUp className="text-xs sm:text-sm" />
              </button>
            )}
@@ -656,7 +665,7 @@ export const MessageInputSection: React.FC<MessageInputSectionProps> = ({
          <div className="mt-2 flex items-center gap-2 text-xs text-zinc-500">
            <Clock />
            <span>{scheduledMessages.filter(m => m.threadId === activeThreadId).length} message(s) scheduled for this conversation</span>
-           <button onClick={() => setShowScheduleModal(true)} className="text-blue-500 hover:underline">View</button>
+           <button onClick={() => setShowScheduleModal(true)} className="text-rose-500 hover:text-rose-600 dark:hover:text-rose-400 hover:underline">View</button>
          </div>
        )}
     </MessageInputPortal>

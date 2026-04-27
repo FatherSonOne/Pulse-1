@@ -297,7 +297,7 @@ describe('MessageSummarizationService', () => {
 
       expect(catchUp.summary).toContain('Budget');
       expect(catchUp.keyChanges).toHaveLength(1);
-      expect(catchUp.decisonsMade).toHaveLength(1);
+      expect(catchUp.decisionsMade).toHaveLength(1);
       expect(catchUp.actionItems).toHaveLength(1);
       expect(catchUp.messageCount).toBe(3);
     });

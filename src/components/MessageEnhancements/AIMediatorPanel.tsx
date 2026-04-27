@@ -2,6 +2,7 @@
 import React, { useState, useEffect } from 'react';
 
 import { Lightbulb, X } from 'lucide-react';
+import { AIProvenanceTag } from '../shared/AIProvenanceTag';
 
 interface ConflictSignal {
   id: string;
@@ -225,15 +226,15 @@ export const AIMediatorPanel: React.FC<AIMediatorPanelProps> = ({
             <i className={`fa-solid ${alertIcons[alertLevel]}`} />
           </div>
           <div>
-            <div className="text-sm font-bold text-zinc-800 dark:text-white flex items-center gap-2">
-              AI Mediator
+            <div className="flex items-center gap-2">
+              <AIProvenanceTag source="pulse-ai" kind="mediation" />
               {alertLevel === 'high' && (
-                <span className="text-[10px] px-1.5 py-0.5 rounded-full bg-red-200 dark:bg-red-800 text-red-700 dark:text-red-200 uppercase font-bold">
+                <span className="text-[10px] px-1.5 py-0.5 rounded font-mono uppercase tracking-[0.1em] font-medium bg-red-500/[0.10] dark:bg-red-500/[0.15] text-red-700 dark:text-red-300">
                   Needs Attention
                 </span>
               )}
             </div>
-            <div className="text-xs text-zinc-600 dark:text-zinc-400">
+            <div className="text-xs text-zinc-600 dark:text-zinc-400 mt-1">
               {signals.length} signal{signals.length !== 1 ? 's' : ''} detected in conversation
             </div>
           </div>

@@ -1,17 +1,22 @@
 /**
- * MessagesSplitView - Phase 2 Implementation
- * Split-view layout with thread list (30%) and conversation panel (70%)
- *
- * This component can be used as a drop-in replacement for the existing Messages component
- * or integrated into it as a layout mode.
+ * MessagesSplitView — split-view layout with thread list (30%) and
+ * conversation panel (70%). Phase 5c: now hosts both workspace channels
+ * AND Pulse DMs in a single unified thread list.
  */
 
-import React, { useState, useEffect } from 'react';
+import React, { useState, useEffect, useMemo } from 'react';
 import { AnimatePresence } from 'framer-motion';
 import EnhancedLoadingScreen from '../EnhancedLoadingScreen';
 import ThreadListPanel from './ThreadListPanel';
 import ConversationPanel from './ConversationPanel';
 import { MessageChannel, ChannelMessage } from '../../types/messages';
+import { PulseConversation } from '../../services/pulseService';
+import {
+  Conversation,
+  conversationId,
+  findConversation,
+  mergeConversations,
+} from '../../types/conversations';
 import { useSplitViewMessages } from '../../hooks/useSplitViewMessages';
 import './messages.css';
 
@@ -19,20 +24,46 @@ import { ArrowLeft, X } from 'lucide-react';
 
 interface MessagesSplitViewProps {
   channels: MessageChannel[];
+  /** Pulse DM conversations rendered alongside channels in the thread
+   *  list. Optional — channel-only consumers can omit this. */
+  pulseConversations?: PulseConversation[];
+  /** Messages keyed by conversation id (channel id OR Pulse conversation
+   *  id). The host is responsible for adapting Pulse messages into
+   *  ChannelMessage shape. */
   messages: Record<string, ChannelMessage[]>;
   currentUserId: string;
-  onSendMessage?: (channelId: string, content: string) => void;
+  /** Send a message to the conversation with the given id. The host
+   *  branches by conversation kind to call the right service. */
+  onSendMessage?: (conversationId: string, content: string) => void;
   onAddReaction?: (messageId: string, emoji: string) => void;
-  onLoadMessages?: (channelId: string) => Promise<void>;
+  onLoadMessages?: (conversationId: string) => Promise<void>;
   isLoading?: boolean;
   renderMessageInput?: () => React.ReactNode;
   renderMessageBubble?: (message: ChannelMessage) => React.ReactNode;
   className?: string;
   fullPage?: boolean;
+
+  // ─── Phase 5b plugin slots ──────────────────────────────────
+  // These are escape hatches that let the legacy Messages.tsx feature
+  // surface migrate into the split view without bloating this
+  // component. Each is optional; missing slots render nothing.
+
+  /** Modal layer rendered above the panels. The host owns visibility
+   *  state. Use for invite / forward / schedule / shortcuts modals. */
+  renderModals?: () => React.ReactNode;
+
+  /** Global overlay rendered above the panels and above modals.
+   *  Use for full-bleed UI like the focus-mode distraction blocker. */
+  renderGlobalOverlay?: () => React.ReactNode;
+
+  /** Banner above both panels — e.g. workspace-wide notification,
+   *  trial-expiring banner. */
+  renderTopBanner?: () => React.ReactNode;
 }
 
 const MessagesSplitView: React.FC<MessagesSplitViewProps> = ({
   channels,
+  pulseConversations = [],
   messages,
   currentUserId,
   onSendMessage,
@@ -42,30 +73,39 @@ const MessagesSplitView: React.FC<MessagesSplitViewProps> = ({
   renderMessageInput,
   renderMessageBubble,
   className = '',
-  fullPage = false
+  fullPage = false,
+  renderModals,
+  renderGlobalOverlay,
+  renderTopBanner
 }) => {
+  // Merge channels + Pulse DMs into a single sorted Conversation[]
+  const conversations = useMemo(
+    () => mergeConversations(channels, pulseConversations),
+    [channels, pulseConversations]
+  );
+
   const {
-    activeChannelId,
+    activeConversationId,
     searchQuery,
     isMobile,
     showMobileView,
-    selectChannel,
+    selectConversation,
     setSearchQuery,
-    toggleMobileView
+    toggleMobileView,
   } = useSplitViewMessages({
-    channels,
-    enableKeyboardShortcuts: true
+    conversations,
+    enableKeyboardShortcuts: true,
   });
 
   const [loadingMessages, setLoadingMessages] = useState(false);
 
-  // Load messages when channel changes
+  // Load messages when conversation changes
   useEffect(() => {
-    const loadChannelMessages = async () => {
-      if (activeChannelId && onLoadMessages) {
+    const loadConversationMessages = async () => {
+      if (activeConversationId && onLoadMessages) {
         setLoadingMessages(true);
         try {
-          await onLoadMessages(activeChannelId);
+          await onLoadMessages(activeConversationId);
         } catch (error) {
           console.error('Failed to load messages:', error);
         } finally {
@@ -74,12 +114,14 @@ const MessagesSplitView: React.FC<MessagesSplitViewProps> = ({
       }
     };
 
-    loadChannelMessages();
-  }, [activeChannelId, onLoadMessages]);
+    loadConversationMessages();
+  }, [activeConversationId, onLoadMessages]);
 
-  // Get active channel and its messages
-  const activeChannel = channels.find(ch => ch.id === activeChannelId) || null;
-  const channelMessages = activeChannelId ? (messages[activeChannelId] || []) : [];
+  // Resolve the active conversation and its message list
+  const activeConversation = findConversation(conversations, activeConversationId);
+  const conversationMessages = activeConversationId
+    ? (messages[activeConversationId] || [])
+    : [];
 
   // Mobile view classes
   const mobileViewClass = isMobile
@@ -90,11 +132,14 @@ const MessagesSplitView: React.FC<MessagesSplitViewProps> = ({
 
   return (
     <div className={`messages-split-view full-height ${fullPage ? 'full-page' : ''} ${mobileViewClass} ${className}`}>
+      {/* Optional banner rendered above both panels */}
+      {renderTopBanner?.()}
+
       {/* Thread List Panel (30%) */}
       <ThreadListPanel
-        channels={channels}
-        activeChannelId={activeChannelId}
-        onSelectChannel={selectChannel}
+        conversations={conversations}
+        activeConversationId={activeConversationId}
+        onSelectConversation={selectConversation}
         searchQuery={searchQuery}
         onSearchChange={setSearchQuery}
       />
@@ -102,13 +147,13 @@ const MessagesSplitView: React.FC<MessagesSplitViewProps> = ({
       {/* Conversation Panel (70%) */}
       <AnimatePresence mode="wait">
         <ConversationPanel
-          key={activeChannelId || 'no-channel'}
-          channel={activeChannel}
-          messages={channelMessages}
+          key={activeConversationId || 'no-conversation'}
+          conversation={activeConversation}
+          messages={conversationMessages}
           currentUserId={currentUserId}
           onSendMessage={
-            onSendMessage && activeChannelId
-              ? (content) => onSendMessage(activeChannelId, content)
+            onSendMessage && activeConversationId
+              ? (content) => onSendMessage(activeConversationId, content)
               : undefined
           }
           onAddReaction={onAddReaction}
@@ -132,6 +177,13 @@ const MessagesSplitView: React.FC<MessagesSplitViewProps> = ({
 
       {/* Keyboard shortcuts helper (can be toggled with ?) */}
       <KeyboardShortcutsHelper />
+
+      {/* Modal layer (host-controlled visibility) */}
+      {renderModals?.()}
+
+      {/* Global overlay layer — sits above modals; used for full-bleed
+       *  UX like focus-mode distraction blocking. */}
+      {renderGlobalOverlay?.()}
     </div>
   );
 };

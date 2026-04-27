@@ -1,5 +1,6 @@
 // Voice Context Extractor - Enhanced Voice-to-Text with Context Extraction
 import React, { useState, useRef, useEffect } from 'react';
+import { AIProvenanceTag } from '../shared/AIProvenanceTag';
 
 import { AtSign, Calendar, CheckSquare, HelpCircle } from 'lucide-react';
 
@@ -266,6 +267,9 @@ export const VoiceContextExtractor: React.FC<VoiceContextExtractorProps> = ({
 
   return (
     <div className="bg-white dark:bg-zinc-800 rounded-xl border border-zinc-200 dark:border-zinc-700 p-4">
+      <div className="mb-3">
+        <AIProvenanceTag source="pulse-ai" kind="transcription" />
+      </div>
       {/* Recording controls */}
       <div className="flex items-center gap-4 mb-4">
         <button

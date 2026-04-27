@@ -23,7 +23,6 @@ const routeImports: Record<string, () => Promise<any>> = {
   '/decisions': () => import('../components/decisions/DecisionTaskHub'),
   '/email': () => import('../components/Email/EmailClientWrapper'),
   '/calendar': () => import('../components/Calendar'),
-  '/ai-lab': () => import('../components/AILab/AILabHubRedesigned'),
   '/settings': () => import('../components/Settings'),
   '/sms': () => import('../components/SMS'),
   '/meetings': () => import('../components/Meetings'),

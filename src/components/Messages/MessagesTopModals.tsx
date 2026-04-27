@@ -80,6 +80,9 @@ export interface MessagesTopModalsProps {
   threads: Thread[];
   activeThreadId: string;
   handleForwardMessage: (targetThreadId: string) => void;
+  /** Forward a Pulse message to another Pulse conversation. Optional so
+   *  the legacy SMS-thread forward path keeps working. */
+  handleForwardPulseMessage?: (messageId: string, targetRecipientId: string) => Promise<void> | void;
 
   // ---- Keyboard Shortcuts Modal ----
   showShortcuts: boolean;
@@ -379,7 +382,7 @@ export const MessagesTopModals = React.memo<MessagesTopModalsProps>((props) => {
         onSchedule={props.handleScheduleMessage}
       />
 
-      {/* Forward Message Modal */}
+      {/* Forward Message Modal — Pulse conversations only. */}
       {props.showForwardModal && props.forwardingMessage && (
         <div className="absolute inset-0 z-50 bg-black/60 backdrop-blur-sm flex items-center justify-center animate-fade-in p-4">
           <div className="bg-white dark:bg-zinc-900 w-full max-w-md rounded-2xl shadow-2xl animate-scale-in border border-zinc-200 dark:border-zinc-800">
@@ -390,17 +393,41 @@ export const MessagesTopModals = React.memo<MessagesTopModalsProps>((props) => {
               <button onClick={() => props.setShowForwardModal(false)}><X className="text-zinc-500" /></button>
             </div>
             <div className="p-4">
-              <div className="bg-zinc-50 dark:bg-zinc-800 p-3 rounded-lg text-sm text-zinc-600 dark:text-zinc-300 mb-4">
+              <div className="bg-zinc-50 dark:bg-zinc-800 p-3 rounded-lg text-sm text-zinc-600 dark:text-zinc-300 mb-4 max-h-32 overflow-y-auto">
                 {props.forwardingMessage.text}
               </div>
-              <div className="text-xs text-zinc-500 mb-2">Select conversation:</div>
-              <div className="space-y-2 max-h-60 overflow-y-auto">
-                {props.threads.filter(t => t.id !== props.activeThreadId).map(t => (
-                  <button key={t.id} onClick={() => props.handleForwardMessage(t.id)} className="w-full flex items-center gap-3 p-2 rounded-lg hover:bg-zinc-100 dark:hover:bg-zinc-800 transition">
-                    <div className={`w-8 h-8 rounded-full ${t.avatarColor} flex items-center justify-center text-white text-xs font-bold`}>{t.contactName.charAt(0)}</div>
-                    <span className="text-sm dark:text-white">{t.contactName}</span>
-                  </button>
-                ))}
+              <div className="text-xs text-zinc-500 mb-2">Forward to:</div>
+              <div className="space-y-1 max-h-60 overflow-y-auto">
+                {props.pulseConversations.length > 0 ? (
+                  props.pulseConversations
+                    .filter(conv => conv.id !== props.activePulseConversation && conv.other_user)
+                    .map(conv => {
+                      const other = conv.other_user!;
+                      const label = other.display_name || other.full_name || other.handle || 'Unknown';
+                      return (
+                        <button
+                          key={conv.id}
+                          onClick={() => {
+                            if (props.handleForwardPulseMessage && props.forwardingMessage) {
+                              void props.handleForwardPulseMessage(props.forwardingMessage.id, other.id);
+                            }
+                          }}
+                          className="w-full flex items-center gap-3 p-2 rounded-lg hover:bg-zinc-100 dark:hover:bg-zinc-800 transition"
+                        >
+                          <div className="w-8 h-8 rounded-full bg-gradient-to-br from-rose-500 to-pink-600 flex items-center justify-center text-white text-xs font-bold flex-shrink-0">
+                            {other.avatar_url
+                              ? <img src={other.avatar_url} alt="" className="w-full h-full rounded-full object-cover" />
+                              : label.charAt(0).toUpperCase()}
+                          </div>
+                          <span className="text-sm dark:text-white text-left">{label}</span>
+                        </button>
+                      );
+                    })
+                ) : (
+                  <div className="text-center py-6 text-zinc-400 dark:text-zinc-500 text-sm">
+                    No other Pulse conversations to forward to
+                  </div>
+                )}
               </div>
             </div>
           </div>

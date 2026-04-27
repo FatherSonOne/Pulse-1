@@ -1,52 +1,56 @@
 import React from 'react';
 import { motion } from 'framer-motion';
-import { MessageChannel } from '../../types/messages';
+import {
+  Conversation,
+  conversationDisplayName,
+  conversationLastMessagePreview,
+  conversationDescription,
+  conversationId,
+} from '../../types/conversations';
 import ThreadItem from './ThreadItem';
 import ThreadSearch from './ThreadSearch';
 
 import { Inbox, Plus } from 'lucide-react';
 
 interface ThreadListPanelProps {
-  channels: MessageChannel[];
-  activeChannelId: string | null;
-  onSelectChannel: (channelId: string) => void;
+  conversations: Conversation[];
+  activeConversationId: string | null;
+  onSelectConversation: (id: string) => void;
   onSearchChange?: (query: string) => void;
   searchQuery?: string;
   className?: string;
 }
 
 const ThreadListPanel: React.FC<ThreadListPanelProps> = ({
-  channels,
-  activeChannelId,
-  onSelectChannel,
+  conversations,
+  activeConversationId,
+  onSelectConversation,
   onSearchChange,
   searchQuery = '',
   className = ''
 }) => {
-  // Separate pinned and regular channels
-  const pinnedChannels = channels.filter(channel =>
-    // Check if channel has a pinned flag or unread count > 0
-    (channel as any).is_pinned === true
+  // Pinned vs regular — channels expose `is_pinned` via an ad-hoc flag
+  // on MessageChannel. DMs don't have a pinned concept yet (Phase 5d.1).
+  const pinnedConversations = conversations.filter((c) =>
+    c.kind === 'channel' && (c.channel as any).is_pinned === true
+  );
+  const regularConversations = conversations.filter((c) =>
+    !(c.kind === 'channel' && (c.channel as any).is_pinned === true)
   );
 
-  const regularChannels = channels.filter(channel =>
-    (channel as any).is_pinned !== true
-  );
-
-  // Filter channels based on search query
-  const filterChannels = (channelList: MessageChannel[]) => {
-    if (!searchQuery.trim()) return channelList;
-
-    const query = searchQuery.toLowerCase();
-    return channelList.filter(channel =>
-      channel.name.toLowerCase().includes(query) ||
-      channel.description?.toLowerCase().includes(query) ||
-      channel.last_message?.toLowerCase().includes(query)
+  // Filter by search query against display name, description, and last preview.
+  const filterConversations = (list: Conversation[]) => {
+    if (!searchQuery.trim()) return list;
+    const q = searchQuery.toLowerCase();
+    return list.filter((c) =>
+      conversationDisplayName(c).toLowerCase().includes(q) ||
+      (conversationDescription(c)?.toLowerCase().includes(q) ?? false) ||
+      conversationLastMessagePreview(c).toLowerCase().includes(q)
     );
   };
 
-  const filteredPinned = filterChannels(pinnedChannels);
-  const filteredRegular = filterChannels(regularChannels);
+  const filteredPinned = filterConversations(pinnedConversations);
+  const filteredRegular = filterConversations(regularConversations);
 
   return (
     <motion.div
@@ -80,25 +84,28 @@ const ThreadListPanel: React.FC<ThreadListPanelProps> = ({
 
       {/* Thread List */}
       <div className="thread-list-content flex-1 overflow-y-auto">
-        {/* Pinned Threads */}
+        {/* Pinned */}
         {filteredPinned.length > 0 && (
           <div className="pinned-threads-section mb-2">
             <div className="px-4 py-2 text-[10px] font-bold text-[#f43f5e] uppercase tracking-[2px]">
               Pinned
             </div>
-            {filteredPinned.map((channel) => (
-              <ThreadItem
-                key={channel.id}
-                channel={channel}
-                isActive={channel.id === activeChannelId}
-                isPinned={true}
-                onClick={() => onSelectChannel(channel.id)}
-              />
-            ))}
+            {filteredPinned.map((c) => {
+              const id = conversationId(c);
+              return (
+                <ThreadItem
+                  key={id}
+                  conversation={c}
+                  isActive={id === activeConversationId}
+                  isPinned={true}
+                  onClick={() => onSelectConversation(id)}
+                />
+              );
+            })}
           </div>
         )}
 
-        {/* Regular Threads */}
+        {/* Regular */}
         {filteredRegular.length > 0 && (
           <div className="regular-threads-section">
             {filteredPinned.length > 0 && (
@@ -106,15 +113,18 @@ const ThreadListPanel: React.FC<ThreadListPanelProps> = ({
                 All Threads
               </div>
             )}
-            {filteredRegular.map((channel) => (
-              <ThreadItem
-                key={channel.id}
-                channel={channel}
-                isActive={channel.id === activeChannelId}
-                isPinned={false}
-                onClick={() => onSelectChannel(channel.id)}
-              />
-            ))}
+            {filteredRegular.map((c) => {
+              const id = conversationId(c);
+              return (
+                <ThreadItem
+                  key={id}
+                  conversation={c}
+                  isActive={id === activeConversationId}
+                  isPinned={false}
+                  onClick={() => onSelectConversation(id)}
+                />
+              );
+            })}
           </div>
         )}
 
@@ -136,11 +146,11 @@ const ThreadListPanel: React.FC<ThreadListPanelProps> = ({
         )}
       </div>
 
-      {/* Footer with thread count */}
+      {/* Footer */}
       <div className="thread-list-footer flex-shrink-0 px-4 py-2 border-t border-white/[0.07] text-[11px] text-[#94a3b8]">
-        {channels.length > 0 ? (
+        {conversations.length > 0 ? (
           <span>
-            {channels.length} thread{channels.length !== 1 ? 's' : ''}
+            {conversations.length} thread{conversations.length !== 1 ? 's' : ''}
             {filteredPinned.length > 0 && ` • ${filteredPinned.length} pinned`}
           </span>
         ) : (

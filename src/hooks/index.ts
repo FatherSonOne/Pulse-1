@@ -39,7 +39,7 @@ export { useResizablePanel } from './useResizablePanel';
 // Messaging (extracted from Messages.tsx)
 export { usePulseMessaging } from './usePulseMessaging';
 export type { UsePulseMessagingReturn } from './usePulseMessaging';
-export { useMessageScheduling } from './useMessageScheduling';
-export type { UseMessageSchedulingReturn, ScheduledMessage } from './useMessageScheduling';
+// useMessageScheduling deleted — superseded by pulseService.scheduleMessage
+// (writes to pulse_scheduled_messages; pg_cron handles delivery).
 export { useMessageContextMenu } from './useMessageContextMenu';
 export type { UseMessageContextMenuReturn, ContextMenuPosition } from './useMessageContextMenu';

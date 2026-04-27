@@ -106,6 +106,17 @@ const featureFlagsConfig: FeatureFlagConfig = {
     targetUsers: ['all'],
     description: 'Tools panel with contextual suggestions',
     version: '1.0.0'
+  },
+
+  // Proposal Mode is wired into the UI but multi-user voting is not yet
+  // persisted (votes are simulated). Disabled until the real schema and
+  // voting service ship — see Phase 1 deep-dive issue #3.
+  proposalMode: {
+    enabled: false,
+    rolloutPercentage: 0,
+    targetUsers: ['internal'],
+    description: 'Proposal-mode decision capture and voting',
+    version: '0.1.0'
   }
 };
 

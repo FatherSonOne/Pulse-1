@@ -19,6 +19,7 @@ import { AttachmentManager } from '../MessageEnhancements/AttachmentManager';
 import { BackupSync } from '../MessageEnhancements/BackupSync';
 import { SmartSuggestions } from '../MessageEnhancements/SmartSuggestions';
 import { getAllToolActions, saveRecentTool, getRecentTools, getToolOverlayType } from '../../services/toolRegistry';
+import { messagePersonalService } from '../../services/messagePersonalService';
 
 const BundleAnalytics = React.lazy(() => import('../MessageEnhancements/BundleAnalytics'));
 const BundleCollaboration = React.lazy(() => import('../MessageEnhancements/BundleCollaboration'));
@@ -510,15 +511,54 @@ export const MessagesFeaturePanels = React.memo<MessagesFeaturePanelsProps>(
                     <BundleProductivity.SmartTemplates
                       templates={userTemplates}
                       contactName={activeThread.contactName}
-                      onInsertTemplate={(content) => setInputText(prev => prev + content)}
-                      onSaveTemplate={(template) => {
-                        setUserTemplates(prev => [...prev, {
-                          ...template,
-                          id: uuidv4(),
-                          usageCount: 0
-                        }]);
+                      onInsertTemplate={(content) => {
+                        setInputText(prev => prev + content);
+                        // Best-effort usage tracking — find the matching
+                        // template by content and bump its usage count.
+                        const matched = userTemplates.find(t => t.content === content);
+                        if (matched) {
+                          void messagePersonalService.recordTemplateUsage(matched.id);
+                          setUserTemplates(prev => prev.map(t =>
+                            t.id === matched.id
+                              ? { ...t, usageCount: (t.usageCount ?? 0) + 1, lastUsed: new Date().toISOString() }
+                              : t
+                          ));
+                        }
                       }}
-                      onDeleteTemplate={(id) => setUserTemplates(prev => prev.filter(t => t.id !== id))}
+                      onSaveTemplate={async (template) => {
+                        try {
+                          const row = await messagePersonalService.addTemplate({
+                            name: template.name,
+                            body: template.content,
+                            category: template.category,
+                            variables: template.variables ?? [],
+                            tags: template.tags ?? [],
+                          });
+                          setUserTemplates(prev => [...prev, {
+                            id: row.id,
+                            name: row.name,
+                            category: row.category,
+                            content: row.body,
+                            variables: row.variables ?? [],
+                            usageCount: row.usage_count,
+                            lastUsed: row.last_used_at ?? undefined,
+                            createdBy: row.user_id,
+                            tags: row.tags ?? [],
+                          }]);
+                        } catch (err) {
+                          console.error('[Messages] save template failed:', err);
+                        }
+                      }}
+                      onDeleteTemplate={async (id) => {
+                        const prevList = userTemplates;
+                        setUserTemplates(prev => prev.filter(t => t.id !== id));
+                        try {
+                          await messagePersonalService.removeTemplate(id);
+                        } catch (err) {
+                          console.error('[Messages] delete template failed:', err);
+                          setUserTemplates(prevList);
+                        }
+                      }}
                     />
                   </React.Suspense>
                 </MessageEnhancementErrorBoundary>
@@ -675,8 +715,30 @@ export const MessagesFeaturePanels = React.memo<MessagesFeaturePanelsProps>(
                         const element = document.getElementById(`message-${bookmark.messageId}`);
                         element?.scrollIntoView({ behavior: 'smooth', block: 'center' });
                       }}
-                      onBookmarkDelete={(id) => setUserBookmarks(prev => prev.filter(b => b.id !== id))}
-                      onBookmarkUpdate={(bookmark) => setUserBookmarks(prev => prev.map(b => b.id === bookmark.id ? bookmark : b))}
+                      onBookmarkDelete={async (id) => {
+                        const prevList = userBookmarks;
+                        setUserBookmarks(prev => prev.filter(b => b.id !== id));
+                        try {
+                          await messagePersonalService.removeBookmark(id);
+                        } catch (err) {
+                          console.error('[Messages] delete bookmark failed:', err);
+                          setUserBookmarks(prevList);
+                        }
+                      }}
+                      onBookmarkUpdate={async (bookmark) => {
+                        const prevList = userBookmarks;
+                        setUserBookmarks(prev => prev.map(b => b.id === bookmark.id ? bookmark : b));
+                        try {
+                          await messagePersonalService.updateBookmark(bookmark.id, {
+                            collection: bookmark.collection ?? null,
+                            note: bookmark.note ?? null,
+                            tags: bookmark.tags,
+                          });
+                        } catch (err) {
+                          console.error('[Messages] update bookmark failed:', err);
+                          setUserBookmarks(prevList);
+                        }
+                      }}
                       onClose={() => setIntelligenceTab('bookmarks')}
                     />
                   </React.Suspense>

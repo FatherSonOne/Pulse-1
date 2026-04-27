@@ -2,6 +2,14 @@
 export { MarkdownRenderer } from './MarkdownRenderer';
 export { ErrorBoundary, withErrorBoundary } from './ErrorBoundary';
 
+// AI provenance — signature tag for any AI-generated artifact
+export { AIProvenanceTag } from './AIProvenanceTag';
+export type {
+  AIProvenanceTagProps,
+  AIProvenanceSource,
+  AIProvenanceKind,
+} from './AIProvenanceTag';
+
 // Virtual scrolling components
 export { VirtualList, SimpleVirtualList, VirtualGrid } from './VirtualList';
 

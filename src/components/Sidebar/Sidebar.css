@@ -142,17 +142,7 @@
   font-size: 1.125rem;
   font-weight: 700;
   letter-spacing: -0.03em;
-  background: linear-gradient(135deg, #f43f5e 0%, #ec4899 50%, #f43f5e 100%);
-  background-size: 200% 100%;
-  -webkit-background-clip: text;
-  -webkit-text-fill-color: transparent;
-  background-clip: text;
-  animation: shimmer 3s ease-in-out infinite;
-}
-
-@keyframes shimmer {
-  0%, 100% { background-position: 0% 50%; }
-  50% { background-position: 100% 50%; }
+  color: #f43f5e;
 }
 
 .sidebar-brand-controls {
@@ -751,10 +741,8 @@
 }
 
 .light .sidebar-nav-item.active {
-  background: linear-gradient(135deg, #ffe4e6 0%, #fecdd3 100%); /* rose-100 to rose-200 */
+  background: rgba(244, 63, 94, 0.08); /* tinted active surface, no gradient */
   color: #be123c; /* rose-700 */
-  border-left: 3px solid #f43f5e;
-  box-shadow: 0 2px 8px rgba(244, 63, 94, 0.15);
 }
 
 .light .sidebar-section-label {

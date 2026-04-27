@@ -48,7 +48,7 @@ export interface ChannelDigest {
 export interface CatchUpSummary {
   summary: string;
   keyChanges: string[];
-  decisonsMade: string[];
+  decisionsMade: string[];
   actionItems: string[];
   messageCount: number;
   timeframe: string;
@@ -273,7 +273,7 @@ Return as JSON with this exact structure:
       for (const channel of channels) {
         // Get messages for the day
         const { data: messages } = await supabase
-          .from('messages')
+          .from('channel_messages')
           .select('*')
           .eq('channel_id', channel.id)
           .gte('created_at', startOfDay.toISOString())
@@ -423,7 +423,7 @@ Provide a 2-3 sentence overview of the most important activities and outcomes fr
 
       // Get messages since last visit
       const { data: messages } = await supabase
-        .from('messages')
+        .from('channel_messages')
         .select('*')
         .eq('channel_id', channelId)
         .gte('created_at', sinceDate.toISOString())
@@ -433,7 +433,7 @@ Provide a 2-3 sentence overview of the most important activities and outcomes fr
         return {
           summary: 'No new messages since your last visit',
           keyChanges: [],
-          decisonsMade: [],
+          decisionsMade: [],
           actionItems: [],
           messageCount: 0,
           timeframe: this.formatTimeframe(sinceDate),
@@ -484,7 +484,7 @@ Return as JSON:
       const catchUpSummary: CatchUpSummary = {
         summary: parsed!.summary || 'New messages were exchanged',
         keyChanges: Array.isArray(parsed!.keyChanges) ? parsed!.keyChanges : [],
-        decisonsMade: Array.isArray(parsed!.decisionsMade) ? parsed!.decisionsMade : [],
+        decisionsMade: Array.isArray(parsed!.decisionsMade) ? parsed!.decisionsMade : [],
         actionItems: Array.isArray(parsed!.actionItems) ? parsed!.actionItems : [],
         messageCount: messages.length,
         timeframe: this.formatTimeframe(sinceDate),
@@ -501,7 +501,7 @@ Return as JSON:
         catchUpSummary.summary,
         catchUpSummary.keyChanges,
         catchUpSummary.actionItems,
-        catchUpSummary.decisonsMade,
+        catchUpSummary.decisionsMade,
         [],
         catchUpSummary.messageCount
       );

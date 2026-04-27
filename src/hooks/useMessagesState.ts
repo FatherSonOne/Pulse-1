@@ -1,4 +1,4 @@
-import { useState, useCallback, useRef } from 'react';
+import { useState, useCallback, useRef, useEffect } from 'react';
 import { Message, Contact } from '../types';
 
 // Pinned message interface
@@ -176,7 +176,29 @@ export const useMessagesState = () => {
 
   // Audio playback
   const [isPlayingId, setIsPlayingId] = useState<string | null>(null);
-  const audioContextRef = useRef<AudioContext | null>(null);
+
+  // Cleanup recorder + interval on unmount so we don't leak
+  // a live MediaStream / setInterval across navigation.
+  useEffect(() => {
+    return () => {
+      if (recordingIntervalRef.current !== null) {
+        clearInterval(recordingIntervalRef.current);
+        recordingIntervalRef.current = null;
+      }
+      const recorder = mediaRecorderRef.current;
+      if (recorder) {
+        try {
+          if (recorder.state !== 'inactive') recorder.stop();
+        } catch {
+          // recorder may already be stopped
+        }
+        // Release tracks so the OS mic indicator turns off
+        recorder.stream?.getTracks().forEach((t) => t.stop());
+        mediaRecorderRef.current = null;
+      }
+      audioChunksRef.current = [];
+    };
+  }, []);
 
   // Actions for collaboration
   const addPinnedMessage = useCallback((message: PinnedMessage) => {
@@ -373,7 +395,6 @@ export const useMessagesState = () => {
     // Audio playback
     isPlayingId,
     setIsPlayingId,
-    audioContextRef,
 
     // Collaboration actions
     addPinnedMessage,

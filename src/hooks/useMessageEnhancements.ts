@@ -4,6 +4,8 @@
 import { useState, useEffect, useCallback, useMemo } from 'react';
 import { messageEnhancementsService } from '../services/messageEnhancementsService';
 import { achievementService } from '../services/achievementService';
+import { invokeAIJson } from '../services/ai/aiService';
+import { getCurrentWorkspaceId } from '../services/ai/getWorkspaceId';
 import type { Thread, Message } from '../types';
 import type {
   MessageMood,
@@ -258,15 +260,52 @@ export const useMessageEnhancements = ({
     text: string,
     targetLanguage: string
   ): Promise<MessageTranslation> => {
-    // This would integrate with a translation API
-    // For now, return a placeholder
-    return {
+    const fallback: MessageTranslation = {
       originalText: text,
-      translatedText: `[${targetLanguage.toUpperCase()}] ${text}`,
+      translatedText: text,
       originalLanguage: 'en',
       targetLanguage,
-      confidence: 0.95
+      confidence: 0,
     };
+
+    if (!text.trim()) return fallback;
+
+    try {
+      const workspaceId = getCurrentWorkspaceId();
+      if (!workspaceId) return fallback;
+
+      const result = await invokeAIJson<{
+        translatedText?: string;
+        sourceLanguage?: string;
+        confidence?: number;
+      }>(
+        'translation',
+        `Translate the following text to ${targetLanguage}.
+Preserve tone, formatting, and named entities. Do not add commentary.
+
+Return JSON with fields:
+- translatedText (string): the translation
+- sourceLanguage (string): ISO 639-1 code of the detected source language (e.g. "en", "es")
+- confidence (number 0-1): your confidence in the translation
+
+Text to translate:
+"""
+${text}
+"""`,
+        { workspaceId, temperature: 0.2 }
+      );
+
+      return {
+        originalText: text,
+        translatedText: result.translatedText?.trim() || text,
+        originalLanguage: result.sourceLanguage ?? 'en',
+        targetLanguage,
+        confidence: typeof result.confidence === 'number' ? result.confidence : 0.85,
+      };
+    } catch (err) {
+      console.error('[useMessageEnhancements] translation failed:', err);
+      return fallback;
+    }
   }, []);
   
   // ===== ANALYTICS =====

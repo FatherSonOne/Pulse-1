@@ -40,21 +40,20 @@ import { getSessionUserSync } from '../services/authService';
 // ==================== Auth Helper ====================
 
 /**
- * Get the current user ID from auth service
- * Returns 'guest' if no user is authenticated (fallback for demo mode)
+ * Get the current user ID from auth service.
+ * Returns null if no user is authenticated — callers MUST guard
+ * before performing mutations. We deliberately do not fall back to a
+ * 'guest' identity because that allowed unauthenticated state changes
+ * to silently succeed.
  */
-const getCurrentUserId = (): string => {
+const getCurrentUserId = (): string | null => {
   const user = getSessionUserSync();
-  return user?.id || 'guest';
+  return user?.id ?? null;
 };
 
-/**
- * Get the current user name from auth service
- * Returns 'Guest' if no user is authenticated
- */
-const getCurrentUserName = (): string => {
+const getCurrentUserName = (): string | null => {
   const user = getSessionUserSync();
-  return user?.name || 'Guest';
+  return user?.name ?? null;
 };
 
 // ==================== Types ====================
@@ -283,12 +282,21 @@ export const useMessagesStore = create<MessagesState>()(
       },
 
       selectChannel: (channelId: string) => {
+        const prevChannelId = get().selectedChannelId;
+
         set((state) => {
           state.selectedChannelId = channelId;
           state.mobileView = 'chat';
           state.smartReplies = [];
           state.draftAnalysis = null;
         });
+
+        // Tear down the previous channel's realtime subscriptions before
+        // loading the new one — otherwise channel switches accumulate
+        // listeners and we double-process every INSERT.
+        if (prevChannelId && prevChannelId !== channelId) {
+          get().unsubscribeFromChannel(prevChannelId);
+        }
 
         // Load messages for this channel
         get().loadMessages(channelId);
@@ -356,9 +364,15 @@ export const useMessagesStore = create<MessagesState>()(
         const { selectedChannelId, draft, replyingTo } = get();
         if (!selectedChannelId || !content.trim()) return;
 
-        // Get authenticated user
+        // Get authenticated user — bail with an error if not signed in.
         const userId = getCurrentUserId();
         const userName = getCurrentUserName();
+        if (!userId || !userName) {
+          set((state) => {
+            state.error = 'Sign in to send messages';
+          });
+          return;
+        }
 
         set((state) => {
           state.isSending = true;
@@ -479,6 +493,10 @@ export const useMessagesStore = create<MessagesState>()(
           if (!selectedChannelId) return;
 
           const userId = getCurrentUserId();
+          if (!userId) {
+            set((state) => { state.error = 'Sign in to react'; });
+            return;
+          }
           await messageChannelService.addReaction(messageId, emoji, userId);
           set((state) => {
             const message = state.messages[selectedChannelId].find((m) => m.id === messageId);
@@ -501,6 +519,10 @@ export const useMessagesStore = create<MessagesState>()(
           if (!selectedChannelId) return;
 
           const userId = getCurrentUserId();
+          if (!userId) {
+            set((state) => { state.error = 'Sign in to react'; });
+            return;
+          }
           await messageChannelService.removeReaction(messageId, emoji, userId);
           set((state) => {
             const message = state.messages[selectedChannelId].find((m) => m.id === messageId);
@@ -584,6 +606,10 @@ export const useMessagesStore = create<MessagesState>()(
 
         try {
           const userId = getCurrentUserId();
+          if (!userId) {
+            set((state) => { state.isGeneratingReplies = false; });
+            return;
+          }
           const replies = await messageChannelService.getSmartReplies(
             apiKey,
             selectedChannelId,
@@ -777,6 +803,7 @@ export const useMessagesStore = create<MessagesState>()(
         try {
           // Get user ID (assuming from auth)
           const userId = getCurrentUserId();
+          if (!userId) return;
 
           const response = await messageAutoResponseService.checkAutoResponse(
             message,
@@ -826,6 +853,13 @@ export const useMessagesStore = create<MessagesState>()(
 
         try {
           const userId = getCurrentUserId();
+          if (!userId) {
+            set((state) => {
+              state.error = 'Sign in to generate summaries';
+              state.isGeneratingSummary = false;
+            });
+            return;
+          }
 
           const summary = await messageSummarizationService.summarizeThread(
             selectedChannelId,
@@ -854,6 +888,13 @@ export const useMessagesStore = create<MessagesState>()(
 
         try {
           const userId = getCurrentUserId();
+          if (!userId) {
+            set((state) => {
+              state.error = 'Sign in to generate summaries';
+              state.isGeneratingSummary = false;
+            });
+            return;
+          }
 
           const digest = await messageSummarizationService.generateDailyDigest(
             userId,
@@ -885,6 +926,13 @@ export const useMessagesStore = create<MessagesState>()(
 
         try {
           const userId = getCurrentUserId();
+          if (!userId) {
+            set((state) => {
+              state.error = 'Sign in to generate summaries';
+              state.isGeneratingSummary = false;
+            });
+            return;
+          }
 
           const catchUp = await messageSummarizationService.generateCatchUpSummary(
             selectedChannelId,
@@ -921,6 +969,10 @@ export const useMessagesStore = create<MessagesState>()(
 
         try {
           const userId = getCurrentUserId();
+          if (!userId) {
+            set((state) => { state.isAnalyzingConversation = false; });
+            return;
+          }
 
           const intelligence = await conversationIntelligenceService.analyzeConversation(
             selectedChannelId,

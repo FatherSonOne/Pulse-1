@@ -1,7 +1,8 @@
 // Message Enhancements Service
 // Central service for all message enhancement features
 
-import { chatWithBot } from './geminiService';
+import { invokeAIPrompt } from './ai/aiService';
+import { getCurrentWorkspaceId } from './ai/getWorkspaceId';
 import type {
   MessageMood,
   RichMessageCard,
@@ -172,14 +173,21 @@ class MessageEnhancementsService {
   
   // ============= SMART COMPOSE =============
   
+  /**
+   * Generate compose suggestions for a partial message draft.
+   *
+   * @param apiKey DEPRECATED — unused. The router manages provider keys
+   *   server-side. Retained for call-site backward compatibility.
+   */
   async generateSmartSuggestions(
     partialText: string,
     context: { contactName: string; recentMessages: string[] },
-    apiKey: string
+    apiKey?: string
   ): Promise<SmartComposeSuggestion[]> {
+    void apiKey; // deprecated — router handles keys
     const suggestions: SmartComposeSuggestion[] = [];
-    
-    // Time-based suggestions
+
+    // Time-based suggestions (offline-friendly fallback)
     if (partialText.toLowerCase().includes('meeting') || partialText.toLowerCase().includes('call')) {
       const hour = new Date().getHours();
       const suggestedTime = hour < 12 ? '2pm' : hour < 15 ? '4pm' : 'tomorrow at 10am';
@@ -190,8 +198,8 @@ class MessageEnhancementsService {
         type: 'time'
       });
     }
-    
-    // Common completions
+
+    // Common completions (offline-friendly fallback)
     const completions: Record<string, string> = {
       'can we': 'schedule a quick call to discuss this?',
       'let me': 'know if you need anything else.',
@@ -199,7 +207,7 @@ class MessageEnhancementsService {
       'looking forward': 'to hearing from you.',
       "i'll": 'get back to you shortly with an update.'
     };
-    
+
     const lowerPartial = partialText.toLowerCase();
     Object.entries(completions).forEach(([trigger, completion]) => {
       if (lowerPartial.endsWith(trigger)) {
@@ -211,30 +219,49 @@ class MessageEnhancementsService {
         });
       }
     });
-    
-    // AI-powered suggestions (if API key available)
-    if (apiKey && partialText.length > 20) {
-      try {
-        const prompt = `Complete this message naturally and professionally. Current text: "${partialText}". Recent context: ${context.recentMessages.slice(-2).join('. ')}. Provide 1-2 completions, each on a new line.`;
-        const history = [{ role: 'user', text: prompt }];
-        const aiSuggestion = await chatWithBot(apiKey, history, prompt, false);
-        if (aiSuggestion) {
-          const lines = aiSuggestion.split('\n').filter(l => l.trim());
 
-          lines.slice(0, 2).forEach(line => {
-            suggestions.push({
-              text: partialText + ' ' + line.trim(),
-              confidence: 0.75,
-              context: 'ai-powered',
-              type: 'complete'
+    // Router-backed completions — replaces the previous chatWithBot
+    // detour. Uses the dedicated quick_reply_suggestions task so trial
+    // gating + workspace metering apply.
+    if (partialText.length > 20) {
+      try {
+        const workspaceId = getCurrentWorkspaceId();
+        if (workspaceId) {
+          const recent = context.recentMessages.slice(-2).filter(Boolean).join(' | ');
+          const aiText = await invokeAIPrompt(
+            'quick_reply_suggestions',
+            `Complete the user's in-progress message naturally and professionally.
+Recipient: ${context.contactName}
+Recent context: ${recent || '(none)'}
+
+Current draft: "${partialText}"
+
+Return 1-2 distinct completions, one per line. No numbering, no quotes, no preamble. Each line must be a full message ready to send.`,
+            { workspaceId, temperature: 0.6 }
+          );
+          if (aiText) {
+            const lines = aiText.split('\n').map(l => l.trim()).filter(Boolean);
+            lines.slice(0, 2).forEach(line => {
+              // Use the model's full sentence if it already includes the
+              // draft prefix, otherwise append it.
+              const full = line.toLowerCase().startsWith(partialText.toLowerCase().slice(0, 12))
+                ? line
+                : `${partialText} ${line}`;
+              suggestions.push({
+                text: full,
+                confidence: 0.75,
+                context: 'ai-powered',
+                type: 'complete'
+              });
             });
-          });
+          }
         }
       } catch (error) {
+        // Silent fail — caller still gets the static fallbacks above.
         console.error('AI suggestion failed:', error);
       }
     }
-    
+
     return suggestions.slice(0, 3); // Max 3 suggestions
   }
   

@@ -93,7 +93,7 @@
   --focus-transition-fast: 150ms cubic-bezier(0.4, 0, 0.2, 1);
   --focus-transition-normal: 300ms cubic-bezier(0.4, 0, 0.2, 1);
   --focus-transition-slow: 500ms cubic-bezier(0.4, 0, 0.2, 1);
-  --focus-transition-spring: 400ms cubic-bezier(0.34, 1.56, 0.64, 1);
+  --focus-transition-ease: 220ms cubic-bezier(0.16, 1, 0.3, 1);
 
   /* Typography */
   --focus-font-display: 'Inter', system-ui, -apple-system, sans-serif;
@@ -231,15 +231,6 @@ html:not(.dark) {
   }
 }
 
-@keyframes focus-bounce-subtle {
-  0%, 100% {
-    transform: translateY(0);
-  }
-  50% {
-    transform: translateY(-4px);
-  }
-}
-
 @keyframes focus-glow-pulse {
   0%, 100% {
     box-shadow: 0 0 20px rgba(59, 130, 246, 0.3);
@@ -271,11 +262,11 @@ html:not(.dark) {
 }
 
 .focus-animate-slide-up {
-  animation: focus-slide-up 0.3s var(--focus-transition-spring) forwards;
+  animation: focus-slide-up 0.3s var(--focus-transition-ease) forwards;
 }
 
 .focus-animate-slide-down {
-  animation: focus-slide-down 0.3s var(--focus-transition-spring) forwards;
+  animation: focus-slide-down 0.3s var(--focus-transition-ease) forwards;
 }
 
 .focus-animate-fade-in {
@@ -283,17 +274,13 @@ html:not(.dark) {
 }
 
 .focus-animate-scale-in {
-  animation: focus-scale-in 0.3s var(--focus-transition-spring) forwards;
+  animation: focus-scale-in 0.3s var(--focus-transition-ease) forwards;
 }
 
 .focus-animate-shimmer {
   background: linear-gradient(90deg, transparent, rgba(255, 255, 255, 0.1), transparent);
   background-size: 200% 100%;
   animation: focus-shimmer 2s infinite;
-}
-
-.focus-animate-bounce {
-  animation: focus-bounce-subtle 1s ease-in-out infinite;
 }
 
 .focus-animate-glow {
@@ -611,7 +598,6 @@ html:not(.dark) {
   .focus-animate-fade-in,
   .focus-animate-scale-in,
   .focus-animate-shimmer,
-  .focus-animate-bounce,
   .focus-animate-glow {
     animation: none;
   }

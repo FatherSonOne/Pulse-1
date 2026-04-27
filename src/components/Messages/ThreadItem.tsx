@@ -1,24 +1,31 @@
 import React from 'react';
 import { motion } from 'framer-motion';
-import { MessageChannel } from '../../types/messages';
+import {
+  Conversation,
+  conversationDisplayName,
+  conversationLastMessageAt,
+  conversationLastMessagePreview,
+  conversationUnreadCount,
+  conversationIsGroup,
+} from '../../types/conversations';
 
 import { BellOff, Lock, MessageCircle, Pin, Users } from 'lucide-react';
 
 interface ThreadItemProps {
-  channel: MessageChannel;
+  conversation: Conversation;
   isActive: boolean;
   isPinned: boolean;
   onClick: () => void;
 }
 
 const ThreadItem: React.FC<ThreadItemProps> = ({
-  channel,
+  conversation,
   isActive,
   isPinned,
   onClick
 }) => {
   // Format timestamp
-  const formatTimestamp = (timestamp?: string) => {
+  const formatTimestamp = (timestamp?: string | null) => {
     if (!timestamp) return '';
 
     const date = new Date(timestamp);
@@ -34,21 +41,18 @@ const ThreadItem: React.FC<ThreadItemProps> = ({
     if (hours < 24) return `${hours}h`;
     if (days < 7) return `${days}d`;
 
-    // Show date for older messages
     return date.toLocaleDateString('en-US', {
       month: 'short',
       day: 'numeric'
     });
   };
 
-  // Truncate message preview
   const truncateMessage = (text?: string, maxLength: number = 60) => {
     if (!text) return 'No messages yet';
     if (text.length <= maxLength) return text;
     return text.slice(0, maxLength) + '...';
   };
 
-  // Get initials for avatar
   const getInitials = (name: string) => {
     const parts = name.trim().split(' ');
     if (parts.length >= 2) {
@@ -57,22 +61,29 @@ const ThreadItem: React.FC<ThreadItemProps> = ({
     return name.slice(0, 2).toUpperCase();
   };
 
-  // Check if channel is a group
-  const isGroup = channel.is_group || (channel.members && channel.members.length > 2);
+  const name = conversationDisplayName(conversation);
+  const lastAt = conversationLastMessageAt(conversation);
+  const preview = conversationLastMessagePreview(conversation);
+  const unread = conversationUnreadCount(conversation);
+  const isGroup = conversationIsGroup(conversation);
+  // Channel-only: private channels show a lock; DMs are always private.
+  const isPrivateChannel = conversation.kind === 'channel' && !conversation.channel.is_public;
+  // DM avatar: use the other user's avatar_url if available; else initials.
+  const dmAvatarUrl = conversation.kind === 'dm' ? conversation.pulse.other_user?.avatar_url : null;
 
   return (
     <motion.div
       className={`thread-item relative px-4 py-3 cursor-pointer transition-colors ${
         isActive
-          ? 'bg-rose-500/[0.08] border-l-4 border-[#f43f5e]'
-          : 'hover:bg-white/[0.04] border-l-4 border-transparent'
+          ? 'active bg-rose-500/[0.08]'
+          : 'hover:bg-white/[0.04]'
       }`}
       onClick={onClick}
       whileHover={{ x: 2 }}
       transition={{ duration: 0.2 }}
       role="button"
       tabIndex={0}
-      aria-label={`Thread: ${channel.name}`}
+      aria-label={`Thread: ${name}`}
       aria-current={isActive ? 'true' : 'false'}
       onKeyDown={(e) => {
         if (e.key === 'Enter' || e.key === ' ') {
@@ -84,20 +95,26 @@ const ThreadItem: React.FC<ThreadItemProps> = ({
       <div className="flex items-start gap-3">
         {/* Avatar */}
         <div className="flex-shrink-0 relative">
-          {isGroup ? (
+          {dmAvatarUrl ? (
+            <img
+              src={dmAvatarUrl}
+              alt={name}
+              className="w-12 h-12 rounded-full object-cover"
+            />
+          ) : isGroup ? (
             <div className="w-12 h-12 rounded-full bg-gradient-to-br from-rose-600 to-rose-400 flex items-center justify-center text-white font-bold text-sm">
               <Users />
             </div>
           ) : (
             <div className="w-12 h-12 rounded-full bg-gradient-to-br from-rose-500 to-pink-500 flex items-center justify-center text-white font-bold text-sm">
-              {getInitials(channel.name)}
+              {getInitials(name)}
             </div>
           )}
 
           {/* Unread badge */}
-          {channel.unread_count && channel.unread_count > 0 && (
+          {unread > 0 && (
             <div className="absolute -top-1 -right-1 min-w-[20px] h-5 px-1.5 rounded-full bg-[#f43f5e] text-white text-xs font-bold flex items-center justify-center">
-              {channel.unread_count > 99 ? '99+' : channel.unread_count}
+              {unread > 99 ? '99+' : unread}
             </div>
           )}
         </div>
@@ -105,7 +122,6 @@ const ThreadItem: React.FC<ThreadItemProps> = ({
         {/* Content */}
         <div className="flex-1 min-w-0">
           <div className="flex items-center justify-between mb-1">
-            {/* Channel name */}
             <div className="flex items-center gap-2 min-w-0 flex-1">
               <h3
                 className={`text-sm font-semibold truncate ${
@@ -114,38 +130,37 @@ const ThreadItem: React.FC<ThreadItemProps> = ({
                     : 'text-[#e2e8f0]'
                 }`}
               >
-                {channel.name}
+                {name}
               </h3>
               {isPinned && (
                 <Pin className="text-xs text-zinc-400 flex-shrink-0" />
               )}
-              {!channel.is_public && (
+              {isPrivateChannel && (
                 <Lock className="text-xs text-zinc-400 flex-shrink-0" />
               )}
             </div>
 
-            {/* Timestamp */}
             <span className="text-xs text-[#94a3b8] flex-shrink-0 ml-2">
-              {formatTimestamp(channel.last_message_at)}
+              {formatTimestamp(lastAt)}
             </span>
           </div>
 
           {/* Message preview */}
           <p
             className={`text-sm truncate ${
-              channel.unread_count && channel.unread_count > 0
+              unread > 0
                 ? 'text-[#e2e8f0] font-medium'
                 : 'text-[#94a3b8]'
             }`}
           >
-            {truncateMessage(channel.last_message)}
+            {truncateMessage(preview)}
           </p>
 
-          {/* Thread count indicator (if applicable) */}
-          {(channel as any).thread_count > 0 && (
+          {/* Thread count (channels only — DMs don't have threads) */}
+          {conversation.kind === 'channel' && (conversation.channel as any).thread_count > 0 && (
             <div className="flex items-center gap-1 mt-1 text-xs text-[#94a3b8]">
               <MessageCircle />
-              <span>{(channel as any).thread_count} replies</span>
+              <span>{(conversation.channel as any).thread_count} replies</span>
             </div>
           )}
         </div>

@@ -13,7 +13,7 @@ import { BotMessage } from './BotMessage';
 import { getAccessibleUserColor } from '../../utils/userColors';
 import toast from 'react-hot-toast';
 
-import { Hash, Lock, MessagesSquare, Paperclip, Pin, Search, Settings, Smile, Trash2, Users } from 'lucide-react';
+import { Check, Hash, Lock, MessagesSquare, Paperclip, Pencil, Pin, Search, Settings, Smile, Trash2, Users, X } from 'lucide-react';
 
 interface MessageChatProps {
   channel: MessageChannel;
@@ -32,11 +32,25 @@ export const MessageChat: React.FC<MessageChatProps> = ({
   const [sending, setSending] = useState(false);
   const [showEmojiPicker, setShowEmojiPicker] = useState(false);
   const [selectedUserId, setSelectedUserId] = useState<string | null>(null);
+  const [editingId, setEditingId] = useState<string | null>(null);
+  const [editText, setEditText] = useState('');
+  // Read receipts: messageId -> ordered list of {userId, readAt}.
+  const [readsByMessage, setReadsByMessage] = useState<Record<string, Array<{ userId: string; readAt: string }>>>({});
   const messagesEndRef = useRef<HTMLDivElement>(null);
   const inputRef = useRef<HTMLTextAreaElement>(null);
+  const editInputRef = useRef<HTMLTextAreaElement>(null);
+  // IntersectionObserver bookkeeping for mark-read.
+  const messageNodeRefs = useRef<Map<string, HTMLDivElement>>(new Map());
+  const pendingReadIds = useRef<Set<string>>(new Set());
+  const flushReadTimerRef = useRef<number | null>(null);
+  const markedReadIds = useRef<Set<string>>(new Set());
 
   useEffect(() => {
     loadMessages();
+    // Reset per-channel read state
+    setReadsByMessage({});
+    markedReadIds.current.clear();
+    pendingReadIds.current.clear();
   }, [channel.id]);
 
   useEffect(() => {
@@ -52,6 +66,17 @@ export const MessageChat: React.FC<MessageChatProps> = ({
       setLoading(true);
       const data = await messageChannelService.getMessages(channel.id);
       setMessages(data || []);
+      // Hydrate read receipts for the loaded batch.
+      if (data && data.length > 0) {
+        try {
+          const reads = await messageChannelService.getReadsForMessages(
+            data.map((m) => m.id)
+          );
+          setReadsByMessage(reads);
+        } catch {
+          // Reading reads is best-effort
+        }
+      }
     } catch (error) {
       console.error('Failed to load messages:', error);
       setMessages([]);
@@ -59,6 +84,83 @@ export const MessageChat: React.FC<MessageChatProps> = ({
       setLoading(false);
     }
   };
+
+  // Subscribe to incoming read receipts for this channel so the sender
+  // sees their messages turn "read" without a refresh.
+  useEffect(() => {
+    const unsubscribe = messageChannelService.subscribeToChannelReads(
+      channel.id,
+      ({ messageId, userId, readAt }) => {
+        setReadsByMessage((prev) => {
+          const existing = prev[messageId] || [];
+          if (existing.some((r) => r.userId === userId)) return prev;
+          return { ...prev, [messageId]: [...existing, { userId, readAt }] };
+        });
+      }
+    );
+    return () => {
+      // removeChannel returns a Promise; we don't need to await it.
+      void unsubscribe();
+    };
+  }, [channel.id]);
+
+  // Flush pending read marks in batches so we don't fire one DB write
+  // per message scrolled-into-view.
+  const scheduleFlushReads = () => {
+    if (flushReadTimerRef.current !== null) return;
+    flushReadTimerRef.current = window.setTimeout(async () => {
+      flushReadTimerRef.current = null;
+      const ids = Array.from(pendingReadIds.current);
+      pendingReadIds.current.clear();
+      if (ids.length === 0) return;
+      try {
+        await messageChannelService.markMessagesRead(ids, currentUserId);
+        ids.forEach((id) => markedReadIds.current.add(id));
+      } catch (err) {
+        // Re-queue on failure so the next visibility tick retries.
+        ids.forEach((id) => pendingReadIds.current.add(id));
+        console.error('[MessageChat] markMessagesRead failed:', err);
+      }
+    }, 600);
+  };
+
+  // IntersectionObserver: when a non-own message becomes visible, queue
+  // it for a batched mark-read. Re-runs when the message list changes
+  // so newly-arrived messages get observed.
+  useEffect(() => {
+    if (messages.length === 0) return;
+    const observer = new IntersectionObserver(
+      (entries) => {
+        let queued = false;
+        for (const entry of entries) {
+          if (!entry.isIntersecting) continue;
+          const messageId = (entry.target as HTMLElement).dataset.messageId;
+          if (!messageId) continue;
+          if (markedReadIds.current.has(messageId)) continue;
+          if (pendingReadIds.current.has(messageId)) continue;
+          pendingReadIds.current.add(messageId);
+          queued = true;
+        }
+        if (queued) scheduleFlushReads();
+      },
+      { threshold: 0.6 }
+    );
+    // Observe own-message elements aren't necessary, but we observe all
+    // and the worker filters by ownership server-side via RLS; here we
+    // skip own messages client-side for efficiency.
+    for (const m of messages) {
+      if (m.sender_id === currentUserId) continue;
+      const node = messageNodeRefs.current.get(m.id);
+      if (node) observer.observe(node);
+    }
+    return () => {
+      observer.disconnect();
+      if (flushReadTimerRef.current !== null) {
+        clearTimeout(flushReadTimerRef.current);
+        flushReadTimerRef.current = null;
+      }
+    };
+  }, [messages, currentUserId]);
 
   const handleSendMessage = async () => {
     if (!inputValue.trim()) return;
@@ -104,6 +206,46 @@ export const MessageChat: React.FC<MessageChatProps> = ({
     }
     setMessages(messages.filter((m) => m.id !== messageId));
     toast.success('Message deleted');
+  };
+
+  const startEditMessage = (messageId: string, currentContent: string) => {
+    setEditingId(messageId);
+    setEditText(currentContent);
+    // Focus the edit input after render
+    setTimeout(() => editInputRef.current?.focus(), 0);
+  };
+
+  const cancelEditMessage = () => {
+    setEditingId(null);
+    setEditText('');
+  };
+
+  const saveEditMessage = async () => {
+    if (!editingId) return;
+    const trimmed = editText.trim();
+    if (!trimmed) return;
+    const idToSave = editingId;
+    const original = messages.find((m) => m.id === idToSave)?.content;
+    // Optimistic update
+    setMessages(messages.map((m) =>
+      m.id === idToSave
+        ? { ...m, content: trimmed, edited_at: new Date().toISOString() }
+        : m
+    ));
+    setEditingId(null);
+    setEditText('');
+    try {
+      await messageChannelService.editMessage(idToSave, trimmed);
+      toast.success('Message updated');
+    } catch (error) {
+      // Roll back on failure
+      if (original !== undefined) {
+        setMessages((prev) => prev.map((m) =>
+          m.id === idToSave ? { ...m, content: original, edited_at: undefined } : m
+        ));
+      }
+      toast.error('Failed to update message');
+    }
   };
 
   const handlePinMessage = async (messageId: string) => {
@@ -264,7 +406,14 @@ export const MessageChat: React.FC<MessageChatProps> = ({
                   ) : null}
 
                   {!isBotMessage(message as AnyChannelMessage) && (
-                  <div className={`message-bubble ${isOwnMessage ? 'message-bubble-sent' : 'message-bubble-received'} group ${message.is_pinned ? 'ring-2 ring-yellow-500/30' : ''}`}>
+                  <div
+                    className={`message-bubble ${isOwnMessage ? 'message-bubble-sent' : 'message-bubble-received'} group ${message.is_pinned ? 'ring-2 ring-yellow-500/30' : ''}`}
+                    data-message-id={message.id}
+                    ref={(node) => {
+                      if (node) messageNodeRefs.current.set(message.id, node);
+                      else messageNodeRefs.current.delete(message.id);
+                    }}
+                  >
                     <div className="flex items-start gap-3">
                       {/* Avatar - Left aligned for all messages */}
                       <button
@@ -316,20 +465,77 @@ export const MessageChat: React.FC<MessageChatProps> = ({
                           {message.edited_at && (
                             <span className="text-[10px] text-zinc-500 dark:text-zinc-400">(edited)</span>
                           )}
+
+                          {/* Read receipts: only on user's own messages.
+                              Filter out the sender themselves so we
+                              don't show "Read by you". */}
+                          {isOwnMessage && (() => {
+                            const readers = (readsByMessage[message.id] || [])
+                              .filter((r) => r.userId !== currentUserId);
+                            if (readers.length === 0) return null;
+                            return (
+                              <span
+                                className="text-[10px] text-emerald-500 dark:text-emerald-400 flex items-center gap-1"
+                                title={`Read by ${readers.length} ${readers.length === 1 ? 'person' : 'people'}`}
+                              >
+                                <Check className="w-2.5 h-2.5" />
+                                {readers.length === 1 ? 'Read' : `Read · ${readers.length}`}
+                              </span>
+                            );
+                          })()}
                         </div>
 
-                        {/* Message content */}
-                        <p
-                          className="msg-content break-words whitespace-pre-wrap"
-                          style={{
-                            fontSize: 'var(--font-size-message)',
-                            fontWeight: 'var(--font-weight-message)',
-                            lineHeight: 'var(--line-height-message)',
-                            color: 'var(--text-primary)',
-                          }}
-                        >
-                          {message.content}
-                        </p>
+                        {/* Message content (inline editor when editing) */}
+                        {editingId === message.id ? (
+                          <div className="mt-1">
+                            <textarea
+                              ref={editInputRef}
+                              value={editText}
+                              onChange={(e) => setEditText(e.target.value)}
+                              onKeyDown={(e) => {
+                                if (e.key === 'Enter' && !e.shiftKey) {
+                                  e.preventDefault();
+                                  void saveEditMessage();
+                                } else if (e.key === 'Escape') {
+                                  e.preventDefault();
+                                  cancelEditMessage();
+                                }
+                              }}
+                              rows={Math.min(6, Math.max(1, editText.split('\n').length))}
+                              className="w-full bg-zinc-100 dark:bg-zinc-800 border border-rose-400/40 rounded-lg px-3 py-2 text-sm text-zinc-900 dark:text-white outline-none focus:ring-2 focus:ring-rose-500/30 resize-none"
+                            />
+                            <div className="flex gap-2 mt-1.5 text-xs">
+                              <button
+                                onClick={() => void saveEditMessage()}
+                                disabled={!editText.trim()}
+                                className="inline-flex items-center gap-1 px-2.5 py-1 rounded-md bg-rose-500 text-white hover:bg-rose-600 disabled:opacity-50 disabled:cursor-not-allowed transition"
+                              >
+                                <Check className="w-3 h-3" /> Save
+                              </button>
+                              <button
+                                onClick={cancelEditMessage}
+                                className="inline-flex items-center gap-1 px-2.5 py-1 rounded-md text-zinc-500 dark:text-zinc-400 hover:bg-zinc-200 dark:hover:bg-zinc-800 transition"
+                              >
+                                <X className="w-3 h-3" /> Cancel
+                              </button>
+                              <span className="text-[10px] text-zinc-400 dark:text-zinc-500 self-center">
+                                Enter to save · Esc to cancel
+                              </span>
+                            </div>
+                          </div>
+                        ) : (
+                          <p
+                            className="msg-content break-words whitespace-pre-wrap"
+                            style={{
+                              fontSize: 'var(--font-size-message)',
+                              fontWeight: 'var(--font-weight-message)',
+                              lineHeight: 'var(--line-height-message)',
+                              color: 'var(--text-primary)',
+                            }}
+                          >
+                            {message.content}
+                          </p>
+                        )}
 
                         {/* Reactions */}
                         {message.reactions && Object.keys(message.reactions).length > 0 && (
@@ -369,13 +575,22 @@ export const MessageChat: React.FC<MessageChatProps> = ({
                           <Pin className="text-xs" />
                         </button>
                         {isOwnMessage && (
-                          <button
-                            onClick={() => handleDeleteMessage(message.id)}
-                            className="w-7 h-7 rounded hover:bg-rose-500/20 flex items-center justify-center text-zinc-500 hover:text-rose-500 transition"
-                            title="Delete message"
-                          >
-                            <Trash2 className="text-xs" />
-                          </button>
+                          <>
+                            <button
+                              onClick={() => startEditMessage(message.id, message.content)}
+                              className="w-7 h-7 rounded hover:bg-zinc-800 flex items-center justify-center text-zinc-500 hover:text-rose-400 transition"
+                              title="Edit message"
+                            >
+                              <Pencil className="text-xs" />
+                            </button>
+                            <button
+                              onClick={() => handleDeleteMessage(message.id)}
+                              className="w-7 h-7 rounded hover:bg-rose-500/20 flex items-center justify-center text-zinc-500 hover:text-rose-500 transition"
+                              title="Delete message"
+                            >
+                              <Trash2 className="text-xs" />
+                            </button>
+                          </>
                         )}
                       </div>
                     </div>

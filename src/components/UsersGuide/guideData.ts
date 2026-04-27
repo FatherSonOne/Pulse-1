@@ -1637,20 +1637,6 @@ export const guideSections: GuideSection[] = [
         note: 'Voice Commands always work — Pulse falls back to browser speech recognition if the primary engine is unavailable.',
       },
       {
-        id: 'ai-lab',
-        title: 'AI Lab — Specialized Workspaces',
-        steps: [
-          'Open from Tools → AI Lab in the sidebar.',
-          'AI Studio — draft, refine, and enhance written content with AI assistance.',
-          'Mission Control — build and coordinate multi-step AI workflows.',
-          'Intelligence Hub — research and synthesize information from multiple sources.',
-          'Quick Actions — fast one-click AI: summarize, rewrite, translate, extract.',
-          'Proposal Builder — create structured proposals and presentations with AI guidance.',
-          'Channel Digest — generate summaries of your channels and conversations automatically.',
-          'Stand-up Briefing — create daily stand-up summaries from your recent activity.',
-        ],
-      },
-      {
         id: 'war-room',
         title: 'Pulse Studio — AI Research & Analysis Workspace',
         description: 'Click Studio in the sidebar. A unified AI workspace where the AI adapts to your needs — no mode switching required.',
