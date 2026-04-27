@@ -2,7 +2,7 @@
 // Shows 3 smart reply options with different tones
 
 import React from 'react';
-import { Sparkles, Zap, MessageCircle } from 'lucide-react';
+import { Zap, MessageCircle } from 'lucide-react';
 import { SmartReply } from '../../services/relay/relayAIService';
 
 interface VoxSmartRepliesProps {
@@ -46,7 +46,6 @@ export const VoxSmartReplies: React.FC<VoxSmartRepliesProps> = ({
     return (
       <div className={`p-4 rounded-xl border ${tc.border} ${tc.bg}`}>
         <div className="flex items-center gap-2 mb-3">
-          <Sparkles className="w-4 h-4 animate-pulse" style={{ color: accentColor }} />
           <span className={`text-sm font-medium ${tc.text}`}>Generating smart replies...</span>
         </div>
         <div className="space-y-2">
@@ -76,7 +75,6 @@ export const VoxSmartReplies: React.FC<VoxSmartRepliesProps> = ({
           <Zap className="w-4 h-4" style={{ color: accentColor }} />
         </div>
         <span className={`text-sm font-semibold ${tc.text}`}>Smart Replies</span>
-        <span className={`text-xs ${tc.textMuted}`}>• Powered by AI</span>
       </div>
 
       {/* Reply Options */}

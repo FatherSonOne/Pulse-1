@@ -2,7 +2,7 @@
 // Shows overview, key points, action items from a conversation
 
 import React from 'react';
-import { FileText, CheckCircle, Users, Clock, MessageSquare, Sparkles } from 'lucide-react';
+import { FileText, CheckCircle, Users, Clock, MessageSquare } from 'lucide-react';
 import { ConversationSummary } from '../../services/relay/relayAIService';
 
 interface VoxConversationSummaryProps {
@@ -39,16 +39,7 @@ export const VoxConversationSummary: React.FC<VoxConversationSummaryProps> = ({
         }}
       >
         <div className="flex items-center gap-2">
-          <div
-            className="w-8 h-8 rounded-lg flex items-center justify-center"
-            style={{ background: `${accentColor}20` }}
-          >
-            <Sparkles className="w-4 h-4" style={{ color: accentColor }} />
-          </div>
-          <div>
-            <h3 className={`text-sm font-semibold ${tc.text}`}>AI Summary</h3>
-            <p className={`text-xs ${tc.textMuted}`}>Powered by Gemini</p>
-          </div>
+          <h3 className={`text-sm font-semibold ${tc.text}`}>AI Summary</h3>
         </div>
         {onClose && (
           <button

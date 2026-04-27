@@ -4,7 +4,7 @@
 import React from 'react';
 import {
   ChevronLeft,
-  Sparkles,
+  AlignLeft,
   Reply,
   FileText,
   CheckCheck,
@@ -160,7 +160,7 @@ const VoxModeToolbar: React.FC<VoxModeToolbarProps> = ({
               {isSummarizing ? (
                 <Loader2 className="w-3 h-3 animate-spin" />
               ) : (
-                <Sparkles className="w-3 h-3" />
+                <AlignLeft className="w-3 h-3" />
               )}
               <span className="hidden md:inline">Summarize</span>
             </button>

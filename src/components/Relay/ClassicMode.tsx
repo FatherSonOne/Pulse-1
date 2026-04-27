@@ -15,7 +15,6 @@ import {
   ChevronRight,
   Check,
   CheckCheck,
-  Sparkles,
   Loader2,
   X,
   Settings,
@@ -1448,7 +1447,6 @@ const ClassicMode: React.FC<ClassicModeProps> = ({
                     {/* Transcription */}
                     {recording.transcription && (
                       <div className="classic-transcription">
-                        <Sparkles className="w-3 h-3" />
                         <p>{recording.transcription}</p>
                       </div>
                     )}
@@ -1702,7 +1700,6 @@ const ClassicMode: React.FC<ClassicModeProps> = ({
               {/* Auto Transcribe */}
               <div className="classic-setting-item">
                 <div className="classic-setting-label">
-                  <Sparkles className="w-4 h-4" />
                   <span>Auto-Transcribe Messages</span>
                 </div>
                 <label className="classic-toggle">
@@ -1779,7 +1776,6 @@ const ClassicMode: React.FC<ClassicModeProps> = ({
               {/* Voice Clarity Enhancement */}
               <div className="classic-setting-item">
                 <div className="classic-setting-label">
-                  <Sparkles className="w-4 h-4" />
                   <span>Enhance Voice Clarity</span>
                 </div>
                 <label className="classic-toggle">

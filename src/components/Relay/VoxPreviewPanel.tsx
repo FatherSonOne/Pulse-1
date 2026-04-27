@@ -4,7 +4,7 @@
 import React, { useState, useEffect, useRef, useCallback } from 'react';
 import { AnimatedIcon } from '../ui/AnimatedIcon';
 
-import { GraduationCap, Lightbulb, Loader2, MessageCircle, RotateCcw, Send, Sparkles, Wand2, X } from 'lucide-react';
+import { GraduationCap, Lightbulb, Loader2, MessageCircle, RotateCcw, Send, Wand2, X } from 'lucide-react';
 
 // ============================================
 // TYPES
@@ -445,7 +445,6 @@ export const VoxPreviewPanel: React.FC<VoxPreviewPanelProps> = ({
                       analysis.clarity === 'unclear' ? 'text-red-500 bg-red-100 dark:bg-red-900/30' :
                       'text-amber-500 bg-amber-100 dark:bg-amber-900/30'
                     }`}>
-                      <Sparkles className="text-xs" />
                       <div className="text-[10px] font-medium capitalize mt-0.5">{analysis.clarity}</div>
                     </div>
                     

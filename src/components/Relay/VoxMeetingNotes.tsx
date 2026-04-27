@@ -10,7 +10,6 @@ import {
   CheckSquare,
   TrendingUp,
   Lightbulb,
-  Sparkles,
   Archive,
   Copy,
   X,
@@ -150,7 +149,6 @@ export const VoxMeetingNotes: React.FC<VoxMeetingNotesProps> = ({
           )}
         </div>
         <div className="flex items-center gap-2">
-          <Sparkles className="w-3.5 h-3.5" style={{ color: accentColor }} />
           <span className={`text-xs ${tc.textMuted}`}>AI-generated meeting notes</span>
         </div>
       </div>

@@ -2,7 +2,7 @@
 // Displays comprehensive AI analysis of voice messages
 
 import React, { useState } from 'react';
-import { Bot, Calendar, Check, HeartPulse, HelpCircle, MapPin, Sparkles, User, X } from 'lucide-react';
+import { Bot, Calendar, Check, HeartPulse, HelpCircle, MapPin, User, X } from 'lucide-react';
 import {
 
   VoxAnalysis,
@@ -155,11 +155,11 @@ export const AIAnalysisPanel: React.FC<AIAnalysisPanelProps> = ({
   return (
     <div className={`bg-white dark:bg-zinc-900 rounded-xl border border-zinc-200 dark:border-zinc-800 overflow-hidden ${className}`}>
       {/* Header */}
-      <div className="p-4 border-b border-zinc-200 dark:border-zinc-800 bg-gradient-to-r from-purple-50 to-pink-50 dark:from-purple-900/20 dark:to-pink-900/20">
+      <div className="p-4 border-b border-zinc-200 dark:border-zinc-800 bg-zinc-50 dark:bg-zinc-900/40">
         <div className="flex items-center justify-between">
           <div className="flex items-center gap-2">
-            <div className="w-8 h-8 rounded-lg bg-gradient-to-br from-purple-500 to-pink-500 flex items-center justify-center">
-              <Bot className="text-white text-sm" />
+            <div className="w-8 h-8 rounded-lg bg-zinc-200 dark:bg-zinc-800 flex items-center justify-center">
+              <Bot className="text-zinc-700 dark:text-zinc-300 text-sm" />
             </div>
             <div>
               <h3 className="font-bold text-sm dark:text-white">AI Analysis</h3>
@@ -410,7 +410,6 @@ export const AIAnalysisPanel: React.FC<AIAnalysisPanelProps> = ({
       {/* Footer */}
       <div className="px-4 py-3 border-t border-zinc-200 dark:border-zinc-800 bg-zinc-50 dark:bg-zinc-900/50">
         <p className="text-[10px] text-zinc-400 text-center">
-          <Sparkles className="mr-1" />
           Analysis took {analysis.processingTime}ms
         </p>
       </div>

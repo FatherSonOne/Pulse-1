@@ -28,7 +28,6 @@ import {
   Waves,
   CheckCheck,
   Tower,
-  Sparkles,
   Reply,
   MoreVertical,
 } from 'lucide-react';

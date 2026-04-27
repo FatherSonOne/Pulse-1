@@ -2,7 +2,7 @@
 // Allows jumping to specific topics within a recording
 
 import React from 'react';
-import { PlayCircle, Clock, List, Sparkles } from 'lucide-react';
+import { PlayCircle, Clock, List } from 'lucide-react';
 import { Chapter, formatChapterTime } from '../../services/relay/relayAIService';
 
 interface VoxAutoChaptersProps {
@@ -66,7 +66,6 @@ export const VoxAutoChapters: React.FC<VoxAutoChaptersProps> = ({
             </p>
           </div>
         </div>
-        <Sparkles className="w-4 h-4" style={{ color: accentColor }} />
       </div>
 
       {/* Chapters List */}

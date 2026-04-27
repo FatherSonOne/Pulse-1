@@ -4,7 +4,6 @@ import {
   Pause,
   Trash2,
   Send,
-  Sparkles,
   Loader2,
   X,
   RotateCcw,
@@ -243,7 +242,6 @@ const RecordingPreview: React.FC<RecordingPreviewProps> = ({
                   }}
                 >
                   <h4 className="text-[10px] font-semibold uppercase tracking-wider mb-3 flex items-center gap-2" style={{ color }}>
-                    <Sparkles className="w-3 h-3" />
                     AI Analysis
                   </h4>
 

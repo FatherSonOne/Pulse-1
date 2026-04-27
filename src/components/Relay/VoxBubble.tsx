@@ -307,28 +307,28 @@ export const VoxBubble: React.FC<VoxBubbleProps> = ({
         {(analysis || isAnalyzing) && (
           <div className="px-3 pb-2">
             {isAnalyzing ? (
-              <div className="flex items-center gap-2 px-3 py-2 rounded-lg bg-purple-50 dark:bg-purple-900/20 text-purple-600 dark:text-purple-400 text-xs">
+              <div className="flex items-center gap-2 px-3 py-2 rounded-lg bg-zinc-100 dark:bg-zinc-800 text-zinc-600 dark:text-zinc-400 text-xs">
                 <Brain className="animate-pulse" />
                 Analyzing...
               </div>
             ) : analysis && (
               <button
                 onClick={onViewAnalysis}
-                className="flex items-center gap-2 px-3 py-2 rounded-lg bg-purple-50 dark:bg-purple-900/20 hover:bg-purple-100 dark:hover:bg-purple-900/40 transition text-xs w-full"
+                className="flex items-center gap-2 px-3 py-2 rounded-lg bg-zinc-100 dark:bg-zinc-800 hover:bg-zinc-200 dark:hover:bg-zinc-700 transition text-xs w-full"
               >
-                <Bot className="text-purple-500" />
-                <span className="text-purple-700 dark:text-purple-300">
+                <Bot className="text-zinc-500 dark:text-zinc-400" />
+                <span className="text-zinc-700 dark:text-zinc-300">
                   {analysis.keyPoints.length} key points
                 </span>
                 {analysis.actionItems.length > 0 && (
                   <>
-                    <span className="text-purple-300">•</span>
-                    <span className="text-purple-700 dark:text-purple-300">
+                    <span className="text-zinc-400">•</span>
+                    <span className="text-zinc-700 dark:text-zinc-300">
                       {analysis.actionItems.length} action{analysis.actionItems.length > 1 ? 's' : ''}
                     </span>
                   </>
                 )}
-                <ChevronRight className="text-purple-400 ml-auto text-[10px]" />
+                <ChevronRight className="text-zinc-400 ml-auto text-[10px]" />
               </button>
             )}
           </div>
@@ -339,7 +339,7 @@ export const VoxBubble: React.FC<VoxBubbleProps> = ({
           {!analysis && !isAnalyzing && onAnalyze && (
             <button
               onClick={onAnalyze}
-              className="text-[10px] px-2 py-1 rounded bg-purple-100 dark:bg-purple-900/30 text-purple-600 hover:bg-purple-200 dark:hover:bg-purple-900/50 transition"
+              className="text-[10px] px-2 py-1 rounded bg-zinc-100 dark:bg-zinc-800 text-zinc-600 hover:bg-zinc-200 dark:hover:bg-zinc-700 transition"
             >
               <Brain className="mr-1" />
               Analyze

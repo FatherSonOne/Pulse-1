@@ -28,7 +28,6 @@ import {
   Pause,
   Clock,
   Users,
-  Sparkles,
   Loader2,
   Check,
   CheckCheck,
@@ -280,7 +279,6 @@ const MessageBubble: React.FC<{
           {/* AI Processing indicator */}
           {message.processingStatus === 'transcribing' && (
             <div className="vvb-processing-badge">
-              <Sparkles className="w-3 h-3 animate-pulse" />
               <span>AI Processing...</span>
             </div>
           )}
@@ -393,7 +391,6 @@ const MessageBubble: React.FC<{
               {/* AI Summary */}
               {message.summary && (
                 <div className="vvb-ai-summary">
-                  <Sparkles className="w-3 h-3" />
                   <span>Summary: {message.summary}</span>
                 </div>
               )}

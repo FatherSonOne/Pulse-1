@@ -10,7 +10,6 @@ import {
   Tag,
   Link2,
   Clock,
-  Sparkles,
   Mail,
   Calendar,
   CheckSquare,
@@ -1094,7 +1093,6 @@ const VoxNotesMode: React.FC<VoxNotesModeProps> = ({
                     }}
                   >
                     <h3 className="text-sm font-semibold mb-2 flex items-center gap-2" style={{ color: MODE_COLOR }}>
-                      <Sparkles className="w-4 h-4" />
                       AI Summary
                     </h3>
                     <p className={`text-sm leading-relaxed ${tc.textSecondary}`}>

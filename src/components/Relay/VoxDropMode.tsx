@@ -16,7 +16,6 @@ import {
   MapPin,
   Lock,
   Timer,
-  Sparkles,
   TrendingUp,
   Loader2,
   Download,
