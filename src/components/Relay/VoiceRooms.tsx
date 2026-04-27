@@ -429,7 +429,7 @@ export const VoiceRooms: React.FC<VoiceRoomsProps> = ({
             {/* Room categories */}
             {!isLoadingRooms && !loadError && Object.entries(roomsByCategory).map(([category, categoryRooms]) => (
               <div key={category} className="mb-4">
-                <div className="px-3 py-2 text-[10px] font-bold text-zinc-500 uppercase tracking-wider">
+                <div className="px-3 py-2 text-[10px] font-bold text-zinc-500 uppercase tracking-wider font-mono">
                   {category}
                 </div>
                 <div className="space-y-1">

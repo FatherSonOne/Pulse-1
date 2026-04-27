@@ -396,7 +396,7 @@ export const VoxPreviewPanel: React.FC<VoxPreviewPanelProps> = ({
 
           {/* Transcription */}
           <div className="px-5 pb-4">
-            <div className="text-xs font-semibold text-zinc-400 uppercase tracking-wider mb-2">
+            <div className="text-xs font-semibold text-zinc-400 uppercase tracking-wider mb-2 font-mono">
               Transcription
             </div>
             <div className="bg-zinc-50 dark:bg-zinc-800/50 rounded-xl p-3 max-h-24 overflow-y-auto">
@@ -421,7 +421,7 @@ export const VoxPreviewPanel: React.FC<VoxPreviewPanelProps> = ({
                 className="w-full text-left"
               >
                 <div className="flex items-center justify-between mb-3">
-                  <div className="text-xs font-semibold text-zinc-400 uppercase tracking-wider flex items-center gap-2">
+                  <div className="text-xs font-semibold text-zinc-400 uppercase tracking-wider flex items-center gap-2 font-mono">
                     <Wand2 className="text-purple-500" />
                     Quick Analysis
                   </div>

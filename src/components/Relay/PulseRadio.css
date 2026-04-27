@@ -69,7 +69,7 @@
    =========================================== */
 
 .pulse-radio {
-  font-family: 'Outfit', -apple-system, BlinkMacSystemFont, sans-serif;
+  font-family: var(--font-sans);
   background: var(--pr-bg-primary);
   min-height: 100vh;
   position: relative;
@@ -232,7 +232,7 @@
 }
 
 .pulse-radio-title h1 {
-  font-family: 'Outfit', sans-serif;
+  font-family: var(--font-sans);
   font-size: 1.25rem;
   font-weight: 600;
   color: var(--pr-text-primary);
@@ -278,7 +278,7 @@
   background: linear-gradient(135deg, var(--pr-primary) 0%, var(--pr-primary-dark) 100%);
   border: none;
   border-radius: 12px;
-  font-family: 'Outfit', sans-serif;
+  font-family: var(--font-sans);
   font-size: 0.875rem;
   font-weight: 500;
   color: white;
@@ -329,7 +329,7 @@
 }
 
 .pulse-radio-sidebar-header h2 {
-  font-family: 'Outfit', sans-serif;
+  font-family: var(--font-sans);
   font-size: 0.875rem;
   font-weight: 600;
   color: var(--pr-text-primary);
@@ -398,7 +398,7 @@
   display: flex;
   align-items: center;
   gap: 0.375rem;
-  font-family: 'Outfit', sans-serif;
+  font-family: var(--font-sans);
   font-size: 0.875rem;
   font-weight: 500;
   color: var(--pr-text-primary);
@@ -441,7 +441,7 @@
 }
 
 .pulse-radio-empty-channels p {
-  font-family: 'Outfit', sans-serif;
+  font-family: var(--font-sans);
   font-size: 0.95rem;
   font-weight: 500;
   color: var(--pr-text-secondary);
@@ -613,7 +613,7 @@
 }
 
 .pulse-radio-hero-info h2 {
-  font-family: 'Outfit', sans-serif;
+  font-family: var(--font-sans);
   font-size: 1.375rem;
   font-weight: 600;
   color: var(--pr-text-primary);
@@ -621,7 +621,7 @@
 }
 
 .pulse-radio-hero-info p {
-  font-family: 'Outfit', sans-serif;
+  font-family: var(--font-sans);
   font-size: 0.875rem;
   color: var(--pr-text-secondary);
   margin: 0 0 0.75rem;
@@ -696,7 +696,7 @@
   background: var(--pr-bg-tertiary);
   border: 1px solid var(--pr-border-subtle);
   border-radius: 12px;
-  font-family: 'Outfit', sans-serif;
+  font-family: var(--font-sans);
   font-size: 0.95rem;
   color: var(--pr-text-primary);
   outline: none;
@@ -751,7 +751,7 @@
 }
 
 .pulse-radio-hint {
-  font-family: 'Outfit', sans-serif;
+  font-family: var(--font-sans);
   font-size: 0.875rem;
   color: var(--pr-text-tertiary);
   text-align: center;
@@ -784,7 +784,7 @@
 }
 
 .pulse-radio-section-title {
-  font-family: 'Outfit', sans-serif;
+  font-family: var(--font-sans);
   font-size: 1rem;
   font-weight: 600;
   color: var(--pr-text-primary);
@@ -891,7 +891,7 @@
 }
 
 .pulse-radio-broadcast-header h4 {
-  font-family: 'Outfit', sans-serif;
+  font-family: var(--font-sans);
   font-size: 1rem;
   font-weight: 600;
   color: var(--pr-text-primary);
@@ -930,7 +930,7 @@
 }
 
 .pulse-radio-transcript {
-  font-family: 'Outfit', sans-serif;
+  font-family: var(--font-sans);
   font-size: 0.875rem;
   color: var(--pr-text-secondary);
   margin: 0 0 0.75rem;
@@ -965,7 +965,7 @@
   background: var(--pr-bg-tertiary);
   border: 1px solid var(--pr-border-subtle);
   border-radius: 8px;
-  font-family: 'Outfit', sans-serif;
+  font-family: var(--font-sans);
   font-size: 0.75rem;
   color: var(--pr-text-secondary);
   cursor: pointer;
@@ -1013,7 +1013,7 @@
 }
 
 .pulse-radio-empty-broadcasts p {
-  font-family: 'Outfit', sans-serif;
+  font-family: var(--font-sans);
   font-size: 1rem;
   font-weight: 500;
   color: var(--pr-text-secondary);
@@ -1101,7 +1101,7 @@
 }
 
 .pulse-radio-empty-state p {
-  font-family: 'Outfit', sans-serif;
+  font-family: var(--font-sans);
   font-size: 1.125rem;
   font-weight: 600;
   color: var(--pr-text-primary);
@@ -1161,7 +1161,7 @@
 }
 
 .pulse-radio-modal h3 {
-  font-family: 'Outfit', sans-serif;
+  font-family: var(--font-sans);
   font-size: 1.25rem;
   font-weight: 600;
   color: var(--pr-text-primary);
@@ -1200,7 +1200,7 @@
 }
 
 .pulse-radio-modal-desc {
-  font-family: 'Outfit', sans-serif;
+  font-family: var(--font-sans);
   font-size: 0.875rem;
   color: var(--pr-text-secondary);
   margin: 0 0 1rem;
@@ -1219,7 +1219,7 @@
 }
 
 .pulse-radio-form-group label {
-  font-family: 'Outfit', sans-serif;
+  font-family: var(--font-sans);
   font-size: 0.8rem;
   font-weight: 500;
   color: var(--pr-text-secondary);
@@ -1234,7 +1234,7 @@
   background: var(--pr-bg-tertiary);
   border: 1px solid var(--pr-border-subtle);
   border-radius: 10px;
-  font-family: 'Outfit', sans-serif;
+  font-family: var(--font-sans);
   font-size: 0.95rem;
   color: var(--pr-text-primary);
   outline: none;
@@ -1271,7 +1271,7 @@
   background: transparent;
   border: none;
   border-radius: 8px;
-  font-family: 'Outfit', sans-serif;
+  font-family: var(--font-sans);
   font-size: 0.875rem;
   color: var(--pr-text-secondary);
   cursor: pointer;
@@ -1296,7 +1296,7 @@
   background: var(--pr-bg-tertiary);
   border: 1px solid var(--pr-border-subtle);
   border-radius: 10px;
-  font-family: 'Outfit', sans-serif;
+  font-family: var(--font-sans);
   font-size: 0.875rem;
   font-weight: 500;
   color: var(--pr-text-secondary);
@@ -1319,7 +1319,7 @@
   background: linear-gradient(135deg, var(--pr-primary) 0%, var(--pr-primary-dark) 100%);
   border: none;
   border-radius: 10px;
-  font-family: 'Outfit', sans-serif;
+  font-family: var(--font-sans);
   font-size: 0.875rem;
   font-weight: 500;
   color: white;
@@ -1369,7 +1369,7 @@
 }
 
 .pulse-radio-settings-hero h4 {
-  font-family: 'Outfit', sans-serif;
+  font-family: var(--font-sans);
   font-size: 1.125rem;
   font-weight: 600;
   color: var(--pr-text-primary);
@@ -1389,7 +1389,7 @@
 }
 
 .pulse-radio-settings-section h5 {
-  font-family: 'Outfit', sans-serif;
+  font-family: var(--font-sans);
   font-size: 0.75rem;
   font-weight: 600;
   color: var(--pr-text-tertiary);
@@ -1433,7 +1433,7 @@
 }
 
 .pulse-radio-option-info p {
-  font-family: 'Outfit', sans-serif;
+  font-family: var(--font-sans);
   font-size: 0.95rem;
   font-weight: 500;
   color: var(--pr-text-primary);
@@ -1459,7 +1459,7 @@
   background: var(--pr-bg-tertiary);
   border: 1px solid var(--pr-border-subtle);
   border-radius: 10px;
-  font-family: 'Outfit', sans-serif;
+  font-family: var(--font-sans);
   font-size: 0.875rem;
   color: var(--pr-text-secondary);
   cursor: pointer;
@@ -1525,7 +1525,7 @@
   width: 40px;
   height: 40px;
   border-radius: 10px;
-  font-family: 'Outfit', sans-serif;
+  font-family: var(--font-sans);
   font-weight: 600;
   font-size: 1rem;
   color: white;
@@ -1538,7 +1538,7 @@
 }
 
 .pulse-radio-user-info p {
-  font-family: 'Outfit', sans-serif;
+  font-family: var(--font-sans);
   font-size: 0.95rem;
   font-weight: 500;
   color: var(--pr-text-primary);
@@ -1557,7 +1557,7 @@
 }
 
 .pulse-radio-no-users {
-  font-family: 'Outfit', sans-serif;
+  font-family: var(--font-sans);
   font-size: 0.875rem;
   color: var(--pr-text-tertiary);
   text-align: center;
@@ -1650,7 +1650,7 @@
 }
 
 .pulse-radio-discussion-player p {
-  font-family: 'Outfit', sans-serif;
+  font-family: var(--font-sans);
   font-size: 0.95rem;
   font-weight: 500;
   color: var(--pr-text-primary);
@@ -1683,7 +1683,7 @@
 }
 
 .pulse-radio-discussion-content p {
-  font-family: 'Outfit', sans-serif;
+  font-family: var(--font-sans);
   font-size: 1rem;
   font-weight: 500;
   color: var(--pr-text-secondary);

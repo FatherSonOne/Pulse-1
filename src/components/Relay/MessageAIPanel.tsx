@@ -245,7 +245,7 @@ export const MessageAIPanel: React.FC<MessageAIPanelProps> = ({
 
               {/* Overview */}
               <div>
-                <h4 className="text-xs font-semibold uppercase tracking-wider mb-2 text-zinc-500 dark:text-zinc-400">
+                <h4 className="text-xs font-semibold uppercase tracking-wider font-mono mb-2 text-zinc-500 dark:text-zinc-400">
                   Overview
                 </h4>
                 <p className="text-sm leading-relaxed text-zinc-700 dark:text-zinc-300">
@@ -256,7 +256,7 @@ export const MessageAIPanel: React.FC<MessageAIPanelProps> = ({
               {/* Key Points */}
               {summary.keyPoints.length > 0 && (
                 <div>
-                  <h4 className="text-xs font-semibold uppercase tracking-wider mb-2 text-zinc-500 dark:text-zinc-400">
+                  <h4 className="text-xs font-semibold uppercase tracking-wider font-mono mb-2 text-zinc-500 dark:text-zinc-400">
                     Key Points
                   </h4>
                   <ul className="space-y-2">
@@ -273,7 +273,7 @@ export const MessageAIPanel: React.FC<MessageAIPanelProps> = ({
               {/* Action Items */}
               {summary.actionItems.length > 0 && (
                 <div>
-                  <h4 className="text-xs font-semibold uppercase tracking-wider mb-2 text-zinc-500 dark:text-zinc-400">
+                  <h4 className="text-xs font-semibold uppercase tracking-wider font-mono mb-2 text-zinc-500 dark:text-zinc-400">
                     Action Items
                   </h4>
                   <ul className="space-y-2">
@@ -652,7 +652,7 @@ const AnalysisSection: React.FC<AnalysisSectionProps> = ({
                   <div className="mt-2 pl-6 space-y-2">
                     {analysis.mentions.people.length > 0 && (
                       <div className="flex items-center gap-2 flex-wrap">
-                        <span className="text-[10px] text-zinc-400 uppercase tracking-wider">People:</span>
+                        <span className="text-[10px] text-zinc-400 uppercase tracking-wider font-mono">People:</span>
                         {analysis.mentions.people.map((person, i) => (
                           <span
                             key={i}
@@ -666,7 +666,7 @@ const AnalysisSection: React.FC<AnalysisSectionProps> = ({
                     )}
                     {analysis.mentions.dates.length > 0 && (
                       <div className="flex items-center gap-2 flex-wrap">
-                        <span className="text-[10px] text-zinc-400 uppercase tracking-wider">Dates:</span>
+                        <span className="text-[10px] text-zinc-400 uppercase tracking-wider font-mono">Dates:</span>
                         {analysis.mentions.dates.map((date, i) => (
                           <span
                             key={i}
@@ -680,7 +680,7 @@ const AnalysisSection: React.FC<AnalysisSectionProps> = ({
                     )}
                     {analysis.mentions.locations.length > 0 && (
                       <div className="flex items-center gap-2 flex-wrap">
-                        <span className="text-[10px] text-zinc-400 uppercase tracking-wider">Places:</span>
+                        <span className="text-[10px] text-zinc-400 uppercase tracking-wider font-mono">Places:</span>
                         {analysis.mentions.locations.map((loc, i) => (
                           <span
                             key={i}
@@ -965,7 +965,7 @@ const MeetingNotesSection: React.FC<MeetingNotesSectionProps> = ({
 
           {/* Summary */}
           <div>
-            <h4 className="text-xs font-semibold uppercase tracking-wider mb-2 text-zinc-500 dark:text-zinc-400">
+            <h4 className="text-xs font-semibold uppercase tracking-wider font-mono mb-2 text-zinc-500 dark:text-zinc-400">
               Summary
             </h4>
             <p className="text-sm leading-relaxed text-zinc-700 dark:text-zinc-300">
@@ -978,7 +978,7 @@ const MeetingNotesSection: React.FC<MeetingNotesSectionProps> = ({
             <div>
               <div className="flex items-center gap-2 mb-3">
                 <Lightbulb className="w-4 h-4" style={{ color: accentColor }} />
-                <h4 className="text-xs font-semibold uppercase tracking-wider text-zinc-500 dark:text-zinc-400">
+                <h4 className="text-xs font-semibold uppercase tracking-wider font-mono text-zinc-500 dark:text-zinc-400">
                   Key Decisions
                 </h4>
               </div>
@@ -1008,7 +1008,7 @@ const MeetingNotesSection: React.FC<MeetingNotesSectionProps> = ({
             <div>
               <div className="flex items-center gap-2 mb-3">
                 <CheckSquare className="w-4 h-4" style={{ color: accentColor }} />
-                <h4 className="text-xs font-semibold uppercase tracking-wider text-zinc-500 dark:text-zinc-400">
+                <h4 className="text-xs font-semibold uppercase tracking-wider font-mono text-zinc-500 dark:text-zinc-400">
                   Action Items
                 </h4>
               </div>
@@ -1052,7 +1052,7 @@ const MeetingNotesSection: React.FC<MeetingNotesSectionProps> = ({
             <div>
               <div className="flex items-center gap-2 mb-3">
                 <TrendingUp className="w-4 h-4" style={{ color: accentColor }} />
-                <h4 className="text-xs font-semibold uppercase tracking-wider text-zinc-500 dark:text-zinc-400">
+                <h4 className="text-xs font-semibold uppercase tracking-wider font-mono text-zinc-500 dark:text-zinc-400">
                   Next Steps
                 </h4>
               </div>

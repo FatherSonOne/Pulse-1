@@ -225,19 +225,19 @@ export const MicrophoneTest: React.FC<MicrophoneTestProps> = ({
 
             {/* Level Labels */}
             <div className="flex justify-between px-1">
-              <span className={`text-[10px] uppercase tracking-wider ${tc.textMuted}`}>
+              <span className={`text-[10px] uppercase tracking-wider font-mono ${tc.textMuted}`}>
                 -∞
               </span>
-              <span className={`text-[10px] uppercase tracking-wider ${tc.textMuted}`}>
+              <span className={`text-[10px] uppercase tracking-wider font-mono ${tc.textMuted}`}>
                 -20dB
               </span>
-              <span className={`text-[10px] uppercase tracking-wider ${tc.textMuted}`}>
+              <span className={`text-[10px] uppercase tracking-wider font-mono ${tc.textMuted}`}>
                 -10dB
               </span>
-              <span className="text-[10px] uppercase tracking-wider text-amber-500">
+              <span className="text-[10px] uppercase tracking-wider font-mono text-amber-500">
                 -6dB
               </span>
-              <span className="text-[10px] uppercase tracking-wider text-red-500">
+              <span className="text-[10px] uppercase tracking-wider font-mono text-red-500">
                 0dB
               </span>
             </div>

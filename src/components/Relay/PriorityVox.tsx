@@ -314,7 +314,7 @@ export const EmergencyAlert: React.FC<EmergencyAlertProps> = ({
         </div>
 
         {/* Title */}
-        <h1 className="text-3xl font-black text-white text-center mb-2 uppercase tracking-wider">
+        <h1 className="text-3xl font-black text-white text-center mb-2 uppercase tracking-wider font-mono">
           {vox.priorityLevel === 'emergency' ? 'EMERGENCY' : 'URGENT MESSAGE'}
         </h1>
         
@@ -348,7 +348,7 @@ export const EmergencyAlert: React.FC<EmergencyAlertProps> = ({
           {vox.requiresAcknowledgment && (
             <button
               onClick={onAcknowledge}
-              className="w-full py-4 bg-white text-red-600 rounded-2xl font-bold text-lg uppercase tracking-wider hover:bg-zinc-100 transition flex items-center justify-center gap-3"
+              className="w-full py-4 bg-white text-red-600 rounded-2xl font-bold text-lg uppercase tracking-wider font-mono hover:bg-zinc-100 transition flex items-center justify-center gap-3"
             >
               <CheckCircle />
               Acknowledge

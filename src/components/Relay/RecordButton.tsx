@@ -129,7 +129,7 @@ export const RecordButton: React.FC<RecordButtonProps> = ({
           )}
 
           {/* Mode Label */}
-          <span className="uppercase tracking-wider">
+          <span className="uppercase tracking-wider font-mono">
             {recordingMode === 'hold' ? 'Hold to Talk' : 'Tap to Talk'}
           </span>
         </button>

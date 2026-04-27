@@ -468,7 +468,7 @@ export const VoxDownloadModal: React.FC<VoxDownloadModalProps> = ({
         {/* Content */}
         <div className="p-6">
           {/* Format Selection */}
-          <h3 className={`text-xs font-semibold uppercase tracking-wider mb-3 ${tc.textMuted}`}>
+          <h3 className={`text-xs font-semibold uppercase tracking-wider mb-3 font-mono ${tc.textMuted}`}>
             Export Format
           </h3>
 

@@ -222,7 +222,7 @@ const RecordingPreview: React.FC<RecordingPreviewProps> = ({
                   background: isDarkMode ? 'rgba(255,255,255,0.03)' : 'rgba(0,0,0,0.03)',
                 }}
               >
-                <h4 className={`text-[10px] font-semibold uppercase tracking-wider mb-2 ${
+                <h4 className={`text-[10px] font-semibold uppercase tracking-wider mb-2 font-mono ${
                   isDarkMode ? 'text-gray-500' : 'text-gray-400'
                 }`}>
                   Transcript
@@ -241,7 +241,7 @@ const RecordingPreview: React.FC<RecordingPreviewProps> = ({
                     border: `1px solid ${color}15`,
                   }}
                 >
-                  <h4 className="text-[10px] font-semibold uppercase tracking-wider mb-3 flex items-center gap-2" style={{ color }}>
+                  <h4 className="text-[10px] font-semibold uppercase tracking-wider mb-3 flex items-center gap-2 font-mono" style={{ color }}>
                     AI Analysis
                   </h4>
 

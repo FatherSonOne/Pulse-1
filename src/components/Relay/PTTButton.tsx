@@ -301,7 +301,7 @@ export const PTTButton: React.FC<PTTButtonProps> = ({
             </span>
           )}
           {internalState === 'idle' && !showSentAnimation && (
-            <span className={`text-[10px] uppercase tracking-widest ${isDarkMode ? 'text-gray-500' : 'text-gray-400'}`}>
+            <span className={`text-[10px] uppercase tracking-widest font-mono ${isDarkMode ? 'text-gray-500' : 'text-gray-400'}`}>
               {recordingMode === 'hold' ? 'Hold to record' : 'Tap to record'}
             </span>
           )}
