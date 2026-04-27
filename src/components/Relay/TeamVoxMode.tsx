@@ -317,7 +317,7 @@ const TeamVoxMode: React.FC<TeamVoxModeProps> = ({
         setMeetingNotes(notes);
         toast.success('Meeting notes generated!');
       } else {
-        toast.error('AI meeting notes unavailable — try again later');
+        toast.error('AI meeting notes unavailable. Try again later.');
       }
     } catch (error: any) {
       console.error('Meeting notes generation error:', error);

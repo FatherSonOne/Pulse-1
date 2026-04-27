@@ -213,7 +213,7 @@ const VoxDropMode: React.FC<VoxDropModeProps> = ({
         setShowSummary(true);
         toast.success('Drops summarized!');
       } else {
-        toast.error('AI summarizer unavailable — try again later');
+        toast.error('AI summarizer unavailable. Try again later.');
       }
     } catch (error: any) {
       console.error('Summarization error:', error);
@@ -221,7 +221,7 @@ const VoxDropMode: React.FC<VoxDropModeProps> = ({
       if (msg.includes('API key') || msg.includes('API_KEY') || msg.includes('invalid') || msg.includes('unauthorized')) {
         toast.error('AI features require API configuration');
       } else if (msg.includes('network') || msg.includes('fetch') || msg.includes('ECONNREFUSED')) {
-        toast.error('Network error — please try again');
+        toast.error('Network error. Please try again.');
       } else {
         toast.error('AI summarizer unavailable (beta)');
       }
@@ -269,7 +269,7 @@ const VoxDropMode: React.FC<VoxDropModeProps> = ({
         setShowSmartReplies(true);
         toast.success('Smart replies generated!');
       } else {
-        toast.error('Smart replies unavailable — try again later');
+        toast.error('Smart replies unavailable. Try again later.');
       }
     } catch (error: any) {
       console.error('Smart replies error:', error);
@@ -277,7 +277,7 @@ const VoxDropMode: React.FC<VoxDropModeProps> = ({
       if (msg.includes('API key') || msg.includes('API_KEY') || msg.includes('invalid') || msg.includes('unauthorized')) {
         toast.error('AI features require API configuration');
       } else if (msg.includes('network') || msg.includes('fetch') || msg.includes('ECONNREFUSED')) {
-        toast.error('Network error — please try again');
+        toast.error('Network error. Please try again.');
       } else {
         toast.error('Smart replies unavailable (beta)');
       }
@@ -1161,7 +1161,7 @@ const VoxDropMode: React.FC<VoxDropModeProps> = ({
                 <textarea
                   value={dropMessage}
                   onChange={(e) => setDropMessage(e.target.value)}
-                  placeholder="Add a text note to accompany your vox..."
+                  placeholder="Add a text note to accompany your voice message..."
                   rows={2}
                   className={`w-full px-4 py-3 rounded-xl ${tc.inputBg} ${tc.text} border focus:outline-none focus:ring-2 focus:ring-red-500/50 transition-all resize-none`}
                 />

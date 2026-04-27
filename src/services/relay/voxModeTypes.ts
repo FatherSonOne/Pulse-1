@@ -52,9 +52,7 @@ export const mapVoxToRelay = (vox: VoxMode | 'classic'): RelayMode => {
 export interface VoxModeInfo {
   id: VoxMode;
   name: string;
-  tagline: string;
   description: string;
-  workflow: string[];
   icon: string;
   features: string[];
   bestFor: string[];
@@ -64,16 +62,7 @@ export const VOX_MODES: Record<VoxMode, VoxModeInfo> = {
   pulse_radio: {
     id: 'pulse_radio',
     name: 'Pulse Radio',
-    tagline: 'Broadcast Your Voice',
     description: 'Create audio broadcasts that reach your followers. Think podcast meets walkie-talkie - share updates, announcements, or thoughts with your entire network.',
-    workflow: [
-      'Select or create a channel',
-      'Record your broadcast message',
-      'Add tags and categories',
-      'Choose visibility (public/private)',
-      'Publish to your followers',
-      'Track listens and engagement'
-    ],
     icon: '📻',
     features: [
       'Multi-channel broadcasting',
@@ -92,16 +81,7 @@ export const VOX_MODES: Record<VoxMode, VoxModeInfo> = {
   voice_threads: {
     id: 'voice_threads',
     name: 'Voice Threads',
-    tagline: 'Conversations That Flow',
     description: 'Async voice conversations with threaded replies. Like iMessage but audio-first - reply to specific messages, create branching discussions, and keep context intact.',
-    workflow: [
-      'Start or join a conversation',
-      'Record your message',
-      'Reply to specific voice notes',
-      'View full transcripts',
-      'Jump to any timestamp',
-      'Branch into sub-threads'
-    ],
     icon: '💬',
     features: [
       'Threaded replies',
@@ -120,16 +100,7 @@ export const VOX_MODES: Record<VoxMode, VoxModeInfo> = {
   team_vox: {
     id: 'team_vox',
     name: 'Team Vox',
-    tagline: 'Your Team\'s Voice Hub',
     description: 'Voice-native team communication tied to workspaces. Create channels like Slack but designed for audio - daily standups, async huddles, and voice-first collaboration.',
-    workflow: [
-      'Select your workspace',
-      'Choose or create a channel',
-      'Record to the channel',
-      'Members get notified',
-      'Team reacts and responds',
-      'AI summarizes discussions'
-    ],
     icon: '👥',
     features: [
       'Workspace channels',
@@ -148,16 +119,7 @@ export const VOX_MODES: Record<VoxMode, VoxModeInfo> = {
   vox_notes: {
     id: 'vox_notes',
     name: 'Vox Notes',
-    tagline: 'Your Voice, Organized',
     description: 'Personal voice memos with AI-powered organization. Capture ideas, thoughts, and reminders. AI automatically tags, categorizes, and links your notes together.',
-    workflow: [
-      'Hit record to capture',
-      'AI transcribes instantly',
-      'Auto-tagged by topic',
-      'Link to emails/meetings/tasks',
-      'Search by content or topic',
-      'AI generates summaries'
-    ],
     icon: '📝',
     features: [
       'Auto-transcription',
@@ -177,16 +139,7 @@ export const VOX_MODES: Record<VoxMode, VoxModeInfo> = {
   quick_vox: {
     id: 'quick_vox',
     name: 'Quick Vox',
-    tagline: 'One Tap. Instant Voice.',
     description: 'Lightning-fast voice messaging to your favorites. No menus, no previews - just tap and talk. See when others are recording and get instant delivery.',
-    workflow: [
-      'Tap favorite contact',
-      'Hold to record',
-      'Release to send instantly',
-      'See delivery status',
-      'Get real-time "typing" indicator',
-      'Instant push notification'
-    ],
     icon: '⚡',
     features: [
       'Favorites bar',
@@ -205,16 +158,7 @@ export const VOX_MODES: Record<VoxMode, VoxModeInfo> = {
   vox_drop: {
     id: 'vox_drop',
     name: 'Vox Drop',
-    tagline: 'Messages From the Future',
     description: 'Schedule voice messages for future delivery. Create time capsules for birthdays, reminders, or "open when..." style reveals. Your voice, delivered when it matters.',
-    workflow: [
-      'Record your message',
-      'Choose delivery date/time',
-      'Add reveal conditions (optional)',
-      'Set recipient(s)',
-      'Schedule the drop',
-      'Track pending deliveries'
-    ],
     icon: '⏰',
     features: [
       'Future scheduling',

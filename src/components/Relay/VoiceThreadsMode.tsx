@@ -891,7 +891,7 @@ const VoiceThreadsMode: React.FC<VoiceThreadsModeProps> = ({
         setShowSummary(true);
         toast.success('Thread summarized!');
       } else {
-        toast.error('AI summarizer unavailable — try again later');
+        toast.error('AI summarizer unavailable. Try again later.');
       }
     } catch (error: any) {
       console.error('Failed to generate summary:', error);
@@ -899,7 +899,7 @@ const VoiceThreadsMode: React.FC<VoiceThreadsModeProps> = ({
       if (msg.includes('API key') || msg.includes('API_KEY')) {
         toast.error('AI features require API configuration');
       } else if (msg.includes('network') || msg.includes('fetch')) {
-        toast.error('Network error — please try again');
+        toast.error('Network error. Please try again.');
       } else {
         toast.error('AI summarizer unavailable (beta)');
       }
@@ -1906,7 +1906,7 @@ const VoiceThreadsMode: React.FC<VoiceThreadsModeProps> = ({
                                       setMessages(prev => prev.filter(m => m.id !== message.id));
                                       toast.success('Message deleted');
                                     } else {
-                                      toast.error('Failed to delete message — you can only delete your own messages');
+                                      toast.error('Failed to delete message. You can only delete your own messages.');
                                     }
                                   } catch {
                                     toast.error('Failed to delete message');

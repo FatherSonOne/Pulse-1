@@ -927,7 +927,7 @@ const MeetingNotesSection: React.FC<MeetingNotesSectionProps> = ({
         notes.actionItems.forEach((item) => {
           let line = `- [ ] ${item.task}`;
           if (item.assignee) line += ` (${item.assignee})`;
-          if (item.dueDate) line += ` — due ${item.dueDate}`;
+          if (item.dueDate) line += ` (due ${item.dueDate})`;
           lines.push(line);
         });
         lines.push('');

@@ -608,7 +608,7 @@ const Glimpse: React.FC<GlimpseProps> = ({
       contactName: message.senderName,
     };
     try {
-      await archiveRelayConversation([item], message.senderName || 'Video Vox');
+      await archiveRelayConversation([item], message.senderName || 'Glimpse');
       toast.success('Archived to Pulse Archives');
     } catch {
       toast.error('Failed to archive');
@@ -658,7 +658,7 @@ const Glimpse: React.FC<GlimpseProps> = ({
         setShowSummary(true);
         toast.success('Conversation summarized!');
       } else {
-        toast.error('AI summarizer unavailable — try again later');
+        toast.error('AI summarizer unavailable. Try again later.');
       }
     } catch (error: any) {
       console.error('Summarization error:', error);
@@ -666,7 +666,7 @@ const Glimpse: React.FC<GlimpseProps> = ({
       if (msg.includes('API key') || msg.includes('API_KEY') || msg.includes('invalid') || msg.includes('unauthorized')) {
         toast.error('AI features require API configuration');
       } else if (msg.includes('network') || msg.includes('fetch') || msg.includes('ECONNREFUSED')) {
-        toast.error('Network error — please try again');
+        toast.error('Network error. Please try again.');
       } else {
         toast.error('AI summarizer unavailable (beta)');
       }
@@ -713,7 +713,7 @@ const Glimpse: React.FC<GlimpseProps> = ({
         setShowSmartReplies(true);
         toast.success('Smart replies generated!');
       } else {
-        toast.error('Smart replies unavailable — try again later');
+        toast.error('Smart replies unavailable. Try again later.');
       }
     } catch (error: any) {
       console.error('Smart replies error:', error);
@@ -721,7 +721,7 @@ const Glimpse: React.FC<GlimpseProps> = ({
       if (msg.includes('API key') || msg.includes('API_KEY') || msg.includes('invalid') || msg.includes('unauthorized')) {
         toast.error('AI features require API configuration');
       } else if (msg.includes('network') || msg.includes('fetch') || msg.includes('ECONNREFUSED')) {
-        toast.error('Network error — please try again');
+        toast.error('Network error. Please try again.');
       } else {
         toast.error('Smart replies unavailable (beta)');
       }
@@ -790,7 +790,7 @@ const Glimpse: React.FC<GlimpseProps> = ({
       if (isSelectionMode && selectionCount > 0) {
         (async () => {
           try {
-            await archiveRelayConversation(Array.from(selectedItems), conversations.find(c => c.id === activeConversationId)?.recipientName || conversations.find(c => c.id === activeConversationId)?.title || 'Video Vox');
+            await archiveRelayConversation(Array.from(selectedItems), conversations.find(c => c.id === activeConversationId)?.recipientName || conversations.find(c => c.id === activeConversationId)?.title || 'Glimpse');
             exitSelectionMode();
             toast.success(`Archived ${selectionCount} message${selectionCount > 1 ? 's' : ''}`);
           } catch {
@@ -944,7 +944,7 @@ const Glimpse: React.FC<GlimpseProps> = ({
             onClose?.();
           }
         }}
-        modeTitle="Video Vox"
+        modeTitle="Glimpse"
         modeSubtitle="Video Voice Messages"
         modeIcon={<Video className="w-5 h-5" />}
         accentColor={MODE_COLOR}

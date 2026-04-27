@@ -656,7 +656,7 @@ const ClassicMode: React.FC<ClassicModeProps> = ({
           analysis: { reply_to_id: newRecording.replyToId },
         } : {}),
       });
-      toast.success(isReply ? 'Reply sent!' : 'Vox sent!');
+      toast.success(isReply ? 'Reply sent!' : 'Message sent!');
     } catch (e) {
       console.error('Error saving recording:', e);
     }
@@ -711,7 +711,7 @@ const ClassicMode: React.FC<ClassicModeProps> = ({
     }
     setRecordings(prev => prev.filter(r => r.id !== recordingId));
     await dataService.deleteVoxerRecording(recordingId);
-    toast.success('Vox deleted');
+    toast.success('Message deleted');
   }, [recordings]);
 
   // Format duration
@@ -749,10 +749,10 @@ const ClassicMode: React.FC<ClassicModeProps> = ({
       document.body.removeChild(a);
       URL.revokeObjectURL(url);
 
-      toast.success('Vox downloaded!');
+      toast.success('Message downloaded!');
     } catch (error) {
       console.error('Download error:', error);
-      toast.error('Failed to download Vox');
+      toast.error('Failed to download message');
     }
   }, [pulseUsers]);
 
@@ -884,7 +884,7 @@ const ClassicMode: React.FC<ClassicModeProps> = ({
   // Forward a message (copy to clipboard or select new recipient)
   const forwardMessage = useCallback((recording: Recording) => {
     // For now, copy the URL to clipboard
-    navigator.clipboard.writeText(`Vox message: ${recording.transcription || 'Voice message'}`);
+    navigator.clipboard.writeText(`Voice message: ${recording.transcription || 'Voice message'}`);
     toast.success('Message copied to clipboard');
     setShowMessageMenu(null);
   }, []);
@@ -982,7 +982,7 @@ const ClassicMode: React.FC<ClassicModeProps> = ({
   // Generate chapters for messages with transcription (min 30s)
   const handleGenerateChapters = async (recording: Recording) => {
     if (!recording.transcription) {
-      toast.error('No transcription available — record and wait for AI to transcribe first');
+      toast.error('No transcription available. Record and wait for AI to transcribe first.');
       return;
     }
     if (recording.duration < 30) {
@@ -1109,8 +1109,8 @@ const ClassicMode: React.FC<ClassicModeProps> = ({
               type="button"
               onClick={() => setShowNewVoxModal(true)}
               className="classic-new-btn"
-              title="New Vox"
-              aria-label="Start new Vox conversation"
+              title="New message"
+              aria-label="Start new voice conversation"
             >
               <Plus className="w-4 h-4" />
             </button>
@@ -1134,7 +1134,7 @@ const ClassicMode: React.FC<ClassicModeProps> = ({
             <div className="classic-empty">
               <MessageCircle className="w-8 h-8" />
               <p>No conversations yet</p>
-              <span>Start a new Vox to begin</span>
+              <span>Start a new voice message to begin</span>
             </div>
           ) : (
             filteredContacts.map(user => {
@@ -1181,7 +1181,7 @@ const ClassicMode: React.FC<ClassicModeProps> = ({
                           <span>{lastVox.sender === 'me' ? 'You: ' : ''}Voice message</span>
                         </>
                       ) : (
-                        <span>Tap to start vox</span>
+                        <span>Tap to start voice message</span>
                       )}
                     </p>
                   </div>
@@ -1538,7 +1538,7 @@ const ClassicMode: React.FC<ClassicModeProps> = ({
                 </div>
               </div>
             </div>
-            <h2>Ready to Vox</h2>
+            <h2>Ready to record</h2>
             <p>Select a contact or start a new conversation</p>
           </div>
         )}
@@ -1549,7 +1549,7 @@ const ClassicMode: React.FC<ClassicModeProps> = ({
         <div className="classic-modal-overlay" onClick={() => setShowNewVoxModal(false)}>
           <div className="classic-modal" onClick={e => e.stopPropagation()}>
             <header className="classic-modal-header">
-              <h3>New Vox</h3>
+              <h3>New message</h3>
               <button type="button" onClick={() => setShowNewVoxModal(false)} title="Close">
                 <X className="w-5 h-5" />
               </button>

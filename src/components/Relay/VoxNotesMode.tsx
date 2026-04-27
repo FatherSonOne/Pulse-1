@@ -177,7 +177,7 @@ const VoxNotesMode: React.FC<VoxNotesModeProps> = ({
         setShowSummary(true);
         toast.success('Notes summarized!');
       } else {
-        toast.error('AI summarizer unavailable — try again later');
+        toast.error('AI summarizer unavailable. Try again later.');
       }
     } catch (error: any) {
       console.error('Summarization error:', error);
@@ -185,7 +185,7 @@ const VoxNotesMode: React.FC<VoxNotesModeProps> = ({
       if (msg.includes('API key') || msg.includes('API_KEY') || msg.includes('invalid') || msg.includes('unauthorized')) {
         toast.error('AI features require API configuration');
       } else if (msg.includes('network') || msg.includes('fetch') || msg.includes('ECONNREFUSED')) {
-        toast.error('Network error — please try again');
+        toast.error('Network error. Please try again.');
       } else {
         toast.error('AI summarizer unavailable (beta)');
       }
@@ -232,7 +232,7 @@ const VoxNotesMode: React.FC<VoxNotesModeProps> = ({
         setShowSmartReplies(true);
         toast.success('Smart replies generated!');
       } else {
-        toast.error('Smart replies unavailable — try again later');
+        toast.error('Smart replies unavailable. Try again later.');
       }
     } catch (error: any) {
       console.error('Smart replies error:', error);
@@ -240,7 +240,7 @@ const VoxNotesMode: React.FC<VoxNotesModeProps> = ({
       if (msg.includes('API key') || msg.includes('API_KEY') || msg.includes('invalid') || msg.includes('unauthorized')) {
         toast.error('AI features require API configuration');
       } else if (msg.includes('network') || msg.includes('fetch') || msg.includes('ECONNREFUSED')) {
-        toast.error('Network error — please try again');
+        toast.error('Network error. Please try again.');
       } else {
         toast.error('Smart replies unavailable (beta)');
       }
