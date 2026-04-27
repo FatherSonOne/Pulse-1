@@ -776,7 +776,10 @@ const ChaptersSection: React.FC<ChaptersSectionProps> = ({
                   } ${!isClickable && 'cursor-default'}`}
                   style={
                     isActive
-                      ? { borderLeft: `3px solid ${accentColor}`, paddingLeft: '11px' }
+                      ? {
+                          border: `1px solid ${accentColor}`,
+                          background: `${accentColor}10`,
+                        }
                       : {}
                   }
                 >

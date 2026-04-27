@@ -1515,9 +1515,9 @@
   gap: 6px;
   padding: 4px 8px;
   margin-bottom: 6px;
-  background: var(--cv-bg-tertiary);
-  border-left: 2px solid var(--cv-accent);
-  border-radius: 0 6px 6px 0;
+  background: rgba(249, 115, 22, 0.08); /* tinted from --cv-accent (#F97316) */
+  border: 1px solid rgba(249, 115, 22, 0.32);
+  border-radius: 6px;
   cursor: pointer;
   transition: background 0.15s ease;
 }

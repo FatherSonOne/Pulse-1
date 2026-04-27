@@ -669,13 +669,15 @@ const TeamVoxMode: React.FC<TeamVoxModeProps> = ({
   const getMessageTypeStyle = (type: string) => {
     switch (type) {
       case 'standup':
+        // Full hairline + tinted bg; status carried by the existing "Standup" pill.
         return isDarkMode
-          ? 'border-l-4 border-amber-500 bg-amber-500/10'
-          : 'border-l-4 border-amber-500 bg-amber-500/5';
+          ? 'border-amber-500/40 bg-amber-500/10'
+          : 'border-amber-500/40 bg-amber-500/5';
       case 'announcement':
+        // Full hairline + tinted bg; status carried by the existing "Announcement" pill.
         return isDarkMode
-          ? 'border-l-4 border-red-500 bg-red-500/10'
-          : 'border-l-4 border-red-500 bg-red-500/5';
+          ? 'border-red-500/40 bg-red-500/10'
+          : 'border-red-500/40 bg-red-500/5';
       default:
         return '';
     }
@@ -737,9 +739,9 @@ const TeamVoxMode: React.FC<TeamVoxModeProps> = ({
           {/* Workspace Header */}
           <button
             onClick={() => toggleWorkspaceExpanded(workspace.id)}
-            className={`w-full px-3 py-2.5 flex items-center gap-2 transition-all border-l-2 ${
+            className={`w-full px-3 py-2.5 flex items-center gap-2 transition-all border-l ${
               selectedWorkspace?.id === workspace.id
-                ? `border-amber-500 ${tc.activeBg}`
+                ? `border-amber-500/60 ${tc.activeBg}`
                 : `border-transparent ${tc.hoverBg}`
             }`}
           >
@@ -772,7 +774,7 @@ const TeamVoxMode: React.FC<TeamVoxModeProps> = ({
 
           {/* Channels */}
           {expandedWorkspaces.has(workspace.id) && (
-            <div className={`ml-8 border-l-2 ${selectedWorkspace?.id === workspace.id ? 'border-amber-500/30' : tc.border} pl-3 space-y-0.5 mt-1`}>
+            <div className={`ml-8 border-l ${selectedWorkspace?.id === workspace.id ? 'border-amber-500/30' : tc.border} pl-3 space-y-0.5 mt-1`}>
               {workspace.channels.map((channel) => (
                 <button
                   key={channel.id}

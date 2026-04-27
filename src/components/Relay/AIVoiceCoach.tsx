@@ -102,11 +102,21 @@ interface ImprovementCardProps {
 }
 
 const ImprovementCard: React.FC<ImprovementCardProps> = ({ improvement }) => {
-  const getPriorityColor = (priority: string) => {
+  // Full 1px tinted border + soft tinted bg per Relay design rules.
+  // Status conveyed by the leading mono-uppercase priority chip below.
+  const getPriorityBorderAndBg = (priority: string) => {
     switch (priority) {
-      case 'high': return 'border-red-500 bg-red-50 dark:bg-red-900/10';
-      case 'medium': return 'border-orange-500 bg-orange-50 dark:bg-orange-900/10';
-      default: return 'border-blue-500 bg-blue-50 dark:bg-blue-900/10';
+      case 'high': return 'border border-red-500/40 bg-red-50 dark:bg-red-900/10';
+      case 'medium': return 'border border-orange-500/40 bg-orange-50 dark:bg-orange-900/10';
+      default: return 'border border-blue-500/40 bg-blue-50 dark:bg-blue-900/10';
+    }
+  };
+
+  const getPriorityChip = (priority: string) => {
+    switch (priority) {
+      case 'high': return 'bg-red-100 text-red-600 dark:bg-red-900/30 dark:text-red-400';
+      case 'medium': return 'bg-orange-100 text-orange-600 dark:bg-orange-900/30 dark:text-orange-400';
+      default: return 'bg-blue-100 text-blue-600 dark:bg-blue-900/30 dark:text-blue-400';
     }
   };
 
@@ -124,7 +134,7 @@ const ImprovementCard: React.FC<ImprovementCardProps> = ({ improvement }) => {
   };
 
   return (
-    <div className={`p-3 rounded-xl border-l-4 ${getPriorityColor(improvement.priority)}`}>
+    <div className={`p-3 rounded-xl ${getPriorityBorderAndBg(improvement.priority)}`}>
       <div className="flex items-start gap-3">
         <div className="w-8 h-8 rounded-full bg-white dark:bg-zinc-800 flex items-center justify-center flex-shrink-0 shadow-sm">
           <i className={`fa-solid ${getTypeIcon(improvement.type)} text-sm text-zinc-600 dark:text-zinc-400`}></i>
@@ -132,11 +142,7 @@ const ImprovementCard: React.FC<ImprovementCardProps> = ({ improvement }) => {
         <div className="flex-1">
           <div className="flex items-center justify-between mb-1">
             <span className="text-xs font-semibold text-zinc-700 dark:text-zinc-300 capitalize">{improvement.type}</span>
-            <span className={`text-[9px] px-2 py-0.5 rounded-full font-medium ${
-              improvement.priority === 'high' ? 'bg-red-100 text-red-600 dark:bg-red-900/30 dark:text-red-400' :
-              improvement.priority === 'medium' ? 'bg-orange-100 text-orange-600 dark:bg-orange-900/30 dark:text-orange-400' :
-              'bg-blue-100 text-blue-600 dark:bg-blue-900/30 dark:text-blue-400'
-            }`}>
+            <span className={`font-mono text-[10px] uppercase tracking-[0.1em] px-1.5 py-0.5 rounded ${getPriorityChip(improvement.priority)}`}>
               {improvement.priority}
             </span>
           </div>

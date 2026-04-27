@@ -474,7 +474,8 @@
 }
 
 .vt-thread-item.pinned {
-  border-left: 3px solid var(--vt-accent);
+  border-color: rgba(16, 185, 129, 0.4); /* --vt-accent (#10B981) at 40% */
+  background: rgba(16, 185, 129, 0.06);
 }
 
 .vt-thread-avatar {
@@ -751,7 +752,8 @@
 }
 
 .vt-message-pinned {
-  border-left: 3px solid var(--vt-accent);
+  border-color: rgba(16, 185, 129, 0.4); /* --vt-accent (#10B981) at 40% */
+  background: rgba(16, 185, 129, 0.06);
 }
 
 .vt-message-pinned-indicator {
@@ -766,9 +768,9 @@
 
 .vt-message-reply-quote {
   padding: 0.75rem;
-  border-left: 3px solid var(--vt-accent);
+  border: 1px solid rgba(16, 185, 129, 0.32); /* --vt-accent (#10B981) hairline */
   border-radius: 6px;
-  background: var(--vt-bg-tertiary);
+  background: rgba(16, 185, 129, 0.06);
   margin-bottom: 0.5rem;
   font-size: 0.875rem;
   color: var(--vt-text-secondary);
