@@ -526,11 +526,11 @@ const VoxDropMode: React.FC<VoxDropModeProps> = ({
       ? 'bg-gradient-to-br from-gray-900 via-red-900/10 to-gray-900'
       : 'bg-gradient-to-br from-slate-50 via-red-50/30 to-white',
     panelBg: isDarkMode
-      ? 'bg-gray-900/60 backdrop-blur-xl'
-      : 'bg-white/80 backdrop-blur-xl',
+      ? 'bg-gray-900'
+      : 'bg-white',
     cardBg: isDarkMode
-      ? 'bg-gray-800/40 backdrop-blur-sm'
-      : 'bg-white/60 backdrop-blur-sm',
+      ? 'bg-gray-800/60'
+      : 'bg-white',
     inputBg: isDarkMode
       ? 'bg-gray-800/60 border-gray-700/50'
       : 'bg-white/80 border-gray-200/60',
@@ -563,8 +563,8 @@ const VoxDropMode: React.FC<VoxDropModeProps> = ({
     // Modal
     modalOverlay: 'bg-black/60 backdrop-blur-sm',
     modalBg: isDarkMode
-      ? 'bg-gray-900/95 backdrop-blur-xl border-gray-800/60'
-      : 'bg-white/95 backdrop-blur-xl border-gray-200/60',
+      ? 'bg-gray-900 border-gray-800/60'
+      : 'bg-white border-gray-200/60',
   };
 
   return (

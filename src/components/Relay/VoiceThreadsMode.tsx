@@ -1748,12 +1748,9 @@ const VoiceThreadsMode: React.FC<VoiceThreadsModeProps> = ({
                               isSelected(message.id)
                                 ? 'bg-[#10B981] border-[#10B981] shadow-lg shadow-emerald-500/30'
                                 : isDarkMode
-                                ? 'bg-gray-800/50 border-gray-600 hover:border-emerald-400'
-                                : 'bg-white/50 border-gray-300 hover:border-emerald-500'
+                                ? 'bg-gray-800 border-gray-600 hover:border-emerald-400'
+                                : 'bg-white border-gray-300 hover:border-emerald-500'
                             }`}
-                            style={{
-                              backdropFilter: 'blur(8px)',
-                            }}
                           >
                             {isSelected(message.id) && <Check className="w-5 h-5 text-white" />}
                           </button>

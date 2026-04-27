@@ -105,8 +105,6 @@
    ============================================ */
 .vox-glass {
   background: var(--vox-glass);
-  backdrop-filter: blur(20px);
-  -webkit-backdrop-filter: blur(20px);
   border: 1px solid var(--vox-glass-border);
   border-radius: 20px;
   box-shadow: var(--vox-shadow-lg);
@@ -114,8 +112,6 @@
 
 .vox-glass-subtle {
   background: var(--vox-glass);
-  backdrop-filter: blur(12px);
-  -webkit-backdrop-filter: blur(12px);
   border: 1px solid var(--vox-glass-border);
   border-radius: 16px;
 }

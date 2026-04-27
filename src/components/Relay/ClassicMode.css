@@ -116,8 +116,6 @@
   padding: 16px 20px;
   border-bottom: 1px solid var(--cv-border);
   background: var(--cv-bg-glass);
-  backdrop-filter: blur(20px);
-  -webkit-backdrop-filter: blur(20px);
 }
 
 .classic-back-btn {
@@ -219,8 +217,6 @@
   border-radius: 12px;
   background: var(--cv-bg-glass);
   border: 1px solid var(--cv-border);
-  backdrop-filter: blur(12px);
-  -webkit-backdrop-filter: blur(12px);
 }
 
 .classic-search svg {
@@ -444,8 +440,6 @@
   gap: 14px;
   padding: 16px 24px;
   background: var(--cv-bg-glass);
-  backdrop-filter: blur(20px);
-  -webkit-backdrop-filter: blur(20px);
   border-bottom: 1px solid var(--cv-border);
   position: sticky;
   top: 0;
@@ -598,8 +592,6 @@
 
 .classic-message.received .classic-message-content {
   background: var(--cv-message-received);
-  backdrop-filter: blur(12px);
-  -webkit-backdrop-filter: blur(12px);
   border: 1px solid var(--cv-border);
   border-bottom-left-radius: 6px;
 }
@@ -789,8 +781,6 @@
 .classic-controls {
   padding: 24px;
   background: var(--cv-bg-glass);
-  backdrop-filter: blur(20px);
-  -webkit-backdrop-filter: blur(20px);
   border-top: 1px solid var(--cv-border);
   display: flex;
   justify-content: center;

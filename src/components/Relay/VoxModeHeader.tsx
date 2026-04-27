@@ -32,8 +32,8 @@ const VoxModeHeader: React.FC<VoxModeHeaderProps> = ({
   // Theme classes
   const tc = {
     pageBg: isDarkMode
-      ? 'bg-gray-900/60 backdrop-blur-xl'
-      : 'bg-white/80 backdrop-blur-xl',
+      ? 'bg-gray-900'
+      : 'bg-white',
     border: isDarkMode ? 'border-gray-800/60' : 'border-gray-200/60',
     text: isDarkMode ? 'text-white' : 'text-gray-900',
     textSecondary: isDarkMode ? 'text-gray-400' : 'text-gray-600',

@@ -140,7 +140,7 @@ export const MicrophoneTest: React.FC<MicrophoneTestProps> = ({
   });
 
   const tc = {
-    bg: isDarkMode ? 'bg-gray-900/80' : 'bg-white/90',
+    bg: isDarkMode ? 'bg-gray-900' : 'bg-white',
     border: isDarkMode ? 'border-gray-700/50' : 'border-gray-200/60',
     text: isDarkMode ? 'text-white' : 'text-gray-900',
     textMuted: isDarkMode ? 'text-gray-400' : 'text-gray-500',
@@ -148,7 +148,7 @@ export const MicrophoneTest: React.FC<MicrophoneTestProps> = ({
   };
 
   return (
-    <div className={`rounded-xl border ${tc.border} ${tc.bg} backdrop-blur-sm overflow-hidden`}>
+    <div className={`rounded-xl border ${tc.border} ${tc.bg} overflow-hidden`}>
       {/* Header */}
       <div
         className="px-4 py-3 flex items-center justify-between"

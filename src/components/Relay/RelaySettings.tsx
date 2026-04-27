@@ -49,8 +49,8 @@ export const RelaySettings: React.FC<RelaySettingsProps> = ({
       ? 'bg-gradient-to-br from-gray-900 via-gray-900 to-gray-800'
       : 'bg-gradient-to-br from-white via-white to-gray-50',
     headerBg: isDarkMode
-      ? 'bg-gray-900/80'
-      : 'bg-white/90',
+      ? 'bg-gray-900'
+      : 'bg-white',
     border: isDarkMode ? 'border-gray-700/50' : 'border-gray-200/60',
     text: isDarkMode ? 'text-white' : 'text-gray-900',
     textSecondary: isDarkMode ? 'text-gray-400' : 'text-gray-600',
@@ -93,7 +93,7 @@ export const RelaySettings: React.FC<RelaySettingsProps> = ({
       >
         {/* Header */}
         <div
-          className={`px-6 py-4 border-b ${tc.border} ${tc.headerBg} backdrop-blur-xl flex-shrink-0`}
+          className={`px-6 py-4 border-b ${tc.border} ${tc.headerBg} flex-shrink-0`}
           style={{
             background: isDarkMode
               ? `linear-gradient(135deg, ${ACCENT_COLOR}10 0%, transparent 50%)`

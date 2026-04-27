@@ -102,8 +102,8 @@ const VoxModeToolbar: React.FC<VoxModeToolbarProps> = ({
   return (
     <header
       className={`flex items-center gap-2 px-3 md:px-4 py-3 border-b shrink-0 ${
-        isDarkMode ? 'border-white/10 bg-gray-900/80' : 'border-gray-200/80 bg-white/80'
-      } backdrop-blur-sm`}
+        isDarkMode ? 'border-white/10 bg-gray-900' : 'border-gray-200 bg-white'
+      }`}
     >
       {/* ← Back */}
       <button

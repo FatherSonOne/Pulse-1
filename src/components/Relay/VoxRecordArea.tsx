@@ -45,8 +45,8 @@ const VoxRecordArea: React.FC<VoxRecordAreaProps> = ({
   // Theme classes
   const tc = {
     cardBg: isDarkMode
-      ? 'bg-gray-800/40 backdrop-blur-sm'
-      : 'bg-white/60 backdrop-blur-sm',
+      ? 'bg-gray-800/60'
+      : 'bg-white',
     border: isDarkMode ? 'border-gray-700/50' : 'border-gray-200/60',
   };
 

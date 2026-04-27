@@ -135,8 +135,6 @@
   gap: 1rem;
   padding: 1rem 1.5rem;
   background: var(--pr-bg-glass);
-  -webkit-backdrop-filter: blur(20px);
-  backdrop-filter: blur(20px);
   border-bottom: 1px solid var(--pr-border-subtle);
 }
 
@@ -313,8 +311,6 @@
 .pulse-radio-sidebar {
   width: 280px;
   background: var(--pr-bg-glass);
-  -webkit-backdrop-filter: blur(16px);
-  backdrop-filter: blur(16px);
   border-right: 1px solid var(--pr-border-subtle);
   display: none;
   flex-direction: column;
@@ -538,8 +534,6 @@
   gap: 1rem;
   padding: 1.5rem;
   background: var(--pr-bg-glass);
-  -webkit-backdrop-filter: blur(16px);
-  backdrop-filter: blur(16px);
   border: 1px solid var(--pr-border-subtle);
   border-radius: 20px;
   position: relative;
@@ -680,8 +674,6 @@
 .pulse-radio-record-section {
   padding: 1.5rem;
   background: var(--pr-bg-glass);
-  -webkit-backdrop-filter: blur(16px);
-  backdrop-filter: blur(16px);
   border: 1px solid var(--pr-border-subtle);
   border-radius: 20px;
 }
@@ -813,8 +805,6 @@
   gap: 1rem;
   padding: 1.25rem;
   background: var(--pr-bg-glass);
-  -webkit-backdrop-filter: blur(16px);
-  backdrop-filter: blur(16px);
   border: 1px solid var(--pr-border-subtle);
   border-radius: 16px;
   transition: all 0.3s cubic-bezier(0.4, 0, 0.2, 1);
@@ -1012,8 +1002,6 @@
   padding: 4rem 2rem;
   text-align: center;
   background: var(--pr-bg-glass);
-  -webkit-backdrop-filter: blur(16px);
-  backdrop-filter: blur(16px);
   border: 1px dashed var(--pr-border-medium);
   border-radius: 16px;
 }
