@@ -493,7 +493,7 @@ export const TimeCapsuleVox: React.FC<TimeCapsuleVoxProps> = ({
             <button
               onClick={handleSchedule}
               disabled={!audioBlob || selectedRecipients.length === 0}
-              className="flex-1 py-3 bg-gradient-to-r from-purple-500 to-pink-500 hover:from-purple-600 hover:to-pink-600 text-white rounded-xl font-semibold transition disabled:opacity-50 disabled:cursor-not-allowed"
+              className="flex-1 py-3 bg-rose-500 hover:bg-rose-600 text-white rounded-xl font-semibold transition disabled:opacity-50 disabled:cursor-not-allowed"
             >
               <History className="mr-2" />
               Schedule Capsule

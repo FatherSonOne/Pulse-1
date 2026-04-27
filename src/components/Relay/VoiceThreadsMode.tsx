@@ -52,7 +52,7 @@ import { voxModeService } from '../../services/relay/voxModeService';
 import VoxModeToolbar from './VoxModeToolbar';
 import VoxRecordArea from './VoxRecordArea';
 // analyticsCollector loaded dynamically to avoid svc-crm-analytics chunk TDZ
-import { VOX_MODES, type VoiceThread, type VoiceThreadMessage, type PulseUser } from '../../services/relay/voxModeTypes';
+import { type VoiceThread, type VoiceThreadMessage, type PulseUser } from '../../services/relay/voxModeTypes';
 import toast from 'react-hot-toast';
 import './VoiceThreadsMode.css';
 
@@ -76,10 +76,9 @@ import { PlaybackSpeedControl } from './PlaybackSpeedControl';
 import { VoxEmptyState } from './VoxEmptyState';
 import { getEmptyStateConfig } from './voxEmptyStates';
 
-// Mode colors from shared palette
-const MODE_COLOR = VOX_MODES.voice_threads.color;
-const MODE_COLOR_LIGHT = VOX_MODES.voice_threads.colorLight!;
-const MODE_COLOR_DARK = VOX_MODES.voice_threads.colorDark!;
+// Relay brand accent (rose-500) — per-mode colors retired in 2.1d.1.
+const MODE_COLOR = '#f43f5e';
+const MODE_COLOR_LIGHT = '#fb7185'; // rose-400
 
 // Quick reaction emojis
 const QUICK_REACTIONS = ['❤️', '👍', '🎯', '🔥', '💡', '👏'];
@@ -1340,7 +1339,7 @@ const VoiceThreadsMode: React.FC<VoiceThreadsModeProps> = ({
         modeIcon={<MessageSquare className="w-5 h-5" />}
         modeTitle="Voice Threads"
         modeSubtitle="Async Voice Conversations"
-        accentColor={MODE_COLOR}
+        accentColor="#f43f5e"
         isDarkMode={isDarkMode}
         showAI={!!(selectedThread && messages.length > 0)}
         onSummarize={selectedThread && messages.length > 0 ? handleSummarizeThread : undefined}
@@ -1825,7 +1824,7 @@ const VoiceThreadsMode: React.FC<VoiceThreadsModeProps> = ({
                               }}
                               mode="compact"
                               isDarkMode={isDarkMode}
-                              accentColor={MODE_COLOR}
+                              accentColor="#f43f5e"
                             />
                           )}
                         </div>
@@ -1898,7 +1897,7 @@ const VoiceThreadsMode: React.FC<VoiceThreadsModeProps> = ({
                             {showMessageMenu === message.id && (
                               <VoxMessageMenu
                                 isDarkMode={isDarkMode}
-                                accentColor={MODE_COLOR}
+                                accentColor="#f43f5e"
                                 anchorRect={menuAnchorRect!}
                                 onArchive={() => handleArchiveMessage(message)}
                                 onDownload={() => handleDownloadMessage(message)}
@@ -2352,7 +2351,7 @@ const VoiceThreadsMode: React.FC<VoiceThreadsModeProps> = ({
           onExitSelection={exitSelectionMode}
           allSelected={selectionCount === messages.length && messages.length > 0}
           isDarkMode={isDarkMode}
-          accentColor={MODE_COLOR}
+          accentColor="#f43f5e"
           contactName={selectedThread.subject || getParticipantNames(selectedThread)}
         />
       )}
@@ -2375,7 +2374,7 @@ const VoiceThreadsMode: React.FC<VoiceThreadsModeProps> = ({
             setShowSmartReplies(false);
           }}
           isDarkMode={isDarkMode}
-          accentColor={MODE_COLOR}
+          accentColor="#f43f5e"
         />
       )}
 
@@ -2435,7 +2434,7 @@ const VoiceThreadsMode: React.FC<VoiceThreadsModeProps> = ({
         <VoxKeyboardShortcutsHelp
           onClose={() => setShowShortcutsHelp(false)}
           isDarkMode={isDarkMode}
-          accentColor={MODE_COLOR}
+          accentColor="#f43f5e"
         />
       )}
 
@@ -2445,7 +2444,7 @@ const VoiceThreadsMode: React.FC<VoiceThreadsModeProps> = ({
           onClose={() => { setShowDownloadModal(false); setDownloadItem(null); }}
           items={[downloadItem]}
           isDarkMode={isDarkMode}
-          accentColor={MODE_COLOR}
+          accentColor="#f43f5e"
         />
       )}
     </div>

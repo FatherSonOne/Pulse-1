@@ -263,8 +263,8 @@ const ClassicMode: React.FC<ClassicModeProps> = ({
   // revoked on component unmount or when no longer needed, preventing memory leaks.
   const blobUrlsRef = useRef<Set<string>>(new Set());
 
-  // Theme colors
-  const accentColor = '#F97316'; // Classic orange
+  // Theme colors — Relay brand accent (rose-500), per-mode colors retired in 2.1d.1.
+  const accentColor = '#f43f5e';
 
   // Cleanup all blob URLs on component unmount to prevent memory leaks (G6 fix).
   // Individual URLs are also revoked when replaced or deleted, but this
@@ -1203,7 +1203,7 @@ const ClassicMode: React.FC<ClassicModeProps> = ({
               modeIcon={<Phone className="w-5 h-5" />}
               modeTitle={activeContact.displayName || activeContact.fullName || 'Conversation'}
               modeSubtitle={activeContact.handle ? `@${activeContact.handle}` : activeContact.role || ''}
-              accentColor="#F97316"
+              accentColor="#f43f5e"
               isDarkMode={isDarkMode}
               showAI
               onSummarize={handleSummarizeConversation}
@@ -1828,7 +1828,7 @@ const ClassicMode: React.FC<ClassicModeProps> = ({
           onExitSelection={exitSelectionMode}
           contactName={activeContact?.displayName || activeContact?.handle}
           isDarkMode={isDarkMode}
-          accentColor="#F97316"
+          accentColor="#f43f5e"
           allSelected={selectionCount === activeThreadRecordings.length && activeThreadRecordings.length > 0}
         />
       )}
@@ -1855,7 +1855,7 @@ const ClassicMode: React.FC<ClassicModeProps> = ({
             replies={smartReplies}
             onSelectReply={handleSelectSmartReply}
             isDarkMode={isDarkMode}
-            accentColor="#3B82F6"
+            accentColor="#f43f5e"
           />
         </div>
       )}

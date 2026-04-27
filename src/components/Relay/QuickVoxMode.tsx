@@ -23,7 +23,7 @@ import VoxRecordArea from './VoxRecordArea';
 import { useVoxRecording } from '../../hooks/useVoxRecording';
 import { voxModeService } from '../../services/relay/voxModeService';
 // analyticsCollector loaded dynamically to avoid svc-crm-analytics chunk TDZ
-import { VOX_MODES, type QuickVoxFavorite, type QuickVoxMessage, type QuickVoxStatus } from '../../services/relay/voxModeTypes';
+import { type QuickVoxFavorite, type QuickVoxMessage, type QuickVoxStatus } from '../../services/relay/voxModeTypes';
 import toast from 'react-hot-toast';
 import './Relay.css';
 
@@ -48,8 +48,8 @@ import { PlaybackSpeedControl } from './PlaybackSpeedControl';
 import { VoxEmptyState } from './VoxEmptyState';
 import { getEmptyStateConfig } from './voxEmptyStates';
 
-// Mode color from shared palette
-const MODE_COLOR = VOX_MODES.quick_vox.color;
+// Relay brand accent (rose-500) — per-mode colors retired in 2.1d.1.
+const MODE_COLOR = '#f43f5e';
 
 interface QuickVoxModeProps {
   apiKey?: string;
@@ -558,7 +558,7 @@ const QuickVoxMode: React.FC<QuickVoxModeProps> = ({
       : 'bg-gray-100/80 border-gray-200/50',
 
     // Buttons
-    btnPrimary: 'bg-gradient-to-r from-blue-500 to-cyan-500 hover:from-blue-600 hover:to-cyan-600 text-white shadow-lg shadow-blue-500/25',
+    btnPrimary: 'bg-rose-500 hover:bg-rose-600 text-white shadow-lg shadow-rose-500/25',
     btnSecondary: isDarkMode
       ? 'bg-gray-800/60 hover:bg-gray-700/60 text-gray-300 border border-gray-700/50'
       : 'bg-white/80 hover:bg-gray-100/80 text-gray-700 border border-gray-200/60',
@@ -581,7 +581,7 @@ const QuickVoxMode: React.FC<QuickVoxModeProps> = ({
         modeIcon={<Zap className="w-5 h-5" />}
         modeTitle="Quick Vox"
         modeSubtitle="Fast Voice to Favorites"
-        accentColor={MODE_COLOR}
+        accentColor="#f43f5e"
         isDarkMode={isDarkMode}
         showAI={!!selectedContact}
         onSummarize={handleSummarizeConversation}
@@ -803,7 +803,7 @@ const QuickVoxMode: React.FC<QuickVoxModeProps> = ({
                                 }}
                                 mode="compact"
                                 isDarkMode={isDarkMode}
-                                accentColor={MODE_COLOR}
+                                accentColor="#f43f5e"
                               />
                             </div>
                             {isMe && (
@@ -833,7 +833,7 @@ const QuickVoxMode: React.FC<QuickVoxModeProps> = ({
                         {showMessageMenu === message.id && (
                           <VoxMessageMenu
                             isDarkMode={isDarkMode}
-                            accentColor={MODE_COLOR}
+                            accentColor="#f43f5e"
                             anchorRect={menuAnchorRect!}
                             onArchive={() => handleArchiveMessage(message)}
                             onDownload={() => handleDownloadMessage(message)}
@@ -937,7 +937,7 @@ const QuickVoxMode: React.FC<QuickVoxModeProps> = ({
             <div className="flex items-center gap-3 mb-6">
               <div
                 className="p-2 rounded-xl"
-                style={{ background: `linear-gradient(135deg, ${MODE_COLOR} 0%, #06b6d4 100%)` }}
+                style={{ background: `linear-gradient(135deg, ${MODE_COLOR} 0%, #e11d48 100%)` }}
               >
                 <Plus className="w-5 h-5 text-white" />
               </div>
@@ -1006,7 +1006,7 @@ const QuickVoxMode: React.FC<QuickVoxModeProps> = ({
           onExitSelection={exitSelectionMode}
           contactName={selectedContact.contactName}
           isDarkMode={isDarkMode}
-          accentColor={MODE_COLOR}
+          accentColor="#f43f5e"
           allSelected={selectionCount === messages.length && messages.length > 0}
         />
       )}
@@ -1039,7 +1039,7 @@ const QuickVoxMode: React.FC<QuickVoxModeProps> = ({
             }}
             onClose={() => setShowSmartReplies(false)}
             isDarkMode={isDarkMode}
-            accentColor={MODE_COLOR}
+            accentColor="#f43f5e"
           />
         </div>
       )}
@@ -1058,7 +1058,7 @@ const QuickVoxMode: React.FC<QuickVoxModeProps> = ({
           onClose={() => { setShowDownloadModal(false); setDownloadItem(null); }}
           items={[downloadItem]}
           isDarkMode={isDarkMode}
-          accentColor={MODE_COLOR}
+          accentColor="#f43f5e"
         />
       )}
     </div>

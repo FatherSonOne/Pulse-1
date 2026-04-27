@@ -16,7 +16,7 @@ import {
   Video,
   X,
 } from 'lucide-react';
-import { VOX_MODES, VoxMode, VoxModeInfo, ALL_MODE_COLORS } from '../../services/relay/voxModeTypes';
+import { VOX_MODES, VoxMode, VoxModeInfo } from '../../services/relay/voxModeTypes';
 import RelaySettings from './RelaySettings';
 
 interface VoxModeSelectorProps {
@@ -42,8 +42,6 @@ const CLASSIC_MODE_INFO = {
     'Track delivery and playback status'
   ],
   icon: '📱',
-  color: '#F97316',
-  gradient: 'from-orange-500 to-red-600',
   features: [
     'Direct contact messaging',
     'Real-time transcription',
@@ -68,8 +66,8 @@ const MODE_ICONS: Record<VoxMode, React.ReactNode> = {
   vox_drop: <Clock className="w-5 h-5" />,
 };
 
-// Mode colors sourced from shared palette (voxModeTypes.ts)
-const MODE_COLORS = ALL_MODE_COLORS;
+// Brand accent for Relay (rose-500). Per-mode colors were retired in 2.1d.1.
+const RELAY_ACCENT = '#f43f5e';
 
 // Industrial dot matrix pattern for CMF Nothing aesthetic
 const DotMatrix: React.FC<{ color: string; isDarkMode: boolean }> = ({ color, isDarkMode }) => {
@@ -157,7 +155,7 @@ const VoxModeSelector: React.FC<VoxModeSelectorProps> = ({
     }, 400);
   };
 
-  const getModeColor = (modeKey: string) => MODE_COLORS[modeKey] || '#6366f1';
+  const getModeColor = (_modeKey: string) => RELAY_ACCENT;
   const activeColor = getModeColor(displayMode || 'classic');
 
   const allModes: Array<{ key: VoxMode | 'classic'; info: typeof CLASSIC_MODE_INFO }> = [

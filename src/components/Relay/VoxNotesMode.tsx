@@ -34,7 +34,7 @@ import VoxRecordArea from './VoxRecordArea';
 import { useVoxRecording } from '../../hooks/useVoxRecording';
 import { voxModeService } from '../../services/relay/voxModeService';
 // analyticsCollector loaded dynamically to avoid svc-crm-analytics chunk TDZ
-import { VOX_MODES, type VoxNote, type LinkedItem } from '../../services/relay/voxModeTypes';
+import { type VoxNote, type LinkedItem } from '../../services/relay/voxModeTypes';
 import toast from 'react-hot-toast';
 import './Relay.css';
 
@@ -58,8 +58,8 @@ import { PlaybackSpeedControl } from './PlaybackSpeedControl';
 import { VoxEmptyState } from './VoxEmptyState';
 import { getEmptyStateConfig } from './voxEmptyStates';
 
-// Mode color from shared palette
-const MODE_COLOR = VOX_MODES.vox_notes.color;
+// Relay brand accent (rose-500) — per-mode colors retired in 2.1d.1.
+const MODE_COLOR = '#f43f5e';
 
 interface VoxNotesModeProps {
   apiKey?: string;
@@ -621,7 +621,7 @@ const VoxNotesMode: React.FC<VoxNotesModeProps> = ({
     textAccent: 'text-pink-500',
 
     // Buttons
-    btnPrimary: 'bg-gradient-to-r from-pink-500 to-rose-500 hover:from-pink-600 hover:to-rose-600 text-white shadow-lg shadow-pink-500/25',
+    btnPrimary: 'bg-rose-500 hover:bg-rose-600 text-white shadow-lg shadow-rose-500/25',
     btnSecondary: isDarkMode
       ? 'bg-gray-800/60 hover:bg-gray-700/60 text-gray-300 border border-gray-700/50'
       : 'bg-white/80 hover:bg-gray-100/80 text-gray-700 border border-gray-200/60',
@@ -820,7 +820,7 @@ const VoxNotesMode: React.FC<VoxNotesModeProps> = ({
                       {showMessageMenu === note.id && menuAnchorRect && (
                         <VoxMessageMenu
                           isDarkMode={isDarkMode}
-                          accentColor={MODE_COLOR}
+                          accentColor="#f43f5e"
                           anchorRect={menuAnchorRect}
                           onArchive={() => handleArchiveNote(note)}
                           onDownload={() => handleDownloadNote(note)}
@@ -860,7 +860,7 @@ const VoxNotesMode: React.FC<VoxNotesModeProps> = ({
         modeIcon={<FileText className="w-5 h-5" />}
         modeTitle="Vox Notes"
         modeSubtitle="Your Voice, Organized"
-        accentColor={MODE_COLOR}
+        accentColor="#f43f5e"
         isDarkMode={isDarkMode}
         showAI={notes.length > 0}
         onSummarize={handleSummarizeNotes}
@@ -1076,7 +1076,7 @@ const VoxNotesMode: React.FC<VoxNotesModeProps> = ({
                     }}
                     mode="compact"
                     isDarkMode={isDarkMode}
-                    accentColor={MODE_COLOR}
+                    accentColor="#f43f5e"
                   />
                 </div>
               </div>
@@ -1288,7 +1288,7 @@ const VoxNotesMode: React.FC<VoxNotesModeProps> = ({
           onExitSelection={exitSelectionMode}
           contactName="My Notes"
           isDarkMode={isDarkMode}
-          accentColor={MODE_COLOR}
+          accentColor="#f43f5e"
           allSelected={selectionCount === filteredNotes.length && filteredNotes.length > 0}
         />
       )}
@@ -1321,7 +1321,7 @@ const VoxNotesMode: React.FC<VoxNotesModeProps> = ({
             }}
             onClose={() => setShowSmartReplies(false)}
             isDarkMode={isDarkMode}
-            accentColor={MODE_COLOR}
+            accentColor="#f43f5e"
           />
         </div>
       )}
@@ -1340,7 +1340,7 @@ const VoxNotesMode: React.FC<VoxNotesModeProps> = ({
           onClose={() => { setShowDownloadModal(false); setDownloadItem(null); }}
           items={[downloadItem]}
           isDarkMode={isDarkMode}
-          accentColor={MODE_COLOR}
+          accentColor="#f43f5e"
         />
       )}
     </div>

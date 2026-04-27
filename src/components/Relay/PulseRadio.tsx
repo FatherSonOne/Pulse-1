@@ -40,7 +40,7 @@ import { useVoxRecording } from '../../hooks/useVoxRecording';
 import { voxModeService } from '../../services/relay/voxModeService';
 import { supabase } from '../../services/supabase';
 // analyticsCollector loaded dynamically to avoid svc-crm-analytics chunk TDZ
-import { VOX_MODES, type PulseChannel, type Broadcast } from '../../services/relay/voxModeTypes';
+import { type PulseChannel, type Broadcast } from '../../services/relay/voxModeTypes';
 import toast from 'react-hot-toast';
 import './PulseRadio.css';
 
@@ -78,9 +78,9 @@ interface PulseRadioProps {
   isDarkMode?: boolean;
 }
 
-// Mode colors from shared palette
-const MODE_COLOR = VOX_MODES.pulse_radio.color;
-const MODE_COLOR_LIGHT = VOX_MODES.pulse_radio.colorLight!;
+// Relay brand accent (rose-500) — per-mode colors retired in 2.1d.1.
+const MODE_COLOR = '#f43f5e';
+const MODE_COLOR_LIGHT = '#fb7185'; // rose-400
 
 // ============================================
 // LAYERED AUDIO VISUALIZER COMPONENT
@@ -749,7 +749,7 @@ const PulseRadio: React.FC<PulseRadioProps> = ({ onBack, apiKey, isDarkMode = fa
         modeIcon={<Radio className="w-5 h-5" />}
         modeTitle="Pulse Radio"
         modeSubtitle="Broadcast & Public Channels"
-        accentColor={MODE_COLOR}
+        accentColor="#f43f5e"
         isDarkMode={isDarkMode}
         showAI
         onSummarize={handleSummarizeChannel}
@@ -1093,7 +1093,7 @@ const PulseRadio: React.FC<PulseRadioProps> = ({ onBack, apiKey, isDarkMode = fa
                             {showMessageMenu === broadcast.id && (
                               <VoxMessageMenu
                                 isDarkMode={isDarkMode}
-                                accentColor={MODE_COLOR}
+                                accentColor="#f43f5e"
                                 anchorRect={menuAnchorRect!}
                                 onArchive={() => handleArchiveBroadcast(broadcast)}
                                 onDownload={() => handleDownloadBroadcast(broadcast)}
@@ -1596,7 +1596,7 @@ const PulseRadio: React.FC<PulseRadioProps> = ({ onBack, apiKey, isDarkMode = fa
           onClose={() => { setShowDownloadModal(false); setDownloadItem(null); }}
           items={[downloadItem]}
           isDarkMode={isDarkMode}
-          accentColor={MODE_COLOR}
+          accentColor="#f43f5e"
         />
       )}
     </div>

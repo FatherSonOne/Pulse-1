@@ -6,7 +6,12 @@ import { LucideIcon } from 'lucide-react';
 
 interface VoxEmptyStateProps {
   mode: string;
-  color: string;
+  /**
+   * Accent color for the empty state. Defaults to Relay rose (#f43f5e).
+   * Per-mode colors retired in 2.1d.1; only peer sections (e.g. Glimpse)
+   * still pass a custom color.
+   */
+  color?: string;
   icon: LucideIcon;
   title: string;
   description: string;
@@ -19,7 +24,7 @@ interface VoxEmptyStateProps {
 
 export const VoxEmptyState: React.FC<VoxEmptyStateProps> = ({
   mode,
-  color,
+  color = '#f43f5e',
   icon: Icon,
   title,
   description,

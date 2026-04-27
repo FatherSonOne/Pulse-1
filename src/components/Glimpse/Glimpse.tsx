@@ -1048,6 +1048,7 @@ const Glimpse: React.FC<GlimpseProps> = ({
             ) : chatHook.messages.length === 0 ? (
               <VoxEmptyState
                 {...emptyConfig}
+                color={MODE_COLOR}
                 isDarkMode={isDarkMode}
                 action={{ label: 'Record Video', onClick: () => setViewMode('record') }}
               />

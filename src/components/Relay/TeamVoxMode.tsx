@@ -36,7 +36,7 @@ import VoxRecordArea from './VoxRecordArea';
 import { useVoxRecording } from '../../hooks/useVoxRecording';
 import { voxModeService } from '../../services/relay/voxModeService';
 // analyticsCollector loaded dynamically to avoid svc-crm-analytics chunk TDZ
-import { VOX_MODES, type VoxWorkspace, type VoxTeamChannel, type TeamVoxMessage } from '../../services/relay/voxModeTypes';
+import { type VoxWorkspace, type VoxTeamChannel, type TeamVoxMessage } from '../../services/relay/voxModeTypes';
 import toast from 'react-hot-toast';
 import './Relay.css';
 
@@ -60,8 +60,8 @@ import { PlaybackSpeedControl } from './PlaybackSpeedControl';
 import { VoxEmptyState } from './VoxEmptyState';
 import { getEmptyStateConfig } from './voxEmptyStates';
 
-// Mode color from shared palette
-const MODE_COLOR = VOX_MODES.team_vox.color;
+// Relay brand accent (rose-500) — per-mode colors retired in 2.1d.1.
+const MODE_COLOR = '#f43f5e';
 
 interface TeamVoxModeProps {
   apiKey?: string;
@@ -714,7 +714,7 @@ const TeamVoxMode: React.FC<TeamVoxModeProps> = ({
     textAccent: 'text-amber-500',
 
     // Buttons
-    btnPrimary: 'bg-gradient-to-r from-amber-500 to-orange-500 hover:from-amber-600 hover:to-orange-600 text-white shadow-lg shadow-amber-500/25',
+    btnPrimary: 'bg-rose-500 hover:bg-rose-600 text-white shadow-lg shadow-rose-500/25',
     btnSecondary: isDarkMode
       ? 'bg-gray-800/60 hover:bg-gray-700/60 text-gray-300 border border-gray-700/50'
       : 'bg-white/80 hover:bg-gray-100/80 text-gray-700 border border-gray-200/60',
@@ -752,7 +752,7 @@ const TeamVoxMode: React.FC<TeamVoxModeProps> = ({
               className="w-7 h-7 rounded-lg flex items-center justify-center shadow-sm"
               style={{
                 background: selectedWorkspace?.id === workspace.id
-                  ? `linear-gradient(135deg, ${MODE_COLOR} 0%, #ea580c 100%)`
+                  ? MODE_COLOR
                   : isDarkMode ? 'rgba(55,65,81,0.5)' : 'rgba(229,231,235,0.8)'
               }}
             >
@@ -838,7 +838,7 @@ const TeamVoxMode: React.FC<TeamVoxModeProps> = ({
         modeIcon={<Users className="w-5 h-5" />}
         modeTitle={selectedChannel?.name || 'Team Vox'}
         modeSubtitle="Workspace Voice Channels"
-        accentColor={MODE_COLOR}
+        accentColor="#f43f5e"
         isDarkMode={isDarkMode}
         showAI={!!(selectedChannel)}
         onSummarize={selectedChannel ? handleSummarizeChannel : undefined}
@@ -912,7 +912,7 @@ const TeamVoxMode: React.FC<TeamVoxModeProps> = ({
                           className="w-8 h-8 rounded-lg flex items-center justify-center shrink-0"
                           style={{
                             background: selectedWorkspace?.id === workspace.id
-                              ? `linear-gradient(135deg, ${MODE_COLOR} 0%, #ea580c 100%)`
+                              ? MODE_COLOR
                               : isDarkMode ? 'rgba(55,65,81,0.5)' : 'rgba(229,231,235,0.8)'
                           }}
                         >
@@ -1164,7 +1164,7 @@ const TeamVoxMode: React.FC<TeamVoxModeProps> = ({
                                     }}
                                     mode="compact"
                                     isDarkMode={isDarkMode}
-                                    accentColor={MODE_COLOR}
+                                    accentColor="#f43f5e"
                                   />
                                   <span className={`text-xs ${tc.textMuted} shrink-0`}>
                                     {formatDuration(message.duration)}
@@ -1361,7 +1361,7 @@ const TeamVoxMode: React.FC<TeamVoxModeProps> = ({
                                 {showMessageMenu === message.id && (
                                   <VoxMessageMenu
                                     isDarkMode={isDarkMode}
-                                    accentColor={MODE_COLOR}
+                                    accentColor="#f43f5e"
                                     anchorRect={menuAnchorRect!}
                                     onArchive={() => handleArchiveMessage(message)}
                                     onDownload={() => handleDownloadMessage(message)}
@@ -1516,7 +1516,7 @@ const TeamVoxMode: React.FC<TeamVoxModeProps> = ({
             <div className="flex items-center gap-3 mb-6">
               <div
                 className="p-2 rounded-xl"
-                style={{ background: `linear-gradient(135deg, ${MODE_COLOR} 0%, #ea580c 100%)` }}
+                style={{ background: MODE_COLOR }}
               >
                 <Users className="w-5 h-5 text-white" />
               </div>
@@ -1576,7 +1576,7 @@ const TeamVoxMode: React.FC<TeamVoxModeProps> = ({
             <div className="flex items-center gap-3 mb-6">
               <div
                 className="p-2 rounded-xl"
-                style={{ background: `linear-gradient(135deg, ${MODE_COLOR} 0%, #ea580c 100%)` }}
+                style={{ background: MODE_COLOR }}
               >
                 <Hash className="w-5 h-5 text-white" />
               </div>
@@ -1646,7 +1646,7 @@ const TeamVoxMode: React.FC<TeamVoxModeProps> = ({
               <div className="flex items-center gap-3">
                 <div
                   className="p-2 rounded-xl"
-                  style={{ background: `linear-gradient(135deg, ${MODE_COLOR} 0%, #ea580c 100%)` }}
+                  style={{ background: MODE_COLOR }}
                 >
                   <UserPlus className="w-5 h-5 text-white" />
                 </div>
@@ -1722,7 +1722,7 @@ const TeamVoxMode: React.FC<TeamVoxModeProps> = ({
               <div className="flex items-center gap-3">
                 <div
                   className="p-2 rounded-xl"
-                  style={{ background: `linear-gradient(135deg, ${MODE_COLOR} 0%, #ea580c 100%)` }}
+                  style={{ background: MODE_COLOR }}
                 >
                   <Bell className="w-5 h-5 text-white" />
                 </div>
@@ -1790,7 +1790,7 @@ const TeamVoxMode: React.FC<TeamVoxModeProps> = ({
               <div className="flex items-center gap-3">
                 <div
                   className="p-2 rounded-xl"
-                  style={{ background: `linear-gradient(135deg, ${MODE_COLOR} 0%, #ea580c 100%)` }}
+                  style={{ background: MODE_COLOR }}
                 >
                   <Settings className="w-5 h-5 text-white" />
                 </div>
@@ -1899,7 +1899,7 @@ const TeamVoxMode: React.FC<TeamVoxModeProps> = ({
               <div className="flex items-center gap-3">
                 <div
                   className="p-2 rounded-xl"
-                  style={{ background: `linear-gradient(135deg, ${MODE_COLOR} 0%, #ea580c 100%)` }}
+                  style={{ background: MODE_COLOR }}
                 >
                   <AtSign className="w-5 h-5 text-white" />
                 </div>
@@ -2012,7 +2012,7 @@ const TeamVoxMode: React.FC<TeamVoxModeProps> = ({
           onExitSelection={exitSelectionMode}
           contactName={selectedChannel.name}
           isDarkMode={isDarkMode}
-          accentColor={MODE_COLOR}
+          accentColor="#f43f5e"
           allSelected={selectionCount === messages.length && messages.length > 0}
         />
       )}
@@ -2045,7 +2045,7 @@ const TeamVoxMode: React.FC<TeamVoxModeProps> = ({
             }}
             onClose={() => setShowSmartReplies(false)}
             isDarkMode={isDarkMode}
-            accentColor={MODE_COLOR}
+            accentColor="#f43f5e"
           />
         </div>
       )}
@@ -2111,7 +2111,7 @@ const TeamVoxMode: React.FC<TeamVoxModeProps> = ({
           onClose={() => { setShowDownloadModal(false); setDownloadItem(null); }}
           items={[downloadItem]}
           isDarkMode={isDarkMode}
-          accentColor={MODE_COLOR}
+          accentColor="#f43f5e"
         />
       )}
     </div>

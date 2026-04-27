@@ -489,7 +489,7 @@ Return ONLY valid JSON, no markdown or extra text.`;
           </button>
           <button
             onClick={onSendAnyway}
-            className="flex-1 py-3 bg-gradient-to-r from-purple-500 to-blue-500 hover:from-purple-600 hover:to-blue-600 text-white rounded-xl font-semibold transition flex items-center justify-center gap-2"
+            className="flex-1 py-3 bg-rose-500 hover:bg-rose-600 text-white rounded-xl font-semibold transition flex items-center justify-center gap-2"
           >
             <Send />
             Send Anyway

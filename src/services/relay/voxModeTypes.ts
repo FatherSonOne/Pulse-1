@@ -25,16 +25,9 @@ export interface VoxModeInfo {
   description: string;
   workflow: string[];
   icon: string;
-  color: string;
-  colorLight?: string;
-  colorDark?: string;
-  gradient: string;
   features: string[];
   bestFor: string[];
 }
-
-// Classic mode color (not a VoxMode but used by the mode selector)
-export const CLASSIC_MODE_COLOR = '#F97316';
 
 export const VOX_MODES: Record<VoxMode, VoxModeInfo> = {
   pulse_radio: {
@@ -51,9 +44,6 @@ export const VOX_MODES: Record<VoxMode, VoxModeInfo> = {
       'Track listens and engagement'
     ],
     icon: '📻',
-    color: '#8B5CF6',
-    colorLight: '#A78BFA',
-    gradient: 'from-purple-500 to-indigo-600',
     features: [
       'Multi-channel broadcasting',
       'Follower subscriptions',
@@ -82,10 +72,6 @@ export const VOX_MODES: Record<VoxMode, VoxModeInfo> = {
       'Branch into sub-threads'
     ],
     icon: '💬',
-    color: '#10B981',
-    colorLight: '#34D399',
-    colorDark: '#059669',
-    gradient: 'from-emerald-500 to-teal-600',
     features: [
       'Threaded replies',
       'Timestamp jumping',
@@ -114,8 +100,6 @@ export const VOX_MODES: Record<VoxMode, VoxModeInfo> = {
       'AI summarizes discussions'
     ],
     icon: '👥',
-    color: '#F59E0B',
-    gradient: 'from-amber-500 to-orange-600',
     features: [
       'Workspace channels',
       'Team notifications',
@@ -144,8 +128,6 @@ export const VOX_MODES: Record<VoxMode, VoxModeInfo> = {
       'AI generates summaries'
     ],
     icon: '📝',
-    color: '#EC4899',
-    gradient: 'from-pink-500 to-rose-600',
     features: [
       'Auto-transcription',
       'Smart tagging',
@@ -175,8 +157,6 @@ export const VOX_MODES: Record<VoxMode, VoxModeInfo> = {
       'Instant push notification'
     ],
     icon: '⚡',
-    color: '#3B82F6',
-    gradient: 'from-blue-500 to-cyan-600',
     features: [
       'Favorites bar',
       'Instant send',
@@ -205,8 +185,6 @@ export const VOX_MODES: Record<VoxMode, VoxModeInfo> = {
       'Track pending deliveries'
     ],
     icon: '⏰',
-    color: '#EF4444',
-    gradient: 'from-red-500 to-pink-600',
     features: [
       'Future scheduling',
       'Recurring deliveries',
@@ -221,32 +199,6 @@ export const VOX_MODES: Record<VoxMode, VoxModeInfo> = {
       'Surprise reveals'
     ]
   },
-};
-
-// ============================================
-// MODE COLOR HELPERS
-// ============================================
-
-/** Get the primary color for a vox mode */
-export const getVoxModeColor = (mode: VoxMode): string => VOX_MODES[mode].color;
-
-/** Get light variant (falls back to primary color) */
-export const getVoxModeColorLight = (mode: VoxMode): string =>
-  VOX_MODES[mode].colorLight || VOX_MODES[mode].color;
-
-/** Get dark variant (falls back to primary color) */
-export const getVoxModeColorDark = (mode: VoxMode): string =>
-  VOX_MODES[mode].colorDark || VOX_MODES[mode].color;
-
-/**
- * All mode colors including classic, for use in selectors.
- * Mirrors the old per-component MODE_COLORS record.
- */
-export const ALL_MODE_COLORS: Record<string, string> = {
-  classic: CLASSIC_MODE_COLOR,
-  ...Object.fromEntries(
-    (Object.keys(VOX_MODES) as VoxMode[]).map((m) => [m, VOX_MODES[m].color])
-  ),
 };
 
 // ============================================
