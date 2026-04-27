@@ -16,6 +16,7 @@ import {
   VoxNotesMode,
   PulseRadio,
 } from './Relay/index';
+import { RelayTriageStream } from './Relay/RelayTriageStream';
 import { RelayMode, mapVoxToRelay } from '../services/relay/voxModeTypes';
 
 interface RelayProps {
@@ -38,9 +39,9 @@ const RELAY_VIEW_LABELS: Record<RelayView, string> = {
 
 const RELAY_VIEWS: readonly RelayView[] = ['triage', 'messages', 'notes', 'live'] as const;
 
-const Relay: React.FC<RelayProps> = ({ apiKey, contacts: _contacts, initialContactId: _initialContactId, isDarkMode = false }) => {
-  // Keep auth hook wired in for downstream consumers (audience pickers etc.).
-  useAuth();
+const Relay: React.FC<RelayProps> = ({ apiKey, contacts, initialContactId: _initialContactId, isDarkMode = false }) => {
+  // user.id powers the Triage stream's voice-source queries.
+  const { user } = useAuth();
 
   const [view, setView] = useState<RelayView>('triage');
   const [showShortcutsHelp, setShowShortcutsHelp] = useState(false);
@@ -89,16 +90,11 @@ const Relay: React.FC<RelayProps> = ({ apiKey, contacts: _contacts, initialConta
 
       <div className="flex-1 overflow-hidden">
         {view === 'triage' && (
-          <div className="h-full flex items-center justify-center px-6 text-center">
-            <div className="max-w-md">
-              <p
-                className="text-sm text-zinc-500 dark:text-zinc-400"
-                style={{ fontFamily: 'Inter, system-ui, sans-serif' }}
-              >
-                Triage stream coming soon — the prioritized voice-message inbox lands in 2.1d.3.
-              </p>
-            </div>
-          </div>
+          <RelayTriageStream
+            user={user}
+            contacts={contacts}
+            onOpenView={setView}
+          />
         )}
         {view === 'messages' && (
           <ClassicMode
