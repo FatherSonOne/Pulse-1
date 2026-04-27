@@ -15,7 +15,7 @@ import {
 } from 'lucide-react';
 import { VoxSelectionItem } from '../../hooks/useVoxSelection';
 import VoxDownloadModal from './VoxDownloadModal';
-import { archiveVoxerConversation } from '../../services/voxer/voxerArchiveService';
+import { archiveVoxerConversation } from '../../services/relay/voxerArchiveService';
 
 interface VoxSelectToolbarProps {
   selectedItems: VoxSelectionItem[];

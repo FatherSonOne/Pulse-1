@@ -37,7 +37,7 @@ import {
   TrendingUp,
   HelpCircle,
 } from 'lucide-react';
-import VoxModeToolbar from '../Voxer/VoxModeToolbar';
+import VoxModeToolbar from '../Relay/VoxModeToolbar';
 import { useGlimpseRecording } from '../../hooks/useGlimpseRecording';
 import {
   useGlimpseConversations,
@@ -46,30 +46,30 @@ import {
   useGlimpseSearch,
 } from '../../hooks/useGlimpse';
 import { glimpseService } from '../../services/glimpse/glimpseService';
-import { voxModeService } from '../../services/voxer/voxModeService';
+import { voxModeService } from '../../services/relay/voxModeService';
 import { type GlimpseMessage, type GlimpseConversation } from '../../services/glimpse/glimpseTypes';
-import type { PulseUser } from '../../services/voxer/voxModeTypes';
+import type { PulseUser } from '../../services/relay/voxModeTypes';
 import './Glimpse.css';
 
 // Phase 2: Selection Mode
 import { useVoxSelection, VoxSelectionItem } from '../../hooks/useVoxSelection';
-import { VoxSelectToolbar } from '../Voxer/VoxSelectToolbar';
-import VoxMessageMenu from '../Voxer/VoxMessageMenu';
-import VoxDownloadModal from '../Voxer/VoxDownloadModal';
-import { archiveVoxerConversation } from '../../services/voxer/voxerArchiveService';
+import { VoxSelectToolbar } from '../Relay/VoxSelectToolbar';
+import VoxMessageMenu from '../Relay/VoxMessageMenu';
+import VoxDownloadModal from '../Relay/VoxDownloadModal';
+import { archiveVoxerConversation } from '../../services/relay/voxerArchiveService';
 
 // Phase 5: AI Enhancements
-import { VoxConversationSummary, VoxSmartReplies } from '../Voxer';
-import { summarizeConversation, generateSmartReplies } from '../../services/voxer/voxerAIService';
-import type { ConversationSummary, SmartReply } from '../../services/voxer/voxerAIService';
+import { VoxConversationSummary, VoxSmartReplies } from '../Relay';
+import { summarizeConversation, generateSmartReplies } from '../../services/relay/voxerAIService';
+import type { ConversationSummary, SmartReply } from '../../services/relay/voxerAIService';
 
 // Phase 6: Final Polish
 import { useVoxerKeyboardShortcuts } from '../../hooks/useVoxerKeyboardShortcuts';
-import { VoxKeyboardShortcutsHelp } from '../Voxer/VoxKeyboardShortcutsHelp';
+import { VoxKeyboardShortcutsHelp } from '../Relay/VoxKeyboardShortcutsHelp';
 import { usePlaybackSpeed } from '../../hooks/usePlaybackSpeed';
-import { PlaybackSpeedControl } from '../Voxer/PlaybackSpeedControl';
-import { VoxEmptyState } from '../Voxer/VoxEmptyState';
-import { getEmptyStateConfig } from '../Voxer/voxEmptyStates';
+import { PlaybackSpeedControl } from '../Relay/PlaybackSpeedControl';
+import { VoxEmptyState } from '../Relay/VoxEmptyState';
+import { getEmptyStateConfig } from '../Relay/voxEmptyStates';
 import toast from 'react-hot-toast';
 
 // ============================================

@@ -33,9 +33,9 @@ import VoxModeHeader from './VoxModeHeader';
 import VoxModeToolbar from './VoxModeToolbar';
 import VoxRecordArea from './VoxRecordArea';
 import { useVoxRecording } from '../../hooks/useVoxRecording';
-import { voxModeService } from '../../services/voxer/voxModeService';
+import { voxModeService } from '../../services/relay/voxModeService';
 // analyticsCollector loaded dynamically to avoid svc-crm-analytics chunk TDZ
-import { VOX_MODES, type VoxNote, type LinkedItem } from '../../services/voxer/voxModeTypes';
+import { VOX_MODES, type VoxNote, type LinkedItem } from '../../services/relay/voxModeTypes';
 import toast from 'react-hot-toast';
 import './Voxer.css';
 
@@ -44,12 +44,12 @@ import { useVoxSelection, VoxSelectionItem } from '../../hooks/useVoxSelection';
 import { VoxSelectToolbar } from './VoxSelectToolbar';
 import VoxMessageMenu from './VoxMessageMenu';
 import VoxDownloadModal from './VoxDownloadModal';
-import { archiveVoxerConversation } from '../../services/voxer/voxerArchiveService';
+import { archiveVoxerConversation } from '../../services/relay/voxerArchiveService';
 
 // Phase 5: AI Enhancements
 import { VoxConversationSummary, VoxSmartReplies } from './index';
-import { summarizeConversation, generateSmartReplies } from '../../services/voxer/voxerAIService';
-import type { ConversationSummary, SmartReply } from '../../services/voxer/voxerAIService';
+import { summarizeConversation, generateSmartReplies } from '../../services/relay/voxerAIService';
+import type { ConversationSummary, SmartReply } from '../../services/relay/voxerAIService';
 
 // Phase 6: Final Polish
 import { useVoxerKeyboardShortcuts } from '../../hooks/useVoxerKeyboardShortcuts';

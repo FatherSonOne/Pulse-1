@@ -6,7 +6,7 @@ import { useAuth } from '../hooks/useAuth';
 
 // Keyboard shortcuts
 import { useVoxerKeyboardShortcuts } from '../hooks/useVoxerKeyboardShortcuts';
-import { VoxKeyboardShortcutsHelp } from './Voxer/VoxKeyboardShortcutsHelp';
+import { VoxKeyboardShortcutsHelp } from './Relay/VoxKeyboardShortcutsHelp';
 
 // Vox Mode System - 7 Communication Styles
 import {
@@ -18,8 +18,8 @@ import {
   VoxNotesMode,
   QuickVoxMode,
   VoxDropMode,
-} from './Voxer/index';
-import { VoxMode } from '../services/voxer/voxModeTypes';
+} from './Relay/index';
+import { VoxMode } from '../services/relay/voxModeTypes';
 
 interface VoxerProps {
   apiKey: string;

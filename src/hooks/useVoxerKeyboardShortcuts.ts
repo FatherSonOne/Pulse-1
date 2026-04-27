@@ -2,7 +2,7 @@
 // Provides Space for record, Escape for back, 1-7 for modes, Ctrl+D/A/S for actions
 
 import { useEffect, useRef } from 'react';
-import { VoxMode } from '../services/voxer/voxModeTypes';
+import { VoxMode } from '../services/relay/voxModeTypes';
 
 export interface VoxerShortcutHandlers {
   onToggleRecording?: () => void;

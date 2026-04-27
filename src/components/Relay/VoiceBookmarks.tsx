@@ -2,7 +2,7 @@
 // Mark specific moments in voxes for quick reference
 
 import React, { useState, useRef, useCallback, useEffect } from 'react';
-import { VoiceBookmark, BookmarkCollection } from '../../services/voxer/advancedVoxerTypes';
+import { VoiceBookmark, BookmarkCollection } from '../../services/relay/advancedVoxerTypes';
 
 import { Bookmark, Pen, Play, Plus, Trash2, X } from 'lucide-react';
 

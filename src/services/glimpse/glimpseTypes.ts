@@ -143,4 +143,4 @@ export interface GlimpseSearchResult {
 }
 
 // Re-export PulseUser from voxer for now (until 1.5d when shared types relocate)
-export type { PulseUser } from '../voxer/voxModeTypes';
+export type { PulseUser } from '../relay/voxModeTypes';

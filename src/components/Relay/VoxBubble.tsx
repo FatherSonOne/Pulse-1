@@ -2,7 +2,7 @@
 // Enhanced message bubble with waveform, transcription, and AI insights
 
 import React, { useState, useRef, useEffect } from 'react';
-import { VoxAnalysis, ActionItem } from '../../services/voxer/voxerTypes';
+import { VoxAnalysis, ActionItem } from '../../services/relay/voxerTypes';
 
 import { Bot, Brain, ChevronRight, Loader2, Reply, Share, Tag } from 'lucide-react';
 

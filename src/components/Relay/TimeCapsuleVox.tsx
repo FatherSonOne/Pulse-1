@@ -2,7 +2,7 @@
 // Schedule voxes to be delivered at a future time
 
 import React, { useState, useRef, useCallback } from 'react';
-import { TimeCapsuleVox as TimeCapsuleType, TimeCapsuleRecurrence } from '../../services/voxer/advancedVoxerTypes';
+import { TimeCapsuleVox as TimeCapsuleType, TimeCapsuleRecurrence } from '../../services/relay/advancedVoxerTypes';
 import { Contact } from '../../types';
 
 import { ArrowRight, Calendar, Check, Clock, History, Hourglass, Pen, Repeat, RotateCw, Users, X } from 'lucide-react';

@@ -17,7 +17,7 @@ import {
   WakeWordConfig,
   VOICE_COMMANDS,
   DEFAULT_WAKE_WORD_CONFIG 
-} from '../../services/voxer/advancedVoxerTypes';
+} from '../../services/relay/advancedVoxerTypes';
 
 // ============================================
 // TYPES

@@ -2,7 +2,7 @@
 // Urgent messages with special handling
 
 import React, { useState, useEffect, useRef, useCallback } from 'react';
-import { PriorityVox as PriorityVoxType, PriorityLevel, PRIORITY_CONFIG } from '../../services/voxer/advancedVoxerTypes';
+import { PriorityVox as PriorityVoxType, PriorityLevel, PRIORITY_CONFIG } from '../../services/relay/advancedVoxerTypes';
 
 import { Bell, Check, CheckCircle, CircleDot, Minus, Plus, X } from 'lucide-react';
 

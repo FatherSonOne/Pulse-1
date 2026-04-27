@@ -50,8 +50,8 @@ import { blobToBase64 } from '../../services/audioService';
 import { transcribeMedia, processWithModel } from '../../services/geminiService';
 import { dataService } from '../../services/dataService';
 import { userContactService } from '../../services/userContactService';
-import { whisperService } from '../../services/voxer/whisperService';
-import { audioEnhancementService } from '../../services/voxer/audioEnhancementService';
+import { whisperService } from '../../services/relay/whisperService';
+import { audioEnhancementService } from '../../services/relay/audioEnhancementService';
 import type { EnrichedUserProfile } from '../../types/userContact';
 import toast from 'react-hot-toast';
 import './ClassicVoxerMode.css';
@@ -78,7 +78,7 @@ import {
   SmartReply,
   MeetingNotes,
   Chapter,
-} from '../../services/voxer/voxerAIService';
+} from '../../services/relay/voxerAIService';
 
 // Phase 6: Final Polish
 import { useVoxerKeyboardShortcuts } from '../../hooks/useVoxerKeyboardShortcuts';
@@ -91,7 +91,7 @@ import { getEmptyStateConfig } from './voxEmptyStates';
 // Message Menu & Download Modal
 import VoxMessageMenu from './VoxMessageMenu';
 import VoxDownloadModal from './VoxDownloadModal';
-import { archiveVoxerConversation } from '../../services/voxer/voxerArchiveService';
+import { archiveVoxerConversation } from '../../services/relay/voxerArchiveService';
 
 // ============================================
 // TYPES

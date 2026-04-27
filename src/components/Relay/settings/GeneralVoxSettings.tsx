@@ -4,7 +4,7 @@
 import React, { useState, useEffect } from 'react';
 import { Bell, Bot, Brain, ChevronDown, Mic, Play, Radio, Settings2, Sparkles, Vibrate, Wand2 } from 'lucide-react';
 import { settingsService, PulseSettings } from '../../../services/settingsService';
-import { VOX_MODES } from '../../../services/voxer/voxModeTypes';
+import { VOX_MODES } from '../../../services/relay/voxModeTypes';
 
 interface GeneralVoxSettingsProps {
   isDarkMode?: boolean;

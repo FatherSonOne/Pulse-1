@@ -99,7 +99,7 @@ export default defineConfig(({ mode }) => {
               if (id.includes('/src/components/')) {
                 // Heavy feature components
                 if (id.includes('/Messages')) return 'feature-messages';
-                if (id.includes('/Voxer')) return 'feature-voxer';
+                if (id.includes('/Relay')) return 'feature-voxer';
                 if (id.includes('/LiveDashboard')) return 'feature-dashboard';
                 if (id.includes('/Email')) return 'feature-email';
                 if (id.includes('/Analytics')) return 'feature-analytics';
@@ -111,7 +111,7 @@ export default defineConfig(({ mode }) => {
               // Services layer — split into domain groups to avoid one 768 kB blob
               if (id.includes('/src/services/')) {
                 // Voice / Voxer — heavy, only needed in voice features
-                if (id.includes('/voxer/') ||
+                if (id.includes('/relay/') ||
                     id.includes('voiceCommand') || id.includes('voiceIntelligence') ||
                     id.includes('voiceGuardrail') || id.includes('voiceRoom') ||
                     id.includes('voiceSearch') || id.includes('audioVoice') ||

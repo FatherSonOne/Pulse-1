@@ -38,10 +38,10 @@ import VoxModeHeader from './VoxModeHeader';
 import VoxModeToolbar from './VoxModeToolbar';
 import VoxRecordArea from './VoxRecordArea';
 import { useVoxRecording } from '../../hooks/useVoxRecording';
-import { voxModeService } from '../../services/voxer/voxModeService';
+import { voxModeService } from '../../services/relay/voxModeService';
 import { supabase } from '../../services/supabase';
 // analyticsCollector loaded dynamically to avoid svc-crm-analytics chunk TDZ
-import { VOX_MODES, type PulseChannel, type Broadcast } from '../../services/voxer/voxModeTypes';
+import { VOX_MODES, type PulseChannel, type Broadcast } from '../../services/relay/voxModeTypes';
 import toast from 'react-hot-toast';
 import './PulseRadio.css';
 
@@ -50,7 +50,7 @@ import { useVoxSelection } from '../../hooks/useVoxSelection';
 import type { VoxSelectionItem } from '../../hooks/useVoxSelection';
 import VoxMessageMenu from './VoxMessageMenu';
 import VoxDownloadModal from './VoxDownloadModal';
-import { archiveVoxerConversation } from '../../services/voxer/voxerArchiveService';
+import { archiveVoxerConversation } from '../../services/relay/voxerArchiveService';
 import { VoxSelectToolbar } from './VoxSelectToolbar';
 
 // Phase 5: AI Enhancements
@@ -63,7 +63,7 @@ import {
   generateSmartReplies,
   ConversationSummary,
   SmartReply,
-} from '../../services/voxer/voxerAIService';
+} from '../../services/relay/voxerAIService';
 
 // Phase 6: Final Polish
 import { useVoxerKeyboardShortcuts } from '../../hooks/useVoxerKeyboardShortcuts';

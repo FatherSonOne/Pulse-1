@@ -7,7 +7,7 @@
 // Create and manage collections of voice messages
 
 import React, { useState, useRef, useCallback, useMemo } from 'react';
-import { VoxPlaylist, VoxPlaylistItem, SmartPlaylistCriteria, DEFAULT_PLAYLISTS } from '../../services/voxer/advancedVoxerTypes';
+import { VoxPlaylist, VoxPlaylistItem, SmartPlaylistCriteria, DEFAULT_PLAYLISTS } from '../../services/relay/advancedVoxerTypes';
 
 import { Check, Clock, EllipsisVertical, List, Pen, Plus, Search, Trash2, Wand2, X } from 'lucide-react';
 

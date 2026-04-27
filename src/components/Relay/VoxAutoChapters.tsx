@@ -3,7 +3,7 @@
 
 import React from 'react';
 import { PlayCircle, Clock, List, Sparkles } from 'lucide-react';
-import { Chapter, formatChapterTime } from '../../services/voxer/voxerAIService';
+import { Chapter, formatChapterTime } from '../../services/relay/voxerAIService';
 
 interface VoxAutoChaptersProps {
   chapters: Chapter[];

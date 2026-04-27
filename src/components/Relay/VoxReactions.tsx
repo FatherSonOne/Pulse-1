@@ -2,7 +2,7 @@
 // Quick voice emoji reactions to messages
 
 import React, { useState, useRef, useCallback, useEffect } from 'react';
-import { VoxReaction, ReactionType, REACTION_EMOJIS, REACTION_SOUNDS } from '../../services/voxer/advancedVoxerTypes';
+import { VoxReaction, ReactionType, REACTION_EMOJIS, REACTION_SOUNDS } from '../../services/relay/advancedVoxerTypes';
 
 import { Check, RotateCw, Volume2 } from 'lucide-react';
 

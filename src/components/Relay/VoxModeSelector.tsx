@@ -16,7 +16,7 @@ import {
   Video,
   X,
 } from 'lucide-react';
-import { VOX_MODES, VoxMode, VoxModeInfo, ALL_MODE_COLORS } from '../../services/voxer/voxModeTypes';
+import { VOX_MODES, VoxMode, VoxModeInfo, ALL_MODE_COLORS } from '../../services/relay/voxModeTypes';
 import VoxerSettings from './VoxerSettings';
 
 interface VoxModeSelectorProps {

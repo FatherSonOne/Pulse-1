@@ -34,9 +34,9 @@ import RecordButton from './RecordButton';
 import VoxModeToolbar from './VoxModeToolbar';
 import VoxRecordArea from './VoxRecordArea';
 import { useVoxRecording } from '../../hooks/useVoxRecording';
-import { voxModeService } from '../../services/voxer/voxModeService';
+import { voxModeService } from '../../services/relay/voxModeService';
 // analyticsCollector loaded dynamically to avoid svc-crm-analytics chunk TDZ
-import { VOX_MODES, type VoxWorkspace, type VoxTeamChannel, type TeamVoxMessage } from '../../services/voxer/voxModeTypes';
+import { VOX_MODES, type VoxWorkspace, type VoxTeamChannel, type TeamVoxMessage } from '../../services/relay/voxModeTypes';
 import toast from 'react-hot-toast';
 import './Voxer.css';
 
@@ -45,12 +45,12 @@ import { useVoxSelection, VoxSelectionItem } from '../../hooks/useVoxSelection';
 import { VoxSelectToolbar } from './VoxSelectToolbar';
 import VoxMessageMenu from './VoxMessageMenu';
 import VoxDownloadModal from './VoxDownloadModal';
-import { archiveVoxerConversation, archiveMeetingNotes } from '../../services/voxer/voxerArchiveService';
+import { archiveVoxerConversation, archiveMeetingNotes } from '../../services/relay/voxerArchiveService';
 
 // Phase 5: AI Enhancements
 import { VoxConversationSummary, VoxSmartReplies, VoxMeetingNotes, VoxAutoChapters } from './index';
-import { summarizeConversation, generateSmartReplies, generateMeetingNotes, generateAutoChapters } from '../../services/voxer/voxerAIService';
-import type { ConversationSummary, SmartReply, MeetingNotes, Chapter } from '../../services/voxer/voxerAIService';
+import { summarizeConversation, generateSmartReplies, generateMeetingNotes, generateAutoChapters } from '../../services/relay/voxerAIService';
+import type { ConversationSummary, SmartReply, MeetingNotes, Chapter } from '../../services/relay/voxerAIService';
 
 // Phase 6: Final Polish
 import { useVoxerKeyboardShortcuts } from '../../hooks/useVoxerKeyboardShortcuts';

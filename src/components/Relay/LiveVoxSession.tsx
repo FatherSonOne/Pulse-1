@@ -7,7 +7,7 @@ import {
   RealtimeTranscriptionService, 
   RealtimeTranscriptSegment,
   RealtimeTranscriptionState 
-} from '../../services/voxer/realtimeTranscriptionService';
+} from '../../services/relay/realtimeTranscriptionService';
 import { processWithModel } from '../../services/geminiService';
 
 import { Bot, Brain, Captions, ChevronLeft, ChevronRight, HelpCircle, Lightbulb, Loader2, Mic, Minimize2, Play, Podcast, RotateCw, Square, Video, X } from 'lucide-react';
