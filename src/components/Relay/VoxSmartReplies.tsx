@@ -2,7 +2,8 @@
 // Shows 3 smart reply options with different tones
 
 import React from 'react';
-import { Zap, MessageCircle } from 'lucide-react';
+import { MessageCircle } from 'lucide-react';
+import { AIProvenanceChip } from '../ui/AIProvenanceChip';
 import { SmartReply } from '../../services/relay/relayAIService';
 
 interface VoxSmartRepliesProps {
@@ -46,7 +47,8 @@ export const VoxSmartReplies: React.FC<VoxSmartRepliesProps> = ({
     return (
       <div className={`p-4 rounded-xl border ${tc.border} ${tc.bg}`}>
         <div className="flex items-center gap-2 mb-3">
-          <span className={`text-sm font-medium ${tc.text}`}>Generating smart replies...</span>
+          <AIProvenanceChip vendor="PULSE AI" type="SUGGESTED" />
+          <span className={`text-xs ${tc.textMuted}`}>generating…</span>
         </div>
         <div className="space-y-2">
           {[1, 2, 3].map((i) => (
@@ -68,13 +70,7 @@ export const VoxSmartReplies: React.FC<VoxSmartRepliesProps> = ({
     <div className={`p-4 rounded-xl border ${tc.border} ${tc.bg}`}>
       {/* Header */}
       <div className="flex items-center gap-2 mb-3">
-        <div
-          className="w-7 h-7 rounded-lg flex items-center justify-center"
-          style={{ background: `${accentColor}20` }}
-        >
-          <Zap className="w-4 h-4" style={{ color: accentColor }} />
-        </div>
-        <span className={`text-sm font-semibold ${tc.text}`}>Smart Replies</span>
+        <AIProvenanceChip vendor="PULSE AI" type="SUGGESTED" />
       </div>
 
       {/* Reply Options */}

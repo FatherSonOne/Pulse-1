@@ -149,7 +149,7 @@ export const VoxMeetingNotes: React.FC<VoxMeetingNotesProps> = ({
           )}
         </div>
         <div className="flex items-center gap-2">
-          <span className={`text-xs ${tc.textMuted}`}>AI-generated meeting notes</span>
+          <AIProvenanceChip vendor="PULSE AI" type="MEETING NOTES" />
         </div>
       </div>
 

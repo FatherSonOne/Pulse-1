@@ -2,8 +2,9 @@
 // Shows overview, key points, action items from a conversation
 
 import React from 'react';
-import { FileText, CheckCircle, Users, Clock, MessageSquare } from 'lucide-react';
+import { CheckCircle, Users, Clock, MessageSquare } from 'lucide-react';
 import { ConversationSummary } from '../../services/relay/relayAIService';
+import { AIProvenanceChip } from '../ui/AIProvenanceChip';
 
 interface VoxConversationSummaryProps {
   summary: ConversationSummary;
@@ -38,17 +39,7 @@ export const VoxConversationSummary: React.FC<VoxConversationSummaryProps> = ({
           background: `linear-gradient(135deg, ${accentColor}15, ${accentColor}05)`,
         }}
       >
-        <div className="flex items-center gap-2">
-          <h3 className={`text-sm font-semibold ${tc.text}`}>AI Summary</h3>
-        </div>
-        {onClose && (
-          <button
-            onClick={onClose}
-            className={`p-1.5 rounded-lg transition-colors ${tc.hoverBg}`}
-          >
-            <FileText className={`w-4 h-4 ${tc.textSecondary}`} />
-          </button>
-        )}
+        <AIProvenanceChip vendor="PULSE AI" type="SUMMARY" onDismiss={onClose} />
       </div>
 
       {/* Stats Bar */}

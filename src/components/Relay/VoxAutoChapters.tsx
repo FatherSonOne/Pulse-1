@@ -2,8 +2,9 @@
 // Allows jumping to specific topics within a recording
 
 import React from 'react';
-import { PlayCircle, Clock, List } from 'lucide-react';
+import { PlayCircle, Clock } from 'lucide-react';
 import { Chapter, formatChapterTime } from '../../services/relay/relayAIService';
+import { AIProvenanceChip } from '../ui/AIProvenanceChip';
 
 interface VoxAutoChaptersProps {
   chapters: Chapter[];
@@ -53,18 +54,10 @@ export const VoxAutoChapters: React.FC<VoxAutoChaptersProps> = ({
         }}
       >
         <div className="flex items-center gap-2">
-          <div
-            className="w-7 h-7 rounded-lg flex items-center justify-center"
-            style={{ background: `${accentColor}20` }}
-          >
-            <List className="w-4 h-4" style={{ color: accentColor }} />
-          </div>
-          <div>
-            <h4 className={`text-sm font-semibold ${tc.text}`}>Chapters</h4>
-            <p className={`text-xs ${tc.textMuted}`}>
-              {chapters.length} topics • AI-generated
-            </p>
-          </div>
+          <AIProvenanceChip vendor="PULSE AI" type="CHAPTERS" />
+          <span className={`text-xs ${tc.textMuted}`}>
+            {chapters.length} {chapters.length === 1 ? 'topic' : 'topics'}
+          </span>
         </div>
       </div>
 

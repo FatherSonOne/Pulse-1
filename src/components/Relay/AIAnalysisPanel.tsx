@@ -2,7 +2,8 @@
 // Displays comprehensive AI analysis of voice messages
 
 import React, { useState } from 'react';
-import { Bot, Calendar, Check, HeartPulse, HelpCircle, MapPin, User, X } from 'lucide-react';
+import { Calendar, Check, HeartPulse, HelpCircle, MapPin, User, X } from 'lucide-react';
+import { AIProvenanceChip } from '../ui/AIProvenanceChip';
 import {
 
   VoxAnalysis,
@@ -158,24 +159,11 @@ export const AIAnalysisPanel: React.FC<AIAnalysisPanelProps> = ({
       <div className="p-4 border-b border-zinc-200 dark:border-zinc-800 bg-zinc-50 dark:bg-zinc-900/40">
         <div className="flex items-center justify-between">
           <div className="flex items-center gap-2">
-            <div className="w-8 h-8 rounded-lg bg-zinc-200 dark:bg-zinc-800 flex items-center justify-center">
-              <Bot className="text-zinc-700 dark:text-zinc-300 text-sm" />
-            </div>
-            <div>
-              <h3 className="font-bold text-sm dark:text-white">AI Analysis</h3>
-              <p className="text-[10px] text-zinc-500">
-                Analyzed {new Date(analysis.analyzedAt).toLocaleTimeString()}
-              </p>
-            </div>
+            <AIProvenanceChip vendor="PULSE AI" type="ANALYSIS" onDismiss={onClose} />
+            <span className="text-[10px] text-zinc-500">
+              {new Date(analysis.analyzedAt).toLocaleTimeString()}
+            </span>
           </div>
-          {onClose && (
-            <button
-              onClick={onClose}
-              className="w-8 h-8 rounded-lg hover:bg-white/50 dark:hover:bg-zinc-800 flex items-center justify-center transition"
-            >
-              <X className="text-zinc-400" />
-            </button>
-          )}
         </div>
 
         {/* Sentiment & Urgency Badges */}
