@@ -258,7 +258,7 @@ const SilentModeSettingsModal: React.FC<SilentModeSettingsModalProps> = ({
   if (!isOpen) return null;
 
   return (
-    <div className="fixed inset-0 bg-black/50 backdrop-blur-sm flex items-center justify-center z-50 p-4 animate-fadeIn">
+    <div className="fixed inset-0 bg-zinc-950/50 backdrop-blur-sm flex items-center justify-center z-50 p-4 animate-fadeIn">
       <div className="bg-white dark:bg-zinc-900 rounded-2xl w-full max-w-md shadow-2xl border border-zinc-200 dark:border-zinc-800 animate-scaleIn">
         {/* Header */}
         <div className="px-4 py-3 border-b border-zinc-200 dark:border-zinc-800 flex items-center justify-between">
@@ -459,7 +459,7 @@ export const SilentModePanel: React.FC<SilentModeProps> = ({
         ) : incomingMessages.length === 0 ? (
           <div className="text-center py-12">
             <div className="w-20 h-20 rounded-full bg-purple-100 dark:bg-purple-900/30 flex items-center justify-center mx-auto mb-4">
-              <Captions className="text-3xl text-purple-500" />
+              <Captions className="text-3xl text-zinc-700 dark:text-zinc-300" />
             </div>
             <h4 className="font-semibold dark:text-white mb-2">No Messages Yet</h4>
             <p className="text-sm text-zinc-500 max-w-xs mx-auto">

@@ -111,7 +111,7 @@ export const RecordButton: React.FC<RecordButtonProps> = ({
             ${disabled || state === 'recording' ? 'opacity-50 cursor-not-allowed' : 'cursor-pointer hover:scale-105 active:scale-95'}
             ${isDarkMode
               ? 'bg-white/5 hover:bg-white/10 text-gray-300'
-              : 'bg-black/5 hover:bg-black/10 text-gray-600'
+              : 'bg-zinc-950/5 hover:bg-zinc-950/10 text-gray-600'
             }
           `}
           style={{

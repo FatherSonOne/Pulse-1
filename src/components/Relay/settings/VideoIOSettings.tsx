@@ -185,7 +185,7 @@ export const VideoIOSettings: React.FC<VideoIOSettingsProps> = ({
       {/* Camera Preview */}
       <div className={`rounded-xl border ${tc.border} overflow-hidden`}>
         <div
-          className="relative aspect-video bg-black flex items-center justify-center"
+          className="relative aspect-video bg-zinc-950 flex items-center justify-center"
           style={{
             background: isDarkMode
               ? 'linear-gradient(135deg, #0a0a0f 0%, #1a1a25 100%)'

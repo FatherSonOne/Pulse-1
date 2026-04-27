@@ -97,7 +97,7 @@ const VoxModeToolbar: React.FC<VoxModeToolbarProps> = ({
   const subtitleColor = isDarkMode ? 'text-gray-400' : 'text-gray-500';
   const actionBtnBase = isDarkMode
     ? 'p-2 rounded-lg text-gray-400 hover:bg-white/10 hover:text-white transition-all duration-200'
-    : 'p-2 rounded-lg text-gray-500 hover:bg-black/10 hover:text-gray-900 transition-all duration-200';
+    : 'p-2 rounded-lg text-gray-500 hover:bg-zinc-950/10 hover:text-gray-900 transition-all duration-200';
 
   return (
     <header

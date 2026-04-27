@@ -630,7 +630,7 @@ const VoxNotesMode: React.FC<VoxNotesModeProps> = ({
       : 'hover:bg-gray-100/80 text-gray-500 hover:text-gray-900',
 
     // Modal
-    modalOverlay: 'bg-black/60 backdrop-blur-sm',
+    modalOverlay: 'bg-zinc-950/60 backdrop-blur-sm',
     modalBg: isDarkMode
       ? 'bg-gray-900 border-gray-800/60'
       : 'bg-white border-gray-200/60',
@@ -1297,7 +1297,7 @@ const VoxNotesMode: React.FC<VoxNotesModeProps> = ({
 
       {/* Conversation Summary Modal */}
       {conversationSummary && showSummary && (
-        <div className="fixed inset-0 bg-black/50 backdrop-blur-sm z-50 flex items-center justify-center p-4">
+        <div className="fixed inset-0 bg-zinc-950/50 backdrop-blur-sm z-50 flex items-center justify-center p-4">
           <div className="max-w-2xl w-full">
             <MessageAIPanel
               summary={conversationSummary}

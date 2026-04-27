@@ -194,7 +194,7 @@
   height: 100%;
   border-radius: 32px;
   overflow: hidden;
-  background: #000;
+  background: #0f0f0f;
 }
 
 .dark .vvb-video-inner {
@@ -913,7 +913,7 @@
   border-radius: 20px;
   overflow: hidden;
   cursor: pointer;
-  background: #000;
+  background: #0f0f0f;
 }
 
 .vvb-message-video {

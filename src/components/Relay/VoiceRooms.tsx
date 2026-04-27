@@ -347,7 +347,7 @@ export const VoiceRooms: React.FC<VoiceRoomsProps> = ({
   const activeRoom = rooms.find(r => r.id === activeRoomId);
 
   return (
-    <div className="fixed inset-0 bg-black/80 backdrop-blur-md flex items-center justify-center z-50 p-4 animate-fadeIn">
+    <div className="fixed inset-0 bg-zinc-950/80 backdrop-blur-md flex items-center justify-center z-50 p-4 animate-fadeIn">
       <div className="bg-zinc-950 rounded-3xl w-full max-w-4xl h-[85vh] flex overflow-hidden border border-zinc-800 shadow-2xl animate-scaleIn">
         
         {/* Sidebar - Room List */}
@@ -728,7 +728,7 @@ const CreateRoomModal: React.FC<CreateRoomModalProps> = ({ onClose, onCreate }) 
   };
 
   return (
-    <div className="fixed inset-0 bg-black/50 flex items-center justify-center z-[60] animate-fadeIn">
+    <div className="fixed inset-0 bg-zinc-950/50 flex items-center justify-center z-[60] animate-fadeIn">
       <div className="bg-zinc-900 rounded-2xl w-full max-w-md mx-4 border border-zinc-800 animate-scaleIn">
         <div className="p-4 border-b border-zinc-800 flex items-center justify-between">
           <h3 className="font-bold text-white">Create Voice Room</h3>

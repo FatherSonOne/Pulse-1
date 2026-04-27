@@ -386,7 +386,7 @@ Only include arrays that have items. Return ONLY valid JSON.`;
   if (!isOpen) return null;
 
   return (
-    <div className="fixed inset-0 bg-black/80 backdrop-blur-md flex items-center justify-center z-50 p-4 animate-fadeIn">
+    <div className="fixed inset-0 bg-zinc-950/80 backdrop-blur-md flex items-center justify-center z-50 p-4 animate-fadeIn">
       <div className="bg-zinc-950 rounded-3xl w-full max-w-6xl h-[90vh] flex flex-col overflow-hidden border border-zinc-800 shadow-2xl animate-scaleIn">
         
         {/* Header */}

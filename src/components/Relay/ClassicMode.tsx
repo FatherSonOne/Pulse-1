@@ -1837,7 +1837,7 @@ const ClassicMode: React.FC<ClassicModeProps> = ({
 
       {/* Conversation Summary Modal */}
       {conversationSummary && showSummary && (
-        <div className="fixed inset-0 bg-black/50 backdrop-blur-sm z-50 flex items-center justify-center p-4">
+        <div className="fixed inset-0 bg-zinc-950/50 backdrop-blur-sm z-50 flex items-center justify-center p-4">
           <div className="max-w-2xl w-full">
             <MessageAIPanel
               summary={conversationSummary}
@@ -1863,7 +1863,7 @@ const ClassicMode: React.FC<ClassicModeProps> = ({
       {/* Meeting Notes Modal */}
       {meetingNotes && (
         <div
-          className="fixed inset-0 bg-black/50 backdrop-blur-sm z-50 flex items-center justify-center p-4"
+          className="fixed inset-0 bg-zinc-950/50 backdrop-blur-sm z-50 flex items-center justify-center p-4"
           onClick={() => setMeetingNotes(null)}
         >
           <div

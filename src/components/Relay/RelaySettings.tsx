@@ -44,7 +44,7 @@ export const RelaySettings: React.FC<RelaySettingsProps> = ({
   if (!isOpen) return null;
 
   const tc = {
-    overlay: isDarkMode ? 'bg-black/70' : 'bg-black/50',
+    overlay: isDarkMode ? 'bg-zinc-950/70' : 'bg-zinc-950/50',
     modalBg: isDarkMode
       ? 'bg-gradient-to-br from-gray-900 via-gray-900 to-gray-800'
       : 'bg-gradient-to-br from-white via-white to-gray-50',

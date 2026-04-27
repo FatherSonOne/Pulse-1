@@ -276,7 +276,7 @@ Return ONLY valid JSON, no markdown or extra text.`;
   if (!isOpen) return null;
 
   return (
-    <div className="fixed inset-0 bg-black/70 backdrop-blur-sm flex items-center justify-center z-50 p-4 animate-fadeIn">
+    <div className="fixed inset-0 bg-zinc-950/70 backdrop-blur-sm flex items-center justify-center z-50 p-4 animate-fadeIn">
       <div className="bg-white dark:bg-zinc-900 rounded-3xl w-full max-w-2xl max-h-[90vh] overflow-hidden flex flex-col border border-zinc-200 dark:border-zinc-800 shadow-2xl animate-scaleIn">
         
         {/* Header */}
@@ -303,7 +303,7 @@ Return ONLY valid JSON, no markdown or extra text.`;
           {isAnalyzing ? (
             <div className="flex flex-col items-center justify-center py-16">
               <div className="w-16 h-16 rounded-full bg-purple-100 dark:bg-purple-900/30 flex items-center justify-center mb-4">
-                <Wand2 className="text-2xl text-purple-500 animate-pulse" />
+                <Wand2 className="text-2xl text-zinc-700 dark:text-zinc-300 animate-pulse" />
               </div>
               <p className="text-zinc-600 dark:text-zinc-400 font-medium">Analyzing your message...</p>
               <p className="text-xs text-zinc-400 mt-1">Checking pace, clarity, tone & more</p>

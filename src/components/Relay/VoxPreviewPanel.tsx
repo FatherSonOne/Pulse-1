@@ -326,7 +326,7 @@ export const VoxPreviewPanel: React.FC<VoxPreviewPanelProps> = ({
     <>
       {/* Backdrop - covers the content area, respects sidebar width */}
       <div 
-        className="fixed inset-0 bg-black/40 backdrop-blur-sm z-[9998] animate-fadeIn"
+        className="fixed inset-0 bg-zinc-950/40 backdrop-blur-sm z-[9998] animate-fadeIn"
         style={{ left: 'var(--sidebar-width, 0)' }}
         onClick={onClose}
       />

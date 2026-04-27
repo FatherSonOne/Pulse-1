@@ -2378,7 +2378,7 @@ const VoiceThreadsMode: React.FC<VoiceThreadsModeProps> = ({
       {/* Phase 5: Meeting Notes Modal */}
       {meetingNotes && (
         <div
-          className="fixed inset-0 bg-black/50 backdrop-blur-sm z-[200] flex items-center justify-center p-4"
+          className="fixed inset-0 bg-zinc-950/50 backdrop-blur-sm z-[200] flex items-center justify-center p-4"
           onClick={() => setMeetingNotes(null)}
         >
           <div

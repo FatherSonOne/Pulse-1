@@ -139,7 +139,7 @@ const RecordingPreview: React.FC<RecordingPreviewProps> = ({
           type="button"
           onClick={onCancel}
           className={`p-2 rounded-xl transition-colors ${
-            isDarkMode ? 'hover:bg-white/5 text-gray-400' : 'hover:bg-black/5 text-gray-500'
+            isDarkMode ? 'hover:bg-white/5 text-gray-400' : 'hover:bg-zinc-950/5 text-gray-500'
           }`}
           title="Discard recording"
         >
@@ -330,7 +330,7 @@ const RecordingPreview: React.FC<RecordingPreviewProps> = ({
           className={`flex items-center justify-center gap-2 px-4 py-3 rounded-xl text-sm font-medium transition-all flex-1 ${
             isDarkMode
               ? 'bg-white/5 hover:bg-white/10 text-gray-300'
-              : 'bg-black/5 hover:bg-black/10 text-gray-600'
+              : 'bg-zinc-950/5 hover:bg-zinc-950/10 text-gray-600'
           }`}
         >
           <Trash2 className="w-4 h-4" />
@@ -342,7 +342,7 @@ const RecordingPreview: React.FC<RecordingPreviewProps> = ({
           className={`flex items-center justify-center gap-2 px-4 py-3 rounded-xl text-sm font-medium transition-all flex-1 ${
             isDarkMode
               ? 'bg-white/5 hover:bg-white/10 text-gray-300'
-              : 'bg-black/5 hover:bg-black/10 text-gray-600'
+              : 'bg-zinc-950/5 hover:bg-zinc-950/10 text-gray-600'
           }`}
         >
           <RotateCcw className="w-4 h-4" />
