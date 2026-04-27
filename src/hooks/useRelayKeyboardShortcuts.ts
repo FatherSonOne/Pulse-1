@@ -1,14 +1,20 @@
 // useRelayKeyboardShortcuts - Global keyboard shortcuts for Relay
-// Provides Space for record, Escape for back, 1-7 for modes, Ctrl+D/A/S for actions
+// Provides Space for record, Escape for back, T/M/N/L for top-level RelayView
+// switching (Triage/Messages/Notes/Live, Stage 2.1d.2), legacy 1–7 for VoxMode
+// mode switches (kept until downstream consumers migrate), and Ctrl+D/A/S for
+// row-level actions.
 
 import { useEffect, useRef } from 'react';
-import { VoxMode } from '../services/relay/voxModeTypes';
+import { VoxMode, RelayMode } from '../services/relay/voxModeTypes';
 
 export interface RelayShortcutHandlers {
   onToggleRecording?: () => void;
   onStopRecording?: () => void;
   onGoBack?: () => void;
+  /** Legacy VoxMode switch (1–7). Kept functional during the transition. */
   onSwitchMode?: (mode: VoxMode | 'classic') => void;
+  /** New top-level RelayView switch (T/M/N/L). 'triage' is the placeholder home view. */
+  onSwitchView?: (view: 'triage' | RelayMode) => void;
   onDownload?: () => void;
   onArchive?: () => void;
   onSummarize?: () => void;
@@ -18,13 +24,17 @@ export interface RelayShortcutHandlers {
 export const RELAY_SHORTCUTS = {
   Space: 'Toggle recording (when not in text input)',
   Escape: 'Stop recording / Go back',
-  '1': 'Switch to Classic',
-  '2': 'Switch to Pulse Radio',
-  '3': 'Switch to Voice Threads',
-  '4': 'Switch to Team Vox',
-  '5': 'Switch to Vox Notes',
-  '6': 'Switch to Quick Vox',
-  '7': 'Switch to Vox Drop',
+  T: 'Switch to Triage',
+  M: 'Switch to Messages',
+  N: 'Switch to Notes',
+  L: 'Switch to Live',
+  '1': 'Switch to Classic Voxer (legacy)',
+  '2': 'Switch to Pulse Radio (legacy)',
+  '3': 'Switch to Voice Threads (legacy)',
+  '4': 'Switch to Team Vox (legacy)',
+  '5': 'Switch to Vox Notes (legacy)',
+  '6': 'Switch to Quick Vox (legacy)',
+  '7': 'Switch to Vox Drop (legacy)',
   'Ctrl+D': 'Download selected',
   'Ctrl+A': 'Archive selected',
   'Ctrl+S': 'Summarize conversation (AI)',
@@ -39,6 +49,13 @@ const MODE_MAP: Record<string, VoxMode | 'classic'> = {
   '5': 'vox_notes',
   '6': 'quick_vox',
   '7': 'vox_drop',
+};
+
+const VIEW_MAP: Record<string, 'triage' | RelayMode> = {
+  t: 'triage',
+  m: 'messages',
+  n: 'notes',
+  l: 'live',
 };
 
 export function useRelayKeyboardShortcuts(
@@ -90,7 +107,26 @@ export function useRelayKeyboardShortcuts(
         return;
       }
 
-      // Number keys - Switch modes (1-8)
+      // Top-level RelayView letter shortcuts (T/M/N/L). Only fire when no
+      // modifier is held — Ctrl+D/A/S below need to win, and Cmd/Alt combos
+      // are reserved for the OS / browser.
+      if (
+        !isInInput &&
+        !isContentEditable &&
+        !event.ctrlKey &&
+        !event.metaKey &&
+        !event.altKey
+      ) {
+        const viewKey = event.key.toLowerCase();
+        if (VIEW_MAP[viewKey] !== undefined) {
+          event.preventDefault();
+          h.onSwitchView?.(VIEW_MAP[viewKey]);
+          return;
+        }
+      }
+
+      // Number keys - Switch legacy VoxMode (1-7). Kept for downstream
+      // consumers that haven't migrated to RelayMode yet.
       if (MODE_MAP[event.key] && !isInInput && !isContentEditable) {
         event.preventDefault();
         h.onSwitchMode?.(MODE_MAP[event.key]);

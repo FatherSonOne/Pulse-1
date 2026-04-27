@@ -15,6 +15,37 @@ export type VoxMode =
 // 'video_vox' was split off into the Glimpse section in 2026-04-27 (sub-stage 1.5c).
 
 // ============================================
+// RELAY MODE TAXONOMY (Stage 2.1d.2)
+// ============================================
+// New top-level mode taxonomy. The legacy VoxMode union is kept for DB
+// persistence + existing mode-component internals; RelayMode is the new
+// 3-mode taxonomy the user sees and Relay.tsx routes against.
+
+export type RelayMode = 'messages' | 'notes' | 'live';
+
+/**
+ * Maps a legacy VoxMode (or 'classic') to its new RelayMode bucket.
+ * - quick_vox, voice_threads, team_vox, vox_drop, classic → 'messages'
+ * - vox_notes → 'notes'
+ * - pulse_radio → 'live'
+ */
+export const mapVoxToRelay = (vox: VoxMode | 'classic'): RelayMode => {
+  switch (vox) {
+    case 'vox_notes':
+      return 'notes';
+    case 'pulse_radio':
+      return 'live';
+    case 'quick_vox':
+    case 'voice_threads':
+    case 'team_vox':
+    case 'vox_drop':
+    case 'classic':
+    default:
+      return 'messages';
+  }
+};
+
+// ============================================
 // VOX MODE METADATA
 // ============================================
 

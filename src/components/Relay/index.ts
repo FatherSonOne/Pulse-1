@@ -39,8 +39,9 @@ export type { VoxEmptyStateConfig } from './voxEmptyStates';
 // VOX MODE SYSTEM - 7 Communication Styles
 // ============================================
 
-// Vox Mode Selector - Main menu for choosing communication style
-export { default as VoxModeSelector } from './VoxModeSelector';
+// VoxModeSelector was retired in Stage 2.1d.2 of the Voxer→Relay rework.
+// The wall-of-tiles mode picker violated brand and was replaced by the inline
+// horizontal mode-nav inside Relay.tsx (Triage / Messages / Notes / Live).
 
 // Unified toolbar component for all Vox modes
 export { default as VoxModeToolbar } from './VoxModeToolbar';
