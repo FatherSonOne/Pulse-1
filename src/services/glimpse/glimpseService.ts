@@ -347,7 +347,7 @@ class GlimpseService {
       // Phase 2: Upload video with real progress (5-85%)
       // Video upload is the heaviest part, so it gets the largest progress range.
       const { error: videoUploadError } = await this.uploadWithProgress(
-        'voxer',
+        'relay',
         videoFileName,
         videoBlob,
         'video/webm',
@@ -366,7 +366,7 @@ class GlimpseService {
       // Phase 3: Upload thumbnail (85-90%)
       onProgress?.(85);
       const { error: thumbUploadError } = await this.uploadWithProgress(
-        'voxer',
+        'relay',
         thumbFileName,
         thumbnailBlob,
         'image/jpeg'
@@ -381,8 +381,8 @@ class GlimpseService {
 
       // Phase 4: Insert DB record and finalize (90-100%)
       // Get public URLs
-      const { data: videoUrlData } = supabase.storage.from('voxer').getPublicUrl(videoFileName);
-      const { data: thumbUrlData } = supabase.storage.from('voxer').getPublicUrl(thumbFileName);
+      const { data: videoUrlData } = supabase.storage.from('relay').getPublicUrl(videoFileName);
+      const { data: thumbUrlData } = supabase.storage.from('relay').getPublicUrl(thumbFileName);
 
       // Insert message
       const { data: messageData, error: insertError } = await supabase

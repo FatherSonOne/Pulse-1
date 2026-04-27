@@ -133,8 +133,14 @@ class VoxModeService {
   }
 
   /**
-   * Ensures the voxer storage bucket exists.
-   * Creates it if it doesn't exist.
+   * Ensures the 'relay' storage bucket exists, creating it if needed.
+   *
+   * Dual-read model: new uploads go to the 'relay' bucket. Old content
+   * remains in the 'voxer' bucket (untouched here) and continues to resolve
+   * via the URLs already stored in DB records — Supabase public URLs encode
+   * the bucket name, so old voxer/* URLs and new relay/* URLs both work
+   * without any application-level fallback. Background migration of orphan
+   * voxer objects + URL rewrites is a separate pass after the 30-day window.
    */
   async ensureStorageBucket(): Promise<boolean> {
     if (this.bucketChecked) return this.bucketExists;
@@ -143,7 +149,7 @@ class VoxModeService {
       // First try to check if bucket exists by listing files (more reliable than listing buckets)
       // This avoids the 400 error when trying to create a bucket that already exists
       const { data: files, error: listFilesError } = await supabase.storage
-        .from('voxer')
+        .from('relay')
         .list('', { limit: 1 });
 
       // If we can list files (even if empty), the bucket exists
@@ -158,7 +164,7 @@ class VoxModeService {
       if (listFilesError.message?.includes('not found') ||
           listFilesError.message?.includes('does not exist')) {
         // Try to create the bucket
-        const { data, error: createError } = await supabase.storage.createBucket('voxer', {
+        const { data, error: createError } = await supabase.storage.createBucket('relay', {
           public: true,
           fileSizeLimit: 52428800, // 50MB
           allowedMimeTypes: ['audio/webm', 'audio/mp4', 'audio/mpeg', 'audio/ogg', 'audio/wav', 'audio/x-m4a']
@@ -172,9 +178,9 @@ class VoxModeService {
             this.bucketExists = true;
             return true;
           }
-          console.error('Error creating voxer bucket:', createError);
-          console.error('>>> IMPORTANT: You need to create the "voxer" storage bucket in Supabase.');
-          console.error('>>> Run the migration: supabase/migrations/026_voxer_storage_bucket.sql');
+          console.error('Error creating relay bucket:', createError);
+          console.error('>>> IMPORTANT: The "relay" storage bucket could not be created automatically.');
+          console.error('>>> Run the migration: supabase/migrations/20260427120000_create_relay_storage_bucket.sql');
           console.error('>>> Or create it manually in the Supabase dashboard under Storage.');
           this.bucketChecked = true;
           this.bucketExists = false;
@@ -194,8 +200,8 @@ class VoxModeService {
 
     } catch (error) {
       console.error('Error ensuring storage bucket:', error);
-      console.error('>>> IMPORTANT: The "voxer" storage bucket may not exist.');
-      console.error('>>> Run the migration: supabase/migrations/026_voxer_storage_bucket.sql');
+      console.error('>>> IMPORTANT: The "relay" storage bucket may not exist.');
+      console.error('>>> Run the migration: supabase/migrations/20260427120000_create_relay_storage_bucket.sql');
       // Don't mark as checked so we can retry
       return false;
     }
@@ -508,7 +514,7 @@ class VoxModeService {
       // Upload audio to storage
       const fileName = `broadcasts/${channelId}/${userId}/${Date.now()}.webm`;
       const { data: uploadData, error: uploadError } = await supabase.storage
-        .from('voxer')
+        .from('relay')
         .upload(fileName, audioBlob, {
           contentType: 'audio/webm',
           upsert: false
@@ -521,7 +527,7 @@ class VoxModeService {
 
       // Get public URL
       const { data: urlData } = supabase.storage
-        .from('voxer')
+        .from('relay')
         .getPublicUrl(fileName);
 
       const audioUrl = urlData.publicUrl;
@@ -651,7 +657,7 @@ class VoxModeService {
       // Upload audio to storage
       const fileName = `voice_threads/${threadId}/${userId}/${Date.now()}.webm`;
       const { data: uploadData, error: uploadError } = await supabase.storage
-        .from('voxer')
+        .from('relay')
         .upload(fileName, audioBlob, {
           contentType: 'audio/webm',
           upsert: false
@@ -668,7 +674,7 @@ class VoxModeService {
 
       // Get public URL
       const { data: urlData } = supabase.storage
-        .from('voxer')
+        .from('relay')
         .getPublicUrl(fileName);
 
       const audioUrl = urlData.publicUrl;
@@ -1066,7 +1072,7 @@ class VoxModeService {
       // Upload audio to storage
       const fileName = `team_vox/${workspaceId}/${channelId}/${userId}/${Date.now()}.webm`;
       const { data: uploadData, error: uploadError } = await supabase.storage
-        .from('voxer')
+        .from('relay')
         .upload(fileName, audioBlob, {
           contentType: 'audio/webm',
           upsert: false
@@ -1083,7 +1089,7 @@ class VoxModeService {
 
       // Get public URL
       const { data: urlData } = supabase.storage
-        .from('voxer')
+        .from('relay')
         .getPublicUrl(fileName);
 
       const audioUrl = urlData.publicUrl;
@@ -1267,7 +1273,7 @@ class VoxModeService {
       // Upload audio to storage
       const fileName = `vox_notes/${userId}/${Date.now()}.webm`;
       const { data: uploadData, error: uploadError } = await supabase.storage
-        .from('voxer')
+        .from('relay')
         .upload(fileName, audioBlob, {
           contentType: 'audio/webm',
           upsert: false
@@ -1280,7 +1286,7 @@ class VoxModeService {
 
       // Get public URL
       const { data: urlData } = supabase.storage
-        .from('voxer')
+        .from('relay')
         .getPublicUrl(fileName);
 
       const audioUrl = urlData.publicUrl;
@@ -1526,7 +1532,7 @@ class VoxModeService {
       // Upload audio to storage
       const fileName = `quick_vox/${userId}/${recipientId}/${Date.now()}.webm`;
       const { data: uploadData, error: uploadError } = await supabase.storage
-        .from('voxer')
+        .from('relay')
         .upload(fileName, audioBlob, {
           contentType: 'audio/webm',
           upsert: false
@@ -1543,7 +1549,7 @@ class VoxModeService {
 
       // Get public URL
       const { data: urlData } = supabase.storage
-        .from('voxer')
+        .from('relay')
         .getPublicUrl(fileName);
 
       const audioUrl = urlData.publicUrl;
@@ -1651,7 +1657,7 @@ class VoxModeService {
       // Upload audio to storage
       const fileName = `vox_drops/${userId}/${Date.now()}.webm`;
       const { data: uploadData, error: uploadError } = await supabase.storage
-        .from('voxer')
+        .from('relay')
         .upload(fileName, audioBlob, {
           contentType: 'audio/webm',
           upsert: false
@@ -1664,7 +1670,7 @@ class VoxModeService {
 
       // Get public URL
       const { data: urlData } = supabase.storage
-        .from('voxer')
+        .from('relay')
         .getPublicUrl(fileName);
 
       const audioUrl = urlData.publicUrl;
