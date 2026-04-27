@@ -104,6 +104,9 @@ docs/archive/scripts/
 .claude/long-term-memory.md
 # .claude/commands/ is intentionally tracked — shared slash commands
 !.claude/commands/*.md
+# .claude/skills/ is intentionally tracked — shared skills (e.g. /impeccable)
+!.claude/skills/
+!.claude/skills/**
 
 # Additional security patterns
 *.pfx
@@ -133,6 +136,8 @@ browser-extension/src/config.js
 *.md
 !README.md
 !CLAUDE.md
+!.claude/commands/**/*.md
+!.claude/skills/**/*.md
 docs/*.md
 
 # Generated helper files
