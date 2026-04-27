@@ -1,9 +1,9 @@
-// Voxer Archive Service - Save Voxer conversations to Pulse Archives
+// Relay Archive Service - Save Relay conversations to Pulse Archives
 // Handles conversion of voice messages to structured archive items
 
 import { VoxSelectionItem } from '../../hooks/useVoxSelection';
 import { saveArchiveItem } from '../dbService';
-import type { MeetingNotes } from './voxerAIService';
+import type { MeetingNotes } from './relayAIService';
 
 /**
  * Format duration from seconds to readable string
@@ -23,13 +23,13 @@ function formatDuration(seconds: number): string {
 }
 
 /**
- * Archive a Voxer conversation to Pulse Archives
+ * Archive a Relay conversation to Pulse Archives
  *
  * @param items - Array of voice messages to archive
  * @param contactName - Name of the contact for the conversation
  * @returns Promise that resolves when archive is saved
  */
-export async function archiveVoxerConversation(
+export async function archiveRelayConversation(
   items: VoxSelectionItem[],
   contactName: string = 'Unknown Contact'
 ): Promise<void> {
@@ -142,7 +142,7 @@ export async function archiveVoxerConversation(
  */
 export async function archiveMeetingNotes(
   notes: MeetingNotes,
-  source: string = 'Voxer'
+  source: string = 'Relay'
 ): Promise<void> {
   // Build a readable plain-text version of the notes
   const lines: string[] = [];
@@ -199,7 +199,7 @@ export async function archiveMeetingNotes(
 }
 
 /**
- * Archive a single Voxer message to Pulse Archives
+ * Archive a single Relay message to Pulse Archives
  * Useful for quick "save this message" actions
  */
 export async function archiveSingleVoxMessage(

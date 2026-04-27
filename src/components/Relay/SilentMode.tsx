@@ -2,7 +2,7 @@
 // View incoming voxes as text when you can't listen
 
 import React, { useState, useEffect, useCallback, useRef } from 'react';
-import { SilentModeSettings, TranscriptionModeMessage } from '../../services/relay/advancedVoxerTypes';
+import { SilentModeSettings, TranscriptionModeMessage } from '../../services/relay/advancedRelayTypes';
 
 import { Captions, Mic, Plus, Reply, Settings, Trash2, Volume2, VolumeX, Wand2, X, Zap } from 'lucide-react';
 

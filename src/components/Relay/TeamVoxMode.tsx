@@ -38,22 +38,22 @@ import { voxModeService } from '../../services/relay/voxModeService';
 // analyticsCollector loaded dynamically to avoid svc-crm-analytics chunk TDZ
 import { VOX_MODES, type VoxWorkspace, type VoxTeamChannel, type TeamVoxMessage } from '../../services/relay/voxModeTypes';
 import toast from 'react-hot-toast';
-import './Voxer.css';
+import './Relay.css';
 
 // Phase 2: Selection Mode
 import { useVoxSelection, VoxSelectionItem } from '../../hooks/useVoxSelection';
 import { VoxSelectToolbar } from './VoxSelectToolbar';
 import VoxMessageMenu from './VoxMessageMenu';
 import VoxDownloadModal from './VoxDownloadModal';
-import { archiveVoxerConversation, archiveMeetingNotes } from '../../services/relay/voxerArchiveService';
+import { archiveRelayConversation, archiveMeetingNotes } from '../../services/relay/relayArchiveService';
 
 // Phase 5: AI Enhancements
 import { VoxConversationSummary, VoxSmartReplies, VoxMeetingNotes, VoxAutoChapters } from './index';
-import { summarizeConversation, generateSmartReplies, generateMeetingNotes, generateAutoChapters } from '../../services/relay/voxerAIService';
-import type { ConversationSummary, SmartReply, MeetingNotes, Chapter } from '../../services/relay/voxerAIService';
+import { summarizeConversation, generateSmartReplies, generateMeetingNotes, generateAutoChapters } from '../../services/relay/relayAIService';
+import type { ConversationSummary, SmartReply, MeetingNotes, Chapter } from '../../services/relay/relayAIService';
 
 // Phase 6: Final Polish
-import { useVoxerKeyboardShortcuts } from '../../hooks/useVoxerKeyboardShortcuts';
+import { useRelayKeyboardShortcuts } from '../../hooks/useRelayKeyboardShortcuts';
 import { VoxKeyboardShortcutsHelp } from './VoxKeyboardShortcutsHelp';
 import { usePlaybackSpeed } from '../../hooks/usePlaybackSpeed';
 import { PlaybackSpeedControl } from './PlaybackSpeedControl';
@@ -405,7 +405,7 @@ const TeamVoxMode: React.FC<TeamVoxModeProps> = ({
   };
 
   // Phase 6: Keyboard Shortcuts (after handler functions are defined)
-  useVoxerKeyboardShortcuts({
+  useRelayKeyboardShortcuts({
     onToggleRecording: () => {
       if (recordingState === 'idle') startRecording();
       else if (recordingState === 'recording') stopRecording();
@@ -445,7 +445,7 @@ const TeamVoxMode: React.FC<TeamVoxModeProps> = ({
       if (isSelectionMode && selectionCount > 0) {
         (async () => {
           try {
-            await archiveVoxerConversation(Array.from(selectedItems), selectedChannel?.name || 'Team Vox');
+            await archiveRelayConversation(Array.from(selectedItems), selectedChannel?.name || 'Team Vox');
             exitSelectionMode();
             toast.success(`Archived ${selectionCount} message${selectionCount > 1 ? 's' : ''}`);
           } catch {
@@ -612,7 +612,7 @@ const TeamVoxMode: React.FC<TeamVoxModeProps> = ({
       transcript: msg.transcript,
     };
     try {
-      await archiveVoxerConversation([item], msg.senderName || 'Team Vox');
+      await archiveRelayConversation([item], msg.senderName || 'Team Vox');
       toast.success('Archived to Pulse Archives');
     } catch {
       toast.error('Failed to archive');

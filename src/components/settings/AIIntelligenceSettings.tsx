@@ -356,12 +356,12 @@ export const AIIntelligenceSettings: React.FC = () => {
         </div>
       </div>
 
-      {/* Voxer Settings Deep-Link */}
+      {/* Relay Settings Deep-Link */}
       <div className="bg-white dark:bg-zinc-900 border border-zinc-200 dark:border-zinc-800 rounded-xl p-6">
         <div className="flex items-center justify-between">
           <div>
             <h4 className="text-sm font-bold text-zinc-900 dark:text-white">
-              Voxer Audio & Voice
+              Relay Audio & Voice
             </h4>
             <p className="text-xs text-zinc-500 mt-0.5">
               Manage microphone, speaker, and voice recording settings
@@ -376,7 +376,7 @@ export const AIIntelligenceSettings: React.FC = () => {
             className="px-4 py-2 bg-purple-600 hover:bg-purple-700 text-white rounded-lg text-sm font-medium transition flex items-center gap-2"
           >
             <Sliders />
-            Open Voxer Settings
+            Open Relay Settings
           </button>
         </div>
       </div>

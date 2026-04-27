@@ -37,22 +37,22 @@ import { voxModeService } from '../../services/relay/voxModeService';
 // analyticsCollector loaded dynamically to avoid svc-crm-analytics chunk TDZ
 import { VOX_MODES, type VoxNote, type LinkedItem } from '../../services/relay/voxModeTypes';
 import toast from 'react-hot-toast';
-import './Voxer.css';
+import './Relay.css';
 
 // Phase 2: Selection Mode
 import { useVoxSelection, VoxSelectionItem } from '../../hooks/useVoxSelection';
 import { VoxSelectToolbar } from './VoxSelectToolbar';
 import VoxMessageMenu from './VoxMessageMenu';
 import VoxDownloadModal from './VoxDownloadModal';
-import { archiveVoxerConversation } from '../../services/relay/voxerArchiveService';
+import { archiveRelayConversation } from '../../services/relay/relayArchiveService';
 
 // Phase 5: AI Enhancements
 import { VoxConversationSummary, VoxSmartReplies } from './index';
-import { summarizeConversation, generateSmartReplies } from '../../services/relay/voxerAIService';
-import type { ConversationSummary, SmartReply } from '../../services/relay/voxerAIService';
+import { summarizeConversation, generateSmartReplies } from '../../services/relay/relayAIService';
+import type { ConversationSummary, SmartReply } from '../../services/relay/relayAIService';
 
 // Phase 6: Final Polish
-import { useVoxerKeyboardShortcuts } from '../../hooks/useVoxerKeyboardShortcuts';
+import { useRelayKeyboardShortcuts } from '../../hooks/useRelayKeyboardShortcuts';
 import { VoxKeyboardShortcutsHelp } from './VoxKeyboardShortcutsHelp';
 import { usePlaybackSpeed } from '../../hooks/usePlaybackSpeed';
 import { PlaybackSpeedControl } from './PlaybackSpeedControl';
@@ -267,7 +267,7 @@ const VoxNotesMode: React.FC<VoxNotesModeProps> = ({
   };
 
   // Phase 6: Keyboard Shortcuts (after handler functions are defined)
-  useVoxerKeyboardShortcuts({
+  useRelayKeyboardShortcuts({
     onToggleRecording: () => {
       if (recordingState === 'idle') startRecording();
       else if (recordingState === 'recording') stopRecording();
@@ -303,7 +303,7 @@ const VoxNotesMode: React.FC<VoxNotesModeProps> = ({
       if (isSelectionMode && selectionCount > 0) {
         (async () => {
           try {
-            await archiveVoxerConversation(Array.from(selectedItems), 'My Notes');
+            await archiveRelayConversation(Array.from(selectedItems), 'My Notes');
             exitSelectionMode();
             toast.success(`Archived ${selectionCount} message${selectionCount > 1 ? 's' : ''}`);
           } catch {
@@ -536,7 +536,7 @@ const VoxNotesMode: React.FC<VoxNotesModeProps> = ({
       transcript: note.transcript,
     };
     try {
-      await archiveVoxerConversation([item], note.title || 'Vox Note');
+      await archiveRelayConversation([item], note.title || 'Vox Note');
       toast.success('Archived to Pulse Archives');
     } catch {
       toast.error('Failed to archive');

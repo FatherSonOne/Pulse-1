@@ -10,7 +10,7 @@ import {
   SuggestedResponse,
   SentimentType,
   UrgencyLevel,
-} from '../../services/relay/voxerTypes';
+} from '../../services/relay/relayTypes';
 
 // ============================================
 // TYPES

@@ -1,59 +1,59 @@
-// Voxer Services - Main Export
+// Relay Services - Main Export
 // Comprehensive voice intelligence and communication services
 
 // Types
-export * from './voxerTypes';
-export * from './advancedVoxerTypes';
+export * from './relayTypes';
+export * from './advancedRelayTypes';
 
 // Services
-export { VoxerTranscriptionService, getVoxerTranscriptionService } from './voxerTranscriptionService';
-export { VoxerAnalysisService, getVoxerAnalysisService } from './voxerAnalysisService';
-export { VoxerFeedbackService, getVoxerFeedbackService } from './voxerFeedbackService';
+export { RelayTranscriptionService, getRelayTranscriptionService } from './relayTranscriptionService';
+export { RelayAnalysisService, getRelayAnalysisService } from './relayAnalysisService';
+export { RelayFeedbackService, getRelayFeedbackService } from './relayFeedbackService';
 
 // ============================================
-// UNIFIED VOXER SERVICE
+// UNIFIED RELAY SERVICE
 // ============================================
 
-import { VoxerTranscriptionService, getVoxerTranscriptionService } from './voxerTranscriptionService';
-import { VoxerAnalysisService, getVoxerAnalysisService } from './voxerAnalysisService';
-import { VoxerFeedbackService, getVoxerFeedbackService } from './voxerFeedbackService';
+import { RelayTranscriptionService, getRelayTranscriptionService } from './relayTranscriptionService';
+import { RelayAnalysisService, getRelayAnalysisService } from './relayAnalysisService';
+import { RelayFeedbackService, getRelayFeedbackService } from './relayFeedbackService';
 import {
   TranscriptionResult,
   VoxAnalysis,
   VoxFeedback,
   TranscriptionConfig,
-  VoxerSettings,
-  DEFAULT_VOXER_SETTINGS,
+  RelaySettings,
+  DEFAULT_RELAY_SETTINGS,
   ActionItem,
   SuggestedResponse,
-} from './voxerTypes';
+} from './relayTypes';
 
-export interface VoxerServiceConfig {
+export interface RelayServiceConfig {
   geminiApiKey?: string;
   openaiApiKey?: string;
   assemblyaiApiKey?: string;
-  settings?: Partial<VoxerSettings>;
+  settings?: Partial<RelaySettings>;
 }
 
-export class VoxerService {
-  private transcriptionService: VoxerTranscriptionService;
-  private analysisService: VoxerAnalysisService;
-  private feedbackService: VoxerFeedbackService;
-  private settings: VoxerSettings;
+export class RelayService {
+  private transcriptionService: RelayTranscriptionService;
+  private analysisService: RelayAnalysisService;
+  private feedbackService: RelayFeedbackService;
+  private settings: RelaySettings;
 
-  constructor(config: VoxerServiceConfig) {
+  constructor(config: RelayServiceConfig) {
     const geminiKey = config.geminiApiKey || import.meta.env.VITE_API_KEY || import.meta.env.VITE_GEMINI_API_KEY || '';
     const openaiKey = config.openaiApiKey || localStorage.getItem('openai_api_key') || '';
 
-    this.transcriptionService = new VoxerTranscriptionService({
+    this.transcriptionService = new RelayTranscriptionService({
       geminiApiKey: geminiKey,
       openaiApiKey: openaiKey,
       assemblyaiApiKey: config.assemblyaiApiKey,
     });
 
-    this.analysisService = new VoxerAnalysisService(geminiKey);
-    this.feedbackService = new VoxerFeedbackService(geminiKey);
-    this.settings = { ...DEFAULT_VOXER_SETTINGS, ...config.settings };
+    this.analysisService = new RelayAnalysisService(geminiKey);
+    this.feedbackService = new RelayFeedbackService(geminiKey);
+    this.settings = { ...DEFAULT_RELAY_SETTINGS, ...config.settings };
   }
 
   // ============================================
@@ -191,11 +191,11 @@ export class VoxerService {
   // SETTINGS
   // ============================================
 
-  getSettings(): VoxerSettings {
+  getSettings(): RelaySettings {
     return { ...this.settings };
   }
 
-  updateSettings(updates: Partial<VoxerSettings>): void {
+  updateSettings(updates: Partial<RelaySettings>): void {
     this.settings = { ...this.settings, ...updates };
     // Persist to localStorage
     localStorage.setItem('voxer_settings', JSON.stringify(this.settings));
@@ -205,9 +205,9 @@ export class VoxerService {
     const saved = localStorage.getItem('voxer_settings');
     if (saved) {
       try {
-        this.settings = { ...DEFAULT_VOXER_SETTINGS, ...JSON.parse(saved) };
+        this.settings = { ...DEFAULT_RELAY_SETTINGS, ...JSON.parse(saved) };
       } catch (e) {
-        console.error('Failed to load Voxer settings:', e);
+        console.error('Failed to load Relay settings:', e);
       }
     }
   }
@@ -229,17 +229,17 @@ export class VoxerService {
 // SINGLETON INSTANCE
 // ============================================
 
-let voxerServiceInstance: VoxerService | null = null;
+let relayServiceInstance: RelayService | null = null;
 
-export const getVoxerService = (config?: VoxerServiceConfig): VoxerService => {
-  if (!voxerServiceInstance) {
-    voxerServiceInstance = new VoxerService(config || {});
-    voxerServiceInstance.loadSettings();
+export const getRelayService = (config?: RelayServiceConfig): RelayService => {
+  if (!relayServiceInstance) {
+    relayServiceInstance = new RelayService(config || {});
+    relayServiceInstance.loadSettings();
   }
-  return voxerServiceInstance;
+  return relayServiceInstance;
 };
 
-export default VoxerService;
+export default RelayService;
 
 // Real-time transcription
 export {

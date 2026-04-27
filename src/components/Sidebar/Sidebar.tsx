@@ -63,7 +63,7 @@ const getNavSections = (isAdmin: boolean): NavSection[] => {
       items: [
         { icon: 'fa-comment-dots', label: 'Messages', view: AppView.MESSAGES },
         { icon: 'fa-envelope-open-text', label: 'Email', view: AppView.EMAIL },
-        { icon: 'fa-walkie-talkie', label: 'Voxer', view: AppView.VOXER },
+        { icon: 'fa-walkie-talkie', label: 'Relay', view: AppView.RELAY },
         { icon: 'fa-video', label: 'Glimpse', view: AppView.GLIMPSE },
       ],
     },

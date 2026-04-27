@@ -430,7 +430,7 @@ const NAVIGATION_MAP: Record<string, string> = {
   'analytics': 'ANALYTICS',
   'stats': 'ANALYTICS',
   'statistics': 'ANALYTICS',
-  'voxer': 'VOXER',
+  'relay': 'RELAY',
   'tasks': 'CALENDAR',
   'task panel': 'CALENDAR',
   'notifications': 'DASHBOARD',

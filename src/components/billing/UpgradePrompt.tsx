@@ -174,7 +174,7 @@ export const UsageLimitWarning: React.FC<UsageLimitWarningProps> = ({ metric, cu
     ai_messages: 'AI messages',
     sms_sent: 'SMS messages',
     storage_bytes: 'storage',
-    voxer_minutes: 'Voxer minutes',
+    voxer_minutes: 'Relay minutes',
     workflow_runs: 'workflow runs',
   };
 

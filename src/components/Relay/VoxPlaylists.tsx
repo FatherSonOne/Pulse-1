@@ -1,4 +1,4 @@
-// DEPRECATED — Voxer→Relay rework (2026-04-27).
+// DEPRECATED — Relay rework (2026-04-27).
 // Playlists are not part of the 3-mode Relay (Messages, Notes, Live).
 // This file is dormant: do not propose enhancements; export removed from index.ts.
 // See ~/.claude/projects/f--pulse1/memory/project_pulse_relay_rename.md
@@ -7,7 +7,7 @@
 // Create and manage collections of voice messages
 
 import React, { useState, useRef, useCallback, useMemo } from 'react';
-import { VoxPlaylist, VoxPlaylistItem, SmartPlaylistCriteria, DEFAULT_PLAYLISTS } from '../../services/relay/advancedVoxerTypes';
+import { VoxPlaylist, VoxPlaylistItem, SmartPlaylistCriteria, DEFAULT_PLAYLISTS } from '../../services/relay/advancedRelayTypes';
 
 import { Check, Clock, EllipsisVertical, List, Pen, Plus, Search, Trash2, Wand2, X } from 'lucide-react';
 

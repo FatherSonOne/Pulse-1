@@ -20,7 +20,7 @@ const DecisionTaskHub = lazy(() => import('./components/decisions/DecisionTaskHu
 const EmailClient = lazy(() => import('./components/Email/EmailClientWrapper'));
 const Calendar = lazy(() => import('./components/Calendar'));
 const Settings = lazy(() => import('./components/Settings'));
-const Voxer = lazy(() => import('./components/Voxer'));
+const Relay = lazy(() => import('./components/Relay'));
 const Glimpse = lazy(() => import('./components/Glimpse'));
 const SMS = lazy(() => import('./components/SMS'));
 const Meetings = lazy(() => import('./components/Meetings').then(module => ({ default: module.Meetings })));
@@ -706,7 +706,7 @@ const App: React.FC = () => {
   const handleContactAction = (action: 'message' | 'vox' | 'meet', contactId: string) => {
     setSelectedContactId(contactId);
     if (action === 'message') setView(AppView.MESSAGES);
-    if (action === 'vox') setView(AppView.VOXER);
+    if (action === 'vox') setView(AppView.RELAY);
     if (action === 'meet') setView(AppView.MEETINGS);
     setIsMobileMenuOpen(false); // Close menu on action
   };
@@ -756,8 +756,8 @@ const App: React.FC = () => {
                   });
                 }}
               />;
-            case AppView.VOXER:
-              return <Voxer apiKey={apiKey} contacts={contacts} initialContactId={selectedContactId} isDarkMode={isDarkMode} />;
+            case AppView.RELAY:
+              return <Relay apiKey={apiKey} contacts={contacts} initialContactId={selectedContactId} isDarkMode={isDarkMode} />;
             case AppView.GLIMPSE:
               return <Glimpse apiKey={apiKey} isDarkMode={isDarkMode} />;
             case AppView.MESSAGES:

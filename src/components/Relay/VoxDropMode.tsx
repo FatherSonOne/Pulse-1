@@ -30,23 +30,23 @@ import VoxRecordArea from './VoxRecordArea';
 import { useVoxRecording } from '../../hooks/useVoxRecording';
 import { voxModeService } from '../../services/relay/voxModeService';
 import { VOX_MODES, type VoxDrop } from '../../services/relay/voxModeTypes';
-import './Voxer.css';
+import './Relay.css';
 
 // Phase 2: Selection Mode
 import { useVoxSelection, VoxSelectionItem } from '../../hooks/useVoxSelection';
 import { VoxSelectToolbar } from './VoxSelectToolbar';
 import VoxMessageMenu from './VoxMessageMenu';
 import VoxDownloadModal from './VoxDownloadModal';
-import { archiveVoxerConversation } from '../../services/relay/voxerArchiveService';
+import { archiveRelayConversation } from '../../services/relay/relayArchiveService';
 
 // Phase 5: AI Enhancements
 import { VoxConversationSummary, VoxSmartReplies } from './index';
-import { summarizeConversation, generateSmartReplies } from '../../services/relay/voxerAIService';
-import type { ConversationSummary, SmartReply } from '../../services/relay/voxerAIService';
+import { summarizeConversation, generateSmartReplies } from '../../services/relay/relayAIService';
+import type { ConversationSummary, SmartReply } from '../../services/relay/relayAIService';
 import toast from 'react-hot-toast';
 
 // Phase 6: Final Polish
-import { useVoxerKeyboardShortcuts } from '../../hooks/useVoxerKeyboardShortcuts';
+import { useRelayKeyboardShortcuts } from '../../hooks/useRelayKeyboardShortcuts';
 import { VoxKeyboardShortcutsHelp } from './VoxKeyboardShortcutsHelp';
 import { usePlaybackSpeed } from '../../hooks/usePlaybackSpeed';
 import { PlaybackSpeedControl } from './PlaybackSpeedControl';
@@ -162,7 +162,7 @@ const VoxDropMode: React.FC<VoxDropModeProps> = ({
       transcript: drop.transcript,
     };
     try {
-      await archiveVoxerConversation([item], drop.title || 'Vox Drop');
+      await archiveRelayConversation([item], drop.title || 'Vox Drop');
       toast.success('Archived to Pulse Archives');
     } catch {
       toast.error('Failed to archive');
@@ -305,7 +305,7 @@ const VoxDropMode: React.FC<VoxDropModeProps> = ({
   };
 
   // Phase 6: Keyboard Shortcuts (after handler functions are defined)
-  useVoxerKeyboardShortcuts({
+  useRelayKeyboardShortcuts({
     onToggleRecording: () => {
       if (recordingState === 'idle') startRecording();
       else if (recordingState === 'recording') stopRecording();
@@ -336,7 +336,7 @@ const VoxDropMode: React.FC<VoxDropModeProps> = ({
       if (isSelectionMode && selectionCount > 0) {
         (async () => {
           try {
-            await archiveVoxerConversation(Array.from(selectedItems), 'Vox Drop');
+            await archiveRelayConversation(Array.from(selectedItems), 'Vox Drop');
             exitSelectionMode();
             toast.success(`Archived ${selectionCount} message${selectionCount > 1 ? 's' : ''}`);
           } catch {

@@ -2,7 +2,7 @@
 // Pre-send analysis with speaking metrics and improvements
 
 import React, { useState, useEffect, useCallback } from 'react';
-import { VoiceCoachAnalysis, VoiceImprovement } from '../../services/relay/advancedVoxerTypes';
+import { VoiceCoachAnalysis, VoiceImprovement } from '../../services/relay/advancedRelayTypes';
 import { processWithModel } from '../../services/geminiService';
 
 import { AlertCircle, CheckCircle, Copy, Drama, GraduationCap, Lightbulb, ListChecks, PenTool, RotateCw, Send, Shield, Target, Wand2, X, Zap } from 'lucide-react';

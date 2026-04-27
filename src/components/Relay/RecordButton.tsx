@@ -1,6 +1,6 @@
-// Unified Record Button Component for Voxer
+// Unified Record Button Component for Relay
 // Wraps PTTButton with mode toggle (hold/tap) functionality
-// Provides consistent recording UI across all Voxer modes
+// Provides consistent recording UI across all Relay modes
 
 import React from 'react';
 import { PTTButton, PTTState, MediaMode } from './PTTButton';

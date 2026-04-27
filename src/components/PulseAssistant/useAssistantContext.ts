@@ -132,8 +132,8 @@ export function useAssistantContext(
         }
       }
 
-      // ── Voxer recordings ───────────────────────────────────────────────
-      if (activeView === AppView.VOXER) {
+      // ── Relay recordings ───────────────────────────────────────────────
+      if (activeView === AppView.RELAY) {
         try {
           const recordings = await dataService.getVoxerRecordings();
           newCtx.voxerRecordings = recordings.slice(0, 20);

@@ -2,7 +2,7 @@
 // Nested conversation replies to specific moments
 
 import React, { useState, useRef, useCallback } from 'react';
-import { VoxInlineThread, VoxInlineThreadReply } from '../../services/relay/advancedVoxerTypes';
+import { VoxInlineThread, VoxInlineThreadReply } from '../../services/relay/advancedRelayTypes';
 
 import { CheckCircle, Clock, MessagesSquare, Reply, RotateCw, Send, X } from 'lucide-react';
 

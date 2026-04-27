@@ -12,7 +12,7 @@ export const STATS = [
 ];
 
 export const VOX_MODES = [
-  { icon: 'fa-solid fa-wave-square', name: 'Classic Voxer', desc: 'Push-to-talk voice with waveform visualization and playback controls' },
+  { icon: 'fa-solid fa-wave-square', name: 'Classic', desc: 'Push-to-talk voice with waveform visualization and playback controls' },
   { icon: 'fa-solid fa-bolt', name: 'Quick Vox', desc: 'One-tap record and send — the fastest way to drop a voice note' },
   { icon: 'fa-solid fa-users', name: 'Team Vox', desc: 'Channel-based voice threads with @mentions and group transcription' },
   { icon: 'fa-solid fa-clock', name: 'Vox Drop', desc: 'Schedule voice messages to deliver at the perfect moment' },
@@ -43,10 +43,10 @@ export const PLATFORMS = [
 ];
 
 export const FAQ_DATA = [
-  { q: "What is Pulse?", a: "Pulse is an AI-powered communication and productivity platform that combines messaging, email, voice (Voxer), calendar, contacts with CRM intelligence, an AI research studio, and analytics — all in one interface. Built for high-performance teams." },
+  { q: "What is Pulse?", a: "Pulse is an AI-powered communication and productivity platform that combines messaging, email, voice (Relay), calendar, contacts with CRM intelligence, an AI research studio, and analytics — all in one interface. Built for high-performance teams." },
   { q: "What AI models does Pulse support?", a: "Pulse integrates multiple AI providers: Google Gemini (primary, with built-in web search grounding), Anthropic Claude, OpenAI GPT-4, ElevenLabs for voice synthesis, OpenAI Whisper and AssemblyAI for transcription. You can switch between models in Settings → AI & Intelligence." },
   { q: "What is the War Room?", a: "The War Room is your AI command center — a research and strategy workspace with 8 slash commands (/brainstorm, /decide, /analyze, /summarize, /plan, /debrief, /risks, /compare), 4 specialized AI agents, RAG document intelligence, voice agent, and session management. Upload your docs and get context-aware AI responses." },
-  { q: "What are the 8 Voxer modes?", a: "Classic Voxer (push-to-talk), Quick Vox (one-tap record), Team Vox (channel-based with @mentions), Vox Drop (scheduled delivery), Vox Notes (voice journaling), Video Vox (async video messages), Pulse Radio (live broadcast), and Voice Threads (async threaded conversations). All modes include AI transcription." },
+  { q: "What are the 8 Relay modes?", a: "Classic (push-to-talk), Quick Vox (one-tap record), Team Vox (channel-based with @mentions), Vox Drop (scheduled delivery), Vox Notes (voice journaling), Video Vox (async video messages), Pulse Radio (live broadcast), and Voice Threads (async threaded conversations). All modes include AI transcription." },
   { q: "Which CRM platforms does Pulse integrate with?", a: "Pulse offers 4 native CRM integrations: HubSpot, Salesforce, Pipedrive, and Zoho CRM. Additionally, Pulse includes Logos Vision — a built-in relationship intelligence system with 0-100 health scoring and bidirectional sync." },
   { q: "What platforms are in the Unified Inbox?", a: "Pulse syncs with Gmail, Slack, Microsoft Outlook/Teams, Zoom, and Google Meet. Each platform connects via OAuth in Settings → Integrations." },
   { q: "Is my data encrypted?", a: "Yes. Pulse stores all data with AES-256 encryption at rest and TLS in transit. Support staff cannot read your message content — only metadata, with your explicit written consent." },
@@ -65,11 +65,11 @@ export const SHORTCUT_GROUPS = [
     { keys: ['G', 'D'], desc: 'Dashboard' },
     { keys: ['G', 'M'], desc: 'Messages' },
     { keys: ['G', 'E'], desc: 'Email' },
-    { keys: ['G', 'V'], desc: 'Voxer' },
+    { keys: ['G', 'V'], desc: 'Relay' },
     { keys: ['G', 'C'], desc: 'Calendar' },
     { keys: ['G', 'T'], desc: 'Contacts' },
   ]},
-  { label: 'Voxer', icon: 'fa-solid fa-microphone', shortcuts: [
+  { label: 'Relay', icon: 'fa-solid fa-microphone', shortcuts: [
     { keys: ['Space'], desc: 'Toggle recording' },
     { keys: ['1–8'], desc: 'Switch Vox mode' },
     { keys: ['Ctrl', 'S'], desc: 'AI summarize' },
@@ -169,7 +169,7 @@ export const ANALYTICS_FEATURES = [
 // Keep in sync with src/components/billing/TrialExpiredBlock.tsx FEATURES.
 export const PULSE_TEAM_FEATURES = [
   'Unlimited team seats',
-  'All 6 Voxer modes (Quick, Team, Drop, Threads, Radio, Notes)',
+  'All 6 Relay modes (Quick, Team, Drop, Threads, Radio, Notes)',
   'Video Vox + Studio RAG',
   'Email, calendar, messaging, meetings',
   'Advanced analytics + full ecosystem bridge',

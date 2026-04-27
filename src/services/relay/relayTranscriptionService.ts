@@ -1,4 +1,4 @@
-// Voxer Transcription Service
+// Relay Transcription Service
 // Supports multiple transcription providers: Gemini, OpenAI Whisper, AssemblyAI
 
 import { GoogleGenAI } from "@google/genai";
@@ -8,13 +8,13 @@ import {
   TranscriptionProvider,
   TranscriptionWord,
   SpeakerSegment,
-} from './voxerTypes';
+} from './relayTypes';
 
 // ============================================
 // TRANSCRIPTION SERVICE CLASS
 // ============================================
 
-export class VoxerTranscriptionService {
+export class RelayTranscriptionService {
   private geminiApiKey: string;
   private openaiApiKey: string;
   private assemblyaiApiKey: string;
@@ -401,17 +401,17 @@ export class VoxerTranscriptionService {
 // SINGLETON INSTANCE
 // ============================================
 
-let transcriptionServiceInstance: VoxerTranscriptionService | null = null;
+let transcriptionServiceInstance: RelayTranscriptionService | null = null;
 
-export const getVoxerTranscriptionService = (config?: {
+export const getRelayTranscriptionService = (config?: {
   geminiApiKey?: string;
   openaiApiKey?: string;
   assemblyaiApiKey?: string;
-}): VoxerTranscriptionService => {
+}): RelayTranscriptionService => {
   if (!transcriptionServiceInstance) {
-    transcriptionServiceInstance = new VoxerTranscriptionService(config || {});
+    transcriptionServiceInstance = new RelayTranscriptionService(config || {});
   }
   return transcriptionServiceInstance;
 };
 
-export default VoxerTranscriptionService;
+export default RelayTranscriptionService;

@@ -18,7 +18,7 @@ interface VoxRecordAreaProps {
 }
 
 /**
- * VoxRecordArea - Themed recording area for Voxer modes
+ * VoxRecordArea - Themed recording area for Relay modes
  *
  * Features:
  * - Mode-specific color theming

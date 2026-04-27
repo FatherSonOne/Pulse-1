@@ -1,4 +1,4 @@
-// VoxModeToolbar - Unified toolbar component for all 8 Voxer modes
+// VoxModeToolbar - Unified toolbar component for all 8 Relay modes
 // Provides consistent layout: [Back] [Icon+Title]  [AI buttons] [Selection] [Custom] [Menu]
 
 import React from 'react';
@@ -61,7 +61,7 @@ export interface VoxModeToolbarProps {
 /**
  * VoxModeToolbar
  *
- * Standard header for all 8 Voxer communication modes.
+ * Standard header for all 8 Relay communication modes.
  *
  * Layout (left → right):
  *   [← Back]  [Icon  Title / Subtitle]  ···  [AI: Summarize] [AI: Reply] [AI: Notes]  [Custom…]  [☐ Select]

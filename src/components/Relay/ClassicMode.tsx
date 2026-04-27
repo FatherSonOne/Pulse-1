@@ -1,4 +1,4 @@
-// Classic Voxer Mode - Avant-Garde CMF Nothing x Glassmorphism Design
+// Classic Mode - Avant-Garde CMF Nothing x Glassmorphism Design
 // Full-featured direct contact messaging with bold industrial aesthetic
 
 import React, { useState, useRef, useEffect, useCallback, useMemo } from 'react';
@@ -54,7 +54,7 @@ import { whisperService } from '../../services/relay/whisperService';
 import { audioEnhancementService } from '../../services/relay/audioEnhancementService';
 import type { EnrichedUserProfile } from '../../types/userContact';
 import toast from 'react-hot-toast';
-import './ClassicVoxerMode.css';
+import './ClassicMode.css';
 
 // Phase 2: Selection Mode
 import { useVoxSelection } from '../../hooks/useVoxSelection';
@@ -78,10 +78,10 @@ import {
   SmartReply,
   MeetingNotes,
   Chapter,
-} from '../../services/relay/voxerAIService';
+} from '../../services/relay/relayAIService';
 
 // Phase 6: Final Polish
-import { useVoxerKeyboardShortcuts } from '../../hooks/useVoxerKeyboardShortcuts';
+import { useRelayKeyboardShortcuts } from '../../hooks/useRelayKeyboardShortcuts';
 import { VoxKeyboardShortcutsHelp } from './VoxKeyboardShortcutsHelp';
 import { usePlaybackSpeed } from '../../hooks/usePlaybackSpeed';
 import { PlaybackSpeedControl } from './PlaybackSpeedControl';
@@ -91,7 +91,7 @@ import { getEmptyStateConfig } from './voxEmptyStates';
 // Message Menu & Download Modal
 import VoxMessageMenu from './VoxMessageMenu';
 import VoxDownloadModal from './VoxDownloadModal';
-import { archiveVoxerConversation } from '../../services/relay/voxerArchiveService';
+import { archiveRelayConversation } from '../../services/relay/relayArchiveService';
 
 // ============================================
 // TYPES
@@ -134,7 +134,7 @@ interface Recording {
 const QUICK_REACTIONS = ['❤️', '👍', '😂', '😮', '🔥', '👏'];
 
 // Settings interface
-interface VoxerSettings {
+interface ClassicModeSettings {
   audioQuality: 'standard' | 'high' | 'ultra';
   autoTranscribe: boolean;
   transcriptionEngine: 'gemini' | 'whisper';
@@ -145,17 +145,17 @@ interface VoxerSettings {
   enhanceVoiceClarity: boolean;
 }
 
-interface ClassicVoxerModeProps {
+interface ClassicModeProps {
   onBack: () => void;
   apiKey: string;
   isDarkMode?: boolean;
 }
 
 // ============================================
-// CLASSIC VOXER MODE COMPONENT
+// CLASSIC MODE COMPONENT
 // ============================================
 
-const ClassicVoxerMode: React.FC<ClassicVoxerModeProps> = ({
+const ClassicMode: React.FC<ClassicModeProps> = ({
   onBack,
   apiKey,
   isDarkMode = false,
@@ -189,7 +189,7 @@ const ClassicVoxerMode: React.FC<ClassicVoxerModeProps> = ({
   const [downloadItem, setDownloadItem] = useState<VoxSelectionItem | null>(null);
   const [showReactionPicker, setShowReactionPicker] = useState<string | null>(null);
   const [replyingTo, setReplyingTo] = useState<Recording | null>(null);
-  const [settings, setSettings] = useState<VoxerSettings>({
+  const [settings, setSettings] = useState<ClassicModeSettings>({
     audioQuality: 'high',
     autoTranscribe: true,
     transcriptionEngine: 'whisper',
@@ -267,7 +267,7 @@ const ClassicVoxerMode: React.FC<ClassicVoxerModeProps> = ({
   const blobUrlsRef = useRef<Set<string>>(new Set());
 
   // Theme colors
-  const accentColor = '#F97316'; // Classic Voxer orange
+  const accentColor = '#F97316'; // Classic orange
 
   // Cleanup all blob URLs on component unmount to prevent memory leaks (G6 fix).
   // Individual URLs are also revoked when replaced or deleted, but this
@@ -774,7 +774,7 @@ const ClassicVoxerMode: React.FC<ClassicVoxerModeProps> = ({
     };
     const loadingToast = toast.loading('Archiving…');
     try {
-      await archiveVoxerConversation([item], activeContact?.displayName || activeContact?.handle || 'Unknown');
+      await archiveRelayConversation([item], activeContact?.displayName || activeContact?.handle || 'Unknown');
       toast.dismiss(loadingToast);
       toast.success('Archived to Pulse Archives');
     } catch {
@@ -835,7 +835,7 @@ const ClassicVoxerMode: React.FC<ClassicVoxerModeProps> = ({
       const manifestUrl = URL.createObjectURL(manifestBlob);
       const a = document.createElement('a');
       a.href = manifestUrl;
-      a.download = `voxer_archive_${contactName}_${new Date().toISOString().split('T')[0]}_manifest.json`;
+      a.download = `relay_archive_${contactName}_${new Date().toISOString().split('T')[0]}_manifest.json`;
       document.body.appendChild(a);
       a.click();
       document.body.removeChild(a);
@@ -1025,7 +1025,7 @@ const ClassicVoxerMode: React.FC<ClassicVoxerModeProps> = ({
   // PHASE 6: KEYBOARD SHORTCUTS (After all handlers defined)
   // ============================================
 
-  useVoxerKeyboardShortcuts({
+  useRelayKeyboardShortcuts({
     onToggleRecording: () => {
       if (!isRecording) startRecording();
       else stopRecording();
@@ -1069,7 +1069,7 @@ const ClassicVoxerMode: React.FC<ClassicVoxerModeProps> = ({
       if (isSelectionMode && selectionCount > 0) {
         (async () => {
           try {
-            await archiveVoxerConversation(Array.from(selectedItems), activeContact?.displayName || activeContact?.handle || 'Classic Voxer');
+            await archiveRelayConversation(Array.from(selectedItems), activeContact?.displayName || activeContact?.handle || 'Classic');
             exitSelectionMode();
             toast.success(`Archived ${selectionCount} message${selectionCount > 1 ? 's' : ''}`);
           } catch {
@@ -1089,7 +1089,7 @@ const ClassicVoxerMode: React.FC<ClassicVoxerModeProps> = ({
   // ============================================
 
   return (
-    <div className={`classic-voxer ${isDarkMode ? 'dark' : 'light'}`}>
+    <div className={`classic-mode ${isDarkMode ? 'dark' : 'light'}`}>
       {/* Hidden audio element */}
       <audio
         ref={audioRef}
@@ -1098,10 +1098,10 @@ const ClassicVoxerMode: React.FC<ClassicVoxerModeProps> = ({
       />
 
       {/* Contact List Sidebar */}
-      <aside className={`classic-voxer-sidebar ${mobileView === 'list' ? 'visible' : 'hidden-mobile'}`}>
+      <aside className={`classic-sidebar ${mobileView === 'list' ? 'visible' : 'hidden-mobile'}`}>
         {/* Header */}
         <VoxModeHeader
-          modeName="Classic Voxer"
+          modeName="Classic"
           modeTagline="Hold to talk"
           modeColor="#F97316"
           modeIcon={Radio}
@@ -1111,7 +1111,7 @@ const ClassicVoxerMode: React.FC<ClassicVoxerModeProps> = ({
             <button
               type="button"
               onClick={() => setShowNewVoxModal(true)}
-              className="classic-voxer-new-btn"
+              className="classic-new-btn"
               title="New Vox"
               aria-label="Start new Vox conversation"
             >
@@ -1121,7 +1121,7 @@ const ClassicVoxerMode: React.FC<ClassicVoxerModeProps> = ({
         />
 
         {/* Search */}
-        <div className="classic-voxer-search">
+        <div className="classic-search">
           <Search className="w-4 h-4" />
           <input
             type="text"
@@ -1132,9 +1132,9 @@ const ClassicVoxerMode: React.FC<ClassicVoxerModeProps> = ({
         </div>
 
         {/* Contact List */}
-        <div className="classic-voxer-contacts">
+        <div className="classic-contacts">
           {filteredContacts.length === 0 ? (
-            <div className="classic-voxer-empty">
+            <div className="classic-empty">
               <MessageCircle className="w-8 h-8" />
               <p>No conversations yet</p>
               <span>Start a new Vox to begin</span>
@@ -1154,30 +1154,30 @@ const ClassicVoxerMode: React.FC<ClassicVoxerModeProps> = ({
                     setActiveContactId(user.id);
                     setMobileView('thread');
                   }}
-                  className={`classic-voxer-contact ${isActive ? 'active' : ''}`}
+                  className={`classic-contact ${isActive ? 'active' : ''}`}
                 >
                   {user.avatarUrl ? (
                     <img
                       src={user.avatarUrl}
                       alt={displayName}
-                      className="classic-voxer-avatar-img"
+                      className="classic-avatar-img"
                     />
                   ) : (
-                    <div className="classic-voxer-avatar classic-voxer-avatar-placeholder">
+                    <div className="classic-avatar classic-avatar-placeholder">
                       {initials}
                     </div>
                   )}
-                  <div className={`classic-voxer-status ${user.onlineStatus === 'online' ? 'online' : ''}`} />
-                  <div className="classic-voxer-contact-info">
-                    <div className="classic-voxer-contact-header">
+                  <div className={`classic-status ${user.onlineStatus === 'online' ? 'online' : ''}`} />
+                  <div className="classic-contact-info">
+                    <div className="classic-contact-header">
                       <h3>{displayName}</h3>
                       {lastVox && (
-                        <span className="classic-voxer-time">
+                        <span className="classic-time">
                           {lastVox.timestamp.toLocaleTimeString([], { hour: '2-digit', minute: '2-digit' })}
                         </span>
                       )}
                     </div>
-                    <p className="classic-voxer-preview">
+                    <p className="classic-preview">
                       {lastVox ? (
                         <>
                           <Mic className="w-3 h-3" />
@@ -1188,7 +1188,7 @@ const ClassicVoxerMode: React.FC<ClassicVoxerModeProps> = ({
                       )}
                     </p>
                   </div>
-                  <ChevronRight className="w-4 h-4 classic-voxer-chevron" />
+                  <ChevronRight className="w-4 h-4 classic-chevron" />
                 </button>
               );
             })
@@ -1197,7 +1197,7 @@ const ClassicVoxerMode: React.FC<ClassicVoxerModeProps> = ({
       </aside>
 
       {/* Main Thread Area */}
-      <main className={`classic-voxer-main ${mobileView === 'thread' ? 'visible' : 'hidden-mobile'}`}>
+      <main className={`classic-main ${mobileView === 'thread' ? 'visible' : 'hidden-mobile'}`}>
         {activeContact ? (
           <>
             {/* Thread Header */}
@@ -1227,14 +1227,14 @@ const ClassicVoxerMode: React.FC<ClassicVoxerModeProps> = ({
                 },
                 {
                   icon: <Settings className="w-4 h-4" />,
-                  title: 'Voxer settings',
+                  title: 'Relay settings',
                   onClick: () => setShowSettings(true),
                 },
               ]}
             />
 
             {/* Messages */}
-            <div className="classic-voxer-messages">
+            <div className="classic-messages">
               {activeThreadRecordings.length === 0 ? (
                 <VoxEmptyState
                   {...emptyConfig}
@@ -1251,9 +1251,9 @@ const ClassicVoxerMode: React.FC<ClassicVoxerModeProps> = ({
                   <div
                     key={recording.id}
                     id={`vox-msg-${recording.id}`}
-                    className={`classic-voxer-message ${recording.sender === 'me' ? 'sent' : 'received'}`}
+                    className={`classic-message ${recording.sender === 'me' ? 'sent' : 'received'}`}
                   >
-                    <div className="classic-voxer-message-content">
+                    <div className="classic-message-content">
                       {/* Selection mode checkbox */}
                       {isSelectionMode && (
                         <button
@@ -1294,7 +1294,7 @@ const ClassicVoxerMode: React.FC<ClassicVoxerModeProps> = ({
                         const parent = activeThreadRecordings.find(r => r.id === recording.replyToId);
                         return (
                           <div
-                            className="classic-voxer-reply-indicator"
+                            className="classic-reply-indicator"
                             onClick={() => {
                               // Scroll to parent message
                               const el = document.getElementById(`vox-msg-${recording.replyToId}`);
@@ -1318,7 +1318,7 @@ const ClassicVoxerMode: React.FC<ClassicVoxerModeProps> = ({
                             ? pausePlayback()
                             : playRecording(recording)
                         }
-                        className="classic-voxer-play-btn"
+                        className="classic-play-btn"
                       >
                         {playingId === recording.id ? (
                           <Pause className="w-4 h-4" />
@@ -1328,12 +1328,12 @@ const ClassicVoxerMode: React.FC<ClassicVoxerModeProps> = ({
                       </button>
 
                       {/* Waveform placeholder */}
-                      <div className="classic-voxer-waveform">
-                        <div className="classic-voxer-waveform-bars">
+                      <div className="classic-waveform">
+                        <div className="classic-waveform-bars">
                           {[...Array(24)].map((_, i) => (
                             <div
                               key={i}
-                              className="classic-voxer-waveform-bar"
+                              className="classic-waveform-bar"
                               style={{
                                 height: `${30 + Math.random() * 50}%`,
                                 opacity: playingId === recording.id ? 1 : 0.5,
@@ -1354,11 +1354,11 @@ const ClassicVoxerMode: React.FC<ClassicVoxerModeProps> = ({
                     </div>
 
                     {/* Message Actions Bar */}
-                    <div className="classic-voxer-message-actions-bar">
+                    <div className="classic-message-actions-bar">
                       <button
                         type="button"
                         onClick={() => toggleStar(recording.id)}
-                        className={`classic-voxer-action-icon ${recording.starred ? 'active' : ''}`}
+                        className={`classic-action-icon ${recording.starred ? 'active' : ''}`}
                         title="Star"
                       >
                         <Star className="w-3.5 h-3.5" />
@@ -1366,7 +1366,7 @@ const ClassicVoxerMode: React.FC<ClassicVoxerModeProps> = ({
                       <button
                         type="button"
                         onClick={() => toggleBookmark(recording.id)}
-                        className={`classic-voxer-action-icon ${recording.bookmarked ? 'active' : ''}`}
+                        className={`classic-action-icon ${recording.bookmarked ? 'active' : ''}`}
                         title="Bookmark"
                       >
                         {recording.bookmarked ? <BookmarkCheck className="w-3.5 h-3.5" /> : <Bookmark className="w-3.5 h-3.5" />}
@@ -1374,7 +1374,7 @@ const ClassicVoxerMode: React.FC<ClassicVoxerModeProps> = ({
                       <button
                         type="button"
                         onClick={() => setReplyContext(recording)}
-                        className="classic-voxer-action-icon"
+                        className="classic-action-icon"
                         title="Reply"
                       >
                         <Reply className="w-3.5 h-3.5" />
@@ -1382,7 +1382,7 @@ const ClassicVoxerMode: React.FC<ClassicVoxerModeProps> = ({
                       <button
                         type="button"
                         onClick={() => setShowReactionPicker(showReactionPicker === recording.id ? null : recording.id)}
-                        className="classic-voxer-action-icon"
+                        className="classic-action-icon"
                         title="Add reaction"
                       >
                         <Smile className="w-3.5 h-3.5" />
@@ -1395,7 +1395,7 @@ const ClassicVoxerMode: React.FC<ClassicVoxerModeProps> = ({
                           setMenuAnchorRect(rect);
                           setShowMessageMenu(showMessageMenu === recording.id ? null : recording.id);
                         }}
-                        className="classic-voxer-action-icon"
+                        className="classic-action-icon"
                         title="More actions"
                       >
                         <MoreVertical className="w-3.5 h-3.5" />
@@ -1404,13 +1404,13 @@ const ClassicVoxerMode: React.FC<ClassicVoxerModeProps> = ({
 
                     {/* Reaction Picker */}
                     {showReactionPicker === recording.id && (
-                      <div className="classic-voxer-reaction-picker">
+                      <div className="classic-reaction-picker">
                         {QUICK_REACTIONS.map(emoji => (
                           <button
                             key={emoji}
                             type="button"
                             onClick={() => addReaction(recording.id, emoji)}
-                            className="classic-voxer-reaction-btn"
+                            className="classic-reaction-btn"
                           >
                             {emoji}
                           </button>
@@ -1436,9 +1436,9 @@ const ClassicVoxerMode: React.FC<ClassicVoxerModeProps> = ({
 
                     {/* Reactions Display */}
                     {recording.reactions && recording.reactions.length > 0 && (
-                      <div className="classic-voxer-reactions-display">
+                      <div className="classic-reactions-display">
                         {recording.reactions.map((reaction, idx) => (
-                          <span key={idx} className="classic-voxer-reaction-badge">
+                          <span key={idx} className="classic-reaction-badge">
                             {reaction.emoji}
                           </span>
                         ))}
@@ -1447,7 +1447,7 @@ const ClassicVoxerMode: React.FC<ClassicVoxerModeProps> = ({
 
                     {/* Transcription */}
                     {recording.transcription && (
-                      <div className="classic-voxer-transcription">
+                      <div className="classic-transcription">
                         <Sparkles className="w-3 h-3" />
                         <p>{recording.transcription}</p>
                       </div>
@@ -1469,10 +1469,10 @@ const ClassicVoxerMode: React.FC<ClassicVoxerModeProps> = ({
                     )}
 
                     {/* Meta info */}
-                    <div className="classic-voxer-message-meta">
+                    <div className="classic-message-meta">
                       <span>{recording.timestamp.toLocaleTimeString([], { hour: '2-digit', minute: '2-digit' })}</span>
                       {recording.sender === 'me' && (
-                        <span className="classic-voxer-status-icon">
+                        <span className="classic-status-icon">
                           {recording.status === 'read' ? (
                             <CheckCheck className="w-3 h-3" />
                           ) : (
@@ -1489,8 +1489,8 @@ const ClassicVoxerMode: React.FC<ClassicVoxerModeProps> = ({
 
             {/* Recording Preview */}
             {pendingRecording && (
-              <div className="classic-voxer-preview-overlay">
-                <div className="classic-voxer-preview-card">
+              <div className="classic-preview-overlay">
+                <div className="classic-preview-card">
                   <RecordingPreview
                     recordingData={{
                       blob: pendingRecording.blob,
@@ -1511,7 +1511,7 @@ const ClassicVoxerMode: React.FC<ClassicVoxerModeProps> = ({
             )}
 
             {/* Recording Controls */}
-            <div className="classic-voxer-controls">
+            <div className="classic-controls">
               <VoxRecordArea
                 modeColor="#F97316"
                 isDarkMode={isDarkMode}
@@ -1527,14 +1527,14 @@ const ClassicVoxerMode: React.FC<ClassicVoxerModeProps> = ({
           </>
         ) : (
           /* Empty State */
-          <div className="classic-voxer-empty-state">
-            <div className="classic-voxer-empty-icon">
-              <div className="classic-voxer-empty-rings">
+          <div className="classic-empty-state">
+            <div className="classic-empty-icon">
+              <div className="classic-empty-rings">
                 <div className="ring ring-1" />
                 <div className="ring ring-2" />
                 <div className="ring ring-3" />
               </div>
-              <div className="classic-voxer-walkie">
+              <div className="classic-walkie">
                 <div className="walkie-antenna" />
                 <div className="walkie-body">
                   <div className="walkie-speaker" />
@@ -1550,15 +1550,15 @@ const ClassicVoxerMode: React.FC<ClassicVoxerModeProps> = ({
 
       {/* New Vox Modal - Pulse Users Only */}
       {showNewVoxModal && (
-        <div className="classic-voxer-modal-overlay" onClick={() => setShowNewVoxModal(false)}>
-          <div className="classic-voxer-modal" onClick={e => e.stopPropagation()}>
-            <header className="classic-voxer-modal-header">
+        <div className="classic-modal-overlay" onClick={() => setShowNewVoxModal(false)}>
+          <div className="classic-modal" onClick={e => e.stopPropagation()}>
+            <header className="classic-modal-header">
               <h3>New Vox</h3>
               <button type="button" onClick={() => setShowNewVoxModal(false)} title="Close">
                 <X className="w-5 h-5" />
               </button>
             </header>
-            <div className="classic-voxer-modal-search">
+            <div className="classic-modal-search">
               <Search className="w-4 h-4" />
               <input
                 type="text"
@@ -1567,14 +1567,14 @@ const ClassicVoxerMode: React.FC<ClassicVoxerModeProps> = ({
                 onChange={(e) => setModalSearchQuery(e.target.value)}
               />
             </div>
-            <div className="classic-voxer-modal-contacts">
+            <div className="classic-modal-contacts">
               {isLoadingUsers ? (
-                <div className="classic-voxer-modal-loading">
+                <div className="classic-modal-loading">
                   <Loader2 className="w-6 h-6 animate-spin" />
                   <span>Loading Pulse users...</span>
                 </div>
               ) : pulseUsers.length === 0 ? (
-                <div className="classic-voxer-modal-empty">
+                <div className="classic-modal-empty">
                   <Users className="w-8 h-8" />
                   <p>No Pulse users found</p>
                   <span>Invite others to join Pulse</span>
@@ -1594,21 +1594,21 @@ const ClassicVoxerMode: React.FC<ClassicVoxerModeProps> = ({
                         setMobileView('thread');
                         setShowNewVoxModal(false);
                       }}
-                      className="classic-voxer-modal-contact"
+                      className="classic-modal-contact"
                     >
                       {user.avatarUrl ? (
                         <img
                           src={user.avatarUrl}
                           alt={displayName}
-                          className="classic-voxer-avatar-img"
+                          className="classic-avatar-img"
                         />
                       ) : (
-                        <div className="classic-voxer-avatar classic-voxer-avatar-placeholder">
+                        <div className="classic-avatar classic-avatar-placeholder">
                           {initials}
                         </div>
                       )}
-                      <div className={`classic-voxer-modal-status ${user.onlineStatus === 'online' ? 'online' : ''}`} />
-                      <div className="classic-voxer-modal-contact-info">
+                      <div className={`classic-modal-status ${user.onlineStatus === 'online' ? 'online' : ''}`} />
+                      <div className="classic-modal-contact-info">
                         <h4>{displayName}</h4>
                         <span>{subtitle}</span>
                       </div>
@@ -1624,26 +1624,26 @@ const ClassicVoxerMode: React.FC<ClassicVoxerModeProps> = ({
 
       {/* Settings Modal */}
       {showSettings && (
-        <div className="classic-voxer-modal-overlay" onClick={() => setShowSettings(false)}>
-          <div className="classic-voxer-settings-modal" onClick={e => e.stopPropagation()}>
-            <header className="classic-voxer-modal-header">
-              <h3>Voxer Settings</h3>
+        <div className="classic-modal-overlay" onClick={() => setShowSettings(false)}>
+          <div className="classic-settings-modal" onClick={e => e.stopPropagation()}>
+            <header className="classic-modal-header">
+              <h3>Relay Settings</h3>
               <button type="button" onClick={() => setShowSettings(false)} title="Close">
                 <X className="w-5 h-5" />
               </button>
             </header>
 
-            <div className="classic-voxer-settings-content">
+            <div className="classic-settings-content">
               {/* Audio Quality */}
-              <div className="classic-voxer-setting-item">
-                <div className="classic-voxer-setting-label">
+              <div className="classic-setting-item">
+                <div className="classic-setting-label">
                   <Volume2 className="w-4 h-4" />
                   <span>Audio Quality</span>
                 </div>
                 <select
                   value={settings.audioQuality}
                   onChange={(e) => setSettings(prev => ({ ...prev, audioQuality: e.target.value as 'standard' | 'high' | 'ultra' }))}
-                  className="classic-voxer-setting-select"
+                  className="classic-setting-select"
                   title="Select audio quality"
                   aria-label="Audio quality"
                 >
@@ -1654,8 +1654,8 @@ const ClassicVoxerMode: React.FC<ClassicVoxerModeProps> = ({
               </div>
 
               {/* Visualizer Sensitivity */}
-              <div className="classic-voxer-setting-item">
-                <div className="classic-voxer-setting-label">
+              <div className="classic-setting-item">
+                <div className="classic-setting-label">
                   <Sliders className="w-4 h-4" />
                   <span>Visualizer Sensitivity</span>
                 </div>
@@ -1666,16 +1666,16 @@ const ClassicVoxerMode: React.FC<ClassicVoxerModeProps> = ({
                   step="0.1"
                   value={settings.visualizerSensitivity}
                   onChange={(e) => setSettings(prev => ({ ...prev, visualizerSensitivity: parseFloat(e.target.value) }))}
-                  className="classic-voxer-setting-slider"
+                  className="classic-setting-slider"
                   title="Adjust visualizer sensitivity"
                   aria-label="Visualizer sensitivity"
                 />
-                <span className="classic-voxer-setting-value">{Math.round(settings.visualizerSensitivity * 100)}%</span>
+                <span className="classic-setting-value">{Math.round(settings.visualizerSensitivity * 100)}%</span>
               </div>
 
               {/* Playback Speed */}
-              <div className="classic-voxer-setting-item">
-                <div className="classic-voxer-setting-label">
+              <div className="classic-setting-item">
+                <div className="classic-setting-label">
                   <Clock className="w-4 h-4" />
                   <span>Playback Speed</span>
                 </div>
@@ -1686,7 +1686,7 @@ const ClassicVoxerMode: React.FC<ClassicVoxerModeProps> = ({
                     setSettings(prev => ({ ...prev, playbackSpeed: speed }));
                     if (audioRef.current) audioRef.current.playbackRate = speed;
                   }}
-                  className="classic-voxer-setting-select"
+                  className="classic-setting-select"
                   title="Select playback speed"
                   aria-label="Playback speed"
                 >
@@ -1700,12 +1700,12 @@ const ClassicVoxerMode: React.FC<ClassicVoxerModeProps> = ({
               </div>
 
               {/* Auto Transcribe */}
-              <div className="classic-voxer-setting-item">
-                <div className="classic-voxer-setting-label">
+              <div className="classic-setting-item">
+                <div className="classic-setting-label">
                   <Sparkles className="w-4 h-4" />
                   <span>Auto-Transcribe Messages</span>
                 </div>
-                <label className="classic-voxer-toggle">
+                <label className="classic-toggle">
                   <input
                     type="checkbox"
                     checked={settings.autoTranscribe}
@@ -1713,20 +1713,20 @@ const ClassicVoxerMode: React.FC<ClassicVoxerModeProps> = ({
                     title="Toggle auto-transcribe"
                     aria-label="Auto-transcribe messages"
                   />
-                  <span className="classic-voxer-toggle-slider" />
+                  <span className="classic-toggle-slider" />
                 </label>
               </div>
 
               {/* Transcription Engine */}
-              <div className="classic-voxer-setting-item">
-                <div className="classic-voxer-setting-label">
+              <div className="classic-setting-item">
+                <div className="classic-setting-label">
                   <MessageCircle className="w-4 h-4" />
                   <span>Transcription Engine</span>
                 </div>
                 <select
                   value={settings.transcriptionEngine}
                   onChange={(e) => setSettings(prev => ({ ...prev, transcriptionEngine: e.target.value as 'gemini' | 'whisper' }))}
-                  className="classic-voxer-setting-select"
+                  className="classic-setting-select"
                   title="Select transcription engine"
                   aria-label="Transcription engine"
                 >
@@ -1736,17 +1736,17 @@ const ClassicVoxerMode: React.FC<ClassicVoxerModeProps> = ({
               </div>
 
               {/* Divider */}
-              <div className="classic-voxer-settings-divider">
+              <div className="classic-settings-divider">
                 <span>Audio Enhancement</span>
               </div>
 
               {/* Audio Enhancement */}
-              <div className="classic-voxer-setting-item">
-                <div className="classic-voxer-setting-label">
+              <div className="classic-setting-item">
+                <div className="classic-setting-label">
                   <Volume2 className="w-4 h-4" />
                   <span>AI Audio Enhancement</span>
                 </div>
-                <label className="classic-voxer-toggle">
+                <label className="classic-toggle">
                   <input
                     type="checkbox"
                     checked={settings.audioEnhancement}
@@ -1754,17 +1754,17 @@ const ClassicVoxerMode: React.FC<ClassicVoxerModeProps> = ({
                     title="Toggle audio enhancement"
                     aria-label="AI audio enhancement"
                   />
-                  <span className="classic-voxer-toggle-slider" />
+                  <span className="classic-toggle-slider" />
                 </label>
               </div>
 
               {/* Noise Reduction */}
-              <div className="classic-voxer-setting-item">
-                <div className="classic-voxer-setting-label">
+              <div className="classic-setting-item">
+                <div className="classic-setting-label">
                   <Mic className="w-4 h-4" />
                   <span>Noise Reduction</span>
                 </div>
-                <label className="classic-voxer-toggle">
+                <label className="classic-toggle">
                   <input
                     type="checkbox"
                     checked={settings.noiseReduction}
@@ -1772,17 +1772,17 @@ const ClassicVoxerMode: React.FC<ClassicVoxerModeProps> = ({
                     title="Toggle noise reduction"
                     aria-label="Noise reduction"
                   />
-                  <span className="classic-voxer-toggle-slider" />
+                  <span className="classic-toggle-slider" />
                 </label>
               </div>
 
               {/* Voice Clarity Enhancement */}
-              <div className="classic-voxer-setting-item">
-                <div className="classic-voxer-setting-label">
+              <div className="classic-setting-item">
+                <div className="classic-setting-label">
                   <Sparkles className="w-4 h-4" />
                   <span>Enhance Voice Clarity</span>
                 </div>
-                <label className="classic-voxer-toggle">
+                <label className="classic-toggle">
                   <input
                     type="checkbox"
                     checked={settings.enhanceVoiceClarity}
@@ -1790,7 +1790,7 @@ const ClassicVoxerMode: React.FC<ClassicVoxerModeProps> = ({
                     title="Toggle voice clarity enhancement"
                     aria-label="Enhance voice clarity"
                   />
-                  <span className="classic-voxer-toggle-slider" />
+                  <span className="classic-toggle-slider" />
                 </label>
               </div>
             </div>
@@ -1800,7 +1800,7 @@ const ClassicVoxerMode: React.FC<ClassicVoxerModeProps> = ({
 
       {/* Reply Context Bar */}
       {replyingTo && (
-        <div className="classic-voxer-reply-bar">
+        <div className="classic-reply-bar">
           <Reply className="w-4 h-4" />
           <span>Replying to: {replyingTo.transcription?.slice(0, 50) || 'Voice message'}...</span>
           <button type="button" onClick={() => setReplyingTo(null)} title="Cancel reply">
@@ -1936,4 +1936,4 @@ const ClassicVoxerMode: React.FC<ClassicVoxerModeProps> = ({
   );
 };
 
-export default ClassicVoxerMode;
+export default ClassicMode;

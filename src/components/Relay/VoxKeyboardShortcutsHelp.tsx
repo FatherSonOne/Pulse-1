@@ -1,9 +1,9 @@
 // VoxKeyboardShortcutsHelp - Modal showing all available keyboard shortcuts
-// Triggered by pressing '?' in any Voxer mode
+// Triggered by pressing '?' in any Relay mode
 
 import React from 'react';
 import { X, Keyboard } from 'lucide-react';
-import { VOXER_SHORTCUTS } from '../../hooks/useVoxerKeyboardShortcuts';
+import { RELAY_SHORTCUTS } from '../../hooks/useRelayKeyboardShortcuts';
 
 interface VoxKeyboardShortcutsHelpProps {
   isOpen: boolean;
@@ -18,7 +18,7 @@ export const VoxKeyboardShortcutsHelp: React.FC<VoxKeyboardShortcutsHelpProps> =
 }) => {
   if (!isOpen) return null;
 
-  const shortcuts = Object.entries(VOXER_SHORTCUTS);
+  const shortcuts = Object.entries(RELAY_SHORTCUTS);
 
   return (
     <div

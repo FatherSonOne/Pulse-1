@@ -1,4 +1,4 @@
-// Advanced Voxer Types
+// Advanced Relay Types
 // Comprehensive type definitions for all advanced features
 
 // ============================================
@@ -448,12 +448,12 @@ export interface VoiceCommandHistory {
 export const VOICE_COMMANDS: VoiceCommand[] = [
   // Navigation
   {
-    id: 'nav-voxer',
-    phrases: ['go to voxer', 'open voxer', 'show voxer'],
+    id: 'nav-relay',
+    phrases: ['go to relay', 'open relay', 'show relay'],
     category: 'navigation',
-    action: 'NAVIGATE_VOXER',
-    description: 'Navigate to the Voxer section',
-    examples: ['Hey Pulse, go to Voxer'],
+    action: 'NAVIGATE_RELAY',
+    description: 'Navigate to the Relay section',
+    examples: ['Hey Pulse, go to Relay'],
   },
   {
     id: 'nav-contacts',

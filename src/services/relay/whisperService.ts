@@ -12,7 +12,7 @@ import { supabase } from '../supabase';
 /**
  * WhisperTranscriptionResult - Whisper-specific transcription output.
  * (Renamed from TranscriptionResult to avoid collision with the canonical
- * TranscriptionResult in voxerTypes.ts which has richer fields like
+ * TranscriptionResult in relayTypes.ts which has richer fields like
  * id, confidence, provider, speakers, etc.)
  */
 export interface WhisperTranscriptionResult {

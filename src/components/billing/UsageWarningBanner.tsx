@@ -1,7 +1,7 @@
 // UsageWarningBanner.tsx — Proactive "you're close to your cap" banner.
 //
 // Reads the workspace's current entitlements and renders a dismissible banner
-// when ANY metered resource (AI messages, SMS, storage, Voxer minutes) has
+// when ANY metered resource (AI messages, SMS, storage, Relay minutes) has
 // crossed the 80% usage threshold. The goal is to warn users BEFORE they hit
 // the hard cap (which triggers the far noisier AICapExceededError toast from
 // useAIErrorHandler).
@@ -51,7 +51,7 @@ const METRICS: MetricConfig[] = [
   },
   {
     key: 'voxer_minutes',
-    label: 'Voxer minutes',
+    label: 'Relay minutes',
     unit: 'min',
     usageField: 'voxer_minutes',
     limitField: 'max_voxer_minutes_mo',

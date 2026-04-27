@@ -17,7 +17,7 @@ import {
   Check,
   Loader2,
 } from 'lucide-react';
-import { MeetingNotes } from '../../services/relay/voxerAIService';
+import { MeetingNotes } from '../../services/relay/relayAIService';
 
 interface VoxMeetingNotesProps {
   notes: MeetingNotes;

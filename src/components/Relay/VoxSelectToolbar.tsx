@@ -15,7 +15,7 @@ import {
 } from 'lucide-react';
 import { VoxSelectionItem } from '../../hooks/useVoxSelection';
 import VoxDownloadModal from './VoxDownloadModal';
-import { archiveVoxerConversation } from '../../services/relay/voxerArchiveService';
+import { archiveRelayConversation } from '../../services/relay/relayArchiveService';
 
 interface VoxSelectToolbarProps {
   selectedItems: VoxSelectionItem[];
@@ -70,7 +70,7 @@ export const VoxSelectToolbar: React.FC<VoxSelectToolbarProps> = ({
       if (onArchive) {
         await onArchive(selectedItems);
       } else {
-        await archiveVoxerConversation(selectedItems, contactName);
+        await archiveRelayConversation(selectedItems, contactName);
 
         // Show success notification (simple approach without external toast library)
         const successMessage = `Conversation archived to Pulse Archives (${selectedItems.length} message${selectedItems.length > 1 ? 's' : ''})`;

@@ -56,15 +56,15 @@ import { useVoxSelection, VoxSelectionItem } from '../../hooks/useVoxSelection';
 import { VoxSelectToolbar } from '../Relay/VoxSelectToolbar';
 import VoxMessageMenu from '../Relay/VoxMessageMenu';
 import VoxDownloadModal from '../Relay/VoxDownloadModal';
-import { archiveVoxerConversation } from '../../services/relay/voxerArchiveService';
+import { archiveRelayConversation } from '../../services/relay/relayArchiveService';
 
 // Phase 5: AI Enhancements
-import { VoxConversationSummary, VoxSmartReplies } from '../Relay';
-import { summarizeConversation, generateSmartReplies } from '../../services/relay/voxerAIService';
-import type { ConversationSummary, SmartReply } from '../../services/relay/voxerAIService';
+import { VoxConversationSummary, VoxSmartReplies } from '../Relay/index';
+import { summarizeConversation, generateSmartReplies } from '../../services/relay/relayAIService';
+import type { ConversationSummary, SmartReply } from '../../services/relay/relayAIService';
 
 // Phase 6: Final Polish
-import { useVoxerKeyboardShortcuts } from '../../hooks/useVoxerKeyboardShortcuts';
+import { useRelayKeyboardShortcuts } from '../../hooks/useRelayKeyboardShortcuts';
 import { VoxKeyboardShortcutsHelp } from '../Relay/VoxKeyboardShortcutsHelp';
 import { usePlaybackSpeed } from '../../hooks/usePlaybackSpeed';
 import { PlaybackSpeedControl } from '../Relay/PlaybackSpeedControl';
@@ -611,7 +611,7 @@ const Glimpse: React.FC<GlimpseProps> = ({
       contactName: message.senderName,
     };
     try {
-      await archiveVoxerConversation([item], message.senderName || 'Video Vox');
+      await archiveRelayConversation([item], message.senderName || 'Video Vox');
       toast.success('Archived to Pulse Archives');
     } catch {
       toast.error('Failed to archive');
@@ -751,7 +751,7 @@ const Glimpse: React.FC<GlimpseProps> = ({
   };
 
   // Phase 6: Keyboard Shortcuts (after handler functions are defined)
-  useVoxerKeyboardShortcuts({
+  useRelayKeyboardShortcuts({
     onToggleRecording: () => {
       if (state.status === 'idle') startPreview();
       else if (state.status === 'previewing') startRecording();
@@ -793,7 +793,7 @@ const Glimpse: React.FC<GlimpseProps> = ({
       if (isSelectionMode && selectionCount > 0) {
         (async () => {
           try {
-            await archiveVoxerConversation(Array.from(selectedItems), conversations.find(c => c.id === activeConversationId)?.recipientName || conversations.find(c => c.id === activeConversationId)?.title || 'Video Vox');
+            await archiveRelayConversation(Array.from(selectedItems), conversations.find(c => c.id === activeConversationId)?.recipientName || conversations.find(c => c.id === activeConversationId)?.title || 'Video Vox');
             exitSelectionMode();
             toast.success(`Archived ${selectionCount} message${selectionCount > 1 ? 's' : ''}`);
           } catch {

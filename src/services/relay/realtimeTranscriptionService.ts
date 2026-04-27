@@ -1,7 +1,7 @@
 // Real-time Transcription Service
 // WebSocket-based streaming transcription with multiple provider support
 
-import { TranscriptionWord } from './voxerTypes';
+import { TranscriptionWord } from './relayTypes';
 
 // ============================================
 // TYPES

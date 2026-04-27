@@ -1,4 +1,4 @@
-// Voxer Components - Main Export
+// Relay Components - Main Export
 // Comprehensive suite of voice communication components
 
 // Core Components
@@ -18,7 +18,7 @@ export { VoxThreads, ThreadIndicator } from './VoxThreads';
 export { TimeCapsuleVox, ScheduledCapsuleCard } from './TimeCapsuleVox';
 export { VoiceBookmarks } from './VoiceBookmarks';
 export { SilentModePanel, SilentModeIndicator, DEFAULT_SILENT_MODE_SETTINGS } from './SilentMode';
-// VoxPlaylists is dormant (Voxer→Relay rework 2026-04-27); export removed to prevent new use.
+// VoxPlaylists is dormant (Relay rework 2026-04-27); export removed to prevent new use.
 export { CollaborativeVox } from './CollaborativeVox';
 export { VoxPreviewPanel } from './VoxPreviewPanel';
 
@@ -46,8 +46,8 @@ export { default as VoxModeSelector } from './VoxModeSelector';
 export { default as VoxModeToolbar } from './VoxModeToolbar';
 export type { VoxModeToolbarProps, VoxToolbarCustomAction } from './VoxModeToolbar';
 
-// Classic Voxer Mode - Direct contact messaging (avant-garde redesign)
-export { default as ClassicVoxerMode } from './ClassicVoxerMode';
+// Classic Mode - Direct contact messaging (avant-garde redesign)
+export { default as ClassicMode } from './ClassicMode';
 
 // Individual Vox Mode Components
 export { default as PulseRadio } from './PulseRadio';           // Broadcast to followers
@@ -56,4 +56,4 @@ export { default as TeamVoxMode } from './TeamVoxMode';         // Workspace/tea
 export { default as VoxNotesMode } from './VoxNotesMode';       // Personal voice memos
 export { default as QuickVoxMode } from './QuickVoxMode';       // One-tap instant communication
 export { default as VoxDropMode } from './VoxDropMode';         // Time-capsule scheduled messages
-// VideoVoxMode moved out of Voxer in sub-stage 1.5c (2026-04-27); now lives at src/components/Glimpse/.
+// VideoVoxMode moved out of Relay in sub-stage 1.5c (2026-04-27); now lives at src/components/Glimpse/.

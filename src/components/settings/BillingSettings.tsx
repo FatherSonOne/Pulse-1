@@ -22,8 +22,8 @@ const PULSE_TEAM_FEATURES: string[] = [
   '2,000 AI messages / month',
   '500 SMS / month',
   '50 GB storage',
-  '500 Voxer minutes / month',
-  'All 6 Voxer modes (Quick, Team, Drop, Threads, Radio, Notes)',
+  '500 Relay minutes / month',
+  'All 6 Relay modes (Quick, Team, Drop, Threads, Radio, Notes)',
   'Video Vox + Studio RAG',
   'Email, calendar, messaging, meetings',
   'Advanced analytics + full ecosystem bridge',
@@ -274,7 +274,7 @@ export const BillingSettings: React.FC = () => {
       {header}
 
       {/* Near-limit warning — dismissible; appears when any metered resource
-          (AI messages, SMS, storage, Voxer minutes) is >= 80% of the cap. */}
+          (AI messages, SMS, storage, Relay minutes) is >= 80% of the cap. */}
       <UsageWarningBanner />
 
       {/* Checkout success / canceled toast */}
@@ -658,7 +658,7 @@ export const BillingSettings: React.FC = () => {
               formatFn={formatBytes}
             />
             <UsageMeter
-              label="Voxer Minutes"
+              label="Relay Minutes"
               current={entitlements.usage?.voxer_minutes || 0}
               limit={entitlements.max_voxer_minutes_mo}
             />

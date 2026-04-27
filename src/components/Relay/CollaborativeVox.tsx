@@ -7,7 +7,7 @@ import {
   CollabVoxSegment, 
   CollabParticipant,
   CollabInvite 
-} from '../../services/relay/advancedVoxerTypes';
+} from '../../services/relay/advancedRelayTypes';
 import { Contact } from '../../types';
 
 import { Check, Mic, Play, Send, Square, Trash2, Users, X } from 'lucide-react';

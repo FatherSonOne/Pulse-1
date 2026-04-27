@@ -12,7 +12,7 @@ interface VoxModeHeaderProps {
 }
 
 /**
- * VoxModeHeader - Unified header component for all Voxer modes
+ * VoxModeHeader - Unified header component for all Relay modes
  *
  * Features:
  * - Mode-specific theming with gradient backgrounds

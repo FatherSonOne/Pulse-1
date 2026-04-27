@@ -1,4 +1,4 @@
-// Voxer AI Service - Phase 5 Enhancements
+// Relay AI Service - Phase 5 Enhancements
 // Provides AI-powered features: summarization, smart replies, meeting notes, auto-chapters
 //
 // All LLM calls route through the centralized ai-router edge function via

@@ -17,7 +17,7 @@ import {
   X,
 } from 'lucide-react';
 import { VOX_MODES, VoxMode, VoxModeInfo, ALL_MODE_COLORS } from '../../services/relay/voxModeTypes';
-import VoxerSettings from './VoxerSettings';
+import RelaySettings from './RelaySettings';
 
 interface VoxModeSelectorProps {
   isOpen: boolean;
@@ -28,12 +28,12 @@ interface VoxModeSelectorProps {
   onOpenSettings?: () => void;
 }
 
-// Classic Voxer mode info (not in VOX_MODES, shown separately)
-const CLASSIC_VOXER_INFO = {
+// Classic mode info (not in VOX_MODES, shown separately)
+const CLASSIC_MODE_INFO = {
   id: null,
-  name: 'Classic Voxer',
+  name: 'Classic',
   tagline: 'Direct Contact Messaging',
-  description: 'The original Voxer experience - send voice messages directly to your contacts with all the classic features: real-time transcription, AI analysis, threaded replies, and more.',
+  description: 'The original Relay experience - send voice messages directly to your contacts with all the classic features: real-time transcription, AI analysis, threaded replies, and more.',
   workflow: [
     'Select a contact from your list',
     'Hold or tap to record a voice message',
@@ -138,7 +138,7 @@ const VoxModeSelector: React.FC<VoxModeSelectorProps> = ({
 
   const displayMode = hoveredMode;
   const activeModeInfo = displayMode === 'classic'
-    ? CLASSIC_VOXER_INFO
+    ? CLASSIC_MODE_INFO
     : displayMode
       ? VOX_MODES[displayMode]
       : null;
@@ -160,11 +160,11 @@ const VoxModeSelector: React.FC<VoxModeSelectorProps> = ({
   const getModeColor = (modeKey: string) => MODE_COLORS[modeKey] || '#6366f1';
   const activeColor = getModeColor(displayMode || 'classic');
 
-  const allModes: Array<{ key: VoxMode | 'classic'; info: typeof CLASSIC_VOXER_INFO }> = [
-    { key: 'classic', info: CLASSIC_VOXER_INFO },
+  const allModes: Array<{ key: VoxMode | 'classic'; info: typeof CLASSIC_MODE_INFO }> = [
+    { key: 'classic', info: CLASSIC_MODE_INFO },
     ...Object.keys(VOX_MODES).map(key => ({
       key: key as VoxMode,
-      info: VOX_MODES[key as VoxMode] as unknown as typeof CLASSIC_VOXER_INFO
+      info: VOX_MODES[key as VoxMode] as unknown as typeof CLASSIC_MODE_INFO
     }))
   ];
 
@@ -256,7 +256,7 @@ const VoxModeSelector: React.FC<VoxModeSelectorProps> = ({
               background: isDarkMode ? 'rgba(255,255,255,0.04)' : 'rgba(0,0,0,0.03)',
               border: `1px solid ${isDarkMode ? 'rgba(255,255,255,0.06)' : 'rgba(0,0,0,0.06)'}`,
             }}
-            title="Voxer Settings"
+            title="Relay Settings"
           >
             <Settings
               className="w-4 h-4 transition-colors"
@@ -301,7 +301,7 @@ const VoxModeSelector: React.FC<VoxModeSelectorProps> = ({
               </h3>
               <div className="space-y-1.5">
                 {recentModes.map((mode, idx) => {
-                  const info = mode === 'classic' ? CLASSIC_VOXER_INFO : VOX_MODES[mode];
+                  const info = mode === 'classic' ? CLASSIC_MODE_INFO : VOX_MODES[mode];
                   const isHovered = hoveredMode === mode;
                   const isCurrent = (mode === 'classic' && currentMode === null) || currentMode === mode;
                   const isAnimating = animatingMode === mode;
@@ -912,8 +912,8 @@ const VoxModeSelector: React.FC<VoxModeSelectorProps> = ({
         }
       `}</style>
 
-      {/* Voxer Settings Modal */}
-      <VoxerSettings
+      {/* Relay Settings Modal */}
+      <RelaySettings
         isOpen={showSettings}
         onClose={() => setShowSettings(false)}
         isDarkMode={isDarkMode}

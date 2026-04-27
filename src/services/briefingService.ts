@@ -31,7 +31,7 @@ export interface BriefingContext {
   // Contacts
   recentContacts: string;
 
-  // Voxer/Voice Messages
+  // Relay/Voice Messages
   unplayedVoxes: string;
 
   // Recent Searches
@@ -278,7 +278,7 @@ class BriefingService {
       .map(c => `${c.name} (${c.role || 'Contact'})${c.company ? ` at ${c.company}` : ''}`)
       .join('\n') || 'No recent contacts.';
 
-    // Process Voxer Recordings
+    // Process Relay Recordings
     const unplayedVoxes = voxerRecordings
       .filter((v: any) => !v.played)
       .slice(0, 5)

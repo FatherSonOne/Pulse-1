@@ -1,4 +1,4 @@
-// Voxer Analysis Service
+// Relay Analysis Service
 // AI-powered analysis of voice messages: summaries, action items, sentiment, and more.
 //
 // All LLM calls route through the central `ai-router` edge function which
@@ -12,7 +12,7 @@ import {
   SentimentType,
   UrgencyLevel,
   EmotionType,
-} from './voxerTypes';
+} from './relayTypes';
 import { withFormattedOutput } from '../aiFormattingService';
 import { invokeAIJson, invokeAIPrompt } from '../ai/aiService';
 import { getCurrentWorkspaceId } from '../ai/getWorkspaceId';
@@ -21,7 +21,7 @@ import { getCurrentWorkspaceId } from '../ai/getWorkspaceId';
 // ANALYSIS SERVICE CLASS
 // ============================================
 
-export class VoxerAnalysisService {
+export class RelayAnalysisService {
   /**
    * @deprecated — retained for backward compatibility during migration.
    *   The `ai-router` edge function holds the provider key server-side.
@@ -459,15 +459,15 @@ Return JSON:
 // SINGLETON INSTANCE
 // ============================================
 
-let analysisServiceInstance: VoxerAnalysisService | null = null;
+let analysisServiceInstance: RelayAnalysisService | null = null;
 
-export const getVoxerAnalysisService = (apiKey?: string): VoxerAnalysisService => {
+export const getRelayAnalysisService = (apiKey?: string): RelayAnalysisService => {
   if (!analysisServiceInstance) {
     // apiKey is accepted for backward compatibility but unused; the router
     // handles keys server-side. We accept any value (including empty).
-    analysisServiceInstance = new VoxerAnalysisService(apiKey ?? '');
+    analysisServiceInstance = new RelayAnalysisService(apiKey ?? '');
   }
   return analysisServiceInstance;
 };
 
-export default VoxerAnalysisService;
+export default RelayAnalysisService;

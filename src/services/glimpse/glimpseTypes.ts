@@ -1,5 +1,5 @@
 // Glimpse Types - Video messaging type definitions
-// Extracted from src/services/voxer/voxModeTypes.ts during the Voxer→Relay rework
+// Extracted from src/services/relay/voxModeTypes.ts during the Relay rework
 // (sub-stage 1.5c, 2026-04-27). Database tables remain video_vox_* for now.
 
 export interface GlimpseMessage {
@@ -142,5 +142,5 @@ export interface GlimpseSearchResult {
   relevanceScore: number;
 }
 
-// Re-export PulseUser from voxer for now (until 1.5d when shared types relocate)
+// Re-export PulseUser from relay for now (until 1.5d when shared types relocate)
 export type { PulseUser } from '../relay/voxModeTypes';

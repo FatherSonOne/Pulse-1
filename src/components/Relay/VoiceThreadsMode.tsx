@@ -61,15 +61,15 @@ import { useVoxSelection, VoxSelectionItem } from '../../hooks/useVoxSelection';
 import { VoxSelectToolbar } from './VoxSelectToolbar';
 import VoxMessageMenu from './VoxMessageMenu';
 import VoxDownloadModal from './VoxDownloadModal';
-import { archiveVoxerConversation, archiveMeetingNotes } from '../../services/relay/voxerArchiveService';
+import { archiveRelayConversation, archiveMeetingNotes } from '../../services/relay/relayArchiveService';
 
 // Phase 5: AI Enhancements
 import { VoxConversationSummary, VoxSmartReplies, VoxMeetingNotes, VoxAutoChapters } from './index';
-import { summarizeConversation, generateSmartReplies, generateMeetingNotes, generateAutoChapters } from '../../services/relay/voxerAIService';
-import type { ConversationSummary, SmartReply, MeetingNotes, Chapter } from '../../services/relay/voxerAIService';
+import { summarizeConversation, generateSmartReplies, generateMeetingNotes, generateAutoChapters } from '../../services/relay/relayAIService';
+import type { ConversationSummary, SmartReply, MeetingNotes, Chapter } from '../../services/relay/relayAIService';
 
 // Phase 6: Final Polish
-import { useVoxerKeyboardShortcuts } from '../../hooks/useVoxerKeyboardShortcuts';
+import { useRelayKeyboardShortcuts } from '../../hooks/useRelayKeyboardShortcuts';
 import { VoxKeyboardShortcutsHelp } from './VoxKeyboardShortcutsHelp';
 import { usePlaybackSpeed } from '../../hooks/usePlaybackSpeed';
 import { PlaybackSpeedControl } from './PlaybackSpeedControl';
@@ -550,7 +550,7 @@ const VoiceThreadsMode: React.FC<VoiceThreadsModeProps> = ({
   // PHASE 6: KEYBOARD SHORTCUTS
   // ============================================
 
-  useVoxerKeyboardShortcuts({
+  useRelayKeyboardShortcuts({
     onToggleRecording: () => {
       if (recordingState === 'idle' && selectedThread) {
         startRecording();
@@ -594,7 +594,7 @@ const VoiceThreadsMode: React.FC<VoiceThreadsModeProps> = ({
       if (isSelectionMode && selectionCount > 0) {
         (async () => {
           try {
-            await archiveVoxerConversation(Array.from(selectedItems), selectedThread?.subject || selectedThread?.participantName || 'Voice Thread');
+            await archiveRelayConversation(Array.from(selectedItems), selectedThread?.subject || selectedThread?.participantName || 'Voice Thread');
             exitSelectionMode();
             toast.success(`Archived ${selectionCount} message${selectionCount > 1 ? 's' : ''}`);
           } catch {
@@ -1193,7 +1193,7 @@ const VoiceThreadsMode: React.FC<VoiceThreadsModeProps> = ({
     };
     const loadingToast = toast.loading('Archiving…');
     try {
-      await archiveVoxerConversation([item], message.senderName || 'Unknown');
+      await archiveRelayConversation([item], message.senderName || 'Unknown');
       toast.dismiss(loadingToast);
       toast.success('Archived to Pulse Archives');
     } catch {

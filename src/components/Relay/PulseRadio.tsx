@@ -50,7 +50,7 @@ import { useVoxSelection } from '../../hooks/useVoxSelection';
 import type { VoxSelectionItem } from '../../hooks/useVoxSelection';
 import VoxMessageMenu from './VoxMessageMenu';
 import VoxDownloadModal from './VoxDownloadModal';
-import { archiveVoxerConversation } from '../../services/relay/voxerArchiveService';
+import { archiveRelayConversation } from '../../services/relay/relayArchiveService';
 import { VoxSelectToolbar } from './VoxSelectToolbar';
 
 // Phase 5: AI Enhancements
@@ -63,10 +63,10 @@ import {
   generateSmartReplies,
   ConversationSummary,
   SmartReply,
-} from '../../services/relay/voxerAIService';
+} from '../../services/relay/relayAIService';
 
 // Phase 6: Final Polish
-import { useVoxerKeyboardShortcuts } from '../../hooks/useVoxerKeyboardShortcuts';
+import { useRelayKeyboardShortcuts } from '../../hooks/useRelayKeyboardShortcuts';
 import { VoxKeyboardShortcutsHelp } from './VoxKeyboardShortcutsHelp';
 import { usePlaybackSpeed } from '../../hooks/usePlaybackSpeed';
 import { PlaybackSpeedControl } from './PlaybackSpeedControl';
@@ -341,7 +341,7 @@ const PulseRadio: React.FC<PulseRadioProps> = ({ onBack, apiKey, isDarkMode = fa
   }, [recordingMode]);
 
   // Phase 6: Keyboard Shortcuts
-  useVoxerKeyboardShortcuts({
+  useRelayKeyboardShortcuts({
     onToggleRecording: () => {
       if (recordingState === 'idle') startRecording();
       else if (recordingState === 'recording') stopRecording();
@@ -373,7 +373,7 @@ const PulseRadio: React.FC<PulseRadioProps> = ({ onBack, apiKey, isDarkMode = fa
       if (isSelectionMode && selectionCount > 0) {
         (async () => {
           try {
-            await archiveVoxerConversation(Array.from(selectedItems), 'Pulse Radio');
+            await archiveRelayConversation(Array.from(selectedItems), 'Pulse Radio');
             exitSelectionMode();
             toast.success(`Archived ${selectionCount} message${selectionCount > 1 ? 's' : ''}`);
           } catch {
@@ -688,7 +688,7 @@ const PulseRadio: React.FC<PulseRadioProps> = ({ onBack, apiKey, isDarkMode = fa
       contactName: broadcast.title || broadcast.hostName,
     };
     try {
-      await archiveVoxerConversation([item], broadcast.title || 'Pulse Radio');
+      await archiveRelayConversation([item], broadcast.title || 'Pulse Radio');
       toast.success('Archived to Pulse Archives');
     } catch {
       toast.error('Failed to archive');

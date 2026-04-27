@@ -1,4 +1,4 @@
-// Voxer AI Feedback Service
+// Relay AI Feedback Service
 // Provides AI-powered feedback on voice messages before sending.
 //
 // All LLM calls route through the central `ai-router` edge function which
@@ -11,7 +11,7 @@ import {
   FeedbackSuggestion,
   FeedbackSeverity,
   FeedbackCategory,
-} from './voxerTypes';
+} from './relayTypes';
 import { invokeAIJson } from '../ai/aiService';
 import { getCurrentWorkspaceId } from '../ai/getWorkspaceId';
 
@@ -19,7 +19,7 @@ import { getCurrentWorkspaceId } from '../ai/getWorkspaceId';
 // FEEDBACK SERVICE CLASS
 // ============================================
 
-export class VoxerFeedbackService {
+export class RelayFeedbackService {
   /**
    * @deprecated — retained for backward compatibility during migration.
    *   The `ai-router` edge function holds the provider key server-side.
@@ -438,15 +438,15 @@ Return JSON with a single "options" array:
 // SINGLETON INSTANCE
 // ============================================
 
-let feedbackServiceInstance: VoxerFeedbackService | null = null;
+let feedbackServiceInstance: RelayFeedbackService | null = null;
 
-export const getVoxerFeedbackService = (apiKey?: string): VoxerFeedbackService => {
+export const getRelayFeedbackService = (apiKey?: string): RelayFeedbackService => {
   if (!feedbackServiceInstance) {
     // apiKey is accepted for backward compatibility but unused; the router
     // handles keys server-side. We accept any value (including empty).
-    feedbackServiceInstance = new VoxerFeedbackService(apiKey ?? '');
+    feedbackServiceInstance = new RelayFeedbackService(apiKey ?? '');
   }
   return feedbackServiceInstance;
 };
 
-export default VoxerFeedbackService;
+export default RelayFeedbackService;

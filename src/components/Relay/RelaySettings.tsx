@@ -1,4 +1,4 @@
-// VoxerSettings Component - Comprehensive Voxer configuration modal
+// RelaySettings Component - Comprehensive Relay configuration modal
 // "Control Room" aesthetic - professional broadcast studio feel
 
 import React, { useState } from 'react';
@@ -15,9 +15,9 @@ import AudioIOSettings from './settings/AudioIOSettings';
 import VideoIOSettings from './settings/VideoIOSettings';
 import StorageSettings from './settings/StorageSettings';
 import GeneralVoxSettings from './settings/GeneralVoxSettings';
-import './Voxer.css';
+import './Relay.css';
 
-interface VoxerSettingsProps {
+interface RelaySettingsProps {
   isOpen: boolean;
   onClose: () => void;
   isDarkMode?: boolean;
@@ -32,9 +32,9 @@ const TABS: { id: SettingsTab; label: string; icon: React.ReactNode }[] = [
   { id: 'general', label: 'General', icon: <Sliders className="w-4 h-4" /> },
 ];
 
-const ACCENT_COLOR = '#8B5CF6'; // Voxer purple
+const ACCENT_COLOR = '#8B5CF6'; // Relay purple
 
-export const VoxerSettings: React.FC<VoxerSettingsProps> = ({
+export const RelaySettings: React.FC<RelaySettingsProps> = ({
   isOpen,
   onClose,
   isDarkMode = false,
@@ -112,7 +112,7 @@ export const VoxerSettings: React.FC<VoxerSettingsProps> = ({
                 <Waves className="w-5 h-5 text-white" />
               </div>
               <div>
-                <h2 className={`text-lg font-bold ${tc.text}`}>Voxer Settings</h2>
+                <h2 className={`text-lg font-bold ${tc.text}`}>Relay Settings</h2>
                 <p className={`text-xs ${tc.textMuted}`}>Configure audio, video, and preferences</p>
               </div>
             </div>
@@ -222,4 +222,4 @@ export const VoxerSettings: React.FC<VoxerSettingsProps> = ({
   );
 };
 
-export default VoxerSettings;
+export default RelaySettings;

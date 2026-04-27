@@ -1,4 +1,4 @@
-// Voxer Types - Enhanced Voice Intelligence System
+// Relay Types - Enhanced Voice Intelligence System
 
 // ============================================
 // TRANSCRIPTION TYPES
@@ -274,7 +274,7 @@ export interface VoxParticipant {
 // REAL-TIME TYPES
 // ============================================
 
-export interface VoxerRealtimeState {
+export interface RelayRealtimeState {
   isConnected: boolean;
   activeChannelId?: string;
   isRecording: boolean;
@@ -290,7 +290,7 @@ export interface VoxerRealtimeState {
   usersOnline: string[];
 }
 
-export interface VoxerSettings {
+export interface RelaySettings {
   // Recording
   defaultMode: 'audio' | 'video';
   recordingMode: 'hold' | 'tap';
@@ -322,7 +322,7 @@ export interface VoxerSettings {
 }
 
 // Default settings
-export const DEFAULT_VOXER_SETTINGS: VoxerSettings = {
+export const DEFAULT_RELAY_SETTINGS: RelaySettings = {
   defaultMode: 'audio',
   recordingMode: 'hold',
   videoQuality: '720p',

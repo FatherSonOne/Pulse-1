@@ -1,4 +1,4 @@
-// voxEmptyStates - Configuration for empty states across all 8 Voxer modes
+// voxEmptyStates - Configuration for empty states across all 8 Relay modes
 // Provides mode-specific icons, titles, and descriptions
 
 import {

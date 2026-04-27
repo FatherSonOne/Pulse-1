@@ -1,4 +1,4 @@
-// GeneralVoxSettings Component - General Voxer preferences
+// GeneralVoxSettings Component - General Relay preferences
 // "Control Room" aesthetic
 
 import React, { useState, useEffect } from 'react';
@@ -59,7 +59,7 @@ export const GeneralVoxSettings: React.FC<GeneralVoxSettingsProps> = ({
 
   // Mode options for dropdown
   const modeOptions = [
-    { id: null, name: 'Classic Voxer', icon: '📱' },
+    { id: null, name: 'Classic', icon: '📱' },
     ...Object.values(VOX_MODES).map(mode => ({
       id: mode.id,
       name: mode.name,
@@ -94,7 +94,7 @@ export const GeneralVoxSettings: React.FC<GeneralVoxSettingsProps> = ({
           <ChevronDown className={`absolute right-3 top-1/2 -translate-y-1/2 w-5 h-5 ${tc.textMuted} pointer-events-none`} />
         </div>
         <p className={`text-xs ${tc.textMuted}`}>
-          The mode that opens when you launch Voxer
+          The mode that opens when you launch Relay
         </p>
       </div>
 

@@ -4,7 +4,7 @@
 //
 // SLATED FOR REPLACEMENT by `MessagesSplitView` once Phase 5c-5d
 // migrate the features that only live here (focus mode, voice
-// recording, voxer integration, the Phase 3-11 enhancement panels,
+// recording, relay integration, the Phase 3-11 enhancement panels,
 // and the Pulse-DM sidebar). See:
 //   docs/deep-dives/messages_PHASED_PLAN_2026-04-26.md  (Phase 5b/c/d)
 //

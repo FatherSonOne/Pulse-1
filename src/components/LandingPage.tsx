@@ -109,7 +109,7 @@ const LandingPage: React.FC<LandingPageProps> = ({ onGetStarted }) => {
 
   // Scroll-triggered section backgrounds — fade in/out as user scrolls through each section
   useEffect(() => {
-    const ids = ['section-voxer', 'section-decisions', 'section-crm'];
+    const ids = ['section-relay', 'section-decisions', 'section-crm'];
     const thresholds = Array.from({ length: 21 }, (_, i) => i / 20);
     const observer = new IntersectionObserver(
       (entries) => {
@@ -470,10 +470,10 @@ const LandingPage: React.FC<LandingPageProps> = ({ onGetStarted }) => {
     window.location.href = '/?signin';
   };
 
-  // ── Animated SVG icons for Voxer mode cards ────────────────────────────────
+  // ── Animated SVG icons for Relay mode cards ────────────────────────────────
   const voxSvg = (idx: number): React.ReactNode => {
     const icons: React.ReactNode[] = [
-      // 0 — Classic Voxer: 5-bar waveform equaliser
+      // 0 — Classic: 5-bar waveform equaliser
       <svg viewBox="0 0 20 20" width={18} height={18} fill="currentColor" aria-hidden="true">
         <rect x="1"    y="9" width="2.5" height="2"  rx="1" className="lp-bar-a" />
         <rect x="4.5"  y="6" width="2.5" height="8"  rx="1" className="lp-bar-b" />
@@ -1156,16 +1156,16 @@ const LandingPage: React.FC<LandingPageProps> = ({ onGetStarted }) => {
       <div id="features">
 
         {/* Section A — Voice-First Communication */}
-        <section id="section-voxer" className={`py-24 px-6 relative overflow-hidden${isDarkMode ? '' : ' bg-stone-50'}`}>
-          {/* Voxer "Sonic Pulse" themed bg — indigo + pink, fades in with scroll */}
+        <section id="section-relay" className={`py-24 px-6 relative overflow-hidden${isDarkMode ? '' : ' bg-stone-50'}`}>
+          {/* Relay "Sonic Pulse" themed bg — indigo + pink, fades in with scroll */}
           <div
             className="absolute inset-0 pointer-events-none transition-opacity duration-700"
-            style={{ opacity: isDarkMode ? Math.min(sectionVis['section-voxer'] ?? 0, 1) : 0 }}
+            style={{ opacity: isDarkMode ? Math.min(sectionVis['section-relay'] ?? 0, 1) : 0 }}
           >
             <div className="absolute inset-0" style={{
               background: 'radial-gradient(ellipse at 15% 50%, rgba(99,102,241,0.18) 0%, transparent 55%), radial-gradient(ellipse at 85% 30%, rgba(236,72,153,0.13) 0%, transparent 50%), radial-gradient(ellipse at 50% 90%, rgba(139,92,246,0.10) 0%, transparent 45%)',
             }}></div>
-            {/* Sonic rings — concentric indigo arcs like Voxer's waveform visualizer */}
+            {/* Sonic rings — concentric indigo arcs like Relay's waveform visualizer */}
             <div className="absolute left-[-80px] top-1/2 -translate-y-1/2 w-[600px] h-[600px] rounded-full border border-indigo-500/10" style={{ boxShadow: 'inset 0 0 60px rgba(99,102,241,0.06)' }}></div>
             <div className="absolute left-[-40px] top-1/2 -translate-y-1/2 w-[450px] h-[450px] rounded-full border border-indigo-400/8"></div>
             <div className="absolute left-[20px] top-1/2 -translate-y-1/2 w-[300px] h-[300px] rounded-full border border-pink-500/8"></div>
@@ -1173,13 +1173,13 @@ const LandingPage: React.FC<LandingPageProps> = ({ onGetStarted }) => {
           <div className="max-w-7xl mx-auto relative z-10">
             <div className="mb-14 animate-fade-in">
               <div className="inline-flex items-center gap-2 px-3 py-1.5 rounded-full bg-rose-500/10 border border-rose-500/25 text-rose-400 text-xs font-bold uppercase tracking-widest mb-4">
-                <Mic /> Voxer
+                <Mic /> Relay
               </div>
               <h2 className="text-4xl sm:text-6xl font-bold mb-4 text-transparent bg-clip-text bg-gradient-to-r from-white via-rose-100 to-pink-200">
                 8 Ways to Speak
               </h2>
               <p className="text-zinc-400 text-lg max-w-2xl">
-                Voice messaging reimagined. From async voice drops to live team broadcasts — Voxer gives your voice the power it deserves, with AI transcription on every message.
+                Voice messaging reimagined. From async voice drops to live team broadcasts — Relay gives your voice the power it deserves, with AI transcription on every message.
               </p>
             </div>
 
@@ -1848,7 +1848,7 @@ const LandingPage: React.FC<LandingPageProps> = ({ onGetStarted }) => {
                   {
                     color: '#818cf8', bg: 'rgba(99,102,241,0.08)', border: 'rgba(99,102,241,0.12)',
                     label: 'Conversation → Case Log',
-                    desc: 'Send a Voxer message in Pulse — a case log entry is automatically created in Logos Vision.',
+                    desc: 'Send a Relay message in Pulse — a case log entry is automatically created in Logos Vision.',
                     icon: (
                       <svg viewBox="0 0 20 20" width={13} height={13} fill="#818cf8" aria-hidden="true">
                         <path d="M2 4a2 2 0 012-2h8a2 2 0 012 2v5a2 2 0 01-2 2H8L5 14v-3H4a2 2 0 01-2-2V4z" />
@@ -2114,7 +2114,7 @@ const LandingPage: React.FC<LandingPageProps> = ({ onGetStarted }) => {
                   <div className="text-sm font-bold text-rose-500 tracking-wider uppercase mb-4">Communication and Intelligence</div>
                   <p className="text-zinc-400 mb-6 flex-grow">The voice and ears of your organization. Real-time messaging, 8 voice modes, AI studio, full email client, calendar, and analytics — all in one interface.</p>
                   <ul className="space-y-3 text-zinc-300 text-sm">
-                    <li className="flex items-center gap-2"><Check className="text-rose-500" /> 8 Voxer Modes + AI Transcription</li>
+                    <li className="flex items-center gap-2"><Check className="text-rose-500" /> 8 Relay Modes + AI Transcription</li>
                     <li className="flex items-center gap-2"><Check className="text-rose-500" /> War Room with 8 Slash Commands</li>
                     <li className="flex items-center gap-2"><Check className="text-rose-500" /> Full Email, Messaging, Calendar</li>
                     <li className="flex items-center gap-2"><Check className="text-rose-500" /> 7+ AI Models (Gemini, Claude, GPT)</li>

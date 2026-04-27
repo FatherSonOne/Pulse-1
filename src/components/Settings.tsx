@@ -59,7 +59,7 @@ const ADMIN_SECTIONS = [
 
 const SECTION_KEYWORDS: Record<string, string[]> = {
   account: ['profile', 'avatar', 'name', 'email', 'theme', 'dark', 'light', 'appearance', 'logout', 'sign out', 'password'],
-  ai_intelligence: ['ai', 'intelligence', 'model', 'gpt', 'claude', 'gemini', 'voice agent', 'quota', 'voxer', 'brain'],
+  ai_intelligence: ['ai', 'intelligence', 'model', 'gpt', 'claude', 'gemini', 'voice agent', 'quota', 'relay', 'brain'],
   integrations: ['slack', 'gmail', 'twilio', 'calendar', 'google', 'contacts', 'maps', 'connect', 'integration'],
   ecosystem: ['ecosystem', 'bridge', 'entomate', 'logos vision', 'qntmecos', 'bot', 'webhook', 'token', 'connection'],
   notifications: ['bell', 'alert', 'push', 'email notification', 'sound', 'vibration', 'quiet hours', 'vip'],

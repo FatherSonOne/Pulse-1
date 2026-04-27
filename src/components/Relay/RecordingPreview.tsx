@@ -13,7 +13,7 @@ import {
 } from 'lucide-react';
 import VoxAudioVisualizer from './VoxAudioVisualizer';
 import type { RecordingData } from '../../hooks/useVoxRecording';
-import './Voxer.css';
+import './Relay.css';
 
 interface RecordingPreviewProps {
   recordingData: RecordingData;

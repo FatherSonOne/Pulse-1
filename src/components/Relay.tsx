@@ -5,13 +5,13 @@ import toast from 'react-hot-toast';
 import { useAuth } from '../hooks/useAuth';
 
 // Keyboard shortcuts
-import { useVoxerKeyboardShortcuts } from '../hooks/useVoxerKeyboardShortcuts';
+import { useRelayKeyboardShortcuts } from '../hooks/useRelayKeyboardShortcuts';
 import { VoxKeyboardShortcutsHelp } from './Relay/VoxKeyboardShortcutsHelp';
 
 // Vox Mode System - 7 Communication Styles
 import {
   VoxModeSelector,
-  ClassicVoxerMode,
+  ClassicMode,
   PulseRadio,
   VoiceThreadsMode,
   TeamVoxMode,
@@ -21,14 +21,14 @@ import {
 } from './Relay/index';
 import { VoxMode } from '../services/relay/voxModeTypes';
 
-interface VoxerProps {
+interface RelayProps {
   apiKey: string;
   contacts: Contact[];
   initialContactId?: string;
   isDarkMode?: boolean;
 }
 
-const Voxer: React.FC<VoxerProps> = ({ apiKey, contacts, initialContactId, isDarkMode = false }) => {
+const Relay: React.FC<RelayProps> = ({ apiKey, contacts, initialContactId, isDarkMode = false }) => {
   // Get user from auth context
   const { user } = useAuth();
   const userId = user?.id || 'guest';
@@ -41,7 +41,7 @@ const Voxer: React.FC<VoxerProps> = ({ apiKey, contacts, initialContactId, isDar
 
   // Mode names for keyboard shortcut toast notifications
   const MODE_NAMES: Record<string, string> = {
-    classic: 'Classic Voxer',
+    classic: 'Classic',
     pulse_radio: 'Pulse Radio',
     voice_threads: 'Voice Threads',
     team_vox: 'Team Vox',
@@ -65,7 +65,7 @@ const Voxer: React.FC<VoxerProps> = ({ apiKey, contacts, initialContactId, isDar
   // Global keyboard shortcuts — mode switching (1-8) and help (?)
   // Escape/go-back is only handled here when NO mode is active, to avoid double-firing
   // with per-mode keyboard shortcut handlers each mode component registers.
-  useVoxerKeyboardShortcuts({
+  useRelayKeyboardShortcuts({
     onSwitchMode: (mode) => {
       const voxMode = mode === 'classic' ? null : mode as VoxMode;
       setCurrentVoxMode(voxMode);
@@ -80,7 +80,7 @@ const Voxer: React.FC<VoxerProps> = ({ apiKey, contacts, initialContactId, isDar
     } : undefined,
   }, true);
 
-  // If a Vox Mode is selected, render that mode's full interface instead of the default Voxer
+  // If a Vox Mode is selected, render that mode's full interface instead of the default Relay
   if (currentVoxMode) {
     return (
       <div className="h-full flex flex-col bg-white dark:bg-zinc-950 rounded-2xl overflow-hidden border border-zinc-200 dark:border-zinc-800 animate-fade-in shadow-xl">
@@ -147,12 +147,12 @@ const Voxer: React.FC<VoxerProps> = ({ apiKey, contacts, initialContactId, isDar
     );
   }
 
-  // Classic Voxer Mode - When no vox mode is selected, show the new ClassicVoxerMode
-  // This replaces the old broken page with the avant-garde redesigned Classic Voxer
+  // Classic Mode - When no vox mode is selected, show the avant-garde redesigned Classic
+  // This replaces the old broken page with the redesigned Classic mode
   if (!currentVoxMode) {
     return (
       <div className="h-full flex flex-col bg-white dark:bg-zinc-950 rounded-2xl overflow-hidden border border-zinc-200 dark:border-zinc-800 animate-fade-in shadow-xl">
-        <ClassicVoxerMode
+        <ClassicMode
           onBack={handleBackToSelector}
           apiKey={apiKey}
           isDarkMode={isDarkMode}
@@ -183,7 +183,7 @@ const Voxer: React.FC<VoxerProps> = ({ apiKey, contacts, initialContactId, isDar
     <div className="h-full flex items-center justify-center bg-white dark:bg-zinc-950 rounded-2xl border border-zinc-200 dark:border-zinc-800">
       <div className="text-center p-8">
         <h2 className="text-xl font-bold text-red-600 dark:text-red-400 mb-2">
-          Voxer Mode Error
+          Relay mode error
         </h2>
         <p className="text-zinc-600 dark:text-zinc-400 mb-4">
           No valid mode selected. This is a bug - please report it.
@@ -202,4 +202,4 @@ const Voxer: React.FC<VoxerProps> = ({ apiKey, contacts, initialContactId, isDar
   );
 };
 
-export default Voxer;
+export default Relay;

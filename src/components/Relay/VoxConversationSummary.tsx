@@ -3,7 +3,7 @@
 
 import React from 'react';
 import { FileText, CheckCircle, Users, Clock, MessageSquare, Sparkles } from 'lucide-react';
-import { ConversationSummary } from '../../services/relay/voxerAIService';
+import { ConversationSummary } from '../../services/relay/relayAIService';
 
 interface VoxConversationSummaryProps {
   summary: ConversationSummary;

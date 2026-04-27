@@ -1,10 +1,10 @@
-// useVoxerKeyboardShortcuts - Global keyboard shortcuts for Voxer
+// useRelayKeyboardShortcuts - Global keyboard shortcuts for Relay
 // Provides Space for record, Escape for back, 1-7 for modes, Ctrl+D/A/S for actions
 
 import { useEffect, useRef } from 'react';
 import { VoxMode } from '../services/relay/voxModeTypes';
 
-export interface VoxerShortcutHandlers {
+export interface RelayShortcutHandlers {
   onToggleRecording?: () => void;
   onStopRecording?: () => void;
   onGoBack?: () => void;
@@ -15,10 +15,10 @@ export interface VoxerShortcutHandlers {
   onShowHelp?: () => void;
 }
 
-export const VOXER_SHORTCUTS = {
+export const RELAY_SHORTCUTS = {
   Space: 'Toggle recording (when not in text input)',
   Escape: 'Stop recording / Go back',
-  '1': 'Switch to Classic Voxer',
+  '1': 'Switch to Classic',
   '2': 'Switch to Pulse Radio',
   '3': 'Switch to Voice Threads',
   '4': 'Switch to Team Vox',
@@ -41,14 +41,14 @@ const MODE_MAP: Record<string, VoxMode | 'classic'> = {
   '7': 'vox_drop',
 };
 
-export function useVoxerKeyboardShortcuts(
-  handlers: VoxerShortcutHandlers,
+export function useRelayKeyboardShortcuts(
+  handlers: RelayShortcutHandlers,
   enabled: boolean = true
 ) {
   // Store handlers in a ref so the event listener is never stale and never
   // needs to be removed/re-added on every render (which caused browser
   // select-all to fire during the brief gap between removal and re-addition).
-  const handlersRef = useRef<VoxerShortcutHandlers>(handlers);
+  const handlersRef = useRef<RelayShortcutHandlers>(handlers);
   handlersRef.current = handlers;
 
   useEffect(() => {
@@ -124,4 +124,4 @@ export function useVoxerKeyboardShortcuts(
   }, [enabled]); // only re-attach when enabled changes, NOT when handlers change
 }
 
-export default useVoxerKeyboardShortcuts;
+export default useRelayKeyboardShortcuts;

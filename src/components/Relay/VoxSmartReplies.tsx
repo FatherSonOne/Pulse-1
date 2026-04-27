@@ -3,7 +3,7 @@
 
 import React from 'react';
 import { Sparkles, Zap, MessageCircle } from 'lucide-react';
-import { SmartReply } from '../../services/relay/voxerAIService';
+import { SmartReply } from '../../services/relay/relayAIService';
 
 interface VoxSmartRepliesProps {
   replies: SmartReply[];

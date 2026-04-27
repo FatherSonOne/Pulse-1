@@ -662,7 +662,7 @@ class VoxModeService {
         return null;
       }
 
-      // Track Voxer usage (duration in minutes)
+      // Track Relay usage (duration in minutes)
       usageTracker.voxerMinutes(Math.ceil(duration / 60));
       usageTracker.storageBytes(audioBlob.size);
 
@@ -1077,7 +1077,7 @@ class VoxModeService {
         return null;
       }
 
-      // Track Voxer usage
+      // Track Relay usage
       usageTracker.voxerMinutes(Math.ceil(duration / 60));
       usageTracker.storageBytes(audioBlob.size);
 
@@ -1537,7 +1537,7 @@ class VoxModeService {
         return null;
       }
 
-      // Track Voxer usage
+      // Track Relay usage
       usageTracker.voxerMinutes(Math.ceil(duration / 60));
       usageTracker.storageBytes(audioBlob.size);
 

@@ -381,7 +381,7 @@ export class UserContactService {
   }
 
   /**
-   * Get all Pulse users (for contact selection in Voxer modes)
+   * Get all Pulse users (for contact selection in Relay modes)
    * Excludes the current user
    */
   async getAllPulseUsers(options?: {

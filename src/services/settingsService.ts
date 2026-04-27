@@ -43,7 +43,7 @@ export interface PulseSettings {
   speakerVolume: number;
   noiseReduction: boolean;
 
-  // Voxer Audio Settings
+  // Relay Audio Settings
   voxMicrophoneDeviceId: string;
   voxSpeakerDeviceId: string;
   voxAudioQuality: 'voice_hd' | 'voice_balanced' | 'voice_low';
@@ -51,18 +51,18 @@ export interface PulseSettings {
   voxAutoGainControl: boolean;
   voxEchoCancellation: boolean;
 
-  // Voxer Video Settings
+  // Relay Video Settings
   voxCameraDeviceId: string;
   voxVideoQuality: '480p' | '720p' | '1080p';
   voxVideoPreviewEnabled: boolean;
   voxVideoMirror: boolean;
 
-  // Voxer Storage Settings
+  // Relay Storage Settings
   voxDownloadFolder: string;
   voxAutoDownload: boolean;
   voxKeepRecordingsDays: number;
 
-  // Voxer General Settings
+  // Relay General Settings
   voxDefaultMode: string | null;
   voxNotificationsEnabled: boolean;
   voxAutoPlayIncoming: boolean;
@@ -210,7 +210,7 @@ const DEFAULT_SETTINGS: PulseSettings = {
   speakerVolume: 100,
   noiseReduction: true,
 
-  // Voxer Audio Settings
+  // Relay Audio Settings
   voxMicrophoneDeviceId: '',
   voxSpeakerDeviceId: '',
   voxAudioQuality: 'voice_hd',
@@ -218,18 +218,18 @@ const DEFAULT_SETTINGS: PulseSettings = {
   voxAutoGainControl: false,
   voxEchoCancellation: true,
 
-  // Voxer Video Settings
+  // Relay Video Settings
   voxCameraDeviceId: '',
   voxVideoQuality: '720p',
   voxVideoPreviewEnabled: true,
   voxVideoMirror: true,
 
-  // Voxer Storage Settings
+  // Relay Storage Settings
   voxDownloadFolder: '',
   voxAutoDownload: false,
   voxKeepRecordingsDays: 30,
 
-  // Voxer General Settings
+  // Relay General Settings
   voxDefaultMode: null,
   voxNotificationsEnabled: true,
   voxAutoPlayIncoming: false,

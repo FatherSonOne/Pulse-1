@@ -1,4 +1,4 @@
-// VoxEmptyState - Beautiful empty state for Voxer modes
+// VoxEmptyState - Beautiful empty state for Relay modes
 // Shows mode-specific message when there are no conversations/messages
 
 import React from 'react';
