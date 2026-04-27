@@ -21,6 +21,7 @@ const EmailClient = lazy(() => import('./components/Email/EmailClientWrapper'));
 const Calendar = lazy(() => import('./components/Calendar'));
 const Settings = lazy(() => import('./components/Settings'));
 const Voxer = lazy(() => import('./components/Voxer'));
+const Glimpse = lazy(() => import('./components/Glimpse'));
 const SMS = lazy(() => import('./components/SMS'));
 const Meetings = lazy(() => import('./components/Meetings').then(module => ({ default: module.Meetings })));
 const Contacts = lazy(() => import('./components/Contacts'));
@@ -757,6 +758,8 @@ const App: React.FC = () => {
               />;
             case AppView.VOXER:
               return <Voxer apiKey={apiKey} contacts={contacts} initialContactId={selectedContactId} isDarkMode={isDarkMode} />;
+            case AppView.GLIMPSE:
+              return <Glimpse apiKey={apiKey} isDarkMode={isDarkMode} />;
             case AppView.MESSAGES:
               return <Messages apiKey={apiKey} contacts={contacts} initialContactId={selectedContactId} onAddContact={handleAddContact} fullPage={true} />;
             case AppView.SMS:

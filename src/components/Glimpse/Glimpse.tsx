@@ -1,4 +1,4 @@
-// VideoVoxMode Component - Full-Featured Video Messaging
+// Glimpse Component - Full-Featured Video Messaging
 // Includes: Recording, Conversations, AI Transcripts, Reactions, Threading, Search
 
 import React, { useState, useRef, useEffect } from 'react';
@@ -37,48 +37,49 @@ import {
   TrendingUp,
   HelpCircle,
 } from 'lucide-react';
-import VoxModeToolbar from './VoxModeToolbar';
-import { useVideoVoxRecording } from '../../hooks/useVideoVoxRecording';
+import VoxModeToolbar from '../Voxer/VoxModeToolbar';
+import { useGlimpseRecording } from '../../hooks/useGlimpseRecording';
 import {
-  useVideoVoxConversations,
-  useVideoVoxMessages,
-  useVideoVoxSend,
-  useVideoVoxSearch,
-} from '../../hooks/useVideoVox';
-import { videoVoxService } from '../../services/voxer/videoVoxService';
+  useGlimpseConversations,
+  useGlimpseMessages,
+  useGlimpseSend,
+  useGlimpseSearch,
+} from '../../hooks/useGlimpse';
+import { glimpseService } from '../../services/glimpse/glimpseService';
 import { voxModeService } from '../../services/voxer/voxModeService';
-import { VOX_MODES, type VideoVoxMessage, type VideoVoxConversation, type PulseUser } from '../../services/voxer/voxModeTypes';
-import './VideoVoxMode.css';
+import { type GlimpseMessage, type GlimpseConversation } from '../../services/glimpse/glimpseTypes';
+import type { PulseUser } from '../../services/voxer/voxModeTypes';
+import './Glimpse.css';
 
 // Phase 2: Selection Mode
 import { useVoxSelection, VoxSelectionItem } from '../../hooks/useVoxSelection';
-import { VoxSelectToolbar } from './VoxSelectToolbar';
-import VoxMessageMenu from './VoxMessageMenu';
-import VoxDownloadModal from './VoxDownloadModal';
+import { VoxSelectToolbar } from '../Voxer/VoxSelectToolbar';
+import VoxMessageMenu from '../Voxer/VoxMessageMenu';
+import VoxDownloadModal from '../Voxer/VoxDownloadModal';
 import { archiveVoxerConversation } from '../../services/voxer/voxerArchiveService';
 
 // Phase 5: AI Enhancements
-import { VoxConversationSummary, VoxSmartReplies } from './index';
+import { VoxConversationSummary, VoxSmartReplies } from '../Voxer';
 import { summarizeConversation, generateSmartReplies } from '../../services/voxer/voxerAIService';
 import type { ConversationSummary, SmartReply } from '../../services/voxer/voxerAIService';
 
 // Phase 6: Final Polish
 import { useVoxerKeyboardShortcuts } from '../../hooks/useVoxerKeyboardShortcuts';
-import { VoxKeyboardShortcutsHelp } from './VoxKeyboardShortcutsHelp';
+import { VoxKeyboardShortcutsHelp } from '../Voxer/VoxKeyboardShortcutsHelp';
 import { usePlaybackSpeed } from '../../hooks/usePlaybackSpeed';
-import { PlaybackSpeedControl } from './PlaybackSpeedControl';
-import { VoxEmptyState } from './VoxEmptyState';
-import { getEmptyStateConfig } from './voxEmptyStates';
+import { PlaybackSpeedControl } from '../Voxer/PlaybackSpeedControl';
+import { VoxEmptyState } from '../Voxer/VoxEmptyState';
+import { getEmptyStateConfig } from '../Voxer/voxEmptyStates';
 import toast from 'react-hot-toast';
 
 // ============================================
 // TYPES
 // ============================================
 
-// Mode color from shared palette
-const MODE_COLOR = VOX_MODES.video_vox.color;
+// Mode color (Glimpse — cyan). Inlined; was VOX_MODES.video_vox.color.
+const MODE_COLOR = '#06B6D4';
 
-interface VideoVoxModeProps {
+interface GlimpseProps {
   isDarkMode?: boolean;
   onClose?: () => void;
   maxDuration?: number;
@@ -108,7 +109,7 @@ const REACTION_EMOJIS = [
 
 // Conversation List Item
 const ConversationItem: React.FC<{
-  conversation: VideoVoxConversation;
+  conversation: GlimpseConversation;
   currentUserId: string;
   onClick: () => void;
   isDarkMode: boolean;
@@ -156,7 +157,7 @@ const ConversationItem: React.FC<{
 
 // Message Bubble
 const MessageBubble: React.FC<{
-  message: VideoVoxMessage;
+  message: GlimpseMessage;
   isOwn: boolean;
   isDarkMode: boolean;
   onReaction: (emoji: string) => void;
@@ -510,7 +511,7 @@ const RecipientSelector: React.FC<{
 // MAIN COMPONENT
 // ============================================
 
-const VideoVoxMode: React.FC<VideoVoxModeProps> = ({
+const Glimpse: React.FC<GlimpseProps> = ({
   isDarkMode = true,
   onClose,
   maxDuration = 60,
@@ -528,7 +529,7 @@ const VideoVoxMode: React.FC<VideoVoxModeProps> = ({
     initialRecipientId ? [initialRecipientId] : []
   );
   const [caption, setCaption] = useState('');
-  const [replyingTo, setReplyingTo] = useState<VideoVoxMessage | null>(null);
+  const [replyingTo, setReplyingTo] = useState<GlimpseMessage | null>(null);
   const [expandedTranscripts, setExpandedTranscripts] = useState<Set<string>>(new Set());
   const [showRecipientSelector, setShowRecipientSelector] = useState(false);
   const [currentUserId, setCurrentUserId] = useState<string>('');
@@ -558,7 +559,7 @@ const VideoVoxMode: React.FC<VideoVoxModeProps> = ({
   // Phase 6: Final Polish States
   const [showShortcutsHelp, setShowShortcutsHelp] = useState(false);
   const { playbackSpeed: globalPlaybackSpeed, setPlaybackSpeed: setGlobalPlaybackSpeed, applyToElement } = usePlaybackSpeed();
-  const emptyConfig = getEmptyStateConfig('video_vox');
+  const emptyConfig = getEmptyStateConfig('glimpse');
 
   // VoxMessageMenu state
   const [showMessageMenu, setShowMessageMenu] = useState<string | null>(null);
@@ -567,9 +568,9 @@ const VideoVoxMode: React.FC<VideoVoxModeProps> = ({
   const [downloadItem, setDownloadItem] = useState<VoxSelectionItem | null>(null);
 
   // Hooks
-  const { conversations, isLoading: conversationsLoading, totalUnread } = useVideoVoxConversations();
-  const { sendToRecipients, isSending, progress, error: sendError } = useVideoVoxSend();
-  const { results: searchResults, isSearching, search: performSearch } = useVideoVoxSearch();
+  const { conversations, isLoading: conversationsLoading, totalUnread } = useGlimpseConversations();
+  const { sendToRecipients, isSending, progress, error: sendError } = useGlimpseSend();
+  const { results: searchResults, isSearching, search: performSearch } = useGlimpseSearch();
   const [searchQuery, setSearchQuery] = useState('');
 
   // Recording hook
@@ -587,7 +588,7 @@ const VideoVoxMode: React.FC<VideoVoxModeProps> = ({
     discardRecording,
     getRecording,
     videoRef,
-  } = useVideoVoxRecording({
+  } = useGlimpseRecording({
     maxDuration,
     videoQuality: '720p',
     facingMode: 'user',
@@ -595,7 +596,7 @@ const VideoVoxMode: React.FC<VideoVoxModeProps> = ({
 
   // Chat messages (when viewing a conversation)
   const chatHook = activeConversationId
-    ? useVideoVoxMessages({ conversationId: activeConversationId })
+    ? useGlimpseMessages({ conversationId: activeConversationId })
     : null;
 
   // VoxMessageMenu handler functions
@@ -606,7 +607,7 @@ const VideoVoxMode: React.FC<VideoVoxModeProps> = ({
       url: message.videoUrl || message.audioUrl || '',
       duration: message.duration || 0,
       timestamp: message.createdAt instanceof Date ? message.createdAt : new Date(message.createdAt || Date.now()),
-      mode: 'video_vox',
+      mode: 'glimpse',
       contactName: message.senderName,
     };
     try {
@@ -624,7 +625,7 @@ const VideoVoxMode: React.FC<VideoVoxModeProps> = ({
       url: message.videoUrl || message.audioUrl || '',
       duration: message.duration || 0,
       timestamp: message.createdAt instanceof Date ? message.createdAt : new Date(message.createdAt || Date.now()),
-      mode: 'video_vox',
+      mode: 'glimpse',
       contactName: message.senderName,
     };
     setDownloadItem(item);
@@ -742,7 +743,7 @@ const VideoVoxMode: React.FC<VideoVoxModeProps> = ({
       timestamp: msg.createdAt,
       sender: (msg.senderId === currentUserId ? 'me' : 'other') as 'me' | 'other',
       transcript: msg.transcript,
-      mode: 'video_vox' as const,
+      mode: 'glimpse' as const,
       contactId: activeConversationId,
       contactName: conversations.find(c => c.id === activeConversationId)?.recipientName || 'Unknown',
     }));
@@ -817,7 +818,7 @@ const VideoVoxMode: React.FC<VideoVoxModeProps> = ({
 
   // Get current user ID
   useEffect(() => {
-    videoVoxService.ensureUserId().then(setCurrentUserId);
+    glimpseService.ensureUserId().then(setCurrentUserId);
   }, []);
 
   // Load Pulse contacts
@@ -877,7 +878,7 @@ const VideoVoxMode: React.FC<VideoVoxModeProps> = ({
     }
   };
 
-  const handleSelectConversation = (conversation: VideoVoxConversation) => {
+  const handleSelectConversation = (conversation: GlimpseConversation) => {
     setActiveConversationId(conversation.id);
     setSelectedRecipients(conversation.participantIds.filter(id => id !== currentUserId));
     setViewMode('chat');
@@ -902,13 +903,13 @@ const VideoVoxMode: React.FC<VideoVoxModeProps> = ({
     await chatHook?.toggleReaction(messageId, emoji);
   };
 
-  const handleReply = (message: VideoVoxMessage) => {
+  const handleReply = (message: GlimpseMessage) => {
     setReplyingTo(message);
     setViewMode('record');
   };
 
   const handleBookmark = async (messageId: string) => {
-    await videoVoxService.toggleBookmark(messageId);
+    await glimpseService.toggleBookmark(messageId);
   };
 
   const toggleTranscript = (messageId: string) => {
@@ -1078,7 +1079,7 @@ const VideoVoxMode: React.FC<VideoVoxModeProps> = ({
                           timestamp: message.createdAt,
                           sender: message.senderId === currentUserId ? 'me' : 'other',
                           transcript: message.transcript,
-                          mode: 'video_vox' as const,
+                          mode: 'glimpse' as const,
                           contactId: activeConversationId || undefined,
                           contactName: conversations.find(c => c.id === activeConversationId)?.title,
                         };
@@ -1515,4 +1516,4 @@ function formatRelativeTime(date: Date): string {
   return date.toLocaleDateString();
 }
 
-export default VideoVoxMode;
+export default Glimpse;

@@ -1,10 +1,10 @@
-// useVideoVoxRecording Hook - Video recording with MediaRecorder API
+// useGlimpseRecording Hook - Video recording with MediaRecorder API
 // Manages camera stream, recording state, and video processing
 
 import { useState, useRef, useCallback, useEffect } from 'react';
-import { VideoVoxRecordingState } from '../services/voxer/voxModeTypes';
+import { GlimpseRecordingState } from '../services/glimpse/glimpseTypes';
 
-export interface UseVideoVoxRecordingOptions {
+export interface UseGlimpseRecordingOptions {
   maxDuration?: number;  // Maximum recording duration in seconds
   videoQuality?: '480p' | '720p' | '1080p';
   facingMode?: 'user' | 'environment';
@@ -12,9 +12,9 @@ export interface UseVideoVoxRecordingOptions {
   onError?: (error: string) => void;
 }
 
-export interface UseVideoVoxRecordingReturn {
+export interface UseGlimpseRecordingReturn {
   // State
-  state: VideoVoxRecordingState;
+  state: GlimpseRecordingState;
   stream: MediaStream | null;
   isRecording: boolean;
   isPreviewing: boolean;
@@ -47,16 +47,16 @@ const VIDEO_CONSTRAINTS: Record<string, MediaTrackConstraints> = {
   '1080p': { width: { ideal: 1920 }, height: { ideal: 1080 }, frameRate: { ideal: 30 } },
 };
 
-const DEFAULT_OPTIONS: UseVideoVoxRecordingOptions = {
+const DEFAULT_OPTIONS: UseGlimpseRecordingOptions = {
   maxDuration: 60,
   videoQuality: '720p',
   facingMode: 'user',
 };
 
-export function useVideoVoxRecording(options: UseVideoVoxRecordingOptions = {}): UseVideoVoxRecordingReturn {
+export function useGlimpseRecording(options: UseGlimpseRecordingOptions = {}): UseGlimpseRecordingReturn {
   const opts = { ...DEFAULT_OPTIONS, ...options };
 
-  const [state, setState] = useState<VideoVoxRecordingState>({
+  const [state, setState] = useState<GlimpseRecordingState>({
     status: 'idle',
     duration: 0,
     maxDuration: opts.maxDuration || 60,
@@ -442,4 +442,4 @@ export function useVideoVoxRecording(options: UseVideoVoxRecordingOptions = {}):
   };
 }
 
-export default useVideoVoxRecording;
+export default useGlimpseRecording;

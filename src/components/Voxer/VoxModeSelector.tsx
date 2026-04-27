@@ -66,7 +66,6 @@ const MODE_ICONS: Record<VoxMode, React.ReactNode> = {
   vox_notes: <FileText className="w-5 h-5" />,
   quick_vox: <Zap className="w-5 h-5" />,
   vox_drop: <Clock className="w-5 h-5" />,
-  video_vox: <Video className="w-5 h-5" />,
 };
 
 // Mode colors sourced from shared palette (voxModeTypes.ts)

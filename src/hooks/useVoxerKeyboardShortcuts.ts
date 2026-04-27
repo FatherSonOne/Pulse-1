@@ -1,5 +1,5 @@
 // useVoxerKeyboardShortcuts - Global keyboard shortcuts for Voxer
-// Provides Space for record, Escape for back, 1-8 for modes, Ctrl+D/A/S for actions
+// Provides Space for record, Escape for back, 1-7 for modes, Ctrl+D/A/S for actions
 
 import { useEffect, useRef } from 'react';
 import { VoxMode } from '../services/voxer/voxModeTypes';
@@ -25,7 +25,6 @@ export const VOXER_SHORTCUTS = {
   '5': 'Switch to Vox Notes',
   '6': 'Switch to Quick Vox',
   '7': 'Switch to Vox Drop',
-  '8': 'Switch to Video Vox',
   'Ctrl+D': 'Download selected',
   'Ctrl+A': 'Archive selected',
   'Ctrl+S': 'Summarize conversation (AI)',
@@ -40,7 +39,6 @@ const MODE_MAP: Record<string, VoxMode | 'classic'> = {
   '5': 'vox_notes',
   '6': 'quick_vox',
   '7': 'vox_drop',
-  '8': 'video_vox',
 };
 
 export function useVoxerKeyboardShortcuts(

@@ -18,6 +18,7 @@ const preloadedRoutes = new Set<string>();
 const routeImports: Record<string, () => Promise<any>> = {
   '/messages': () => import('../components/Messages'),
   '/voxer': () => import('../components/Voxer'),
+  '/glimpse': () => import('../components/Glimpse'),
   '/dashboard': () => import('../components/LiveDashboard'),
   '/live': () => import('../components/LiveDashboard'),
   '/decisions': () => import('../components/decisions/DecisionTaskHub'),

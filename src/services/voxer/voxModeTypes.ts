@@ -11,8 +11,8 @@ export type VoxMode =
   | 'team_vox'         // Workspace/team focused
   | 'vox_notes'        // Personal voice memos
   | 'quick_vox'        // One-tap instant communication
-  | 'vox_drop'         // Time-capsule scheduled messages
-  | 'video_vox';       // Cinematic video messages
+  | 'vox_drop';        // Time-capsule scheduled messages
+// 'video_vox' was split off into the Glimpse section in 2026-04-27 (sub-stage 1.5c).
 
 // ============================================
 // VOX MODE METADATA
@@ -221,37 +221,6 @@ export const VOX_MODES: Record<VoxMode, VoxModeInfo> = {
       'Surprise reveals'
     ]
   },
-  video_vox: {
-    id: 'video_vox',
-    name: 'Video Vox',
-    tagline: 'Face-to-Face, Async',
-    description: 'Send cinematic video messages with a personal touch. Full cinematic experience with letterbox framing, film grain effects, and stunning visual polish. Your face, your voice, delivered beautifully.',
-    workflow: [
-      'Tap to start camera preview',
-      'Frame yourself in the Cinema Frame',
-      'Hold or tap to record your video',
-      'Preview with cinematic effects',
-      'Add an optional caption',
-      'Send your video message'
-    ],
-    icon: '🎬',
-    color: '#06B6D4',
-    gradient: 'from-pink-500 via-purple-500 to-indigo-500',
-    features: [
-      'Cinematic letterbox framing',
-      'Film grain & visual effects',
-      'Front/back camera toggle',
-      'Video message transcription',
-      'View receipts & reactions',
-      'Caption overlay support'
-    ],
-    bestFor: [
-      'Personal greetings',
-      'Visual storytelling',
-      'Emotional messages',
-      'Face-to-face async'
-    ]
-  }
 };
 
 // ============================================

@@ -12,6 +12,7 @@ export enum AppView {
   EMAIL = 'EMAIL',
   SMS = 'SMS',
   VOXER = 'VOXER',
+  GLIMPSE = 'GLIMPSE',
   CALENDAR = 'CALENDAR',
   MEETINGS = 'MEETINGS',
   CONTACTS = 'CONTACTS',

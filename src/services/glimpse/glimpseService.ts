@@ -4,22 +4,22 @@
 import { supabase } from '../supabase';
 import { GoogleGenAI, Type } from '@google/genai';
 import type {
-  VideoVoxMessage,
-  VideoVoxConversation,
-  VideoVoxConversationMember,
-  VideoVoxReaction,
-  VideoVoxReadReceipt,
-  VideoVoxBookmark,
-  VideoVoxAIAnalysis,
-  VideoVoxSearchResult,
+  GlimpseMessage,
+  GlimpseConversation,
+  GlimpseConversationMember,
+  GlimpseReaction,
+  GlimpseReadReceipt,
+  GlimpseBookmark,
+  GlimpseAIAnalysis,
+  GlimpseSearchResult,
   PulseUser,
-} from './voxModeTypes';
+} from './glimpseTypes';
 
 // ============================================
 // VIDEO VOX SERVICE CLASS
 // ============================================
 
-class VideoVoxService {
+class GlimpseService {
   private userId: string | null = null;
   private geminiApiKey: string | null = null;
 
@@ -68,7 +68,7 @@ class VideoVoxService {
   /**
    * Get or create a conversation between participants
    */
-  async getOrCreateConversation(participantIds: string[]): Promise<VideoVoxConversation | null> {
+  async getOrCreateConversation(participantIds: string[]): Promise<GlimpseConversation | null> {
     const userId = await this.ensureUserId();
     if (!userId) return null;
 
@@ -98,7 +98,7 @@ class VideoVoxService {
   /**
    * Get a single conversation by ID
    */
-  async getConversation(conversationId: string): Promise<VideoVoxConversation | null> {
+  async getConversation(conversationId: string): Promise<GlimpseConversation | null> {
     const { data, error } = await supabase
       .from('video_vox_conversations')
       .select(`
@@ -124,7 +124,7 @@ class VideoVoxService {
   /**
    * Get all conversations for current user
    */
-  async getMyConversations(): Promise<VideoVoxConversation[]> {
+  async getMyConversations(): Promise<GlimpseConversation[]> {
     const userId = await this.ensureUserId();
     if (!userId) return [];
 
@@ -165,7 +165,7 @@ class VideoVoxService {
     const participantMap = new Map(allParticipants.map(p => [p.id, p]));
 
     // Map results back to each conversation
-    const conversations: VideoVoxConversation[] = [];
+    const conversations: GlimpseConversation[] = [];
     for (const item of validItems) {
       const conv = item.video_vox_conversations as any;
       const participants = (conv.participant_ids || [])
@@ -295,7 +295,7 @@ class VideoVoxService {
    * Upload and send a video message.
    * Accepts an optional onProgress callback for real upload progress tracking.
    */
-  async uploadAndSendVideoVox(
+  async uploadAndSendGlimpse(
     recipientIds: string[],
     videoBlob: Blob,
     thumbnailBlob: Blob,
@@ -309,7 +309,7 @@ class VideoVoxService {
       expiresAt?: Date;
     },
     onProgress?: (percent: number) => void
-  ): Promise<VideoVoxMessage | null> {
+  ): Promise<GlimpseMessage | null> {
     const userId = await this.ensureUserId();
     if (!userId) {
       console.error('No user ID for video vox upload');
@@ -428,7 +428,7 @@ class VideoVoxService {
       onProgress?.(100);
       return this.mapDbToMessage(messageData);
     } catch (error) {
-      console.error('Error in uploadAndSendVideoVox:', error);
+      console.error('Error in uploadAndSendGlimpse:', error);
       return null;
     }
   }
@@ -439,7 +439,7 @@ class VideoVoxService {
   async getConversationMessages(
     conversationId: string,
     options?: { limit?: number; offset?: number; beforeId?: string }
-  ): Promise<VideoVoxMessage[]> {
+  ): Promise<GlimpseMessage[]> {
     let query = supabase
       .from('video_vox_messages')
       .select('*')
@@ -472,7 +472,7 @@ class VideoVoxService {
   /**
    * Get a single message
    */
-  async getMessage(messageId: string): Promise<VideoVoxMessage | null> {
+  async getMessage(messageId: string): Promise<GlimpseMessage | null> {
     const { data, error } = await supabase
       .from('video_vox_messages')
       .select('*')
@@ -491,7 +491,7 @@ class VideoVoxService {
   /**
    * Get thread replies for a message
    */
-  async getThreadReplies(messageId: string): Promise<VideoVoxMessage[]> {
+  async getThreadReplies(messageId: string): Promise<GlimpseMessage[]> {
     const { data, error } = await supabase
       .from('video_vox_messages')
       .select('*')
@@ -689,7 +689,7 @@ class VideoVoxService {
   /**
    * Get user's bookmarks
    */
-  async getMyBookmarks(): Promise<VideoVoxBookmark[]> {
+  async getMyBookmarks(): Promise<GlimpseBookmark[]> {
     const userId = await this.ensureUserId();
     if (!userId) return [];
 
@@ -740,7 +740,7 @@ class VideoVoxService {
   /**
    * Process video with Gemini AI
    */
-  async processVideoWithAI(messageId: string, videoBlob: Blob): Promise<VideoVoxAIAnalysis | null> {
+  async processVideoWithAI(messageId: string, videoBlob: Blob): Promise<GlimpseAIAnalysis | null> {
     const apiKey = this.getGeminiApiKey();
     if (!apiKey) {
       console.warn('No Gemini API key available - skipping AI processing');
@@ -798,7 +798,7 @@ Return as JSON.` }
       });
 
       const resultText = response.text || '{}';
-      const analysis: VideoVoxAIAnalysis = JSON.parse(resultText);
+      const analysis: GlimpseAIAnalysis = JSON.parse(resultText);
 
       // Update message with AI results
       await supabase
@@ -856,7 +856,7 @@ Return as JSON.` }
   /**
    * Manually trigger AI analysis for an existing message
    */
-  async reprocessWithAI(messageId: string): Promise<VideoVoxAIAnalysis | null> {
+  async reprocessWithAI(messageId: string): Promise<GlimpseAIAnalysis | null> {
     const message = await this.getMessage(messageId);
     if (!message) return null;
 
@@ -921,7 +921,7 @@ Return as JSON.` }
   /**
    * Search videos by content
    */
-  async searchVideos(query: string): Promise<VideoVoxSearchResult[]> {
+  async searchVideos(query: string): Promise<GlimpseSearchResult[]> {
     const userId = await this.ensureUserId();
     if (!userId || !query.trim()) return [];
 
@@ -949,7 +949,7 @@ Return as JSON.` }
       transcript: 0.4,
     } as const;
 
-    const results: VideoVoxSearchResult[] = data.map(m => {
+    const results: GlimpseSearchResult[] = data.map(m => {
       const message = this.mapDbToMessage(m);
       let matchType: 'transcript' | 'caption' | 'topic' | 'summary' = 'transcript';
       let matchText = '';
@@ -998,12 +998,12 @@ Return as JSON.` }
    */
   async subscribeToConversation(
     conversationId: string,
-    callback: (message: VideoVoxMessage) => void
+    callback: (message: GlimpseMessage) => void
   ): Promise<any> {
     // AUTH GUARD: Check session before subscribing
     const { data: { session } } = await supabase.auth.getSession();
     if (!session?.user) {
-      console.warn('[VideoVoxService] Cannot subscribe to conversation: user not authenticated');
+      console.warn('[GlimpseService] Cannot subscribe to conversation: user not authenticated');
       return null;
     }
 
@@ -1033,7 +1033,7 @@ Return as JSON.` }
     // AUTH GUARD: Check session before subscribing
     const { data: { session } } = await supabase.auth.getSession();
     if (!session?.user) {
-      console.warn('[VideoVoxService] Cannot subscribe to reactions: user not authenticated');
+      console.warn('[GlimpseService] Cannot subscribe to reactions: user not authenticated');
       return null;
     }
 
@@ -1056,11 +1056,11 @@ Return as JSON.` }
   /**
    * Subscribe to new conversations
    */
-  async subscribeToNewConversations(callback: (conversation: VideoVoxConversation) => void): Promise<any> {
+  async subscribeToNewConversations(callback: (conversation: GlimpseConversation) => void): Promise<any> {
     // AUTH GUARD: Check session before subscribing
     const { data: { session } } = await supabase.auth.getSession();
     if (!session?.user) {
-      console.warn('[VideoVoxService] Cannot subscribe to new conversations: user not authenticated');
+      console.warn('[GlimpseService] Cannot subscribe to new conversations: user not authenticated');
       return null;
     }
 
@@ -1203,7 +1203,7 @@ Return as JSON.` }
   // DB MAPPERS
   // ============================================
 
-  private mapDbToMessage(db: any): VideoVoxMessage {
+  private mapDbToMessage(db: any): GlimpseMessage {
     return {
       id: db.id,
       conversationId: db.conversation_id,
@@ -1244,7 +1244,7 @@ Return as JSON.` }
     handle?: string;
     avatarUrl?: string;
     avatarColor: string;
-  }>): VideoVoxConversation {
+  }>): GlimpseConversation {
     const lastMessage = db.video_vox_messages;
 
     return {
@@ -1266,4 +1266,4 @@ Return as JSON.` }
 }
 
 // Export singleton instance
-export const videoVoxService = new VideoVoxService();
+export const glimpseService = new GlimpseService();

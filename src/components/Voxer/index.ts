@@ -56,4 +56,4 @@ export { default as TeamVoxMode } from './TeamVoxMode';         // Workspace/tea
 export { default as VoxNotesMode } from './VoxNotesMode';       // Personal voice memos
 export { default as QuickVoxMode } from './QuickVoxMode';       // One-tap instant communication
 export { default as VoxDropMode } from './VoxDropMode';         // Time-capsule scheduled messages
-export { default as VideoVoxMode } from './VideoVoxMode';       // Cinematic video messages
+// VideoVoxMode moved out of Voxer in sub-stage 1.5c (2026-04-27); now lives at src/components/Glimpse/.

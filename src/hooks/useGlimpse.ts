@@ -1,34 +1,34 @@
-// useVideoVox - React hooks for Video Vox functionality
+// useGlimpse - React hooks for Video Vox functionality
 // Provides state management, real-time updates, and easy integration
 
 import { useState, useEffect, useCallback, useRef } from 'react';
-import { videoVoxService } from '../services/voxer/videoVoxService';
+import { glimpseService } from '../services/glimpse/glimpseService';
 import { supabase } from '../services/supabase';
 import type {
-  VideoVoxMessage,
-  VideoVoxConversation,
-  VideoVoxBookmark,
-  VideoVoxSearchResult,
-} from '../services/voxer/voxModeTypes';
+  GlimpseMessage,
+  GlimpseConversation,
+  GlimpseBookmark,
+  GlimpseSearchResult,
+} from '../services/glimpse/glimpseTypes';
 import { RealtimeChannel } from '@supabase/supabase-js';
 
 // ============================================
 // CONVERSATIONS HOOK
 // ============================================
 
-export interface UseVideoVoxConversationsReturn {
-  conversations: VideoVoxConversation[];
+export interface UseGlimpseConversationsReturn {
+  conversations: GlimpseConversation[];
   isLoading: boolean;
   error: string | null;
   totalUnread: number;
   refresh: () => Promise<void>;
-  createConversation: (participantIds: string[]) => Promise<VideoVoxConversation | null>;
+  createConversation: (participantIds: string[]) => Promise<GlimpseConversation | null>;
   markAsRead: (conversationId: string) => Promise<void>;
   toggleMute: (conversationId: string, muted: boolean) => Promise<void>;
 }
 
-export function useVideoVoxConversations(): UseVideoVoxConversationsReturn {
-  const [conversations, setConversations] = useState<VideoVoxConversation[]>([]);
+export function useGlimpseConversations(): UseGlimpseConversationsReturn {
+  const [conversations, setConversations] = useState<GlimpseConversation[]>([]);
   const [isLoading, setIsLoading] = useState(true);
   const [error, setError] = useState<string | null>(null);
   const [totalUnread, setTotalUnread] = useState(0);
@@ -39,8 +39,8 @@ export function useVideoVoxConversations(): UseVideoVoxConversationsReturn {
       setIsLoading(true);
       setError(null);
       const [convos, unread] = await Promise.all([
-        videoVoxService.getMyConversations(),
-        videoVoxService.getTotalUnreadCount()
+        glimpseService.getMyConversations(),
+        glimpseService.getTotalUnreadCount()
       ]);
       setConversations(convos);
       setTotalUnread(unread);
@@ -53,7 +53,7 @@ export function useVideoVoxConversations(): UseVideoVoxConversationsReturn {
 
   const createConversation = useCallback(async (participantIds: string[]) => {
     try {
-      const conversation = await videoVoxService.getOrCreateConversation(participantIds);
+      const conversation = await glimpseService.getOrCreateConversation(participantIds);
       if (conversation) {
         await refresh();
       }
@@ -65,7 +65,7 @@ export function useVideoVoxConversations(): UseVideoVoxConversationsReturn {
   }, [refresh]);
 
   const markAsRead = useCallback(async (conversationId: string) => {
-    await videoVoxService.markConversationAsRead(conversationId);
+    await glimpseService.markConversationAsRead(conversationId);
     setConversations(prev => prev.map(c =>
       c.id === conversationId ? { ...c } : c
     ));
@@ -73,7 +73,7 @@ export function useVideoVoxConversations(): UseVideoVoxConversationsReturn {
   }, []);
 
   const toggleMute = useCallback(async (conversationId: string, muted: boolean) => {
-    await videoVoxService.toggleMuteConversation(conversationId, muted);
+    await glimpseService.toggleMuteConversation(conversationId, muted);
     await refresh();
   }, [refresh]);
 
@@ -81,7 +81,7 @@ export function useVideoVoxConversations(): UseVideoVoxConversationsReturn {
     refresh();
 
     // Subscribe to new conversations
-    videoVoxService.subscribeToNewConversations((conversation) => {
+    glimpseService.subscribeToNewConversations((conversation) => {
       setConversations(prev => [conversation, ...prev]);
     }).then(channel => {
       subscriptionRef.current = channel;
@@ -111,14 +111,14 @@ export function useVideoVoxConversations(): UseVideoVoxConversationsReturn {
 // MESSAGES HOOK
 // ============================================
 
-export interface UseVideoVoxMessagesOptions {
+export interface UseGlimpseMessagesOptions {
   conversationId: string;
   limit?: number;
   autoMarkAsRead?: boolean;
 }
 
-export interface UseVideoVoxMessagesReturn {
-  messages: VideoVoxMessage[];
+export interface UseGlimpseMessagesReturn {
+  messages: GlimpseMessage[];
   isLoading: boolean;
   error: string | null;
   hasMore: boolean;
@@ -135,16 +135,16 @@ export interface UseVideoVoxMessagesReturn {
       quotedText?: string;
       mentions?: string[];
     }
-  ) => Promise<VideoVoxMessage | null>;
+  ) => Promise<GlimpseMessage | null>;
   deleteMessage: (messageId: string) => Promise<boolean>;
   toggleReaction: (messageId: string, emoji: string, timestamp?: number) => Promise<boolean>;
   markAsViewed: (messageId: string, watchDuration?: number, completed?: boolean) => Promise<void>;
 }
 
-export function useVideoVoxMessages(options: UseVideoVoxMessagesOptions): UseVideoVoxMessagesReturn {
+export function useGlimpseMessages(options: UseGlimpseMessagesOptions): UseGlimpseMessagesReturn {
   const { conversationId, limit = 50, autoMarkAsRead = true } = options;
 
-  const [messages, setMessages] = useState<VideoVoxMessage[]>([]);
+  const [messages, setMessages] = useState<GlimpseMessage[]>([]);
   const [isLoading, setIsLoading] = useState(true);
   const [error, setError] = useState<string | null>(null);
   const [hasMore, setHasMore] = useState(true);
@@ -155,13 +155,13 @@ export function useVideoVoxMessages(options: UseVideoVoxMessagesOptions): UseVid
     try {
       setIsLoading(true);
       setError(null);
-      const msgs = await videoVoxService.getConversationMessages(conversationId, { limit });
+      const msgs = await glimpseService.getConversationMessages(conversationId, { limit });
       setMessages(msgs);
       setOffset(msgs.length);
       setHasMore(msgs.length >= limit);
 
       if (autoMarkAsRead) {
-        await videoVoxService.markConversationAsRead(conversationId);
+        await glimpseService.markConversationAsRead(conversationId);
       }
     } catch (err: any) {
       setError(err.message || 'Failed to load messages');
@@ -174,7 +174,7 @@ export function useVideoVoxMessages(options: UseVideoVoxMessagesOptions): UseVid
     if (!hasMore || isLoading) return;
 
     try {
-      const moreMsgs = await videoVoxService.getConversationMessages(conversationId, {
+      const moreMsgs = await glimpseService.getConversationMessages(conversationId, {
         limit,
         offset
       });
@@ -199,10 +199,10 @@ export function useVideoVoxMessages(options: UseVideoVoxMessagesOptions): UseVid
     }
   ) => {
     // Get recipient IDs from conversation
-    const conversation = await videoVoxService.getConversation(conversationId);
+    const conversation = await glimpseService.getConversation(conversationId);
     if (!conversation) return null;
 
-    const message = await videoVoxService.uploadAndSendVideoVox(
+    const message = await glimpseService.uploadAndSendGlimpse(
       conversation.participantIds,
       videoBlob,
       thumbnailBlob,
@@ -215,7 +215,7 @@ export function useVideoVoxMessages(options: UseVideoVoxMessagesOptions): UseVid
   }, [conversationId]);
 
   const deleteMessage = useCallback(async (messageId: string) => {
-    const success = await videoVoxService.deleteMessage(messageId);
+    const success = await glimpseService.deleteMessage(messageId);
     if (success) {
       setMessages(prev => prev.filter(m => m.id !== messageId));
     }
@@ -223,13 +223,13 @@ export function useVideoVoxMessages(options: UseVideoVoxMessagesOptions): UseVid
   }, []);
 
   const toggleReaction = useCallback(async (messageId: string, emoji: string, timestamp?: number) => {
-    const success = await videoVoxService.toggleReaction(messageId, emoji, timestamp);
+    const success = await glimpseService.toggleReaction(messageId, emoji, timestamp);
     // Reactions will update via subscription
     return success;
   }, []);
 
   const markAsViewed = useCallback(async (messageId: string, watchDuration?: number, completed?: boolean) => {
-    await videoVoxService.markMessageAsViewed(messageId, watchDuration, completed);
+    await glimpseService.markMessageAsViewed(messageId, watchDuration, completed);
     setMessages(prev => prev.map(m =>
       m.id === messageId ? { ...m, status: 'viewed' as const } : m
     ));
@@ -239,7 +239,7 @@ export function useVideoVoxMessages(options: UseVideoVoxMessagesOptions): UseVid
     refresh();
 
     // Subscribe to new messages
-    subscriptionRef.current = videoVoxService.subscribeToConversation(conversationId, (message) => {
+    subscriptionRef.current = glimpseService.subscribeToConversation(conversationId, (message) => {
       setMessages(prev => [...prev, message]);
     });
 
@@ -266,20 +266,20 @@ export function useVideoVoxMessages(options: UseVideoVoxMessagesOptions): UseVid
 // SINGLE MESSAGE HOOK
 // ============================================
 
-export interface UseVideoVoxMessageReturn {
-  message: VideoVoxMessage | null;
+export interface UseGlimpseMessageReturn {
+  message: GlimpseMessage | null;
   isLoading: boolean;
   error: string | null;
-  replies: VideoVoxMessage[];
+  replies: GlimpseMessage[];
   refresh: () => Promise<void>;
   toggleReaction: (emoji: string, timestamp?: number) => Promise<boolean>;
   toggleBookmark: (note?: string, timestamp?: number) => Promise<boolean>;
   reprocessAI: () => Promise<void>;
 }
 
-export function useVideoVoxMessage(messageId: string): UseVideoVoxMessageReturn {
-  const [message, setMessage] = useState<VideoVoxMessage | null>(null);
-  const [replies, setReplies] = useState<VideoVoxMessage[]>([]);
+export function useGlimpseMessage(messageId: string): UseGlimpseMessageReturn {
+  const [message, setMessage] = useState<GlimpseMessage | null>(null);
+  const [replies, setReplies] = useState<GlimpseMessage[]>([]);
   const [isLoading, setIsLoading] = useState(true);
   const [error, setError] = useState<string | null>(null);
 
@@ -288,8 +288,8 @@ export function useVideoVoxMessage(messageId: string): UseVideoVoxMessageReturn 
       setIsLoading(true);
       setError(null);
       const [msg, threadReplies] = await Promise.all([
-        videoVoxService.getMessage(messageId),
-        videoVoxService.getThreadReplies(messageId)
+        glimpseService.getMessage(messageId),
+        glimpseService.getThreadReplies(messageId)
       ]);
       setMessage(msg);
       setReplies(threadReplies);
@@ -301,7 +301,7 @@ export function useVideoVoxMessage(messageId: string): UseVideoVoxMessageReturn 
   }, [messageId]);
 
   const toggleReaction = useCallback(async (emoji: string, timestamp?: number) => {
-    const success = await videoVoxService.toggleReaction(messageId, emoji, timestamp);
+    const success = await glimpseService.toggleReaction(messageId, emoji, timestamp);
     if (success) {
       await refresh();
     }
@@ -309,11 +309,11 @@ export function useVideoVoxMessage(messageId: string): UseVideoVoxMessageReturn 
   }, [messageId, refresh]);
 
   const toggleBookmark = useCallback(async (note?: string, timestamp?: number) => {
-    return await videoVoxService.toggleBookmark(messageId, note, timestamp);
+    return await glimpseService.toggleBookmark(messageId, note, timestamp);
   }, [messageId]);
 
   const reprocessAI = useCallback(async () => {
-    await videoVoxService.reprocessWithAI(messageId);
+    await glimpseService.reprocessWithAI(messageId);
     await refresh();
   }, [messageId, refresh]);
 
@@ -337,16 +337,16 @@ export function useVideoVoxMessage(messageId: string): UseVideoVoxMessageReturn 
 // SEARCH HOOK
 // ============================================
 
-export interface UseVideoVoxSearchReturn {
-  results: VideoVoxSearchResult[];
+export interface UseGlimpseSearchReturn {
+  results: GlimpseSearchResult[];
   isSearching: boolean;
   error: string | null;
   search: (query: string) => Promise<void>;
   clearResults: () => void;
 }
 
-export function useVideoVoxSearch(): UseVideoVoxSearchReturn {
-  const [results, setResults] = useState<VideoVoxSearchResult[]>([]);
+export function useGlimpseSearch(): UseGlimpseSearchReturn {
+  const [results, setResults] = useState<GlimpseSearchResult[]>([]);
   const [isSearching, setIsSearching] = useState(false);
   const [error, setError] = useState<string | null>(null);
 
@@ -359,7 +359,7 @@ export function useVideoVoxSearch(): UseVideoVoxSearchReturn {
     try {
       setIsSearching(true);
       setError(null);
-      const searchResults = await videoVoxService.searchVideos(query);
+      const searchResults = await glimpseService.searchVideos(query);
       setResults(searchResults);
     } catch (err: any) {
       setError(err.message);
@@ -386,16 +386,16 @@ export function useVideoVoxSearch(): UseVideoVoxSearchReturn {
 // BOOKMARKS HOOK
 // ============================================
 
-export interface UseVideoVoxBookmarksReturn {
-  bookmarks: VideoVoxBookmark[];
+export interface UseGlimpseBookmarksReturn {
+  bookmarks: GlimpseBookmark[];
   isLoading: boolean;
   error: string | null;
   refresh: () => Promise<void>;
   toggleBookmark: (messageId: string, note?: string, timestamp?: number) => Promise<boolean>;
 }
 
-export function useVideoVoxBookmarks(): UseVideoVoxBookmarksReturn {
-  const [bookmarks, setBookmarks] = useState<VideoVoxBookmark[]>([]);
+export function useGlimpseBookmarks(): UseGlimpseBookmarksReturn {
+  const [bookmarks, setBookmarks] = useState<GlimpseBookmark[]>([]);
   const [isLoading, setIsLoading] = useState(true);
   const [error, setError] = useState<string | null>(null);
 
@@ -403,7 +403,7 @@ export function useVideoVoxBookmarks(): UseVideoVoxBookmarksReturn {
     try {
       setIsLoading(true);
       setError(null);
-      const marks = await videoVoxService.getMyBookmarks();
+      const marks = await glimpseService.getMyBookmarks();
       setBookmarks(marks);
     } catch (err: any) {
       setError(err.message);
@@ -413,7 +413,7 @@ export function useVideoVoxBookmarks(): UseVideoVoxBookmarksReturn {
   }, []);
 
   const toggleBookmark = useCallback(async (messageId: string, note?: string, timestamp?: number) => {
-    const success = await videoVoxService.toggleBookmark(messageId, note, timestamp);
+    const success = await glimpseService.toggleBookmark(messageId, note, timestamp);
     if (success) {
       await refresh();
     }
@@ -437,7 +437,7 @@ export function useVideoVoxBookmarks(): UseVideoVoxBookmarksReturn {
 // SEND VIDEO HOOK (Simplified for single sends)
 // ============================================
 
-export interface UseVideoVoxSendReturn {
+export interface UseGlimpseSendReturn {
   isSending: boolean;
   progress: number;
   error: string | null;
@@ -451,11 +451,11 @@ export interface UseVideoVoxSendReturn {
       replyToId?: string;
       mentions?: string[];
     }
-  ) => Promise<VideoVoxMessage | null>;
+  ) => Promise<GlimpseMessage | null>;
   reset: () => void;
 }
 
-export function useVideoVoxSend(): UseVideoVoxSendReturn {
+export function useGlimpseSend(): UseGlimpseSendReturn {
   const [isSending, setIsSending] = useState(false);
   const [progress, setProgress] = useState(0);
   const [error, setError] = useState<string | null>(null);
@@ -477,10 +477,10 @@ export function useVideoVoxSend(): UseVideoVoxSendReturn {
       setProgress(0);
 
       // Real progress tracking via XHR onprogress in the service layer.
-      // The service's uploadAndSendVideoVox accepts an onProgress callback that
+      // The service's uploadAndSendGlimpse accepts an onProgress callback that
       // reports actual byte-level upload progress (video upload: 5-85%,
       // thumbnail: 85-90%, DB insert/finalize: 90-100%).
-      const message = await videoVoxService.uploadAndSendVideoVox(
+      const message = await glimpseService.uploadAndSendGlimpse(
         recipientIds,
         videoBlob,
         thumbnailBlob,

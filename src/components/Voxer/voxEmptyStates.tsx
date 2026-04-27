@@ -78,12 +78,12 @@ export const VOX_EMPTY_STATES: Record<string, VoxEmptyStateConfig> = {
     description: 'Drop a voice note! Leave asynchronous voice messages for anyone to pick up.',
   },
 
-  video_vox: {
-    mode: 'video_vox',
+  glimpse: {
+    mode: 'glimpse',
     color: '#06B6D4', // Cyan
     icon: Video,
-    title: 'No video messages',
-    description: 'Lights, camera, action! Record cinematic video messages with professional quality.',
+    title: 'No glimpses yet',
+    description: 'Record a quick video message. Hold to record, release to send.',
   },
 };
 

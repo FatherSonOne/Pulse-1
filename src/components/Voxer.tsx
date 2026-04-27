@@ -18,7 +18,6 @@ import {
   VoxNotesMode,
   QuickVoxMode,
   VoxDropMode,
-  VideoVoxMode,
 } from './Voxer/index';
 import { VoxMode } from '../services/voxer/voxModeTypes';
 
@@ -49,7 +48,6 @@ const Voxer: React.FC<VoxerProps> = ({ apiKey, contacts, initialContactId, isDar
     vox_notes: 'Vox Notes',
     quick_vox: 'Quick Vox',
     vox_drop: 'Vox Drop',
-    video_vox: 'Video Vox',
   };
 
   // Handle mode selection callback
@@ -103,9 +101,6 @@ const Voxer: React.FC<VoxerProps> = ({ apiKey, contacts, initialContactId, isDar
         )}
         {currentVoxMode === 'vox_drop' && (
           <VoxDropMode onBack={handleBackToSelector} apiKey={apiKey} isDarkMode={isDarkMode} />
-        )}
-        {currentVoxMode === 'video_vox' && (
-          <VideoVoxMode onClose={handleBackToSelector} apiKey={apiKey} isDarkMode={isDarkMode} />
         )}
 
         {/* Vox Mode Selector Modal (can be opened from within modes) */}
