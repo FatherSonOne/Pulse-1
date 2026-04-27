@@ -58,7 +58,7 @@ import VoxDownloadModal from '../Relay/VoxDownloadModal';
 import { archiveRelayConversation } from '../../services/relay/relayArchiveService';
 
 // Phase 5: AI Enhancements
-import { VoxConversationSummary, VoxSmartReplies } from '../Relay/index';
+import { MessageAIPanel, VoxSmartReplies } from '../Relay/index';
 import { summarizeConversation, generateSmartReplies } from '../../services/relay/relayAIService';
 import type { ConversationSummary, SmartReply } from '../../services/relay/relayAIService';
 
@@ -1436,10 +1436,9 @@ const Glimpse: React.FC<GlimpseProps> = ({
       {conversationSummary && showSummary && (
         <div className="fixed inset-0 bg-black/50 backdrop-blur-sm z-50 flex items-center justify-center p-4">
           <div className="max-w-2xl w-full">
-            <VoxConversationSummary
+            <MessageAIPanel
               summary={conversationSummary}
               isDarkMode={isDarkMode}
-              accentColor={MODE_COLOR}
               onClose={() => setShowSummary(false)}
             />
           </div>

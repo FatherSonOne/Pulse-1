@@ -62,10 +62,8 @@ import { VoxSelectToolbar } from './VoxSelectToolbar';
 
 // Phase 5: AI Enhancements
 import {
-  VoxConversationSummary,
+  MessageAIPanel,
   VoxSmartReplies,
-  VoxMeetingNotes,
-  VoxAutoChapters,
 } from './index';
 
 import {
@@ -1841,10 +1839,9 @@ const ClassicMode: React.FC<ClassicModeProps> = ({
       {conversationSummary && showSummary && (
         <div className="fixed inset-0 bg-black/50 backdrop-blur-sm z-50 flex items-center justify-center p-4">
           <div className="max-w-2xl w-full">
-            <VoxConversationSummary
+            <MessageAIPanel
               summary={conversationSummary}
               isDarkMode={isDarkMode}
-              accentColor="#A855F7"
               onClose={() => setShowSummary(false)}
             />
           </div>
@@ -1873,11 +1870,11 @@ const ClassicMode: React.FC<ClassicModeProps> = ({
             className="max-w-3xl w-full max-h-[90vh] overflow-y-auto"
             onClick={(e) => e.stopPropagation()}
           >
-            <VoxMeetingNotes
-              notes={meetingNotes}
+            <MessageAIPanel
+              meetingNotes={meetingNotes}
               isDarkMode={isDarkMode}
-              accentColor="#10B981"
               onClose={() => setMeetingNotes(null)}
+              defaultOpen={{ meetingNotes: true }}
             />
           </div>
         </div>
@@ -1898,14 +1895,14 @@ const ClassicMode: React.FC<ClassicModeProps> = ({
             >
               <X className="w-4 h-4" />
             </button>
-            <VoxAutoChapters
+            <MessageAIPanel
               chapters={activeChapters}
               currentTime={0}
               onSeek={(_time) => {
                 // TODO: Implement seek functionality
               }}
               isDarkMode={isDarkMode}
-              accentColor="#06B6D4"
+              defaultOpen={{ chapters: true }}
             />
           </div>
         </div>

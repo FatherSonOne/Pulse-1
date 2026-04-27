@@ -54,7 +54,7 @@ import { VoxSelectToolbar } from './VoxSelectToolbar';
 
 // Phase 5: AI Enhancements
 import {
-  VoxConversationSummary,
+  MessageAIPanel,
   VoxSmartReplies,
 } from './index';
 import {
@@ -1559,10 +1559,9 @@ const PulseRadio: React.FC<PulseRadioProps> = ({ onBack, apiKey, isDarkMode = fa
       {conversationSummary && showSummary && (
         <div className="fixed inset-0 bg-black/50 backdrop-blur-sm z-50 flex items-center justify-center p-4">
           <div className="max-w-2xl w-full">
-            <VoxConversationSummary
+            <MessageAIPanel
               summary={conversationSummary}
               isDarkMode={isDarkMode}
-              accentColor="#8B5CF6"
               onClose={() => setShowSummary(false)}
             />
           </div>

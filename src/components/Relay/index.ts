@@ -5,7 +5,8 @@
 export { PTTButton, MiniPTTButton } from './PTTButton';
 export type { PTTState, RecordingMode, MediaMode } from './PTTButton';
 
-export { AIAnalysisPanel, AnalysisBadge } from './AIAnalysisPanel';
+export { MessageAIPanel } from './MessageAIPanel';
+export type { MessageAIPanelProps } from './MessageAIPanel';
 export { VoxBubble } from './VoxBubble';
 export { LiveVoxSession } from './LiveVoxSession';
 export { VoiceRooms } from './VoiceRooms';
@@ -23,10 +24,9 @@ export { CollaborativeVox } from './CollaborativeVox';
 export { VoxPreviewPanel } from './VoxPreviewPanel';
 
 // Phase 5: AI Enhancements
-export { VoxConversationSummary } from './VoxConversationSummary';
+// VoxConversationSummary, VoxMeetingNotes, VoxAutoChapters, AIAnalysisPanel were
+// consolidated into MessageAIPanel (Stage 2.1c, Voxer→Relay rework).
 export { VoxSmartReplies } from './VoxSmartReplies';
-export { VoxMeetingNotes } from './VoxMeetingNotes';
-export { VoxAutoChapters } from './VoxAutoChapters';
 
 // Phase 6: Final Polish
 export { VoxKeyboardShortcutsHelp } from './VoxKeyboardShortcutsHelp';

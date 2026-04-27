@@ -48,7 +48,7 @@ import VoxDownloadModal from './VoxDownloadModal';
 import { archiveRelayConversation, archiveMeetingNotes } from '../../services/relay/relayArchiveService';
 
 // Phase 5: AI Enhancements
-import { VoxConversationSummary, VoxSmartReplies, VoxMeetingNotes, VoxAutoChapters } from './index';
+import { MessageAIPanel, VoxSmartReplies } from './index';
 import { summarizeConversation, generateSmartReplies, generateMeetingNotes, generateAutoChapters } from '../../services/relay/relayAIService';
 import type { ConversationSummary, SmartReply, MeetingNotes, Chapter } from '../../services/relay/relayAIService';
 
@@ -2023,10 +2023,9 @@ const TeamVoxMode: React.FC<TeamVoxModeProps> = ({
       {conversationSummary && showSummary && (
         <div className="fixed inset-0 bg-black/50 backdrop-blur-sm z-50 flex items-center justify-center p-4">
           <div className="max-w-2xl w-full">
-            <VoxConversationSummary
+            <MessageAIPanel
               summary={conversationSummary}
               isDarkMode={isDarkMode}
-              accentColor={MODE_COLOR}
               onClose={() => setShowSummary(false)}
             />
           </div>
@@ -2058,11 +2057,11 @@ const TeamVoxMode: React.FC<TeamVoxModeProps> = ({
           onClick={() => setMeetingNotes(null)}
         >
           <div className="max-w-2xl w-full max-h-[90vh] overflow-y-auto" onClick={e => e.stopPropagation()}>
-            <VoxMeetingNotes
-              notes={meetingNotes}
+            <MessageAIPanel
+              meetingNotes={meetingNotes}
               isDarkMode={isDarkMode}
-              accentColor={MODE_COLOR}
               onClose={() => setMeetingNotes(null)}
+              defaultOpen={{ meetingNotes: true }}
               onArchive={async () => {
                 await archiveMeetingNotes(
                   meetingNotes,
@@ -2088,11 +2087,11 @@ const TeamVoxMode: React.FC<TeamVoxModeProps> = ({
             >
               <X className="w-3.5 h-3.5" />
             </button>
-            <VoxAutoChapters
+            <MessageAIPanel
               chapters={activeChapters}
               currentTime={0}
               isDarkMode={isDarkMode}
-              accentColor={MODE_COLOR}
+              defaultOpen={{ chapters: true }}
             />
           </div>
         </div>
