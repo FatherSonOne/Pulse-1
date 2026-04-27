@@ -1,12 +1,12 @@
 /**
  * SplitViewMessagesContainer - Enhanced Split-View Layout
  *
- * A comprehensive split-view container for the Pulse Messages system featuring:
- * - 30%/70% desktop split (1200px+)
- * - 25%/75% tablet split (768px-1199px)
- * - Full-width stacked mobile view (<768px)
- * - Drag-to-resize divider with visual feedback
- * - Framer Motion animations for smooth transitions
+ * @deprecated  Channel-only variant of the split-view; superseded by
+ * `MessagesSplitView` which now hosts both workspace channels AND
+ * Pulse DMs (Phase 5c). This file's resize/divider behavior should be
+ * folded into `MessagesSplitView` and this component deleted in
+ * Phase 5d. Until then it stays compilable but is not used in
+ * production.
  *
  * @author UI Designer Agent
  * @version 2.0.0
@@ -17,6 +17,12 @@ import { motion, AnimatePresence, useMotionValue, useTransform, PanInfo } from '
 import ThreadListPanel from './ThreadListPanel';
 import ConversationPanel from './ConversationPanel';
 import { MessageChannel, ChannelMessage } from '../../types/messages';
+import {
+  Conversation,
+  conversationId,
+  findConversation,
+  mergeConversations,
+} from '../../types/conversations';
 import { useSplitViewMessages } from '../../hooks/useSplitViewMessages';
 
 import { ArrowLeft, X } from 'lucide-react';
@@ -444,29 +450,36 @@ const SplitViewMessagesContainer: React.FC<SplitViewMessagesContainerProps> = ({
   const [isDividerHovered, setIsDividerHovered] = useState(false);
   const [loadingMessages, setLoadingMessages] = useState(false);
 
+  // Channels-only adapter — wraps the channels prop into the unified
+  // Conversation[] shape the hook now expects.
+  const conversations = useMemo<Conversation[]>(
+    () => mergeConversations(channels, []),
+    [channels]
+  );
+
   // Custom hook for split-view state management
   const {
-    activeChannelId,
+    activeConversationId,
     searchQuery,
     isMobile,
     showMobileView,
-    selectChannel,
+    selectConversation,
     setSearchQuery,
     toggleMobileView,
   } = useSplitViewMessages({
-    channels,
+    conversations,
     enableKeyboardShortcuts: true,
   });
 
   // Derived state
-  const activeChannel = useMemo(
-    () => channels.find(ch => ch.id === activeChannelId) || null,
-    [channels, activeChannelId]
+  const activeConversation = useMemo(
+    () => findConversation(conversations, activeConversationId),
+    [conversations, activeConversationId]
   );
 
   const channelMessages = useMemo(
-    () => activeChannelId ? (messages[activeChannelId] || []) : [],
-    [messages, activeChannelId]
+    () => (activeConversationId ? (messages[activeConversationId] || []) : []),
+    [messages, activeConversationId]
   );
 
   // Load persisted panel width
@@ -524,10 +537,10 @@ const SplitViewMessagesContainer: React.FC<SplitViewMessagesContainerProps> = ({
   // Load messages when channel changes
   useEffect(() => {
     const loadChannelMessages = async () => {
-      if (activeChannelId && onLoadMessages) {
+      if (activeConversationId && onLoadMessages) {
         setLoadingMessages(true);
         try {
-          await onLoadMessages(activeChannelId);
+          await onLoadMessages(activeConversationId);
         } catch (error) {
           console.error('Failed to load messages:', error);
         } finally {
@@ -537,7 +550,7 @@ const SplitViewMessagesContainer: React.FC<SplitViewMessagesContainerProps> = ({
     };
 
     loadChannelMessages();
-  }, [activeChannelId, onLoadMessages]);
+  }, [activeConversationId, onLoadMessages]);
 
   // Resize handlers
   const handleResizeStart = useCallback(() => {
@@ -601,9 +614,9 @@ const SplitViewMessagesContainer: React.FC<SplitViewMessagesContainerProps> = ({
               transition={{ duration: DESIGN_TOKENS.animation.normal, ease: [0.4, 0, 0.2, 1] }}
             >
               <ThreadListPanel
-                channels={channels}
-                activeChannelId={activeChannelId}
-                onSelectChannel={selectChannel}
+                conversations={conversations}
+                activeConversationId={activeConversationId}
+                onSelectConversation={selectConversation}
                 searchQuery={searchQuery}
                 onSearchChange={setSearchQuery}
                 className="h-full"
@@ -620,12 +633,12 @@ const SplitViewMessagesContainer: React.FC<SplitViewMessagesContainerProps> = ({
               transition={{ duration: DESIGN_TOKENS.animation.normal, ease: [0.4, 0, 0.2, 1] }}
             >
               <ConversationPanel
-                channel={activeChannel}
+                conversation={activeConversation}
                 messages={channelMessages}
                 currentUserId={currentUserId}
                 onSendMessage={
-                  onSendMessage && activeChannelId
-                    ? (content) => onSendMessage(activeChannelId, content)
+                  onSendMessage && activeConversationId
+                    ? (content) => onSendMessage(activeConversationId, content)
                     : undefined
                 }
                 onAddReaction={onAddReaction}
@@ -672,9 +685,9 @@ const SplitViewMessagesContainer: React.FC<SplitViewMessagesContainerProps> = ({
         variants={threadListVariants}
       >
         <ThreadListPanel
-          channels={channels}
-          activeChannelId={activeChannelId}
-          onSelectChannel={selectChannel}
+          conversations={conversations}
+          activeConversationId={activeConversationId}
+          onSelectConversation={selectConversation}
           searchQuery={searchQuery}
           onSearchChange={setSearchQuery}
           className="h-full"
@@ -697,7 +710,7 @@ const SplitViewMessagesContainer: React.FC<SplitViewMessagesContainerProps> = ({
       {/* Conversation Panel */}
       <AnimatePresence mode="wait">
         <motion.div
-          key={activeChannelId || 'no-channel'}
+          key={activeConversationId || 'no-channel'}
           className="conversation-wrapper h-full flex-1 overflow-hidden"
           style={{ width: conversationWidth }}
           initial="hidden"
@@ -706,12 +719,12 @@ const SplitViewMessagesContainer: React.FC<SplitViewMessagesContainerProps> = ({
           variants={conversationVariants}
         >
           <ConversationPanel
-            channel={activeChannel}
+            conversation={activeConversation}
             messages={channelMessages}
             currentUserId={currentUserId}
             onSendMessage={
-              onSendMessage && activeChannelId
-                ? (content) => onSendMessage(activeChannelId, content)
+              onSendMessage && activeConversationId
+                ? (content) => onSendMessage(activeConversationId, content)
                 : undefined
             }
             onAddReaction={onAddReaction}

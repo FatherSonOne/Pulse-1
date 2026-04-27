@@ -89,20 +89,18 @@ export const EmailViewerNew: React.FC<EmailViewerNewProps> = ({
     return emailAddr.substring(0, 2).toUpperCase();
   };
 
-  // Get avatar color
+  // Neutral tinted avatars — match the list (coral reserved for state, not decoration)
   const getAvatarColor = (emailAddr: string) => {
-    const colors = [
-      'bg-gradient-to-br from-rose-500 to-pink-500',      // Brand primary (50%)
-      'bg-gradient-to-br from-pink-500 to-rose-600',      // Brand secondary
-      'bg-gradient-to-br from-coral-500 to-rose-500',     // Brand tertiary
-      'bg-gradient-to-br from-rose-400 to-pink-400',      // Brand light
-      'bg-gradient-to-br from-amber-500 to-orange-500',   // Warm accent (50%)
-      'bg-gradient-to-br from-purple-500 to-pink-500',    // Purple-pink blend
-      'bg-gradient-to-br from-teal-500 to-cyan-500',      // Cool accent
-      'bg-gradient-to-br from-indigo-500 to-purple-500',  // Deep accent
+    const palette = [
+      'bg-stone-200 text-stone-700 dark:bg-zinc-800 dark:text-zinc-300',
+      'bg-amber-100 text-amber-900 dark:bg-amber-950/40 dark:text-amber-200',
+      'bg-emerald-100 text-emerald-900 dark:bg-emerald-950/40 dark:text-emerald-200',
+      'bg-sky-100 text-sky-900 dark:bg-sky-950/40 dark:text-sky-200',
+      'bg-violet-100 text-violet-900 dark:bg-violet-950/40 dark:text-violet-200',
+      'bg-stone-100 text-stone-700 dark:bg-zinc-900 dark:text-zinc-300',
     ];
     const hash = emailAddr.split('').reduce((acc, char) => acc + char.charCodeAt(0), 0);
-    return colors[hash % colors.length];
+    return palette[hash % palette.length];
   };
 
   // Toggle message expansion
@@ -541,8 +539,8 @@ export const EmailViewerNew: React.FC<EmailViewerNewProps> = ({
                   aria-expanded={isExpanded}
                   aria-label={`${isExpanded ? 'Collapse' : 'Expand'} message from ${msg.from_name || msg.from_email}`}
                 >
-                  {/* Avatar */}
-                  <div className={`w-10 h-10 rounded-full flex items-center justify-center text-white text-sm font-medium flex-shrink-0 ${getAvatarColor(msg.from_email)}`}>
+                  {/* Avatar — neutral tint, mono initials */}
+                  <div className={`w-10 h-10 rounded-full flex items-center justify-center font-mono text-[12px] tracking-wider font-medium flex-shrink-0 ${getAvatarColor(msg.from_email)}`}>
                     {getInitials(msg.from_name, msg.from_email)}
                   </div>
 

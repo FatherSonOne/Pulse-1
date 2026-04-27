@@ -29,7 +29,7 @@ import { useEmailKeyboardShortcuts } from '../../hooks/useEmailKeyboardShortcuts
 import { ReconnectGoogleModal } from '../Auth/ReconnectGoogleModal';
 import { GoogleAuthStatus } from './GoogleAuthStatus';
 
-import { AlertTriangle, ExternalLink, Keyboard, Loader2, MailCheck, MailOpen, Menu, Minus, Pen, Plus, Search, Send, Settings, X } from 'lucide-react';
+import { AlertTriangle, ExternalLink, Keyboard, Loader2, MailCheck, MailOpen, Menu, Pen, Search, Send, Settings, X } from 'lucide-react';
 
 interface PulseEmailClientRedesignProps {
   userEmail: string;
@@ -63,7 +63,6 @@ export const PulseEmailClientRedesign: React.FC<PulseEmailClientRedesignProps> =
     zoomLevel, accentColor,
     sidebarOpen, showBriefing, showKeyboardShortcuts, showEmailSettings, showReauthModal, nudgeFocused,
     currentView, editingCampaign, campaignRefreshKey,
-    zoomIn, zoomOut, zoomReset, setZoomLevel,
     setSidebarOpen, setShowBriefing, setShowKeyboardShortcuts, setShowEmailSettings,
     setShowReauthModal, setNudgeFocused,
     setCurrentView, setEditingCampaign, incrementCampaignRefreshKey,
@@ -343,20 +342,12 @@ export const PulseEmailClientRedesign: React.FC<PulseEmailClientRedesignProps> =
     onHelp: () => setShowKeyboardShortcuts(true),
   });
 
-  // ── Accent color helpers ───────────────────────────────────────────
-  const accentClasses = {
-    rose: { bg: 'bg-rose-500', gradient: 'from-rose-500 to-red-500', text: 'text-rose-600 dark:text-rose-400' },
-    blue: { bg: 'bg-blue-500', gradient: 'from-blue-500 to-indigo-500', text: 'text-blue-600 dark:text-blue-400' },
-    purple: { bg: 'bg-purple-500', gradient: 'from-purple-500 to-pink-500', text: 'text-purple-600 dark:text-purple-400' },
-    green: { bg: 'bg-green-500', gradient: 'from-green-500 to-emerald-500', text: 'text-green-600 dark:text-green-400' },
-  }[accentColor];
-
   // ═══════════════════════════════════════════════════════════════════
   //  RENDER
   // ═══════════════════════════════════════════════════════════════════
 
   return (
-    <div className="flex flex-1 h-full bg-stone-100 dark:bg-zinc-950 min-h-0">
+    <div className="flex flex-1 h-full bg-stone-50 dark:bg-zinc-950 min-h-0">
       {/* Sidebar */}
       <EmailSidebarRedesign
         currentFolder={currentFolder}
@@ -372,71 +363,87 @@ export const PulseEmailClientRedesign: React.FC<PulseEmailClientRedesignProps> =
         cachedEmailCount={syncState?.total_emails_cached ?? 0}
       />
 
-      {/* Main content area */}
-      <div className="flex-1 flex flex-col min-w-0 min-h-0 my-3 mr-3 bg-white dark:bg-zinc-900 border border-stone-200 dark:border-zinc-800 rounded-xl overflow-hidden shadow-xl">
+      {/* Main content area: rests on canvas, no card, no margin asymmetry */}
+      <div className="flex-1 flex flex-col min-w-0 min-h-0 bg-white dark:bg-zinc-900">
         {/* Auth Error Banner */}
         {authError && (
-          <div className="bg-amber-500/10 border-b border-amber-500/30 px-4 py-3 flex items-center justify-between">
+          <div className="bg-amber-500/10 border-b border-amber-500/30 px-6 py-3 flex items-center justify-between">
             <div className="flex items-center gap-3">
               <AlertTriangle className="text-amber-500" />
               <span className="text-amber-800 dark:text-amber-200 text-sm">Your Google session has expired. Reconnect to send emails.</span>
             </div>
-            <button onClick={handleReAuthenticate} disabled={reAuthenticating} className="bg-amber-500 hover:bg-amber-600 text-black font-medium px-4 py-1.5 rounded-lg text-sm transition flex items-center gap-2 disabled:opacity-50">
+            <button onClick={handleReAuthenticate} disabled={reAuthenticating} className="bg-amber-500 hover:bg-amber-600 text-stone-950 font-medium px-4 py-1.5 rounded-lg text-sm transition flex items-center gap-2 disabled:opacity-50">
               {reAuthenticating ? (<><Loader2 className="animate-spin" />Connecting...</>) : (<><ExternalLink />Reconnect Google</>)}
             </button>
           </div>
         )}
 
-        {/* Header */}
-        <div className="flex items-center gap-2 sm:gap-3 px-3 sm:px-4 py-3 border-b border-stone-200 dark:border-zinc-800 bg-white dark:bg-zinc-900/50">
-          <button onClick={() => setSidebarOpen(true)} className="md:hidden w-10 h-10 rounded-lg bg-stone-100 dark:bg-zinc-800 flex items-center justify-center text-stone-600 dark:text-zinc-400 hover:bg-stone-200 dark:hover:bg-zinc-700 transition" aria-label="Open menu"><Menu /></button>
+        {/* Header — search dominates, secondary controls quiet */}
+        <div className="flex items-center gap-4 px-6 py-4 border-b border-stone-200 dark:border-zinc-800">
+          <button onClick={() => setSidebarOpen(true)} className="md:hidden w-9 h-9 rounded-lg hover:bg-stone-100 dark:hover:bg-zinc-800 flex items-center justify-center text-stone-600 dark:text-zinc-400 transition" aria-label="Open menu"><Menu className="w-4 h-4" /></button>
 
-          {/* Search */}
-          <div className="flex-1 relative">
-            <input type="text" value={searchQuery} onChange={(e) => setSearchQuery(e.target.value)} onKeyDown={(e) => e.key === 'Enter' && handleSearch()} placeholder="Search emails..." className="w-full bg-stone-100 dark:bg-zinc-800/50 border border-stone-200 dark:border-zinc-700/50 rounded-lg px-4 py-2 pl-10 text-sm text-stone-900 dark:text-white placeholder-stone-500 dark:placeholder-zinc-500 focus:outline-none focus:border-rose-500/50 focus:ring-1 focus:ring-rose-500/30" />
-            <Search className="absolute left-3 top-1/2 -translate-y-1/2 text-stone-400 dark:text-zinc-500 text-sm" />
+          {/* Search — primary surface */}
+          <div className="flex-1 relative max-w-2xl">
+            <input
+              type="text"
+              value={searchQuery}
+              onChange={(e) => setSearchQuery(e.target.value)}
+              onKeyDown={(e) => e.key === 'Enter' && handleSearch()}
+              placeholder="Search emails"
+              className="w-full bg-stone-100/70 dark:bg-white/[0.03] border border-transparent hover:border-stone-200 dark:hover:border-white/10 rounded-lg pl-10 pr-9 py-2 text-sm text-stone-900 dark:text-white placeholder-stone-500 dark:placeholder-zinc-500 focus:outline-none focus:border-rose-500/60 focus:bg-white dark:focus:bg-zinc-900 transition-colors"
+            />
+            <Search className="absolute left-3 top-1/2 -translate-y-1/2 w-4 h-4 text-stone-400 dark:text-zinc-500" />
             {searchQuery && (
-              <button type="button" title="Clear search" onClick={() => { setSearchQuery(''); loadEmails(); }} className="absolute right-3 top-1/2 -translate-y-1/2 text-stone-400 dark:text-zinc-500 hover:text-stone-700 dark:hover:text-white"><X className="text-sm" /></button>
+              <button type="button" title="Clear search" onClick={() => { setSearchQuery(''); loadEmails(); }} className="absolute right-3 top-1/2 -translate-y-1/2 text-stone-400 dark:text-zinc-500 hover:text-stone-700 dark:hover:text-white"><X className="w-3.5 h-3.5" /></button>
             )}
           </div>
 
-          {currentFolder === 'inbox' && <FollowUpRemindersDropdown onComposeFollowUp={(to, subject, email) => openFollowUp(to, subject, email)} onDismiss={dismissFollowUp} />}
+          {/* Secondary cluster — tight grouping, ghost styling */}
+          <div className="flex items-center gap-1">
+            {currentFolder === 'inbox' && <FollowUpRemindersDropdown onComposeFollowUp={(to, subject, email) => openFollowUp(to, subject, email)} onDismiss={dismissFollowUp} />}
 
-          <GoogleAuthStatus onReconnect={() => setShowReauthModal(true)} />
+            <GoogleAuthStatus onReconnect={() => setShowReauthModal(true)} />
 
-          {/* Sync */}
-          <button onClick={handleSync} disabled={syncing} className={`hidden sm:flex items-center gap-2 px-4 py-2 bg-gradient-to-r ${accentClasses.gradient} hover:opacity-90 text-white rounded-lg text-sm transition disabled:opacity-50 shadow-sm`} title="Sync emails">
-            <i className={`fa-solid fa-arrows-rotate ${syncing ? 'fa-spin' : ''}`}></i>
-            <span className="hidden lg:inline">{syncing ? 'Syncing...' : 'Sync'}</span>
-          </button>
-          <button onClick={handleSync} disabled={syncing} className={`sm:hidden w-10 h-10 rounded-lg ${accentClasses.bg} flex items-center justify-center text-white disabled:opacity-50`} aria-label="Sync emails">
-            <i className={`fa-solid fa-arrows-rotate ${syncing ? 'fa-spin' : ''}`}></i>
-          </button>
+            <OfflineIndicatorCompact isOffline={isOffline} pendingActionsCount={pendingActionsCount} />
 
-          <OfflineIndicatorCompact isOffline={isOffline} pendingActionsCount={pendingActionsCount} />
+            {currentFolder === 'inbox' && (
+              <button
+                onClick={() => setShowBriefing(!showBriefing)}
+                className={`hidden sm:flex items-center gap-2 px-3 h-9 rounded-lg text-sm transition ${
+                  showBriefing
+                    ? 'bg-rose-500/10 text-rose-600 dark:text-rose-400'
+                    : 'text-stone-600 dark:text-zinc-400 hover:bg-stone-100 dark:hover:bg-white/[0.04] hover:text-stone-900 dark:hover:text-white'
+                }`}
+                title={showBriefing ? 'Hide briefing' : 'Show briefing'}
+              >
+                <MailOpen className="w-4 h-4" /><span className="hidden lg:inline">Briefing</span>
+              </button>
+            )}
 
-          {/* Briefing toggle */}
-          {currentFolder === 'inbox' && (
-            <button onClick={() => setShowBriefing(!showBriefing)} className={`hidden sm:flex items-center gap-2 px-3 py-2 rounded-lg text-sm transition ${showBriefing ? `bg-gradient-to-r ${accentClasses.gradient} bg-opacity-20 ${accentClasses.text} border border-${accentColor}-500/30` : 'bg-stone-200 dark:bg-zinc-800 text-stone-600 dark:text-zinc-400 hover:text-stone-800 dark:hover:text-white'}`} title={showBriefing ? 'Hide briefing' : 'Show briefing'}>
-              <MailOpen /><span className="hidden lg:inline">Briefing</span><i className={`fa-solid fa-chevron-${showBriefing ? 'up' : 'down'} text-xs`}></i>
+            <button
+              onClick={handleSync}
+              disabled={syncing}
+              className="w-9 h-9 rounded-lg text-stone-600 dark:text-zinc-400 hover:bg-stone-100 dark:hover:bg-white/[0.04] hover:text-stone-900 dark:hover:text-white flex items-center justify-center transition disabled:opacity-40"
+              title="Sync emails"
+              aria-label="Sync emails"
+            >
+              <i className={`fa-solid fa-arrows-rotate text-sm ${syncing ? 'fa-spin' : ''}`}></i>
             </button>
-          )}
 
-          {/* Zoom */}
-          <div className="hidden lg:flex items-center gap-1 bg-stone-200 dark:bg-zinc-800 rounded-lg px-2 py-1">
-            <button onClick={zoomOut} disabled={zoomLevel <= 50} className="w-7 h-7 rounded flex items-center justify-center text-stone-600 dark:text-zinc-400 hover:bg-stone-300 dark:hover:bg-zinc-700 hover:text-stone-800 dark:hover:text-white transition disabled:opacity-40 disabled:cursor-not-allowed" title="Zoom out" aria-label="Zoom out"><Minus className="text-xs" /></button>
-            <input type="range" min="50" max="100" value={zoomLevel} onChange={(e) => setZoomLevel(parseInt(e.target.value))} className={`w-16 h-1 bg-stone-300 dark:bg-zinc-700 rounded-lg appearance-none cursor-pointer accent-${accentColor}-500`} title={`Zoom: ${zoomLevel}%`} aria-label="Zoom level slider" />
-            <button onClick={zoomIn} disabled={zoomLevel >= 100} className="w-7 h-7 rounded flex items-center justify-center text-stone-600 dark:text-zinc-400 hover:bg-stone-300 dark:hover:bg-zinc-700 hover:text-stone-800 dark:hover:text-white transition disabled:opacity-40 disabled:cursor-not-allowed" title="Zoom in" aria-label="Zoom in"><Plus className="text-xs" /></button>
-            <button onClick={zoomReset} className="ml-1 px-2 py-1 text-xs text-stone-600 dark:text-zinc-400 hover:text-stone-800 dark:hover:text-white font-medium transition" title="Reset to 100%">{zoomLevel}%</button>
+            <button
+              onClick={() => setShowEmailSettings(true)}
+              className="w-9 h-9 rounded-lg text-stone-600 dark:text-zinc-400 hover:bg-stone-100 dark:hover:bg-white/[0.04] hover:text-stone-900 dark:hover:text-white flex items-center justify-center transition"
+              title="Email settings"
+              aria-label="Open email settings"
+            >
+              <Settings className="w-4 h-4" />
+            </button>
           </div>
-
-          {/* Settings */}
-          <button onClick={() => setShowEmailSettings(true)} className="w-10 h-10 rounded-lg bg-stone-200 dark:bg-zinc-800 hover:bg-stone-300 dark:hover:bg-zinc-700 flex items-center justify-center text-stone-600 dark:text-zinc-400 hover:text-stone-800 dark:hover:text-white transition" title="Email Settings" aria-label="Open email settings"><Settings /></button>
         </div>
 
-        {/* Daily Briefing */}
+        {/* Daily Briefing — generous breathing room above content */}
         {showBriefing && currentFolder === 'inbox' && !selectedEmail && (
-          <div ref={briefingRef} className={`px-4 py-3 border-b border-stone-200 dark:border-zinc-800 transition-all duration-300 ${nudgeFocused ? 'ring-2 ring-rose-500/60 ring-inset bg-rose-500/5' : ''}`}>
+          <div ref={briefingRef} className={`px-6 py-5 border-b border-stone-200 dark:border-zinc-800 transition-colors duration-300 ${nudgeFocused ? 'bg-rose-500/[0.04]' : ''}`}>
             <DailyBriefing onEmailClick={(email) => { handleEmailSelect(email); setShowBriefing(false); }} onViewAll={() => setShowBriefing(false)} />
           </div>
         )}
@@ -450,18 +457,16 @@ export const PulseEmailClientRedesign: React.FC<PulseEmailClientRedesignProps> =
               <EmailCampaignsDashboard key={campaignRefreshKey} onNewCampaign={() => setEditingCampaign(null)} onEditCampaign={(c) => setEditingCampaign(c)} />
             )
           ) : (
-            <>
-              <div className="flex h-full origin-top-left transition-transform duration-200" style={{ transform: `scale(${zoomLevel / 100})`, width: `${10000 / zoomLevel}%`, height: `${10000 / zoomLevel}%` }}>
-                <div className={`${selectedEmail ? 'hidden md:flex md:w-2/5 md:border-r md:border-stone-200 dark:md:border-zinc-800' : 'flex w-full'} flex-col min-h-0 flex-1`}>
-                  <EmailListRedesign emails={emails} selectedEmail={selectedEmail} loading={loading} onEmailSelect={handleEmailSelect} onToggleStar={handleToggleStar} onArchive={handleArchive} onTrash={handleTrash} currentFolder={currentFolder} accentColor={accentColor} activeCategory={activeCategory} onCategoryChange={handleCategoryChange} categoryCounts={categoryCounts} hasMore={hasMore} loadingMore={loadingMore} onLoadMore={loadMore} />
-                </div>
-                {selectedEmail && (
-                  <div className="w-full md:flex-1 overflow-hidden">
-                    <EmailViewerNew email={selectedEmail} thread={selectedThread} onClose={() => { setSelectedEmail(null); setSelectedThread(null); }} onReply={(email, prefilled) => openReply(email, prefilled)} onReplyAll={(email) => openReplyAll(email, userEmail)} onForward={(email) => openForward(email)} onArchive={() => handleArchive(selectedEmail)} onTrash={() => handleTrash(selectedEmail)} onToggleStar={() => handleToggleStar(selectedEmail)} onMarkUnread={() => handleMarkUnread(selectedEmail)} />
-                  </div>
-                )}
+            <div className="flex h-full origin-top-left transition-transform duration-200" style={{ transform: `scale(${zoomLevel / 100})`, width: `${10000 / zoomLevel}%`, height: `${10000 / zoomLevel}%` }}>
+              <div className={`${selectedEmail ? 'hidden md:flex md:w-2/5 md:border-r md:border-stone-200 dark:md:border-zinc-800' : 'flex w-full'} flex-col min-h-0 flex-1`}>
+                <EmailListRedesign emails={emails} selectedEmail={selectedEmail} loading={loading} onEmailSelect={handleEmailSelect} onToggleStar={handleToggleStar} onArchive={handleArchive} onTrash={handleTrash} currentFolder={currentFolder} accentColor={accentColor} activeCategory={activeCategory} onCategoryChange={handleCategoryChange} categoryCounts={categoryCounts} hasMore={hasMore} loadingMore={loadingMore} onLoadMore={loadMore} />
               </div>
-            </>
+              {selectedEmail && (
+                <div className="w-full md:flex-1 overflow-hidden">
+                  <EmailViewerNew email={selectedEmail} thread={selectedThread} onClose={() => { setSelectedEmail(null); setSelectedThread(null); }} onReply={(email, prefilled) => openReply(email, prefilled)} onReplyAll={(email) => openReplyAll(email, userEmail)} onForward={(email) => openForward(email)} onArchive={() => handleArchive(selectedEmail)} onTrash={() => handleTrash(selectedEmail)} onToggleStar={() => handleToggleStar(selectedEmail)} onMarkUnread={() => handleMarkUnread(selectedEmail)} />
+                </div>
+              )}
+            </div>
           )}
         </div>
       </div>
@@ -476,10 +481,23 @@ export const PulseEmailClientRedesign: React.FC<PulseEmailClientRedesignProps> =
       {showKeyboardShortcuts && <KeyboardShortcutsModal onClose={() => setShowKeyboardShortcuts(false)} />}
 
       {/* FAB for mobile compose */}
-      <button onClick={openCompose} className={`md:hidden fixed bottom-20 right-4 w-14 h-14 rounded-full bg-gradient-to-r ${accentClasses.gradient} text-white shadow-2xl flex items-center justify-center hover:scale-110 transition-transform z-50`} aria-label="Compose email"><Pen className="text-lg" /></button>
+      <button
+        onClick={openCompose}
+        className="md:hidden fixed bottom-20 right-4 w-14 h-14 rounded-full bg-rose-500 hover:bg-rose-600 text-white shadow-[0_8px_24px_rgba(244,63,94,0.35)] flex items-center justify-center transition-colors z-50"
+        aria-label="Compose email"
+      >
+        <Pen className="w-5 h-5" />
+      </button>
 
       {/* Keyboard shortcuts hint */}
-      <button onClick={() => setShowKeyboardShortcuts(true)} className="hidden md:flex fixed bottom-4 right-4 w-10 h-10 rounded-xl bg-stone-200 dark:bg-zinc-800 hover:bg-stone-300 dark:hover:bg-zinc-700 items-center justify-center text-stone-500 dark:text-zinc-400 hover:text-stone-700 dark:hover:text-white transition shadow-lg z-50" title="Keyboard shortcuts (?)"><Keyboard /></button>
+      <button
+        onClick={() => setShowKeyboardShortcuts(true)}
+        className="hidden md:flex fixed bottom-4 right-4 w-9 h-9 rounded-lg bg-white/80 dark:bg-white/[0.04] backdrop-blur border border-stone-200 dark:border-white/10 hover:bg-white dark:hover:bg-white/[0.08] items-center justify-center text-stone-500 dark:text-zinc-400 hover:text-stone-700 dark:hover:text-white transition z-50"
+        title="Keyboard shortcuts (?)"
+        aria-label="Keyboard shortcuts"
+      >
+        <Keyboard className="w-4 h-4" />
+      </button>
 
       {/* Reconnect Google Modal */}
       <ReconnectGoogleModal isOpen={showReauthModal} onClose={() => setShowReauthModal(false)} onSuccess={async () => { setShowReauthModal(false); setAuthError(false); toast.success('Google reconnected successfully!'); await loadEmails(); }} message="Your Google session has expired. Please reconnect to continue using Gmail features." />

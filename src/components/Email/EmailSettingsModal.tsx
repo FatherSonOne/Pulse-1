@@ -10,7 +10,8 @@ import { emailAccountsService, EmailAccount, EmailAccountInput } from '../../ser
 import { emailSyncService, SyncState } from '../../services/emailSyncService';
 import toast from 'react-hot-toast';
 
-import { ExternalLink, FastForward, Filter, Info, List, Pen, Plus, RefreshCw, Settings, SlidersHorizontal, Star, Tags, UserCircle, X, Zap } from 'lucide-react';
+import { ExternalLink, FastForward, Filter, Info, List, Minus, Pen, Plus, RefreshCw, Settings, SlidersHorizontal, Star, Tags, UserCircle, X, Zap } from 'lucide-react';
+import { useEmailUIStore } from '../../store/emailUIStore';
 
 interface EmailSettingsModalProps {
   isOpen: boolean;
@@ -24,6 +25,7 @@ export const EmailSettingsModal: React.FC<EmailSettingsModalProps> = ({
   userEmail,
 }) => {
   type NotificationRuleDraft = Omit<NotificationRule, 'id' | 'user_id' | 'created_at' | 'updated_at'> & { id?: string };
+  const { zoomLevel, zoomIn, zoomOut, zoomReset, setZoomLevel } = useEmailUIStore();
   const [activeTab, setActiveTab] = useState<'general' | 'gmail' | 'sync' | 'automation' | 'accounts'>('general');
   const [gmailProfile, setGmailProfile] = useState<any>(null);
   const [loading, setLoading] = useState(false);
@@ -629,6 +631,47 @@ export const EmailSettingsModal: React.FC<EmailSettingsModalProps> = ({
                       </button>
                     </div>
                     <p className="text-xs text-stone-500 dark:text-zinc-500 mt-2">Overrides the default accent color.</p>
+                  </div>
+                  <div className="p-4 bg-stone-50 dark:bg-zinc-900/50 rounded-xl border border-stone-200 dark:border-zinc-800">
+                    <div className="flex items-center justify-between mb-3">
+                      <div className="font-medium text-stone-900 dark:text-white">Zoom</div>
+                      <span className="font-mono text-[11px] tabular-nums tracking-wider text-stone-500 dark:text-zinc-500">{zoomLevel}%</span>
+                    </div>
+                    <div className="flex items-center gap-3">
+                      <button
+                        onClick={zoomOut}
+                        disabled={zoomLevel <= 50}
+                        className="w-8 h-8 rounded-lg hover:bg-stone-200 dark:hover:bg-zinc-800 flex items-center justify-center text-stone-600 dark:text-zinc-400 hover:text-stone-900 dark:hover:text-white transition disabled:opacity-40"
+                        aria-label="Zoom out"
+                      >
+                        <Minus className="w-3.5 h-3.5" />
+                      </button>
+                      <input
+                        type="range"
+                        min="50"
+                        max="100"
+                        step="5"
+                        value={zoomLevel}
+                        onChange={(e) => setZoomLevel(parseInt(e.target.value))}
+                        className="flex-1 h-1 bg-stone-200 dark:bg-zinc-700 rounded-lg appearance-none cursor-pointer accent-rose-500"
+                        aria-label="Zoom level"
+                      />
+                      <button
+                        onClick={zoomIn}
+                        disabled={zoomLevel >= 100}
+                        className="w-8 h-8 rounded-lg hover:bg-stone-200 dark:hover:bg-zinc-800 flex items-center justify-center text-stone-600 dark:text-zinc-400 hover:text-stone-900 dark:hover:text-white transition disabled:opacity-40"
+                        aria-label="Zoom in"
+                      >
+                        <Plus className="w-3.5 h-3.5" />
+                      </button>
+                      <button
+                        onClick={zoomReset}
+                        className="font-mono text-[10px] uppercase tracking-[0.12em] text-stone-500 dark:text-zinc-500 hover:text-rose-600 dark:hover:text-rose-400 transition"
+                      >
+                        Reset
+                      </button>
+                    </div>
+                    <p className="text-xs text-stone-500 dark:text-zinc-500 mt-2">Scale the email pane between 50% and 100%.</p>
                   </div>
                 </div>
               </div>

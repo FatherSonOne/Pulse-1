@@ -19,6 +19,8 @@
 import React from 'react';
 import { MessagesProvider, ToolsProvider, FocusModeProvider } from '../../contexts';
 import Messages from '../Messages';
+import { useFeatureFlag } from '../../lib/featureFlags';
+import { MessagesSplitViewWithProviders } from './MessagesSplitViewWithProviders';
 
 interface MessagesWithProvidersProps {
   apiKey: string;
@@ -50,17 +52,29 @@ export const MessagesWithProviders: React.FC<MessagesWithProvidersProps> = ({
   onAddContact,
   currentUser,
 }) => {
+  // Phase 5e — feature-flag gated cutover. When ON, mount the new
+  // entry that uses MessagesSplitView + the Phase 5d plugins. When
+  // OFF (default), keep the legacy 4810-line Messages.tsx monolith.
+  const useV2 = useFeatureFlag('pulseMessagesV2', currentUser?.id);
+
   return (
     <MessagesProvider currentUser={currentUser}>
       <ToolsProvider>
         <FocusModeProvider>
-          <Messages
-            apiKey={apiKey}
-            contacts={contacts}
-            initialContactId={initialContactId}
-            onAddContact={onAddContact}
-            currentUser={currentUser}
-          />
+          {useV2 ? (
+            <MessagesSplitViewWithProviders
+              currentUser={currentUser}
+              contacts={contacts}
+            />
+          ) : (
+            <Messages
+              apiKey={apiKey}
+              contacts={contacts}
+              initialContactId={initialContactId}
+              onAddContact={onAddContact}
+              currentUser={currentUser}
+            />
+          )}
         </FocusModeProvider>
       </ToolsProvider>
     </MessagesProvider>

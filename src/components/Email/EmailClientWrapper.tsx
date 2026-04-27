@@ -9,22 +9,14 @@ interface EmailClientWrapperProps {
   apiKey?: string;
 }
 
-/**
- * Wrapper component that adapts legacy App.tsx props to the new PulseEmailClient
- * This allows the new email client to work with the existing App.tsx without changes
- */
 export const EmailClientWrapper: React.FC<EmailClientWrapperProps> = ({
   user,
-  onUpdateUser,
-  apiKey,
 }) => {
   return (
-    <div className="h-full w-full rounded-2xl bg-zinc-950 shadow-2xl border border-zinc-800 flex flex-col">
-      <PulseEmailClientRedesign
-        userEmail={user.email}
-        userName={user.name}
-      />
-    </div>
+    <PulseEmailClientRedesign
+      userEmail={user.email}
+      userName={user.name}
+    />
   );
 };
 

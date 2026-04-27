@@ -1,4 +1,4 @@
-// EmailSidebarRedesign.tsx - Modern folder navigation sidebar
+// EmailSidebarRedesign.tsx - Folder navigation sidebar
 import React from 'react';
 import { EmailFolder } from '../../services/emailSyncService';
 
@@ -18,16 +18,16 @@ interface EmailSidebarRedesignProps {
   cachedEmailCount?: number;
 }
 
-const folders: { id: EmailFolder; label: string; icon: string; color?: string }[] = [
+const folders: { id: EmailFolder; label: string; icon: string }[] = [
   { id: 'inbox', label: 'Inbox', icon: 'fa-inbox' },
-  { id: 'starred', label: 'Starred', icon: 'fa-star', color: 'text-yellow-500' },
-  { id: 'snoozed', label: 'Snoozed', icon: 'fa-clock', color: 'text-blue-500' },
-  { id: 'sent', label: 'Sent', icon: 'fa-paper-plane', color: 'text-green-500' },
-  { id: 'drafts', label: 'Drafts', icon: 'fa-file', color: 'text-amber-500' },
-  { id: 'important', label: 'Important', icon: 'fa-bookmark', color: 'text-red-500' },
+  { id: 'starred', label: 'Starred', icon: 'fa-star' },
+  { id: 'snoozed', label: 'Snoozed', icon: 'fa-clock' },
+  { id: 'sent', label: 'Sent', icon: 'fa-paper-plane' },
+  { id: 'drafts', label: 'Drafts', icon: 'fa-file' },
+  { id: 'important', label: 'Important', icon: 'fa-bookmark' },
   { id: 'all', label: 'All Mail', icon: 'fa-envelope' },
-  { id: 'trash', label: 'Trash', icon: 'fa-trash', color: 'text-stone-400' },
-  { id: 'spam', label: 'Spam', icon: 'fa-circle-exclamation', color: 'text-orange-500' },
+  { id: 'trash', label: 'Trash', icon: 'fa-trash' },
+  { id: 'spam', label: 'Spam', icon: 'fa-circle-exclamation' },
 ];
 
 export const EmailSidebarRedesign: React.FC<EmailSidebarRedesignProps> = ({
@@ -38,7 +38,6 @@ export const EmailSidebarRedesign: React.FC<EmailSidebarRedesignProps> = ({
   onCompose,
   isOpen = true,
   onClose,
-  accentColor = 'rose',
   onCampaignsClick,
   isCampaignsActive = false,
   cachedEmailCount = 0,
@@ -48,43 +47,48 @@ export const EmailSidebarRedesign: React.FC<EmailSidebarRedesignProps> = ({
     onClose?.();
   };
 
-  // Get accent color gradient
-  const getAccentGradient = () => {
-    const gradients = {
-      rose: 'from-rose-500 to-red-500',
-      blue: 'from-blue-500 to-indigo-500',
-      purple: 'from-purple-500 to-pink-500',
-      green: 'from-green-500 to-emerald-500',
-    };
-    return gradients[accentColor];
-  };
-
-  const getAccentText = () => {
-    const colors = {
-      rose: 'text-rose-600 dark:text-rose-500',
-      blue: 'text-blue-600 dark:text-blue-500',
-      purple: 'text-purple-600 dark:text-purple-500',
-      green: 'text-green-600 dark:text-green-500',
-    };
-    return colors[accentColor];
-  };
-
-  const getAccentBg = () => {
-    const colors = {
-      rose: 'bg-rose-500/10 border-rose-500/20',
-      blue: 'bg-blue-500/10 border-blue-500/20',
-      purple: 'bg-purple-500/10 border-purple-500/20',
-      green: 'bg-green-500/10 border-green-500/20',
-    };
-    return colors[accentColor];
-  };
+  const renderNavButton = (
+    label: string,
+    icon: React.ReactNode,
+    isActive: boolean,
+    onClick: () => void,
+    count?: number,
+    ariaLabel?: string,
+  ) => (
+    <button
+      onClick={onClick}
+      aria-current={isActive ? 'page' : undefined}
+      aria-label={ariaLabel ?? label}
+      className={`relative w-full flex items-center gap-3 pl-4 pr-3 h-9 rounded-md text-left text-sm transition-colors group ${
+        isActive
+          ? 'text-rose-600 dark:text-rose-400 bg-rose-500/[0.06] dark:bg-rose-500/[0.08] font-medium'
+          : 'text-stone-600 dark:text-zinc-400 hover:text-stone-900 dark:hover:text-white hover:bg-stone-100/70 dark:hover:bg-white/[0.04] font-normal'
+      }`}
+    >
+      {/* Active edge marker — 2px coral leading bar (state mark, not stripe) */}
+      {isActive && (
+        <span className="absolute left-0 top-1.5 bottom-1.5 w-[2px] rounded-r bg-rose-500" aria-hidden="true" />
+      )}
+      <span className="w-4 h-4 flex items-center justify-center text-[15px] flex-shrink-0">
+        {icon}
+      </span>
+      <span className="flex-1 truncate">{label}</span>
+      {typeof count === 'number' && count > 0 && (
+        <span className={`font-mono text-[11px] tabular-nums tracking-wider ${
+          isActive ? 'text-rose-600 dark:text-rose-400' : 'text-stone-500 dark:text-zinc-500'
+        }`}>
+          {count > 999 ? '999+' : count}
+        </span>
+      )}
+    </button>
+  );
 
   return (
     <>
       {/* Mobile overlay */}
       {isOpen && (
         <div
-          className="fixed inset-0 bg-black/60 backdrop-blur-sm z-40 md:hidden transition-opacity"
+          className="fixed inset-0 bg-stone-950/60 backdrop-blur-sm z-40 md:hidden"
           onClick={onClose}
           aria-hidden="true"
         />
@@ -94,8 +98,8 @@ export const EmailSidebarRedesign: React.FC<EmailSidebarRedesignProps> = ({
       <aside
         className={`
           fixed md:relative z-50 md:z-auto
-          h-full w-72 md:w-64
-          bg-stone-50 dark:bg-zinc-900/50
+          h-full w-72 md:w-60
+          bg-stone-50 dark:bg-zinc-950
           border-r border-stone-200 dark:border-zinc-800
           flex flex-col
           transform transition-transform duration-300 ease-out
@@ -104,112 +108,81 @@ export const EmailSidebarRedesign: React.FC<EmailSidebarRedesignProps> = ({
         `}
         aria-label="Email folders"
       >
-        {/* Header */}
-        <div className="p-4 border-b border-stone-200 dark:border-zinc-800">
-          <div className="flex items-center justify-between mb-4">
-            <div className="flex items-center gap-3">
-              <div className={`w-10 h-10 rounded-xl bg-gradient-to-br ${getAccentGradient()} flex items-center justify-center shadow-lg`}>
-                <Mail className="text-white text-lg" />
-              </div>
-              <div>
-                <h2 className="font-bold text-stone-900 dark:text-white text-lg">Pulse Mail</h2>
-                <p className="text-xs text-stone-500 dark:text-zinc-500">AI-Powered Inbox</p>
-              </div>
+        {/* Brand row — tight, no gradient block */}
+        <div className="flex items-center justify-between h-14 pl-5 pr-3 border-b border-stone-200 dark:border-zinc-800">
+          <div className="flex items-center gap-2.5">
+            <Mail className="w-4 h-4 text-rose-500" />
+            <div className="flex flex-col leading-tight">
+              <span className="text-[13px] font-semibold text-stone-900 dark:text-white tracking-tight">Pulse Mail</span>
+              <span className="font-mono text-[9px] uppercase tracking-[0.12em] text-stone-500 dark:text-zinc-500">AI Inbox</span>
             </div>
-            <button
-              onClick={onClose}
-              className="md:hidden w-8 h-8 rounded-lg hover:bg-stone-200 dark:hover:bg-zinc-800 flex items-center justify-center text-stone-500 dark:text-zinc-400 transition"
-              aria-label="Close menu"
-            >
-              <X />
-            </button>
           </div>
+          <button
+            onClick={onClose}
+            className="md:hidden w-8 h-8 rounded-lg hover:bg-stone-100 dark:hover:bg-white/[0.04] flex items-center justify-center text-stone-500 dark:text-zinc-400 transition"
+            aria-label="Close menu"
+          >
+            <X className="w-4 h-4" />
+          </button>
+        </div>
 
-          {/* Compose button */}
+        {/* Compose — solid coral, weight 500, no scale, hairline halo */}
+        <div className="px-3 pt-4 pb-2">
           <button
             onClick={onCompose}
-            className={`w-full flex items-center justify-center gap-2.5 bg-gradient-to-r ${getAccentGradient()} hover:shadow-xl text-white px-4 py-3.5 rounded-xl font-bold transition-all duration-200 shadow-lg hover:scale-[1.02] active:scale-[0.98]`}
+            className="w-full flex items-center justify-center gap-2 bg-rose-500 hover:bg-rose-600 text-white h-10 rounded-lg font-medium text-sm transition-colors shadow-[0_1px_0_rgba(244,63,94,0.2),0_4px_12px_rgba(244,63,94,0.18)]"
             aria-label="Compose new email"
           >
-            <SquarePen className="text-lg" />
+            <SquarePen className="w-4 h-4" />
             <span>Compose</span>
           </button>
         </div>
 
-        {/* Folder list */}
-        <nav className="flex-1 overflow-y-auto px-3 py-2 scroll-smooth" aria-label="Email folders navigation">
-          <div className="space-y-1">
+        {/* Folder list — section label + tight rows */}
+        <nav className="flex-1 overflow-y-auto pt-4 pb-2 scroll-smooth" aria-label="Email folders navigation">
+          <div className="px-5 pb-2">
+            <span className="font-mono text-[10px] uppercase tracking-[0.14em] text-stone-400 dark:text-zinc-600">
+              Folders
+            </span>
+          </div>
+          <div className="px-2 space-y-px">
             {folders.map((folder) => {
               const count = folder.id === 'inbox' ? unreadCount : folderCounts[folder.id];
               const isActive = currentFolder === folder.id;
-
-              return (
-                <button
-                  key={folder.id}
-                  onClick={() => handleFolderClick(folder.id)}
-                  className={`w-full group flex items-center gap-3 px-3 py-2.5 rounded-xl text-left transition-all duration-200 ${isActive
-                      ? `${getAccentBg()} ${getAccentText()} border shadow-sm font-semibold`
-                      : 'text-stone-600 dark:text-zinc-400 hover:bg-stone-100 dark:hover:bg-zinc-800/60 hover:text-stone-900 dark:hover:text-white font-medium'
-                    }`}
-                  aria-current={isActive ? 'page' : undefined}
-                  aria-label={`${folder.label}${count > 0 ? `, ${count} ${folder.id === 'inbox' ? 'unread' : 'emails'}` : ''}`}
-                >
-                  <div className={`w-9 h-9 rounded-lg flex items-center justify-center transition-all ${isActive
-                      ? `bg-gradient-to-br ${getAccentGradient()} text-white shadow-md`
-                      : 'bg-stone-200 dark:bg-zinc-800 group-hover:bg-stone-300 dark:group-hover:bg-zinc-700'
-                    }`}>
-                    <i className={`fa-solid ${folder.icon} ${!isActive && folder.color ? folder.color : ''}`} aria-hidden="true"></i>
-                  </div>
-                  <span className="flex-1 text-sm">{folder.label}</span>
-                  {count > 0 && (
-                    <span
-                      className={`text-xs font-bold px-2.5 py-1 rounded-full transition-all ${isActive
-                          ? `bg-gradient-to-r ${getAccentGradient()} text-white shadow-sm`
-                          : 'bg-stone-200 dark:bg-zinc-800 text-stone-700 dark:text-zinc-300 group-hover:bg-stone-300 dark:group-hover:bg-zinc-700'
-                        }`}
-                      aria-hidden="true"
-                    >
-                      {count > 999 ? '999+' : count}
-                    </span>
-                  )}
-                </button>
+              return renderNavButton(
+                folder.label,
+                <i className={`fa-solid ${folder.icon}`} aria-hidden="true" />,
+                isActive,
+                () => handleFolderClick(folder.id),
+                count,
+                `${folder.label}${count > 0 ? `, ${count} ${folder.id === 'inbox' ? 'unread' : 'emails'}` : ''}`,
               );
             })}
           </div>
+
+          {/* Section break — generous separation between folder group and tools group */}
+          <div className="px-5 pt-6 pb-2">
+            <span className="font-mono text-[10px] uppercase tracking-[0.14em] text-stone-400 dark:text-zinc-600">
+              Tools
+            </span>
+          </div>
+          <div className="px-2">
+            {renderNavButton(
+              'Campaigns',
+              <Megaphone className="w-4 h-4" />,
+              isCampaignsActive,
+              () => onCampaignsClick?.(),
+            )}
+          </div>
         </nav>
 
-        {/* Campaigns navigation */}
-        <div className="px-3 py-2 border-t border-stone-200 dark:border-zinc-800">
-          <button
-            type="button"
-            onClick={onCampaignsClick}
-            aria-label="Campaigns"
-            className={`w-full group flex items-center gap-3 px-3 py-2.5 rounded-xl text-left transition-all duration-200 ${
-              isCampaignsActive
-                ? `${getAccentBg()} ${getAccentText()} border shadow-sm font-semibold`
-                : 'text-stone-600 dark:text-zinc-400 hover:bg-stone-100 dark:hover:bg-zinc-800/60 hover:text-stone-900 dark:hover:text-white font-medium'
-            }`}
-          >
-            <div className={`w-9 h-9 rounded-lg flex items-center justify-center transition-all ${
-              isCampaignsActive
-                ? `bg-gradient-to-br ${getAccentGradient()} text-white shadow-md`
-                : 'bg-stone-200 dark:bg-zinc-800 group-hover:bg-stone-300 dark:group-hover:bg-zinc-700'
-            }`}>
-              <Megaphone />
-            </div>
-            <span className="flex-1 text-sm">Campaigns</span>
-          </button>
-        </div>
-
-        {/* Cached email count */}
-        <div className="p-4 border-t border-stone-200 dark:border-zinc-800 bg-stone-100/50 dark:bg-zinc-900/50">
-          <div className="flex items-center gap-2">
-            <Database className="text-stone-500 dark:text-zinc-500" />
-            <div className="flex-1 flex items-center justify-between text-xs font-medium text-stone-600 dark:text-zinc-400">
-              <span>Cached Emails</span>
-              <span className="tabular-nums">{cachedEmailCount.toLocaleString()}</span>
-            </div>
-          </div>
+        {/* Cached count footer — mono, restrained */}
+        <div className="px-5 py-3 border-t border-stone-200 dark:border-zinc-800 flex items-center gap-2 text-stone-500 dark:text-zinc-500">
+          <Database className="w-3 h-3" />
+          <span className="font-mono text-[10px] uppercase tracking-[0.12em]">Cached</span>
+          <span className="font-mono text-[10px] tabular-nums ml-auto text-stone-700 dark:text-zinc-400">
+            {cachedEmailCount.toLocaleString()}
+          </span>
         </div>
       </aside>
     </>

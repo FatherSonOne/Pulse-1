@@ -117,6 +117,19 @@ const featureFlagsConfig: FeatureFlagConfig = {
     targetUsers: ['internal'],
     description: 'Proposal-mode decision capture and voting',
     version: '0.1.0'
+  },
+
+  // Phase 5e — production cutover gate. When ON, MessagesWithProviders
+  // mounts the new MessagesSplitViewWithProviders entry instead of the
+  // legacy 4810-line Messages.tsx monolith. Defaults OFF; flip ON per
+  // user / via env var (VITE_FEATURE_PULSEMESSAGESV2=true) once the
+  // new entry is verified against your workspace + DMs.
+  pulseMessagesV2: {
+    enabled: false,
+    rolloutPercentage: 0,
+    targetUsers: ['internal'],
+    description: 'New Messages entry (MessagesSplitViewWithProviders) — channels + DMs unified, plugin-based',
+    version: '2.0.0'
   }
 };
 
@@ -197,12 +210,46 @@ function isUserInRollout(userId: string | undefined, percentage: number): boolea
   return Math.abs(hash % 100) < percentage;
 }
 
+// Dev-mode URL/localStorage override — lets you flip a flag on/off
+// without editing config or restarting Vite. Tries:
+//   1. URL query param  ?ff_<flagName>=on|off
+//   2. localStorage      key  ff_<flagName>  value  on|off
+// Returns null if no override is set; the normal flag evaluation runs.
+function readDevOverride(flagName: string): boolean | null {
+  if (typeof window === 'undefined') return null;
+  const queryKey = `ff_${flagName}`;
+  try {
+    const params = new URLSearchParams(window.location.search);
+    const fromQuery = params.get(queryKey);
+    if (fromQuery === 'on' || fromQuery === '1' || fromQuery === 'true') {
+      // Persist so subsequent navigations within the SPA stay overridden.
+      window.localStorage.setItem(queryKey, 'on');
+      return true;
+    }
+    if (fromQuery === 'off' || fromQuery === '0' || fromQuery === 'false') {
+      window.localStorage.setItem(queryKey, 'off');
+      return false;
+    }
+    const fromStorage = window.localStorage.getItem(queryKey);
+    if (fromStorage === 'on') return true;
+    if (fromStorage === 'off') return false;
+  } catch {
+    // Private browsing / sandboxed contexts may block storage.
+  }
+  return null;
+}
+
 // Main feature flag check function
 export function useFeatureFlag(
   flagName: string,
   userId?: string,
   defaultValue: boolean = false
 ): boolean {
+  // Dev override takes precedence — useful for smoke-testing a flag
+  // on your own session without bumping rollout percentages.
+  const override = readDevOverride(flagName);
+  if (override !== null) return override;
+
   const flags = loadFeatureFlags();
   const flag = flags[flagName];
 

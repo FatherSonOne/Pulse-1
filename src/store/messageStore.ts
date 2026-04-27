@@ -35,6 +35,7 @@ import {
   FocusSession,
   FocusSessionStats,
 } from '../services/focusModeService';
+import { pulseService, PulseConversation } from '../services/pulseService';
 import { getSessionUserSync } from '../services/authService';
 
 // ==================== Auth Helper ====================
@@ -61,6 +62,11 @@ const getCurrentUserName = (): string | null => {
 interface MessagesState {
   // Core Data
   channels: MessageChannel[];
+  /** Pulse direct-message conversations rendered alongside channels in
+   *  the unified split-view thread list (Phase 5c). Loaded by
+   *  `loadPulseConversations()`; the messages themselves still live in
+   *  pulse_messages and are loaded via pulseService when a DM is opened. */
+  pulseConversations: PulseConversation[];
   selectedChannelId: string | null;
   messages: Record<string, ChannelMessage[]>; // channelId -> messages
   members: Record<string, ChannelMember[]>; // channelId -> members
@@ -130,6 +136,12 @@ interface MessagesState {
 
   // Actions - Channels
   loadChannels: (workspaceId: string) => Promise<void>;
+  /** Load Pulse direct-message conversations for the current user. */
+  loadPulseConversations: () => Promise<void>;
+  /** Load Pulse messages for a specific conversation, adapting them
+   *  into the unified `ChannelMessage` shape and storing under the
+   *  conversation id in the same `messages` map used by channels. */
+  loadPulseMessages: (conversationId: string, limit?: number) => Promise<void>;
   selectChannel: (channelId: string) => void;
   createChannel: (
     workspaceId: string,
@@ -212,6 +224,7 @@ export const useMessagesStore = create<MessagesState>()(
     immer((set, get) => ({
       // Initial State
       channels: [],
+      pulseConversations: [],
       selectedChannelId: null,
       messages: {},
       members: {},
@@ -278,6 +291,55 @@ export const useMessagesStore = create<MessagesState>()(
             state.error = 'Failed to load channels';
             state.isLoading = false;
           });
+        }
+      },
+
+      loadPulseConversations: async () => {
+        try {
+          const pulseConversations = await pulseService.getConversations();
+          set((state) => {
+            state.pulseConversations = pulseConversations;
+          });
+        } catch (error) {
+          console.error('[messageStore] failed to load Pulse conversations:', error);
+        }
+      },
+
+      loadPulseMessages: async (conversationId: string, limit = 50) => {
+        try {
+          const pulseMessages = await pulseService.getMessages(conversationId, limit);
+          // Adapt PulseMessage → ChannelMessage shape so the same
+          // `messages` map and rendering pipeline works for both kinds.
+          // Use the conversation id as the synthetic channel_id since
+          // ConversationPanel only reads it as a key, not for queries.
+          const adapted: ChannelMessage[] = pulseMessages.map((m) => ({
+            id: m.id,
+            channel_id: conversationId,
+            sender_id: m.sender_id,
+            sender_name: m.sender?.display_name || m.sender?.full_name || m.sender?.handle || undefined,
+            content: m.content,
+            message_type: m.content_type === 'voice' ? 'voice'
+              : m.content_type === 'image' ? 'image'
+              : m.content_type === 'file' ? 'file'
+              : 'text',
+            attachments: m.media_url
+              ? [{
+                  id: m.id,
+                  type: m.content_type === 'voice' ? 'voice' : m.content_type === 'image' ? 'image' : 'file',
+                  url: m.media_url,
+                  name: '',
+                }]
+              : undefined,
+            thread_id: m.thread_id ?? undefined,
+            edited_at: undefined,
+            created_at: m.created_at,
+            is_pinned: false,
+          }));
+          set((state) => {
+            state.messages[conversationId] = adapted;
+          });
+        } catch (error) {
+          console.error('[messageStore] failed to load Pulse messages:', error);
         }
       },
 

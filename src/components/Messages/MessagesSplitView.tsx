@@ -38,6 +38,20 @@ interface MessagesSplitViewProps {
   onAddReaction?: (messageId: string, emoji: string) => void;
   onLoadMessages?: (conversationId: string) => Promise<void>;
   isLoading?: boolean;
+  /** Custom message input renderer. The default `ConversationPanel`
+   *  does not render an input — the host owns the composer.
+   *
+   *  Voice-message support: use `useMessagesVoiceComposer` from
+   *  `MessagesVoiceComposerPlugin` (Phase 5d.4) to add a record
+   *  button + recording banner to your custom input:
+   *
+   *      const voice = useMessagesVoiceComposer({
+   *        onRecordingComplete: (blob, sec) => sendVox(blob, sec),
+   *      });
+   *      // ...
+   *      {voice.isRecording && <voice.RecordingBanner />}
+   *      <voice.RecordButton />
+   */
   renderMessageInput?: () => React.ReactNode;
   renderMessageBubble?: (message: ChannelMessage) => React.ReactNode;
   className?: string;
@@ -49,15 +63,100 @@ interface MessagesSplitViewProps {
   // component. Each is optional; missing slots render nothing.
 
   /** Modal layer rendered above the panels. The host owns visibility
-   *  state. Use for invite / forward / schedule / shortcuts modals. */
+   *  state. Use for invite / forward / schedule / shortcuts modals.
+   *
+   *  Canonical implementation: `MessagesModalsPlugin` (Phase 5d.1).
+   *  Wrap the tree in `<MessagesModalsProvider>`, then:
+   *
+   *      <MessagesSplitView
+   *        renderModals={() => (
+   *          <MessagesModalsPlugin
+   *            pulseConversations={...}
+   *            activePulseConversationId={...}
+   *            onSchedule={...}
+   *            ...
+   *          />
+   *        )}
+   *      />
+   *
+   *  Children anywhere in the tree call `useMessagesModals().openForward(msg)`,
+   *  `.openSchedule()`, etc. without prop-threading. */
   renderModals?: () => React.ReactNode;
 
   /** Global overlay rendered above the panels and above modals.
-   *  Use for full-bleed UI like the focus-mode distraction blocker. */
+   *  Use for full-bleed UI like the focus-mode distraction blocker.
+   *
+   *  Canonical implementation: `MessagesFocusModePlugin` (Phase 5d.3) —
+   *  bridges `useFocusMode()` context to the self-contained
+   *  `<FocusMode>` overlay. Wrap the tree in `<FocusModeProvider>`
+   *  (already provided by `MessagesWithProviders`), then:
+   *
+   *      <MessagesSplitView
+   *        renderGlobalOverlay={() => (
+   *          <MessagesFocusModePlugin userId={user.id} threadName={...} />
+   *        )}
+   *      />
+   *
+   *  Anywhere in the tree:
+   *
+   *      const { startFocusMode } = useFocusMode();
+   *      <button onClick={() => startFocusMode(threadId, 25 * 60)}>Focus</button>
+   */
   renderGlobalOverlay?: () => React.ReactNode;
 
+  /** Right-side drawer rendered above the conversation panel. Used for
+   *  the Phase 3-11 "enhancement" feature panels (analytics,
+   *  collaboration, productivity, intelligence, proactive,
+   *  communication, automation, security, multimedia).
+   *
+   *  Canonical implementation: `MessagesFeaturePanelHost` (Phase 5d.6) —
+   *  drives an animated right drawer from `useMessagesFeaturePanels()`
+   *  context. Wrap the tree in `<MessagesFeaturePanelsProvider>`, then:
+   *
+   *      <MessagesSplitView
+   *        renderRightDrawer={() => (
+   *          <MessagesFeaturePanelHost
+   *            panels={{
+   *              intelligence: ({ activeTab, setTab, close }) => (
+   *                <BundleIntelligence.Panel tab={activeTab} onTabChange={setTab} onClose={close} />
+   *              ),
+   *              productivity: (...) => ...,
+   *            }}
+   *          />
+   *        )}
+   *      />
+   *
+   *  Anywhere in the tree:
+   *      const { openPanel } = useMessagesFeaturePanels();
+   *      <button onClick={() => openPanel('intelligence', 'bookmarks')}>Open</button>
+   */
+  renderRightDrawer?: () => React.ReactNode;
+
   /** Banner above both panels — e.g. workspace-wide notification,
-   *  trial-expiring banner. */
+   *  trial-expiring banner.
+   *
+   *  Canonical implementations:
+   *    - `MessagesBannersPlugin` (5d.2) — view-only-mode + SMS-mode hints.
+   *    - `MessagesCatchUpCard` (5d.5) — AI catch-up summary on thread
+   *      open. Drive it via `useMessagesAIContext` and render
+   *      conditionally:
+   *
+   *      const ai = useMessagesAIContext({
+   *        conversationId, conversationHistory, shouldFetchCatchUp: hasUnread,
+   *      });
+   *      // ...
+   *      renderTopBanner={() => (
+   *        <>
+   *          <MessagesBannersPlugin ... />
+   *          {ai.catchUp && (
+   *            <MessagesCatchUpCard catchUp={ai.catchUp} onDismiss={ai.refetch} />
+   *          )}
+   *          {ai.nudge && (
+   *            <MessagesNudgeBar nudge={ai.nudge} onDismiss={...} />
+   *          )}
+   *        </>
+   *      )}
+   */
   renderTopBanner?: () => React.ReactNode;
 }
 
@@ -76,7 +175,8 @@ const MessagesSplitView: React.FC<MessagesSplitViewProps> = ({
   fullPage = false,
   renderModals,
   renderGlobalOverlay,
-  renderTopBanner
+  renderTopBanner,
+  renderRightDrawer
 }) => {
   // Merge channels + Pulse DMs into a single sorted Conversation[]
   const conversations = useMemo(
@@ -177,6 +277,9 @@ const MessagesSplitView: React.FC<MessagesSplitViewProps> = ({
 
       {/* Keyboard shortcuts helper (can be toggled with ?) */}
       <KeyboardShortcutsHelper />
+
+      {/* Right drawer (feature panels) */}
+      {renderRightDrawer?.()}
 
       {/* Modal layer (host-controlled visibility) */}
       {renderModals?.()}
