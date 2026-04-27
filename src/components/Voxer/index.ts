@@ -6,7 +6,6 @@ export { PTTButton, MiniPTTButton } from './PTTButton';
 export type { PTTState, RecordingMode, MediaMode } from './PTTButton';
 
 export { AIAnalysisPanel, AnalysisBadge } from './AIAnalysisPanel';
-export { AIFeedbackModal } from './AIFeedbackModal';
 export { VoxBubble } from './VoxBubble';
 export { LiveVoxSession } from './LiveVoxSession';
 export { VoiceRooms } from './VoiceRooms';
@@ -19,7 +18,7 @@ export { VoxThreads, ThreadIndicator } from './VoxThreads';
 export { TimeCapsuleVox, ScheduledCapsuleCard } from './TimeCapsuleVox';
 export { VoiceBookmarks } from './VoiceBookmarks';
 export { SilentModePanel, SilentModeIndicator, DEFAULT_SILENT_MODE_SETTINGS } from './SilentMode';
-export { VoxPlaylists, AddToPlaylistModal } from './VoxPlaylists';
+// VoxPlaylists is dormant (Voxer→Relay rework 2026-04-27); export removed to prevent new use.
 export { CollaborativeVox } from './CollaborativeVox';
 export { VoxPreviewPanel } from './VoxPreviewPanel';
 

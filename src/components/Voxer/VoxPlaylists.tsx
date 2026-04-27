@@ -1,3 +1,8 @@
+// DEPRECATED — Voxer→Relay rework (2026-04-27).
+// Playlists are not part of the 3-mode Relay (Messages, Notes, Live).
+// This file is dormant: do not propose enhancements; export removed from index.ts.
+// See ~/.claude/projects/f--pulse1/memory/project_pulse_relay_rename.md
+//
 // Vox Playlists Component
 // Create and manage collections of voice messages
 

@@ -1,3 +1,8 @@
+// DEPRECATED — Voxer→Relay rework (2026-04-27).
+// Wake-word voice control is orthogonal to async voice messaging and out of scope for Relay.
+// This file is dormant: do not propose enhancements, do not import anywhere.
+// See ~/.claude/projects/f--pulse1/memory/project_pulse_relay_rename.md
+//
 // Voice Commands Hub Component
 // Voice control system for hands-free operation
 
