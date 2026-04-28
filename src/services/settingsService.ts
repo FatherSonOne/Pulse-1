@@ -116,6 +116,15 @@ export interface PulseSettings {
   aiProviderOverrides: { openai?: boolean; anthropic?: boolean; google?: boolean };
   aiPiiMaskingEnabled: boolean;
 
+  // Multi-provider model preferences — see `aiPreferencesService`. Stored
+  // here as an opaque blob so the dial/tier-models/task-overrides shape
+  // can evolve without a settings migration.
+  aiModelPreferences: {
+    dial?: 'auto' | 'fast' | 'balanced' | 'premium';
+    tierModels?: Record<string, string>;
+    taskOverrides?: Record<string, string>;
+  };
+
   // Email (Phase 4)
   emailNotificationBundling: boolean;
   emailAutoArchiveDays: number;
@@ -167,6 +176,13 @@ export interface PulseSettings {
 
   // Live Dashboard
   liveBoardSelectedAgent: string;
+
+  // Decisions and Tasks accordion state — persisted per-mode so the operator
+  // can have one set of sections expanded in Active and a different set in
+  // Board. Keyed by section_id (lowercase, snake_case) to boolean (true =
+  // expanded). Cross-device sync via user_settings JSONB.
+  decisionsHubAccordionActive: Record<string, boolean>;
+  decisionsHubAccordionBoard: Record<string, boolean>;
 
   // Sync metadata
   lastSyncedAt: string | null;
@@ -277,6 +293,7 @@ const DEFAULT_SETTINGS: PulseSettings = {
   // AI overrides default to empty / off — org policy applies until the user opts in.
   aiProviderOverrides: {},
   aiPiiMaskingEnabled: false,
+  aiModelPreferences: {},
 
   // Per-channel routing — defaults pick reasonable modes per channel.
   notificationRouting: {
@@ -341,6 +358,31 @@ const DEFAULT_SETTINGS: PulseSettings = {
 
   // Live Dashboard
   liveBoardSelectedAgent: 'general',
+
+  // Decisions and Tasks accordion defaults. High-attention sections start
+  // expanded; low-attention sections start collapsed. The operator can
+  // override via the section header chevron, and the override syncs across
+  // devices.
+  decisionsHubAccordionActive: {
+    needs_vote: true,
+    overdue: true,
+    blocked: true,
+    in_review: true,
+    in_progress: true,
+    todo: false,
+    recently_done: false,
+    proposed: false,
+  },
+  decisionsHubAccordionBoard: {
+    proposed: false,
+    voting: true,
+    decided: false,
+    todo: false,
+    in_progress: true,
+    in_review: true,
+    blocked: true,
+    done: false,
+  },
 
   // Sync metadata
   lastSyncedAt: null,

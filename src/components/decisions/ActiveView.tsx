@@ -1,5 +1,5 @@
 import React, { useMemo } from 'react';
-import { AlertCircle, Clock, Eye, Hammer, ListTodo, CheckCircle2, Ban, Vote } from 'lucide-react';
+import { AlertCircle, Clock, Eye, Hammer, ListTodo, CheckCircle2, Ban, Vote, Users, Rocket, Wallet, Sparkles } from 'lucide-react';
 import { Task } from '../../services/taskService';
 import { DecisionWithVotes } from '../../services/decisionService';
 import { TaskSection } from '../tasks/TaskSection';
@@ -18,7 +18,24 @@ interface ActiveViewProps {
   onDelete?: (taskId: string) => Promise<void>;
   onEdit?: (task: Task) => void;
   onDecisionAction?: (decision: DecisionWithVotes, action: string) => void;
+  /** Opens the DecisionTemplates browser. Wired from DecisionTaskHub. */
+  onOpenTemplates?: () => void;
+  /** Opens the Decision Mission AI flow with no preloaded decision. */
+  onOpenAIMission?: () => void;
 }
+
+// Three first-run quick-launches for the "You're caught up" panel.
+// These mirror the canonical decision_templates Supabase rows (System category)
+// but render inline as low-commitment starters, not as full template cards.
+const QUICK_LAUNCH_TEMPLATES: Array<{
+  icon: typeof Users;
+  label: string;
+  hint: string;
+}> = [
+  { icon: Users, label: 'Hire someone', hint: 'Recruitment workflow' },
+  { icon: Rocket, label: 'Build a feature', hint: 'Product feature decision' },
+  { icon: Wallet, label: 'Allocate budget', hint: 'Resource planning' },
+];
 
 export const ActiveView: React.FC<ActiveViewProps> = ({
   tasks,
@@ -31,7 +48,9 @@ export const ActiveView: React.FC<ActiveViewProps> = ({
   onStatusChange,
   onDelete,
   onEdit,
-  onDecisionAction
+  onDecisionAction,
+  onOpenTemplates,
+  onOpenAIMission,
 }) => {
   // Group tasks by status and decisions by attention needed
   const { taskSections, decisionSections } = useMemo(() => {
@@ -88,10 +107,47 @@ export const ActiveView: React.FC<ActiveViewProps> = ({
 
   if (!hasAnyItems) {
     return (
-      <div className="active-view-empty">
-        <ListTodo size={64} color="#ccc" />
-        <h3>No active items</h3>
-        <p>No decisions or tasks needing attention right now</p>
+      <div className="active-view-empty" role="status" aria-live="polite">
+        <span className="active-empty-eyebrow dt-label">YOU'RE CAUGHT UP</span>
+        <h3 className="active-empty-headline">Nothing needs you right now.</h3>
+        <p className="active-empty-sub">
+          Plan ahead with a template, or start something with AI.
+        </p>
+
+        {onOpenTemplates && (
+          <div className="active-empty-templates" role="group" aria-label="Quick start templates">
+            {QUICK_LAUNCH_TEMPLATES.map(({ icon: Icon, label, hint }) => (
+              <button
+                key={label}
+                type="button"
+                className="active-empty-template"
+                onClick={onOpenTemplates}
+                title={hint}
+              >
+                <Icon size={18} aria-hidden="true" />
+                <span className="active-empty-template-label">{label}</span>
+                <span className="active-empty-template-hint">{hint}</span>
+              </button>
+            ))}
+          </div>
+        )}
+
+        {onOpenAIMission && (
+          <>
+            <div className="active-empty-divider" aria-hidden="true">
+              <span className="dt-label">OR</span>
+            </div>
+
+            <button
+              type="button"
+              className="active-empty-ai-cta"
+              onClick={onOpenAIMission}
+            >
+              <Sparkles size={16} aria-hidden="true" />
+              <span>Open with AI</span>
+            </button>
+          </>
+        )}
       </div>
     );
   }

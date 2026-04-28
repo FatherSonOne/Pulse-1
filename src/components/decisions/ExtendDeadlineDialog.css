@@ -77,8 +77,8 @@
 
 .extend-deadline-close:hover {
   background: rgba(239, 68, 68, 0.1);
-  border-color: #ef4444;
-  color: #ef4444;
+  border-color: var(--dt-status-overdue);
+  color: var(--dt-status-overdue);
 }
 
 /* Body */
@@ -94,11 +94,11 @@
   align-items: center;
   gap: 0.5rem;
   padding: 0.75rem;
-  background: rgba(245, 158, 11, 0.1);
-  border: 1px solid rgba(245, 158, 11, 0.3);
-  border-radius: 8px;
+  background: var(--dt-bg-secondary);
+  border: 1px solid var(--dt-border);
+  border-radius: var(--dt-radius-sm);
   font-size: 0.875rem;
-  color: var(--hub-text, #1c1917);
+  color: var(--dt-text-primary);
 }
 
 /* Extension Options */
@@ -125,14 +125,14 @@
 
 .extend-deadline-option:hover {
   background: var(--hub-card-hover, #fef7f4);
-  border-color: #f43f5e;
+  border-color: var(--dt-accent);
   transform: translateY(-2px);
   box-shadow: 0 4px 12px rgba(244, 63, 94, 0.15);
 }
 
 .extend-deadline-option.selected {
   background: rgba(244, 63, 94, 0.1);
-  border-color: #f43f5e;
+  border-color: var(--dt-accent);
   box-shadow: 0 0 0 3px rgba(244, 63, 94, 0.15);
 }
 
@@ -153,7 +153,7 @@
   width: 20px;
   height: 20px;
   border-radius: 50%;
-  background: #f43f5e;
+  background: var(--dt-accent);
   color: white;
   display: flex;
   align-items: center;
@@ -190,7 +190,7 @@
 
 .extend-deadline-custom-input:focus {
   outline: none;
-  border-color: #f43f5e;
+  border-color: var(--dt-accent);
   box-shadow: 0 0 0 3px rgba(244, 63, 94, 0.1);
 }
 
@@ -200,7 +200,7 @@
   background: rgba(239, 68, 68, 0.1);
   border: 1px solid rgba(239, 68, 68, 0.3);
   border-radius: 8px;
-  color: #ef4444;
+  color: var(--dt-status-overdue);
   font-size: 0.875rem;
 }
 
@@ -214,11 +214,12 @@
 }
 
 .extend-deadline-preview-label {
-  font-size: 0.75rem;
-  font-weight: 600;
+  font-family: var(--dt-font-family-mono);
+  font-size: var(--dt-label-size);
+  font-weight: var(--dt-label-weight);
   text-transform: uppercase;
-  letter-spacing: 0.5px;
-  color: #059669;
+  letter-spacing: var(--dt-label-tracking);
+  color: var(--dt-status-decided);
   margin-bottom: 0.5rem;
 }
 
@@ -272,7 +273,7 @@
 }
 
 .extend-deadline-button-primary {
-  background: linear-gradient(135deg, #f43f5e 0%, #ec4899 100%);
+  background: linear-gradient(135deg, var(--dt-accent) 0%, #ec4899 100%);
   border-color: transparent;
   color: white;
 }
@@ -319,7 +320,7 @@
 
 .dark .extend-deadline-option:hover {
   background: #262626;
-  border-color: #f43f5e;
+  border-color: var(--dt-accent);
 }
 
 .dark .extend-deadline-option-label {

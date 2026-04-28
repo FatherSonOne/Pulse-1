@@ -44,11 +44,22 @@
   overflow: hidden;
 }
 
+/* GPU-accelerated progress fill: scale the X-axis instead of animating width.
+   The fill is 100% wide at rest and shrinks via transform; no layout thrash. */
 .subtask-progress-fill {
+  width: 100%;
   height: 100%;
   background: var(--dt-accent-gradient);
-  transition: width 0.3s ease;
   border-radius: 4px;
+  transform-origin: left center;
+  transition: transform var(--dt-transition-base);
+  will-change: transform;
+}
+
+@media (prefers-reduced-motion: reduce) {
+  .subtask-progress-fill {
+    transition: none;
+  }
 }
 
 /* Subtask items container */
@@ -247,7 +258,7 @@
   font-size: 0.875rem;
   font-weight: 600;
   cursor: pointer;
-  transition: all 0.2s ease;
+  transition: all var(--dt-transition-base);
 }
 
 .subtask-ai-button:hover:not(:disabled) {
@@ -278,10 +289,10 @@
   gap: 0.25rem;
 }
 
-/* AI-generated subtask indicator */
+/* AI-generated subtask indicator: subtle background tint + the inline
+   `.ai-badge` chip already in the row carries the explicit identity. */
 .subtask-item.ai-generated {
-  background: linear-gradient(to right, rgba(225, 29, 72, 0.03), transparent);
-  border-left: 2px solid var(--dt-accent, #e11d48);
+  background: var(--dt-accent-softer);
 }
 
 .ai-badge {
@@ -316,14 +327,14 @@
   font-size: var(--dt-font-sm);
 }
 
-/* Error message */
+/* Error message: full 1px overdue border + tinted background, no side-stripe. */
 .subtask-error {
-  padding: var(--dt-spacing-sm);
+  padding: var(--dt-spacing-sm) var(--dt-spacing-md);
   background: var(--dt-status-bg-overdue);
-  color: var(--dt-status-overdue);
+  border: 1px solid rgba(239, 68, 68, 0.25);
   border-radius: var(--dt-radius-sm);
+  color: var(--dt-status-overdue);
   font-size: var(--dt-font-sm);
-  border-left: 3px solid var(--dt-status-overdue);
 }
 
 /* Responsive adjustments */

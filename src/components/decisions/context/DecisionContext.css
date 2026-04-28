@@ -1,0 +1,193 @@
+/* Decision context styles. Phase 4 components: OutcomeRetrospective,
+   ComparisonView (deferred), CriteriaGrid (deferred). */
+
+@import '../design-tokens.css';
+
+/* ─────────────────────────────────────────────────────────────────────────
+   OUTCOME RETROSPECTIVE
+   ───────────────────────────────────────────────────────────────────────── */
+
+.dx-retro {
+  padding: 16px;
+  background: var(--dt-bg-card);
+  border: 1px solid var(--dt-border);
+  border-radius: var(--dt-radius);
+  display: flex;
+  flex-direction: column;
+  gap: 12px;
+}
+
+.dark .dx-retro {
+  background: rgba(255, 255, 255, 0.03);
+}
+
+.dx-retro-header {
+  display: flex;
+  flex-direction: column;
+  gap: 4px;
+}
+
+.dx-retro-eyebrow {
+  display: inline-flex;
+  align-items: center;
+  gap: 6px;
+  align-self: flex-start;
+  padding: 3px 8px;
+  background: var(--dt-accent-soft);
+  color: var(--dt-accent-hover);
+  border-radius: var(--dt-radius-sm);
+  font-family: var(--dt-font-family-mono);
+  font-size: var(--dt-label-size-sm);
+  font-weight: var(--dt-label-weight);
+  letter-spacing: var(--dt-label-tracking);
+  text-transform: uppercase;
+  margin-bottom: 4px;
+}
+
+.dx-retro-title {
+  font-size: 1.0625rem;
+  font-weight: 600;
+  color: var(--dt-text-primary);
+  margin: 0;
+  letter-spacing: -0.01em;
+}
+
+.dx-retro-sub {
+  font-size: 0.8125rem;
+  color: var(--dt-text-secondary);
+  margin: 0;
+  font-style: italic;
+}
+
+.dx-retro-ratings {
+  display: grid;
+  grid-template-columns: repeat(3, 1fr);
+  gap: 8px;
+}
+
+.dx-retro-rating {
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  gap: 6px;
+  padding: 10px 12px;
+  background: var(--dt-bg-card);
+  border: 1px solid var(--dt-border);
+  border-radius: var(--dt-radius-sm);
+  color: var(--dt-text-secondary);
+  font-family: var(--dt-font-family);
+  font-size: 0.875rem;
+  font-weight: 500;
+  cursor: pointer;
+  transition: all var(--dt-transition-fast);
+}
+
+.dark .dx-retro-rating {
+  background: rgba(255, 255, 255, 0.04);
+}
+
+.dx-retro-rating:hover:not(.is-selected) {
+  border-color: var(--dt-border-hover);
+  color: var(--dt-text-primary);
+}
+
+.dx-retro-rating.is-selected {
+  border-color: var(--dt-accent);
+  background: var(--dt-accent-soft);
+  color: var(--dt-accent-hover);
+}
+
+.dx-retro-rating[data-rating="good"].is-selected {
+  border-color: var(--dt-status-decided);
+  background: rgba(16, 185, 129, 0.10);
+  color: var(--dt-status-decided);
+}
+
+.dx-retro-rating[data-rating="poor"].is-selected {
+  border-color: var(--dt-status-overdue);
+  background: rgba(239, 68, 68, 0.10);
+  color: var(--dt-status-overdue);
+}
+
+.dx-retro-label {
+  color: var(--dt-text-muted);
+}
+
+.dx-retro-textarea {
+  width: 100%;
+  padding: 10px 12px;
+  background: var(--dt-bg-card);
+  border: 1px solid var(--dt-border);
+  border-radius: var(--dt-radius-sm);
+  color: var(--dt-text-primary);
+  font-family: var(--dt-font-family);
+  font-size: 0.9375rem;
+  line-height: 1.5;
+  resize: vertical;
+  min-height: 72px;
+  transition: all var(--dt-transition-fast);
+}
+
+.dark .dx-retro-textarea {
+  background: rgba(255, 255, 255, 0.04);
+}
+
+.dx-retro-textarea:focus {
+  outline: none;
+  border-color: var(--dt-accent);
+  box-shadow: var(--dt-shadow-focus);
+}
+
+.dx-retro-actions {
+  display: flex;
+  gap: 8px;
+  justify-content: flex-end;
+}
+
+.dx-retro-action-secondary,
+.dx-retro-action-primary {
+  display: inline-flex;
+  align-items: center;
+  gap: 6px;
+  padding: 8px 16px;
+  border: none;
+  border-radius: var(--dt-radius-sm);
+  font-family: var(--dt-font-family);
+  font-size: 0.875rem;
+  font-weight: 500;
+  cursor: pointer;
+  transition: all var(--dt-transition-fast);
+}
+
+.dx-retro-action-secondary {
+  background: transparent;
+  color: var(--dt-text-secondary);
+}
+
+.dx-retro-action-secondary:hover:not(:disabled) {
+  background: var(--dt-bg-card-hover);
+  color: var(--dt-text-primary);
+}
+
+.dx-retro-action-primary {
+  background: var(--dt-accent-gradient);
+  color: white;
+  box-shadow: 0 4px 12px var(--dt-accent-glow);
+}
+
+.dx-retro-action-primary:hover:not(:disabled) {
+  transform: translateY(-1px);
+  filter: brightness(1.05);
+}
+
+.dx-retro-action-secondary:disabled,
+.dx-retro-action-primary:disabled {
+  opacity: 0.5;
+  cursor: not-allowed;
+}
+
+@media (prefers-reduced-motion: reduce) {
+  .dx-retro-action-primary:hover:not(:disabled) {
+    transform: none;
+  }
+}

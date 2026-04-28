@@ -163,12 +163,42 @@
   background: var(--dt-accent);
   color: white;
   border-radius: 9px;
-  font-size: 10px;
-  font-weight: var(--dt-font-weight-bold);
+  font-family: var(--dt-font-family-mono);
+  font-size: var(--dt-label-size-sm);
+  font-weight: var(--dt-label-weight);
+  letter-spacing: 0.05em;
+  font-feature-settings: "tnum" 1;
 }
 
 .action-label {
   font-size: var(--dt-font-sm);
+}
+
+/* ─────────────────────────────────────────────────────────────────────────
+   NARROW-DESKTOP RESPONSIVE: collapse text labels on AI / Templates / Create
+   below 1440px so the 5-button cluster fits without wrapping or cramming.
+   The buttons stay full-strength via aria-label + title (set in TSX) and
+   the primary "+ Create" keeps its coral gradient so it remains the visual
+   anchor when it's icon-only.
+   ───────────────────────────────────────────────────────────────────────── */
+@media (max-width: 1440px) {
+  .action-label {
+    display: none;
+  }
+
+  /* Icon-only buttons want roughly square padding instead of the 8/16px
+     pill geometry that the label variant uses. */
+  .hub-action-button {
+    padding: var(--dt-spacing-sm);
+    gap: 0;
+  }
+
+  /* The notification badge needs slightly tighter offsets when its host
+     button shrinks to a square. */
+  .hub-action-button.notification-badge .badge-count {
+    top: -5px;
+    right: -5px;
+  }
 }
 
 /* ─────────────────────────────────────────────────────────────────────────
@@ -278,10 +308,6 @@
     max-height: 100%;
     border-radius: 0;
   }
-
-  .action-label {
-    display: none;
-  }
 }
 
 @media (max-width: 480px) {
@@ -310,7 +336,7 @@
   font-size: 14px;
   font-weight: 500;
   cursor: pointer;
-  transition: all 0.15s ease;
+  transition: all var(--dt-transition-fast);
 }
 
 .hub-load-more-button:hover:not(:disabled) {
@@ -329,8 +355,8 @@
   align-items: center;
   justify-content: space-between;
   padding: 10px 16px;
-  background: var(--dt-accent, #667eea);
-  border-radius: 8px;
+  background: var(--dt-accent);
+  border-radius: var(--dt-radius-sm);
   margin-bottom: 12px;
   color: white;
 }
@@ -339,8 +365,12 @@
   display: flex;
   align-items: center;
   gap: 8px;
-  font-size: 14px;
-  font-weight: 600;
+  font-family: var(--dt-font-family-mono);
+  font-size: var(--dt-label-size);
+  font-weight: var(--dt-label-weight);
+  letter-spacing: var(--dt-label-tracking);
+  text-transform: uppercase;
+  font-feature-settings: "tnum" 1;
 }
 
 .hub-bulk-actions {
@@ -349,37 +379,158 @@
   gap: 8px;
 }
 
-.hub-bulk-status-select {
+/* Pulse-styled bulk status dropdown. Replaces the native <select> so the
+   bulk toolbar reads as instrument-grade chrome end-to-end. The menu sits
+   above the toolbar with backdrop blur, mono uppercase labels, and a
+   status-colour dot per option. */
+.hub-bulk-status-dropdown {
+  position: relative;
+}
+
+.hub-bulk-status-trigger {
+  display: inline-flex;
+  align-items: center;
+  gap: 6px;
   padding: 6px 12px;
-  border-radius: 6px;
+  border-radius: var(--dt-radius-sm);
   border: 1px solid rgba(255, 255, 255, 0.3);
   background: rgba(255, 255, 255, 0.15);
   color: white;
-  font-size: 13px;
+  font-family: var(--dt-font-family-mono);
+  font-size: var(--dt-label-size);
+  font-weight: var(--dt-label-weight);
+  letter-spacing: var(--dt-label-tracking);
+  text-transform: uppercase;
   cursor: pointer;
+  transition: all var(--dt-transition-fast);
 }
 
-.hub-bulk-status-select option {
-  color: #374151;
-  background: white;
+.hub-bulk-status-trigger:hover {
+  background: rgba(255, 255, 255, 0.22);
+  border-color: rgba(255, 255, 255, 0.5);
+}
+
+.hub-bulk-status-trigger:focus-visible {
+  outline: 2px solid white;
+  outline-offset: 2px;
+}
+
+.hub-bulk-status-trigger[aria-expanded="true"] svg {
+  transform: rotate(180deg);
+}
+
+.hub-bulk-status-trigger svg {
+  transition: transform var(--dt-transition-base);
+}
+
+.hub-bulk-status-backdrop {
+  position: fixed;
+  inset: 0;
+  z-index: 49;
+}
+
+.hub-bulk-status-menu {
+  position: absolute;
+  top: calc(100% + 6px);
+  left: 0;
+  z-index: 50;
+  min-width: 180px;
+  padding: 4px;
+  background: var(--dt-bg-card);
+  border: 1px solid var(--dt-border);
+  border-radius: var(--dt-radius-sm);
+  box-shadow: var(--dt-shadow-modal);
+  animation: hub-bulk-menu-in 180ms cubic-bezier(0.16, 1, 0.3, 1);
+}
+
+.dark .hub-bulk-status-menu {
+  background: rgba(20, 20, 22, 0.96);
+  backdrop-filter: blur(24px);
+  -webkit-backdrop-filter: blur(24px);
+}
+
+@keyframes hub-bulk-menu-in {
+  from { opacity: 0; transform: translateY(-4px); }
+  to   { opacity: 1; transform: translateY(0); }
+}
+
+@media (prefers-reduced-motion: reduce) {
+  .hub-bulk-status-menu {
+    animation: none;
+  }
+}
+
+.hub-bulk-status-item {
+  display: flex;
+  align-items: center;
+  gap: 10px;
+  width: 100%;
+  padding: 8px 10px;
+  background: transparent;
+  border: none;
+  border-radius: 6px;
+  color: var(--dt-text-primary);
+  text-align: left;
+  cursor: pointer;
+  transition: background var(--dt-transition-fast);
+}
+
+.hub-bulk-status-item:hover {
+  background: var(--dt-bg-card-hover);
+}
+
+.hub-bulk-status-item:focus-visible {
+  outline: none;
+  background: var(--dt-accent-soft);
+}
+
+.hub-bulk-status-dot {
+  width: 8px;
+  height: 8px;
+  border-radius: 50%;
+  flex-shrink: 0;
 }
 
 .hub-bulk-delete {
   display: flex;
   align-items: center;
-  gap: 4px;
+  gap: 6px;
   padding: 6px 12px;
-  border-radius: 6px;
+  border-radius: var(--dt-radius-sm);
   border: 1px solid rgba(255, 255, 255, 0.3);
-  background: rgba(239, 68, 68, 0.8);
+  background: rgba(239, 68, 68, 0.85);
   color: white;
-  font-size: 13px;
+  font-family: var(--dt-font-family-mono);
+  font-size: var(--dt-label-size);
+  font-weight: var(--dt-label-weight);
+  letter-spacing: var(--dt-label-tracking);
+  text-transform: uppercase;
   cursor: pointer;
-  transition: background 0.15s;
+  transition: all var(--dt-transition-base);
 }
 
 .hub-bulk-delete:hover {
-  background: #ef4444;
+  background: var(--dt-status-overdue);
+}
+
+/* Two-step armed state. Saturates fully and adds a subtle pulse so the
+   operator knows the next click is destructive. Auto-disarms after 4s. */
+.hub-bulk-delete.is-confirming {
+  background: var(--dt-status-overdue);
+  border-color: rgba(255, 255, 255, 0.6);
+  box-shadow: 0 0 0 3px rgba(239, 68, 68, 0.30);
+  animation: hub-bulk-confirm-pulse 1.2s ease-in-out infinite;
+}
+
+@keyframes hub-bulk-confirm-pulse {
+  0%, 100% { box-shadow: 0 0 0 3px rgba(239, 68, 68, 0.30); }
+  50%      { box-shadow: 0 0 0 5px rgba(239, 68, 68, 0.18); }
+}
+
+@media (prefers-reduced-motion: reduce) {
+  .hub-bulk-delete.is-confirming {
+    animation: none;
+  }
 }
 
 .hub-bulk-clear {

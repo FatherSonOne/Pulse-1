@@ -1,8 +1,8 @@
 import React, { useState, useEffect } from 'react';
 import { createPortal } from 'react-dom';
-import { X, Search, CheckSquare, TrendingUp, Sparkles, Plus } from 'lucide-react';
+import toast from 'react-hot-toast';
+import { X, Search, CheckSquare, TrendingUp, ArrowLeft, Plus } from 'lucide-react';
 import { DecisionTemplate, decisionTemplateService, TemplateVariables } from '../../services/decisionTemplateService';
-import { AnimatedIcon } from '../ui/AnimatedIcon';
 import './DecisionTemplates.css';
 
 interface DecisionTemplatesProps {
@@ -11,20 +11,12 @@ interface DecisionTemplatesProps {
   onSelectTemplate: (template: DecisionTemplate, variables: TemplateVariables) => void;
 }
 
-interface CategoryTab {
-  category: string;
-  count: number;
-  icon: string;
-}
-
 export const DecisionTemplates: React.FC<DecisionTemplatesProps> = ({
   workspaceId,
   onClose,
-  onSelectTemplate
+  onSelectTemplate,
 }) => {
   const [templates, setTemplates] = useState<DecisionTemplate[]>([]);
-  const [categories, setCategories] = useState<CategoryTab[]>([]);
-  const [selectedCategory, setSelectedCategory] = useState<string>('All');
   const [searchQuery, setSearchQuery] = useState('');
   const [selectedTemplate, setSelectedTemplate] = useState<DecisionTemplate | null>(null);
   const [variables, setVariables] = useState<TemplateVariables>({});
@@ -34,19 +26,15 @@ export const DecisionTemplates: React.FC<DecisionTemplatesProps> = ({
     loadTemplates();
   }, [workspaceId]);
 
+  // Categories were removed: with 5 templates and 5 categories, every category
+  // had exactly 1 item. The tab navigation duplicated the All view and added
+  // cognitive overhead. Search handles filtering; the template name carries
+  // category meaning ("Hire New Team Member" doesn't need a HIRING tag).
   const loadTemplates = async () => {
     setLoading(true);
     try {
-      const [templateData, categoryData] = await Promise.all([
-        decisionTemplateService.getTemplates(workspaceId),
-        decisionTemplateService.getCategories(workspaceId)
-      ]);
-
+      const templateData = await decisionTemplateService.getTemplates(workspaceId);
       setTemplates(templateData);
-      setCategories([
-        { category: 'All', count: templateData.length, icon: 'clipboard' },
-        ...categoryData.map(c => ({ ...c, icon: c.icon || '📁' }))
-      ]);
     } catch (error) {
       console.error('Error loading templates:', error);
     } finally {
@@ -54,13 +42,15 @@ export const DecisionTemplates: React.FC<DecisionTemplatesProps> = ({
     }
   };
 
-  // Filter templates
-  const filteredTemplates = templates.filter(template => {
-    const matchesCategory = selectedCategory === 'All' || template.category === selectedCategory;
-    const matchesSearch = !searchQuery ||
-      template.name.toLowerCase().includes(searchQuery.toLowerCase()) ||
-      template.description?.toLowerCase().includes(searchQuery.toLowerCase());
-    return matchesCategory && matchesSearch;
+  // Filter by name/description only. Category is searchable as plain text.
+  const filteredTemplates = templates.filter((template) => {
+    if (!searchQuery) return true;
+    const q = searchQuery.toLowerCase();
+    return (
+      template.name.toLowerCase().includes(q) ||
+      template.description?.toLowerCase().includes(q) ||
+      template.category?.toLowerCase().includes(q)
+    );
   });
 
   const handleSelectTemplate = (template: DecisionTemplate) => {
@@ -87,7 +77,8 @@ export const DecisionTemplates: React.FC<DecisionTemplatesProps> = ({
     // Check if all variables are filled
     const missingVars = Object.entries(variables).filter(([_, value]) => !value.trim());
     if (missingVars.length > 0) {
-      alert(`Please fill in all required fields: ${missingVars.map(([key]) => key).join(', ')}`);
+      const fields = missingVars.map(([key]) => key).join(', ');
+      toast.error(`Fill in: ${fields}`, { duration: 3500 });
       return;
     }
 
@@ -103,93 +94,74 @@ export const DecisionTemplates: React.FC<DecisionTemplatesProps> = ({
           <>
             <div className="decision-templates-header">
               <div className="header-left">
-                <Sparkles size={24} className="header-icon" />
-                <div>
-                  <h2 className="decision-templates-title">Decision Templates</h2>
-                  <p className="decision-templates-subtitle">Start with a proven decision framework</p>
-                </div>
+                <h2 className="decision-templates-title">Decision Templates</h2>
+                <p className="decision-templates-subtitle">
+                  Start with a proven decision framework.
+                </p>
               </div>
               <button
                 className="decision-templates-close"
                 onClick={onClose}
                 aria-label="Close"
+                title="Close"
               >
-                <X size={20} />
+                <X size={18} />
               </button>
             </div>
 
             <div className="decision-templates-content">
               {/* Search Bar */}
               <div className="templates-search">
-                <Search size={18} />
+                <Search size={16} aria-hidden="true" />
                 <input
                   type="text"
-                  placeholder="Search templates..."
+                  placeholder="Search templates"
                   value={searchQuery}
                   onChange={(e) => setSearchQuery(e.target.value)}
                   className="search-input"
+                  aria-label="Search templates"
                 />
-              </div>
-
-              {/* Category Tabs */}
-              <div className="category-tabs">
-                {categories.map(({ category, count, icon }) => (
-                  <button
-                    key={category}
-                    className={`category-tab ${selectedCategory === category ? 'active' : ''}`}
-                    onClick={() => setSelectedCategory(category)}
-                  >
-                    <span className="category-icon">{icon}</span>
-                    <span className="category-name">{category}</span>
-                    <span className="category-count">{count}</span>
-                  </button>
-                ))}
               </div>
 
               {/* Template Grid */}
               {loading ? (
                 <div className="templates-loading">
                   <div className="spinner"></div>
-                  <p>Loading templates...</p>
+                  <p>Loading templates</p>
                 </div>
               ) : filteredTemplates.length === 0 ? (
                 <div className="templates-empty">
-                  <Sparkles size={48} color="#ccc" />
-                  <h3>No templates found</h3>
-                  <p>Try a different category or search term</p>
+                  <span className="dt-label templates-empty-eyebrow">No matches</span>
+                  <h3>Nothing found for "{searchQuery}".</h3>
+                  <p>Try a different search, or pick from the full list.</p>
                 </div>
               ) : (
                 <div className="templates-grid">
-                  {filteredTemplates.map(template => (
-                    <div
+                  {filteredTemplates.map((template) => (
+                    <button
                       key={template.id}
+                      type="button"
                       className="template-card"
                       onClick={() => handleSelectTemplate(template)}
                     >
-                      <div className="template-card-header">
-                        <span className="template-icon"><AnimatedIcon icon={template.icon || 'clipboard'} size={22} /></span>
-                        <div className="template-meta">
-                          {template.is_system && (
-                            <span className="system-badge">System</span>
-                          )}
-                          {template.category && (
-                            <span className="category-badge">{template.category}</span>
-                          )}
-                        </div>
-                      </div>
                       <h3 className="template-name">{template.name}</h3>
                       <p className="template-description">{template.description}</p>
                       <div className="template-stats">
                         <span className="stat-item">
-                          <CheckSquare size={14} />
-                          {template.suggested_tasks.length} tasks
+                          <CheckSquare size={13} aria-hidden="true" />
+                          <span className="dt-label">
+                            {template.suggested_tasks.length} task
+                            {template.suggested_tasks.length === 1 ? '' : 's'}
+                          </span>
                         </span>
                         <span className="stat-item">
-                          <TrendingUp size={14} />
-                          {template.usage_count} uses
+                          <TrendingUp size={13} aria-hidden="true" />
+                          <span className="dt-label">
+                            {template.usage_count} {template.usage_count === 1 ? 'use' : 'uses'}
+                          </span>
                         </span>
                       </div>
-                    </div>
+                    </button>
                   ))}
                 </div>
               )}
@@ -199,25 +171,27 @@ export const DecisionTemplates: React.FC<DecisionTemplatesProps> = ({
           // Template Configuration View
           <>
             <div className="decision-templates-header">
-              <div className="header-left">
+              <div className="header-left header-left-with-back">
                 <button
                   className="back-button"
                   onClick={() => setSelectedTemplate(null)}
                   aria-label="Back to templates"
+                  title="Back"
                 >
-                  ←
+                  <ArrowLeft size={16} aria-hidden="true" />
                 </button>
                 <div>
                   <h2 className="decision-templates-title">{selectedTemplate.name}</h2>
-                  <p className="decision-templates-subtitle">Fill in the details</p>
+                  <p className="decision-templates-subtitle">Fill in the details.</p>
                 </div>
               </div>
               <button
                 className="decision-templates-close"
                 onClick={onClose}
                 aria-label="Close"
+                title="Close"
               >
-                <X size={20} />
+                <X size={18} />
               </button>
             </div>
 
@@ -225,7 +199,6 @@ export const DecisionTemplates: React.FC<DecisionTemplatesProps> = ({
               {/* Template Info */}
               <div className="template-info-card">
                 <div className="info-header">
-                  <span className="template-icon-large"><AnimatedIcon icon={selectedTemplate.icon || 'clipboard'} size={32} /></span>
                   <div>
                     <h3>{selectedTemplate.name}</h3>
                     <p>{selectedTemplate.description}</p>
@@ -233,8 +206,10 @@ export const DecisionTemplates: React.FC<DecisionTemplatesProps> = ({
                 </div>
                 <div className="info-stats">
                   <div className="stat">
-                    <CheckSquare size={16} />
-                    <span>{selectedTemplate.suggested_tasks.length} suggested tasks</span>
+                    <CheckSquare size={14} aria-hidden="true" />
+                    <span className="dt-label">
+                      {selectedTemplate.suggested_tasks.length} suggested tasks
+                    </span>
                   </div>
                   <div className="stat">
                     <span className="type-badge">{selectedTemplate.default_decision_type || 'consensus'}</span>

@@ -13,6 +13,7 @@ import {
   Edit2,
   Trash2
 } from 'lucide-react';
+import { AIProvenanceChip } from '../ui/AIProvenanceChip';
 import './EnhancedTaskCard.css';
 
 export interface EnhancedTaskCardProps {
@@ -54,6 +55,9 @@ const EnhancedTaskCardComponent: React.FC<EnhancedTaskCardProps> = ({
 }) => {
   const [isUpdating, setIsUpdating] = useState(false);
   const [showActions, setShowActions] = useState(false);
+  // Two-step inline confirmation for delete. First click arms, second click
+  // within 4 seconds executes. Auto-disarms via timeout.
+  const [confirmingDelete, setConfirmingDelete] = useState(false);
 
   // Get AI columns from task metadata
   const aiScore = task.metadata?.ai_priority_score || task.metadata?.aiScore || null;
@@ -101,9 +105,14 @@ const EnhancedTaskCardComponent: React.FC<EnhancedTaskCardProps> = ({
   };
 
   const handleDelete = async () => {
-    if (onDelete && window.confirm('Are you sure you want to delete this task?')) {
-      await onDelete(task.id);
+    if (!onDelete) return;
+    if (!confirmingDelete) {
+      setConfirmingDelete(true);
+      window.setTimeout(() => setConfirmingDelete(false), 4000);
+      return;
     }
+    setConfirmingDelete(false);
+    await onDelete(task.id);
   };
 
   const getPriorityColor = (priority: Task['priority']) => {
@@ -225,6 +234,16 @@ const EnhancedTaskCardComponent: React.FC<EnhancedTaskCardProps> = ({
           </div>
         </div>
 
+        {/* AI Provenance — task originated from a template or decision decomposition */}
+        {(task.metadata?.generated_from_template || task.metadata?.generated_from_decision) && (
+          <div className="task-provenance">
+            <AIProvenanceChip
+              vendor="PULSE AI"
+              type={task.metadata?.generated_from_template ? 'TEMPLATE' : 'DECISION'}
+            />
+          </div>
+        )}
+
         {/* Description */}
         {task.description && (
           <p className="task-description">{task.description}</p>
@@ -335,10 +354,12 @@ const EnhancedTaskCardComponent: React.FC<EnhancedTaskCardProps> = ({
           {onDelete && (
             <button
               type="button"
-              className="task-action-button delete"
+              className={`task-action-button delete${confirmingDelete ? ' is-confirming' : ''}`}
               onClick={handleDelete}
               onKeyDown={(e) => handleActionKeyDown(e, handleDelete)}
-              aria-label={`Delete task: ${task.title}`}
+              aria-label={confirmingDelete ? `Confirm delete: ${task.title}` : `Delete task: ${task.title}`}
+              aria-pressed={confirmingDelete}
+              title={confirmingDelete ? 'Click again to confirm' : 'Delete'}
             >
               <Trash2 size={16} aria-hidden="true" />
             </button>

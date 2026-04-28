@@ -37,21 +37,34 @@ export interface DecisionWithVotes extends Decision {
 }
 
 export const decisionService = {
-  // Create a new decision
+  // Create a new decision.
+  //
+  // The decisions table column names diverge from the TS interface:
+  //   - `proposal_text` in the DB <-> `title` in the interface
+  //   - `created_by` in the DB    <-> `proposed_by` in the interface
+  //   - `threshold` is NOT NULL in the DB and defaults to 1
+  // We map at insert time so callers keep the friendlier interface.
   async createDecision(data: {
     workspace_id: string;
     message_id?: string;
     title: string;
     description?: string;
-    decision_type?: Decision['decision_type'];
+    decision_type?: string;
     proposed_by: string;
+    /** Optional consensus threshold (number of votes needed). Defaults to 1. */
+    threshold?: number;
   }): Promise<Decision | null> {
     const { data: decision, error } = await supabase
       .from('decisions')
       .insert({
-        ...data,
+        workspace_id: data.workspace_id,
+        message_id: data.message_id,
+        proposal_text: data.title,
+        description: data.description ?? null,
+        decision_type: data.decision_type || 'general',
         status: 'proposed',
-        decision_type: data.decision_type || 'general'
+        threshold: data.threshold ?? 1,
+        created_by: data.proposed_by,
       })
       .select()
       .single();
@@ -61,7 +74,14 @@ export const decisionService = {
       return null;
     }
 
-    return decision;
+    // Re-shape to match the Decision interface readers expect.
+    return decision
+      ? {
+          ...decision,
+          title: (decision as { proposal_text?: string }).proposal_text ?? data.title,
+          proposed_by: (decision as { created_by?: string }).created_by ?? data.proposed_by,
+        }
+      : null;
   },
 
   // Get all decisions for a workspace (excludes archived by default)
@@ -85,10 +105,15 @@ export const decisionService = {
       return { decisions: [], hasMore: false };
     }
 
-    const mapped = decisions.map(d => ({
+    // Alias the underlying column names (proposal_text / created_by) onto
+    // the friendlier interface fields (title / proposed_by) so existing
+    // readers like card components keep working.
+    const mapped = decisions.map((d: Record<string, unknown>) => ({
       ...d,
-      vote_counts: this.calculateVoteCounts(d.votes || [])
-    }));
+      title: (d.title as string) ?? (d.proposal_text as string) ?? '',
+      proposed_by: (d.proposed_by as string) ?? (d.created_by as string) ?? '',
+      vote_counts: this.calculateVoteCounts((d.votes as DecisionVote[]) || [])
+    })) as DecisionWithVotes[];
 
     return {
       decisions: mapped,

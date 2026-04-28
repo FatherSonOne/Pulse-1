@@ -134,6 +134,18 @@
      FONT FAMILY
      ───────────────────────────────────────────────────────────────────────── */
   --dt-font-family: 'Inter', system-ui, -apple-system, sans-serif;
+  --dt-font-family-mono: 'JetBrains Mono', 'SF Mono', Menlo, Consolas, ui-monospace, monospace;
+
+  /* ─────────────────────────────────────────────────────────────────────────
+     LABEL TYPOGRAPHY (mono uppercase tracked, the system signature)
+     Per DESIGN.md: every label, timestamp, status pill, section header,
+     and AI provenance chip uses JetBrains Mono uppercase 0.1em tracked.
+     ───────────────────────────────────────────────────────────────────────── */
+  --dt-label-size:     0.6875rem; /* 11px */
+  --dt-label-size-sm:  0.625rem;  /* 10px */
+  --dt-label-tracking: 0.1em;
+  --dt-label-weight:   500;
+  --dt-time-size:      0.625rem;  /* 10px */
 }
 
 /* ═══════════════════════════════════════════════════════════════════════════
@@ -215,6 +227,47 @@
    UTILITY CLASSES
    ═══════════════════════════════════════════════════════════════════════════ */
 
+/* The mono-label signature.
+   Every uppercase tracked label across the feature uses this recipe.
+   Apply via className="dt-label" or by composing the variables in your rule. */
+.dt-label {
+  font-family: var(--dt-font-family-mono);
+  font-size: var(--dt-label-size);
+  font-weight: var(--dt-label-weight);
+  letter-spacing: var(--dt-label-tracking);
+  text-transform: uppercase;
+  font-feature-settings: "tnum" 1, "ss01" 1;
+  line-height: 1;
+}
+
+.dt-label-sm {
+  font-family: var(--dt-font-family-mono);
+  font-size: var(--dt-label-size-sm);
+  font-weight: var(--dt-label-weight);
+  letter-spacing: var(--dt-label-tracking);
+  text-transform: uppercase;
+  font-feature-settings: "tnum" 1, "ss01" 1;
+  line-height: 1;
+}
+
+/* Inline timestamps — mono, muted, tabular numerals so 12:04 and 12:48 align. */
+.dt-time {
+  font-family: var(--dt-font-family-mono);
+  font-size: var(--dt-time-size);
+  font-weight: 400;
+  color: var(--dt-text-muted);
+  font-feature-settings: "tnum" 1;
+  line-height: 1;
+}
+
+/* Tabular numerals only (preserves current font-family). For count badges
+   inside Inter contexts where the surrounding text should stay Inter but
+   the digits need to align. */
+.dt-num {
+  font-variant-numeric: tabular-nums;
+  font-feature-settings: "tnum" 1;
+}
+
 /* Glass card base */
 .dt-glass-card {
   background: var(--dt-glass-bg);
@@ -231,52 +284,14 @@
   transform: translateY(-1px);
 }
 
-/* Status accent borders */
-.dt-card[data-status="overdue"] {
-  border-left: 3px solid var(--dt-status-overdue);
-}
-
-.dt-card[data-status="blocked"] {
-  border-left: 3px solid var(--dt-status-blocked);
-}
-
-.dt-card[data-status="in_review"],
-.dt-card[data-status="in-review"] {
-  border-left: 3px solid var(--dt-status-in-review);
-}
-
-.dt-card[data-status="in_progress"],
-.dt-card[data-status="in-progress"] {
-  border-left: 3px solid var(--dt-status-in-progress);
-}
-
-.dt-card[data-status="todo"] {
-  border-left: 3px solid var(--dt-status-todo);
-}
-
-.dt-card[data-status="done"] {
-  border-left: 3px solid var(--dt-status-done);
-}
-
-.dt-card[data-status="cancelled"] {
-  border-left: 3px solid var(--dt-status-cancelled);
-}
-
-.dt-card[data-status="pending"] {
-  border-left: 3px solid var(--dt-status-pending);
-}
-
-.dt-card[data-status="proposed"] {
-  border-left: 3px solid var(--dt-status-proposed);
-}
-
-.dt-card[data-status="voting"] {
-  border-left: 3px solid var(--dt-status-voting);
-}
-
-.dt-card[data-status="decided"] {
-  border-left: 3px solid var(--dt-status-decided);
-}
+/* Status identity on .dt-card[data-status] is now carried by the per-component
+   status pill (see EnhancedDecisionCard, EnhancedTaskCard, ArchiveItemCard,
+   BoardView section header). The 3px-side-stripe cascade that used to live
+   here was the most-replicated absolute-ban pattern in the codebase, called
+   out explicitly in DESIGN.md as a migration target. Removed in step 7
+   polish. If you need a card to express status visually beyond its internal
+   pill, use a tinted background (`background: rgba(R,G,B,0.04)`) or a full
+   1px colored border, never a side-stripe. */
 
 /* ─────────────────────────────────────────────────────────────────────────
    SHARED KEYFRAMES
