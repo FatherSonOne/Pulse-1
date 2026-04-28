@@ -182,3 +182,23 @@ export const PULSE_TEAM_PRICING = {
   yearlyMonthlyEquiv: Math.round(1000 / 12), // ≈ $83/mo display value
   trialDays: 30,
 };
+
+// ── Pricing — Pulse Growth tier ─────────────────────────────────────────────
+// 5× Team caps for AI/SMS/Relay, 10× storage, plus premium-only unlocks.
+export const PULSE_GROWTH_FEATURES = [
+  'Everything in Team, plus:',
+  '10,000 AI messages / 2,500 SMS / 500 GB / 2,500 Relay min / mo',
+  'SSO / SAML — coming soon',
+  'API access with rate-limited keys',
+  'Audit log retention: 365 days',
+  'Custom branding on emails & exports',
+  'Advanced AI budget controls (per-user caps)',
+  'Priority support — 1 business day SLA',
+];
+
+export const PULSE_GROWTH_PRICING = {
+  monthly: 300,      // $/mo billed monthly
+  yearly: 3000,      // $/yr billed annually (2 months free vs. monthly)
+  yearlyMonthlyEquiv: Math.round(3000 / 12), // ≈ $250/mo display value
+  trialDays: 30,
+};

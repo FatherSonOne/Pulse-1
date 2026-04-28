@@ -4,10 +4,16 @@ import { supabase } from './supabase';
 // Types
 // ---------------------------------------------------------------------------
 
-export type WorkspacePlan = 'free' | 'team' | 'starter' | 'pro' | 'business' | 'ecosystem';
+export type WorkspacePlan = 'free' | 'team' | 'growth' | 'starter' | 'pro' | 'business' | 'ecosystem';
+
+// NOTE: Pulse runs two live tiers — 'team' ($100/mo) and 'growth' ($300/mo).
+// The legacy keys (free/starter/pro/business/ecosystem) remain only to keep
+// historical workspace.plan rows readable; they are not user-selectable.
 
 export const WORKSPACE_PLAN_LABELS: Record<WorkspacePlan, string> = {
   free: 'Free',
+  team: 'Team',
+  growth: 'Growth',
   starter: 'Starter',
   pro: 'Pro',
   business: 'Business',
@@ -16,15 +22,18 @@ export const WORKSPACE_PLAN_LABELS: Record<WorkspacePlan, string> = {
 
 export const WORKSPACE_PLAN_LIMITS: Record<WorkspacePlan, number> = {
   free: 50,
+  team: 1_000_000,
+  growth: 1_000_000,
   starter: 500,
   pro: 5000,
   business: 15000,
   ecosystem: 25000,
 };
 
-
 export const WORKSPACE_PLAN_DESCRIPTIONS: Record<WorkspacePlan, string> = {
   free: 'Try it out with basic features',
+  team: 'Pulse Team — unlimited seats, all features',
+  growth: 'Pulse Growth — 5× capacity, SSO, API, audit retention, priority support',
   starter: 'For small teams getting started',
   pro: 'For growing organizations',
   business: 'For established organizations with advanced needs',
@@ -33,6 +42,8 @@ export const WORKSPACE_PLAN_DESCRIPTIONS: Record<WorkspacePlan, string> = {
 
 export const WORKSPACE_PLAN_APPS: Record<WorkspacePlan, string[]> = {
   free: ['Pulse'],
+  team: ['Pulse'],
+  growth: ['Pulse'],
   starter: ['Pulse'],
   pro: ['Pulse'],
   business: ['Pulse'],
@@ -41,6 +52,8 @@ export const WORKSPACE_PLAN_APPS: Record<WorkspacePlan, string[]> = {
 
 export const WORKSPACE_PLAN_PRICES: Record<WorkspacePlan, string> = {
   free: '$0',
+  team: '$100/mo',
+  growth: '$300/mo',
   starter: '$79/mo',
   pro: '$149/mo',
   business: '$249/mo',
@@ -49,6 +62,8 @@ export const WORKSPACE_PLAN_PRICES: Record<WorkspacePlan, string> = {
 
 export const WORKSPACE_PLAN_COLORS: Record<WorkspacePlan, string> = {
   free: '#6b7280',
+  team: '#f43f5e',
+  growth: '#7c3aed',
   starter: '#3b82f6',
   pro: '#f43f5e',
   business: '#7c3aed',
@@ -67,6 +82,7 @@ export interface Workspace {
   avatar_url: string | null;
   plan: WorkspacePlan;
   owner_id: string;
+  parent_workspace_id: string | null;
   created_at: string;
   updated_at: string;
   stripeCustomerId?: string | null;
@@ -291,13 +307,14 @@ export const workspaceService = {
   },
 
   /**
-   * Creates a new workspace owned by the currently authenticated user.
-   * Automatically inserts the owner as a workspace_member with role 'owner'.
+   * Creates a new primary (billed) workspace owned by the currently authenticated user.
+   * Automatically inserts the owner as a workspace_member with role 'owner' and
+   * starts a 30-day Pulse Team trial. Used for first-time users only — additional
+   * workspaces under an existing owner go through `createChildWorkspace`.
    */
   async createWorkspace(name: string, description?: string, plan: WorkspacePlan = 'team'): Promise<Workspace> {
     const userId = await getCurrentUserId();
 
-    // Auto-generate a URL-safe slug from the name
     const baseSlug = name
       .toLowerCase()
       .replace(/[^a-z0-9]+/g, '-')
@@ -313,6 +330,7 @@ export const workspaceService = {
         description: description ?? null,
         owner_id: userId,
         plan,
+        parent_workspace_id: null,
       })
       .select()
       .single();
@@ -330,8 +348,6 @@ export const workspaceService = {
 
     assertNoError(memberError, 'createWorkspace — insert owner member');
 
-    // Start a 30-day Pulse Team trial. Non-fatal if it fails (RPC is idempotent
-    // and can be retried manually). Done lazily via import to avoid circular deps.
     try {
       const billingService = (await import('./billingService')).default;
       await billingService.startPulseTeamTrial(workspace.id);
@@ -340,6 +356,28 @@ export const workspaceService = {
     }
 
     return workspace as Workspace;
+  },
+
+  /**
+   * Creates a child workspace under a primary, sharing the parent's plan and
+   * entitlements without its own subscription. Owner-only. Used when an org
+   * owner wants to spin up additional sub-contexts (Development, Project, etc.)
+   * inside their existing paid org.
+   */
+  async createChildWorkspace(parentWorkspaceId: string, name: string, description?: string): Promise<Workspace> {
+    const { data, error } = await supabase.rpc('create_child_workspace', {
+      p_parent_id: parentWorkspaceId,
+      p_name: name,
+      p_description: description ?? null,
+    });
+
+    assertNoError(error, 'createChildWorkspace');
+
+    if (!data) {
+      throw new Error('createChildWorkspace returned no workspace');
+    }
+
+    return data as Workspace;
   },
 
   /**

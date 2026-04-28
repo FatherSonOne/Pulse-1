@@ -225,6 +225,131 @@
   flex-shrink: 0;
 }
 
+/* Row wrapper that holds the list item + per-row "..." menu trigger */
+.ws-row {
+  position: relative;
+  display: flex;
+  align-items: center;
+}
+
+.ws-row .ws-list-item {
+  flex: 1;
+  min-width: 0;
+}
+
+.ws-row-menu-trigger {
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  width: 28px;
+  height: 28px;
+  margin-right: 6px;
+  padding: 0;
+  border: none;
+  background: transparent;
+  color: var(--nav-item-text);
+  border-radius: 6px;
+  cursor: pointer;
+  opacity: 0;
+  transition: opacity 0.12s, background 0.12s, color 0.12s;
+  flex-shrink: 0;
+}
+
+.ws-row:hover .ws-row-menu-trigger,
+.ws-row-menu-trigger:focus-visible {
+  opacity: 0.7;
+}
+
+.ws-row-menu-trigger:hover {
+  opacity: 1;
+  background: var(--nav-item-bg-hover);
+  color: var(--nav-item-text-active);
+}
+
+.ws-row-menu-trigger svg {
+  width: 14px;
+  height: 14px;
+}
+
+.ws-row-menu {
+  position: absolute;
+  top: calc(100% - 4px);
+  right: 6px;
+  z-index: 1000;
+  min-width: 180px;
+  padding: 4px;
+  background: var(--sidebar-bg, #1a1a1a);
+  border: 1px solid var(--sidebar-border, rgba(255, 255, 255, 0.08));
+  border-radius: 8px;
+  box-shadow: 0 8px 24px rgba(0, 0, 0, 0.32);
+  display: flex;
+  flex-direction: column;
+  gap: 1px;
+}
+
+.ws-row-menu-item {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  padding: 7px 10px;
+  font-size: 12px;
+  font-weight: 500;
+  color: var(--nav-item-text-hover);
+  background: transparent;
+  border: none;
+  border-radius: 5px;
+  cursor: pointer;
+  text-align: left;
+  transition: background 0.1s;
+}
+
+.ws-row-menu-item:hover {
+  background: var(--nav-item-bg-hover);
+  color: var(--nav-item-text-active);
+}
+
+.ws-row-menu-item svg {
+  width: 14px;
+  height: 14px;
+  flex-shrink: 0;
+}
+
+.ws-row-menu-item-danger {
+  color: #f43f5e;
+}
+
+.ws-row-menu-item-danger:hover {
+  background: rgba(244, 63, 94, 0.1);
+  color: #f43f5e;
+}
+
+/* Child workspace row (sub-context under a primary) */
+.ws-list-item-child {
+  padding-left: 24px;
+}
+
+.ws-child-indicator {
+  width: 12px;
+  height: 12px;
+  color: var(--nav-item-text);
+  opacity: 0.5;
+  flex-shrink: 0;
+  margin-right: -4px;
+}
+
+.ws-create-hint {
+  font-size: 11px;
+  color: var(--nav-item-text);
+  opacity: 0.75;
+  margin: 0 2px 8px;
+  line-height: 1.4;
+}
+
+.ws-create-hint strong {
+  color: var(--nav-item-text-active);
+  font-weight: 600;
+}
+
 /* ── Role badge ─────────────────────────────────── */
 .ws-role-badge {
   font-size: 9px;

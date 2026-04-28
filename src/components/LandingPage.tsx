@@ -2,7 +2,7 @@ import React, { useState, useEffect, useRef, lazy, Suspense } from 'react';
 import './LandingPage.css';
 
 import { Apple, ArrowDown, Battery, Bell, Book, BookOpen, Bot, Check, ChevronUp, Download, ExternalLink, Eye, Gavel, Heart, HeartPulse, HelpCircle, Info, Keyboard, Layers, LayoutGrid, Mic, Network, Play, Rocket, Search, ShieldHalf, Signal, Smartphone, Wand2, Wifi, X } from 'lucide-react';
-import { STATS, VOX_MODES, CRM_PLATFORMS, PLATFORMS, FAQ_DATA, SHORTCUT_GROUPS, STUDIO_FEATURES, EMAIL_FEATURES, MESSAGING_FEATURES, CALENDAR_FEATURES, ANALYTICS_FEATURES, PULSE_TEAM_FEATURES, PULSE_TEAM_PRICING } from './LandingPage/landingData';
+import { STATS, VOX_MODES, CRM_PLATFORMS, PLATFORMS, FAQ_DATA, SHORTCUT_GROUPS, STUDIO_FEATURES, EMAIL_FEATURES, MESSAGING_FEATURES, CALENDAR_FEATURES, ANALYTICS_FEATURES, PULSE_TEAM_FEATURES, PULSE_TEAM_PRICING, PULSE_GROWTH_FEATURES, PULSE_GROWTH_PRICING } from './LandingPage/landingData';
 
 // Lazy-load the guide — guideData.ts is 26k lines and must NOT land in the main bundle
 const UsersGuide = lazy(() => import('./UsersGuide/UsersGuide'));
@@ -2449,26 +2449,24 @@ const LandingPage: React.FC<LandingPageProps> = ({ onGetStarted }) => {
             </button>
           </div>
 
-          {/* Pulse Team card — single centered tier */}
-          <div className="max-w-xl mx-auto">
-            <div className="relative rounded-2xl overflow-hidden shadow-2xl shadow-rose-500/10">
-              {/* Gradient accent bar — matches TrialExpiredBlock */}
-              <div className="h-1 bg-gradient-to-r from-fuchsia-500 via-pink-500 to-rose-500" aria-hidden="true" />
+          {/* Two-tier pricing — Team and Growth side-by-side */}
+          <div className="max-w-5xl mx-auto grid grid-cols-1 md:grid-cols-2 gap-6 items-stretch">
 
-              <div className="bg-gradient-to-br from-zinc-950 to-zinc-900 border-x border-b border-zinc-700/60 rounded-b-2xl p-8 sm:p-10 space-y-6">
-                {/* Header row */}
+            {/* ─── Pulse Team ─── */}
+            <div className="relative rounded-2xl overflow-hidden shadow-2xl shadow-rose-500/10 flex flex-col">
+              <div className="h-1 bg-gradient-to-r from-fuchsia-500 via-pink-500 to-rose-500" aria-hidden="true" />
+              <div className="bg-gradient-to-br from-zinc-950 to-zinc-900 border-x border-b border-zinc-700/60 rounded-b-2xl p-8 sm:p-10 space-y-6 flex-1 flex flex-col">
                 <div className="flex items-center justify-between gap-4">
                   <div>
                     <p className="text-xs font-bold uppercase tracking-widest text-rose-400 mb-1">Pulse Team</p>
                     <h3 className="text-2xl sm:text-3xl font-bold text-white">
                       ${pricingCycle === 'monthly' ? PULSE_TEAM_PRICING.monthly : PULSE_TEAM_PRICING.yearlyMonthlyEquiv}
                       <span className="text-base font-normal text-zinc-400">/mo</span>
-                      <span className="ml-3 text-sm font-medium text-zinc-500">· {PULSE_TEAM_PRICING.trialDays} days free</span>
                     </h3>
                     <p className="text-xs text-zinc-500 mt-1.5">
                       {pricingCycle === 'monthly'
-                        ? 'Billed monthly. Cancel anytime.'
-                        : `Billed $${PULSE_TEAM_PRICING.yearly.toLocaleString()} yearly (2 months free)`}
+                        ? `Billed monthly · ${PULSE_TEAM_PRICING.trialDays} days free`
+                        : `$${PULSE_TEAM_PRICING.yearly.toLocaleString()}/yr · 2 months free · ${PULSE_TEAM_PRICING.trialDays} days free`}
                     </p>
                   </div>
                   <div className="hidden sm:flex w-14 h-14 rounded-xl bg-gradient-to-br from-fuchsia-500 to-pink-600 items-center justify-center flex-shrink-0 shadow-lg shadow-rose-500/30">
@@ -2476,8 +2474,7 @@ const LandingPage: React.FC<LandingPageProps> = ({ onGetStarted }) => {
                   </div>
                 </div>
 
-                {/* Feature list */}
-                <ul className="space-y-3 pt-2">
+                <ul className="space-y-3 pt-2 flex-1">
                   {PULSE_TEAM_FEATURES.map((feat) => (
                     <li key={feat} className="flex items-start gap-3 text-sm text-zinc-200">
                       <Check size={18} className="text-emerald-400 mt-0.5 flex-shrink-0" aria-hidden="true" />
@@ -2486,7 +2483,6 @@ const LandingPage: React.FC<LandingPageProps> = ({ onGetStarted }) => {
                   ))}
                 </ul>
 
-                {/* CTA */}
                 <button
                   type="button"
                   onClick={onGetStarted}
@@ -2498,11 +2494,57 @@ const LandingPage: React.FC<LandingPageProps> = ({ onGetStarted }) => {
               </div>
             </div>
 
-            {/* Trust footnote */}
-            <p className="text-center text-xs text-zinc-500 mt-6 px-4">
-              No credit card required to start. Cancel anytime. Secure checkout via Stripe.
-            </p>
+            {/* ─── Pulse Growth ─── */}
+            <div className="relative rounded-2xl overflow-hidden shadow-2xl shadow-violet-500/10 flex flex-col">
+              <div className="h-1 bg-gradient-to-r from-violet-500 via-purple-500 to-indigo-500" aria-hidden="true" />
+              <div className="bg-gradient-to-br from-zinc-950 to-zinc-900 border-x border-b border-zinc-700/60 rounded-b-2xl p-8 sm:p-10 space-y-6 flex-1 flex flex-col">
+                <div className="flex items-center justify-between gap-4">
+                  <div>
+                    <div className="flex items-center gap-2 mb-1">
+                      <p className="text-xs font-bold uppercase tracking-widest text-violet-400">Pulse Growth</p>
+                      <span className="text-[10px] font-semibold uppercase tracking-wide px-1.5 py-0.5 rounded bg-violet-500/15 text-violet-300 border border-violet-500/20">
+                        For growing orgs
+                      </span>
+                    </div>
+                    <h3 className="text-2xl sm:text-3xl font-bold text-white">
+                      ${pricingCycle === 'monthly' ? PULSE_GROWTH_PRICING.monthly : PULSE_GROWTH_PRICING.yearlyMonthlyEquiv}
+                      <span className="text-base font-normal text-zinc-400">/mo</span>
+                    </h3>
+                    <p className="text-xs text-zinc-500 mt-1.5">
+                      {pricingCycle === 'monthly'
+                        ? `Billed monthly · ${PULSE_GROWTH_PRICING.trialDays} days free`
+                        : `$${PULSE_GROWTH_PRICING.yearly.toLocaleString()}/yr · 2 months free · ${PULSE_GROWTH_PRICING.trialDays} days free`}
+                    </p>
+                  </div>
+                  <div className="hidden sm:flex w-14 h-14 rounded-xl bg-gradient-to-br from-violet-500 to-indigo-600 items-center justify-center flex-shrink-0 shadow-lg shadow-violet-500/30">
+                    <HeartPulse size={26} className="text-white" />
+                  </div>
+                </div>
+
+                <ul className="space-y-3 pt-2 flex-1">
+                  {PULSE_GROWTH_FEATURES.map((feat) => (
+                    <li key={feat} className="flex items-start gap-3 text-sm text-zinc-200">
+                      <Check size={18} className="text-violet-400 mt-0.5 flex-shrink-0" aria-hidden="true" />
+                      <span>{feat}</span>
+                    </li>
+                  ))}
+                </ul>
+
+                <button
+                  type="button"
+                  onClick={onGetStarted}
+                  className="w-full py-3.5 rounded-xl bg-gradient-to-r from-violet-600 via-purple-600 to-indigo-600 hover:from-violet-500 hover:via-purple-500 hover:to-indigo-500 text-white font-semibold text-sm shadow-lg shadow-violet-500/30 hover:shadow-violet-500/50 transition-all duration-200 hover:-translate-y-0.5 active:translate-y-0 flex items-center justify-center gap-2"
+                >
+                  <Rocket size={16} aria-hidden="true" />
+                  Start with Growth
+                </button>
+              </div>
+            </div>
           </div>
+
+          <p className="text-center text-xs text-zinc-500 mt-6 px-4 max-w-5xl mx-auto">
+            No credit card required to start. Cancel anytime. Secure checkout via Stripe.
+          </p>
         </div>
       </section>
 

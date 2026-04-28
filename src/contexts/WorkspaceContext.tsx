@@ -33,6 +33,7 @@ export interface WorkspaceDataContextType {
 export interface WorkspaceActionsContextType {
   switchWorkspace: (workspaceId: string) => void;
   createWorkspace: (name: string, description?: string, plan?: WorkspacePlan) => Promise<Workspace>;
+  createChildWorkspace: (parentWorkspaceId: string, name: string, description?: string) => Promise<Workspace>;
   updateWorkspace: (
     workspaceId: string,
     updates: WorkspaceUpdatableFields,
@@ -250,7 +251,18 @@ export const WorkspaceProvider: React.FC<WorkspaceProviderProps> = ({ children }
 
   const createWorkspace = useCallback(
     async (name: string, description?: string, plan?: WorkspacePlan): Promise<Workspace> => {
-      const created = await workspaceService.createWorkspace(name, description, plan || 'free');
+      const created = await workspaceService.createWorkspace(name, description, plan || 'team');
+      setWorkspaces((prev) => [...prev, created]);
+      setCurrentWorkspace(created);
+      localStorage.setItem(ACTIVE_WORKSPACE_KEY, created.id);
+      return created;
+    },
+    [],
+  );
+
+  const createChildWorkspace = useCallback(
+    async (parentWorkspaceId: string, name: string, description?: string): Promise<Workspace> => {
+      const created = await workspaceService.createChildWorkspace(parentWorkspaceId, name, description);
       setWorkspaces((prev) => [...prev, created]);
       setCurrentWorkspace(created);
       localStorage.setItem(ACTIVE_WORKSPACE_KEY, created.id);
@@ -341,6 +353,7 @@ export const WorkspaceProvider: React.FC<WorkspaceProviderProps> = ({ children }
   const actionsValue = useMemo<WorkspaceActionsContextType>(() => ({
     switchWorkspace,
     createWorkspace,
+    createChildWorkspace,
     updateWorkspace,
     refreshWorkspaces,
     refreshMembers,
@@ -348,7 +361,7 @@ export const WorkspaceProvider: React.FC<WorkspaceProviderProps> = ({ children }
     hardDeleteWorkspace,
     restoreWorkspace,
     deletedWorkspaces,
-  }), [switchWorkspace, createWorkspace, updateWorkspace, refreshWorkspaces, refreshMembers, softDeleteWorkspace, hardDeleteWorkspace, restoreWorkspace, deletedWorkspaces]);
+  }), [switchWorkspace, createWorkspace, createChildWorkspace, updateWorkspace, refreshWorkspaces, refreshMembers, softDeleteWorkspace, hardDeleteWorkspace, restoreWorkspace, deletedWorkspaces]);
 
   const permissionsValue = useMemo<WorkspacePermissionsContextType>(() => ({
     isOwner,
