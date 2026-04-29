@@ -11,7 +11,8 @@ export enum AppView {
   MESSAGES = 'MESSAGES',
   EMAIL = 'EMAIL',
   SMS = 'SMS',
-  VOXER = 'VOXER',
+  RELAY = 'RELAY',
+  GLIMPSE = 'GLIMPSE',
   CALENDAR = 'CALENDAR',
   MEETINGS = 'MEETINGS',
   CONTACTS = 'CONTACTS',
@@ -207,7 +208,7 @@ export interface ArchiveItem {
   sharedWith?: string[]; // User IDs
   createdBy?: string;
   updatedAt?: Date;
-  // Flexible metadata for storing structured data (e.g., Voxer audio URLs, custom fields)
+  // Flexible metadata for storing structured data (e.g., Relay audio URLs, custom fields)
   metadata?: Record<string, any>;
 }
 

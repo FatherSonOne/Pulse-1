@@ -48,19 +48,19 @@ const FormattingToolbar: React.FC<FormattingToolbarProps> = ({
         tooltipShadow: '0 4px 12px rgba(0, 0, 0, 0.4)',
       };
     }
-    // Light mode — warm rose-tinted palette
+    // Light mode — neutral surface, coral reserved for hover/active state only.
     return {
-      toolbarBg: 'linear-gradient(135deg, rgba(15, 23, 42, 0.05) 0%, rgba(244, 63, 94, 0.08) 100%)',
-      toolbarBorder: 'rgba(244, 63, 94, 0.15)',
-      divider: 'rgba(244, 63, 94, 0.18)',
+      toolbarBg: 'rgba(0, 0, 0, 0.02)',
+      toolbarBorder: 'rgba(0, 0, 0, 0.08)',
+      divider: 'rgba(0, 0, 0, 0.08)',
       btnIdle: '#78716c',
-      btnHover: '#f43f5e',
-      btnHoverBg: 'rgba(244, 63, 94, 0.08)',
-      btnHoverBorder: 'rgba(244, 63, 94, 0.2)',
-      tooltipBg: '#fffbfc',
-      tooltipBorder: 'rgba(244, 63, 94, 0.18)',
-      tooltipText: '#3f3f46',
-      tooltipShadow: '0 4px 16px rgba(244, 63, 94, 0.12), 0 2px 6px rgba(0,0,0,0.06)',
+      btnHover: '#e11d48',
+      btnHoverBg: 'rgba(244, 63, 94, 0.06)',
+      btnHoverBorder: 'rgba(244, 63, 94, 0.18)',
+      tooltipBg: '#ffffff',
+      tooltipBorder: 'rgba(0, 0, 0, 0.1)',
+      tooltipText: '#27272a',
+      tooltipShadow: '0 4px 16px rgba(0, 0, 0, 0.08), 0 2px 6px rgba(0, 0, 0, 0.04)',
     };
   }, [isDark]);
 
@@ -181,7 +181,6 @@ const FormattingToolbar: React.FC<FormattingToolbarProps> = ({
             label="AI Assist"
             shortcut="Cmd+K"
             onClick={onAIAssist}
-            accentColor="#8B5CF6"
             theme={theme}
           >
             <Wand2 size={15} />

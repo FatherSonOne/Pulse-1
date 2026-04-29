@@ -1,10 +1,11 @@
 import React, { useState, useRef, useEffect, useCallback } from 'react';
 import { useWorkspace } from '../../contexts/WorkspaceContext';
 import { useAuth } from '../../hooks/useAuth';
-import { Workspace, WorkspacePlan, WORKSPACE_PLAN_LABELS, WORKSPACE_PLAN_DESCRIPTIONS, WORKSPACE_PLAN_APPS, WORKSPACE_PLAN_PRICES, WORKSPACE_PLAN_COLORS, workspaceService } from '../../services/workspaceService';
+import { Workspace, workspaceService } from '../../services/workspaceService';
+import { DeleteWorkspaceDialog } from '../settings/DeleteWorkspaceDialog';
 import './WorkspaceSwitcher.css';
 
-import { ArrowLeft, Check, Copy, Plus, UserPlus } from 'lucide-react';
+import { Archive, ArrowLeft, Check, Copy, CornerDownRight, MoreHorizontal, Plus, Trash2, UserPlus } from 'lucide-react';
 
 interface WorkspaceSwitcherProps {
   isCollapsed: boolean;
@@ -49,18 +50,19 @@ export const WorkspaceSwitcher: React.FC<WorkspaceSwitcherProps> = ({ isCollapse
     currentWorkspace,
     members,
     currentRole,
-    isAdmin,
+    isOwner,
     canManageMembers,
     switchWorkspace,
-    createWorkspace,
+    createChildWorkspace,
+    softDeleteWorkspace,
+    hardDeleteWorkspace,
   } = useWorkspace();
 
   const [isOpen, setIsOpen] = useState(false);
   const [showCreateForm, setShowCreateForm] = useState(false);
-  const [createStep, setCreateStep] = useState<1 | 2>(1);
-  const [selectedPlan, setSelectedPlan] = useState<WorkspacePlan>('free');
   const [showInviteForm, setShowInviteForm] = useState(false);
   const [newName, setNewName] = useState('');
+  const [createError, setCreateError] = useState('');
   const [inviteEmail, setInviteEmail] = useState('');
   const [inviteRole, setInviteRole] = useState<'admin' | 'member' | 'viewer'>('member');
   const [isCreating, setIsCreating] = useState(false);
@@ -69,6 +71,13 @@ export const WorkspaceSwitcher: React.FC<WorkspaceSwitcherProps> = ({ isCollapse
   const [inviteLink, setInviteLink] = useState('');
   const [linkCopied, setLinkCopied] = useState(false);
   const [unreadCounts, setUnreadCounts] = useState<Record<string, number>>({});
+  const [openRowMenuId, setOpenRowMenuId] = useState<string | null>(null);
+  const [deleteTarget, setDeleteTarget] = useState<{ ws: Workspace; mode: 'soft' | 'hard' } | null>(null);
+  const [isDeleting, setIsDeleting] = useState(false);
+
+  const primaryWorkspace = currentWorkspace?.parent_workspace_id
+    ? workspaces.find((w) => w.id === currentWorkspace.parent_workspace_id) ?? currentWorkspace
+    : currentWorkspace;
   const panelRef = useRef<HTMLDivElement>(null);
   const triggerRef = useRef<HTMLButtonElement>(null);
 
@@ -103,10 +112,16 @@ export const WorkspaceSwitcher: React.FC<WorkspaceSwitcherProps> = ({ isCollapse
         setIsOpen(false);
         setShowCreateForm(false);
         setShowInviteForm(false);
+        setOpenRowMenuId(null);
       }
     };
     document.addEventListener('mousedown', handler);
     return () => document.removeEventListener('mousedown', handler);
+  }, [isOpen]);
+
+  // Close row menu when panel closes or workspace switches
+  useEffect(() => {
+    if (!isOpen) setOpenRowMenuId(null);
   }, [isOpen]);
 
   // Keyboard navigation: Escape to close, arrow keys to navigate workspace list
@@ -139,16 +154,17 @@ export const WorkspaceSwitcher: React.FC<WorkspaceSwitcherProps> = ({ isCollapse
   };
 
   const handleCreate = async () => {
-    if (!newName.trim()) return;
+    if (!newName.trim() || !primaryWorkspace) return;
     setIsCreating(true);
+    setCreateError('');
     try {
-      const ws = await createWorkspace(newName.trim(), undefined, selectedPlan);
+      const ws = await createChildWorkspace(primaryWorkspace.id, newName.trim());
       switchWorkspace(ws.id);
       setNewName('');
-      setSelectedPlan('free');
-      setCreateStep(1);
       setShowCreateForm(false);
       setIsOpen(false);
+    } catch (err: any) {
+      setCreateError(err?.message ?? 'Could not create workspace');
     } finally {
       setIsCreating(false);
     }
@@ -179,6 +195,26 @@ export const WorkspaceSwitcher: React.FC<WorkspaceSwitcherProps> = ({ isCollapse
     });
   };
 
+  const handleRowAction = (ws: Workspace, mode: 'soft' | 'hard') => {
+    setOpenRowMenuId(null);
+    setDeleteTarget({ ws, mode });
+  };
+
+  const handleConfirmDelete = async () => {
+    if (!deleteTarget) return;
+    setIsDeleting(true);
+    try {
+      if (deleteTarget.mode === 'soft') {
+        await softDeleteWorkspace(deleteTarget.ws.id);
+      } else {
+        await hardDeleteWorkspace(deleteTarget.ws.id);
+      }
+      setDeleteTarget(null);
+    } finally {
+      setIsDeleting(false);
+    }
+  };
+
   if (!currentWorkspace) return null;
 
   // Collapsed state: just an avatar icon
@@ -199,11 +235,26 @@ export const WorkspaceSwitcher: React.FC<WorkspaceSwitcherProps> = ({ isCollapse
             <WorkspaceList
               workspaces={workspaces}
               currentId={currentWorkspace.id}
+              currentUserId={user?.id}
               onSwitch={handleSwitch}
-              onCreateClick={() => setShowCreateForm(true)}
+              onCreateClick={isOwner ? () => setShowCreateForm(true) : undefined}
+              onArchive={(ws) => handleRowAction(ws, 'soft')}
+              onDelete={(ws) => handleRowAction(ws, 'hard')}
+              openMenuId={openRowMenuId}
+              onMenuToggle={(id) => setOpenRowMenuId((cur) => (cur === id ? null : id))}
               unreadCounts={unreadCounts}
             />
           </div>
+        )}
+        {deleteTarget && (
+          <DeleteWorkspaceDialog
+            workspaceName={deleteTarget.ws.name}
+            mode={deleteTarget.mode}
+            isOpen={true}
+            isLoading={isDeleting}
+            onConfirm={handleConfirmDelete}
+            onCancel={() => setDeleteTarget(null)}
+          />
         )}
       </div>
     );
@@ -244,8 +295,13 @@ export const WorkspaceSwitcher: React.FC<WorkspaceSwitcherProps> = ({ isCollapse
                 <WorkspaceList
                   workspaces={workspaces}
                   currentId={currentWorkspace.id}
+                  currentUserId={user?.id}
                   onSwitch={handleSwitch}
-                  onCreateClick={() => setShowCreateForm(true)}
+                  onCreateClick={isOwner ? () => setShowCreateForm(true) : undefined}
+                  onArchive={(ws) => handleRowAction(ws, 'soft')}
+                  onDelete={(ws) => handleRowAction(ws, 'hard')}
+                  openMenuId={openRowMenuId}
+                  onMenuToggle={(id) => setOpenRowMenuId((cur) => (cur === id ? null : id))}
                 />
               </div>
 
@@ -295,121 +351,45 @@ export const WorkspaceSwitcher: React.FC<WorkspaceSwitcherProps> = ({ isCollapse
             </>
           )}
 
-          {/* Create workspace wizard (2-step) */}
-          {showCreateForm && (
+          {/* Create child workspace */}
+          {showCreateForm && primaryWorkspace && (
             <div className="ws-panel-section">
               <button
                 type="button"
                 className="ws-back-btn"
                 onClick={() => {
-                  if (createStep === 2) {
-                    setCreateStep(1);
-                  } else {
-                    setShowCreateForm(false);
-                    setCreateStep(1);
-                    setSelectedPlan('free');
-                  }
+                  setShowCreateForm(false);
+                  setNewName('');
+                  setCreateError('');
                 }}
               >
                 <ArrowLeft /> Back
               </button>
-
-              {createStep === 1 && (
-                <>
-                  <div className="ws-panel-label">New workspace</div>
-                  <div className="ws-form">
-                    <input
-                      autoFocus
-                      className="ws-input"
-                      placeholder="Workspace name"
-                      value={newName}
-                      onChange={(e) => setNewName(e.target.value)}
-                      maxLength={50}
-                    />
-                    <button
-                      type="button"
-                      className="ws-submit-btn"
-                      disabled={!newName.trim()}
-                      onClick={() => setCreateStep(2)}
-                    >
-                      Next: Choose Plan
-                    </button>
-                  </div>
-                </>
-              )}
-
-              {createStep === 2 && (
-                <>
-                  <div className="ws-panel-label">Choose a plan</div>
-                  <div style={{ display: 'flex', flexDirection: 'column', gap: '6px', marginBottom: '10px' }}>
-                    {(['free', 'starter', 'pro', 'business', 'ecosystem'] as WorkspacePlan[]).map((plan) => {
-                      const isSelected = selectedPlan === plan;
-                      const colors = WORKSPACE_PLAN_COLORS;
-                      const prices = WORKSPACE_PLAN_PRICES;
-                      return (
-                        <button
-                          key={plan}
-                          type="button"
-                          onClick={() => setSelectedPlan(plan)}
-                          className="ws-plan-card"
-                          style={{
-                            display: 'flex', alignItems: 'center', gap: '10px',
-                            padding: '10px 12px', borderRadius: '10px',
-                            border: isSelected ? `2px solid ${colors[plan]}` : '1px solid var(--ws-border, rgba(255,255,255,0.08))',
-                            background: isSelected ? `${colors[plan]}10` : 'transparent',
-                            cursor: 'pointer', textAlign: 'left', width: '100%',
-                            transition: 'all 0.15s',
-                          }}
-                        >
-                          <div style={{
-                            width: '32px', height: '32px', borderRadius: '8px',
-                            background: `linear-gradient(135deg, ${colors[plan]}, ${colors[plan]}cc)`,
-                            display: 'flex', alignItems: 'center', justifyContent: 'center', flexShrink: 0,
-                          }}>
-                            <span style={{ color: '#fff', fontSize: '12px', fontWeight: 700 }}>
-                              {WORKSPACE_PLAN_LABELS[plan][0]}
-                            </span>
-                          </div>
-                          <div style={{ flex: 1, minWidth: 0 }}>
-                            <div style={{ display: 'flex', alignItems: 'center', gap: '6px' }}>
-                              <span style={{ fontSize: '13px', fontWeight: 600, color: 'var(--ws-text, #fff)' }}>
-                                {WORKSPACE_PLAN_LABELS[plan]}
-                              </span>
-                              {plan === 'pro' && (
-                                <span style={{ fontSize: '9px', fontWeight: 700, padding: '1px 5px', borderRadius: '4px', background: '#f43f5e20', color: '#f43f5e', textTransform: 'uppercase' }}>Popular</span>
-                              )}
-                              {plan === 'ecosystem' && (
-                                <span style={{ fontSize: '9px', fontWeight: 700, padding: '1px 5px', borderRadius: '4px', background: '#10b98120', color: '#10b981', textTransform: 'uppercase' }}>Full Suite</span>
-                              )}
-                            </div>
-                            <div style={{ fontSize: '11px', color: 'var(--ws-text-muted, #a1a1aa)', marginTop: '1px' }}>
-                              {WORKSPACE_PLAN_DESCRIPTIONS[plan]}
-                            </div>
-                            {plan === 'ecosystem' && (
-                              <div style={{ display: 'flex', gap: '4px', marginTop: '4px' }}>
-                                {WORKSPACE_PLAN_APPS[plan].map((app) => (
-                                  <span key={app} style={{ fontSize: '9px', padding: '1px 5px', borderRadius: '4px', background: 'rgba(255,255,255,0.06)', color: 'var(--ws-text-muted, #a1a1aa)' }}>{app}</span>
-                                ))}
-                              </div>
-                            )}
-                          </div>
-                          <span style={{ fontSize: '13px', fontWeight: 700, color: colors[plan], flexShrink: 0 }}>
-                            {prices[plan]}
-                          </span>
-                        </button>
-                      );
-                    })}
-                  </div>
-                  <button
-                    type="button"
-                    className="ws-submit-btn"
-                    disabled={isCreating}
-                    onClick={handleCreate}
-                  >
-                    {isCreating ? 'Creating…' : `Create with ${WORKSPACE_PLAN_LABELS[selectedPlan]} Plan`}
-                  </button>
-                </>
-              )}
+              <div className="ws-panel-label">New workspace</div>
+              <p className="ws-create-hint">
+                Sub-context under <strong>{primaryWorkspace.name}</strong> — shares your plan,
+                no extra charge.
+              </p>
+              <div className="ws-form">
+                <input
+                  autoFocus
+                  className="ws-input"
+                  placeholder="e.g. Development, Personal, Project X"
+                  value={newName}
+                  onChange={(e) => setNewName(e.target.value)}
+                  onKeyDown={(e) => { if (e.key === 'Enter' && newName.trim()) handleCreate(); }}
+                  maxLength={50}
+                />
+                {createError && <div className="ws-error">{createError}</div>}
+                <button
+                  type="button"
+                  className="ws-submit-btn"
+                  disabled={!newName.trim() || isCreating}
+                  onClick={handleCreate}
+                >
+                  {isCreating ? 'Creating…' : 'Create workspace'}
+                </button>
+              </div>
             </div>
           )}
 
@@ -474,6 +454,16 @@ export const WorkspaceSwitcher: React.FC<WorkspaceSwitcherProps> = ({ isCollapse
           )}
         </div>
       )}
+      {deleteTarget && (
+        <DeleteWorkspaceDialog
+          workspaceName={deleteTarget.ws.name}
+          mode={deleteTarget.mode}
+          isOpen={true}
+          isLoading={isDeleting}
+          onConfirm={handleConfirmDelete}
+          onCancel={() => setDeleteTarget(null)}
+        />
+      )}
     </div>
   );
 };
@@ -485,22 +475,55 @@ export const WorkspaceSwitcher: React.FC<WorkspaceSwitcherProps> = ({ isCollapse
 interface WorkspaceListProps {
   workspaces: Workspace[];
   currentId: string;
+  currentUserId?: string;
   onSwitch: (ws: Workspace) => void;
-  onCreateClick: () => void;
+  onCreateClick?: () => void;
+  onArchive?: (ws: Workspace) => void;
+  onDelete?: (ws: Workspace) => void;
+  openMenuId?: string | null;
+  onMenuToggle?: (id: string) => void;
   unreadCounts?: Record<string, number>;
 }
 
-const WorkspaceList: React.FC<WorkspaceListProps> = ({ workspaces, currentId, onSwitch, onCreateClick, unreadCounts }) => (
-  <>
-    {workspaces.map((ws) => {
-      const unread = unreadCounts?.[ws.id] ?? 0;
-      return (
+const WorkspaceList: React.FC<WorkspaceListProps> = ({
+  workspaces,
+  currentId,
+  currentUserId,
+  onSwitch,
+  onCreateClick,
+  onArchive,
+  onDelete,
+  openMenuId,
+  onMenuToggle,
+  unreadCounts,
+}) => {
+  const primaries = workspaces.filter((w) => !w.parent_workspace_id);
+  const childrenByParent = workspaces.reduce<Record<string, Workspace[]>>((acc, w) => {
+    if (w.parent_workspace_id) {
+      (acc[w.parent_workspace_id] ||= []).push(w);
+    }
+    return acc;
+  }, {});
+  const orphans = workspaces.filter(
+    (w) => w.parent_workspace_id && !primaries.some((p) => p.id === w.parent_workspace_id),
+  );
+
+  const renderRow = (ws: Workspace, isChild: boolean) => {
+    const unread = unreadCounts?.[ws.id] ?? 0;
+    const userIsOwner = !!currentUserId && ws.owner_id === currentUserId;
+    const canShowMenu = userIsOwner && (onArchive || onDelete);
+    const menuOpen = openMenuId === ws.id;
+    return (
+      <div
+        key={ws.id}
+        className={`ws-row ${ws.id === currentId ? 'active' : ''} ${isChild ? 'ws-row-child' : ''}`}
+      >
         <button
           type="button"
-          key={ws.id}
-          className={`ws-list-item ${ws.id === currentId ? 'active' : ''}`}
+          className={`ws-list-item ${ws.id === currentId ? 'active' : ''} ${isChild ? 'ws-list-item-child' : ''}`}
           onClick={() => onSwitch(ws)}
         >
+          {isChild && <CornerDownRight className="ws-child-indicator" />}
           <WorkspaceAvatar workspace={ws} size={22} />
           <span className="ws-list-name">{ws.name}</span>
           {unread > 0 && ws.id !== currentId && (
@@ -508,13 +531,66 @@ const WorkspaceList: React.FC<WorkspaceListProps> = ({ workspaces, currentId, on
           )}
           {ws.id === currentId && <Check className="ws-list-check" />}
         </button>
-      );
-    })}
-    <button type="button" className="ws-list-item ws-list-create" onClick={onCreateClick}>
-      <div className="ws-create-icon"><Plus /></div>
-      <span>New workspace</span>
-    </button>
-  </>
-);
+        {canShowMenu && (
+          <>
+            <button
+              type="button"
+              aria-label="Workspace options"
+              className="ws-row-menu-trigger"
+              onClick={(e) => {
+                e.stopPropagation();
+                onMenuToggle?.(ws.id);
+              }}
+            >
+              <MoreHorizontal />
+            </button>
+            {menuOpen && (
+              <div className="ws-row-menu" role="menu" onClick={(e) => e.stopPropagation()}>
+                {onArchive && (
+                  <button
+                    type="button"
+                    role="menuitem"
+                    className="ws-row-menu-item"
+                    onClick={() => onArchive(ws)}
+                  >
+                    <Archive /> <span>Archive</span>
+                  </button>
+                )}
+                {onDelete && (
+                  <button
+                    type="button"
+                    role="menuitem"
+                    className="ws-row-menu-item ws-row-menu-item-danger"
+                    onClick={() => onDelete(ws)}
+                  >
+                    <Trash2 /> <span>Delete permanently</span>
+                  </button>
+                )}
+              </div>
+            )}
+          </>
+        )}
+      </div>
+    );
+  };
+
+  return (
+    <>
+      {primaries.map((p) => (
+        <React.Fragment key={p.id}>
+          {renderRow(p, false)}
+          {(childrenByParent[p.id] ?? []).map((c) => renderRow(c, true))}
+        </React.Fragment>
+      ))}
+      {orphans.map((o) => renderRow(o, false))}
+      {onCreateClick && (
+        <button type="button" className="ws-list-item ws-list-create" onClick={onCreateClick}>
+          <div className="ws-create-icon"><Plus /></div>
+          <span>New workspace</span>
+        </button>
+      )}
+    </>
+  );
+};
 
 export default WorkspaceSwitcher;

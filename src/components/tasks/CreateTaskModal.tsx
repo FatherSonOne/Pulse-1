@@ -1,6 +1,6 @@
-import React, { useState, useEffect } from 'react';
+import React, { useEffect, useRef, useState } from 'react';
 import { createPortal } from 'react-dom';
-import { X, Save, Sparkles, Calendar, Lightbulb } from 'lucide-react';
+import { X, Plus, Sparkles } from 'lucide-react';
 import { Task } from '../../services/taskService';
 import { User } from '../../types';
 import { parseNaturalLanguageTaskWithFallback } from '../../services/geminiService';
@@ -48,17 +48,52 @@ export const CreateTaskModal: React.FC<CreateTaskModalProps> = ({
     reasoning: string;
   } | null>(null);
 
-  // Focus trap
+  // Modal container ref for focus management.
+  const modalRef = useRef<HTMLDivElement | null>(null);
+
+  // Escape closes, Cmd/Ctrl+Enter submits the form. Pulse expects keyboard-
+  // first operators (Linear/Raycast bar) so the shortcut is non-negotiable.
   useEffect(() => {
-    const handleEscape = (e: KeyboardEvent) => {
+    const handleKey = (e: KeyboardEvent) => {
       if (e.key === 'Escape') {
         onClose();
+        return;
+      }
+      if (e.key === 'Enter' && (e.metaKey || e.ctrlKey)) {
+        e.preventDefault();
+        const form = modalRef.current?.querySelector<HTMLFormElement>('form');
+        if (form) {
+          form.requestSubmit();
+        }
       }
     };
 
-    document.addEventListener('keydown', handleEscape);
-    return () => document.removeEventListener('keydown', handleEscape);
+    document.addEventListener('keydown', handleKey);
+    return () => document.removeEventListener('keydown', handleKey);
   }, [onClose]);
+
+  // Focus trap matching the DecisionTaskHub pattern. Tab cycles within the
+  // modal so keyboard users don't fall out into the page underneath.
+  useEffect(() => {
+    const handleTab = (e: KeyboardEvent) => {
+      if (e.key !== 'Tab' || !modalRef.current) return;
+      const focusables = modalRef.current.querySelectorAll<HTMLElement>(
+        'button, [href], input, select, textarea, [tabindex]:not([tabindex="-1"])'
+      );
+      if (focusables.length === 0) return;
+      const first = focusables[0];
+      const last = focusables[focusables.length - 1];
+      if (e.shiftKey && document.activeElement === first) {
+        e.preventDefault();
+        last.focus();
+      } else if (!e.shiftKey && document.activeElement === last) {
+        e.preventDefault();
+        first.focus();
+      }
+    };
+    document.addEventListener('keydown', handleTab);
+    return () => document.removeEventListener('keydown', handleTab);
+  }, []);
 
   const parseNaturalLanguage = async () => {
     if (!naturalLanguageInput.trim()) {
@@ -256,16 +291,28 @@ export const CreateTaskModal: React.FC<CreateTaskModalProps> = ({
   };
 
   const modalContent = (
-    <div className="create-task-modal-overlay" onClick={onClose}>
-      <div className="create-task-modal" onClick={(e) => e.stopPropagation()}>
+    <div
+      className="create-task-modal-overlay"
+      onClick={onClose}
+      role="presentation"
+    >
+      <div
+        ref={modalRef}
+        className="create-task-modal"
+        role="dialog"
+        aria-modal="true"
+        aria-labelledby="create-task-modal-title"
+        onClick={(e) => e.stopPropagation()}
+      >
         <div className="create-task-modal-header">
-          <h2 className="create-task-modal-title">Create New Task</h2>
+          <h2 id="create-task-modal-title" className="create-task-modal-title">New task</h2>
           <button
             className="create-task-modal-close"
             onClick={onClose}
-            aria-label="Close modal"
+            aria-label="Close"
+            title="Close"
           >
-            <X size={20} />
+            <X size={18} />
           </button>
         </div>
 
@@ -322,11 +369,11 @@ export const CreateTaskModal: React.FC<CreateTaskModalProps> = ({
                 disabled={isProcessing || !naturalLanguageInput.trim()}
               >
                 {isProcessing ? (
-                  <>Processing...</>
+                  <>Processing</>
                 ) : (
                   <>
-                    <Sparkles size={16} />
-                    Parse Task
+                    <Sparkles size={16} aria-hidden="true" />
+                    Make task
                   </>
                 )}
               </button>
@@ -412,10 +459,10 @@ export const CreateTaskModal: React.FC<CreateTaskModalProps> = ({
                     className="suggest-deadline-button"
                     onClick={handleSuggestDeadline}
                     disabled={isSuggestingDeadline || !title.trim()}
-                    title="Let AI suggest an optimal deadline"
+                    title="Pulse AI suggests an optimal deadline"
                   >
-                    <Lightbulb size={14} />
-                    {isSuggestingDeadline ? 'Analyzing...' : 'Suggest'}
+                    <Sparkles size={12} aria-hidden="true" />
+                    {isSuggestingDeadline ? 'Thinking' : 'Pulse AI · Suggest'}
                   </button>
                 </div>
                 <input
@@ -426,9 +473,9 @@ export const CreateTaskModal: React.FC<CreateTaskModalProps> = ({
                   onChange={(e) => setDeadline(e.target.value)}
                 />
                 {deadlineSuggestion && (
-                  <div className="deadline-suggestion">
-                    <Lightbulb size={14} className="suggestion-icon" />
+                  <div className="deadline-suggestion" role="status">
                     <div className="suggestion-content">
+                      <span className="suggestion-provenance">PULSE AI &middot; SUGGESTED</span>
                       <div className="suggestion-reasoning">
                         {deadlineSuggestion.reasoning}
                       </div>
@@ -438,20 +485,27 @@ export const CreateTaskModal: React.FC<CreateTaskModalProps> = ({
               </div>
 
               <div className="create-task-modal-footer">
-                <button
-                  type="button"
-                  className="create-task-button create-task-button-secondary"
-                  onClick={onClose}
-                >
-                  Cancel
-                </button>
-                <button
-                  type="submit"
-                  className="create-task-button create-task-button-primary"
-                >
-                  <Save size={16} />
-                  Create Task
-                </button>
+                <span className="create-task-modal-footer-hint" aria-hidden="true">
+                  <kbd>&#8984;</kbd>
+                  <kbd>&#8629;</kbd>
+                  to create
+                </span>
+                <div className="create-task-modal-footer-actions">
+                  <button
+                    type="button"
+                    className="create-task-button create-task-button-secondary"
+                    onClick={onClose}
+                  >
+                    Cancel
+                  </button>
+                  <button
+                    type="submit"
+                    className="create-task-button create-task-button-primary"
+                  >
+                    <Plus size={16} aria-hidden="true" strokeWidth={2.5} />
+                    Create task
+                  </button>
+                </div>
               </div>
             </>
           )}

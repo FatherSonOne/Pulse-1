@@ -54,10 +54,12 @@
   animation: msgHeartbeat 0.5s cubic-bezier(0.16, 1, 0.3, 1) forwards;
 }
 
-/* AI mode — keep purple accent for AI-specific state */
+/* AI mode — rose with deeper halo so it reads distinct from the focus-within ring */
 .message-input-container.ai-active {
-  border-color: rgba(139, 92, 246, 0.4);
-  box-shadow: 0 0 0 3px rgba(139, 92, 246, 0.12), 0 4px 20px rgba(0, 0, 0, 0.5);
+  border-color: rgba(244, 63, 94, 0.6);
+  box-shadow: 0 0 0 3px rgba(244, 63, 94, 0.18),
+              0 0 24px rgba(244, 63, 94, 0.28),
+              0 4px 20px rgba(0, 0, 0, 0.5);
 }
 
 /* ============================================
@@ -116,16 +118,16 @@
 }
 
 .message-input-area code {
-  font-family: 'Courier New', monospace;
+  font-family: 'JetBrains Mono', 'SF Mono', Consolas, monospace;
   font-size: 0.875em;
-  background: rgba(139, 92, 246, 0.1);
+  background: rgba(255, 255, 255, 0.06);
   padding: 2px 6px;
   border-radius: 3px;
-  color: #C4B5FD;
+  color: #fda4af;
 }
 
 .message-input-area a {
-  color: var(--ai-active, #8B5CF6);
+  color: #fb7185;
   text-decoration: underline;
   text-decoration-style: dotted;
   text-underline-offset: 2px;
@@ -221,6 +223,55 @@
 }
 
 /* ============================================
+   Mode Row (Simple / Advanced toggle)
+   ============================================ */
+.message-input-mode-row {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  padding: 6px 12px 4px;
+}
+
+.mode-toggle-button {
+  display: inline-flex;
+  align-items: center;
+  gap: 6px;
+  padding: 4px 8px;
+  font-family: 'JetBrains Mono', 'SF Mono', Consolas, monospace;
+  font-size: 10px;
+  font-weight: 500;
+  letter-spacing: 0.08em;
+  text-transform: uppercase;
+  color: #71717a;
+  background: transparent;
+  border: 1px solid transparent;
+  border-radius: 6px;
+  cursor: pointer;
+  transition: color 150ms cubic-bezier(0.16, 1, 0.3, 1),
+              background 150ms cubic-bezier(0.16, 1, 0.3, 1),
+              border-color 150ms cubic-bezier(0.16, 1, 0.3, 1);
+}
+
+.mode-toggle-button:hover {
+  color: #e4e4e7;
+  background: rgba(255, 255, 255, 0.04);
+  border-color: rgba(255, 255, 255, 0.08);
+}
+
+.mode-toggle-button[aria-pressed="true"] {
+  color: #f43f5e;
+  background: rgba(244, 63, 94, 0.08);
+  border-color: rgba(244, 63, 94, 0.2);
+}
+
+.mode-row-draft-hint {
+  font-family: 'JetBrains Mono', 'SF Mono', Consolas, monospace;
+  font-size: 10px;
+  letter-spacing: 0.05em;
+  color: #71717a;
+}
+
+/* ============================================
    Action Bar
    ============================================ */
 .message-action-bar {
@@ -228,7 +279,7 @@
   align-items: center;
   justify-content: space-between;
   padding: var(--space-3, 0.75rem) var(--space-4, 1rem);
-  background: rgba(0, 0, 0, 0.6);
+  background: rgba(255, 255, 255, 0.02);
   -webkit-backdrop-filter: blur(12px);
   backdrop-filter: blur(12px);
   border-top: 1px solid rgba(255, 255, 255, 0.06);
@@ -281,29 +332,38 @@
   display: flex;
   align-items: center;
   gap: var(--space-2, 0.5rem);
-  padding: 12px 16px;
-  min-height: 48px;
+  padding: 10px 14px;
+  min-height: 40px;
   background: transparent;
-  border: 1px solid #3F3F46;
+  border: 1px solid rgba(255, 255, 255, 0.08);
   border-radius: var(--ai-radius-md, 0.5rem);
-  color: #A1A1AA;
-  font-size: var(--text-sm, 0.875rem);
+  color: #a1a1aa;
+  font-family: 'JetBrains Mono', 'SF Mono', Consolas, monospace;
+  font-size: 11px;
   font-weight: 500;
+  letter-spacing: 0.1em;
+  text-transform: uppercase;
   cursor: pointer;
-  transition: all var(--animation-fast, 150ms);
+  transition: color 150ms cubic-bezier(0.16, 1, 0.3, 1),
+              background 150ms cubic-bezier(0.16, 1, 0.3, 1),
+              border-color 150ms cubic-bezier(0.16, 1, 0.3, 1);
 }
 
-.ai-toggle-button:hover {
-  background: var(--ai-background-hover, rgba(139, 92, 246, 0.1));
-  border-color: var(--ai-active, #8B5CF6);
-  color: var(--ai-active, #8B5CF6);
+.ai-toggle-button:hover:not(:disabled) {
+  background: rgba(244, 63, 94, 0.08);
+  border-color: rgba(244, 63, 94, 0.25);
+  color: #f43f5e;
 }
 
 .ai-toggle-button.active {
-  background: linear-gradient(135deg, rgba(139, 92, 246, 0.2), rgba(139, 92, 246, 0.1));
-  border-color: var(--ai-active, #8B5CF6);
-  color: var(--ai-active, #8B5CF6);
-  box-shadow: 0 0 0 2px rgba(139, 92, 246, 0.2);
+  background: rgba(244, 63, 94, 0.12);
+  border-color: rgba(244, 63, 94, 0.4);
+  color: #f43f5e;
+}
+
+.ai-toggle-button:disabled {
+  opacity: 0.5;
+  cursor: not-allowed;
 }
 
 .ai-toggle-icon {
@@ -406,36 +466,44 @@
 }
 
 /* ============================================
-   Tools Menu Button
+   Tools Menu Button — state-only coral, idle is neutral
    ============================================ */
 .tools-menu-button {
   display: flex;
   align-items: center;
   gap: 6px;
-  padding: 12px 16px;
-  min-height: 48px;
-  background: linear-gradient(135deg, rgba(244, 63, 94, 0.1), rgba(236, 72, 153, 0.1));
-  border: 1px solid rgba(244, 63, 94, 0.2);
+  padding: 10px 14px;
+  min-height: 40px;
+  background: transparent;
+  border: 1px solid rgba(255, 255, 255, 0.08);
   border-radius: 10px;
-  color: #f43f5e;
+  color: #a1a1aa;
   font-size: 13px;
-  font-weight: 600;
+  font-weight: 500;
   cursor: pointer;
-  transition: all 200ms ease;
+  transition: color 150ms cubic-bezier(0.16, 1, 0.3, 1),
+              background 150ms cubic-bezier(0.16, 1, 0.3, 1),
+              border-color 150ms cubic-bezier(0.16, 1, 0.3, 1),
+              transform 150ms cubic-bezier(0.16, 1, 0.3, 1);
 }
 
-.tools-menu-button:hover {
-  background: linear-gradient(135deg, rgba(244, 63, 94, 0.15), rgba(236, 72, 153, 0.15));
-  border-color: rgba(244, 63, 94, 0.3);
-  box-shadow: 0 2px 8px rgba(244, 63, 94, 0.2);
+.tools-menu-button:hover:not(:disabled) {
+  background: rgba(244, 63, 94, 0.08);
+  border-color: rgba(244, 63, 94, 0.25);
+  color: #f43f5e;
   transform: translateY(-1px);
 }
 
 .tools-menu-button.active {
-  background: linear-gradient(135deg, #f43f5e, #ec4899);
-  border-color: #f43f5e;
-  color: white;
-  box-shadow: 0 4px 12px rgba(244, 63, 94, 0.3);
+  background: rgba(244, 63, 94, 0.12);
+  border-color: rgba(244, 63, 94, 0.4);
+  color: #f43f5e;
+}
+
+.tools-menu-button:disabled {
+  opacity: 0.5;
+  cursor: not-allowed;
+  transform: none;
 }
 
 .tools-menu-button i {
@@ -445,6 +513,66 @@
 .tools-menu-label {
   font-size: 12px;
   letter-spacing: -0.01em;
+}
+
+/* ============================================
+   Attachment Error Banner
+   ============================================ */
+.attachment-error {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  margin: 4px 12px 0;
+  padding: 8px 12px;
+  font-size: 12px;
+  color: #f87171;
+  background: rgba(239, 68, 68, 0.08);
+  border: 1px solid rgba(239, 68, 68, 0.2);
+  border-radius: 8px;
+}
+
+.attachment-error span {
+  flex: 1;
+  line-height: 1.4;
+}
+
+.attachment-error-dismiss {
+  width: 20px;
+  height: 20px;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  background: transparent;
+  border: none;
+  border-radius: 4px;
+  color: inherit;
+  cursor: pointer;
+  font-size: 16px;
+  line-height: 1;
+  opacity: 0.7;
+  transition: opacity 150ms ease;
+}
+
+.attachment-error-dismiss:hover {
+  opacity: 1;
+}
+
+:root:not(.dark) .attachment-error {
+  color: #b91c1c;
+  background: rgba(239, 68, 68, 0.06);
+  border-color: rgba(239, 68, 68, 0.18);
+}
+
+/* ============================================
+   Disabled State
+   ============================================ */
+.message-input-container.is-disabled {
+  opacity: 0.6;
+  pointer-events: none;
+}
+
+.message-input-container.is-disabled .send-button {
+  pointer-events: auto;
 }
 
 /* ============================================
@@ -519,8 +647,8 @@
 }
 
 :root:not(.dark) .message-input-area code {
-  background: rgba(139, 92, 246, 0.08);
-  color: #7c3aed;
+  background: rgba(0, 0, 0, 0.04);
+  color: #be123c;
 }
 
 :root:not(.dark) .message-input-area::-webkit-scrollbar-thumb {
@@ -528,8 +656,45 @@
 }
 
 :root:not(.dark) .message-action-bar {
-  background: linear-gradient(135deg, rgba(15, 23, 42, 0.06) 0%, rgba(244, 63, 94, 0.10) 100%);
-  border-top-color: rgba(244, 63, 94, 0.15);
+  background: rgba(0, 0, 0, 0.02);
+  border-top-color: rgba(0, 0, 0, 0.08);
+}
+
+:root:not(.dark) .mode-toggle-button {
+  color: #78716c;
+}
+
+:root:not(.dark) .mode-toggle-button:hover {
+  color: #18181b;
+  background: rgba(0, 0, 0, 0.03);
+  border-color: rgba(0, 0, 0, 0.08);
+}
+
+:root:not(.dark) .mode-toggle-button[aria-pressed="true"] {
+  color: #e11d48;
+  background: rgba(244, 63, 94, 0.08);
+  border-color: rgba(244, 63, 94, 0.2);
+}
+
+:root:not(.dark) .mode-row-draft-hint {
+  color: #a8a29e;
+}
+
+:root:not(.dark) .tools-menu-button {
+  border-color: rgba(0, 0, 0, 0.1);
+  color: #78716c;
+}
+
+:root:not(.dark) .tools-menu-button:hover:not(:disabled) {
+  background: rgba(244, 63, 94, 0.06);
+  border-color: rgba(244, 63, 94, 0.2);
+  color: #e11d48;
+}
+
+:root:not(.dark) .tools-menu-button.active {
+  background: rgba(244, 63, 94, 0.08);
+  border-color: rgba(244, 63, 94, 0.3);
+  color: #e11d48;
 }
 
 :root:not(.dark) .voice-input-button {
@@ -538,8 +703,20 @@
 }
 
 :root:not(.dark) .ai-toggle-button {
-  border-color: #d6d3d1;
+  border-color: rgba(0, 0, 0, 0.1);
   color: #78716c;
+}
+
+:root:not(.dark) .ai-toggle-button:hover:not(:disabled) {
+  background: rgba(244, 63, 94, 0.06);
+  border-color: rgba(244, 63, 94, 0.2);
+  color: #e11d48;
+}
+
+:root:not(.dark) .ai-toggle-button.active {
+  background: rgba(244, 63, 94, 0.08);
+  border-color: rgba(244, 63, 94, 0.3);
+  color: #e11d48;
 }
 
 :root:not(.dark) .simple-action-button {

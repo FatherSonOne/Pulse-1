@@ -127,7 +127,7 @@ const billingService = {
 
     if (error || !data) {
       // No entitlements row = no active subscription/trial.
-      // Every limit is 0 (all AI/SMS/storage/Voxer blocked) and no features flipped on.
+      // Every limit is 0 (all AI/SMS/storage/Relay blocked) and no features flipped on.
       // UI should detect apps.pulse === undefined and render TrialExpiredBlock.
       return {
         workspace_id: workspaceId,

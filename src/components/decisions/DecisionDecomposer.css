@@ -295,12 +295,13 @@
 }
 
 .priority-badge {
-  padding: 4px 10px;
-  border-radius: 12px;
-  font-size: 0.75rem;
-  font-weight: 600;
+  padding: 3px 8px;
+  border-radius: var(--dt-radius-sm);
+  font-family: var(--dt-font-family-mono);
+  font-size: var(--dt-label-size-sm);
+  font-weight: var(--dt-label-weight);
   text-transform: uppercase;
-  letter-spacing: 0.5px;
+  letter-spacing: var(--dt-label-tracking);
 }
 
 .priority-badge.priority-urgent {
@@ -353,12 +354,13 @@
 .task-rationale {
   margin: 10px 0 0 30px;
   padding: 8px 12px;
-  background: #fefce8;
-  border-left: 3px solid #fbbf24;
-  border-radius: 4px;
+  background: var(--dt-bg-secondary);
+  border: 1px solid var(--dt-border);
+  border-radius: var(--dt-radius-sm);
   font-size: 0.8125rem;
-  color: #92400e;
-  line-height: 1.4;
+  color: var(--dt-text-secondary);
+  line-height: 1.5;
+  max-width: 65ch;
 }
 
 /* Action Buttons */

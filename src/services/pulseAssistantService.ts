@@ -11,7 +11,7 @@ import { getCurrentWorkspaceId } from "./ai/getWorkspaceId";
 const PULSE_APP_KNOWLEDGE = `
 ## ABOUT PULSE
 
-Pulse is a unified communication and productivity platform that combines email, messaging, SMS, async voice (Voxer), video meetings, calendar, task management, team decisions, CRM integrations, analytics, and AI — all in a single app. It runs on web and Android.
+Pulse is a unified communication and productivity platform that combines email, messaging, SMS, async voice (Relay), video meetings, calendar, task management, team decisions, CRM integrations, analytics, and AI — all in a single app. It runs on web and Android.
 
 ## APP SECTIONS
 
@@ -22,7 +22,7 @@ Pulse is a unified communication and productivity platform that combines email, 
 - **Messages** — Unified messaging inbox. Supports threads, pinned messages, smart folders (Priority, Team, Follow-ups, Archived), inline tools (type / to access: /gif, /file, /task, /poll, /reminder), conversation highlights (decisions, action items), bulk actions, and ecosystem bot messages from connected apps.
 - **Email** — Full email client (Gmail/Outlook). Features include AI daily briefing with top 5 priority emails, email templates with variables ({{first_name}}, {{company}}, {{date}}), scheduling (Tomorrow, Monday 9 AM, etc.), follow-up reminders, email campaigns (3-step builder: Setup, Compose, Review & Send), audience segments (All, Recent, VIP, Important), and filters with auto-actions.
 - **SMS** — Text messaging. Send and receive SMS/text messages directly within Pulse.
-- **Voxer** — Async voice messaging with 8 modes: Pulse Radio (broadcast), Voice Threads (threaded conversations), Team Vox (team channels with @mentions), Vox Notes (personal recordings), Quick Vox (fast send), Vox Drop (scheduled delivery), Classic Voxer (walkie-talkie style), and AI transcription.
+- **Relay** — Async voice messaging with 8 modes: Pulse Radio (broadcast), Voice Threads (threaded conversations), Team Vox (team channels with @mentions), Vox Notes (personal recordings), Quick Vox (fast send), Vox Drop (scheduled delivery), Classic (walkie-talkie style), and AI transcription.
 
 ### Work & People
 - **Calendar** — Calendar management with Google Calendar sync. View events, create new ones, set reminders, and find free time. AI helps identify scheduling conflicts and suggest optimal meeting times.
@@ -74,7 +74,7 @@ Pulse is a unified communication and productivity platform that combines email, 
 - **G then D** — Go to Dashboard
 - **G then M** — Go to Messages
 - **G then E** — Go to Email
-- **G then V** — Go to Voxer
+- **G then V** — Go to Relay
 - **G then C** — Go to Calendar
 - **G then N** — Go to Meetings
 - **G then P** — Go to Contacts
@@ -95,7 +95,7 @@ Pulse is a unified communication and productivity platform that combines email, 
 - Use the / command in message compose to quickly insert GIFs, files, tasks, polls, or reminders.
 - Archive completed decisions and tasks to keep your workspace clean.
 - Check Analytics weekly to spot communication patterns and team health trends.
-- Use Voxer Quick Vox for fast voice messages when typing is inconvenient.
+- Use Relay Quick Vox for fast voice messages when typing is inconvenient.
 `.trim();
 
 // ─── 5-minute in-memory cache (same pattern as conversationalAIService) ──────
@@ -203,7 +203,7 @@ export interface AssistantContext {
   events?: CalendarEvent[];
   // Contacts (CONTACTS)
   contacts?: Contact[];
-  // Voxer recordings (VOXER)
+  // Relay recordings (RELAY)
   voxerRecordings?: Record<string, unknown>[];
   // Analytics metrics (ANALYTICS)
   analyticsMetrics?: AnalyticsMetrics;
@@ -248,7 +248,7 @@ export const SECTION_LABELS: Partial<Record<AppView, string>> = {
   [AppView.MESSAGES]: 'Messages',
   [AppView.EMAIL]: 'Email',
   [AppView.SMS]: 'SMS',
-  [AppView.VOXER]: 'Voxer',
+  [AppView.RELAY]: 'Relay',
   [AppView.CALENDAR]: 'Calendar',
   [AppView.MEETINGS]: 'Meetings',
   [AppView.CONTACTS]: 'Contacts',
@@ -303,7 +303,7 @@ const SECTION_QUICK_ACTIONS: Partial<Record<AppView, PulseQuickAction[]>> = {
     { id: 'follow-up', label: 'Who should I follow up with?', query: 'Who should I follow up with and why? Who have I not contacted recently?' },
     { id: 'relationship-health', label: 'Relationship health check', query: 'Which contact relationships might need attention or re-engagement?' },
   ],
-  [AppView.VOXER]: [
+  [AppView.RELAY]: [
     { id: 'urgent-voxes', label: 'Any urgent voxes?', query: 'Are there any urgent vox messages I should listen to right away?' },
     { id: 'summarise-threads', label: 'Summarise threads', query: 'Summarise the activity in my vox message threads.' },
   ],
@@ -388,7 +388,7 @@ const SECTION_SUGGESTED_ACTIONS: Partial<Record<AppView, SuggestedAction[]>> = {
     { id: 'go-email', label: 'Check Email', targetView: AppView.EMAIL },
     { id: 'go-tasks', label: 'Open Tasks', targetView: AppView.DECISIONS_TASKS },
   ],
-  [AppView.VOXER]: [
+  [AppView.RELAY]: [
     { id: 'go-messages', label: 'Open Messages', targetView: AppView.MESSAGES },
     { id: 'go-contacts', label: 'View Contacts', targetView: AppView.CONTACTS },
   ],
@@ -429,7 +429,7 @@ const SECTION_SUGGESTED_ACTIONS: Partial<Record<AppView, SuggestedAction[]>> = {
   ],
   [AppView.LIVE]: [
     { id: 'go-dashboard', label: 'Go to Dashboard', targetView: AppView.DASHBOARD },
-    { id: 'go-voxer', label: 'Open Voxer', targetView: AppView.VOXER },
+    { id: 'go-relay', label: 'Open Relay', targetView: AppView.RELAY },
     { id: 'go-messages', label: 'Open Messages', targetView: AppView.MESSAGES },
   ],
 };
@@ -523,7 +523,7 @@ function buildSystemInstruction(context: AssistantContext): string {
     contextBlocks.push(`Contacts (${contactsData.length} total):\n${JSON.stringify(contactsData, null, 2)}`);
   }
 
-  // Voxer recordings
+  // Relay recordings
   const voxData = (context.voxerRecordings ?? []).slice(0, 10).map((v) => ({
     id: v.id,
     title: v.title ?? v.type ?? 'Vox',
@@ -780,7 +780,7 @@ export const pulseAssistantService = {
       return count > 0 ? `${count} contact${count !== 1 ? 's' : ''}` : '';
     }
 
-    if (context.section === AppView.VOXER) {
+    if (context.section === AppView.RELAY) {
       const total = context.voxerRecordings?.length ?? 0;
       const unlistened = (context.voxerRecordings ?? []).filter((v) => !v.listened).length;
       const parts: string[] = [];

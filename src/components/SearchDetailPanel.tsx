@@ -52,7 +52,7 @@ export const SearchDetailPanel: React.FC<SearchDetailPanelProps> = ({ result, on
     message: AppView.MESSAGES,
     unified_message: AppView.MESSAGES,
     thread: AppView.MESSAGES,
-    vox: AppView.VOXER,
+    vox: AppView.RELAY,
     task: AppView.DECISIONS_TASKS,
     event: AppView.CALENDAR,
     contact: AppView.CONTACTS,

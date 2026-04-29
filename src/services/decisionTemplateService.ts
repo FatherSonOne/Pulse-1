@@ -24,6 +24,21 @@ export interface DecisionTemplate {
   workspace_id?: string;
   created_at: string;
   updated_at: string;
+  /** Wizard state snapshot. Null for legacy system templates. Phase 1.8. */
+  template_config?: WizardTemplateConfig | null;
+}
+
+/** Wizard state snapshot persisted on a template. */
+export interface WizardTemplateConfig {
+  frameId: string;
+  step2: Record<string, unknown>;
+  step4: {
+    decideByDate: string | null;
+    shipByDate: string | null;
+    checkInCadence: 'none' | 'daily' | 'twice_weekly' | 'weekly';
+    remindBeforeDays: 0 | 1 | 3 | 7;
+    retrospectiveDays: 0 | 30 | 60 | 90;
+  };
 }
 
 export interface SuggestedTask {
@@ -233,5 +248,100 @@ export const decisionTemplateService = {
     if (error) {
       console.error('Error tracking template usage:', error);
     }
+  },
+
+  /**
+   * Phase 1.8: Save the wizard state as a reusable template.
+   *
+   * Personal templates have is_system=false and a created_by. Workspace-shared
+   * templates set workspace_id to the current workspace; personal-only
+   * templates leave workspace_id null so they don't leak across workspaces.
+   *
+   * The legacy title_template / description_template columns are still
+   * required by the schema — we synthesize lightweight string templates
+   * from the wizard's frame so old code paths keep working until they're
+   * migrated.
+   */
+  async saveWizardAsTemplate(opts: {
+    workspaceId: string;
+    userId: string;
+    templateName: string;
+    description?: string;
+    config: WizardTemplateConfig;
+    sharedWithWorkspace: boolean;
+    /** Synthesized from the frame's deriveDecisionTitle for legacy compat. */
+    titleTemplate: string;
+    /** Synthesized from the frame's deriveDecisionDescription. */
+    descriptionTemplate?: string;
+    suggestedTasks: SuggestedTask[];
+    defaultDecisionType?: string;
+    category?: string;
+  }): Promise<DecisionTemplate | null> {
+    const { data, error } = await supabase
+      .from('decision_templates')
+      .insert({
+        name: opts.templateName,
+        description: opts.description ?? null,
+        category: opts.category ?? null,
+        icon: null,
+        title_template: opts.titleTemplate,
+        description_template: opts.descriptionTemplate ?? null,
+        suggested_tasks: opts.suggestedTasks,
+        default_decision_type: opts.defaultDecisionType ?? 'consensus',
+        is_system: false,
+        is_active: true,
+        created_by: opts.userId,
+        workspace_id: opts.sharedWithWorkspace ? opts.workspaceId : null,
+        template_config: opts.config,
+      })
+      .select()
+      .single();
+
+    if (error) {
+      console.error('Error saving wizard as template:', error);
+      return null;
+    }
+    return data as DecisionTemplate;
+  },
+
+  /**
+   * Phase 1.8: Load a saved template back into wizard state.
+   * Returns null for legacy templates (template_config is null).
+   */
+  async loadTemplateAsWizardState(templateId: string): Promise<WizardTemplateConfig | null> {
+    const { data, error } = await supabase
+      .from('decision_templates')
+      .select('template_config')
+      .eq('id', templateId)
+      .single();
+
+    if (error || !data) {
+      console.error('Error loading template:', error);
+      return null;
+    }
+    return (data.template_config as WizardTemplateConfig | null) ?? null;
+  },
+
+  /**
+   * Phase 1.8: List personal and workspace-shared templates for the wizard's
+   * "start from a saved template" surface. Personal templates (created_by =
+   * userId, workspace_id null) and workspace-shared templates (workspace_id
+   * = workspaceId) both surface; legacy system templates are excluded.
+   */
+  async listPersonalTemplates(workspaceId: string, userId: string): Promise<DecisionTemplate[]> {
+    const { data, error } = await supabase
+      .from('decision_templates')
+      .select('*')
+      .eq('is_active', true)
+      .eq('is_system', false)
+      .or(`created_by.eq.${userId},workspace_id.eq.${workspaceId}`)
+      .order('last_used_at', { ascending: false, nullsFirst: false })
+      .order('updated_at', { ascending: false });
+
+    if (error) {
+      console.error('Error listing personal templates:', error);
+      return [];
+    }
+    return (data ?? []) as DecisionTemplate[];
   }
 };

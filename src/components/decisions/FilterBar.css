@@ -188,11 +188,12 @@
 }
 
 .filter-bar__active-label {
-  font-size: var(--dt-font-xs);
-  font-weight: var(--dt-font-weight-semibold);
+  font-family: var(--dt-font-family-mono);
+  font-size: var(--dt-label-size);
+  font-weight: var(--dt-label-weight);
   color: var(--dt-text-muted);
   text-transform: uppercase;
-  letter-spacing: 0.5px;
+  letter-spacing: var(--dt-label-tracking);
 }
 
 .filter-bar__active-tag {

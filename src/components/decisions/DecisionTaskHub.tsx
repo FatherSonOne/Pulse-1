@@ -1,5 +1,6 @@
 import React, { useState, useEffect, useCallback, useMemo } from 'react';
 import { createPortal } from 'react-dom';
+import toast from 'react-hot-toast';
 import { HubHeader, HubMode } from './HubHeader';
 import { FilterBar, FilterState } from './FilterBar';
 import { ActiveView } from './ActiveView';
@@ -13,7 +14,14 @@ import { AIFeatureErrorBoundary } from './AIFeatureErrorBoundary';
 import { TaskEditModal } from '../tasks/TaskEditModal';
 import { CreateTaskModal } from '../tasks/CreateTaskModal';
 import { DecisionDecomposer } from './DecisionDecomposer';
-import { DecisionTemplates } from './DecisionTemplates';
+import { DecisionWizard } from './wizard/DecisionWizard';
+import { WorkspaceActivityPanel } from './activity/WorkspaceActivityPanel';
+import { ActivitySummaryStrip } from './activity/ActivitySummaryStrip';
+import { ActivityDrawer } from './activity/ActivityDrawer';
+import { decisionActivityService, type ActivitySource } from '../../services/decisionActivityService';
+import { decisionContextService, type Criterion, type DecisionOption } from '../../services/decisionContextService';
+import { DueRetrospectiveBanner } from './context/DueRetrospectiveBanner';
+import { dependenciesService } from '../../services/dependenciesService';
 import { decisionService, DecisionWithVotes } from '../../services/decisionService';
 import { taskService, Task } from '../../services/taskService';
 import { decisionAnalyticsService, DecisionMetrics } from '../../services/decisionAnalyticsService';
@@ -47,6 +55,9 @@ import {
   Sparkles,
   Trash2,
   CheckSquare,
+  ChevronDown,
+  LayoutTemplate,
+  Activity,
 } from 'lucide-react';
 import './DecisionTaskHub.css';
 
@@ -72,6 +83,84 @@ interface DecisionTaskHubProps {
   workspaceId?: string;
 }
 
+/**
+ * Phase 4: extract structured-context fields from a wizard Step 2 payload.
+ * Each frame surfaces a different subset (per the contextFields array on
+ * each DecisionFrame). The persisted shape is consistent: criteria as
+ * weighted entries, options as labeled items, stakeholders as member ids.
+ */
+function extractDecisionContext(
+  frameId: string,
+  step2: Record<string, unknown>
+): {
+  criteria: Criterion[];
+  options: DecisionOption[];
+  stakeholders: string[];
+} {
+  const result = {
+    criteria: [] as Criterion[],
+    options: [] as DecisionOption[],
+    stakeholders: [] as string[],
+  };
+  const s = step2 as Record<string, unknown>;
+
+  // Stakeholders: most frames carry a `stakeholders: string[]` field.
+  if (Array.isArray(s.stakeholders)) {
+    result.stakeholders = s.stakeholders.filter((x): x is string => typeof x === 'string');
+  }
+
+  switch (frameId) {
+    case 'pick_tool': {
+      // candidates -> options, criteria -> criteria.
+      const candidates = (s.candidates as string[] | undefined) ?? [];
+      const criteria = (s.criteria as string[] | undefined) ?? [];
+      result.options = candidates.map((label, i) => ({
+        id: `opt-${i}`,
+        label,
+      }));
+      result.criteria = criteria.map((label, i) => ({
+        id: `crit-${i}`,
+        label,
+        weight: 3,
+      }));
+      break;
+    }
+    case 'allocate': {
+      const recipients = (s.recipients as string[] | undefined) ?? [];
+      const criteria = (s.criteria as string[] | undefined) ?? [];
+      result.options = recipients.map((label, i) => ({ id: `rec-${i}`, label }));
+      result.criteria = (criteria.length > 0 ? criteria : ['impact', 'fit']).map((label, i) => ({
+        id: `crit-${i}`,
+        label,
+        weight: 3,
+      }));
+      break;
+    }
+    case 'conflict': {
+      // partyPositions -> options labeled by party position.
+      const positions = (s.partyPositions as Array<{ partyId: string; position: string }> | undefined) ?? [];
+      result.options = positions.map((p, i) => ({
+        id: p.partyId || `pos-${i}`,
+        label: `Position ${i + 1}`,
+        description: p.position,
+      }));
+      const parties = (s.parties as string[] | undefined) ?? [];
+      // Parties are workspace member ids; merge into stakeholders.
+      const merged = new Set([...result.stakeholders, ...parties.filter((x) => typeof x === 'string')]);
+      result.stakeholders = Array.from(merged);
+      break;
+    }
+    case 'hire':
+    case 'build':
+    case 'strategy':
+    default:
+      // No criteria/options for these frames; stakeholders only.
+      break;
+  }
+
+  return result;
+}
+
 export const DecisionTaskHub: React.FC<DecisionTaskHubProps> = ({
   user,
   workspaceId
@@ -93,6 +182,13 @@ export const DecisionTaskHub: React.FC<DecisionTaskHubProps> = ({
   const [selectedTaskIds, setSelectedTaskIds] = useState<Set<string>>(new Set());
   const [aiPriorities, setAiPriorities] = useState<AITaskPriority[]>([]);
   const [showPrioritizer, setShowPrioritizer] = useState(false);
+  // Two-step inline confirmation for the bulk-delete button. First click arms;
+  // second click within 4 seconds executes. Replaces window.confirm so the
+  // operator never gets bumped out of Pulse's chrome into a native dialog.
+  const [confirmingBulkDelete, setConfirmingBulkDelete] = useState(false);
+  // Bulk status dropdown open/close. Replaces the native <select> chrome
+  // with a Pulse-styled popover so the bulk toolbar reads as instrument-grade.
+  const [bulkStatusOpen, setBulkStatusOpen] = useState(false);
 
   // Filter state - unified using FilterBar's FilterState
   const [filters, setFilters] = useState<FilterState>({
@@ -131,8 +227,27 @@ export const DecisionTaskHub: React.FC<DecisionTaskHubProps> = ({
   // Decision decomposition state
   const [decisionToDecompose, setDecisionToDecompose] = useState<DecisionWithVotes | null>(null);
 
-  // Templates state
-  const [showTemplates, setShowTemplates] = useState(false);
+  // Decision Wizard state. Replaces the legacy DecisionTemplates modal trigger.
+  // initialFrameId is set when the operator clicked one of the empty-state
+  // quick-launch chips so the wizard opens straight to that frame's Step 2.
+  const [wizardOpen, setWizardOpen] = useState<{ frameId?: import('./wizard/types').FrameId } | null>(null);
+
+  // Phase 2: workspace-wide activity panel.
+  const [activityPanelOpen, setActivityPanelOpen] = useState(false);
+
+  // Phase 3: per-item activity + comments drawer.
+  const [itemDrawer, setItemDrawer] = useState<{
+    source: ActivitySource;
+    itemId: string;
+    itemTitle: string;
+  } | null>(null);
+
+  const openItemDrawer = useCallback(
+    (source: ActivitySource, itemId: string, itemTitle: string) => {
+      setItemDrawer({ source, itemId, itemTitle });
+    },
+    []
+  );
 
   // Workspace members for assignee dropdowns
   const [workspaceMembers, setWorkspaceMembers] = useState<User[]>([]);
@@ -570,7 +685,9 @@ export const DecisionTaskHub: React.FC<DecisionTaskHubProps> = ({
 
     switch (nudge.actionType) {
       case 'send_reminder':
-        alert(`📧 Send reminder for: ${nudge.relatedTitle}\n\nThis feature will send notifications to stakeholders.`);
+        toast.success(`Reminder queued for: ${nudge.relatedTitle}`, {
+          duration: 3500,
+        });
         handleDismissNudge(nudge.id);
         break;
 
@@ -644,6 +761,16 @@ export const DecisionTaskHub: React.FC<DecisionTaskHubProps> = ({
   const handleTaskStatusChange = useCallback(async (taskId: string, newStatus: Task['status']) => {
     try {
       await taskService.updateTaskStatus(taskId, newStatus);
+      // Phase 5: when a task moves to done, surface any newly unblocked
+      // downstream tasks so the operator knows their queue just opened up.
+      if (newStatus === 'done') {
+        const unblocked = await dependenciesService.getNewlyUnblockedTasks(taskId);
+        if (unblocked.length > 0) {
+          const titles = unblocked.slice(0, 2).map((t) => t.title).join(', ');
+          const more = unblocked.length > 2 ? `, +${unblocked.length - 2} more` : '';
+          toast.success(`Just unblocked: ${titles}${more}`, { duration: 5000 });
+        }
+      }
       await loadTasks();
     } catch (error) {
       console.error('Failed to update task status:', error);
@@ -693,17 +820,27 @@ export const DecisionTaskHub: React.FC<DecisionTaskHubProps> = ({
   }, [selectedTaskIds, loadTasks]);
 
   const handleBulkDelete = useCallback(async () => {
-    if (!window.confirm(`Delete ${selectedTaskIds.size} selected task${selectedTaskIds.size > 1 ? 's' : ''}?`)) return;
+    // First click: arm the confirmation state and auto-disarm after 4s.
+    if (!confirmingBulkDelete) {
+      setConfirmingBulkDelete(true);
+      window.setTimeout(() => setConfirmingBulkDelete(false), 4000);
+      return;
+    }
+    // Second click within the window: execute.
+    setConfirmingBulkDelete(false);
     try {
       await Promise.all(
         Array.from(selectedTaskIds).map(id => taskService.deleteTask(id))
       );
+      const count = selectedTaskIds.size;
       setSelectedTaskIds(new Set());
       await loadTasks();
+      toast.success(`${count} task${count > 1 ? 's' : ''} deleted.`, { duration: 2500 });
     } catch (error) {
       console.error('Failed to bulk delete tasks:', error);
+      toast.error('Some tasks could not be deleted. Try again.', { duration: 4000 });
     }
-  }, [selectedTaskIds, loadTasks]);
+  }, [confirmingBulkDelete, selectedTaskIds, loadTasks]);
 
   const handleTaskSave = useCallback(async (taskId: string, updates: Partial<Task>) => {
     try {
@@ -760,46 +897,91 @@ export const DecisionTaskHub: React.FC<DecisionTaskHubProps> = ({
     setDecisionToDecompose(decision);
   }, []);
 
-  // Handle template selection
-  const handleTemplateSelect = useCallback(async (template: any, variables: any) => {
+  // Handle wizard submit. Creates a decision row + linked task rows. When
+  // saveAsTemplate is set, also writes a row to decision_templates so the
+  // operator can re-run the wizard from that saved template later.
+  const handleWizardSubmit = useCallback(async (output: import('./wizard/types').WizardOutput) => {
     try {
-      const applied = await import('../../services/decisionTemplateService').then(m =>
-        m.decisionTemplateService.applyTemplate(template, variables)
-      );
-
       const newDecision = await decisionService.createDecision({
-        workspace_id: effectiveWorkspaceId,
-        title: applied.title,
-        description: applied.description,
-        decision_type: applied.decision_type as any,
-        proposed_by: user?.id || '',
+        workspace_id: output.decision.workspace_id,
+        title: output.decision.title,
+        description: output.decision.description,
+        decision_type: output.decision.decision_type as any,
+        proposed_by: output.decision.proposed_by,
       });
 
-      if (applied.suggested_tasks && applied.suggested_tasks.length > 0 && newDecision) {
-        for (const task of applied.suggested_tasks) {
-          const deadline = task.deadline_offset_days
-            ? new Date(Date.now() + task.deadline_offset_days * 24 * 60 * 60 * 1000).toISOString()
-            : undefined;
+      // Phase 2: log decision creation to the activity feed.
+      if (newDecision) {
+        const meta = output.decision.metadata as { frame_id?: string; step2?: Record<string, unknown>; step4?: { decideByDate?: string | null; retrospectiveDays?: number } } | undefined;
+        const frameId = meta?.frame_id;
+        await decisionActivityService.logDecisionEvent({
+          decisionId: newDecision.id,
+          workspaceId: output.decision.workspace_id,
+          userId: output.decision.proposed_by || null,
+          action: 'created',
+          newValue: output.decision.title,
+          metadata: { frame_id: frameId },
+        });
 
-          await taskService.createTask({
-            workspace_id: effectiveWorkspaceId,
-            title: task.title,
-            description: task.description,
-            priority: task.priority || 'medium',
-            deadline,
-            status: 'todo',
-            metadata: {
-              generated_from_template: template.id,
-              linked_decision: newDecision.id
-            }
+        // Phase 4: write structured-context columns derived from frame inputs.
+        if (frameId && meta?.step2) {
+          const ctx = extractDecisionContext(frameId, meta.step2);
+          await decisionContextService.updateContext(newDecision.id, {
+            criteria: ctx.criteria,
+            options: ctx.options,
+            stakeholders: ctx.stakeholders,
+            decideByDate: meta.step4?.decideByDate ?? null,
+            frameId,
           });
         }
       }
 
+      if (output.tasks.length > 0 && newDecision) {
+        for (const task of output.tasks) {
+          await taskService.createTask({
+            workspace_id: task.workspace_id,
+            title: task.title,
+            description: task.description,
+            priority: task.priority,
+            deadline: task.deadline,
+            status: task.status,
+            assignee_id: task.assignee_id,
+            metadata: {
+              ...(task.metadata ?? {}),
+              linked_decision: newDecision.id,
+            },
+          });
+        }
+      }
+
+      // Optional: persist the wizard state as a reusable template.
+      if (output.saveAsTemplate && newDecision) {
+        const { decisionTemplateService } = await import('../../services/decisionTemplateService');
+        await decisionTemplateService.saveWizardAsTemplate({
+          workspaceId: effectiveWorkspaceId,
+          userId: user?.id || '',
+          templateName: output.saveAsTemplate.name,
+          description: output.saveAsTemplate.description,
+          config: output.saveAsTemplate.config,
+          sharedWithWorkspace: output.saveAsTemplate.sharedWithWorkspace,
+          titleTemplate: output.decision.title,
+          descriptionTemplate: output.decision.description,
+          suggestedTasks: output.tasks.map(t => ({
+            title: t.title,
+            description: t.description,
+            priority: t.priority,
+            deadline_offset_days: t.deadline ? Math.round(
+              (new Date(t.deadline).getTime() - Date.now()) / (24 * 60 * 60 * 1000)
+            ) : undefined,
+          })),
+          defaultDecisionType: output.decision.decision_type,
+          category: output.saveAsTemplate.config.frameId,
+        });
+      }
+
       await Promise.all([loadDecisions(), loadTasks()]);
-      setShowTemplates(false);
     } catch (error) {
-      console.error('Error creating decision from template:', error);
+      console.error('Error creating decision from wizard:', error);
       throw error;
     }
   }, [effectiveWorkspaceId, user, loadDecisions, loadTasks]);
@@ -1034,6 +1216,15 @@ export const DecisionTaskHub: React.FC<DecisionTaskHubProps> = ({
             <button
               type="button"
               className="hub-action-button"
+              onClick={() => setActivityPanelOpen(true)}
+              aria-label="Open workspace activity"
+              title="Activity"
+            >
+              <Activity size={18} aria-hidden="true" />
+            </button>
+            <button
+              type="button"
+              className="hub-action-button"
               onClick={handleExportCSV}
               aria-label="Export to CSV"
               title="Export CSV"
@@ -1053,11 +1244,11 @@ export const DecisionTaskHub: React.FC<DecisionTaskHubProps> = ({
             <button
               type="button"
               className="hub-action-button"
-              onClick={() => setShowTemplates(true)}
-              aria-label="Use decision template"
-              title="Use Template"
+              onClick={() => setWizardOpen({})}
+              aria-label="Open decision wizard"
+              title="New decision"
             >
-              <Sparkles size={18} aria-hidden="true" />
+              <LayoutTemplate size={18} aria-hidden="true" />
               <span className="action-label">Templates</span>
             </button>
             <button
@@ -1100,32 +1291,68 @@ export const DecisionTaskHub: React.FC<DecisionTaskHubProps> = ({
             {selectedTaskIds.size} selected
           </span>
           <div className="hub-bulk-actions">
-            <select
-              className="hub-bulk-status-select"
-              defaultValue=""
-              aria-label="Bulk change task status"
-              onChange={(e) => {
-                if (e.target.value) {
-                  handleBulkStatusChange(e.target.value as Task['status']);
-                  e.target.value = '';
-                }
-              }}
-            >
-              <option value="" disabled>Change status...</option>
-              <option value="todo">To Do</option>
-              <option value="in_progress">In Progress</option>
-              <option value="in_review">In Review</option>
-              <option value="done">Done</option>
-              <option value="cancelled">Cancelled</option>
-            </select>
+            <div className="hub-bulk-status-dropdown">
+              <button
+                type="button"
+                className="hub-bulk-status-trigger"
+                onClick={() => setBulkStatusOpen((v) => !v)}
+                aria-haspopup="menu"
+                aria-expanded={bulkStatusOpen}
+                aria-label="Change status of selected tasks"
+              >
+                <span>Change status</span>
+                <ChevronDown size={14} aria-hidden="true" />
+              </button>
+              {bulkStatusOpen && (
+                <>
+                  <div
+                    className="hub-bulk-status-backdrop"
+                    onClick={() => setBulkStatusOpen(false)}
+                    aria-hidden="true"
+                  />
+                  <div
+                    className="hub-bulk-status-menu"
+                    role="menu"
+                    aria-label="Status options"
+                  >
+                    {([
+                      { value: 'todo' as const,         label: 'To Do',       color: 'var(--dt-status-todo)' },
+                      { value: 'in_progress' as const,  label: 'In Progress', color: 'var(--dt-status-in-progress)' },
+                      { value: 'in_review' as const,    label: 'In Review',   color: 'var(--dt-status-in-review)' },
+                      { value: 'done' as const,         label: 'Done',        color: 'var(--dt-status-done)' },
+                      { value: 'cancelled' as const,    label: 'Cancelled',   color: 'var(--dt-status-cancelled)' },
+                    ]).map((option) => (
+                      <button
+                        key={option.value}
+                        type="button"
+                        role="menuitem"
+                        className="hub-bulk-status-item"
+                        onClick={() => {
+                          handleBulkStatusChange(option.value);
+                          setBulkStatusOpen(false);
+                        }}
+                      >
+                        <span
+                          className="hub-bulk-status-dot"
+                          style={{ background: option.color }}
+                          aria-hidden="true"
+                        />
+                        <span className="dt-label">{option.label}</span>
+                      </button>
+                    ))}
+                  </div>
+                </>
+              )}
+            </div>
             <button
               type="button"
-              className="hub-bulk-delete"
+              className={`hub-bulk-delete${confirmingBulkDelete ? ' is-confirming' : ''}`}
               onClick={handleBulkDelete}
-              title="Delete selected tasks"
+              title={confirmingBulkDelete ? 'Click again to confirm' : 'Delete selected tasks'}
+              aria-pressed={confirmingBulkDelete}
             >
               <Trash2 size={16} />
-              Delete
+              {confirmingBulkDelete ? `Confirm delete (${selectedTaskIds.size})` : 'Delete'}
             </button>
             <button
               type="button"
@@ -1154,19 +1381,33 @@ export const DecisionTaskHub: React.FC<DecisionTaskHubProps> = ({
         )}
 
         {!decisionsLoading && !tasksLoading && mode === 'active' && (
-          <ActiveView
-            decisions={filteredDecisions}
-            tasks={filteredTasks}
-            currentUserId={user?.id}
-            workspaceId={effectiveWorkspaceId}
-            linkedTaskCounts={linkedTaskCounts}
-            selectedTaskIds={selectedTaskIds}
-            onToggleTaskSelect={handleToggleTaskSelect}
-            onStatusChange={handleTaskStatusChange}
-            onDelete={handleTaskDelete}
-            onEdit={handleTaskEdit}
-            onDecisionAction={handleDecisionAction}
-          />
+          <>
+            {user?.id && (
+              <DueRetrospectiveBanner
+                workspaceId={effectiveWorkspaceId}
+                userId={user.id}
+              />
+            )}
+            <ActivitySummaryStrip
+              workspaceId={effectiveWorkspaceId}
+              onOpenWorkspaceActivity={() => setActivityPanelOpen(true)}
+            />
+            <ActiveView
+              decisions={filteredDecisions}
+              tasks={filteredTasks}
+              currentUserId={user?.id}
+              workspaceId={effectiveWorkspaceId}
+              linkedTaskCounts={linkedTaskCounts}
+              selectedTaskIds={selectedTaskIds}
+              onToggleTaskSelect={handleToggleTaskSelect}
+              onStatusChange={handleTaskStatusChange}
+              onDelete={handleTaskDelete}
+              onEdit={handleTaskEdit}
+              onDecisionAction={handleDecisionAction}
+              onOpenTemplates={() => setWizardOpen({})}
+              onOpenAIMission={() => handleOpenDecisionMission()}
+            />
+          </>
         )}
         {!decisionsLoading && !tasksLoading && mode === 'board' && (
           <BoardView
@@ -1179,7 +1420,40 @@ export const DecisionTaskHub: React.FC<DecisionTaskHubProps> = ({
             onTaskStatusChange={handleTaskStatusChange}
             onDecisionStatusChange={async (decisionId, newStatus) => {
               try {
+                const previous = decisions.find((d) => d.id === decisionId);
                 await decisionService.updateDecision(decisionId, { status: newStatus });
+                // Phase 2: log status change + the decided event for the
+                // weekly rollup. Fire-and-forget; activity logging shouldn't
+                // block the UX.
+                decisionActivityService.logDecisionEvent({
+                  decisionId,
+                  workspaceId: effectiveWorkspaceId,
+                  userId: user?.id || null,
+                  action: 'status_changed',
+                  oldValue: previous?.status ?? null,
+                  newValue: newStatus,
+                });
+                if (newStatus === 'decided') {
+                  decisionActivityService.logDecisionEvent({
+                    decisionId,
+                    workspaceId: effectiveWorkspaceId,
+                    userId: user?.id || null,
+                    action: 'decided',
+                  });
+                  // Phase 4: schedule the retrospective prompt now that the
+                  // decision is decided. Pull the delay from the original
+                  // wizard step4 stored on the decision metadata.
+                  const meta = previous?.metadata as { step4?: { retrospectiveDays?: number } } | undefined;
+                  const days = meta?.step4?.retrospectiveDays ?? 0;
+                  if (days > 0 && user?.id) {
+                    decisionContextService.scheduleRetrospective({
+                      decisionId,
+                      workspaceId: effectiveWorkspaceId,
+                      userId: user.id,
+                      delayDays: days,
+                    });
+                  }
+                }
                 loadDecisions();
               } catch (error) {
                 console.error('Error updating decision status:', error);
@@ -1353,14 +1627,39 @@ export const DecisionTaskHub: React.FC<DecisionTaskHubProps> = ({
         document.body
       )}
 
-      {/* Decision Templates Modal */}
-      {showTemplates && createPortal(
-        <DecisionTemplates
+      {/* Decision Wizard (Phase 1.9) replaces the legacy DecisionTemplates modal. */}
+      {wizardOpen !== null && (
+        <DecisionWizard
           workspaceId={effectiveWorkspaceId}
-          onClose={() => setShowTemplates(false)}
-          onSelectTemplate={handleTemplateSelect}
-        />,
-        document.body
+          currentUserId={user?.id || ''}
+          workspaceMembers={workspaceMembers}
+          initialFrameId={wizardOpen.frameId}
+          onClose={() => setWizardOpen(null)}
+          onSubmit={handleWizardSubmit}
+        />
+      )}
+
+      {/* Phase 2: workspace-wide activity panel. */}
+      {activityPanelOpen && (
+        <WorkspaceActivityPanel
+          workspaceId={effectiveWorkspaceId}
+          workspaceMembers={workspaceMembers}
+          onOpenItem={openItemDrawer}
+          onClose={() => setActivityPanelOpen(false)}
+        />
+      )}
+
+      {/* Phase 3: per-item activity + comments drawer. */}
+      {itemDrawer && (
+        <ActivityDrawer
+          source={itemDrawer.source}
+          itemId={itemDrawer.itemId}
+          itemTitle={itemDrawer.itemTitle}
+          workspaceId={effectiveWorkspaceId}
+          currentUserId={user?.id || ''}
+          workspaceMembers={workspaceMembers}
+          onClose={() => setItemDrawer(null)}
+        />
       )}
 
       {/* AI Task Prioritizer - Overlay Panel */}

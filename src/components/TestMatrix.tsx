@@ -120,14 +120,14 @@ const initialTestData: TestSection[] = [
       { id: 'sms-7', name: 'Smart SMS Suggestions', steps: ['Start composing SMS to a frequent contact'], expected: 'AI suggests completions based on patterns', status: 'pending', notes: '' },
     ]
   },
-  // ── VOXER ────────────────────────────────────────────────────────────────
+  // ── RELAY ────────────────────────────────────────────────────────────────
   {
-    id: 'voxer',
-    title: 'Voxer — Voice Messaging',
+    id: 'relay',
+    title: 'Relay — Voice Messaging',
     priority: 'high',
     tests: [
-      { id: 'vox-1', name: 'Open Voxer Hub', steps: ['Navigate to Voxer (G→V)'], expected: 'Voxer hub loads with mode toolbar', status: 'pending', notes: '' },
-      { id: 'vox-2', name: 'Classic Voxer (Key 1)', steps: ['Press 1 or select Classic', 'Record, preview, send'], expected: 'Recording previewed, then sent to recipient', status: 'pending', notes: '' },
+      { id: 'vox-1', name: 'Open Relay Hub', steps: ['Navigate to Relay (G→V)'], expected: 'Relay hub loads with mode toolbar', status: 'pending', notes: '' },
+      { id: 'vox-2', name: 'Classic (Key 1)', steps: ['Press 1 or select Classic', 'Record, preview, send'], expected: 'Recording previewed, then sent to recipient', status: 'pending', notes: '' },
       { id: 'vox-3', name: 'Pulse Radio (Key 2)', steps: ['Press 2', 'Select audience', 'Record', 'Click Broadcast'], expected: 'Each recipient receives the message individually', status: 'pending', notes: '' },
       { id: 'vox-4', name: 'Voice Threads (Key 3)', steps: ['Press 3', 'Open/start thread', 'Record reply'], expected: 'Reply added chronologically; AI summary updates', status: 'pending', notes: '' },
       { id: 'vox-5', name: 'Team Vox (Key 4)', steps: ['Press 4', 'Choose/create channel', 'Record and send'], expected: 'All channel members receive message; @mentions work', status: 'pending', notes: '' },
@@ -333,7 +333,7 @@ const initialTestData: TestSection[] = [
     priority: 'medium',
     tests: [
       { id: 'srch-1', name: 'Open Search (Ctrl+K)', steps: ['Press Ctrl+K from anywhere'], expected: 'Search modal opens', status: 'pending', notes: '' },
-      { id: 'srch-2', name: 'Cross-Channel Results', steps: ['Search a keyword'], expected: 'Results from messages, email, contacts, tasks, calendar, Voxer transcripts', status: 'pending', notes: '' },
+      { id: 'srch-2', name: 'Cross-Channel Results', steps: ['Search a keyword'], expected: 'Results from messages, email, contacts, tasks, calendar, Relay transcripts', status: 'pending', notes: '' },
       { id: 'srch-3', name: 'Advanced Syntax', steps: ['Search: from:John type:email after:2026-01-01 has:attachment'], expected: 'Filtered results matching syntax', status: 'pending', notes: '' },
       { id: 'srch-4', name: 'Natural Language Search', steps: ['Search: "emails from David last week about the proposal"'], expected: 'AI understands intent; relevant results shown', status: 'pending', notes: '' },
       { id: 'srch-5', name: 'Saved Searches', steps: ['Run search', 'Click Save Search', 'Name it'], expected: 'Saved search appears in dropdown for quick access', status: 'pending', notes: '' },
@@ -373,7 +373,7 @@ const initialTestData: TestSection[] = [
       { id: 'bill-2', name: 'Plan Comparison', steps: ['Toggle Monthly/Yearly', 'View plan cards'], expected: 'All tiers shown with pricing; yearly discount visible', status: 'pending', notes: '' },
       { id: 'bill-3', name: 'Upgrade Plan', steps: ['Click Upgrade on a plan card'], expected: 'Stripe checkout opens; on success, new plan active immediately', status: 'pending', notes: '' },
       { id: 'bill-4', name: 'Manage Subscription', steps: ['Click Manage Subscription'], expected: 'Stripe Customer Portal opens for downgrade/cancel/payment changes', status: 'pending', notes: '' },
-      { id: 'bill-5', name: 'Usage Tracking', steps: ['Check usage gauges (AI Messages, SMS, Storage, Contacts, Voxer Minutes)'], expected: 'Gauges reflect actual usage; warning at 80%', status: 'pending', notes: '' },
+      { id: 'bill-5', name: 'Usage Tracking', steps: ['Check usage gauges (AI Messages, SMS, Storage, Contacts, Relay Minutes)'], expected: 'Gauges reflect actual usage; warning at 80%', status: 'pending', notes: '' },
       { id: 'bill-6', name: 'Feature Gating', steps: ['Try to use a feature above current plan'], expected: 'Upgrade prompt shown with one-click upgrade button', status: 'pending', notes: '' },
       { id: 'bill-7', name: 'Invoice History', steps: ['View Invoice History section'], expected: 'Past invoices with amount, status, and PDF download', status: 'pending', notes: '' },
     ]
@@ -420,7 +420,7 @@ const initialTestData: TestSection[] = [
       { id: 'kb-2', name: 'Search (Ctrl+K)', steps: ['Press Ctrl+K'], expected: 'Search modal opens from any section', status: 'pending', notes: '' },
       { id: 'kb-3', name: 'AI Assistant (Ctrl+/)', steps: ['Press Ctrl+/'], expected: 'AI assistant toggles open/closed', status: 'pending', notes: '' },
       { id: 'kb-4', name: 'Command Palette (Ctrl+Shift+P)', steps: ['Press Ctrl+Shift+P'], expected: 'Quick Actions Command Palette opens', status: 'pending', notes: '' },
-      { id: 'kb-5', name: 'Voxer Mode Keys (1-8)', steps: ['Open Voxer', 'Press 1 through 8'], expected: 'Each key switches to correct Voxer mode', status: 'pending', notes: '' },
+      { id: 'kb-5', name: 'Relay Mode Keys (1-8)', steps: ['Open Relay', 'Press 1 through 8'], expected: 'Each key switches to correct Relay mode', status: 'pending', notes: '' },
       { id: 'kb-6', name: 'Contextual Help (?)', steps: ['Press ? in any section'], expected: 'Context-specific keyboard shortcuts shown', status: 'pending', notes: '' },
     ]
   },

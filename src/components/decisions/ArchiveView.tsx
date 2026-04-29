@@ -355,16 +355,19 @@ export const ArchiveView: React.FC<ArchiveViewProps> = ({
         </div>
       ) : (
         /* Empty state */
-        <div className="archive-empty" role="status">
-          <div className="empty-icon">
-            <Archive size={64} strokeWidth={1.5} />
-          </div>
-          <h3 className="empty-title">No archived items</h3>
-          <p className="empty-description">
+        <div className="archive-empty" role="status" aria-live="polite">
+          <span className="archive-empty-eyebrow dt-label">
+            {searchQuery ? 'NO MATCHES' : 'EMPTY ARCHIVE'}
+          </span>
+          <h3 className="archive-empty-title">
             {searchQuery
-              ? `No items match "${searchQuery}" in the selected date range`
-              : 'Completed tasks and decisions will appear here'
-            }
+              ? `Nothing for "${searchQuery}".`
+              : 'Nothing archived yet.'}
+          </h3>
+          <p className="archive-empty-description">
+            {searchQuery
+              ? 'Try a different query or clear the date range.'
+              : 'Completed tasks and decisions land here. Archive an item from any view to see it appear.'}
           </p>
         </div>
       )}

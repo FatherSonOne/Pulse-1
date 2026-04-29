@@ -57,7 +57,7 @@
   opacity: 0;
   pointer-events: none;
   will-change: opacity;
-  transition: opacity 0.2s ease;
+  transition: opacity var(--dt-transition-base);
 }
 
 .enhanced-task-card:focus-within::after {
@@ -90,44 +90,73 @@
   box-shadow: 0 4px 16px rgba(0, 0, 0, 0.40);
 }
 
-/* Status transition animation */
+/* Status transition: same vocabulary as decision-card status-transitioning. */
 .enhanced-task-card.status-transitioning {
-  transition: all 0.4s cubic-bezier(0.34, 1.56, 0.64, 1);
-  animation: etcStatusPulse 0.4s ease-out;
+  transition: all var(--dt-transition-base);
+  animation: etcStatusPulse 280ms cubic-bezier(0.16, 1, 0.3, 1);
 }
 
 @keyframes etcStatusPulse {
   0%   { transform: scale(1); }
-  50%  { transform: scale(1.02); }
+  40%  { transform: scale(1.015); }
   100% { transform: scale(1); }
 }
 
-.enhanced-task-card.overdue {
-  border-left: 4px solid #dc2626;
-  background: rgba(239, 68, 68, 0.04);
+@media (prefers-reduced-motion: reduce) {
+  .enhanced-task-card.status-transitioning {
+    transition: none;
+    animation: none;
+  }
 }
 
-/* Status Accent Borders */
+/* Status identity. Subtle full-card tint replaces the side-stripe pattern.
+   The card-internal status badge carries the explicit label (To Do / In
+   Progress / Blocked / Done / Cancelled), so this is just an at-a-glance cue. */
+.enhanced-task-card.overdue {
+  background: rgba(239, 68, 68, 0.06);
+  border-color: rgba(239, 68, 68, 0.30);
+}
+
 .enhanced-task-card.status-todo {
-  border-left: 2px solid #94a3b8;
+  background: rgba(148, 163, 184, 0.04);
 }
 
 .enhanced-task-card.status-in_progress {
-  border-left: 2px solid #3b82f6;
+  background: rgba(59, 130, 246, 0.04);
 }
 
 .enhanced-task-card.status-done {
-  opacity: 0.6;
-  border-left: 2px solid #10b981;
+  opacity: 0.65;
+  background: rgba(16, 185, 129, 0.04);
 }
 
 .enhanced-task-card.status-cancelled {
-  border-left: 2px solid #6b7280;
   opacity: 0.5;
 }
 
 .enhanced-task-card.status-blocked {
-  border-left: 2px solid #ef4444;
+  background: rgba(239, 68, 68, 0.04);
+  border-color: rgba(239, 68, 68, 0.20);
+}
+
+.dark .enhanced-task-card.overdue {
+  background: rgba(239, 68, 68, 0.10);
+}
+
+.dark .enhanced-task-card.status-todo {
+  background: rgba(148, 163, 184, 0.06);
+}
+
+.dark .enhanced-task-card.status-in_progress {
+  background: rgba(59, 130, 246, 0.07);
+}
+
+.dark .enhanced-task-card.status-done {
+  background: rgba(16, 185, 129, 0.07);
+}
+
+.dark .enhanced-task-card.status-blocked {
+  background: rgba(239, 68, 68, 0.08);
 }
 
 .enhanced-task-card.status-done .task-title {
@@ -205,14 +234,22 @@
   flex-shrink: 0;
 }
 
+/* AI Provenance row — sits between header and description */
+.task-provenance {
+  display: flex;
+  margin-top: 0.5rem;
+  margin-bottom: 0.25rem;
+}
+
 /* Priority Badge */
 .task-priority-badge {
   padding: 0.25rem 0.625rem;
   border-radius: 6px;
-  font-size: 10px;
-  font-weight: 700;
+  font-family: var(--dt-font-family-mono);
+  font-size: var(--dt-label-size-sm);
+  font-weight: var(--dt-label-weight);
   text-transform: uppercase;
-  letter-spacing: 0.06em;
+  letter-spacing: var(--dt-label-tracking);
   white-space: nowrap;
 }
 
@@ -223,12 +260,15 @@
   gap: 0.25rem;
   padding: 0.25rem 0.5rem;
   border-radius: 6px;
-  font-size: 10px;
-  font-weight: 700;
+  font-family: var(--dt-font-family-mono);
+  font-size: var(--dt-label-size-sm);
+  font-weight: var(--dt-label-weight);
+  letter-spacing: 0.05em;
   white-space: nowrap;
   background: rgba(139, 92, 246, 0.10);
   border: 1px solid rgba(139, 92, 246, 0.25);
   color: #8b5cf6;
+  font-feature-settings: "tnum" 1;
 }
 
 .ai-score-badge svg {
@@ -423,8 +463,28 @@
 }
 
 .task-action-button.delete:hover {
-  background: #ef4444;
-  border-color: #ef4444;
+  background: var(--dt-status-overdue, #ef4444);
+  border-color: var(--dt-status-overdue, #ef4444);
+}
+
+/* Armed state: the next click is destructive. Auto-disarms after 4s.
+   Saturates fully and pulses gently so the operator notices the change. */
+.task-action-button.delete.is-confirming {
+  background: var(--dt-status-overdue, #ef4444);
+  border-color: var(--dt-status-overdue, #ef4444);
+  color: white;
+  animation: task-delete-confirm-pulse 1.2s ease-in-out infinite;
+}
+
+@keyframes task-delete-confirm-pulse {
+  0%, 100% { box-shadow: 0 0 0 2px rgba(239, 68, 68, 0.30); }
+  50%      { box-shadow: 0 0 0 4px rgba(239, 68, 68, 0.18); }
+}
+
+@media (prefers-reduced-motion: reduce) {
+  .task-action-button.delete.is-confirming {
+    animation: none;
+  }
 }
 
 /* Responsive design */

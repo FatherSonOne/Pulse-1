@@ -17,7 +17,8 @@ const preloadedRoutes = new Set<string>();
 // Map of routes to their dynamic imports
 const routeImports: Record<string, () => Promise<any>> = {
   '/messages': () => import('../components/Messages'),
-  '/voxer': () => import('../components/Voxer'),
+  '/relay': () => import('../components/Relay'),
+  '/glimpse': () => import('../components/Glimpse'),
   '/dashboard': () => import('../components/LiveDashboard'),
   '/live': () => import('../components/LiveDashboard'),
   '/decisions': () => import('../components/decisions/DecisionTaskHub'),

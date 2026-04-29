@@ -15,6 +15,11 @@ interface EnhancedLoadingScreenProps {
   inline?: boolean; // If true, uses h-full w-full flex layout (no fixed/absolute) — safest for section-level use
 }
 
+const getInitialDarkMode = () => {
+  if (typeof document === 'undefined') return true;
+  return document.documentElement.classList.contains('dark');
+};
+
 const EnhancedLoadingScreen: React.FC<EnhancedLoadingScreenProps> = ({
   currentStage: propStage,
   currentStageLabel: propLabel,
@@ -29,6 +34,19 @@ const EnhancedLoadingScreen: React.FC<EnhancedLoadingScreenProps> = ({
   const currentStage = propStage ?? loadingContext.currentStage;
   const currentStageLabel = propLabel ?? loadingContext.currentStageLabel;
   const contextProgress = propProgress ?? loadingContext.progress;
+
+  // Track current theme so the loading screen matches app appearance
+  const [isDarkMode, setIsDarkMode] = useState<boolean>(getInitialDarkMode);
+
+  useEffect(() => {
+    if (typeof document === 'undefined') return;
+    const root = document.documentElement;
+    const observer = new MutationObserver(() => {
+      setIsDarkMode(root.classList.contains('dark'));
+    });
+    observer.observe(root, { attributes: true, attributeFilter: ['class'] });
+    return () => observer.disconnect();
+  }, []);
 
   // Animated progress value
   const animatedProgress = useMotionValue(0);
@@ -59,13 +77,39 @@ const EnhancedLoadingScreen: React.FC<EnhancedLoadingScreenProps> = ({
   const circumference = 2 * Math.PI * radius;
   const strokeDashoffset = circumference - (progress / 100) * circumference;
 
+  // Theme-aware palette — keeps the rose/pink accent identical across modes,
+  // swaps only surface, ring, text, and pill colors.
+  const palette = isDarkMode
+    ? {
+        screenBg: 'bg-[#09090b]',
+        logoPlateBg: 'bg-[#0f172a]',
+        logoShadow:
+          '0 25px 50px -12px rgba(244, 63, 94, 0.15), 0 0 40px rgba(236, 72, 153, 0.1)',
+        ringTrack: '#27272a',
+        stageText: 'text-[#a1a1aa]',
+        pillBg: 'bg-[#18181b]',
+        pillBorder: 'border-[#27272a]',
+        pillSubtext: 'text-[#71717a]',
+      }
+    : {
+        screenBg: 'bg-[#fafafa]',
+        logoPlateBg: 'bg-white',
+        logoShadow:
+          '0 25px 50px -12px rgba(244, 63, 94, 0.20), 0 0 40px rgba(236, 72, 153, 0.18), 0 1px 2px rgba(15, 23, 42, 0.04)',
+        ringTrack: '#e4e4e7',
+        stageText: 'text-[#52525b]',
+        pillBg: 'bg-white',
+        pillBorder: 'border-[#e4e4e7]',
+        pillSubtext: 'text-[#71717a]',
+      };
+
   return (
     <motion.div
       initial={{ opacity: 0 }}
       animate={{ opacity: 1 }}
       exit={{ opacity: 0 }}
       transition={{ duration: 0.3 }}
-      className={`${inline ? 'h-full w-full' : contained ? 'absolute inset-0 z-50' : 'fixed inset-0 z-50'} flex items-center justify-center bg-[#09090b]`}
+      className={`${inline ? 'h-full w-full' : contained ? 'absolute inset-0 z-50' : 'fixed inset-0 z-50'} flex items-center justify-center ${palette.screenBg}`}
       role="status"
       aria-live="polite"
       aria-label={`Loading: ${currentStageLabel} - ${Math.round(progress)}% complete`}
@@ -94,7 +138,7 @@ const EnhancedLoadingScreen: React.FC<EnhancedLoadingScreenProps> = ({
               cy="70"
               r={radius}
               fill="none"
-              stroke="#27272a"
+              stroke={palette.ringTrack}
               strokeWidth="4"
             />
 
@@ -120,9 +164,9 @@ const EnhancedLoadingScreen: React.FC<EnhancedLoadingScreenProps> = ({
 
           {/* Logo Container */}
           <motion.div
-            className="relative w-[140px] h-[140px] bg-[#0f172a] rounded-3xl flex items-center justify-center shadow-2xl"
+            className={`relative w-[140px] h-[140px] ${palette.logoPlateBg} rounded-3xl flex items-center justify-center shadow-2xl`}
             style={{
-              boxShadow: '0 25px 50px -12px rgba(244, 63, 94, 0.15), 0 0 40px rgba(236, 72, 153, 0.1)'
+              boxShadow: palette.logoShadow
             }}
           >
             {/* Pulsing Waveform Logo */}
@@ -215,7 +259,7 @@ const EnhancedLoadingScreen: React.FC<EnhancedLoadingScreenProps> = ({
             transition={{ duration: 0.2 }}
             className="text-center space-y-2"
           >
-            <p className="text-[#a1a1aa] text-lg font-medium">
+            <p className={`${palette.stageText} text-lg font-medium`}>
               {currentStageLabel}
             </p>
 
@@ -248,11 +292,11 @@ const EnhancedLoadingScreen: React.FC<EnhancedLoadingScreenProps> = ({
           transition={{ delay: 0.5 }}
           className={`${inline ? '' : 'absolute bottom-12 left-0 right-0'} text-center`}
         >
-          <div className="inline-flex items-center gap-2 px-4 py-2 bg-[#18181b] border border-[#27272a] rounded-full">
+          <div className={`inline-flex items-center gap-2 px-4 py-2 ${palette.pillBg} border ${palette.pillBorder} rounded-full`}>
             <span className="text-xs font-semibold bg-gradient-to-r from-rose-500 to-pink-500 bg-clip-text text-transparent">
               BETA
             </span>
-            <span className="text-xs text-[#71717a]">
+            <span className={`text-xs ${palette.pillSubtext}`}>
               Pulse v1.0
             </span>
           </div>

@@ -1,0 +1,117 @@
+/* Dependency section styles. Phase 5 of the Decisions and Tasks overhaul. */
+
+@import '../design-tokens.css';
+
+.dp-section {
+  display: flex;
+  flex-direction: column;
+  gap: 12px;
+}
+
+.dp-loading {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  color: var(--dt-text-muted);
+  font-family: var(--dt-font-family-mono);
+  font-size: var(--dt-label-size);
+  letter-spacing: var(--dt-label-tracking);
+  text-transform: uppercase;
+}
+
+.dp-spinner {
+  animation: dp-spin 1.2s linear infinite;
+}
+
+@keyframes dp-spin {
+  from { transform: rotate(0deg); }
+  to   { transform: rotate(360deg); }
+}
+
+@media (prefers-reduced-motion: reduce) {
+  .dp-spinner { animation: none; }
+}
+
+.dp-group {
+  display: flex;
+  flex-direction: column;
+  gap: 4px;
+}
+
+.dp-group-title {
+  display: inline-flex;
+  align-items: center;
+  gap: 6px;
+  margin: 0 0 4px 0;
+  color: var(--dt-text-muted);
+  font-weight: 500;
+}
+
+.dp-list {
+  list-style: none;
+  margin: 0;
+  padding: 0;
+  display: flex;
+  flex-direction: column;
+  gap: 4px;
+}
+
+.dp-row {
+  margin: 0;
+}
+
+.dp-row-button {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  width: 100%;
+  padding: 6px 10px;
+  background: var(--dt-bg-card);
+  border: 1px solid var(--dt-border);
+  border-radius: var(--dt-radius-sm);
+  color: var(--dt-text-primary);
+  text-align: left;
+  cursor: pointer;
+  font-family: inherit;
+  font-size: 0.875rem;
+  transition: all var(--dt-transition-fast);
+}
+
+.dark .dp-row-button {
+  background: rgba(255, 255, 255, 0.04);
+}
+
+.dp-row-button:hover {
+  border-color: var(--dt-accent);
+  background: var(--dt-bg-card-hover);
+}
+
+.dp-row-dot {
+  width: 8px;
+  height: 8px;
+  border-radius: 50%;
+  flex-shrink: 0;
+}
+
+.dp-row-title {
+  flex: 1;
+  min-width: 0;
+  overflow: hidden;
+  text-overflow: ellipsis;
+  white-space: nowrap;
+}
+
+.dp-row-title.is-cancelled {
+  text-decoration: line-through;
+  color: var(--dt-text-muted);
+}
+
+.dp-row-cancelled-icon {
+  color: var(--dt-text-muted);
+  flex-shrink: 0;
+}
+
+.dp-row-status {
+  color: var(--dt-text-muted);
+  flex-shrink: 0;
+}

@@ -414,7 +414,7 @@ a.duration-300,
 
 /* ============================================================
    ANIMATED SVG ICONS — keyframes + utility classes
-   Used in Voxer, Decisions, CRM, and Logos Vision sections
+   Used in Relay, Decisions, CRM, and Logos Vision sections
    ============================================================ */
 
 @keyframes lp-bars {
@@ -533,7 +533,7 @@ a.duration-300,
   }
 }
 
-/* ── Orbital Voxer Section ─────────────────────────────────────────── */
+/* ── Orbital Relay Section ─────────────────────────────────────────── */
 @keyframes lp-orbit-rotate {
   from { transform: rotate(0deg); }
   to   { transform: rotate(360deg); }
@@ -588,7 +588,7 @@ a.duration-300,
    NOTE: Overlay opacity is now controlled directly in TSX via isDarkMode conditional
    (inline style wins over CSS, so we set opacity:0 in the JSX when not in dark mode).
    These CSS rules are kept as a fallback safety net only. ── */
-.lp-light #section-voxer > .absolute.inset-0.pointer-events-none,
+.lp-light #section-relay > .absolute.inset-0.pointer-events-none,
 .lp-light #section-decisions > .absolute.inset-0.pointer-events-none,
 .lp-light #section-crm > .absolute.inset-0.pointer-events-none {
   opacity: 0 !important;

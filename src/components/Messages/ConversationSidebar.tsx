@@ -5,6 +5,9 @@ import { UserBadge } from './UserBadge';
 import { ThreadBadges, ThreadActionsMenu } from '../MessageEnhancements/ThreadActions';
 import { PulseConversation } from '../../services/pulseService';
 import { Thread } from '../../types';
+import { TagPills } from './TagPills';
+import type { TagDefinition } from '../../services/tagsService';
+import { RemindersInbox } from './RemindersInbox';
 
 interface VirtualConversationItem {
   item: PulseConversation;
@@ -48,6 +51,14 @@ interface ConversationSidebarProps {
   messageEnhancements: any;
   handleDeletePulseConversation: (id: string) => void;
   threads: Thread[];
+  /** Phase 7b — tags applied to each Pulse conversation, keyed by
+   *  conversation id. Optional; renders compact pills inline when
+   *  provided. */
+  conversationTags?: Record<string, TagDefinition[]>;
+  /** Phase 7b — when a fired reminder is opened, jump the host to
+   *  that conversation. Optional; if omitted, the reminder is just
+   *  dismissed without navigation. */
+  onJumpToConversation?: (conversationId: string, kind: 'dm' | 'channel') => void;
 }
 
 export const ConversationSidebar: React.FC<ConversationSidebarProps> = ({
@@ -61,6 +72,8 @@ export const ConversationSidebar: React.FC<ConversationSidebarProps> = ({
   threadListRef, pulseConversations, conversationsTotalHeight, virtualConversations,
   activePulseConversation, setSelectedContactUserId, setShowContactPanel,
   handleSelectConversation, messageEnhancements, handleDeletePulseConversation, threads,
+  conversationTags = {},
+  onJumpToConversation,
 }) => {
   return (
     <div ref={sidebarRef} className={`w-full md:w-[30%] md:min-w-[280px] md:max-w-[400px] border-r border-zinc-200 dark:border-zinc-700 bg-white dark:bg-zinc-950 flex-shrink-0 flex flex-col ${mobileView === 'chat' ? 'max-md:hidden' : ''}`}>
@@ -71,6 +84,12 @@ export const ConversationSidebar: React.FC<ConversationSidebarProps> = ({
             <UserPlus className="text-sm" />
           </button>
           {/* SMS toggle hidden — SMS is not in active development */}
+          {/* Phase 7b — fired-reminders inbox. Shows due snoozes
+           *  across all conversations. No-op when host doesn't pass
+           *  `onJumpToConversation`. */}
+          {onJumpToConversation && (
+            <RemindersInbox onJumpToConversation={onJumpToConversation} />
+          )}
           <button onClick={() => setShowShortcuts(true)} className="w-12 h-12 rounded-lg text-zinc-500 dark:text-zinc-400 hover:bg-zinc-100 dark:hover:bg-zinc-800 flex items-center justify-center transition" title="Keyboard shortcuts">
             <Keyboard className="text-sm" />
           </button>
@@ -256,6 +275,16 @@ export const ConversationSidebar: React.FC<ConversationSidebarProps> = ({
                         {otherUser.handle && <span className="text-[10px] text-emerald-600 dark:text-emerald-400">@{otherUser.handle}</span>}
                         {conv.last_message_preview && (
                           <p className="text-xs truncate text-zinc-500 dark:text-zinc-400 ml-1">{conv.last_message_preview}</p>
+                        )}
+                        {/* Phase 7b — compact tag dots; full pills appear in the
+                         *  conversation header when active. */}
+                        {conversationTags[conv.id]?.length > 0 && (
+                          <TagPills
+                            tags={conversationTags[conv.id]}
+                            compact
+                            max={4}
+                            className="ml-1"
+                          />
                         )}
                       </div>
                     </div>

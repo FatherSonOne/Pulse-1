@@ -1,7 +1,9 @@
-import React, { useState, useMemo } from 'react';
+import React, { useState, useMemo, useEffect, useRef, useCallback } from 'react';
 import { motion, AnimatePresence } from 'framer-motion';
+import toast from 'react-hot-toast';
 import { DecisionWithVotes } from '../../services/decisionService';
 import { Task } from '../../services/taskService';
+import { settingsService } from '../../services/settingsService';
 import { EnhancedDecisionCard } from './EnhancedDecisionCard';
 import { EnhancedTaskCard } from '../tasks/EnhancedTaskCard';
 import {
@@ -13,7 +15,8 @@ import {
   Eye,
   AlertCircle,
   CheckCircle2,
-  type LucideIcon
+  ChevronDown,
+  type LucideIcon,
 } from 'lucide-react';
 import './BoardView.css';
 
@@ -39,14 +42,13 @@ interface BoardViewProps {
   onTaskEdit?: (task: Task) => void;
 }
 
-type ColumnId = 'proposed' | 'voting' | 'decided' | 'todo' | 'in_progress' | 'in_review' | 'blocked' | 'done';
+type SectionId = 'proposed' | 'voting' | 'decided' | 'todo' | 'in_progress' | 'in_review' | 'blocked' | 'done';
 
-interface Column {
-  id: ColumnId;
+interface Section {
+  id: SectionId;
   label: string;
   icon: LucideIcon;
   statusColor: string;
-  bgColor: string;
   acceptsDecisions: boolean;
   acceptsTasks: boolean;
   wipLimit?: number;
@@ -54,86 +56,38 @@ interface Column {
 
 type Decision = DecisionWithVotes;
 
-// Column configuration
-const COLUMNS: Column[] = [
-  {
-    id: 'proposed',
-    label: 'Proposed',
-    icon: Lightbulb,
-    statusColor: '#8b5cf6',
-    bgColor: 'var(--dt-status-bg-proposed)',
-    acceptsDecisions: true,
-    acceptsTasks: false
-  },
-  {
-    id: 'voting',
-    label: 'Voting',
-    icon: Vote,
-    statusColor: '#f59e0b',
-    bgColor: 'var(--dt-status-bg-voting)',
-    acceptsDecisions: true,
-    acceptsTasks: false
-  },
-  {
-    id: 'decided',
-    label: 'Decided',
-    icon: CheckCircle,
-    statusColor: '#10b981',
-    bgColor: 'var(--dt-status-bg-decided)',
-    acceptsDecisions: true,
-    acceptsTasks: false
-  },
-  {
-    id: 'todo',
-    label: 'To Do',
-    icon: Circle,
-    statusColor: '#6b7280',
-    bgColor: 'var(--dt-status-bg-todo)',
-    acceptsDecisions: false,
-    acceptsTasks: true
-  },
-  {
-    id: 'in_progress',
-    label: 'In Progress',
-    icon: PlayCircle,
-    statusColor: '#3b82f6',
-    bgColor: 'var(--dt-status-bg-in-progress)',
-    acceptsDecisions: false,
-    acceptsTasks: true,
-    wipLimit: 5
-  },
-  {
-    id: 'in_review',
-    label: 'In Review',
-    icon: Eye,
-    statusColor: '#a855f7',
-    bgColor: 'var(--dt-status-bg-in-review)',
-    acceptsDecisions: false,
-    acceptsTasks: true
-  },
-  {
-    id: 'blocked',
-    label: 'Blocked',
-    icon: AlertCircle,
-    statusColor: '#f97316',
-    bgColor: 'var(--dt-status-bg-blocked)',
-    acceptsDecisions: false,
-    acceptsTasks: true
-  },
-  {
-    id: 'done',
-    label: 'Done',
-    icon: CheckCircle2,
-    statusColor: '#22c55e',
-    bgColor: 'var(--dt-status-bg-done)',
-    acceptsDecisions: true,
-    acceptsTasks: true
-  }
+// Section configuration. Order top-to-bottom is the operator's reading order:
+// decisions first (Proposed → Voting → Decided), then task statuses left-to-right
+// in the original kanban (To Do → In Progress → In Review → Blocked → Done).
+const SECTIONS: Section[] = [
+  { id: 'proposed',    label: 'Proposed',    icon: Lightbulb,    statusColor: 'var(--dt-status-proposed)',    acceptsDecisions: true,  acceptsTasks: false },
+  { id: 'voting',      label: 'Voting',      icon: Vote,         statusColor: 'var(--dt-status-voting)',      acceptsDecisions: true,  acceptsTasks: false },
+  { id: 'decided',     label: 'Decided',     icon: CheckCircle,  statusColor: 'var(--dt-status-decided)',     acceptsDecisions: true,  acceptsTasks: false },
+  { id: 'todo',        label: 'To Do',       icon: Circle,       statusColor: 'var(--dt-status-todo)',        acceptsDecisions: false, acceptsTasks: true },
+  { id: 'in_progress', label: 'In Progress', icon: PlayCircle,   statusColor: 'var(--dt-status-in-progress)', acceptsDecisions: false, acceptsTasks: true,  wipLimit: 5 },
+  { id: 'in_review',   label: 'In Review',   icon: Eye,          statusColor: 'var(--dt-status-in-review)',   acceptsDecisions: false, acceptsTasks: true },
+  { id: 'blocked',     label: 'Blocked',     icon: AlertCircle,  statusColor: 'var(--dt-status-blocked)',     acceptsDecisions: false, acceptsTasks: true },
+  { id: 'done',        label: 'Done',        icon: CheckCircle2, statusColor: 'var(--dt-status-done)',        acceptsDecisions: true,  acceptsTasks: true },
 ];
 
+// 600ms drag-hover before a collapsed section auto-expands. Matches macOS
+// Finder spring-loaded folder timing — long enough to avoid accidental
+// expansion when crossing a header on the way to another section.
+const DRAG_AUTOEXPAND_MS = 600;
+
 /**
- * BoardView - 8-column Kanban board for decisions and tasks
- * Phase 2: Full implementation with drag-and-drop, framer-motion animations
+ * BoardView renders the full status set as a stack of collapsible vertical
+ * sections. Cards flex-wrap inside each expanded section so a single section
+ * with 12 tasks shows 3-4 per row instead of being squeezed into a 280px lane.
+ *
+ * Persistence: expanded/collapsed state is read from
+ * settingsService.get('decisionsHubAccordionBoard') on mount and written back
+ * on every toggle. The settingsService syncs to user_settings JSONB so the
+ * layout follows the operator across devices.
+ *
+ * Drag-and-drop: dropping onto an expanded section's body changes status as
+ * before. Hovering over a collapsed section header for 600ms auto-expands
+ * it so the operator can place the card precisely.
  */
 export const BoardView: React.FC<BoardViewProps> = ({
   decisions,
@@ -147,14 +101,56 @@ export const BoardView: React.FC<BoardViewProps> = ({
   onDecisionDecompose,
   onVote,
   onTaskDelete,
-  onTaskEdit
+  onTaskEdit,
 }) => {
   const [draggedItem, setDraggedItem] = useState<{ id: string; type: 'decision' | 'task' } | null>(null);
-  const [dragOverColumn, setDragOverColumn] = useState<ColumnId | null>(null);
+  const [dragOverSection, setDragOverSection] = useState<SectionId | null>(null);
+  const [expanded, setExpanded] = useState<Record<string, boolean>>({});
+  const autoExpandTimer = useRef<number | null>(null);
 
-  // Filter and organize items into columns
-  const columnItems = useMemo(() => {
-    const columns: Record<ColumnId, { decisions: DecisionWithVotes[]; tasks: Task[] }> = {
+  // Hydrate accordion state from settingsService once on mount. The service
+  // wraps localStorage + Capacitor Preferences + Supabase user_settings, so
+  // this is the single source of truth.
+  useEffect(() => {
+    let cancelled = false;
+    settingsService.get('decisionsHubAccordionBoard').then((stored) => {
+      if (!cancelled && stored && typeof stored === 'object') {
+        setExpanded(stored as Record<string, boolean>);
+      }
+    });
+    return () => {
+      cancelled = true;
+    };
+  }, []);
+
+  // Toggle a section and persist the new map. We write the full map (not just
+  // the changed key) because settingsService.set wants the typed value.
+  const toggleSection = useCallback((id: SectionId) => {
+    setExpanded((prev) => {
+      const next = { ...prev, [id]: !prev[id] };
+      settingsService.set('decisionsHubAccordionBoard', next).catch((err) => {
+        console.error('Failed to persist accordion state:', err);
+      });
+      return next;
+    });
+  }, []);
+
+  // Force-expand without toggling. Used by the drag auto-expand timer.
+  const forceExpand = useCallback((id: SectionId) => {
+    setExpanded((prev) => {
+      if (prev[id]) return prev;
+      const next = { ...prev, [id]: true };
+      settingsService.set('decisionsHubAccordionBoard', next).catch(() => undefined);
+      return next;
+    });
+  }, []);
+
+  const isExpanded = (id: SectionId): boolean => expanded[id] ?? false;
+
+  // Group items into their target sections. Decisions land in Proposed/Voting/
+  // Decided; tasks in To Do / In Progress / In Review / Blocked / Done.
+  const sectionItems = useMemo(() => {
+    const buckets: Record<SectionId, { decisions: DecisionWithVotes[]; tasks: Task[] }> = {
       proposed: { decisions: [], tasks: [] },
       voting: { decisions: [], tasks: [] },
       decided: { decisions: [], tasks: [] },
@@ -162,42 +158,39 @@ export const BoardView: React.FC<BoardViewProps> = ({
       in_progress: { decisions: [], tasks: [] },
       in_review: { decisions: [], tasks: [] },
       blocked: { decisions: [], tasks: [] },
-      done: { decisions: [], tasks: [] }
+      done: { decisions: [], tasks: [] },
     };
 
-    // Place decisions in columns
     decisions.forEach((decision) => {
       if (decision.status === 'proposed') {
-        columns.proposed.decisions.push(decision);
+        buckets.proposed.decisions.push(decision);
       } else if (decision.status === 'voting') {
-        columns.voting.decisions.push(decision);
+        buckets.voting.decisions.push(decision);
       } else if (decision.status === 'decided') {
-        // Check if decision has linked tasks
-        const hasLinkedTasks = tasks.some(t => t.metadata?.decision_id === decision.id);
+        const hasLinkedTasks = tasks.some((t) => t.metadata?.decision_id === decision.id);
         if (hasLinkedTasks) {
-          columns.done.decisions.push(decision);
+          buckets.done.decisions.push(decision);
         } else {
-          columns.decided.decisions.push(decision);
+          buckets.decided.decisions.push(decision);
         }
       }
     });
 
-    // Place tasks in columns
     tasks.forEach((task) => {
       if (task.status === 'todo' || task.status === 'pending') {
-        columns.todo.tasks.push(task);
+        buckets.todo.tasks.push(task);
       } else if (task.status === 'in_progress') {
-        columns.in_progress.tasks.push(task);
+        buckets.in_progress.tasks.push(task);
       } else if (task.status === 'in_review') {
-        columns.in_review.tasks.push(task);
+        buckets.in_review.tasks.push(task);
       } else if (task.status === 'blocked') {
-        columns.blocked.tasks.push(task);
+        buckets.blocked.tasks.push(task);
       } else if (task.status === 'done') {
-        columns.done.tasks.push(task);
+        buckets.done.tasks.push(task);
       }
     });
 
-    return columns;
+    return buckets;
   }, [decisions, tasks]);
 
   // Drag handlers
@@ -207,68 +200,92 @@ export const BoardView: React.FC<BoardViewProps> = ({
     e.dataTransfer.setData('text/html', e.currentTarget.innerHTML);
   };
 
-  const handleDragOver = (e: React.DragEvent, columnId: ColumnId) => {
+  const handleDragOver = (e: React.DragEvent, sectionId: SectionId) => {
     e.preventDefault();
     e.dataTransfer.dropEffect = 'move';
-    setDragOverColumn(columnId);
+
+    if (dragOverSection !== sectionId) {
+      // Clear any pending auto-expand on the previous section.
+      if (autoExpandTimer.current) {
+        window.clearTimeout(autoExpandTimer.current);
+        autoExpandTimer.current = null;
+      }
+      setDragOverSection(sectionId);
+
+      // Schedule auto-expand if collapsed.
+      if (!isExpanded(sectionId)) {
+        autoExpandTimer.current = window.setTimeout(() => {
+          forceExpand(sectionId);
+          autoExpandTimer.current = null;
+        }, DRAG_AUTOEXPAND_MS);
+      }
+    }
   };
 
   const handleDragLeave = () => {
-    setDragOverColumn(null);
+    if (autoExpandTimer.current) {
+      window.clearTimeout(autoExpandTimer.current);
+      autoExpandTimer.current = null;
+    }
+    setDragOverSection(null);
   };
 
-  const handleDrop = async (e: React.DragEvent, columnId: ColumnId) => {
+  const handleDrop = async (e: React.DragEvent, sectionId: SectionId) => {
     e.preventDefault();
-    setDragOverColumn(null);
+    setDragOverSection(null);
+    if (autoExpandTimer.current) {
+      window.clearTimeout(autoExpandTimer.current);
+      autoExpandTimer.current = null;
+    }
 
     if (!draggedItem) return;
 
-    const column = COLUMNS.find(c => c.id === columnId);
-    if (!column) return;
+    const section = SECTIONS.find((s) => s.id === sectionId);
+    if (!section) return;
 
-    // Handle decision drop
     if (draggedItem.type === 'decision') {
-      if (!column.acceptsDecisions) {
-        alert('This column does not accept decisions');
+      if (!section.acceptsDecisions) {
+        toast.error(`Decisions can't enter ${section.label}. Try Decided.`, {
+          id: 'invalid-drop',
+          duration: 3000,
+        });
         return;
       }
 
-      const decision = decisions.find(d => d.id === draggedItem.id);
+      const decision = decisions.find((d) => d.id === draggedItem.id);
       if (!decision) return;
 
-      // Map column to decision status
       let newStatus: Decision['status'];
-      if (columnId === 'proposed') newStatus = 'proposed';
-      else if (columnId === 'voting') newStatus = 'voting';
-      else if (columnId === 'decided' || columnId === 'done') newStatus = 'decided';
+      if (sectionId === 'proposed') newStatus = 'proposed';
+      else if (sectionId === 'voting') newStatus = 'voting';
+      else if (sectionId === 'decided' || sectionId === 'done') newStatus = 'decided';
       else return;
 
-      // Special: If dropping to "Decided", trigger decompose
-      if (columnId === 'decided' && onDecisionDecompose) {
+      if (sectionId === 'decided' && onDecisionDecompose) {
         onDecisionDecompose(decision);
       }
 
       if (onDecisionStatusChange && decision.status !== newStatus) {
         onDecisionStatusChange(draggedItem.id, newStatus);
       }
-    }
-    // Handle task drop
-    else if (draggedItem.type === 'task') {
-      if (!column.acceptsTasks) {
-        alert('This column does not accept tasks');
+    } else if (draggedItem.type === 'task') {
+      if (!section.acceptsTasks) {
+        toast.error(`Tasks can't enter ${section.label}. Try To Do.`, {
+          id: 'invalid-drop',
+          duration: 3000,
+        });
         return;
       }
 
-      const task = tasks.find(t => t.id === draggedItem.id);
+      const task = tasks.find((t) => t.id === draggedItem.id);
       if (!task) return;
 
-      // Map column to task status
       let newStatus: Task['status'];
-      if (columnId === 'todo') newStatus = 'todo';
-      else if (columnId === 'in_progress') newStatus = 'in_progress';
-      else if (columnId === 'in_review') newStatus = 'in_review';
-      else if (columnId === 'blocked') newStatus = 'blocked';
-      else if (columnId === 'done') newStatus = 'done';
+      if (sectionId === 'todo') newStatus = 'todo';
+      else if (sectionId === 'in_progress') newStatus = 'in_progress';
+      else if (sectionId === 'in_review') newStatus = 'in_review';
+      else if (sectionId === 'blocked') newStatus = 'blocked';
+      else if (sectionId === 'done') newStatus = 'done';
       else return;
 
       if (onTaskStatusChange && task.status !== newStatus) {
@@ -281,113 +298,140 @@ export const BoardView: React.FC<BoardViewProps> = ({
 
   const handleDragEnd = () => {
     setDraggedItem(null);
-    setDragOverColumn(null);
+    setDragOverSection(null);
+    if (autoExpandTimer.current) {
+      window.clearTimeout(autoExpandTimer.current);
+      autoExpandTimer.current = null;
+    }
   };
 
-  // Render a single column
-  const renderColumn = (column: Column) => {
-    const { decisions: colDecisions, tasks: colTasks } = columnItems[column.id];
-    const totalCount = colDecisions.length + colTasks.length;
-    const isOverWipLimit = column.wipLimit && totalCount > column.wipLimit;
+  const renderSection = (section: Section) => {
+    const { decisions: secDecisions, tasks: secTasks } = sectionItems[section.id];
+    const totalCount = secDecisions.length + secTasks.length;
+    const isOverWipLimit = section.wipLimit !== undefined && totalCount > section.wipLimit;
+    const open = isExpanded(section.id);
+    const isDragOver = dragOverSection === section.id;
 
     return (
-      <div
-        key={column.id}
-        className={`board-column ${dragOverColumn === column.id ? 'drag-over' : ''}`}
-        data-status={column.id}
-        style={{ background: column.bgColor }}
-        onDragOver={(e) => handleDragOver(e, column.id)}
+      <section
+        key={section.id}
+        className={`board-section${open ? ' expanded' : ''}${isDragOver ? ' drag-over' : ''}`}
+        data-status={section.id}
+        onDragOver={(e) => handleDragOver(e, section.id)}
         onDragLeave={handleDragLeave}
-        onDrop={(e) => handleDrop(e, column.id)}
+        onDrop={(e) => handleDrop(e, section.id)}
       >
-        {/* Column Header */}
-        <div className="board-column-header">
-          <column.icon size={18} style={{ color: column.statusColor }} />
-          <h3 className="column-title">{column.label}</h3>
+        <button
+          type="button"
+          className="board-section-header"
+          onClick={() => toggleSection(section.id)}
+          aria-expanded={open}
+          aria-controls={`section-body-${section.id}`}
+        >
+          <ChevronDown
+            size={14}
+            className="board-section-chevron"
+            aria-hidden="true"
+          />
           <span
-            className={`column-count-badge ${isOverWipLimit ? 'wip-limit-warning' : ''}`}
-            style={!isOverWipLimit ? { background: column.statusColor } : {}}
-          >
-            {totalCount}
-          </span>
+            className="board-section-dot"
+            style={{ background: section.statusColor }}
+            aria-hidden="true"
+          />
+          <section.icon
+            size={14}
+            className="board-section-icon"
+            style={{ color: section.statusColor }}
+            aria-hidden="true"
+          />
+          <span className="board-section-title dt-label">{section.label}</span>
+          <span className="board-section-count">{totalCount}</span>
           {isOverWipLimit && (
-            <span className="wip-limit-text" title={`WIP limit: ${column.wipLimit}`}>
-              !
+            <span
+              className="board-section-wip dt-label"
+              title={`WIP limit: ${section.wipLimit}`}
+            >
+              WIP {totalCount}/{section.wipLimit}
             </span>
           )}
+        </button>
+
+        <div
+          id={`section-body-${section.id}`}
+          className="board-section-body"
+          role="region"
+          aria-label={`${section.label} items`}
+        >
+          <div className="board-section-cards">
+            {totalCount === 0 ? (
+              <div className="board-section-drop-hint" aria-hidden={!isDragOver}>
+                <span className="dt-label">
+                  {isDragOver ? `Drop to set ${section.label}` : 'Nothing here yet.'}
+                </span>
+              </div>
+            ) : (
+              <AnimatePresence mode="popLayout">
+                {secDecisions.map((decision) => (
+                  <motion.div
+                    key={`decision-${decision.id}`}
+                    layout
+                    initial={{ opacity: 0, y: 8 }}
+                    animate={{ opacity: 1, y: 0 }}
+                    exit={{ opacity: 0, scale: 0.95 }}
+                    transition={{ duration: 0.22, ease: [0.16, 1, 0.3, 1] }}
+                    className={`board-card${draggedItem?.id === decision.id ? ' dragging' : ''}`}
+                    draggable
+                    onDragStart={(e) => handleDragStart(e as unknown as React.DragEvent, decision.id, 'decision')}
+                    onDragEnd={handleDragEnd}
+                  >
+                    <EnhancedDecisionCard
+                      decision={decision}
+                      currentUserId={currentUserId}
+                      workspaceId={workspaceId}
+                      linkedTaskCount={linkedTaskCounts[decision.id] || 0}
+                      onVote={onVote}
+                      onGenerateTasks={onDecisionDecompose ? () => onDecisionDecompose(decision) : undefined}
+                    />
+                  </motion.div>
+                ))}
+
+                {secTasks.map((task) => (
+                  <motion.div
+                    key={`task-${task.id}`}
+                    layout
+                    initial={{ opacity: 0, y: 8 }}
+                    animate={{ opacity: 1, y: 0 }}
+                    exit={{ opacity: 0, scale: 0.95 }}
+                    transition={{ duration: 0.22, ease: [0.16, 1, 0.3, 1] }}
+                    className={`board-card${draggedItem?.id === task.id ? ' dragging' : ''}`}
+                    draggable
+                    onDragStart={(e) => handleDragStart(e as unknown as React.DragEvent, task.id, 'task')}
+                    onDragEnd={handleDragEnd}
+                  >
+                    <EnhancedTaskCard
+                      task={task}
+                      onStatusChange={async (taskId, newStatus) => {
+                        if (onTaskStatusChange) {
+                          onTaskStatusChange(taskId, newStatus);
+                        }
+                      }}
+                      onDelete={onTaskDelete}
+                      onEdit={onTaskEdit}
+                      allTasks={tasks}
+                    />
+                  </motion.div>
+                ))}
+              </AnimatePresence>
+            )}
+          </div>
         </div>
-
-        {/* Column Body - Cards */}
-        <div className="board-column-body">
-          <AnimatePresence mode="popLayout">
-            {/* Render decisions */}
-            {colDecisions.map((decision) => (
-              <motion.div
-                key={`decision-${decision.id}`}
-                layout
-                initial={{ opacity: 0, y: 20 }}
-                animate={{ opacity: 1, y: 0 }}
-                exit={{ opacity: 0, scale: 0.9 }}
-                transition={{ duration: 0.2 }}
-                className={`board-card ${draggedItem?.id === decision.id ? 'dragging' : ''}`}
-                draggable
-                onDragStart={(e) => handleDragStart(e as any, decision.id, 'decision')}
-                onDragEnd={handleDragEnd}
-              >
-                <EnhancedDecisionCard
-                  decision={decision}
-                  currentUserId={currentUserId}
-                  workspaceId={workspaceId}
-                  linkedTaskCount={linkedTaskCounts[decision.id] || 0}
-                  onVote={onVote}
-                  onGenerateTasks={onDecisionDecompose ? () => onDecisionDecompose(decision) : undefined}
-                />
-              </motion.div>
-            ))}
-
-            {/* Render tasks */}
-            {colTasks.map((task) => (
-              <motion.div
-                key={`task-${task.id}`}
-                layout
-                initial={{ opacity: 0, y: 20 }}
-                animate={{ opacity: 1, y: 0 }}
-                exit={{ opacity: 0, scale: 0.9 }}
-                transition={{ duration: 0.2 }}
-                className={`board-card ${draggedItem?.id === task.id ? 'dragging' : ''}`}
-                draggable
-                onDragStart={(e) => handleDragStart(e as any, task.id, 'task')}
-                onDragEnd={handleDragEnd}
-              >
-                <EnhancedTaskCard
-                  task={task}
-                  onStatusChange={async (taskId, newStatus) => {
-                    if (onTaskStatusChange) {
-                      onTaskStatusChange(taskId, newStatus);
-                    }
-                  }}
-                  onDelete={onTaskDelete}
-                  onEdit={onTaskEdit}
-                  allTasks={tasks}
-                />
-              </motion.div>
-            ))}
-          </AnimatePresence>
-
-          {/* Empty state */}
-          {totalCount === 0 && (
-            <div className="column-empty-state">
-              <p>No items</p>
-            </div>
-          )}
-        </div>
-      </div>
+      </section>
     );
   };
 
   return (
     <div className="board-view">
-      {COLUMNS.map((column) => renderColumn(column))}
+      {SECTIONS.map((section) => renderSection(section))}
     </div>
   );
 };

@@ -1,0 +1,1531 @@
+/* Decision Wizard styles. Shared shell + primitives. Frames inherit. */
+
+@import '../design-tokens.css';
+
+/* ─────────────────────────────────────────────────────────────────────────
+   FIELD BASICS
+   ───────────────────────────────────────────────────────────────────────── */
+
+.dw-field {
+  display: flex;
+  flex-direction: column;
+  gap: 6px;
+  margin-bottom: var(--dt-spacing-md);
+}
+
+.dw-field-label {
+  color: var(--dt-text-muted);
+  display: inline-flex;
+  align-items: center;
+  gap: 4px;
+}
+
+.dw-field-required {
+  color: var(--dt-status-overdue);
+  font-family: var(--dt-font-family);
+  font-size: 0.875rem;
+  letter-spacing: 0;
+}
+
+.dw-field-hint {
+  font-size: 0.8125rem;
+  color: var(--dt-text-muted);
+  line-height: 1.5;
+  margin: 0;
+}
+
+.dw-field-error {
+  font-family: var(--dt-font-family-mono);
+  font-size: var(--dt-label-size-sm);
+  font-weight: var(--dt-label-weight);
+  letter-spacing: 0.05em;
+  text-transform: uppercase;
+  color: var(--dt-status-overdue);
+  margin: 0;
+}
+
+/* ─────────────────────────────────────────────────────────────────────────
+   TEXT INPUTS
+   ───────────────────────────────────────────────────────────────────────── */
+
+.dw-input,
+.dw-textarea {
+  width: 100%;
+  padding: 10px 12px;
+  background: var(--dt-bg-card);
+  border: 1px solid var(--dt-border);
+  border-radius: var(--dt-radius-sm);
+  color: var(--dt-text-primary);
+  font-family: var(--dt-font-family);
+  font-size: 0.9375rem;
+  line-height: 1.5;
+  transition: all var(--dt-transition-fast);
+}
+
+.dark .dw-input,
+.dark .dw-textarea {
+  background: rgba(255, 255, 255, 0.04);
+}
+
+.dw-input::placeholder,
+.dw-textarea::placeholder {
+  color: var(--dt-text-muted);
+}
+
+.dw-input:focus,
+.dw-textarea:focus {
+  outline: none;
+  border-color: var(--dt-accent);
+  box-shadow: var(--dt-shadow-focus);
+}
+
+.dw-input.has-error,
+.dw-textarea.has-error {
+  border-color: var(--dt-status-overdue);
+}
+
+.dw-textarea {
+  resize: vertical;
+  min-height: 80px;
+}
+
+/* ─────────────────────────────────────────────────────────────────────────
+   CHIPS FIELD
+   ───────────────────────────────────────────────────────────────────────── */
+
+.dw-chips-container {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 6px;
+  align-items: center;
+  min-height: 42px;
+  padding: 6px 8px;
+  background: var(--dt-bg-card);
+  border: 1px solid var(--dt-border);
+  border-radius: var(--dt-radius-sm);
+  cursor: text;
+  transition: all var(--dt-transition-fast);
+}
+
+.dark .dw-chips-container {
+  background: rgba(255, 255, 255, 0.04);
+}
+
+.dw-chips-container:focus-within {
+  border-color: var(--dt-accent);
+  box-shadow: var(--dt-shadow-focus);
+}
+
+.dw-chips-container.has-error {
+  border-color: var(--dt-status-overdue);
+}
+
+.dw-chip {
+  display: inline-flex;
+  align-items: center;
+  gap: 4px;
+  padding: 3px 4px 3px 10px;
+  background: var(--dt-accent-soft);
+  color: var(--dt-accent-hover);
+  border-radius: var(--dt-radius-sm);
+  font-size: 0.875rem;
+  font-weight: 500;
+  white-space: nowrap;
+}
+
+.dw-chip-remove {
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  width: 16px;
+  height: 16px;
+  padding: 0;
+  background: transparent;
+  border: none;
+  color: var(--dt-accent-hover);
+  cursor: pointer;
+  border-radius: 4px;
+  transition: background var(--dt-transition-fast);
+}
+
+.dw-chip-remove:hover {
+  background: var(--dt-accent-soft);
+}
+
+.dw-chips-input {
+  flex: 1;
+  min-width: 120px;
+  padding: 4px;
+  background: transparent;
+  border: none;
+  color: var(--dt-text-primary);
+  font-family: var(--dt-font-family);
+  font-size: 0.9375rem;
+  outline: none;
+}
+
+.dw-chips-input::placeholder {
+  color: var(--dt-text-muted);
+}
+
+/* ─────────────────────────────────────────────────────────────────────────
+   RADIO GROUP — segmented control
+   ───────────────────────────────────────────────────────────────────────── */
+
+.dw-radiogroup {
+  display: flex;
+  gap: 4px;
+  padding: 4px;
+  background: var(--dt-bg-secondary);
+  border-radius: var(--dt-radius-sm);
+  flex-wrap: wrap;
+}
+
+.dw-radiogroup.has-error {
+  outline: 1px solid var(--dt-status-overdue);
+  outline-offset: 1px;
+}
+
+.dw-radio-option {
+  flex: 1;
+  min-width: 80px;
+  padding: 8px 12px;
+  background: transparent;
+  border: none;
+  color: var(--dt-text-secondary);
+  font-family: var(--dt-font-family);
+  font-size: 0.875rem;
+  font-weight: 500;
+  border-radius: calc(var(--dt-radius-sm) - 2px);
+  cursor: pointer;
+  transition: all var(--dt-transition-fast);
+  white-space: nowrap;
+}
+
+.dw-radio-option:hover:not(.is-selected) {
+  color: var(--dt-text-primary);
+  background: var(--dt-bg-card-hover);
+}
+
+.dw-radio-option.is-selected {
+  background: var(--dt-bg-card);
+  color: var(--dt-accent-hover);
+  box-shadow: var(--dt-shadow-card);
+}
+
+.dw-radio-option:focus-visible {
+  outline: 2px solid var(--dt-accent);
+  outline-offset: 2px;
+}
+
+/* ─────────────────────────────────────────────────────────────────────────
+   DATE PICKER
+   ───────────────────────────────────────────────────────────────────────── */
+
+.dw-datepicker {
+  position: relative;
+}
+
+.dw-datepicker-trigger {
+  display: inline-flex;
+  align-items: center;
+  gap: 8px;
+  width: 100%;
+  padding: 10px 12px;
+  background: var(--dt-bg-card);
+  border: 1px solid var(--dt-border);
+  border-radius: var(--dt-radius-sm);
+  color: var(--dt-text-primary);
+  font-family: var(--dt-font-family);
+  font-size: 0.9375rem;
+  cursor: pointer;
+  transition: all var(--dt-transition-fast);
+  text-align: left;
+}
+
+.dark .dw-datepicker-trigger {
+  background: rgba(255, 255, 255, 0.04);
+}
+
+.dw-datepicker-trigger:hover {
+  border-color: var(--dt-border-hover);
+}
+
+.dw-datepicker-trigger:focus-visible {
+  outline: 2px solid var(--dt-accent);
+  outline-offset: 2px;
+}
+
+.dw-datepicker-trigger.has-error {
+  border-color: var(--dt-status-overdue);
+}
+
+.dw-datepicker-trigger svg {
+  color: var(--dt-text-muted);
+  flex-shrink: 0;
+}
+
+.dw-datepicker-backdrop {
+  position: fixed;
+  inset: 0;
+  z-index: 49;
+}
+
+.dw-datepicker-popover {
+  position: absolute;
+  top: calc(100% + 6px);
+  left: 0;
+  z-index: 50;
+  width: 280px;
+  padding: 12px;
+  background: var(--dt-bg-card);
+  border: 1px solid var(--dt-border);
+  border-radius: var(--dt-radius-sm);
+  box-shadow: var(--dt-shadow-modal);
+  animation: dw-popover-in 180ms cubic-bezier(0.16, 1, 0.3, 1);
+}
+
+.dark .dw-datepicker-popover {
+  background: rgba(20, 20, 22, 0.96);
+  backdrop-filter: blur(24px);
+  -webkit-backdrop-filter: blur(24px);
+}
+
+@keyframes dw-popover-in {
+  from { opacity: 0; transform: translateY(-4px); }
+  to   { opacity: 1; transform: translateY(0); }
+}
+
+@media (prefers-reduced-motion: reduce) {
+  .dw-datepicker-popover { animation: none; }
+}
+
+.dw-datepicker-header {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  margin-bottom: 8px;
+}
+
+.dw-datepicker-nav {
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  width: 28px;
+  height: 28px;
+  background: transparent;
+  border: none;
+  color: var(--dt-text-secondary);
+  border-radius: var(--dt-radius-sm);
+  cursor: pointer;
+  transition: background var(--dt-transition-fast);
+}
+
+.dw-datepicker-nav:hover {
+  background: var(--dt-bg-card-hover);
+  color: var(--dt-text-primary);
+}
+
+.dw-datepicker-title {
+  color: var(--dt-text-primary);
+}
+
+.dw-datepicker-weekdays {
+  display: grid;
+  grid-template-columns: repeat(7, 1fr);
+  gap: 2px;
+  margin-bottom: 4px;
+}
+
+.dw-datepicker-weekday {
+  text-align: center;
+  color: var(--dt-text-muted);
+  padding: 4px 0;
+}
+
+.dw-datepicker-grid {
+  display: grid;
+  grid-template-columns: repeat(7, 1fr);
+  gap: 2px;
+}
+
+.dw-datepicker-cell,
+.dw-datepicker-cell-empty {
+  aspect-ratio: 1 / 1;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  background: transparent;
+  border: none;
+  color: var(--dt-text-primary);
+  font-family: var(--dt-font-family);
+  font-size: 0.875rem;
+  border-radius: var(--dt-radius-sm);
+  cursor: pointer;
+  transition: all var(--dt-transition-fast);
+}
+
+.dw-datepicker-cell:hover {
+  background: var(--dt-bg-card-hover);
+}
+
+.dw-datepicker-cell.is-today {
+  color: var(--dt-accent-hover);
+  font-weight: 600;
+}
+
+.dw-datepicker-cell.is-selected {
+  background: var(--dt-accent);
+  color: white;
+}
+
+.dw-datepicker-cell.is-selected:hover {
+  background: var(--dt-accent-hover);
+}
+
+.dw-datepicker-cell-empty {
+  cursor: default;
+  pointer-events: none;
+}
+
+/* ─────────────────────────────────────────────────────────────────────────
+   MEMBER PICKER
+   ───────────────────────────────────────────────────────────────────────── */
+
+.dw-memberpicker {
+  position: relative;
+}
+
+.dw-memberpicker-trigger {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  width: 100%;
+  min-height: 42px;
+  padding: 6px 10px;
+  background: var(--dt-bg-card);
+  border: 1px solid var(--dt-border);
+  border-radius: var(--dt-radius-sm);
+  color: var(--dt-text-primary);
+  font-family: var(--dt-font-family);
+  font-size: 0.9375rem;
+  cursor: pointer;
+  transition: all var(--dt-transition-fast);
+  text-align: left;
+}
+
+.dark .dw-memberpicker-trigger {
+  background: rgba(255, 255, 255, 0.04);
+}
+
+.dw-memberpicker-trigger:hover {
+  border-color: var(--dt-border-hover);
+}
+
+.dw-memberpicker-trigger:focus-visible {
+  outline: 2px solid var(--dt-accent);
+  outline-offset: 2px;
+}
+
+.dw-memberpicker-trigger.has-error {
+  border-color: var(--dt-status-overdue);
+}
+
+.dw-memberpicker-placeholder {
+  color: var(--dt-text-muted);
+  flex: 1;
+}
+
+.dw-memberpicker-chips {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 4px;
+  flex: 1;
+}
+
+.dw-memberpicker-chevron {
+  flex-shrink: 0;
+  color: var(--dt-text-muted);
+  margin-left: auto;
+}
+
+.dw-memberpicker-backdrop {
+  position: fixed;
+  inset: 0;
+  z-index: 49;
+}
+
+.dw-memberpicker-popover {
+  position: absolute;
+  top: calc(100% + 6px);
+  left: 0;
+  right: 0;
+  z-index: 50;
+  max-height: 280px;
+  display: flex;
+  flex-direction: column;
+  background: var(--dt-bg-card);
+  border: 1px solid var(--dt-border);
+  border-radius: var(--dt-radius-sm);
+  box-shadow: var(--dt-shadow-modal);
+  animation: dw-popover-in 180ms cubic-bezier(0.16, 1, 0.3, 1);
+  overflow: hidden;
+}
+
+.dark .dw-memberpicker-popover {
+  background: rgba(20, 20, 22, 0.96);
+  backdrop-filter: blur(24px);
+  -webkit-backdrop-filter: blur(24px);
+}
+
+.dw-memberpicker-search {
+  width: 100%;
+  padding: 10px 12px;
+  background: transparent;
+  border: none;
+  border-bottom: 1px solid var(--dt-border);
+  color: var(--dt-text-primary);
+  font-family: var(--dt-font-family);
+  font-size: 0.9375rem;
+  outline: none;
+}
+
+.dw-memberpicker-search::placeholder {
+  color: var(--dt-text-muted);
+}
+
+.dw-memberpicker-options {
+  display: flex;
+  flex-direction: column;
+  padding: 4px;
+  overflow-y: auto;
+  max-height: 220px;
+}
+
+.dw-memberpicker-option {
+  padding: 8px 10px;
+  background: transparent;
+  border: none;
+  color: var(--dt-text-primary);
+  font-family: var(--dt-font-family);
+  font-size: 0.9375rem;
+  text-align: left;
+  border-radius: 6px;
+  cursor: pointer;
+  transition: background var(--dt-transition-fast);
+}
+
+.dw-memberpicker-option:hover {
+  background: var(--dt-bg-card-hover);
+}
+
+.dw-memberpicker-empty {
+  padding: 12px 10px;
+  color: var(--dt-text-muted);
+  font-size: 0.875rem;
+  margin: 0;
+}
+
+/* ─────────────────────────────────────────────────────────────────────────
+   CURRENCY FIELD
+   ───────────────────────────────────────────────────────────────────────── */
+
+.dw-currency-wrap {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  padding: 0 12px;
+  background: var(--dt-bg-card);
+  border: 1px solid var(--dt-border);
+  border-radius: var(--dt-radius-sm);
+  transition: all var(--dt-transition-fast);
+}
+
+.dark .dw-currency-wrap {
+  background: rgba(255, 255, 255, 0.04);
+}
+
+.dw-currency-wrap:focus-within {
+  border-color: var(--dt-accent);
+  box-shadow: var(--dt-shadow-focus);
+}
+
+.dw-currency-wrap.has-error {
+  border-color: var(--dt-status-overdue);
+}
+
+.dw-currency-symbol {
+  color: var(--dt-text-muted);
+  font-family: var(--dt-font-family-mono);
+  font-size: 0.9375rem;
+}
+
+.dw-currency-input {
+  flex: 1;
+  padding: 10px 0;
+  background: transparent;
+  border: none;
+  color: var(--dt-text-primary);
+  font-family: var(--dt-font-family);
+  font-size: 0.9375rem;
+  outline: none;
+  -moz-appearance: textfield;
+}
+
+.dw-currency-input::-webkit-outer-spin-button,
+.dw-currency-input::-webkit-inner-spin-button {
+  -webkit-appearance: none;
+  margin: 0;
+}
+
+.dw-currency-suffix {
+  color: var(--dt-text-muted);
+}
+
+/* ─────────────────────────────────────────────────────────────────────────
+   SELECT FIELD
+   ───────────────────────────────────────────────────────────────────────── */
+
+.dw-select {
+  position: relative;
+}
+
+.dw-select-trigger {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 8px;
+  width: 100%;
+  padding: 10px 12px;
+  background: var(--dt-bg-card);
+  border: 1px solid var(--dt-border);
+  border-radius: var(--dt-radius-sm);
+  color: var(--dt-text-primary);
+  font-family: var(--dt-font-family);
+  font-size: 0.9375rem;
+  cursor: pointer;
+  transition: all var(--dt-transition-fast);
+  text-align: left;
+}
+
+.dark .dw-select-trigger {
+  background: rgba(255, 255, 255, 0.04);
+}
+
+.dw-select-trigger:hover {
+  border-color: var(--dt-border-hover);
+}
+
+.dw-select-trigger:focus-visible {
+  outline: 2px solid var(--dt-accent);
+  outline-offset: 2px;
+}
+
+.dw-select-trigger.has-error {
+  border-color: var(--dt-status-overdue);
+}
+
+.dw-select-trigger svg {
+  color: var(--dt-text-muted);
+  flex-shrink: 0;
+  transition: transform var(--dt-transition-base);
+}
+
+.dw-select-trigger[aria-expanded="true"] svg {
+  transform: rotate(180deg);
+}
+
+.dw-select-placeholder {
+  color: var(--dt-text-muted);
+}
+
+.dw-select-backdrop {
+  position: fixed;
+  inset: 0;
+  z-index: 49;
+}
+
+.dw-select-popover {
+  position: absolute;
+  top: calc(100% + 6px);
+  left: 0;
+  right: 0;
+  z-index: 50;
+  padding: 4px;
+  background: var(--dt-bg-card);
+  border: 1px solid var(--dt-border);
+  border-radius: var(--dt-radius-sm);
+  box-shadow: var(--dt-shadow-modal);
+  animation: dw-popover-in 180ms cubic-bezier(0.16, 1, 0.3, 1);
+}
+
+.dark .dw-select-popover {
+  background: rgba(20, 20, 22, 0.96);
+  backdrop-filter: blur(24px);
+  -webkit-backdrop-filter: blur(24px);
+}
+
+.dw-select-option {
+  display: block;
+  width: 100%;
+  padding: 8px 10px;
+  background: transparent;
+  border: none;
+  color: var(--dt-text-primary);
+  font-family: var(--dt-font-family);
+  font-size: 0.9375rem;
+  text-align: left;
+  border-radius: 6px;
+  cursor: pointer;
+  transition: background var(--dt-transition-fast);
+}
+
+.dw-select-option:hover,
+.dw-select-option.is-selected {
+  background: var(--dt-bg-card-hover);
+}
+
+.dw-select-option.is-selected {
+  color: var(--dt-accent-hover);
+}
+
+/* ═══════════════════════════════════════════════════════════════════════════
+   WIZARD SHELL: slide-down modal, progress, header, body, footer
+   ═══════════════════════════════════════════════════════════════════════════ */
+
+.dw-overlay {
+  position: fixed;
+  inset: 0;
+  background: rgba(0, 0, 0, 0.45);
+  z-index: 1000;
+  animation: dw-fade 200ms ease-out;
+}
+
+.dw-modal {
+  position: fixed;
+  top: 0;
+  left: 50%;
+  z-index: 1001;
+  width: calc(100% - 32px);
+  max-width: 1100px;
+  max-height: 92vh;
+  display: flex;
+  flex-direction: column;
+  background: var(--dt-bg-card);
+  border: 1px solid var(--dt-border);
+  border-top: none;
+  border-radius: 0 0 var(--dt-radius-lg) var(--dt-radius-lg);
+  box-shadow: 0 16px 40px rgba(0, 0, 0, 0.18);
+  transform: translate(-50%, 0);
+  animation: dw-slide-down 280ms cubic-bezier(0.16, 1, 0.3, 1);
+  transform-origin: top center;
+}
+
+.dark .dw-modal {
+  background: rgba(20, 20, 22, 0.97);
+  backdrop-filter: blur(24px);
+  -webkit-backdrop-filter: blur(24px);
+  box-shadow: 0 16px 40px rgba(0, 0, 0, 0.50);
+}
+
+@keyframes dw-slide-down {
+  from { transform: translate(-50%, -100%); opacity: 0.6; }
+  to   { transform: translate(-50%, 0); opacity: 1; }
+}
+
+@keyframes dw-fade {
+  from { opacity: 0; }
+  to   { opacity: 1; }
+}
+
+@media (prefers-reduced-motion: reduce) {
+  .dw-modal, .dw-overlay {
+    animation: none;
+  }
+}
+
+/* ── Header ────────────────────────────────────────────────────────────── */
+
+.dw-modal-header {
+  display: flex;
+  align-items: flex-start;
+  justify-content: space-between;
+  gap: 16px;
+  padding: 20px 24px;
+  border-bottom: 1px solid var(--dt-border);
+}
+
+.dw-modal-header-left {
+  flex: 1;
+  min-width: 0;
+}
+
+.dw-modal-title {
+  font-size: 1.25rem;
+  font-weight: 600;
+  color: var(--dt-text-primary);
+  margin: 0 0 12px 0;
+  letter-spacing: -0.01em;
+}
+
+.dw-modal-close {
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  width: 32px;
+  height: 32px;
+  background: transparent;
+  border: none;
+  color: var(--dt-text-secondary);
+  cursor: pointer;
+  border-radius: var(--dt-radius-sm);
+  transition: all var(--dt-transition-fast);
+  flex-shrink: 0;
+}
+
+.dw-modal-close:hover {
+  background: var(--dt-bg-card-hover);
+  color: var(--dt-text-primary);
+}
+
+/* ── Progress steps ────────────────────────────────────────────────────── */
+
+.dw-progress {
+  display: flex;
+  align-items: center;
+  gap: 0;
+  margin: 0;
+  padding: 0;
+  list-style: none;
+}
+
+.dw-progress-step {
+  display: inline-flex;
+  align-items: center;
+  gap: 8px;
+  padding-right: 16px;
+  position: relative;
+  color: var(--dt-text-muted);
+  transition: color var(--dt-transition-fast);
+}
+
+.dw-progress-step:not(:last-child)::after {
+  content: '';
+  width: 12px;
+  height: 1px;
+  background: var(--dt-border);
+  margin-left: 4px;
+}
+
+.dw-progress-step.is-active,
+.dw-progress-step.is-complete {
+  color: var(--dt-accent-hover);
+}
+
+.dw-progress-dot {
+  width: 8px;
+  height: 8px;
+  border-radius: 50%;
+  background: var(--dt-bg-secondary);
+  border: 1px solid var(--dt-border);
+  flex-shrink: 0;
+  transition: all var(--dt-transition-fast);
+}
+
+.dw-progress-step.is-active .dw-progress-dot {
+  background: var(--dt-accent);
+  border-color: var(--dt-accent);
+  box-shadow: 0 0 0 3px var(--dt-accent-soft);
+}
+
+.dw-progress-step.is-complete .dw-progress-dot {
+  background: var(--dt-accent);
+  border-color: var(--dt-accent);
+}
+
+.dw-progress-label {
+  white-space: nowrap;
+}
+
+/* ── Body ──────────────────────────────────────────────────────────────── */
+
+.dw-modal-body {
+  flex: 1;
+  padding: 24px;
+  overflow-y: auto;
+}
+
+/* ── Footer (forward / back navigation) ────────────────────────────────── */
+
+.dw-modal-footer {
+  display: flex;
+  align-items: center;
+  gap: 12px;
+  padding: 16px 24px;
+  border-top: 1px solid var(--dt-border);
+}
+
+.dw-nav-spacer {
+  flex: 1;
+}
+
+.dw-nav-hint {
+  color: var(--dt-text-muted);
+}
+
+.dw-nav-secondary,
+.dw-nav-primary,
+.dw-button-secondary,
+.dw-button-primary {
+  display: inline-flex;
+  align-items: center;
+  gap: 6px;
+  padding: 9px 16px;
+  font-family: var(--dt-font-family);
+  font-size: 0.9375rem;
+  font-weight: 500;
+  border-radius: var(--dt-radius-sm);
+  border: none;
+  cursor: pointer;
+  transition: all var(--dt-transition-fast);
+}
+
+.dw-nav-secondary,
+.dw-button-secondary {
+  background: var(--dt-bg-card-hover);
+  color: var(--dt-text-primary);
+}
+
+.dw-nav-secondary:hover:not(:disabled),
+.dw-button-secondary:hover:not(:disabled) {
+  background: var(--dt-bg-secondary);
+}
+
+.dw-nav-primary,
+.dw-button-primary {
+  background: var(--dt-accent-gradient);
+  color: white;
+  box-shadow: 0 4px 12px var(--dt-accent-glow);
+}
+
+.dw-nav-primary:hover:not(:disabled),
+.dw-button-primary:hover:not(:disabled) {
+  transform: translateY(-1px);
+  filter: brightness(1.05);
+}
+
+.dw-nav-primary:disabled,
+.dw-button-primary:disabled,
+.dw-nav-secondary:disabled,
+.dw-button-secondary:disabled {
+  opacity: 0.5;
+  cursor: not-allowed;
+}
+
+.dw-back-button {
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  width: 28px;
+  height: 28px;
+  background: transparent;
+  border: none;
+  color: var(--dt-text-secondary);
+  border-radius: var(--dt-radius-sm);
+  cursor: pointer;
+  transition: all var(--dt-transition-fast);
+}
+
+.dw-back-button:hover {
+  background: var(--dt-bg-card-hover);
+  color: var(--dt-text-primary);
+}
+
+@media (prefers-reduced-motion: reduce) {
+  .dw-nav-primary:hover:not(:disabled),
+  .dw-button-primary:hover:not(:disabled) {
+    transform: none;
+  }
+}
+
+/* ═══════════════════════════════════════════════════════════════════════════
+   STEP 1: FRAME SELECT
+   ═══════════════════════════════════════════════════════════════════════════ */
+
+.dw-step1-header {
+  margin-bottom: 24px;
+}
+
+.dw-step1-title {
+  font-size: 1.5rem;
+  font-weight: 300;
+  color: var(--dt-text-primary);
+  margin: 0 0 6px 0;
+  letter-spacing: -0.02em;
+}
+
+.dw-step1-sub {
+  font-size: 0.9375rem;
+  color: var(--dt-text-secondary);
+  margin: 0;
+  max-width: 60ch;
+}
+
+.dw-step1-grid {
+  display: grid;
+  grid-template-columns: repeat(auto-fill, minmax(240px, 1fr));
+  gap: 12px;
+  margin-bottom: 24px;
+}
+
+.dw-step1-card {
+  display: flex;
+  flex-direction: column;
+  align-items: flex-start;
+  gap: 8px;
+  padding: 16px;
+  background: var(--dt-bg-card);
+  border: 1px solid var(--dt-border);
+  border-radius: var(--dt-radius);
+  color: var(--dt-text-primary);
+  text-align: left;
+  cursor: pointer;
+  transition: all var(--dt-transition-fast);
+}
+
+.dw-step1-card:hover {
+  border-color: var(--dt-accent);
+  background: var(--dt-bg-card-hover);
+  box-shadow: var(--dt-shadow-card-hover);
+  transform: translateY(-1px);
+}
+
+.dw-step1-card:focus-visible {
+  outline: 2px solid var(--dt-accent);
+  outline-offset: 2px;
+}
+
+.dw-step1-card-icon {
+  color: var(--dt-text-secondary);
+  transition: color var(--dt-transition-fast);
+}
+
+.dw-step1-card:hover .dw-step1-card-icon {
+  color: var(--dt-accent);
+}
+
+.dw-step1-card-label {
+  font-size: 1rem;
+  font-weight: 600;
+  color: var(--dt-text-primary);
+}
+
+.dw-step1-card-blurb {
+  font-size: 0.8125rem;
+  color: var(--dt-text-muted);
+  line-height: 1.4;
+}
+
+.dw-step1-divider {
+  display: flex;
+  align-items: center;
+  gap: 12px;
+  color: var(--dt-text-muted);
+  margin: 8px 0 16px;
+}
+
+.dw-step1-divider::before,
+.dw-step1-divider::after {
+  content: '';
+  flex: 1;
+  height: 1px;
+  background: var(--dt-border);
+}
+
+.dw-step1-ai {
+  display: flex;
+  flex-direction: column;
+  gap: 10px;
+}
+
+.dw-step1-ai-label {
+  color: var(--dt-text-muted);
+}
+
+.dw-step1-ai-input {
+  width: 100%;
+  padding: 12px 14px;
+  background: var(--dt-bg-card);
+  border: 1px solid var(--dt-accent);
+  border-radius: var(--dt-radius-sm);
+  color: var(--dt-text-primary);
+  font-family: var(--dt-font-family);
+  font-size: 0.9375rem;
+  line-height: 1.5;
+  resize: vertical;
+  min-height: 80px;
+  transition: all var(--dt-transition-fast);
+}
+
+.dark .dw-step1-ai-input {
+  background: rgba(255, 255, 255, 0.04);
+}
+
+.dw-step1-ai-input:focus {
+  outline: none;
+  box-shadow: var(--dt-shadow-focus);
+}
+
+.dw-step1-ai-button {
+  display: inline-flex;
+  align-items: center;
+  gap: 8px;
+  padding: 9px 18px;
+  background: var(--dt-accent-gradient);
+  color: white;
+  border: none;
+  border-radius: var(--dt-radius-sm);
+  font-family: var(--dt-font-family);
+  font-size: 0.9375rem;
+  font-weight: 500;
+  cursor: pointer;
+  align-self: flex-start;
+  box-shadow: 0 4px 12px var(--dt-accent-glow);
+  transition: all var(--dt-transition-fast);
+}
+
+.dw-step1-ai-button:hover:not(:disabled) {
+  transform: translateY(-1px);
+  filter: brightness(1.05);
+}
+
+.dw-step1-ai-button:disabled {
+  opacity: 0.5;
+  cursor: not-allowed;
+}
+
+.dw-step1-ai-spinner {
+  animation: dw-spin 1.2s linear infinite;
+}
+
+@keyframes dw-spin {
+  from { transform: rotate(0deg); }
+  to   { transform: rotate(360deg); }
+}
+
+/* ═══════════════════════════════════════════════════════════════════════════
+   STEP 2: FRAME FORM
+   ═══════════════════════════════════════════════════════════════════════════ */
+
+.dw-step2-header {
+  display: flex;
+  align-items: center;
+  gap: 12px;
+  margin-bottom: 20px;
+}
+
+.dw-step2-icon {
+  color: var(--dt-accent);
+  flex-shrink: 0;
+}
+
+.dw-step2-title {
+  font-size: 1.25rem;
+  font-weight: 600;
+  color: var(--dt-text-primary);
+  margin: 0;
+  letter-spacing: -0.01em;
+}
+
+.dw-step2-sub {
+  font-size: 0.8125rem;
+  color: var(--dt-text-secondary);
+  margin: 2px 0 0 0;
+}
+
+.dw-step2-form {
+  display: flex;
+  flex-direction: column;
+}
+
+.dw-step2-missing {
+  padding: 24px;
+  text-align: center;
+  color: var(--dt-text-secondary);
+}
+
+.dw-step2-missing p {
+  margin: 0 0 16px 0;
+}
+
+/* ═══════════════════════════════════════════════════════════════════════════
+   STEP 3: TASK SHAPING
+   ═══════════════════════════════════════════════════════════════════════════ */
+
+.dw-step3-header {
+  display: flex;
+  align-items: flex-start;
+  justify-content: space-between;
+  gap: 12px;
+  margin-bottom: 20px;
+}
+
+.dw-step3-title {
+  font-size: 1.25rem;
+  font-weight: 600;
+  color: var(--dt-text-primary);
+  margin: 0 0 4px 0;
+  letter-spacing: -0.01em;
+}
+
+.dw-step3-sub {
+  font-size: 0.8125rem;
+  color: var(--dt-text-secondary);
+  margin: 0;
+}
+
+.dw-step3-regenerate {
+  display: inline-flex;
+  align-items: center;
+  gap: 6px;
+  padding: 6px 12px;
+  background: var(--dt-accent-soft);
+  border: 1px solid transparent;
+  border-radius: var(--dt-radius-sm);
+  color: var(--dt-accent-hover);
+  font-family: var(--dt-font-family-mono);
+  font-size: var(--dt-label-size-sm);
+  font-weight: var(--dt-label-weight);
+  letter-spacing: var(--dt-label-tracking);
+  text-transform: uppercase;
+  cursor: pointer;
+  transition: all var(--dt-transition-fast);
+  flex-shrink: 0;
+}
+
+.dw-step3-regenerate:hover:not(:disabled) {
+  border-color: var(--dt-accent);
+}
+
+.dw-step3-regenerate:disabled {
+  opacity: 0.5;
+  cursor: not-allowed;
+}
+
+.dw-step3-empty {
+  padding: 24px;
+  text-align: center;
+  color: var(--dt-text-muted);
+  border: 1px dashed var(--dt-border);
+  border-radius: var(--dt-radius-sm);
+  margin-bottom: 12px;
+}
+
+.dw-step3-list {
+  list-style: none;
+  margin: 0 0 12px 0;
+  padding: 0;
+  display: flex;
+  flex-direction: column;
+  gap: 6px;
+}
+
+.dw-step3-task {
+  background: var(--dt-bg-card);
+  border: 1px solid var(--dt-border);
+  border-radius: var(--dt-radius-sm);
+  transition: border-color var(--dt-transition-fast);
+}
+
+.dw-step3-task.is-decision {
+  border-color: var(--dt-accent);
+  box-shadow: 0 0 0 1px var(--dt-accent-soft);
+}
+
+.dw-step3-task.is-expanded {
+  background: var(--dt-bg-card-hover);
+}
+
+.dw-step3-task-row {
+  display: flex;
+  align-items: center;
+  gap: 4px;
+  padding: 4px 8px;
+}
+
+.dw-step3-task-grip,
+.dw-step3-task-decision,
+.dw-step3-task-delete {
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  width: 24px;
+  height: 24px;
+  padding: 0;
+  background: transparent;
+  border: none;
+  color: var(--dt-text-muted);
+  border-radius: 4px;
+  cursor: pointer;
+  transition: all var(--dt-transition-fast);
+  flex-shrink: 0;
+}
+
+.dw-step3-task-grip {
+  cursor: grab;
+}
+
+.dw-step3-task-grip:hover,
+.dw-step3-task-decision:hover {
+  background: var(--dt-bg-secondary);
+  color: var(--dt-text-primary);
+}
+
+.dw-step3-task-decision[aria-pressed="true"] {
+  background: var(--dt-accent);
+  color: white;
+}
+
+.dw-step3-task-delete:hover {
+  background: rgba(239, 68, 68, 0.12);
+  color: var(--dt-status-overdue);
+}
+
+.dw-step3-task-toggle {
+  flex: 1;
+  min-width: 0;
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 8px;
+  padding: 6px 8px;
+  background: transparent;
+  border: none;
+  cursor: pointer;
+  text-align: left;
+}
+
+.dw-step3-task-title {
+  flex: 1;
+  min-width: 0;
+  font-size: 0.9375rem;
+  color: var(--dt-text-primary);
+  overflow: hidden;
+  text-overflow: ellipsis;
+  white-space: nowrap;
+}
+
+.dw-step3-task-placeholder {
+  color: var(--dt-text-muted);
+  font-style: italic;
+}
+
+.dw-step3-task-meta {
+  display: inline-flex;
+  align-items: center;
+  gap: 6px;
+  flex-shrink: 0;
+  color: var(--dt-text-muted);
+}
+
+.dw-step3-task-due {
+  font-feature-settings: "tnum" 1;
+}
+
+.dw-step3-task-decision-pill {
+  padding: 2px 6px;
+  background: var(--dt-accent-soft);
+  color: var(--dt-accent-hover);
+  border-radius: 4px;
+}
+
+.dw-step3-task-detail {
+  padding: 8px 16px 12px;
+  display: flex;
+  flex-direction: column;
+  gap: 8px;
+  border-top: 1px solid var(--dt-border);
+}
+
+.dw-step3-task-row-2col {
+  display: grid;
+  grid-template-columns: 1fr 1fr;
+  gap: 12px;
+}
+
+.dw-step3-add {
+  display: inline-flex;
+  align-items: center;
+  gap: 6px;
+  padding: 8px 12px;
+  background: transparent;
+  border: 1px dashed var(--dt-border);
+  border-radius: var(--dt-radius-sm);
+  color: var(--dt-text-secondary);
+  font-family: var(--dt-font-family);
+  font-size: 0.875rem;
+  cursor: pointer;
+  transition: all var(--dt-transition-fast);
+  align-self: flex-start;
+}
+
+.dw-step3-add:hover {
+  border-color: var(--dt-accent);
+  color: var(--dt-accent-hover);
+}
+
+/* ═══════════════════════════════════════════════════════════════════════════
+   STEP 4: RHYTHM
+   ═══════════════════════════════════════════════════════════════════════════ */
+
+.dw-step4-header {
+  margin-bottom: 20px;
+}
+
+.dw-step4-title {
+  font-size: 1.25rem;
+  font-weight: 600;
+  color: var(--dt-text-primary);
+  margin: 0 0 4px 0;
+  letter-spacing: -0.01em;
+}
+
+.dw-step4-sub {
+  font-size: 0.8125rem;
+  color: var(--dt-text-secondary);
+  margin: 0;
+}
+
+.dw-step4-grid {
+  display: grid;
+  grid-template-columns: 1fr 1fr;
+  gap: 16px;
+  margin-bottom: 8px;
+}
+
+@media (max-width: 640px) {
+  .dw-step4-grid {
+    grid-template-columns: 1fr;
+  }
+  .dw-step3-task-row-2col {
+    grid-template-columns: 1fr;
+  }
+}
+
+/* ═══════════════════════════════════════════════════════════════════════════
+   STEP 5: SAVE AND USE
+   ═══════════════════════════════════════════════════════════════════════════ */
+
+.dw-step5-header {
+  margin-bottom: 20px;
+}
+
+.dw-step5-title {
+  font-size: 1.5rem;
+  font-weight: 300;
+  color: var(--dt-text-primary);
+  margin: 0 0 6px 0;
+  letter-spacing: -0.02em;
+}
+
+.dw-step5-sub {
+  font-size: 0.9375rem;
+  color: var(--dt-text-secondary);
+  margin: 0;
+}
+
+.dw-step5-summary {
+  background: var(--dt-bg-secondary);
+  border: 1px solid var(--dt-border);
+  border-radius: var(--dt-radius-sm);
+  padding: 16px;
+  margin-bottom: 20px;
+  display: flex;
+  flex-direction: column;
+  gap: 10px;
+}
+
+.dw-step5-summary-row {
+  display: flex;
+  align-items: baseline;
+  gap: 12px;
+}
+
+.dw-step5-summary-row .dt-label {
+  flex-shrink: 0;
+  width: 110px;
+  color: var(--dt-text-muted);
+}
+
+.dw-step5-summary-value {
+  flex: 1;
+  color: var(--dt-text-primary);
+  font-size: 0.9375rem;
+}
+
+.dw-step5-save-form {
+  background: var(--dt-bg-card);
+  border: 1px solid var(--dt-border);
+  border-radius: var(--dt-radius-sm);
+  padding: 16px;
+  margin-bottom: 20px;
+}
+
+.dw-step5-share {
+  display: inline-flex;
+  align-items: center;
+  gap: 8px;
+  font-size: 0.9375rem;
+  color: var(--dt-text-primary);
+  cursor: pointer;
+  user-select: none;
+}
+
+.dw-step5-share input[type="checkbox"] {
+  accent-color: var(--dt-accent);
+}
+
+.dw-step5-actions {
+  display: flex;
+  gap: 12px;
+  justify-content: flex-end;
+}
+
+@media (max-width: 640px) {
+  .dw-step5-actions {
+    flex-direction: column-reverse;
+  }
+  .dw-step5-actions button {
+    width: 100%;
+    justify-content: center;
+  }
+}
+
+/* ═══════════════════════════════════════════════════════════════════════════
+   MOBILE
+   ═══════════════════════════════════════════════════════════════════════════ */
+
+@media (max-width: 768px) {
+  .dw-modal {
+    width: 100%;
+    max-width: 100%;
+    max-height: 100vh;
+    border-radius: 0;
+    border-left: none;
+    border-right: none;
+  }
+
+  .dw-modal-header,
+  .dw-modal-body,
+  .dw-modal-footer {
+    padding-left: 16px;
+    padding-right: 16px;
+  }
+
+  .dw-progress-label {
+    display: none;
+  }
+  .dw-progress-step:not(:last-child)::after {
+    margin-left: 0;
+  }
+}

@@ -13,7 +13,7 @@ interface TrialExpiredBlockProps {
 
 const FEATURES = [
   'Unlimited team seats',
-  'All 6 Voxer modes (Quick, Team, Drop, Threads, Radio, Notes)',
+  'All 6 Relay modes (Quick, Team, Drop, Threads, Radio, Notes)',
   'Video Vox + Studio RAG',
   'Email, calendar, messaging, meetings',
   'Advanced analytics + full ecosystem bridge',

@@ -906,7 +906,7 @@ const Dashboard: React.FC<DashboardProps> = ({ user, apiKey, setView, openSettin
         setView(AppView.EMAIL);
         break;
       case 'vox':
-        setView(AppView.VOXER);
+        setView(AppView.RELAY);
         break;
       case 'contact':
         setView(AppView.CONTACTS);
@@ -967,7 +967,7 @@ const Dashboard: React.FC<DashboardProps> = ({ user, apiKey, setView, openSettin
         setView(AppView.EMAIL);
         break;
       case 'vox':
-        setView(AppView.VOXER);
+        setView(AppView.RELAY);
         break;
       case 'contact':
         setView(AppView.CONTACTS);
@@ -1055,7 +1055,7 @@ const Dashboard: React.FC<DashboardProps> = ({ user, apiKey, setView, openSettin
     { id: 'message', label: 'Send Message', icon: 'fa-message', color: 'bg-gradient-to-br from-pink-500 to-rose-400', view: AppView.MESSAGES },
     { id: 'meeting', label: 'Schedule Meet', icon: 'fa-video', color: 'bg-gradient-to-br from-rose-400 to-pink-600', view: AppView.CALENDAR },
     { id: 'email', label: 'Compose Email', icon: 'fa-envelope', color: 'bg-gradient-to-br from-pink-600 to-rose-500', view: AppView.EMAIL },
-    { id: 'vox', label: 'Quick Vox', icon: 'fa-microphone', color: 'bg-gradient-to-br from-orange-500 to-amber-500', view: AppView.VOXER },
+    { id: 'vox', label: 'Quick Vox', icon: 'fa-microphone', color: 'bg-gradient-to-br from-orange-500 to-amber-500', view: AppView.RELAY },
     { id: 'contact', label: 'New Contact', icon: 'fa-user-plus', color: 'bg-gradient-to-br from-emerald-500 to-teal-500', view: AppView.CONTACTS, openAddContact: true },
     { id: 'warroom', label: 'War Room', icon: 'fa-book-open', color: 'bg-gradient-to-br from-rose-500 to-pink-600', view: AppView.LIVE },
     { id: 'search', label: 'Search', icon: 'fa-magnifying-glass', color: 'bg-gradient-to-br from-sky-500 to-blue-500', view: AppView.MULTI_MODAL },
@@ -1220,7 +1220,7 @@ const Dashboard: React.FC<DashboardProps> = ({ user, apiKey, setView, openSettin
                         } else if (rec.includes('meeting') || rec.includes('calendar') || rec.includes('event') || rec.includes('task')) {
                           setView(AppView.CALENDAR);
                         } else if (rec.includes('voice') || rec.includes('vox')) {
-                          setView(AppView.VOXER);
+                          setView(AppView.RELAY);
                         } else {
                           sessionStorage.setItem('pulse_focus_nudge', 'email');
                           setView(AppView.EMAIL);
@@ -1699,7 +1699,7 @@ const Dashboard: React.FC<DashboardProps> = ({ user, apiKey, setView, openSettin
               {[
                 { label: 'Messages', count: messageUnreadCount, icon: MessageSquare, view: AppView.MESSAGES },
                 { label: 'Email', count: emailUnreadCount, icon: Mail, view: AppView.EMAIL },
-                { label: 'Vox', count: voxUnreadCount, icon: Mic, view: AppView.VOXER },
+                { label: 'Vox', count: voxUnreadCount, icon: Mic, view: AppView.RELAY },
               ].map(({ label, count, icon: Icon, view }) => (
                 <button key={label} onClick={() => setView(view)}
                   className="w-full flex items-center justify-between px-3 py-2.5 rounded-xl bg-zinc-50 dark:bg-zinc-800/60 hover:bg-rose-50 dark:hover:bg-rose-500/10 border border-zinc-200 dark:border-zinc-700/50 hover:border-rose-500/30 transition-all group">

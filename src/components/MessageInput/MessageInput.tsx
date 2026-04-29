@@ -1,8 +1,9 @@
 // src/components/MessageInput/MessageInput.tsx
 // AI-Augmented Message Input Component
 
-import React, { useState, useRef, useEffect, useCallback, lazy, Suspense } from 'react';
+import React, { useState, useRef, useEffect, useCallback, useMemo, lazy, Suspense } from 'react';
 import { motion, AnimatePresence } from 'framer-motion';
+import { useTranslation } from 'react-i18next';
 import useMessagesStore from '../../store/messageStore';
 import FormattingToolbar from './FormattingToolbar';
 import ToneAnalyzer from './ToneAnalyzer';
@@ -12,9 +13,20 @@ import InlineToolsMenu from './InlineToolsMenu';
 import { useSlashCommands } from '../../hooks/useSlashCommands';
 import { getToolOverlayType, saveRecentTool } from '../../services/toolRegistry';
 import './MessageInput.css';
-import { ArrowUp, LayoutGrid, Paperclip, Smile, Wand2 } from 'lucide-react';
+import {
+  ArrowUp,
+  CheckCircle2,
+  Loader2,
+  AlertCircle,
+  LayoutGrid,
+  Mic,
+  Paperclip,
+  Smile,
+  Sliders,
+  Square,
+  Wand2,
+} from 'lucide-react';
 import type {
-
   MessageInputProps,
   AttachmentFile,
   DraftState,
@@ -23,68 +35,133 @@ import type {
   ToneAnalysis,
 } from './types';
 
-// Lazy load AI components for better performance
 const AIComposer = lazy(() => import('./AIComposer'));
+
+const DEFAULT_MAX_ATTACHMENT_BYTES = 25 * 1024 * 1024; // 25 MB
+const DRAFT_DEBOUNCE_MS = 800;
+const DRAFT_STORAGE_PREFIX = 'pulse_msg_draft_v1:';
+const FORMATTABLE: ReadonlyArray<FormattingAction['type']> = [
+  'bold',
+  'italic',
+  'underline',
+  'strikethrough',
+];
+
+/** Generate a collision-resistant attachment id; falls back if crypto missing. */
+function makeAttachmentId(): string {
+  const c = (typeof crypto !== 'undefined' ? crypto : null) as Crypto | null;
+  if (c?.randomUUID) return c.randomUUID();
+  return `att_${Date.now().toString(36)}_${Math.random().toString(36).slice(2, 10)}`;
+}
+
+function classifyAttachment(file: File): AttachmentFile['type'] {
+  if (file.type.startsWith('image/')) return 'image';
+  if (file.type.startsWith('video/')) return 'video';
+  if (file.type.startsWith('audio/')) return 'audio';
+  return 'document';
+}
+
+function formatBytes(bytes: number): string {
+  if (bytes < 1024) return `${bytes} B`;
+  if (bytes < 1024 * 1024) return `${(bytes / 1024).toFixed(0)} KB`;
+  return `${(bytes / (1024 * 1024)).toFixed(1)} MB`;
+}
 
 const MessageInput: React.FC<MessageInputProps> = ({
   onSend,
   onTyping,
-  placeholder = 'Type your message...',
+  placeholder,
   aiEnabled = false,
   voiceEnabled = false,
   maxLength = 2000,
+  maxAttachmentBytes = DEFAULT_MAX_ATTACHMENT_BYTES,
   channelId,
+  apiKey,
   disabled = false,
   initialValue = '',
   setActiveToolOverlay,
 }) => {
-  // State
-  const [content, setContent] = useState(initialValue);
-  const [advancedMode, setAdvancedMode] = useState(false); // Simple mode by default (Phase 1 Task 5)
+  const { t: tr } = useTranslation();
+  const placeholderText = placeholder ?? tr('messages.input.placeholder', 'Type your message...');
+  const draftStorageKey = useMemo(
+    () => (channelId ? `${DRAFT_STORAGE_PREFIX}${channelId}` : null),
+    [channelId],
+  );
+
+  const initialContent = useMemo(() => {
+    if (initialValue) return initialValue;
+    if (!draftStorageKey || typeof window === 'undefined') return '';
+    try {
+      return window.localStorage.getItem(draftStorageKey) || '';
+    } catch {
+      return '';
+    }
+  }, [draftStorageKey, initialValue]);
+
+  const [content, setContent] = useState(initialContent);
+  const [advancedMode, setAdvancedMode] = useState(false);
   const [showAI, setShowAI] = useState(false);
   const [isRecording, setIsRecording] = useState(false);
   const [showToolsMenu, setShowToolsMenu] = useState(false);
   const [attachments, setAttachments] = useState<AttachmentFile[]>([]);
   const [activeFormats, setActiveFormats] = useState<Set<string>>(new Set());
-  const [draft, setDraft] = useState<DraftState>({
-    text: '',
+  const [attachmentError, setAttachmentError] = useState<string | null>(null);
+  const [draftTick, setDraftTick] = useState(0);
+  const [draft, setDraft] = useState<DraftState>(() => ({
+    text: initialContent,
     lastSaved: new Date(),
-    status: 'saved',
-  });
+    status: initialContent ? 'saved' : 'idle',
+  }));
 
-  // Refs
   const editorRef = useRef<HTMLDivElement>(null);
+  const fileInputRef = useRef<HTMLInputElement>(null);
   const toolsButtonRef = useRef<HTMLButtonElement>(null);
-  const typingTimeoutRef = useRef<NodeJS.Timeout>();
-  const draftTimeoutRef = useRef<NodeJS.Timeout>();
+  const typingTimeoutRef = useRef<NodeJS.Timeout | null>(null);
+  const draftTimeoutRef = useRef<NodeJS.Timeout | null>(null);
 
-  // Store
-  const messageStore = useMessagesStore();
-  const aiSuggestions = (messageStore.smartReplies || []) as unknown as AISuggestion[];
-  const toneAnalysis = messageStore.draftAnalysis as unknown as ToneAnalysis | null;
-  const isGeneratingAI = messageStore.isGeneratingReplies;
-  const isAnalyzingTone = messageStore.isAnalyzingDraft;
+  // Narrow Zustand selectors — avoid re-rendering on unrelated store updates.
+  const aiSuggestions = useMessagesStore(
+    (s) => (s.smartReplies || []) as unknown as AISuggestion[],
+  );
+  const toneAnalysis = useMessagesStore(
+    (s) => s.draftAnalysis as unknown as ToneAnalysis | null,
+  );
+  const isGeneratingAI = useMessagesStore((s) => s.isGeneratingReplies);
+  const isAnalyzingTone = useMessagesStore((s) => s.isAnalyzingDraft);
+  const generateSmartReplies = useMessagesStore((s) => s.generateSmartReplies);
+  const analyzeDraft = useMessagesStore((s) => s.analyzeDraft);
+  const setStoreDraft = useMessagesStore((s) => s.setDraft);
 
-  // Tool launch handler for slash commands
-  const handleToolLaunch = useCallback((toolId: string) => {
-    console.log('[MessageInput] Tool launched:', toolId);
-    const overlayType = getToolOverlayType(toolId);
-    if (overlayType && setActiveToolOverlay) {
-      setActiveToolOverlay(overlayType);
+  // Hydrate the editor with the restored draft on mount.
+  useEffect(() => {
+    if (initialContent && editorRef.current && !editorRef.current.textContent) {
+      editorRef.current.textContent = initialContent;
     }
-    saveRecentTool(toolId);
-    setContent('');
-    if (editorRef.current) {
-      editorRef.current.textContent = '';
-    }
-  }, [setActiveToolOverlay]);
+    // mount-only — restored value never re-applies after the user types.
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, []);
 
-  // Slash commands system
+  const handleToolLaunch = useCallback(
+    (toolId: string) => {
+      const overlayType = getToolOverlayType(toolId);
+      if (overlayType && setActiveToolOverlay) {
+        setActiveToolOverlay(overlayType);
+      }
+      saveRecentTool(toolId);
+      setContent('');
+      if (editorRef.current) {
+        editorRef.current.textContent = '';
+      }
+    },
+    [setActiveToolOverlay],
+  );
+
   const slashCommands = useSlashCommands(content, editorRef, handleToolLaunch);
 
-  // Auto-save draft
+  // Persist draft to localStorage (debounced).
   useEffect(() => {
-    if (!content || content === draft.text) return;
+    if (!draftStorageKey || typeof window === 'undefined') return;
+    if (content === draft.text) return;
 
     if (draftTimeoutRef.current) {
       clearTimeout(draftTimeoutRef.current);
@@ -93,155 +170,230 @@ const MessageInput: React.FC<MessageInputProps> = ({
     setDraft((prev) => ({ ...prev, status: 'saving' }));
 
     draftTimeoutRef.current = setTimeout(() => {
-      // Save draft logic here
-      setDraft({
-        text: content,
-        lastSaved: new Date(),
-        status: 'saved',
-      });
-    }, 1000);
+      try {
+        if (content) {
+          window.localStorage.setItem(draftStorageKey, content);
+        } else {
+          window.localStorage.removeItem(draftStorageKey);
+        }
+        setDraft({ text: content, lastSaved: new Date(), status: 'saved' });
+      } catch {
+        setDraft((prev) => ({ ...prev, status: 'error' }));
+      }
+    }, DRAFT_DEBOUNCE_MS);
 
     return () => {
-      if (draftTimeoutRef.current) {
-        clearTimeout(draftTimeoutRef.current);
-      }
+      if (draftTimeoutRef.current) clearTimeout(draftTimeoutRef.current);
     };
-  }, [content, draft.text]);
+  }, [content, draft.text, draftStorageKey]);
+
+  // Tick the "saved Ns ago" indicator without depending on keystrokes.
+  useEffect(() => {
+    if (draft.status !== 'saved') return;
+    const id = setInterval(() => setDraftTick((t) => t + 1), 15_000);
+    return () => clearInterval(id);
+  }, [draft.status]);
 
   // Typing indicator
   useEffect(() => {
     if (!onTyping) return;
-
-    if (typingTimeoutRef.current) {
-      clearTimeout(typingTimeoutRef.current);
-    }
+    if (typingTimeoutRef.current) clearTimeout(typingTimeoutRef.current);
 
     if (content) {
       onTyping(true);
-      typingTimeoutRef.current = setTimeout(() => {
-        onTyping(false);
-      }, 1000);
+      typingTimeoutRef.current = setTimeout(() => onTyping(false), 1000);
     } else {
       onTyping(false);
     }
 
     return () => {
-      if (typingTimeoutRef.current) {
-        clearTimeout(typingTimeoutRef.current);
-      }
+      if (typingTimeoutRef.current) clearTimeout(typingTimeoutRef.current);
     };
   }, [content, onTyping]);
 
-  // AI suggestions
+  // The store actions read `state.draft` and `state.selectedChannelId` internally
+  // and accept the API key as their argument — keep the store's draft in sync
+  // with the editor so suggestions and tone analysis target the right text.
   useEffect(() => {
-    if (!aiEnabled || !showAI || content.length < 10) return;
+    setStoreDraft(content);
+  }, [content, setStoreDraft]);
 
+  // AI suggestions — only fire when we have a real API key.
+  useEffect(() => {
+    if (!aiEnabled || !showAI || !apiKey || content.length < 10) return;
     const timeoutId = setTimeout(() => {
-      messageStore.generateSmartReplies(channelId || '', content);
+      generateSmartReplies(apiKey);
     }, 300);
-
     return () => clearTimeout(timeoutId);
-  }, [content, showAI, aiEnabled, channelId, messageStore]);
+  }, [content, showAI, aiEnabled, apiKey, generateSmartReplies]);
 
-  // Tone analysis
+  // Tone analysis — same gate.
   useEffect(() => {
-    if (!aiEnabled || content.length < 5) return;
-
-    const timeoutId = setTimeout(() => {
-      messageStore.analyzeDraft(content);
-    }, 500);
-
+    if (!aiEnabled || !apiKey || content.length < 5) return;
+    const timeoutId = setTimeout(() => analyzeDraft(apiKey), 500);
     return () => clearTimeout(timeoutId);
-  }, [content, aiEnabled, messageStore]);
+  }, [content, aiEnabled, apiKey, analyzeDraft]);
 
-  // Handle content change
-  const handleContentChange = useCallback((e: React.FormEvent<HTMLDivElement>) => {
-    const text = e.currentTarget.textContent || '';
-    if (text.length <= maxLength) {
-      setContent(text);
-    } else {
-      // Truncate and update
-      const truncated = text.slice(0, maxLength);
-      e.currentTarget.textContent = truncated;
-      setContent(truncated);
-    }
-  }, [maxLength]);
+  // Sync activeFormats from real selection state instead of toggle guesses.
+  useEffect(() => {
+    const handleSelectionChange = () => {
+      const sel = typeof document !== 'undefined' ? document.getSelection() : null;
+      if (!sel || !editorRef.current) return;
+      if (!editorRef.current.contains(sel.anchorNode)) return;
 
-  // Handle keyboard shortcuts
-  const handleKeyDown = useCallback(
-    (e: React.KeyboardEvent<HTMLDivElement>) => {
-      // Let slash command handler try first
-      if (slashCommands.state.isActive) {
-        const handled = slashCommands.handlers.handleKeyDown(e);
-        if (handled) return;
+      const next = new Set<string>();
+      for (const cmd of FORMATTABLE) {
+        try {
+          if (document.queryCommandState(cmd)) next.add(cmd);
+        } catch {
+          // ignore — execCommand is deprecated and may throw in some browsers.
+        }
       }
-
-      // Send message on Cmd/Ctrl + Enter
-      if ((e.metaKey || e.ctrlKey) && e.key === 'Enter') {
-        e.preventDefault();
-        handleSendMessage();
-        return;
-      }
-
-      // Toggle AI on Cmd/Ctrl + K
-      if ((e.metaKey || e.ctrlKey) && e.key === 'k') {
-        e.preventDefault();
-        setShowAI((prev) => !prev);
-        return;
-      }
-
-      // Bold on Cmd/Ctrl + B
-      if ((e.metaKey || e.ctrlKey) && e.key === 'b') {
-        e.preventDefault();
-        applyFormat({ type: 'bold' });
-        return;
-      }
-
-      // Italic on Cmd/Ctrl + I
-      if ((e.metaKey || e.ctrlKey) && e.key === 'i') {
-        e.preventDefault();
-        applyFormat({ type: 'italic' });
-        return;
-      }
-
-      // Code on Cmd/Ctrl + E
-      if ((e.metaKey || e.ctrlKey) && e.key === 'e') {
-        e.preventDefault();
-        applyFormat({ type: 'code' });
-        return;
-      }
-    },
-    [content, slashCommands]
-  );
-
-  // Format text
-  const applyFormat = useCallback((action: FormattingAction) => {
-    document.execCommand(action.type, false, undefined);
-    setActiveFormats((prev) => {
-      const newFormats = new Set(prev);
-      if (newFormats.has(action.type)) {
-        newFormats.delete(action.type);
-      } else {
-        newFormats.add(action.type);
-      }
-      return newFormats;
-    });
+      setActiveFormats((prev) => {
+        if (prev.size === next.size && [...next].every((v) => prev.has(v))) return prev;
+        return next;
+      });
+    };
+    document.addEventListener('selectionchange', handleSelectionChange);
+    return () => document.removeEventListener('selectionchange', handleSelectionChange);
   }, []);
 
-  // Send message
-  const handleSendMessage = useCallback(() => {
-    if (!content.trim() || disabled) return;
+  // ─── Content + formatting ───
+  const handleContentChange = useCallback(
+    (e: React.FormEvent<HTMLDivElement>) => {
+      const text = e.currentTarget.textContent || '';
+      // Track length without mutating the DOM mid-input (mutation resets the cursor).
+      setContent(text.length <= maxLength ? text : text.slice(0, maxLength));
+    },
+    [maxLength],
+  );
 
-    onSend(content);
+  // Enforce maxLength at the input boundary so the contenteditable cursor stays intact.
+  const handleBeforeInput = useCallback(
+    (e: React.FormEvent<HTMLDivElement>) => {
+      const native = e.nativeEvent as InputEvent;
+      if (!native || typeof native.data !== 'string' || native.data === '') return;
+      const current = e.currentTarget.textContent?.length ?? 0;
+      if (current + native.data.length > maxLength) {
+        e.preventDefault();
+      }
+    },
+    [maxLength],
+  );
+
+  const handlePaste = useCallback(
+    (e: React.ClipboardEvent<HTMLDivElement>) => {
+      // Always strip rich formatting on paste — keeps the editor a plain-text surface.
+      const text = e.clipboardData?.getData('text/plain') ?? '';
+      e.preventDefault();
+      const current = e.currentTarget.textContent?.length ?? 0;
+      const room = Math.max(0, maxLength - current);
+      const safe = text.slice(0, room);
+      if (safe) {
+        document.execCommand('insertText', false, safe);
+      }
+    },
+    [maxLength],
+  );
+
+  const applyFormat = useCallback((action: FormattingAction) => {
+    if (action.type === 'link') {
+      const url = window.prompt(tr('messages.input.linkPrompt', 'Enter URL:'));
+      if (!url) return;
+      try {
+        document.execCommand('createLink', false, url);
+      } catch {
+        /* no-op */
+      }
+      return;
+    }
+
+    try {
+      document.execCommand(action.type, false, undefined);
+    } catch {
+      /* no-op — browsers may reject deprecated commands */
+    }
+
+    // Re-read the actual selection state instead of toggling our cached set.
+    try {
+      setActiveFormats((prev) => {
+        const next = new Set<string>(prev);
+        if (FORMATTABLE.includes(action.type as FormattingAction['type'])) {
+          if (document.queryCommandState(action.type)) next.add(action.type);
+          else next.delete(action.type);
+        }
+        return next;
+      });
+    } catch {
+      /* no-op */
+    }
+  }, []);
+
+  const handleSendMessage = useCallback(() => {
+    const trimmed = content.trim();
+    if ((!trimmed && attachments.length === 0) || disabled) return;
+    if (content.length > maxLength) return;
+
+    onSend(trimmed, attachments.length > 0 ? attachments : undefined);
+
     setContent('');
     if (editorRef.current) {
       editorRef.current.textContent = '';
     }
     setAttachments([]);
     setShowAI(false);
-  }, [content, disabled, onSend]);
+    setActiveFormats(new Set());
 
-  // Accept AI suggestion
+    if (draftStorageKey && typeof window !== 'undefined') {
+      try {
+        window.localStorage.removeItem(draftStorageKey);
+      } catch {
+        /* no-op */
+      }
+    }
+    setDraft({ text: '', lastSaved: new Date(), status: 'idle' });
+  }, [content, attachments, disabled, maxLength, onSend, draftStorageKey]);
+
+  const handleKeyDown = useCallback(
+    (e: React.KeyboardEvent<HTMLDivElement>) => {
+      if (slashCommands.state.isActive) {
+        const handled = slashCommands.handlers.handleKeyDown(e);
+        if (handled) return;
+      }
+
+      if ((e.metaKey || e.ctrlKey) && e.key === 'Enter') {
+        e.preventDefault();
+        handleSendMessage();
+        return;
+      }
+
+      if ((e.metaKey || e.ctrlKey) && e.key === 'k') {
+        e.preventDefault();
+        if (aiEnabled) setShowAI((prev) => !prev);
+        return;
+      }
+
+      if ((e.metaKey || e.ctrlKey) && e.key === 'b') {
+        e.preventDefault();
+        applyFormat({ type: 'bold' });
+        return;
+      }
+
+      if ((e.metaKey || e.ctrlKey) && e.key === 'i') {
+        e.preventDefault();
+        applyFormat({ type: 'italic' });
+        return;
+      }
+
+      if ((e.metaKey || e.ctrlKey) && e.key === 'e') {
+        e.preventDefault();
+        applyFormat({ type: 'code' });
+        return;
+      }
+    },
+    [slashCommands, handleSendMessage, applyFormat, aiEnabled],
+  );
+
   const handleAcceptSuggestion = useCallback((suggestion: AISuggestion) => {
     setContent(suggestion.text);
     if (editorRef.current) {
@@ -250,61 +402,126 @@ const MessageInput: React.FC<MessageInputProps> = ({
     setShowAI(false);
   }, []);
 
-  // Dismiss AI suggestion
-  const handleDismissSuggestion = useCallback((suggestionId: string) => {
-    // Logic to remove specific suggestion
-    messageStore.clearSmartReplies();
-  }, [messageStore]);
-
-  // Add attachment
-  const handleAttachmentAdd = useCallback((files: FileList) => {
-    const newAttachments: AttachmentFile[] = Array.from(files).map((file) => ({
-      id: Math.random().toString(36).substr(2, 9),
-      file,
-      name: file.name,
-      size: file.size,
-      type: file.type.startsWith('image/')
-        ? 'image'
-        : file.type.startsWith('video/')
-        ? 'video'
-        : file.type.startsWith('audio/')
-        ? 'audio'
-        : 'document',
-    }));
-
-    setAttachments((prev) => [...prev, ...newAttachments]);
+  // The store does not expose a per-suggestion dismiss action. Closing the AI
+  // panel matches the typical "dismiss" semantic; suggestions are regenerated
+  // on the next prompt.
+  const handleDismissSuggestion = useCallback(() => {
+    setShowAI(false);
   }, []);
 
-  // Remove attachment
+  // ─── Attachments ───
+  const acceptFiles = useCallback(
+    (files: FileList | File[]) => {
+      const list = Array.from(files);
+      if (list.length === 0) return;
+
+      const tooLarge = list.find((f) => f.size > maxAttachmentBytes);
+      if (tooLarge) {
+        setAttachmentError(
+          tr('messages.input.attachmentTooLarge', {
+            name: tooLarge.name,
+            size: formatBytes(tooLarge.size),
+            limit: formatBytes(maxAttachmentBytes),
+            defaultValue: '{{name}} is {{size}} — over the {{limit}} limit.',
+          }),
+        );
+        return;
+      }
+      setAttachmentError(null);
+
+      const next: AttachmentFile[] = list.map((file) => ({
+        id: makeAttachmentId(),
+        file,
+        name: file.name,
+        size: file.size,
+        type: classifyAttachment(file),
+      }));
+      setAttachments((prev) => [...prev, ...next]);
+    },
+    [maxAttachmentBytes],
+  );
+
   const handleAttachmentRemove = useCallback((id: string) => {
-    setAttachments((prev) => prev.filter((a) => a.id !== id));
+    setAttachments((prev) => {
+      const removed = prev.find((a) => a.id === id);
+      if (removed?.preview) {
+        try {
+          URL.revokeObjectURL(removed.preview);
+        } catch {
+          /* no-op */
+        }
+      }
+      return prev.filter((a) => a.id !== id);
+    });
   }, []);
 
-  // Character count
+  // Free any preview blob URLs on unmount.
+  useEffect(() => {
+    return () => {
+      for (const a of attachments) {
+        if (a.preview) {
+          try {
+            URL.revokeObjectURL(a.preview);
+          } catch {
+            /* no-op */
+          }
+        }
+      }
+    };
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, []);
+
+  const handleDrop = useCallback(
+    (e: React.DragEvent<HTMLDivElement>) => {
+      const files = e.dataTransfer?.files;
+      if (!files || files.length === 0) return;
+      e.preventDefault();
+      acceptFiles(files);
+    },
+    [acceptFiles],
+  );
+
+  const handleDragOver = useCallback((e: React.DragEvent<HTMLDivElement>) => {
+    if (e.dataTransfer?.types?.includes('Files')) {
+      e.preventDefault();
+    }
+  }, []);
+
+  const openFilePicker = useCallback(() => fileInputRef.current?.click(), []);
+
+  // ─── Derived ───
   const characterCount = content.length;
   const isNearLimit = characterCount > maxLength * 0.9;
   const isOverLimit = characterCount > maxLength;
+  const canSend = !disabled && !isOverLimit && (!!content.trim() || attachments.length > 0);
 
-  // Draft status text
-  const getDraftStatusText = () => {
-    if (draft.status === 'saving') return 'Saving draft...';
-    if (draft.status === 'saved') {
-      const seconds = Math.floor((Date.now() - draft.lastSaved.getTime()) / 1000);
-      if (seconds < 5) return 'Draft saved';
-      if (seconds < 60) return `Saved ${seconds}s ago`;
-      const minutes = Math.floor(seconds / 60);
-      return `Saved ${minutes}m ago`;
-    }
-    if (draft.status === 'error') return 'Failed to save';
-    return '';
-  };
+  const draftStatusText = useMemo(() => {
+    if (draft.status === 'saving') return tr('messages.input.draftSaving', 'Saving draft...');
+    if (draft.status === 'error') return tr('messages.input.draftError', 'Failed to save draft');
+    if (draft.status === 'idle') return '';
+    const seconds = Math.floor((Date.now() - draft.lastSaved.getTime()) / 1000);
+    if (seconds < 5) return tr('messages.input.draftSaved', 'Draft saved');
+    const ago = (value: string) =>
+      tr('messages.input.draftSavedAgo', { value, defaultValue: 'Saved {{value}} ago' });
+    if (seconds < 60) return ago(`${seconds}s`);
+    const minutes = Math.floor(seconds / 60);
+    if (minutes < 60) return ago(`${minutes}m`);
+    const hours = Math.floor(minutes / 60);
+    return ago(`${hours}h`);
+    // draftTick is intentionally a dependency so this re-evaluates on the interval.
+  }, [draft.status, draft.lastSaved, draftTick, tr]);
+
+  const DraftIcon =
+    draft.status === 'saving' ? Loader2 : draft.status === 'error' ? AlertCircle : CheckCircle2;
 
   return (
     <div className="message-input-wrapper">
       {/* AI Suggestions Overlay */}
       <AnimatePresence>
         {showAI && aiEnabled && aiSuggestions.length > 0 && (
-          <Suspense fallback={<div className="ai-loading">Loading AI...</div>}>
+          <Suspense
+            fallback={<div className="ai-loading">{tr('messages.input.aiLoading', 'Loading AI...')}</div>}
+          >
             <AIComposer
               suggestions={aiSuggestions}
               isLoading={isGeneratingAI}
@@ -316,8 +533,11 @@ const MessageInput: React.FC<MessageInputProps> = ({
         )}
       </AnimatePresence>
 
-      <div className={`message-input-container ${showAI ? 'ai-active' : ''}`}>
-        {/* Slash Command Dropdown */}
+      <div
+        className={`message-input-container ${showAI ? 'ai-active' : ''} ${disabled ? 'is-disabled' : ''}`}
+        onDrop={handleDrop}
+        onDragOver={handleDragOver}
+      >
         <AnimatePresence>
           {slashCommands.state.isActive && (
             <SlashCommandDropdown
@@ -330,7 +550,6 @@ const MessageInput: React.FC<MessageInputProps> = ({
           )}
         </AnimatePresence>
 
-        {/* Inline Tools Menu */}
         <AnimatePresence>
           {showToolsMenu && (
             <InlineToolsMenu
@@ -340,73 +559,97 @@ const MessageInput: React.FC<MessageInputProps> = ({
           )}
         </AnimatePresence>
 
-        {/* Advanced Mode Toggle - Phase 1 Task 5 */}
-        <div className="flex items-center justify-between mb-2 px-1">
+        {/* Mode toggle */}
+        <div className="message-input-mode-row">
           <button
-            onClick={() => setAdvancedMode(!advancedMode)}
-            className="text-xs font-medium text-zinc-500 hover:text-rose-500 transition flex items-center gap-1.5 px-2 py-1 rounded hover:bg-zinc-800/50"
-            title={advancedMode ? 'Switch to simple mode' : 'Switch to advanced mode'}
+            type="button"
+            onClick={() => setAdvancedMode((v) => !v)}
+            className="mode-toggle-button"
+            aria-pressed={advancedMode}
+            title={
+              advancedMode
+                ? tr('messages.input.modeSwitchToSimple', 'Switch to simple mode')
+                : tr('messages.input.modeSwitchToAdvanced', 'Switch to advanced mode')
+            }
           >
-            <i className={`fa-solid ${advancedMode ? 'fa-sliders' : 'fa-wand-magic-sparkles'} text-[10px]`}></i>
-            <span>{advancedMode ? 'Simple Mode' : 'Advanced Mode'}</span>
+            <Sliders size={11} aria-hidden="true" />
+            <span>
+              {advancedMode
+                ? tr('messages.input.modeAdvanced', 'Advanced Mode')
+                : tr('messages.input.modeSimple', 'Simple Mode')}
+            </span>
           </button>
-          {advancedMode && draft.status === 'saved' && (
-            <span className="text-[10px] text-zinc-600">{getDraftStatusText()}</span>
+          {advancedMode && draft.status === 'saved' && draftStatusText && (
+            <span className="mode-row-draft-hint">{draftStatusText}</span>
           )}
         </div>
 
-        {/* Formatting Toolbar - Only in Advanced Mode */}
         {advancedMode && (
           <FormattingToolbar
             onFormat={applyFormat}
             activeFormats={activeFormats}
-            onEmojiClick={() => {}}
-            onAttachmentClick={() => document.getElementById('file-input')?.click()}
-            onAIAssist={() => setShowAI(!showAI)}
+            onEmojiClick={() => {
+              /* delegated to host; intentional no-op here */
+            }}
+            onAttachmentClick={openFilePicker}
+            onAIAssist={() => setShowAI((v) => !v)}
             aiEnabled={aiEnabled}
           />
         )}
 
-        {/* Tone Analyzer Badge - Only in Advanced Mode */}
         {advancedMode && aiEnabled && toneAnalysis && (
           <ToneAnalyzer analysis={toneAnalysis} isAnalyzing={isAnalyzingTone} />
         )}
 
-        {/* Text Input Area */}
         <div
           ref={editorRef}
           className="message-input-area"
           contentEditable={!disabled}
+          suppressContentEditableWarning
           onInput={handleContentChange}
+          onBeforeInput={handleBeforeInput}
           onKeyDown={handleKeyDown}
-          data-placeholder={placeholder}
+          onPaste={handlePaste}
+          data-placeholder={placeholderText}
           role="textbox"
           aria-multiline="true"
-          aria-label="Message text"
+          aria-label={tr('messages.input.ariaLabel', 'Message text')}
           aria-describedby="character-counter draft-indicator"
+          aria-disabled={disabled || undefined}
+          spellCheck
         />
 
-        {/* Attachment Preview */}
         {attachments.length > 0 && (
           <AttachmentPreview attachments={attachments} onRemove={handleAttachmentRemove} />
         )}
 
-        {/* Draft Indicator */}
-        {content && (
+        {attachmentError && (
+          <div className="attachment-error" role="alert">
+            <AlertCircle size={12} aria-hidden="true" />
+            <span>{attachmentError}</span>
+            <button
+              type="button"
+              className="attachment-error-dismiss"
+              onClick={() => setAttachmentError(null)}
+              aria-label={tr('messages.input.attachmentDismiss', 'Dismiss')}
+            >
+              ×
+            </button>
+          </div>
+        )}
+
+        {content && (draft.status === 'saving' || draft.status === 'saved' || draft.status === 'error') && (
           <div
             id="draft-indicator"
             className={`draft-indicator ${draft.status}`}
             role="status"
             aria-live="polite"
           >
-            <span className="draft-icon">
-              {draft.status === 'saving' ? '⏳' : draft.status === 'saved' ? '✓' : '⚠'}
-            </span>
-            <span className="draft-timestamp">{getDraftStatusText()}</span>
+            <DraftIcon size={12} className="draft-icon" aria-hidden="true" />
+            <span className="draft-timestamp">{draftStatusText}</span>
           </div>
         )}
 
-        {/* Character Counter */}
         <div
           id="character-counter"
           className={`character-counter ${isNearLimit ? 'warning' : ''} ${isOverLimit ? 'error' : ''}`}
@@ -416,101 +659,124 @@ const MessageInput: React.FC<MessageInputProps> = ({
           {characterCount} / {maxLength}
         </div>
 
-        {/* Action Bar */}
         <div className="message-action-bar">
           <div className="action-bar-left">
-            {/* Simple Mode: Attach, Emoji, Voice only */}
             {!advancedMode && (
               <>
                 <button
-                  className="simple-action-button w-12 h-12"
-                  onClick={() => document.getElementById('file-input')?.click()}
-                  aria-label="Attach file"
-                  title="Attach file"
+                  type="button"
+                  className="simple-action-button"
+                  onClick={openFilePicker}
+                  aria-label={tr('messages.input.attach', 'Attach file')}
+                  title={tr('messages.input.attach', 'Attach file')}
+                  disabled={disabled}
                 >
-                  <Paperclip />
+                  <Paperclip size={16} />
                 </button>
                 <button
-                  className="simple-action-button w-12 h-12"
-                  onClick={() => {}}
-                  aria-label="Add emoji"
-                  title="Add emoji"
+                  type="button"
+                  className="simple-action-button"
+                  onClick={() => {
+                    /* host wires emoji picker via setActiveToolOverlay */
+                  }}
+                  aria-label={tr('messages.input.emoji', 'Add emoji')}
+                  title={tr('messages.input.emoji', 'Add emoji')}
+                  disabled={disabled}
                 >
-                  <Smile />
+                  <Smile size={16} />
                 </button>
                 {voiceEnabled && (
                   <button
-                    className={`simple-action-button w-12 h-12 ${isRecording ? 'recording' : ''}`}
-                    onClick={() => setIsRecording(!isRecording)}
-                    aria-label={isRecording ? 'Stop recording' : 'Start voice input'}
+                    type="button"
+                    className={`simple-action-button ${isRecording ? 'recording' : ''}`}
+                    onClick={() => setIsRecording((v) => !v)}
+                    aria-label={
+                      isRecording
+                        ? tr('messages.input.voiceStop', 'Stop recording')
+                        : tr('messages.input.voiceStart', 'Start voice input')
+                    }
                     aria-pressed={isRecording}
-                    title="Voice input"
+                    disabled={disabled}
                   >
-                    <i className={`fa-solid ${isRecording ? 'fa-stop' : 'fa-microphone'}`} />
+                    {isRecording ? <Square size={16} /> : <Mic size={16} />}
                   </button>
                 )}
               </>
             )}
 
-            {/* Advanced Mode: Full toolbar */}
             {advancedMode && (
               <>
                 {voiceEnabled && (
                   <button
+                    type="button"
                     className={`voice-input-button ${isRecording ? 'recording' : ''}`}
-                    onClick={() => setIsRecording(!isRecording)}
-                    aria-label={isRecording ? 'Stop recording' : 'Start voice input'}
+                    onClick={() => setIsRecording((v) => !v)}
+                    aria-label={
+                      isRecording
+                        ? tr('messages.input.voiceStop', 'Stop recording')
+                        : tr('messages.input.voiceStart', 'Start voice input')
+                    }
                     aria-pressed={isRecording}
+                    disabled={disabled}
                   >
-                    <i className={`fa-solid ${isRecording ? 'fa-stop' : 'fa-microphone'}`} />
+                    {isRecording ? <Square size={16} /> : <Mic size={16} />}
                   </button>
                 )}
 
                 {aiEnabled && (
                   <button
+                    type="button"
                     className={`ai-toggle-button ${showAI ? 'active' : ''}`}
-                    onClick={() => setShowAI(!showAI)}
-                    aria-label="Toggle AI suggestions"
+                    onClick={() => setShowAI((v) => !v)}
+                    aria-label={tr('messages.input.aiToggle', 'Toggle AI suggestions')}
                     aria-pressed={showAI}
+                    disabled={disabled}
                   >
-                    <Wand2 className="ai-toggle-icon" />
-                    <span className="ai-toggle-label">AI</span>
+                    <Wand2 className="ai-toggle-icon" size={16} />
+                    <span className="ai-toggle-label">{tr('messages.input.ai', 'AI')}</span>
                   </button>
                 )}
 
-                {/* Tools Menu Button */}
                 <button
+                  type="button"
                   ref={toolsButtonRef}
                   className={`tools-menu-button ${showToolsMenu ? 'active' : ''}`}
-                  onClick={() => setShowToolsMenu(!showToolsMenu)}
-                  aria-label="Open tools menu"
+                  onClick={() => setShowToolsMenu((v) => !v)}
+                  aria-label={tr('messages.input.toolsOpen', 'Open tools menu')}
                   aria-pressed={showToolsMenu}
+                  disabled={disabled}
                 >
-                  <LayoutGrid />
-                  <span className="tools-menu-label">Tools</span>
+                  <LayoutGrid size={14} />
+                  <span className="tools-menu-label">{tr('messages.input.tools', 'Tools')}</span>
                 </button>
               </>
             )}
           </div>
 
           <button
+            type="button"
             className="send-button"
             onClick={handleSendMessage}
-            disabled={!content.trim() || disabled || isOverLimit}
-            aria-label="Send message"
+            disabled={!canSend}
+            aria-label={tr('messages.input.send', 'Send message')}
           >
-            <ArrowUp />
+            <ArrowUp size={18} />
           </button>
         </div>
       </div>
 
-      {/* Hidden file input */}
       <input
+        ref={fileInputRef}
         type="file"
-        id="file-input"
         multiple
-        onChange={(e) => e.target.files && handleAttachmentAdd(e.target.files)}
+        onChange={(e) => {
+          if (e.target.files) acceptFiles(e.target.files);
+          // Allow re-selecting the same file twice in a row.
+          e.target.value = '';
+        }}
         style={{ display: 'none' }}
+        aria-hidden="true"
+        tabIndex={-1}
       />
     </div>
   );

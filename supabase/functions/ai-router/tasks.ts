@@ -141,3 +141,38 @@ export const TASK_MODELS: Record<AITask, TaskConfig> = {
 export function isValidTask(task: string): task is AITask {
   return task in TASK_MODELS;
 }
+
+// ── Model override allowlist ─────────────────────────────────────────
+// Mirror of `src/lib/aiModelCatalog.ts`. Adding a model: append to both.
+// The router validates client-supplied model_override against this map so
+// callers cannot ask for arbitrary model strings.
+//
+// Capability flags are enforced too — e.g. `web_search` task requires a model
+// that supports webSearch (Gemini only).
+export interface AllowedModel {
+  provider: AIProvider;
+  model: string;
+  supports: { webSearch: boolean; promptCaching: boolean };
+}
+
+export const MODEL_ALLOWLIST: Record<string, AllowedModel> = {
+  'gemini-flash': {
+    provider: 'gemini',
+    model: GEMINI_FLASH,
+    supports: { webSearch: true, promptCaching: false },
+  },
+  'claude-haiku': {
+    provider: 'claude',
+    model: CLAUDE_HAIKU,
+    supports: { webSearch: false, promptCaching: true },
+  },
+  'claude-sonnet': {
+    provider: 'claude',
+    model: CLAUDE_SONNET,
+    supports: { webSearch: false, promptCaching: true },
+  },
+};
+
+export function resolveOverride(id: string): AllowedModel | null {
+  return MODEL_ALLOWLIST[id] ?? null;
+}

@@ -122,9 +122,11 @@
 }
 
 .day-name {
-  font-size: 0.75rem;
+  font-family: var(--dt-font-family-mono);
+  font-size: var(--dt-label-size);
+  font-weight: var(--dt-label-weight);
   text-transform: uppercase;
-  letter-spacing: 0.025em;
+  letter-spacing: var(--dt-label-tracking);
 }
 
 .day-date {
@@ -141,7 +143,7 @@
 .workload-cell-data {
   font-weight: 600;
   font-size: 1rem;
-  transition: all 0.2s ease;
+  transition: all var(--dt-transition-base);
   cursor: help;
   position: relative;
 }

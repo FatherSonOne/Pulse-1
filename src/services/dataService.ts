@@ -1350,7 +1350,7 @@ class DataService {
     return teamMembers;
   }
 
-  // ============= VOXER RECORDINGS =============
+  // ============= RELAY RECORDINGS =============
 
   async getVoxerRecordings(): Promise<any[]> {
     const { data, error } = await supabase
@@ -1441,7 +1441,7 @@ class DataService {
       result = data;
     }
 
-    // Track Voxer recording for analytics (dynamic import keeps svc-crm-analytics lazy)
+    // Track Relay recording for analytics (dynamic import keeps svc-crm-analytics lazy)
     import('./analyticsCollector').then(({ default: analyticsCollector }) => {
       analyticsCollector.trackMessageEvent({
         id: result.id,

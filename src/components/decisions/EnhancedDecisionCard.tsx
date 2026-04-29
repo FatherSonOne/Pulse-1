@@ -1,4 +1,5 @@
 import React, { useEffect, useState, memo } from 'react';
+import toast from 'react-hot-toast';
 import { decisionService, DecisionWithVotes, DecisionVote } from '../../services/decisionService';
 import { taskService } from '../../services/taskService';
 import { decisionAnalyticsService, RiskAssessment } from '../../services/decisionAnalyticsService';
@@ -219,7 +220,7 @@ const EnhancedDecisionCardComponent: React.FC<EnhancedDecisionCardProps> = ({
 
     // Fallback to legacy extraction modal
     if (decision.status !== 'decided' && decision.status !== 'approved') {
-      alert('Tasks can only be generated from approved or decided decisions.');
+      toast.error('Decide this first. Tasks generate from decided decisions.', { duration: 3500 });
       return;
     }
 
@@ -229,7 +230,7 @@ const EnhancedDecisionCardComponent: React.FC<EnhancedDecisionCardProps> = ({
       const tasks = await taskIntelligenceService.extractTasksFromDecision(decision, '');
 
       if (tasks.length === 0) {
-        alert('No tasks could be generated from this decision.');
+        toast('No tasks surfaced. Add detail to the decision and try again.', { duration: 4000 });
         setGeneratingTasks(false);
         return;
       }
@@ -240,7 +241,7 @@ const EnhancedDecisionCardComponent: React.FC<EnhancedDecisionCardProps> = ({
 
     } catch (error) {
       console.error('Failed to generate tasks:', error);
-      alert('Failed to generate tasks. Please try again.');
+      toast.error('Could not generate tasks. Try again.', { duration: 4000 });
     } finally {
       setGeneratingTasks(false);
     }
@@ -268,7 +269,8 @@ const EnhancedDecisionCardComponent: React.FC<EnhancedDecisionCardProps> = ({
 
     setLinkedTaskCount(prev => prev + createdTasks.length);
 
-    alert(`Successfully created ${createdTasks.length} ${createdTasks.length === 1 ? 'task' : 'tasks'} from this decision!\n\nSwitch to the Tasks tab to view them.`);
+    const count = createdTasks.length;
+    toast.success(`${count} ${count === 1 ? 'task' : 'tasks'} created from this decision.`, { duration: 3000 });
   };
 
   const getStatusIcon = () => {

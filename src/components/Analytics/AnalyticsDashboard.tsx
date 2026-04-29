@@ -347,7 +347,7 @@ export const AnalyticsDashboard: React.FC<AnalyticsDashboardProps> = ({ onClose 
                       const channelLabels: Record<string, string> = {
                         email: 'Email',
                         pulse: 'Messages',
-                        voxer: 'Voxer'
+                        voxer: 'Relay'
                       };
                       return (
                         <div key={channel} className={`channel-row channel-${channel}`}>

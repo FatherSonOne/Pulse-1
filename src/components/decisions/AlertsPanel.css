@@ -229,7 +229,7 @@
   cursor: pointer;
   border-radius: 4px;
   color: var(--dt-text-muted, #94a3b8);
-  transition: background 0.15s ease, color 0.15s ease;
+  transition: background var(--dt-transition-fast), color var(--dt-transition-fast);
 }
 
 .alert-snooze-button:hover {
@@ -260,7 +260,7 @@
   border: none;
   cursor: pointer;
   color: var(--dt-text-primary, #0f172a);
-  transition: background 0.12s ease;
+  transition: background var(--dt-transition-fast);
   white-space: nowrap;
 }
 

@@ -8,7 +8,7 @@
   border-radius: 12px;
   font-size: 0.75rem;
   font-weight: 600;
-  transition: all 0.3s ease;
+  transition: all var(--dt-transition-slow);
   position: relative;
   border: 1px solid transparent;
 }
@@ -24,7 +24,10 @@
 .rt-indicator-label {
   position: relative;
   z-index: 1;
-  letter-spacing: 0.5px;
+  font-family: var(--dt-font-family-mono);
+  font-size: var(--dt-label-size-sm);
+  font-weight: var(--dt-label-weight);
+  letter-spacing: var(--dt-label-tracking);
   text-transform: uppercase;
 }
 

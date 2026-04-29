@@ -2,7 +2,7 @@ import React, { useState, useEffect, useRef, lazy, Suspense } from 'react';
 import './LandingPage.css';
 
 import { Apple, ArrowDown, Battery, Bell, Book, BookOpen, Bot, Check, ChevronUp, Download, ExternalLink, Eye, Gavel, Heart, HeartPulse, HelpCircle, Info, Keyboard, Layers, LayoutGrid, Mic, Network, Play, Rocket, Search, ShieldHalf, Signal, Smartphone, Wand2, Wifi, X } from 'lucide-react';
-import { STATS, VOX_MODES, CRM_PLATFORMS, PLATFORMS, FAQ_DATA, SHORTCUT_GROUPS, STUDIO_FEATURES, EMAIL_FEATURES, MESSAGING_FEATURES, CALENDAR_FEATURES, ANALYTICS_FEATURES, PULSE_TEAM_FEATURES, PULSE_TEAM_PRICING } from './LandingPage/landingData';
+import { STATS, VOX_MODES, CRM_PLATFORMS, PLATFORMS, FAQ_DATA, SHORTCUT_GROUPS, STUDIO_FEATURES, EMAIL_FEATURES, MESSAGING_FEATURES, CALENDAR_FEATURES, ANALYTICS_FEATURES, PULSE_TEAM_FEATURES, PULSE_TEAM_PRICING, PULSE_GROWTH_FEATURES, PULSE_GROWTH_PRICING } from './LandingPage/landingData';
 
 // Lazy-load the guide — guideData.ts is 26k lines and must NOT land in the main bundle
 const UsersGuide = lazy(() => import('./UsersGuide/UsersGuide'));
@@ -109,7 +109,7 @@ const LandingPage: React.FC<LandingPageProps> = ({ onGetStarted }) => {
 
   // Scroll-triggered section backgrounds — fade in/out as user scrolls through each section
   useEffect(() => {
-    const ids = ['section-voxer', 'section-decisions', 'section-crm'];
+    const ids = ['section-relay', 'section-decisions', 'section-crm'];
     const thresholds = Array.from({ length: 21 }, (_, i) => i / 20);
     const observer = new IntersectionObserver(
       (entries) => {
@@ -470,10 +470,10 @@ const LandingPage: React.FC<LandingPageProps> = ({ onGetStarted }) => {
     window.location.href = '/?signin';
   };
 
-  // ── Animated SVG icons for Voxer mode cards ────────────────────────────────
+  // ── Animated SVG icons for Relay mode cards ────────────────────────────────
   const voxSvg = (idx: number): React.ReactNode => {
     const icons: React.ReactNode[] = [
-      // 0 — Classic Voxer: 5-bar waveform equaliser
+      // 0 — Classic: 5-bar waveform equaliser
       <svg viewBox="0 0 20 20" width={18} height={18} fill="currentColor" aria-hidden="true">
         <rect x="1"    y="9" width="2.5" height="2"  rx="1" className="lp-bar-a" />
         <rect x="4.5"  y="6" width="2.5" height="8"  rx="1" className="lp-bar-b" />
@@ -1156,16 +1156,16 @@ const LandingPage: React.FC<LandingPageProps> = ({ onGetStarted }) => {
       <div id="features">
 
         {/* Section A — Voice-First Communication */}
-        <section id="section-voxer" className={`py-24 px-6 relative overflow-hidden${isDarkMode ? '' : ' bg-stone-50'}`}>
-          {/* Voxer "Sonic Pulse" themed bg — indigo + pink, fades in with scroll */}
+        <section id="section-relay" className={`py-24 px-6 relative overflow-hidden${isDarkMode ? '' : ' bg-stone-50'}`}>
+          {/* Relay "Sonic Pulse" themed bg — indigo + pink, fades in with scroll */}
           <div
             className="absolute inset-0 pointer-events-none transition-opacity duration-700"
-            style={{ opacity: isDarkMode ? Math.min(sectionVis['section-voxer'] ?? 0, 1) : 0 }}
+            style={{ opacity: isDarkMode ? Math.min(sectionVis['section-relay'] ?? 0, 1) : 0 }}
           >
             <div className="absolute inset-0" style={{
               background: 'radial-gradient(ellipse at 15% 50%, rgba(99,102,241,0.18) 0%, transparent 55%), radial-gradient(ellipse at 85% 30%, rgba(236,72,153,0.13) 0%, transparent 50%), radial-gradient(ellipse at 50% 90%, rgba(139,92,246,0.10) 0%, transparent 45%)',
             }}></div>
-            {/* Sonic rings — concentric indigo arcs like Voxer's waveform visualizer */}
+            {/* Sonic rings — concentric indigo arcs like Relay's waveform visualizer */}
             <div className="absolute left-[-80px] top-1/2 -translate-y-1/2 w-[600px] h-[600px] rounded-full border border-indigo-500/10" style={{ boxShadow: 'inset 0 0 60px rgba(99,102,241,0.06)' }}></div>
             <div className="absolute left-[-40px] top-1/2 -translate-y-1/2 w-[450px] h-[450px] rounded-full border border-indigo-400/8"></div>
             <div className="absolute left-[20px] top-1/2 -translate-y-1/2 w-[300px] h-[300px] rounded-full border border-pink-500/8"></div>
@@ -1173,13 +1173,13 @@ const LandingPage: React.FC<LandingPageProps> = ({ onGetStarted }) => {
           <div className="max-w-7xl mx-auto relative z-10">
             <div className="mb-14 animate-fade-in">
               <div className="inline-flex items-center gap-2 px-3 py-1.5 rounded-full bg-rose-500/10 border border-rose-500/25 text-rose-400 text-xs font-bold uppercase tracking-widest mb-4">
-                <Mic /> Voxer
+                <Mic /> Relay
               </div>
               <h2 className="text-4xl sm:text-6xl font-bold mb-4 text-transparent bg-clip-text bg-gradient-to-r from-white via-rose-100 to-pink-200">
                 8 Ways to Speak
               </h2>
               <p className="text-zinc-400 text-lg max-w-2xl">
-                Voice messaging reimagined. From async voice drops to live team broadcasts — Voxer gives your voice the power it deserves, with AI transcription on every message.
+                Voice messaging reimagined. From async voice drops to live team broadcasts — Relay gives your voice the power it deserves, with AI transcription on every message.
               </p>
             </div>
 
@@ -1848,7 +1848,7 @@ const LandingPage: React.FC<LandingPageProps> = ({ onGetStarted }) => {
                   {
                     color: '#818cf8', bg: 'rgba(99,102,241,0.08)', border: 'rgba(99,102,241,0.12)',
                     label: 'Conversation → Case Log',
-                    desc: 'Send a Voxer message in Pulse — a case log entry is automatically created in Logos Vision.',
+                    desc: 'Send a Relay message in Pulse — a case log entry is automatically created in Logos Vision.',
                     icon: (
                       <svg viewBox="0 0 20 20" width={13} height={13} fill="#818cf8" aria-hidden="true">
                         <path d="M2 4a2 2 0 012-2h8a2 2 0 012 2v5a2 2 0 01-2 2H8L5 14v-3H4a2 2 0 01-2-2V4z" />
@@ -2114,7 +2114,7 @@ const LandingPage: React.FC<LandingPageProps> = ({ onGetStarted }) => {
                   <div className="text-sm font-bold text-rose-500 tracking-wider uppercase mb-4">Communication and Intelligence</div>
                   <p className="text-zinc-400 mb-6 flex-grow">The voice and ears of your organization. Real-time messaging, 8 voice modes, AI studio, full email client, calendar, and analytics — all in one interface.</p>
                   <ul className="space-y-3 text-zinc-300 text-sm">
-                    <li className="flex items-center gap-2"><Check className="text-rose-500" /> 8 Voxer Modes + AI Transcription</li>
+                    <li className="flex items-center gap-2"><Check className="text-rose-500" /> 8 Relay Modes + AI Transcription</li>
                     <li className="flex items-center gap-2"><Check className="text-rose-500" /> War Room with 8 Slash Commands</li>
                     <li className="flex items-center gap-2"><Check className="text-rose-500" /> Full Email, Messaging, Calendar</li>
                     <li className="flex items-center gap-2"><Check className="text-rose-500" /> 7+ AI Models (Gemini, Claude, GPT)</li>
@@ -2449,26 +2449,24 @@ const LandingPage: React.FC<LandingPageProps> = ({ onGetStarted }) => {
             </button>
           </div>
 
-          {/* Pulse Team card — single centered tier */}
-          <div className="max-w-xl mx-auto">
-            <div className="relative rounded-2xl overflow-hidden shadow-2xl shadow-rose-500/10">
-              {/* Gradient accent bar — matches TrialExpiredBlock */}
-              <div className="h-1 bg-gradient-to-r from-fuchsia-500 via-pink-500 to-rose-500" aria-hidden="true" />
+          {/* Two-tier pricing — Team and Growth side-by-side */}
+          <div className="max-w-5xl mx-auto grid grid-cols-1 md:grid-cols-2 gap-6 items-stretch">
 
-              <div className="bg-gradient-to-br from-zinc-950 to-zinc-900 border-x border-b border-zinc-700/60 rounded-b-2xl p-8 sm:p-10 space-y-6">
-                {/* Header row */}
+            {/* ─── Pulse Team ─── */}
+            <div className="relative rounded-2xl overflow-hidden shadow-2xl shadow-rose-500/10 flex flex-col">
+              <div className="h-1 bg-gradient-to-r from-fuchsia-500 via-pink-500 to-rose-500" aria-hidden="true" />
+              <div className="bg-gradient-to-br from-zinc-950 to-zinc-900 border-x border-b border-zinc-700/60 rounded-b-2xl p-8 sm:p-10 space-y-6 flex-1 flex flex-col">
                 <div className="flex items-center justify-between gap-4">
                   <div>
                     <p className="text-xs font-bold uppercase tracking-widest text-rose-400 mb-1">Pulse Team</p>
                     <h3 className="text-2xl sm:text-3xl font-bold text-white">
                       ${pricingCycle === 'monthly' ? PULSE_TEAM_PRICING.monthly : PULSE_TEAM_PRICING.yearlyMonthlyEquiv}
                       <span className="text-base font-normal text-zinc-400">/mo</span>
-                      <span className="ml-3 text-sm font-medium text-zinc-500">· {PULSE_TEAM_PRICING.trialDays} days free</span>
                     </h3>
                     <p className="text-xs text-zinc-500 mt-1.5">
                       {pricingCycle === 'monthly'
-                        ? 'Billed monthly. Cancel anytime.'
-                        : `Billed $${PULSE_TEAM_PRICING.yearly.toLocaleString()} yearly (2 months free)`}
+                        ? `Billed monthly · ${PULSE_TEAM_PRICING.trialDays} days free`
+                        : `$${PULSE_TEAM_PRICING.yearly.toLocaleString()}/yr · 2 months free · ${PULSE_TEAM_PRICING.trialDays} days free`}
                     </p>
                   </div>
                   <div className="hidden sm:flex w-14 h-14 rounded-xl bg-gradient-to-br from-fuchsia-500 to-pink-600 items-center justify-center flex-shrink-0 shadow-lg shadow-rose-500/30">
@@ -2476,8 +2474,7 @@ const LandingPage: React.FC<LandingPageProps> = ({ onGetStarted }) => {
                   </div>
                 </div>
 
-                {/* Feature list */}
-                <ul className="space-y-3 pt-2">
+                <ul className="space-y-3 pt-2 flex-1">
                   {PULSE_TEAM_FEATURES.map((feat) => (
                     <li key={feat} className="flex items-start gap-3 text-sm text-zinc-200">
                       <Check size={18} className="text-emerald-400 mt-0.5 flex-shrink-0" aria-hidden="true" />
@@ -2486,7 +2483,6 @@ const LandingPage: React.FC<LandingPageProps> = ({ onGetStarted }) => {
                   ))}
                 </ul>
 
-                {/* CTA */}
                 <button
                   type="button"
                   onClick={onGetStarted}
@@ -2498,11 +2494,57 @@ const LandingPage: React.FC<LandingPageProps> = ({ onGetStarted }) => {
               </div>
             </div>
 
-            {/* Trust footnote */}
-            <p className="text-center text-xs text-zinc-500 mt-6 px-4">
-              No credit card required to start. Cancel anytime. Secure checkout via Stripe.
-            </p>
+            {/* ─── Pulse Growth ─── */}
+            <div className="relative rounded-2xl overflow-hidden shadow-2xl shadow-violet-500/10 flex flex-col">
+              <div className="h-1 bg-gradient-to-r from-violet-500 via-purple-500 to-indigo-500" aria-hidden="true" />
+              <div className="bg-gradient-to-br from-zinc-950 to-zinc-900 border-x border-b border-zinc-700/60 rounded-b-2xl p-8 sm:p-10 space-y-6 flex-1 flex flex-col">
+                <div className="flex items-center justify-between gap-4">
+                  <div>
+                    <div className="flex items-center gap-2 mb-1">
+                      <p className="text-xs font-bold uppercase tracking-widest text-violet-400">Pulse Growth</p>
+                      <span className="text-[10px] font-semibold uppercase tracking-wide px-1.5 py-0.5 rounded bg-violet-500/15 text-violet-300 border border-violet-500/20">
+                        For growing orgs
+                      </span>
+                    </div>
+                    <h3 className="text-2xl sm:text-3xl font-bold text-white">
+                      ${pricingCycle === 'monthly' ? PULSE_GROWTH_PRICING.monthly : PULSE_GROWTH_PRICING.yearlyMonthlyEquiv}
+                      <span className="text-base font-normal text-zinc-400">/mo</span>
+                    </h3>
+                    <p className="text-xs text-zinc-500 mt-1.5">
+                      {pricingCycle === 'monthly'
+                        ? `Billed monthly · ${PULSE_GROWTH_PRICING.trialDays} days free`
+                        : `$${PULSE_GROWTH_PRICING.yearly.toLocaleString()}/yr · 2 months free · ${PULSE_GROWTH_PRICING.trialDays} days free`}
+                    </p>
+                  </div>
+                  <div className="hidden sm:flex w-14 h-14 rounded-xl bg-gradient-to-br from-violet-500 to-indigo-600 items-center justify-center flex-shrink-0 shadow-lg shadow-violet-500/30">
+                    <HeartPulse size={26} className="text-white" />
+                  </div>
+                </div>
+
+                <ul className="space-y-3 pt-2 flex-1">
+                  {PULSE_GROWTH_FEATURES.map((feat) => (
+                    <li key={feat} className="flex items-start gap-3 text-sm text-zinc-200">
+                      <Check size={18} className="text-violet-400 mt-0.5 flex-shrink-0" aria-hidden="true" />
+                      <span>{feat}</span>
+                    </li>
+                  ))}
+                </ul>
+
+                <button
+                  type="button"
+                  onClick={onGetStarted}
+                  className="w-full py-3.5 rounded-xl bg-gradient-to-r from-violet-600 via-purple-600 to-indigo-600 hover:from-violet-500 hover:via-purple-500 hover:to-indigo-500 text-white font-semibold text-sm shadow-lg shadow-violet-500/30 hover:shadow-violet-500/50 transition-all duration-200 hover:-translate-y-0.5 active:translate-y-0 flex items-center justify-center gap-2"
+                >
+                  <Rocket size={16} aria-hidden="true" />
+                  Start with Growth
+                </button>
+              </div>
+            </div>
           </div>
+
+          <p className="text-center text-xs text-zinc-500 mt-6 px-4 max-w-5xl mx-auto">
+            No credit card required to start. Cancel anytime. Secure checkout via Stripe.
+          </p>
         </div>
       </section>
 

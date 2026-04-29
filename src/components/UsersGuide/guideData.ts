@@ -54,7 +54,7 @@ export interface GuideSection {
 
 export const CATEGORIES: { label: string; ids: string[] }[] = [
   { label: 'Start Here',         ids: ['introduction', 'getting-started', 'dashboard'] },
-  { label: 'Communication',      ids: ['messaging', 'email', 'sms', 'voxer'] },
+  { label: 'Communication',      ids: ['messaging', 'email', 'sms', 'relay'] },
   { label: 'Meetings & Time',    ids: ['meetings', 'calendar'] },
   { label: 'People & Decisions', ids: ['contacts', 'decisions-tasks'] },
   { label: 'AI & Intelligence',  ids: ['ai-features', 'analytics'] },
@@ -100,7 +100,7 @@ export const guideSections: GuideSection[] = [
           'Unified Inbox — a single inbox showing messages from every connected channel.',
           'Channel — a source of messages: Email, SMS, Slack, or internal Pulse messages.',
           'Contact — any person you communicate with, imported from all connected accounts.',
-          'Voxer — Pulse\'s async voice messaging system with 8 modes and AI transcription.',
+          'Relay — Pulse\'s async voice messaging system with 8 modes and AI transcription.',
           'Pulse AI — the context-aware assistant accessible from anywhere with Ctrl+/.',
         ],
       },
@@ -113,7 +113,7 @@ export const guideSections: GuideSection[] = [
           ['Individual user', 'Connect email → explore Unified Inbox → try Pulse AI'],
           ['Team admin', 'Create workspace → invite members → set up Team Vox channels → Decisions'],
           ['Sales professional', 'Connect CRM → set up Contact Circles → enable Relationship Autopilot'],
-          ['Remote worker', 'Set up Voxer modes → Team Vox for async standups → Calendar sync'],
+          ['Remote worker', 'Set up Relay modes → Team Vox for async standups → Calendar sync'],
           ['Manager', 'Connect accounts → view Workload Heatmap → set up Analytics reports'],
         ],
       },
@@ -145,12 +145,12 @@ export const guideSections: GuideSection[] = [
         title: 'Navigating the Sidebar',
         description: 'The left sidebar is your main navigation, organized into sections.',
         steps: [
-          'Primary section (top): Dashboard, Messages, Email, SMS, Voxer, Calendar, Meetings.',
+          'Primary section (top): Dashboard, Messages, Email, SMS, Relay, Calendar, Meetings.',
           'Secondary section (middle): Contacts, Decisions & Tasks, Tools, Analytics.',
           'Bottom: AI Assistant (ECG icon), Settings, Your Profile.',
           'Click the arrow button at the top of the sidebar to collapse it for more screen space.',
           'Click the ? button in the sidebar header to open the User\'s Guide at any time. On mobile, the ? button appears between the notifications bell and the menu icon.',
-          'Press G + a letter to jump instantly: G→D = Dashboard, G→M = Messages, G→E = Email, G→V = Voxer, G→C = Calendar, G→N = Meetings, G→P = Contacts, G→T = Tasks, G→A = Analytics.',
+          'Press G + a letter to jump instantly: G→D = Dashboard, G→M = Messages, G→E = Email, G→V = Relay, G→C = Calendar, G→N = Meetings, G→P = Contacts, G→T = Tasks, G→A = Analytics.',
         ],
       },
       {
@@ -648,14 +648,14 @@ export const guideSections: GuideSection[] = [
     ],
   },
 
-  // ── 7. VOXER ─────────────────────────────────────────────────────────────
+  // ── 7. RELAY ─────────────────────────────────────────────────────────────
   {
-    id: 'voxer',
-    title: 'Voxer — Voice Messaging',
+    id: 'relay',
+    title: 'Relay — Voice Messaging',
     icon: '🎙️',
     summary: 'Eight voice modes for every situation — quick notes to scheduled broadcasts — all with AI transcription, summaries, and smart replies.',
     steps: [
-      'Click Voxer in the sidebar to open the voice messaging hub.',
+      'Click Relay in the sidebar to open the voice messaging hub.',
       'Pick a mode from the toolbar at the top, or press keys 1–8 to switch instantly.',
       'Every voice message is automatically transcribed to text — read it when you can\'t listen.',
       'Use the AI toolbar (Summarize, Smart Replies, Meeting Notes) at the top of every mode.',
@@ -676,11 +676,11 @@ export const guideSections: GuideSection[] = [
         note: 'Best for: quick check-ins, fast answers, "hey did you see this?" moments.',
       },
       {
-        id: 'classic-voxer',
-        title: 'Classic Voxer (Key: 1) — Full Control',
+        id: 'classic-relay',
+        title: 'Classic (Key: 1) — Full Control',
         description: 'Traditional voice messaging with preview and editing.',
         steps: [
-          'Select Classic Voxer or press 1.',
+          'Select Classic or press 1.',
           'Press Record, speak your message, press Stop.',
           'Preview your recording — re-record if needed.',
           'Optionally trim the beginning and end before sending.',
@@ -734,7 +734,7 @@ export const guideSections: GuideSection[] = [
           'Select Pulse Radio or press 2.',
           'Choose your audience: a team, a Contact Circle, or individual contacts.',
           'Record your broadcast message.',
-          'Click Broadcast — each recipient receives it individually in their Voxer inbox.',
+          'Click Broadcast — each recipient receives it individually in their Relay inbox.',
         ],
         note: 'Best for: company-wide announcements, all-hands updates, client list broadcasts.',
       },
@@ -777,7 +777,7 @@ export const guideSections: GuideSection[] = [
       {
         id: 'ai-toolbar',
         title: 'AI Toolbar',
-        description: 'Every Voxer mode includes an AI toolbar at the top.',
+        description: 'Every Relay mode includes an AI toolbar at the top.',
         steps: [
           'Summarize (Ctrl+S) — generates a written summary of the full conversation.',
           'Smart Replies — suggests 3 quick voice reply options based on context.',
@@ -798,7 +798,7 @@ export const guideSections: GuideSection[] = [
     shortcuts: [
       { key: 'Space', action: 'Toggle recording (when not typing)' },
       { key: 'Escape', action: 'Stop recording / cancel' },
-      { key: '1', action: 'Switch to Classic Voxer' },
+      { key: '1', action: 'Switch to Classic' },
       { key: '2', action: 'Switch to Pulse Radio' },
       { key: '3', action: 'Switch to Voice Threads' },
       { key: '4', action: 'Switch to Team Vox' },
@@ -809,11 +809,11 @@ export const guideSections: GuideSection[] = [
       { key: 'Ctrl+S', action: 'AI Summarize conversation' },
       { key: 'Ctrl+A', action: 'Select all / enter selection mode' },
       { key: 'Ctrl+D', action: 'Download selected message' },
-      { key: '?', action: 'Show all Voxer keyboard shortcuts' },
+      { key: '?', action: 'Show all Relay keyboard shortcuts' },
     ],
     tips: [
       'Press Space to start/stop recording without clicking — keep your hands on the keyboard.',
-      'Press ? in any Voxer mode to see the full context-specific keyboard shortcut list.',
+      'Press ? in any Relay mode to see the full context-specific keyboard shortcut list.',
       'Adjust playback to 1.5x or 2x to listen to long voice messages much faster.',
       'The AI transcript appears below every message — read it when you\'re in a quiet space.',
     ],
@@ -844,7 +844,7 @@ export const guideSections: GuideSection[] = [
     ],
     advanced: [
       {
-        id: 'adv-voxer-async',
+        id: 'adv-relay-async',
         title: 'Async Communication Best Practices',
         items: [
           'Use Team Vox + AI Summary as a complete standup replacement — one paragraph covers the whole team.',
@@ -2028,7 +2028,7 @@ export const guideSections: GuideSection[] = [
     id: 'search',
     title: 'Search',
     icon: '🔍',
-    summary: 'Unified search across every channel — messages, email, contacts, tasks, decisions, calendar, and Voxer transcripts — with natural language, filters, saved searches, and alerts.',
+    summary: 'Unified search across every channel — messages, email, contacts, tasks, decisions, calendar, and Relay transcripts — with natural language, filters, saved searches, and alerts.',
     steps: [
       'Press Ctrl+K (or Cmd+K on Mac) to open search from anywhere in Pulse.',
       'Type any keyword, name, or phrase — results appear from all sources simultaneously.',
@@ -2083,7 +2083,7 @@ export const guideSections: GuideSection[] = [
       },
     ],
     tips: [
-      'Search covers SMS, Email, Messages, Contacts, Tasks, Calendar, and Voxer transcripts simultaneously.',
+      'Search covers SMS, Email, Messages, Contacts, Tasks, Calendar, and Relay transcripts simultaneously.',
       'Natural language works: "messages from David last week about the proposal" — Pulse understands intent.',
       'Set a search alert for "from:bigclient.com" — be notified instantly when your key client emails you.',
     ],
@@ -2149,7 +2149,7 @@ export const guideSections: GuideSection[] = [
         id: 'notifications',
         title: 'Notification Preferences',
         steps: [
-          'For each channel (Messages, Email, Voxer, Tasks, Decisions) choose: All Notifications, Mentions Only, or Off.',
+          'For each channel (Messages, Email, Relay, Tasks, Decisions) choose: All Notifications, Mentions Only, or Off.',
           'Set Quiet Hours — a time range with zero notifications (e.g., 10 PM to 7 AM).',
           'Toggle Sound on/off for desktop notifications.',
           'Choose delivery: in-app only, or in-app + email digest.',
@@ -2349,17 +2349,17 @@ export const guideSections: GuideSection[] = [
         title: 'Pulse Team — What\'s Included',
         steps: [
           'Unlimited team seats — invite your whole workspace at no extra cost.',
-          'All 6 Voxer modes: Quick, Team, Drop, Threads, Radio, Notes — plus Video Vox and Studio RAG.',
+          'All 6 Relay modes: Quick, Team, Drop, Threads, Radio, Notes — plus Video Vox and Studio RAG.',
           'Email, Calendar, Messaging, Meetings, Contacts, Decisions & Tasks — every feature unlocked.',
           'Advanced Analytics and the full QntmEcos Ecosystem Bridge (Entomate + Logos Vision sync).',
-          'Monthly allowances: 2,000 AI messages · 500 SMS · 50 GB storage · 500 Voxer minutes. All reset on the 1st.',
+          'Monthly allowances: 2,000 AI messages · 500 SMS · 50 GB storage · 500 Relay minutes. All reset on the 1st.',
         ],
       },
       {
         id: 'usage-tracking',
         title: 'Usage Tracking',
         steps: [
-          'The Billing page shows four usage gauges: AI Messages, SMS Sent, Storage, and Voxer Minutes.',
+          'The Billing page shows four usage gauges: AI Messages, SMS Sent, Storage, and Relay Minutes.',
           'A warning banner appears when any metric reaches 80% of the monthly limit.',
           'When you hit a limit, the affected feature shows an inline upgrade prompt.',
           'Usage resets at the start of each billing period.',
@@ -2388,8 +2388,8 @@ export const guideSections: GuideSection[] = [
           ['AI messages', '2,000 per month'],
           ['SMS', '500 per month'],
           ['Storage', '50 GB'],
-          ['Voxer minutes', '500 per month'],
-          ['Features', 'All Voxer modes, Email, Calendar, Meetings, Analytics, Ecosystem Bridge'],
+          ['Relay minutes', '500 per month'],
+          ['Features', 'All Relay modes, Email, Calendar, Meetings, Analytics, Ecosystem Bridge'],
         ],
       },
     ],
@@ -2411,7 +2411,7 @@ export const guideSections: GuideSection[] = [
       'Windows Desktop: visit the Pulse website → Downloads → Windows PC → run the .exe installer.',
       'Android: open Google Play Store → search Pulse → tap Install.',
       'Sign in with your existing Pulse account on any platform — your workspace syncs instantly.',
-      'Grant required permissions on mobile: notifications, microphone (Voxer), camera (Video Vox, card scanning).',
+      'Grant required permissions on mobile: notifications, microphone (Relay), camera (Video Vox, card scanning).',
       'Enable Biometric Login on Android: Settings → Security → Biometric Login.',
       'Add the Android home screen widget for quick stats and message preview.',
     ],
@@ -2475,7 +2475,7 @@ export const guideSections: GuideSection[] = [
         scenario: 'You\'re traveling all day but need to stay on top of critical communications.',
         steps: [
           'Enable push notifications for Mentions Only in Messages and All for Email from key contacts (via filters).',
-          'Use Voxer Quick Vox on mobile for fast replies — faster than typing.',
+          'Use Relay Quick Vox on mobile for fast replies — faster than typing.',
           'Use AI Smart Compose on mobile to draft email replies quickly with one tap.',
           'When in a meeting, enable Do Not Disturb mode — only urgent items get through.',
           'Review your Pulse widget on your home screen during breaks for a 5-second status check.',
@@ -2489,7 +2489,7 @@ export const guideSections: GuideSection[] = [
     id: 'shortcuts',
     title: 'Keyboard Shortcuts',
     icon: '⌨️',
-    summary: 'Every keyboard shortcut in Pulse — navigation, messaging, email, calendar, Voxer, and search.',
+    summary: 'Every keyboard shortcut in Pulse — navigation, messaging, email, calendar, Relay, and search.',
     steps: [
       'Press ? in any section to see context-specific keyboard shortcuts for that section.',
       'All shortcuts listed below work on Windows (Ctrl) and Mac (Cmd) unless otherwise noted.',
@@ -2514,7 +2514,7 @@ export const guideSections: GuideSection[] = [
           ['G then M', 'Messages'],
           ['G then E', 'Email'],
           ['G then S', 'SMS'],
-          ['G then V', 'Voxer'],
+          ['G then V', 'Relay'],
           ['G then C', 'Calendar'],
           ['G then N', 'Meetings'],
           ['G then P', 'Contacts'],
@@ -2562,23 +2562,23 @@ export const guideSections: GuideSection[] = [
         ],
       },
       {
-        title: 'Voxer',
+        title: 'Relay',
         columns: ['Shortcut', 'Action'],
         rows: [
           ['Space', 'Toggle recording (when not typing)'],
           ['Escape', 'Stop recording / cancel'],
-          ['1–8', 'Switch Voxer mode (1=Classic, 2=Radio, 3=Threads, 4=Team, 5=Notes, 6=Quick, 7=Drop, 8=Video)'],
+          ['1–8', 'Switch Relay mode (1=Classic, 2=Radio, 3=Threads, 4=Team, 5=Notes, 6=Quick, 7=Drop, 8=Video)'],
           ['Ctrl+S', 'AI Summarize conversation'],
           ['Ctrl+A', 'Enter selection mode'],
           ['Ctrl+D', 'Download selected message'],
-          ['?', 'Show Voxer shortcuts'],
+          ['?', 'Show Relay shortcuts'],
         ],
       },
     ],
     tips: [
       'G + letter shortcuts work from anywhere in Pulse — you don\'t need to click the sidebar.',
       'Press Ctrl+/ to toggle the AI Assistant open and closed without taking your hands off the keyboard.',
-      'In Voxer, press Space to start/stop recording — keep your hands ready to type a follow-up.',
+      'In Relay, press Space to start/stop recording — keep your hands ready to type a follow-up.',
     ],
   },
 
@@ -2587,7 +2587,7 @@ export const guideSections: GuideSection[] = [
     id: 'troubleshooting',
     title: 'Troubleshooting & FAQ',
     icon: '🛟',
-    summary: 'Common issues and fixes — messages, email sync, notifications, Voxer audio, calendar, CRM, and account questions.',
+    summary: 'Common issues and fixes — messages, email sync, notifications, Relay audio, calendar, CRM, and account questions.',
     steps: [
       'For any issue: first try refreshing the page (F5), then log out and log back in.',
       'For sync issues: go to Settings → Connected Accounts, check the connection status, and click Reconnect.',
@@ -2629,8 +2629,8 @@ export const guideSections: GuideSection[] = [
         ],
       },
       {
-        id: 'voxer-audio',
-        title: 'Can\'t hear Voxer messages',
+        id: 'relay-audio',
+        title: 'Can\'t hear Relay messages',
         steps: [
           'Check that your device volume is not muted.',
           'Check browser audio/microphone permissions: address bar → Site settings → Microphone → Allow.',

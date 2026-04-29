@@ -695,7 +695,7 @@ export const voiceIntelligenceService = {
   // ────────────────────────────────────────────────────────────────────
 
   /**
-   * Summarize an already-transcribed voice message / voxer transcript.
+   * Summarize an already-transcribed voice message / relay transcript.
    * Routes to `voxer_transcript_summary` (bulk task → Gemini Flash).
    *
    * @param apiKey DEPRECATED — unused. Retained for backward compatibility.

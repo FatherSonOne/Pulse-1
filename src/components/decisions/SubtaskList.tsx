@@ -4,6 +4,7 @@
  */
 
 import React, { useState, useEffect } from 'react';
+import toast from 'react-hot-toast';
 import { CheckSquare, Square, X, Plus, Sparkles } from 'lucide-react';
 import { subtaskService, Subtask } from '../../services/subtaskService';
 import './SubtaskList.css';
@@ -136,11 +137,11 @@ export const SubtaskList: React.FC<SubtaskListProps> = ({
 
       } else {
         console.warn('AI subtask generation returned no results');
-        alert('Unable to generate subtasks. Please check your API key in Settings.');
+        toast.error('Could not generate subtasks. Check your API key in Settings.', { duration: 4500 });
       }
     } catch (error) {
       console.error('Error generating AI subtasks:', error);
-      alert('Error generating subtasks. Please try again.');
+      toast.error('Could not generate subtasks. Try again.', { duration: 4000 });
     } finally {
       setIsGeneratingAI(false);
     }
@@ -182,7 +183,11 @@ export const SubtaskList: React.FC<SubtaskListProps> = ({
         >
           <div
             className="subtask-progress-fill"
-            style={{ width: `${progress.percentage}%` }}
+            style={{ transform: `scaleX(${(progress.percentage || 0) / 100})` }}
+            role="progressbar"
+            aria-valuenow={progress.percentage || 0}
+            aria-valuemin={0}
+            aria-valuemax={100}
           />
         </div>
       )}

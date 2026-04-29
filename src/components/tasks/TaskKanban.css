@@ -189,13 +189,12 @@
   box-shadow: 0 6px 20px rgba(244, 63, 94, 0.40);
 }
 
-/* Task wrapper — with stagger for first 5 */
+/* Task wrapper, with stagger for first 5 */
 .kanban-task-wrapper {
   cursor: grab;
-  transition: opacity 150ms ease;
-  border-left: 2px solid transparent;
+  transition: opacity var(--dt-transition-fast);
   border-radius: 12px;
-  animation: kanbanEnter 0.22s cubic-bezier(0.16, 1, 0.3, 1) both;
+  animation: kanbanEnter 220ms cubic-bezier(0.16, 1, 0.3, 1) both;
 }
 
 .kanban-column-content .kanban-task-wrapper:nth-child(1) { animation-delay:   0ms; }

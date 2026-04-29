@@ -91,5 +91,53 @@
       "failedExportUsers": "Failed to export users.",
       "failedExportMessages": "Failed to export messages."
     }
+  },
+  "messages": {
+    "input": {
+      "placeholder": "Type your message...",
+      "ariaLabel": "Message text",
+      "send": "Send message",
+      "attach": "Attach file",
+      "emoji": "Add emoji",
+      "voiceStart": "Start voice input",
+      "voiceStop": "Stop recording",
+      "ai": "AI",
+      "aiToggle": "Toggle AI suggestions",
+      "tools": "Tools",
+      "toolsOpen": "Open tools menu",
+      "modeSimple": "Simple Mode",
+      "modeAdvanced": "Advanced Mode",
+      "modeSwitchToSimple": "Switch to simple mode",
+      "modeSwitchToAdvanced": "Switch to advanced mode",
+      "draftSaving": "Saving draft...",
+      "draftSaved": "Draft saved",
+      "draftSavedAgo": "Saved {{value}} ago",
+      "draftError": "Failed to save draft",
+      "characterCounter": "{{count}} / {{max}}",
+      "linkPrompt": "Enter URL:",
+      "attachmentTooLarge": "{{name}} is {{size}} — over the {{limit}} limit.",
+      "attachmentDismiss": "Dismiss",
+      "aiLoading": "Loading AI..."
+    },
+    "featureSettings": {
+      "title": "Feature Settings",
+      "close": "Close settings",
+      "search": "Search features...",
+      "searchAriaLabel": "Search features",
+      "advancedMode": "Advanced Mode",
+      "advancedModeDesc": "Show all features and settings",
+      "toggleAdvancedMode": "Toggle advanced mode",
+      "noResults": "No features match “{{query}}”.",
+      "enabledOf": "{{enabled}}/{{total}}",
+      "priorityBadge": "PRIORITY",
+      "enableAll": "Enable All",
+      "disableAll": "Disable All",
+      "reset": "Reset to Defaults",
+      "resetConfirmTitle": "Confirm reset",
+      "resetConfirmBody": "Reset all features to defaults? This can't be undone.",
+      "resetCancel": "Cancel",
+      "resetConfirm": "Yes, reset",
+      "toggleFeature": "Toggle {{name}}"
+    }
   }
 }

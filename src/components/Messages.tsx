@@ -4,7 +4,7 @@
 //
 // SLATED FOR REPLACEMENT by `MessagesSplitView` once Phase 5c-5d
 // migrate the features that only live here (focus mode, voice
-// recording, voxer integration, the Phase 3-11 enhancement panels,
+// recording, relay integration, the Phase 3-11 enhancement panels,
 // and the Pulse-DM sidebar). See:
 //   docs/deep-dives/messages_PHASED_PLAN_2026-04-26.md  (Phase 5b/c/d)
 //
@@ -147,6 +147,11 @@ import { MobileDrawer, useSwipeFromEdge, MobileDrawerHeader } from './Messages/M
 const FocusMode = lazy(() => import('./Messages/FocusMode').then(m => ({ default: m.FocusMode })));
 
 import { MessagesFeaturePanels } from './Messages/MessagesFeaturePanels';
+import { MessageLinkPreviews } from './Messages/LinkPreviewCard';
+import { SnoozeMenu } from './Messages/SnoozeMenu';
+import { TagPicker, TagPills } from './Messages/TagPills';
+import { tagsService, type TagDefinition } from '../services/tagsService';
+import { useWorkspace } from '../contexts/WorkspaceContext';
 
 import { Archive, ArrowLeft, ArrowRight, ArrowUp, AtSign, BarChart, Bot, Check, CheckCheck, CheckCircle, CheckCircle2, Clock, Copy, Crosshair, Download, Ellipsis, Eye, File, FileOutput, FileText, Flag, Gavel, GitFork, Handshake, Hash, HeartPulse, History, Image, Keyboard, Layers, LayoutGrid, Link, ListChecks, Loader2, Lock, LogOut, Mail, Menu, MessageCircle, MessageSquare, MessagesSquare, Pen, PenTool, Play, Plus, Reply, Rocket, Scale, Search, Send, Share, SlidersHorizontal, Smartphone, Smile, Square, SquarePen, Star, Target, Terminal, ThumbsDown, ThumbsUp, Trash2, TrendingUp, Trophy, UserPlus, UserX, Users, Video, Wand2, Wrench, X, Zap } from 'lucide-react';
 
@@ -778,6 +783,37 @@ const Messages: React.FC<MessagesProps> = ({ apiKey, contacts, initialContactId,
   const [radialMenuMessageId, setRadialMenuMessageId] = useState<string | null>(null);
   const [contextMenuMessageId, setContextMenuMessageId] = useState<string | null>(null);
   const [showFeatureSettings, setShowFeatureSettings] = useState(false);
+
+  // Phase 7b — tags (Pulse DM scope for now). Pulled from
+  // useWorkspace() so picker knows which workspace's tag taxonomy to
+  // show; gracefully no-ops if no active workspace.
+  const { currentWorkspace } = useWorkspace();
+  const [conversationTags, setConversationTags] = useState<Record<string, TagDefinition[]>>({});
+  const refreshTagsFor = useCallback(async (conversationId: string) => {
+    try {
+      const tags = await tagsService.listTagsForConversation(conversationId);
+      setConversationTags((prev) => ({ ...prev, [conversationId]: tags }));
+    } catch (err) {
+      console.error('[Messages] refresh tags failed:', err);
+    }
+  }, []);
+  // Bulk-load tags for the visible Pulse conversations whenever the list changes.
+  useEffect(() => {
+    if (pulseConversations.length === 0) return;
+    let cancelled = false;
+    void tagsService
+      .listTagsForConversations(pulseConversations.map((c) => c.id))
+      .then((grouped) => { if (!cancelled) setConversationTags(grouped); })
+      .catch((err) => console.error('[Messages] bulk tag load failed:', err));
+    return () => { cancelled = true; };
+  }, [pulseConversations]);
+  // Subscribe to realtime tag changes so other devices/users see updates live.
+  useEffect(() => {
+    const unsubscribe = tagsService.subscribeToTagChanges(({ conversationId }) => {
+      void refreshTagsFor(conversationId);
+    });
+    return unsubscribe;
+  }, [refreshTagsFor]);
 
   // Contact details panel state
   const [selectedContactUserId, setSelectedContactUserId] = useState<string | null>(null);
@@ -3203,6 +3239,17 @@ const Messages: React.FC<MessagesProps> = ({ apiKey, contacts, initialContactId,
         messageEnhancements={messageEnhancements}
         handleDeletePulseConversation={handleDeletePulseConversation}
         threads={threads}
+        conversationTags={conversationTags}
+        onJumpToConversation={(conversationId, kind) => {
+          // Phase 7b — fired-reminder click navigation. Currently DM
+          // only; a fired reminder for a workspace channel would route
+          // through different state.
+          if (kind === 'dm') {
+            setActivePulseConversation(conversationId);
+            setActiveThreadId('');
+            setMobileView('chat');
+          }
+        }}
       />
 
       {/* Main Chat Area - 70% width on desktop for split-view */}
@@ -3287,6 +3334,27 @@ const Messages: React.FC<MessagesProps> = ({ apiKey, contacts, initialContactId,
 
             {/* Header Action Buttons */}
             <div className="flex items-center gap-2">
+              {/* Phase 7b: Tag picker — only when there's an active
+               *  workspace (tag definitions are workspace-scoped). */}
+              {activePulseConversation && currentWorkspace && (
+                <TagPicker
+                  workspaceId={currentWorkspace.id}
+                  conversationKind="dm"
+                  conversationId={activePulseConversation}
+                  currentTags={conversationTags[activePulseConversation] ?? []}
+                  onChanged={() => void refreshTagsFor(activePulseConversation)}
+                />
+              )}
+              {/* Phase 7b: Snooze / "remind me about this thread" */}
+              {activePulseConversation && (
+                <SnoozeMenu
+                  conversationKind="dm"
+                  conversationId={activePulseConversation}
+                  defaultNote={
+                    activePulseConv?.last_message_preview ?? undefined
+                  }
+                />
+              )}
               {/* Feature Settings Button */}
               <button
                 onClick={() => setShowFeatureSettings(true)}
@@ -3827,6 +3895,9 @@ const Messages: React.FC<MessagesProps> = ({ apiKey, contacts, initialContactId,
                               {renderTextWithLinks(msg.content)}
                             </p>
                             )}
+                            {/* Phase 7b: OG link preview cards. Renders nothing if no
+                             *  URLs in the text — graceful enhancement. Cached server-side. */}
+                            <MessageLinkPreviews text={msg.content} max={2} />
                             <div
                               className="mt-1.5 flex items-center gap-2"
                               style={{
@@ -4282,6 +4353,7 @@ const Messages: React.FC<MessagesProps> = ({ apiKey, contacts, initialContactId,
                 voiceEnabled={true}
                 maxLength={2000}
                 channelId={activePulseConv?.id}
+                apiKey={apiKey}
                 disabled={false}
                 setActiveToolOverlay={setActiveToolOverlay}
               />
@@ -4620,6 +4692,10 @@ const Messages: React.FC<MessagesProps> = ({ apiKey, contacts, initialContactId,
                             })()}
 
                             {msg.text && <p className="leading-relaxed whitespace-pre-wrap font-normal">{renderTextWithLinks(msg.text)}</p>}
+
+                            {/* Phase 7b: OG link preview cards. Renders nothing if no
+                             *  URLs in the text — graceful enhancement. Cached server-side. */}
+                            <MessageLinkPreviews text={msg.text} max={2} />
 
                             {/* Phase 1: Rich Message Cards (link previews, code blocks, etc.) */}
                             {msg.text && (() => {

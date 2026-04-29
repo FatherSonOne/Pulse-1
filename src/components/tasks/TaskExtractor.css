@@ -212,10 +212,12 @@
 
 .priority-badge {
   padding: 3px 8px;
-  border-radius: 10px;
+  border-radius: var(--dt-radius-sm);
   color: white;
-  font-size: 10px;
-  font-weight: 600;
+  font-family: var(--dt-font-family-mono);
+  font-size: var(--dt-label-size-sm);
+  font-weight: var(--dt-label-weight);
+  letter-spacing: var(--dt-label-tracking);
   text-transform: uppercase;
 }
 
@@ -274,7 +276,10 @@
   display: block;
   margin-bottom: 6px;
   color: rgba(255, 255, 255, 0.5);
-  font-size: 11px;
+  font-family: var(--dt-font-family-mono);
+  font-size: var(--dt-label-size);
+  font-weight: var(--dt-label-weight);
+  letter-spacing: var(--dt-label-tracking);
   text-transform: uppercase;
 }
 

@@ -11,10 +11,16 @@ import { InvoicesCard } from './billing/InvoicesCard';
 // ── Constants ────────────────────────────────────────────────────────
 
 const PULSE_TEAM_PLAN_ID = 'pulse_team';
+const PULSE_GROWTH_PLAN_ID = 'pulse_growth';
 
 const PULSE_TEAM_PRICING = {
   monthly: 100,
   yearly: 1000, // 2 months free vs. $1200
+};
+
+const PULSE_GROWTH_PRICING = {
+  monthly: 300,
+  yearly: 3000, // 2 months free vs. $3600
 };
 
 const PULSE_TEAM_FEATURES: string[] = [
@@ -22,17 +28,37 @@ const PULSE_TEAM_FEATURES: string[] = [
   '2,000 AI messages / month',
   '500 SMS / month',
   '50 GB storage',
-  '500 Voxer minutes / month',
-  'All 6 Voxer modes (Quick, Team, Drop, Threads, Radio, Notes)',
+  '500 Relay minutes / month',
+  'All 6 Relay modes (Quick, Team, Drop, Threads, Radio, Notes)',
   'Video Vox + Studio RAG',
   'Email, calendar, messaging, meetings',
   'Advanced analytics + full ecosystem bridge',
+];
+
+const PULSE_GROWTH_FEATURES: string[] = [
+  'Everything in Team, plus:',
+  '10,000 AI messages / month (5×)',
+  '2,500 SMS / month (5×)',
+  '500 GB storage (10×)',
+  '2,500 Relay minutes / month (5×)',
+  'SSO / SAML — coming soon',
+  'API access with rate-limited keys',
+  'Audit log retention: 365 days',
+  'Custom branding on emails & exports',
+  'Advanced AI budget controls (per-user caps)',
+  'Priority support — 1 business day SLA',
 ];
 
 const TEAM_COLORS = {
   gradient: 'linear-gradient(135deg, #d946ef, #ec4899)',
   shadow: 'rgba(217, 70, 239, 0.3)',
   badge: '#d946ef',
+};
+
+const GROWTH_COLORS = {
+  gradient: 'linear-gradient(135deg, #7c3aed, #6366f1)',
+  shadow: 'rgba(124, 58, 237, 0.3)',
+  badge: '#7c3aed',
 };
 
 // ── Helpers ──────────────────────────────────────────────────────────
@@ -93,6 +119,7 @@ export const BillingSettings: React.FC = () => {
   const [invoices, setInvoices] = useState<Invoice[]>([]);
   const [subscription, setSubscription] = useState<Subscription | null>(null);
   const [selectedCycle, setSelectedCycle] = useState<'monthly' | 'yearly'>('monthly');
+  const [growthCycle, setGrowthCycle] = useState<'monthly' | 'yearly'>('monthly');
   const [loading, setLoading] = useState(true);
   const [loadError, setLoadError] = useState<string | null>(null);
   const [actionLoading, setActionLoading] = useState<string | null>(null);
@@ -168,6 +195,27 @@ export const BillingSettings: React.FC = () => {
         window.location.href = url;
       } catch (err) {
         console.error('Checkout failed:', err);
+        setLoadError(err instanceof Error ? err.message : 'Checkout failed. Try again.');
+      } finally {
+        setActionLoading(null);
+      }
+    },
+    [workspaceId],
+  );
+
+  const handleCheckoutGrowth = useCallback(
+    async (cycle: 'monthly' | 'yearly') => {
+      if (!workspaceId) return;
+      setActionLoading('checkout-growth');
+      try {
+        const url = await billingService.createCheckout({
+          workspaceId,
+          planId: PULSE_GROWTH_PLAN_ID,
+          billingCycle: cycle,
+        });
+        window.location.href = url;
+      } catch (err) {
+        console.error('Growth checkout failed:', err);
         setLoadError(err instanceof Error ? err.message : 'Checkout failed. Try again.');
       } finally {
         setActionLoading(null);
@@ -274,7 +322,7 @@ export const BillingSettings: React.FC = () => {
       {header}
 
       {/* Near-limit warning — dismissible; appears when any metered resource
-          (AI messages, SMS, storage, Voxer minutes) is >= 80% of the cap. */}
+          (AI messages, SMS, storage, Relay minutes) is >= 80% of the cap. */}
       <UsageWarningBanner />
 
       {/* Checkout success / canceled toast */}
@@ -617,6 +665,133 @@ export const BillingSettings: React.FC = () => {
         </div>
       )}
 
+      {/* Upgrade to Growth card — visible to billing managers on Team (not already on Growth) */}
+      {canManageBilling && entitlements?.apps?.pulse !== 'growth' && (
+        <div
+          className="rounded-2xl p-6"
+          style={{
+            background: 'var(--set-surface)',
+            border: `2px solid ${GROWTH_COLORS.badge}40`,
+          }}
+        >
+          <div className="flex items-start justify-between gap-4 flex-wrap mb-5">
+            <div>
+              <div className="flex items-center gap-2 mb-1">
+                <h4
+                  className="text-lg font-bold"
+                  style={{ color: 'var(--set-text-main)' }}
+                >
+                  Outgrew Pulse Team?
+                </h4>
+                <span
+                  className="text-[10px] font-semibold px-2 py-0.5 rounded"
+                  style={{
+                    background: `${GROWTH_COLORS.badge}20`,
+                    color: GROWTH_COLORS.badge,
+                    letterSpacing: '0.04em',
+                  }}
+                >
+                  GROWTH
+                </span>
+              </div>
+              <p className="text-sm" style={{ color: 'var(--set-text-muted)' }}>
+                5× metered capacity, 10× storage, plus SSO, API access, audit retention,
+                custom branding, and priority support.
+              </p>
+            </div>
+            <div className="text-right">
+              <div className="text-3xl font-bold" style={{ color: 'var(--set-text-main)' }}>
+                $
+                {growthCycle === 'monthly'
+                  ? PULSE_GROWTH_PRICING.monthly
+                  : Math.round(PULSE_GROWTH_PRICING.yearly / 12)}
+                <span
+                  className="text-sm font-normal"
+                  style={{ color: 'var(--set-text-muted)' }}
+                >
+                  /mo
+                </span>
+              </div>
+              {growthCycle === 'yearly' && (
+                <div className="text-xs" style={{ color: 'var(--set-text-muted)' }}>
+                  ${PULSE_GROWTH_PRICING.yearly.toLocaleString()} billed yearly · 2 months free
+                </div>
+              )}
+            </div>
+          </div>
+
+          <div
+            className="flex items-center gap-2 rounded-xl p-1 mb-5"
+            style={{ background: 'var(--set-surface-raised)', border: '1px solid var(--set-border)' }}
+          >
+            <button
+              type="button"
+              onClick={() => setGrowthCycle('monthly')}
+              className="flex-1 px-4 py-2 rounded-lg text-sm font-medium transition-all"
+              style={{
+                background: growthCycle === 'monthly' ? GROWTH_COLORS.gradient : 'transparent',
+                color: growthCycle === 'monthly' ? 'white' : 'var(--set-text-muted)',
+                boxShadow: growthCycle === 'monthly' ? `0 2px 8px ${GROWTH_COLORS.shadow}` : 'none',
+              }}
+            >
+              Monthly
+            </button>
+            <button
+              type="button"
+              onClick={() => setGrowthCycle('yearly')}
+              className="flex-1 px-4 py-2 rounded-lg text-sm font-medium transition-all"
+              style={{
+                background: growthCycle === 'yearly' ? GROWTH_COLORS.gradient : 'transparent',
+                color: growthCycle === 'yearly' ? 'white' : 'var(--set-text-muted)',
+                boxShadow: growthCycle === 'yearly' ? `0 2px 8px ${GROWTH_COLORS.shadow}` : 'none',
+              }}
+            >
+              Yearly
+              <span className="text-xs ml-1" style={{ color: '#10b981' }}>
+                2 months free
+              </span>
+            </button>
+          </div>
+
+          <ul className="space-y-2 mb-5">
+            {PULSE_GROWTH_FEATURES.map((feat) => (
+              <li
+                key={feat}
+                className="flex items-start gap-2 text-sm"
+                style={{ color: 'var(--set-text-secondary)' }}
+              >
+                <svg
+                  width="14"
+                  height="14"
+                  viewBox="0 0 24 24"
+                  fill="none"
+                  strokeWidth="2.5"
+                  strokeLinecap="round"
+                  strokeLinejoin="round"
+                  style={{ stroke: GROWTH_COLORS.badge, marginTop: 3, flexShrink: 0 }}
+                >
+                  <polyline points="20 6 9 17 4 12" />
+                </svg>
+                <span>{feat}</span>
+              </li>
+            ))}
+          </ul>
+
+          <button
+            type="button"
+            onClick={() => handleCheckoutGrowth(growthCycle)}
+            disabled={actionLoading === 'checkout-growth'}
+            className="w-full py-3 px-4 text-sm font-semibold rounded-xl transition-all text-white disabled:opacity-50"
+            style={{
+              background: GROWTH_COLORS.gradient,
+              boxShadow: `0 4px 12px ${GROWTH_COLORS.shadow}`,
+            }}
+          >
+            {actionLoading === 'checkout-growth' ? 'Redirecting to checkout...' : 'Move up to Growth'}
+          </button>
+        </div>
+      )}
+
       {/* Usage Meters */}
       {entitlements && (
         <div
@@ -658,7 +833,7 @@ export const BillingSettings: React.FC = () => {
               formatFn={formatBytes}
             />
             <UsageMeter
-              label="Voxer Minutes"
+              label="Relay Minutes"
               current={entitlements.usage?.voxer_minutes || 0}
               limit={entitlements.max_voxer_minutes_mo}
             />
