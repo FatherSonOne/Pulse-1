@@ -22,10 +22,10 @@
   --vox-classic: #f97316;
 
   /* Light mode */
-  --vox-bg-primary: #ffffff;
+  --vox-bg-primary: #fafafa;
   --vox-bg-secondary: #f8fafc;
   --vox-bg-tertiary: #f1f5f9;
-  --vox-bg-elevated: #ffffff;
+  --vox-bg-elevated: #fafafa;
   --vox-border: rgba(0, 0, 0, 0.08);
   --vox-border-strong: rgba(0, 0, 0, 0.12);
   --vox-text-primary: #0f172a;

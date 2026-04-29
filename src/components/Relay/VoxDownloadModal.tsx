@@ -66,7 +66,7 @@ const FORMATS: FormatOption[] = [
   },
 ];
 
-const ACCENT_COLOR = '#8B5CF6';
+const ACCENT_COLOR = '#f43f5e';
 
 export const VoxDownloadModal: React.FC<VoxDownloadModalProps> = ({
   isOpen,

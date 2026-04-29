@@ -2,13 +2,17 @@
 // Type definitions for MessageInput components
 
 export interface MessageInputProps {
-  onSend: (text: string) => void;
+  onSend: (text: string, attachments?: AttachmentFile[]) => void;
   onTyping?: (isTyping: boolean) => void;
   placeholder?: string;
   aiEnabled?: boolean;
   voiceEnabled?: boolean;
   maxLength?: number;
+  /** Max attachment size in bytes; defaults to 25 MB. */
+  maxAttachmentBytes?: number;
   channelId?: string;
+  /** API key for AI features (smart replies / tone analysis). When absent, AI features are inert. */
+  apiKey?: string | null;
   disabled?: boolean;
   initialValue?: string;
   setActiveToolOverlay?: (overlayType: 'analytics' | 'collaboration' | 'productivity' | 'intelligence' | 'proactive' | 'communication' | 'personalization' | 'security' | 'mediaHub') => void;
@@ -50,7 +54,7 @@ export interface AttachmentFile {
 export interface DraftState {
   text: string;
   lastSaved: Date;
-  status: 'saving' | 'saved' | 'error';
+  status: 'idle' | 'saving' | 'saved' | 'error';
 }
 
 export interface AIComposerProps {

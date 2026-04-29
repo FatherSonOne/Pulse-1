@@ -566,6 +566,7 @@ export const MessageInputSection: React.FC<MessageInputSectionProps> = ({
                voiceEnabled={false}
                maxLength={2000}
                channelId={activeThread?.id}
+               apiKey={apiKey}
                setActiveToolOverlay={setActiveToolOverlay}
              />
            </div>

@@ -23,6 +23,9 @@ export interface InvokeAIOptions {
   workspaceId: string;
   /** Abort signal to cancel the request. */
   signal?: AbortSignal;
+  /** Override the task's default provider/model for this single call.
+   *  Must be a model id from `aiModelCatalog` (validated server-side). */
+  modelOverride?: string;
 }
 
 export async function invokeAI(
@@ -45,7 +48,12 @@ export async function invokeAI(
   // Use supabase.functions.invoke — it sets both apikey + Authorization headers
   // which the Supabase edge-function gateway requires.
   const { data, error } = await supabase.functions.invoke('ai-router', {
-    body: { task, params, workspace_id: opts.workspaceId },
+    body: {
+      task,
+      params,
+      workspace_id: opts.workspaceId,
+      ...(opts.modelOverride ? { model_override: opts.modelOverride } : {}),
+    },
   });
 
   if (error) {
@@ -108,7 +116,7 @@ export async function invokeAIPrompt(
       jsonMode: opts.jsonMode,
       temperature: opts.temperature,
     },
-    opts,
+    opts, // forwards modelOverride if present
   );
   return result.text;
 }

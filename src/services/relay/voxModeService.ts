@@ -1562,6 +1562,196 @@ class VoxModeService {
     }
   }
 
+  /**
+   * Snooze a triage item — insert a row in voice_reminders that the cron
+   * worker will fire at `remindAt`. Returns the new reminder's id, or null
+   * on auth/insert failure. The Triage UI uses this to surface 1h /
+   * Tomorrow / Pick presets.
+   */
+  async snoozeTriageItem(
+    kind: 'classic' | 'thread' | 'quick' | 'broadcast' | 'note',
+    rowId: string,
+    remindAt: Date,
+    note?: string,
+  ): Promise<string | null> {
+    const authUserId = await this.ensureUserId();
+    if (!authUserId) return null;
+    const voiceKind = `voice_${kind}` as
+      | 'voice_classic'
+      | 'voice_thread'
+      | 'voice_quick'
+      | 'voice_broadcast'
+      | 'voice_note';
+    const { data, error } = await supabase
+      .from('voice_reminders')
+      .insert({
+        user_id: authUserId,
+        voice_kind: voiceKind,
+        source_id: rowId,
+        remind_at: remindAt.toISOString(),
+        note,
+      })
+      .select('id')
+      .single();
+    if (error) {
+      console.warn('[snoozeTriageItem] failed:', error.message);
+      return null;
+    }
+    return data?.id ?? null;
+  }
+
+  /**
+   * Cancel a previously created reminder by id. Used by the snooze toast's
+   * Undo action — the row is deleted outright rather than marked dismissed
+   * because the user explicitly took back the snooze.
+   */
+  async cancelVoiceReminder(reminderId: string): Promise<boolean> {
+    const authUserId = await this.ensureUserId();
+    if (!authUserId) return false;
+    const { error } = await supabase
+      .from('voice_reminders')
+      .delete()
+      .eq('id', reminderId)
+      .eq('user_id', authUserId);
+    if (error) {
+      console.warn('[cancelVoiceReminder] failed:', error.message);
+      return false;
+    }
+    return true;
+  }
+
+  /**
+   * Mark a triage item as read. Each kind has its own read-tracking shape:
+   *  - 'classic' (voxer_recordings): toggles `played = true`.
+   *  - 'thread' (voice_thread_messages): appends current pulse user to
+   *    `read_by[]` if absent.
+   *  - 'quick' (quick_vox_messages): sets `played_at = now()`.
+   *  - 'broadcast' / 'note': no-op (notes are personal; broadcasts use a
+   *    separate playback-tracking surface and don't appear in needs-reply).
+   * Returns true when the row was updated (or was already read), false on
+   * authentication failure / missing pulse_users mapping.
+   */
+  async markTriageItemRead(
+    kind: 'classic' | 'thread' | 'quick' | 'broadcast' | 'note',
+    rowId: string,
+  ): Promise<boolean> {
+    const authUserId = await this.ensureUserId();
+    if (!authUserId) return false;
+
+    if (kind === 'classic') {
+      const { error } = await supabase
+        .from('voxer_recordings')
+        .update({ played: true })
+        .eq('id', rowId)
+        .eq('user_id', authUserId);
+      if (error) {
+        console.warn('[markTriageItemRead] classic failed:', error.message);
+        return false;
+      }
+      return true;
+    }
+
+    if (kind === 'broadcast' || kind === 'note') {
+      // Broadcasts/notes don't drive needs-reply; nothing to persist.
+      return true;
+    }
+
+    // thread + quick both need the canonical pulse user uuid.
+    const pulseResp = await supabase
+      .from('pulse_users')
+      .select('id')
+      .eq('auth_user_id', authUserId)
+      .maybeSingle();
+    const pulseUserId: string | undefined = pulseResp.data?.id;
+    if (!pulseUserId) return false;
+
+    if (kind === 'quick') {
+      const { error } = await supabase
+        .from('quick_vox_messages')
+        .update({ played_at: new Date().toISOString() })
+        .eq('id', rowId)
+        .eq('recipient_id', pulseUserId)
+        .is('played_at', null);
+      if (error) {
+        console.warn('[markTriageItemRead] quick failed:', error.message);
+        return false;
+      }
+      return true;
+    }
+
+    // thread: append pulseUserId to read_by[] only if not already present.
+    // We re-read first so we don't blow away other readers' entries.
+    const current = await supabase
+      .from('voice_thread_messages')
+      .select('read_by')
+      .eq('id', rowId)
+      .maybeSingle();
+    if (current.error) {
+      console.warn('[markTriageItemRead] thread read failed:', current.error.message);
+      return false;
+    }
+    const existing: string[] = Array.isArray(current.data?.read_by)
+      ? current.data.read_by
+      : [];
+    if (existing.includes(pulseUserId)) return true;
+    const next = [...existing, pulseUserId];
+    const { error } = await supabase
+      .from('voice_thread_messages')
+      .update({ read_by: next })
+      .eq('id', rowId);
+    if (error) {
+      console.warn('[markTriageItemRead] thread update failed:', error.message);
+      return false;
+    }
+    return true;
+  }
+
+  /**
+   * Upload an audio blob to the `relay` bucket without writing any
+   * conversation row, and return the public URL. Used by the share-link
+   * fallback when the recipient isn't on Pulse — the composer hands the URL
+   * to the OS clipboard / share sheet instead of inserting a quick_vox row.
+   */
+  async uploadAudioForShare(
+    audioBlob: Blob,
+    duration: number,
+  ): Promise<string | null> {
+    const userId = await this.ensureUserId();
+    if (!userId) {
+      console.error('No user ID for share-audio upload');
+      return null;
+    }
+
+    try {
+      await this.ensureStorageBucket();
+
+      const fileName = `share/${userId}/${Date.now()}.webm`;
+      const { error: uploadError } = await supabase.storage
+        .from('relay')
+        .upload(fileName, audioBlob, {
+          contentType: 'audio/webm',
+          upsert: false,
+        });
+
+      if (uploadError) {
+        console.error('Error uploading share audio:', uploadError);
+        return null;
+      }
+
+      usageTracker.voxerMinutes(Math.ceil(duration / 60));
+      usageTracker.storageBytes(audioBlob.size);
+
+      const { data: urlData } = supabase.storage
+        .from('relay')
+        .getPublicUrl(fileName);
+
+      return urlData.publicUrl ?? null;
+    } catch (error) {
+      console.error('Error uploading share audio:', error);
+      return null;
+    }
+  }
+
   async sendQuickVox(recipientId: string, audioUrl: string, duration: number): Promise<QuickVoxMessage | null> {
     const userId = await this.ensureUserId();
     if (!userId) return null;

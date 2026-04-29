@@ -2,7 +2,7 @@
 // Handles conversion of voice messages to structured archive items
 
 import { VoxSelectionItem } from '../../hooks/useVoxSelection';
-import { saveArchiveItem } from '../dbService';
+import { saveArchiveItem, deleteArchiveItem } from '../dbService';
 import type { MeetingNotes } from './relayAIService';
 
 /**
@@ -32,7 +32,7 @@ function formatDuration(seconds: number): string {
 export async function archiveRelayConversation(
   items: VoxSelectionItem[],
   contactName: string = 'Unknown Contact'
-): Promise<void> {
+): Promise<{ archiveId: string }> {
   if (items.length === 0) {
     throw new Error('No items to archive');
   }
@@ -87,7 +87,7 @@ export async function archiveRelayConversation(
   const relatedContactId = sortedItems.find(item => item.contactId)?.contactId;
 
   // Save to Pulse Archives
-  await saveArchiveItem({
+  const saved = await saveArchiveItem({
     type: 'vox_transcript',
     title: `Vox Conversation with ${contactName} — ${new Date().toLocaleDateString('en-US', {
       month: 'short',
@@ -134,6 +134,17 @@ export async function archiveRelayConversation(
       },
     },
   });
+
+  return { archiveId: saved.id };
+}
+
+/**
+ * Undo a previously archived Relay conversation by deleting the archive row.
+ * The original voice messages were never modified by the archive call, so
+ * this is a complete reversal — equivalent to "the archive never happened".
+ */
+export async function unarchiveRelayConversation(archiveId: string): Promise<boolean> {
+  return await deleteArchiveItem(archiveId);
 }
 
 /**

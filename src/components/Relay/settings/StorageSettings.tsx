@@ -37,7 +37,7 @@ const RETENTION_OPTIONS = [
 
 export const StorageSettings: React.FC<StorageSettingsProps> = ({
   isDarkMode = false,
-  accentColor = '#8B5CF6',
+  accentColor = '#f43f5e',
 }) => {
   const [downloadFolder, setDownloadFolder] = useState('');
   const [autoDownload, setAutoDownload] = useState(false);

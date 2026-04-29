@@ -1,16 +1,11 @@
-// RelaySettings Component - Comprehensive Relay configuration modal
-// "Control Room" aesthetic - professional broadcast studio feel
+// RelaySettings — Relay configuration sheet.
+//
+// Right-edge sheet (not a centered modal) per brand discipline. Coral accent,
+// no glassmorphism, mono uppercase tab labels. Wraps the four existing
+// settings sub-components (Audio I/O, Video I/O, Storage, General).
 
-import React, { useState } from 'react';
-import {
-  X,
-  Settings,
-  Mic,
-  Video,
-  HardDrive,
-  Sliders,
-  Waves,
-} from 'lucide-react';
+import React, { useEffect, useState } from 'react';
+import { X, Mic, Video, HardDrive, Sliders } from 'lucide-react';
 import AudioIOSettings from './settings/AudioIOSettings';
 import VideoIOSettings from './settings/VideoIOSettings';
 import StorageSettings from './settings/StorageSettings';
@@ -25,14 +20,14 @@ interface RelaySettingsProps {
 
 type SettingsTab = 'audio' | 'video' | 'storage' | 'general';
 
-const TABS: { id: SettingsTab; label: string; icon: React.ReactNode }[] = [
-  { id: 'audio', label: 'Audio', icon: <Mic className="w-4 h-4" /> },
-  { id: 'video', label: 'Video', icon: <Video className="w-4 h-4" /> },
-  { id: 'storage', label: 'Storage', icon: <HardDrive className="w-4 h-4" /> },
-  { id: 'general', label: 'General', icon: <Sliders className="w-4 h-4" /> },
+const TABS: { id: SettingsTab; label: string; icon: React.ComponentType<{ className?: string }> }[] = [
+  { id: 'audio', label: 'Audio', icon: Mic },
+  { id: 'video', label: 'Video', icon: Video },
+  { id: 'storage', label: 'Storage', icon: HardDrive },
+  { id: 'general', label: 'General', icon: Sliders },
 ];
 
-const ACCENT_COLOR = '#8B5CF6'; // Relay purple
+const ACCENT_COLOR = '#f43f5e';
 
 export const RelaySettings: React.FC<RelaySettingsProps> = ({
   isOpen,
@@ -41,28 +36,17 @@ export const RelaySettings: React.FC<RelaySettingsProps> = ({
 }) => {
   const [activeTab, setActiveTab] = useState<SettingsTab>('audio');
 
-  if (!isOpen) return null;
+  // Close on Escape.
+  useEffect(() => {
+    if (!isOpen) return;
+    const onKey = (e: KeyboardEvent) => {
+      if (e.key === 'Escape') onClose();
+    };
+    window.addEventListener('keydown', onKey);
+    return () => window.removeEventListener('keydown', onKey);
+  }, [isOpen, onClose]);
 
-  const tc = {
-    overlay: isDarkMode ? 'bg-zinc-950/70' : 'bg-zinc-950/50',
-    modalBg: isDarkMode
-      ? 'bg-gradient-to-br from-gray-900 via-gray-900 to-gray-800'
-      : 'bg-gradient-to-br from-white via-white to-gray-50',
-    headerBg: isDarkMode
-      ? 'bg-gray-900'
-      : 'bg-white',
-    border: isDarkMode ? 'border-gray-700/50' : 'border-gray-200/60',
-    text: isDarkMode ? 'text-white' : 'text-gray-900',
-    textSecondary: isDarkMode ? 'text-gray-400' : 'text-gray-600',
-    textMuted: isDarkMode ? 'text-gray-500' : 'text-gray-400',
-    tabBg: isDarkMode ? 'bg-gray-800/50' : 'bg-gray-100/80',
-    tabActive: isDarkMode
-      ? 'bg-gray-700/80 text-white'
-      : 'bg-white text-gray-900 shadow-sm',
-    tabInactive: isDarkMode
-      ? 'text-gray-400 hover:text-gray-200 hover:bg-gray-700/40'
-      : 'text-gray-500 hover:text-gray-700 hover:bg-gray-200/50',
-  };
+  if (!isOpen) return null;
 
   const renderTabContent = () => {
     switch (activeTab) {
@@ -80,144 +64,111 @@ export const RelaySettings: React.FC<RelaySettingsProps> = ({
   };
 
   return (
-    <div className="fixed inset-0 z-50 flex items-center justify-center p-4">
-      {/* Backdrop */}
-      <div
-        className={`absolute inset-0 ${tc.overlay} backdrop-blur-sm`}
+    <div
+      className="fixed inset-0 z-50 flex justify-end"
+      role="dialog"
+      aria-modal="true"
+      aria-label="Relay settings"
+    >
+      {/* Flat dim — no glassmorphism on the backdrop. */}
+      <button
+        type="button"
+        aria-label="Close settings"
         onClick={onClose}
+        className="absolute inset-0 bg-black/40"
       />
 
-      {/* Modal */}
-      <div
-        className={`relative w-full max-w-2xl max-h-[90vh] rounded-2xl border ${tc.border} ${tc.modalBg} shadow-2xl overflow-hidden flex flex-col animate-in fade-in zoom-in-95 duration-200`}
+      {/* Right-edge sheet — single hairline along the inner edge replaces
+          the heavy drop-shadow; the backdrop scrim handles depth. */}
+      <aside
+        className={`relative w-full sm:max-w-md h-full flex flex-col border-l ${
+          isDarkMode
+            ? 'bg-zinc-950 border-zinc-800'
+            : 'bg-white border-zinc-200'
+        } animate-fade-in`}
       >
         {/* Header */}
         <div
-          className={`px-6 py-4 border-b ${tc.border} ${tc.headerBg} flex-shrink-0`}
-          style={{
-            background: isDarkMode
-              ? `linear-gradient(135deg, ${ACCENT_COLOR}10 0%, transparent 50%)`
-              : `linear-gradient(135deg, ${ACCENT_COLOR}08 0%, transparent 50%)`
-          }}
+          className={`px-4 py-3 flex items-center justify-between border-b ${
+            isDarkMode ? 'border-zinc-800' : 'border-zinc-200'
+          }`}
         >
-          <div className="flex items-center justify-between">
-            <div className="flex items-center gap-3">
-              <div
-                className="w-10 h-10 rounded-xl flex items-center justify-center"
-                style={{
-                  background: `linear-gradient(135deg, ${ACCENT_COLOR} 0%, ${ACCENT_COLOR}cc 100%)`,
-                  boxShadow: `0 4px 14px ${ACCENT_COLOR}30`,
-                }}
-              >
-                <Waves className="w-5 h-5 text-white" />
-              </div>
-              <div>
-                <h2 className={`text-lg font-bold ${tc.text}`}>Relay Settings</h2>
-                <p className={`text-xs ${tc.textMuted}`}>Configure audio, video, and preferences</p>
-              </div>
-            </div>
-            <button
-              onClick={onClose}
-              className={`p-2 rounded-lg transition-all ${tc.textMuted} hover:${tc.text} ${isDarkMode ? 'hover:bg-gray-700/50' : 'hover:bg-gray-100'}`}
-            >
-              <X className="w-5 h-5" />
-            </button>
-          </div>
+          <h2
+            className={`font-mono text-[11px] uppercase tracking-[0.1em] ${
+              isDarkMode ? 'text-zinc-300' : 'text-zinc-700'
+            }`}
+          >
+            Relay settings
+          </h2>
+          <button
+            type="button"
+            onClick={onClose}
+            className={`p-1 rounded-md transition ${
+              isDarkMode ? 'hover:bg-zinc-900' : 'hover:bg-zinc-100'
+            }`}
+            aria-label="Close settings"
+          >
+            <X className="w-4 h-4" />
+          </button>
         </div>
 
-        {/* Tabs */}
-        <div className={`px-6 py-3 border-b ${tc.border} flex-shrink-0`}>
-          <div className={`flex p-1 rounded-xl ${tc.tabBg}`}>
-            {TABS.map((tab) => (
+        {/* Tab nav */}
+        <nav
+          className={`flex items-center gap-1 px-3 py-2 border-b overflow-x-auto ${
+            isDarkMode ? 'border-zinc-800' : 'border-zinc-200'
+          }`}
+          role="tablist"
+        >
+          {TABS.map((tab) => {
+            const Icon = tab.icon;
+            const isActive = activeTab === tab.id;
+            return (
               <button
                 key={tab.id}
+                type="button"
+                role="tab"
+                aria-selected={isActive}
                 onClick={() => setActiveTab(tab.id)}
-                className={`flex-1 flex items-center justify-center gap-2 px-4 py-2.5 rounded-lg text-sm font-medium transition-all duration-200 ${
-                  activeTab === tab.id ? tc.tabActive : tc.tabInactive
+                className={`shrink-0 inline-flex items-center gap-1.5 px-3 py-1.5 rounded-md font-mono text-[11px] uppercase tracking-[0.1em] transition ${
+                  isActive
+                    ? 'bg-rose-500/10 text-rose-600 dark:text-rose-400'
+                    : isDarkMode
+                      ? 'text-zinc-400 hover:bg-zinc-900'
+                      : 'text-zinc-500 hover:bg-zinc-100'
                 }`}
-                style={activeTab === tab.id ? {
-                  boxShadow: isDarkMode ? 'none' : '0 1px 3px rgba(0,0,0,0.1)',
-                } : undefined}
               >
-                {tab.icon}
-                <span className="hidden sm:inline">{tab.label}</span>
+                <Icon className="w-3.5 h-3.5" />
+                {tab.label}
               </button>
-            ))}
-          </div>
-        </div>
+            );
+          })}
+        </nav>
 
-        {/* Content */}
-        <div className="flex-1 overflow-y-auto p-6">
-          {renderTabContent()}
-        </div>
+        {/* Tab content */}
+        <div className="flex-1 overflow-y-auto p-5">{renderTabContent()}</div>
 
         {/* Footer */}
-        <div className={`px-6 py-4 border-t ${tc.border} flex-shrink-0 flex items-center justify-between`}>
-          <p className={`text-xs ${tc.textMuted}`}>
-            Settings are saved automatically
+        <div
+          className={`px-4 py-3 border-t flex items-center justify-between ${
+            isDarkMode ? 'border-zinc-800' : 'border-zinc-200'
+          }`}
+        >
+          <p
+            className={`font-mono text-[10px] uppercase tracking-[0.1em] ${
+              isDarkMode ? 'text-zinc-500' : 'text-zinc-400'
+            }`}
+          >
+            Saved automatically
           </p>
           <button
+            type="button"
             onClick={onClose}
-            className="px-6 py-2.5 rounded-xl font-medium text-white transition-all"
-            style={{
-              background: `linear-gradient(135deg, ${ACCENT_COLOR} 0%, ${ACCENT_COLOR}cc 100%)`,
-              boxShadow: `0 4px 14px ${ACCENT_COLOR}30`,
-            }}
+            className="px-4 py-1.5 rounded-md bg-rose-500 hover:bg-rose-600 text-white font-mono text-[11px] uppercase tracking-[0.1em] font-semibold transition focus:outline-none focus-visible:ring-2 focus-visible:ring-rose-400 focus-visible:ring-offset-2 dark:focus-visible:ring-offset-zinc-950"
           >
             Done
           </button>
         </div>
-      </div>
-
-      {/* Custom Styles */}
-      <style>{`
-        @keyframes fade-in {
-          from { opacity: 0; }
-          to { opacity: 1; }
-        }
-        @keyframes zoom-in-95 {
-          from { transform: scale(0.95); }
-          to { transform: scale(1); }
-        }
-        .animate-in {
-          animation: fade-in 0.2s ease-out, zoom-in-95 0.2s ease-out;
-        }
-
-        /* Custom range input styling */
-        input[type="range"] {
-          -webkit-appearance: none;
-          appearance: none;
-          background: transparent;
-        }
-        input[type="range"]::-webkit-slider-thumb {
-          -webkit-appearance: none;
-          appearance: none;
-          width: 18px;
-          height: 18px;
-          border-radius: 50%;
-          background: white;
-          box-shadow: 0 2px 6px rgba(0,0,0,0.2);
-          cursor: pointer;
-          margin-top: -6px;
-        }
-        input[type="range"]::-moz-range-thumb {
-          width: 18px;
-          height: 18px;
-          border-radius: 50%;
-          background: white;
-          box-shadow: 0 2px 6px rgba(0,0,0,0.2);
-          cursor: pointer;
-          border: none;
-        }
-        input[type="range"]::-webkit-slider-runnable-track {
-          height: 6px;
-          border-radius: 3px;
-        }
-        input[type="range"]::-moz-range-track {
-          height: 6px;
-          border-radius: 3px;
-        }
-      `}</style>
+      </aside>
     </div>
   );
 };

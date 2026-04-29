@@ -13,7 +13,7 @@ interface GeneralVoxSettingsProps {
 
 export const GeneralVoxSettings: React.FC<GeneralVoxSettingsProps> = ({
   isDarkMode = false,
-  accentColor = '#8B5CF6',
+  accentColor = '#f43f5e',
 }) => {
   const [defaultMode, setDefaultMode] = useState<string | null>(null);
   const [notificationsEnabled, setNotificationsEnabled] = useState(true);

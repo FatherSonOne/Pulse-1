@@ -101,7 +101,7 @@ const RecordingPreview: React.FC<RecordingPreviewProps> = ({
       style={{
         background: isDarkMode
           ? 'linear-gradient(135deg, rgba(20,20,30,0.95), rgba(15,15,22,0.98))'
-          : 'linear-gradient(135deg, #ffffff, #f8fafc)',
+          : 'linear-gradient(135deg, #fafafa, #f8fafc)',
         border: `1px solid ${isDarkMode ? 'rgba(255,255,255,0.08)' : 'rgba(0,0,0,0.08)'}`,
         boxShadow: isDarkMode
           ? '0 20px 40px rgba(0,0,0,0.4)'

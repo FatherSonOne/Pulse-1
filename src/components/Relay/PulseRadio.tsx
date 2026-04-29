@@ -206,7 +206,7 @@ const LayeredVisualizer: React.FC<LayeredVisualizerProps> = ({
 
       // Layer 3: Waveform line overlay
       ctx.beginPath();
-      ctx.strokeStyle = isDarkMode ? 'rgba(255,255,255,0.4)' : 'rgba(139,92,246,0.6)';
+      ctx.strokeStyle = isDarkMode ? 'rgba(255,255,255,0.4)' : 'rgba(244,63,94,0.6)';
       ctx.lineWidth = 2;
       ctx.lineCap = 'round';
       ctx.lineJoin = 'round';
@@ -850,7 +850,15 @@ const PulseRadio: React.FC<PulseRadioProps> = ({ onBack, apiKey, isDarkMode = fa
               <div className="pulse-radio-empty-channels">
                 <Radio className="w-12 h-12" />
                 <p>No channels yet</p>
-                <span>Create your first channel</span>
+                <span>Create your first channel to start broadcasting.</span>
+                <button
+                  type="button"
+                  onClick={() => setShowNewChannel(true)}
+                  className="pulse-radio-empty-cta"
+                >
+                  <Plus className="w-4 h-4" />
+                  Create Channel
+                </button>
               </div>
             )}
           </div>
@@ -928,7 +936,7 @@ const PulseRadio: React.FC<PulseRadioProps> = ({ onBack, apiKey, isDarkMode = fa
                       />
 
                       <VoxRecordArea
-                        modeColor="#8B5CF6"
+                        modeColor="#f43f5e"
                         isDarkMode={isDarkMode}
                         isRecording={recordingState === 'recording'}
                         isPreviewing={recordingState === 'preview'}
@@ -1496,7 +1504,7 @@ const PulseRadio: React.FC<PulseRadioProps> = ({ onBack, apiKey, isDarkMode = fa
 
                 <div className="pulse-radio-discussion-record">
                   <VoxRecordArea
-                    modeColor="#8B5CF6"
+                    modeColor="#f43f5e"
                     isDarkMode={isDarkMode}
                     isRecording={recordingState === 'recording'}
                     isPreviewing={recordingState === 'preview'}
@@ -1550,7 +1558,7 @@ const PulseRadio: React.FC<PulseRadioProps> = ({ onBack, apiKey, isDarkMode = fa
           onExitSelection={exitSelectionMode}
           contactName={selectedChannel?.name || 'Channel'}
           isDarkMode={isDarkMode}
-          accentColor="#8B5CF6"
+          accentColor="#f43f5e"
           allSelected={selectionCount === broadcasts.length && broadcasts.length > 0}
         />
       )}
@@ -1579,7 +1587,7 @@ const PulseRadio: React.FC<PulseRadioProps> = ({ onBack, apiKey, isDarkMode = fa
           }}
           onClose={() => setSmartReplies([])}
           isDarkMode={isDarkMode}
-          accentColor="#8B5CF6"
+          accentColor="#f43f5e"
         />
       )}
 

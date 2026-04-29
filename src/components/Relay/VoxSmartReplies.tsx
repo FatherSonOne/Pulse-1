@@ -31,7 +31,7 @@ export const VoxSmartReplies: React.FC<VoxSmartRepliesProps> = ({
   onSelectReply,
   isLoading = false,
   isDarkMode = false,
-  accentColor = '#8B5CF6',
+  accentColor = '#f43f5e',
 }) => {
   const tc = {
     bg: isDarkMode ? 'bg-zinc-900' : 'bg-white',

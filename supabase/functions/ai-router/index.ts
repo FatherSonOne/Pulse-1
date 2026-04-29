@@ -15,7 +15,7 @@
 import { serve } from 'https://deno.land/std@0.168.0/http/server.ts';
 import { createClient } from 'https://esm.sh/@supabase/supabase-js@2.39.0';
 
-import { TASK_MODELS, isValidTask, type AITask } from './tasks.ts';
+import { TASK_MODELS, isValidTask, resolveOverride, type AITask } from './tasks.ts';
 import { invokeGemini, invokeClaude, type AIInvokeInput, type AIResponse } from './providers.ts';
 import { verifyWorkspaceAccess, checkAICap, incrementAIUsage } from './metering.ts';
 
@@ -38,6 +38,10 @@ interface RouterRequest {
   task: AITask;
   params: Omit<AIInvokeInput, 'model'>;
   workspace_id: string;
+  /** Optional caller-supplied model id (e.g. 'claude-sonnet') — must be in
+   *  MODEL_ALLOWLIST. When provided, replaces the task's primary provider+model.
+   *  Fallback chain still uses the task default to keep outage handling sane. */
+  model_override?: string;
 }
 
 async function invokeProvider(
@@ -69,10 +73,21 @@ serve(async (req: Request) => {
     return json({ error: 'invalid_body' }, 400);
   }
 
-  const { task, params, workspace_id } = body;
+  const { task, params, workspace_id, model_override } = body;
   if (!task || !isValidTask(task)) return json({ error: 'invalid_task' }, 400);
   if (!workspace_id) return json({ error: 'workspace_id required' }, 400);
   if (!params?.messages?.length) return json({ error: 'messages required' }, 400);
+
+  // Resolve override (if any) before workspace check so we fail fast on bad input.
+  let override: ReturnType<typeof resolveOverride> = null;
+  if (model_override) {
+    override = resolveOverride(model_override);
+    if (!override) return json({ error: 'invalid_model_override', detail: model_override }, 400);
+    // Capability gate — `web_search` task requires a webSearch-capable model.
+    if (task === 'web_search' && !override.supports.webSearch) {
+      return json({ error: 'model_capability_mismatch', detail: 'web_search requires Gemini' }, 400);
+    }
+  }
 
   // ── Workspace membership check ──────────────────────────────────
   const hasAccess = await verifyWorkspaceAccess(supabase, user.id, workspace_id);
@@ -91,10 +106,18 @@ serve(async (req: Request) => {
 
   // ── Route to provider ───────────────────────────────────────────
   const config = TASK_MODELS[task];
+  // Resolve effective primary: override wins, otherwise task default.
+  const primaryProvider = override ? override.provider : config.provider;
+  const primaryModel = override ? override.model : config.model;
+  const primarySupportsCache = override ? override.supports.promptCaching : true;
   const invokeInput: AIInvokeInput = {
     ...params,
-    model: config.model,
-    cacheSystemPrompt: params.cacheSystemPrompt ?? config.cacheSystemPrompt,
+    model: primaryModel,
+    // Disable cache when the chosen model can't cache (Gemini today). Otherwise
+    // honour caller param then task default.
+    cacheSystemPrompt: primarySupportsCache
+      ? (params.cacheSystemPrompt ?? config.cacheSystemPrompt)
+      : false,
     maxOutputTokens: params.maxOutputTokens ?? config.maxOutputTokens,
     // web_search task auto-enables Google Search grounding. Other tasks can
     // opt-in by passing params.webSearch=true explicitly.
@@ -105,9 +128,9 @@ serve(async (req: Request) => {
   let usedFallback = false;
 
   try {
-    response = await invokeProvider(config.provider, invokeInput);
+    response = await invokeProvider(primaryProvider, invokeInput);
   } catch (primaryErr) {
-    console.warn(`[ai-router] primary ${config.provider}/${config.model} failed for ${task}:`, primaryErr);
+    console.warn(`[ai-router] primary ${primaryProvider}/${primaryModel} failed for ${task}:`, primaryErr);
 
     if (!config.fallback) {
       return json({

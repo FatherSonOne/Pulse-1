@@ -12,10 +12,15 @@ import {
   Square,
   Clock,
   AlertCircle,
+  RotateCcw,
 } from 'lucide-react';
+import toast from 'react-hot-toast';
 import { VoxSelectionItem } from '../../hooks/useVoxSelection';
 import VoxDownloadModal from './VoxDownloadModal';
-import { archiveRelayConversation } from '../../services/relay/relayArchiveService';
+import {
+  archiveRelayConversation,
+  unarchiveRelayConversation,
+} from '../../services/relay/relayArchiveService';
 
 interface VoxSelectToolbarProps {
   selectedItems: VoxSelectionItem[];
@@ -32,7 +37,7 @@ interface VoxSelectToolbarProps {
   contactName?: string; // Added for archive labeling
 }
 
-const ACCENT_COLOR = '#8B5CF6';
+const ACCENT_COLOR = '#f43f5e';
 
 export const VoxSelectToolbar: React.FC<VoxSelectToolbarProps> = ({
   selectedItems,
@@ -66,61 +71,53 @@ export const VoxSelectToolbar: React.FC<VoxSelectToolbarProps> = ({
     setArchiveError(null);
 
     try {
-      // Use custom onArchive handler if provided, otherwise use default archive service
+      const messagePart = `${selectedItems.length} message${selectedItems.length > 1 ? 's' : ''}`;
+
       if (onArchive) {
+        // Caller-supplied archive handler — no archive ID to undo against, so
+        // we surface a plain confirmation toast.
         await onArchive(selectedItems);
+        toast.success(`Archived ${messagePart}`);
       } else {
-        await archiveRelayConversation(selectedItems, contactName);
-
-        // Show success notification (simple approach without external toast library)
-        const successMessage = `Conversation archived to Pulse Archives (${selectedItems.length} message${selectedItems.length > 1 ? 's' : ''})`;
-
-        // Create a simple visual notification
-        const notification = document.createElement('div');
-        notification.innerHTML = `
-          <div style="position: fixed; top: 20px; right: 20px; z-index: 9999; background: linear-gradient(135deg, #10b981, #059669); color: white; padding: 12px 20px; border-radius: 12px; box-shadow: 0 4px 14px rgba(16, 185, 129, 0.3); font-family: system-ui; font-size: 14px; font-weight: 500; display: flex; align-items: center; gap: 8px; animation: slideIn 0.3s ease-out;">
-            <span style="font-size: 18px;">📚</span>
-            ${successMessage}
-          </div>
-        `;
-        document.body.appendChild(notification);
-
-        // Remove after 3 seconds
-        setTimeout(() => {
-          notification.style.animation = 'slideOut 0.3s ease-out';
-          setTimeout(() => {
-            document.body.removeChild(notification);
-          }, 300);
-        }, 3000);
-
-        // Add animation styles
-        if (!document.getElementById('vox-archive-toast-styles')) {
-          const style = document.createElement('style');
-          style.id = 'vox-archive-toast-styles';
-          style.textContent = `
-            @keyframes slideIn {
-              from {
-                transform: translateX(400px);
-                opacity: 0;
-              }
-              to {
-                transform: translateX(0);
-                opacity: 1;
-              }
-            }
-            @keyframes slideOut {
-              from {
-                transform: translateX(0);
-                opacity: 1;
-              }
-              to {
-                transform: translateX(400px);
-                opacity: 0;
-              }
-            }
-          `;
-          document.head.appendChild(style);
-        }
+        const { archiveId } = await archiveRelayConversation(selectedItems, contactName);
+        // Undo toast: 5s window to delete the archive row, equivalent to
+        // pretending the archive call never happened. The original messages
+        // were never modified by the archive flow, so this is fully reversible.
+        toast.custom(
+          (t) => (
+            <div
+              className={`${t.visible ? 'animate-enter' : 'animate-leave'} max-w-md w-full ${
+                isDarkMode ? 'bg-zinc-900 ring-zinc-800' : 'bg-white ring-zinc-200'
+              } shadow-lg rounded-xl pointer-events-auto flex ring-1`}
+            >
+              <div className="flex-1 w-0 p-4 flex items-center gap-3">
+                <Archive className="w-5 h-5 text-rose-500 shrink-0" />
+                <p className={`text-sm font-medium ${isDarkMode ? 'text-zinc-100' : 'text-zinc-900'}`}>
+                  Archived {messagePart} to Pulse Archives
+                </p>
+              </div>
+              <div className={`flex border-l ${isDarkMode ? 'border-zinc-800' : 'border-zinc-200'}`}>
+                <button
+                  type="button"
+                  onClick={async () => {
+                    toast.dismiss(t.id);
+                    const ok = await unarchiveRelayConversation(archiveId);
+                    if (ok) {
+                      toast.success('Archive undone');
+                    } else {
+                      toast.error('Could not undo archive');
+                    }
+                  }}
+                  className="w-full rounded-none rounded-r-xl px-4 flex items-center gap-1.5 text-sm font-medium text-rose-600 dark:text-rose-400 hover:bg-rose-50 dark:hover:bg-rose-500/10 transition focus:outline-none"
+                >
+                  <RotateCcw className="w-3.5 h-3.5" />
+                  Undo
+                </button>
+              </div>
+            </div>
+          ),
+          { duration: 5000 },
+        );
       }
 
       onExitSelection();
@@ -135,21 +132,65 @@ export const VoxSelectToolbar: React.FC<VoxSelectToolbarProps> = ({
   const handleDelete = async () => {
     if (!onDelete || selectedItems.length === 0) return;
 
-    const confirmed = window.confirm(
-      `Are you sure you want to delete ${selectionCount} ${selectionCount === 1 ? 'message' : 'messages'}? This cannot be undone.`
+    // Inline confirm via react-hot-toast — same channel as our other
+    // notifications, no native window.confirm blocking the main thread.
+    toast.custom(
+      (t) => (
+        <div
+          className={`${t.visible ? 'animate-enter' : 'animate-leave'} max-w-md w-full ${
+            isDarkMode ? 'bg-zinc-900 ring-zinc-800' : 'bg-white ring-zinc-200'
+          } shadow-lg rounded-xl pointer-events-auto flex flex-col ring-1 p-4 gap-3`}
+        >
+          <div className="flex items-start gap-3">
+            <Trash2 className="w-5 h-5 text-rose-500 shrink-0 mt-0.5" />
+            <div className="flex-1">
+              <p className={`text-sm font-medium ${isDarkMode ? 'text-zinc-100' : 'text-zinc-900'}`}>
+                Delete {selectionCount} {selectionCount === 1 ? 'message' : 'messages'}?
+              </p>
+              <p className={`mt-1 text-xs ${isDarkMode ? 'text-zinc-400' : 'text-zinc-500'}`}>
+                This cannot be undone.
+              </p>
+            </div>
+          </div>
+          <div className="flex items-center justify-end gap-2">
+            <button
+              type="button"
+              onClick={() => toast.dismiss(t.id)}
+              className={`px-3 py-1.5 rounded-md text-sm font-medium transition ${
+                isDarkMode
+                  ? 'text-zinc-300 hover:bg-zinc-800'
+                  : 'text-zinc-600 hover:bg-zinc-100'
+              }`}
+            >
+              Cancel
+            </button>
+            <button
+              type="button"
+              onClick={async () => {
+                toast.dismiss(t.id);
+                setIsDeleting(true);
+                try {
+                  await onDelete(selectedItems);
+                  toast.success(
+                    `Deleted ${selectionCount} ${selectionCount === 1 ? 'message' : 'messages'}`,
+                  );
+                  onExitSelection();
+                } catch (error) {
+                  console.error('Delete failed:', error);
+                  toast.error('Could not delete. Try again.');
+                } finally {
+                  setIsDeleting(false);
+                }
+              }}
+              className="px-3 py-1.5 rounded-md text-sm font-semibold bg-rose-500 hover:bg-rose-600 text-white transition"
+            >
+              Delete
+            </button>
+          </div>
+        </div>
+      ),
+      { duration: Infinity },
     );
-
-    if (!confirmed) return;
-
-    setIsDeleting(true);
-    try {
-      await onDelete(selectedItems);
-      onExitSelection();
-    } catch (error) {
-      console.error('Delete failed:', error);
-    } finally {
-      setIsDeleting(false);
-    }
   };
 
   const tc = {
@@ -178,7 +219,7 @@ export const VoxSelectToolbar: React.FC<VoxSelectToolbarProps> = ({
           zIndex: 999999,
           background: isDarkMode
             ? 'linear-gradient(to top, #1f2937 0%, #111827 100%)'
-            : 'linear-gradient(to top, #ffffff 0%, #f9fafb 100%)',
+            : 'linear-gradient(to top, #fafafa 0%, #f9fafb 100%)',
           borderTop: `2px solid ${accentColor}`,
           boxShadow: '0 -8px 32px rgba(0, 0, 0, 0.2)',
         }}

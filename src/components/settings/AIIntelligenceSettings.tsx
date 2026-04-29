@@ -5,6 +5,7 @@ import { Book, Brain, Headset, Mic, Play, Sliders, Volume2 } from 'lucide-react'
 import { ToggleItem } from './shared/ToggleItem';
 import { AIProvidersCard } from './ai/AIProvidersCard';
 import { AIDataPolicyCard } from './ai/AIDataPolicyCard';
+import { AIModelPreferencesCard } from './ai/AIModelPreferencesCard';
 
 export const AIIntelligenceSettings: React.FC = () => {
   // Voice Agent state
@@ -102,6 +103,9 @@ export const AIIntelligenceSettings: React.FC = () => {
 
       {/* Providers — org policy + per-user override */}
       <AIProvidersCard />
+
+      {/* Per-user model preferences (quality dial + tier picker) */}
+      <AIModelPreferencesCard />
 
       {/* PII masking + AI output retention */}
       <AIDataPolicyCard />

@@ -639,7 +639,7 @@ const QuickVoxMode: React.FC<QuickVoxModeProps> = ({
 
                     {/* Online indicator */}
                     {status?.isOnline && !status?.isRecording && (
-                      <div className="absolute bottom-0 right-0 w-4 h-4 bg-green-500 rounded-full border-2" style={{ borderColor: isDarkMode ? '#1f2937' : '#ffffff' }} />
+                      <div className="absolute bottom-0 right-0 w-4 h-4 bg-green-500 rounded-full border-2" style={{ borderColor: isDarkMode ? '#1f2937' : '#fafafa' }} />
                     )}
                   </div>
                   <span className={`text-xs ${tc.textSecondary} truncate max-w-[70px]`}>

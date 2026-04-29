@@ -266,28 +266,14 @@ export const EmergencyAlert: React.FC<EmergencyAlertProps> = ({
   const [isPlaying, setIsPlaying] = useState(false);
   const [playCount, setPlayCount] = useState(0);
   const audioRef = useRef<HTMLAudioElement>(null);
-  const alertSoundRef = useRef<HTMLAudioElement>(null);
 
-  const config = PRIORITY_CONFIG[vox.priorityLevel];
-
-  // Auto-play alert sound
+  // Auto-replay alert sound up to repeatCount times. The banner's animate-ping
+  // dot carries the visual urgency; we no longer flash the document body.
   useEffect(() => {
-    const playAlert = () => {
-      if (playCount < vox.repeatCount) {
-        // Play alert sound (would normally be an actual sound file)
-        setPlayCount(prev => prev + 1);
-        
-        // Flash the screen
-        document.body.style.animation = 'flash-red 0.5s ease-in-out';
-        setTimeout(() => {
-          document.body.style.animation = '';
-        }, 500);
-      }
-    };
-
-    playAlert();
-    const interval = setInterval(playAlert, 3000);
-    
+    if (playCount >= vox.repeatCount) return;
+    const interval = setInterval(() => {
+      setPlayCount((prev) => (prev < vox.repeatCount ? prev + 1 : prev));
+    }, 3000);
     return () => clearInterval(interval);
   }, [playCount, vox.repeatCount]);
 
@@ -299,85 +285,64 @@ export const EmergencyAlert: React.FC<EmergencyAlertProps> = ({
     onPlay();
   };
 
+  // Stage 4: demoted from a full-bleed red overlay to a top-pinned coral banner.
+  // Same urgency signal (coral solid + animate-pulse dot + auto-replay alert),
+  // none of the modal-as-first-thought ban violation. Sits inside the app shell
+  // so the user retains context.
+  const label = vox.priorityLevel === 'emergency' ? 'EMERGENCY' : 'URGENT MESSAGE';
+
   return (
-    <div className="fixed inset-0 bg-red-900/90 backdrop-blur-lg flex items-center justify-center z-[100] animate-fadeIn">
-      {/* Pulsing Background */}
-      <div className="absolute inset-0 bg-gradient-to-br from-red-600 to-red-900 animate-pulse" />
-      
-      {/* Alert Content */}
-      <div className="relative z-10 max-w-md w-full mx-4">
-        {/* Alert Icon */}
-        <div className="flex justify-center mb-6">
-          <div className="w-24 h-24 rounded-full bg-white/20 flex items-center justify-center animate-pulse">
-            <CircleDot className="text-5xl text-white" />
+    <div
+      role="alert"
+      aria-live="assertive"
+      className="fixed top-0 inset-x-0 z-[100] bg-rose-500 text-white shadow-lg shadow-rose-500/40 animate-fadeIn"
+    >
+      <div className="max-w-5xl mx-auto px-4 py-3 flex items-center gap-3">
+        <span className="relative flex h-2.5 w-2.5 shrink-0" aria-hidden="true">
+          <span className="absolute inline-flex h-full w-full rounded-full bg-white opacity-75 animate-ping" />
+          <span className="relative inline-flex rounded-full h-2.5 w-2.5 bg-white" />
+        </span>
+
+        <div className="flex-1 min-w-0">
+          <div className="font-mono text-[11px] uppercase tracking-[0.1em] font-bold leading-none">
+            {label}
+          </div>
+          <div className="text-sm font-semibold truncate mt-0.5">
+            From {senderName}
           </div>
         </div>
 
-        {/* Title */}
-        <h1 className="text-3xl font-black text-white text-center mb-2 uppercase tracking-wider font-mono">
-          {vox.priorityLevel === 'emergency' ? 'EMERGENCY' : 'URGENT MESSAGE'}
-        </h1>
-        
-        <p className="text-xl text-white/80 text-center mb-8">
-          From <span className="font-bold text-white">{senderName}</span>
-        </p>
+        <button
+          type="button"
+          onClick={handlePlay}
+          className="px-3 py-1.5 rounded-md bg-white text-rose-700 font-mono text-[11px] uppercase tracking-[0.1em] font-bold hover:bg-zinc-100 transition flex items-center gap-1.5"
+          aria-label={isPlaying ? 'Playing alert' : 'Play alert'}
+        >
+          <CircleDot className="w-3.5 h-3.5" />
+          {isPlaying ? 'Playing' : 'Play'}
+        </button>
 
-        {/* Play Button */}
-        <div className="flex justify-center mb-8">
+        {vox.requiresAcknowledgment ? (
           <button
-            onClick={handlePlay}
-            className={`w-20 h-20 rounded-full flex items-center justify-center text-3xl transition transform hover:scale-110 ${
-              isPlaying 
-                ? 'bg-white text-red-600' 
-                : 'bg-white/20 text-white hover:bg-white/30'
-            }`}
+            type="button"
+            onClick={onAcknowledge}
+            className="px-3 py-1.5 rounded-md bg-white text-rose-700 font-mono text-[11px] uppercase tracking-[0.1em] font-bold hover:bg-zinc-100 transition flex items-center gap-1.5"
           >
-            <i className={`fa-solid ${isPlaying ? 'fa-volume-high' : 'fa-play'}`}></i>
+            <CheckCircle className="w-3.5 h-3.5" />
+            Acknowledge
           </button>
-        </div>
+        ) : (
+          <button
+            type="button"
+            onClick={onDismiss}
+            className="px-3 py-1.5 rounded-md bg-white/15 hover:bg-white/25 text-white font-mono text-[11px] uppercase tracking-[0.1em] font-bold transition"
+          >
+            Dismiss
+          </button>
+        )}
 
-        {/* Hidden Audio */}
-        <audio 
-          ref={audioRef} 
-          src={audioUrl} 
-          onEnded={() => setIsPlaying(false)}
-        />
-
-        {/* Action Buttons */}
-        <div className="space-y-3">
-          {vox.requiresAcknowledgment && (
-            <button
-              onClick={onAcknowledge}
-              className="w-full py-4 bg-white text-red-600 rounded-2xl font-bold text-lg uppercase tracking-wider font-mono hover:bg-zinc-100 transition flex items-center justify-center gap-3"
-            >
-              <CheckCircle />
-              Acknowledge
-            </button>
-          )}
-          
-          {!vox.requiresAcknowledgment && (
-            <button
-              onClick={onDismiss}
-              className="w-full py-4 bg-white/20 text-white rounded-2xl font-semibold hover:bg-white/30 transition"
-            >
-              Dismiss
-            </button>
-          )}
-        </div>
-
-        {/* Timestamp */}
-        <p className="text-center text-white/50 text-sm mt-6">
-          Received at {new Date(vox.createdAt).toLocaleTimeString()}
-        </p>
+        <audio ref={audioRef} src={audioUrl} onEnded={() => setIsPlaying(false)} />
       </div>
-
-      {/* CSS Animation */}
-      <style>{`
-        @keyframes flash-red {
-          0%, 100% { background-color: transparent; }
-          50% { background-color: rgba(220, 38, 38, 0.3); }
-        }
-      `}</style>
     </div>
   );
 };

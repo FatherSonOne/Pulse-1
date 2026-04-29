@@ -119,16 +119,23 @@ const featureFlagsConfig: FeatureFlagConfig = {
     version: '0.1.0'
   },
 
-  // Phase 5e — production cutover gate. When ON, MessagesWithProviders
-  // mounts the new MessagesSplitViewWithProviders entry instead of the
-  // legacy 4810-line Messages.tsx monolith. Defaults OFF; flip ON per
-  // user / via env var (VITE_FEATURE_PULSEMESSAGESV2=true) once the
-  // new entry is verified against your workspace + DMs.
+  // Phase 5e — ⚠️ PAUSED as of 2026-04-27.
+  //
+  // The v2 entry exists as parallel-rebuild scaffolding but has a
+  // multi-session feature-parity gap vs. the legacy Messages.tsx
+  // (no slash commands, no smart compose, no inline reactions, no
+  // context menu, no mood badges, no rich cards, no voice transcript,
+  // no AI cards, etc.). See:
+  //   docs/deep-dives/messages_v2_parity_backlog.md
+  //
+  // **Do NOT flip this to enabled: true** for production users until
+  // the parity backlog is closed and a fresh smoke test passes.
+  // Local dev override is fine via `?ff_pulseMessagesV2=on` URL param.
   pulseMessagesV2: {
     enabled: false,
     rolloutPercentage: 0,
     targetUsers: ['internal'],
-    description: 'New Messages entry (MessagesSplitViewWithProviders) — channels + DMs unified, plugin-based',
+    description: 'PAUSED — v2 Messages entry scaffolding; not production-ready. See docs/deep-dives/messages_v2_parity_backlog.md',
     version: '2.0.0'
   }
 };

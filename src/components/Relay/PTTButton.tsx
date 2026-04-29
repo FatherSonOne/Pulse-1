@@ -50,7 +50,7 @@ export const PTTButton: React.FC<PTTButtonProps> = ({
   showTimer = true,
   showWaveform = true,
   enableHaptics = true,
-  color = '#f97316',
+  color = '#f43f5e',
   isDarkMode = false,
   className = '',
 }) => {
@@ -92,11 +92,15 @@ export const PTTButton: React.FC<PTTButtonProps> = ({
   }, [disabled, internalState, onStart, triggerHaptic]);
 
   const handleStop = useCallback(() => {
-    if (!isPressed && recordingMode === 'hold') return;
+    // Hold mode normally requires a prior press, but if recording is already
+    // active (e.g., async getUserMedia resolved after a quick click, or the
+    // press state was lost across a re-render) we MUST still honor stop —
+    // otherwise the recording becomes unstoppable.
+    if (!isPressed && recordingMode === 'hold' && internalState !== 'recording') return;
     setIsPressed(false);
     triggerHaptic('light');
     onStop?.();
-  }, [isPressed, recordingMode, onStop, triggerHaptic]);
+  }, [isPressed, recordingMode, internalState, onStop, triggerHaptic]);
 
   const handleTapToggle = useCallback(() => {
     if (disabled) return;
@@ -164,15 +168,19 @@ export const PTTButton: React.FC<PTTButtonProps> = ({
   });
 
   const isRecording = internalState === 'recording';
-  const bgGradient = isRecording
-    ? `linear-gradient(135deg, ${color} 0%, #dc2626 100%)`
+  // Flat fills, no gradients — the ring + ripple animations carry the
+  // motion. State hue (`color` for recording/sent, red for error, neutral
+  // for idle) is the only signal needed; gradient framing reads as Voxer-
+  // era ornament against the rest of the brand surface.
+  const bgFill = isRecording
+    ? color
     : showSentAnimation
-      ? 'linear-gradient(135deg, #10b981 0%, #059669 100%)'
+      ? color
       : internalState === 'error'
-        ? 'linear-gradient(135deg, #ef4444 0%, #dc2626 100%)'
+        ? '#ef4444'
         : isDarkMode
-          ? 'linear-gradient(135deg, #2a2a3a 0%, #1a1a25 100%)'
-          : 'linear-gradient(135deg, #f8fafc 0%, #e2e8f0 100%)';
+          ? '#1f1f29'
+          : '#f1f5f9';
 
   return (
     <div className={`relative inline-flex flex-col items-center ${className}`}>
@@ -188,7 +196,9 @@ export const PTTButton: React.FC<PTTButtonProps> = ({
         </div>
       )}
 
-      {/* Waveform Visualizer */}
+      {/* Waveform Visualizer — flat coral fill; bar height carries the
+          motion. Glow box-shadow stays subtle so a quiet room doesn't
+          render as a flickering halo. */}
       {showWaveform && isRecording && (
         <div className="absolute -top-10 left-1/2 -translate-x-1/2 flex items-end gap-[2px] h-8">
           {waveformBars.map((height, i) => (
@@ -197,8 +207,8 @@ export const PTTButton: React.FC<PTTButtonProps> = ({
               className="w-[3px] rounded-full transition-all duration-75"
               style={{
                 height: `${height}%`,
-                background: `linear-gradient(to top, ${color}, ${color}88)`,
-                boxShadow: `0 0 8px ${color}40`,
+                backgroundColor: color,
+                boxShadow: `0 0 6px ${color}33`,
               }}
             />
           ))}
@@ -255,11 +265,11 @@ export const PTTButton: React.FC<PTTButtonProps> = ({
         style={{
           width: config.button,
           height: config.button,
-          background: bgGradient,
+          background: bgFill,
           boxShadow: isRecording
             ? `0 8px 30px ${color}50, 0 0 60px ${color}30`
             : showSentAnimation
-              ? '0 8px 30px rgba(16, 185, 129, 0.4)'
+              ? `0 8px 30px ${color}66`
               : isDarkMode
                 ? '0 4px 20px rgba(0, 0, 0, 0.4), inset 0 1px 0 rgba(255, 255, 255, 0.05)'
                 : '0 4px 20px rgba(0, 0, 0, 0.1), inset 0 1px 0 rgba(255, 255, 255, 0.8)',
@@ -272,13 +282,15 @@ export const PTTButton: React.FC<PTTButtonProps> = ({
       >
         {getIcon()}
 
-        {/* Recording Indicator Dot */}
+        {/* Recording indicator dot — uses the brand color so the on-state
+            reads consistently with the surrounding coral system instead of
+            introducing a separate red signal. */}
         {isRecording && (
           <div
             className="absolute top-2 right-2 w-3 h-3 rounded-full animate-pulse"
             style={{
-              backgroundColor: '#ef4444',
-              boxShadow: '0 0 12px rgba(239, 68, 68, 0.6)',
+              backgroundColor: color,
+              boxShadow: `0 0 12px ${color}99`,
             }}
           />
         )}
@@ -306,7 +318,7 @@ export const PTTButton: React.FC<PTTButtonProps> = ({
             </span>
           )}
           {showSentAnimation && (
-            <span className="text-xs font-semibold text-emerald-500">
+            <span className="text-xs font-semibold text-rose-500">
               Sent!
             </span>
           )}
@@ -339,7 +351,7 @@ export const MiniPTTButton: React.FC<MiniPTTButtonProps> = ({
   onToggle,
   mode = 'audio',
   disabled = false,
-  color = '#f97316',
+  color = '#f43f5e',
   isDarkMode = false,
 }) => {
   return (
@@ -354,7 +366,7 @@ export const MiniPTTButton: React.FC<MiniPTTButtonProps> = ({
       `}
       style={{
         background: isRecording
-          ? `linear-gradient(135deg, ${color}, #dc2626)`
+          ? `linear-gradient(135deg, ${color}, ${color}cc)`
           : isDarkMode ? 'rgba(255,255,255,0.06)' : 'rgba(0,0,0,0.04)',
         boxShadow: isRecording ? `0 4px 15px ${color}40` : undefined,
         color: isRecording ? 'white' : isDarkMode ? '#94a3b8' : '#64748b',

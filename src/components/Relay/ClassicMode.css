@@ -11,13 +11,13 @@
    ============================================ */
 
 .classic-mode {
-  --cv-accent: #F97316;
-  --cv-accent-light: #FB923C;
-  --cv-accent-dark: #EA580C;
+  --cv-accent: #f43f5e;
+  --cv-accent-light: #fb7185;
+  --cv-accent-dark: #e11d48;
 
   /* Light mode */
   --cv-bg-primary: #fafafa;
-  --cv-bg-secondary: #ffffff;
+  --cv-bg-secondary: #fafafa;
   --cv-bg-tertiary: #f5f5f5;
   --cv-bg-elevated: rgba(255, 255, 255, 0.8);
   --cv-bg-glass: rgba(255, 255, 255, 0.6);
@@ -1515,8 +1515,8 @@
   gap: 6px;
   padding: 4px 8px;
   margin-bottom: 6px;
-  background: rgba(249, 115, 22, 0.08); /* tinted from --cv-accent (#F97316) */
-  border: 1px solid rgba(249, 115, 22, 0.32);
+  background: rgba(244, 63, 94, 0.08); /* tinted from --cv-accent (#f43f5e) */
+  border: 1px solid rgba(244, 63, 94, 0.32);
   border-radius: 6px;
   cursor: pointer;
   transition: background 0.15s ease;

@@ -78,7 +78,7 @@ export const PlaybackSpeedControl: React.FC<PlaybackSpeedControlProps> = ({
         <div
           className="rounded-xl shadow-xl border p-2 min-w-[100px]"
           style={{
-            background: isDarkMode ? '#1f2937' : '#ffffff',
+            background: isDarkMode ? '#1f2937' : '#fafafa',
             borderColor: isDarkMode ? '#374151' : '#e5e7eb',
           }}
         >

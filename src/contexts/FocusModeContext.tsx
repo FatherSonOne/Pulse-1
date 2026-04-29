@@ -1,4 +1,5 @@
 import React, { createContext, useContext, useState, useCallback, useEffect, useRef, ReactNode } from 'react';
+import { mobileNotificationService } from '../services/mobileNotificationService';
 
 // Focus Mode Context State Interface
 export interface FocusModeContextState {
@@ -130,13 +131,17 @@ export const FocusModeProvider: React.FC<FocusModeProviderProps> = ({ children }
               timerRef.current = null;
             }
 
-            // Show notification
-            if ('Notification' in window && Notification.permission === 'granted') {
-              new Notification('Focus Session Complete!', {
-                body: 'Great work! Time to take a break.',
-                icon: '/pulse-logo.png',
-              });
-            }
+            // Phase 6: dispatch via mobileNotificationService — uses
+            // Capacitor LocalNotifications on Android (when installed)
+            // and falls back to Web Notification API on web/desktop.
+            // Critical: works when the Pulse app is backgrounded on
+            // Android, which the old `new Notification(...)` path did not.
+            void mobileNotificationService.notify({
+              id: 'focus-session-complete',
+              title: 'Focus Session Complete!',
+              body: 'Great work! Time to take a break.',
+              icon: '/pulse-logo.png',
+            });
 
             return timerDuration;
           }
@@ -182,11 +187,11 @@ export const FocusModeProvider: React.FC<FocusModeProviderProps> = ({ children }
     }
   }, []);
 
-  // Request notification permission on mount
+  // Request notification permission on mount via the platform-aware
+  // service — native (Capacitor) gets the right OS prompt; web gets
+  // the standard browser prompt.
   useEffect(() => {
-    if ('Notification' in window && Notification.permission === 'default') {
-      Notification.requestPermission();
-    }
+    void mobileNotificationService.requestPermission();
   }, []);
 
   const value: FocusModeContextState = {

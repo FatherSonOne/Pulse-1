@@ -25,6 +25,7 @@
 
 import { useCallback, useEffect, useState } from 'react';
 import { supabase } from '../services/supabase';
+import { voxModeService } from '../services/relay/voxModeService';
 
 export type TriageItemKind = 'classic' | 'thread' | 'quick' | 'broadcast' | 'note';
 
@@ -57,11 +58,21 @@ export interface UseRelayTriageReturn {
   isLoading: boolean;
   error: string | null;
   refresh: () => Promise<void>;
+  /**
+   * Mark a single triage item as read. Optimistically clears `needsReply`
+   * locally before round-tripping the per-kind mutation, then rolls the
+   * count back if the persistence fails. Notes / broadcasts are no-ops.
+   */
+  markRead: (item: TriageItem) => Promise<void>;
+  /** Same as `markRead` but for a batch — used by the bulk action. */
+  markManyRead: (items: TriageItem[]) => Promise<void>;
 }
 
 const PER_SOURCE_LIMIT = 30;
 
 const noopRefresh = async () => {};
+const noopMarkRead = async (_item: TriageItem) => {};
+const noopMarkManyRead = async (_items: TriageItem[]) => {};
 
 /**
  * Coerce a Supabase row's `created_at`/`recorded_at`/`published_at` cell into
@@ -364,11 +375,93 @@ export function useRelayTriage(userId: string | undefined | null): UseRelayTriag
     void fetchAll();
   }, [userId, fetchAll]);
 
+  // Realtime: any INSERT into a triage source table triggers a refetch.
+  // We re-run the whole 5-source fan-out rather than splice individual rows
+  // so the per-source LIMIT(30) cap stays automatic and the per-kind
+  // mapping/needs-reply heuristics live in exactly one place. Debounced
+  // 250ms so a burst of inserts collapses into one refresh.
+  useEffect(() => {
+    if (!userId) return;
+    const tables: string[] = [
+      'voxer_recordings',
+      'voice_thread_messages',
+      'quick_vox_messages',
+      'broadcasts',
+      'vox_notes',
+    ];
+    let pending: ReturnType<typeof setTimeout> | null = null;
+    const scheduleRefresh = () => {
+      if (pending) clearTimeout(pending);
+      pending = setTimeout(() => {
+        pending = null;
+        void fetchAll();
+      }, 250);
+    };
+    const channels = tables.map((table) =>
+      supabase
+        .channel(`relay-triage-${table}`)
+        .on(
+          'postgres_changes' as any,
+          { event: 'INSERT', schema: 'public', table },
+          scheduleRefresh,
+        )
+        .subscribe(),
+    );
+    return () => {
+      if (pending) clearTimeout(pending);
+      channels.forEach((c) => {
+        try { supabase.removeChannel(c); } catch { /* noop */ }
+      });
+    };
+  }, [userId, fetchAll]);
+
+  const markRead = useCallback(
+    async (item: TriageItem) => {
+      if (!item.needsReply) return;
+      // Optimistically clear locally so the row removes/dims immediately;
+      // roll back on persistence failure.
+      let rolledBack = false;
+      setItems((prev) =>
+        prev.map((i) =>
+          i.kind === item.kind && i.id === item.id ? { ...i, needsReply: false } : i,
+        ),
+      );
+      setNeedsReplyCount((c) => Math.max(0, c - 1));
+      try {
+        const ok = await voxModeService.markTriageItemRead(item.kind, item.id);
+        if (!ok) rolledBack = true;
+      } catch (err) {
+        console.warn('[useRelayTriage] markRead failed:', err);
+        rolledBack = true;
+      }
+      if (rolledBack) {
+        setItems((prev) =>
+          prev.map((i) =>
+            i.kind === item.kind && i.id === item.id ? { ...i, needsReply: true } : i,
+          ),
+        );
+        setNeedsReplyCount((c) => c + 1);
+      }
+    },
+    [],
+  );
+
+  const markManyRead = useCallback(
+    async (batch: TriageItem[]) => {
+      const candidates = batch.filter((i) => i.needsReply);
+      if (candidates.length === 0) return;
+      await Promise.all(candidates.map((i) => markRead(i)));
+    },
+    [markRead],
+  );
+
   return {
     items,
     needsReplyCount,
     isLoading,
     error,
     refresh: userId ? fetchAll : noopRefresh,
+    markRead: userId ? markRead : noopMarkRead,
+    markManyRead: userId ? markManyRead : noopMarkManyRead,
   };
 }

@@ -5,15 +5,15 @@
 
 /* CSS Custom Properties - Light/Dark Mode Support */
 :root {
-  /* Pulse Radio Brand Colors - Vibrant Purple */
-  --pr-primary: #8B5CF6;
-  --pr-primary-light: #A78BFA;
-  --pr-primary-dark: #7C3AED;
-  --pr-primary-glow: rgba(139, 92, 246, 0.4);
+  /* Pulse Radio Brand Colors — coral (rose-500) per Relay brand North Star */
+  --pr-primary: #f43f5e;
+  --pr-primary-light: #fb7185;
+  --pr-primary-dark: #e11d48;
+  --pr-primary-glow: rgba(244, 63, 94, 0.4);
 
   /* Light Mode Defaults */
   --pr-bg-primary: #fafafa;
-  --pr-bg-secondary: #ffffff;
+  --pr-bg-secondary: #fafafa;
   --pr-bg-tertiary: #f5f5f5;
   --pr-bg-glass: rgba(255, 255, 255, 0.7);
   --pr-bg-glass-hover: rgba(255, 255, 255, 0.85);
@@ -22,16 +22,16 @@
   --pr-text-primary: #18181b;
   --pr-text-secondary: #52525b;
   --pr-text-tertiary: #a1a1aa;
-  --pr-text-accent: #8B5CF6;
+  --pr-text-accent: #f43f5e;
 
   --pr-border-subtle: rgba(0, 0, 0, 0.06);
   --pr-border-medium: rgba(0, 0, 0, 0.1);
-  --pr-border-accent: rgba(139, 92, 246, 0.3);
+  --pr-border-accent: rgba(244, 63, 94, 0.3);
 
   --pr-shadow-sm: 0 1px 2px rgba(0, 0, 0, 0.04);
   --pr-shadow-md: 0 4px 12px rgba(0, 0, 0, 0.06);
   --pr-shadow-lg: 0 8px 32px rgba(0, 0, 0, 0.08);
-  --pr-shadow-glow: 0 0 40px rgba(139, 92, 246, 0.15);
+  --pr-shadow-glow: 0 0 40px rgba(244, 63, 94, 0.15);
 
   --pr-dot-pattern: rgba(0, 0, 0, 0.03);
   --pr-grid-line: rgba(0, 0, 0, 0.04);
@@ -49,16 +49,16 @@
   --pr-text-primary: #fafafa;
   --pr-text-secondary: #a1a1aa;
   --pr-text-tertiary: #71717a;
-  --pr-text-accent: #A78BFA;
+  --pr-text-accent: #fb7185;
 
   --pr-border-subtle: rgba(255, 255, 255, 0.06);
   --pr-border-medium: rgba(255, 255, 255, 0.1);
-  --pr-border-accent: rgba(139, 92, 246, 0.4);
+  --pr-border-accent: rgba(244, 63, 94, 0.4);
 
   --pr-shadow-sm: 0 1px 2px rgba(0, 0, 0, 0.2);
   --pr-shadow-md: 0 4px 12px rgba(0, 0, 0, 0.3);
   --pr-shadow-lg: 0 8px 32px rgba(0, 0, 0, 0.4);
-  --pr-shadow-glow: 0 0 60px rgba(139, 92, 246, 0.25);
+  --pr-shadow-glow: 0 0 60px rgba(244, 63, 94, 0.25);
 
   --pr-dot-pattern: rgba(255, 255, 255, 0.02);
   --pr-grid-line: rgba(255, 255, 255, 0.03);
@@ -103,8 +103,8 @@
   height: 60%;
   background: radial-gradient(
     ellipse at center,
-    rgba(139, 92, 246, 0.08) 0%,
-    rgba(139, 92, 246, 0.03) 40%,
+    rgba(244, 63, 94, 0.08) 0%,
+    rgba(244, 63, 94, 0.03) 40%,
     transparent 70%
   );
   pointer-events: none;
@@ -450,6 +450,37 @@
 
 .pulse-radio-empty-channels span {
   font-size: 0.8rem;
+}
+
+.pulse-radio-empty-cta {
+  display: inline-flex;
+  align-items: center;
+  gap: 0.4rem;
+  margin-top: 1.25rem;
+  padding: 0.55rem 1rem;
+  border-radius: 9999px;
+  background: #f43f5e;
+  color: #ffffff;
+  font-family: var(--font-sans);
+  font-size: 0.825rem;
+  font-weight: 600;
+  border: 0;
+  cursor: pointer;
+  box-shadow: 0 6px 18px rgba(244, 63, 94, 0.25);
+  transition: background 0.15s ease, transform 0.15s ease;
+}
+
+.pulse-radio-empty-cta:hover {
+  background: #e11d48;
+}
+
+.pulse-radio-empty-cta:active {
+  transform: scale(0.98);
+}
+
+.pulse-radio-empty-cta:focus-visible {
+  outline: 2px solid #f43f5e;
+  outline-offset: 2px;
 }
 
 /* Mobile Sidebar */
@@ -846,7 +877,7 @@
   background: linear-gradient(
     90deg,
     transparent 0%,
-    rgba(139, 92, 246, 0.05) 50%,
+    rgba(244, 63, 94, 0.05) 50%,
     transparent 100%
   );
   animation: playing-sweep 2s ease-in-out infinite;
@@ -1514,7 +1545,7 @@
 }
 
 .pulse-radio-user.selected {
-  background: rgba(139, 92, 246, 0.1);
+  background: rgba(244, 63, 94, 0.1);
   border-color: var(--pr-border-accent);
 }
 
@@ -1788,8 +1819,8 @@
 .pulse-radio-inline-input {
   padding: 6px 10px;
   border-radius: 8px;
-  border: 1px solid rgba(139, 92, 246, 0.3);
-  background: rgba(139, 92, 246, 0.05);
+  border: 1px solid rgba(244, 63, 94, 0.3);
+  background: rgba(244, 63, 94, 0.05);
   color: inherit;
   font-size: 0.9rem;
   outline: none;
@@ -1797,7 +1828,7 @@
 }
 
 .pulse-radio-inline-input:focus {
-  border-color: rgba(139, 92, 246, 0.6);
+  border-color: rgba(244, 63, 94, 0.6);
 }
 
 .pulse-radio-inline-save,
@@ -1814,7 +1845,7 @@
 }
 
 .pulse-radio-inline-save {
-  background: rgba(139, 92, 246, 0.8);
+  background: rgba(244, 63, 94, 0.8);
   color: #fff;
 }
 

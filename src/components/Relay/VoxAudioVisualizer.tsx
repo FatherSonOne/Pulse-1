@@ -235,7 +235,7 @@ const VoxAudioVisualizer: React.FC<VoxAudioVisualizerProps> = ({
 
       // Playhead line
       ctx.beginPath();
-      ctx.strokeStyle = '#ffffff';
+      ctx.strokeStyle = '#fafafa';
       ctx.lineWidth = 2;
       ctx.moveTo(playheadX, 0);
       ctx.lineTo(playheadX, height);
@@ -245,7 +245,7 @@ const VoxAudioVisualizer: React.FC<VoxAudioVisualizerProps> = ({
       if (duration > 0) {
         const currentTime = playbackProgress * duration;
         ctx.font = '11px "Inter", system-ui, sans-serif';
-        ctx.fillStyle = '#ffffff';
+        ctx.fillStyle = '#fafafa';
         ctx.fillText(formatTime(currentTime), playheadX + 6, 14);
       }
     }

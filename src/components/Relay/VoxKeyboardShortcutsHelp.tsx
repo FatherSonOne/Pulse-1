@@ -34,7 +34,7 @@ export const VoxKeyboardShortcutsHelp: React.FC<VoxKeyboardShortcutsHelpProps> =
         style={{
           background: isDarkMode
             ? 'linear-gradient(135deg, #1f2937 0%, #111827 100%)'
-            : 'linear-gradient(135deg, #ffffff 0%, #f9fafb 100%)',
+            : 'linear-gradient(135deg, #fafafa 0%, #f9fafb 100%)',
         }}
         onClick={(e) => e.stopPropagation()}
       >
@@ -51,7 +51,7 @@ export const VoxKeyboardShortcutsHelp: React.FC<VoxKeyboardShortcutsHelpProps> =
                 className="p-2 rounded-xl"
                 style={{
                   background: isDarkMode ? '#374151' : '#e5e7eb',
-                  color: '#F97316',
+                  color: '#f43f5e',
                 }}
               >
                 <Keyboard className="w-6 h-6" />
@@ -105,7 +105,7 @@ export const VoxKeyboardShortcutsHelp: React.FC<VoxKeyboardShortcutsHelpProps> =
                 <kbd
                   className="px-3 py-1.5 rounded-lg font-mono text-xs font-semibold border-2 min-w-[60px] text-center"
                   style={{
-                    background: isDarkMode ? '#374151' : '#ffffff',
+                    background: isDarkMode ? '#374151' : '#fafafa',
                     color: isDarkMode ? '#f9fafb' : '#111827',
                     borderColor: isDarkMode ? '#4b5563' : '#d1d5db',
                     boxShadow: isDarkMode

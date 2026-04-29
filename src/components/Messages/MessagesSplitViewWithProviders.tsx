@@ -1,9 +1,38 @@
 /**
  * MessagesSplitViewWithProviders
  *
- * Phase 5e — production entry for the new architecture.
+ * ⚠️ PAUSED as of 2026-04-27 — DO NOT FLIP THE FLAG.
  *
- * Composes everything Phases 5b-5d shipped:
+ * This component is parallel-rebuild scaffolding, not a production-
+ * ready cutover. Initial smoke testing surfaced a multi-session
+ * feature-parity gap vs. the legacy `Messages.tsx`:
+ *
+ *   - The default `<ChatInput>` is bare (no slash commands, no mention
+ *     picker, no smart compose, no attachments, no AI suggestions).
+ *   - No `renderMessageBubble` is passed, so `ConversationPanel` falls
+ *     back to its plain default — no inline reactions, no context menu,
+ *     no mood badges, no rich cards, no voice playback, no bot-message
+ *     rendering, no read-receipt avatars, no per-message star/bookmark.
+ *   - AI hooks built in 5d.5 (`useMessagesAIContext`, `useMessagesAIDraft`)
+ *     are not called; `MessagesCatchUpCard` + `MessagesNudgeBar` are not
+ *     rendered.
+ *   - 4 of 9 right-drawer panels are unwired; the wired 5 expose only
+ *     1 tab each.
+ *   - Real-time subscriptions for messages, reactions, reads, typing
+ *     are not auto-invoked from this entry.
+ *
+ * The full gap list and recommended sequencing for closing it lives in
+ * `docs/deep-dives/messages_v2_parity_backlog.md`. The flag
+ * (`pulseMessagesV2`) is **default OFF and must remain so** until that
+ * backlog is materially closed and a fresh smoke test passes.
+ *
+ * The component still compiles, the architecture is clean, and the
+ * Phase 5d plugins it composes can be reused in other contexts (e.g.
+ * gradual refactor inside the legacy entry). The only thing to avoid
+ * is flipping the flag for production users.
+ *
+ * Phase 5e — *was meant to be* the production entry. Composes
+ * everything Phases 5b-5d shipped:
  *   - `MessagesSplitView` rendering
  *   - Plugin slots wired to their canonical implementations
  *   - `messageStore` connected for channels + Pulse conversations
@@ -68,6 +97,10 @@ import type { Contact } from '../../types';
 // per-bundle React.lazy of that specific component.
 import { MessageBookmarks as MessageBookmarksPanel } from '../MessageEnhancements/MessageBookmarks';
 import { SmartTemplates as SmartTemplatesPanel } from '../MessageEnhancements/SmartTemplates';
+import { ResponseTimeTracker as ResponseTimeTrackerPanel } from '../MessageEnhancements/ResponseTimeTracker';
+import { SmartReminders as SmartRemindersPanel } from '../MessageEnhancements/SmartReminders';
+import { VoiceRecorder as VoiceRecorderPanel } from '../MessageEnhancements/VoiceMessages';
+import type { ChannelMessage } from '../../types/messages';
 
 interface MessagesSplitViewWithProvidersProps {
   /** Authenticated user — used for sender attribution + send handlers. */
@@ -187,6 +220,27 @@ const MessagesSplitViewConnected: React.FC<MessagesSplitViewWithProvidersProps> 
     return contacts.find((c) => c.id === id || c.pulseUserId === id) ?? null;
   }, [activePulseConv, contacts]);
 
+  // ── Stable handlers passed to MessagesSplitView ────────────
+  // MSV has a useEffect keyed on `[activeConversationId, onLoadMessages]`.
+  // Without memoization, every render of this connected component would
+  // produce a fresh `onLoadMessages` reference, refire MSV's effect, and
+  // the call chain (load → store update → re-render → new ref → load …)
+  // becomes an infinite fetch loop.
+  const onSendMessageStable = useCallback(
+    (conversationId: string, content: string) => {
+      setActiveConversationId(conversationId);
+      void handleSendMessage(conversationId, content);
+    },
+    [handleSendMessage],
+  );
+  const onLoadMessagesStable = useCallback(
+    async (conversationId: string) => {
+      setActiveConversationId(conversationId);
+      await handleLoadMessages(conversationId);
+    },
+    [handleLoadMessages],
+  );
+
   // ── Sub-views ──────────────────────────────────────────────
   return (
     <MessagesSplitView
@@ -194,21 +248,46 @@ const MessagesSplitViewConnected: React.FC<MessagesSplitViewWithProvidersProps> 
       pulseConversations={pulseConversations}
       messages={messages}
       currentUserId={userId}
-      onSendMessage={(conversationId, content) => {
-        setActiveConversationId(conversationId);
-        void handleSendMessage(conversationId, content);
-      }}
-      onLoadMessages={async (conversationId) => {
-        setActiveConversationId(conversationId);
-        await handleLoadMessages(conversationId);
-      }}
+      onSendMessage={onSendMessageStable}
+      onLoadMessages={onLoadMessagesStable}
       renderTopBanner={() => (
         <BannersHost activeContact={activeContact} />
       )}
       renderGlobalOverlay={() => (
         <MessagesFocusModePlugin userId={userId} />
       )}
-      renderRightDrawer={() => <FeaturePanelsHost />}
+      renderRightDrawer={() => (
+        <FeaturePanelsHost
+          activeConversationId={activeConversationId}
+          activeContactName={
+            activePulseConv
+              ? activePulseConv.other_user?.display_name ||
+                activePulseConv.other_user?.full_name ||
+                activePulseConv.other_user?.handle ||
+                'Conversation'
+              : channels.find((c) => c.id === activeConversationId)?.name || 'Conversation'
+          }
+          activeMessages={activeConversationId ? messages[activeConversationId] || [] : []}
+          currentUserId={userId}
+          onSendVoice={async (blob, durationSec) => {
+            if (!activeConversationId || !activePulseConv?.other_user) return;
+            try {
+              const recipientId = activePulseConv.other_user.id;
+              const file = new File([blob], `voice-${Date.now()}.webm`, {
+                type: blob.type || 'audio/webm',
+              });
+              await pulseService.sendMessageWithAttachment(
+                recipientId,
+                file,
+                `Voice message (${Math.max(1, Math.round(durationSec))}s)`,
+              );
+              await loadPulseMessages(activeConversationId);
+            } catch (err) {
+              console.error('[FeaturePanelsHost] voice send failed:', err);
+            }
+          }}
+        />
+      )}
       renderModals={() => (
         <ModalsHost
           activePulseConversationId={
@@ -233,7 +312,7 @@ const MessagesSplitViewConnected: React.FC<MessagesSplitViewWithProvidersProps> 
             // pulse-attachments bucket, then send_pulse_message with
             // content_type='voice'). Channel voice messages aren't
             // wired here — workspace channels rarely use voice and
-            // the Voxer surface owns that flow.
+            // the Relay surface owns that flow.
             try {
               const recipientId = activePulseConv.other_user.id;
               const file = new File([blob], `voice-${Date.now()}.webm`, {
@@ -424,7 +503,21 @@ const ChatInput: React.FC<ChatInputProps> = ({ draft, setDraft, onSend, onSendVo
 // the canonical pattern.
 // ──────────────────────────────────────────────────────────────
 
-const FeaturePanelsHost: React.FC = () => {
+interface FeaturePanelsHostProps {
+  activeConversationId: string | null;
+  activeContactName: string;
+  activeMessages: ChannelMessage[];
+  currentUserId: string;
+  onSendVoice: (blob: Blob, durationSec: number) => Promise<void> | void;
+}
+
+const FeaturePanelsHost: React.FC<FeaturePanelsHostProps> = ({
+  activeConversationId,
+  activeContactName,
+  activeMessages,
+  currentUserId,
+  onSendVoice,
+}) => {
   // ── Bookmarks state (intelligence/bookmarks tab) ────────────
   const [bookmarks, setBookmarks] = useState<
     Array<{
@@ -555,6 +648,29 @@ const FeaturePanelsHost: React.FC = () => {
             }}
           />
         ),
+        analytics: ({ activeTab, setTab }) => (
+          <AnalyticsPanelContent
+            activeTab={activeTab}
+            setTab={setTab}
+            messages={activeMessages}
+            currentUserId={currentUserId}
+            contactName={activeContactName}
+          />
+        ),
+        proactive: ({ activeTab, setTab }) => (
+          <ProactivePanelContent
+            activeTab={activeTab}
+            setTab={setTab}
+            conversationId={activeConversationId}
+          />
+        ),
+        communication: ({ activeTab, setTab }) => (
+          <CommunicationPanelContent
+            activeTab={activeTab}
+            setTab={setTab}
+            onSendVoice={onSendVoice}
+          />
+        ),
       }}
     />
   );
@@ -663,6 +779,150 @@ const ProductivityPanelContent: React.FC<ProductivityPanelProps> = ({
       )}
       {activeTab !== 'templates' && (
         <PanelDeferred tab={activeTab} hint="Wire this tab to the matching BundleProductivity sub-component." />
+      )}
+    </div>
+  </div>
+);
+
+// ── Analytics panel ──
+// Wired tab: 'response' (uses ResponseTimeTracker with PulseMessage→legacy adapter).
+// Default tab is 'overview' but the legacy implementation didn't have an
+// overview tab — it had response/engagement/flow/insights. We expose
+// the same set so users see consistent labels; tabs other than
+// 'response' show the deferred message until wired.
+
+interface AnalyticsPanelProps {
+  activeTab: string;
+  setTab: (t: string) => void;
+  messages: ChannelMessage[];
+  currentUserId: string;
+  contactName: string;
+}
+
+const ANALYTICS_TABS: Array<{ key: string; label: string }> = [
+  { key: 'response', label: 'Response Time' },
+  { key: 'engagement', label: 'Engagement' },
+  { key: 'flow', label: 'Flow' },
+  { key: 'insights', label: 'AI Insights' },
+];
+
+const AnalyticsPanelContent: React.FC<AnalyticsPanelProps> = ({
+  activeTab,
+  setTab,
+  messages,
+  currentUserId,
+  contactName,
+}) => {
+  // ResponseTimeTracker expects { id, sender: 'user' | 'other', timestamp: string }.
+  // Our ChannelMessage has sender_id (uuid) + created_at (ISO string).
+  const adaptedMessages = useMemo(
+    () =>
+      messages.map((m) => ({
+        id: m.id,
+        sender: (m.sender_id === currentUserId ? 'user' : 'other') as 'user' | 'other',
+        timestamp: m.created_at,
+      })),
+    [messages, currentUserId],
+  );
+
+  const fallbackTab = activeTab === 'overview' ? 'response' : activeTab;
+
+  return (
+    <div>
+      <PanelTabs tabs={ANALYTICS_TABS} activeTab={fallbackTab} setTab={setTab} />
+      <div className="p-3">
+        {fallbackTab === 'response' && (
+          <ResponseTimeTrackerPanel
+            messages={adaptedMessages}
+            contactName={contactName}
+          />
+        )}
+        {fallbackTab !== 'response' && (
+          <PanelDeferred tab={fallbackTab} hint="Wire this tab to the matching BundleAnalytics sub-component (EngagementScoring / ConversationFlowViz / ProactiveInsightsEnhanced)." />
+        )}
+      </div>
+    </div>
+  );
+};
+
+// ── Proactive panel ──
+// Wired tab: 'reminders'. SmartReminders has all-optional props; it
+// renders mock data internally when no reminders are passed (the
+// legacy production wiring was actually broken against this interface,
+// triggering pre-existing TS errors). When a real reminders service
+// lands, pass `reminders` + `onCreateReminder` etc. here.
+
+interface ProactivePanelProps {
+  activeTab: string;
+  setTab: (t: string) => void;
+  conversationId: string | null;
+}
+
+const PROACTIVE_TABS: Array<{ key: string; label: string }> = [
+  { key: 'reminders', label: 'Reminders' },
+  { key: 'threading', label: 'Threading' },
+  { key: 'sentiment', label: 'Sentiment' },
+  { key: 'groups', label: 'Groups' },
+  { key: 'search', label: 'Search' },
+  { key: 'highlights', label: 'Highlights' },
+];
+
+const ProactivePanelContent: React.FC<ProactivePanelProps> = ({
+  activeTab,
+  setTab,
+  conversationId,
+}) => (
+  <div>
+    <PanelTabs tabs={PROACTIVE_TABS} activeTab={activeTab} setTab={setTab} />
+    <div className="p-3">
+      {activeTab === 'reminders' && (
+        <SmartRemindersPanel />
+      )}
+      {activeTab !== 'reminders' && (
+        <PanelDeferred tab={activeTab} hint="Wire this tab to the matching BundleProactive sub-component." />
+      )}
+    </div>
+    {/* `conversationId` reserved for future filtering when a reminders
+     *  service lands; suppressed-unused-prop warning. */}
+    {void conversationId}
+  </div>
+);
+
+// ── Communication panel ──
+// Wired tab: 'voice' (VoiceRecorder; routes to the host's onSendVoice).
+
+interface CommunicationPanelProps {
+  activeTab: string;
+  setTab: (t: string) => void;
+  onSendVoice: (blob: Blob, durationSec: number) => Promise<void> | void;
+}
+
+const COMMUNICATION_TABS: Array<{ key: string; label: string }> = [
+  { key: 'voice', label: 'Voice' },
+  { key: 'reactions', label: 'Reactions' },
+  { key: 'inbox', label: 'Priority Inbox' },
+  { key: 'archive', label: 'Archive' },
+  { key: 'replies', label: 'Quick Replies' },
+  { key: 'status', label: 'Status' },
+];
+
+const CommunicationPanelContent: React.FC<CommunicationPanelProps> = ({
+  activeTab,
+  setTab,
+  onSendVoice,
+}) => (
+  <div>
+    <PanelTabs tabs={COMMUNICATION_TABS} activeTab={activeTab} setTab={setTab} />
+    <div className="p-3">
+      {activeTab === 'voice' && (
+        <VoiceRecorderPanel
+          onSendVoice={(blob, duration) => {
+            void onSendVoice(blob, duration);
+          }}
+        />
+      )}
+      {activeTab !== 'voice' && (
+        <PanelDeferred tab={activeTab} hint="Wire this tab to the matching BundleCommunication sub-component." />
       )}
     </div>
   </div>

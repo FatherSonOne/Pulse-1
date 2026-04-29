@@ -12,25 +12,32 @@
 
 import React, { useState } from 'react';
 import {
+  AlignLeft,
+  AtSign,
   Calendar,
   Check,
   CheckCircle,
   CheckSquare,
   ChevronDown,
+  ChevronUp,
   Clock,
   Copy,
   HeartPulse,
   HelpCircle,
   Lightbulb,
+  ListChecks,
   Loader2,
   MapPin,
   MessageSquare,
   PlayCircle,
+  Reply,
+  Tag,
   TrendingUp,
   User,
   Users,
   X,
   Archive,
+  type LucideIcon,
 } from 'lucide-react';
 import {
   ConversationSummary,
@@ -97,31 +104,33 @@ export interface MessageAIPanelProps {
 // HELPERS
 // ============================================
 
+// Coral discipline: positive/urgent earn coral; the rest stay neutral zinc.
+// Tint and weight carry the signal — not hue.
 const getSentimentConfig = (sentiment: SentimentType) => {
   const configs = {
-    positive: { color: 'text-emerald-500', bg: 'bg-emerald-50 dark:bg-emerald-900/20', icon: 'fa-face-smile', label: 'Positive' },
-    negative: { color: 'text-red-500', bg: 'bg-red-50 dark:bg-red-900/20', icon: 'fa-face-frown', label: 'Negative' },
-    neutral: { color: 'text-zinc-500', bg: 'bg-zinc-100 dark:bg-zinc-800', icon: 'fa-face-meh', label: 'Neutral' },
-    mixed: { color: 'text-amber-500', bg: 'bg-amber-50 dark:bg-amber-900/20', icon: 'fa-face-meh-blank', label: 'Mixed' },
+    positive: { color: 'text-rose-600 dark:text-rose-400', bg: 'bg-rose-500/10', label: 'Positive' },
+    negative: { color: 'text-zinc-700 dark:text-zinc-300', bg: 'bg-zinc-100 dark:bg-zinc-800', label: 'Negative' },
+    neutral: { color: 'text-zinc-500 dark:text-zinc-400', bg: 'bg-zinc-100 dark:bg-zinc-800', label: 'Neutral' },
+    mixed: { color: 'text-zinc-600 dark:text-zinc-300', bg: 'bg-zinc-100 dark:bg-zinc-800', label: 'Mixed' },
   };
   return configs[sentiment] || configs.neutral;
 };
 
 const getUrgencyConfig = (urgency: UrgencyLevel) => {
   const configs = {
-    urgent: { color: 'text-red-600', bg: 'bg-red-100 dark:bg-red-900/30', icon: 'fa-circle-exclamation', label: 'Urgent' },
-    high: { color: 'text-orange-500', bg: 'bg-orange-100 dark:bg-orange-900/30', icon: 'fa-triangle-exclamation', label: 'High' },
-    medium: { color: 'text-yellow-500', bg: 'bg-yellow-100 dark:bg-yellow-900/30', icon: 'fa-circle-info', label: 'Medium' },
-    low: { color: 'text-zinc-500', bg: 'bg-zinc-100 dark:bg-zinc-800', icon: 'fa-circle', label: 'Low' },
+    urgent: { color: 'text-white', bg: 'bg-rose-500', label: 'Urgent' },
+    high: { color: 'text-rose-600 dark:text-rose-400', bg: 'bg-rose-500/10', label: 'High' },
+    medium: { color: 'text-zinc-700 dark:text-zinc-300', bg: 'bg-zinc-100 dark:bg-zinc-800', label: 'Medium' },
+    low: { color: 'text-zinc-500 dark:text-zinc-400', bg: 'bg-zinc-100 dark:bg-zinc-800', label: 'Low' },
   };
   return configs[urgency] || configs.low;
 };
 
 const getPriorityColor = (priority: string) => {
   const colors = {
-    high: 'text-red-500 bg-red-50 dark:bg-red-900/20',
-    medium: 'text-amber-500 bg-amber-50 dark:bg-amber-900/20',
-    low: 'text-zinc-500 bg-zinc-100 dark:bg-zinc-800',
+    high: 'text-rose-600 dark:text-rose-400 bg-rose-500/10',
+    medium: 'text-zinc-600 dark:text-zinc-300 bg-zinc-100 dark:bg-zinc-800',
+    low: 'text-zinc-500 dark:text-zinc-400 bg-zinc-100 dark:bg-zinc-800',
   };
   return colors[priority as keyof typeof colors] || colors.low;
 };
@@ -376,31 +385,32 @@ const AnalysisSection: React.FC<AnalysisSectionProps> = ({
   const urgencyConfig = getUrgencyConfig(analysis.urgency);
 
   const SubHeader: React.FC<{
-    icon: string;
+    icon: LucideIcon;
     title: string;
     sectionKey: string;
     count?: number;
-    color?: string;
-  }> = ({ icon, title, sectionKey, count, color = 'text-zinc-700 dark:text-zinc-300' }) => (
-    <button
-      type="button"
-      onClick={() => toggleSubsection(sectionKey)}
-      className="w-full flex items-center justify-between py-2 text-left group"
-    >
-      <div className="flex items-center gap-2">
-        <i className={`fa-solid ${icon} text-sm ${color}`} />
-        <span className={`text-sm font-semibold ${color}`}>{title}</span>
-        {count !== undefined && count > 0 && (
-          <span className="px-1.5 py-0.5 text-[10px] font-bold bg-zinc-100 dark:bg-zinc-800 text-zinc-500 rounded">
-            {count}
-          </span>
-        )}
-      </div>
-      <i
-        className={`fa-solid fa-chevron-${expandedSubsections.has(sectionKey) ? 'up' : 'down'} text-xs text-zinc-400 group-hover:text-zinc-600`}
-      />
-    </button>
-  );
+  }> = ({ icon: Icon, title, sectionKey, count }) => {
+    const expanded = expandedSubsections.has(sectionKey);
+    const ChevronIcon = expanded ? ChevronUp : ChevronDown;
+    return (
+      <button
+        type="button"
+        onClick={() => toggleSubsection(sectionKey)}
+        className="w-full flex items-center justify-between py-2 text-left group"
+      >
+        <div className="flex items-center gap-2 text-zinc-700 dark:text-zinc-300">
+          <Icon className="w-3.5 h-3.5" />
+          <span className="text-sm font-semibold">{title}</span>
+          {count !== undefined && count > 0 && (
+            <span className="px-1.5 py-0.5 text-[10px] font-bold bg-zinc-100 dark:bg-zinc-800 text-zinc-500 rounded">
+              {count}
+            </span>
+          )}
+        </div>
+        <ChevronIcon className="w-3.5 h-3.5 text-zinc-400 group-hover:text-zinc-600" />
+      </button>
+    );
+  };
 
   return (
     <section className={borderClass}>
@@ -416,25 +426,24 @@ const AnalysisSection: React.FC<AnalysisSectionProps> = ({
       />
       {isOpen && (
         <div className="px-4 pb-4 space-y-3">
-          {/* Sentiment & Urgency Badges */}
+          {/* Sentiment & Urgency chips — coral discipline: positive/urgent earn
+              coral, the rest stay neutral. */}
           <div className="flex gap-2 flex-wrap">
             <div
-              className={`flex items-center gap-1.5 px-2.5 py-1 rounded-full text-xs font-medium ${sentimentConfig.bg} ${sentimentConfig.color}`}
+              className={`px-2.5 py-1 rounded-full font-mono text-[10px] uppercase tracking-[0.1em] font-semibold ${sentimentConfig.bg} ${sentimentConfig.color}`}
             >
-              <i className={`fa-solid ${sentimentConfig.icon}`} />
               {sentimentConfig.label}
             </div>
             {analysis.urgency !== 'low' && (
               <div
-                className={`flex items-center gap-1.5 px-2.5 py-1 rounded-full text-xs font-medium ${urgencyConfig.bg} ${urgencyConfig.color}`}
+                className={`px-2.5 py-1 rounded-full font-mono text-[10px] uppercase tracking-[0.1em] font-semibold ${urgencyConfig.bg} ${urgencyConfig.color}`}
               >
-                <i className={`fa-solid ${urgencyConfig.icon}`} />
                 {urgencyConfig.label}
               </div>
             )}
             {analysis.emotion && (
-              <div className="flex items-center gap-1.5 px-2.5 py-1 rounded-full text-xs font-medium bg-blue-50 dark:bg-blue-900/20 text-blue-500">
-                <HeartPulse className="w-3.5 h-3.5" />
+              <div className="flex items-center gap-1.5 px-2.5 py-1 rounded-full font-mono text-[10px] uppercase tracking-[0.1em] font-semibold bg-zinc-100 dark:bg-zinc-800 text-zinc-600 dark:text-zinc-300">
+                <HeartPulse className="w-3 h-3" />
                 {analysis.emotion}
               </div>
             )}
@@ -444,7 +453,7 @@ const AnalysisSection: React.FC<AnalysisSectionProps> = ({
           <div className="divide-y divide-zinc-100 dark:divide-zinc-800">
             {/* Summary */}
             <div className="py-2">
-              <SubHeader icon="fa-align-left" title="Summary" sectionKey="summary" color="text-purple-600" />
+              <SubHeader icon={AlignLeft} title="Summary" sectionKey="summary" />
               {expandedSubsections.has('summary') && (
                 <p className="text-sm text-zinc-600 dark:text-zinc-400 leading-relaxed mt-2 pl-6">
                   {analysis.summary}
@@ -456,17 +465,16 @@ const AnalysisSection: React.FC<AnalysisSectionProps> = ({
             {analysis.keyPoints.length > 0 && (
               <div className="py-2">
                 <SubHeader
-                  icon="fa-list-check"
+                  icon={ListChecks}
                   title="Key Points"
                   sectionKey="keyPoints"
                   count={analysis.keyPoints.length}
-                  color="text-blue-600"
                 />
                 {expandedSubsections.has('keyPoints') && (
                   <ul className="mt-2 pl-6 space-y-1.5">
                     {analysis.keyPoints.map((point, i) => (
                       <li key={i} className="flex items-start gap-2 text-sm text-zinc-600 dark:text-zinc-400">
-                        <span className="text-blue-500 mt-1">•</span>
+                        <span className="text-rose-500 mt-1">•</span>
                         {point}
                       </li>
                     ))}
@@ -479,11 +487,10 @@ const AnalysisSection: React.FC<AnalysisSectionProps> = ({
             {analysis.actionItems.length > 0 && (
               <div className="py-2">
                 <SubHeader
-                  icon="fa-tasks"
+                  icon={CheckSquare}
                   title="Action Items"
                   sectionKey="actionItems"
                   count={analysis.actionItems.length}
-                  color="text-emerald-600"
                 />
                 {expandedSubsections.has('actionItems') && (
                   <ul className="mt-2 pl-6 space-y-2">
@@ -501,8 +508,8 @@ const AnalysisSection: React.FC<AnalysisSectionProps> = ({
                           }}
                           className={`w-4 h-4 mt-0.5 rounded border-2 flex items-center justify-center transition ${
                             item.completed
-                              ? 'bg-emerald-500 border-emerald-500 text-white'
-                              : 'border-zinc-300 dark:border-zinc-600 group-hover:border-emerald-500'
+                              ? 'bg-rose-500 border-rose-500 text-white'
+                              : 'border-zinc-300 dark:border-zinc-600 group-hover:border-rose-500'
                           }`}
                         >
                           {item.completed && <Check className="w-2 h-2" />}
@@ -540,17 +547,16 @@ const AnalysisSection: React.FC<AnalysisSectionProps> = ({
             {analysis.questions.length > 0 && (
               <div className="py-2">
                 <SubHeader
-                  icon="fa-circle-question"
+                  icon={HelpCircle}
                   title="Questions Asked"
                   sectionKey="questions"
                   count={analysis.questions.length}
-                  color="text-amber-600"
                 />
                 {expandedSubsections.has('questions') && (
                   <ul className="mt-2 pl-6 space-y-1.5">
                     {analysis.questions.map((question, i) => (
                       <li key={i} className="flex items-start gap-2 text-sm text-zinc-600 dark:text-zinc-400">
-                        <HelpCircle className="w-3.5 h-3.5 text-amber-500 mt-0.5 flex-shrink-0" />
+                        <HelpCircle className="w-3.5 h-3.5 text-zinc-400 mt-0.5 flex-shrink-0" />
                         {question}
                       </li>
                     ))}
@@ -563,11 +569,10 @@ const AnalysisSection: React.FC<AnalysisSectionProps> = ({
             {analysis.suggestedResponses.length > 0 && (
               <div className="py-2">
                 <SubHeader
-                  icon="fa-reply"
+                  icon={Reply}
                   title="Suggested Responses"
                   sectionKey="responses"
                   count={analysis.suggestedResponses.length}
-                  color="text-pink-600"
                 />
                 {expandedSubsections.has('responses') && (
                   <div className="mt-2 pl-6 space-y-2">
@@ -576,9 +581,9 @@ const AnalysisSection: React.FC<AnalysisSectionProps> = ({
                         key={response.id}
                         type="button"
                         onClick={() => onResponseSelect?.(response)}
-                        className="w-full text-left p-3 rounded-lg border border-zinc-200 dark:border-zinc-700 hover:border-pink-300 dark:hover:border-pink-700 hover:bg-pink-50 dark:hover:bg-pink-900/10 transition group"
+                        className="w-full text-left p-3 rounded-lg border border-zinc-200 dark:border-zinc-700 hover:border-rose-300 dark:hover:border-rose-700 hover:bg-rose-500/5 transition group"
                       >
-                        <p className="text-sm text-zinc-700 dark:text-zinc-300 group-hover:text-pink-700 dark:group-hover:text-pink-300">
+                        <p className="text-sm text-zinc-700 dark:text-zinc-300 group-hover:text-rose-700 dark:group-hover:text-rose-300">
                           "{response.text}"
                         </p>
                         <div className="flex items-center gap-2 mt-2">
@@ -600,11 +605,10 @@ const AnalysisSection: React.FC<AnalysisSectionProps> = ({
             {analysis.suggestedFollowUps.length > 0 && (
               <div className="py-2">
                 <SubHeader
-                  icon="fa-lightbulb"
+                  icon={Lightbulb}
                   title="Follow-up Ideas"
                   sectionKey="followups"
                   count={analysis.suggestedFollowUps.length}
-                  color="text-cyan-600"
                 />
                 {expandedSubsections.has('followups') && (
                   <div className="mt-2 pl-6 flex flex-wrap gap-2">
@@ -613,7 +617,7 @@ const AnalysisSection: React.FC<AnalysisSectionProps> = ({
                         key={i}
                         type="button"
                         onClick={() => onFollowUpSelect?.(followUp)}
-                        className="px-3 py-1.5 text-xs bg-cyan-50 dark:bg-cyan-900/20 text-cyan-700 dark:text-cyan-300 rounded-full hover:bg-cyan-100 dark:hover:bg-cyan-900/40 transition"
+                        className="px-3 py-1.5 text-xs bg-rose-500/10 text-rose-600 dark:text-rose-400 rounded-full hover:bg-rose-500/20 transition"
                       >
                         {followUp}
                       </button>
@@ -626,7 +630,7 @@ const AnalysisSection: React.FC<AnalysisSectionProps> = ({
             {/* Topics */}
             {analysis.topics.length > 0 && (
               <div className="py-2">
-                <SubHeader icon="fa-tags" title="Topics" sectionKey="topics" count={analysis.topics.length} />
+                <SubHeader icon={Tag} title="Topics" sectionKey="topics" count={analysis.topics.length} />
                 {expandedSubsections.has('topics') && (
                   <div className="mt-2 pl-6 flex flex-wrap gap-1.5">
                     {analysis.topics.map((topic, i) => (
@@ -642,12 +646,12 @@ const AnalysisSection: React.FC<AnalysisSectionProps> = ({
               </div>
             )}
 
-            {/* Mentions */}
+            {/* Mentions — neutral pills with leading lucide icon, no per-type color. */}
             {(analysis.mentions.people.length > 0 ||
               analysis.mentions.dates.length > 0 ||
               analysis.mentions.locations.length > 0) && (
               <div className="py-2">
-                <SubHeader icon="fa-at" title="Mentions" sectionKey="mentions" />
+                <SubHeader icon={AtSign} title="Mentions" sectionKey="mentions" />
                 {expandedSubsections.has('mentions') && (
                   <div className="mt-2 pl-6 space-y-2">
                     {analysis.mentions.people.length > 0 && (
@@ -656,9 +660,9 @@ const AnalysisSection: React.FC<AnalysisSectionProps> = ({
                         {analysis.mentions.people.map((person, i) => (
                           <span
                             key={i}
-                            className="px-2 py-0.5 text-xs bg-blue-50 dark:bg-blue-900/20 text-blue-600 rounded inline-flex items-center gap-1"
+                            className="px-2 py-0.5 text-xs bg-zinc-100 dark:bg-zinc-800 text-zinc-700 dark:text-zinc-300 rounded inline-flex items-center gap-1"
                           >
-                            <User className="w-2.5 h-2.5" />
+                            <User className="w-2.5 h-2.5 text-zinc-400" />
                             {person}
                           </span>
                         ))}
@@ -670,9 +674,9 @@ const AnalysisSection: React.FC<AnalysisSectionProps> = ({
                         {analysis.mentions.dates.map((date, i) => (
                           <span
                             key={i}
-                            className="px-2 py-0.5 text-xs bg-purple-50 dark:bg-purple-900/20 text-purple-600 rounded inline-flex items-center gap-1"
+                            className="px-2 py-0.5 text-xs bg-zinc-100 dark:bg-zinc-800 text-zinc-700 dark:text-zinc-300 rounded inline-flex items-center gap-1"
                           >
-                            <Calendar className="w-2.5 h-2.5" />
+                            <Calendar className="w-2.5 h-2.5 text-zinc-400" />
                             {date.text}
                           </span>
                         ))}
@@ -684,9 +688,9 @@ const AnalysisSection: React.FC<AnalysisSectionProps> = ({
                         {analysis.mentions.locations.map((loc, i) => (
                           <span
                             key={i}
-                            className="px-2 py-0.5 text-xs bg-emerald-50 dark:bg-emerald-900/20 text-emerald-600 rounded inline-flex items-center gap-1"
+                            className="px-2 py-0.5 text-xs bg-zinc-100 dark:bg-zinc-800 text-zinc-700 dark:text-zinc-300 rounded inline-flex items-center gap-1"
                           >
-                            <MapPin className="w-2.5 h-2.5" />
+                            <MapPin className="w-2.5 h-2.5 text-zinc-400" />
                             {loc}
                           </span>
                         ))}
@@ -1031,13 +1035,15 @@ const MeetingNotesSection: React.FC<MeetingNotesSectionProps> = ({
                         {(item.assignee || item.dueDate) && (
                           <div className="flex items-center gap-3 mt-1.5">
                             {item.assignee && (
-                              <span className="text-xs text-zinc-500 dark:text-zinc-400">
-                                👤 {item.assignee}
+                              <span className="text-xs text-zinc-500 dark:text-zinc-400 inline-flex items-center gap-1">
+                                <User className="w-3 h-3" />
+                                {item.assignee}
                               </span>
                             )}
                             {item.dueDate && (
-                              <span className="text-xs text-zinc-500 dark:text-zinc-400">
-                                📅 {item.dueDate}
+                              <span className="text-xs text-zinc-500 dark:text-zinc-400 inline-flex items-center gap-1">
+                                <Calendar className="w-3 h-3" />
+                                {item.dueDate}
                               </span>
                             )}
                           </div>

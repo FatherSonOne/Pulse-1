@@ -146,6 +146,8 @@ interface ClassicModeProps {
   onBack: () => void;
   apiKey: string;
   isDarkMode?: boolean;
+  /** Pulse user id to land on (e.g. opening from contact card or deep link). */
+  initialContactId?: string;
 }
 
 // ============================================
@@ -156,9 +158,10 @@ const ClassicMode: React.FC<ClassicModeProps> = ({
   onBack,
   apiKey,
   isDarkMode = false,
+  initialContactId,
 }) => {
   // State
-  const [activeContactId, setActiveContactId] = useState<string>('');
+  const [activeContactId, setActiveContactId] = useState<string>(initialContactId ?? '');
   const [recordings, setRecordings] = useState<Recording[]>([]);
   const [searchQuery, setSearchQuery] = useState('');
   const [modalSearchQuery, setModalSearchQuery] = useState('');
@@ -178,8 +181,10 @@ const ClassicMode: React.FC<ClassicModeProps> = ({
   const [transcript, setTranscript] = useState<string>('');
   const isPreviewing = !!pendingRecording;
 
-  // Settings and controls state
-  const [showSettings, setShowSettings] = useState(false);
+  // Settings and controls state. The Settings entry point lives at the
+  // Relay shell level (the gear icon in Relay.tsx); ClassicMode no longer
+  // surfaces a duplicate door, but the settings object below is still
+  // consumed by the audio/transcription pipeline at its current defaults.
   const [showMessageMenu, setShowMessageMenu] = useState<string | null>(null);
   const [menuAnchorRect, setMenuAnchorRect] = useState<DOMRect | null>(null);
   const [showDownloadModal, setShowDownloadModal] = useState(false);
@@ -1034,7 +1039,6 @@ const ClassicMode: React.FC<ClassicModeProps> = ({
       if (meetingNotes) { setMeetingNotes(null); return; }
       if (showSummary) { setShowSummary(false); return; }
       if (showDownloadModal) { setShowDownloadModal(false); return; }
-      if (showSettings) { setShowSettings(false); return; }
       if (showNewVoxModal) { setShowNewVoxModal(false); return; }
       // Priority 2: discard active recording
       if (isRecording) { stopRecording(); return; }
@@ -1098,9 +1102,9 @@ const ClassicMode: React.FC<ClassicModeProps> = ({
       <aside className={`classic-sidebar ${mobileView === 'list' ? 'visible' : 'hidden-mobile'}`}>
         {/* Header */}
         <VoxModeHeader
-          modeName="Classic"
+          modeName="Messages"
           modeTagline="Hold to talk"
-          modeColor="#F97316"
+          modeColor="#f43f5e"
           modeIcon={Radio}
           onBack={onBack}
           isDarkMode={isDarkMode}
@@ -1221,11 +1225,6 @@ const ClassicMode: React.FC<ClassicModeProps> = ({
                   icon: <Archive className="w-4 h-4" />,
                   title: 'Archive conversation',
                   onClick: () => archiveConversation(activeContactId),
-                },
-                {
-                  icon: <Settings className="w-4 h-4" />,
-                  title: 'Relay settings',
-                  onClick: () => setShowSettings(true),
                 },
               ]}
             />
@@ -1509,7 +1508,7 @@ const ClassicMode: React.FC<ClassicModeProps> = ({
             {/* Recording Controls */}
             <div className="classic-controls">
               <VoxRecordArea
-                modeColor="#F97316"
+                modeColor="#f43f5e"
                 isDarkMode={isDarkMode}
                 isRecording={isRecording}
                 isPreviewing={isPreviewing}
@@ -1613,180 +1612,6 @@ const ClassicMode: React.FC<ClassicModeProps> = ({
                   );
                 })
               )}
-            </div>
-          </div>
-        </div>
-      )}
-
-      {/* Settings Modal */}
-      {showSettings && (
-        <div className="classic-modal-overlay" onClick={() => setShowSettings(false)}>
-          <div className="classic-settings-modal" onClick={e => e.stopPropagation()}>
-            <header className="classic-modal-header">
-              <h3>Relay Settings</h3>
-              <button type="button" onClick={() => setShowSettings(false)} title="Close">
-                <X className="w-5 h-5" />
-              </button>
-            </header>
-
-            <div className="classic-settings-content">
-              {/* Audio Quality */}
-              <div className="classic-setting-item">
-                <div className="classic-setting-label">
-                  <Volume2 className="w-4 h-4" />
-                  <span>Audio Quality</span>
-                </div>
-                <select
-                  value={settings.audioQuality}
-                  onChange={(e) => setSettings(prev => ({ ...prev, audioQuality: e.target.value as 'standard' | 'high' | 'ultra' }))}
-                  className="classic-setting-select"
-                  title="Select audio quality"
-                  aria-label="Audio quality"
-                >
-                  <option value="standard">Standard</option>
-                  <option value="high">High</option>
-                  <option value="ultra">Ultra HD</option>
-                </select>
-              </div>
-
-              {/* Visualizer Sensitivity */}
-              <div className="classic-setting-item">
-                <div className="classic-setting-label">
-                  <Sliders className="w-4 h-4" />
-                  <span>Visualizer Sensitivity</span>
-                </div>
-                <input
-                  type="range"
-                  min="0.1"
-                  max="1"
-                  step="0.1"
-                  value={settings.visualizerSensitivity}
-                  onChange={(e) => setSettings(prev => ({ ...prev, visualizerSensitivity: parseFloat(e.target.value) }))}
-                  className="classic-setting-slider"
-                  title="Adjust visualizer sensitivity"
-                  aria-label="Visualizer sensitivity"
-                />
-                <span className="classic-setting-value">{Math.round(settings.visualizerSensitivity * 100)}%</span>
-              </div>
-
-              {/* Playback Speed */}
-              <div className="classic-setting-item">
-                <div className="classic-setting-label">
-                  <Clock className="w-4 h-4" />
-                  <span>Playback Speed</span>
-                </div>
-                <select
-                  value={settings.playbackSpeed}
-                  onChange={(e) => {
-                    const speed = parseFloat(e.target.value);
-                    setSettings(prev => ({ ...prev, playbackSpeed: speed }));
-                    if (audioRef.current) audioRef.current.playbackRate = speed;
-                  }}
-                  className="classic-setting-select"
-                  title="Select playback speed"
-                  aria-label="Playback speed"
-                >
-                  <option value="0.5">0.5x</option>
-                  <option value="0.75">0.75x</option>
-                  <option value="1">1x (Normal)</option>
-                  <option value="1.25">1.25x</option>
-                  <option value="1.5">1.5x</option>
-                  <option value="2">2x</option>
-                </select>
-              </div>
-
-              {/* Auto Transcribe */}
-              <div className="classic-setting-item">
-                <div className="classic-setting-label">
-                  <span>Auto-Transcribe Messages</span>
-                </div>
-                <label className="classic-toggle">
-                  <input
-                    type="checkbox"
-                    checked={settings.autoTranscribe}
-                    onChange={(e) => setSettings(prev => ({ ...prev, autoTranscribe: e.target.checked }))}
-                    title="Toggle auto-transcribe"
-                    aria-label="Auto-transcribe messages"
-                  />
-                  <span className="classic-toggle-slider" />
-                </label>
-              </div>
-
-              {/* Transcription Engine */}
-              <div className="classic-setting-item">
-                <div className="classic-setting-label">
-                  <MessageCircle className="w-4 h-4" />
-                  <span>Transcription Engine</span>
-                </div>
-                <select
-                  value={settings.transcriptionEngine}
-                  onChange={(e) => setSettings(prev => ({ ...prev, transcriptionEngine: e.target.value as 'gemini' | 'whisper' }))}
-                  className="classic-setting-select"
-                  title="Select transcription engine"
-                  aria-label="Transcription engine"
-                >
-                  <option value="whisper">OpenAI Whisper (Recommended)</option>
-                  <option value="gemini">Google Gemini</option>
-                </select>
-              </div>
-
-              {/* Divider */}
-              <div className="classic-settings-divider">
-                <span>Audio Enhancement</span>
-              </div>
-
-              {/* Audio Enhancement */}
-              <div className="classic-setting-item">
-                <div className="classic-setting-label">
-                  <Volume2 className="w-4 h-4" />
-                  <span>AI Audio Enhancement</span>
-                </div>
-                <label className="classic-toggle">
-                  <input
-                    type="checkbox"
-                    checked={settings.audioEnhancement}
-                    onChange={(e) => setSettings(prev => ({ ...prev, audioEnhancement: e.target.checked }))}
-                    title="Toggle audio enhancement"
-                    aria-label="AI audio enhancement"
-                  />
-                  <span className="classic-toggle-slider" />
-                </label>
-              </div>
-
-              {/* Noise Reduction */}
-              <div className="classic-setting-item">
-                <div className="classic-setting-label">
-                  <Mic className="w-4 h-4" />
-                  <span>Noise Reduction</span>
-                </div>
-                <label className="classic-toggle">
-                  <input
-                    type="checkbox"
-                    checked={settings.noiseReduction}
-                    onChange={(e) => setSettings(prev => ({ ...prev, noiseReduction: e.target.checked }))}
-                    title="Toggle noise reduction"
-                    aria-label="Noise reduction"
-                  />
-                  <span className="classic-toggle-slider" />
-                </label>
-              </div>
-
-              {/* Voice Clarity Enhancement */}
-              <div className="classic-setting-item">
-                <div className="classic-setting-label">
-                  <span>Enhance Voice Clarity</span>
-                </div>
-                <label className="classic-toggle">
-                  <input
-                    type="checkbox"
-                    checked={settings.enhanceVoiceClarity}
-                    onChange={(e) => setSettings(prev => ({ ...prev, enhanceVoiceClarity: e.target.checked }))}
-                    title="Toggle voice clarity enhancement"
-                    aria-label="Enhance voice clarity"
-                  />
-                  <span className="classic-toggle-slider" />
-                </label>
-              </div>
             </div>
           </div>
         </div>

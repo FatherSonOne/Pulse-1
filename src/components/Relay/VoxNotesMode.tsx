@@ -858,7 +858,7 @@ const VoxNotesMode: React.FC<VoxNotesModeProps> = ({
       <VoxModeToolbar
         onBack={onBack}
         modeIcon={<FileText className="w-5 h-5" />}
-        modeTitle="Vox Notes"
+        modeTitle="Notes"
         modeSubtitle="Your Voice, Organized"
         accentColor="#f43f5e"
         isDarkMode={isDarkMode}

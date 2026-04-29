@@ -1,19 +1,15 @@
 // useRelayKeyboardShortcuts - Global keyboard shortcuts for Relay
 // Provides Space for record, Escape for back, T/M/N/L for top-level RelayView
-// switching (Triage/Messages/Notes/Live, Stage 2.1d.2), legacy 1–7 for VoxMode
-// mode switches (kept until downstream consumers migrate), and Ctrl+D/A/S for
-// row-level actions.
+// switching, and Ctrl+D/A/S for row-level actions when consumers wire them.
 
 import { useEffect, useRef } from 'react';
-import { VoxMode, RelayMode } from '../services/relay/voxModeTypes';
+import { RelayMode } from '../services/relay/voxModeTypes';
 
 export interface RelayShortcutHandlers {
   onToggleRecording?: () => void;
   onStopRecording?: () => void;
   onGoBack?: () => void;
-  /** Legacy VoxMode switch (1–7). Kept functional during the transition. */
-  onSwitchMode?: (mode: VoxMode | 'classic') => void;
-  /** New top-level RelayView switch (T/M/N/L). 'triage' is the placeholder home view. */
+  /** Top-level RelayView switch (T/M/N/L). 'triage' is the home view. */
   onSwitchView?: (view: 'triage' | RelayMode) => void;
   onDownload?: () => void;
   onArchive?: () => void;
@@ -22,34 +18,17 @@ export interface RelayShortcutHandlers {
 }
 
 export const RELAY_SHORTCUTS = {
-  Space: 'Toggle recording (when not in text input)',
+  Space: 'New voice message (when not in text input)',
   Escape: 'Stop recording / Go back',
   T: 'Switch to Triage',
   M: 'Switch to Messages',
   N: 'Switch to Notes',
   L: 'Switch to Live',
-  '1': 'Switch to Classic Voxer (legacy)',
-  '2': 'Switch to Pulse Radio (legacy)',
-  '3': 'Switch to Voice Threads (legacy)',
-  '4': 'Switch to Team Vox (legacy)',
-  '5': 'Switch to Vox Notes (legacy)',
-  '6': 'Switch to Quick Vox (legacy)',
-  '7': 'Switch to Vox Drop (legacy)',
   'Ctrl+D': 'Download selected',
   'Ctrl+A': 'Archive selected',
   'Ctrl+S': 'Summarize conversation (AI)',
   '?': 'Show keyboard shortcuts',
 } as const;
-
-const MODE_MAP: Record<string, VoxMode | 'classic'> = {
-  '1': 'classic',
-  '2': 'pulse_radio',
-  '3': 'voice_threads',
-  '4': 'team_vox',
-  '5': 'vox_notes',
-  '6': 'quick_vox',
-  '7': 'vox_drop',
-};
 
 const VIEW_MAP: Record<string, 'triage' | RelayMode> = {
   t: 'triage',
@@ -125,32 +104,34 @@ export function useRelayKeyboardShortcuts(
         }
       }
 
-      // Number keys - Switch legacy VoxMode (1-7). Kept for downstream
-      // consumers that haven't migrated to RelayMode yet.
-      if (MODE_MAP[event.key] && !isInInput && !isContentEditable) {
+      // Ctrl/Cmd shortcuts deliberately mirror browser globals (Save / Select
+      // All / Bookmark) — only override when the consumer has actually wired
+      // a handler. Without a handler, fall through to the browser default
+      // instead of swallowing the chord. Ctrl+A additionally requires a
+      // non-input target so we don't break Select All inside text fields.
+      const isCtrl = event.ctrlKey || event.metaKey;
+
+      if (isCtrl && event.key === 'd' && h.onDownload) {
         event.preventDefault();
-        h.onSwitchMode?.(MODE_MAP[event.key]);
+        h.onDownload();
         return;
       }
 
-      // Ctrl+D - Download
-      if (event.ctrlKey && event.key === 'd') {
+      if (
+        isCtrl &&
+        event.key === 'a' &&
+        !isInInput &&
+        !isContentEditable &&
+        h.onArchive
+      ) {
         event.preventDefault();
-        h.onDownload?.();
+        h.onArchive();
         return;
       }
 
-      // Ctrl+A - Archive (override default select all)
-      if (event.ctrlKey && event.key === 'a' && !isInInput && !isContentEditable) {
+      if (isCtrl && event.key === 's' && h.onSummarize) {
         event.preventDefault();
-        h.onArchive?.();
-        return;
-      }
-
-      // Ctrl+S - Summarize (override default save)
-      if (event.ctrlKey && event.key === 's') {
-        event.preventDefault();
-        h.onSummarize?.();
+        h.onSummarize();
         return;
       }
     };

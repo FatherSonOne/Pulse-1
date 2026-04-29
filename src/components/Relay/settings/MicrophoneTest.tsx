@@ -13,7 +13,7 @@ interface MicrophoneTestProps {
 export const MicrophoneTest: React.FC<MicrophoneTestProps> = ({
   deviceId,
   isDarkMode = false,
-  accentColor = '#8B5CF6',
+  accentColor = '#f43f5e',
 }) => {
   const [isActive, setIsActive] = useState(false);
   const [audioLevel, setAudioLevel] = useState(0);

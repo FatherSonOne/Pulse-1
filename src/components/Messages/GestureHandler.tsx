@@ -1,4 +1,5 @@
 import React, { useRef, useState, useEffect, useCallback } from 'react';
+import { hapticService } from '../../services/hapticService';
 
 export interface GestureHandlerProps {
   onSwipeLeft?: () => void;
@@ -119,10 +120,10 @@ export const GestureHandler: React.FC<GestureHandlerProps> = ({
             setIsLongPressing(true);
             onLongPress();
 
-            // Haptic feedback if available
-            if (navigator.vibrate) {
-              navigator.vibrate(50);
-            }
+            // Phase 6 — platform-aware haptic. On Android (Capacitor)
+            // this routes to the native Haptics plugin; on web it
+            // falls back to navigator.vibrate.
+            void hapticService.trigger('medium');
           }
         }, longPressDelay);
       }
@@ -195,20 +196,12 @@ export const GestureHandler: React.FC<GestureHandlerProps> = ({
         // Swipe left (negative deltaX)
         if (deltaX < -swipeThreshold && onSwipeLeft) {
           onSwipeLeft();
-
-          // Haptic feedback
-          if (navigator.vibrate) {
-            navigator.vibrate(30);
-          }
+          void hapticService.trigger('light');
         }
         // Swipe right (positive deltaX)
         else if (deltaX > swipeThreshold && onSwipeRight) {
           onSwipeRight();
-
-          // Haptic feedback
-          if (navigator.vibrate) {
-            navigator.vibrate(30);
-          }
+          void hapticService.trigger('light');
         }
       }
 
@@ -382,7 +375,7 @@ export function useGestureHandler({
             touchStateRef.current.isLongPressing = true;
             setIsLongPressing(true);
             onLongPress();
-            if (navigator.vibrate) navigator.vibrate(50);
+            void hapticService.trigger('medium');
           }
         }, longPressDelay);
       }
@@ -432,10 +425,10 @@ export function useGestureHandler({
     if (!state.isLongPressing && state.isSwiping && Math.abs(deltaX) > Math.abs(deltaY)) {
       if (deltaX < -swipeThreshold && onSwipeLeft) {
         onSwipeLeft();
-        if (navigator.vibrate) navigator.vibrate(30);
+        void hapticService.trigger('light');
       } else if (deltaX > swipeThreshold && onSwipeRight) {
         onSwipeRight();
-        if (navigator.vibrate) navigator.vibrate(30);
+        void hapticService.trigger('light');
       }
     }
 

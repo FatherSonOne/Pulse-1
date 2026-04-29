@@ -28,7 +28,7 @@ const VIDEO_QUALITIES = [
 
 export const VideoIOSettings: React.FC<VideoIOSettingsProps> = ({
   isDarkMode = false,
-  accentColor = '#8B5CF6',
+  accentColor = '#f43f5e',
 }) => {
   const { videoInputs, isLoading, hasPermission, requestPermission } = useMediaDevices();
 
