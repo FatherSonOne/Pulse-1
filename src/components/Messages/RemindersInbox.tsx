@@ -160,23 +160,26 @@ export const RemindersInbox: React.FC<RemindersInboxProps> = ({
 
   const count = fired.length;
 
+  // Phase F — self-hide when zero reminders due. The "All caught up" empty
+  // popover is redundant noise in the header; users can find Reminders via
+  // search/keyboard, and the Triage Brief surfaces caught-up state already.
+  if (count === 0 && !loading) {
+    return null;
+  }
+
   return (
     <div ref={containerRef} className={`relative ${className}`}>
       <button
         type="button"
         onClick={() => setOpen((v) => !v)}
-        className={`relative w-12 h-12 flex items-center justify-center rounded-lg transition-colors ${
-          count > 0
-            ? 'text-amber-600 dark:text-amber-400 hover:bg-amber-50 dark:hover:bg-amber-900/20'
-            : 'text-zinc-500 dark:text-zinc-400 hover:bg-zinc-100 dark:hover:bg-zinc-800'
-        }`}
-        title={count > 0 ? `${count} reminder${count > 1 ? 's' : ''} due` : 'Reminders'}
+        className="relative h-8 w-8 flex items-center justify-center rounded-md text-amber-600 dark:text-amber-400 hover:bg-amber-500/10 dark:hover:bg-amber-500/15 transition-colors focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-amber-500/40"
+        title={`${count} reminder${count > 1 ? 's' : ''} due`}
         aria-label="Reminders"
         aria-expanded={open}
       >
-        <BellRing className="w-4 h-4" />
+        <BellRing className="w-3.5 h-3.5" />
         {count > 0 && (
-          <span className="absolute -top-0.5 -right-0.5 min-w-[18px] h-[18px] px-1 rounded-full bg-amber-500 text-white text-[10px] font-bold flex items-center justify-center">
+          <span className="absolute -top-0.5 -right-0.5 min-w-[16px] h-[16px] px-1 rounded-full bg-amber-500 text-white font-mono text-[9px] font-semibold flex items-center justify-center tabular-nums">
             {count > 99 ? '99+' : count}
           </span>
         )}
@@ -184,31 +187,29 @@ export const RemindersInbox: React.FC<RemindersInboxProps> = ({
 
       {open && (
         <div
-          className="absolute right-0 top-full mt-1 w-80 max-h-[480px] bg-white dark:bg-zinc-900 border border-zinc-200 dark:border-zinc-800 rounded-xl shadow-xl z-50 overflow-hidden flex flex-col"
+          className="absolute right-0 top-full mt-2 w-80 max-h-[480px] bg-white dark:bg-black border border-zinc-200 dark:border-white/[0.06] rounded-xl shadow-xl z-50 overflow-hidden flex flex-col backdrop-blur-md"
           role="dialog"
         >
-          <div className="px-3 py-2 border-b border-zinc-200 dark:border-zinc-800 flex items-center justify-between">
-            <h4 className="text-xs font-bold text-zinc-700 dark:text-zinc-300 uppercase tracking-wider">
-              Due reminders
+          <div className="px-3 py-2.5 border-b border-zinc-200 dark:border-white/[0.06] flex items-center justify-between">
+            <h4 className="font-mono uppercase tracking-[0.1em] text-[10px] font-medium text-zinc-500 dark:text-zinc-400">
+              DUE REMINDERS
             </h4>
             {count > 0 && (
-              <span className="text-[10px] text-zinc-500 dark:text-zinc-400">
-                {count} pending
+              <span className="font-mono text-[10px] text-zinc-400 dark:text-zinc-600 tabular-nums">
+                {count} PENDING
               </span>
             )}
           </div>
 
           <div className="flex-1 overflow-y-auto">
             {loading && fired.length === 0 ? (
-              <div className="p-6 text-center text-sm text-zinc-500 dark:text-zinc-400">
-                Loading…
+              <div className="p-6 text-center font-mono uppercase tracking-[0.1em] text-[10px] text-zinc-400 dark:text-zinc-600">
+                LOADING…
               </div>
             ) : fired.length === 0 ? (
               <div className="p-6 text-center">
-                <BellRing className="w-8 h-8 mx-auto mb-2 text-zinc-300 dark:text-zinc-700" />
-                <p className="text-sm text-zinc-600 dark:text-zinc-300">All caught up</p>
-                <p className="text-xs text-zinc-400 dark:text-zinc-500 mt-0.5">
-                  Snoozed conversations show up here when their time is up.
+                <p className="font-mono uppercase tracking-[0.1em] text-[10px] text-zinc-400 dark:text-zinc-600">
+                  ALL CAUGHT UP
                 </p>
               </div>
             ) : (

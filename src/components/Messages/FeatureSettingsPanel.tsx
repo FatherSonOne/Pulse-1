@@ -72,10 +72,10 @@ export const FeatureSettingsPanel: React.FC<FeatureSettingsPanelProps> = ({
   const t = useMemo(() => {
     if (isDark) {
       return {
-        panelBg: '#09090b',
+        panelBg: '#000000',
         panelShadow: '-4px 0 32px rgba(0, 0, 0, 0.6)',
-        headerBg: 'linear-gradient(135deg, rgba(244, 63, 94, 0.12) 0%, rgba(236, 72, 153, 0.08) 100%)',
-        headerBorder: 'rgba(244, 63, 94, 0.25)',
+        headerBg: 'transparent',
+        headerBorder: 'rgba(255, 255, 255, 0.06)',
         textPrimary: '#fafafa',
         textSecondary: '#a1a1aa',
         textMuted: '#71717a',
@@ -114,8 +114,8 @@ export const FeatureSettingsPanel: React.FC<FeatureSettingsPanelProps> = ({
     return {
       panelBg: '#ffffff',
       panelShadow: '-4px 0 24px rgba(0, 0, 0, 0.15)',
-      headerBg: 'linear-gradient(135deg, rgba(244, 63, 94, 0.08) 0%, rgba(236, 72, 153, 0.08) 100%)',
-      headerBorder: 'rgba(244, 63, 94, 0.2)',
+      headerBg: 'transparent',
+      headerBorder: 'rgba(0, 0, 0, 0.08)',
       textPrimary: '#18181b',
       textSecondary: '#52525b',
       textMuted: '#71717a',
@@ -327,7 +327,7 @@ export const FeatureSettingsPanel: React.FC<FeatureSettingsPanelProps> = ({
             <div
               style={{
                 padding: '24px',
-                borderBottom: `2px solid ${t.headerBorder}`,
+                borderBottom: `1px solid ${t.headerBorder}`,
                 background: t.headerBg,
               }}
             >
@@ -342,15 +342,19 @@ export const FeatureSettingsPanel: React.FC<FeatureSettingsPanelProps> = ({
                 <h2
                   id="feature-settings-title"
                   style={{
-                    fontSize: '24px',
-                    fontWeight: 700,
-                    color: t.textPrimary,
+                    fontFamily: "'JetBrains Mono', 'SF Mono', Consolas, monospace",
+                    fontSize: '11px',
+                    fontWeight: 500,
+                    letterSpacing: '0.1em',
+                    textTransform: 'uppercase',
+                    color: t.textSecondary || '#71717a',
                     margin: 0,
                     display: 'flex',
                     alignItems: 'center',
+                    gap: '8px',
                   }}
                 >
-                  <Sliders style={{ marginRight: '12px', color: '#f43f5e' }} />
+                  <Sliders size={12} style={{ color: '#f43f5e' }} aria-hidden="true" />
                   {tr('messages.featureSettings.title', 'Feature Settings')}
                 </h2>
                 <button

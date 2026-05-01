@@ -118,6 +118,7 @@ import type { ToolAction } from '../services/toolRegistry';
 import { messageEnhancementsService } from '../services/messageEnhancementsService';
 import type { LiveCollaborator } from '../types/messageEnhancements';
 import { VoiceTextButton } from './shared/VoiceTextButton';
+import { TriageBrief } from './Messages/TriageBrief';
 import MessageInput from './MessageInput';
 import { FloatingToolsButton } from './FloatingToolsButton';
 // Advanced Features - Context, Attention, Tasks, Artifacts
@@ -3085,47 +3086,20 @@ const Messages: React.FC<MessagesProps> = ({ apiKey, contacts, initialContactId,
     );
   }
 
-  // Helper to render empty chat area when no thread selected
+  // Phase B — Triage Brief replaces the dashed-border SaaS empty state.
+  // Right pane at rest answers "what needs me now?" instead of pitching CTA.
+  // Mobile: hidden when the user is on the list view.
   const renderEmptyChatArea = () => (
-    <div className={`flex-1 flex flex-col items-center justify-center p-8 bg-white dark:bg-zinc-950 ${mobileView === 'list' ? 'max-md:hidden' : ''}`}>
-      {/* New Message Card - Clickable */}
-      <div
-        onClick={() => setShowNewChatModal(true)}
-        className="w-full max-w-md cursor-pointer group"
-      >
-        <div className="bg-gradient-to-br from-zinc-50 to-zinc-100 dark:from-zinc-900 dark:to-zinc-800 rounded-2xl p-8 border-2 border-dashed border-zinc-300 dark:border-zinc-700 hover:border-rose-400 dark:hover:border-rose-500 hover:from-rose-50 hover:to-pink-50 dark:hover:from-rose-950/30 dark:hover:to-pink-950/30 transition-all duration-300 shadow-sm hover:shadow-lg hover:shadow-rose-500/20">
-          <div className="text-center">
-            <div className="w-20 h-20 bg-gradient-to-br from-rose-100 to-pink-100 dark:from-rose-900/50 dark:to-pink-900/50 rounded-full flex items-center justify-center mx-auto mb-6 group-hover:scale-110 transition-transform">
-              <Send className="text-3xl text-rose-500 group-hover:text-rose-600 transition-colors" />
-            </div>
-            <h2 className="text-xl font-bold text-zinc-900 dark:text-white mb-2">
-              Send a New Message
-            </h2>
-            <p className="text-zinc-500 dark:text-zinc-400 text-center mb-6 max-w-sm mx-auto">
-              {pulseConversations.length > 0
-                ? 'Start a new conversation with a Pulse user.'
-                : 'Start your first Pulse conversation to begin messaging.'}
-            </p>
-            <div className="inline-flex items-center gap-2 px-6 py-3 bg-gradient-to-r from-rose-500 to-pink-600 text-white rounded-xl font-semibold group-hover:from-rose-600 group-hover:to-pink-700 transition shadow-lg shadow-rose-500/30">
-              <Plus />
-              New Conversation
-            </div>
-          </div>
-        </div>
-      </div>
-
-      {/* Quick Actions */}
-      {pulseConversations.length > 0 && (
-        <div className="mt-8 text-center">
-          <p className="text-xs text-zinc-400 dark:text-zinc-500 mb-3">Or select from your conversations</p>
-          <div className="flex justify-center gap-4">
-            <div className="text-xs text-zinc-500 dark:text-zinc-400">
-              <span className="font-medium text-rose-600 dark:text-rose-400">{pulseConversations.length}</span> Pulse chats
-            </div>
-            {/* SMS button hidden — SMS is not in active development */}
-          </div>
-        </div>
-      )}
+    <div className={`flex-1 flex ${mobileView === 'list' ? 'max-md:hidden' : ''}`}>
+      <TriageBrief
+        pulseConversations={pulseConversations}
+        onOpenConversation={(convId) => {
+          setActivePulseConversation(convId);
+          setActiveThreadId('');
+          setMobileView('chat');
+        }}
+        onNewConversation={() => setShowNewChatModal(true)}
+      />
     </div>
   );
 

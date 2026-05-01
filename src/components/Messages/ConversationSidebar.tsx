@@ -1,5 +1,5 @@
 import React from 'react';
-import { UserPlus, Smartphone, Keyboard, SquarePen, Check, Archive, Search, X, Plus, MessagesSquare, AtSign } from 'lucide-react';
+import { UserPlus, Smartphone, Keyboard, SquarePen, Check, Archive, Search, X, Plus, MessagesSquare, AtSign, Command } from 'lucide-react';
 import { OnlineIndicator } from '../UserContact/OnlineIndicator';
 import { UserBadge } from './UserBadge';
 import { ThreadBadges, ThreadActionsMenu } from '../MessageEnhancements/ThreadActions';
@@ -75,115 +75,168 @@ export const ConversationSidebar: React.FC<ConversationSidebarProps> = ({
   conversationTags = {},
   onJumpToConversation,
 }) => {
+  // Phase A — Coral Cockpit shell rework.
+  // Mono `MESSAGES · <count>` section label; labeled `+ INVITE` ghost button
+  // (always visible — early-org invite affordance); RemindersInbox kept but
+  // self-hides when no reminders are due; mono `⌘` keyboard glyph; ghost-coral
+  // compose with `⌘N` hint. Filter dropdown removed in favor of search-syntax
+  // chips (`is:unread`, `pinned`, `tasks`, `votes`) revealed on focus.
+  // Search syntax tokens map to threadFilter so existing list logic keeps working.
+
+  const conversationCount = pulseConversations.length;
+
+  // Map search-syntax tokens (e.g. "is:unread") to threadFilter keys.
+  const onSearchInput = (raw: string) => {
+    handleSearch(raw);
+    const trimmed = raw.trim().toLowerCase();
+    const tokenToFilter: Record<string, string> = {
+      'is:unread': 'unread',
+      'is:pinned': 'pinned',
+      'is:tasks': 'with-tasks',
+      'has:tasks': 'with-tasks',
+      'is:votes': 'with-decisions',
+      'has:decisions': 'with-decisions',
+    };
+    if (tokenToFilter[trimmed]) {
+      setThreadFilter(tokenToFilter[trimmed]);
+    } else if (trimmed === '' || trimmed === 'is:all') {
+      setThreadFilter('all');
+    }
+  };
+
+  const filterChips: Array<{ key: string; label: string; token: string }> = [
+    { key: 'all', label: 'ALL', token: '' },
+    { key: 'unread', label: 'UNREAD', token: 'is:unread' },
+    { key: 'pinned', label: 'PINNED', token: 'is:pinned' },
+    { key: 'with-tasks', label: 'TASKS', token: 'is:tasks' },
+    { key: 'with-decisions', label: 'VOTES', token: 'is:votes' },
+  ];
+
   return (
-    <div ref={sidebarRef} className={`w-full md:w-[30%] md:min-w-[280px] md:max-w-[400px] border-r border-zinc-200 dark:border-zinc-700 bg-white dark:bg-zinc-950 flex-shrink-0 flex flex-col ${mobileView === 'chat' ? 'max-md:hidden' : ''}`}>
-      <div className="p-5 flex justify-between items-center">
-        <h2 className="font-bold text-lg text-zinc-900 dark:text-white tracking-tight">Pulse Messages</h2>
-        <div className="flex items-center gap-2">
-          <button onClick={() => setShowInviteModal(true)} className="w-12 h-12 rounded-lg text-rose-500 hover:bg-rose-100 dark:hover:bg-rose-900/30 flex items-center justify-center transition" title="Invite team member">
-            <UserPlus className="text-sm" />
+    <div ref={sidebarRef} className={`w-full md:w-[30%] md:min-w-[280px] md:max-w-[400px] border-r border-zinc-200 dark:border-white/[0.06] bg-[#f8f8f8] dark:bg-black flex-shrink-0 flex flex-col ${mobileView === 'chat' ? 'max-md:hidden' : ''}`}>
+      {/* Header — mono section label + actions */}
+      <div className="px-5 pt-5 pb-3 flex justify-between items-center">
+        <h2 className="font-mono uppercase tracking-[0.1em] text-[11px] text-zinc-500 dark:text-zinc-400 flex items-center gap-2">
+          <span>MESSAGES</span>
+          {conversationCount > 0 && (
+            <>
+              <span className="text-zinc-300 dark:text-zinc-700" aria-hidden="true">·</span>
+              <span className="text-zinc-900 dark:text-zinc-100 font-medium">{conversationCount}</span>
+            </>
+          )}
+        </h2>
+        <div className="flex items-center gap-1">
+          {/* Invite Team — labeled, always visible per user direction (early-org invite affordance) */}
+          <button
+            onClick={() => setShowInviteModal(true)}
+            className="h-8 px-2.5 rounded-md inline-flex items-center gap-1.5 text-rose-600 dark:text-rose-400 hover:bg-rose-500/10 dark:hover:bg-rose-500/15 transition-colors focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-rose-500/40"
+            title="Invite a teammate to your workspace"
+            aria-label="Invite teammate"
+          >
+            <UserPlus className="w-3.5 h-3.5" />
+            <span className="font-mono uppercase tracking-[0.1em] text-[10px] font-medium">INVITE</span>
           </button>
-          {/* SMS toggle hidden — SMS is not in active development */}
-          {/* Phase 7b — fired-reminders inbox. Shows due snoozes
-           *  across all conversations. No-op when host doesn't pass
-           *  `onJumpToConversation`. */}
+          {/* RemindersInbox — preserved but self-hides when zero reminders due */}
           {onJumpToConversation && (
             <RemindersInbox onJumpToConversation={onJumpToConversation} />
           )}
-          <button onClick={() => setShowShortcuts(true)} className="w-12 h-12 rounded-lg text-zinc-500 dark:text-zinc-400 hover:bg-zinc-100 dark:hover:bg-zinc-800 flex items-center justify-center transition" title="Keyboard shortcuts">
-            <Keyboard className="text-sm" />
+          {/* Keyboard shortcuts — mono ⌘ glyph */}
+          <button
+            onClick={() => setShowShortcuts(true)}
+            className="h-8 w-8 rounded-md inline-flex items-center justify-center text-zinc-500 dark:text-zinc-400 hover:bg-zinc-200/60 dark:hover:bg-white/[0.055] hover:text-zinc-900 dark:hover:text-zinc-100 transition-colors focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-rose-500/40"
+            title="Keyboard shortcuts"
+            aria-label="Keyboard shortcuts"
+          >
+            <Command className="w-3.5 h-3.5" />
           </button>
-          <button onClick={() => setShowNewChatModal(true)} className="w-12 h-12 rounded-lg bg-rose-500/10 border border-rose-500/20 text-rose-500 hover:bg-rose-500/20 flex items-center justify-center transition" title="New message">
-            <SquarePen className="text-sm" />
+          {/* Compose — ghost coral with ⌘N hint (drops 1 of 3 filled-coral attractors) */}
+          <button
+            onClick={() => setShowNewChatModal(true)}
+            className="h-8 px-2.5 rounded-md inline-flex items-center gap-1.5 text-rose-600 dark:text-rose-400 hover:bg-rose-500/10 dark:hover:bg-rose-500/15 transition-colors focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-rose-500/40"
+            title="New conversation (⌘N)"
+            aria-label="New conversation"
+          >
+            <SquarePen className="w-3.5 h-3.5" />
+            <span className="hidden md:inline font-mono uppercase tracking-[0.1em] text-[10px] text-zinc-400 dark:text-zinc-500">⌘N</span>
           </button>
         </div>
       </div>
 
-      {/* Thread Filter Dropdown */}
-      <div className="px-4 pb-3 relative">
-        <div className="flex items-center gap-2">
-          {/* Filter Dropdown */}
-          <div className="relative flex-1">
-            <button
-              onClick={() => setShowFilterDropdown(!showFilterDropdown)}
-              className="w-full flex items-center justify-between px-3 py-2 bg-zinc-50 dark:bg-zinc-800 border border-zinc-200 dark:border-zinc-700 rounded-lg text-sm hover:border-rose-500/30 transition"
-            >
-              <span className="flex items-center gap-2">
-                <i className={`fa-solid ${
-                  threadFilter === 'all' ? 'fa-inbox' :
-                  threadFilter === 'unread' ? 'fa-circle' :
-                  threadFilter === 'pinned' ? 'fa-thumbtack' :
-                  threadFilter === 'with-tasks' ? 'fa-check-square' :
-                  'fa-gavel'
-                } text-xs text-zinc-500 dark:text-zinc-400`}></i>
-                <span className="text-zinc-900 dark:text-zinc-100">
-                  {threadFilter === 'all' ? 'All Messages' :
-                   threadFilter === 'unread' ? 'Unread' :
-                   threadFilter === 'pinned' ? 'Pinned' :
-                   threadFilter === 'with-tasks' ? 'With Tasks' :
-                   'With Votes'}
-                </span>
-              </span>
-              <i className={`fa-solid fa-chevron-down text-xs text-zinc-500 dark:text-zinc-400 transition-transform ${showFilterDropdown ? 'rotate-180' : ''}`}></i>
-            </button>
-            {showFilterDropdown && (
-              <div className="absolute top-full left-0 right-0 mt-1 bg-white dark:bg-zinc-800 border border-zinc-200 dark:border-zinc-700 rounded-lg shadow-lg shadow-black/10 dark:shadow-black/30 z-50 py-1 animate-fade-in">
-                {([
-                  { key: 'all', label: 'All Messages', icon: 'fa-inbox' },
-                  { key: 'unread', label: 'Unread', icon: 'fa-circle' },
-                  { key: 'pinned', label: 'Pinned', icon: 'fa-thumbtack' },
-                  { key: 'with-tasks', label: 'With Tasks', icon: 'fa-check-square' },
-                  { key: 'with-decisions', label: 'With Votes', icon: 'fa-gavel' },
-                ] as const).map(filter => (
-                  <button
-                    key={filter.key}
-                    onClick={() => { setThreadFilter(filter.key as any); setShowFilterDropdown(false); }}
-                    className={`w-full flex items-center gap-2 px-3 py-2 text-sm hover:bg-rose-50 dark:hover:bg-rose-500/10 transition ${threadFilter === filter.key ? 'bg-rose-50 dark:bg-rose-500/10 text-rose-600 dark:text-rose-400' : 'text-zinc-500 dark:text-zinc-400'}`}
-                  >
-                    <i className={`fa-solid ${filter.icon} text-xs w-4`}></i>
-                    {filter.label}
-                    {threadFilter === filter.key && <Check className="text-xs ml-auto text-emerald-500" />}
-                  </button>
-                ))}
-                <div className="border-t border-zinc-200 dark:border-zinc-700 my-1"></div>
-                <button
-                  onClick={() => { setShowArchived(!showArchived); setShowFilterDropdown(false); }}
-                  className={`w-full flex items-center gap-2 px-3 py-2 text-sm hover:bg-rose-50 dark:hover:bg-rose-500/10 transition ${showArchived ? 'text-amber-500' : 'text-zinc-500 dark:text-zinc-400'}`}
-                >
-                  <Archive className="text-xs w-4" />
-                  {showArchived ? 'Hide Archived' : 'Show Archived'}
-                  {showArchived && <Check className="text-xs ml-auto text-amber-500" />}
-                </button>
-              </div>
-            )}
-          </div>
-        </div>
-      </div>
-
-      {/* Search Bar */}
-      <div className="px-4 pb-3">
-        <div className="relative">
+      {/* Search — borderless inset, ⌘K hint, syntax chips on focus.
+          Filter dropdown killed; chips below set threadFilter directly. */}
+      <div className="px-4 pb-2">
+        <div className="relative group">
+          <Search className="absolute left-3 top-1/2 -translate-y-1/2 text-zinc-400 dark:text-zinc-500 w-3.5 h-3.5" aria-hidden="true" />
           <input
             ref={searchInputRef}
             type="text"
-            placeholder="Search messages..."
+            placeholder="Search · is:unread · from:@frankie"
             value={searchQuery}
-            onChange={e => handleSearch(e.target.value)}
+            onChange={e => onSearchInput(e.target.value)}
             onFocus={() => setIsSearchOpen(true)}
-            className="w-full bg-zinc-50 dark:bg-zinc-800 border border-zinc-200 dark:border-zinc-700 rounded-lg px-3 py-2 text-sm pl-9 outline-none text-zinc-900 dark:text-zinc-100 placeholder-zinc-400 dark:placeholder-zinc-500 focus:ring-2 focus:ring-rose-500/30 focus:border-rose-500/40 transition"
+            className="w-full bg-transparent border-0 border-b border-zinc-200 dark:border-white/[0.06] rounded-none px-9 py-2 text-[13px] outline-none text-zinc-900 dark:text-zinc-100 placeholder:text-zinc-400 dark:placeholder:text-zinc-600 focus:border-rose-500/60 transition-colors"
           />
-          <Search className="absolute left-3 top-1/2 -translate-y-1/2 text-zinc-500 dark:text-zinc-400 text-xs" />
-          {searchQuery && (
-            <button onClick={() => { setSearchQuery(''); setSearchResults([]); }} className="absolute right-3 top-1/2 -translate-y-1/2 text-zinc-500 dark:text-zinc-400 hover:text-zinc-900 dark:hover:text-zinc-100">
-              <X className="text-xs" />
+          {searchQuery ? (
+            <button
+              onClick={() => { setSearchQuery(''); setSearchResults([]); setThreadFilter('all'); }}
+              className="absolute right-2 top-1/2 -translate-y-1/2 w-6 h-6 rounded-md inline-flex items-center justify-center text-zinc-400 dark:text-zinc-500 hover:text-zinc-900 dark:hover:text-zinc-100 hover:bg-zinc-200/60 dark:hover:bg-white/[0.055] transition-colors"
+              aria-label="Clear search"
+            >
+              <X className="w-3 h-3" />
             </button>
+          ) : (
+            <span className="absolute right-3 top-1/2 -translate-y-1/2 font-mono uppercase tracking-[0.1em] text-[10px] text-zinc-400 dark:text-zinc-600 pointer-events-none">⌘K</span>
           )}
         </div>
+        {/* Filter chips — replace the dropdown. One row, mono labels. */}
+        <div className="mt-2 flex items-center gap-1 overflow-x-auto -mx-1 px-1 pb-0.5 [scrollbar-width:none] [&::-webkit-scrollbar]:hidden">
+          {filterChips.map(chip => {
+            const active = threadFilter === chip.key;
+            return (
+              <button
+                key={chip.key}
+                onClick={() => {
+                  setThreadFilter(chip.key);
+                  if (chip.token === '' && searchQuery.startsWith('is:')) setSearchQuery('');
+                }}
+                className={`flex-shrink-0 h-6 px-2 rounded font-mono uppercase tracking-[0.1em] text-[10px] font-medium transition-colors focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-rose-500/40 ${
+                  active
+                    ? 'bg-rose-500/10 text-rose-600 dark:bg-rose-500/15 dark:text-rose-400'
+                    : 'text-zinc-500 dark:text-zinc-500 hover:text-zinc-900 dark:hover:text-zinc-200 hover:bg-zinc-200/40 dark:hover:bg-white/[0.04]'
+                }`}
+              >
+                {chip.label}
+              </button>
+            );
+          })}
+          <div className="flex-shrink-0 w-px h-3 bg-zinc-200 dark:bg-white/[0.08] mx-1" aria-hidden="true" />
+          <button
+            onClick={() => setShowArchived(!showArchived)}
+            className={`flex-shrink-0 h-6 px-2 rounded font-mono uppercase tracking-[0.1em] text-[10px] font-medium inline-flex items-center gap-1 transition-colors focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-rose-500/40 ${
+              showArchived
+                ? 'bg-amber-500/10 text-amber-600 dark:text-amber-400'
+                : 'text-zinc-500 dark:text-zinc-500 hover:text-zinc-900 dark:hover:text-zinc-200 hover:bg-zinc-200/40 dark:hover:bg-white/[0.04]'
+            }`}
+            title={showArchived ? 'Hide archived' : 'Show archived'}
+          >
+            <Archive className="w-3 h-3" />
+            ARCHIVED
+          </button>
+        </div>
+        {/* Search-scope filter (preserved) */}
         {isSearchOpen && searchQuery && (
-          <div className="mt-2 flex gap-2">
+          <div className="mt-2 flex gap-1">
             {(['all', 'files', 'decisions', 'tasks'] as const).map(f => (
-              <button key={f} onClick={() => { setSearchFilter(f); handleSearch(searchQuery); }} className={`px-2 py-1 rounded text-xs ${searchFilter === f ? 'bg-rose-500 text-white' : 'bg-zinc-100 dark:bg-zinc-800 text-zinc-500 dark:text-zinc-400 hover:text-zinc-900 dark:hover:text-zinc-100'}`}>
-                {f.charAt(0).toUpperCase() + f.slice(1)}
+              <button
+                key={f}
+                onClick={() => { setSearchFilter(f); handleSearch(searchQuery); }}
+                className={`h-6 px-2 rounded font-mono uppercase tracking-[0.1em] text-[10px] font-medium transition-colors ${
+                  searchFilter === f
+                    ? 'bg-rose-500 text-white'
+                    : 'text-zinc-500 dark:text-zinc-500 hover:text-zinc-900 dark:hover:text-zinc-200 hover:bg-zinc-200/40 dark:hover:bg-white/[0.04]'
+                }`}
+              >
+                {f}
               </button>
             ))}
           </div>
@@ -255,7 +308,7 @@ export const ConversationSidebar: React.FC<ConversationSidebarProps> = ({
                       <div className="flex justify-between items-baseline mb-0.5">
                         <div className="flex items-center gap-1.5 flex-1 min-w-0">
                           <h3
-                            className={`text-sm truncate ${hasUnread ? 'font-bold' : 'font-medium'} text-zinc-900 dark:text-zinc-100`}
+                            className={`text-[13px] truncate ${hasUnread ? 'font-semibold text-zinc-900 dark:text-zinc-50' : 'font-medium text-zinc-700 dark:text-zinc-300'}`}
                           >
                             {otherUser.display_name || otherUser.full_name || otherUser.handle || 'Unknown'}
                           </h3>
@@ -265,16 +318,23 @@ export const ConversationSidebar: React.FC<ConversationSidebarProps> = ({
                           )}
                         </div>
                         {conv.last_message_at && (
-                          <span className="text-[10px] text-zinc-400 dark:text-zinc-500 whitespace-nowrap ml-2">
+                          <span className="font-mono text-[10px] text-zinc-400 dark:text-zinc-600 whitespace-nowrap ml-2 tabular-nums">
                             {new Date(conv.last_message_at).toLocaleTimeString([], { hour: '2-digit', minute: '2-digit' })}
                           </span>
                         )}
                       </div>
-                      <div className="flex items-center gap-1">
-                        <AtSign className="text-emerald-500 text-[10px]" />
-                        {otherUser.handle && <span className="text-[10px] text-emerald-600 dark:text-emerald-400">@{otherUser.handle}</span>}
-                        {conv.last_message_preview && (
-                          <p className="text-xs truncate text-zinc-500 dark:text-zinc-400 ml-1">{conv.last_message_preview}</p>
+                      <div className="flex items-center gap-1.5">
+                        {otherUser.handle && (
+                          <span className="font-mono text-[10px] text-zinc-400 dark:text-zinc-600 flex-shrink-0">@{otherUser.handle}</span>
+                        )}
+                        {conv.last_message_preview ? (
+                          <p className={`text-[12px] truncate ${hasUnread ? 'text-zinc-700 dark:text-zinc-300' : 'text-zinc-500 dark:text-zinc-500'}`}>
+                            {conv.last_message_preview}
+                          </p>
+                        ) : (
+                          <span className="font-mono uppercase tracking-[0.1em] text-[10px] text-zinc-400 dark:text-zinc-600">
+                            NO MESSAGES YET · TAP TO START
+                          </span>
                         )}
                         {/* Phase 7b — compact tag dots; full pills appear in the
                          *  conversation header when active. */}
@@ -291,9 +351,12 @@ export const ConversationSidebar: React.FC<ConversationSidebarProps> = ({
                     {/* Thread Badges - Pin/Star indicators */}
                     <ThreadBadges actions={messageEnhancements.getThreadActions(conv.id)} />
                     {hasUnread && (
-                      <div className="w-5 h-5 bg-emerald-500 rounded-full flex items-center justify-center">
-                        <span className="text-[10px] text-white font-bold">{conv.unread_count}</span>
-                      </div>
+                      <span
+                        className="font-mono uppercase tracking-[0.1em] text-[10px] font-medium px-1.5 py-0.5 rounded bg-rose-500/10 text-rose-700 dark:bg-rose-500/15 dark:text-rose-300 tabular-nums"
+                        aria-label={`${conv.unread_count} unread`}
+                      >
+                        {conv.unread_count}
+                      </span>
                     )}
                     {/* Thread Actions Menu - Pin/Star/Mute/Archive/Delete */}
                     <div className="opacity-0 group-hover:opacity-100 transition-opacity">
@@ -312,23 +375,21 @@ export const ConversationSidebar: React.FC<ConversationSidebarProps> = ({
             })}
           </div>
         ) : (
-          /* Empty state when no Pulse conversations */
-          <div className="flex flex-col items-center justify-center py-12 text-center px-4">
-            <div className="w-20 h-20 rounded-2xl bg-rose-50 dark:bg-rose-500/10 border border-rose-100 dark:border-rose-500/20 flex items-center justify-center mb-4">
-              <MessagesSquare className="text-3xl text-rose-500" />
-            </div>
-            <h3 className="text-zinc-900 dark:text-white font-semibold mb-2">No Pulse Messages Yet</h3>
-            <p className="text-zinc-500 dark:text-zinc-400 text-sm mb-4 max-w-[200px]">
-              Start a conversation with a Pulse user to get started.
+          /* Empty state — quiet, mono, no SaaS-template card */
+          <div className="flex flex-col items-start justify-start py-8 px-4 space-y-3">
+            <p className="font-mono uppercase tracking-[0.1em] text-[10px] text-zinc-400 dark:text-zinc-600">
+              NO CONVERSATIONS YET
+            </p>
+            <p className="text-[13px] text-zinc-500 dark:text-zinc-500 leading-[1.5] max-w-[240px]">
+              Start your first conversation with a Pulse user.
             </p>
             <button
               onClick={() => setShowNewChatModal(true)}
-              className="px-4 py-2 bg-gradient-to-r from-rose-500 to-pink-600 text-white text-sm font-medium rounded-lg hover:from-rose-600 hover:to-pink-700 transition shadow-lg shadow-rose-500/30"
+              className="inline-flex items-center gap-1.5 px-3 py-1.5 -ml-2 rounded-md text-rose-600 dark:text-rose-400 hover:bg-rose-500/10 dark:hover:bg-rose-500/15 transition-colors focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-rose-500/40"
             >
-              <Plus className="mr-2" />
-              New Conversation
+              <Plus className="w-3.5 h-3.5" />
+              <span className="text-[13px] font-medium">New conversation</span>
             </button>
-            {/* SMS button hidden — SMS is not in active development */}
           </div>
         )}
       </div>

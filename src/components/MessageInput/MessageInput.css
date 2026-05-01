@@ -39,14 +39,16 @@
   transition: opacity 0.2s ease;
 }
 
-/* Steady rose glow on focus */
+/* Phase D — quieter focus state. The previous 0.5 border + halo competed with
+   primary CTAs and broke "Coral earns its appearance." 1px hairline coral with
+   a subtle 3px halo is enough; ::after halo is not amplified on focus alone. */
 .message-input-container:focus-within {
-  border-color: rgba(244, 63, 94, 0.5);
-  box-shadow: 0 0 0 1px rgba(244, 63, 94, 0.2), 0 4px 20px rgba(0, 0, 0, 0.5);
+  border-color: rgba(244, 63, 94, 0.25);
+  box-shadow: 0 0 0 3px rgba(244, 63, 94, 0.08), 0 4px 20px rgba(0, 0, 0, 0.4);
 }
 
 .message-input-container:focus-within::after {
-  opacity: 0.4;
+  opacity: 0;
 }
 
 /* Single-fire heartbeat on focus — class applied via JS (same pattern as search bar) */
@@ -205,12 +207,25 @@
   position: absolute;
   bottom: var(--space-2, 0.5rem);
   right: var(--space-3, 0.75rem);
-  font-size: 0.6875rem;               /* 11px */
-  font-weight: 400;
-  color: #6b7280;
+  font-family: 'JetBrains Mono', 'SF Mono', Consolas, monospace;
+  font-size: 0.625rem;                /* 10px — mono signature label scale */
+  font-weight: 500;
+  letter-spacing: 0.05em;
+  color: #a1a1aa;
   font-variant-numeric: tabular-nums;
-  transition: color var(--animation-fast, 150ms);
+  transition: color var(--animation-fast, 150ms),
+              opacity var(--animation-fast, 150ms);
   z-index: 5;
+  /* Phase D: only show counter past 50% capacity. JS sets isNearLimit at 90%;
+     CSS handles the 0–50% hide via the parent container. We default to faded
+     and the container has no signal until typed content nears the limit. */
+  opacity: 0.5;
+}
+
+.character-counter.warning,
+.character-counter.error,
+.message-input-area:not(:empty) ~ .character-counter {
+  opacity: 1;
 }
 
 .character-counter.warning {
