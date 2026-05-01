@@ -288,44 +288,6 @@ if (isMobileViewport) {
   document.documentElement.classList.add('mobile-viewport');
 }
 
-// DEV-ONLY: pinpoint <circle cx="undefined"> warnings (issue #28).
-// Captures the React owner stack the first time a circle gets cx/cy as
-// the literal string "undefined" or as undefined/null, then logs it once.
-// Remove this block after the warning's source is identified and fixed.
-if ((import.meta as ImportMeta & { env?: { DEV?: boolean } }).env?.DEV && typeof Element !== 'undefined') {
-  let already = false;
-  const orig = Element.prototype.setAttribute;
-  Element.prototype.setAttribute = function (name: string, value: string) {
-    if (
-      !already &&
-      this.tagName === 'circle' &&
-      (name === 'cx' || name === 'cy') &&
-      (value === undefined || value === null || value === 'undefined')
-    ) {
-      already = true;
-      const stack = new Error('CIRCLE_UNDEFINED_TRACE').stack || '(no stack)';
-      let parent = this.parentElement;
-      const chain: string[] = [];
-      while (parent && chain.length < 10) {
-        const cls =
-          typeof parent.className === 'string'
-            ? parent.className
-            : (parent.className as unknown as { baseVal?: string })?.baseVal || '';
-        chain.push(parent.tagName.toLowerCase() + (cls ? '.' + cls.split(' ').slice(0, 2).join('.') : ''));
-        parent = parent.parentElement;
-      }
-      // eslint-disable-next-line no-console
-      console.error(
-        '[CIRCLE_TRACE #28] cx/cy set to undefined on a <circle>.\nDOM chain (innermost → root): ' +
-          chain.join(' > ') +
-          '\nStack:\n' +
-          stack
-      );
-    }
-    return orig.call(this, name, value);
-  };
-}
-
 ReactDOM.createRoot(document.getElementById('root')!).render(
   <React.StrictMode>
     <LoadingProvider>
