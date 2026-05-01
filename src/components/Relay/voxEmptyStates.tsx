@@ -73,8 +73,8 @@ export const VOX_EMPTY_STATES: Record<string, VoxEmptyStateConfig> = {
   glimpse: {
     mode: 'glimpse',
     icon: Video,
-    title: 'No glimpses yet',
-    description: 'Record a quick video message. Hold to record, release to send.',
+    title: 'No glimpses in this thread',
+    description: 'Send a glimpse when text isn\'t enough. Pulse transcribes and extracts action items so the recipient doesn\'t have to watch.',
   },
 };
 

@@ -102,6 +102,10 @@ docs/archive/scripts/
 .claude/plugins/
 .claude/mcp-needs-auth-cache.json
 .claude/long-term-memory.md
+.claude/scheduled_tasks.lock
+
+# Test artifacts (screenshots, probes, browser profiles)
+.test-artifacts/
 # .claude/commands/ is intentionally tracked — shared slash commands
 !.claude/commands/*.md
 # .claude/skills/ is intentionally tracked — shared skills (e.g. /impeccable)

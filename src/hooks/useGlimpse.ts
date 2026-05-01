@@ -141,17 +141,31 @@ export interface UseGlimpseMessagesReturn {
   markAsViewed: (messageId: string, watchDuration?: number, completed?: boolean) => Promise<void>;
 }
 
+/**
+ * useGlimpseMessages — must be called UNCONDITIONALLY by consumers (Rules of
+ * Hooks). Pass an empty string for `conversationId` when no conversation is
+ * active and the hook will no-op safely (empty messages, no fetch, no
+ * subscription).
+ */
 export function useGlimpseMessages(options: UseGlimpseMessagesOptions): UseGlimpseMessagesReturn {
   const { conversationId, limit = 50, autoMarkAsRead = true } = options;
+  const isActive = conversationId.length > 0;
 
   const [messages, setMessages] = useState<GlimpseMessage[]>([]);
-  const [isLoading, setIsLoading] = useState(true);
+  const [isLoading, setIsLoading] = useState(false);
   const [error, setError] = useState<string | null>(null);
   const [hasMore, setHasMore] = useState(true);
   const [offset, setOffset] = useState(0);
   const subscriptionRef = useRef<RealtimeChannel | null>(null);
 
   const refresh = useCallback(async () => {
+    if (!isActive) {
+      setMessages([]);
+      setOffset(0);
+      setHasMore(false);
+      setIsLoading(false);
+      return;
+    }
     try {
       setIsLoading(true);
       setError(null);
@@ -168,10 +182,10 @@ export function useGlimpseMessages(options: UseGlimpseMessagesOptions): UseGlimp
     } finally {
       setIsLoading(false);
     }
-  }, [conversationId, limit, autoMarkAsRead]);
+  }, [conversationId, limit, autoMarkAsRead, isActive]);
 
   const loadMore = useCallback(async () => {
-    if (!hasMore || isLoading) return;
+    if (!isActive || !hasMore || isLoading) return;
 
     try {
       const moreMsgs = await glimpseService.getConversationMessages(conversationId, {
@@ -198,6 +212,7 @@ export function useGlimpseMessages(options: UseGlimpseMessagesOptions): UseGlimp
       mentions?: string[];
     }
   ) => {
+    if (!isActive) return null;
     // Get recipient IDs from conversation
     const conversation = await glimpseService.getConversation(conversationId);
     if (!conversation) return null;
@@ -212,7 +227,7 @@ export function useGlimpseMessages(options: UseGlimpseMessagesOptions): UseGlimp
 
     // Message will be added via subscription
     return message;
-  }, [conversationId]);
+  }, [conversationId, isActive]);
 
   const deleteMessage = useCallback(async (messageId: string) => {
     const success = await glimpseService.deleteMessage(messageId);
@@ -223,8 +238,33 @@ export function useGlimpseMessages(options: UseGlimpseMessagesOptions): UseGlimp
   }, []);
 
   const toggleReaction = useCallback(async (messageId: string, emoji: string, timestamp?: number) => {
+    const userId = await glimpseService.ensureUserId();
+    if (!userId) return false;
+
+    // Optimistically flip the reaction in local state so the bubble updates
+    // instantly. We re-apply the same flip on rollback if the server rejects.
+    const flip = () =>
+      setMessages((prev) =>
+        prev.map((m) => {
+          if (m.id !== messageId) return m;
+          const reactions: Record<string, string[]> = { ...(m.reactions || {}) };
+          const users = reactions[emoji] ? [...reactions[emoji]] : [];
+          const idx = users.indexOf(userId);
+          if (idx >= 0) {
+            users.splice(idx, 1);
+            if (users.length === 0) delete reactions[emoji];
+            else reactions[emoji] = users;
+          } else {
+            users.push(userId);
+            reactions[emoji] = users;
+          }
+          return { ...m, reactions };
+        })
+      );
+
+    flip();
     const success = await glimpseService.toggleReaction(messageId, emoji, timestamp);
-    // Reactions will update via subscription
+    if (!success) flip(); // rollback on failure
     return success;
   }, []);
 
@@ -238,15 +278,35 @@ export function useGlimpseMessages(options: UseGlimpseMessagesOptions): UseGlimp
   useEffect(() => {
     refresh();
 
-    // Subscribe to new messages
-    subscriptionRef.current = glimpseService.subscribeToConversation(conversationId, (message) => {
-      setMessages(prev => [...prev, message]);
-    });
+    if (!isActive) return;
+
+    let cancelled = false;
+    glimpseService
+      .subscribeToConversation(conversationId, (message) => {
+        setMessages((prev) => [...prev, message]);
+      })
+      .then((channel) => {
+        if (cancelled) {
+          if (channel) {
+            try {
+              supabase.removeChannel(channel);
+            } catch {
+              /* ignore */
+            }
+          }
+          return;
+        }
+        subscriptionRef.current = channel ?? null;
+      });
 
     return () => {
-      subscriptionRef.current?.unsubscribe();
+      cancelled = true;
+      if (subscriptionRef.current) {
+        supabase.removeChannel(subscriptionRef.current);
+        subscriptionRef.current = null;
+      }
     };
-  }, [conversationId, refresh]);
+  }, [conversationId, refresh, isActive]);
 
   return {
     messages,
@@ -273,7 +333,7 @@ export interface UseGlimpseMessageReturn {
   replies: GlimpseMessage[];
   refresh: () => Promise<void>;
   toggleReaction: (emoji: string, timestamp?: number) => Promise<boolean>;
-  toggleBookmark: (note?: string, timestamp?: number) => Promise<boolean>;
+  toggleBookmark: (note?: string, timestamp?: number) => Promise<'added' | 'removed' | null>;
   reprocessAI: () => Promise<void>;
 }
 
@@ -391,7 +451,7 @@ export interface UseGlimpseBookmarksReturn {
   isLoading: boolean;
   error: string | null;
   refresh: () => Promise<void>;
-  toggleBookmark: (messageId: string, note?: string, timestamp?: number) => Promise<boolean>;
+  toggleBookmark: (messageId: string, note?: string, timestamp?: number) => Promise<'added' | 'removed' | null>;
 }
 
 export function useGlimpseBookmarks(): UseGlimpseBookmarksReturn {
@@ -413,11 +473,11 @@ export function useGlimpseBookmarks(): UseGlimpseBookmarksReturn {
   }, []);
 
   const toggleBookmark = useCallback(async (messageId: string, note?: string, timestamp?: number) => {
-    const success = await glimpseService.toggleBookmark(messageId, note, timestamp);
-    if (success) {
+    const result = await glimpseService.toggleBookmark(messageId, note, timestamp);
+    if (result) {
       await refresh();
     }
-    return success;
+    return result;
   }, [refresh]);
 
   useEffect(() => {
@@ -449,7 +509,10 @@ export interface UseGlimpseSendReturn {
     options?: {
       caption?: string;
       replyToId?: string;
+      replyToTimestamp?: number;
+      quotedText?: string;
       mentions?: string[];
+      expiresAt?: Date;
     }
   ) => Promise<GlimpseMessage | null>;
   reset: () => void;
@@ -468,7 +531,10 @@ export function useGlimpseSend(): UseGlimpseSendReturn {
     options?: {
       caption?: string;
       replyToId?: string;
+      replyToTimestamp?: number;
+      quotedText?: string;
       mentions?: string[];
+      expiresAt?: Date;
     }
   ) => {
     try {

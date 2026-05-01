@@ -154,7 +154,11 @@ const VoxModeToolbar: React.FC<VoxModeToolbarProps> = ({
               type="button"
               onClick={onSummarize}
               disabled={!hasContent || isSummarizing}
-              className="p-1.5 md:px-2.5 md:py-1.5 rounded-lg bg-purple-500 text-white text-xs font-medium hover:bg-purple-600 transition disabled:opacity-50 disabled:cursor-not-allowed flex items-center gap-1"
+              className={`group inline-flex items-center gap-1.5 px-1.5 md:px-2 py-1.5 rounded-md font-mono text-[10px] tracking-[0.12em] uppercase font-medium transition-colors duration-200 disabled:opacity-40 disabled:cursor-not-allowed bg-transparent ${
+                isDarkMode
+                  ? 'text-rose-300 hover:text-rose-200'
+                  : 'text-rose-700 hover:text-rose-900'
+              }`}
               title="AI Summarize (Ctrl+S)"
             >
               {isSummarizing ? (
@@ -162,7 +166,9 @@ const VoxModeToolbar: React.FC<VoxModeToolbarProps> = ({
               ) : (
                 <AlignLeft className="w-3 h-3" />
               )}
-              <span className="hidden md:inline">Summarize</span>
+              <span className="hidden md:inline-block group-hover:[text-decoration:underline] [text-decoration-thickness:1px] [text-underline-offset:3px]">
+                Summarize
+              </span>
             </button>
           )}
 
@@ -171,7 +177,11 @@ const VoxModeToolbar: React.FC<VoxModeToolbarProps> = ({
               type="button"
               onClick={onSmartReplies}
               disabled={isGeneratingReplies}
-              className="p-1.5 md:px-2.5 md:py-1.5 rounded-lg bg-blue-500 text-white text-xs font-medium hover:bg-blue-600 transition disabled:opacity-50 disabled:cursor-not-allowed flex items-center gap-1"
+              className={`group inline-flex items-center gap-1.5 px-1.5 md:px-2 py-1.5 rounded-md font-mono text-[10px] tracking-[0.12em] uppercase font-medium transition-colors duration-200 disabled:opacity-40 disabled:cursor-not-allowed bg-transparent ${
+                isDarkMode
+                  ? 'text-rose-300 hover:text-rose-200'
+                  : 'text-rose-700 hover:text-rose-900'
+              }`}
               title="Generate Smart Replies"
             >
               {isGeneratingReplies ? (
@@ -179,7 +189,9 @@ const VoxModeToolbar: React.FC<VoxModeToolbarProps> = ({
               ) : (
                 <Reply className="w-3 h-3" />
               )}
-              <span className="hidden md:inline">Quick Reply</span>
+              <span className="hidden md:inline-block group-hover:[text-decoration:underline] [text-decoration-thickness:1px] [text-underline-offset:3px]">
+                Reply
+              </span>
             </button>
           )}
 
@@ -188,7 +200,11 @@ const VoxModeToolbar: React.FC<VoxModeToolbarProps> = ({
               type="button"
               onClick={onMeetingNotes}
               disabled={!hasContent || isGeneratingNotes}
-              className="p-1.5 md:px-2.5 md:py-1.5 rounded-lg bg-green-500 text-white text-xs font-medium hover:bg-green-600 transition disabled:opacity-50 disabled:cursor-not-allowed flex items-center gap-1"
+              className={`group inline-flex items-center gap-1.5 px-1.5 md:px-2 py-1.5 rounded-md font-mono text-[10px] tracking-[0.12em] uppercase font-medium transition-colors duration-200 disabled:opacity-40 disabled:cursor-not-allowed bg-transparent ${
+                isDarkMode
+                  ? 'text-rose-300 hover:text-rose-200'
+                  : 'text-rose-700 hover:text-rose-900'
+              }`}
               title="Generate Meeting Notes"
             >
               {isGeneratingNotes ? (
@@ -196,7 +212,9 @@ const VoxModeToolbar: React.FC<VoxModeToolbarProps> = ({
               ) : (
                 <FileText className="w-3 h-3" />
               )}
-              <span className="hidden md:inline">Notes</span>
+              <span className="hidden md:inline-block group-hover:[text-decoration:underline] [text-decoration-thickness:1px] [text-underline-offset:3px]">
+                Notes
+              </span>
             </button>
           )}
         </div>

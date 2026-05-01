@@ -65,7 +65,7 @@ import type { ConversationSummary, SmartReply } from '../../services/relay/relay
 // Phase 6: Final Polish
 import { useRelayKeyboardShortcuts } from '../../hooks/useRelayKeyboardShortcuts';
 import { VoxKeyboardShortcutsHelp } from '../Relay/VoxKeyboardShortcutsHelp';
-import { usePlaybackSpeed } from '../../hooks/usePlaybackSpeed';
+import { usePlaybackSpeed, type PlaybackSpeed } from '../../hooks/usePlaybackSpeed';
 import { PlaybackSpeedControl } from '../Relay/PlaybackSpeedControl';
 import { VoxEmptyState } from '../Relay/VoxEmptyState';
 import { getEmptyStateConfig } from '../Relay/voxEmptyStates';
@@ -75,8 +75,8 @@ import toast from 'react-hot-toast';
 // TYPES
 // ============================================
 
-// Mode color (Glimpse — cyan). Inlined; was VOX_MODES.video_vox.color.
-const MODE_COLOR = '#06B6D4';
+// Mode color (Glimpse — coral). Single source of state/signal in Pulse.
+const MODE_COLOR = '#f43f5e';
 
 interface GlimpseProps {
   isDarkMode?: boolean;
@@ -140,21 +140,19 @@ const ConversationItem: React.FC<{
       <div className="vvb-conv-info">
         <div className="vvb-conv-header">
           <span className="vvb-conv-name">{displayName}</span>
-          {conversation.lastMessageAt && (
-            <span className="vvb-conv-time">
-              {formatRelativeTime(conversation.lastMessageAt)}
-            </span>
-          )}
+          <span className="vvb-conv-time">
+            {conversation.lastMessageAt
+              ? formatRelativeTime(conversation.lastMessageAt)
+              : 'NEW'}
+          </span>
         </div>
-        <p className="vvb-conv-preview">
-          {conversation.lastMessageCaption || `${conversation.lastMessageDuration || 0}s video`}
-        </p>
+        <p className="vvb-conv-preview">{formatConvoPreview(conversation)}</p>
       </div>
     </button>
   );
 };
 
-// Message Bubble
+// Glimpse Card — transcript-first
 const MessageBubble: React.FC<{
   message: GlimpseMessage;
   isOwn: boolean;
@@ -168,56 +166,56 @@ const MessageBubble: React.FC<{
   isSelectionMode?: boolean;
   isSelected?: boolean;
   onToggleSelection?: () => void;
-  playbackSpeed?: number;
-  onPlaybackSpeedChange?: (speed: number) => void;
+  playbackSpeed?: PlaybackSpeed;
+  onPlaybackSpeedChange?: (speed: PlaybackSpeed) => void;
 }> = ({
   message,
   isOwn,
-  isDarkMode,
   onReaction,
   onReply,
   onBookmark,
-  onTranscriptClick,
-  showTranscript,
-  onToggleTranscript,
   isSelectionMode = false,
   isSelected = false,
   onToggleSelection,
   playbackSpeed = 1.0,
   onPlaybackSpeedChange,
+  isDarkMode,
 }) => {
   const videoRef = useRef<HTMLVideoElement>(null);
-  const [isPlaying, setIsPlaying] = useState(false);
-  const [showReactions, setShowReactions] = useState(false);
-  const [currentTime, setCurrentTime] = useState(0);
+  const [showPlayer, setShowPlayer] = useState(false);
+  const [showReactionPicker, setShowReactionPicker] = useState(false);
 
-  const togglePlay = () => {
-    if (videoRef.current) {
-      if (isPlaying) {
-        videoRef.current.pause();
-      } else {
-        videoRef.current.play();
-      }
-      setIsPlaying(!isPlaying);
-    }
-  };
-
-  // Get total reaction count
   const totalReactions = Object.values(message.reactions || {}).reduce(
     (sum, users) => sum + users.length,
     0
   );
 
-  // Apply playback speed when it changes
+  const isProcessing =
+    message.processingStatus === 'pending' ||
+    message.processingStatus === 'transcribing';
+  const processingFailed = message.processingStatus === 'failed';
+  const hasSummary = !!message.summary;
+  const actionItems = message.actionItems || [];
+  const topics = message.topics || [];
+
+  const cardState = isProcessing
+    ? 'processing'
+    : processingFailed
+      ? 'failed'
+      : 'ready';
+
   useEffect(() => {
-    if (videoRef.current) {
-      videoRef.current.playbackRate = playbackSpeed;
-    }
-  }, [playbackSpeed]);
+    if (videoRef.current) videoRef.current.playbackRate = playbackSpeed;
+  }, [playbackSpeed, showPlayer]);
+
+  const handleConvertAction = (item: string) => {
+    navigator.clipboard.writeText(item).catch(() => {});
+    toast.success('Action copied. Paste into a Pulse task.');
+  };
 
   return (
-    <div className={`vvb-message ${isOwn ? 'own' : 'other'} ${isDarkMode ? 'dark' : 'light'} relative`}>
-      {/* Phase 2: Selection Checkbox */}
+    <article className="gl-card" data-own={isOwn} data-state={cardState}>
+      {/* Selection checkbox */}
       {isSelectionMode && (
         <button
           type="button"
@@ -225,216 +223,249 @@ const MessageBubble: React.FC<{
             e.stopPropagation();
             onToggleSelection?.();
           }}
-          className={`absolute top-3 right-3 w-7 h-7 rounded-lg flex items-center justify-center transition-all shadow-lg hover:scale-110 active:scale-95 z-10 ${
-            isSelected
-              ? 'bg-cyan-500 border-2 border-cyan-600'
-              : 'bg-white dark:bg-gray-700 border-2 border-gray-400 dark:border-gray-500'
-          }`}
+          className="gl-secondary-btn"
           style={{
-            boxShadow: isSelected
-              ? '0 4px 12px rgba(6, 182, 212, 0.4)'
-              : '0 2px 8px rgba(0, 0, 0, 0.2)',
+            position: 'absolute',
+            top: 12,
+            right: 12,
+            zIndex: 5,
+            background: isSelected ? MODE_COLOR : undefined,
+            color: isSelected ? '#fafafa' : undefined,
+            borderColor: isSelected ? MODE_COLOR : undefined,
           }}
+          aria-pressed={isSelected}
+          aria-label={isSelected ? 'Deselect message' : 'Select message'}
+          title={isSelected ? 'Deselect' : 'Select'}
         >
-          {isSelected && <Check className="w-5 h-5 text-white font-bold" />}
+          {isSelected ? <Check className="w-4 h-4" /> : <Square className="w-4 h-4" />}
         </button>
       )}
 
+      {/* Meta row */}
+      <header className="gl-card-meta">
+        <div className="left">
+          <span className={`gl-sender ${!isOwn && message.status !== 'viewed' ? 'unread' : ''}`}>
+            {isOwn ? 'You' : message.senderName} · GLIMPSE
+          </span>
+        </div>
+        <div className="right">
+          <span className="duration">{formatDuration(message.duration)}</span>
+          {actionItems.length > 0 && (
+            <span className="gl-label dim">·</span>
+          )}
+          {actionItems.length > 0 && (
+            <span className="actions-count">
+              {actionItems.length} ACTION {actionItems.length === 1 ? 'ITEM' : 'ITEMS'}
+            </span>
+          )}
+        </div>
+      </header>
+
       {/* Reply context */}
       {message.replyToId && message.quotedText && (
-        <div className="vvb-reply-context">
+        <div className="gl-reply-context">
           <Reply className="w-3 h-3" />
-          <span>{message.quotedText.substring(0, 50)}...</span>
+          <span>{message.quotedText.substring(0, 80)}{message.quotedText.length > 80 ? '…' : ''}</span>
         </div>
       )}
 
-      {/* Video Container */}
-      <div className="vvb-message-video-wrap">
-        <div
-          className="vvb-message-video-container"
-          onClick={togglePlay}
-        >
+      {/* Summary block — the headline */}
+      {(hasSummary || isProcessing || processingFailed) && (
+        <div className="gl-summary">
+          {hasSummary && (
+            <>
+              <span className="gl-ai-chip">CLAUDE · SUMMARY</span>
+              <p className="gl-summary-text">{message.summary}</p>
+            </>
+          )}
+          {isProcessing && !hasSummary && (
+            <>
+              <span className="gl-ai-chip pending">PULSE AI · TRANSCRIBING</span>
+              <div className="gl-summary-skeleton" aria-hidden="true">
+                <span /><span /><span />
+              </div>
+            </>
+          )}
+          {processingFailed && !hasSummary && (
+            <span className="gl-ai-chip failed">TRANSCRIPT UNAVAILABLE</span>
+          )}
+        </div>
+      )}
+
+      {/* Caption (when present, distinct from AI summary) */}
+      {message.caption && hasSummary && (
+        <p className="gl-summary-text" style={{ color: 'var(--gl-ink-cloth)', fontStyle: 'italic' }}>
+          “{message.caption}”
+        </p>
+      )}
+      {message.caption && !hasSummary && !isProcessing && (
+        <p className="gl-summary-text">{message.caption}</p>
+      )}
+
+      {/* Action items */}
+      {actionItems.length > 0 && (
+        <ul className="gl-actions" aria-label="Extracted action items">
+          {actionItems.map((item, i) => (
+            <li key={i}>
+              <button
+                type="button"
+                className="gl-action-btn"
+                onClick={() => handleConvertAction(item)}
+                title="Copy to clipboard"
+              >
+                {item}
+              </button>
+            </li>
+          ))}
+        </ul>
+      )}
+
+      {/* Topics */}
+      {topics.length > 0 && (
+        <div className="gl-topics">
+          {topics.slice(0, 6).map((topic, i) => (
+            <span key={i} className="gl-topic">{topic}</span>
+          ))}
+        </div>
+      )}
+
+      {/* Inline player */}
+      {showPlayer && (
+        <div className="gl-player">
           <video
             ref={videoRef}
             src={message.videoUrl}
             poster={message.thumbnailUrl}
             className="vvb-message-video"
+            controls
+            autoPlay
             playsInline
-            onTimeUpdate={(e) => setCurrentTime(e.currentTarget.currentTime)}
-            onEnded={() => setIsPlaying(false)}
-          />
-
-          {/* Play/Pause overlay */}
-          {!isPlaying && (
-            <div className="vvb-play-overlay">
-              <Play className="w-8 h-8" />
-            </div>
-          )}
-
-          {/* Duration badge */}
-          <div className="vvb-duration-badge">
-            {formatDuration(message.duration)}
-          </div>
-
-          {/* AI Processing indicator */}
-          {message.processingStatus === 'transcribing' && (
-            <div className="vvb-processing-badge">
-              <span>AI Processing...</span>
-            </div>
-          )}
-        </div>
-
-        {/* Quick reaction bar */}
-        <div className="vvb-quick-reactions">
-          {REACTION_EMOJIS.slice(0, 3).map(({ emoji }) => (
-            <button
-              key={emoji}
-              onClick={() => onReaction(emoji)}
-              className="vvb-quick-reaction"
-            >
-              {emoji}
-            </button>
-          ))}
-          <button
-            onClick={() => setShowReactions(!showReactions)}
-            className="vvb-more-reactions"
-          >
-            <MoreVertical className="w-4 h-4" />
-          </button>
-        </div>
-
-        {/* Full reaction picker */}
-        {showReactions && (
-          <div className="vvb-reaction-picker">
-            {REACTION_EMOJIS.map(({ emoji, label }) => (
-              <button
-                key={emoji}
-                onClick={() => {
-                  onReaction(emoji);
-                  setShowReactions(false);
-                }}
-                title={label}
-                className="vvb-reaction-btn"
-              >
-                {emoji}
-              </button>
-            ))}
-          </div>
-        )}
-      </div>
-
-      {/* Caption */}
-      {message.caption && (
-        <p className="vvb-message-caption">{message.caption}</p>
-      )}
-
-      {/* Phase 6: Playback Speed Control */}
-      {onPlaybackSpeedChange && (
-        <div className="flex items-center gap-2 mt-2">
-          <PlaybackSpeedControl
-            speed={playbackSpeed}
-            onSpeedChange={onPlaybackSpeedChange}
-            mode="compact"
-            isDarkMode={isDarkMode}
-            accentColor={MODE_COLOR}
           />
         </div>
       )}
 
-      {/* Message info row */}
-      <div className="vvb-message-info">
-        <span className="vvb-message-time">
-          {formatTime(message.createdAt)}
-        </span>
-
-        {/* Status indicators */}
-        {isOwn && (
-          <span className="vvb-message-status">
-            {message.status === 'viewed' ? (
-              <Eye className="w-3 h-3 text-blue-400" />
-            ) : message.status === 'delivered' ? (
-              <CheckCheck className="w-3 h-3 text-gray-400" />
-            ) : (
-              <Check className="w-3 h-3 text-gray-400" />
-            )}
+      {/* Proof row: thumb + actions */}
+      <div className="gl-proof-row">
+        <button
+          type="button"
+          className="gl-thumb"
+          onClick={() => setShowPlayer((v) => !v)}
+          aria-label={showPlayer ? 'Hide video' : 'Watch video'}
+        >
+          {message.thumbnailUrl && <img src={message.thumbnailUrl} alt="" />}
+          <span className="gl-thumb-overlay">
+            {showPlayer ? <Pause className="w-5 h-5" /> : <Play className="w-5 h-5" />}
           </span>
-        )}
+          <span className="gl-thumb-duration">{formatDuration(message.duration)}</span>
+        </button>
 
-        {/* Reactions summary */}
-        {totalReactions > 0 && (
-          <div className="vvb-reactions-summary">
-            {Object.entries(message.reactions || {}).slice(0, 3).map(([emoji, users]) => (
-              <span key={emoji} className="vvb-reaction-count">
-                {emoji} {users.length}
-              </span>
-            ))}
-          </div>
-        )}
+        <div className="gl-quick-actions">
+          <button
+            type="button"
+            className={`gl-action-pill ${showPlayer ? 'primary' : ''}`}
+            onClick={() => setShowPlayer((v) => !v)}
+          >
+            {showPlayer ? <Pause className="icon" /> : <Play className="icon" />}
+            <span>{showPlayer ? 'Hide' : 'Watch'}</span>
+          </button>
+          <button type="button" className="gl-action-pill" onClick={onReply}>
+            <Reply className="icon" />
+            <span>Reply</span>
+          </button>
+          <button type="button" className="gl-action-pill" onClick={onBookmark} title="Bookmark">
+            <Bookmark className="icon" />
+          </button>
+          {onPlaybackSpeedChange && showPlayer && (
+            <PlaybackSpeedControl
+              speed={playbackSpeed}
+              onSpeedChange={onPlaybackSpeedChange}
+              compact
+              isDarkMode={isDarkMode}
+            />
+          )}
+        </div>
       </div>
 
-      {/* Transcript section */}
+      {/* Full transcript (collapsed by default) */}
       {message.transcript && (
-        <div className="vvb-transcript-section">
-          <button
-            onClick={onToggleTranscript}
-            className="vvb-transcript-toggle"
-          >
-            <FileText className="w-4 h-4" />
-            <span>Transcript</span>
-            <ChevronDown className={`w-4 h-4 transition-transform ${showTranscript ? 'rotate-180' : ''}`} />
-          </button>
-
-          {showTranscript && (
-            <div className="vvb-transcript-content">
-              <p>{message.transcript}</p>
-
-              {/* AI Summary */}
-              {message.summary && (
-                <div className="vvb-ai-summary">
-                  <span>Summary: {message.summary}</span>
-                </div>
-              )}
-
-              {/* Topics */}
-              {message.topics && message.topics.length > 0 && (
-                <div className="vvb-topics">
-                  {message.topics.map((topic, i) => (
-                    <span key={i} className="vvb-topic-tag">{topic}</span>
-                  ))}
-                </div>
-              )}
-
-              {/* Action Items */}
-              {message.actionItems && message.actionItems.length > 0 && (
-                <div className="vvb-action-items">
-                  <strong>Action Items:</strong>
-                  <ul>
-                    {message.actionItems.map((item, i) => (
-                      <li key={i}>{item}</li>
-                    ))}
-                  </ul>
-                </div>
-              )}
-            </div>
-          )}
-        </div>
+        <details className="gl-transcript">
+          <summary>Full transcript</summary>
+          <p>{message.transcript}</p>
+        </details>
       )}
 
-      {/* Actions */}
-      <div className="vvb-message-actions">
-        <button onClick={onReply} title="Reply">
-          <Reply className="w-4 h-4" />
-        </button>
-        <button onClick={onBookmark} title="Bookmark">
-          <Bookmark className="w-4 h-4" />
-        </button>
-        {message.threadCount > 0 && (
-          <span className="vvb-thread-count">
-            {message.threadCount} {message.threadCount === 1 ? 'reply' : 'replies'}
-          </span>
-        )}
-      </div>
-    </div>
+      {/* Footer */}
+      <footer className="gl-card-footer">
+        <div className="gl-footer-left">
+          <span className="gl-time">{formatTime(message.createdAt)}</span>
+          {isOwn && (
+            <span className={`gl-status-icon ${message.status === 'viewed' ? 'viewed' : ''}`}>
+              {message.status === 'viewed' ? (
+                <Eye className="w-3 h-3" />
+              ) : message.status === 'delivered' ? (
+                <CheckCheck className="w-3 h-3" />
+              ) : (
+                <Check className="w-3 h-3" />
+              )}
+            </span>
+          )}
+          {message.threadCount > 0 && (
+            <span className="gl-label dim">
+              {message.threadCount} {message.threadCount === 1 ? 'REPLY' : 'REPLIES'}
+            </span>
+          )}
+        </div>
+        <div className="gl-footer-right">
+          {totalReactions > 0 && (
+            <div className="gl-reactions">
+              {Object.entries(message.reactions || {}).slice(0, 3).map(([emoji, users]) => (
+                <button
+                  key={emoji}
+                  type="button"
+                  className="gl-reaction"
+                  onClick={() => onReaction(emoji)}
+                >
+                  <span>{emoji}</span>
+                  <span className="count">{users.length}</span>
+                </button>
+              ))}
+            </div>
+          )}
+          <div style={{ position: 'relative' }}>
+            <button
+              type="button"
+              className="gl-reaction-add"
+              onClick={() => setShowReactionPicker((v) => !v)}
+              aria-label="Add reaction"
+              title="Add reaction"
+            >
+              <Heart className="w-3 h-3" />
+            </button>
+            {showReactionPicker && (
+              <div
+                className="gl-reaction-picker"
+                style={{ position: 'absolute', bottom: 'calc(100% + 6px)', right: 0, zIndex: 10 }}
+              >
+                {REACTION_EMOJIS.map(({ emoji, label }) => (
+                  <button
+                    key={emoji}
+                    type="button"
+                    className="gl-reaction-pick-btn"
+                    onClick={() => {
+                      onReaction(emoji);
+                      setShowReactionPicker(false);
+                    }}
+                    title={label}
+                  >
+                    {emoji}
+                  </button>
+                ))}
+              </div>
+            )}
+          </div>
+        </div>
+      </footer>
+    </article>
   );
 };
 
@@ -564,19 +595,25 @@ const Glimpse: React.FC<GlimpseProps> = ({
   const [showDownloadModal, setShowDownloadModal] = useState(false);
   const [downloadItem, setDownloadItem] = useState<VoxSelectionItem | null>(null);
 
+
   // Hooks
   const { conversations, isLoading: conversationsLoading, totalUnread } = useGlimpseConversations();
   const { sendToRecipients, isSending, progress, error: sendError } = useGlimpseSend();
   const { results: searchResults, isSearching, search: performSearch } = useGlimpseSearch();
   const [searchQuery, setSearchQuery] = useState('');
 
-  // Recording hook
+  // Recording hook (cam + cam-screen)
   const {
     state,
     isRecording,
     isPreviewing,
     duration,
     previewUrl,
+    captureMode,
+    setCaptureMode,
+    pipCorner,
+    swapPipCorner,
+    mirrorPreview,
     startPreview,
     stopPreview,
     flipCamera,
@@ -589,12 +626,14 @@ const Glimpse: React.FC<GlimpseProps> = ({
     maxDuration,
     videoQuality: '720p',
     facingMode: 'user',
+    captureMode: 'cam',
+    onScreenShareEnded: () => toast('Screen share ended. Continuing with camera only.'),
   });
 
-  // Chat messages (when viewing a conversation)
-  const chatHook = activeConversationId
-    ? useGlimpseMessages({ conversationId: activeConversationId })
-    : null;
+  // Chat messages (when viewing a conversation). The hook MUST be called
+  // unconditionally — Rules of Hooks. Empty conversationId puts the hook in
+  // no-op mode (no fetch, no subscription, empty messages).
+  const chatHook = useGlimpseMessages({ conversationId: activeConversationId || '' });
 
   // VoxMessageMenu handler functions
   const handleArchiveMessage = async (message: any) => {
@@ -742,7 +781,7 @@ const Glimpse: React.FC<GlimpseProps> = ({
       transcript: msg.transcript,
       mode: 'glimpse' as const,
       contactId: activeConversationId,
-      contactName: conversations.find(c => c.id === activeConversationId)?.recipientName || 'Unknown',
+      contactName: conversations.find(c => c.id === activeConversationId)?.title || 'Glimpse',
     }));
     selectAll(allItems);
   };
@@ -778,9 +817,6 @@ const Glimpse: React.FC<GlimpseProps> = ({
         onClose?.();
       }
     },
-    onSwitchMode: (_mode) => {
-      // Mode switch handled by parent
-    },
     onDownload: () => {
       if (isSelectionMode && selectionCount > 0) {
         // Download handled by selection toolbar
@@ -790,7 +826,7 @@ const Glimpse: React.FC<GlimpseProps> = ({
       if (isSelectionMode && selectionCount > 0) {
         (async () => {
           try {
-            await archiveRelayConversation(Array.from(selectedItems), conversations.find(c => c.id === activeConversationId)?.recipientName || conversations.find(c => c.id === activeConversationId)?.title || 'Glimpse');
+            await archiveRelayConversation(Array.from(selectedItems), conversations.find(c => c.id === activeConversationId)?.title || 'Glimpse');
             exitSelectionMode();
             toast.success(`Archived ${selectionCount} message${selectionCount > 1 ? 's' : ''}`);
           } catch {
@@ -906,7 +942,10 @@ const Glimpse: React.FC<GlimpseProps> = ({
   };
 
   const handleBookmark = async (messageId: string) => {
-    await glimpseService.toggleBookmark(messageId);
+    const result = await glimpseService.toggleBookmark(messageId);
+    if (result === 'added') toast.success('Bookmarked');
+    else if (result === 'removed') toast.success('Bookmark removed');
+    else toast.error('Could not update bookmark');
   };
 
   const toggleTranscript = (messageId: string) => {
@@ -945,7 +984,7 @@ const Glimpse: React.FC<GlimpseProps> = ({
           }
         }}
         modeTitle="Glimpse"
-        modeSubtitle="Video Voice Messages"
+        modeSubtitle="Video · Transcribed · Triaged"
         modeIcon={<Video className="w-5 h-5" />}
         accentColor={MODE_COLOR}
         isDarkMode={isDarkMode}
@@ -1012,16 +1051,16 @@ const Glimpse: React.FC<GlimpseProps> = ({
               </div>
             ) : conversations.length === 0 ? (
               <div className="vvb-empty">
-                <Video className="w-12 h-12 opacity-50" />
-                <h3>No video conversations yet</h3>
-                <p>Record and send your first video message!</p>
+                <Video className="w-10 h-10" style={{ color: MODE_COLOR, opacity: 0.7 }} />
+                <h3>No glimpses yet</h3>
+                <p>Video for the moments words can't carry. Pulse handles the rest.</p>
                 <button
                   type="button"
                   onClick={() => setViewMode('record')}
                   className="vvb-empty-cta"
                 >
-                  <Video className="w-5 h-5" />
-                  Record Video
+                  <Video className="w-4 h-4" />
+                  Record a glimpse
                 </button>
               </div>
             ) : (
@@ -1181,19 +1220,28 @@ const Glimpse: React.FC<GlimpseProps> = ({
 
         {/* RECORD VIEW */}
         {viewMode === 'record' && (
-          <>
-            {/* Recipient selector toggle */}
+          <div className="gl-record">
+            {/* Recipient bar */}
             {state.status === 'idle' && (
               <button
                 type="button"
                 onClick={() => setShowRecipientSelector(!showRecipientSelector)}
-                className="vvb-recipient-toggle"
+                className="gl-recipient-bar"
+                aria-expanded={showRecipientSelector}
               >
-                <Users className="w-4 h-4" />
-                {selectedRecipients.length === 0
-                  ? 'Select recipients'
-                  : `${selectedRecipients.length} selected`}
-                <ChevronDown className={`w-4 h-4 ${showRecipientSelector ? 'rotate-180' : ''}`} />
+                <Users className="icon w-4 h-4" />
+                <span className="label">
+                  {selectedRecipients.length === 0
+                    ? 'Select recipients'
+                    : `${selectedRecipients.length} selected`}
+                </span>
+                {selectedRecipients.length > 0 && (
+                  <span className="count">{selectedRecipients.length}</span>
+                )}
+                <ChevronDown
+                  className={`w-4 h-4 transition-transform ${showRecipientSelector ? 'rotate-180' : ''}`}
+                  style={{ color: 'var(--gl-ink-cloth)' }}
+                />
               </button>
             )}
 
@@ -1208,124 +1256,168 @@ const Glimpse: React.FC<GlimpseProps> = ({
               />
             )}
 
-            {/* Reply context */}
+            {/* Capture mode toggle */}
+            {state.status === 'idle' && (
+              <div className="gl-mode-toggle" role="group" aria-label="Capture mode">
+                <button
+                  type="button"
+                  className="gl-mode-btn"
+                  aria-pressed={captureMode === 'cam'}
+                  onClick={() => setCaptureMode('cam')}
+                >
+                  <Video className="w-3 h-3" />
+                  Cam
+                </button>
+                <button
+                  type="button"
+                  className="gl-mode-btn"
+                  aria-pressed={captureMode === 'cam-screen'}
+                  onClick={() => setCaptureMode('cam-screen')}
+                  title="Record screen with camera picture-in-picture"
+                >
+                  <Square className="w-3 h-3" />
+                  Cam + Screen
+                </button>
+              </div>
+            )}
+
+            {/* Replying-to chip */}
             {replyingTo && (
-              <div className="vvb-replying-to">
+              <div className="gl-replying-to">
                 <Reply className="w-4 h-4" />
                 <span>Replying to {replyingTo.senderName}</span>
-                <button type="button" onClick={() => setReplyingTo(null)} title="Cancel reply" aria-label="Cancel reply">
+                <button
+                  type="button"
+                  onClick={() => setReplyingTo(null)}
+                  title="Cancel reply"
+                  aria-label="Cancel reply"
+                >
                   <X className="w-4 h-4" />
                 </button>
               </div>
             )}
 
-            {/* Video Bubble */}
-            <div className={`vvb-video-bubble ${isRecording ? 'recording' : ''}`}>
-              <div className="vvb-video-inner">
-                {/* Video Preview/Recording */}
-                {state.status === 'ready' && previewUrl ? (
-                  <video
-                    src={previewUrl}
-                    className="vvb-video"
-                    controls
-                    loop
-                    playsInline
-                  />
-                ) : (
-                  <video
-                    ref={videoRef}
-                    className="vvb-video mirror"
-                    playsInline
-                    muted
-                  />
-                )}
+            {/* Video stage */}
+            <div className="gl-stage" data-state={isRecording ? 'recording' : state.status} data-mode={captureMode}>
+              {state.status === 'ready' && previewUrl ? (
+                <video src={previewUrl} controls loop playsInline />
+              ) : (
+                <video
+                  ref={videoRef}
+                  className={mirrorPreview ? 'mirror' : ''}
+                  playsInline
+                  muted
+                />
+              )}
 
-                {/* Idle state overlay */}
-                {state.status === 'idle' && (
-                  <div className="vvb-idle-state">
-                    <div className="vvb-idle-icon">
-                      <Video className="w-8 h-8 text-white" />
-                    </div>
-                    <p className="vvb-idle-text">Tap to start camera</p>
+              {/* Idle overlay */}
+              {state.status === 'idle' && !state.error && (
+                <div className="gl-idle">
+                  <div className="gl-idle-icon">
+                    {captureMode === 'cam-screen' ? (
+                      <Square className="w-6 h-6" />
+                    ) : (
+                      <Video className="w-6 h-6" />
+                    )}
                   </div>
-                )}
+                  <p className="gl-idle-text">
+                    {captureMode === 'cam-screen'
+                      ? 'tap to start screen + camera'
+                      : 'tap to start camera'}
+                  </p>
+                </div>
+              )}
 
-                {/* Recording indicator and duration */}
-                {(isPreviewing || isRecording) && (
-                  <div className="vvb-overlay-top">
-                    <div className={`vvb-rec-badge ${isRecording ? 'visible' : ''}`}>
-                      <div className="vvb-rec-dot" />
-                      <span className="vvb-rec-text">REC</span>
-                    </div>
+              {/* Top meta */}
+              {(isPreviewing || isRecording || state.status === 'ready') && (
+                <div className="gl-stage-top">
+                  <div className={`gl-rec-badge ${isRecording ? 'visible' : ''}`}>
+                    <span className="gl-rec-dot" />
+                    <span>REC</span>
+                  </div>
+                  <div style={{ display: 'flex', alignItems: 'center', gap: 8 }}>
+                    {captureMode === 'cam-screen' && (isPreviewing || isRecording) && (
+                      <span className="gl-mode-chip">CAM + SCREEN</span>
+                    )}
                     {(isRecording || state.status === 'ready') && (
-                      <div className="vvb-duration">
+                      <div className="gl-duration">
                         {formatDurationDisplay(duration)} / {formatDurationDisplay(maxDuration)}
                       </div>
                     )}
                   </div>
-                )}
+                </div>
+              )}
 
-                {/* Flip camera button */}
-                {(isPreviewing || isRecording) && (
-                  <button
-                    type="button"
-                    onClick={flipCamera}
-                    className="vvb-flip-btn"
-                    title="Flip camera"
-                  >
-                    <FlipHorizontal className="w-4 h-4" />
+              {/* Stage controls (right side): flip OR pip-corner */}
+              {(isPreviewing || isRecording) && captureMode === 'cam' && (
+                <button
+                  type="button"
+                  onClick={flipCamera}
+                  className="gl-flip-btn"
+                  title="Flip camera"
+                  aria-label="Flip camera"
+                >
+                  <FlipHorizontal className="w-4 h-4" />
+                </button>
+              )}
+              {(isPreviewing || isRecording) && captureMode === 'cam-screen' && (
+                <button
+                  type="button"
+                  onClick={swapPipCorner}
+                  className="gl-flip-btn"
+                  title={`Move PIP (currently ${pipCorner.toUpperCase()})`}
+                  aria-label="Move picture-in-picture corner"
+                >
+                  <RotateCcw className="w-4 h-4" />
+                </button>
+              )}
+
+              {/* Error */}
+              {state.error && (
+                <div className="gl-stage-error">
+                  <AlertCircle className="w-8 h-8" />
+                  <p>{state.error}</p>
+                  <button type="button" onClick={startPreview} className="gl-retry-btn">
+                    Try again
                   </button>
-                )}
-
-                {/* Error state */}
-                {state.error && (
-                  <div className="vvb-error">
-                    <AlertCircle className="w-10 h-10 vvb-error-icon" />
-                    <p className="vvb-error-text">{state.error}</p>
-                    <button type="button" onClick={startPreview} className="vvb-retry-btn">
-                      Try Again
-                    </button>
-                  </div>
-                )}
-              </div>
+                </div>
+              )}
             </div>
 
             {/* Controls */}
-            <div className="vvb-controls">
+            <div className="gl-controls">
               {state.status === 'ready' ? (
-                /* Post-recording controls */
                 <>
-                  <div className="vvb-caption-wrap">
-                    <input
-                      type="text"
-                      value={caption}
-                      onChange={(e) => setCaption(e.target.value)}
-                      placeholder="Add a caption..."
-                      className="vvb-caption-input"
-                      maxLength={200}
-                    />
-                  </div>
+                  <input
+                    type="text"
+                    value={caption}
+                    onChange={(e) => setCaption(e.target.value)}
+                    placeholder="Add a caption (optional)"
+                    className="gl-caption-input"
+                    maxLength={200}
+                  />
 
-                  <div className="vvb-controls-row">
+                  <div className="gl-secondary-controls">
                     <button
                       type="button"
                       onClick={discardRecording}
-                      className="vvb-ctrl-btn danger"
+                      className="gl-secondary-btn danger"
                       title="Discard"
+                      aria-label="Discard recording"
                     >
-                      <Trash2 className="w-5 h-5" />
+                      <Trash2 className="w-4 h-4" />
                     </button>
-
                     <button
                       type="button"
                       onClick={() => {
                         discardRecording();
                         startPreview();
                       }}
-                      className="vvb-ctrl-btn"
+                      className="gl-secondary-btn"
                       title="Re-record"
+                      aria-label="Re-record"
                     >
-                      <RotateCcw className="w-5 h-5" />
+                      <RotateCcw className="w-4 h-4" />
                     </button>
                   </div>
 
@@ -1333,85 +1425,68 @@ const Glimpse: React.FC<GlimpseProps> = ({
                     type="button"
                     onClick={handleSend}
                     disabled={isSending || selectedRecipients.length === 0}
-                    className="vvb-send-btn"
+                    className="gl-send-btn"
                   >
                     {isSending ? (
                       <>
-                        <Loader2 className="w-5 h-5 animate-spin" />
-                        Sending... {progress}%
+                        <Loader2 className="w-4 h-4 animate-spin" />
+                        <span>Sending {progress}%</span>
                       </>
                     ) : selectedRecipients.length === 0 ? (
                       <>
-                        <Users className="w-5 h-5" />
-                        Select Recipients
+                        <Users className="w-4 h-4" />
+                        <span>Select recipients</span>
                       </>
                     ) : (
                       <>
-                        <Send className="w-5 h-5" />
-                        Send Video
+                        <Send className="w-4 h-4" />
+                        <span>Send glimpse</span>
                       </>
                     )}
                   </button>
 
-                  {sendError && (
-                    <p className="text-red-400 text-sm text-center">{sendError}</p>
-                  )}
+                  {sendError && <p className="gl-send-error">{sendError}</p>}
                 </>
               ) : (
-                /* Recording controls */
                 <>
-                  <div className="vvb-controls-row">
-                    {/* Record button */}
-                    <div className="vvb-record-container">
-                      {/* Progress ring */}
-                      {isRecording && (
-                        <svg className="vvb-progress-ring" viewBox="0 0 84 84">
-                          <defs>
-                            <linearGradient id="vvb-gradient" x1="0%" y1="0%" x2="100%" y2="100%">
-                              <stop offset="0%" stopColor="#06B6D4" />
-                              <stop offset="100%" stopColor="#0EA5E9" />
-                            </linearGradient>
-                          </defs>
-                          <circle
-                            className="track"
-                            cx="42"
-                            cy="42"
-                            r={ringRadius}
-                          />
-                          <circle
-                            className="progress"
-                            cx="42"
-                            cy="42"
-                            r={ringRadius}
-                            strokeDasharray={ringCircumference}
-                            strokeDashoffset={ringOffset}
-                          />
-                        </svg>
-                      )}
-
-                      <button
-                        type="button"
-                        onClick={handleRecordClick}
-                        disabled={state.status === 'idle' && selectedRecipients.length === 0 && pulseContacts.length > 0}
-                        className={`vvb-record-btn ${isRecording ? 'recording' : ''}`}
-                        aria-label={isRecording ? 'Stop recording' : 'Start recording'}
-                        title={isRecording ? 'Stop recording' : 'Start recording'}
-                      >
-                        <div className="vvb-record-icon" />
-                      </button>
-                    </div>
+                  <div className="gl-record-cluster">
+                    {isRecording && (
+                      <svg className="gl-progress-ring" viewBox="0 0 84 84">
+                        <circle className="track" cx="42" cy="42" r={ringRadius} />
+                        <circle
+                          className="progress"
+                          cx="42"
+                          cy="42"
+                          r={ringRadius}
+                          strokeDasharray={ringCircumference}
+                          strokeDashoffset={ringOffset}
+                        />
+                      </svg>
+                    )}
+                    <button
+                      type="button"
+                      onClick={handleRecordClick}
+                      className="gl-record-btn"
+                      data-state={isRecording ? 'recording' : state.status}
+                      aria-label={isRecording ? 'Stop recording' : 'Start recording'}
+                      title={isRecording ? 'Stop recording' : 'Start recording'}
+                    >
+                      <span className="gl-record-icon" />
+                    </button>
                   </div>
 
-                  <p className="vvb-hint">
-                    {state.status === 'idle' && selectedRecipients.length === 0 && pulseContacts.length > 0 && 'Select recipients first'}
-                    {state.status === 'idle' && (selectedRecipients.length > 0 || pulseContacts.length === 0) && 'Tap to start camera'}
-                    {isPreviewing && 'Tap to start recording'}
-                    {isRecording && 'Tap to stop recording'}
+                  <p className="gl-hint">
+                    {state.status === 'idle' &&
+                      (captureMode === 'cam-screen'
+                        ? 'tap to start screen + camera'
+                        : 'tap to start camera')}
+                    {isPreviewing && 'tap to record'}
+                    {isRecording && 'tap to stop'}
                   </p>
                 </>
               )}
             </div>
-          </>
+          </div>
         )}
       </main>
 
@@ -1449,15 +1524,27 @@ const Glimpse: React.FC<GlimpseProps> = ({
       {/* Smart Replies Panel */}
       {smartReplies.length > 0 && showSmartReplies && (
         <div className="fixed bottom-20 right-4 z-40 w-96">
+          <button
+            type="button"
+            onClick={() => setShowSmartReplies(false)}
+            aria-label="Dismiss smart replies"
+            className="absolute -top-2 -right-2 z-10 w-6 h-6 rounded-full flex items-center justify-center"
+            style={{
+              background: isDarkMode ? 'rgba(255,255,255,0.06)' : '#f2f2f2',
+              color: isDarkMode ? '#b4b4b8' : '#52525b',
+              border: '1px solid ' + (isDarkMode ? 'rgba(255,255,255,0.10)' : 'rgba(0,0,0,0.08)'),
+            }}
+          >
+            <X className="w-3 h-3" />
+          </button>
           <VoxSmartReplies
             replies={smartReplies}
             onSelectReply={(reply) => {
-              navigator.clipboard.writeText(reply.text);
-              toast.success('Smart reply copied! Use it in your next message.');
+              navigator.clipboard.writeText(reply);
+              toast.success('Smart reply copied. Paste into your next message.');
               setSmartReplies([]);
               setShowSmartReplies(false);
             }}
-            onClose={() => setShowSmartReplies(false)}
             isDarkMode={isDarkMode}
             accentColor={MODE_COLOR}
           />
@@ -1497,6 +1584,15 @@ function formatDuration(seconds: number): string {
 
 function formatTime(date: Date): string {
   return date.toLocaleTimeString([], { hour: '2-digit', minute: '2-digit' });
+}
+
+function formatConvoPreview(conversation: GlimpseConversation): string {
+  if (conversation.lastMessageCaption) return conversation.lastMessageCaption;
+  if (conversation.lastMessageDuration && conversation.lastMessageDuration > 0) {
+    return `${formatDuration(conversation.lastMessageDuration)} glimpse`;
+  }
+  if (conversation.lastMessageAt) return 'Glimpse';
+  return 'No glimpses yet';
 }
 
 function formatRelativeTime(date: Date): string {

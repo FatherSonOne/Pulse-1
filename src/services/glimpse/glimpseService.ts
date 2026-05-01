@@ -103,7 +103,7 @@ class GlimpseService {
       .from('video_vox_conversations')
       .select(`
         *,
-        video_vox_messages!video_vox_conversations_last_message_id_fkey (
+        video_vox_messages!video_vox_conversations_last_message_fkey (
           caption,
           sender_name,
           duration,
@@ -111,7 +111,7 @@ class GlimpseService {
         )
       `)
       .eq('id', conversationId)
-      .single();
+      .maybeSingle();
 
     if (error || !data) return null;
 
@@ -122,60 +122,84 @@ class GlimpseService {
   }
 
   /**
-   * Get all conversations for current user
+   * Get all conversations for current user.
+   *
+   * Implementation note: split into two queries instead of one nested embed +
+   * cross-table order. PostgREST's nested ORDER syntax (`order=embedded(col)`)
+   * is a 400 footgun in the JS SDK, and the alternative referencedTable option
+   * is fragile across versions. Two simple queries are predictable and the cost
+   * difference is negligible — both hit indexed columns.
    */
   async getMyConversations(): Promise<GlimpseConversation[]> {
     const userId = await this.ensureUserId();
     if (!userId) return [];
 
-    const { data, error } = await supabase
+    // Step 1: which conversations is the user a member of?
+    const { data: members, error: memberError } = await supabase
       .from('video_vox_conversation_members')
+      .select('conversation_id, unread_count')
+      .eq('user_id', userId);
+
+    if (memberError) {
+      console.error('Error fetching conversation memberships:', memberError);
+      return [];
+    }
+    if (!members || members.length === 0) return [];
+
+    const conversationIds = members.map((m) => m.conversation_id);
+    const unreadByConv = new Map<string, number>(
+      members.map((m) => [m.conversation_id, m.unread_count || 0])
+    );
+
+    // Step 2: full conversations + last-message embed, ordered server-side.
+    const { data: convs, error: convError } = await supabase
+      .from('video_vox_conversations')
       .select(`
-        conversation_id,
-        unread_count,
-        video_vox_conversations (
-          *,
-          video_vox_messages!video_vox_conversations_last_message_id_fkey (
-            caption,
-            sender_name,
-            duration,
-            thumbnail_url
-          )
+        *,
+        video_vox_messages!video_vox_conversations_last_message_fkey (
+          caption,
+          sender_name,
+          duration,
+          thumbnail_url
         )
       `)
-      .eq('user_id', userId)
-      .order('video_vox_conversations(last_message_at)', { ascending: false });
+      .in('id', conversationIds)
+      .order('last_message_at', { ascending: false, nullsFirst: false });
 
-    if (error || !data) return [];
+    if (convError) {
+      console.error('Error fetching conversations:', convError);
+      return [];
+    }
+    if (!convs) return [];
 
-    // Filter to valid conversation rows first
-    const validItems = data.filter(item => item.video_vox_conversations != null);
-
-    // Batch participant lookup: collect ALL unique participant IDs across every conversation
+    // Step 3: batch participant lookup (eliminates N+1)
     const allParticipantIds = new Set<string>();
-    for (const item of validItems) {
-      const conv = item.video_vox_conversations as any;
-      for (const pid of (conv.participant_ids || [])) {
+    for (const conv of convs) {
+      for (const pid of conv.participant_ids || []) {
         allParticipantIds.add(pid);
       }
     }
-
-    // Single query for all participant details (eliminates N+1)
     const allParticipants = await this.getParticipantDetails([...allParticipantIds]);
-    const participantMap = new Map(allParticipants.map(p => [p.id, p]));
+    const participantMap = new Map(allParticipants.map((p) => [p.id, p]));
 
-    // Map results back to each conversation
-    const conversations: GlimpseConversation[] = [];
-    for (const item of validItems) {
-      const conv = item.video_vox_conversations as any;
+    // Step 4: map to GlimpseConversation, attaching unread + participants
+    return convs.map((conv) => {
       const participants = (conv.participant_ids || [])
         .map((pid: string) => participantMap.get(pid))
-        .filter(Boolean) as Array<{ id: string; name: string; handle?: string; avatarUrl?: string; avatarColor: string }>;
+        .filter(Boolean) as Array<{
+        id: string;
+        name: string;
+        handle?: string;
+        avatarUrl?: string;
+        avatarColor: string;
+      }>;
       const mapped = this.mapDbToConversation(conv, participants);
-      conversations.push(mapped);
-    }
-
-    return conversations;
+      // Attach unread for completeness — currently the type doesn't carry it,
+      // but consumers may extend GlimpseConversation later.
+      (mapped as GlimpseConversation & { unreadCount?: number }).unreadCount =
+        unreadByConv.get(conv.id) ?? 0;
+      return mapped;
+    });
   }
 
   /**
@@ -327,12 +351,13 @@ class GlimpseService {
         return null;
       }
 
-      // Get sender info
+      // Get sender info — maybeSingle so a missing pulse_users row falls
+      // through to the default name without 406ing.
       const { data: userData } = await supabase
         .from('pulse_users')
         .select('display_name, handle, avatar_url')
         .eq('id', userId)
-        .single();
+        .maybeSingle();
 
       const senderName = userData?.display_name || 'Unknown';
       const senderHandle = userData?.handle;
@@ -477,7 +502,7 @@ class GlimpseService {
       .from('video_vox_messages')
       .select('*')
       .eq('id', messageId)
-      .single();
+      .maybeSingle();
 
     if (error || !data) return null;
 
@@ -536,7 +561,7 @@ class GlimpseService {
       .from('video_vox_messages')
       .select('sender_id, status')
       .eq('id', messageId)
-      .single();
+      .maybeSingle();
 
     if (message && message.sender_id !== userId && message.status !== 'viewed') {
       await supabase
@@ -560,7 +585,7 @@ class GlimpseService {
       .from('video_vox_messages')
       .select('sender_id')
       .eq('id', messageId)
-      .single();
+      .maybeSingle();
 
     if (!message || message.sender_id !== userId) {
       return false;
@@ -590,13 +615,15 @@ class GlimpseService {
     if (!userId) return false;
 
     // Check if reaction exists
+    // toggle pattern — first click always finds zero rows; use maybeSingle()
+    // to avoid 406 Not Acceptable on the empty result.
     const { data: existing } = await supabase
       .from('video_vox_reactions')
       .select('id')
       .eq('message_id', messageId)
       .eq('user_id', userId)
       .eq('emoji', emoji)
-      .single();
+      .maybeSingle();
 
     if (existing) {
       // Remove reaction
@@ -653,37 +680,41 @@ class GlimpseService {
   // ============================================
 
   /**
-   * Toggle bookmark on a message
+   * Toggle bookmark on a message. Returns the new state so the UI can give
+   * immediate "added" / "removed" feedback without an extra round-trip.
    */
-  async toggleBookmark(messageId: string, note?: string, timestamp?: number): Promise<boolean> {
+  async toggleBookmark(
+    messageId: string,
+    note?: string,
+    timestamp?: number
+  ): Promise<'added' | 'removed' | null> {
     const userId = await this.ensureUserId();
-    if (!userId) return false;
+    if (!userId) return null;
 
     const { data: existing } = await supabase
       .from('video_vox_bookmarks')
       .select('id')
       .eq('message_id', messageId)
       .eq('user_id', userId)
-      .single();
+      .maybeSingle();
 
     if (existing) {
       const { error } = await supabase
         .from('video_vox_bookmarks')
         .delete()
         .eq('id', existing.id);
-      return !error;
-    } else {
-      const { error } = await supabase
-        .from('video_vox_bookmarks')
-        .insert([{
-          message_id: messageId,
-          user_id: userId,
-          note: note,
-          timestamp: timestamp,
-          created_at: new Date().toISOString()
-        }]);
-      return !error;
+      return error ? null : 'removed';
     }
+    const { error } = await supabase
+      .from('video_vox_bookmarks')
+      .insert([{
+        message_id: messageId,
+        user_id: userId,
+        note: note,
+        timestamp: timestamp,
+        created_at: new Date().toISOString(),
+      }]);
+    return error ? null : 'added';
   }
 
   /**
@@ -716,25 +747,27 @@ class GlimpseService {
   // ============================================
 
   /**
-   * Queue AI processing for a video message
+   * Queue AI processing for a video message.
+   * The queue insert is best-effort bookkeeping — if RLS or the table itself
+   * is misconfigured we still want the AI work to run, since the queue is for
+   * later reprocessing, not the live path.
    */
   private async queueAIProcessing(messageId: string, videoBlob: Blob): Promise<void> {
-    try {
-      // Add to queue
-      await supabase
-        .from('video_vox_ai_queue')
-        .insert([{
-          message_id: messageId,
-          status: 'pending',
-          tasks: ['transcribe', 'summarize', 'extract_topics'],
-          created_at: new Date().toISOString()
-        }]);
+    const { error: queueErr } = await supabase
+      .from('video_vox_ai_queue')
+      .insert([{
+        message_id: messageId,
+        status: 'pending',
+        tasks: ['transcribe', 'summarize', 'extract_topics'],
+        created_at: new Date().toISOString(),
+      }]);
 
-      // Process immediately in background
-      this.processVideoWithAI(messageId, videoBlob).catch(console.error);
-    } catch (error) {
-      console.error('Error queuing AI processing:', error);
+    if (queueErr) {
+      console.warn('AI queue enqueue failed (continuing with inline processing):', queueErr.message);
     }
+
+    // Always run the AI work, even if queue insert failed.
+    this.processVideoWithAI(messageId, videoBlob).catch(console.error);
   }
 
   /**
@@ -833,21 +866,25 @@ Return as JSON.` }
         .eq('id', messageId);
 
       // Increment attempts with a separate fetch-then-update since Supabase JS SDK
-      // does not support raw SQL expressions in .update()
+      // does not support raw SQL expressions in .update(). Use maybeSingle()
+      // because the queue row may not exist (queue insert can fail on RLS or
+      // if the table is misconfigured) — .single() would 406 on no rows.
       const { data: queueEntry } = await supabase
         .from('video_vox_ai_queue')
         .select('attempts')
         .eq('message_id', messageId)
-        .single();
+        .maybeSingle();
 
-      await supabase
-        .from('video_vox_ai_queue')
-        .update({
-          status: 'failed',
-          error_message: error.message,
-          attempts: (queueEntry?.attempts ?? 0) + 1
-        })
-        .eq('message_id', messageId);
+      if (queueEntry) {
+        await supabase
+          .from('video_vox_ai_queue')
+          .update({
+            status: 'failed',
+            error_message: error.message,
+            attempts: (queueEntry.attempts ?? 0) + 1,
+          })
+          .eq('message_id', messageId);
+      }
 
       return null;
     }
@@ -1191,8 +1228,18 @@ Return as JSON.` }
     return new Promise((resolve, reject) => {
       const reader = new FileReader();
       reader.onloadend = () => {
+        // Data URL form: `data:<mimetype>;base64,<payload>`. The mimetype can
+        // contain commas (e.g. `video/webm;codecs=vp9,opus`) so naive split(',')
+        // lands inside the codec list. Split on the literal `;base64,` marker
+        // which is unambiguous.
         const result = reader.result as string;
-        resolve(result.split(',')[1]);
+        const marker = ';base64,';
+        const idx = result.indexOf(marker);
+        if (idx < 0) {
+          reject(new Error('Unexpected FileReader output: missing ;base64, marker'));
+          return;
+        }
+        resolve(result.slice(idx + marker.length));
       };
       reader.onerror = reject;
       reader.readAsDataURL(blob);
