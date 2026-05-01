@@ -76,6 +76,8 @@ interface PulseRadioProps {
   apiKey?: string;
   onBack: () => void;
   isDarkMode?: boolean;
+  /** Broadcast id to scroll to / select on mount (e.g. triage deep-link). */
+  initialBroadcastId?: string;
 }
 
 // Relay brand accent (rose-500) — per-mode colors retired in 2.1d.1.
@@ -255,7 +257,7 @@ const LayeredVisualizer: React.FC<LayeredVisualizerProps> = ({
 // MAIN COMPONENT
 // ============================================
 
-const PulseRadio: React.FC<PulseRadioProps> = ({ onBack, apiKey, isDarkMode = false }) => {
+const PulseRadio: React.FC<PulseRadioProps> = ({ onBack, apiKey, isDarkMode = false, initialBroadcastId }) => {
   const [channels, setChannels] = useState<PulseChannel[]>([]);
   const [selectedChannel, setSelectedChannel] = useState<PulseChannel | null>(null);
   const [broadcasts, setBroadcasts] = useState<Broadcast[]>([]);
@@ -515,6 +517,23 @@ const PulseRadio: React.FC<PulseRadioProps> = ({ onBack, apiKey, isDarkMode = fa
       loadBroadcasts(selectedChannel.id);
     }
   }, [selectedChannel]);
+
+  // Deep-link: when the parent passed a broadcast id (e.g. from a triage row
+  // click), scroll the matching broadcast row into view once it's loaded.
+  // If the broadcast lives on a channel we haven't auto-selected, the row
+  // won't be in `broadcasts` yet — gracefully degrades to "land on the
+  // section" without further routing.
+  useEffect(() => {
+    if (!initialBroadcastId || broadcasts.length === 0) return;
+    const match = broadcasts.find((b) => b.id === initialBroadcastId);
+    if (!match) return;
+    const el = document.querySelector<HTMLElement>(
+      `[data-broadcast-id="${initialBroadcastId}"]`,
+    );
+    if (el) {
+      el.scrollIntoView({ behavior: 'smooth', block: 'center' });
+    }
+  }, [initialBroadcastId, broadcasts]);
 
   const loadPulseUsers = async () => {
     const users = await voxModeService.getAllPulseUsers();

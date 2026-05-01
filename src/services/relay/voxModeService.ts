@@ -1706,6 +1706,160 @@ class VoxModeService {
     return true;
   }
 
+  // ─────────────────────────────────────────────────────────────────────
+  // Triage dismissal — local-only "hide from triage" flag.
+  //
+  // Stage 2.1d.5 lands archive-from-triage without a schema migration. We
+  // keep a per-user Set of `${kind}:${id}` strings in localStorage; the
+  // useRelayTriage hook filters them out client-side. This means the
+  // dismissal does NOT sync across devices — a deliberate trade-off so
+  // we can ship today instead of waiting on a `relay_triage_dismissals`
+  // migration. When that migration lands, swap the storage backend; the
+  // public surface here doesn't change.
+  // ─────────────────────────────────────────────────────────────────────
+
+  private triageDismissStorageKey(authUserId: string): string {
+    return `relay_triage_dismissed:${authUserId}`;
+  }
+
+  private readDismissedSet(authUserId: string): Set<string> {
+    try {
+      const raw = localStorage.getItem(this.triageDismissStorageKey(authUserId));
+      if (!raw) return new Set();
+      const parsed = JSON.parse(raw);
+      return new Set(Array.isArray(parsed) ? parsed : []);
+    } catch {
+      return new Set();
+    }
+  }
+
+  private writeDismissedSet(authUserId: string, set: Set<string>): void {
+    try {
+      localStorage.setItem(
+        this.triageDismissStorageKey(authUserId),
+        JSON.stringify(Array.from(set)),
+      );
+    } catch (err) {
+      console.warn('[voxModeService] dismissed-set write failed:', err);
+    }
+  }
+
+  /** Hide a triage item from the feed without touching the source row. */
+  async dismissTriageItem(
+    kind: 'classic' | 'thread' | 'quick' | 'broadcast' | 'note',
+    rowId: string,
+  ): Promise<boolean> {
+    const authUserId = await this.ensureUserId();
+    if (!authUserId) return false;
+    const set = this.readDismissedSet(authUserId);
+    set.add(`${kind}:${rowId}`);
+    this.writeDismissedSet(authUserId, set);
+    return true;
+  }
+
+  /** Undo a dismissal — used by the toast's Undo action. */
+  async undismissTriageItem(
+    kind: 'classic' | 'thread' | 'quick' | 'broadcast' | 'note',
+    rowId: string,
+  ): Promise<boolean> {
+    const authUserId = await this.ensureUserId();
+    if (!authUserId) return false;
+    const set = this.readDismissedSet(authUserId);
+    set.delete(`${kind}:${rowId}`);
+    this.writeDismissedSet(authUserId, set);
+    return true;
+  }
+
+  /** Snapshot the dismissed set as `${kind}:${id}` strings. */
+  async getDismissedTriageIds(): Promise<Set<string>> {
+    const authUserId = await this.ensureUserId();
+    if (!authUserId) return new Set();
+    return this.readDismissedSet(authUserId);
+  }
+
+  /**
+   * Hard-delete a triage item from its source table. Per-kind RLS does the
+   * authorisation gate — we just call DELETE and report whether the row
+   * actually went away. Threads use the existing `is_deleted` soft flag;
+   * broadcasts are author-only and we let RLS reject non-owners.
+   *
+   * Returns true on success, false on RLS reject / network error / no-op.
+   */
+  async deleteTriageItem(
+    kind: 'classic' | 'thread' | 'quick' | 'broadcast' | 'note',
+    rowId: string,
+  ): Promise<boolean> {
+    const authUserId = await this.ensureUserId();
+    if (!authUserId) return false;
+
+    if (kind === 'classic') {
+      const { error } = await supabase
+        .from('voxer_recordings')
+        .delete()
+        .eq('id', rowId)
+        .eq('user_id', authUserId);
+      if (error) {
+        console.warn('[deleteTriageItem] classic failed:', error.message);
+        return false;
+      }
+      return true;
+    }
+
+    if (kind === 'note') {
+      // Reuse the existing helper so the delete path stays consistent
+      // with everywhere else that drops a vox note.
+      return this.deleteVoxNote(rowId);
+    }
+
+    if (kind === 'broadcast') {
+      const { error } = await supabase
+        .from('broadcasts')
+        .delete()
+        .eq('id', rowId);
+      if (error) {
+        console.warn('[deleteTriageItem] broadcast failed:', error.message);
+        return false;
+      }
+      return true;
+    }
+
+    // thread + quick both need the canonical pulse user uuid.
+    const pulseResp = await supabase
+      .from('pulse_users')
+      .select('id')
+      .eq('auth_user_id', authUserId)
+      .maybeSingle();
+    const pulseUserId: string | undefined = pulseResp.data?.id;
+    if (!pulseUserId) return false;
+
+    if (kind === 'quick') {
+      const { error } = await supabase
+        .from('quick_vox_messages')
+        .delete()
+        .eq('id', rowId)
+        .or(`sender_id.eq.${pulseUserId},recipient_id.eq.${pulseUserId}`);
+      if (error) {
+        console.warn('[deleteTriageItem] quick failed:', error.message);
+        return false;
+      }
+      return true;
+    }
+
+    // thread: soft-delete via the existing `is_deleted` column so the
+    // message disappears for everyone in the thread without losing the
+    // row (consistent with how the threads view treats deletion).
+    const { error } = await supabase
+      .from('voice_thread_messages')
+      .update({ is_deleted: true })
+      .eq('id', rowId)
+      .eq('sender_id', pulseUserId);
+    if (error) {
+      console.warn('[deleteTriageItem] thread soft-delete failed:', error.message);
+      return false;
+    }
+    return true;
+  }
+
   /**
    * Upload an audio blob to the `relay` bucket without writing any
    * conversation row, and return the public URL. Used by the share-link

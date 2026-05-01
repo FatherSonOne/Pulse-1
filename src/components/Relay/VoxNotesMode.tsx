@@ -65,6 +65,8 @@ interface VoxNotesModeProps {
   apiKey?: string;
   onBack: () => void;
   isDarkMode?: boolean;
+  /** Note id to select on mount (e.g. from a triage row deep-link). */
+  initialNoteId?: string;
 }
 
 const LINK_TYPE_ICONS: Record<string, React.ReactNode> = {
@@ -79,6 +81,7 @@ const VoxNotesMode: React.FC<VoxNotesModeProps> = ({
   apiKey,
   onBack,
   isDarkMode = false,
+  initialNoteId,
 }) => {
   const [notes, setNotes] = useState<VoxNote[]>([]);
   const [selectedNote, setSelectedNote] = useState<VoxNote | null>(null);
@@ -384,12 +387,20 @@ const VoxNotesMode: React.FC<VoxNotesModeProps> = ({
     }
   }, [searchQuery]);
 
-  // Auto-select first note when notes load (if none selected)
+  // Auto-select first note when notes load (if none selected). If a triage
+  // deep-link handed us an initialNoteId, prefer that match — falls back to
+  // the first note if the id was stale.
   useEffect(() => {
-    if (notes.length > 0 && !selectedNote) {
-      setSelectedNote(notes[0]);
+    if (notes.length === 0 || selectedNote) return;
+    if (initialNoteId) {
+      const match = notes.find((n) => n.id === initialNoteId);
+      if (match) {
+        setSelectedNote(match);
+        return;
+      }
     }
-  }, [notes]);
+    setSelectedNote(notes[0]);
+  }, [notes, initialNoteId]);
 
   useEffect(() => {
     const tags = new Set<string>();

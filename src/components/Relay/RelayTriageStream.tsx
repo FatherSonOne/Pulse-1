@@ -7,7 +7,19 @@
 // RelayComposer (the new-voice-message launcher).
 
 import React, { useEffect, useMemo, useRef, useState } from 'react';
-import { Mic, Reply, Play, Pause, Check, CheckCheck, Clock, ChevronDown } from 'lucide-react';
+import {
+  Mic,
+  Reply,
+  Play,
+  Pause,
+  Check,
+  CheckCheck,
+  Clock,
+  ChevronDown,
+  X,
+  MoreHorizontal,
+  Trash2,
+} from 'lucide-react';
 import toast from 'react-hot-toast';
 import type { Contact, User } from '../../types';
 import { useRelayTriage, type TriageItem, type TriageItemKind } from '../../hooks/useRelayTriage';
@@ -50,7 +62,15 @@ interface RelayTriageStreamProps {
   // Surfaced for parity with the rest of Relay's view tree; not consumed yet
   // (audience-picker integration lands in 2.1d.4).
   contacts?: Contact[];
-  onOpenView: (view: RelayTriageView) => void;
+  /**
+   * Switch the parent Relay view. The optional `focusItem` lets the caller
+   * deep-link straight to the triage row's source — bodies that accept an
+   * `initialItemId` will scroll to + highlight the matching row on mount.
+   */
+  onOpenView: (
+    view: RelayTriageView,
+    focusItem?: { kind: TriageItemKind; id: string; senderId?: string },
+  ) => void;
   onCompose: () => void;
   /** Open the composer with a specific Pulse user prefilled as 1:1 recipient. */
   onReply: (recipientId: string) => void;
@@ -103,20 +123,39 @@ const TriageRow: React.FC<{
   onReply?: () => void;
   onMarkRead?: () => void;
   onSnooze?: (untilMs: number) => void;
-}> = ({ item, isPlaying, onClick, onTogglePlay, onReply, onMarkRead, onSnooze }) => {
+  onDismiss?: () => void;
+  onDelete?: () => void;
+}> = ({
+  item,
+  isPlaying,
+  onClick,
+  onTogglePlay,
+  onReply,
+  onMarkRead,
+  onSnooze,
+  onDismiss,
+  onDelete,
+}) => {
   const [snoozeMenuOpen, setSnoozeMenuOpen] = useState(false);
+  const [overflowMenuOpen, setOverflowMenuOpen] = useState(false);
   const snoozeRef = useRef<HTMLDivElement | null>(null);
+  const overflowRef = useRef<HTMLDivElement | null>(null);
 
-  // Close the snooze menu on outside click so it doesn't linger between rows.
+  // Close any open menu on outside click so they don't linger between rows.
   useEffect(() => {
-    if (!snoozeMenuOpen) return;
+    if (!snoozeMenuOpen && !overflowMenuOpen) return;
     const onDocClick = (e: MouseEvent) => {
-      if (!snoozeRef.current) return;
-      if (!snoozeRef.current.contains(e.target as Node)) setSnoozeMenuOpen(false);
+      const t = e.target as Node;
+      if (snoozeMenuOpen && snoozeRef.current && !snoozeRef.current.contains(t)) {
+        setSnoozeMenuOpen(false);
+      }
+      if (overflowMenuOpen && overflowRef.current && !overflowRef.current.contains(t)) {
+        setOverflowMenuOpen(false);
+      }
     };
     document.addEventListener('mousedown', onDocClick);
     return () => document.removeEventListener('mousedown', onDocClick);
-  }, [snoozeMenuOpen]);
+  }, [snoozeMenuOpen, overflowMenuOpen]);
   // Reply makes sense for 1:1 voice (classic/quick) and for voice threads where
   // we have a thread_id to target. The actual routing decision (1:1 quick vs
   // voice-thread message) is made by the caller via onReply — we just expose
@@ -209,28 +248,29 @@ const TriageRow: React.FC<{
         </div>
       </button>
 
-      {(canReply || (item.needsReply && onMarkRead) || onSnooze) && (
+      {(canReply || onDismiss || onSnooze || onMarkRead || onDelete) && (
         <div
           className={`absolute right-2 top-2 ${
-            snoozeMenuOpen
+            snoozeMenuOpen || overflowMenuOpen
               ? 'opacity-100'
               : 'opacity-0 group-hover:opacity-100 focus-within:opacity-100'
           } transition flex items-center gap-1.5`}
         >
-          {/* Read — ghost icon-only. Terminal action; the lowest visual weight
-              of the three so the eye lands on Reply first. */}
-          {item.needsReply && onMarkRead && (
+          {/* Archive — primary dismiss. Always available; clears the row from
+              triage without touching the source data. Lowest visual weight of
+              the cluster so Reply still wins the eye. */}
+          {onDismiss && (
             <button
               type="button"
               onClick={(e) => {
                 e.stopPropagation();
-                onMarkRead();
+                onDismiss();
               }}
               className="inline-flex items-center justify-center w-6 h-6 rounded-md text-zinc-500 hover:text-zinc-700 hover:bg-zinc-100 dark:text-zinc-400 dark:hover:text-zinc-200 dark:hover:bg-zinc-800 transition focus:outline-none focus-visible:ring-2 focus-visible:ring-rose-400"
-              aria-label={`Mark ${item.senderName} as read`}
-              title="Mark as read"
+              aria-label={`Dismiss ${item.senderName} from triage`}
+              title="Dismiss from triage"
             >
-              <Check className="w-3.5 h-3.5" />
+              <X className="w-3.5 h-3.5" />
             </button>
           )}
           {/* Snooze — secondary outline. Visible enough to discover, quiet
@@ -241,6 +281,7 @@ const TriageRow: React.FC<{
                 type="button"
                 onClick={(e) => {
                   e.stopPropagation();
+                  setOverflowMenuOpen(false);
                   setSnoozeMenuOpen((o) => !o);
                 }}
                 className={`inline-flex items-center gap-1 px-2 py-1 rounded-md bg-transparent text-zinc-600 dark:text-zinc-400 ring-1 transition focus:outline-none focus-visible:ring-2 focus-visible:ring-rose-400 ${
@@ -303,6 +344,68 @@ const TriageRow: React.FC<{
               <span className="font-mono text-[10px] uppercase tracking-[0.1em]">Reply</span>
             </button>
           )}
+          {/* Overflow — destructive + low-frequency actions. Lives last so
+              the eye traverses Dismiss → Snooze → Reply → "more" left-to-right. */}
+          {(onMarkRead || onDelete) && (
+            <div ref={overflowRef} className="relative">
+              <button
+                type="button"
+                onClick={(e) => {
+                  e.stopPropagation();
+                  setSnoozeMenuOpen(false);
+                  setOverflowMenuOpen((o) => !o);
+                }}
+                className={`inline-flex items-center justify-center w-6 h-6 rounded-md transition focus:outline-none focus-visible:ring-2 focus-visible:ring-rose-400 ${
+                  overflowMenuOpen
+                    ? 'bg-zinc-100 dark:bg-zinc-800 text-zinc-700 dark:text-zinc-200'
+                    : 'text-zinc-500 hover:text-zinc-700 hover:bg-zinc-100 dark:text-zinc-400 dark:hover:text-zinc-200 dark:hover:bg-zinc-800'
+                }`}
+                aria-haspopup="menu"
+                aria-expanded={overflowMenuOpen}
+                aria-label={`More actions for ${item.senderName}`}
+                title="More"
+              >
+                <MoreHorizontal className="w-3.5 h-3.5" />
+              </button>
+              {overflowMenuOpen && (
+                <div
+                  role="menu"
+                  className="absolute right-0 top-full mt-1.5 w-48 rounded-md ring-1 ring-zinc-200 dark:ring-zinc-800 bg-white dark:bg-zinc-950 py-1 z-10 shadow-md"
+                >
+                  {item.needsReply && onMarkRead && (
+                    <button
+                      type="button"
+                      role="menuitem"
+                      onClick={(e) => {
+                        e.stopPropagation();
+                        setOverflowMenuOpen(false);
+                        onMarkRead();
+                      }}
+                      className="w-full text-left px-3 py-1.5 flex items-center gap-2 font-mono text-[11px] uppercase tracking-[0.1em] text-zinc-600 dark:text-zinc-300 hover:bg-zinc-100 dark:hover:bg-zinc-900 hover:text-zinc-900 dark:hover:text-zinc-100 transition"
+                    >
+                      <Check className="w-3 h-3" />
+                      Mark as read
+                    </button>
+                  )}
+                  {onDelete && (
+                    <button
+                      type="button"
+                      role="menuitem"
+                      onClick={(e) => {
+                        e.stopPropagation();
+                        setOverflowMenuOpen(false);
+                        onDelete();
+                      }}
+                      className="w-full text-left px-3 py-1.5 flex items-center gap-2 font-mono text-[11px] uppercase tracking-[0.1em] text-rose-600 dark:text-rose-400 hover:bg-rose-500/10 transition"
+                    >
+                      <Trash2 className="w-3 h-3" />
+                      Delete forever
+                    </button>
+                  )}
+                </div>
+              )}
+            </div>
+          )}
         </div>
       )}
     </div>
@@ -350,7 +453,17 @@ const EmptyState: React.FC<{ filter: FilterId }> = ({ filter }) => (
 
 export const RelayTriageStream: React.FC<RelayTriageStreamProps> = ({ user, onOpenView, onCompose, onReply, onReplyToThread }) => {
   const [activeFilter, setActiveFilter] = useState<FilterId>('all');
-  const { items, needsReplyCount, isLoading, error, markRead, markManyRead } = useRelayTriage(user?.id);
+  const {
+    items,
+    needsReplyCount,
+    isLoading,
+    error,
+    markRead,
+    markManyRead,
+    dismiss,
+    undismiss,
+    remove,
+  } = useRelayTriage(user?.id);
 
   // Single shared <audio> for inline row playback. Owning it here (rather
   // than per-row) gives us "only one row plays at a time" for free, lets
@@ -463,7 +576,72 @@ export const RelayTriageStream: React.FC<RelayTriageStreamProps> = ({ user, onOp
   }, [items, activeFilter]);
 
   const handleRowClick = (item: TriageItem) => {
-    onOpenView(viewForKind(item.kind));
+    onOpenView(viewForKind(item.kind), {
+      kind: item.kind,
+      id: item.id,
+      senderId: item.senderId,
+    });
+  };
+
+  /** Dismiss-from-triage with an Undo toast (5s). */
+  const dismissItem = async (item: TriageItem) => {
+    await dismiss(item);
+    toast.success(
+      (t) => (
+        <span className="flex items-center gap-3">
+          <span>Dismissed from triage</span>
+          <button
+            type="button"
+            onClick={async () => {
+              toast.dismiss(t.id);
+              await undismiss(item);
+              toast.success('Restored');
+            }}
+            className="font-mono text-[10px] uppercase tracking-[0.1em] text-rose-600 hover:text-rose-700"
+          >
+            Undo
+          </button>
+        </span>
+      ),
+      { duration: 5000 },
+    );
+  };
+
+  /** Hard-delete with a confirm-via-toast pattern: the toast itself hosts
+      the destructive action, so we don't ship a full modal for a single
+      decision the user can also reach via the row. */
+  const removeItem = async (item: TriageItem) => {
+    toast(
+      (t) => (
+        <span className="flex flex-col gap-2 min-w-[14rem]">
+          <span className="text-sm">
+            Delete this voice {item.kind === 'note' ? 'note' : 'message'} forever? This can't be undone.
+          </span>
+          <div className="flex items-center gap-2 justify-end">
+            <button
+              type="button"
+              onClick={() => toast.dismiss(t.id)}
+              className="font-mono text-[10px] uppercase tracking-[0.1em] px-2 py-1 rounded text-zinc-600 dark:text-zinc-300 hover:bg-zinc-100 dark:hover:bg-zinc-800"
+            >
+              Cancel
+            </button>
+            <button
+              type="button"
+              onClick={async () => {
+                toast.dismiss(t.id);
+                const ok = await remove(item);
+                if (ok) toast.success('Deleted');
+                else toast.error("Couldn't delete — you may not own this row.");
+              }}
+              className="font-mono text-[10px] uppercase tracking-[0.1em] px-2 py-1 rounded bg-rose-500 hover:bg-rose-600 text-white"
+            >
+              Delete
+            </button>
+          </div>
+        </span>
+      ),
+      { duration: 8000 },
+    );
   };
 
   return (
@@ -492,17 +670,15 @@ export const RelayTriageStream: React.FC<RelayTriageStreamProps> = ({ user, onOp
         ))}
       </div>
 
-      {/* Triage banner — surface needs-reply count or "Inbox clear."
-          The banner is the primary coral signal on this view; the
-          "Mark all read" affordance is intentionally a hairline ghost
-          so it reads as one surface, not two competing chips. */}
-      <div className="px-4 py-3 bg-rose-50 dark:bg-rose-500/10 border-b border-zinc-200 dark:border-zinc-800 flex items-center gap-3">
-        <p className="text-sm font-semibold text-rose-700 dark:text-rose-300 flex-1">
-          {needsReplyCount > 0
-            ? `${needsReplyCount} voice ${needsReplyCount === 1 ? 'message' : 'messages'} need a reply`
-            : 'Inbox clear.'}
-        </p>
-        {needsReplyCount > 0 && (
+      {/* Triage banner — heavy coral only when something genuinely needs
+          a reply. With nothing pending it's a quieter neutral chip
+          ("All caught up."), and when the feed is empty entirely the
+          banner hides — the empty state already speaks. */}
+      {needsReplyCount > 0 ? (
+        <div className="px-4 py-3 bg-rose-50 dark:bg-rose-500/10 border-b border-zinc-200 dark:border-zinc-800 flex items-center gap-3">
+          <p className="text-sm font-semibold text-rose-700 dark:text-rose-300 flex-1">
+            {needsReplyCount} voice {needsReplyCount === 1 ? 'message' : 'messages'} need a reply
+          </p>
           <button
             type="button"
             onClick={() => markManyRead(items)}
@@ -512,8 +688,14 @@ export const RelayTriageStream: React.FC<RelayTriageStreamProps> = ({ user, onOp
             <CheckCheck className="w-3 h-3" />
             Mark all read
           </button>
-        )}
-      </div>
+        </div>
+      ) : items.length > 0 ? (
+        <div className="px-4 py-2 border-b border-zinc-200 dark:border-zinc-800">
+          <p className="font-mono text-[11px] uppercase tracking-[0.1em] text-zinc-500 dark:text-zinc-400">
+            All caught up — nothing needs a reply.
+          </p>
+        </div>
+      ) : null}
 
       {/* Stream list */}
       <div className="flex-1 overflow-y-auto">
@@ -538,6 +720,8 @@ export const RelayTriageStream: React.FC<RelayTriageStreamProps> = ({ user, onOp
                   onTogglePlay={() => togglePlay(item)}
                   onMarkRead={() => markRead(item)}
                   onSnooze={(ms) => snoozeItem(item, ms)}
+                  onDismiss={() => dismissItem(item)}
+                  onDelete={() => removeItem(item)}
                   onReply={(() => {
                     // Thread rows reply into the thread; quick/classic rows
                     // open a 1:1 composer prefilled with the sender.

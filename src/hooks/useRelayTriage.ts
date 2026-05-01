@@ -66,6 +66,19 @@ export interface UseRelayTriageReturn {
   markRead: (item: TriageItem) => Promise<void>;
   /** Same as `markRead` but for a batch — used by the bulk action. */
   markManyRead: (items: TriageItem[]) => Promise<void>;
+  /**
+   * Hide a triage item from the feed without deleting the source row.
+   * Returns the kind+id pair so the caller can wire an Undo toast.
+   */
+  dismiss: (item: TriageItem) => Promise<void>;
+  /** Restore a previously-dismissed item — paired with `dismiss` for Undo. */
+  undismiss: (item: TriageItem) => Promise<void>;
+  /**
+   * Hard-delete the underlying row (per-kind: voxer_recordings / quick / note
+   * / broadcast hard delete; thread soft-delete via is_deleted). Optimistic
+   * removal from the feed; rolls back on RLS reject.
+   */
+  remove: (item: TriageItem) => Promise<boolean>;
 }
 
 const PER_SOURCE_LIMIT = 30;
@@ -73,6 +86,8 @@ const PER_SOURCE_LIMIT = 30;
 const noopRefresh = async () => {};
 const noopMarkRead = async (_item: TriageItem) => {};
 const noopMarkManyRead = async (_items: TriageItem[]) => {};
+const noopDismiss = async (_item: TriageItem) => {};
+const noopRemove = async (_item: TriageItem): Promise<boolean> => false;
 
 /**
  * Coerce a Supabase row's `created_at`/`recorded_at`/`published_at` cell into
@@ -106,6 +121,11 @@ export function useRelayTriage(userId: string | undefined | null): UseRelayTriag
   const [needsReplyCount, setNeedsReplyCount] = useState(0);
   const [isLoading, setIsLoading] = useState(false);
   const [error, setError] = useState<string | null>(null);
+  // Local-only set of dismissed `${kind}:${id}` strings. Filtered out of the
+  // feed before render. Persisted to localStorage by voxModeService — we
+  // mirror it here so the dismiss/undismiss callbacks can drive immediate
+  // re-renders without re-querying storage.
+  const [dismissedKeys, setDismissedKeys] = useState<Set<string>>(new Set());
 
   const fetchAll = useCallback(async (): Promise<void> => {
     if (!userId) {
@@ -350,9 +370,18 @@ export function useRelayTriage(userId: string | undefined | null): UseRelayTriag
         ...noteItems,
       ].sort((a, b) => b.createdAt.getTime() - a.createdAt.getTime());
 
-      const replyCount = merged.reduce((acc, i) => (i.needsReply ? acc + 1 : acc), 0);
+      // 6) Strip out items the user has dismissed from triage. We re-pull
+      //    the persisted set on every fetch so a dismissal made in another
+      //    tab takes effect on the next refresh; the local state is
+      //    primarily for immediate-render after a click.
+      const persistedDismissed = await voxModeService.getDismissedTriageIds();
+      setDismissedKeys(persistedDismissed);
+      const visible = merged.filter(
+        (i) => !persistedDismissed.has(`${i.kind}:${i.id}`),
+      );
+      const replyCount = visible.reduce((acc, i) => (i.needsReply ? acc + 1 : acc), 0);
 
-      setItems(merged);
+      setItems(visible);
       setNeedsReplyCount(replyCount);
     } catch (err: any) {
       console.error('[useRelayTriage] fatal error', err);
@@ -455,6 +484,83 @@ export function useRelayTriage(userId: string | undefined | null): UseRelayTriag
     [markRead],
   );
 
+  const dismiss = useCallback(
+    async (item: TriageItem) => {
+      const key = `${item.kind}:${item.id}`;
+      // Optimistic — drop the row immediately so the click feels instant.
+      setItems((prev) => prev.filter((i) => !(i.kind === item.kind && i.id === item.id)));
+      if (item.needsReply) {
+        setNeedsReplyCount((c) => Math.max(0, c - 1));
+      }
+      setDismissedKeys((prev) => {
+        const next = new Set(prev);
+        next.add(key);
+        return next;
+      });
+      const ok = await voxModeService.dismissTriageItem(item.kind, item.id);
+      if (!ok) {
+        // Rollback — put the item back and restore the count.
+        setItems((prev) => {
+          if (prev.some((i) => i.kind === item.kind && i.id === item.id)) return prev;
+          return [...prev, item].sort(
+            (a, b) => b.createdAt.getTime() - a.createdAt.getTime(),
+          );
+        });
+        if (item.needsReply) setNeedsReplyCount((c) => c + 1);
+        setDismissedKeys((prev) => {
+          const next = new Set(prev);
+          next.delete(key);
+          return next;
+        });
+      }
+    },
+    [],
+  );
+
+  const undismiss = useCallback(
+    async (item: TriageItem) => {
+      const key = `${item.kind}:${item.id}`;
+      const ok = await voxModeService.undismissTriageItem(item.kind, item.id);
+      if (!ok) return;
+      setDismissedKeys((prev) => {
+        const next = new Set(prev);
+        next.delete(key);
+        return next;
+      });
+      setItems((prev) => {
+        if (prev.some((i) => i.kind === item.kind && i.id === item.id)) return prev;
+        return [...prev, item].sort(
+          (a, b) => b.createdAt.getTime() - a.createdAt.getTime(),
+        );
+      });
+      if (item.needsReply) setNeedsReplyCount((c) => c + 1);
+    },
+    [],
+  );
+
+  const remove = useCallback(
+    async (item: TriageItem): Promise<boolean> => {
+      // Optimistic removal — drop the row before the round-trip so the
+      // confirm-then-delete flow doesn't sit on a spinner. Roll back if
+      // the per-kind DELETE is RLS-rejected or fails for any reason.
+      const beforeNeedsReply = item.needsReply;
+      setItems((prev) => prev.filter((i) => !(i.kind === item.kind && i.id === item.id)));
+      if (beforeNeedsReply) setNeedsReplyCount((c) => Math.max(0, c - 1));
+      const ok = await voxModeService.deleteTriageItem(item.kind, item.id);
+      if (!ok) {
+        setItems((prev) => {
+          if (prev.some((i) => i.kind === item.kind && i.id === item.id)) return prev;
+          return [...prev, item].sort(
+            (a, b) => b.createdAt.getTime() - a.createdAt.getTime(),
+          );
+        });
+        if (beforeNeedsReply) setNeedsReplyCount((c) => c + 1);
+      }
+      return ok;
+    },
+    [],
+  );
+
   return {
     items,
     needsReplyCount,
@@ -463,5 +569,8 @@ export function useRelayTriage(userId: string | undefined | null): UseRelayTriag
     refresh: userId ? fetchAll : noopRefresh,
     markRead: userId ? markRead : noopMarkRead,
     markManyRead: userId ? markManyRead : noopMarkManyRead,
+    dismiss: userId ? dismiss : noopDismiss,
+    undismiss: userId ? undismiss : noopDismiss,
+    remove: userId ? remove : noopRemove,
   };
 }

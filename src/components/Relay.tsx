@@ -64,6 +64,14 @@ const Relay: React.FC<RelayProps> = ({ apiKey, contacts, initialContactId, isDar
   const [composerOpen, setComposerOpen] = useState(false);
   const [composerPrefillRecipientId, setComposerPrefillRecipientId] = useState<string | null>(null);
   const [composerReplyTo, setComposerReplyTo] = useState<ComposerReplyTo | null>(null);
+  // Deep-link state — set when a triage row is clicked. Each body unmounts
+  // when its view tab loses focus, so passing these as `initial*` props
+  // gives one-shot scroll-to-and-select on next mount without coupling the
+  // body's internal selection state to this wrapper.
+  const [focusContactId, setFocusContactId] = useState<string | null>(initialContactId ?? null);
+  const [focusNoteId, setFocusNoteId] = useState<string | null>(null);
+  const [focusBroadcastId, setFocusBroadcastId] = useState<string | null>(null);
+  const [focusThreadId, setFocusThreadId] = useState<string | null>(null);
 
   const openComposer = (recipientId: string | null = null) => {
     setComposerPrefillRecipientId(recipientId);
@@ -128,7 +136,26 @@ const Relay: React.FC<RelayProps> = ({ apiKey, contacts, initialContactId, isDar
           <RelayTriageStream
             user={user}
             contacts={contacts}
-            onOpenView={setView}
+            onOpenView={(nextView, focus) => {
+              // Stash the focus target for the destination body. Each kind
+              // uses a different "initial*" prop because the bodies key off
+              // different identifiers (Pulse user id vs note id vs broadcast
+              // id vs thread id).
+              if (focus) {
+                if (focus.kind === 'note') {
+                  setFocusNoteId(focus.id);
+                } else if (focus.kind === 'broadcast') {
+                  setFocusBroadcastId(focus.id);
+                } else if (focus.kind === 'thread') {
+                  setFocusThreadId(focus.id);
+                } else if (focus.senderId) {
+                  // 'classic' / 'quick' both store the sender's pulse id;
+                  // ClassicMode lands on that contact's thread.
+                  setFocusContactId(focus.senderId);
+                }
+              }
+              setView(nextView);
+            }}
             onCompose={() => openComposer(null)}
             onReply={(recipientId) => openComposer(recipientId)}
             onReplyToThread={(threadId, threadLabel) =>
@@ -141,7 +168,7 @@ const Relay: React.FC<RelayProps> = ({ apiKey, contacts, initialContactId, isDar
             onBack={() => setView('triage')}
             apiKey={apiKey}
             isDarkMode={isDarkMode}
-            initialContactId={initialContactId}
+            initialContactId={focusContactId ?? initialContactId}
           />
         )}
         {view === 'channel' && (
@@ -156,6 +183,7 @@ const Relay: React.FC<RelayProps> = ({ apiKey, contacts, initialContactId, isDar
             onBack={() => setView('triage')}
             apiKey={apiKey}
             isDarkMode={isDarkMode}
+            initialBroadcastId={focusBroadcastId ?? undefined}
           />
         )}
         {view === 'notes' && (
@@ -163,6 +191,7 @@ const Relay: React.FC<RelayProps> = ({ apiKey, contacts, initialContactId, isDar
             onBack={() => setView('triage')}
             apiKey={apiKey}
             isDarkMode={isDarkMode}
+            initialNoteId={focusNoteId ?? undefined}
           />
         )}
         {view === 'live' && (
@@ -170,6 +199,7 @@ const Relay: React.FC<RelayProps> = ({ apiKey, contacts, initialContactId, isDar
             onBack={() => setView('triage')}
             apiKey={apiKey}
             isDarkMode={isDarkMode}
+            initialBroadcastId={focusBroadcastId ?? undefined}
           />
         )}
       </div>
