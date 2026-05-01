@@ -36,6 +36,7 @@ import {
   TrendingUp,
   HelpCircle,
   MonitorPlay,
+  Edit3,
 } from 'lucide-react';
 import VoxModeToolbar from '../Relay/VoxModeToolbar';
 import { useGlimpseRecording } from '../../hooks/useGlimpseRecording';
@@ -60,8 +61,9 @@ import { archiveRelayConversation } from '../../services/relay/relayArchiveServi
 
 // Phase 5: AI Enhancements
 import { MessageAIPanel, VoxSmartReplies } from '../Relay/index';
-import { summarizeConversation, generateSmartReplies } from '../../services/relay/relayAIService';
-import type { ConversationSummary, SmartReply } from '../../services/relay/relayAIService';
+import { summarizeConversation, generateSmartReplies, generateReplyDraft } from '../../services/relay/relayAIService';
+import type { ConversationSummary, SmartReply, ReplyDraft } from '../../services/relay/relayAIService';
+import { GlimpseReplyDraftPanel } from './GlimpseReplyDraftPanel';
 
 // Phase 6: Final Polish
 import { useRelayKeyboardShortcuts } from '../../hooks/useRelayKeyboardShortcuts';
@@ -659,7 +661,10 @@ const Glimpse: React.FC<GlimpseProps> = ({
   const [conversationSummary, setConversationSummary] = useState<ConversationSummary | null>(null);
   const [showSmartReplies, setShowSmartReplies] = useState(false);
   const [smartReplies, setSmartReplies] = useState<SmartReply[]>([]);
+  const [replyDraft, setReplyDraft] = useState<ReplyDraft | null>(null);
+  const [showReplyDraft, setShowReplyDraft] = useState(false);
   const [isGeneratingAI, setIsGeneratingAI] = useState(false);
+  const [isGeneratingDraft, setIsGeneratingDraft] = useState(false);
 
   // Phase 6: Final Polish States
   const [showShortcutsHelp, setShowShortcutsHelp] = useState(false);
@@ -852,6 +857,80 @@ const Glimpse: React.FC<GlimpseProps> = ({
     } finally {
       setIsGeneratingAI(false);
     }
+  };
+
+  // "Draft" — generate a single longer-form reply draft (option C from #27).
+  // Distinct from Smart Replies (3 quick options): one considered draft the
+  // user can edit, copy, or carry into a Glimpse reply as the caption.
+  const handleGenerateReplyDraft = async () => {
+    if (!chatHook || chatHook.messages.length === 0) {
+      toast.error('No messages to draft a reply for');
+      return;
+    }
+    // The slot is pointless if you've never received an incoming message.
+    const hasIncoming = chatHook.messages.some(msg => msg.senderId !== currentUserId);
+    if (!hasIncoming) {
+      toast('Nothing to reply to yet');
+      return;
+    }
+
+    setIsGeneratingDraft(true);
+    try {
+      const recent = chatHook.messages.slice(-5).map(msg => ({
+        id: msg.id,
+        transcription: msg.transcript || '',
+        sender: (msg.senderId === currentUserId ? 'me' : 'other') as 'me' | 'other',
+        senderName: msg.senderName,
+        timestamp: msg.createdAt,
+        duration: msg.duration,
+      }));
+
+      // Lightweight relationship hint — sender name is enough to personalize
+      // tone without coupling to the full RelationshipProfile loader. The
+      // service treats every field as optional, so this stays graceful.
+      const lastIncoming = [...recent].reverse().find(m => m.sender === 'other');
+      const draft = await generateReplyDraft(
+        recent,
+        lastIncoming ? { contactName: lastIncoming.senderName } : undefined,
+      );
+
+      if (draft) {
+        setReplyDraft(draft);
+        setShowReplyDraft(true);
+        toast.success('Draft ready');
+      } else {
+        toast.error('Could not draft a reply. Try again.');
+      }
+    } catch (error: unknown) {
+      console.error('Reply draft error:', error);
+      const msg = (error as { message?: string })?.message || '';
+      if (msg.includes('API key') || msg.includes('API_KEY') || msg.includes('invalid') || msg.includes('unauthorized')) {
+        toast.error('AI features require API configuration');
+      } else if (msg.includes('network') || msg.includes('fetch') || msg.includes('ECONNREFUSED')) {
+        toast.error('Network error. Please try again.');
+      } else {
+        toast.error('Reply drafter unavailable (beta)');
+      }
+    } finally {
+      setIsGeneratingDraft(false);
+    }
+  };
+
+  // Carry a draft into the recorder as the caption for a new Glimpse reply.
+  // Hooks into the existing reply flow: the source message becomes the
+  // replyingTo target and the draft prefills the caption input.
+  const handleUseDraftAsCaption = (draftText: string) => {
+    const lastIncoming = chatHook?.messages
+      .slice()
+      .reverse()
+      .find(msg => msg.senderId !== currentUserId);
+    if (lastIncoming) {
+      setReplyingTo(lastIncoming);
+    }
+    setCaption(draftText);
+    setCaptureMode('cam');
+    setShowReplyDraft(false);
+    setViewMode('record');
   };
 
   const handleSelectAllMessages = () => {
@@ -1107,8 +1186,17 @@ const Glimpse: React.FC<GlimpseProps> = ({
         showAI={viewMode === 'chat'}
         onSummarize={viewMode === 'chat' ? handleSummarizeConversation : undefined}
         onSmartReplies={viewMode === 'chat' ? handleGenerateSmartReplies : undefined}
+        onMeetingNotes={
+          viewMode === 'chat' && chatHook && chatHook.messages.some(m => m.senderId !== currentUserId)
+            ? handleGenerateReplyDraft
+            : undefined
+        }
+        notesIcon={<Edit3 />}
+        notesLabel="Draft"
+        notesTitle="Draft a long-form reply"
         isSummarizing={isGeneratingAI}
         isGeneratingReplies={isGeneratingAI}
+        isGeneratingNotes={isGeneratingDraft}
         hasContent={viewMode === 'chat' ? (chatHook ? chatHook.messages.length > 0 : false) : false}
         isSelectionMode={isSelectionMode}
         onToggleSelection={() => isSelectionMode ? exitSelectionMode() : enterSelectionMode()}
@@ -1670,6 +1758,18 @@ const Glimpse: React.FC<GlimpseProps> = ({
               onClose={() => setShowSummary(false)}
             />
           </div>
+        </div>
+      )}
+
+      {/* Reply Draft Panel — single longer-form draft (issue #27 option C) */}
+      {replyDraft && showReplyDraft && (
+        <div className="fixed bottom-20 right-4 z-40 w-96 max-w-[calc(100vw-32px)]">
+          <GlimpseReplyDraftPanel
+            draft={replyDraft}
+            isDarkMode={isDarkMode}
+            onUseAsCaption={handleUseDraftAsCaption}
+            onDismiss={() => setShowReplyDraft(false)}
+          />
         </div>
       )}
 

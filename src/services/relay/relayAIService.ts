@@ -53,6 +53,29 @@ export interface Chapter {
   summary: string;
 }
 
+/**
+ * Single longer-form reply draft (Glimpse "Draft" affordance).
+ * Distinct from SmartReply which returns three quick options.
+ */
+export interface ReplyDraft {
+  text: string;
+  tone: 'professional' | 'casual' | 'friendly' | 'warm' | 'direct';
+  suggestedAction?: string;
+}
+
+/**
+ * Optional relationship context used to tune the draft tone. Comes from
+ * the existing relationship profile system; all fields optional so the
+ * feature degrades gracefully when no profile exists.
+ */
+export interface RelationshipContext {
+  contactName?: string;
+  category?: string;
+  closeness?: 'close' | 'familiar' | 'professional' | 'distant';
+  preferredTone?: string;
+  recentTopics?: string[];
+}
+
 // ─── Internal raw-response shapes from the model ─────────────────────────
 
 interface RawConversationSummary {
@@ -82,6 +105,12 @@ interface RawChapter {
 
 interface RawChapterResponse {
   chapters?: RawChapter[];
+}
+
+interface RawReplyDraft {
+  text?: string;
+  tone?: ReplyDraft['tone'];
+  suggestedAction?: string;
 }
 
 /**
@@ -294,6 +323,92 @@ Format as JSON:
     keyDecisions: parsed.keyDecisions || [],
     actionItems: parsed.actionItems || [],
     nextSteps: parsed.nextSteps || [],
+  };
+}
+
+/**
+ * Generate a single longer-form reply draft for the Glimpse "Draft" affordance.
+ * Distinct from generateSmartReplies (which returns 3 quick options) — this
+ * is one considered draft tuned to the relationship context, intended to be
+ * read, edited, and either copied to clipboard or used as the caption for a
+ * Glimpse reply.
+ *
+ * @param messages       Recent conversation messages (last ~5). The most recent
+ *                       incoming message is treated as the message being replied to.
+ * @param relationship   Optional relationship context to tune tone. Feature
+ *                       degrades gracefully when not provided.
+ * @param workspaceId    Optional workspace override; defaults to the active workspace.
+ */
+export async function generateReplyDraft(
+  messages: VoxMessage[],
+  relationship?: RelationshipContext,
+  workspaceId?: string,
+): Promise<ReplyDraft | null> {
+  if (messages.length === 0) return null;
+
+  // The "message being replied to" is the most recent incoming message.
+  const incoming = [...messages].reverse().find(m => m.sender === 'other');
+  if (!incoming) return null;
+
+  const wsId = workspaceId ?? getCurrentWorkspaceId();
+  if (!wsId) throw new Error('No active workspace — AI unavailable');
+
+  const recent = messages.slice(-5);
+  const context = recent
+    .map(msg => {
+      const sender = msg.sender === 'me' ? 'You' : (msg.senderName || 'Contact');
+      return `${sender}: ${msg.transcription}`;
+    })
+    .join('\n');
+
+  const relationshipBlock = relationship
+    ? `RELATIONSHIP CONTEXT:
+- Contact: ${relationship.contactName || incoming.senderName || 'Contact'}
+- Category: ${relationship.category || 'unspecified'}
+- Closeness: ${relationship.closeness || 'unspecified'}
+${relationship.preferredTone ? `- Preferred tone: ${relationship.preferredTone}` : ''}
+${relationship.recentTopics && relationship.recentTopics.length > 0 ? `- Recent topics: ${relationship.recentTopics.join(', ')}` : ''}
+
+`
+    : '';
+
+  const prompt = `You are drafting a single, considered reply (not three quick options) for a video message thread.
+
+${relationshipBlock}CONVERSATION:
+${context}
+
+MESSAGE BEING REPLIED TO:
+${incoming.senderName || 'Contact'}: ${incoming.transcription}
+
+Write one reply draft (50-120 words, longer than a one-liner, not a manifesto). It should:
+- Acknowledge what they said specifically (don't be generic)
+- Match the tone implied by the relationship context
+- Move the conversation forward — answer questions, propose next steps, or close the loop
+- Be ready to use as-is OR edit lightly before sending
+
+Format as JSON:
+{
+  "text": "Draft reply text here.",
+  "tone": "professional" | "casual" | "friendly" | "warm" | "direct",
+  "suggestedAction": "Optional one-line action like 'Schedule a call' or 'Send a glimpse back', or omit"
+}`;
+
+  // Routes through the existing 'voxer_smart_reply' task — same domain (voice
+  // messaging reply drafting). A dedicated 'glimpse_draft_reply' task can be
+  // added to the AI router enum once this affordance graduates from beta and
+  // we want separate metering / model tuning.
+  const parsed = await invokeAIJson<RawReplyDraft>(
+    'voxer_smart_reply',
+    prompt,
+    { workspaceId: wsId, temperature: 0.6 },
+  );
+
+  if (!parsed.text) return null;
+
+  return {
+    text: parsed.text.trim(),
+    tone: parsed.tone || 'friendly',
+    suggestedAction: parsed.suggestedAction,
   };
 }
 

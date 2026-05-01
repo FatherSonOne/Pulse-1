@@ -42,6 +42,12 @@ export interface VoxModeToolbarProps {
   isGeneratingNotes?: boolean;
   /** Disable AI buttons when there is no content to process */
   hasContent?: boolean;
+  /** Override the third AI slot's icon. Defaults to <FileText />. Glimpse uses
+      this slot for "Draft" (long-form reply draft) instead of meeting notes. */
+  notesIcon?: React.ReactNode;
+  /** Override the third AI slot's label and tooltip text. Defaults to "Notes". */
+  notesLabel?: string;
+  notesTitle?: string;
 
   // Selection mode
   isSelectionMode: boolean;
@@ -85,6 +91,9 @@ const VoxModeToolbar: React.FC<VoxModeToolbarProps> = ({
   isGeneratingReplies = false,
   isGeneratingNotes = false,
   hasContent = true,
+  notesIcon,
+  notesLabel = 'Notes',
+  notesTitle = 'Generate Meeting Notes',
 
   isSelectionMode,
   onToggleSelection,
@@ -205,15 +214,17 @@ const VoxModeToolbar: React.FC<VoxModeToolbarProps> = ({
                   ? 'text-rose-300 hover:text-rose-200'
                   : 'text-rose-700 hover:text-rose-900'
               }`}
-              title="Generate Meeting Notes"
+              title={notesTitle}
             >
               {isGeneratingNotes ? (
                 <Loader2 className="w-3 h-3 animate-spin" />
+              ) : notesIcon ? (
+                <span className="inline-flex [&>svg]:w-3 [&>svg]:h-3">{notesIcon}</span>
               ) : (
                 <FileText className="w-3 h-3" />
               )}
               <span className="hidden sm:inline-block group-hover:[text-decoration:underline] [text-decoration-thickness:1px] [text-underline-offset:3px]">
-                Notes
+                {notesLabel}
               </span>
             </button>
           )}
