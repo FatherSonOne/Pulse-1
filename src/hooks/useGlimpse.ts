@@ -119,6 +119,9 @@ export interface UseGlimpseMessagesOptions {
 
 export interface UseGlimpseMessagesReturn {
   messages: GlimpseMessage[];
+  bookmarkedIds: Set<string>;
+  /** Map of glimpse message id → set of action-item texts already converted to Pulse tasks. */
+  convertedActionItems: Map<string, Set<string>>;
   isLoading: boolean;
   error: string | null;
   hasMore: boolean;
@@ -138,6 +141,12 @@ export interface UseGlimpseMessagesReturn {
   ) => Promise<GlimpseMessage | null>;
   deleteMessage: (messageId: string) => Promise<boolean>;
   toggleReaction: (messageId: string, emoji: string, timestamp?: number) => Promise<boolean>;
+  toggleBookmark: (messageId: string) => Promise<'added' | 'removed' | null>;
+  /** Convert an extracted action item to a Pulse task; updates local state. */
+  addActionItemAsTask: (
+    message: GlimpseMessage,
+    actionItem: string
+  ) => Promise<'created' | 'already-exists' | 'failed'>;
   markAsViewed: (messageId: string, watchDuration?: number, completed?: boolean) => Promise<void>;
 }
 
@@ -152,6 +161,8 @@ export function useGlimpseMessages(options: UseGlimpseMessagesOptions): UseGlimp
   const isActive = conversationId.length > 0;
 
   const [messages, setMessages] = useState<GlimpseMessage[]>([]);
+  const [bookmarkedIds, setBookmarkedIds] = useState<Set<string>>(new Set());
+  const [convertedActionItems, setConvertedActionItems] = useState<Map<string, Set<string>>>(new Map());
   const [isLoading, setIsLoading] = useState(false);
   const [error, setError] = useState<string | null>(null);
   const [hasMore, setHasMore] = useState(true);
@@ -161,6 +172,8 @@ export function useGlimpseMessages(options: UseGlimpseMessagesOptions): UseGlimp
   const refresh = useCallback(async () => {
     if (!isActive) {
       setMessages([]);
+      setBookmarkedIds(new Set());
+      setConvertedActionItems(new Map());
       setOffset(0);
       setHasMore(false);
       setIsLoading(false);
@@ -174,6 +187,22 @@ export function useGlimpseMessages(options: UseGlimpseMessagesOptions): UseGlimp
       setOffset(msgs.length);
       setHasMore(msgs.length >= limit);
 
+      // Fetch bookmarks + converted action items in parallel — both are
+      // best-effort UI hints, neither blocks the message render.
+      const [bookmarks, converted] = await Promise.all([
+        glimpseService.getMyBookmarks(),
+        glimpseService.getConvertedActionItems(msgs.map((m) => m.id)),
+      ]);
+
+      const conversationMessageIds = new Set(msgs.map((m) => m.id));
+      const bookmarkedHere = new Set(
+        bookmarks
+          .filter((b) => conversationMessageIds.has(b.messageId))
+          .map((b) => b.messageId)
+      );
+      setBookmarkedIds(bookmarkedHere);
+      setConvertedActionItems(converted);
+
       if (autoMarkAsRead) {
         await glimpseService.markConversationAsRead(conversationId);
       }
@@ -183,6 +212,24 @@ export function useGlimpseMessages(options: UseGlimpseMessagesOptions): UseGlimp
       setIsLoading(false);
     }
   }, [conversationId, limit, autoMarkAsRead, isActive]);
+
+  const addActionItemAsTask = useCallback(
+    async (message: GlimpseMessage, actionItem: string) => {
+      const result = await glimpseService.createTaskFromActionItem(actionItem, message);
+      if (result.status === 'created' || result.status === 'already-exists') {
+        // Update local state so the row immediately renders as ✓ converted
+        setConvertedActionItems((prev) => {
+          const next = new Map(prev);
+          const set = new Set(next.get(message.id) || []);
+          set.add(actionItem.trim());
+          next.set(message.id, set);
+          return next;
+        });
+      }
+      return result.status;
+    },
+    []
+  );
 
   const loadMore = useCallback(async () => {
     if (!isActive || !hasMore || isLoading) return;
@@ -236,6 +283,30 @@ export function useGlimpseMessages(options: UseGlimpseMessagesOptions): UseGlimp
     }
     return success;
   }, []);
+
+  const toggleBookmark = useCallback(async (messageId: string) => {
+    // Optimistic flip — instant UI update; rollback on server failure.
+    const wasBookmarked = bookmarkedIds.has(messageId);
+    setBookmarkedIds((prev) => {
+      const next = new Set(prev);
+      if (next.has(messageId)) next.delete(messageId);
+      else next.add(messageId);
+      return next;
+    });
+
+    const result = await glimpseService.toggleBookmark(messageId);
+
+    if (result === null) {
+      // Server failed — rollback
+      setBookmarkedIds((prev) => {
+        const next = new Set(prev);
+        if (wasBookmarked) next.add(messageId);
+        else next.delete(messageId);
+        return next;
+      });
+    }
+    return result;
+  }, [bookmarkedIds]);
 
   const toggleReaction = useCallback(async (messageId: string, emoji: string, timestamp?: number) => {
     const userId = await glimpseService.ensureUserId();
@@ -308,8 +379,61 @@ export function useGlimpseMessages(options: UseGlimpseMessagesOptions): UseGlimp
     };
   }, [conversationId, refresh, isActive]);
 
+  // Reactions realtime — subscribe once per conversation, refetch the affected
+  // message's full reaction map on any insert/delete so local state always
+  // matches the server (avoids double-counting the optimistic flip).
+  const messagesRef = useRef(messages);
+  messagesRef.current = messages;
+
+  useEffect(() => {
+    if (!isActive) return;
+
+    let cancelled = false;
+    let channel: RealtimeChannel | null = null;
+
+    (async () => {
+      const { data: { session } } = await supabase.auth.getSession();
+      if (!session?.user || cancelled) return;
+
+      channel = supabase
+        .channel(`glimpse_reactions:${conversationId}`)
+        .on(
+          'postgres_changes',
+          {
+            event: '*',
+            schema: 'public',
+            table: 'video_vox_reactions',
+          },
+          async (payload) => {
+            const messageId =
+              (payload.new as { message_id?: string } | null)?.message_id ||
+              (payload.old as { message_id?: string } | null)?.message_id;
+            if (!messageId) return;
+            // Filter to messages in this conversation
+            if (!messagesRef.current.some((m) => m.id === messageId)) return;
+
+            const reactions = await glimpseService.getReactionsForMessages([messageId]);
+            const next = reactions[messageId] || {};
+            setMessages((prev) =>
+              prev.map((m) => (m.id === messageId ? { ...m, reactions: next } : m))
+            );
+          }
+        )
+        .subscribe();
+    })();
+
+    return () => {
+      cancelled = true;
+      if (channel) {
+        supabase.removeChannel(channel);
+      }
+    };
+  }, [conversationId, isActive]);
+
   return {
     messages,
+    bookmarkedIds,
+    convertedActionItems,
     isLoading,
     error,
     hasMore,
@@ -318,6 +442,8 @@ export function useGlimpseMessages(options: UseGlimpseMessagesOptions): UseGlimp
     sendMessage,
     deleteMessage,
     toggleReaction,
+    toggleBookmark,
+    addActionItemAsTask,
     markAsViewed,
   };
 }

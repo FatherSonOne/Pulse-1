@@ -18,15 +18,15 @@ export interface RelayShortcutHandlers {
 }
 
 export const RELAY_SHORTCUTS = {
-  Space: 'New voice message (when not in text input)',
-  Escape: 'Stop recording / Go back',
-  T: 'Switch to Triage',
-  M: 'Switch to Messages',
-  N: 'Switch to Notes',
-  L: 'Switch to Live',
-  'Ctrl+D': 'Download selected',
-  'Ctrl+A': 'Archive selected',
-  'Ctrl+S': 'Summarize conversation (AI)',
+  Space: 'Start or stop recording',
+  Escape: 'Stop recording, close modal, or go back',
+  T: 'Triage view (all)',
+  M: 'Messages view',
+  N: 'Notes view',
+  L: 'Live view',
+  'Ctrl+D': 'Download selected messages',
+  'Ctrl+A': 'Archive selected messages',
+  'Ctrl+S': 'Summarize conversation with AI',
   '?': 'Show keyboard shortcuts',
 } as const;
 

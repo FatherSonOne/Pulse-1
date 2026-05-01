@@ -680,6 +680,99 @@ class GlimpseService {
   // ============================================
 
   /**
+   * Create a Pulse task from an extracted action item on a Glimpse message.
+   * Idempotent — if a task already exists with the same title + origin message,
+   * returns 'already-exists' instead of inserting a duplicate. Stores
+   * provenance in metadata so future UIs can show "from glimpse by X on Y".
+   */
+  async createTaskFromActionItem(
+    actionItem: string,
+    message: GlimpseMessage
+  ): Promise<{ status: 'created' | 'already-exists' | 'failed'; taskId?: string }> {
+    const userId = await this.ensureUserId();
+    if (!userId) return { status: 'failed' };
+
+    const trimmed = actionItem.trim();
+    if (!trimmed) return { status: 'failed' };
+
+    // De-dupe: check whether a task with the same title already exists for
+    // this origin message. Lookup is exact match — Gemini output is stable
+    // enough that exact-text comparison works for the same source extraction.
+    const { data: existing } = await supabase
+      .from('tasks')
+      .select('id')
+      .eq('user_id', userId)
+      .eq('origin_message_id', message.id)
+      .eq('title', trimmed)
+      .maybeSingle();
+
+    if (existing) {
+      return { status: 'already-exists', taskId: existing.id };
+    }
+
+    const { data, error } = await supabase
+      .from('tasks')
+      .insert([
+        {
+          user_id: userId,
+          title: trimmed,
+          description: `Extracted from Glimpse · ${message.senderName} · ${message.createdAt.toLocaleString()}`,
+          origin_message_id: message.id,
+          status: 'todo',
+          list_id: 'work',
+          metadata: {
+            source: 'glimpse',
+            glimpse_message_id: message.id,
+            glimpse_conversation_id: message.conversationId,
+            glimpse_sender_id: message.senderId,
+            glimpse_sender_name: message.senderName,
+            glimpse_recorded_at: message.createdAt.toISOString(),
+            glimpse_video_url: message.videoUrl,
+          },
+        },
+      ])
+      .select('id')
+      .single();
+
+    if (error || !data) {
+      console.error('Error creating task from action item:', error);
+      return { status: 'failed' };
+    }
+
+    return { status: 'created', taskId: data.id };
+  }
+
+  /**
+   * Get the set of action-item texts already converted to tasks for a list of
+   * glimpse messages. Used by the chat hook to render ✓ marks on rows the
+   * user has already pulled into their task list across sessions.
+   */
+  async getConvertedActionItems(
+    messageIds: string[]
+  ): Promise<Map<string, Set<string>>> {
+    const userId = await this.ensureUserId();
+    if (!userId || messageIds.length === 0) return new Map();
+
+    const { data, error } = await supabase
+      .from('tasks')
+      .select('origin_message_id, title')
+      .eq('user_id', userId)
+      .in('origin_message_id', messageIds);
+
+    if (error || !data) return new Map();
+
+    const byMessage = new Map<string, Set<string>>();
+    for (const row of data) {
+      if (!row.origin_message_id) continue;
+      if (!byMessage.has(row.origin_message_id)) {
+        byMessage.set(row.origin_message_id, new Set());
+      }
+      byMessage.get(row.origin_message_id)!.add(row.title);
+    }
+    return byMessage;
+  }
+
+  /**
    * Toggle bookmark on a message. Returns the new state so the UI can give
    * immediate "added" / "removed" feedback without an extra round-trip.
    */

@@ -35,6 +35,7 @@ import {
   Square,
   TrendingUp,
   HelpCircle,
+  MonitorPlay,
 } from 'lucide-react';
 import VoxModeToolbar from '../Relay/VoxModeToolbar';
 import { useGlimpseRecording } from '../../hooks/useGlimpseRecording';
@@ -163,6 +164,12 @@ const MessageBubble: React.FC<{
   onTranscriptClick: (timestamp: number) => void;
   showTranscript: boolean;
   onToggleTranscript: () => void;
+  onShowMenu?: (anchorRect: DOMRect) => void;
+  isBookmarked?: boolean;
+  /** Set of action-item texts already converted to Pulse tasks. */
+  convertedActionItems?: Set<string>;
+  /** Convert an action item to a Pulse task; updates parent state. */
+  onAddAsTask?: (actionItem: string) => Promise<'created' | 'already-exists' | 'failed'>;
   isSelectionMode?: boolean;
   isSelected?: boolean;
   onToggleSelection?: () => void;
@@ -174,6 +181,10 @@ const MessageBubble: React.FC<{
   onReaction,
   onReply,
   onBookmark,
+  onShowMenu,
+  isBookmarked = false,
+  convertedActionItems,
+  onAddAsTask,
   isSelectionMode = false,
   isSelected = false,
   onToggleSelection,
@@ -208,9 +219,17 @@ const MessageBubble: React.FC<{
     if (videoRef.current) videoRef.current.playbackRate = playbackSpeed;
   }, [playbackSpeed, showPlayer]);
 
-  const handleConvertAction = (item: string) => {
-    navigator.clipboard.writeText(item).catch(() => {});
-    toast.success('Action copied. Paste into a Pulse task.');
+  const handleConvertAction = async (item: string) => {
+    if (!onAddAsTask) {
+      // Fallback: copy to clipboard if no task wiring is available
+      navigator.clipboard.writeText(item).catch(() => {});
+      toast.success('Action copied to clipboard.');
+      return;
+    }
+    const status = await onAddAsTask(item);
+    if (status === 'created') toast.success('Added to tasks');
+    else if (status === 'already-exists') toast('Already in tasks');
+    else toast.error('Could not add to tasks');
   };
 
   return (
@@ -258,6 +277,20 @@ const MessageBubble: React.FC<{
               {actionItems.length} ACTION {actionItems.length === 1 ? 'ITEM' : 'ITEMS'}
             </span>
           )}
+          {onShowMenu && (
+            <button
+              type="button"
+              className="gl-menu-btn"
+              onClick={(e) => {
+                e.stopPropagation();
+                onShowMenu(e.currentTarget.getBoundingClientRect());
+              }}
+              aria-label="More actions"
+              title="More actions"
+            >
+              <MoreVertical className="w-3.5 h-3.5" />
+            </button>
+          )}
         </div>
       </header>
 
@@ -269,8 +302,10 @@ const MessageBubble: React.FC<{
         </div>
       )}
 
-      {/* Summary block — the headline */}
-      {(hasSummary || isProcessing || processingFailed) && (
+      {/* Summary block — the headline. Provenance chip celebrates AI success;
+          processing shows a soft pending state; failure demotes to a ghost row
+          so a broken AI doesn't dominate the card. */}
+      {(hasSummary || isProcessing) && (
         <div className="gl-summary">
           {hasSummary && (
             <>
@@ -286,9 +321,6 @@ const MessageBubble: React.FC<{
               </div>
             </>
           )}
-          {processingFailed && !hasSummary && (
-            <span className="gl-ai-chip failed">TRANSCRIPT UNAVAILABLE</span>
-          )}
         </div>
       )}
 
@@ -302,21 +334,31 @@ const MessageBubble: React.FC<{
         <p className="gl-summary-text">{message.caption}</p>
       )}
 
-      {/* Action items */}
+      {/* AI failure: a quiet ghost row, not a screaming chip */}
+      {processingFailed && !hasSummary && (
+        <p className="gl-transcript-fail">transcript unavailable</p>
+      )}
+
+      {/* Action items — tap a row to convert it into a Pulse task. Converted
+          items render with a check + dimmed text to show the work is done. */}
       {actionItems.length > 0 && (
         <ul className="gl-actions" aria-label="Extracted action items">
-          {actionItems.map((item, i) => (
-            <li key={i}>
-              <button
-                type="button"
-                className="gl-action-btn"
-                onClick={() => handleConvertAction(item)}
-                title="Copy to clipboard"
-              >
-                {item}
-              </button>
-            </li>
-          ))}
+          {actionItems.map((item, i) => {
+            const isConverted = !!convertedActionItems?.has(item.trim());
+            return (
+              <li key={i}>
+                <button
+                  type="button"
+                  className={`gl-action-btn ${isConverted ? 'converted' : ''}`}
+                  onClick={() => handleConvertAction(item)}
+                  title={isConverted ? 'Already in tasks' : 'Add to Pulse tasks'}
+                  aria-pressed={isConverted}
+                >
+                  {item}
+                </button>
+              </li>
+            );
+          })}
         </ul>
       )}
 
@@ -372,8 +414,18 @@ const MessageBubble: React.FC<{
             <Reply className="icon" />
             <span>Reply</span>
           </button>
-          <button type="button" className="gl-action-pill" onClick={onBookmark} title="Bookmark">
-            <Bookmark className="icon" />
+          <button
+            type="button"
+            className={`gl-action-pill ${isBookmarked ? 'bookmarked' : ''}`}
+            onClick={onBookmark}
+            title={isBookmarked ? 'Remove bookmark' : 'Bookmark'}
+            aria-label={isBookmarked ? 'Remove bookmark' : 'Bookmark this glimpse'}
+            aria-pressed={isBookmarked}
+          >
+            <Bookmark
+              className="icon"
+              fill={isBookmarked ? 'currentColor' : 'none'}
+            />
           </button>
           {onPlaybackSpeedChange && showPlayer && (
             <PlaybackSpeedControl
@@ -627,7 +679,13 @@ const Glimpse: React.FC<GlimpseProps> = ({
     videoQuality: '720p',
     facingMode: 'user',
     captureMode: 'cam',
-    onScreenShareEnded: () => toast('Screen share ended. Continuing with camera only.'),
+    onScreenShareEnded: (reason) => {
+      if (reason === 'user-cancel') {
+        toast('Screen sharing canceled. Tap to try again.');
+      } else {
+        toast('Screen share ended. Continuing with camera only.');
+      }
+    },
   });
 
   // Chat messages (when viewing a conversation). The hook MUST be called
@@ -942,7 +1000,10 @@ const Glimpse: React.FC<GlimpseProps> = ({
   };
 
   const handleBookmark = async (messageId: string) => {
-    const result = await glimpseService.toggleBookmark(messageId);
+    // Route through the chat hook so the local bookmarkedIds set updates
+    // optimistically and the bookmark icon fills/empties without a refetch.
+    if (!chatHook) return;
+    const result = await chatHook.toggleBookmark(messageId);
     if (result === 'added') toast.success('Bookmarked');
     else if (result === 'removed') toast.success('Bookmark removed');
     else toast.error('Could not update bookmark');
@@ -1007,17 +1068,34 @@ const Glimpse: React.FC<GlimpseProps> = ({
             },
             {
               icon: <Video className="w-4 h-4" />,
-              label: 'New Video',
-              title: 'New Video',
-              onClick: () => { setSelectedRecipients([]); setViewMode('record'); },
+              label: 'Glimpse',
+              title: 'Record a glimpse — camera',
+              onClick: () => {
+                setCaptureMode('cam');
+                setSelectedRecipients([]);
+                setViewMode('record');
+              },
+            },
+            {
+              icon: <MonitorPlay className="w-4 h-4" />,
+              label: 'Walkthrough',
+              title: 'Record a walkthrough — screen + camera',
+              onClick: () => {
+                setCaptureMode('cam-screen');
+                setSelectedRecipients([]);
+                setViewMode('record');
+              },
             },
           ] : []),
           ...(viewMode === 'chat' ? [
             {
               icon: <Video className="w-4 h-4" />,
               label: 'Reply',
-              title: 'Record Reply',
-              onClick: () => setViewMode('record'),
+              title: 'Record reply',
+              onClick: () => {
+                setCaptureMode('cam');
+                setViewMode('record');
+              },
             },
           ] : []),
         ]}
@@ -1054,14 +1132,32 @@ const Glimpse: React.FC<GlimpseProps> = ({
                 <Video className="w-10 h-10" style={{ color: MODE_COLOR, opacity: 0.7 }} />
                 <h3>No glimpses yet</h3>
                 <p>Video for the moments words can't carry. Pulse handles the rest.</p>
-                <button
-                  type="button"
-                  onClick={() => setViewMode('record')}
-                  className="vvb-empty-cta"
-                >
-                  <Video className="w-4 h-4" />
-                  Record a glimpse
-                </button>
+                <div className="gl-empty-cta-row">
+                  <button
+                    type="button"
+                    onClick={() => {
+                      setCaptureMode('cam');
+                      setSelectedRecipients([]);
+                      setViewMode('record');
+                    }}
+                    className="vvb-empty-cta"
+                  >
+                    <Video className="w-4 h-4" />
+                    Record a glimpse
+                  </button>
+                  <button
+                    type="button"
+                    onClick={() => {
+                      setCaptureMode('cam-screen');
+                      setSelectedRecipients([]);
+                      setViewMode('record');
+                    }}
+                    className="vvb-empty-cta"
+                  >
+                    <MonitorPlay className="w-4 h-4" />
+                    Record a walkthrough
+                  </button>
+                </div>
               </div>
             ) : (
               conversations.map(conv => (
@@ -1094,7 +1190,7 @@ const Glimpse: React.FC<GlimpseProps> = ({
             ) : (
               <div className="vvb-messages-list">
                 {chatHook.messages.map(message => (
-                  <div key={message.id} className="relative">
+                  <React.Fragment key={message.id}>
                     <MessageBubble
                       message={message}
                       isOwn={message.senderId === currentUserId}
@@ -1102,6 +1198,13 @@ const Glimpse: React.FC<GlimpseProps> = ({
                       onReaction={(emoji) => handleReaction(message.id, emoji)}
                       onReply={() => handleReply(message)}
                       onBookmark={() => handleBookmark(message.id)}
+                      isBookmarked={chatHook.bookmarkedIds.has(message.id)}
+                      convertedActionItems={chatHook.convertedActionItems.get(message.id)}
+                      onAddAsTask={(item) => chatHook.addActionItemAsTask(message, item)}
+                      onShowMenu={(rect) => {
+                        setMenuAnchorRect(rect);
+                        setShowMessageMenu(showMessageMenu === message.id ? null : message.id);
+                      }}
                       onTranscriptClick={() => {}}
                       showTranscript={expandedTranscripts.has(message.id)}
                       onToggleTranscript={() => toggleTranscript(message.id)}
@@ -1127,41 +1230,26 @@ const Glimpse: React.FC<GlimpseProps> = ({
                         setGlobalPlaybackSpeed(newSpeed);
                       }}
                     />
-                    <div className="absolute top-2 right-2 z-10">
-                      <button
-                        type="button"
-                        onClick={(e) => {
-                          e.stopPropagation();
-                          const rect = (e.currentTarget as HTMLButtonElement).getBoundingClientRect();
-                          setMenuAnchorRect(rect);
-                          setShowMessageMenu(showMessageMenu === message.id ? null : message.id);
+                    {showMessageMenu === message.id && menuAnchorRect && (
+                      <VoxMessageMenu
+                        isDarkMode={isDarkMode}
+                        accentColor={MODE_COLOR}
+                        anchorRect={menuAnchorRect}
+                        onArchive={() => handleArchiveMessage(message)}
+                        onDownload={() => handleDownloadMessage(message)}
+                        onDelete={async () => {
+                          const success = await chatHook.deleteMessage(message.id);
+                          if (success) {
+                            toast.success('Message deleted');
+                          } else {
+                            toast.error('Failed to delete message');
+                          }
+                          setShowMessageMenu(null);
                         }}
-                        className="p-1 rounded opacity-60 hover:opacity-100 transition-opacity"
-                        title="More actions"
-                      >
-                        <MoreVertical className="w-4 h-4" />
-                      </button>
-                      {showMessageMenu === message.id && (
-                        <VoxMessageMenu
-                          isDarkMode={isDarkMode}
-                          accentColor={MODE_COLOR}
-                          anchorRect={menuAnchorRect!}
-                          onArchive={() => handleArchiveMessage(message)}
-                          onDownload={() => handleDownloadMessage(message)}
-                          onDelete={async () => {
-                            const success = await chatHook.deleteMessage(message.id);
-                            if (success) {
-                              toast.success('Message deleted');
-                            } else {
-                              toast.error('Failed to delete message');
-                            }
-                            setShowMessageMenu(null);
-                          }}
-                          onClose={() => setShowMessageMenu(null)}
-                        />
-                      )}
-                    </div>
-                  </div>
+                        onClose={() => setShowMessageMenu(null)}
+                      />
+                    )}
+                  </React.Fragment>
                 ))}
               </div>
             )}
@@ -1221,63 +1309,53 @@ const Glimpse: React.FC<GlimpseProps> = ({
         {/* RECORD VIEW */}
         {viewMode === 'record' && (
           <div className="gl-record">
-            {/* Recipient bar */}
+            {/* Mode confirmation strip — sits above the recipient bar so the
+                recipient popover (which drops down from the bar) doesn't
+                cover the active capture mode. */}
             {state.status === 'idle' && (
-              <button
-                type="button"
-                onClick={() => setShowRecipientSelector(!showRecipientSelector)}
-                className="gl-recipient-bar"
-                aria-expanded={showRecipientSelector}
-              >
-                <Users className="icon w-4 h-4" />
-                <span className="label">
-                  {selectedRecipients.length === 0
-                    ? 'Select recipients'
-                    : `${selectedRecipients.length} selected`}
-                </span>
-                {selectedRecipients.length > 0 && (
-                  <span className="count">{selectedRecipients.length}</span>
+              <p className="gl-mode-confirm">
+                {captureMode === 'cam-screen' ? (
+                  <><MonitorPlay className="w-3 h-3" /> Walkthrough · screen + camera</>
+                ) : (
+                  <><Video className="w-3 h-3" /> Glimpse · camera</>
                 )}
-                <ChevronDown
-                  className={`w-4 h-4 transition-transform ${showRecipientSelector ? 'rotate-180' : ''}`}
-                  style={{ color: 'var(--gl-ink-cloth)' }}
-                />
-              </button>
+              </p>
             )}
 
-            {/* Recipient selector dropdown */}
-            {showRecipientSelector && state.status === 'idle' && (
-              <RecipientSelector
-                contacts={pulseContacts}
-                selectedIds={selectedRecipients}
-                onSelect={handleToggleRecipient}
-                onDone={() => setShowRecipientSelector(false)}
-                isDarkMode={isDarkMode}
-              />
-            )}
-
-            {/* Capture mode toggle */}
+            {/* Recipient bar — anchor for the selector popover so it never
+                pushes the recorder off the fold. */}
             {state.status === 'idle' && (
-              <div className="gl-mode-toggle" role="group" aria-label="Capture mode">
+              <div className="gl-recipient-anchor">
                 <button
                   type="button"
-                  className="gl-mode-btn"
-                  aria-pressed={captureMode === 'cam'}
-                  onClick={() => setCaptureMode('cam')}
+                  onClick={() => setShowRecipientSelector(!showRecipientSelector)}
+                  className="gl-recipient-bar"
+                  aria-expanded={showRecipientSelector}
                 >
-                  <Video className="w-3 h-3" />
-                  Cam
+                  <Users className="icon w-4 h-4" />
+                  <span className="label">
+                    {selectedRecipients.length === 0
+                      ? 'Select recipients'
+                      : `${selectedRecipients.length} selected`}
+                  </span>
+                  {selectedRecipients.length > 0 && (
+                    <span className="count">{selectedRecipients.length}</span>
+                  )}
+                  <ChevronDown
+                    className={`w-4 h-4 transition-transform ${showRecipientSelector ? 'rotate-180' : ''}`}
+                    style={{ color: 'var(--gl-ink-cloth)' }}
+                  />
                 </button>
-                <button
-                  type="button"
-                  className="gl-mode-btn"
-                  aria-pressed={captureMode === 'cam-screen'}
-                  onClick={() => setCaptureMode('cam-screen')}
-                  title="Record screen with camera picture-in-picture"
-                >
-                  <Square className="w-3 h-3" />
-                  Cam + Screen
-                </button>
+
+                {showRecipientSelector && (
+                  <RecipientSelector
+                    contacts={pulseContacts}
+                    selectedIds={selectedRecipients}
+                    onSelect={handleToggleRecipient}
+                    onDone={() => setShowRecipientSelector(false)}
+                    isDarkMode={isDarkMode}
+                  />
+                )}
               </div>
             )}
 

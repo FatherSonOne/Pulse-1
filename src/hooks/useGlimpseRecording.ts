@@ -18,7 +18,12 @@ export interface UseGlimpseRecordingOptions {
   pipCorner?: GlimpsePipCorner;
   onRecordingComplete?: (blob: Blob, thumbnail: Blob) => void;
   onError?: (error: string) => void;
-  onScreenShareEnded?: () => void;
+  /**
+   * Fired when a screen-share session ends. `reason` distinguishes a
+   * user-cancel at the picker (no share ever started) from an ended track
+   * mid-recording (the user clicked the browser's "Stop sharing" bar).
+   */
+  onScreenShareEnded?: (reason: 'user-cancel' | 'track-ended') => void;
 }
 
 export interface UseGlimpseRecordingReturn {
@@ -378,7 +383,7 @@ export function useGlimpseRecording(options: UseGlimpseRecordingOptions = {}): U
       const screenTrack = screenStream.getVideoTracks()[0];
       if (screenTrack) {
         screenTrack.onended = async () => {
-          opts.onScreenShareEnded?.();
+          opts.onScreenShareEnded?.('track-ended');
           // If we are still in this mode, drop back to cam-only seamlessly.
           tearDownCompositor();
           if (screenStreamRef.current) {
@@ -412,17 +417,34 @@ export function useGlimpseRecording(options: UseGlimpseRecordingOptions = {}): U
 
       return true;
     } catch (error: any) {
-      console.error('Failed to start cam+screen preview:', error);
       // Tear down any partial state
       tearDownCompositor();
       stopAllSourceTracks();
 
+      // User-cancel from the screen-share picker is a normal action, not an
+      // error. Chrome reports it as `NotAllowedError: Permission denied by
+      // user`. Distinguish that from a true permission-deny / unsupported case
+      // and route through the soft-cancel path with a calm toast.
+      const message: string = error?.message || '';
+      const isUserCancel =
+        error?.name === 'NotAllowedError' &&
+        (/Permission denied by user/i.test(message) ||
+          /Permission denied by system/i.test(message));
+
+      if (isUserCancel) {
+        setState((prev) => ({ ...prev, status: 'idle', error: null }));
+        opts.onScreenShareEnded?.('user-cancel');
+        return false;
+      }
+
+      console.error('Failed to start cam+screen preview:', error);
+
       const errorMessage =
         error?.name === 'NotAllowedError'
           ? 'Permission denied. Allow camera and screen sharing to use this mode.'
-          : error?.message?.includes('not supported')
-          ? error.message
-          : `Capture unavailable: ${error?.message || 'unknown error'}`;
+          : message.includes('not supported')
+          ? message
+          : `Capture unavailable: ${message || 'unknown error'}`;
 
       setState((prev) => ({ ...prev, status: 'idle', error: errorMessage }));
       opts.onError?.(errorMessage);
