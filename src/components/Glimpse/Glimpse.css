@@ -1070,7 +1070,8 @@
               box-shadow var(--gl-med) var(--gl-ease);
 }
 
-.gl-stage[data-state="recording"] {
+.gl-stage[data-state="recording"],
+.gl-stage[data-state="paused"] {
   border-color: var(--gl-rose);
   box-shadow:
     0 0 0 1px var(--gl-rose),
@@ -1078,10 +1079,26 @@
   animation: gl-stage-pulse 2.4s ease-in-out infinite;
 }
 
-.video-vox-mode.dark .gl-stage[data-state="recording"] {
+.video-vox-mode.dark .gl-stage[data-state="recording"],
+.video-vox-mode.dark .gl-stage[data-state="paused"] {
   box-shadow:
     0 0 0 1px var(--gl-rose),
     0 4px 24px var(--gl-accent-glow-dark);
+}
+
+/* Paused: keep the rose ring but dampen the breathing pulse so the user
+   reads the state as "still alive, not actively capturing". */
+.gl-stage[data-state="paused"] {
+  animation-duration: 4.2s;
+  opacity: 0.95;
+}
+.gl-stage[data-state="paused"]::after {
+  content: '';
+  position: absolute;
+  inset: 0;
+  pointer-events: none;
+  background: rgba(0, 0, 0, 0.18);
+  border-radius: inherit;
 }
 
 @keyframes gl-stage-pulse {
@@ -1172,6 +1189,19 @@
   transform: translateY(0);
 }
 
+/* Paused REC badge — flips to a low-key amber surface so the live REC and
+   paused states never read as the same thing at a glance. */
+.gl-rec-badge.paused {
+  background: rgba(20, 20, 22, 0.7);
+  color: #fde68a;
+  border: 1px solid rgba(253, 230, 138, 0.4);
+}
+.gl-rec-badge.paused .gl-rec-dot {
+  background: #fde68a;
+  animation: none;
+  opacity: 0.8;
+}
+
 .gl-rec-dot {
   width: 6px;
   height: 6px;
@@ -1183,6 +1213,19 @@
 @keyframes gl-blink {
   0%, 100% { opacity: 1; }
   50% { opacity: 0.35; }
+}
+
+.gl-duration-paused {
+  margin-left: 8px;
+  padding: 1px 6px;
+  border-radius: 3px;
+  background: rgba(253, 230, 138, 0.18);
+  color: #fde68a;
+  font-family: var(--gl-mono);
+  font-size: 10px;
+  font-weight: 500;
+  letter-spacing: 0.14em;
+  text-transform: uppercase;
 }
 
 .gl-duration {
@@ -1266,10 +1309,37 @@
   gap: 12px;
 }
 
+.gl-record-row {
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  gap: 24px;
+}
+
+/* Side slots flank the record cluster so the cluster stays optically
+   centered whether or not the pause button is present. */
+.gl-record-side {
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  width: 48px;
+  height: 48px;
+}
+
 .gl-record-cluster {
   position: relative;
   width: 72px;
   height: 72px;
+}
+
+.gl-pause-btn {
+  width: 48px;
+  height: 48px;
+  border-radius: 50%;
+  padding: 0;
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
 }
 
 .gl-progress-ring {
@@ -1817,6 +1887,7 @@
    ============================================ */
 @media (prefers-reduced-motion: reduce) {
   .gl-stage[data-state="recording"],
+  .gl-stage[data-state="paused"],
   .gl-rec-dot,
   .gl-summary-skeleton span,
   .gl-reaction-picker,

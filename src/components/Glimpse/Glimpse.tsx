@@ -696,6 +696,8 @@ const Glimpse: React.FC<GlimpseProps> = ({
     flipCamera,
     startRecording,
     stopRecording,
+    pauseRecording,
+    resumeRecording,
     discardRecording,
     getRecording,
     videoRef,
@@ -959,13 +961,20 @@ const Glimpse: React.FC<GlimpseProps> = ({
   const ringCircumference = 2 * Math.PI * ringRadius;
   const ringOffset = ringCircumference - (progressPercent / 100) * ringCircumference;
 
+  // Paused/capturing convenience flags — `isRecording` from the hook is
+  // strictly `status === 'recording'`, so it goes false the moment we pause.
+  // `isCapturing` covers both states for shared chrome (duration counter,
+  // stage overlays, REC badge).
+  const isPaused = state.status === 'paused';
+  const isCapturing = isRecording || isPaused;
+
   // Handlers
   const handleRecordClick = () => {
     if (state.status === 'idle') {
       startPreview();
     } else if (state.status === 'previewing') {
       startRecording();
-    } else if (state.status === 'recording') {
+    } else if (state.status === 'recording' || state.status === 'paused') {
       stopRecording();
     }
   };
@@ -1411,7 +1420,7 @@ const Glimpse: React.FC<GlimpseProps> = ({
             )}
 
             {/* Video stage */}
-            <div className="gl-stage" data-state={isRecording ? 'recording' : state.status} data-mode={captureMode}>
+            <div className="gl-stage" data-state={state.status} data-mode={captureMode}>
               {state.status === 'ready' && previewUrl ? (
                 <video src={previewUrl} controls loop playsInline />
               ) : (
@@ -1442,19 +1451,20 @@ const Glimpse: React.FC<GlimpseProps> = ({
               )}
 
               {/* Top meta */}
-              {(isPreviewing || isRecording || state.status === 'ready') && (
+              {(isPreviewing || isCapturing || state.status === 'ready') && (
                 <div className="gl-stage-top">
-                  <div className={`gl-rec-badge ${isRecording ? 'visible' : ''}`}>
+                  <div className={`gl-rec-badge ${isCapturing ? 'visible' : ''} ${isPaused ? 'paused' : ''}`}>
                     <span className="gl-rec-dot" />
-                    <span>REC</span>
+                    <span>{isPaused ? 'PAUSED' : 'REC'}</span>
                   </div>
                   <div style={{ display: 'flex', alignItems: 'center', gap: 8 }}>
-                    {captureMode === 'cam-screen' && (isPreviewing || isRecording) && (
+                    {captureMode === 'cam-screen' && (isPreviewing || isCapturing) && (
                       <span className="gl-mode-chip">CAM + SCREEN</span>
                     )}
-                    {(isRecording || state.status === 'ready') && (
+                    {(isCapturing || state.status === 'ready') && (
                       <div className="gl-duration">
                         {formatDurationDisplay(duration)} / {formatDurationDisplay(maxDuration)}
+                        {isPaused && <span className="gl-duration-paused">PAUSED</span>}
                       </div>
                     )}
                   </div>
@@ -1462,7 +1472,7 @@ const Glimpse: React.FC<GlimpseProps> = ({
               )}
 
               {/* Stage controls (right side): flip OR pip-corner */}
-              {(isPreviewing || isRecording) && captureMode === 'cam' && (
+              {(isPreviewing || isCapturing) && captureMode === 'cam' && (
                 <button
                   type="button"
                   onClick={flipCamera}
@@ -1473,7 +1483,7 @@ const Glimpse: React.FC<GlimpseProps> = ({
                   <FlipHorizontal className="w-4 h-4" />
                 </button>
               )}
-              {(isPreviewing || isRecording) && captureMode === 'cam-screen' && (
+              {(isPreviewing || isCapturing) && captureMode === 'cam-screen' && (
                 <button
                   type="button"
                   onClick={swapPipCorner}
@@ -1562,30 +1572,48 @@ const Glimpse: React.FC<GlimpseProps> = ({
                 </>
               ) : (
                 <>
-                  <div className="gl-record-cluster">
-                    {isRecording && (
-                      <svg className="gl-progress-ring" viewBox="0 0 84 84">
-                        <circle className="track" cx="42" cy="42" r={ringRadius} />
-                        <circle
-                          className="progress"
-                          cx="42"
-                          cy="42"
-                          r={ringRadius}
-                          strokeDasharray={ringCircumference}
-                          strokeDashoffset={ringOffset}
-                        />
-                      </svg>
-                    )}
-                    <button
-                      type="button"
-                      onClick={handleRecordClick}
-                      className="gl-record-btn"
-                      data-state={isRecording ? 'recording' : state.status}
-                      aria-label={isRecording ? 'Stop recording' : 'Start recording'}
-                      title={isRecording ? 'Stop recording' : 'Start recording'}
-                    >
-                      <span className="gl-record-icon" />
-                    </button>
+                  <div className="gl-record-row">
+                    {/* Left spacer keeps the record button centered when the
+                        right-side pause button isn't visible. */}
+                    <span className="gl-record-side" aria-hidden="true" />
+                    <div className="gl-record-cluster">
+                      {isCapturing && (
+                        <svg className="gl-progress-ring" viewBox="0 0 84 84">
+                          <circle className="track" cx="42" cy="42" r={ringRadius} />
+                          <circle
+                            className="progress"
+                            cx="42"
+                            cy="42"
+                            r={ringRadius}
+                            strokeDasharray={ringCircumference}
+                            strokeDashoffset={ringOffset}
+                          />
+                        </svg>
+                      )}
+                      <button
+                        type="button"
+                        onClick={handleRecordClick}
+                        className="gl-record-btn"
+                        data-state={isCapturing ? 'recording' : state.status}
+                        aria-label={isCapturing ? 'Stop recording' : 'Start recording'}
+                        title={isCapturing ? 'Stop recording' : 'Start recording'}
+                      >
+                        <span className="gl-record-icon" />
+                      </button>
+                    </div>
+                    <span className="gl-record-side">
+                      {isCapturing && (
+                        <button
+                          type="button"
+                          onClick={isPaused ? resumeRecording : pauseRecording}
+                          className="gl-secondary-btn gl-pause-btn"
+                          title={isPaused ? 'Resume recording' : 'Pause recording'}
+                          aria-label={isPaused ? 'Resume recording' : 'Pause recording'}
+                        >
+                          {isPaused ? <Play className="w-5 h-5" /> : <Pause className="w-5 h-5" />}
+                        </button>
+                      )}
+                    </span>
                   </div>
 
                   <p className="gl-hint">
@@ -1594,7 +1622,8 @@ const Glimpse: React.FC<GlimpseProps> = ({
                         ? 'tap to start screen + camera'
                         : 'tap to start camera')}
                     {isPreviewing && 'tap to record'}
-                    {isRecording && 'tap to stop'}
+                    {isRecording && 'tap to stop · pause to step away'}
+                    {isPaused && 'paused · tap play to resume, square to stop'}
                   </p>
                 </>
               )}
