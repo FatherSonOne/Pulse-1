@@ -79,6 +79,31 @@ import toast from 'react-hot-toast';
 // Mode color (Glimpse — coral). Single source of state/signal in Pulse.
 const MODE_COLOR = '#f43f5e';
 
+// localStorage memory for last-used recipient set. Versioned so future schema
+// shifts (e.g. moving to a server-side jsonb column) won't replay stale shapes.
+const RECIPIENT_MEMORY_PREFIX = 'glimpse:lastRecipients:v1:';
+
+const readLastRecipients = (userId: string): string[] => {
+  if (!userId) return [];
+  try {
+    const raw = localStorage.getItem(RECIPIENT_MEMORY_PREFIX + userId);
+    if (!raw) return [];
+    const parsed = JSON.parse(raw);
+    return Array.isArray(parsed) ? parsed.filter(x => typeof x === 'string') : [];
+  } catch {
+    return [];
+  }
+};
+
+const writeLastRecipients = (userId: string, ids: string[]): void => {
+  if (!userId) return;
+  try {
+    localStorage.setItem(RECIPIENT_MEMORY_PREFIX + userId, JSON.stringify(ids));
+  } catch {
+    // Quota / private mode — silent; recipient memory is best-effort.
+  }
+};
+
 interface GlimpseProps {
   isDarkMode?: boolean;
   onClose?: () => void;
@@ -945,6 +970,18 @@ const Glimpse: React.FC<GlimpseProps> = ({
     }
   };
 
+  // Open the recorder for a fresh New Glimpse / New Walkthrough — pre-fills
+  // selectedRecipients from last-used memory, filtered against the current
+  // pulseContacts list so deleted/invalid IDs are silently dropped. Reply
+  // entry points keep their conversation-derived recipients and bypass this.
+  const enterRecorder = (mode: 'cam' | 'cam-screen') => {
+    setCaptureMode(mode);
+    const remembered = readLastRecipients(currentUserId);
+    const validIds = new Set(pulseContacts.map(c => c.id));
+    setSelectedRecipients(remembered.filter(id => validIds.has(id)));
+    setViewMode('record');
+  };
+
   const handleSend = async () => {
     const recording = getRecording();
     if (!recording || selectedRecipients.length === 0) return;
@@ -962,6 +999,7 @@ const Glimpse: React.FC<GlimpseProps> = ({
     );
 
     if (message) {
+      writeLastRecipients(currentUserId, selectedRecipients);
       discardRecording();
       setCaption('');
       setReplyingTo(null);
@@ -1070,21 +1108,13 @@ const Glimpse: React.FC<GlimpseProps> = ({
               icon: <Video className="w-4 h-4" />,
               label: 'Glimpse',
               title: 'Record a glimpse — camera',
-              onClick: () => {
-                setCaptureMode('cam');
-                setSelectedRecipients([]);
-                setViewMode('record');
-              },
+              onClick: () => enterRecorder('cam'),
             },
             {
               icon: <MonitorPlay className="w-4 h-4" />,
               label: 'Walkthrough',
               title: 'Record a walkthrough — screen + camera',
-              onClick: () => {
-                setCaptureMode('cam-screen');
-                setSelectedRecipients([]);
-                setViewMode('record');
-              },
+              onClick: () => enterRecorder('cam-screen'),
             },
           ] : []),
           ...(viewMode === 'chat' ? [
@@ -1135,11 +1165,7 @@ const Glimpse: React.FC<GlimpseProps> = ({
                 <div className="gl-empty-cta-row">
                   <button
                     type="button"
-                    onClick={() => {
-                      setCaptureMode('cam');
-                      setSelectedRecipients([]);
-                      setViewMode('record');
-                    }}
+                    onClick={() => enterRecorder('cam')}
                     className="vvb-empty-cta"
                   >
                     <Video className="w-4 h-4" />
@@ -1147,11 +1173,7 @@ const Glimpse: React.FC<GlimpseProps> = ({
                   </button>
                   <button
                     type="button"
-                    onClick={() => {
-                      setCaptureMode('cam-screen');
-                      setSelectedRecipients([]);
-                      setViewMode('record');
-                    }}
+                    onClick={() => enterRecorder('cam-screen')}
                     className="vvb-empty-cta"
                   >
                     <MonitorPlay className="w-4 h-4" />
@@ -1326,26 +1348,39 @@ const Glimpse: React.FC<GlimpseProps> = ({
                 pushes the recorder off the fold. */}
             {state.status === 'idle' && (
               <div className="gl-recipient-anchor">
-                <button
-                  type="button"
-                  onClick={() => setShowRecipientSelector(!showRecipientSelector)}
-                  className="gl-recipient-bar"
-                  aria-expanded={showRecipientSelector}
-                >
-                  <Users className="icon w-4 h-4" />
-                  <span className="label">
-                    {selectedRecipients.length === 0
-                      ? 'Select recipients'
-                      : `${selectedRecipients.length} selected`}
-                  </span>
+                <div className="gl-recipient-bar">
+                  <button
+                    type="button"
+                    onClick={() => setShowRecipientSelector(!showRecipientSelector)}
+                    className="gl-recipient-bar-toggle"
+                    aria-expanded={showRecipientSelector}
+                  >
+                    <Users className="icon w-4 h-4" />
+                    <span className="label">
+                      {selectedRecipients.length === 0
+                        ? 'Select recipients'
+                        : `${selectedRecipients.length} selected`}
+                    </span>
+                    {selectedRecipients.length > 0 && (
+                      <span className="count">{selectedRecipients.length}</span>
+                    )}
+                    <ChevronDown
+                      className={`w-4 h-4 transition-transform ${showRecipientSelector ? 'rotate-180' : ''}`}
+                      style={{ color: 'var(--gl-ink-cloth)' }}
+                    />
+                  </button>
                   {selectedRecipients.length > 0 && (
-                    <span className="count">{selectedRecipients.length}</span>
+                    <button
+                      type="button"
+                      onClick={() => setSelectedRecipients([])}
+                      className="gl-recipient-clear"
+                      title="Clear recipients"
+                      aria-label="Clear recipients"
+                    >
+                      <X className="w-3.5 h-3.5" />
+                    </button>
                   )}
-                  <ChevronDown
-                    className={`w-4 h-4 transition-transform ${showRecipientSelector ? 'rotate-180' : ''}`}
-                    style={{ color: 'var(--gl-ink-cloth)' }}
-                  />
-                </button>
+                </div>
 
                 {showRecipientSelector && (
                   <RecipientSelector

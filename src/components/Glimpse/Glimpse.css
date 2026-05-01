@@ -905,21 +905,32 @@
 /* Recipient bar */
 .gl-recipient-bar {
   display: flex;
-  align-items: center;
-  gap: 8px;
+  align-items: stretch;
   width: 100%;
-  padding: 10px 12px;
   border-radius: 12px;
   border: 1px solid var(--gl-border);
   background: var(--gl-surface);
   font-family: var(--gl-sans);
   font-size: 0.875rem;
   color: var(--gl-ink);
-  cursor: pointer;
   transition: border-color var(--gl-fast) var(--gl-ease);
+  overflow: hidden;
 }
 
 .gl-recipient-bar:hover { border-color: var(--gl-border-strong); }
+
+.gl-recipient-bar-toggle {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  flex: 1;
+  padding: 10px 12px;
+  background: transparent;
+  border: none;
+  color: inherit;
+  font: inherit;
+  cursor: pointer;
+}
 
 .gl-recipient-bar .icon { color: var(--gl-ink-cloth); }
 .gl-recipient-bar .label { flex: 1; text-align: left; }
@@ -931,6 +942,23 @@
   color: var(--gl-rose-deep);
 }
 .video-vox-mode.dark .gl-recipient-bar .count { color: var(--gl-rose-bright); }
+
+.gl-recipient-clear {
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  width: 36px;
+  border: none;
+  border-left: 1px solid var(--gl-border);
+  background: transparent;
+  color: var(--gl-ink-cloth);
+  cursor: pointer;
+  transition: background var(--gl-fast) var(--gl-ease), color var(--gl-fast) var(--gl-ease);
+}
+.gl-recipient-clear:hover {
+  background: var(--gl-rose-tint, rgba(244, 63, 94, 0.08));
+  color: var(--gl-rose-deep);
+}
 
 /* Mode toggle (Cam / Cam + Screen) */
 .gl-mode-toggle {
