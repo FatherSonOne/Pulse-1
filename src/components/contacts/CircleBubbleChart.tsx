@@ -36,8 +36,10 @@ interface CircleBubbleChartProps {
 // ==================== HELPERS ====================
 
 function bubbleRadius(memberCount: number): number {
-  // Scale radius with sqrt of member count, clamped
-  return Math.max(48, Math.min(110, 40 + Math.sqrt(memberCount) * 16));
+  // Scale radius with sqrt of member count, clamped. Coerce non-numeric / NaN
+  // input to 0 so the result is always a finite length the SVG layout accepts.
+  const n = Number.isFinite(memberCount) ? memberCount : 0;
+  return Math.max(48, Math.min(110, 40 + Math.sqrt(Math.max(0, n)) * 16));
 }
 
 function getHealthGlow(healthScore?: number): string {
@@ -62,16 +64,21 @@ function memberInitial(name: string): string {
 // ==================== FORCE SIMULATION ====================
 
 function initBubbles(circles: ContactCircle[], width: number, height: number): BubbleState[] {
+  // Guard against zero/NaN container size so x,y stay finite — a transiently
+  // unmeasured container would otherwise produce NaN translates and downstream
+  // <circle cx="undefined"> warnings.
+  const w = Number.isFinite(width) && width > 0 ? width : 600;
+  const h = Number.isFinite(height) && height > 0 ? height : 440;
   return circles.map((circle, i) => {
-    const angle = (i / circles.length) * Math.PI * 2;
-    const spread = Math.min(width, height) * 0.28;
+    const angle = (i / Math.max(1, circles.length)) * Math.PI * 2;
+    const spread = Math.min(w, h) * 0.28;
     return {
       id: circle.id,
-      x: width / 2 + Math.cos(angle) * spread,
-      y: height / 2 + Math.sin(angle) * spread,
+      x: w / 2 + Math.cos(angle) * spread,
+      y: h / 2 + Math.sin(angle) * spread,
       vx: 0,
       vy: 0,
-      radius: bubbleRadius(circle.memberContactIds.length),
+      radius: bubbleRadius(circle.memberContactIds?.length ?? 0),
       circle,
     };
   });
@@ -165,6 +172,10 @@ export const CircleBubbleChart: React.FC<CircleBubbleChartProps> = ({
     stepsRef.current = 0;
   }, [circles, width, height]);
 
+  // Skip render entirely until the parent has measured a real size — emitting
+  // SVG circles into an unmeasured container produces non-finite cx/cy.
+  const containerReady = Number.isFinite(width) && Number.isFinite(height) && width > 0 && height > 0;
+
   // Run simulation
   useEffect(() => {
     const MAX_STEPS = 180; // settle after ~3 seconds at 60fps
@@ -191,6 +202,8 @@ export const CircleBubbleChart: React.FC<CircleBubbleChartProps> = ({
       onCircleClick(bubble.circle);
     }
   }, [zoomedCircleId, onCircleClick]);
+
+  if (!containerReady) return null;
 
   // Empty state
   if (circles.length === 0) {
