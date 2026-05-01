@@ -166,7 +166,7 @@ const VoxModeToolbar: React.FC<VoxModeToolbarProps> = ({
               ) : (
                 <AlignLeft className="w-3 h-3" />
               )}
-              <span className="inline-block group-hover:[text-decoration:underline] [text-decoration-thickness:1px] [text-underline-offset:3px]">
+              <span className="hidden sm:inline-block group-hover:[text-decoration:underline] [text-decoration-thickness:1px] [text-underline-offset:3px]">
                 Summarize
               </span>
             </button>
@@ -189,7 +189,7 @@ const VoxModeToolbar: React.FC<VoxModeToolbarProps> = ({
               ) : (
                 <Reply className="w-3 h-3" />
               )}
-              <span className="inline-block group-hover:[text-decoration:underline] [text-decoration-thickness:1px] [text-underline-offset:3px]">
+              <span className="hidden sm:inline-block group-hover:[text-decoration:underline] [text-decoration-thickness:1px] [text-underline-offset:3px]">
                 Reply
               </span>
             </button>
@@ -212,7 +212,7 @@ const VoxModeToolbar: React.FC<VoxModeToolbarProps> = ({
               ) : (
                 <FileText className="w-3 h-3" />
               )}
-              <span className="inline-block group-hover:[text-decoration:underline] [text-decoration-thickness:1px] [text-underline-offset:3px]">
+              <span className="hidden sm:inline-block group-hover:[text-decoration:underline] [text-decoration-thickness:1px] [text-underline-offset:3px]">
                 Notes
               </span>
             </button>
@@ -239,10 +239,7 @@ const VoxModeToolbar: React.FC<VoxModeToolbarProps> = ({
             >
               {action.icon}
               {action.label && (
-                <span
-                  className="ml-1.5 text-xs font-medium"
-                  style={{ display: 'inline-block' }}
-                >
+                <span className="hidden sm:inline-block ml-1.5 text-xs font-medium">
                   {action.label}
                 </span>
               )}

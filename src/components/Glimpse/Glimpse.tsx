@@ -968,6 +968,14 @@ const Glimpse: React.FC<GlimpseProps> = ({
   const isPaused = state.status === 'paused';
   const isCapturing = isRecording || isPaused;
 
+  // Walkthrough capture relies on getDisplayMedia which Android Chrome /
+  // Capacitor webview don't expose — hide the entry points there instead of
+  // letting users tap a CTA that errors.
+  const canShareScreen =
+    typeof navigator !== 'undefined' &&
+    !!navigator.mediaDevices &&
+    typeof (navigator.mediaDevices as MediaDevices & { getDisplayMedia?: unknown }).getDisplayMedia === 'function';
+
   // Handlers
   const handleRecordClick = () => {
     if (state.status === 'idle') {
@@ -1119,12 +1127,12 @@ const Glimpse: React.FC<GlimpseProps> = ({
               title: 'Record a glimpse — camera',
               onClick: () => enterRecorder('cam'),
             },
-            {
+            ...(canShareScreen ? [{
               icon: <MonitorPlay className="w-4 h-4" />,
               label: 'Walkthrough',
               title: 'Record a walkthrough — screen + camera',
               onClick: () => enterRecorder('cam-screen'),
-            },
+            }] : []),
           ] : []),
           ...(viewMode === 'chat' ? [
             {
@@ -1180,14 +1188,16 @@ const Glimpse: React.FC<GlimpseProps> = ({
                     <Video className="w-4 h-4" />
                     Record a glimpse
                   </button>
-                  <button
-                    type="button"
-                    onClick={() => enterRecorder('cam-screen')}
-                    className="vvb-empty-cta"
-                  >
-                    <MonitorPlay className="w-4 h-4" />
-                    Record a walkthrough
-                  </button>
+                  {canShareScreen && (
+                    <button
+                      type="button"
+                      onClick={() => enterRecorder('cam-screen')}
+                      className="vvb-empty-cta"
+                    >
+                      <MonitorPlay className="w-4 h-4" />
+                      Record a walkthrough
+                    </button>
+                  )}
                 </div>
               </div>
             ) : (

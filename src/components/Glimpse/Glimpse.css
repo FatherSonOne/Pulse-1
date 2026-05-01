@@ -1875,11 +1875,33 @@
 @media (max-width: 480px) {
   .vvb-messages-list { padding: 12px; }
   .gl-card { padding: 14px; }
-  .gl-record { padding: 12px 12px 24px; }
-  .gl-stage { aspect-ratio: 16/9; max-height: 50vh; }
+
+  /* Recorder gets safe-area padding so the send button / record cluster
+     never sits under a Capacitor Android nav-bar or iOS home-indicator. */
+  .gl-record {
+    padding: 12px 12px calc(24px + env(safe-area-inset-bottom, 0px));
+  }
+
+  /* Portrait stage caps at ~45vh so the controls cluster + send CTA fit
+     without scrolling on a Pixel-class phone. */
+  .gl-stage { aspect-ratio: 16/9; max-height: 45vh; }
+
   .gl-record-cluster { width: 64px; height: 64px; }
   .gl-record-icon { width: 22px; height: 22px; }
   .gl-thumb { width: 64px; height: 64px; }
+
+  /* Tap-target floor (≥48px) for every interactive control on mobile. */
+  .gl-secondary-btn,
+  .gl-pause-btn,
+  .gl-record-side {
+    width: 48px;
+    height: 48px;
+  }
+  .gl-recipient-clear { width: 48px; }
+  .gl-recipient-bar-toggle { padding: 12px; }
+  .vvb-empty-cta { padding: 12px 18px; }
+  .gl-action-btn { padding: 12px 10px; }
+  .gl-send-btn { padding: 14px 20px; }
 }
 
 /* ============================================
