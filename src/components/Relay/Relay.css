@@ -7,57 +7,58 @@
    CSS CUSTOM PROPERTIES
    ============================================ */
 :root {
-  /* Core palette */
-  --vox-primary: #6366f1;
-  --vox-primary-light: #818cf8;
-  --vox-primary-dark: #4f46e5;
+  /* Coral Cockpit — single accent across every mode. The historical rainbow
+     of per-mode hues was retired in 2.1d.1; tokens kept under their old names
+     so consumers don't break, but every value resolves to rose-500 family. */
+  --vox-primary: #f43f5e;
+  --vox-primary-light: #fb7185;
+  --vox-primary-dark: #e11d48;
 
-  /* Mode colors */
-  --vox-radio: #8b5cf6;
-  --vox-threads: #10b981;
-  --vox-team: #f59e0b;
-  --vox-notes: #ec4899;
-  --vox-quick: #3b82f6;
-  --vox-drop: #ef4444;
-  --vox-classic: #f97316;
+  --vox-radio: var(--vox-primary);
+  --vox-threads: var(--vox-primary);
+  --vox-team: var(--vox-primary);
+  --vox-notes: var(--vox-primary);
+  --vox-quick: var(--vox-primary);
+  --vox-drop: var(--vox-primary);
+  --vox-classic: var(--vox-primary);
 
-  /* Light mode */
-  --vox-bg-primary: #fafafa;
-  --vox-bg-secondary: #f8fafc;
-  --vox-bg-tertiary: #f1f5f9;
-  --vox-bg-elevated: #fafafa;
+  /* Light mode — Pulse paper-warm canvas, tinted ink (no #fff / #000). */
+  --vox-bg-primary: #f8f8f8;
+  --vox-bg-secondary: #ffffff;
+  --vox-bg-tertiary: #f2f2f2;
+  --vox-bg-elevated: #ffffff;
   --vox-border: rgba(0, 0, 0, 0.08);
   --vox-border-strong: rgba(0, 0, 0, 0.12);
-  --vox-text-primary: #0f172a;
-  --vox-text-secondary: #475569;
-  --vox-text-muted: #94a3b8;
+  --vox-text-primary: #0f0f0f;
+  --vox-text-secondary: #52525b;
+  --vox-text-muted: #6b7280;
   --vox-glass: rgba(255, 255, 255, 0.7);
   --vox-glass-border: rgba(255, 255, 255, 0.3);
   --vox-shadow-sm: 0 1px 2px rgba(0, 0, 0, 0.05);
-  --vox-shadow-md: 0 4px 6px -1px rgba(0, 0, 0, 0.1), 0 2px 4px -2px rgba(0, 0, 0, 0.1);
-  --vox-shadow-lg: 0 10px 15px -3px rgba(0, 0, 0, 0.1), 0 4px 6px -4px rgba(0, 0, 0, 0.1);
-  --vox-shadow-xl: 0 20px 25px -5px rgba(0, 0, 0, 0.1), 0 8px 10px -6px rgba(0, 0, 0, 0.1);
-  --vox-glow: rgba(99, 102, 241, 0.3);
+  --vox-shadow-md: 0 1px 3px rgba(0, 0, 0, 0.06), 0 1px 2px rgba(0, 0, 0, 0.04);
+  --vox-shadow-lg: 0 4px 12px rgba(0, 0, 0, 0.08);
+  --vox-shadow-xl: 0 20px 25px -5px rgba(0, 0, 0, 0.10), 0 10px 10px -5px rgba(0, 0, 0, 0.04);
+  --vox-glow: rgba(244, 63, 94, 0.25);
 }
 
 .dark {
-  /* Dark mode overrides */
-  --vox-bg-primary: #0a0a0f;
-  --vox-bg-secondary: #12121a;
-  --vox-bg-tertiary: #1a1a25;
-  --vox-bg-elevated: #1e1e2a;
+  /* Dark mode — translucent surfaces over true-black canvas (DESIGN.md). */
+  --vox-bg-primary: #000000;
+  --vox-bg-secondary: rgba(255, 255, 255, 0.03);
+  --vox-bg-tertiary: rgba(255, 255, 255, 0.055);
+  --vox-bg-elevated: rgba(255, 255, 255, 0.06);
   --vox-border: rgba(255, 255, 255, 0.06);
-  --vox-border-strong: rgba(255, 255, 255, 0.1);
-  --vox-text-primary: #f8fafc;
-  --vox-text-secondary: #94a3b8;
-  --vox-text-muted: #64748b;
-  --vox-glass: rgba(20, 20, 30, 0.8);
+  --vox-border-strong: rgba(255, 255, 255, 0.10);
+  --vox-text-primary: #fafafa;
+  --vox-text-secondary: #b4b4b8;
+  --vox-text-muted: #71717a;
+  --vox-glass: rgba(20, 20, 22, 0.8);
   --vox-glass-border: rgba(255, 255, 255, 0.08);
   --vox-shadow-sm: 0 1px 2px rgba(0, 0, 0, 0.3);
-  --vox-shadow-md: 0 4px 6px -1px rgba(0, 0, 0, 0.4);
-  --vox-shadow-lg: 0 10px 15px -3px rgba(0, 0, 0, 0.5);
-  --vox-shadow-xl: 0 20px 25px -5px rgba(0, 0, 0, 0.6);
-  --vox-glow: rgba(99, 102, 241, 0.4);
+  --vox-shadow-md: 0 4px 16px rgba(0, 0, 0, 0.40);
+  --vox-shadow-lg: 0 4px 16px rgba(0, 0, 0, 0.40);
+  --vox-shadow-xl: 0 20px 25px -5px rgba(0, 0, 0, 0.50), 0 10px 10px -5px rgba(0, 0, 0, 0.30);
+  --vox-glow: rgba(244, 63, 94, 0.30);
 }
 
 /* ============================================
@@ -71,49 +72,24 @@
   overflow: hidden;
 }
 
-.vox-container::before {
-  content: '';
-  position: absolute;
-  top: -50%;
-  left: -50%;
-  width: 200%;
-  height: 200%;
-  background: radial-gradient(
-    ellipse at center,
-    rgba(99, 102, 241, 0.03) 0%,
-    transparent 50%
-  );
-  pointer-events: none;
-  animation: vox-ambient-pulse 20s ease-in-out infinite;
-}
-
-.dark .vox-container::before {
-  background: radial-gradient(
-    ellipse at center,
-    rgba(99, 102, 241, 0.08) 0%,
-    transparent 50%
-  );
-}
-
-@keyframes vox-ambient-pulse {
-  0%, 100% { transform: scale(1) rotate(0deg); opacity: 0.5; }
-  50% { transform: scale(1.1) rotate(180deg); opacity: 0.8; }
-}
+/* Decorative ambient gradient + 20s rotation removed in the 2026-04 brand
+   sweep — Pulse motion conveys state, not atmosphere. */
 
 /* ============================================
-   GLASSMORPHISM PANELS
+   GLASSMORPHISM PANELS — modal/floating-panel only
+   DESIGN.md: never apply to lists or cards in flow.
    ============================================ */
 .vox-glass {
   background: var(--vox-glass);
   border: 1px solid var(--vox-glass-border);
-  border-radius: 20px;
+  border-radius: 16px;
   box-shadow: var(--vox-shadow-lg);
 }
 
 .vox-glass-subtle {
   background: var(--vox-glass);
   border: 1px solid var(--vox-glass-border);
-  border-radius: 16px;
+  border-radius: 12px;
 }
 
 /* ============================================
@@ -121,13 +97,9 @@
    ============================================ */
 .vox-visualizer-container {
   position: relative;
-  border-radius: 24px;
+  border-radius: 12px;
   overflow: hidden;
-  background: linear-gradient(
-    135deg,
-    var(--vox-bg-tertiary) 0%,
-    var(--vox-bg-secondary) 100%
-  );
+  background: var(--vox-bg-tertiary);
 }
 
 .vox-visualizer-glow {
@@ -274,14 +246,10 @@
 }
 
 .vox-ptt-button.recording {
-  background: linear-gradient(
-    135deg,
-    var(--vox-classic) 0%,
-    #dc2626 100%
-  );
+  background: var(--vox-primary);
   box-shadow:
-    var(--vox-shadow-xl),
-    0 0 30px rgba(249, 115, 22, 0.5);
+    0 0 0 1px var(--vox-primary),
+    0 4px 24px rgba(244, 63, 94, 0.25);
   animation: vox-ptt-pulse 1s ease-in-out infinite;
 }
 
@@ -339,60 +307,42 @@
   overflow: hidden;
 }
 
-.vox-mode-card::before {
-  content: '';
-  position: absolute;
-  top: 0;
-  left: 0;
-  right: 0;
-  height: 3px;
-  background: var(--mode-color, var(--vox-primary));
-  opacity: 0;
-  transition: opacity 0.3s ease;
-}
+/* ::before top-stripe accent removed in 2026-04 sweep — same family as the
+   banned side-stripe pattern. Selection signal is now border + tint only. */
 
 .vox-mode-card:hover {
   background: var(--vox-bg-tertiary);
   border-color: var(--vox-border-strong);
-  transform: translateY(-2px);
+  transform: translateY(-1px);
   box-shadow: var(--vox-shadow-md);
-}
-
-.vox-mode-card:hover::before {
-  opacity: 1;
 }
 
 .vox-mode-card.selected {
   background: var(--vox-bg-elevated);
-  border-color: var(--mode-color, var(--vox-primary));
+  border-color: var(--vox-primary);
   box-shadow:
     var(--vox-shadow-lg),
-    0 0 0 1px var(--mode-color, var(--vox-primary)),
-    0 0 30px color-mix(in srgb, var(--mode-color, var(--vox-primary)) 20%, transparent);
-}
-
-.vox-mode-card.selected::before {
-  opacity: 1;
+    0 0 0 1px var(--vox-primary);
 }
 
 .vox-mode-icon {
   width: 48px;
   height: 48px;
-  border-radius: 14px;
+  border-radius: 12px;
   display: flex;
   align-items: center;
   justify-content: center;
-  background: color-mix(in srgb, var(--mode-color, var(--vox-primary)) 15%, transparent);
-  color: var(--mode-color, var(--vox-primary));
+  background: color-mix(in srgb, var(--vox-primary) 10%, transparent);
+  color: var(--vox-primary);
   margin-bottom: 12px;
-  transition: all 0.3s ease;
+  transition: all 0.2s cubic-bezier(0.16, 1, 0.3, 1);
 }
 
 .vox-mode-card:hover .vox-mode-icon,
 .vox-mode-card.selected .vox-mode-icon {
-  background: var(--mode-color, var(--vox-primary));
+  background: var(--vox-primary);
   color: white;
-  box-shadow: 0 4px 14px color-mix(in srgb, var(--mode-color, var(--vox-primary)) 40%, transparent);
+  box-shadow: 0 4px 14px rgba(244, 63, 94, 0.30);
 }
 
 .vox-mode-title {
@@ -411,7 +361,7 @@
    RECORDING PREVIEW
    ============================================ */
 .vox-preview-container {
-  border-radius: 20px;
+  border-radius: 12px;
   background: var(--vox-bg-secondary);
   border: 1px solid var(--vox-border);
   overflow: hidden;
@@ -507,7 +457,7 @@
 .vox-bubble {
   max-width: 85%;
   padding: 16px;
-  border-radius: 20px;
+  border-radius: 12px;
   background: var(--vox-bg-secondary);
   border: 1px solid var(--vox-border);
   position: relative;
@@ -515,11 +465,7 @@
 
 .vox-bubble.sent {
   margin-left: auto;
-  background: linear-gradient(
-    135deg,
-    var(--vox-primary) 0%,
-    var(--vox-primary-dark) 100%
-  );
+  background: var(--vox-primary);
   color: white;
   border-color: transparent;
 }
@@ -808,10 +754,10 @@
   max-height: 90vh;
   overflow-y: auto;
   background: var(--vox-bg-primary);
-  border-radius: 24px;
+  border-radius: 16px;
   border: 1px solid var(--vox-border);
   box-shadow: var(--vox-shadow-xl);
-  animation: vox-slide-up 0.3s cubic-bezier(0.4, 0, 0.2, 1);
+  animation: vox-slide-up 0.3s cubic-bezier(0.16, 1, 0.3, 1);
 }
 
 @keyframes vox-slide-up {
@@ -946,12 +892,8 @@
    ============================================ */
 .vox-analysis {
   padding: 16px;
-  border-radius: 16px;
-  background: linear-gradient(
-    135deg,
-    color-mix(in srgb, var(--vox-primary) 5%, var(--vox-bg-secondary)),
-    var(--vox-bg-secondary)
-  );
+  border-radius: 12px;
+  background: var(--vox-bg-secondary);
   border: 1px solid var(--vox-border);
 }
 
@@ -1089,7 +1031,7 @@
   }
 
   .vox-preview-container {
-    border-radius: 16px;
+    border-radius: 12px;
   }
 
   .vox-modal {
@@ -1119,7 +1061,7 @@
   .vox-bubble {
     max-width: 90%;
     padding: 12px;
-    border-radius: 16px;
+    border-radius: 12px;
   }
 }
 
@@ -1168,11 +1110,12 @@
   }
 }
 
-/* Focus visible styles */
+/* Focus visible styles — coral 2px outline + 3px halo per DESIGN.md. */
 .vox-btn:focus-visible,
 .vox-input:focus-visible,
 .vox-tab:focus-visible,
 .vox-list-item:focus-visible {
   outline: 2px solid var(--vox-primary);
   outline-offset: 2px;
+  box-shadow: 0 0 0 3px rgba(244, 63, 94, 0.10);
 }

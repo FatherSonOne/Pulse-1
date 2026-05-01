@@ -72,13 +72,13 @@ const VoiceListeningOverlay: React.FC<VoiceListeningOverlayProps> = ({
   if (!isListening) return null;
 
   return (
-    <div className="fixed inset-0 bg-black/80 backdrop-blur-lg flex items-center justify-center z-[100] animate-fadeIn">
+    <div className="fixed inset-0 bg-zinc-950/80 backdrop-blur-lg flex items-center justify-center z-[100] animate-fadeIn">
       <div className="text-center max-w-md mx-4">
-        {/* Animated Orb */}
+        {/* Listening orb — coral on neutral, no rainbow gradients. */}
         <div className="relative w-32 h-32 mx-auto mb-8">
-          <div className="absolute inset-0 rounded-full bg-gradient-to-br from-orange-500 to-pink-500 animate-pulse" />
-          <div className="absolute inset-2 rounded-full bg-gradient-to-br from-orange-400 to-pink-400 animate-ping opacity-75" />
-          <div className="absolute inset-4 rounded-full bg-black flex items-center justify-center">
+          <div className="absolute inset-0 rounded-full bg-rose-500 animate-pulse" />
+          <div className="absolute inset-2 rounded-full bg-rose-400 animate-ping opacity-75" />
+          <div className="absolute inset-4 rounded-full bg-zinc-950 flex items-center justify-center">
             <Mic className="text-4xl text-white animate-pulse" />
           </div>
         </div>
@@ -89,7 +89,7 @@ const VoiceListeningOverlay: React.FC<VoiceListeningOverlayProps> = ({
             {matchedCommand ? 'Command recognized!' : 'Listening...'}
           </p>
           {transcript && (
-            <p className="text-2xl font-bold bg-gradient-to-r from-orange-400 to-pink-400 bg-clip-text text-transparent">
+            <p className="text-2xl font-semibold text-rose-400">
               "{transcript}"
             </p>
           )}
@@ -546,13 +546,11 @@ export const FloatingVoiceButton: React.FC<FloatingVoiceButtonProps> = ({
   return (
     <button
       onClick={onPress}
-      className={`fixed bottom-24 right-6 w-14 h-14 rounded-full shadow-2xl flex items-center justify-center z-50 transition transform hover:scale-110 ${
-        isListening
-          ? 'bg-red-500 animate-pulse'
-          : 'bg-gradient-to-br from-orange-500 to-pink-500'
+      className={`fixed bottom-24 right-6 w-14 h-14 rounded-full shadow-lg shadow-rose-500/30 flex items-center justify-center z-50 transition transform hover:scale-105 ${
+        isListening ? 'bg-rose-500 animate-pulse' : 'bg-rose-500'
       }`}
     >
-      <i className={`fa-solid fa-microphone text-xl text-white ${isListening ? 'animate-bounce' : ''}`}></i>
+      <i className="fa-solid fa-microphone text-xl text-white"></i>
     </button>
   );
 };

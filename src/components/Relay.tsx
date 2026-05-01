@@ -7,9 +7,9 @@ import { useAuth } from '../hooks/useAuth';
 import { useRelayKeyboardShortcuts } from '../hooks/useRelayKeyboardShortcuts';
 import { VoxKeyboardShortcutsHelp } from './Relay/VoxKeyboardShortcutsHelp';
 
-// Audience renderers — RelayMode buckets render one of these as the body.
-// VoxNotesMode and PulseRadio are the 'notes' and 'live' bodies; 'messages'
-// renders ClassicMode through the audience picker.
+// Audience renderers — Relay's six peer views each render one of these.
+// 'direct' / 'channel' / 'broadcast' are what 'messages' used to be; the
+// audience picker has been folded into the top nav (2026-04 brand sweep).
 import {
   ClassicMode,
   VoxNotesMode,
@@ -19,29 +19,33 @@ import {
 import { RelayTriageStream } from './Relay/RelayTriageStream';
 import { RelayComposer, type ComposerReplyTo } from './Relay/RelayComposer';
 import { RelaySettings } from './Relay/RelaySettings';
-import {
-  MessagesAudiencePicker,
-  type MessagesAudience,
-} from './Relay/MessagesAudiencePicker';
-import { RelayMode } from '../services/relay/voxModeTypes';
 
 interface RelayProps {
   apiKey: string;
   contacts: Contact[];
-  /** Pulse user id to land on inside Messages (e.g. opening a contact's DM). */
+  /** Pulse user id to land on inside Direct (e.g. opening a contact's DM). */
   initialContactId?: string;
   isDarkMode?: boolean;
 }
 
-// Top-level views inside Relay. Triage is the default landing experience and
-// is rebuilt in 2.1d.3; the other three are RelayMode audience renderers.
-type RelayView = 'triage' | RelayMode;
+// Top-level views inside Relay. Triage is the default landing experience.
+// The other five are the audience peers Messages used to bundle.
+type RelayView = 'triage' | 'direct' | 'channel' | 'broadcast' | 'notes' | 'live';
 
-const RELAY_VIEWS: readonly RelayView[] = ['triage', 'messages', 'notes', 'live'] as const;
+const RELAY_VIEWS: readonly RelayView[] = [
+  'triage',
+  'direct',
+  'channel',
+  'broadcast',
+  'notes',
+  'live',
+] as const;
 
 const RELAY_VIEW_LABELS: Record<RelayView, string> = {
   triage: 'Triage',
-  messages: 'Messages',
+  direct: 'Direct',
+  channel: 'Channel',
+  broadcast: 'Broadcast',
   notes: 'Notes',
   live: 'Live',
 };
@@ -50,14 +54,11 @@ const Relay: React.FC<RelayProps> = ({ apiKey, contacts, initialContactId, isDar
   // user.id powers the Triage stream's voice-source queries.
   const { user } = useAuth();
 
-  // If the parent passed an initialContactId we land on Messages so the
+  // If the parent passed an initialContactId we land on Direct so the
   // contact is reachable. ClassicMode owns the per-contact selection (an
   // explicit prop hand-off would couple this wrapper to its internal state),
   // so the value is forwarded below.
-  const [view, setView] = useState<RelayView>(initialContactId ? 'messages' : 'triage');
-  // Audience switch inside the Messages view — collapses the old 7-mode
-  // VoxModeSelector down to Direct / Channel / Broadcast (Stage 5 P1 #9).
-  const [messagesAudience, setMessagesAudience] = useState<MessagesAudience>('direct');
+  const [view, setView] = useState<RelayView>(initialContactId ? 'direct' : 'triage');
   const [showShortcutsHelp, setShowShortcutsHelp] = useState(false);
   const [showSettings, setShowSettings] = useState(false);
   const [composerOpen, setComposerOpen] = useState(false);
@@ -76,9 +77,9 @@ const Relay: React.FC<RelayProps> = ({ apiKey, contacts, initialContactId, isDar
     setComposerOpen(true);
   };
 
-  // T/M/N/L switches the view directly. The active-tab style on the nav
-  // already communicates the change, so no toast is fired — repeated
-  // T/M/N/L taps would otherwise stack four toasts in a couple of seconds.
+  // T/D/C/B/N/L switches the view directly. The active-tab style on the
+  // nav already communicates the change, so no toast is fired — repeated
+  // taps would otherwise stack toasts in a couple of seconds.
   useRelayKeyboardShortcuts({
     onSwitchView: (newView) => setView(newView),
     onShowHelp: () => setShowShortcutsHelp(true),
@@ -87,9 +88,11 @@ const Relay: React.FC<RelayProps> = ({ apiKey, contacts, initialContactId, isDar
 
   return (
     <div className="h-full flex flex-col bg-white dark:bg-zinc-950 rounded-2xl overflow-hidden border border-zinc-200 dark:border-zinc-800 animate-fade-in shadow-xl">
-      {/* Mode nav — Triage / Messages / Notes / Live + settings affordance */}
+      {/* Mode nav — six peers + settings affordance. The Direct / Channel /
+          Broadcast triplet replaces the old "Messages" umbrella so the top
+          nav stays the single mode signal. */}
       <nav
-        className="flex items-center gap-1 px-3 py-2 border-b border-zinc-200 dark:border-zinc-800"
+        className="flex items-center gap-1 px-3 py-2 border-b border-zinc-200 dark:border-zinc-800 overflow-x-auto"
         role="tablist"
         aria-label="Relay views"
       >
@@ -100,7 +103,7 @@ const Relay: React.FC<RelayProps> = ({ apiKey, contacts, initialContactId, isDar
             role="tab"
             aria-selected={view === v}
             onClick={() => setView(v)}
-            className={`px-3 py-1.5 rounded-md text-xs font-mono uppercase tracking-[0.1em] transition ${
+            className={`shrink-0 px-3 py-1.5 rounded-md text-xs font-mono uppercase tracking-[0.1em] transition ${
               view === v
                 ? 'bg-rose-500/10 text-rose-600 dark:text-rose-400'
                 : 'text-zinc-500 dark:text-zinc-400 hover:bg-zinc-100 dark:hover:bg-zinc-900'
@@ -112,7 +115,7 @@ const Relay: React.FC<RelayProps> = ({ apiKey, contacts, initialContactId, isDar
         <button
           type="button"
           onClick={() => setShowSettings(true)}
-          className="ml-auto p-1.5 rounded-md text-zinc-500 dark:text-zinc-400 hover:bg-zinc-100 dark:hover:bg-zinc-900 transition focus:outline-none focus-visible:ring-2 focus-visible:ring-rose-400"
+          className="ml-auto shrink-0 p-1.5 rounded-md text-zinc-500 dark:text-zinc-400 hover:bg-zinc-100 dark:hover:bg-zinc-900 transition focus:outline-none focus-visible:ring-2 focus-visible:ring-rose-400"
           aria-label="Open Relay settings"
           title="Relay settings"
         >
@@ -133,44 +136,27 @@ const Relay: React.FC<RelayProps> = ({ apiKey, contacts, initialContactId, isDar
             }
           />
         )}
-        {view === 'messages' && (
-          <div className="h-full relative">
-            {/* Audience picker floats at the top-right of the Messages body
-                so the top nav stays the single mode signal. The renderer
-                below fills the full body — its own header (search, contact
-                list, etc.) flows underneath without competing chrome. */}
-            <div className="absolute top-2 right-3 z-20">
-              <MessagesAudiencePicker
-                audience={messagesAudience}
-                onChange={setMessagesAudience}
-                isDarkMode={isDarkMode}
-              />
-            </div>
-            <div className="h-full overflow-hidden">
-              {messagesAudience === 'direct' && (
-                <ClassicMode
-                  onBack={() => setView('triage')}
-                  apiKey={apiKey}
-                  isDarkMode={isDarkMode}
-                  initialContactId={initialContactId}
-                />
-              )}
-              {messagesAudience === 'channel' && (
-                <TeamVoxMode
-                  onBack={() => setView('triage')}
-                  apiKey={apiKey}
-                  isDarkMode={isDarkMode}
-                />
-              )}
-              {messagesAudience === 'broadcast' && (
-                <PulseRadio
-                  onBack={() => setView('triage')}
-                  apiKey={apiKey}
-                  isDarkMode={isDarkMode}
-                />
-              )}
-            </div>
-          </div>
+        {view === 'direct' && (
+          <ClassicMode
+            onBack={() => setView('triage')}
+            apiKey={apiKey}
+            isDarkMode={isDarkMode}
+            initialContactId={initialContactId}
+          />
+        )}
+        {view === 'channel' && (
+          <TeamVoxMode
+            onBack={() => setView('triage')}
+            apiKey={apiKey}
+            isDarkMode={isDarkMode}
+          />
+        )}
+        {view === 'broadcast' && (
+          <PulseRadio
+            onBack={() => setView('triage')}
+            apiKey={apiKey}
+            isDarkMode={isDarkMode}
+          />
         )}
         {view === 'notes' && (
           <VoxNotesMode

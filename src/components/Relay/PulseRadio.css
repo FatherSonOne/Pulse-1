@@ -78,50 +78,8 @@
   flex-direction: column;
 }
 
-/* Industrial dot matrix background */
-.pulse-radio::before {
-  content: '';
-  position: absolute;
-  top: 0;
-  left: 0;
-  right: 0;
-  bottom: 0;
-  background-image:
-    radial-gradient(circle at 1px 1px, var(--pr-dot-pattern) 1px, transparent 0);
-  background-size: 24px 24px;
-  pointer-events: none;
-  z-index: 0;
-}
-
-/* Ambient glow orb */
-.pulse-radio::after {
-  content: '';
-  position: absolute;
-  top: -20%;
-  right: -10%;
-  width: 60%;
-  height: 60%;
-  background: radial-gradient(
-    ellipse at center,
-    rgba(244, 63, 94, 0.08) 0%,
-    rgba(244, 63, 94, 0.03) 40%,
-    transparent 70%
-  );
-  pointer-events: none;
-  z-index: 0;
-  animation: pulse-orb 8s ease-in-out infinite;
-}
-
-@keyframes pulse-orb {
-  0%, 100% {
-    transform: translate(0, 0) scale(1);
-    opacity: 0.6;
-  }
-  50% {
-    transform: translate(-5%, 5%) scale(1.1);
-    opacity: 1;
-  }
-}
+/* Decorative dot-matrix + 8s ambient glow orb removed in 2026-04 brand
+   sweep — Pulse motion conveys state, not atmosphere. */
 
 /* ===========================================
    HEADER
@@ -138,26 +96,8 @@
   border-bottom: 1px solid var(--pr-border-subtle);
 }
 
-.pulse-radio-header::before {
-  content: '';
-  position: absolute;
-  left: 0;
-  top: 0;
-  bottom: 0;
-  width: 4px;
-  background: linear-gradient(
-    180deg,
-    var(--pr-primary) 0%,
-    var(--pr-primary-light) 50%,
-    var(--pr-primary) 100%
-  );
-  animation: header-accent-pulse 3s ease-in-out infinite;
-}
-
-@keyframes header-accent-pulse {
-  0%, 100% { opacity: 0.7; }
-  50% { opacity: 1; }
-}
+/* 4px left-edge accent stripe removed — same family as the banned
+   side-stripe pattern (DESIGN.md absolute bans). */
 
 .pulse-radio-back-btn {
   display: flex;
@@ -207,28 +147,10 @@
   justify-content: center;
   width: 44px;
   height: 44px;
-  background: linear-gradient(135deg, var(--pr-primary) 0%, var(--pr-primary-dark) 100%);
+  background: var(--pr-primary);
   border-radius: 12px;
   color: white;
-}
-
-.pulse-radio-title-icon::before {
-  content: '';
-  position: absolute;
-  inset: -2px;
-  border-radius: 14px;
-  background: linear-gradient(135deg, var(--pr-primary-light) 0%, var(--pr-primary) 100%);
-  z-index: -1;
-  opacity: 0.5;
-}
-
-.pulse-radio-title-notch {
-  position: absolute;
-  top: 4px;
-  right: 4px;
-  width: 8px;
-  height: 8px;
-  background: linear-gradient(135deg, transparent 50%, rgba(255, 255, 255, 0.3) 50%);
+  box-shadow: 0 4px 12px rgba(244, 63, 94, 0.25);
 }
 
 .pulse-radio-title h1 {
@@ -275,7 +197,7 @@
   align-items: center;
   gap: 0.5rem;
   padding: 0.625rem 1rem;
-  background: linear-gradient(135deg, var(--pr-primary) 0%, var(--pr-primary-dark) 100%);
+  background: var(--pr-primary);
   border: none;
   border-radius: 12px;
   font-family: var(--font-sans);
@@ -283,8 +205,8 @@
   font-weight: 500;
   color: white;
   cursor: pointer;
-  transition: all 0.2s ease;
-  box-shadow: 0 4px 12px var(--pr-primary-glow);
+  transition: all 0.2s cubic-bezier(0.16, 1, 0.3, 1);
+  box-shadow: 0 4px 12px rgba(244, 63, 94, 0.30);
 }
 
 .pulse-radio-new-btn:hover {
@@ -564,36 +486,14 @@
   align-items: flex-start;
   gap: 1rem;
   padding: 1.5rem;
-  background: var(--pr-bg-glass);
+  background: var(--pr-bg-secondary);
   border: 1px solid var(--pr-border-subtle);
-  border-radius: 20px;
+  border-radius: 12px;
   position: relative;
   overflow: hidden;
 }
 
-/* Industrial corner accents */
-.pulse-radio-channel-hero::before,
-.pulse-radio-channel-hero::after {
-  content: '';
-  position: absolute;
-  width: 16px;
-  height: 16px;
-  border: 2px solid var(--pr-border-medium);
-}
-
-.pulse-radio-channel-hero::before {
-  top: 12px;
-  left: 12px;
-  border-right: none;
-  border-bottom: none;
-}
-
-.pulse-radio-channel-hero::after {
-  bottom: 12px;
-  right: 12px;
-  border-left: none;
-  border-top: none;
-}
+/* Decorative L-bracket corner accents removed in 2026-04 brand sweep. */
 
 .pulse-radio-hero-icon {
   position: relative;
@@ -602,10 +502,11 @@
   justify-content: center;
   width: 64px;
   height: 64px;
-  background: linear-gradient(135deg, var(--pr-primary) 0%, var(--pr-primary-dark) 100%);
-  border-radius: 16px;
+  background: var(--pr-primary);
+  border-radius: 12px;
   color: white;
   flex-shrink: 0;
+  box-shadow: 0 4px 12px rgba(244, 63, 94, 0.25);
 }
 
 .pulse-radio-hero-rings {
@@ -704,9 +605,9 @@
 
 .pulse-radio-record-section {
   padding: 1.5rem;
-  background: var(--pr-bg-glass);
+  background: var(--pr-bg-secondary);
   border: 1px solid var(--pr-border-subtle);
-  border-radius: 20px;
+  border-radius: 12px;
 }
 
 .pulse-radio-preview {
@@ -756,18 +657,18 @@
   align-items: center;
   gap: 0.5rem;
   padding: 0.5rem 1rem;
-  background: rgba(239, 68, 68, 0.1);
-  border: 1px solid rgba(239, 68, 68, 0.3);
-  border-radius: 20px;
+  background: rgba(244, 63, 94, 0.10);
+  border: 1px solid rgba(244, 63, 94, 0.30);
+  border-radius: 9999px;
   font-family: 'JetBrains Mono', monospace;
   font-size: 0.75rem;
-  color: #ef4444;
+  color: var(--pr-primary);
 }
 
 .pulse-radio-recording-dot {
   width: 8px;
   height: 8px;
-  background: #ef4444;
+  background: var(--pr-primary);
   border-radius: 50%;
   animation: rec-blink 1s ease-in-out infinite;
 }

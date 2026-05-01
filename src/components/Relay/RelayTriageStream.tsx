@@ -14,9 +14,17 @@ import { useRelayTriage, type TriageItem, type TriageItemKind } from '../../hook
 import { AIProvenanceChip } from '../ui/AIProvenanceChip';
 import { voxModeService } from '../../services/relay/voxModeService';
 import { resolveAudioUrl, legacyAudioUrl } from '../../services/relay/resolveAudioUrl';
-import type { RelayMode } from '../../services/relay/voxModeTypes';
 
-type RelayTriageView = 'triage' | RelayMode;
+// Mirrors Relay.tsx's local RelayView (six peers). Kept as a separate alias
+// so this file's surface is self-explanatory without a parent import.
+type RelayTriageView =
+  | 'triage'
+  | 'direct'
+  | 'channel'
+  | 'broadcast'
+  | 'notes'
+  | 'live';
+
 type FilterId = 'all' | 'needs_reply' | 'messages' | 'notes' | 'live';
 
 const FILTER_ORDER: readonly FilterId[] = ['all', 'needs_reply', 'messages', 'notes', 'live'] as const;
@@ -50,11 +58,12 @@ interface RelayTriageStreamProps {
   onReplyToThread: (threadId: string, threadLabel?: string) => void;
 }
 
-/** Map TriageItemKind → top-level Relay view. */
+/** Map TriageItemKind → top-level Relay view (six-peer space). */
 function viewForKind(kind: TriageItemKind): RelayTriageView {
-  if (kind === 'broadcast') return 'live';
+  if (kind === 'broadcast') return 'broadcast';
   if (kind === 'note') return 'notes';
-  return 'messages';
+  // 'classic' / 'quick' / 'thread' are all 1:1 message-shaped — Direct.
+  return 'direct';
 }
 
 /** "2h ago" / "just now" — inline since we ship no date-fns dependency. */

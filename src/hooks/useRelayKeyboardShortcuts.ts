@@ -1,16 +1,26 @@
 // useRelayKeyboardShortcuts - Global keyboard shortcuts for Relay
-// Provides Space for record, Escape for back, T/M/N/L for top-level RelayView
-// switching, and Ctrl+D/A/S for row-level actions when consumers wire them.
+// Provides Space for record, Escape for back, T/D/C/B/N/L for top-level
+// RelayView switching, and Ctrl+D/A/S for row-level actions when consumers
+// wire them. The Messages umbrella collapsed into Direct/Channel/Broadcast
+// in the 2026-04 brand sweep — the M shortcut was retired alongside it.
 
 import { useEffect, useRef } from 'react';
-import { RelayMode } from '../services/relay/voxModeTypes';
+
+/** Top-level Relay view (6 peers). Mirrors Relay.tsx's local RelayView. */
+export type RelayShortcutView =
+  | 'triage'
+  | 'direct'
+  | 'channel'
+  | 'broadcast'
+  | 'notes'
+  | 'live';
 
 export interface RelayShortcutHandlers {
   onToggleRecording?: () => void;
   onStopRecording?: () => void;
   onGoBack?: () => void;
-  /** Top-level RelayView switch (T/M/N/L). 'triage' is the home view. */
-  onSwitchView?: (view: 'triage' | RelayMode) => void;
+  /** Top-level RelayView switch (T/D/C/B/N/L). 'triage' is the home view. */
+  onSwitchView?: (view: RelayShortcutView) => void;
   onDownload?: () => void;
   onArchive?: () => void;
   onSummarize?: () => void;
@@ -21,7 +31,9 @@ export const RELAY_SHORTCUTS = {
   Space: 'Start or stop recording',
   Escape: 'Stop recording, close modal, or go back',
   T: 'Triage view (all)',
-  M: 'Messages view',
+  D: 'Direct (1:1 messages)',
+  C: 'Channel (team)',
+  B: 'Broadcast',
   N: 'Notes view',
   L: 'Live view',
   'Ctrl+D': 'Download selected messages',
@@ -30,9 +42,11 @@ export const RELAY_SHORTCUTS = {
   '?': 'Show keyboard shortcuts',
 } as const;
 
-const VIEW_MAP: Record<string, 'triage' | RelayMode> = {
+const VIEW_MAP: Record<string, RelayShortcutView> = {
   t: 'triage',
-  m: 'messages',
+  d: 'direct',
+  c: 'channel',
+  b: 'broadcast',
   n: 'notes',
   l: 'live',
 };
