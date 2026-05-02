@@ -33,6 +33,7 @@ import {
   saveTranscript,
 } from '../../services/pulseVideoService';
 import { supabase } from '../../services/supabaseClient';
+import { AIProvenanceChip } from '../ui/AIProvenanceChip';
 
 // ── Types ──────────────────────────────────────────────────────────────────────
 
@@ -572,14 +573,23 @@ const MeetingRoom: React.FC<{
       </div>
 
       {/* ── Live transcript ─────────────────────────────────────────────────── */}
-      {transcriptEnabled && transcriptLines.length > 0 && (
-        <div className="px-4 pb-2 max-h-24 overflow-y-auto">
-          {transcriptLines.slice(-3).map((line, i) => (
-            <p key={i} className={`text-xs leading-snug ${line.isFinal ? 'text-white/70' : 'text-white/40 italic'}`}>
-              <span className="font-mono uppercase tracking-[0.1em] text-[10px] text-rose-400">{line.speaker}</span>{' '}
-              <span className="font-sans">{line.text}</span>
+      {transcriptEnabled && (
+        <div className="px-4 pt-2 pb-2 max-h-28 overflow-y-auto border-t border-white/[0.04]">
+          <div className="mb-1.5">
+            <AIProvenanceChip vendor="DEEPGRAM" type="LIVE" fresh={transcriptLines.length > 0} />
+          </div>
+          {transcriptLines.length === 0 ? (
+            <p className="font-mono uppercase tracking-[0.1em] text-[10px] text-white/30">
+              LISTENING
             </p>
-          ))}
+          ) : (
+            transcriptLines.slice(-3).map((line, i) => (
+              <p key={i} className={`text-xs leading-snug ${line.isFinal ? 'text-white/70' : 'text-white/40 italic'}`}>
+                <span className="font-mono uppercase tracking-[0.1em] text-[10px] text-rose-400">{line.speaker}</span>{' '}
+                <span className="font-sans">{line.text}</span>
+              </p>
+            ))
+          )}
         </div>
       )}
 
@@ -664,14 +674,20 @@ const MeetingRoom: React.FC<{
             {isSummarizing ? (
               <>
                 <Loader2 size={28} className="animate-spin motion-reduce:animate-none text-white/50 mx-auto" />
-                <p className="text-white font-mono uppercase tracking-[0.1em] text-[11px]">GENERATING SUMMARY</p>
+                <div className="flex justify-center">
+                  <AIProvenanceChip vendor="GEMINI" type="SUMMARY" fresh />
+                </div>
+                <p className="text-white font-mono uppercase tracking-[0.1em] text-[11px]">GENERATING</p>
               </>
             ) : (
               <>
                 <PhoneOff size={28} className="text-rose-400 mx-auto" />
                 <p className="text-white font-semibold text-base">Leave the meeting?</p>
                 {transcriptLines.filter(l => l.isFinal).length > 0 && (
-                  <p className="text-white/55 text-sm">A summary will be generated from the transcript.</p>
+                  <div className="flex flex-col items-center gap-2">
+                    <AIProvenanceChip vendor="GEMINI" type="SUMMARY" />
+                    <p className="text-white/55 text-sm">A summary will be generated from the transcript.</p>
+                  </div>
                 )}
                 <div className="flex gap-3">
                   <button
