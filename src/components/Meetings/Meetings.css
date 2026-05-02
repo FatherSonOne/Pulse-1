@@ -4211,3 +4211,148 @@
     transition: none;
   }
 }
+
+/* ============================================
+   ROOM ERROR + LOADING STAGE
+   Coral Cockpit treatment for the pre-room state
+   (creating room, retry-after-failure, auth-expired).
+   ============================================ */
+.mtg-room-stage {
+  flex: 1;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  min-height: 400px;
+  padding: 32px;
+  background: var(--mtg-bg-primary);
+}
+
+/* Error state — quiet, structured, escapable */
+.mtg-room-error {
+  max-width: 360px;
+  width: 100%;
+  display: flex;
+  flex-direction: column;
+  align-items: flex-start;
+  gap: 12px;
+  padding: 24px;
+  background: var(--mtg-bg-secondary);
+  border: 1px solid var(--mtg-border);
+  border-radius: 12px;
+}
+.mtg-room-error-icon {
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  width: 32px;
+  height: 32px;
+  border-radius: 8px;
+  background: rgba(239, 68, 68, 0.10);
+  color: var(--mtg-accent-danger);
+}
+.mtg-room-error-label {
+  font-family: var(--font-mono, "JetBrains Mono", monospace);
+  font-size: 10px;
+  font-weight: 500;
+  letter-spacing: 0.1em;
+  text-transform: uppercase;
+  color: var(--mtg-accent-danger);
+}
+.mtg-room-error-message {
+  font-size: 14px;
+  line-height: 1.5;
+  color: var(--mtg-text-primary);
+  max-width: 38ch;
+}
+.mtg-room-error-actions {
+  display: flex;
+  flex-direction: column;
+  gap: 8px;
+  width: 100%;
+  margin-top: 8px;
+}
+.mtg-room-error-primary {
+  padding: 10px 16px;
+  background: var(--mtg-accent-primary);
+  color: #fff;
+  border: none;
+  border-radius: 8px;
+  font-family: var(--font-mono, "JetBrains Mono", monospace);
+  font-size: 11px;
+  font-weight: 500;
+  letter-spacing: 0.1em;
+  text-transform: uppercase;
+  cursor: pointer;
+  transition: background 220ms cubic-bezier(0.16, 1, 0.3, 1);
+}
+.mtg-room-error-primary:hover { background: var(--mtg-accent-secondary); }
+.mtg-room-error-secondary {
+  padding: 10px 16px;
+  background: transparent;
+  color: var(--mtg-text-secondary);
+  border: 1px solid var(--mtg-border);
+  border-radius: 8px;
+  font-family: var(--font-mono, "JetBrains Mono", monospace);
+  font-size: 11px;
+  font-weight: 500;
+  letter-spacing: 0.1em;
+  text-transform: uppercase;
+  cursor: pointer;
+  transition: border-color 220ms cubic-bezier(0.16, 1, 0.3, 1), color 220ms cubic-bezier(0.16, 1, 0.3, 1);
+}
+.mtg-room-error-secondary:hover {
+  border-color: var(--mtg-border-active);
+  color: var(--mtg-text-primary);
+}
+.mtg-room-error-tertiary {
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  gap: 8px;
+  padding: 8px 12px;
+  background: transparent;
+  color: var(--mtg-text-muted);
+  border: none;
+  border-radius: 6px;
+  font-family: var(--font-mono, "JetBrains Mono", monospace);
+  font-size: 10px;
+  font-weight: 500;
+  letter-spacing: 0.1em;
+  text-transform: uppercase;
+  cursor: pointer;
+  margin-top: 4px;
+  transition: color 220ms cubic-bezier(0.16, 1, 0.3, 1);
+}
+.mtg-room-error-tertiary:hover { color: var(--mtg-text-primary); }
+
+/* Loading state — quiet mono spinner + label */
+.mtg-room-loading {
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  gap: 12px;
+  color: var(--mtg-text-secondary);
+}
+.mtg-room-loading-spinner {
+  color: var(--mtg-accent-primary);
+  animation: mtg-spinner-rotate 900ms linear infinite;
+}
+.mtg-room-loading-label {
+  font-family: var(--font-mono, "JetBrains Mono", monospace);
+  font-size: 10px;
+  font-weight: 500;
+  letter-spacing: 0.1em;
+  text-transform: uppercase;
+  color: var(--mtg-text-muted);
+}
+@keyframes mtg-spinner-rotate {
+  from { transform: rotate(0deg); }
+  to { transform: rotate(360deg); }
+}
+
+@media (prefers-reduced-motion: reduce) {
+  .mtg-room-loading-spinner { animation-duration: 2s; }
+  .mtg-room-error-primary, .mtg-room-error-secondary, .mtg-room-error-tertiary {
+    transition: none;
+  }
+}

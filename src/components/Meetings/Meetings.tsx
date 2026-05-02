@@ -12,7 +12,8 @@ import { pulseService } from '../../services/pulseService';
 import { googleCalendarService } from '../../services/googleCalendarService';
 
 // Import new components
-import { Loader2, X } from 'lucide-react';
+import { AlertCircle, Loader2, LogOut, X } from 'lucide-react';
+import { supabase } from '../../services/supabase';
 import {
 
   Platform,
@@ -132,6 +133,10 @@ const Meetings: React.FC<MeetingsProps> = ({ apiKey, contacts, initialContactId,
   // Inline error for the join input — replaces the prior alert() apology modal.
   const [joinError, setJoinError] = useState<string | null>(null);
 
+  // Tracks whether the current room error is auth-flavored, so we can offer
+  // a Sign Out escape hatch (the only reliable cure for a corrupted session).
+  const [roomErrorIsAuth, setRoomErrorIsAuth] = useState(false);
+
   // ============================================
   // INITIALIZATION
   // ============================================
@@ -233,10 +238,12 @@ const Meetings: React.FC<MeetingsProps> = ({ apiKey, contacts, initialContactId,
     } catch (err) {
       console.error('[Meetings] Failed to create Pulse room:', err);
       // Distinguish auth failure from network/server failure so the user knows what to do.
-      const message = err instanceof EdgeCallError && (err.code === 'no-session' || err.code === 'auth-expired')
-        ? err.message
+      const isAuth = err instanceof EdgeCallError && (err.code === 'no-session' || err.code === 'auth-expired');
+      const message = isAuth
+        ? (err as EdgeCallError).message
         : 'Couldn\'t reach the meeting service. Try again in a moment.';
       setRoomCreationError(message);
+      setRoomErrorIsAuth(isAuth);
       setActiveMeetingTitle(title);
       setView('active');
     }
@@ -339,10 +346,12 @@ const Meetings: React.FC<MeetingsProps> = ({ apiKey, contacts, initialContactId,
       setView('active');
     } catch (err) {
       console.error('[Meetings] Failed to create room for bulk invite:', err);
-      const message = err instanceof EdgeCallError && (err.code === 'no-session' || err.code === 'auth-expired')
-        ? err.message
+      const isAuth = err instanceof EdgeCallError && (err.code === 'no-session' || err.code === 'auth-expired');
+      const message = isAuth
+        ? (err as EdgeCallError).message
         : 'Couldn\'t create the invite room. Try again in a moment.';
       setRoomCreationError(message);
+      setRoomErrorIsAuth(isAuth);
     }
   };
 
@@ -798,19 +807,23 @@ const Meetings: React.FC<MeetingsProps> = ({ apiKey, contacts, initialContactId,
   // No active room — show error/retry or loading state
   return (
     <div className="meetings-container">
-      <div className="meetings-active" style={{ display: 'flex', alignItems: 'center', justifyContent: 'center', minHeight: 400 }}>
+      <div className="mtg-room-stage">
         {roomCreationError ? (
-          <div className="meetings-room-error">
-            <div className="meetings-room-error-icon">
-              <X />
+          <div className="mtg-room-error" role="alert">
+            <div className="mtg-room-error-icon">
+              <AlertCircle size={20} strokeWidth={1.75} />
             </div>
-            <div className="meetings-room-error-text">{roomCreationError}</div>
-            <div className="meetings-room-error-actions">
+            <div className="mtg-room-error-label">
+              {roomErrorIsAuth ? 'SESSION EXPIRED' : 'MEETING UNAVAILABLE'}
+            </div>
+            <div className="mtg-room-error-message">{roomCreationError}</div>
+            <div className="mtg-room-error-actions">
               <button
                 type="button"
-                className="meetings-submit-btn"
+                className="mtg-room-error-primary"
                 onClick={() => {
                   setRoomCreationError(null);
+                  setRoomErrorIsAuth(false);
                   createAndJoinPulseRoom(activeMeetingTitle);
                 }}
               >
@@ -818,17 +831,34 @@ const Meetings: React.FC<MeetingsProps> = ({ apiKey, contacts, initialContactId,
               </button>
               <button
                 type="button"
-                className="meetings-schedule-close"
-                onClick={() => { setRoomCreationError(null); setView('dashboard'); }}
+                className="mtg-room-error-secondary"
+                onClick={() => {
+                  setRoomCreationError(null);
+                  setRoomErrorIsAuth(false);
+                  setView('dashboard');
+                }}
               >
-                Back to Dashboard
+                Back to dashboard
               </button>
+              {roomErrorIsAuth && (
+                <button
+                  type="button"
+                  className="mtg-room-error-tertiary"
+                  onClick={async () => {
+                    await supabase.auth.signOut();
+                    window.location.reload();
+                  }}
+                >
+                  <LogOut size={12} strokeWidth={2} />
+                  <span>Sign out and reload</span>
+                </button>
+              )}
             </div>
           </div>
         ) : (
-          <div className="meetings-room-loading">
-            <Loader2 className="meetings-room-loading-spinner" />
-            <div>Creating meeting room...</div>
+          <div className="mtg-room-loading">
+            <Loader2 className="mtg-room-loading-spinner" size={20} strokeWidth={2} />
+            <div className="mtg-room-loading-label">CREATING ROOM</div>
           </div>
         )}
       </div>
