@@ -3863,7 +3863,8 @@
   position: relative;
   z-index: 1;
 }
-.mtg-action-join { display: flex; min-width: 0; }
+.mtg-action-join { display: flex; min-width: 0; flex: 1; }
+.mtg-action-join-wrap { width: 100%; display: flex; flex-direction: column; gap: 4px; }
 .mtg-action-join-input {
   width: 100%;
   padding: 10px 16px;
@@ -3879,6 +3880,21 @@
   outline: none;
   border-color: var(--mtg-accent-primary);
   box-shadow: var(--mtg-glow-primary);
+}
+.mtg-action-join-input.has-error {
+  border-color: var(--mtg-accent-danger);
+}
+.mtg-action-join-input.has-error:focus {
+  box-shadow: 0 0 0 3px rgba(239, 68, 68, 0.15);
+}
+.mtg-action-join-error {
+  font-family: var(--font-mono, "JetBrains Mono", monospace);
+  font-size: 10px;
+  font-weight: 500;
+  letter-spacing: 0.1em;
+  text-transform: uppercase;
+  color: var(--mtg-accent-danger);
+  padding: 0 4px;
 }
 .mtg-action-split {
   position: relative;

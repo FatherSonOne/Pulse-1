@@ -368,6 +368,14 @@ export const isEntomateConnected = async (): Promise<boolean> => {
  * Auto-export a just-ended meeting to Entomate if the setting is enabled.
  * Called from meeting end handlers — fires and forgets (logs errors, never throws).
  */
+export interface AutoExportResult {
+  /** True only when the artifact was actually written to Entomate. */
+  exported: boolean;
+  /** When `exported` is false, why the export was skipped or failed. */
+  reason?: 'disabled' | 'not-connected' | 'failed' | 'error';
+  error?: string;
+}
+
 export const autoExportIfEnabled = async (meeting: {
   id?: string;
   title: string;
@@ -376,13 +384,13 @@ export const autoExportIfEnabled = async (meeting: {
   attendees?: string[];
   durationMinutes?: number;
   source?: 'pulse_video' | 'ai_scribe' | 'voxer';
-}): Promise<void> => {
+}): Promise<AutoExportResult> => {
   try {
     const settings = getMeetingSettings();
-    if (!settings.autoExportToEntomate) return;
+    if (!settings.autoExportToEntomate) return { exported: false, reason: 'disabled' };
 
     const connected = await isEntomateConnected();
-    if (!connected) return;
+    if (!connected) return { exported: false, reason: 'not-connected' };
 
     const recording: MeetingRecording = {
       id: meeting.id || crypto.randomUUID(),
@@ -398,11 +406,13 @@ export const autoExportIfEnabled = async (meeting: {
     const result = await exportMeetingToEntomate(recording, meeting.source || 'ai_scribe');
     if (result.success) {
       console.log(`[autoExport] Meeting "${meeting.title}" exported to Entomate`);
-    } else {
-      console.warn(`[autoExport] Export failed: ${result.error}`);
+      return { exported: true };
     }
+    console.warn(`[autoExport] Export failed: ${result.error}`);
+    return { exported: false, reason: 'failed', error: result.error };
   } catch (err) {
     console.error('[autoExport] Error:', err);
+    return { exported: false, reason: 'error', error: err instanceof Error ? err.message : String(err) };
   }
 };
 

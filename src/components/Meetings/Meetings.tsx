@@ -1,4 +1,5 @@
 import React, { useEffect, useMemo, useState } from 'react';
+import toast from 'react-hot-toast';
 import { fetchCalendarEvents } from '../../services/authService';
 import { getArchives } from '../../services/dbService';
 import { Contact, CalendarEvent, ArchiveItem } from '../../types';
@@ -128,6 +129,9 @@ const Meetings: React.FC<MeetingsProps> = ({ apiKey, contacts, initialContactId,
   // Pulse Video (Daily.co) room state
   const [activeRoom, setActiveRoom] = useState<{ url: string; name: string } | null>(null);
 
+  // Inline error for the join input — replaces the prior alert() apology modal.
+  const [joinError, setJoinError] = useState<string | null>(null);
+
   // ============================================
   // INITIALIZATION
   // ============================================
@@ -187,6 +191,7 @@ const Meetings: React.FC<MeetingsProps> = ({ apiKey, contacts, initialContactId,
 
   const handleLinkJoin = (e: React.FormEvent) => {
     e.preventDefault();
+    setJoinError(null);
     if (!meetingLinkInput.trim()) return;
 
     const input = meetingLinkInput.trim().toLowerCase();
@@ -207,7 +212,8 @@ const Meetings: React.FC<MeetingsProps> = ({ apiKey, contacts, initialContactId,
         setActiveParticipants([]);
         setView('active');
       } else {
-        alert('Invalid meeting code. Please enter a valid Pulse meeting code (e.g., abc-defg-hij) or a meeting link.');
+        // Inline error replaces the prior alert() — Pulse copy spec: terse, no apology.
+        setJoinError('INVALID CODE · format abc-defg-hij or paste a full link');
         return;
       }
     }
@@ -535,11 +541,12 @@ const Meetings: React.FC<MeetingsProps> = ({ apiKey, contacts, initialContactId,
         {/* Action row — Join + Start (with platform overflow) + Schedule */}
         <MeetingsActionRow
           joinValue={meetingLinkInput}
-          onJoinChange={setMeetingLinkInput}
+          onJoinChange={(v) => { setMeetingLinkInput(v); if (joinError) setJoinError(null); }}
           onJoinSubmit={handleLinkJoin}
           onStartPulse={() => startMeeting('pulse')}
           onStartExternal={(p) => startMeeting(p)}
           onSchedule={() => setView('schedule')}
+          error={joinError}
         />
 
         {/* Time-rail dashboard */}
@@ -651,10 +658,16 @@ const Meetings: React.FC<MeetingsProps> = ({ apiKey, contacts, initialContactId,
                     }
                   }}
                 >
-                  <option value="">Add participant...</option>
-                  {contacts.map(c => (
-                    <option key={c.id} value={c.id}>{c.name}</option>
-                  ))}
+                  <option value="">
+                    {contacts.length === scheduleAttendees.size
+                      ? 'All contacts added'
+                      : 'Add participant...'}
+                  </option>
+                  {contacts
+                    .filter(c => !scheduleAttendees.has(c.id))
+                    .map(c => (
+                      <option key={c.id} value={c.id}>{c.name}</option>
+                    ))}
                 </select>
               </div>
 
@@ -753,14 +766,19 @@ const Meetings: React.FC<MeetingsProps> = ({ apiKey, contacts, initialContactId,
               });
               setView('summary');
 
-              // Auto-export to Entomate (fire-and-forget)
+              // Auto-export to Entomate (fire-and-forget) — surface a quiet toast
+              // so the user knows the artifact left the room.
               autoExportIfEnabled({
                 title: activeMeetingTitle,
                 transcript: summary.transcript || null,
                 attendees: activeParticipants.map(p => p.name),
                 durationMinutes: Math.round(summary.durationSeconds / 60),
                 source: 'pulse_video',
-              });
+              }).then(result => {
+                if (result?.exported) {
+                  toast.success('Saved to Entomate', { duration: 3000, position: 'bottom-right' });
+                }
+              }).catch(() => { /* silent — auto-export is best-effort */ });
             } else {
               setView('dashboard');
             }

@@ -275,10 +275,12 @@ export interface MeetingsActionRowProps {
   onStartPulse: () => void;
   onStartExternal: (platform: Platform) => void;
   onSchedule: () => void;
+  /** Inline mono-tracked error message rendered below the join input. */
+  error?: string | null;
 }
 
 export const MeetingsActionRow: React.FC<MeetingsActionRowProps> = ({
-  joinValue, onJoinChange, onJoinSubmit, onStartPulse, onStartExternal, onSchedule,
+  joinValue, onJoinChange, onJoinSubmit, onStartPulse, onStartExternal, onSchedule, error,
 }) => {
   const [startOpen, setStartOpen] = useState(false);
   const [scheduleOpen, setScheduleOpen] = useState(false);
@@ -297,13 +299,20 @@ export const MeetingsActionRow: React.FC<MeetingsActionRowProps> = ({
   return (
     <div className="mtg-action-row">
       <form className="mtg-action-join" onSubmit={onJoinSubmit}>
-        <input
-          type="text"
-          className="mtg-action-join-input"
-          placeholder="Paste meeting link or enter code…"
-          value={joinValue}
-          onChange={e => onJoinChange(e.target.value)}
-        />
+        <div className="mtg-action-join-wrap">
+          <input
+            type="text"
+            className={`mtg-action-join-input ${error ? 'has-error' : ''}`}
+            placeholder="Paste meeting link or enter code…"
+            value={joinValue}
+            onChange={e => onJoinChange(e.target.value)}
+            aria-invalid={error ? 'true' : undefined}
+            aria-describedby={error ? 'mtg-join-error' : undefined}
+          />
+          {error && (
+            <div id="mtg-join-error" className="mtg-action-join-error" role="alert">{error}</div>
+          )}
+        </div>
       </form>
       <div className="mtg-action-split" ref={startRef}>
         <button className="mtg-action-start" onClick={onStartPulse}>
