@@ -283,7 +283,7 @@ export const ConversationSidebar: React.FC<ConversationSidebarProps> = ({
                       ${activePulseConversation === conv.id
                         ? 'bg-rose-50 dark:bg-rose-500/10 ring-1 ring-rose-500/20'
                         : cursorConvId === conv.id
-                        ? 'ring-1 ring-rose-500/30 ring-offset-0'
+                        ? 'bg-rose-500/[0.04] dark:bg-rose-500/[0.06] ring-1 ring-rose-500/40'
                         : 'hover:bg-zinc-100/60 dark:hover:bg-white/[0.04]'}`}
                   >
                     <button

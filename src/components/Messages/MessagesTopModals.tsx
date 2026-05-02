@@ -38,7 +38,7 @@ const KEYBOARD_SHORTCUTS: Record<string, string> = {
   '⌘N': 'New conversation',
   '⌘K': 'Open command palette',
   '⌘Enter': 'Send message',
-  'Esc': 'Close modal / cancel',
+  'Esc': 'Close modal / leave composer',
   '⇧F': 'Toggle Focus Mode',
 };
 

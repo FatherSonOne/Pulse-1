@@ -2964,6 +2964,13 @@ const Messages: React.FC<MessagesProps> = ({ apiKey, contacts, initialContactId,
         setShowForwardModal(false);
         setShowShortcuts(false);
         setEditingMessageId(null);
+        // Phase III.B: also blur the composer if it's focused, so J/K/E/R
+        // shortcuts become reachable from the chat view (Slack pattern).
+        // Skip if focus is already on body — nothing to blur.
+        const active = document.activeElement as HTMLElement | null;
+        if (active && active !== document.body && 'blur' in active) {
+          active.blur();
+        }
       }
     };
 
