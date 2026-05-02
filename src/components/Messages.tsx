@@ -4093,7 +4093,7 @@ const Messages: React.FC<MessagesProps> = ({ apiKey, contacts, initialContactId,
                             localStorage.setItem(`pulse-goal-${activePulseConv?.id}`, goal);
                             setShowOutcomeSetup(false);
                           }}
-                          className="p-3 rounded-lg border border-zinc-200 dark:border-zinc-700 hover:border-emerald-500 hover:bg-emerald-50 dark:hover:bg-emerald-900/20 text-sm text-zinc-700 dark:text-zinc-300 transition"
+                          className="p-3 rounded-lg border border-zinc-200 dark:border-white/[0.08] bg-transparent hover:border-rose-500/40 hover:bg-rose-500/5 dark:hover:bg-rose-500/[0.06] text-sm text-zinc-700 dark:text-zinc-300 hover:text-rose-600 dark:hover:text-rose-bright transition-colors focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-rose-500/40"
                         >
                           {goal}
                         </button>
@@ -4101,11 +4101,11 @@ const Messages: React.FC<MessagesProps> = ({ apiKey, contacts, initialContactId,
                     </div>
                   </div>
                   <div>
-                    <label className="block text-xs font-bold text-zinc-700 dark:text-zinc-300 mb-2">Custom Goal</label>
+                    <label className="block text-[10px] font-mono uppercase tracking-[0.1em] font-medium text-zinc-400 dark:text-zinc-500 mb-2">Custom Goal</label>
                     <input
                       type="text"
                       placeholder="Enter your custom goal..."
-                      className="w-full bg-zinc-50 dark:bg-zinc-800 border border-zinc-200 dark:border-zinc-700 rounded-lg px-3 py-2 text-sm focus:ring-2 focus:ring-emerald-500 outline-none"
+                      className="w-full bg-zinc-50 dark:bg-white/[0.03] border border-zinc-200 dark:border-white/[0.08] rounded-lg px-3 py-2 text-sm focus:ring-2 focus:ring-rose-500/40 focus:border-rose-500/40 outline-none transition-colors"
                       onKeyDown={(e) => {
                         if (e.key === 'Enter' && (e.target as HTMLInputElement).value.trim()) {
                           localStorage.setItem(`pulse-goal-${activePulseConv?.id}`, (e.target as HTMLInputElement).value);
@@ -4619,16 +4619,21 @@ const Messages: React.FC<MessagesProps> = ({ apiKey, contacts, initialContactId,
                             </div>
                         )}
 
-                        <div className={`rounded-2xl px-4 py-3 md:px-5 md:py-4 text-sm transition-all relative shadow-sm ${
-                            isMe ? 'bg-zinc-900 dark:bg-white text-white dark:text-zinc-900 rounded-br-sm'
-                            : 'bg-white dark:bg-zinc-800 border border-zinc-200 dark:border-zinc-700 text-zinc-800 dark:text-zinc-200 rounded-bl-sm'
-                        } ${isProposal && !isApproved ? '!bg-amber-100 dark:!bg-amber-900/40 !text-amber-900 dark:!text-amber-100 ring-2 ring-amber-400 dark:ring-amber-500 border-amber-300 dark:border-amber-600' : ''} ${isApproved ? '!bg-emerald-100 dark:!bg-emerald-900/40 !text-emerald-900 dark:!text-emerald-100 ring-2 ring-emerald-400 dark:ring-emerald-500 border-emerald-300 dark:border-emerald-600' : ''}`}>
+                        <div className={`rounded-2xl px-4 py-3 md:px-5 md:py-4 text-sm transition-colors relative ${
+                            isProposal && !isApproved
+                              ? `bg-amber-500/5 dark:bg-amber-500/[0.08] ring-1 ring-amber-500/30 text-zinc-800 dark:text-zinc-200 ${isMe ? 'rounded-br-sm' : 'rounded-bl-sm'}`
+                              : isApproved
+                              ? `bg-emerald-500/5 dark:bg-emerald-500/[0.08] ring-1 ring-emerald-500/30 text-zinc-800 dark:text-zinc-200 ${isMe ? 'rounded-br-sm' : 'rounded-bl-sm'}`
+                              : isMe
+                              ? 'bg-zinc-900 dark:bg-white text-white dark:text-zinc-900 rounded-br-sm'
+                              : 'bg-white dark:bg-zinc-800 border border-zinc-200 dark:border-zinc-700 text-zinc-800 dark:text-zinc-200 rounded-bl-sm'
+                        }`}>
 
                             {/* Proposal Header */}
                             {isProposal && (
-                                <div className="flex items-center gap-2 mb-2 pb-2 border-b border-amber-300 dark:border-amber-700">
-                                    <i className={`fa-solid ${isApproved ? 'fa-gavel text-emerald-600 dark:text-emerald-400' : 'fa-scale-balanced text-amber-600 dark:text-amber-400'}`}></i>
-                                    <span className="font-mono uppercase tracking-[0.1em] text-[10px] font-medium text-amber-800 dark:text-amber-200">{isApproved ? 'Decision Approved' : 'Formal Proposal'}</span>
+                                <div className="flex items-center gap-2 mb-2 pb-2 border-b border-zinc-200/60 dark:border-white/[0.06]">
+                                    <i className={`fa-solid ${isApproved ? 'fa-gavel text-emerald-500 dark:text-emerald-400' : 'fa-scale-balanced text-amber-500 dark:text-amber-400'} text-[10px] opacity-80`}></i>
+                                    <span className={`font-mono uppercase tracking-[0.1em] text-[10px] font-medium ${isApproved ? 'text-emerald-700 dark:text-emerald-400' : 'text-amber-700 dark:text-amber-400'}`}>{isApproved ? 'PULSE AI · DECISION APPROVED' : 'PULSE AI · FORMAL PROPOSAL'}</span>
                                 </div>
                             )}
 
@@ -4762,22 +4767,22 @@ const Messages: React.FC<MessagesProps> = ({ apiKey, contacts, initialContactId,
 
                             {/* Voting Interface */}
                             {isProposal && msg.decisionData && (
-                                <div className="mt-3 pt-2 border-t border-amber-300 dark:border-amber-700">
+                                <div className="mt-3 pt-2 border-t border-zinc-200/60 dark:border-white/[0.06]">
                                     <div className="flex gap-2 mb-2">
                                         <button
                                             onClick={() => handleVote(msg.id, 'me', 'approve')}
-                                            className={`flex-1 py-2 rounded-lg text-xs font-bold transition flex items-center justify-center gap-2 ${msg.decisionData.votes.some(v => v.userId === 'me' && v.choice === 'approve') ? 'bg-emerald-600 text-white' : 'bg-amber-200 dark:bg-amber-800/60 text-amber-800 dark:text-amber-200 hover:bg-amber-300 dark:hover:bg-amber-700/60'}`}
+                                            className={`flex-1 py-2 px-3 rounded-lg text-[10px] font-mono uppercase tracking-[0.1em] font-medium transition-colors flex items-center justify-center gap-2 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-rose-500/40 ${msg.decisionData.votes.some(v => v.userId === 'me' && v.choice === 'approve') ? 'bg-emerald-500/15 dark:bg-emerald-500/20 text-emerald-700 dark:text-emerald-400 border border-emerald-500/30' : 'bg-transparent border border-zinc-200 dark:border-white/[0.08] text-zinc-600 dark:text-zinc-300 hover:bg-emerald-500/10 dark:hover:bg-emerald-500/[0.12] hover:text-emerald-700 dark:hover:text-emerald-400 hover:border-emerald-500/30'}`}
                                         >
-                                            <ThumbsUp /> Approve ({msg.decisionData.votes.filter(v => v.choice === 'approve').length})
+                                            <ThumbsUp className="w-3.5 h-3.5" /> Approve <span className="tabular-nums opacity-70">({msg.decisionData.votes.filter(v => v.choice === 'approve').length})</span>
                                         </button>
                                         <button
                                             onClick={() => handleVote(msg.id, 'me', 'reject')}
-                                            className={`flex-1 py-2 rounded-lg text-xs font-bold transition flex items-center justify-center gap-2 ${msg.decisionData.votes.some(v => v.userId === 'me' && v.choice === 'reject') ? 'bg-red-600 text-white' : 'bg-amber-200 dark:bg-amber-800/60 text-amber-800 dark:text-amber-200 hover:bg-amber-300 dark:hover:bg-amber-700/60'}`}
+                                            className={`flex-1 py-2 px-3 rounded-lg text-[10px] font-mono uppercase tracking-[0.1em] font-medium transition-colors flex items-center justify-center gap-2 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-rose-500/40 ${msg.decisionData.votes.some(v => v.userId === 'me' && v.choice === 'reject') ? 'bg-red-500/15 dark:bg-red-500/20 text-red-700 dark:text-red-400 border border-red-500/30' : 'bg-transparent border border-zinc-200 dark:border-white/[0.08] text-zinc-600 dark:text-zinc-300 hover:bg-red-500/10 dark:hover:bg-red-500/[0.12] hover:text-red-700 dark:hover:text-red-400 hover:border-red-500/30'}`}
                                         >
-                                            <ThumbsDown /> Reject ({msg.decisionData.votes.filter(v => v.choice === 'reject').length})
+                                            <ThumbsDown className="w-3.5 h-3.5" /> Reject <span className="tabular-nums opacity-70">({msg.decisionData.votes.filter(v => v.choice === 'reject').length})</span>
                                         </button>
                                     </div>
-                                    <div className="text-[10px] text-amber-700 dark:text-amber-300 text-center">Threshold: {msg.decisionData.threshold} approvals required</div>
+                                    <div className="text-[10px] font-mono uppercase tracking-[0.1em] font-medium text-zinc-500 dark:text-zinc-400 text-center tabular-nums">Threshold: {msg.decisionData.threshold} approvals required</div>
                                 </div>
                             )}
 

@@ -1104,7 +1104,7 @@ export const MessagesFeaturePanels = React.memo<MessagesFeaturePanelsProps>(
                     <React.Suspense fallback={<FeatureSkeleton />}>
                       <BundleAutomation.ContactNotes
                         contactId={activeThread.contactId}
-                        contactName={contacts.find(c => c.id === activeThread.contactId)?.name || 'Unknown'}
+                        contactName={activeThread.contactName || 'Unknown'}
                         onNoteAdded={(note) => console.log('Note added:', note)}
                         onNoteDeleted={(noteId) => console.log('Note deleted:', noteId)}
                       />
