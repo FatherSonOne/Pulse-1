@@ -117,13 +117,13 @@ const ParticipantTile: React.FC<{ sessionId: string; isLocal?: boolean }> = ({ s
         />
       )}
 
-      {/* Name label */}
+      {/* Name label — mono uppercase tracked per Coral Cockpit */}
       <div className="absolute bottom-2 left-2 right-2 flex items-center gap-1.5">
-        <span className="bg-[#080808]/60 text-white text-xs px-2 py-0.5 rounded-full backdrop-blur-sm truncate">
-          {participant?.user_name ?? 'Guest'}{isLocal ? ' (You)' : ''}
+        <span className="bg-black/60 text-white/90 font-mono uppercase tracking-[0.1em] text-[10px] px-2 py-0.5 rounded-full backdrop-blur-sm truncate">
+          {participant?.user_name ?? 'Guest'}{isLocal ? ' · YOU' : ''}
         </span>
         {participant?.tracks?.audio?.state === 'off' && (
-          <span className="bg-rose-500/80 rounded-full p-0.5">
+          <span className="bg-rose-500/80 rounded-full p-0.5" aria-label="Muted">
             <MicOff size={10} className="text-white" />
           </span>
         )}
@@ -356,10 +356,10 @@ const MeetingRoom: React.FC<{
 
   if (!isJoined) {
     return (
-      <div className="flex items-center justify-center h-full bg-[#080808] text-white">
+      <div className="flex items-center justify-center h-full bg-black text-white">
         <div className="flex flex-col items-center gap-3">
-          <Loader2 size={32} className="animate-spin text-rose-500" />
-          <p className="text-sm text-white/60">Connecting to {meetingTitle}…</p>
+          <Loader2 size={32} className="animate-spin motion-reduce:animate-none text-white/40" />
+          <p className="font-mono uppercase tracking-[0.1em] text-[11px] text-white/55">CONNECTING</p>
         </div>
       </div>
     );
@@ -371,19 +371,28 @@ const MeetingRoom: React.FC<{
       <DailyAudio />
 
       {/* ── Header ─────────────────────────────────────────────────────────── */}
-      <div className="flex items-center justify-between px-4 py-2 bg-[#080808]/80 border-b border-white/10 backdrop-blur-sm">
+      <div className="flex items-center justify-between px-4 py-2.5 bg-black/80 border-b border-white/10 backdrop-blur-sm">
         <div className="flex items-center gap-3">
-          <div className="w-2 h-2 rounded-full bg-rose-500 animate-pulse" />
+          <div className="w-2 h-2 rounded-full bg-rose-500 animate-pulse motion-reduce:animate-none" />
           <span className="font-semibold text-sm truncate max-w-xs">{meetingTitle}</span>
           {isRecording && (
-            <span className="flex items-center gap-1 bg-rose-500/20 text-rose-400 text-xs px-2 py-0.5 rounded-full border border-rose-500/30">
+            <span className="flex items-center gap-1 bg-rose-500/15 text-rose-400 font-mono uppercase tracking-[0.1em] text-[10px] px-2 py-0.5 rounded-full border border-rose-500/30">
               <Circle size={6} className="fill-rose-400" /> REC
             </span>
           )}
         </div>
-        <div className="flex items-center gap-3 text-sm text-white/50">
-          <span>{formatTime(elapsed)}</span>
-          <span>{allParticipants.length} participant{allParticipants.length !== 1 ? 's' : ''}</span>
+        {/* Timer is the typographic centerpiece — large mono tabular-num */}
+        <div className="flex items-center gap-4">
+          <span
+            className="font-mono text-base text-white/85 tabular-nums leading-none"
+            style={{ fontVariantNumeric: 'tabular-nums' }}
+            aria-label="Elapsed time"
+          >
+            {formatTime(elapsed)}
+          </span>
+          <span className="font-mono uppercase tracking-[0.1em] text-[10px] text-white/40">
+            {allParticipants.length} {allParticipants.length === 1 ? 'PARTICIPANT' : 'PARTICIPANTS'}
+          </span>
         </div>
       </div>
 
@@ -407,8 +416,8 @@ const MeetingRoom: React.FC<{
         {sidePanel !== 'none' && (
           <div className="w-72 bg-zinc-900/90 border-l border-white/10 flex flex-col backdrop-blur-sm">
             <div className="flex items-center justify-between px-4 py-3 border-b border-white/10">
-              <span className="font-medium text-sm capitalize">{sidePanel}</span>
-              <button type="button" aria-label="Close panel" onClick={() => setSidePanel('none')} className="text-white/40 hover:text-white">
+              <span className="font-mono uppercase tracking-[0.1em] text-[11px] text-white/70">{sidePanel}</span>
+              <button type="button" aria-label="Close panel" onClick={() => setSidePanel('none')} className="text-white/40 hover:text-white focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-rose-500/40 rounded">
                 <X size={16} />
               </button>
             </div>
@@ -417,11 +426,11 @@ const MeetingRoom: React.FC<{
               <>
                 <div className="flex-1 overflow-y-auto p-3 space-y-3">
                   {chatMessages.length === 0 && (
-                    <p className="text-white/30 text-xs text-center pt-4">No messages yet</p>
+                    <p className="text-white/30 font-mono uppercase tracking-[0.1em] text-[10px] text-center pt-4">NO MESSAGES YET</p>
                   )}
                   {chatMessages.map(msg => (
                     <div key={msg.id} className={`flex flex-col ${msg.isLocal ? 'items-end' : 'items-start'}`}>
-                      <span className="text-white/40 text-xs mb-0.5">{msg.sender}</span>
+                      <span className="text-white/40 font-mono uppercase tracking-[0.1em] text-[10px] mb-0.5">{msg.sender}</span>
                       <div className={`px-3 py-1.5 rounded-xl text-sm max-w-[90%] ${
                         msg.isLocal ? 'bg-rose-500/20 text-rose-100' : 'bg-white/10 text-white'
                       }`}>
@@ -462,10 +471,11 @@ const MeetingRoom: React.FC<{
 
       {/* ── Live transcript ─────────────────────────────────────────────────── */}
       {transcriptEnabled && transcriptLines.length > 0 && (
-        <div className="px-4 pb-2 max-h-20 overflow-y-auto">
+        <div className="px-4 pb-2 max-h-24 overflow-y-auto">
           {transcriptLines.slice(-3).map((line, i) => (
-            <p key={i} className={`text-xs ${line.isFinal ? 'text-white/70' : 'text-white/40 italic'}`}>
-              <span className="text-rose-400 font-medium">{line.speaker}:</span> {line.text}
+            <p key={i} className={`text-xs leading-snug ${line.isFinal ? 'text-white/70' : 'text-white/40 italic'}`}>
+              <span className="font-mono uppercase tracking-[0.1em] text-[10px] text-rose-400">{line.speaker}</span>{' '}
+              <span className="font-sans">{line.text}</span>
             </p>
           ))}
         </div>
@@ -530,36 +540,44 @@ const MeetingRoom: React.FC<{
         <button
           type="button"
           onClick={() => setShowEndConfirm(true)}
-          className="flex flex-col items-center gap-1 bg-rose-500 hover:bg-rose-600 text-white px-5 py-2 rounded-xl transition-colors ml-4"
+          aria-label="Leave meeting"
+          className="flex flex-col items-center gap-1 bg-rose-500 hover:bg-rose-600 text-white px-5 py-2 rounded-xl transition-colors ml-4 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-rose-500/40"
         >
           <PhoneOff size={18} />
-          <span className="text-[10px] font-medium">Leave</span>
+          <span className="font-mono uppercase tracking-[0.1em] text-[10px]">LEAVE</span>
         </button>
       </div>
 
       {/* ── End call confirmation ────────────────────────────────────────────── */}
       {showEndConfirm && (
-        <div className="absolute inset-0 bg-[#080808]/70 flex items-center justify-center z-50 backdrop-blur-sm">
+        <div className="absolute inset-0 bg-black/70 flex items-center justify-center z-50 backdrop-blur-sm">
           <div className="bg-zinc-900 border border-white/10 rounded-2xl p-6 w-80 text-center space-y-4">
             {isSummarizing ? (
               <>
-                <Loader2 size={28} className="animate-spin text-rose-500 mx-auto" />
-                <p className="text-white font-medium">Generating AI summary…</p>
-                <p className="text-white/50 text-sm">This takes a few seconds</p>
+                <Loader2 size={28} className="animate-spin motion-reduce:animate-none text-white/50 mx-auto" />
+                <p className="text-white font-mono uppercase tracking-[0.1em] text-[11px]">GENERATING SUMMARY</p>
               </>
             ) : (
               <>
-                <PhoneOff size={28} className="text-rose-500 mx-auto" />
-                <p className="text-white font-semibold">Leave the meeting?</p>
+                <PhoneOff size={28} className="text-rose-400 mx-auto" />
+                <p className="text-white font-semibold text-base">Leave the meeting?</p>
                 {transcriptLines.filter(l => l.isFinal).length > 0 && (
-                  <p className="text-white/50 text-sm">We'll generate an AI summary from the transcript.</p>
+                  <p className="text-white/55 text-sm">A summary will be generated from the transcript.</p>
                 )}
                 <div className="flex gap-3">
-                  <button type="button" onClick={() => setShowEndConfirm(false)} className="flex-1 bg-white/10 hover:bg-white/20 text-white py-2 rounded-xl transition-colors text-sm">
-                    Stay
+                  <button
+                    type="button"
+                    onClick={() => setShowEndConfirm(false)}
+                    className="flex-1 bg-white/10 hover:bg-white/20 text-white py-2 rounded-xl transition-colors font-mono uppercase tracking-[0.1em] text-[11px] focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-rose-500/40"
+                  >
+                    STAY
                   </button>
-                  <button type="button" onClick={handleLeave} className="flex-1 bg-rose-500 hover:bg-rose-600 text-white py-2 rounded-xl transition-colors text-sm font-medium">
-                    Leave
+                  <button
+                    type="button"
+                    onClick={handleLeave}
+                    className="flex-1 bg-rose-500 hover:bg-rose-600 text-white py-2 rounded-xl transition-colors font-mono uppercase tracking-[0.1em] text-[11px] focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-rose-500/40"
+                  >
+                    LEAVE
                   </button>
                 </div>
               </>
@@ -609,17 +627,18 @@ const ControlButton: React.FC<{
   <button
     type="button"
     aria-label={label}
+    aria-pressed={highlight ?? false}
     onClick={onClick}
-    className={`flex flex-col items-center gap-1 px-3 py-2 rounded-xl transition-colors ${
+    className={`flex flex-col items-center gap-1 px-3 py-2 rounded-xl transition-colors focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-rose-500/40 ${
       danger
-        ? 'bg-rose-500/20 text-rose-400 hover:bg-rose-500/30'
+        ? 'bg-rose-500/15 text-rose-400 hover:bg-rose-500/25'
         : highlight
-        ? 'bg-rose-500/20 text-rose-300 hover:bg-rose-500/30'
+        ? 'bg-white/10 text-rose-400 hover:bg-white/15'
         : 'bg-white/10 text-white/80 hover:bg-white/20'
     }`}
   >
     {active ? activeIcon : inactiveIcon}
-    <span className="text-[10px] font-medium">{label}</span>
+    <span className="font-mono uppercase tracking-[0.1em] text-[10px]">{label}</span>
   </button>
 );
 
@@ -640,32 +659,47 @@ const Lobby: React.FC<{
   };
 
   return (
-    <div className="flex items-center justify-center h-full bg-[#080808] text-white">
+    <div className="flex items-center justify-center h-full bg-black text-white">
       <div className="w-full max-w-sm space-y-6 p-8">
-        <div className="text-center space-y-2">
-          <div className="w-14 h-14 rounded-2xl bg-rose-500/20 border border-rose-500/30 flex items-center justify-center mx-auto mb-4">
+        <div className="text-center space-y-3">
+          <div className="w-14 h-14 rounded-2xl bg-white/[0.04] border border-white/10 flex items-center justify-center mx-auto mb-4">
             <Video size={24} className="text-rose-400" />
           </div>
+          <p className="font-mono uppercase tracking-[0.1em] text-[10px] text-white/40">PULSE MEETING</p>
           <h2 className="text-xl font-semibold">{meetingTitle}</h2>
-          <p className="text-white/50 text-sm">Ready to join?</p>
         </div>
 
-        <div className="flex items-center gap-2 bg-white/5 border border-white/10 rounded-xl px-3 py-2">
-          <span className="flex-1 text-xs text-white/40 truncate">
+        <div className="flex items-center gap-2 bg-white/[0.04] border border-white/10 rounded-xl px-3 py-2">
+          <span className="flex-1 font-mono text-[11px] text-white/55 truncate" style={{ fontVariantNumeric: 'tabular-nums' }}>
             {window.location.origin}/meet/{roomUrl.split('/').pop()}
           </span>
-          <button type="button" aria-label="Copy meeting link" onClick={copyLink} className="text-white/40 hover:text-rose-400 transition-colors shrink-0">
+          <button
+            type="button"
+            aria-label="Copy meeting link"
+            onClick={copyLink}
+            className="text-white/40 hover:text-rose-400 transition-colors shrink-0 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-rose-500/40 rounded"
+          >
             <Copy size={14} />
           </button>
-          {copied && <span className="text-rose-400 text-xs">Copied!</span>}
+          {copied && (
+            <span className="font-mono uppercase tracking-[0.1em] text-[10px] text-rose-400">COPIED</span>
+          )}
         </div>
 
         <div className="flex gap-3">
-          <button type="button" onClick={onCancel} className="flex-1 bg-white/10 hover:bg-white/20 text-white py-3 rounded-xl transition-colors text-sm">
-            Cancel
+          <button
+            type="button"
+            onClick={onCancel}
+            className="flex-1 bg-white/10 hover:bg-white/15 text-white py-3 rounded-xl transition-colors font-mono uppercase tracking-[0.1em] text-[11px] focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-rose-500/40"
+          >
+            CANCEL
           </button>
-          <button type="button" onClick={onJoin} className="flex-1 bg-rose-500 hover:bg-rose-600 text-white py-3 rounded-xl transition-colors text-sm font-semibold">
-            Join Now
+          <button
+            type="button"
+            onClick={onJoin}
+            className="flex-1 bg-rose-500 hover:bg-rose-600 text-white py-3 rounded-xl transition-colors font-mono uppercase tracking-[0.1em] text-[11px] font-semibold focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-rose-500/40"
+          >
+            JOIN NOW
           </button>
         </div>
       </div>
@@ -719,8 +753,9 @@ const PulseVideoRoom: React.FC<PulseVideoRoomProps> = ({
 
   if (stage === 'joining' || !callObject) {
     return (
-      <div className="flex items-center justify-center h-full bg-[#080808] text-white">
-        <Loader2 size={28} className="animate-spin text-rose-500" />
+      <div className="flex flex-col items-center justify-center h-full bg-black text-white gap-3">
+        <Loader2 size={28} className="animate-spin motion-reduce:animate-none text-white/40" />
+        <p className="font-mono uppercase tracking-[0.1em] text-[10px] text-white/40">JOINING</p>
       </div>
     );
   }
