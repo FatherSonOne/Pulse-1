@@ -818,40 +818,57 @@ const Meetings: React.FC<MeetingsProps> = ({ apiKey, contacts, initialContactId,
             </div>
             <div className="mtg-room-error-message">{roomCreationError}</div>
             <div className="mtg-room-error-actions">
-              <button
-                type="button"
-                className="mtg-room-error-primary"
-                onClick={() => {
-                  setRoomCreationError(null);
-                  setRoomErrorIsAuth(false);
-                  createAndJoinPulseRoom(activeMeetingTitle);
-                }}
-              >
-                Retry
-              </button>
-              <button
-                type="button"
-                className="mtg-room-error-secondary"
-                onClick={() => {
-                  setRoomCreationError(null);
-                  setRoomErrorIsAuth(false);
-                  setView('dashboard');
-                }}
-              >
-                Back to dashboard
-              </button>
-              {roomErrorIsAuth && (
-                <button
-                  type="button"
-                  className="mtg-room-error-tertiary"
-                  onClick={async () => {
-                    await supabase.auth.signOut();
-                    window.location.reload();
-                  }}
-                >
-                  <LogOut size={12} strokeWidth={2} />
-                  <span>Sign out and reload</span>
-                </button>
+              {roomErrorIsAuth ? (
+                <>
+                  {/* Auth failures are unrecoverable without a fresh login.
+                      Promote Sign Out to primary; demote Retry to ghost since
+                      it will just fail again. */}
+                  <button
+                    type="button"
+                    className="mtg-room-error-primary"
+                    onClick={async () => {
+                      await supabase.auth.signOut();
+                      window.location.reload();
+                    }}
+                  >
+                    <LogOut size={14} strokeWidth={2} style={{ marginRight: 8 }} />
+                    Sign out and reload
+                  </button>
+                  <button
+                    type="button"
+                    className="mtg-room-error-secondary"
+                    onClick={() => {
+                      setRoomCreationError(null);
+                      setRoomErrorIsAuth(false);
+                      setView('dashboard');
+                    }}
+                  >
+                    Back to dashboard
+                  </button>
+                </>
+              ) : (
+                <>
+                  <button
+                    type="button"
+                    className="mtg-room-error-primary"
+                    onClick={() => {
+                      setRoomCreationError(null);
+                      createAndJoinPulseRoom(activeMeetingTitle);
+                    }}
+                  >
+                    Retry
+                  </button>
+                  <button
+                    type="button"
+                    className="mtg-room-error-secondary"
+                    onClick={() => {
+                      setRoomCreationError(null);
+                      setView('dashboard');
+                    }}
+                  >
+                    Back to dashboard
+                  </button>
+                </>
               )}
             </div>
           </div>

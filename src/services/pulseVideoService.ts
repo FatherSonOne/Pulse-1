@@ -42,7 +42,8 @@ async function getFreshAccessToken(): Promise<string | null> {
     return session.access_token;
   }
   // Token missing or about to expire — try a single refresh.
-  const { data: refreshed } = await supabase.auth.refreshSession();
+  const { data: refreshed, error } = await supabase.auth.refreshSession();
+  if (error) console.warn('[pulseVideoService] refreshSession error:', error.message);
   return refreshed.session?.access_token ?? null;
 }
 
@@ -78,9 +79,23 @@ async function callEdge(body: Record<string, unknown>): Promise<any> {
   if (res.status === 401 || res.status === 403) {
     // Edge said "Invalid token" / "Authentication required" with our fresh token.
     // The session is genuinely no good — caller should prompt sign-in.
+    // Log enough context to debug without exposing the token itself.
+    try {
+      const { data: { session } } = await supabase.auth.getSession();
+      const { data: { user } } = await supabase.auth.getUser();
+      console.warn('[pulseVideoService] Edge returned 401 with a fresh token. Session diagnosis:', {
+        hasSession: !!session,
+        sessionUserId: session?.user?.id,
+        clientUserId: user?.id,
+        expiresInSec: session?.expires_at ? session.expires_at - Math.floor(Date.now() / 1000) : null,
+        edgeError: data.error,
+      });
+    } catch (e) {
+      console.warn('[pulseVideoService] Diagnostic getSession/getUser also failed:', e);
+    }
     throw new EdgeCallError(
       'auth-expired',
-      'Your session expired. Please sign in again.',
+      'Your session is no longer valid. Sign out and sign back in to fix this.',
       res.status,
     );
   }
