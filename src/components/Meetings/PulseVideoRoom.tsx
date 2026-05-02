@@ -95,7 +95,7 @@ const ParticipantTile: React.FC<{ sessionId: string; isLocal?: boolean }> = ({ s
     .reduce((acc: number, c: string) => acc + c.charCodeAt(0), 0) % 360;
 
   return (
-    <div className="relative w-full h-full rounded-xl overflow-hidden bg-[#080808]/60 border border-white/10">
+    <div className="relative w-full h-full rounded-xl overflow-hidden bg-white/[0.03] border border-white/[0.08]">
       {videoOff ? (
         <div
           className="absolute inset-0 flex items-center justify-center"
@@ -366,7 +366,7 @@ const MeetingRoom: React.FC<{
   }
 
   return (
-    <div className="flex flex-col h-full bg-[#080808] text-white select-none">
+    <div className="flex flex-col h-full bg-black text-white">
       {/* ── DailyAudio handles all remote audio automatically */}
       <DailyAudio />
 
@@ -414,7 +414,7 @@ const MeetingRoom: React.FC<{
 
         {/* Side panel */}
         {sidePanel !== 'none' && (
-          <div className="w-72 bg-zinc-900/90 border-l border-white/10 flex flex-col backdrop-blur-sm">
+          <div className="w-72 bg-white/[0.03] border-l border-white/[0.06] flex flex-col">
             <div className="flex items-center justify-between px-4 py-3 border-b border-white/10">
               <span className="font-mono uppercase tracking-[0.1em] text-[11px] text-white/70">{sidePanel}</span>
               <button type="button" aria-label="Close panel" onClick={() => setSidePanel('none')} className="text-white/40 hover:text-white focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-rose-500/40 rounded">
@@ -482,7 +482,7 @@ const MeetingRoom: React.FC<{
       )}
 
       {/* ── Controls bar ────────────────────────────────────────────────────── */}
-      <div className="flex items-center justify-center gap-3 px-6 py-4 bg-zinc-900/80 border-t border-white/10 backdrop-blur-sm">
+      <div className="flex items-center justify-center gap-3 px-6 py-4 bg-white/[0.03] border-t border-white/[0.06]">
         {/* Mic */}
         <ControlButton active={micOn} onClick={toggleMic} activeIcon={<Mic size={18} />} inactiveIcon={<MicOff size={18} />} label="Mic" danger={!micOn} />
 
@@ -551,7 +551,7 @@ const MeetingRoom: React.FC<{
       {/* ── End call confirmation ────────────────────────────────────────────── */}
       {showEndConfirm && (
         <div className="absolute inset-0 bg-black/70 flex items-center justify-center z-50 backdrop-blur-sm">
-          <div className="bg-zinc-900 border border-white/10 rounded-2xl p-6 w-80 text-center space-y-4">
+          <div className="bg-white/[0.04] border border-white/[0.10] rounded-2xl p-6 w-80 text-center space-y-4 backdrop-blur-xl">
             {isSummarizing ? (
               <>
                 <Loader2 size={28} className="animate-spin motion-reduce:animate-none text-white/50 mx-auto" />
