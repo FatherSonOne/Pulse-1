@@ -95,13 +95,17 @@ export const PulseAssistantButton: React.FC<PulseAssistantButtonProps> = ({
             className="pa-ecg-sweep"
           />
 
-          {/* ── Glowing dot at the leading edge — hot rose-pink ── */}
+          {/* ── Glowing dot at the leading edge — hot rose-pink ──
+              `initial` is required when animating SVG attributes via keyframe
+              arrays — without it framer-motion's motion-value system briefly
+              resolves cx/cy to undefined during interpolation setup, which
+              React stringifies to "undefined" on the DOM attribute and the
+              SVG layout engine warns. */}
           <motion.circle
-            cx={DOT_KX[0]}
-            cy={DOT_KY[0]}
             r="3.2"
             fill="#ff7096"
             filter="url(#pa-ecg-dot-glow)"
+            initial={{ cx: DOT_KX[0], cy: DOT_KY[0], opacity: DOT_OPAC[0] }}
             animate={{
               cx: DOT_KX,
               cy: DOT_KY,

@@ -182,14 +182,18 @@ const MeetingRoom: React.FC<{
       if (initialMicOff) daily.setLocalAudio(false);
       if (initialCameraOff) daily.setLocalVideo(false);
 
-      // Auto-start recording if enabled (host only)
+      // Auto-start recording if enabled (host only).
+      // Daily SDK's startRecording/startTranscription return void — errors come
+      // back via 'error' / 'recording-error' events, not via promise rejection.
+      // Wrap in try/catch only for synchronous throws (e.g. invalid args).
       if (autoRecord && isHost) {
-        daily.startRecording().catch((err: unknown) => console.warn('[PulseVideoRoom] Auto-record failed:', err));
+        try { daily.startRecording(); }
+        catch (err) { console.warn('[PulseVideoRoom] Auto-record failed:', err); }
       }
 
-      // Auto-start transcription if enabled
       if (autoTranscribe && isHost) {
-        daily.startTranscription({ language: 'en' }).catch((err: unknown) => console.warn('[PulseVideoRoom] Auto-transcribe failed:', err));
+        try { daily.startTranscription({ language: 'en' }); }
+        catch (err) { console.warn('[PulseVideoRoom] Auto-transcribe failed:', err); }
         setTranscriptEnabled(true);
       }
     });
@@ -312,9 +316,10 @@ const MeetingRoom: React.FC<{
 
       let summary = '';
       try {
-        // Use Gemini to summarize if available
+        // Use Gemini to summarize if available. The apiKey arg is unused by
+        // the service (auth is workspace-derived) but is still in the signature.
         const { generateSummary } = await import('../../services/geminiService');
-        summary = await generateSummary(fullTranscript);
+        summary = (await generateSummary('', fullTranscript)) ?? '';
       } catch {
         summary = `Meeting lasted ${Math.floor(duration / 60)} minutes with ${allParticipants.length} participant(s).`;
       }
