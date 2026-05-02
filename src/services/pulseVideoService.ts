@@ -9,20 +9,86 @@ import { supabase } from './supabaseClient';
 
 const EDGE_URL = `${import.meta.env.VITE_SUPABASE_URL}/functions/v1/daily-rooms`;
 
-async function callEdge(body: Record<string, unknown>) {
+/**
+ * Distinct error codes so callers can surface the right message.
+ * - 'no-session'     — user has never signed in / signed out
+ * - 'auth-expired'   — refresh attempted, still no valid token (sign-in required)
+ * - 'forbidden'      — server returned 401/403 with a valid-looking token
+ * - 'server'         — non-auth server error (5xx, validation, etc.)
+ */
+export type EdgeErrorCode = 'no-session' | 'auth-expired' | 'forbidden' | 'server';
+
+export class EdgeCallError extends Error {
+  code: EdgeErrorCode;
+  status?: number;
+  constructor(code: EdgeErrorCode, message: string, status?: number) {
+    super(message);
+    this.name = 'EdgeCallError';
+    this.code = code;
+    this.status = status;
+  }
+}
+
+/** True if the access_token is within `bufferSec` of expiring (or already expired). */
+function isExpiringSoon(expiresAtSec: number | undefined | null, bufferSec = 30): boolean {
+  if (!expiresAtSec) return true;
+  return expiresAtSec * 1000 - Date.now() < bufferSec * 1000;
+}
+
+/** Resolve a fresh access_token, refreshing the session if needed. */
+async function getFreshAccessToken(): Promise<string | null> {
   const { data: { session } } = await supabase.auth.getSession();
+  if (session?.access_token && !isExpiringSoon(session.expires_at)) {
+    return session.access_token;
+  }
+  // Token missing or about to expire — try a single refresh.
+  const { data: refreshed } = await supabase.auth.refreshSession();
+  return refreshed.session?.access_token ?? null;
+}
+
+// eslint-disable-next-line @typescript-eslint/no-explicit-any
+async function callEdge(body: Record<string, unknown>): Promise<any> {
+  const token = await getFreshAccessToken();
+  if (!token) {
+    throw new EdgeCallError(
+      'no-session',
+      'You need to sign in to start or join a Pulse meeting.',
+    );
+  }
+
   const res = await fetch(EDGE_URL, {
     method: 'POST',
     headers: {
       'Content-Type': 'application/json',
-      'Authorization': `Bearer ${session?.access_token ?? ''}`,
+      'Authorization': `Bearer ${token}`,
     },
     body: JSON.stringify(body),
   });
 
-  const data = await res.json();
-  if (!res.ok) throw new Error(data.error ?? `Edge function error ${res.status}`);
-  return data;
+  let data: { error?: string } & Record<string, unknown> = {};
+  try {
+    data = await res.json();
+  } catch {
+    /* empty body / non-JSON response — leave data as {} */
+  }
+
+  if (res.ok) return data;
+
+  // Map error responses to actionable codes.
+  if (res.status === 401 || res.status === 403) {
+    // Edge said "Invalid token" / "Authentication required" with our fresh token.
+    // The session is genuinely no good — caller should prompt sign-in.
+    throw new EdgeCallError(
+      'auth-expired',
+      'Your session expired. Please sign in again.',
+      res.status,
+    );
+  }
+  throw new EdgeCallError(
+    'server',
+    data.error ?? `Edge function error ${res.status}`,
+    res.status,
+  );
 }
 
 // ── Room management ────────────────────────────────────────────────────────────

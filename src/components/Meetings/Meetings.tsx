@@ -5,7 +5,7 @@ import { getArchives } from '../../services/dbService';
 import { Contact, CalendarEvent, ArchiveItem } from '../../types';
 import './Meetings.css';
 import PulseVideoRoom, { MeetingEndSummary } from './PulseVideoRoom';
-import { createPulseRoom } from '../../services/pulseVideoService';
+import { createPulseRoom, EdgeCallError } from '../../services/pulseVideoService';
 import { autoExportIfEnabled, getMeetingSettings, fetchMeetingAnalytics } from '../../services/meetingService';
 import { notificationService } from '../../services/notificationService';
 import { pulseService } from '../../services/pulseService';
@@ -232,7 +232,11 @@ const Meetings: React.FC<MeetingsProps> = ({ apiKey, contacts, initialContactId,
       setView('active');
     } catch (err) {
       console.error('[Meetings] Failed to create Pulse room:', err);
-      setRoomCreationError('Failed to create meeting room. Please check your connection and try again.');
+      // Distinguish auth failure from network/server failure so the user knows what to do.
+      const message = err instanceof EdgeCallError && (err.code === 'no-session' || err.code === 'auth-expired')
+        ? err.message
+        : 'Couldn\'t reach the meeting service. Try again in a moment.';
+      setRoomCreationError(message);
       setActiveMeetingTitle(title);
       setView('active');
     }
@@ -335,7 +339,10 @@ const Meetings: React.FC<MeetingsProps> = ({ apiKey, contacts, initialContactId,
       setView('active');
     } catch (err) {
       console.error('[Meetings] Failed to create room for bulk invite:', err);
-      setRoomCreationError('Failed to create meeting room for invite. Please try again.');
+      const message = err instanceof EdgeCallError && (err.code === 'no-session' || err.code === 'auth-expired')
+        ? err.message
+        : 'Couldn\'t create the invite room. Try again in a moment.';
+      setRoomCreationError(message);
     }
   };
 
