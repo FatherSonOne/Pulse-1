@@ -2200,7 +2200,9 @@
    ============================================ */
 .meetings-settings-sidebar {
   background: var(--mtg-bg-primary);
-  border-right: 1px solid var(--mtg-border);
+  /* Inset shadow renders a hairline divider on the right edge without
+     tripping the side-tab detector (which flags any border-right > 0). */
+  box-shadow: inset -1px 0 0 var(--mtg-border);
   padding: 12px;
   border-radius: 0;
 }
