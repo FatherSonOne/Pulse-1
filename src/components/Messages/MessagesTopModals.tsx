@@ -30,14 +30,16 @@ import {
 } from './modals';
 
 const KEYBOARD_SHORTCUTS: Record<string, string> = {
-  'Ctrl+Enter': 'Send message',
-  'Ctrl+K': 'Open command palette',
-  'Ctrl+/': 'Show keyboard shortcuts',
-  'Ctrl+F': 'Search messages',
-  'Escape': 'Close modals / Cancel',
-  'Alt+M': 'Mute conversation',
-  'Alt+S': 'Star message',
-  'Alt+R': 'Reply to message',
+  'J': 'Next conversation',
+  'K': 'Previous conversation',
+  'Enter': 'Open conversation under cursor',
+  'R': 'Focus composer',
+  '?': 'Toggle this overlay',
+  '⌘N': 'New conversation',
+  '⌘K': 'Open command palette',
+  '⌘Enter': 'Send message',
+  'Esc': 'Close modal / cancel',
+  '⇧F': 'Toggle Focus Mode',
 };
 
 export interface MessagesTopModalsProps {
@@ -436,19 +438,25 @@ export const MessagesTopModals = React.memo<MessagesTopModalsProps>((props) => {
 
       {/* Keyboard Shortcuts Modal */}
       {props.showShortcuts && (
-        <div className="absolute inset-0 z-50 bg-black/60 backdrop-blur-sm flex items-center justify-center animate-fade-in p-4">
-          <div className="bg-white dark:bg-zinc-900 w-full max-w-md rounded-2xl shadow-2xl animate-scale-in border border-zinc-200 dark:border-zinc-800">
-            <div className="p-4 border-b border-zinc-200 dark:border-zinc-800 flex justify-between items-center">
-              <h3 className="font-bold dark:text-white flex items-center gap-2">
-                <Keyboard className="text-blue-500" /> Keyboard Shortcuts
+        <div className="absolute inset-0 z-50 bg-black/60 backdrop-blur-sm flex items-center justify-center animate-fade-in p-4" onClick={() => props.setShowShortcuts(false)}>
+          <div className="bg-white dark:bg-black w-full max-w-md rounded-2xl shadow-2xl animate-scale-in border border-zinc-200 dark:border-white/[0.06]" onClick={(e) => e.stopPropagation()} role="dialog" aria-label="Keyboard shortcuts">
+            <div className="p-4 border-b border-zinc-200 dark:border-white/[0.06] flex justify-between items-center">
+              <h3 className="font-medium text-zinc-900 dark:text-white flex items-center gap-2">
+                <Keyboard className="w-4 h-4 text-zinc-400 dark:text-zinc-500" /> Keyboard Shortcuts
               </h3>
-              <button onClick={() => props.setShowShortcuts(false)}><X className="text-zinc-500" /></button>
+              <button
+                onClick={() => props.setShowShortcuts(false)}
+                className="w-7 h-7 rounded-md text-zinc-400 hover:text-rose-500 dark:hover:text-rose-bright hover:bg-zinc-100 dark:hover:bg-white/[0.04] flex items-center justify-center transition-colors focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-rose-500/40"
+                aria-label="Close shortcuts"
+              >
+                <X className="w-4 h-4" />
+              </button>
             </div>
-            <div className="p-4 space-y-2">
+            <div className="p-4 space-y-1">
               {Object.entries(KEYBOARD_SHORTCUTS).map(([key, action]) => (
-                <div key={key} className="flex justify-between items-center py-2 border-b border-zinc-100 dark:border-zinc-800">
-                  <span className="text-sm text-zinc-600 dark:text-zinc-300">{action}</span>
-                  <kbd className="px-2 py-1 bg-zinc-100 dark:bg-zinc-800 rounded text-xs font-mono">{key}</kbd>
+                <div key={key} className="flex justify-between items-center py-1.5 border-b border-zinc-100/60 dark:border-white/[0.04] last:border-b-0">
+                  <span className="text-sm text-zinc-700 dark:text-zinc-300">{action}</span>
+                  <kbd className="px-2 py-0.5 bg-zinc-100 dark:bg-white/[0.06] rounded text-[10px] font-mono uppercase tracking-[0.05em] text-zinc-600 dark:text-zinc-300 tabular-nums">{key}</kbd>
                 </div>
               ))}
             </div>

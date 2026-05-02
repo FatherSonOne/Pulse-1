@@ -611,6 +611,7 @@ const MessageInput: React.FC<MessageInputProps> = ({
           onKeyDown={handleKeyDown}
           onPaste={handlePaste}
           data-placeholder={placeholderText}
+          data-composer="pulse"
           role="textbox"
           aria-multiline="true"
           aria-label={tr('messages.input.ariaLabel', 'Message text')}

@@ -149,6 +149,7 @@ const FocusMode = lazy(() => import('./Messages/FocusMode').then(m => ({ default
 
 import { MessagesFeaturePanels } from './Messages/MessagesFeaturePanels';
 import { MessageLinkPreviews } from './Messages/LinkPreviewCard';
+import { useMessagesKeyboardShortcuts } from '../hooks/useMessagesKeyboardShortcuts';
 import { SnoozeMenu } from './Messages/SnoozeMenu';
 import { TagPicker, TagPills } from './Messages/TagPills';
 import { tagsService, type TagDefinition } from '../services/tagsService';
@@ -2993,6 +2994,30 @@ const Messages: React.FC<MessagesProps> = ({ apiKey, contacts, initialContactId,
     setMobileView('list');
   }, []);
 
+  // Phase III: J/K/Enter cursor navigation, R focus composer, ? shortcuts
+  // overlay. E (archive) deferred until Pulse archive backend exists.
+  // MUST be before any early returns (Rules of Hooks).
+  const keyboardDisabled =
+    showFeatureSettings || showCommandPalette || showOutcomeSetup ||
+    showStatsPanel || showHandoffCard || showThemeSelector ||
+    showInviteModal || showNewChatModal || showAnalyticsDashboard ||
+    showShortcuts || showToolsDrawer || showArtifactModal;
+
+  const { cursorConvId } = useMessagesKeyboardShortcuts({
+    conversations: pulseConversations,
+    activeConversationId: activePulseConversation,
+    onSelectConversation: (id: string) => {
+      selectPulseConversation(id);
+      closeDrawer();
+    },
+    onFocusComposer: () => {
+      const el = document.querySelector('[data-composer="pulse"]');
+      if (el && 'focus' in el) (el as HTMLElement).focus();
+    },
+    onToggleShortcutsOverlay: () => setShowShortcuts(prev => !prev),
+    disabled: keyboardDisabled,
+  });
+
   // Loading state
   if (isLoading) {
     // Lazy import EnhancedLoadingScreen to avoid circular dependencies
@@ -3209,6 +3234,7 @@ const Messages: React.FC<MessagesProps> = ({ apiKey, contacts, initialContactId,
         handleDeletePulseConversation={handleDeletePulseConversation}
         threads={threads}
         conversationTags={conversationTags}
+        cursorConvId={cursorConvId}
         onJumpToConversation={(conversationId, kind) => {
           // Phase 7b — fired-reminder click navigation. Currently DM
           // only; a fired reminder for a workspace channel would route

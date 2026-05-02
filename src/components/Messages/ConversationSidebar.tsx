@@ -57,6 +57,9 @@ interface ConversationSidebarProps {
    *  that conversation. Optional; if omitted, the reminder is just
    *  dismissed without navigation. */
   onJumpToConversation?: (conversationId: string, kind: 'dm' | 'channel') => void;
+  /** Phase III — keyboard cursor (J/K nav). When set, the matching row
+   *  renders a subtle ring distinct from the active row. Optional. */
+  cursorConvId?: string | null;
 }
 
 export const ConversationSidebar: React.FC<ConversationSidebarProps> = ({
@@ -70,6 +73,7 @@ export const ConversationSidebar: React.FC<ConversationSidebarProps> = ({
   threadListRef, pulseConversations, conversationsTotalHeight, virtualConversations,
   activePulseConversation, setSelectedContactUserId, setShowContactPanel,
   handleSelectConversation, messageEnhancements, handleDeletePulseConversation, threads,
+  cursorConvId,
   conversationTags = {},
   onJumpToConversation,
 }) => {
@@ -138,11 +142,11 @@ export const ConversationSidebar: React.FC<ConversationSidebarProps> = ({
           {onJumpToConversation && (
             <RemindersInbox onJumpToConversation={onJumpToConversation} />
           )}
-          {/* Keyboard shortcuts — mono ⌘ glyph */}
+          {/* Keyboard shortcuts — mono ⌘ glyph, also bound to ? */}
           <button
             onClick={() => setShowShortcuts(true)}
             className="h-8 w-8 rounded-md inline-flex items-center justify-center text-zinc-500 dark:text-zinc-400 hover:bg-zinc-200/60 dark:hover:bg-white/[0.055] hover:text-zinc-900 dark:hover:text-zinc-100 transition-colors focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-rose-500/40"
-            title="Keyboard shortcuts"
+            title="Keyboard shortcuts (?)"
             aria-label="Keyboard shortcuts"
           >
             <Command className="w-3.5 h-3.5" />
@@ -276,7 +280,11 @@ export const ConversationSidebar: React.FC<ConversationSidebarProps> = ({
                 <div key={conv.id} style={style}>
                   <div
                     className={`p-3 rounded-xl cursor-pointer transition-colors relative group flex items-center gap-3
-                      ${activePulseConversation === conv.id ? 'bg-rose-50 dark:bg-rose-500/10 ring-1 ring-rose-500/20' : 'hover:bg-zinc-100/60 dark:hover:bg-white/[0.04]'}`}
+                      ${activePulseConversation === conv.id
+                        ? 'bg-rose-50 dark:bg-rose-500/10 ring-1 ring-rose-500/20'
+                        : cursorConvId === conv.id
+                        ? 'ring-1 ring-rose-500/30 ring-offset-0'
+                        : 'hover:bg-zinc-100/60 dark:hover:bg-white/[0.04]'}`}
                   >
                     <button
                       onClick={(e) => {
