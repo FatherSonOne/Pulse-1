@@ -148,6 +148,82 @@ const ParticipantTile: React.FC<{ sessionId: string; isLocal?: boolean }> = ({ s
   );
 };
 
+// ── Waiting-for-participants empty state ──────────────────────────────────────
+// When the host (or anyone) is alone in the room, replace the giant grey
+// camera-off panel with a quiet centered moment: mono caption, timer as
+// centerpiece, copy-link affordance pulled up from the Lobby. Self-preview
+// only appears as a small corner tile when the camera is on.
+
+const WaitingForParticipants: React.FC<{
+  roomName: string;
+  elapsed: number;
+  formatTime: (s: number) => string;
+  localId: string | undefined;
+  cameraOn: boolean;
+}> = ({ roomName, elapsed, formatTime, localId, cameraOn }) => {
+  const meetingLink = `${window.location.origin}/meet/${roomName}`;
+  const [copied, setCopied] = useState(false);
+
+  const copy = async () => {
+    try {
+      await navigator.clipboard.writeText(meetingLink);
+      setCopied(true);
+      setTimeout(() => setCopied(false), 2000);
+    } catch {
+      /* clipboard blocked — silent */
+    }
+  };
+
+  return (
+    <div className="relative w-full h-full flex flex-col items-center justify-center text-center bg-white/[0.02] border border-white/[0.06] rounded-xl">
+      <div className="space-y-6 max-w-md px-8">
+        <div className="space-y-2">
+          <p className="font-mono uppercase tracking-[0.1em] text-[11px] text-white/40">
+            WAITING FOR PARTICIPANTS
+          </p>
+          <p
+            className="font-mono text-2xl text-white/85"
+            style={{ fontVariantNumeric: 'tabular-nums' }}
+          >
+            {formatTime(elapsed)}
+          </p>
+        </div>
+
+        <p className="text-sm text-white/55">Share the link to invite someone.</p>
+
+        <div className="flex items-center gap-2 bg-white/[0.04] border border-white/[0.10] rounded-xl px-3 py-2">
+          <span
+            className="flex-1 font-mono text-[11px] text-white/55 truncate text-left"
+            style={{ fontVariantNumeric: 'tabular-nums' }}
+          >
+            {meetingLink}
+          </span>
+          <button
+            type="button"
+            onClick={copy}
+            aria-label="Copy meeting link"
+            className="text-white/50 hover:text-rose-400 transition-colors shrink-0 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-rose-500/40 rounded p-1"
+          >
+            <Copy size={14} />
+          </button>
+          {copied && (
+            <span className="font-mono uppercase tracking-[0.1em] text-[10px] text-rose-400">
+              COPIED
+            </span>
+          )}
+        </div>
+      </div>
+
+      {/* Self-preview corner-tile — only when camera is on */}
+      {cameraOn && localId && (
+        <div className="absolute bottom-4 right-4 w-40 h-28 rounded-lg overflow-hidden border border-white/[0.10] shadow-lg">
+          <ParticipantTile sessionId={localId} isLocal />
+        </div>
+      )}
+    </div>
+  );
+};
+
 // ── Inner meeting room (must be inside DailyProvider) ─────────────────────────
 
 const MeetingRoom: React.FC<{
@@ -414,18 +490,28 @@ const MeetingRoom: React.FC<{
 
       {/* ── Main area ───────────────────────────────────────────────────────── */}
       <div className="flex flex-1 overflow-hidden">
-        {/* Video grid */}
+        {/* Video grid — or sole-participant waiting state */}
         <div className="flex-1 p-3 overflow-hidden">
-          <div
-            className="w-full h-full grid gap-2"
-            style={{
-              gridTemplateColumns: `repeat(${gridCols}, minmax(0, 1fr))`,
-              gridAutoRows: `minmax(0, 1fr)`,
-            }}
-          >
-            {localId && <ParticipantTile sessionId={localId} isLocal />}
-            {remoteIds.map(id => <ParticipantTile key={id} sessionId={id} />)}
-          </div>
+          {allParticipants.length <= 1 ? (
+            <WaitingForParticipants
+              roomName={roomName}
+              elapsed={elapsed}
+              formatTime={formatTime}
+              localId={localId}
+              cameraOn={cameraOn}
+            />
+          ) : (
+            <div
+              className="w-full h-full grid gap-2"
+              style={{
+                gridTemplateColumns: `repeat(${gridCols}, minmax(0, 1fr))`,
+                gridAutoRows: `minmax(0, 1fr)`,
+              }}
+            >
+              {localId && <ParticipantTile sessionId={localId} isLocal />}
+              {remoteIds.map(id => <ParticipantTile key={id} sessionId={id} />)}
+            </div>
+          )}
         </div>
 
         {/* Side panel */}
