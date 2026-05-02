@@ -208,16 +208,20 @@
 }
 
 .meetings-hero-title {
-  font-size: 32px;
-  font-weight: 300;
+  font-size: 24px;
+  font-weight: 600;
   color: var(--mtg-text-primary);
-  letter-spacing: -0.5px;
+  letter-spacing: -0.025em;
   margin-bottom: 8px;
 }
 
 .meetings-hero-subtitle {
-  font-size: 14px;
+  font-family: var(--font-mono, "JetBrains Mono", "SF Mono", Consolas, monospace);
+  font-size: 11px;
+  font-weight: 500;
   color: var(--mtg-text-muted);
+  text-transform: uppercase;
+  letter-spacing: 0.1em;
   margin-bottom: 32px;
 }
 
@@ -260,12 +264,13 @@
   border: none;
   border-radius: 12px;
   color: white;
-  font-weight: 700;
-  font-size: 13px;
-  letter-spacing: 0.5px;
+  font-family: var(--font-mono, "JetBrains Mono", "SF Mono", Consolas, monospace);
+  font-weight: 500;
+  font-size: 11px;
+  letter-spacing: 0.1em;
   text-transform: uppercase;
   cursor: pointer;
-  transition: all 0.3s ease;
+  transition: all 220ms cubic-bezier(0.16, 1, 0.3, 1);
 }
 
 .meetings-join-btn:hover {
@@ -312,10 +317,11 @@
   display: flex;
   align-items: center;
   gap: 10px;
+  font-family: var(--font-mono, "JetBrains Mono", "SF Mono", Consolas, monospace);
   font-size: 11px;
-  font-weight: 700;
+  font-weight: 500;
   text-transform: uppercase;
-  letter-spacing: 1.5px;
+  letter-spacing: 0.1em;
   color: var(--mtg-text-muted);
 }
 
@@ -324,11 +330,12 @@
 }
 
 .meetings-section-action {
+  font-family: var(--font-mono, "JetBrains Mono", "SF Mono", Consolas, monospace);
   font-size: 11px;
-  font-weight: 600;
+  font-weight: 500;
   color: var(--mtg-accent-primary);
   text-transform: uppercase;
-  letter-spacing: 0.5px;
+  letter-spacing: 0.1em;
   background: none;
   border: none;
   cursor: pointer;
@@ -432,14 +439,14 @@
   top: 12px;
   right: 12px;
   padding: 4px 8px;
-  background: rgba(244, 63, 94, 0.15);
-  border: 1px solid rgba(244, 63, 94, 0.3);
-  border-radius: 6px;
-  font-size: 9px;
-  font-weight: 700;
+  background: rgba(244, 63, 94, 0.10);
+  border-radius: 4px;
+  font-family: var(--font-mono, "JetBrains Mono", "SF Mono", Consolas, monospace);
+  font-size: 10px;
+  font-weight: 500;
   color: var(--mtg-accent-primary);
   text-transform: uppercase;
-  letter-spacing: 0.5px;
+  letter-spacing: 0.1em;
 }
 
 .meetings-platform-actions {
@@ -454,13 +461,14 @@
   flex: 1;
   padding: 10px;
   border: none;
-  border-radius: 10px;
+  border-radius: 8px;
+  font-family: var(--font-mono, "JetBrains Mono", "SF Mono", Consolas, monospace);
   font-size: 11px;
-  font-weight: 600;
+  font-weight: 500;
   text-transform: uppercase;
-  letter-spacing: 0.5px;
+  letter-spacing: 0.1em;
   cursor: pointer;
-  transition: all 0.2s;
+  transition: all 220ms cubic-bezier(0.16, 1, 0.3, 1);
 }
 
 .meetings-platform-btn.primary {
@@ -571,10 +579,13 @@
   align-items: center;
   gap: 4px;
   padding: 4px 8px;
-  background: rgba(244, 63, 94, 0.1);
-  border-radius: 6px;
+  background: rgba(244, 63, 94, 0.10);
+  border-radius: 4px;
+  font-family: var(--font-mono, "JetBrains Mono", "SF Mono", Consolas, monospace);
   font-size: 10px;
-  font-weight: 600;
+  font-weight: 500;
+  text-transform: uppercase;
+  letter-spacing: 0.1em;
   color: var(--mtg-accent-primary);
   margin-top: 12px;
 }
@@ -3718,9 +3729,55 @@
 /* Animation Adjustments - Light Mode */
 @keyframes mtg-glow-pulse-light {
   0%, 100% { box-shadow: var(--mtg-shadow-md); }
-  50% { box-shadow: var(--mtg-shadow-lg); }
+  50% { box-shadow: var(--mtg-shadow-md); }
 }
 
 :root:not(.dark) .meetings-hero-icon {
   animation: mtg-glow-pulse-light 3s ease-in-out infinite;
+}
+
+/* ============================================
+   MONO LABEL OVERRIDE
+   Source-order override that promotes every uppercase-tracked
+   label class to JetBrains Mono 0.1em-tracked. The Coral Cockpit
+   "instrument, not document" signature pattern.
+   ============================================ */
+.meetings-container .meetings-section-title,
+.meetings-container .meetings-section-action,
+.meetings-container .meetings-platform-badge,
+.meetings-container .meetings-platform-btn,
+.meetings-container .meetings-feature-badge,
+.meetings-container .meetings-upcoming-ampm,
+.meetings-container .meetings-insight-label,
+.meetings-container .meetings-analytics-stat-label,
+.meetings-container .meetings-analytics-chart-title,
+.meetings-container .meetings-settings-section-title,
+.meetings-container .meetings-breakout-panel-title,
+.meetings-container .meetings-summary-card-header,
+.meetings-container .meetings-summary-meta-label,
+.meetings-container .meetings-summary-stat-label,
+.meetings-container .meetings-empty,
+.meetings-container .meetings-history-time,
+.meetings-container .meetings-history-meta,
+.meetings-container .meetings-history-duration,
+.meetings-container .meetings-quick-action-label,
+.meetings-container .meetings-section-title-extra,
+.meetings-container .meetings-history-empty-label {
+  font-family: var(--font-mono, "JetBrains Mono", "SF Mono", Consolas, monospace);
+  letter-spacing: 0.1em;
+  font-weight: 500;
+  text-transform: uppercase;
+}
+
+/* Tabular numbers for any time-of-day/duration/count display */
+.meetings-container .meetings-upcoming-time,
+.meetings-container .meetings-upcoming-ampm,
+.meetings-container .meetings-history-time,
+.meetings-container .meetings-history-duration,
+.meetings-container .meetings-summary-stat-value,
+.meetings-container .meetings-insight-value,
+.meetings-container .meetings-analytics-stat-value,
+.meetings-container .meetings-meeting-code {
+  font-variant-numeric: tabular-nums;
+  font-feature-settings: "tnum";
 }

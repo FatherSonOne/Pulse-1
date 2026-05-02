@@ -1,6 +1,7 @@
 import React, { useEffect, useRef, useState } from 'react';
 import { Contact, CalendarEvent, ArchiveItem } from '../../types';
 import { Activity, ArrowLeft, BarChart, Calendar, CalendarPlus, Check, CheckCircle2, ChevronDown, Copy, Download, FileText, Film, Gavel, Inbox, Info, Loader2, Megaphone, Mic, Monitor, PieChart, Play, PlayCircle, Plus, Search, Settings, Sliders, SplitSquareVertical, Square, Trash2, TrendingUp, Upload, UserPlus, Users, Video, VideoOff, Volume2, Wand2, X, Zap } from 'lucide-react';
+import { AIProvenanceChip } from '../ui/AIProvenanceChip';
 import {
 
   fetchMeetingAnalytics,
@@ -2542,9 +2543,13 @@ export const MeetingSummaryView: React.FC<MeetingSummaryViewProps> = ({ data, lo
       <div className="meetings-summary-body">
         {/* AI Summary */}
         <div className="meetings-summary-card">
-          <div className="meetings-summary-card-header">
-            <Wand2 />
-            AI Summary
+          <div className="meetings-summary-card-header" style={{ display: 'flex', alignItems: 'center', gap: 10 }}>
+            <AIProvenanceChip vendor="GEMINI" type="SUMMARY" />
+            {data && data.keyPoints.length > 0 && (
+              <span style={{ fontSize: 11, color: 'var(--mtg-text-muted)' }}>
+                · {data.keyPoints.length} key point{data.keyPoints.length === 1 ? '' : 's'}
+              </span>
+            )}
           </div>
           {loading ? (
             <>
@@ -2571,9 +2576,11 @@ export const MeetingSummaryView: React.FC<MeetingSummaryViewProps> = ({ data, lo
           <div className="meetings-summary-two-col">
             {/* Action Items */}
             <div className="meetings-summary-card">
-              <div className="meetings-summary-card-header">
-                <CheckCircle2 />
-                Action Items ({actionItems.length})
+              <div className="meetings-summary-card-header" style={{ display: 'flex', alignItems: 'center', gap: 10 }}>
+                <AIProvenanceChip vendor="GEMINI" type="ACTIONS" />
+                <span style={{ fontSize: 11, color: 'var(--mtg-text-muted)', fontVariantNumeric: 'tabular-nums' }}>
+                  · {actionItems.length}
+                </span>
               </div>
               {actionItems.length === 0 ? (
                 <div style={{ fontSize: 12, color: 'var(--mtg-text-muted)' }}>No action items captured.</div>
@@ -2599,9 +2606,11 @@ export const MeetingSummaryView: React.FC<MeetingSummaryViewProps> = ({ data, lo
 
             {/* Decisions */}
             <div className="meetings-summary-card">
-              <div className="meetings-summary-card-header">
-                <Gavel />
-                Key Decisions ({data.decisions.length})
+              <div className="meetings-summary-card-header" style={{ display: 'flex', alignItems: 'center', gap: 10 }}>
+                <AIProvenanceChip vendor="GEMINI" type="DECISIONS" />
+                <span style={{ fontSize: 11, color: 'var(--mtg-text-muted)', fontVariantNumeric: 'tabular-nums' }}>
+                  · {data.decisions.length}
+                </span>
               </div>
               {data.decisions.length === 0 ? (
                 <div style={{ fontSize: 12, color: 'var(--mtg-text-muted)' }}>No key decisions identified.</div>
@@ -2618,9 +2627,8 @@ export const MeetingSummaryView: React.FC<MeetingSummaryViewProps> = ({ data, lo
         {/* Timeline */}
         {!loading && data && data.timelineEvents.length > 0 && (
           <div className="meetings-summary-card">
-            <div className="meetings-summary-card-header">
-              <Activity />
-              Meeting Timeline
+            <div className="meetings-summary-card-header" style={{ display: 'flex', alignItems: 'center', gap: 10 }}>
+              <AIProvenanceChip vendor="GEMINI" type="TIMELINE" />
             </div>
             <div className="meetings-summary-timeline">
               {data.timelineEvents.slice(0, 10).map((entry, i) => (
