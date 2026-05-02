@@ -9,7 +9,7 @@ import React, { useMemo, useState, useRef, useEffect } from 'react';
 import {
   Calendar, ChevronDown, FileText, Inbox, Megaphone, Mic, Monitor,
   Plus, Settings, Sliders, SplitSquareVertical, UserPlus, Video, Wand2, Zap,
-  CheckCircle2, Copy, BarChart, PlayCircle, ListChecks,
+  CheckCircle2, Copy, BarChart, PlayCircle, ListChecks, X,
 } from 'lucide-react';
 import { CalendarEvent, ArchiveItem, Contact } from '../../types';
 import { Platform } from './MeetingsComponents';
@@ -25,7 +25,7 @@ interface BucketedMeetings {
   thisWeek: CalendarEvent[];
 }
 
-function bucketMeetings(meetings: CalendarEvent[], reference = new Date()): BucketedMeetings {
+export function bucketMeetings(meetings: CalendarEvent[], reference = new Date()): BucketedMeetings {
   const now = reference;
   const nextThreshold = new Date(now.getTime() + 60 * 60 * 1000);
   const endOfToday = new Date(now);
@@ -78,42 +78,78 @@ function minutesUntil(d: Date, reference = new Date()): number {
 // ============================================
 
 interface TimeRailRowProps {
+  rowId: string;
   time: string;
   title: string;
   meta?: string;
   imminent?: boolean;
   live?: boolean;
   hasRecap?: boolean;
+  cursor?: boolean;
   primaryAction: string;
   onPrimary: () => void;
   onSecondary?: () => void;
+  onHover?: (id: string) => void;
 }
 
 const TimeRailRow: React.FC<TimeRailRowProps> = ({
-  time, title, meta, imminent, live, hasRecap, primaryAction, onPrimary, onSecondary,
-}) => (
-  <div className={`mtg-rail-row ${live ? 'is-live' : ''} ${imminent ? 'is-imminent' : ''}`}>
-    <div className="mtg-rail-time">
-      {live && <span className="mtg-rail-live-dot" aria-label="Live" />}
-      {hasRecap && !live && <span className="mtg-rail-recap-dot" aria-label="Recap ready" />}
-      <span>{time}</span>
-    </div>
-    <div className="mtg-rail-body">
-      <div className="mtg-rail-title">{title}</div>
-      {meta && <div className="mtg-rail-meta">{meta}</div>}
-    </div>
-    <div className="mtg-rail-actions">
-      {onSecondary && (
-        <button className="mtg-rail-secondary" onClick={onSecondary} aria-label="More options">
-          <Sliders size={14} />
+  rowId, time, title, meta, imminent, live, hasRecap, cursor, primaryAction, onPrimary, onSecondary, onHover,
+}) => {
+  const handleRowClick = (e: React.MouseEvent<HTMLDivElement>) => {
+    // Allow clicks on interactive children (the secondary button) to bubble up
+    // without firing the row's primary action — the button's own handler stops propagation.
+    if ((e.target as HTMLElement).closest('button, a, input, [role="menuitem"]')) return;
+    onPrimary();
+  };
+
+  const handleRowKeyDown = (e: React.KeyboardEvent<HTMLDivElement>) => {
+    if (e.key === 'Enter' || e.key === ' ') {
+      if ((e.target as HTMLElement) !== e.currentTarget) return;
+      e.preventDefault();
+      onPrimary();
+    }
+  };
+
+  return (
+    <div
+      className={`mtg-rail-row ${live ? 'is-live' : ''} ${imminent ? 'is-imminent' : ''} ${cursor ? 'is-cursor' : ''}`}
+      data-row-id={rowId}
+      role="button"
+      tabIndex={0}
+      onClick={handleRowClick}
+      onKeyDown={handleRowKeyDown}
+      onMouseEnter={onHover ? () => onHover(rowId) : undefined}
+      aria-label={`${primaryAction}: ${title}`}
+    >
+      <div className="mtg-rail-time">
+        {live && <span className="mtg-rail-live-dot" aria-label="Live" />}
+        {hasRecap && !live && <span className="mtg-rail-recap-dot" aria-label="Recap ready" />}
+        <span>{time}</span>
+      </div>
+      <div className="mtg-rail-body">
+        <div className="mtg-rail-title">{title}</div>
+        {meta && <div className="mtg-rail-meta">{meta}</div>}
+      </div>
+      <div className="mtg-rail-actions">
+        {onSecondary && (
+          <button
+            className="mtg-rail-secondary"
+            onClick={(e) => { e.stopPropagation(); onSecondary(); }}
+            aria-label="More options"
+          >
+            <Sliders size={14} />
+          </button>
+        )}
+        <button
+          className={`mtg-rail-primary ${live || imminent ? 'is-coral' : ''}`}
+          onClick={(e) => { e.stopPropagation(); onPrimary(); }}
+        >
+          {primaryAction}
         </button>
-      )}
-      <button className={`mtg-rail-primary ${live || imminent ? 'is-coral' : ''}`} onClick={onPrimary}>
-        {primaryAction}
-      </button>
+      </div>
     </div>
-  </div>
-);
+  );
+};
 
 // ============================================
 // TIME-RAIL BUCKET
@@ -146,10 +182,14 @@ export interface TimeRailProps {
   onOpenMeeting: (meeting: CalendarEvent) => void;
   onOpenRecap: (note: ArchiveItem) => void;
   onMeetingMenu?: (meeting: CalendarEvent) => void;
+  /** Id of the row currently under the keyboard cursor (for visual highlight). */
+  cursorRowId?: string | null;
+  /** Notify parent of mouse hover so cursor follows the mouse without fighting it. */
+  onRowHover?: (id: string) => void;
 }
 
 export const TimeRail: React.FC<TimeRailProps> = ({
-  meetings, recentNotes, onJoinMeeting, onOpenMeeting, onOpenRecap, onMeetingMenu,
+  meetings, recentNotes, onJoinMeeting, onOpenMeeting, onOpenRecap, onMeetingMenu, cursorRowId, onRowHover,
 }) => {
   const buckets = useMemo(() => bucketMeetings(meetings), [meetings]);
   const recent = useMemo(() => recentNotes.slice(0, 8), [recentNotes]);
@@ -160,7 +200,24 @@ export const TimeRail: React.FC<TimeRailProps> = ({
   if (isEmpty) {
     return (
       <div className="mtg-rail">
-        <div className="mtg-rail-empty">Nothing on the calendar. Pulse is quiet.</div>
+        <div className="mtg-rail-empty-stack" role="region" aria-label="Get started">
+          <div className="mtg-rail-empty-headline">No meetings on deck.</div>
+          <div className="mtg-rail-empty-row">
+            <span className="mtg-rail-empty-key">START</span>
+            <span className="mtg-rail-empty-copy">Try <kbd>N</kbd> for an instant Pulse room.</span>
+          </div>
+          <div className="mtg-rail-empty-row">
+            <span className="mtg-rail-empty-key">JOIN</span>
+            <span className="mtg-rail-empty-copy">Paste a Zoom, Meet, Teams or Pulse link above. <kbd>J</kbd> focuses the input.</span>
+          </div>
+          <div className="mtg-rail-empty-row">
+            <span className="mtg-rail-empty-key">SCHEDULE</span>
+            <span className="mtg-rail-empty-copy">Connect Google Calendar to see your day. <kbd>S</kbd> opens scheduling.</span>
+          </div>
+          <div className="mtg-rail-empty-footnote">
+            Press <kbd>?</kbd> for the full keyboard map.
+          </div>
+        </div>
       </div>
     );
   }
@@ -175,14 +232,17 @@ export const TimeRail: React.FC<TimeRailProps> = ({
     return (
       <TimeRailRow
         key={m.id}
+        rowId={m.id}
         time={time}
         title={m.title}
         meta={meta}
         live={opts.live}
         imminent={imminent}
+        cursor={cursorRowId === m.id}
         primaryAction={action}
         onPrimary={() => (opts.future ? onOpenMeeting(m) : onJoinMeeting(m))}
         onSecondary={onMeetingMenu ? () => onMeetingMenu(m) : undefined}
+        onHover={onRowHover}
       />
     );
   };
@@ -214,12 +274,15 @@ export const TimeRail: React.FC<TimeRailProps> = ({
           {recent.map(note => (
             <TimeRailRow
               key={note.id}
+              rowId={note.id}
               time={formatRelative(note.date)}
               title={note.title}
               meta={note.tags.slice(0, 2).map(t => `#${t}`).join(' · ') || undefined}
               hasRecap
+              cursor={cursorRowId === note.id}
               primaryAction="Recap"
               onPrimary={() => onOpenRecap(note)}
+              onHover={onRowHover}
             />
           ))}
         </Bucket>
@@ -240,6 +303,9 @@ export interface MeetingsHeaderStripProps {
   onOpenSettings: () => void;
 }
 
+const isMac = typeof navigator !== 'undefined' && /Mac|iPod|iPhone|iPad/.test(navigator.platform);
+const modKey = isMac ? '⌘' : 'Ctrl';
+
 export const MeetingsHeaderStrip: React.FC<MeetingsHeaderStripProps> = ({
   meetingCount, pendingActionCount, onOpenTools, onOpenActions, onOpenSettings,
 }) => (
@@ -248,9 +314,16 @@ export const MeetingsHeaderStrip: React.FC<MeetingsHeaderStripProps> = ({
       MEETINGS · <span className="mtg-header-count">{meetingCount}</span>
     </div>
     <div className="mtg-header-actions">
-      <button className="mtg-header-icon-btn" onClick={onOpenTools} title="Tools" aria-label="Tools">
+      <button
+        className="mtg-header-icon-btn"
+        onClick={onOpenTools}
+        title={`Tools (${modKey}+K)`}
+        aria-label="Tools"
+        aria-keyshortcuts={isMac ? 'Meta+K' : 'Control+K'}
+      >
         <Sliders size={16} />
         <span>TOOLS</span>
+        <kbd className="mtg-header-kbd">{modKey}K</kbd>
       </button>
       <button className="mtg-header-icon-btn" onClick={onOpenActions} title="Action items" aria-label="Action items">
         <CheckCircle2 size={16} />
@@ -301,6 +374,7 @@ export const MeetingsActionRow: React.FC<MeetingsActionRowProps> = ({
       <form className="mtg-action-join" onSubmit={onJoinSubmit}>
         <div className="mtg-action-join-wrap">
           <input
+            id="mtg-join-input"
             type="text"
             className={`mtg-action-join-input ${error ? 'has-error' : ''}`}
             placeholder="Paste meeting link or enter code…"
@@ -393,45 +467,121 @@ export const MeetingsToolsMenu: React.FC<MeetingsToolsMenuProps> = ({
 // COMPACT SIDEBAR — Insight + Quick Actions (no Upcoming; rail handles it)
 // ============================================
 
-export interface MeetingsInsightLineProps {
+// ============================================
+// RAIL KICKER — horizontal mono summary above the rail
+// Replaces the prior right-sidebar insight + quick stack (Phase 10.6 distill)
+// ============================================
+
+export interface MeetingsRailKickerProps {
+  totalMeetings: number;
   avgDurationMinutes: number;
   weeklyTrendDelta?: number;
 }
 
-export const MeetingsInsightLine: React.FC<MeetingsInsightLineProps> = ({ avgDurationMinutes, weeklyTrendDelta }) => {
-  const direction = weeklyTrendDelta === undefined ? null : weeklyTrendDelta < 0 ? 'down' : weeklyTrendDelta > 0 ? 'up' : 'flat';
-  const arrow = direction === 'down' ? '↓' : direction === 'up' ? '↑' : '→';
+export const MeetingsRailKicker: React.FC<MeetingsRailKickerProps> = ({
+  totalMeetings, avgDurationMinutes, weeklyTrendDelta,
+}) => {
+  if (totalMeetings === 0) return null;
+  const arrow = weeklyTrendDelta === undefined ? null : weeklyTrendDelta < 0 ? '↓' : weeklyTrendDelta > 0 ? '↑' : '→';
   return (
-    <div className="mtg-insight-line">
-      <span className="mtg-insight-label">AVG MEETING</span>
-      <span className="mtg-insight-value">{avgDurationMinutes} min</span>
-      {weeklyTrendDelta !== undefined && (
-        <span className="mtg-insight-trend">
-          {arrow} {Math.abs(weeklyTrendDelta)} min vs last week
-        </span>
+    <div className="mtg-rail-kicker">
+      <span className="mtg-rail-kicker-segment">
+        <span className="mtg-rail-kicker-value">{totalMeetings}</span>
+        <span className="mtg-rail-kicker-unit">{totalMeetings === 1 ? 'meeting' : 'meetings'}</span>
+      </span>
+      <span className="mtg-rail-kicker-sep" aria-hidden="true">·</span>
+      <span className="mtg-rail-kicker-segment">
+        <span className="mtg-rail-kicker-label">AVG</span>
+        <span className="mtg-rail-kicker-value">{avgDurationMinutes}</span>
+        <span className="mtg-rail-kicker-unit">min</span>
+      </span>
+      {arrow && weeklyTrendDelta !== undefined && (
+        <>
+          <span className="mtg-rail-kicker-sep" aria-hidden="true">·</span>
+          <span className="mtg-rail-kicker-segment mtg-rail-kicker-trend">
+            {arrow} {Math.abs(weeklyTrendDelta)} min vs last
+          </span>
+        </>
       )}
     </div>
   );
 };
 
-export interface MeetingsQuickActionsProps {
-  onAction: (action: string) => void;
+// ============================================
+// SHORTCUTS OVERLAY — `?` to toggle
+// ============================================
+
+export interface MeetingsShortcutsOverlayProps {
+  open: boolean;
+  onClose: () => void;
 }
 
-export const MeetingsQuickActions: React.FC<MeetingsQuickActionsProps> = ({ onAction }) => (
-  <div className="mtg-quick-list">
-    <div className="mtg-quick-label">QUICK</div>
-    <button className="mtg-quick-row" onClick={() => onAction('test-audio')}>
-      <Mic size={14} /> <span>Test microphone</span>
-    </button>
-    <button className="mtg-quick-row" onClick={() => onAction('test-video')}>
-      <Video size={14} /> <span>Test camera</span>
-    </button>
-    <button className="mtg-quick-row" onClick={() => onAction('share-screen')}>
-      <Monitor size={14} /> <span>Share screen</span>
-    </button>
-    <button className="mtg-quick-row" onClick={() => onAction('settings')}>
-      <Settings size={14} /> <span>Meeting settings</span>
-    </button>
-  </div>
-);
+export const MeetingsShortcutsOverlay: React.FC<MeetingsShortcutsOverlayProps> = ({ open, onClose }) => {
+  useEffect(() => {
+    if (!open) return;
+    const onKey = (e: KeyboardEvent) => {
+      if (e.key === 'Escape') {
+        e.preventDefault();
+        onClose();
+      }
+    };
+    window.addEventListener('keydown', onKey);
+    return () => window.removeEventListener('keydown', onKey);
+  }, [open, onClose]);
+
+  if (!open) return null;
+
+  const groups: Array<{ label: string; rows: Array<[string, string]> }> = [
+    {
+      label: 'NAVIGATE',
+      rows: [
+        [`${modKey} K`, 'Open tools'],
+        ['↑ ↓', 'Move cursor on rail'],
+        ['Enter', 'Join cursor row'],
+        ['M', 'Row menu'],
+      ],
+    },
+    {
+      label: 'ACTIONS',
+      rows: [
+        ['N', 'Start Pulse meeting'],
+        ['J', 'Focus join input'],
+        ['S', 'Schedule meeting'],
+      ],
+    },
+    {
+      label: 'HELP',
+      rows: [
+        ['?', 'Toggle this overlay'],
+        ['Esc', 'Close overlay'],
+      ],
+    },
+  ];
+
+  return (
+    <>
+      <div className="mtg-shortcuts-backdrop" onClick={onClose} />
+      <div className="mtg-shortcuts-card" role="dialog" aria-label="Keyboard shortcuts">
+        <div className="mtg-shortcuts-header">
+          <span className="mtg-shortcuts-title">KEYBOARD SHORTCUTS</span>
+          <button className="mtg-shortcuts-close" onClick={onClose} aria-label="Close">
+            <X size={14} />
+          </button>
+        </div>
+        <div className="mtg-shortcuts-body">
+          {groups.map(g => (
+            <section key={g.label} className="mtg-shortcuts-group">
+              <header className="mtg-shortcuts-group-label">{g.label}</header>
+              {g.rows.map(([keys, desc]) => (
+                <div key={keys} className="mtg-shortcuts-row">
+                  <kbd className="mtg-shortcuts-keys">{keys}</kbd>
+                  <span className="mtg-shortcuts-desc">{desc}</span>
+                </div>
+              ))}
+            </section>
+          ))}
+        </div>
+      </div>
+    </>
+  );
+};

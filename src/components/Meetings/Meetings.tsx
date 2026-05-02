@@ -38,9 +38,11 @@ import {
   MeetingsHeaderStrip,
   MeetingsActionRow,
   MeetingsToolsMenu,
-  MeetingsInsightLine,
-  MeetingsQuickActions,
+  MeetingsRailKicker,
+  MeetingsShortcutsOverlay,
+  bucketMeetings,
 } from './TimeRail';
+import { useMeetingsKeyboardShortcuts } from '../../hooks/useMeetingsKeyboardShortcuts';
 
 interface MeetingsProps {
   apiKey: string;
@@ -138,6 +140,9 @@ const Meetings: React.FC<MeetingsProps> = ({ apiKey, contacts, initialContactId,
   // Tracks whether the current room error is auth-flavored, so we can offer
   // a Sign Out escape hatch (the only reliable cure for a corrupted session).
   const [roomErrorIsAuth, setRoomErrorIsAuth] = useState(false);
+
+  // Keyboard shortcuts overlay (`?` to toggle).
+  const [showShortcuts, setShowShortcuts] = useState(false);
 
   // ============================================
   // INITIALIZATION
@@ -415,21 +420,6 @@ const Meetings: React.FC<MeetingsProps> = ({ apiKey, contacts, initialContactId,
     ));
   };
 
-  const handleQuickAction = (action: string) => {
-    switch (action) {
-      case 'share-screen':
-        startMeeting('pulse');
-        break;
-      case 'test-audio':
-      case 'test-video':
-        setShowDeviceTest(true);
-        break;
-      case 'settings':
-        setShowMeetingSettings(true);
-        break;
-    }
-  };
-
   // ============================================
   // SCHEDULE LOGIC
   // ============================================
@@ -478,6 +468,62 @@ const Meetings: React.FC<MeetingsProps> = ({ apiKey, contacts, initialContactId,
   // ============================================
 
   const meetingSettings = useMemo(() => getMeetingSettings(), [activeRoom]);
+
+  // ============================================
+  // KEYBOARD ROW LIST — flat dashboard cursor target order
+  // ============================================
+  // Mirrors TimeRail's render order: now → next → today → thisWeek → recent.
+  // The hook moves cursor across this single list; ids match `data-row-id` in TimeRail.
+  const railRows = useMemo(() => {
+    const buckets = bucketMeetings(upcomingMeets);
+    const recent = pastNotes.slice(0, 8);
+    const rows: Array<{ id: string; onPrimary: () => void; onSecondary?: () => void }> = [];
+    const pushMeet = (m: CalendarEvent) => {
+      rows.push({ id: m.id, onPrimary: () => createAndJoinPulseRoom(m.title, m.id) });
+    };
+    for (const m of buckets.now) pushMeet(m);
+    for (const m of buckets.next) pushMeet(m);
+    for (const m of buckets.today) pushMeet(m);
+    for (const m of buckets.thisWeek) pushMeet(m);
+    for (const note of recent) {
+      rows.push({
+        id: note.id,
+        onPrimary: () => {
+          setSummaryData({
+            aiSummary: note.content || '',
+            keyPoints: [],
+            actionItems: [],
+            decisions: [],
+            timelineEvents: [],
+            participants: [],
+            duration: 0,
+            meetingTitle: note.title,
+          });
+          setView('summary');
+        },
+      });
+    }
+    return rows;
+  }, [upcomingMeets, pastNotes]);
+
+  const anyModalOpen =
+    showRolodex || showTemplates || showAgendaBuilder || showActionItems ||
+    showAnalytics || showRecordings || showDeviceTest || showMeetingSettings ||
+    showBreakoutRooms || showToolsMenu;
+
+  const { cursorRowId, setCursorRowId } = useMeetingsKeyboardShortcuts({
+    rows: railRows,
+    onStartPulse: () => startMeeting('pulse'),
+    onFocusJoin: () => {
+      const el = document.getElementById('mtg-join-input') as HTMLInputElement | null;
+      el?.focus();
+      el?.select();
+    },
+    onSchedule: () => setView('schedule'),
+    onToggleTools: () => setShowToolsMenu(v => !v),
+    onToggleShortcutsOverlay: () => setShowShortcuts(v => !v),
+    disabled: view !== 'dashboard' || anyModalOpen,
+  });
 
   // ============================================
   // RENDER: DASHBOARD VIEW
@@ -533,6 +579,10 @@ const Meetings: React.FC<MeetingsProps> = ({ apiKey, contacts, initialContactId,
           onClose={() => setShowBreakoutRooms(false)}
           activeParticipants={activeParticipants}
         />
+        <MeetingsShortcutsOverlay
+          open={showShortcuts}
+          onClose={() => setShowShortcuts(false)}
+        />
 
         {/* Header strip */}
         <MeetingsHeaderStrip
@@ -567,12 +617,19 @@ const Meetings: React.FC<MeetingsProps> = ({ apiKey, contacts, initialContactId,
           error={joinError}
         />
 
-        {/* Time-rail dashboard */}
+        {/* Time-rail dashboard — sidebar collapsed; kicker line carries the signal */}
         <div className="mtg-dashboard">
           <main className="mtg-dashboard-main">
+            <MeetingsRailKicker
+              totalMeetings={insights.totalMeetings}
+              avgDurationMinutes={insights.avgDuration}
+              weeklyTrendDelta={trendDelta}
+            />
             <TimeRail
               meetings={upcomingMeets}
               recentNotes={pastNotes}
+              cursorRowId={cursorRowId}
+              onRowHover={setCursorRowId}
               onJoinMeeting={(m) => createAndJoinPulseRoom(m.title, m.id)}
               onOpenMeeting={(m) => createAndJoinPulseRoom(m.title, m.id)}
               onOpenRecap={(note) => {
@@ -590,13 +647,6 @@ const Meetings: React.FC<MeetingsProps> = ({ apiKey, contacts, initialContactId,
               }}
             />
           </main>
-          <aside className="mtg-dashboard-aside">
-            <MeetingsInsightLine
-              avgDurationMinutes={insights.avgDuration}
-              weeklyTrendDelta={trendDelta}
-            />
-            <MeetingsQuickActions onAction={handleQuickAction} />
-          </aside>
         </div>
       </div>
     );
@@ -689,24 +739,17 @@ const Meetings: React.FC<MeetingsProps> = ({ apiKey, contacts, initialContactId,
                 </select>
               </div>
 
-              {/* Agenda Preview (NEW) */}
               {agendaItems.length > 0 && (
                 <div className="meetings-form-group">
                   <label className="meetings-form-label">
                     Agenda ({agendaItems.length} items)
                   </label>
-                  <div style={{
-                    background: 'var(--mtg-bg-primary)',
-                    borderRadius: 12,
-                    padding: 12,
-                    fontSize: 12,
-                    color: 'var(--mtg-text-secondary)',
-                    maxHeight: 120,
-                    overflow: 'auto'
-                  }}>
+                  <div className="meetings-form-agenda-preview">
                     {agendaItems.map((item, i) => (
-                      <div key={item.id} style={{ marginBottom: 6 }}>
-                        {i + 1}. {item.title} ({item.duration} min)
+                      <div key={item.id} className="meetings-form-agenda-item">
+                        <span className="meetings-form-agenda-index">{String(i + 1).padStart(2, '0')}</span>
+                        <span>{item.title}</span>
+                        <span className="meetings-form-agenda-duration">{item.duration} MIN</span>
                       </div>
                     ))}
                   </div>
