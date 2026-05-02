@@ -487,8 +487,8 @@ export const MessagesTopModals = React.memo<MessagesTopModalsProps>((props) => {
         <div className="absolute inset-0 z-50 bg-black/60 backdrop-blur-sm flex items-center justify-center animate-fade-in p-4">
           <div className="bg-white dark:bg-zinc-900 w-full max-w-sm rounded-2xl shadow-2xl animate-scale-in border border-zinc-200 dark:border-zinc-800">
             <div className="p-6 text-center">
-              <div className="w-16 h-16 rounded-full bg-red-100 dark:bg-red-900/30 flex items-center justify-center mx-auto mb-4">
-                <Trash2 className="text-2xl text-red-500" />
+              <div className="w-16 h-16 rounded-full bg-red-500/15 dark:bg-red-500/20 ring-1 ring-red-500/30 flex items-center justify-center mx-auto mb-4">
+                <Trash2 className="text-2xl text-red-600 dark:text-red-400" />
               </div>
               <h3 className="font-bold text-lg dark:text-white mb-2">Delete Conversation?</h3>
               <p className="text-sm text-zinc-600 dark:text-zinc-400 mb-6">
@@ -497,13 +497,13 @@ export const MessagesTopModals = React.memo<MessagesTopModalsProps>((props) => {
               <div className="flex gap-3">
                 <button
                   onClick={() => { props.setShowDeleteConfirm(false); props.setThreadToDelete(null); }}
-                  className="flex-1 px-4 py-2.5 rounded-xl border border-zinc-300 dark:border-zinc-700 text-zinc-700 dark:text-zinc-300 font-medium hover:bg-zinc-100 dark:hover:bg-zinc-800 transition"
+                  className="flex-1 px-4 py-2.5 rounded-xl border border-zinc-300 dark:border-zinc-700 text-zinc-700 dark:text-zinc-300 font-medium hover:bg-zinc-100 dark:hover:bg-white/[0.04] transition-colors focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-rose-500/40"
                 >
                   Cancel
                 </button>
                 <button
                   onClick={props.handleDeleteThread}
-                  className="flex-1 px-4 py-2.5 rounded-xl bg-red-500 text-white font-medium hover:bg-red-600 transition"
+                  className="flex-1 px-4 py-2.5 rounded-xl bg-rose-500 text-white font-medium hover:bg-rose-600 transition-colors focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-rose-500/40"
                 >
                   Delete
                 </button>

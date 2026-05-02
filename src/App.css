@@ -663,3 +663,13 @@ input[type="radio"]:checked {
     animation: ticker-scroll 12s linear infinite;
   }
 }
+
+/* Respect prefers-reduced-motion (WCAG 2.3.3) */
+@media (prefers-reduced-motion: reduce) {
+  .ticker-text {
+    animation: none;
+  }
+  .ticker-container::after {
+    animation: none;
+  }
+}

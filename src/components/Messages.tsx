@@ -2987,9 +2987,9 @@ const Messages: React.FC<MessagesProps> = ({ apiKey, contacts, initialContactId,
 
   const getSourceIcon = (source?: string) => {
       switch(source) {
-          case 'slack': return <Hash className="text-white bg-purple-600 rounded p-0.5 text-[8px]" />;
-          case 'email': return <Mail className="text-white bg-blue-500 rounded p-0.5 text-[8px]" />;
-          case 'sms': return <MessageSquare className="text-white bg-green-500 rounded p-0.5 text-[8px]" />;
+          case 'slack': return <Hash className="text-zinc-500 dark:text-zinc-400 bg-zinc-100 dark:bg-white/[0.04] ring-1 ring-zinc-200 dark:ring-white/[0.06] rounded p-0.5 text-[8px]" />;
+          case 'email': return <Mail className="text-zinc-500 dark:text-zinc-400 bg-zinc-100 dark:bg-white/[0.04] ring-1 ring-zinc-200 dark:ring-white/[0.06] rounded p-0.5 text-[8px]" />;
+          case 'sms': return <MessageSquare className="text-zinc-500 dark:text-zinc-400 bg-zinc-100 dark:bg-white/[0.04] ring-1 ring-zinc-200 dark:ring-white/[0.06] rounded p-0.5 text-[8px]" />;
           default: return null;
       }
   };
@@ -3033,7 +3033,7 @@ const Messages: React.FC<MessagesProps> = ({ apiKey, contacts, initialContactId,
       <Suspense fallback={
         <div className="h-full flex items-center justify-center bg-white dark:bg-zinc-950">
           <div className="text-center">
-            <Loader2 className="text-3xl text-blue-500 mb-4 animate-spin" />
+            <Loader2 className="text-3xl text-rose-500 dark:text-rose-bright mb-4 animate-spin" />
             <p className="text-zinc-500 dark:text-zinc-400">Loading...</p>
           </div>
         </div>
@@ -3405,7 +3405,7 @@ const Messages: React.FC<MessagesProps> = ({ apiKey, contacts, initialContactId,
                     .map(msg => (
                       <div
                         key={msg.id}
-                        className="p-2 rounded-lg bg-white dark:bg-zinc-800 border border-zinc-200 dark:border-zinc-700 cursor-pointer hover:border-blue-400 transition"
+                        className="p-2 rounded-lg bg-white dark:bg-zinc-800 border border-zinc-200 dark:border-zinc-700 cursor-pointer hover:border-rose-500/40 transition-colors"
                       >
                         <div className="flex items-center gap-2 text-[10px] text-zinc-500 dark:text-zinc-400 mb-1">
                           <span className="font-medium">
@@ -3419,7 +3419,7 @@ const Messages: React.FC<MessagesProps> = ({ apiKey, contacts, initialContactId,
                         <div className="text-xs text-zinc-700 dark:text-zinc-300 line-clamp-2">
                           {msg.content.split(new RegExp(`(${searchQuery})`, 'gi')).map((part, i) =>
                             part.toLowerCase() === searchQuery.toLowerCase()
-                              ? <mark key={i} className="bg-yellow-200 dark:bg-yellow-800 px-0.5 rounded">{part}</mark>
+                              ? <mark key={i} className="bg-rose-500/20 dark:bg-rose-500/25 text-rose-700 dark:text-rose-200 px-0.5 rounded">{part}</mark>
                               : part
                           )}
                         </div>
@@ -3665,8 +3665,8 @@ const Messages: React.FC<MessagesProps> = ({ apiKey, contacts, initialContactId,
             )}
             {pulseMessages.length === 0 ? (
               <div className="flex flex-col items-center justify-center h-full text-center">
-                <div className="w-20 h-20 bg-gradient-to-br from-rose-100 to-pink-100 dark:from-rose-900/30 dark:to-pink-900/30 rounded-full flex items-center justify-center mb-4">
-                  <MessagesSquare className="text-3xl text-rose-500" />
+                <div className="w-20 h-20 bg-rose-500/10 dark:bg-rose-500/15 ring-1 ring-rose-500/20 dark:ring-rose-500/30 rounded-full flex items-center justify-center mb-4">
+                  <MessagesSquare className="text-3xl text-rose-500 dark:text-rose-bright" />
                 </div>
                 <h3 className="text-lg font-bold dark:text-white mb-2">Start a Conversation</h3>
                 <p className="text-sm text-zinc-500 max-w-sm">
@@ -3704,7 +3704,7 @@ const Messages: React.FC<MessagesProps> = ({ apiKey, contacts, initialContactId,
                     <div className={`flex ${isMe ? 'justify-end' : 'justify-start'} group relative ${isGrouped ? 'mb-1' : 'mb-4'}`}>
                       {!isMe && showAvatar && (
                         <div
-                          className="w-8 h-8 rounded-full flex items-center justify-center text-xs text-white mr-2 mt-auto flex-shrink-0 bg-gradient-to-br from-rose-500 to-pink-600"
+                          className="w-8 h-8 rounded-full flex items-center justify-center text-xs mr-2 mt-auto flex-shrink-0 bg-rose-500/15 ring-1 ring-rose-500/30 text-rose-700 dark:text-rose-300 font-medium"
                         >
                           {activePulseConv.other_user?.avatar_url ? (
                             <img src={activePulseConv.other_user.avatar_url} alt="" className="w-full h-full rounded-full object-cover" />
@@ -3719,13 +3719,13 @@ const Messages: React.FC<MessagesProps> = ({ apiKey, contacts, initialContactId,
                         {/* Star indicator */}
                         {isStarred && (
                           <div className={`absolute -top-2 ${isMe ? '-left-2' : '-right-2'} z-10`}>
-                            <Star className="text-amber-400 text-xs" />
+                            <Star className="text-rose-500/70 dark:text-rose-bright/70 text-xs" />
                           </div>
                         )}
 
                         {/* Reply indicator */}
                         {isReplyTarget && (
-                          <div className="absolute -top-6 left-0 right-0 flex items-center gap-1 text-[10px] text-emerald-500">
+                          <div className="absolute -top-6 left-0 right-0 flex items-center gap-1 text-[10px] text-rose-600 dark:text-rose-bright">
                             <Reply />
                             <span>Replying to this message</span>
                           </div>
@@ -3942,7 +3942,7 @@ const Messages: React.FC<MessagesProps> = ({ apiKey, contacts, initialContactId,
                                   }}
                                   className="w-full px-4 py-2.5 text-left text-sm text-zinc-700 dark:text-zinc-300 hover:bg-zinc-100 dark:hover:bg-zinc-800 flex items-center gap-3 transition"
                                 >
-                                  <Reply className="text-blue-500 w-4" />
+                                  <Reply className="text-zinc-400 group-hover:text-rose-500 dark:group-hover:text-rose-bright w-4" />
                                   Reply
                                 </button>
                                 <button
@@ -3962,7 +3962,7 @@ const Messages: React.FC<MessagesProps> = ({ apiKey, contacts, initialContactId,
                                   }}
                                   className="w-full px-4 py-2.5 text-left text-sm text-zinc-700 dark:text-zinc-300 hover:bg-zinc-100 dark:hover:bg-zinc-800 flex items-center gap-3 transition"
                                 >
-                                  <i className={`fa-${isStarred ? 'solid' : 'regular'} fa-star ${isStarred ? 'text-amber-400' : 'text-zinc-500'} w-4`}></i>
+                                  <i className={`fa-${isStarred ? 'solid' : 'regular'} fa-star ${isStarred ? 'text-rose-500/70 dark:text-rose-bright/70' : 'text-zinc-500'} w-4`}></i>
                                   {isStarred ? 'Unstar' : 'Star'}
                                 </button>
                                 <button
@@ -3984,7 +3984,7 @@ const Messages: React.FC<MessagesProps> = ({ apiKey, contacts, initialContactId,
                                     }}
                                     className="w-full px-4 py-2.5 text-left text-sm text-zinc-700 dark:text-zinc-300 hover:bg-zinc-100 dark:hover:bg-zinc-800 flex items-center gap-3 transition"
                                   >
-                                    <i className="fa-solid fa-pen text-blue-500 w-4"></i>
+                                    <i className="fa-solid fa-pen text-zinc-400 group-hover:text-rose-500 dark:group-hover:text-rose-bright w-4"></i>
                                     Edit
                                   </button>
                                 )}
@@ -4004,7 +4004,7 @@ const Messages: React.FC<MessagesProps> = ({ apiKey, contacts, initialContactId,
                                   }}
                                   className="w-full px-4 py-2.5 text-left text-sm text-zinc-700 dark:text-zinc-300 hover:bg-zinc-100 dark:hover:bg-zinc-800 flex items-center gap-3 transition"
                                 >
-                                  <ArrowRight className="text-emerald-500 w-4" />
+                                  <ArrowRight className="text-rose-500 dark:text-rose-bright w-4" />
                                   Forward
                                 </button>
                               </div>
@@ -4019,7 +4019,7 @@ const Messages: React.FC<MessagesProps> = ({ apiKey, contacts, initialContactId,
                               <button
                                 key={ridx}
                                 onClick={() => handlePulseReaction(msg.id, r.emoji)}
-                                className={`px-2 py-0.5 rounded-full text-xs flex items-center gap-1 transition ${r.me ? 'bg-emerald-100 dark:bg-emerald-900/30 border border-emerald-300 dark:border-emerald-700' : 'bg-zinc-100 dark:bg-zinc-800 border border-zinc-200 dark:border-zinc-700'}`}
+                                className={`px-2 py-0.5 rounded-full text-xs flex items-center gap-1 transition ${r.me ? 'bg-rose-500/10 dark:bg-rose-500/15 border border-rose-500/30' : 'bg-zinc-100 dark:bg-zinc-800 border border-zinc-200 dark:border-zinc-700'}`}
                               >
                                 <span>{r.emoji}</span>
                                 <span className="text-zinc-500">{r.count}</span>
@@ -4392,11 +4392,11 @@ const Messages: React.FC<MessagesProps> = ({ apiKey, contacts, initialContactId,
                 <Wand2 className="w-3 h-3 text-zinc-400 dark:text-zinc-500 flex-shrink-0" />
                 <span className="text-[10px] font-mono uppercase tracking-[0.1em] font-medium text-zinc-400 dark:text-zinc-500 flex-shrink-0">Pulse AI</span>
                 <div className="flex-1 overflow-hidden relative">
-                  <div className="ticker-container whitespace-nowrap">
-                    <span className="text-xs text-zinc-600 dark:text-zinc-300 inline-block ticker-text">
+                  <div className="ticker-container whitespace-nowrap motion-reduce:overflow-visible">
+                    <span className="text-xs text-zinc-600 dark:text-zinc-300 inline-block ticker-text motion-reduce:animate-none">
                       {nudge.message}
                     </span>
-                    <span className="text-xs text-zinc-600 dark:text-zinc-300 inline-block ticker-text" aria-hidden="true">
+                    <span className="text-xs text-zinc-600 dark:text-zinc-300 inline-block ticker-text motion-reduce:animate-none motion-reduce:hidden" aria-hidden="true">
                       {nudge.message}
                     </span>
                   </div>
@@ -4533,25 +4533,28 @@ const Messages: React.FC<MessagesProps> = ({ apiKey, contacts, initialContactId,
         <div className="flex-1 overflow-y-auto p-4 md:p-6 space-y-6">
           {activeThread.outcome && (
               <div className="flex justify-center mb-4">
-                  <div className="bg-indigo-50 dark:bg-indigo-900/20 text-indigo-700 dark:text-indigo-300 text-xs px-3 py-1 rounded-full border border-indigo-200 dark:border-indigo-800 flex items-center gap-2">
-                      <Flag /> Outcome Goal: <span className="font-bold">{activeThread.outcome.goal}</span>
+                  <div className="bg-zinc-100 dark:bg-white/[0.04] text-rose-600 dark:text-rose-bright text-xs px-3 py-1 rounded-full border border-zinc-200 dark:border-white/[0.06] flex items-center gap-2">
+                      <Flag className="w-3 h-3" />
+                      <span className="font-mono uppercase tracking-[0.1em] text-[10px] font-medium text-zinc-400 dark:text-zinc-500">PULSE AI · OUTCOME GOAL</span>
+                      <span className="text-zinc-300 dark:text-zinc-600">·</span>
+                      <span className="text-rose-600 dark:text-rose-bright">{activeThread.outcome.goal}</span>
                   </div>
               </div>
           )}
 
           {/* Handoff Card */}
           {showHandoffCard && (
-              <div className="mx-auto max-w-lg bg-yellow-50 dark:bg-yellow-900/10 border border-yellow-200 dark:border-yellow-700/50 rounded-xl p-6 shadow-lg mb-6 animate-scale-in relative">
-                  <button onClick={() => setShowHandoffCard(false)} className="absolute top-2 right-2 text-yellow-600 hover:text-yellow-800"><X /></button>
-                  <div className="flex items-center gap-2 mb-4 text-yellow-700 dark:text-yellow-500 font-bold uppercase text-xs tracking-widest">
+              <div className="mx-auto max-w-lg bg-zinc-50 dark:bg-white/[0.03] ring-1 ring-zinc-200 dark:ring-white/[0.06] rounded-xl p-6 mb-6 animate-scale-in relative">
+                  <button onClick={() => setShowHandoffCard(false)} className="absolute top-2 right-2 text-zinc-400 hover:text-rose-500 dark:hover:text-rose-bright transition-colors focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-rose-500/40 rounded"><X /></button>
+                  <div className="flex items-center gap-2 mb-4 text-zinc-500 dark:text-zinc-400 font-mono uppercase tracking-[0.1em] text-[10px] font-medium">
                       <i className={`fa-solid ${loadingHandoff ? 'fa-circle-notch fa-spin' : 'fa-handshake'}`}></i>
-                      {loadingHandoff ? 'Generating Handoff Summary...' : 'Context Handoff'}
+                      {loadingHandoff ? 'PULSE AI · GENERATING HANDOFF…' : 'PULSE AI · CONTEXT HANDOFF'}
                   </div>
 
                   {loadingHandoff ? (
                       <div className="py-8 flex flex-col items-center gap-3">
-                          <div className="w-12 h-12 rounded-full bg-yellow-100 dark:bg-yellow-800/30 flex items-center justify-center">
-                              <Wand2 className="text-yellow-600 dark:text-yellow-400 animate-pulse" />
+                          <div className="w-12 h-12 rounded-full bg-zinc-100 dark:bg-white/[0.04] flex items-center justify-center">
+                              <Wand2 className="text-zinc-500 dark:text-zinc-400 animate-pulse" />
                           </div>
                           <p className="text-sm text-zinc-500 dark:text-zinc-400">Analyzing conversation history...</p>
                       </div>
@@ -4560,7 +4563,7 @@ const Messages: React.FC<MessagesProps> = ({ apiKey, contacts, initialContactId,
                           <p className="text-sm text-zinc-800 dark:text-zinc-200 mb-4">{handoffContent.context}</p>
                           <div className="grid grid-cols-2 gap-4">
                               <div>
-                                  <div className="text-[10px] font-bold text-zinc-500 uppercase mb-2">Key Decisions</div>
+                                  <div className="font-mono uppercase tracking-[0.1em] text-[10px] font-medium text-zinc-500 dark:text-zinc-400 mb-2">Key Decisions</div>
                                   {handoffContent.keyDecisions.length > 0 ? (
                                       <ul className="list-disc list-inside text-xs text-zinc-700 dark:text-zinc-300 space-y-1">
                                           {handoffContent.keyDecisions.map((d: string, i: number) => <li key={i}>{d}</li>)}
@@ -4570,7 +4573,7 @@ const Messages: React.FC<MessagesProps> = ({ apiKey, contacts, initialContactId,
                                   )}
                               </div>
                               <div>
-                                  <div className="text-[10px] font-bold text-zinc-500 uppercase mb-2">Pending Actions</div>
+                                  <div className="font-mono uppercase tracking-[0.1em] text-[10px] font-medium text-zinc-500 dark:text-zinc-400 mb-2">Pending Actions</div>
                                   {handoffContent.pendingActions.length > 0 ? (
                                       <ul className="list-disc list-inside text-xs text-zinc-700 dark:text-zinc-300 space-y-1">
                                           {handoffContent.pendingActions.map((a: string, i: number) => <li key={i}>{a}</li>)}
@@ -4583,16 +4586,16 @@ const Messages: React.FC<MessagesProps> = ({ apiKey, contacts, initialContactId,
                           <div className="flex gap-2 mt-4">
                               <button
                                   onClick={() => handleSend(`Here is a context summary for new team members:\n\n${handoffContent.context}\n\nKey Decisions:\n${handoffContent.keyDecisions.map((d: string) => '• ' + d).join('\n') || 'None yet'}\n\nPending Actions:\n${handoffContent.pendingActions.map((a: string) => '• ' + a).join('\n') || 'None'}`)}
-                                  className="flex-1 bg-yellow-100 hover:bg-yellow-200 dark:bg-yellow-800/30 dark:hover:bg-yellow-800/50 text-yellow-800 dark:text-yellow-200 font-bold py-2 rounded-lg text-xs transition flex items-center justify-center gap-2"
+                                  className="flex-1 bg-transparent border border-zinc-200 dark:border-white/[0.08] text-zinc-600 dark:text-zinc-300 hover:bg-rose-500/10 dark:hover:bg-rose-500/[0.12] hover:text-rose-600 dark:hover:text-rose-bright hover:border-rose-500/30 font-mono uppercase tracking-[0.1em] font-medium py-2 rounded-lg text-[10px] transition-colors flex items-center justify-center gap-2 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-rose-500/40"
                               >
-                                  <Send /> Share to Thread
+                                  <Send className="w-3 h-3" /> Share to Thread
                               </button>
                               <button
                                   onClick={() => {
                                       navigator.clipboard.writeText(`Context Handoff Summary\n\n${handoffContent.context}\n\nKey Decisions:\n${handoffContent.keyDecisions.map((d: string) => '• ' + d).join('\n') || 'None'}\n\nPending Actions:\n${handoffContent.pendingActions.map((a: string) => '• ' + a).join('\n') || 'None'}`);
                                       alert('Copied to clipboard!');
                                   }}
-                                  className="px-4 py-2 bg-zinc-100 hover:bg-zinc-200 dark:bg-zinc-800 dark:hover:bg-zinc-700 text-zinc-600 dark:text-zinc-300 rounded-lg text-xs transition"
+                                  className="px-4 py-2 bg-transparent border border-zinc-200 dark:border-white/[0.08] hover:bg-zinc-100 dark:hover:bg-white/[0.04] text-zinc-500 dark:text-zinc-400 rounded-lg text-xs transition-colors focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-rose-500/40"
                                   title="Copy to clipboard"
                               >
                                   <Copy />
@@ -4739,7 +4742,7 @@ const Messages: React.FC<MessagesProps> = ({ apiKey, contacts, initialContactId,
                                                     const audio = new Audio(msg.attachment?.url);
                                                     audio.play();
                                                 }}
-                                                className="w-10 h-10 rounded-full bg-blue-500 text-white flex items-center justify-center hover:bg-blue-600 transition"
+                                                className="w-10 h-10 rounded-full bg-rose-500 text-white flex items-center justify-center hover:bg-rose-600 transition focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-rose-500/40"
                                             >
                                                 <Play className="text-sm" />
                                             </button>
@@ -4845,14 +4848,14 @@ const Messages: React.FC<MessagesProps> = ({ apiKey, contacts, initialContactId,
                                 <div className="w-px h-5 bg-zinc-200 dark:bg-zinc-700 mx-1"></div>
                                 <button
                                     onClick={() => handleExtractTask(msg)}
-                                    className={`w-7 h-7 flex items-center justify-center text-zinc-400 hover:text-emerald-500 rounded-full transition ${creatingTaskForMsgId === msg.id ? 'animate-spin text-emerald-500' : ''}`}
+                                    className={`w-7 h-7 flex items-center justify-center text-zinc-400 hover:text-rose-500 dark:hover:text-rose-bright rounded-full transition ${creatingTaskForMsgId === msg.id ? 'animate-spin text-rose-500 dark:text-rose-bright' : ''}`}
                                     title="Create Task"
                                 >
                                     <Check className="text-xs" />
                                 </button>
                                 <button
                                     onClick={() => setReplyingTo(msg)}
-                                    className="w-7 h-7 flex items-center justify-center text-zinc-400 hover:text-blue-500 rounded-full transition"
+                                    className="w-7 h-7 flex items-center justify-center text-zinc-400 hover:text-rose-500 dark:hover:text-rose-bright rounded-full transition"
                                     title="Reply"
                                 >
                                     <Reply className="text-xs" />
@@ -4875,7 +4878,7 @@ const Messages: React.FC<MessagesProps> = ({ apiKey, contacts, initialContactId,
                                 )}
                                 <button
                                     onClick={() => handleTTS(msg.text, msg.id)}
-                                    className={`w-7 h-7 flex items-center justify-center rounded-full transition ${isPlayingId === msg.id ? 'text-blue-500 animate-pulse' : 'text-zinc-400 hover:text-blue-500'}`}
+                                    className={`w-7 h-7 flex items-center justify-center rounded-full transition ${isPlayingId === msg.id ? 'text-rose-500 dark:text-rose-bright animate-pulse' : 'text-zinc-400 hover:text-rose-500 dark:hover:text-rose-bright'}`}
                                     title="Read Aloud"
                                 >
                                     <i className={`fa-solid ${isPlayingId === msg.id ? 'fa-volume-high' : 'fa-volume-up'} text-xs`}></i>
