@@ -502,45 +502,10 @@ export const QuickActions: React.FC<QuickActionsProps> = ({ onAction }) => (
   </div>
 );
 
-// ============================================
-// MEETING INSIGHTS (NEW FEATURE)
-// ============================================
-
-interface MeetingInsightsCardProps {
-  insights: MeetingInsights;
-}
-
-export const MeetingInsightsCard: React.FC<MeetingInsightsCardProps> = ({
-  insights,
-}) => (
-  <div className="meetings-insights-card">
-    <div className="meetings-section-header">
-      <div className="meetings-section-title">
-        <TrendingUp />
-        This Week
-      </div>
-    </div>
-    <div className="meetings-insights-stats">
-      <div className="meetings-insight-stat">
-        <div className="meetings-insight-value">{insights.totalMeetings}</div>
-        <div className="meetings-insight-label">Meetings</div>
-      </div>
-      <div className="meetings-insight-stat">
-        <div className="meetings-insight-value">{insights.totalHours}h</div>
-        <div className="meetings-insight-label">Total Time</div>
-      </div>
-    </div>
-    <div className="meetings-insights-chart">
-      {insights.weeklyTrend.map((value, i) => (
-        <div
-          key={i}
-          className="meetings-insights-bar"
-          style={{ height: `${value}%` }}
-        />
-      ))}
-    </div>
-  </div>
-);
+// MeetingInsightsCard removed in the Coral Cockpit migration. The dashboard
+// now exposes a single mono-typeset signal line via `MeetingsInsightLine` in
+// TimeRail.tsx — the hero-metric template (big number + small label + bar
+// chart) is forbidden by DESIGN.md.
 
 // ============================================
 // BULK INVITE MODAL

@@ -873,66 +873,9 @@
   background: rgba(244, 63, 94, 0.05);
 }
 
-/* ============================================
-   MEETING INSIGHTS CARD (NEW FEATURE)
-   ============================================ */
-.meetings-insights-card {
-  background: var(--mtg-gradient-card);
-  backdrop-filter: blur(10px);
-  border: 1px solid var(--mtg-border);
-  border-radius: 16px;
-  padding: 20px;
-}
-
-.meetings-insights-stats {
-  display: grid;
-  grid-template-columns: repeat(2, 1fr);
-  gap: 12px;
-  margin-bottom: 16px;
-}
-
-.meetings-insight-stat {
-  padding: 14px;
-  background: var(--mtg-bg-tertiary);
-  border-radius: 10px;
-  text-align: center;
-}
-
-.meetings-insight-value {
-  font-size: 24px;
-  font-weight: 700;
-  color: var(--mtg-text-primary);
-  margin-bottom: 4px;
-}
-
-.meetings-insight-label {
-  font-size: 10px;
-  color: var(--mtg-text-muted);
-  text-transform: uppercase;
-  letter-spacing: 0.5px;
-}
-
-.meetings-insights-chart {
-  height: 60px;
-  background: var(--mtg-bg-tertiary);
-  border-radius: 8px;
-  display: flex;
-  align-items: flex-end;
-  gap: 4px;
-  padding: 8px;
-}
-
-.meetings-insights-bar {
-  flex: 1;
-  background: var(--mtg-accent-primary);
-  border-radius: 4px 4px 0 0;
-  opacity: 0.7;
-  transition: opacity 0.2s;
-}
-
-.meetings-insights-bar:hover {
-  opacity: 1;
-}
+/* MEETING INSIGHTS CARD removed in the Coral Cockpit migration.
+   Replaced by .mtg-insight-line — a single mono-typeset signal in the
+   right-rail of the time-rail dashboard. */
 
 /* ============================================
    ACTIVE MEETING VIEW
@@ -3531,8 +3474,7 @@
 
 /* Sidebar Cards - Light Mode */
 :root:not(.dark) .meetings-upcoming-card,
-:root:not(.dark) .meetings-quick-actions,
-:root:not(.dark) .meetings-insights-card {
+:root:not(.dark) .meetings-quick-actions {
   background: var(--mtg-bg-secondary);
   border-color: var(--mtg-border-strong);
   box-shadow: var(--mtg-shadow-sm);
@@ -3540,7 +3482,7 @@
 
 :root:not(.dark) .meetings-upcoming-item {
   background: var(--mtg-bg-tertiary);
-  border-left-color: var(--mtg-accent-primary);
+  border-color: var(--mtg-border-strong);
 }
 
 :root:not(.dark) .meetings-upcoming-item:hover {
