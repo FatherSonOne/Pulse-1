@@ -429,7 +429,7 @@ export const UpcomingMeetings: React.FC<UpcomingMeetingsProps> = ({
                     <div
                       key={i}
                       className="meetings-upcoming-avatar"
-                      style={{ backgroundColor: ['#7c3aed', '#10b981', '#f59e0b'][i % 3] }}
+                      style={{ backgroundColor: ['#f43f5e', '#fb7185', '#ec4899'][i % 3] }}
                     >
                       {initials || '?'}
                     </div>
@@ -589,7 +589,7 @@ export const BulkInviteModal: React.FC<BulkInviteModalProps> = ({
               >
                 <div
                   className="meetings-contact-avatar"
-                  style={{ backgroundColor: contact.avatarColor || '#7c3aed' }}
+                  style={{ backgroundColor: contact.avatarColor || '#f43f5e' }}
                 >
                   {selectedContacts.has(contact.id)
                     ? <Check />
@@ -658,7 +658,7 @@ export const TemplatesModal: React.FC<TemplatesModalProps> = ({
               >
                 <div
                   className="meetings-contact-avatar"
-                  style={{ backgroundColor: '#7c3aed' }}
+                  style={{ backgroundColor: '#f43f5e' }}
                 >
                   <i className={`fa-solid ${template.icon}`} style={{ fontSize: 16 }} />
                 </div>
@@ -778,7 +778,7 @@ export const AgendaBuilderModal: React.FC<AgendaBuilderModalProps> = ({
                 <span style={{
                   fontSize: 11,
                   color: 'var(--mtg-accent-primary)',
-                  background: 'rgba(0, 212, 255, 0.1)',
+                  background: 'rgba(244, 63, 94, 0.10)',
                   padding: '4px 8px',
                   borderRadius: 6
                 }}>
@@ -944,7 +944,7 @@ export const ActionItemsModal: React.FC<ActionItemsModalProps> = ({
                       width: 28,
                       height: 28,
                       borderRadius: '50%',
-                      background: item.assignee.avatarColor || '#7c3aed',
+                      background: item.assignee.avatarColor || '#f43f5e',
                       display: 'flex',
                       alignItems: 'center',
                       justifyContent: 'center',
@@ -1008,7 +1008,8 @@ export interface BreakoutRoom {
   color: string;
 }
 
-const BREAKOUT_COLORS = ['#00d4ff', '#7c3aed', '#10b981', '#f59e0b', '#ef4444', '#ec4899'];
+// Breakout room differentiation — coral family + warm complements (not the 11-color status vocabulary).
+const BREAKOUT_COLORS = ['#f43f5e', '#fb7185', '#ec4899', '#f97316', '#eab308', '#a855f7'];
 
 // ============================================
 // MEETING SUMMARY TYPES
@@ -1974,7 +1975,7 @@ export const MeetingSettingsModal: React.FC<MeetingSettingsModalProps> = ({ isOp
                         Breakout Rooms
                         <span style={{
                           marginLeft: 8, fontSize: 10, padding: '2px 7px',
-                          background: 'rgba(0, 212, 255, 0.1)', borderRadius: 10,
+                          background: 'rgba(244, 63, 94, 0.10)', borderRadius: 10,
                           color: 'var(--mtg-accent-primary)', fontWeight: 600,
                         }}>Coming Soon</span>
                       </div>
@@ -2229,7 +2230,7 @@ export const BreakoutRoomsModal: React.FC<BreakoutRoomsModalProps> = ({
                 >
                   <div style={{
                     width: 24, height: 24, borderRadius: '50%',
-                    background: p.avatarColor || '#7c3aed',
+                    background: p.avatarColor || '#f43f5e',
                     display: 'flex', alignItems: 'center', justifyContent: 'center',
                     fontSize: 10, fontWeight: 700, color: 'white', flexShrink: 0,
                   }}>
@@ -2493,7 +2494,7 @@ export const MeetingSummaryView: React.FC<MeetingSummaryViewProps> = ({ data, lo
               <div
                 key={p.id}
                 className="meetings-summary-participant-avatar"
-                style={{ background: p.avatarColor || '#7c3aed', zIndex: 5 - i }}
+                style={{ background: p.avatarColor || '#f43f5e', zIndex: 5 - i }}
                 title={p.name}
               >
                 {p.name.charAt(0)}

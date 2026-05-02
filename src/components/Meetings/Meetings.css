@@ -1,98 +1,97 @@
 /* ============================================
-   PULSE MEETINGS - COMMAND CENTER AESTHETIC
-   A Mission Control inspired interface with
-   tactical precision and cinematic depth
+   PULSE MEETINGS — CORAL COCKPIT
+   Time-rail dashboard for the solo operator.
+   Coral = signal. Mono = instrument.
    ============================================ */
 
 /* ============================================
-   CSS VARIABLES
+   CSS VARIABLES — DARK (default)
+   True-black canvas + translucent surface stack.
    ============================================ */
 :root {
-  /* Core Palette - Tactical Dark */
-  --mtg-bg-primary: #0a0a0f;
-  --mtg-bg-secondary: #12121a;
-  --mtg-bg-tertiary: #1a1a24;
-  --mtg-bg-elevated: #222230;
-  --mtg-bg-glass: rgba(20, 20, 30, 0.85);
+  /* Surfaces — translucent on true-black canvas */
+  --mtg-bg-primary: #000000;
+  --mtg-bg-secondary: rgba(255, 255, 255, 0.03);
+  --mtg-bg-tertiary: rgba(255, 255, 255, 0.055);
+  --mtg-bg-elevated: rgba(255, 255, 255, 0.08);
+  --mtg-bg-glass: rgba(0, 0, 0, 0.85);
 
-  /* Accent Colors - Signal System */
-  --mtg-accent-primary: #00d4ff;
-  --mtg-accent-secondary: #7c3aed;
-  --mtg-accent-success: #10b981;
-  --mtg-accent-warning: #f59e0b;
+  /* Accents — Coral signal vocabulary */
+  --mtg-accent-primary: #f43f5e;
+  --mtg-accent-secondary: #fb7185;
+  --mtg-accent-success: #22c55e;
+  --mtg-accent-warning: #f97316;
   --mtg-accent-danger: #ef4444;
-  --mtg-accent-live: #ff2d55;
+  --mtg-accent-live: #f43f5e;
 
-  /* Glow Effects */
-  --mtg-glow-primary: 0 0 40px rgba(0, 212, 255, 0.3);
-  --mtg-glow-success: 0 0 30px rgba(16, 185, 129, 0.4);
-  --mtg-glow-danger: 0 0 30px rgba(239, 68, 68, 0.4);
-  --mtg-glow-live: 0 0 20px rgba(255, 45, 85, 0.5);
+  /* Focus halos — hairline, not glow */
+  --mtg-glow-primary: 0 0 0 3px rgba(244, 63, 94, 0.20);
+  --mtg-glow-success: 0 0 0 3px rgba(34, 197, 94, 0.20);
+  --mtg-glow-danger: 0 0 0 3px rgba(239, 68, 68, 0.20);
+  --mtg-glow-live: 0 0 0 1px #f43f5e;
 
-  /* Text */
-  --mtg-text-primary: #ffffff;
-  --mtg-text-secondary: #94a3b8;
-  --mtg-text-muted: #64748b;
+  /* Text — tinted neutral, not pure white */
+  --mtg-text-primary: #fafafa;
+  --mtg-text-secondary: #b4b4b8;
+  --mtg-text-muted: #6b7280;
 
-  /* Borders */
-  --mtg-border: rgba(255, 255, 255, 0.08);
-  --mtg-border-active: rgba(0, 212, 255, 0.5);
+  /* Borders — hairline */
+  --mtg-border: rgba(255, 255, 255, 0.06);
+  --mtg-border-active: rgba(244, 63, 94, 0.50);
 
-  /* Gradients */
-  --mtg-gradient-hero: linear-gradient(135deg, #0a0a0f 0%, #1a1a2e 50%, #0f0f1a 100%);
-  --mtg-gradient-card: linear-gradient(180deg, rgba(30, 30, 45, 0.6) 0%, rgba(20, 20, 30, 0.8) 100%);
-  --mtg-gradient-accent: linear-gradient(135deg, #00d4ff 0%, #7c3aed 100%);
+  /* Gradients — neutral surface, coral only as signature CTA */
+  --mtg-gradient-hero: linear-gradient(180deg, #000000 0%, rgba(255,255,255,0.02) 100%);
+  --mtg-gradient-card: linear-gradient(180deg, rgba(255,255,255,0.04) 0%, rgba(255,255,255,0.02) 100%);
+  --mtg-gradient-accent: linear-gradient(135deg, #f43f5e 0%, #ec4899 100%);
 }
 
 /* ============================================
-   LIGHT MODE - REFINED & OPTIMIZED
-   Clean, professional aesthetic with proper
-   contrast, shadows, and visual hierarchy
+   LIGHT MODE — Paper-warm canvas, ink-true text
    ============================================ */
 :root:not(.dark) {
-  /* Core Palette - Clean & Airy */
-  --mtg-bg-primary: #f8fafc;
+  /* Surfaces — tinted neutrals, never pure white */
+  --mtg-bg-primary: #f8f8f8;
   --mtg-bg-secondary: #ffffff;
-  --mtg-bg-tertiary: #f1f5f9;
+  --mtg-bg-tertiary: #f2f2f2;
   --mtg-bg-elevated: #ffffff;
   --mtg-bg-glass: rgba(255, 255, 255, 0.92);
-  --mtg-bg-hover: #f0f4f8;
+  --mtg-bg-hover: #f2f2f2;
 
-  /* Accent Colors - Adjusted for Light Mode */
-  --mtg-accent-primary: #0891b2;
-  --mtg-accent-secondary: #7c3aed;
-  --mtg-accent-success: #059669;
-  --mtg-accent-warning: #d97706;
+  /* Accents — Coral signal vocabulary */
+  --mtg-accent-primary: #f43f5e;
+  --mtg-accent-secondary: #e11d48;
+  --mtg-accent-success: #16a34a;
+  --mtg-accent-warning: #ea580c;
   --mtg-accent-danger: #dc2626;
   --mtg-accent-live: #e11d48;
 
-  /* Glow Effects - Softer for Light Mode */
-  --mtg-glow-primary: 0 4px 20px rgba(8, 145, 178, 0.15);
-  --mtg-glow-success: 0 4px 16px rgba(5, 150, 105, 0.2);
-  --mtg-glow-danger: 0 4px 16px rgba(220, 38, 38, 0.2);
-  --mtg-glow-live: 0 4px 12px rgba(225, 29, 72, 0.25);
+  /* Focus halos — hairline, not glow */
+  --mtg-glow-primary: 0 0 0 3px rgba(244, 63, 94, 0.10);
+  --mtg-glow-success: 0 0 0 3px rgba(22, 163, 74, 0.10);
+  --mtg-glow-danger: 0 0 0 3px rgba(220, 38, 38, 0.10);
+  --mtg-glow-live: 0 0 0 1px #e11d48;
 
-  /* Text - High Contrast */
-  --mtg-text-primary: #0f172a;
-  --mtg-text-secondary: #475569;
-  --mtg-text-muted: #64748b;
+  /* Text — ink-true on paper-warm */
+  --mtg-text-primary: #0f0f0f;
+  --mtg-text-secondary: #52525b;
+  --mtg-text-muted: #6b7280;
 
-  /* Borders - Subtle but Defined */
-  --mtg-border: rgba(15, 23, 42, 0.08);
-  --mtg-border-active: rgba(8, 145, 178, 0.4);
-  --mtg-border-strong: rgba(15, 23, 42, 0.12);
+  /* Borders — hairline */
+  --mtg-border: rgba(0, 0, 0, 0.08);
+  --mtg-border-active: rgba(244, 63, 94, 0.40);
+  --mtg-border-strong: rgba(0, 0, 0, 0.12);
 
-  /* Shadows - Depth for Light Backgrounds */
+  /* Shadows — ambient hairline only */
   --mtg-shadow-sm: 0 1px 2px rgba(15, 23, 42, 0.04);
-  --mtg-shadow-md: 0 4px 12px rgba(15, 23, 42, 0.06), 0 1px 3px rgba(15, 23, 42, 0.04);
-  --mtg-shadow-lg: 0 8px 24px rgba(15, 23, 42, 0.08), 0 2px 8px rgba(15, 23, 42, 0.04);
-  --mtg-shadow-xl: 0 16px 48px rgba(15, 23, 42, 0.1), 0 4px 16px rgba(15, 23, 42, 0.06);
+  --mtg-shadow-md: 0 1px 3px rgba(15, 23, 42, 0.06), 0 1px 2px rgba(15, 23, 42, 0.04);
+  --mtg-shadow-lg: 0 4px 12px rgba(15, 23, 42, 0.08);
+  --mtg-shadow-xl: 0 20px 25px -5px rgba(15, 23, 42, 0.10), 0 10px 10px -5px rgba(15, 23, 42, 0.04);
 
-  /* Gradients - Refined for Light Mode */
-  --mtg-gradient-hero: linear-gradient(135deg, #ffffff 0%, #f1f5f9 50%, #f8fafc 100%);
-  --mtg-gradient-card: linear-gradient(180deg, #ffffff 0%, #fafbfc 100%);
-  --mtg-gradient-accent: linear-gradient(135deg, #0891b2 0%, #7c3aed 100%);
-  --mtg-gradient-subtle: linear-gradient(180deg, rgba(248, 250, 252, 0) 0%, rgba(241, 245, 249, 0.5) 100%);
+  /* Gradients — neutral surface, coral only as signature CTA */
+  --mtg-gradient-hero: linear-gradient(180deg, #f8f8f8 0%, #f2f2f2 100%);
+  --mtg-gradient-card: linear-gradient(180deg, #ffffff 0%, #fafafa 100%);
+  --mtg-gradient-accent: linear-gradient(135deg, #f43f5e 0%, #ec4899 100%);
+  --mtg-gradient-subtle: linear-gradient(180deg, rgba(248, 248, 248, 0) 0%, rgba(242, 242, 242, 0.5) 100%);
 }
 
 /* ============================================
@@ -109,20 +108,18 @@
   100% { transform: translateY(100%); }
 }
 
-@keyframes mtg-data-stream {
-  0% { background-position: 0% 50%; }
-  50% { background-position: 100% 50%; }
-  100% { background-position: 0% 50%; }
-}
-
+/* mtg-data-stream + mtg-glow-pulse removed in Coral Cockpit migration (decorative). */
+/* mtg-glow-pulse kept as a no-op alias so any outstanding `animation: mtg-glow-pulse` declarations
+   don't break before Phase 4/5 strip them from element CSS. */
 @keyframes mtg-glow-pulse {
   0%, 100% { box-shadow: var(--mtg-glow-primary); }
-  50% { box-shadow: 0 0 60px rgba(0, 212, 255, 0.5); }
+  50% { box-shadow: var(--mtg-glow-primary); }
 }
 
+/* Live-pulse retained for the active recording dot only — recolored to coral. */
 @keyframes mtg-live-pulse {
   0%, 100% { box-shadow: var(--mtg-glow-live); opacity: 1; }
-  50% { box-shadow: 0 0 30px rgba(255, 45, 85, 0.7); opacity: 0.8; }
+  50% { box-shadow: 0 0 0 4px rgba(244, 63, 94, 0.20); opacity: 0.85; }
 }
 
 @keyframes mtg-fade-in {
@@ -145,10 +142,7 @@
   100% { background-position: 200% 0; }
 }
 
-@keyframes mtg-orbit {
-  from { transform: rotate(0deg) translateX(60px) rotate(0deg); }
-  to { transform: rotate(360deg) translateX(60px) rotate(-360deg); }
-}
+/* mtg-orbit removed in Coral Cockpit migration (decorative). */
 
 /* ============================================
    MAIN CONTAINER
@@ -164,17 +158,7 @@
   border: 1px solid var(--mtg-border);
 }
 
-/* Ambient background effect */
-.meetings-container::before {
-  content: '';
-  position: absolute;
-  inset: 0;
-  background:
-    radial-gradient(ellipse 80% 50% at 20% 20%, rgba(0, 212, 255, 0.08) 0%, transparent 50%),
-    radial-gradient(ellipse 60% 40% at 80% 80%, rgba(124, 58, 237, 0.06) 0%, transparent 50%);
-  pointer-events: none;
-  z-index: 0;
-}
+/* Ambient background effect — removed in Coral Cockpit migration. Section relies on canvas + hairline borders for depth. */
 
 /* ============================================
    HERO SECTION - JOIN AREA
@@ -194,43 +178,10 @@
   pointer-events: none;
 }
 
-/* Grid pattern overlay */
-.meetings-hero-grid {
-  position: absolute;
-  inset: 0;
-  background-image:
-    linear-gradient(rgba(0, 212, 255, 0.03) 1px, transparent 1px),
-    linear-gradient(90deg, rgba(0, 212, 255, 0.03) 1px, transparent 1px);
-  background-size: 40px 40px;
-  mask-image: radial-gradient(ellipse 80% 60% at 50% 40%, black, transparent);
-}
-
-/* Orbiting particles */
+/* Decorative grid + orbiting particles removed in Coral Cockpit migration. */
+.meetings-hero-grid,
 .meetings-hero-orbit {
-  position: absolute;
-  width: 8px;
-  height: 8px;
-  background: var(--mtg-accent-primary);
-  border-radius: 50%;
-  top: 50%;
-  left: 50%;
-  animation: mtg-orbit 20s linear infinite;
-  opacity: 0.6;
-  box-shadow: 0 0 20px var(--mtg-accent-primary);
-}
-
-.meetings-hero-orbit:nth-child(2) {
-  animation-duration: 25s;
-  animation-direction: reverse;
-  background: var(--mtg-accent-secondary);
-  box-shadow: 0 0 20px var(--mtg-accent-secondary);
-}
-
-.meetings-hero-orbit:nth-child(3) {
-  animation-duration: 30s;
-  animation-delay: -5s;
-  width: 6px;
-  height: 6px;
+  display: none;
 }
 
 .meetings-hero-content {
@@ -319,7 +270,7 @@
 
 .meetings-join-btn:hover {
   transform: translateY(-1px);
-  box-shadow: 0 8px 24px rgba(0, 212, 255, 0.4);
+  box-shadow: 0 8px 24px rgba(244, 63, 94, 0.4);
 }
 
 /* ============================================
@@ -421,7 +372,7 @@
   content: '';
   position: absolute;
   inset: 0;
-  background: linear-gradient(135deg, transparent 50%, rgba(0, 212, 255, 0.05) 100%);
+  background: linear-gradient(135deg, transparent 50%, rgba(244, 63, 94, 0.05) 100%);
   opacity: 0;
   transition: opacity 0.3s;
 }
@@ -437,7 +388,7 @@
 }
 
 .meetings-platform-card.pulse {
-  border-color: rgba(0, 212, 255, 0.3);
+  border-color: rgba(244, 63, 94, 0.3);
 }
 
 .meetings-platform-icon {
@@ -454,7 +405,8 @@
   z-index: 1;
 }
 
-.meetings-platform-icon.pulse { background: linear-gradient(135deg, #00d4ff, #0099cc); }
+/* Platform icons — Pulse uses coral signature; external platforms keep their official brand colors as identity, not decoration */
+.meetings-platform-icon.pulse { background: linear-gradient(135deg, #f43f5e, #ec4899); }
 .meetings-platform-icon.google { background: linear-gradient(135deg, #ea4335, #fa7b17); }
 .meetings-platform-icon.zoom { background: linear-gradient(135deg, #2d8cff, #0b5cff); }
 .meetings-platform-icon.teams { background: linear-gradient(135deg, #5059c9, #7b83eb); }
@@ -480,8 +432,8 @@
   top: 12px;
   right: 12px;
   padding: 4px 8px;
-  background: rgba(0, 212, 255, 0.15);
-  border: 1px solid rgba(0, 212, 255, 0.3);
+  background: rgba(244, 63, 94, 0.15);
+  border: 1px solid rgba(244, 63, 94, 0.3);
   border-radius: 6px;
   font-size: 9px;
   font-weight: 700;
@@ -586,12 +538,21 @@
   font-size: 16px;
 }
 
-.meetings-feature-icon.templates { background: rgba(124, 58, 237, 0.2); color: #a78bfa; }
-.meetings-feature-icon.agenda { background: rgba(16, 185, 129, 0.2); color: #34d399; }
-.meetings-feature-icon.actions { background: rgba(245, 158, 11, 0.2); color: #fbbf24; }
-.meetings-feature-icon.analytics { background: rgba(0, 212, 255, 0.2); color: #00d4ff; }
-.meetings-feature-icon.recordings { background: rgba(239, 68, 68, 0.2); color: #f87171; }
-.meetings-feature-icon.breakout { background: rgba(236, 72, 153, 0.2); color: #f472b6; }
+/* Feature icons — neutral by default; icon glyph carries identity, hover lifts to coral. Status colors stay in status vocabulary. */
+.meetings-feature-icon.templates,
+.meetings-feature-icon.agenda,
+.meetings-feature-icon.actions,
+.meetings-feature-icon.analytics,
+.meetings-feature-icon.recordings,
+.meetings-feature-icon.breakout {
+  background: rgba(255, 255, 255, 0.04);
+  color: var(--mtg-text-secondary);
+  transition: color 200ms cubic-bezier(0.16, 1, 0.3, 1), background 200ms cubic-bezier(0.16, 1, 0.3, 1);
+}
+.meetings-feature-card:hover .meetings-feature-icon {
+  background: rgba(244, 63, 94, 0.10);
+  color: var(--mtg-accent-primary);
+}
 
 .meetings-feature-title {
   font-size: 13px;
@@ -610,7 +571,7 @@
   align-items: center;
   gap: 4px;
   padding: 4px 8px;
-  background: rgba(0, 212, 255, 0.1);
+  background: rgba(244, 63, 94, 0.1);
   border-radius: 6px;
   font-size: 10px;
   font-weight: 600;
@@ -644,7 +605,7 @@
 }
 
 .meetings-history-item:hover {
-  background: rgba(0, 212, 255, 0.03);
+  background: rgba(244, 63, 94, 0.03);
 }
 
 .meetings-history-icon {
@@ -897,7 +858,7 @@
 .meetings-schedule-btn:hover {
   border-color: var(--mtg-accent-primary);
   color: var(--mtg-accent-primary);
-  background: rgba(0, 212, 255, 0.05);
+  background: rgba(244, 63, 94, 0.05);
 }
 
 /* ============================================
@@ -1439,7 +1400,7 @@
 }
 
 .meetings-contact-item.selected {
-  background: rgba(0, 212, 255, 0.1);
+  background: rgba(244, 63, 94, 0.1);
   border-color: var(--mtg-accent-primary);
 }
 
@@ -1578,7 +1539,7 @@
 .meetings-form-input:focus {
   outline: none;
   border-color: var(--mtg-accent-primary);
-  box-shadow: 0 0 0 3px rgba(0, 212, 255, 0.1);
+  box-shadow: 0 0 0 3px rgba(244, 63, 94, 0.1);
 }
 
 .meetings-attendee-chips {
@@ -1593,7 +1554,7 @@
   align-items: center;
   gap: 6px;
   padding: 6px 12px;
-  background: rgba(0, 212, 255, 0.1);
+  background: rgba(244, 63, 94, 0.1);
   border-radius: 20px;
   font-size: 12px;
   font-weight: 600;
@@ -1645,7 +1606,7 @@
 
 .meetings-submit-btn:hover {
   transform: translateY(-2px);
-  box-shadow: 0 8px 24px rgba(0, 212, 255, 0.4);
+  box-shadow: 0 8px 24px rgba(244, 63, 94, 0.4);
 }
 
 /* ============================================
@@ -1827,8 +1788,8 @@
 
 .meetings-topic-pill {
   padding: 6px 12px;
-  background: rgba(0, 212, 255, 0.1);
-  border: 1px solid rgba(0, 212, 255, 0.2);
+  background: rgba(244, 63, 94, 0.1);
+  border: 1px solid rgba(244, 63, 94, 0.2);
   border-radius: 20px;
   font-size: 12px;
   color: var(--mtg-accent-primary);
@@ -1840,7 +1801,7 @@
 .meetings-topic-pill-count {
   font-weight: 700;
   font-size: 10px;
-  background: rgba(0, 212, 255, 0.15);
+  background: rgba(244, 63, 94, 0.15);
   padding: 1px 5px;
   border-radius: 10px;
 }
@@ -2126,7 +2087,7 @@
 }
 
 .meetings-transcript-view mark {
-  background: rgba(0, 212, 255, 0.2);
+  background: rgba(244, 63, 94, 0.2);
   color: var(--mtg-accent-primary);
   border-radius: 2px;
 }
@@ -2317,7 +2278,7 @@
 }
 
 .meetings-settings-nav-item.active {
-  background: rgba(0, 212, 255, 0.1);
+  background: rgba(244, 63, 94, 0.1);
   color: var(--mtg-accent-primary);
 }
 
@@ -2426,7 +2387,7 @@
 }
 
 .meetings-pill-btn.active {
-  background: rgba(0, 212, 255, 0.1);
+  background: rgba(244, 63, 94, 0.1);
   border-color: var(--mtg-accent-primary);
   color: var(--mtg-accent-primary);
 }
@@ -2457,7 +2418,7 @@
 
 .meetings-calendar-card.selected {
   border-color: var(--mtg-accent-primary);
-  background: rgba(0, 212, 255, 0.05);
+  background: rgba(244, 63, 94, 0.05);
 }
 
 .meetings-calendar-card-icon {
@@ -2536,12 +2497,12 @@
 
 .meetings-breakout-participant-chip:hover {
   border-color: var(--mtg-accent-primary);
-  background: rgba(0, 212, 255, 0.05);
+  background: rgba(244, 63, 94, 0.05);
 }
 
 .meetings-breakout-participant-chip.selected {
   border-color: var(--mtg-accent-primary);
-  background: rgba(0, 212, 255, 0.1);
+  background: rgba(244, 63, 94, 0.1);
 }
 
 .meetings-breakout-room-card {
@@ -2559,7 +2520,7 @@
 
 .meetings-breakout-room-card.drop-target {
   border-color: var(--mtg-accent-primary);
-  background: rgba(0, 212, 255, 0.05);
+  background: rgba(244, 63, 94, 0.05);
 }
 
 .meetings-breakout-room-header {
@@ -2693,7 +2654,7 @@
 
 .meetings-breakout-start-btn:not(:disabled):hover {
   transform: translateY(-1px);
-  box-shadow: 0 4px 16px rgba(0, 212, 255, 0.3);
+  box-shadow: 0 4px 16px rgba(244, 63, 94, 0.3);
 }
 
 .meetings-breakout-broadcast-btn {
@@ -3049,7 +3010,7 @@
   background: var(--mtg-accent-primary);
   flex-shrink: 0;
   margin-top: 3px;
-  box-shadow: 0 0 0 3px rgba(0, 212, 255, 0.15);
+  box-shadow: 0 0 0 3px rgba(244, 63, 94, 0.15);
 }
 
 .meetings-summary-timeline-note {
@@ -3509,38 +3470,19 @@
   transform: translateY(-2px);
 }
 
-:root:not(.dark) .meetings-feature-icon.templates {
-  background: rgba(124, 58, 237, 0.1);
-  color: #7c3aed;
-}
-
-:root:not(.dark) .meetings-feature-icon.agenda {
-  background: rgba(5, 150, 105, 0.1);
-  color: #059669;
-}
-
-:root:not(.dark) .meetings-feature-icon.actions {
-  background: rgba(217, 119, 6, 0.1);
-  color: #d97706;
-}
-
-:root:not(.dark) .meetings-feature-icon.analytics {
-  background: rgba(8, 145, 178, 0.1);
-  color: #0891b2;
-}
-
-:root:not(.dark) .meetings-feature-icon.recordings {
-  background: rgba(220, 38, 38, 0.1);
-  color: #dc2626;
-}
-
+/* Light-mode feature icons — neutral by default; coral on hover via shared rule above */
+:root:not(.dark) .meetings-feature-icon.templates,
+:root:not(.dark) .meetings-feature-icon.agenda,
+:root:not(.dark) .meetings-feature-icon.actions,
+:root:not(.dark) .meetings-feature-icon.analytics,
+:root:not(.dark) .meetings-feature-icon.recordings,
 :root:not(.dark) .meetings-feature-icon.breakout {
-  background: rgba(219, 39, 119, 0.1);
-  color: #db2777;
+  background: rgba(0, 0, 0, 0.04);
+  color: var(--mtg-text-secondary);
 }
 
 :root:not(.dark) .meetings-feature-badge {
-  background: rgba(8, 145, 178, 0.08);
+  background: rgba(244, 63, 94, 0.08);
   color: var(--mtg-accent-primary);
 }
 
