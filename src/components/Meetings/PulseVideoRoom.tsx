@@ -74,6 +74,24 @@ interface TranscriptLine {
   isFinal: boolean;
 }
 
+// ── Identity palette ──────────────────────────────────────────────────────────
+// Six tinted-neutral identity colors, desaturated enough to never compete
+// with coral signal. Stable-mapped from a name hash so the same person gets
+// the same color across sessions.
+const IDENTITY_PALETTE = [
+  { tile: 'oklch(0.30 0.04 220)', avatar: 'oklch(0.50 0.08 220)' }, // slate
+  { tile: 'oklch(0.30 0.03 160)', avatar: 'oklch(0.48 0.07 160)' }, // sage
+  { tile: 'oklch(0.30 0.04 30)',  avatar: 'oklch(0.50 0.07 30)' },  // terracotta
+  { tile: 'oklch(0.30 0.04 280)', avatar: 'oklch(0.50 0.07 280)' }, // plum
+  { tile: 'oklch(0.30 0.04 80)',  avatar: 'oklch(0.50 0.07 80)' },  // amber-mute
+  { tile: 'oklch(0.30 0.04 200)', avatar: 'oklch(0.50 0.07 200)' }, // ocean
+] as const;
+
+const identityColor = (name: string) => {
+  const hash = name.split('').reduce((acc, c) => acc + c.charCodeAt(0), 0);
+  return IDENTITY_PALETTE[hash % IDENTITY_PALETTE.length];
+};
+
 // ── Participant tile ───────────────────────────────────────────────────────────
 
 const ParticipantTile: React.FC<{ sessionId: string; isLocal?: boolean }> = ({ sessionId, isLocal }) => {
@@ -82,28 +100,26 @@ const ParticipantTile: React.FC<{ sessionId: string; isLocal?: boolean }> = ({ s
     ? !participant?.local || participant?.tracks?.video?.state === 'off'
     : participant?.tracks?.video?.state === 'off' || participant?.tracks?.video?.state === 'blocked';
 
-  const initials = (participant?.user_name ?? 'G')
+  const name = participant?.user_name ?? 'Guest';
+  const initials = name
     .split(' ')
     .map((n: string) => n[0])
     .join('')
     .toUpperCase()
     .slice(0, 2);
 
-  // Color from name hash
-  const hue = (participant?.user_name ?? 'G')
-    .split('')
-    .reduce((acc: number, c: string) => acc + c.charCodeAt(0), 0) % 360;
+  const color = identityColor(name);
 
   return (
     <div className="relative w-full h-full rounded-xl overflow-hidden bg-white/[0.03] border border-white/[0.08]">
       {videoOff ? (
         <div
           className="absolute inset-0 flex items-center justify-center"
-          style={{ background: `hsl(${hue}, 45%, 18%)` }}
+          style={{ background: color.tile }}
         >
           <div
             className="w-16 h-16 rounded-full flex items-center justify-center text-xl font-bold text-white"
-            style={{ background: `hsl(${hue}, 65%, 40%)` }}
+            style={{ background: color.avatar }}
           >
             {initials}
           </div>
@@ -432,7 +448,7 @@ const MeetingRoom: React.FC<{
                     <div key={msg.id} className={`flex flex-col ${msg.isLocal ? 'items-end' : 'items-start'}`}>
                       <span className="text-white/40 font-mono uppercase tracking-[0.1em] text-[10px] mb-0.5">{msg.sender}</span>
                       <div className={`px-3 py-1.5 rounded-xl text-sm max-w-[90%] ${
-                        msg.isLocal ? 'bg-rose-500/20 text-rose-100' : 'bg-white/10 text-white'
+                        msg.isLocal ? 'bg-white/[0.08] text-white' : 'bg-white/[0.04] text-white/90'
                       }`}>
                         {msg.text}
                       </div>
@@ -594,7 +610,7 @@ const MeetingRoom: React.FC<{
 const ParticipantRow: React.FC<{ sessionId: string; isLocal: boolean }> = ({ sessionId, isLocal }) => {
   const participant = useParticipant(sessionId);
   const name = participant?.user_name ?? 'Guest';
-  const hue = name.split('').reduce((a: number, c: string) => a + c.charCodeAt(0), 0) % 360;
+  const color = identityColor(name);
   const isMuted = participant?.tracks?.audio?.state === 'off';
   const isVideoOff = participant?.tracks?.video?.state === 'off';
 
@@ -602,13 +618,16 @@ const ParticipantRow: React.FC<{ sessionId: string; isLocal: boolean }> = ({ ses
     <div className="flex items-center gap-2 py-1">
       <div
         className="w-7 h-7 rounded-full flex items-center justify-center text-xs font-bold text-white shrink-0"
-        style={{ background: `hsl(${hue}, 65%, 40%)` }}
+        style={{ background: color.avatar }}
       >
         {name.split(' ').map((n: string) => n[0]).join('').toUpperCase().slice(0, 2)}
       </div>
-      <span className="flex-1 text-sm text-white/90 truncate">{name}{isLocal ? ' (You)' : ''}</span>
-      {isMuted && <MicOff size={12} className="text-rose-400 shrink-0" />}
-      {isVideoOff && <VideoOff size={12} className="text-white/30 shrink-0" />}
+      <span className="flex-1 text-sm text-white/90 truncate">
+        {name}
+        {isLocal && <span className="font-mono uppercase tracking-[0.1em] text-[10px] text-white/40 ml-1.5">YOU</span>}
+      </span>
+      {isMuted && <MicOff size={12} className="text-rose-400 shrink-0" aria-label="Muted" />}
+      {isVideoOff && <VideoOff size={12} className="text-white/30 shrink-0" aria-label="Camera off" />}
     </div>
   );
 };
