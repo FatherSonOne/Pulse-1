@@ -202,7 +202,7 @@ export const MessagesFeaturePanels = React.memo<MessagesFeaturePanelsProps>(
       <>
         {/* Phase 3: Analytics Panel */}
         {showAnalyticsPanel && activeThread && (
-          <div className="border-b border-zinc-200 dark:border-zinc-800 bg-zinc-50 dark:bg-zinc-900 p-4 animate-slide-down">
+          <div className="border-b border-zinc-200 dark:border-white/[0.06] bg-zinc-50 dark:bg-white/[0.02] p-4 animate-slide-down">
             {/* Tab Navigation */}
             <div className="flex gap-1 mb-4">
               {[
@@ -214,21 +214,23 @@ export const MessagesFeaturePanels = React.memo<MessagesFeaturePanelsProps>(
                 <button
                   key={tab.id}
                   onClick={() => setAnalyticsView(tab.id)}
-                  className={`flex items-center gap-1.5 px-3 py-1.5 rounded-lg text-xs font-medium transition ${
+                  className={`flex items-center gap-1.5 px-3 py-1.5 rounded-md text-[10px] font-mono uppercase tracking-[0.1em] font-medium transition-colors focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-rose-500/40 ${
                     analyticsView === tab.id
-                      ? 'bg-indigo-500 text-white'
-                      : 'text-zinc-600 dark:text-zinc-400 hover:bg-zinc-200 dark:hover:bg-zinc-800'
+                      ? 'bg-rose-500/10 dark:bg-rose-500/15 text-rose-600 dark:text-rose-bright'
+                      : 'text-zinc-500 dark:text-zinc-400 hover:bg-zinc-100 dark:hover:bg-white/[0.04] hover:text-rose-500 dark:hover:text-rose-bright'
                   }`}
+                  aria-pressed={analyticsView === tab.id}
                 >
-                  <i className={`fa-solid ${tab.icon}`} />
+                  <i className={`fa-solid ${tab.icon} text-[10px] opacity-70`} />
                   {tab.label}
                 </button>
               ))}
               <button
                 onClick={() => setShowAnalyticsPanel(false)}
-                className="ml-auto text-zinc-400 hover:text-zinc-600 dark:hover:text-zinc-300"
+                className="ml-auto w-7 h-7 rounded-md text-zinc-400 hover:text-rose-500 dark:hover:text-rose-bright hover:bg-zinc-100 dark:hover:bg-white/[0.04] flex items-center justify-center transition-colors focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-rose-500/40"
+                aria-label="Close analytics panel"
               >
-                <X />
+                <X className="w-4 h-4" />
               </button>
             </div>
 
@@ -311,7 +313,7 @@ export const MessagesFeaturePanels = React.memo<MessagesFeaturePanelsProps>(
 
         {/* Phase 4: Collaboration Panel */}
         {showCollaborationPanel && activeThread && (
-          <div className="border-b border-zinc-200 dark:border-zinc-800 bg-zinc-50 dark:bg-zinc-900 p-4 animate-slide-down">
+          <div className="border-b border-zinc-200 dark:border-white/[0.06] bg-zinc-50 dark:bg-white/[0.02] p-4 animate-slide-down">
             {/* Tab Navigation */}
             <div className="flex gap-1 mb-4 overflow-x-auto pb-2">
               {[
@@ -325,13 +327,14 @@ export const MessagesFeaturePanels = React.memo<MessagesFeaturePanelsProps>(
                 <button
                   key={tab.id}
                   onClick={() => setCollaborationTab(tab.id)}
-                  className={`flex items-center gap-1.5 px-3 py-1.5 rounded-lg text-xs font-medium transition whitespace-nowrap ${
+                  className={`flex items-center gap-1.5 px-3 py-1.5 rounded-md text-[10px] font-mono uppercase tracking-[0.1em] font-medium transition-colors whitespace-nowrap focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-rose-500/40 ${
                     collaborationTab === tab.id
-                      ? 'bg-purple-600 text-white'
-                      : 'bg-white dark:bg-zinc-800 text-zinc-600 dark:text-zinc-400 hover:bg-purple-50 dark:hover:bg-purple-900/20'
+                      ? 'bg-rose-500/10 dark:bg-rose-500/15 text-rose-600 dark:text-rose-bright'
+                      : 'text-zinc-500 dark:text-zinc-400 hover:bg-zinc-100 dark:hover:bg-white/[0.04] hover:text-rose-500 dark:hover:text-rose-bright'
                   }`}
+                  aria-pressed={collaborationTab === tab.id}
                 >
-                  <i className={`fa-solid ${tab.icon}`} />
+                  <i className={`fa-solid ${tab.icon} text-[10px] opacity-70`} />
                   {tab.label}
                 </button>
               ))}
@@ -477,7 +480,7 @@ export const MessagesFeaturePanels = React.memo<MessagesFeaturePanelsProps>(
 
         {/* Phase 5: Productivity Panel */}
         {showProductivityPanel && activeThread && (
-          <div className="border-b border-zinc-200 dark:border-zinc-800 bg-zinc-50 dark:bg-zinc-900 p-4 animate-slide-down">
+          <div className="border-b border-zinc-200 dark:border-white/[0.06] bg-zinc-50 dark:bg-white/[0.02] p-4 animate-slide-down">
             {/* Tab Navigation */}
             <div className="flex gap-1 mb-4 overflow-x-auto pb-2">
               {[
@@ -491,13 +494,14 @@ export const MessagesFeaturePanels = React.memo<MessagesFeaturePanelsProps>(
                 <button
                   key={tab.id}
                   onClick={() => setProductivityTab(tab.id)}
-                  className={`flex items-center gap-1.5 px-3 py-1.5 rounded-lg text-xs font-medium transition whitespace-nowrap ${
+                  className={`flex items-center gap-1.5 px-3 py-1.5 rounded-md text-[10px] font-mono uppercase tracking-[0.1em] font-medium transition-colors whitespace-nowrap focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-rose-500/40 ${
                     productivityTab === tab.id
-                      ? 'bg-gradient-to-r from-rose-500 to-pink-600 text-white shadow-lg shadow-rose-500/30'
-                      : 'bg-white dark:bg-zinc-800 text-zinc-600 dark:text-zinc-400 hover:bg-rose-50 dark:hover:bg-rose-900/20'
+                      ? 'bg-rose-500/10 dark:bg-rose-500/15 text-rose-600 dark:text-rose-bright'
+                      : 'text-zinc-500 dark:text-zinc-400 hover:bg-zinc-100 dark:hover:bg-white/[0.04] hover:text-rose-500 dark:hover:text-rose-bright'
                   }`}
+                  aria-pressed={productivityTab === tab.id}
                 >
-                  <i className={`fa-solid ${tab.icon}`} />
+                  <i className={`fa-solid ${tab.icon} text-[10px] opacity-70`} />
                   {tab.label}
                 </button>
               ))}
@@ -658,7 +662,7 @@ export const MessagesFeaturePanels = React.memo<MessagesFeaturePanelsProps>(
 
         {/* Phase 6: Intelligence & Organization Panel */}
         {showIntelligencePanel && activeThread && (
-          <div className="border-b border-zinc-200 dark:border-zinc-800 bg-zinc-50 dark:bg-zinc-900 p-4 animate-slide-down">
+          <div className="border-b border-zinc-200 dark:border-white/[0.06] bg-zinc-50 dark:bg-white/[0.02] p-4 animate-slide-down">
             {/* Tab Navigation */}
             <div className="flex gap-1 mb-4 overflow-x-auto pb-2">
               {[
@@ -671,13 +675,14 @@ export const MessagesFeaturePanels = React.memo<MessagesFeaturePanelsProps>(
                 <button
                   key={tab.id}
                   onClick={() => setIntelligenceTab(tab.id)}
-                  className={`flex items-center gap-1.5 px-3 py-1.5 rounded-lg text-xs font-medium transition whitespace-nowrap ${
+                  className={`flex items-center gap-1.5 px-3 py-1.5 rounded-md text-[10px] font-mono uppercase tracking-[0.1em] font-medium transition-colors whitespace-nowrap focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-rose-500/40 ${
                     intelligenceTab === tab.id
-                      ? 'bg-violet-600 text-white'
-                      : 'bg-white dark:bg-zinc-800 text-zinc-600 dark:text-zinc-400 hover:bg-violet-50 dark:hover:bg-violet-900/20'
+                      ? 'bg-rose-500/10 dark:bg-rose-500/15 text-rose-600 dark:text-rose-bright'
+                      : 'text-zinc-500 dark:text-zinc-400 hover:bg-zinc-100 dark:hover:bg-white/[0.04] hover:text-rose-500 dark:hover:text-rose-bright'
                   }`}
+                  aria-pressed={intelligenceTab === tab.id}
                 >
-                  <i className={`fa-solid ${tab.icon}`} />
+                  <i className={`fa-solid ${tab.icon} text-[10px] opacity-70`} />
                   {tab.label}
                 </button>
               ))}
@@ -806,7 +811,7 @@ export const MessagesFeaturePanels = React.memo<MessagesFeaturePanelsProps>(
 
         {/* Phase 7: Proactive Intelligence & Advanced Organization Panel */}
         {showProactivePanel && activeThread && (
-          <div className="border-b border-zinc-200 dark:border-zinc-800 bg-zinc-50 dark:bg-zinc-900 p-4 animate-slide-down">
+          <div className="border-b border-zinc-200 dark:border-white/[0.06] bg-zinc-50 dark:bg-white/[0.02] p-4 animate-slide-down">
             {/* Tab Navigation */}
             <div className="flex gap-1 mb-4 overflow-x-auto pb-2">
               {[
@@ -820,13 +825,14 @@ export const MessagesFeaturePanels = React.memo<MessagesFeaturePanelsProps>(
                 <button
                   key={tab.id}
                   onClick={() => setProactiveTab(tab.id)}
-                  className={`flex items-center gap-1.5 px-3 py-1.5 rounded-lg text-xs font-medium transition whitespace-nowrap ${
+                  className={`flex items-center gap-1.5 px-3 py-1.5 rounded-md text-[10px] font-mono uppercase tracking-[0.1em] font-medium transition-colors whitespace-nowrap focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-rose-500/40 ${
                     proactiveTab === tab.id
-                      ? 'bg-rose-600 text-white'
-                      : 'bg-white dark:bg-zinc-800 text-zinc-600 dark:text-zinc-400 hover:bg-rose-50 dark:hover:bg-rose-900/20'
+                      ? 'bg-rose-500/10 dark:bg-rose-500/15 text-rose-600 dark:text-rose-bright'
+                      : 'text-zinc-500 dark:text-zinc-400 hover:bg-zinc-100 dark:hover:bg-white/[0.04] hover:text-rose-500 dark:hover:text-rose-bright'
                   }`}
+                  aria-pressed={proactiveTab === tab.id}
                 >
-                  <i className={`fa-solid ${tab.icon}`} />
+                  <i className={`fa-solid ${tab.icon} text-[10px] opacity-70`} />
                   {tab.label}
                 </button>
               ))}
@@ -922,7 +928,7 @@ export const MessagesFeaturePanels = React.memo<MessagesFeaturePanelsProps>(
 
         {/* Phase 8: Communication Enhancement & Inbox Intelligence Panel */}
         {showCommunicationPanel && activeThread && (
-          <div className="border-b border-zinc-200 dark:border-zinc-800 bg-zinc-50 dark:bg-zinc-900 p-4 animate-slide-down">
+          <div className="border-b border-zinc-200 dark:border-white/[0.06] bg-zinc-50 dark:bg-white/[0.02] p-4 animate-slide-down">
             {/* Tab Navigation */}
             <div className="flex gap-1 mb-4 overflow-x-auto pb-2">
               {[
@@ -936,13 +942,14 @@ export const MessagesFeaturePanels = React.memo<MessagesFeaturePanelsProps>(
                 <button
                   key={tab.id}
                   onClick={() => setCommunicationTab(tab.id)}
-                  className={`flex items-center gap-1.5 px-3 py-1.5 rounded-lg text-xs font-medium transition whitespace-nowrap ${
+                  className={`flex items-center gap-1.5 px-3 py-1.5 rounded-md text-[10px] font-mono uppercase tracking-[0.1em] font-medium transition-colors whitespace-nowrap focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-rose-500/40 ${
                     communicationTab === tab.id
-                      ? 'bg-amber-600 text-white'
-                      : 'bg-white dark:bg-zinc-800 text-zinc-600 dark:text-zinc-400 hover:bg-amber-50 dark:hover:bg-amber-900/20'
+                      ? 'bg-rose-500/10 dark:bg-rose-500/15 text-rose-600 dark:text-rose-bright'
+                      : 'text-zinc-500 dark:text-zinc-400 hover:bg-zinc-100 dark:hover:bg-white/[0.04] hover:text-rose-500 dark:hover:text-rose-bright'
                   }`}
+                  aria-pressed={communicationTab === tab.id}
                 >
-                  <i className={`fa-solid ${tab.icon}`} />
+                  <i className={`fa-solid ${tab.icon} text-[10px] opacity-70`} />
                   {tab.label}
                 </button>
               ))}
@@ -1024,7 +1031,7 @@ export const MessagesFeaturePanels = React.memo<MessagesFeaturePanelsProps>(
 
         {/* Phase 9: Advanced Personalization & Automation Panel */}
         {showPersonalizationPanel && activeThread && (
-          <div className="border-b border-zinc-200 dark:border-zinc-800 bg-zinc-50 dark:bg-zinc-900 p-4 animate-slide-down">
+          <div className="border-b border-zinc-200 dark:border-white/[0.06] bg-zinc-50 dark:bg-white/[0.02] p-4 animate-slide-down">
             {/* Tab Navigation */}
             <div className="flex gap-1 mb-4 overflow-x-auto pb-2">
               {[
@@ -1038,13 +1045,14 @@ export const MessagesFeaturePanels = React.memo<MessagesFeaturePanelsProps>(
                 <button
                   key={tab.id}
                   onClick={() => setPersonalizationTab(tab.id)}
-                  className={`flex items-center gap-1.5 px-3 py-1.5 rounded-lg text-xs font-medium transition whitespace-nowrap ${
+                  className={`flex items-center gap-1.5 px-3 py-1.5 rounded-md text-[10px] font-mono uppercase tracking-[0.1em] font-medium transition-colors whitespace-nowrap focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-rose-500/40 ${
                     personalizationTab === tab.id
-                      ? 'bg-fuchsia-600 text-white'
-                      : 'bg-white dark:bg-zinc-800 text-zinc-600 dark:text-zinc-400 hover:bg-fuchsia-50 dark:hover:bg-fuchsia-900/20'
+                      ? 'bg-rose-500/10 dark:bg-rose-500/15 text-rose-600 dark:text-rose-bright'
+                      : 'text-zinc-500 dark:text-zinc-400 hover:bg-zinc-100 dark:hover:bg-white/[0.04] hover:text-rose-500 dark:hover:text-rose-bright'
                   }`}
+                  aria-pressed={personalizationTab === tab.id}
                 >
-                  <i className={`fa-solid ${tab.icon}`} />
+                  <i className={`fa-solid ${tab.icon} text-[10px] opacity-70`} />
                   {tab.label}
                 </button>
               ))}
@@ -1142,7 +1150,7 @@ export const MessagesFeaturePanels = React.memo<MessagesFeaturePanelsProps>(
 
         {/* Phase 10: Security, Insights & Productivity Panel */}
         {showSecurityPanel && activeThread && (
-          <div className="border-b border-zinc-200 dark:border-zinc-800 bg-zinc-50 dark:bg-zinc-900 p-4 animate-slide-down">
+          <div className="border-b border-zinc-200 dark:border-white/[0.06] bg-zinc-50 dark:bg-white/[0.02] p-4 animate-slide-down">
             {/* Tab Navigation */}
             <div className="flex gap-1 mb-4 overflow-x-auto pb-2">
               {[
@@ -1156,13 +1164,14 @@ export const MessagesFeaturePanels = React.memo<MessagesFeaturePanelsProps>(
                 <button
                   key={tab.id}
                   onClick={() => setSecurityTab(tab.id)}
-                  className={`flex items-center gap-1.5 px-3 py-1.5 rounded-lg text-xs font-medium transition whitespace-nowrap ${
+                  className={`flex items-center gap-1.5 px-3 py-1.5 rounded-md text-[10px] font-mono uppercase tracking-[0.1em] font-medium transition-colors whitespace-nowrap focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-rose-500/40 ${
                     securityTab === tab.id
-                      ? 'bg-gradient-to-r from-rose-500 to-pink-600 text-white shadow-lg shadow-rose-500/30'
-                      : 'bg-white dark:bg-zinc-800 text-zinc-600 dark:text-zinc-400 hover:bg-rose-50 dark:hover:bg-rose-900/20'
+                      ? 'bg-rose-500/10 dark:bg-rose-500/15 text-rose-600 dark:text-rose-bright'
+                      : 'text-zinc-500 dark:text-zinc-400 hover:bg-zinc-100 dark:hover:bg-white/[0.04] hover:text-rose-500 dark:hover:text-rose-bright'
                   }`}
+                  aria-pressed={securityTab === tab.id}
                 >
-                  <i className={`fa-solid ${tab.icon}`} />
+                  <i className={`fa-solid ${tab.icon} text-[10px] opacity-70`} />
                   {tab.label}
                 </button>
               ))}
@@ -1241,7 +1250,7 @@ export const MessagesFeaturePanels = React.memo<MessagesFeaturePanelsProps>(
 
         {/* Phase 11: Multi-Media & Export Hub Panel */}
         {showMediaHubPanel && activeThread && (
-          <div className="border-b border-zinc-200 dark:border-zinc-800 bg-zinc-50 dark:bg-zinc-900 p-4 animate-slide-down">
+          <div className="border-b border-zinc-200 dark:border-white/[0.06] bg-zinc-50 dark:bg-white/[0.02] p-4 animate-slide-down">
             {/* Tab Navigation */}
             <div className="flex gap-1 mb-4 overflow-x-auto pb-2">
               {[
@@ -1255,13 +1264,14 @@ export const MessagesFeaturePanels = React.memo<MessagesFeaturePanelsProps>(
                 <button
                   key={tab.id}
                   onClick={() => setMediaHubTab(tab.id)}
-                  className={`flex items-center gap-1.5 px-3 py-1.5 rounded-lg text-xs font-medium transition whitespace-nowrap ${
+                  className={`flex items-center gap-1.5 px-3 py-1.5 rounded-md text-[10px] font-mono uppercase tracking-[0.1em] font-medium transition-colors whitespace-nowrap focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-rose-500/40 ${
                     mediaHubTab === tab.id
-                      ? 'bg-gradient-to-r from-rose-500 to-pink-600 text-white shadow-lg shadow-rose-500/30'
-                      : 'bg-white dark:bg-zinc-800 text-zinc-600 dark:text-zinc-400 hover:bg-rose-50 dark:hover:bg-rose-900/20'
+                      ? 'bg-rose-500/10 dark:bg-rose-500/15 text-rose-600 dark:text-rose-bright'
+                      : 'text-zinc-500 dark:text-zinc-400 hover:bg-zinc-100 dark:hover:bg-white/[0.04] hover:text-rose-500 dark:hover:text-rose-bright'
                   }`}
+                  aria-pressed={mediaHubTab === tab.id}
                 >
-                  <i className={`fa-solid ${tab.icon}`} />
+                  <i className={`fa-solid ${tab.icon} text-[10px] opacity-70`} />
                   {tab.label}
                 </button>
               ))}
