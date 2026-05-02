@@ -62,6 +62,14 @@ interface PulseVideoRoomProps {
   autoTranscribe?: boolean;
 }
 
+// Best-effort macOS detection for shortcut hint formatting (⌘ vs Ctrl).
+// Modern: navigator.userAgentData.platform; fallback: userAgent string.
+const isMac = (): boolean => {
+  if (typeof navigator === 'undefined') return false;
+  const uaData = (navigator as Navigator & { userAgentData?: { platform: string } }).userAgentData;
+  return uaData?.platform === 'macOS' || /Mac|iPhone|iPad/.test(navigator.userAgent);
+};
+
 interface ChatMessage {
   id: string;
   sender: string;
@@ -137,7 +145,7 @@ const ParticipantTile: React.FC<{ sessionId: string; isLocal?: boolean }> = ({ s
 
       {/* Name label — mono uppercase tracked per Coral Cockpit */}
       <div className="absolute bottom-2 left-2 right-2 flex items-center gap-1.5">
-        <span className="bg-black/60 text-white/90 font-mono uppercase tracking-[0.1em] text-[10px] px-2 py-0.5 rounded-full backdrop-blur-sm truncate">
+        <span className="bg-[#080808]/60 text-white/90 font-mono uppercase tracking-[0.1em] text-[10px] px-2 py-0.5 rounded-full backdrop-blur-sm truncate">
           {participant?.user_name ?? 'Guest'}{isLocal ? ' · YOU' : ''}
         </span>
         {participant?.tracks?.audio?.state === 'off' && (
@@ -626,7 +634,7 @@ const MeetingRoom: React.FC<{
 
   if (!isJoined) {
     return (
-      <div className="flex items-center justify-center h-full bg-black text-white px-6">
+      <div className="flex items-center justify-center h-full bg-[#080808] text-white px-6">
         {joinError ? (
           <div className="flex flex-col items-center gap-4 max-w-sm text-center">
             <AlertCircle size={28} className="text-rose-400" />
@@ -651,12 +659,12 @@ const MeetingRoom: React.FC<{
   }
 
   return (
-    <div className="flex flex-col h-full bg-black text-white">
+    <div className="flex flex-col h-full bg-[#080808] text-white">
       {/* ── DailyAudio handles all remote audio automatically */}
       <DailyAudio />
 
       {/* ── Header ─────────────────────────────────────────────────────────── */}
-      <div className="flex items-center justify-between px-4 py-2.5 bg-black/80 border-b border-white/10 backdrop-blur-sm">
+      <div className="flex items-center justify-between px-4 py-2.5 bg-[#080808]/80 border-b border-white/10 backdrop-blur-sm">
         <div className="flex items-center gap-3">
           <div className="w-2 h-2 rounded-full bg-rose-500 animate-pulse motion-reduce:animate-none" />
           <span className="font-semibold text-sm truncate max-w-xs">{meetingTitle}</span>
@@ -739,8 +747,9 @@ const MeetingRoom: React.FC<{
                     <input
                       value={chatInput}
                       onChange={e => setChatInput(e.target.value)}
-                      placeholder="Message…"
-                      className="flex-1 bg-white/10 text-white text-sm px-3 py-1.5 rounded-lg outline-none placeholder:text-white/30 focus:ring-1 focus:ring-rose-500/50"
+                      placeholder="Message"
+                      aria-label="Chat message"
+                      className="flex-1 bg-white/10 text-white text-sm px-3 py-1.5 rounded-lg outline-none placeholder:text-white/30 focus-visible:ring-2 focus-visible:ring-rose-500/40"
                     />
                     <button type="submit" className="bg-rose-500 hover:bg-rose-600 text-white px-3 py-1.5 rounded-lg text-sm transition-colors">
                       Send
@@ -766,7 +775,11 @@ const MeetingRoom: React.FC<{
 
       {/* ── Live transcript ─────────────────────────────────────────────────── */}
       {transcriptEnabled && (
-        <div className="px-4 pt-2 pb-2 max-h-28 overflow-y-auto border-t border-white/[0.04]">
+        <div
+          className="px-4 pt-2 pb-2 max-h-28 overflow-y-auto border-t border-white/[0.04]"
+          aria-live="polite"
+          aria-label="Live transcript"
+        >
           <div className="mb-1.5">
             <AIProvenanceChip vendor="DEEPGRAM" type="LIVE" fresh={transcriptLines.length > 0} />
           </div>
@@ -792,8 +805,24 @@ const MeetingRoom: React.FC<{
       <div className="flex items-center justify-center gap-3 px-6 py-3 bg-white/[0.03] border-t border-white/[0.06]">
         {/* Primary — elevated group */}
         <div className="flex items-center gap-1 bg-white/[0.04] rounded-xl p-1">
-          <ControlButton active={micOn} onClick={toggleMic} activeIcon={<Mic size={20} />} inactiveIcon={<MicOff size={20} />} label="Mic" danger={!micOn} />
-          <ControlButton active={cameraOn} onClick={toggleCamera} activeIcon={<Video size={20} />} inactiveIcon={<VideoOff size={20} />} label="Camera" danger={!cameraOn} />
+          <ControlButton
+            active={micOn}
+            onClick={toggleMic}
+            activeIcon={<Mic size={20} />}
+            inactiveIcon={<MicOff size={20} />}
+            label="Mic"
+            danger={!micOn}
+            shortcut={isMac() ? '⌘D' : 'Ctrl+D'}
+          />
+          <ControlButton
+            active={cameraOn}
+            onClick={toggleCamera}
+            activeIcon={<Video size={20} />}
+            inactiveIcon={<VideoOff size={20} />}
+            label="Camera"
+            danger={!cameraOn}
+            shortcut={isMac() ? '⌘E' : 'Ctrl+E'}
+          />
         </div>
 
         <div className="h-7 w-px bg-white/[0.08]" aria-hidden="true" />
@@ -876,7 +905,7 @@ const MeetingRoom: React.FC<{
 
       {/* ── End call confirmation ────────────────────────────────────────────── */}
       {showEndConfirm && (
-        <div className="absolute inset-0 bg-black/70 flex items-center justify-center z-50 backdrop-blur-sm">
+        <div className="absolute inset-0 bg-[#080808]/70 flex items-center justify-center z-50 backdrop-blur-sm">
           <div className="bg-white/[0.04] border border-white/[0.10] rounded-2xl p-6 w-80 text-center space-y-4 backdrop-blur-xl">
             {isSummarizing ? (
               <>
@@ -959,12 +988,15 @@ const ControlButton: React.FC<{
   danger?: boolean;
   highlight?: boolean;
   iconOnly?: boolean;
-}> = ({ active, onClick, activeIcon, inactiveIcon, label, danger, highlight, iconOnly }) => (
+  /** Optional keyboard shortcut hint, e.g. '⌘D'. Surfaces in title + aria-keyshortcuts. */
+  shortcut?: string;
+}> = ({ active, onClick, activeIcon, inactiveIcon, label, danger, highlight, iconOnly, shortcut }) => (
   <button
     type="button"
-    aria-label={label}
+    aria-label={shortcut ? `${label} (${shortcut})` : label}
     aria-pressed={highlight ?? false}
-    title={iconOnly ? label : undefined}
+    aria-keyshortcuts={shortcut}
+    title={shortcut ? `${label} · ${shortcut}` : (iconOnly ? label : undefined)}
     onClick={onClick}
     className={`flex flex-col items-center gap-1 ${iconOnly ? 'px-2.5 py-2' : 'px-3 py-2'} rounded-xl transition-colors focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-rose-500/40 ${
       danger
@@ -998,7 +1030,7 @@ const Lobby: React.FC<{
   };
 
   return (
-    <div className="flex items-center justify-center h-full bg-black text-white">
+    <div className="flex items-center justify-center h-full bg-[#080808] text-white">
       <div className="w-full max-w-sm space-y-6 p-8">
         <div className="text-center space-y-3">
           <div className="w-14 h-14 rounded-2xl bg-white/[0.04] border border-white/10 flex items-center justify-center mx-auto mb-4">
@@ -1092,7 +1124,7 @@ const PulseVideoRoom: React.FC<PulseVideoRoomProps> = ({
 
   if (stage === 'joining' || !callObject) {
     return (
-      <div className="flex flex-col items-center justify-center h-full bg-black text-white gap-3">
+      <div className="flex flex-col items-center justify-center h-full bg-[#080808] text-white gap-3">
         <Loader2 size={28} className="animate-spin motion-reduce:animate-none text-white/40" />
         <p className="font-mono uppercase tracking-[0.1em] text-[10px] text-white/40">JOINING</p>
       </div>
