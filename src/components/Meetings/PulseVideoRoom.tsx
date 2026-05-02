@@ -497,67 +497,74 @@ const MeetingRoom: React.FC<{
         </div>
       )}
 
-      {/* ── Controls bar ────────────────────────────────────────────────────── */}
-      <div className="flex items-center justify-center gap-3 px-6 py-4 bg-white/[0.03] border-t border-white/[0.06]">
-        {/* Mic */}
-        <ControlButton active={micOn} onClick={toggleMic} activeIcon={<Mic size={18} />} inactiveIcon={<MicOff size={18} />} label="Mic" danger={!micOn} />
+      {/* ── Controls bar ──────────────────────────────────────────────────────
+           Three tiers: primary (Mic, Camera) elevated in a tinted group;
+           secondary (Share, Record, Transcribe) flat; tertiary (Chat,
+           People) icon-only. Leave isolated on the far right. */}
+      <div className="flex items-center justify-center gap-3 px-6 py-3 bg-white/[0.03] border-t border-white/[0.06]">
+        {/* Primary — elevated group */}
+        <div className="flex items-center gap-1 bg-white/[0.04] rounded-xl p-1">
+          <ControlButton active={micOn} onClick={toggleMic} activeIcon={<Mic size={20} />} inactiveIcon={<MicOff size={20} />} label="Mic" danger={!micOn} />
+          <ControlButton active={cameraOn} onClick={toggleCamera} activeIcon={<Video size={20} />} inactiveIcon={<VideoOff size={20} />} label="Camera" danger={!cameraOn} />
+        </div>
 
-        {/* Camera */}
-        <ControlButton active={cameraOn} onClick={toggleCamera} activeIcon={<Video size={18} />} inactiveIcon={<VideoOff size={18} />} label="Camera" danger={!cameraOn} />
+        <div className="h-7 w-px bg-white/[0.08]" aria-hidden="true" />
 
-        {/* Screen share */}
-        <ControlButton active={!screenSharing} onClick={toggleScreenShare} activeIcon={<Monitor size={18} />} inactiveIcon={<MonitorOff size={18} />} label="Share" highlight={screenSharing} />
+        {/* Secondary — flat group */}
+        <div className="flex items-center gap-1">
+          <ControlButton active={!screenSharing} onClick={toggleScreenShare} activeIcon={<Monitor size={18} />} inactiveIcon={<MonitorOff size={18} />} label="Share" highlight={screenSharing} />
+          {isHost && (
+            <ControlButton
+              active={!isRecording}
+              onClick={toggleRecording}
+              activeIcon={<Circle size={18} />}
+              inactiveIcon={<Square size={18} />}
+              label={isRecording ? 'Stop Rec' : 'Record'}
+              danger={isRecording}
+            />
+          )}
+          {isHost && (
+            <ControlButton
+              active={!transcriptEnabled}
+              onClick={toggleTranscription}
+              activeIcon={<Wand2 size={18} />}
+              inactiveIcon={<Wand2 size={18} />}
+              label={transcriptEnabled ? 'Stop' : 'Transcribe'}
+              highlight={transcriptEnabled}
+            />
+          )}
+        </div>
 
-        {/* Record (host only) */}
-        {isHost && (
+        <div className="h-7 w-px bg-white/[0.08]" aria-hidden="true" />
+
+        {/* Tertiary — icon-only */}
+        <div className="flex items-center gap-1">
           <ControlButton
-            active={!isRecording}
-            onClick={toggleRecording}
-            activeIcon={<Circle size={18} />}
-            inactiveIcon={<Square size={18} />}
-            label={isRecording ? 'Stop Rec' : 'Record'}
-            danger={isRecording}
+            active={sidePanel !== 'chat'}
+            onClick={() => setSidePanel(p => p === 'chat' ? 'none' : 'chat')}
+            activeIcon={<MessageSquare size={18} />}
+            inactiveIcon={<MessageSquare size={18} />}
+            label="Chat"
+            highlight={sidePanel === 'chat'}
+            iconOnly
           />
-        )}
-
-        {/* Transcription (host only) */}
-        {isHost && (
           <ControlButton
-            active={!transcriptEnabled}
-            onClick={toggleTranscription}
-            activeIcon={<Wand2 size={18} />}
-            inactiveIcon={<Wand2 size={18} />}
-            label={transcriptEnabled ? 'Stop AI' : 'AI Notes'}
-            highlight={transcriptEnabled}
+            active={sidePanel !== 'participants'}
+            onClick={() => setSidePanel(p => p === 'participants' ? 'none' : 'participants')}
+            activeIcon={<Users size={18} />}
+            inactiveIcon={<Users size={18} />}
+            label={`People (${allParticipants.length})`}
+            highlight={sidePanel === 'participants'}
+            iconOnly
           />
-        )}
+        </div>
 
-        {/* Chat */}
-        <ControlButton
-          active={sidePanel !== 'chat'}
-          onClick={() => setSidePanel(p => p === 'chat' ? 'none' : 'chat')}
-          activeIcon={<MessageSquare size={18} />}
-          inactiveIcon={<MessageSquare size={18} />}
-          label="Chat"
-          highlight={sidePanel === 'chat'}
-        />
-
-        {/* Participants */}
-        <ControlButton
-          active={sidePanel !== 'participants'}
-          onClick={() => setSidePanel(p => p === 'participants' ? 'none' : 'participants')}
-          activeIcon={<Users size={18} />}
-          inactiveIcon={<Users size={18} />}
-          label={`People (${allParticipants.length})`}
-          highlight={sidePanel === 'participants'}
-        />
-
-        {/* Leave */}
+        {/* Leave — isolated */}
         <button
           type="button"
           onClick={() => setShowEndConfirm(true)}
           aria-label="Leave meeting"
-          className="flex flex-col items-center gap-1 bg-rose-500 hover:bg-rose-600 text-white px-5 py-2 rounded-xl transition-colors ml-4 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-rose-500/40"
+          className="flex flex-col items-center gap-1 bg-rose-500 hover:bg-rose-600 text-white px-5 py-2.5 rounded-xl transition-colors ml-3 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-rose-500/40"
         >
           <PhoneOff size={18} />
           <span className="font-mono uppercase tracking-[0.1em] text-[10px]">LEAVE</span>
@@ -642,22 +649,26 @@ const ControlButton: React.FC<{
   label: string;
   danger?: boolean;
   highlight?: boolean;
-}> = ({ active, onClick, activeIcon, inactiveIcon, label, danger, highlight }) => (
+  iconOnly?: boolean;
+}> = ({ active, onClick, activeIcon, inactiveIcon, label, danger, highlight, iconOnly }) => (
   <button
     type="button"
     aria-label={label}
     aria-pressed={highlight ?? false}
+    title={iconOnly ? label : undefined}
     onClick={onClick}
-    className={`flex flex-col items-center gap-1 px-3 py-2 rounded-xl transition-colors focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-rose-500/40 ${
+    className={`flex flex-col items-center gap-1 ${iconOnly ? 'px-2.5 py-2' : 'px-3 py-2'} rounded-xl transition-colors focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-rose-500/40 ${
       danger
         ? 'bg-rose-500/15 text-rose-400 hover:bg-rose-500/25'
         : highlight
         ? 'bg-white/10 text-rose-400 hover:bg-white/15'
-        : 'bg-white/10 text-white/80 hover:bg-white/20'
+        : 'bg-white/[0.06] text-white/80 hover:bg-white/[0.12]'
     }`}
   >
     {active ? activeIcon : inactiveIcon}
-    <span className="font-mono uppercase tracking-[0.1em] text-[10px]">{label}</span>
+    {!iconOnly && (
+      <span className="font-mono uppercase tracking-[0.1em] text-[10px]">{label}</span>
+    )}
   </button>
 );
 
