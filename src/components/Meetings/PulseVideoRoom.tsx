@@ -22,8 +22,9 @@ import {
 import {
   Mic, MicOff, Video, VideoOff, Monitor, MonitorOff,
   Circle, Square, MessageSquare, Users, PhoneOff,
-  Copy, ChevronDown, Loader2, Wand2, X,
+  Copy, ChevronDown, Loader2, Wand2, X, Settings, AlertCircle,
 } from 'lucide-react';
+import toast from 'react-hot-toast';
 import {
   getMeetingToken,
   markRoomActive,
@@ -225,6 +226,120 @@ const WaitingForParticipants: React.FC<{
   );
 };
 
+// ── Device picker popover ─────────────────────────────────────────────────────
+// Lists audio inputs and video inputs from MediaDevices. Selecting one swaps
+// the active device via Daily's setInputDevicesAsync. Escape and click-outside
+// both close the popover (Escape is wired in MeetingRoom's keyboard effect).
+
+const DevicePickerPopover: React.FC<{
+  daily: DailyCall | null;
+  onClose: () => void;
+}> = ({ daily, onClose }) => {
+  const [audioInputs, setAudioInputs] = useState<MediaDeviceInfo[]>([]);
+  const [videoInputs, setVideoInputs] = useState<MediaDeviceInfo[]>([]);
+  const [currentAudioId, setCurrentAudioId] = useState<string | null>(null);
+  const [currentVideoId, setCurrentVideoId] = useState<string | null>(null);
+  const ref = useRef<HTMLDivElement | null>(null);
+
+  useEffect(() => {
+    if (!daily) return;
+    daily.enumerateDevices()
+      .then(({ devices }) => {
+        setAudioInputs(devices.filter(d => d.kind === 'audioinput'));
+        setVideoInputs(devices.filter(d => d.kind === 'videoinput'));
+        try {
+          const inputs = daily.getInputDevices() as { mic?: MediaDeviceInfo; camera?: MediaDeviceInfo };
+          setCurrentAudioId(inputs.mic?.deviceId ?? null);
+          setCurrentVideoId(inputs.camera?.deviceId ?? null);
+        } catch { /* getInputDevices may not be available pre-join */ }
+      })
+      .catch(err => console.warn('[DevicePicker] enumerateDevices failed:', err));
+  }, [daily]);
+
+  // Click-outside to close
+  useEffect(() => {
+    const onMouseDown = (e: MouseEvent) => {
+      if (ref.current && !ref.current.contains(e.target as Node)) onClose();
+    };
+    document.addEventListener('mousedown', onMouseDown);
+    return () => document.removeEventListener('mousedown', onMouseDown);
+  }, [onClose]);
+
+  const selectAudio = async (deviceId: string) => {
+    if (!daily) return;
+    try {
+      await daily.setInputDevicesAsync({ audioDeviceId: deviceId });
+      setCurrentAudioId(deviceId);
+    } catch (err) {
+      console.error('[DevicePicker] audio switch failed:', err);
+    }
+  };
+
+  const selectVideo = async (deviceId: string) => {
+    if (!daily) return;
+    try {
+      await daily.setInputDevicesAsync({ videoDeviceId: deviceId });
+      setCurrentVideoId(deviceId);
+    } catch (err) {
+      console.error('[DevicePicker] video switch failed:', err);
+    }
+  };
+
+  return (
+    <div
+      ref={ref}
+      role="menu"
+      aria-label="Device settings"
+      className="absolute bottom-full mb-3 left-1/2 -translate-x-1/2 w-80 bg-white/[0.05] border border-white/[0.10] rounded-xl backdrop-blur-xl py-2 shadow-2xl z-30"
+    >
+      <div className="flex items-center justify-between px-3 pb-2 border-b border-white/[0.06]">
+        <span className="font-mono uppercase tracking-[0.1em] text-[10px] text-white/55">DEVICES</span>
+        <ChevronDown size={12} className="text-white/30 rotate-180" aria-hidden="true" />
+      </div>
+
+      <div className="px-3 pt-2 pb-1 font-mono uppercase tracking-[0.1em] text-[10px] text-white/35">MICROPHONE</div>
+      {audioInputs.length === 0 ? (
+        <p className="px-3 py-1 text-xs text-white/40">No microphones detected</p>
+      ) : (
+        audioInputs.map(d => (
+          <button
+            key={d.deviceId}
+            type="button"
+            role="menuitemradio"
+            aria-checked={currentAudioId === d.deviceId}
+            onClick={() => selectAudio(d.deviceId)}
+            className={`w-full text-left px-3 py-1.5 text-xs hover:bg-white/[0.05] truncate transition-colors focus-visible:outline-none focus-visible:bg-white/[0.05] ${
+              currentAudioId === d.deviceId ? 'text-rose-400' : 'text-white/80'
+            }`}
+          >
+            {d.label || `Microphone ${d.deviceId.slice(0, 6)}`}
+          </button>
+        ))
+      )}
+
+      <div className="px-3 pt-3 pb-1 font-mono uppercase tracking-[0.1em] text-[10px] text-white/35 border-t border-white/[0.04] mt-1">CAMERA</div>
+      {videoInputs.length === 0 ? (
+        <p className="px-3 py-1 text-xs text-white/40">No cameras detected</p>
+      ) : (
+        videoInputs.map(d => (
+          <button
+            key={d.deviceId}
+            type="button"
+            role="menuitemradio"
+            aria-checked={currentVideoId === d.deviceId}
+            onClick={() => selectVideo(d.deviceId)}
+            className={`w-full text-left px-3 py-1.5 text-xs hover:bg-white/[0.05] truncate transition-colors focus-visible:outline-none focus-visible:bg-white/[0.05] ${
+              currentVideoId === d.deviceId ? 'text-rose-400' : 'text-white/80'
+            }`}
+          >
+            {d.label || `Camera ${d.deviceId.slice(0, 6)}`}
+          </button>
+        ))
+      )}
+    </div>
+  );
+};
+
 // ── Inner meeting room (must be inside DailyProvider) ─────────────────────────
 
 const MeetingRoom: React.FC<{
@@ -244,6 +359,7 @@ const MeetingRoom: React.FC<{
   const remoteIds = useParticipantIds({ filter: 'remote' });
 
   const [isJoined, setIsJoined] = useState(false);
+  const [joinError, setJoinError] = useState<string | null>(null);
   const [micOn, setMicOn] = useState(!initialMicOff);
   const [cameraOn, setCameraOn] = useState(!initialCameraOff);
   const [screenSharing, setScreenSharing] = useState(false);
@@ -256,6 +372,7 @@ const MeetingRoom: React.FC<{
   const [elapsed, setElapsed] = useState(0);
   const [showEndConfirm, setShowEndConfirm] = useState(false);
   const [isSummarizing, setIsSummarizing] = useState(false);
+  const [showDevicePicker, setShowDevicePicker] = useState(false);
   const startTimeRef = useRef<number>(Date.now());
   const timerRef = useRef<ReturnType<typeof setInterval> | null>(null);
   const allParticipants = localId ? [localId, ...remoteIds] : remoteIds;
@@ -263,33 +380,41 @@ const MeetingRoom: React.FC<{
   // ── Join room on mount ──────────────────────────────────────────────────────
   useEffect(() => {
     if (!daily || !roomUrl || !token) return;
-    daily.join({ url: roomUrl, token }).then(() => {
-      setIsJoined(true);
-      markRoomActive(roomName);
-      startTimeRef.current = Date.now();
-      timerRef.current = setInterval(() => {
-        setElapsed(Math.floor((Date.now() - startTimeRef.current) / 1000));
-      }, 1000);
+    daily.join({ url: roomUrl, token })
+      .then(() => {
+        setIsJoined(true);
+        setJoinError(null);
+        markRoomActive(roomName);
+        startTimeRef.current = Date.now();
+        timerRef.current = setInterval(() => {
+          setElapsed(Math.floor((Date.now() - startTimeRef.current) / 1000));
+        }, 1000);
 
-      // Apply initial device states from meeting settings
-      if (initialMicOff) daily.setLocalAudio(false);
-      if (initialCameraOff) daily.setLocalVideo(false);
+        // Apply initial device states from meeting settings
+        if (initialMicOff) daily.setLocalAudio(false);
+        if (initialCameraOff) daily.setLocalVideo(false);
 
-      // Auto-start recording if enabled (host only).
-      // Daily SDK's startRecording/startTranscription return void — errors come
-      // back via 'error' / 'recording-error' events, not via promise rejection.
-      // Wrap in try/catch only for synchronous throws (e.g. invalid args).
-      if (autoRecord && isHost) {
-        try { daily.startRecording(); }
-        catch (err) { console.warn('[PulseVideoRoom] Auto-record failed:', err); }
-      }
+        // Auto-start recording if enabled (host only).
+        // Daily SDK's startRecording/startTranscription return void — errors come
+        // back via 'error' / 'recording-error' events, not via promise rejection.
+        // Wrap in try/catch only for synchronous throws (e.g. invalid args).
+        if (autoRecord && isHost) {
+          try { daily.startRecording(); }
+          catch (err) { console.warn('[PulseVideoRoom] Auto-record failed:', err); }
+        }
 
-      if (autoTranscribe && isHost) {
-        try { daily.startTranscription({ language: 'en' }); }
-        catch (err) { console.warn('[PulseVideoRoom] Auto-transcribe failed:', err); }
-        setTranscriptEnabled(true);
-      }
-    });
+        if (autoTranscribe && isHost) {
+          try { daily.startTranscription({ language: 'en' }); }
+          catch (err) { console.warn('[PulseVideoRoom] Auto-transcribe failed:', err); }
+          setTranscriptEnabled(true);
+        }
+      })
+      .catch(err => {
+        // The previous code had no .catch — a failed join left the spinner
+        // on forever. Surface it so the user can retry or leave.
+        console.error('[PulseVideoRoom] Join failed:', err);
+        setJoinError('Could not join the room. Check your connection and try again.');
+      });
 
     return () => {
       if (timerRef.current) clearInterval(timerRef.current);
@@ -307,6 +432,14 @@ const MeetingRoom: React.FC<{
     setIsRecording(false);
     notifyRecordingStopped(roomName);
   }, [roomName]));
+
+  // Recording errors come via event, not promise rejection — surface them so
+  // a silent auto-record failure isn't mistaken for a successful recording.
+  useDailyEvent('recording-error', useCallback((evt: unknown) => {
+    console.warn('[PulseVideoRoom] recording-error:', evt);
+    toast.error('Recording could not start.', { duration: 4000, position: 'bottom-right' });
+    setIsRecording(false);
+  }, []));
 
   useDailyEvent('app-message', useCallback((evt: { data?: { type?: string; text?: string; sender?: string } }) => {
     if (evt?.data?.type === 'chat') {
@@ -340,15 +473,21 @@ const MeetingRoom: React.FC<{
   }, [daily]));
 
   // ── Controls ────────────────────────────────────────────────────────────────
-  const toggleMic = () => {
-    daily?.setLocalAudio(!micOn);
-    setMicOn(v => !v);
-  };
+  // Stable refs (useCallback) so the keyboard-shortcut effect can include
+  // them in deps without rebinding on every state change.
+  const toggleMic = useCallback(() => {
+    setMicOn(v => {
+      daily?.setLocalAudio(!v);
+      return !v;
+    });
+  }, [daily]);
 
-  const toggleCamera = () => {
-    daily?.setLocalVideo(!cameraOn);
-    setCameraOn(v => !v);
-  };
+  const toggleCamera = useCallback(() => {
+    setCameraOn(v => {
+      daily?.setLocalVideo(!v);
+      return !v;
+    });
+  }, [daily]);
 
   const toggleScreenShare = async () => {
     if (!daily) return;
@@ -417,8 +556,18 @@ const MeetingRoom: React.FC<{
         summary = `Meeting lasted ${Math.floor(duration / 60)} minutes with ${allParticipants.length} participant(s).`;
       }
 
-      await saveTranscript(roomName, fullTranscript, summary);
-      await markRoomEnded(roomName, duration);
+      // Persist + mark ended in a try block so a network blip can't swallow
+      // the summary the user is about to receive.
+      try {
+        await saveTranscript(roomName, fullTranscript, summary);
+        await markRoomEnded(roomName, duration);
+      } catch (err) {
+        console.error('[PulseVideoRoom] Failed to persist transcript/summary:', err);
+        toast.error('Transcript could not be saved. Summary is still available.', {
+          duration: 4000,
+          position: 'bottom-right',
+        });
+      }
       setIsSummarizing(false);
 
       onLeave({
@@ -429,10 +578,38 @@ const MeetingRoom: React.FC<{
         recordingStarted: isRecording,
       });
     } else {
-      await markRoomEnded(roomName, duration);
+      try { await markRoomEnded(roomName, duration); }
+      catch (err) { console.error('[PulseVideoRoom] markRoomEnded failed:', err); }
       onLeave({ durationSeconds: duration, participantCount: allParticipants.length, transcript: '', summary: '', recordingStarted: isRecording });
     }
   };
+
+  // ── Keyboard shortcuts ──────────────────────────────────────────────────────
+  // Cmd/Ctrl-D: toggle mic. Cmd/Ctrl-E: toggle camera. Esc: close side panel.
+  // Skip when the user is typing in an input or contenteditable surface.
+  useEffect(() => {
+    const onKey = (e: KeyboardEvent) => {
+      const target = e.target as HTMLElement | null;
+      const inField =
+        target?.tagName === 'INPUT' ||
+        target?.tagName === 'TEXTAREA' ||
+        target?.isContentEditable === true;
+
+      const cmd = e.metaKey || e.ctrlKey;
+      if (cmd && e.key.toLowerCase() === 'd' && !inField) {
+        e.preventDefault();
+        toggleMic();
+      } else if (cmd && e.key.toLowerCase() === 'e' && !inField) {
+        e.preventDefault();
+        toggleCamera();
+      } else if (e.key === 'Escape') {
+        if (showDevicePicker) setShowDevicePicker(false);
+        else if (sidePanel !== 'none') setSidePanel('none');
+      }
+    };
+    window.addEventListener('keydown', onKey);
+    return () => window.removeEventListener('keydown', onKey);
+  }, [toggleMic, toggleCamera, sidePanel, showDevicePicker]);
 
   // ── Format timer ────────────────────────────────────────────────────────────
   const formatTime = (s: number) => {
@@ -449,11 +626,26 @@ const MeetingRoom: React.FC<{
 
   if (!isJoined) {
     return (
-      <div className="flex items-center justify-center h-full bg-black text-white">
-        <div className="flex flex-col items-center gap-3">
-          <Loader2 size={32} className="animate-spin motion-reduce:animate-none text-white/40" />
-          <p className="font-mono uppercase tracking-[0.1em] text-[11px] text-white/55">CONNECTING</p>
-        </div>
+      <div className="flex items-center justify-center h-full bg-black text-white px-6">
+        {joinError ? (
+          <div className="flex flex-col items-center gap-4 max-w-sm text-center">
+            <AlertCircle size={28} className="text-rose-400" />
+            <p className="font-mono uppercase tracking-[0.1em] text-[11px] text-white/55">JOIN FAILED</p>
+            <p className="text-sm text-white/70 leading-snug">{joinError}</p>
+            <button
+              type="button"
+              onClick={() => onLeave()}
+              className="mt-2 bg-white/10 hover:bg-white/15 text-white px-4 py-2 rounded-xl transition-colors font-mono uppercase tracking-[0.1em] text-[11px] focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-rose-500/40"
+            >
+              BACK
+            </button>
+          </div>
+        ) : (
+          <div className="flex flex-col items-center gap-3">
+            <Loader2 size={32} className="animate-spin motion-reduce:animate-none text-white/40" />
+            <p className="font-mono uppercase tracking-[0.1em] text-[11px] text-white/55">CONNECTING</p>
+          </div>
+        )}
       </div>
     );
   }
@@ -606,8 +798,8 @@ const MeetingRoom: React.FC<{
 
         <div className="h-7 w-px bg-white/[0.08]" aria-hidden="true" />
 
-        {/* Secondary — flat group */}
-        <div className="flex items-center gap-1">
+        {/* Secondary — flat group (with device picker anchored above the Devices button) */}
+        <div className="relative flex items-center gap-1">
           <ControlButton active={!screenSharing} onClick={toggleScreenShare} activeIcon={<Monitor size={18} />} inactiveIcon={<MonitorOff size={18} />} label="Share" highlight={screenSharing} />
           {isHost && (
             <ControlButton
@@ -627,6 +819,21 @@ const MeetingRoom: React.FC<{
               inactiveIcon={<Wand2 size={18} />}
               label={transcriptEnabled ? 'Stop' : 'Transcribe'}
               highlight={transcriptEnabled}
+            />
+          )}
+          <ControlButton
+            active={!showDevicePicker}
+            onClick={() => setShowDevicePicker(v => !v)}
+            activeIcon={<Settings size={18} />}
+            inactiveIcon={<Settings size={18} />}
+            label="Devices"
+            highlight={showDevicePicker}
+          />
+
+          {showDevicePicker && (
+            <DevicePickerPopover
+              daily={daily}
+              onClose={() => setShowDevicePicker(false)}
             />
           )}
         </div>
