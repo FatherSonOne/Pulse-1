@@ -127,8 +127,10 @@ const Meetings: React.FC<MeetingsProps> = ({ apiKey, contacts, initialContactId,
   const [scheduleTime, setScheduleTime] = useState('');
   const [scheduleAttendees, setScheduleAttendees] = useState<Set<string>>(new Set());
 
-  // Pulse Video (Daily.co) room state
-  const [activeRoom, setActiveRoom] = useState<{ url: string; name: string } | null>(null);
+  // Pulse Video (Daily.co) room state — uses the PulseRoom shape returned by
+  // createPulseRoom (roomUrl + roomName). Earlier code typed this as
+  // { url, name } which silently rendered `undefined.split(...)` in the Lobby.
+  const [activeRoom, setActiveRoom] = useState<{ roomUrl: string; roomName: string } | null>(null);
 
   // Inline error for the join input — replaces the prior alert() apology modal.
   const [joinError, setJoinError] = useState<string | null>(null);
@@ -161,7 +163,7 @@ const Meetings: React.FC<MeetingsProps> = ({ apiKey, contacts, initialContactId,
       setMeetingCode(initialMeetingCode);
       setActiveMeetingTitle('Pulse Meeting');
       setActiveParticipants([]);
-      setActiveRoom({ url: `https://pulse.daily.co/${initialMeetingCode}`, name: initialMeetingCode });
+      setActiveRoom({ roomUrl: `https://pulse.daily.co/${initialMeetingCode}`, roomName: initialMeetingCode });
       setView('active');
       window.history.replaceState({}, '', '/');
     }
@@ -750,8 +752,8 @@ const Meetings: React.FC<MeetingsProps> = ({ apiKey, contacts, initialContactId,
     return (
       <div className="meetings-container">
         <PulseVideoRoom
-          roomUrl={activeRoom.url}
-          roomName={activeRoom.name}
+          roomUrl={activeRoom.roomUrl}
+          roomName={activeRoom.roomName}
           meetingTitle={activeMeetingTitle}
           isHost
           initialMicOff={meetingSettings.autoMuteOnJoin}

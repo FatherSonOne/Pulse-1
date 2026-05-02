@@ -28,14 +28,18 @@ serve(async (req) => {
       );
     }
 
+    const userToken = authHeader.slice(7);
     const supabaseClient = createClient(
       Deno.env.get('SUPABASE_URL')!,
       Deno.env.get('SUPABASE_ANON_KEY')!,
       { global: { headers: { Authorization: authHeader } } }
     );
 
-    const { data: { user } } = await supabaseClient.auth.getUser();
+    // supabase-js v2: pass the JWT explicitly. getUser() with no argument
+    // looks for a session in client-side storage and returns null on the server.
+    const { data: { user }, error: getUserError } = await supabaseClient.auth.getUser(userToken);
     if (!user) {
+      console.warn('[openai-realtime-token] getUser rejected token:', getUserError?.message ?? 'unknown');
       return new Response(
         JSON.stringify({ error: 'Invalid or expired token' }),
         { status: 401, headers: { ...corsHeaders, 'Content-Type': 'application/json' } }

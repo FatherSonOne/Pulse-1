@@ -36,7 +36,9 @@ serve(async (req) => {
       global: { headers: { Authorization: `Bearer ${token}` } },
     });
 
-    const { data: { user }, error: authError } = await userClient.auth.getUser();
+    // supabase-js v2: pass the JWT explicitly. getUser() with no argument
+    // looks for a session in client-side storage and returns null on the server.
+    const { data: { user }, error: authError } = await userClient.auth.getUser(token);
     if (authError || !user) return json({ error: 'Unauthorized' }, 401);
 
     // Get workspace_id from query param
