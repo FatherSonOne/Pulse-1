@@ -45,8 +45,16 @@ serve(async (req) => {
 
   try {
     // ── Auth check — all actions require a valid Supabase session ─────────────
+    // supabase-js v2: getUser() WITHOUT a token argument looks for a session in
+    // client-side storage (which doesn't exist on the server). Passing the JWT
+    // explicitly is the only correct way to validate a user-supplied bearer
+    // token from inside an edge function. The previous version called getUser()
+    // with no argument and silently failed for every authenticated request with
+    // "Auth session missing!" — easy to miss because the function returned the
+    // expected 401 without surfacing the underlying error.
     const authHeader = req.headers.get('Authorization');
     if (!authHeader?.startsWith('Bearer ')) return json({ error: 'Authentication required' }, 401);
+    const userToken = authHeader.slice(7);
 
     const supabase = createClient(
       Deno.env.get('SUPABASE_URL')!,
@@ -54,8 +62,11 @@ serve(async (req) => {
       { global: { headers: { Authorization: authHeader } } },
     );
 
-    const { data: { user } } = await supabase.auth.getUser();
-    if (!user) return json({ error: 'Invalid token' }, 401);
+    const { data: { user }, error: getUserError } = await supabase.auth.getUser(userToken);
+    if (!user) {
+      console.warn('[daily-rooms] getUser rejected token:', getUserError?.message ?? 'unknown');
+      return json({ error: 'Invalid token' }, 401);
+    }
 
     const body = await req.json();
     const { action } = body;
