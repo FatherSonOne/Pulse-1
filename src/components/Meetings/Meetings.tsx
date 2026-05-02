@@ -20,13 +20,6 @@ import {
   ActionItem,
   MeetingInsights,
   MeetingSummaryData,
-  HeroSection,
-  PlatformCards,
-  FeatureCards,
-  MeetingHistory,
-  UpcomingMeetings,
-  QuickActions,
-  MeetingInsightsCard,
   BulkInviteModal,
   TemplatesModal,
   AgendaBuilderModal,
@@ -38,6 +31,14 @@ import {
   BreakoutRoomsModal,
   MeetingSummaryView,
 } from './MeetingsComponents';
+import {
+  TimeRail,
+  MeetingsHeaderStrip,
+  MeetingsActionRow,
+  MeetingsToolsMenu,
+  MeetingsInsightLine,
+  MeetingsQuickActions,
+} from './TimeRail';
 
 interface MeetingsProps {
   apiKey: string;
@@ -71,7 +72,7 @@ const Meetings: React.FC<MeetingsProps> = ({ apiKey, contacts, initialContactId,
   const [selectedForInvite, setSelectedForInvite] = useState<Set<string>>(new Set());
   const [invitePlatform, setInvitePlatform] = useState<Platform>('pulse');
 
-  // Feature Modals State (NEW)
+  // Feature Modals State
   const [showTemplates, setShowTemplates] = useState(false);
   const [showAgendaBuilder, setShowAgendaBuilder] = useState(false);
   const [showActionItems, setShowActionItems] = useState(false);
@@ -80,6 +81,7 @@ const Meetings: React.FC<MeetingsProps> = ({ apiKey, contacts, initialContactId,
   const [showDeviceTest, setShowDeviceTest] = useState(false);
   const [showMeetingSettings, setShowMeetingSettings] = useState(false);
   const [showBreakoutRooms, setShowBreakoutRooms] = useState(false);
+  const [showToolsMenu, setShowToolsMenu] = useState(false);
   const [agendaItems, setAgendaItems] = useState<AgendaItem[]>([]);
   const [actionItems, setActionItems] = useState<ActionItem[]>(() => {
     try {
@@ -458,9 +460,17 @@ const Meetings: React.FC<MeetingsProps> = ({ apiKey, contacts, initialContactId,
   // ============================================
 
   if (view === 'dashboard') {
+    const pendingCount = actionItems.filter(i => i.status !== 'completed').length;
+    const totalScheduled = upcomingMeets.length + pastNotes.length;
+    // Compare last week's avg duration to overall avg for the trend signal.
+    const trendDelta = insights.weeklyTrend.length >= 2
+      ? Math.round((insights.weeklyTrend[insights.weeklyTrend.length - 1] || 0)
+                 - (insights.weeklyTrend[insights.weeklyTrend.length - 2] || 0))
+      : undefined;
+
     return (
       <div className="meetings-container">
-        {/* Modals */}
+        {/* Modals — all advanced features preserved */}
         <BulkInviteModal
           isOpen={showRolodex}
           platform={invitePlatform}
@@ -470,13 +480,11 @@ const Meetings: React.FC<MeetingsProps> = ({ apiKey, contacts, initialContactId,
           onSend={sendBulkInvites}
           onClose={() => setShowRolodex(false)}
         />
-
         <TemplatesModal
           isOpen={showTemplates}
           onSelect={handleTemplateSelect}
           onClose={() => setShowTemplates(false)}
         />
-
         <AgendaBuilderModal
           isOpen={showAgendaBuilder}
           items={agendaItems}
@@ -484,7 +492,6 @@ const Meetings: React.FC<MeetingsProps> = ({ apiKey, contacts, initialContactId,
           onRemoveItem={handleRemoveAgendaItem}
           onClose={() => setShowAgendaBuilder(false)}
         />
-
         <ActionItemsModal
           isOpen={showActionItems}
           items={actionItems}
@@ -493,111 +500,78 @@ const Meetings: React.FC<MeetingsProps> = ({ apiKey, contacts, initialContactId,
           onToggleStatus={handleToggleActionStatus}
           onClose={() => setShowActionItems(false)}
         />
-
-        <AnalyticsModal
-          isOpen={showAnalytics}
-          onClose={() => setShowAnalytics(false)}
-        />
-
-        <RecordingsModal
-          isOpen={showRecordings}
-          onClose={() => setShowRecordings(false)}
-        />
-
-        <DeviceTestModal
-          isOpen={showDeviceTest}
-          onClose={() => setShowDeviceTest(false)}
-        />
-
-        <MeetingSettingsModal
-          isOpen={showMeetingSettings}
-          onClose={() => setShowMeetingSettings(false)}
-        />
-
+        <AnalyticsModal isOpen={showAnalytics} onClose={() => setShowAnalytics(false)} />
+        <RecordingsModal isOpen={showRecordings} onClose={() => setShowRecordings(false)} />
+        <DeviceTestModal isOpen={showDeviceTest} onClose={() => setShowDeviceTest(false)} />
+        <MeetingSettingsModal isOpen={showMeetingSettings} onClose={() => setShowMeetingSettings(false)} />
         <BreakoutRoomsModal
           isOpen={showBreakoutRooms}
           onClose={() => setShowBreakoutRooms(false)}
           activeParticipants={activeParticipants}
         />
 
-        {/* Hero Section */}
-        <HeroSection
-          meetingLinkInput={meetingLinkInput}
-          onInputChange={setMeetingLinkInput}
-          onJoin={handleLinkJoin}
+        {/* Header strip */}
+        <MeetingsHeaderStrip
+          meetingCount={totalScheduled}
+          pendingActionCount={pendingCount}
+          onOpenTools={() => setShowToolsMenu(v => !v)}
+          onOpenActions={() => setShowActionItems(true)}
+          onOpenSettings={() => setShowMeetingSettings(true)}
         />
 
-        {/* Dashboard Content */}
-        <div className="meetings-dashboard">
-          <div className="meetings-grid">
-            {/* Left Column */}
-            <div>
-              {/* Platform Cards */}
-              <div className="meetings-section-header">
-                <div className="meetings-section-title">
-                  <PlayCircle />
-                  Start Instant Meeting
-                </div>
-              </div>
-              <PlatformCards
-                onStartMeeting={startMeeting}
-                onBulkInvite={openBulkInvite}
-              />
+        {/* Tools popover — Templates / Agenda / Recordings / Analytics / Bulk Invite / Breakout / Device Test */}
+        <MeetingsToolsMenu
+          open={showToolsMenu}
+          onClose={() => setShowToolsMenu(false)}
+          onTemplates={() => setShowTemplates(true)}
+          onAgenda={() => setShowAgendaBuilder(true)}
+          onRecordings={() => setShowRecordings(true)}
+          onAnalytics={() => setShowAnalytics(true)}
+          onBulkInvite={() => openBulkInvite('pulse')}
+          onBreakout={() => setShowBreakoutRooms(true)}
+          onDeviceTest={() => setShowDeviceTest(true)}
+        />
 
-              {/* Feature Cards (NEW) */}
-              <div className="meetings-section-header">
-                <div className="meetings-section-title">
-                  <LayoutGrid />
-                  Enhanced Features
-                </div>
-              </div>
-              <FeatureCards
-                onFeatureClick={handleFeatureClick}
-                pendingActions={actionItems.filter(i => i.status !== 'completed').length}
-              />
+        {/* Action row — Join + Start (with platform overflow) + Schedule */}
+        <MeetingsActionRow
+          joinValue={meetingLinkInput}
+          onJoinChange={setMeetingLinkInput}
+          onJoinSubmit={handleLinkJoin}
+          onStartPulse={() => startMeeting('pulse')}
+          onStartExternal={(p) => startMeeting(p)}
+          onSchedule={() => setView('schedule')}
+        />
 
-              {/* Meeting History */}
-              <div className="meetings-section-header">
-                <div className="meetings-section-title">
-                  <History />
-                  History & Notes
-                </div>
-                <button className="meetings-section-action" onClick={() => setShowRecordings(true)}>View All</button>
-              </div>
-              <MeetingHistory
-                notes={pastNotes}
-                onNoteClick={(note) => {
-                  setSummaryData({
-                    aiSummary: note.content || '',
-                    keyPoints: [],
-                    actionItems: [],
-                    decisions: [],
-                    timelineEvents: [],
-                    participants: [],
-                    duration: 0,
-                    meetingTitle: note.title,
-                  });
-                  setView('summary');
-                }}
-              />
-            </div>
-
-            {/* Right Column - Sidebar */}
-            <div className="meetings-sidebar">
-              <UpcomingMeetings
-                meetings={upcomingMeets}
-                onJoin={(meeting) => {
-                  createAndJoinPulseRoom(meeting.title, meeting.id);
-                }}
-                onSchedule={() => setView('schedule')}
-                onViewAll={() => setShowAnalytics(true)}
-              />
-
-              <QuickActions onAction={handleQuickAction} />
-
-              <MeetingInsightsCard insights={insights} />
-            </div>
-          </div>
+        {/* Time-rail dashboard */}
+        <div className="mtg-dashboard">
+          <main className="mtg-dashboard-main">
+            <TimeRail
+              meetings={upcomingMeets}
+              recentNotes={pastNotes}
+              onJoinMeeting={(m) => createAndJoinPulseRoom(m.title, m.id)}
+              onOpenMeeting={(m) => createAndJoinPulseRoom(m.title, m.id)}
+              onOpenRecap={(note) => {
+                setSummaryData({
+                  aiSummary: note.content || '',
+                  keyPoints: [],
+                  actionItems: [],
+                  decisions: [],
+                  timelineEvents: [],
+                  participants: [],
+                  duration: 0,
+                  meetingTitle: note.title,
+                });
+                setView('summary');
+              }}
+            />
+          </main>
+          <aside className="mtg-dashboard-aside">
+            <MeetingsInsightLine
+              avgDurationMinutes={insights.avgDuration}
+              weeklyTrendDelta={trendDelta}
+            />
+            <MeetingsQuickActions onAction={handleQuickAction} />
+          </aside>
         </div>
       </div>
     );
