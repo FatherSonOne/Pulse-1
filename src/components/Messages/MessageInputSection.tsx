@@ -121,10 +121,10 @@ export const MessageInputSection: React.FC<MessageInputSectionProps> = ({
     >
        {/* View-Only Mode Banner for Non-Pulse Users on PC */}
        {isViewOnlyMode && (
-         <div className="mb-4 p-4 bg-amber-50 dark:bg-amber-900/20 border border-amber-200 dark:border-amber-800 rounded-xl">
+         <div className="mb-4 p-4 bg-amber-500/[0.06] dark:bg-amber-500/[0.08] ring-1 ring-amber-500/30 rounded-xl">
            <div className="flex items-start gap-3">
-             <div className="w-10 h-10 bg-amber-100 dark:bg-amber-900/40 rounded-full flex items-center justify-center flex-shrink-0">
-               <Smartphone className="text-amber-600 dark:text-amber-400" />
+             <div className="w-10 h-10 bg-amber-500/15 ring-1 ring-amber-500/30 rounded-full flex items-center justify-center flex-shrink-0">
+               <Smartphone className="text-amber-700 dark:text-amber-400" />
              </div>
              <div className="flex-1">
                <h4 className="font-semibold text-amber-800 dark:text-amber-200 text-sm mb-1">Send from your phone</h4>
@@ -139,7 +139,7 @@ export const MessageInputSection: React.FC<MessageInputSectionProps> = ({
                      setShowInviteToPulseModal(true);
                    }
                  }}
-                 className="text-xs font-medium text-amber-600 dark:text-amber-400 hover:underline inline-flex items-center gap-1"
+                 className="text-[10px] font-mono uppercase tracking-[0.1em] font-medium text-amber-700 dark:text-amber-400 hover:underline inline-flex items-center gap-1 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-amber-500/40 rounded"
                >
                  <Rocket /> Invite to Pulse for free messaging
                </button>
@@ -174,7 +174,7 @@ export const MessageInputSection: React.FC<MessageInputSectionProps> = ({
        {showTemplates && (
          <div className="absolute bottom-full left-4 right-4 mb-2 bg-white dark:bg-zinc-900 border border-zinc-200 dark:border-zinc-800 rounded-xl shadow-xl p-3 animate-slide-up z-30">
            <div className="flex items-center justify-between mb-3">
-             <span className="text-xs font-bold text-zinc-500 uppercase tracking-wider">Quick Templates</span>
+             <span className="text-[10px] font-mono uppercase tracking-[0.1em] font-medium text-zinc-500 dark:text-zinc-400">Quick Templates</span>
              <button onClick={() => setShowTemplates(false)} className="text-zinc-400 hover:text-zinc-600">
                <X className="text-xs" />
              </button>
@@ -214,7 +214,7 @@ export const MessageInputSection: React.FC<MessageInputSectionProps> = ({
        {showEmojiPicker && !emojiPickerMessageId && (
          <div className="absolute bottom-full left-4 mb-2 bg-white dark:bg-zinc-900 border border-zinc-200 dark:border-zinc-800 rounded-xl shadow-xl p-3 animate-slide-up z-30 w-80">
            <div className="flex items-center justify-between mb-3">
-             <span className="text-xs font-bold text-zinc-500 uppercase tracking-wider">Add Emoji</span>
+             <span className="text-[10px] font-mono uppercase tracking-[0.1em] font-medium text-zinc-500 dark:text-zinc-400">Add Emoji</span>
              <button onClick={() => setShowEmojiPicker(false)} className="text-zinc-400 hover:text-zinc-600">
                <X className="text-xs" />
              </button>
@@ -335,20 +335,20 @@ export const MessageInputSection: React.FC<MessageInputSectionProps> = ({
        )}
 
        {proposalModeEnabled && isProposalMode && (
-           <div className="absolute bottom-full left-4 right-4 mb-2 bg-amber-50 dark:bg-amber-900/20 border border-amber-200 dark:border-amber-800 p-2 rounded-lg flex items-center justify-between text-xs text-amber-800 dark:text-amber-200 animate-slide-up">
-               <span className="font-bold flex items-center gap-2"><Scale /> Proposal Mode Active</span>
-               <button onClick={() => setIsProposalMode(false)}><X /></button>
+           <div className="absolute bottom-full left-4 right-4 mb-2 bg-amber-500/[0.06] dark:bg-amber-500/[0.08] ring-1 ring-amber-500/30 p-2 rounded-lg flex items-center justify-between text-xs text-amber-700 dark:text-amber-300 animate-slide-up">
+               <span className="font-mono uppercase tracking-[0.1em] text-[10px] font-medium flex items-center gap-2"><Scale /> PROPOSAL MODE ACTIVE</span>
+               <button onClick={() => setIsProposalMode(false)} className="hover:text-amber-900 dark:hover:text-amber-200 transition-colors focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-amber-500/40 rounded"><X /></button>
            </div>
        )}
 
        {/* Recording Indicator */}
        {isRecording && (
-         <div className="absolute bottom-full left-4 right-4 mb-2 bg-red-50 dark:bg-red-900/20 border border-red-200 dark:border-red-800 p-3 rounded-lg flex items-center justify-between animate-slide-up">
+         <div className="absolute bottom-full left-4 right-4 mb-2 bg-red-500/[0.06] dark:bg-red-500/[0.08] ring-1 ring-red-500/30 p-3 rounded-lg flex items-center justify-between animate-slide-up">
            <div className="flex items-center gap-3">
              <div className="w-3 h-3 rounded-full bg-red-500 animate-pulse"></div>
              <span className="text-sm text-red-700 dark:text-red-300 font-medium">Recording... {formatDuration(recordingDuration)}</span>
            </div>
-           <button onClick={stopRecording} className="px-3 py-1 bg-red-500 text-white rounded-lg text-sm font-medium hover:bg-red-600 transition">
+           <button onClick={stopRecording} className="px-3 py-1 bg-red-500 text-white rounded-lg text-[10px] font-mono uppercase tracking-[0.1em] font-medium hover:bg-red-600 transition-colors focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-red-500/40">
              Stop & Send
            </button>
          </div>
@@ -389,7 +389,7 @@ export const MessageInputSection: React.FC<MessageInputSectionProps> = ({
          />
        )}
 
-       <div className={`flex gap-1 sm:gap-2 items-end relative bg-zinc-50 dark:bg-zinc-900 p-1.5 sm:p-2 rounded-xl border transition ${proposalModeEnabled && isProposalMode ? 'border-amber-400' : isRecording ? 'border-red-400' : 'border-zinc-200 dark:border-zinc-800'}`}>
+       <div className={`flex gap-1 sm:gap-2 items-end relative bg-zinc-50 dark:bg-zinc-900 p-1.5 sm:p-2 rounded-xl border transition-colors ${proposalModeEnabled && isProposalMode ? 'border-amber-500/50' : isRecording ? 'border-red-500/50' : 'border-zinc-200 dark:border-zinc-800'}`}>
          {/* Left Action Buttons - Collapsed on mobile */}
          <div className="flex gap-0.5 sm:gap-1 relative flex-shrink-0">
            {proposalModeEnabled && (
@@ -633,7 +633,7 @@ export const MessageInputSection: React.FC<MessageInputSectionProps> = ({
              <button
                onClick={() => handleSendSms(inputText)}
                disabled={!inputText.trim()}
-               className="w-8 h-8 sm:w-10 sm:h-10 rounded-lg bg-gradient-to-br from-rose-500 to-pink-500 hover:from-rose-600 hover:to-pink-600 text-white flex items-center justify-center transition shadow-[0_4px_12px_rgba(244,63,94,0.30)] hover:shadow-[0_6px_20px_rgba(244,63,94,0.40)] disabled:opacity-50 disabled:shadow-none"
+               className="w-8 h-8 sm:w-10 sm:h-10 rounded-lg bg-rose-500 hover:bg-rose-600 text-white flex items-center justify-center transition-colors shadow-[0_2px_8px_rgba(244,63,94,0.20)] hover:shadow-[0_4px_12px_rgba(244,63,94,0.30)] disabled:opacity-50 disabled:shadow-none focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-rose-500/40"
                title="Send SMS"
              >
                <MessageSquare className="text-xs sm:text-sm" />
@@ -652,7 +652,7 @@ export const MessageInputSection: React.FC<MessageInputSectionProps> = ({
              <button
                onClick={() => handleSend()}
                disabled={isRecording || (!inputText.trim())}
-               className="w-8 h-8 sm:w-10 sm:h-10 rounded-lg bg-gradient-to-br from-rose-500 to-pink-500 hover:from-rose-600 hover:to-pink-600 text-white flex items-center justify-center transition shadow-[0_4px_12px_rgba(244,63,94,0.30)] hover:shadow-[0_6px_20px_rgba(244,63,94,0.40)] disabled:opacity-50 disabled:shadow-none"
+               className="w-8 h-8 sm:w-10 sm:h-10 rounded-lg bg-rose-500 hover:bg-rose-600 text-white flex items-center justify-center transition-colors shadow-[0_2px_8px_rgba(244,63,94,0.20)] hover:shadow-[0_4px_12px_rgba(244,63,94,0.30)] disabled:opacity-50 disabled:shadow-none focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-rose-500/40"
                title="Send (Enter)"
              >
                <ArrowUp className="text-xs sm:text-sm" />

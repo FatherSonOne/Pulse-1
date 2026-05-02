@@ -271,17 +271,20 @@ export const MessagesCatchUpCard: React.FC<MessagesCatchUpCardProps> = ({
 
   return (
     <div
-      className={`bg-gradient-to-br from-rose-50 to-pink-50 dark:from-rose-950/30 dark:to-pink-950/30 border border-rose-200 dark:border-rose-800 rounded-xl p-4 ${className}`}
+      className={`bg-zinc-50 dark:bg-white/[0.03] ring-1 ring-zinc-200 dark:ring-white/[0.06] rounded-xl p-4 ${className}`}
       role="region"
       aria-label="Catch-up summary"
     >
       <div className="flex items-start gap-3">
-        <div className="w-9 h-9 rounded-full bg-rose-100 dark:bg-rose-900/40 flex items-center justify-center flex-shrink-0">
-          <Sparkles className="w-4 h-4 text-rose-600 dark:text-rose-400" />
+        <div className="w-9 h-9 rounded-full bg-rose-500/15 ring-1 ring-rose-500/30 flex items-center justify-center flex-shrink-0">
+          <Sparkles className="w-4 h-4 text-rose-500 dark:text-rose-bright" />
         </div>
         <div className="flex-1 min-w-0">
+          <div className="font-mono uppercase tracking-[0.1em] text-[10px] font-medium text-zinc-500 dark:text-zinc-400 mb-1">
+            PULSE AI · CATCH UP
+          </div>
           <div className="flex items-center justify-between mb-1">
-            <h4 className="text-sm font-semibold text-rose-900 dark:text-rose-200">
+            <h4 className="text-sm font-semibold text-zinc-800 dark:text-zinc-100">
               Catch up
             </h4>
             <div className="flex items-center gap-1">
@@ -290,26 +293,26 @@ export const MessagesCatchUpCard: React.FC<MessagesCatchUpCardProps> = ({
                 onClick={() => setExpanded((v) => !v)}
                 aria-expanded={expanded}
                 aria-label={expanded ? 'Collapse' : 'Expand'}
-                className="p-1 rounded hover:bg-rose-100 dark:hover:bg-rose-900/40 transition"
+                className="p-1 rounded hover:bg-rose-500/10 dark:hover:bg-rose-500/15 transition-colors focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-rose-500/40"
               >
                 {expanded
-                  ? <ChevronUp className="w-3.5 h-3.5 text-rose-600 dark:text-rose-400" />
-                  : <ChevronDown className="w-3.5 h-3.5 text-rose-600 dark:text-rose-400" />}
+                  ? <ChevronUp className="w-3.5 h-3.5 text-zinc-500 dark:text-zinc-400" />
+                  : <ChevronDown className="w-3.5 h-3.5 text-zinc-500 dark:text-zinc-400" />}
               </button>
               {onDismiss && (
                 <button
                   type="button"
                   onClick={onDismiss}
                   aria-label="Dismiss catch-up"
-                  className="p-1 rounded hover:bg-rose-100 dark:hover:bg-rose-900/40 transition"
+                  className="p-1 rounded hover:bg-rose-500/10 dark:hover:bg-rose-500/15 transition-colors focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-rose-500/40"
                 >
-                  <X className="w-3.5 h-3.5 text-rose-600 dark:text-rose-400" />
+                  <X className="w-3.5 h-3.5 text-zinc-500 dark:text-zinc-400" />
                 </button>
               )}
             </div>
           </div>
 
-          <p className="text-sm text-rose-800 dark:text-rose-200 leading-relaxed">
+          <p className="text-sm text-zinc-700 dark:text-zinc-300 leading-relaxed">
             {catchUp.summary}
           </p>
 
@@ -354,14 +357,14 @@ const CatchUpSection: React.FC<{
   tone: 'emerald' | 'amber' | 'blue';
 }> = ({ icon, label, items, tone }) => {
   const toneClasses = {
-    emerald: 'text-emerald-700 dark:text-emerald-400 bg-emerald-50 dark:bg-emerald-950/40',
-    amber: 'text-amber-700 dark:text-amber-400 bg-amber-50 dark:bg-amber-950/40',
-    blue: 'text-blue-700 dark:text-blue-400 bg-blue-50 dark:bg-blue-950/40',
+    emerald: 'text-emerald-700 dark:text-emerald-400 bg-emerald-500/[0.08] ring-1 ring-emerald-500/30',
+    amber: 'text-amber-700 dark:text-amber-400 bg-amber-500/[0.08] ring-1 ring-amber-500/30',
+    blue: 'text-blue-700 dark:text-blue-400 bg-blue-500/[0.08] ring-1 ring-blue-500/30',
   }[tone];
 
   return (
     <div>
-      <div className={`inline-flex items-center gap-1 text-[10px] font-bold uppercase tracking-wider px-2 py-0.5 rounded ${toneClasses}`}>
+      <div className={`inline-flex items-center gap-1 text-[10px] font-mono uppercase tracking-[0.1em] font-medium px-2 py-0.5 rounded ${toneClasses}`}>
         {icon}
         {label}
       </div>
@@ -399,10 +402,10 @@ const NUDGE_LABELS: Record<Nudge['type'], string> = {
 };
 
 const NUDGE_TONES: Record<Nudge['type'], string> = {
-  follow_up: 'border-blue-300 dark:border-blue-700 bg-blue-50 dark:bg-blue-950/30 text-blue-900 dark:text-blue-200',
-  clarify: 'border-amber-300 dark:border-amber-700 bg-amber-50 dark:bg-amber-950/30 text-amber-900 dark:text-amber-200',
-  de_escalate: 'border-rose-300 dark:border-rose-700 bg-rose-50 dark:bg-rose-950/30 text-rose-900 dark:text-rose-200',
-  praise: 'border-emerald-300 dark:border-emerald-700 bg-emerald-50 dark:bg-emerald-950/30 text-emerald-900 dark:text-emerald-200',
+  follow_up: 'ring-1 ring-blue-500/30 bg-blue-500/[0.06] dark:bg-blue-500/[0.08] text-blue-700 dark:text-blue-300',
+  clarify: 'ring-1 ring-amber-500/30 bg-amber-500/[0.06] dark:bg-amber-500/[0.08] text-amber-700 dark:text-amber-300',
+  de_escalate: 'ring-1 ring-rose-500/30 bg-rose-500/[0.06] dark:bg-rose-500/[0.08] text-rose-700 dark:text-rose-300',
+  praise: 'ring-1 ring-emerald-500/30 bg-emerald-500/[0.06] dark:bg-emerald-500/[0.08] text-emerald-700 dark:text-emerald-300',
 };
 
 export const MessagesNudgeBar: React.FC<MessagesNudgeBarProps> = ({
@@ -412,7 +415,7 @@ export const MessagesNudgeBar: React.FC<MessagesNudgeBarProps> = ({
   className = '',
 }) => (
   <div
-    className={`flex items-center gap-3 px-3 py-2 rounded-lg border text-sm ${NUDGE_TONES[nudge.type]} ${className}`}
+    className={`flex items-center gap-3 px-3 py-2 rounded-lg text-sm ${NUDGE_TONES[nudge.type]} ${className}`}
     role="status"
     aria-label={`Nudge: ${NUDGE_LABELS[nudge.type]}`}
   >
@@ -423,15 +426,15 @@ export const MessagesNudgeBar: React.FC<MessagesNudgeBarProps> = ({
       {nudge.type === 'praise' && <CheckCircle2 className="w-4 h-4" />}
     </div>
     <div className="flex-1 min-w-0">
-      <span className="font-semibold">{NUDGE_LABELS[nudge.type]}</span>
-      <span className="text-xs opacity-80 ml-2">{nudge.message}</span>
+      <span className="font-mono uppercase tracking-[0.1em] text-[10px] font-medium opacity-70 mr-2">PULSE AI · {NUDGE_LABELS[nudge.type].toUpperCase()}</span>
+      <span className="text-xs opacity-90">{nudge.message}</span>
     </div>
     <div className="flex items-center gap-1 flex-shrink-0">
       {onAccept && (
         <button
           type="button"
           onClick={onAccept}
-          className="px-2.5 py-1 text-xs font-medium bg-white/60 dark:bg-zinc-900/40 hover:bg-white dark:hover:bg-zinc-900/60 rounded transition"
+          className="px-2.5 py-1 text-[10px] font-mono uppercase tracking-[0.1em] font-medium bg-transparent hover:bg-white/40 dark:hover:bg-white/[0.06] rounded transition-colors focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-current/40"
         >
           Apply
         </button>
@@ -441,7 +444,7 @@ export const MessagesNudgeBar: React.FC<MessagesNudgeBarProps> = ({
           type="button"
           onClick={onDismiss}
           aria-label="Dismiss nudge"
-          className="p-1 rounded hover:bg-white/60 dark:hover:bg-zinc-900/40 transition"
+          className="p-1 rounded hover:bg-white/40 dark:hover:bg-white/[0.06] transition-colors focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-current/40"
         >
           <X className="w-3.5 h-3.5" />
         </button>

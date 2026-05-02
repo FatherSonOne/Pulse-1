@@ -319,11 +319,11 @@ export const MessageChat: React.FC<MessageChatProps> = ({
       <div className="px-6 py-4 border-b border-white/[0.07] flex items-center justify-between">
         <div className="flex items-center gap-3">
           {channel.is_group ? (
-            <div className="w-10 h-10 rounded-lg bg-gradient-to-br from-rose-500/20 to-pink-500/20 border border-rose-500/30 flex items-center justify-center">
+            <div className="w-10 h-10 rounded-lg bg-rose-500/15 ring-1 ring-rose-500/30 flex items-center justify-center">
               <Users className="text-rose-400" />
             </div>
           ) : (
-            <div className="w-10 h-10 rounded-lg bg-gradient-to-br from-rose-500/10 to-pink-500/10 border border-rose-500/20 flex items-center justify-center">
+            <div className="w-10 h-10 rounded-lg bg-rose-500/10 ring-1 ring-rose-500/20 flex items-center justify-center">
               <Hash className="text-rose-400" />
             </div>
           )}
@@ -331,7 +331,7 @@ export const MessageChat: React.FC<MessageChatProps> = ({
             <h2 className="text-lg font-semibold text-white flex items-center gap-2">
               {channel.is_group ? '' : '#'}{channel.name}
               {channel.is_public === false && !channel.is_group && (
-                <Lock className="text-xs text-yellow-500" />
+                <Lock className="text-xs text-zinc-400 dark:text-zinc-500" />
               )}
             </h2>
             {channel.description && (
@@ -455,7 +455,7 @@ export const MessageChat: React.FC<MessageChatProps> = ({
 
                           {/* Pinned indicator */}
                           {message.is_pinned && (
-                            <span className="text-[10px] text-yellow-500 flex items-center gap-1">
+                            <span className="text-[10px] text-rose-500/80 dark:text-rose-bright/80 flex items-center gap-1">
                               <Pin />
                               Pinned
                             </span>
@@ -569,7 +569,7 @@ export const MessageChat: React.FC<MessageChatProps> = ({
                         </button>
                         <button
                           onClick={() => handlePinMessage(message.id)}
-                          className={`w-7 h-7 rounded hover:bg-zinc-800 flex items-center justify-center transition ${message.is_pinned ? 'text-yellow-500' : 'text-zinc-500 hover:text-rose-400'}`}
+                          className={`w-7 h-7 rounded hover:bg-zinc-800 flex items-center justify-center transition ${message.is_pinned ? 'text-rose-500 dark:text-rose-bright' : 'text-zinc-500 hover:text-rose-400'}`}
                           title={message.is_pinned ? 'Unpin message' : 'Pin message'}
                         >
                           <Pin className="text-xs" />

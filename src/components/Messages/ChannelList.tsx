@@ -98,7 +98,7 @@ export const ChannelList: React.FC<ChannelListProps> = ({
         </h2>
         <button
           onClick={() => setShowNewChannel(true)}
-          className="w-12 h-12 rounded-lg bg-gradient-to-br from-rose-500/10 to-pink-500/10 border border-rose-500/20 hover:from-rose-500/20 hover:to-pink-500/20 hover:border-rose-500/40 flex items-center justify-center transition-all hover-scale"
+          className="w-12 h-12 rounded-lg bg-rose-500/10 ring-1 ring-rose-500/20 hover:bg-rose-500/15 hover:ring-rose-500/40 flex items-center justify-center transition-colors focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-rose-500/40"
           title="Create channel"
         >
           <Plus className="text-sm text-rose-500" />
@@ -136,7 +136,7 @@ export const ChannelList: React.FC<ChannelListProps> = ({
           <div className="flex gap-2">
             <button
               onClick={handleCreateChannel}
-              className="flex-1 bg-gradient-to-r from-rose-500 to-pink-600 hover:from-rose-600 hover:to-pink-700 text-white py-2 rounded-lg text-xs font-bold uppercase tracking-wider transition-all btn-pulse shadow-lg shadow-rose-500/30"
+              className="flex-1 bg-rose-500 hover:bg-rose-600 text-white py-2 rounded-lg text-[10px] font-mono uppercase tracking-[0.1em] font-medium transition-colors focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-rose-500/40"
             >
               Create
             </button>
@@ -171,7 +171,7 @@ export const ChannelList: React.FC<ChannelListProps> = ({
             {/* Public Channels */}
             {channels.filter(c => !c.is_group && !(c as any).is_bot_channel).length > 0 && (
               <div className="mb-4">
-                <div className="px-4 py-2 text-[10px] font-bold text-[#f43f5e] uppercase tracking-[2px]">
+                <div className="px-4 py-2 text-[10px] font-mono uppercase tracking-[0.1em] font-medium text-rose-500 dark:text-rose-bright">
                   Channels
                 </div>
                 {channels.filter(c => !c.is_group && !(c as any).is_bot_channel).map((channel) => (
@@ -205,7 +205,7 @@ export const ChannelList: React.FC<ChannelListProps> = ({
             {/* Group Chats */}
             {channels.filter(c => c.is_group).length > 0 && (
               <div className="mb-4">
-                <div className="px-4 py-2 text-[10px] font-bold text-[#94a3b8] uppercase tracking-[2px]">
+                <div className="px-4 py-2 text-[10px] font-mono uppercase tracking-[0.1em] font-medium text-zinc-400 dark:text-zinc-500">
                   Group Chats
                 </div>
                 {channels.filter(c => c.is_group).map((channel) => (
@@ -236,7 +236,7 @@ export const ChannelList: React.FC<ChannelListProps> = ({
             {/* Integrations (Bot Channels) */}
             {channels.filter(c => (c as any).is_bot_channel).length > 0 && (
               <div>
-                <div className="px-4 py-2 text-[10px] font-bold text-violet-400 uppercase tracking-[2px] flex items-center gap-1.5">
+                <div className="px-4 py-2 text-[10px] font-mono uppercase tracking-[0.1em] font-medium text-zinc-400 dark:text-zinc-500 flex items-center gap-1.5">
                   <Bot className="w-3 h-3" />
                   Integrations
                 </div>
@@ -247,14 +247,14 @@ export const ChannelList: React.FC<ChannelListProps> = ({
                     className={`channel-item ${selectedChannel?.id === channel.id ? 'active' : ''}`}
                     onClick={() => onSelectChannel(channel)}
                   >
-                    <div className="channel-icon text-violet-400">
+                    <div className="channel-icon text-zinc-400 dark:text-zinc-500">
                       <Bot />
                     </div>
                     <div className="flex-1 min-w-0">
-                      <span className="channel-name truncate block text-violet-300/80">{channel.name}</span>
+                      <span className="channel-name truncate block text-zinc-300 dark:text-zinc-300">{channel.name}</span>
                     </div>
                     {channel.unread_count && channel.unread_count > 0 ? (
-                      <span className="unread-badge bg-violet-500">{channel.unread_count}</span>
+                      <span className="unread-badge bg-rose-500">{channel.unread_count}</span>
                     ) : null}
                   </button>
                 ))}

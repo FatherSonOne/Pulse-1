@@ -20,14 +20,14 @@ const BOT_CONFIG: Record<string, { name: string; emoji: string; avatarBg: string
   entomate: {
     name: 'Entomate',
     emoji: '🤖',
-    avatarBg: 'from-violet-600/30 to-purple-600/30',
-    accentColor: 'border-violet-500/20 bg-violet-500/5',
+    avatarBg: 'bg-violet-500/15 ring-1 ring-violet-500/30',
+    accentColor: 'ring-1 ring-violet-500/30 bg-violet-500/[0.06]',
   },
   logos_vision: {
     name: 'Logos Vision',
     emoji: '🔮',
-    avatarBg: 'from-blue-600/30 to-cyan-600/30',
-    accentColor: 'border-blue-500/20 bg-blue-500/5',
+    avatarBg: 'bg-blue-500/15 ring-1 ring-blue-500/30',
+    accentColor: 'ring-1 ring-blue-500/30 bg-blue-500/[0.06]',
   },
 };
 
@@ -38,8 +38,8 @@ export const BotMessage: React.FC<BotMessageProps> = ({ message }) => {
   const bot = BOT_CONFIG[message.bot_app] || {
     name: message.bot_app,
     emoji: '🤖',
-    avatarBg: 'from-zinc-600/30 to-zinc-700/30',
-    accentColor: 'border-zinc-500/20 bg-zinc-500/5',
+    avatarBg: 'bg-zinc-500/15 ring-1 ring-zinc-500/30',
+    accentColor: 'ring-1 ring-zinc-500/30 bg-zinc-500/[0.06]',
   };
 
   const handleAction = (action: BotAction) => {
@@ -109,7 +109,7 @@ export const BotMessage: React.FC<BotMessageProps> = ({ message }) => {
   return (
     <div className="group flex items-start gap-3 py-2 px-1 rounded-xl hover:bg-white/[0.02] transition-colors">
       {/* Bot Avatar */}
-      <div className={`w-9 h-9 rounded-lg bg-gradient-to-br ${bot.avatarBg} border border-white/[0.08] flex items-center justify-center flex-shrink-0`}>
+      <div className={`w-9 h-9 rounded-lg ${bot.avatarBg} flex items-center justify-center flex-shrink-0`}>
         <span className="text-base leading-none">{bot.emoji}</span>
       </div>
 
@@ -118,9 +118,9 @@ export const BotMessage: React.FC<BotMessageProps> = ({ message }) => {
         {/* Header */}
         <div className="flex items-center gap-2 mb-1 flex-wrap">
           <span className="text-sm font-semibold text-zinc-200">{bot.name}</span>
-          <span className="text-[9px] font-bold uppercase tracking-widest text-violet-400 bg-violet-500/15 border border-violet-500/25 px-1.5 py-0.5 rounded-full flex items-center gap-1">
+          <span className="text-[10px] font-mono uppercase tracking-[0.1em] font-medium text-zinc-400 dark:text-zinc-500 bg-transparent ring-1 ring-zinc-300/50 dark:ring-white/[0.08] px-1.5 py-0.5 rounded-full flex items-center gap-1">
             <Bot className="w-2.5 h-2.5" />
-            BOT
+            PULSE AI · BOT
           </span>
           <SmartTimestamp time={message.created_at} />
         </div>
@@ -165,18 +165,18 @@ export const BotMessage: React.FC<BotMessageProps> = ({ message }) => {
 
         {/* Export all status */}
         {exportAllState === 'exporting' && (
-          <div className="mt-2 flex items-center gap-2 text-xs text-violet-400 bg-violet-500/10 border border-violet-500/20 rounded-lg px-3 py-2">
+          <div className="mt-2 flex items-center gap-2 text-xs text-violet-700 dark:text-violet-300 bg-violet-500/[0.08] ring-1 ring-violet-500/30 rounded-lg px-3 py-2">
             <Loader2 className="w-3 h-3 animate-spin" />
             <span>Exporting recordings to Entomate...</span>
           </div>
         )}
         {exportAllState === 'done' && (
-          <div className="mt-2 flex items-center gap-2 text-xs text-emerald-400 bg-emerald-500/10 border border-emerald-500/20 rounded-lg px-3 py-2">
+          <div className="mt-2 flex items-center gap-2 text-xs text-emerald-700 dark:text-emerald-300 bg-emerald-500/[0.08] ring-1 ring-emerald-500/30 rounded-lg px-3 py-2">
             <span>All recordings exported to Entomate!</span>
           </div>
         )}
         {exportAllState === 'error' && (
-          <div className="mt-2 flex items-center gap-2 text-xs text-rose-400 bg-rose-500/10 border border-rose-500/20 rounded-lg px-3 py-2">
+          <div className="mt-2 flex items-center gap-2 text-xs text-rose-700 dark:text-rose-300 bg-rose-500/[0.08] ring-1 ring-rose-500/30 rounded-lg px-3 py-2">
             <span>Some recordings failed to export. Try again later.</span>
           </div>
         )}
@@ -209,9 +209,9 @@ function InlineRating({ rating, submitted, meetingId, onRate, onClose }: {
 
   if (submitted) {
     return (
-      <div className="mt-2 flex items-center gap-2 text-xs text-emerald-400 bg-emerald-500/10 border border-emerald-500/20 rounded-lg px-3 py-2">
+      <div className="mt-2 flex items-center gap-2 text-xs text-emerald-700 dark:text-emerald-300 bg-emerald-500/[0.08] ring-1 ring-emerald-500/30 rounded-lg px-3 py-2">
         <span>Thanks for your feedback!</span>
-        <span className="text-amber-400">
+        <span className="text-rose-500/70 dark:text-rose-bright/70">
           {'★'.repeat(rating)}{'☆'.repeat(5 - rating)}
         </span>
         <button type="button" onClick={onClose} className="ml-auto text-zinc-500 hover:text-zinc-300">dismiss</button>
@@ -235,7 +235,7 @@ function InlineRating({ rating, submitted, meetingId, onRate, onClose }: {
           >
             <Star className={`w-4 h-4 transition-colors ${
               (hovered || rating) > i
-                ? 'text-amber-400 fill-amber-400'
+                ? 'text-rose-500 fill-rose-500 dark:text-rose-bright dark:fill-rose-bright'
                 : 'text-zinc-600'
             }`} />
           </button>
@@ -260,13 +260,13 @@ function AlertCard({ content, actions, onAction }: CardProps) {
   const isSuccess = content.includes('✅') || content.toLowerCase().includes('success');
 
   const colors = isError
-    ? 'border-rose-500/20 bg-rose-500/5'
+    ? 'ring-1 ring-rose-500/30 bg-rose-500/[0.06]'
     : isSuccess
-    ? 'border-emerald-500/20 bg-emerald-500/5'
-    : 'border-amber-500/20 bg-amber-500/5';
+    ? 'ring-1 ring-emerald-500/30 bg-emerald-500/[0.06]'
+    : 'ring-1 ring-amber-500/30 bg-amber-500/[0.06]';
 
   return (
-    <div className={`rounded-xl border ${colors} overflow-hidden mt-1`}>
+    <div className={`rounded-xl ${colors} overflow-hidden mt-1`}>
       <div className="px-4 py-3">
         <SimpleMarkdown text={content} />
       </div>

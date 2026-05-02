@@ -28,14 +28,17 @@ export const ActionItemsCard: React.FC<ActionItemsCardProps> = ({
   const dueDate = metadata.actionItems?.[0]?.dueDate;
 
   return (
-    <div className="rounded-xl border border-emerald-500/20 bg-emerald-500/5 overflow-hidden mt-1">
+    <div className="rounded-xl ring-1 ring-emerald-500/30 bg-emerald-500/[0.06] overflow-hidden mt-1">
       {/* Header */}
       <div className="flex items-center gap-2 px-4 py-3 border-b border-emerald-500/10">
-        <div className="w-8 h-8 rounded-lg bg-emerald-500/20 flex items-center justify-center text-lg">
+        <div className="w-8 h-8 rounded-lg bg-emerald-500/[0.08] ring-1 ring-emerald-500/20 flex items-center justify-center text-lg">
           ✅
         </div>
-        <div>
-          <span className="text-sm font-semibold text-emerald-300">Task Assigned</span>
+        <div className="flex-1">
+          <div className="font-mono uppercase tracking-[0.1em] text-[10px] font-medium text-emerald-700 dark:text-emerald-400 mb-0.5">
+            PULSE AI · ACTION ITEMS
+          </div>
+          <span className="text-sm font-semibold text-zinc-800 dark:text-zinc-200">Task Assigned</span>
           <div className="flex items-center gap-1 mt-0.5">
             <div className={`w-1.5 h-1.5 rounded-full ${pConf.dot}`} />
             <span className={`text-xs capitalize ${pConf.color}`}>{priority} priority</span>
@@ -85,7 +88,7 @@ export const ActionItemsCard: React.FC<ActionItemsCardProps> = ({
             <button
               key={i}
               onClick={() => onAction?.(action) || (action.url && window.open(action.url, '_blank'))}
-              className="flex items-center gap-1.5 px-3 py-1.5 rounded-lg text-xs font-medium bg-emerald-500/20 hover:bg-emerald-500/30 text-emerald-300 border border-emerald-500/25 hover:border-emerald-500/40 transition"
+              className="flex items-center gap-1.5 px-3 py-1.5 rounded-lg text-[10px] font-mono uppercase tracking-[0.1em] font-medium bg-transparent hover:bg-emerald-500/10 text-emerald-700 dark:text-emerald-400 ring-1 ring-emerald-500/30 hover:ring-emerald-500/50 transition-colors focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-emerald-500/40"
             >
               {action.url && <ExternalLink className="w-3 h-3" />}
               {action.label}
