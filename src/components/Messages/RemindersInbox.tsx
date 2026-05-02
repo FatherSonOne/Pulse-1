@@ -172,14 +172,14 @@ export const RemindersInbox: React.FC<RemindersInboxProps> = ({
       <button
         type="button"
         onClick={() => setOpen((v) => !v)}
-        className="relative h-8 w-8 flex items-center justify-center rounded-md text-amber-600 dark:text-amber-400 hover:bg-amber-500/10 dark:hover:bg-amber-500/15 transition-colors focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-amber-500/40"
+        className="relative h-8 w-8 flex items-center justify-center rounded-md text-rose-600 dark:text-rose-bright hover:bg-rose-500/10 dark:hover:bg-rose-500/15 transition-colors focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-rose-500/40"
         title={`${count} reminder${count > 1 ? 's' : ''} due`}
         aria-label="Reminders"
         aria-expanded={open}
       >
         <BellRing className="w-3.5 h-3.5" />
         {count > 0 && (
-          <span className="absolute -top-0.5 -right-0.5 min-w-[16px] h-[16px] px-1 rounded-full bg-amber-500 text-white font-mono text-[9px] font-semibold flex items-center justify-center tabular-nums">
+          <span className="absolute -top-0.5 -right-0.5 min-w-[16px] h-[16px] px-1 rounded-full bg-rose-500 text-white font-mono text-[9px] font-medium flex items-center justify-center tabular-nums">
             {count > 99 ? '99+' : count}
           </span>
         )}
@@ -187,7 +187,7 @@ export const RemindersInbox: React.FC<RemindersInboxProps> = ({
 
       {open && (
         <div
-          className="absolute right-0 top-full mt-2 w-80 max-h-[480px] bg-white dark:bg-black border border-zinc-200 dark:border-white/[0.06] rounded-xl shadow-xl z-50 overflow-hidden flex flex-col backdrop-blur-md"
+          className="absolute right-0 top-full mt-2 w-80 max-h-[480px] bg-white dark:bg-black/90 border border-zinc-200 dark:border-white/[0.06] rounded-xl shadow-xl z-50 overflow-hidden flex flex-col backdrop-blur-md"
           role="dialog"
         >
           <div className="px-3 py-2.5 border-b border-zinc-200 dark:border-white/[0.06] flex items-center justify-between">
@@ -195,7 +195,7 @@ export const RemindersInbox: React.FC<RemindersInboxProps> = ({
               DUE REMINDERS
             </h4>
             {count > 0 && (
-              <span className="font-mono text-[10px] text-zinc-400 dark:text-zinc-600 tabular-nums">
+              <span className="font-mono text-[10px] text-zinc-500 dark:text-zinc-500 tabular-nums">
                 {count} PENDING
               </span>
             )}
@@ -203,12 +203,12 @@ export const RemindersInbox: React.FC<RemindersInboxProps> = ({
 
           <div className="flex-1 overflow-y-auto">
             {loading && fired.length === 0 ? (
-              <div className="p-6 text-center font-mono uppercase tracking-[0.1em] text-[10px] text-zinc-400 dark:text-zinc-600">
+              <div className="p-6 text-center font-mono uppercase tracking-[0.1em] text-[10px] text-zinc-500 dark:text-zinc-500">
                 LOADING…
               </div>
             ) : fired.length === 0 ? (
               <div className="p-6 text-center">
-                <p className="font-mono uppercase tracking-[0.1em] text-[10px] text-zinc-400 dark:text-zinc-600">
+                <p className="font-mono uppercase tracking-[0.1em] text-[10px] text-zinc-500 dark:text-zinc-500">
                   ALL CAUGHT UP
                 </p>
               </div>
@@ -260,19 +260,19 @@ const ReminderRow: React.FC<ReminderRowProps> = ({
     : 'recently';
 
   return (
-    <li className="p-3 hover:bg-zinc-50 dark:hover:bg-zinc-800/50 transition">
+    <li className="p-3 hover:bg-zinc-100/60 dark:hover:bg-white/[0.04] transition-colors">
       <div className="flex items-start justify-between gap-2">
         <button
           type="button"
           onClick={onJump}
           disabled={busy}
-          className="flex-1 text-left min-w-0 disabled:opacity-50"
+          className="flex-1 text-left min-w-0 disabled:opacity-50 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-rose-500/40 rounded"
         >
-          <div className="flex items-center gap-1.5 text-[10px] uppercase tracking-wider text-amber-600 dark:text-amber-400 font-bold mb-0.5">
+          <div className="flex items-center gap-1.5 text-[10px] font-mono uppercase tracking-[0.1em] text-rose-600 dark:text-rose-bright font-medium mb-0.5">
             <BellRing className="w-2.5 h-2.5" />
             <span>Due {firedTime}</span>
             <span className="text-zinc-400 dark:text-zinc-500">·</span>
-            <span className="text-zinc-500 dark:text-zinc-400 normal-case font-medium tracking-normal">
+            <span className="text-zinc-500 dark:text-zinc-400 normal-case tracking-normal">
               {reminder.conversation_kind === 'dm' ? 'Pulse DM' : 'Channel'}
             </span>
           </div>
@@ -315,7 +315,7 @@ const ReminderRow: React.FC<ReminderRowProps> = ({
                 type="button"
                 onClick={() => onResnooze(preset.key)}
                 disabled={busy}
-                className="inline-flex items-center gap-1 px-2 py-0.5 rounded-md bg-zinc-100 dark:bg-zinc-800 hover:bg-amber-100 dark:hover:bg-amber-900/30 text-[11px] text-zinc-700 dark:text-zinc-300 transition disabled:opacity-50"
+                className="inline-flex items-center gap-1 px-2 py-0.5 rounded-md bg-zinc-100 dark:bg-white/[0.04] hover:bg-zinc-200 dark:hover:bg-white/[0.08] text-[11px] text-zinc-700 dark:text-zinc-300 transition-colors disabled:opacity-50 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-rose-500/40"
               >
                 {preset.icon}
                 {preset.label}

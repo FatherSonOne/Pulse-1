@@ -88,7 +88,7 @@ export const TriageBrief: React.FC<TriageBriefProps> = ({
             </h1>
           )}
           {lastSeen && (
-            <p className="font-mono uppercase tracking-[0.1em] text-[10px] text-zinc-400 dark:text-zinc-600 inline-flex items-center gap-1.5">
+            <p className="font-mono uppercase tracking-[0.1em] text-[10px] text-zinc-500 dark:text-zinc-500 inline-flex items-center gap-1.5">
               <Clock className="w-3 h-3" aria-hidden="true" />
               LAST ACTIVITY · {formatRelative(lastSeen)}
             </p>
@@ -142,7 +142,7 @@ export const TriageBrief: React.FC<TriageBriefProps> = ({
                             </span>
                           )}
                           {ago && (
-                            <span className="font-mono text-[10px] text-zinc-400 dark:text-zinc-600">
+                            <span className="font-mono text-[10px] text-zinc-500 dark:text-zinc-500">
                               {ago}
                             </span>
                           )}
@@ -169,10 +169,10 @@ export const TriageBrief: React.FC<TriageBriefProps> = ({
           >
             <Plus className="w-3.5 h-3.5" aria-hidden="true" />
             <span className="text-[13px] font-medium">New conversation</span>
-            <span className="font-mono uppercase tracking-[0.1em] text-[10px] text-zinc-400 dark:text-zinc-600">⌘N</span>
+            <span className="font-mono uppercase tracking-[0.1em] text-[10px] text-zinc-500 dark:text-zinc-500">⌘N</span>
           </button>
           {total > 0 && caughtUp && (
-            <p className="mt-2 font-mono uppercase tracking-[0.1em] text-[10px] text-zinc-400 dark:text-zinc-600">
+            <p className="mt-2 font-mono uppercase tracking-[0.1em] text-[10px] text-zinc-500 dark:text-zinc-500">
               {total} {total === 1 ? 'CONVERSATION' : 'CONVERSATIONS'} · ALL READ
             </p>
           )}

@@ -218,30 +218,30 @@ const QuickAddContact: React.FC<QuickAddContactProps> = ({ onAddContact, onConta
       </div>
       <div className="space-y-3">
         <div>
-          <label className="block text-xs font-bold text-zinc-500 dark:text-zinc-400 uppercase tracking-wider mb-1">Name</label>
+          <label className="block text-[10px] font-mono uppercase tracking-[0.1em] font-medium text-zinc-500 dark:text-zinc-500 mb-1">Name</label>
           <input
             type="text"
             value={name}
             onChange={(e) => setName(e.target.value)}
             placeholder="John Doe"
-            className="w-full px-3 py-2 rounded-lg border border-zinc-300 dark:border-zinc-700 bg-white dark:bg-zinc-800 dark:text-white focus:ring-2 focus:ring-blue-500 focus:border-transparent outline-none transition"
+            className="w-full px-3 py-2 rounded-lg border border-zinc-200 dark:border-white/[0.08] bg-white dark:bg-white/[0.03] dark:text-white focus:ring-2 focus:ring-rose-500/40 focus:border-rose-500/40 outline-none transition-colors"
             autoFocus
           />
         </div>
         <div>
-          <label className="block text-xs font-bold text-zinc-500 dark:text-zinc-400 uppercase tracking-wider mb-1">Email</label>
+          <label className="block text-[10px] font-mono uppercase tracking-[0.1em] font-medium text-zinc-500 dark:text-zinc-500 mb-1">Email</label>
           <input
             type="email"
             value={email}
             onChange={(e) => setEmail(e.target.value)}
             placeholder="john@example.com"
-            className="w-full px-3 py-2 rounded-lg border border-zinc-300 dark:border-zinc-700 bg-white dark:bg-zinc-800 dark:text-white focus:ring-2 focus:ring-blue-500 focus:border-transparent outline-none transition"
+            className="w-full px-3 py-2 rounded-lg border border-zinc-200 dark:border-white/[0.08] bg-white dark:bg-white/[0.03] dark:text-white focus:ring-2 focus:ring-rose-500/40 focus:border-rose-500/40 outline-none transition-colors"
           />
         </div>
         <button
           onClick={handleSubmit}
           disabled={!name.trim() || !email.trim() || isAdding || !onAddContact}
-          className="w-full px-4 py-2 rounded-lg text-sm font-bold bg-blue-600 text-white hover:bg-blue-700 disabled:opacity-50 disabled:cursor-not-allowed transition flex items-center justify-center gap-2"
+          className="w-full px-4 py-2 rounded-lg text-sm font-medium bg-rose-500 text-white hover:bg-rose-600 disabled:opacity-50 disabled:cursor-not-allowed transition-colors flex items-center justify-center gap-2 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-rose-500/40"
         >
           {isAdding ? (
             <>
@@ -396,9 +396,6 @@ const Messages: React.FC<MessagesProps> = ({ apiKey, contacts, initialContactId,
   // SMS Sub-page State
   const [showCellularSMS, setShowCellularSMS] = useState(false);
   const [activeSmsThreadId, setActiveSmsThreadId] = useState<string | null>(null);
-
-  // Filter Dropdown State
-  const [showFilterDropdown, setShowFilterDropdown] = useState(false);
 
   const [typingThreads, setTypingThreads] = useState<Record<string, boolean>>({});
   const [searchQuery, setSearchQuery] = useState('');
@@ -3185,8 +3182,6 @@ const Messages: React.FC<MessagesProps> = ({ apiKey, contacts, initialContactId,
         setShowNewChatModal={setShowNewChatModal}
         threadFilter={threadFilter}
         setThreadFilter={setThreadFilter}
-        showFilterDropdown={showFilterDropdown}
-        setShowFilterDropdown={setShowFilterDropdown}
         showArchived={showArchived}
         setShowArchived={setShowArchived}
         searchInputRef={searchInputRef}
@@ -3248,7 +3243,7 @@ const Messages: React.FC<MessagesProps> = ({ apiKey, contacts, initialContactId,
                     setShowContactPanel(true);
                   }
                 }}
-                className="w-10 h-10 rounded-full bg-gradient-to-br from-rose-500 to-pink-600 flex items-center justify-center text-white text-sm font-bold flex-shrink-0 relative hover:ring-2 hover:ring-emerald-500/50 transition-all"
+                className="w-10 h-10 rounded-full bg-rose-500/15 dark:bg-rose-500/15 flex items-center justify-center text-rose-700 dark:text-rose-300 text-sm font-medium flex-shrink-0 relative hover:bg-rose-500/20 dark:hover:bg-rose-500/20 transition-colors focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-rose-500/40"
                 title="View contact details"
               >
                 {activePulseConv.other_user?.avatar_url ? (
@@ -3263,21 +3258,21 @@ const Messages: React.FC<MessagesProps> = ({ apiKey, contacts, initialContactId,
                   </div>
                 )}
               </button>
-              <div className="flex flex-col">
+              <div className="flex flex-col min-w-0">
                 <span
-                  className="font-bold leading-tight flex items-center gap-2 text-zinc-900 dark:text-zinc-100"
+                  className="font-medium leading-tight flex items-center gap-1.5 text-zinc-900 dark:text-zinc-100 truncate"
                 >
                   {activePulseConv.other_user?.display_name || activePulseConv.other_user?.full_name || 'Unknown'}
                   {activePulseConv.other_user?.is_verified && (
                     <>
-                      <CheckCircle2 className="text-blue-500 text-xs" />
+                      <CheckCircle2 className="w-3.5 h-3.5 text-zinc-400 dark:text-zinc-500 flex-shrink-0" />
                       <UserBadge role="member" size="sm" showIcon={false} showLabel={true} />
                     </>
                   )}
                 </span>
-                <div className="flex items-center gap-2">
+                <div className="flex items-center gap-2 text-[10px] font-mono uppercase tracking-[0.1em] font-medium text-zinc-400 dark:text-zinc-500">
                   {activePulseConv.other_user?.handle && (
-                    <span className="text-xs text-emerald-500 font-medium">@{activePulseConv.other_user.handle}</span>
+                    <span>@{activePulseConv.other_user.handle}</span>
                   )}
                   {activePulseConv.other_user?.id && (
                     <OnlineIndicator userId={activePulseConv.other_user.id} showText={true} />
@@ -3295,9 +3290,9 @@ const Messages: React.FC<MessagesProps> = ({ apiKey, contacts, initialContactId,
                   value={searchQuery}
                   onChange={e => setSearchQuery(e.target.value)}
                   onFocus={() => setIsSearchOpen(true)}
-                  className="w-full bg-zinc-100 dark:bg-zinc-800 border border-zinc-200 dark:border-zinc-700 rounded-lg px-3 py-2 text-sm pl-9 outline-none focus:ring-2 focus:ring-emerald-500/50 dark:text-white transition"
+                  className="w-full bg-zinc-50 dark:bg-white/[0.03] border border-transparent rounded-lg px-3 py-2 text-sm pl-9 outline-none focus:ring-2 focus:ring-rose-500/40 focus:border-rose-500/40 dark:text-white transition"
                 />
-                <Search className="absolute left-3 top-1/2 -translate-y-1/2 text-zinc-400 text-xs" />
+                <Search className="absolute left-3 top-1/2 -translate-y-1/2 text-zinc-400 dark:text-zinc-500 text-xs" />
                 {searchQuery && (
                   <button onClick={() => { setSearchQuery(''); setIsSearchOpen(false); }} className="absolute right-3 top-1/2 -translate-y-1/2 text-zinc-400 hover:text-zinc-600 dark:hover:text-zinc-300">
                     <X className="text-xs" />
@@ -3344,7 +3339,7 @@ const Messages: React.FC<MessagesProps> = ({ apiKey, contacts, initialContactId,
 
           {/* Pulse Message Search Panel */}
           {isSearchOpen && (
-            <div className="border-b border-zinc-200 dark:border-zinc-800 bg-gradient-to-r from-rose-50 to-pink-50 dark:from-rose-900/20 dark:to-pink-900/20 p-3 animate-slide-down">
+            <div className="border-b border-zinc-200 dark:border-white/[0.06] bg-zinc-50 dark:bg-white/[0.02] p-3 animate-slide-down">
               <div className="flex items-center gap-2">
                 <div className="flex-1 relative">
                   <input
@@ -3353,9 +3348,9 @@ const Messages: React.FC<MessagesProps> = ({ apiKey, contacts, initialContactId,
                     placeholder="Search messages in this conversation..."
                     value={searchQuery}
                     onChange={e => setSearchQuery(e.target.value)}
-                    className="w-full bg-white dark:bg-zinc-800 border border-blue-200 dark:border-blue-700 rounded-lg px-3 py-2 text-sm pl-9 outline-none focus:ring-2 focus:ring-blue-500"
+                    className="w-full bg-white dark:bg-white/[0.03] border border-zinc-200 dark:border-white/[0.06] rounded-lg px-3 py-2 text-sm pl-9 outline-none focus:ring-2 focus:ring-rose-500/40 focus:border-rose-500/40"
                   />
-                  <Search className="absolute left-3 top-1/2 -translate-y-1/2 text-blue-400 text-xs" />
+                  <Search className="absolute left-3 top-1/2 -translate-y-1/2 text-zinc-400 dark:text-zinc-500 text-xs" />
                   {searchQuery && (
                     <button onClick={() => setSearchQuery('')} className="absolute right-3 top-1/2 -translate-y-1/2 text-zinc-400 hover:text-zinc-600">
                       <X className="text-xs" />
@@ -3407,9 +3402,16 @@ const Messages: React.FC<MessagesProps> = ({ apiKey, contacts, initialContactId,
             </div>
           )}
 
-          {/* Tools Panel Drawer - Compact Icon Grid */}
+          {/* Tools Panel Drawer - Coral Cockpit dense list */}
           <AnimatePresence>
-            {showToolsDrawer && (
+            {showToolsDrawer && (() => {
+              const hasAchievements = showAchievements && messageEnhancements.getAllAchievements().length > 0;
+              const utilitiesCount = 5 + (hasAchievements ? 1 : 0);
+              const totalTools = 4 + 4 + 4 + utilitiesCount;
+              const rowClass = "w-full flex items-center gap-3 px-3 py-2 rounded-lg hover:bg-zinc-100 dark:hover:bg-white/[0.04] text-zinc-700 dark:text-zinc-300 hover:text-rose-600 dark:hover:text-rose-bright transition-colors group focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-rose-500/40";
+              const iconClass = "w-4 text-center text-zinc-400 dark:text-zinc-500 group-hover:text-rose-500 dark:group-hover:text-rose-bright flex-shrink-0";
+              const sectionLabel = "px-2 pt-4 pb-1.5 text-[10px] font-mono uppercase tracking-[0.1em] font-medium text-zinc-400 dark:text-zinc-500";
+              return (
               <>
                 {/* Backdrop */}
                 <motion.div
@@ -3420,180 +3422,150 @@ const Messages: React.FC<MessagesProps> = ({ apiKey, contacts, initialContactId,
                   className="fixed inset-0 bg-black/40 backdrop-blur-sm z-[90]"
                   onClick={() => setShowToolsDrawer(false)}
                 />
-                {/* Drawer Panel - Compact */}
+                {/* Drawer Panel */}
                 <motion.div
                   initial={{ x: '100%' }}
                   animate={{ x: 0 }}
                   exit={{ x: '100%' }}
                   transition={{ type: 'spring', damping: 25, stiffness: 300 }}
-                  className="fixed right-0 top-0 bottom-0 w-64 bg-white dark:bg-zinc-900 shadow-2xl z-[91] flex flex-col border-l border-zinc-200 dark:border-zinc-800"
+                  className="fixed right-0 top-0 bottom-0 w-72 bg-white dark:bg-black border-l border-zinc-200/60 dark:border-white/[0.06] shadow-2xl z-[91] flex flex-col"
+                  role="dialog"
+                  aria-label="Tools menu"
                 >
                   {/* Drawer Header */}
-                  <div className="flex items-center justify-between px-3 py-2 border-b border-zinc-200 dark:border-zinc-800 bg-gradient-to-r from-rose-50 to-pink-50 dark:from-rose-950/30 dark:to-pink-950/30">
-                    <div className="flex items-center gap-2">
-                      <div className="w-8 h-8 rounded-lg bg-gradient-to-br from-rose-500 to-pink-600 flex items-center justify-center text-white text-sm">
-                        <Wrench />
-                      </div>
-                      <span className="font-bold text-zinc-900 dark:text-white text-sm">Tools</span>
+                  <div className="flex items-center justify-between px-4 py-3 border-b border-zinc-200/60 dark:border-white/[0.06]">
+                    <div className="flex items-baseline gap-2">
+                      <span className="text-[11px] font-mono uppercase tracking-[0.1em] font-medium text-zinc-700 dark:text-zinc-200">TOOLS</span>
+                      <span className="text-[10px] font-mono uppercase tracking-[0.1em] font-medium text-zinc-400 dark:text-zinc-500 tabular-nums">· {totalTools} AVAILABLE</span>
                     </div>
                     <button
                       onClick={() => setShowToolsDrawer(false)}
-                      className="w-7 h-7 rounded-lg hover:bg-zinc-200 dark:hover:bg-zinc-800 flex items-center justify-center transition"
+                      className="w-7 h-7 rounded-lg text-zinc-500 hover:text-rose-500 dark:hover:text-rose-bright hover:bg-zinc-100 dark:hover:bg-white/[0.04] flex items-center justify-center transition-colors focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-rose-500/40"
+                      aria-label="Close tools"
                     >
-                      <X className="text-zinc-500 text-sm" />
+                      <X className="w-4 h-4" />
                     </button>
                   </div>
 
-                  {/* Compact Tools Grid */}
-                  <div className="flex-1 p-3 space-y-3 overflow-y-auto">
-                    {/* AI Tools */}
-                    <div>
-                      <div className="text-[10px] font-bold text-purple-600 dark:text-purple-400 uppercase tracking-wider mb-2 flex items-center gap-1">
-                        <Bot /> AI Tools
-                      </div>
-                      <div className="grid grid-cols-4 gap-2">
-                        {[
-                          { id: 'ai-coach', icon: 'fa-user-graduate', name: 'Coach', overlay: 'intelligence' },
-                          { id: 'smart-compose', icon: 'fa-wand-magic-sparkles', name: 'Compose', overlay: 'productivity' },
-                          { id: 'sentiment-analysis', icon: 'fa-face-smile', name: 'Sentiment', overlay: 'analytics' },
-                          { id: 'translation', icon: 'fa-language', name: 'Translate', overlay: 'communication' },
-                        ].map(tool => (
-                          <button
-                            key={tool.id}
-                            onClick={() => { setActiveToolOverlay(tool.overlay as any); setShowToolsDrawer(false); }}
-                            className="flex flex-col items-center p-2 rounded-xl hover:bg-purple-50 dark:hover:bg-purple-900/20 transition group"
-                            title={tool.name}
-                          >
-                            <div className="w-10 h-10 rounded-xl bg-purple-100 dark:bg-purple-900/30 flex items-center justify-center text-purple-600 dark:text-purple-400 group-hover:scale-110 transition">
-                              <i className={`fa-solid ${tool.icon}`}></i>
-                            </div>
-                            <span className="text-[10px] text-zinc-600 dark:text-zinc-400 mt-1 font-medium">{tool.name}</span>
-                          </button>
-                        ))}
-                      </div>
-                    </div>
-
-                    {/* Content Creation */}
-                    <div>
-                      <div className="text-[10px] font-bold text-blue-600 dark:text-blue-400 uppercase tracking-wider mb-2 flex items-center gap-1">
-                        <PenTool /> Content
-                      </div>
-                      <div className="grid grid-cols-4 gap-2">
-                        {[
-                          { id: 'templates', icon: 'fa-file-lines', name: 'Templates', overlay: 'productivity' },
-                          { id: 'voice-recorder', icon: 'fa-microphone', name: 'Voice', overlay: 'mediaHub' },
-                          { id: 'attachments', icon: 'fa-paperclip', name: 'Files', overlay: 'mediaHub' },
-                          { id: 'schedule', icon: 'fa-clock', name: 'Schedule', overlay: 'productivity' },
-                        ].map(tool => (
-                          <button
-                            key={tool.id}
-                            onClick={() => { setActiveToolOverlay(tool.overlay as any); setShowToolsDrawer(false); }}
-                            className="flex flex-col items-center p-2 rounded-xl hover:bg-blue-50 dark:hover:bg-blue-900/20 transition group"
-                            title={tool.name}
-                          >
-                            <div className="w-10 h-10 rounded-xl bg-blue-100 dark:bg-blue-900/30 flex items-center justify-center text-blue-600 dark:text-blue-400 group-hover:scale-110 transition">
-                              <i className={`fa-solid ${tool.icon}`}></i>
-                            </div>
-                            <span className="text-[10px] text-zinc-600 dark:text-zinc-400 mt-1 font-medium">{tool.name}</span>
-                          </button>
-                        ))}
-                      </div>
-                    </div>
-
-                    {/* Analysis */}
-                    <div>
-                      <div className="text-[10px] font-bold text-green-600 dark:text-green-400 uppercase tracking-wider mb-2 flex items-center gap-1">
-                        <TrendingUp /> Analysis
-                      </div>
-                      <div className="grid grid-cols-4 gap-2">
-                        {[
-                          { id: 'analytics', icon: 'fa-chart-pie', name: 'Analytics', overlay: 'analytics' },
-                          { id: 'health', icon: 'fa-heart-pulse', name: 'Health', overlay: 'analytics' },
-                          { id: 'network', icon: 'fa-diagram-project', name: 'Network', overlay: 'collaboration' },
-                          { id: 'insights', icon: 'fa-magnifying-glass-chart', name: 'Insights', overlay: 'intelligence' },
-                        ].map(tool => (
-                          <button
-                            key={tool.id}
-                            onClick={() => { setActiveToolOverlay(tool.overlay as any); setShowToolsDrawer(false); }}
-                            className="flex flex-col items-center p-2 rounded-xl hover:bg-green-50 dark:hover:bg-green-900/20 transition group"
-                            title={tool.name}
-                          >
-                            <div className="w-10 h-10 rounded-xl bg-green-100 dark:bg-green-900/30 flex items-center justify-center text-green-600 dark:text-green-400 group-hover:scale-110 transition">
-                              <i className={`fa-solid ${tool.icon}`}></i>
-                            </div>
-                            <span className="text-[10px] text-zinc-600 dark:text-zinc-400 mt-1 font-medium">{tool.name}</span>
-                          </button>
-                        ))}
-                      </div>
-                    </div>
-
-                    {/* Utilities */}
-                    <div>
-                      <div className="text-[10px] font-bold text-amber-600 dark:text-amber-400 uppercase tracking-wider mb-2 flex items-center gap-1">
-                        <Wrench /> Utilities
-                      </div>
-                      <div className="grid grid-cols-4 gap-2">
-                        {/* Focus Mode */}
+                  {/* Tools List */}
+                  <div className="flex-1 overflow-y-auto px-2 py-1">
+                    {/* AI section */}
+                    <div className={`${sectionLabel} pt-2`}>AI · 4</div>
+                    <div className="space-y-0.5">
+                      {[
+                        { id: 'ai-coach', icon: 'fa-user-graduate', name: 'Coach', overlay: 'intelligence' },
+                        { id: 'smart-compose', icon: 'fa-wand-magic-sparkles', name: 'Compose', overlay: 'productivity' },
+                        { id: 'sentiment-analysis', icon: 'fa-face-smile', name: 'Sentiment', overlay: 'analytics' },
+                        { id: 'translation', icon: 'fa-language', name: 'Translate', overlay: 'communication' },
+                      ].map(tool => (
                         <button
-                          onClick={() => {
-                            setIsFocusModeActive(!isFocusModeActive);
-                            setFocusThreadId(isFocusModeActive ? null : activeThreadId || 'main');
-                            setShowToolsDrawer(false);
-                          }}
-                          className={`flex flex-col items-center p-2 rounded-xl transition group ${isFocusModeActive ? 'bg-rose-100 dark:bg-rose-900/30' : 'hover:bg-amber-50 dark:hover:bg-amber-900/20'}`}
-                          title="Focus Mode"
+                          key={tool.id}
+                          onClick={() => { setActiveToolOverlay(tool.overlay as any); setShowToolsDrawer(false); }}
+                          className={rowClass}
                         >
-                          <div className={`w-10 h-10 rounded-xl flex items-center justify-center group-hover:scale-110 transition ${isFocusModeActive ? 'bg-rose-500 text-white' : 'bg-amber-100 dark:bg-amber-900/30 text-amber-600 dark:text-amber-400'}`}>
-                            <Crosshair />
-                          </div>
-                          <span className="text-[10px] text-zinc-600 dark:text-zinc-400 mt-1 font-medium">Focus</span>
+                          <i className={`fa-solid ${tool.icon} ${iconClass}`}></i>
+                          <span className="text-sm flex-1 text-left">{tool.name}</span>
                         </button>
+                      ))}
+                    </div>
 
-                        {/* Achievements */}
-                        {showAchievements && messageEnhancements.getAllAchievements().length > 0 && (
-                          <button
-                            onClick={() => { setShowAnalyticsDashboard(true); setShowToolsDrawer(false); }}
-                            className="flex flex-col items-center p-2 rounded-xl hover:bg-amber-50 dark:hover:bg-amber-900/20 transition group"
-                            title="Achievements"
-                          >
-                            <div className="w-10 h-10 rounded-xl bg-amber-100 dark:bg-amber-900/30 flex items-center justify-center text-amber-600 dark:text-amber-400 group-hover:scale-110 transition">
-                              <Trophy />
-                            </div>
-                            <span className="text-[10px] text-zinc-600 dark:text-zinc-400 mt-1 font-medium">Awards</span>
-                          </button>
-                        )}
+                    {/* Content section */}
+                    <div className={sectionLabel}>CONTENT · 4</div>
+                    <div className="space-y-0.5">
+                      {[
+                        { id: 'templates', icon: 'fa-file-lines', name: 'Templates', overlay: 'productivity' },
+                        { id: 'voice-recorder', icon: 'fa-microphone', name: 'Voice', overlay: 'mediaHub' },
+                        { id: 'attachments', icon: 'fa-paperclip', name: 'Files', overlay: 'mediaHub' },
+                        { id: 'schedule', icon: 'fa-clock', name: 'Schedule', overlay: 'productivity' },
+                      ].map(tool => (
+                        <button
+                          key={tool.id}
+                          onClick={() => { setActiveToolOverlay(tool.overlay as any); setShowToolsDrawer(false); }}
+                          className={rowClass}
+                        >
+                          <i className={`fa-solid ${tool.icon} ${iconClass}`}></i>
+                          <span className="text-sm flex-1 text-left">{tool.name}</span>
+                        </button>
+                      ))}
+                    </div>
 
-                        {[
-                          { id: 'theme', icon: 'fa-palette', name: 'Theme', overlay: 'personalization' },
-                          { id: 'security', icon: 'fa-shield-halved', name: 'Security', overlay: 'security' },
-                          { id: 'export', icon: 'fa-download', name: 'Export', overlay: 'productivity' },
-                          { id: 'settings', icon: 'fa-gear', name: 'Settings', overlay: 'personalization' },
-                        ].map(tool => (
-                          <button
-                            key={tool.id}
-                            onClick={() => { setActiveToolOverlay(tool.overlay as any); setShowToolsDrawer(false); }}
-                            className="flex flex-col items-center p-2 rounded-xl hover:bg-amber-50 dark:hover:bg-amber-900/20 transition group"
-                            title={tool.name}
-                          >
-                            <div className="w-10 h-10 rounded-xl bg-amber-100 dark:bg-amber-900/30 flex items-center justify-center text-amber-600 dark:text-amber-400 group-hover:scale-110 transition">
-                              <i className={`fa-solid ${tool.icon}`}></i>
-                            </div>
-                            <span className="text-[10px] text-zinc-600 dark:text-zinc-400 mt-1 font-medium">{tool.name}</span>
-                          </button>
-                        ))}
-                      </div>
+                    {/* Analysis section */}
+                    <div className={sectionLabel}>ANALYSIS · 4</div>
+                    <div className="space-y-0.5">
+                      {[
+                        { id: 'analytics', icon: 'fa-chart-pie', name: 'Analytics', overlay: 'analytics' },
+                        { id: 'health', icon: 'fa-heart-pulse', name: 'Health', overlay: 'analytics' },
+                        { id: 'network', icon: 'fa-diagram-project', name: 'Network', overlay: 'collaboration' },
+                        { id: 'insights', icon: 'fa-magnifying-glass-chart', name: 'Insights', overlay: 'intelligence' },
+                      ].map(tool => (
+                        <button
+                          key={tool.id}
+                          onClick={() => { setActiveToolOverlay(tool.overlay as any); setShowToolsDrawer(false); }}
+                          className={rowClass}
+                        >
+                          <i className={`fa-solid ${tool.icon} ${iconClass}`}></i>
+                          <span className="text-sm flex-1 text-left">{tool.name}</span>
+                        </button>
+                      ))}
+                    </div>
+
+                    {/* Utilities section */}
+                    <div className={sectionLabel}>UTILITIES · {utilitiesCount}</div>
+                    <div className="space-y-0.5 pb-2">
+                      {/* Focus Mode (toggleable) */}
+                      <button
+                        onClick={() => {
+                          setIsFocusModeActive(!isFocusModeActive);
+                          setFocusThreadId(isFocusModeActive ? null : activeThreadId || 'main');
+                          setShowToolsDrawer(false);
+                        }}
+                        className={`w-full flex items-center gap-3 px-3 py-2 rounded-lg transition-colors group focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-rose-500/40 ${isFocusModeActive ? 'bg-rose-500/10 dark:bg-rose-500/10 text-rose-600 dark:text-rose-bright' : 'hover:bg-zinc-100 dark:hover:bg-white/[0.04] text-zinc-700 dark:text-zinc-300 hover:text-rose-600 dark:hover:text-rose-bright'}`}
+                        aria-pressed={isFocusModeActive}
+                      >
+                        <Crosshair className={`w-4 h-4 flex-shrink-0 ${isFocusModeActive ? 'text-rose-500 dark:text-rose-bright' : 'text-zinc-400 dark:text-zinc-500 group-hover:text-rose-500 dark:group-hover:text-rose-bright'}`} />
+                        <span className="text-sm flex-1 text-left">Focus Mode</span>
+                        {isFocusModeActive && <span className="text-[10px] font-mono uppercase tracking-[0.1em] font-medium">ON</span>}
+                      </button>
+
+                      {/* Achievements (conditional) */}
+                      {hasAchievements && (
+                        <button
+                          onClick={() => { setShowAnalyticsDashboard(true); setShowToolsDrawer(false); }}
+                          className={rowClass}
+                        >
+                          <Trophy className="w-4 h-4 text-zinc-400 dark:text-zinc-500 group-hover:text-rose-500 dark:group-hover:text-rose-bright flex-shrink-0" />
+                          <span className="text-sm flex-1 text-left">Achievements</span>
+                        </button>
+                      )}
+
+                      {[
+                        { id: 'theme', icon: 'fa-palette', name: 'Theme', overlay: 'personalization' },
+                        { id: 'security', icon: 'fa-shield-halved', name: 'Security', overlay: 'security' },
+                        { id: 'export', icon: 'fa-download', name: 'Export', overlay: 'productivity' },
+                        { id: 'settings', icon: 'fa-gear', name: 'Settings', overlay: 'personalization' },
+                      ].map(tool => (
+                        <button
+                          key={tool.id}
+                          onClick={() => { setActiveToolOverlay(tool.overlay as any); setShowToolsDrawer(false); }}
+                          className={rowClass}
+                        >
+                          <i className={`fa-solid ${tool.icon} ${iconClass}`}></i>
+                          <span className="text-sm flex-1 text-left">{tool.name}</span>
+                        </button>
+                      ))}
                     </div>
                   </div>
 
-                  {/* Quick tip footer */}
-                  <div className="px-3 py-2 border-t border-zinc-200 dark:border-zinc-800 bg-zinc-50 dark:bg-zinc-800/50">
-                    <p className="text-[10px] text-zinc-400 dark:text-zinc-500 text-center">
-                      <kbd className="px-1 py-0.5 bg-zinc-200 dark:bg-zinc-700 rounded text-[9px]">Esc</kbd> to close
+                  {/* Footer */}
+                  <div className="px-4 py-2.5 border-t border-zinc-200/60 dark:border-white/[0.06]">
+                    <p className="text-[10px] font-mono uppercase tracking-[0.1em] font-medium text-zinc-400 dark:text-zinc-500 text-center">
+                      <kbd className="px-1.5 py-0.5 bg-zinc-100 dark:bg-white/[0.06] rounded text-[9px] font-mono">Esc</kbd>{' '}to close
                     </p>
                   </div>
                 </motion.div>
               </>
-            )}
+              );
+            })()}
           </AnimatePresence>
 
           {/* Theme Picker Popup */}
@@ -3910,9 +3882,9 @@ const Messages: React.FC<MessagesProps> = ({ apiKey, contacts, initialContactId,
                             }}
                             onClick={(e) => e.stopPropagation()}
                           >
-                            <div className="bg-white dark:bg-zinc-900 rounded-2xl shadow-2xl border border-zinc-200 dark:border-zinc-700 overflow-hidden min-w-[180px]">
+                            <div className="bg-white dark:bg-black rounded-2xl shadow-2xl border border-zinc-200 dark:border-white/[0.06] overflow-hidden min-w-[180px] backdrop-blur-md">
                               {/* Quick Reactions Row */}
-                              <div className="p-2 border-b border-zinc-100 dark:border-zinc-800">
+                              <div className="p-2 border-b border-zinc-100 dark:border-white/[0.04]">
                                 <div className="flex items-center justify-around">
                                   {COMMON_REACTIONS.map(emoji => (
                                     <button
@@ -4045,51 +4017,51 @@ const Messages: React.FC<MessagesProps> = ({ apiKey, contacts, initialContactId,
           {/* Pulse Conversation Stats Modal */}
           {showStatsPanel && (
             <div className="absolute inset-0 z-50 bg-black/60 backdrop-blur-sm flex items-center justify-center animate-fade-in p-4">
-              <div className="bg-white dark:bg-zinc-900 w-full max-w-md rounded-2xl shadow-2xl animate-scale-in border border-zinc-200 dark:border-zinc-800">
-                <div className="p-4 border-b border-zinc-200 dark:border-zinc-800 flex justify-between items-center">
-                  <h3 className="font-bold dark:text-white flex items-center gap-2">
-                    <BarChart className="text-indigo-500" /> Pulse Conversation Stats
+              <div className="bg-white dark:bg-black w-full max-w-md rounded-2xl shadow-2xl animate-scale-in border border-zinc-200 dark:border-white/[0.06]">
+                <div className="p-4 border-b border-zinc-200 dark:border-white/[0.06] flex justify-between items-center">
+                  <h3 className="font-medium text-zinc-900 dark:text-white flex items-center gap-2">
+                    <BarChart className="w-4 h-4 text-zinc-400 dark:text-zinc-500" /> Pulse Conversation Stats
                   </h3>
-                  <button onClick={() => setShowStatsPanel(false)}><X className="text-zinc-500" /></button>
+                  <button onClick={() => setShowStatsPanel(false)} className="text-zinc-400 hover:text-rose-500 dark:hover:text-rose-bright transition focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-rose-500/40 rounded" aria-label="Close stats"><X className="w-4 h-4" /></button>
                 </div>
                 <div className="p-4 space-y-4">
-                  <div className="grid grid-cols-2 gap-4">
-                    <div className="bg-zinc-50 dark:bg-zinc-800 p-3 rounded-lg text-center">
-                      <div className="text-2xl font-bold text-emerald-500">{pulseMessages.length}</div>
-                      <div className="text-xs text-zinc-500">Total Messages</div>
+                  <div className="grid grid-cols-2 gap-3">
+                    <div className="bg-zinc-50 dark:bg-white/[0.03] border border-zinc-200/60 dark:border-white/[0.06] p-3 rounded-lg flex flex-col gap-1">
+                      <span className="text-[10px] font-mono uppercase tracking-[0.1em] font-medium text-zinc-400 dark:text-zinc-500">Total Messages</span>
+                      <span className="text-xl font-medium tabular-nums text-zinc-900 dark:text-white">{pulseMessages.length}</span>
                     </div>
-                    <div className="bg-zinc-50 dark:bg-zinc-800 p-3 rounded-lg text-center">
-                      <div className="text-2xl font-bold text-cyan-500">
+                    <div className="bg-zinc-50 dark:bg-white/[0.03] border border-zinc-200/60 dark:border-white/[0.06] p-3 rounded-lg flex flex-col gap-1">
+                      <span className="text-[10px] font-mono uppercase tracking-[0.1em] font-medium text-zinc-400 dark:text-zinc-500">Last Activity</span>
+                      <span className="text-sm font-medium tabular-nums text-zinc-900 dark:text-white">
                         {pulseMessages.length > 0 ? new Date(pulseMessages[pulseMessages.length - 1].created_at).toLocaleDateString() : 'N/A'}
-                      </div>
-                      <div className="text-xs text-zinc-500">Last Activity</div>
+                      </span>
                     </div>
                   </div>
-                  <div className="grid grid-cols-3 gap-3">
-                    <div className="text-center">
-                      <div className="text-lg font-bold text-emerald-600 dark:text-emerald-400">
+                  <div className="grid grid-cols-3 gap-3 text-xs">
+                    <div className="flex flex-col gap-0.5">
+                      <span className="text-[10px] font-mono uppercase tracking-[0.1em] font-medium text-zinc-400 dark:text-zinc-500">Sent</span>
+                      <span className="font-medium tabular-nums text-zinc-900 dark:text-white">
                         {pulseMessages.filter(m => m.sender_id !== activePulseConv?.other_user?.id).length}
-                      </div>
-                      <div className="text-xs text-zinc-500">Sent by You</div>
+                      </span>
                     </div>
-                    <div className="text-center">
-                      <div className="text-lg font-bold text-cyan-600 dark:text-cyan-400">
+                    <div className="flex flex-col gap-0.5">
+                      <span className="text-[10px] font-mono uppercase tracking-[0.1em] font-medium text-zinc-400 dark:text-zinc-500">Received</span>
+                      <span className="font-medium tabular-nums text-zinc-900 dark:text-white">
                         {pulseMessages.filter(m => m.sender_id === activePulseConv?.other_user?.id).length}
-                      </div>
-                      <div className="text-xs text-zinc-500">Received</div>
+                      </span>
                     </div>
-                    <div className="text-center">
-                      <div className="text-lg font-bold text-violet-600 dark:text-violet-400">
+                    <div className="flex flex-col gap-0.5">
+                      <span className="text-[10px] font-mono uppercase tracking-[0.1em] font-medium text-zinc-400 dark:text-zinc-500">Days Active</span>
+                      <span className="font-medium tabular-nums text-zinc-900 dark:text-white">
                         {pulseMessages.length > 0 ? Math.round((new Date().getTime() - new Date(pulseMessages[0].created_at).getTime()) / (1000 * 60 * 60 * 24)) : 0}
-                      </div>
-                      <div className="text-xs text-zinc-500">Days Active</div>
+                      </span>
                     </div>
                   </div>
-                  <div className="border-t pt-3">
-                    <div className="text-xs text-zinc-500 mb-2">Conversation Started</div>
-                    <div className="text-sm text-zinc-700 dark:text-zinc-300">
+                  <div className="border-t border-zinc-200/60 dark:border-white/[0.06] pt-3 flex flex-col gap-1">
+                    <span className="text-[10px] font-mono uppercase tracking-[0.1em] font-medium text-zinc-400 dark:text-zinc-500">Conversation Started</span>
+                    <span className="text-sm text-zinc-700 dark:text-zinc-300">
                       {pulseMessages.length > 0 ? new Date(pulseMessages[0].created_at).toLocaleString() : 'No messages yet'}
-                    </div>
+                    </span>
                   </div>
                 </div>
               </div>
@@ -4099,19 +4071,19 @@ const Messages: React.FC<MessagesProps> = ({ apiKey, contacts, initialContactId,
           {/* Pulse Outcome Setup Modal */}
           {showOutcomeSetup && (
             <div className="absolute inset-0 z-50 bg-black/60 backdrop-blur-sm flex items-center justify-center animate-fade-in p-4">
-              <div className="bg-white dark:bg-zinc-900 w-full max-w-md rounded-2xl shadow-2xl animate-scale-in border border-zinc-200 dark:border-zinc-800">
-                <div className="p-4 border-b border-zinc-200 dark:border-zinc-800 flex justify-between items-center">
-                  <h3 className="font-bold dark:text-white flex items-center gap-2">
-                    <Target className="text-red-500" /> Set Conversation Goal
+              <div className="bg-white dark:bg-black w-full max-w-md rounded-2xl shadow-2xl animate-scale-in border border-zinc-200 dark:border-white/[0.06]">
+                <div className="p-4 border-b border-zinc-200 dark:border-white/[0.06] flex justify-between items-center">
+                  <h3 className="font-medium text-zinc-900 dark:text-white flex items-center gap-2">
+                    <Target className="w-4 h-4 text-rose-500" /> Set Conversation Goal
                   </h3>
-                  <button onClick={() => setShowOutcomeSetup(false)}><X className="text-zinc-500" /></button>
+                  <button onClick={() => setShowOutcomeSetup(false)} className="text-zinc-400 hover:text-rose-500 dark:hover:text-rose-bright transition focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-rose-500/40 rounded" aria-label="Close goal setup"><X className="w-4 h-4" /></button>
                 </div>
                 <div className="p-4 space-y-4">
                   <p className="text-sm text-zinc-500 dark:text-zinc-400">
                     Define a goal for this conversation to track progress and stay focused.
                   </p>
                   <div>
-                    <label className="block text-xs font-bold text-zinc-700 dark:text-zinc-300 mb-2">Goal Type</label>
+                    <label className="block text-[10px] font-mono uppercase tracking-[0.1em] font-medium text-zinc-400 dark:text-zinc-500 mb-2">Goal Type</label>
                     <div className="grid grid-cols-2 gap-2">
                       {['Close Deal', 'Schedule Meeting', 'Get Approval', 'Resolve Issue'].map(goal => (
                         <button
@@ -4150,40 +4122,40 @@ const Messages: React.FC<MessagesProps> = ({ apiKey, contacts, initialContactId,
           {/* Pulse Handoff Card */}
           {showHandoffCard && (
             <div className="absolute inset-0 z-50 bg-black/60 backdrop-blur-sm flex items-center justify-center animate-fade-in p-4">
-              <div className="bg-white dark:bg-zinc-900 w-full max-w-lg rounded-2xl shadow-2xl animate-scale-in border border-zinc-200 dark:border-zinc-800">
-                <div className="p-4 border-b border-zinc-200 dark:border-zinc-800 flex justify-between items-center">
-                  <h3 className="font-bold dark:text-white flex items-center gap-2">
-                    <LogOut className="text-yellow-500" /> Conversation Handoff
+              <div className="bg-white dark:bg-black w-full max-w-lg rounded-2xl shadow-2xl animate-scale-in border border-zinc-200 dark:border-white/[0.06]">
+                <div className="p-4 border-b border-zinc-200 dark:border-white/[0.06] flex justify-between items-center">
+                  <h3 className="font-medium text-zinc-900 dark:text-white flex items-center gap-2">
+                    <LogOut className="w-4 h-4 text-zinc-400 dark:text-zinc-500" /> Conversation Handoff
                   </h3>
-                  <button onClick={() => setShowHandoffCard(false)}><X className="text-zinc-500" /></button>
+                  <button onClick={() => setShowHandoffCard(false)} className="text-zinc-400 hover:text-rose-500 dark:hover:text-rose-bright transition focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-rose-500/40 rounded" aria-label="Close handoff"><X className="w-4 h-4" /></button>
                 </div>
                 <div className="p-4 space-y-4">
-                  <div className="bg-yellow-50 dark:bg-yellow-900/20 border border-yellow-200 dark:border-yellow-700/50 rounded-lg p-4">
-                    <div className="text-xs font-bold text-yellow-700 dark:text-yellow-400 uppercase tracking-wider mb-2">
-                      <Handshake className="mr-2" />Context Summary
+                  <div className="bg-zinc-50 dark:bg-white/[0.03] border border-zinc-200/60 dark:border-white/[0.06] rounded-lg p-4">
+                    <div className="text-[10px] font-mono uppercase tracking-[0.1em] font-medium text-zinc-400 dark:text-zinc-500 mb-2 flex items-center gap-1.5">
+                      <Handshake className="w-3 h-3" />Context Summary
                     </div>
                     <p className="text-sm text-zinc-700 dark:text-zinc-300 mb-3">
-                      Conversation with <strong>{activePulseConv?.other_user?.display_name || activePulseConv?.other_user?.handle || 'User'}</strong>
+                      Conversation with <strong className="font-medium text-zinc-900 dark:text-white">{activePulseConv?.other_user?.display_name || activePulseConv?.other_user?.handle || 'User'}</strong>
                     </p>
                     <div className="grid grid-cols-2 gap-3 text-xs">
-                      <div>
-                        <span className="text-zinc-500">Total Messages:</span>
-                        <span className="ml-2 font-bold text-zinc-800 dark:text-zinc-200">{pulseMessages.length}</span>
+                      <div className="flex flex-col gap-0.5">
+                        <span className="text-[10px] font-mono uppercase tracking-[0.1em] font-medium text-zinc-400 dark:text-zinc-500">Total Messages</span>
+                        <span className="font-medium tabular-nums text-zinc-900 dark:text-zinc-100">{pulseMessages.length}</span>
                       </div>
-                      <div>
-                        <span className="text-zinc-500">Started:</span>
-                        <span className="ml-2 font-bold text-zinc-800 dark:text-zinc-200">
+                      <div className="flex flex-col gap-0.5">
+                        <span className="text-[10px] font-mono uppercase tracking-[0.1em] font-medium text-zinc-400 dark:text-zinc-500">Started</span>
+                        <span className="font-medium tabular-nums text-zinc-900 dark:text-zinc-100">
                           {pulseMessages.length > 0 ? new Date(pulseMessages[0].created_at).toLocaleDateString() : 'N/A'}
                         </span>
                       </div>
                     </div>
                   </div>
                   <div>
-                    <div className="text-xs font-bold text-zinc-500 uppercase mb-2">Recent Topics</div>
+                    <div className="text-[10px] font-mono uppercase tracking-[0.1em] font-medium text-zinc-400 dark:text-zinc-500 mb-2">Recent Topics</div>
                     <div className="space-y-1 max-h-32 overflow-y-auto">
                       {pulseMessages.slice(-5).map((m, i) => (
                         <div key={i} className="text-xs text-zinc-600 dark:text-zinc-400 truncate">
-                          • {m.content.slice(0, 60)}{m.content.length > 60 ? '...' : ''}
+                          {m.content.slice(0, 60)}{m.content.length > 60 ? '…' : ''}
                         </div>
                       ))}
                     </div>
@@ -4191,17 +4163,17 @@ const Messages: React.FC<MessagesProps> = ({ apiKey, contacts, initialContactId,
                   <div className="flex gap-2">
                     <button
                       onClick={() => {
-                        const handoffText = `📋 Conversation Handoff\n\nContact: ${activePulseConv?.other_user?.display_name || activePulseConv?.other_user?.handle || 'User'}\nMessages: ${pulseMessages.length}\nStarted: ${pulseMessages.length > 0 ? new Date(pulseMessages[0].created_at).toLocaleDateString() : 'N/A'}\n\nRecent Topics:\n${pulseMessages.slice(-5).map(m => '• ' + m.content.slice(0, 50)).join('\n')}`;
+                        const handoffText = `Conversation Handoff\n\nContact: ${activePulseConv?.other_user?.display_name || activePulseConv?.other_user?.handle || 'User'}\nMessages: ${pulseMessages.length}\nStarted: ${pulseMessages.length > 0 ? new Date(pulseMessages[0].created_at).toLocaleDateString() : 'N/A'}\n\nRecent Topics:\n${pulseMessages.slice(-5).map(m => m.content.slice(0, 50)).join('\n')}`;
                         navigator.clipboard.writeText(handoffText);
                         setShowHandoffCard(false);
                       }}
-                      className="flex-1 bg-yellow-100 hover:bg-yellow-200 dark:bg-yellow-800/30 dark:hover:bg-yellow-800/50 text-yellow-800 dark:text-yellow-200 font-bold py-2 rounded-lg text-xs transition flex items-center justify-center gap-2"
+                      className="flex-1 bg-rose-500 hover:bg-rose-600 text-white font-medium py-2 rounded-lg text-xs transition-colors flex items-center justify-center gap-2 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-rose-500/40"
                     >
-                      <Copy /> Copy to Clipboard
+                      <Copy className="w-3.5 h-3.5" /> Copy to Clipboard
                     </button>
                     <button
                       onClick={() => setShowHandoffCard(false)}
-                      className="px-4 py-2 text-zinc-500 hover:text-zinc-700 text-xs"
+                      className="px-4 py-2 text-zinc-500 hover:text-zinc-700 dark:hover:text-zinc-300 text-xs transition-colors focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-rose-500/40 rounded"
                     >
                       Close
                     </button>
@@ -4352,23 +4324,27 @@ const Messages: React.FC<MessagesProps> = ({ apiKey, contacts, initialContactId,
              {/* Desktop Back Button (visible only on mobile when chat is active) */}
              <button onClick={handleBackToList} className="max-md:hidden text-zinc-500 w-12 h-12 flex items-center justify-center hover:bg-zinc-100 dark:hover:bg-zinc-800 rounded-lg transition flex-shrink-0" title="Back to messages"><ArrowLeft /></button>
              <div className="flex flex-col min-w-0">
-                 <span className="font-bold text-zinc-900 dark:text-white leading-tight flex items-center gap-1 sm:gap-2 text-sm sm:text-base truncate">
+                 <span className="font-medium text-zinc-900 dark:text-white leading-tight flex items-center gap-1.5 sm:gap-2 text-sm sm:text-base truncate">
                      <span className="truncate max-w-[120px] sm:max-w-none">{activeThread.contactName}</span>
-                     {activeThread.outcome && <span className="hidden sm:inline px-1.5 py-0.5 rounded bg-indigo-100 dark:bg-indigo-900/30 text-indigo-600 dark:text-indigo-300 text-[10px] uppercase font-bold tracking-wider flex-shrink-0">Goal Active</span>}
+                     {activeThread.outcome && <span className="hidden sm:inline px-1.5 py-0.5 rounded bg-rose-500/10 dark:bg-rose-500/15 text-rose-600 dark:text-rose-300 text-[10px] uppercase font-mono font-medium tracking-[0.1em] flex-shrink-0">Goal Active</span>}
                  </span>
                  {activeThread.outcome ? (
-                     <div className="flex items-center gap-2 text-[10px]">
-                         <span className="text-zinc-500 hidden sm:inline">Progress:</span>
-                         <div className="w-12 sm:w-16 h-1.5 bg-zinc-200 dark:bg-zinc-800 rounded-full overflow-hidden">
-                             <div className={`h-full rounded-full ${activeThread.outcome.status === 'blocked' ? 'bg-red-500' : 'bg-emerald-500'}`} style={{width: `${activeThread.outcome.progress}%`}}></div>
+                     <div className="flex items-center gap-2 text-[10px] font-mono uppercase tracking-[0.1em] font-medium text-zinc-400 dark:text-zinc-500">
+                         <span className="hidden sm:inline">Progress</span>
+                         <div className="w-12 sm:w-16 h-1 bg-zinc-200 dark:bg-white/[0.06] rounded-full overflow-hidden">
+                             <div className={`h-full rounded-full ${activeThread.outcome.status === 'blocked' ? 'bg-rose-500' : 'bg-emerald-500'}`} style={{width: `${activeThread.outcome.progress}%`}}></div>
                          </div>
+                         <span className="tabular-nums">{activeThread.outcome.progress}%</span>
                      </div>
                  ) : (
-                     <div className="flex items-center gap-1 sm:gap-2">
-                         <span className="text-[10px] text-emerald-500 font-medium tracking-wide">ONLINE</span>
+                     <div className="flex items-center gap-1.5 sm:gap-2 text-[10px] font-mono uppercase tracking-[0.1em] font-medium text-zinc-400 dark:text-zinc-500">
+                         <span className="flex items-center gap-1">
+                             <span className="w-1.5 h-1.5 rounded-full bg-emerald-500" aria-hidden="true" />
+                             Online
+                         </span>
                          {teamHealth && (
-                             <span className={`hidden sm:flex text-[10px] px-1.5 rounded items-center gap-1 cursor-help ${teamHealth.status === 'healthy' ? 'bg-emerald-100 text-emerald-600' : 'bg-red-100 text-red-600'}`} title={`Reliability: ${teamHealth.reliability}\nIssues: ${teamHealth.issues.join(', ')}`}>
-                                 <HeartPulse /> {teamHealth.score}%
+                             <span className="hidden sm:flex items-center gap-1 cursor-help tabular-nums" title={`Reliability: ${teamHealth.reliability}\nIssues: ${teamHealth.issues.join(', ')}`}>
+                                 <HeartPulse className="w-2.5 h-2.5" /> {teamHealth.score}%
                              </span>
                          )}
                      </div>
@@ -4378,20 +4354,21 @@ const Messages: React.FC<MessagesProps> = ({ apiKey, contacts, initialContactId,
 
           {/* AI Coach Tip - Hidden on mobile, visible on md+ */}
           {nudge && showCoachTip && (
-            <div className={`hidden md:flex flex-1 max-w-md mx-4 transition-all duration-300 ${coachTipFading ? 'opacity-0 scale-95' : 'opacity-100 scale-100'}`}>
-              <div className={`flex items-center gap-2 px-3 py-1.5 bg-purple-50 dark:bg-purple-900/20 border border-purple-200 dark:border-purple-700/50 rounded-lg group transition-all duration-300 ${nudgeFocused ? 'ring-2 ring-purple-500/60 bg-purple-100 dark:bg-purple-900/40 scale-[1.02]' : ''}`}>
-                <Wand2 className="text-purple-500 text-xs flex-shrink-0 animate-pulse" />
+            <div className={`hidden md:flex flex-1 max-w-md mx-4 transition-opacity duration-300 ${coachTipFading ? 'opacity-0' : 'opacity-100'}`}>
+              <div className={`flex items-center gap-2 px-3 py-1.5 bg-zinc-50 dark:bg-white/[0.03] border border-zinc-200/60 dark:border-white/[0.06] rounded-lg group transition-colors ${nudgeFocused ? 'ring-1 ring-rose-500/30 bg-rose-500/5 dark:bg-rose-500/[0.06]' : ''}`}>
+                <Wand2 className="w-3 h-3 text-zinc-400 dark:text-zinc-500 flex-shrink-0" />
+                <span className="text-[10px] font-mono uppercase tracking-[0.1em] font-medium text-zinc-400 dark:text-zinc-500 flex-shrink-0">Pulse AI</span>
                 <div className="flex-1 overflow-hidden relative">
                   <div className="ticker-container whitespace-nowrap">
-                    <span className="text-xs text-purple-700 dark:text-purple-300 inline-block ticker-text">
+                    <span className="text-xs text-zinc-600 dark:text-zinc-300 inline-block ticker-text">
                       {nudge.message}
                     </span>
-                    <span className="text-xs text-purple-700 dark:text-purple-300 inline-block ticker-text" aria-hidden="true">
+                    <span className="text-xs text-zinc-600 dark:text-zinc-300 inline-block ticker-text" aria-hidden="true">
                       {nudge.message}
                     </span>
                   </div>
                 </div>
-                <button onClick={dismissCoachTip} className="text-purple-400 hover:text-purple-600 transition p-0.5 flex-shrink-0">
+                <button onClick={dismissCoachTip} className="text-zinc-400 hover:text-rose-500 dark:hover:text-rose-bright transition p-0.5 flex-shrink-0 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-rose-500/40 rounded">
                   <X className="text-[10px]" />
                 </button>
               </div>
@@ -4403,8 +4380,9 @@ const Messages: React.FC<MessagesProps> = ({ apiKey, contacts, initialContactId,
             {/* Tools Drawer Button - Always visible */}
             <button
               onClick={() => setShowToolsDrawer(true)}
-              className="w-8 h-8 sm:w-9 sm:h-9 rounded-lg flex items-center justify-center transition border border-indigo-200 dark:border-indigo-700 bg-indigo-50 dark:bg-indigo-900/30 text-indigo-500 hover:bg-indigo-100 dark:hover:bg-indigo-900/50 flex-shrink-0"
+              className="w-8 h-8 sm:w-9 sm:h-9 rounded-lg flex items-center justify-center transition-colors border border-zinc-200 dark:border-white/[0.06] bg-transparent text-zinc-500 hover:bg-zinc-100 dark:hover:bg-white/[0.04] hover:text-rose-500 dark:hover:text-rose-bright flex-shrink-0 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-rose-500/40"
               title="Open Tools Menu"
+              aria-label="Open Tools menu"
             >
               <LayoutGrid className="text-xs sm:text-sm" />
             </button>
@@ -4412,8 +4390,9 @@ const Messages: React.FC<MessagesProps> = ({ apiKey, contacts, initialContactId,
             {/* Command Palette - Always visible */}
             <button
               onClick={() => setShowCommandPalette(true)}
-              className="w-8 h-8 sm:w-9 sm:h-9 rounded-lg flex items-center justify-center transition border text-zinc-400 hover:bg-zinc-100 dark:hover:bg-zinc-800 flex-shrink-0"
+              className="w-8 h-8 sm:w-9 sm:h-9 rounded-lg flex items-center justify-center transition-colors border border-zinc-200 dark:border-white/[0.06] bg-transparent text-zinc-500 hover:bg-zinc-100 dark:hover:bg-white/[0.04] hover:text-rose-500 dark:hover:text-rose-bright flex-shrink-0 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-rose-500/40"
               title="Quick Actions (Ctrl+K)"
+              aria-label="Open command palette"
             >
               <Terminal className="text-xs sm:text-sm" />
             </button>
@@ -4421,8 +4400,9 @@ const Messages: React.FC<MessagesProps> = ({ apiKey, contacts, initialContactId,
             {/* Focus Mode - Always visible */}
             <button
               onClick={toggleFocusMode}
-              className={`w-8 h-8 sm:w-9 sm:h-9 rounded-lg flex items-center justify-center transition border flex-shrink-0 ${focusThreadId ? 'bg-indigo-600 text-white' : 'text-zinc-400 hover:bg-zinc-100 dark:hover:bg-zinc-800'}`}
+              className={`w-8 h-8 sm:w-9 sm:h-9 rounded-lg flex items-center justify-center transition-colors border flex-shrink-0 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-rose-500/40 ${focusThreadId ? 'bg-rose-500/10 dark:bg-rose-500/15 border-rose-500/30 text-rose-600 dark:text-rose-bright' : 'border-zinc-200 dark:border-white/[0.06] bg-transparent text-zinc-500 hover:bg-zinc-100 dark:hover:bg-white/[0.04] hover:text-rose-500 dark:hover:text-rose-bright'}`}
               title="Focus Mode"
+              aria-pressed={!!focusThreadId}
             >
               <Eye className="text-xs sm:text-sm" />
             </button>
@@ -4431,8 +4411,9 @@ const Messages: React.FC<MessagesProps> = ({ apiKey, contacts, initialContactId,
             {showAchievements && messageEnhancements.getAllAchievements().length > 0 && (
               <button
                 onClick={() => setShowAnalyticsDashboard(true)}
-                className="w-8 h-8 sm:w-9 sm:h-9 rounded-lg flex items-center justify-center transition border border-amber-200 dark:border-amber-700 bg-amber-50 dark:bg-amber-900/30 text-amber-500 hover:bg-amber-100 dark:hover:bg-amber-900/50 flex-shrink-0"
+                className="w-8 h-8 sm:w-9 sm:h-9 rounded-lg flex items-center justify-center transition-colors border border-zinc-200 dark:border-white/[0.06] bg-transparent text-zinc-500 hover:bg-zinc-100 dark:hover:bg-white/[0.04] hover:text-rose-500 dark:hover:text-rose-bright flex-shrink-0 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-rose-500/40"
                 title="View Achievements"
+                aria-label="View achievements"
               >
                 <Trophy className="text-xs sm:text-sm" />
               </button>
@@ -4442,12 +4423,12 @@ const Messages: React.FC<MessagesProps> = ({ apiKey, contacts, initialContactId,
 
         {/* Outcome Setup Modal */}
         {showOutcomeSetup && (
-            <div className="absolute top-16 left-0 right-0 z-30 bg-white dark:bg-zinc-900 border-b border-zinc-200 dark:border-zinc-800 p-4 shadow-lg animate-slide-up">
-                <h4 className="text-sm font-bold mb-2 dark:text-white">Define Desired Outcome</h4>
+            <div className="absolute top-16 left-0 right-0 z-30 bg-white dark:bg-black border-b border-zinc-200/60 dark:border-white/[0.06] p-4 shadow-lg animate-slide-up">
+                <h4 className="text-[10px] font-mono uppercase tracking-[0.1em] font-medium text-zinc-400 dark:text-zinc-500 mb-2">Define Desired Outcome</h4>
                 <div className="flex gap-2">
-                    <input type="text" value={outcomeGoal} onChange={e => setOutcomeGoal(e.target.value)} placeholder="e.g., Ship v2.0 by Friday" className="flex-1 border rounded-lg px-3 py-2 text-sm bg-zinc-50 dark:bg-zinc-800 dark:text-white dark:border-zinc-700 outline-none" />
-                    <button onClick={handleSetOutcome} className="bg-indigo-600 text-white px-4 py-2 rounded-lg text-sm font-bold">Set</button>
-                    <button onClick={() => setShowOutcomeSetup(false)} className="text-zinc-500 px-3">Cancel</button>
+                    <input type="text" value={outcomeGoal} onChange={e => setOutcomeGoal(e.target.value)} placeholder="e.g., Ship v2.0 by Friday" className="flex-1 border border-zinc-200 dark:border-white/[0.08] rounded-lg px-3 py-2 text-sm bg-zinc-50 dark:bg-white/[0.03] dark:text-white outline-none focus:ring-2 focus:ring-rose-500/40 focus:border-rose-500/40 transition-colors" />
+                    <button onClick={handleSetOutcome} className="bg-rose-500 hover:bg-rose-600 text-white px-4 py-2 rounded-lg text-sm font-medium transition-colors focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-rose-500/40">Set</button>
+                    <button onClick={() => setShowOutcomeSetup(false)} className="text-zinc-500 hover:text-zinc-700 dark:hover:text-zinc-300 px-3 text-sm transition-colors focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-rose-500/40 rounded">Cancel</button>
                 </div>
             </div>
         )}
@@ -4647,7 +4628,7 @@ const Messages: React.FC<MessagesProps> = ({ apiKey, contacts, initialContactId,
                             {isProposal && (
                                 <div className="flex items-center gap-2 mb-2 pb-2 border-b border-amber-300 dark:border-amber-700">
                                     <i className={`fa-solid ${isApproved ? 'fa-gavel text-emerald-600 dark:text-emerald-400' : 'fa-scale-balanced text-amber-600 dark:text-amber-400'}`}></i>
-                                    <span className="font-bold text-xs uppercase tracking-wide text-amber-800 dark:text-amber-200">{isApproved ? 'Decision Approved' : 'Formal Proposal'}</span>
+                                    <span className="font-mono uppercase tracking-[0.1em] text-[10px] font-medium text-amber-800 dark:text-amber-200">{isApproved ? 'Decision Approved' : 'Formal Proposal'}</span>
                                 </div>
                             )}
 
@@ -4754,8 +4735,8 @@ const Messages: React.FC<MessagesProps> = ({ apiKey, contacts, initialContactId,
                                 <div className="mt-3">
                                     {msg.voiceAnalysis ? (
                                         <div className="bg-black/5 dark:bg-white/5 rounded-xl p-3 text-xs">
-                                            <div className="flex items-center gap-2 mb-2 text-purple-500 font-bold uppercase tracking-wider text-[10px]">
-                                                <Wand2 /> Deep Audio Analysis
+                                            <div className="flex items-center gap-2 mb-2 text-rose-500 dark:text-rose-bright font-mono font-medium uppercase tracking-[0.1em] text-[10px]">
+                                                <Wand2 className="w-3 h-3" /> PULSE AI · DEEP AUDIO
                                             </div>
                                             <p className="mb-2 italic">"{msg.voiceAnalysis.transcription}"</p>
                                             <div className="mb-2"><strong>Summary:</strong> {msg.voiceAnalysis.summary}</div>
@@ -4771,7 +4752,7 @@ const Messages: React.FC<MessagesProps> = ({ apiKey, contacts, initialContactId,
                                     ) : (
                                         <button 
                                             onClick={() => msg.attachment?.url && handleAnalyzeVoice(msg.id, msg.attachment.url)}
-                                            className="text-xs flex items-center gap-2 text-purple-500 hover:text-purple-600 font-bold uppercase tracking-wider"
+                                            className="text-[10px] font-mono uppercase tracking-[0.1em] font-medium flex items-center gap-2 text-zinc-500 dark:text-zinc-400 hover:text-rose-500 dark:hover:text-rose-bright transition-colors focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-rose-500/40 rounded"
                                         >
                                             {analyzingAudioId === msg.id ? <><Loader2 className="animate-spin" /> Analyzing...</> : <><Wand2 /> Deep Analyze Voice</>}
                                         </button>

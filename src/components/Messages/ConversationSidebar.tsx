@@ -23,8 +23,6 @@ interface ConversationSidebarProps {
   setShowNewChatModal: (v: boolean) => void;
   threadFilter: string;
   setThreadFilter: (v: string) => void;
-  showFilterDropdown: boolean;
-  setShowFilterDropdown: (v: boolean) => void;
   showArchived: boolean;
   setShowArchived: (v: boolean) => void;
   searchInputRef: React.RefObject<HTMLInputElement>;
@@ -64,7 +62,7 @@ interface ConversationSidebarProps {
 export const ConversationSidebar: React.FC<ConversationSidebarProps> = ({
   sidebarRef, mobileView,
   setShowInviteModal, setShowCellularSMS, setShowShortcuts, setShowNewChatModal,
-  threadFilter, setThreadFilter, showFilterDropdown, setShowFilterDropdown,
+  threadFilter, setThreadFilter,
   showArchived, setShowArchived,
   searchInputRef, searchQuery, handleSearch, isSearchOpen, setIsSearchOpen,
   searchResults, searchFilter, setSearchFilter,
@@ -185,7 +183,7 @@ export const ConversationSidebar: React.FC<ConversationSidebarProps> = ({
               <X className="w-3 h-3" />
             </button>
           ) : (
-            <span className="absolute right-3 top-1/2 -translate-y-1/2 font-mono uppercase tracking-[0.1em] text-[10px] text-zinc-400 dark:text-zinc-600 pointer-events-none">⌘K</span>
+            <span className="absolute right-3 top-1/2 -translate-y-1/2 font-mono uppercase tracking-[0.1em] text-[10px] text-zinc-500 dark:text-zinc-500 pointer-events-none">⌘K</span>
           )}
         </div>
         {/* Filter chips — replace the dropdown. One row, mono labels. */}
@@ -277,8 +275,8 @@ export const ConversationSidebar: React.FC<ConversationSidebarProps> = ({
               return (
                 <div key={conv.id} style={style}>
                   <div
-                    className={`p-3 rounded-xl cursor-pointer transition relative group flex items-center gap-3
-                      ${activePulseConversation === conv.id ? 'bg-rose-50 dark:bg-rose-500/10 shadow-sm ring-1 ring-rose-500/20' : 'hover:bg-rose-50 dark:hover:bg-rose-500/5'}`}
+                    className={`p-3 rounded-xl cursor-pointer transition-colors relative group flex items-center gap-3
+                      ${activePulseConversation === conv.id ? 'bg-rose-50 dark:bg-rose-500/10 ring-1 ring-rose-500/20' : 'hover:bg-zinc-100/60 dark:hover:bg-white/[0.04]'}`}
                   >
                     <button
                       onClick={(e) => {
@@ -286,7 +284,7 @@ export const ConversationSidebar: React.FC<ConversationSidebarProps> = ({
                         setSelectedContactUserId(otherUser.id);
                         setShowContactPanel(true);
                       }}
-                      className="w-10 h-10 rounded-full bg-gradient-to-br from-rose-500 to-pink-600 flex items-center justify-center text-white text-sm font-bold flex-shrink-0 relative hover:ring-2 hover:ring-emerald-500/50 transition-all"
+                      className="w-10 h-10 rounded-full bg-rose-500/15 dark:bg-rose-500/15 flex items-center justify-center text-rose-700 dark:text-rose-300 text-sm font-medium flex-shrink-0 relative hover:bg-rose-500/20 dark:hover:bg-rose-500/20 transition-colors focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-rose-500/40"
                       title="View contact details"
                     >
                       {otherUser.avatar_url ? (
@@ -299,7 +297,7 @@ export const ConversationSidebar: React.FC<ConversationSidebarProps> = ({
                         <OnlineIndicator userId={otherUser.id} size="medium" />
                       </div>
                       {otherUser.is_verified && (
-                        <div className="absolute -top-0.5 -right-0.5 w-4 h-4 bg-blue-500 rounded-full flex items-center justify-center border-2 border-white dark:border-zinc-950">
+                        <div className="absolute -top-0.5 -right-0.5 w-4 h-4 bg-zinc-400 dark:bg-zinc-500 rounded-full flex items-center justify-center border-2 border-white dark:border-black" title="Verified">
                           <Check className="text-[7px] text-white" />
                         </div>
                       )}
@@ -318,21 +316,21 @@ export const ConversationSidebar: React.FC<ConversationSidebarProps> = ({
                           )}
                         </div>
                         {conv.last_message_at && (
-                          <span className="font-mono text-[10px] text-zinc-400 dark:text-zinc-600 whitespace-nowrap ml-2 tabular-nums">
+                          <span className="font-mono text-[10px] text-zinc-500 dark:text-zinc-500 whitespace-nowrap ml-2 tabular-nums">
                             {new Date(conv.last_message_at).toLocaleTimeString([], { hour: '2-digit', minute: '2-digit' })}
                           </span>
                         )}
                       </div>
                       <div className="flex items-center gap-1.5">
                         {otherUser.handle && (
-                          <span className="font-mono text-[10px] text-zinc-400 dark:text-zinc-600 flex-shrink-0">@{otherUser.handle}</span>
+                          <span className="font-mono text-[10px] text-zinc-500 dark:text-zinc-500 flex-shrink-0">@{otherUser.handle}</span>
                         )}
                         {conv.last_message_preview ? (
                           <p className={`text-[12px] truncate ${hasUnread ? 'text-zinc-700 dark:text-zinc-300' : 'text-zinc-500 dark:text-zinc-500'}`}>
                             {conv.last_message_preview}
                           </p>
                         ) : (
-                          <span className="font-mono uppercase tracking-[0.1em] text-[10px] text-zinc-400 dark:text-zinc-600">
+                          <span className="font-mono uppercase tracking-[0.1em] text-[10px] text-zinc-500 dark:text-zinc-500">
                             NO MESSAGES YET · TAP TO START
                           </span>
                         )}
@@ -377,7 +375,7 @@ export const ConversationSidebar: React.FC<ConversationSidebarProps> = ({
         ) : (
           /* Empty state — quiet, mono, no SaaS-template card */
           <div className="flex flex-col items-start justify-start py-8 px-4 space-y-3">
-            <p className="font-mono uppercase tracking-[0.1em] text-[10px] text-zinc-400 dark:text-zinc-600">
+            <p className="font-mono uppercase tracking-[0.1em] text-[10px] text-zinc-500 dark:text-zinc-500">
               NO CONVERSATIONS YET
             </p>
             <p className="text-[13px] text-zinc-500 dark:text-zinc-500 leading-[1.5] max-w-[240px]">

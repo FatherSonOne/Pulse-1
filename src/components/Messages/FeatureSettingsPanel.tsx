@@ -83,18 +83,18 @@ export const FeatureSettingsPanel: React.FC<FeatureSettingsPanelProps> = ({
         surfaceBorder: 'rgba(255, 255, 255, 0.08)',
         surfaceHover: 'rgba(255, 255, 255, 0.06)',
         inputBg: 'rgba(255, 255, 255, 0.05)',
-        inputBorder: 'rgba(244, 63, 94, 0.25)',
+        inputBorder: 'rgba(255, 255, 255, 0.08)',
         inputText: '#fafafa',
         inputPlaceholder: '#71717a',
-        categoryBg: 'rgba(244, 63, 94, 0.08)',
-        categoryBorder: 'rgba(244, 63, 94, 0.2)',
+        categoryBg: 'rgba(255, 255, 255, 0.03)',
+        categoryBorder: 'rgba(255, 255, 255, 0.06)',
         categoryText: '#fafafa',
         featureBg: 'rgba(255, 255, 255, 0.03)',
         featureBorder: 'rgba(255, 255, 255, 0.07)',
         featureText: '#e4e4e7',
         toggleOff: '#3f3f46',
         toggleKnob: '#fafafa',
-        footerBg: 'rgba(244, 63, 94, 0.06)',
+        footerBg: 'transparent',
         footerBorder: 'rgba(255, 255, 255, 0.06)',
         resetBtnBg: 'rgba(255, 255, 255, 0.04)',
         resetBtnBorder: 'rgba(244, 63, 94, 0.3)',
@@ -103,8 +103,8 @@ export const FeatureSettingsPanel: React.FC<FeatureSettingsPanelProps> = ({
         resetCancelBg: 'rgba(255, 255, 255, 0.04)',
         resetCancelBorder: 'rgba(255, 255, 255, 0.1)',
         resetCancelText: '#a1a1aa',
-        enableBtnBg: 'rgba(244, 63, 94, 0.12)',
-        enableBtnBorder: 'rgba(244, 63, 94, 0.25)',
+        enableBtnBg: 'rgba(255, 255, 255, 0.04)',
+        enableBtnBorder: 'rgba(255, 255, 255, 0.08)',
         disableBtnBg: 'rgba(255, 255, 255, 0.04)',
         disableBtnBorder: 'rgba(255, 255, 255, 0.08)',
         disableBtnText: '#a1a1aa',
@@ -123,18 +123,18 @@ export const FeatureSettingsPanel: React.FC<FeatureSettingsPanelProps> = ({
       surfaceBorder: 'rgba(0, 0, 0, 0.08)',
       surfaceHover: 'rgba(0, 0, 0, 0.03)',
       inputBg: '#ffffff',
-      inputBorder: 'rgba(244, 63, 94, 0.2)',
+      inputBorder: 'rgba(0, 0, 0, 0.08)',
       inputText: '#18181b',
       inputPlaceholder: '#a1a1aa',
-      categoryBg: 'rgba(244, 63, 94, 0.05)',
-      categoryBorder: 'rgba(244, 63, 94, 0.2)',
+      categoryBg: 'rgba(0, 0, 0, 0.02)',
+      categoryBorder: 'rgba(0, 0, 0, 0.06)',
       categoryText: '#18181b',
       featureBg: '#ffffff',
       featureBorder: 'rgba(0, 0, 0, 0.1)',
       featureText: '#18181b',
       toggleOff: '#e4e4e7',
       toggleKnob: '#fafafa',
-      footerBg: 'rgba(244, 63, 94, 0.05)',
+      footerBg: 'transparent',
       footerBorder: 'rgba(0, 0, 0, 0.1)',
       resetBtnBg: '#ffffff',
       resetBtnBorder: 'rgba(244, 63, 94, 0.3)',
@@ -143,10 +143,10 @@ export const FeatureSettingsPanel: React.FC<FeatureSettingsPanelProps> = ({
       resetCancelBg: '#ffffff',
       resetCancelBorder: 'rgba(0, 0, 0, 0.1)',
       resetCancelText: '#52525b',
-      enableBtnBg: 'rgba(244, 63, 94, 0.1)',
-      enableBtnBorder: 'rgba(244, 63, 94, 0.2)',
-      disableBtnBg: 'rgba(0, 0, 0, 0.05)',
-      disableBtnBorder: 'rgba(0, 0, 0, 0.1)',
+      enableBtnBg: 'rgba(0, 0, 0, 0.04)',
+      enableBtnBorder: 'rgba(0, 0, 0, 0.08)',
+      disableBtnBg: 'rgba(0, 0, 0, 0.04)',
+      disableBtnBorder: 'rgba(0, 0, 0, 0.08)',
       disableBtnText: '#71717a',
       emptyText: '#71717a',
     };
@@ -354,29 +354,36 @@ export const FeatureSettingsPanel: React.FC<FeatureSettingsPanelProps> = ({
                     gap: '8px',
                   }}
                 >
-                  <Sliders size={12} style={{ color: '#f43f5e' }} aria-hidden="true" />
+                  <Sliders size={12} style={{ color: t.textMuted }} aria-hidden="true" />
                   {tr('messages.featureSettings.title', 'Feature Settings')}
                 </h2>
                 <button
                   type="button"
                   onClick={onClose}
                   style={{
-                    width: '40px',
-                    height: '40px',
-                    borderRadius: '50%',
+                    width: '32px',
+                    height: '32px',
+                    borderRadius: '8px',
                     border: 'none',
-                    background: isDark ? 'rgba(244, 63, 94, 0.15)' : 'rgba(244, 63, 94, 0.1)',
-                    color: '#f43f5e',
+                    background: 'transparent',
+                    color: t.textSecondary,
                     cursor: 'pointer',
                     display: 'flex',
                     alignItems: 'center',
                     justifyContent: 'center',
-                    fontSize: '18px',
-                    transition: 'background 0.2s',
+                    transition: 'background 0.2s, color 0.2s',
+                  }}
+                  onMouseEnter={(e) => {
+                    e.currentTarget.style.background = isDark ? 'rgba(255, 255, 255, 0.04)' : 'rgba(0, 0, 0, 0.04)';
+                    e.currentTarget.style.color = '#f43f5e';
+                  }}
+                  onMouseLeave={(e) => {
+                    e.currentTarget.style.background = 'transparent';
+                    e.currentTarget.style.color = t.textSecondary;
                   }}
                   aria-label={tr('messages.featureSettings.close', 'Close settings')}
                 >
-                  <X />
+                  <X size={16} />
                 </button>
               </div>
 
@@ -404,7 +411,7 @@ export const FeatureSettingsPanel: React.FC<FeatureSettingsPanelProps> = ({
                   style={{
                     width: '100%',
                     padding: '12px 12px 12px 40px',
-                    border: `2px solid ${t.inputBorder}`,
+                    border: `1px solid ${t.inputBorder}`,
                     borderRadius: '12px',
                     fontSize: '14px',
                     background: t.inputBg,
@@ -424,7 +431,7 @@ export const FeatureSettingsPanel: React.FC<FeatureSettingsPanelProps> = ({
                   padding: '12px',
                   background: t.surface,
                   borderRadius: '12px',
-                  border: `2px solid ${t.inputBorder}`,
+                  border: `1px solid ${t.inputBorder}`,
                   display: 'flex',
                   alignItems: 'center',
                   justifyContent: 'space-between',
@@ -518,11 +525,11 @@ export const FeatureSettingsPanel: React.FC<FeatureSettingsPanelProps> = ({
                     width: '100%',
                     padding: '12px',
                     background: t.resetBtnBg,
-                    border: `2px solid ${t.resetBtnBorder}`,
+                    border: `1px solid ${t.resetBtnBorder}`,
                     borderRadius: '12px',
                     color: '#f43f5e',
                     fontSize: '14px',
-                    fontWeight: 600,
+                    fontWeight: 500,
                     cursor: 'pointer',
                     display: 'flex',
                     alignItems: 'center',
@@ -687,13 +694,22 @@ const CategoryRow: React.FC<CategoryRowProps> = React.memo(function CategoryRow(
           <div style={{ fontSize: '12px', color: t.textMuted }}>{categoryDescription}</div>
         </div>
         <div style={{ display: 'flex', alignItems: 'center', gap: '12px' }}>
-          <span style={{ fontSize: '12px', color: '#f43f5e', fontWeight: 600 }}>
+          <span
+            style={{
+              fontFamily: "'JetBrains Mono', 'SF Mono', Consolas, monospace",
+              fontSize: '11px',
+              fontWeight: 500,
+              letterSpacing: '0.05em',
+              color: '#f43f5e',
+              fontVariantNumeric: 'tabular-nums',
+            }}
+          >
             {enabledCount}/{allFeatures.length}
           </span>
           {isExpanded ? (
-            <ChevronUp size={14} style={{ color: '#f43f5e' }} aria-hidden="true" />
+            <ChevronUp size={14} style={{ color: t.textMuted }} aria-hidden="true" />
           ) : (
-            <ChevronDown size={14} style={{ color: '#f43f5e' }} aria-hidden="true" />
+            <ChevronDown size={14} style={{ color: t.textMuted }} aria-hidden="true" />
           )}
         </div>
       </button>
@@ -724,11 +740,17 @@ const CategoryRow: React.FC<CategoryRowProps> = React.memo(function CategoryRow(
                   background: t.enableBtnBg,
                   border: `1px solid ${t.enableBtnBorder}`,
                   borderRadius: '8px',
-                  color: '#f43f5e',
+                  color: t.disableBtnText,
                   fontSize: '12px',
-                  fontWeight: 600,
+                  fontWeight: 500,
                   cursor: 'pointer',
-                  transition: 'background 0.15s ease',
+                  transition: 'background 0.15s ease, color 0.15s ease',
+                }}
+                onMouseEnter={(e) => {
+                  e.currentTarget.style.color = '#f43f5e';
+                }}
+                onMouseLeave={(e) => {
+                  e.currentTarget.style.color = t.disableBtnText;
                 }}
               >
                 {tr('messages.featureSettings.enableAll', 'Enable All')}
@@ -744,9 +766,15 @@ const CategoryRow: React.FC<CategoryRowProps> = React.memo(function CategoryRow(
                   borderRadius: '8px',
                   color: t.disableBtnText,
                   fontSize: '12px',
-                  fontWeight: 600,
+                  fontWeight: 500,
                   cursor: 'pointer',
-                  transition: 'background 0.15s ease',
+                  transition: 'background 0.15s ease, color 0.15s ease',
+                }}
+                onMouseEnter={(e) => {
+                  e.currentTarget.style.color = '#f43f5e';
+                }}
+                onMouseLeave={(e) => {
+                  e.currentTarget.style.color = t.disableBtnText;
                 }}
               >
                 {tr('messages.featureSettings.disableAll', 'Disable All')}
