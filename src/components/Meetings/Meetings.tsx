@@ -11,7 +11,7 @@ import { pulseService } from '../../services/pulseService';
 import { googleCalendarService } from '../../services/googleCalendarService';
 
 // Import new components
-import { ArrowLeft, Copy, History, LayoutGrid, Loader2, PlayCircle, Upload, X } from 'lucide-react';
+import { Loader2, X } from 'lucide-react';
 import {
 
   Platform,
@@ -380,7 +380,7 @@ const Meetings: React.FC<MeetingsProps> = ({ apiKey, contacts, initialContactId,
   };
 
   const handleAddActionItem = (item: Omit<ActionItem, 'id' | 'createdAt'>) => {
-    setActionItems([...actionItems, { ...item, id: `action-${Date.now()}`, createdAt: new Date() }]);
+    setActionItems([...actionItems, { ...item, id: crypto.randomUUID(), createdAt: new Date() }]);
   };
 
   const handleToggleActionStatus = (id: string) => {

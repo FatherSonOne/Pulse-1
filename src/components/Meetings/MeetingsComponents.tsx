@@ -761,8 +761,8 @@ export const AgendaBuilderModal: React.FC<AgendaBuilderModalProps> = ({
                   gap: 12,
                   padding: 14,
                   background: 'var(--mtg-bg-tertiary)',
+                  border: '1px solid var(--mtg-border)',
                   borderRadius: 12,
-                  borderLeft: '3px solid var(--mtg-accent-primary)',
                 }}
               >
                 <span style={{

@@ -95,7 +95,7 @@ const ParticipantTile: React.FC<{ sessionId: string; isLocal?: boolean }> = ({ s
     .reduce((acc: number, c: string) => acc + c.charCodeAt(0), 0) % 360;
 
   return (
-    <div className="relative w-full h-full rounded-xl overflow-hidden bg-black/60 border border-white/10">
+    <div className="relative w-full h-full rounded-xl overflow-hidden bg-[#080808]/60 border border-white/10">
       {videoOff ? (
         <div
           className="absolute inset-0 flex items-center justify-center"
@@ -119,7 +119,7 @@ const ParticipantTile: React.FC<{ sessionId: string; isLocal?: boolean }> = ({ s
 
       {/* Name label */}
       <div className="absolute bottom-2 left-2 right-2 flex items-center gap-1.5">
-        <span className="bg-black/60 text-white text-xs px-2 py-0.5 rounded-full backdrop-blur-sm truncate">
+        <span className="bg-[#080808]/60 text-white text-xs px-2 py-0.5 rounded-full backdrop-blur-sm truncate">
           {participant?.user_name ?? 'Guest'}{isLocal ? ' (You)' : ''}
         </span>
         {participant?.tracks?.audio?.state === 'off' && (
@@ -351,7 +351,7 @@ const MeetingRoom: React.FC<{
 
   if (!isJoined) {
     return (
-      <div className="flex items-center justify-center h-full bg-black text-white">
+      <div className="flex items-center justify-center h-full bg-[#080808] text-white">
         <div className="flex flex-col items-center gap-3">
           <Loader2 size={32} className="animate-spin text-rose-500" />
           <p className="text-sm text-white/60">Connecting to {meetingTitle}…</p>
@@ -361,12 +361,12 @@ const MeetingRoom: React.FC<{
   }
 
   return (
-    <div className="flex flex-col h-full bg-black text-white select-none">
+    <div className="flex flex-col h-full bg-[#080808] text-white select-none">
       {/* ── DailyAudio handles all remote audio automatically */}
       <DailyAudio />
 
       {/* ── Header ─────────────────────────────────────────────────────────── */}
-      <div className="flex items-center justify-between px-4 py-2 bg-black/80 border-b border-white/10 backdrop-blur-sm">
+      <div className="flex items-center justify-between px-4 py-2 bg-[#080808]/80 border-b border-white/10 backdrop-blur-sm">
         <div className="flex items-center gap-3">
           <div className="w-2 h-2 rounded-full bg-rose-500 animate-pulse" />
           <span className="font-semibold text-sm truncate max-w-xs">{meetingTitle}</span>
@@ -534,7 +534,7 @@ const MeetingRoom: React.FC<{
 
       {/* ── End call confirmation ────────────────────────────────────────────── */}
       {showEndConfirm && (
-        <div className="absolute inset-0 bg-black/70 flex items-center justify-center z-50 backdrop-blur-sm">
+        <div className="absolute inset-0 bg-[#080808]/70 flex items-center justify-center z-50 backdrop-blur-sm">
           <div className="bg-zinc-900 border border-white/10 rounded-2xl p-6 w-80 text-center space-y-4">
             {isSummarizing ? (
               <>
@@ -635,7 +635,7 @@ const Lobby: React.FC<{
   };
 
   return (
-    <div className="flex items-center justify-center h-full bg-black text-white">
+    <div className="flex items-center justify-center h-full bg-[#080808] text-white">
       <div className="w-full max-w-sm space-y-6 p-8">
         <div className="text-center space-y-2">
           <div className="w-14 h-14 rounded-2xl bg-rose-500/20 border border-rose-500/30 flex items-center justify-center mx-auto mb-4">
@@ -714,7 +714,7 @@ const PulseVideoRoom: React.FC<PulseVideoRoomProps> = ({
 
   if (stage === 'joining' || !callObject) {
     return (
-      <div className="flex items-center justify-center h-full bg-black text-white">
+      <div className="flex items-center justify-center h-full bg-[#080808] text-white">
         <Loader2 size={28} className="animate-spin text-rose-500" />
       </div>
     );
