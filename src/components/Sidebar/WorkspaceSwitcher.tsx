@@ -176,11 +176,17 @@ export const WorkspaceSwitcher: React.FC<WorkspaceSwitcherProps> = ({ isCollapse
     setIsInviting(true);
     setInviteError('');
     try {
-      const invite = await workspaceService.inviteMember(currentWorkspace.id, inviteEmail.trim(), inviteRole, {
-        workspaceName: currentWorkspace.name,
-      });
+      const { invite, emailDelivery } = await workspaceService.inviteMember(
+        currentWorkspace.id,
+        inviteEmail.trim(),
+        inviteRole,
+        { workspaceName: currentWorkspace.name },
+      );
       setInviteEmail('');
       setInviteLink(workspaceService.getInviteLink(invite.token));
+      if (!emailDelivery.ok) {
+        setInviteError(`Invite created — but the email couldn't be delivered (${emailDelivery.reason ?? 'unknown'}). Copy the link below and share it manually.`);
+      }
     } catch (err: any) {
       setInviteError(err?.message ?? 'Invite failed');
     } finally {

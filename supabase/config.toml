@@ -395,6 +395,12 @@ verify_jwt = false
 [functions.whisper-proxy]
 verify_jwt = false
 
+# send-email: validates the caller's JWT manually inside the function (same
+# pattern as billing-checkout). Platform-level verify_jwt is disabled to
+# avoid the gateway-401 issue under our auth setup.
+[functions.send-email]
+verify_jwt = false
+
 [analytics]
 enabled = true
 port = 54327

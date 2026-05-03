@@ -80,8 +80,20 @@ export const BulkInviteCard: React.FC<Props> = ({ workspaceId, workspaceName, on
 
     for (const row of dedupedValid) {
       try {
-        await workspaceService.inviteMember(workspaceId, row.email!, row.role!, { workspaceName });
-        ok++;
+        const { emailDelivery } = await workspaceService.inviteMember(
+          workspaceId,
+          row.email!,
+          row.role!,
+          { workspaceName },
+        );
+        if (emailDelivery.ok) {
+          ok++;
+        } else {
+          failed.push({
+            email: row.email!,
+            reason: `email failed (${emailDelivery.reason ?? 'unknown'}) — share link manually`,
+          });
+        }
       } catch (err: unknown) {
         const reason = err instanceof Error ? err.message.replace(/^\[workspaceService\]\s*/, '') : 'failed';
         failed.push({ email: row.email!, reason });

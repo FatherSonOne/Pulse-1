@@ -49,10 +49,19 @@ export const TeamSettings: React.FC<TeamSettingsProps> = ({ userId }) => {
     if (!inviteEmail || !workspaceId || !currentWorkspace) return;
     setIsInviting(true);
     try {
-      await workspaceService.inviteMember(workspaceId, inviteEmail, inviteRole, {
-        workspaceName: currentWorkspace.name,
-      });
-      toast.success(`Invite sent to ${inviteEmail}`);
+      const { isResend, emailDelivery } = await workspaceService.inviteMember(
+        workspaceId,
+        inviteEmail,
+        inviteRole,
+        { workspaceName: currentWorkspace.name },
+      );
+      if (emailDelivery.ok) {
+        toast.success(isResend ? `Re-sent invite to ${inviteEmail}` : `Invite sent to ${inviteEmail}`);
+      } else {
+        toast.error(
+          `Invite created but email couldn't be delivered (${emailDelivery.reason ?? 'unknown'}). Copy the link from Pending Invites and share it manually.`,
+        );
+      }
       setInviteEmail('');
       setInviteRole('member');
       await loadInvites();
