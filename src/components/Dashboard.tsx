@@ -6,6 +6,7 @@ import { User, AppView, BatchedNotification, CalendarEvent, Task, Thread, Contac
 import { generateJournalInsight, generateSearchResponse, generateDailyBriefing, generateThinkingResponse } from '../services/geminiService';
 import { saveArchiveItem } from '../services/dbService';
 import { dataService } from '../services/dataService';
+import { useWorkspaceData } from '../contexts/WorkspaceContext';
 import { briefingService, BriefingContext } from '../services/briefingService';
 import { useAIErrorHandler } from '../hooks/useAIErrorHandler';
 import { UsageWarningBanner } from './billing/UsageWarningBanner';
@@ -114,29 +115,42 @@ interface BriefingStats {
 
 // ============= SKELETON COMPONENTS =============
 
-// WidgetSkeleton removed — was defined but never used
-
 const BriefingSkeleton: React.FC = () => (
-  <div className="gradient-dashboard-hero border border-rose-800/30 rounded-xl sm:rounded-2xl p-8 animate-pulse relative overflow-hidden glow-rose-sm">
-    <div className="absolute inset-0 bg-gradient-to-br from-rose-900/30 via-pink-900/20 to-transparent pointer-events-none"></div>
-    <div className="relative z-10 flex flex-col md:flex-row gap-12">
-      <div className="flex-1">
-        <div className="h-3 bg-zinc-800/50 rounded w-24 mb-4"></div>
-        <div className="h-8 bg-zinc-800/50 rounded w-2/3 mb-4"></div>
-        <div className="space-y-2">
-          <div className="h-4 bg-zinc-800/50 rounded w-full"></div>
-          <div className="h-4 bg-zinc-800/50 rounded w-5/6"></div>
-        </div>
-      </div>
-      <div className="flex-1 space-y-3">
-        <div className="h-3 bg-zinc-800/50 rounded w-20 mb-4"></div>
-        {[1, 2, 3].map(i => (
-          <div key={i} className="h-16 glass-card rounded-lg"></div>
-        ))}
-      </div>
+  <div className="bg-white dark:bg-white/[0.03] border border-zinc-200 dark:border-white/[0.06] rounded-xl p-6 sm:p-8 animate-pulse">
+    <div className="h-3 bg-zinc-200/70 dark:bg-white/[0.06] rounded w-32 mb-5"></div>
+    <div className="h-6 bg-zinc-200/70 dark:bg-white/[0.06] rounded w-1/2 mb-3"></div>
+    <div className="space-y-2 mb-6">
+      <div className="h-4 bg-zinc-200/70 dark:bg-white/[0.06] rounded w-full max-w-[65ch]"></div>
+      <div className="h-4 bg-zinc-200/70 dark:bg-white/[0.06] rounded w-4/5 max-w-[55ch]"></div>
+    </div>
+    <div className="h-9 bg-zinc-200/70 dark:bg-white/[0.06] rounded w-72 mb-6"></div>
+    <div className="grid grid-cols-1 md:grid-cols-2 gap-x-8 gap-y-2">
+      {[1, 2, 3, 4].map(i => (
+        <div key={i} className="h-10 bg-zinc-100/80 dark:bg-white/[0.04] rounded"></div>
+      ))}
     </div>
   </div>
 );
+
+// ============= AI PROVENANCE CHIP =============
+// The system signature: every AI artifact is attributable, dismissable, and visually identifiable.
+// JetBrains Mono uppercase tracked, accent-soft-light bg, rose-deep text, optional leading dot.
+
+interface ProvenanceChipProps {
+  provider?: 'claude' | 'gemini' | 'pulse';
+  kind: string;
+  className?: string;
+}
+
+const ProvenanceChip: React.FC<ProvenanceChipProps> = ({ provider = 'pulse', kind, className = '' }) => {
+  const label = provider === 'claude' ? 'CLAUDE' : provider === 'gemini' ? 'GEMINI' : 'PULSE AI';
+  return (
+    <span className={`pulse-label inline-flex items-center gap-1.5 px-2 py-0.5 rounded bg-rose-500/10 text-rose-600 dark:text-rose-400 ${className}`}>
+      <span className="w-1.5 h-1.5 rounded-full bg-rose-500" aria-hidden="true"></span>
+      {label} · {kind}
+    </span>
+  );
+};
 
 // ============= TIME-AWARE GREETING =============
 
@@ -182,79 +196,116 @@ interface TodaysPrioritiesProps {
 }
 
 const TodaysPriorities: React.FC<TodaysPrioritiesProps> = ({ priorities, isLoading, onItemClick }) => {
-  const getUrgencyColor = (urgency: string) => {
+  const getUrgencyDotColor = (urgency: string) => {
     switch (urgency) {
-      case 'urgent': return 'border-red-500 bg-red-50 dark:bg-red-900/20';
-      case 'high': return 'border-orange-500 bg-orange-50 dark:bg-orange-900/20';
-      case 'medium': return 'border-rose-500 bg-rose-50 dark:bg-rose-900/20';
-      default: return 'border-zinc-300 bg-zinc-50 dark:bg-zinc-900';
+      case 'urgent': return 'bg-red-500';
+      case 'high': return 'bg-orange-500';
+      case 'medium': return 'bg-rose-500';
+      default: return 'bg-zinc-400';
     }
   };
 
-  const getTypeIcon = (type: string) => {
+  const getUrgencyLabel = (urgency: string) => {
+    switch (urgency) {
+      case 'urgent': return 'URGENT';
+      case 'high': return 'HIGH';
+      case 'medium': return 'MEDIUM';
+      default: return 'LOW';
+    }
+  };
+
+  const getTypeLabel = (type: string) => {
     switch (type) {
-      case 'task': return 'fa-check-circle';
-      case 'event': return 'fa-calendar';
-      case 'message': return 'fa-message';
-      default: return 'fa-circle';
+      case 'task': return 'TASK';
+      case 'event': return 'EVENT';
+      case 'message': return 'MSG';
+      default: return '';
     }
   };
 
   if (isLoading) {
     return (
-      <div className="grid grid-cols-1 md:grid-cols-3 lg:grid-cols-5 gap-3 animate-pulse">
-        {[1, 2, 3, 4, 5].map(i => (
-          <div key={i} className="h-24 bg-zinc-100 dark:bg-zinc-800 rounded-xl"></div>
-        ))}
-      </div>
+      <section className="animate-pulse">
+        <div className="h-3 bg-zinc-200/70 dark:bg-white/[0.06] rounded w-24 mb-4"></div>
+        <div className="h-20 bg-zinc-100/80 dark:bg-white/[0.04] rounded-xl mb-2"></div>
+        <div className="space-y-1.5">
+          {[1, 2, 3, 4].map(i => (
+            <div key={i} className="h-10 bg-zinc-100/60 dark:bg-white/[0.03] rounded"></div>
+          ))}
+        </div>
+      </section>
     );
   }
 
+  if (priorities.length === 0) {
+    return (
+      <section>
+        <h2 className="pulse-label text-zinc-500 dark:text-zinc-400 mb-3">PRIORITIES · TODAY</h2>
+        <p className="text-sm text-zinc-500 dark:text-zinc-400">Nothing on fire. Use the time.</p>
+      </section>
+    );
+  }
+
+  const [primary, ...rest] = priorities;
+
   return (
-    <section className="animate-slide-up">
-      <div className="flex items-center justify-between mb-3 sm:mb-4">
-        <div className="flex items-center gap-2">
-          <div className="w-7 h-7 sm:w-8 sm:h-8 rounded-lg bg-gradient-to-br from-rose-500 to-pink-500 flex items-center justify-center shadow-lg glow-rose-sm">
-            <Zap className="text-white text-xs" />
-          </div>
-          <h2 className="text-sm sm:text-base font-bold text-zinc-900 dark:text-white uppercase tracking-wider">Today's Priorities</h2>
-        </div>
-        <span className="text-xs text-gradient-rose font-semibold">{priorities.length} items</span>
+    <section>
+      <div className="flex items-center justify-between mb-3">
+        <h2 className="pulse-label text-zinc-500 dark:text-zinc-400">
+          PRIORITIES · {priorities.length}
+        </h2>
       </div>
 
-      <div className="grid grid-cols-1 sm:grid-cols-2 md:grid-cols-3 lg:grid-cols-5 gap-2 sm:gap-3 dashboard-stagger">
-        {priorities.map((item) => (
-          <div
-            key={item.id}
-            onClick={() => onItemClick(item)}
-            className={`border-l-4 rounded-xl p-3 sm:p-4 cursor-pointer hover:shadow-lg transition-all duration-150 group active:scale-[0.98] min-h-[72px] card-hover-lift backdrop-blur-sm ${getUrgencyColor(item.urgency)}`}
-          >
-            <div className="flex items-start gap-2 sm:gap-3">
-              <div className={`w-9 h-9 sm:w-8 sm:h-8 rounded-lg flex items-center justify-center shrink-0 ${
-                item.type === 'task' ? 'bg-rose-100 text-rose-600 dark:bg-rose-900/30 dark:text-rose-400' :
-                item.type === 'event' ? 'bg-purple-100 text-purple-600 dark:bg-purple-900/30 dark:text-purple-400' :
-                'bg-emerald-100 text-emerald-600 dark:bg-emerald-900/30 dark:text-emerald-400'
-              }`}>
-                <i className={`fa-solid ${getTypeIcon(item.type)} text-sm`}></i>
-              </div>
-              <div className="flex-1 min-w-0">
-                <h4 className="text-sm font-semibold text-zinc-900 dark:text-white truncate">{item.title}</h4>
-                {item.dueTime && (
-                  <p className="text-xs text-zinc-500 mt-1">
-                    {item.dueTime.toLocaleTimeString([], { hour: '2-digit', minute: '2-digit' })}
-                  </p>
-                )}
+      {/* Priority #1 — full-width, primary visual weight */}
+      <button
+        onClick={() => onItemClick(primary)}
+        className="w-full text-left bg-white dark:bg-white/[0.03] border border-zinc-200 dark:border-white/[0.06] hover:border-rose-500/40 dark:hover:border-rose-500/30 rounded-xl px-5 py-4 mb-2 transition-colors duration-150 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-rose-500/40"
+      >
+        <div className="flex items-center gap-2 mb-1.5">
+          <span className={`w-2 h-2 rounded-full ${getUrgencyDotColor(primary.urgency)}`} aria-hidden="true"></span>
+          <span className="pulse-label text-zinc-500 dark:text-zinc-500">
+            {getUrgencyLabel(primary.urgency)}{getTypeLabel(primary.type) ? ` · ${getTypeLabel(primary.type)}` : ''}
+            {primary.source ? ` · ${primary.source.toUpperCase()}` : ''}
+          </span>
+        </div>
+        <div className="flex items-baseline justify-between gap-3">
+          <h3 className="text-base sm:text-lg font-semibold text-zinc-900 dark:text-zinc-50 leading-snug truncate">
+            {primary.title}
+          </h3>
+          {primary.dueTime && (
+            <span className="pulse-label text-zinc-500 dark:text-zinc-500 shrink-0">
+              {primary.dueTime.toLocaleTimeString([], { hour: '2-digit', minute: '2-digit' })}
+            </span>
+          )}
+        </div>
+      </button>
+
+      {/* Priorities #2-5 — single-line ranked list */}
+      {rest.length > 0 && (
+        <ul className="space-y-px">
+          {rest.slice(0, 4).map((item) => (
+            <li key={item.id}>
+              <button
+                onClick={() => onItemClick(item)}
+                className="w-full text-left flex items-center gap-3 px-3 py-2.5 rounded hover:bg-zinc-50 dark:hover:bg-white/[0.04] transition-colors duration-150 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-rose-500/40 group"
+              >
+                <span className={`w-1.5 h-1.5 rounded-full ${getUrgencyDotColor(item.urgency)} shrink-0`} aria-hidden="true"></span>
+                <span className="text-sm text-zinc-800 dark:text-zinc-200 truncate flex-1">
+                  {item.title}
+                </span>
                 {item.source && (
-                  <span className="inline-block mt-1 text-[10px] px-1.5 py-0.5 bg-zinc-200 dark:bg-zinc-700 text-zinc-600 dark:text-zinc-300 rounded uppercase">
-                    {item.source}
+                  <span className="pulse-label text-zinc-400 dark:text-zinc-500 shrink-0">{item.source.toUpperCase()}</span>
+                )}
+                {item.dueTime && (
+                  <span className="pulse-label text-zinc-500 dark:text-zinc-400 shrink-0">
+                    {item.dueTime.toLocaleTimeString([], { hour: '2-digit', minute: '2-digit' })}
                   </span>
                 )}
-              </div>
-            </div>
-          </div>
-        ))}
-
-      </div>
+              </button>
+            </li>
+          ))}
+        </ul>
+      )}
     </section>
   );
 };
@@ -266,6 +317,11 @@ const Dashboard: React.FC<DashboardProps> = ({ user, apiKey, setView, openSettin
   const effectiveApiKey = apiKey || '';
   // AI-router error handler (cap exceeded / provider down → toast + CTA)
   const handleAIError = useAIErrorHandler();
+  // Active workspace — required for scoping realtime subscriptions so a
+  // dashboard channel from one workspace doesn't keep streaming after the
+  // user switches to another. dataService also tears down all channels on
+  // workspace switch via the pulse:workspace-changed event bus.
+  const { currentWorkspace } = useWorkspaceData();
   // Real data state
   const [events, setEvents] = useState<CalendarEvent[]>([]);
   const [tasks, setTasks] = useState<Task[]>([]);
@@ -295,9 +351,9 @@ const Dashboard: React.FC<DashboardProps> = ({ user, apiKey, setView, openSettin
   const [teamBuilderContacts, setTeamBuilderContacts] = useState<Contact[]>([]);
   const [loadingTeamBuilderContacts, setLoadingTeamBuilderContacts] = useState(false);
 
-  // Widget expansion state
+  // Widget expansion state — default to one expanded widget; rest collapsed for triage focus
   const [expandedWidgets, setExpandedWidgets] = useState<Set<string>>(
-    new Set(['journal', 'scheduler', 'analytics', 'goals', 'team'])
+    new Set(['scheduler'])
   );
 
   // Journal State
@@ -620,9 +676,10 @@ const Dashboard: React.FC<DashboardProps> = ({ user, apiKey, setView, openSettin
 
   // Real-time subscriptions
   useEffect(() => {
+    if (!currentWorkspace?.id) return;
     let unsubscribe: (() => void) | null = null;
 
-    dataService.subscribeToDashboardUpdates({
+    dataService.subscribeToDashboardUpdates(currentWorkspace.id, {
       onTaskUpdate: (task) => {
         setTasks(prev => {
           const idx = prev.findIndex(t => t.id === task.id);
@@ -654,7 +711,7 @@ const Dashboard: React.FC<DashboardProps> = ({ user, apiKey, setView, openSettin
         unsubscribe();
       }
     };
-  }, []);
+  }, [currentWorkspace?.id]);
 
   // Computed Metrics
   const productivityMetrics = useMemo<ProductivityMetrics>(() => {
@@ -1049,16 +1106,16 @@ const Dashboard: React.FC<DashboardProps> = ({ user, apiKey, setView, openSettin
     return hours > 0 ? `${hours}h ${mins}m` : `${mins}m`;
   }, []);
 
-  // Quick Actions with brand colors
+  // Quick Actions — neutral surfaces, single primary action style
   const quickActions = useMemo(() => [
-    { id: 'task', label: 'New Task', icon: 'fa-check', color: 'bg-gradient-to-br from-rose-500 to-pink-500', view: AppView.CALENDAR, openTaskPanel: true },
-    { id: 'message', label: 'Send Message', icon: 'fa-message', color: 'bg-gradient-to-br from-pink-500 to-rose-400', view: AppView.MESSAGES },
-    { id: 'meeting', label: 'Schedule Meet', icon: 'fa-video', color: 'bg-gradient-to-br from-rose-400 to-pink-600', view: AppView.CALENDAR },
-    { id: 'email', label: 'Compose Email', icon: 'fa-envelope', color: 'bg-gradient-to-br from-pink-600 to-rose-500', view: AppView.EMAIL },
-    { id: 'vox', label: 'Quick Vox', icon: 'fa-microphone', color: 'bg-gradient-to-br from-orange-500 to-amber-500', view: AppView.RELAY },
-    { id: 'contact', label: 'New Contact', icon: 'fa-user-plus', color: 'bg-gradient-to-br from-emerald-500 to-teal-500', view: AppView.CONTACTS, openAddContact: true },
-    { id: 'warroom', label: 'War Room', icon: 'fa-book-open', color: 'bg-gradient-to-br from-rose-500 to-pink-600', view: AppView.LIVE },
-    { id: 'search', label: 'Search', icon: 'fa-magnifying-glass', color: 'bg-gradient-to-br from-sky-500 to-blue-500', view: AppView.MULTI_MODAL },
+    { id: 'task', label: 'New Task', icon: 'fa-check', view: AppView.CALENDAR, openTaskPanel: true },
+    { id: 'message', label: 'Send Message', icon: 'fa-message', view: AppView.MESSAGES },
+    { id: 'meeting', label: 'Schedule Meet', icon: 'fa-video', view: AppView.CALENDAR },
+    { id: 'email', label: 'Compose Email', icon: 'fa-envelope', view: AppView.EMAIL },
+    { id: 'vox', label: 'Quick Relay', icon: 'fa-microphone', view: AppView.RELAY },
+    { id: 'contact', label: 'New Contact', icon: 'fa-user-plus', view: AppView.CONTACTS, openAddContact: true },
+    { id: 'warroom', label: 'War Room', icon: 'fa-book-open', view: AppView.LIVE },
+    { id: 'search', label: 'Search', icon: 'fa-magnifying-glass', view: AppView.MULTI_MODAL },
   ], []);
 
   // Derived: upcoming events (next 3 future events sorted by start time)
@@ -1095,37 +1152,38 @@ const Dashboard: React.FC<DashboardProps> = ({ user, apiKey, setView, openSettin
               type="text"
               value={searchQuery}
               onChange={(e) => setSearchQuery(e.target.value)}
-              placeholder="Search the web with AI..."
-              className="w-full bg-white dark:bg-zinc-900 border border-zinc-200 dark:border-zinc-800 rounded-2xl pl-11 pr-28 py-3.5 text-sm text-zinc-900 dark:text-white placeholder-zinc-400 focus:border-rose-500/60 focus:ring-2 focus:ring-rose-500/20 focus:ring-offset-0 focus:outline-none transition-all shadow-sm"
+              placeholder="Search the web"
+              className="w-full bg-white dark:bg-white/[0.03] border border-zinc-200 dark:border-white/[0.06] rounded-xl pl-11 pr-24 py-3 text-sm text-zinc-900 dark:text-zinc-100 placeholder-zinc-400 dark:placeholder-zinc-500 focus:border-rose-500/60 dark:focus:border-rose-500/40 focus:ring-2 focus:ring-rose-500/20 focus:outline-none transition-colors duration-150"
             />
             <button
               type="submit"
-              className="absolute right-3 bg-gradient-to-r from-rose-500 to-pink-500 text-white px-4 py-1.5 rounded-xl text-xs font-semibold hover:opacity-90 transition flex items-center gap-1.5"
+              disabled={loadingTools || !searchQuery.trim()}
+              className="absolute right-2 bg-rose-500 hover:bg-rose-600 active:bg-rose-700 text-white px-3.5 py-1.5 rounded-lg text-xs font-semibold disabled:opacity-50 transition-colors duration-150 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-rose-500/40 inline-flex items-center gap-1.5"
             >
-              {loadingTools ? <Loader2 className="animate-spin w-3 h-3" /> : <><Sparkles className="w-3 h-3" />Search</>}
+              {loadingTools ? <Loader2 className="animate-spin w-3 h-3" /> : 'Search'}
             </button>
           </div>
         </form>
         {searchResult && (
-          <div className="mt-2 bg-white dark:bg-zinc-900 border border-zinc-200 dark:border-zinc-800 rounded-2xl p-4 text-sm leading-relaxed text-zinc-700 dark:text-zinc-300 shadow-sm animate-fade-in">
-            <div className="flex items-center gap-2 mb-2 text-xs text-zinc-400 font-medium uppercase tracking-wide">
-              <Sparkles className="w-3 h-3 text-rose-400" /> AI Web Search
+          <div className="mt-2 bg-white dark:bg-white/[0.03] border border-zinc-200 dark:border-white/[0.06] rounded-xl p-4 text-sm leading-relaxed text-zinc-700 dark:text-zinc-300 animate-fade-in">
+            <div className="mb-3">
+              <ProvenanceChip provider="gemini" kind="WEB" />
             </div>
             <div className="text-sm leading-relaxed">
               <ReactMarkdown
                 components={{
                   p: ({ node, ...props }) => <p className="my-2 leading-relaxed text-zinc-700 dark:text-zinc-300" {...props} />,
-                  h1: ({ node, ...props }) => <h1 className="text-base font-semibold mt-4 mb-2 text-zinc-900 dark:text-white" {...props} />,
-                  h2: ({ node, ...props }) => <h2 className="text-sm font-semibold mt-4 mb-2 text-zinc-900 dark:text-white" {...props} />,
-                  h3: ({ node, ...props }) => <h3 className="text-sm font-semibold mt-3 mb-1.5 text-zinc-900 dark:text-white" {...props} />,
+                  h1: ({ node, ...props }) => <h1 className="text-base font-semibold mt-4 mb-2 text-zinc-900 dark:text-zinc-50" {...props} />,
+                  h2: ({ node, ...props }) => <h2 className="text-sm font-semibold mt-4 mb-2 text-zinc-900 dark:text-zinc-50" {...props} />,
+                  h3: ({ node, ...props }) => <h3 className="text-sm font-semibold mt-3 mb-1.5 text-zinc-900 dark:text-zinc-50" {...props} />,
                   ul: ({ node, ...props }) => <ul className="list-disc pl-5 my-2 space-y-1" {...props} />,
                   ol: ({ node, ...props }) => <ol className="list-decimal pl-5 my-2 space-y-1" {...props} />,
                   li: ({ node, ...props }) => <li className="leading-relaxed text-zinc-700 dark:text-zinc-300" {...props} />,
-                  strong: ({ node, ...props }) => <strong className="font-semibold text-zinc-900 dark:text-white" {...props} />,
+                  strong: ({ node, ...props }) => <strong className="font-semibold text-zinc-900 dark:text-zinc-50" {...props} />,
                   em: ({ node, ...props }) => <em className="italic text-zinc-700 dark:text-zinc-300" {...props} />,
                   a: ({ node, ...props }) => <a target="_blank" rel="noopener noreferrer" className="text-rose-500 hover:text-rose-400 underline underline-offset-2" {...props} />,
                   code: ({ node, ...props }) => <code className="px-1 py-0.5 rounded bg-zinc-100 dark:bg-zinc-800 text-rose-500 text-xs font-mono" {...props} />,
-                  blockquote: ({ node, ...props }) => <blockquote className="border-l-2 border-rose-400 pl-3 my-2 italic text-zinc-600 dark:text-zinc-400" {...props} />,
+                  blockquote: ({ node, ...props }) => <blockquote className="pl-3 my-2 italic text-zinc-600 dark:text-zinc-400" {...props} />,
                   hr: () => <hr className="my-3 border-zinc-200 dark:border-zinc-800" />,
                 }}
               >
@@ -1147,223 +1205,174 @@ const Dashboard: React.FC<DashboardProps> = ({ user, apiKey, setView, openSettin
         )}
       </div>
 
-      {/* Daily Briefing Hero - Enhanced with Beautiful Gradients */}
+      {/* Daily Briefing — quiet, triage-first */}
       {loadingBriefing || isLoading ? (
         <BriefingSkeleton />
       ) : (
-        <section className="gradient-dashboard-hero texture-noise grain-effect border border-rose-800/30 rounded-xl sm:rounded-2xl p-4 sm:p-6 lg:p-8 text-white relative overflow-hidden animate-slide-up glow-rose-md shadow-2xl">
-          {/* Organic Gradient Base Layer with Smooth Transitions */}
-          <div className="absolute inset-0 bg-gradient-to-br from-rose-950 via-pink-950/90 to-purple-950/80 pointer-events-none"></div>
-
-          {/* Layered Blurred Gradient Orbs - Softer Edges */}
-          <div className="absolute -top-[40%] -right-[30%] w-[800px] h-[800px] bg-gradient-radial from-rose-500/25 via-rose-600/15 to-transparent rounded-full blur-[120px] pointer-events-none animate-pulse-glow-slow opacity-80"></div>
-          <div className="absolute -bottom-[35%] -left-[25%] w-[700px] h-[700px] bg-gradient-radial from-pink-500/20 via-pink-600/12 to-transparent rounded-full blur-[100px] pointer-events-none animate-pulse-glow-slow opacity-70" style={{ animationDelay: '2s' }}></div>
-          <div className="absolute top-[20%] right-[15%] w-[500px] h-[500px] bg-gradient-radial from-purple-500/15 via-purple-600/8 to-transparent rounded-full blur-[90px] pointer-events-none animate-pulse-glow-slow opacity-60" style={{ animationDelay: '1s' }}></div>
-          <div className="absolute bottom-[25%] left-[40%] w-[600px] h-[600px] bg-gradient-radial from-rose-600/18 via-pink-700/10 to-transparent rounded-full blur-[110px] pointer-events-none animate-pulse-glow-slow opacity-50" style={{ animationDelay: '3s' }}></div>
-
-          {/* Subtle Noise Texture Overlay */}
-          <div className="absolute inset-0 opacity-[0.015] mix-blend-overlay pointer-events-none"
-            style={{
-              backgroundImage: `url("data:image/svg+xml,%3Csvg viewBox='0 0 400 400' xmlns='http://www.w3.org/2000/svg'%3E%3Cfilter id='noiseFilter'%3E%3CfeTurbulence type='fractalNoise' baseFrequency='0.9' numOctaves='4' stitchTiles='stitch'/%3E%3C/filter%3E%3Crect width='100%25' height='100%25' filter='url(%23noiseFilter)'/%3E%3C/svg%3E")`,
-              backgroundSize: '200px 200px'
-            }}
-          ></div>
-
-          {/* Animated Gradient Mesh - Organic Movement */}
-          <div className="absolute inset-0 opacity-30 pointer-events-none mix-blend-soft-light"
-            style={{
-              background: `
-                radial-gradient(ellipse at 20% 30%, rgba(244, 63, 94, 0.15), transparent 50%),
-                radial-gradient(ellipse at 80% 70%, rgba(236, 72, 153, 0.12), transparent 50%),
-                radial-gradient(ellipse at 40% 80%, rgba(168, 85, 247, 0.10), transparent 50%)
-              `,
-              animation: 'gradient-shift 15s ease-in-out infinite'
-            }}
-          ></div>
-
-          {/* Soft Vignette Effect */}
-          <div className="absolute inset-0 pointer-events-none"
-            style={{
-              background: 'radial-gradient(ellipse at center, transparent 0%, rgba(0, 0, 0, 0.25) 100%)'
-            }}
-          ></div>
-
+        <section className="bg-white dark:bg-white/[0.03] border border-zinc-200 dark:border-white/[0.06] rounded-xl p-6 sm:p-8 transition-colors duration-150">
           {briefing ? (
-            <div className="relative z-10">
-              {/* Header with refresh button and stats */}
-              <div className="flex items-start justify-between mb-6">
-                <div className="flex-1">
-                  <div className="flex items-center gap-2 mb-3 text-rose-400 font-medium text-xs uppercase tracking-widest">
-                    <span className="w-2 h-2 bg-rose-500 rounded-full animate-pulse"></span>
-                    <i className={`fa-solid ${contextualGreeting.icon}`}></i>
-                    Daily Overview
+            <div>
+              {/* Header: provenance + greeting + refresh */}
+              <div className="flex items-start justify-between mb-3 gap-4">
+                <div className="flex-1 min-w-0">
+                  <div className="flex items-center gap-2 mb-2.5 flex-wrap">
+                    <ProvenanceChip provider="claude" kind="BRIEFING" />
                     {lastBriefingRefresh && (
-                      <span className="text-zinc-400 normal-case ml-2">
-                        Updated {lastBriefingRefresh.toLocaleTimeString([], { hour: '2-digit', minute: '2-digit' })}
+                      <span className="pulse-label text-zinc-400 dark:text-zinc-500">
+                        UPDATED {lastBriefingRefresh.toLocaleTimeString([], { hour: '2-digit', minute: '2-digit' })}
                       </span>
                     )}
                   </div>
-                  <h1 className="text-xl sm:text-2xl lg:text-3xl font-semibold mb-3 sm:mb-4 text-white tracking-tight">{contextualGreeting.greeting}</h1>
-                  <p className="text-zinc-200 leading-relaxed text-sm sm:text-base max-w-2xl">{briefing.summary}</p>
-                  {briefing.focusRecommendation && (
-                    <div
-                      className="mt-4 inline-flex items-center gap-2 px-4 py-2 bg-rose-500/10 border border-rose-500/20 rounded-lg cursor-pointer hover:bg-rose-500/20 hover:border-rose-500/40 transition-all duration-200 group"
-                      onClick={() => {
-                        // Smart navigation: detect what the recommendation refers to
-                        const rec = briefing.focusRecommendation?.toLowerCase() || '';
-                        if (rec.includes('email') || rec.includes('inbox') || rec.includes('cash app') || rec.includes('message from')) {
-                          sessionStorage.setItem('pulse_focus_nudge', 'email');
-                          setView(AppView.EMAIL);
-                        } else if (rec.includes('message') || rec.includes('chat') || rec.includes('conversation')) {
-                          sessionStorage.setItem('pulse_focus_nudge', 'message');
-                          setView(AppView.MESSAGES);
-                        } else if (rec.includes('meeting') || rec.includes('calendar') || rec.includes('event') || rec.includes('task')) {
-                          setView(AppView.CALENDAR);
-                        } else if (rec.includes('voice') || rec.includes('vox')) {
-                          setView(AppView.RELAY);
-                        } else {
-                          sessionStorage.setItem('pulse_focus_nudge', 'email');
-                          setView(AppView.EMAIL);
-                        }
-                      }}
-                      title="Click to go directly to this item"
-                    >
-                      <Target className="text-rose-400" />
-                      <span className="text-sm text-rose-300 font-medium">{briefing.focusRecommendation}</span>
-                      <ArrowRight className="text-rose-400/60 text-xs group-hover:text-rose-400 transition-colors" />
-                    </div>
-                  )}
+                  <h1 className="text-xl sm:text-2xl font-semibold text-zinc-900 dark:text-zinc-50 tracking-tight">
+                    {contextualGreeting.greeting}
+                  </h1>
                 </div>
                 <button
                   onClick={handleRefreshBriefing}
                   disabled={loadingBriefing}
-                  className="w-10 h-10 rounded-lg bg-zinc-800/50 hover:bg-zinc-700/50 border border-zinc-700 flex items-center justify-center text-zinc-400 hover:text-white transition disabled:opacity-50"
+                  className="w-9 h-9 rounded-lg flex items-center justify-center text-zinc-400 hover:text-zinc-700 dark:hover:text-zinc-200 hover:bg-zinc-100 dark:hover:bg-white/[0.05] transition-colors duration-150 disabled:opacity-50 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-rose-500/40"
                   title="Refresh briefing"
+                  aria-label="Refresh briefing"
                 >
-                  <i className={`fa-solid fa-sync ${loadingBriefing ? 'fa-spin' : ''}`}></i>
+                  <i className={`fa-solid fa-sync text-sm ${loadingBriefing ? 'fa-spin' : ''}`}></i>
                 </button>
               </div>
 
-              {/* Quick Stats Row - Enhanced with Glassmorphism */}
+              {/* Briefing prose, capped at 65ch */}
+              <p className="text-sm sm:text-[15px] text-zinc-700 dark:text-zinc-300 leading-relaxed max-w-[65ch] mb-5">
+                {briefing.summary}
+              </p>
+
+              {/* Primary action: focus recommendation */}
+              {briefing.focusRecommendation && (
+                <button
+                  onClick={() => {
+                    const rec = briefing.focusRecommendation?.toLowerCase() || '';
+                    if (rec.includes('email') || rec.includes('inbox') || rec.includes('cash app') || rec.includes('message from')) {
+                      sessionStorage.setItem('pulse_focus_nudge', 'email');
+                      setView(AppView.EMAIL);
+                    } else if (rec.includes('message') || rec.includes('chat') || rec.includes('conversation')) {
+                      sessionStorage.setItem('pulse_focus_nudge', 'message');
+                      setView(AppView.MESSAGES);
+                    } else if (rec.includes('meeting') || rec.includes('calendar') || rec.includes('event') || rec.includes('task')) {
+                      setView(AppView.CALENDAR);
+                    } else if (rec.includes('voice') || rec.includes('vox')) {
+                      setView(AppView.RELAY);
+                    } else {
+                      sessionStorage.setItem('pulse_focus_nudge', 'email');
+                      setView(AppView.EMAIL);
+                    }
+                  }}
+                  className="group inline-flex items-center gap-2.5 px-4 py-2.5 rounded-lg bg-rose-500 text-white text-sm font-medium hover:bg-rose-600 active:bg-rose-700 transition-colors duration-150 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-rose-500/40 focus-visible:ring-offset-2 focus-visible:ring-offset-white dark:focus-visible:ring-offset-zinc-950 max-w-full"
+                >
+                  <Target className="w-4 h-4 shrink-0" />
+                  <span className="truncate text-left">{briefing.focusRecommendation}</span>
+                  <ArrowRight className="w-4 h-4 shrink-0 transition-transform duration-150 group-hover:translate-x-0.5" />
+                </button>
+              )}
+
+              {/* Single mono-tracked status line replacing the 4-stat grid */}
               {briefingStats && (
-                <div className="grid grid-cols-4 gap-2 sm:gap-4 mb-4 sm:mb-6">
-                  {[
-                    { value: briefingStats.unreadMessages, label: 'Unread' },
-                    { value: briefingStats.pendingTasks, label: 'Tasks' },
-                    { value: briefingStats.todayMeetings, label: 'Meetings' },
-                    { value: briefingStats.unplayedVoxes, label: 'Voxes' },
-                  ].map(({ value, label }) => (
-                    <div
-                      key={label}
-                      className="glass-rose-hover transition-all duration-150 rounded-lg sm:rounded-xl p-2 sm:p-3 text-center group cursor-pointer card-hover-lift border border-rose-500/20"
-                      style={{ background: 'rgba(244, 63, 94, 0.06)', backdropFilter: 'blur(16px)' }}
-                    >
-                      <div className="text-lg sm:text-2xl font-bold text-white">{value}</div>
-                      <div className="text-[9px] sm:text-[10px] text-white/60 group-hover:text-white uppercase tracking-wider transition-colors">{label}</div>
-                    </div>
-                  ))}
+                <div className="mt-5 pt-4 border-t border-zinc-100 dark:border-white/[0.06]">
+                  <div className="flex flex-wrap items-center gap-x-5 gap-y-1.5 pulse-label text-zinc-500 dark:text-zinc-400">
+                    <span><span className="text-zinc-900 dark:text-zinc-100 font-semibold mr-1">{briefingStats.unreadMessages}</span>UNREAD</span>
+                    <span><span className="text-zinc-900 dark:text-zinc-100 font-semibold mr-1">{briefingStats.pendingTasks}</span>TASKS</span>
+                    <span><span className="text-zinc-900 dark:text-zinc-100 font-semibold mr-1">{briefingStats.todayMeetings}</span>MEETINGS</span>
+                    <span><span className="text-zinc-900 dark:text-zinc-100 font-semibold mr-1">{briefingStats.unplayedVoxes}</span>VOXES</span>
+                  </div>
                 </div>
               )}
 
-              {/* Main content: Highlights + Suggestions */}
-              <div className="flex flex-col lg:flex-row gap-4 sm:gap-6 lg:gap-8">
-                {/* Highlights Section */}
-                {briefing.highlights && briefing.highlights.length > 0 && (
-                  <div className="flex-1 space-y-2 sm:space-y-3">
-                    <h3 className="text-[10px] sm:text-xs font-bold text-rose-400/80 uppercase tracking-widest flex items-center gap-2">
-                      <Flame />
-                      Key Highlights
-                    </h3>
-                    <div className="grid gap-2 dashboard-stagger">
-                      {briefing.highlights.slice(0, 4).map((highlight, idx) => (
-                        <div
-                          key={idx}
-                          onClick={() => handleHighlightAction(highlight.category)}
-                          className="glass-card hover:glass-rose-strong border-gradient-rose-subtle rounded-lg sm:rounded-xl p-3 sm:p-4 flex items-start gap-2 sm:gap-3 transition-all duration-150 cursor-pointer group card-hover-lift active:scale-[0.98] min-h-[56px]"
-                        >
-                          <div className={`w-9 h-9 sm:w-8 sm:h-8 rounded-lg flex items-center justify-center shrink-0 ${getPriorityColor(highlight.priority)}`}>
-                            <i className={`fa-solid ${getCategoryIcon(highlight.category)} text-sm`}></i>
-                          </div>
-                          <div className="flex-1 min-w-0">
-                            <div className="flex items-center gap-2 flex-wrap">
-                              <div className="font-medium text-sm sm:text-sm text-zinc-900 line-clamp-1">{highlight.title}</div>
-                              {highlight.priority === 'urgent' && (
-                                <span className="px-1.5 py-0.5 text-[9px] bg-red-500/20 text-red-400 rounded uppercase font-bold shrink-0">Urgent</span>
-                              )}
-                            </div>
-                            <div className="text-xs text-zinc-900 mt-0.5 line-clamp-2 sm:line-clamp-1">{highlight.detail}</div>
-                          </div>
-                          <ChevronRight className="text-xs text-zinc-400 group-hover:text-rose-400 transition" />
-                        </div>
-                      ))}
+              {/* Highlights + Suggestions: two ranked lists, no cards */}
+              {((briefing.highlights && briefing.highlights.length > 0) || briefing.suggestions.length > 0) && (
+                <div className="mt-6 pt-5 border-t border-zinc-100 dark:border-white/[0.06] grid gap-x-10 gap-y-6 lg:grid-cols-2">
+                  {briefing.highlights && briefing.highlights.length > 0 && (
+                    <div>
+                      <h3 className="pulse-label text-zinc-500 dark:text-zinc-400 mb-3">HIGHLIGHTS</h3>
+                      <ul className="space-y-1">
+                        {briefing.highlights.slice(0, 4).map((highlight, idx) => (
+                          <li key={idx}>
+                            <button
+                              onClick={() => handleHighlightAction(highlight.category)}
+                              className="w-full text-left flex items-baseline gap-2.5 px-2 py-1.5 -mx-2 rounded hover:bg-zinc-50 dark:hover:bg-white/[0.04] transition-colors duration-150 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-rose-500/40 group"
+                            >
+                              <span
+                                className={`w-1.5 h-1.5 rounded-full shrink-0 self-center ${
+                                  highlight.priority === 'urgent' ? 'bg-red-500'
+                                  : highlight.priority === 'high' ? 'bg-orange-500'
+                                  : highlight.priority === 'medium' ? 'bg-rose-500'
+                                  : 'bg-zinc-400'
+                                }`}
+                                aria-hidden="true"
+                              ></span>
+                              <span className="flex-1 min-w-0">
+                                <span className="block text-sm text-zinc-900 dark:text-zinc-100 truncate">{highlight.title}</span>
+                                <span className="block text-xs text-zinc-500 dark:text-zinc-400 truncate">{highlight.detail}</span>
+                              </span>
+                              <ChevronRight className="w-3.5 h-3.5 text-zinc-300 dark:text-zinc-600 group-hover:text-rose-500 dark:group-hover:text-rose-400 transition-colors shrink-0 self-center" />
+                            </button>
+                          </li>
+                        ))}
+                      </ul>
                     </div>
-                  </div>
-                )}
+                  )}
 
-                {/* Suggestions Section */}
-                <div className="flex-1 space-y-2 sm:space-y-3">
-                  <h3 className="text-[10px] sm:text-xs font-bold text-rose-400/80 uppercase tracking-widest flex items-center gap-2">
-                    <Lightbulb />
-                    Action Items
-                  </h3>
-                  <div className="grid gap-2 dashboard-stagger">
-                    {briefing.suggestions.slice(0, 4).map((suggestion, idx) => (
-                      <div
-                        key={idx}
-                        className={`glass-card hover:glass-rose-strong border-gradient-rose-subtle rounded-lg sm:rounded-xl p-3 sm:p-4 transition-all duration-150 group card-hover-lift active:scale-[0.98] min-h-[56px] ${
-                          suggestion.type === 'ai_assist' ? 'border-gradient-rose-strong' : ''
-                        }`}
-                      >
-                        <div className="flex items-center justify-between">
-                          <div className="flex-1 min-w-0 pr-2 sm:pr-3">
-                            <div className="flex items-center gap-2 flex-wrap">
-                              {suggestion.type === 'ai_assist' && (
-                                <Sparkles className="text-rose-400 text-sm animate-pulse" />
-                              )}
-                              <div className="font-medium text-sm text-zinc-900 line-clamp-1">{suggestion.action}</div>
-                              {suggestion.priority === 'urgent' && (
-                                <span className="px-1.5 py-0.5 text-[9px] bg-red-500/20 text-red-400 rounded uppercase font-bold shrink-0">Urgent</span>
-                              )}
-                            </div>
-                            <div className="text-xs text-zinc-900 mt-0.5 line-clamp-2 sm:line-clamp-1">{suggestion.reason}</div>
-                          </div>
-                          <button
-                            onClick={() => suggestion.type === 'ai_assist' && suggestion.aiFeature ? handleAIFeatureClick(suggestion.aiFeature) : handleSuggestionAction(suggestion.type)}
-                            className="w-10 h-10 sm:w-8 sm:h-8 rounded-lg bg-gradient-to-br from-rose-600/30 to-pink-600/20 border border-rose-500/30 flex items-center justify-center text-rose-400 group-hover:text-white group-hover:from-rose-500 group-hover:to-pink-500 group-hover:border-rose-500 transition shrink-0 active:scale-95"
-                          >
-                            <i className={`fa-solid ${
-                              suggestion.type === 'ai_assist' ? 'fa-sparkles' :
-                              suggestion.type === 'message' ? 'fa-reply' :
-                              suggestion.type === 'event' ? 'fa-calendar-check' :
-                              suggestion.type === 'task' ? 'fa-list-check' :
-                              suggestion.type === 'email' ? 'fa-envelope' :
-                              suggestion.type === 'vox' ? 'fa-microphone' :
-                              suggestion.type === 'contact' ? 'fa-user-plus' :
-                              'fa-arrow-right'
-                            } text-sm sm:text-xs`}></i>
-                          </button>
-                        </div>
-                      </div>
-                    ))}
-                  </div>
+                  {briefing.suggestions.length > 0 && (
+                    <div>
+                      <h3 className="pulse-label text-zinc-500 dark:text-zinc-400 mb-3">SUGGESTED</h3>
+                      <ul className="space-y-1">
+                        {briefing.suggestions.slice(0, 4).map((suggestion, idx) => (
+                          <li key={idx}>
+                            <button
+                              onClick={() => suggestion.type === 'ai_assist' && suggestion.aiFeature ? handleAIFeatureClick(suggestion.aiFeature) : handleSuggestionAction(suggestion.type)}
+                              className="w-full text-left flex items-baseline gap-2.5 px-2 py-1.5 -mx-2 rounded hover:bg-zinc-50 dark:hover:bg-white/[0.04] transition-colors duration-150 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-rose-500/40 group"
+                            >
+                              <span
+                                className={`w-1.5 h-1.5 rounded-full shrink-0 self-center ${
+                                  suggestion.priority === 'urgent' ? 'bg-red-500'
+                                  : suggestion.priority === 'high' ? 'bg-orange-500'
+                                  : 'bg-zinc-400'
+                                }`}
+                                aria-hidden="true"
+                              ></span>
+                              <span className="flex-1 min-w-0">
+                                <span className="flex items-center gap-1.5 min-w-0">
+                                  {suggestion.type === 'ai_assist' && (
+                                    <ProvenanceChip provider="pulse" kind="ASSIST" className="shrink-0" />
+                                  )}
+                                  <span className="block text-sm text-zinc-900 dark:text-zinc-100 truncate">{suggestion.action}</span>
+                                </span>
+                                <span className="block text-xs text-zinc-500 dark:text-zinc-400 truncate">{suggestion.reason}</span>
+                              </span>
+                              <ArrowRight className="w-3.5 h-3.5 text-zinc-300 dark:text-zinc-600 group-hover:text-rose-500 dark:group-hover:text-rose-400 transition-colors shrink-0 self-center" />
+                            </button>
+                          </li>
+                        ))}
+                      </ul>
+                    </div>
+                  )}
                 </div>
-              </div>
+              )}
             </div>
           ) : (
-            <div className="py-8 text-center relative z-10">
-              <div className="flex items-center justify-center gap-2 mb-4">
-                <div className="w-12 h-12 rounded-xl bg-gradient-to-br from-rose-600/30 to-pink-600/20 border border-rose-500/20 flex items-center justify-center">
-                  <i className={`fa-solid ${contextualGreeting.icon} text-xl text-rose-400`}></i>
-                </div>
+            // Empty state: terse Pulse voice, single primary action
+            <div>
+              <div className="flex items-center gap-2 mb-3">
+                <ProvenanceChip provider="claude" kind="BRIEFING" />
               </div>
-              <h1 className="text-2xl font-light mb-2 text-white">{contextualGreeting.greeting}</h1>
-              <p className="text-zinc-500 font-light">Your dashboard is ready. Add some data to generate your AI briefing.</p>
+              <h1 className="text-xl sm:text-2xl font-semibold text-zinc-900 dark:text-zinc-50 tracking-tight mb-2">
+                {contextualGreeting.greeting}
+              </h1>
+              <p className="text-sm text-zinc-600 dark:text-zinc-400 mb-5 max-w-[65ch]">
+                Pulse hasn't drafted a briefing yet. Generate one when you're ready to see what needs you today.
+              </p>
               <button
                 onClick={handleRefreshBriefing}
                 disabled={loadingBriefing}
-                className="mt-4 px-6 py-2 bg-rose-500/20 hover:bg-rose-500/30 border border-rose-500/30 rounded-lg text-rose-400 text-sm font-medium transition disabled:opacity-50"
+                className="inline-flex items-center gap-2 px-4 py-2.5 rounded-lg bg-rose-500 hover:bg-rose-600 active:bg-rose-700 text-white text-sm font-medium transition-colors duration-150 disabled:opacity-50 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-rose-500/40 focus-visible:ring-offset-2 focus-visible:ring-offset-white dark:focus-visible:ring-offset-zinc-950"
               >
-                {loadingBriefing ? 'Generating...' : 'Generate AI Briefing'}
+                {loadingBriefing ? <Loader2 className="w-4 h-4 animate-spin" /> : <Target className="w-4 h-4" />}
+                {loadingBriefing ? 'Generating' : 'Generate briefing'}
               </button>
             </div>
           )}
@@ -1383,7 +1392,7 @@ const Dashboard: React.FC<DashboardProps> = ({ user, apiKey, setView, openSettin
           id="attention-focus"
           title="Attention & Focus"
           icon="fa-brain"
-          iconColor="text-purple-500"
+          iconColor=""
           isExpanded={expandedWidgets.has('attention-focus')}
           onToggle={toggleWidget}
           className="animate-spring-enter"
@@ -1437,7 +1446,7 @@ const Dashboard: React.FC<DashboardProps> = ({ user, apiKey, setView, openSettin
                   <div className="w-10 h-10 border-2 border-emerald-500 rounded-full flex items-center justify-center mx-auto mb-3">
                     <Check className="text-emerald-500" />
                   </div>
-                  <h3 className="text-sm font-bold uppercase tracking-widest dark:text-white text-zinc-900">Saved</h3>
+                  <h3 className="text-sm font-bold uppercase tracking-widest dark:text-zinc-50 text-zinc-900">Saved</h3>
                   <button
                     onClick={() => setView(AppView.ARCHIVES)}
                     className="mt-2 text-xs text-zinc-400 hover:text-rose-500 transition flex items-center gap-1.5 mx-auto"
@@ -1462,32 +1471,33 @@ const Dashboard: React.FC<DashboardProps> = ({ user, apiKey, setView, openSettin
             </div>
 
             {journalInsight && (
-              <div className="mb-4 pl-4 border-l-2 border-purple-500 text-sm text-zinc-600 dark:text-zinc-400 italic animate-fade-in">
-                "{journalInsight}"
+              <div className="mb-4 p-3 rounded-lg bg-zinc-50 dark:bg-white/[0.04] text-sm text-zinc-700 dark:text-zinc-300 animate-fade-in">
+                <ProvenanceChip provider="claude" kind="INSIGHT" className="mb-2" />
+                <p className="italic leading-relaxed">{journalInsight}</p>
               </div>
             )}
 
-            <div className="flex gap-3 items-center pt-4 border-t border-zinc-100 dark:border-zinc-900">
+            <div className="flex gap-3 items-center pt-4 border-t border-zinc-100 dark:border-white/[0.06]">
               <button
                 onClick={handleJournalAnalyze}
                 disabled={saving || !journalText}
-                className="px-4 py-2 bg-zinc-50 dark:bg-zinc-900 hover:bg-zinc-100 dark:hover:bg-zinc-800 text-zinc-900 dark:text-zinc-300 rounded-lg text-xs font-semibold uppercase tracking-wider transition disabled:opacity-50"
+                className="pulse-label px-3 py-2 rounded text-zinc-600 dark:text-zinc-400 hover:text-zinc-900 dark:hover:text-zinc-100 hover:bg-zinc-100 dark:hover:bg-white/[0.05] transition-colors duration-150 disabled:opacity-40 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-rose-500/40"
               >
-                Analyze AI
+                ANALYZE
               </button>
               <div className="flex-1"></div>
               <button
                 onClick={handleShare}
                 disabled={!journalText}
-                className={`w-9 h-9 rounded-lg transition flex items-center justify-center ${journalCopied ? 'bg-emerald-100 dark:bg-emerald-900/30 text-emerald-600 dark:text-emerald-400' : 'hover:bg-zinc-100 dark:hover:bg-zinc-900 text-zinc-400'}`}
-                title={journalCopied ? 'Copied!' : 'Copy to clipboard'}
+                className={`w-9 h-9 rounded-lg transition-colors duration-150 flex items-center justify-center disabled:opacity-40 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-rose-500/40 ${journalCopied ? 'bg-emerald-100 dark:bg-emerald-900/30 text-emerald-600 dark:text-emerald-400' : 'hover:bg-zinc-100 dark:hover:bg-white/[0.05] text-zinc-400'}`}
+                title={journalCopied ? 'Copied' : 'Copy to clipboard'}
               >
                 {journalCopied ? <Check /> : <Copy />}
               </button>
               <button
                 onClick={handleArchive}
                 disabled={saving || !journalText}
-                className="px-6 py-2 bg-zinc-900 dark:bg-white text-white dark:text-black rounded-lg text-xs font-bold uppercase tracking-widest hover:opacity-90 transition disabled:opacity-50"
+                className="px-5 py-2 bg-rose-500 hover:bg-rose-600 active:bg-rose-700 text-white rounded-lg text-sm font-medium transition-colors duration-150 disabled:opacity-40 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-rose-500/40 focus-visible:ring-offset-2 focus-visible:ring-offset-white dark:focus-visible:ring-offset-zinc-950"
               >
                 Save
               </button>
@@ -1495,34 +1505,33 @@ const Dashboard: React.FC<DashboardProps> = ({ user, apiKey, setView, openSettin
 
             {/* Recent Journal Entries */}
             {recentJournals.length > 0 && (
-              <div className="mt-4 pt-4 border-t border-zinc-100 dark:border-zinc-900">
-                <div className="flex items-center justify-between mb-3">
-                  <h4 className="text-[10px] font-bold text-zinc-500 uppercase tracking-widest">Recent</h4>
+              <div className="mt-4 pt-4 border-t border-zinc-100 dark:border-white/[0.06]">
+                <div className="flex items-center justify-between mb-2">
+                  <h4 className="pulse-label text-zinc-500 dark:text-zinc-400">RECENT</h4>
                   <button
                     onClick={() => setView(AppView.ARCHIVES)}
-                    className="text-[10px] text-zinc-500 hover:text-rose-500 transition"
+                    className="pulse-label text-zinc-400 dark:text-zinc-500 hover:text-rose-600 dark:hover:text-rose-400 transition-colors"
                   >
-                    See all
+                    SEE ALL
                   </button>
                 </div>
-                <div className="space-y-2">
+                <ul className="space-y-px">
                   {recentJournals.map(journal => (
-                    <button
-                      key={journal.id}
-                      onClick={() => setView(AppView.ARCHIVES)}
-                      className="w-full text-left p-2 rounded-lg hover:bg-zinc-50 dark:hover:bg-zinc-900 border-l-2 border-rose-500/20 dark:border-rose-500/15 hover:border-rose-500/60 dark:hover:border-rose-500/50 transition-colors duration-150 group"
-                    >
-                      <div className="flex items-center gap-2">
-                        <span className="text-xs text-zinc-500 dark:text-zinc-500 shrink-0">
-                          {journal.date.toLocaleDateString('en-US', { month: 'short', day: 'numeric' })}
+                    <li key={journal.id}>
+                      <button
+                        onClick={() => setView(AppView.ARCHIVES)}
+                        className="w-full text-left flex items-center gap-2.5 px-2 py-1.5 rounded hover:bg-zinc-50 dark:hover:bg-white/[0.04] transition-colors duration-150 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-rose-500/40 group"
+                      >
+                        <span className="pulse-label text-zinc-400 dark:text-zinc-500 shrink-0">
+                          {journal.date.toLocaleDateString('en-US', { month: 'short', day: 'numeric' }).toUpperCase()}
                         </span>
-                        <span className="text-xs text-zinc-700 dark:text-zinc-300 truncate flex-1 group-hover:text-rose-600 dark:group-hover:text-rose-400 transition">
+                        <span className="text-xs text-zinc-700 dark:text-zinc-300 truncate flex-1 group-hover:text-zinc-900 dark:group-hover:text-zinc-100 transition-colors">
                           {journal.content.replace('Entry: ', '').slice(0, 60)}...
                         </span>
-                      </div>
-                    </button>
+                      </button>
+                    </li>
                   ))}
-                </div>
+                </ul>
               </div>
             )}
           </div>
@@ -1571,35 +1580,33 @@ const Dashboard: React.FC<DashboardProps> = ({ user, apiKey, setView, openSettin
             </div>
 
             {batchedNotifications.length > 0 ? (
-              <div className="bg-zinc-50 dark:bg-zinc-900 rounded-xl p-4 border border-zinc-100 dark:border-zinc-800">
-                <div className="flex justify-between items-center mb-3">
-                  <span className="text-xs font-bold uppercase text-zinc-500">Batched ({batchedNotifications.length})</span>
-                  <button onClick={() => setBatchedNotifications([])} className="text-xs text-rose-500 hover:underline">Clear All</button>
+              <div className="pt-3 border-t border-zinc-100 dark:border-white/[0.06]">
+                <div className="flex justify-between items-center mb-2">
+                  <span className="pulse-label text-zinc-500 dark:text-zinc-400">BATCHED · {batchedNotifications.length}</span>
+                  <button onClick={() => setBatchedNotifications([])} className="pulse-label text-zinc-400 dark:text-zinc-500 hover:text-rose-600 dark:hover:text-rose-400 transition-colors">CLEAR</button>
                 </div>
-                <div className="space-y-2">
+                <ul className="space-y-px">
                   {batchedNotifications.slice(0, 3).map(n => (
-                    <div key={n.id} className="flex items-start gap-3 p-2 bg-white dark:bg-zinc-950 rounded-lg border border-zinc-100 dark:border-zinc-800">
-                      <div className="text-[10px] font-bold text-zinc-500 uppercase mt-0.5 min-w-[40px]">{n.source}</div>
-                      <div className="flex-1 min-w-0">
-                        <div className="text-xs text-zinc-700 dark:text-zinc-300 truncate">{n.message}</div>
-                        <div className="text-[10px] text-zinc-500">{n.time.toLocaleTimeString([], {hour:'2-digit', minute:'2-digit'})}</div>
-                      </div>
-                    </div>
+                    <li key={n.id} className="flex items-baseline gap-3 px-2 py-1.5 -mx-2 rounded">
+                      <span className="pulse-label text-zinc-400 dark:text-zinc-500 shrink-0 min-w-[40px]">{n.source.toUpperCase()}</span>
+                      <span className="flex-1 min-w-0">
+                        <span className="block text-xs text-zinc-700 dark:text-zinc-300 truncate">{n.message}</span>
+                        <span className="pulse-label text-zinc-400 dark:text-zinc-500">{n.time.toLocaleTimeString([], {hour:'2-digit', minute:'2-digit'})}</span>
+                      </span>
+                    </li>
                   ))}
-                </div>
+                </ul>
               </div>
             ) : (
-              <div className="text-center text-zinc-500 text-sm py-4">No batched notifications.</div>
+              <p className="text-sm text-zinc-500 dark:text-zinc-400 text-center py-3">Nothing batched. Stay sharp.</p>
             )}
           </CollapsibleWidget>
 
           {/* Mini Pulse AI */}
-          <div className="dashboard-widget-surface backdrop-blur-lg rounded-2xl p-5 relative overflow-hidden border border-zinc-200/80 dark:border-zinc-800/60 card-elevated hover:border-rose-500/30 transition-all duration-150">
-            <div className="flex items-center gap-3 mb-4">
-              <div className="w-8 h-8 bg-gradient-to-br from-rose-500/20 to-pink-500/20 border border-rose-500/20 rounded-full flex items-center justify-center">
-                <Sparkles className="w-4 h-4 text-rose-500" />
-              </div>
-              <h3 className="font-medium text-base dark:text-white text-zinc-900">Ask Pulse AI</h3>
+          <div className="bg-white dark:bg-white/[0.03] rounded-xl p-5 border border-zinc-200 dark:border-white/[0.06] transition-colors duration-150">
+            <div className="flex items-center justify-between mb-3">
+              <h3 className="text-sm font-semibold text-zinc-900 dark:text-zinc-100">Ask Pulse AI</h3>
+              <ProvenanceChip provider="pulse" kind="ASSIST" />
             </div>
             {/* Quick chips */}
             <div className="flex flex-wrap gap-1.5 mb-3">
@@ -1618,7 +1625,7 @@ const Dashboard: React.FC<DashboardProps> = ({ user, apiKey, setView, openSettin
                   value={pulseAiQuery}
                   onChange={(e) => setPulseAiQuery(e.target.value)}
                   placeholder="Ask anything..."
-                  className="w-full bg-zinc-50 dark:bg-zinc-800/60 border border-zinc-200 dark:border-zinc-700 rounded-xl px-3 py-2 text-sm text-zinc-900 dark:text-white placeholder-zinc-400 focus:border-rose-500/40 focus:outline-none transition-all pr-8"
+                  className="w-full bg-zinc-50 dark:bg-zinc-800/60 border border-zinc-200 dark:border-zinc-700 rounded-xl px-3 py-2 text-sm text-zinc-900 dark:text-zinc-50 placeholder-zinc-400 focus:border-rose-500/40 focus:outline-none transition-all pr-8"
                 />
                 <button type="submit" className="absolute right-2 top-2 text-zinc-400 hover:text-rose-400 transition">
                   {loadingPulseAi ? <Loader2 className="animate-spin w-4 h-4" /> : <ArrowRight className="w-4 h-4" />}
@@ -1641,15 +1648,13 @@ const Dashboard: React.FC<DashboardProps> = ({ user, apiKey, setView, openSettin
           </div>
 
           {/* Upcoming Events */}
-          <div className="dashboard-widget-surface backdrop-blur-lg rounded-2xl p-5 border border-zinc-200/80 dark:border-zinc-800/60 card-elevated hover:border-rose-500/30 transition-all duration-150">
-            <div className="flex items-center justify-between mb-4">
-              <div className="flex items-center gap-3">
-                <div className="w-8 h-8 bg-gradient-to-br from-rose-500/20 to-pink-500/20 border border-rose-500/20 rounded-full flex items-center justify-center">
-                  <Calendar className="w-4 h-4 text-rose-500" />
-                </div>
-                <h3 className="font-medium text-base dark:text-white text-zinc-900">Upcoming Events</h3>
+          <div className="bg-white dark:bg-white/[0.03] rounded-xl p-5 border border-zinc-200 dark:border-white/[0.06] transition-colors duration-150">
+            <div className="flex items-center justify-between mb-3">
+              <div className="flex items-center gap-2">
+                <Calendar className="w-4 h-4 text-zinc-400 dark:text-zinc-500" />
+                <h3 className="text-sm font-semibold text-zinc-900 dark:text-zinc-100">Upcoming</h3>
               </div>
-              <button onClick={() => setView(AppView.CALENDAR)} className="text-xs text-rose-500 hover:text-rose-400 font-medium">View all</button>
+              <button onClick={() => setView(AppView.CALENDAR)} className="pulse-label text-zinc-400 dark:text-zinc-500 hover:text-rose-600 dark:hover:text-rose-400 transition-colors">VIEW ALL</button>
             </div>
             {upcomingEvents.length === 0 ? (
               <p className="text-xs text-zinc-400 text-center py-3">No upcoming events</p>
@@ -1687,68 +1692,82 @@ const Dashboard: React.FC<DashboardProps> = ({ user, apiKey, setView, openSettin
             )}
           </div>
 
-          {/* Unread Pulse */}
-          <div className="dashboard-widget-surface backdrop-blur-lg rounded-2xl p-5 border border-zinc-200/80 dark:border-zinc-800/60 card-elevated hover:border-rose-500/30 transition-all duration-150">
-            <div className="flex items-center gap-3 mb-4">
-              <div className="w-8 h-8 bg-gradient-to-br from-rose-500/20 to-pink-500/20 border border-rose-500/20 rounded-full flex items-center justify-center">
-                <Zap className="w-4 h-4 text-rose-500" />
-              </div>
-              <h3 className="font-medium text-base dark:text-white text-zinc-900">Unread Pulse</h3>
-            </div>
-            <div className="space-y-2">
+          {/* Unread */}
+          <div className="bg-white dark:bg-white/[0.03] rounded-xl p-5 border border-zinc-200 dark:border-white/[0.06] transition-colors duration-150">
+            <h3 className="text-sm font-semibold text-zinc-900 dark:text-zinc-100 mb-3">Unread</h3>
+            <ul className="space-y-px">
               {[
                 { label: 'Messages', count: messageUnreadCount, icon: MessageSquare, view: AppView.MESSAGES },
                 { label: 'Email', count: emailUnreadCount, icon: Mail, view: AppView.EMAIL },
-                { label: 'Vox', count: voxUnreadCount, icon: Mic, view: AppView.RELAY },
+                { label: 'Relay', count: voxUnreadCount, icon: Mic, view: AppView.RELAY },
               ].map(({ label, count, icon: Icon, view }) => (
-                <button key={label} onClick={() => setView(view)}
-                  className="w-full flex items-center justify-between px-3 py-2.5 rounded-xl bg-zinc-50 dark:bg-zinc-800/60 hover:bg-rose-50 dark:hover:bg-rose-500/10 border border-zinc-200 dark:border-zinc-700/50 hover:border-rose-500/30 transition-all group">
-                  <div className="flex items-center gap-2.5">
-                    <Icon className="w-4 h-4 text-zinc-400 group-hover:text-rose-400 transition-colors" />
-                    <span className="text-sm text-zinc-700 dark:text-zinc-300">{label}</span>
-                  </div>
-                  <div className="flex items-center gap-1.5">
-                    {count > 0 ? (
-                      <span className="text-xs font-semibold text-white bg-rose-500 px-2 py-0.5 rounded-full min-w-[1.5rem] text-center">{count}</span>
-                    ) : (
-                      <span className="text-xs text-zinc-400">All clear</span>
-                    )}
-                    <ChevronRight className="w-3 h-3 text-zinc-400 group-hover:text-rose-400 transition-colors" />
-                  </div>
-                </button>
+                <li key={label}>
+                  <button
+                    onClick={() => setView(view)}
+                    className="w-full flex items-center justify-between gap-3 px-3 py-2.5 rounded hover:bg-zinc-50 dark:hover:bg-white/[0.04] transition-colors duration-150 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-rose-500/40 group"
+                  >
+                    <div className="flex items-center gap-2.5">
+                      <Icon className="w-4 h-4 text-zinc-400 dark:text-zinc-500" />
+                      <span className="text-sm text-zinc-800 dark:text-zinc-200">{label}</span>
+                    </div>
+                    <div className="flex items-center gap-2">
+                      {count > 0 ? (
+                        <span className="pulse-label inline-flex items-center justify-center min-w-[1.25rem] h-5 px-1.5 rounded bg-rose-500 text-white">{count}</span>
+                      ) : (
+                        <span className="pulse-label text-zinc-400 dark:text-zinc-500">CLEAR</span>
+                      )}
+                      <ChevronRight className="w-3.5 h-3.5 text-zinc-300 dark:text-zinc-600 group-hover:text-rose-500 dark:group-hover:text-rose-400 transition-colors" />
+                    </div>
+                  </button>
+                </li>
               ))}
-            </div>
+            </ul>
           </div>
 
         </div>
       </div>
 
-      {/* Quick Actions Floating Button - Rendered via Portal */}
+      {/* Quick Actions Floating Button — Rendered via Portal */}
       {ReactDOM.createPortal(
         <div className="fixed bottom-6 right-6 z-[9999]" style={{ position: 'fixed' }}>
-          <div className={`flex flex-col-reverse gap-2 mb-2 transition-all ${showQuickActions ? 'opacity-100 translate-y-0' : 'opacity-0 translate-y-4 pointer-events-none'}`}>
-            {quickActions.map(action => (
-              <button
-                key={action.id}
-                onClick={() => {
-                  const params: Record<string, boolean> = {};
-                  if (action.openTaskPanel) params.openTaskPanel = true;
-                  if (action.openAddContact) params.openAddContact = true;
-                  setView(action.view, Object.keys(params).length > 0 ? params : undefined);
-                  setShowQuickActions(false);
-                }}
-                className={`${action.color} text-white w-12 h-12 rounded-full shadow-lg flex items-center justify-center hover:scale-110 transition-transform`}
-                title={action.label}
-              >
-                <i className={`fa-solid ${action.icon}`}></i>
-              </button>
-            ))}
-          </div>
+          {showQuickActions && (
+            <div
+              className="absolute bottom-full right-0 mb-3 w-56 rounded-xl bg-white dark:bg-zinc-950 border border-zinc-200 dark:border-white/[0.08] shadow-lg overflow-hidden animate-fade-in"
+              role="menu"
+            >
+              <ul className="py-1">
+                {quickActions.map(action => (
+                  <li key={action.id}>
+                    <button
+                      onClick={() => {
+                        const params: Record<string, boolean> = {};
+                        if (action.openTaskPanel) params.openTaskPanel = true;
+                        if (action.openAddContact) params.openAddContact = true;
+                        setView(action.view, Object.keys(params).length > 0 ? params : undefined);
+                        setShowQuickActions(false);
+                      }}
+                      className="w-full flex items-center gap-3 px-3 py-2 text-sm text-zinc-800 dark:text-zinc-200 hover:bg-zinc-50 dark:hover:bg-white/[0.04] hover:text-rose-600 dark:hover:text-rose-400 focus-visible:outline-none focus-visible:bg-zinc-50 dark:focus-visible:bg-white/[0.04] transition-colors duration-150"
+                      role="menuitem"
+                    >
+                      <i className={`fa-solid ${action.icon} w-4 text-center text-zinc-400 dark:text-zinc-500`}></i>
+                      <span>{action.label}</span>
+                    </button>
+                  </li>
+                ))}
+              </ul>
+            </div>
+          )}
           <button
             onClick={() => setShowQuickActions(!showQuickActions)}
-            className={`w-14 h-14 rounded-full shadow-xl flex items-center justify-center transition-all ${showQuickActions ? 'bg-zinc-800 rotate-45' : 'bg-gradient-to-br from-rose-500 to-pink-500 hover:from-rose-600 hover:to-pink-600'} text-white`}
+            aria-expanded={showQuickActions}
+            aria-label={showQuickActions ? 'Close quick actions' : 'Open quick actions'}
+            className={`w-12 h-12 rounded-full flex items-center justify-center transition-colors duration-150 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-rose-500/40 focus-visible:ring-offset-2 focus-visible:ring-offset-white dark:focus-visible:ring-offset-zinc-950 ${
+              showQuickActions
+                ? 'bg-zinc-200 dark:bg-white/[0.08] text-zinc-700 dark:text-zinc-200 rotate-45'
+                : 'bg-rose-500 hover:bg-rose-600 active:bg-rose-700 text-white shadow-md shadow-rose-500/20'
+            }`}
           >
-            <Plus className="text-xl" />
+            <Plus className="w-5 h-5" />
           </button>
         </div>,
         document.body
@@ -1759,106 +1778,96 @@ const Dashboard: React.FC<DashboardProps> = ({ user, apiKey, setView, openSettin
         id="analytics"
         title="Productivity Analytics"
         icon="fa-chart-line"
-        iconColor="text-pink-500"
+        iconColor="text-rose-500"
         isExpanded={expandedWidgets.has('analytics')}
         onToggle={toggleWidget}
         headerAction={
-          <div className="flex items-center gap-2">
+          <div className="flex items-center gap-1" role="tablist" aria-label="Time range">
             {(['day', 'week', 'month'] as const).map(range => (
               <button
                 key={range}
                 onClick={(e) => { e.stopPropagation(); setAnalyticsTimeRange(range); }}
-                className={`px-3 py-1.5 rounded-lg text-xs font-semibold transition ${
+                role="tab"
+                aria-selected={analyticsTimeRange === range}
+                className={`pulse-label px-2.5 py-1 rounded transition-colors duration-150 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-rose-500/40 ${
                   analyticsTimeRange === range
-                    ? 'bg-zinc-900 dark:bg-white text-white dark:text-black'
-                    : 'bg-zinc-100 dark:bg-zinc-900 text-zinc-600 dark:text-zinc-400 hover:bg-zinc-200 dark:hover:bg-zinc-800 hover:text-rose-500 dark:hover:text-rose-400'
+                    ? 'text-rose-600 dark:text-rose-400 bg-rose-500/10'
+                    : 'text-zinc-500 dark:text-zinc-400 hover:text-zinc-900 dark:hover:text-zinc-100'
                 }`}
               >
-                {range.charAt(0).toUpperCase() + range.slice(1)}
+                {range.toUpperCase()}
               </button>
             ))}
           </div>
         }
-        className="animate-spring-enter"
       >
-        {/* Metric Cards */}
-        <div className="grid grid-cols-2 md:grid-cols-4 gap-4 mb-6 dashboard-stagger">
-          <div className="dashboard-widget-surface backdrop-blur-lg rounded-xl p-4 border border-zinc-200/80 dark:border-zinc-800/60 card-elevated hover:border-rose-500/30 transition-all duration-150">
-            <div className="flex items-center justify-between mb-2">
-              <span className="text-xs font-bold text-zinc-600 dark:text-zinc-400 uppercase">Tasks Done</span>
-              <CheckCircle className="text-rose-500" />
-            </div>
-            <div className="text-2xl font-bold text-zinc-800 dark:text-zinc-100">{productivityMetrics.tasksCompleted}</div>
-            <div className="text-[10px] text-zinc-500">of {productivityMetrics.tasksTotal} total</div>
+        {/* Metric row — single mono-tracked status line, not a 4-stat grid */}
+        <dl className="grid grid-cols-2 md:grid-cols-4 gap-x-6 gap-y-4 mb-6">
+          <div>
+            <dt className="pulse-label text-zinc-500 dark:text-zinc-400 mb-1">TASKS DONE</dt>
+            <dd className="text-2xl font-semibold text-zinc-900 dark:text-zinc-100 leading-none">{productivityMetrics.tasksCompleted}<span className="text-sm font-normal text-zinc-400 dark:text-zinc-500 ml-1">/ {productivityMetrics.tasksTotal}</span></dd>
           </div>
-          <div className="dashboard-widget-surface backdrop-blur-lg rounded-xl p-4 border border-zinc-200/80 dark:border-zinc-800/60 card-elevated hover:border-rose-500/30 transition-all duration-150">
-            <div className="flex items-center justify-between mb-2">
-              <span className="text-xs font-bold text-zinc-600 dark:text-zinc-400 uppercase">Messages</span>
-              <MessageSquare className="text-pink-500" />
-            </div>
-            <div className="text-2xl font-bold text-zinc-800 dark:text-zinc-100">{productivityMetrics.messagesSent + productivityMetrics.messagesReceived}</div>
-            <div className="text-[10px] text-zinc-500">{productivityMetrics.messagesSent} sent, {productivityMetrics.messagesReceived} received</div>
+          <div>
+            <dt className="pulse-label text-zinc-500 dark:text-zinc-400 mb-1">MESSAGES</dt>
+            <dd className="text-2xl font-semibold text-zinc-900 dark:text-zinc-100 leading-none">{productivityMetrics.messagesSent + productivityMetrics.messagesReceived}</dd>
+            <p className="text-[11px] text-zinc-500 dark:text-zinc-400 mt-1">{productivityMetrics.messagesSent} sent, {productivityMetrics.messagesReceived} in</p>
           </div>
-          <div className="dashboard-widget-surface backdrop-blur-lg rounded-xl p-4 border border-zinc-200/80 dark:border-zinc-800/60 card-elevated hover:border-rose-500/30 transition-all duration-150">
-            <div className="flex items-center justify-between mb-2">
-              <span className="text-xs font-bold text-zinc-600 dark:text-zinc-400 uppercase">Focus Time</span>
-              <Target className="text-rose-500" />
-            </div>
-            <div className="text-2xl font-bold text-zinc-800 dark:text-zinc-100">{formatFocusTime(productivityMetrics.focusTime)}</div>
-            <div className="text-[10px] text-zinc-500">
-              {events.some(e => e.type === 'focus') ? 'Deep work today' : 'Est. from tasks'}
-            </div>
+          <div>
+            <dt className="pulse-label text-zinc-500 dark:text-zinc-400 mb-1">FOCUS</dt>
+            <dd className="text-2xl font-semibold text-zinc-900 dark:text-zinc-100 leading-none">{formatFocusTime(productivityMetrics.focusTime)}</dd>
+            <p className="text-[11px] text-zinc-500 dark:text-zinc-400 mt-1">
+              {events.some(e => e.type === 'focus') ? 'Deep work today' : 'Estimated from tasks'}
+            </p>
           </div>
-          <div className="dashboard-widget-surface backdrop-blur-lg rounded-xl p-4 border border-zinc-200/80 dark:border-zinc-800/60 card-elevated hover:border-rose-500/30 transition-all duration-150">
-            <div className="flex items-center justify-between mb-2">
-              <span className="text-xs font-bold text-zinc-600 dark:text-zinc-400 uppercase">Avg Response</span>
-              <Clock className="text-pink-500" />
-            </div>
-            <div className="text-2xl font-bold text-zinc-800 dark:text-zinc-100">
-              {productivityMetrics.responseTime > 0 ? `${productivityMetrics.responseTime}m` : '—'}
-            </div>
-            <div className="text-[10px] text-zinc-500">
-              {productivityMetrics.responseTime > 0 ? 'Avg response time' : 'No data yet'}
-            </div>
+          <div>
+            <dt className="pulse-label text-zinc-500 dark:text-zinc-400 mb-1">AVG REPLY</dt>
+            <dd className="text-2xl font-semibold text-zinc-900 dark:text-zinc-100 leading-none">
+              {productivityMetrics.responseTime > 0 ? `${productivityMetrics.responseTime}m` : '–'}
+            </dd>
+            <p className="text-[11px] text-zinc-500 dark:text-zinc-400 mt-1">
+              {productivityMetrics.responseTime > 0 ? 'Average response' : 'Not enough data'}
+            </p>
           </div>
-        </div>
+        </dl>
 
-        {/* Weekly Chart */}
-        <div className="bg-zinc-50 dark:bg-zinc-900 rounded-xl p-4 border border-zinc-100 dark:border-zinc-800">
+        {/* Weekly chart — flat bars, no gradient, lives directly inside the widget (no nested card) */}
+        <div className="pt-4 border-t border-zinc-100 dark:border-white/[0.06]">
           <div className="flex items-center justify-between mb-4">
-            <h4 className="text-sm font-bold text-zinc-700 dark:text-zinc-300">Weekly Activity</h4>
-            <div className="flex gap-2">
+            <h4 className="pulse-label text-zinc-500 dark:text-zinc-400">WEEKLY ACTIVITY</h4>
+            <div className="flex gap-1" role="tablist" aria-label="Weekly metric">
               {(['tasks', 'messages', 'meetings'] as const).map(metric => (
                 <button
                   key={metric}
                   onClick={() => setSelectedMetric(metric)}
-                  className={`px-2 py-1 rounded text-xs transition ${
+                  role="tab"
+                  aria-selected={selectedMetric === metric}
+                  className={`pulse-label px-2 py-1 rounded transition-colors duration-150 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-rose-500/40 ${
                     selectedMetric === metric
-                      ? 'bg-rose-100 dark:bg-rose-900/30 text-rose-600 dark:text-rose-400 font-semibold'
-                      : 'text-zinc-500 hover:text-zinc-700 dark:hover:text-zinc-300'
+                      ? 'text-rose-600 dark:text-rose-400 bg-rose-500/10'
+                      : 'text-zinc-500 dark:text-zinc-400 hover:text-zinc-900 dark:hover:text-zinc-100'
                   }`}
                 >
-                  {metric.charAt(0).toUpperCase() + metric.slice(1)}
+                  {metric.toUpperCase()}
                 </button>
               ))}
             </div>
           </div>
-          <div className="flex items-end gap-2 h-32">
+          <div className="flex items-end gap-2 h-28">
             {weeklyData.map((day) => (
               <div key={day.day} className="flex-1 flex flex-col items-center gap-2">
-                <div className="w-full bg-zinc-200 dark:bg-zinc-800 rounded-t relative overflow-hidden" style={{ height: '100%' }}>
+                <div className="w-full bg-zinc-100 dark:bg-white/[0.05] rounded relative overflow-hidden" style={{ height: '100%' }}>
                   <div
-                    className="absolute bottom-0 w-full bg-gradient-to-t from-rose-600 to-pink-400 rounded-t transition-all duration-500"
+                    className="absolute bottom-0 w-full bg-rose-500 rounded transition-all duration-500"
                     style={{ height: `${(day[selectedMetric] / maxChartValue) * 100}%` }}
                   ></div>
                 </div>
-                <span className="text-[10px] font-medium text-zinc-500">{day.day}</span>
+                <span className="pulse-label text-zinc-400 dark:text-zinc-500">{day.day.toUpperCase()}</span>
               </div>
             ))}
           </div>
-          <div className="flex justify-between items-center mt-4 pt-4 border-t border-zinc-200 dark:border-zinc-800">
-            <span className="text-xs text-zinc-500">Total this week:</span>
-            <span className="text-sm font-bold text-zinc-700 dark:text-zinc-300">
+          <div className="flex justify-between items-baseline mt-4 pt-3 border-t border-zinc-100 dark:border-white/[0.06]">
+            <span className="pulse-label text-zinc-500 dark:text-zinc-400">TOTAL · WEEK</span>
+            <span className="text-sm font-semibold text-zinc-800 dark:text-zinc-200">
               {weeklyTotals[selectedMetric]} {selectedMetric}
             </span>
           </div>
@@ -1886,55 +1895,37 @@ const Dashboard: React.FC<DashboardProps> = ({ user, apiKey, setView, openSettin
           }
           className="animate-slide-up"
         >
-          <div className="space-y-4 dashboard-stagger">
+          <div className="space-y-4">
             {goals
               .filter(goal => goal.enabled !== false)
               .map(goal => {
-                const colorClasses = {
-                  blue: 'bg-blue-500',
-                  green: 'bg-green-500',
-                  purple: 'bg-purple-500',
-                  red: 'bg-red-500',
-                  indigo: 'bg-indigo-500',
-                  emerald: 'bg-emerald-500',
-                  cyan: 'bg-cyan-500',
-                  teal: 'bg-teal-500',
-                  amber: 'bg-amber-500',
-                  rose: 'bg-rose-500',
-                };
-                const iconColor = goal.color || 'rose';
-                const progressPercent = Math.min((goal.progress / goal.target) * 100, 100);
-                
+                const progressPercent = Math.min((goal.progress / Math.max(goal.target, 1)) * 100, 100);
+                const trendIcon = goal.trend === 'up' ? 'fa-arrow-up' : goal.trend === 'down' ? 'fa-arrow-down' : 'fa-minus';
+                const trendColor = goal.trend === 'up' ? 'text-emerald-600 dark:text-emerald-400' : goal.trend === 'down' ? 'text-red-600 dark:text-red-400' : 'text-zinc-500 dark:text-zinc-400';
+
                 return (
-                  <div key={goal.id} className="group">
-                    <div className="flex items-center justify-between mb-1">
-                      <div className="flex items-center gap-2">
+                  <div key={goal.id}>
+                    <div className="flex items-center justify-between mb-1.5">
+                      <div className="flex items-center gap-2 min-w-0">
                         {goal.icon && (
-                          <i className={`fa-solid ${goal.icon} text-xs text-zinc-500`}></i>
+                          <i className={`fa-solid ${goal.icon} text-xs text-zinc-400 dark:text-zinc-500 w-3 text-center`}></i>
                         )}
-                        <span className="text-sm font-medium text-zinc-700 dark:text-zinc-300">{goal.title}</span>
+                        <span className="text-sm text-zinc-800 dark:text-zinc-200 truncate">{goal.title}</span>
                       </div>
-                      <div className="flex items-center gap-2">
-                        <span className="text-xs text-zinc-500">
-                          {goal.progress}/{goal.target} {goal.unit}
+                      <div className="flex items-center gap-3 shrink-0">
+                        <span className="pulse-label text-zinc-500 dark:text-zinc-400">
+                          {goal.progress}/{goal.target}{goal.unit ? ` ${goal.unit.toUpperCase()}` : ''}
                         </span>
-                        <span className={`text-[10px] px-1.5 py-0.5 rounded ${
-                          goal.trend === 'up' ? 'bg-emerald-100 text-emerald-600 dark:bg-emerald-900/30 dark:text-emerald-400' :
-                          goal.trend === 'down' ? 'bg-red-100 text-red-600 dark:bg-red-900/30 dark:text-red-400' :
-                          'bg-zinc-100 text-zinc-600 dark:bg-zinc-800 dark:text-zinc-400'
-                        }`}>
-                          <i className={`fa-solid ${goal.trend === 'up' ? 'fa-arrow-up' : goal.trend === 'down' ? 'fa-arrow-down' : 'fa-minus'} mr-0.5`}></i>
-                          {goal.trend}
+                        <span className={`pulse-label inline-flex items-center gap-0.5 ${trendColor}`}>
+                          <i className={`fa-solid ${trendIcon} text-[9px]`}></i>
+                          {goal.trend.toUpperCase()}
                         </span>
                       </div>
                     </div>
-                    <div className="h-2 bg-zinc-100 dark:bg-zinc-800 rounded-full overflow-hidden">
+                    <div className="h-1.5 bg-zinc-100 dark:bg-white/[0.05] rounded-full overflow-hidden">
                       <div
                         className={`h-full rounded-full transition-all duration-500 ${
-                          progressPercent >= 100 ? 'bg-emerald-500' :
-                          progressPercent >= 70 ? (colorClasses[iconColor as keyof typeof colorClasses] || 'bg-rose-500') :
-                          progressPercent >= 40 ? 'bg-yellow-500' :
-                          'bg-red-500'
+                          progressPercent >= 100 ? 'bg-emerald-500' : 'bg-rose-500'
                         }`}
                         style={{ width: `${progressPercent}%` }}
                       ></div>
@@ -1943,9 +1934,9 @@ const Dashboard: React.FC<DashboardProps> = ({ user, apiKey, setView, openSettin
                 );
               })}
             {goals.filter(goal => goal.enabled !== false).length === 0 && (
-              <div className="text-center py-8 text-zinc-500">
-                <Target className="mb-2 text-2xl" />
-                <p className="text-sm">No goals enabled. Click "Edit Goals" to get started.</p>
+              <div className="text-center py-6">
+                <p className="text-sm text-zinc-600 dark:text-zinc-400 mb-1">No goals enabled.</p>
+                <p className="text-xs text-zinc-500 dark:text-zinc-500">Pick a few from <span className="text-zinc-700 dark:text-zinc-300">Edit Goals</span> to start tracking.</p>
               </div>
             )}
           </div>
@@ -1956,7 +1947,7 @@ const Dashboard: React.FC<DashboardProps> = ({ user, apiKey, setView, openSettin
           id="team"
           title="Team Activity"
           icon="fa-users"
-          iconColor="text-pink-400"
+          iconColor="text-rose-400"
           isExpanded={expandedWidgets.has('team')}
           onToggle={toggleWidget}
           className="animate-spring-enter"
@@ -2027,10 +2018,9 @@ const Dashboard: React.FC<DashboardProps> = ({ user, apiKey, setView, openSettin
 
             if (membersToDisplay.length === 0) {
               return (
-                <div className="text-center py-8 text-zinc-500">
-                  <Users className="mb-2 text-2xl" />
-                  <p className="text-sm mb-3">
-                    {selectedTeamId ? 'No members in this team yet.' : 'No team members yet.'}
+                <div className="py-6">
+                  <p className="text-sm text-zinc-600 dark:text-zinc-400 mb-3">
+                    {selectedTeamId ? 'This team has no members yet.' : 'No team yet. Build one to track activity.'}
                   </p>
                   <button
                     onClick={() => {
@@ -2048,45 +2038,44 @@ const Dashboard: React.FC<DashboardProps> = ({ user, apiKey, setView, openSettin
                       }
                       setShowTeamBuilder(true);
                     }}
-                    className="px-4 py-2 bg-rose-500 hover:bg-rose-600 text-white text-sm font-medium rounded-lg transition-all duration-150 hover:-translate-y-0.5 hover:shadow-lg hover:shadow-rose-500/30 active:scale-95"
+                    className="inline-flex items-center gap-2 px-4 py-2 bg-rose-500 hover:bg-rose-600 active:bg-rose-700 text-white text-sm font-medium rounded-lg transition-colors duration-150 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-rose-500/40 focus-visible:ring-offset-2 focus-visible:ring-offset-white dark:focus-visible:ring-offset-zinc-950"
                   >
-                    {selectedTeamId ? 'Add Members' : 'Build Your Team'}
+                    {selectedTeamId ? 'Add members' : 'Build team'}
                   </button>
                 </div>
               );
             }
 
             return (
-              <div className="space-y-3 dashboard-stagger">
+              <ul className="space-y-px">
                 {membersToDisplay.slice(0, 5).map(member => (
-                  <div
-                    key={member.id}
-                    onClick={() => setView(AppView.MESSAGES)}
-                    className="flex items-center gap-3 p-3 rounded-xl hover:bg-zinc-50 dark:hover:bg-zinc-900 border-l-2 border-rose-500/20 dark:border-rose-500/15 hover:border-rose-500/60 dark:hover:border-rose-500/50 transition-colors duration-150 cursor-pointer group"
-                  >
-                    <div className="relative">
-                      <div className={`w-10 h-10 rounded-full ${member.avatarColor} flex items-center justify-center text-white font-bold`}>
-                        {member.name.charAt(0)}
+                  <li key={member.id}>
+                    <button
+                      onClick={() => setView(AppView.MESSAGES)}
+                      className="w-full flex items-center gap-3 px-3 py-2.5 rounded hover:bg-zinc-50 dark:hover:bg-white/[0.04] transition-colors duration-150 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-rose-500/40 group"
+                    >
+                      <div className="relative shrink-0">
+                        <div className={`w-9 h-9 rounded-full ${member.avatarColor} flex items-center justify-center text-white font-semibold text-sm`}>
+                          {member.name.charAt(0)}
+                        </div>
+                        <div className={`absolute -bottom-0.5 -right-0.5 w-3 h-3 rounded-full border-2 border-white dark:border-zinc-950 ${getStatusColor(member.status)}`}></div>
                       </div>
-                      <div className={`absolute -bottom-0.5 -right-0.5 w-3.5 h-3.5 rounded-full border-2 border-white dark:border-zinc-950 ${getStatusColor(member.status)}`}></div>
-                    </div>
-                    <div className="flex-1 min-w-0">
-                      <div className="flex items-center gap-2">
-                        <span className="font-medium text-sm text-zinc-900 dark:text-white truncate">{member.name}</span>
-                        {member.unreadCount && member.unreadCount > 0 && (
-                          <span className="px-1.5 py-0.5 bg-rose-500 text-white text-[10px] font-bold rounded-full">
-                            {member.unreadCount}
-                          </span>
-                        )}
+                      <div className="flex-1 min-w-0 text-left">
+                        <div className="flex items-center gap-2">
+                          <span className="text-sm text-zinc-900 dark:text-zinc-100 truncate">{member.name}</span>
+                          {member.unreadCount && member.unreadCount > 0 && (
+                            <span className="pulse-label inline-flex items-center justify-center min-w-[1.25rem] h-5 px-1.5 rounded bg-rose-500 text-white shrink-0">
+                              {member.unreadCount}
+                            </span>
+                          )}
+                        </div>
+                        <span className="pulse-label text-zinc-400 dark:text-zinc-500">{member.status.toUpperCase()}</span>
                       </div>
-                      <span className="text-xs text-zinc-500 capitalize">{member.status}</span>
-                    </div>
-                    <button className="opacity-0 group-hover:opacity-100 w-8 h-8 rounded-lg bg-rose-50 dark:bg-rose-900/20 text-rose-500 flex items-center justify-center transition">
-                      <MessageSquare className="text-xs" />
+                      <MessageSquare className="opacity-0 group-hover:opacity-100 w-4 h-4 text-zinc-400 dark:text-zinc-500 transition-opacity" />
                     </button>
-                  </div>
+                  </li>
                 ))}
-              </div>
+              </ul>
             );
           })()}
         </CollapsibleWidget>
@@ -2104,108 +2093,111 @@ const Dashboard: React.FC<DashboardProps> = ({ user, apiKey, setView, openSettin
           >
             {loadingTeamHealth ? (
               <div className="py-8 flex items-center justify-center">
-                <div className="animate-spin rounded-full h-8 w-8 border-b-2 border-rose-500"></div>
+                <Loader2 className="w-5 h-5 animate-spin text-zinc-400 dark:text-zinc-500" />
               </div>
             ) : teamHealthMetrics ? (
-              <div className="space-y-6">
-                {/* Communication Health */}
-                <div className="p-4 bg-gradient-to-br from-emerald-50 to-cyan-50 dark:from-emerald-950/40 dark:to-cyan-950/40 rounded-xl border border-emerald-200 dark:border-emerald-800/60">
-                  <div className="flex items-center gap-2 mb-4">
-                    <MessageSquare className="text-emerald-600 dark:text-emerald-400" />
-                    <h4 className="font-semibold text-sm text-zinc-900 dark:text-white">Communication Health</h4>
+              <div className="divide-y divide-zinc-100 dark:divide-white/[0.06]">
+                {/* Communication */}
+                <section className="py-5 first:pt-0">
+                  <div className="flex items-center gap-2 mb-3">
+                    <MessageSquare className="w-4 h-4 text-zinc-400 dark:text-zinc-500" />
+                    <h4 className="pulse-label text-zinc-500 dark:text-zinc-400">COMMUNICATION</h4>
                   </div>
-                  <div className="grid grid-cols-2 gap-4">
+                  <dl className="grid grid-cols-2 sm:grid-cols-4 gap-x-6 gap-y-3">
                     <div>
-                      <div className="text-xs text-zinc-500 mb-1">Engagement Score</div>
-                      <div className="flex items-baseline gap-2">
-                        <span className="text-2xl font-bold text-emerald-600 dark:text-emerald-400">{teamHealthMetrics.communicationHealth.engagementScore}</span>
-                        <span className="text-xs text-zinc-500">/100</span>
-                      </div>
+                      <dt className="pulse-label text-zinc-500 dark:text-zinc-400 mb-1">ENGAGEMENT</dt>
+                      <dd className="text-xl font-semibold text-zinc-900 dark:text-zinc-100">{teamHealthMetrics.communicationHealth.engagementScore}<span className="text-xs font-normal text-zinc-400 dark:text-zinc-500 ml-1">/ 100</span></dd>
                     </div>
                     <div>
-                      <div className="text-xs text-zinc-500 mb-1">Avg Response Time</div>
-                      <div className="text-lg font-semibold text-zinc-900 dark:text-white">
-                        {teamHealthMetrics.communicationHealth.avgResponseTime > 0 
+                      <dt className="pulse-label text-zinc-500 dark:text-zinc-400 mb-1">AVG REPLY</dt>
+                      <dd className="text-xl font-semibold text-zinc-900 dark:text-zinc-100">
+                        {teamHealthMetrics.communicationHealth.avgResponseTime > 0
                           ? `${Math.round(teamHealthMetrics.communicationHealth.avgResponseTime)}m`
-                          : 'N/A'}
-                      </div>
+                          : '–'}
+                      </dd>
                     </div>
                     <div>
-                      <div className="text-xs text-zinc-500 mb-1">Messages</div>
-                      <div className="text-sm font-medium text-zinc-900 dark:text-white">
-                        {teamHealthMetrics.communicationHealth.messageVolume.sent} sent • {teamHealthMetrics.communicationHealth.messageVolume.received} received
-                      </div>
+                      <dt className="pulse-label text-zinc-500 dark:text-zinc-400 mb-1">MESSAGES</dt>
+                      <dd className="text-sm text-zinc-700 dark:text-zinc-300">
+                        {teamHealthMetrics.communicationHealth.messageVolume.sent} sent · {teamHealthMetrics.communicationHealth.messageVolume.received} in
+                      </dd>
                     </div>
                     <div>
-                      <div className="text-xs text-zinc-500 mb-1">Active Conversations</div>
-                      <div className="text-sm font-medium text-zinc-900 dark:text-white">
-                        {teamHealthMetrics.communicationHealth.activeConversations} {teamHealthMetrics.communicationHealth.unreadCount > 0 && `• ${teamHealthMetrics.communicationHealth.unreadCount} unread`}
-                      </div>
+                      <dt className="pulse-label text-zinc-500 dark:text-zinc-400 mb-1">ACTIVE</dt>
+                      <dd className="text-sm text-zinc-700 dark:text-zinc-300">
+                        {teamHealthMetrics.communicationHealth.activeConversations}
+                        {teamHealthMetrics.communicationHealth.unreadCount > 0 && (
+                          <span className="text-rose-600 dark:text-rose-400 ml-1">· {teamHealthMetrics.communicationHealth.unreadCount} unread</span>
+                        )}
+                      </dd>
                     </div>
-                  </div>
-                </div>
+                  </dl>
+                </section>
 
-                {/* Votes/Decisions */}
-                <div className="p-4 bg-gradient-to-br from-rose-50 to-pink-50 dark:from-rose-950/40 dark:to-pink-950/40 rounded-xl border border-rose-200 dark:border-rose-800/60">
-                  <div className="flex items-center gap-2 mb-4">
-                    <CheckSquare className="text-rose-600 dark:text-rose-400" />
-                    <h4 className="font-semibold text-sm text-zinc-900 dark:text-white">Votes & Decisions</h4>
+                {/* Votes & Decisions */}
+                <section className="py-5">
+                  <div className="flex items-center gap-2 mb-3">
+                    <CheckSquare className="w-4 h-4 text-zinc-400 dark:text-zinc-500" />
+                    <h4 className="pulse-label text-zinc-500 dark:text-zinc-400">DECISIONS</h4>
                   </div>
-                  <div className="grid grid-cols-2 gap-4">
+                  <dl className="grid grid-cols-2 sm:grid-cols-4 gap-x-6 gap-y-3">
                     <div>
-                      <div className="text-xs text-zinc-500 mb-1">Active Decisions</div>
-                      <div className="text-2xl font-bold text-rose-600 dark:text-rose-400">{teamHealthMetrics.votes.activeDecisions}</div>
+                      <dt className="pulse-label text-zinc-500 dark:text-zinc-400 mb-1">ACTIVE</dt>
+                      <dd className="text-xl font-semibold text-zinc-900 dark:text-zinc-100">{teamHealthMetrics.votes.activeDecisions}</dd>
                     </div>
                     <div>
-                      <div className="text-xs text-zinc-500 mb-1">Pending Votes</div>
-                      <div className="text-2xl font-bold text-orange-600 dark:text-orange-400">{teamHealthMetrics.votes.pendingVotes}</div>
+                      <dt className="pulse-label text-zinc-500 dark:text-zinc-400 mb-1">PENDING VOTES</dt>
+                      <dd className="text-xl font-semibold text-zinc-900 dark:text-zinc-100">
+                        {teamHealthMetrics.votes.pendingVotes}
+                        {teamHealthMetrics.votes.pendingVotes > 0 && (
+                          <span className="ml-2 align-middle inline-block w-1.5 h-1.5 rounded-full bg-orange-500" aria-hidden="true"></span>
+                        )}
+                      </dd>
                     </div>
                     <div>
-                      <div className="text-xs text-zinc-500 mb-1">Consensus Rate</div>
-                      <div className="flex items-baseline gap-2">
-                        <span className="text-lg font-semibold text-zinc-900 dark:text-white">{teamHealthMetrics.votes.consensusRate}%</span>
-                      </div>
+                      <dt className="pulse-label text-zinc-500 dark:text-zinc-400 mb-1">CONSENSUS</dt>
+                      <dd className="text-xl font-semibold text-zinc-900 dark:text-zinc-100">{teamHealthMetrics.votes.consensusRate}<span className="text-xs font-normal text-zinc-400 dark:text-zinc-500">%</span></dd>
                     </div>
                     <div>
-                      <div className="text-xs text-zinc-500 mb-1">Decisions Made</div>
-                      <div className="text-lg font-semibold text-zinc-900 dark:text-white">{teamHealthMetrics.votes.decisionsMade}</div>
+                      <dt className="pulse-label text-zinc-500 dark:text-zinc-400 mb-1">RESOLVED</dt>
+                      <dd className="text-xl font-semibold text-zinc-900 dark:text-zinc-100">{teamHealthMetrics.votes.decisionsMade}</dd>
                     </div>
-                  </div>
-                </div>
+                  </dl>
+                </section>
 
-                {/* Projects/Outcomes */}
-                <div className="p-4 bg-gradient-to-br from-purple-50 to-pink-50 dark:from-purple-950/40 dark:to-pink-950/40 rounded-xl border border-purple-200 dark:border-purple-800/60">
-                  <div className="flex items-center gap-2 mb-4">
-                    <Target className="text-purple-600 dark:text-purple-400" />
-                    <h4 className="font-semibold text-sm text-zinc-900 dark:text-white">Projects & Outcomes</h4>
+                {/* Projects */}
+                <section className="py-5 last:pb-0">
+                  <div className="flex items-center gap-2 mb-3">
+                    <Target className="w-4 h-4 text-zinc-400 dark:text-zinc-500" />
+                    <h4 className="pulse-label text-zinc-500 dark:text-zinc-400">PROJECTS</h4>
                   </div>
-                  <div className="grid grid-cols-2 gap-4">
+                  <dl className="grid grid-cols-2 sm:grid-cols-4 gap-x-6 gap-y-3">
                     <div>
-                      <div className="text-xs text-zinc-500 mb-1">Active Outcomes</div>
-                      <div className="text-2xl font-bold text-purple-600 dark:text-purple-400">{teamHealthMetrics.projects.activeOutcomes}</div>
+                      <dt className="pulse-label text-zinc-500 dark:text-zinc-400 mb-1">ACTIVE</dt>
+                      <dd className="text-xl font-semibold text-zinc-900 dark:text-zinc-100">{teamHealthMetrics.projects.activeOutcomes}</dd>
                     </div>
                     <div>
-                      <div className="text-xs text-zinc-500 mb-1">Avg Progress</div>
-                      <div className="flex items-baseline gap-2">
-                        <span className="text-lg font-semibold text-zinc-900 dark:text-white">{teamHealthMetrics.projects.avgProgress}%</span>
-                      </div>
+                      <dt className="pulse-label text-zinc-500 dark:text-zinc-400 mb-1">AVG PROGRESS</dt>
+                      <dd className="text-xl font-semibold text-zinc-900 dark:text-zinc-100">{teamHealthMetrics.projects.avgProgress}<span className="text-xs font-normal text-zinc-400 dark:text-zinc-500">%</span></dd>
                     </div>
                     <div>
-                      <div className="text-xs text-zinc-500 mb-1">Completion Rate</div>
-                      <div className="text-lg font-semibold text-zinc-900 dark:text-white">{teamHealthMetrics.projects.completionRate}%</div>
+                      <dt className="pulse-label text-zinc-500 dark:text-zinc-400 mb-1">COMPLETION</dt>
+                      <dd className="text-xl font-semibold text-zinc-900 dark:text-zinc-100">{teamHealthMetrics.projects.completionRate}<span className="text-xs font-normal text-zinc-400 dark:text-zinc-500">%</span></dd>
                     </div>
                     <div>
-                      <div className="text-xs text-zinc-500 mb-1">Blockers</div>
-                      <div className="text-lg font-semibold text-red-600 dark:text-red-400">{teamHealthMetrics.projects.blockers}</div>
+                      <dt className="pulse-label text-zinc-500 dark:text-zinc-400 mb-1">BLOCKERS</dt>
+                      <dd className="text-xl font-semibold text-zinc-900 dark:text-zinc-100">
+                        {teamHealthMetrics.projects.blockers}
+                        {teamHealthMetrics.projects.blockers > 0 && (
+                          <span className="ml-2 align-middle inline-block w-1.5 h-1.5 rounded-full bg-red-500" aria-hidden="true"></span>
+                        )}
+                      </dd>
                     </div>
-                  </div>
-                </div>
+                  </dl>
+                </section>
               </div>
             ) : (
-              <div className="text-center py-8 text-zinc-500">
-                <TrendingUp className="mb-2 text-2xl" />
-                <p className="text-sm">No team health data available yet.</p>
-              </div>
+              <p className="text-sm text-zinc-500 dark:text-zinc-400 text-center py-6">No team health data yet.</p>
             )}
           </CollapsibleWidget>
         )}
@@ -2227,8 +2219,8 @@ const Dashboard: React.FC<DashboardProps> = ({ user, apiKey, setView, openSettin
             {/* Header */}
             <div className="flex items-center justify-between p-6 border-b border-zinc-200 dark:border-zinc-800">
               <div>
-                <h3 className="text-xl font-bold dark:text-white flex items-center gap-2">
-                  <Users className="text-pink-500" />
+                <h3 className="text-xl font-bold dark:text-zinc-50 flex items-center gap-2">
+                  <Users className="text-rose-500" />
                   {selectedTeamId ? 'Edit Team' : 'Create New Team'}
                 </h3>
                 <p className="text-xs text-zinc-500 mt-1">Add Pulse users and contacts to your team</p>
@@ -2258,7 +2250,7 @@ const Dashboard: React.FC<DashboardProps> = ({ user, apiKey, setView, openSettin
                     value={teamBuilderName}
                     onChange={(e) => setTeamBuilderName(e.target.value)}
                     placeholder="e.g., Engineering Team, Marketing Squad"
-                    className="w-full px-4 py-2.5 bg-zinc-100 dark:bg-zinc-800 border border-zinc-200 dark:border-zinc-700 rounded-xl text-sm dark:text-white focus:outline-none focus:ring-2 focus:ring-pink-500 focus:border-transparent"
+                    className="w-full px-4 py-2.5 bg-zinc-100 dark:bg-zinc-800 border border-zinc-200 dark:border-zinc-700 rounded-xl text-sm dark:text-zinc-50 focus:outline-none focus:ring-2 focus:ring-rose-500 focus:border-transparent"
                     autoFocus
                   />
                 </div>
@@ -2269,7 +2261,7 @@ const Dashboard: React.FC<DashboardProps> = ({ user, apiKey, setView, openSettin
                     onChange={(e) => setTeamBuilderDescription(e.target.value)}
                     placeholder="What is this team for?"
                     rows={2}
-                    className="w-full px-4 py-2.5 bg-zinc-100 dark:bg-zinc-800 border border-zinc-200 dark:border-zinc-700 rounded-xl text-sm dark:text-white focus:outline-none focus:ring-2 focus:ring-pink-500 focus:border-transparent resize-none"
+                    className="w-full px-4 py-2.5 bg-zinc-100 dark:bg-zinc-800 border border-zinc-200 dark:border-zinc-700 rounded-xl text-sm dark:text-zinc-50 focus:outline-none focus:ring-2 focus:ring-rose-500 focus:border-transparent resize-none"
                   />
                 </div>
               </div>
@@ -2280,7 +2272,7 @@ const Dashboard: React.FC<DashboardProps> = ({ user, apiKey, setView, openSettin
                   onClick={() => setTeamBuilderTab('pulse')}
                   className={`px-4 py-2 text-sm font-medium transition ${
                     teamBuilderTab === 'pulse'
-                      ? 'text-pink-500 border-b-2 border-pink-500'
+                      ? 'text-rose-500 border-b-2 border-rose-500'
                       : 'text-zinc-500 hover:text-zinc-700 dark:hover:text-zinc-300'
                   }`}
                 >
@@ -2290,7 +2282,7 @@ const Dashboard: React.FC<DashboardProps> = ({ user, apiKey, setView, openSettin
                   onClick={() => setTeamBuilderTab('contacts')}
                   className={`px-4 py-2 text-sm font-medium transition ${
                     teamBuilderTab === 'contacts'
-                      ? 'text-pink-500 border-b-2 border-pink-500'
+                      ? 'text-rose-500 border-b-2 border-rose-500'
                       : 'text-zinc-500 hover:text-zinc-700 dark:hover:text-zinc-300'
                   }`}
                 >
@@ -2307,7 +2299,7 @@ const Dashboard: React.FC<DashboardProps> = ({ user, apiKey, setView, openSettin
                     value={teamBuilderSearchQuery}
                     onChange={(e) => setTeamBuilderSearchQuery(e.target.value)}
                     placeholder={teamBuilderTab === 'pulse' ? 'Search Pulse users by name or @handle...' : 'Search contacts...'}
-                    className="w-full pl-10 pr-4 py-2.5 bg-zinc-100 dark:bg-zinc-800 border border-zinc-200 dark:border-zinc-700 rounded-xl text-sm dark:text-white focus:outline-none focus:ring-2 focus:ring-pink-500 focus:border-transparent"
+                    className="w-full pl-10 pr-4 py-2.5 bg-zinc-100 dark:bg-zinc-800 border border-zinc-200 dark:border-zinc-700 rounded-xl text-sm dark:text-zinc-50 focus:outline-none focus:ring-2 focus:ring-rose-500 focus:border-transparent"
                   />
                 </div>
               </div>
@@ -2381,7 +2373,7 @@ const Dashboard: React.FC<DashboardProps> = ({ user, apiKey, setView, openSettin
                             )}
                           </div>
                           <div className="flex-1 min-w-0">
-                            <div className="font-medium text-sm dark:text-white truncate flex items-center gap-2">
+                            <div className="font-medium text-sm dark:text-zinc-50 truncate flex items-center gap-2">
                               {user.display_name || user.full_name || 'Pulse User'}
                               {user.is_verified && <CheckCircle2 className="text-rose-500 text-xs" />}
                             </div>
@@ -2403,7 +2395,7 @@ const Dashboard: React.FC<DashboardProps> = ({ user, apiKey, setView, openSettin
                             }}
                             className={`px-3 py-1.5 text-xs font-medium rounded-lg transition ${
                               isSelected
-                                ? 'bg-pink-500 hover:bg-pink-600 text-white'
+                                ? 'bg-rose-500 hover:bg-rose-600 text-white'
                                 : 'bg-zinc-200 dark:bg-zinc-700 hover:bg-zinc-300 dark:hover:bg-zinc-600 text-zinc-700 dark:text-zinc-300'
                             }`}
                           >
@@ -2425,7 +2417,7 @@ const Dashboard: React.FC<DashboardProps> = ({ user, apiKey, setView, openSettin
                     if (loadingTeamBuilderContacts) {
                       return (
                         <div className="text-center py-12">
-                          <div className="animate-spin rounded-full h-8 w-8 border-b-2 border-pink-500 mx-auto"></div>
+                          <div className="animate-spin rounded-full h-8 w-8 border-b-2 border-rose-500 mx-auto"></div>
                         </div>
                       );
                     }
@@ -2457,7 +2449,7 @@ const Dashboard: React.FC<DashboardProps> = ({ user, apiKey, setView, openSettin
                             {contact.name.charAt(0)}
                           </div>
                           <div className="flex-1 min-w-0">
-                            <div className="font-medium text-sm dark:text-white truncate">{contact.name}</div>
+                            <div className="font-medium text-sm dark:text-zinc-50 truncate">{contact.name}</div>
                             {contact.phone && (
                               <div className="text-xs text-zinc-500 truncate">{contact.phone}</div>
                             )}
@@ -2467,7 +2459,7 @@ const Dashboard: React.FC<DashboardProps> = ({ user, apiKey, setView, openSettin
                               <button
                                 disabled
                                 className="px-2 py-1 text-xs font-medium text-zinc-400 dark:text-zinc-600 cursor-not-allowed rounded"
-                                title="Invite to Pulse — coming soon"
+                                title="Invite to Pulse, coming soon"
                               >
                                 <Send />
                               </button>
@@ -2486,7 +2478,7 @@ const Dashboard: React.FC<DashboardProps> = ({ user, apiKey, setView, openSettin
                               }}
                               className={`px-3 py-1.5 text-xs font-medium rounded-lg transition ${
                                 isSelected
-                                  ? 'bg-pink-500 hover:bg-pink-600 text-white'
+                                  ? 'bg-rose-500 hover:bg-rose-600 text-white'
                                   : 'bg-zinc-200 dark:bg-zinc-700 hover:bg-zinc-300 dark:hover:bg-zinc-600 text-zinc-700 dark:text-zinc-300'
                               }`}
                             >
@@ -2627,7 +2619,7 @@ const Dashboard: React.FC<DashboardProps> = ({ user, apiKey, setView, openSettin
             {/* Header */}
             <div className="flex items-center justify-between p-6 border-b border-zinc-200 dark:border-zinc-800">
               <div>
-                <h3 className="text-xl font-bold dark:text-white flex items-center gap-2">
+                <h3 className="text-xl font-bold dark:text-zinc-50 flex items-center gap-2">
                   <Target className="text-rose-500" />
                   Edit Goals
                 </h3>
@@ -2723,7 +2715,7 @@ const Dashboard: React.FC<DashboardProps> = ({ user, apiKey, setView, openSettin
                           </div>
                           <div className="flex-1 min-w-0">
                             <div className="flex items-center gap-2 mb-1">
-                              <span className={`font-semibold text-sm ${isEnabled ? 'dark:text-white' : 'text-zinc-400 dark:text-zinc-500'}`}>
+                              <span className={`font-semibold text-sm ${isEnabled ? 'dark:text-zinc-50' : 'text-zinc-400 dark:text-zinc-500'}`}>
                                 {goal.title}
                               </span>
                               {!isEnabled && (
@@ -2789,7 +2781,7 @@ const Dashboard: React.FC<DashboardProps> = ({ user, apiKey, setView, openSettin
                                 min="1"
                                 value={goal.target}
                                 onChange={(e) => handleUpdateGoal(goal.id, { target: parseInt(e.target.value) || 1 })}
-                                className="w-20 px-2 py-1 text-sm bg-white dark:bg-zinc-700 border border-zinc-300 dark:border-zinc-600 rounded-lg text-zinc-900 dark:text-white focus:outline-none focus:ring-2 focus:ring-rose-500"
+                                className="w-20 px-2 py-1 text-sm bg-white dark:bg-zinc-700 border border-zinc-300 dark:border-zinc-600 rounded-lg text-zinc-900 dark:text-zinc-50 focus:outline-none focus:ring-2 focus:ring-rose-500"
                               />
                             </div>
                           </div>
@@ -2827,7 +2819,7 @@ const Dashboard: React.FC<DashboardProps> = ({ user, apiKey, setView, openSettin
                     // Just close the modal
                     setShowGoalEditor(false);
                   }}
-                  className="px-6 py-2 bg-gradient-to-r from-rose-500 to-pink-500 hover:from-rose-600 hover:to-pink-600 text-white rounded-lg font-semibold transition shadow-lg shadow-rose-500/25"
+                  className="px-5 py-2 bg-rose-500 hover:bg-rose-600 active:bg-rose-700 text-white rounded-lg text-sm font-medium transition-colors duration-150 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-rose-500/40 focus-visible:ring-offset-2 focus-visible:ring-offset-white dark:focus-visible:ring-offset-zinc-950"
                 >
                   Done
                 </button>

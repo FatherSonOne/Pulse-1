@@ -2,6 +2,7 @@ import React, {
   createContext,
   useContext,
   useEffect,
+  useRef,
   useState,
   useCallback,
   useMemo,
@@ -10,6 +11,7 @@ import React, {
 import { useAuth } from '../hooks/useAuth';
 import { workspaceService, Workspace, WorkspaceMember, WorkspacePlan, WorkspaceUpdatableFields } from '../services/workspaceService';
 import { supabase } from '../services/supabase';
+import { emitWorkspaceChanged, emitWorkspaceCleared } from '../services/workspaceEvents';
 
 // ---------------------------------------------------------------------------
 // Constants
@@ -205,6 +207,36 @@ export const WorkspaceProvider: React.FC<WorkspaceProviderProps> = ({ children }
   }, [currentWorkspaceId]);
 
   // ---------------------------------------------------------------------------
+  // Broadcast workspace lifecycle events to singleton services
+  // ---------------------------------------------------------------------------
+  // Long-lived services (dataService, voxModeService, …) hold realtime channels
+  // filtered by the previous workspace_id. They listen for these events to tear
+  // those channels down on switch — preventing cross-workspace data leaks.
+
+  const previousWorkspaceIdRef = useRef<string | null>(null);
+
+  useEffect(() => {
+    const previousId = previousWorkspaceIdRef.current;
+    const userId = user?.id ?? null;
+
+    if (currentWorkspaceId) {
+      if (previousId !== currentWorkspaceId) {
+        emitWorkspaceChanged({ previousId, currentId: currentWorkspaceId, userId });
+      }
+    } else if (previousId) {
+      // currentWorkspace just became null — could be logout, last-workspace deletion,
+      // or the user lost their last membership. WorkspaceProvider's !user effect
+      // distinguishes logout; this branch covers the other two.
+      emitWorkspaceCleared({
+        previousId,
+        reason: !userId ? 'logout' : 'no-membership',
+      });
+    }
+
+    previousWorkspaceIdRef.current = currentWorkspaceId ?? null;
+  }, [currentWorkspaceId, user?.id]);
+
+  // ---------------------------------------------------------------------------
   // Realtime subscription
   // ---------------------------------------------------------------------------
 
@@ -222,6 +254,26 @@ export const WorkspaceProvider: React.FC<WorkspaceProviderProps> = ({ children }
 
     return () => { supabase.removeChannel(channel); };
   }, [currentWorkspaceId]);
+
+  // Watch this user's OWN membership rows across ALL workspaces. The above
+  // subscription is scoped to the active workspace and will not fire when
+  // the user is added to a NEW workspace (e.g. by accepting an invite),
+  // leaving the workspace switcher stale until reload. This second channel
+  // catches that case and refetches the workspace list.
+  useEffect(() => {
+    if (!user) return;
+
+    const channel = supabase
+      .channel(`my_workspace_memberships:${user.id}`)
+      .on(
+        'postgres_changes',
+        { event: '*', schema: 'public', table: 'workspace_members', filter: `user_id=eq.${user.id}` },
+        () => { loadWorkspaces(); },
+      )
+      .subscribe();
+
+    return () => { supabase.removeChannel(channel); };
+  }, [user, loadWorkspaces]);
 
   // ---------------------------------------------------------------------------
   // Derived state

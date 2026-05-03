@@ -5,6 +5,7 @@
 
 import { supabase } from './supabase';
 import type { RealtimeChannel } from '@supabase/supabase-js';
+import { onWorkspaceChanged, onWorkspaceCleared } from './workspaceEvents';
 // analyticsCollector is dynamically imported at call sites to avoid eagerly loading
 // the svc-crm-analytics chunk (which contains a circular dep that triggers a TDZ error
 // if loaded during app startup via the dataService → analyticsCollector static import).
@@ -334,6 +335,16 @@ type DBThreadWithMessages = DBThread & { messages: DBMessage[] | null };
 class DataService {
   private userId: string | null = null;
   private subscriptionRegistry: Map<string, RealtimeChannel> = new Map();
+
+  constructor() {
+    // Tear down all realtime channels when the user switches workspaces or
+    // logs out. Channels filtered by the previous workspace_id would otherwise
+    // continue streaming into the new context — a cross-workspace data leak.
+    // Callers that want fresh realtime subscriptions in the new workspace
+    // re-subscribe via their normal mount path.
+    onWorkspaceChanged(() => this.cleanupAllSubscriptions());
+    onWorkspaceCleared(() => this.cleanupAllSubscriptions());
+  }
 
   private registerChannel(key: string, channel: RealtimeChannel): RealtimeChannel {
     const existing = this.subscriptionRegistry.get(key);
@@ -1637,7 +1648,19 @@ class DataService {
 
   // ============= REAL-TIME DASHBOARD SUBSCRIPTIONS =============
 
-  async subscribeToDashboardUpdates(callbacks: {
+  // Workspace-scoped dashboard subscriptions.
+  //
+  // Today the underlying tables (`tasks`, `calendar_events`, `unified_messages`)
+  // are user-scoped only — they have no `workspace_id` column yet, so the
+  // postgres filter cannot pin to a workspace. Cross-workspace leak protection
+  // currently comes from PR-5: dataService tears down all channels on workspace
+  // switch, so a stale channel from the previous workspace can't keep streaming.
+  //
+  // Channel names are namespaced by `${userId}:${workspaceId}` so multiple
+  // workspace switches never collide on the global supabase channel registry.
+  // Once PR-1 (Phase-3 RLS migration) adds workspace_id columns to these
+  // tables, swap each filter to `workspace_id=eq.${workspaceId}` — see issue #33.
+  async subscribeToDashboardUpdates(workspaceId: string, callbacks: {
     onTaskUpdate?: (task: Task) => void;
     onEventUpdate?: (event: CalendarEvent) => void;
     onMessageUpdate?: (message: UnifiedMessage) => void;
@@ -1649,57 +1672,59 @@ class DataService {
       return null;
     }
 
+    const userId = this.getUserId();
+    const ns = `${userId}:${workspaceId}`;
     const channels = [];
 
     if (callbacks.onTaskUpdate) {
       const taskChannel = supabase
-        .channel('dashboard_tasks')
+        .channel(`dashboard_tasks:${ns}`)
         .on('postgres_changes', {
           event: '*',
           schema: 'public',
           table: 'tasks',
-          filter: `user_id=eq.${this.getUserId()}`
+          filter: `user_id=eq.${userId}`,
         }, (payload) => {
           if (payload.new) {
             callbacks.onTaskUpdate!(dbToTask(payload.new as DBTask));
           }
         })
         .subscribe();
-      channels.push(this.registerChannel('dashboard_tasks', taskChannel));
+      channels.push(this.registerChannel(`dashboard_tasks:${ns}`, taskChannel));
     }
 
     if (callbacks.onEventUpdate) {
       const eventChannel = supabase
-        .channel('dashboard_events')
+        .channel(`dashboard_events:${ns}`)
         .on('postgres_changes', {
           event: '*',
           schema: 'public',
           table: 'calendar_events',
-          filter: `user_id=eq.${this.getUserId()}`
+          filter: `user_id=eq.${userId}`,
         }, (payload) => {
           if (payload.new) {
             callbacks.onEventUpdate!(dbToEvent(payload.new as DBCalendarEvent));
           }
         })
         .subscribe();
-      channels.push(this.registerChannel('dashboard_events', eventChannel));
+      channels.push(this.registerChannel(`dashboard_events:${ns}`, eventChannel));
     }
 
     if (callbacks.onMessageUpdate) {
       const messageChannel = supabase
-        .channel('dashboard_messages')
+        .channel(`dashboard_messages:${ns}`)
         .on('postgres_changes', {
           event: 'INSERT',
           schema: 'public',
           table: 'unified_messages',
-          filter: `user_id=eq.${this.getUserId()}`
+          filter: `user_id=eq.${userId}`,
         }, (payload) => {
           if (payload.new) {
             callbacks.onMessageUpdate!(dbToUnifiedMessage(payload.new as DBUnifiedMessage));
           }
         })
         .subscribe();
-      channels.push(this.registerChannel('dashboard_messages', messageChannel));
+      channels.push(this.registerChannel(`dashboard_messages:${ns}`, messageChannel));
     }
 
     // Return unsubscribe function

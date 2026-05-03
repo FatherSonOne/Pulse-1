@@ -29,10 +29,11 @@ import { proactiveSuggestionsService, Nudge } from '../../services/proactiveSugg
 import { taskIntelligenceService, AITaskPriority } from '../../services/taskIntelligenceService';
 import { ragService, AIMessage, ThinkingStep } from '../../services/ragService';
 import { useAIErrorHandler } from '../../hooks/useAIErrorHandler';
+import { useDecisionTaskRealtime } from '../../hooks/useDecisionTaskRealtime';
 import { DecisionMission } from '../WarRoom/missions/DecisionMission';
 import { ConversationalAssistant } from './ConversationalAssistant';
 import { AlertsPanel } from './AlertsPanel';
-import { RealTimeIndicator, ConnectionStatus } from './RealTimeIndicator';
+import { RealTimeIndicator } from './RealTimeIndicator';
 import { ReassignTaskModal } from './ReassignTaskModal';
 import { ExtendDeadlineDialog } from './ExtendDeadlineDialog';
 import { User } from '../../types';
@@ -206,9 +207,6 @@ export const DecisionTaskHub: React.FC<DecisionTaskHubProps> = ({
   const [showAssistant, setShowAssistant] = useState(false);
   const [lastDismissedNudge, setLastDismissedNudge] = useState<string | null>(null);
 
-  // Real-time state
-  const [connectionStatus, setConnectionStatus] = useState<ConnectionStatus>('disconnected');
-
   // Modal state
   const [showDecisionMission, setShowDecisionMission] = useState(false);
   const [selectedDecision, setSelectedDecision] = useState<DecisionWithVotes | null>(null);
@@ -306,78 +304,12 @@ export const DecisionTaskHub: React.FC<DecisionTaskHubProps> = ({
     }
   }, [debouncedDecisions, debouncedTasks]);
 
-  // Real-time subscriptions for decisions, tasks, and votes
-  useEffect(() => {
-    if (!effectiveWorkspaceId) return;
-
-    setConnectionStatus('connecting');
-
-    // Subscribe to decisions changes
-    const decisionsChannel = supabase
-      .channel('decisions-changes')
-      .on(
-        'postgres_changes',
-        {
-          event: '*',
-          schema: 'public',
-          table: 'decisions',
-          filter: `workspace_id=eq.${effectiveWorkspaceId}`
-        },
-        (payload) => {
-          handleDecisionChange(payload);
-        }
-      )
-      .subscribe((status) => {
-        updateConnectionStatus(status);
-      });
-
-    // Subscribe to tasks changes
-    const tasksChannel = supabase
-      .channel('extracted-tasks-changes')
-      .on(
-        'postgres_changes',
-        {
-          event: '*',
-          schema: 'public',
-          table: 'extracted_tasks',
-          filter: `workspace_id=eq.${effectiveWorkspaceId}`
-        },
-        (payload) => {
-          handleTaskChange(payload);
-        }
-      )
-      .subscribe((status) => {
-        updateConnectionStatus(status);
-      });
-
-    // Subscribe to decision_votes changes (filtered to decisions in this workspace)
-    const decisionIds = decisions.map(d => d.id);
-    const votesChannel = supabase
-      .channel('votes-changes')
-      .on(
-        'postgres_changes',
-        {
-          event: '*',
-          schema: 'public',
-          table: 'decision_votes',
-          ...(decisionIds.length > 0 ? { filter: `decision_id=in.(${decisionIds.join(',')})` } : {})
-        },
-        (payload) => {
-          handleVoteChange(payload);
-        }
-      )
-      .subscribe((status) => {
-        updateConnectionStatus(status);
-      });
-
-    // Cleanup on unmount
-    return () => {
-      decisionsChannel.unsubscribe();
-      tasksChannel.unsubscribe();
-      votesChannel.unsubscribe();
-      setConnectionStatus('disconnected');
-    };
-  }, [effectiveWorkspaceId]);
+  // Real-time subscriptions for decisions, tasks, and votes — channels are
+  // namespaced by workspace_id inside the hook to prevent stale subscriptions
+  // from a previous workspace leaking into the current one on switch.
+  // Handlers are defined further down (handleDecisionChange / handleTaskChange /
+  // handleVoteChange) — declared via useCallback so referential identity is
+  // stable and the hook's useEffect doesn't tear down on every render.
 
   // Modal Escape key handling
   useEffect(() => {
@@ -725,17 +657,7 @@ export const DecisionTaskHub: React.FC<DecisionTaskHubProps> = ({
   }, [decisions, tasks, handleDismissNudge, handleOpenDecisionMission]);
 
   // Real-time event handlers
-  const updateConnectionStatus = useCallback((status: string) => {
-    if (status === 'SUBSCRIBED') {
-      setConnectionStatus('connected');
-    } else if (status === 'CHANNEL_ERROR') {
-      setConnectionStatus('error');
-    } else if (status === 'CLOSED') {
-      setConnectionStatus('disconnected');
-    }
-  }, []);
-
-  const handleDecisionChange = useCallback((payload: any) => {
+  const handleDecisionChange = useCallback(() => {
     loadDecisions();
     setTimeout(() => {
       generateMetrics();
@@ -743,19 +665,27 @@ export const DecisionTaskHub: React.FC<DecisionTaskHubProps> = ({
     }, 500);
   }, [loadDecisions, generateMetrics, generateNudges]);
 
-  const handleTaskChange = useCallback((payload: any) => {
+  const handleTaskChange = useCallback(() => {
     loadTasks();
     setTimeout(() => {
       generateNudges();
     }, 500);
   }, [loadTasks, generateNudges]);
 
-  const handleVoteChange = useCallback((payload: any) => {
+  const handleVoteChange = useCallback(() => {
     loadDecisions();
     setTimeout(() => {
       generateMetrics();
     }, 500);
   }, [loadDecisions, generateMetrics]);
+
+  const { connectionStatus } = useDecisionTaskRealtime({
+    effectiveWorkspaceId,
+    decisions,
+    onDecisionChange: handleDecisionChange,
+    onTaskChange: handleTaskChange,
+    onVoteChange: handleVoteChange,
+  });
 
   // Task management handlers
   const handleTaskStatusChange = useCallback(async (taskId: string, newStatus: Task['status']) => {
