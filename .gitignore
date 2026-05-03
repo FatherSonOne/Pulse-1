@@ -106,6 +106,13 @@ docs/archive/scripts/
 
 # Test artifacts (screenshots, probes, browser profiles)
 .test-artifacts/
+
+# /git-tracker runtime state (issue number for current branch)
+.claude/.git-tracker-issue
+
+# /impeccable scan output (regenerated each run)
+.impeccable-scan.json
+.tmp-impeccable*.json
 # .claude/commands/ is intentionally tracked — shared slash commands
 !.claude/commands/*.md
 # .claude/skills/ is intentionally tracked — shared skills (e.g. /impeccable)
