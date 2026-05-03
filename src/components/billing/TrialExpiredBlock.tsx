@@ -2,13 +2,16 @@
 // Renders inside whichever area would normally be usable — blocks interaction until upgrade.
 
 import React, { useState } from 'react';
-import { AlertTriangle, Check, CreditCard, Loader, Sparkles } from 'lucide-react';
+import { AlertTriangle, Check, CreditCard, Loader, Sparkles, X } from 'lucide-react';
 import billingService from '../../services/billingService';
 
 interface TrialExpiredBlockProps {
   workspaceId: string;
   workspaceName?: string;
   canManageBilling?: boolean;
+  /** Dev-only escape hatch. When provided, renders an "X" close button
+   *  in the top-right corner that dismisses the overlay for the session. */
+  onDevDismiss?: () => void;
 }
 
 const FEATURES = [
@@ -24,6 +27,7 @@ export const TrialExpiredBlock: React.FC<TrialExpiredBlockProps> = ({
   workspaceId,
   workspaceName,
   canManageBilling = true,
+  onDevDismiss,
 }) => {
   const [cycle, setCycle] = useState<'monthly' | 'yearly'>('monthly');
   const [loading, setLoading] = useState(false);
@@ -58,6 +62,17 @@ export const TrialExpiredBlock: React.FC<TrialExpiredBlockProps> = ({
       <div className="relative w-full max-w-xl bg-gradient-to-br from-zinc-950 to-zinc-900 border border-zinc-700 rounded-2xl shadow-2xl overflow-hidden">
         {/* Accent bar */}
         <div className="h-1 bg-gradient-to-r from-fuchsia-500 via-pink-500 to-rose-500" />
+
+        {onDevDismiss && (
+          <button
+            type="button"
+            onClick={onDevDismiss}
+            title="Dismiss for this tab session (dev only) — Ctrl+Shift+P"
+            className="absolute top-3 right-3 w-8 h-8 rounded-lg bg-zinc-800/80 hover:bg-zinc-700 border border-zinc-700 text-zinc-400 hover:text-white flex items-center justify-center transition-colors z-10"
+          >
+            <X size={16} />
+          </button>
+        )}
 
         <div className="p-8 space-y-6">
           <div className="flex items-start gap-4">
