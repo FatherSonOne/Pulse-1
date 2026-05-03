@@ -11,7 +11,8 @@ import { ContactDetail } from './ContactDetail';
 import { supabase } from '../../services/supabase';
 import './Contacts.css';
 
-import { ArrowDown, ArrowUp, Bell, Building2, Check, ChevronRight, Copy, LayoutGrid, Lightbulb, List, Mail, MapPin, MessageSquare, Network, Phone, Plus, Radio, RefreshCw, Search, Star, UserX, Users, Video, Wand2, X } from 'lucide-react';
+import { ArrowDown, ArrowUp, Bell, Building2, Check, ChevronRight, Clock, Copy, Flame, LayoutGrid, List, MessageSquare, Moon, Network, Plus, Radio, RefreshCw, Search, Snowflake, Star, UserX, Users, Video, Wand2, X, Zap } from 'lucide-react';
+import type { LucideIcon } from 'lucide-react';
 
 // ============================================
 // TYPES
@@ -33,8 +34,7 @@ type FilterStatus = 'all' | 'online' | 'offline';
 interface SmartListConfig {
   id: SmartListType;
   label: string;
-  icon: string;
-  iconClass: string;
+  Icon: LucideIcon;
 }
 
 // ============================================
@@ -42,20 +42,20 @@ interface SmartListConfig {
 // ============================================
 
 const SMART_LISTS: SmartListConfig[] = [
-  { id: 'needs_follow_up', label: 'Needs Follow-up', icon: 'fa-clock', iconClass: 'follow-up' },
-  { id: 'warm_leads', label: 'Warm Leads', icon: 'fa-fire', iconClass: 'warm' },
-  { id: 'inactive_30_days', label: 'Inactive (30d)', icon: 'fa-moon', iconClass: 'inactive' },
-  { id: 'vip', label: 'VIP Contacts', icon: 'fa-star', iconClass: 'vip' },
-  { id: 'cold_leads', label: 'Cold Leads', icon: 'fa-snowflake', iconClass: 'cold' },
-  { id: 'recent_contacts', label: 'Recent', icon: 'fa-bolt', iconClass: 'recent' },
+  { id: 'needs_follow_up', label: 'Needs Follow-up', Icon: Clock },
+  { id: 'warm_leads', label: 'Warm Leads', Icon: Flame },
+  { id: 'inactive_30_days', label: 'Inactive (30d)', Icon: Moon },
+  { id: 'vip', label: 'VIP Contacts', Icon: Star },
+  { id: 'cold_leads', label: 'Cold Leads', Icon: Snowflake },
+  { id: 'recent_contacts', label: 'Recent', Icon: Zap },
 ];
 
 const TAGS = [
-  { id: 'vip', label: 'VIP', color: 'bg-amber-500' },
-  { id: 'prospect', label: 'Prospect', color: 'bg-blue-500' },
-  { id: 'customer', label: 'Customer', color: 'bg-emerald-500' },
-  { id: 'partner', label: 'Partner', color: 'bg-purple-500' },
-  { id: 'vendor', label: 'Vendor', color: 'bg-cyan-500' },
+  { id: 'vip', label: 'VIP', activeColor: '#f59e0b' },
+  { id: 'prospect', label: 'Prospect', activeColor: '#3b82f6' },
+  { id: 'customer', label: 'Customer', activeColor: '#10b981' },
+  { id: 'partner', label: 'Partner', activeColor: '#a855f7' },
+  { id: 'vendor', label: 'Vendor', activeColor: '#06b6d4' },
 ];
 
 // ============================================
@@ -142,21 +142,27 @@ const Sidebar: React.FC<SidebarProps> = ({
     {/* Tags Section */}
     <div className="contacts-sidebar-section">
       <div className="contacts-section-title">Tags</div>
-      {TAGS.map((tag) => (
-        <button
-          key={tag.id}
-          className={`contacts-filter-btn ${filterTag === tag.id ? 'active' : ''}`}
-          onClick={() => {
-            onFilterTagChange(filterTag === tag.id ? null : tag.id);
-            onSmartListChange(null);
-          }}
-        >
-          <div className="contacts-filter-btn-content">
-            <div className={`contacts-status-dot ${tag.color}`} style={{ borderRadius: 4 }} />
-            <span className="contacts-filter-btn-label">{tag.label}</span>
-          </div>
-        </button>
-      ))}
+      {TAGS.map((tag) => {
+        const isActive = filterTag === tag.id;
+        return (
+          <button
+            key={tag.id}
+            className={`contacts-filter-btn ${isActive ? 'active' : ''}`}
+            onClick={() => {
+              onFilterTagChange(isActive ? null : tag.id);
+              onSmartListChange(null);
+            }}
+          >
+            <div className="contacts-filter-btn-content">
+              <div
+                className="contacts-tag-dot"
+                style={{ backgroundColor: isActive ? tag.activeColor : 'currentColor' }}
+              />
+              <span className="contacts-filter-btn-label">{tag.label}</span>
+            </div>
+          </button>
+        );
+      })}
     </div>
 
     {/* Alerts Banner */}
@@ -186,19 +192,22 @@ const Sidebar: React.FC<SidebarProps> = ({
     {/* Smart Lists Section */}
     <div className="contacts-sidebar-section">
       <div className="contacts-section-title">Smart Lists</div>
-      {SMART_LISTS.map((list) => (
-        <button
-          key={list.id}
-          className={`contacts-smart-list ${activeSmartList === list.id ? 'active' : ''}`}
-          onClick={() => onSmartListChange(activeSmartList === list.id ? null : list.id)}
-        >
-          <div className={`contacts-smart-list-icon ${list.iconClass}`}>
-            <i className={`fa-solid ${list.icon}`} />
-          </div>
-          <span className="contacts-smart-list-label">{list.label}</span>
-          <span className="contacts-smart-list-count">{smartListCounts[list.id] || 0}</span>
-        </button>
-      ))}
+      {SMART_LISTS.map((list) => {
+        const ListIcon = list.Icon;
+        return (
+          <button
+            key={list.id}
+            className={`contacts-smart-list ${activeSmartList === list.id ? 'active' : ''}`}
+            onClick={() => onSmartListChange(activeSmartList === list.id ? null : list.id)}
+          >
+            <div className="contacts-smart-list-icon">
+              <ListIcon size={14} />
+            </div>
+            <span className="contacts-smart-list-label">{list.label}</span>
+            <span className="contacts-smart-list-count">{smartListCounts[list.id] || 0}</span>
+          </button>
+        );
+      })}
     </div>
 
     {/* Add Contact Button */}
@@ -641,21 +650,18 @@ export const ContactsRedesigned: React.FC<ContactsRedesignedProps> = ({
                 <span>contacts</span>
               </div>
               {activeSmartList && (
-                <div
-                  className="contacts-stat"
-                  style={{
-                    background: 'rgba(139, 92, 246, 0.1)',
-                    border: '1px solid rgba(139, 92, 246, 0.2)',
-                    cursor: 'pointer',
-                  }}
+                <button
+                  type="button"
+                  className="contacts-stat contacts-stat-filter"
                   onClick={() => setActiveSmartList(null)}
+                  aria-label={`Clear filter: ${SMART_LISTS.find(l => l.id === activeSmartList)?.label}`}
                 >
                   <Wand2 />
-                  <span style={{ color: '#8b5cf6' }}>
+                  <span>
                     {SMART_LISTS.find(l => l.id === activeSmartList)?.label}
                   </span>
                   <X />
-                </div>
+                </button>
               )}
             </div>
           </div>
@@ -722,15 +728,50 @@ export const ContactsRedesigned: React.FC<ContactsRedesignedProps> = ({
 
         {/* Content */}
         {filteredContacts.length === 0 ? (
-          <div className="contacts-empty">
-            <div className="contacts-empty-icon">
-              <UserX />
+          contacts.length === 0 ? (
+            <div className="contacts-empty contacts-empty--first-run">
+              <div className="contacts-empty-eyebrow">YOUR NETWORK</div>
+              <h2 className="contacts-empty-headline">Build your network</h2>
+              <p className="contacts-empty-lede">
+                Add a contact or sync from Google. Pulse turns it into Smart Lists,
+                relationship health, and follow-up nudges.
+              </p>
+              <div className="contacts-empty-actions">
+                <button
+                  type="button"
+                  className="contacts-empty-cta contacts-empty-cta--primary"
+                  onClick={() => setShowAddModal(true)}
+                >
+                  <Plus size={16} />
+                  Add a contact
+                </button>
+                <button
+                  type="button"
+                  className="contacts-empty-cta contacts-empty-cta--secondary"
+                  onClick={handleSync}
+                  disabled={isSyncing}
+                >
+                  <RefreshCw size={16} className={isSyncing ? 'contacts-empty-syncing' : ''} />
+                  {isSyncing ? 'Syncing…' : 'Sync from Google'}
+                </button>
+              </div>
+              <ul className="contacts-empty-perks">
+                <li><Wand2 size={12} /> Smart Lists auto-group warm leads, follow-ups, and inactive ties</li>
+                <li><Bell size={12} /> Alerts surface relationships that need attention</li>
+                <li><MessageSquare size={12} /> One-tap reach via Messages, Relay, or Glimpse</li>
+              </ul>
             </div>
-            <div className="contacts-empty-title">No Contacts Found</div>
-            <div className="contacts-empty-desc">
-              {searchQuery ? 'Try adjusting your search or filters' : 'Add your first contact to get started'}
+          ) : (
+            <div className="contacts-empty">
+              <div className="contacts-empty-icon">
+                <UserX />
+              </div>
+              <div className="contacts-empty-title">No matches</div>
+              <div className="contacts-empty-desc">
+                Adjust your search or clear filters to see more contacts.
+              </div>
             </div>
-          </div>
+          )
         ) : viewStyle === 'grid' ? (
           <div className="contacts-grid">
             <div className="contacts-grid-inner">

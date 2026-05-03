@@ -123,7 +123,7 @@ export const ContactsShell: React.FC<ContactsShellProps> = (props) => {
                   relative flex items-center gap-2 px-4 py-2.5 rounded-t-lg text-sm font-medium
                   transition-colors duration-150
                   ${isActive
-                    ? 'bg-zinc-50 dark:bg-zinc-950 text-indigo-600 dark:text-indigo-400 border border-b-0 border-zinc-200 dark:border-zinc-700'
+                    ? 'bg-zinc-50 dark:bg-zinc-950 text-rose-500 dark:text-rose-400 border border-b-0 border-zinc-200 dark:border-zinc-700'
                     : 'text-zinc-500 dark:text-zinc-400 hover:text-zinc-700 dark:hover:text-zinc-200 hover:bg-zinc-50 dark:hover:bg-zinc-800/50'
                   }
                 `}
@@ -139,7 +139,7 @@ export const ContactsShell: React.FC<ContactsShellProps> = (props) => {
                 )}
                 {/* Active indicator */}
                 {isActive && (
-                  <span className="absolute bottom-0 left-0 right-0 h-0.5 bg-indigo-600 dark:bg-indigo-400 rounded-full" />
+                  <span className="absolute bottom-0 left-0 right-0 h-0.5 bg-rose-500 dark:bg-rose-400 rounded-full" />
                 )}
               </button>
             );

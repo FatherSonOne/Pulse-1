@@ -31,10 +31,10 @@ export const SmartListPanel: React.FC<SmartListPanelProps> = ({
   return (
     <div className="p-4 border-t border-zinc-200 dark:border-zinc-800 flex-1 overflow-y-auto">
       <div className="flex items-center justify-between mb-4">
-        <h2 className="text-xs font-bold text-zinc-500 dark:text-zinc-400 uppercase tracking-wider">
-          Smart Lists (AI)
+        <h2 className="font-mono text-[11px] font-medium text-zinc-500 dark:text-zinc-400 uppercase tracking-[0.1em]">
+          Smart Lists · AI
         </h2>
-        <span className="text-[10px] bg-purple-100 dark:bg-purple-900/30 text-purple-600 dark:text-purple-400 px-1.5 py-0.5 rounded font-bold">
+        <span className="font-mono text-[10px] bg-rose-500/10 text-rose-600 dark:text-rose-400 px-1.5 py-0.5 rounded tracking-[0.1em] font-medium">
           BETA
         </span>
       </div>
@@ -51,7 +51,7 @@ export const SmartListPanel: React.FC<SmartListPanelProps> = ({
               disabled={isLoading}
               className={`w-full text-left px-3 py-2.5 rounded-lg text-sm font-medium flex items-center justify-between group transition ${
                 isActive
-                  ? 'bg-white dark:bg-zinc-800 shadow-sm text-zinc-900 dark:text-white ring-1 ring-purple-500/20'
+                  ? 'bg-white dark:bg-zinc-800 shadow-sm text-zinc-900 dark:text-white ring-1 ring-rose-500/20'
                   : 'text-zinc-600 dark:text-zinc-400 hover:bg-zinc-100 dark:hover:bg-zinc-800'
               }`}
             >
@@ -69,7 +69,7 @@ export const SmartListPanel: React.FC<SmartListPanelProps> = ({
                 <span
                   className={`text-xs px-2 py-0.5 rounded-full transition ${
                     isActive
-                      ? 'bg-purple-100 dark:bg-purple-900/30 text-purple-600 dark:text-purple-400'
+                      ? 'bg-rose-500/10 text-rose-600 dark:text-rose-400'
                       : 'bg-zinc-100 dark:bg-zinc-800 text-zinc-500 group-hover:bg-white dark:group-hover:bg-zinc-700'
                   }`}
                 >

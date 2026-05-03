@@ -434,43 +434,6 @@
   background: rgba(107, 114, 128, 0.12);
 }
 
-/* Smart List Icons - Light Mode */
-.light-mode .contacts-smart-list-icon.follow-up,
-[data-theme="light"] .contacts-smart-list-icon.follow-up,
-:root:not(.dark) .contacts-smart-list-icon.follow-up {
-  background: rgba(249, 115, 22, 0.12);
-}
-
-.light-mode .contacts-smart-list-icon.warm,
-[data-theme="light"] .contacts-smart-list-icon.warm,
-:root:not(.dark) .contacts-smart-list-icon.warm {
-  background: rgba(34, 197, 94, 0.12);
-}
-
-.light-mode .contacts-smart-list-icon.inactive,
-[data-theme="light"] .contacts-smart-list-icon.inactive,
-:root:not(.dark) .contacts-smart-list-icon.inactive {
-  background: rgba(107, 114, 128, 0.12);
-}
-
-.light-mode .contacts-smart-list-icon.vip,
-[data-theme="light"] .contacts-smart-list-icon.vip,
-:root:not(.dark) .contacts-smart-list-icon.vip {
-  background: rgba(234, 179, 8, 0.12);
-}
-
-.light-mode .contacts-smart-list-icon.cold,
-[data-theme="light"] .contacts-smart-list-icon.cold,
-:root:not(.dark) .contacts-smart-list-icon.cold {
-  background: rgba(59, 130, 246, 0.12);
-}
-
-.light-mode .contacts-smart-list-icon.recent,
-[data-theme="light"] .contacts-smart-list-icon.recent,
-:root:not(.dark) .contacts-smart-list-icon.recent {
-  background: rgba(244, 63, 94, 0.10);
-}
-
 /* Scrollbar - Light Mode */
 .light-mode .contacts-container ::-webkit-scrollbar-thumb,
 [data-theme="light"] .contacts-container ::-webkit-scrollbar-thumb,
@@ -485,38 +448,17 @@
 }
 
 /* ============================================
-   ANIMATIONS
+   ANIMATIONS — state only, never decoration
    ============================================ */
-@keyframes cnt-pulse-glow {
-  0%, 100% { box-shadow: 0 0 20px var(--cnt-node-glow), 0 0 40px rgba(244, 63, 94, 0.2); }
-  50% { box-shadow: 0 0 30px var(--cnt-node-glow), 0 0 60px rgba(244, 63, 94, 0.3); }
-}
 
-@keyframes cnt-orbit {
-  from { transform: rotate(0deg) translateX(var(--orbit-radius, 30px)) rotate(0deg); }
-  to { transform: rotate(360deg) translateX(var(--orbit-radius, 30px)) rotate(-360deg); }
-}
-
-@keyframes cnt-float {
-  0%, 100% { transform: translateY(0); }
-  50% { transform: translateY(-8px); }
-}
-
+/* Sync-in-progress breathing pulse (used by .contacts-action-btn.syncing
+   and .contacts-empty-syncing). */
 @keyframes cnt-breathe {
   0%, 100% { transform: scale(1); opacity: 0.8; }
   50% { transform: scale(1.05); opacity: 1; }
 }
 
-@keyframes cnt-connection-flow {
-  0% { stroke-dashoffset: 20; }
-  100% { stroke-dashoffset: 0; }
-}
-
-@keyframes cnt-fade-in {
-  from { opacity: 0; transform: translateY(12px); }
-  to { opacity: 1; transform: translateY(0); }
-}
-
+/* Panel entrance — sidebar and detail rail. */
 @keyframes cnt-slide-in-left {
   from { opacity: 0; transform: translateX(-20px); }
   to { opacity: 1; transform: translateX(0); }
@@ -527,32 +469,13 @@
   to { opacity: 1; transform: translateX(0); }
 }
 
-@keyframes cnt-scale-up {
-  from { opacity: 0; transform: scale(0.9); }
-  to { opacity: 1; transform: scale(1); }
-}
-
-@keyframes cnt-shimmer {
-  0% { background-position: -200% 0; }
-  100% { background-position: 200% 0; }
-}
-
-@keyframes cnt-ring-pulse {
-  0% { transform: scale(0.8); opacity: 0.8; }
-  50% { transform: scale(1.2); opacity: 0; }
-  100% { transform: scale(0.8); opacity: 0; }
-}
-
-@keyframes cnt-online-pulse {
-  0%, 100% { box-shadow: 0 0 0 0 rgba(52, 211, 153, 0.4); }
-  50% { box-shadow: 0 0 0 6px rgba(52, 211, 153, 0); }
-}
-
+/* Card / row entrance — staggered, first 5–6 only. */
 @keyframes contactsEnter {
   from { opacity: 0; transform: translateY(6px); }
   to   { opacity: 1; transform: translateY(0); }
 }
 
+/* Search-focus heartbeat — fires once on focus to confirm the input is active. */
 @keyframes contactsHeartbeat {
   0%   { box-shadow: 0 0 0 0   rgba(244, 63, 94, 0.25); }
   40%  { box-shadow: 0 0 0 6px rgba(244, 63, 94, 0.10); }
@@ -573,37 +496,6 @@
   border: 1px solid var(--cnt-border);
 }
 
-/* Ambient void effect */
-.contacts-container::before {
-  content: '';
-  position: absolute;
-  inset: 0;
-  background: var(--cnt-gradient-void);
-  pointer-events: none;
-  z-index: 0;
-}
-
-/* Subtle grid pattern */
-.contacts-container::after {
-  content: '';
-  position: absolute;
-  inset: 0;
-  background-image:
-    radial-gradient(circle at center, rgba(244, 63, 94, 0.03) 1px, transparent 1px);
-  background-size: 32px 32px;
-  pointer-events: none;
-  z-index: 0;
-  opacity: 0.5;
-}
-
-/* Light mode grid pattern */
-.light-mode .contacts-container::after,
-[data-theme="light"] .contacts-container::after,
-:root:not(.dark) .contacts-container::after {
-  background-image:
-    radial-gradient(circle at center, rgba(244, 63, 94, 0.05) 1px, transparent 1px);
-  opacity: 0.4;
-}
 
 /* ============================================
    SIDEBAR - NAVIGATION PANEL
@@ -697,10 +589,11 @@
 }
 
 .contacts-section-title {
-  font-size: 10px;
-  font-weight: 700;
+  font-family: 'JetBrains Mono', 'SF Mono', Consolas, monospace;
+  font-size: 11px;
+  font-weight: 500;
   text-transform: uppercase;
-  letter-spacing: 1.2px;
+  letter-spacing: 0.1em;
   color: var(--cnt-text-muted);
   padding: 0 8px;
   margin-bottom: 8px;
@@ -786,7 +679,6 @@
 
 .contacts-status-dot.online {
   background: var(--cnt-status-online);
-  box-shadow: 0 0 8px var(--cnt-status-online);
 }
 
 .contacts-status-dot.away { background: var(--cnt-status-away); }
@@ -816,6 +708,9 @@
   border: 1px solid rgba(244, 63, 94, 0.2);
 }
 
+/* Smart-list icons — neutral at rest, coral on active. The list label and
+   count pill carry the visual hierarchy; icons stay quiet so 6 lists in a
+   row don't blow the sidebar's saturation budget. */
 .contacts-smart-list-icon {
   width: 24px;
   height: 24px;
@@ -823,15 +718,37 @@
   display: flex;
   align-items: center;
   justify-content: center;
-  font-size: 10px;
+  font-size: 12px;
+  color: var(--cnt-text-muted);
+  transition: color 0.2s;
 }
 
-.contacts-smart-list-icon.follow-up { background: rgba(249, 115, 22, 0.2); color: #f97316; }
-.contacts-smart-list-icon.warm { background: rgba(34, 197, 94, 0.2); color: #22c55e; }
-.contacts-smart-list-icon.inactive { background: rgba(107, 114, 128, 0.2); color: #6b7280; }
-.contacts-smart-list-icon.vip { background: rgba(234, 179, 8, 0.2); color: #eab308; }
-.contacts-smart-list-icon.cold { background: rgba(59, 130, 246, 0.2); color: #3b82f6; }
-.contacts-smart-list-icon.recent { background: rgba(244, 63, 94, 0.15); color: #f43f5e; }
+.contacts-smart-list:hover .contacts-smart-list-icon {
+  color: var(--cnt-text-secondary);
+}
+
+.contacts-smart-list.active .contacts-smart-list-icon {
+  color: var(--cnt-accent-primary);
+}
+
+/* Sidebar tag dot — muted at rest (inherits text color), tag color only when selected */
+.contacts-tag-dot {
+  width: 8px;
+  height: 8px;
+  border-radius: 50%;
+  flex-shrink: 0;
+  opacity: 0.55;
+  color: var(--cnt-text-muted);
+  transition: opacity 0.2s, background-color 0.2s;
+}
+
+.contacts-filter-btn:hover .contacts-tag-dot {
+  opacity: 0.85;
+}
+
+.contacts-filter-btn.active .contacts-tag-dot {
+  opacity: 1;
+}
 
 .contacts-smart-list-label {
   flex: 1;
@@ -928,6 +845,25 @@
   color: var(--cnt-text-primary);
 }
 
+/* Active filter chip — coral, matches DESIGN.md chip-accent */
+.contacts-stat-filter {
+  background: rgba(244, 63, 94, 0.10);
+  border: 1px solid rgba(244, 63, 94, 0.20);
+  color: var(--cnt-accent-primary);
+  cursor: pointer;
+  font: inherit;
+  font-weight: 500;
+}
+
+.contacts-stat-filter:hover {
+  background: rgba(244, 63, 94, 0.14);
+  border-color: rgba(244, 63, 94, 0.30);
+}
+
+.contacts-stat-filter span {
+  color: var(--cnt-accent-primary);
+}
+
 .contacts-topbar-right {
   display: flex;
   align-items: center;
@@ -1007,11 +943,10 @@
   -webkit-backdrop-filter: blur(10px);
   backdrop-filter: blur(10px);
   border: 1px solid var(--cnt-border);
-  border-left: 2px solid transparent;
   border-radius: 20px;
   padding: 24px;
   cursor: pointer;
-  transition: all 0.3s cubic-bezier(0.4, 0, 0.2, 1), border-color 150ms cubic-bezier(0.16, 1, 0.3, 1);
+  transition: transform 220ms cubic-bezier(0.16, 1, 0.3, 1), border-color 150ms cubic-bezier(0.16, 1, 0.3, 1), box-shadow 220ms cubic-bezier(0.16, 1, 0.3, 1);
   animation: contactsEnter 0.22s cubic-bezier(0.16, 1, 0.3, 1) both;
   overflow: hidden;
 }
@@ -1038,9 +973,9 @@
 }
 
 .contacts-node:hover {
-  transform: translateY(-4px);
+  transform: translateY(-1px);
   border-color: var(--cnt-border-active);
-  box-shadow: 0 20px 40px rgba(0, 0, 0, 0.3), 0 0 30px var(--cnt-node-glow);
+  box-shadow: 0 4px 16px rgba(0, 0, 0, 0.40);
 }
 
 .contacts-node:hover::before {
@@ -1049,7 +984,6 @@
 
 .contacts-node.selected {
   border-color: var(--cnt-accent-primary);
-  border-left: 3px solid var(--cnt-accent-primary);
   box-shadow: 0 0 0 2px rgba(244, 63, 94, 0.3);
 }
 
@@ -1076,28 +1010,10 @@
   box-shadow: 0 4px 20px rgba(0, 0, 0, 0.3);
 }
 
-/* Orbital rings */
+/* Orbital rings — kept as inert markup spacers so JSX stays compatible.
+   Visual rings dropped per product motion law: state only, never decoration. */
 .contacts-node-orbit {
-  position: absolute;
-  border: 1px dashed var(--cnt-connection-line);
-  border-radius: 50%;
-  top: 50%;
-  left: 50%;
-}
-
-.contacts-node-orbit.inner {
-  width: 80px;
-  height: 80px;
-  margin: -40px 0 0 -40px;
-  animation: cnt-breathe 4s ease-in-out infinite;
-}
-
-.contacts-node-orbit.outer {
-  width: 100px;
-  height: 100px;
-  margin: -50px 0 0 -50px;
-  opacity: 0.5;
-  animation: cnt-breathe 6s ease-in-out infinite reverse;
+  display: none;
 }
 
 /* Status pulse */
@@ -1114,7 +1030,6 @@
 
 .contacts-node-status.online {
   background: var(--cnt-status-online);
-  animation: cnt-online-pulse 2s ease-in-out infinite;
 }
 
 .contacts-node-status.away { background: var(--cnt-status-away); }
@@ -1284,10 +1199,11 @@
   padding: 12px 24px;
   background: var(--cnt-bg-secondary);
   border-bottom: 1px solid var(--cnt-border);
-  font-size: 10px;
-  font-weight: 700;
+  font-family: 'JetBrains Mono', 'SF Mono', Consolas, monospace;
+  font-size: 11px;
+  font-weight: 500;
   text-transform: uppercase;
-  letter-spacing: 1px;
+  letter-spacing: 0.1em;
   color: var(--cnt-text-muted);
   position: sticky;
   top: 0;
@@ -1300,10 +1216,9 @@
   gap: 16px;
   padding: 14px 24px;
   border-bottom: 1px solid var(--cnt-border);
-  border-left: 2px solid transparent;
   align-items: center;
   cursor: pointer;
-  transition: all 0.2s, border-color 150ms cubic-bezier(0.16, 1, 0.3, 1);
+  transition: background 0.2s, border-color 150ms cubic-bezier(0.16, 1, 0.3, 1);
   animation: contactsEnter 0.22s cubic-bezier(0.16, 1, 0.3, 1) both;
 }
 
@@ -1317,12 +1232,12 @@
 
 .contacts-list-row:hover {
   background: var(--cnt-bg-secondary);
-  border-left-color: rgba(244, 63, 94, 0.25);
 }
 
+/* Selected row: full-card tint + 1px coral border. No side-stripe (banned). */
 .contacts-list-row.selected {
   background: rgba(244, 63, 94, 0.07);
-  border-left: 3px solid var(--cnt-accent-primary);
+  box-shadow: inset 0 0 0 1px var(--cnt-accent-primary);
 }
 
 .contacts-list-checkbox {
@@ -1768,9 +1683,129 @@
   max-width: 300px;
 }
 
+/* First-run empty state — activation moment, not a "nothing here" sign */
+.contacts-empty--first-run {
+  align-items: flex-start;
+  text-align: left;
+  padding: 64px 48px;
+  max-width: 520px;
+  margin: 0 auto;
+  gap: 0;
+}
+
+.contacts-empty-eyebrow {
+  font-family: 'JetBrains Mono', 'SF Mono', Consolas, monospace;
+  font-size: 11px;
+  font-weight: 500;
+  letter-spacing: 0.1em;
+  color: var(--cnt-accent-primary);
+  margin-bottom: 12px;
+}
+
+.contacts-empty-headline {
+  font-size: 30px;
+  font-weight: 300;
+  line-height: 1.2;
+  letter-spacing: -0.025em;
+  color: var(--cnt-text-primary);
+  margin: 0 0 12px;
+}
+
+.contacts-empty-lede {
+  font-size: 15px;
+  line-height: 1.5;
+  color: var(--cnt-text-secondary);
+  max-width: 52ch;
+  margin: 0 0 28px;
+}
+
+.contacts-empty-actions {
+  display: flex;
+  gap: 12px;
+  margin-bottom: 32px;
+  flex-wrap: wrap;
+}
+
+.contacts-empty-cta {
+  display: inline-flex;
+  align-items: center;
+  gap: 8px;
+  padding: 12px 20px;
+  border-radius: 12px;
+  font-size: 14px;
+  font-weight: 500;
+  cursor: pointer;
+  transition: transform 220ms cubic-bezier(0.16, 1, 0.3, 1), background 220ms, border-color 220ms, box-shadow 220ms;
+  border: 1px solid transparent;
+}
+
+.contacts-empty-cta:hover { transform: translateY(-1px); }
+.contacts-empty-cta:disabled { opacity: 0.6; cursor: not-allowed; transform: none; }
+
+.contacts-empty-cta--primary {
+  background: var(--cnt-gradient-node);
+  color: white;
+  box-shadow: 0 4px 12px rgba(244, 63, 94, 0.30);
+}
+
+.contacts-empty-cta--primary:hover {
+  box-shadow: 0 6px 20px rgba(244, 63, 94, 0.40);
+}
+
+.contacts-empty-cta--secondary {
+  background: transparent;
+  color: var(--cnt-accent-primary);
+  border-color: var(--cnt-accent-primary);
+}
+
+.contacts-empty-cta--secondary:hover {
+  background: rgba(244, 63, 94, 0.10);
+}
+
+.contacts-empty-syncing {
+  animation: cnt-breathe 1s ease-in-out infinite;
+}
+
+.contacts-empty-perks {
+  list-style: none;
+  padding: 20px 0 0;
+  margin: 0;
+  border-top: 1px solid var(--cnt-border);
+  display: flex;
+  flex-direction: column;
+  gap: 10px;
+}
+
+.contacts-empty-perks li {
+  display: flex;
+  align-items: center;
+  gap: 10px;
+  font-size: 13px;
+  color: var(--cnt-text-secondary);
+}
+
+.contacts-empty-perks svg {
+  color: var(--cnt-accent-primary);
+  flex-shrink: 0;
+}
+
 /* ============================================
    RESPONSIVE
    ============================================ */
+/* Honor reduced-motion: drop entrance animations and the syncing breathe
+   pulse. Selected/hover transitions stay (they communicate state). */
+@media (prefers-reduced-motion: reduce) {
+  .contacts-sidebar,
+  .contacts-detail,
+  .contacts-node,
+  .contacts-list-row {
+    animation: none !important;
+  }
+  .contacts-action-btn.syncing {
+    animation: none !important;
+  }
+}
+
 @media (max-width: 1024px) {
   .contacts-sidebar {
     width: 240px;
